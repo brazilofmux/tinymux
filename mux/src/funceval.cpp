@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.44 2004-03-18 19:40:49 sdennis Exp $
+// $Id: funceval.cpp,v 1.45 2004-04-02 14:11:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1429,7 +1429,7 @@ FUNCTION(fun_inc)
 {
     if (nfargs == 1)
     {
-        safe_ltoa(mux_atol(fargs[0]) + 1, buff, bufc);
+        safe_i64toa(mux_atoi64(fargs[0]) + 1, buff, bufc);
     }
     else
     {
@@ -1441,7 +1441,7 @@ FUNCTION(fun_dec)
 {
     if (nfargs == 1)
     {
-        safe_ltoa(mux_atol(fargs[0]) - 1, buff, bufc);
+        safe_i64toa(mux_atoi64(fargs[0]) - 1, buff, bufc);
     }
     else
     {
