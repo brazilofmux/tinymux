@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.54 2002-03-01 22:44:23 sdennis Exp $
+// $Id: game.cpp,v 1.55 2002-04-14 20:50:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1664,43 +1664,60 @@ int Hearer(dbref thing)
     ATTR *ap;
 
     if (mudstate.inpipe && (thing == mudstate.poutobj))
+    {
         return 1;
+    }
 
     if (Connected(thing) || Puppet(thing))
+    {
         return 1;
+    }
 
     if (Monitor(thing))
+    {
         buff = alloc_lbuf("Hearer");
+    }
     else
+    {
         buff = NULL;
+    }
     atr_push();
-    for (attr = atr_head(thing, &as); attr; attr = atr_next(&as)) {
-        if (attr == A_LISTEN) {
+    for (attr = atr_head(thing, &as); attr; attr = atr_next(&as))
+    {
+        if (attr == A_LISTEN)
+        {
             if (buff)
+            {
                 free_lbuf(buff);
+            }
             atr_pop();
             return 1;
         }
-        if (Monitor(thing)) {
+        if (Monitor(thing))
+        {
             ap = atr_num(attr);
             if (!ap || (ap->flags & AF_NOPROG))
+            {
                 continue;
+            }
 
             atr_get_str(buff, thing, attr, &aowner, &aflags);
 
-            /*
-             * Make sure we can execute it
-             */
-
+            // Make sure we can execute it.
+            //
             if ((buff[0] != AMATCH_LISTEN) || (aflags & AF_NOPROG))
+            {
                 continue;
+            }
 
-            /*
-             * Make sure there's a : in it
-             */
-
-            for (s = buff + 1; *s && (*s != ':'); s++) ;
-            if (s) {
+            // Make sure there's a : in it.
+            //
+            for (s = buff + 1; *s && (*s != ':'); s++)
+            {
+                ; // Nothing
+            }
+            if (s)
+            {
                 free_lbuf(buff);
                 atr_pop();
                 return 1;
@@ -1708,7 +1725,9 @@ int Hearer(dbref thing)
         }
     }
     if (buff)
+    {
         free_lbuf(buff);
+    }
     atr_pop();
     return 0;
 }

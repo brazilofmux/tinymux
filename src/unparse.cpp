@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.6 2001-11-28 06:35:55 sdennis Exp $
+// $Id: unparse.cpp,v 1.7 2002-04-14 20:51:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -179,11 +179,16 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
     case BOOLEXP_ATR:
     case BOOLEXP_EVAL:
         if (b->type == BOOLEXP_EVAL)
+        {
             sep_ch = '/';
+        }
         else
+        {
             sep_ch = ':';
+        }
         ap = atr_num(b->thing);
-        if (ap && ap->number) {
+        if (ap && ap->number)
+        {
             safe_str((char *)ap->name, boolexp_buf, &buftop);
             safe_chr(sep_ch, boolexp_buf, &buftop);
             safe_str((char *)b->sub1, boolexp_buf, &buftop);
