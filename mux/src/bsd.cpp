@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.25 2003-01-31 15:12:42 sdennis Exp $
+// $Id: bsd.cpp,v 1.26 2003-01-31 16:14:29 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -86,7 +86,7 @@ static HANDLE hSlaveRequestStackSemaphore;
 #define SLAVE_REQUEST_STACK_SIZE 50
 static SLAVE_REQUEST SlaveRequests[SLAVE_REQUEST_STACK_SIZE];
 static int iSlaveRequest = 0;
-#define MAX_STRING 128
+#define MAX_STRING 514
 typedef struct
 {
     char host[MAX_STRING];
@@ -251,7 +251,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                         setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&TurnOn, sizeof(TurnOn));
 
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        char szPortPair[MAX_STRING];
+                        char szPortPair[128];
                         sprintf(szPortPair, "%d, %d\r\n",
                             ntohs(req.sa_in.sin_port), req.port_in);
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
@@ -283,25 +283,30 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                                 int nIdentBuffer = cc;
                                 szIdentBuffer[nIdentBuffer] = 0;
-                                char *p = strrchr(szIdentBuffer, '\r');
-                                if (p != NULL)
+
+                                char *p = szIdentBuffer;
+                                for (;;)
                                 {
-                                    // We found a '\r', so only copy characters up to but not including the '\r'.
-                                    //
-                                    nIdentBuffer = p - szIdentBuffer;
-                                    bAllDone = TRUE;
+                                    if (  *p == '\0'
+                                       || *p == '\r'
+                                       || *p == '\n')
+                                    {
+                                        bAllDone = TRUE;
+                                        break;
+                                    }
+                                    if (Tiny_IsPrint[(unsigned char)*p])
+                                    {
+                                        szIdent[nIdent++] = *p;
+                                        if (sizeof(szIdent) - 1 <= nIdent)
+                                        {
+                                            bAllDone = TRUE;
+                                            break;
+                                        }
+                                    }
+                                    p++;
                                 }
-                                if (nIdent + nIdentBuffer >= sizeof(szIdent))
-                                {
-                                    nIdentBuffer = sizeof(szIdent) - nIdent - 1;
-                                    bAllDone = TRUE;
-                                }
-                                if (nIdentBuffer)
-                                {
-                                    memcpy(szIdent + nIdent, szIdentBuffer, nIdentBuffer);
-                                    nIdent += nIdentBuffer;
-                                    szIdent[nIdent] = 0;
-                                }
+                                szIdent[nIdent] = '\0';
+
                                 ltaCurrent.GetUTC();
                             }
                         }
