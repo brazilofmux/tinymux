@@ -227,7 +227,12 @@ Bug Fixes:
      time as the IEEE floating-point Ind/+Inf/-Inf stuff was introduced.
  --  Subnet masks for restricted sites are now validated.
  --  Bits in the base IP address for restricted subnets are now removed.
-
+ --  MEMORY_BASED attributes were allocated one byte too short (introduced in
+     Beta 8).
+ --  isValidSubnetMask() went through the wrong sequence of valid subnet masks
+     (introduced in Beta 9).
+ --  cf_log_syntax showed gibberish because of the way va_start/va_end-type
+     arguments were handled (introduced in Beta 9).
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
