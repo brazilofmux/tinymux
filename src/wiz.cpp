@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.25 2002-03-02 08:05:00 sdennis Exp $
+// $Id: wiz.cpp,v 1.26 2002-05-23 19:21:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -402,10 +402,8 @@ void do_newpassword
     char *password
 )
 {
-    dbref victim;
-    char *buf;
-
-    if ((victim = lookup_player(player, name, 0)) == NOTHING)
+    dbref victim = lookup_player(player, name, 0);
+    if (victim == NOTHING)
     {
         notify_quiet(player, "No such player.");
         return;
@@ -419,8 +417,29 @@ void do_newpassword
     }
     if (God(victim))
     {
-        notify_quiet(player, "You cannot change that player's password.");
-        return;
+        BOOL bCan = TRUE;
+        if (God(player))
+        {
+            // God can change her own password if it's missing.
+            //
+            int   aflags;
+            dbref aowner;
+            char *target = atr_get(player, A_PASS, &aowner, &aflags);
+            if (target[0] != '\0')
+            {
+                bCan = FALSE;
+            }
+            free_lbuf(target);
+        }
+        else
+        {
+            bCan = FALSE;
+        }
+        if (!bCan)
+        {
+            notify_quiet(player, "You cannot change that player's password.");
+            return;
+        }
     }
     STARTLOG(LOG_WIZARD, "WIZ", "PASS");
     log_name(player);
@@ -430,9 +449,9 @@ void do_newpassword
 
     // It's ok, do it.
     //
-    s_Pass(victim, crypt((const char *)password, "XX"));
+    s_Pass(victim, crypt(password, "XX"));
     notify_quiet(player, "Password changed.");
-    buf = alloc_lbuf("do_newpassword");
+    char *buf = alloc_lbuf("do_newpassword");
     char *bp = buf;
     safe_tprintf_str(buf, &bp, "Your password has been changed by %s.", Name(player));
     notify_quiet(victim, buf);
