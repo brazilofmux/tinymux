@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.9 2002-07-17 03:46:30 sdennis Exp $
+// $Id: conf.cpp,v 1.10 2002-07-19 12:18:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -1811,7 +1811,6 @@ void list_cf_access(dbref player)
 // cf_display: Given a config parameter by name, return its value in some
 // sane fashion.
 //
-
 void cf_display(dbref player, char *param_name, char *buff, char **bufc)
 {
     CONF *tp;
@@ -1859,6 +1858,29 @@ void cf_display(dbref player, char *param_name, char *buff, char **bufc)
         }
     }
     safe_nomatch(buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// cf_list: List all config options the player can read.
+//
+void cf_list(dbref player, char *buff, char **bufc)
+{
+    CONF *tp;
+    ITL itl;
+    ItemToList_Init(&itl, buff, bufc);
+
+    for (tp = conftable; tp->pname; tp++)
+    {
+        if (check_access(player, tp->rperms))
+        {
+            if (!ItemToList_AddString(&itl, tp->pname))
+            {
+                break;
+            }
+        }
+    }
+    ItemToList_Final(&itl);
+    return;
 }
 
 #endif // !STANDALONE

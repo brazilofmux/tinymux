@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.63 2002-07-19 12:00:44 jake Exp $
+// $Id: functions.cpp,v 1.64 2002-07-19 12:18:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -25,6 +25,7 @@ UFUN *ufun_head;
 extern NAMETAB indiv_attraccess_nametab[];
 
 extern void cf_display(dbref, char *, char *, char **);
+extern void cf_list(dbref, char *, char **);
 
 // Function definitions from funceval.cpp
 //
@@ -7605,7 +7606,14 @@ FUNCTION(fun_trim)
 
 FUNCTION(fun_config)
 {
-    cf_display(executor, fargs[0], buff, bufc);
+    if (nfargs == 1)
+    {
+        cf_display(executor, fargs[0], buff, bufc);
+    }
+    else
+    {
+        cf_list(executor, buff, bufc);
+    }
 }
 
 /* ---------------------------------------------------------------------------
@@ -7650,7 +7658,7 @@ FUN flist[] =
     {"COMP",     fun_comp,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"COMTITLE", fun_comtitle, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CON",      fun_con,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONFIG",   fun_config,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONFIG",   fun_config,   MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"CONN",     fun_conn,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONNLAST", fun_connlast, MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONNLEFT", fun_connleft, MAX_ARG, 1,  1,       0, CA_PUBLIC},
