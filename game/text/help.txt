@@ -6681,6 +6681,28 @@ ISUB()
   Related Topics: add(), dec(), iadd(), idiv(), imul(), inc(), mod(),
             sub().
 
+& ITEMIZE()
+ITEMIZE()
+
+  FUNCTION: itemize(<list>[, <delim>[, <conj>[, <punc>]]])
+
+  This function takes a <delim>-separated <list>, and:
+
+   If there's just one element, return it.
+   If there's two elements, return <e1> <conj> <e2>
+   If there's more than two, return <e1><punc> <e2><punc> ... <conj> <en>
+
+  The default <conj> is "and", default <punc> is ",", and default <delim> is
+  space.
+
+  Examples:
+    > say [itemize(eggs)] * [itemize(eggs bacon)]
+    You say, "eggs * eggs and bacon"
+    > say [itemize(eggs bacon spam)]
+    You say, "eggs, bacon, and spam"
+    > say [itemize(eggs bacon spam, ,&,;)]
+    You say, "eggs; bacon; & spam"
+
 & ITEMS()
 ITEMS()
 
