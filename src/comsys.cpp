@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.43 2001-06-11 01:56:46 sdennis Exp $
+// * $Id: comsys.cpp,v 1.44 2001-06-15 20:39:59 hellspawn Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2009,7 +2009,7 @@ void do_comconnectraw_notify(dbref player, char *chan)
     {
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
-            ":has disconnected.", &messNormal, &messNoComtitle);
+            ":has connected.", &messNormal, &messNoComtitle);
         SendChannelMessage(ch, messNormal, messNoComtitle, FALSE);
     }
 }
@@ -2489,7 +2489,7 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     char *mess2, *mess2nct;
     BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
         ":boots", &mess1, &mess1nct);
-    BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
+    BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, 0, vu
         ":off the channel.", &mess2, &mess2nct);
     char *messNormal = alloc_lbuf("do_chboot.messnormal");
     char *messNoComtitle = alloc_lbuf("do_chboot.messnocomtitle");
