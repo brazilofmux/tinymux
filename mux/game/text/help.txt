@@ -3654,6 +3654,87 @@ ABS()
 
   Related Topics: iabs(), isign(), sign().
 
+& ACCENT()
+ACCENT()
+
+  FUNCTION: accent(<string>, <template>)
+  
+  The accent() function will return <string>, with characters in it
+  possibly changed to accented ones according to <template>. Both
+  arguments must be the same number of characters.
+
+  Whether or not the resulting string is actually displayed correctly
+  is client-dependent. Some OSes uses different character sets than
+  the one assumed (ISO 8859-1), and some clients strip these 8-bit
+  characters.
+
+("help accent2" for more)
+
+& ACCENT2
+ACCENT() (continued)
+
+  For each character in <string>, the corresponding character of
+  <template> is checked according to the table below, and a replacement
+  done. If either the current <string> or <template> characters aren't
+  in the table, the <string> character is passed through unchanged.
+ 
+  Accent                         Template   String
+  Name       Description         Character  Character
+  -----------------------------------------------------------------
+  grave      Backward slant      `          A,E,I,O,U,a,e,i,o,u
+             above letter
+  acute      Forward slant       '          A,E,I,O,U,Y,a,e,i,o,u,y
+             above letter
+  tilde      Wavy line above     ~          A,N,O,a,n,o
+             letter
+  circumflex carat above         ^          A,E,I,O,U,a,e,i,o,u
+             letter
+  umlaut     Two dots above      :          A,E,I,O,U,,a,e,i,o,u,y
+  diaeresis  letter
+  ring       Small circle above  o          A,a
+             letter
+  cedilla    Small tail below    ,          C,c
+             letter
+
+("help accent3" for more)
+
+& ACCENT3
+ACCENT() (continued)
+
+  These are non-accent special characters, mostly punctuation and
+  non-roman letters.
+ 
+                      Template   String
+  Description         Character  Character
+  --------------------------------------------------------------
+  Upside-down ?       u          ?
+  Upside-down !       u          !
+  << quote mark       "          <
+  >> quote mark       "          >
+  German sharp s      B          s
+  Capital thorn       |          P
+  Lower-case thorn    |          p
+  Capital eth         -          D
+  Lower-case eth      &          o
+
+  Examples:
+
+    > think accent(Aule, ---:)
+    Aul(e-with-diaeresis)
+ 
+    > think accent(The Nina was a ship, The Ni~a was a ship) 
+    The Ni(n-with-~)a was a ship
+
+("help accent4" for more)
+
+& ACCENT4
+ACCENT() (continued)
+
+    > think accent(Khazad ai-menu!, Khaz^d ai-m^nu!)
+    Khaz(a-with-^)d ai-m(e-with-^)nu!
+
+  Related Topics: NOACCENT, chr(), ord(), stripaccents().
+
 & ACOS()
 ACOS()
 
@@ -6270,8 +6351,8 @@ FUNCTION CLASSES (continued)
 
   Stack:                     EMPTY ITEMS LSTACK PEEK POP PUSH
 
-  Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE CAT
-                             CENTER CHR COMP DECRYPT DELETE EDIT ENCRYPT
+  Strings:                   ACCENT AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE
+                             CAT CENTER CHR COMP DECRYPT DELETE EDIT ENCRYPT
                              ESCAPE IF IFELSE LCSTR LJUST LPOS MERGE MID ORD
                              POS REGMATCH REGMATCHI REGRAB REGRABALL
                              REGRABALLI REGRABI REPEAT REPLACE REVERSE RIGHT
@@ -6291,70 +6372,71 @@ FUNCTION LIST
  
   Help is available for the following functions:
 
-    @@()        ABS()       ACOS()      ADD()       AFTER()     ALPHAMAX()
-    ALPHAMIN()  AND()       ANDBOOL()   ANDFLAGS()  ANSI()      APOSS()
-    ART()       ASIN()      ATAN()      ATTRCNT()   BAND()      BEEP()
-    BEFORE()    BITTYPE()   BNAND()     BOR()       CAND()      CANDBOOL()
-    CANSEE()    CAPSTR()    CASE()      CAT()       CEIL()      CENTER()
-    CHANNELS()  CHILDREN()  CHR()       CMDS()      COLUMNS()   COMALIAS()
-    COMP()      COMTITLE()  CON()       CONFIG()    CONN()      CONNLAST()
-    CONNLEFT()  CONNMAX()   CONNNUM()   CONNRECORD()CONNTOTAL() CONTROLS()
-    CONVSECS()  CONVTIME()  COR()       CORBOOL()   COS()       CRC32()
-    CREATE()    CTIME()     CTU()       CWHO()      DEC()       DECRYPT()
-    DEFAULT()   DELETE()    DIE()       DIGITTIME() DIST2D()    DIST3D()
-    DOING()     DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()
-    ELOCK()     EMIT()      EMPTY()     ENCRYPT()   EQ()        ERROR()
-    ESCAPE()    EVAL()      EXIT()      EXP()       EXPTIME()   EXTRACT()
-    FDIV()      FILTER()    FILTERBOOL()FINDABLE()  FIRST()     FLAGS()
-    FLOOR()     FLOORDIV()  FOLD()      FOREACH()   FULLNAME()  GET()
-    GET_EVAL()  GRAB()      GREP()      GREPI()     GT()        GTE()
+    @@()        ABS()       ACCENT()    ACOS()      ADD()       AFTER()
+    ALPHAMAX()  ALPHAMIN()  AND()       ANDBOOL()   ANDFLAGS()  ANSI()
+    APOSS()     ART()       ASIN()      ATAN()      ATTRCNT()   BAND()
+    BEEP()      BEFORE()    BITTYPE()   BNAND()     BOR()       CAND()
+    CANDBOOL()  CANSEE()    CAPSTR()    CASE()      CAT()       CEIL()
+    CENTER()    CHANNELS()  CHILDREN()  CHR()       CMDS()      COLUMNS()
+    COMALIAS()  COMP()      COMTITLE()  CON()       CONFIG()    CONN()
+    CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()   CONNRECORD()CONNTOTAL()
+    CONTROLS()  CONVSECS()  CONVTIME()  COR()       CORBOOL()   COS()
+    CRC32()     CREATE()    CTIME()     CTU()       CWHO()      DEC()
+    DECRYPT()   DEFAULT()   DELETE()    DIE()       DIGITTIME() DIST2D()
+    DIST3D()    DOING()     DUMPING()   E()         EDEFAULT()  EDIT()
+    ELEMENTS()  ELOCK()     EMIT()      EMPTY()     ENCRYPT()   EQ()
+    ERROR()     ESCAPE()    EVAL()      EXIT()      EXP()       EXPTIME()
+    EXTRACT()   FDIV()      FILTER()    FILTERBOOL()FINDABLE()  FIRST()
+    FLAGS()     FLOOR()     FLOORDIV()  FOLD()      FOREACH()   FULLNAME()
+    GET()       GET_EVAL()  GRAB()      GREP()      GREPI()     GT()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASQUOTA()  HASTYPE()
-    HOME()      HOST()      IABS()      IADD()      IDIV()      IDLE()
-    IF()        IFELSE()    ILEV()      IMUL()      INC()       INDEX()
-    INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()     ISNUM()
-    ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()     ITER()
-    LADD()      LAND()      LAST()      LATTR()     LATTRCMDS() LATTRP()
-    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()
-    LINK()      LIST()      LIT()       LJUST()     LN()        LNUM()
-    LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()       LOR()
-    LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()    LSTACK()
-    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAP()
-    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
-    MIN()       MIX()       MOD()       MONEY()     MOTD()      MTIME()
-    MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
-    NEXT()      NOT()       NULL()      NUM()       OBJ()       OBJEVAL()
-    OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()
-    OWNER()     PACK()      PARENT()    PARSE()     PEEK()      PEMIT()
-    PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()
-    POP()       PORTS()     POS()       POSS()      POWER()     PUSH()
+    GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASQUOTA()
+    HASTYPE()   HOME()      HOST()      IABS()      IADD()      IDIV()
+    IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
+    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
+    ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()
+    ITER()      LADD()      LAND()      LAST()      LATTR()     LATTRCMDS()
+    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
+    LFLAGS()    LINK()      LIST()      LIT()       LJUST()     LN()
+    LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()
+    LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()
+    LSTACK()    LT()        LTE()       LWHO()      MAIL()      MAILFROM()
+    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
+    MID()       MIN()       MIX()       MOD()       MONEY()     MOTD()
+    MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()
+    NEQ()       NEXT()      NOT()       NULL()      NUM()       OBJ()
+    OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()
+    ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()     PEEK()
+    PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()
+    POLL()      POP()       PORTS()     POS()       POSS()      POWER()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    R()         RAND()      REGMATCH()  REGMATCHI() REGRAB()    REGRABALL()
-    REGRABALLI()REGRABI()   REMAINDER() REMIT()     REMOVE()    REPEAT()
-    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()     RJUST()
-    RLOC()      ROMAN()     ROOM()      ROUND()     S()         SCRAMBLE()
-    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
-    SETQ()      SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()
-    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
-    SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
-    STATS()     STRCAT()    STRIPACCENTS()          STRIPANSI() STRLEN()
-    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
-    T()         TABLE()     TAN()       TEL()       TIME()      TIMEFMT()
-    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
-    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
-    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
-    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
-    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    PUSH()      R()         RAND()      REGMATCH()  REGMATCHI() REGRAB()
+    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()     REMOVE()
+    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()
+    RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()     S()
+    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
+    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
+    SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()
+    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS()
+    STARTTIME() STATS()     STRCAT()    STRIPACCENTS()          STRIPANSI()
+    STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
+    SWITCH()    T()         TABLE()     TAN()       TEL()       TIME()
+    TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()      U()
+    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
+    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
+    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()
+    WORDS()     WRITETIME() XGET()      XOR()       ZFUN()      ZONE()
+    ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
