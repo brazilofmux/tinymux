@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.27 2002-07-25 18:19:42 jake Exp $
+// $Id: mail.cpp,v 1.28 2002-07-27 01:49:18 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1012,18 +1012,18 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
         atr_add_raw(player, A_MAILMSG, pMessageBody);
     }
 
-    int aflags;
-    dbref aowner;
-
-    char *pValue = atr_get(player, A_MAILFLAGS, &aowner, &aflags);
+    // The following use of atr_get_raw() and atr_add_raw() together is OK
+    // because atr_add_raw isn't being passed a pointer than came from
+    // atr_get_raw(). The return value from Tiny_ltoa_t() is a pointer to a
+    // static buffer.
+    //
+    char *pValue = atr_get_raw(player, A_MAILFLAGS);
     int iFlag = M_REPLY;
     if (pValue)
     {
         iFlag |= Tiny_atol(pValue);
-        free_lbuf(pValue);
     }
-    atr_add(player, A_MAILFLAGS, Tiny_ltoa_t(iFlag), aowner, aflags);
-    free_lbuf(tolist);
+    atr_add_raw(player, A_MAILFLAGS, Tiny_ltoa_t(iFlag));
 }
 
 /*-------------------------------------------------------------------------*
