@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.54 2003-10-09 01:57:35 sdennis Exp $
+// $Id: stringutil.cpp,v 1.55 2004-01-10 19:00:50 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -178,9 +178,9 @@ const bool mux_isspace[256] =
 // The first character of an attribute name must be either alphabetic,
 // '_', '#', '.', or '~'. It's handled by the following table.
 //
-// Characters thereafter may be letters, numbers, and characters from the set
-// {'?!`/-_.@#$^&~=+<>()%}. Lower-case letters are turned into uppercase
-// before being used, but lower-case letters are valid input.
+// Characters thereafter may be letters, numbers, and characters from
+// the set {'?!`/-_.@#$^&~=+<>()}. Lower-case letters are turned into
+// uppercase before being used, but lower-case letters are valid input.
 //
 bool mux_AttrNameInitialSet[256] =
 {
@@ -211,7 +211,7 @@ bool mux_AttrNameSet[256] =
 //
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
-    0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1,  // 2
+    0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1,  // 2
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1,  // 3
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1,  // 5
