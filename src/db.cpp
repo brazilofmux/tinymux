@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.23 2000-08-03 03:40:24 sdennis Exp $
+// $Id: db.cpp,v 1.24 2000-08-03 03:43:08 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3231,7 +3231,7 @@ void load_restart_db(void)
     strcpy(mudstate.doing_hdr, getstring_noalloc(f, new_strings));
 
     if (version & RS_CONCENTRATE)
-     {
+    {
 #ifdef CONCENTRATE
         conc_pid = getref(f);
 #else
