@@ -6771,8 +6771,6 @@ GRABALL()
     You say "test test"
     > say graball(This is testing a test,tes*)
     You say "testing test"
-    > say graball(This is testing a test,s$)
-    You say "This is"
 
   Related Topics: grab(), LISTS, regrab(), regraball().
 
