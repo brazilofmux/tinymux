@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.53 2001-02-12 08:28:27 sdennis Exp $
+// $Id: functions.cpp,v 1.54 2001-02-25 16:47:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -976,9 +976,13 @@ FUNCTION(fun_convsecs)
 FUNCTION(fun_convtime)
 {
     CLinearTimeAbsolute lta;
-    if (lta.SetString(fargs[0]))
+    BOOL bZoneSpecified = FALSE;
+    if (  lta.SetString(fargs[0])
+       || ParseDate(lta, fargs[0], &bZoneSpecified))
     {
-        if (nfargs == 1 || _stricmp("utc", fargs[1]) != 0)
+        if (  !bZoneSpecified
+           && (  nfargs == 1
+              || _stricmp("utc", fargs[1]) != 0))
         {
             lta.Local2UTC();
         }

@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules
 //
-// $Id: timeutil.h,v 1.6 2001-02-12 08:28:27 sdennis Exp $
+// $Id: timeutil.h,v 1.7 2001-02-25 16:47:27 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -8,7 +8,7 @@
 // do_convtime() is heavily modified from previous game server code.
 //
 // MUX 2.1
-// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial
@@ -147,5 +147,6 @@ INT64 i64Division(INT64 x, INT64 y);
 INT64 i64Remainder(INT64 x, INT64 y);
 #endif
 
+extern BOOL ParseDate(CLinearTimeAbsolute &lta, char *pDateString, BOOL *pbZoneSpecified);
 
 #endif // TIMEUTIL_H
