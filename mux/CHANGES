@@ -8,7 +8,8 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- XXX
+ -- Added 'reset_players' configuration option which resets the player
+    connection record.
 
 
 Bug Fixes:
