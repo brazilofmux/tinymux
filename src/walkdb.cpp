@@ -1,7 +1,7 @@
 //
 // walkdb.c -- Support for commands that walk the entire db 
 //
-// $Id: walkdb.cpp,v 1.2 2000-04-11 21:38:00 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.3 2000-04-24 21:36:42 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -101,20 +101,8 @@ void do_find(dbref player, dbref cause, int key, char *name)
         return;
     }
     parse_range(&name, &low_bound, &high_bound);
-#ifndef MEMORY_BASED
-    int iResetCounter = 0;
-#endif
     for (i = low_bound; i <= high_bound; i++)
     {
-#ifndef MEMORY_BASED
-        if (!iResetCounter)
-        {
-            iResetCounter = 100;
-            cache_reset(0);
-        }
-        iResetCounter--;
-#endif // MEMORY_BASED 
-
         if (  (Typeof(i) != TYPE_EXIT)
            && controls(player, i)
            && (!*name || string_match(PureName(i), name)))
@@ -760,20 +748,8 @@ void search_perform(dbref player, dbref cause, SEARCH *parm)
     buff = alloc_sbuf("search_perform.num");
     save_invk_ctr = mudstate.func_invk_ctr;
 
-#ifndef MEMORY_BASED
-    int iResetCounter = 0;
-#endif
     for (thing = parm->low_bound; thing <= parm->high_bound; thing++)
     {
-#ifndef MEMORY_BASED
-        if (!iResetCounter)
-        {
-            iResetCounter = 100;
-            cache_reset(0);
-        }
-        iResetCounter--;
-#endif // MEMORY_BASED
-
         mudstate.func_invk_ctr = save_invk_ctr;
 
         // Check for matching type.
