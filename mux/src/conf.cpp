@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.23 2002-09-21 03:16:27 jake Exp $
+// $Id: conf.cpp,v 1.24 2002-09-25 06:50:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -970,7 +970,7 @@ typedef struct
     size_t maxHexLen;
 } DECODEIPV4;
 
-static BOOL DecodeN(int nType, size_t len, const char *p, unsigned long *pu32)
+static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
 {
     static DECODEIPV4 DecodeIPv4Table[4] =
     {
@@ -980,14 +980,16 @@ static BOOL DecodeN(int nType, size_t len, const char *p, unsigned long *pu32)
         { 32, 4294967295UL, 11, 10, 8 }
     };
 
-    *pu32 <<= DecodeIPv4Table[nType].nShift;
+    *pu32  = (*pu32 << DecodeIPv4Table[nType].nShift) & 0xFFFFFFFFUL;
     if (len == 0)
     {
         return FALSE;
     }
-    unsigned long ul = 0;
-    unsigned long ul2;
-    if (len >= 3 && p[0] == '0' && Tiny_ToLower[(unsigned char)p[1]] == 'x')
+    in_addr_t ul = 0;
+    in_addr_t ul2;
+    if (  len >= 3
+       && p[0] == '0'
+       && Tiny_ToLower[(unsigned char)p[1]] == 'x')
     {
         // Hexadecimal Path
         //
@@ -1008,7 +1010,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, unsigned long *pu32)
         {
             unsigned char ch = Tiny_ToLower[(unsigned char)*p];
             ul2 = ul;
-            ul <<= 4;
+            ul  = (ul << 4) & 0xFFFFFFFFUL;
             if (ul < ul2)
             {
                 // Overflow
@@ -1052,7 +1054,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, unsigned long *pu32)
         {
             unsigned char ch = *p;
             ul2 = ul;
-            ul <<= 3;
+            ul  = (ul << 3) & 0xFFFFFFFFUL;
             if (ul < ul2)
             {
                 // Overflow
@@ -1083,7 +1085,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, unsigned long *pu32)
         {
             unsigned char ch = *p;
             ul2 = ul;
-            ul *= 10;
+            ul  = (ul * 10) & 0xFFFFFFFFUL;
             if (ul < ul2)
             {
                 // Overflow
@@ -1143,7 +1145,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, unsigned long *pu32)
 //    0X8 Hexadecimal
 //    8   Decimal
 //
-static BOOL MakeCanonicalIPv4(const char *str, unsigned long *pnIP)
+static BOOL MakeCanonicalIPv4(const char *str, in_addr_t *pnIP)
 {
     *pnIP = 0;
     if (!str)
@@ -1193,16 +1195,16 @@ static BOOL MakeCanonicalIPv4(const char *str, unsigned long *pnIP)
 // valid one. Valid masks consist of a N-bit sequence of '1' bits followed by
 // a (32-N)-bit sequence of '0' bits, where N is 0 to 32.
 //
-BOOL isValidSubnetMask(unsigned long ulMask)
+BOOL isValidSubnetMask(in_addr_t ulMask)
 {
-    unsigned long ulTest = 0xFFFFFFFFUL;
+    in_addr_t ulTest = 0xFFFFFFFFUL;
     for (int i = 0; i <= 32; i++)
     {
         if (ulMask == ulTest)
         {
             return TRUE;
         }
-        ulTest <<= 1;
+        ulTest = (ulTest << 1) & 0xFFFFFFFFUL;
     }
     return FALSE;
 }
@@ -1214,7 +1216,7 @@ CF_HAND(cf_site)
 {
     SITE **ppv = (SITE **)vp;
     struct in_addr addr_num, mask_num;
-    unsigned long ulMask, ulNetBits;
+    in_addr_t ulMask, ulNetBits;
 
     char *addr_txt;
     char *mask_txt = strchr(str, '/');
@@ -1250,8 +1252,14 @@ CF_HAND(cf_site)
         //
         addr_txt = str;
         *mask_txt++ = '\0';
+        if (!is_integer(mask_txt, NULL))
+        {
+            cf_log_syntax(player, cmd, "Mask field (%s) in CIDR IP prefix is not numeric.", mask_txt);
+            return -1;
+        }
         int mask_bits = Tiny_atol(mask_txt);
-        if ((mask_bits > 32) || (mask_bits < 0))
+        if (  mask_bits < 0
+           || 32 < mask_bits)
         {
             cf_log_syntax(player, cmd, "Mask bits (%d) in CIDR IP prefix out of range.", mask_bits);
             return -1;
@@ -1263,7 +1271,7 @@ CF_HAND(cf_site)
             ulMask = 0;
             if (mask_bits > 0)
             {
-                ulMask = 0xFFFFFFFFUL << (32 - mask_bits);
+                ulMask = (0xFFFFFFFFUL << (32 - mask_bits)) & 0xFFFFFFFFUL;
             }
             mask_num.s_addr = htonl(ulMask);
         }
@@ -1274,7 +1282,7 @@ CF_HAND(cf_site)
         return -1;
     }
     addr_num.s_addr = ulNetBits;
-    unsigned long ulAddr = ntohl(addr_num.s_addr);
+    in_addr_t ulAddr = ntohl(addr_num.s_addr);
 
     if (ulAddr & ~ulMask)
     {

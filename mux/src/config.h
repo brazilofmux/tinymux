@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.3 2002-07-25 13:17:48 jake Exp $
+// $Id: config.h,v 1.4 2002-09-25 06:50:30 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -177,10 +177,13 @@ typedef UINT32           UINT16;
 #define INT16_MAX_VALUE  32767
 #define UINT16_MAX_VALUE 0xFFFFU
 
+#ifndef HAVE_IN_ADDR_T
+typedef UINT32 in_addr_t;
+#endif
+
 #ifndef SMALLEST_INT_GTE_NEG_QUOTIENT
 #define LARGEST_INT_LTE_NEG_QUOTIENT
 #endif // !SMALLEST_INT_GTE_NEG_QUOTIENT
-
 
 extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
 #define Tiny_Assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
