@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.110 2003-03-09 14:37:55 sdennis Exp $
+// $Id: command.cpp,v 1.111 2003-03-23 20:53:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1722,7 +1722,8 @@ char *process_command
 
     // Check for the HOME command.
     //
-    if (string_compare(pCommand, "home") == 0)
+    if (  Has_location(executor)
+       && string_compare(pCommand, "home") == 0)
     {
         // CmdCheck tests for @icmd. higcheck tests for i/p hooks.
         // Both from RhostMUSH.
