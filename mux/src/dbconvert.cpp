@@ -1,6 +1,6 @@
 // dbconvert.cpp -- Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.3 2002-06-12 07:26:22 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.4 2002-06-12 15:59:34 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -12,13 +12,6 @@
 #include "db.h"
 #include "vattr.h"
 #include "_build.h"
-
-#ifdef RADIX_COMPRESSION
-#ifndef COMPRESSOR
-#define COMPRESSOR
-#endif
-#include "radix.h"
-#endif
 
 extern void NDECL(cf_init);
 extern void do_dbck(dbref executor, dbref caller, dbref enactor, int);
@@ -109,9 +102,6 @@ int DCL_CDECL main(int argc, char *argv[])
     SeedRandomNumberGenerator();
 
     cf_init();
-#ifdef RADIX_COMPRESSION
-    init_string_compress();
-#endif
 
     // Decide what conversions to do and how to format the output file.
     //

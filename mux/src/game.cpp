@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.5 2002-06-12 01:24:46 raevnos Exp $
+// $Id: game.cpp,v 1.6 2002-06-12 16:03:55 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -17,9 +17,6 @@
 #include "muxcli.h"
 #include "mguests.h"
 #include "pcre.h"
-#ifdef RADIX_COMPRESSION
-#include "radix.h"
-#endif // RADIX_COMPRESSION
 
 extern void NDECL(init_attrtab);
 extern void NDECL(init_cmdtab);
@@ -1958,10 +1955,6 @@ int DCL_CDECL main(int argc, char *argv[])
         Log.WriteString("Crypto API unavailable.\r\n");
     }
 #endif // WIN32
-
-#ifdef RADIX_COMPRESSION
-    init_string_compress();
-#endif // RADIX_COMPRESSION
 
 #ifdef MEMORY_BASED
     // Database isn't corrupted.

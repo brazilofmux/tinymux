@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.3 2002-06-04 15:33:34 sdennis Exp $
+// $Id: db.cpp,v 1.4 2002-06-12 15:57:24 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -29,13 +29,6 @@
 #include "interface.h"
 #include "comsys.h"
 
-#ifdef RADIX_COMPRESSION
-#ifndef COMPRESSOR
-#define COMPRESSOR
-#endif // !COMPRESSOR
-#include "radix.h"
-#endif // RADIX_COMPRESSION
-
 #ifndef O_ACCMODE
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)
 #endif // O_ACCMODE
@@ -45,19 +38,6 @@ NAME *names = NULL;
 NAME *purenames = NULL;
 
 extern void FDECL(desc_addhash, (DESC *));
-
-#ifdef RADIX_COMPRESSION
-
-/* Buffers for compressing in and out of. NOTE: These assume that compression
- * will NEVER expand input text by more than 1.5, which is valid for the
- * radix tree stuff, since it emits at worst a 12 bit code for every input
- * byte. If this changes, the size of compress_buff needs to be adjusted to the
- * new worst case.
- */
-char decomp_buff[LBUF_SIZE];
-char compress_buff[LBUF_SIZE + (LBUF_SIZE >> 1) + 1];
-
-#endif // RADIX_COMPRESSION
 
 typedef struct atrcount ATRCOUNT;
 struct atrcount {
@@ -1500,93 +1480,6 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
     return cp;
 }
 
-#ifdef RADIX_COMPRESSION
-
-/* ---------------------------------------------------------------------------
- * atr_get_raw_decode_LEN: Get an attribute string out of the DB, decompress
- * and decode it in one shot. Since the decompression involves a copy, and we
- * normally do decode/copy immediately after fetching the attribute, this is
- * used to roll the two operations together.
- */
-static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *flags, int atr, int *pLen)
-{
-    char *a;
-    int nLen;
-    if (!Good_obj(thing))
-        return 0;
-
-#ifdef MEMORY_BASED
-    a = atr_get_raw_LEN(thing, atr, &nLen);
-#else // MEMORY_BASED
-    Aname okey;
-    Tiny_Assert(atr != A_LIST);
-    makekey(thing, atr, &okey);
-    a = FETCH(&okey, &nLen);
-    nLen = a ? (nLen-1) : 0;
-#endif // MEMORY_BASED
-
-    *owner = Owner(thing);
-    if (!a)
-    {
-        *flags = 0;
-        if (oattr)
-        {
-            *oattr = '\0';
-        }
-        return 0;
-    }
-
-#ifdef MEMORY_BASED
-
-    // We have already uncompressed it by calling get_atr_raw_LEN above.
-    //
-    const char *a1 = atr_decode_flags_owner(a, owner, flags);
-    if (oattr)
-    {
-        // The caller wants the value of the attribute as well.
-        //
-        // If there was an owner/flag data at the beginning, a != a1.
-        // a1 always points at the beginning of the attribute value.
-        //
-        nLen -= (a1 - a);
-        *pLen = nLen;
-        memcpy(oattr, a1, nLen + 1);
-    }
-
-#else // MEMORY_BASED
-
-    // We now have a compressed attribute, decompress it into oattr.
-    // and decode it.
-    //
-    char *cp = oattr;
-    if (cp == NULL) cp = decomp_buff;
-    nLen = string_decompress(a, cp);
-    const char *cp1 = atr_decode_flags_owner(cp, owner, flags);
-    if (oattr)
-    {
-        // The caller wants the value of the attribute as well.
-        //
-        // If there was an owner/flag data at the beginning, cp != cp1.
-        // cp1 always points at the beginning of the attribute value.
-        //
-        if (cp1 != cp)
-        {
-            // There was owner/flag data at the beginning so we
-            // need to move the string down.
-            //
-            *pLen = nLen - (cp1 - oattr);
-            memmove(oattr, cp1, (*pLen)+1);
-        }
-        else
-        {
-            *pLen = nLen;
-        }
-    }
-#endif // MEMORY_BASED
-    return 1;
-}
-#endif // RADIX_COMPRESSION
-
 // ---------------------------------------------------------------------------
 // atr_decode: Decode an attribute string.
 //
@@ -1724,12 +1617,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
         nValue = LBUF_SIZE-1;
         szValue[nValue] = '\0';
     }
-#ifdef RADIX_COMPRESSION
-    int nCompressedValue = string_compress(szValue, compress_buff);
-    text = BufferCloneLen(compress_buff, nCompressedValue);
-#else // RADIX_COMPRESSION
     text = StringCloneLen(szValue, nValue);
-#endif // RADIX_COMPRESSION
 
     if (!db[thing].ahead)
     {
@@ -1739,11 +1627,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
         db[thing].at_count = 1;
         list[0].number = atr;
         list[0].data = text;
-#ifdef RADIX_COMPRESSION
-        list[0].size = nCompressedValue;
-#else // RADIX_COMPRESSION
         list[0].size = nValue+1;
-#endif // RADIX_COMPRESSION
         found = 1;
     }
     else
@@ -1761,11 +1645,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
             {
                 MEMFREE(list[mid].data);
                 list[mid].data = text;
-#ifdef RADIX_COMPRESSION
-                list[mid].size = nCompressedValue;
-#else // RADIX_COMPRESSION
                 list[mid].size = nValue+1;
-#endif // RADIX_COMPRESSION
                 found = 1;
                 break;
             }
@@ -1806,11 +1686,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
 
             list[lo].data = text;
             list[lo].number = atr;
-#ifdef RADIX_COMPRESSION
-            list[lo].size = nCompressedValue;
-#else // RADIX_COMPRESSION
             list[lo].size = nValue+1;
-#endif // RADIX_COMPRESSION
             db[thing].at_count++;
             db[thing].ahead = list;
         }
@@ -1844,15 +1720,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
         {
             return;
         }
-#ifdef RADIX_COMPRESSION
-
-        // It's not an A_LIST, so compress it into a buffer and store that.
-        //
-        int nCompressedValue = string_compress(szValue, compress_buff);
-        STORE(&okey, compress_buff, nCompressedValue);
-#else // RADIX_COMPRESSION
         STORE(&okey, szValue, nValue+1);
-#endif // RADIX_COMPRESSION
     }
 #endif // MEMORY_BASED
 
@@ -1974,13 +1842,8 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
         mid = ((hi - lo) >> 1) + lo;
         if (list[mid].number == atr)
         {
-#ifdef RADIX_COMPRESSION
-            *pLen = string_decompress(list[mid].data, decomp_buff);
-            return decomp_buff;
-#else // RADIX_COMPRESSION
             *pLen = list[mid].size - 1;
             return list[mid].data;
-#endif // RADIX_COMPRESSION
         }
         else if (list[mid].number > atr)
         {
@@ -2006,18 +1869,8 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
     int nLen;
     a = FETCH(&okey, &nLen);
     nLen = a ? (nLen-1) : 0;
-#ifdef RADIX_COMPRESSION
-    if (!a || atr == A_LIST)
-    {
-        *pLen = nLen;
-        return a;
-    }
-    *pLen = string_decompress(a, decomp_buff) - 1;
-    return decomp_buff;
-#else // RADIX_COMPRESSION
     *pLen = nLen;
     return a;
-#endif // RADIX_COMPRESSION
 }
 #endif // MEMORY_BASED
 
@@ -2029,9 +1882,6 @@ char *atr_get_raw(dbref thing, int atr)
 
 char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, int *pLen)
 {
-#ifdef RADIX_COMPRESSION
-    (void)atr_get_raw_decode_LEN(thing, s, owner, flags, atr, pLen);
-#else // RADIX_COMPRESSION
     char *buff;
 
     buff = atr_get_raw_LEN(thing, atr, pLen);
@@ -2046,7 +1896,6 @@ char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, i
     {
         atr_decode_LEN(buff, *pLen, s, thing, owner, flags, pLen);
     }
-#endif // RADIX_COMPRESSION
     return s;
 }
 
@@ -2072,12 +1921,6 @@ char *atr_get(dbref thing, int atr, dbref *owner, int *flags)
 int atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
 {
     int nLen;
-#ifdef RADIX_COMPRESSION
-    int retval;
-
-    retval = atr_get_raw_decode_LEN(thing, NULL, owner, flags, atr, &nLen);
-    return retval;
-#else // RADIX_COMPRESSION
     char *buff;
 
     buff = atr_get_raw_LEN(thing, atr, &nLen);
@@ -2089,7 +1932,6 @@ int atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
     }
     atr_decode_LEN(buff, nLen, NULL, thing, owner, flags, &nLen);
     return 1;
-#endif // RADIX_COMPRESSION
 }
 
 #ifndef STANDALONE
@@ -2099,22 +1941,10 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
     dbref parent;
     int lev;
     ATTR *ap;
-
-#ifdef RADIX_COMPRESSION
-    int retval;
-#else // RADIX_COMPRESSION
     char *buff;
-#endif // RADIX_COMPRESSION
 
     ITER_PARENTS(thing, parent, lev)
     {
-#ifdef RADIX_COMPRESSION
-        retval = atr_get_raw_decode_LEN(parent, s, owner, flags, atr, pLen);
-        if (retval && ((lev == 0) || !(*flags & AF_PRIVATE)))
-        {
-            return s;
-        }
-#else // RADIX_COMPRESSION
         buff = atr_get_raw_LEN(parent, atr, pLen);
         if (buff && *buff)
         {
@@ -2124,7 +1954,6 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
                 return s;
             }
         }
-#endif // RADIX_COMPRESSION
         if ((lev == 0) && Good_obj(Parent(parent)))
         {
             ap = atr_num(atr);

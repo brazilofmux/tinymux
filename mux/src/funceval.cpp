@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.9 2002-06-12 01:24:46 raevnos Exp $
+// $Id: funceval.cpp,v 1.10 2002-06-12 16:02:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -19,9 +19,6 @@
 #include "ansi.h"
 #include "comsys.h"
 #include "pcre.h"
-#ifdef RADIX_COMPRESSION
-#include "radix.h"
-#endif
 
 /* Note: Many functions in this file have been taken, whole or in part, from
  * PennMUSH 1.50, and TinyMUSH 2.2, for softcode compatibility. The
@@ -1305,9 +1302,6 @@ FUNCTION(fun_mail)
 {
     dbref playerask;
     int num, rc, uc, cc;
-#ifdef RADIX_COMPRESSION
-    char *msgbuff;
-#endif
 
     // Make sure we have the right number of arguments.
     //
@@ -1374,14 +1368,7 @@ FUNCTION(fun_mail)
     struct mail *mp = mail_fetch(playerask, num);
     if (mp)
     {
-#ifdef RADIX_COMPRESSION
-        msgbuff = alloc_lbuf("fun_mail");
-        string_decompress(MessageFetch(mp->number), msgbuff);
-        safe_str(msgbuff, buff, bufc);
-        free_lbuf(msgbuff);
-#else
         safe_str(MessageFetch(mp->number), buff, bufc);
-#endif
         return;
     }
 
