@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.14 2002-10-14 06:12:16 sdennis Exp $
+// $Id: match.cpp,v 1.15 2003-01-02 15:10:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -36,7 +36,8 @@ static void promote_match(dbref what, int confidence)
     //
     if (md.pref_type != NOTYPE)
     {
-        if (Good_obj(what) && (Typeof(what) == md.pref_type))
+        if (  Good_obj(what)
+           && Typeof(what) == md.pref_type)
         {
             confidence |= CON_TYPE;
         }
@@ -46,7 +47,8 @@ static void promote_match(dbref what, int confidence)
         MSTATE save_md;
 
         save_match_state(&save_md);
-        if (Good_obj(what) && could_doit(md.player, what, A_LOCK))
+        if (  Good_obj(what)
+           && could_doit(md.player, what, A_LOCK))
         {
             confidence |= CON_LOCK;
         }
@@ -113,7 +115,8 @@ static char *munge_space_for_match(char *name)
 
         while (*p)
         {
-            while (*p && !Tiny_IsSpace[(unsigned char)*p])
+            while (  *p
+                  && !Tiny_IsSpace[(unsigned char)*p])
             {
                 *q++ = *p++;
             }
@@ -215,7 +218,8 @@ void match_me(void)
     {
         return;
     }
-    if (Good_obj(md.absolute_form) && (md.absolute_form == md.player)) 
+    if (  Good_obj(md.absolute_form)
+       && md.absolute_form == md.player) 
     {
         promote_match(md.player, CON_DBREF | CON_LOCAL);
         return;
@@ -246,7 +250,8 @@ void match_here(void)
     {
         return;
     }
-    if (Good_obj(md.player) && Has_location(md.player)) 
+    if (  Good_obj(md.player)
+       && Has_location(md.player)) 
     {
         dbref loc = Location(md.player);
         if (Good_obj(loc)) 
@@ -317,7 +322,8 @@ void match_neighbor(void)
     {
         return;
     }
-    if (Good_obj(md.player) && Has_location(md.player)) 
+    if (  Good_obj(md.player)
+       && Has_location(md.player)) 
     {
         dbref loc = Location(md.player);
         if (Good_obj(loc)) 
@@ -329,7 +335,8 @@ void match_neighbor(void)
 
 static BOOL match_exit_internal(dbref loc, dbref baseloc, int local)
 {
-    if (!Good_obj(loc) || !Has_exits(loc))
+    if (  !Good_obj(loc)
+       || !Has_exits(loc))
     {
         return TRUE;
     }
@@ -344,11 +351,17 @@ static BOOL match_exit_internal(dbref loc, dbref baseloc, int local)
         {
             key = 0;
             if (Examinable(md.player, loc))
+            {
                 key |= VE_LOC_XAM;
+            }
             if (Dark(loc))
+            {
                 key |= VE_LOC_DARK;
+            }
             if (Dark(baseloc))
+            {
                 key |= VE_BASE_DARK;
+            }
             if (exit_visible(exit, md.player, key)) 
             {
                 promote_match(exit, CON_DBREF | local);
@@ -372,7 +385,8 @@ void match_exit(void)
     }
 
     dbref loc = Location(md.player);
-    if (Good_obj(md.player) && Has_location(md.player))
+    if (  Good_obj(md.player)
+       && Has_location(md.player))
     {
         (void)match_exit_internal(loc, loc, CON_LOCAL);
     }
@@ -384,7 +398,8 @@ void match_exit_with_parents(void)
     {
         return;
     }
-    if (Good_obj(md.player) && Has_location(md.player))
+    if (  Good_obj(md.player)
+       && Has_location(md.player))
     {
         dbref parent;
         int lev;
@@ -405,7 +420,8 @@ void match_carried_exit(void)
     {
         return;
     }
-    if (Good_obj(md.player) && Has_exits(md.player))
+    if (  Good_obj(md.player)
+       && Has_exits(md.player))
     {
         (void)match_exit_internal(md.player, md.player, CON_LOCAL);
     }
@@ -439,7 +455,8 @@ void match_master_exit(void)
     {
         return;
     }
-    if (Good_obj(md.player) && Has_exits(md.player))
+    if (  Good_obj(md.player)
+       && Has_exits(md.player))
     {
         (void)match_exit_internal(mudconf.master_room, mudconf.master_room, 0);
     }
@@ -451,7 +468,8 @@ void match_zone_exit(void)
     {
         return;
     }
-    if (Good_obj(md.player) && Has_exits(md.player))
+    if (  Good_obj(md.player)
+       && Has_exits(md.player))
     {
         (void)match_exit_internal(Zone(md.player), Zone(md.player), 0);
     }
@@ -505,8 +523,10 @@ dbref match_result(void)
     {
     case 0:
         return NOTHING;
+
     case 1:
         return md.match;
+
     default:
         return AMBIGUOUS;
     }
@@ -526,9 +546,11 @@ dbref match_status(dbref player, dbref match)
     case NOTHING:
         notify(player, NOMATCH_MESSAGE);
         return NOTHING;
+
     case AMBIGUOUS:
         notify(player, AMBIGUOUS_MESSAGE);
         return NOTHING;
+
     case NOPERM:
         notify(player, NOPERM_MESSAGE);
         return NOTHING;
@@ -551,7 +573,7 @@ void save_match_state(MSTATE *mstate)
     mstate->match = md.match;
     mstate->player = md.player;
     mstate->string = alloc_lbuf("save_match_state");
-    StringCopy(mstate->string, md.string);
+    strcpy(mstate->string, md.string);
 }
 
 void restore_match_state(MSTATE *mstate)
@@ -563,7 +585,7 @@ void restore_match_state(MSTATE *mstate)
     md.absolute_form = mstate->absolute_form;
     md.match = mstate->match;
     md.player = mstate->player;
-    StringCopy(md.string, mstate->string);
+    strcpy(md.string, mstate->string);
     free_lbuf(mstate->string);
 }
 
