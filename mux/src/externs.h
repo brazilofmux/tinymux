@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.29 2004-07-24 05:34:20 sdennis Exp $
+// $Id: externs.h,v 1.30 2004-09-14 13:19:29 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -548,6 +548,7 @@ extern bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define SWEEP_VERBOSE   256 /* Display what pattern matches */
 #define TELEPORT_DEFAULT 1  /* Emit all messages */
 #define TELEPORT_QUIET  2   /* Teleport in quietly */
+#define TELEPORT_LIST   4   /* Teleport a list of items */
 #define TIMECHK_RESET   1   /* Reset all counters to zero */
 #define TIMECHK_SCREEN  2   /* Write info to screen */
 #define TIMECHK_LOG     4   /* Write info to log */

@@ -3463,8 +3463,9 @@ Related Topics: @name.
   The second and third forms let you remove any object from locations you
   control by sending them through an exit or to their home.
 
-  The following switch is available:
+  The following switches are available:
      /quiet - Teleports without setting off success or failure messages.
+     /list  - Interpret <object> as a space-delimited list of objects.
 
   Related Topics: JUMP_OK, @lock (tport and telout), @tfail, @otfail, @atfail,
       @tofail, @otofail, @atofail.

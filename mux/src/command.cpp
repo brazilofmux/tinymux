@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.43 2004-08-16 05:14:07 sdennis Exp $
+// $Id: command.cpp,v 1.44 2004-09-14 13:19:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -499,6 +499,7 @@ NAMETAB switch_sw[] =
 
 NAMETAB teleport_sw[] =
 {
+    {"list",            1,  CA_PUBLIC,  TELEPORT_LIST|SW_MULTIPLE},
     {"loud",            1,  CA_PUBLIC,  TELEPORT_DEFAULT},
     {"quiet",           1,  CA_PUBLIC,  TELEPORT_QUIET},
     { NULL,             0,          0,  0}

@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.11 2004-05-20 04:31:19 sdennis Exp $
+// $Id: wiz.cpp,v 1.12 2004-09-14 13:19:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -13,52 +13,18 @@
 #include "file_c.h"
 #include "powers.h"
 
-void do_teleport
+void do_teleport_single
 (
     dbref executor,
     dbref caller,
     dbref enactor,
     int   key,
-    int   nargs,
-    char *arg1,
-    char *arg2
+    dbref victim,
+    char *to
 )
 {
-    dbref victim, destination, loc;
-    char *to;
-    int hush = 0;
-
-    if (  (  Fixed(executor)
-          || Fixed(Owner(executor)))
-       && !Tel_Anywhere(executor))
-    {
-        notify(executor, mudconf.fixed_tel_msg);
-        return;
-    }
-
-    // Get victim.
-    //
-    if (nargs == 1)
-    {
-        victim = executor;
-        to = arg1;
-    }
-    else if (nargs == 2)
-    {
-        init_match(executor, arg1, NOTYPE);
-        match_everything(0);
-        victim = noisy_match_result();
-
-        if (victim == NOTHING)
-        {
-            return;
-        }
-        to = arg2;
-    }
-    else
-    {
-        return;
-    }
+    dbref loc;
+    int   hush = 0;
 
     // Validate type of victim.
     //
@@ -100,7 +66,7 @@ void do_teleport
     //
     init_match(executor, to, NOTYPE);
     match_everything(0);
-    destination = match_result();
+    dbref destination = match_result();
 
     switch (destination)
     {
@@ -221,6 +187,73 @@ void do_teleport
             else
             {
                 notify_quiet(executor, "I can't find that exit.");
+            }
+        }
+    }
+}
+
+void do_teleport
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
+{
+    if (  (  Fixed(executor)
+          || Fixed(Owner(executor)))
+       && !Tel_Anywhere(executor))
+    {
+        notify(executor, mudconf.fixed_tel_msg);
+        return;
+    }
+
+    // Get victim.
+    //
+    if (nargs == 1)
+    {
+        // Teleport executor to given destination.
+        //
+        do_teleport_single(executor, caller, enactor, key, executor, arg1);
+    }
+    else if (nargs == 2)
+    {
+        // Teleport 3rd part(y/ies) to given destination.
+        //
+        if (key & TELEPORT_LIST)
+        {
+            // We have a space-delimited list of victims.
+            //
+            char *p;
+            MUX_STRTOK_STATE tts;
+            mux_strtok_src(&tts, arg1);
+            mux_strtok_ctl(&tts, " ");
+            for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
+            {
+                init_match(executor, p, NOTYPE);
+                match_everything(0);
+                dbref victim = noisy_match_result();
+
+                if (Good_obj(victim))
+                {
+                    do_teleport_single(executor, caller, enactor, key, victim,
+                        arg2);
+                }
+            }
+        }
+        else
+        {
+            init_match(executor, arg1, NOTYPE);
+            match_everything(0);
+            dbref victim = noisy_match_result();
+    
+            if (Good_obj(victim))
+            {
+                do_teleport_single(executor, caller, enactor, key, victim,
+                    arg2);
             }
         }
     }
