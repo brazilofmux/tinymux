@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.14 2000-05-25 02:30:16 sdennis Exp $
+// $Id: db.cpp,v 1.15 2000-05-25 04:33:20 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3131,18 +3131,6 @@ void ReleaseAllResources(dbref obj)
         do_mail_purge(obj);
     }
 }
-
-#if 1
-void toast_player(dbref player)
-{
-    if (mudconf.have_comsys)
-    {
-        do_clearcom(player, player, 0);
-        do_channelnuke(player);
-        del_comsys(player);
-    }
-}
-#endif
 
 #else
 

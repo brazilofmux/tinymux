@@ -1,6 +1,6 @@
 // mguests.cpp - multiguest code originally ported from DarkZone 
 //
-// $Id: mguests.cpp,v 1.2 2000-05-25 02:53:42 sdennis Exp $
+// $Id: mguests.cpp,v 1.3 2000-05-25 04:33:20 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -78,12 +78,7 @@ void destroy_guest(dbref guest)
     }
 
     atr_add_raw(guest, A_DESTROYER, Tiny_ltoa_t(mudconf.guest_nuker));
-#if 0 // QQQ
     destroy_player(mudconf.guest_nuker, guest);
-#else
-    destroy_player(guest);
-    destroy_obj(mudconf.guest_nuker, guest);
-#endif
 }
 
 char *make_guest(DESC *d)

@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.17 2000-05-25 04:14:06 sdennis Exp $
+// $Id: externs.h,v 1.18 2000-05-25 04:33:20 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -611,8 +611,7 @@ extern void ReleaseAllResources(dbref obj);
 
 extern int ReplaceFile(char *old_name, char *new_name);
 extern void RemoveFile(char *name);
-//QQQ: extern void destroy_player(dbref agent, dbref victim);
-extern void destroy_player(dbref victim);
+extern void destroy_player(dbref agent, dbref victim);
 extern dbref match_controlled_quiet(dbref player, const char *name);
 extern void do_pemit_list(dbref player, char *list, const char *message);
 extern int boot_off(dbref player, char *message);

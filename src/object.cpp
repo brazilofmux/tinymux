@@ -2,7 +2,7 @@
  * object.c - low-level object manipulation routines 
  */
 /*
- * $Id: object.cpp,v 1.3 2000-05-25 04:09:06 sdennis Exp $ 
+ * $Id: object.cpp,v 1.4 2000-05-25 04:33:20 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -665,11 +665,7 @@ void destroy_thing(dbref thing)
     destroy_obj(NOTHING, thing);
 }
 
-#if 0 //QQQ
 void destroy_player(dbref agent, dbref victim)
-#else
-void destroy_player(dbref victim)
-#endif
 {
 #ifndef STANDALONE
     // Bye bye...
@@ -689,11 +685,7 @@ void destroy_player(dbref victim)
     free_lbuf(buf);
 
     move_via_generic(victim, NOTHING, player, 0);
-#if 0 // QQQ
     destroy_obj(agent, victim);
-#else
-    destroy_obj(NOTHING, victim);
-#endif
     notify_quiet(player, tprintf("(%d objects @chowned to you)", count));
 #endif
 }
@@ -711,11 +703,7 @@ static void NDECL(purge_going)
         switch (Typeof(i))
         {
         case TYPE_PLAYER:
-#if 0 // QQQ
             destroy_player(NOTHING, i);
-#else
-            destroy_player(i);
-#endif
             break;
 
         case TYPE_ROOM:

@@ -2,7 +2,7 @@
  * create.c -- Commands that create new objects 
  */
 /*
- * $Id: create.cpp,v 1.4 2000-05-25 02:46:05 sdennis Exp $ 
+ * $Id: create.cpp,v 1.5 2000-05-25 04:33:20 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -859,8 +859,7 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
 
         case TYPE_PLAYER:
             atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(player));
-            //QQQ: destroy_player(player, thing);
-            destroy_player(thing);
+            destroy_player(player, thing);
             break;
 
         case TYPE_ROOM:
