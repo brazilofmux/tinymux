@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.13 2003-02-04 08:45:49 sdennis Exp $
+// $Id: funceval.cpp,v 1.14 2003-02-05 00:59:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3459,7 +3459,7 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
         int curq;
         if (  qregs[i]
            && *qregs[i]
-           && (curq = Tiny_IsRegister[(unsigned char)qregs[i][0]]) != -1
+           && (curq = mux_RegisterSet[(unsigned char)qregs[i][0]]) != -1
            && qregs[i][1] == '\0'
            && curq < MAX_GLOBAL_REGS)
         {

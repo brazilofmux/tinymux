@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.7 2003-02-05 00:29:09 sdennis Exp $
+// $Id: externs.h,v 1.8 2003-02-05 00:59:24 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -51,7 +51,7 @@ extern char **PushPointers(int nNeeded);
 extern void PopPointers(char **p, int nNeeded);
 extern int *PushIntegers(int nNeeded);
 extern void PopIntegers(int *pi, int nNeeded);
-extern const signed char Tiny_IsRegister[256];
+extern const signed char mux_RegisterSet[256];
 
 /* From game.cpp */
 #define notify(p,m)                         notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)

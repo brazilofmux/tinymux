@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.28 2003-02-05 00:04:50 sdennis Exp $
+// $Id: functions.cpp,v 1.29 2003-02-05 00:59:24 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -497,7 +497,7 @@ const char *TinyFPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "0", "0"
 #define TINY_FPGROUP_NAN   0x50 // "NaN"
 #define TINY_FPGROUP(x) ((x) & 0xF0)
 
-// Tiny_fpclass returns an integer that is one of the following:
+// mux_fpclass returns an integer that is one of the following:
 //
 #define TINY_FPCLASS_PINF  (TINY_FPGROUP_PINF|0) // Positive infinity (+INF)
 #define TINY_FPCLASS_NINF  (TINY_FPGROUP_NINF|1) // Negative infinity (-INF)
@@ -550,7 +550,7 @@ double MakeSpecialFloat(int iWhich)
     return SpecialFloatTable[iWhich].d;
 }
 
-static int Tiny_fpclass(double result)
+static int mux_fpclass(double result)
 {
     UINT64 i64;
 
@@ -598,7 +598,7 @@ static void fval(char *buff, char **bufc, double result)
     // Get double val into buffer.
     //
 #ifdef HAVE_IEEE_FP_FORMAT
-    int fpc = Tiny_fpclass(result);
+    int fpc = mux_fpclass(result);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
@@ -629,7 +629,7 @@ static void fval_buf(char *buff, double result)
     // Get double val into buffer.
     //
 #ifdef HAVE_IEEE_FP_FORMAT
-    int fpc = Tiny_fpclass(result);
+    int fpc = mux_fpclass(result);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
@@ -3530,7 +3530,7 @@ FUNCTION(fun_floor)
 {
     double r = floor(mux_atof(fargs[0]));
 #ifdef HAVE_IEEE_FP_FORMAT
-    int fpc = Tiny_fpclass(r);
+    int fpc = mux_fpclass(r);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
@@ -3548,7 +3548,7 @@ FUNCTION(fun_ceil)
 {
     double r = ceil(mux_atof(fargs[0]));
 #ifdef HAVE_IEEE_FP_FORMAT
-    int fpc = Tiny_fpclass(r);
+    int fpc = mux_fpclass(r);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
@@ -3566,7 +3566,7 @@ FUNCTION(fun_round)
 {
     double r = mux_atof(fargs[0]);
 #ifdef HAVE_IEEE_FP_FORMAT
-    int fpc = Tiny_fpclass(r);
+    int fpc = mux_fpclass(r);
     if (  TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS
        || TINY_FPGROUP(fpc) == TINY_FPGROUP_ZERO)
     {
@@ -3594,7 +3594,7 @@ FUNCTION(fun_trunc)
 
     rFractionalPart = modf(rArg, &rIntegerPart);
 #ifdef HAVE_IEEE_FP_FORMAT
-    int fpc = Tiny_fpclass(rIntegerPart);
+    int fpc = mux_fpclass(rIntegerPart);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
@@ -5664,7 +5664,7 @@ FUNCTION(fun_attrcnt)
  * * fun_reverse, fun_revwords: Reverse things.
  */
 
-static void Tiny_memrevcpy(char *dest, char *src, unsigned int n)
+static void mux_memrevcpy(char *dest, char *src, unsigned int n)
 {
     dest += n - 1;
     while (n--)
@@ -5750,7 +5750,7 @@ void ANSI_TransformTextReverseWithFunction
 
 FUNCTION(fun_reverse)
 {
-    ANSI_TransformTextReverseWithFunction(buff, bufc, fargs[0], Tiny_memrevcpy);
+    ANSI_TransformTextReverseWithFunction(buff, bufc, fargs[0], mux_memrevcpy);
 }
 
 char ReverseWordsInText_Seperator;
@@ -7708,7 +7708,7 @@ FUNCTION(fun_center)
 
 FUNCTION(fun_setq)
 {
-    int regnum = Tiny_IsRegister[(unsigned char)fargs[0][0]];
+    int regnum = mux_RegisterSet[(unsigned char)fargs[0][0]];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')
@@ -7729,7 +7729,7 @@ FUNCTION(fun_setq)
 
 FUNCTION(fun_setr)
 {
-    int regnum = Tiny_IsRegister[(unsigned char)fargs[0][0]];
+    int regnum = mux_RegisterSet[(unsigned char)fargs[0][0]];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')
@@ -7751,7 +7751,7 @@ FUNCTION(fun_setr)
 
 FUNCTION(fun_r)
 {
-    int regnum = Tiny_IsRegister[(unsigned char)fargs[0][0]];
+    int regnum = mux_RegisterSet[(unsigned char)fargs[0][0]];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')

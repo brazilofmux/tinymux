@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.9 2003-02-04 08:45:49 sdennis Exp $
+// $Id: eval.cpp,v 1.10 2003-02-05 00:59:24 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -128,7 +128,7 @@ static const char isSpecial_L4[256] =
 // Characters that are valid q-registers, and their offsets in the register
 // array. -1 for invalid registers.
 //
-const signed char Tiny_IsRegister[256] =
+const signed char mux_RegisterSet[256] =
 {
     -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0x00-0x0F
     -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0x10-0x1F
@@ -1455,7 +1455,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                     // Q
                     //
                     pdstr++;
-                    i = Tiny_IsRegister[(unsigned char)*pdstr];
+                    i = mux_RegisterSet[(unsigned char)*pdstr];
                     if (  0 <= i
                        && i < MAX_GLOBAL_REGS)
                     {
