@@ -7713,7 +7713,7 @@ MAIL()
   Only wizards can use the second and third forms of the function
   on other players.
 
-  Related Topics:
+  Related Topics: @mail, mail-reading.
 
 & MAIL-ADMIN
 MAIL-ADMIN
@@ -8407,7 +8407,7 @@ MUNGE()
     > say [munge(sort_alpha,v(places),v(dbrefs))]
     You say, "#9000 #20 #5000"
 
-  Related Topics: sortby()
+  Related Topics: soryby().
 
 & MYOPIC
 MYOPIC
