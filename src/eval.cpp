@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.31 2001-12-06 03:20:01 sdennis Exp $
+// $Id: eval.cpp,v 1.32 2001-12-09 08:47:56 sdennis Exp $
 //
 
 // MUX 2.1
@@ -200,18 +200,18 @@ char *parse_to(char **dstr, char delim, int eval)
         *dstr = rstr;
     }
     zstr = cstr = rstr;
-    int iOriginalCode = isSpecial_L3[delim];
+    int iOriginalCode = isSpecial_L3[(unsigned char)delim];
     isSpecial_L3[' '] = 1; // Spaces are special.
     if (iOriginalCode <= 3)
     {
         // We can override this code.
         //
-        isSpecial_L3[delim] = 8;
+        isSpecial_L3[(unsigned char)delim] = 8;
     }
 
     for (;;)
     {
-        int iCode = isSpecial_L3[*cstr];
+        int iCode = isSpecial_L3[(unsigned char)*cstr];
 
 TryAgain:
         if (iCode == 0)
@@ -222,7 +222,7 @@ TryAgain:
             do
             {
                 NEXTCHAR
-                iCode = isSpecial_L3[*cstr];
+                iCode = isSpecial_L3[(unsigned char)*cstr];
             } while (iCode == 0);
         }
 
@@ -328,7 +328,7 @@ TryAgain:
                     {
                         rstr = parse_to_cleanup(eval, first, cstr, rstr, zstr, strFirewall);
                         *dstr = ++cstr;
-                        isSpecial_L3[delim] = iOriginalCode;
+                        isSpecial_L3[(unsigned char)delim] = iOriginalCode;
                         isSpecial_L3[' '] = 0; // Spaces aren't special anymore
                         return rstr;
                     }
@@ -350,7 +350,7 @@ TryAgain:
                     }
                     for (;;)
                     {
-                        int iCodeL4 = isSpecial_L4[*cstr];
+                        int iCodeL4 = isSpecial_L4[(unsigned char)*cstr];
                         if (iCodeL4 == 0)
                         {
                             // Mudane Characters
@@ -358,7 +358,7 @@ TryAgain:
                             do
                             {
                                 NEXTCHAR
-                                iCodeL4 = isSpecial_L4[*cstr];
+                                iCodeL4 = isSpecial_L4[(unsigned char)*cstr];
                             } while (iCodeL4 == 0);
                         }
 
@@ -420,7 +420,7 @@ TryAgain:
                 {
                     // '\0' - End of string.
                     //
-                    isSpecial_L3[delim] = iOriginalCode;
+                    isSpecial_L3[(unsigned char)delim] = iOriginalCode;
                     isSpecial_L3[' '] = 0; // Spaces aren't special anymore
                     break;
                 }
@@ -432,7 +432,7 @@ TryAgain:
                     {
                         rstr = parse_to_cleanup(eval, first, cstr, rstr, zstr, strFirewall);
                         *dstr = ++cstr;
-                        isSpecial_L3[delim] = iOriginalCode;
+                        isSpecial_L3[(unsigned char)delim] = iOriginalCode;
                         isSpecial_L3[' '] = 0; // Spaces aren't special anymore
                         return rstr;
                     }
@@ -477,24 +477,24 @@ char *parse_to_lite(char **dstr, char delim1, char delim2, int *nLen, int *iWhic
     }
     sp = 0;
     cstr = rstr = *dstr;
-    int iOriginalCode1 = isSpecial_L3[delim1];
-    int iOriginalCode2 = isSpecial_L3[delim2];
+    int iOriginalCode1 = isSpecial_L3[(unsigned char)delim1];
+    int iOriginalCode2 = isSpecial_L3[(unsigned char)delim2];
     if (iOriginalCode1 <= 3)
     {
         // We can override this code.
         //
-        isSpecial_L3[delim1] = 8;
+        isSpecial_L3[(unsigned char)delim1] = 8;
     }
     if (iOriginalCode2 <= 3)
     {
         // We can override this code.
         //
-        isSpecial_L3[delim2] = 8;
+        isSpecial_L3[(unsigned char)delim2] = 8;
     }
 
     for (;;)
     {
-        int iCode = isSpecial_L3[*cstr];
+        int iCode = isSpecial_L3[(unsigned char)*cstr];
 
 TryAgain:
         if (iCode == 0)
@@ -504,7 +504,7 @@ TryAgain:
             do
             {
                 cstr++;
-                iCode = isSpecial_L3[*cstr];
+                iCode = isSpecial_L3[(unsigned char)*cstr];
             } while (iCode == 0);
         }
 
@@ -580,8 +580,8 @@ TryAgain:
                         *cstr = '\0';
                         *nLen = (cstr - rstr);
                         *dstr = ++cstr;
-                        isSpecial_L3[delim1] = iOriginalCode1;
-                        isSpecial_L3[delim2] = iOriginalCode2;
+                        isSpecial_L3[(unsigned char)delim1] = iOriginalCode1;
+                        isSpecial_L3[(unsigned char)delim2] = iOriginalCode2;
                         return rstr;
                     }
                     cstr++;
@@ -594,7 +594,7 @@ TryAgain:
                     cstr++;
                     for (;;)
                     {
-                        int iCodeL4 = isSpecial_L4[*cstr];
+                        int iCodeL4 = isSpecial_L4[(unsigned char)*cstr];
                         if (iCodeL4 == 0)
                         {
                             // Mudane Characters
@@ -602,7 +602,7 @@ TryAgain:
                             do
                             {
                                 cstr++;
-                                iCodeL4 = isSpecial_L4[*cstr];
+                                iCodeL4 = isSpecial_L4[(unsigned char)*cstr];
                             } while (iCodeL4 == 0);
                         }
 
@@ -656,8 +656,8 @@ TryAgain:
                 {
                     // '\0' - End of string.
                     //
-                    isSpecial_L3[delim1] = iOriginalCode1;
-                    isSpecial_L3[delim2] = iOriginalCode2;
+                    isSpecial_L3[(unsigned char)delim1] = iOriginalCode1;
+                    isSpecial_L3[(unsigned char)delim2] = iOriginalCode2;
                     break;
                 }
                 else
@@ -677,8 +677,8 @@ TryAgain:
                         *cstr = '\0';
                         *nLen = (cstr - rstr);
                         *dstr = ++cstr;
-                        isSpecial_L3[delim1] = iOriginalCode1;
-                        isSpecial_L3[delim2] = iOriginalCode2;
+                        isSpecial_L3[(unsigned char)delim1] = iOriginalCode1;
+                        isSpecial_L3[(unsigned char)delim2] = iOriginalCode2;
                         return rstr;
                     }
 
@@ -806,29 +806,22 @@ char *parse_arglist_lite( dbref player, dbref cause, char *dstr, char delim,
 //
 int get_gender(dbref player)
 {
-    char first, *atr_gotten;
     dbref aowner;
     int aflags;
-
-    atr_gotten = atr_pget(player, A_SEX, &aowner, &aflags);
-    first = *atr_gotten;
+    char *atr_gotten = atr_pget(player, A_SEX, &aowner, &aflags);
+    char first = atr_gotten[0];
     free_lbuf(atr_gotten);
-    switch (first)
+    switch (Tiny_ToLower[(unsigned char)first])
     {
-    case 'P':
     case 'p':
         return 4;
-    case 'M':
     case 'm':
         return 3;
-    case 'F':
     case 'f':
-    case 'W':
     case 'w':
         return 2;
-    default:
-        return 1;
     }
+    return 1;
 }
 
 //---------------------------------------------------------------------------
@@ -1064,7 +1057,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
     char *realbuff = NULL, *realbp = NULL;
     dbref aowner;
     int at_space, nfargs, gender, aflags, feval, i;
-    int is_trace, is_top, save_count;
+    int is_trace, is_top;
     int ansi = 0;
     FUN *fp;
     UFUN *ufp;
@@ -1135,22 +1128,25 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
         // Handle Mudane characters specially. There are usually a lot of them.
         // Just copy them.
         //
-        if (!isSpecial_L1[*pdstr])
+        if (!isSpecial_L1[(unsigned char)*pdstr])
         {
-            *dstr = pdstr++;
-            while (!isSpecial_L1[*pdstr])
+            char *p = pdstr + 1;
+            while (!isSpecial_L1[(unsigned char)*p++])
             {
-                pdstr++;
+                // Nothing.
+                //
+                ;
             }
-            i = pdstr - *dstr;
+            i = p - pdstr - 1;
             if (i > nBufferAvailable)
             {
                 i = nBufferAvailable;
             }
-            memcpy(*bufc, *dstr, i);
+            memcpy(*bufc, pdstr, i);
             nBufferAvailable -= i;
             *bufc += i;
             at_space = 0;
+            pdstr = p - 1;
         }
 
 
@@ -1226,13 +1222,10 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                     nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     break;
                 }
-                else
+                else if (nBufferAvailable)
                 {
-                    if (nBufferAvailable)
-                    {
-                        *(*bufc)++ = '(';
-                        nBufferAvailable--;
-                    }
+                    *(*bufc)++ = '(';
+                    nBufferAvailable--;
                 }
             }
             else
@@ -1447,8 +1440,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         // Invoker DB number.
                         //
                         TinyExec_scratch[0] = '#';
-                        Tiny_ltoa(cause, TinyExec_scratch+1);
-                        safe_str(TinyExec_scratch, buff, bufc);
+                        i = Tiny_ltoa(cause, TinyExec_scratch+1);
+                        safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                     else if (iCode == 4)
@@ -1460,8 +1453,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         // Executor DB number.
                         //
                         TinyExec_scratch[0] = '#';
-                        Tiny_ltoa(player, TinyExec_scratch+1);
-                        safe_str(TinyExec_scratch, buff, bufc);
+                        i = Tiny_ltoa(player, TinyExec_scratch+1);
+                        safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                     else
@@ -1552,8 +1545,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         if (!(eval & EV_NO_LOCATION))
                         {
                             TinyExec_scratch[0] = '#';
-                            Tiny_ltoa(where_is(cause), TinyExec_scratch+1);
-                            safe_str(TinyExec_scratch, buff, bufc);
+                            i = Tiny_ltoa(where_is(cause), TinyExec_scratch+1);
+                            safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
@@ -1975,13 +1968,16 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
     if (is_trace)
     {
         tcache_add(player, savestr, start);
-        save_count = tcache_count - mudconf.trace_limit;;
         if (is_top || !mudconf.trace_topdown)
+        {
             tcache_finish();
-        if (is_top && (save_count > 0))
+        }
+        if (  is_top
+           && tcache_count - mudconf.trace_limit > 0)
         {
             tbuf = alloc_mbuf("exec.trace_diag");
-            sprintf(tbuf, "%d lines of trace output discarded.", save_count);
+            sprintf(tbuf, "%d lines of trace output discarded.", tcache_count
+                - mudconf.trace_limit);
             notify(player, tbuf);
             free_mbuf(tbuf);
         }

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.77 2001-12-07 09:36:35 sdennis Exp $
+// $Id: funceval.cpp,v 1.78 2001-12-09 08:47:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -80,7 +80,7 @@ FUNCTION(fun_ansi)
 
     while (*s)
     {
-        const char *pColor = ColorTable[*s];
+        const char *pColor = ColorTable[(unsigned char)*s];
         if (pColor)
         {
             safe_str(pColor, buff, bufc);
@@ -3259,7 +3259,7 @@ FUNCTION(fun_regmatch)
         int curq;
         if (  qregs[i]
            && *qregs[i]
-           && (curq = Tiny_IsRegister[qregs[i][0]]) != -1
+           && (curq = Tiny_IsRegister[(unsigned char)qregs[i][0]]) != -1
            && qregs[i][1] == '\0'
            && curq < MAX_GLOBAL_REGS)
         {

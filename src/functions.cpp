@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.114 2001-12-06 03:41:49 sdennis Exp $
+// $Id: functions.cpp,v 1.115 2001-12-09 08:47:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6492,7 +6492,7 @@ FUNCTION(fun_center)
 
 FUNCTION(fun_setq)
 {
-    int regnum = Tiny_IsRegister[fargs[0][0]];
+    int regnum = Tiny_IsRegister[(unsigned char)fargs[0][0]];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')
@@ -6513,7 +6513,7 @@ FUNCTION(fun_setq)
 
 FUNCTION(fun_setr)
 {
-    int regnum = Tiny_IsRegister[fargs[0][0]];
+    int regnum = Tiny_IsRegister[(unsigned char)fargs[0][0]];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')
