@@ -332,6 +332,7 @@ Bug Fixes:
     were effectively listening devices that didn't show up on a @sweep.
  -- Document logged-out command 'INFO'.
  -- Alierak fix for buffer overflow exploit in slave process.
+ -- Alierak Fix for logic bug in logging.
 
 
 Performance Enhancements:
