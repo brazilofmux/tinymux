@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.38 2002-06-27 17:12:33 sdennis Exp $
+// $Id: functions.cpp,v 1.39 2002-06-28 05:52:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -802,7 +802,7 @@ FUNCTION(fun_words)
 
 FUNCTION(fun_flags)
 {
-    dbref it = match_thing(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
     if (  it != NOTHING
        && (  mudconf.pub_flags
           || Examinable(executor, it)
@@ -1670,7 +1670,7 @@ FUNCTION(fun_parent)
 {
     dbref it;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
     if (  Good_obj(it)
        && (  Examinable(executor, it)
           || it == enactor))
@@ -1890,7 +1890,7 @@ FUNCTION(fun_con)
 {
     dbref it;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
 
     if ((it != NOTHING) &&
         (Has_contents(it)) &&
@@ -1914,7 +1914,7 @@ FUNCTION(fun_exit)
     dbref it, exit;
     int key;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
     if (Good_obj(it) && Has_exits(it) && Good_obj(Exits(it))) {
         key = 0;
         if (Examinable(executor, it))
@@ -1942,7 +1942,7 @@ FUNCTION(fun_next)
     dbref it, loc, exit, ex_here;
     int key;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
     if (Good_obj(it) && Has_siblings(it))
     {
         loc = where_is(it);
@@ -1982,7 +1982,7 @@ FUNCTION(fun_loc)
 {
     dbref it;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
     if (locatable(executor, it, enactor))
         safe_tprintf_str(buff, bufc, "#%d", Location(it));
     else
@@ -1999,7 +1999,7 @@ FUNCTION(fun_where)
 {
     dbref it;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
     if (locatable(executor, it, enactor))
         safe_tprintf_str(buff, bufc, "#%d", where_is(it));
     else
@@ -2021,7 +2021,7 @@ FUNCTION(fun_rloc)
     if (levels > mudconf.ntfy_nest_lim)
         levels = mudconf.ntfy_nest_lim;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
     if (locatable(executor, it, enactor)) {
         for (i = 0; i < levels; i++) {
             if (!Good_obj(it) || !Has_location(it))
@@ -2044,7 +2044,7 @@ FUNCTION(fun_room)
     dbref it;
     int count;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
     if (locatable(executor, it, enactor)) {
         for (count = mudconf.ntfy_nest_lim; count > 0; count--) {
             it = Location(it);
@@ -2082,7 +2082,7 @@ FUNCTION(fun_owner)
             it = aowner;
         }
     } else {
-        it = match_thing(executor, fargs[0]);
+        it = match_thing_quiet(executor, fargs[0]);
         if (it != NOTHING)
             it = Owner(it);
     }
@@ -2096,13 +2096,13 @@ FUNCTION(fun_owner)
 
 FUNCTION(fun_controls)
 {
-    dbref x = match_thing(executor, fargs[0]);
+    dbref x = match_thing_quiet(executor, fargs[0]);
     if (x == NOTHING)
     {
         safe_tprintf_str(buff, bufc, "%s", "#-1 ARG1 NOT FOUND");
         return;
     }
-    dbref y = match_thing(executor, fargs[1]);
+    dbref y = match_thing_quiet(executor, fargs[1]);
     if (y == NOTHING)
     {
         safe_tprintf_str(buff, bufc, "%s", "#-1 ARG2 NOT FOUND");
@@ -2118,7 +2118,7 @@ FUNCTION(fun_controls)
 
 FUNCTION(fun_fullname)
 {
-    dbref it = match_thing(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
     if (it == NOTHING)
     {
         return;
@@ -2145,7 +2145,7 @@ FUNCTION(fun_name)
     dbref it;
     char *s, *temp;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
     if (it == NOTHING) {
         return;
     }
@@ -2407,7 +2407,7 @@ FUNCTION(fun_strlen)
 
 FUNCTION(fun_num)
 {
-    safe_tprintf_str(buff, bufc, "#%d", match_thing(executor, fargs[0]));
+    safe_tprintf_str(buff, bufc, "#%d", match_thing_quiet(executor, fargs[0]));
 }
 
 void internalPlayerFind
@@ -2422,7 +2422,7 @@ void internalPlayerFind
     dbref thing;
     if (*name == '#')
     {
-        thing = match_thing(player, name);
+        thing = match_thing_quiet(player, name);
         if (bVerifyPlayer)
         {
             if (!Good_obj(thing) || !isPlayer(thing))
@@ -3976,10 +3976,10 @@ FUNCTION(fun_cansee)
 {
     dbref looker, lookee;
     int mode;
-    looker = match_thing(executor, fargs[0]);
+    looker = match_thing_quiet(executor, fargs[0]);
     if (looker != NOTHING)
     {
-        lookee = match_thing(executor, fargs[1]);
+        lookee = match_thing_quiet(executor, fargs[1]);
         if (lookee != NOTHING)
         {
             if (nfargs == 3)
@@ -4028,7 +4028,7 @@ FUNCTION(fun_cansee)
 
 FUNCTION(fun_lcon)
 {
-    dbref it = match_thing(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
     if (  it != NOTHING
        && Has_contents(it)
        && (  Examinable(executor, it)
@@ -4069,7 +4069,7 @@ FUNCTION(fun_lcon)
 
 FUNCTION(fun_lexits)
 {
-    dbref it = match_thing(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
 
     if (!Good_obj(it) || !Has_exits(it))
     {
@@ -4141,7 +4141,7 @@ FUNCTION(fun_home)
 {
     dbref it;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it) || !Examinable(executor, it))
         safe_nothing(buff, bufc);
     else if (Has_home(it))
@@ -4164,7 +4164,7 @@ FUNCTION(fun_money)
 {
     dbref it;
 
-    it = match_thing(executor, fargs[0]);
+    it = match_thing_quiet(executor, fargs[0]);
     if ((it == NOTHING) || !Examinable(executor, it))
         safe_nothing(buff, bufc);
     else
@@ -4644,7 +4644,7 @@ FUNCTION(fun_wordpos)
 
 FUNCTION(fun_type)
 {
-    dbref it = match_thing(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
         safe_str("#-1 NOT FOUND", buff, bufc);
@@ -4740,7 +4740,7 @@ FUNCTION(fun_hasflag)
     }
     else
     {
-        it = match_thing(executor, fargs[0]);
+        it = match_thing_quiet(executor, fargs[0]);
         if (!Good_obj(it))
         {
             safe_str("#-1 NOT FOUND", buff, bufc);
@@ -4761,7 +4761,7 @@ FUNCTION(fun_hasflag)
 
 FUNCTION(fun_haspower)
 {
-    dbref it = match_thing(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
         safe_str("#-1 NOT FOUND", buff, bufc);
@@ -4867,7 +4867,7 @@ FUNCTION(fun_elock)
 
     // Get the victim and ensure we can do it.
     //
-    victim = match_thing(executor, fargs[1]);
+    victim = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(victim))
     {
         safe_str("#-1 NOT FOUND", buff, bufc);
@@ -4924,8 +4924,8 @@ FUNCTION(fun_nearby)
     dbref obj1, obj2;
     int ch = '0';
 
-    obj1 = match_thing(executor, fargs[0]);
-    obj2 = match_thing(executor, fargs[1]);
+    obj1 = match_thing_quiet(executor, fargs[0]);
+    obj2 = match_thing_quiet(executor, fargs[1]);
     if (  (  nearby_or_control(executor, obj1)
           || nearby_or_control(executor, obj2))
        && nearby(obj1, obj2))
@@ -4945,7 +4945,7 @@ static void process_sex(dbref player, char *what, const char *token, char *buff,
     dbref it;
     char *str;
 
-    it = match_thing(player, what);
+    it = match_thing_quiet(player, what);
     if (!Good_obj(it) || (!isPlayer(it) && !nearby_or_control(player, it)))
     {
         safe_nomatch(buff, bufc);
@@ -5002,7 +5002,7 @@ FUNCTION(fun_connrecord)
 
 FUNCTION(fun_ctime)
 {
-    dbref thing = match_thing(executor, fargs[0]);
+    dbref thing = match_thing_quiet(executor, fargs[0]);
     if (Examinable(executor, thing))
     {
         safe_str(atr_get_raw(thing, A_CREATED), buff, bufc);
@@ -6292,7 +6292,7 @@ FUNCTION(fun_locate)
      */
 
     if (See_All(executor))
-        thing = match_thing(executor, fargs[0]);
+        thing = match_thing_quiet(executor, fargs[0]);
     else
         thing = match_controlled(executor, fargs[0]);
     if (!Good_obj(thing))
@@ -8547,7 +8547,7 @@ extern FLAGNAMEENT gen_flag_names[];
 FUNCTION(fun_lflags)
 {
     BOOL bFirst = TRUE;
-    dbref target = match_thing(executor, fargs[0]);
+    dbref target = match_thing_quiet(executor, fargs[0]);
     if (  (target != NOTHING)
        && (  mudconf.pub_flags
           || Examinable(executor, target)

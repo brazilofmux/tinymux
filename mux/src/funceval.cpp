@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.20 2002-06-27 06:38:31 jake Exp $
+// $Id: funceval.cpp,v 1.21 2002-06-28 05:52:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -127,11 +127,14 @@ FUNCTION(fun_ansi)
 
 FUNCTION(fun_zone)
 {
-    if (!mudconf.have_zones) {
+    if (!mudconf.have_zones)
+    {
         return;
     }
-    dbref it = match_thing(executor, fargs[0]);
-    if (it == NOTHING || !Examinable(executor, it)) {
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (  it == NOTHING
+       || !Examinable(executor, it))
+    {
         safe_nothing(buff, bufc);
         return;
     }
@@ -629,7 +632,7 @@ FUNCTION(fun_inzone)
 //
 FUNCTION(fun_children)
 {
-    dbref it = match_thing(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
     if (!(WizRoy(executor) || Controls(executor, it)))
     {
         safe_noperm(buff, bufc);
@@ -662,7 +665,7 @@ FUNCTION(fun_objeval)
     TinyExec(name, &bp, executor, caller, enactor,
              EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
-    dbref obj = match_thing(executor, name);
+    dbref obj = match_thing_quiet(executor, name);
 
     if (!Controls(executor, obj))
     {
@@ -1062,7 +1065,7 @@ static int mem_usage(dbref thing)
 
 FUNCTION(fun_objmem)
 {
-    dbref thing = match_thing(executor, fargs[0]);
+    dbref thing = match_thing_quiet(executor, fargs[0]);
     if (thing == NOTHING || !Examinable(executor, thing))
     {
         safe_noperm(buff, bufc);
@@ -1073,7 +1076,7 @@ FUNCTION(fun_objmem)
 
 FUNCTION(fun_playmem)
 {
-    dbref thing = match_thing(executor, fargs[0]);
+    dbref thing = match_thing_quiet(executor, fargs[0]);
     if (thing == NOTHING || !Examinable(executor, thing))
     {
         safe_noperm(buff, bufc);
@@ -1102,7 +1105,7 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
     FLAG p_type;
     int negate, temp;
     int ret = type;
-    dbref it = match_thing(player, name);
+    dbref it = match_thing_quiet(player, name);
 
     negate = temp = 0;
 
@@ -1437,7 +1440,7 @@ FUNCTION(fun_mailfrom)
 void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
                    BOOL bCheckParent)
 {
-    dbref thing = match_thing(executor, fargs[0]);
+    dbref thing = match_thing_quiet(executor, fargs[0]);
     if (thing == NOTHING) 
     {
         safe_nomatch(buff, bufc);
@@ -1593,8 +1596,8 @@ FUNCTION(fun_udefault)
  */
 FUNCTION(fun_findable)
 {
-    dbref obj = match_thing(executor, fargs[0]);
-    dbref victim = match_thing(executor, fargs[1]);
+    dbref obj = match_thing_quiet(executor, fargs[0]);
+    dbref victim = match_thing_quiet(executor, fargs[1]);
 
     if (obj == NOTHING)
         safe_str("#-1 ARG1 NOT FOUND", buff, bufc);
@@ -1645,14 +1648,14 @@ FUNCTION(fun_visible)
 {
     char ch = '0';
 
-    dbref it = match_thing(executor, fargs[0]); 
+    dbref it = match_thing_quiet(executor, fargs[0]); 
     if (it != NOTHING)
     {
         dbref thing;
         int   atr = NOTHING;
         if (!parse_attrib(executor, fargs[1], &thing, &atr))
         {
-            thing = match_thing(executor, fargs[1]);
+            thing = match_thing_quiet(executor, fargs[1]);
         }
         if (Good_obj(thing))
         {
@@ -2754,7 +2757,7 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
 void grep_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
                    BOOL bCaseInsens)
 {
-    dbref it = match_thing(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
 
     if (it == NOTHING) {
         safe_nomatch(buff, bufc);
@@ -2857,7 +2860,7 @@ FUNCTION(fun_valid)
 //
 FUNCTION(fun_hastype)
 {
-    dbref it = match_thing(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
 
     if (it == NOTHING)
     {
@@ -2911,7 +2914,7 @@ FUNCTION(fun_hastype)
 //
 FUNCTION(fun_lparent)
 {
-    dbref it = match_thing(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
         safe_nomatch(buff, bufc);
@@ -2975,7 +2978,7 @@ FUNCTION(fun_lstack)
     }
     else
     {
-        doer = match_thing(executor, fargs[0]);
+        doer = match_thing_quiet(executor, fargs[0]);
     }
 
     if (!Controls(executor, doer)) {
@@ -3021,7 +3024,7 @@ FUNCTION(fun_empty)
     }
     else
     {
-        doer = match_thing(executor, fargs[0]);
+        doer = match_thing_quiet(executor, fargs[0]);
     }
 
     if (!Controls(executor, doer))
@@ -3042,7 +3045,7 @@ FUNCTION(fun_items)
     }
     else
     {
-        doer = match_thing(executor, fargs[0]);
+        doer = match_thing_quiet(executor, fargs[0]);
     }
 
     if (!Controls(executor, doer))
@@ -3065,7 +3068,7 @@ FUNCTION(fun_peek)
     }
     else
     {
-        doer = match_thing(executor, fargs[0]);
+        doer = match_thing_quiet(executor, fargs[0]);
     }
 
     if (!Controls(executor, doer))
@@ -3118,7 +3121,7 @@ FUNCTION(fun_pop)
     }
     else
     {
-        doer = match_thing(executor, fargs[0]);
+        doer = match_thing_quiet(executor, fargs[0]);
     }
 
     if (!Controls(executor, doer))
@@ -3187,7 +3190,7 @@ FUNCTION(fun_push)
     }
     else
     {
-        doer = match_thing(executor, fargs[0]);
+        doer = match_thing_quiet(executor, fargs[0]);
         data = fargs[1];
     }
 
@@ -3599,7 +3602,7 @@ static void room_list
 
 FUNCTION(fun_lrooms)
 {
-    dbref room = match_thing(executor, fargs[0]);
+    dbref room = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(room) || !isRoom(room))
     {
         safe_str("#-1 FIRST ARGUMENT MUST BE A ROOM", buff, bufc);
