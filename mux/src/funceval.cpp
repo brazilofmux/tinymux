@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.23 2003-02-15 17:09:44 jake Exp $
+// $Id: funceval.cpp,v 1.24 2003-02-15 17:18:45 jake Exp $
 //
 
 #include "copyright.h"
@@ -2262,30 +2262,20 @@ FUNCTION(fun_mix)
     // Get the attribute, check the permissions. 
     // 
     dbref thing;
-    int anum;
     ATTR *ap;
 
-    if (parse_attrib(executor, fargs[0], &thing, &anum)) 
-    {
-        if (anum == NOTHING)
-        {
-            ap = NULL;
-        }
-        else
-        {
-            ap = atr_num(anum);
-        }
-    }
-    else
+    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
     }
 
-    if (!ap)
+    if (  !ap
+       || !See_attr(executor, thing, ap))
     {
         return;
     }
+
     dbref aowner;
     int aflags;
     char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
@@ -2293,8 +2283,7 @@ FUNCTION(fun_mix)
     {
         return;
     }
-    else if (  !*atext 
-            || !See_attr(executor, thing, ap)) 
+    else if (!*atext) 
     {
         free_lbuf(atext);
         return;
@@ -2351,61 +2340,52 @@ FUNCTION(fun_mix)
  */
 FUNCTION(fun_foreach)
 {
-    dbref aowner, thing;
-    int aflags, anum;
-    ATTR *ap;
-    char *atext, *atextbuf, *str, *cp, *bp;
-    char cbuf[2], prev = '\0';
-    bool flag = false;
-
     if (  nfargs != 2
        && nfargs != 4)
     {
-        safe_str("#-1 FUNCTION (FOREACH) EXPECTS 2 or 4 ARGUMENTS", buff, bufc);
+        safe_str("#-1 FUNCTION (FOREACH) EXPECTS 2 OR 4 ARGUMENTS", buff, bufc);
         return;
     }
 
-    if (parse_attrib(executor, fargs[0], &thing, &anum))
-    {
-        if (anum == NOTHING)
-        {
-            ap = NULL;
-        }
-        else
-        {
-            ap = atr_num(anum);
-        }
-    }
-    else
+    dbref thing;
+    ATTR *ap;
+
+    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
     }
 
-    if (!ap)
+    if (  !ap
+       || !See_attr(executor, thing, ap))
     {
         return;
     }
-    atext = atr_pget(thing, ap->number, &aowner, &aflags);
+
+    dbref aowner;
+    int aflags;
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
     if (!atext)
     {
         return;
     }
-    else if (  !*atext
-            || !See_attr(executor, thing, ap))
+    else if (!*atext)
     {
         free_lbuf(atext);
         return;
     }
-    atextbuf = alloc_lbuf("fun_foreach");
-    cp = trim_space_sep(fargs[1], ' ');
+    char *str;
+    char cbuf[2], prev = '\0';
+    char *atextbuf = alloc_lbuf("fun_foreach");
+    char *cp = trim_space_sep(fargs[1], ' ');
 
-    bp = cbuf;
+    char *bp = cbuf;
 
     cbuf[1] = '\0';
 
     if (nfargs == 4)
     {
+        bool flag = false;
         while (  cp
               && *cp
               && mudstate.func_invk_ctr < mudconf.func_invk_lim)
