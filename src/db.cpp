@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.17 2000-06-03 01:26:44 sdennis Exp $
+// $Id: db.cpp,v 1.18 2000-06-03 04:54:11 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1515,14 +1515,7 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
     a = (char *)atr_get_raw_LEN(thing, atr, &nLen);
 #else
     Aname okey;
-    if (atr == A_LIST)
-    {
-        // This is not supposed to be compressed!
-        //
-        Log.WriteString("ABORT! db.cpp, list is compressed in atr_get_raw_decode().\n");
-        Log.Flush();
-        abort();
-    }
+    Tiny_Assert(atr != A_LIST);
     makekey(thing, atr, &okey);
     a = FETCH(&okey, &nLen);
     nLen = a ? (nLen-1) : 0;
@@ -1624,18 +1617,14 @@ void atr_clr(dbref thing, int atr)
     int hi, lo, mid;
 
     if (!db[thing].at_count || !db[thing].ahead)
-        return;
-
-    if (db[thing].at_count < 0)
     {
-        Log.WriteString("ABORT! db.cpp, negative attribute count in atr_clr().\n");
-        Log.Flush();
-        abort();
+        return;
     }
 
-    /*
-     * Binary search for the attribute. 
-     */
+    Tiny_Assert(0 <= db[thing].at_count);
+
+    // Binary search for the attribute.
+    //
     lo = 0;
     hi = db[thing].at_count - 1;
     list = db[thing].ahead;
@@ -3202,12 +3191,7 @@ void load_restart_db(void)
     mudstate.restarting = 1;
 
     fgets(buf, 3, f);
-    if (strncmp(buf, "+V", 2))
-    {
-        Log.WriteString("ABORT! db.cpp, load_restart_db sees no version magic (+V..) in restart.db.\n");
-        Log.Flush();
-        abort();
-    }
+    Tiny_Assert(strncmp(buf, "+V", 2) == 0);
     version = getref(f);
     MainGameSockPort = getref(f);
 
