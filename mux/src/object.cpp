@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.7 2003-02-11 13:43:17 jake Exp $
+// $Id: object.cpp,v 1.8 2003-09-14 19:14:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -846,7 +846,7 @@ static void check_dead_refs(void)
             } 
             else if (!OwnsOthers(owner))
             {
-                if(isPlayer(i))
+                if (isPlayer(i))
                 {
                     Log_header_err(i, NOTHING, owner, true,
                        "Owner", "is not a valid owner type.  Set to player.");
@@ -863,6 +863,7 @@ static void check_dead_refs(void)
         }
 
         // Check the parent
+        //
         targ = Parent(i);
         if (Good_obj(targ)) 
         {
@@ -925,6 +926,7 @@ static void check_dead_refs(void)
         }
 
         // Check forwardlist
+        //
         fp = fwdlist_get(i);
         bool dirty = false;
         if (fp) 
@@ -932,13 +934,14 @@ static void check_dead_refs(void)
             for (j = 0; j < fp->count; j++) 
             {
                 targ = fp->data[j];
-                if (Good_obj(targ) && Going(targ)) 
+                if (  Good_obj(targ)
+                   && Going(targ)) 
                 {
                     fp->data[j] = NOTHING;
                     dirty = true;
                 } 
                 else if (  !Good_obj(targ) 
-                        && (targ != NOTHING)) 
+                        && targ != NOTHING) 
                 {
                     fp->data[j] = NOTHING;
                     dirty = true;
@@ -957,6 +960,7 @@ static void check_dead_refs(void)
         if (check_type & DBCK_FULL) 
         {
             // Check for wizards
+            //
             if (Wizard(i)) 
             {
                 if (isPlayer(i)) 
@@ -995,7 +999,8 @@ static void check_dead_refs(void)
                 move_object(i, Home(i));
             }
 
-            // Check for self-referential Next()
+            // Check for self-referential Next().
+            //
             if (Next(i) == i) 
             {
                 Log_simple_err(i, NOTHING,
@@ -1230,7 +1235,8 @@ static void check_loc_exits(dbref loc)
 
     // Only check players, rooms, and things that aren't GOING.
     //
-    if (isExit(loc) || Going(loc))
+    if (  isExit(loc)
+       || Going(loc))
     {
         return;
     }
@@ -1402,7 +1408,8 @@ static void check_exit_chains(void)
     }
     DO_WHOLE_DB(i)
     {
-        if (isExit(i) && !Marked(i))
+        if (  isExit(i)
+           && !Marked(i))
         {
             Log_simple_err(i, NOTHING, "Disconnected exit.  Destroyed.");
             destroy_obj(i);
@@ -1482,7 +1489,8 @@ static void check_loc_contents(dbref loc)
 
     // Only check players, rooms, and things that aren't GOING.
     //
-    if (isExit(loc) || Going(loc))
+    if (  isExit(loc)
+       || Going(loc))
     {
         return;
     }
@@ -1577,7 +1585,6 @@ static void check_loc_contents(dbref loc)
             obj = Next(obj);
         }
     }
-    return;
 }
 
 static void check_contents_chains(void)
@@ -1591,7 +1598,9 @@ static void check_contents_chains(void)
     }
     DO_WHOLE_DB(i)
     {
-        if (!Going(i) && !Marked(i) && Has_location(i))
+        if (  !Going(i)
+           && !Marked(i)
+           && Has_location(i))
         {
             Log_simple_err(i, Location(i), "Orphaned object, moved home.");
             s_Location(i, NOTHING); 
