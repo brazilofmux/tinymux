@@ -149,7 +149,7 @@ Performance Enhancements:
  -- Jake sorted the mudconf structures first by type and then by name.
  -- Raevnos updated PCRE.  The updated version does not require
     Raevnos' fix (implemented with C++ exceptions). With this release,
-    MUX 2.3 not longer depends on C++ exceptions.
+    MUX 2.3 no longer depends on C++ exceptions.
 
 
 Cosmetic Changes:
