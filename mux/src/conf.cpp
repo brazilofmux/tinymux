@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.33 2003-02-06 15:11:36 sdennis Exp $
+// $Id: conf.cpp,v 1.34 2003-02-06 17:23:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -511,8 +511,14 @@ NAMETAB bool_names[] =
 
 CF_HAND(cf_bool)
 {
+    int i = search_nametab(GOD, bool_names, str);
+    if (i < 0) 
+    {
+        cf_log_notfound(player, cmd, "Value", str);
+        return -1;
+    }
     BOOL *pb = (BOOL *)vp;
-    BOOL b = search_nametab(GOD, bool_names, str);
+    BOOL b = i;
     *pb = b;
     return 0;
 }
@@ -522,9 +528,7 @@ CF_HAND(cf_bool)
 //
 CF_HAND(cf_option)
 {
-    int i;
-
-    i = search_nametab(GOD, (NAMETAB *) pExtra, str);
+    int i = search_nametab(GOD, (NAMETAB *) pExtra, str);
     if (i < 0)
     {
         cf_log_notfound(player, cmd, "Value", str);
@@ -1523,7 +1527,7 @@ CF_HAND(cf_hook)
        if (*hookptr == '!' && *(hookptr + 1))
        {
           hookflg = search_nametab(GOD, hook_names, hookptr + 1);
-          if ( hookflg != -1 )
+          if (0 < hookflg)
           {
              retval = 0;
              *vp = *vp & ~hookflg;
@@ -1532,7 +1536,7 @@ CF_HAND(cf_hook)
        else
        {
           hookflg = search_nametab(GOD, hook_names, hookptr);
-          if ( hookflg != -1 )
+          if (0 < hookflg)
           {
              retval = 0;
              *vp = *vp | hookflg;
