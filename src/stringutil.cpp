@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.34 2000-11-12 11:06:12 sdennis Exp $
+// $Id: stringutil.cpp,v 1.35 2000-12-03 04:18:16 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -22,7 +22,7 @@
 #include "alloc.h"
 #include "ansi.h"
 
-char Tiny_IsASCII[256] =
+const char Tiny_IsASCII[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -45,7 +45,7 @@ char Tiny_IsASCII[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-char Tiny_IsPrint[256] =
+const char Tiny_IsPrint[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -68,7 +68,7 @@ char Tiny_IsPrint[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-char Tiny_IsDigit[256] =
+const char Tiny_IsDigit[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -114,7 +114,7 @@ char Tiny_IsAlpha[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-char Tiny_IsAlphaNumeric[256] =
+const char Tiny_IsAlphaNumeric[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -137,7 +137,7 @@ char Tiny_IsAlphaNumeric[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-char Tiny_IsUpper[256] =
+const char Tiny_IsUpper[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -160,7 +160,7 @@ char Tiny_IsUpper[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-char Tiny_IsLower[256] =
+const char Tiny_IsLower[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -183,7 +183,7 @@ char Tiny_IsLower[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-char Tiny_IsSpace[256] =
+const char Tiny_IsSpace[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -240,7 +240,7 @@ char Tiny_IsAttributeNameCharacter[256] =
 // Valid characters for an object name are all printable
 // characters except those from the set {=&|}.
 //
-char Tiny_IsObjectNameCharacter[256] =
+const char Tiny_IsObjectNameCharacter[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -292,7 +292,7 @@ char Tiny_IsPlayerNameCharacter[256] =
 // Characters which should be escaped for the secure()
 // function: '%$\[](){},;'.
 //
-char Tiny_IsSecureCharacter[256] =
+const char Tiny_IsSecureCharacter[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -318,7 +318,7 @@ char Tiny_IsSecureCharacter[256] =
 // Characters which should be escaped for the escape()
 // function: '%\[]{};'.
 //
-char Tiny_IsEscapeCharacter[256] =
+const char Tiny_IsEscapeCharacter[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -341,7 +341,7 @@ char Tiny_IsEscapeCharacter[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-char ANSI_TokenTerminatorTable[256] =
+const char ANSI_TokenTerminatorTable[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -364,7 +364,7 @@ char ANSI_TokenTerminatorTable[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-unsigned char Tiny_ToUpper[256] =
+const unsigned char Tiny_ToUpper[256] =
 {
 //   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
 //
@@ -386,7 +386,7 @@ unsigned char Tiny_ToUpper[256] =
     0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
 };
 
-unsigned char Tiny_ToLower[256] =
+const unsigned char Tiny_ToLower[256] =
 {
 //   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
 //
@@ -540,7 +540,7 @@ char *strip_ansi(const char *szString, unsigned int *pnString)
 #define ANSI_COLOR_INDEX_WHITE     7
 #define ANSI_COLOR_INDEX_DEFAULT   9
 
-ANSI_ColorState acsRestingStates[3] =
+const ANSI_ColorState acsRestingStates[3] =
 {
     {TRUE,  FALSE, FALSE, FALSE, FALSE, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT},
     {FALSE, FALSE, FALSE, FALSE, FALSE, ANSI_COLOR_INDEX_WHITE,   ANSI_COLOR_INDEX_DEFAULT},
@@ -668,14 +668,14 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
 char *ANSI_TransitionColorBinary
 (
     ANSI_ColorState *acsCurrent,
-    ANSI_ColorState *acsNext,
+    const ANSI_ColorState *pcsNext,
     int *nTransition,
     int  iEndGoal
 )
 {
     static char Buffer[ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
 
-    if (memcmp(acsCurrent, acsNext, sizeof(ANSI_ColorState)) == 0)
+    if (memcmp(acsCurrent, pcsNext, sizeof(ANSI_ColorState)) == 0)
     {
         *nTransition = 0;
         Buffer[0] = '\0';
@@ -684,61 +684,61 @@ char *ANSI_TransitionColorBinary
     ANSI_ColorState tmp = *acsCurrent;
     char *p = Buffer;
 
-    if (acsNext->bNormal)
+    if (pcsNext->bNormal)
     {
         // With NOBLEED, we can't stay in the normal mode. We must eventually
         // be on a white foreground.
         //
-        *acsNext = acsRestingStates[iEndGoal];
+        pcsNext = &acsRestingStates[iEndGoal];
     }
 
     // Do we need to go through the normal state?
     //
-    if (  tmp.bHighlite && !acsNext->bHighlite
-       || tmp.bUnder    && !acsNext->bUnder
-       || tmp.bBlink    && !acsNext->bBlink
-       || tmp.bInverse  && !acsNext->bInverse
+    if (  tmp.bHighlite && !pcsNext->bHighlite
+       || tmp.bUnder    && !pcsNext->bUnder
+       || tmp.bBlink    && !pcsNext->bBlink
+       || tmp.bInverse  && !pcsNext->bInverse
        || (  tmp.iBackground != ANSI_COLOR_INDEX_DEFAULT
-          && acsNext->iBackground == ANSI_COLOR_INDEX_DEFAULT)
+          && pcsNext->iBackground == ANSI_COLOR_INDEX_DEFAULT)
        || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
-          && acsNext->iForeground == ANSI_COLOR_INDEX_DEFAULT))
+          && pcsNext->iForeground == ANSI_COLOR_INDEX_DEFAULT))
     {
         memcpy(p, ANSI_NORMAL, sizeof(ANSI_NORMAL)-1);
         p += sizeof(ANSI_NORMAL)-1;
         tmp = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
-    if (tmp.bHighlite != acsNext->bHighlite)
+    if (tmp.bHighlite != pcsNext->bHighlite)
     {
         memcpy(p, ANSI_HILITE, sizeof(ANSI_HILITE)-1);
         p += sizeof(ANSI_HILITE)-1;
     }
-    if (tmp.bUnder != acsNext->bUnder)
+    if (tmp.bUnder != pcsNext->bUnder)
     {
         memcpy(p, ANSI_UNDER, sizeof(ANSI_UNDER)-1);
         p += sizeof(ANSI_UNDER)-1;
     }
-    if (tmp.bBlink != acsNext->bBlink)
+    if (tmp.bBlink != pcsNext->bBlink)
     {
         memcpy(p, ANSI_BLINK, sizeof(ANSI_BLINK)-1);
         p += sizeof(ANSI_BLINK)-1;
     }
-    if (tmp.bInverse != acsNext->bInverse)
+    if (tmp.bInverse != pcsNext->bInverse)
     {
         memcpy(p, ANSI_INVERSE, sizeof(ANSI_INVERSE)-1);
         p += sizeof(ANSI_INVERSE)-1;
     }
-    if (tmp.iForeground != acsNext->iForeground)
+    if (tmp.iForeground != pcsNext->iForeground)
     {
         memcpy(p, ANSI_FOREGROUND, sizeof(ANSI_FOREGROUND)-1);
         p += sizeof(ANSI_FOREGROUND)-1;
-        *p++ = acsNext->iForeground + '0';
+        *p++ = pcsNext->iForeground + '0';
         *p++ = ANSI_ATTR_CMD;
     }
-    if (tmp.iBackground != acsNext->iBackground)
+    if (tmp.iBackground != pcsNext->iBackground)
     {
         memcpy(p, ANSI_BACKGROUND, sizeof(ANSI_BACKGROUND)-1);
         p += sizeof(ANSI_BACKGROUND)-1;
-        *p++ = acsNext->iBackground + '0';
+        *p++ = pcsNext->iBackground + '0';
         *p++ = ANSI_ATTR_CMD;
     }
     *p = '\0';
@@ -753,7 +753,12 @@ char *ANSI_TransitionColorBinary
 // Generate the minimal MU ANSI %-sequence that will transition from one color state
 // to another.
 //
-char *ANSI_TransitionColorEscape(ANSI_ColorState *acsCurrent, ANSI_ColorState *acsNext, int *nTransition)
+char *ANSI_TransitionColorEscape
+(
+    ANSI_ColorState *acsCurrent,
+    ANSI_ColorState *acsNext,
+    int *nTransition
+)
 {
     static char Buffer[ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH+1];
     static char cForegroundColors[9] = "xrgybmcw";
@@ -1179,7 +1184,7 @@ char *normal_to_white(const char *szString)
     return Buffer;
 }
 
-char MU_EscapeChar[256] =
+const char MU_EscapeChar[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -1861,7 +1866,7 @@ int matches_exit_from_list(char *str, char *pattern)
     return 0;
 }
 
-char Digits100[201] =
+const char Digits100[201] =
 "001020304050607080900111213141516171819102122232425262728292\
 031323334353637383930414243444546474849405152535455565758595\
 061626364656667686960717273747576777879708182838485868788898\
@@ -1880,7 +1885,7 @@ int Tiny_ltoa(long val, char *buf)
     
     char *q = p;
     
-    char *z;
+    const char *z;
     while (uval > 99)
     {
         z = Digits100 + ((uval % 100) << 1);
@@ -1947,7 +1952,7 @@ int Tiny_i64toa(INT64 val, char *buf)
     
     char *q = p;
     
-    char *z;
+    const char *z;
     while (val > 99)
     {
         z = Digits100 + ((val % 100) << 1);
@@ -2002,7 +2007,7 @@ void safe_i64toa(INT64 val, char *buff, char **bufc, int size)
     safe_copy_buf(temp, n, buff, bufc, size);
 }
 
-char TableATOI[16][10] =
+const char TableATOI[16][10] =
 {
     {  0,  1,  2,  3,  4,  5,  6,  7,  8,  9},
     { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19},

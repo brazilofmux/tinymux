@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.48 2000-11-17 23:34:10 sdennis Exp $
+// $Id: functions.cpp,v 1.49 2000-12-03 04:18:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3934,7 +3934,7 @@ void ANSI_TransformTextWithTable
     char *buff,
     char **bufc,
     char *pString,
-    unsigned char xfrmTable[256])
+    const unsigned char xfrmTable[256])
 {
     int   nString = strlen(pString);
     char *pBuffer = *bufc;

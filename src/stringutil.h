@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.17 2000-11-12 11:06:12 sdennis Exp $
+// $Id: stringutil.h,v 1.18 2000-12-03 04:18:16 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -16,21 +16,21 @@
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
-extern char Tiny_IsASCII[256];
-extern char Tiny_IsPrint[256];
-extern char Tiny_IsDigit[256];
+extern const char Tiny_IsASCII[256];
+extern const char Tiny_IsPrint[256];
+extern const char Tiny_IsDigit[256];
 extern char Tiny_IsAlpha[256];
-extern char Tiny_IsAlphaNumeric[256];
-extern char Tiny_IsUpper[256];
-extern char Tiny_IsLower[256];
-extern char Tiny_IsSpace[256];
+extern const char Tiny_IsAlphaNumeric[256];
+extern const char Tiny_IsUpper[256];
+extern const char Tiny_IsLower[256];
+extern const char Tiny_IsSpace[256];
 extern char Tiny_IsAttributeNameCharacter[256];
-extern char Tiny_IsObjectNameCharacter[256];
+extern const char Tiny_IsObjectNameCharacter[256];
 extern char Tiny_IsPlayerNameCharacter[256];
-extern char Tiny_IsSecureCharacter[256];
-extern char Tiny_IsEscapeCharacter[256];
-extern unsigned char Tiny_ToUpper[256];
-extern unsigned char Tiny_ToLower[256];
+extern const char Tiny_IsSecureCharacter[256];
+extern const char Tiny_IsEscapeCharacter[256];
+extern const unsigned char Tiny_ToUpper[256];
+extern const unsigned char Tiny_ToLower[256];
 int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1);
 #define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
 #define TOKEN_ANSI      1 // ANSI sequence.
