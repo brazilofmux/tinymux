@@ -1074,6 +1074,24 @@ Related Topics: @name.
 
   Related Topics: examine, look.
 
+& @DESCFORMAT
+@DESCFORMAT
+
+  COMMAND: @descformat <object> [=<format>]
+
+  Normally, the description of an object is controlled by the content and
+  formatting found in the DESCRIBE attribute.  With the WOD_REALMS package
+  enabled, DESCRIBE can be substituted in favor of other attributes.
+
+  However, in all cases, @descformat provides one final pass over the
+  appearance of an object.  The evaluted description text is passed as %0,
+  and the attribute name where this text can be found is passed as %1.  The
+  unevaluated description can be acquired using v(%1).
+
+  This is useful to achieve a consistent 'look' using room parents.
+
+  Related Topics: @conformat, @exitformat, @nameformat, @conformat.
+
 & @DESCRIBE
 @DESCRIBE
 
@@ -4842,17 +4860,17 @@ COMMANDS (continued)
   @akill       @aleave      @alfail      @alias       @amail       @amhear
   @amove       @apay        @arfail      @asuccess    @atfail      @atofail
   @atport      @aufail      @ause        @away        @charges     @conformat
-  @cost        @daily       @describe    @dfail       @drop        @ealias
-  @efail       @enter       @exitformat  @fail        @filter      @forwardlist
-  @gfail       @idesc       @idle        @idletimeout @infilter    @inprefix
-  @kill        @lalias      @leave       @lfail       @listen      @mailsucc
-  @moniker     @move        @odescribe   @odfail      @odrop       @oefail
-  @oenter      @ofail       @ogfail      @okill       @oleave      @olfail
-  @omove       @opay        @orfail      @osuccess    @otfail      @otofail
-  @otport      @oufail      @ouse        @oxenter     @oxleave     @oxtport
-  @pay         @prefix      @reject      @rfail       @runout      @saystring
-  @sex         @signature   @speechmod   @startup     @success     @tfail
-  @tofail      @tport       @ufail       @use
+  @cost        @daily       @descformat  @describe    @dfail       @drop
+  @ealias      @efail       @enter       @exitformat  @fail        @filter
+  @forwardlist @gfail       @idesc       @idle        @idletimeout @infilter
+  @inprefix    @kill        @lalias      @leave       @lfail       @listen
+  @mailsucc    @moniker     @move        @nameformat  @odescribe   @odfail
+  @odrop       @oefail      @oenter      @ofail       @ogfail      @okill
+  @oleave      @olfail      @omove       @opay        @orfail      @osuccess
+  @otfail      @otofail     @otport      @oufail      @ouse        @oxenter
+  @oxleave     @oxtport     @pay         @prefix      @reject      @rfail
+  @runout      @saystring   @sex         @signature   @speechmod   @startup
+  @success     @tfail       @tofail      @tport       @ufail       @use
 
 & COMP()
 COMP()
