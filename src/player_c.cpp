@@ -1,10 +1,7 @@
-
-/*
- * player_c.c -- Player cache routines 
- */
-/*
- * $Id: player_c.cpp,v 1.2 2000-04-13 08:08:31 sdennis Exp $ 
- */
+// player_c.cpp - Player cache routines.
+//
+// $Id: player_c.cpp,v 1.3 2000-08-23 00:24:11 sdennis Exp $
+//
 
 #include "copyright.h"
 #include "autoconf.h"
@@ -64,12 +61,13 @@ static void pcache_reload1(dbref player, PCACHE *pp)
 
 PCACHE *pcache_find(dbref player)
 {
-    PCACHE *pp;
-
     if (!Good_obj(player) || !OwnsOthers(player))
+    {
         return NULL;
-    pp = (PCACHE *) hashfindLEN(&player, sizeof(player), &pcache_htab);
-    if (pp) {
+    }
+    PCACHE *pp = (PCACHE *)hashfindLEN(&player, sizeof(player), &pcache_htab);
+    if (pp)
+    {
         pp->cflags |= PF_REF;
         return pp;
     }
@@ -86,11 +84,11 @@ PCACHE *pcache_find(dbref player)
 
 void pcache_reload(dbref player)
 {
-    PCACHE *pp;
-
-    pp = pcache_find(player);
+    PCACHE *pp = pcache_find(player);
     if (!pp)
+    {
         return;
+    }
     pcache_reload1(player, pp);
 }
 
@@ -115,13 +113,13 @@ static void pcache_save(PCACHE *pp)
 
 void NDECL(pcache_trim)
 {
-    PCACHE *pp, *pplast, *ppnext;
-
-    pp = pcache_head;
-    pplast = NULL;
+    PCACHE *pp = pcache_head;
+    PCACHE *pplast = NULL;
     while (pp)
     {
-        if (!(pp->cflags & PF_DEAD) && (pp->queue || (pp->cflags & PF_REF)))
+        if (  !(pp->cflags & PF_DEAD)
+           && (  pp->queue
+              || (pp->cflags & PF_REF)))
         {
             pp->cflags &= ~PF_REF;
             pplast = pp;
@@ -129,11 +127,15 @@ void NDECL(pcache_trim)
         }
         else
         {
-            ppnext = pp->next;
+            PCACHE *ppnext = pp->next;
             if (pplast)
+            {
                 pplast->next = ppnext;
+            }
             else
+            {
                 pcache_head = ppnext;
+            }
             if (!(pp->cflags & PF_DEAD))
             {
                 pcache_save(pp);
@@ -150,7 +152,8 @@ void NDECL(pcache_sync)
     PCACHE *pp;
 
     pp = pcache_head;
-    while (pp) {
+    while (pp)
+    {
         pcache_save(pp);
         pp = pp->next;
     }
@@ -162,7 +165,9 @@ void pcache_purge(dbref player)
 
     pp = (PCACHE *) hashfindLEN(&player, sizeof(player), &pcache_htab);
     if (!pp)
+    {
         return;
+    }
     pp->cflags = PF_DEAD;
     hashdeleteLEN(&(pp->player), sizeof(pp->player), &pcache_htab);
 }
@@ -175,7 +180,9 @@ int a_Queue(dbref player, int adj)
     {
         pp = pcache_find(player);
         if (pp)
+        {
             pp->queue += adj;
+        }
         return pp->queue;
     }
     return 0;
@@ -185,10 +192,13 @@ void s_Queue(dbref player, int val)
 {
     PCACHE *pp;
 
-    if (OwnsOthers(player)) {
+    if (OwnsOthers(player))
+    {
         pp = pcache_find(player);
         if (pp)
+        {
             pp->queue = val;
+        }
     }
 }
 
