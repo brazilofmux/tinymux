@@ -17,10 +17,9 @@ docs/latticeS.ps
 docs/mux2.1-man.pdf
 docs/mux2.1-man.tex
 game/alias.conf
-game/bin/tinymux.exe
+game/bin/netmux.exe
 game/bin/dbconvert.exe
 game/bin/mkindx.exe
-game/bin/a.exe
 game/compat.conf
 game/data/db_load.bat
 game/data/db_unload.bat

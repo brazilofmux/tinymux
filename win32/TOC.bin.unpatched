@@ -1,5 +1,5 @@
-game/data/tinymux.db
-game/tinymux.conf
+game/data/netmux.db
+game/netmux.conf
 game/text/badsite.txt
 game/text/connect.txt
 game/text/create_reg.txt

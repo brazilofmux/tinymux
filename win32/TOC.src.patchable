@@ -1,11 +1,7 @@
-a.dep
-a.dsp
-a.mak
 ALPHA
 CHANGES
 dbconvert.dep
 dbconvert.dsp
-dbconvert.mak
 docs/BACKUPS
 docs/CHANGES.1.6
 docs/COMPRESSION
@@ -34,7 +30,6 @@ game/text/wizhelp.txt
 INSTALL
 mkindx.dep
 mkindx.dsp
-mkindx.mak
 NOTES
 README
 readme.txt
@@ -150,7 +145,6 @@ src/wild.cpp
 src/wiz.cpp
 src/_build.cpp
 src/_build.h
-TinyMUX.dep
-TinyMUX.dsp
-tinymux.dsw
-TinyMUX.mak
+netmux.dep
+netmux.dsp
+netmux.dsw
