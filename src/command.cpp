@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.13 2000-06-07 09:46:29 sdennis Exp $
+// $Id: command.cpp,v 1.14 2000-06-24 22:21:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -28,8 +28,6 @@ extern void logged_out0(dbref player, dbref cause, int key);
 extern void logged_out1(dbref player, dbref cause, int key, char *arg);
 extern void boot_slave(dbref, dbref, int);
 extern void NDECL(vattr_clean_db);
-
-#define CACHING "object"
 
 #define SW_MULTIPLE   0x80000000    // This sw may be spec'd w/others.
 #define SW_GOT_UNIQUE 0x40000000    // Already have a unique option.
