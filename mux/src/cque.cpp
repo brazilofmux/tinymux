@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.18 2004-05-25 19:15:26 sdennis Exp $
+// $Id: cque.cpp,v 1.19 2004-05-25 19:17:09 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1230,7 +1230,9 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
 CLinearTimeDelta ltdWarp;
 int CallBack_Warp(PTASK_RECORD p)
 {
-    if (p->fpTask == Task_RunQueueEntry || p->fpTask == Task_SemaphoreTimeout)
+    if (  p->fpTask == Task_RunQueueEntry
+       || p->fpTask == Task_SemaphoreTimeout
+       || p->fpTask == Task_SQLTimeout)
     {
         BQUE *point = (BQUE *)(p->arg_voidptr);
         if (point->IsTimed)
