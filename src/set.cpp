@@ -1,6 +1,6 @@
-// set.cpp -- commands which set parameters.
+// set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.16 2001-11-08 04:53:42 sdennis Exp $
+// $Id: set.cpp,v 1.17 2001-11-20 04:21:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
