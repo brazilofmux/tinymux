@@ -7960,7 +7960,7 @@ LNUM()
     > say lnum(3,7)
     You say "3 4 5 6 7"
     > say lnum(4,-2,|)
-    You say "4|3|1|0|-1|-2"
+    You say "4|3|2|1|0|-1|-2"
     > say lnum(2,6,@@)
     You say "23456"
 
@@ -9818,7 +9818,7 @@ POLL()
 & POP()
 POP()
 
-  FUNCTION: pop([<object>], [<position>])
+  FUNCTION: pop([<object>[,<position>]])
 
   pop() returns an item from the caller's stack and removes it from
   the stack. If <position> is specified, it returns the item from that
