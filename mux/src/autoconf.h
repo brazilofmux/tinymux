@@ -21,8 +21,6 @@
 
 /* Define if we have stdlib.h et al */
 #define STDC_HEADERS
-/* Define if we have string.h instead of strings.h */
-#define USG
 /* Define if we have unistd.h */
 #undef HAVE_UNISTD_H
 /* Define if we have memory.h and need it to get memcmp et al */
