@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.65 2002-07-19 12:41:08 jake Exp $
+// $Id: functions.cpp,v 1.66 2002-07-21 02:01:14 jake Exp $
 //
 
 #include "copyright.h"
@@ -2734,6 +2734,90 @@ FUNCTION(fun_or)
     for (int i = 0; i < nfargs; i++)
     {
         val = val || Tiny_atol(fargs[i]);
+    }
+    safe_bool(val, buff, bufc);
+}
+
+FUNCTION(fun_cand)
+{
+    BOOL val = TRUE;
+    char *bp, *temp, *str;
+    for (int i = 0; i < nfargs; i++)
+    {
+        bp = temp = alloc_lbuf("fun_cand");
+        str = fargs[i];
+        TinyExec(temp, &bp, executor, caller, enactor, 
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
+        *bp = '\0';
+        val = val && Tiny_atol(temp);
+        free_lbuf(temp);
+        if (!val)
+        {
+            break;
+        }
+    }
+    safe_bool(val, buff, bufc);
+}
+
+FUNCTION(fun_cor)
+{
+    BOOL val = FALSE;
+    char *bp, *temp, *str;
+    for (int i = 0; i < nfargs; i++)
+    {
+        bp = temp = alloc_lbuf("fun_cor");
+        str = fargs[i];
+        TinyExec(temp, &bp, executor, caller, enactor, 
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
+        *bp = '\0';
+        val = val || Tiny_atol(temp);
+        free_lbuf(temp);
+        if (val)
+        {
+            break;
+        }
+    }
+    safe_bool(val, buff, bufc);
+}
+
+FUNCTION(fun_candbool)
+{
+    BOOL val = TRUE;
+    char *bp, *temp, *str;
+    for (int i = 0; i < nfargs; i++)
+    {
+        bp = temp = alloc_lbuf("fun_candbool");
+        str = fargs[i];
+        TinyExec(temp, &bp, executor, caller, enactor, 
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
+        *bp = '\0';
+        val = val && xlate(temp);
+        free_lbuf(temp);
+        if (!val)
+        {
+            break;
+        }
+    }
+    safe_bool(val, buff, bufc);
+}
+
+FUNCTION(fun_corbool)
+{
+    BOOL val = FALSE;
+    char *bp, *temp, *str;
+    for (int i = 0; i < nfargs; i++)
+    {
+        bp = temp = alloc_lbuf("fun_corbool");
+        str = fargs[i];
+        TinyExec(temp, &bp, executor, caller, enactor, 
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
+        *bp = '\0';
+        val = val || xlate(temp);
+        free_lbuf(temp);
+        if (val)
+        {
+            break;
+        }
     }
     safe_bool(val, buff, bufc);
 }
@@ -7642,6 +7726,8 @@ FUN flist[] =
     {"BEFORE",   fun_before,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"BNAND",    fun_bnand,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"BOR",      fun_bor,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"CAND",     fun_cand,     MAX_ARG, 1,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"CANDBOOL", fun_candbool, MAX_ARG, 1,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
 #ifdef WOD_REALMS
     {"CANSEE",   fun_cansee,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
 #endif
@@ -7669,6 +7755,8 @@ FUN flist[] =
     {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CONVSECS", fun_convsecs, MAX_ARG, 1,  3,       0, CA_PUBLIC},
     {"CONVTIME", fun_convtime, MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"COR",      fun_cor,      MAX_ARG, 1,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"CORBOOL",  fun_corbool,  MAX_ARG, 1,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
     {"COS",      fun_cos,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
