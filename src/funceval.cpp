@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.15 2000-06-07 23:51:57 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.16 2000-06-08 02:47:47 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -277,6 +277,11 @@ FUNCTION(fun_set)
     int atr, atr2, aflags, clear, flagvalue, could_hear;
     ATTR *attr, *attr2;
 
+    if (check_command(player, "@set", buff, bufc))
+    {
+        return;
+    }
+
     // obj/attr form?
     //
     if (parse_attrib(player, fargs[0], &thing, &atr))
@@ -337,19 +342,22 @@ FUNCTION(fun_set)
             return;
         }
     }
-    /*
-     * find thing 
-     */
 
+    // Find thing.
+    //
     if ((thing = match_controlled(player, fargs[0])) == NOTHING)
     {
         safe_str("#-1", buff, bufc);
         return;
     }
-    /*
-     * check for attr set first 
-     */
-    for (p = fargs[1]; *p && (*p != ':'); p++) ;
+
+    // Check for attr set first.
+    //
+    for (p = fargs[1]; *p && (*p != ':'); p++)
+    {
+        // Nothing
+        ;
+    }
 
     if (*p)
     {
@@ -361,12 +369,14 @@ FUNCTION(fun_set)
             return;
         }
         attr = atr_num(atr);
-        if (!attr) {
+        if (!attr)
+        {
             safe_str("#-1 PERMISSION DENIED", buff, bufc);
             return;
         }
         atr_get_info(thing, atr, &aowner, &aflags);
-        if (!Set_attr(player, thing, attr, aflags)) {
+        if (!Set_attr(player, thing, attr, aflags))
+        {
             safe_str("#-1 PERMISSION DENIED", buff, bufc);
             return;
         }
@@ -377,8 +387,9 @@ FUNCTION(fun_set)
         if (*p == '_')
         {
             strcpy(buff2, p + 1);
-            if (!parse_attrib(player, p + 1, &thing2, &atr2) ||
-                (atr2 == NOTHING)) {
+            if (  !parse_attrib(player, p + 1, &thing2, &atr2)
+               || (atr2 == NOTHING))
+            {
                 free_lbuf(buff2);
                 safe_str("#-1 NO MATCH", buff, bufc);
                 return;
@@ -387,24 +398,24 @@ FUNCTION(fun_set)
             p = buff2;
             atr_pget_str(buff2, thing2, atr2, &aowner, &aflags);
 
-            if (!attr2 ||
-             !See_attr(player, thing2, attr2, aowner, aflags)) {
+            if (  !attr2
+               || !See_attr(player, thing2, attr2, aowner, aflags))
+            {
                 free_lbuf(buff2);
                 safe_str("#-1 PERMISSION DENIED", buff, bufc);
                 return;
             }
         }
-        /*
-         * set it 
-         */
 
+        // Set it.
+        //
         set_attr_internal(player, thing, atr, p, 0, buff, bufc);
         free_lbuf(buff2);
         return;
     }
-    /*
-     * set/clear a flag 
-     */
+
+    // Set/clear a flag.
+    //
     flag_set(thing, player, fargs[1], 0);
 }
 #endif
