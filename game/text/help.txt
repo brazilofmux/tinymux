@@ -7076,7 +7076,9 @@ TABLE ()
     foo.,.,.,.|bar.,.,.,.
     baz.,.,.,.
 
-  Related Topics: columns()& FOREACH()
+  Related Topics: columns()
+
+& FOREACH()
 FOREACH()
 
   FUNCTION: foreach([<object>/]<attribute>,<string>[,<begin>, <end>])
