@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.10 2002-07-09 19:33:53 jake Exp $
+// $Id: match.cpp,v 1.11 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -151,7 +151,7 @@ void match_player(void)
     {
         char *p;
         for (p = md.string + 1; Tiny_IsSpace[(unsigned char)*p]; p++) ;
-        dbref match = lookup_player(NOTHING, p, 1);
+        dbref match = lookup_player(NOTHING, p, TRUE);
         if (Good_obj(match))
         {
             promote_match(match, CON_TOKEN);

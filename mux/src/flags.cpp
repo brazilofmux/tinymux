@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.6 2002-07-09 08:22:48 jake Exp $
+// $Id: flags.cpp,v 1.7 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -173,7 +173,7 @@ BOOL fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
  * * fh_going_bit: manipulate the going bit.  Non-gods may only clear on rooms.
  */
 
-BOOL fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
+BOOL fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
 {
     if (  Going(target)
        && reset
@@ -207,7 +207,7 @@ BOOL fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
  * * fh_hear_bit: set or clear bits that affect hearing.
  */
 
-BOOL fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
+BOOL fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
 {
     if (isPlayer(target) && (flag & MONITOR))
     {
@@ -437,7 +437,7 @@ FLAGNAMEENT gen_flag_names[] =
     {"MEDIUM",          TRUE, &fbeMedium         },
     {"DEAD",            TRUE, &fbeDead           },
 #endif // WOD_REALMS
-    {NULL, FALSE, NULL}
+    {NULL,             FALSE, NULL}
 };
 
 #endif
@@ -869,12 +869,9 @@ char *unparse_object_numonly(dbref target)
  * ---------------------------------------------------------------------------
  * * Return an lbuf pointing to the object name and possibly the db# and flags
  */
-char *unparse_object(dbref player, dbref target, int obey_myopic)
+char *unparse_object(dbref player, dbref target, BOOL obey_myopic)
 {
-    char *buf, *fp;
-    int exam;
-
-    buf = alloc_lbuf("unparse_object");
+    char *buf = alloc_lbuf("unparse_object");
     if (NOPERM <= target && target < 0)
     {
         strcpy(buf, aszSpecialDBRefNames[-target]);
@@ -885,6 +882,7 @@ char *unparse_object(dbref player, dbref target, int obey_myopic)
     }
     else
     {
+        BOOL exam;
         if (obey_myopic)
         {
             exam = MyopicExam(player, target);
@@ -899,7 +897,7 @@ char *unparse_object(dbref player, dbref target, int obey_myopic)
         {
             // show everything
             //
-            fp = decode_flags(player, &(db[target].fs));
+            char *fp = decode_flags(player, &(db[target].fs));
             sprintf(buf, "%s(#%d%s)", Name(target), target, fp);
             free_sbuf(fp);
         }
@@ -914,8 +912,8 @@ char *unparse_object(dbref player, dbref target, int obey_myopic)
 }
 
 /* ---------------------------------------------------------------------------
-* cf_flag_access: Modify who can set a flag.
-*/
+ * cf_flag_access: Modify who can set a flag.
+ */
 
 CF_HAND(cf_flag_access)
 {

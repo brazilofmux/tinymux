@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.3 2002-06-27 06:38:31 jake Exp $
+// $Id: file_c.cpp,v 1.4 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -69,12 +69,10 @@ NAMETAB list_files[] =
 
 void do_list_file(dbref executor, dbref caller, dbref enactor, int extra, char *arg)
 {
-    int flagvalue;
-
-    flagvalue = search_nametab(executor, list_files, arg);
+    int flagvalue = search_nametab(executor, list_files, arg);
     if (flagvalue < 0)
     {
-        display_nametab(executor, list_files, "Unknown file.  Use one of:", 1);
+        display_nametab(executor, list_files, "Unknown file.  Use one of:", TRUE);
         return;
     }
     fcache_send(executor, flagvalue);
@@ -82,13 +80,11 @@ void do_list_file(dbref executor, dbref caller, dbref enactor, int extra, char *
 
 static FBLOCK *fcache_fill(FBLOCK *fp, char ch)
 {
-    FBLOCK *tfp;
-
     if (fp->hdr.nchars >= sizeof(fp->data))
     {
         // We filled the current buffer.  Go get a new one.
         //
-        tfp = fp;
+        FBLOCK *tfp = fp;
         fp = (FBLOCK *) alloc_mbuf("fcache_fill");
         fp->hdr.nxt = NULL;
         fp->hdr.nchars = 0;
@@ -143,8 +139,8 @@ static int fcache_read(FBLOCK **cp, char *filename)
     // Process the file, one lbuf at a time.
     //
     nmax = read(fd, buff, LBUF_SIZE);
-    while (nmax > 0) {
-
+    while (nmax > 0)
+    {
         for (n = 0; n < nmax; n++)
         {
             switch (buff[n])
@@ -181,15 +177,14 @@ static int fcache_read(FBLOCK **cp, char *filename)
 
 void fcache_rawdump(SOCKET fd, int num)
 {
-    int cnt, remaining;
-    char *start;
-    FBLOCK *fp;
-
     if ((num < 0) || (num > FC_LAST))
     {
         return;
     }
-    fp = fcache[num].fileblock;
+
+    FBLOCK *fp = fcache[num].fileblock;
+    int cnt, remaining;
+    char *start;
 
     while (fp != NULL)
     {

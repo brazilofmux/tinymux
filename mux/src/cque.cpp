@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.9 2002-07-09 22:31:08 jake Exp $
+// $Id: cque.cpp,v 1.10 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -153,7 +153,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     {
                         command++;
                         numpipes++;
-                        mudstate.inpipe = 1;
+                        mudstate.inpipe = TRUE;
                         mudstate.poutnew = alloc_lbuf("process_command.pipe");
                         mudstate.poutbufc = mudstate.poutnew;
                         mudstate.poutobj = executor;
@@ -161,7 +161,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         // No lag check on piped commands.
                         //
                         process_command(executor, point->caller, point->enactor,
-                            0, cp, point->env, point->nargs);
+                            FALSE, cp, point->env, point->nargs);
                         if (mudstate.pout)
                         {
                             free_lbuf(mudstate.pout);
@@ -172,14 +172,14 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         mudstate.pout = mudstate.poutnew;
                         cp = parse_to(&command, ';', 0);
                     }
-                    mudstate.inpipe = 0;
+                    mudstate.inpipe = FALSE;
 
                     CLinearTimeAbsolute ltaBegin;
                     ltaBegin.GetUTC();
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
                     char *log_cmdbuf = process_command(executor, point->caller,
-                        point->enactor, 0, cp, point->env, point->nargs);
+                        point->enactor, FALSE, cp, point->env, point->nargs);
 
                     CLinearTimeAbsolute ltaEnd;
                     ltaEnd.GetUTC();
@@ -225,13 +225,11 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 // ---------------------------------------------------------------------------
 // que_want: Do we want this queue entry?
 //
-static int que_want(BQUE *entry, dbref ptarg, dbref otarg)
+static BOOL que_want(BQUE *entry, dbref ptarg, dbref otarg)
 {
     if ((ptarg != NOTHING) && (ptarg != Owner(entry->executor)))
-        return 0;
-    if ((otarg != NOTHING) && (otarg != entry->executor))
-        return 0;
-    return 1;
+        return FALSE;
+    return ((otarg == NOTHING) || (otarg == entry->executor));
 }
 
 void Task_SemaphoreTimeout(void *pExpired, int iUnused)
@@ -306,7 +304,7 @@ int halt_que(dbref executor, dbref object)
 {
     Halt_Player_Target = executor;
     Halt_Object_Target = object;
-    Halt_Entries = 0;
+    Halt_Entries       = 0;
     Halt_Player_Run    = NOTHING;
     Halt_Entries_Run   = 0;
 
@@ -330,7 +328,7 @@ void do_halt(dbref executor, dbref caller, dbref enactor, int key, char *target)
 {
     dbref executor_targ, obj_targ;
 
-    if ((key & HALT_ALL) && !(Can_Halt(executor)))
+    if ((key & HALT_ALL) && !Can_Halt(executor))
     {
         notify(executor, NOPERM_MESSAGE);
         return;
@@ -555,16 +553,14 @@ void do_notify
     char *count
 )
 {
-    dbref thing;
     int loccount, attr = 0;
     ATTR *ap;
-    char *obj;
-
-    obj = parse_to(&what, '/', 0);
+    char *obj = parse_to(&what, '/', 0);
     init_match(executor, obj, NOTYPE);
     match_everything(0);
 
-    if ((thing = noisy_match_result()) < 0)
+    dbref thing = noisy_match_result();
+    if (thing < 0)
     {
         notify(executor, "No match.");
     }
@@ -637,7 +633,6 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
 {
     int a;
     BQUE *tmp;
-    char *tptr;
 
     // Can we run commands at all?
     //
@@ -717,7 +712,7 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
     tmp = alloc_qentry("setup_que.qblock");
     tmp->comm = NULL;
 
-    tptr = tmp->text = (char *)MEMALLOC(tlen);
+    char *tptr = tmp->text = (char *)MEMALLOC(tlen);
     (void)ISOUTOFMEMORY(tptr);
 
     if (command)
@@ -1019,7 +1014,7 @@ int CallBack_ShowDispatches(PTASK_RECORD p)
 
 void ShowPsLine(BQUE *tmp)
 {
-    char *bufp = unparse_object(Show_Player, tmp->executor, 0);
+    char *bufp = unparse_object(Show_Player, tmp->executor, FALSE);
     if (tmp->IsTimed && (Good_obj(tmp->sem)))
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
@@ -1053,7 +1048,7 @@ void ShowPsLine(BQUE *tmp)
             }
         }
         *bp = '\0';
-        bp = unparse_object(Show_Player, tmp->enactor, 0);
+        bp = unparse_object(Show_Player, tmp->enactor, FALSE);
         notify(Show_Player, tprintf("   Enactor: %s%s", bp, bufp));
         free_lbuf(bp);
     }
@@ -1122,7 +1117,7 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
 
     // Figure out what to list the queue for.
     //
-    if ((key & PS_ALL) && !(See_Queue(executor)))
+    if ((key & PS_ALL) && !See_Queue(executor))
     {
         notify(executor, NOPERM_MESSAGE);
         return;
@@ -1229,9 +1224,6 @@ int CallBack_Warp(PTASK_RECORD p)
 //
 void do_queue(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
-    int was_disabled;
-
-    was_disabled = 0;
     if (key == QUEUE_KICK)
     {
         int i = Tiny_atol(arg);

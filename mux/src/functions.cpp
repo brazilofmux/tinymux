@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.53 2002-07-09 21:24:45 jake Exp $
+// $Id: functions.cpp,v 1.54 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -755,10 +755,9 @@ BOOL delim_check
     return TRUE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_words: Returns number of words in a string.
- * * Added 1/28/91 Philip D. Wasson
+/* ---------------------------------------------------------------------------
+ * fun_words: Returns number of words in a string.
+ * Added 1/28/91 Philip D. Wasson
  */
 
 int countwords(char *str, char sep)
@@ -774,18 +773,18 @@ int countwords(char *str, char sep)
 
 FUNCTION(fun_words)
 {
-    char sep;
-
     if (nfargs == 0)
     {
         safe_chr('0', buff, bufc);
         return;
     }
+
+    char sep;
     varargs_preamble(2);
     safe_ltoa(countwords(strip_ansi(fargs[0]), sep), buff, bufc);
 }
 
-/*
+/* ---------------------------------------------------------------------------
  * fun_flags: Returns the flags on an object.
  * Because @switch is case-insensitive, not quite as useful as it could be.
  */
@@ -812,9 +811,8 @@ FUNCTION(fun_flags)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_rand: Return a random number from 0 to arg1-1
+/* ---------------------------------------------------------------------------
+ * fun_rand: Return a random number from 0 to arg1-1
  */
 
 FUNCTION(fun_rand)
@@ -830,16 +828,13 @@ FUNCTION(fun_rand)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_abs: Returns the absolute value of its argument.
+/* ---------------------------------------------------------------------------
+ * fun_abs: Returns the absolute value of its argument.
  */
 
 FUNCTION(fun_abs)
 {
-    double num;
-
-    num = Tiny_atof(fargs[0]);
+    double num = Tiny_atof(fargs[0]);
     if (num == 0.0)
     {
         safe_chr('0', buff, bufc);
@@ -854,23 +849,20 @@ FUNCTION(fun_abs)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_sign: Returns -1, 0, or 1 based on the the sign of its argument.
+/* ---------------------------------------------------------------------------
+ * fun_sign: Returns -1, 0, or 1 based on the the sign of its argument.
  */
 
 FUNCTION(fun_sign)
 {
-    double num;
-
-    num = Tiny_atof(fargs[0]);
+    double num = Tiny_atof(fargs[0]);
     if (num < 0)
     {
         safe_str("-1", buff, bufc);
     }
     else
     {
-        safe_chr((num > 0) ? '1' : '0', buff, bufc);
+        safe_bool(num > 0, buff, bufc);
     }
 }
 
@@ -1460,7 +1452,7 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
         atr_gotten = atr_get_LEN(thing, attrib, &aowner, &aflags, &nLen);
         if (bCanReadAttr(executor, thing, attr, FALSE))
         {
-            struct boolexp *pBoolExp = parse_boolexp(executor, atr_gotten, 1);
+            struct boolexp *pBoolExp = parse_boolexp(executor, atr_gotten, TRUE);
             free_lbuf(atr_gotten);
             atr_gotten = unparse_boolexp(executor, pBoolExp);
             free_boolexp(pBoolExp);
@@ -1544,11 +1536,9 @@ FUNCTION(fun_subeval)
 
 FUNCTION(fun_eval)
 {
-    char *str;
-
     if (nfargs == 1)
     {
-        str = fargs[0];
+        char *str = fargs[0];
         TinyExec(buff, bufc, executor, caller, enactor, EV_EVAL, &str,
                  (char **)NULL, 0);
         return;
@@ -1570,7 +1560,7 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
             dbref enactor,
             char *fargs[], int nfargs,
             char *cargs[], int ncargs,
-            int is_local)
+            BOOL is_local)
 {
     dbref aowner, thing;
     int aflags, anum;
@@ -1645,13 +1635,13 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
 FUNCTION(fun_u)
 {
     do_ufun(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
-            ncargs, 0);
+            ncargs, FALSE);
 }
 
 FUNCTION(fun_ulocal)
 {
     do_ufun(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
-            ncargs, 1);
+            ncargs, TRUE);
 }
 
 /*
@@ -1772,17 +1762,17 @@ FUNCTION(fun_right)
 
 FUNCTION(fun_first)
 {
-    char *s, *first, sep;
-
     // If we are passed an empty arglist return a null string.
     //
     if (nfargs == 0)
     {
         return;
     }
+    char sep;
     varargs_preamble(2);
-    s = trim_space_sep(fargs[0], sep);
-    first = split_token(&s, sep);
+
+    char *s = trim_space_sep(fargs[0], sep);
+    char *first = split_token(&s, sep);
     if (first)
     {
         safe_str(first, buff, bufc);
@@ -1797,20 +1787,19 @@ FUNCTION(fun_first)
 
 FUNCTION(fun_rest)
 {
-    char *s, *first, sep;
-
     // If we are passed an empty arglist return a null string.
     //
     if (nfargs == 0)
     {
         return;
     }
+    char sep;
     varargs_preamble(2);
-    s = trim_space_sep(fargs[0], sep);  /*
-                         * leading spaces ...
-                         */
-    first = split_token(&s, sep);
-    if (s) {
+
+    char *s = trim_space_sep(fargs[0], sep);  // leading spaces ...
+    char *first = split_token(&s, sep);
+    if (s)
+    {
         safe_str(s, buff, bufc);
     }
 }
@@ -1967,7 +1956,7 @@ FUNCTION(fun_next)
     if (Has_siblings(it))
     {
         dbref loc = where_is(it);
-        BOOL ex_here = Good_obj(loc) ? Examinable(executor, loc) : 0;
+        BOOL ex_here = Good_obj(loc) ? Examinable(executor, loc) : FALSE;
         if (  ex_here
            || loc == executor
            || loc == where_is(executor))
@@ -2036,7 +2025,7 @@ FUNCTION(fun_loc)
 
 /*
  * ---------------------------------------------------------------------------
- * * fun_where: Returns the "true" location of something
+ * * fun_where: Returns the "TRUE" location of something
  */
 
 FUNCTION(fun_where)
@@ -2194,7 +2183,7 @@ FUNCTION(fun_controls)
         safe_str(" (ARG2)", buff, bufc);
         return;
     }
-    safe_ltoa(Controls(x, y), buff, bufc);
+    safe_bool(Controls(x,y), buff, bufc);
 }
 
 /*
@@ -2296,7 +2285,7 @@ FUNCTION(fun_strmatch)
     // Check if we match the whole string.  If so, return 1.
     //
     BOOL cc = quick_wild(fargs[1], fargs[0]);
-    safe_chr(cc ? '1' : '0', buff, bufc);
+    safe_bool(cc, buff, bufc);
 }
 
 /*
@@ -2573,7 +2562,7 @@ void internalPlayerFind
             //
             nptr++;
         }
-        thing = lookup_player(player, nptr, 1);
+        thing = lookup_player(player, nptr, TRUE);
         if (  (thing == NOTHING)
            || (!isPlayer(thing) && bVerifyPlayer))
         {
@@ -2600,166 +2589,148 @@ FUNCTION(fun_pfind)
 
 FUNCTION(fun_gt)
 {
-    int ch = '0';
+    BOOL bResult = FALSE;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        if (Tiny_atol(fargs[0]) > Tiny_atol(fargs[1]))
-        {
-            ch = '1';
-        }
+        bResult = (Tiny_atol(fargs[0]) > Tiny_atol(fargs[1]));
     }
-    else if (Tiny_atof(fargs[0]) > Tiny_atof(fargs[1]))
+    else
     {
-        ch = '1';
+        bResult = (Tiny_atof(fargs[0]) > Tiny_atof(fargs[1]));
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(bResult, buff, bufc);
 }
 
 FUNCTION(fun_gte)
 {
-    int ch = '0';
+    BOOL bResult = FALSE;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        if (Tiny_atol(fargs[0]) >= Tiny_atol(fargs[1]))
-        {
-            ch = '1';
-        }
+        bResult = (Tiny_atol(fargs[0]) >= Tiny_atol(fargs[1]));
     }
-    else if (Tiny_atof(fargs[0]) >= Tiny_atof(fargs[1]))
+    else
     {
-        ch = '1';
+        bResult = (Tiny_atof(fargs[0]) >= Tiny_atof(fargs[1]));
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(bResult, buff, bufc);
 }
 
 FUNCTION(fun_lt)
 {
-    int ch = '0';
+    BOOL bResult = FALSE;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        if (Tiny_atol(fargs[0]) < Tiny_atol(fargs[1]))
-        {
-            ch = '1';
-        }
+        bResult = (Tiny_atol(fargs[0]) < Tiny_atol(fargs[1]));
     }
-    else if (Tiny_atof(fargs[0]) < Tiny_atof(fargs[1]))
+    else
     {
-        ch = '1';
+        bResult = (Tiny_atof(fargs[0]) < Tiny_atof(fargs[1]));
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(bResult, buff, bufc);
 }
 
 FUNCTION(fun_lte)
 {
-    int ch = '0';
+    BOOL bResult = FALSE;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        if (Tiny_atol(fargs[0]) <= Tiny_atol(fargs[1]))
-        {
-            ch = '1';
-        }
+        bResult = (Tiny_atol(fargs[0]) <= Tiny_atol(fargs[1]));
     }
-    else if (Tiny_atof(fargs[0]) <= Tiny_atof(fargs[1]))
+    else
     {
-        ch = '1';
+        bResult = (Tiny_atof(fargs[0]) <= Tiny_atof(fargs[1]));
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(bResult, buff, bufc);
 }
 
 FUNCTION(fun_eq)
 {
-    int ch = '0';
+    BOOL bResult = FALSE;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        if (Tiny_atol(fargs[0]) == Tiny_atol(fargs[1]))
-        {
-            ch = '1';
-        }
+        bResult = (Tiny_atol(fargs[0]) == Tiny_atol(fargs[1]));
     }
-    else if (  strcmp(fargs[0], fargs[1]) == 0
-            || Tiny_atof(fargs[0]) == Tiny_atof(fargs[1]))
+    else 
     {
-        ch = '1';
+        bResult = (  strcmp(fargs[0], fargs[1]) == 0
+                  || Tiny_atof(fargs[0]) == Tiny_atof(fargs[1]));
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(bResult, buff, bufc);
 }
 
 FUNCTION(fun_neq)
 {
-    int ch = '0';
+    BOOL bResult = FALSE;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        if (Tiny_atol(fargs[0]) != Tiny_atol(fargs[1]))
-        {
-            ch = '1';
-        }
+        bResult = (Tiny_atol(fargs[0]) != Tiny_atol(fargs[1]));
     }
-    else if (  strcmp(fargs[0], fargs[1]) != 0
-            && Tiny_atof(fargs[0]) != Tiny_atof(fargs[1]))
+    else 
     {
-        ch = '1';
+        bResult = (  strcmp(fargs[0], fargs[1]) != 0
+                  && Tiny_atof(fargs[0]) != Tiny_atof(fargs[1]));
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(bResult, buff, bufc);
 }
 
 FUNCTION(fun_and)
 {
-    int val = TRUE;
+    BOOL val = TRUE;
     for (int i = 0; i < nfargs; i++)
     {
         val = val && Tiny_atol(fargs[i]);
     }
-    safe_chr(val ? '1' : '0', buff, bufc);
+    safe_bool(val, buff, bufc);
 }
 
 FUNCTION(fun_or)
 {
-    int val = FALSE;
+    BOOL val = FALSE;
     for (int i = 0; i < nfargs; i++)
     {
         val = val || Tiny_atol(fargs[i]);
     }
-    safe_chr(val ? '1' : '0', buff, bufc);
+    safe_bool(val, buff, bufc);
 }
 
 FUNCTION(fun_xor)
 {
-    int val = FALSE;
+    BOOL val = FALSE;
     for (int i = 0; i < nfargs; i++)
     {
         int tval = Tiny_atol(fargs[i]);
         val = (val && !tval) || (!val && tval);
     }
-    safe_chr(val ? '1' : '0', buff, bufc);
+    safe_bool(val, buff, bufc);
 }
 
 FUNCTION(fun_not)
 {
-    safe_ltoa(!xlate(fargs[0]), buff, bufc);
+    safe_bool(!xlate(fargs[0]), buff, bufc);
 }
 
 FUNCTION(fun_t)
@@ -2771,7 +2742,7 @@ FUNCTION(fun_t)
     }
     else
     {
-        safe_ltoa(!!xlate(fargs[0]), buff, bufc);
+        safe_bool(xlate(fargs[0]), buff, bufc);
     }
 }
 static const char *bigones[] =
@@ -4100,7 +4071,7 @@ FUNCTION(fun_comp)
     }
     else
     {
-        safe_chr((x == 0) ? '0' : '1', buff, bufc);
+        safe_bool((x == 0), buff, bufc);
     }
 }
 
@@ -4145,15 +4116,12 @@ FUNCTION(fun_cansee)
     // Do it.
     //
     int Realm_Do = DoThingToThingVisibility(looker, lookee, mode);
-    int ch = '0';
+    BOOL bResult = FALSE;
     if ((Realm_Do & REALM_DO_MASK) != REALM_DO_HIDDEN_FROM_YOU)
     {
-        if (!Dark(lookee))
-        {
-            ch = '1';
-        }
+        bResult = !Dark(lookee);
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(bResult, buff, bufc);
 }
 #endif
 
@@ -4443,10 +4411,10 @@ FUNCTION(fun_lpos)
 
 static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, char sep, int flag)
 {
-    int ct, overrun;
+    int ct;
     char *sptr, *iptr, *eptr;
     int slen = 0, ilen = 0, elen = 0;
-
+    BOOL overrun;
     char nullb;
 
     // If passed a null string return an empty string, except that we
@@ -4492,7 +4460,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         // Break off 'before' portion.
         //
         sptr = eptr = trim_space_sep_LEN(str, nStr, sep, &elen);
-        overrun = 1;
+        overrun = TRUE;
         for (  ct = el;
                ct > 2 && eptr;
                eptr = next_token_LEN(eptr, &elen, sep), ct--)
@@ -4505,7 +4473,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
             // doesn't represent the 'target' word, but the
             // the last token in the 'before' portion.
             //
-            overrun = 0;
+            overrun = FALSE;
             iptr = split_token_LEN(&eptr, &elen, sep, &ilen);
             slen = (iptr - sptr) + ilen;
         }
@@ -4631,7 +4599,7 @@ FUNCTION(fun_remove)
 {
     char *s, *sp, *word;
     char sep;
-    int first, found;
+    BOOL first, found;
 
     varargs_preamble(3);
     if (strchr(fargs[1], sep))
@@ -4646,17 +4614,21 @@ FUNCTION(fun_remove)
     // one that matches the target word.
     //
     sp = s;
-    found = 0;
-    first = 1;
-    while (s) {
+    found = FALSE;
+    first = TRUE;
+    while (s)
+    {
         sp = split_token(&s, sep);
-        if (found || strcmp(sp, word)) {
+        if (found || strcmp(sp, word))
+        {
             if (!first)
                 safe_chr(sep, buff, bufc);
             safe_str(sp, buff, bufc);
-            first = 0;
-        } else {
-            found = 1;
+            first = FALSE;
+        }
+        else
+        {
+            found = TRUE;
         }
     }
 }
@@ -4875,7 +4847,7 @@ static BOOL atr_has_flag
         {
             if (string_prefix(pEntry->pName, flagname))
             {
-                return aflags & (pEntry->iMask);
+                return (aflags & (pEntry->iMask));
             }
             pEntry++;
         }
@@ -4901,7 +4873,7 @@ FUNCTION(fun_hasflag)
             dbref aowner;
             atr_pget_info(it, atr, &aowner, &aflags);
             BOOL cc = atr_has_flag(executor, it, ap, aowner, aflags, fargs[1]);
-            safe_chr(cc ? '1' : '0', buff, bufc);
+            safe_bool(cc, buff, bufc);
         }
     }
     else
@@ -4916,7 +4888,7 @@ FUNCTION(fun_hasflag)
                 || it == enactor)
         {
             BOOL cc = has_flag(executor, it, fargs[1]);
-            safe_chr(cc ? '1' : '0', buff, bufc);
+            safe_bool(cc, buff, bufc);
         }
         else
         {
@@ -4937,12 +4909,7 @@ FUNCTION(fun_haspower)
        || Examinable(executor, it)
        || it == enactor)
     {
-        int ch = '0';
-        if (has_power(executor, it, fargs[1]))
-        {
-            ch = '1';
-        }
-        safe_chr(ch, buff, bufc);
+        safe_bool(has_power(executor, it, fargs[1]), buff, bufc);
     }
     else
     {
@@ -4990,37 +4957,37 @@ FUNCTION(fun_lock)
 {
     dbref it, aowner;
     int aflags;
-    char *tbuf;
     ATTR *attr;
     struct boolexp *pBoolExp;
 
-    /*
-     * Parse the argument into obj + lock
-     */
-
+    // Parse the argument into obj + lock
+    //
     if (!get_obj_and_lock(executor, fargs[0], &it, &attr, buff, bufc))
+    {
         return;
+    }
 
-    /*
-     * Get the attribute and decode it if we can read it
-     */
-
-    tbuf = atr_get(it, attr->number, &aowner, &aflags);
-    if (bCanReadAttr(executor, it, attr, FALSE)) {
-        pBoolExp = parse_boolexp(executor, tbuf, 1);
+    // Get the attribute and decode it if we can read it
+    //
+    char *tbuf = atr_get(it, attr->number, &aowner, &aflags);
+    if (bCanReadAttr(executor, it, attr, FALSE))
+    {
+        pBoolExp = parse_boolexp(executor, tbuf, TRUE);
         free_lbuf(tbuf);
         tbuf = unparse_boolexp_function(executor, pBoolExp);
         free_boolexp(pBoolExp);
         safe_str(tbuf, buff, bufc);
-    } else
+    }
+    else
+    {
         free_lbuf(tbuf);
+    }
 }
 
 FUNCTION(fun_elock)
 {
-    dbref it, victim, aowner;
+    dbref it, aowner;
     int aflags;
-    char *tbuf;
     ATTR *attr;
     struct boolexp *pBoolExp;
 
@@ -5033,7 +5000,7 @@ FUNCTION(fun_elock)
 
     // Get the victim and ensure we can do it.
     //
-    victim = match_thing_quiet(executor, fargs[1]);
+    dbref victim = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(victim))
     {
         safe_match_result(victim, buff, bufc);
@@ -5045,12 +5012,12 @@ FUNCTION(fun_elock)
     }
     else
     {
-        tbuf = atr_get(it, attr->number, &aowner, &aflags);
+        char *tbuf = atr_get(it, attr->number, &aowner, &aflags);
         if (  attr->number == A_LOCK
            || bCanReadAttr(executor, it, attr, FALSE))
         {
-            pBoolExp = parse_boolexp(executor, tbuf, 1);
-            safe_ltoa(eval_boolexp(victim, it, it, pBoolExp), buff, bufc);
+            pBoolExp = parse_boolexp(executor, tbuf, TRUE);
+            safe_bool(eval_boolexp(victim, it, it, pBoolExp), buff, bufc);
             free_boolexp(pBoolExp);
         }
         else
@@ -5061,8 +5028,7 @@ FUNCTION(fun_elock)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
+/* ---------------------------------------------------------------------------
  * * fun_lwho: Return list of connected users.
  */
 
@@ -5080,37 +5046,30 @@ FUNCTION(fun_lports)
     make_port_ulist(executor, buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_nearby: Return whether or not obj1 is near obj2.
+/* ---------------------------------------------------------------------------
+ * fun_nearby: Return whether or not obj1 is near obj2.
  */
 
 FUNCTION(fun_nearby)
 {
-    dbref obj1, obj2;
-    int ch = '0';
-
-    obj1 = match_thing_quiet(executor, fargs[0]);
+    dbref obj1 = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(obj1))
     {
         safe_match_result(obj1, buff, bufc);
         safe_str(" (ARG1)", buff, bufc);
         return;
     }
-    obj2 = match_thing_quiet(executor, fargs[1]);
+    dbref obj2 = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(obj2))
     {
         safe_match_result(obj2, buff, bufc);
         safe_str(" (ARG2)", buff, bufc);
         return;
     }
-    if (  (  nearby_or_control(executor, obj1)
-          || nearby_or_control(executor, obj2))
-       && nearby(obj1, obj2))
-    {
-        ch = '1';
-    }
-    safe_chr(ch, buff, bufc);
+    BOOL bResult = (  (  nearby_or_control(executor, obj1)
+                      || nearby_or_control(executor, obj2))
+                      && nearby(obj1, obj2));
+    safe_bool(bResult, buff, bufc);
 }
 
 /*
@@ -5392,7 +5351,7 @@ void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
     //
     bFirst = TRUE;
     olist_push();
-    if (parse_attrib_wild(executor, fargs[0], &thing, bCheckParent, 0, 1))
+    if (parse_attrib_wild(executor, fargs[0], &thing, bCheckParent, FALSE, TRUE))
     {
         for (ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
@@ -5437,7 +5396,7 @@ FUNCTION(fun_attrcnt)
     // Mechanism from lattr.
     //
     olist_push();
-    if (parse_attrib_wild(executor, fargs[0], &thing, 0, 0, 1))
+    if (parse_attrib_wild(executor, fargs[0], &thing, FALSE, FALSE, TRUE))
     {
         for (ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
@@ -5770,7 +5729,7 @@ FUNCTION(fun_stats)
     }
     else
     {
-        who = lookup_player(executor, fargs[0], 1);
+        who = lookup_player(executor, fargs[0], TRUE);
         if (who == NOTHING)
         {
             safe_str("#-1 NOT FOUND", buff, bufc);
@@ -6745,7 +6704,7 @@ FUNCTION(fun_idle)
         {
             pTargetName++;
         }
-        dbref target = lookup_player(executor, pTargetName, 1);
+        dbref target = lookup_player(executor, pTargetName, TRUE);
         if (  Good_obj(target)
            && (  !Hidden(target)
               || See_Hidden(executor)))
@@ -6789,7 +6748,7 @@ FUNCTION(fun_conn)
         {
             pTargetName++;
         }
-        dbref target = lookup_player(executor, pTargetName, 1);
+        dbref target = lookup_player(executor, pTargetName, TRUE);
         if (  Good_obj(target)
            && (  !Hidden(target)
               || See_Hidden(executor)))
@@ -7493,26 +7452,25 @@ FUNCTION(fun_r)
 
 FUNCTION(fun_isnum)
 {
-    safe_chr((is_real(fargs[0]) ? '1' : '0'), buff, bufc);
+    safe_bool(is_real(fargs[0]), buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
- * * israt: is the argument an rational?
+ * israt: is the argument an rational?
  */
 
 FUNCTION(fun_israt)
 {
-    safe_chr((is_rational(fargs[0]) ? '1' : '0'), buff, bufc);
+    safe_bool(is_rational(fargs[0]), buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * isint: is the argument an integer?
+/* ---------------------------------------------------------------------------
+ * isint: is the argument an integer?
  */
 
 FUNCTION(fun_isint)
 {
-    safe_chr((is_integer(fargs[0], NULL) ? '1' : '0'), buff, bufc);
+    safe_bool(is_integer(fargs[0], NULL), buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
@@ -7521,20 +7479,16 @@ FUNCTION(fun_isint)
 
 FUNCTION(fun_isdbref)
 {
-    char *p;
     dbref dbitem;
-    int ch = '0';
+    BOOL bResult = FALSE;
 
-    p = fargs[0];
+    char *p = fargs[0];
     if (*p++ == NUMBER_TOKEN)
     {
         dbitem = parse_dbref(p);
-        if (Good_obj(dbitem))
-        {
-            ch = '1';
-        }
+        bResult = Good_obj(dbitem);
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(bResult, buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
@@ -8223,7 +8177,7 @@ FUNCTION(fun_isign)
     }
     else
     {
-        safe_chr((num > 0) ? '1' : '0', buff, bufc);
+        safe_bool(num > 0, buff, bufc);
     }
 }
 
@@ -8469,7 +8423,7 @@ FUNCTION(fun_cmds)
     }
     else
     {
-        dbref target = lookup_player(executor, fargs[0], 1);
+        dbref target = lookup_player(executor, fargs[0], TRUE);
         if (  Good_obj(target)
            && Connected(target)
            && (  Wizard_Who(executor)
@@ -8497,7 +8451,7 @@ FUNCTION(fun_startsecs)
 //
 FUNCTION(fun_conntotal)
 {
-    dbref target = lookup_player(executor, fargs[0], 1);
+    dbref target = lookup_player(executor, fargs[0], TRUE);
     if (Good_obj(target))
     {
         long TotalTime = fetch_totaltime(target);
@@ -8518,7 +8472,7 @@ FUNCTION(fun_conntotal)
 //
 FUNCTION(fun_connmax)
 {
-    dbref target = lookup_player(executor, fargs[0], 1);
+    dbref target = lookup_player(executor, fargs[0], TRUE);
     if (Good_obj(target))
     {
         long Longest = fetch_longestconnect(target);
@@ -8540,7 +8494,7 @@ FUNCTION(fun_connmax)
 //
 FUNCTION(fun_connlast)
 {
-    dbref target = lookup_player(executor, fargs[0], 1);
+    dbref target = lookup_player(executor, fargs[0], TRUE);
     if (Good_obj(target))
     {
         safe_ltoa(fetch_lastconnect(target), buff, bufc);
@@ -8556,7 +8510,7 @@ FUNCTION(fun_connlast)
 //
 FUNCTION(fun_connnum)
 {
-    dbref target = lookup_player(executor, fargs[0], 1);
+    dbref target = lookup_player(executor, fargs[0], TRUE);
     if (Good_obj(target))
     {
         long NumConnections = fetch_numconnections(target);
@@ -8577,7 +8531,7 @@ FUNCTION(fun_connnum)
 //
 FUNCTION(fun_connleft)
 {
-    dbref target = lookup_player(executor, fargs[0], 1);
+    dbref target = lookup_player(executor, fargs[0], TRUE);
     if (Good_obj(target))
     {
         CLinearTimeAbsolute cl = fetch_logouttime(target);
@@ -8600,7 +8554,7 @@ FUNCTION(fun_lattrcmds)
     //
     olist_push();
     dbref thing;
-    if (parse_attrib_wild(executor, fargs[0], &thing, 0, 0, 1))
+    if (parse_attrib_wild(executor, fargs[0], &thing, FALSE, FALSE, TRUE))
     {
         BOOL isFirst = TRUE;
         char *buf = alloc_lbuf("fun_lattrcmds");
@@ -8662,7 +8616,7 @@ FUNCTION(fun_lcmds)
     //
     olist_push();
     dbref thing;
-    if (parse_attrib_wild(executor, fargs[0], &thing, 0, 0, 1))
+    if (parse_attrib_wild(executor, fargs[0], &thing, FALSE, FALSE, TRUE))
     {
         BOOL isFirst = TRUE;
         char *buf = alloc_lbuf("fun_lattrcmds");

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.8 2002-07-09 08:22:49 jake Exp $
+// $Id: stringutil.cpp,v 1.9 2002-07-13 07:23:02 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1279,7 +1279,7 @@ const char MU_EscapeNoConvert[256] =
 // Convert raw character sequences into MUX substitutions (type = 1)
 // or strips them (type = 0).
 //
-char *translate_string(const char *szString, int bConvert)
+char *translate_string(const char *szString, BOOL bConvert)
 {
     static char szTranslatedString[LBUF_SIZE];
     char *pTranslatedString = szTranslatedString;
@@ -1776,7 +1776,7 @@ BOOL minmatch(char *str, char *target, int min)
     {
         return TRUE;
     }
-    return ((min <= 0) ? 1 : 0);
+    return (min <= 0);
 }
 
 // --------------------------------------------------------------------------
@@ -2338,7 +2338,7 @@ LastSpaces:
         str++;
     }
 
-    return (*str ? FALSE : TRUE);
+    return (!*str);
 }
 
 #define ATOF_LIMIT 100
@@ -2620,7 +2620,7 @@ BOOL is_integer(char *str, int *pDigits)
         str++;
     }
 
-    return (*str ? FALSE : TRUE);
+    return (!*str);
 }
 
 BOOL is_rational(char *str)
@@ -2696,7 +2696,7 @@ BOOL is_rational(char *str)
 
     // There must be nothing else after the trailing spaces.
     //
-    return (*str ? FALSE : TRUE);
+    return (!*str);
 }
 
 BOOL is_real(char *str)
@@ -2856,19 +2856,19 @@ char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
 
 void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc)
 {
-    p->bFirst = 1;
+    p->bFirst = TRUE;
     p->buff = arg_buff;
     p->bufc = arg_bufc;
     p->nBufferAvailable = LBUF_SIZE - (*arg_bufc - arg_buff) - 1;
 }
 
-int DbrefToBuffer_Add(DTB *pContext, int i)
+BOOL DbrefToBuffer_Add(DTB *pContext, int i)
 {
     char smbuf[SBUF_SIZE];
     char *p = smbuf;
     if (pContext->bFirst)
     {
-        pContext->bFirst = 0;
+        pContext->bFirst = FALSE;
     }
     else
     {
@@ -2881,12 +2881,12 @@ int DbrefToBuffer_Add(DTB *pContext, int i)
     {
         // Out of room.
         //
-        return 0;
+        return FALSE;
     }
     memcpy(*(pContext->bufc), smbuf, nLen);
     *(pContext->bufc) += nLen;
     pContext->nBufferAvailable -= nLen;
-    return 1;
+    return TRUE;
 }
 
 void DbrefToBuffer_Final(DTB *pContext)
@@ -2896,19 +2896,19 @@ void DbrefToBuffer_Final(DTB *pContext)
 
 void IntegerToBuffer_Init(ITB *p, char *arg_buff, char **arg_bufc)
 {
-    p->bFirst = 1;
+    p->bFirst = TRUE;
     p->buff = arg_buff;
     p->bufc = arg_bufc;
     p->nBufferAvailable = LBUF_SIZE - (*arg_bufc - arg_buff) - 1;
 }
 
-int IntegerToBuffer_Add(ITB *pContext, int i)
+BOOL IntegerToBuffer_Add(ITB *pContext, int i)
 {
     char smbuf[SBUF_SIZE];
     char *p = smbuf;
     if (pContext->bFirst)
     {
-        pContext->bFirst = 0;
+        pContext->bFirst = FALSE;
     }
     else
     {
@@ -2920,12 +2920,12 @@ int IntegerToBuffer_Add(ITB *pContext, int i)
     {
         // Out of room.
         //
-        return 0;
+        return FALSE;
     }
     memcpy(*(pContext->bufc), smbuf, nLen);
     *(pContext->bufc) += nLen;
     pContext->nBufferAvailable -= nLen;
-    return 1;
+    return TRUE;
 }
 
 void IntegerToBuffer_Final(ITB *pContext)

@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.7 2002-07-09 08:22:49 jake Exp $
+// $Id: interface.h,v 1.8 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -97,9 +97,9 @@ struct descriptor_data
   char output_buffer[SIZEOF_OVERLAPPED_BUFFERS];        // buffer for writing
   OVERLAPPED InboundOverlapped;   // for asynchronous reading
   OVERLAPPED OutboundOverlapped;  // for asynchronous writing
-  BOOL bWritePending;             // true if in process of writing
-  BOOL bConnectionDropped;        // true if we cannot send to player
-  BOOL bConnectionShutdown;       // true if connection has been shutdown
+  BOOL bWritePending;             // TRUE if in process of writing
+  BOOL bConnectionDropped;        // TRUE if we cannot send to player
+  BOOL bConnectionShutdown;       // TRUE if connection has been shutdown
   BOOL bCallProcessOutputLater;   // Does the socket need priming for output.
 #endif // WIN32
 

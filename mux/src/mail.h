@@ -1,6 +1,6 @@
 // mail.h
 //
-// $Id: mail.h,v 1.3 2002-06-27 06:38:31 jake Exp $
+// $Id: mail.h,v 1.4 2002-07-13 07:23:01 jake Exp $
 //
 
 #ifndef _MAIL_H
@@ -61,7 +61,8 @@
 
 typedef unsigned int mail_flag;
 
-struct mail {
+struct mail
+{
   struct mail *next;
   struct mail *prev;
   dbref to;
@@ -73,14 +74,16 @@ struct mail {
   int read;
 };
 
-struct mail_selector {
+struct mail_selector
+{
     int low, high;
     mail_flag flags;
     dbref player;
     int days, day_comp;
 };
 
-struct muser {
+struct muser
+{
     dbref who;
     char *fwd;
     char *vacation;
@@ -96,7 +99,7 @@ struct mail_entry
 };
 
 extern void set_player_folder(dbref, int);
-extern void do_malias_send(dbref, char *, char *, char *, int, mail_flag, int);
+extern void do_malias_send(dbref, char *, char *, char *, int, mail_flag, BOOL);
 extern struct malias *get_malias(dbref, char *);
 extern void load_malias(FILE *);
 extern void save_malias(FILE *);
@@ -119,6 +122,6 @@ extern void do_malias_remove(dbref, char *, char *);
 extern void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount);
 extern char *MessageFetch(int number);
 extern void check_mail_expiration(void);
-extern void check_mail(dbref player, int folder, int silent);
+extern void check_mail(dbref player, int folder, BOOL silent);
 
 #endif

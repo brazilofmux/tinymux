@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.9 2002-07-09 08:22:49 jake Exp $
+// $Id: mguests.cpp,v 1.10 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -56,7 +56,7 @@ void CGuests::StartUp(void)
     for (i = 0; i < mudconf.number_guests; i++)
     {
         sprintf(name, "%s%d", mudconf.guest_prefix, i + 1);
-        dbref player = lookup_player(GOD, name, 0);
+        dbref player = lookup_player(GOD, name, FALSE);
         if (  player != NOTHING
            && Guest(player))
         {
@@ -139,7 +139,7 @@ char *CGuests::Create(DESC *d)
             // Lets try to grab our own name, if we don't have it.
             //
             sprintf(name, "%s%d", mudconf.guest_prefix, nGuests);
-            dbref player = lookup_player(GOD, name, 0);
+            dbref player = lookup_player(GOD, name, FALSE);
             if (player == NOTHING)
             {
                 delete_player_name(Guests[i], Name(Guests[i]));
@@ -268,7 +268,7 @@ dbref CGuests::MakeGuestChar(void)
     for (i = 0; i < mudconf.number_guests;i++)
     {
         sprintf(name, "%s%d", mudconf.guest_prefix, i + 1);
-        player = lookup_player(GOD, name, 0);
+        player = lookup_player(GOD, name, FALSE);
         if (player == NOTHING)
         {
             break;
@@ -277,7 +277,7 @@ dbref CGuests::MakeGuestChar(void)
 
     // Make the player.
     //
-    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, 0, 1);
+    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, FALSE, TRUE);
 
     // No Player Created?? Return error.
     //
@@ -325,7 +325,7 @@ void CGuests::DestroyGuestChar(dbref guest)
     if (  !Wizard(mudconf.guest_nuker)
        || !Good_obj(mudconf.guest_nuker))
     {
-        mudconf.guest_nuker = 1;
+        mudconf.guest_nuker = GOD;
     }
 
     // Destroy it!

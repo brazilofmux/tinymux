@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.8 2002-07-09 05:57:33 jake Exp $
+// $Id: boolexp.cpp,v 1.9 2002-07-13 07:23:01 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -12,7 +12,7 @@
 
 #ifndef STANDALONE
 
-static BOOL parsing_internal = 0;
+static BOOL parsing_internal = FALSE;
 
 /* ---------------------------------------------------------------------------
  * check_attr: indicate if attribute ATTR on player passes key when checked by
@@ -51,26 +51,26 @@ static BOOL check_attr(dbref player, dbref lockobj, ATTR *attr, char *key)
 
 BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 {
-    dbref aowner, obj, source;
-    int aflags, c;
-    char *key, *buff, *buff2, *bp, *str;
-    ATTR *a;
-    int preserve_len[MAX_GLOBAL_REGS];
-    char *preserve[MAX_GLOBAL_REGS];
-    BOOL bCheck;
-
     if (b == TRUE_BOOLEXP)
     {
         return TRUE;
     }
 
+    dbref aowner, obj, source;
+    int aflags;
+    char *key, *buff, *buff2, *bp, *str;
+    ATTR *a;
+    int preserve_len[MAX_GLOBAL_REGS];
+    char *preserve[MAX_GLOBAL_REGS];
+    BOOL bCheck, c;
+
     switch (b->type)
     {
     case BOOLEXP_AND:
-        return (eval_boolexp(player, thing, from, b->sub1) && eval_boolexp(player, thing, from, b->sub2));
+        return eval_boolexp(player, thing, from, b->sub1) && eval_boolexp(player, thing, from, b->sub2);
 
     case BOOLEXP_OR:
-        return (eval_boolexp(player, thing, from, b->sub1) || eval_boolexp(player, thing, from, b->sub2));
+        return eval_boolexp(player, thing, from, b->sub1) || eval_boolexp(player, thing, from, b->sub2);
 
     case BOOLEXP_NOT:
         return !eval_boolexp(player, thing, from, b->sub1);
@@ -213,7 +213,7 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         //
         if (b->sub1->type == BOOLEXP_CONST)
         {
-            return (member(b->sub1->thing, Contents(player)));
+            return member(b->sub1->thing, Contents(player));
         }
 
         // Nope, do an attribute check
@@ -249,7 +249,7 @@ BOOL eval_boolexp_atr(dbref player, dbref thing, dbref from, char *key)
 {
     BOOL ret_value;
 
-    BOOLEXP *b = parse_boolexp(player, key, 1);
+    BOOLEXP *b = parse_boolexp(player, key, TRUE);
     if (b == NULL)
     {
         ret_value = TRUE;
@@ -362,7 +362,8 @@ static BOOLEXP *parse_boolexp_L(void)
     buf = NULL;
     skip_whitespace();
 
-    switch (*parsebuf) {
+    switch (*parsebuf)
+    {
     case '(':
         parsebuf++;
         b = parse_boolexp_E();
@@ -616,15 +617,18 @@ static BOOLEXP *parse_boolexp_T(void)
 {
     BOOLEXP *b, *b2;
 
-    if ((b = parse_boolexp_F()) != TRUE_BOOLEXP) {
+    if ((b = parse_boolexp_F()) != TRUE_BOOLEXP)
+    {
         skip_whitespace();
-        if (*parsebuf == AND_TOKEN) {
+        if (*parsebuf == AND_TOKEN)
+        {
             parsebuf++;
 
             b2 = alloc_bool("parse_boolexp_T");
             b2->type = BOOLEXP_AND;
             b2->sub1 = b;
-            if ((b2->sub2 = parse_boolexp_T()) == TRUE_BOOLEXP) {
+            if ((b2->sub2 = parse_boolexp_T()) == TRUE_BOOLEXP)
+            {
                 free_boolexp(b2);
                 return TRUE_BOOLEXP;
             }
@@ -640,15 +644,18 @@ static BOOLEXP *parse_boolexp_E(void)
 {
     BOOLEXP *b, *b2;
 
-    if ((b = parse_boolexp_T()) != TRUE_BOOLEXP) {
+    if ((b = parse_boolexp_T()) != TRUE_BOOLEXP)
+    {
         skip_whitespace();
-        if (*parsebuf == OR_TOKEN) {
+        if (*parsebuf == OR_TOKEN)
+        {
             parsebuf++;
 
             b2 = alloc_bool("parse_boolexp_E");
             b2->type = BOOLEXP_OR;
             b2->sub1 = b;
-            if ((b2->sub2 = parse_boolexp_E()) == TRUE_BOOLEXP) {
+            if ((b2->sub2 = parse_boolexp_E()) == TRUE_BOOLEXP)
+            {
                 free_boolexp(b2);
                 return TRUE_BOOLEXP;
             }
@@ -664,7 +671,9 @@ BOOLEXP *parse_boolexp(dbref player, const char *buf, BOOL internal)
     parsebuf = parsestore;
     parse_player = player;
     if ((buf == NULL) || (*buf == '\0'))
+    {
         return (TRUE_BOOLEXP);
+    }
 #ifndef STANDALONE
     parsing_internal = internal;
 #endif

@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.9 2002-07-09 22:31:08 jake Exp $
+// $Id: walkdb.cpp,v 1.10 2002-07-13 07:23:02 jake Exp $
 //
 
 #include "copyright.h"
@@ -99,7 +99,7 @@ void do_find(dbref executor, dbref caller, dbref enactor, int key, char *name)
            && Controls(executor, i)
            && (!*name || string_match(PureName(i), name)))
         {
-            buff = unparse_object(executor, i, 0);
+            buff = unparse_object(executor, i, FALSE);
             notify(executor, buff);
             free_lbuf(buff);
         }
@@ -207,7 +207,7 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int key, char *name)
                 mudstate.db_top, nNextFree));
             return;
         }
-        owner = lookup_player(executor, name, 1);
+        owner = lookup_player(executor, name, TRUE);
         if (owner == NOTHING)
         {
             notify(executor, "Not found.");
@@ -446,7 +446,7 @@ BOOL search_setup(dbref player, char *searchfor, SEARCH *parm)
     }
     else
     {
-        parm->s_rst_owner = lookup_player(player, pname, 1);
+        parm->s_rst_owner = lookup_player(player, pname, TRUE);
     }
 
     if (parm->s_rst_owner == NOTHING)
@@ -878,7 +878,6 @@ static void search_mark(dbref player, int key)
 
 void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
-    int flag, destitute;
     char *buff, *outbuf, *bp;
     dbref thing, from, to;
     SEARCH searchparm;
@@ -894,7 +893,8 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     }
     olist_push();
     search_perform(executor, caller, enactor, &searchparm);
-    destitute = 1;
+    BOOL destitute = TRUE;
+    BOOL flag;
 
     // If we are doing a @mark command, handle that here.
     //
@@ -917,7 +917,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     if (  searchparm.s_rst_type == TYPE_ROOM
        || searchparm.s_rst_type == NOTYPE)
     {
-        flag = 1;
+        flag = TRUE;
         for (thing = olist_first(); thing != NOTHING; thing = olist_next())
         {
             if (Typeof(thing) != TYPE_ROOM)
@@ -926,11 +926,11 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
             }
             if (flag)
             {
-                flag = 0;
-                destitute = 0;
+                flag = FALSE;
+                destitute = FALSE;
                 notify(executor, "\nROOMS:");
             }
-            buff = unparse_object(executor, thing, 0);
+            buff = unparse_object(executor, thing, FALSE);
             notify(executor, buff);
             free_lbuf(buff);
             rcount++;
@@ -942,7 +942,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     if (  searchparm.s_rst_type == TYPE_EXIT
        || searchparm.s_rst_type == NOTYPE)
     {
-        flag = 1;
+        flag = TRUE;
         for (thing = olist_first(); thing != NOTHING; thing = olist_next())
         {
             if (Typeof(thing) != TYPE_EXIT)
@@ -951,25 +951,25 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
             }
             if (flag)
             {
-                flag = 0;
-                destitute = 0;
+                flag = FALSE;
+                destitute = FALSE;
                 notify(executor, "\nEXITS:");
             }
             from = Exits(thing);
             to = Location(thing);
 
             bp = outbuf;
-            buff = unparse_object(executor, thing, 0);
+            buff = unparse_object(executor, thing, FALSE);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
             safe_str(" [from ", outbuf, &bp);
-            buff = unparse_object(executor, from, 0);
+            buff = unparse_object(executor, from, FALSE);
             safe_str(((from == NOTHING) ? "NOWHERE" : buff), outbuf, &bp);
             free_lbuf(buff);
 
             safe_str(" to ", outbuf, &bp);
-            buff = unparse_object(executor, to, 0);
+            buff = unparse_object(executor, to, FALSE);
             safe_str(((to == NOTHING) ? "NOWHERE" : buff), outbuf, &bp);
             free_lbuf(buff);
 
@@ -985,7 +985,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     if (  searchparm.s_rst_type == TYPE_THING
        || searchparm.s_rst_type == NOTYPE)
     {
-        flag = 1;
+        flag = TRUE;
         for (thing = olist_first(); thing != NOTHING; thing = olist_next())
         {
             if (Typeof(thing) != TYPE_THING)
@@ -994,17 +994,17 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
             }
             if (flag)
             {
-                flag = 0;
-                destitute = 0;
+                flag = FALSE;
+                destitute = FALSE;
                 notify(executor, "\nOBJECTS:");
             }
             bp = outbuf;
-            buff = unparse_object(executor, thing, 0);
+            buff = unparse_object(executor, thing, FALSE);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
             safe_str(" [owner: ", outbuf, &bp);
-            buff = unparse_object(executor, Owner(thing), 0);
+            buff = unparse_object(executor, Owner(thing), FALSE);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
@@ -1020,7 +1020,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     if (  searchparm.s_rst_type == TYPE_GARBAGE
        || searchparm.s_rst_type == NOTYPE)
     {
-        flag = 1;
+        flag = TRUE;
         for (thing = olist_first(); thing != NOTHING; thing = olist_next())
         {
             if (Typeof(thing) != TYPE_GARBAGE)
@@ -1029,17 +1029,17 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
             }
             if (flag)
             {
-                flag = 0;
-                destitute = 0;
+                flag = FALSE;
+                destitute = FALSE;
                 notify(executor, "\nGARBAGE:");
             }
             bp = outbuf;
-            buff = unparse_object(executor, thing, 0);
+            buff = unparse_object(executor, thing, FALSE);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
             safe_str(" [owner: ", outbuf, &bp);
-            buff = unparse_object(executor, Owner(thing), 0);
+            buff = unparse_object(executor, Owner(thing), FALSE);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
@@ -1055,7 +1055,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     if (  searchparm.s_rst_type == TYPE_PLAYER
        || searchparm.s_rst_type == NOTYPE)
     {
-        flag = 1;
+        flag = TRUE;
         for (thing = olist_first(); thing != NOTHING; thing = olist_next())
         {
             if (Typeof(thing) != TYPE_PLAYER)
@@ -1064,8 +1064,8 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
             }
             if (flag)
             {
-                flag = 0;
-                destitute = 0;
+                flag = FALSE;
+                destitute = FALSE;
                 notify(executor, "\nPLAYERS:");
             }
             bp = outbuf;
@@ -1075,7 +1075,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
             if (searchparm.s_wizard)
             {
                 safe_str(" [location: ", outbuf, &bp);
-                buff = unparse_object(executor, Location(thing), 0);
+                buff = unparse_object(executor, Location(thing), FALSE);
                 safe_str(buff, outbuf, &bp);
                 free_lbuf(buff);
                 safe_chr(']', outbuf, &bp);

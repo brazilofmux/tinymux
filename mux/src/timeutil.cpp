@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.4 2002-07-09 08:22:49 jake Exp $
+// $Id: timeutil.cpp,v 1.5 2002-07-13 07:23:02 jake Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1757,7 +1757,7 @@ static CLinearTimeDelta QueryLocalOffsetAt_Internal
     lta.SetSeconds(lt);
     ltdOffset = ltaLocal - lta;
 
-    *pisDST = ptm->tm_isdst > 0 ? TRUE: FALSE;
+    *pisDST = (ptm->tm_isdst > 0);
 
     // We now have a mapping from UTC lta to a (ltdOffset, *pisDST)
     // tuple which will will use to update the cache.

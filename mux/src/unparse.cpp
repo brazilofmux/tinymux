@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.2 2002-06-27 09:06:47 jake Exp $
+// $Id: unparse.cpp,v 1.3 2002-07-13 07:23:02 jake Exp $
 //
 
 #include "copyright.h"
@@ -120,7 +120,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
             // Examine output - informative. Name(#Num) or Name.
             //
-            buff = unparse_object(player, b->thing, 0);
+            buff = unparse_object(player, b->thing, FALSE);
             safe_str(buff, boolexp_buf, &buftop);
             free_lbuf(buff);
             break;

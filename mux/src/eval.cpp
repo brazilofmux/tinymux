@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.14 2002-07-09 21:24:45 jake Exp $
+// $Id: eval.cpp,v 1.15 2002-07-13 07:23:01 jake Exp $
 //
 
 // MUX 2.1
@@ -33,8 +33,7 @@
 // returned as NULL.
 //
 static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
-                               char *zstr, char *strFirewall
-                             )
+                               char *zstr, char *strFirewall)
 {
     if (  (mudconf.space_compress || (eval & EV_STRIP_TS))
        && !(eval & EV_NO_COMPRESS)
@@ -408,7 +407,7 @@ TryAgain:
                             NEXTCHAR
                         }
                     }
-                    first = 0;
+                    first = FALSE;
                 }
             }
             else
@@ -499,7 +498,7 @@ char *parse_to_lite(char **dstr, char delim1, char delim2, int *nLen, int *iWhic
 TryAgain:
         if (iCode == 0)
         {
-            // Mudane characters and not the delimiter we are looking for.
+            // Mundane characters and not the delimiter we are looking for.
             //
             do
             {
@@ -838,12 +837,13 @@ struct tcache_ent
     struct tcache_ent *next;
 } *tcache_head;
 
-int tcache_top, tcache_count;
+BOOL tcache_top;
+int  tcache_count;
 
 void tcache_init(void)
 {
     tcache_head = NULL;
-    tcache_top = 1;
+    tcache_top = TRUE;
     tcache_count = 0;
 }
 
@@ -851,7 +851,7 @@ BOOL tcache_empty(void)
 {
     if (tcache_top)
     {
-        tcache_top = 0;
+        tcache_top = FALSE;
         tcache_count = 0;
         return TRUE;
     }
@@ -860,16 +860,13 @@ BOOL tcache_empty(void)
 
 static void tcache_add(dbref player, char *orig, char *result)
 {
-    char *tp;
-    TCENT *xp;
-
     if (strcmp(orig, result))
     {
         tcache_count++;
         if (tcache_count <= mudconf.trace_limit)
         {
-            xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
-            tp = alloc_lbuf("tcache_add.lbuf");
+            TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
+            char *tp = alloc_lbuf("tcache_add.lbuf");
             StringCopy(tp, result);
             xp->player = player;
             xp->orig = orig;
@@ -890,11 +887,9 @@ static void tcache_add(dbref player, char *orig, char *result)
 
 static void tcache_finish(void)
 {
-    TCENT *xp;
-
     while (tcache_head != NULL)
     {
-        xp = tcache_head;
+        TCENT *xp = tcache_head;
         tcache_head = xp->next;
         notify(Owner(xp->player), tprintf("%s(#%d)} '%s' -> '%s'", Name(xp->player),
             xp->player, xp->orig, xp->result));
@@ -902,7 +897,7 @@ static void tcache_finish(void)
         free_lbuf(xp->result);
         free_sbuf(xp);
     }
-    tcache_top = 1;
+    tcache_top = TRUE;
     tcache_count = 0;
 }
 
@@ -1059,7 +1054,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     char *realbuff = NULL, *realbp = NULL;
     dbref aowner;
     int at_space, nfargs, gender, aflags, feval, i;
-    int ansi = 0;
+    BOOL ansi = FALSE;
     FUN *fp;
     UFUN *ufp;
 
@@ -1496,7 +1491,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         if (pColor)
                         {
                             pdstr++;
-                            ansi = 1;
+                            ansi = TRUE;
                             safe_str(pColor, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
@@ -1962,7 +1957,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     }
 
     // If we're eating spaces, and the last thing was a space, eat it up.
-    // Complicated by the fact that at_space is initially true. So check to
+    // Complicated by the fact that at_space is initially TRUE. So check to
     // see if we actually put something in the buffer, too.
     //
     if (  bSpaceIsSpecial

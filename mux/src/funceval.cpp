@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.28 2002-07-09 19:33:53 jake Exp $
+// $Id: funceval.cpp,v 1.29 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -225,12 +225,10 @@ FUNCTION(fun_remit)
 //
 FUNCTION(fun_create)
 {
-    dbref thing;
-    int cost;
-    char sep, *name;
+    char sep;
 
     varargs_preamble(3);
-    name = fargs[0];
+    char *name = fargs[0];
 
     if (!name || !*name)
     {
@@ -238,9 +236,16 @@ FUNCTION(fun_create)
         return;
     }
     if (nfargs >= 3 && *fargs[2])
+    {
         sep = *fargs[2];
+    }
     else
+    {
         sep = 't';
+    }
+
+    dbref thing;
+    int cost;
 
     switch (sep)
     {
@@ -335,16 +340,16 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
 
 FUNCTION(fun_set)
 {
+    if (check_command(executor, "@set", buff, bufc))
+    {
+        return;
+    }
+
     dbref thing, thing2, aowner;
     char *p, *buff2;
     BOOL clear;
     int atr, atr2, aflags, flagvalue;
     ATTR *attr, *attr2;
-
-    if (check_command(executor, "@set", buff, bufc))
-    {
-        return;
-    }
 
     // obj/attr form?
     //
@@ -397,12 +402,15 @@ FUNCTION(fun_set)
             // Just do it!
             //
             if (clear)
+            {
                 aflags &= ~flagvalue;
+            }
             else
+            {
                 aflags |= flagvalue;
+            }
             BOOL could_hear = Hearer(thing);
             atr_set_flags(thing, atr, aflags);
-
             return;
         }
     }
@@ -506,7 +514,7 @@ static unsigned int GenCode(char *pCode, const char *pCodeASCII)
     return pOut - pCode;
 }
 
-static char *crypt_code(char *code, char *text, int type)
+static char *crypt_code(char *code, char *text, BOOL type)
 {
     if (!text && !*text)
     {
@@ -573,12 +581,12 @@ static char *crypt_code(char *code, char *text, int type)
 //
 FUNCTION(fun_encrypt)
 {
-    safe_str(crypt_code(fargs[1], fargs[0], 1), buff, bufc);
+    safe_str(crypt_code(fargs[1], fargs[0], TRUE), buff, bufc);
 }
 
 FUNCTION(fun_decrypt)
 {
-    safe_str(crypt_code(fargs[1], fargs[0], 0), buff, bufc);
+    safe_str(crypt_code(fargs[1], fargs[0], FALSE), buff, bufc);
 }
 
 // Borrowed from DarkZone
@@ -592,10 +600,10 @@ void scan_zone
     char **bufc
 )
 {
-    dbref it;
+    dbref it = match_thing_quiet(player, szZone);
 
     if (  !mudconf.have_zones
-       || (  !Controls(player, it = match_thing_quiet(player, szZone))
+       || (  !Controls(player, it)
           && !WizRoy(player)))
     {
         safe_noperm(buff, bufc);
@@ -1120,22 +1128,23 @@ FUNCTION(fun_playmem)
 }
 
 // Code for andflags() and orflags() borrowed from PennMUSH 1.50
-// 0 for orflags, 1 for andflags
+// FALSE for orflags, TRUE for andflags
 //
-static BOOL handle_flaglists(dbref player, char *name, char *fstr, int type)
+static BOOL handle_flaglists(dbref player, char *name, char *fstr, BOOL type)
 {
+    dbref it = match_thing_quiet(player, name);
+    if (!Good_obj(it))
+    {
+        return FALSE;
+    }
+
     char *s;
     char flagletter[2];
     FLAGSET fset;
     FLAG p_type;
     BOOL negate = FALSE;
     BOOL temp = FALSE;
-    int ret = type;
-    dbref it = match_thing_quiet(player, name);
-    if (!Good_obj(it))
-    {
-        return FALSE;
-    }
+    BOOL ret = type;
 
     for (s = fstr; *s; s++)
     {
@@ -1163,12 +1172,16 @@ static BOOL handle_flaglists(dbref player, char *name, char *fstr, int type)
         {
             // Either we got a '!' that wasn't followed by a letter, or we
             // couldn't find that flag. For AND, since we've failed a check,
-            // we can return false. Otherwise we just go on.
+            // we can return FALSE. Otherwise we just go on.
             //
-            if (type == 1)
+            if (type)
+            {
                 return FALSE;
+            }
             else
+            {
                 continue;
+            }
         }
         else
         {
@@ -1196,22 +1209,22 @@ static BOOL handle_flaglists(dbref player, char *name, char *fstr, int type)
                 temp = FALSE;
             }
 
-            if (  type == 1
+            if (  type
                && (  (negate && temp)
                   || (!negate && !temp)))
             {
                 // Too bad there's no NXOR function. At this point we've
                 // either got a flag and we don't want it, or we don't have a
-                // flag and we want it. Since it's AND, we return false.
+                // flag and we want it. Since it's AND, we return FALSE.
                 //
                 return FALSE;
 
             }
-            else if (  type == 0
+            else if (  !type
                     && (  (!negate && temp)
                        || (negate && !temp)))
             {
-                // We've found something we want, in an OR. We OR a true with
+                // We've found something we want, in an OR. We OR a TRUE with
                 // the current value.
                 //
                 ret |= 1;
@@ -1226,12 +1239,12 @@ static BOOL handle_flaglists(dbref player, char *name, char *fstr, int type)
 
 FUNCTION(fun_orflags)
 {
-    safe_ltoa(handle_flaglists(executor, fargs[0], fargs[1], 0), buff, bufc);
+    safe_bool(handle_flaglists(executor, fargs[0], fargs[1], FALSE), buff, bufc);
 }
 
 FUNCTION(fun_andflags)
 {
-    safe_ltoa(handle_flaglists(executor, fargs[0], fargs[1], 1), buff, bufc);
+    safe_bool(handle_flaglists(executor, fargs[0], fargs[1], TRUE), buff, bufc);
 }
 
 FUNCTION(fun_strtrunc)
@@ -1342,7 +1355,7 @@ FUNCTION(fun_mail)
             // Handle the case of wanting to count the number of
             // messages.
             //
-            playerask = lookup_player(executor, fargs[0], 1);
+            playerask = lookup_player(executor, fargs[0], TRUE);
             if (playerask == NOTHING)
             {
                 safe_str("#-1 NO SUCH PLAYER", buff, bufc);
@@ -1366,7 +1379,7 @@ FUNCTION(fun_mail)
     }
     else // if (nfargs == 2)
     {
-        playerask = lookup_player(executor, fargs[0], 1);
+        playerask = lookup_player(executor, fargs[0], TRUE);
         if (playerask == NOTHING)
         {
             safe_str("#-1 NO SUCH PLAYER", buff, bufc);
@@ -1427,7 +1440,7 @@ FUNCTION(fun_mailfrom)
     }
     else // if (nfargs == 2)
     {
-        playerask = lookup_player(executor, fargs[0], 1);
+        playerask = lookup_player(executor, fargs[0], TRUE);
         if (playerask == NOTHING)
         {
             safe_str("#-1 NO SUCH PLAYER", buff, bufc);
@@ -1477,7 +1490,7 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
     }
 
     ATTR *attr = atr_str(fargs[1]);
-    int ch = '0';
+    BOOL result = FALSE;
     if (attr)
     {
         if (!bCanReadAttr(executor, thing, attr, bCheckParent))
@@ -1492,23 +1505,17 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
                 dbref aowner;
                 int aflags;
                 char *tbuf = atr_pget(thing, attr->number, &aowner, &aflags);
-                if (tbuf[0] != '\0')
-                {
-                    ch = '1';
-                }
+                result = (tbuf[0] != '\0');
                 free_lbuf(tbuf);
             }
             else
             {
                 char *tbuf = atr_get_raw(thing, attr->number);
-                if (tbuf != NULL)
-                {
-                    ch = '1';
-                }
+                result = (tbuf != NULL);
             }
         }
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(result, buff, bufc);
 }
 
 FUNCTION(fun_hasattr)
@@ -1642,11 +1649,14 @@ FUNCTION(fun_findable)
 #ifdef WOD_REALMS
     if (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(obj, victim, ACTION_IS_STATIONARY))
     {
-        safe_ltoa(locatable(obj, victim, obj), buff, bufc);
+        safe_bool(locatable(obj, victim, obj), buff, bufc);
     }
-    else safe_chr('0', buff, bufc);
+    else
+    {
+        safe_chr('0', buff, bufc);
+    }
 #else
-    safe_ltoa(locatable(obj, victim, obj), buff, bufc);
+    safe_bool(locatable(obj, victim, obj), buff, bufc);
 #endif
 }
 
@@ -1657,17 +1667,17 @@ FUNCTION(fun_findable)
 FUNCTION(fun_isword)
 {
     char *p;
-    int ch = '1';
+    BOOL result = TRUE;
 
     for (p = fargs[0]; *p; p++)
     {
         if (!Tiny_IsAlpha[(unsigned char)*p])
         {
-            ch = '0';
+            result = FALSE;
             break;
         }
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(result, buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1683,7 +1693,7 @@ FUNCTION(fun_visible)
         return;
     }
 
-    char  ch = '0';
+    BOOL  result = FALSE;
     dbref thing;
     int   atr = NOTHING;
     if (!parse_attrib(executor, fargs[1], &thing, &atr))
@@ -1700,21 +1710,15 @@ FUNCTION(fun_visible)
     {
         if (atr == NOTHING)
         {
-            if (Examinable(it, thing))
-            {
-                ch = '1';
-            }
+            result = (Examinable(it, thing));
         }
         else
         {
             ATTR *ap = atr_num(atr);
-            if (ap && See_attr(it, thing, ap))
-            {
-                ch = '1';
-            }
+            result = (ap && See_attr(it, thing, ap));
         }
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(result, buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1767,7 +1771,7 @@ FUNCTION(fun_elements)
  *           single element that we match.
  *
  *  grab(Test:1 Ack:2 Foof:3,*:2)    => Ack:2
- *  grab(Test-1+Ack-2+Foof-3,*o*,+)  => Ack:2
+ *  grab(Test-1+Ack-2+Foof-3,*o*,+)  => Foof-3
  * Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_grab)
@@ -1944,7 +1948,8 @@ loop:
         // Walk the array, looking for stuff that's less than our
         // pivot. If it is, swap it with the next thing along
         //
-        if ((*compare) (array[i], array[left]) < 0) {
+        if ((*compare) (array[i], array[left]) < 0)
+        {
             last++;
             if (last == i)
                 continue;
@@ -1965,11 +1970,14 @@ loop:
     // At this point everything underneath the 'last' index is < the
     // entry at 'last' and everything above it is not < it.
     //
-    if ((last - left) < (right - last)) {
+    if ((last - left) < (right - last))
+    {
         sane_qsort(array, left, last - 1, compare);
         left = last + 1;
         goto loop;
-    } else {
+    }
+    else
+    {
         sane_qsort(array, last + 1, right, compare);
         right = last - 1;
         goto loop;
@@ -2105,7 +2113,9 @@ FUNCTION(fun_matchall)
     } while (s);
 
     if (*bufc == old)
+    {
         safe_chr('0', buff, bufc);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -2114,7 +2124,7 @@ FUNCTION(fun_matchall)
 //
 FUNCTION(fun_ports)
 {
-    dbref target = lookup_player(executor, fargs[0], 1);
+    dbref target = lookup_player(executor, fargs[0], TRUE);
     if (Good_obj(target))
     {
         if (target == executor || Wizard(executor))
@@ -2230,10 +2240,11 @@ FUNCTION(fun_mix)
 FUNCTION(fun_foreach)
 {
     dbref aowner, thing;
-    int aflags, anum, flag = 0;
+    int aflags, anum;
     ATTR *ap;
     char *atext, *atextbuf, *str, *cp, *bp;
     char cbuf[2], prev = '\0';
+    BOOL flag = FALSE;
 
     if (  nfargs != 2
        && nfargs != 4)
@@ -2296,7 +2307,7 @@ FUNCTION(fun_foreach)
                    && prev != '\\'
                    && prev != '%')
                 {
-                    flag = 0;
+                    flag = FALSE;
                     continue;
                 }
             }
@@ -2306,7 +2317,7 @@ FUNCTION(fun_foreach)
                    && prev != '\\'
                    && prev != '%')
                 {
-                    flag = 1;
+                    flag = TRUE;
                     continue;
                 }
                 else
@@ -2573,7 +2584,7 @@ FUNCTION(fun_dumping)
 #ifdef WIN32
     safe_chr('0', buff, bufc);
 #else // WIN32
-    safe_chr(mudstate.dumping ? '1' : '0', buff, bufc);
+    safe_bool(mudstate.dumping, buff, bufc);
 #endif // WIN32
 }
 
@@ -2737,7 +2748,7 @@ FUNCTION(fun_strcat)
 
 // grep() and grepi() code borrowed from PennMUSH 1.50
 //
-char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len, int insensitive)
+char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len, BOOL insensitive)
 {
     // Returns a list of attributes which match <pattern> on <thing>
     // whose contents have <lookfor>.
@@ -2752,7 +2763,7 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
     bp = tbuf1;
     safe_tprintf_str(buf, &bufc, "#%d/%s", thing, pattern);
     olist_push();
-    if (parse_attrib_wild(player, buf, &thing, 0, 0, 1))
+    if (parse_attrib_wild(player, buf, &thing, FALSE, FALSE, TRUE))
     {
         BMH_State bmhs;
         if (insensitive)
@@ -2903,8 +2914,7 @@ FUNCTION(fun_valid)
         safe_nothing(buff, bufc);
         return;
     }
-    char ch = bValid ? '1' : '0';
-    safe_chr(ch, buff, bufc);
+    safe_bool(bValid, buff, bufc);
 }
 
 // Borrowed from PennMUSH 1.50
@@ -2917,39 +2927,27 @@ FUNCTION(fun_hastype)
         safe_match_result(it, buff, bufc);
         return;
     }
-    int ch = '0';
+    BOOL bResult = FALSE;
     switch (Tiny_ToLower[(unsigned char)fargs[1][0]])
     {
     case 'r':
 
-        if (isRoom(it))
-        {
-            ch = '1';
-        }
+        bResult = isRoom(it);
         break;
 
     case 'e':
 
-        if (isExit(it))
-        {
-            ch = '1';
-        }
+        bResult = isExit(it);
         break;
 
     case 'p':
 
-        if (isPlayer(it))
-        {
-            ch = '1';
-        }
+        bResult = isPlayer(it);
         break;
 
     case 't':
 
-        if (isThing(it))
-        {
-            ch = '1';
-        }
+        bResult = isThing(it);
         break;
 
     default:
@@ -2957,7 +2955,7 @@ FUNCTION(fun_hastype)
         safe_str("#-1 NO SUCH TYPE", buff, bufc);
         break;
     }
-    safe_chr(ch, buff, bufc);
+    safe_bool(bResult, buff, bufc);
 }
 
 // Borrowed from PennMUSH 1.50
@@ -3182,9 +3180,7 @@ FUNCTION(fun_peek)
 
 FUNCTION(fun_pop)
 {
-    STACK *sp, *prev = NULL;
     dbref doer;
-    int count = 0, pos;
 
     if (nfargs <= 0 || !*fargs[0])
     {
@@ -3199,12 +3195,13 @@ FUNCTION(fun_pop)
             return;
         }
     }
-
     if (!Controls(executor, doer))
     {
         safe_noperm(buff, bufc);
         return;
     }
+
+    int pos;
     if (nfargs <= 1 || !*fargs[1])
     {
         pos = 0;
@@ -3213,9 +3210,6 @@ FUNCTION(fun_pop)
     {
         pos = Tiny_atol(fargs[1]);
     }
-
-    sp = Stack(doer);
-
     if (stacksize(doer) == 0)
     {
         return;
@@ -3225,6 +3219,10 @@ FUNCTION(fun_pop)
         safe_str("#-1 POSITION TOO LARGE", buff, bufc);
         return;
     }
+
+    STACK *sp = Stack(doer);
+    STACK *prev = NULL;
+    int count = 0;
     while (count != pos)
     {
         if (sp == NULL)
@@ -3255,7 +3253,6 @@ FUNCTION(fun_pop)
 
 FUNCTION(fun_push)
 {
-    STACK *sp;
     dbref doer;
     char *data;
 
@@ -3285,7 +3282,7 @@ FUNCTION(fun_push)
         safe_str("#-1 STACK SIZE EXCEEDED", buff, bufc);
         return;
     }
-    sp = (STACK *)MEMALLOC(sizeof(STACK));
+    STACK *sp = (STACK *)MEMALLOC(sizeof(STACK));
     (void)ISOUTOFMEMORY(sp);
     sp->next = Stack(doer);
     sp->data = alloc_lbuf("push");
@@ -3327,7 +3324,7 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
 
     int matched = pcre_exec(re, NULL, search, strlen(search), 0, 0,
 			    ovec, ovecsize);
-    safe_ltoa(matched > 0, buff, bufc);
+    safe_bool(matched > 0, buff, bufc);
 
     // If we don't have a third argument, we're done.
     //
@@ -3397,7 +3394,8 @@ FUNCTION(fun_regmatchi)
  */
 
 void real_regrab(char *search, const char *pattern, char sep, char *buff,
-		 char **bufc, bool cis, bool all) {
+		 char **bufc, BOOL cis, bool all)
+{
   pcre *re;
   pcre_extra *study = NULL;
   const char *errptr;
@@ -3483,14 +3481,8 @@ FUNCTION(fun_regraballi)
 
 FUNCTION(fun_translate)
 {
-    int type = 0;
-
     int ch = fargs[1][0];
-    if (ch == 'p' || ch == '1')
-    {
-        type = 1;
-    }
-
+    BOOL type = (ch == 'p' || ch == '1');
     safe_str(translate_string(fargs[0], type), buff, bufc);
 }
 
@@ -3619,7 +3611,7 @@ static void room_list
     CBitField &bfReport,
     int   level,
     int   maxlevels,
-    int   showall
+    BOOL  showall
 )
 {
     // Make sure the player can really see this room from their location.
@@ -3715,10 +3707,10 @@ FUNCTION(fun_lrooms)
         }
     }
 
-    int B = 1;
+    BOOL B = TRUE;
     if (nfargs == 3)
     {
-        B = Tiny_atol(fargs[2]);
+        B = Tiny_atol(fargs[2]) ? TRUE : FALSE;
     }
 
     CBitField bfReport(mudstate.db_top-1);

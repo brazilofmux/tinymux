@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.25 2002-07-09 22:31:08 jake Exp $
+// $Id: externs.h,v 1.26 2002-07-13 07:23:01 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -132,8 +132,8 @@ extern void move_object(dbref, dbref);
 extern void move_via_generic(dbref, dbref, dbref, int);
 extern void move_via_exit(dbref, dbref, dbref, dbref, int);
 extern BOOL move_via_teleport(dbref, dbref, dbref, int);
-extern void move_exit(dbref, dbref, int, const char *, int);
-extern void do_enter_internal(dbref, dbref, int);
+extern void move_exit(dbref, dbref, BOOL, const char *, int);
+extern void do_enter_internal(dbref, dbref, BOOL);
 
 /* From object.cpp */
 extern dbref start_home(void);
@@ -147,13 +147,13 @@ extern void  destroy_obj(dbref);
 extern void  empty_obj(dbref);
 
 /* From player.cpp */
-extern void record_login(dbref, int, char *, char *, char *, char *);
+extern void record_login(dbref, BOOL, char *, char *, char *, char *);
 extern BOOL check_pass(dbref, const char *);
 extern dbref connect_player(char *, char *, char *, char *, char *);
-extern dbref create_player(char *, char *, dbref, int, int);
+extern dbref create_player(char *, char *, dbref, BOOL, BOOL);
 extern BOOL add_player_name(dbref, char *);
 extern BOOL delete_player_name(dbref, char *);
-extern dbref lookup_player(dbref, char *, int);
+extern dbref lookup_player(dbref, char *, BOOL);
 extern void load_player_names(void);
 extern void badname_add(char *);
 extern void badname_remove(char *);
@@ -252,7 +252,7 @@ extern char *uncompress_str(char *, const char *, int);
 /* From command.cpp */
 extern BOOL check_access(dbref player, int mask);
 extern void set_prefix_cmds(void);
-extern char *process_command(dbref executor, dbref caller, dbref enactor, int,
+extern char *process_command(dbref executor, dbref caller, dbref enactor, BOOL,
     char *, char *[], int);
 
 #define Protect(f) (cmdp->perms & f)
@@ -298,8 +298,8 @@ extern char *atr_get_str_LEN(char *s, dbref, int, dbref *, int *, int *);
 extern char *atr_get_str(char *, dbref, int, dbref *, int *);
 extern char *atr_pget_str_LEN(char *, dbref, int, dbref *, int *, int *);
 extern char *atr_pget_str(char *, dbref, int, dbref *, int *);
-extern int  atr_get_info(dbref, int, dbref *, int *);
-extern int  atr_pget_info(dbref, int, dbref *, int *);
+extern BOOL atr_get_info(dbref, int, dbref *, int *);
+extern BOOL atr_pget_info(dbref, int, dbref *, int *);
 extern void atr_free(dbref);
 extern BOOL check_zone_handler(dbref player, dbref thing, BOOL bPlayerCheck);
 #ifdef STANDALONE
@@ -663,8 +663,6 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
         log_text(m); \
     ENDLOG
 
-#define test_top()      ((mudstate.qfirst != NULL) ? 1 : 0)
-
 extern const char *NOMATCH_MESSAGE;
 extern const char *AMBIGUOUS_MESSAGE;
 extern const char *NOPERM_MESSAGE;
@@ -820,7 +818,7 @@ typedef struct
 #define PRIORITY_CF_DEQUEUE_DISABLED (PRIORITY_PLAYER-1)
 
 typedef int SCHCMP(PTASK_RECORD, PTASK_RECORD);
-typedef BOOL SCHLOOK(PTASK_RECORD);
+typedef int SCHLOOK(PTASK_RECORD);
 
 class CTaskHeap
 {

@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.3 2002-06-27 09:06:47 jake Exp $
+// $Id: svdhash.cpp,v 1.4 2002-07-13 07:23:02 jake Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -811,8 +811,8 @@ HP_DIRINDEX CHashPage::FindNextKey(HP_DIRINDEX iDir, UINT32 nHash, unsigned int 
     return HP_DIR_EMPTY;
 }
 
-// HeapAlloc - Return true if there was enough room to copy the record into the heap, otherwise,
-//             it returns false.
+// HeapAlloc - Return TRUE if there was enough room to copy the record into the heap, otherwise,
+//             it returns FALSE.
 //
 BOOL CHashPage::HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 {
@@ -1062,7 +1062,7 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
     // Don't struggle further.
     // You'll just make it worse.
     //
-    mudstate.shutdown_flag = 1;
+    mudstate.shutdown_flag = TRUE;
 #endif // STANDALONE
     return FALSE;
 }
@@ -1096,7 +1096,7 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     // Don't struggle further.
     // You'll just make it worse.
     //
-    mudstate.shutdown_flag = 1;
+    mudstate.shutdown_flag = TRUE;
 #endif // STANDALONE
     return FALSE;
 }
@@ -1135,7 +1135,7 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
     // Don't struggle further.
     // You'll just make it worse.
     //
-    mudstate.shutdown_flag = 1;
+    mudstate.shutdown_flag = TRUE;
 #endif // STANDALONE
     return FALSE;
 }
@@ -1175,7 +1175,7 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     // Don't struggle further.
     // You'll just make it worse.
     //
-    mudstate.shutdown_flag = 1;
+    mudstate.shutdown_flag = TRUE;
 #endif // STANDALONE
     return FALSE;
 }
@@ -1210,7 +1210,7 @@ BOOL CHashPage::Defrag(HP_HEAPLENGTH nExtra)
     // Initialize that type of HashPage and copy records over.
     //
     hpNew->Empty(m_pHeader->m_nDepth, m_pHeader->m_nHashGroup, nGoodDirSize);
-    BOOL errInserted = HP_INSERT_SUCCESS;
+    int errInserted = HP_INSERT_SUCCESS;
     for (int iDir = 0; iDir < m_pHeader->m_nDirSize && IS_HP_SUCCESS(errInserted); iDir++)
     {
         if (m_pDirectory[iDir] < HP_DIR_DELETED) // ValidateAllocatedBlock(iDir))

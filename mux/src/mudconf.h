@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.5 2002-06-30 06:24:28 sdennis Exp $
+// $Id: mudconf.h,v 1.6 2002-07-13 07:23:01 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -30,23 +30,23 @@ typedef struct confdata CONFDATA;
 struct confdata
 {
 #ifndef STANDALONE
-    int     compress_db;    // should we use compress.
-    int     have_comsys;    // Should the comsystem be active?
-    int     have_mailer;    // Should @mail be active?
-    int     have_zones;     // Should zones be active?
+    BOOL    compress_db;    // should we use compress.
+    BOOL    have_comsys;    // Should the comsystem be active?
+    BOOL    have_mailer;    // Should @mail be active?
+    BOOL    have_zones;     // Should zones be active?
     IntArray ports;         // user ports.
     int     init_size;      // initial db size.
-    int     have_guest;     // Do we wish to allow a GUEST character?
+    BOOL    have_guest;     // Do we wish to allow a GUEST character?
     dbref   guest_char;     // player num of prototype GUEST character.
     dbref   guest_nuker;    // Wiz who nukes the GUEST characters.
     int     number_guests;  // number of guest characters allowed.
     int     min_guests;     // The # we should start nuking at.
-    int     indent_desc;    // Newlines before and after descs?
-    int     name_spaces;    // allow player names to have spaces.
+    BOOL    indent_desc;    // Newlines before and after descs?
+    BOOL    name_spaces;    // allow player names to have spaces.
     unsigned int site_chars;// where to truncate site name.
     int     fork_dump;      // perform dump in a forked process.
     int     sig_action;     // What to do with fatal signals.
-    int     paranoid_alloc; /* Rigorous buffer integrity checks */
+    BOOL    paranoid_alloc; /* Rigorous buffer integrity checks */
     int     max_players;    /* Max # of connected players */
     int     dump_interval;  /* interval between ckp dumps in seconds */
     int     check_interval; /* interval between db check/cleans in secs */
@@ -70,42 +70,42 @@ struct confdata
     int     searchcost;     /* cost of commands that search the whole DB */
     int     waitcost;       /* cost of @wait (refunded when finishes) */
     int     mail_expiration; /* Number of days to wait to delete mail */
-    int     use_http;       /* Should we allow http access? */
+    BOOL    use_http;       /* Should we allow http access? */
     int     queuemax;       /* max commands a player may have in queue */
     int     queue_chunk;    /* # cmds to run from queue when idle */
     int     active_q_chunk; /* # cmds to run from queue when active */
     int     machinecost;    /* One in mc+1 cmds costs 1 penny (POW2-1) */
-    int     clone_copy_cost;/* Does @clone copy value? */
-    int     use_hostname;   /* TRUE = use machine NAME rather than quad */
-    int     ex_flags;       /* TRUE = show flags on examine */
-    int     robot_speak;    /* TRUE = allow robots to speak */
-    int     pub_flags;      /* TRUE = flags() works on anything */
-    int     quiet_look;     /* TRUE = don't see attribs when looking */
-    int     exam_public;    /* Does EXAM show public attrs by default? */
-    int     read_rem_desc;  /* Can the DESCs of nonlocal objs be read? */
-    int     read_rem_name;  /* Can the NAMEs of nonlocal objs be read? */
-    int     sweep_dark;     /* Can you sweep dark places? */
-    int     player_listen;  /* Are AxHEAR triggered on players? */
-    int     quiet_whisper;  /* Can others tell when you whisper? */
-    int     dark_sleepers;  /* Are sleeping players 'dark'? */
-    int     destroy_going_now;  // Does GOING act like DESTROY_OK?
-    int     see_own_dark;   /* Do you see your own dark stuff? */
-    int     idle_wiz_dark;  /* Do idling wizards get set dark? */
-    int     pemit_players;  /* Can you @pemit to faraway players? */
-    int     pemit_any;      /* Can you @pemit to ANY remote object? */
-    int     match_mine;     /* Should you check yourself for $-commands? */
-    int     match_mine_pl;  /* Should players check selves for $-cmds? */
-    int     switch_df_all;  /* Should @switch match all by default? */
-    int     fascist_tport;  /* Src of teleport must be owned/JUMP_OK */
-    int     safer_passwords;/* enforce reasonably good password choices? */
+    BOOL    clone_copy_cost;/* Does @clone copy value? */
+    BOOL    use_hostname;   /* TRUE = use machine NAME rather than quad */
+    BOOL    ex_flags;       /* TRUE = show flags on examine */
+    BOOL    robot_speak;    /* TRUE = allow robots to speak */
+    BOOL    pub_flags;      /* TRUE = flags() works on anything */
+    BOOL    quiet_look;     /* TRUE = don't see attribs when looking */
+    BOOL    exam_public;    /* Does EXAM show public attrs by default? */
+    BOOL    read_rem_desc;  /* Can the DESCs of nonlocal objs be read? */
+    BOOL    read_rem_name;  /* Can the NAMEs of nonlocal objs be read? */
+    BOOL    sweep_dark;     /* Can you sweep dark places? */
+    BOOL    player_listen;  /* Are AxHEAR triggered on players? */
+    BOOL    quiet_whisper;  /* Can others tell when you whisper? */
+    BOOL    dark_sleepers;  /* Are sleeping players 'dark'? */
+    BOOL    destroy_going_now;  // Does GOING act like DESTROY_OK?
+    BOOL    see_own_dark;   /* Do you see your own dark stuff? */
+    BOOL    idle_wiz_dark;  /* Do idling wizards get set dark? */
+    BOOL    pemit_players;  /* Can you @pemit to faraway players? */
+    BOOL    pemit_any;      /* Can you @pemit to ANY remote object? */
+    BOOL    match_mine;     /* Should you check yourself for $-commands? */
+    BOOL    match_mine_pl;  /* Should players check selves for $-cmds? */
+    BOOL    switch_df_all;  /* Should @switch match all by default? */
+    BOOL    fascist_tport;  /* Src of teleport must be owned/JUMP_OK */
+    BOOL    safer_passwords;/* enforce reasonably good password choices? */
     int     stack_limit;    /* How big can stacks get? */
-    int     safe_unowned;   /* Are objects not owned by you safe? */
-    int     space_compress; /* Convert multiple spaces into one space */
-    int     terse_look;     /* Does manual look obey TERSE */
-    int     terse_contents; /* Does TERSE look show exits */
-    int     terse_exits;    /* Does TERSE look show obvious exits */
-    int     terse_movemsg;  /* Show move msgs (SUCC/LEAVE/etc) if TERSE? */
-    int     trace_topdown;  /* Is TRACE output top-down or bottom-up? */
+    BOOL    safe_unowned;   /* Are objects not owned by you safe? */
+    BOOL    space_compress; /* Convert multiple spaces into one space */
+    BOOL    terse_look;     /* Does manual look obey TERSE */
+    BOOL    terse_contents; /* Does TERSE look show exits */
+    BOOL    terse_exits;    /* Does TERSE look show obvious exits */
+    BOOL    terse_movemsg;  /* Show move msgs (SUCC/LEAVE/etc) if TERSE? */
+    BOOL    trace_topdown;  /* Is TRACE output top-down or bottom-up? */
     int     trace_limit;    /* Max lines of trace output if top-down */
     dbref   master_room;    // Room containing default cmds/exits/etc.
     int     timeslice;      /* How often do we bump people's cmd quotas? */
@@ -118,9 +118,9 @@ struct confdata
     int     lock_nest_lim;  /* Max nesting of lock evals */
     int     parent_nest_lim;/* Max levels of parents */
     int     zone_nest_lim;  /* Max nesting of zones */
-    int     allow_guest_from_registered_site; // Whether guests from registered sites are allowed.
-    int     eval_comtitle;  /* Should Comtitles Evaluate? */
-    int     autozone;       // New objects are automatically zoned.
+    BOOL    allow_guest_from_registered_site; // Whether guests from registered sites are allowed.
+    BOOL    eval_comtitle;  /* Should Comtitles Evaluate? */
+    BOOL    autozone;       // New objects are automatically zoned.
     int     nStackLimit;    // Current stack limit.
 
     unsigned int max_cache_size; /* Max size of attribute cache */
@@ -180,11 +180,11 @@ struct confdata
     char    many_coins[32]; /* name of many coins (ie. "pennies") */
     char    *art_regexp;    /* Basic regexp for determining which article to use. */
     ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
-    int     toad_recipient; /* Default @toad recipient. */
-    int     run_startup;    // If no, startup attributes aren't processed on load.
-    int     safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
+    dbref   toad_recipient; /* Default @toad recipient. */
+    BOOL    run_startup;    // If no, startup attributes aren't processed on load.
+    BOOL    safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
 #endif
-    int     cache_names;    /* Should object names be cached separately */
+    BOOL    cache_names;    /* Should object names be cached separately */
 
     int     paylimit;       /* getting money gets hard over this much */
     int     digcost;        /* cost of @dig command */
@@ -198,7 +198,7 @@ struct confdata
     int     exit_quota;     /* quota needed to make an exit */
     int     thing_quota;    /* quota needed to make a thing */
     int     player_quota;   /* quota needed to make a robot player */
-    int     quotas;         /* TRUE = have building quotas */
+    BOOL    quotas;         /* TRUE = have building quotas */
     dbref   start_room;     // initial location and home for players.
     dbref   start_home;     // initial HOME for players.
     dbref   default_home;   // HOME when home is inaccessable.
@@ -224,7 +224,8 @@ struct site_data
 };
 
 typedef struct objlist_block OBLOCK;
-struct objlist_block {
+struct objlist_block
+{
     struct objlist_block *next;
     dbref   data[(LBUF_SIZE - sizeof(OBLOCK *)) / sizeof(dbref)];
 };
@@ -283,19 +284,19 @@ struct statedata
 
     int record_players; /* The maximum # of player logged on */
 #ifndef STANDALONE
-    int bReadingConfiguration;  // are we reading the config file at startup?
-    int bCanRestart;            // are we ready to even attempt a restart.
-    int panicking;              // are we in the middle of dying horribly?
+    BOOL bReadingConfiguration;  // are we reading the config file at startup?
+    BOOL bCanRestart;            // are we ready to even attempt a restart.
+    BOOL panicking;              // are we in the middle of dying horribly?
 #ifndef WIN32
-    int restarting; /* Are we restarting? */
-    int dumping;    /* Are we dumping? */
+    BOOL restarting; /* Are we restarting? */
+    BOOL dumping;    /* Are we dumping? */
 #endif
     int epoch;      /* Generation number for dumps */
     int generation; /* DB global generation number */
     dbref   curr_enactor;   /* Who initiated the current command */
     dbref   curr_executor;  /* Who is running the current command */
     int events_flag;    /* Flags for check_events */
-    int shutdown_flag;  /* Should interface be shut down? */
+    BOOL    shutdown_flag;  /* Should interface be shut down? */
     char    *debug_cmd;     // The command we are executing (if any).
     char    *curr_cmd;      /* The current command */
     SITE    *access_list;   /* Access states for sites */
@@ -318,7 +319,7 @@ struct statedata
     char    *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
     int     glob_reg_len[MAX_GLOBAL_REGS];  /* Length of strs */
     int     zone_nest_num;  /* Global current zone nest position */
-    int     inpipe;         /* Boolean flag for command piping */
+    BOOL    inpipe;         /* Boolean flag for command piping */
     char    *pout;          /* The output of the pipe used in %| */
     char    *poutnew;       /* The output being build by the current command */
     char    *poutbufc;      /* Buffer position for poutnew */

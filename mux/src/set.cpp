@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.22 2002-07-09 22:31:08 jake Exp $
+// $Id: set.cpp,v 1.23 2002-07-13 07:23:02 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -204,7 +204,7 @@ void do_name
             return;
         }
         else if (  string_compare(buff, Name(thing))
-                && lookup_player(NOTHING, buff, 0) != NOTHING)
+                && lookup_player(NOTHING, buff, FALSE) != NOTHING)
         {
             // string_compare allows changing foo to Foo, etc.
             //
@@ -312,7 +312,7 @@ void do_alias
                 notify_quiet(executor, "Alias removed.");
             }
         }
-        else if (lookup_player(NOTHING, trimalias, 0) != NOTHING)
+        else if (lookup_player(NOTHING, trimalias, FALSE) != NOTHING)
         {
             // Make sure new alias isn't already in use.
             //
@@ -498,7 +498,7 @@ void do_lock
     }
 
     char *pRestrictedKeyText = RemoveSetOfCharacters(keytext, "\r\n\t");
-    okey = parse_boolexp(executor, pRestrictedKeyText, 0);
+    okey = parse_boolexp(executor, pRestrictedKeyText, FALSE);
     if (okey == TRUE_BOOLEXP)
     {
         notify_quiet(executor, "I don't understand that key.");
@@ -694,7 +694,7 @@ void do_chown
         }
         else
         {
-            nOwnerNew = lookup_player(executor, newown, 1);
+            nOwnerNew = lookup_player(executor, newown, TRUE);
         }
 
         // You may chown an attr to yourself if you own the object and the attr
@@ -808,7 +808,7 @@ void do_chown
     }
     else
     {
-        nOwnerNew = lookup_player(executor, newown, 1);
+        nOwnerNew = lookup_player(executor, newown, TRUE);
     }
 
     int cost = 1, quota = 1;
@@ -941,7 +941,7 @@ void do_set
 {
     dbref thing, thing2, aowner;
     char *p, *buff;
-    int atr, atr2, aflags, clear, flagvalue;
+    int atr, atr2, aflags, flagvalue;
     ATTR *attr, *attr2;
 
     // See if we have the <obj>/<attr> form, which is how you set
@@ -961,11 +961,11 @@ void do_set
 
             // Check for clearing.
             //
-            clear = 0;
+            BOOL clear = FALSE;
             if (*flag == NOT_TOKEN)
             {
                 flag++;
-                clear = 1;
+                clear = TRUE;
             }
 
             // Make sure player specified a valid attribute flag.
@@ -1784,7 +1784,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int key, char *object)
 {
     char *df_use, *df_ouse, *temp;
     dbref thing, aowner;
-    int aflags, doit;
+    int aflags;
 
     init_match(executor, object, NOTYPE);
     match_neighbor();
@@ -1810,18 +1810,18 @@ void do_use(dbref executor, dbref caller, dbref enactor, int key, char *object)
         return;
     }
     temp = alloc_lbuf("do_use");
-    doit = 0;
+    BOOL doit = FALSE;
     if (*atr_pget_str(temp, thing, A_USE, &aowner, &aflags))
     {
-        doit = 1;
+        doit = TRUE;
     }
     else if (*atr_pget_str(temp, thing, A_OUSE, &aowner, &aflags))
     {
-        doit = 1;
+        doit = TRUE;
     }
     else if (*atr_pget_str(temp, thing, A_AUSE, &aowner, &aflags))
     {
-        doit = 1;
+        doit = TRUE;
     }
     free_lbuf(temp);
 

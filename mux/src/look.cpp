@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.15 2002-07-09 21:24:45 jake Exp $
+// $Id: look.cpp,v 1.16 2002-07-13 07:23:01 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -609,15 +609,15 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
     // Check to see if he can see the location.
     //
-    BOOL can_see_loc = (!Dark(loc) ||
-        (mudconf.see_own_dark && Examinable(player, loc)));
+    BOOL can_see_loc = (  !Dark(loc)
+                       || (mudconf.see_own_dark && Examinable(player, loc)));
 
     dbref aowner;
     int aflags;
     char *ContentsFormatBuffer = atr_pget(loc, A_CONFORMAT, &aowner, &aflags);
     char *ContentsFormat = ContentsFormatBuffer;
 
-    int bDisplayContents = 1;
+    BOOL bDisplayContents = TRUE;
     if (*ContentsFormat)
     {
         char *VisibleObjectList = alloc_lbuf("look_contents.VOL");
@@ -671,7 +671,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         free_lbuf(ContentsNameScratch);
         free_lbuf(VisibleObjectList);
 
-        bDisplayContents = 0;
+        bDisplayContents = FALSE;
     }
     free_lbuf(ContentsFormatBuffer);
 
@@ -705,7 +705,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
                 if (can_see(player, thing, can_see_loc))
 #endif
                 {
-                    buff = unparse_object(player, thing, 1);
+                    buff = unparse_object(player, thing, TRUE);
                     html_cp = html_buff;
                     if (Html(player))
                     {
@@ -760,7 +760,7 @@ static void view_atr
     char *text,
     dbref aowner,
     int aflags,
-    int skip_tag
+    BOOL skip_tag
 )
 {
     char *buf;
@@ -770,7 +770,7 @@ static void view_atr
 
     if (ap->flags & AF_IS_LOCK)
     {
-        pBoolExp = parse_boolexp(player, text, 1);
+        pBoolExp = parse_boolexp(player, text, TRUE);
         text = unparse_boolexp(player, pBoolExp);
         free_boolexp(pBoolExp);
     }
@@ -839,8 +839,8 @@ static void look_atrs1
     dbref player,
     dbref thing,
     dbref othing,
-    int check_exclude,
-    int hash_insert
+    BOOL  check_exclude,
+    BOOL  hash_insert
 )
 {
     dbref aowner;
@@ -882,40 +882,41 @@ static void look_atrs1
                     hashaddLEN(&ca, sizeof(ca), (int *)attr,
                         &mudstate.parent_htab);
                 }
-                view_atr(player, thing, &cattr, buf, aowner, aflags, 0);
+                view_atr(player, thing, &cattr, buf, aowner, aflags, FALSE);
             }
         }
         free_lbuf(buf);
     }
 }
 
-static void look_atrs(dbref player, dbref thing, int check_parents)
+static void look_atrs(dbref player, dbref thing, BOOL check_parents)
 {
     dbref parent;
-    int lev, check_exclude, hash_insert;
+    int lev;
+    BOOL check_exclude, hash_insert;
 
     if (!check_parents)
     {
-        look_atrs1(player, thing, thing, 0, 0);
+        look_atrs1(player, thing, thing, FALSE, FALSE);
     }
     else
     {
-        hash_insert = 1;
-        check_exclude = 0;
+        hash_insert = TRUE;
+        check_exclude = FALSE;
         hashflush(&mudstate.parent_htab);
         ITER_PARENTS(thing, parent, lev)
         {
             if (!Good_obj(Parent(parent)))
-                hash_insert = 0;
+                hash_insert = FALSE;
             look_atrs1(player, parent, thing,
                 check_exclude, hash_insert);
-            check_exclude = 1;
+            check_exclude = TRUE;
         }
     }
 }
 
 
-static void look_simple(dbref player, dbref thing, int obey_terse)
+static void look_simple(dbref player, dbref thing, BOOL obey_terse)
 {
     int pattr;
     char *buff;
@@ -942,7 +943,7 @@ static void look_simple(dbref player, dbref thing, int obey_terse)
     //
     if (Examinable(player, thing))
     {
-        buff = unparse_object(player, thing, 1);
+        buff = unparse_object(player, thing, TRUE);
         notify(player, buff);
         free_lbuf(buff);
     }
@@ -958,7 +959,7 @@ static void look_simple(dbref player, dbref thing, int obey_terse)
 
     if (!mudconf.quiet_look && (!Terse(player) || mudconf.terse_look))
     {
-        look_atrs(player, thing, 0);
+        look_atrs(player, thing, FALSE);
     }
 }
 
@@ -1089,7 +1090,7 @@ void look_in(dbref player, dbref loc, int key)
     {
         // Okay, no @NameFormat.  Show the normal name.
         //
-        char *buff = unparse_object(player, loc, 1);
+        char *buff = unparse_object(player, loc, TRUE);
         notify(player, buff);
         free_lbuf(buff);
     }
@@ -1115,7 +1116,7 @@ void look_in(dbref player, dbref loc, int key)
     }
     show_desc(player, loc, showkey);
 
-    BOOL is_terse = (key & LK_OBEYTERSE) ? Terse(player) : 0;
+    BOOL is_terse = (key & LK_OBEYTERSE) ? Terse(player) : FALSE;
 
     // Tell him the appropriate messages if he has the key.
     //
@@ -1144,7 +1145,7 @@ void look_in(dbref player, dbref loc, int key)
     //
     if ((key & LK_SHOWATTR) && !mudconf.quiet_look && !is_terse)
     {
-        look_atrs(player, loc, 0);
+        look_atrs(player, loc, FALSE);
     }
     if (!is_terse || mudconf.terse_contents)
     {
@@ -1294,7 +1295,7 @@ static void debug_examine(dbref player, dbref thing)
     notify(player, tprintf("Powers  = %s", buf));
     free_mbuf(buf);
     buf = atr_get(thing, A_LOCK, &aowner, &aflags);
-    pBoolExp = parse_boolexp(player, buf, 1);
+    pBoolExp = parse_boolexp(player, buf, TRUE);
     free_lbuf(buf);
     notify(player, tprintf("Lock    = %s", unparse_boolexp(player, pBoolExp)));
     free_boolexp(pBoolExp);
@@ -1455,7 +1456,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
     BOOLEXP *pBoolExp;
     int aflags;
     BOOL control;
-    BOOL do_parent = key & EXAM_PARENT;
+    BOOL do_parent = (key & EXAM_PARENT);
 
     dbref thing = NOTHING;
     if (!name || !*name)
@@ -1516,7 +1517,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
 
     if (control)
     {
-        buf2 = unparse_object(executor, thing, 0);
+        buf2 = unparse_object(executor, thing, FALSE);
         notify(executor, buf2);
         free_lbuf(buf2);
         if (mudconf.ex_flags)
@@ -1558,7 +1559,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
                || (aowner == Owner(executor)))
             {
                 view_atr(executor, thing, atr_num(A_DESC), temp,
-                    aowner, aflags, 1);
+                    aowner, aflags, TRUE);
             }
             else
             {
@@ -1578,7 +1579,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         savec = mudconf.many_coins[0];
         mudconf.many_coins[0] = Tiny_ToUpper[(unsigned char)mudconf.many_coins[0]];
         buf2 = atr_get(thing, A_LOCK, &aowner, &aflags);
-        pBoolExp = parse_boolexp(executor, buf2, 1);
+        pBoolExp = parse_boolexp(executor, buf2, TRUE);
         buf = unparse_boolexp(executor, pBoolExp);
         free_boolexp(pBoolExp);
         StringCopy(buf2, Name(Owner(thing)));
@@ -1590,7 +1591,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         //
         if (mudconf.have_zones)
         {
-            buf2 = unparse_object(executor, Zone(thing), 0);
+            buf2 = unparse_object(executor, Zone(thing), FALSE);
             notify(executor, tprintf("Zone: %s", buf2));
             free_lbuf(buf2);
         }
@@ -1600,7 +1601,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         loc = Parent(thing);
         if (loc != NOTHING)
         {
-            buf2 = unparse_object(executor, loc, 0);
+            buf2 = unparse_object(executor, loc, FALSE);
             notify(executor, tprintf("Parent: %s", buf2));
             free_lbuf(buf2);
         }
@@ -1635,7 +1636,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
 #endif
             DOLIST(content, Contents(thing))
             {
-                buf2 = unparse_object(executor, content, 0);
+                buf2 = unparse_object(executor, content, FALSE);
                 notify(executor, buf2);
                 free_lbuf(buf2);
             }
@@ -1653,7 +1654,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
                 notify(executor, "Exits:");
                 DOLIST(exit, Exits(thing))
                 {
-                    buf2 = unparse_object(executor, exit, 0);
+                    buf2 = unparse_object(executor, exit, FALSE);
                     notify(executor, buf2);
                     free_lbuf(buf2);
                 }
@@ -1667,7 +1668,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
             //
             if (Dropto(thing) != NOTHING)
             {
-                buf2 = unparse_object(executor, Dropto(thing), 0);
+                buf2 = unparse_object(executor, Dropto(thing), FALSE);
                 notify(executor, tprintf("Dropped objects go to: %s", buf2));
                 free_lbuf(buf2);
             }
@@ -1683,7 +1684,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
                 notify(executor, "Exits:");
                 DOLIST(exit, Exits(thing))
                 {
-                    buf2 = unparse_object(executor, exit, 0);
+                    buf2 = unparse_object(executor, exit, FALSE);
                     notify(executor, buf2);
                     free_lbuf(buf2);
                 }
@@ -1696,7 +1697,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
             // Print home
             //
             loc = Home(thing);
-            buf2 = unparse_object(executor, loc, 0);
+            buf2 = unparse_object(executor, loc, FALSE);
             notify(executor, tprintf("Home: %s", buf2));
             free_lbuf(buf2);
 
@@ -1708,14 +1709,14 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
                    || Examinable(executor, thing)
                    || Linkable(executor, loc)))
             {
-                buf2 = unparse_object(executor, loc, 0);
+                buf2 = unparse_object(executor, loc, FALSE);
                 notify(executor, tprintf("Location: %s", buf2));
                 free_lbuf(buf2);
             }
             break;
 
         case TYPE_EXIT:
-            buf2 = unparse_object(executor, Exits(thing), 0);
+            buf2 = unparse_object(executor, Exits(thing), FALSE);
             notify(executor, tprintf("Source: %s", buf2));
             free_lbuf(buf2);
 
@@ -1730,7 +1731,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
                 break;
 
             default:
-                buf2 = unparse_object(executor, Location(thing), 0);
+                buf2 = unparse_object(executor, Location(thing), FALSE);
                 notify(executor, tprintf("Destination: %s", buf2));
                 free_lbuf(buf2);
                 break;
@@ -1804,7 +1805,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
         notify(executor, "You are carrying:");
         DOLIST(thing, thing)
         {
-            buff = unparse_object(executor, thing, 1);
+            buff = unparse_object(executor, thing, TRUE);
             notify(executor, buff);
             free_lbuf(buff);
         }
@@ -1840,14 +1841,17 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
     FWDLIST *fp;
 
     parse_range(&name, &low_bound, &high_bound);
-    if (!name || !*name) {
+    if (!name || !*name)
+    {
         if (Has_location(executor))
             thing = Location(executor);
         else
             thing = executor;
         if (!Good_obj(thing))
             return;
-    } else {
+    }
+    else
+    {
         init_match(executor, name, NOTYPE);
         match_everything(MAT_EXIT_PARENTS);
         thing = noisy_match_result();
@@ -1855,7 +1859,8 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
             return;
     }
 
-    if (!payfor(executor, mudconf.searchcost)) {
+    if (!payfor(executor, mudconf.searchcost))
+    {
         notify(executor,
             tprintf("You don't have enough %s.",
             mudconf.many_coins));
@@ -1864,35 +1869,36 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
     message = alloc_lbuf("do_entrances");
     control_thing = Examinable(executor, thing);
     count = 0;
-    for (i = low_bound; i <= high_bound; i++) {
-        if (control_thing || Examinable(executor, i)) {
-            switch (Typeof(i)) {
+    for (i = low_bound; i <= high_bound; i++)
+    {
+        if (control_thing || Examinable(executor, i))
+        {
+            switch (Typeof(i))
+            {
             case TYPE_EXIT:
-                if (Location(i) == thing) {
-                    exit = unparse_object(executor,
-                        Exits(i), 0);
-                    notify(executor,
-                        tprintf("%s (%s)",
-                        exit, Name(i)));
+                if (Location(i) == thing)
+                {
+                    exit = unparse_object(executor, Exits(i), FALSE);
+                    notify(executor, tprintf("%s (%s)", exit, Name(i)));
                     free_lbuf(exit);
                     count++;
                 }
                 break;
             case TYPE_ROOM:
-                if (Dropto(i) == thing) {
-                    exit = unparse_object(executor, i, 0);
-                    notify(executor,
-                        tprintf("%s [dropto]", exit));
+                if (Dropto(i) == thing)
+                {
+                    exit = unparse_object(executor, i, FALSE);
+                    notify(executor, tprintf("%s [dropto]", exit));
                     free_lbuf(exit);
                     count++;
                 }
                 break;
             case TYPE_THING:
             case TYPE_PLAYER:
-                if (Home(i) == thing) {
-                    exit = unparse_object(executor, i, 0);
-                    notify(executor,
-                        tprintf("%s [home]", exit));
+                if (Home(i) == thing)
+                {
+                    exit = unparse_object(executor, i, FALSE);
+                    notify(executor, tprintf("%s [home]", exit));
                     free_lbuf(exit);
                     count++;
                 }
@@ -1903,9 +1909,8 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
             //
             if (Parent(i) == thing)
             {
-                exit = unparse_object(executor, i, 0);
-                notify(executor,
-                    tprintf("%s [parent]", exit));
+                exit = unparse_object(executor, i, FALSE);
+                notify(executor, tprintf("%s [parent]", exit));
                 free_lbuf(exit);
                 count++;
             }
@@ -1921,7 +1926,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
                 {
                     if (fp->data[j] != thing)
                         continue;
-                    exit = unparse_object(executor, i, 0);
+                    exit = unparse_object(executor, i, FALSE);
                     notify(executor,
                         tprintf("%s [forward]", exit));
                     free_lbuf(exit);
@@ -2245,7 +2250,7 @@ void do_decomp
     }
 
     thingname = atr_get(thing, A_LOCK, &aowner, &aflags);
-    pBoolExp = parse_boolexp(executor, thingname, 1);
+    pBoolExp = parse_boolexp(executor, thingname, TRUE);
 
     // Determine the name of the thing to use in reporting and then
     // report the command to make the thing.
@@ -2268,7 +2273,7 @@ void do_decomp
                 strcpy(thingname, Name(thing));
                 val = OBJECT_DEPOSIT(Pennies(thing));
                 notify(executor,
-                    tprintf("@create %s=%d", translate_string(thingname, 1),
+                    tprintf("@create %s=%d", translate_string(thingname, TRUE),
                     val));
                 break;
 
@@ -2276,13 +2281,13 @@ void do_decomp
                 strcpy(thingname, "here");
                 notify(executor,
                     tprintf("@dig/teleport %s",
-                    translate_string(Name(thing), 1)));
+                    translate_string(Name(thing), TRUE)));
                 break;
 
             case TYPE_EXIT:
                 strcpy(thingname, Name(thing));
                 notify(executor,
-                    tprintf("@open %s", translate_string(Name(thing), 1)));
+                    tprintf("@open %s", translate_string(Name(thing), TRUE)));
                 for (got = thingname; *got; got++)
                 {
                     if (*got == EXIT_DELIMITER)
@@ -2351,7 +2356,7 @@ void do_decomp
         {
             if (attr->flags & AF_IS_LOCK)
             {
-                pBoolExp = parse_boolexp(executor, got, 1);
+                pBoolExp = parse_boolexp(executor, got, TRUE);
                 ltext = unparse_boolexp_decompile(executor, pBoolExp);
                 free_boolexp(pBoolExp);
                 notify(executor, tprintf("@lock/%s %s=%s", attr->name,

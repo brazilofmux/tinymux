@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.20 2002-07-09 08:22:48 jake Exp $
+// $Id: command.cpp,v 1.21 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -20,7 +20,7 @@ extern void list_cf_access(dbref);
 extern void list_siteinfo(dbref);
 extern void logged_out0(dbref executor, dbref caller, dbref enactor, int key);
 extern void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg);
-extern void boot_slave(dbref executor, dbref caller, dbref enactor, int);
+extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
 extern void vattr_clean_db(void);
 
 // Switch tables for the various commands.
@@ -519,73 +519,73 @@ CMDENT_NO_ARG command_table_no_arg[] =
 
 CMDENT_ONE_ARG command_table_one_arg[] =
 {
-    {"+help",         NULL,       0,    HELP_PLUSHELP,  CS_ONE_ARG,         do_help},
-    {"+shelp",        NULL,       CA_STAFF,    HELP_STAFFHELP, CS_ONE_ARG,         do_help},
-    {"@boot",         boot_sw,    CA_NO_GUEST|CA_NO_SLAVE,    0,      CS_ONE_ARG|CS_INTERP,       do_boot},
-    {"@break",        NULL,       0,                          0,      CS_ONE_ARG,                 do_break},
-    {"@ccreate",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,        0,               CS_ONE_ARG,                    do_createchannel},
-    {"@cdestroy",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,        0,               CS_ONE_ARG,                    do_destroychannel},
-    {"@cut",          NULL,       CA_WIZARD|CA_LOCATION,  0,      CS_ONE_ARG|CS_INTERP,       do_cut},
-    {"@cwho",         NULL,       CA_NO_SLAVE,        0,              CS_ONE_ARG,                     do_channelwho},
-    {"@destroy",      destroy_sw, CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,    DEST_ONE,   CS_ONE_ARG|CS_INTERP,       do_destroy},
-    //{"@destroyall",   NULL,       CA_WIZARD|CA_GBL_BUILD,     DEST_ALL,   CS_ONE_ARG,         do_destroy},
-    {"@disable",      NULL,       CA_WIZARD,    GLOB_DISABLE,   CS_ONE_ARG,         do_global},
-    {"@doing",        doing_sw,   CA_PUBLIC,    0,      CS_ONE_ARG,         do_doing},
-    {"@emit",         emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,     SAY_EMIT,   CS_ONE_ARG|CS_INTERP,       do_say},
-    {"@enable",       NULL,       CA_WIZARD,     GLOB_ENABLE,    CS_ONE_ARG,         do_global},
-    {"@entrances",    NULL,       CA_NO_GUEST,     0,      CS_ONE_ARG|CS_INTERP,   do_entrances},
-    {"@find",         NULL,       0,    0,      CS_ONE_ARG|CS_INTERP,       do_find},
-    {"@halt",         halt_sw,    CA_NO_SLAVE,    0,      CS_ONE_ARG|CS_INTERP,       do_halt},
-    {"@kick",         NULL,       CA_WIZARD,    QUEUE_KICK, CS_ONE_ARG|CS_INTERP,       do_queue},
-    {"@last",         NULL,       CA_NO_GUEST,    0,      CS_ONE_ARG|CS_INTERP,       do_last},
-    {"@list",         NULL,       0,    0,      CS_ONE_ARG|CS_INTERP,       do_list},
-    {"@listcommands", NULL,       CA_GOD,    0,      CS_ONE_ARG,         do_listcommands},
-    {"@list_file",    NULL,       CA_WIZARD,    0,      CS_ONE_ARG|CS_INTERP,       do_list_file},
-    {"@listmotd",     listmotd_sw,0,    MOTD_LIST,  CS_ONE_ARG,         do_motd},
-    {"@mark",         mark_sw,    CA_WIZARD,    SRCH_MARK,  CS_ONE_ARG|CS_NOINTERP,     do_search},
-    {"@motd",         motd_sw,    CA_WIZARD,    0,      CS_ONE_ARG,         do_motd},
+    {"+help",         NULL,       0,             HELP_PLUSHELP,   CS_ONE_ARG,           do_help},
+    {"+shelp",        NULL,       CA_STAFF,      HELP_STAFFHELP,  CS_ONE_ARG,           do_help},
+    {"@boot",         boot_sw,    CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG|CS_INTERP, do_boot},
+    {"@break",        NULL,       0,                          0,  CS_ONE_ARG,           do_break},
+    {"@ccreate",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           do_createchannel},
+    {"@cdestroy",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           do_destroychannel},
+    {"@cut",          NULL,       CA_WIZARD|CA_LOCATION,      0,  CS_ONE_ARG|CS_INTERP, do_cut},
+    {"@cwho",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_channelwho},
+    {"@destroy",      destroy_sw, CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, DEST_ONE,   CS_ONE_ARG|CS_INTERP,   do_destroy},
+    //{"@destroyall",   NULL,       CA_WIZARD|CA_GBL_BUILD,     DEST_ALL,   CS_ONE_ARG,   do_destroy},
+    {"@disable",      NULL,       CA_WIZARD,       GLOB_DISABLE,  CS_ONE_ARG,           do_global},
+    {"@doing",        doing_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG,           do_doing},
+    {"@emit",         emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,  SAY_EMIT,   CS_ONE_ARG|CS_INTERP,   do_say},
+    {"@enable",       NULL,       CA_WIZARD,       GLOB_ENABLE,   CS_ONE_ARG,           do_global},
+    {"@entrances",    NULL,       CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, do_entrances},
+    {"@find",         NULL,       0,                          0,  CS_ONE_ARG|CS_INTERP, do_find},
+    {"@halt",         halt_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, do_halt},
+    {"@kick",         NULL,       CA_WIZARD,         QUEUE_KICK,  CS_ONE_ARG|CS_INTERP, do_queue},
+    {"@last",         NULL,       CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, do_last},
+    {"@list",         NULL,       0,                          0,  CS_ONE_ARG|CS_INTERP, do_list},
+    {"@listcommands", NULL,       CA_GOD,                     0,  CS_ONE_ARG,           do_listcommands},
+    {"@list_file",    NULL,       CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, do_list_file},
+    {"@listmotd",     listmotd_sw,0,                  MOTD_LIST,  CS_ONE_ARG,           do_motd},
+    {"@mark",         mark_sw,    CA_WIZARD,          SRCH_MARK,  CS_ONE_ARG|CS_NOINTERP,   do_search},
+    {"@motd",         motd_sw,    CA_WIZARD,                  0,  CS_ONE_ARG,           do_motd},
     {"@nemit",        emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE, SAY_EMIT, CS_ONE_ARG|CS_UNPARSE|CS_NOSQUISH, do_say},
-    {"@poor",         NULL,       CA_GOD,    0,      CS_ONE_ARG|CS_INTERP,       do_poor},
-    {"@ps",           ps_sw,      0,    0,      CS_ONE_ARG|CS_INTERP,       do_ps},
-    {"@quitprogram",  NULL,       CA_PUBLIC,    0,      CS_ONE_ARG|CS_INTERP,       do_quitprog},
-    {"@search",       NULL,       0,    SRCH_SEARCH,    CS_ONE_ARG|CS_NOINTERP,     do_search},
-    {"@shutdown",     NULL,       CA_WIZARD,    0,      CS_ONE_ARG,         do_shutdown},
-    {"@stats",        stats_sw,   0,    0,      CS_ONE_ARG|CS_INTERP,       do_stats},
-    {"@sweep",        sweep_sw,   0,    0,      CS_ONE_ARG,         do_sweep},
-    {"@timewarp",     warp_sw,    CA_WIZARD,    0,      CS_ONE_ARG|CS_INTERP,       do_timewarp},
-    {"@unlink",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD,    0,      CS_ONE_ARG|CS_INTERP,       do_unlink},
-    {"@unlock",       lock_sw,    CA_NO_SLAVE,    0,      CS_ONE_ARG|CS_INTERP,       do_unlock},
-    {"@wall",         wall_sw,    CA_ANNOUNCE,    SAY_SHOUT,  CS_ONE_ARG|CS_INTERP,       do_say},
-    {"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,    0,      CS_ONE_ARG|CS_INTERP,       do_wipe},
-    {"allcom",        NULL,       CA_NO_SLAVE,        0,              CS_ONE_ARG,                     do_allcom},
-    {"delcom",        NULL,       CA_NO_SLAVE,        0,              CS_ONE_ARG,                     do_delcom},
-    {"drop",          drop_sw,    CA_NO_SLAVE|CA_CONTENTS|CA_LOCATION|CA_NO_GUEST,    0,      CS_ONE_ARG|CS_INTERP,       do_drop},
-    {"enter",         enter_sw,   CA_LOCATION,    0,      CS_ONE_ARG|CS_INTERP,       do_enter},
-    {"examine",       examine_sw, 0,    0,      CS_ONE_ARG|CS_INTERP,       do_examine},
-    {"get",           get_sw,     CA_LOCATION|CA_NO_GUEST,    0,      CS_ONE_ARG|CS_INTERP,       do_get},
-    {"goto",          goto_sw,    CA_LOCATION,    0,      CS_ONE_ARG|CS_INTERP,       do_move},
-    {"help",          NULL,       0,    HELP_HELP,  CS_ONE_ARG,         do_help},
-    {"look",          look_sw,    CA_LOCATION,    LOOK_LOOK,  CS_ONE_ARG|CS_INTERP,       do_look},
-    {"news",          NULL,       0,    HELP_NEWS,  CS_ONE_ARG,         do_help},
-    {"outputprefix",  NULL,       CA_PUBLIC,    CMD_PREFIX, CS_ONE_ARG,         logged_out1},
-    {"outputsuffix",  NULL,       CA_PUBLIC,    CMD_SUFFIX, CS_ONE_ARG,         logged_out1},
-    {"pose",          pose_sw,    CA_LOCATION|CA_NO_SLAVE,    SAY_POSE,   CS_ONE_ARG|CS_INTERP,       do_say},
-    {"say",           NULL,       CA_LOCATION|CA_NO_SLAVE,    SAY_SAY,    CS_ONE_ARG|CS_INTERP,       do_say},
-    {"session",       NULL,       CA_PUBLIC,    CMD_SESSION,    CS_ONE_ARG,         logged_out1},
-    {"think",         NULL,       CA_NO_SLAVE,        0,              CS_ONE_ARG,                     do_think},
-    {"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,    0,      CS_ONE_ARG|CS_INTERP,       do_use},
-    {"wizhelp",       NULL,       CA_WIZARD,    HELP_WIZHELP,   CS_ONE_ARG,         do_help},
-    {"wiznews",       NULL,       CA_WIZARD,        HELP_WIZNEWS,   CS_ONE_ARG,                     do_help},
-    {"doing",         NULL,       CA_PUBLIC,    CMD_DOING,  CS_ONE_ARG,         logged_out1},
-    {"who",           NULL,       CA_PUBLIC,    CMD_WHO,    CS_ONE_ARG,         logged_out1},
-    {"puebloclient",  NULL,       CA_PUBLIC,      CMD_PUEBLOCLIENT,CS_ONE_ARG,                    logged_out1},
-    {"\\",            NULL,       CA_NO_GUEST|CA_LOCATION|CF_DARK|CA_NO_SLAVE,    SAY_PREFIX, CS_ONE_ARG|CS_INTERP,       do_say},
-    {":",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,    SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, do_say},
-    {";",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,    SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, do_say},
-    {"\"",            NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,     SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, do_say},
-    {"-",             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,     0,      CS_ONE_ARG|CS_LEADIN,       do_postpend},
-    {"~",             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,     0,      CS_ONE_ARG|CS_LEADIN,       do_prepend},
-    {NULL,            NULL,       0,     0,      0,              NULL}
+    {"@poor",         NULL,       CA_GOD,                     0,  CS_ONE_ARG|CS_INTERP, do_poor},
+    {"@ps",           ps_sw,      0,                          0,  CS_ONE_ARG|CS_INTERP, do_ps},
+    {"@quitprogram",  NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, do_quitprog},
+    {"@search",       NULL,       0,                SRCH_SEARCH,  CS_ONE_ARG|CS_NOINTERP,   do_search},
+    {"@shutdown",     NULL,       CA_WIZARD,                  0,  CS_ONE_ARG,           do_shutdown},
+    {"@stats",        stats_sw,   0,                          0,  CS_ONE_ARG|CS_INTERP, do_stats},
+    {"@sweep",        sweep_sw,   0,                          0,  CS_ONE_ARG,           do_sweep},
+    {"@timewarp",     warp_sw,    CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, do_timewarp},
+    {"@unlink",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD,   0,  CS_ONE_ARG|CS_INTERP, do_unlink},
+    {"@unlock",       lock_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, do_unlock},
+    {"@wall",         wall_sw,    CA_ANNOUNCE,        SAY_SHOUT,  CS_ONE_ARG|CS_INTERP, do_say},
+    {"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_ONE_ARG|CS_INTERP,   do_wipe},
+    {"allcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_allcom},
+    {"delcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_delcom},
+    {"drop",          drop_sw,    CA_NO_SLAVE|CA_CONTENTS|CA_LOCATION|CA_NO_GUEST,  0,  CS_ONE_ARG|CS_INTERP,   do_drop},
+    {"enter",         enter_sw,   CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, do_enter},
+    {"examine",       examine_sw, 0,                          0,  CS_ONE_ARG|CS_INTERP, do_examine},
+    {"get",           get_sw,     CA_LOCATION|CA_NO_GUEST,    0,  CS_ONE_ARG|CS_INTERP, do_get},
+    {"goto",          goto_sw,    CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, do_move},
+    {"help",          NULL,       0,                  HELP_HELP,  CS_ONE_ARG,           do_help},
+    {"look",          look_sw,    CA_LOCATION,        LOOK_LOOK,  CS_ONE_ARG|CS_INTERP, do_look},
+    {"news",          NULL,       0,                  HELP_NEWS,  CS_ONE_ARG,           do_help},
+    {"outputprefix",  NULL,       CA_PUBLIC,         CMD_PREFIX,  CS_ONE_ARG,           logged_out1},
+    {"outputsuffix",  NULL,       CA_PUBLIC,         CMD_SUFFIX,  CS_ONE_ARG,           logged_out1},
+    {"pose",          pose_sw,    CA_LOCATION|CA_NO_SLAVE,  SAY_POSE,   CS_ONE_ARG|CS_INTERP,   do_say},
+    {"say",           NULL,       CA_LOCATION|CA_NO_SLAVE,  SAY_SAY,    CS_ONE_ARG|CS_INTERP,   do_say},
+    {"session",       NULL,       CA_PUBLIC,        CMD_SESSION,  CS_ONE_ARG,           logged_out1},
+    {"think",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_think},
+    {"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,  0,  CS_ONE_ARG|CS_INTERP, do_use},
+    {"wizhelp",       NULL,       CA_WIZARD,       HELP_WIZHELP,  CS_ONE_ARG,           do_help},
+    {"wiznews",       NULL,       CA_WIZARD,       HELP_WIZNEWS,  CS_ONE_ARG,           do_help},
+    {"doing",         NULL,       CA_PUBLIC,          CMD_DOING,  CS_ONE_ARG,           logged_out1},
+    {"who",           NULL,       CA_PUBLIC,            CMD_WHO,  CS_ONE_ARG,           logged_out1},
+    {"puebloclient",  NULL,       CA_PUBLIC,   CMD_PUEBLOCLIENT,  CS_ONE_ARG,           logged_out1},
+    {"\\",            NULL,       CA_NO_GUEST|CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP,   do_say},
+    {":",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, do_say},
+    {";",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, do_say},
+    {"\"",            NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, do_say},
+    {"-",             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   do_postpend},
+    {"~",             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   do_prepend},
+    {NULL,            NULL,       0,                          0,    0,                  NULL}
 };
 
 CMDENT_ONE_ARG_CMDARG command_table_one_arg_cmdarg[] =
@@ -656,28 +656,28 @@ CMDENT_TWO_ARG command_table_two_arg[] =
 
 CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
 {
-    {"@cpattr",       NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,         0,             CS_TWO_ARG|CS_ARGV,             do_cpattr},
-    {"@dig",          dig_sw,     CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,     0,      CS_TWO_ARG|CS_ARGV|CS_INTERP,   do_dig},
-    {"@edit",         NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_ARGV|CS_STRIP_AROUND, do_edit},
-    {"@mvattr",       NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,    0,      CS_TWO_ARG|CS_ARGV,     do_mvattr},
-    {"@open",         open_sw,    CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_ARGV|CS_INTERP,   do_open},
-    {"@trigger",      trig_sw,    CA_GBL_INTERP,    0,      CS_TWO_ARG|CS_ARGV,     do_trigger},
-    {"@verb",         NULL,       CA_GBL_INTERP|CA_NO_SLAVE,    0,      CS_TWO_ARG|CS_ARGV|CS_INTERP|CS_STRIP_AROUND, do_verb},
-    {NULL,            NULL,       0,     0,      0,              NULL}
+    {"@cpattr",     NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV,             do_cpattr},
+    {"@dig",        dig_sw,     CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   do_dig},
+    {"@edit",       NULL,       CA_NO_SLAVE|CA_NO_GUEST,              0,  CS_TWO_ARG|CS_ARGV|CS_STRIP_AROUND, do_edit},
+    {"@mvattr",     NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV,             do_mvattr},
+    {"@open",       open_sw,    CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST, 0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   do_open},
+    {"@trigger",    trig_sw,    CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV,             do_trigger},
+    {"@verb",       NULL,       CA_GBL_INTERP|CA_NO_SLAVE,            0,  CS_TWO_ARG|CS_ARGV|CS_INTERP|CS_STRIP_AROUND, do_verb},
+    {NULL,          NULL,       0,                                    0,  0,              NULL}
 };
 
 CMDENT_TWO_ARG_CMDARG command_table_two_arg_cmdarg[] =
 {
-    {"@dolist",       dolist_sw,  CA_GBL_INTERP,    0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_dolist},
-    {"@force",        NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,    FRC_COMMAND,    CS_TWO_ARG|CS_INTERP|CS_CMDARG, do_force},
-    {"@wait",         wait_sw,    CA_GBL_INTERP,    0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_wait},
-    {NULL,            NULL,       0,     0,      0,              NULL}
+    {"@dolist", dolist_sw,  CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_dolist},
+    {"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,    FRC_COMMAND,    CS_TWO_ARG|CS_INTERP|CS_CMDARG, do_force},
+    {"@wait",   wait_sw,    CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_wait},
+    {NULL,      NULL,       0,              0,      0,              NULL}
 };
 
 CMDENT_TWO_ARG_ARGV_CMDARG command_table_two_arg_argv_cmdarg[] =
 {
-    {"@switch",       switch_sw,  CA_GBL_INTERP,    0,      CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_switch},
-    {NULL,            NULL,       0,     0,      0,              NULL}
+    {"@switch", switch_sw,  CA_GBL_INTERP,  0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_switch},
+    {NULL,      NULL,       0,              0,  0,                                                        NULL}
 };
 
 CMDENT *prefix_cmds[256];
@@ -890,13 +890,12 @@ BOOL check_access(dbref player, int mask)
  */
 
 void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
-            dbref enactor, int interactive, char *arg, char *unp_command,
+            dbref enactor, BOOL interactive, char *arg, char *unp_command,
             char *cargs[], int ncargs)
 {
     char *buf1, *buf2, tchar, *bp, *str, *buff, *s, *j, *new0;
     char *args[MAX_ARG];
     int nargs, i, interp, key, xkey, aflags;
-    int hasswitch = 0;
     dbref aowner;
     char *aargs[10];
     ADDENT *add;
@@ -982,7 +981,6 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
             }
             key |= xkey;
             switchp = buf1;
-            hasswitch = 1;
         } while (buf1);
     }
     else if (switchp && !(cmdp->callseq & CS_ADDED))
@@ -1285,7 +1283,7 @@ char *process_command
     dbref executor,
     dbref caller,
     dbref enactor,
-    int   interactive,
+    BOOL  interactive,
     char *arg_command,
     char *args[],
     int   nargs
@@ -1438,8 +1436,9 @@ char *process_command
     //
     if (string_compare(pCommand, "home") == 0)
     {
-        if (((Fixed(executor)) || (Fixed(Owner(executor)))) &&
-            !(WizRoy(executor)))
+        if (  (  Fixed(executor)
+              || Fixed(Owner(executor)))
+           && !WizRoy(executor))
         {
             notify(executor, mudconf.fixed_home_msg);
             return preserve_cmd;
@@ -1460,7 +1459,7 @@ char *process_command
         exit = last_match_result();
         if (exit != NOTHING)
         {
-            move_exit(executor, exit, 0, "You can't go that way.", 0);
+            move_exit(executor, exit, FALSE, "You can't go that way.", 0);
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
@@ -1472,7 +1471,7 @@ char *process_command
         exit = last_match_result();
         if (exit != NOTHING)
         {
-            move_exit(executor, exit, 1, NULL, 0);
+            move_exit(executor, exit, TRUE, NULL, 0);
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
@@ -1596,7 +1595,7 @@ char *process_command
                 if (matches_exit_from_list(LowerCaseCommand, p))
                 {
                     free_lbuf(p);
-                    do_enter_internal(executor, exit, 0);
+                    do_enter_internal(executor, exit, FALSE);
                     return preserve_cmd;
                 }
             }
@@ -1606,10 +1605,10 @@ char *process_command
 
     // Check for $-command matches on me.
     //
-    if (mudconf.match_mine && (!(No_Command(executor))))
+    if (mudconf.match_mine && !No_Command(executor))
     {
-        if (((Typeof(executor) != TYPE_PLAYER) || mudconf.match_mine_pl)
-            && (atr_match(executor, executor, AMATCH_CMD, LowerCaseCommand, 1) > 0))
+        if (  (!isPlayer(executor) || mudconf.match_mine_pl)
+           && (atr_match(executor, executor, AMATCH_CMD, LowerCaseCommand, TRUE) > 0))
         {
             succ++;
         }
@@ -1619,11 +1618,11 @@ char *process_command
     //
     if (Has_location(executor))
     {
-        succ += list_check(Contents(Location(executor)), executor, AMATCH_CMD, LowerCaseCommand, 1);
+        succ += list_check(Contents(Location(executor)), executor, AMATCH_CMD, LowerCaseCommand, TRUE);
 
-        if (!(No_Command(Location(executor))))
+        if (!No_Command(Location(executor)))
         {
-            if (atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, 1) > 0)
+            if (atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, TRUE) > 0)
             {
                 succ++;
             }
@@ -1634,7 +1633,7 @@ char *process_command
     //
     if (Has_contents(executor))
     {
-        succ += list_check(Contents(executor), executor, AMATCH_CMD, LowerCaseCommand, 1);
+        succ += list_check(Contents(executor), executor, AMATCH_CMD, LowerCaseCommand, TRUE);
     }
 
     if (  !succ
@@ -1661,12 +1660,12 @@ char *process_command
                     exit = last_match_result();
                     if (exit != NOTHING)
                     {
-                        move_exit(executor, exit, 1, NULL, 0);
+                        move_exit(executor, exit, TRUE, NULL, 0);
                         mudstate.debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
                     succ += list_check(Contents(zone_loc), executor,
-                               AMATCH_CMD, LowerCaseCommand, 1);
+                               AMATCH_CMD, LowerCaseCommand, TRUE);
 
                     // end of parent room checks.
                     //
@@ -1679,7 +1678,7 @@ char *process_command
                 if (!No_Command(zone_loc))
                 {
                    succ += atr_match(zone_loc, executor, AMATCH_CMD,
-                       LowerCaseCommand, 1);
+                       LowerCaseCommand, TRUE);
                 }
             }
         }
@@ -1695,7 +1694,7 @@ char *process_command
            && !No_Command(zone)
            && zone_loc != zone)
         {
-            succ += atr_match(zone, executor, AMATCH_CMD, LowerCaseCommand, 1);
+            succ += atr_match(zone, executor, AMATCH_CMD, LowerCaseCommand, TRUE);
         }
     }
 
@@ -1707,10 +1706,10 @@ char *process_command
            && Has_contents(mudconf.master_room))
         {
             succ += list_check(Contents(mudconf.master_room),
-                       executor, AMATCH_CMD, LowerCaseCommand, 0);
-            if (!(No_Command(mudconf.master_room)))
+                       executor, AMATCH_CMD, LowerCaseCommand, FALSE);
+            if (!No_Command(mudconf.master_room))
             {
-                if (atr_match(mudconf.master_room, executor, AMATCH_CMD, LowerCaseCommand, 0) > 0)
+                if (atr_match(mudconf.master_room, executor, AMATCH_CMD, LowerCaseCommand, FALSE) > 0)
                 {
                     succ++;
                 }
@@ -1740,10 +1739,9 @@ char *process_command
 //
 static void list_cmdtable(dbref player)
 {
-    char *buf, *bp, *cp;
-
-    buf = alloc_lbuf("list_cmdtable");
-    bp = buf;
+    char *buf = alloc_lbuf("list_cmdtable");
+    char *bp = buf;
+    char *cp;
     for (cp = (char *)"Commands:"; *cp; cp++)
         *bp++ = *cp;
 
@@ -1938,7 +1936,7 @@ static void list_cmdaccess(dbref player)
                 if (!(cmdp->perms & CF_DARK))
                 {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
+                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
                 }
             }
         }
@@ -1952,7 +1950,7 @@ static void list_cmdaccess(dbref player)
                 if (!(cmdp->perms & CF_DARK))
                 {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
+                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
                 }
             }
         }
@@ -1966,7 +1964,7 @@ static void list_cmdaccess(dbref player)
                 if (!(cmdp->perms & CF_DARK))
                 {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
+                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
                 }
             }
         }
@@ -1980,7 +1978,7 @@ static void list_cmdaccess(dbref player)
                 if (!(cmdp->perms & CF_DARK))
                 {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
+                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
                 }
             }
         }
@@ -1994,7 +1992,7 @@ static void list_cmdaccess(dbref player)
                 if (!(cmdp->perms & CF_DARK))
                 {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
+                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
                 }
             }
         }
@@ -2008,7 +2006,7 @@ static void list_cmdaccess(dbref player)
                 if (!(cmdp->perms & CF_DARK))
                 {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
+                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
                 }
             }
         }
@@ -2022,7 +2020,7 @@ static void list_cmdaccess(dbref player)
                 if (!(cmdp->perms & CF_DARK))
                 {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
+                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
                 }
             }
         }
@@ -2057,7 +2055,7 @@ static void list_cmdaccess(dbref player)
         if (!(cmdp->perms & CF_DARK))
         {
             sprintf(buff, "%.60s:", cmdp->cmdname);
-            listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
+            listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
         }
     }
 }
@@ -2067,9 +2065,7 @@ static void list_cmdaccess(dbref player)
 //
 static void list_cmdswitches(dbref player)
 {
-    char *buff;
-
-    buff = alloc_sbuf("list_cmdswitches");
+    char *buff = alloc_sbuf("list_cmdswitches");
     {
         CMDENT_NO_ARG *cmdp;
         for (cmdp = command_table_no_arg; cmdp->cmdname; cmdp++)
@@ -2228,16 +2224,15 @@ NAMETAB indiv_attraccess_nametab[] =
 
 static void list_attraccess(dbref player)
 {
-    char *buff;
     ATTR *ap;
 
-    buff = alloc_sbuf("list_attraccess");
+    char *buff = alloc_sbuf("list_attraccess");
     for (ap = attr; ap->name; ap++)
     {
         if (bCanReadAttr(player, player, ap, FALSE))
         {
             sprintf(buff, "%s:", ap->name);
-            listset_nametab(player, attraccess_nametab, ap->flags, buff, 1);
+            listset_nametab(player, attraccess_nametab, ap->flags, buff, TRUE);
         }
     }
     free_sbuf(buff);
@@ -2250,14 +2245,17 @@ CF_HAND(cf_access)
 {
     CMDENT *cmdp;
     char *ap;
-    int set_switch;
+    BOOL set_switch;
 
     for (ap = str; *ap && !Tiny_IsSpace[(unsigned char)*ap] && (*ap != '/'); ap++) ;
-    if (*ap == '/') {
-        set_switch = 1;
+    if (*ap == '/')
+    {
+        set_switch = TRUE;
         *ap++ = '\0';
-    } else {
-        set_switch = 0;
+    }
+    else
+    {
+        set_switch = FALSE;
         if (*ap)
             *ap++ = '\0';
         while (Tiny_IsSpace[(unsigned char)*ap])
@@ -2295,7 +2293,7 @@ CF_HAND(cf_acmd_access)
     for (ap = attr; ap->name; ap++)
     {
         int nBuffer;
-        int bValid;
+        BOOL bValid;
         char *buff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)
         {
@@ -2487,9 +2485,7 @@ static void list_df_flags(dbref player)
 
 static void list_costs(dbref player)
 {
-    char *buff;
-
-    buff = alloc_mbuf("list_costs");
+    char *buff = alloc_mbuf("list_costs");
     *buff = '\0';
     if (mudconf.quotas)
         sprintf(buff, " and %d quota", mudconf.room_quota);
@@ -2507,28 +2503,35 @@ static void list_costs(dbref player)
     if (mudconf.quotas)
         sprintf(buff, " and %d quota", mudconf.thing_quota);
     if (mudconf.createmin == mudconf.createmax)
+    {
         raw_notify(player,
                tprintf("Creating a new thing costs %d %s%s.",
                    mudconf.createmin,
                    coin_name(mudconf.createmin), buff));
+    }
     else
+    {
         raw_notify(player,
         tprintf("Creating a new thing costs between %d and %d %s%s.",
             mudconf.createmin, mudconf.createmax,
             mudconf.many_coins, buff));
+    }
     if (mudconf.quotas)
         sprintf(buff, " and %d quota", mudconf.player_quota);
     notify(player,
            tprintf("Creating a robot costs %d %s%s.",
                mudconf.robotcost, coin_name(mudconf.robotcost),
                buff));
-    if (mudconf.killmin == mudconf.killmax) {
+    if (mudconf.killmin == mudconf.killmax)
+    {
         raw_notify(player,
                tprintf("Killing costs %d %s, with a %d%% chance of success.",
                 mudconf.killmin, coin_name(mudconf.digcost),
                    (mudconf.killmin * 100) /
                    mudconf.killguarantee));
-    } else {
+    }
+    else
+    {
         raw_notify(player,
                tprintf("Killing costs between %d and %d %s.",
                    mudconf.killmin, mudconf.killmax,
@@ -2545,7 +2548,8 @@ static void list_costs(dbref player)
         raw_notify(player,
            tprintf("Each command run from the queue costs 1/%d %s.",
                mudconf.machinecost, mudconf.one_coin));
-    if (mudconf.waitcost > 0) {
+    if (mudconf.waitcost > 0)
+    {
         raw_notify(player,
                tprintf("A %d %s deposit is charged for putting a command on the queue.",
                    mudconf.waitcost, mudconf.one_coin));
@@ -2654,7 +2658,8 @@ static void list_options(dbref player)
     raw_notify(player,
            tprintf("Players may have at most %d commands in the queue at one time.",
                mudconf.queuemax));
-    if (mudconf.match_mine) {
+    if (mudconf.match_mine)
+    {
         if (mudconf.match_mine_pl)
             raw_notify(player, "All objects search themselves for $-commands.");
         else
@@ -2750,7 +2755,7 @@ static void list_options(dbref player)
 // ---------------------------------------------------------------------------
 // list_vattrs: List user-defined attributes
 //
-static void list_vattrs(dbref player, char *s_mask, int wild_mtch)
+static void list_vattrs(dbref player, char *s_mask, BOOL wild_mtch)
 {
     char *buff = alloc_lbuf("list_vattrs");
 
@@ -2778,7 +2783,7 @@ static void list_vattrs(dbref player, char *s_mask, int wild_mtch)
                 wna++;
             }
             sprintf(buff, "%s(%d):", va->name, va->number);
-            listset_nametab(player, attraccess_nametab, va->flags, buff, 1);
+            listset_nametab(player, attraccess_nametab, va->flags, buff, TRUE);
         }
     }
  
@@ -2998,23 +3003,23 @@ static void list_process(dbref player)
 //
 #define LIST_ATTRIBUTES 1
 #define LIST_COMMANDS   2
-#define LIST_COSTS  3
-#define LIST_FLAGS  4
+#define LIST_COSTS      3
+#define LIST_FLAGS      4
 #define LIST_FUNCTIONS  5
 #define LIST_GLOBALS    6
 #define LIST_ALLOCATOR  7
 #define LIST_LOGGING    8
 #define LIST_DF_FLAGS   9
-#define LIST_PERMS  10
+#define LIST_PERMS      10
 #define LIST_ATTRPERMS  11
 #define LIST_OPTIONS    12
 #define LIST_HASHSTATS  13
 #define LIST_BUFTRACE   14
 #define LIST_CONF_PERMS 15
 #define LIST_SITEINFO   16
-#define LIST_POWERS 17
+#define LIST_POWERS     17
 #define LIST_SWITCHES   18
-#define LIST_VATTRS 19
+#define LIST_VATTRS     19
 #define LIST_DB_STATS   20
 #define LIST_PROCESS    21
 #define LIST_BADNAMES   22
@@ -3095,8 +3100,8 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
         break;
     case LIST_GLOBALS:
         interp_nametab(executor, enable_names, mudconf.control_flags,
-                (char *)"Global parameters:", (char *)"enabled",
-                   (char *)"disabled");
+                "Global parameters:", "enabled",
+                   "disabled");
         break;
     case LIST_DF_FLAGS:
         list_df_flags(executor);
@@ -3114,15 +3119,15 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
         list_attraccess(executor);
         break;
     case LIST_VATTRS:
-        list_vattrs(executor, NULL, 0);
+        list_vattrs(executor, NULL, FALSE);
         break;
     case LIST_LOGGING:
         interp_nametab(executor, logoptions_nametab, mudconf.log_options,
-                   (char *)"Events Logged:", (char *)"enabled",
-                   (char *)"disabled");
+                   "Events Logged:", "enabled",
+                   "disabled");
         interp_nametab(executor, logdata_nametab, mudconf.log_info,
-                   (char *)"Information Logged:", (char *)"yes",
-                   (char *)"no");
+                   "Information Logged:", "yes",
+                   "no");
         break;
     case LIST_DB_STATS:
         list_db_stats(executor);
@@ -3152,11 +3157,11 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
         }
         if (flagvalue == LIST_VATTRS)
         {
-            list_vattrs(executor, s_sub_option, 1);
+            list_vattrs(executor, s_sub_option, TRUE);
         }
         else
         {
-            display_nametab(executor, list_names, "Unknown option.  Use one of:", 1);
+            display_nametab(executor, list_names, "Unknown option.  Use one of:", TRUE);
         }
     }
 }

@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.1 2002-05-24 06:53:14 sdennis Exp $
+// $Id: alloc.cpp,v 1.2 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -471,9 +471,7 @@ void pool_free_lbuf(char *buf)
 
 static char *pool_stats(int poolnum, const char *text)
 {
-    char *buf;
-
-    buf = alloc_mbuf("pool_stats");
+    char *buf = alloc_mbuf("pool_stats");
     sprintf(buf, "%-15s %5d%9d%9d%9d%9d", text, pools[poolnum].pool_size,
         pools[poolnum].num_alloc, pools[poolnum].max_alloc,
         pools[poolnum].tot_alloc, pools[poolnum].num_lost);
@@ -483,11 +481,10 @@ static char *pool_stats(int poolnum, const char *text)
 static void pool_trace(dbref player, int poolnum, const char *text)
 {
     POOLHDR *ph;
-    int numfree;
     unsigned int *ibuf;
     char *h;
 
-    numfree = 0;
+    int numfree = 0;
     notify(player, tprintf("----- %s -----", text));
     for (ph = pools[poolnum].chain_head; ph != NULL; ph = ph->next)
     {

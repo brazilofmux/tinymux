@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.10 2002-07-09 22:31:08 jake Exp $
+// $Id: create.cpp,v 1.11 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -17,11 +17,9 @@
 //
 static dbref parse_linkable_room(dbref player, char *room_name)
 {
-    dbref room;
-
     init_match(player, room_name, NOTYPE);
     match_everything(MAT_NO_EXITS | MAT_NUMERIC | MAT_HOME);
-    room = match_result();
+    dbref room = match_result();
 
     // HOME is always linkable
     //
@@ -54,13 +52,10 @@ static dbref parse_linkable_room(dbref player, char *room_name)
 //
 static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
 {
-    dbref exit;
-
     if (!Good_obj(loc))
     {
         return;
     }
-
     if (!direction || !*direction)
     {
         notify_quiet(player, "Open where?");
@@ -71,7 +66,7 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
         notify_quiet(player, NOPERM_MESSAGE);
         return;
     }
-    exit = create_obj(player, TYPE_EXIT, direction, 0);
+    dbref exit = create_obj(player, TYPE_EXIT, direction, 0);
     if (exit == NOTHING)
     {
         return;
@@ -124,7 +119,6 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
 void do_open(dbref executor, dbref caller, dbref enactor, int key,
              char *direction, char *links[], int nlinks)
 {
-    dbref loc, destnum;
     char *dest;
 
     // Create the exit and link to the destination, if there is one
@@ -138,6 +132,7 @@ void do_open(dbref executor, dbref caller, dbref enactor, int key,
         dest = NULL;
     }
 
+    dbref loc;
     if (key == OPEN_INVENTORY)
     {
         loc = executor;
@@ -153,7 +148,7 @@ void do_open(dbref executor, dbref caller, dbref enactor, int key,
     //
     if (nlinks >= 2)
     {
-        destnum = parse_linkable_room(executor, dest);
+        dbref destnum = parse_linkable_room(executor, dest);
         if (Good_obj(destnum) || destnum == HOME)
         {
             char buff[12];
@@ -169,8 +164,6 @@ void do_open(dbref executor, dbref caller, dbref enactor, int key,
 
 static void link_exit(dbref player, dbref exit, dbref dest)
 {
-    int cost, quot;
-
     // Make sure we can link there
     //
     if (  dest != HOME
@@ -193,8 +186,8 @@ static void link_exit(dbref player, dbref exit, dbref dest)
 
     // Handle costs
     //
-    cost = mudconf.linkcost;
-    quot = 0;
+    int cost = mudconf.linkcost;
+    int quot = 0;
     if (Owner(exit) != Owner(player))
     {
         cost += mudconf.opencost;
@@ -236,16 +229,15 @@ void do_link
     char *where
 )
 {
-    dbref thing, room;
-    char *buff;
-
     // Find the thing to link
     //
     init_match(executor, what, TYPE_EXIT);
     match_everything(0);
-    thing = noisy_match_result();
+    dbref thing = noisy_match_result();
     if (thing == NOTHING)
+    {
         return;
+    }
 
     // Allow unlink if where is not specified
     //
@@ -254,6 +246,10 @@ void do_link
         do_unlink(executor, caller, enactor, key, what);
         return;
     }
+
+    dbref room;
+    char *buff;
+
     switch (Typeof(thing))
     {
     case TYPE_EXIT:
@@ -446,9 +442,6 @@ void do_parent
 void do_dig(dbref executor, dbref caller, dbref enactor, int key, char *name,
             char *args[], int nargs)
 {
-    dbref room;
-    char *buff;
-
     // we don't need to know player's location!  hooray!
     //
     if (!name || !*name)
@@ -456,7 +449,7 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int key, char *name,
         notify_quiet(executor, "Dig what?");
         return;
     }
-    room = create_obj(executor, TYPE_ROOM, name, 0);
+    dbref room = create_obj(executor, TYPE_ROOM, name, 0);
     if (room == NOTHING)
     {
         return;
@@ -464,7 +457,7 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int key, char *name,
 
     notify(executor, tprintf("%s created with room number %d.", name, room));
 
-    buff = alloc_sbuf("do_dig");
+    char *buff = alloc_sbuf("do_dig");
     if (  nargs >= 1
        && args[0]
        && *args[0])
@@ -755,8 +748,8 @@ void do_pcreate
     char *pass
 )
 {
-    BOOL isrobot = (key == PCRE_ROBOT) ? 1 : 0;
-    dbref newplayer = create_player(name, pass, executor, isrobot, 0);
+    BOOL isrobot = (key == PCRE_ROBOT);
+    dbref newplayer = create_player(name, pass, executor, isrobot, FALSE);
     if (newplayer == NOTHING)
     {
         notify_quiet(executor, tprintf("Failure creating '%s'", name));
@@ -901,7 +894,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
     // Make sure we can do it, on a type-specific basis.
     //
     char *NameOfType;
-    int can_doit;
+    BOOL can_doit;
     switch (Typeof(thing))
     {
     case TYPE_EXIT:
@@ -916,17 +909,17 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
 
     case TYPE_ROOM:
         NameOfType = "room";
-        can_doit = 1;
+        can_doit = TRUE;
         break;
 
     case TYPE_THING:
         NameOfType = "thing";
-        can_doit = 1;
+        can_doit = TRUE;
         break;
 
     default:
         NameOfType = "weird";
-        can_doit = 1;
+        can_doit = TRUE;
         break;
     }
     if (!can_doit)

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.6 2002-07-09 08:22:48 jake Exp $
+// $Id: bsd.cpp,v 1.7 2002-07-13 07:23:01 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -56,7 +56,7 @@ pid_t game_pid;
 
 DESC *initializesock(SOCKET, struct sockaddr_in *);
 DESC *new_connection(PortInfo *Port, int *piError);
-int  process_input(DESC *);
+BOOL process_input(DESC *);
 void SiteMonSend(int, const char *, DESC *, const char *);
 
 #ifdef WIN32
@@ -254,7 +254,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                     }
                     else
                     {
-                        int TurnOn = TRUE;
+                        int TurnOn = 1;
                         setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&TurnOn, sizeof(TurnOn));
 
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
@@ -415,7 +415,10 @@ static int get_slave_result(void)
 
     // At this point, we have a host name on our own stack.
     //
-    if (!mudconf.use_hostname) return 1;
+    if (!mudconf.use_hostname)
+    {
+        return 1;
+    }
     for (d = descriptor_list; d; d = d->next)
     {
         if (strcmp(d->addr, host))
@@ -437,21 +440,16 @@ static int get_slave_result(void)
         }
     }
 
-    if (sscanf( ident,
-                "%d , %d : %s : %s : %s",
-                &remote_port,
-                &local_port,
-                token,
-                os,
-                userid
-              ) != 5)
+    if (sscanf(ident, "%d , %d : %s : %s : %s", &remote_port, &local_port, token, os, userid) != 5)
     {
         return 1;
     }
     for (d = descriptor_list; d; d = d->next)
     {
         if (ntohs((d->address).sin_port) != remote_port)
+        {
             continue;
+        }
 
         StringCopyTrunc(d->username, userid, 10);
         d->username[10] = '\0';
@@ -465,7 +463,7 @@ static int get_slave_result(void)
 
 #else // WIN32
 
-void boot_slave(dbref executor, dbref caller, dbref enactor, int int3)
+void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 {
     char *pFailedFunc = 0;
     int sv[2];
@@ -1059,7 +1057,7 @@ LRESULT WINAPI TinyWindowProc
     switch (msg)
     {
     case WM_CLOSE:
-        mudstate.shutdown_flag = 1;
+        mudstate.shutdown_flag = TRUE;
         PostQueuedCompletionStatus(CompletionPort, 0, 0, &lpo_wakeup);
         return 0;
 
@@ -1101,7 +1099,7 @@ DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
     {
         DispatchMessage(&msg);
     }
-    mudstate.shutdown_flag = 1;
+    mudstate.shutdown_flag = TRUE;
     PostQueuedCompletionStatus(CompletionPort, 0, 0, &lpo_wakeup);
     return 1;
 }
@@ -2356,7 +2354,7 @@ BOOL process_input(DESC *d)
     return cc;
 }
 
-void close_sockets(int emergency, char *message)
+void close_sockets(BOOL emergency, char *message)
 {
     DESC *d, *dnext;
 
@@ -2393,7 +2391,7 @@ void close_sockets(int emergency, char *message)
 
 void emergency_shutdown(void)
 {
-    close_sockets(1, "Going down - Bye");
+    close_sockets(TRUE, "Going down - Bye");
 }
 
 
@@ -2424,7 +2422,7 @@ static void check_panicking(int sig)
         kill(getpid(), sig);
 #endif // WIN32
     }
-    mudstate.panicking = 1;
+    mudstate.panicking = TRUE;
 }
 
 static void unset_signals(void)
@@ -2889,8 +2887,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
 NAMETAB sigactions_nametab[] =
 {
-    {"exit",    3,  0,  SA_EXIT},
-    {"default", 1,  0,  SA_DFLT},
+    {"exit",        3,  0,  SA_EXIT},
+    {"default",     1,  0,  SA_DFLT},
     { NULL,         0,  0,  0}
 };
 
@@ -2995,7 +2993,7 @@ void __cdecl MUDListenThread(void * pVoid)
 
     SOCKADDR_IN SockAddr;
     int         nLen;
-    BOOL    b;
+    BOOL        b;
 
     struct descriptor_data * d;
 

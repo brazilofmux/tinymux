@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.13 2002-07-09 22:31:08 jake Exp $
+// $Id: speech.cpp,v 1.14 2002-07-13 07:23:02 jake Exp $
 //
 
 #include "copyright.h"
@@ -505,7 +505,7 @@ void do_page
         char *p;
         for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
         {
-            dbref target = lookup_player(executor,p, 1);
+            dbref target = lookup_player(executor,p, TRUE);
             if (target != NOTHING)
             {
                 aPlayers[nPlayers++] = target;

@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.13 2002-07-09 17:36:47 sdennis Exp $
+// $Id: mail.cpp,v 1.14 2002-07-13 07:23:01 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -18,11 +18,11 @@
 #include "powers.h"
 
 static int  sign(int);
-static void do_mail_flags(dbref, char *, mail_flag, int);
-static void send_mail(dbref, dbref, const char *, const char *, int, mail_flag, int);
+static void do_mail_flags(dbref, char *, mail_flag, BOOL);
+static void send_mail(dbref, dbref, const char *, const char *, int, mail_flag, BOOL);
 static int  player_folder(dbref);
-static int  parse_msglist(char *, struct mail_selector *, dbref);
-static int  mail_match(struct mail *, struct mail_selector, int);
+static BOOL parse_msglist(char *, struct mail_selector *, dbref);
+static BOOL mail_match(struct mail *, struct mail_selector, int);
 static int  parse_folder(dbref, char *);
 static char *status_chars(struct mail *);
 static char *status_string(struct mail *);
@@ -32,7 +32,7 @@ static char *get_folder_name(dbref, int);
 static char *mail_list_time(const char *);
 static char *make_numlist(dbref, char *);
 static char *make_namelist(dbref, char *);
-static void mail_to_list(dbref, char *, char *, char *, int, int);
+static void mail_to_list(dbref, char *, char *, char *, int, BOOL);
 static void do_edit_msg(dbref, char *, char *);
 static void do_mail_proof(dbref);
 void do_mail_cc(dbref, char *);
@@ -301,7 +301,7 @@ void do_mail_change_folder(dbref player, char *fld, char *newname)
         //
         for (pfld = MAX_FOLDERS; pfld >= 0; pfld--)
         {
-            check_mail(player, pfld, 1);
+            check_mail(player, pfld, TRUE);
         }
         pfld = player_folder(player);
         notify(player, tprintf("MAIL: Current folder is %d [%s].",
@@ -346,32 +346,32 @@ void do_mail_change_folder(dbref player, char *fld, char *newname)
 
 void do_mail_tag(dbref player, char *msglist)
 {
-    do_mail_flags(player, msglist, M_TAG, 0);
+    do_mail_flags(player, msglist, M_TAG, FALSE);
 }
 
 void do_mail_safe(dbref player, char *msglist)
 {
-    do_mail_flags(player, msglist, M_SAFE, 0);
+    do_mail_flags(player, msglist, M_SAFE, FALSE);
 }
 
 void do_mail_clear(dbref player, char *msglist)
 {
-    do_mail_flags(player, msglist, M_CLEARED, 0);
+    do_mail_flags(player, msglist, M_CLEARED, FALSE);
 }
 
 void do_mail_untag(dbref player, char *msglist)
 {
-    do_mail_flags(player, msglist, M_TAG, 1);
+    do_mail_flags(player, msglist, M_TAG, TRUE);
 }
 
 void do_mail_unclear(dbref player, char *msglist)
 {
-    do_mail_flags(player, msglist, M_CLEARED, 1);
+    do_mail_flags(player, msglist, M_CLEARED, TRUE);
 }
 
 // Adjust the flags of a set of messages.
-// If negate is 1, clear the flag.
-static void do_mail_flags(dbref player, char *msglist, mail_flag flag, int negate)
+// If negate is TRUE, clear the flag.
+static void do_mail_flags(dbref player, char *msglist, mail_flag flag, BOOL negate)
 {
     struct mail_selector ms;
 
@@ -550,7 +550,7 @@ void do_mail_read(dbref player, char *msglist)
 
 void do_mail_retract(dbref player, char *name, char *msglist)
 {
-    dbref target = lookup_player(player, name, 1);
+    dbref target = lookup_player(player, name, TRUE);
     if (target == NOTHING)
     {
         notify(player, "MAIL: No such player.");
@@ -637,7 +637,7 @@ void do_mail_retract(dbref player, char *name, char *msglist)
 
 void do_mail_review(dbref player, char *name, char *msglist)
 {
-    dbref target = lookup_player(player, name, 1);
+    dbref target = lookup_player(player, name, TRUE);
     if (target == NOTHING)
     {
         notify(player, "MAIL: No such player.");
@@ -719,7 +719,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
     }
 }
 
-void do_mail_list(dbref player, char *msglist, int sub)
+void do_mail_list(dbref player, char *msglist, BOOL sub)
 {
     struct mail_selector ms;
 
@@ -909,7 +909,7 @@ void do_mail_fwd(dbref player, char *msg, char *tolist)
     atr_add_raw(player, A_MAILFLAGS, Tiny_ltoa_t(iFlag));
 }
 
-void do_mail_reply(dbref player, char *msg, int all, int key)
+void do_mail_reply(dbref player, char *msg, BOOL all, int key)
 {
     if (Flags2(player) & PLAYER_MAILS)
     {
@@ -1095,7 +1095,7 @@ static void send_mail
     const char *subject,
     int number,
     mail_flag flags,
-    int silent
+    BOOL silent
 )
 {
     char tbuf1[30];
@@ -1225,7 +1225,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
     dbref thing;
     if (string_prefix("clear", action))
     {
-        dbref target = lookup_player(player, victim, 1);
+        dbref target = lookup_player(player, victim, TRUE);
         if (target == NOTHING)
         {
             init_match(player, victim, NOTYPE);
@@ -1462,7 +1462,7 @@ void do_mail_stats(dbref player, char *name, int full)
     }
     else
     {
-        target = lookup_player(player, name, 1);
+        target = lookup_player(player, name, TRUE);
     }
 
     if (target == NOTHING)
@@ -1664,7 +1664,7 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
 
         // Just the "@mail" command.
         //
-        do_mail_list(player, arg1, 1);
+        do_mail_list(player, arg1, TRUE);
         return;
     }
 
@@ -1705,7 +1705,7 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
         }
         else
         {
-            do_mail_list(player, arg1, 1);
+            do_mail_list(player, arg1, TRUE);
         }
         return;
     }
@@ -1760,7 +1760,7 @@ void do_mail
         do_mail_change_folder(executor, arg1, arg2);
         break;
     case MAIL_LIST:
-        do_mail_list(executor, arg1, 0);
+        do_mail_list(executor, arg1, FALSE);
         break;
     case MAIL_READ:
         do_mail_read(executor, arg1);
@@ -1787,10 +1787,10 @@ void do_mail
         do_mail_fwd(executor, arg1, arg2);
         break;
     case MAIL_REPLY:
-        do_mail_reply(executor, arg1, 0, key);
+        do_mail_reply(executor, arg1, FALSE, key);
         break;
     case MAIL_REPLYALL:
-        do_mail_reply(executor, arg1, 1, key);
+        do_mail_reply(executor, arg1, TRUE, key);
         break;
     case MAIL_SEND:
         do_expmail_stop(executor, 0);
@@ -2399,7 +2399,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 notify(player, "MAIL: Invalid player");
                 return FALSE;
             }
-            ms->player = lookup_player(player, p, 1);
+            ms->player = lookup_player(player, p, TRUE);
             if (ms->player == NOTHING)
             {
                 notify(player, "MAIL: Invalid player");
@@ -2664,7 +2664,7 @@ static char *status_string(struct mail *mp)
     return tbuf1;
 }
 
-void check_mail(dbref player, int folder, int silent)
+void check_mail(dbref player, int folder, BOOL silent)
 {
     // Check for new @mail
     //
@@ -2932,7 +2932,7 @@ struct malias *get_malias(dbref player, char *alias, int *pnResult)
     return NULL;
 }
 
-void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int number, mail_flag flags, int silent)
+void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int number, mail_flag flags, BOOL silent)
 {
     int nResult;
     struct malias *m = get_malias(player, tolist, &nResult);
@@ -3064,7 +3064,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
         }
         else
         {
-            target = lookup_player(player, head, 1);
+            target = lookup_player(player, head, TRUE);
         }
         if (!Good_obj(target) || !isPlayer(target))
         {
@@ -3072,7 +3072,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
         }
         else
         {
-            buff = unparse_object(player, target, 0);
+            buff = unparse_object(player, target, FALSE);
             notify(player,
             tprintf("MAIL: %s added to alias %s", buff, alias));
             malias[ma_top]->list[i] = target;
@@ -3546,7 +3546,7 @@ static char *make_numlist(dbref player, char *arg)
         }
         else
         {
-            target = lookup_player(player, head, 1);
+            target = lookup_player(player, head, TRUE);
             if (target != NOTHING)
             {
                 sprintf(buf, "%d ", target);
@@ -3612,11 +3612,11 @@ void do_mail_quick(dbref player, char *arg1, char *arg2)
         free_lbuf(buf);
         return;
     }
-    mail_to_list(player, make_numlist(player, buf), bp, arg2, 0, 0);
+    mail_to_list(player, make_numlist(player, buf), bp, arg2, 0, FALSE);
     free_lbuf(buf);
 }
 
-void mail_to_list(dbref player, char *list, char *subject, char *message, int flags, int silent)
+void mail_to_list(dbref player, char *list, char *subject, char *message, int flags, BOOL silent)
 {
     if (!list)
     {
@@ -3720,7 +3720,7 @@ void do_expmail_stop(dbref player, int flags)
         {
             char *mailsub   = atr_get(player, A_MAILSUB, &aowner, &aflags);
             char *mailflags = atr_get(player, A_MAILFLAGS, &aowner, &aflags);
-            mail_to_list(player, tolist, mailsub, mailmsg, flags | Tiny_atol(mailflags), 0);
+            mail_to_list(player, tolist, mailsub, mailmsg, flags | Tiny_atol(mailflags), FALSE);
             free_lbuf(mailflags);
             free_lbuf(mailsub);
 
@@ -3952,8 +3952,8 @@ void do_malias_chown(dbref player, char *alias, char *owner)
     {
         return;
     }
-    dbref no = NOTHING;
-    if ((no = lookup_player(player, owner, 1)) == NOTHING)
+    dbref no = lookup_player(player, owner, TRUE);
+    if (no == NOTHING)
     {
         notify(player, "MAIL: I do not see that here.");
         return;
@@ -3988,7 +3988,7 @@ void do_malias_add(dbref player, char *alias, char *person)
 
     if (thing == NOTHING)
     {
-        thing = lookup_player(player, person, 1);
+        thing = lookup_player(player, person, TRUE);
     }
 
     if (thing == NOTHING)
@@ -4049,7 +4049,7 @@ void do_malias_remove(dbref player, char *alias, char *person)
     }
     if (thing == NOTHING)
     {
-        thing = lookup_player(player, person, 1);
+        thing = lookup_player(player, person, TRUE);
     }
     if (thing == NOTHING)
     {
@@ -4152,7 +4152,7 @@ void do_malias_delete(dbref player, char *alias)
             {
                 if (m == malias[i])
                 {
-                    done = 1;
+                    done = TRUE;
                     notify(player, "MAIL: Alias Deleted.");
                     malias[i] = malias[i + 1];
                 }

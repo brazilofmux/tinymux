@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.10 2002-07-09 08:22:49 jake Exp $
+// $Id: log.cpp,v 1.11 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -167,7 +167,7 @@ void log_name(dbref target)
 
     if ((mudconf.log_info & LOGOPT_FLAGS) != 0)
     {
-        tp = unparse_object(GOD, target, 0);
+        tp = unparse_object(GOD, target, FALSE);
     }
     else
     {
@@ -180,7 +180,7 @@ void log_name(dbref target)
     {
         if ((mudconf.log_info & LOGOPT_FLAGS) != 0)
         {
-            tp = unparse_object(GOD, Owner(target), 0);
+            tp = unparse_object(GOD, Owner(target), FALSE);
         }
         else
         {

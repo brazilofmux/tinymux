@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.6 2002-07-09 08:22:49 jake Exp $
+// $Id: stringutil.h,v 1.7 2002-07-13 07:23:02 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -135,7 +135,7 @@ void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp);
 int safe_fill(char *buff, char **bufc, char chFile, int nSpaces);
 extern BOOL matches_exit_from_list(char *, char *);
-extern char *translate_string(const char *, int);
+extern char *translate_string(const char *, BOOL);
 #ifndef WIN32
 extern int _stricmp(const char *a, const char *b);
 extern int _strnicmp(const char *a, const char *b, int n);
@@ -145,7 +145,7 @@ extern void _strupr(char *a);
 
 typedef struct tag_dtb
 {
-    int bFirst;
+    BOOL bFirst;
     char *buff;
     char **bufc;
     int nBufferAvailable;
@@ -153,17 +153,17 @@ typedef struct tag_dtb
 
 typedef struct tag_itb
 {
-    int bFirst;
+    BOOL bFirst;
     char *buff;
     char **bufc;
     int nBufferAvailable;
 } ITB;
 
 void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc);
-int DbrefToBuffer_Add(DTB *pContext, int i);
+BOOL DbrefToBuffer_Add(DTB *pContext, int i);
 void DbrefToBuffer_Final(DTB *pContext);
 void IntegerToBuffer_Init(ITB *p, char *arg_buff, char **arg_bufc);
-int IntegerToBuffer_Add(ITB *pContext, int i);
+BOOL IntegerToBuffer_Add(ITB *pContext, int i);
 void IntegerToBuffer_Final(ITB *pContext);
 int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va);
 int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);

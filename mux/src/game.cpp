@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.15 2002-07-09 21:24:45 jake Exp $
+// $Id: game.cpp,v 1.16 2002-07-13 07:23:01 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -25,12 +25,12 @@ extern void pcache_init(void);
 extern int  cf_read(void);
 extern void ValidateConfigurationDbrefs(void);
 extern void init_functab(void);
-extern void close_sockets(int emergency, char *message);
+extern void close_sockets(BOOL emergency, char *message);
 extern void init_version(void);
 extern void init_logout_cmdtab(void);
 extern void raw_notify(dbref, const char *);
 extern void do_dbck(dbref executor, dbref caller, dbref enactor, int);
-extern void boot_slave(dbref executor, dbref caller, dbref enactor, int);
+extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
 
 void fork_and_dump(int);
 void dump_database(void);
@@ -551,7 +551,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
 
     // msg contains the raw message, msg_ns contains the NOSPOOFed msg.
     //
-    BOOL check_listens = Halted(target) ? FALSE : TRUE;
+    BOOL check_listens = !Halted(target);
     switch (Typeof(target))
     {
     case TYPE_PLAYER:
@@ -691,7 +691,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
            && (sender != target)
            && Monitor(target))
         {
-            atr_match(target, sender, AMATCH_LISTEN, (char *)msg, 0);
+            atr_match(target, sender, AMATCH_LISTEN, (char *)msg, FALSE);
         }
 
         // Deliver message to forwardlist members.
@@ -925,9 +925,9 @@ void notify_except2(dbref loc, dbref player, dbref exc1, dbref exc2, const char 
 static void report_timecheck
 (
     dbref player,
-    int yes_screen,
-    int yes_log,
-    int yes_clear
+    BOOL yes_screen,
+    BOOL yes_log,
+    BOOL yes_clear
 )
 {
     int thing, obj_counted;
@@ -947,7 +947,7 @@ static void report_timecheck
     }
     else
     {
-        yes_log = 0;
+        yes_log = FALSE;
         STARTLOG(LOG_ALWAYS, "WIZ", "TIMECHECK");
         log_name(player);
         log_text(" checks object time use over ");
@@ -1006,25 +1006,25 @@ static void report_timecheck
 
 void do_timecheck(dbref executor, dbref caller, dbref enactor, int key)
 {
-    int yes_screen, yes_log, yes_clear;
+    BOOL yes_screen, yes_log, yes_clear;
 
-    yes_screen = yes_log = yes_clear = 0;
+    yes_screen = yes_log = yes_clear = FALSE;
 
     if (key == 0)
     {
         // No switches, default to printing to screen and clearing counters.
         //
-        yes_screen = 1;
-        yes_clear = 1;
+        yes_screen = TRUE;
+        yes_clear = TRUE;
     }
     else
     {
         if (key & TIMECHK_RESET)
-            yes_clear = 1;
+            yes_clear = TRUE;
         if (key & TIMECHK_SCREEN)
-            yes_screen = 1;
+            yes_screen = TRUE;
         if (key & TIMECHK_LOG)
-            yes_log = 1;
+            yes_log = TRUE;
     }
 
     report_timecheck(executor, yes_screen, yes_log, yes_clear);
@@ -1090,7 +1090,7 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
 
     // Set up for normal shutdown.
     //
-    mudstate.shutdown_flag = 1;
+    mudstate.shutdown_flag = TRUE;
 }
 
 #ifndef STANDALONE
@@ -1326,7 +1326,7 @@ void dump_database(void)
             sleep(1);
         }
     }
-    mudstate.dumping = 1;
+    mudstate.dumping = TRUE;
 #endif
     buff = alloc_mbuf("dump_database");
     sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
@@ -1350,7 +1350,7 @@ void dump_database(void)
     // This doesn't matter. We are about the stop the game. However,
     // leave it in.
     //
-    mudstate.dumping = 0;
+    mudstate.dumping = FALSE;
 #endif
 }
 
@@ -1359,14 +1359,14 @@ void fork_and_dump(int key)
     char *buff;
 
 #ifndef WIN32
-    // fork_and_dump is never called with mudstate.dumping == 1, but we'll
+    // fork_and_dump is never called with mudstate.dumping TRUE, but we'll
     // ensure assertion now.
     //
     if (mudstate.dumping)
     {
         return;
     }
-    mudstate.dumping = 1;
+    mudstate.dumping = TRUE;
 #endif
 
     // If no options were given, then it means DUMP_TEXT+DUMP_STRUCT.
@@ -1493,7 +1493,7 @@ static int load_game(int ccPageFile)
     struct stat statbuf;
     int db_format, db_version, db_flags;
 
-    int compressed = 0;
+    BOOL compressed = FALSE;
 
     if (mudconf.compress_db)
     {
@@ -1505,12 +1505,12 @@ static int load_game(int ccPageFile)
             if (f != NULL)
             {
                 DebugTotalFiles++;
-                compressed = 1;
+                compressed = TRUE;
             }
         }
     }
 
-    if (compressed == 0)
+    if (!compressed)
     {
         StringCopy(infile, mudconf.indb);
         if (stat(infile, &statbuf) != 0)
@@ -2127,7 +2127,7 @@ int DCL_CDECL main(int argc, char *argv[])
     shovechars(nMainGamePorts, aMainGamePorts);
 #endif // WIN32
 
-    close_sockets(0, "Going down - Bye");
+    close_sockets(FALSE, "Going down - Bye");
     dump_database();
     CLOSE;
 

@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.5 2002-06-27 09:06:47 jake Exp $
+// $Id: quota.cpp,v 1.6 2002-07-13 07:23:02 jake Exp $
 //
 
 #include "copyright.h"
@@ -170,7 +170,8 @@ void do_quota
     }
 
     dbref who;
-    int set = 0, value = 0, i;
+    int value = 0, i;
+    BOOL set = FALSE;
 
     // Show or set all quotas if requested.
     //
@@ -179,12 +180,12 @@ void do_quota
         if (arg1 && *arg1)
         {
             value = Tiny_atol(arg1);
-            set = 1;
+            set = TRUE;
         }
         else if (key & (QUOTA_SET | QUOTA_FIX))
         {
             value = 0;
-            set = 1;
+            set = TRUE;
         }
         if (set)
         {
@@ -215,7 +216,7 @@ void do_quota
     }
     else
     {
-        who = lookup_player(executor, arg1, 1);
+        who = lookup_player(executor, arg1, TRUE);
         if (!Good_obj(who))
         {
             notify_quiet(executor, "Not found.");
@@ -240,12 +241,12 @@ void do_quota
     }
     if (arg2 && *arg2)
     {
-        set = 1;
+        set = TRUE;
         value = Tiny_atol(arg2);
     }
     else if (key & QUOTA_FIX)
     {
-        set = 1;
+        set = TRUE;
         value = 0;
     }
     if (set)
@@ -270,7 +271,7 @@ FUNCTION(fun_hasquota)
 
     // Find out whose quota to show.
     //
-    dbref who = lookup_player(executor, fargs[0], 1);
+    dbref who = lookup_player(executor, fargs[0], TRUE);
     if (!Good_obj(who))
     {
         safe_str("#-1 NOT FOUND", buff, bufc);
@@ -294,5 +295,5 @@ FUNCTION(fun_hasquota)
         int rq = Tiny_atol(atr_get(who, A_RQUOTA, &aowner, &aflags));
         bResult = (rq >= Tiny_atol(fargs[1]));
     }
-    safe_chr(bResult ? '1' : '0', buff, bufc);
+    safe_bool(bResult, buff, bufc);
 }

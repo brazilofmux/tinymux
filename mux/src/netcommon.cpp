@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.15 2002-07-09 08:22:49 jake Exp $
+// $Id: netcommon.cpp,v 1.16 2002-07-13 07:23:02 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -766,7 +766,7 @@ static void announce_connect(dbref player, DESC *d)
     ltaNow.GetLocal();
     time_str = ltaNow.ReturnDateString();
 
-    record_login(player, 1, time_str, d->addr, d->username,
+    record_login(player, TRUE, time_str, d->addr, d->username,
         inet_ntoa((d->address).sin_addr));
     look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
     mudstate.curr_enactor = temp;
@@ -1929,7 +1929,7 @@ static BOOL check_connect(DESC *d, char *msg)
         }
         else
         {
-            player = create_player(user, password, NOTHING, 0, 0);
+            player = create_player(user, password, NOTHING, FALSE, FALSE);
             if (player == NOTHING)
             {
                 queue_string(d, create_fail);
@@ -1977,7 +1977,7 @@ static BOOL check_connect(DESC *d, char *msg)
     return TRUE;
 }
 
-BOOL do_command(DESC *d, char *command, int first)
+BOOL do_command(DESC *d, char *command)
 {
     char *arg, *cmdsave;
     NAMETAB *cp;
@@ -2035,7 +2035,7 @@ BOOL do_command(DESC *d, char *command, int first)
             ltaBegin.GetUTC();
 
             char *log_cmdbuf = process_command(d->player, d->player, d->player,
-                1, command, (char **)NULL, 0);
+                TRUE, command, (char **)NULL, 0);
 
             CLinearTimeAbsolute ltaEnd;
             ltaEnd.GetUTC();
@@ -2269,7 +2269,7 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                 if (d->program_data != NULL)
                     handle_prog(d, t->cmd);
                 else
-                    do_command(d, t->cmd, 1);
+                    do_command(d, t->cmd);
                 free_lbuf(t);
             }
             else
@@ -2468,7 +2468,7 @@ FUNCTION(fun_doing)
     }
     else
     {
-        dbref victim = lookup_player(executor, fargs[0], 1);
+        dbref victim = lookup_player(executor, fargs[0], TRUE);
         if (victim == NOTHING)
         {
             safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
@@ -2519,7 +2519,7 @@ FUNCTION(fun_host)
     } 
     else
     {
-        dbref victim = lookup_player(executor, fargs[0], 1);
+        dbref victim = lookup_player(executor, fargs[0], TRUE);
         if (victim == NOTHING)
         {
             safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);

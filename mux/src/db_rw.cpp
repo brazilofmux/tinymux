@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.5 2002-07-09 08:22:48 jake Exp $
+// $Id: db_rw.cpp,v 1.6 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -30,9 +30,9 @@ static BOOLEXP *getboolexp1(FILE *f)
 {
     BOOLEXP *b;
     char *buff, *s;
-    int c, d, anum;
+    int d, anum;
 
-    c = getc(f);
+    int c = getc(f);
     switch (c)
     {
     case '\n':
@@ -48,7 +48,8 @@ static BOOLEXP *getboolexp1(FILE *f)
 
     case '(':
         b = alloc_bool("getboolexp1.openparen");
-        switch (c = getc(f)) {
+        switch (c = getc(f))
+        {
         case NOT_TOKEN:
             b->type = BOOLEXP_NOT;
             b->sub1 = getboolexp1(f);
@@ -129,14 +130,16 @@ static BOOLEXP *getboolexp1(FILE *f)
         buff = alloc_lbuf("getboolexp_quoted");
         StringCopy(buff, getstring_noalloc(f, 1));
         c = fgetc(f);
-        if (c == EOF) {
+        if (c == EOF)
+        {
             free_lbuf(buff);
             return TRUE_BOOLEXP;
         }
 
         b = alloc_bool("getboolexp1_quoted");
         anum = mkattr(buff);
-        if (anum <= 0) {
+        if (anum <= 0)
+        {
             free_bool(b);
             free_lbuf(buff);
             goto error;
@@ -261,11 +264,8 @@ error:
 
 static BOOLEXP *getboolexp(FILE *f)
 {
-    BOOLEXP *b;
-    char c;
-
-    b = getboolexp1(f);
-    c = getc(f);
+    BOOLEXP *b = getboolexp1(f);
+    char c = getc(f);
     Tiny_Assert(c == '\n');
 
     if (g_format == F_MUX)
@@ -444,7 +444,8 @@ static void putbool_subexp(FILE *f, BOOLEXP *b)
 
 static void putboolexp(FILE *f, BOOLEXP *b)
 {
-    if (b != TRUE_BOOLEXP) {
+    if (b != TRUE_BOOLEXP)
+    {
         putbool_subexp(f, b);
     }
     putc('\n', f);
@@ -767,7 +768,7 @@ static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
     if (!(flags & V_ATRKEY))
     {
         got = atr_get(i, A_LOCK, &aowner, &aflags);
-        tempbool = parse_boolexp(GOD, got, 1);
+        tempbool = parse_boolexp(GOD, got, TRUE);
         free_lbuf(got);
         putboolexp(f, tempbool);
         if (tempbool)
@@ -789,7 +790,7 @@ static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
 
     // Write the attribute list.
     //
-    if ((!(flags & V_DATABASE)))
+    if (!(flags & V_DATABASE))
     {
         char buf[SBUF_SIZE];
         buf[0] = '>';

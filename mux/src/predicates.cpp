@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.29 2002-07-09 22:31:08 jake Exp $
+// $Id: predicates.cpp,v 1.30 2002-07-13 07:23:02 jake Exp $
 //
 
 #include "copyright.h"
@@ -16,7 +16,7 @@
 #include "interface.h"
 #include "powers.h"
 
-extern BOOL do_command(DESC *, char *, int);
+extern BOOL do_command(DESC *, char *);
 extern void dump_database(void);
 
 char * DCL_CDECL tprintf(const char *fmt,...)
@@ -557,7 +557,7 @@ void do_switch
     int   ncargs
 )
 {
-    int a, any;
+    int a;
     char *buff, *bp, *str;
 
     if (!expr || (nargs <= 0))
@@ -575,7 +575,7 @@ void do_switch
 
     // Now try a wild card match of buff with stuff in coms.
     //
-    any = 0;
+    BOOL any = FALSE;
     buff = bp = alloc_lbuf("do_switch");
     CLinearTimeAbsolute lta;
     for (a = 0; (a < (nargs - 1)) && args[a] && args[a + 1]; a += 2)
@@ -596,7 +596,7 @@ void do_switch
                 free_lbuf(buff);
                 return;
             }
-            any = 1;
+            any = TRUE;
         }
     }
     free_lbuf(buff);
@@ -725,7 +725,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
 {
     CMDENT *old;
     ADDENT *nextp;
-    int didit = 0;
+    BOOL didit = FALSE;
 
     char *keyname;
 
@@ -783,7 +783,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
                         pName = ap->name;
                     }
                     notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, pName));
-                    didit = 1;
+                    didit = TRUE;
                 }
             }
         }
@@ -929,7 +929,7 @@ void handle_prog(DESC *d, char *message)
     //
     if (*message == '|')
     {
-        do_command(d, message + 1, 1);
+        do_command(d, message + 1);
 
         // Use telnet protocol's GOAHEAD command to show prompt
         //
@@ -977,7 +977,8 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int key, char *name)
 {
     DESC *d;
     dbref doer;
-    int i, isprog = 0;
+    int i;
+    BOOL isprog = FALSE;
 
     if (*name)
     {
@@ -1007,7 +1008,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int key, char *name)
     {
         if (d->program_data != NULL)
         {
-            isprog = 1;
+            isprog = TRUE;
         }
     }
 

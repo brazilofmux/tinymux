@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.10 2002-07-09 08:22:48 jake Exp $
+// $Id: flags.h,v 1.11 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -161,7 +161,7 @@ extern char *flag_description(dbref, dbref);
 extern FLAGNAMEENT *find_flag(dbref, char *);
 extern char *decode_flags(dbref, FLAGSET *);
 extern BOOL has_flag(dbref, dbref, char *);
-extern char *unparse_object(dbref, dbref, int);
+extern char *unparse_object(dbref, dbref, BOOL);
 extern char *unparse_object_numonly(dbref);
 extern BOOL convert_flags(dbref, char *, FLAGSET *, FLAG *);
 extern void decompile_flags(dbref, dbref, char *);

@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.8 2002-07-09 21:24:45 jake Exp $
+// $Id: wiz.cpp,v 1.9 2002-07-13 07:23:02 jake Exp $
 //
 
 #include "copyright.h"
@@ -218,7 +218,7 @@ void do_teleport
         {
             if (Exits(destination) == Location(victim))
             {
-                move_exit(victim, destination, 0, "You can't go that way.", 0);
+                move_exit(victim, destination, FALSE, "You can't go that way.", 0);
             }
             else
             {
@@ -399,7 +399,7 @@ void do_newpassword
     char *password
 )
 {
-    dbref victim = lookup_player(executor, name, 0);
+    dbref victim = lookup_player(executor, name, FALSE);
     if (victim == NOTHING)
     {
         notify_quiet(executor, "No such player.");
@@ -592,12 +592,11 @@ void do_cut(dbref executor, dbref caller, dbref enactor, int key, char *thing)
 //
 void do_motd(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
-    int is_brief;
+    BOOL is_brief = FALSE;
 
-    is_brief = 0;
     if (key & MOTD_BRIEF)
     {
-        is_brief = 1;
+        is_brief = TRUE;
         key = key & ~MOTD_BRIEF;
         if (key == MOTD_ALL)
             key = MOTD_LIST;

@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.6 2002-06-27 06:38:31 jake Exp $
+// $Id: help.cpp,v 1.7 2002-07-13 07:23:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -69,7 +69,7 @@ int helpindex_read(CHashTable *htab, char *filename)
         // Substrings already added will be rejected by hashaddLEN.
         //
         _strlwr(entry.topic);
-        BOOL bOriginal = 1; // First is the longest.
+        BOOL bOriginal = TRUE; // First is the longest.
         int nTopic = strlen(entry.topic);
 
         for (nTopic = strlen(entry.topic); nTopic > 0; nTopic--)
@@ -82,7 +82,7 @@ int helpindex_read(CHashTable *htab, char *filename)
             (void)ISOUTOFMEMORY(htab_entry);
             htab_entry->pos = entry.pos;
             htab_entry->original = bOriginal;
-            bOriginal = 0;
+            bOriginal = FALSE;
             htab_entry->key = StringCloneLen(entry.topic, nTopic);
 
             if ((hashaddLEN(entry.topic, nTopic, (int *)htab_entry, htab)) == 0)
@@ -129,13 +129,13 @@ void helpindex_init(void)
     helpindex_load(NOTHING);
 }
 
-void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int eval)
+void help_write(dbref player, char *topic, CHashTable *htab, char *filename, BOOL eval)
 {
     FILE *fp;
     char *p, *line, *bp, *str, *result;
     int offset;
     struct help_entry *htab_entry;
-    char matched;
+    BOOL matched;
     char *topic_list = 0, *buffp = 0;
 
     if (*topic == '\0')
@@ -153,7 +153,7 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
     }
     else
     {
-        matched = 0;
+        matched = FALSE;
         for (htab_entry = (struct help_entry *)hash_firstentry(htab);
              htab_entry != NULL;
              htab_entry = (struct help_entry *)hash_nextentry(htab))
@@ -161,9 +161,9 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
             if (  htab_entry->original
                && quick_wild(topic, htab_entry->key))
             {
-                if (matched == 0)
+                if (!matched)
                 {
-                    matched = 1;
+                    matched = TRUE;
                     topic_list = alloc_lbuf("help_write");
                     buffp = topic_list;
                 }
@@ -172,7 +172,7 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
                 safe_chr(' ', topic_list, &buffp);
             }
         }
-        if (matched == 0)
+        if (!matched)
         {
             notify(player, tprintf("No entry for '%s'.", topic));
         }
@@ -270,24 +270,25 @@ void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message
 {
     char *buf;
 
-    switch (key) {
+    switch (key)
+    {
     case HELP_HELP:
-        help_write(executor, message, &mudstate.help_htab, mudconf.help_file, 0);
+        help_write(executor, message, &mudstate.help_htab, mudconf.help_file, FALSE);
         break;
     case HELP_NEWS:
-        help_write(executor, message, &mudstate.news_htab, mudconf.news_file, 1);
+        help_write(executor, message, &mudstate.news_htab, mudconf.news_file, TRUE);
         break;
     case HELP_WIZHELP:
-        help_write(executor, message, &mudstate.wizhelp_htab, mudconf.whelp_file, 0);
+        help_write(executor, message, &mudstate.wizhelp_htab, mudconf.whelp_file, FALSE);
         break;
     case HELP_PLUSHELP:
-        help_write(executor, message, &mudstate.plushelp_htab, mudconf.plushelp_file, 1);
+        help_write(executor, message, &mudstate.plushelp_htab, mudconf.plushelp_file, TRUE);
         break;
     case HELP_STAFFHELP:
-        help_write(executor, message, &mudstate.staffhelp_htab, mudconf.staffhelp_file, 1);
+        help_write(executor, message, &mudstate.staffhelp_htab, mudconf.staffhelp_file, TRUE);
         break;
     case HELP_WIZNEWS:
-        help_write(executor, message, &mudstate.wiznews_htab, mudconf.wiznews_file, 0);
+        help_write(executor, message, &mudstate.wiznews_htab, mudconf.wiznews_file, FALSE);
         break;
     default:
         STARTLOG(LOG_BUGS, "BUG", "HELP")

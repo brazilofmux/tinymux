@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.2 2002-06-27 06:38:31 jake Exp $
+// $Id: htab.cpp,v 1.3 2002-07-13 07:23:01 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -75,7 +75,10 @@ int hashaddLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
     // Make sure that the entry isn't already in the hash table.  If it
     // is, exit with an error.
     //
-    if (str == NULL || nStr <= 0) return -1;
+    if (str == NULL || nStr <= 0)
+    {
+        return -1;
+    }
 
     UINT32 nHash = HASH_ProcessBuffer(0, str, nStr);
 
@@ -143,9 +146,12 @@ void hashflush(CHashTable *htab)
  * * hashreplLEN: replace the data part of a hash entry.
  */
 
-int hashreplLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
+BOOL hashreplLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
 {
-    if (str == NULL || nStr <= 0) return 0;
+    if (str == NULL || nStr <= 0)
+    {
+        return FALSE;
+    }
 
     UINT32 nHash = HASH_ProcessBuffer(0, str, nStr);
 
@@ -160,11 +166,11 @@ int hashreplLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
         {
             htab_rec.hashdata = hashdata;
             htab->Update(iDir, nRecord, &htab_rec);
-            return 1;
+            return TRUE;
         }
         iDir = htab->FindNextKey(iDir, nHash);
     }
-    return 0;
+    return FALSE;
 }
 
 void hashreplall(int *old, int *new0, CHashTable *htab)
@@ -287,28 +293,32 @@ NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, char *flagname)
  * * display_nametab: Print out the names of the entries in a name table.
  */
 
-void display_nametab(dbref player, NAMETAB *ntab, char *prefix, int list_if_none)
+void display_nametab(dbref player, NAMETAB *ntab, char *prefix, BOOL list_if_none)
 {
     char *buf, *bp, *cp;
     NAMETAB *nt;
-    int got_one;
+    BOOL got_one;
 
     buf = alloc_lbuf("display_nametab");
     bp = buf;
-    got_one = 0;
+    got_one = FALSE;
     for (cp = prefix; *cp; cp++)
         *bp++ = *cp;
-    for (nt = ntab; nt->name; nt++) {
-        if (God(player) || check_access(player, nt->perm)) {
+    for (nt = ntab; nt->name; nt++)
+    {
+        if (God(player) || check_access(player, nt->perm))
+        {
             *bp++ = ' ';
             for (cp = nt->name; *cp; cp++)
                 *bp++ = *cp;
-            got_one = 1;
+            got_one = TRUE;
         }
     }
     *bp = '\0';
     if (got_one || list_if_none)
+    {
         notify(player, buf);
+    }
     free_lbuf(buf);
 }
 
@@ -319,18 +329,20 @@ void display_nametab(dbref player, NAMETAB *ntab, char *prefix, int list_if_none
  * * interp_nametab: Print values for flags defined in name table.
  */
 
-void interp_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, char *true_text, char *false_text)
+void interp_nametab(dbref player, NAMETAB *ntab, int flagword, const char *prefix, const char *true_text, const char *false_text)
 {
-    char *buf, *bp, *cp;
-    NAMETAB *nt;
+    char *buf = alloc_lbuf("interp_nametab");
+    char *bp = buf;
+    const char *cp;
 
-    buf = alloc_lbuf("interp_nametab");
-    bp = buf;
     for (cp = prefix; *cp; cp++)
         *bp++ = *cp;
-    nt = ntab;
-    while (nt->name) {
-        if (God(player) || check_access(player, nt->perm)) {
+    NAMETAB *nt = ntab;
+    while (nt->name)
+    {
+        if (  God(player)
+           || check_access(player, nt->perm))
+        {
             *bp++ = ' ';
             for (cp = nt->name; *cp; cp++)
                 *bp++ = *cp;
@@ -357,24 +369,27 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, cha
  * * listset_nametab: Print values for flags defined in name table.
  */
 
-void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, int list_if_none)
+void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, BOOL list_if_none)
 {
     char *buf, *bp, *cp;
     NAMETAB *nt;
-    int got_one;
+    BOOL got_one;
 
     buf = bp = alloc_lbuf("listset_nametab");
     for (cp = prefix; *cp; cp++)
         *bp++ = *cp;
     nt = ntab;
-    got_one = 0;
-    while (nt->name) {
-        if (((flagword & nt->flag) != 0) &&
-            (God(player) || check_access(player, nt->perm))) {
+    got_one = FALSE;
+    while (nt->name)
+    {
+        if (  ((flagword & nt->flag) != 0)
+           && (  God(player)
+              || check_access(player, nt->perm)))
+        {
             *bp++ = ' ';
             for (cp = nt->name; *cp; cp++)
                 *bp++ = *cp;
-            got_one = 1;
+            got_one = TRUE;
         }
         nt++;
     }
