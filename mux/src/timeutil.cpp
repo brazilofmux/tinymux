@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.31 2004-05-15 15:34:39 sdennis Exp $
+// $Id: timeutil.cpp,v 1.32 2004-05-15 17:19:04 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1390,6 +1390,12 @@ void CLinearTimeAbsolute::SetSecondsString(char *arg_szSeconds)
     m_tAbsolute += EPOCH_OFFSET;
 }
 
+CMuxAlarm::CMuxAlarm(void)
+{
+    bAlarmed = false;
+    bAlarmSet = false;
+}
+
 // OS Dependent Routines:
 //
 #ifdef WIN32
@@ -1533,6 +1539,14 @@ void CMuxAlarm::SurrenderSlice(void)
     ::Sleep(0);
 }
 
+void CMuxAlarm::Set(CLinearTimeDelta ltd)
+{
+}
+
+void CMuxAlarm::Clear(void)
+{
+}
+
 #else // !WIN32
 
 void GetUTCLinearTime(INT64 *plt)
@@ -1571,7 +1585,25 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
             req = rem;
         }
     }
-#elif defined(HAVE_USLEEP)
+#else
+#ifdef HAVE_SETITIMER
+    struct itimerval it;
+    struct itimerval oit;
+    bool   bSaved = false;
+    if (bAlarmSet)
+    {
+        // Save existing timer and disable.
+        //
+        it.it_value.tv_sec = 0;
+        it.it_value.tv_usec = 0;
+        it.it_interval.tv_sec = 0;
+        it.it_interval.tv_usec = 0;
+        setitimer(ITIMER_PROF, &it, &oit);
+        bSaved = true;
+        bAlarmSet = false;
+    }
+#endif
+#if   defined(HAVE_USLEEP)
 #define TIME_1S 1000000
     unsigned long usec;
     INT64 usecTotal = ltd.ReturnMicroseconds();
@@ -1594,11 +1626,53 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
 #else
     ::sleep(ltd.ReturnSeconds());
 #endif
+#ifdef HAVE_SETITIMER
+    if (bSaved)
+    {
+        // Restore and re-enabled timer.
+        //
+        setitimer(ITIMER_PROF, &oit, NULL);
+        bAlarmSet = true;
+    }
+#endif
+#endif
 }
 
 void CMuxAlarm::SurrenderSlice(void)
 {
     ::sleep(0);
+}
+
+void CMuxAlarm::Set(CLinearTimeDelta ltd)
+{
+#ifdef HAVE_SETITIMER
+    struct itimerval it;
+    ltd.ReturnTimeValueStruct(&it.it_value);
+    it.it_interval.tv_sec = 0;
+    it.it_interval.tv_usec = 0;
+    setitimer(ITIMER_PROF, &it, NULL);
+    bAlarmSet = true;
+#endif
+}
+
+void CMuxAlarm::Clear(void)
+{
+#ifdef HAVE_SETITIMER
+    // Turn off the timer.
+    //
+    struct itimerval it;
+    it.it_value.tv_sec = 0;
+    it.it_value.tv_usec = 0;
+    it.it_interval.tv_sec = 0;
+    it.it_interval.tv_usec = 0;
+    setitimer(ITIMER_PROF, &it, NULL);
+    bAlarmSet = false;
+#endif
+}
+
+void CMuxAlarm::Signal(void)
+{
+    bAlarmed = true;
 }
 
 #endif // !WIN32

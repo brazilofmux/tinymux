@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.13 2004-05-15 01:34:48 sdennis Exp $
+// $Id: cque.cpp,v 1.14 2004-05-15 17:19:04 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -153,6 +153,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 
                     CLinearTimeAbsolute ltaBegin;
                     ltaBegin.GetUTC();
+                    MuxAlarm.Set(mudconf.max_cmdsecs);
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
                     char *log_cmdbuf = process_command(executor, point->caller,
@@ -160,6 +161,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 
                     CLinearTimeAbsolute ltaEnd;
                     ltaEnd.GetUTC();
+                    MuxAlarm.Clear();
 
                     CLinearTimeDelta ltdUsageEnd = GetProcessorUsage();
                     CLinearTimeDelta ltd = ltdUsageEnd - ltdUsageBegin;
@@ -172,7 +174,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     }
 
                     ltd = ltaEnd - ltaBegin;
-                    if (ltd > mudconf.max_cmdsecs)
+                    if (ltd > mudconf.rpt_cmdsecs)
                     {
                         STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
                         log_name_and_loc(executor);

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.30 2004-05-15 14:31:53 sdennis Exp $
+// $Id: bsd.cpp,v 1.31 2004-05-15 17:19:04 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2841,6 +2841,14 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         scheduler.CancelTask(dispatch_DatabaseDump, 0, 0);
         mudstate.dump_counter.GetUTC();
         scheduler.DeferTask(mudstate.dump_counter, PRIORITY_SYSTEM, dispatch_DatabaseDump, 0, 0);
+        break;
+
+    case SIGPROF:
+
+        // Softcode is running longer than is reasonable.  Apply the brakes.
+        //
+        log_signal(sig);
+        MuxAlarm.Signal();
         break;
 
 #endif // !WIN32

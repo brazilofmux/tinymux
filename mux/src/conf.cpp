@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.42 2004-05-13 13:52:24 sdennis Exp $
+// $Id: conf.cpp,v 1.43 2004-05-15 17:19:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -208,7 +208,8 @@ void cf_init(void)
     mudconf.timeslice.SetSeconds(1);
     mudconf.cmd_quota_max = 100;
     mudconf.cmd_quota_incr = 1;
-    mudconf.max_cmdsecs.SetSeconds(120);
+    mudconf.rpt_cmdsecs.SetSeconds(120);
+    mudconf.max_cmdsecs.SetSeconds(60);
     mudconf.cache_tick_period.SetSeconds(30);
     mudconf.control_flags = 0xffffffff; // Everything for now...
     mudconf.log_options = LOG_ALWAYS | LOG_BUGS | LOG_SECURITY |
@@ -1665,6 +1666,7 @@ CONF conftable[] =
     {"conn_timeout",              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.conn_timeout,           NULL,               0},
     {"connect_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.conn_file,       NULL, SIZEOF_PATHNAME},
     {"connect_reg_file",          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.creg_file,       NULL, SIZEOF_PATHNAME},
+    {"lag_limit",                 cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.max_cmdsecs,     NULL,               0},
     {"crash_database",            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crashdb,         NULL, SIZEOF_PATHNAME},
     {"create_max_cost",           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmax,              NULL,               0},
     {"create_min_cost",           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmin,              NULL,               0},
@@ -1728,7 +1730,7 @@ CONF conftable[] =
     {"kill_guarantee_cost",       cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killguarantee,          NULL,               0},
     {"kill_max_cost",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmax,                NULL,               0},
     {"kill_min_cost",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmin,                NULL,               0},
-    {"lag_maximum",               cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.max_cmdsecs,     NULL,               0},
+    {"lag_maximum",               cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.rpt_cmdsecs,     NULL,               0},
     {"link_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.linkcost,               NULL,               0},
     {"list_access",               cf_ntab_access, CA_GOD,    CA_DISABLED, (int *)list_names,               access_nametab,     0},
     {"lock_recursion_limit",      cf_int,         CA_WIZARD, CA_PUBLIC,   &mudconf.lock_nest_lim,          NULL,               0},

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.18 2004-05-13 13:52:24 sdennis Exp $
+// $Id: mudconf.h,v 1.19 2004-05-15 17:19:04 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -200,7 +200,8 @@ struct confdata
     char    *uncompress;        /* program to run to uncompress */
     char    *wizmotd_file;      /* display this file on login to wizards */
     unsigned char    markdata[8];  /* Masks for marking/unmarking */
-    CLinearTimeDelta max_cmdsecs;  /* Threshhold for real time taken by command */
+    CLinearTimeDelta rpt_cmdsecs;  /* Reporting Threshhold for time taken by command */
+    CLinearTimeDelta max_cmdsecs;  /* Upper Limit for real time taken by command */
     CLinearTimeDelta cache_tick_period; // Minor cycle for cache maintenance.
     CLinearTimeDelta timeslice;         // How often do we bump people's cmd quotas?
 

@@ -32,9 +32,7 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(setrlimit getrusage timelocal mktime srandom)
 AC_CHECK_FUNCS(getdtablesize socket gethostbyaddr)
 AC_CHECK_FUNCS(gettimeofday select socket wait3)
-AC_CHECK_FUNCS(getpagesize)
-AC_CHECK_FUNCS(usleep)
-AC_CHECK_FUNCS(nanosleep)
+AC_CHECK_FUNCS(getpagesize usleep nanosleep setitimer)
 AC_EGREP_HEADER(getpagesize,unistd.h,,AC_DEFINE(NEED_GETPAGESIZE_DCL))
 AC_TYPE_OFF_T
 AC_TYPE_PID_T

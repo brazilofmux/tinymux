@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.34 2004-05-13 13:52:24 sdennis Exp $
+// $Id: netcommon.cpp,v 1.35 2004-05-15 17:19:04 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2194,15 +2194,17 @@ bool do_command(DESC *d, char *command)
 
             CLinearTimeAbsolute ltaBegin;
             ltaBegin.GetUTC();
+            MuxAlarm.Set(mudconf.max_cmdsecs);
 
             char *log_cmdbuf = process_command(d->player, d->player, d->player,
                 true, command, (char **)NULL, 0);
 
             CLinearTimeAbsolute ltaEnd;
             ltaEnd.GetUTC();
+            MuxAlarm.Clear();
 
             CLinearTimeDelta ltd = ltaEnd - ltaBegin;
-            if (ltd > mudconf.max_cmdsecs)
+            if (ltd > mudconf.rpt_cmdsecs)
             {
                 STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
                 log_name_and_loc(d->player);
