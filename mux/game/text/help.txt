@@ -3118,30 +3118,6 @@ Related Topics: @name.
 
   Related Topics: say, ", @speechmod.
 
-& @SPEECHMOD
-@SPEECHMOD
-
-  Command: @speechmod <object> = <string>
-  Attribute: SpeechMod
-
-  Sets a filter to be applied to all of <object>'s speech. <string> is
-  evaluated with the original speech as %0 and the command as %1. It is
-  then displayed in place of the original speech. You can use this to
-  colorize each word of what you say, say things backwards, etc. 
-
-  @speechmod affects: "  \\  ;  :  page  pose  say  whisper  @fpose  
-     @fsay  @wall  on-channel speech
-
-  %1 may be one of: channel  channel/pose  page  pose  say  whisper
-    @emit (for \\)  @fpose  @fpemit  @fsay  @wall
-
-  Example:
-    > @speechmod me=ucstr(%0)
-    > "Hello.
-    Player says "HELLO."
-
-  Related Topics: say, ", @saystring.
-
 & @SEARCH
 @SEARCH
 
@@ -3244,6 +3220,30 @@ Related Topics: @name.
   combined with the @mail message.)
 
   Related Topics: @mailsucc, @amail, @mail.
+
+& @SPEECHMOD
+@SPEECHMOD
+
+  Command: @speechmod <object> = <string>
+  Attribute: SpeechMod
+
+  Sets a filter to be applied to all of <object>'s speech. <string> is
+  evaluated with the original speech as %0 and the command as %1. It is
+  then displayed in place of the original speech. You can use this to
+  colorize each word of what you say, say things backwards, etc. 
+
+  @speechmod affects: "  \\  ;  :  page  pose  say  whisper  @fpose  
+     @fsay  @wall  on-channel speech
+
+  %1 may be one of: channel  channel/pose  page  pose  say  whisper
+    @emit (for \\)  @fpose  @fpemit  @fsay  @wall
+
+  Example:
+    > @speechmod me=ucstr(%0)
+    > "Hello.
+    Player says "HELLO."
+
+  Related Topics: say, ", @saystring.
 
 & @STARTUP
 @STARTUP
@@ -6997,6 +6997,32 @@ INSERT()
 
   Related Topics: extract(), ldelete(), replace().
 
+& INUM()
+INUM()
+
+  FUNCTION: itext(<n>)
+            inum(<n>)
+            ilev()
+
+  These functions, when called within an iter(), return the equivalent
+  of ## (itext) or #@ (inum), with reference to the nth more outermost
+  iter(), where n=0 refers to the current iter(), n=1 to an iter()
+  in which the current iter() is nested, etc.
+   
+  > say [iter(red blue green,iter(fish shoe, #@:##))]
+  You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
+   
+  > say [iter(red blue green,iter(fish shoe, [inum(1)]:[itext(1)]))]
+  You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
+   
+  > say [iter(red blue green,iter(fish shoe, [inum(0)]:[itext(0)]))]
+  You say, "1:fish 2:shoe 1:fish 2:shoe 1:fish 2:shoe"
+   
+  > say [iter(red blue green,iter(fish shoe, [itext(1)]:[itext(0)]))]
+  You say, "red:fish red:shoe blue:fish blue:shoe green:fish green:shoe"
+
+  Related Topics: iter(), itext(), ilev().
+
 & INVENTORY
 INVENTORY
 
@@ -7221,6 +7247,32 @@ ITER()
     You say "1 1 4 2 1 3"
 
   Related Topics: @dolist, list(), parse(), ilev().
+
+& ITEXT()
+ITEXT()
+
+  FUNCTION: itext(<n>)
+            inum(<n>)
+            ilev()
+
+  These functions, when called within an iter(), return the equivalent
+  of ## (itext) or #@ (inum), with reference to the nth more outermost
+  iter(), where n=0 refers to the current iter(), n=1 to an iter()
+  in which the current iter() is nested, etc.
+   
+  > say [iter(red blue green,iter(fish shoe, #@:##))]
+  You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
+   
+  > say [iter(red blue green,iter(fish shoe, [inum(1)]:[itext(1)]))]
+  You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
+   
+  > say [iter(red blue green,iter(fish shoe, [inum(0)]:[itext(0)]))]
+  You say, "1:fish 2:shoe 1:fish 2:shoe 1:fish 2:shoe"
+   
+  > say [iter(red blue green,iter(fish shoe, [itext(1)]:[itext(0)]))]
+  You say, "red:fish red:shoe blue:fish blue:shoe green:fish green:shoe"
+
+  Related Topics: iter(), inum(), ilev().
 
 & JUMP_OK
 JUMP_OK
@@ -11536,7 +11588,8 @@ TRACE (continued)
 & TRAIN
 TRAIN
 
-  Command: train <command>
+  COMMAND: train <command>
+
   The train command is used to output to your location exactly what you
   have typed, then execute it.  The output is not parsed and is taken
   verbatim and displayed as is. 
