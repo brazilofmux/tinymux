@@ -2,7 +2,7 @@
  * player.c 
  */
 /*
- * $Id: player.cpp,v 1.7 2001-03-30 16:43:41 zenty Exp $ 
+ * $Id: player.cpp,v 1.8 2001-03-31 02:22:54 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -177,8 +177,10 @@ void record_login(dbref player, int isgood, char *ldate, char *lhost, char *luse
             atr_add_raw(player, A_LASTSITE, tprintf("%s@%s", lusername, lhost));
         else
             atr_add_raw(player, A_LASTSITE, lhost);
-	// Add the players last IP too.
-	atr_add_raw(player, A_LASTIP, lipaddr);
+
+        // Add the players last IP too.
+        //
+        atr_add_raw(player, A_LASTIP, lipaddr);
     }
     else
     {
