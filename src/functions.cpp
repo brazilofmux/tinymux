@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.127 2002-01-24 07:07:34 sdennis Exp $
+// $Id: functions.cpp,v 1.128 2002-01-25 00:27:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -854,7 +854,7 @@ FUNCTION(fun_words)
         return;
     }
     varargs_preamble(2);
-    safe_ltoa(countwords(fargs[0], sep), buff, bufc);
+    safe_ltoa(countwords(strip_ansi(fargs[0]), sep), buff, bufc);
 }
 
 /*
