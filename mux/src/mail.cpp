@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.57 2003-01-04 04:26:48 sdennis Exp $
+// $Id: mail.cpp,v 1.58 2003-01-04 05:07:32 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -302,7 +302,7 @@ void add_folder_name(dbref player, int fld, char *name)
     // Fetch current list of folders
     //
     int aflags;
-    int nFolders;
+    size_t nFolders;
     dbref aowner;
     char *aFolders = alloc_lbuf("add_folder_name.str");
     char *pFolders = atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner,
@@ -414,7 +414,7 @@ static char *get_folder_name(dbref player, int fld)
     // Get the name of the folder, or return "unnamed".
     //
     int aflags;
-    int nFolders;
+    size_t nFolders;
     dbref aowner;
     static char aFolders[LBUF_SIZE];
     char *pFolders = atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner,
@@ -454,7 +454,7 @@ static int get_folder_number(dbref player, char *name)
     // Look up a folder name and return the corresponding folder number.
     //
     int aflags;
-    int nFolders;
+    size_t nFolders;
     dbref aowner;
     char *aFolders = alloc_lbuf("get_folder_num_str");
     char *pFolders = atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner,
@@ -3660,7 +3660,7 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
         }
 
         free_lbuf(oldmsg);
-        int nLen;
+        size_t nLen;
         const char *attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
         notify(executor, tprintf("%d/%d characters prepended.", nLen, LBUF_SIZE-1));
     }
@@ -3713,7 +3713,7 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
         }
 
         free_lbuf(oldmsg);
-        int nLen;
+        size_t nLen;
         const char *attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
         notify(executor, tprintf("%d/%d characters added.", nLen, LBUF_SIZE-1));
     }

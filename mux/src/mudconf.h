@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.12 2002-09-02 18:33:12 jake Exp $
+// $Id: mudconf.h,v 1.13 2003-01-04 05:03:29 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -256,7 +256,7 @@ typedef struct alist ALIST;
 struct alist
 {
     char    *data;
-    int len;
+    size_t len;
     struct alist *next;
 };
 
@@ -375,8 +375,8 @@ struct statedata
 
     ALIST   iter_alist;     /* Attribute list for iterations */
     char    *mod_alist; /* Attribute list for modifying */
-    int     mod_alist_len; /* Length of mod_alist */
-    int     mod_size;   /* Length of modified buffer */
+    size_t  mod_alist_len; /* Length of mod_alist */
+    size_t  mod_size;   /* Length of modified buffer */
     dbref   mod_al_id;  /* Where did mod_alist come from? */
     CHashTable attr_name_htab; /* Attribute names hashtable */
     CHashTable vattr_name_htab;/* User attribute names hashtable */

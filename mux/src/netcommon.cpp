@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.38 2003-01-03 15:58:20 sdennis Exp $
+// $Id: netcommon.cpp,v 1.39 2003-01-04 05:07:32 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -642,7 +642,8 @@ static void announce_connect(dbref player, DESC *d)
 
     char *buf = alloc_lbuf("announce_connect");
     dbref aowner;
-    int aflags, nLen;
+    int aflags;
+    size_t nLen;
     atr_pget_str_LEN(buf, player, A_TIMEOUT, &aowner, &aflags, &nLen);
     if (nLen)
     {
@@ -867,7 +868,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
 
         dbref aowner, zone, obj;
         int aflags;
-        int nLen;
+        size_t nLen;
         char *argv[1];
         argv[0] = (char *)reason;
         CLinearTimeAbsolute lta;

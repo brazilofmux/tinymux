@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.63 2002-12-16 00:21:26 sdennis Exp $
+// $Id: funceval.cpp,v 1.64 2003-01-04 05:06:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1143,7 +1143,7 @@ static int mem_usage(dbref thing)
     int k = sizeof(struct object) + strlen(Name(thing)) + 1;
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
-        int nLen;
+        size_t nLen;
         const char *str = atr_get_raw_LEN(thing, ca, &nLen);
         k += nLen+1;
         ATTR *attr = atr_num(ca);
@@ -2893,7 +2893,7 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
 
         for (ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
-            int nText;
+            size_t nText;
             char *attrib = atr_get_LEN(thing, ca, &aowner, &aflags, &nText);
             int i;
             if (insensitive)

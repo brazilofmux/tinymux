@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.53 2002-12-16 00:21:26 sdennis Exp $
+// $Id: db.cpp,v 1.54 2003-01-04 05:04:54 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -462,7 +462,7 @@ const char *Name(dbref thing)
 #else // MEMORY_BASED
     if (!db[thing].name)
     {
-        int len;
+        size_t len;
         char *pName = atr_get_LEN( thing, A_NAME, &aowner, &aflags, &len);
         db[thing].name = StringCloneLen(pName, len);
         free_lbuf(pName);
@@ -486,7 +486,7 @@ const char *PureName(dbref thing)
     {
         if (!db[thing].purename)
         {
-            int nName;
+            size_t nName;
             size_t nPureName;
 #ifdef MEMORY_BASED
             pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &nName);
@@ -537,9 +537,9 @@ const char *Moniker(dbref thing)
     const char *pPureName = strip_accents(PureName(thing));
     char *pPureNameCopy = StringClone(pPureName);
 
-    int nMoniker;
-    dbref aowner;
-    int aflags;
+    size_t nMoniker;
+    dbref  aowner;
+    int    aflags;
     char *pMoniker = atr_get_LEN(thing, A_MONIKER, &aowner, &aflags,
         &nMoniker);
     char *pPureMoniker = strip_accents(strip_ansi(pMoniker));
@@ -1282,7 +1282,7 @@ BOOL Commer(dbref thing)
 
 // al_extend: Get more space for attributes, if needed
 //
-void al_extend(char **buffer, int *bufsiz, int len, BOOL copy)
+void al_extend(char **buffer, size_t *bufsiz, size_t len, BOOL copy)
 {
     if (len > *bufsiz)
     {
@@ -1335,7 +1335,7 @@ char *al_fetch(dbref thing)
     // Save old list, then fetch and set up the attribute list.
     //
     al_store();
-    int len;
+    size_t len;
     const char *astr = atr_get_raw_LEN(thing, A_LIST, &len);
     if (astr)
     {
@@ -1545,7 +1545,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
 // atr_decode: Decode an attribute string.
 //
 static void atr_decode_LEN(const char *iattr, int nLen, char *oattr,
-                           dbref thing, dbref *owner, int *flags, int *pLen)
+                           dbref thing, dbref *owner, int *flags, size_t *pLen)
 {
     // Default the owner
     //
@@ -1864,7 +1864,7 @@ int get_atr(char *name)
 }
 
 #ifdef MEMORY_BASED
-const char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
+const char *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
 {
     if (!Good_obj(thing))
     {
@@ -1905,7 +1905,7 @@ const char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 
 #else // MEMORY_BASED
 
-const char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
+const char *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
 {
     Aname okey;
 
@@ -1920,11 +1920,12 @@ const char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 
 const char *atr_get_raw(dbref thing, int atr)
 {
-    int Len;
+    size_t Len;
     return atr_get_raw_LEN(thing, atr, &Len);
 }
 
-char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, int *pLen)
+char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags,
+    size_t *pLen)
 {
     const char *buff = atr_get_raw_LEN(thing, atr, pLen);
     if (!buff)
@@ -1943,11 +1944,11 @@ char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, i
 
 char *atr_get_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
 {
-    int nLen;
+    size_t nLen;
     return atr_get_str_LEN(s, thing, atr, owner, flags, &nLen);
 }
 
-char *atr_get_LEN(dbref thing, int atr, dbref *owner, int *flags, int *pLen)
+char *atr_get_LEN(dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
 {
     char *buff = alloc_lbuf("atr_get");
     return atr_get_str_LEN(buff, thing, atr, owner, flags, pLen);
@@ -1956,7 +1957,7 @@ char *atr_get_LEN(dbref thing, int atr, dbref *owner, int *flags, int *pLen)
 char *atr_get_real(dbref thing, int atr, dbref *owner, int *flags,
     const char *file, const int line)
 {
-    int nLen;
+    size_t nLen;
 #ifdef STANDALONE
     char *buff = (char *)malloc(LBUF_SIZE);
 #else
@@ -1967,7 +1968,7 @@ char *atr_get_real(dbref thing, int atr, dbref *owner, int *flags,
 
 BOOL atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
 {
-    int nLen;
+    size_t nLen;
     const char *buff = atr_get_raw_LEN(thing, atr, &nLen);
     if (!buff)
     {
@@ -1981,7 +1982,7 @@ BOOL atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
 
 #ifndef STANDALONE
 
-char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, int *pLen)
+char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
 {
     dbref parent;
     int lev;
@@ -2019,11 +2020,11 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
 
 char *atr_pget_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
 {
-    int nLen;
+    size_t nLen;
     return atr_pget_str_LEN(s, thing, atr, owner, flags, &nLen);
 }
 
-char *atr_pget_LEN(dbref thing, int atr, dbref *owner, int *flags, int *pLen)
+char *atr_pget_LEN(dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
 {
     char *buff = alloc_lbuf("atr_pget");
     return atr_pget_str_LEN(buff, thing, atr, owner, flags, pLen);
@@ -2032,7 +2033,7 @@ char *atr_pget_LEN(dbref thing, int atr, dbref *owner, int *flags, int *pLen)
 char *atr_pget_real(dbref thing, int atr, dbref *owner, int *flags,
     const char *file, const int line)
 {
-    int nLen;
+    size_t nLen;
     char *buff = pool_alloc_lbuf("atr_pget", file, line);
     return atr_pget_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
@@ -2045,7 +2046,7 @@ BOOL atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
 
     ITER_PARENTS(thing, parent, lev)
     {
-        int nLen;
+        size_t nLen;
         const char *buff = atr_get_raw_LEN(parent, atr, &nLen);
         if (buff && *buff)
         {
@@ -2267,7 +2268,7 @@ int atr_head(dbref thing, char **attrp)
     return 0;
 #else // MEMORY_BASED
     const char *astr;
-    int alen;
+    size_t alen;
 
     // Get attribute list.  Save a read if it is in the modify atr list
     //

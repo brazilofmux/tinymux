@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.22 2002-12-16 00:21:27 sdennis Exp $
+// $Id: stringutil.h,v 1.23 2003-01-04 05:07:32 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -109,7 +109,7 @@ extern void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Con
 extern int ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, int *pnVisualWidth);
 extern char *ANSI_TruncateAndPad_sbuf(const char *pString, int nMaxVisualWidth, char fill = ' ');
 extern int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, int iEndGoal);
-extern char *strip_ansi(const char *szString, unsigned int *pnString = 0);
+extern char *strip_ansi(const char *szString, size_t *pnString = 0);
 extern char *strip_accents(const char *szString, size_t *pnString = 0);
 extern char *normal_to_white(const char *);
 extern char *munge_space(const char *);
@@ -131,7 +131,7 @@ extern int prefix_match(const char *, const char *);
 extern char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
 #endif // 0
 extern BOOL minmatch(char *str, char *target, int min);
-extern char *StringCloneLen(const char *str, unsigned int nStr);
+extern char *StringCloneLen(const char *str, size_t nStr);
 extern char *StringClone(const char *str);
 void safe_copy_str(const char *src, char *buff, char **bufp, int max);
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.123 2002-12-16 00:21:26 sdennis Exp $
+// $Id: functions.cpp,v 1.124 2003-01-04 05:07:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1492,7 +1492,7 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
 
     dbref aowner;
     int   aflags;
-    int nLen = 0;
+    size_t nLen = 0;
     bFreeBuffer = FALSE;
     BOOL bEval = TRUE;
     char *atr_gotten = NULL;
@@ -1884,7 +1884,7 @@ FUNCTION(fun_v)
         // If we can access it, return it, otherwise return a null
         // string.
         //
-        int nLen;
+        size_t nLen;
         tbuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
         if (See_attr(executor, executor, ap))
         {

@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.23 2003-01-04 04:38:09 sdennis Exp $
+// $Id: eval.cpp,v 1.24 2003-01-04 05:05:41 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1158,7 +1158,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     isSpecial_L1['('] = (eval & EV_FCHECK) != 0;
     isSpecial_L1['['] = (eval & EV_NOFCHECK) == 0;
 
-    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     for (;;)
     {
         // Handle mundane characters specially. There are usually a lot of them.
@@ -1171,14 +1171,14 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             {
                 ; // Nothing.
             }
-            i = p - pdstr - 1;
-            if (nBufferAvailable < i)
+            size_t n = p - pdstr - 1;
+            if (nBufferAvailable < n)
             {
-                i = nBufferAvailable;
+                n = nBufferAvailable;
             }
-            memcpy(*bufc, pdstr, i);
-            nBufferAvailable -= i;
-            *bufc += i;
+            memcpy(*bufc, pdstr, n);
+            nBufferAvailable -= n;
+            *bufc += n;
             at_space = 0;
             pdstr = p - 1;
         }
@@ -1614,7 +1614,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         if (Tiny_IsAlpha[(unsigned char)(*pdstr)])
                         {
                             i = A_VA + Tiny_ToUpper[(unsigned char)(*pdstr)] - 'A';
-                            int nAttrGotten;
+                            size_t nAttrGotten;
                             atr_pget_str_LEN(TinyExec_scratch, executor, i,
                                 &aowner, &aflags, &nAttrGotten);
                             if (0 < nAttrGotten)
