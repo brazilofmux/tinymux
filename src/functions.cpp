@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.89 2001-09-09 02:32:17 sdennis Exp $
+// $Id: functions.cpp,v 1.90 2001-09-11 03:59:03 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2164,11 +2164,14 @@ FUNCTION(fun_index)
 
 FUNCTION(fun_cat)
 {
-    safe_str(fargs[0], buff, bufc);
-    for (int i = 1; i < nfargs; i++)
+    if (nfargs)
     {
-        safe_chr(' ', buff, bufc);
-        safe_str(fargs[i], buff, bufc);
+        safe_str(fargs[0], buff, bufc);
+        for (int i = 1; i < nfargs; i++)
+        {
+            safe_chr(' ', buff, bufc);
+            safe_str(fargs[i], buff, bufc);
+        }
     }
 }
 
@@ -6330,7 +6333,7 @@ FUN flist[] =
     {"CANSEE",   fun_cansee,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
 #endif
     {"CAPSTR",   fun_capstr,   1,       1,  1,       0, CA_PUBLIC},
-    {"CAT",      fun_cat,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"CAT",      fun_cat,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CEIL",     fun_ceil,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CENTER",   fun_center,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"CHANNELS", fun_channels, MAX_ARG, 0,  0,       0, CA_PUBLIC},
