@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.12 2004-05-15 20:44:55 sdennis Exp $
+// $Id: boolexp.cpp,v 1.13 2004-05-15 22:45:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -157,7 +157,8 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
     case BOOLEXP_EVAL:
 
         a = atr_num(b->thing);
-        if (!a)
+        if (  !a
+           || MuxAlarm.bAlarmed)
         {
             // No such attribute.
             //
@@ -182,8 +183,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             bCheck = true;
         }
-        if (  bCheck
-           && !MuxAlarm.bAlarmed)
+        if (bCheck)
         {
             char **preserve = NULL;
             int *preserve_len = NULL;
