@@ -1,5 +1,5 @@
 /* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.4 2000-11-06 16:16:54 sdennis Exp $ */
+/* $Id: attrs.h,v 1.5 2000-11-06 17:50:09 sdennis Exp $ */
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -18,9 +18,11 @@
 #define AF_IS_LOCK  0x00400 /* Attribute is a lock */
 #define AF_VISUAL   0x00800 /* Anyone can see */
 #define AF_PRIVATE  0x01000 /* Not inherited by children */
-#define AF_DIRTY    0x02000 /* This attribute has been compiled. */
+#define AF_HTML     0x02000 /* Don't HTML escape this in did_it() */
+#define AF_NOPARSE  0x04000 /* Don't evaluate when checking for $-cmds */
 #define AF_REGEXP   0x08000 /* Do a regexp rather than wildcard match */
-#define AF_ISUSED   0x10000 /* Used to make efficient sweeps of stale attributes */
+#define AF_NOCLONE  0x10000 /* Don't copy this attr when cloning. */
+#define AF_ISUSED   0x80000 /* Used to make efficient sweeps of stale attributes */
 
 #define A_OSUCC     1   /* Others success message */
 #define A_OFAIL     2   /* Others fail message */
@@ -120,6 +122,7 @@
 #define A_MAILFOLDERS   96  /* @mail folders */
 #define A_LUSER     97  /* Spare lock not referenced by server */
 #define A_LPARENT   98  /* Who may @parent to me if PARENT_OK set */
+#define A_LCONTROL  99  /* Who controls me if CONTROL_OK set */
 #define A_VA        100 /* VA attribute (VB-VZ follow) */
 
 #define A_GFAIL     129 /* Give fail message */
@@ -160,6 +163,13 @@
 #define A_PROGCMD   210 /* Command for exectution by @prog */
 #define A_MAILFLAGS 211 /* Flags for extended mail */
 #define A_DESTROYER 212 /* Who is destroying this object? */
+
+#define A_NEWOBJS       213     /* New object array */
+#define A_LCON_FMT      214     /* Player-specified contents format */
+#define A_LEXITS_FMT    215     /* Player-specified exits format */
+#define A_EXITVARDEST   216     /* Variable exit destination */
+#define A_LCHOWN        217     /* ChownLock */
+
 #define A_VRML_URL  220 /* URL of the VRML scene for this object */
 #define A_HTDESC    221 /* HTML @desc */
 
