@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.21 2003-03-13 15:53:36 sdennis Exp $
+// $Id: eval.cpp,v 1.22 2003-03-13 15:59:55 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1409,7 +1409,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                 fargs = NULL;
             }
             eval &= ~EV_FCHECK;
-            isSpecial_L1['('] = 0;
+            isSpecial_L1['('] = false;
         }
         else if (*pdstr == '%')
         {
