@@ -9728,11 +9728,12 @@ POS()
 
   FUNCTION: pos(<string1>,<string2>)
 
-  This function returns the position that string1 begins in string2,
-  with the first position being 1.
-  If string1 is not in string2, then it returns -1.
+  This function returns the position that string1 begins in string2, with the
+  first position being 1.  If string1 is not in string2, then it returns -1.
 
-  Example: pos(man,superman) returns 6
+  Example:
+    > think pos(man,superman)
+    6
 
   Related Topics:
 
