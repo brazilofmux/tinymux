@@ -91,7 +91,7 @@
 /* Define if you need to declare getrusage yourself */
 #undef NEED_GETRUSAGE_DCL
 /* Define if struct linger is defined */
-#undef HAVE_LINGER
+#define HAVE_LINGER
 /* Define if signal handlers have a struct sigcontext as their third arg */
 #undef HAVE_STRUCT_SIGCONTEXT
 /* Define if stdio.h defines lots of extra functions */
