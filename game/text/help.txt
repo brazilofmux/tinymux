@@ -5650,6 +5650,16 @@ ATTRIBUTE OWNERSHIP (continued)
 
   Related Topics: @chown, @lock, @set, @unlock, examine.
 
+& ATTRCNT()
+ATTRCNT()
+
+  FUNCTION: attrcnt(<object>[/<wild-pattern>])
+
+  Returns a count of the attributes set on <object>.  If <wild-pattern> is
+  given, only attributes matching it are counted.
+
+  Related Topics: lattr()
+
 & BEING KILLED
 BEING KILLED
 
@@ -8919,7 +8929,7 @@ LATTR()
   Returns a list of the attributes set on <object>.  If <wild-pattern> is
   given, only attributes matching it are returned.
 
-  Example:
+  Examples:
     > ex me
     Mortal(#226Pc)
     ....
@@ -8934,7 +8944,7 @@ LATTR()
     > say lattr(me/v*)
     You say "VC VE VV"
 
-  Related Topics: @dolist.
+  Related Topics: attrcnt(), @dolist.
 
 & REVERSE()
 REVERSE()
