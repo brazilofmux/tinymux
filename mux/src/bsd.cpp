@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.20 2002-09-29 07:21:45 sdennis Exp $
+// $Id: bsd.cpp,v 1.21 2002-09-29 07:41:19 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2684,6 +2684,7 @@ void BuildSignalNamesTable(void)
             if (tsn->pShortName == NULL)
             {
                 tsn->pShortName = pst->szSignal;
+#ifndef WIN32
                 if (sig == SIGUSR1)
                 {
                     tsn->pLongName = "Restart server";
@@ -2692,14 +2693,16 @@ void BuildSignalNamesTable(void)
                 {
                     tsn->pLongName = "Drop flatfile";
                 }
+#endif // WIN32
 #ifdef SysSigNames
-                else if (  SysSigNames[sig]
-                        && strcmp(tsn->pShortName, SysSigNames[sig]) != 0)
+                if (  tsn->pLongName == NULL
+                   && SysSigNames[sig]
+                   && strcmp(tsn->pShortName, SysSigNames[sig]) != 0)
                 {
                     tsn->pLongName = SysSigNames[sig];
                 }
-            }
 #endif // SysSigNames
+            }
         }
         pst++;
     }
