@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.28 2003-04-12 06:15:00 sdennis Exp $
+// $Id: game.cpp,v 1.29 2003-04-12 06:30:23 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1512,7 +1512,7 @@ void fork_and_dump(int key)
         else if (child == mudstate.dumper)
         {
             // The child process executed and exited before fork() returned to
-            // the parent.  Without a process id, the parent's SIGCHLD hander
+            // the parent.  Without a process id, the parent's SIGCHLD handler
             // cannot be certain that the pid of the exiting process matches
             // the pid of this child.
             //
