@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.10 2003-02-05 06:20:58 jake Exp $
+// $Id: comsys.cpp,v 1.11 2003-02-17 01:37:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -163,7 +163,8 @@ char *MakeCanonicalComAlias
     int n = 0;
     while (*p)
     {
-        if (!mux_isprint[(unsigned char)*p] || *p == ' ')
+        if (  !mux_isprint(*p)
+           || *p == ' ')
         {
             return NULL;
         }

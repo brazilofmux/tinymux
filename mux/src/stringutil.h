@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.33 2003-02-16 18:26:56 jake Exp $
+// $Id: stringutil.h,v 1.34 2003-02-17 01:37:01 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -25,6 +25,25 @@ extern const bool mux_isescape[256];
 extern const unsigned char mux_toupper[256];
 extern const unsigned char mux_tolower[256];
 extern const unsigned char mux_StripAccents[256];
+
+#define mux_isprint(x) (mux_isprint[(unsigned char)(x)])
+#define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
+#define mux_isalpha(x) (mux_isalpha[(unsigned char)(x)])
+#define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
+#define mux_islower(x) (mux_islower[(unsigned char)(x)])
+#define mux_isupper(x) (mux_isupper[(unsigned char)(x)])
+#define mux_isspace(x) (mux_isspace[(unsigned char)(x)])
+#define mux_toupper(x) (mux_toupper[(unsigned char)(x)])
+#define mux_tolower(x) (mux_tolower[(unsigned char)(x)])
+
+#define mux_AttrNameInitialSet(x) (mux_AttrNameInitialSet[(unsigned char)(x)])
+#define mux_AttrNameSet(x)        (mux_AttrNameSet[(unsigned char)(x)])
+#define mux_ObjectNameSet(x)      (mux_ObjectNameSet[(unsigned char)(x)])
+#define mux_PlayerNameSet(x)      (mux_PlayerNameSet[(unsigned char)(x)])
+#define mux_issecure(x)           (mux_issecure[(unsigned char)(x)])
+#define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
+#define mux_StripAccents(x)       (mux_StripAccents[(unsigned char)(x)])
+
 int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1);
 #define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
 #define TOKEN_ANSI      1 // ANSI sequence.

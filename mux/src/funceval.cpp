@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.30 2003-02-16 17:55:10 jake Exp $
+// $Id: funceval.cpp,v 1.31 2003-02-17 01:37:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -617,7 +617,7 @@ static unsigned int GenCode(char *pCode, const char *pCodeASCII)
     char *pOut = pCode;
     while (*pIn)
     {
-        if (mux_isprint[(unsigned char)*pIn])
+        if (mux_isprint(*pIn))
         {
             *pOut++ = *pIn - ' ';
         }
@@ -656,7 +656,7 @@ static char *crypt_code(char *code, char *text, bool type)
     //
     while (*p)
     {
-        if (mux_isprint[(unsigned char)*p])
+        if (mux_isprint(*p))
         {
             int iCode = *p - ' ';
             if (type)

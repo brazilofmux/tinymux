@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.9 2003-02-16 20:55:24 sdennis Exp $
+// $Id: db_rw.cpp,v 1.10 2003-02-17 01:37:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -786,7 +786,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             return -1;
 
         default:
-            if (mux_isprint[(unsigned char)ch])
+            if (mux_isprint(ch))
             {
                 Log.tinyprintf(ENDLINE "Illegal character '%c' near object #%d" ENDLINE, ch, i);
             }
