@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.48 2003-02-17 03:05:55 sdennis Exp $
+// $Id: stringutil.cpp,v 1.49 2003-02-17 03:10:41 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -557,7 +557,7 @@ char *strip_accents(const char *szString, size_t *pnString)
     {
         while (*pString)
         {
-            *pBuffer = mux_StripAccents[(unsigned char)*pString];
+            *pBuffer = mux_StripAccents(*pString);
             pBuffer++;
             pString++;
         }
