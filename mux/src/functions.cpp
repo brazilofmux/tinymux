@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.18 2002-06-18 23:04:55 jake Exp $
+// $Id: functions.cpp,v 1.19 2002-06-19 06:44:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6123,7 +6123,7 @@ FUNCTION(fun_idle)
                     break;
             }
         }
-        if(foundit)
+        if (foundit)
         {
             if (!((d->player == executor) || Wizard_Who(executor)))
             {
@@ -6153,7 +6153,9 @@ FUNCTION(fun_idle)
             pTargetName++;
         }
         dbref target = lookup_player(executor, pTargetName, 1);
-        if (Good_obj(target) && Dark(target) && !Wizard(executor))
+        if (  Good_obj(target)
+           && Hidden(target)
+           && !See_Hidden(executor))
         {
             target = NOTHING;
         }
@@ -6177,7 +6179,7 @@ FUNCTION(fun_conn)
                     break;
             }
         }
-        if(foundit)
+        if (foundit)
         {
             if (!((d->player == executor) || Wizard_Who(executor)))
             {
@@ -6207,7 +6209,9 @@ FUNCTION(fun_conn)
             pTargetName++;
         }
         dbref target = lookup_player(executor, pTargetName, 1);
-        if (Good_obj(target) && Dark(target) && !Wizard(executor))
+        if (  Good_obj(target)
+           && Hidden(target)
+           && !See_Hidden(executor))
         {
             target = NOTHING;
         }
@@ -7857,7 +7861,7 @@ FUNCTION(fun_cmds)
                     break;
             }
         }
-        if(foundit)
+        if (foundit)
         {
             if (!((d->player == executor) || Wizard_Who(executor)))
             {
@@ -7879,7 +7883,7 @@ FUNCTION(fun_cmds)
     else
     {
         dbref target = lookup_player(executor, fargs[0], 1);
-    if (Good_obj(target) && Connected(target))
+        if (Good_obj(target) && Connected(target))
         {
             if (!(Wizard_Who(executor) || Controls(executor, target)))
             {
@@ -8223,8 +8227,9 @@ FUNCTION(fun_lflags)
 
 FUNCTION(fun_art)
 {
-  const int ovecsize = 33;
-  int ovec[ovecsize];
+    const int ovecsize = 33;
+    int ovec[ovecsize];
+
     // Drop the input string into lower case.
     //
     _strlwr(fargs[0]);
