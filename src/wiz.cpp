@@ -1,6 +1,6 @@
-// wiz.cpp -- Wizard-only commands
+// wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.13 2000-11-05 18:56:36 sdennis Exp $
+// $Id: wiz.cpp,v 1.14 2000-11-16 19:31:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -69,7 +69,8 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
     // Fail if we don't control the victim or the victim's location.
     //
     if (  !Controls(player, victim)
-       && !Controls(player, Location(victim))
+       && (  (isExit(victim) && !Controls(player, Home(victim)))
+	      || !Controls(player, Location(victim)))
        && !Tel_Anything(player))
     {
         notify_quiet(player, NOPERM_MESSAGE);
@@ -123,7 +124,15 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
     //
     if (mudconf.fascist_tport)
     {
-        loc = where_room(victim);
+        if (isExit(victim))
+        {
+			loc = where_room(Home(victim));
+        }
+		else
+        {
+			loc = where_room(victim);
+        }
+
         if (  !Good_obj(loc)
            || !isRoom(loc)
            || !( Controls(player, loc)
