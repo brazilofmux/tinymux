@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.132 2003-02-16 20:43:35 sdennis Exp $
+// $Id: functions.cpp,v 1.133 2003-05-08 06:20:44 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -5276,7 +5276,7 @@ FUNCTION(fun_nearby)
 
 static void process_sex(dbref player, char *what, const char *token, char *buff, char **bufc)
 {
-    dbref it = match_thing_quiet(player, what);
+    dbref it = match_thing_quiet(player, strip_ansi(what));
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
