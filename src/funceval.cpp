@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.49 2001-06-28 11:59:41 sdennis Exp $
+// $Id: funceval.cpp,v 1.50 2001-06-28 12:20:00 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -262,11 +262,11 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     int aflags, could_hear;
     ATTR *attr;
 
-	if (isGarbage(thing))
-	{
-		notify_quiet(player, "Cannot set attributes on garbage objects.");
-		return;
-	}
+    if (isGarbage(thing))
+    {
+        notify_quiet(player, "Cannot set attributes on garbage objects.");
+        return;
+    }
     attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (attr && Set_attr(player, thing, attr, aflags))
@@ -1002,19 +1002,19 @@ FUNCTION(fun_objmem)
 FUNCTION(fun_playmem)
 {
     dbref thing;
-	if (nfargs)
-	{
+    if (nfargs)
+    {
         thing = match_thing(player, fargs[0]);
         if (thing == NOTHING || !Examinable(player, thing))
         {
             safe_noperm(buff, bufc);
             return;
         }
-	}
-	else
-	{
-		thing = player;
-	}
+    }
+    else
+    {
+        thing = player;
+    }
     int tot = 0;
     dbref j;
     DO_WHOLE_DB(j)
@@ -1189,11 +1189,11 @@ FUNCTION(fun_t)
     if (!mbuff || !*mbuff || !xlate(mbuff))
     {
         safe_chr('0', buff, bufc);
-	}
+    }
     else
     {
-		safe_chr('1', buff, bufc);
-	}
+        safe_chr('1', buff, bufc);
+    }
     free_lbuf(mbuff);
 }
 
@@ -1559,7 +1559,7 @@ FUNCTION(fun_udefault)
     *bp = '\0';
 
     // First we check to see that the attribute exists on the object.
-	// If so, we grab it and use it.
+    // If so, we grab it and use it.
     //
     if (objname != NULL) {
         if (parse_attrib(player, objname, &thing, &anum)) {
@@ -1849,7 +1849,7 @@ static dbref ucomp_player;
 static int u_comp(const void *s1, const void *s2)
 {
     // Note that this function is for use in conjunction with our own
-	// sane_qsort routine, NOT with the standard library qsort!
+    // sane_qsort routine, NOT with the standard library qsort!
     //
     char *result, *tbuf, *elems[2], *bp, *str;
     int n;
@@ -1882,7 +1882,7 @@ static void sane_qsort(void *array[], int left, int right, PV compare)
 {
     // Andrew Molitor's qsort, which doesn't require transitivity between
     // comparisons (essential for preventing crashes due to boneheads
-	// who write comparison functions where a > b doesn't mean b < a).
+    // who write comparison functions where a > b doesn't mean b < a).
     //
     int i, last;
     void *tmp;
