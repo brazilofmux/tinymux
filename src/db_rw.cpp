@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.16 2001-06-28 10:16:30 sdennis Exp $
+// $Id: db_rw.cpp,v 1.17 2001-06-28 10:27:29 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -699,7 +699,7 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
         case 13: // honorary wizard
         case 14: // administrator
         case 15: // director
-			newf1 = TYPE_PLAYER | WIZARD;
+            newf1 = TYPE_PLAYER | WIZARD;
             break;
 
         default: // A bad type, mark going
@@ -718,7 +718,7 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
         switch (newf1 & TYPE_MASK)
         {
         case TYPE_PLAYER:
-            
+
             // Lose CONNECT TERSE QUITE NOWALLS WARPTEXT
             //
             if (f1 & MUSE_BUILD)
@@ -730,7 +730,7 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
             break;
 
         case TYPE_THING:
-            
+
             // Lose LIGHT SACR_OK
             //
             if (f1 & MUSE_KEY)
@@ -903,7 +903,7 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
         switch (db_version) {
         case 3:
             (newf1 &= ~V2_ACCESSED);  // Clear ACCESSED
-		case 4:
+        case 4:
             (newf1 &= ~V3_MARKED);  // Clear MARKED
         case 5:
             // Merge GAGGED into SLAVE, move SUSPECT
@@ -1383,7 +1383,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             break;
 #endif
         case '+':
-            
+
             // MUX and MUSH header
             //
             switch (ch = getc(f))
@@ -1624,7 +1624,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             s_Exits(i, getref(f));
             s_Link(i, NOTHING);
             s_Next(i, getref(f));
-			// s_Zone(i, NOTHING);
+            // s_Zone(i, NOTHING);
             tempbool = getboolexp(f);
             atr_add_raw(i, A_LOCK,
                     unparse_boolexp_quiet(1, tempbool));
@@ -1784,7 +1784,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     (void)getref(f);
 
                 // Kalkin put his creation times BEFORE channels
-				// unlike standard Penn...
+                // unlike standard Penn...
                 //
                 if (read_dark_mc)
                 {
@@ -1892,7 +1892,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
                 // LOCK
                 //
-				if (read_key)
+                if (read_key)
                 {
                     tempbool = getboolexp(f);
                     atr_add_raw(i, A_LOCK,
