@@ -361,6 +361,10 @@ Bug Fixes:
  --  Bug #500 - Change idle times and connect times to floored times instead
      of rounded to nearest.
  --  Bug #613 - #-1 RECURSION LIMIT EXCEEDED missing.
+ --  Bug #625 - Fixed max() to work for negative numbers.
+ --  Fixed typo that could have affected the logic, but didn't in this
+     particular case.
+ --  Bug #664 - The "playername" syntax at the connect screen was broken.
 
 
 Performance Enhancements:
@@ -465,6 +469,8 @@ Cosmetic Changes:
  --  buildnum.data added into distribution.
  --  Spelling error in 'wizhelp have_macros' topic.
  --  Bug #521, #527, #529 - help topic typos.
+ --  Freshened help.
+ --  Changed db_load and db_unload usage message.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
