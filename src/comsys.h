@@ -1,6 +1,6 @@
 // Comsys.h
 //
-// $Id: comsys.h,v 1.4 2001-03-31 04:15:53 sdennis Exp $
+// $Id: comsys.h,v 1.5 2001-08-28 15:21:57 sdennis Exp $
 
 #ifndef __COMSYS_H__
 #define __COMSYS_H__
@@ -78,7 +78,14 @@ void destroy_comsys(comsys_t *c);
 void sort_com_aliases(comsys_t *c);
 void load_comsystem(FILE *fp);
 void save_comsystem(FILE *fp);
-void SendChannelMessage(struct channel *ch, char *msgNormal, char *msgNoComtitle, int raw);
+void SendChannelMessage
+(
+    dbref  player,
+    struct channel *ch,
+    char  *msgNormal,
+    char  *msgNoComtitle,
+    int    raw
+);
 void do_comwho(dbref player, struct channel *ch);
 void do_leavechannel(dbref player, struct channel *ch);
 void do_delcomchannel(dbref player, char *channel);

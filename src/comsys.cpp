@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.54 2001-07-26 16:45:32 sdennis Exp $
+// * $Id: comsys.cpp,v 1.55 2001-08-28 15:21:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -995,12 +995,13 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         char *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
             arg2, &messNormal, &messNoComtitle);
-        SendChannelMessage(ch, messNormal, messNoComtitle, FALSE);
+        SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
     }
 }
 
 void SendChannelMessage
 (
+    dbref player,
     struct channel *ch,
     char *msgNormal,
     char *msgNoComtitle,
@@ -1013,35 +1014,18 @@ void SendChannelMessage
     struct comuser *user;
     for (user = ch->on_users; user; user = user->on_next)
     {
-        if (user->bUserIsOn)
+        if (  user->bUserIsOn 
+           && do_test_access(user->who, CHANNEL_RECEIVE, ch))
         {
-            if (do_test_access(user->who, CHANNEL_RECEIVE, ch))
+            if (  user->ComTitleStatus
+               || bSpoof
+               || msgNoComtitle == NULL)
             {
-                if (  isPlayer(user->who)
-                   && Connected(user->who))
-                {
-                    if (  user->ComTitleStatus
-                       || bSpoof
-                       || msgNoComtitle == NULL)
-                    {
-                        raw_notify(user->who, msgNormal);
-                    }
-                    else
-                    {
-                        raw_notify(user->who, msgNoComtitle);
-                    }
-                }
-                else
-                {
-                    if (user->ComTitleStatus || bSpoof)
-                    {
-                        notify(user->who, msgNormal);
-                    }
-                    else
-                    {
-                        notify(user->who, msgNoComtitle);
-                    }
-                }
+                notify_with_cause(user->who, player, msgNormal);
+            }
+            else
+            {
+                notify_with_cause(user->who, player, msgNoComtitle);
             }
         }
     }
@@ -1123,7 +1107,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
             ":has joined this channel.", &messNormal, &messNoComtitle);
-        SendChannelMessage(ch, messNormal, messNoComtitle, FALSE);
+        SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
     }
 }
 
@@ -1136,7 +1120,7 @@ void do_leavechannel(dbref player, struct channel *ch)
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
             ":has left this channel.", &messNormal, &messNoComtitle);
-        SendChannelMessage(ch, messNormal, messNoComtitle, FALSE);
+        SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
     }
     user->bUserIsOn = FALSE;
 }
@@ -1489,7 +1473,7 @@ void do_delcomchannel(dbref player, char *channel)
                     BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
                         ch->header, user, ":has left this channel.",
                         &messNormal, &messNoComtitle);
-                    SendChannelMessage(ch, messNormal, messNoComtitle, FALSE);
+                    SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
                 }
                 raw_notify(player, tprintf("You have left channel %s.", channel));
 
@@ -2006,7 +1990,7 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
             ":has disconnected.", &messNormal, &messNoComtitle);
-        SendChannelMessage(ch, messNormal, messNoComtitle, FALSE);
+        SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
     }
 }
 
@@ -2022,7 +2006,7 @@ void do_comconnectraw_notify(dbref player, char *chan)
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
             ":has connected.", &messNormal, &messNoComtitle);
-        SendChannelMessage(ch, messNormal, messNoComtitle, FALSE);
+        SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
     }
 }
 
@@ -2363,11 +2347,11 @@ void do_cemit(dbref player, dbref cause, int key, char *chan, char *text)
     }
     if (key == CEMIT_NOHEADER)
     {
-        SendChannelMessage(ch, text, NULL, TRUE);
+        SendChannelMessage(player, ch, text, NULL, TRUE);
     }
     else
     {
-        SendChannelMessage(ch, tprintf("%s %s", ch->header, text), NULL, TRUE);
+        SendChannelMessage(player, ch, tprintf("%s %s", ch->header, text), NULL, TRUE);
     }
 }
 
@@ -2515,7 +2499,7 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     *mnctp = '\0';
     free_lbuf(mess1); free_lbuf(mess1nct);
     free_lbuf(mess2); free_lbuf(mess2nct);
-    SendChannelMessage(ch, messNormal, messNoComtitle, FALSE);
+    SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
     do_delcomchannel(thing, channel);
 }
 
