@@ -11487,53 +11487,80 @@ SUBJ()
 & SUBSTITUTIONS
 SUBSTITUTIONS
 
-  All messages may contain %-substitutions, which evaluate to gender-specific
-  pronouns if the player's gender is set or to other useful information.
-  Information returned is based on the player that caused the message to be
-  displayed, not the object that stored the message or which is running the
-  action list.  The substitutions available are:
+  The most basic form of evaluation is a %-substitution.  Even when other
+  forms of evalution are not performed, %-substitutions usually are.  A
+  %-substitution is a '%' followed by one or two letters, digits, or symbols.
+  If a sequence is understood, it is substituted by a corresponding value.
+  If a sequence is not understood, the initial '%' is removed.  In this way,
+  the '%' also acts similiarly to the '\' escape.
 
-    %s, %S  = Name, he, she, it, they.        (subjective)
-    %o, %O  = Name, him, her, it, them.       (objective)
-    %p, %P  = Name's, his, her, its, their.   (possessive)
-    %a, %A  = Name's, his, hers, its, theirs. (absolute possessive)
-    %n, %N  = the player's name.
-    %r      = carriage return
-    %t      = tab character
-    %b      = space character
-    %%      = literal '%' character
-    %0-%9   = Value of positional parameter/stack location 0 through 9.
-    %q0-%q9 = Value of temporary (setq) register 0 through 9.
-    %qa-%qz = Value of temporary (setq) register A through Z.
-    %va-%vz = Contents of attribute va through vz
+  For some substitutions, if the letter following the '%' is capitalized, the
+  first letter of the result of the substitution is also capitalized.
+
+  Certain %-sequences provide gender-specific pronouns.  Some provide
+  information about the execution state.  Some provide control the appearance
+  of text.
+
+  Commonly-used substitutions:
+
+    %r       Carriage Return
+    %t       Tab
+    %b       Space
+    %%       Literal '%'.
+    %\       Literal '/'.
+    %x<code> ANSI color codes. See: ansi().
+    %c<code> ANSI color codes. See: ansi().
 
 { 'help substitutions2' for more }
 
 & SUBSTITUTIONS2
 SUBSTITUTIONS (continued)
 
-    %#      = Database number of the object that caused the message to be
-              displayed or the action list to be run (Enactor).
+  Pronoun-related substitutions:
 
-    %@      = Database number of the object immediately calling %! (Caller).
-              This number starts as the same as %#, but can be affected by
-              u()-type functions, zones, and @function.
+    %s, %S   Subjective form: he, she, it, they.  See: subj(%#)
+    %o, %O   Objective form: him, her, it, them.  See: obj(%#)
+    %p, %P   Possessive form: his, her, its, their.  See: poss(%#)
+    %a, %A   Absolute Possessive form: his, hers, its, theirs.
 
-    %!      = Database number of the object holding the message or running
-              the action list (Executor).
+  Database substitutions:
 
-    %l      = Database number of the location of the object that caused the
-              message to be displayed or the action list to be run.
+    %n, %N   Enactor's name.  See name(%#).
+    %va-%vz  Contents of attribute va through vz
 
-    %x %c   = ANSI color codes. See 'help ansi()' for more information.
+  Execution state substitutions:
 
-    %|      = A string piped from the previous command in a pipe.
- 
-  If the letter following the % is capitalized, the first letter of the
-  result of the substitution is also capitalized.
- 
-  Note: %<whatever> is equivalent to [v(<whatever>)], but is more efficient.
-  See also: GENDER, V().
+    %m       Text of the last command executed.
+    %0-%9    Value of positional parameter/stack location 0 through 9.
+    %q0-%q9  Value of temporary (setq) register 0 through 9.
+    %qa-%qz  Value of temporary (setq) register A through Z.
+
+{ 'help substitutions3' for more }
+
+& SUBSTITUTIONS3
+SUBSTITUTIONS (continued)
+
+  Execution state substitutions (continued):
+
+    %#      Database number of the object that caused the message to be
+            displayed or the action list to be run (Enactor).
+
+    %@      Database number of the object immediately calling %! (Caller).
+            This number starts as the same as %#, but can be affected by
+            u()-type functions, zones, and @function.
+
+    %!      Database number of the object holding the message or running
+            the action list (Executor).
+
+    %l      Database number of the location of the object that caused the
+            message to be displayed or the action list to be run.
+
+    %|      A string piped from the previous command in a pipe.
+
+  Note that %<whatever> is equivalent to [v(<whatever>)], but is more
+  efficient.
+
+  Related Topics: ANSI(), ANSI CODES, ANSI SUBSTITUTION, GENDER, V(). 
 
 & SUCCESS
 SUCCESS
