@@ -4104,6 +4104,20 @@ BEING KILLED
 
   Related Topics: kill, @akill, @kill, @okill, IMMORTAL, WIZARD.
 
+& BLIND
+BLIND
+
+  FLAG: BLIND(B)
+
+  This flag supresses the '<who> has arrived.' and '<who> has left.' messages.
+  When set on a player, the messages caused by their movement are surpressed.
+  When set on a location, the messages for everyone entering or leaving that
+  location are surpressed.
+
+  This flag can only be set by Wizards.
+
+  Related Topics: DARK
+
 & BNAND()
 BNAND()
 
