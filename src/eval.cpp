@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.2 2000-04-11 21:18:06 sdennis Exp $
+// $Id: eval.cpp,v 1.3 2000-04-12 20:12:14 sdennis Exp $
 //
 
 // MUX 2.0
@@ -1614,7 +1614,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                                     {
                                         // Carriage return.
                                         //
-                                        safe_str((char *)"\r\n", buff, bufc);
+                                        safe_copy_buf("\r\n", 2, buff, bufc, LBUF_SIZE-1);
                                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                                     }
                                     else
