@@ -7757,7 +7757,7 @@ LEXITS()
   Returns a space-separated list of the exits in <loc> and its parents.
   Dark exits are not returned unless you own the location.
 
-  Example:
+  Examples:
     > look here
     The Town Square
     You are in the town square.  All around you .....
