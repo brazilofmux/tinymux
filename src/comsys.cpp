@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.48 2001-06-29 16:27:14 sdennis Exp $
+// * $Id: comsys.cpp,v 1.49 2001-06-29 19:01:49 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -942,7 +942,8 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         raw_notify(player, "You are not listed as on that channel.  Delete this alias and readd.");
         return;
     }
-    if (has_flag(player, player, "GAGGED"))
+    if (  Gagged(player)
+       && !Wizard(player))
     {
         raw_notify(player, "GAGGED players may not speak on channels.");
         return;
