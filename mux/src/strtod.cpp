@@ -3471,7 +3471,7 @@ void FLOAT_Initialize(void)
 {
 #if defined(HAVE_FPU_CONTROL_H) && defined(_FPU_GETCW) \
  && defined(_FPU_EXTENDED) && defined(_FPU_DOUBLE)
-    fpu_control_t oldcw, newcw;  
+    fpu_control_t oldcw, newcw;
     _FPU_GETCW(oldcw);
     newcw = (oldcw & ~_FPU_EXTENDED) | _FPU_DOUBLE;
     _FPU_SETCW(newcw);
