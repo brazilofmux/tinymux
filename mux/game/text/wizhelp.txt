@@ -1533,19 +1533,22 @@ CACHE_PAGES
   CONFIG PARAMETER: cache_pages <num>
   DEFAULT: 40
 
-  Specifies the size of the hashpage cache.  This is the lowest-level
-  caching (not counting the operating system's caching).  Don't set
-  this too low (e.g., less than 10) or the server's performance will
-  degrade dramatically.
+  Specifies the size of the hashpage cache.  This configuration option cannot
+  be changed after the server starts.  It can only be changed via the
+  configuration file.
 
-  The most effective type of caching occurs one level higher
-  (see max_cache_size), however for larger games, it may be necessary to
-  increase cache_pages somewhat.  Estimate that you will need one page
-  per active player.  So, the default of 40 is tuned to perform well
-  for up to 100 players.
+  The most effective type of caching occurs one level higher (see
+  max_cache_size), however for larger games, it is necessary to increase
+  cache_pages as well (which caches at a lower level).
 
-  This configuration option cannot be changed after the server starts.  It
-  can only be changed via the configuration file.
+  Recommendations:
+
+   -- Have at least 10 hash pages or the server itself will thrash the cache.
+
+   -- Have one cache page for every active player, or simple paging will
+      thrash the cache.
+
+  The default of 40 will perform well up to 100 players.
 
   Related Topics: cache_pages, max_cache_size.
 
