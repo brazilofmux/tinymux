@@ -1,12 +1,8 @@
 /* config.h */
-/* $Id: config.h,v 1.4 2000-04-25 18:33:14 sdennis Exp $ */
+/* $Id: config.h,v 1.5 2000-05-19 19:29:16 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
-
-/* TEST_MALLOC: Defining this makes a malloc that keeps track of the number
- *      of blocks allocated.  Good for testing for Memory leaks.
- */
 
 /* Compile time options */
 
