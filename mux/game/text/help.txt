@@ -5663,6 +5663,24 @@ FILTER()
 
   Related Topics: u(), map(), fold()
 
+& FILTERBOOL()
+FILTERBOOL()
+
+  FUNCTION: filterbool([<obj>/]<attr>, <list>[, <delim>])
+
+  This function evaluates the contents of <attr> for each element of <list>,
+  passing it in as %0.  A <delimiter>-separated list is returned of those
+  elements for which the evaluation returns a boolean-true value.
+
+  <delimiter> may be used to specify a delimiter other than space.
+
+  Examples:
+    > &IS_ODD object=mod(%0,2)
+    > say filterbool(object/is_odd,1 2 3 4 5)
+    You say "1 3 5"
+
+  Related Topics: u(), map(), fold()
+
 & FINDABLE()
 FINDABLE()
 
@@ -7564,15 +7582,19 @@ LPARENT()
 LPORTS()
 
   FUNCTION: lports()
+  Returns a list of the db numbers and ports of connected players.
 
-  This function returns the list of descriptors ("ports") of all active
-  connections.  This is a Wizard-only function.
+  Example:
+    > WHO
+    Player Name          On For Idle  Doing
+    Mortal                00:11   0s  
+    Evinar                00:12   6m  
+    Wizard                00:32   6s  
+    3 Players logged in.
+    > say lports()
+    You say "#226:20 #271:5 #1:6"
 
-  The list of ports is returned in order of most recent connection to least
-  recent connection. These ports correspond to those given by the SESSION
-  command.
-
-  Related Topics: ports()
+  Related Topics: lwho(), WHO, DOING, conn(), idle().
 
 & LPOS()
 LPOS()
@@ -7685,24 +7707,30 @@ LTE()
 
   Related Topics: lt(), gte(), gt(), eq(), neq().
 
-& LWHO()
 LWHO()
 
-  FUNCTION: lwho()
+  FUNCTION: lwho([<boolean>])
 
-  Returns a list of the db numbers of connected players.
+  Returns a list of the db numbers of connected players.  This returns what
+  a 'WHO' or 'DOING' would return.  This takes an optional boolean value.
+  '0' is the default, and '1' returns the player list in the form dbref:port.
+  Only wizards may use the port option.
 
   Example:
     > WHO
     Player Name          On For Idle  Doing
-    Mortal                00:11   0s
-    Evinar                00:12   6m
-    Wizard                00:32   6s
+    Mortal                00:11   0s  
+    Evinar                00:12   6m  
+    Wizard                00:32   6s  
     3 Players logged in.
     > say lwho()
     You say "#226 #271 #1"
+    > say lwho(0)
+    You say "#226 #271 #1"
+    > say lwho(1)
+    You say "#226:20 #271:5 #1:6"
 
-  Related Topics: WHO, conn(), idle().
+  Related Topics: WHO, DOING, conn(), idle().
 
 & MAIL()
 MAIL()
