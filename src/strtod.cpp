@@ -68,9 +68,9 @@
  */
 
 /*
- * #define IEEE_LITTLE_ENDIAN for IEEE-arithmetic machines where the least
+ * #define IEEE_8087 for IEEE-arithmetic machines where the least
  *  significant byte has the lowest address.
- * #define IEEE_BIG_ENDIAN for IEEE-arithmetic machines where the most
+ * #define IEEE_MC68K for IEEE-arithmetic machines where the most
  *  significant byte has the lowest address.
  * #define Long int on machines with 32-bit ints and 64-bit longs.
  * #define Sudden_Underflow for IEEE-format machines without gradual
@@ -101,9 +101,9 @@
 
 #define Unsigned_Shifts
 #ifdef WORDS_BIGENDIAN
-#define IEEE_BIG_ENDIAN
+#define IEEE_MC68K
 #else
-#define IEEE_LITTLE_ENDIAN
+#define IEEE_8087
 #endif
 
 #if defined(__arm__) && !defined(__VFP_FP__)
@@ -112,7 +112,7 @@
  * byte and word endianness. The byte order is still little endian
  * but the word order is big endian.
  */
-#define IEEE_BIG_ENDIAN
+#define IEEE_MC68K
 #endif
 
 #ifdef __vax__
@@ -124,10 +124,10 @@
 
 #ifdef Bad_float_h
 #undef __STDC__
-#ifdef IEEE_BIG_ENDIAN
+#ifdef IEEE_MC68K
 #define IEEE_ARITHMETIC
 #endif
-#ifdef IEEE_LITTLE_ENDIAN
+#ifdef IEEE_8087
 #define IEEE_ARITHMETIC
 #endif
 
@@ -174,9 +174,9 @@
 #define Sign_Extend(a,b) /*no-op*/
 #endif
 
-#if defined(IEEE_LITTLE_ENDIAN) + defined(IEEE_BIG_ENDIAN) + defined(VAX) + \
+#if defined(IEEE_8087) + defined(IEEE_MC68K) + defined(VAX) + \
     defined(IBM) != 1
-Exactly one of IEEE_LITTLE_ENDIAN IEEE_BIG_ENDIAN, VAX, or
+Exactly one of IEEE_8087 IEEE_MC68K, VAX, or
 IBM should be defined.
 #endif
 
@@ -186,7 +186,7 @@ typedef union
     ULong ul[2];
 } _double;
 #define value(x) ((x).d)
-#ifdef IEEE_LITTLE_ENDIAN
+#ifdef IEEE_8087
 #define word0(x) ((x).ul[1])
 #define word1(x) ((x).ul[0])
 #else
@@ -198,7 +198,7 @@ typedef union
  * An alternative that might be better on some machines is
  * #define Storeinc(a,b,c) (*a++ = b << 16 | c & 0xffff)
  */
-#if defined(IEEE_LITTLE_ENDIAN) + defined(VAX) + defined(__arm__)
+#if defined(IEEE_8087) + defined(VAX) + defined(__arm__)
 #define Storeinc(a,b,c) \
     (((u_short *)(void *)a)[1] = \
     (u_short)b, ((u_short *)(void *)a)[0] = (u_short)c, a++)
@@ -214,7 +214,7 @@ typedef union
 /* Quick_max = floor((P-1)*log(FLT_RADIX)/log(10) - 1) */
 /* Int_max = floor(P*log(FLT_RADIX)/log(10) - 1) */
 
-#if defined(IEEE_LITTLE_ENDIAN) + defined(IEEE_BIG_ENDIAN)
+#if defined(IEEE_8087) + defined(IEEE_MC68K)
 #define Exp_shift  20
 #define Exp_shift1 20
 #define Exp_msk1    0x100000
@@ -2840,4 +2840,3 @@ round_9_up:
     }
     return s0;
 }
-
