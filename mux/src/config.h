@@ -1,14 +1,12 @@
 // config.h
 //
-// $Id: config.h,v 1.5 2003-01-04 18:17:18 sdennis Exp $
+// $Id: config.h,v 1.6 2003-01-21 23:09:05 sdennis Exp $
 //
 
 #ifndef CONFIG_H
 #define CONFIG_H
 
 /* Compile time options */
-
-#define CONF_FILE "netmux.conf" /* Default config file */
 
 #define SIDE_EFFECT_FUNCTIONS   /* Those neat funcs that should be commands */
 

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.33 2003-01-21 22:48:38 sdennis Exp $
+// $Id: game.cpp,v 1.34 2003-01-21 23:09:05 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1856,13 +1856,7 @@ CLI_OptionEntry OptionTable[4] =
 
 void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
 {
-    if (!p)
-    {
-        // Non-option argument.
-        //
-        conffile = pValue;
-    }
-    else
+    if (p)
     {
         switch (p->m_Unique)
         {
@@ -1884,10 +1878,37 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
             break;
         }
     }
+    else
+    {
+        bSyntaxError = TRUE;
+    }
 }
 
 int DCL_CDECL main(int argc, char *argv[])
 {
+    build_version();
+
+    // Parse the command line
+    //
+    CLI_Process(argc, argv, OptionTable,
+        sizeof(OptionTable)/sizeof(CLI_OptionEntry), CLI_CallBack);
+    if (bVersion)
+    {
+        printf("Version: %s" ENDLINE, mudstate.version);
+        return 1;
+    }
+    if (  bSyntaxError
+       || conffile == NULL)
+    {
+        printf("Version: %s" ENDLINE, mudstate.version);
+        printf("Usage: %s [-h] [-v] [-s] [-c filename]" ENDLINE, argv[0]);
+        printf("  -v  Display version string." ENDLINE);
+        printf("  -s  Start with a minimal database." ENDLINE);
+        printf("  -c  Specify configuration file." ENDLINE);
+        printf("  -h  Display this help." ENDLINE);
+        return 1;
+    }
+
     BuildSignalNamesTable();
 
     FLOAT_Initialize();
@@ -1903,27 +1924,6 @@ int DCL_CDECL main(int argc, char *argv[])
     hfIdentData.Open("svdlines.dir", "svdlines.pag");
     bMemAccountingInitialized = TRUE;
 #endif
-
-    build_version();
-
-    // Parse the command line
-    //
-    CLI_Process(argc, argv, OptionTable, sizeof(OptionTable)/sizeof(CLI_OptionEntry), CLI_CallBack);
-    if (bVersion)
-    {
-        printf("Version: %s" ENDLINE, mudstate.version);
-        return 1;
-    }
-    if (bSyntaxError)
-    {
-        printf("Version: %s" ENDLINE, mudstate.version);
-        printf("Usage: %s [-h] [-v] [-s] [[-c] config-file]" ENDLINE, argv[0]);
-        printf("  -v  Display version string." ENDLINE);
-        printf("  -s  Start with a minimal database." ENDLINE);
-        printf("  -c  Specify configuration file." ENDLINE);
-        printf("  -h  Display this help." ENDLINE);
-        return 1;
-    }
 
 #ifdef WIN32
     // Find which version of Windows we are using - Completion ports do
@@ -1948,9 +1948,11 @@ int DCL_CDECL main(int argc, char *argv[])
             return 1;
         }
 
-        // Find the entry point for CancelIO so we can use it. This is done dynamically because Windows 95/98 doesn't
-        // have a CancelIO entry point. If it were done at load time, it would always fail on Windows 95/98...even
-        // though we don't use it or depend on it in that case.
+        // Find the entry point for CancelIO so we can use it. This is done
+        // dynamically because Windows 95/98 doesn't have a CancelIO entry
+        // point. If it were done at load time, it would always fail on
+        // Windows 95/98...even though we don't use it or depend on it in
+        // that case.
         //
         fpCancelIo = (FCANCELIO *)GetProcAddress(hInstKernel32, "CancelIo");
         if (fpCancelIo == NULL)
@@ -2026,14 +2028,7 @@ int DCL_CDECL main(int argc, char *argv[])
     init_attrtab();
     init_version();
 
-    if (conffile)
-    {
-        mudconf.config_file = StringClone(conffile);
-    }
-    else
-    {
-        mudconf.config_file = StringClone(CONF_FILE);
-    }
+    mudconf.config_file = StringClone(conffile);
     cf_read();
 
     fcache_init();
