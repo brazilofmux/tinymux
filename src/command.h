@@ -1,5 +1,5 @@
 /* command.h - declarations used by the command processor */
-/* $Id: command.h,v 1.1 2000-04-11 07:14:43 sdennis Exp $ */
+/* $Id: command.h,v 1.2 2000-04-29 08:08:31 sdennis Exp $ */
 
 #ifndef __COMMAND_H
 #define __COMMAND_H
@@ -120,6 +120,7 @@ CMD_ONE_ARG(do_sweep);          /* Check for listeners */
 CMD_TWO_ARG_ARGV_CMDARG(do_switch); /* Execute cmd based on match */
 CMD_TWO_ARG(do_teleport);       /* Teleport elsewhere */
 CMD_ONE_ARG(do_think);          /* Think command */
+CMD_NO_ARG(do_timecheck);       /* Check time used by objects */
 CMD_ONE_ARG(do_timewarp);       /* Warp various timers */
 CMD_TWO_ARG(do_toad);           /* Turn a tinyjerk into a tinytoad */
 CMD_TWO_ARG_ARGV(do_trigger);   /* Trigger an attribute */
@@ -254,19 +255,34 @@ typedef struct
 #define CA_WIZARD     0x00000002  /* Wizards only */
 #define CA_BUILDER    0x00000004  /* Builders only */
 #define CA_IMMORTAL   0x00000008  /* Immortals only */
-#define CA_ROBOT      0x00000010  /* Robots only */
-#define CA_ANNOUNCE   0x00000020  /* Announce Power */
-#define CA_STAFF      0x00000400  /* Has Staff flag */
-#define CA_ADMIN      0x00000800  /* Wizard or royal */
+#define CA_STAFF      0x00000010  /* Must have STAFF flag */
+#define CA_HEAD       0x00000020  /* Must have HEAD flag */
+#define CA_SQL_OK     0x00000040  /* Must have SQL_OK power */
+#define CA_ADMIN      0x00000080  /* Wizard or royal */
+#define CA_ROBOT      0x00000100  /* Robots only */
+#define CA_ANNOUNCE   0x00000200  /* Announce Power */
+
 #define CA_NO_HAVEN   0x00001000  /* Not by HAVEN players */
 #define CA_NO_ROBOT   0x00002000  /* Not by ROBOT players */
 #define CA_NO_SLAVE   0x00004000  /* Not by SLAVE players */
 #define CA_NO_SUSPECT 0x00008000  /* Not by SUSPECT players */
 #define CA_NO_GUEST   0x00010000  /* Not by GUEST players */
 
-#define CA_GBL_BUILD  0x01000000  /* Requires the global BUILDING flag */
-#define CA_GBL_INTERP 0x02000000  /* Requires the global INTERP flag */
-#define CA_DISABLED   0x04000000  /* Command completely disabled */
+#define CA_MARKER0    0x00002000
+#define CA_MARKER1    0x00004000
+#define CA_MARKER2    0x00008000
+#define CA_MARKER3    0x00010000
+#define CA_MARKER4    0x00020000
+#define CA_MARKER5    0x00040000
+#define CA_MARKER6    0x00080000
+#define CA_MARKER7    0x00100000
+#define CA_MARKER8    0x00200000
+#define CA_MARKER9    0x00400000
+
+#define CA_GBL_BUILD  0x00800000  /* Requires the global BUILDING flag */
+#define CA_GBL_INTERP 0x01000000  /* Requires the global INTERP flag */
+#define CA_DISABLED   0x02000000  /* Command completely disabled */
+#define CA_STATIC     0x04000000  /* Cannot be changed at runtime */
 #define CA_NO_DECOMP  0x08000000  /* Don't include in @decompile */
 
 #define CA_LOCATION   0x10000000  /* Invoker must have location */
