@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.32 2001-09-28 09:41:16 sdennis Exp $
+// $Id: game.cpp,v 1.33 2001-10-08 00:36:43 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1750,39 +1750,39 @@ static void NDECL(process_preload)
     i = 0;
     DO_WHOLE_DB(thing)
     {
-        /*
-         * Ignore GOING objects
-         */
-
+        // Ignore GOING objects.
+        //
         if (Going(thing))
+        {
             continue;
+        }
 
         scheduler.RunTasks(10);
 
-        /*
-         * Look for a STARTUP attribute in parents
-         */
-
-        ITER_PARENTS(thing, parent, lev)
+        // Look for a STARTUP attribute in parents.
+        //
+        if (mudconf.startup)
         {
-            if (Flags(thing) & HAS_STARTUP)
+            ITER_PARENTS(thing, parent, lev)
             {
-                did_it(Owner(thing), thing, 0, NULL, 0, NULL, A_STARTUP, (char **)NULL, 0);
+                if (Flags(thing) & HAS_STARTUP)
+                {
+                    did_it(Owner(thing), thing, 0, NULL, 0, NULL, A_STARTUP,
+                        (char **)NULL, 0);
 
-                // Process queue entries as we add them.
-                //
-                scheduler.RunTasks(10);
-                break;
-             }
+                    // Process queue entries as we add them.
+                    //
+                    scheduler.RunTasks(10);
+                    break;
+                 }
+            }
         }
 
-        /*
-         * Look for a FORWARDLIST attribute
-         */
-
+        // Look for a FORWARDLIST attribute.
+        //
         if (H_Fwdlist(thing))
         {
-            (void)atr_get_str(tstr, thing, A_FORWARDLIST, &aowner, &aflags);
+            atr_get_str(tstr, thing, A_FORWARDLIST, &aowner, &aflags);
             if (*tstr)
             {
                 fwdlist_load(fp, GOD, tstr);

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.24 2001-10-06 08:14:14 sdennis Exp $
+// $Id: mudconf.h,v 1.25 2001-10-08 00:36:43 sdennis Exp $
 //
 #ifndef __CONF_H
 #define __CONF_H
@@ -204,6 +204,7 @@ struct confdata
     char    *art_regexp;    /* Basic regexp for determining which article to use. */
     ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
     int     toad_recipient; /* Default @toad recipient. */
+    int     startup;        // If no, startup attributes aren't processed on load.
 #else
     int     paylimit;   /* getting money gets hard over this much */
     int     digcost;    /* cost of @dig command */

@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.42 2001-10-06 08:14:14 sdennis Exp $
+// $Id: conf.cpp,v 1.43 2001-10-08 00:36:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -251,6 +251,7 @@ void NDECL(cf_init)
     mudconf.cache_names = 1;
     mudconf.toad_recipient = -1;
     mudconf.eval_comtitle = 1;
+    mudconf.startup = TRUE;
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = FALSE;
     mudstate.bCanRestart = FALSE;
@@ -1491,6 +1492,7 @@ CONF conftable[] =
     {"plushelp_index",            cf_string_dyn,  CA_STATIC, (int *)&mudconf.plushelp_indx,   NULL, SIZEOF_PATHNAME},
     {"staffhelp_file",            cf_string_dyn,  CA_STATIC, (int *)&mudconf.staffhelp_file,  NULL, SIZEOF_PATHNAME},
     {"staffhelp_index",           cf_string_dyn,  CA_STATIC, (int *)&mudconf.staffhelp_indx,  NULL, SIZEOF_PATHNAME},
+    {"startup",                   cf_bool,        CA_STATIC, &mudconf.startup,                NULL,               0},
     {"public_channel",            cf_string,      CA_STATIC, (int *)mudconf.public_channel,   NULL,              32},
     {"wiznews_file",              cf_string_dyn,  CA_STATIC, (int *)&mudconf.wiznews_file,    NULL, SIZEOF_PATHNAME},
     {"wiznews_index",             cf_string_dyn,  CA_STATIC, (int *)&mudconf.wiznews_indx,    NULL, SIZEOF_PATHNAME},
