@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.25 2002-02-14 09:03:43 sdennis Exp $
+// $Id: flags.cpp,v 1.26 2002-02-14 21:37:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -418,16 +418,16 @@ FLAGNAMEENT gen_flag_names[] =
     {"VISUAL",          TRUE, &fbeVisual         },
     {"WIZARD",          TRUE, &fbeWizard         },
 #ifdef WOD_REALMS
-    {"OBF",             TRUE, &fbeObf            },
-    {"HSS",             TRUE, &fbeHss            },
-    {"UMBRA",           TRUE, &fbeUmbra          },
-    {"SHROUD",          TRUE, &fbeShroud         },
-    {"MATRIX",          TRUE, &fbeMatrix         },
-    {"MEDIUM",          TRUE, &fbeMedium         },
-    {"DEAD",            TRUE, &fbeDead           },
     {"FAE",             TRUE, &fbeFae            },
     {"CHIMERA",         TRUE, &fbeChimera        },
     {"PEERING",         TRUE, &fbePeering        },
+    {"UMBRA",           TRUE, &fbeUmbra          },
+    {"SHROUD",          TRUE, &fbeShroud         },
+    {"MATRIX",          TRUE, &fbeMatrix         },
+    {"OBF",             TRUE, &fbeObf            },
+    {"HSS",             TRUE, &fbeHss            },
+    {"MEDIUM",          TRUE, &fbeMedium         },
+    {"DEAD",            TRUE, &fbeDead           },
 #endif // WOD_REALMS
     {NULL, FALSE}
 };
