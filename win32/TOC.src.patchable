@@ -62,8 +62,6 @@ src/crypt/ufc-crypt.h
 src/crypt/ufc.cpp
 src/db.cpp
 src/db.h
-src/dbconvert.cpp
-src/dbconvert.dsp
 src/db_rw.cpp
 src/eval.cpp
 src/externs.h
