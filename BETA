@@ -1,5 +1,5 @@
-TinyMUX 2.0:  BETA 11
-Last Update:  July 2000
+TinyMUX 2.0:  BETA 13
+Last Update:  September 2000
 
 General Cautions During the Beta Period:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -11,8 +11,8 @@ thrown trashy ansi and nightmarish databases at it, made it do
 terrible things that made it choke, turn blue, and crash.  We even let
 Ashen-Shugar beat on it a while.  
 
-As a result of this abuse, 326 bugs have been fixed. Even though there
-are 134 bugs still left to fix, only two of these are crashing bugs,
+As a result of this abuse, 352 bugs have been fixed. Even though there
+are 149 bugs still left to fix, only two of these are crashing bugs,
 and the remaining bugs are mostly ANSI-related or feature requests.
 However, it is our belief, that this is the best and most stable version
 of TinyMUX available.
