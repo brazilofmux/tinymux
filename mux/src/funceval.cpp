@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.14 2002-06-13 08:32:23 jake Exp $
+// $Id: funceval.cpp,v 1.15 2002-06-13 14:09:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1446,6 +1446,7 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
     }
 
     ATTR *attr = atr_str(fargs[1]);
+    int ch = '0';
     if (attr)
     {
         if (!bCanReadAttr(executor, thing, attr, bCheckParent))
@@ -1455,24 +1456,25 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
         }
         else
         {
-            char *tbuf;
-            int ch = '0';
-
             if (bCheckParent)
             {
                 dbref aowner;
                 int aflags;
-                tbuf = atr_pget(thing, attr->number, &aowner, &aflags);
+                char *tbuf = atr_pget(thing, attr->number, &aowner, &aflags);
+                if (tbuf[0] != '\0')
+                {
+                    ch = '1';
+                }
+                free_lbuf(tbuf);
             }
             else
             {
                 char *tbuf = atr_get_raw(thing, attr->number);
+                if (tbuf != NULL)
+                {
+                    ch = '1';
+                }
             }
-            if (*tbuf)
-            {
-                ch = '1';
-            }
-            free_lbuf(tbuf);
         }
     }
     safe_chr(ch, buff, bufc);
@@ -1482,6 +1484,7 @@ FUNCTION(fun_hasattr)
 {
     hasattr_handler(buff, bufc, executor, fargs, FALSE);
 }
+
 FUNCTION(fun_hasattrp)
 {
     hasattr_handler(buff, bufc, executor, fargs, TRUE);
