@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.4 2002-06-03 20:29:52 sdennis Exp $
+// $Id: eval.cpp,v 1.5 2002-06-03 20:36:54 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1050,8 +1050,8 @@ static DCL_INLINE void PopIntegers(int *pi, int nNeeded)
     pIntsFrame->nints += nNeeded;
 }
 
-void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
-               dbref cause, int eval, char **dstr, char *cargs[], int ncargs)
+void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
+               dbref enactor, int eval, char **dstr, char *cargs[], int ncargs)
 {
     char *TempPtr;
     char *tstr, *tbuf, *start, *oldp, *savestr;
@@ -1085,7 +1085,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
     at_space = 1;
     gender = -1;
 
-    is_trace = Trace(player) && !(eval & EV_NOTRACE);
+    is_trace = Trace(executor) && !(eval & EV_NOTRACE);
     is_top = 0;
 
     // Extend the buffer if we need to.
@@ -1255,8 +1255,9 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                 }
 
                 char **fargs = PushPointers(MAX_ARG);
-                pdstr = parse_arglist_lite(player, caller, cause, pdstr + 1,
-                      ')', feval, fargs, nfargs, cargs, ncargs, &nfargs);
+                pdstr = parse_arglist_lite(executor, caller, enactor,
+                      pdstr + 1, ')', feval, fargs, nfargs, cargs, ncargs,
+                      &nfargs);
 
 
                 // If no closing delim, just insert the '(' and continue normally.
@@ -1286,11 +1287,11 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                     {
                         safe_str("#-1 FUNCTION INVOCATION LIMIT EXCEEDED", buff, &oldp);
                     }
-                    else if (Going(player))
+                    else if (Going(executor))
                     {
                         safe_str("#-1 BAD INVOKER", buff, &oldp);
                     }
-                    else if (!check_access(player, ufp ? ufp->perms : fp->perms))
+                    else if (!check_access(executor, ufp ? ufp->perms : fp->perms))
                     {
                         safe_noperm(buff, &oldp);
                     }
@@ -1300,7 +1301,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                         if (ufp->flags & FN_PRIV)
                             i = ufp->obj;
                         else
-                            i = player;
+                            i = executor;
                         TempPtr = tstr;
 
                         char **preserve = NULL;
@@ -1313,7 +1314,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                             save_global_regs("eval_save", preserve, preserve_len);
                         }
 
-                        TinyExec(buff, &oldp, i, caller, cause, feval,
+                        TinyExec(buff, &oldp, i, caller, enactor, feval,
                                  &TempPtr, fargs, nfargs);
 
                         if (ufp->flags & FN_PRES)
@@ -1335,7 +1336,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                         if (  fp->minArgs <= nfargs
                            && nfargs <= fp->maxArgs)
                         {
-                            fp->fun(buff, &oldp, player, cause, fargs, nfargs, cargs, ncargs);
+                            fp->fun(buff, &oldp, executor, enactor, fargs, nfargs, cargs, ncargs);
                         }
                         else
                         {
@@ -1444,7 +1445,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                         // Enactor DB number.
                         //
                         TinyExec_scratch[0] = '#';
-                        i = Tiny_ltoa(cause, TinyExec_scratch+1);
+                        i = Tiny_ltoa(enactor, TinyExec_scratch+1);
                         safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
@@ -1457,7 +1458,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                         // Executor DB number.
                         //
                         TinyExec_scratch[0] = '#';
-                        i = Tiny_ltoa(player, TinyExec_scratch+1);
+                        i = Tiny_ltoa(executor, TinyExec_scratch+1);
                         safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
@@ -1549,7 +1550,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                         if (!(eval & EV_NO_LOCATION))
                         {
                             TinyExec_scratch[0] = '#';
-                            i = Tiny_ltoa(where_is(cause), TinyExec_scratch+1);
+                            i = Tiny_ltoa(where_is(enactor), TinyExec_scratch+1);
                             safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
@@ -1566,7 +1567,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                         {
                             i = 100 + Tiny_ToUpper[(unsigned char)(*pdstr)] - 'A';
                             int nAttrGotten;
-                            atr_pget_str_LEN(TinyExec_scratch, player, i,
+                            atr_pget_str_LEN(TinyExec_scratch, executor, i,
                                 &aowner, &aflags, &nAttrGotten);
                             if (nAttrGotten > 0)
                             {
@@ -1609,7 +1610,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                             //
                             // Enactor name
                             //
-                            safe_str(Name(cause), buff, bufc);
+                            safe_str(Name(enactor), buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
@@ -1634,11 +1635,11 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                             //
                             if (gender < 0)
                             {
-                                gender = get_gender(cause);
+                                gender = get_gender(enactor);
                             }
                             if (!gender)
                             {
-                                tbuf = Name(cause);
+                                tbuf = Name(enactor);
                             }
                             else
                             {
@@ -1662,12 +1663,12 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                             //
                             if (gender < 0)
                             {
-                                gender = get_gender(cause);
+                                gender = get_gender(enactor);
                             }
 
                             if (!gender)
                             {
-                                safe_str(Name(cause), buff, bufc);
+                                safe_str(Name(enactor), buff, bufc);
                                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                                 if (nBufferAvailable)
                                 {
@@ -1690,11 +1691,11 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                             //
                             if (gender < 0)
                             {
-                                gender = get_gender(cause);
+                                gender = get_gender(enactor);
                             }
                             if (!gender)
                             {
-                                tbuf = Name(cause);
+                                tbuf = Name(enactor);
                             }
                             else
                             {
@@ -1716,12 +1717,12 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                             //
                             if (gender < 0)
                             {
-                                gender = get_gender(cause);
+                                gender = get_gender(enactor);
                             }
 
                             if (!gender)
                             {
-                                safe_str(Name(cause), buff, bufc);
+                                safe_str(Name(enactor), buff, bufc);
                                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                                 if (nBufferAvailable)
                                 {
@@ -1801,7 +1802,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
             else
             {
                 TempPtr = tbuf;
-                TinyExec( buff, bufc, player, caller, cause,
+                TinyExec( buff, bufc, executor, caller, enactor,
                           (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, &TempPtr,
                           cargs, ncargs
                         );
@@ -1876,15 +1877,15 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                     }
 
                     TempPtr = tbuf;
-                    TinyExec(buff, bufc, player, caller, cause,
+                    TinyExec(buff, bufc, executor, caller, enactor,
                         (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_TOP)),
                         &TempPtr, cargs, ncargs);
                 }
                 else
                 {
                     TempPtr = tbuf;
-                    TinyExec(buff, bufc, player, caller, cause, eval & ~EV_TOP,
-                        &TempPtr, cargs, ncargs);
+                    TinyExec(buff, bufc, executor, caller, enactor,
+                        eval & ~EV_TOP, &TempPtr, cargs, ncargs);
                 }
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
 
@@ -1985,7 +1986,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
     //
     if (is_trace)
     {
-        tcache_add(player, savestr, start);
+        tcache_add(executor, savestr, start);
         if (is_top || !mudconf.trace_topdown)
         {
             tcache_finish();
@@ -1996,7 +1997,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
             tbuf = alloc_mbuf("exec.trace_diag");
             sprintf(tbuf, "%d lines of trace output discarded.", tcache_count
                 - mudconf.trace_limit);
-            notify(player, tbuf);
+            notify(executor, tbuf);
             free_mbuf(tbuf);
         }
     }
