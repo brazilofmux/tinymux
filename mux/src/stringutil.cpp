@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.17 2002-08-03 19:49:20 sdennis Exp $
+// $Id: stringutil.cpp,v 1.18 2002-08-09 03:05:35 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3267,7 +3267,7 @@ CF_HAND(cf_art_rule)
     if (!reNewRegexp)
     {
         cf_log_syntax(player, cmd, "Error processing regexp '%s':.",
-		      pCurrent, errptr);
+              pCurrent, errptr);
         return -1;
     }
 

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.64 2002-08-08 15:36:18 sdennis Exp $
+// $Id: command.cpp,v 1.65 2002-08-09 03:05:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -1440,12 +1440,12 @@ int zonecmdtest(dbref player, char *cmd)
     if (Good_obj(loc))
     {
         i_ret = cmdtest(loc, cmd); 
-        if ( i_ret == 0 )
+        if (i_ret == 0)
         {
             dbref zone = Zone(loc);
             if (  Good_obj(zone)
-                && (  isRoom(zone)
-                   || isThing(zone)))
+               && (  isRoom(zone)
+                  || isThing(zone)))
             {
                 i_ret = cmdtest(zone, cmd);
             }
@@ -1457,8 +1457,8 @@ int zonecmdtest(dbref player, char *cmd)
 int higcheck (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *pCommand)
 {
     int hval = 0;
-    if(  Good_obj(mudconf.hook_obj)
-        && !Going(mudconf.hook_obj))
+    if (  Good_obj(mudconf.hook_obj)
+       && !Going(mudconf.hook_obj))
     {
         char *s_uselock;
         if (cmdp->hookmask & HOOK_IGNORE)
@@ -1661,7 +1661,7 @@ char *process_command
         }
         if (prefix_cmds[i]->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
         {
-           hval = higcheck(executor, caller, enactor, prefix_cmds[i], pCommand);
+            hval = higcheck(executor, caller, enactor, prefix_cmds[i], pCommand);
         }
         if ((cval != 2) && (hval != 2))
         {
@@ -1770,7 +1770,7 @@ char *process_command
         }
         if (goto_cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
         {
-           hval = higcheck(executor, caller, enactor, goto_cmdp, "goto");
+            hval = higcheck(executor, caller, enactor, goto_cmdp, "goto");
         }
         if ((cval != 2) && (hval != 2))
         {
@@ -1878,7 +1878,7 @@ char *process_command
         }
         if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
         {
-           hval = higcheck(executor, caller, enactor, cmdp, LowerCaseCommand);
+            hval = higcheck(executor, caller, enactor, cmdp, LowerCaseCommand);
         }
         if (cmdp->hookmask & HOOK_IGSWITCH)
         {
@@ -2191,7 +2191,7 @@ char *process_command
     if (!succ)
     {
         if (  Good_obj(mudconf.global_error_obj) 
-           && !Going(mudconf.global_error_obj) ) 
+           && !Going(mudconf.global_error_obj)) 
         {
             char *errtext = atr_get(mudconf.global_error_obj, A_VA, &aowner, &aflags);
             char *errbuff = alloc_lbuf("process_command.error_msg");
@@ -4088,10 +4088,10 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
     CMDENT *cmdp = (CMDENT *)NULL;
 
     if (  (  key 
-       && !(key & HOOK_LIST))
+          && !(key & HOOK_LIST))
        || (  (  !key 
              || (key & HOOK_LIST))
-          && *name) )
+          && *name))
     {
         cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
         if (!cmdp)

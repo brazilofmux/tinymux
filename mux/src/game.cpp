@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.22 2002-08-08 15:43:09 sdennis Exp $
+// $Id: game.cpp,v 1.23 2002-08-09 03:05:35 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -141,7 +141,9 @@ BOOL regexp_match(char *pattern, char *str, char *args[], int nargs)
     for (i = 0; i < matches; ++i)
     {
       if (ovec[i*2] == -1)
-	continue;
+      {
+          continue;
+      }
       len = ovec[(i*2)+1] - ovec[i*2];
         args[i] = alloc_lbuf("regexp_match");
         strncpy(args[i], str + ovec[i*2], len);
