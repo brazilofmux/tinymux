@@ -1,5 +1,7 @@
-/* macro.h */
-/* $Id: macro.h,v 1.1 2000-04-11 07:14:45 sdennis Exp $ */
+// macro.h -- Obsoleted.
+//
+// $Id: macro.h,v 1.2 2001-11-19 19:36:49 sdennis Exp $
+//
 
 #ifndef __MACRO_H
 #define __MACRO_H
