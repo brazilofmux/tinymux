@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.35 2003-04-01 21:03:24 sdennis Exp $
+// $Id: predicates.cpp,v 1.36 2003-04-23 04:25:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1803,14 +1803,19 @@ bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bCheckParent)
     dbref aowner;
     int aflags;
 
+    bool b;
     if (  !mudstate.bStandAlone
        && bCheckParent)
     {
-        atr_pget_info(target, tattr->number, &aowner, &aflags);
+        b = atr_pget_info(target, tattr->number, &aowner, &aflags);
     }
     else
     {
-        atr_get_info(target, tattr->number, &aowner, &aflags);
+        b = atr_get_info(target, tattr->number, &aowner, &aflags);
+    }
+    if (!b)
+    {
+        return false;
     }
 
     int mAllow = AF_VISUAL;
@@ -1864,10 +1869,6 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
         return false;
     }
 
-    dbref aowner;
-    int aflags;
-    atr_get_info(target, tattr->number, &aowner, &aflags);
-
     int mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST;
     if (!God(executor))
     {
@@ -1888,7 +1889,11 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
             return false;
         }
     }
-    if (  (tattr->flags & mDeny)
+
+    dbref aowner;
+    int aflags;
+    if (  !atr_get_info(target, tattr->number, &aowner, &aflags)
+       || (tattr->flags & mDeny)
        || (aflags & mDeny))
     {
         return false;
@@ -1896,6 +1901,53 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
     else
     {
         return true;
+    }
+}
+
+bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr)
+{
+    if (!tattr)
+    {
+        return false;
+    }
+
+    int mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST;
+    if (!God(executor))
+    {
+        if (God(target))
+        {
+            return false;
+        }
+        if (Wizard(executor))
+        {
+            mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST|AF_GOD;
+        }
+        else if (Controls(executor, target))
+        {
+            mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST|AF_WIZARD|AF_GOD;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    dbref aowner;
+    int aflags;
+    if (  !atr_get_info(target, tattr->number, &aowner, &aflags)
+       || (tattr->flags & mDeny)
+       || (aflags & mDeny))
+    {
+        return false;
+    }
+    else if (  Wizard(executor)
+            || Owner(executor) == aowner)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }
 
