@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.27 2001-10-17 16:35:29 sdennis Exp $
+// $Id: db_rw.cpp,v 1.28 2001-10-17 16:47:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -546,9 +546,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     dbref i, anum;
     int ch;
     const char *tstr;
-    int read_3flags, read_money, read_timestamps, read_new_strings;
-    int read_powers;
-    int deduce_version, deduce_name, deduce_zone, deduce_timestamps;
+    int read_money, read_timestamps;
     int aflags, f1, f2, f3;
     BOOLEXP *tempbool;
     char *buff;
@@ -565,17 +563,9 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
     BOOL read_attribs = TRUE;
     BOOL read_name = TRUE;
-    BOOL read_zone = FALSE;
     BOOL read_key = TRUE;
     read_money = 1;
-    read_3flags = 0;
     read_timestamps = 0;
-    read_new_strings = 0;
-    read_powers = 0;
-    deduce_version = 1;
-    deduce_zone = 1;
-    deduce_name = 1;
-    deduce_timestamps = 1;
 #ifdef STANDALONE
     Log.WriteString("Reading ");
     Log.Flush();
@@ -624,7 +614,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     break;
                 }
                 header_gotten = TRUE;
-                deduce_version = 0;
                 g_format = F_MUX;
                 g_version = getref(f);
                 Tiny_Assert((g_version & MANDFLAGS) == MANDFLAGS);
@@ -638,15 +627,9 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 }
                 read_key = !(g_version & V_ATRKEY);
                 read_money = !(g_version & V_ATRMONEY);
-                read_3flags = (g_version & V_3FLAGS);
-                read_powers = (g_version & V_POWERS);
-                read_new_strings = (g_version & V_QUOTED);
                 g_flags = g_version & ~V_MASK;
 
                 g_version &= V_MASK;
-                deduce_name = 0;
-                deduce_version = 0;
-                deduce_zone = 0;
                 break;
 
             case 'S':   // SIZE
@@ -664,7 +647,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             case 'A':   // USER-NAMED ATTRIBUTE
                 anum = getref(f);
-                tstr = getstring_noalloc(f, read_new_strings);
+                tstr = getstring_noalloc(f, FALSE);
                 if (Tiny_IsDigit[(unsigned char)*tstr])
                 {
                     aflags = 0;
@@ -713,52 +696,19 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             break;
 
         case '!':   // MUX entry
-            if (deduce_version)
-            {
-                g_format = F_MUX;
-                g_version = 1;
-                deduce_name = 0;
-                deduce_zone = 0;
-                deduce_version = 0;
-            }
-            else if (deduce_zone)
-            {
-                deduce_zone = 0;
-                read_zone = FALSE;
-            }
             i = getref(f);
             db_grow(i + 1);
 
             if (read_name)
             {
-                tstr = getstring_noalloc(f, read_new_strings);
-                if (deduce_name)
-                {
-                    if (Tiny_IsDigit[(unsigned char)*tstr])
-                    {
-                        read_name = FALSE;
-                        s_Location(i, Tiny_atol(tstr));
-                    }
-                    else
-                    {
-                        buff = alloc_lbuf("dbread.s_Name");
-                        len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-                        s_Name(i, buff);
-                        free_lbuf(buff);
+                tstr = getstring_noalloc(f, FALSE);
+                buff = alloc_lbuf("dbread.s_Name");
+                len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE,
+                    &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+                s_Name(i, buff);
+                free_lbuf(buff);
 
-                        s_Location(i, getref(f));
-                    }
-                    deduce_name = 0;
-                }
-                else
-                {
-                    buff = alloc_lbuf("dbread.s_Name");
-                    len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-                    s_Name(i, buff);
-                    free_lbuf(buff);
-
-                    s_Location(i, getref(f));
-                }
+                s_Location(i, getref(f));
             }
             else
             {
@@ -767,21 +717,13 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             // ZONE
             //
-            if (read_zone)
+            int zone;
+            zone = getref(f);
+            if (zone < NOTHING)
             {
-                int zone = getref(f);
-                if (zone < NOTHING)
-                {
-                    zone = NOTHING;
-                }
-                s_Zone(i, zone);
+                zone = NOTHING;
             }
-#if 0
-            else
-            {
-                s_Zone(i, NOTHING);
-            }
-#endif
+            s_Zone(i, zone);
 
             // CONTENTS and EXITS
             //
@@ -823,31 +765,20 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             // FLAGS
             //
-            f1 = getref(f);
-            f2 = getref(f);
+            s_Flags(i, getref(f));
+            s_Flags2(i, getref(f));
+            s_Flags3(i, getref(f));
 
-            if (read_3flags)
-                f3 = getref(f);
-            else
-                f3 = 0;
-
-            s_Flags(i, f1);
-            s_Flags2(i, f2);
-            s_Flags3(i, f3);
-
-            if (read_powers)
-            {
-                f1 = getref(f);
-                f2 = getref(f);
-                s_Powers(i, f1);
-                s_Powers2(i, f2);
-            }
+            // POWERS
+            //
+            s_Powers(i, getref(f));
+            s_Powers2(i, getref(f));
 
             // ATTRIBUTES
             //
             if (read_attribs)
             {
-                if (!get_list(f, i, read_new_strings))
+                if (!get_list(f, i, FALSE))
                 {
                     Log.tinyprintf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
                     return -1;
@@ -942,15 +873,9 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
     }
     putref(f, Flags(i));
     putref(f, Flags2(i));
-    if (flags & V_3FLAGS)
-    {
-        putref(f, Flags3(i));
-    }
-    if (flags & V_POWERS)
-    {
-        putref(f, Powers(i));
-        putref(f, Powers2(i));
-    }
+    putref(f, Flags3(i));
+    putref(f, Powers(i));
+    putref(f, Powers2(i));
 
     // Write the attribute list.
     //
