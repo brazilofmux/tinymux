@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.17 2003-01-12 18:18:15 sdennis Exp $
+// $Id: help.cpp,v 1.18 2003-01-20 07:25:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -44,6 +44,100 @@ void helpindex_clean(int iHelpfile)
     mudstate.aHelpDesc[iHelpfile].ht = NULL;
 }
 
+BOOL bHaveTopic;
+long pos;
+int lineno;
+int ntopics;
+FILE *rfp;
+
+#define LINE_SIZE 4096
+char Line[LINE_SIZE + 1];
+int  nLine;
+
+void HelpIndex_Start(FILE *fp)
+{
+    pos = 0L;
+    lineno = 0;
+    ntopics = 0;
+    rfp = fp;
+    BOOL bHaveTopic = FALSE;
+    nLine = 0;
+}
+
+BOOL HelpIndex_Read(help_indx *pEntry)
+{
+    for (;;)
+    {
+        while (nLine == 0)
+        {
+            if (fgets(Line, LINE_SIZE, rfp) == NULL)
+            {
+                if (bHaveTopic)
+                {
+                    pEntry->len = (int)(pos - pEntry->pos);
+                    bHaveTopic = FALSE;
+                    return TRUE;
+                }
+                return FALSE;
+            }
+            ++lineno;
+            
+            nLine = strlen(Line);
+            if (  nLine > 0
+               && Line[nLine - 1] != '\n')
+            {
+                Log.tinyprintf("HelpIndex_Read, line %d: line too long\n", lineno);
+            }
+        }
+
+        if (Line[0] == '&')
+        {
+            if (bHaveTopic)
+            {
+                pEntry->len = (int)(pos - pEntry->pos);
+                bHaveTopic = FALSE;
+                return TRUE;
+            }
+
+            ++ntopics;
+            char *topic = Line + 1;
+            while (  *topic == ' '
+                  || *topic == '\t'
+                  || *topic == '\r')
+            {
+                topic++;
+            }
+            char *s;
+            int i;
+            memset(pEntry->topic, 0, sizeof(pEntry->topic));
+            for (i = -1, s = topic; *s != '\n' && *s != '\r' && *s != '\0'; s++)
+            {
+                if (i >= TOPIC_NAME_LEN - 1)
+                {
+                    break;
+                }
+                if (*s != ' ' || pEntry->topic[i] != ' ')
+                {
+                    pEntry->topic[++i] = *s;
+                }
+            }
+            pEntry->topic[++i] = '\0';
+            pEntry->pos = pos + (long)nLine;
+            bHaveTopic = TRUE;
+        }
+        pos += nLine;
+        nLine = 0;
+    }
+}
+
+void HelpIndex_End(void)
+{
+    pos = 0L;
+    lineno = 0;
+    ntopics = 0;
+    rfp = NULL;
+}
+
 int helpindex_read(int iHelpfile)
 {
     helpindex_clean(iHelpfile);
@@ -51,17 +145,17 @@ int helpindex_read(int iHelpfile)
     mudstate.aHelpDesc[iHelpfile].ht = new CHashTable;
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
 
-    char szIndexFilename[SBUF_SIZE+8];
-    sprintf(szIndexFilename, "%s.indx", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
+    char szTextFilename[SBUF_SIZE+8];
+    sprintf(szTextFilename, "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     help_indx entry;
 
-    FILE *fp = fopen(szIndexFilename, "rb");
+    FILE *fp = fopen(szTextFilename, "rb");
     if (fp == NULL)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
         char *p = alloc_lbuf("helpindex_read.LOG");
-        sprintf(p, "Can't open %s for reading.", szIndexFilename);
+        sprintf(p, "Can't open %s for reading.", szTextFilename);
         log_text(p);
         free_lbuf(p);
         ENDLOG;
@@ -69,7 +163,8 @@ int helpindex_read(int iHelpfile)
     }
     DebugTotalFiles++;
     int count = 0;
-    while ((fread((char *)&entry, sizeof(help_indx), 1, fp)) == 1)
+    HelpIndex_Start(fp);
+    while (HelpIndex_Read(&entry))
     {
         // Convert the entry to all lowercase letters and add all leftmost substrings.
         //
@@ -105,6 +200,7 @@ int helpindex_read(int iHelpfile)
             }
         }
     }
+    HelpIndex_End();
     if (fclose(fp) == 0)
     {
         DebugTotalFiles--;
