@@ -13,7 +13,7 @@ ZIP=gzip
 DBDATE=`date +%m%d-%H%M`
 #
 # files to tar up
-TEXT_FILES="$TEXT/badsite.txt $TEXT/connect.txt $TEXT/create_reg.txt $TEXT/down.txt $TEXT/guest.txt $TEXT/motd.txt $TEXT/news.txt $TEXT/newuser.txt $TEXT/plushelp.txt $TEXT/quit.txt $TEXT/register.txt $TEXT/wizmotd.txt $TEXT/wiznews.txt $TEXT/staffhelp.txt"
+TEXT_FILES="$TEXT/badsite.txt $TEXT/connect.txt $TEXT/create_reg.txt $TEXT/down.txt $TEXT/full.txt $TEXT/guest.txt $TEXT/motd.txt $TEXT/news.txt $TEXT/newuser.txt $TEXT/plushelp.txt $TEXT/quit.txt $TEXT/register.txt $TEXT/wizmotd.txt $TEXT/wiznews.txt $TEXT/staffhelp.txt"
 
 CONFIG_FILES="mux.config $GAMENAME.conf"
 
