@@ -9,6 +9,9 @@ Major changes that may affect performance and require softcode tweaks:
  -- Removed support for many older mail, comsys, and flatfile formats
     related to Pern, MUD, MUSH, and Penn.
  -- dbconvert now only support three options: Load, Unload, and Check.
+ -- It became necessary to move the flag letters for WOD_REALMS into
+    then '0' to '9' range. Flatfiles are still compatible, but softcode
+    that uses orflags(), andflags(), and flags() could be affected.
     
 
 Feature Additions:
@@ -90,6 +93,8 @@ Feature Additions:
     decimal point.
  -- Added HASQUOTA(). Patch from Jake.
  -- Added @list guests which tracks guest characters. Zenty patch. Rhost idea.
+ -- Added SITEMON flag to track connections and disconnections from site.
+    Patch from Zenty.
 
 Bug Fixes:
 ~~~~~~~~~
