@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.12 2003-02-04 11:43:10 jake Exp $
+// $Id: command.cpp,v 1.13 2003-02-04 12:09:38 jake Exp $
 //
 
 #include "copyright.h"
@@ -1518,8 +1518,8 @@ void hook_fail(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
     {
         char *s_uselock = hook_name(cmdp->cmdname, HOOK_AFAIL);
         ATTR *hk_ap2 = atr_str(s_uselock);
-        BOOL hk_retval = process_hook(executor, caller, enactor,
-            mudconf.hook_obj, s_uselock, hk_ap2, FALSE);
+        process_hook(executor, caller, enactor, mudconf.hook_obj, 
+            s_uselock, hk_ap2, FALSE);
         free_sbuf(s_uselock);
     }
 }
@@ -3654,9 +3654,9 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
 {
     CMDENT *cmdp;
     NAMETAB *logcmdp;
-    char *buff1, *pt1, *pt2, *pt3, *atrpt, pre[2], *pt4, *pt5, *message;
+    char *buff1, *pt1, *pt2, *pt3, *atrpt, pre[2], *pt4, *pt5;
     int x, aflags, y, home;
-    dbref target, aowner, zone;
+    dbref target = NOTHING, aowner, zone;
     BOOL bFound, set;
 
     int loc_set = -1;
@@ -3669,10 +3669,6 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
         if (key != ICMD_LALLROOM)
         {
             target = match_thing_quiet(player, name);
-        }
-        else
-        {
-            target = NOTHING;
         }
         if (  key != ICMD_LALLROOM
            && (  !Good_obj(target)
@@ -3816,6 +3812,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
     {
         key = loc_set;
     }
+    char *message = "";
     buff1 = alloc_lbuf("do_icmd");
     for (x = 0; x < nargs; x++)
     {
