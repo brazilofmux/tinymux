@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.3 2002-06-13 22:12:46 jake Exp $
+// $Id: quota.cpp,v 1.4 2002-06-24 15:53:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -262,7 +262,6 @@ void do_quota
 
 FUNCTION(fun_hasquota)
 {
-        
     if (!mudconf.quotas)
     {
         safe_str("#-1 Quotas are not enabled.", buff, bufc);
@@ -295,5 +294,5 @@ FUNCTION(fun_hasquota)
         int rq = Tiny_atol(atr_get(who, A_RQUOTA, &aowner, &aflags));
         bResult = (rq >= Tiny_atol(fargs[1]));
     }
-    safe_ltoa(bResult ? '1' : '0', buff, bufc);
+    safe_chr(bResult ? '1' : '0', buff, bufc);
 }
