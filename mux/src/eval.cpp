@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.11 2002-06-30 06:24:28 sdennis Exp $
+// $Id: eval.cpp,v 1.12 2002-06-30 06:42:27 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1079,6 +1079,9 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     {
         return;
     }
+
+    // Stack Limit checking with thanks to RhostMUSH.
+    //
     if (mudstate.nStackNest > mudconf.nStackLimit)
     {
         mudstate.bStackLimitReached = TRUE;
