@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.124 2002-01-15 06:23:28 sdennis Exp $
+// $Id: functions.cpp,v 1.125 2002-01-15 06:50:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -596,11 +596,11 @@ typedef union
 //
 SpecialFloatUnion SpecialFloatTable[IEEE_MAKE_TABLESIZE] =
 {
-    0, // Unused.
-    IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER,
-    IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER,
-    IEEE_MASK_EXPONENT,
-    IEEE_MASK_EXPONENT | IEEE_MASK_SIGN
+    { 0 }, // Unused.
+    { IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER },
+    { IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER },
+    { IEEE_MASK_EXPONENT },
+    { IEEE_MASK_EXPONENT | IEEE_MASK_SIGN }
 };
 
 double MakeSpecialFloat(int iWhich)
