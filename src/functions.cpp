@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.77 2001-09-11 03:55:46 sdennis Exp $
+// $Id: functions.cpp,v 1.78 2001-09-14 22:29:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2046,21 +2046,16 @@ FUNCTION(fun_name)
 
 FUNCTION(fun_match)
 {
-    int wcount;
-    char *r, *s, sep;
-
+    char sep;
     varargs_preamble("MATCH", 3);
 
-    /*
-     * Check each word individually, returning the word number of the * * 
-     * 
-     * *  * * first one that matches.  If none match, return 0. 
-     */
-
-    wcount = 1;
-    s = trim_space_sep(fargs[0], sep);
+    // Check each word individually, returning the word number of the first
+    // one that matches.  If none match, return 0.
+    //
+    int wcount = 1;
+    char *s = trim_space_sep(fargs[0], sep);
     do {
-        r = split_token(&s, sep);
+        char *r = split_token(&s, sep);
         if (quick_wild(fargs[1], r))
         {
             safe_ltoa(wcount, buff, bufc, LBUF_SIZE-1);
