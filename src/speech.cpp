@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.20 2001-11-28 06:35:54 sdennis Exp $
+// $Id: speech.cpp,v 1.21 2002-01-15 05:13:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -448,39 +448,6 @@ static int page_check(dbref player, dbref target)
         return 1;
     }
     return 0;
-}
-
-/*
- * Used in do_page
- */
-static char *dbrefs_to_names(dbref player, char *list, char *namelist, int ismessage)
-{
-    char *bp, *p;
-    char oldlist[LBUF_SIZE];
-
-    StringCopy(oldlist, list);
-    bp = namelist;
-
-    TINY_STRTOK_STATE tts;
-    Tiny_StrTokString(&tts, oldlist);
-    Tiny_StrTokControl(&tts, " ");
-    for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
-    {
-        if (ismessage)
-        {
-            safe_str(tprintf("%s, ", Name(Tiny_atol(p))), namelist, &bp);
-        }
-        else
-        {
-            if (lookup_player(player, p, 1) != NOTHING)
-            {
-                safe_str(tprintf("%s, ",
-                     Name(lookup_player(player, p, 1))), namelist, &bp);
-            }
-        }
-    }
-    *(bp - 2) = '\0';
-    return bp;
 }
 
 //
