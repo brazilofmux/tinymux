@@ -142,6 +142,7 @@ Feature Additions:
  --  Added PICKRAND() from ChaoticMUX.
  --  Added LRAND() from TinyMUSH 3.0.
  --  GAGGED players no longer allowed to speak on channels.
+ --  The WOD_REALMS option now shows up in INFO.
 
 
 Bug Fixes:
