@@ -10094,18 +10094,20 @@ DIGITTIME()
     > say digittime(123456)
     You say "1d 10:18"
   
-  See also: writetime(), singletime(), exptime(), secs(), time().
-
-& WRITETIME()
-  Function: writetime(<seconds>)
+  Related Topics: writetime(), singletime(), exptime(), secs(), time().
   
+& WRITETIME()
+WRITETIME()
+
+  FUNCTION: writetime(<seconds>)
+
   This function converts seconds to a number of time elements (hours,
   minutes, seconds) that is equivalent to the given number of
   <seconds>.
-  
+
   This is very similar to the exptime() function, but the elements
   are given their long names instead of short names.
-  
+
   Example:
     > say writetime(45)
     You say "45 seconds"
@@ -10113,11 +10115,13 @@ DIGITTIME()
     You say "3 hours 25 minutes 45 seconds"
     > say writetime(123456)
     You say "1 day 10 hours 17 minutes 36 seconds"
-  
-  See also: exptime(), singletime(), digittime(), secs(), time().
-  
+
+  See also: digittime(), exptime(), secs(), singletime(), time().
+
 & EXPTIME()
-  Function: exptime(<seconds>)
+EXPTIME()
+
+  FUNCTION: exptime(<seconds>)
   
   This function converts seconds to a number of time elements (hours,
   minutes, seconds) that is equivalent to the given number of
