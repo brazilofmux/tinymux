@@ -221,6 +221,8 @@ Bug Fixes:
     uninitialized. Bug introduced by Jake. Found and fixed by Brazil.
  -- Fixed set(me/attribute,!flag) form. It was looking for the '!' in the
     first argument instead of the second one. Reported by Sean Hunter.
+ -- Fixed bug in fh_god where permission failures were still reported as
+    success.  Reported by Sean Hunter.
 
 
 
