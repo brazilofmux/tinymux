@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
+// $Id: log.cpp,v 1.3 2002-06-12 03:30:38 jake Exp $
 //
 
 #include "copyright.h"
@@ -14,33 +14,33 @@
 
 NAMETAB logdata_nametab[] =
 {
-    {(char *)"flags",       1,  0,  LOGOPT_FLAGS},
-    {(char *)"location",        1,  0,  LOGOPT_LOC},
-    {(char *)"owner",       1,  0,  LOGOPT_OWNER},
-    {(char *)"timestamp",       1,  0,  LOGOPT_TIMESTAMP},
+    {"flags",           1,  0,  LOGOPT_FLAGS},
+    {"location",        1,  0,  LOGOPT_LOC},
+    {"owner",           1,  0,  LOGOPT_OWNER},
+    {"timestamp",       1,  0,  LOGOPT_TIMESTAMP},
     { NULL,             0,  0,  0}
 };
 
 NAMETAB logoptions_nametab[] =
 {
-    {(char *)"accounting",      2,  0,  LOG_ACCOUNTING},
-    {(char *)"all_commands",    2,  0,  LOG_ALLCOMMANDS},
-    {(char *)"bad_commands",    2,  0,  LOG_BADCOMMANDS},
-    {(char *)"buffer_alloc",    3,  0,  LOG_ALLOCATE},
-    {(char *)"bugs",            3,  0,  LOG_BUGS},
-    {(char *)"checkpoints",     2,  0,  LOG_DBSAVES},
-    {(char *)"config_changes",  2,  0,  LOG_CONFIGMODS},
-    {(char *)"create",          2,  0,  LOG_PCREATES},
-    {(char *)"killing",         1,  0,  LOG_KILLS},
-    {(char *)"logins",          1,  0,  LOG_LOGIN},
-    {(char *)"network",         1,  0,  LOG_NET},
-    {(char *)"problems",        1,  0,  LOG_PROBLEMS},
-    {(char *)"security",        2,  0,  LOG_SECURITY},
-    {(char *)"shouts",          2,  0,  LOG_SHOUTS},
-    {(char *)"startup",         2,  0,  LOG_STARTUP},
-    {(char *)"suspect",         2,  0,  LOG_SUSPECTCMDS},
-    {(char *)"time_usage",      1,  0,  LOG_TIMEUSE},
-    {(char *)"wizard",          1,  0,  LOG_WIZARD},
+    {"accounting",      2,  0,  LOG_ACCOUNTING},
+    {"all_commands",    2,  0,  LOG_ALLCOMMANDS},
+    {"bad_commands",    2,  0,  LOG_BADCOMMANDS},
+    {"buffer_alloc",    3,  0,  LOG_ALLOCATE},
+    {"bugs",            3,  0,  LOG_BUGS},
+    {"checkpoints",     2,  0,  LOG_DBSAVES},
+    {"config_changes",  2,  0,  LOG_CONFIGMODS},
+    {"create",          2,  0,  LOG_PCREATES},
+    {"killing",         1,  0,  LOG_KILLS},
+    {"logins",          1,  0,  LOG_LOGIN},
+    {"network",         1,  0,  LOG_NET},
+    {"problems",        1,  0,  LOG_PROBLEMS},
+    {"security",        2,  0,  LOG_SECURITY},
+    {"shouts",          2,  0,  LOG_SHOUTS},
+    {"startup",         2,  0,  LOG_STARTUP},
+    {"suspect",         2,  0,  LOG_SUSPECTCMDS},
+    {"time_usage",      1,  0,  LOG_TIMEUSE},
+    {"wizard",          1,  0,  LOG_WIZARD},
     { NULL,                     0,  0,  0}
 };
 
