@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  March 2001
+Last Update:  April 2001
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -19,6 +19,7 @@ Feature Additions:
  -- Added command access for UNINSPECTED and NO_UNINSPECTED.
  -- Added %m for 'lastcommand'. Equivalent to %c in MUSH.
  -- Exits can be teleported from room to room instead of taken and dropped.
+ -- Added generalized article guessing (see art() and article_rule).
 
 Bug Fixes:
 ~~~~~~~~~
