@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.63 2004-07-09 14:52:57 sdennis Exp $
+// $Id: stringutil.cpp,v 1.64 2004-07-09 15:07:01 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1864,7 +1864,10 @@ void safe_copy_str(const char *src, char *buff, char **bufp, int nSizeOfBuffer)
 
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp)
 {
-    if (src == NULL) return;
+    if (src == NULL)
+    {
+        return;
+    }
 
     char *tp = *bufp;
     char *maxtp = buff + LBUF_SIZE - 1;
@@ -1875,7 +1878,7 @@ void safe_copy_str_lbuf(const char *src, char *buff, char **bufp)
     *bufp = tp;
 }
 
-int safe_copy_buf(const char *src, int nLen, char *buff, char **bufc)
+size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufc)
 {
     size_t left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
@@ -1887,7 +1890,7 @@ int safe_copy_buf(const char *src, int nLen, char *buff, char **bufc)
     return nLen;
 }
 
-int safe_fill(char *buff, char **bufc, char chFill, int nSpaces)
+size_t safe_fill(char *buff, char **bufc, char chFill, size_t nSpaces)
 {
     // Check for buffer limits.
     //

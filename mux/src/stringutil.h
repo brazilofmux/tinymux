@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.40 2004-07-08 22:13:56 sdennis Exp $
+// $Id: stringutil.h,v 1.41 2004-07-09 15:07:01 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -146,8 +146,8 @@ extern char *StringCloneLen(const char *str, size_t nStr);
 extern char *StringClone(const char *str);
 void safe_copy_str(const char *src, char *buff, char **bufp, int max);
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
-int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp);
-int safe_fill(char *buff, char **bufc, char chFile, int nSpaces);
+size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufp);
+size_t safe_fill(char *buff, char **bufc, char chFile, size_t nSpaces);
 extern bool matches_exit_from_list(char *, const char *);
 extern char *translate_string(const char *, bool);
 extern int mux_stricmp(const char *a, const char *b);
