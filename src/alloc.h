@@ -1,14 +1,14 @@
 // alloc.h -- External definitions for memory allocation subsystem.
 //
-// $Id: alloc.h,v 1.4 2001-11-23 23:02:36 sdennis Exp $
+// $Id: alloc.h,v 1.5 2001-11-24 19:19:13 sdennis Exp $
 //
 
 #ifndef M_ALLOC_H
 #define M_ALLOC_H
 
-#define POOL_SBUF   0
-#define POOL_MBUF   1
-#define POOL_LBUF   2
+#define POOL_LBUF   0
+#define POOL_SBUF   1
+#define POOL_MBUF   2
 #define POOL_BOOL   3
 #define POOL_DESC   4
 #define POOL_QENTRY 5
@@ -46,23 +46,25 @@
 #else // STANDALONE
 
 extern void FDECL(pool_init, (int, int));
-extern char *   FDECL(pool_alloc, (int, const char *));
-extern void FDECL(pool_free, (int, char **));
+extern char *pool_alloc(int, const char *);
+extern char *pool_alloc_lbuf(const char *);
+extern void pool_free(int, char *);
+extern void pool_free_lbuf(char *);
 extern void FDECL(list_bufstats, (dbref));
 extern void FDECL(list_buftrace, (dbref));
 
-#define alloc_lbuf(s)   pool_alloc(POOL_LBUF,s)
-#define free_lbuf(b)    pool_free(POOL_LBUF,((char **)&(b)))
+#define alloc_lbuf(s)   pool_alloc_lbuf(s)
+#define free_lbuf(b)    pool_free_lbuf((char *)(b))
 #define alloc_mbuf(s)   pool_alloc(POOL_MBUF,s)
-#define free_mbuf(b)    pool_free(POOL_MBUF,((char **)&(b)))
+#define free_mbuf(b)    pool_free(POOL_MBUF,(char *)(b))
 #define alloc_sbuf(s)   pool_alloc(POOL_SBUF,s)
-#define free_sbuf(b)    pool_free(POOL_SBUF,((char **)&(b)))
+#define free_sbuf(b)    pool_free(POOL_SBUF,(char *)(b))
 #define alloc_bool(s)   (struct boolexp *)pool_alloc(POOL_BOOL,s)
-#define free_bool(b)    pool_free(POOL_BOOL,((char **)&(b)))
+#define free_bool(b)    pool_free(POOL_BOOL,(char *)(b))
 #define alloc_qentry(s) (BQUE *)pool_alloc(POOL_QENTRY,s)
-#define free_qentry(b)  pool_free(POOL_QENTRY,((char **)&(b)))
+#define free_qentry(b)  pool_free(POOL_QENTRY,(char *)(b))
 #define alloc_pcache(s) (PCACHE *)pool_alloc(POOL_PCACHE,s)
-#define free_pcache(b)  pool_free(POOL_PCACHE,((char **)&(b)))
+#define free_pcache(b)  pool_free(POOL_PCACHE,(char *)(b))
 
 #endif // STANDALONE
 

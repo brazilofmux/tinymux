@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.7 2001-11-19 19:37:11 sdennis Exp $
+// $Id: interface.h,v 1.8 2001-11-24 19:19:13 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -197,7 +197,7 @@ extern dbref    FDECL(find_connected_name, (dbref, char *));
 /* From predicates.c */
 
 #define alloc_desc(s) (DESC *)pool_alloc(POOL_DESC,s)
-#define free_desc(b) pool_free(POOL_DESC,((char **)&(b)))
+#define free_desc(b) pool_free(POOL_DESC,(char *)(b))
 
 #define DESC_ITER_PLAYER(p,d) \
     for (d=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab); d; d = d->hashnext)
