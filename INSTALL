@@ -1,5 +1,5 @@
-TinyMUX 2.0: INSTALL
-Last Update: December 2001
+TinyMUX 2.1: INSTALL
+Last Update: April 2002
 
 Please note that there are two sets of instructions included in this 
 file.  Please skip to 'Instructions for Existing Games' for how to 
@@ -33,7 +33,7 @@ Instructions for New Installations:
 
       - cd to the game directory. 'cd ../game'
       - Make your configuration file, as described in docs/CONFIGURATION
-      - Type './Startmux'.  TinyMUX 2.0 automatically creates a minimal 
+      - Type './Startmux'.  TinyMUX 2.1 automatically creates a minimal 
         DB if one does not exist in the game/data directory.
       - Log into the game as player wizard 'connect wizard potrzebie', 
         and shut it down again.
@@ -41,7 +41,7 @@ Instructions for New Installations:
 5.  Edit the .txt files in game/text to your liking.  In particular 
     connect.txt and motd.txt.
     
-6.  Start up TinyMUX 2.0 by running './Startmux' again.
+6.  Start up TinyMUX 2.1 by running './Startmux' again.
 
 7.  @ccreate a channel named 'Public', and a channel named 'Guests' from
     within the MUX. Created players will automatically be joined to 
@@ -51,10 +51,6 @@ Instructions for New Installations:
 
 Changes to dbconvert:
 ~~~~~~~~~~~~~~~~~~~~
- - One of the major and important changes to MUX 2.0 is the use of CHash 
-   in the place of GDBM.  You will notice the changes primarily in the way 
-   dbconvert and the db_unload and db_load scripts work.  
- 
  - dbconvert is the means by which the binary game data is converted to 
    flatfile format and back again.  The db_load and db_unload scripts 
    simplify the process for the user. 
@@ -115,8 +111,8 @@ or upgrade.]
       to the GAMENAME.conf file.
       
       - **CHANGED**  Your old GAMENAME.conf file will not work under 
-        MUX 2.0. To make a proper file, you must edit the GAMENAME.conf 
-        in the MUX 2.0  game/ editting lines marked 'input_database', 
+        MUX 2.1. To make a proper file, you must edit the GAMENAME.conf 
+        in the MUX 2.1  game/ editting lines marked 'input_database', 
                 'output_database' 'crash_database', 'game_dir_file', and 
         'game_pag_file', change 'netmux' to the same thing you entered 
         in GAMENAME. Then add in the config parameters from your old 
@@ -128,8 +124,6 @@ or upgrade.]
     - If you had a mail database previously, adjust mail_expiration 
       accordingly, BEFORE you restart the game, or else ALL @mail older 
       than the default value of 14 days will be deleted.
-    - If you do not want to use the built-in +help command, redefine
-      PLUSHELP_COMMAND in config.h to be something else.
       
-5.  Start TinyMUX 2.0 by running './Startmux'.
+5.  Start TinyMUX 2.1 by running './Startmux'.
 
