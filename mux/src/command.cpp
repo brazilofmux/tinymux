@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.72 2002-09-01 18:15:47 jake Exp $
+// $Id: command.cpp,v 1.73 2002-09-03 02:41:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4055,7 +4055,8 @@ void do_ansiname(dbref executor, dbref caller, dbref enactor, int key, int nfarg
         return;
     }
 
-    if (!*instr || !instr) 
+    if (  instr == NULL
+       || instr[0] == '\0')
     {
         notify(executor, "Ansi string cleared.");
         atr_clr(thing, A_ANSINAME);
