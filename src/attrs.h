@@ -1,5 +1,5 @@
 /* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.10 2001-06-27 22:06:11 sdennis Exp $ */
+/* $Id: attrs.h,v 1.11 2001-06-29 07:04:41 sdennis Exp $ */
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -160,7 +160,6 @@
 #define A_PROGCMD   210 /* Command for execution by @prog */
 #define A_MAILFLAGS 211 /* Flags for extended mail */
 #define A_DESTROYER 212 /* Who is destroying this object? */
-#define A_CREATED   218 // Date/time created
 #define A_VRML_URL  220 /* URL of the VRML scene for this object */
 #define A_HTDESC    221 /* HTML @desc */
 
