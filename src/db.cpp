@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.48 2001-06-30 17:44:17 morgan Exp $
+// $Id: db.cpp,v 1.49 2001-09-23 08:34:16 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2085,7 +2085,7 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
     {
 #ifdef RADIX_COMPRESSION
         retval = atr_get_raw_decode_LEN(parent, s, owner, flags, atr, pLen);
-        if (retval && ((lev = 0) || !(*flags & AF_PRIVATE)))
+        if (retval && ((lev == 0) || !(*flags & AF_PRIVATE)))
         {
             return s;
         }
