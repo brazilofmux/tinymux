@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.29 2001-07-05 22:59:54 sdennis Exp $
+// $Id: predicates.cpp,v 1.30 2001-07-06 15:29:15 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1243,6 +1243,15 @@ extern SOCKET slave_socket;
  * * Ported to MUX2 by Patrick Hill (7-5-2001), hellspawn@anomux.org
  */
 
+#ifdef WIN32
+
+void do_backup(dbref player, int cause, int key)
+{
+    notify(player, "This feature is not yet available on Win32-hosted MUX.");
+}
+
+#else // WIN32
+
 void do_backup(dbref player, int cause, int key)
 {
 #ifndef WIN32
@@ -1259,9 +1268,10 @@ void do_backup(dbref player, int cause, int key)
     ENDLOG;
      
     dump_database_internal(DUMP_I_FLAT);
-    system(tprintf("./Backup.new %s.FLAT 1>&2", mudconf.outdb));
+    system(tprintf("./_backupflat.sh %s.FLAT 1>&2", mudconf.outdb));
     raw_broadcast(0, "GAME: Backup finished.");
 }
+#endif // WIN32
 
 /*
  * ---------------------------------------------------------------------------
