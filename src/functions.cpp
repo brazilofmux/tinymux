@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.91 2001-09-14 22:21:43 sdennis Exp $
+// $Id: functions.cpp,v 1.92 2001-09-14 22:39:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2023,44 +2023,44 @@ FUNCTION(fun_extract)
     start = Tiny_atol(fargs[1]);
     len = Tiny_atol(fargs[2]);
 
-    if ((start < 1) || (len < 1)) {
+    if ((start < 1) || (len < 1))
+    {
         return;
     }
-    /*
-     * Skip to the start of the string to save 
-     */
 
+    // Skip to the start of the string to save.
+    //
     start--;
     s = trim_space_sep(s, sep);
-    while (start && s) {
+    while (start && s)
+    {
         s = next_token(s, sep);
         start--;
     }
 
-    /*
-     * If we ran of the end of the string, return nothing 
-     */
-
-    if (!s || !*s) {
+    // If we ran of the end of the string, return nothing.
+    //
+    if (!s || !*s)
+    {
         return;
     }
-    /*
-     * Count off the words in the string to save 
-     */
 
+    // Count off the words in the string to save.
+    //
     r = s;
     len--;
-    while (len && s) {
+    while (len && s)
+    {
         s = next_token(s, sep);
         len--;
     }
 
-    /*
-     * Chop off the rest of the string, if needed 
-     */
-
+    // Chop off the rest of the string, if needed.
+    //
     if (s && *s)
+    {
         t = split_token(&s, sep);
+    }
     safe_str(r, buff, bufc);
 }
 
@@ -2069,21 +2069,29 @@ int xlate(char *arg)
     int temp;
     char *temp2;
 
-    if (arg[0] == '#') {
+    if (arg[0] == '#')
+    {
         arg++;
-        if (is_integer(arg, 0)) {
+        if (is_integer(arg, 0))
+        {
             temp = Tiny_atol(arg);
             if (temp == -1)
+            {
                 temp = 0;
+            }
             return temp;
         }
         return 0;
     }
     temp2 = trim_space_sep(arg, ' ');
     if (!*temp2)
+    {
         return 0;
+    }
     if (is_integer(temp2, 0))
+    {
         return Tiny_atol(temp2);
+    }
     return 1;
 }
 
@@ -2105,54 +2113,62 @@ FUNCTION(fun_index)
     end = Tiny_atol(fargs[3]);
 
     if ((start < 1) || (end < 1) || (*s == '\0'))
+    {
         return;
+    }
     if (c == '\0')
+    {
         c = ' ';
+    }
 
-    /*
-     * move s to point to the start of the item we want 
-     */
-
+    // Move s to point to the start of the item we want.
+    //
     start--;
-    while (start && s && *s) {
-        if ((s = (char *)strchr(s, c)) != NULL)
+    while (start && s && *s)
+    {
+        if ((s = strchr(s, c)) != NULL)
+        {
             s++;
+        }
         start--;
     }
 
-    /*
-     * skip over just spaces 
-     */
-
+    // Skip over just spaces.
+    //
     while (s && (*s == ' '))
+    {
         s++;
+    }
     if (!s || !*s)
+    {
         return;
+    }
 
-    /*
-     * figure out where to end the string 
-     */
-
+    // Figure out where to end the string.
+    //
     p = s;
-    while (end && p && *p) {
-        if ((p = (char *)strchr(p, c)) != NULL) {
-            if (--end == 0) {
+    while (end && p && *p)
+    {
+        if ((p = (char *)strchr(p, c)) != NULL)
+        {
+            if (--end == 0)
+            {
                 do {
                     p--;
                 } while ((*p == ' ') && (p > s));
                 *(++p) = '\0';
                 safe_str(s, buff, bufc);
                 return;
-            } else {
+            }
+            else
+            {
                 p++;
             }
         }
     }
 
-    /*
-     * if we've gotten this far, we've run off the end of the string 
-     */
-
+    // if we've gotten this far, we've run off the end of the string.
+    //
     safe_str(s, buff, bufc);
 }
 
