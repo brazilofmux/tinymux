@@ -416,7 +416,7 @@ int ok_name(const char *name)
     //
     for (cp = name; cp && *cp; cp++)
     {
-        if (!Tiny_IsPrint[(unsigned char)*cp])
+        if (!Tiny_IsPrint[(unsigned char)*cp] && *cp != ESC_CHAR)
         {
             return 0;
         }
