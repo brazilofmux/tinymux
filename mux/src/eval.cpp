@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.19 2003-03-11 06:18:56 sdennis Exp $
+// $Id: eval.cpp,v 1.20 2003-03-12 06:42:16 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -888,10 +888,14 @@ static void tcache_add(dbref player, char *orig, char *result)
         {
             TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
             char *tp = alloc_lbuf("tcache_add.lbuf");
-            strcpy(tp, result);
+
+            int nvw;
+            ANSI_TruncateToField(result, LBUF_SIZE, tp, LBUF_SIZE,
+                &nvw, ANSI_ENDGOAL_NORMAL);
+            xp->result = tp;
+
             xp->player = player;
             xp->orig = orig;
-            xp->result = tp;
             xp->next = tcache_head;
             tcache_head = xp;
         }
@@ -2002,27 +2006,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
 
     **bufc = '\0';
 
-    // If the player used a %x sub in the string, and hasn't yet terminated
-    // the color with a %xn yet, we'll have to do it for them. Certain
-    // overflows can trim ANSI off as well.
-    //
-    if (  ansi
-       || (eval & EV_TOP))
-    {
-        // ANSI_NORMAL is guaranteed to be written on the end.
-        //
-        int nVisualWidth;
-        int nLen = ANSI_TruncateToField(buff, sizeof(mux_scratch),
-            mux_scratch, sizeof(mux_scratch), &nVisualWidth,
-            ANSI_ENDGOAL_NORMAL);
-        if (nLen != nVisualWidth)
-        {
-            memcpy(buff, mux_scratch, nLen+1);
-            *bufc = buff + nLen;
-        }
-    }
-
-    // Report trace information.
+    // Collect and report trace information.
     //
     if (is_trace)
     {
@@ -2042,13 +2026,38 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             free_mbuf(tbuf);
         }
     }
-    if (realbuff)
+
+    if (  realbuff
+       || ansi
+       || (eval & EV_TOP))
     {
-        *bufc = realbp;
-        safe_str(buff, realbuff, bufc);
-        MEMFREE(buff);
-        buff = realbuff;
+        // We need to transfer and/or ANSI optimize the result.
+        //
+        struct ANSI_In_Context aic;
+        struct ANSI_Out_Context aoc;
+
+        ANSI_String_Out_Init(&aoc, mux_scratch, sizeof(mux_scratch),
+            sizeof(mux_scratch), ANSI_ENDGOAL_NORMAL);
+        if (realbuff)
+        {
+            *realbp = '\0';
+            ANSI_String_In_Init(&aic, realbuff, ANSI_ENDGOAL_NORMAL);
+            ANSI_String_Copy(&aoc, &aic, sizeof(mux_scratch));
+        }
+        ANSI_String_In_Init(&aic, buff, ANSI_ENDGOAL_NORMAL);
+        ANSI_String_Copy(&aoc, &aic, sizeof(mux_scratch));
+        if (realbuff)
+        {
+            MEMFREE(buff);
+            buff = realbuff;
+        }
+
+        int nVisualWidth;
+        int nLen = ANSI_String_Finalize(&aoc, &nVisualWidth);
+        memcpy(buff, mux_scratch, nLen+1);
+        *bufc = buff + nLen;
     }
+
     *dstr = pdstr;
 
     // Restore Parser Mode.
