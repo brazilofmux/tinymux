@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.4 2002-06-27 09:06:47 jake Exp $
+// $Id: rob.cpp,v 1.5 2002-07-09 02:03:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -22,9 +22,7 @@ void do_kill
     char *costchar
 )
 {
-    dbref victim;
     char *buf1, *buf2;
-    int cost;
 
     init_match(executor, what, TYPE_PLAYER);
     match_neighbor();
@@ -35,7 +33,7 @@ void do_kill
         match_player();
         match_absolute();
     }
-    victim = match_result();
+    dbref victim = match_result();
 
     switch (victim)
     {
@@ -47,32 +45,31 @@ void do_kill
         break;
     default:
         if ((Typeof(victim) != TYPE_PLAYER) &&
-            (Typeof(victim) != TYPE_THING)) {
+            (Typeof(victim) != TYPE_THING))
+        {
             notify(executor,
                 "Sorry, you can only kill players and things.");
             break;
         }
-        if ((Haven(Location(victim)) && !Wizard(executor)) ||
-            (controls(victim, Location(victim)) &&
-             !controls(executor, Location(victim))) ||
-            Unkillable(victim)) {
+        if (  (Haven(Location(victim)) && !Wizard(executor)) 
+           || (  controls(victim, Location(victim)) 
+              && !controls(executor, Location(victim))) 
+           || Unkillable(victim))
+        {
             notify(executor, "Sorry.");
             break;
         }
-        /*
-         * go for it
-         */
+        // Go for it.
 
-        cost = Tiny_atol(costchar);
-        if (key == KILL_KILL) {
+        int cost = Tiny_atol(costchar);
+        if (key == KILL_KILL)
+        {
             if (cost < mudconf.killmin)
                 cost = mudconf.killmin;
             if (cost > mudconf.killmax)
                 cost = mudconf.killmax;
 
-            /*
-             * see if it works
-             */
+            // See if it works.
 
             if (!payfor(executor, cost))
             {
@@ -91,10 +88,8 @@ void do_kill
            || Wizard(victim))
         {
 
-            /*
-             * Failure: notify player and victim only
-             */
-
+            // Failure: notify player and victim only.
+            //
             notify(executor, "Your murder attempt failed.");
             buf1 = alloc_lbuf("do_kill.failed");
             sprintf(buf1, "%s tried to kill you!", Name(executor));
@@ -117,10 +112,9 @@ void do_kill
             free_lbuf(buf1);
             break;
         }
-        /*
-         * Success!  You killed him
-         */
 
+        // Success!  You killed him
+        //
         buf1 = alloc_lbuf("do_kill.succ.1");
         buf2 = alloc_lbuf("do_kill.succ.2");
         if (Suspect(executor))
@@ -141,43 +135,42 @@ void do_kill
         if (Typeof(victim) != TYPE_PLAYER)
         {
             if (halt_que(NOTHING, victim) > 0)
+            {
                 if (!Quiet(victim))
+                {
                     notify(Owner(victim), "Halted.");
+                }
+            }
         }
         did_it(executor, victim, A_KILL, buf1, A_OKILL, buf2, A_AKILL, (char **)NULL, 0);
 
-        /*
-         * notify victim
-         */
-
+        // notify victim
+        //
         sprintf(buf1, "%s killed you!", Name(executor));
         notify_with_cause_ooc(victim, executor, buf1);
 
-        /*
-         * Pay off the bonus
-         */
-
-        if (key == KILL_KILL) {
-            cost /= 2;  /*
-                     * victim gets half
-                     */
-            if (Pennies(Owner(victim)) < mudconf.paylimit) {
+        // Pay off the bonus.
+        //
+        if (key == KILL_KILL)
+        {
+            cost /= 2;  // Victim gets half.
+            if (Pennies(Owner(victim)) < mudconf.paylimit)
+            {
                 sprintf(buf1,
                     "Your insurance policy pays %d %s.",
                     cost, mudconf.many_coins);
                 notify(victim, buf1);
                 giveto(Owner(victim), cost);
-            } else {
-                notify(victim,
-                 "Your insurance policy has been revoked.");
+            }
+            else
+            {
+                notify(victim, "Your insurance policy has been revoked.");
             }
         }
         free_lbuf(buf1);
         free_lbuf(buf2);
 
-        /*
-         * send him home
-         */
+        // Send him home.
 
         move_via_generic(victim, HOME, NOTHING, 0);
         divest_object(victim);
@@ -192,15 +185,14 @@ void do_kill
 
 static void give_thing(dbref giver, dbref recipient, int key, char *what)
 {
-    dbref thing;
-    char *str, *sp;
 
     init_match(giver, what, TYPE_THING);
     match_possession();
     match_me();
-    thing = match_result();
+    dbref thing = match_result();
 
-    switch (thing) {
+    switch (thing)
+    {
     case NOTHING:
         notify(giver, "You don't have that!");
         return;
@@ -208,7 +200,6 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
         notify(giver, "I don't know which you mean!");
         return;
     }
-
     if (thing == giver)
     {
         notify(giver, "You can't give yourself away!");
@@ -226,6 +217,7 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
         notify(giver, NOPERM_MESSAGE);
         return;
     }
+    char *str, *sp;
     if (!could_doit(giver, thing, A_LGIVE))
     {
         sp = str = alloc_lbuf("do_give.gfail");
@@ -268,77 +260,73 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
 
 static void give_money(dbref giver, dbref recipient, int key, int amount)
 {
-    dbref aowner;
-    int cost, aflags;
-    char *str;
-
-    /*
-     * do amount consistency check
-     */
-
-    if (amount < 0 && !Steal(giver)) {
+    // Do amount consistency check.
+    //
+    if (amount < 0 && !Steal(giver))
+    {
         notify(giver,
                tprintf("You look through your pockets. Nope, no negative %s.",
                    mudconf.many_coins));
         return;
     }
-    if (!amount) {
+    if (!amount)
+    {
         notify(giver,
                tprintf("You must specify a positive number of %s.",
                    mudconf.many_coins));
         return;
     }
-    if (!Wizard(giver)) {
-        if ((Typeof(recipient) == TYPE_PLAYER) &&
-            (Pennies(recipient) + amount > mudconf.paylimit)) {
-            notify(giver,
-               tprintf("That player doesn't need that many %s!",
+    if (!Wizard(giver))
+    {
+        if (  (Typeof(recipient) == TYPE_PLAYER)
+           && (Pennies(recipient) + amount > mudconf.paylimit))
+        {
+            notify(giver, tprintf("That player doesn't need that many %s!",
                    mudconf.many_coins));
             return;
         }
-        if (!could_doit(giver, recipient, A_LUSE)) {
-            notify(giver,
-                   tprintf("%s won't take your money.",
-                       Name(recipient)));
+        if (!could_doit(giver, recipient, A_LUSE))
+        {
+            notify(giver, tprintf("%s won't take your money.", Name(recipient)));
             return;
         }
     }
-    /*
-     * try to do the give
-     */
+    // Try to do the give.
 
-    if (!payfor(giver, amount)) {
-        notify(giver,
-               tprintf("You don't have that many %s to give!",
-                   mudconf.many_coins));
+    if (!payfor(giver, amount))
+    {
+        notify(giver, tprintf("You don't have that many %s to give!", 
+            mudconf.many_coins));
         return;
     }
-    /*
-     * Find out cost if an object
-     */
-
-    if (Typeof(recipient) == TYPE_THING) {
-        str = atr_pget(recipient, A_COST, &aowner, &aflags);
+    // Find out cost if an object.
+    //
+    int cost;
+    if (Typeof(recipient) == TYPE_THING)
+    {
+        dbref aowner;
+        int aflags;
+        char *str = atr_pget(recipient, A_COST, &aowner, &aflags);
         cost = Tiny_atol(str);
         free_lbuf(str);
 
-        /*
-         * Can't afford it?
-         */
-
-        if (amount < cost) {
+        // Can't afford it?
+        //
+        if (amount < cost)
+        {
             notify(giver, "Feeling poor today?");
             giveto(giver, amount);
             return;
         }
-        /*
-         * Negative cost
-         */
-
-        if (cost < 0) {
+        // Negative cost
+        //
+        if (cost < 0)
+        {
             return;
         }
-    } else {
+    }
+    else
+    {
         cost = amount;
     }
 
@@ -356,9 +344,8 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         }
     }
 
-    /*
-     * Report change given
-     */
+    // Report change given
+    //
     if ((amount - cost) == 1)
     {
         notify(giver, tprintf("You get 1 %s in change.", mudconf.one_coin));
@@ -370,9 +357,8 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         giveto(giver, (amount - cost));
     }
 
-    /*
-     * Transfer the money and run PAY attributes
-     */
+    // Transfer the money and run PAY attributes
+    //
     giveto(recipient, cost);
     did_it(giver, recipient, A_PAY, NULL, A_OPAY, NULL, A_APAY, (char **)NULL, 0);
     return;
@@ -411,11 +397,6 @@ void do_give
         return;
     }
 
-    if (isGarbage(recipient))
-    {
-        notify(executor, "Garbage objects can't receive gifts.");
-        return;
-    }
     if (isExit(recipient))
     {
         notify(executor, "You can't give anything to an exit.");
@@ -423,7 +404,7 @@ void do_give
     }
     if (Guest(recipient))
     {
-        notify(executor, "Guest really doesn't need money or anything.");
+        notify(executor, "Guests really don't need money or anything.");
         return;
     }
     if (is_rational(amnt))
