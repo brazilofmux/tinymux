@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.22 2002-07-14 00:04:56 jake Exp $
+// $Id: command.cpp,v 1.23 2002-07-14 01:23:51 jake Exp $
 //
 
 #include "copyright.h"
@@ -793,32 +793,32 @@ BOOL check_access(dbref player, int mask)
         return TRUE;
     }
 
-    if (!(  ((mask & CA_WIZARD)     && Wizard(player))
-         || ((mask & CA_ADMIN)      && WizRoy(player))
-         || ((mask & CA_BUILDER)    && Builder(player))
-         || ((mask & CA_STAFF)      && Staff(player))
-         || ((mask & CA_HEAD)       && Head(player))
-         || ((mask & CA_ANNOUNCE)   && Announce(player))
-         || ((mask & CA_IMMORTAL)   && Immortal(player))
-         || ((mask & CA_UNINS)      && Uninspected(player))
-         || ((mask & CA_ROBOT)      && Robot(player))))
+    if (  (mask == CA_PUBLIC)
+       || ((mask & CA_GOD)        && God(player))
+       || ((mask & CA_WIZARD)     && Wizard(player))
+       || ((mask & CA_ADMIN)      && WizRoy(player))
+       || ((mask & CA_BUILDER)    && Builder(player))
+       || ((mask & CA_STAFF)      && Staff(player))
+       || ((mask & CA_HEAD)       && Head(player))
+       || ((mask & CA_ANNOUNCE)   && Announce(player))
+       || ((mask & CA_IMMORTAL)   && Immortal(player))
+       || ((mask & CA_UNINS)      && Uninspected(player))
+       || ((mask & CA_ROBOT)      && Robot(player)))
     {
-        return FALSE;
+        // Check for forbidden flags.
+        //
+        if (  Wizard(player)
+           &&  !(  ((mask & CA_NO_HAVEN)   && Player_haven(player))
+                || ((mask & CA_NO_ROBOT)   && Robot(player))
+                || ((mask & CA_NO_SLAVE)   && Slave(player))
+                || ((mask & CA_NO_SUSPECT) && Suspect(player))
+                || ((mask & CA_NO_GUEST)   && Guest(player))
+                || ((mask & CA_NO_UNINS)   && Uninspected(player))))
+        {
+            return TRUE;
+        }
     }
-
-    // Check for forbidden flags.
-    //
-    if (  !Wizard(player)
-       && (  ((mask & CA_NO_HAVEN)   && Player_haven(player))
-          || ((mask & CA_NO_ROBOT)   && Robot(player))
-          || ((mask & CA_NO_SLAVE)   && Slave(player))
-          || ((mask & CA_NO_SUSPECT) && Suspect(player))
-          || ((mask & CA_NO_GUEST)   && Guest(player))
-          || ((mask & CA_NO_UNINS)   && Uninspected(player))))
-    {
-        return FALSE;
-    }
-    return TRUE;
+    return FALSE;
 }
 
 /* ---------------------------------------------------------------------------
