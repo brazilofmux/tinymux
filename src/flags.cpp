@@ -1,6 +1,6 @@
 // flags.cpp - flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.6 2000-08-09 07:03:20 sdennis Exp $ 
+// $Id: flags.cpp,v 1.7 2000-10-24 22:26:28 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -754,7 +754,7 @@ char *unparse_object(dbref player, dbref target, int obey_myopic)
     int exam;
 
     buf = alloc_lbuf("unparse_object");
-    if (target < 0)
+    if (NOPERM <= target && target < 0)
     {
         strcpy(buf, aszSpecialDBRefNames[-target]);
     }
