@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.94 2002-09-08 07:21:46 sdennis Exp $
+// $Id: functions.cpp,v 1.95 2002-09-09 04:42:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4251,7 +4251,7 @@ FUNCTION(fun_comp)
     }
     else
     {
-        safe_bool((x == 0), buff, bufc);
+        safe_bool((x != 0), buff, bufc);
     }
 }
 
