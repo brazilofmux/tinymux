@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.23 2003-02-04 11:43:10 jake Exp $
+// $Id: functions.cpp,v 1.24 2003-02-04 12:01:42 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1832,7 +1832,7 @@ FUNCTION(fun_rest)
     varargs_preamble(2);
 
     char *s = trim_space_sep(fargs[0], sep);  // leading spaces ...
-    char *first = split_token(&s, sep);
+    split_token(&s, sep);
     if (s)
     {
         safe_str(s, buff, bufc);
@@ -7522,7 +7522,7 @@ void centerjustcombo
 
     // Determine string to pad with.
     //
-    int  vwPad;
+    int  vwPad = 0;
     int  nPad = -1;
     char aPad[SBUF_SIZE];
     struct ANSI_In_Context  aic;
