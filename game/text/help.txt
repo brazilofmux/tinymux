@@ -8046,9 +8046,13 @@ MID()
 
   FUNCTION: mid(<string>, <first>, <length>)
 
-  Mid returns a segment of the string, the <length> characters to the
-  right of the <first> character.  Note that the first character in a
-  string is numbered zero, and not one.
+  Mid returns a segment of the string, the <length> characters to the right
+  of the <first> character.  Note that the first character in a string is
+  numbered zero, and not one.
+
+  If you are looking for left(), then look at strtrunc() as an equivalent.
+
+  Related Topics: strtrunc().
 
 & MIN()
 MIN()
