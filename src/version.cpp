@@ -1,7 +1,7 @@
 //
 // version.cpp - version information 
 //
-// $Id: version.cpp,v 1.17 2001-06-29 20:00:12 sdennis Exp $ 
+// $Id: version.cpp,v 1.18 2001-07-03 19:44:18 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -42,7 +42,7 @@ void NDECL(init_version)
 #else // ALPHA
         sprintf( mudstate.version, "MUX %s #%s [%s]", MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
-        sprintf( mudstate.short_ver, "MUX %s Win32", MUX_VERSION);
+        sprintf( mudstate.short_ver, "MUX %s", MUX_VERSION);
 #endif // ALPHA
 #endif // WIN32
 
