@@ -8,13 +8,28 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
+ -- Added support for multi-character delimiters across nearly all
+    functions which accept input or output delimiters.  For example,
+    'iter(1%r2%r3,itext(),%r,|)' produces '1|2|3'.
+ -- Added output delimiter to filter() and filterbool().
  -- Added 'reset_players' configuration option which resets the player
     connection record.
+ -- Added 'user_attrib_per_hour' which limits the rate at which
+    user-defined attributes are created.
+ -- Added 'mail_per_hour' which limits the rate at which @mail can be
+    created.
 
 
 Bug Fixes:
 ~~~~~~~~~
- -- XXX
+ -- Solaris build needed a missing HAVE_FCNTL_H.
+ -- First argument argument of udefault(), edefault(), and default()
+    supported <dbref>/<attrname>, but not just <attrname>.  But
+    introduced in MUX 2.2 timeframe.
+ -- While the server hasn't allowed mail aliases (@malias) larger than
+    100 members for awhile, it did not protect itself properly against
+    mail aliases saved in older mail.db files.
+ -- @backup now works with MEMORY_BASED build.
 
 
 Performance Enhancements:
@@ -24,9 +39,10 @@ Performance Enhancements:
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
- -- XXX
+ -- Increased the space available to WHO for @moniker names to provide
+    more room for more ANSI transitions.
 
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- XXX
+ -- Added ATTACK notes.
