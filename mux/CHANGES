@@ -124,7 +124,7 @@ Feature Additions:
     RhostMUSH. Jake.
  -- Extended exptime() and writetime() to use weeks and 30-day months.
  -- Added MailLock as a new @lock.  Incoming @mail must pass the MailLock or
-    it is returned.
+    it is returned.  Added by Jake.
 
 
 Bug Fixes:
