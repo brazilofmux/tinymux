@@ -40,45 +40,67 @@ main(argc, argv)
     Name = argv[0];		/* save name of program for error messages  */
     sin.sin_port = htons((u_short) PORT);	/* Assume PORT */
     argc--, argv++;
-    if (argc > 0) {		/* unless specified on command-line       */
+    if (argc > 0)
+    {
+        // unless specified on command-line.
+        //
 	sin.sin_port = atoi(*argv);
 	sin.sin_port = htons((u_short) sin.sin_port);
     }
     strcpy(msg, "");
     strcpy(tmp, "");
-    while (1) {
+    while (1)
+    {
 	if ((gets(tmp)) == NULL)
+        {
 	    break;
+        }
 	strcat(tmp, "\r\n");
 	strcat(msg, tmp);
     }
     msg[4095] = '\0';
     signal(SIGHUP, SIG_IGN);	/* get socket, bind port to it      */
     s = socket(AF_INET, SOCK_STREAM, 0);
-    if (s < 0) {
+    if (s < 0)
+    {
 	perror("announce: socket");
 	exit(1);
     }
-    if (bind(s, (struct sockaddr *)&sin, sizeof sin) < 0) {
+    int opt = 1;
+    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
+    {   
+        perror("setsockopt");
+    }
+    if (bind(s, (struct sockaddr *)&sin, sizeof sin) < 0)
+    {
 	perror("bind");
 	exit(1);
     }
-    if ((foo = fork()) != 0) {
+    if ((foo = fork()) != 0)
+    {
 	fprintf(stderr, "announce: pid %d running on port %d\n", foo,
 		ntohs((u_short) sin.sin_port));
 	_exit(0);
-    } else {
+    }
+    else
+    {
 	setpriority(PRIO_PROCESS, getpid(), 10);
     }
-    if (listen(s, 1) < 0) {	/* start listening on port */
+    if (listen(s, 1) < 0)
+    {
+        // start listening on port.
+        //
 	perror("announce: listen");
 	_exit(1);
     }
     foo = sizeof sin;
-    for (;;) {			/* loop forever, accepting requests & printing
-				 * msg */
+    for (;;)
+    {
+        // loop forever, accepting requests & printing msg.
+        //
 	ns = accept(s, (struct sockaddr *)&sin, &foo);
-	if (ns < 0) {
+	if (ns < 0)
+        {
 	    perror("announce: accept");
 	    _exit(1);
 	}
