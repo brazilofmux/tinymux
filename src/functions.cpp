@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.161 2002-03-01 00:51:59 sdennis Exp $
+// $Id: functions.cpp,v 1.162 2002-03-01 20:53:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2828,7 +2828,6 @@ double AddDoubles(int n, double pd[])
 
         // How many base-10 digits for sum+ulp?
         //
-        double r = sum;
         double s = sum + ulp;
         p = Tiny_dtoa(s, mode, 50, &decpt, &bNegative, &rve);
         if (rve - p < nDigits)
