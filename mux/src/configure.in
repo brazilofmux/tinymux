@@ -158,7 +158,6 @@ int main(int argc, char *argv[])
    return 1;
 }
 ],AC_DEFINE(SMALLEST_INT_GTE_NEG_QUOTIENT),AC_DEFINE(LARGEST_INT_LTE_NEG_QUOTIENT),AC_DEFINE(LARGEST_INT_LTE_NEG_QUOTIENT))
-AC_CHECKING(for perror dcl)
 AC_CHECKING(for getrusage dcl)
 AC_EGREP_HEADER(getrusage,sys/resource.h, ,AC_DEFINE(NEED_GETRUSAGE_DCL))
 AC_CHECKING(for getrlimit dcl)
