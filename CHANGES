@@ -446,6 +446,8 @@ Bug Fixes:
  --  Bug #686 - Fix to @listcommands. @addcommand'ed commands weren't shown.
  --  Bug #710 - Leaving an object that is inside a garbage object may garble
      your location and randomly put the server into an endless loop.
+ --  Bug #357 - objects on channel can now use MONITOR, @listen, or @ahear.
+     @aahear worked before, and it still works.
 
 
 Performance Enhancements:
