@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.12 2000-04-27 23:28:32 sdennis Exp $
+// $Id: functions.cpp,v 1.13 2000-05-01 11:53:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3948,22 +3948,55 @@ FUNCTION(fun_capstr)
  * ---------------------------------------------------------------------------
  * * fun_lnum: Return a list of numbers.
  */
-
 FUNCTION(fun_lnum)
 {
-    int limit = Tiny_atol(fargs[0]);
-    if (limit > 0)
+    char sep;
+    if (  nfargs == 0
+       || !fn_range_check("LNUM", nfargs, 1, 3, buff, bufc)
+       || !delim_check(fargs, nfargs, 3, &sep, buff, bufc, 0, player, cause, cargs, ncargs, 1))
     {
-        safe_chr('0', buff, bufc);
-        for (int ctr = 1; ctr < limit; ctr++)
-        {
-            char tbuff[10];
-            sprintf(tbuff, " %d", ctr);
-            char *p = *bufc;
-            safe_str(tbuff, buff, bufc);
+        return;
+    }
 
-            // Was there room in the buffer?
-            //
+    int bot = 0, top;
+    if (nfargs == 1)
+    {
+        top = Tiny_atol(fargs[0]) - 1;
+        if (top < 0)
+        {
+            return;
+        }
+    }
+    else
+    {
+        bot = Tiny_atol(fargs[0]);
+        top = Tiny_atol(fargs[1]);
+    }
+
+    int i;
+    if (bot == top)
+    {
+        safe_ltoa(bot, buff, bufc, LBUF_SIZE-1);
+    }
+    else if (bot < top)
+    {
+        safe_ltoa(bot, buff, bufc, LBUF_SIZE-1);
+        for (i = bot+1; i <= top; i++)
+        {
+            print_sep(sep, buff, bufc);
+            char *p = *bufc;
+            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+            if (p == *bufc) return;
+        }
+    }
+    else if (top < bot)
+    {
+        safe_ltoa(bot, buff, bufc, LBUF_SIZE-1);
+        for (i = bot-1; i >= top; i--)
+        {
+            print_sep(sep, buff, bufc);
+            char *p = *bufc;
+            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
             if (p == *bufc) return;
         }
     }
@@ -5940,7 +5973,7 @@ FUN flist[] =
     {"LJUST",    fun_ljust,    0,  FN_VARARGS, CA_PUBLIC},
     {"LINK",     fun_link,     2,  0,          CA_PUBLIC},
     {"LN",       fun_ln,       1,  0,          CA_PUBLIC},
-    {"LNUM",     fun_lnum,     1,  0,          CA_PUBLIC},
+    {"LNUM",     fun_lnum,     0,  FN_VARARGS, CA_PUBLIC},
     {"LOC",      fun_loc,      1,  0,          CA_PUBLIC},
     {"LOCATE",   fun_locate,   3,  0,          CA_PUBLIC},
     {"LOCK",     fun_lock,     1,  0,          CA_PUBLIC},

@@ -7323,13 +7323,27 @@ We would like to thank the following people:
 
 & LNUM()
 
-  Function: lnum(<number>)
+  Function:  lnum(<number1>[,<number2>][,<sep>])
  
-  Returns a list of numbers from 0 to <number>-1.
+  If only given one argument, this function returns a list of numbers from
+  0 to <number1>-1. If <number1> less than 1, nothing is returned.
  
-  Example:
+  If given at least two arguments, this function returns a list of numbers
+  from <number1> to <number2>. If <number2> is less than <number1>, the list
+  will be in descending order, otherwise, the list will be in ascending order.
+  Negative integers are valid.
+
+  <sep> is used as the separator character, if given.
+ 
+  Examples:
     > say lnum(5) 
     You say "0 1 2 3 4"
+    > say lnum(3,7)
+    You say "3 4 5 6 7"
+    > say lnum(4,-2,|)
+    You say "4|3|1|0|-1|-2"
+    > say lnum(2,6,@@)
+    You say "23456"
 
 & LATTR()
 
