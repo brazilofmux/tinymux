@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  December 2002
+Last Update:  January 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -121,6 +121,10 @@ Feature Additions:
  -- Added KEEPALIVE flag which, if set, periodically causes a TELNET NOP to
     be sent to the client.  Idea and patch from Soruk.  This is not the same
     as the TCP/IP option by the same name.
+ -- Support sort(-1.05:abc -1.1:def,f).  The previous example is not
+    auto-detected as floating-point number, and this is by design.  However,
+    if floating-point is selected explicitly, it will sort by the
+    floating-point prefix.
 
 Bug Fixes:
 ~~~~~~~~~
