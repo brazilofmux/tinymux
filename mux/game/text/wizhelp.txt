@@ -360,7 +360,7 @@
   This command either removes aliases of existing flags, or renames the
   flag.  For example, if you rename CONNECTED to BOBTHEWIZ, then
   whenever you reference the previous 'CONNECTED' flag, it will be seen
-  as 'BOBTHEWIZ' instead.  This does not effect the character of 'c'
+  as 'BOBTHEWIZ' instead.  This does not affect the character of 'c'
   for the flag, only the name of it.  This takes effect until the server
   is shutdown or rebooted.  To make a permanent addition, you need to
   use the 'flag_name' config parameter in the conf file.
