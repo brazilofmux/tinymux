@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.57 2002-02-13 19:24:47 sdennis Exp $
+// $Id: netcommon.cpp,v 1.58 2002-02-13 19:27:11 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1674,10 +1674,11 @@ static int check_connect(DESC *d, char *msg)
                     command, user, password, cmdsave);
                 return 0;
             }
-            if ((mudconf.guest_char != NOTHING) &&
-                (mudconf.control_flags & CF_LOGIN))
+            if (  mudconf.guest_char != NOTHING
+               && (mudconf.control_flags & CF_LOGIN))
             {
-                if(!(mudconf.control_flags & CF_GUEST)) {
+                if (!(mudconf.control_flags & CF_GUEST))
+                {
                     queue_string(d, "Guest logins are disabled.\n");
                     free_lbuf(command);
                     free_lbuf(user);
@@ -1693,8 +1694,8 @@ static int check_connect(DESC *d, char *msg)
                     free_lbuf(password);
                     return 0;
                 }
-                StringCopy(user, p);
-                StringCopy(password, GUEST_PASSWORD);
+                strcpy(user, p);
+                strcpy(password, GUEST_PASSWORD);
             }
         }
 
