@@ -92,6 +92,7 @@ Bug Fixes:
     in MUX 2.1.3.23 Unix-only). My bug.
  -- Bug #786 - Logging of commands by players set suspect now works. Patch
     from Shawn Wagner.
+ -- '@mail/' was interpreted as '@mail/abort'. Reported by Cloud@Ashes.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~

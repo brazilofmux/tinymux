@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.56 2001-11-02 17:25:05 sdennis Exp $
+// $Id: command.cpp,v 1.57 2001-11-02 19:19:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -264,37 +264,37 @@ NAMETAB look_sw[] =
 
 NAMETAB mail_sw[] =
 {
-    {(char *)"abort",       0,      CA_PUBLIC,      MAIL_ABORT},
-    {(char *)"alias",       1,      CA_PUBLIC,      MAIL_ALIAS},
-    {(char *)"alist",       1,      CA_PUBLIC,      MAIL_ALIST},
+    {(char *)"abort",       2,      CA_PUBLIC,      MAIL_ABORT},
+    {(char *)"alias",       4,      CA_PUBLIC,      MAIL_ALIAS},
+    {(char *)"alist",       4,      CA_PUBLIC,      MAIL_ALIST},
     {(char *)"cc",          2,      CA_PUBLIC,      MAIL_CC},
-    {(char *)"clear",       1,      CA_PUBLIC,      MAIL_CLEAR},
-    {(char *)"debug",       1,      CA_PUBLIC,      MAIL_DEBUG},
-    {(char *)"dstats",      1,      CA_PUBLIC,      MAIL_DSTATS},
-    {(char *)"edit",        2,      CA_PUBLIC,      MAIL_EDIT},
-    {(char *)"file",        1,      CA_PUBLIC,      MAIL_FILE},
-    {(char *)"folder",      1,      CA_PUBLIC,      MAIL_FOLDER},
-    {(char *)"forward",     2,      CA_PUBLIC,      MAIL_FORWARD},
-    {(char *)"fstats",      1,      CA_PUBLIC,      MAIL_FSTATS},
+    {(char *)"clear",       2,      CA_PUBLIC,      MAIL_CLEAR},
+    {(char *)"debug",       2,      CA_PUBLIC,      MAIL_DEBUG},
+    {(char *)"dstats",      2,      CA_PUBLIC,      MAIL_DSTATS},
+    {(char *)"edit",        1,      CA_PUBLIC,      MAIL_EDIT},
+    {(char *)"file",        2,      CA_PUBLIC,      MAIL_FILE},
+    {(char *)"folder",      3,      CA_PUBLIC,      MAIL_FOLDER},
+    {(char *)"forward",     3,      CA_PUBLIC,      MAIL_FORWARD},
+    {(char *)"fstats",      2,      CA_PUBLIC,      MAIL_FSTATS},
     {(char *)"fwd",         2,      CA_PUBLIC,      MAIL_FORWARD},
     {(char *)"list",        1,      CA_PUBLIC,      MAIL_LIST},
     {(char *)"nuke",        1,      CA_PUBLIC,      MAIL_NUKE},
-    {(char *)"proof",       1,      CA_PUBLIC,      MAIL_PROOF},
-    {(char *)"purge",       1,      CA_PUBLIC,      MAIL_PURGE},
-    {(char *)"quick",       0,      CA_PUBLIC,      MAIL_QUICK},
+    {(char *)"proof",       2,      CA_PUBLIC,      MAIL_PROOF},
+    {(char *)"purge",       2,      CA_PUBLIC,      MAIL_PURGE},
+    {(char *)"quick",       3,      CA_PUBLIC,      MAIL_QUICK},
     {(char *)"quote",       3,      CA_PUBLIC,      MAIL_QUOTE|SW_MULTIPLE},
-    {(char *)"read",        1,      CA_PUBLIC,      MAIL_READ},
+    {(char *)"read",        3,      CA_PUBLIC,      MAIL_READ},
     {(char *)"reply",       3,      CA_PUBLIC,      MAIL_REPLY},
     {(char *)"replyall",    6,      CA_PUBLIC,      MAIL_REPLYALL},
-    {(char *)"retract",     2,      CA_PUBLIC,      MAIL_RETRACT},
-    {(char *)"review",      2,      CA_PUBLIC,      MAIL_REVIEW},
+    {(char *)"retract",     3,      CA_PUBLIC,      MAIL_RETRACT},
+    {(char *)"review",      3,      CA_PUBLIC,      MAIL_REVIEW},
     {(char *)"safe",        2,      CA_PUBLIC,      MAIL_SAFE},
-    {(char *)"send",        0,      CA_PUBLIC,      MAIL_SEND},
-    {(char *)"stats",       1,      CA_PUBLIC,      MAIL_STATS},
+    {(char *)"send",        2,      CA_PUBLIC,      MAIL_SEND},
+    {(char *)"stats",       2,      CA_PUBLIC,      MAIL_STATS},
     {(char *)"tag",         1,      CA_PUBLIC,      MAIL_TAG},
-    {(char *)"unclear",     1,      CA_PUBLIC,      MAIL_UNCLEAR},
-    {(char *)"untag",       1,      CA_PUBLIC,      MAIL_UNTAG},
-    {(char *)"urgent",      1,      CA_PUBLIC,      MAIL_URGENT},
+    {(char *)"unclear",     3,      CA_PUBLIC,      MAIL_UNCLEAR},
+    {(char *)"untag",       3,      CA_PUBLIC,      MAIL_UNTAG},
+    {(char *)"urgent",      2,      CA_PUBLIC,      MAIL_URGENT},
     { NULL,                 0,              0,      0}
 };
 
