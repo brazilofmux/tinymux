@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.74 2003-11-18 04:38:45 sdennis Exp $
+// $Id: funceval.cpp,v 1.75 2004-06-04 21:53:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2320,7 +2320,7 @@ FUNCTION(fun_mix)
         cp[i-1] = trim_space_sep(fargs[i], sep);
     }
     int twords;
-    int nwords = countwords(cp[1], sep);
+    int nwords = countwords(cp[0], sep);
     for (i = 2; i<= lastn; i++) 
     {
         twords = countwords(cp[i-1], sep);
