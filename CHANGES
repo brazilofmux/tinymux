@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  September 2002
+Last Update:  October 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,6 +117,7 @@ Feature Additions:
     controlled by the hide and can_see powers. auto-DARK is still only
     performed for Wizards. Idea from TinyMUSH 3.0.
  -- Allow #1 to @newpassword herself if it's missing. Idea from Ian.
+ -- Backpatch more descriptive messages for two zone functions from MUX 2.2.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -298,7 +299,18 @@ Bug Fixes:
  -- comtitle switch table needed to be terminated. Jake fixed.
  -- Fixed two memcpy/strip-ansi idioms (one in pos() and one in @decomp).
     Found by Jake.  Bug introduced by Brazil.
-
+ -- Fixed bug in ansi() that was previously fixed, but has returned. ansi()
+    returns a result that is much shorter than it needs to be.  Reported by
+    Alierak (both first and second time).  Brazil's bug.
+ -- Don't allow children(#-1) to return all unparented dbrefs.  Bug from
+    MUX 1.6.  Reported by Alierak.  I'm calling it a bug, and yet, there is
+    some value in the previous behavior.
+ -- Fixed SIGSEGV bug in vmul().  Reported by Alierak. Bug from MUX 1.6.
+ -- Fixed unlikely SIGSEGV bug in function table initialization.  Brazil's
+    bug.  Fixed by Brazil.  Reported by Kieran Boru.
+ -- OutOfMemory() and AssertionFailed() reversed sense of bCanRestart.
+    Reported by Alierak.  Brazil's bug.
+ -- Fixed convtime() SIGSEGV.  Reported by Alierak.  Brazil's bug.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
