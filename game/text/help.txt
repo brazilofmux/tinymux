@@ -5051,18 +5051,20 @@ files.
   Logical:                   AND NOT OR XOR
   Miscellaneous:             ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM ISWORD
                              LIT SETR SUBEVAL
- 
+
 { 'help function classes2' for more }
  
 & FUNCTION CLASSES2
 
-  Object Information:        ANDFLAGS APOSS CONTROLS DEFAULT EDEFAULT ELOCK
-                             FLAGS GET GET_EVAL GREP GREPI HASATTR HASATTRP
-                             HASFLAG HASPOWER HASTYPE HOME LATTR LCON LEXITS
-                             LPARENT LOCK MONEY NAME OBJ OBJEVAL OBJMEM
-                             ORFLAGS OWNER PARENT PMATCH POSS S SUBJ TYPE U
+  Object Information:        ANDFLAGS APOSS CMDS CONTROLS DEFAULT EDEFAULT
+                             ELOCK FLAGS GET GET_EVAL GREP GREPI HASATTR
+                             HASATTRP HASFLAG HASPOWER HASTYPE HOME LATTR
+                             LATTRCMDS LCMDS LCON LEXITS LFLAGS LPARENT
+                             LOCK MONEY NAME OBJ OBJEVAL OBJMEM ORFLAGS
+                             OWNER PARENT PMATCH POSS S SUBJ TYPE U
                              UDEFAULT ULOCAL V VISIBLE
-  Player Information:        CONN DOING FINDABLE IDLE LWHO PLAYMEM PORTS 
+  Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNTOTAL
+                             DOING FINDABLE IDLE LWHO PLAYMEM PORTS 
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ SORT
   Side-Effect Functions:     LINK TEL
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CAT COMP
@@ -5070,7 +5072,8 @@ files.
                              POS REPEAT REPLACE REVERSE SCRAMBLE SECURE
                              SPACE SQUISH STRCAT STRLEN STRMATCH TRANSLATE
                              STRTRUNC SWITCH UCSTR ENCRYPT DECRYPT VALID
-  Time:                      CONVSECS CONVTIME SECS STARTTIME TIME
+  Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
+                             SINGLETIME STARTSECS STARTTIME TIME WRITETIME
   Trigonometry:              ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
                              VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
 & GENDER
@@ -9282,7 +9285,7 @@ VALID()
     You say "command1 command2"
   
   See also: lattrcmds().
-  
+
 & STARTSECS()
   Function: startsecs()
   
@@ -9296,7 +9299,7 @@ VALID()
     You say "959093815"
   
   See also: secs().
-  
+
 & LATTRCMDS()
   Function: lattrcmds(<object>)
 
@@ -9327,7 +9330,7 @@ VALID()
     You say "1d 10:18"
   
   See also: writetime(), singletime(), exptime(), secs(), time().
-  
+
 & WRITETIME()
   Function: writetime(<seconds>)
   
@@ -9383,7 +9386,7 @@ VALID()
     You say "1d"
   
   See also: writetime(), exptime(), digittime(), secs(), time().
-  
+
 & LFLAGS()
   Function lflags(<object>)
   
@@ -9405,7 +9408,7 @@ VALID()
   
   See also: connmax(), connlast(), connnum(), connleft(), secs(),
             conn().
-  
+
 & CONNMAX()
   Function connmax(<player>)
   
@@ -9414,7 +9417,7 @@ VALID()
   
   See also: conntotal(), connlast(), connnum(), connleft(), secs(),
             conn().
-  
+
 & CONNLAST()
   Function connlast(<player>)
   
