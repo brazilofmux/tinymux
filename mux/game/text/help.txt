@@ -10158,7 +10158,7 @@ POWERS LIST
   free_quota        Unlimited quota.
   guest             Is this a guest character?
   halt              Can @halt anything, and @halt/all.
-  hide              Can set themselves DARK.
+  hide              DARK flag is effective for hiding.
   idle              No idle timeout.
   long_fingers      Can get, look, whisper, etc from a distance.
 
@@ -10173,6 +10173,7 @@ POWERS LIST (continued)
   prog              Can use @program on players other than themself.
   search            Can @search anyone.
   see_all           Can examine and see attributes like a wizard.
+  see_hidden        Can see hidden players and DARK wizards.
   see_queue         Can @ps/all or @ps any player.
   siteadmin         Can @shutdown and @restart.
   stat_any          Can @stat any player.
