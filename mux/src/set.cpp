@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.24 2002-07-14 07:07:16 sdennis Exp $
+// $Id: set.cpp,v 1.25 2002-07-14 07:38:08 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -13,7 +13,7 @@
 
 extern NAMETAB indiv_attraccess_nametab[];
 
-dbref match_handler(dbref executor, const char *name, int key, BOOL bQuiet)
+dbref match_controlled_handler(dbref executor, const char *name, BOOL bQuiet)
 {
     dbref mat;
     init_match(executor, name, NOTYPE);
@@ -26,28 +26,12 @@ dbref match_handler(dbref executor, const char *name, int key, BOOL bQuiet)
     {
         mat = noisy_match_result();
     }
-
     if (!Good_obj(mat))
     {
         return mat;
     }
 
-    BOOL check;
-    switch (key)
-    {
-    case MATCH_CONTROL:
-        check = !Controls(executor, mat);
-        break;
-
-    case MATCH_EXAM:
-        check = !Examinable(executor, mat);
-        break;
-
-    default:
-        return NOTHING;
-    }
-
-    if (!check)
+    if (Controls(executor, mat))
     {
         return mat;
     }

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.26 2002-07-13 07:23:01 jake Exp $
+// $Id: externs.h,v 1.27 2002-07-14 07:38:08 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -197,10 +197,9 @@ extern BOOL bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 extern BOOL parse_attrib(dbref, char *, dbref *, int *);
 extern BOOL parse_attrib_wild(dbref, char *, dbref *, BOOL, BOOL, BOOL);
 extern void edit_string(char *, char **, char *, char *);
-extern dbref match_handler(dbref player, const char *name, int key, BOOL bQuiet);
-#define match_controlled(player,name)       match_handler(player, name, MATCH_CONTROL, FALSE)
-#define match_controlled_quiet(player,name) match_handler(player, name, MATCH_CONTROL, TRUE)
-#define match_examinable(player,name)       match_handler(player, name, MATCH_EXAM, FALSE)
+extern dbref match_controlled_handler(dbref player, const char *name, BOOL bQuiet);
+#define match_controlled(player,name)       match_controlled_handler(player, name, FALSE)
+#define match_controlled_quiet(player,name) match_controlled_handler(player, name, TRUE)
 
 /* From boolexp.cpp */
 extern BOOL eval_boolexp(dbref, dbref, dbref, BOOLEXP *);
