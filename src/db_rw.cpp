@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.25 2001-10-17 15:58:04 sdennis Exp $
+// $Id: db_rw.cpp,v 1.26 2001-10-17 16:27:41 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -546,7 +546,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     dbref i, anum;
     int ch;
     const char *tstr;
-    int read_attribs, read_name, read_zone, read_key, read_parent;
     int read_extflags, read_3flags, read_money, read_timestamps, read_new_strings;
     int read_powers;
     int deduce_version, deduce_name, deduce_zone, deduce_timestamps;
@@ -564,11 +563,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     BOOL size_gotten = FALSE;
     BOOL nextattr_gotten = FALSE;
 
-    read_attribs = 1;
-    read_name = 1;
-    read_zone = 0;
-    read_key = 1;
-    read_parent = 0;
+    BOOL read_attribs = TRUE;
+    BOOL read_name = TRUE;
+    BOOL read_zone = FALSE;
+    BOOL read_key = TRUE;
     read_money = 1;
     read_extflags = 0;
     read_3flags = 0;
@@ -636,12 +634,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (g_version & V_GDBM)
                 {
-                    read_attribs = 0;
+                    read_attribs = FALSE;
                     read_name = !(g_version & V_ATRNAME);
                 }
-                read_zone = (g_version & V_ZONE);
                 read_key = !(g_version & V_ATRKEY);
-                read_parent = (g_version & V_PARENT);
                 read_money = !(g_version & V_ATRMONEY);
                 read_extflags = (g_version & V_XFLAGS);
                 read_3flags = (g_version & V_3FLAGS);
@@ -730,7 +726,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             else if (deduce_zone)
             {
                 deduce_zone = 0;
-                read_zone = 0;
+                read_zone = FALSE;
             }
             i = getref(f);
             db_grow(i + 1);
@@ -742,7 +738,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     if (Tiny_IsDigit[(unsigned char)*tstr])
                     {
-                        read_name = 0;
+                        read_name = FALSE;
                         s_Location(i, Tiny_atol(tstr));
                     }
                     else
@@ -816,17 +812,9 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             //
             s_Owner(i, getref(f));
 
-            // PARENT: PennMUSH uses this field for ZONE (which we use as
-            // PARENT if we didn't already read in a non-NOTHING parent.)
+            // PARENT
             //
-            if (read_parent)
-            {
-                s_Parent(i, getref(f));
-            }
-            else
-            {
-                s_Parent(i, NOTHING);
-            }
+            s_Parent(i, getref(f));
 
             // PENNIES
             //
@@ -935,10 +923,7 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
         putstring(f, Name(i));
     }
     putref(f, Location(i));
-    if (flags & V_ZONE)
-    {
-        putref(f, Zone(i));
-    }
+    putref(f, Zone(i));
     putref(f, Contents(i));
     putref(f, Exits(i));
     putref(f, Link(i));
@@ -955,10 +940,7 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
         }
     }
     putref(f, Owner(i));
-    if (flags & V_PARENT)
-    {
-        putref(f, Parent(i));
-    }
+    putref(f, Parent(i));
     if (!(flags & V_ATRMONEY))
     {
         putref(f, Pennies(i));

@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.10 2001-10-17 05:51:34 sdennis Exp $
+// $Id: db.h,v 1.11 2001-10-17 16:27:41 sdennis Exp $
 //
 #ifndef __DB_H
 #define __DB_H
@@ -104,9 +104,7 @@ struct boolexp
 #define V_GDBM      0x00000400  /* attrs are in a gdbm db, not here */
 #define V_ATRNAME   0x00000800  /* NAME is an attr, not in the hdr */
 #define V_ATRKEY    0x00001000  /* KEY is an attr, not in the hdr */
-#define V_PERNKEY   0x00001000  /* PERN: Extra locks in object hdr */
 #define V_PARENT    0x00002000  /* db has the PARENT field */
-#define V_COMM      0x00004000  /* PERN: Comm status in header */
 #define V_ATRMONEY  0x00008000  /* Money is kept in an attribute */
 #define V_XFLAGS    0x00010000  /* An extra word of flags */
 #define V_POWERS    0x00020000  /* Powers? */

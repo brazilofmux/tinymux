@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.12 2001-10-17 15:58:59 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.13 2001-10-17 16:27:41 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -32,33 +32,27 @@ void info(int fmt, int flags, int ver)
 {
     const char *cp;
 
-    switch (fmt) {
-    case F_MUX:
+    if (fmt == F_MUX)
+    {
         cp = "TinyMUX";
-        break;
-    default:
+    }
+    else
+    {
         cp = "*unknown*";
-        break;
     }
     Log.tinyprintf("%s version %d:", cp, ver);
-    if (flags & V_ZONE)
-        Log.WriteString(" Zone");
-    if (flags & V_LINK)
-        Log.WriteString(" Link");
+    if ((flags & MANDFLAGS) != MANDFLAGS)
+    {
+        Log.WriteString(" Unsupported flags");
+    }
     if (flags & V_GDBM)
         Log.WriteString(" GDBM");
     if (flags & V_ATRNAME)
         Log.WriteString(" AtrName");
     if (flags & V_ATRKEY)
         Log.WriteString(" AtrKey");
-    if (flags & V_PARENT)
-        Log.WriteString(" Parent");
-    if (flags & V_COMM)
-        Log.WriteString(" Comm");
     if (flags & V_ATRMONEY)
         Log.WriteString(" AtrMoney");
-    if (flags & V_XFLAGS)
-        Log.WriteString(" ExtFlags");
     Log.WriteString("\n");
 }
 
@@ -84,16 +78,8 @@ void usage(char *prog)
     Log.tinyprintf("Usage: %s gamedb-basename [flags] [<in-file] [>out-file]\n", prog);
     Log.WriteString("   Available flags are:\n");
     Log.WriteString("      C - Perform consistency check\n");
-    Log.WriteString("      G - Write in dir/pag format     g - Write in flat file format\n");
-    Log.WriteString("      K - Store key as an attribute   k - Store key in the header\n");
-    Log.WriteString("      L - Include link information    l - Don't include link information\n");
-    Log.WriteString("      M - Store attr map if DIRPAG    m - Don't store attr map if DIRPAG\n");
-    Log.WriteString("      N - Store name as an attribute  n - Store name in the header\n");
-    Log.WriteString("      P - Include parent information  p - Don't include parent information\n");
-    Log.WriteString("      W - Write the output file  b    w - Don't write the output file.\n");
-    Log.WriteString("      X - Create a default DIRPAG db  x - Create a default flat file db\n");
-    Log.WriteString("      Z - Include zone information    z - Don't include zone information\n");
-    Log.WriteString("      <number> - Set output version number\n");
+    Log.WriteString("      X - Load into attribute database.\n");
+    Log.WriteString("      x - Unload to a flat file db\n");
 }
 
 long DebugTotalFiles = 3;
@@ -104,7 +90,7 @@ long DebugTotalSockets = 0;
 int DCL_CDECL main(int argc, char *argv[])
 {
     int setflags, clrflags, ver;
-    int db_ver, db_format, db_flags, do_check, do_write;
+    int db_ver, db_format, db_flags;
     char *fp;
 
     if ((argc < 2) || (argc > 3))
@@ -122,9 +108,10 @@ int DCL_CDECL main(int argc, char *argv[])
 
     // Decide what conversions to do and how to format the output file.
     //
-    setflags = clrflags = ver = do_check = 0;
-    do_write = 1;
-    int do_redirect = 0;
+    setflags = clrflags = ver = 0;
+    BOOL do_check = FALSE;
+    BOOL do_write = TRUE;
+    BOOL do_redirect = FALSE;
 
     if (argc >= 3)
     {
@@ -133,73 +120,23 @@ int DCL_CDECL main(int argc, char *argv[])
             switch (*fp)
             {
             case 'C':
-                do_check = 1;
+                do_check = TRUE;
+                do_write = FALSE;
                 break;
-            case 'G':
-                setflags |= V_GDBM;
-                break;
-            case 'g':
-                clrflags |= V_GDBM;
-                break;
-            case 'Z':
-                setflags |= V_ZONE;
-                break;
-            case 'z':
-                clrflags |= V_ZONE;
-                break;
-            case 'L':
-                setflags |= V_LINK;
-                break;
-            case 'l':
-                clrflags |= V_LINK;
-                break;
-            case 'N':
-                setflags |= V_ATRNAME;
-                break;
-            case 'n':
-                clrflags |= V_ATRNAME;
-                break;
-            case 'K':
-                setflags |= V_ATRKEY;
-                break;
-            case 'k':
-                clrflags |= V_ATRKEY;
-                break;
-            case 'P':
-                setflags |= V_PARENT;
-                break;
-            case 'p':
-                clrflags |= V_PARENT;
-                break;
-            case 'W':
-                do_write = 1;
-                break;
-            case 'w':
-                do_write = 0;
-                break;
+
             case 'X':
                 clrflags = 0xffffffff;
                 setflags = OUTPUT_FLAGS;
                 ver = OUTPUT_VERSION;
                 do_redirect = 1;
                 break;
+
             case 'x':
                 clrflags = 0xffffffff;
                 setflags = UNLOAD_FLAGS;
                 ver = UNLOAD_VERSION;
                 break;
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                ver = ver * 10 + (*fp - '0');
-                break;
+
             default:
                 Log.tinyprintf("Unknown flag: '%c'\n", *fp);
                 usage(argv[0]);
@@ -268,7 +205,8 @@ int DCL_CDECL main(int argc, char *argv[])
     if (do_check)
         do_dbck(NOTHING, NOTHING, DBCK_FULL);
 
-    if (do_write) {
+    if (do_write)
+    {
         db_flags = (db_flags & ~clrflags) | setflags;
         if (db_format != F_MUX)
             db_ver = 3;
