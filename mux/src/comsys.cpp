@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.16 2003-06-24 14:51:52 jake Exp $
+// $Id: comsys.cpp,v 1.17 2003-07-24 00:20:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -935,14 +935,14 @@ void BuildChannelMessage
 
 void do_processcom(dbref player, char *arg1, char *arg2)
 {
-    if ((strlen(arg1) + strlen(arg2)) > 3500)
-    {
-        arg2[3500] = '\0'; // TODO: Incorrect logic that doesn't hurt anything.
-    }
     if (!*arg2)
     {
         raw_notify(player, "No message.");
         return;
+    }
+    if (3500 < strlen(arg2))
+    {
+        arg2[3500] = '\0';
     }
     struct channel *ch = select_channel(arg1);
     if (!ch)
