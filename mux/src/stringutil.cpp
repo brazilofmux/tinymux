@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.5 2002-06-20 23:30:25 sdennis Exp $
+// $Id: stringutil.cpp,v 1.6 2002-06-28 15:15:26 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2188,23 +2188,7 @@ INT64 Tiny_atoi64(const char *pString)
 // Ind
 // NaN
 //
-typedef struct
-{
-    int    iLeadingSign;
-    int    iString;
-    char  *pDigitsA;
-    size_t nDigitsA;
-    char  *pDigitsB;
-    size_t nDigitsB;
-    int    iExponentSign;
-    char  *pDigitsC;
-    size_t nDigitsC;
-    char  *pMeat;
-    size_t nMeat;
-
-} PARSE_FLOAT_RESULT;
-
-BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
+BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str)
 {
     // Parse Input
     //

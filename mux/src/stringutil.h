@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.3 2002-06-27 06:38:31 jake Exp $
+// $Id: stringutil.h,v 1.4 2002-06-28 15:15:26 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -188,5 +188,23 @@ struct ArtRuleset
     void *m_pRegexpStudy;
     int m_bUseAn;
 };
+
+typedef struct
+{
+    int    iLeadingSign;
+    int    iString;
+    char  *pDigitsA;
+    size_t nDigitsA;
+    char  *pDigitsB;
+    size_t nDigitsB;
+    int    iExponentSign;
+    char  *pDigitsC;
+    size_t nDigitsC;
+    char  *pMeat;
+    size_t nMeat;
+
+} PARSE_FLOAT_RESULT;
+
+extern BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str);
 
 #endif // STRINGUTIL_H

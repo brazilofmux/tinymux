@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.41 2002-06-28 07:10:16 sdennis Exp $
+// $Id: functions.cpp,v 1.42 2002-06-28 15:15:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1671,18 +1671,21 @@ FUNCTION(fun_ulocal)
 
 FUNCTION(fun_parent)
 {
-    dbref it;
-
-    it = match_thing_quiet(executor, fargs[0]);
-    if (  Good_obj(it)
-       && (  Examinable(executor, it)
-          || it == enactor))
+    dbref result = NOTHING;
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (Good_obj(it))
     {
-        safe_tprintf_str(buff, bufc, "#%d", Parent(it));
-    } else {
-        safe_nothing(buff, bufc);
+        if (  Examinable(executor, it)
+           || it == enactor)
+        {
+            result = Parent(it);
+        }
     }
-    return;
+    else
+    {
+        result = it;
+    }
+    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
@@ -1891,17 +1894,23 @@ FUNCTION(fun_s)
 
 FUNCTION(fun_con)
 {
+    dbref result = NOTHING;
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (  Good_obj(it)
-       && Has_contents(it)
-       && (  Examinable(executor, it)
-          || where_is(executor) == it
-          || it == enactor))
+    if (Good_obj(it))
     {
-        safe_tprintf_str(buff, bufc, "#%d", Contents(it));
-        return;
+        if (  Has_contents(it)
+           && (  Examinable(executor, it)
+              || where_is(executor) == it
+              || it == enactor))
+        {
+            result = Contents(it);
+        }
     }
-    safe_nothing(buff, bufc);
+    else
+    {
+        result = it;
+    }
+    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
@@ -1911,31 +1920,38 @@ FUNCTION(fun_con)
 
 FUNCTION(fun_exit)
 {
+    dbref result = NOTHING;
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (  Good_obj(it)
-       && Has_exits(it)
-       && Good_obj(Exits(it)))
+    if (Good_obj(it))
     {
-        int key = 0;
-        if (Examinable(executor, it))
+        if (  Has_exits(it)
+           && Good_obj(Exits(it)))
         {
-            key |= VE_LOC_XAM;
-        }
-        if (Dark(it))
-        {
-            key |= VE_LOC_DARK;
-        }
-        dbref exit;
-        DOLIST(exit, Exits(it))
-        {
-            if (exit_visible(exit, executor, key))
+            int key = 0;
+            if (Examinable(executor, it))
             {
-                safe_tprintf_str(buff, bufc, "#%d", exit);
-                return;
+                key |= VE_LOC_XAM;
+            }
+            if (Dark(it))
+            {
+                key |= VE_LOC_DARK;
+            }
+            dbref exit;
+            DOLIST(exit, Exits(it))
+            {
+                if (exit_visible(exit, executor, key))
+                {
+                    result = exit;
+                    break;;
+                }
             }
         }
     }
-    safe_nothing(buff, bufc);
+    else
+    {
+        result = it;
+    }
+    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
@@ -2017,14 +2033,20 @@ FUNCTION(fun_loc)
 
 FUNCTION(fun_where)
 {
-    dbref it;
-
-    it = match_thing_quiet(executor, fargs[0]);
-    if (locatable(executor, it, enactor))
-        safe_tprintf_str(buff, bufc, "#%d", where_is(it));
+    dbref result = NOTHING;
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (Good_obj(it))
+    {
+        if (locatable(executor, it, enactor))
+        {
+            result = where_is(it);
+        }
+    }
     else
-        safe_nothing(buff, bufc);
-    return;
+    {
+        result = it;
+    }
+    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
@@ -2061,27 +2083,31 @@ FUNCTION(fun_rloc)
 
 FUNCTION(fun_room)
 {
-    dbref it;
-    int count;
-
-    it = match_thing_quiet(executor, fargs[0]);
-    if (locatable(executor, it, enactor)) {
-        for (count = mudconf.ntfy_nest_lim; count > 0; count--) {
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (locatable(executor, it, enactor))
+    {
+        int count;
+        for (count = mudconf.ntfy_nest_lim; count > 0; count--)
+        {
             it = Location(it);
             if (!Good_obj(it))
                 break;
-            if (isRoom(it)) {
+            if (isRoom(it))
+            {
                 safe_tprintf_str(buff, bufc, "#%d", it);
                 return;
             }
         }
         safe_nothing(buff, bufc);
-    } else if (isRoom(it)) {
+    }
+    else if (isRoom(it))
+    {
         safe_tprintf_str(buff, bufc, "#%d", it);
-    } else {
+    }
+    else
+    {
         safe_nothing(buff, bufc);
     }
-    return;
 }
 
 /*
@@ -2094,17 +2120,25 @@ FUNCTION(fun_owner)
     dbref it, aowner;
     int atr, aflags;
 
-    if (parse_attrib(executor, fargs[0], &it, &atr)) {
-        if (atr == NOTHING) {
+    if (parse_attrib(executor, fargs[0], &it, &atr))
+    {
+        if (atr == NOTHING)
+        {
             it = NOTHING;
-        } else {
+        }
+        else
+        {
             atr_pget_info(it, atr, &aowner, &aflags);
             it = aowner;
         }
-    } else {
+    }
+    else
+    {
         it = match_thing_quiet(executor, fargs[0]);
-        if (it != NOTHING)
+        if (Good_obj(it))
+        {
             it = Owner(it);
+        }
     }
     safe_tprintf_str(buff, bufc, "#%d", it);
 }
@@ -2117,13 +2151,13 @@ FUNCTION(fun_owner)
 FUNCTION(fun_controls)
 {
     dbref x = match_thing_quiet(executor, fargs[0]);
-    if (x == NOTHING)
+    if (!Good_obj(x))
     {
         safe_tprintf_str(buff, bufc, "%s", "#-1 ARG1 NOT FOUND");
         return;
     }
     dbref y = match_thing_quiet(executor, fargs[1]);
-    if (y == NOTHING)
+    if (!Good_obj(y))
     {
         safe_tprintf_str(buff, bufc, "%s", "#-1 ARG2 NOT FOUND");
         return;
@@ -2139,7 +2173,7 @@ FUNCTION(fun_controls)
 FUNCTION(fun_fullname)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (it == NOTHING)
+    if (!Good_obj(it))
     {
         return;
     }
@@ -2166,11 +2200,16 @@ FUNCTION(fun_name)
     char *s, *temp;
 
     it = match_thing_quiet(executor, fargs[0]);
-    if (it == NOTHING) {
+    if (!Good_obj(it))
+    {
         return;
     }
-    if (!mudconf.read_rem_name) {
-        if (!nearby_or_control(executor, it) && !isPlayer(it) && !Long_Fingers(executor)) {
+    if (!mudconf.read_rem_name)
+    {
+        if (  !nearby_or_control(executor, it)
+           && !isPlayer(it)
+           && !Long_Fingers(executor))
+        {
             safe_str("#-1 TOO FAR AWAY TO SEE", buff, bufc);
             return;
         }
@@ -2288,35 +2327,69 @@ FUNCTION(fun_extract)
     safe_str(r, buff, bufc);
 }
 
+// xlate() controls the subtle definition of a softcode boolean.
+//
 int xlate(char *arg)
 {
-    int temp;
-    char *temp2;
-
-    if (arg[0] == '#')
+    const char *p = arg;
+    if (p[0] == '#')
     {
-        arg++;
-        if (is_integer(arg, NULL))
+        if (p[1] == '-')
         {
-            temp = Tiny_atol(arg);
-            if (temp == -1)
-            {
-                temp = 0;
-            }
-            return temp;
+            // '#-...' is FALSE. This includes '#-0000' and '#-ABC'.
+            // This cases are unlikely in practice. We can always come back
+            // and cover these.
+            //
+            return FALSE;
         }
-        return 0;
+        return TRUE;
     }
-    temp2 = trim_space_sep(arg, ' ');
-    if (!*temp2)
+
+    PARSE_FLOAT_RESULT pfr;
+    memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
+    if (ParseFloat(&pfr, p))
     {
-        return 0;
+        // Examine whether number was a zero value.
+        //
+        if (pfr.iString)
+        {
+            // This covers NaN, +Inf, -Inf, and Ind.
+            //
+            return FALSE;
+        }
+
+        // We can ignore leading sign, exponent sign, and exponent as 0, -0,
+        // and +0. Also, 0E+100 and 0.0e-100 are all zero.
+        //
+        // However, we need to cover 00000.0 and 0.00000 cases.
+        //
+        while (pfr.nDigitsA--)
+        {
+            if (*pfr.pDigitsA != '0')
+            {
+                return TRUE;
+            }
+            pfr.pDigitsA++;
+        }
+        while (pfr.nDigitsB--)
+        {
+            if (*pfr.pDigitsB != '0')
+            {
+                return TRUE;
+            }
+            pfr.pDigitsB++;
+        }
+        return FALSE;
     }
-    if (is_integer(temp2, NULL))
+    while (Tiny_IsSpace[(unsigned char)*p])
     {
-        return Tiny_atol(temp2);
+        p++;
     }
-    return 1;
+    if (p[0] == '\0')
+    {
+        return FALSE;
+    }
+    return TRUE;
 }
 
 /*
@@ -3997,10 +4070,10 @@ FUNCTION(fun_cansee)
     dbref looker, lookee;
     int mode;
     looker = match_thing_quiet(executor, fargs[0]);
-    if (looker != NOTHING)
+    if (Good_obj(looker))
     {
         lookee = match_thing_quiet(executor, fargs[1]);
-        if (lookee != NOTHING)
+        if (Good_obj(lookee))
         {
             if (nfargs == 3)
             {
@@ -4049,7 +4122,7 @@ FUNCTION(fun_cansee)
 FUNCTION(fun_lcon)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (  it != NOTHING
+    if (  Good_obj(it)
        && Has_contents(it)
        && (  Examinable(executor, it)
           || Location(executor) == it
@@ -4090,8 +4163,13 @@ FUNCTION(fun_lcon)
 FUNCTION(fun_lexits)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
-
-    if (!Good_obj(it) || !Has_exits(it))
+    
+    if (!Good_obj(it))
+    {
+        safe_tprintf_str(buff, bufc, "#%d", it);
+        return;
+    }
+    if (!Has_exits(it))
     {
         safe_nothing(buff, bufc);
         return;
@@ -4159,20 +4237,31 @@ FUNCTION(fun_lexits)
 
 FUNCTION(fun_home)
 {
-    dbref it;
-
-    it = match_thing_quiet(executor, fargs[0]);
-    if (!Good_obj(it) || !Examinable(executor, it))
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_tprintf_str(buff, bufc, "#%d", it);
+    }
+    if (!Examinable(executor, it))
+    {
         safe_nothing(buff, bufc);
+    }
     else if (Has_home(it))
+    {
         safe_tprintf_str(buff, bufc, "#%d", Home(it));
+    }
     else if (Has_dropto(it))
+    {
         safe_tprintf_str(buff, bufc, "#%d", Dropto(it));
+    }
     else if (isExit(it))
+    {
         safe_tprintf_str(buff, bufc, "#%d", where_is(it));
+    }
     else
+    {
         safe_nothing(buff, bufc);
-    return;
+    }
 }
 
 /*
@@ -4182,13 +4271,21 @@ FUNCTION(fun_home)
 
 FUNCTION(fun_money)
 {
-    dbref it;
-
-    it = match_thing_quiet(executor, fargs[0]);
-    if ((it == NOTHING) || !Examinable(executor, it))
-        safe_nothing(buff, bufc);
+    dbref result = NOTHING;
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (Good_obj(it))
+    {
+        if (Examinable(executor, it))
+        {
+           safe_ltoa(Pennies(it), buff, bufc);
+           return;
+        }
+    }
     else
-        safe_ltoa(Pennies(it), buff, bufc);
+    {
+        result = it;
+    }
+    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
@@ -4667,7 +4764,14 @@ FUNCTION(fun_type)
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_str("#-1 NOT FOUND", buff, bufc);
+        if (it == AMBIGUOUS)
+        {
+            safe_str("#-2 AMBIGUOUS", buff, bufc);
+        }
+        else
+        {
+            safe_str("#-1 NOT FOUND", buff, bufc);
+        }
         return;
     }
     switch (Typeof(it))
@@ -4763,7 +4867,14 @@ FUNCTION(fun_hasflag)
         it = match_thing_quiet(executor, fargs[0]);
         if (!Good_obj(it))
         {
-            safe_str("#-1 NOT FOUND", buff, bufc);
+            if (it == AMBIGUOUS)
+            {
+                safe_str("#-2 AMBIGUOUS", buff, bufc);
+            }
+            else
+            {
+                safe_str("#-1 NOT FOUND", buff, bufc);
+            }
         }
         else if (  mudconf.pub_flags
                 || Examinable(executor, it)
@@ -4784,7 +4895,14 @@ FUNCTION(fun_haspower)
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_str("#-1 NOT FOUND", buff, bufc);
+        if (it == AMBIGUOUS)
+        {
+            safe_str("#-2 AMBIGUOUS", buff, bufc);
+        }
+        else
+        {
+            safe_str("#-1 NOT FOUND", buff, bufc);
+        }
         return;
     }
     if (  mudconf.pub_flags
@@ -4890,7 +5008,14 @@ FUNCTION(fun_elock)
     victim = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(victim))
     {
-        safe_str("#-1 NOT FOUND", buff, bufc);
+        if (victim == AMBIGUOUS)
+        {
+            safe_str("#-2 AMBIGUOUS", buff, bufc);
+        }
+        else
+        {
+            safe_str("#-1 NOT FOUND", buff, bufc);
+        }
     }
     else if (  !nearby_or_control(executor, victim)
             && !nearby_or_control(executor, it))
@@ -4945,7 +5070,29 @@ FUNCTION(fun_nearby)
     int ch = '0';
 
     obj1 = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(obj1))
+    {
+        if (obj1 == AMBIGUOUS)
+        {
+            safe_str("#-2 AMBIGUOUS", buff, bufc);
+        }
+        else
+        {
+            safe_str("#-1 NOT FOUND", buff, bufc);
+        }
+    }
     obj2 = match_thing_quiet(executor, fargs[1]);
+    if (!Good_obj(obj2))
+    {
+        if (obj2 == AMBIGUOUS)
+        {
+            safe_str("#-2 AMBIGUOUS", buff, bufc);
+        }
+        else
+        {
+            safe_str("#-1 NOT FOUND", buff, bufc);
+        }
+    }
     if (  (  nearby_or_control(executor, obj1)
           || nearby_or_control(executor, obj2))
        && nearby(obj1, obj2))
@@ -4962,17 +5109,26 @@ FUNCTION(fun_nearby)
 
 static void process_sex(dbref player, char *what, const char *token, char *buff, char **bufc)
 {
-    dbref it;
-    char *str;
-
-    it = match_thing_quiet(player, what);
-    if (!Good_obj(it) || (!isPlayer(it) && !nearby_or_control(player, it)))
+    dbref it = match_thing_quiet(player, what);
+    if (!Good_obj(it))
+    {
+        if (it == AMBIGUOUS)
+        {
+            safe_str("#-2 AMBIGUOUS", buff, bufc);
+        }
+        else
+        {
+            safe_str("#-1 NOT FOUND", buff, bufc);
+        }
+        return;
+    }
+    if (!isPlayer(it) && !nearby_or_control(player, it))
     {
         safe_nomatch(buff, bufc);
     }
     else
     {
-        str = (char *)token;
+        char *str = (char *)token;
         TinyExec(buff, bufc, it, it, it, EV_EVAL, &str, (char **)NULL, 0);
     }
 }
