@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.35 2001-02-10 10:05:38 sdennis Exp $
+// $Id: command.cpp,v 1.36 2001-02-11 00:07:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -496,6 +496,7 @@ CMDENT_NO_ARG command_table_no_arg[] =
     {(char *)"quit",          NULL,       CA_PUBLIC,    CMD_QUIT,   CS_NO_ARGS,         logged_out0},
     {(char *)"logout",        NULL,       CA_PUBLIC,    CMD_LOGOUT, CS_NO_ARGS,         logged_out0},
     {(char *)"report",        NULL,       0,    0,      CS_NO_ARGS,   do_report},
+    {(char *)"info",          NULL,       CA_PUBLIC,    CMD_INFO,   CS_NO_ARGS,         logged_out0},
     {(char *)NULL,            NULL,       0,     0,      0,              NULL}
 };
 

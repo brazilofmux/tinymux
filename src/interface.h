@@ -1,5 +1,5 @@
 /* interface.h */
-/* $Id: interface.h,v 1.2 2000-06-03 09:07:38 sdennis Exp $ */
+/* $Id: interface.h,v 1.3 2001-02-11 00:07:44 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -47,6 +47,7 @@
 #define CMD_LOGOUT  7
 #define CMD_SESSION 8
 #define CMD_PUEBLOCLIENT 9
+#define CMD_INFO    10
 
 #define CMD_MASK    0xff
 #define CMD_NOxFIX  0x100

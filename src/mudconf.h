@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.16 2001-02-07 05:28:14 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.17 2001-02-11 00:07:44 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -372,6 +372,7 @@ struct statedata
     CHashTable acache_htab;    // Attribute Cache
 
     char    version[128];   /* MUX version string */
+    char    short_ver[64];  /* Short version number (for INFO) */
     char    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
     int     nObjEvalNest;      // The nesting level of objeval()
                                // invocations.
