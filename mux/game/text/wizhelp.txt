@@ -406,7 +406,7 @@
 
   Related Topics: @drain, @notify, kill, HALTED, SEMAPHORES.
 
-&@HOOK
+& @HOOK
 @HOOK
 
   Command: @hook[/<switch(s)>] [<command/attribute>]
@@ -433,8 +433,10 @@
          /clear     - When used in junction with any of the above switches, 
                       will clear the hook from being applied.
          /list      - This lists the current commands/attributes with hooks.
-  
-{ help @hook2 for examples}&@HOOK2
+
+{ help @hook2 for examples}
+
+& @HOOK2
 @HOOK (continued)
 
   Command: @hook[/<switch(s)>] [<command/attribute>]  (continued)
@@ -457,8 +459,10 @@
     ---------------------------------+---------------------------------------
                                -- No @hooks defined --
     ---------------------------------+---------------------------------------
-  
-  Related Topics: hook_obj, hook_cmd, HOOK SETUP.& @ICMD
+
+  Related Topics: hook_obj, hook_cmd, HOOK SETUP.
+
+& @ICMD
 @ICMD
 
   Command: @icmd</switch> <player [= arguments]>
@@ -507,26 +511,26 @@
 @ICMD (continued)
 
   Command: @icmd</switch> <player [= arguments]>
-  
+
   The commands can be specified on the player in the form of:
   COMMAND, !COMMAND, COMMAND, ..., etc
-  
+
   To remove the command from the player, a ! must be specified.
   To change the level from DISABLE to IGNORE or visa versa, it
   must first be REMOVED then ADDED.  For example:
-  
+
     @icmd/disable TinyJerk=page, whisper, @emit, @pemit
     @icmd/ignore TinyJerk=!@pemit, !@emit, @pemit, @emit
-  
+
   The above would first set all four to disable.  The second
   would remove @emit and @pemit and then re-add it as ignored.
   The /disable switch is the default and assumed if no switches
   are specified.  All aliases are taken into effect automatically.
   For rooms you could do the following:
-    
+
     @icmd/droom here=page, whisper, @emit, @pemit
     @icmd/iroom here=!@pemit, !@emit, @pemit, @emit
-  
+
   Example:  @icmd/ignore majortwit=page,",:,say,pose,@emit,@pemit,whisper,;
             @icmd/ignore dimwit=page,!say,!",pose,:
 
