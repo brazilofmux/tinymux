@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.30 2003-07-22 04:46:33 sdennis Exp $
+// $Id: db.cpp,v 1.31 2003-07-23 00:19:53 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -668,19 +668,9 @@ void s_Moniker(dbref thing, const char *s)
     }
 }
 
-const char *GenerateSalt(void)
-{
-    static char szSalt[12];
-    INT64 iSalt = (((INT64)RandomINT32(0, INT32_MAX_VALUE)) << 32)
-                | (((INT64)RandomINT32(0, INT32_MAX_VALUE)) <<  1)
-                | (((INT64)RandomINT32(0, 1))                    );
-    mux_Pack(iSalt, 64, szSalt);
-    return szSalt;
-}
-
 void s_Pass(dbref thing, const char *s)
 {
-    atr_add_raw(thing, A_PASS, mux_crypt(s, GenerateSalt()));
+    atr_add_raw(thing, A_PASS, s);
 }
 
 /* ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.18 2003-07-22 04:46:33 sdennis Exp $
+// $Id: externs.h,v 1.19 2003-07-23 00:19:53 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -146,6 +146,7 @@ extern void badname_add(char *);
 extern void badname_remove(char *);
 extern bool badname_check(char *);
 extern void badname_list(dbref, const char *);
+extern void ChangePassword(dbref player, const char *szPassword);
 extern char *mux_crypt(const char *szPassword, const char *szSalt);
 
 /* From predicates.cpp */
@@ -194,9 +195,6 @@ extern void set_modified(dbref thing);
 extern bool eval_boolexp(dbref, dbref, dbref, BOOLEXP *);
 extern BOOLEXP *parse_boolexp(dbref, const char *, bool);
 extern bool eval_boolexp_atr(dbref, dbref, dbref, char *);
-
-/* From funceval.cpp */
-size_t mux_Pack(INT64 val, int iRadix, char *buf);
 
 /* From functions.cpp */
 extern bool xlate(char *);

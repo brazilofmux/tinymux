@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.40 2003-05-12 07:38:36 sdennis Exp $
+// $Id: predicates.cpp,v 1.41 2003-07-23 00:19:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -566,16 +566,6 @@ bool ok_password(const char *password, dbref player)
         {
             num_special++;
         }
-    }
-
-    // Needed.  Change it if you like, but be sure yours is the same.
-    //
-    if (  strlen(password) == 13
-       && password[0] == 'X'
-       && password[1] == 'X')
-    {
-        notify_quiet(player, "Please choose another password.");
-        return false;
     }
 
     if (  !mudstate.bStandAlone

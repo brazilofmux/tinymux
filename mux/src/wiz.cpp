@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.7 2003-07-22 04:46:33 sdennis Exp $
+// $Id: wiz.cpp,v 1.8 2003-07-23 00:19:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -445,7 +445,7 @@ void do_newpassword
 
     // It's ok, do it.
     //
-    s_Pass(victim, password);
+    ChangePassword(victim, password);
     notify_quiet(executor, "Password changed.");
     char *buf = alloc_lbuf("do_newpassword");
     char *bp = buf;

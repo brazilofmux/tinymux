@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.7 2003-07-22 04:46:33 sdennis Exp $
+// $Id: player.cpp,v 1.8 2003-07-23 00:19:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -199,27 +199,137 @@ void record_login
     free_lbuf(atrbuf);
 }
 
-const char *szSHA1Prefix = "|SHA1|";
-size_t     nSHA1Prefix = strlen(szSHA1Prefix);
+const char Base64Table[65] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+#define ENCODED_LENGTH(x) ((((x)+2)/3)*4)
+
+size_t EncodeBase64(size_t nIn, const char *pIn, char *pOut)
+{
+    int nTriples = nIn/3;
+    int nLeftover = nIn%3;
+    size_t nOut = 4 * nTriples;
+    UINT8 ch0, ch1, ch2, ch3;
+
+    while (nTriples--)
+    {
+        ch0 = ((UINT8)pIn[0]) >> 2;
+        ch1 = ((((UINT8)pIn[0]) & 0x03) << 4)
+            | (((UINT8)pIn[1]) >> 4);
+        ch2 = ((((UINT8)pIn[1]) & 0x0F) << 2)
+            | (((UINT8)pIn[2]) >> 6);
+        ch3 = ((UINT8)pIn[2]) & 0x3F;
+
+        pOut[0] = Base64Table[ch0];
+        pOut[1] = Base64Table[ch1];
+        pOut[2] = Base64Table[ch2];
+        pOut[3] = Base64Table[ch3];
+
+        pOut += 4;
+        pIn  += 3;
+    }
+    
+    switch (nLeftover)
+    {
+    case 1:
+        ch0 = ((UINT8)pIn[0]) >> 2;
+        ch1 = ((((UINT8)pIn[0]) & 0x03) << 4);
+        pOut[0] = Base64Table[ch0];
+        pOut[1] = Base64Table[ch1];
+        pOut[2] = '=';
+        pOut[3] = '=';
+        nOut += 4;
+        pOut += 4;
+        break;
+
+    case 2:
+        ch0 = ((UINT8)pIn[0]) >> 2;
+        ch1 = ((((UINT8)pIn[0]) & 0x03) << 4)
+            | (((UINT8)pIn[1]) >> 4);
+        ch2 = ((((UINT8)pIn[1]) & 0x0F) << 2);
+        pOut[0] = Base64Table[ch0];
+        pOut[1] = Base64Table[ch1];
+        pOut[2] = Base64Table[ch2];
+        pOut[3] = '=';
+        nOut += 4;
+        pOut += 4;
+        break;
+    }
+    pOut[0] = '\0';
+    return nOut;
+}
+
+#define SALT_LENGTH 9
+#define ENCODED_SALT_LENGTH ENCODED_LENGTH(SALT_LENGTH)
+
+const char *GenerateSalt(void)
+{
+    char szSaltRaw[SALT_LENGTH+1];
+    int i;
+    for (i = 0; i < SALT_LENGTH; i++)
+    {
+        szSaltRaw[i] = RandomINT32(0, 255);
+    }
+    szSaltRaw[SALT_LENGTH] = '\0';
+
+    static char szSaltEncoded[ENCODED_SALT_LENGTH+1];
+    EncodeBase64(SALT_LENGTH, szSaltRaw, szSaltEncoded);
+    return szSaltEncoded;
+}
+
+void ChangePassword(dbref player, const char *szPassword)
+{
+    s_Pass(player, mux_crypt(szPassword, GenerateSalt()));
+}
+
+#define SHA1_PREFIX_LENGTH 6
+const char szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "|SHA1|";
+
+#define ENCODED_HASH_LENGTH ENCODED_LENGTH(5*sizeof(UINT32))
 
 char *mux_crypt(const char *szPassword, const char *szSalt)
 {
+    if (ENCODED_SALT_LENGTH < strlen(szSalt))
+    {
+        // We should never get here as check_pass() validates
+        // the length of the salt in the database, and
+        // GenerateSalt() generates exactly the above length.
+        //
+        return "|FAIL||";
+    }
+
+    // Calculate Hash.
+    //
     SHA1_CONTEXT shac;
-    static char buf[80]; // 74 plus 6 safety.
-    int  i;
 
     SHA1_Init(&shac);
     SHA1_Compute(&shac, strlen(szSalt), szSalt);
     SHA1_Compute(&shac, strlen(szPassword), szPassword);
     SHA1_Final(&shac);
 
-    sprintf(buf, "%s%s|", szSHA1Prefix, szSalt);
+    // Serialize 5 UINT32 words into big-endian.
+    //
+    char szHashRaw[21];
+    char *p = szHashRaw;
+
+    int i;
     for (i = 0; i <= 4; i++)
     {
-        char szPart[12];
-        mux_Pack(shac.H[i], 64, szPart);
-        strcat(buf, szPart);
+        *p++ = (UINT8)(shac.H[i] >> 24);
+        *p++ = (UINT8)(shac.H[i] >> 16);
+        *p++ = (UINT8)(shac.H[i] >>  8);
+        *p++ = (UINT8)(shac.H[i]      );
     }
+    *p = '\0';
+
+    //          1         2         3         4
+    // 12345678901234567890123456789012345678901234567
+    // |SHA1|ssssssssssss|hhhhhhhhhhhhhhhhhhhhhhhhhhhh
+    //
+    static char buf[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH + 1 + ENCODED_HASH_LENGTH + 1 + 16];
+    sprintf(buf, "%s%s|", szSHA1Prefix, szSalt);
+    int n = strlen(buf);
+    EncodeBase64(20, szHashRaw, buf + n);
     return buf;
 }
 
@@ -239,12 +349,12 @@ bool check_pass(dbref player, const char *pPassword)
     {
         size_t nTarget = strlen(pTarget);
         size_t nPassword = strlen(pPassword);
-        if (  nSHA1Prefix <= nTarget
-           && memcmp(szSHA1Prefix, pTarget, nSHA1Prefix) == 0)
+        if (  SHA1_PREFIX_LENGTH <= nTarget
+           && memcmp(szSHA1Prefix, pTarget, SHA1_PREFIX_LENGTH) == 0)
         {
             // SHA-1 password.
             //
-            char *pSalt = pTarget + nSHA1Prefix;
+            char *pSalt = pTarget + SHA1_PREFIX_LENGTH;
             char *pHash;
             if (  *pSalt
                && (pHash = strchr(pSalt + 1, '|')))
@@ -252,9 +362,9 @@ bool check_pass(dbref player, const char *pPassword)
                 size_t nSalt = pHash - pSalt;
                 pHash++;
 
-                if (nSalt <= 11)
+                if (nSalt <= ENCODED_SALT_LENGTH)
                 {
-                    char szSalt[12];
+                    char szSalt[ENCODED_SALT_LENGTH+1];
                     memcpy(szSalt, pSalt, nSalt);
                     szSalt[nSalt] = '\0';
 
@@ -292,7 +402,7 @@ bool check_pass(dbref player, const char *pPassword)
     {
         // Upgrade password to SHA-1.
         //
-        s_Pass(player, pPassword);
+        ChangePassword(player, pPassword);
     }
     free_lbuf(pTarget);
     return bValidPass;
@@ -383,7 +493,7 @@ dbref create_player(char *name, char *password, dbref creator, bool isrobot, boo
         }
     }
 
-    s_Pass(player, pbuf);
+    ChangePassword(player, pbuf);
     s_Home(player, start_home());
     free_lbuf(pbuf);
     return player;
