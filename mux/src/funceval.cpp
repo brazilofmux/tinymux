@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.59 2002-10-01 07:30:21 sdennis Exp $
+// $Id: funceval.cpp,v 1.60 2002-10-10 12:38:24 jake Exp $
 //
 
 #include "copyright.h"
@@ -1437,9 +1437,14 @@ FUNCTION(fun_mail)
             playerask = lookup_player(executor, fargs[0], TRUE);
             if (playerask == NOTHING)
             {
-                safe_str("#-1 NO SUCH PLAYER", buff, bufc);
+                playerask = match_thing_quiet(executor, fargs[0]);
+                if (!isPlayer(playerask))
+                {
+                    safe_str("#-1 NO SUCH PLAYER", buff, bufc);
+                    return;
+                }
             }
-            else if (playerask == executor || Wizard(executor))
+            if (playerask == executor || Wizard(executor))
             {
                 count_mail(playerask, 0, &rc, &uc, &cc);
                 safe_tprintf_str(buff, bufc, "%d %d %d", rc, uc, cc);
