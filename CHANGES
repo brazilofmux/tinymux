@@ -248,6 +248,9 @@ Bug Fixes:
  -- Fix isnum() parsing when exponents are involved.
  -- Fix the way nanoseconds are broken into milliseconds, microseconds,
     and nanoseconds. Probably not observable in MUX 2.1.
+ -- Fix @mvattr. There was still one case of where @mvattr would remove
+    the source attribute while prevented from creating it on the
+    destination object.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -293,7 +296,7 @@ Cosmetic Changes:
  -- @pcreate and @robot now report the created dbref.
  -- say command now emits 'You say, "..."' instead of 'You say "..."'.
  -- Help for pmatch changed to reflect that the #-2 result was removed long ago.
- -- @wall now adds comma after shouts. From TM3.
+ -- @wall now adds comma after shouts. TM3 found first.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
