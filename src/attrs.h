@@ -1,5 +1,5 @@
 /* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.9 2001-06-27 21:48:41 sdennis Exp $ */
+/* $Id: attrs.h,v 1.10 2001-06-27 22:06:11 sdennis Exp $ */
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -177,7 +177,7 @@
 #define A_IDLETMOUT 240 /* Idle message timeout */
 
 #define A_EXITFORMAT 241
-#define A_CONFORMAT 242
+#define A_CONFORMAT  242
 #define A_NAMEFORMAT 243
 
 #define A_VLIST     252
