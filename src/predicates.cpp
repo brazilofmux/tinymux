@@ -1,3 +1,6 @@
+// predicates.cpp
+// $Id: predicates.cpp,v 1.10 2000-04-24 23:34:25 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
