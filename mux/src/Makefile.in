@@ -22,7 +22,6 @@ LIBS = -lm
 else
 LIBS = @LIBS@
 endif
-LIBOBJS = @LIBOBJS@
 .SUFFIXES: .cpp
 
 # After we finish beta testing, we'll take away the debugging -g flag.
@@ -191,13 +190,13 @@ slave: slave.o
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
 
-dbconvert: _build.o dbconvert.o $(SA_OBJ) $(ALLOC_O) $(LIBOBJS)
-	$(CXX) $(ALLCXXFLAGS) -o dbconvert _build.o dbconvert.o $(SA_OBJ) $(COM_OBJ) $(ALLOC_O) $(LIBS) $(MORELIBS) $(LIBOBJS)
+dbconvert: _build.o dbconvert.o $(SA_OBJ) $(ALLOC_O)
+	$(CXX) $(ALLCXXFLAGS) -o dbconvert _build.o dbconvert.o $(SA_OBJ) $(COM_OBJ) $(ALLOC_O) $(LIBS) $(MORELIBS)
 
-netmux: $(OBJ) $(LIBOBJS) $(VER_SRC)
+netmux: $(OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(LIBOBJS) $(VER_OBJ) $(LIBS) $(MORELIBS)
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS)
 
 cvs:
 	rm -f buildnum.data
