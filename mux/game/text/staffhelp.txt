@@ -1,0 +1,350 @@
+& help
+------------------------------------------------------------------------------
+Index 
+
+  This is the index of staff helpfiles, V1.0 (1 AUG 00)
+
+  +accept        +cnotes        +commands      +contents      +duty          
+  +join          +motd          +register      +rjoin         +rsummon       
+  +stnotes       +summon        +timestamp     BACKGROUNDS    CONFIGURE      
+  DEFAULTS       FUNCTIONS      PROJECT
+
+  To get help on any of the listed topics, type '+shelp <topic>'
+-----------------------------------------------------------------------------
+
+& +accept
+------------------------------------------------------------------------------
++accept
+
+  SYNTAX: +accept
+
+  This command sets an acceptance attribute on the player to show that they 
+  have read and accepted the terms of your game's AUP.  It sets a simple 
+  timestamp on the character object and sends the player an emit that the 
+  command has worked.  
+
+  This command is adaptable to other applications where you may need players 
+  to acknowledge that they have read and accepted rules associated with the 
+  game.  Imbedding the command in the text of the material you want to be read 
+  is the best way to document it for players.
+-----------------------------------------------------------------------------
+
+& backgrounds
+------------------------------------------------------------------------------
+Staff Background Commands:                                
+
+  +bgview <name>       - Shows the number of sections for player.
+  +bgcheck <name>/<#>  - Locks a background section when finished.
+
+  The '<#>' sign in the BG help stands for the number of the section you are
+  working on. The BG commands allows for multiple sections so that your 
+  background can be broken up into reasonably sized pieces of text.
+-----------------------------------------------------------------------------
+
+& CONFIGURE
+------------------------------------------------------------------------------
+Configuring SGP:
+
+  There will be several things that you need to configure in this package in 
+  order to make use of all the features therein.  One of the first will be to 
+  edit the parameters that define who passes isstaff() and ostaff().  Both 
+  functions are found on the Global Functions object.  
+
+  isstaff() is defined specifically by flag.  ostaff() checks against the list 
+  stored in &STAFF-LIST on the Global Parent Object.  Truthfully, most 
+  functions in the game will use isstaff(), where ostaff() is used for code 
+  where you want the regular game staff to show, such as +who.
+
+  &STAFF-LIST is a space seperated list of dbrefs.  It displays on +staff and 
+  +staff/all in the same order that they are entered on the list.
+
+  See Also: CONFIGURE2
+-----------------------------------------------------------------------------
+
+& CONFIGURE2
+------------------------------------------------------------------------------
+Configuring SGP:
+
+  Headers and Footers maybe changed through the code by editting the code.  
+  This code is specifically set up to use &HEADER and &FOOTER attributes on 
+  the Global Parent Object.  You can edit the existing default headers and 
+  simply add them in the place of the old.  The footers can be substituted by 
+  editting them to match.  Examine the global parent object for a pregenerated 
+  set of footers.
+  
+  ANSI color is optional not used in this code, since different servers enable 
+  and handle color differently.  ASCII character art used as header and footer     
+  attributes on the main code will not require a major hacking effort.  
+  Complex ASCII art has been incorporated into at least one game and simply 
+  requires someone with the patience to hack it in.  
+
+  All globals are coded to 78 spaces wide.  78 is divisable by 78, 39, 26, 13, 
+  6, 3, 2, and 1.  When you design your own ASCII for this package, you can 
+  use repeat() to generate certain unique elements.  There is nothing to 
+  prevent ascii headers and other elements from being several lines high, 
+  though it is adviseable to keep an eye to how many extra lines the code 
+  generates.
+
+  See Also: CONFIGURE3
+-----------------------------------------------------------------------------
+
+& CONFIGURE3
+------------------------------------------------------------------------------
+Configuring SGP +finger:
+
+  +finger can be customized in the by changing appropriate references in the 
+  softcode to headers and footers to attributes that you desire.  
+
+  Adjusting the types of attributes that the code will read by default 
+  requires making changes to &FINGER_LIST and &FINGER_LIST_LONG on the parent 
+  object.  These two attributes control the finger attributes that the code 
+  looks for, and the actual output to the display itself.  These two 
+  attributes are in a specific order and are directly related to each other.  
+  If you add, remove, or modify items in the list, you must make sure that the 
+  order is preserved in both lists.  You have been warned. 
+  
+  As with all such undertakings, make sure you have a backup of anything you 
+  had prior to making modifications.  You'll hate yourself if you've made 
+  extensive modifications and then mess up.
+-----------------------------------------------------------------------------
+
+& +cnotes
+------------------------------------------------------------------------------
++cnotes
+
+  SYNTAX: +cnotelist <name>               - Gives you a list of all cnotes on 
+                                            a character object.
+          +cnoteview <name> <notename>    - Gives you the contents of the 
+                                            <notename> note on named player 
+                                            or dbref for objects.
+          +cnote/<notename> <name>=<text> - Sets a cnote on a player or 
+                                            object(use dbref) to the value of 
+                                            the text with person and time 
+                                            added. (WIZ ONLY)
+          +cnoteapp <pcname> <notename>   - Approves and timestamps a player-
+                                            set cnotes, sets the attribute 
+                                            wizard so the player can't change 
+                                            it.  Approved notes bear the line:     
+                                            "Approved by XXX on date YYY"
+          +cnotedel <pcname> <notename>   - Deletes a given note from a 
+                                            character.
+  
+  Players may set notes on objects other than themselves by setting an 
+  attribute &CNOTE_<notename> <object>=<text>.  Staff approved notes will 
+  bear "Approved by XXX on date YYY" to show that staff has seen and approved 
+  the information for IC purposes.
+----------------------------------------------------------------------------- 
+
+& +commands
+------------------------------------------------------------------------------
++commands
+
+  SYNTAX: +commands <thing>
+
+  This command shows the $-commands for a given object, room, or player.  This 
+  is useful for many reasons, including looking for conflicting commands.
+-----------------------------------------------------------------------------
+
+& +contents
+------------------------------------------------------------------------------
++contents
+
+  SYNTAX: +contents <thing>
+
+  This commands shows the contents of a given object, room, or player.  It 
+  shows DARK objects.
+----------------------------------------------------------------------------- 
+
+& DEFAULTS 
+------------------------------------------------------------------------------
+Default SGP 
+
+  SGP comes with a given list of commands and helpfiles.  The default 
+  configuration of the code is found in the SGP Installer.  This configuration 
+  accounts for base globals and doesn't include those commands that would be 
+  only useful in a roleplaying environment.  To add the RP specific code, 
+  quote the RPPack file in the same that you did the installer.  It will write 
+  them directly to the required objects.
+  
+  This code does not include a bulletin board system.  If you choose to use 
+  Myrrdin's BBS system, you may simply add the text version of +help to the 
+  file and add the specific topics to the listing in the index at the top of 
+  this file.  Other BBS systems may or may not have helpfiles that are 
+  MUX-ready. 
+
+  Helpfiles for MUX are set up as .txt files and are placed in the game/text/ 
+  directory of your master account as 'staffhelp.txt' and 'plushelp.txt'.  
+  Use mkindx and then @readcache within the MUX to bring changes into the 
+  files read by the game.  These files may be used by Penn and TinyMUSH 2.2 
+  games with hardcoded +help commands, though there will be additions required 
+  for Tiny that are not needed for Penn.
+-----------------------------------------------------------------------------
+
+& +duty 
+------------------------------------------------------------------------------
++duty
+
+  SYNTAX: +duty
+
+  This sets a staff member as being either On or Off duty.  
+-----------------------------------------------------------------------------
+
+& FUNCTIONS
+------------------------------------------------------------------------------
+Softcoded Functions:
+
+  Functions: isstaff(<dbref>)   
+
+    Returns 1 or 0 when player matches the flags defined as 'staff'
+    
+             ostaff(<dbref>)    
+    
+    Softcoded function that checks to see if <dbref> against the official 
+    staff list as listed on the Global Parent.
+    
+             andlist(<string>,<delimiter>) 
+
+    Returns a string as a comma separated list with 'and' between second to 
+    last and last elements.
+-----------------------------------------------------------------------------
+
+& +motd
+------------------------------------------------------------------------------
++motd
+
+  SYNTAX: +motd/list
+          +motd/set <type>=<message>
+          +motd/del <type>=<MOTD #>
+          +motd/reset   
+
+  This code allows for easier manipulation of the @motd command and the use of 
+  softcoded MOTD to create semi-permanent MOTD.  
+  
+  The first command lists the stored MOTD messages in order from oldest to 
+  newest, by MOTD type.  The types listed are: general, wizard, down, and 
+  full.  
+  
+  The second command sets an MOTD attribute to the global parent.  You select 
+  the type from the above list and set the message of your choosing.  
+        
+  >     +motd/set general=This is an MOTD.
+
+  The third command removes a selected MOTD # from a given MOTD listing.  In 
+  the above example, the message number is 1 in the general list. 
+
+  > +motd/del general=1 
+  
+  The last command resets the +motd system so that the game will read the 
+  MOTDs appropriately.  This code is called as part of the @startup for the 
+  object. 
+------------------------------------------------------------------------------
+
+& +join
+------------------------------------------------------------------------------
++join
+
+  SYNTAX: +join <name>
+
+  Allows a staff member to join a player where they are on the game.
+  Please note that it is considered polite to page the player in advance to 
+  inform them of the pending visit.
+
+  See Also: +summon
+-----------------------------------------------------------------------------  
+
+& PROJECT 
+------------------------------------------------------------------------------
+Project Status Tracker Help                             
+        
+  SYNTAX:  +setproject <project name>/<coder name>/<status>
+           +viewprojects
+           +editproject <project name>/who=<coder name>
+           +editproject <project name>/status=<status>
+           +deleteproject <project name>
+           +trackerhelp -- Gets this screen.
+
+  This code assists in the management of game-related projects.  The project 
+  name, and the other fields, can have spaces in them.
+-----------------------------------------------------------------------------
+
+& +register
+------------------------------------------------------------------------------
++register
+
+  SYNTAX: +register <character>=<RL name>=<email>=<alts>
+
+  The RL name must be their FULL name, first and last. Alts can be none.
+-----------------------------------------------------------------------------
+
+& +rjoin
+------------------------------------------------------------------------------
++rjoin
+
+  SYNTAX: +rjoin
+
+  Sends a staff member back to where they had been previously.  Use this 
+  command when you want to go somewhere other than your home.
+  
+  See Also: +join
+-----------------------------------------------------------------------------
+
+& +rsummon
+------------------------------------------------------------------------------
++rsummon
+
+  SYNTAX: +rsummon <player> 
+
+  Allows a staff member to send a player back to the location they were when 
+  they were originally summoned.
+  
+  See Also: +summon
+-----------------------------------------------------------------------------
+
+& +stnotes
+------------------------------------------------------------------------------
+STNOTES
+
+  SYNTAX: +stnotes
+          +stnotes <object>
+          +setnote <object>/<note>=<text> (Wiz Only)
+          +setnote/vis <object>/<note>=<text> (Wiz Only)
+
+  The first form searches the current local and lists out any players, 
+  objects, or exits that have STnotes set on them (the room is checked as 
+  well). The second form displays all the STnotes set on a player or object. 
+  The third form is used to set an STnote on an object or person. To clear an 
+  existing note, use the third form of the command with no text. Normally the 
+  judge note created is not visible to the owner of the object. 
+
+  If you want to set a note that is also visible to the object owner, use the 
+  /vis switch on the +setnote command.
+-----------------------------------------------------------------------------
+
+& +summon
+------------------------------------------------------------------------------
++summon
+
+  SYNTAX: +summon <player>
+
+  Allows a staff member to summon a player object to their current location.  
+  Please note that it is considered polite to page the player in advance to 
+  inform them of the pending summons.
+  
+  See Also: +rsummon, +join
+-----------------------------------------------------------------------------
+
+& +timestamp
+------------------------------------------------------------------------------
++timestamp
+
+  SYNTAX:  +timestamp <name>/<topic>=<note>  - Sets a timestamp on a given 
+                                               player for a given topic and 
+                                               reason.
+           +timestamp/read <name>            - Lets staff read all timestamps 
+                                               on a given player.
+           +timestamp/rem <name>/<topic>     - Removes a given timestamp 
+                                               attribute from a player.
+           +timestamp/showall                - Shows all currently set 
+                                               timestamps.  Can be spammy.
+-----------------------------------------------------------------------------
+
