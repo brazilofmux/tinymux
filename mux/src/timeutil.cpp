@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.35 2004-06-10 15:27:14 sdennis Exp $
+// $Id: timeutil.cpp,v 1.36 2004-07-07 18:01:44 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -543,9 +543,9 @@ bool ParseFractionalSecondsString(INT64 &i64, char *str)
     }
 
 #define PFSS_PRECISION 7
-    char aBuffer[64];
-    int  nBufferAvailable = sizeof(aBuffer) - PFSS_PRECISION - 1;
-    char *p = aBuffer;
+    char   aBuffer[64];
+    size_t nBufferAvailable = sizeof(aBuffer) - PFSS_PRECISION - 1;
+    char  *p = aBuffer;
 
     // Sign.
     //
@@ -558,7 +558,7 @@ bool ParseFractionalSecondsString(INT64 &i64, char *str)
     // Integer part.
     //
     bool bOverUnderflow = false;
-    int n = pIntegerEnd - pIntegerStart;
+    size_t n = pIntegerEnd - pIntegerStart;
     if (n > 0)
     {
         if (n > nBufferAvailable)
@@ -2309,7 +2309,7 @@ typedef struct tag_pd_node
 #define PDTT_NUMERIC_SIGNED   5 // [+-][0-9]+
     unsigned  uTokenType;
     char     *pToken;
-    unsigned  nToken;
+    size_t    nToken;
     int       iToken;
 
     // Link to previous and next node.
@@ -2380,7 +2380,7 @@ typedef struct tag_AllFields
 
 // isValidYear assumes numeric string.
 //
-bool isValidYear(int nStr, char *pStr, int iValue)
+bool isValidYear(size_t nStr, char *pStr, int iValue)
 {
     // Year may be Y, YY, YYY, YYYY, or YYYYY.
     // Negative and zero years are permitted in general, but we aren't
@@ -2393,7 +2393,7 @@ bool isValidYear(int nStr, char *pStr, int iValue)
     return false;
 }
 
-bool isValidMonth(int nStr, char *pStr, int iValue)
+bool isValidMonth(size_t nStr, char *pStr, int iValue)
 {
     // Month may be 1 through 9, 01 through 09, 10, 11, or 12.
     //
@@ -2405,7 +2405,7 @@ bool isValidMonth(int nStr, char *pStr, int iValue)
     return false;
 }
 
-bool isValidDayOfMonth(int nStr, char *pStr, int iValue)
+bool isValidDayOfMonth(size_t nStr, char *pStr, int iValue)
 {
     // Day Of Month may be 1 through 9, 01 through 09, 10 through 19,
     // 20 through 29, 30, and 31.
@@ -2418,7 +2418,7 @@ bool isValidDayOfMonth(int nStr, char *pStr, int iValue)
     return false;
 }
 
-bool isValidDayOfWeek(int nStr, char *pStr, int iValue)
+bool isValidDayOfWeek(size_t nStr, char *pStr, int iValue)
 {
     // Day Of Week may be 1 through 7.
     //
@@ -2430,7 +2430,7 @@ bool isValidDayOfWeek(int nStr, char *pStr, int iValue)
     return false;
 }
 
-bool isValidDayOfYear(int nStr, char *pStr, int iValue)
+bool isValidDayOfYear(size_t nStr, char *pStr, int iValue)
 {
     // Day Of Year 001 through 366
     //
@@ -2442,7 +2442,7 @@ bool isValidDayOfYear(int nStr, char *pStr, int iValue)
     return false;
 }
 
-bool isValidWeekOfYear(int nStr, char *pStr, int iValue)
+bool isValidWeekOfYear(size_t nStr, char *pStr, int iValue)
 {
     // Week Of Year may be 01 through 53.
     //
@@ -2454,7 +2454,7 @@ bool isValidWeekOfYear(int nStr, char *pStr, int iValue)
     return false;
 }
 
-bool isValidHour(int nStr, char *pStr, int iValue)
+bool isValidHour(size_t nStr, char *pStr, int iValue)
 {
     // Hour may be 0 through 9, 00 through 09, 10 through 19, 20 through 24.
     //
@@ -2466,7 +2466,7 @@ bool isValidHour(int nStr, char *pStr, int iValue)
     return false;
 }
 
-bool isValidMinute(int nStr, char *pStr, int iValue)
+bool isValidMinute(size_t nStr, char *pStr, int iValue)
 {
     // Minute may be 00 through 59.
     //
@@ -2478,7 +2478,7 @@ bool isValidMinute(int nStr, char *pStr, int iValue)
     return false;
 }
 
-bool isValidSecond(int nStr, char *pStr, int iValue)
+bool isValidSecond(size_t nStr, char *pStr, int iValue)
 {
     // Second may be 00 through 59. Leap seconds represented
     // by '60' are not dealt with.
@@ -2491,7 +2491,7 @@ bool isValidSecond(int nStr, char *pStr, int iValue)
     return false;
 }
 
-bool isValidSubSecond(int nStr, char *pStr, int iValue)
+bool isValidSubSecond(size_t nStr, char *pStr, int iValue)
 {
     // Sub seconds can really be anything, but we limit
     // it's precision to 100 ns.
@@ -2505,7 +2505,7 @@ bool isValidSubSecond(int nStr, char *pStr, int iValue)
 
 // This function handles H, HH, HMM, HHMM, HMMSS, HHMMSS
 //
-bool isValidHMS(int nStr, char *pStr, int iValue)
+bool isValidHMS(size_t nStr, char *pStr, int iValue)
 {
     int iHour, iMinutes, iSeconds;
     switch (nStr)
@@ -2601,7 +2601,7 @@ void BreakDownHMS(PD_Node *pNode)
 
 // This function handles YYMMDD, YYYMMDD, YYYYMMDD, YYYYYMMDD
 //
-bool isValidYMD(int nStr, char *pStr, int iValue)
+bool isValidYMD(size_t nStr, char *pStr, int iValue)
 {
     int iYear = iValue / 10000;
     iValue -= 10000 * iYear;
@@ -2629,7 +2629,7 @@ void BreakDownYMD(PD_Node *pNode)
 
 // This function handles MMDDYY
 //
-bool isValidMDY(int nStr, char *pStr, int iValue)
+bool isValidMDY(size_t nStr, char *pStr, int iValue)
 {
     int iMonth = iValue / 10000;
     iValue -= 10000 * iMonth;
@@ -2658,7 +2658,7 @@ void BreakDownMDY(PD_Node *pNode)
 
 // This function handles DDMMYY
 //
-bool isValidDMY(int nStr, char *pStr, int iValue)
+bool isValidDMY(size_t nStr, char *pStr, int iValue)
 {
     int iDay = iValue / 10000;
     iValue -= 10000 * iDay;
@@ -2687,7 +2687,7 @@ void BreakDownDMY(PD_Node *pNode)
 
 // This function handles YDDD, YYDDD, YYYDDD, YYYYDDD, YYYYYDDD
 //
-bool isValidYD(int nStr, char *pStr, int iValue)
+bool isValidYD(size_t nStr, char *pStr, int iValue)
 {
     int iYear = iValue / 1000;
     iValue -= 1000*iYear;
@@ -2723,7 +2723,7 @@ const int InitialCouldBe[9] =
     PDCB_YMD  // 9
 };
 
-typedef bool PVALIDFUNC(int nStr, char *pStr, int iValue);
+typedef bool PVALIDFUNC(size_t nStr, char *pStr, int iValue);
 
 typedef struct tag_pd_numeric_valid
 {
@@ -2756,9 +2756,9 @@ const NUMERIC_VALID_RECORD NumericSet[] =
 //
 void ClassifyNumericToken(PD_Node *pNode)
 {
-    int   nToken = pNode->nToken;
-    char *pToken = pNode->pToken;
-    int   iToken = pNode->iToken;
+    size_t nToken = pNode->nToken;
+    char  *pToken = pNode->pToken;
+    int    iToken = pNode->iToken;
 
     unsigned int uCouldBe = InitialCouldBe[nToken-1];
 
@@ -3090,7 +3090,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
         }
         pNode->pNextNode = 0;
         pNode->pPrevNode = 0;
-        unsigned int nLen = p - pSave;
+        size_t nLen = p - pSave;
         pNode->nToken = nLen;
         pNode->pToken = pSave;
         pNode->iToken = 0;
