@@ -1862,7 +1862,37 @@
  
   @mail/quick <player-list>/<subject> = <message>
         Sends <message> to the list of players.
+
+  See mail-sending3.
   
+& mail-sending3
+
+  @mail/reply[/quote] <message>
+        This starts a working message to the person who sent you <msg>.
+
+  @mail/replyall[/quote]
+        This starts a working message to the person who sent you <msg>
+        and to every other recipient of <message>.
+
+  In both cases, because this is a reply, the subject line will be:
+  
+        'Re: <subject line from original message>'
+
+  Also, in both cases, if /quote is specified, the original message
+  will be quoted into the working message with a header and footer much
+  like the following:
+  
+        On Thu Apr 27 21:33:04 2000, Gordon wrote:
+  
+        <quoted message from original message>
+  
+        ********** End of included message from Gordon
+
+  You can add additional text above or below the quoted material with
+  the postpend ('-') and prepend ('~') @mail commands. Like, normal
+  outgoing @mail, the reply is finished and sent with '--' on a line
+  by itself
+
 & mail-other
 
   @mail/clear [<msg-list | all>]
@@ -5024,58 +5054,59 @@ We would like to thank the following people:
   Help is available for the following functions:
     ABS()       ACOS()      ADD()       AFTER()     ALPHAMAX()  ALPHAMIN()
     AND()       ANDFLAGS()  ANSI()      APOSS()     ART()       ASIN()
-    ATAN()      BEEP()      BEFORE()    CAPSTR()    CASE()      CAT()
-    CEIL()      CENTER()    CHANNELS()  CHILDREN()  COLUMNS()   COMALIAS()
-    COMP()      COMTITLE()  CON()       CONN()      CONTROLS()  CONVSECS()
-    CONVTIME()  COS()       CREATE()    CWHO()      DEC()       DECRYPT()
-    DEFAULT()   DELETE()    DIE()       DIST2D()    DIST3D()    DIV()
-    DOING()     E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()
-    EMPTY()     ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()
-    EXTRACT()   EVAL()      FDIV()      FILTER()    FINDABLE()  FIRST()
-    FLAGS()     FLOOR()     FOLD()      FOREACH()   FULLNAME()  GET()
-    GET_EVAL()  GRAB()      GREP()      GREPI()     GT()        GTE()
-    HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()   HOME()
-    IADD()      IDIV()      IDLE()      IFELSE()    IMUL()      INC()
-    INDEX()     INSERT()    INZONE()    ISDBREF()   ISNUM()     ISUB()
-    ISWORD()    ITER()      ITEMS()     LAST()      LATTR()     LCON()
-    LCSTR()     LDELETE()   LEXITS()    LIST()      LIT()       LJUST()
-    LN()        LNUM()      LOC()       LOCATE()    LOCK()      LOG()
-    LPARENT()   LPOS()      LSTACK()    LT()        LTE()       LWHO()
+    ATAN()      BAND()      BEEP()      BEFORE()    BNAND()     BOR()
+    CAPSTR()    CASE()      CAT()       CEIL()      CENTER()    CHANNELS()
+    CHILDREN()  COLUMNS()   COMALIAS()  COMP()      COMTITLE()  CON()
+    CONN()      CONTROLS()  CONVSECS()  CONVTIME()  COS()       CREATE()
+    CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()    DIE()
+    DIST2D()    DIST3D()    DIV()       DOING()     E()         EDEFAULT()
+    EDIT()      ELEMENTS()  ELOCK()     EMPTY()     ENCRYPT()   EQ()
+    ESCAPE()    EXIT()      EXP()       EXTRACT()   EVAL()      FDIV()
+    FILTER()    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FOLD()
+    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()
+    GREPI()     GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()
+    HASPOWER()  HASTYPE()   HOME()      IADD()      IDIV()      IDLE()
+    IFELSE()    IMUL()      INC()       INDEX()     INSERT()    INZONE()
+    ISDBREF()   ISNUM()     ISUB()      ISWORD()    ITER()      ITEMS()
+    LAST()      LATTR()     LCON()      LCSTR()     LDELETE()   LEXITS()
+    LIST()      LIT()       LJUST()     LN()        LNUM()      LOC()
+    LOCATE()    LOCK()      LOG()       LPARENT()   LPOS()      LSTACK()
+    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAP()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
  
-    MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()
-    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
-    MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()
-    NEARBY()    NEQ()       NEXT()      NOT()       NUM()       OBJ()
-    OBJEVAL()   OBJMEM()    OR()        ORFLAGS()   OWNER()     PARENT()
-    PARSE()     PEEK()      PEMIT()     PI()        PLAYMEM()   PMATCH()
-    POLL()      POP()       PORTS()     POS()       POSS()      POWER()
-    PUSH()      R()         RAND()      REGMATCH()  REMOVE()    REPEAT()
-    REPLACE()   REST()      REVERSE()   REVWORDS()  RJUST()     RLOC()
-    ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()
-    SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
-    SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
-    SORT()      SORTBY()    SPACE()     SPLICE()    SQRT()      SQUISH()
-    STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()
-    STRTRUNC()  SUB()       SUBJ()      SWITCH()    TAN()       TIME()
-    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         ULOCAL()
-    UCSTR()     UDEFAULT()  V()         VADD()      VCROSS()    VDIM()
-    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
-    VUNIT()     WHERE()     WORDPOS()   WORDS()     XGET()      XOR()
-    ZONE()      ZWHO()
+    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
+    MIN()       MIX()       MOD()       MONEY()     MOTD()      MUDNAME()
+    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
+    NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()    OR()
+    ORFLAGS()   OWNER()     PARENT()    PARSE()     PEEK()      PEMIT()
+    PI()        PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()
+    POS()       POSS()      POWER()     PUSH()      R()         RAND()
+    REGMATCH()  REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
+    REVWORDS()  RJUST()     RLOC()      ROOM()      ROUND()     S()
+    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
+    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
+    SHUFFLE()   SIGN()      SIN()       SORT()      SORTBY()    SPACE()
+    SPLICE()    SQRT()      SQUISH()    STARTTIME() STATS()     STRCAT()
+    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBJ()
+    SWITCH()    TAN()       TIME()      TRANSLATE() TRIM()      TRUNC()
+    TYPE()      U()         ULOCAL()    UCSTR()     UDEFAULT()  V()
+    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
+    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
+    WORDPOS()   WORDS()     XGET()      XOR()       ZONE()      ZWHO()
   
 & FUNCTION CLASSES
 
   Topic: FUNCTION CLASSES
  
-  Arithmetic:                ABS ADD DEC DIE DIV FDIV IADD IDIV IMUL INC
-                             ISUB MOD MUL POWER RAND SHL SHR SIGN SUB SQRT
+  Arithmetic:                ABS ADD BAND BNAND BOR DEC DIE DIV FDIV IADD IDIV
+                             IMUL INC ISUB MOD MUL POWER RAND SHL SHR SIGN SUB
+                             SQRT
   Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
-  Database Information:      EXIT INZONE LOC LOCATE NEARBY NEXT NUM RLOC ROOM
-                             SEARCH STATS WHERE MAIL ZONE ZWHO
+  Database Information:      EXIT INZONE LOC LOCATE MAIL NEARBY NEXT NUM RLOC
+                             ROOM SEARCH STATS VALID WHERE ZONE ZWHO
   Floating Point Conversion: FLOOR ROUND TRUNC
   Game Information:          CWHO MOTD MUDNAME POLL VERSION
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
@@ -5086,7 +5117,7 @@ We would like to thank the following people:
   Logarithms:                E EXP LOG LN
   Logical:                   AND NOT OR XOR
   Miscellaneous:             ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM ISWORD
-                             LIT SETR
+                             LIT SETR SUBEVAL
  
 { 'help function classes2' for more }
  
@@ -5095,16 +5126,17 @@ We would like to thank the following people:
   Object Information:        ANDFLAGS APOSS CONTROLS DEFAULT EDEFAULT ELOCK
                              FLAGS GET GET_EVAL GREP GREPI HASATTR HASATTRP
                              HASFLAG HASPOWER HASTYPE HOME LATTR LCON LEXITS
-                             LPARENT LOCK MONEY NAME OBJ OBJEVAL
-                             OBJMEM ORFLAGS OWNER PARENT PMATCH POSS S SUBJ
-                             TYPE U UDEFAULT ULOCAL V VISIBLE
-  Player Information:        CONN DOING FINDABLE IDLE LWHO PLAYMEM PORTS
+                             LPARENT LOCK MONEY NAME OBJ OBJEVAL OBJMEM
+                             ORFLAGS OWNER PARENT PMATCH POSS S SUBJ TYPE U
+                             UDEFAULT ULOCAL V VISIBLE
+  Player Information:        CONN DOING FINDABLE IDLE LWHO PLAYMEM PORTS 
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ SORT
+  Side-Effect Functions:     LINK TEL
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CAT COMP
                              DELETE EDIT ESCAPE IFELSE LCSTR LPOS MERGE MID
                              POS REPEAT REPLACE REVERSE SCRAMBLE SECURE
                              SPACE SQUISH STRCAT STRLEN STRMATCH TRANSLATE
-                             STRTRUNC SWITCH UCSTR ENCRYPT DECRYPT
+                             STRTRUNC SWITCH UCSTR ENCRYPT DECRYPT VALID
   Time:                      CONVSECS CONVTIME SECS STARTTIME TIME
   Trigonometry:              ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
                              VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
@@ -5825,16 +5857,108 @@ We would like to thank the following people:
   Returns 1 if the object is of the named type, otherwise 0.
   Valid types are: ROOM, EXIT, PLAYER, THING.
   If an invalid type is given, #-1 is returned.
+
 & SHL()
   shl(<number>,<count>)
 
   Performs a leftwards bit-shift on <number>, shifting it <count> times.
-  This is equivalent to mul(<number>,pow(2,<count>), but much faster.
+  This is equivalent to imul(<number>,pow(2,<count>), but much faster.
+
+    > think shl(2,10)
+    2048
+
+  See also: shr(), band(), bnand(), bor().
+
 & SHR()
   shr(<number>,<count>)
 
   Performs a rightwards bit-shift on <number>, shifting it <count> times.
   This is equivalent to div(<number>,pow(2,<count>), but much faster.
+
+    > think shr(1309,5)
+    40
+
+  See also: shl(), band(), bnand(), bor().
+
+& BAND()
+  band(<number>, <number>)
+ 
+  Both arguments are an integer that is treated as a bitfield. It
+  performs a bitwise logical AND between these two bitfields and
+  returns the resulting bitfield as an integer which can be further
+  treated as an integer, a bitfield, or a logical boolean depending
+  on your intentions.
+
+     > think band(922,785)
+     784
+
+  In the above example, 922 in base 10 is equivalent to 39A in base
+  16 or 0011 1001 1010 in base 2. Likewise, 785 in base 10 is the same
+  as 311 in base 16 and or 0011 0001 0001 in base 2.
+
+         0011 1001 1010 (922)
+  (BAND) 0011 0001 0001 (785)
+         --------------
+         0011 0001 0000 (784)
+
+  The result may be expressed as 310 in base 16 or 784 in base 10.
+
+  So, this function is useful for testing whether a particular bit in
+  the field is 'on' or 'off'. More than one bit can be tested at a
+  time. If all bits are 'off', the result is zero which can also be
+  interpreted as a boolean false in softcode.
+ 
+  See also: shl(), shr(), bnand(), bor().
+ 
+& BNAND()
+  band(<number1>, <number2>)
+
+  Both arguments are an integer that is treated as a bitfield. It
+  performs a bitwise logical AND between <number1> and the complement
+  of <number2> which has the effect of forcing certain bits in
+  <number1> off in the result.
+
+     > think bnand(922,785)
+     138
+
+  In the above example, 922 in base 10 is equivalent to 39A in base
+  16 or 0011 1001 1010 in base 2. Likewise, 785 in base 10 is the same
+  as 311 in base 16 and or 0011 0001 0001 in base 2. The complement
+  of 785 (specifically the one's complement) is 1100 1110 1110 in base
+  2, and is a simple bitwise reversal of 1's and 0's.
+
+          0011 1001 1010 (922)
+  (BAND)  1100 1110 1110 (Complement of 785)
+          --------------
+          0000 1000 1010 (138)
+
+  The result may be expressed as 08A in base 16 or 138 in base 10.
+
+  See also: shl(), shr(), band(), bor().
+ 
+& BOR()
+  bor(<number>, <number>)
+ 
+  Both arguments are an integer that is treated as a bitfield. It
+  performs a bitwise logical OR which has the effect of forcing certain
+  bits on in the result.
+
+     > think bor(922,785)
+     923
+
+  In the above example, 922 in base 10 is equivalent to 39A in base
+  16 or 0011 1001 1010 in base 2. Likewise, 785 in base 10 is the same
+  as 311 in base 16 and or 0011 0001 0001 in base 2.
+
+         0011 1001 1010 (922)
+  (BOR)  0011 0001 0001 (785)
+         --------------
+         0011 1001 1011 (923)
+
+  The result may be expressed as 39B in base 16 or 923 in base 10.
+ 
+  See also: shl(), shr(), band(), bnand().
+ 
 & VADD()
   vadd(<vector>,<vector>[,<delim>][,<output delim>])
  
@@ -8866,7 +8990,7 @@ We would like to thank the following people:
  
 & MOTD()
  
-  Function: motd(<player>)
+  Function: motd()
  
   motd() returns the current MOTD as set using @motd.
  
@@ -8993,3 +9117,51 @@ We would like to thank the following people:
   to see, respectively. 
 
   
+& LINK()
+LINK()
+
+  Function: link(<name>,<destination>)
+  Works the same as @link, <name> and <destination> are equivalent to what
+  comes before and after the '=' sign. Returns nothing. This is a side
+  effect function, and should only be used when necessary.
+
+  Related Topics: @link
+
+& SUBEVAL()
+SUBEVAL()
+
+  Function: subeval(<string>)
+  This function's usefulness is primarily useful in conjunction with
+  v() as a way to control when evalution occurs. Escapes are
+  evaluated, but and functions are not. The location escape is also
+  not evaluated.
+
+  When used from the command line, it's use is limited to nil because
+  evaluation of subeval's parameters occurs before the subeval()
+  function is called.
+
+& TEL()
+TEL()
+
+  Function: tel(<name>,<destination>)
+  Works the same as @tel, <name> and <destination> are equivalent to what
+  comes before and after the '=' sign. Returns nothing. This is a side
+  effect function, and should only be used when necessary.
+
+  Related Topics: @teleport
+
+
+& VALID()
+VALID()
+
+  Function: valid(<name>,<argument>)
+  This returns true or false depending on whether the characters and
+  arrangement of characters in <argument> satisfy the restrictions
+  implied by <name>
+
+  For example, A <name> of 'name' causes <argument> to be validated as
+  an object name. Valid() does not check the database for existance and
+  it does not guarantee that if you try to create such an object that
+  the attempt will succeed. It only looks at <argument> as a string
+  of characters.
+
