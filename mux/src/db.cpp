@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.27 2002-07-29 12:30:26 jake Exp $
+// $Id: db.cpp,v 1.28 2002-07-29 13:56:53 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -540,6 +540,7 @@ char *PureName(dbref thing)
 void s_Name(dbref thing, char *s)
 {
     atr_add_raw(thing, A_NAME, s);
+    set_modified(thing);
 #ifndef MEMORY_BASED
     set_string(&names[thing], s);
 #endif // !MEMORY_BASED
