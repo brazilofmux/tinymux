@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.4 2003-01-31 06:41:36 sdennis Exp $
+// $Id: funceval.cpp,v 1.5 2003-01-31 07:07:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2857,8 +2857,7 @@ FUNCTION(fun_pack)
 FUNCTION(fun_strcat)
 {
     int i;
-    safe_str(fargs[0], buff, bufc);
-    for (i = 1; i < nfargs; i++)
+    for (i = 0; i < nfargs; i++)
     {
         safe_str(fargs[i], buff, bufc);
     }
