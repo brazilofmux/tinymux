@@ -3,7 +3,7 @@
  * player_c.c -- Player cache routines 
  */
 /*
- * $Id: player_c.cpp,v 1.1 2000-04-11 07:14:46 sdennis Exp $ 
+ * $Id: player_c.cpp,v 1.2 2000-04-13 08:08:31 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -229,7 +229,11 @@ int Pennies(dbref obj)
     }
 #endif
     cp = atr_get_raw(obj, A_MONEY);
-    return (safe_atoi(cp));
+    if (cp)
+    {
+        return Tiny_atol(cp);
+    }
+    return 0;
 }
 
 void s_Pennies(dbref obj, int howfew)
