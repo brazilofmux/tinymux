@@ -42,8 +42,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /G6 /Gr /MT /W3 /GX /Ox /Ot /Oa /Og /Oi /Oy /Ob2 /Gf /Gy /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "WOD_REALMS" /FR /YX /FD /c
-# SUBTRACT CPP /Z<none> /Os
+# ADD CPP /nologo /G6 /Gr /MT /W3 /GX /Ox /Ot /Oa /Og /Oi /Ob2 /Gf /Gy /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "WOD_REALMS" /FR /YX /FD /c
+# SUBTRACT CPP /Os
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -386,10 +386,6 @@ SOURCE=.\htab.h
 # Begin Source File
 
 SOURCE=.\interface.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\macro.h
 # End Source File
 # Begin Source File
 
