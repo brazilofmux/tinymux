@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.20 2003-04-26 07:24:35 sdennis Exp $
+// $Id: mail.cpp,v 1.21 2003-04-26 07:25:21 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1104,7 +1104,7 @@ char *MakeCanonicalMailAlias
 (
     char *pMailAlias,
     int *pnValidMailAlias,
-    BOOL *pbValidMailAlias
+    bool *pbValidMailAlias
 )
 {
     static char Buffer[SIZEOF_MALIAS];
