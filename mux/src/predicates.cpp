@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.12 2002-06-14 05:52:32 sdennis Exp $
+// $Id: predicates.cpp,v 1.13 2002-06-14 05:54:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1531,7 +1531,7 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
 
     int mDeny = 0;
     int mAllow = AF_VISUAL;
-    if (WizRoy(executor)
+    if (WizRoy(executor))
     {
         if (God(executor))
         {
@@ -1543,7 +1543,7 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
         }
     }
     else if (  Examinable(executor, target)
-            || owner(executor) == aowner)
+            || Owner(executor) == aowner)
     {
         mDeny = AF_INTERNAL|AF_DARK|AF_MDARK;
     }
