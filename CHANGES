@@ -161,6 +161,8 @@ Bug Fixes:
     system calls after a signal were mentioned as being affected.
  -- Bug #624 - delcom now deletes aliases without removing you completely
     from the channel. addcom warnings also removed.
+ -- Objects could use flags() to see CONNECTED flag of DARK WIZARDs.
+ -- scramble() strips ANSI now.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,6 +203,7 @@ Cosmetic Changes:
     hardtabs.
  -- Remove unused sections of #ifdef'ed out code.
  -- @pcreate and @robot now report the created dbref.
+ -- say command now emits 'You say, "..."' instead of 'You say "..."'.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
