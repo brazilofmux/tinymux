@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.8 2002-07-17 03:46:30 sdennis Exp $
+// $Id: stringutil.h,v 1.9 2002-07-18 19:09:52 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -105,7 +105,7 @@ struct ANSI_Out_Context
 void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, int iEndGoal);
 void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, char *pField, int nField, int vwMax, int iEndGoal);
 void ANSI_String_Skip(struct ANSI_In_Context *pacIn, int maxVisualWidth, int *pnVisualWidth);
-void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, int nField, int vwMax);
+void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, int vwMax);
 int ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, int *pnVisualWidth);
 int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, int iEndGoal);
 extern char *strip_ansi(const char *szString, unsigned int *pnString = 0);

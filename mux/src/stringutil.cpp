@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.11 2002-07-17 03:46:30 sdennis Exp $
+// $Id: stringutil.cpp,v 1.12 2002-07-18 19:09:52 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -950,7 +950,6 @@ void ANSI_String_Copy
 (
     struct ANSI_Out_Context *pacOut,
     struct ANSI_In_Context  *pacIn,
-    int nSize0,
     int maxVisualWidth0
 )
 {
@@ -974,10 +973,6 @@ void ANSI_String_Copy
     // What is the working limit for field size.
     //
     int nMax = pacOut->m_nMax;
-    if (nSize0 < nMax)
-    {
-        nMax = nSize0;
-    }
 
     char *pField = pacOut->m_p;
     while (pacIn->m_n)
@@ -1090,12 +1085,10 @@ void ANSI_String_Copy
                 {
                     // Was size limit related to the session or the call?
                     //
-                    if (nMax != nSize0)
-                    {
-                        pacOut->m_bDone = TRUE;
-                    }
+                    pacOut->m_bDone = TRUE;
                 }
                 pacOut->m_n += pField - pacOut->m_p;
+                pacOut->m_nMax -= pField - pacOut->m_p;
                 pacOut->m_p  = pField;
                 pacOut->m_vw += vw;
                 return;
@@ -1134,6 +1127,7 @@ void ANSI_String_Copy
         }
     }
     pacOut->m_n += pField - pacOut->m_p;
+    pacOut->m_nMax -= pField - pacOut->m_p;
     pacOut->m_p  = pField;
     pacOut->m_vw += vw;
 }
@@ -1188,7 +1182,7 @@ int ANSI_TruncateToField
     struct ANSI_Out_Context aoc;
     ANSI_String_In_Init(&aic, szString, iEndGoal);
     ANSI_String_Out_Init(&aoc, pField0, nField, maxVisualWidth, iEndGoal);
-    ANSI_String_Copy(&aoc, &aic, nField, maxVisualWidth);
+    ANSI_String_Copy(&aoc, &aic, maxVisualWidth);
     return ANSI_String_Finalize(&aoc, pnVisualWidth);
 }
 

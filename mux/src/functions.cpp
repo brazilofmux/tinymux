@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.60 2002-07-17 06:58:14 sdennis Exp $
+// $Id: functions.cpp,v 1.61 2002-07-18 19:09:52 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1725,7 +1725,7 @@ FUNCTION(fun_mid)
     struct ANSI_Out_Context aoc;
     int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable, nLength, ANSI_ENDGOAL_NORMAL);
-    ANSI_String_Copy(&aoc, &aic, nBufferAvailable, nLength);
+    ANSI_String_Copy(&aoc, &aic, nLength);
     int nSize = ANSI_String_Finalize(&aoc, &nDone);
     *bufc += nSize;
 }
@@ -1770,7 +1770,7 @@ FUNCTION(fun_right)
     struct ANSI_Out_Context aoc;
     int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable, nLength, ANSI_ENDGOAL_NORMAL);
-    ANSI_String_Copy(&aoc, &aic, nBufferAvailable, nLength);
+    ANSI_String_Copy(&aoc, &aic, nLength);
     int nSize = ANSI_String_Finalize(&aoc, &nDone);
     *bufc += nSize;
 }
@@ -7260,7 +7260,7 @@ void centerjustcombo
         char *p = RemoveSetOfCharacters(fargs[2], "\r\n\t");
         ANSI_String_In_Init(&aic, p, ANSI_ENDGOAL_NORMAL);
         ANSI_String_Out_Init(&aoc, aPad, sizeof(aPad), sizeof(aPad), ANSI_ENDGOAL_LEAK);
-        ANSI_String_Copy(&aoc, &aic, sizeof(aPad), sizeof(aPad));
+        ANSI_String_Copy(&aoc, &aic, sizeof(aPad));
         nPad = ANSI_String_Finalize(&aoc, &vwPad);
     }
     if (nPad <= 0)
@@ -7367,7 +7367,7 @@ void centerjustcombo
     for (i = 0; i < nLeadFull; i++)
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, vwPad);
+        ANSI_String_Copy(&aoc, &aic, vwPad);
     }
 
     // Output the partial leading padding segment.
@@ -7375,7 +7375,7 @@ void centerjustcombo
     if (vwLeadPartial > 0)
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, vwLeadPartial);
+        ANSI_String_Copy(&aoc, &aic, vwLeadPartial);
     }
 
     // Output the main string to be centered.
@@ -7383,7 +7383,7 @@ void centerjustcombo
     if (nStr > 0)
     {
         ANSI_String_In_Init(&aic, aStr, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, LBUF_SIZE-1);
+        ANSI_String_Copy(&aoc, &aic, LBUF_SIZE-1);
     }
 
     // Output the first partial trailing padding segment.
@@ -7392,7 +7392,7 @@ void centerjustcombo
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
         ANSI_String_Skip(&aic, vwTrailSkip0, &vwDone);
-        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, LBUF_SIZE-1);
+        ANSI_String_Copy(&aoc, &aic, LBUF_SIZE-1);
     }
 
     // Output the runs of full trailing padding.
@@ -7400,7 +7400,7 @@ void centerjustcombo
     for (i = 0; i < nTrailFull; i++)
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, vwPad);
+        ANSI_String_Copy(&aoc, &aic, vwPad);
     }
 
     // Output the second partial trailing padding segment.
@@ -7408,7 +7408,7 @@ void centerjustcombo
     if (vwTrailPartial1 > 0)
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, vwTrailPartial1);
+        ANSI_String_Copy(&aoc, &aic, vwTrailPartial1);
     }
 
     n = ANSI_String_Finalize(&aoc, &vwDone);
