@@ -10169,9 +10169,9 @@ TRIM()
   Example:
     > say trim(;;;Wacka;;;,,;)
     You say "Wacka"
-    > say trim(%b%b%b Polly Parrot %b%b%b%b,,r)
+    > say trim(%b%b%b Polly Parrot %b%b%b%b,r)
     You say "    Polly Parrot"
-    > say trim(---Trim Rules!---,-,l)
+    > say trim(---Trim Rules!---,l,-)
     You say "Trim Rules!---"
 
   Related Topics: center(), ljust(), rjust().
