@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.21 2001-04-28 19:14:27 sdennis Exp $
+// $Id: eval.cpp,v 1.22 2001-06-05 06:06:45 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1930,6 +1930,25 @@ void save_global_regs
     }
 }
 
+void save_and_clear_global_regs
+(
+    const char *funcname,
+    char *preserve[],
+    int preserve_len[]
+)
+{
+    int i;
+
+    for (i = 0; i < MAX_GLOBAL_REGS; i++)
+    {
+        preserve[i] = mudstate.global_regs[i];
+        preserve_len[i] = mudstate.glob_reg_len[i];
+
+        mudstate.global_regs[i] = NULL;
+        mudstate.glob_reg_len[i] = 0;
+    }
+}
+
 void restore_global_regs
 (
     const char *funcname,
@@ -1943,15 +1962,12 @@ void restore_global_regs
     {
         if (preserve[i])
         {
-            if (!mudstate.global_regs[i])
+            if (mudstate.global_regs[i])
             {
-                mudstate.global_regs[i] = alloc_lbuf(funcname);
+                free_lbuf(mudstate.global_regs[i]);
             }
-            int n = preserve_len[i];
-            memcpy(mudstate.global_regs[i], preserve[i], n);
-            mudstate.global_regs[i][n] = '\0';
-            free_lbuf(preserve[i]);
-            mudstate.glob_reg_len[i] = n;
+            mudstate.global_regs[i] = preserve[i];
+            mudstate.glob_reg_len[i] = preserve_len[i];
         }
         else
         {
