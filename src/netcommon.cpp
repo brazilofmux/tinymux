@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.24 2000-10-24 19:59:52 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.25 2001-02-01 05:32:28 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -554,20 +554,20 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
         {
             *p++ = *msg++;
         }
-        *p = '\0';
-        while (Tiny_IsSpace[(unsigned char)*msg])
-        {
-            msg++;
-        }
-        p = pass;
-        while (  *msg
-              && Tiny_IsASCII[(unsigned char)*msg]
-              && !Tiny_IsSpace[(unsigned char)*msg])
-        {
-            *p++ = *msg++;
-        }
-        *p = '\0';
     }
+    *p = '\0';
+    while (Tiny_IsSpace[(unsigned char)*msg])
+    {
+        msg++;
+    }
+    p = pass;
+    while (  *msg
+          && Tiny_IsASCII[(unsigned char)*msg]
+          && !Tiny_IsSpace[(unsigned char)*msg])
+    {
+        *p++ = *msg++;
+    }
+    *p = '\0';
 }
 
 static void announce_connect(dbref player, DESC *d)
