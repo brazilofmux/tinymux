@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.33 2004-03-17 20:30:08 sdennis Exp $
+// $Id: game.cpp,v 1.34 2004-03-28 17:58:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1874,6 +1874,8 @@ static void process_preload(void)
     free_lbuf(tstr);
 }
 
+#ifndef MEMORY_BASED
+
 /*
  * ---------------------------------------------------------------------------
  * * info: display info about the file being read or written.
@@ -2047,6 +2049,7 @@ void dbconvert(void)
     db_free();
     exit(0);
 }
+#endif // MEMORY_BASED
 
 void write_pidfile(const char *pFilename)
 {   
@@ -2095,18 +2098,26 @@ char *pidfile = "netmux.pid";
 char *pErrorBasename = "";
 bool bServerOption = false;
 
-CLI_OptionEntry OptionTable[12] =
+#ifdef MEMORY_BASED
+#define NUM_CLI_OPTIONS 6
+#else
+#define NUM_CLI_OPTIONS 12
+#endif
+
+CLI_OptionEntry OptionTable[NUM_CLI_OPTIONS] =
 {
     { "c", CLI_REQUIRED, CLI_DO_CONFIG_FILE },
     { "s", CLI_NONE,     CLI_DO_MINIMAL     },
     { "v", CLI_NONE,     CLI_DO_VERSION     },
     { "h", CLI_NONE,     CLI_DO_USAGE       },
+#ifndef MEMORY_BASED
     { "i", CLI_REQUIRED, CLI_DO_INFILE      },
     { "o", CLI_REQUIRED, CLI_DO_OUTFILE     },
     { "k", CLI_NONE,     CLI_DO_CHECK       },
     { "l", CLI_NONE,     CLI_DO_LOAD        },
     { "u", CLI_NONE,     CLI_DO_UNLOAD      },
     { "d", CLI_REQUIRED, CLI_DO_BASENAME    },
+#endif // MEMORY_BASED
     { "p", CLI_REQUIRED, CLI_DO_PID_FILE    },
     { "e", CLI_REQUIRED, CLI_DO_ERRORPATH   }
 };
@@ -2142,6 +2153,7 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
             pErrorBasename = pValue;
             break;
 
+#ifndef MEMORY_BASED
         case CLI_DO_INFILE:
             mudstate.bStandAlone = true;
             standalone_infile = pValue;
@@ -2171,6 +2183,7 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
             mudstate.bStandAlone = true;
             standalone_basename = pValue;
             break;
+#endif
 
         case CLI_DO_USAGE:
         default:
@@ -2214,6 +2227,8 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     CLI_Process(argc, argv, OptionTable,
         sizeof(OptionTable)/sizeof(CLI_OptionEntry), CLI_CallBack);
+
+#ifndef MEMORY_BASED
     if (mudstate.bStandAlone)
     {
         int n = 0;
@@ -2243,7 +2258,10 @@ int DCL_CDECL main(int argc, char *argv[])
             return 0;
         }
     }
-    else if (bVersion)
+    else
+#endif // MEMORY_BASED
+
+    if (bVersion)
     {
         fprintf(stderr, "Version: %s" ENDLINE, mudstate.version);
         return 1;
