@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.11 2002-08-11 21:46:51 jake Exp $
+// $Id: walkdb.cpp,v 1.12 2002-09-28 23:13:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -235,25 +235,29 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int key, char *name)
 
 int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
 {
-    if (Typeof(from_player) != TYPE_PLAYER)
+    if (!isPlayer(from_player))
     {
         from_player = Owner(from_player);
     }
-    if (Typeof(to_player) != TYPE_PLAYER)
+    if (!isPlayer(to_player))
     {
         to_player = Owner(to_player);
     }
-    int i, count, quota_out, quota_in;
-    count = quota_out = quota_in = 0;
-    if ((from_player == GOD) && (acting_player != GOD))
+    int count     = 0;
+    if (  God(from_player)
+       && !God(acting_player))
     {
         notify(acting_player, "Permission denied.");
     }
     else
     {
+        int i;
+        int quota_out = 0;
+        int quota_in  = 0;
         DO_WHOLE_DB(i)
         {
-            if ((Owner(i) == from_player) && (Owner(i) != i))
+            if (  Owner(i) == from_player
+               && Owner(i) != i)
             {
                 switch (Typeof(i))
                 {
