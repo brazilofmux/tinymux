@@ -3144,14 +3144,22 @@ POWERS LIST (continued)
   COMMAND:   @aconnect <object> = <command-list>
   ATTRIBUTE: Aconnect
 
-  Sets the actions to be taken by a player right after connecting to the
-  game.  This attribute is only meaningful for players, and will never be
-  automatically triggered on other object types.
-  It is also possible to check the zone object/objects in the zone parent
-  room for an @aconnect. If one is found, it will be executed when a player
-  connects in that zone.
+  Sets the actions to be taken by a player upon connecting to the MUX. The
+  following steps occur in the following order whenver a player connects to
+  the MUX. Parentage is observed.
 
-  Example: @aconnect me = check.my.mailbox
+   - Execute the connecting player's @aconnect.
+   - Execute the master room's @aconnect.
+   - Execute any @aconnect found on any of the master room's contents.
+   - If the location that the player is connecting into belongs to a zone,
+     then
+
+     a) if the zone object is a thing, execute its @aconnect.
+     b) if the zone object is a room, execute any @aconnect found on any of
+        that room's contents.
+
+  Example:
+    > @aconnect me = check.my.mailbox
 
   Related Topics: @adisconnect.
 
@@ -3186,13 +3194,22 @@ POWERS LIST (continued)
   COMMAND:   @adisconnect <object> = <command-list>
   ATTRIBUTE: Adisconnect
 
-  Sets the actions to be taken by a player right after disconnecting from
-  the game.
+  Sets the actions to be taken by a player upon disconnecting from the MUX.
+  The following steps occur in the following order whenver a player connects
+  to the MUX. Parentage is observed.
 
-  This attribute is only meaningful for players, and will never be
-  automatically triggered on other object types.
+   - Execute the connecting player's @adisconnect.
+   - Execute the master room's @adisconnect.
+   - Execute any @adisconnect found on any of the master room's contents.
+   - If the location that the player is connecting into belongs to a zone,
+     then
 
-  Example: @adisconnect me = home
+     a) if the zone object is a thing, execute its @adisconnect.
+     b) if the zone object is a room, execute any @adisconnect found on any of
+        that room's contents.
+
+  Example:
+    > @adisconnect me = home
 
   Related Topics: @aconnect.
 
@@ -9874,13 +9891,22 @@ SQRT()
 & SQUISH()
 SQUISH()
 
-  FUNCTION: squish(<text>)
+  FUNCTION: squish(<text>[,<character>])
 
-  This function literally 'squishes' the given text, reducing multiple
-  instances of spaces to a single space, after evaluating everything
-  normally.
+  This function replaces multiple occurance <character> in <text> with a
+  single occurance.  If <character> is not specified, it defaults to a space.
 
-  Related Topics:
+  Examples:
+    > @wait 0=@va me=Foo[space(5)]Bar
+    Set.
+    > think %va
+    Test     Test
+    > say squish(%va)
+    Test Test
+    > think squish(....Foo....Bar....,.)
+    .Foo.Bar.
+
+  Related Topics: strip(), trim()
 
 & POWER()
 POWER()
