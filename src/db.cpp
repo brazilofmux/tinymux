@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.24 2000-08-03 03:43:08 sdennis Exp $
+// $Id: db.cpp,v 1.25 2000-08-23 00:15:42 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1524,14 +1524,12 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
 
 #ifdef RADIX_COMPRESSION
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_get_raw_decode_LEN: Get an attribute string out of the DB, decompress and
- * * decode it in one shot. Since the decompression involves a copy, and we
- * * normally do decode/copy immediately after fetching the attribute, this is
- * * used to roll the two operations together.
+/* ---------------------------------------------------------------------------
+ * atr_get_raw_decode_LEN: Get an attribute string out of the DB, decompress
+ * and decode it in one shot. Since the decompression involves a copy, and we
+ * normally do decode/copy immediately after fetching the attribute, this is
+ * used to roll the two operations together.
  */
-
 static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *flags, int atr, int *pLen)
 {
     char *a;
