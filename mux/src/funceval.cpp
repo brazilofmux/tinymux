@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.26 2003-02-16 00:07:16 sdennis Exp $
+// $Id: funceval.cpp,v 1.27 2003-02-16 16:21:21 jake Exp $
 //
 
 #include "copyright.h"
@@ -28,7 +28,6 @@
 
 extern NAMETAB indiv_attraccess_nametab[];
 extern int countwords(char *, char);
-extern bool check_read_perms(dbref, dbref, ATTR *, int, int, char *, char **);
 extern void arr2list(char *arr[], int alen, char *list, char **bufc, char sep);
 extern void make_portlist(dbref, dbref, char *, char **);
 
@@ -1656,8 +1655,7 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
                && See_attr(executor, thing, attr))
             {
                 char *atr_gotten = atr_pget(thing, attr->number, &aowner, &aflags);
-                if (  atr_gotten[0] != '\0'
-                   && check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
+                if (atr_gotten[0] != '\0')
                 {
                     switch (key)
                     {

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.39 2003-02-16 16:14:24 jake Exp $
+// $Id: functions.cpp,v 1.40 2003-02-16 16:21:21 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1380,25 +1380,6 @@ FUNCTION(fun_timefmt)
  * ---------------------------------------------------------------------------
  * * fun_get, fun_get_eval: Get attribute from object.
  */
-bool check_read_perms
-(
-    dbref player,
-    dbref thing,
-    ATTR *attr,
-    int aowner,
-    int aflags,
-    char *buff,
-    char **bufc
-)
-{
-    if (See_attr(player, thing, attr))
-    {
-        return true;
-    }
-    safe_noperm(buff, bufc);
-    return false;
-}
-
 #define GET_GET     1
 #define GET_XGET    2
 #define GET_EVAL    4
@@ -1557,8 +1538,9 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
         free_lbuf(atext);
         return;
     }
-    if (!check_read_perms(executor, thing, ap, aowner, aflags, buff, bufc))
+    if (!See_attr(executor, thing, ap))
     {
+        safe_noperm(buff, bufc);
         free_lbuf(atext);
         return;
     }
