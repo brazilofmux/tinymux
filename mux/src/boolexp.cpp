@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.9 2002-07-13 07:23:01 jake Exp $
+// $Id: boolexp.cpp,v 1.10 2002-07-18 19:25:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -41,7 +41,9 @@ static BOOL check_attr(dbref player, dbref lockobj, ATTR *attr, char *key)
     {
         bCheck = TRUE;
     }
-    if (bCheck && !wild_match(key, buff))
+
+    if (  bCheck
+       && !wild_match(key, buff))
     {
         bCheck = FALSE;
     }
@@ -67,10 +69,12 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
     switch (b->type)
     {
     case BOOLEXP_AND:
-        return eval_boolexp(player, thing, from, b->sub1) && eval_boolexp(player, thing, from, b->sub2);
+        return   eval_boolexp(player, thing, from, b->sub1)
+              && eval_boolexp(player, thing, from, b->sub2);
 
     case BOOLEXP_OR:
-        return eval_boolexp(player, thing, from, b->sub1) || eval_boolexp(player, thing, from, b->sub2);
+        return   eval_boolexp(player, thing, from, b->sub1)
+              || eval_boolexp(player, thing, from, b->sub2);
 
     case BOOLEXP_NOT:
         return !eval_boolexp(player, thing, from, b->sub1);
@@ -96,7 +100,8 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             mudstate.lock_nest_lev--;
             return FALSE;
         }
-        if ((b->sub1->type != BOOLEXP_CONST) || (b->sub1->thing < 0))
+        if (  b->sub1->type != BOOLEXP_CONST
+           || b->sub1->thing < 0)
         {
 #ifndef STANDALONE
             STARTLOG(LOG_BUGS, "BUG", "LOCK")
@@ -120,7 +125,8 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         return c;
 
     case BOOLEXP_CONST:
-        return (b->thing == player || member(b->thing, Contents(player)));
+        return   b->thing == player
+              || member(b->thing, Contents(player));
 
     case BOOLEXP_ATR:
         a = atr_num(b->thing);
@@ -165,7 +171,8 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         }
         bCheck = FALSE;
 
-        if ((a->number == A_NAME) || (a->number == A_LENTER))
+        if (  a->number == A_NAME
+           || a->number == A_LENTER)
         {
             bCheck = TRUE;
         }
@@ -239,7 +246,7 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
     default:
 
         // Bad type
-
+        //
         Tiny_Assert(0);
         return FALSE;
     }
@@ -291,7 +298,7 @@ static BOOLEXP *test_atr(char *s)
     int anum, locktype;
 
     char *buff = alloc_lbuf("test_atr");
-    StringCopy(buff, s);
+    strcpy(buff, s);
     for (s = buff; *s && (*s != ':') && (*s != '/'); s++) ;
     if (!*s)
     {
@@ -368,7 +375,9 @@ static BOOLEXP *parse_boolexp_L(void)
         parsebuf++;
         b = parse_boolexp_E();
         skip_whitespace();
-        if (b == TRUE_BOOLEXP || *parsebuf++ != ')') {
+        if (  b == TRUE_BOOLEXP
+           || *parsebuf++ != ')')
+        {
             free_boolexp(b);
             return TRUE_BOOLEXP;
         }
@@ -379,8 +388,10 @@ static BOOLEXP *parse_boolexp_L(void)
         //
         buf = alloc_lbuf("parse_boolexp_L");
         p = buf;
-        while (*parsebuf && (*parsebuf != AND_TOKEN) &&
-               (*parsebuf != OR_TOKEN) && (*parsebuf != ')'))
+        while (  *parsebuf
+              && *parsebuf != AND_TOKEN
+              && *parsebuf != OR_TOKEN
+              && *parsebuf != ')')
         {
             *p++ = *parsebuf++;
         }
@@ -439,8 +450,7 @@ static BOOLEXP *parse_boolexp_L(void)
 
         if (b->thing == NOTHING)
         {
-            notify(parse_player,
-                   tprintf("I don't see %s here.", buf));
+            notify(parse_player, tprintf("I don't see %s here.", buf));
             free_lbuf(buf);
             free_bool(b);
             return TRUE_BOOLEXP;
@@ -535,16 +545,16 @@ static BOOLEXP *parse_boolexp_F(void)
         b2 = alloc_bool("parse_boolexp_F.is");
         b2->type = BOOLEXP_IS;
         b2->sub1 = parse_boolexp_L();
-        if ((b2->sub1) == TRUE_BOOLEXP)
+        if (b2->sub1 == TRUE_BOOLEXP)
         {
             free_boolexp(b2);
             return (TRUE_BOOLEXP);
         }
-        else if (  ((b2->sub1->type) != BOOLEXP_CONST)
-                && ((b2->sub1->type) != BOOLEXP_ATR))
+        else if (  b2->sub1->type != BOOLEXP_CONST
+                && b2->sub1->type != BOOLEXP_ATR)
         {
             free_boolexp(b2);
-            return (TRUE_BOOLEXP);
+            return TRUE_BOOLEXP;
         }
         else
         {
@@ -561,20 +571,20 @@ static BOOLEXP *parse_boolexp_F(void)
         b2 = alloc_bool("parse_boolexp_F.carry");
         b2->type = BOOLEXP_CARRY;
         b2->sub1 = parse_boolexp_L();
-        if ((b2->sub1) == TRUE_BOOLEXP)
+        if (b2->sub1 == TRUE_BOOLEXP)
         {
             free_boolexp(b2);
-            return (TRUE_BOOLEXP);
+            return TRUE_BOOLEXP;
         }
-        else if (  ((b2->sub1->type) != BOOLEXP_CONST)
-                && ((b2->sub1->type) != BOOLEXP_ATR))
+        else if (  b2->sub1->type != BOOLEXP_CONST
+                && b2->sub1->type != BOOLEXP_ATR)
         {
             free_boolexp(b2);
-            return (TRUE_BOOLEXP);
+            return TRUE_BOOLEXP;
         }
         else
         {
-            return (b2);
+            return b2;
         }
 
         // NOTREACHED
@@ -587,19 +597,19 @@ static BOOLEXP *parse_boolexp_F(void)
         b2 = alloc_bool("parse_boolexp_F.owner");
         b2->type = BOOLEXP_OWNER;
         b2->sub1 = parse_boolexp_L();
-        if ((b2->sub1) == TRUE_BOOLEXP)
+        if (b2->sub1 == TRUE_BOOLEXP)
         {
             free_boolexp(b2);
-            return (TRUE_BOOLEXP);
+            return TRUE_BOOLEXP;
         }
-        else if ((b2->sub1->type) != BOOLEXP_CONST)
+        else if (b2->sub1->type != BOOLEXP_CONST)
         {
             free_boolexp(b2);
-            return (TRUE_BOOLEXP);
+            return TRUE_BOOLEXP;
         }
         else
         {
-            return (b2);
+            return b2;
         }
 
         // NOTREACHED
@@ -607,7 +617,7 @@ static BOOLEXP *parse_boolexp_F(void)
         break;
 
     default:
-        return (parse_boolexp_L());
+        return parse_boolexp_L();
     }
 }
 
@@ -667,12 +677,13 @@ static BOOLEXP *parse_boolexp_E(void)
 
 BOOLEXP *parse_boolexp(dbref player, const char *buf, BOOL internal)
 {
-    StringCopy(parsestore, buf);
+    strcpy(parsestore, buf);
     parsebuf = parsestore;
     parse_player = player;
-    if ((buf == NULL) || (*buf == '\0'))
+    if (  buf == NULL
+       || *buf == '\0')
     {
-        return (TRUE_BOOLEXP);
+        return TRUE_BOOLEXP;
     }
 #ifndef STANDALONE
     parsing_internal = internal;
