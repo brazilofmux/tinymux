@@ -1,8 +1,12 @@
-Welcome to AlloyMUX
+Welcome to TinyMUX
 ------------------------------------------------------------------------------
   "connect <name> <password>" connects you to an existing character.
-  "connect guest" connects you to a guest character.
+  "connect guest" connects you to a guest account if one is prepared.
   "create <name> <password>" creates a new character.
+
   "WHO" tells you who is logged in to the game (case sensitive).
   "QUIT" exits the game and saves your character.
+
+  Once logged on, "help" gives help on specific commands, functions, and
+  special topics.  Other 'help' commands include "+help" and "news".
 ------------------------------------------------------------------------------
