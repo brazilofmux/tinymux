@@ -164,9 +164,10 @@ Bug Fixes:
     from the channel. addcom warnings also removed.
  -- Objects could use flags() to see CONNECTED flag of DARK WIZARDs.
  -- scramble() strips ANSI now.
- -- Bug #782 - You could log into a guest twice if you knew the dbref#.
+ -- Bug #782 - You could log into a guest twice if you knew the dbref#. Patch
+    from Zenty.
  -- Bug #783 - Could get a DARK guest by logging into a previous guest player
-    with it's dbref.
+    with it's dbref. Patch from Zenty.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
