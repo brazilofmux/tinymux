@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.17 2004-08-18 21:58:59 sdennis Exp $
+// $Id: htab.cpp,v 1.18 2004-08-18 22:02:48 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -379,10 +379,10 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
 
 void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, bool list_if_none)
 {
-    char *buf, *bp, *cp;
-    buf = bp = alloc_lbuf("listset_nametab");
-    for (cp = prefix; *cp; cp++)
-        *bp++ = *cp;
+    char *buf = alloc_lbuf("listset_nametab");
+    char *bp = buf;
+
+    safe_str(prefix, buf, &bp);
 
     NAMETAB *nt = ntab;
     bool got_one = false;
@@ -392,15 +392,15 @@ void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, bo
            && (  God(player)
               || check_access(player, nt->perm)))
         {
-            *bp++ = ' ';
-            for (cp = nt->name; *cp; cp++)
-                *bp++ = *cp;
+            safe_chr(' ', buf, &bp);
+            safe_str(nt->name, buf, &bp);
             got_one = true;
         }
         nt++;
     }
     *bp = '\0';
-    if (got_one || list_if_none)
+    if (  got_one
+       || list_if_none)
     {
         notify(player, buf);
     }
