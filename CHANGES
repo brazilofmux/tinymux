@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  February 2002
+Last Update:  April 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,6 +107,11 @@ Feature Additions:
  -- Bug #799 - Update lcmds() to handle spaced commands and ^-listens.
  -- Add isint() and israt().
  -- Improve auto-detection of list type. Affects sort().
+ -- Added optional second argument to cwho() to control which dbrefs to
+    return.
+ -- @list user_attributes now supports a wildcard pattern to control
+    which user-defined attributes are reported.
+ -- Allow '~' as the first character of an attribute name.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -210,6 +215,18 @@ Bug Fixes:
  -- Updated strtod.cpp to later version.
  -- In places that check for integers, also allow a plus sign. Changed by
     Raevnos.
+ -- Fixed several places in the code where atr_num() isn't tested for NULL
+    including @listcommands and @function/list.
+ -- Fix v() to allow for '~' and '_' as a leading character in an attribute
+    name.
+ -- Allow search() to mean search(me) again.
+ -- Fix @dbclean so that when it renumbers attributes, it also updates the
+    attribute numbers in the @addcommand and @function data structures.
+ -- Don't disable @sweep on WOD_REALMS builds. @sweep can be disabled
+    separately with existing commands.
+ -- Fix the '@list hashstats' report so that the 'longest' column is reset
+    whenever a hash page is defragmented.  This will tend to give a smaller
+    and more accurate number.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
