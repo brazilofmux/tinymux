@@ -121,6 +121,8 @@ int main(int argc, char *argv[])
 ], ,AC_DEFINE(SIGNAL_SIGCHLD_BRAINDAMAGE),AC_DEFINE(SIGNAL_SIGCHLD_BRAINDAMAGE))
 
 AC_DECL_SYS_SIGLIST
+AC_MSG_CHECKING(for sys_signame decl)
+AC_EGREP_HEADER(sys_signame,signal.h,AC_DEFINE(HAVE_SYS_SIGNAME) AC_MSG_RESULT(yes),AC_MSG_RESULT(no))
 AC_CHECKING(for IEEE floating-point format)
 AC_TRY_RUN([
 double rZero = 0.0;
