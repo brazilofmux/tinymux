@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.23 2002-02-05 09:29:59 sdennis Exp $
+// $Id: svdrand.cpp,v 1.24 2002-02-17 01:41:48 sdennis Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -33,11 +33,16 @@ typedef BOOL WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
 #include <unistd.h>
 #endif
 
-void sgenrand(UINT32);    // seed the generator
-UINT32 genrand(void);     // returns a random 32-bit integer */
+// Seed the generator.
+//
+void sgenrand(UINT32);
+void sgenrand_from_array(UINT32 *, UINT32);
 
-#define N 624
-static UINT32 mt[N];
+// Returns a random 32-bit integer.
+//
+UINT32 genrand(void);
+
+#define NUM_RANDOM_UINT32 1024
 
 BOOL bCryptoAPI = FALSE;
 static BOOL bSeeded = FALSE;
@@ -45,6 +50,9 @@ void SeedRandomNumberGenerator(void)
 {
     if (bSeeded) return;
     bSeeded = TRUE;
+
+    UINT32 aRandomSystemBytes[NUM_RANDOM_UINT32];
+    int    nRandomSystemBytes = 0;
 
 #ifdef HAVE_DEV_URANDOM
     // Try to seed the PRNG from /dev/urandom 
@@ -54,11 +62,11 @@ void SeedRandomNumberGenerator(void)
 
     if (fd >= 0)
     {
-        int len = read(fd, mt, sizeof mt);
+        int len = read(fd, aRandomSystemBytes, sizeof aRandomSystemBytes);
         close(fd);
-        if (len == sizeof mt)
+        if (len > 0)
         {
-            return;
+            nRandomSystemBytes = len/(sizeof UINT32);
         }
     }
 #endif
@@ -67,7 +75,7 @@ void SeedRandomNumberGenerator(void)
     // API as follows lets us to fallback gracefully when running on pre-OSR2
     // Win95.
     //
-    bCryptoAPI = TRUE;
+    bCryptoAPI = FALSE;
     HINSTANCE hAdvAPI32 = LoadLibrary("advapi32");
     if (hAdvAPI32)
     {
@@ -93,19 +101,29 @@ void SeedRandomNumberGenerator(void)
 
             if (fpCryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, 0))
             {
-                if (fpCryptGenRandom(hProv, sizeof mt, (BYTE *)mt))
+                if (fpCryptGenRandom(hProv, sizeof aRandomSystemBytes,
+                    (BYTE *)aRandomSystemBytes))
                 {
-                    fpCryptReleaseContext(hProv, 0);
-                    FreeLibrary(hAdvAPI32);
-                    return;
+                    nRandomSystemBytes = NUM_RANDOM_UINT32;
+                    bCryptoAPI = TRUE;
                 }
                 fpCryptReleaseContext(hProv, 0);
             }
         }
         FreeLibrary(hAdvAPI32);
     }
-    bCryptoAPI = FALSE;
 #endif
+
+    if (nRandomSystemBytes >= sizeof UINT32)
+    {
+        int i;
+        for (i = 0; i < nRandomSystemBytes; i++)
+        {
+            aRandomSystemBytes[i] &= 0xFFFFFFFFUL;
+        }
+        sgenrand_from_array(aRandomSystemBytes, nRandomSystemBytes);
+        return;
+    }
 
     // Determine the initial seed.
     //
@@ -176,88 +194,142 @@ INT32 RandomINT32(INT32 lLow, INT32 lHigh)
     return lLow + (n % x);
 }
 
-/* Coded by Takuji Nishimura, considering the suggestions by      */
-/* Topher Cooper and Marc Rieffel in July-Aug. 1997.              */
+/* A C-program for MT19937, with initialization improved 2002/2/10.*/
+/* Coded by Takuji Nishimura and Makoto Matsumoto.                 */
+/* This is a faster version by taking Shawn Cokus's optimization,  */
+/* Matthe Bellew's simplification, Isaku Wada's real version.      */
 
-/* This library is free software; you can redistribute it and/or   */
-/* modify it under the terms of the GNU Library General Public     */
-/* License as published by the Free Software Foundation; either    */
-/* version 2 of the License, or (at your option) any later         */
-/* version.                                                        */
+/* Before using, initialize the state by using init_genrand(seed)  */
+/* or init_by_array(init_key, key_length).                         */
+
+/* This library is free software.                                  */
 /* This library is distributed in the hope that it will be useful, */
 /* but WITHOUT ANY WARRANTY; without even the implied warranty of  */
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.            */
-/* See the GNU Library General Public License for more details.    */
-/* You should have received a copy of the GNU Library General      */
-/* Public License along with this library; if not, write to the    */
-/* Free Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   */
-/* 02111-1307  USA                                                 */
 
-/* Copyright (C) 1997, 1999 Makoto Matsumoto and Takuji Nishimura. */
-/* When you use this, send an email to: matumoto@math.keio.ac.jp   */
-/* with an appropriate reference to your work.                     */
+/* Copyright (C) 1997, 2002 Makoto Matsumoto and Takuji Nishimura. */
+/* Any feedback is very welcome.                                   */
+/* http://www.math.keio.ac.jp/matumoto/emt.html                    */
+/* email: matumoto@math.keio.ac.jp                                 */
 
+#define N 624
 #define M 397
-#define MATRIX_A 0x9908b0df
-#define UPPER_MASK 0x80000000
-#define LOWER_MASK 0x7fffffff
-#define TEMPERING_MASK_B 0x9d2c5680
-#define TEMPERING_MASK_C 0xefc60000
-#define TEMPERING_SHIFT_U(y)  (y >> 11)
-#define TEMPERING_SHIFT_S(y)  (y << 7)
-#define TEMPERING_SHIFT_T(y)  (y << 15)
-#define TEMPERING_SHIFT_L(y)  (y >> 18)
+#define MATRIX_A 0x9908b0dfUL
+#define UMASK 0x80000000UL // most significant w-r bits
+#define LMASK 0x7fffffffUL // least significant r bits
+#define MIXBITS(u,v) ( ((u) & UMASK) | ((v) & LMASK) )
+#define TWIST(u,v) ((MIXBITS(u,v) >> 1) ^ ((v)&1UL ? MATRIX_A : 0UL))
 
-static int mti = N + 1;
+static UINT32 mt[N];
+static int left = 1;
+static UINT32 *next;
 
-void sgenrand(UINT32 nSeed)
+// initializes mt[N] with a seed.
+//
+static void sgenrand(UINT32 nSeed)
 {
-    nSeed |= 1; // Force the seed to be odd.
-    for (int i = 0; i < N; i++)
+    int j;
+    mt[0] = nSeed & 0xffffffffUL;
+    for (j = 1; j < N; j++)
     {
-        mt[i] = nSeed & 0xffff0000;
-        nSeed = 69069 * nSeed + 1;
-        mt[i] |= (nSeed & 0xffff0000) >> 16;
-        nSeed = 69069 * nSeed + 1;
+        // See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier.
+        // In the previous versions, MSBs of the seed affect
+        // only MSBs of the array mt[].
+        // 2002/01/09 modified by Makoto Matsumoto.
+        //
+        mt[j] = 1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j;
+        mt[j] &= 0xffffffffUL;  // for >32 bit machines.
     }
-    mti = N;
+    left = 1;
 }
 
-UINT32 genrand(void)
+// initialize by an array with array-length
+// init_key is the array for initializing keys
+// key_length is its length
+//
+static void sgenrand_from_array(UINT32 *init_key, UINT32 key_length)
+{
+    sgenrand(19650218UL);
+    int i = 1;
+    int j = 0;
+    int k = (N > key_length ? N : key_length);
+    for (; k; k--)
+    {
+        mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 30)) * 1664525UL))
+              + init_key[j] + j;
+        mt[i] &= 0xffffffffUL; // for > 32-bit machines.
+        i++;
+        j++;
+        if (i >= N)
+        {
+            mt[0] = mt[N-1];
+            i = 1;
+        }
+        if (j >= key_length)
+        {
+            j = 0;
+        }
+    }
+    for (k = N-1; k; k--)
+    {
+        mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 30)) * 1566083941UL)) - i;
+        mt[i] &= 0xffffffffUL; // for > 32-bit machines.
+        i++;
+        if (i >= N)
+        {
+            mt[0] = mt[N-1];
+            i = 1;
+        }
+    }
+
+    mt[0] = 0x80000000UL; /* MSB is 1; assuring non-zero initial array */
+    left = 1;
+}
+
+static void next_state(void)
+{
+    UINT32 *p = mt;
+    int j;
+
+    if (!bSeeded)
+    {
+        SeedRandomNumberGenerator();
+    }
+
+    for (j = N-M+1; --j; p++)
+    {
+        *p = p[M] ^ TWIST(p[0], p[1]);
+    }
+
+    for (j = M; --j; p++)
+    {
+        *p = p[M-N] ^ TWIST(p[0], p[1]);
+    }
+
+    *p = p[M-N] ^ TWIST(p[0], mt[0]);
+
+    left = N;
+    next = mt;
+}
+
+// generates a random number on the interval [0,0xffffffff]
+//
+static UINT32 genrand(void)
 {
     UINT32 y;
-    static UINT32 mag01[2] = {0x0, MATRIX_A};
-    int kk;
 
-    if (mti >= N)
+    if (--left == 0)
     {
-        if (!bSeeded)
-        {
-            SeedRandomNumberGenerator();
-        }
-
-        for (kk=0; kk < N-M; kk++)
-        {
-            y = (mt[kk] & UPPER_MASK) | (mt[kk+1] & LOWER_MASK);
-            mt[kk] = mt[kk+M] ^ (y >> 1) ^ mag01[ y & 0x1 ];
-        }
-        for (; kk < N-1; kk++)
-        {
-            y = (mt[kk] & UPPER_MASK) | (mt[kk+1] & LOWER_MASK);
-            mt[kk] = mt[ kk+(M-N) ] ^ (y >> 1) ^ mag01[ y & 0x1 ];
-        }
-        y = (mt[N-1] & UPPER_MASK) | (mt[0] & LOWER_MASK);
-        mt[N-1] = mt[M-1] ^ (y >> 1) ^ mag01[ y & 0x1 ];
-
-        mti = 0;
+        next_state();
     }
+    y = *next++;
 
-    y = mt[mti++];
-    y ^= TEMPERING_SHIFT_U(y);
-    y ^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
-    y ^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
-    y ^= TEMPERING_SHIFT_L(y);
+    // Tempering.
+    //
+    y ^= (y >> 11);
+    y ^= (y << 7) & 0x9d2c5680UL;
+    y ^= (y << 15) & 0xefc60000UL;
+    y ^= (y >> 18);
+
     return y;
 }
-
-
