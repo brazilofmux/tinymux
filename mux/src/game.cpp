@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.46 2004-07-10 19:52:19 sdennis Exp $
+// $Id: game.cpp,v 1.47 2004-07-10 23:04:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1548,13 +1548,13 @@ void fork_and_dump(int key)
         mudstate.dumping = false;
         mudstate.dumper = 0;
     }
+    bRequestAccepted = false;
 #endif
 
     if (*mudconf.postdump_msg)
     {
         raw_broadcast(0, "%s", mudconf.postdump_msg);
     }
-    bRequestAccepted = false;
 }
 
 #define LOAD_GAME_SUCCESS           0
