@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.32 2004-05-10 14:12:22 sdennis Exp $
+// $Id: netcommon.cpp,v 1.33 2004-05-13 06:03:43 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2436,7 +2436,7 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                     d->input_tail = NULL;
                 }
                 d->input_size -= (strlen(t->cmd) + 1);
-                d->last_time = mudstate.now;
+                d->last_time.GetUTC();
                 if (d->program_data != NULL)
                 {
                     handle_prog(d, t->cmd);
@@ -2451,10 +2451,13 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
             {
                 // Don't bother looking for more quota until at least this much time has past.
                 //
-                CLinearTimeDelta ltd;
+                CLinearTimeAbsolute lsaWhen;
+                CLinearTimeDelta    ltd;
+
                 ltd.SetMilliseconds(mudconf.timeslice);
-                CLinearTimeAbsolute lsaWhen = mudstate.now + ltd;
-                scheduler.DeferTask(lsaWhen, PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
+                lsaWhen.GetUTC();
+
+                scheduler.DeferTask(lsaWhen + ltd, PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
             }
         }
     }

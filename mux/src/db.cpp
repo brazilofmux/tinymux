@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.45 2004-05-13 06:01:28 sdennis Exp $
+// $Id: db.cpp,v 1.46 2004-05-13 06:06:33 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1154,10 +1154,13 @@ ATTR *atr_num(int anum)
 
 void SetupThrottle(dbref executor)
 {
-    CLinearTimeDelta ltdHour;
-    ltdHour.SetSeconds(24*60*60);
+    CLinearTimeAbsolute tNow;
+    CLinearTimeDelta    ltdHour;
 
-    db[executor].tThrottleExpired = mudstate.now + ltdHour;
+    ltdHour.SetSeconds(24*60*60);
+    tNow.GetUTC();
+
+    db[executor].tThrottleExpired = tNow + ltdHour;
     s_ThAttrib(executor, mudconf.vattr_per_hour);
     s_ThMail(executor, mudconf.mail_per_hour);
 }
