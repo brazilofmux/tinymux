@@ -2,7 +2,7 @@
  * rob.c -- Commands dealing with giving/taking/killing things or money 
  */
 /*
- * $Id: rob.cpp,v 1.2 2000-06-07 10:55:33 sdennis Exp $ 
+ * $Id: rob.cpp,v 1.3 2000-10-26 08:26:50 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -209,7 +209,7 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
     }
     if (((Typeof(thing) != TYPE_THING) && (Typeof(thing) != TYPE_PLAYER)) || !(Enter_ok(recipient) || controls(giver, recipient)))
     {
-        notify(giver, "Permission denied.");
+        notify(giver, NOPERM_MESSAGE);
         return;
     }
     if (!could_doit(giver, thing, A_LGIVE))
