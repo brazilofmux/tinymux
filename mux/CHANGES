@@ -358,6 +358,9 @@ Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
  -- Optimized check_access() hardcode function which is frequently used.
  -- Took out unnecessary test against Tiny_IsASCII character class in bsd.cpp
+ -- Raevnos updated PCRE.  The updated version does not require
+    Raevnos' fix (implemented with C++ exceptions). With this release,
+    MUX 2.2 not longer depends on C++ exceptions.
 
 
 Cosmetic Changes:
