@@ -452,6 +452,7 @@ Bug Fixes:
  --  Bug Fix: cat() with no arguments causes SIGSEGV.
  --  Several semaphores waiting on the same object/attr could be @notified
      out of order.
+ --  Channel messages are considered OOC.
 
 
 Performance Enhancements:
