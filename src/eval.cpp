@@ -1,9 +1,9 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.10 2000-10-04 06:42:00 sdennis Exp $
+// $Id: eval.cpp,v 1.11 2000-10-25 04:29:23 sdennis Exp $
 //
 
-// MUX 2.0
+// MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
 //
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All

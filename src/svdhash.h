@@ -1,8 +1,8 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.h,v 1.4 2000-09-07 08:22:38 sdennis Exp $
+// $Id: svdhash.h,v 1.5 2000-10-25 04:29:23 sdennis Exp $
 //
-// MUX 2.0
+// MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.

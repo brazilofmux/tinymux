@@ -1,13 +1,13 @@
 // svdrand.h -- Random Numbers
 //
-// $Id: svdrand.h,v 1.3 2000-04-25 18:32:28 sdennis Exp $
+// $Id: svdrand.h,v 1.4 2000-10-25 04:29:23 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
 // 
 // RandomLong() was derived from existing game server code.
 //
-// MUX 2.0
+// MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.

@@ -1,8 +1,8 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.30 2000-10-24 23:42:40 sdennis Exp $
+// $Id: db.cpp,v 1.31 2000-10-25 04:29:23 sdennis Exp $
 //
-// MUX 2.0
+// MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
 //
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All

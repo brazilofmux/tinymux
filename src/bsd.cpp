@@ -1,7 +1,7 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.16 2000-10-10 23:06:47 sdennis Exp $
+// $Id: bsd.cpp,v 1.17 2000-10-25 04:29:23 sdennis Exp $
 //
-// MUX 2.0
+// MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
 // prototype. Portions are original work.
 //

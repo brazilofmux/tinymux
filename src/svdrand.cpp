@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers
 //
-// $Id: svdrand.cpp,v 1.10 2000-05-17 07:48:58 sdennis Exp $
+// $Id: svdrand.cpp,v 1.11 2000-10-25 04:29:23 sdennis Exp $
 //
 // The first version of Random Numbers based on algorithms presented in
 // "Numerical Recipes in C", Cambridge Press, 1992. The second one is
@@ -8,7 +8,7 @@
 // 
 // RandomLong() was derived from existing game server code.
 //
-// MUX 2.0
+// MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.

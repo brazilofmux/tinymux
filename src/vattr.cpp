@@ -1,8 +1,8 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.7 2000-09-07 14:48:13 sdennis Exp $
+// $Id: vattr.cpp,v 1.8 2000-10-25 04:29:23 sdennis Exp $
 //
-// MUX 2.0
+// MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
 //
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
