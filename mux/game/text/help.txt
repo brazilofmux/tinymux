@@ -6741,11 +6741,11 @@ GRAB()
 
   FUNCTION: grab(<list>, <pattern>[, <delim>])
 
-  This function matches <pattern> against each word in <list>, returning
-  the first word that matches. If no words match, then an empty string
-  is returned. The match is not case-sensitive, and wildcard characters
-  are permitted. <delim> may be used to specify a list delimiter other
-  than a space.
+  This function matches <pattern> against each word in <list>, returning the
+  first word that matches.  If no words match, then an empty string is
+  returned.  The match is not case-sensitive, and wildcard characters are
+  permitted in <pattern>.  <delim> may be used to specify a list delimiter
+  other than a space.
 
   Examples:
     > say grab(This is a new test,?e*)
@@ -6760,9 +6760,21 @@ GRABALL()
 
   FUNCTION: graball(<list>, <pattern>[, <delim>])
 
-  Not implemented, yet.
+  This function matches <pattern> against each word in <list>, returning the
+  all words that match.  If no words match, then an empty string is returned.
+  The match is not case-sensitive, and wildcard characters are permitted in
+  <pattern>.  <delim> may be used to specify a list delimiter other than a
+  space.
 
-  Related Topics: grab(), regrab(), regraball().
+  Examples:
+    > say graball(This is a test of a test,test)
+    You say "test test"
+    > say graball(This is testing a test,tes*)
+    You say "testing test"
+    > say graball(This is testing a test,s$)
+    You say "This is"
+
+  Related Topics: grab(), LISTS, regrab(), regraball().
 
 & GREP()
 GREP()
