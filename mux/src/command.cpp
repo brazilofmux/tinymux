@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.73 2002-09-03 02:41:32 sdennis Exp $
+// $Id: command.cpp,v 1.74 2002-09-06 16:30:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4025,21 +4025,21 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
 //
 void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string)
 {
-   dbref loc = Location(executor);
-   if (!Good_obj(loc))
-   {
-      notify(executor, "Bad location.");
-      return;
-   }
-   if (  !string
-      || !*string)
-   {
-      notify(executor, "Train requires an argument.");
-      return;
-   }
+    dbref loc = Location(executor);
+    if (!Good_obj(loc))
+    {
+        notify(executor, "Bad location.");
+        return;
+    }
+    if (  !string
+       || !*string)
+    {
+        notify(executor, "Train requires an argument.");
+        return;
+    }
 
-   notify_all_from_inside(loc, executor, tprintf("%s types -=> %s", get_ansiname(executor), string));
-   process_command(executor, caller, enactor, TRUE, string, (char **)NULL, 0);
+    notify_all_from_inside(loc, executor, tprintf("%s types -=> %s", get_ansiname(executor), string));
+    process_command(executor, caller, enactor, TRUE, string, (char **)NULL, 0);
 }
 
 // do_ansiname: set ansified name for something.
@@ -4082,7 +4082,7 @@ void do_ansiname(dbref executor, dbref caller, dbref enactor, int key, int nfarg
         char *retbuff, *retbuffptr;
         retbuffptr = retbuff = alloc_lbuf("do_ansiname.ret");
         TinyExec(retbuff, &retbuffptr, executor, caller, enactor, 
-            EV_EVAL | EV_FCHECK, &instr, (char **)NULL, 0);
+            EV_EVAL | EV_FCHECK | EV_TOP, &instr, (char **)NULL, 0);
 
         unsigned int n;
         if (strcmp(strip_ansi(retbuff, &n), namebuff) != 0)
@@ -4095,7 +4095,7 @@ void do_ansiname(dbref executor, dbref caller, dbref enactor, int key, int nfarg
         else
         {
             notify(executor, tprintf("Ansi string entered for %s of '%s'.", namebuff, retbuff));
-            atr_add_raw(thing, A_ANSINAME, tprintf("%.3900s%s", retbuff, ANSI_NORMAL));
+            atr_add_raw(thing, A_ANSINAME, retbuff);
         }
         free_lbuf(retbuff);
         free_lbuf(namebuff);
