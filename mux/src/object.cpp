@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.8 2003-09-14 19:14:56 sdennis Exp $
+// $Id: object.cpp,v 1.9 2003-09-14 19:59:10 jake Exp $
 //
 
 #include "copyright.h"
@@ -794,6 +794,7 @@ static void check_dead_refs(void)
     int aflags;
     char *str;
     FWDLIST *fp;
+    bool dirty;
 
     DO_WHOLE_DB(i)
     {
@@ -928,7 +929,7 @@ static void check_dead_refs(void)
         // Check forwardlist
         //
         fp = fwdlist_get(i);
-        bool dirty = false;
+        dirty = false;
         if (fp) 
         {
             for (j = 0; j < fp->count; j++) 
