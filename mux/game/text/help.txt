@@ -1,35 +1,10 @@
-& HELP
-HELP
-
-  This is the MUX online help facility.
-
-     Notes on help descriptions:
-        [text] - Text enclosed in []'s is optional.  The []'s are never typed
-                 in as part of the command.
-        <parameter> - Information parameter for a command.  The <>'s are
-                      never typed in as part of the command.
-
-  -  Syntax of help command:
-       help [<command>]
-
-  -  To get a list of MUX topics:
-       help topics
-
-  -  To get a list of Comsystem commands:
-       help comsys
-
-  -  To get a list of MUX Commands:
-       help commands      (or @list commands)
-
-  Some of the configuration shown in the help.txt might not be the same as
-  the configuration of this MUX. If you notice any errors, contact an Admin.
-
 & "
 "
 
   COMMAND: "<message>
 
-  Says <message> out loud to everyone in your current room.
+  Says <message> out loud to everyone in your current location (usually a
+  room).
 
   Example:
     > "Where is the movie theater?
@@ -6919,6 +6894,32 @@ HEAD
 
   Related Topics:
 
+& HELP
+HELP
+
+  This is the MUX online help facility.
+
+     Notes on help descriptions:
+        [text] - Text enclosed in []'s is optional.  The []'s are never typed
+                 in as part of the command.
+        <parameter> - Information parameter for a command.  The <>'s are
+                      never typed in as part of the command.
+
+  -  Syntax of help command:
+       help [<command>]
+
+  -  To get a list of MUX topics:
+       help topics
+
+  -  To get a list of Comsystem commands:
+       help comsys
+
+  -  To get a list of MUX Commands:
+       help commands      (or @list commands)
+
+  Some of the configuration shown in the help.txt might not be the same as
+  the configuration of this MUX. If you notice any errors, contact an Admin.
+
 & HERE
 HERE
 
@@ -10700,12 +10701,12 @@ SAY
             nsay <message>
             "<message>
 
-  Says <message> out loud to everyone in your current room.
-  If you use say/noeval or nsay, the message is not evaluated.
+  Says <message> out loud to everyone in your current location (usually
+  a room).  If you use say/noeval or nsay, the message is not evaluated.
 
   Example:
     > say Where is the movie theater?
-    Player says "Where is the movie theater?"
+    Player says, "Where is the movie theater?"
 
   Related Topics: page, pose, whisper, :, ;, ".
 
