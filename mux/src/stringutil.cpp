@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
+// $Id: stringutil.cpp,v 1.5 2002-06-20 23:30:25 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3097,6 +3097,10 @@ int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
 #define BMH_LARGE 32767
 void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat)
 {
+    if (nPat <= 0)
+    {
+        return;
+    }
     int k;
     for (k = 0; k < 128; k++)
     {
@@ -3118,6 +3122,10 @@ void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat)
 
 int BMH_Execute(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
 {
+    if (nPat <= 0)
+    {
+        return -1;
+    }
     for (int i = nPat-1; i < nSrc; i += bmhs->m_skip2)
     {
         while ((i += bmhs->m_d[(unsigned char)(pSrc[i])]) < nSrc)
@@ -3152,6 +3160,10 @@ int BMH_StringSearch(int nPat, char *pPat, int nSrc, char *pSrc)
 
 void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
 {
+    if (nPat <= 0)
+    {
+        return;
+    }
     int k;
     for (k = 0; k < 128; k++)
     {
@@ -3175,6 +3187,10 @@ void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
 
 int BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
 {
+    if (nPat <= 0)
+    {
+        return -1;
+    }
     for (int i = nPat-1; i < nSrc; i += bmhs->m_skip2)
     {
         while ((i += bmhs->m_d[(unsigned char)(pSrc[i])]) < nSrc)
