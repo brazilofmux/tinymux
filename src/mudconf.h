@@ -1,6 +1,7 @@
-/* mudconf.h */
-/* $Id: mudconf.h,v 1.18 2001-03-31 04:49:00 sdennis Exp $ */
-
+// mudconf.h
+//
+// $Id: mudconf.h,v 1.19 2001-06-28 07:13:09 sdennis Exp $
+//
 #ifndef __CONF_H
 #define __CONF_H
 
@@ -104,6 +105,7 @@ struct confdata
     int     player_listen;  /* Are AxHEAR triggered on players? */
     int     quiet_whisper;  /* Can others tell when you whisper? */
     int     dark_sleepers;  /* Are sleeping players 'dark'? */
+    int     destroy_going_now;  // Does GOING act like DESTROY_OK?
     int     see_own_dark;   /* Do you see your own dark stuff? */
     int     idle_wiz_dark;  /* Do idling wizards get set dark? */
     int     pemit_players;  /* Can you @pemit to faraway players? */
@@ -144,8 +146,8 @@ struct confdata
     unsigned int max_cache_size; /* Max size of attribute cache */
 
     FLAGSET player_flags;   /* Flags players start with */
-    FLAGSET room_flags; /* Flags rooms start with */
-    FLAGSET exit_flags; /* Flags exits start with */
+    FLAGSET room_flags;     /* Flags rooms start with */
+    FLAGSET exit_flags;     /* Flags exits start with */
     FLAGSET thing_flags;    /* Flags things start with */
     FLAGSET robot_flags;    /* Flags robots start with */
 
@@ -198,6 +200,9 @@ struct confdata
     char    one_coin[32];   /* name of one coin (ie. "penny") */
     char    many_coins[32]; /* name of many coins (ie. "pennies") */
     int     toad_recipient; /* Default @toad recipient. */
+    char    log_prefix[32]; /* Prefix of logfile name */
+    int     safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
+    int     no_startup;     // If yes, startup attributes aren't processed on load.
 #else
     int     paylimit;   /* getting money gets hard over this much */
     int     digcost;    /* cost of @dig command */
@@ -221,7 +226,7 @@ struct confdata
     int     ntfy_nest_lim;  /* Max nesting of notifys */
 
     Uchar   markdata[8];    /* Masks for marking/unmarking */
-#endif  /* STANDALONE */
+#endif
 
     char    *game_dir;   /* use this game CHashFile DIR file if we need one */
     char    *game_pag;   /* use this game CHashFile PAG file if we need one */
@@ -304,7 +309,7 @@ struct statedata
 #if !defined(VMS) && !defined(WIN32)
     int restarting; /* Are we restarting? */
     int dumping;    /* Are we dumping? */
-#endif // WIN32
+#endif
     int logging;    /* Are we in the middle of logging? */
     int epoch;      /* Generation number for dumps */
     int generation; /* DB global generation number */
@@ -364,7 +369,7 @@ struct statedata
 #endif
     CHashTable news_htab;  /* News topics hashtable */
     CHashTable help_htab;  /* Help topics hashtable */
-    CHashTable wizhelp_htab;   /* Wizard help topics hashtable */ 
+    CHashTable wizhelp_htab;   /* Wizard help topics hashtable */
     CHashTable plushelp_htab;  /* +help topics hashtable */
     CHashTable staffhelp_htab; /* +shelp topics hashtable */
     CHashTable wiznews_htab;   /* wiznews topics hashtable */
@@ -385,7 +390,7 @@ struct statedata
     MARKBUF *markbits;  /* temp storage for marking/unmarking */
 
     ALIST      iter_alist;     /* Attribute list for iterations */
-#endif  // STANDALONE
+#endif
     char    *mod_alist; /* Attribute list for modifying */
     int     mod_alist_len; /* Length of mod_alist */
     int     mod_size;   /* Length of modified buffer */
