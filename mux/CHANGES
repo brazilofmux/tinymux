@@ -52,8 +52,8 @@ Feature Additions:
     distribution is weighted.  The idea was originally implemented by
     Catherine@Firan.  The code included here is based on a
     re-implementation of that in TM3.1 by Lydia.
- -- Added HELPTEXT() to allow easier softcode access to helpfile topics.
-    Re-implemented from TM3.1 help topic.
+ -- Added TEXTFILE() to allow easier softcode access to helpfile topics.
+    Re-implemented from TM3.1 help topic.  Originally from PennMUSH.
  -- Added guests_channel_alias and public_channel_alias configuration
     options.
 
