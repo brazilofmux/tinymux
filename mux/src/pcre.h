@@ -11,8 +11,8 @@
 #define _PCRE_H
 
 #define PCRE_MAJOR          4
-#define PCRE_MINOR          4
-#define PCRE_DATE           21-August-2003
+#define PCRE_MINOR          5
+#define PCRE_DATE           01-December-2003
 
 #ifndef PCRE_DATA_SCOPE
 #  define PCRE_DATA_SCOPE     extern
@@ -52,6 +52,7 @@ it is needed here for malloc. */
 #define PCRE_ERROR_MATCHLIMIT     (-8)
 #define PCRE_ERROR_CALLOUT        (-9)  /* Never used by PCRE itself */
 #define PCRE_ERROR_BADUTF8       (-10)
+#define PCRE_ERROR_BADUTF8_OFFSET (-11)
 
 /* Request types for pcre_fullinfo() */
 
@@ -75,6 +76,7 @@ it is needed here for malloc. */
 #define PCRE_CONFIG_LINK_SIZE               2
 #define PCRE_CONFIG_POSIX_MALLOC_THRESHOLD  3
 #define PCRE_CONFIG_MATCH_LIMIT             4
+#define PCRE_CONFIG_STACKRECURSE            5
 
 /* Bit flags for the pcre_extra structure */
 
