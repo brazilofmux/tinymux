@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.11 2000-11-03 02:51:13 sdennis Exp $
+// $Id: look.cpp,v 1.12 2001-01-09 08:35:53 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -607,7 +607,16 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 }
 
 
-static void view_atr(dbref player, dbref thing, ATTR *ap, char *text, dbref aowner, int aflags, int skip_tag)
+static void view_atr
+(
+    dbref player,
+    dbref thing,
+    ATTR *ap,
+    char *text,
+    dbref aowner,
+    int aflags,
+    int skip_tag
+)
 {
     char *buf;
     char xbuf[8];
@@ -626,10 +635,15 @@ static void view_atr(dbref player, dbref thing, ATTR *ap, char *text, dbref aown
     //    
     if (!Controls(player, thing) && (Owner(player) != aowner))
     {
-        if (skip_tag && (ap->number == A_DESC))
+        if (  skip_tag
+           && ap->number == A_DESC)
+        {
             buf = text;
+        }
         else
+        {
             buf = tprintf("%s%s:%s %s", ANSI_HILITE, ap->name, ANSI_NORMAL, text);
+        }
         notify(player, buf);
         return;
     }
@@ -675,7 +689,14 @@ static void view_atr(dbref player, dbref thing, ATTR *ap, char *text, dbref aown
     notify(player, buf);
 }
 
-static void look_atrs1(dbref player, dbref thing, dbref othing, int check_exclude, int hash_insert)
+static void look_atrs1
+(
+    dbref player,
+    dbref thing,
+    dbref othing,
+    int check_exclude,
+    int hash_insert
+)
 {
     dbref aowner;
     int ca, aflags;
@@ -713,7 +734,8 @@ static void look_atrs1(dbref player, dbref thing, dbref othing, int check_exclud
             {
                 if (hash_insert)
                 {
-                    hashaddLEN(&ca, sizeof(ca), (int *)attr, &mudstate.parent_htab);
+                    hashaddLEN(&ca, sizeof(ca), (int *)attr,
+                        &mudstate.parent_htab);
                 }
                 view_atr(player, thing, &cattr, buf, aowner, aflags, 0);
             }
