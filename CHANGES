@@ -553,6 +553,16 @@ Performance Enhancements:
  --  Changed fval() to avoid using sprintf() and strip_useless_zeros for
      the common cases.
  --  Minor typo in quota.cpp that didn't change the statements logic.
+ --  Fixed SIZEOF__LONG typo in code that would be very unlikely to affect any
+     platform.
+ --  Removed unintialized have_macros config option. Could have been an
+     issue if you were running a non-DEBUG build and wanted to disable the
+     comsys.
+ --  Fixed SIGSEGV bug in timeutil with how the timezone offset table was
+     maintained. It required three things to happen at the same time.
+ --  Fixed memory leak of Bools upon a @backup or @dump/flatfile. Bug
+     originated in MUX 1.6, first fixed in Chaotic MUX, and is already
+     fixed in MUSH 3.0.
 
 
 Cosmetic Changes:
