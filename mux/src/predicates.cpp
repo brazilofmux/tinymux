@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.4 2002-06-05 06:34:55 sdennis Exp $
+// $Id: predicates.cpp,v 1.5 2002-06-13 04:22:38 jake Exp $
 //
 
 #include "copyright.h"
@@ -1507,6 +1507,127 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
 #endif /*
         * STANDALONE
         */
+
+// ---------------------------------------------------------------------------
+// bCanReadAttr, bCanSetAttr: Verify permission to affect attributes.
+// ---------------------------------------------------------------------------
+
+BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
+{
+    dbref aowner;
+    int aflags;
+
+#ifdef STANDALONE
+    atr_get_info(target, tattr->number, &aowner, &aflags);
+#else
+    if (bCheckParent)
+    {
+        atr_pget_info(target, tattr->number, &aowner, &aflags);
+    }
+    else
+    {
+        atr_get_info(target, tattr->number, &aowner, &aflags);
+    }
+#endif
+
+    if (   (tattr->flags & AF_INTERNAL)
+        || (aflags & AF_INTERNAL))
+    {
+        return FALSE;
+    }
+    else if (  (  (tattr->flags & AF_DARK)
+               || (aflags & AF_DARK))
+             && !God(executor))
+    {
+        return FALSE;
+    }
+    else if (  (  (tattr->flags & AF_MDARK)
+               || (tattr->flags & AF_ODARK)
+               || (aflags & AF_MDARK)
+               || (aflags & AF_ODARK))
+             && !WizRoy(executor))
+    {
+        return FALSE;
+    }
+    else if (   (tattr->flags & AF_VISUAL)
+             || (aflags & AF_VISUAL)
+             || Examinable(executor, target))
+    {
+        return TRUE;
+    }
+    else if (tattr->name == "Desc")
+    {
+        if (nearby(executor, target))
+        {
+            return TRUE;
+        }
+        else
+        {
+#ifdef STANDALONE
+            return FALSE;
+#else
+            return mudconf.read_rem_desc;
+#endif
+        }
+    }
+    else
+    {
+        return TRUE; // I don't know what would reach this point. --JN
+        STARTLOG(LOG_BUGS, "BUG", "UNIMP");
+        log_text("bCanRead fell through. Executor:");
+        log_text(Tiny_ltoa_t(executor));
+        log_text("Target:");
+        log_text(Tiny_ltoa_t(target));
+        log_text("Attr:");
+        log_text(tattr->name);
+        ENDLOG;
+
+    }
+}
+
+BOOL bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
+{
+    if(!bCanReadAttr(executor, target, tattr, FALSE))
+    {
+        return FALSE;
+    }
+
+    dbref aowner;
+    int aflags;
+    atr_get_info(target, tattr->number, &aowner, &aflags);
+
+    if (   (tattr->flags & AF_CONST)
+             || (aflags & AF_CONST))
+    {
+        return FALSE;
+    }
+    else if (   !God(executor) 
+             && (   (tattr->flags & AF_GOD)
+                 || (aflags & AF_GOD)))
+    {
+        return FALSE;
+    }
+    else if (   !Wizard(executor)
+             && (   (tattr->flags & AF_WIZARD)
+                 || (aflags & AF_WIZARD)))
+    {
+        return FALSE;
+    }
+    else if (   (aflags & AF_LOCK)
+             &&  !(God(executor))
+               || (executor == Owner(target)))
+    {
+        return FALSE;
+    }
+    else if (Controls(executor,target))
+    {
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
 
 /*
  * ---------------------------------------------------------------------------

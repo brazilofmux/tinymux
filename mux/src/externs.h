@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.8 2002-06-12 17:56:56 zenty Exp $
+// $Id: externs.h,v 1.9 2002-06-13 04:22:38 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -194,6 +194,8 @@ extern void FDECL(did_it, (dbref, dbref, int, const char *, int,
             const char *, int, char *[], int));
 extern void FDECL(list_bufstats, (dbref));
 extern void FDECL(list_buftrace, (dbref));
+extern BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bParentCheck);
+extern BOOL bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 
 /* From set.cpp */
 extern int  FDECL(parse_attrib, (dbref, char *, dbref *, int *));
