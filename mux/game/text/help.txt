@@ -5928,7 +5928,7 @@ FUNCTION CLASSES (continued)
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE CAT
                              CENTER COMP DECRYPT DELETE EDIT ENCRYPT ESCAPE
                              IFELSE LCSTR LJUST LPOS MERGE MID POS REGMATCH
-                             REPEAT REPLACE REVERSE RIGHT RJUST SCRAMBLE
+                             REPEAT REPLACE REVERSE RIGHT RJUST ROMAN SCRAMBLE
                              SECURE SPACE SPELLNUM SQUISH STRCAT STRIPANSI
                              STRLEN STRMATCH STRTRUNC SWITCH TRANSLATE TRIM
                              UCSTR WORDPOS
@@ -5983,20 +5983,20 @@ FUNCTION LIST (continued)
     PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
     POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
     REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
-    REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROOM()
-    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
-    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
-    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
-    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()
-    SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIPANSI()
-    STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
-    SWITCH()    T()         TABLE()     TAN()       TEL()       TIME()
-    TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()      U()
-    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
-    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
-    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()
-    WORDS()     WRITETIME() XGET()      XOR()       ZFUN()      ZONE()
-    ZWHO()
+    REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
+    ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()
+    SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
+    SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
+    SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()
+    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
+    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()
+    SUBJ()      SWITCH()    T()         TABLE()     TAN()       TEL()
+    TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()
+    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
+    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
+    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
+    WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()       ZFUN()
+    ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -9776,6 +9776,18 @@ ROBOT
   exit or pick up the thing, the player is treated as having failed the lock.
 
   Related Topics: OUTPUTPREFIX, OUTPUTSUFFIX, @robot.
+
+& ROMAN()
+ROMAN()
+
+  FUNCTION: ROMAN(<number1>)
+
+  Given a number, it returns its Roman form. Only numbers between 1 and 3999
+  can be converted.
+
+  Example:
+    > say roman(1999)
+    You say, "MCMXCIX"
 
 & ROOM
 ROOM
