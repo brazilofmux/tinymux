@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.16 2002-07-13 07:23:01 jake Exp $
+// $Id: db.cpp,v 1.17 2002-07-16 05:28:01 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1504,7 +1504,7 @@ void atr_clr(dbref thing, int atr)
     Aname okey;
 
     makekey(thing, atr, &okey);
-    TM_DELETE(&okey);
+    cache_del(&okey);
     al_delete(thing, atr);
 #endif // MEMORY_BASED
     switch (atr)
@@ -1649,7 +1649,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     makekey(thing, atr, &okey);
     if (!szValue || szValue[0] == '\0')
     {
-        TM_DELETE(&okey);
+        cache_del(&okey);
         al_delete(thing, atr);
         return;
     }
@@ -1664,7 +1664,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     {
         // A_LIST is never compressed and it's never listed within itself.
         //
-        STORE(&okey, szValue, nValue+1);
+        cache_put(&okey, szValue, nValue+1);
     }
     else
     {
@@ -1672,7 +1672,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
         {
             return;
         }
-        STORE(&okey, szValue, nValue+1);
+        cache_put(&okey, szValue, nValue+1);
     }
 #endif // MEMORY_BASED
 
@@ -1816,7 +1816,7 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 
     makekey(thing, atr, &okey);
     int nLen;
-    char *a = FETCH(&okey, &nLen);
+    char *a = cache_get(&okey, &nLen);
     nLen = a ? (nLen-1) : 0;
     *pLen = nLen;
     return a;

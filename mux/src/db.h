@@ -1,21 +1,15 @@
 // db.h
 //
-// $Id: db.h,v 1.5 2002-06-27 06:54:43 jake Exp $
+// $Id: db.h,v 1.6 2002-07-16 05:28:01 jake Exp $
 //
 
 #ifndef __DB_H
 #define __DB_H
 
 #ifndef MEMORY_BASED
-#define STORE(key, attr, len)   cache_put(key, attr, len)
-#define TM_DELETE(key)          cache_del(key)
-#define FETCH(key, pLen)        cache_get(key, pLen)
 #define SYNC                    cache_sync()
 #define CLOSE                   cache_close()
 #else // !MEMORY_BASED
-#define STORE(key, attr, len)
-#define TM_DELETE(key)
-#define FETCH(key, pLen)
 #define SYNC
 #define CLOSE
 #endif // !MEMORY_BASED
