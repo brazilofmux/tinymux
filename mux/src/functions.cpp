@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.98 2002-09-18 03:26:58 sdennis Exp $
+// $Id: functions.cpp,v 1.99 2002-09-18 04:19:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9234,7 +9234,8 @@ FUNCTION(fun_ord)
     char *p  = strip_ansi(fargs[0], &n);
     if (n == 1)
     {
-        safe_ltoa(p[0], buff, bufc);
+        unsigned ch = p[0];
+        safe_ltoa(ch, buff, bufc);
     }
     else
     {
@@ -9276,10 +9277,6 @@ FUNCTION(fun_chr)
 //
 FUNCTION(fun_stripaccents)
 {
-    char *p = fargs[0];
-    while (*p)
-    {
-        safe_chr(Tiny_StripAccents[(unsigned char)*p], buff, bufc);
-        p++;
-    }
+    size_t nLen;
+    safe_copy_buf(strip_accents(fargs[0], &nLen), nLen, buff, bufc);
 }

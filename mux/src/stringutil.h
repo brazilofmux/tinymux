@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.18 2002-09-18 03:26:59 sdennis Exp $
+// $Id: stringutil.h,v 1.19 2002-09-18 04:19:42 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -110,6 +110,7 @@ extern int ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, int *pnVisualWi
 extern char *ANSI_TruncateAndPad_sbuf(const char *pString, int nMaxVisualWidth, char fill = ' ');
 extern int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, int iEndGoal);
 extern char *strip_ansi(const char *szString, unsigned int *pnString = 0);
+extern char *strip_accents(const char *szString, size_t *pnString = 0);
 extern char *normal_to_white(const char *);
 extern char *munge_space(const char *);
 extern char *trim_spaces(char *);

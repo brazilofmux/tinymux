@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.24 2002-09-18 03:26:59 sdennis Exp $
+// $Id: stringutil.cpp,v 1.25 2002-09-18 04:19:42 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -554,6 +554,30 @@ char *strip_ansi(const char *szString, unsigned int *pnString)
     *pBuffer = '\0';
     return Buffer;
 }
+
+char *strip_accents(const char *szString, size_t *pnString)
+{
+    static char Buffer[LBUF_SIZE];
+    char *pBuffer = Buffer;
+
+    const char *pString = szString;
+    if (pString)
+    {
+        while (*pString)
+        {
+            *pBuffer = Tiny_StripAccents[(unsigned char)*pString];
+            pBuffer++;
+            pString++;
+        }
+    }
+    if (pnString)
+    {
+        *pnString = pBuffer - Buffer;
+    }
+    *pBuffer = '\0';
+    return Buffer;
+}
+
 #define ANSI_COLOR_INDEX_BLACK     0
 #define ANSI_COLOR_INDEX_RED       1
 #define ANSI_COLOR_INDEX_GREEN     2
@@ -3303,3 +3327,4 @@ CF_HAND(cf_art_rule)
 #endif // !STANDALONE
     return 0;
 }
+

@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.17 2002-09-06 15:47:24 sdennis Exp $
+// $Id: flags.h,v 1.18 2002-09-18 04:19:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -79,6 +79,7 @@
 #define HTML         0x04000000  /* Player supports HTML */
 #define BLIND        0x08000000  // Surpress has arrived / left messages.
 #define SUSPECT      0x10000000  /* Report some activities to wizards */
+#define NOACCENTS    0x20000000  // Strip accented characters.
 #define CONNECTED    0x40000000  /* Player is connected */
 #define SLAVE        0x80000000  /* Disallow most commands */
 
@@ -249,6 +250,7 @@ extern char *MakeCanonicalFlagName
 #define Fixed(x)            ((Flags2(x) & FIXED) != 0)
 #define Uninspected(x)      ((Flags2(x) & UNINSPECTED) != 0)
 #define Ansi(x)             ((Flags2(x) & ANSI) != 0)
+#define NoAccents(x)        ((Flags2(x) & NOACCENTS) != 0)
 #define No_Command(x)       ((Flags2(x) & NO_COMMAND) != 0)
 #define NoBleed(x)          ((Flags2(x) & NOBLEED) != 0)
 

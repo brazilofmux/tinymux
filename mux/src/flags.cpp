@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.24 2002-09-06 16:44:28 sdennis Exp $
+// $Id: flags.cpp,v 1.25 2002-09-18 04:19:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -295,6 +295,7 @@ static FLAGBITENT fbeLinkOk         = { LINK_OK,      'L',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeMonitor        = { MONITOR,      'M',    FLAG_WORD1, 0,                    fh_hear_bit};
 static FLAGBITENT fbeMyopic         = { MYOPIC,       'm',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeNoCommand      = { NO_COMMAND,   'n',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeNoAccents      = { NOACCENTS,    ' ',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeNoBleed        = { NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeNoSpoof        = { NOSPOOF,      'N',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeOpaque         = { TM_OPAQUE,    'O',    FLAG_WORD1, 0,                    fh_any};
@@ -357,6 +358,7 @@ static FLAGBITENT fbeMarker9        = { MARK_9,       '9',    FLAG_WORD3, 0,    
 FLAGNAMEENT gen_flag_names[] =
 {
     {"ABODE",           TRUE, &fbeAbode          },
+    {"ACCENTS",        FALSE, &fbeNoAccents      },
     {"ANSI",            TRUE, &fbeAnsi           },
     {"AUDIBLE",         TRUE, &fbeAudible        },
     {"AUDITORIUM",      TRUE, &fbeAuditorium     },
@@ -399,6 +401,7 @@ FLAGNAMEENT gen_flag_names[] =
     {"MONITOR",         TRUE, &fbeMonitor        },
     {"MYOPIC",          TRUE, &fbeMyopic         },
     {"NO_COMMAND",      TRUE, &fbeNoCommand      },
+    {"NOACCENTS",       TRUE, &fbeNoAccents      },
     {"NOBLEED",         TRUE, &fbeNoBleed        },
     {"NOSPOOF",         TRUE, &fbeNoSpoof        },
     {"OPAQUE",          TRUE, &fbeOpaque         },

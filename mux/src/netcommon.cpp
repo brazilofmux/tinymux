@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.30 2002-09-17 06:38:35 sdennis Exp $
+// $Id: netcommon.cpp,v 1.31 2002-09-18 04:19:42 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -379,6 +379,11 @@ void queue_string(DESC *d, const char *s)
     else
     {
         new0 = s;
+    }
+
+    if (NoAccents(d->player))
+    {
+        new0 = strip_accents(new0);
     }
     queue_write(d, new0, strlen(new0));
 }
