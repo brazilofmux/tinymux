@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.30 2000-11-15 02:48:33 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.31 2000-11-16 15:41:44 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1217,11 +1217,9 @@ static void dump_users(DESC *e, char *match, int key)
                 continue;
             if ((key == CMD_SESSION) && !(Wizard_Who(e->player) && (e->flags & DS_CONNECTED)) && (d->player != e->player))
                 continue;
-            
-                /*
-                * Get choice flags for wizards 
-            */
-            
+
+            // Get choice flags for wizards.
+            //            
             fp = flist;
             sp = slist;
             if ((e->flags & DS_CONNECTED) && Wizard_Who(e->player))

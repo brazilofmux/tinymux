@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.46 2000-11-16 07:48:07 sdennis Exp $
+// $Id: functions.cpp,v 1.47 2000-11-16 15:41:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6871,19 +6871,11 @@ void GeneralTimeConversion
         if (reTable[i].iBase <= Seconds || i == iEndBase)
         {
             int iValue;
-            if (bSingleTerm)
-            {
-                // Round to the nearest.
-                //
-                iValue = (Seconds + (reTable[i].iBase >> 1))/reTable[i].iBase;
-            }
-            else
-            {
-                // Division and remainder.
-                //
-                iValue = Seconds/reTable[i].iBase;
-                Seconds -= iValue * reTable[i].iBase;
-            }
+
+            // Division and remainder.
+            //
+            iValue = Seconds/reTable[i].iBase;
+            Seconds -= iValue * reTable[i].iBase;
 
             if (iValue != 0 || i == iEndBase)
             {
@@ -6946,11 +6938,9 @@ const char *time_format_1(int Seconds)
     {
         Seconds = 0;
     }
-    
-    // We are showing the time in minutes, so round to the nearest
-    // minute.
+
+    // We are showing the time in minutes. 59s --> 0m
     //
-    Seconds += 30;
 
     // Divide the time down into days, hours, and minutes.
     //
