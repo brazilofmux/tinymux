@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.5 2002-06-27 06:38:31 jake Exp $
+// $Id: wiz.cpp,v 1.6 2002-07-08 17:59:21 jake Exp $
 //
 
 #include "copyright.h"
@@ -461,7 +461,6 @@ void do_newpassword
 void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
     dbref victim;
-    char *buf, *bp;
     int count;
 
     if (!(Can_Boot(executor)))
@@ -481,12 +480,9 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
             return;
         }
         STARTLOG(LOG_WIZARD, "WIZ", "BOOT");
-        buf = alloc_sbuf("do_boot.port");
-        sprintf(buf, "Port %d", victim);
-        log_text(buf);
+        log_text(tprintf("Port %d", victim));
         log_text(" was @booted by ");
         log_name(executor);
-        free_sbuf(buf);
         ENDLOG;
     }
     else
@@ -521,16 +517,15 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
         ENDLOG;
         notify_quiet(executor, tprintf("You booted %s off!", Name(victim)));
     }
+
+    const char *buf;
     if (key & BOOT_QUIET)
     {
         buf = NULL;
     }
     else
     {
-        bp = buf = alloc_lbuf("do_boot.msg");
-        safe_str(Name(executor), buf, &bp);
-        safe_str(" gently shows you the door.", buf, &bp);
-        *bp = '\0';
+        buf = tprintf("%s gently shows you the door.", Name(executor));
     }
 
     if (key & BOOT_PORT)
@@ -541,12 +536,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
     {
         count = boot_off(victim, buf);
     }
-    if (buf)
-    {
-        free_lbuf(buf);
-    }
-    buf = tprintf("%d connection%s closed.", count, (count == 1 ? "" : "s"));
-    notify_quiet(executor, buf);
+    notify_quiet(executor, tprintf("%d connection%s closed.", count, (count == 1 ? "" : "s")));
 }
 
 // ---------------------------------------------------------------------------
