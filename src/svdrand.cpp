@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers
 //
-// $Id: svdrand.cpp,v 1.5 2000-04-25 18:32:39 sdennis Exp $
+// $Id: svdrand.cpp,v 1.6 2000-04-27 23:29:10 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
@@ -20,172 +20,167 @@
 #include "config.h"
 #include "timeutil.h"
 #include "svdrand.h"
+#include "svdhash.h"
 
-#define IA 16807
-#define IM 2147483647
-#define IQ 127773
-#define IR 2836
 #define NTAB 32
-#define NDIV (1+(IM-1)/NTAB)
+static unsigned long iv[NTAB];
+static unsigned long iy = 0;
+static unsigned long idum = 123456789;
+static unsigned long idum2 = 123456789;
+static BOOL bSeeded = FALSE;
 
-static long idum = 0;
+#define IM1 4294967291
+#define IM2 4294967279
+#define IA1 40014
+#define IA2 40692
+#define IQ1 107336
+#define IQ2 105548
+#define IR1 24587
+#define IR2 8063
+#define NDIV2 (1+(IM1-1)/NTAB)
+
+// Schrage's algorithm algorithm for multiplying two unsigned 32-bit
+// integers modulo a unsigned 32-bit constant without using
+// intermediates larger than an unsigned 32-bit variable.
+//
+// Given:
+//
+//  r < q, q = m/a, r = m%a, so that m = aq + r
+//
+// We calculate:
+//
+//  (a * z) % m
+//
+unsigned long ModulusMultiply
+(
+    unsigned long z,
+    unsigned long a,
+    unsigned long m,
+    unsigned long q,
+    unsigned long r
+)
+{
+    unsigned long k = z/q;
+    z = a*(z - k*q);
+    if (z <= k*r)
+    {
+        z += m;
+    }
+    z -= r*k;
+    return z;
+}
 
 void SeedRandomNumberGenerator(void)
 {
+    if (bSeeded) return;
+    bSeeded = TRUE;
+
+    // Determine the initial seed, idum.
+    //
     CLinearTimeAbsolute lsaNow;
     lsaNow.GetUTC();
-    idum = -(long)(lsaNow.ReturnSeconds() & 0x7FFFFFFFUL);
-    if (1000 < idum)
+    idum = (unsigned long)(lsaNow.ReturnSeconds() & 0xFFFFFFFFUL);
+    if (idum <= 1000)
     {
-        idum = -idum;
+        idum += 22261048;
     }
-    else if (-1000 < idum)
-    {
-        idum -= 22261048;
-    }
-}
 
-static long iy=0;
-static long iv[NTAB];
+    // ASSERT: 1000 < idum
 
-#if 0
-long ran1(void)
-{
+    // Fill in the shuffle array.
+    //
     int j;
-    long k;
-    
-    if (idum <= 0 || !iy)
+    idum2 = idum;
+    for (j = 0; j < 8; j++)
     {
-        if (-(idum) < 1) idum=1;
-        else idum = -(idum);
-        for (j=NTAB+7;j>=0;j--)
-        {
-            k=(idum)/IQ;
-            idum=IA*(idum-k*IQ)-IR*k;
-            if (idum < 0) idum += IM;
-            if (j < NTAB) iv[j] = idum;
-        }
-        iy=iv[0];
+        idum = ModulusMultiply(idum, IA1, IM1, IQ1, IR1);
     }
-    k=(idum)/IQ;
-    idum=IA*(idum-k*IQ)-IR*k;
-    if (idum < 0) idum += IM;
-    j=iy/NDIV;
-    iy=iv[j];
-    iv[j] = idum;
-    
-    return iy;
+    for (j = NTAB-1; j >= 0; j--)
+    {
+        idum = ModulusMultiply(idum, IA1, IM1, IQ1, IR1);
+        iv[j] = idum;
+    }
+    iy = iv[0];
 }
-#endif
-
-#define IM1 2147483563
-#define IM2 2147483399
-#define IA1 40014
-#define IA2 40692
-#define IQ1 53668
-#define IQ2 52774
-#define IR1 12211
-#define IR2 3791
-#define NDIV2 (1+(IM1-1)/NTAB)
-
-static long idum2=123456789;
 
 long ran2(void)
 {
-    int j;
-    long k;
-    
-    if (idum <= 0)
+    idum  = ModulusMultiply(idum,  IA1, IM1, IQ1, IR1);
+    idum2 = ModulusMultiply(idum2, IA2, IM2, IQ2, IR2);
+    int j = iy/NDIV2;
+    iy = iv[j];
+    if (iy < idum2)
     {
-        if (-idum < 1) idum = 1;
-        else idum = -idum;
-        idum2 = idum;
-        for ( j = NTAB + 7; j >= 0; j-- )
-        {
-            k = idum/IQ1;
-            idum = IA1 * (idum - k*IQ1) - k*IR1;
-            if ( idum < 0 ) idum += IM1;
-            if ( j < NTAB ) iv[j] = idum;
-        }
-        iy = iv[0];
+        iy += IM1;
     }
-    k = idum/IQ1;
-    idum = IA1 * (idum - k*IQ1) - k*IR1;
-    if ( idum < 0 ) idum += IM1;
-    k = idum2/IQ2;
-    idum2 = IA2*(idum2 - k*IQ2) - k*IR2;
-    if ( idum2 < 0 ) idum2 += IM2;
-    j = iy/NDIV2;
-    iy = iv[j] - idum2;
+    iy -= idum2;
     iv[j] = idum;
-    if ( iy < 0 ) iy += IM1;
-    return iy;
+    return CRC32_ProcessInteger(iy);
 }
 
-#define AM (1.0/IM)
-#define EPS 1.2e-7
-#define RNMX (1.0-EPS)
-
-#if 0
-// fran1 -- return a random floating-point number on the interval [0,1)
+// RandomLong -- return a long on the interval [lLow, lHigh]
 //
-double fran1(void)
-{
-    double temp = AM*ran1();
-    if (temp > RNMX) return RNMX;
-    else return temp;
-}
-#endif
-
-// fran2 -- return a random floating-point number on the interval [0,1)
-//
-double fran2(void)
-{
-    double temp = AM*ran2();
-    if (temp > RNMX) return RNMX;
-    else return temp;
-}
-
-double RandomFloat(double flLow, double flHigh)
-{
-    double fl = fran2(); // double in [0,1)
-    return (fl * (flHigh-flLow)) + flLow; // double in [low,high)
-}
-
-/* RandomLong -- return a long on the interval [lLow, lHigh]
- */
 long RandomLong(long lLow, long lHigh)
 {
-#if 0
+    // Validate parameters
+    //
+    if (lHigh < lLow)
+    {
+        return -1;
+    }
+    else if (lHigh == lLow)
+    {
+        return lLow;
+    }
 
-    return lLow + ran2() % (lHigh-lLow+1);
+    unsigned long x = lHigh-lLow;
+    if (LONG_MAX < x)
+    {
+        return -1;
+    }
+    x++;
 
-#else
+    // We can now look for an random number on the interval [0,x-1].
+    //
+    static unsigned long maxLeftover = 0;
+    static unsigned long n = 0;
 
-  /* In order to be perfectly anal about not introducing any further sources
-   * of statistical bias, we're going to call rand2() until we get a number
-   * less than the greatest representable multiple of x. We'll then return
-   * n mod x.
-   */
-  long n;
-  unsigned long x = (lHigh-lLow+1);
-  long maxAcceptable = LONG_MAX - (LONG_MAX%x);
+    if (maxLeftover < x)
+    {
+        maxLeftover = ULONG_MAX;
+        n = ran2();
+    }
 
-  if (x <= 0 || LONG_MAX < x-1)
-  {
-    return -1;
-  }
-  do
-  {
-    n = ran2();
-  } while (n >= maxAcceptable);
+    // In order to be perfectly conservative about not introducing any
+    // further sources of statistical bias, we're going to call rand2()
+    // until we get a number less than the greatest representable
+    // multiple of x. We'll then return n mod x.
+    //
+    // N.B. This loop happens in randomized constant time, and pretty
+    // damn fast randomized constant time too, since
+    //
+    //      P(ULONG_MAX - n < ULONG_MAX % x) < 0.5, for any x.
+    //
+    // So even for the least desireable x, the average number of times
+    // we will call ran2() is less than 2.
+    //
+    unsigned long nLimit = maxLeftover - (maxLeftover%x);
+    while (n >= nLimit)
+    {
+        n = ran2();
+        if (maxLeftover != ULONG_MAX)
+        {
+            maxLeftover = ULONG_MAX;
+            nLimit = ULONG_MAX - (ULONG_MAX%x);
+        }
+    }
 
-  /* N.B. This loop happens in randomized constant time, and pretty damn
-   * fast randomized constant time too, since P(LONG_MAX - n < LONG_MAX % x)
-   * < 0.5 for any x, so for any X, the average number of times we should
-   * have to call ran2() is less than 2.
-   */
-  return lLow + (n % x);
-
-#endif
+    // Save useful, leftover bits. x -always- divides evenly into
+    // (nLimit-1). And, the probability of the final n on the
+    // interval [0,maxLeftover-1] is evenly distributed.
+    //
+    maxLeftover = (nLimit-1) / x;
+    long nAnswer = lLow + (n%x);
+    n /= x;
+    return nAnswer;
 }
