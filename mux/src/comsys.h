@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.14 2002-07-27 04:59:43 sdennis Exp $
+// $Id: comsys.h,v 1.15 2002-07-27 10:49:01 jake Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -127,12 +127,8 @@ void  do_chanlist(dbref executor, dbref caller, dbref enactor, int key);
 #define CHANNEL_SPOOF     0x400
 
 
-// explanation of logic: If it's not owned by god, and it's either not
-// a player, or a connected player, it's good... If it is owned by god,
-// then if it's going, assume it's already gone, no matter what it is.
-// :)
+// Connected players and non-garbage objects are ok.
 //
-#define UNDEAD(x) (((!God(Owner(x))) || !(Going(x))) && \
-        ((Typeof(x) != TYPE_PLAYER) || (Connected(x))))
+#define UNDEAD(x) (Good_obj(x) && ((Typeof(x) != TYPE_PLAYER) || Connected(x)))
 
 #endif // __COMSYS_H__

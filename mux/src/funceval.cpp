@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.37 2002-07-24 18:13:45 sdennis Exp $
+// $Id: funceval.cpp,v 1.38 2002-07-27 10:49:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -127,6 +127,7 @@ FUNCTION(fun_zone)
 {
     if (!mudconf.have_zones)
     {
+        safe_str("#-1 ZONES DISABLED", buff, bufc);
         return;
     }
     dbref it = match_thing_quiet(executor, fargs[0]);
@@ -624,7 +625,7 @@ void scan_zone
     dbref i;
     ITL pContext;
     ItemToList_Init(&pContext, buff, bufc, '#');
-    for (i = 0; i < mudstate.db_top; i++)
+    DO_WHOLE_DB(i)
     {
         if (  Typeof(i) == ObjectType
            && Zone(i) == it
@@ -665,7 +666,7 @@ FUNCTION(fun_children)
     dbref i;
     ITL pContext;
     ItemToList_Init(&pContext, buff, bufc, '#');
-    for (i = 0; i < mudstate.db_top; i++)
+    DO_WHOLE_DB(i)
     {
         if (  Parent(i) == it
            && !ItemToList_AddInteger(&pContext, i))

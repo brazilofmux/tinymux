@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.33 2002-07-27 04:56:16 sdennis Exp $
+// $Id: comsys.cpp,v 1.34 2002-07-27 10:49:01 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -269,18 +269,13 @@ void load_channels(FILE *fp)
             c->alias = NULL;
             c->channels = NULL;
         }
-        if (c->who >= 0 && c->who < mudstate.db_top)
+        if (Good_obj(c->who))
         {
-            if (  isPlayer(c->who)
-               || !God(Owner(c->who))
-               || !Going(c->who))
-            {
-                add_comsys(c);
-            }
+            add_comsys(c);
         }
         else
         {
-            Log.tinyprintf("dbref %d out of range [0, %d)" ENDLINE, c->who, mudstate.db_top);
+            Log.tinyprintf("Invalid dbref %d." ENDLINE, c->who);
         }
         purge_comsystem();
     }
@@ -1027,7 +1022,10 @@ void SendChannelMessage
             atr_add(ch->chan_obj, atr, msgNormal, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
         }
     }
-
+    else if (ch->chan_obj != NOTHING)
+    {
+        ch->chan_obj = NOTHING;
+    }
 
     // Since msgNormal and msgNoComTitle are no longer needed, free them here.
     //
@@ -1537,7 +1535,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
             
             for (; i < c->numchannels; i++)
             {
-                strcpy(c->alias + i * ALIAS_SIZE, c->alias + i * ALIAS_SIZE + ALIAS_SIZE);
+                strcpy(c->alias + i * ALIAS_SIZE, c->alias + (i + 1) * ALIAS_SIZE);
                 c->channels[i] = c->channels[i + 1];
             }
             return;
@@ -1814,7 +1812,7 @@ void do_listchannels(dbref player)
     struct channel *ch;
     char temp[LBUF_SIZE];
 
-    int perm = Comm_All(player);
+    BOOL perm = Comm_All(player);
     if (!perm)
     {
         raw_notify(player, "Warning: Only public channels and your channels will be shown.");
@@ -1873,7 +1871,7 @@ void do_comtitle
 
     if (channel[0] == '\0')
     {
-        raw_notify(executor, "Unknown alias");
+        raw_notify(executor, "Unknown alias.");
         return;
     }
     struct channel *ch = select_channel(channel);
@@ -2046,7 +2044,7 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *a
     char channel[MAX_CHANNEL_LEN+1];
     char *s, *t, *buff;
     char temp[LBUF_SIZE];
-    int i, flag;
+    int i;
 
     if (!mudconf.have_comsys)
     {
@@ -2061,9 +2059,11 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *a
     }
     *t = 0;
 
-    flag = 0;
+    BOOL flag = FALSE;
     if (*s && *(s + 1))
+    {
         flag = (*(s + 1) == 'a');
+    }
 
     struct channel *ch = select_channel(channel);
     if (!ch)
@@ -2168,9 +2168,7 @@ void do_comdisconnect(dbref player)
     for (i = 0; i < c->numchannels; i++)
     {
         do_comdisconnectchannel(player, c->channels[i]);
-#ifdef CHANNEL_LOUD
         do_comdisconnectraw_notify(player, c->channels[i]);
-#endif // CHANNEL_LOUD
     }
 }
 
@@ -2563,16 +2561,21 @@ void do_chopen
         match_everything(0);
         thing = match_result();
 
-        ch->chan_obj = thing;
         if (thing == NOTHING)
         {
+            ch->chan_obj = thing;
             msg = tprintf("Channel %s is now disassociated from any channel object.", ch->name);
         }
-        else
+        else if (Good_obj(thing))
         {
+            ch->chan_obj = thing;
             buff = unparse_object(executor, thing, FALSE);
             msg = tprintf("Channel %s is now using %s as channel object.", ch->name, buff);
             free_lbuf(buff);
+        }
+        else
+        {
+            msg = tprintf("%d is not a valid channel object.", thing);
         }
         break;
 

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.36 2002-07-25 14:34:25 jake Exp $
+// $Id: externs.h,v 1.37 2002-07-27 10:49:01 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -437,7 +437,6 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define MALIAS_REMOVE   4   /* Removes a player from an alias */
 #define MALIAS_DELETE   5   /* Deletes a mail alias */
 #define MALIAS_RENAME   6   /* Renames a mail alias */
-#define MALIAS_CLEANUP  7   // Check mail aliases for bad members.
 #define MALIAS_LIST     8   /* Lists mail aliases */
 #define MALIAS_STATUS   9   /* Status of mail aliases */
 #define MARK_SET        0   /* Set mark bits */

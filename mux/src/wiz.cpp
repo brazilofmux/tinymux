@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.11 2002-07-23 05:36:13 jake Exp $
+// $Id: wiz.cpp,v 1.12 2002-07-27 10:49:02 jake Exp $
 //
 
 #include "copyright.h"
@@ -317,13 +317,13 @@ void do_toad
     }
     else
     {
-        if (mudconf.toad_recipient == -1)
+        if (mudconf.toad_recipient == NOTHING)
         {
             recipient = executor;
         }
         else
         {
-            recipient =  mudconf.toad_recipient;
+            recipient = mudconf.toad_recipient;
         }
     }
 
@@ -332,7 +332,6 @@ void do_toad
     log_text(" was @toaded by ");
     log_name(executor);
     ENDLOG;
-
 
     // Clear everything out.
     //
@@ -360,7 +359,7 @@ void do_toad
     char *pVictimName = Name(victim);
     sprintf(buf, "%s has been turned into a slimy toad!", pVictimName);
     notify_except2(loc, executor, victim, executor, buf);
-    sprintf(buf, "You toaded %s! (%d objects @chowned)", pVictimName, count+1);
+    sprintf(buf, "You toaded %s! (%d objects @chowned)", pVictimName, count + 1);
     notify_quiet(executor, buf);
 
     // Zap the name from the name hash table.

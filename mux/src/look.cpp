@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.21 2002-07-23 15:51:11 jake Exp $
+// $Id: look.cpp,v 1.22 2002-07-27 10:49:01 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -85,7 +85,7 @@ int RealmExitsMap[NUMBER_OF_REALMS][NUMBER_OF_REALMS] =
     /* STAFF   LOOKER */ { MAP_SEEN, MAP_SEEN, MAP_SEEN, MAP_SEEN, MAP_SEEN, MAP_SEEN, MAP_SEEN, MAP_SEEN}
 };
 
-int WhichRealm(dbref what, int bPeering)
+int WhichRealm(dbref what, BOOL bPeering)
 {
     int realm = NORMAL_REALM;
     if (isMatrix(what))       realm = MATRIX_REALM;
@@ -204,7 +204,7 @@ int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state)
     }
 
     int realmLooker = WhichRealm(looker, isPeering(looker));
-    int realmLookee = WhichRealm(lookee, 0);
+    int realmLookee = WhichRealm(lookee, FALSE);
 
     // You can always see yourself.
     //

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.12 2002-07-23 15:51:11 jake Exp $
+// $Id: cque.cpp,v 1.13 2002-07-27 10:49:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -112,7 +112,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
     BQUE *point = (BQUE *)pEntry;
     dbref executor = point->executor;
 
-    if ((executor >= 0) && !Going(executor))
+    if (Good_obj(executor) && !Going(executor))
     {
         giveto(executor, mudconf.waitcost);
         mudstate.curr_enactor = point->enactor;
