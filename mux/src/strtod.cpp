@@ -1824,7 +1824,7 @@ undfl:
 
     /* Now the hard part -- adjusting rv to the correct value.*/
 
-    /* Put digits into bd: TRUE value = bd * 10^e */
+    /* Put digits into bd: true value = bd * 10^e */
 
     bd0 = s2b(s0, nd0, nd, y);
 
@@ -2442,7 +2442,7 @@ static int quorem(Bigint *b, Bigint *S)
     sxe = sx + --n;
     bx = b->x;
     bxe = bx + n;
-    q = *bxe / (*sxe + 1);  /* ensure q <= TRUE quotient */
+    q = *bxe / (*sxe + 1);  /* ensure q <= true quotient */
     if (q)
     {
         borrow = 0;
@@ -3045,7 +3045,7 @@ fast_failed:
             }
             goto one_digit;
         }
-        for (i = 1;; i++, dval(d) *= 10.)
+        for (i = 1; ; i++, dval(d) *= 10.0)
         {
             L = (Long)(dval(d) / ds);
             dval(d) -= L*ds;
@@ -3057,6 +3057,11 @@ fast_failed:
                 dval(d) += ds;
             }
 #endif
+            if (ds <= dval(d))
+            {
+                L++;
+                dval(d) -= ds;
+            }
             *s++ = '0' + (int)L;
             if (!dval(d))
             {
@@ -3096,7 +3101,7 @@ bump_up:
             }
         }
         goto ret1;
-        }
+    }
 
     m2 = b2;
     m5 = b5;
