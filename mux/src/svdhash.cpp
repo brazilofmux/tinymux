@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.8 2003-02-04 06:40:40 sdennis Exp $
+// $Id: svdhash.cpp,v 1.9 2003-02-04 11:53:29 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1049,7 +1049,6 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
         }
         return TRUE;
     }
-    return FALSE;
 }
 
 BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
@@ -1076,7 +1075,6 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
         SetVariablePointers();
         return TRUE;
     }
-    return FALSE;
 }
 
 #else // WIN32
