@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.35 2002-09-09 07:31:37 jake Exp $
+// $Id: mail.cpp,v 1.36 2002-09-09 08:52:36 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -301,8 +301,6 @@ void set_player_folder(dbref player, int fnum)
     }
     free_lbuf(tbuf1);
 }
-
-
 
 // Change or rename a folder
 //
@@ -2661,13 +2659,13 @@ static char *status_chars(struct mail *mp)
     static char res[10];
 
     char *p = res;
-    *p++ = Read(mp) ? '-' : 'N';
-    *p++ = M_Safe(mp) ? 'S' : '-';
-    *p++ = Cleared(mp) ? 'C' : '-';
-    *p++ = Urgent(mp) ? 'U' : '-';
-    *p++ = Mass(mp) ? 'M' : '-';
-    *p++ = Forward(mp) ? 'F' : '-';
-    *p++ = Tagged(mp) ? '+' : '-';
+    *p++ = Read(mp)     ? '-' : 'N';
+    *p++ = M_Safe(mp)   ? 'S' : '-';
+    *p++ = Cleared(mp)  ? 'C' : '-';
+    *p++ = Urgent(mp)   ? 'U' : '-';
+    *p++ = Mass(mp)     ? 'M' : '-';
+    *p++ = Forward(mp)  ? 'F' : '-';
+    *p++ = Tagged(mp)   ? '+' : '-';
     *p = '\0';
     return res;
 }
@@ -3129,8 +3127,6 @@ void do_malias_switch(dbref player, char *a1, char *a2)
     }
 }
 
-
-
 void do_mail_cc(dbref player, char *arg)
 {
     if (!(Flags2(player) & PLAYER_MAILS))
@@ -3515,7 +3511,8 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
     {
         return;
     }
-    if ((*(text + 1) == '-') && !(*(text + 2)))
+    if (  (text[1] == '-') 
+       && (text[2] == '\0'))
     {
         do_expmail_stop(executor, 0);
         return;
