@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.83 2002-08-25 12:56:59 jake Exp $
+// $Id: functions.cpp,v 1.84 2002-08-26 01:10:12 jake Exp $
 //
 
 #include "copyright.h"
@@ -8030,7 +8030,7 @@ FUN flist[] =
     {"LFLAGS",   fun_lflags,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LINK",     fun_link,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"LIST",     fun_list,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
-    {"LIT",      fun_lit,      MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
+    {"LIT",      fun_lit,      1,       1,  1, FN_NO_EVAL, CA_PUBLIC},
     {"LJUST",    fun_ljust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"LN",       fun_ln,       MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LNUM",     fun_lnum,     MAX_ARG, 0,  3,       0, CA_PUBLIC},
