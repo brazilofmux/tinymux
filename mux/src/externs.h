@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.22 2004-03-08 04:37:40 sdennis Exp $
+// $Id: externs.h,v 1.23 2004-04-18 04:06:36 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -202,8 +202,6 @@ extern bool eval_boolexp_atr(dbref, dbref, dbref, char *);
 
 /* From functions.cpp */
 extern bool xlate(char *);
-extern char *trim_space_sep(char *, char);
-extern char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim);
 extern char *next_token(char *str, char sep);
 extern char *split_token(char **sp, char sep);
 

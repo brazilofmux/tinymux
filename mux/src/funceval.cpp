@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.50 2004-04-18 02:08:19 sdennis Exp $
+// $Id: funceval.cpp,v 1.51 2004-04-18 04:06:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -964,7 +964,7 @@ FUNCTION(fun_columns)
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
     int ncp;
-    char *cp = trim_space_sep_LEN(curr, bp-curr, sep.str[0], &ncp);
+    char *cp = trim_space_sep_LEN(curr, bp-curr, &sep, &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -1094,7 +1094,10 @@ FUNCTION(fun_table)
     }
 
     int nNumCols = nLineLength / nFieldWidth;
-    char *pNext = trim_space_sep(fargs[0], cDelimiter);
+    SEP sep;
+    sep.n = 1;
+    sep.str[0] = cDelimiter;
+    char *pNext = trim_space_sep(fargs[0], &sep);
     if (!*pNext)
     {
         return;
@@ -1914,7 +1917,10 @@ FUNCTION(fun_elements)
     strcpy(wordlist, fargs[0]);
     nwords = list2arr(ptrs, LBUF_SIZE / 2, wordlist, sep.str[0]);
 
-    s = trim_space_sep(fargs[1], ' ');
+    SEP sep2;
+    sep2.n = 1;
+    sep2.str[0] = ' ';
+    s = trim_space_sep(fargs[1], &sep2);
 
     // Go through the second list, grabbing the numbers and finding the
     // corresponding elements.
@@ -1955,7 +1961,7 @@ FUNCTION(fun_grab)
 
     // Walk the wordstring, until we find the word we want.
     //
-    char *s = trim_space_sep(fargs[0], sep.str[0]);
+    char *s = trim_space_sep(fargs[0], &sep);
     do
     {
         char *r = split_token(&s, sep.str[0]);
@@ -1978,7 +1984,7 @@ FUNCTION(fun_graball)
 
     bool bFirst = true;
 
-    char *s = trim_space_sep(fargs[0], sep.str[0]);
+    char *s = trim_space_sep(fargs[0], &sep);
     do
     {
         char *r = split_token(&s, sep.str[0]);
@@ -2067,7 +2073,7 @@ FUNCTION(fun_pickrand)
         return;
     }
 
-    char *s = trim_space_sep(fargs[0], sep.str[0]);
+    char *s = trim_space_sep(fargs[0], &sep);
     char *t = s;
     if (s[0] == '\0')
     {
@@ -2259,7 +2265,7 @@ FUNCTION(fun_last)
     // Trim leading spaces.
     //
     int nLen = strlen(fargs[0]);
-    char *pStart = trim_space_sep_LEN(fargs[0], nLen, sep.str[0], &nLen);
+    char *pStart = trim_space_sep_LEN(fargs[0], nLen, &sep, &nLen);
     char *pEnd = pStart + nLen - 1;
 
     if (sep.str[0] == ' ')
@@ -2305,7 +2311,7 @@ FUNCTION(fun_matchall)
     // match. If none match, return 0.
     //
     wcount = 1;
-    s = trim_space_sep(fargs[0], sep.str[0]);
+    s = trim_space_sep(fargs[0], &sep);
     do
     {
         r = split_token(&s, sep.str[0]);
@@ -2403,7 +2409,7 @@ FUNCTION(fun_mix)
     //
     for (i = 1; i <= lastn; i++) 
     {
-        cp[i-1] = trim_space_sep(fargs[i], sep.str[0]);
+        cp[i-1] = trim_space_sep(fargs[i], &sep);
     }
     int twords;
     int nwords = countwords(cp[1], sep.str[0]);
@@ -2460,7 +2466,10 @@ FUNCTION(fun_foreach)
     char *str;
     char cbuf[2], prev = '\0';
     char *atextbuf = alloc_lbuf("fun_foreach");
-    char *cp = trim_space_sep(fargs[1], ' ');
+    SEP sep;
+    sep.n = 1;
+    sep.str[0] = ' ';
+    char *cp = trim_space_sep(fargs[1], &sep);
 
     char *bp = cbuf;
 
@@ -3638,7 +3647,10 @@ void real_regrab(char *search, const char *pattern, char sep, char *buff,
     }
 
     bool first = true;
-    char *s = trim_space_sep(search, sep);
+    SEP sep2;
+    sep2.n = 1;
+    sep2.str[0] = sep;
+    char *s = trim_space_sep(search, &sep2);
     do
     {
         char *r = split_token(&s, sep);

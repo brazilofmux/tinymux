@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.84 2004-04-18 02:08:19 sdennis Exp $
+// $Id: functions.cpp,v 1.85 2004-04-18 04:06:36 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -154,9 +154,10 @@ XFUNCTION(fun_hasquota);
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
 //
-char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim)
+char *trim_space_sep_LEN(char *str, int nStr, SEP *sep, int *nTrim)
 {
-    if (sep != ' ')
+    if (  sep->n != 1
+       || sep->str[0] != ' ')
     {
         *nTrim = nStr;
         return str;
@@ -173,9 +174,9 @@ char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim)
 
     // Advance over trailing spaces.
     //
-    for (; *pEnd == ' ' && pEnd > pBegin; pEnd--)
+    for (; pEnd > pBegin && *pEnd == ' '; pEnd--)
     {
-        // Nothing
+        // Nothing.
     }
     pEnd++;
 
@@ -187,9 +188,10 @@ char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim)
 
 // Trim off leading and trailing spaces if the separator char is a space.
 //
-char *trim_space_sep(char *str, char sep)
+char *trim_space_sep(char *str, SEP *sep)
 {
-    if (sep != ' ')
+    if (  sep->n != 1
+       || sep->str[0] != ' ')
     {
         return str;
     }
@@ -200,11 +202,11 @@ char *trim_space_sep(char *str, char sep)
     char *p;
     for (p = str; *p; p++)
     {
-        // Nothing
+        // Nothing.
     }
-    for (p--; *p == ' ' && p > str; p--)
+    for (p--; p > str && *p == ' '; p--)
     {
-        // Nothing
+        // Nothing.
     }
     p++;
     *p = '\0';
@@ -428,7 +430,10 @@ static int get_list_type
 
 int list2arr(char *arr[], int maxlen, char *list, char sep)
 {
-    list = trim_space_sep(list, sep);
+    SEP sep2;
+    sep2.n = 1;
+    sep2.str[0] = sep;
+    list = trim_space_sep(list, &sep2);
     if (list[0] == '\0')
     {
         return 0;
@@ -764,7 +769,10 @@ int countwords(char *str, char sep)
 {
     int n;
 
-    str = trim_space_sep(str, sep);
+    SEP sep2;
+    sep2.n = 1;
+    sep2.str[0] = sep;
+    str = trim_space_sep(str, &sep2);
     if (!*str)
     {
         return 0;
@@ -1699,7 +1707,7 @@ FUNCTION(fun_first)
         return;
     }
 
-    char *s = trim_space_sep(fargs[0], sep.str[0]);
+    char *s = trim_space_sep(fargs[0], &sep);
     char *first = split_token(&s, sep.str[0]);
     if (first)
     {
@@ -1728,7 +1736,7 @@ FUNCTION(fun_rest)
         return;
     }
 
-    char *s = trim_space_sep(fargs[0], sep.str[0]);  // leading spaces ...
+    char *s = trim_space_sep(fargs[0], &sep);
     split_token(&s, sep.str[0]);
     if (s)
     {
@@ -2200,7 +2208,7 @@ FUNCTION(fun_match)
     // one that matches.  If none match, return 0.
     //
     int wcount = 1;
-    char *s = trim_space_sep(fargs[0], sep.str[0]);
+    char *s = trim_space_sep(fargs[0], &sep);
     do {
         char *r = split_token(&s, sep.str[0]);
         mudstate.wild_invk_ctr = 0;
@@ -2257,7 +2265,7 @@ FUNCTION(fun_extract)
     // Skip to the start of the string to save.
     //
     start--;
-    s = trim_space_sep(s, sep.str[0]);
+    s = trim_space_sep(s, &sep);
     while (  start 
           && s)
     {
@@ -3293,7 +3301,7 @@ FUNCTION(fun_ladd)
             return;
         }
 
-        char *cp = trim_space_sep(fargs[0], sep.str[0]);
+        char *cp = trim_space_sep(fargs[0], &sep);
         while (cp)
         {
             char *curr = split_token(&cp, sep.str[0]);
@@ -3314,7 +3322,7 @@ FUNCTION(fun_land)
             return;
         }
 
-        char *cp = trim_space_sep(fargs[0], sep.str[0]);
+        char *cp = trim_space_sep(fargs[0], &sep);
         while (cp && bValue)
         {
             char *curr = split_token(&cp, sep.str[0]);
@@ -3335,7 +3343,7 @@ FUNCTION(fun_lor)
             return;
         }
 
-        char *cp = trim_space_sep(fargs[0], sep.str[0]);
+        char *cp = trim_space_sep(fargs[0], &sep);
         while (cp && !bValue)
         {
             char *curr = split_token(&cp, sep.str[0]);
@@ -4694,7 +4702,8 @@ FUNCTION(fun_lpos)
 #define IF_REPLACE  1
 #define IF_INSERT   2
 
-static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, char sep, int flag)
+static void do_itemfuns(char *buff, char **bufc, char *str, int el,
+                        char *word, SEP *psep, int flag)
 {
     int ct;
     char *sptr, *iptr, *eptr;
@@ -4705,7 +4714,10 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
     // If passed a null string return an empty string, except that we
     // are allowed to append to a null string.
     //
-    if ((!str || !*str) && ((flag != IF_INSERT) || (el != 1)))
+    if (  (  !str
+          || !*str)
+       && (  flag != IF_INSERT
+          || el != 1))
     {
         return;
     }
@@ -4736,19 +4748,19 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         }
         else
         {
-            eptr = trim_space_sep_LEN(str, nStr, sep, &elen);
-            iptr = split_token_LEN(&eptr, &elen, sep, &ilen);
+            eptr = trim_space_sep_LEN(str, nStr, psep, &elen);
+            iptr = split_token_LEN(&eptr, &elen, psep->str[0], &ilen);
         }
     }
     else
     {
         // Break off 'before' portion.
         //
-        sptr = eptr = trim_space_sep_LEN(str, nStr, sep, &elen);
+        sptr = eptr = trim_space_sep_LEN(str, nStr, psep, &elen);
         overrun = true;
         for (  ct = el;
                ct > 2 && eptr;
-               eptr = next_token_LEN(eptr, &elen, sep), ct--)
+               eptr = next_token_LEN(eptr, &elen, psep->str[0]), ct--)
         {
             // Nothing
         }
@@ -4759,7 +4771,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
             // the last token in the 'before' portion.
             //
             overrun = false;
-            iptr = split_token_LEN(&eptr, &elen, sep, &ilen);
+            iptr = split_token_LEN(&eptr, &elen, psep->str[0], &ilen);
             slen = (iptr - sptr) + ilen;
         }
 
@@ -4767,7 +4779,9 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         // the string. Insert is allowed to continue if we are exactly
         // at the end of the string, but replace and delete are not.
         //
-        if (!(eptr || ((flag == IF_INSERT) && !overrun)))
+        if (!(  eptr
+             || (  flag == IF_INSERT
+                && !overrun)))
         {
             safe_copy_buf(str, nStr, buff, bufc);
             return;
@@ -4777,7 +4791,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         //
         if (eptr)
         {
-            iptr = split_token_LEN(&eptr, &elen, sep, &ilen);
+            iptr = split_token_LEN(&eptr, &elen, psep->str[0], &ilen);
         }
         else
         {
@@ -4797,7 +4811,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
             safe_copy_buf(sptr, slen, buff, bufc);
             if (eptr)
             {
-                safe_chr(sep, buff, bufc);
+                safe_chr(psep->str[0], buff, bufc);
             }
         }
         if (eptr)
@@ -4813,12 +4827,12 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         if (sptr)
         {
             safe_copy_buf(sptr, slen, buff, bufc);
-            safe_chr(sep, buff, bufc);
+            safe_chr(psep->str[0], buff, bufc);
         }
         safe_str(word, buff, bufc);
         if (eptr)
         {
-            safe_chr(sep, buff, bufc);
+            safe_chr(psep->str[0], buff, bufc);
             safe_copy_buf(eptr, elen, buff, bufc);
         }
         break;
@@ -4830,17 +4844,17 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         if (sptr)
         {
             safe_copy_buf(sptr, slen, buff, bufc);
-            safe_chr(sep, buff, bufc);
+            safe_chr(psep->str[0], buff, bufc);
         }
         safe_str(word, buff, bufc);
         if (iptr)
         {
-            safe_chr(sep, buff, bufc);
+            safe_chr(psep->str[0], buff, bufc);
             safe_copy_buf(iptr, ilen, buff, bufc);
         }
         if (eptr)
         {
-            safe_chr(sep, buff, bufc);
+            safe_chr(psep->str[0], buff, bufc);
             safe_copy_buf(eptr, elen, buff, bufc);
         }
         break;
@@ -4858,7 +4872,7 @@ FUNCTION(fun_ldelete)
 
     // Delete a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), NULL, sep.str[0], IF_DELETE);
+    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), NULL, &sep, IF_DELETE);
 }
 
 FUNCTION(fun_replace)
@@ -4871,7 +4885,7 @@ FUNCTION(fun_replace)
 
     // Replace a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], sep.str[0], IF_REPLACE);
+    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], &sep, IF_REPLACE);
 }
 
 FUNCTION(fun_insert)
@@ -4884,7 +4898,7 @@ FUNCTION(fun_insert)
 
     // Insert a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], sep.str[0], IF_INSERT);
+    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], &sep, IF_INSERT);
 }
 
 /*
@@ -4951,7 +4965,7 @@ FUNCTION(fun_member)
     char *r, *s;
 
     wcount = 1;
-    s = trim_space_sep(fargs[0], sep.str[0]);
+    s = trim_space_sep(fargs[0], &sep);
     do {
         r = split_token(&s, sep.str[0]);
         if (!strcmp(fargs[1], r))
@@ -5075,7 +5089,7 @@ FUNCTION(fun_wordpos)
     {
         int ncp_trimmed;
         char *tp = &(cp[charpos - 1]);
-        cp = trim_space_sep_LEN(cp, ncp, sep.str[0], &ncp_trimmed);
+        cp = trim_space_sep_LEN(cp, ncp, &sep, &ncp_trimmed);
         char *xp = split_token(&cp, sep.str[0]);
 
         int i;
@@ -5969,7 +5983,10 @@ FUNCTION(fun_after)
     if (  mlen == 1
        && *mp == ' ')
     {
-        bp = trim_space_sep(bp, ' ');
+        SEP sep2;
+        sep2.n = 1;
+        sep2.str[0] = ' ';
+        bp = trim_space_sep(bp, &sep2);
     }
 
     // Look for the target string.
@@ -6009,7 +6026,10 @@ FUNCTION(fun_before)
     if (  mlen == 1
        && *mp == ' ')
     {
-        bp = trim_space_sep(bp, ' ');
+        SEP sep2;
+        sep2.n = 1;
+        sep2.str[0] = ' ';
+        bp = trim_space_sep(bp, &sep2);
     }
 
     ip = bp;
@@ -6328,7 +6348,7 @@ FUNCTION(fun_parse)
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
     int ncp;
-    char *cp = trim_space_sep_LEN(curr, dp-curr, sep.str[0], &ncp);
+    char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -6394,7 +6414,7 @@ FUNCTION(fun_iter)
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
     int ncp;
-    char *cp = trim_space_sep_LEN(curr, dp-curr, sep.str[0], &ncp);
+    char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -6484,7 +6504,7 @@ FUNCTION(fun_list)
     mux_exec(curr, &dp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     int ncp;
-    char *cp = trim_space_sep_LEN(curr, dp-curr, sep.str[0], &ncp);
+    char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -6638,7 +6658,7 @@ FUNCTION(fun_itemize)
     }
 
     int pos = 1;
-    char *cp = trim_space_sep(fargs[0], sep.str[0]);
+    char *cp = trim_space_sep(fargs[0], &sep);
     char *word = split_token(&cp, sep.str[0]);
     while (cp && *cp)
     {
@@ -6694,7 +6714,11 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
     // Now iteratively eval the attrib with the argument list.
     //
     char *result, *curr, *objstring, *bp, *str, *cp; 
-    cp = curr = trim_space_sep(fargs[1], sep);
+
+    SEP sep2;
+    sep2.n = 1;
+    sep2.str[0] = sep;
+    cp = curr = trim_space_sep(fargs[1], &sep2);
     char *atextbuf = alloc_lbuf("fun_filter");
     bool bFirst = true;
     while (  cp
@@ -6779,7 +6803,7 @@ FUNCTION(fun_map)
 
     // Now process the list one element at a time.
     //
-    char *cp = trim_space_sep(fargs[1], sep.str[0]);
+    char *cp = trim_space_sep(fargs[1], &sep);
     char *atextbuf = alloc_lbuf("fun_map");
     bool first = true;
     char *objstring, *str;
