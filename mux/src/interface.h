@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.14 2002-09-26 13:52:26 jake Exp $
+// $Id: interface.h,v 1.15 2002-09-29 07:21:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -162,9 +162,7 @@ extern void process_output(void *, int);
 extern void dump_restart_db(void);
 #endif // WIN32
 
-#ifndef SYS_SIGLIST_DECLARED
 extern void BuildSignalNamesTable(void);
-#endif // !SYS_SIGLIST_DECLARED
 extern void set_signals(void);
 
 // from netcommon.cpp

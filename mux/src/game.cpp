@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.25 2002-09-28 06:59:19 sdennis Exp $
+// $Id: game.cpp,v 1.26 2002-09-29 07:21:45 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1849,9 +1849,7 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
 
 int DCL_CDECL main(int argc, char *argv[])
 {
-#ifndef SYS_SIGLIST_DECLARED
     BuildSignalNamesTable();
-#endif
 
     FLOAT_Initialize();
     TIME_Initialize();

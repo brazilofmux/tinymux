@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.19 2002-09-28 07:22:17 sdennis Exp $
+// $Id: bsd.cpp,v 1.20 2002-09-29 07:21:45 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2413,14 +2413,6 @@ void emergency_shutdown(void)
 // ---------------------------------------------------------------------------
 // Signal handling routines.
 //
-void log_signal(const char *signame)
-{
-    STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
-    log_text("Caught signal ");
-    log_text(signame);
-    ENDLOG;
-}
-
 static void check_panicking(int sig)
 {
     // If we are panicking, turn off signal catching and resignal.
@@ -2456,19 +2448,13 @@ static void unset_signals(void)
 #define CAST_SIGNAL_FUNC
 #endif // _SGI_SOURCE
 
-#if defined(HAVE_SYS_SIGNAME)
-#define signames sys_signame
-#elif defined(SYS_SIGLIST_DECLARED)
-#define signames sys_siglist
-#else // HAVE_SYS_SIGNAME
-
 // The purpose of the following code is support the case where sys_siglist is
 // is not part of the environment. This is the case for some Unix platforms
 // and also for Win32.
 //
 typedef struct
 {
-    int         nSignal;
+    int         iSignal;
     const char *szSignal;
 } SIGNALTYPE, *PSIGNALTYPE;
 
@@ -2664,34 +2650,109 @@ const SIGNALTYPE aSigTypes[] =
     { -1, NULL }
 };
 
-static const char *signames[NSIG];
+typedef struct
+{
+    const char *pShortName;
+    const char *pLongName;
+} TINY_SIGNAMES;
+
+static TINY_SIGNAMES signames[NSIG];
+
+#if defined(HAVE_SYS_SIGNAME)
+#define SysSigNames sys_signame
+#elif defined(SYS_SIGLIST_DECLARED)
+#define SysSigNames sys_siglist
+#endif // HAVE_SYS_SIGNAME
 
 void BuildSignalNamesTable(void)
 {
     int i;
     for (i = 0; i < NSIG; i++)
     {
-        signames[i] = NULL;
+        signames[i].pShortName = NULL;
+        signames[i].pLongName  = NULL;
     }
-    i = 0;
-    while (  aSigTypes[i].nSignal >= 0
-          && aSigTypes[i].nSignal < NSIG)
+
+    const SIGNALTYPE *pst = aSigTypes;
+    while (pst->szSignal)
     {
-        if (signames[aSigTypes[i].nSignal] == NULL)
+        int sig = pst->iSignal;
+        if (  0 <= sig
+           && sig < NSIG)
         {
-            signames[aSigTypes[i].nSignal] = aSigTypes[i].szSignal;
+            TINY_SIGNAMES *tsn = &signames[sig];
+            if (tsn->pShortName == NULL)
+            {
+                tsn->pShortName = pst->szSignal;
+                if (sig == SIGUSR1)
+                {
+                    tsn->pLongName = "Restart server";
+                }
+                else if (sig == SIGUSR2)
+                {
+                    tsn->pLongName = "Drop flatfile";
+                }
+#ifdef SysSigNames
+                else if (  SysSigNames[sig]
+                        && strcmp(tsn->pShortName, SysSigNames[sig]) != 0)
+                {
+                    tsn->pLongName = SysSigNames[sig];
+                }
+            }
+#endif // SysSigNames
         }
-        i++;
+        pst++;
     }
     for (i = 0; i < NSIG; i++)
     {
-        if (signames[i] == NULL)
+        TINY_SIGNAMES *tsn = &signames[i];
+        if (tsn->pShortName == NULL)
         {
-            signames[i] = "SIGRESERVED";
+#ifdef SysSigNames
+            if (SysSigNames[i])
+            {
+                tsn->pLongName = SysSigNames[i];
+            }
+#endif // SysSigNames
+
+            // This is the only non-const memory case.
+            //
+            tsn->pShortName = StringClone(tprintf("SIG%03d", i));
         }
     }
 }
-#endif // HAVE_SYS_SIGNAME
+
+static char *SignalDesc(int iSignal)
+{
+    static char buff[LBUF_SIZE];
+    char *bufc = buff; 
+    safe_str(signames[iSignal].pShortName, buff, &bufc);
+    if (signames[iSignal].pLongName)
+    {
+        safe_str(" (", buff, &bufc);
+        safe_str(signames[iSignal].pLongName, buff, &bufc);
+        safe_chr(')', buff, &bufc);
+    }
+    *bufc = '\0';
+    return buff;
+}
+
+void log_signal(int iSignal)
+{
+    STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
+    log_text("Caught signal ");
+    log_text(SignalDesc(iSignal));
+    ENDLOG;
+}
+
+void log_signal_ignore(int iSignal)
+{
+    STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
+    log_text("Caught signal and ignored signal ");
+    log_text(SignalDesc(iSignal));
+    log_text(" because server just came up.");
+    ENDLOG;
+}
 
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
@@ -2709,16 +2770,12 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
     case SIGUSR1:
         if (mudstate.bCanRestart)
         {
-            log_signal(signames[sig]);
+            log_signal(sig);
             do_restart(GOD, GOD, GOD, 0);
         }
         else
         {
-            STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
-            log_text("Caught and ignored signal ");
-            log_text(signames[sig]);
-            log_text(" because server just came up.");
-            ENDLOG;
+            log_signal_ignore(sig);
         }
         break;
 
@@ -2726,8 +2783,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
         // Drop a flatfile.
         //
-        log_signal(signames[sig]);
-        raw_broadcast(0, "Caught signal %s requesting a flatfile @dump. Please wait.", signames[sig]);
+        log_signal(sig);
+        raw_broadcast(0, "Caught signal %s requesting a flatfile @dump. Please wait.", SignalDesc(sig));
         dump_database_internal(DUMP_I_SIGNAL);
         break;
 
@@ -2756,7 +2813,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
         // Perform a database dump.
         //
-        log_signal(signames[sig]);
+        log_signal(sig);
         extern void dispatch_DatabaseDump(void *pUnused, int iUnused);
         scheduler.CancelTask(dispatch_DatabaseDump, 0, 0);
         mudstate.dump_counter.GetUTC();
@@ -2769,7 +2826,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
         // Log + ignore
         //
-        log_signal(signames[sig]);
+        log_signal(sig);
         break;
 
 #ifndef WIN32
@@ -2782,8 +2839,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         // Time for a normal and short-winded shutdown.
         //
         check_panicking(sig);
-        log_signal(signames[sig]);
-        raw_broadcast(0, "GAME: Caught signal %s, exiting.", signames[sig]);
+        log_signal(sig);
+        raw_broadcast(0, "GAME: Caught signal %s, exiting.", SignalDesc(sig));
         mudstate.shutdown_flag = TRUE;
         break;
 
@@ -2810,7 +2867,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         //
         Log.Flush();
         check_panicking(sig);
-        log_signal(signames[sig]);
+        log_signal(sig);
         report();
         SYNC;
         if (  mudconf.sig_action != SA_EXIT
@@ -2819,7 +2876,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             raw_broadcast
             (  0,
                "GAME: Fatal signal %s caught, restarting.",
-               signames[sig]
+               SignalDesc(sig)
             );
 
             // There is no older DB. It's a fiction. Our only choice is
@@ -2885,7 +2942,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         // Coredump.
         //
         check_panicking(sig);
-        log_signal(signames[sig]);
+        log_signal(sig);
         report();
 
 #ifdef WIN32
