@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.42 2002-06-28 15:15:26 sdennis Exp $
+// $Id: functions.cpp,v 1.43 2002-06-28 15:56:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1966,7 +1966,7 @@ FUNCTION(fun_next)
        && Has_siblings(it))
     {
         dbref loc = where_is(it);
-        dbref ex_here = Good_obj(loc) ? Examinable(executor, loc) : 0;
+        BOOL ex_here = Good_obj(loc) ? Examinable(executor, loc) : 0;
         if (  ex_here
            || loc == executor
            || loc == where_is(executor))
