@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.58 2001-04-10 17:35:44 sdennis Exp $
+// $Id: functions.cpp,v 1.59 2001-05-22 04:51:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2113,7 +2113,12 @@ FUNCTION(fun_version)
 }
 FUNCTION(fun_strlen)
 {
-    safe_ltoa(strlen(strip_ansi(fargs[0])), buff, bufc, LBUF_SIZE-1);
+    unsigned int n = 0;
+    if (nfargs >= 1)
+    {
+        strip_ansi(fargs[0], &n);
+    }
+    safe_ltoa(n, buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_num)
@@ -6527,7 +6532,7 @@ FUN flist[] =
     {"STATS",    fun_stats,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"STRCAT",   fun_strcat,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"STRIPANSI",fun_stripansi,MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"STRLEN",   fun_strlen,   1,       1,  1,       0, CA_PUBLIC},
+    {"STRLEN",   fun_strlen,   1,       0,  1,       0, CA_PUBLIC},
     {"STRMATCH", fun_strmatch, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"STRTRUNC", fun_strtrunc, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"SUB",      fun_sub,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
