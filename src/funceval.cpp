@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.68 2001-10-11 19:26:47 sdennis Exp $
+// $Id: funceval.cpp,v 1.69 2001-10-11 21:10:00 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -804,8 +804,7 @@ FUNCTION(fun_columns)
         if (nColumns-1 <= iColumn)
         {
             iColumn = 0;
-            nBufferAvailable -= safe_copy_buf("\r\n", 2, buff, bufc,
-                LBUF_SIZE-1);
+            nBufferAvailable -= safe_copy_buf("\r\n", 2, buff, bufc);
             bNeedCRLF = FALSE;
         }
         else
@@ -818,7 +817,7 @@ FUNCTION(fun_columns)
     }
     if (bNeedCRLF)
     {
-        safe_copy_buf("\r\n", 2, buff, bufc, LBUF_SIZE-1);
+        safe_copy_buf("\r\n", 2, buff, bufc);
     }
     free_lbuf(curr);
 }
@@ -1047,7 +1046,7 @@ FUNCTION(fun_objmem)
         safe_noperm(buff, bufc);
         return;
     }
-    safe_ltoa(mem_usage(thing), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(mem_usage(thing), buff, bufc);
 }
 
 FUNCTION(fun_playmem)
@@ -1067,7 +1066,7 @@ FUNCTION(fun_playmem)
             tot += mem_usage(j);
         }
     }
-    safe_ltoa(tot, buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(tot, buff, bufc);
 }
 
 // Code for andflags() and orflags() borrowed from PennMUSH 1.50
@@ -1169,12 +1168,12 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
 
 FUNCTION(fun_orflags)
 {
-    safe_ltoa(handle_flaglists(player, fargs[0], fargs[1], 0), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(handle_flaglists(player, fargs[0], fargs[1], 0), buff, bufc);
 }
 
 FUNCTION(fun_andflags)
 {
-    safe_ltoa(handle_flaglists(player, fargs[0], fargs[1], 1), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(handle_flaglists(player, fargs[0], fargs[1], 1), buff, bufc);
 }
 
 FUNCTION(fun_strtrunc)
@@ -1230,7 +1229,7 @@ FUNCTION(fun_inc)
 {
     if (nfargs == 1)
     {
-        safe_ltoa(Tiny_atol(fargs[0]) + 1, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(Tiny_atol(fargs[0]) + 1, buff, bufc);
     }
     else
     {
@@ -1242,7 +1241,7 @@ FUNCTION(fun_dec)
 {
     if (nfargs == 1)
     {
-        safe_ltoa(Tiny_atol(fargs[0]) - 1, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(Tiny_atol(fargs[0]) - 1, buff, bufc);
     }
     else
     {
@@ -1272,7 +1271,7 @@ FUNCTION(fun_mail)
     if (nfargs == 0 || !fargs[0] || !fargs[0][0])
     {
         count_mail(player, 0, &rc, &uc, &cc);
-        safe_ltoa(rc + uc, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(rc + uc, buff, bufc);
         return;
     }
     else if (nfargs == 1)
@@ -1643,11 +1642,11 @@ FUNCTION(fun_findable)
 #ifdef WOD_REALMS
         if (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(obj, victim, ACTION_IS_STATIONARY))
         {
-            safe_ltoa(locatable(obj, victim, obj), buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(locatable(obj, victim, obj), buff, bufc);
         }
         else safe_chr('0', buff, bufc);
 #else
-        safe_ltoa(locatable(obj, victim, obj), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(locatable(obj, victim, obj), buff, bufc);
 #endif
     }
 }
@@ -1696,7 +1695,7 @@ FUNCTION(fun_visible)
         {
             ap = atr_num(atr);
             atr_pget_info(thing, atr, &aowner, &aflags);
-            safe_ltoa(See_attr(it, thing, ap, aowner, aflags), buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(See_attr(it, thing, ap, aowner, aflags), buff, bufc);
             return;
         }
     }
@@ -1709,7 +1708,7 @@ FUNCTION(fun_visible)
         safe_chr('0', buff, bufc);
         return;
     }
-    safe_ltoa(Examinable(it, thing), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(Examinable(it, thing), buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
@@ -2056,7 +2055,7 @@ FUNCTION(fun_last)
     // Return the last token.
     //
     nLen = pEnd - p;
-    safe_copy_buf(p+1, nLen, buff, bufc, LBUF_SIZE-1);
+    safe_copy_buf(p+1, nLen, buff, bufc);
 }
 
 // Borrowed from TinyMUSH 2.2
@@ -2407,7 +2406,7 @@ FUNCTION(fun_die)
         total += RandomINT32(1, die);
     }
 
-    safe_ltoa(total, buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(total, buff, bufc);
 }
 
 FUNCTION(fun_lrand)
@@ -2436,11 +2435,11 @@ FUNCTION(fun_lrand)
         for (int i = 0; i < n_times-1; i++)
         {
             INT32 val = RandomINT32(iLower, iUpper);
-            safe_ltoa(val, buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(val, buff, bufc);
             print_sep(sep, buff, bufc);
         }
         INT32 val = RandomINT32(iLower, iUpper);
-        safe_ltoa(val, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(val, buff, bufc);
     }
 }
 
@@ -2458,7 +2457,7 @@ FUNCTION(fun_lit)
 FUNCTION(fun_shl)
 {
     if (is_number(fargs[0]) && is_number(fargs[1]))
-        safe_ltoa(Tiny_atol(fargs[0]) << Tiny_atol(fargs[1]), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(Tiny_atol(fargs[0]) << Tiny_atol(fargs[1]), buff, bufc);
     else
         safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
 }
@@ -2466,7 +2465,7 @@ FUNCTION(fun_shl)
 FUNCTION(fun_shr)
 {
     if (is_number(fargs[0]) && is_number(fargs[1]))
-        safe_ltoa(Tiny_atol(fargs[0]) >> Tiny_atol(fargs[1]), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(Tiny_atol(fargs[0]) >> Tiny_atol(fargs[1]), buff, bufc);
     else
         safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
 }
@@ -2474,7 +2473,7 @@ FUNCTION(fun_shr)
 FUNCTION(fun_band)
 {
     if (is_number(fargs[0]) && is_number(fargs[1]))
-        safe_ltoa(Tiny_atol(fargs[0]) & Tiny_atol(fargs[1]), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(Tiny_atol(fargs[0]) & Tiny_atol(fargs[1]), buff, bufc);
     else
         safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
 }
@@ -2482,7 +2481,7 @@ FUNCTION(fun_band)
 FUNCTION(fun_bor)
 {
     if (is_number(fargs[0]) && is_number(fargs[1]))
-        safe_ltoa(Tiny_atol(fargs[0]) | Tiny_atol(fargs[1]), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(Tiny_atol(fargs[0]) | Tiny_atol(fargs[1]), buff, bufc);
     else
         safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
 }
@@ -2490,7 +2489,7 @@ FUNCTION(fun_bor)
 FUNCTION(fun_bnand)
 {
     if (is_number(fargs[0]) && is_number(fargs[1]))
-        safe_ltoa(Tiny_atol(fargs[0]) & ~(Tiny_atol(fargs[1])), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(Tiny_atol(fargs[0]) & ~(Tiny_atol(fargs[1])), buff, bufc);
     else
         safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
 }
@@ -2503,7 +2502,7 @@ FUNCTION(fun_crc32)
         int n = strlen(fargs[i]);
         ulCRC32 = CRC32_ProcessBuffer(ulCRC32, fargs[i], n);
     }
-    safe_i64toa(ulCRC32, buff, bufc, LBUF_SIZE-1);
+    safe_i64toa(ulCRC32, buff, bufc);
 }
 
 FUNCTION(fun_dumping)
@@ -2596,7 +2595,7 @@ FUNCTION(fun_unpack)
     {
         sum = -sum;
     }
-    safe_i64toa(sum, buff, bufc, LBUF_SIZE-1);
+    safe_i64toa(sum, buff, bufc);
 }
 
 FUNCTION(fun_pack)
@@ -2669,7 +2668,7 @@ FUNCTION(fun_pack)
         // Stop when we reach or pass the middle.
         //
     }
-    safe_copy_buf(TempBuffer, nLength, buff, bufc, LBUF_SIZE-1);
+    safe_copy_buf(TempBuffer, nLength, buff, bufc);
 }
 
 FUNCTION(fun_strcat)
@@ -3038,7 +3037,7 @@ FUNCTION(fun_items)
         safe_noperm(buff, bufc);
         return;
     }
-    safe_ltoa(stacksize(doer), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(stacksize(doer), buff, bufc);
 }
 
 FUNCTION(fun_peek)
@@ -3221,7 +3220,7 @@ FUNCTION(fun_regmatch)
     }
 
     int matched = regexec(re, fargs[0]);
-    safe_ltoa(regexec(re, fargs[0]), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(regexec(re, fargs[0]), buff, bufc);
 
     // If we don't have a third argument, we're done.
     //

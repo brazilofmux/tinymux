@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.98 2001-10-11 19:26:47 sdennis Exp $
+// $Id: functions.cpp,v 1.99 2001-10-11 21:10:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -678,7 +678,7 @@ static void fval(char *buff, char **bufc, double result)
            &&  rIntegerPart <= LONG_MAX)
         {
             long i = (long)rIntegerPart;
-            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(i, buff, bufc);
         }
         else
         {
@@ -858,7 +858,7 @@ FUNCTION(fun_words)
         return;
     }
     varargs_preamble(2);
-    safe_ltoa(countwords(fargs[0], sep), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(countwords(fargs[0], sep), buff, bufc);
 }
 
 /*
@@ -896,7 +896,7 @@ FUNCTION(fun_rand)
     }
     else
     {
-        safe_ltoa(RandomINT32(0,num-1), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(RandomINT32(0,num-1), buff, bufc);
     }
 }
 
@@ -1051,7 +1051,7 @@ FUNCTION(fun_convtime)
         {
             lta.Local2UTC();
         }
-        safe_i64toa(lta.ReturnSeconds(), buff, bufc, LBUF_SIZE-1);
+        safe_i64toa(lta.ReturnSeconds(), buff, bufc);
     }
     else
     {
@@ -1162,7 +1162,7 @@ FUNCTION(fun_timefmt)
     while ((q = strchr(p, '$')) != NULL)
     {
         size_t nLen = q - p;
-        safe_copy_buf(p, nLen, buff, bufc, LBUF_SIZE-1);
+        safe_copy_buf(p, nLen, buff, bufc);
         p = q;
 
         // Now, p points to a '$'.
@@ -1337,7 +1337,7 @@ FUNCTION(fun_timefmt)
             break;
 
         case 'u': // $u - Day of the Week, range 1 to 7. Monday = 1.
-            safe_ltoa(iDayOfWeekMonday, buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(iDayOfWeekMonday, buff, bufc);
             break;
 
         case 'U': // $U - Week of the year from 1st Sunday
@@ -1350,7 +1350,7 @@ FUNCTION(fun_timefmt)
             break;
 
         case 'w': // $w - Day of the week. 0 = Sunday
-            safe_ltoa(ft.iDayOfWeek, buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(ft.iDayOfWeek, buff, bufc);
             break;
 
         case 'W': // $W - Week of the year from 1st Monday
@@ -1503,7 +1503,7 @@ FUNCTION(fun_get)
         {
             if (nLen)
             {
-                safe_copy_buf(atr_gotten, nLen, buff, bufc, LBUF_SIZE-1);
+                safe_copy_buf(atr_gotten, nLen, buff, bufc);
             }
         }
         else
@@ -1577,7 +1577,7 @@ FUNCTION(fun_xget)
     {
         if (free_buffer)
         {
-            safe_copy_buf(atr_gotten, nLen, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(atr_gotten, nLen, buff, bufc);
         }
         else
         {
@@ -1970,7 +1970,7 @@ FUNCTION(fun_v)
         tbuf = atr_pget_LEN(player, ap->number, &aowner, &aflags, &nLen);
         if (See_attr(player, player, ap, aowner, aflags))
         {
-            safe_copy_buf(tbuf, nLen, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(tbuf, nLen, buff, bufc);
         }
         free_lbuf(tbuf);
         return;
@@ -2225,7 +2225,7 @@ FUNCTION(fun_controls)
         safe_tprintf_str(buff, bufc, "%s", "#-1 ARG2 NOT FOUND");
         return;
     }
-    safe_ltoa(Controls(x, y), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(Controls(x, y), buff, bufc);
 }
 
 /*
@@ -2307,7 +2307,7 @@ FUNCTION(fun_match)
         char *r = split_token(&s, sep);
         if (quick_wild(fargs[1], r))
         {
-            safe_ltoa(wcount, buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(wcount, buff, bufc);
             return;
         }
         wcount++;
@@ -2519,7 +2519,7 @@ FUNCTION(fun_strlen)
     {
         strip_ansi(fargs[0], &n);
     }
-    safe_ltoa(n, buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(n, buff, bufc);
 }
 
 FUNCTION(fun_num)
@@ -2744,7 +2744,7 @@ FUNCTION(fun_xor)
 
 FUNCTION(fun_not)
 {
-    safe_ltoa(!xlate(fargs[0]), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(!xlate(fargs[0]), buff, bufc);
 }
 
 FUNCTION(fun_t)
@@ -2756,7 +2756,7 @@ FUNCTION(fun_t)
     }
     else
     {
-        safe_ltoa(!!xlate(fargs[0]), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(!!xlate(fargs[0]), buff, bufc);
     }
 }
 
@@ -2853,7 +2853,7 @@ FUNCTION(fun_add)
     {
         sum += Tiny_atol(fargs[i]);
     }
-    safe_ltoa(sum, buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(sum, buff, bufc);
 }
 
 FUNCTION(fun_sub)
@@ -2866,7 +2866,7 @@ FUNCTION(fun_sub)
     {
         int iResult;
         iResult = Tiny_atol(fargs[0]) - Tiny_atol(fargs[1]);
-        safe_ltoa(iResult, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(iResult, buff, bufc);
     }
     else
     {
@@ -3004,7 +3004,7 @@ FUNCTION(fun_idiv)
     {
         top = Tiny_atoi64(fargs[0]);
         top = i64Division(top, bot);
-        safe_i64toa(top, buff, bufc, LBUF_SIZE-1);
+        safe_i64toa(top, buff, bufc);
     }
 }
 
@@ -3021,7 +3021,7 @@ FUNCTION(fun_floordiv)
     {
         top = Tiny_atoi64(fargs[0]);
         top = i64FloorDivision(top, bot);
-        safe_i64toa(top, buff, bufc, LBUF_SIZE-1);
+        safe_i64toa(top, buff, bufc);
     }
 }
 
@@ -3065,7 +3065,7 @@ FUNCTION(fun_mod)
     }
     top = Tiny_atoi64(fargs[0]);
     top = i64Mod(top, bot);
-    safe_i64toa(top, buff, bufc, LBUF_SIZE-1);
+    safe_i64toa(top, buff, bufc);
 }
 
 FUNCTION(fun_remainder)
@@ -3079,7 +3079,7 @@ FUNCTION(fun_remainder)
     }
     top = Tiny_atoi64(fargs[0]);
     top = i64Remainder(top, bot);
-    safe_i64toa(top, buff, bufc, LBUF_SIZE-1);
+    safe_i64toa(top, buff, bufc);
   }
 
 FUNCTION(fun_pi)
@@ -3224,7 +3224,7 @@ FUNCTION(fun_dist2d)
     d = Tiny_atol(fargs[1]) - Tiny_atol(fargs[3]);
     r += (double)(d * d);
     d = (int)(sqrt(r) + 0.5);
-    safe_ltoa(d, buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(d, buff, bufc);
 }
 
 FUNCTION(fun_dist3d)
@@ -3239,7 +3239,7 @@ FUNCTION(fun_dist3d)
     d = Tiny_atol(fargs[2]) - Tiny_atol(fargs[5]);
     r += (double)(d * d);
     d = (int)(sqrt(r) + 0.5);
-    safe_ltoa(d, buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(d, buff, bufc);
 }
 
 
@@ -3547,7 +3547,7 @@ FUNCTION(fun_vdim)
     else
     {
         varargs_preamble(2);
-        safe_ltoa(countwords(fargs[0],sep), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(countwords(fargs[0],sep), buff, bufc);
     }
 }
 
@@ -3768,7 +3768,7 @@ FUNCTION(fun_money)
     if ((it == NOTHING) || !Examinable(player, it))
         safe_nothing(buff, bufc);
     else
-        safe_ltoa(Pennies(it), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(Pennies(it), buff, bufc);
 }
 
 /*
@@ -3816,7 +3816,7 @@ FUNCTION(fun_pos)
 
     if (i > 0)
     {
-        safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(i, buff, bufc);
     }
     else
     {
@@ -3854,7 +3854,7 @@ FUNCTION(fun_lpos)
             {
                 safe_chr(' ', buff, bufc);
             }
-            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(i, buff, bufc);
         }
     }
 }
@@ -3896,7 +3896,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
     //
     if (el < 1)
     {
-        safe_copy_buf(str, nStr, buff, bufc, LBUF_SIZE-1);
+        safe_copy_buf(str, nStr, buff, bufc);
         return;
     }
 
@@ -3950,7 +3950,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         //
         if (!(eptr || ((flag == IF_INSERT) && !overrun)))
         {
-            safe_copy_buf(str, nStr, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(str, nStr, buff, bufc);
             return;
         }
 
@@ -3975,7 +3975,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         //
         if (sptr)
         {
-            safe_copy_buf(sptr, slen, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(sptr, slen, buff, bufc);
             if (eptr)
             {
                 safe_chr(sep, buff, bufc);
@@ -3983,7 +3983,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         }
         if (eptr)
         {
-            safe_copy_buf(eptr, elen, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(eptr, elen, buff, bufc);
         }
         break;
 
@@ -3993,14 +3993,14 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         //
         if (sptr)
         {
-            safe_copy_buf(sptr, slen, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(sptr, slen, buff, bufc);
             safe_chr(sep, buff, bufc);
         }
         safe_str(word, buff, bufc);
         if (eptr)
         {
             safe_chr(sep, buff, bufc);
-            safe_copy_buf(eptr, elen, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(eptr, elen, buff, bufc);
         }
         break;
 
@@ -4010,19 +4010,19 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         //
         if (sptr)
         {
-            safe_copy_buf(sptr, slen, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(sptr, slen, buff, bufc);
             safe_chr(sep, buff, bufc);
         }
         safe_str(word, buff, bufc);
         if (iptr)
         {
             safe_chr(sep, buff, bufc);
-            safe_copy_buf(iptr, ilen, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(iptr, ilen, buff, bufc);
         }
         if (eptr)
         {
             safe_chr(sep, buff, bufc);
-            safe_copy_buf(eptr, elen, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(eptr, elen, buff, bufc);
         }
         break;
     }
@@ -4112,7 +4112,7 @@ FUNCTION(fun_member)
         r = split_token(&s, sep);
         if (!strcmp(fargs[1], r))
         {
-            safe_ltoa(wcount, buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(wcount, buff, bufc);
             return;
         }
         wcount++;
@@ -4159,7 +4159,7 @@ FUNCTION(fun_secure)
         {
             // Process ANSI portion (pString, nTokenLength0).
             //
-            safe_copy_buf(pString, nTokenLength0, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(pString, nTokenLength0, buff, bufc);
             pString += nTokenLength0;
             nString -= nTokenLength0;
         }
@@ -4204,7 +4204,7 @@ FUNCTION(fun_escape)
         {
             // Process ANSI portion (pString, nTokenLength0).
             //
-            safe_copy_buf(pString, nTokenLength0, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(pString, nTokenLength0, buff, bufc);
             pString += nTokenLength0;
             nString -= nTokenLength0;
         }
@@ -4236,7 +4236,7 @@ FUNCTION(fun_wordpos)
                 break;
             xp = split_token(&cp, sep);
         }
-        safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(i, buff, bufc);
         return;
     }
     safe_nothing(buff, bufc);
@@ -4331,7 +4331,7 @@ FUNCTION(fun_delete)
     {
         if (nLen)
         {
-            safe_copy_buf(s, nLen, buff, bufc, LBUF_SIZE-1);
+            safe_copy_buf(s, nLen, buff, bufc);
         }
         return;
     }
@@ -4344,11 +4344,11 @@ FUNCTION(fun_delete)
     //
     if (iStart)
     {
-        safe_copy_buf(s, iStart, buff, bufc, LBUF_SIZE-1);
+        safe_copy_buf(s, iStart, buff, bufc);
     }
     if (iEnd < nLen)
     {
-        safe_copy_buf(s + iEnd, nLen - iEnd, buff, bufc, LBUF_SIZE-1);
+        safe_copy_buf(s + iEnd, nLen - iEnd, buff, bufc);
     }
 }
 
@@ -4416,7 +4416,7 @@ FUNCTION(fun_elock)
            || Read_attr(player, it, attr, aowner, aflags))
         {
             pBoolExp = parse_boolexp(player, tbuf, 1);
-            safe_ltoa(eval_boolexp(victim, it, it, pBoolExp), buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(eval_boolexp(victim, it, it, pBoolExp), buff, bufc);
             free_boolexp(pBoolExp);
         }
         else
@@ -4604,7 +4604,7 @@ FUNCTION(fun_capstr)
     char *pString = fargs[0];
     char *pBuffer = *bufc;
     int nString = strlen(pString);
-    nString = safe_copy_buf(pString, nString, buff, bufc, LBUF_SIZE-1);
+    nString = safe_copy_buf(pString, nString, buff, bufc);
 
     // Find the first text character in (nString, pBuffer).
     //
@@ -4659,27 +4659,27 @@ FUNCTION(fun_lnum)
     int i;
     if (bot == top)
     {
-        safe_ltoa(bot, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(bot, buff, bufc);
     }
     else if (bot < top)
     {
-        safe_ltoa(bot, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(bot, buff, bufc);
         for (i = bot+1; i <= top; i++)
         {
             print_sep(sep, buff, bufc);
             char *p = *bufc;
-            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(i, buff, bufc);
             if (p == *bufc) return;
         }
     }
     else if (top < bot)
     {
-        safe_ltoa(bot, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(bot, buff, bufc);
         for (i = bot-1; i >= top; i--)
         {
             print_sep(sep, buff, bufc);
             char *p = *bufc;
-            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+            safe_ltoa(i, buff, bufc);
             if (p == *bufc) return;
         }
     }
@@ -4904,7 +4904,7 @@ FUNCTION(fun_after)
         // Yup, return what follows.
         //
         bp += i + mlen;
-        safe_copy_buf(bp, nText-i-mlen, buff, bufc, LBUF_SIZE-1);
+        safe_copy_buf(bp, nText-i-mlen, buff, bufc);
     }
     //
     // Ran off the end without finding it.
@@ -4943,7 +4943,7 @@ FUNCTION(fun_before)
     {
         // Yup, return what follows.
         //
-        safe_copy_buf(ip, i, buff, bufc, LBUF_SIZE-1);
+        safe_copy_buf(ip, i, buff, bufc);
         return;
     }
     // Ran off the end without finding it.
@@ -5866,7 +5866,7 @@ FUNCTION(fun_idle)
     {
         target = NOTHING;
     }
-    safe_ltoa(fetch_idle(target), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(fetch_idle(target), buff, bufc);
 }
 
 FUNCTION(fun_conn)
@@ -5876,7 +5876,7 @@ FUNCTION(fun_conn)
     {
         target = NOTHING;
     }
-    safe_ltoa(fetch_connect(target), buff, bufc, LBUF_SIZE-1);
+    safe_ltoa(fetch_connect(target), buff, bufc);
 }
 
 /*
@@ -6296,7 +6296,7 @@ void centerjustcombo
     //
     if (vwStr == width)
     {
-        safe_copy_buf(aStr, nStr, buff, bufc, LBUF_SIZE-1);
+        safe_copy_buf(aStr, nStr, buff, bufc);
         return;
     }
 
@@ -6317,7 +6317,7 @@ void centerjustcombo
     if (nPad == 1 && vwPad == 1)
     {
         safe_fill(buff, bufc, aPad[0], vwLeading);
-        safe_copy_buf(aStr, nStr, buff, bufc, LBUF_SIZE-1);
+        safe_copy_buf(aStr, nStr, buff, bufc);
         safe_fill(buff, bufc, aPad[0], vwTrailing);
         return;
     }
@@ -6488,7 +6488,7 @@ FUNCTION(fun_setr)
         int n = strlen(fargs[1]);
         memcpy(mudstate.global_regs[regnum], fargs[1], n+1);
         mudstate.glob_reg_len[regnum] = n;
-        safe_copy_buf(fargs[1], n, buff, bufc, LBUF_SIZE-1);
+        safe_copy_buf(fargs[1], n, buff, bufc);
     }
 }
 
@@ -6504,7 +6504,7 @@ FUNCTION(fun_r)
     else if (mudstate.global_regs[regnum])
     {
         safe_copy_buf(mudstate.global_regs[regnum],
-            mudstate.glob_reg_len[regnum], buff, bufc, LBUF_SIZE-1);
+            mudstate.glob_reg_len[regnum], buff, bufc);
     }
 }
 
@@ -7112,7 +7112,7 @@ FUNCTION(fun_iadd)
     {
         sum += Tiny_atoi64(fargs[i]);
     }
-    safe_i64toa(sum, buff, bufc, LBUF_SIZE-1);
+    safe_i64toa(sum, buff, bufc);
 }
  
 /////////////////////////////////////////////////////////////////
@@ -7124,7 +7124,7 @@ FUNCTION(fun_iadd)
 FUNCTION(fun_isub)
 {
     INT64 diff = Tiny_atoi64(fargs[0]) - Tiny_atoi64(fargs[1]);
-    safe_i64toa(diff, buff, bufc, LBUF_SIZE-1);
+    safe_i64toa(diff, buff, bufc);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -7140,7 +7140,7 @@ FUNCTION(fun_imul)
     {
         prod *= Tiny_atoi64(fargs[i]);
     }
-    safe_i64toa(prod, buff, bufc, LBUF_SIZE-1);
+    safe_i64toa(prod, buff, bufc);
 }
 
 // fun_abs: Returns the absolute value of its argument.
@@ -7155,11 +7155,11 @@ FUNCTION(fun_iabs)
     }
     else if (num < 0)
     {
-        safe_i64toa(-num, buff, bufc, LBUF_SIZE-1);
+        safe_i64toa(-num, buff, bufc);
     }
     else
     {
-        safe_i64toa(num, buff, bufc, LBUF_SIZE-1);
+        safe_i64toa(num, buff, bufc);
     }
 }
 
@@ -7405,7 +7405,7 @@ FUNCTION(fun_cmds)
         {
             target = NOTHING;
         }
-        safe_ltoa(fetch_cmds(target), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(fetch_cmds(target), buff, bufc);
     }
     else
     {
@@ -7437,7 +7437,7 @@ FUNCTION(fun_conntotal)
         {
             TotalTime += fetch_connect(target);
         }
-        safe_ltoa(TotalTime, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(TotalTime, buff, bufc);
     }
     else
     {
@@ -7459,7 +7459,7 @@ FUNCTION(fun_connmax)
         {
             Longest = Current;
         }
-        safe_ltoa(Longest, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(Longest, buff, bufc);
     }
     else
     {
@@ -7475,7 +7475,7 @@ FUNCTION(fun_connlast)
     dbref target = lookup_player(player, fargs[0], 1);
     if (Good_obj(target))
     {
-        safe_ltoa(fetch_lastconnect(target), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(fetch_lastconnect(target), buff, bufc);
     }
     else
     {
@@ -7496,7 +7496,7 @@ FUNCTION(fun_connnum)
         {
             NumConnections += fetch_session(target);
         }
-        safe_ltoa(NumConnections, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(NumConnections, buff, bufc);
     }
     else
     {

@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.64 2001-10-02 03:57:57 sdennis Exp $
+// $Id: externs.h,v 1.65 2001-10-11 21:09:59 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -674,9 +674,9 @@ extern const char *FUNC_FAIL_MESSAGE;
 extern const char *FUNC_NOPERM_MESSAGE;
 extern const char *FUNC_NOMATCH_MESSAGE;
 
-#define safe_nothing(b,p)   safe_copy_buf(FUNC_FAIL_MESSAGE,3,(b),(p),(LBUF_SIZE-1))
-#define safe_noperm(b,p)    safe_copy_buf(FUNC_NOPERM_MESSAGE,21,(b),(p),(LBUF_SIZE-1))
-#define safe_nomatch(b,p)   safe_copy_buf(FUNC_NOMATCH_MESSAGE,12,(b),(p),(LBUF_SIZE-1))
+#define safe_nothing(b,p)   safe_copy_buf(FUNC_FAIL_MESSAGE,3,(b),(p))
+#define safe_noperm(b,p)    safe_copy_buf(FUNC_NOPERM_MESSAGE,21,(b),(p))
+#define safe_nomatch(b,p)   safe_copy_buf(FUNC_NOMATCH_MESSAGE,12,(b),(p))
 
 extern int ReplaceFile(char *old_name, char *new_name);
 extern void RemoveFile(char *name);

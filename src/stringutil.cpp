@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.50 2001-10-11 19:26:47 sdennis Exp $
+// $Id: stringutil.cpp,v 1.51 2001-10-11 21:10:00 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1667,7 +1667,7 @@ char *replace_string(const char *old, const char *new0, const char *string)
             int n = p - s;
             if (n)
             {
-                safe_copy_buf(s, n, result, &r, LBUF_SIZE-1);
+                safe_copy_buf(s, n, result, &r);
                 s += n;
             }
 
@@ -1809,15 +1809,15 @@ void safe_copy_str(const char *src, char *buff, char **bufp, int nSizeOfBuffer)
     *bufp = tp;
 }
 
-int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp, int nSizeOfBuffer)
+int safe_copy_buf(const char *src, int nLen, char *buff, char **bufc)
 {
-    int left = (buff + nSizeOfBuffer) - *bufp;
+    int left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
     {
         nLen = left;
     }
-    memcpy(*bufp, src, nLen);
-    *bufp += nLen;
+    memcpy(*bufc, src, nLen);
+    *bufc += nLen;
     return nLen;
 }
 
@@ -1950,11 +1950,11 @@ char *Tiny_ltoa_t(long val)
     return buff;
 }
 
-void safe_ltoa(long val, char *buff, char **bufc, int size)
+void safe_ltoa(long val, char *buff, char **bufc)
 {
     static char temp[12];
     int n = Tiny_ltoa(val, temp);
-    safe_copy_buf(temp, n, buff, bufc, size);
+    safe_copy_buf(temp, n, buff, bufc);
 }
 
 int Tiny_i64toa(INT64 val, char *buf)
@@ -2017,11 +2017,11 @@ char *Tiny_i64toa_t(INT64 val)
     return buff;
 }
 
-void safe_i64toa(INT64 val, char *buff, char **bufc, int size)
+void safe_i64toa(INT64 val, char *buff, char **bufc)
 {
     static char temp[22];
     int n = Tiny_i64toa(val, temp);
-    safe_copy_buf(temp, n, buff, bufc, size);
+    safe_copy_buf(temp, n, buff, bufc);
 }
 
 const char TableATOI[16][10] =

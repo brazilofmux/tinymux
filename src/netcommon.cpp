@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.38 2001-08-24 18:02:23 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.39 2001-10-11 21:10:00 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2369,7 +2369,7 @@ void make_ulist(dbref player, char *buff, char **bufc)
             safe_chr(' ', buff, bufc);
         }
         safe_chr('#', buff, bufc);
-        safe_ltoa(d->player, buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(d->player, buff, bufc);
     }
 }
 

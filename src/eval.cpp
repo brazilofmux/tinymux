@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.25 2001-09-08 19:25:46 sdennis Exp $
+// $Id: eval.cpp,v 1.26 2001-10-11 21:09:59 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1349,7 +1349,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         if (mudstate.global_regs[i])
                         {
                             safe_copy_buf(mudstate.global_regs[i],
-                                mudstate.glob_reg_len[i], buff, bufc, LBUF_SIZE-1);
+                                mudstate.glob_reg_len[i], buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
@@ -1428,7 +1428,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         //
                         // Carriage return.
                         //
-                        safe_copy_buf("\r\n", 2, buff, bufc, LBUF_SIZE-1);
+                        safe_copy_buf("\r\n", 2, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                 }
