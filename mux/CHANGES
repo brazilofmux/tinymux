@@ -4,8 +4,9 @@ Last Update:  May 2004
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  -- The units on the timeslice configuration option have changed from
-    milliseconds to seconds.  Milliseconds was an integer, where as
-    seconds can be a fraction.  So, this change doesn't take anything away.
+    milliseconds to seconds.  But, seconds can be expressed as a
+    fraction whereas milliseconds could only be expressed as an
+    integer, so this change doesn't take any capability away.
 
 
 Feature Additions:
@@ -16,7 +17,7 @@ Feature Additions:
  -- Added 'reset_players' configuration option which resets the player
     connection record.
  -- Added 'user_attrib_per_hour' which limits the rate at which
-    user-defined attributes are created.
+    user-defined attribute names are created.
  -- Added 'mail_per_hour' which limits the rate at which @mail can be
     created.
  -- Add output delimiter to elements(), extract(), filter(),
@@ -24,15 +25,17 @@ Feature Additions:
     splice().
  -- Connection, disconnection, partial, and suspect emits now show the
     player's @moniker.
- -- Added lag_limit configuration option that control how long the server
-    will service commands.  The execution of expensive commands is
-    abbreviated.
- -- On Win32, use higher-quality time from QueryPerformanceCounter() on
-    Win32 instead of GetSystemTimeAsFileTime().  As soon as the error
-    from using QueryPerformanceCounter() drops below 5ms, the server switches
-    to using it as a time source.  So, if you are doing any softcode
-    profiling on Win32, you need to wait a few seconds after the server is
-    started before beginning your tests.
+ -- Added lag_limit configuration option to control how long the
+    server will service commands.  The execution of expensive commands
+    is abbreviated, and the queue is drained, and the executor is
+    @set HALTED.  lag_maximum continues to be the reporting threshold.
+ -- On Win32, use higher-quality time from QueryPerformanceCounter()
+    instead of GetSystemTimeAsFileTime().  As soon as the error from
+    using QueryPerformanceCounter() drops below 5ms, the server
+    switches to using it as a time source.  So, if you are doing any
+    softcode profiling on Win32, you need to wait a few seconds after
+    the server is started before beginning your tests.
+ -- Updated PCRE from version 4.2 to version 4.5.
 
 
 Bug Fixes:
