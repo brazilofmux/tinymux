@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.9 2002-08-14 00:06:57 jake Exp $
+// $Id: db_rw.cpp,v 1.10 2003-01-04 18:14:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -54,62 +54,96 @@ static BOOLEXP *getboolexp1(FILE *f)
             b->type = BOOLEXP_NOT;
             b->sub1 = getboolexp1(f);
             if ((d = getc(f)) == '\n')
+            {
                 d = getc(f);
+            }
             if (d != ')')
+            {
                 goto error;
+            }
             return b;
+
         case INDIR_TOKEN:
             b->type = BOOLEXP_INDIR;
             b->sub1 = getboolexp1(f);
             if ((d = getc(f)) == '\n')
+            {
                 d = getc(f);
+            }
             if (d != ')')
+            {
                 goto error;
+            }
             return b;
+
         case IS_TOKEN:
             b->type = BOOLEXP_IS;
             b->sub1 = getboolexp1(f);
             if ((d = getc(f)) == '\n')
+            {
                 d = getc(f);
+            }
             if (d != ')')
+            {
                 goto error;
+            }
             return b;
+
         case CARRY_TOKEN:
             b->type = BOOLEXP_CARRY;
             b->sub1 = getboolexp1(f);
             if ((d = getc(f)) == '\n')
+            {
                 d = getc(f);
+            }
             if (d != ')')
+            {
                 goto error;
+            }
             return b;
+
         case OWNER_TOKEN:
             b->type = BOOLEXP_OWNER;
             b->sub1 = getboolexp1(f);
             if ((d = getc(f)) == '\n')
+            {
                 d = getc(f);
+            }
             if (d != ')')
+            {
                 goto error;
+            }
             return b;
+
         default:
             ungetc(c, f);
             b->sub1 = getboolexp1(f);
             if ((c = getc(f)) == '\n')
+            {
                 c = getc(f);
-            switch (c) {
+            }
+            switch (c)
+            {
             case AND_TOKEN:
                 b->type = BOOLEXP_AND;
                 break;
+
             case OR_TOKEN:
                 b->type = BOOLEXP_OR;
                 break;
+
             default:
                 goto error;
             }
             b->sub2 = getboolexp1(f);
             if ((d = getc(f)) == '\n')
+            {
                 d = getc(f);
+            }
             if (d != ')')
+            {
                 goto error;
+            }
             return b;
         }
 
@@ -128,7 +162,7 @@ static BOOLEXP *getboolexp1(FILE *f)
     case '"':
         ungetc(c, f);
         buff = alloc_lbuf("getboolexp_quoted");
-        StringCopy(buff, getstring_noalloc(f, 1));
+        strcpy(buff, getstring_noalloc(f, 1));
         c = fgetc(f);
         if (c == EOF)
         {
@@ -147,17 +181,22 @@ static BOOLEXP *getboolexp1(FILE *f)
         free_lbuf(buff);
         b->thing = anum;
 
-        // if last character is : then this is an attribute lock. A
+        // If last character is : then this is an attribute lock. A
         // last character of / means an eval lock.
         //
-        if ((c == ':') || (c == '/'))
+        if (  c == ':'
+           || c == '/')
         {
             if (c == '/')
+            {
                 b->type = BOOLEXP_EVAL;
+            }
             else
+            {
                 b->type = BOOLEXP_ATR;
+            }
             buff = alloc_lbuf("getboolexp1.attr_lock");
-            StringCopy(buff, getstring_noalloc(f, 1));
+            strcpy(buff, getstring_noalloc(f, 1));
             b->sub1 = (BOOLEXP *)StringClone(buff);
             free_lbuf(buff);
         }
@@ -186,10 +225,17 @@ static BOOLEXP *getboolexp1(FILE *f)
         {
             buff = alloc_lbuf("getboolexp1.atr_name");
 
-            for (s = buff;
-                 ((c = getc(f)) != EOF) && (c != '\n') &&
-                 (c != ':') && (c != '/');
-                 *s++ = c) ;
+            for (  s = buff;
+
+                   (c = getc(f)) != EOF
+                && c != '\n'
+                && c != ':'
+                && c != '/';
+
+                   *s++ = c)
+            {
+                ; // Nothing.
+            }
 
             if (c == EOF)
             {
@@ -218,30 +264,37 @@ static BOOLEXP *getboolexp1(FILE *f)
             goto error;
         }
 
-        // if last character is : then this is an attribute lock. A last
+        // If last character is : then this is an attribute lock. A last
         // character of / means an eval lock.
         //
-        if ((c == ':') || (c == '/'))
+        if (  c == ':'
+           || c == '/')
         {
             if (c == '/')
+            {
                 b->type = BOOLEXP_EVAL;
+            }
             else
+            {
                 b->type = BOOLEXP_ATR;
+            }
             buff = alloc_lbuf("getboolexp1.attr_lock");
             for (  s = buff;
 
-                   ((c = getc(f)) != EOF)
-                && (c != '\n')
-                && (c != ')')
-                && (c != OR_TOKEN)
-                && (c != AND_TOKEN);
+                   (c = getc(f)) != EOF
+                && c != '\n'
+                && c != ')'
+                && c != OR_TOKEN
+                && c != AND_TOKEN;
 
                    *s++ = c)
             {
-                // Nothing
+                ; // Nothing
             }
             if (c == EOF)
+            {
                 goto error;
+            }
             *s++ = 0;
             b->sub1 = (BOOLEXP *)StringClone(buff);
             free_lbuf(buff);
@@ -859,6 +912,7 @@ dbref db_write(FILE *f, int format, int version)
     case F_MUX:
         flags = version;
         break;
+
     default:
         Log.WriteString("Can only write MUX format." ENDLINE);
         return -1;
