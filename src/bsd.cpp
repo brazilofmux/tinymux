@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.51 2002-01-12 15:33:42 sdennis Exp $
+// $Id: bsd.cpp,v 1.52 2002-01-15 05:14:16 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1421,7 +1421,6 @@ DESC *new_connection(PortInfo *Port)
 #endif // SOCKLEN_T_DCL
 #ifndef WIN32
     int len;
-    char *buf;
 #endif // !WIN32
 
     char *cmdsave = mudstate.debug_cmd;
