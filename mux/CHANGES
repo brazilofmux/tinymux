@@ -33,6 +33,13 @@ Feature Additions:
     'one thousand one hundred'.
  -- Added ROMAN() function which converts numbers between 1-3999 to their
     Roman numeric equivalents.
+ -- Changed BOOLEAN VALUES to be consistent more PennMUSH. I needed to be
+    able to handle '#-2 AMBIGUOUS' at the least.
+ -- In MUX 2.0 and 2.1, many functions would notify the enactor of certain
+    error messages (e.g., I don't know which one you mean). This has been
+    removed in favor of returning '#-2 AMBIGIOUS' and other error messages
+    like '#-1 PERMISSION DENIED', "#-1 NOT FOUND', etc. Command continue
+    notify the enactor.
 
 Bug Fixes:
 ~~~~~~~~~
