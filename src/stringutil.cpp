@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $
+// $Id: stringutil.cpp,v 1.2 2000-04-12 01:50:32 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2000,3 +2000,69 @@ void _strupr(char *a)
     }
 }
 #endif // WIN32
+
+#ifdef WIN32
+#define VSNPRINTF _vsnprintf
+#else // WIN32
+#ifdef NEED_VSPRINTF_DCL
+extern char *vsnprintf(char *, char *, va_list);
+#endif
+#define VSNPRINTF vsnprint
+#endif // WIN32
+
+// Tiny_vsnprintf - Is an sprintf-like function that will not overflow
+// a buffer of specific size. The size is give by count, and count
+// should be chosen to include the '\0' termination.
+//
+// Returns: A number from 0 to count-1 that is the string length of
+// the returned (possibly truncated) buffer.
+//
+int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, ...)
+{
+    // From the manuals:
+    //
+    // vsnprintf returns the number of characters written, not
+    // including the terminating '\0' character.
+    //
+    // It returns a -1 if an output error occurs.
+    //
+    // It can return a number larger than the size of the buffer
+    // on some systems to indicate how much space it -would- have taken
+    // if not limited by the request.
+    //
+    // On Win32, it can fill the buffer completely without a
+    // null-termination and return -1.
+
+
+    // To favor the Unix case, if there is an output error, but
+    // vsnprint doesn't touch the buffer, we avoid undefined trash by
+    // null-terminating the buffer to zero-length before the call.
+    // Not sure that this happens, but it's a cheap precaution.
+    //
+    buff[0] = '\0';
+
+    // If Unix version does start touching the buffer, null-terminates,
+    // and returns -1, we are still safe. However, if Unix version
+    // touches the buffer writes garbage, and then returns -1, we may
+    // pass garbage, but this possibility seems very unlikely.
+    //
+    va_list ap;
+    va_start(ap, fmt);
+    int len = VSNPRINTF(buff, count, fmt, ap);
+    va_end(ap);
+    if (len < 0 || len > count-1)
+    {
+        if (buff[0] == '\0')
+        {
+            // vsnprintf did not touch the buffer.
+            //
+            len = 0;
+        }
+        else
+        {
+            len = count-1;
+        }
+    }
+    buff[len] = '\0';
+    return len;
+}
