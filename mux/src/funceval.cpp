@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.19 2003-02-15 16:04:35 jake Exp $
+// $Id: funceval.cpp,v 1.20 2003-02-15 16:31:00 jake Exp $
 //
 
 #include "copyright.h"
@@ -414,45 +414,46 @@ FUNCTION(fun_set)
     }
 
     dbref thing, aowner;
-    int aflags, flagvalue;
+    int aflags;
     ATTR *attr;
 
-    // obj/attr form?
+    // See if we have the <obj>/<attr> form, which is how you set
+    // attribute flags.
     //
     if (parse_attrib_temp(executor, fargs[0], &thing, &attr))
     {
         if (  attr
            && See_attr(executor, thing, attr))
         {
-            bool clear = false;
-
             char *flagname = fargs[1];
+
+            // You must specify a flag name.
+            //
             if (flagname[0] == '\0')
             {
-                // Must specify flag name
-                //
                 safe_str("#-1 UNSPECIFIED PARAMETER", buff, bufc);
                 return;
             }
 
+            // Check for clearing.
+            //
+            bool clear = false;
             if (flagname[0] == NOT_TOKEN)
             {
-                // We are clearing a flag instead of setting it.
-                //
                 flagname++;
                 clear = true;
             }
 
-            // valid attribute flag?
+            // Make sure player specified a valid attribute flag.
             //
-            flagvalue = search_nametab(executor, indiv_attraccess_nametab, flagname);
+            int flagvalue = search_nametab(executor, indiv_attraccess_nametab, flagname);
             if (flagvalue < 0)
             {
                 safe_str("#-1 CAN NOT SET", buff, bufc);
                 return;
             }
 
-            // Make sure attribute is present
+            // Make sure the object has the attribute present.
             //
             if (!atr_get_info(thing, attr->number, &aowner, &aflags))
             {
@@ -460,7 +461,7 @@ FUNCTION(fun_set)
                 return;
             }
 
-            // Can we write to attribute?
+            // Make sure we can write to the attribute.
             //
             if (!bCanSetAttr(executor, thing, attr))
             {
@@ -468,7 +469,7 @@ FUNCTION(fun_set)
                 return;
             }
 
-            // Just do it!
+            // Go do it.
             //
             if (clear)
             {
@@ -486,7 +487,7 @@ FUNCTION(fun_set)
     // Find thing.
     //
     thing = match_controlled_quiet(executor, fargs[0]);
-    if (thing == NOTHING)
+    if (!Good_obj(thing))
     {
         safe_nothing(buff, bufc);
         return;
@@ -521,7 +522,7 @@ FUNCTION(fun_set)
         }
         char *buff2 = alloc_lbuf("fun_set");
 
-        // check for _
+        // Check for _
         //
         if (*p == '_')
         {
@@ -547,9 +548,10 @@ FUNCTION(fun_set)
             }
         }
 
-        // Set it.
+        // Go set it.
         //
         set_attr_internal(executor, thing, atr, p, 0, buff, bufc);
+        free_lbuf(buff);
         return;
     }
 
