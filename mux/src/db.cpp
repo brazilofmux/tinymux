@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.38 2004-04-13 19:41:57 sdennis Exp $
+// $Id: db.cpp,v 1.39 2004-04-14 02:35:49 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2538,8 +2538,8 @@ static const char xlat_table[256] =
 // Action 0 - Emit X.
 // Action 1 - Get a Buffer.
 // Action 2 - Emit X. Move to START state.
-// Action 3 - Move to ESC state.
-// Action 4 - Terminate parse.
+// Action 3 - Terminate parse.
+// Action 4 - Move to ESC state.
 //
 
 static const int action_table[2][4] =
