@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.15 2004-05-15 22:59:41 sdennis Exp $
+// $Id: cque.cpp,v 1.16 2004-05-16 23:02:52 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -164,6 +164,8 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     if (MuxAlarm.bAlarmed)
                     {
                         notify(executor, "GAME: Expensive activity abbreviated.");
+                        halt_que(executor, NOTHING);
+                        s_Flags(point->enactor, FLAG_WORD1, Flags(point->enactor) | HALT);
                     }
                     MuxAlarm.Clear();
 

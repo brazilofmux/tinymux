@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.36 2004-05-15 22:59:41 sdennis Exp $
+// $Id: netcommon.cpp,v 1.37 2004-05-16 23:02:52 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2204,6 +2204,8 @@ bool do_command(DESC *d, char *command)
             if (MuxAlarm.bAlarmed)
             {
                 notify(d->player, "GAME: Expensive activity abbreviated.");
+                halt_que(d->player, NOTHING);
+                s_Flags(d->player, FLAG_WORD1, Flags(d->player) | HALT);
             }
             MuxAlarm.Clear();
 
