@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.16 2000-05-06 18:01:28 sdennis Exp $
+// $Id: functions.cpp,v 1.17 2000-05-14 01:30:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2440,7 +2440,7 @@ FUNCTION(fun_trunc)
 
     rFractionalPart = modf(rArg, &rIntegerPart);
 #ifdef HAVE_IEEE_FP_FORMAT
-    int fpc = Tiny_fpclass(rFractionalPart);
+    int fpc = Tiny_fpclass(rIntegerPart);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
