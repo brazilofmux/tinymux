@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.23 2001-10-17 05:51:34 sdennis Exp $
+// $Id: db_rw.cpp,v 1.24 2001-10-17 06:23:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -271,9 +271,6 @@ static BOOLEXP *getboolexp(FILE *f)
     c = getc(f);
     Tiny_Assert(c == '\n');
 
-    // MUSH (except for PernMUSH) can have an extra CR, MUD
-    // does not.
-    //
     if (g_format == F_MUX)
     {
         if ((c = getc(f)) != '\n')
@@ -544,101 +541,13 @@ static void putboolexp(FILE *f, BOOLEXP *b)
     putc('\n', f);
 }
 
-#ifdef STANDALONE
-
-/* ---------------------------------------------------------------------------
- * getlist_discard
- */
-
-static void getlist_discard(FILE *f, dbref i, int set)
-{
-    int count;
-
-    count = getref(f);
-    for (count--; count >= 0; count--) {
-        if (set)
-            s_Parent(i, getref(f));
-        else
-            (void)getref(f);
-    }
-}
-
-static void getpenn_new_locks(FILE *f, int i)
-{
-    int c;
-    char *buf, *p;
-    struct boolexp *tempbool;
-
-    buf = alloc_lbuf("getpenn_new_locks");
-    p = buf;
-    while (c = getc(f), (c != EOF) && (c != '|'))
-    {
-        *p++ = c;
-    }
-
-    *p = '\0';
-
-    tempbool = getboolexp(f);
-
-    if (tempbool == TRUE_BOOLEXP)
-        return;
-
-    if (!strcmp(buf, "Basic"))
-        atr_add_raw(i, A_LOCK,
-                unparse_boolexp_quiet(1, tempbool));
-    else if (!strcmp(buf, "Use"))
-        atr_add_raw(i, A_LUSE,
-                unparse_boolexp_quiet(1, tempbool));
-    else if (!strcmp(buf, "Enter"))
-        atr_add_raw(i, A_LENTER,
-                unparse_boolexp_quiet(1, tempbool));
-    else if (!strcmp(buf, "Page"))
-        atr_add_raw(i, A_LPAGE,
-                unparse_boolexp_quiet(1, tempbool));
-    else if (!strcmp(buf, "Teleport"))
-        atr_add_raw(i, A_LTPORT,
-                unparse_boolexp_quiet(1, tempbool));
-    else if (!strcmp(buf, "Speech"))
-        atr_add_raw(i, A_LSPEECH,
-                unparse_boolexp_quiet(1, tempbool));
-    else if (!strcmp(buf, "Parent"))
-        atr_add_raw(i, A_LPARENT,
-                unparse_boolexp_quiet(1, tempbool));
-    else if (!strcmp(buf, "Link"))
-        atr_add_raw(i, A_LLINK,
-                unparse_boolexp_quiet(1, tempbool));
-    else if (!strcmp(buf, "Leave"))
-        atr_add_raw(i, A_LLEAVE,
-                unparse_boolexp_quiet(1, tempbool));
-    else if (!strcmp(buf, "Drop"))
-        atr_add_raw(i, A_LDROP,
-                unparse_boolexp_quiet(1, tempbool));
-    else if (!strcmp(buf, "Give"))
-        atr_add_raw(i, A_LGIVE,
-                unparse_boolexp_quiet(1, tempbool));
-    free_lbuf(buf);
-}
-#endif
-
 dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 {
     dbref i, anum;
-    char ch;
+    int ch;
     const char *tstr;
-    int header_gotten, size_gotten, nextattr_gotten;
     int read_attribs, read_name, read_zone, read_link, read_key, read_parent;
     int read_extflags, read_3flags, read_money, read_timestamps, read_new_strings;
-#ifdef STANDALONE
-    int read_pern_comm, read_pern_parent;
-    int read_pern_warnings, read_pern_creation, read_pern_powers;
-    int read_pern_new_locks, is_dark;
-    int read_dark_comm, read_dark_slock, read_dark_mc, read_dark_mpar;
-    int read_dark_class, read_dark_rank, read_dark_droplock;
-    int read_dark_givelock, read_dark_getlock;
-    int read_dark_threepow, penn_version;
-    int peek;
-    char *p;
-#endif
     int read_powers;
     int deduce_version, deduce_name, deduce_zone, deduce_timestamps;
     int aflags, f1, f2, f3;
@@ -647,12 +556,14 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     int len;
     int nVisualWidth;
 
-    header_gotten = 0;
-    size_gotten = 0;
-    nextattr_gotten = 0;
     g_format = F_UNKNOWN;
     g_version = 0;
     g_flags = 0;
+
+    BOOL header_gotten = FALSE;
+    BOOL size_gotten = FALSE;
+    BOOL nextattr_gotten = FALSE;
+
     read_attribs = 1;
     read_name = 1;
     read_zone = 0;
@@ -670,32 +581,11 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     deduce_name = 1;
     deduce_timestamps = 1;
 #ifdef STANDALONE
-    is_dark = 0;
-    read_pern_comm = 0;
-    read_pern_parent = 0;
-    read_pern_warnings = 0;
-    read_pern_creation = 0;
-    read_pern_powers = 0;
-    read_pern_new_locks = 0;
-    read_dark_comm = 0;
-    read_dark_slock = 0;
-    read_dark_mc = 0;
-    read_dark_mpar = 0;
-    read_dark_class = 0;
-    read_dark_rank = 0;
-    read_dark_droplock = 0;
-    read_dark_givelock = 0;
-    read_dark_getlock = 0;
-    read_dark_threepow = 0;
-    penn_version = 0;
-
     Log.WriteString("Reading ");
     Log.Flush();
-#endif
-    db_free();
-#ifdef STANDALONE
     int iDotCounter = 0;
 #endif
+    db_free();
     for (i = 0;; i++)
     {
 #ifdef STANDALONE
@@ -717,7 +607,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 mudstate.record_players = getref(f);
                 break;
             default:
-                (void)getstring_noalloc(f, 0);
+                getstring_noalloc(f, 0);
             }
             break;
 
@@ -737,7 +627,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     tstr = getstring_noalloc(f, 0);
                     break;
                 }
-                header_gotten = 1;
+                header_gotten = TRUE;
                 deduce_version = 0;
                 g_format = F_MUX;
                 g_version = getref(f);
@@ -775,8 +665,8 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 else
                 {
                     mudstate.min_size = getref(f);
+                    size_gotten = TRUE;
                 }
-                size_gotten = 1;
                 break;
 
             case 'A':   // USER-NAMED ATTRIBUTE
@@ -819,7 +709,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 else
                 {
                     mudstate.attr_next = getref(f);
-                    nextattr_gotten = 1;
+                    nextattr_gotten = TRUE;
                 }
                 break;
 
