@@ -1773,6 +1773,8 @@ WHO
                                    object is ENTER_OK. Also, the enter lock
                                    of an object being used as a Zone Master
                                    Object determines control of that zone.
+     GetFromLock:  All but Exits:  controls who may gets things from a given
+                                   location.
      GiveLock:     Players/Things: controls who may give the object.
      LeaveLock:    Players/Things: controls who may LEAVE the object.
      LinkLock:     All but Exits:  controls who may link to the location if the
