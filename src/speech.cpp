@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.21 2002-01-15 05:13:01 sdennis Exp $
+// $Id: speech.cpp,v 1.22 2002-02-08 00:15:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -164,8 +164,8 @@ void do_say(dbref player, dbref cause, int key, char *message)
     switch (key)
     {
     case SAY_SAY:
-        notify_saypose(player, tprintf("You say \"%s\"", message));
-        notify_except(loc, player, player, tprintf("%s says \"%s\"", Name(player), message), MSG_SAYPOSE);
+        notify_saypose(player, tprintf("You say, \"%s\"", message));
+        notify_except(loc, player, player, tprintf("%s says, \"%s\"", Name(player), message), MSG_SAYPOSE);
         break;
 
     case SAY_POSE:
@@ -257,7 +257,7 @@ void do_say(dbref player, dbref cause, int key, char *message)
         default:
             buf2 = alloc_lbuf("do_say.wizshout");
             bp = buf2;
-            safe_str((char *)" says \"", buf2, &bp);
+            safe_str((char *)" says, \"", buf2, &bp);
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
@@ -290,7 +290,7 @@ void do_say(dbref player, dbref cause, int key, char *message)
         default:
             buf2 = alloc_lbuf("do_say.adminshout");
             bp = buf2;
-            safe_str((char *)" says \"", buf2, &bp);
+            safe_str((char *)" says, \"", buf2, &bp);
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
@@ -944,11 +944,11 @@ void do_pemit_single
             break;
 
         case PEMIT_FSAY:
-            notify(target, tprintf("You say \"%s\"", message));
+            notify(target, tprintf("You say, \"%s\"", message));
             if (loc != NOTHING)
             {
                 notify_except(loc, player, target,
-                    tprintf("%s says \"%s\"", Name(target), message), 0);
+                    tprintf("%s says, \"%s\"", Name(target), message), 0);
             }
             break;
 

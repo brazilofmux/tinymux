@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.149 2002-02-07 09:05:01 sdennis Exp $
+// $Id: functions.cpp,v 1.150 2002-02-08 00:15:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5492,7 +5492,7 @@ FUNCTION(fun_ilev)
  * *
  * *    > &REP_NUM object=[%0][repeat(%1,%1)]
  * *    > say fold(OBJECT/REP_NUM,1 2 3 4 5,->)
- * *    You say "->122333444455555"
+ * *    You say, "->122333444455555"
  * *
  * *      NOTE: To use added list separator, you must use base case!
  */
@@ -5668,9 +5668,9 @@ FUNCTION(fun_itemize)
  * *
  * *      > &IS_ODD object=mod(%0,2)
  * *      > say filter(object/is_odd,1 2 3 4 5)
- * *      You say "1 3 5"
+ * *      You say, "1 3 5"
  * *      > say filter(object/is_odd,1-2-3-4-5,-)
- * *      You say "1-3-5"
+ * *      You say, "1-3-5"
  * *
  * *  NOTE:  If you specify a separator it is used to delimit returned list
  */
@@ -5763,9 +5763,9 @@ FUNCTION(fun_filter)
  * *
  * *  > &DIV_TWO object=fdiv(%0,2)
  * *  > say map(1 2 3 4 5,object/div_two)
- * *  You say "0.5 1 1.5 2 2.5"
+ * *  You say, "0.5 1 1.5 2 2.5"
  * *  > say map(object/div_two,1-2-3-4-5,-)
- * *  You say "0.5-1-1.5-2-2.5"
+ * *  You say, "0.5-1-1.5-2-2.5"
  * *
  */
 
