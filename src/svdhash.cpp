@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.35 2001-12-06 03:39:58 sdennis Exp $
+// $Id: svdhash.cpp,v 1.36 2002-04-10 23:06:07 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -690,12 +690,21 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         {
             if (m_pHeader->m_nDirEmptyLeft < m_nDirEmptyTrigger)
             {
-                if (!Defrag(nRecord)) return HP_INSERT_ERROR_FULL;
-                continue;
+                if (Defrag(nRecord))
+                {
+                    continue;
+                }
+                return HP_INSERT_ERROR_FULL;
             }
-            if (HeapAlloc(iDir, nRecord, nHash, pRecord)) return HP_INSERT_SUCCESS;
+            if (HeapAlloc(iDir, nRecord, nHash, pRecord))
+            {
+                return HP_INSERT_SUCCESS;
+            }
         }
-        if (!Defrag(nRecord)) return HP_INSERT_ERROR_FULL;
+        if (!Defrag(nRecord))
+        {
+            return HP_INSERT_ERROR_FULL;
+        }
     }
     return HP_INSERT_ERROR_FULL;
 }
