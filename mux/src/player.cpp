@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.13 2003-07-23 19:37:38 sdennis Exp $
+// $Id: player.cpp,v 1.14 2003-07-24 00:21:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -204,59 +204,53 @@ const char Base64Table[65] =
 
 #define ENCODED_LENGTH(x) ((((x)+2)/3)*4)
 
-size_t EncodeBase64(size_t nIn, const char *pIn, char *pOut)
+void EncodeBase64(size_t nIn, const char *pIn, char *pOut)
 {
-    int nTriples = nIn/3;
+    int nTriples  = nIn/3;
     int nLeftover = nIn%3;
-    size_t nOut = 4 * nTriples;
-    UINT8 ch0, ch1, ch2, ch3;
+    UINT32 stage;
+
+    const UINT8 *p = (const UINT8 *)pIn;
+          UINT8 *q = (      UINT8 *)pOut;
 
     while (nTriples--)
     {
-        ch0 = ((UINT8)pIn[0]) >> 2;
-        ch1 = ((((UINT8)pIn[0]) & 0x03) << 4)
-            | (((UINT8)pIn[1]) >> 4);
-        ch2 = ((((UINT8)pIn[1]) & 0x0F) << 2)
-            | (((UINT8)pIn[2]) >> 6);
-        ch3 = ((UINT8)pIn[2]) & 0x3F;
+        stage = (p[0] << 16) | (p[1] << 8) | p[2];
 
-        pOut[0] = Base64Table[ch0];
-        pOut[1] = Base64Table[ch1];
-        pOut[2] = Base64Table[ch2];
-        pOut[3] = Base64Table[ch3];
+        q[0] = Base64Table[(stage >> 18)       ];
+        q[1] = Base64Table[(stage >> 12) & 0x3F];
+        q[2] = Base64Table[(stage >>  6) & 0x3F];
+        q[3] = Base64Table[(stage      ) & 0x3F];
 
-        pOut += 4;
-        pIn  += 3;
+        q += 4;
+        p += 3;
     }
     
     switch (nLeftover)
     {
     case 1:
-        ch0 = ((UINT8)pIn[0]) >> 2;
-        ch1 = ((((UINT8)pIn[0]) & 0x03) << 4);
-        pOut[0] = Base64Table[ch0];
-        pOut[1] = Base64Table[ch1];
-        pOut[2] = '=';
-        pOut[3] = '=';
-        nOut += 4;
-        pOut += 4;
+        stage = p[0] << 16;
+
+        q[0] = Base64Table[(stage >> 18)       ];
+        q[1] = Base64Table[(stage >> 12) & 0x3F];
+        q[2] = '=';
+        q[3] = '=';
+
+        q += 4;
         break;
 
     case 2:
-        ch0 = ((UINT8)pIn[0]) >> 2;
-        ch1 = ((((UINT8)pIn[0]) & 0x03) << 4)
-            | (((UINT8)pIn[1]) >> 4);
-        ch2 = ((((UINT8)pIn[1]) & 0x0F) << 2);
-        pOut[0] = Base64Table[ch0];
-        pOut[1] = Base64Table[ch1];
-        pOut[2] = Base64Table[ch2];
-        pOut[3] = '=';
-        nOut += 4;
-        pOut += 4;
+        stage = (p[0] << 16) | (p[1] << 8);
+
+        q[0] = Base64Table[(stage >> 18)       ];
+        q[1] = Base64Table[(stage >> 12) & 0x3F];
+        q[2] = Base64Table[(stage >>  6) & 0x3F];
+        q[3] = '=';
+
+        q += 4;
         break;
     }
-    pOut[0] = '\0';
-    return nOut;
+    q[0] = '\0';
 }
 
 #define SHA1_PREFIX_LENGTH 6
@@ -334,7 +328,10 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
                 {
                     nSaltField = strlen(pSaltField);
                 }
-                *piType = CRYPT_SHA1;
+                if (nSaltField <= ENCODED_SALT_LENGTH)
+                {
+                    *piType = CRYPT_SHA1;
+                }
             }
             else if (  nAlgo == MD5_PREFIX_LENGTH
                     && memcmp(szSetting, szMD5Prefix, MD5_PREFIX_LENGTH) == 0)
