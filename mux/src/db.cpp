@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.50 2002-10-01 15:45:21 sdennis Exp $
+// $Id: db.cpp,v 1.51 2002-11-12 15:47:06 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -125,6 +125,7 @@ ATTR attr[] =
     {"Mailcurf",    A_MAILCURF, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
     {"Mailflags",   A_MAILFLAGS, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
     {"Mailfolders", A_MAILFOLDERS, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
+    {"MailLock",    A_LMAIL,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"Mailmsg",     A_MAILMSG,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"Mailsub",     A_MAILSUB,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"Mailsucc",    A_MAIL,     AF_ODARK | AF_NOPROG},
