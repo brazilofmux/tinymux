@@ -62,20 +62,41 @@ in turn allows other people to connect. % See Figure 1 below.
 These layers are written in a particular computer language. The hardware
 layers have their own C-like language for describing how a body of gates are
 connected logically, geographical, thermally, etc.  Most operating systems are
-written in C/C++ with some assembly language and some higher level scripting
+written in C/C++ with some assembly language and some higher-level scripting
 or macro languages. This is also sometimes called hardcode.
 
+The term \emph{hardcode} usually means the approximately 75,000 lines of C/C++
+source code that make up the game server itself.
 All of the MUSH-type text-based game servers are written in C except MUX 2.0
-which is a combination of C and C++. This is what people call hardcode.
+which is a combination of C and C++.
+
+However, the term can also be used more generically to refer to anything
+written in C/C++ or even to anything written in a general purpose programming
+language.
 
 All of the Softcode Global Packages are written in a mostly universal language
 that doesn't have a name. You could call it MUSHcode, but then you are probably
-referring specifically to MUSH 2.2.x or U1 or perhaps MUSH 3.0. You could call
+referring to the commands and functions of a specific version of a specific
+server. You could call
 it softcode, but then you are also probably including non-MUSH family languages
 further away and more incompatible. For the purpose of this document, we'll
 call it softcode with the understanding that we expect it to run on a particular
 set of closely related servers and on TinyMUX 2.0 in particular.
 
+\section{I'm using Windows. Why does the log say it can't find it's files?}
+You are probably running the tinymux.exe file directly from the GUI by double
+clicking on the icon. The server needs the current directory to be the game
+sub-directory. All the file names are relative to that point, but when you
+double-click on the tinymux.exe program directly, the current directory might
+be the game$\backslash$bin or tinymux$\backslash$release directory, or it
+might be somewhere else.  The current directory is too undefined for the game
+to be run this way.
+
+You should open a Command Prompt window (that is, an MS-DOS box), change to
+the drive and `mux2.0$\backslash$game' sub-directory where you extracted the
+distribution, make sure the tinymux.exe, a.exe, dbconvert.exe, and mkindx.exe
+programs are in the `bin' sub-directory, and then run the startmux.bat batch
+file.
 \section{How to Begin Running TinyMUX}
 The first thing you'll need is some server hardware with some flavor of Unix or
 Windows running. It's more than a little helpful if this server has a dedicated
@@ -206,9 +227,29 @@ Connection Lost.\\
 The database is quite rugged, but there are no guarantees if you make a
 habit of abusing it.
 
-Finally, buy a UPS. Backup, off-line. Do it. If you use WinNT, configure it,
-and then leave the server alone. WinNT works best if you give it good
-hardware, good drivers, a set of services to run, and then leave it the heck
-alone.
+Finally, buy a UPS. Backup, off-line. Do it. If you use Window NT, configure
+it, and then leave the server alone. WinNT works best if you give it good
+hardware, good drivers, a set of services to run, and then leave it alone
+to serve.
+\chapter{Configuration}
+\section{Basic Configuration}
+The game server reads from a configuration file when the game server starts or
+restarts, but changing a configuration file while the game is running does not
+change a running game's behavior. To accomplish that, look at the `@admin' or
+`@restart' commands.
+
+The name of the configuration file is given in the ./Startmux script on the
+command line and it's netmux.conf for Unix installations and tinymux.conf for
+Win32 installations.
+
+If you look at this file, you'll see several lines with `include' in them.
+Including a sub-configuration file is the same as if the contents were
+present in the top-level configuration file.
+
+Everything in a configuration file is handled as if \#1 (Wizard) did it.
+\section{Site-Banning}
+\subsection{Overview}
+The following configuration options are used to restrict a player's access
+based on their IP address:
 \backmatter
 \end{document}
