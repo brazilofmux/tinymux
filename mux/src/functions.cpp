@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.22 2003-02-04 06:03:12 sdennis Exp $
+// $Id: functions.cpp,v 1.23 2003-02-04 11:43:10 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2733,7 +2733,7 @@ FUNCTION(fun_and)
     BOOL val = TRUE;
     for (int i = 0; i < nfargs && val; i++)
     {
-        val = mux_atol(fargs[i]);
+        val = (mux_atol(fargs[i]) ? TRUE : FALSE);
     }
     safe_bool(val, buff, bufc);
 }
@@ -2743,7 +2743,7 @@ FUNCTION(fun_or)
     BOOL val = FALSE;
     for (int i = 0; i < nfargs && !val; i++)
     {
-        val = mux_atol(fargs[i]);
+        val = (mux_atol(fargs[i]) != 0);
     }
     safe_bool(val, buff, bufc);
 }
@@ -2779,7 +2779,7 @@ FUNCTION(fun_cand)
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = mux_atol(temp);
+        val = (mux_atol(temp) != 0);
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -2796,7 +2796,7 @@ FUNCTION(fun_cor)
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = mux_atol(temp);
+        val = (mux_atol(temp) != 0);
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -3402,7 +3402,7 @@ FUNCTION(fun_land)
         while (cp && bValue)
         {
             char *curr = split_token(&cp, sep);
-            bValue = mux_atol(curr);
+            bValue = (mux_atol(curr) != 0);
         }
     }
     safe_bool(bValue, buff, bufc);
@@ -3420,7 +3420,7 @@ FUNCTION(fun_lor)
         while (cp && !bValue)
         {
             char *curr = split_token(&cp, sep);
-            bValue = mux_atol(curr);
+            bValue = (mux_atol(curr) != 0);
         }
     }
     safe_bool(bValue, buff, bufc);
@@ -5021,7 +5021,7 @@ static BOOL atr_has_flag
         {
             if (string_prefix(pEntry->pName, flagname))
             {
-                return (aflags & (pEntry->iMask));
+                return ((aflags & (pEntry->iMask)) ? TRUE : FALSE);
             }
             pEntry++;
         }

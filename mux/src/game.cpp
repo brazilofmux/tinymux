@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.12 2003-02-04 08:45:49 sdennis Exp $
+// $Id: game.cpp,v 1.13 2003-02-04 11:43:10 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -178,7 +178,7 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
         return -1;
     }
 
-    int match = 0;
+    BOOL match = FALSE;
     int attr;
     char *as;
     atr_push();
@@ -266,7 +266,7 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
     return (match);
 }
 
-int atr_match(dbref thing, dbref player, char type, char *str, BOOL check_parents)
+BOOL atr_match(dbref thing, dbref player, char type, char *str, BOOL check_parents)
 {
     int lev, result;
     BOOL exclude, insert;
@@ -284,7 +284,7 @@ int atr_match(dbref thing, dbref player, char type, char *str, BOOL check_parent
     BOOL match = FALSE;
     if (!check_parents)
     {
-        return atr_match1(thing, thing, player, type, str, FALSE, FALSE);
+        return (atr_match1(thing, thing, player, type, str, FALSE, FALSE) > 0);
     }
 
     // Check parents, ignoring halted objects
@@ -1694,7 +1694,7 @@ BOOL list_check(dbref thing, dbref player, char type, char *str, BOOL check_pare
         if (  thing != player
            && !No_Command(thing))
         {
-            if (atr_match(thing, player, type, str, check_parent) > 0)
+            if (atr_match(thing, player, type, str, check_parent))
             {
                 match = TRUE;
             }

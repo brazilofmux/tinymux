@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.6 2003-02-03 22:48:34 sdennis Exp $
+// $Id: look.cpp,v 1.7 2003-02-04 11:43:10 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1490,7 +1490,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
     BOOLEXP *pBoolExp;
     int aflags;
     BOOL control;
-    BOOL do_parent = (key & EXAM_PARENT);
+    BOOL do_parent = ((key & EXAM_PARENT) ? TRUE : FALSE);
 
     dbref thing = NOTHING;
     if (  !name

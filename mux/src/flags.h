@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.2 2003-01-31 03:59:07 sdennis Exp $
+// $Id: flags.h,v 1.3 2003-02-04 11:43:10 jake Exp $
 //
 
 #include "copyright.h"
@@ -356,8 +356,8 @@ extern char *MakeCanonicalFlagName
                             mudconf.markdata[(x)&7])
 #define Unmark(x)           (mudstate.markbits->chunk[(x)>>3] &= \
                             ~mudconf.markdata[(x)&7])
-#define Marked(x)           (mudstate.markbits->chunk[(x)>>3] & \
-                            mudconf.markdata[(x)&7])
+#define Marked(x)           ((mudstate.markbits->chunk[(x)>>3] & \
+                            mudconf.markdata[(x)&7]) ? TRUE : FALSE)
 #define Mark_all(i)         {for ((i)=0; (i)<((mudstate.db_top+7)>>3); (i)++) \
                             mudstate.markbits->chunk[i]=0xFFU;}
 #define Unmark_all(i)       {for ((i)=0; (i)<((mudstate.db_top+7)>>3); (i)++) \

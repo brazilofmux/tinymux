@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.11 2003-02-04 06:40:40 sdennis Exp $
+// $Id: command.cpp,v 1.12 2003-02-04 11:43:10 jake Exp $
 //
 
 #include "copyright.h"
@@ -2106,7 +2106,7 @@ char *process_command
     if (mudconf.match_mine && !No_Command(executor))
     {
         if (  (!isPlayer(executor) || mudconf.match_mine_pl)
-           && (atr_match(executor, executor, AMATCH_CMD, LowerCaseCommand, TRUE) > 0))
+           && atr_match(executor, executor, AMATCH_CMD, LowerCaseCommand, TRUE))
         {
             succ = TRUE;
         }
@@ -2120,7 +2120,7 @@ char *process_command
 
         if (!No_Command(Location(executor)))
         {
-            succ |= (atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, TRUE) > 0);
+            succ |= atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, TRUE);
         }
     }
 
@@ -2204,7 +2204,7 @@ char *process_command
                        executor, AMATCH_CMD, LowerCaseCommand, FALSE);
             if (!No_Command(mudconf.master_room))
             {
-                succ |= (atr_match(mudconf.master_room, executor, AMATCH_CMD, LowerCaseCommand, FALSE) > 0);
+                succ |= atr_match(mudconf.master_room, executor, AMATCH_CMD, LowerCaseCommand, FALSE);
             }
         }
     }

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.4 2003-02-04 11:38:55 jake Exp $
+// $Id: externs.h,v 1.5 2003-02-04 11:43:10 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -77,7 +77,7 @@ extern void notify_check(dbref, dbref, const char *, int);
 
 extern BOOL Hearer(dbref);
 extern void report(void);
-extern int  atr_match(dbref, dbref, char, char *, BOOL);
+extern BOOL atr_match(dbref, dbref, char, char *, BOOL);
 extern BOOL list_check(dbref, dbref, char, char *, BOOL);
 extern BOOL html_escape(const char *src, char *dest, char **destp);
 

@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.2 2003-02-03 06:01:48 sdennis Exp $
+// $Id: player.cpp,v 1.3 2003-02-04 11:43:10 jake Exp $
 //
 
 #include "copyright.h"
@@ -430,7 +430,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int key, char *who)
 
 BOOL add_player_name(dbref player, const char *name)
 {
-    int stat;
+    BOOL stat;
     char *temp, *tp;
 
     // Convert to all lowercase.
@@ -482,9 +482,8 @@ BOOL add_player_name(dbref player, const char *name)
         (void)ISOUTOFMEMORY(p);
 
         *p = player;
-        stat = hashaddLEN(temp, strlen(temp), p, &mudstate.player_htab);
+        stat = (hashaddLEN(temp, strlen(temp), p, &mudstate.player_htab) >= 0);
         free_lbuf(temp);
-        stat = (stat >= 0);
     }
     return stat;
 }

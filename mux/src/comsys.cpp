@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.7 2003-02-04 05:38:04 sdennis Exp $
+// $Id: comsys.cpp,v 1.8 2003-02-04 11:43:10 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2463,7 +2463,7 @@ BOOL do_test_access(dbref player, long access, struct channel *chan)
     //
     flag_value &= 0xFF;
 
-    return ((long)chan->type & flag_value);
+    return (((long)chan->type & flag_value) ? TRUE : FALSE);
 }
 
 // TRUE means continue, FALSE means stop
