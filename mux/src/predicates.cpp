@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.57 2004-08-18 22:35:26 sdennis Exp $
+// $Id: predicates.cpp,v 1.58 2004-08-26 18:56:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -383,7 +383,7 @@ char *MakeCanonicalExitName(const char *pName, int *pnName, bool *pbValid)
     safe_mb_str(pStripped, Buf, &pBuf);
     *pBuf = '\0';
 
-    int nBuf = pBuf - Buf;
+    size_t nBuf = pBuf - Buf;
     pBuf = Buf;
 
     bool bHaveDisplay = false;
@@ -480,7 +480,7 @@ bool ValidatePlayerName(const char *pName)
     {
         return false;
     }
-    unsigned int nName = strlen(pName);
+    size_t nName = strlen(pName);
 
     // Verify that name is not empty, but not too long, either.
     //
@@ -1014,7 +1014,7 @@ void do_delcommand
        && (old->callseq & CS_ADDED))
     {
         char *p__Name = tprintf("__%s", name);
-        unsigned int n__Name = strlen(p__Name);
+        size_t n__Name = strlen(p__Name);
 
         if (command[0] == '\0')
         {
