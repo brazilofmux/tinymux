@@ -1,10 +1,7 @@
-
-/*
- * powers.c - power manipulation routines 
- */
-/*
- * $Id: powers.cpp,v 1.4 2001-01-22 02:23:41 sdennis Exp $ 
- */
+// powers.cpp -- Power manipulation routines.
+//
+// $Id: powers.cpp,v 1.5 2001-11-20 05:10:12 sdennis Exp $
+//
 
 #include "copyright.h"
 #include "autoconf.h"
@@ -201,10 +198,10 @@ POWERENT *find_power(dbref thing, char *powername)
 int decode_power(dbref player, char *powername, POWERSET *pset)
 {
     POWERENT *pent;
-    
+
     pset->word1 = 0;
     pset->word2 = 0;
-    
+
     pent = (POWERENT *)hashfindLEN(powername, strlen(powername), &mudstate.powers_htab);
     if (!pent)
     {
@@ -224,7 +221,7 @@ int decode_power(dbref player, char *powername, POWERSET *pset)
 
 /*
  * ---------------------------------------------------------------------------
- * * power_set: Set or clear a specified power on an object. 
+ * * power_set: Set or clear a specified power on an object.
  */
 
 void power_set(dbref target, dbref player, char *power, int key)
@@ -232,10 +229,8 @@ void power_set(dbref target, dbref player, char *power, int key)
     POWERENT *fp;
     int negate, result;
 
-    /*
-     * Trim spaces, and handle the negation character 
-     */
-
+    // Trim spaces, and handle the negation character.
+    //
     negate = 0;
     while (Tiny_IsSpace[(unsigned char)*power])
         power++;
@@ -382,16 +377,14 @@ void decompile_powers(dbref player, dbref thing, char *thingname)
     POWER f1, f2;
     POWERENT *fp;
 
-    /*
-     * Report generic powers 
-     */
-
+    // Report generic powers.
+    //
     f1 = Powers(thing);
     f2 = Powers2(thing);
 
     for (fp = gen_powers; fp->powername; fp++)
     {
-        // Skip if we shouldn't decompile this power 
+        // Skip if we shouldn't decompile this power
         //
         if (fp->listperm & CA_NO_DECOMP)
         {
