@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.61 2003-07-22 04:56:51 sdennis Exp $
+// $Id: functions.cpp,v 1.62 2003-07-24 00:20:51 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3597,7 +3597,7 @@ static double ConvertRDG2R(double d, const char *szUnits)
     case 'g':
         // Gradians to Radians.
         //
-        d *= 0.011570796326794896;
+        d *= 0.015707963267948967;
         break;
     }
     return d;
