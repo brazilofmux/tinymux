@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.134 2002-01-26 18:08:27 sdennis Exp $
+// $Id: functions.cpp,v 1.135 2002-01-27 13:17:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1155,7 +1155,43 @@ FUNCTION(fun_timefmt)
     int iDayOfWeekMonday  = (ft.iDayOfWeek == 0)?7:ft.iDayOfWeek;
     int iWeekOfYearMonday = (ft.iDayOfYear-iDayOfWeekMonday+7)/7;
 
-
+    // Calculate ISO Week and Year.  Remember that the ISO Year can be the
+    // same, one year ahead, or one year behind of the Gregorian Year.
+    //
+    int iYearISO = ft.iYear;
+    int iWeekISO = 0;
+    int iTemp = 0;
+    if (  ft.iMonth == 12
+       && 35 <= 7 + ft.iDayOfMonth - iDayOfWeekMonday)
+    {
+        iYearISO++;
+        iWeekISO = 1;
+    }
+    else if (  ft.iMonth == 1
+            && ft.iDayOfMonth <= 3
+            && (iTemp = 7 - ft.iDayOfMonth + iDayOfWeekMonday) >= 11)
+    {
+        iYearISO--;
+        if (  iTemp == 11
+           || (  iTemp == 12
+              && isLeapYear(iYearISO)))
+        {
+            iWeekISO = 53;
+        }
+        else
+        {
+            iWeekISO = 52;
+        }
+    }
+    else
+    {
+        iWeekISO = (7 + ft.iDayOfYear - iDayOfWeekMonday)/7;
+        if (4 <= (7 + ft.iDayOfYear - iDayOfWeekMonday)%7)
+        {
+            iWeekISO++;
+        }
+    }
+        
     char *q;
     char *p = fargs[0];
     while ((q = strchr(p, '$')) != NULL)
@@ -1253,11 +1289,11 @@ FUNCTION(fun_timefmt)
             break;
 
         case 'g': // $g - Like $G, two-digit ISO 8601 year.
-            // TODO
+            safe_tprintf_str(buff, bufc, "%02d", iYearISO%100);
             break;
 
         case 'G': // $G - The ISO 8601 year.
-            // TODO
+            safe_tprintf_str(buff, bufc, "%04d", iYearISO);
             break;
 
         case 'H': // $H - Hour of the 24-hour day.
@@ -1345,7 +1381,7 @@ FUNCTION(fun_timefmt)
             break;
 
         case 'V': // $V - ISO 8601:1988 week number.
-            // TODO
+            safe_tprintf_str(buff, bufc, "%02d", iWeekISO);
             break;
 
         case 'w': // $w - Day of the week. 0 = Sunday
