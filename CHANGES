@@ -21,6 +21,7 @@ Feature Additions:
  -- Exits can be teleported from room to room instead of taken and dropped.
  -- Added generalized article guessing (see art() and article_rule).
  -- Support 36 global registers instead of 10.
+ -- Add TIMEFMT() function.
 
 Bug Fixes:
 ~~~~~~~~~
