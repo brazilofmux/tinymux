@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.117 2002-10-02 05:12:29 sdennis Exp $
+// $Id: functions.cpp,v 1.118 2002-10-02 05:38:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8795,21 +8795,23 @@ typedef struct
 
 } RADIX_ENTRY;
 
-#define N_RADIX_ENTRIES 5
+#define N_RADIX_ENTRIES 6
 const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
 {
-    {604800, 'w', 4, "week"   },
-    { 86400, 'd', 3, "day"    },
-    {  3600, 'h', 4, "hour"   },
-    {    60, 'm', 6, "minute" },
-    {     1, 's', 6, "second" }
+    { 2592000, 'M', 5, "month"  },
+    {  604800, 'w', 4, "week"   },
+    {   86400, 'd', 3, "day"    },
+    {    3600, 'h', 4, "hour"   },
+    {      60, 'm', 6, "minute" },
+    {       1, 's', 6, "second" }
 };
 
-#define IWEEKS   0
-#define IDAYS    1
-#define IHOURS   2
-#define IMINUTES 3
-#define ISECONDS 4
+#define IMONTHS  0
+#define IWEEKS   1
+#define IDAYS    2
+#define IHOURS   3
+#define IMINUTES 4
+#define ISECONDS 5
 
 // This routine supports most of the time formats using the above
 // table.
@@ -8879,18 +8881,18 @@ void GeneralTimeConversion
 
 // These buffers is used by:
 //
-//     time_format_1 (23 bytes) uses TimeBuffer64,
-//     time_format_2 (17 bytes) uses TimeBuffer32,
-//     expand_time   (31 bytes) uses TimeBuffer32,
-//     write_time    (59 bytes) uses TimeBuffer64.
+//     time_format_1 (23 bytes) uses TimeBuffer80,
+//     time_format_2 (17 bytes) uses TimeBuffer64,
+//     expand_time   (33 bytes) uses TimeBuffer64,
+//     write_time    (69 bytes) uses TimeBuffer80.
 //
 // time_format_1 and time_format_2 are called from within the same
 // printf, so they must use different buffers.
 //
-// We pick 32 and 64 as a round numbers.
+// We pick 64 as a round number.
 //
-static char TimeBuffer32[32];
 static char TimeBuffer64[64];
+static char TimeBuffer80[80];
 
 // Show time in days, hours, and minutes
 //
@@ -8919,13 +8921,13 @@ const char *time_format_1(int Seconds)
 
     if (Days > 0)
     {
-        sprintf(TimeBuffer64, "%dd %02d:%02d", Days, Hours, Minutes);
+        sprintf(TimeBuffer80, "%dd %02d:%02d", Days, Hours, Minutes);
     }
     else
     {
-        sprintf(TimeBuffer64, "%02d:%02d", Hours, Minutes);
+        sprintf(TimeBuffer80, "%02d:%02d", Hours, Minutes);
     }
-    return TimeBuffer64;
+    return TimeBuffer80;
 }
 
 // Show time in days, hours, minutes, or seconds.
@@ -8935,8 +8937,8 @@ const char *time_format_2(int Seconds)
     // 2^63/86400 is 1.07E14 which is at most 15 digits.
     // '(15)d\0' is at most 17 characters.
     //
-    GeneralTimeConversion(TimeBuffer32, Seconds, IDAYS, ISECONDS, TRUE, FALSE);
-    return TimeBuffer32;
+    GeneralTimeConversion(TimeBuffer64, Seconds, IDAYS, ISECONDS, TRUE, FALSE);
+    return TimeBuffer64;
 }
 
 // Del's added functions for dooferMUX ! :)
@@ -8947,23 +8949,23 @@ const char *time_format_2(int Seconds)
 //
 const char *expand_time(int Seconds)
 {
-    // 2^63/604800 is 15250284452472 which is at most 14 digits.
-    // '(14)w (1)d (2)h (2)m (2)s\0' is at most 31 characters.
+    // 2^63/2592000 is 3558399705577 which is at most 13 digits.
+    // '(13)M (1)w (1)d (2)h (2)m (2)s\0' is at most 33 characters.
     //
-    GeneralTimeConversion(TimeBuffer32, Seconds, IWEEKS, ISECONDS, FALSE, FALSE);
-    return TimeBuffer32;
+    GeneralTimeConversion(TimeBuffer64, Seconds, IMONTHS, ISECONDS, FALSE, FALSE);
+    return TimeBuffer64;
 }
 
 // write_time - Written (long) time format.
 //
 const char *write_time(int Seconds)
 {
-    // 2^63/604800 is 15250284452472 which is at most 14 digits.
-    // '(14) weeks (1) days (2) hours (2) minutes (2) seconds\0' is at most
-    // 59 characters.
+    // 2^63/2592000 is 3558399705577 which is at most 13 digits.
+    // '(13) months (1) weeks (1) days (2) hours (2) minutes (2) seconds\0' is
+    // at most 69 characters.
     //
-    GeneralTimeConversion(TimeBuffer64, Seconds, IWEEKS, ISECONDS, FALSE, TRUE);
-    return TimeBuffer64;
+    GeneralTimeConversion(TimeBuffer80, Seconds, IMONTHS, ISECONDS, FALSE, TRUE);
+    return TimeBuffer80;
 }
 
 // digittime - Digital format time ([(days)d]HH:MM) from given
