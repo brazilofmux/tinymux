@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.29 2001-06-30 17:44:17 morgan Exp $
+// $Id: bsd.cpp,v 1.30 2001-08-26 15:54:29 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1266,7 +1266,6 @@ void shovechars(int port)
 
 DESC *new_connection(SOCKET sock)
 {
-    char *buff, *buff1, *cmdsave;
     DESC *d;
     struct sockaddr_in addr;
 #ifdef SOCKLEN_T_DCL
@@ -1279,7 +1278,7 @@ DESC *new_connection(SOCKET sock)
     char *buf;
 #endif // !WIN32
 
-    cmdsave = mudstate.debug_cmd;
+    char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< new_connection >";
     addr_len = sizeof(struct sockaddr);
 
@@ -1290,15 +1289,21 @@ DESC *new_connection(SOCKET sock)
         return 0;
     }
 
+    char *pBuffM2 = alloc_mbuf("new_connection.address");
+    strcpy(pBuffM2, inet_ntoa(addr.sin_addr));
+    unsigned short usPort = ntohs(addr.sin_port);
+
     DebugTotalSockets++;
     if (site_check(addr.sin_addr, mudstate.access_list) == H_FORBIDDEN)
     {
         STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-        buff = alloc_mbuf("new_connection.LOG.badsite");
-        sprintf(buff, "[%d/%s] Connection refused.  (Remote port %d)", newsock, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-        log_text(buff);
-        free_mbuf(buff);
+        char *pBuffM1  = alloc_mbuf("new_connection.LOG.badsite");
+        sprintf(pBuffM1, "[%d/%s] Connection refused.  (Remote port %d)",
+            newsock, pBuffM2, usPort);
+        log_text(pBuffM1);
+        free_mbuf(pBuffM1);
         ENDLOG;
+
         fcache_rawdump(newsock, FC_CONN_SITE);
         shutdown(newsock, SD_BOTH);
         if (SOCKET_CLOSE(newsock) == 0)
@@ -1311,19 +1316,14 @@ DESC *new_connection(SOCKET sock)
     }
     else
     {
-        buff = alloc_mbuf("new_connection.address");
-#ifndef WIN32
-        buf = alloc_lbuf("new_connection.write");
-#endif // !WIN32
-        StringCopy(buff, inet_ntoa(addr.sin_addr));
-
 #ifdef WIN32
         // Make slave request
         //
         // Go take control of the stack, but don't bother if it takes
         // longer than 5 seconds to do it.
         //
-        if (bSlaveBooted && (WAIT_OBJECT_0 == WaitForSingleObject(hSlaveRequestStackSemaphore, 5000)))
+        if (  bSlaveBooted
+           && WAIT_OBJECT_0 == WaitForSingleObject(hSlaveRequestStackSemaphore, 5000))
         {
             // We have control of the stack. Skip the request if the stack is full.
             //
@@ -1348,12 +1348,14 @@ DESC *new_connection(SOCKET sock)
 #else // WIN32
         // Make slave request
         //
-        if ((slave_socket != INVALID_SOCKET) && mudconf.use_hostname)
+        if (  slave_socket != INVALID_SOCKET
+           && mudconf.use_hostname)
         {
-            sprintf(buf, "%s\n%s,%d,%d\n", inet_ntoa(addr.sin_addr),
-                inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), mudconf.port);
-            len = strlen(buf);
-            if (write(slave_socket, buf, len) < 0)
+            char *pBuffL1 = alloc_lbuf("new_connection.write");
+            sprintf(pBuffL1, "%s\n%s,%d,%d\n", pBuffM2,
+                pBuffM2, usPort, mudconf.port);
+            len = strlen(pBuffL1);
+            if (write(slave_socket, pBuffL1, len) < 0)
             {
                 if (close(slave_socket) == 0)
                 {
@@ -1361,21 +1363,23 @@ DESC *new_connection(SOCKET sock)
                 }
                 slave_socket = INVALID_SOCKET;
             }
+            free_lbuf(pBuffL1);
         }
-        free_lbuf(buf);
 #endif // WIN32
 
         STARTLOG(LOG_NET, "NET", "CONN");
-        buff1 = alloc_mbuf("new_connection.LOG.open");
-        sprintf(buff1, "[%d/%s] Connection opened (remote port %d)", newsock, buff, ntohs(addr.sin_port));
-        log_text(buff1);
-        free_mbuf(buff1);
+        char *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
+        sprintf(pBuffM3, "[%d/%s] Connection opened (remote port %d)", newsock,
+            pBuffM2, usPort);
+        log_text(pBuffM3);
+        free_mbuf(pBuffM3);
         ENDLOG;
+
         d = initializesock(newsock, &addr);
         welcome_user(d);
         mudstate.debug_cmd = cmdsave;
-        free_mbuf(buff);
     }
+    free_mbuf(pBuffM2);
     mudstate.debug_cmd = cmdsave;
     return d;
 }
