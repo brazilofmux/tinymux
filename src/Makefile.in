@@ -113,16 +113,10 @@ D_OBJ	= alloc.o attrcache.o boolexp.o bsd.o command.o comsys.o conf.o \
 	player.o player_c.o powers.o quota.o rob.o regexp.o set.o speech.o \
 	stringutil.o svdrand.o svdhash.o svdreport.o timer.o timeutil.o \
 	unparse.o vattr.o walkdb.o wild.o wiz.o
-D_INC	= copyright.h flags.h help.h htab.h interface.h match.h functions.h \
-	  command.h config.h db.h externs.h mudconf.h misc.h \
-	  vattr.h file_c.h fifo.h alloc.h attrs.h comsys.h macro.h \
-          mguests.h powers.h slave.h concentrator.h regexp.h svdrand.h \
-	  svdhash.h svdreport.h
 
 # Version number routine
 VER_SRC	= version.cpp
 VER_OBJ	= version.o
-VER_INC	= patchlevel.h
 VER_FLG	= -DMUX_BUILD_DATE="\"`date`\"" \
 	  -DMUX_BUILD_NUM="\"`sh ./buildnum.sh`\""
 
@@ -203,12 +197,8 @@ REINSTALL_TARG	= $(INSTALL_PROG) help.txt wizhelp.txt alias.conf compat.conf
 
 #compiliation source files
 ALLSRC	= $(D_SRC) $(VER_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC)
-ALLINC	= $(D_INC) $(VER_INC) $(NET_INC) $(LIB_INC) $(COMPRESS_INC)
 SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S) $(CONC_S) $(C_COMPRESS_S)
 OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O) $(CONC_O) $(C_COMPRESS_O)
-
-# Files in the standard distribution
-DIST	= $(ALLSRC) $(ALLINC) $(AUXIL)
 
 ifdef SWITCH_RADIX_COMPRESSION
 OUT	= netmux mkindx dbconvert a
@@ -267,12 +257,6 @@ netmux: $(OBJ) $(LIBOBJS)
 cvs:
 	rm -f buildnum.data
 	echo "0" > buildnum.data
-
-dist.tar.Z: $(DIST)
-	-rm -f buildnum.data
-	echo 0 > buildnum.data
-	tar cvhf - $(DIST) | compress -c > dist.tar.Z.NEW
-	mv dist.tar.Z.NEW dist.tar.Z
 
 depend: $(ALLSRC) unsplit
 	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) $(CONC_S) slave.cpp portconc.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
