@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.42 2001-06-28 09:22:07 sdennis Exp $
+// $Id: db.cpp,v 1.43 2001-06-29 06:06:46 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -128,7 +128,6 @@ ATTR attr[] =
     {"Comment", A_COMMENT, AF_MDARK | AF_WIZARD, NULL},
     {"ConFormat", A_CONFORMAT, AF_ODARK | AF_NOPROG, NULL},
     {"Cost", A_COST, AF_ODARK, NULL},
-    {"Created", A_CREATED, AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD, NULL},
     {"Daily", A_DAILY, AF_ODARK, NULL},
     {"Desc", A_DESC, AF_NOPROG, NULL},
     {"DefaultLock", A_LOCK, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
