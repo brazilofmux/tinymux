@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.1 2000-04-11 07:14:46 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.2 2000-04-12 00:52:24 sdennis Exp $ 
 */
 
 /*
@@ -176,23 +176,37 @@ void raw_notify_newline(dbref player)
 extern char *vsprintf(char *, char *, va_list);
 #endif
 
-void DCL_CDECL raw_broadcast(int inflags, char *template0, ...)
+void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
 {
-    char *buff;
-    DESC *d;
-    va_list ap;
-    
-    va_start(ap, template0);
-    if (!template0 || !*template0)
+    if (!fmt || !*fmt)
+    {
         return;
-    
-    buff = alloc_lbuf("raw_broadcast");
-#ifdef WIN32
-    _vsnprintf(buff, LBUF_SIZE, template0, ap);
-#else // WIN32
-    vsnprintf(buff, LBUF_SIZE, template0, ap);
-#endif // WIN32
-    
+    }
+    char *buff = alloc_lbuf("raw_broadcast");
+
+    // See predicates.cpp, tprintf() for more comments.
+    //
+    buff[0] = '\0';
+    va_list ap;
+    va_start(ap, fmt);
+    int len = VSNPRINTF(buff, LBUF_SIZE, fmt, ap);
+    va_end(ap);
+    if (len < 0 || len > LBUF_SIZE-1)
+    {
+        if (buff[0] == '\0')
+        {
+            // vsnprintf did not touch the buffer.
+            //
+            len = 0;
+        }
+        else
+        {
+            len = LBUF_SIZE-1;
+        }
+    }
+    buff[len] = '\0';
+
+    DESC *d;
     DESC_ITER_CONN(d)
     {
         if ((Flags(d->player) & inflags) == inflags)
@@ -203,7 +217,6 @@ void DCL_CDECL raw_broadcast(int inflags, char *template0, ...)
         }
     }
     free_lbuf(buff);
-    va_end(ap);
 }
 
 /*

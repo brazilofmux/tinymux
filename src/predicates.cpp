@@ -21,18 +21,56 @@
 extern int FDECL(do_command, (DESC *, char *, int));
 extern void NDECL(dump_database);
 
-char * DCL_CDECL tprintf(char *format,...)
+#ifdef NEED_VSPRINTF_DCL
+extern char *vsprintf(char *, char *, va_list);
+#endif
+
+char * DCL_CDECL tprintf(const char *format,...)
 {
     static char buff[LBUF_SIZE];
     va_list ap;
-
     va_start(ap, format);
-#ifdef WIN32
-    int len = _vsnprintf(buff, LBUF_SIZE, format, ap);
-#else // WIN32
-    int len = vsnprintf(buff, LBUF_SIZE, format, ap);
-#endif // WIN32
-    buff[LBUF_SIZE-1] = '\0';
+
+    // vsnprintf returns the number of characters written, not
+    // including the terminating '\0' character.
+    //
+    // It returns a -1 if an output error occurs.
+    //
+    // It can return a number larger than the size of the buffer
+    // on some systems to indicate how much space it -would- have taken
+    // if not limited by the request.
+    //
+    // On Win32, it can fill the buffer completely without a
+    // null-termination and return -1.
+
+
+    // To favor the Unix case, if there is an output error, but
+    // vsnprint doesn't touch the buffer, we avoid undefined trash by
+    // null-terminating the buffer to zero-length before the call.
+    // Not sure that this happens, but it's a cheap precaution.
+    //
+    buff[0] = '\0';
+
+    // If Unix version does start touching the buffer, null-terminates,
+    // and returns -1, we are still safe. However, if Unix version
+    // touches the buffer writes garbage, and then returns -1, we may
+    // pass garbage, but this possibility seems very unlikely.
+    //
+    int len = VSNPRINTF(buff, LBUF_SIZE, format, ap);
+    if (len < 0 || len > LBUF_SIZE-1)
+    {
+        if (buff[0] == '\0')
+        {
+            // vsnprintf did not touch the buffer.
+            //
+            len = 0;
+        }
+        else
+        {
+            len = LBUF_SIZE-1;
+        }
+    }
+    buff[len] = '\0';
     va_end(ap);
     return buff;
 }
@@ -42,22 +80,29 @@ void DCL_CDECL safe_tprintf_str(char *str, char **bp, char *format,...)
     va_list ap;
     va_start(ap, format);
 
-    // vsnprintf returns the number of characters written, not including the terminating null character, 
-    // or a negative value if an output error occurs.
+    int nAvailable = LBUF_SIZE - (*bp - str) - 1;
+
+    // See tprintf above for more comments.
     //
-    int nAvailable = LBUF_SIZE - (*bp - str);
-#ifdef WIN32
-    int len = _vsnprintf(*bp, nAvailable, format, ap);
-#else // WIN32
-    int len = vsnprintf(*bp, nAvailable, format, ap);
-#endif // WIN32
-    va_end(ap);
-    if (len < 0)
+    **bp = '\0';
+    int len = VSNPRINTF(*bp, nAvailable+1, format, ap);
+    if (len < 0 || len > nAvailable)
     {
-        len = nAvailable;
+        if (**bp == '\0')
+        {
+            // vsnprintf did not touch the buffer.
+            //
+            len = 0;
+        }
+        else
+        {
+            len = nAvailable;
+        }
     }
     *bp += len;
     **bp = '\0';
+
+    va_end(ap);
 }
 
 /*
