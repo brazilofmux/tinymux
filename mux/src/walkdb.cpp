@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.5 2003-02-05 06:20:59 jake Exp $
+// $Id: walkdb.cpp,v 1.6 2003-02-28 14:39:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -914,7 +914,6 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     int ecount = 0;
     int tcount = 0;
     int pcount = 0;
-    int gcount = 0;
 
     // Room search.
     //
@@ -1019,41 +1018,6 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
         }
     }
 
-    // Garbage search
-    //
-    if (  searchparm.s_rst_type == TYPE_GARBAGE
-       || searchparm.s_rst_type == NOTYPE)
-    {
-        flag = true;
-        for (thing = olist_first(); thing != NOTHING; thing = olist_next())
-        {
-            if (Typeof(thing) != TYPE_GARBAGE)
-            {
-                continue;
-            }
-            if (flag)
-            {
-                flag = false;
-                destitute = false;
-                notify(executor, "\nGARBAGE:");
-            }
-            bp = outbuf;
-            buff = unparse_object(executor, thing, false);
-            safe_str(buff, outbuf, &bp);
-            free_lbuf(buff);
-
-            safe_str(" [owner: ", outbuf, &bp);
-            buff = unparse_object(executor, Owner(thing), false);
-            safe_str(buff, outbuf, &bp);
-            free_lbuf(buff);
-
-            safe_chr(']', outbuf, &bp);
-            *bp = '\0';
-            notify(executor, outbuf);
-            gcount++;
-        }
-    }
-
     // Player search
     //
     if (  searchparm.s_rst_type == TYPE_PLAYER
@@ -1099,8 +1063,8 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     else
     {
         sprintf(outbuf,
-            "\nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d  Garbage...%d",
-            rcount, ecount, tcount, pcount, gcount);
+            "\nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d",
+            rcount, ecount, tcount, pcount);
         notify(executor, outbuf);
     }
     free_lbuf(outbuf);
