@@ -1,26 +1,5 @@
-& help
+& HELP
+NEWS
 
-There have been many changes to get to MUX 1.0.  Here are the names of
-a few:  Type 'news foo' for more info on foo.
- 
-Parser
-Bugs
+  See http://www.tinymux.com
 
-& bugs
-
-Recent bugfixes:
- 
-@readcache now frees the memory that was allocated when it reads new files
-into memory. Many buffer fubars have been fixed. The distribution should be
-pretty stable.
- 
-& parser
- 
-HA! We didn't rewrite the parser. It does, however, handle ANSI pretty well.
-Bleeding should never take place (unless you are on a client that doesn't
-know what ANSI_NORMAL is). A few speed improvements have been made as well.
- 
-& foo
- 
-GAWD that was a bad joke.
- 
