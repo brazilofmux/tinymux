@@ -4,7 +4,7 @@
  * originally taken from PennMUSH 1.50 p10, and has been heavily modified
  * since being included in MUX.
  * 
- * $Id: mail.cpp,v 1.1 2000-04-11 07:14:45 sdennis Exp $
+ * $Id: mail.cpp,v 1.2 2000-04-12 21:13:29 sdennis Exp $
  * -------------------------------------------------------------------
  */
 
@@ -1094,14 +1094,14 @@ void do_mail_reply(dbref player, char *msg, int all, int key)
             if (*p == '*')
             {
                 safe_str(p, names, &bp);
-                safe_str(" ", names, &bp);
+                safe_chr(' ', names, &bp);
             }
             else if (Tiny_atol(p) != mp->from)
             {
                 safe_chr('"', names, &bp);
                 safe_str(Name(Tiny_atol(p)), names, &bp);
                 safe_chr('"', names, &bp);
-                safe_str(" ", names, &bp);
+                safe_chr(' ', names, &bp);
             }
         }
         free_lbuf(oldlist);
