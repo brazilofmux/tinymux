@@ -127,6 +127,8 @@ Bug Fixes:
  -- Use waitpid() everywhere instead of wait() or wait3().
  -- Freshen getpagesize() for QNX.
  -- Previous work on slave left zombie slave processes.
+ -- Some SIGCHLD signals from the dumping process were not getting
+    through.
  -- Disallow parsing of 'Fri Apr 04 07:15:04 2003 utc' by first-level
     date parser so that second-level parser can deal properly with it.
     Reported by Talim.
