@@ -8,10 +8,10 @@ NewVersion=2.2.0.$NewBuild
 ChangesDir=mux
 ReferenceDir=mux2.2_$OldBuild
 DistroDir=mux2.2
-NewDir=mux2.1_$NewBuild
-patchableFiles=`cat ~/TOC.patchable`
-unpatchedFiles=`cat ~/TOC.unpatched`
-removeFiles=`cat ~/TOC.removed`
+NewDir=mux2.2_$NewBuild
+patchableFiles=`cat TOC.patchable`
+unpatchedFiles=`cat TOC.unpatched`
+removeFiles=`cat TOC.removed`
 
 # Build patchfile
 #
