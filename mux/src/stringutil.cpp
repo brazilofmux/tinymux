@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.20 2003-02-03 20:46:38 sdennis Exp $
+// $Id: stringutil.cpp,v 1.21 2003-02-03 21:48:15 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -401,7 +401,7 @@ const unsigned char Tiny_ToLower[256] =
     0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
 };
 
-const unsigned char Tiny_StripAccents[256] =
+const unsigned char mux_StripAccents[256] =
 {
 //   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
 //
@@ -557,7 +557,7 @@ char *strip_accents(const char *szString, size_t *pnString)
     {
         while (*pString)
         {
-            *pBuffer = Tiny_StripAccents[(unsigned char)*pString];
+            *pBuffer = mux_StripAccents[(unsigned char)*pString];
             pBuffer++;
             pString++;
         }

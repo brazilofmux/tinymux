@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.14 2003-02-03 20:46:38 sdennis Exp $
+// $Id: stringutil.h,v 1.15 2003-02-03 21:48:15 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -24,7 +24,7 @@ extern const char Tiny_IsSecureCharacter[256];
 extern const char Tiny_IsEscapeCharacter[256];
 extern const unsigned char Tiny_ToUpper[256];
 extern const unsigned char Tiny_ToLower[256];
-extern const unsigned char Tiny_StripAccents[256];
+extern const unsigned char mux_StripAccents[256];
 int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1);
 #define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
 #define TOKEN_ANSI      1 // ANSI sequence.
