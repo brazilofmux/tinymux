@@ -1,11 +1,11 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.32 2002-01-25 17:42:07 sdennis Exp $
+// $Id: stringutil.h,v 1.33 2002-02-01 00:35:48 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
 //
-// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2002 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial

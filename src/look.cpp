@@ -1,11 +1,11 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.37 2002-01-15 05:21:21 sdennis Exp $
+// $Id: look.cpp,v 1.38 2002-02-01 00:34:22 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
 //
-// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2002 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial

@@ -1,11 +1,11 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.68 2002-01-31 12:39:47 sdennis Exp $
+// $Id: db.cpp,v 1.69 2002-02-01 00:33:45 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
 //
-// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2002 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial
