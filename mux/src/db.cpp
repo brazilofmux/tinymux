@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.26 2002-07-28 15:42:39 jake Exp $
+// $Id: db.cpp,v 1.27 2002-07-29 12:30:26 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -54,42 +54,42 @@ extern void desc_reload(dbref);
 //
 ATTR attr[] =
 {
-    {"Aahear",      A_AAHEAR,   AF_ODARK},
-    {"Aclone",      A_ACLONE,   AF_ODARK},
-    {"Aconnect",    A_ACONNECT, AF_ODARK},
-    {"Adesc",       A_ADESC,    AF_ODARK},
+    {"Aahear",      A_AAHEAR,   AF_ODARK | AF_NOPROG},
+    {"Aclone",      A_ACLONE,   AF_ODARK | AF_NOPROG},
+    {"Aconnect",    A_ACONNECT, AF_ODARK | AF_NOPROG},
+    {"Adesc",       A_ADESC,    AF_ODARK | AF_NOPROG},
     {"Adfail",      A_ADFAIL,   AF_ODARK | AF_NOPROG},
-    {"Adisconnect", A_ADISCONNECT, AF_ODARK},
-    {"Adrop",       A_ADROP,    AF_ODARK},
+    {"Adisconnect", A_ADISCONNECT, AF_ODARK | AF_NOPROG},
+    {"Adrop",       A_ADROP,    AF_ODARK | AF_NOPROG},
     {"Aefail",      A_AEFAIL,   AF_ODARK | AF_NOPROG},
-    {"Aenter",      A_AENTER,   AF_ODARK},
+    {"Aenter",      A_AENTER,   AF_ODARK | AF_NOPROG},
     {"Afail",       A_AFAIL,    AF_ODARK | AF_NOPROG},
     {"Agfail",      A_AGFAIL,   AF_ODARK | AF_NOPROG},
-    {"Ahear",       A_AHEAR,    AF_ODARK},
-    {"Akill",       A_AKILL,    AF_ODARK},
-    {"Aleave",      A_ALEAVE,   AF_ODARK},
+    {"Ahear",       A_AHEAR,    AF_ODARK | AF_NOPROG},
+    {"Akill",       A_AKILL,    AF_ODARK | AF_NOPROG},
+    {"Aleave",      A_ALEAVE,   AF_ODARK | AF_NOPROG},
     {"Alfail",      A_ALFAIL,   AF_ODARK | AF_NOPROG},
     {"Alias",       A_ALIAS,    AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_PRIVATE | AF_CONST},
     {"Allowance",   A_ALLOWANCE, AF_MDARK | AF_NOPROG | AF_WIZARD},
     {"Amail",       A_AMAIL,    AF_ODARK | AF_NOPROG},
-    {"Amhear",      A_AMHEAR,   AF_ODARK},
-    {"Amove",       A_AMOVE,    AF_ODARK},
-    {"Apay",        A_APAY,     AF_ODARK},
+    {"Amhear",      A_AMHEAR,   AF_ODARK | AF_NOPROG},
+    {"Amove",       A_AMOVE,    AF_ODARK | AF_NOPROG},
+    {"Apay",        A_APAY,     AF_ODARK | AF_NOPROG},
     {"Arfail",      A_ARFAIL,   AF_ODARK | AF_NOPROG},
-    {"Asucc",       A_ASUCC,    AF_ODARK},
+    {"Asucc",       A_ASUCC,    AF_ODARK | AF_NOPROG},
     {"Atfail",      A_ATFAIL,   AF_ODARK | AF_NOPROG},
     {"Atport",      A_ATPORT,   AF_ODARK | AF_NOPROG},
     {"Atofail",     A_ATOFAIL,  AF_ODARK | AF_NOPROG},
     {"Aufail",      A_AUFAIL,   AF_ODARK | AF_NOPROG},
-    {"Ause",        A_AUSE,     AF_ODARK},
+    {"Ause",        A_AUSE,     AF_ODARK | AF_NOPROG},
     {"Away",        A_AWAY,     AF_ODARK | AF_NOPROG},
     {"Charges",     A_CHARGES,  AF_ODARK | AF_NOPROG},
     {"CmdCheck",    A_CMDCHECK, AF_DARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_PRIVATE | AF_CONST},
     {"Comment",     A_COMMENT,  AF_MDARK | AF_WIZARD},
     {"ConFormat",   A_CONFORMAT, AF_ODARK | AF_NOPROG},
-    {"Cost",        A_COST,     AF_ODARK},
+    {"Cost",        A_COST,     AF_ODARK | AF_NOPROG},
     {"Created",     A_CREATED,  AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD},
-    {"Daily",       A_DAILY,    AF_ODARK},
+    {"Daily",       A_DAILY,    AF_ODARK | AF_NOPROG},
     {"Desc",        A_DESC,     AF_NOPROG},
     {"DefaultLock", A_LOCK,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"Destroyer",   A_DESTROYER, AF_MDARK | AF_WIZARD | AF_NOPROG},
@@ -98,7 +98,7 @@ ATTR attr[] =
     {"DropLock",    A_LDROP,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"Ealias",      A_EALIAS,   AF_ODARK | AF_NOPROG},
     {"Efail",       A_EFAIL,    AF_ODARK | AF_NOPROG},
-    {"Enter",       A_ENTER,    AF_ODARK},
+    {"Enter",       A_ENTER,    AF_ODARK | AF_NOPROG},
     {"EnterLock",   A_LENTER,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"ExitFormat",  A_EXITFORMAT, AF_ODARK | AF_NOPROG},
     {"Fail",        A_FAIL,     AF_ODARK | AF_NOPROG},
@@ -112,17 +112,17 @@ ATTR attr[] =
     {"IdleTimeout", A_IDLETMOUT, AF_ODARK | AF_NOPROG},
     {"Infilter",    A_INFILTER, AF_ODARK | AF_NOPROG},
     {"Inprefix",    A_INPREFIX, AF_ODARK | AF_NOPROG},
-    {"Kill",        A_KILL,     AF_ODARK},
+    {"Kill",        A_KILL,     AF_ODARK | AF_NOPROG},
     {"Lalias",      A_LALIAS,   AF_ODARK | AF_NOPROG},
     {"Last",        A_LAST,     AF_WIZARD | AF_NOCMD | AF_NOPROG | AF_NOCLONE},
     {"Lastpage",    A_LASTPAGE, AF_INTERNAL | AF_NOCMD | AF_NOPROG | AF_GOD | AF_PRIVATE},
     {"Lastsite",    A_LASTSITE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_GOD},
     {"LastIP",      A_LASTIP,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_GOD},
-    {"Leave",       A_LEAVE,    AF_ODARK},
+    {"Leave",       A_LEAVE,    AF_ODARK | AF_NOPROG},
     {"LeaveLock",   A_LLEAVE,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"Lfail",       A_LFAIL,    AF_ODARK | AF_NOPROG},
     {"LinkLock",    A_LLINK,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {"Listen",      A_LISTEN,   AF_ODARK},
+    {"Listen",      A_LISTEN,   AF_ODARK | AF_NOPROG},
     {"Logindata",   A_LOGINDATA, AF_MDARK | AF_NOPROG | AF_NOCMD | AF_CONST},
     {"Mailcurf",    A_MAILCURF, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
     {"Mailflags",   A_MAILFLAGS, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
@@ -132,34 +132,34 @@ ATTR attr[] =
     {"Mailsucc",    A_MAIL,     AF_ODARK | AF_NOPROG},
     {"Mailto",      A_MAILTO,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"Modified",    A_MODIFIED, AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD},
-    {"Move",        A_MOVE,     AF_ODARK},
+    {"Move",        A_MOVE,     AF_ODARK | AF_NOPROG},
     {"Name",        A_NAME,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"NameFormat",  A_NAMEFORMAT, AF_ODARK | AF_NOPROG | AF_WIZARD},
     {"Odesc",       A_ODESC,    AF_ODARK | AF_NOPROG},
     {"Odfail",      A_ODFAIL,   AF_ODARK | AF_NOPROG},
     {"Odrop",       A_ODROP,    AF_ODARK | AF_NOPROG},
     {"Oefail",      A_OEFAIL,   AF_ODARK | AF_NOPROG},
-    {"Oenter",      A_OENTER,   AF_ODARK},
+    {"Oenter",      A_OENTER,   AF_ODARK | AF_NOPROG},
     {"Ofail",       A_OFAIL,    AF_ODARK | AF_NOPROG},
     {"Ogfail",      A_OGFAIL,   AF_ODARK | AF_NOPROG},
-    {"Okill",       A_OKILL,    AF_ODARK},
-    {"Oleave",      A_OLEAVE,   AF_ODARK},
+    {"Okill",       A_OKILL,    AF_ODARK | AF_NOPROG},
+    {"Oleave",      A_OLEAVE,   AF_ODARK | AF_NOPROG},
     {"Olfail",      A_OLFAIL,   AF_ODARK | AF_NOPROG},
-    {"Omove",       A_OMOVE,    AF_ODARK},
-    {"Opay",        A_OPAY,     AF_ODARK},
+    {"Omove",       A_OMOVE,    AF_ODARK | AF_NOPROG},
+    {"Opay",        A_OPAY,     AF_ODARK | AF_NOPROG},
     {"Orfail",      A_ORFAIL,   AF_ODARK | AF_NOPROG},
     {"Osucc",       A_OSUCC,    AF_ODARK | AF_NOPROG},
     {"Otfail",      A_OTFAIL,   AF_ODARK | AF_NOPROG},
     {"Otport",      A_OTPORT,   AF_ODARK | AF_NOPROG},
     {"Otofail",     A_OTOFAIL,  AF_ODARK | AF_NOPROG},
     {"Oufail",      A_OUFAIL,   AF_ODARK | AF_NOPROG},
-    {"Ouse",        A_OUSE,     AF_ODARK},
-    {"Oxenter",     A_OXENTER,  AF_ODARK},
-    {"Oxleave",     A_OXLEAVE,  AF_ODARK},
+    {"Ouse",        A_OUSE,     AF_ODARK | AF_NOPROG},
+    {"Oxenter",     A_OXENTER,  AF_ODARK | AF_NOPROG},
+    {"Oxleave",     A_OXLEAVE,  AF_ODARK | AF_NOPROG},
     {"Oxtport",     A_OXTPORT,  AF_ODARK | AF_NOPROG},
     {"PageLock",    A_LPAGE,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"ParentLock",  A_LPARENT,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {"Pay",         A_PAY,      AF_ODARK},
+    {"Pay",         A_PAY,      AF_ODARK | AF_NOPROG},
     {"Prefix",      A_PREFIX,   AF_ODARK | AF_NOPROG},
     {"ProgCmd",     A_PROGCMD,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"QueueMax",    A_QUEUEMAX, AF_MDARK | AF_WIZARD | AF_NOPROG},
@@ -168,12 +168,12 @@ ATTR attr[] =
     {"Reject",      A_REJECT,   AF_ODARK | AF_NOPROG},
     {"Rfail",       A_RFAIL,    AF_ODARK | AF_NOPROG},
     {"Rquota",      A_RQUOTA,   AF_MDARK | AF_NOPROG | AF_GOD | AF_NOCMD | AF_NOCLONE},
-    {"Runout",      A_RUNOUT,   AF_ODARK},
+    {"Runout",      A_RUNOUT,   AF_ODARK | AF_NOPROG},
     {"Semaphore",   A_SEMAPHORE, AF_ODARK | AF_NOPROG | AF_WIZARD | AF_NOCMD | AF_NOCLONE},
     {"Sex",         A_SEX,      AF_NOPROG},
     {"Signature",   A_SIGNATURE, AF_ODARK | AF_NOPROG},
     {"SpeechLock",  A_LSPEECH,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {"Startup",     A_STARTUP,  AF_ODARK},
+    {"Startup",     A_STARTUP,  AF_ODARK | AF_NOPROG},
     {"Succ",        A_SUCC,     AF_ODARK | AF_NOPROG},
     {"TeloutLock",  A_LTELOUT,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"Tfail",       A_TFAIL,    AF_ODARK | AF_NOPROG},
@@ -182,7 +182,7 @@ ATTR attr[] =
     {"TportLock",   A_LTPORT,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"Tofail",      A_TOFAIL,   AF_ODARK | AF_NOPROG},
     {"Ufail",       A_UFAIL,    AF_ODARK | AF_NOPROG},
-    {"Use",         A_USE,      AF_ODARK},
+    {"Use",         A_USE,      AF_ODARK | AF_NOPROG},
     {"UseLock",     A_LUSE,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"UserLock",    A_LUSER,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"VA",          A_VA,       AF_ODARK},
@@ -211,7 +211,7 @@ ATTR attr[] =
     {"VX",          A_VA + 23,  AF_ODARK},
     {"VY",          A_VA + 24,  AF_ODARK},
     {"VZ",          A_VA + 25,  AF_ODARK},
-    {"VRML_URL",    A_VRML_URL, AF_ODARK},
+    {"VRML_URL",    A_VRML_URL, AF_ODARK | AF_NOPROG},
     {"HTDesc",      A_HTDESC,   AF_NOPROG},
     // Added by D.Piper (del@doofer.org) 2000-APR
     //
@@ -815,7 +815,7 @@ void do_fixdb
 // We truncate the attribute name to a length of SBUF_SIZE-1, if
 // necessary, but we will validate the remaining characters anyway.
 //
-// NOTE: Refer to init_attrtab() where is directly manipulates
+// NOTE: Refer to init_attrtab() where it directly manipulates
 // Tiny_IsAttributeNameCharacter to allow the attribute name: "*Password".
 //
 char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
@@ -964,7 +964,7 @@ ATTR *atr_str(char *s)
 
     // Nope, look for a user attribute.
     //
-    a = (ATTR *)vattr_find_LEN(buff, nBuffer);
+    a = vattr_find_LEN(buff, nBuffer);
     return a;
 }
 
