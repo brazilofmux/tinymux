@@ -422,7 +422,7 @@
     default_flags       flags               functions           globals
     hashstats           logging             options             permissions
     powers              process             site_info           switches
-    user_attributes
+    user_attributes     guests
 
   Type wizhelp @list <option> for help with a particular option.
 
@@ -582,6 +582,15 @@
   Related Topics: @dbck, @disable, @enable, @kick, @list permissions,
                   @timewarp, checkpoint, conn_timeout, dump_interval,
                   dump_offset, idle_interval, idle_timeout.
+
+& @LIST GUESTS
+@LIST GUESTS
+
+  COMMAND: @list guests
+
+  Lists all the guests currently on the mux, the name and dbref, if they are
+  connected or not, and the lastsite of the guest. A * before the entry
+  denotes that the guest will NOT be destroyed on an @dbck.
 
 & @LIST HASHSTATS
 @LIST HASHSTATS
@@ -752,7 +761,7 @@
                                from this site.
 
   Related Topics: forbid_site, permit_site, register_site, suspect_site,
-                  trust_site.
+                  trust_site, nositemon_site, guest_site.
 
 & @LIST SWITCHES
 @LIST SWITCHES
@@ -1946,8 +1955,8 @@ FORBID_SITE
   prevent access from troublemaking sites.  The default is for all sites to
   be allowed to connect, none forbidden.
 
-  Related Topics: badsite_file, permit_site, register_site, SITE LISTS,
-                  SITE NOTATION.
+  Related Topics: badsite_file, permit_site, register_site, guest_site, 
+                  SITE LISTS, SITE NOTATION,
 
 & FORK_DUMP
 FORK_DUMP
@@ -2103,7 +2112,8 @@ GUEST_CHAR_NUM
   allowed to create or destroy objects).  The actual restrictions can be
   changed with the access config parameter using the no_guest permission.
 
-  Related Topics: guest_prefix, guest_nuker, number_guests, access.
+  Related Topics: guest_prefix, guest_nuker, number_guests, access,
+                  min_guests, guest_site.
 
 & GUEST_FILE
 GUEST_FILE
@@ -2125,7 +2135,32 @@ GUEST_NUKER
   Specifies who is to nuke guests when they log off. If it is not a good
   object or a wizard, it defaults to #1.
 
-  Related Topics: guest_char_num, guest_prefix, number_guests.
+  Related Topics: guest_char_num, guest_prefix, number_guests, min_guests,
+                  guest_site.
+
+&GUEST_PREFIX
+GUEST_PREFIX
+
+  CONFIG PARAMETER: guest_preifx <name>
+  DEFAULT: Guest
+
+  Specifies the prefix for all guests. This will be what is put before the #
+  when the guest is created. This will also be what is used to connect to
+  the guests on your system.
+
+  Related Topics: guest_char_num, number_guests, min_guests, guest_site.
+
+& GUEST_SITE
+GUEST_SITE
+
+  CONFIG PARAMETER: guest_site <site>
+
+  Indicates that connections to guests form this site should be rejected.
+  Players will be able to connect normally and create if set.
+
+  Related Topics: badsite_file, permit_site, register_site, forbid_site,
+                  SITE LISTS, SITE NOTATION,
+                  ALLOW_GUEST_FROM_REGISTERED_SITE.
 
 & HAVE_COMSYS
 HAVE_COMSYS
@@ -2282,6 +2317,18 @@ INPUT_DATABASE
   controls where updated copies of the database are written.
 
   Related Topics: crash_database, output_database
+
+& MIN_GUESTS
+MIN_GUESTS
+
+  CONFIG PARAMETER: min_guests
+  DEFAULT: 1
+
+  Specifies the minimum number of guests that are should remain on the mux.
+  These guests will not be nuked on @dbck's but will instead be recycled.
+  Use this to set how many guests you normally have on.
+
+  Related Topics: number_guests, guest_char_num, guest_prefix, guest_site
 
 & KILL_GUARANTEE_COST
 KILL_GUARANTEE_COST
@@ -2835,8 +2882,8 @@ PERMIT_SITE
   or subnets that would otherwise be disallowed by a forbid_site directive.
   The default is all sites permitted, none forbidden.
 
-  Related Topics: badsite_file, forbid_site, register_site, SITE LISTS,
-                  SITE NOTATION.
+  Related Topics: badsite_file, forbid_site, register_site, guest_site
+                  SITE LISTS, SITE NOTATION.
 
 & PLAYER_FLAGS
 PLAYER_FLAGS
@@ -3103,8 +3150,8 @@ REGISTER_SITE
   Indicates that registration is to be enforced for sites whose address
   matches the specified <site>.
 
-  Related Topics: forbid_site, permit_site, REGISTRATION, SITE LISTS,
-                  SITE NOTATION.
+  Related Topics: forbid_site, permit_site, guest_site, REGISTRATION, 
+                  SITE LISTS, SITE NOTATION.
 
 & REGISTRATION
 REGISTRATION
@@ -3339,7 +3386,8 @@ SITE LISTS
 
   There are two site lists:
 
-      Access Control List  - forbid_site, permit_site and register_site.
+      Access Control List  - forbid_site, permit_site, register_site,
+                             guest_site, nositemon_site.
       Suspects             - suspect_site and trust_site
 
   Both contain an ordered list of 'sites', 'subnets', or 'hosts' specified
@@ -3377,7 +3425,8 @@ SITE LISTS (continued)
   net are allowed to create their own characters.
  
   Related Topics: @admin, forbid_site, @list site_information, permit_site,
-                  register_site, SITE NOTATION, suspect_site, trust_site.
+                  register_site, SITE NOTATION, suspect_site, trust_site,
+                  guest_site, nositemon_site..
 
 & SITE NOTATION
 SITE NOTATION
