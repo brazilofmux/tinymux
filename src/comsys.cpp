@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.25 2001-02-25 23:48:51 sdennis Exp $
+// * $Id: comsys.cpp,v 1.26 2001-02-26 09:13:58 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -724,6 +724,7 @@ void load_comsystem(FILE *fp)
                     memcpy(user, &t_user, sizeof(struct comuser));
 
                     user->title = StringCloneLen(pTitle, nTitle);
+                    ch->users[jAdded++] = user;
 
                     if (  !(isPlayer(user->who))
                        && !(Going(user->who)
@@ -733,7 +734,6 @@ void load_comsystem(FILE *fp)
                     }
                     user->on_next = ch->on_users;
                     ch->on_users = user;
-                    ch->users[jAdded++] = user;
                 }
                 else
                 {
