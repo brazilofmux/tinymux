@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.53 2004-06-10 15:28:43 sdennis Exp $
+// $Id: predicates.cpp,v 1.54 2004-07-09 15:23:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -32,8 +32,8 @@ void DCL_CDECL safe_tprintf_str(char *str, char **bp, const char *fmt,...)
 {
     va_list ap;
     va_start(ap, fmt);
-    int nAvailable = LBUF_SIZE - (*bp - str);
-    int len = mux_vsnprintf(*bp, nAvailable, fmt, ap);
+    size_t nAvailable = LBUF_SIZE - (*bp - str);
+    size_t len = mux_vsnprintf(*bp, (int)nAvailable, fmt, ap);
     va_end(ap);
     *bp += len;
 }
