@@ -453,9 +453,11 @@ Bug Fixes:
  --  Several semaphores waiting on the same object/attr could be @notified
      out of order.
  --  Channel messages are considered OOC.
+ --  Bug #662 - SIGSEGV in @dbck.
  --  Bug #618 - Logic in new_home enables being inside a garbage object.
  --  Bug #424 - Linking deposit refund. Patch from Jake.
  --  Bug #585 - Parent isn't cleared during @destroy process. Patch from Jake.
+ --  Bug #765 - whispering to objects with ears should still be allowed.
  --  Bug #602 - fun_ansi reaches backwards into the buffer.
 
 
