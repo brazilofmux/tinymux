@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.75 2002-04-13 21:27:39 sdennis Exp $
+// $Id: stringutil.cpp,v 1.76 2002-05-04 03:03:19 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1620,8 +1620,8 @@ char *replace_string(const char *old, const char *new0, const char *s)
     {
         // Find next occurrence of the first character of OLD string.
         //
-        char *p = strchr(s, old[0]);
-        if (p)
+        char *p;
+        if (olen && (p = strchr(s, old[0])))
         {
             // Copy up to the next occurrence of the first char of OLD.
             //

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.172 2002-05-03 03:10:47 sdennis Exp $
+// $Id: functions.cpp,v 1.173 2002-05-04 03:03:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5926,7 +5926,7 @@ FUNCTION(fun_edit)
 {
     char *tstr;
 
-    edit_string((char *)strip_ansi(fargs[0]), &tstr, fargs[1], fargs[2]);
+    edit_string(strip_ansi(fargs[0]), &tstr, fargs[1], fargs[2]);
     safe_str(tstr, buff, bufc);
     free_lbuf(tstr);
 }
