@@ -10666,7 +10666,8 @@ SUBSTITUTIONS
 
 { 'help substitutions2' for more }
 
-& substitutions2
+& SUBSTITUTIONS2
+SUBSTITUTIONS (continued)
 
     %#      = Database number of the object that caused the message to be
               displayed or the action list to be run.
