@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.22 2002-08-14 00:06:58 jake Exp $
+// $Id: speech.cpp,v 1.23 2002-08-20 08:54:34 jake Exp $
 //
 
 #include "copyright.h"
@@ -11,6 +11,27 @@
 #include "attrs.h"
 #include "interface.h"
 #include "powers.h"
+
+char *modSpeech(dbref player, char *message, BOOL bWhich)
+{
+    dbref aowner;
+    int aflags;
+    char *mod = atr_get(player, bWhich ? A_SPEECHMOD : A_SAYSTRING, &aowner, &aflags);
+
+    if(!mod || !*mod)
+    {
+        free_lbuf(mod);
+        return NULL;
+    }
+
+    char *mod_orig = mod;
+    char *new_message = alloc_lbuf("modspeech");
+    char *t_ptr = new_message;
+    TinyExec(new_message, &t_ptr, player, player, player, 
+        EV_FCHECK | EV_EVAL | EV_TOP, &mod, &message, 1);
+    free_lbuf(mod_orig);
+    return new_message;
+}
 
 static int idle_timeout_val(dbref player)
 {
@@ -147,6 +168,15 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         }
     }
 
+    // Parse speechmod if present.
+    //
+    char *messageOrig, *messageNew, *saystring;
+    messageOrig = message;
+    if (messageNew = modSpeech(executor, message, TRUE))
+    {
+        message = messageNew;
+    }
+
     // Make sure speaker is somewhere if speaking in a place
     //
     dbref loc = where_is(executor);
@@ -156,10 +186,13 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
     case SAY_POSE:
     case SAY_POSE_NOSPC:
     case SAY_EMIT:
-        if (!Good_obj(loc))
+        if (!( Good_obj(loc)
+            && sp_ok(executor)))
+        {
+            if (messageNew)
+                free_lbuf(messageNew);
             return;
-        if (!sp_ok(executor))
-            return;
+        }
     }
 
     // Send the message on its way
@@ -167,8 +200,17 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
     switch (key)
     {
     case SAY_SAY:
-        notify_saypose(executor, tprintf("You say, \"%s\"", message));
-        notify_except(loc, executor, executor, tprintf("%s says, \"%s\"", Name(executor), message), MSG_SAYPOSE);
+        if (saystring = modSpeech(executor, messageOrig, FALSE))
+        {
+            notify_saypose(executor, tprintf("%s %s \"%s\"", Name(executor), saystring, message));
+            notify_except(loc, executor, executor, tprintf("%s %s \"%s\"", Name(executor), saystring, message), MSG_SAYPOSE);
+            free_lbuf(saystring);
+        }
+        else
+        {
+            notify_saypose(executor, tprintf("You say \"%s\"", message));
+            notify_except(loc, executor, executor, tprintf("%s says, \"%s\"", Name(executor), message), MSG_SAYPOSE);
+        }
         break;
 
     case SAY_POSE:
@@ -195,6 +237,8 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         {
             if (isRoom(loc) && (say_flags & SAY_HERE))
             {
+                if (messageNew)
+                    free_lbuf(messageNew);
                 return;
             }
             for (depth = 0; !isRoom(loc) && (depth < 20); depth++)
@@ -202,6 +246,8 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
                 loc = Location(loc);
                 if (!Good_obj(loc) || (loc == Location(loc)))
                 {
+                    if (messageNew)
+                        free_lbuf(messageNew);
                     return;
                 }
             }
@@ -212,6 +258,10 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         }
         break;
     }
+    if (messageNew)
+    {
+        free_lbuf(messageNew);
+    }
 }
 
 
@@ -220,6 +270,15 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
     char *buf2, *bp;
     int say_flags = key & (SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
     key &= ~(SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
+
+    // Parse speechmod if present.
+    //
+    char *messageOrig, *messageNew;
+    messageOrig = message;
+    if (messageNew = modSpeech(executor, message, TRUE))
+    {
+        message = messageNew;
+    }
 
     switch (key)
     {
@@ -385,6 +444,10 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
         log_text(message);
         ENDLOG;
         break;
+    }
+    if (messageNew)
+    {
+        free_lbuf(messageNew);
     }
 }
 
@@ -694,9 +757,41 @@ void do_page
         pMessage = arg2;
     }
 
+    int pageMode;
     switch (*pMessage)
     {
     case '\0':
+        pageMode = 1;
+        break;
+
+    case ':':
+        pageMode = 2;
+        pMessage++;
+        break;
+
+    case ';':
+        pageMode = 3;
+        pMessage++;
+        break;
+
+    case '"':
+        pMessage++;
+
+        // FALL THROUGH
+
+    default:
+        pageMode = 0;
+    }
+
+    char *newMessage;
+    if(newMessage = modSpeech(executor, pMessage, TRUE))
+    {
+	   pMessage = newMessage;
+    }
+
+    switch (pageMode)
+    {
+    case 1:
         // 'page A=' form.
         //
         if (nValid == 1)
@@ -712,8 +807,7 @@ void do_page
         safe_tprintf_str(imessage, &imp, "You page %s.", aFriendly);
         break;
 
-    case ':':
-        pMessage++;
+    case 2:
         safe_str("From afar, ", omessage, &omp);
         if (nValid > 1)
         {
@@ -724,8 +818,7 @@ void do_page
             aFriendly, Name(executor), pMessage);
         break;
 
-    case ';':
-        pMessage++;
+    case 3:
         safe_str("From afar, ", omessage, &omp);
         if (nValid > 1)
         {
@@ -735,11 +828,6 @@ void do_page
         safe_tprintf_str(imessage, &imp, "Long distance to %s: %s%s",
             aFriendly, Name(executor), pMessage);
         break;
-
-    case '"':
-        pMessage++;
-
-        // FALL THROUGH
 
     default:
         if (nValid > 1)
@@ -774,19 +862,34 @@ void do_page
     //
     notify(executor, imessage);
     free_lbuf(imessage);
+    if(newMessage)
+    {
+	    free_lbuf(newMessage);
+    }
 }
 
 /* ---------------------------------------------------------------------------
  * do_pemit: Messages to specific players, or to all but specific players.
  */
 
-void whisper_pose(dbref player, dbref target, char *message)
+void whisper_pose(dbref player, dbref target, char *message, BOOL bSpace)
 {
+    char *newMessage;
+    if (newMessage = modSpeech(player, message, TRUE))
+    {
+        message = newMessage;
+    }
     char *buff = alloc_lbuf("do_pemit.whisper.pose");
     StringCopy(buff, Name(player));
-    notify(player, tprintf("%s senses \"%s%s\"", Name(target), buff, message));
-    notify_with_cause(target, player, tprintf("You sense %s%s", buff, message));
+    notify(player, tprintf("%s senses \"%s%s%s\"", Name(target), buff, 
+        bSpace ? " " : "", message));
+    notify_with_cause(target, player, tprintf("You sense %s%s%s", buff, 
+        bSpace ? " " : "", message));
     free_lbuf(buff);
+    if (newMessage)
+    {
+        free_lbuf(newMessage);
+    }
 }
 
 void do_pemit_single
@@ -824,6 +927,8 @@ void do_pemit_single
         match_everything(0);
         target = match_result();
     }
+
+    char *newMessage, *saystring;
 
     switch (target)
     {
@@ -928,22 +1033,31 @@ void do_pemit_single
             switch (chPoseType)
             {
             case ':':
-                whisper_pose(player, target, message);
+                message++;
+                whisper_pose(player, target, message, TRUE);
                 break;
 
             case ';':
                 message++;
-                whisper_pose(player, target, message);
+                whisper_pose(player, target, message, FALSE);
                 break;
 
             case '"':
                 message++;
 
             default:
+                if (newMessage = modSpeech(player, message, TRUE))
+                {
+                    message = newMessage;
+                }
                 notify(player, tprintf("You whisper \"%s\" to %s.", message,
                     Name(target)));
                 notify_with_cause(target, player,
                     tprintf("%s whispers \"%s\"", Name(player), message));
+                if (newMessage)
+                {
+                    free_lbuf(newMessage);
+                }
             }
             if (  !mudconf.quiet_whisper
                && !Wizard(player))
@@ -964,22 +1078,58 @@ void do_pemit_single
             break;
 
         case PEMIT_FSAY:
+            if (newMessage = modSpeech(target, message, TRUE))
+            {
+                message = newMessage;
+            }
             notify(target, tprintf("You say, \"%s\"", message));
             if (loc != NOTHING)
             {
-                notify_except(loc, player, target,
-                    tprintf("%s says, \"%s\"", Name(target), message), 0);
+                if (saystring = modSpeech(target, message, FALSE))
+                {
+                    notify_except(loc, player, target,
+                        tprintf("%s %s \"%s\"", Name(target), saystring, message), 0);
+                }
+                else
+                {
+                    notify_except(loc, player, target,
+                        tprintf("%s says, \"%s\"", Name(target), message), 0);
+                }
+            }
+            if (saystring)
+            {
+                free_lbuf(saystring);
+            }
+            if (newMessage)
+            {
+                free_lbuf(newMessage);
             }
             break;
 
         case PEMIT_FPOSE:
+            if (newMessage = modSpeech(target, message, TRUE))
+            {
+                message = newMessage;
+            }
             notify_all_from_inside(loc, player, tprintf("%s %s", Name(target),
                 message));
+            if (newMessage)
+            {
+                free_lbuf(newMessage);
+            }
             break;
 
         case PEMIT_FPOSE_NS:
+            if (newMessage = modSpeech(target, message, TRUE))
+            {
+                message = newMessage;
+            }
             notify_all_from_inside(loc, player, tprintf("%s%s", Name(target),
                 message));
+            if (newMessage)
+            {
+                free_lbuf(newMessage);
+            }
             break;
 
         case PEMIT_FEMIT:
@@ -1075,7 +1225,7 @@ void do_pemit
     {
         bDoList = TRUE;
     }
-    key &= ~(PEMIT_CONTENTS |  PEMIT_LIST);
+    key &= ~(PEMIT_CONTENTS | PEMIT_LIST);
 
 
     // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML and remove from key.

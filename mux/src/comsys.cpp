@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.36 2002-08-17 08:30:02 jake Exp $
+// $Id: comsys.cpp,v 1.37 2002-08-20 08:54:34 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -774,7 +774,7 @@ void BuildChannelMessage
     BOOL bSpoof,
     const char *pHeader,
     struct comuser *user,
-    const char *pPose,
+    char *pPose,
     char **messNormal,
     char **messNoComtitle
 )
@@ -838,40 +838,84 @@ void BuildChannelMessage
         }
     }
 
-    if (':' == pPose[0])
+    char *saystring, *newPose;
+
+    switch(pPose[0])
     {
+    case ':':
+        pPose++;
+        if (newPose = modSpeech(user->who, pPose, TRUE))
+        {
+            pPose = newPose;
+        }
         safe_chr(' ', *messNormal, &mnptr);
-        safe_str(pPose+1, *messNormal, &mnptr);
+        safe_str(pPose, *messNormal, &mnptr);
         if (!bSpoof)
         {
             safe_chr(' ', *messNoComtitle, &mncptr);
-            safe_str(pPose+1, *messNoComtitle, &mncptr);
+            safe_str(pPose, *messNoComtitle, &mncptr);
         }
-    }
-    else if (';' == pPose[0])
-    {
-        safe_str(pPose+1, *messNormal, &mnptr);
+        break;
+
+    case ';':
+        pPose++;
+        if (newPose = modSpeech(user->who, pPose, TRUE))
+        {
+            pPose = newPose;
+        }
+        safe_str(pPose, *messNormal, &mnptr);
         if (!bSpoof)
         {
-            safe_str(pPose+1, *messNoComtitle, &mncptr);
+            safe_str(pPose, *messNoComtitle, &mncptr);
         }
-    }
-    else
-    {
-        safe_str(" says, \"", *messNormal, &mnptr);
+        break;
+
+    default:
+        if (newPose = modSpeech(user->who, pPose, TRUE))
+        {
+            pPose = newPose;
+        }
+        if (saystring = modSpeech(user->who, pPose, FALSE))
+        {
+            safe_chr(' ', *messNormal, &mnptr);
+            safe_str(saystring, *messNormal, &mnptr);
+            safe_str(" \"", *messNormal, &mnptr);
+        }
+        else
+        {
+            safe_str(" says, \"", *messNormal, &mnptr);
+        }
         safe_str(pPose, *messNormal, &mnptr);
         safe_chr('"', *messNormal, &mnptr);
         if (!bSpoof)
         {
-            safe_str(" says, \"", *messNoComtitle, &mncptr);
+            if (saystring)
+            {
+                safe_chr(' ', *messNoComtitle, &mncptr);
+                safe_str(saystring, *messNoComtitle, &mncptr);
+                safe_str(" \"", *messNoComtitle, &mncptr);
+            }
+            else
+            {
+                safe_str(" says, \"", *messNoComtitle, &mncptr);
+            }
             safe_str(pPose, *messNoComtitle, &mncptr);
             safe_chr('"', *messNoComtitle, &mncptr);
         }
+        break;
     }
     *mnptr = '\0';
     if (!bSpoof)
     {
         *mncptr = '\0';
+    }
+    if (newPose)
+    {
+        free_lbuf(newPose);
+    }
+    if (saystring)
+    {
+        free_lbuf(saystring);
     }
 }
 

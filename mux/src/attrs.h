@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.4 2002-07-31 17:02:31 jake Exp $
+// $Id: attrs.h,v 1.5 2002-08-20 08:54:34 jake Exp $
 //
 
 #ifndef _ATTRS_H
@@ -128,7 +128,7 @@
 #define A_LCONTROL  99  /* Who controls me if CONTROL_OK set */
 #define A_VA        100 /* VA attribute (VB-VZ follow) */
 #define A_LGET      127 /* Get lock (who may get stuff from me?) */
-
+// 128 unused
 #define A_GFAIL     129 /* Give fail message */
 #define A_OGFAIL    130 /* Others give fail message */
 #define A_AGFAIL    131 /* Give fail action */
@@ -172,6 +172,8 @@
 #define A_DESTROYER 212 /* Who is destroying this object? */
 
 #define A_NEWOBJS       213     /* New object array */
+#define A_SAYSTRING     214     // Replaces 'says,'
+#define A_SPEECHMOD     215     // Softcode to be applied to speech
 #define A_EXITVARDEST   216     /* Variable exit destination */
 #define A_LCHOWN        217     /* ChownLock */
 #define A_CREATED       218     // Date/time created

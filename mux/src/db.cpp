@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.39 2002-08-14 00:06:57 jake Exp $
+// $Id: db.cpp,v 1.40 2002-08-20 08:54:34 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -170,9 +170,11 @@ ATTR attr[] =
     {"Rfail",       A_RFAIL,    AF_ODARK | AF_NOPROG},
     {"Rquota",      A_RQUOTA,   AF_MDARK | AF_NOPROG | AF_GOD | AF_NOCMD | AF_NOCLONE},
     {"Runout",      A_RUNOUT,   AF_ODARK | AF_NOPROG},
+    {"SayString",   A_SAYSTRING, AF_ODARK | AF_NOPROG},
     {"Semaphore",   A_SEMAPHORE, AF_ODARK | AF_NOPROG | AF_WIZARD | AF_NOCMD | AF_NOCLONE},
     {"Sex",         A_SEX,      AF_NOPROG},
     {"Signature",   A_SIGNATURE, AF_ODARK | AF_NOPROG},
+    {"SpeechMod",   A_SPEECHMOD, AF_ODARK | AF_NOPROG},
     {"SpeechLock",  A_LSPEECH,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"Startup",     A_STARTUP,  AF_ODARK | AF_NOPROG},
     {"Succ",        A_SUCC,     AF_ODARK | AF_NOPROG},
