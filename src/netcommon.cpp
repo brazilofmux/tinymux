@@ -1,16 +1,11 @@
-/*
-* netcommon.c 
-*/
-/*
-* $Id: netcommon.cpp,v 1.18 2000-09-05 20:28:53 sdennis Exp $ 
-*/
-
-/*
-* This file contains routines used by the networking code that do not
-* depend on the implementation of the networking code.  The network-specific
-* portions of the descriptor data structure are not used.
-*/
-
+// netcommon.cpp
+//
+// $Id: netcommon.cpp,v 1.19 2000-09-07 06:55:07 sdennis Exp $ 
+//
+// This file contains routines used by the networking code that do not
+// depend on the implementation of the networking code.  The network-specific
+// portions of the descriptor data structure are not used.
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -588,32 +583,44 @@ static void announce_connect(dbref player, DESC *d)
     
     count = 0;
     DESC_ITER_CONN(dtemp)
+    {
         count++;
+    }
     
     if (mudstate.record_players < count)
+    {
         mudstate.record_players = count;
+    }
     
     buf = atr_pget(player, A_TIMEOUT, &aowner, &aflags);
-    if (buf) {
+    if (buf)
+    {
         d->timeout = Tiny_atol(buf);
         if (d->timeout <= 0)
+        {
             d->timeout = mudconf.idle_timeout;
+        }
     }
     free_lbuf(buf);
     
     loc = Location(player);
     s_Connected(player);
     
-    if (d->flags & DS_PUEBLOCLIENT) {
+    if (d->flags & DS_PUEBLOCLIENT)
+    {
         s_Html(player);
     }
     
-    raw_notify(player, tprintf("\n%sMOTD:%s %s\n", ANSI_HILITE,
-        ANSI_NORMAL, mudconf.motd_msg));
-    if (Wizard(player)) {
-        raw_notify(player, tprintf("%sWIZMOTD:%s %s\n",
-            ANSI_HILITE, ANSI_NORMAL, mudconf.wizmotd_msg));
-        if (!(mudconf.control_flags & CF_LOGIN)) {
+    raw_notify( player, tprintf("\n%sMOTD:%s %s\n", ANSI_HILITE,
+                ANSI_NORMAL, mudconf.motd_msg));
+
+    if (Wizard(player))
+    {
+        raw_notify( player, tprintf("%sWIZMOTD:%s %s\n", ANSI_HILITE,
+                    ANSI_NORMAL, mudconf.wizmotd_msg));
+
+        if (!(mudconf.control_flags & CF_LOGIN))
+        {
             raw_notify(player, "*** Logins are disabled.");
         }
     }
@@ -623,37 +630,45 @@ static void announce_connect(dbref player, DESC *d)
         raw_notify(player, "Your PAGE LOCK is set.  You may be unable to receive some pages.");
     }
     num = 0;
-    DESC_ITER_PLAYER(player, dtemp) num++;
+    DESC_ITER_PLAYER(player, dtemp)
+    {
+        num++;
+    }
     
-    /*
-    * Reset vacation flag 
-    */
+    // Reset vacation flag.
+    //
     s_Flags2(player, Flags2(player) & ~VACATION);
     
+    char *pRoomAnnounceFmt;
+    char *pMonitorAnnounceFmt;
     if (num < 2)
     {
-        sprintf(buf, "%s has connected.", Name(player));
-        
+        pRoomAnnounceFmt = "%s has connected.";
         if (mudconf.have_comsys)
+        {
             do_comconnect(player);
-        
+        }
         if (Dark(player))
         {
-            raw_broadcast(MONITOR, (char *)"GAME: %s has DARK-connected.", Name(player), 0, 0, 0, 0, 0);
+            pMonitorAnnounceFmt = "GAME: %s has DARK-connected.";
         }
         else
-        {
-            raw_broadcast(MONITOR, (char *)"GAME: %s has connected.", Name(player), 0, 0, 0, 0, 0);
+        { 
+            pMonitorAnnounceFmt = "GAME: %s has connected.";
         }
     }
     else
     {
-        sprintf(buf, "%s has reconnected.", Name(player));
-        raw_broadcast(MONITOR, (char *)"GAME: %s has reconnected.", Name(player), 0, 0, 0, 0, 0);
+        pRoomAnnounceFmt = "%s has reconnected.";
+        pMonitorAnnounceFmt = "GAME: %s has reconnected.";
     }
+    sprintf(buf, pRoomAnnounceFmt, Name(player));
+    raw_broadcast(MONITOR, pMonitorAnnounceFmt, Name(player), 0, 0, 0, 0, 0);
     
     key = MSG_INV;
-    if ((loc != NOTHING) && !(Dark(player) && Wizard(player)))
+    if (  loc != NOTHING
+       && !(  Dark(player)
+           && Wizard(player)))
     {
         key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
     }
@@ -662,46 +677,58 @@ static void announce_connect(dbref player, DESC *d)
     mudstate.curr_enactor = player;
     notify_check(player, player, buf, key);
     free_lbuf(buf);
-    if (Suspect(player)) {
+    if (Suspect(player))
+    {
         raw_broadcast(WIZARD, (char *)"[Suspect] %s has connected.",
             Name(player), 0, 0, 0, 0, 0);
     }
-    if (d->host_info & H_SUSPECT) {
+    if (d->host_info & H_SUSPECT)
+    {
         raw_broadcast(WIZARD,
             (char *)"[Suspect site: %s] %s has connected.",
             d->addr, Name(player), 0, 0, 0, 0);
     }
     buf = atr_pget(player, A_ACONNECT, &aowner, &aflags);
     if (buf)
-        wait_que(player, player, 0, NOTHING, 0, buf, (char **)NULL, 0,
-        NULL);
+    {
+        wait_que(player, player, 0, NOTHING, 0, buf, (char **)NULL, 0, NULL);
+    }
     free_lbuf(buf);
-    if (mudconf.master_room != NOTHING) {
-        buf = atr_pget(mudconf.master_room, A_ACONNECT, &aowner,
-            &aflags);
+    if (mudconf.master_room != NOTHING)
+    {
+        buf = atr_pget(mudconf.master_room, A_ACONNECT, &aowner, &aflags);
         if (buf)
-            wait_que(mudconf.master_room, player, 0, NOTHING, 0,
-            buf, (char **)NULL, 0, NULL);
+        {
+            wait_que( mudconf.master_room, player, 0, NOTHING, 0,
+                      buf, (char **)NULL, 0, NULL);
+        }
         free_lbuf(buf);
-        DOLIST(obj, Contents(mudconf.master_room)) {
+        DOLIST(obj, Contents(mudconf.master_room))
+        {
             buf = atr_pget(obj, A_ACONNECT, &aowner, &aflags);
-            if (buf) {
-                wait_que(obj, player, 0, NOTHING, 0, buf,
-                    (char **)NULL, 0, NULL);
+            if (buf)
+            {
+                wait_que( obj, player, 0, NOTHING, 0, buf, (char **)NULL, 0,
+                          NULL);
             }
             free_lbuf(buf);
         }
     }
-    /*
-    * do the zone of the player's location's possible aconnect 
-    */
-    if (mudconf.have_zones && ((zone = Zone(loc)) != NOTHING)) {
-        switch (Typeof(zone)) {
+
+    // Do the zone of the player's location's possible aconnect.
+    //
+    if (  mudconf.have_zones
+       && ((zone = Zone(loc)) != NOTHING))
+    {
+        switch (Typeof(zone))
+        {
         case TYPE_THING:
+
             buf = atr_pget(zone, A_ACONNECT, &aowner, &aflags);
-            if (buf) {
-                wait_que(zone, player, 0, NOTHING, 0, buf,
-                    (char **)NULL, 0, NULL);
+            if (buf)
+            {
+                wait_que( zone, player, 0, NOTHING, 0, buf, (char **)NULL, 0,
+                          NULL);
             }
             free_lbuf(buf);
             break;
@@ -720,7 +747,9 @@ static void announce_connect(dbref player, DESC *d)
                 free_lbuf(buf);
             }
             break;
+
         default:
+
             log_text(tprintf("Invalid zone #%d for %s(#%d) has bad type %d",
                 zone, Name(player), player, Typeof(zone)));
         }
@@ -730,7 +759,7 @@ static void announce_connect(dbref player, DESC *d)
     time_str = ltaNow.ReturnDateString();
     
     record_login(player, 1, time_str, d->addr, d->username);
-    look_in(player, Location(player), (LK_SHOWEXIT | LK_OBEYTERSE | LK_SHOWVRML));
+    look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
     mudstate.curr_enactor = temp;
 }
 
@@ -1880,9 +1909,9 @@ int do_command(DESC *d, char *command, int first)
             }
             mudstate.curr_player = d->player;
             mudstate.curr_enactor = d->player;
-            process_command(d->player, d->player, 1,
-                command, (char **)NULL, 0);
-            if (d->output_suffix) {
+            process_command(d->player, d->player, 1, command, (char **)NULL, 0);
+            if (d->output_suffix)
+            {
                 queue_string(d, d->output_suffix);
                 queue_write(d, "\r\n", 2);
             }
@@ -1895,7 +1924,6 @@ int do_command(DESC *d, char *command, int first)
             return (check_connect(d, command));
         }
     }
-
 
     // The command was in the logged-out command table. Perform
     // prefix and suffix processing, and invoke the command
@@ -1910,7 +1938,9 @@ int do_command(DESC *d, char *command, int first)
             queue_write(d, "\r\n", 2);
         }
     }
-    if ((!check_access(d->player, cp->perm)) || ((cp->perm & CA_PLAYER) && !(d->flags & DS_CONNECTED)))
+    if (  !check_access(d->player, cp->perm)
+       || (  (cp->perm & CA_PLAYER)
+          && !(d->flags & DS_CONNECTED)))
     {
         queue_string(d, "Permission denied.\r\n");
     }
@@ -1920,50 +1950,71 @@ int do_command(DESC *d, char *command, int first)
         switch (cp->flag & CMD_MASK)
         {
         case CMD_QUIT:
+
             shutdownsock(d, R_QUIT);
             mudstate.debug_cmd = cmdsave;
             return 0;
+
         case CMD_LOGOUT:
+
             shutdownsock(d, R_LOGOUT);
             break;
+
         case CMD_WHO:
+
             dump_users(d, arg, CMD_WHO);
             break;
+
         case CMD_DOING:
+
             dump_users(d, arg, CMD_DOING);
             break;
+
         case CMD_SESSION:
+
             dump_users(d, arg, CMD_SESSION);
             break;
+
         case CMD_PREFIX:
+
             set_userstring(&d->output_prefix, arg);
             break;
+
         case CMD_SUFFIX:
+
             set_userstring(&d->output_suffix, arg);
             break;
+
         case CMD_PUEBLOCLIENT:
-            /* Set the descriptor's flag */
+
+            // Set the descriptor's flag.
+            //
             d->flags |= DS_PUEBLOCLIENT;
-            /* If we're already connected, set the player's flag */
-            if (d->player) {
+
+            // If we're already connected, set the player's flag.
+            //
+            if (d->player)
+            {
                 s_Html(d->player);
             }
             queue_string(d, mudconf.pueblo_msg);
             queue_string(d, "\r\n");
             break;
+
         default:
-            STARTLOG(LOG_BUGS, "BUG", "PARSE")
-                arg = alloc_lbuf("do_command.LOG");
-            sprintf(arg,
-                "Prefix command with no handler: '%s'",
-                command);
+
+            STARTLOG(LOG_BUGS, "BUG", "PARSE");
+            arg = alloc_lbuf("do_command.LOG");
+            sprintf(arg, "Prefix command with no handler: '%s'", command);
             log_text(arg);
             free_lbuf(arg);
-            ENDLOG
+            ENDLOG;
         }
     }
-    if (!(cp->flag & CMD_NOxFIX)) {
-        if (d->output_prefix) {
+    if (!(cp->flag & CMD_NOxFIX))
+    {
+        if (d->output_prefix)
+        {
             queue_string(d, d->output_suffix);
             queue_write(d, "\r\n", 2);
         }
