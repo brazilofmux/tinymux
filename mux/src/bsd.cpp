@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.15 2003-03-03 05:06:04 sdennis Exp $
+// $Id: bsd.cpp,v 1.16 2003-03-03 18:34:19 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2796,9 +2796,9 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 #else // HAVE_UNION_WAIT NEED_WAIT3_DCL
     int stat_buf;
 #endif // HAVE_UNION_WAIT NEED_WAIT3_DCL
+    pid_t child;
 #endif // !WIN32
 
-    pid_t child;
     switch (sig)
     {
 #ifndef WIN32
