@@ -751,7 +751,7 @@ Related Topics: @name.
     > @cemit/noheader Public=This is a test!
     This is a test.
 
-  Related Topics: comsys commands, alias, addcom.
+  Related Topics: comsys commands, alias, addcom, cemit()
 
 & @CHARGES
 @CHARGES
@@ -4694,6 +4694,17 @@ CEIL()
     You say "-5"
 
   Related Topics: fdiv(), floor(), idiv(), mod(), round(), trunc().
+
+& CEMIT()
+CEMIT()
+
+  FUNCTION: cemit(<channel>, <message>)
+
+  Sends <message> over <channel> prefixed by the channel's name. You must own
+  or control the channel to do this.  This is a functional equivalent of
+  @cemit.
+
+  Related Topics: @cemit
 
 & CENTER()
 CENTER()
