@@ -29,7 +29,6 @@
 #undef NEED_MEMORY_H
 /* signal() return type */
 #define RETSIGTYPE void
-#undef HAVE_WAIT3
 /* Define if struct tm has a timezone member */
 #undef HAVE_TM_ZONE
 /* Define if tzname[] exists */
@@ -98,8 +97,6 @@
 #define EXTENDED_STDIO_DCLS
 /* Define if sys/socket.h defines lots of extra functions */
 #undef EXTENDED_SOCKET_DCLS
-/* Define if sys/wait.h defines union wait. */
-#undef HAVE_UNION_WAIT
 /* Define if you have IEEE floating-point formatted numbers */
 #define HAVE_IEEE_FP_FORMAT 1
 /* Define if your IEEE floating-point library can generate NaN */
