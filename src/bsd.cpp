@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.37 2001-11-28 06:35:53 sdennis Exp $
+// $Id: bsd.cpp,v 1.38 2001-11-28 06:42:59 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1276,7 +1276,7 @@ void shovechars(int port)
                 if (d->flags & DS_AUTODARK)
                 {
                     d->flags &= ~DS_AUTODARK;
-                    s_Flags(d->player, Flags(d->player) & ~DARK);
+                    s_Flags(d->player, FLAG_WORD1, Flags(d->player) & ~DARK);
                 }
 
                 // Process received data.
