@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.14 2002-06-14 06:00:16 sdennis Exp $
+// $Id: predicates.cpp,v 1.15 2002-06-14 07:31:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1502,14 +1502,11 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
     return 1;
 }
 
-#endif /*
-        * STANDALONE
-        */
+#endif // STANDALONE
 
 // ---------------------------------------------------------------------------
 // bCanReadAttr, bCanSetAttr: Verify permission to affect attributes.
 // ---------------------------------------------------------------------------
-
 
 BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
 {
@@ -1581,45 +1578,38 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
 
 BOOL bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
 {
-    if(!bCanReadAttr(executor, target, tattr, FALSE))
-    {
-        return FALSE;
-    }
-
     dbref aowner;
     int aflags;
     atr_get_info(target, tattr->number, &aowner, &aflags);
 
-    if (   (tattr->flags & AF_CONST)
-             || (aflags & AF_CONST))
+    int mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST;
+    if (!God(executor))
+    {
+        if (God(target))
+        {
+            return FALSE;
+        }
+        if (Wizard(executor))
+        {
+            mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST|AF_LOCK|AF_GOD;
+        }
+        else if (Controls(executor, target))
+        {
+            mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST|AF_LOCK|AF_WIZARD|AF_GOD;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+    if (  (tattr->flags & mDeny)
+       || (aflags & mDeny))
     {
         return FALSE;
-    }
-    else if (   !God(executor) 
-             && (   (tattr->flags & AF_GOD)
-                 || (aflags & AF_GOD)))
-    {
-        return FALSE;
-    }
-    else if (   !Wizard(executor)
-             && (   (tattr->flags & AF_WIZARD)
-                 || (aflags & AF_WIZARD)))
-    {
-        return FALSE;
-    }
-    else if (   (aflags & AF_LOCK)
-             &&  !(God(executor))
-               || (executor == Owner(target)))
-    {
-        return FALSE;
-    }
-    else if (Controls(executor,target))
-    {
-        return TRUE;
     }
     else
     {
-        return FALSE;
+        return TRUE;
     }
 }
 
