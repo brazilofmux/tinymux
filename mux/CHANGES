@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  May 2004
+Last Update:  June 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -43,6 +43,11 @@ Feature Additions:
     facilaties within the game.
  -- Add FCOUNT() and FDEPTH() for softcode access to function invocation
     and nesting counters.
+ -- Added POWERS() function to return a space-delimited list of powers.
+    PennMUSH implement this first.
+ -- Added some plumbing for SQL.  There is no way to make SQL queries,
+    but @ps would show them if there were.  @halt and @kick would also
+    interact with them.
 
 
 Bug Fixes:
@@ -62,6 +67,11 @@ Bug Fixes:
     search_nametab() interface.
  -- Fix @notify/foo123 where foo123 is a never-before-used attributes.
     Legacy bug from MUX 1.6.
+ -- Tightend up command piping to log expensive piped commands and also
+    improve the interaction with @break and lag_limit.
+ -- Fixed bug in MIX() where '&mixit me=(%0|%1);think mix(mixit,0 1,1)'
+    gives '(0|1)' instead of '(0|1) (1|)'.  It wasn't determining the
+    length of the first list correctly.
 
 
 Performance Enhancements:
