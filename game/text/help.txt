@@ -209,27 +209,30 @@ PARENT ROOMS
 & COMSYS
 COMSYS
 
-  This is the help for the MUX comsystem. Note that the channel
-  names and aliases are case-sensitive. Upon creation, new players
-  automatically join the "Public" channel, while guest characters join
-  channel "Guests" when they connect.
+  This is the help for the MUX comsystem. Note that the channel names and
+  aliases are case-sensitive. Many games are configured to have a new player
+  automatically join the 'Public' channel, and a Guest join the 'Guest'
+  channel. If you are a wizard, see 'wizhelp config' for the parameters
+  relating to this.
 
-  Note: <alias> is the alias you choose for the channel.
-  The "Public" channel for new players is aliased to "pub".
-  The "Guests" channel for guests is aliases to "g".
+  A comsys allows the various players to communicate with each other. A
+  comsys can consist of one Public channel for all players, or various
+  channels set aside for various groups within the game, thus allowing each
+  group to communicate with the other members of that group.
 
-  Aliases are the most common way to manipulate channels, and may be used in
-  2 different ways:
+  Two of the most accepted reasons for using a comsys are to allow players to
+  interact with members of their group, and to provide a venue for OOC
+  chatting.
 
-    <alias> <who|on|off>
-    <alias> <message>
+  Related Topics: comsys commands, comsys examples
 
-{ 'help comsys2' for more }
+& COMSYS EXAMPLES
+COMSYS EXAMPLES
 
-& COMSYS2
-COMSYS (continued)
+  Examples:
+    > addcom public=Public
+    Channel Public added with alias garou.
 
-  For example:
     > pub off
     [Public] Foobar has left this channel.
 
@@ -247,18 +250,22 @@ COMSYS (continued)
     > pub Hello world!
     [Public] Foobar says, "Hello world!"
 
-{ 'help comsys commands' for more }
+  Related Topcs: comsys commands
 
 & COMSYS COMMANDS
-COMSYS COMMANDS
+COMSYS COMMANDS AND FUNCTIONS
 
   These are the topics for the MUX comsystem:
 
-  addcom       allcom       alias        comlist      comtitle     clearcom
-  delcom
+  User Commands:            @clist addcom alias allcom comlist comtitle
+                            clearcom delcom
 
-  @ccreate     @cboot       @ccharge     @cchown      @cdestroy    @clist
-  @coflags     @cpflags     @cset        @cwho
+  Administrative Commands:  @cboot @ccharge @cchown @ccreate @cdestroy @cemit
+                            @clist @coflags @cpflags @cset @cwho
+
+  Functions:                channels() comalias() comtitle() cwho()
+
+  General Information:      channel object comsys examples
 
 & @CBOOT
 @CBOOT
