@@ -11029,3 +11029,35 @@ CONNLEFT()
 
   Related Topics: @conformat, @exitformat
 
+& @BREAK
+@BREAK
+
+  COMMAND: @break <boolean>
+
+  @break stops the execution of further commands in the current action
+  list if its argument is a true value. It doesn't affect new queue
+  entries made by previous commands in the action list. Very useful to
+  people who don't like @switch.
+
+  Examples:
+    > @va obj=$testme *:@pemit %#=Before;@break %0;@pemit %#=After
+    > testme 0
+    Before
+    After
+    > testme 1
+    Before
+
+    > @force me={@switch 1=1,think 3rd;think 1st;@break 1;think 2nd}
+    1st
+    3rd
+
+  In the last example, the @switch is run, which queues 'think 3rd',
+  'think 1st' is run, displaying '1st', command execution is broken
+  (so we never 'think 2nd', and then the queued 'think 3rd' is run,
+  displaying '3rd'.
+
+  If you follow that, you have a very good understanding of the
+  TinyMUX queue. :)
+
+  Related Topics: BOOLEAN VALUES
+
