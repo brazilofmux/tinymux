@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.14 2000-09-07 08:13:45 sdennis Exp $
+// $Id: bsd.cpp,v 1.15 2000-10-10 22:56:14 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2330,9 +2330,9 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
 #ifndef WIN32
 #if defined(HAVE_UNION_WAIT) && defined(NEED_WAIT3_DCL)
-    union wait stat;
+    union wait stat_buf;
 #else
-    int stat;
+    int stat_buf;
 #endif
 #endif // WIN32
 
@@ -2356,13 +2356,13 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         signal(SIGCHLD, CAST_SIGNAL_FUNC sighandler);
 #endif
 #ifdef HAVE_WAIT3
-        while (wait3(&stat, WNOHANG, NULL) > 0) ;
+        while (wait3(&stat_buf, WNOHANG, NULL) > 0) ;
 #else
-        wait((int *)&stat);
+        wait((int *)&stat_buf);
 #endif
         // Did the child exit?
         //        
-        if (WEXITSTATUS(stat) == 8)
+        if (WEXITSTATUS(stat_buf) == 8)
         {
             exit(0);
         }
