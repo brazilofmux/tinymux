@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.2 2003-01-23 02:33:19 sdennis Exp $
+// $Id: command.cpp,v 1.3 2003-01-29 23:48:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -561,8 +561,8 @@ CMDENT_NO_ARG command_table_no_arg[] =
     {"@startslave", NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, boot_slave},
 #endif // !WIN32
     {"@timecheck",  timecheck_sw, CA_WIZARD, 0,          CS_NO_ARGS, 0, do_timecheck},
-    {"comlist",     NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_comlist},
     {"clearcom",    NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_clearcom},
+    {"comlist",     NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_comlist},
     {"info",        NULL,       CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, 0, logged_out0},
     {"inventory",   NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_inventory},
     {"leave",       leave_sw,   CA_LOCATION, 0,          CS_NO_ARGS, 0, do_leave},
@@ -583,7 +583,6 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"@cut",          NULL,       CA_WIZARD|CA_LOCATION,      0,  CS_ONE_ARG|CS_INTERP, 0, do_cut},
     {"@cwho",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_channelwho},
     {"@destroy",      destroy_sw, CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, DEST_ONE,   CS_ONE_ARG|CS_INTERP,   0, do_destroy},
-    //{"@destroyall",   NULL,       CA_WIZARD|CA_GBL_BUILD,     DEST_ALL,   CS_ONE_ARG,   0, do_destroy},
     {"@disable",      NULL,       CA_WIZARD,       GLOB_DISABLE,  CS_ONE_ARG,           0, do_global},
     {"@doing",        doing_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_doing},
     {"@emit",         emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,  SAY_EMIT,   CS_ONE_ARG|CS_INTERP,   0, do_say},
@@ -595,8 +594,8 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"@kick",         NULL,       CA_WIZARD,         QUEUE_KICK,  CS_ONE_ARG|CS_INTERP, 0, do_queue},
     {"@last",         NULL,       CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, 0, do_last},
     {"@list",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_list},
-    {"@listcommands", NULL,       CA_GOD,                     0,  CS_ONE_ARG,           0, do_listcommands},
     {"@list_file",    NULL,       CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_list_file},
+    {"@listcommands", NULL,       CA_GOD,                     0,  CS_ONE_ARG,           0, do_listcommands},
     {"@listmotd",     listmotd_sw,CA_PUBLIC,          MOTD_LIST,  CS_ONE_ARG,           0, do_motd},
     {"@mark",         mark_sw,    CA_WIZARD,          SRCH_MARK,  CS_ONE_ARG|CS_NOINTERP,   0, do_search},
     {"@motd",         motd_sw,    CA_WIZARD,                  0,  CS_ONE_ARG,           0, do_motd},
