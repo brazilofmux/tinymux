@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.24 2003-08-30 05:03:27 sdennis Exp $
+// $Id: netcommon.cpp,v 1.25 2003-09-07 22:25:44 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2199,13 +2199,13 @@ bool do_command(DESC *d, char *command)
             ltaEnd.GetUTC();
 
             CLinearTimeDelta ltd = ltaEnd - ltaBegin;
-            if (ltd.ReturnSeconds() >= mudconf.max_cmdsecs)
+            if (ltd > mudconf.max_cmdsecs)
             {
                 STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
                 log_name_and_loc(d->player);
                 char *logbuf = alloc_lbuf("do_command.LOG.cpu");
-                long ms = ltd.ReturnMilliseconds();
-                sprintf(logbuf, " queued command taking %ld.%03ld secs: ", ms/1000, ms%1000);
+                sprintf(logbuf, " queued command taking %s secs: ",
+                    ltd.ReturnSecondsString());
                 log_text(logbuf);
                 free_lbuf(logbuf);
                 log_text(log_cmdbuf);

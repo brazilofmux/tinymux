@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.29 2003-09-07 22:05:46 sdennis Exp $
+// $Id: conf.cpp,v 1.30 2003-09-07 22:25:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -206,7 +206,7 @@ void cf_init(void)
     mudconf.timeslice = 1000;
     mudconf.cmd_quota_max = 100;
     mudconf.cmd_quota_incr = 1;
-    mudconf.max_cmdsecs = 120;
+    mudconf.max_cmdsecs.SetSeconds(120);
     mudconf.control_flags = 0xffffffff; // Everything for now...
     mudconf.log_options = LOG_ALWAYS | LOG_BUGS | LOG_SECURITY |
         LOG_NET | LOG_LOGIN | LOG_DBSAVES | LOG_CONFIGMODS |
@@ -1707,7 +1707,7 @@ CONF conftable[] =
     {"kill_guarantee_cost",       cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killguarantee,          NULL,               0},
     {"kill_max_cost",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmax,                NULL,               0},
     {"kill_min_cost",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmin,                NULL,               0},
-    {"lag_maximum",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_cmdsecs,            NULL,               0},
+    {"lag_maximum",               cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.max_cmdsecs,     NULL,               0},
     {"link_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.linkcost,               NULL,               0},
     {"list_access",               cf_ntab_access, CA_GOD,    CA_DISABLED, (int *)list_names,               access_nametab,     0},
     {"lock_recursion_limit",      cf_int,         CA_WIZARD, CA_PUBLIC,   &mudconf.lock_nest_lim,          NULL,               0},

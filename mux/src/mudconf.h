@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.12 2003-04-12 06:21:53 sdennis Exp $
+// $Id: mudconf.h,v 1.13 2003-09-07 22:25:44 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -121,7 +121,6 @@ struct confdata
     int     log_options;        /* What gets logged */
     int     machinecost;        /* One in mc+1 cmds costs 1 penny (POW2-1) */
     int     mail_expiration;    /* Number of days to wait to delete mail */
-    int     max_cmdsecs;        /* Threshhold for real time taken by command */
     int     max_players;        /* Max # of connected players */
     int     min_guests;         // The # we should start nuking at.
     int     nStackLimit;        // Current stack limit.
@@ -196,7 +195,8 @@ struct confdata
     char    *status_file;       /* Where to write arg to @shutdown */
     char    *uncompress;        /* program to run to uncompress */
     char    *wizmotd_file;      /* display this file on login to wizards */
-    unsigned char   markdata[8];    /* Masks for marking/unmarking */
+    unsigned char    markdata[8];  /* Masks for marking/unmarking */
+    CLinearTimeDelta max_cmdsecs;  /* Threshhold for real time taken by command */
 
     FLAGSET exit_flags;         /* Flags exits start with */
     FLAGSET player_flags;       /* Flags players start with */
