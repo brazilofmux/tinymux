@@ -52,6 +52,15 @@ HELP
 
   Related Topics: @force.
 
+& $-COMMANDS
+$-COMMANDS
+
+  These commands are called arbitrary commands, user-defined commands, or
+  $-commands (for how they are defined).  See 'arbitrary commands' for the
+  full description.
+
+  Related Topics: arbitrary commands
+
 & &
 
   COMMAND: &<attribute> <object>[=<value>]
@@ -10117,16 +10126,6 @@ POWER()
 
   Related Topics: exp(), ln(), log(), sqrt()
 
-& POWERS()
-POWERS()
-
-  FUNCTION: powers(<object>)
-
-  Returns a space-delimited list of power names for <object>.  You may not be
-  able to retrieve information for objects that you do not own.
-
-  Related Topics: haspower()
-
 & POWERS LIST
 POWERS LIST
 
@@ -10165,6 +10164,16 @@ POWERS LIST (continued)
   unkillable        Cannot be killed with the 'kill' command.
 
   Related Topics: @power
+
+& POWERS()
+POWERS()
+
+  FUNCTION: powers(<object>)
+
+  Returns a space-delimited list of power names for <object>.  You may not be
+  able to retrieve information for objects that you do not own.
+
+  Related Topics: haspower()
 
 & PUEBLO
 PUEBLO
@@ -11132,7 +11141,7 @@ SET()
   before and after the '=' sign. Returns nothing. This is a side effect
   function, and should only be used when necessary.
 
-  Related Topics:
+  Related Topics: @set
 
 & SETDIFF()
 SETDIFF()
@@ -12130,19 +12139,23 @@ TOPICS
 
   Help available on the following Topics:
 
-  ARBITRARY COMMANDS  ATTRIBUTE OWNERSHIP BEING KILLED        BOGUS COMMANDS
-  BOOLEAN VALUES      COMMAND EVALUATION  COMSYS              CONTROL
-  COSTS               CREDITS             DROP-TO             ENACTOR
-  EXITS               FAILURE             FLAG LIST           FLAGS
-  FUNCTION LIST       FUNCTIONS           GENDER              GOALS
-  HERE                HOMES               LINKING             LISTENING
-  LISTS               LOOPING             ME                  MONEY
-  MOVING              OBJECT STACK        OBJECT TYPES        PARENT OBJECTS
-  PARENT ROOMS        PIPING              POWERS LIST         PUEBLO
-  PUPPETS             REGEXPS             ROBBERY             SEARCH CLASSES
-  SEMAPHORES          SPOOFING            STACK               SUBSTITUTIONS
-  SUCCESS             SWITCHES            VERBS               WIZARDS
-  ZONES
+  $-COMMANDS               ARBITRARY COMMANDS       ATTRIBUTE OWNERSHIP
+  BEING KILLED             BOGUS COMMANDS           BOOLEAN VALUES
+  COMMAND EVALUATION       COMSYS                   CONTROL
+  COSTS                    CREDITS                  DROP-TO
+  ENACTOR                  EXITS                    FAILURE
+  FLAG LIST                FLAGS                    FUNCTION LIST
+  FUNCTIONS                GENDER                   GOALS
+  HERE                     HOMES                    LINKING
+  LISTENING                LISTS                    LOOPING
+  ME                       MONEY                    MOVING
+  OBJECT STACK             OBJECT TYPES             PARENT OBJECTS
+  PARENT ROOMS             PIPING                   POWERS LIST
+  PUEBLO                   PUPPETS                  REGEXPS
+  ROBBERY                  SEARCH CLASSES           SEMAPHORES
+  SPOOFING                 STACK                    SUBSTITUTIONS
+  SUCCESS                  SWITCHES                 USER-DEFINED COMMANDS
+  VERBS                    WIZARDS                  ZONES
 
 & TRACE
 TRACE
@@ -12453,6 +12466,15 @@ USE
   used by others should be @lock'ed with the appropriate uselock.
 
   Related Topics: @ause, @ouse, @use, @lock, @lock locks.
+
+& USER-DEFINED COMMANDS
+USER-DEFINED COMMANDS
+
+  These commands are called arbitrary commands, user-defined commands, or
+  $-commands (for how they are defined).  See 'arbitrary commands' for the
+  full description.
+
+  Related Topics: arbitrary commands
 
 & V()
 V()
