@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.23 2002-06-29 00:09:45 sdennis Exp $
+// $Id: funceval.cpp,v 1.24 2002-07-09 03:25:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -2351,6 +2351,7 @@ FUNCTION(fun_munge)
     char *list1, *list2, *rlist;
     char *ptrs1[LBUF_SIZE / 2], *ptrs2[LBUF_SIZE / 2], *results[LBUF_SIZE / 2];
     char *atext, *bp, *str, sep, *oldp;
+    char *uargs[2], isep[2] = { '\0', '\0' };
 
     oldp = *bufc;
     varargs_preamble(4);
@@ -2407,8 +2408,11 @@ FUNCTION(fun_munge)
     //
     bp = rlist = alloc_lbuf("fun_munge");
     str = atext;
+    uargs[0] = fargs[1];
+    uargs[1] = isep;
+    isep[0] = sep;
     TinyExec(rlist, &bp, executor, caller, enactor,
-             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &fargs[1], 1);
+             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, uargs, 1);
     *bp = '\0';
 
     // Now that we have our result, put it back into array form.

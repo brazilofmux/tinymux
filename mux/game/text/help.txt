@@ -8387,13 +8387,13 @@ MUNGE()
   FUNCTION: munge([<object>/]<attribute>,<list 1>,<list 2>[,<delimiter>])
 
   This function takes two lists of equal length. It passes the entirety of
-  <list 1> to the user-defined function as %0. Then, this resulting list
-  is matched with elements in <list 2>, and the rearranged <list 2> is
-  returned. This is useful for doing things like sorting a list, and then
-  returning the correspoding elements in the other list. If a resulting
-  element from the user-defined function doesn't match an element in the
-  original <list 1>, a corresponding element from <list 2> does not appear
-  in the final result.
+  <list 1> to the user-defined function as %0 and the delimiter as %1.
+  Then, this resulting list is matched with elements in <list 2>, and the
+  rearranged <list 2> is returned. This is useful for doing things like
+  sorting a list, and then returning the correspoding elements in the other
+  list. If a resulting element from the user-defined function doesn't match
+  an element in the original <list 1>, a corresponding element from <list 2>
+  does not appear in the final result.
 
   For example: Consider attribute PLACES, which contains "Fort Benden Ista",
   and another attribute DBREFS contains the dbrefs of the main JUMP_OK
@@ -8407,7 +8407,7 @@ MUNGE()
     > say [munge(sort_alpha,v(places),v(dbrefs))]
     You say, "#9000 #20 #5000"
 
-  Related Topics:
+  Related Topics: sortby()
 
 & MYOPIC
 MYOPIC
