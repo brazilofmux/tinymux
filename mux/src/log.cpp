@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.2 2003-01-23 07:32:50 sdennis Exp $
+// $Id: log.cpp,v 1.3 2003-01-24 06:49:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9,8 +9,6 @@
 #include "externs.h"
 
 #include <sys/types.h>
-
-#ifndef STANDALONE
 
 NAMETAB logdata_nametab[] =
 {
@@ -44,8 +42,6 @@ NAMETAB logoptions_nametab[] =
     { NULL,                     0,  0,  0}
 };
 
-#endif // !STANDALONE
-
 /* ---------------------------------------------------------------------------
  * start_log: see if it is OK to log something, and if so, start writing the
  * log entry.
@@ -57,33 +53,38 @@ BOOL start_log(const char *primary, const char *secondary)
     if (  1 <= mudstate.logging
        && mudstate.logging <= 2)
     {
-#ifndef STANDALONE
-        // Format the timestamp.
-        //
-        char buffer[256];
-        buffer[0] = '\0';
-        if ((mudconf.log_info & LOGOPT_TIMESTAMP) != 0)
+        if (!mudstate.bStandAlone)
         {
-            CLinearTimeAbsolute ltaNow;
-            ltaNow.GetLocal();
-            FIELDEDTIME ft;
-            ltaNow.ReturnFields(&ft);
-            sprintf(buffer, "%d.%02d%02d:%02d%02d%02d ",ft.iYear, ft.iMonth,
-                    ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond);
+            // Format the timestamp.
+            //
+            char buffer[256];
+            buffer[0] = '\0';
+            if (mudconf.log_info & LOGOPT_TIMESTAMP)
+            {
+                CLinearTimeAbsolute ltaNow;
+                ltaNow.GetLocal();
+                FIELDEDTIME ft;
+                ltaNow.ReturnFields(&ft);
+                sprintf(buffer, "%d.%02d%02d:%02d%02d%02d ",ft.iYear,
+                    ft.iMonth, ft.iDayOfMonth, ft.iHour, ft.iMinute,
+                    ft.iSecond);
+            }
+
+            // Write the header to the log.
+            //
+            if (  secondary
+               && *secondary)
+            {
+                Log.tinyprintf("%s%s %3s/%-5s: ", buffer, mudconf.mud_name,
+                    primary, secondary);
+            }
+            else
+            {
+                Log.tinyprintf("%s%s %-9s: ", buffer, mudconf.mud_name,
+                    primary);
+            }
         }
 
-        // Write the header to the log.
-        //
-        if (secondary && *secondary)
-        {
-            Log.tinyprintf("%s%s %3s/%-5s: ", buffer, mudconf.mud_name, primary,
-                secondary);
-        }
-        else
-        {
-            Log.tinyprintf("%s%s %-9s: ", buffer, mudconf.mud_name, primary);
-        }
-#endif
         // If a recursive call, log it and return indicating no log.
         //
         if (mudstate.logging == 1)
@@ -155,37 +156,39 @@ void log_number(int num)
 
 void log_name(dbref target)
 {
-#ifdef STANDALONE
-    Log.tinyprintf("%s(#%d)", Name(target), target);
-#else // STANDALONE
-    char *tp;
-
-    if ((mudconf.log_info & LOGOPT_FLAGS) != 0)
+    if (mudstate.bStandAlone)
     {
-        tp = unparse_object(GOD, target, FALSE);
+        Log.tinyprintf("%s(#%d)", Name(target), target);
     }
     else
     {
-        tp = unparse_object_numonly(target);
-    }
-    Log.WriteString(strip_ansi(tp));
-    free_lbuf(tp);
-    if (  (mudconf.log_info & LOGOPT_OWNER) != 0
-       && target != Owner(target))
-    {
-        if ((mudconf.log_info & LOGOPT_FLAGS) != 0)
+        char *tp;
+
+        if (mudconf.log_info & LOGOPT_FLAGS)
         {
-            tp = unparse_object(GOD, Owner(target), FALSE);
+            tp = unparse_object(GOD, target, FALSE);
         }
         else
         {
-            tp = unparse_object_numonly(Owner(target));
+            tp = unparse_object_numonly(target);
         }
-        Log.tinyprintf("[%s]", strip_ansi(tp));
+        Log.WriteString(strip_ansi(tp));
         free_lbuf(tp);
+        if (  (mudconf.log_info & LOGOPT_OWNER)
+           && target != Owner(target))
+        {
+            if (mudconf.log_info & LOGOPT_FLAGS)
+            {
+                tp = unparse_object(GOD, Owner(target), FALSE);
+            }
+            else
+            {
+                tp = unparse_object_numonly(Owner(target));
+            }
+            Log.tinyprintf("[%s]", strip_ansi(tp));
+            free_lbuf(tp);
+        }
     }
-#endif // STANDALONE
-    return;
 }
 
 /* ---------------------------------------------------------------------------
@@ -242,7 +245,6 @@ void log_type_and_name(dbref thing)
     return;
 }
 
-#ifndef STANDALONE
 void do_log
 (
     dbref executor,
@@ -340,4 +342,3 @@ void do_log
     fclose(hFile);
     free_lbuf(pFullName);
 }
-#endif // !STANDALONE

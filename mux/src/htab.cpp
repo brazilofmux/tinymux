@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: htab.cpp,v 1.2 2003-01-24 06:50:34 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -248,8 +248,6 @@ int *hash_nextkey(CHashTable *htab, int *nKeyLength, char **pKey)
     return NULL;
 }
 
-#ifndef STANDALONE
-
 /*
  * ---------------------------------------------------------------------------
  * * search_nametab: Search a name table for a match and return the flag value.
@@ -436,5 +434,3 @@ CF_HAND(cf_ntab_access)
     cf_log_notfound(player, cmd, "Entry", str);
     return -1;
 }
-
-#endif // !STANDALONE
