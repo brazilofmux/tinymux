@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.24 2003-09-07 22:05:46 sdennis Exp $
+// $Id: timeutil.cpp,v 1.25 2003-10-09 01:57:35 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -935,7 +935,7 @@ bool ParseThreeLetters(const char **pp, int *piHash)
         p++;
     }
 
-    // Parse space-seperate token.
+    // Parse space-separate token.
     //
     const char *q = p;
     int iHash = 0;

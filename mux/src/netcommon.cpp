@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.25 2003-09-07 22:25:44 sdennis Exp $
+// $Id: netcommon.cpp,v 1.26 2003-10-09 01:57:35 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1873,7 +1873,7 @@ static bool check_connect(DESC *d, char *msg)
                 // character by other means and then fail this
                 // connection.
                 //
-                // The guest 'power' is handled seperately further
+                // The guest 'power' is handled separately further
                 // down.
                 //
                 failconn("CONN", "Connect", "Guest Site Forbidden", d,

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.53 2003-07-31 06:07:42 sdennis Exp $
+// $Id: stringutil.cpp,v 1.54 2003-10-09 01:57:35 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2914,7 +2914,7 @@ bool is_real(char *str)
 // You may call mux_strtok_ctl() to change the set of control characters
 // between mux_strtok_parse() calls, however keep in mind that the parsing
 // may not occur how you intend it to as mux_strtok_parse() does not
-// consume -all- of the controlling delimiters that seperate two tokens.
+// consume -all- of the controlling delimiters that separate two tokens.
 // It consumes only the first one.
 //
 void mux_strtok_src(MUX_STRTOK_STATE *tts, char *arg_pString)
