@@ -4171,24 +4171,19 @@ ATTRIBUTE OWNERSHIP (continued)
   after the attribute name.  If there are any flags set on the attribute,
   those flags are indicated in the parentheses too.
 
-  The + flag means that the attribute is locked (so that it will not
-  change ownership of the object is @chowned), the $ flag means that
-  $-commands are not checked for that attribute.  The I flag indicates that
-  the attribute is not inherited by children of the object, and the V flag
-  shows that the attribute is publicly visible.
-
 { 'help attrib3' for more }
 
 & attrib3
 ATTRIBUTE OWNERSHIP (continued)
 
-  When checking an attribute lock against an object, the lock will always
-  fail if the locked object is not owned by the same player as the attribute
-  being tested.  The comparison specified in the lock is only performed if
-  the owner of the locked object also owns the attribute on the object
-  being checked.
+  When checking an attribute lock against an object, the lock will
+  always fail if the locked object is not owned by the same player as
+  the attribute being tested.  The comparison specified in the lock is
+  only performed if the owner of the locked object also owns the
+  attribute on the object being checked.
 
-  Related Topics: @chown, @lock, @set, @unlock, examine.
+  Related Topics: ATTRIBUTE FLAGS, @chown, examine, @lock, @set,
+                  @unlock.
 
 & ATTRIBUTE FLAGS
 ATTRIBUTE FLAGS
