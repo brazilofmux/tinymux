@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.24 2001-09-08 19:25:47 sdennis Exp $
+// $Id: svdhash.cpp,v 1.25 2001-10-14 17:16:57 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -1334,7 +1334,9 @@ BOOL CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
 {
     CloseAll();
 #ifdef WIN32
-    m_hPageFile = CreateFile(szPageFile, GENERIC_READ | GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
+    m_hPageFile = CreateFile(szPageFile, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ, 0, CREATE_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
 #else // WIN32
     m_hPageFile = open(szPageFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
 #endif // WIN32
@@ -1345,7 +1347,9 @@ BOOL CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
     }
 
 #ifdef WIN32
-    m_hDirFile = CreateFile(szDirFile, GENERIC_READ | GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    m_hDirFile = CreateFile(szDirFile, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ, 0, CREATE_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 #else // WIN32
     m_hDirFile = open(szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
 #endif // WIN32
@@ -1473,7 +1477,9 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile)
     // First let's try to open the page file. This is the more important file.
     //
 #ifdef WIN32
-    m_hPageFile = CreateFile(szPageFile, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
+    m_hPageFile = CreateFile(szPageFile, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ, 0, OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
 #else // WIN32
     m_hPageFile = open(szPageFile, O_RDWR|O_BINARY);
 #endif // WIN32
@@ -1529,7 +1535,9 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile)
     // However, having it helps us to open faster.
     //
 #ifdef WIN32
-    m_hDirFile = CreateFile(szDirFile, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    m_hDirFile = CreateFile(szDirFile, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ, 0, OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 #else // WIN32
     m_hDirFile = open(szDirFile, O_RDWR|O_BINARY);
 #endif // WIN32
@@ -1538,7 +1546,9 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile)
         // The Directory doesn't exist, so we create it anew, and rebuild the
         // index.
 #ifdef WIN32
-        m_hDirFile = CreateFile(szDirFile, GENERIC_READ | GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        m_hDirFile = CreateFile(szDirFile, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ, 0, CREATE_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 #else // WIN32
         m_hDirFile = open(szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
 #endif // WIN32
@@ -2468,7 +2478,9 @@ void CLogFile::CreateLogFile(void)
     CloseLogFile();
 
     m_nSize = 0;
-    m_hFile = CreateFile(m_szFilename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    m_hFile = CreateFile(m_szFilename, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ, 0, CREATE_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 }
 
 void CLogFile::AppendLogFile(void)
@@ -2476,7 +2488,9 @@ void CLogFile::AppendLogFile(void)
     CloseLogFile();
 
 #ifdef WIN32
-    m_hFile = CreateFile(m_szFilename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    m_hFile = CreateFile(m_szFilename, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ, 0, OPEN_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 #else // WIN32
     m_hFile = open(m_szFilename, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
 #endif // WIN32
