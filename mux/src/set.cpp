@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.10 2003-02-15 16:00:32 jake Exp $
+// $Id: set.cpp,v 1.11 2003-02-15 16:32:16 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -922,24 +922,25 @@ void do_set
     int   key,
     int   nargs,
     char *name,
-    char *flag
+    char *flagname
 )
 {
-    dbref thing, thing2, aowner;
-    char *p, *buff;
-    int atr, atr2, aflags, flagvalue;
-    ATTR *attr, *attr2;
+    dbref thing, aowner;
+    int aflags;
+    ATTR *attr;
 
     // See if we have the <obj>/<attr> form, which is how you set
     // attribute flags.
     //
-    if (parse_attrib(executor, name, &thing, &atr))
+    if (parse_attrib_temp(executor, name, &thing, &attr))
     {
-        if (atr != NOTHING)
+        if (  attr
+           && See_attr(executor, thing, attr))
         {
             // You must specify a flag name.
             //
-            if (!flag || !*flag)
+            if (  !flagname 
+               || flagname[0] == '\0')
             {
                 notify_quiet(executor, "I don't know what you want to set!");
                 return;
@@ -948,15 +949,15 @@ void do_set
             // Check for clearing.
             //
             bool clear = false;
-            if (*flag == NOT_TOKEN)
+            if (flagname[0] == NOT_TOKEN)
             {
-                flag++;
+                flagname++;
                 clear = true;
             }
 
             // Make sure player specified a valid attribute flag.
             //
-            flagvalue = search_nametab(executor, indiv_attraccess_nametab, flag);
+            int flagvalue = search_nametab(executor, indiv_attraccess_nametab, flagname);
             if (flagvalue < 0)
             {
                 notify_quiet(executor, "You can't set that!");
@@ -965,7 +966,7 @@ void do_set
 
             // Make sure the object has the attribute present.
             //
-            if (!atr_get_info(thing, atr, &aowner, &aflags))
+            if (!atr_get_info(thing, attr->number, &aowner, &aflags))
             {
                 notify_quiet(executor, "Attribute not present on object.");
                 return;
@@ -973,9 +974,7 @@ void do_set
 
             // Make sure we can write to the attribute.
             //
-            attr = atr_num(atr);
-            if (  !attr
-               || !bCanSetAttr(executor, thing, attr))
+            if (!bCanSetAttr(executor, thing, attr))
             {
                 notify_quiet(executor, NOPERM_MESSAGE);
                 return;
@@ -992,7 +991,7 @@ void do_set
                 aflags |= flagvalue;
             }
             bool could_hear = Hearer(thing);
-            atr_set_flags(thing, atr, aflags);
+            atr_set_flags(thing, attr->number, aflags);
 
             // Tell the player about it.
             //
@@ -1024,7 +1023,7 @@ void do_set
 
     // Check for attribute set first.
     //
-    for (p = flag; *p && (*p != ':'); p++)
+    for (char *p = flagname; *p && (*p != ':'); p++)
     {
         ; // Nothing.
     }
@@ -1032,7 +1031,7 @@ void do_set
     if (*p)
     {
         *p++ = 0;
-        atr = mkattr(flag);
+        int atr = mkattr(flagname);
         if (atr <= 0)
         {
             notify_quiet(executor, "Couldn't create attribute.");
@@ -1049,26 +1048,27 @@ void do_set
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        buff = alloc_lbuf("do_set");
+        char *buff = alloc_lbuf("do_set");
 
         // Check for _
         //
         if (*p == '_')
         {
+            ATTR *attr2;
+            dbref thing2;
+
             strcpy(buff, p + 1);
-            if (  !parse_attrib(executor, p + 1, &thing2, &atr2)
-               || atr2 == NOTHING)
+            if (!( parse_attrib_temp(executor, p + 1, &thing2, &attr2)
+                && attr2))
             {
                 notify_quiet(executor, "No match.");
                 free_lbuf(buff);
                 return;
             }
-            attr2 = atr_num(atr2);
             p = buff;
-            atr_pget_str(buff, thing2, atr2, &aowner, &aflags);
+            atr_pget_str(buff, thing2, attr2->number, &aowner, &aflags);
 
-            if (  !attr2
-               || !See_attr(executor, thing2, attr2))
+            if (!See_attr(executor, thing2, attr2))
             {
                 notify_quiet(executor, NOPERM_MESSAGE);
                 free_lbuf(buff);
@@ -1085,7 +1085,7 @@ void do_set
 
     // Set or clear a flag.
     //
-    flag_set(thing, executor, flag, key);
+    flag_set(thing, executor, flagname, key);
 }
 
 void do_power
@@ -1774,10 +1774,10 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
                 char *object, char *argv[], int nargs)
 {
     dbref thing;
-    int attrib;
+    ATTR *attr;
 
-    if (  !parse_attrib(executor, object, &thing, &attrib)
-       || attrib == NOTHING)
+    if (!( parse_attrib_temp(executor, object, &thing, &attr)
+        && attr))
     {
         notify_quiet(executor, "No match.");
         return;
@@ -1787,7 +1787,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
         notify_quiet(executor, NOPERM_MESSAGE);
         return;
     }
-    did_it(executor, thing, 0, NULL, 0, NULL, attrib, argv, nargs);
+    did_it(executor, thing, 0, NULL, 0, NULL, attr->number, argv, nargs);
 
     // TODO: Be more descriptive as to what was triggered?
     //
