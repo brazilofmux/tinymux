@@ -3040,7 +3040,7 @@ POWERS LIST (continued)
 
   The first form of @wait executes <command> at some future time.
 
-  The second form executes <command> when the object's sempaphore is
+  The second form executes <command> when the object's semaphore is
   notified. If <seconds> is specified in this second form, <command> is
   executed at some future time even if the object's semaphore isn't
   notified. This is sometimes refered to as a 'timeout'.
