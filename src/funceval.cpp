@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.29 2000-10-09 07:14:46 sdennis Exp $
+// $Id: funceval.cpp,v 1.30 2000-10-16 00:09:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -416,71 +416,103 @@ FUNCTION(fun_set)
 }
 #endif
 
-/*
- * Code for encrypt() and decrypt() was taken from the DarkZone server 
- */
-/*
- * Copy over only alphanumeric chars 
- */
-static char *crunch_code(char *code)
+// Generate a substitution array.
+//
+static unsigned int GenCode(char *pCode, const char *pCodeASCII)
 {
-    char *in;
-    char *out;
-    static char output[LBUF_SIZE];
+    // Strip out the ANSI.
+    //
+    unsigned int nIn;
+    char *pIn = strip_ansi(pCodeASCII, &nIn);
 
-    out = output;
-    in = code;
-    while (*in)
+    // Process the printable characters.
+    // 
+    char *pOut = pCode;
+    while (*pIn)
     {
-        if ((*in >= 32) || (*in <= 126))
+        if (Tiny_IsPrint[(unsigned char)*pIn])
         {
-            printf("%c", *in);
-            *out++ = *in;
+            *pOut++ = *pIn - ' ';
         }
-        in++;
+        pIn++;
     }
-    *out = '\0';
-    return output;
+    *pOut = '\0';
+    return pOut - pCode;
 }
 
 static char *crypt_code(char *code, char *text, int type)
 {
-    static char textbuff[LBUF_SIZE];
-    char codebuff[LBUF_SIZE];
-    int start = 32;
-    int end = 126;
-    int mod = end - start + 1;
-    char *p, *q, *r;
-
     if (!text && !*text)
-        return ((char *)"");
-    strcpy(codebuff, crunch_code(code));
-    if (!code || !*code || !codebuff || !*codebuff)
-        return (text);
-    textbuff[0] = '\0';
+    {
+        return "";
+    }
+    if (!code || !*code)
+    {
+        return text;
+    }
 
-    p = text;
-    q = codebuff;
-    r = textbuff;
-    /*
-     * Encryption: Simply go through each character of the text, get its
-     * * * * ascii value, subtract start, add the ascii value (less
-     * start) * of * * the code, mod the result, add start. Continue  
-     */
-    while (*p) {
-        if ((*p < start) || (*p > end)) {
-            p++;
-            continue;
+    char codebuff[LBUF_SIZE];
+    unsigned int nCode = GenCode(codebuff, code);
+    if (nCode == 0)
+    {
+        return text;
+    }
+
+    static char textbuff[LBUF_SIZE];
+    unsigned int nText;
+    char *p = strip_ansi(text, &nText);
+    char *q = codebuff;
+    char *r = textbuff;
+
+    int iMod    = '~' - ' ' + 1;
+
+    // Encryption loop:
+    //
+    while (*p)
+    {
+        if (Tiny_IsPrint[(unsigned char)*p])
+        {
+            int iCode = *p - ' ';
+            if (type)
+            {
+                iCode += *q;
+                if (iMod <= iCode)
+                {
+                    iCode -= iMod;
+                }
+            }
+            else
+            {
+                iCode -= *q;
+                if (iCode < 0)
+                {
+                    iCode += iMod;
+                }
+            }
+            *r++ = iCode + ' ';
+            q++;
+            if (*q == '\0')
+            {
+                q = codebuff;
+            }
         }
-        if (type)
-            *r++ = (((*p++ - start) + (*q++ - start)) % mod) + start;
-        else
-            *r++ = (((*p++ - *q++) + 2 * mod) % mod) + start;
-        if (!*q)
-            q = codebuff;
+        p++;
     }
     *r = '\0';
     return textbuff;
+}
+
+// Code for encrypt() and decrypt() was taken from the DarkZone
+// server.
+//
+FUNCTION(fun_encrypt)
+{
+    safe_str(crypt_code(fargs[1], fargs[0], 1), buff, bufc);
+}
+
+FUNCTION(fun_decrypt)
+{
+    safe_str(crypt_code(fargs[1], fargs[0], 0), buff, bufc);
 }
 
 /*
@@ -561,16 +593,6 @@ FUNCTION(fun_children)
         }
     }
     DbrefToBuffer_Final(&pContext);
-}
-
-FUNCTION(fun_encrypt)
-{
-    safe_str(crypt_code(fargs[1], fargs[0], 1), buff, bufc);
-}
-
-FUNCTION(fun_decrypt)
-{
-    safe_str(crypt_code(fargs[1], fargs[0], 0), buff, bufc);
 }
 
 FUNCTION(fun_objeval)
