@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: comsys.cpp,v 1.2 2003-01-23 06:16:35 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1379,7 +1379,7 @@ struct comuser *select_user(struct channel *ch, dbref player)
     int first = 0;
     int last = ch->num_users - 1;
     int dir = 1;
-    int current;
+    int current = 0;
 
     while (dir && (first <= last))
     {
