@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.67 2004-08-16 05:14:07 sdennis Exp $
+// $Id: stringutil.cpp,v 1.68 2004-12-25 08:07:44 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -3197,13 +3197,13 @@ void BMH_Prepare(BMH_State *bmhs, int nPat, const char *pPat)
     bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
     {
-        bmhs->m_d[pPat[k]] = nPat - k - 1;
+        bmhs->m_d[(unsigned char)pPat[k]] = nPat - k - 1;
         if (pPat[k] == chLastPat)
         {
             bmhs->m_skip2 = nPat - k - 1;
         }
     }
-    bmhs->m_d[chLastPat] = BMH_LARGE;
+    bmhs->m_d[(unsigned char)chLastPat] = BMH_LARGE;
 }
 
 int BMH_Execute(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const char *pSrc)
