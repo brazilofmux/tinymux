@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.47 2000-11-16 15:41:44 sdennis Exp $
+// $Id: functions.cpp,v 1.48 2000-11-17 23:34:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1447,49 +1447,6 @@ FUNCTION(fun_parent)
     }
     return;
 }
-
-#if 1
-/*
- * ---------------------------------------------------------------------------
- * * fun_parse: Make list from evaluating arg3 with each member of arg2.
- * * arg1 specifies a delimiter character to use in the parsing of arg2.
- * * NOTE: This function expects that its arguments have not been evaluated.
- */
-
-FUNCTION(fun_parse)
-{
-    char *curr, *objstring, *buff2, *buff3, *cp, sep;
-    char *dp, *str;
-    int first, number = 0;
-
-    evarargs_preamble("PARSE", 3);
-    cp = curr = dp = alloc_lbuf("fun_parse");
-    str = fargs[0];
-    TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-    *dp = '\0';
-    cp = trim_space_sep(cp, sep);
-    if (!*cp) {
-        free_lbuf(curr);
-        return;
-    }
-    first = 1;
-    while (cp)
-    {
-        if (!first)
-            safe_chr(' ', buff, bufc);
-        first = 0;
-        number++;
-        objstring = split_token(&cp, sep);
-        buff2 = replace_string(BOUND_VAR, objstring, fargs[1]);
-        buff3 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), buff2);
-        str = buff3;
-        TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-        free_lbuf(buff2);
-        free_lbuf(buff3);
-    }
-    free_lbuf(curr);
-}
-#endif
 
 /*
  * ---------------------------------------------------------------------------
@@ -4687,6 +4644,48 @@ FUNCTION(fun_repeat)
 }
 
 #if 1
+
+/*
+ * ---------------------------------------------------------------------------
+ * * fun_parse: Make list from evaluating arg3 with each member of arg2.
+ * * arg1 specifies a delimiter character to use in the parsing of arg2.
+ * * NOTE: This function expects that its arguments have not been evaluated.
+ */
+
+FUNCTION(fun_parse)
+{
+    char *curr, *objstring, *buff2, *buff3, *cp, sep;
+    char *dp, *str;
+    int first, number = 0;
+
+    evarargs_preamble("PARSE", 3);
+    cp = curr = dp = alloc_lbuf("fun_parse");
+    str = fargs[0];
+    TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    *dp = '\0';
+    cp = trim_space_sep(cp, sep);
+    if (!*cp) {
+        free_lbuf(curr);
+        return;
+    }
+    first = 1;
+    while (cp)
+    {
+        if (!first)
+            safe_chr(' ', buff, bufc);
+        first = 0;
+        number++;
+        objstring = split_token(&cp, sep);
+        buff2 = replace_string(BOUND_VAR, objstring, fargs[1]);
+        buff3 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), buff2);
+        str = buff3;
+        TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        free_lbuf(buff2);
+        free_lbuf(buff3);
+    }
+    free_lbuf(curr);
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_iter: Make list from evaluating arg2 with each member of arg1.
