@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.41 2001-05-14 21:23:12 zenty Exp $
+// * $Id: comsys.cpp,v 1.42 2001-06-06 03:12:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -925,8 +925,6 @@ void BuildChannelMessage
 
 void do_processcom(dbref player, char *arg1, char *arg2)
 {
-    char *mess, *bp;
-    
     if ((strlen(arg1) + strlen(arg2)) > 3500)
     {
         arg2[3500] = '\0'; // TODO: Incorrect logic that doesn't hurt anything.
@@ -2002,8 +2000,6 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
 
 void do_comconnectraw_notify(dbref player, char *chan)
 {
-    char *buff;
-    
     struct channel *ch = select_channel(chan);
     if (!ch) return;
     struct comuser *cu = select_user(ch, player);
