@@ -1,11 +1,11 @@
 // htab.cpp - table hashing routines
 //
-// $Id: htab.cpp,v 1.6 2001-06-29 11:30:18 sdennis Exp $
+// $Id: htab.cpp,v 1.7 2001-09-08 18:52:38 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
 //
-// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial
