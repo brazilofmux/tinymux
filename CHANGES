@@ -415,6 +415,8 @@ Bug Fixes:
  --  Bug #752 - pmatch() doesn't accept '*' as described in the help.
      Found by Ashen-Shugar. Fixed by Marlek.
  --  Can give objects to themselves. Fixed by Marlek.
+ --  search() now uses the DbrefToBuffer() calls to ensure that returned
+     dbrefs aren't truncated in the middle of the number.
 
 
 Performance Enhancements:
