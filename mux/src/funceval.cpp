@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.60 2002-10-10 12:38:24 jake Exp $
+// $Id: funceval.cpp,v 1.61 2002-10-13 19:03:13 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -675,15 +675,15 @@ void scan_zone
     }
 
     dbref it = match_thing_quiet(player, szZone);
-    if (  !Controls(player, it)
-       && !WizRoy(player))
-    {
-        safe_noperm(buff, bufc);
-        return;
-    }
-    else if (!Good_obj(it))
+    if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
+        return;
+    }
+    else if (  !Controls(player, it)
+            && !WizRoy(player))
+    {
+        safe_noperm(buff, bufc);
         return;
     }
 
