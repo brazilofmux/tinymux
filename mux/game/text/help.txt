@@ -6314,8 +6314,8 @@ FUNCTION CLASSES
  
   Arithmetic:                ABS ADD BAND BNAND BOR CEIL CRC32 DEC DIE FDIV
                              FLOORDIV IABS IADD IDIV IMUL INC ISIGN ISUB MOD
-                             MUL PACK POWER RAND REMAINDER SHL SHR SIGN SUB
-                             SQRT UNPACK
+                             MUL PACK POWER RAND REMAINDER SHA1 SHL SHR SIGN
+                             SUB SQRT UNPACK
 
   Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
 
@@ -6453,18 +6453,18 @@ FUNCTION LIST (continued)
     REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
     RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()
     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
-    SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHL()
-    SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
-    SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()
-    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIP()     STRIPACCENTS()
-    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()
-    SUBJ()      SWITCH()    T()         TABLE()     TAN()       TEL()
-    TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()
-    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
-    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
-    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()
-    ZFUN()      ZONE()      ZWHO()
+    SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHA1()
+    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
+    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()
+    SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIP()
+    STRIPACCENTS()          STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
+    SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()
+    TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()
+    TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()
+    UNPACK()    V()         VADD()      VALID()     VCROSS()    VDIM()
+    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
+    VUNIT()     WHERE()     WORDPOS()   WORDS()     WRAP()      WRITETIME()
+    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -10967,6 +10967,26 @@ SETUNION()
     You say, "bar.foo"
 
   Related Topics: setdiff(), setinter(), sort().
+
+& SHA1()
+SHA1()
+
+  FUNCTION: sha1(<string>)
+
+  Returns 40 hexidecimal characters which represent a 160-bit
+  cryptographically secure hash of <string>.
+
+  This hash can also be described as a signature, fingerprint, or
+  digest.  sha1() implements SHA-1 as described in FIPS 180-1 and
+  FIPS 180-2.
+
+  Example:
+    > think sha1(abc)
+    A9993E364706816ABA3E25717850C26C9CD0D89D
+    > think sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)
+    84983E441C3BD26EBAAE4AA1F95129E5E54670F1
+
+  Related Topics: crc32(), unpack().
 
 & SHL()
 SHL()
