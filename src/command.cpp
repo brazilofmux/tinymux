@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.3 2000-04-15 17:25:48 sdennis Exp $
+// $Id: command.cpp,v 1.4 2000-04-16 08:02:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1224,7 +1224,8 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
 
     if (!pOriginalCommand)
     {
-	    fprintf(stderr, "ABORT! command.cpp, NULL command in process_command().\n");
+	    Log.WriteString("ABORT! command.cpp, NULL command in process_command().\n");
+        Log.Flush();
         abort();
     }
 
