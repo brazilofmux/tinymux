@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.17 2001-07-06 16:24:21 sdennis Exp $
+// $Id: config.h,v 1.18 2001-10-10 02:38:04 sdennis Exp $
 //
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -162,7 +162,7 @@ typedef UINT64           UINT32;
 #if SIZEOF_INT == 2
 typedef int              INT16;
 typedef unsigned int     UINT16;
-#elif SIZEOF__LONG == 2
+#elif SIZEOF_LONG == 2
 typedef long             INT16;
 typedef unsigned long    UINT16;
 #elif SIZEOF_SHORT == 2
