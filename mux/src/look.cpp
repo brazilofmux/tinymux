@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.21 2004-04-13 06:34:22 sdennis Exp $
+// $Id: look.cpp,v 1.22 2004-06-04 23:10:57 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1382,9 +1382,9 @@ static void debug_examine(dbref player, dbref thing)
     buf = flag_description(player, thing);
     notify(player, tprintf("Flags   = %s", buf));
     free_mbuf(buf);
-    buf = power_description(player, thing);
+    buf = powers_list(player, thing);
     notify(player, tprintf("Powers  = %s", buf));
-    free_mbuf(buf);
+    free_lbuf(buf);
     buf = atr_get(thing, A_LOCK, &aowner, &aflags);
     pBoolExp = parse_boolexp(player, buf, true);
     free_lbuf(buf);
@@ -1681,9 +1681,9 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
             notify(executor, tprintf("Parent: %s", buf2));
             free_lbuf(buf2);
         }
-        buf2 = power_description(executor, thing);
-        notify(executor, buf2);
-        free_mbuf(buf2);
+        buf2 = powers_list(executor, thing);
+        notify(executor, tprintf("Powers: %s", buf2));
+        free_lbuf(buf2);
     }
     if (!(key & EXAM_BRIEF))
     {

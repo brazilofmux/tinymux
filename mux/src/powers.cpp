@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.7 2004-05-20 03:21:21 sdennis Exp $
+// $Id: powers.cpp,v 1.8 2004-06-04 23:10:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -310,25 +310,21 @@ bool has_power(dbref player, dbref it, char *powername)
 }
 
 /* ---------------------------------------------------------------------------
- * power_description: Return an mbuf containing the type and powers on thing.
+ * powers_list: Return an LBUG containing the type and powers on thing.
  */
 
-char *power_description(dbref player, dbref target)
+char *powers_list(dbref player, dbref target)
 {
-    char *buff, *bp;
-    POWERENT *fp;
-    POWER fv;
-
     // Allocate the return buffer.
     //
-    bp = buff = alloc_mbuf("power_description");
+    char *buff = alloc_lbuf("powers_list"); 
+    char *bp = buff;
 
-    // Store the header strings and object type.
-    //
-    safe_mb_str("Powers:", buff, &bp);
-
+    bool bFirst = true;
+    POWERENT *fp;
     for (fp = gen_powers; fp->powername; fp++)
     {
+        POWER fv;
         if (fp->powerpower & POWER_EXT)
         {
             fv = Powers2(target);
@@ -340,16 +336,25 @@ char *power_description(dbref player, dbref target)
 
         if (fv & fp->powervalue)
         {
-            if ((fp->listperm & CA_WIZARD) && !Wizard(player))
+            if (  (fp->listperm & CA_WIZARD)
+               && !Wizard(player))
             {
                 continue;
             }
-            if ((fp->listperm & CA_GOD) && !God(player))
+            if (  (fp->listperm & CA_GOD)
+               && !God(player))
             {
                 continue;
             }
-            safe_mb_chr(' ', buff, &bp);
-            safe_mb_str(fp->powername, buff, &bp);
+            if (bFirst)
+            {
+                bFirst = false;
+            }
+            else
+            {
+                safe_chr(' ', buff, &bp);
+            }
+            safe_str(fp->powername, buff, &bp);
         }
     }
 

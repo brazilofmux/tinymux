@@ -1,6 +1,6 @@
 // powers.h -- Object powers.
 //
-// $Id: powers.h,v 1.3 2004-05-20 03:21:21 sdennis Exp $
+// $Id: powers.h,v 1.4 2004-06-04 23:10:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -68,7 +68,7 @@ typedef struct powerset {
 extern void init_powertab(void);
 extern void display_powertab(dbref);
 extern void power_set(dbref, dbref, char *, int);
-extern char *power_description(dbref, dbref);
+extern char *powers_list(dbref executor, dbref thing);
 extern bool has_power(dbref, dbref, char *);
 extern void decompile_powers(dbref, dbref, char *);
 extern bool decode_power(dbref player, char *powername, POWERSET *pset);

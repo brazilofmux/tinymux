@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.104 2004-05-25 00:52:24 sdennis Exp $
+// $Id: functions.cpp,v 1.105 2004-06-04 23:10:56 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -5321,6 +5321,28 @@ FUNCTION(fun_haspower)
     }
 }
 
+FUNCTION(fun_powers)
+{
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (  mudconf.pub_flags
+       || Examinable(executor, it)
+       || it == enactor)
+    {
+        char *buf = powers_list(executor, it);
+        safe_str(buf, buff, bufc);
+        free_lbuf(buf);
+    }
+    else
+    {
+        safe_noperm(buff, bufc);
+    }
+}
+
 FUNCTION(fun_delete)
 {
     char *s = fargs[0];
@@ -9721,6 +9743,7 @@ FUN flist[] =
     {"POS",         fun_pos,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"POSS",        fun_poss,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"POWER",       fun_power,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"POWERS",      fun_powers,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"PUSH",        fun_push,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"R",           fun_r,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"RAND",        fun_rand,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
