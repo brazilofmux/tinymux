@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.38 2001-03-31 04:15:52 sdennis Exp $
+// $Id: command.cpp,v 1.39 2001-03-31 08:27:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -47,10 +47,10 @@ NAMETAB boot_sw[] =
 };
 
 NAMETAB comtitle_sw[] =
-  {
-    {(char *)"off",      2,  CA_PUBLIC,  1},
-    {(char *)"on",       2,  CA_PUBLIC,  2},
-  };
+{
+    {"off",             2,  CA_PUBLIC,  COMTITLE_OFF},
+    {"on",              2,  CA_PUBLIC,  COMTITLE_ON},
+};
 
 NAMETAB cemit_sw[] =
 {
@@ -631,8 +631,8 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {(char *)"@teleport",     teleport_sw,CA_NO_GUEST,    TELEPORT_DEFAULT, CS_TWO_ARG|CS_INTERP,     do_teleport},
     {(char *)"@toad",         toad_sw,    CA_WIZARD,    0,      CS_TWO_ARG|CS_INTERP,       do_toad},
     {(char *)"addcom",        NULL,       CA_NO_SLAVE,        0,              CS_TWO_ARG,                     do_addcom},
-    {(char *)"comtitle",      comtitle_sw, CA_NO_SLAVE,       0,              CS_TWO_ARG,                    do_comtitle},
-    {(char *)"give",          give_sw,    CA_LOCATION|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_INTERP,       do_give},
+    {"comtitle",              comtitle_sw, CA_NO_SLAVE,       0,              CS_TWO_ARG,                    do_comtitle},
+    {"give",                  give_sw,    CA_LOCATION|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_INTERP,       do_give},
     {(char *)"kill",          NULL,       CA_NO_GUEST|CA_NO_SLAVE,    KILL_KILL,  CS_TWO_ARG|CS_INTERP,       do_kill},
     {(char *)"page",          NULL,       CA_NO_SLAVE,    0,      CS_TWO_ARG|CS_INTERP,       do_page},
     {(char *)"slay",          NULL,       CA_WIZARD,    KILL_SLAY,  CS_TWO_ARG|CS_INTERP,       do_kill},
@@ -1252,7 +1252,7 @@ char *process_command
     int   nargs
 )
 {
-	static char preserve_cmd[LBUF_SIZE];
+    static char preserve_cmd[LBUF_SIZE];
     char *pOriginalCommand = arg_command;
     static char SpaceCompressCommand[LBUF_SIZE];
     static char LowerCaseCommand[LBUF_SIZE];
@@ -1327,7 +1327,7 @@ char *process_command
     }
     strcpy(preserve_cmd, pOriginalCommand);
     mudstate.debug_cmd = pOriginalCommand;
-	mudstate.curr_cmd = preserve_cmd;
+    mudstate.curr_cmd = preserve_cmd;
 
     if (mudconf.space_compress)
     {

@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.35 2001-03-31 04:15:53 sdennis Exp $
+// * $Id: comsys.cpp,v 1.36 2001-03-31 08:27:11 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -688,7 +688,7 @@ void load_comsystem(FILE *fp)
                 if (ver)
                 {
                     fscanf(fp, "%d %d %d\n", &(t_user.who), &(t_user.bUserIsOn),
-			   &(t_user.ComTitleStatus));
+                        &(t_user.ComTitleStatus));
                 }
                 else
                 {
@@ -852,42 +852,50 @@ void BuildChannelMessage
             safe_str(user->title, *messNormal, &mnptr);
         }
         if (!bSpoof)
-	{
-	  safe_chr(' ', *messNormal, &mnptr);
-	  safe_str(Name(user->who), *messNormal, &mnptr);
-	  safe_str(Name(user->who), *messNoComtitle, &mncptr);
+        {
+            safe_chr(' ', *messNormal, &mnptr);
+            safe_str(Name(user->who), *messNormal, &mnptr);
+            safe_str(Name(user->who), *messNoComtitle, &mncptr);
         }
     }
     else
     {
         safe_str(Name(user->who), *messNormal, &mnptr);
-	if(!bSpoof) safe_str(Name(user->who), *messNoComtitle, &mncptr);
+        if (!bSpoof)
+        {
+            safe_str(Name(user->who), *messNoComtitle, &mncptr);
+        }
     }
 
     if (':' == pPose[0])
     {
-	safe_chr(' ', *messNormal, &mnptr);
-	safe_str(pPose+1, *messNormal, &mnptr);
-	if(!bSpoof) {
-	  safe_chr(' ', *messNoComtitle, &mncptr);
-	  safe_str(pPose+1, *messNoComtitle, &mncptr);
-	}
+        safe_chr(' ', *messNormal, &mnptr);
+        safe_str(pPose+1, *messNormal, &mnptr);
+        if (!bSpoof)
+        {
+            safe_chr(' ', *messNoComtitle, &mncptr);
+            safe_str(pPose+1, *messNoComtitle, &mncptr);
+        }
     }
     else if (';' == pPose[0])
     {
         safe_str(pPose+1, *messNormal, &mnptr);
-	if(!bSpoof) safe_str(pPose+1, *messNoComtitle, &mncptr);
+        if (!bSpoof)
+        {
+            safe_str(pPose+1, *messNoComtitle, &mncptr);
+        }
     }
     else
     {
         safe_str(" says, \"", *messNormal, &mnptr);
         safe_str(pPose, *messNormal, &mnptr);
         safe_chr('"', *messNormal, &mnptr);
-	if(!bSpoof) {
-	  safe_str(" says, \"", *messNoComtitle, &mncptr);
-	  safe_str(pPose, *messNoComtitle, &mncptr);
-	  safe_chr('"', *messNoComtitle, &mncptr);
-	}
+        if (!bSpoof)
+        {
+            safe_str(" says, \"", *messNoComtitle, &mncptr);
+            safe_str(pPose, *messNoComtitle, &mncptr);
+            safe_chr('"', *messNoComtitle, &mncptr);
+        }
     }
     *mnptr='\0';
     if(!bSpoof)
@@ -955,11 +963,13 @@ void do_processcom(dbref player, char *arg1, char *arg2)
             giveto(ch->charge_who, ch->charge);
         }
 
-	char *messNormal, *messNoComtitle;
-	// BuildChannelMessage Allocates messNormal and messNoComtitle, sendchannelmessage free's them.
-	BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user, arg2,
-			    &messNormal, &messNoComtitle);
-	SendChannelMessage(ch, messNormal, messNoComtitle, 0);
+        char *messNormal, *messNoComtitle;
+
+        // BuildChannelMessage Allocates messNormal and messNoComtitle, sendchannelmessage free's them.
+        //
+        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user, arg2,
+            &messNormal, &messNoComtitle);
+        SendChannelMessage(ch, messNormal, messNoComtitle, 0);
     }
 }
 
@@ -976,15 +986,27 @@ void SendChannelMessage(struct channel *ch, char *msgNormal, char *msgNoComtitle
             if (do_test_access(user->who, CHANNEL_RECEIVE, ch))
             {
                 if ((Typeof(user->who) == TYPE_PLAYER) && Connected(user->who)) 
-		  if((user->ComTitleStatus == 1) || bSpoof)
-		    raw_notify(user->who, msgNormal);
-		  else
-                    raw_notify(user->who, msgNoComtitle);
+                {
+                    if ((user->ComTitleStatus == 1) || bSpoof)
+                    {
+                        raw_notify(user->who, msgNormal);
+                    }
+                    else
+                    {
+                        raw_notify(user->who, msgNoComtitle);
+                    }
+                }
                 else
-		  if((user->ComTitleStatus == 1) || bSpoof)
-                    notify(user->who, msgNormal);
-		  else
-		    notify(user->who, msgNoComtitle);
+                {
+                    if ((user->ComTitleStatus == 1) || bSpoof)
+                    {
+                        notify(user->who, msgNormal);
+                    }
+                    else
+                    {
+                        notify(user->who, msgNoComtitle);
+                    }
+                }
             }
         }
     }
@@ -1029,7 +1051,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         
         user->who = player;
         user->bUserIsOn = 1;
-	user->ComTitleStatus=1;
+        user->ComTitleStatus = 1;
 
         user->title = StringClone("");
         
@@ -1056,7 +1078,7 @@ void do_joinchannel(dbref player, struct channel *ch)
     {
       char *messNormal, *messNoComtitle;
       BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-			  ":has joined this channel.", &messNormal, &messNoComtitle);
+          ":has joined this channel.", &messNormal, &messNoComtitle);
       SendChannelMessage(ch, messNormal, messNoComtitle, 0);
     }
 }
@@ -1069,7 +1091,7 @@ void do_leavechannel(dbref player, struct channel *ch)
     { 
       char *messNormal, *messNoComtitle;
       BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-			  ":has left this channel.", &messNormal, &messNoComtitle);
+          ":has left this channel.", &messNormal, &messNoComtitle);
       SendChannelMessage(ch, messNormal, messNoComtitle, 0);
     }
     user->bUserIsOn = 0;
@@ -1419,10 +1441,10 @@ void do_delcomchannel(dbref player, char *channel)
                 do_comdisconnectchannel(player, channel);
                 if (user->bUserIsOn && (!Dark(player)))
                 {
-		  char *messNormal, *messNoComtitle;
-		  BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-				      ":has left this channel.", &messNormal, &messNoComtitle);
-		  SendChannelMessage(ch, messNormal, messNoComtitle, 0);
+                  char *messNormal, *messNoComtitle;
+                  BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
+                      ":has left this channel.", &messNormal, &messNoComtitle);
+                  SendChannelMessage(ch, messNormal, messNoComtitle, 0);
                 }
                 raw_notify(player, tprintf("You have left channel %s.", channel));
                 
@@ -1712,24 +1734,30 @@ void do_comtitle(dbref player, dbref cause, int key, char *arg1, char *arg2)
     {
         if (select_user(ch, player))
         {
-	  if(key == 1) {
-	    if((ch->type & CHANNEL_SPOOF) == 0) {
-	      raw_notify(player, tprintf("Comtitles are now off for channel %s",
-					 channel));
-	      do_setcomtitlestatus(player, ch, 0);
-	    } else {
-	      raw_notify(player, "You can not turn off comtitles on that channel.");	    
-	    }
-	  } else if (key == 2) {
-	    raw_notify(player, tprintf("Comtitles are now on for channel %s",
-				       channel));
-	    do_setcomtitlestatus(player, ch, 1);
-	  } else {
-	    char *pValidatedTitleValue = RestrictTitleValue(arg2);
-	    do_setnewtitle(player, ch, pValidatedTitleValue);
-	    raw_notify(player, tprintf("Title set to '%s' on channel %s.",
-				       pValidatedTitleValue, channel));
-	  }
+            if (key == 1)
+            {
+                if ((ch->type & CHANNEL_SPOOF) == 0)
+                {
+                    raw_notify(player, tprintf("Comtitles are now off for channel %s", channel));
+                    do_setcomtitlestatus(player, ch, 0);
+                }
+                else
+                {
+                    raw_notify(player, "You can not turn off comtitles on that channel.");    
+                }
+            }
+            else if (key == 2)
+            {
+                raw_notify(player, tprintf("Comtitles are now on for channel %s", channel));
+                do_setcomtitlestatus(player, ch, 1);
+            }
+            else
+            {
+                char *pValidatedTitleValue = RestrictTitleValue(arg2);
+                do_setnewtitle(player, ch, pValidatedTitleValue);
+                raw_notify(player, tprintf("Title set to '%s' on channel %s.",
+                    pValidatedTitleValue, channel));
+            }
         }
     }
     else
@@ -1930,8 +1958,8 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
     {
       char *messNormal, *messNoComtitle;
       BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
-			  ch->header, cu, ":has disconnected.", &messNormal,
-			  &messNoComtitle);
+          ch->header, cu, ":has disconnected.", &messNormal,
+          &messNoComtitle);
       SendChannelMessage(ch, messNormal, messNoComtitle, 0);
     }
 }
@@ -1949,8 +1977,8 @@ void do_comconnectraw_notify(dbref player, char *chan)
     {
       char *messNormal, *messNoComtitle;
       BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
-			  ch->header, cu, ":has disconnected.", &messNormal,
-			  &messNoComtitle);
+          ch->header, cu, ":has disconnected.", &messNormal,
+          &messNoComtitle);
       SendChannelMessage(ch, messNormal, messNoComtitle, 0);
     }
 }
@@ -2429,9 +2457,9 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     char *mess1, *mess1nct;
     char *mess2, *mess2nct;
     BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
-			ch->header, user, ":boots", &mess1, &mess1nct);
+        ch->header, user, ":boots", &mess1, &mess1nct);
     BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
-			ch->header, user, ":off the channel.", &mess2, &mess2nct);
+        ch->header, user, ":off the channel.", &mess2, &mess2nct);
     char *messNormal=alloc_lbuf("do_chboot.messnormal");
     char *messNoComtitle=alloc_lbuf("do_chboot.messnocomtitle");
     char *mnp=messNormal;
