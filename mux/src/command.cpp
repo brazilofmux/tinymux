@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.51 2002-07-31 17:02:31 jake Exp $
+// $Id: command.cpp,v 1.52 2002-08-01 15:05:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -234,6 +234,7 @@ NAMETAB hook_sw[] =
     {"after",           3,     CA_GOD,  HOOK_AFTER},
     {"before",          3,     CA_GOD,  HOOK_BEFORE},
     {"clear",           3,     CA_GOD,  HOOK_CLEAR|SW_MULTIPLE},
+    {"fail",            1,     CA_GOD,  HOOK_AFAIL},
     {"ignore",          3,     CA_GOD,  HOOK_IGNORE},
     {"igswitch",        3,     CA_GOD,  HOOK_IGSWITCH},
     {"list",            3,     CA_GOD,  HOOK_LIST},
@@ -1552,6 +1553,45 @@ int higcheck (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *p
     return hval;
 }
 
+void hook_fail (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *pCommand)
+{
+    if(  Good_obj(mudconf.hook_obj)
+        && !Going(mudconf.hook_obj))
+    {
+        char *s_uselock = alloc_sbuf("command_hook.higcheck");
+        memset(s_uselock, '\0', sizeof(s_uselock));
+        switch(pCommand[0])
+        {
+        case '"' :  sprintf(s_uselock, "AF_%s", "say");
+            break;
+        case ':' :  
+        case ';' :  sprintf(s_uselock, "AF_%s", "pose");
+            break;
+        case '\\':  sprintf(s_uselock, "AF_%s", "@emit");
+            break;
+        case '#' :  sprintf(s_uselock, "AF_%s", "@force");
+            break;
+        case '&' :  sprintf(s_uselock, "AF_%s", "@set");
+            break;
+        case '-' :  sprintf(s_uselock, "AF_%s", "@mail");
+            break;
+        case '~' :  sprintf(s_uselock, "AF_%s", "@mail");
+            break;
+        default  :  sprintf(s_uselock, "AF_%s", pCommand);
+            break;
+        }
+        //dx_tmp = s_uselock;
+        //    while (*dx_tmp) {
+        //        if ( !isalnum(*dx_tmp) && *dx_tmp != '_' && *dx_tmp != '@' && *dx_tmp != '-' ) 
+        //            *dx_tmp = 'X';
+        //        dx_tmp++;
+        //    }
+        ATTR *hk_ap2 = atr_str(s_uselock);
+        BOOL hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, FALSE);
+        free_sbuf(s_uselock);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // process_command: Execute a command.
 //
@@ -1713,7 +1753,14 @@ char *process_command
         {
             if (cval == 1 || hval == 1)
             {
-                notify(executor, NOPERM_MESSAGE);
+                if (prefix_cmds[i]->hookmask & HOOK_AFAIL)
+                {
+                    hook_fail(executor, caller, enactor, prefix_cmds[i], pCommand);
+                }
+                else
+                {
+                    notify(executor, NOPERM_MESSAGE);
+                }
                 return preserve_cmd;
             }  
             process_cmdent(prefix_cmds[i], NULL, executor, caller, enactor,
@@ -1822,7 +1869,14 @@ char *process_command
             {
                 if (cval || hval)
                 {
-                    notify_quiet(executor, NOPERM_MESSAGE);
+                    if (goto_cmdp->hookmask & HOOK_AFAIL)
+                    {
+                        hook_fail(executor, caller, enactor, goto_cmdp, "goto");
+                    }
+                    else
+                    {
+                        notify(executor, NOPERM_MESSAGE);
+                    }
                     return preserve_cmd;
                 }
                 move_exit(executor, exit, FALSE, "You can't go that way.", 0);
@@ -1931,7 +1985,14 @@ char *process_command
         {
             if (cval == 1 || hval == 1)
             {
-                notify(executor, NOPERM_MESSAGE);
+                if (cmdp->hookmask & HOOK_AFAIL)
+                {
+                    hook_fail(executor, caller, enactor, cmdp, LowerCaseCommand);
+                }
+                else
+                {
+                    notify(executor, NOPERM_MESSAGE);
+                }
                 return preserve_cmd;
             }  
             if (mudconf.space_compress && (cmdp->callseq & CS_NOSQUISH))
@@ -2014,7 +2075,7 @@ char *process_command
                 {
                     cval = zonecmdtest(executor, "leave");
                 }
-                cmdp = (CMDENT *)hashfindLEN((char *)"leave", 5, &mudstate.command_htab);
+                cmdp = (CMDENT *)hashfindLEN((char *)"leave", strlen("leave"), &mudstate.command_htab);
                 if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
                 {
                     hval = higcheck(executor, caller, enactor, cmdp, "leave");
@@ -2023,7 +2084,14 @@ char *process_command
                 {
                     if (cval == 1 || hval == 1)
                     {
-                        notify(executor, NOPERM_MESSAGE);
+                        if (cmdp->hookmask & HOOK_AFAIL)
+                        {
+                            hook_fail(executor, caller, enactor, cmdp, "leave");
+                        }
+                        else
+                        {
+                            notify(executor, NOPERM_MESSAGE);
+                        }
                         return preserve_cmd;
                     }  
                     do_leave(executor, caller, executor, 0);
@@ -2066,7 +2134,7 @@ char *process_command
                     {
                         cval = zonecmdtest(executor, "enter");
                     }
-                    cmdp = (CMDENT *)hashfindLEN((char *)"enter", 5, &mudstate.command_htab);
+                    cmdp = (CMDENT *)hashfindLEN((char *)"enter", strlen("enter"), &mudstate.command_htab);
                     if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
                     {
                         hval = higcheck(executor, caller, enactor, cmdp, "enter");
@@ -2075,7 +2143,14 @@ char *process_command
                     {
                         if (cval == 1 || hval == 1)
                         {
-                            notify(executor, NOPERM_MESSAGE);
+                            if (cmdp->hookmask & HOOK_AFAIL)
+                            {
+                                hook_fail(executor, caller, enactor, cmdp, "enter");
+                            }
+                            else
+                            {
+                                notify(executor, NOPERM_MESSAGE);
+                            }
                             return preserve_cmd;
                         }  
                         do_enter_internal(executor, exit, FALSE);

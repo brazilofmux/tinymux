@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.15 2002-07-29 23:53:42 jake Exp $
+// $Id: conf.cpp,v 1.16 2002-08-01 15:05:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -1385,13 +1385,13 @@ CF_HAND(cf_raw_helpfile)
 //
 NAMETAB hook_names[] =
 {
-    {"before",  3, 0, HOOK_BEFORE},
-    {"after",   3, 0, HOOK_AFTER},
-    {"permit",  3, 0, HOOK_PERMIT},
-    {"ignore",  3, 0, HOOK_IGNORE},
-    {"bfail",   3, 0, HOOK_IGSWITCH},
-    {"afail",   3, 0, HOOK_AFAIL},
-    {NULL,      0, 0, 0}
+    {"after",      3, 0, HOOK_AFTER},
+    {"before",     3, 0, HOOK_BEFORE},
+    {"fail",       3, 0, HOOK_AFAIL},
+    {"ignore",     3, 0, HOOK_IGNORE},
+    {"igswitch",   3, 0, HOOK_IGSWITCH},
+    {"permit",     3, 0, HOOK_PERMIT},
+    {NULL,         0, 0, 0}
 };
 
 CF_HAND(cf_hook)
