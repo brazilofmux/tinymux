@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.11 2004-07-24 05:40:15 sdennis Exp $
+// $Id: timer.cpp,v 1.12 2004-10-30 22:21:01 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -359,7 +359,10 @@ bool CTaskHeap::Grow(void)
 
 PTASK_RECORD CTaskHeap::PeekAtTopmost(void)
 {
-    if (m_nCurrent <= 0) return NULL;
+    if (m_nCurrent <= 0)
+    {
+        return NULL;
+    }
     return m_pHeap[0];
 }
 
@@ -373,7 +376,9 @@ void CTaskHeap::CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer)
     for (int i = 0; i < m_nCurrent; i++)
     {
         PTASK_RECORD p = m_pHeap[i];
-        if ((p->fpTask == fpTask) && (p->arg_voidptr == arg_voidptr) && (p->arg_Integer == arg_Integer))
+        if (  p->fpTask == fpTask
+           && p->arg_voidptr == arg_voidptr
+           && p->arg_Integer == arg_Integer)
         {
             p->fpTask = NULL;
         }

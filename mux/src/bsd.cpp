@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.41 2004-09-24 17:25:07 sdennis Exp $
+// $Id: bsd.cpp,v 1.42 2004-10-30 22:21:01 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -72,6 +72,7 @@ OVERLAPPED lpo_welcome; // special to indicate a player has -just- connected.
 OVERLAPPED lpo_wakeup;  // special to indicate that the loop should wakeup and return.
 void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
 CRITICAL_SECTION csDescriptorList;      // for thread synchronization
+extern void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
 
 typedef struct
 {
@@ -1633,12 +1634,11 @@ void shutdownsock(DESC *d, int reason)
         reason = R_QUIT;
     }
 
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+
     if (d->flags & DS_CONNECTED)
     {
-
-        CLinearTimeAbsolute ltaNow;
-        ltaNow.GetUTC();
-
         // Added by D.Piper (del@doofer.org) 1997 & 2000-APR
         //
 
@@ -1808,32 +1808,37 @@ void shutdownsock(DESC *d, int reason)
 #ifdef WIN32
         if (platform == VER_PLATFORM_WIN32_NT)
         {
-            // don't close down the socket twice
+            // Don't close down the socket twice.
             //
-            if (d->bConnectionShutdown)
-                return;
-
-            // make sure we don't try to initiate or process any outstanding IOs
-            //
-            d->bConnectionShutdown = true;
-            d->bConnectionDropped = true;
-
-            // cancel any pending reads or writes on this socket
-            //
-            if (!fpCancelIo((HANDLE) d->descriptor))
+            if (!d->bConnectionShutdown)
             {
-                Log.tinyprintf("Error %ld on CancelIo" ENDLINE, GetLastError());
-            }
+                // Make sure we don't try to initiate or process any
+                // outstanding IOs
+                //
+                d->bConnectionShutdown = true;
 
-            // post a notification that it is safe to free the descriptor
-            // we can't free the descriptor here (below) as there may be some
-            // queued completed IOs that will crash when they refer to a descriptor
-            // (d) that has been freed.
-            //
-            if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted))
-            {
-                Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
+                // Protect removing the descriptor from our linked list from
+                // any interference from the listening thread.
+                //
+                EnterCriticalSection(&csDescriptorList);
+                *d->prev = d->next;
+                if (d->next)
+                {
+                    d->next->prev = d->prev;
+                }
+                LeaveCriticalSection(&csDescriptorList);
+
+                // This descriptor may hang around awhile, clear out the links.
+                //
+                d->next = 0;
+                d->prev = 0;
+
+                // Close the connection in 5 seconds.
+                //
+                scheduler.DeferTask(ltaNow + FACTOR_100NS_PER_SECOND*5,
+                    PRIORITY_SYSTEM, Task_DeferredClose, d, 0);
             }
+            return;
         }
 #endif
 
@@ -1844,37 +1849,22 @@ void shutdownsock(DESC *d, int reason)
         }
         d->descriptor = INVALID_SOCKET;
 
-#ifdef WIN32
-        // protect removing the descriptor from our linked list from
-        // any interference from the listening thread
-        //
-        if (platform == VER_PLATFORM_WIN32_NT)
-            EnterCriticalSection(&csDescriptorList);
-#endif // WIN32
-
         *d->prev = d->next;
         if (d->next)
+        {
             d->next->prev = d->prev;
+        }
 
         // This descriptor may hang around awhile, clear out the links.
         //
         d->next = 0;
         d->prev = 0;
 
-#ifdef WIN32
-        // safe to allow the listening thread to continue now
+        // If we don't have queued IOs, then we can free these, now.
         //
-        if (platform == VER_PLATFORM_WIN32_NT)
-            LeaveCriticalSection(&csDescriptorList);
-        else
-#endif // WIN32
-        {
-            // If we don't have queued IOs, then we can free these, now.
-            //
-            freeqs(d);
-            free_desc(d);
-            ndescriptors--;
-        }
+        freeqs(d);
+        free_desc(d);
+        ndescriptors--;
     }
 }
 
@@ -1884,7 +1874,9 @@ void shutdownsock_brief(DESC *d)
     // don't close down the socket twice
     //
     if (d->bConnectionShutdown)
+    {
         return;
+    }
 
     // make sure we don't try to initiate or process any outstanding IOs
     //
@@ -1913,7 +1905,9 @@ void shutdownsock_brief(DESC *d)
 
     *d->prev = d->next;
     if (d->next)
+    {
         d->next->prev = d->prev;
+    }
 
     d->next = 0;
     d->prev = 0;
@@ -3290,6 +3284,40 @@ void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer)
     }
 }
 
+void Task_DeferredClose(void *arg_voidptr, int arg_Integer)
+{
+    DESC *d = (DESC *)arg_voidptr;
+    if (d)
+    {
+        d->bConnectionDropped = true;
+
+        // Cancel any pending reads or writes on this socket
+        //
+        if (!fpCancelIo((HANDLE) d->descriptor))
+        {
+            Log.tinyprintf("Error %ld on CancelIo" ENDLINE, GetLastError());
+        }
+
+        shutdown(d->descriptor, SD_BOTH);
+        if (SOCKET_CLOSE(d->descriptor) == 0)
+        {
+            DebugTotalSockets--;
+        }
+        d->descriptor = INVALID_SOCKET;
+
+        // Post a notification that it is safe to free the descriptor
+        // we can't free the descriptor here (below) as there may be some
+        // queued completed IOs that will crash when they refer to a descriptor
+        // (d) that has been freed.
+        //
+        if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted))
+        {
+            Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
+        }
+    }
+}
+
+
 /*
 This is called from within shovechars when it needs to see if any IOs have
 completed for the Windows NT version.
@@ -3425,11 +3453,19 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 //
                 DWORD nWritten;
                 b = WriteFile((HANDLE) d->descriptor, d->output_buffer,
-                              nBytes, &nWritten, &d->OutboundOverlapped);
+                    nBytes, &nWritten, &d->OutboundOverlapped);
 
             } while (b);
 
-            if (bNothingToWrite) continue;
+            if (bNothingToWrite)
+            {
+                if (d->bConnectionShutdown)
+                {
+                    scheduler.CancelTask(Task_DeferredClose, d, 0);
+                    scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_DeferredClose, d, 0);
+                }
+                continue;
+            }
 
             d->bWritePending = true;
             DWORD dwLastError = GetLastError();

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.26 2004-08-16 05:14:07 sdennis Exp $
+// $Id: cque.cpp,v 1.27 2004-10-30 22:21:01 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1046,7 +1046,8 @@ dbref Show_Player;
 int Show_bFirstLine;
 
 #ifdef WIN32
-void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
+extern void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
+extern void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
 #endif
 void dispatch_DatabaseDump(void *pUnused, int iUnused);
 void dispatch_FreeListReconstruction(void *pUnused, int iUnused);
@@ -1090,6 +1091,10 @@ int CallBack_ShowDispatches(PTASK_RECORD p)
     else if (p->fpTask == Task_FreeDescriptor)
     {
         notify(Show_Player, tprintf("[%d]Delayed descriptor deallocation", ltd.ReturnSeconds()));
+    }
+    else if (p->fpTask == Task_DeferredClose)
+    {
+        notify(Show_Player, tprintf("[%d]Delayed socket close", ltd.ReturnSeconds()));
     }
 #endif
     else
