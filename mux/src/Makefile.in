@@ -13,7 +13,7 @@ ifdef FORCE_C_COMPILER
 CXX = @CC@
 else
 CXX = @CXX@
-.endif
+endif
 #CXXCPP = @CXXCPP@	# This is broken in autoconf.  Sigh.
 CXXCPP = $(CXX) -E
 @def_brief_lib_list@
