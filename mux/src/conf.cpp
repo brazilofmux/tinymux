@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.5 2003-02-03 19:38:41 sdennis Exp $
+// $Id: conf.cpp,v 1.6 2003-02-03 20:18:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -399,7 +399,7 @@ CF_HAND(cf_int_array)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t\n\r");
-    while ((p = Tiny_StrTokParse(&tts)) != NULL)
+    while ((p = mux_strtok_parse(&tts)) != NULL)
     {
         int unused;
         if (is_integer(p, &unused))
@@ -598,8 +598,8 @@ CF_HAND(cf_alias)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t=,");
-    char *alias = Tiny_StrTokParse(&tts);
-    char *orig = Tiny_StrTokParse(&tts);
+    char *alias = mux_strtok_parse(&tts);
+    char *orig = mux_strtok_parse(&tts);
 
     if (orig)
     {
@@ -629,8 +629,8 @@ CF_HAND(cf_flagalias)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t=,");
-    char *alias = Tiny_StrTokParse(&tts);
-    char *orig = Tiny_StrTokParse(&tts);
+    char *alias = mux_strtok_parse(&tts);
+    char *orig = mux_strtok_parse(&tts);
 
     BOOL success = FALSE;
     int  nName;
@@ -662,8 +662,8 @@ CF_HAND(cf_poweralias)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t=,");
-    char *alias = Tiny_StrTokParse(&tts);
-    char *orig = Tiny_StrTokParse(&tts);
+    char *alias = mux_strtok_parse(&tts);
+    char *orig = mux_strtok_parse(&tts);
 
     BOOL success = FALSE;
     int  nName;
@@ -700,7 +700,7 @@ CF_HAND(cf_or_in_bits)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t");
-    char *sp = Tiny_StrTokParse(&tts);
+    char *sp = mux_strtok_parse(&tts);
     while (sp != NULL)
     {
         // Set the appropriate bit.
@@ -719,7 +719,7 @@ CF_HAND(cf_or_in_bits)
 
         // Get the next token.
         //
-        sp = Tiny_StrTokParse(&tts);
+        sp = mux_strtok_parse(&tts);
     }
     return cf_status_from_succfail(player, cmd, success, failure);
 }
@@ -738,7 +738,7 @@ CF_HAND(cf_modify_bits)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t");
-    char *sp = Tiny_StrTokParse(&tts);
+    char *sp = mux_strtok_parse(&tts);
     while (sp != NULL)
     {
         // Check for negation.
@@ -769,7 +769,7 @@ CF_HAND(cf_modify_bits)
 
         // Get the next token.
         //
-        sp = Tiny_StrTokParse(&tts);
+        sp = mux_strtok_parse(&tts);
     }
     return cf_status_from_succfail(player, cmd, success, failure);
 }
@@ -789,7 +789,7 @@ CF_HAND(cf_set_bits)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t");
-    char *sp = Tiny_StrTokParse(&tts);
+    char *sp = mux_strtok_parse(&tts);
     while (sp != NULL)
     {
         // Set the appropriate bit.
@@ -808,7 +808,7 @@ CF_HAND(cf_set_bits)
 
         // Get the next token.
         //
-        sp = Tiny_StrTokParse(&tts);
+        sp = mux_strtok_parse(&tts);
     }
     return cf_status_from_succfail(player, cmd, success, failure);
 }
@@ -826,7 +826,7 @@ CF_HAND(cf_set_flags)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t");
-    char *sp = Tiny_StrTokParse(&tts);
+    char *sp = mux_strtok_parse(&tts);
     FLAGSET *fset = (FLAGSET *) vp;
 
     while (sp != NULL)
@@ -871,7 +871,7 @@ CF_HAND(cf_set_flags)
 
         // Get the next token
         //
-        sp = Tiny_StrTokParse(&tts);
+        sp = mux_strtok_parse(&tts);
     }
     if ((success == 0) && (failure == 0))
     {
@@ -1166,11 +1166,11 @@ CF_HAND(cf_site)
         TINY_STRTOK_STATE tts;
         Tiny_StrTokString(&tts, str);
         Tiny_StrTokControl(&tts, " \t=,");
-        addr_txt = Tiny_StrTokParse(&tts);
+        addr_txt = mux_strtok_parse(&tts);
         mask_txt = NULL;
         if (addr_txt)
         {
-            mask_txt = Tiny_StrTokParse(&tts);
+            mask_txt = mux_strtok_parse(&tts);
         }
         if (!addr_txt || !*addr_txt || !mask_txt || !*mask_txt)
         {
@@ -1330,8 +1330,8 @@ int add_helpfile(dbref player, char *cmd, char *str, BOOL bRaw)
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t\n\r");
 
-    char *pCmdName = Tiny_StrTokParse(&tts);
-    char *pBase = Tiny_StrTokParse(&tts);
+    char *pCmdName = mux_strtok_parse(&tts);
+    char *pBase = mux_strtok_parse(&tts);
     if (pBase == NULL)
     {
         cf_log_syntax(player, cmd, "Missing path for helpfile %s", pCmdName);
@@ -1449,7 +1449,7 @@ CF_HAND(cf_hook)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, playbuff);
     Tiny_StrTokControl(&tts, " \t");
-    hookcmd = Tiny_StrTokParse(&tts);
+    hookcmd = mux_strtok_parse(&tts);
     if (hookcmd != NULL)
     {
        cmdp = (CMDENT *)hashfindLEN(hookcmd, strlen(hookcmd), &mudstate.command_htab);
@@ -1465,7 +1465,7 @@ CF_HAND(cf_hook)
 
     *vp = cmdp->hookmask;
     strncpy(playbuff, str, 200);
-    hookptr = Tiny_StrTokParse(&tts);
+    hookptr = mux_strtok_parse(&tts);
     while (hookptr != NULL)
     {
        if (*hookptr == '!' && *(hookptr + 1))
@@ -1486,7 +1486,7 @@ CF_HAND(cf_hook)
              *vp = *vp | hookflg;
           }
        }
-       hookptr = Tiny_StrTokParse(&tts);
+       hookptr = mux_strtok_parse(&tts);
     }
     cmdp->hookmask = *vp;
     return retval;

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.17 2003-02-03 20:07:23 sdennis Exp $
+// $Id: stringutil.cpp,v 1.18 2003-02-03 20:18:18 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2886,16 +2886,16 @@ BOOL is_real(char *str)
     return ParseFloat(&pfr, str);
 }
 
-// Tiny_StrTokString, Tiny_StrTokControl, Tiny_StrTokParse.
+// Tiny_StrTokString, Tiny_StrTokControl, mux_strtok_parse.
 //
 // These three functions work together to replace the functionality of the
 // strtok() C runtime library function. Call Tiny_StrTokString() first with
 // the string to parse, then Tiny_StrTokControl() with the control
-// characters, and finally Tiny_StrTokParse() to parse out the tokens.
+// characters, and finally mux_strtok_parse() to parse out the tokens.
 //
 // You may call Tiny_StrTokControl() to change the set of control characters
-// between Tiny_StrTokParse() calls, however keep in mind that the parsing
-// may not occur how you intend it to as Tiny_StrTokParse() does not
+// between mux_strtok_parse() calls, however keep in mind that the parsing
+// may not occur how you intend it to as mux_strtok_parse() does not
 // consume -all- of the controlling delimiters that seperate two tokens.
 // It consumes only the first one.
 //
@@ -2929,7 +2929,7 @@ void Tiny_StrTokControl(TINY_STRTOK_STATE *tts, char *pControl)
     }
 }
 
-char *Tiny_StrTokParseLEN(TINY_STRTOK_STATE *tts, int *pnLen)
+char *mux_strtok_parseLEN(TINY_STRTOK_STATE *tts, int *pnLen)
 {
     *pnLen = 0;
     if (!tts)
@@ -2991,10 +2991,10 @@ char *Tiny_StrTokParseLEN(TINY_STRTOK_STATE *tts, int *pnLen)
     }
 }
 
-char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts)
+char *mux_strtok_parse(TINY_STRTOK_STATE *tts)
 {
     int nLen;
-    char *p = Tiny_StrTokParseLEN(tts, &nLen);
+    char *p = mux_strtok_parseLEN(tts, &nLen);
     if (p)
     {
         p[nLen] = '\0';
@@ -3016,9 +3016,9 @@ char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, pString);
     Tiny_StrTokControl(&tts, pSetToRemove);
-    for ( p = Tiny_StrTokParseLEN(&tts, &nLen);
+    for ( p = mux_strtok_parseLEN(&tts, &nLen);
           p && nLeft;
-          p = Tiny_StrTokParseLEN(&tts, &nLen))
+          p = mux_strtok_parseLEN(&tts, &nLen))
     {
         if (nLeft < nLen)
         {

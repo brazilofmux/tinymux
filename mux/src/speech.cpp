@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
+// $Id: speech.cpp,v 1.4 2003-02-03 20:18:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -630,7 +630,7 @@ void do_page
         Tiny_StrTokString(&tts, arg1);
         Tiny_StrTokControl(&tts, ", ");
         char *p;
-        for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
+        for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
         {
             dbref target = lookup_player(executor,p, TRUE);
             if (target != NOTHING)
@@ -656,7 +656,7 @@ void do_page
         Tiny_StrTokString(&tts, pLastPage);
         Tiny_StrTokControl(&tts, " ");
         char *p;
-        for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
+        for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
         {
             dbref target = mux_atol(p);
             if (  Good_obj(target)
@@ -1253,7 +1253,7 @@ void do_pemit_list
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, list);
     Tiny_StrTokControl(&tts, " ");
-    for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
+    for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
     {
         do_pemit_single(player, key, bDoContents, pemit_flags, p, chPoseType,
             message);

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.8 2003-02-03 15:00:33 sdennis Exp $
+// $Id: db.cpp,v 1.9 2003-02-03 20:18:18 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -710,7 +710,7 @@ void do_attribute
         TINY_STRTOK_STATE tts;
         Tiny_StrTokString(&tts, value);
         Tiny_StrTokControl(&tts, " ");
-        sp = Tiny_StrTokParse(&tts);
+        sp = mux_strtok_parse(&tts);
         success = FALSE;
         while (sp != NULL)
         {
@@ -741,7 +741,7 @@ void do_attribute
 
             // Get the next token.
             //
-            sp = Tiny_StrTokParse(&tts);
+            sp = mux_strtok_parse(&tts);
         }
         if (success && !Quiet(executor))
             notify(executor, "Attribute access changed.");
