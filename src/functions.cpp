@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.42 2000-11-12 04:39:07 sdennis Exp $
+// $Id: functions.cpp,v 1.43 2000-11-12 08:25:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2542,7 +2542,7 @@ FUNCTION(fun_trunc)
 #endif // HAVE_IEEE_FP_FORMAT
 }
 
-FUNCTION(fun_div)
+FUNCTION(fun_idiv)
 {
     INT64 bot, top;
 
@@ -6322,7 +6322,6 @@ FUN flist[] =
     {"DIE",      fun_die,      2,  0,          CA_PUBLIC},
     {"DIST2D",   fun_dist2d,   4,  0,          CA_PUBLIC},
     {"DIST3D",   fun_dist3d,   6,  0,          CA_PUBLIC},
-    {"DIV",      fun_div,      2,  0,          CA_PUBLIC},
     {"DOING",    fun_doing,    1,  0,          CA_PUBLIC},
     {"E",        fun_e,        0,  0,          CA_PUBLIC},
     {"EDEFAULT", fun_edefault, 2,  FN_NO_EVAL, CA_PUBLIC},
@@ -6361,7 +6360,7 @@ FUN flist[] =
     {"HASTYPE",  fun_hastype,  2,  0,          CA_PUBLIC},
     {"HOME",     fun_home,     1,  0,          CA_PUBLIC},
     {"IADD",     fun_iadd,     0,  FN_VARARGS, CA_PUBLIC},
-    {"IDIV",     fun_div,      2,  0,          CA_PUBLIC},
+    {"IDIV",     fun_idiv,     2,  0,          CA_PUBLIC},
     {"IDLE",     fun_idle,     1,  0,          CA_PUBLIC},
     {"IFELSE",   fun_ifelse,   3,  FN_NO_EVAL, CA_PUBLIC},
     {"IMUL",     fun_imul,     0,  FN_VARARGS, CA_PUBLIC},
