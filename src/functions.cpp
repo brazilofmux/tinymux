@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.151 2002-02-12 23:52:30 sdennis Exp $
+// $Id: functions.cpp,v 1.152 2002-02-12 23:54:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -151,6 +151,7 @@ XFUNCTION(fun_art);
 XFUNCTION(fun_t);
 XFUNCTION(fun_dumping);
 XFUNCTION(fun_lrooms);
+XFUNCTION(fun_hasquota);
 
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
