@@ -12199,10 +12199,10 @@ VERSION()
 
   Example:
      > version
-     TinyMUX Beta version 2.0 patchlevel 0 #3
-     Build date: Thu Dec  5 10:10:07 EST 1991
+     MUX 2.2.0.44 #1 [ALPHA]
+     Build date: Tue Oct  1 11:47:16 PDT 2002
      > say version()
-     You say "TinyMUX Beta version 2.0 patchlevel 0 #3"
+     You say "MUX 2.2.0.44 #1 [ALPHA]"
 
   Related Topics:
 
