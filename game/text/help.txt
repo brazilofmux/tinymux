@@ -11480,10 +11480,10 @@ VERSION()
 
   Example:
      > version
-     MUX 2.0.36.331 #1 [2002-OCT-01]
-     Build date: Tue Oct  1 00:41:13 PDT 2002
+     MUX 2.1.18.60 #1 [2002-OCT-01]
+     Build date: Tue Oct  1 11:00:34 PDT 2002
      > say version()
-     You say "MUX 2.0.36.331 #1 [2002-OCT-01]"
+     You say "MUX 2.1.18.60 #1 [2002-OCT-01]"
 
   Related Topics:
 
