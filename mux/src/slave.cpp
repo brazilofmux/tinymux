@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.8 2003-03-03 17:19:01 sdennis Exp $
+// $Id: slave.cpp,v 1.9 2003-04-01 18:46:49 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -203,11 +203,6 @@ int query(char *ip, char *orig_arg)
     return 0;
 }
 
-RETSIGTYPE child_signal(int iSig)
-{
-    signal(SIGCHLD, CAST_SIGNAL_FUNC child_signal);
-}
-
 RETSIGTYPE alarm_signal(int iSig)
 {
     struct itimerval itime;
@@ -226,7 +221,30 @@ RETSIGTYPE alarm_signal(int iSig)
 }
 
 #define MAX_CHILDREN 20
-int nChildren = 0;
+volatile int nChildrenStarted = 0;
+volatile int nChildrenEndedSIGCHLD = 0;
+volatile int nChildrenEndedMain = 0;
+
+RETSIGTYPE child_signal(int iSig)
+{
+    // Collect the children.
+    //
+#ifdef NEXT
+    while (wait3(NULL, WNOHANG, NULL) > 0)
+#else
+    while (waitpid(0, NULL, WNOHANG) > 0)
+#endif
+    {
+        int nChildren = nChildrenStarted - nChildrenEndedSIGCHLD
+            - nChildrenEndedMain;
+        if (0 < nChildren)
+        {
+            nChildrenEndedSIGCHLD++;
+        }
+    }
+
+    signal(SIGCHLD, CAST_SIGNAL_FUNC child_signal);
+}
 
 int main(int argc, char *argv[])
 {
@@ -292,20 +310,23 @@ int main(int argc, char *argv[])
         }
         if (child > 0)
         {
-            nChildren++;
+            nChildrenStarted++;
         }
 
-        // Collect any children.
+        int nChildren = nChildrenStarted - nChildrenEndedSIGCHLD
+            - nChildrenEndedMain;
+
+        // Collect the children.
         //
 #ifdef NEXT
-        while (wait3(NULL, (nChildren < MAX_CHILDREN)? WNOHANG : 0, NULL) > 0)
+        while (wait3(NULL, (nChildren < MAX_CHILDREN) ? WNOHANG : 0, NULL) > 0)
 #else
-        while (waitpid(0, NULL, (nChildren < MAX_CHILDREN) ? WNOHANG: 0) > 0)
+        while (waitpid(0, NULL, (nChildren < MAX_CHILDREN) ? WNOHANG : 0) > 0)
 #endif
         {
             if (0 < nChildren)
             {
-                nChildren--;
+                nChildrenEndedMain++;
             }
         }
     }
