@@ -1,5 +1,5 @@
 /* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.8 2001-06-05 02:08:56 sdennis Exp $ */
+/* $Id: attrs.h,v 1.9 2001-06-27 21:48:41 sdennis Exp $ */
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -61,7 +61,7 @@
 #define A_ODESC     37  /* Others describe message */
 #define A_RQUOTA    38  /* Relative object quota */
 #define A_ACONNECT  39  /* Actions run when player connects */
-#define A_ADISCONNECT   40  /* Actions run when player disconnectes */
+#define A_ADISCONNECT   40  /* Actions run when player disconnects */
 #define A_ALLOWANCE 41  /* Daily allowance, if diff from default */
 #define A_LOCK      42  /* Object lock */
 #define A_NAME      43  /* Object name */
@@ -157,9 +157,10 @@
 #define A_MAILSUB   207 /* The mail subject */
 #define A_MAILCURF  208 /* The current @mail folder */
 #define A_LSPEECH   209 /* Speechlocks */
-#define A_PROGCMD   210 /* Command for exectution by @prog */
+#define A_PROGCMD   210 /* Command for execution by @prog */
 #define A_MAILFLAGS 211 /* Flags for extended mail */
 #define A_DESTROYER 212 /* Who is destroying this object? */
+#define A_CREATED   218 // Date/time created
 #define A_VRML_URL  220 /* URL of the VRML scene for this object */
 #define A_HTDESC    221 /* HTML @desc */
 
@@ -168,7 +169,7 @@
 #define A_REASON    222 // Disconnect reason
 #ifdef GAME_DOOFERMUX
 #define A_REGINFO   223 // Registration Information
-#endif // GAME_DOOFERMUX
+#endif
 #define A_CONNINFO  224 // Connection info: (total connected time,
                         // longest connection last connection, total
                         // connections, time of logout.
