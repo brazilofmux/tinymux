@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.70 2002-08-31 01:59:50 jake Exp $
+// $Id: command.cpp,v 1.71 2002-09-01 16:31:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,6 +8,7 @@
 #include "config.h"
 #include "externs.h"
 
+#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
 #include "comsys.h"
@@ -644,6 +645,7 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@addcommand",  NULL,       CA_GOD,                                           0,           CS_TWO_ARG,           0, do_addcommand},
     {"@admin",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_admin},
     {"@alias",       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_alias},
+    {"@ansiname",    NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_ansiname},
     {"@attribute",   attrib_sw,  CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_attribute},
     {"@cboot",       cboot_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_chboot},
     {"@ccharge",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          1,           CS_TWO_ARG,           0, do_editchannel},
@@ -4038,6 +4040,65 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
 
    notify_all_from_inside(loc, executor, tprintf("%s types -=> %s", Name(executor), string));
    process_command(executor, caller, enactor, TRUE, string, (char **)NULL, 0);
+}
+
+// do_ansiname: set ansified name for something.
+// From RhostMUSH, used with permission.
+//
+void do_ansiname(dbref executor, dbref caller, dbref enactor, int key, int nfargs, char *name, char *instr)
+{
+    dbref thing = match_thing(executor, name);
+    if ( !(  Good_obj(thing)
+          && Controls(executor, thing)))
+    {
+        notify(executor, "Permission denied.");
+        return;
+    }
+
+    if (!*instr || !instr) 
+    {
+        notify(executor, "Ansi string cleared.");
+        atr_clr(thing, A_ANSINAME);
+    }
+    else
+    {
+        char *namebuff, *namebuffptr;
+        namebuffptr = namebuff = alloc_lbuf("do_ansiname.name");
+
+        if (isExit(thing)) 
+        {
+            for (const char *s = Name(thing); *s && (*s != ';'); s++)
+            {
+                safe_chr(*s, namebuff, &namebuffptr);
+            }
+        }
+        else
+        {
+            safe_str(Name(thing), namebuff, &namebuffptr);
+        }
+        *namebuffptr = '\0';
+
+        char *retbuff, *retbuffptr;
+        retbuffptr = retbuff = alloc_lbuf("do_ansiname.ret");
+        TinyExec(retbuff, &retbuffptr, executor, caller, enactor, 
+            EV_EVAL | EV_FCHECK, &instr, (char **)NULL, 0);
+
+        unsigned int n;
+        if (strcmp(strip_ansi(retbuff, &n), namebuff) != 0)
+        {
+            notify(executor, tprintf("String entered must match name of target, '%s'.", Name(thing)));
+            free_lbuf(retbuff);
+            free_lbuf(namebuff);
+            return;
+        }
+        else
+        {
+            notify(executor, tprintf("Ansi string entered for %s of '%s'.", namebuff, retbuff));
+            atr_add_raw(thing, A_ANSINAME, tprintf("%.3900s%s", retbuff, ANSI_NORMAL));
+        }
+        free_lbuf(retbuff);
+        free_lbuf(namebuff);
+    }
 }
 
 // do_hook: run softcode before or after running a hardcode command, or softcode access.

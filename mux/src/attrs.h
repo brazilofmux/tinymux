@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.5 2002-08-20 08:54:34 jake Exp $
+// $Id: attrs.h,v 1.6 2002-09-01 16:31:30 jake Exp $
 //
 
 #ifndef _ATTRS_H
@@ -155,8 +155,9 @@
 #define A_MATRIXDESC 148
 #endif // WOD_REALMS
 
+// 149 - 197 unused
 #define A_CMDCHECK  198 // For @icmd. (From RhostMUSH)
-
+#define A_ANSINAME  199 // Ansi colored name of object. (From RhostMUSH)
 #define A_LASTPAGE  200 /* Player last paged */
 #define A_MAIL      201 /* Message echoed to sender */
 #define A_AMAIL     202 /* Action taken when mail received */
@@ -191,15 +192,15 @@
 #define A_CONNINFO  224 // Connection info: (total connected time,
                         // longest connection last connection, total
                         // connections, time of logout.
-
+// 225 unused
 #define A_LOPEN     226 // Lock for controlling OPEN_OK locations
-
+// 227 - 239 unused
 #define A_IDLETMOUT 240 /* Idle message timeout */
 
 #define A_EXITFORMAT 241
 #define A_CONFORMAT  242
 #define A_NAMEFORMAT 243
-
+// 244 - 251 unused
 #define A_VLIST     252
 #define A_LIST      253
 #define A_STRUCT    254

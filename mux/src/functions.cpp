@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.84 2002-08-26 01:10:12 jake Exp $
+// $Id: functions.cpp,v 1.85 2002-09-01 16:31:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -5385,6 +5385,48 @@ FUNCTION(fun_mtime)
     }
 }
 
+// ---------------------------------------------------------------------------
+// fun_ansiname: Return the value of an object's Ansiname attribute.
+// ---------------------------------------------------------------------------
+char *valid_ansiname(dbref thing)
+{
+    char *ansiname = alloc_lbuf("fun_ansiname.valid");
+    const char *attrtext = atr_get_raw(thing, A_ANSINAME);
+    unsigned int n;
+    if (  !attrtext 
+       || !*attrtext
+       || strcmp(strip_ansi(ansiname, &n), Name(thing)) != 0)
+    {
+        strcpy(ansiname, Name(thing));
+    }
+    else
+    {
+        strcpy(ansiname, attrtext);
+    }
+    return ansiname;
+}
+
+FUNCTION(fun_ansiname)
+{
+    dbref thing;
+    if (nfargs == 1)
+    {
+        thing = match_thing_quiet(executor, fargs[0]);
+    }
+    else
+    {
+        thing = executor;
+    }
+    if (!Good_obj(thing))
+    {
+        safe_match_result(thing, buff, bufc);
+        return;
+    }
+    char *ansiname = valid_ansiname(thing);
+    safe_str(ansiname, buff, bufc);
+    free_lbuf(ansiname);
+}
+
 void ANSI_TransformTextWithTable
 (
     char *buff,
@@ -7894,6 +7936,7 @@ FUN flist[] =
     {"ANDBOOL",  fun_andbool,  MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"ANDFLAGS", fun_andflags, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ANSI",     fun_ansi,     MAX_ARG, 2,  MAX_ARG, 0, CA_PUBLIC},
+    {"ANSINAME", fun_ansiname, MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"APOSS",    fun_aposs,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ART",      fun_art,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ASIN",     fun_asin,     MAX_ARG, 1,  2,       0, CA_PUBLIC},

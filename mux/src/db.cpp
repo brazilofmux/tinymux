@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.41 2002-08-25 22:44:35 jake Exp $
+// $Id: db.cpp,v 1.42 2002-09-01 16:31:31 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -74,6 +74,7 @@ ATTR attr[] =
     {"Amail",       A_AMAIL,    AF_ODARK | AF_NOPROG},
     {"Amhear",      A_AMHEAR,   AF_ODARK | AF_NOPROG},
     {"Amove",       A_AMOVE,    AF_ODARK | AF_NOPROG},
+    {"Ansiname",    A_ANSINAME, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
     {"Apay",        A_APAY,     AF_ODARK | AF_NOPROG},
     {"Arfail",      A_ARFAIL,   AF_ODARK | AF_NOPROG},
     {"Asucc",       A_ASUCC,    AF_ODARK | AF_NOPROG},
