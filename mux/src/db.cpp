@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.37 2004-04-13 06:34:22 sdennis Exp $
+// $Id: db.cpp,v 1.38 2004-04-13 19:41:57 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2581,7 +2581,7 @@ char *getstring_noalloc(FILE *f, int new_strings)
                 int ch = *pInput++;
                 if (iState == STATE_START)
                 {
-                    if (xlat_table[ch] == 0)
+                    if (xlat_table[(unsigned char)ch] == 0)
                     {
                         // As long as xlat_table[*p] is 0, just keep copying the characters.
                         //
@@ -2590,11 +2590,11 @@ char *getstring_noalloc(FILE *f, int new_strings)
                         {
                             *pOutput++ = ch;
                             ch = *pInput++;
-                        } while (xlat_table[ch] == 0);
+                        } while (xlat_table[(unsigned char)ch] == 0);
                         nOutput = pOutput - p;
                     }
                 }
-                int iAction = action_table[iState][xlat_table[ch]];
+                int iAction = action_table[iState][xlat_table[(unsigned char)ch]];
                 if (iAction <= 2)
                 {
                     if (iAction == 1)
@@ -2695,7 +2695,7 @@ void putstring(FILE *f, const char *pRaw)
         for (;;)
         {
             char ch;
-            while ((ch = xlat_table[*pRaw]) == 0)
+            while ((ch = xlat_table[(unsigned char)*pRaw]) == 0)
             {
                 *pBuffer++ = *pRaw++;
             }
