@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.23 2001-07-06 16:24:21 sdennis Exp $
+// $Id: eval.cpp,v 1.24 2001-08-01 04:57:27 sdennis Exp $
 //
 
 // MUX 2.1
@@ -839,6 +839,7 @@ int get_gender(dbref player)
 typedef struct tcache_ent TCENT;
 struct tcache_ent
 {
+    dbref player;
     char *orig;
     char *result;
     struct tcache_ent *next;
@@ -864,7 +865,7 @@ int NDECL(tcache_empty)
     return 0;
 }
 
-static void tcache_add(char *orig, char *result)
+static void tcache_add(dbref player, char *orig, char *result)
 {
     char *tp;
     TCENT *xp;
@@ -877,6 +878,7 @@ static void tcache_add(char *orig, char *result)
             xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
             tp = alloc_lbuf("tcache_add.lbuf");
             StringCopy(tp, result);
+            xp->player = player;
             xp->orig = orig;
             xp->result = tp;
             xp->next = tcache_head;
@@ -893,7 +895,7 @@ static void tcache_add(char *orig, char *result)
     }
 }
 
-static void tcache_finish(dbref player)
+static void tcache_finish(void)
 {
     TCENT *xp;
 
@@ -901,8 +903,8 @@ static void tcache_finish(dbref player)
     {
         xp = tcache_head;
         tcache_head = xp->next;
-        notify(Owner(player), tprintf("%s(#%d)} '%s' -> '%s'", Name(player),
-            player, xp->orig, xp->result));
+        notify(Owner(xp->player), tprintf("%s(#%d)} '%s' -> '%s'", Name(xp->player),
+            xp->player, xp->orig, xp->result));
         free_lbuf(xp->orig);
         free_lbuf(xp->result);
         free_sbuf(xp);
@@ -1893,10 +1895,10 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
     //
     if (is_trace)
     {
-        tcache_add(savestr, start);
+        tcache_add(player, savestr, start);
         save_count = tcache_count - mudconf.trace_limit;;
         if (is_top || !mudconf.trace_topdown)
-            tcache_finish(player);
+            tcache_finish();
         if (is_top && (save_count > 0))
         {
             tbuf = alloc_mbuf("exec.trace_diag");
