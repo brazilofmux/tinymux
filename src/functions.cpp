@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.54 2001-06-14 08:45:50 sdennis Exp $
+// $Id: functions.cpp,v 1.55 2001-06-14 08:48:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1503,7 +1503,7 @@ FUNCTION(fun_parse)
     char *str;
     int first, number = 0;
 
-    sevarargs_preamble("ITER", 4);
+    sevarargs_preamble("PARSE", 4);
     cp = curr = dp = alloc_lbuf("fun_parse");
     str = fargs[0];
     TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
