@@ -144,7 +144,7 @@ NET_O	= bsd.o
 
 # Auxiliary source files: only used by offline utilities.
 #
-AUX_SRC	= dbconvert.cpp mkindx.cpp unsplit.cpp
+AUX_SRC	= dbconvert.cpp unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
 ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(REALMS)
@@ -169,7 +169,7 @@ ALLSRC	= $(D_SRC) $(VER_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC)
 SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S)
 OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O)
 
-OUT	= netmux mkindx dbconvert
+OUT	= netmux dbconvert
 
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
@@ -180,18 +180,13 @@ all: slave $(OUT) links
 TAGS: *.cpp *.h
 	etags *.cpp *.h
 
-links: dbconvert mkindx netmux slave
+links: dbconvert netmux slave
 	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/dbconvert dbconvert
-	cd ../game/bin ; rm -f mkindx ; ln -s ../../src/mkindx mkindx
 	cd ../game/bin ; rm -f netmux ; ln -s ../../src/netmux netmux
 	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
-	cd ../game/text; rm -f mkindx; ln -s ../../src/mkindx mkindx
 
 slave: slave.o
 	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o slave slave.o
-
-mkindx: _build.o mkindx.o
-	$(CXX) $(ALLCXXFLAGS) -o mkindx _build.o mkindx.o
 
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
@@ -213,15 +208,6 @@ depend: $(ALLSRC) unsplit
 	mv .depend~ .depend
 
 index: help.indx news.indx wizhelp.indx
-
-help.indx: help.txt
-	./mkindx help.txt help.indx
-
-news.indx: news.txt
-	./mkindx news.txt news.indx
-
-wizhelp.indx: wizhelp.txt
-	./mkindx wizhelp.txt wizhelp.indx
 
 verify:
 	runtest --tool mux --src ./testsuite
