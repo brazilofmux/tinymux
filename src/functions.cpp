@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.52 2001-06-11 12:57:02 sdennis Exp $
+// $Id: functions.cpp,v 1.53 2001-06-12 08:29:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -59,6 +59,7 @@ XFUNCTION(fun_elements);
 XFUNCTION(fun_grab);
 XFUNCTION(fun_scramble);
 XFUNCTION(fun_shuffle);
+XFUNCTION(fun_pickrand);
 XFUNCTION(fun_sortby);
 XFUNCTION(fun_default);
 XFUNCTION(fun_edefault);
@@ -89,6 +90,7 @@ XFUNCTION(fun_dec);
 XFUNCTION(fun_mail);
 XFUNCTION(fun_mailfrom);
 XFUNCTION(fun_die);
+XFUNCTION(fun_lrand);
 XFUNCTION(fun_lit);
 XFUNCTION(fun_shl);
 XFUNCTION(fun_shr);
@@ -6445,6 +6447,7 @@ FUN flist[] =
     {"LOCK",     fun_lock,     1,  0,          CA_PUBLIC},
     {"LOG",      fun_log,      1,  0,          CA_PUBLIC},
     {"LPOS",     fun_lpos,     2,  0,          CA_PUBLIC},
+    {"LRAND",    fun_lrand,    0,  FN_VARARGS, CA_PUBLIC},
     {"LSTACK",   fun_lstack,   0,  FN_VARARGS, CA_PUBLIC},
     {"LT",       fun_lt,       2,  0,          CA_PUBLIC},
     {"LTE",      fun_lte,      2,  0,          CA_PUBLIC},
@@ -6486,6 +6489,7 @@ FUN flist[] =
     {"PEMIT",    fun_pemit,    2,  0,          CA_PUBLIC},
     {"PFIND",    fun_pfind,    1,  0,          CA_PUBLIC},
     {"PI",       fun_pi,       0,  0,          CA_PUBLIC},
+    {"PICKRAND", fun_pickrand, 0,  FN_VARARGS, CA_PUBLIC},
     {"PLAYMEM",  fun_playmem,  1,  0,          CA_PUBLIC},
     {"PMATCH",   fun_pmatch,   1,  0,          CA_PUBLIC},
     {"POLL",     fun_poll,     0,  0,          CA_PUBLIC},
