@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.8 2002-07-08 21:02:37 jake Exp $
+// $Id: log.cpp,v 1.9 2002-07-09 02:25:06 jake Exp $
 //
 
 #include "copyright.h"
@@ -208,24 +208,26 @@ void log_name_and_loc(dbref player)
     return;
 }
 
-char *OBJTYP(dbref thing)
+const char *OBJTYP(dbref thing)
 {
-    if (!Good_obj(thing)) {
-        return (char *)"??OUT-OF-RANGE??";
+    if (!Good_obj(thing) && !isGarbage(thing))
+    {
+        return "??OUT-OF-RANGE??";
     }
-    switch (Typeof(thing)) {
+    switch (Typeof(thing))
+    {
     case TYPE_PLAYER:
-        return (char *)"PLAYER";
+        return "PLAYER";
     case TYPE_THING:
-        return (char *)"THING";
+        return "THING";
     case TYPE_ROOM:
-        return (char *)"ROOM";
+        return "ROOM";
     case TYPE_EXIT:
-        return (char *)"EXIT";
+        return "EXIT";
     case TYPE_GARBAGE:
-        return (char *)"GARBAGE";
+        return "GARBAGE";
     default:
-        return (char *)"??ILLEGAL??";
+        return "??ILLEGAL??";
     }
 }
 
@@ -237,7 +239,9 @@ void log_type_and_name(dbref thing)
     sprintf(nbuf, " #%d(", thing);
     log_text(nbuf);
     if (Good_obj(thing))
+    {
         log_text(Name(thing));
+    }
     log_text(")");
     return;
 }

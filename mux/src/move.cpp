@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.7 2002-06-27 17:46:57 sdennis Exp $
+// $Id: move.cpp,v 1.8 2002-07-09 02:25:06 jake Exp $
 //
 
 #include "copyright.h"
@@ -902,8 +902,7 @@ void do_leave(dbref executor, dbref caller, dbref enactor, int key)
     if (  !Good_obj(loc)
        || Going(loc)
        || !Has_location(loc)
-       || isGarbage(newLoc = Location(loc))
-       || !Good_obj(newLoc)
+       || !Good_obj(newLoc = Location(loc))
        || Going(newLoc))
     {
         notify(executor, "You can't leave.");

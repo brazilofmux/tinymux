@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.6 2002-07-08 17:59:21 jake Exp $
+// $Id: wiz.cpp,v 1.7 2002-07-09 02:25:06 jake Exp $
 //
 
 #include "copyright.h"
@@ -66,7 +66,7 @@ void do_teleport
 
     // Validate type of victim.
     //
-    if (  isGarbage(victim)
+    if (  !Good_obj(victim)
        || isRoom(victim))
     {
         notify_quiet(executor, "You can't teleport that.");

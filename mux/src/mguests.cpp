@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.7 2002-06-18 18:22:58 jake Exp $
+// $Id: mguests.cpp,v 1.8 2002-07-09 02:25:06 jake Exp $
 //
 
 #include "copyright.h"
@@ -127,7 +127,6 @@ char *CGuests::Create(DESC *d)
         // just drop it and make a new one.
         //
         if (  !Good_obj(Guests[i])
-           || isGarbage(Guests[i])
            || !isPlayer(Guests[i])
            || !Guest(Guests[i]))
         {
@@ -209,7 +208,6 @@ void CGuests::CleanUp(void)
     for (i = 0; i < nPool; i++)
     {
         if (  !Good_obj(Guests[i])
-           || isGarbage(Guests[i])
            || !isPlayer(Guests[i])
            || !Guest(Guests[i]))
         {
@@ -251,8 +249,7 @@ void CGuests::CleanUp(void)
     {
         if (!Connected(Guests[i]))
         {
-            if (  Good_obj(Guests[i])
-               && !isGarbage(Guests[i]))
+            if (Good_obj(Guests[i]))
             {
                 DestroyGuestChar(Guests[i]);
             }

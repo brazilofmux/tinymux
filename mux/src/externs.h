@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.20 2002-07-08 17:59:21 jake Exp $
+// $Id: externs.h,v 1.21 2002-07-09 02:25:06 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -120,7 +120,6 @@ extern void log_text(const char *);
 extern void log_number(int);
 extern void log_name(dbref);
 extern void log_name_and_loc(dbref);
-extern char *OBJTYP(dbref);
 extern void log_type_and_name(dbref);
 extern void log_type_and_num(dbref);
 
