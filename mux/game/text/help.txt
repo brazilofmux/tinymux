@@ -6218,7 +6218,7 @@ FLAG LIST
 
   (*) Note that these 'flags' are really types.  Also notice that THING
       is not in the list.  That is, andflag(me,P) and hastype(me,PLAYER)
-      work, but hasflag(me,PLAYER) does not.
+      work, but hasflag(me,THING) does not.
 
 { 'help flag list2' for more }
 
