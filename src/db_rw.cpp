@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.26 2001-10-17 16:27:41 sdennis Exp $
+// $Id: db_rw.cpp,v 1.27 2001-10-17 16:35:29 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -546,7 +546,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     dbref i, anum;
     int ch;
     const char *tstr;
-    int read_extflags, read_3flags, read_money, read_timestamps, read_new_strings;
+    int read_3flags, read_money, read_timestamps, read_new_strings;
     int read_powers;
     int deduce_version, deduce_name, deduce_zone, deduce_timestamps;
     int aflags, f1, f2, f3;
@@ -568,7 +568,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     BOOL read_zone = FALSE;
     BOOL read_key = TRUE;
     read_money = 1;
-    read_extflags = 0;
     read_3flags = 0;
     read_timestamps = 0;
     read_new_strings = 0;
@@ -639,7 +638,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 }
                 read_key = !(g_version & V_ATRKEY);
                 read_money = !(g_version & V_ATRMONEY);
-                read_extflags = (g_version & V_XFLAGS);
                 read_3flags = (g_version & V_3FLAGS);
                 read_powers = (g_version & V_POWERS);
                 read_new_strings = (g_version & V_QUOTED);
@@ -826,10 +824,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             // FLAGS
             //
             f1 = getref(f);
-            if (read_extflags)
-                f2 = getref(f);
-            else
-                f2 = 0;
+            f2 = getref(f);
 
             if (read_3flags)
                 f3 = getref(f);
@@ -946,10 +941,7 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
         putref(f, Pennies(i));
     }
     putref(f, Flags(i));
-    if (flags & V_XFLAGS)
-    {
-        putref(f, Flags2(i));
-    }
+    putref(f, Flags2(i));
     if (flags & V_3FLAGS)
     {
         putref(f, Flags3(i));
