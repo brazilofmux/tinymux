@@ -109,9 +109,10 @@ Feature Additions:
     from RhostMUSH.
  -- Added MONIKER() as a combination of INAME() from PennMUSH and ANSINAME()
     from RhostMUSH.
- -- Jake added STRIP().
- -- Jake added WRAP() from RhostMUSH.
+ -- Jake added STRIP(). Idea from RhostMUSH.
+ -- Jake added WRAP(). Based on RhostMUSH's.
  -- Blank lines in configuration are now ignored as if they were comments.
+
 
 Bug Fixes:
 ~~~~~~~~~
