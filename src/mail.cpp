@@ -4,7 +4,7 @@
  * originally taken from PennMUSH 1.50 p10, and has been heavily modified
  * since being included in MUX.
  * 
- * $Id: mail.cpp,v 1.6 2000-06-02 16:18:04 sdennis Exp $
+ * $Id: mail.cpp,v 1.7 2000-06-05 23:09:31 sdennis Exp $
  * -------------------------------------------------------------------
  */
 
@@ -70,18 +70,6 @@ int ma_top = 0;
 
 struct malias **malias;
 
-#ifdef RADIX_COMPRESSION
-char *strndup(const char *str, int len)
-{
-    char *s;
-
-    s = (char *)MEMALLOC(len);
-    memcpy(s, str, len);
-    return s;
-}
-#endif /*
-        * RADIX_COMPRESSION 
-        */
 
 /*
  * Handling functions for the database of mail messages. 
@@ -120,15 +108,8 @@ static void mail_db_grow(int newtop)
         newsize = newtop;
     }
 
-    newdb = (MENT *) MEMALLOC((newsize + 1) * sizeof(MENT));
-
-    if (!newdb)
-    {
-        Log.WriteString("ABORT! mail.cpp, failed to allocate memory.\n");
-        Log.Flush();
-        abort();
-    }
-
+    newdb = (MENT *)MEMALLOC((newsize + 1) * sizeof(MENT));
+    ISOUTOFMEMORY(newdb);
     if (mudstate.mail_list)
     {
         mudstate.mail_list -= 1;
@@ -210,9 +191,9 @@ static int add_mail_message(dbref player, char *message)
     char *pMessageBody = tprintf("%s %s", msg, execstr);
 #ifdef RADIX_COMPRESSION
     int len = string_compress(pMessageBody, msgbuff);
-    mudstate.mail_list[number].message = (char *)strndup(msgbuff, len);
+    mudstate.mail_list[number].message = BufferCloneLen(msgbuff, len);
 #else
-    mudstate.mail_list[number].message = (char *)strdup(pMessageBody);
+    mudstate.mail_list[number].message = StringClone(pMessageBody);
 #endif // RADIX_COMPRESSION
     free_lbuf(atrstr);
     free_lbuf(execstr);
@@ -241,9 +222,9 @@ static int add_mail_message_nosig(char *message)
     }
 #ifdef RADIX_COMPRESSION
     int len = string_compress(message, msgbuff);
-    mudstate.mail_list[number].message = (char *)strndup(msgbuff, len);
+    mudstate.mail_list[number].message = BufferCloneLen(msgbuff, len);
 #else
-    mudstate.mail_list[number].message = (char *)strdup(message);
+    mudstate.mail_list[number].message = StringClone(message);
 #endif // RADIX_COMPRESSION
     make_mail_freelist();
     return number;
@@ -268,9 +249,9 @@ static void new_mail_message(char *message, int number)
         message[LBUF_SIZE-1] = '\0';
     }
 #ifdef RADIX_COMPRESSION
-    mudstate.mail_list[number].message = (char *)strndup(message, len);
+    mudstate.mail_list[number].message = BufferCloneLen(message, len);
 #else
-    mudstate.mail_list[number].message = (char *)strdup(message);
+    mudstate.mail_list[number].message = StringClone(message);
 #endif
 }
 
@@ -320,7 +301,7 @@ char *get_mail_message(int number)
         delete_mail_message(number);
 #ifdef RADIX_COMPRESSION
         string_compress("MAIL: This mail message does not exist in the database. Please alert your admin.", msgbuff);
-        StringCopy(buff, msgbuff);
+        strcpy(buff, msgbuff);
         return buff;
 #else       
         return "MAIL: This mail message does not exist in the database. Please alert your admin.";
@@ -812,7 +793,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
         */
                     free_lbuf(status);
                     notify(player, DASH_LINE);
-                    StringCopy(tbuf1, msg);
+                    strcpy(tbuf1, msg);
                     notify(player, tbuf1);
                     notify(player, DASH_LINE);
                     free_lbuf(msg);
@@ -1088,7 +1069,7 @@ void do_mail_reply(dbref player, char *msg, int all, int key)
         bp = names;
         *bp = '\0';
 
-        StringCopy(oldlist, (char *)mp->tolist);
+        strcpy(oldlist, (char *)mp->tolist);
 
         TINY_STRTOK_STATE tts;
         Tiny_StrTokString(&tts, oldlist);
@@ -1243,9 +1224,6 @@ void urgent_mail(dbref player, int folder, int *ucount)
 static void send_mail(dbref player, dbref target, const char *tolist, const char *subject, int number, mail_flag flags, int silent)
 {
     char tbuf1[30];
-#ifdef RADIX_COMPRESSION
-    int len;
-#endif
 
     if (Typeof(target) != TYPE_PLAYER)
     {
@@ -1256,28 +1234,27 @@ static void send_mail(dbref player, dbref target, const char *tolist, const char
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
     char *temp = ltaNow.ReturnDateString();
-    StringCopy(tbuf1, temp);
+    strcpy(tbuf1, temp);
 
-    /*
-     * initialize the appropriate fields 
-     */
+    // Initialize the appropriate fields.
+    //
     struct mail *newp = (struct mail *)MEMALLOC(sizeof(struct mail));
-
+    ISOUTOFMEMORY(newp);
     newp->to = target;
     newp->from = player;
-    newp->tolist = (char *)strdup((char *)tolist);
+    newp->tolist = StringClone(tolist);
 
     newp->number = number;
     add_count(number);
 
 #ifdef RADIX_COMPRESSION
-    len = string_compress(tbuf1, timebuff);
-    newp->time = (char *)strndup(timebuff, len);
+    int len = string_compress(tbuf1, timebuff);
+    newp->time = BufferCloneLen(timebuff, len);
     len = string_compress(subject, subbuff);
-    newp->subject = (char *)strndup(subbuff, len);
+    newp->subject = BufferCloneLen(subbuff, len);
 #else
-    newp->time = (char *)strdup(tbuf1);
-    newp->subject = (char *)strdup(subject);
+    newp->time = StringClone(tbuf1);
+    newp->subject = StringClone(subject);
 #endif // RADIX_COMPRESSION 
 
     // Send to folder 0
@@ -1607,9 +1584,9 @@ void do_mail_stats(dbref player, char *name, int full)
             if (!tr && !tu) {
 #ifdef RADIX_COMPRESSION
                 string_decompress(mp->time, timebuff);
-                StringCopy(last, timebuff);
+                strcpy(last, timebuff);
 #else
-                StringCopy(last, mp->time);
+                strcpy(last, mp->time);
 #endif /*
         * RADIX_COMPRESSION 
         */
@@ -1946,6 +1923,7 @@ int load_mail(FILE *fp)
     while (strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
+        ISOUTOFMEMORY(mp);
 
         dbref nTo = Tiny_atol(nbuf1);
 
@@ -1977,25 +1955,25 @@ int load_mail(FILE *fp)
         }
         if (read_tolist)
         {
-            mp->tolist = (char *)strdup(getstring_noalloc(fp, read_new_strings));
+            mp->tolist = StringClone(getstring_noalloc(fp, read_new_strings));
         }
         else
         {
-            mp->tolist = (char *)strdup(Tiny_ltoa_t(mp->to));
+            mp->tolist = StringClone(Tiny_ltoa_t(mp->to));
         }
 
 #ifdef RADIX_COMPRESSION
         len = string_compress(getstring_noalloc(fp, read_new_strings), timebuff);
-        mp->time = (char *)strndup(timebuff, len);
+        mp->time = BufferCloneLen(timebuff, len);
         if (pennsub)
         {
             len = string_compress(getstring_noalloc(fp, read_new_strings), subbuff);
-            mp->subject = (char *)strndup(subbuff, len);
+            mp->subject = BufferCloneLen(subbuff, len);
         }
         else if (!new0)
         {
             len = string_compress("No subject", subbuff);
-            mp->subject = (char *)strndup(subbuff, len);
+            mp->subject = BufferCloneLen(subbuff, len);
         }
         if (!read_newdb)
         {
@@ -2007,22 +1985,22 @@ int load_mail(FILE *fp)
         if (new0)
         {
             len = string_compress(getstring_noalloc(fp, read_new_strings), subbuff);
-            mp->subject = (char *)strndup(subbuff, len);
+            mp->subject = BufferCloneLen(subbuff, len);
         }
         else if (!pennsub)
         {
             len = string_compress("No subject", subbuff);
-            mp->subject = (char *)strndup(subbuff, len);
+            mp->subject = BufferCloneLen(subbuff, len);
         }
 #else
-        mp->time = (char *)strdup(getstring_noalloc(fp, read_new_strings));
+        mp->time = StringClone(getstring_noalloc(fp, read_new_strings));
         if (pennsub)
         {
-            mp->subject = (char *)strdup(getstring_noalloc(fp, read_new_strings));
+            mp->subject = StringClone(getstring_noalloc(fp, read_new_strings));
         }
         else if (!new0)
         {
-            mp->subject = (char *)strdup("No subject");
+            mp->subject = StringClone("No subject");
         }
 
         if (!read_newdb)
@@ -2033,11 +2011,11 @@ int load_mail(FILE *fp)
         }
         if (new0)
         {
-            mp->subject = (char *)strdup(getstring_noalloc(fp, read_new_strings));
+            mp->subject = StringClone(getstring_noalloc(fp, read_new_strings));
         }
         else if (!pennsub)
         {
-            mp->subject = (char *)strdup("No subject");
+            mp->subject = StringClone("No subject");
         }
 #endif // RADIX_COMPRESSION
         mp->read = getref(fp);
@@ -2122,12 +2100,12 @@ static char *get_folder_name(dbref player, int fld)
     atrstr = atr_get(player, A_MAILFOLDERS, &player, &flags);
     if (!*atrstr)
     {
-        StringCopy(str, "unnamed");
+        strcpy(str, "unnamed");
         free_lbuf(pat);
         free_lbuf(atrstr);
         return str;
     }
-    StringCopy(str, atrstr);
+    strcpy(str, atrstr);
     old = (char *)string_match(str, pat);
     free_lbuf(atrstr);
     if (old)
@@ -2144,7 +2122,7 @@ static char *get_folder_name(dbref player, int fld)
     }
     else
     {
-        StringCopy(str, "unnamed");
+        strcpy(str, "unnamed");
         free_lbuf(pat);
         return str;
     }
@@ -2178,12 +2156,12 @@ void add_folder_name(dbref player, int fld, char *name)
     atrstr = atr_get(player, A_MAILFOLDERS, &player, &aflags);
     if (*atrstr)
     {
-        StringCopy(str, atrstr);
+        strcpy(str, atrstr);
         old = (char *)string_match(str, pat);
     }
     if (old && *old)
     {
-        StringCopy(tbuf, str);
+        strcpy(tbuf, str);
         r = old;
         while (!Tiny_IsSpace[(unsigned char)*r])
         {
@@ -2926,46 +2904,59 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     int i = 0;
     dbref target;
 
-    if (!alias || !*alias || !tolist || !*tolist) {
+    if (!alias || !*alias || !tolist || !*tolist)
+    {
         notify(player, "MAIL: What alias do you want to create?.");
         return;
     }
-    if (*alias != '*') {
+    if (*alias != '*')
+    {
         notify(player, "MAIL: All Mail aliases must begin with '*'.");
         return;
     }
     m = get_malias(player, alias);
-    if (m) {
+    if (m)
+    {
         notify(player,
            tprintf("MAIL: Mail Alias '%s' already exists.", alias));
         return;
     }
-    if (!ma_size) {
+    if (!ma_size)
+    {
         ma_size = MA_INC;
         malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
-    } else if (ma_top >= ma_size) {
+        ISOUTOFMEMORY(malias);
+    }
+    else if (ma_top >= ma_size)
+    {
         ma_size += MA_INC;
         nm = (struct malias **)MEMALLOC(sizeof(struct malias *) * (ma_size));
+        ISOUTOFMEMORY(nm);
 
         for (i = 0; i < ma_top; i++)
+        {
             nm[i] = malias[i];
+        }
         MEMFREE(malias);
         malias = nm;
     }
     malias[ma_top] = (struct malias *)MEMALLOC(sizeof(struct malias));
+    ISOUTOFMEMORY(malias[ma_top]);
 
     i = 0;
 
-    /*
-     * Parse the player list 
-     */
+    // Parse the player list.
+    //
     head = (char *)tolist;
-    while (head && *head && (i < (MALIAS_LEN - 1))) {
+    while (head && *head && (i < (MALIAS_LEN - 1)))
+    {
         while (*head == ' ')
             head++;
         tail = head;
-        while (*tail && (*tail != ' ')) {
-            if (*tail == '"') {
+        while (*tail && (*tail != ' '))
+        {
+            if (*tail == '"')
+            {
                 head++;
                 tail++;
                 while (*tail && (*tail != '"'))
@@ -2979,20 +2970,27 @@ void do_malias_create(dbref player, char *alias, char *tolist)
             tail++;
         spot = *tail;
         *tail = '\0';
-        /*
-         * Now locate a target 
-         */
+
+        // Now locate a target.
+        //
         if (!_stricmp(head, "me"))
             target = player;
-        else if (*head == '#') {
+        else if (*head == '#')
+        {
             target = Tiny_atol(head + 1);
             if (!Good_obj(target))
                 target = NOTHING;
-        } else
+        }
+        else
+        {
             target = lookup_player(player, head, 1);
-        if ((target == NOTHING) || (Typeof(target) != TYPE_PLAYER)) {
+        }
+        if ((target == NOTHING) || (Typeof(target) != TYPE_PLAYER))
+        {
             notify(player, "MAIL: No such player.");
-        } else {
+        }
+        else
+        {
             buff = unparse_object(player, target, 0);
             notify(player,
             tprintf("MAIL: %s added to alias %s", buff, alias));
@@ -3000,9 +2998,9 @@ void do_malias_create(dbref player, char *alias, char *tolist)
             i++;
             free_lbuf(buff);
         }
-        /*
-         * Get the next recip 
-         */
+
+        // Get the next recip.
+        //
         *tail = spot;
         head = tail;
         if (*head == '"')
@@ -3011,12 +3009,10 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     malias[ma_top]->list[i] = NOTHING;
 
     na = alias + 1;
-    malias[ma_top]->name = (char *)MEMALLOC(strlen(na) + 1);
+    malias[ma_top]->name = StringClone(na);
     malias[ma_top]->numrecep = i;
     malias[ma_top]->owner = player;
-    StringCopy(malias[ma_top]->name, na);
-    malias[ma_top]->desc = (char *)MEMALLOC(strlen(na) + 1);
-    StringCopy(malias[ma_top]->desc, na);
+    malias[ma_top]->desc = StringClone(na);
     ma_top++;
 
 
@@ -3104,36 +3100,41 @@ void malias_read(FILE *fp)
     struct malias *m;
 
     fscanf(fp, "%d\n", &ma_top);
-
+    if (ma_top <= 0)
+    {
+        ma_size = ma_top = 0;
+        malias = NULL;
+        return;
+    }
     ma_size = ma_top;
 
-    if (ma_top > 0)
-        malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
+    malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
+    ISOUTOFMEMORY(malias);
 
-    else
-        malias = NULL;
+    for (i = 0; i < ma_top; i++)
+    {
+        m = (struct malias *)MEMALLOC(sizeof(struct malias));
+        ISOUTOFMEMORY(m);
 
-    for (i = 0; i < ma_top; i++) {
-        malias[i] = (struct malias *)MEMALLOC(sizeof(struct malias));
-
-        m = (struct malias *)malias[i];
+        malias[i] = m;
 
         fscanf(fp, "%d %d\n", &(m->owner), &(m->numrecep));
 
         fscanf(fp, "%[^\n]\n", buffer);
-        m->name = (char *)MEMALLOC(strlen(buffer) - 1);
-        StringCopy(m->name, buffer + 2);
+        m->name = StringClone(buffer+2);
+
         fscanf(fp, "%[^\n]\n", buffer);
-        m->desc = (char *)MEMALLOC(strlen(buffer) - 1);
-        StringCopy(m->desc, buffer + 2);
+        m->desc = StringClone(buffer+2);
 
-        if (m->numrecep > 0) {
-
-            for (j = 0; j < m->numrecep; j++) {
+        if (m->numrecep > 0)
+        {
+            for (j = 0; j < m->numrecep; j++)
+            {
                 m->list[j] = getref(fp);
-
             }
-        } else {
+        }
+        else
+        {
             m->list[0] = 0;
         }
     }
@@ -3233,7 +3234,7 @@ static char *make_namelist(dbref player, char *arg)
     names = alloc_lbuf("make_namelist.names");
     bp = names;
 
-    StringCopy(oldarg, arg);
+    strcpy(oldarg, arg);
 
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, oldarg);
@@ -3364,7 +3365,7 @@ void do_mail_quick(dbref player, char *arg1, char *arg2)
     }
     buf = alloc_lbuf("do_mail_quick");
     bp = buf;
-    StringCopy(bp, arg1);
+    strcpy(bp, arg1);
 
     parse_to(&bp, '/', 1);
 
@@ -3395,7 +3396,7 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
         return;
     }
     tolist = alloc_lbuf("mail_to_list");
-    StringCopy(tolist, list);
+    strcpy(tolist, list);
 
     number = add_mail_message(player, message);
 
@@ -3649,9 +3650,7 @@ void do_malias_desc(dbref player, char *alias, char *desc)
     else if ((m->owner != GOD) || ExpMail(player))
     {
         MEMFREE(m->desc);
-        m->desc = (char *)MEMALLOC(strlen(desc) + 1);
-
-        StringCopy(m->desc, desc);
+        m->desc = StringClone(desc);
         notify(player, "MAIL: Description changed.");
     }
     else
@@ -3807,29 +3806,29 @@ void do_malias_remove(dbref player, char *alias, char *person)
 
 void do_malias_rename(dbref player, char *alias, char *newname)
 {
-    struct malias *m;
-
-    if (get_malias(player, newname) != NULL) {
+    if (get_malias(player, newname) != NULL)
+    {
         notify(player, "MAIL: That name already exists!");
         return;
     }
-    if ((m = get_malias(player, alias)) == NULL) {
+    struct malias *m = get_malias(player, alias);
+    if (!m)
+    {
         notify(player, "MAIL: I cannot find that alias!");
         return;
     }
-    if (*newname != '*') {
+    if (*newname != '*')
+    {
         notify(player, "MAIL: Bad alias.");
         return;
     }
-    if (!ExpMail(player) && !(m->owner == player)) {
+    if (!ExpMail(player) && !(m->owner == player))
+    {
         notify(player, "MAIL: Permission denied.");
         return;
     }
     MEMFREE(m->name);
-    m->name = (char *)MEMALLOC(sizeof(char) * strlen(newname));
-
-    StringCopy(m->name, newname + 1);
-
+    m->name = StringClone(newname+1);
     notify(player, "MAIL: Mailing Alias renamed.");
 }
 
@@ -3837,32 +3836,43 @@ void do_malias_delete(dbref player, char *alias)
 {
     int i = 0;
     int done = 0;
-    struct malias *m;
 
-    m = get_malias(player, alias);
+    struct malias *m = get_malias(player, alias);
     
-    if (!m) {
+    if (!m)
+    {
         notify(player, "MAIL: Not a valid alias. Remember to prefix the alias name with *.");
         return;
     }
 
-    for (i = 0; i < ma_top; i++) {
+    for (i = 0; i < ma_top; i++)
+    {
         if (done)
+        {
             malias[i] = malias[i + 1];
-        else {
+        }
+        else
+        {
             if ((m->owner == player) || ExpMail(player))
-                if (m == malias[i]) {
+            {
+                if (m == malias[i])
+                {
                     done = 1;
                     notify(player, "MAIL: Alias Deleted.");
                     malias[i] = malias[i + 1];
                 }
+            }
         }
     }
 
     if (!done)
+    {
         notify(player, "MAIL: Alias not found.");
+    }
     else
+    {
         ma_top--;
+    }
 }
 
 void do_malias_adminlist(dbref player)
