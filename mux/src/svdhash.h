@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.7 2003-07-30 05:13:43 sdennis Exp $
+// $Id: svdhash.h,v 1.8 2003-09-04 15:08:54 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -10,6 +10,11 @@
 #define SVDHASH_H
 
 //#define HP_PROTECTION
+
+#define SECTOR_SIZE     512
+#define LBUF_BLOCKED   (SECTOR_SIZE*((LBUF_SIZE+SECTOR_SIZE-1)/SECTOR_SIZE))
+#define HT_SIZEOF_PAGE (1*LBUF_BLOCKED)
+#define HF_SIZEOF_PAGE (3*LBUF_BLOCKED)
 
 extern UINT32 CRC32_ProcessBuffer
 (
@@ -32,17 +37,19 @@ extern UINT32 HASH_ProcessBuffer
     size_t       nBuffer
 );
 
-#ifdef _SGI_SOURCE
+#if _SGI_SOURCE || ((UINT16_MAX_VALUE-2) <= HF_SIZEOF_PAGE)
+typedef UINT32 UINT_OFFSET;
+#define UINT_OFFSET_MAX_VALUE UINT32_MAX_VALUE
 #define EXPAND_TO_BOUNDARY(x) (((x) + 3) & (~3))
-typedef unsigned int HP_HEAPOFFSET, *HP_PHEAPOFFSET;
-typedef unsigned int HP_HEAPLENGTH, *HP_PHEAPLENGTH;
-typedef unsigned int HP_DIRINDEX, *HP_PDIRINDEX;
-#else //_SGI_SOURCE
+#else
+typedef UINT16 UINT_OFFSET;
+#define UINT_OFFSET_MAX_VALUE UINT16_MAX_VALUE
 #define EXPAND_TO_BOUNDARY(x) (((x) + 1) & (~1))
-typedef unsigned short HP_HEAPOFFSET, *HP_PHEAPOFFSET;
-typedef unsigned short HP_HEAPLENGTH, *HP_PHEAPLENGTH;
-typedef unsigned short HP_DIRINDEX, *HP_PDIRINDEX;
-#endif // _SGI_SOURCE
+#endif
+
+typedef UINT_OFFSET HP_HEAPOFFSET, *HP_PHEAPOFFSET;
+typedef UINT_OFFSET HP_HEAPLENGTH, *HP_PHEAPLENGTH;
+typedef UINT_OFFSET HP_DIRINDEX, *HP_PDIRINDEX;
 
 #define HP_SIZEOF_HEAPOFFSET sizeof(HP_HEAPOFFSET)
 #define HP_SIZEOF_HEAPLENGTH sizeof(HP_HEAPLENGTH)
@@ -60,12 +67,12 @@ typedef struct tagHPHeader
     HP_DIRINDEX    m_nDepth;
 } HP_HEADER, *HP_PHEADER;
 
-#define HP_NIL_OFFSET 0xFFFFU
+#define HP_NIL_OFFSET UINT_OFFSET_MAX_VALUE
 
 // Possible special values for m_pDirectory[i]
 //
-#define HP_DIR_EMPTY   0xFFFFU
-#define HP_DIR_DELETED 0xFFFEU
+#define HP_DIR_EMPTY   UINT_OFFSET_MAX_VALUE
+#define HP_DIR_DELETED (UINT_OFFSET_MAX_VALUE-1)
 
 typedef struct tagHPTrailer
 {
