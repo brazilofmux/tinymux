@@ -8812,7 +8812,7 @@ LATTR()
   Returns a list of the attributes set on <object>.  If <wild-pattern> is
   given, only attributes matching it are returned.
 
-  Example:
+  Examples:
     > ex me
     Mortal(#226Pc)
     ....
