@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.5 2000-06-03 04:18:24 sdennis Exp $
+// $Id: attrcache.cpp,v 1.6 2000-10-14 05:22:18 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -101,13 +101,14 @@ void cache_pass2(void)
         int nSize;
         for (;;)
         {
-            int cc = fread(&nSize, 1, sizeof(nSize), TempFiles[i]);
+            size_t cc = fread(&nSize, 1, sizeof(nSize), TempFiles[i]);
             if (cc != sizeof(nSize))
             {
                 break;
             }
             ATTR_RECORD Record;
-            fread(&Record, 1, nSize, TempFiles[i]);
+            cc = fread(&Record, 1, nSize, TempFiles[i]);
+            Tiny_Assert(cc == nSize);
             cache_put(&Record.attrKey, Record.attrText, nSize - sizeof(Aname));
             if (cnt-- == 0)
             {
