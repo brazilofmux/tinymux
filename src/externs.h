@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.51 2001-06-11 13:12:51 sdennis Exp $
+// $Id: externs.h,v 1.52 2001-06-12 08:32:16 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -218,6 +218,10 @@ extern int  FDECL(xlate, (char *));
 extern double safe_atof(char *szString);
 extern char *trim_space_sep(char *, char);
 extern char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim);
+extern char *next_token(char *str, char sep);
+extern char *next_token_LEN(char *str, int *nStr, char sep);
+extern char *split_token_LEN(char **sp, int *nStr, char sep, int *nToken);
+extern char *split_token(char **sp, char sep);
 
 /* From unparse.cpp */
 extern char *   FDECL(unparse_boolexp, (dbref, BOOLEXP *));

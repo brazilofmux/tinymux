@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.61 2001-06-11 13:12:51 sdennis Exp $
+// $Id: functions.cpp,v 1.62 2001-06-12 08:32:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -60,6 +60,7 @@ XFUNCTION(fun_elements);
 XFUNCTION(fun_grab);
 XFUNCTION(fun_scramble);
 XFUNCTION(fun_shuffle);
+XFUNCTION(fun_pickrand);
 XFUNCTION(fun_sortby);
 XFUNCTION(fun_default);
 XFUNCTION(fun_edefault);
@@ -90,6 +91,7 @@ XFUNCTION(fun_dec);
 XFUNCTION(fun_mail);
 XFUNCTION(fun_mailfrom);
 XFUNCTION(fun_die);
+XFUNCTION(fun_lrand);
 XFUNCTION(fun_lit);
 XFUNCTION(fun_shl);
 XFUNCTION(fun_shr);
@@ -6442,6 +6444,7 @@ FUN flist[] =
     {"LOCK",     fun_lock,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LOG",      fun_log,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LPOS",     fun_lpos,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"LRAND",    fun_lrand,    MAX_ARG, 3,  4,       0, CA_PUBLIC},
     {"LSTACK",   fun_lstack,   MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"LT",       fun_lt,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"LTE",      fun_lte,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
@@ -6482,6 +6485,7 @@ FUN flist[] =
     {"PEMIT",    fun_pemit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"PFIND",    fun_pfind,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"PI",       fun_pi,       MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"PICKRAND", fun_pickrand, MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"PLAYMEM",  fun_playmem,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"PMATCH",   fun_pmatch,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"POLL",     fun_poll,     MAX_ARG, 0,  0,       0, CA_PUBLIC},

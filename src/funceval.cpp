@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.46 2001-04-10 17:35:45 sdennis Exp $
+// $Id: funceval.cpp,v 1.47 2001-06-12 08:32:16 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1821,6 +1821,41 @@ FUNCTION(fun_shuffle)
     arr2list(words, n, buff, bufc, sep);
 }
 
+// pickrand -- choose a random item from a list.
+//
+FUNCTION(fun_pickrand)
+{
+    if (nfargs == 0 || fargs[0][0] == '\0')
+    {
+        return;
+    }
+    char sep;
+    varargs_preamble("PICKRAND", 2);
+
+    char *s = trim_space_sep(fargs[0], sep);
+    char *t = s;
+    if (s[0] == '\0')
+    {
+        return;
+    }
+    INT32 n;
+    for (n = 0; t; t = next_token(t, sep), n++)
+    {
+        ; // Nothing
+    }
+
+    if (n >= 1)
+    {
+        INT32 w = RandomINT32(0, n-1);
+        for (n = 0; n < w; n++)
+        {
+            s = next_token(s, sep);
+        }
+        t = split_token(&s, sep);
+        safe_str(t, buff, bufc);
+    }
+}
+
 /*
  * sortby() code borrowed from TinyMUSH 2.2 
  */
@@ -2403,6 +2438,40 @@ FUNCTION(fun_die)
     }
 
     safe_ltoa(total, buff, bufc, LBUF_SIZE-1);
+}
+
+FUNCTION(fun_lrand)
+{
+    char sep;
+    if (!delim_check(fargs, nfargs, 4, &sep, buff, bufc, 0,
+        player, cause, cargs, ncargs, 1))
+    {
+        return;
+    }
+
+    int n_times = Tiny_atol(fargs[2]);
+    if (n_times < 1)
+    {
+        return;
+    }
+    if (n_times > LBUF_SIZE)
+    {
+        n_times = LBUF_SIZE;
+    }
+    INT32 iLower = Tiny_atol(fargs[0]);
+    INT32 iUpper = Tiny_atol(fargs[1]);
+
+    if (iLower <= iUpper)
+    {
+        for (int i = 0; i < n_times-1; i++)
+        {
+            INT32 val = RandomINT32(iLower, iUpper);
+            safe_ltoa(val, buff, bufc, LBUF_SIZE-1);
+            print_sep(sep, buff, bufc);
+        }
+        INT32 val = RandomINT32(iLower, iUpper);
+        safe_ltoa(val, buff, bufc, LBUF_SIZE-1);
+    }
 }
 
 /*
