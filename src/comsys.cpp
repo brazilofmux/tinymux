@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.69 2002-06-04 04:18:12 sdennis Exp $
+// $Id: comsys.cpp,v 1.70 2002-07-18 00:34:24 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2779,9 +2779,7 @@ FUNCTION(fun_channels)
         return;
     }
 
-    char *outbuff = alloc_lbuf("fun_comlist_outbuff");
-    *outbuff='\0';
-
+    BOOL bFirst = TRUE;
     struct channel *chn;
     for (chn = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          chn;
@@ -2791,10 +2789,15 @@ FUNCTION(fun_channels)
            || (chn->type & CHANNEL_PUBLIC)
            || chn->charge_who == player)
         {
-            strcat(outbuff, chn->name);
-            strcat(outbuff, " ");
+            if (bFirst)
+            {
+                bFirst = FALSE;
+            }
+            else
+            {
+                safe_chr(' ', buff, bufc);
+            }
+            safe_str(chn->name, buff, bufc);
         }
     }
-    safe_str(outbuff, buff, bufc);
-    free_lbuf(outbuff);
 }
