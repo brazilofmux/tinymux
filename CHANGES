@@ -148,6 +148,9 @@ Performance Enhancements:
  -- Improve putstring() performance and therefore @dumps.
  -- Improved parser speed by a few instructions.
  -- Improve speed of TRANSLATE() and emit %t for hardtabs.
+ -- Use /dev/urandom on Unix and Crypto API on Win32 to seed the random
+    number generator. Fall back gracefully on pre-OSR2 Win95 to previous
+    time/pid scheme.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
