@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers
 //
-// $Id: svdrand.cpp,v 1.13 2001-02-07 05:28:14 sdennis Exp $
+// $Id: svdrand.cpp,v 1.14 2001-07-05 18:12:37 sdennis Exp $
 //
 // The first version of Random Numbers based on algorithms presented in
 // "Numerical Recipes in C", Cambridge Press, 1992. The second one is
@@ -37,8 +37,11 @@ void SeedRandomNumberGenerator(void)
     CLinearTimeAbsolute lsaNow;
     lsaNow.GetUTC();
     INT64 i64Seed = lsaNow.Return100ns();
+    int pid = getpid();
 
     UINT32 nSeed = CRC32_ProcessBuffer(0, &i64Seed, sizeof(INT64));
+    nSeed = CRC32_ProcessBuffer(nSeed, &pid, sizeof(pid));
+
     if (nSeed <= 1000)
     {
         nSeed += 22261048;
