@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.50 2001-03-31 04:48:59 sdennis Exp $
+// $Id: functions.cpp,v 1.51 2001-06-05 06:23:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2182,9 +2182,15 @@ FUNCTION(fun_version)
 {
     safe_str(mudstate.version, buff, bufc);
 }
+
 FUNCTION(fun_strlen)
 {
-    safe_ltoa(strlen(strip_ansi(fargs[0])), buff, bufc, LBUF_SIZE-1);
+    unsigned int n = 0;
+    if (nfargs >= 1)
+    {
+        strip_ansi(fargs[0], &n);
+    }
+    safe_ltoa(n, buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_num)
