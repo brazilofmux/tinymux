@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.13 2000-09-05 20:28:53 sdennis Exp $
+// $Id: bsd.cpp,v 1.14 2000-09-07 08:13:45 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2475,18 +2475,6 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
             // We are the reproduced child with a slightly better chance.
             //
-#if 0
-            if (mudconf.compress_db)
-            {
-                sprintf(outdb, "%s.Z", mudconf.outdb);
-                sprintf(indb, "%s.Z", mudconf.indb);
-                ReplaceFile(outdb, indb);
-            }
-            else
-            {
-                ReplaceFile(mudconf.outdb, mudconf.indb);
-            }
-#endif
             dump_restart_db();
 #ifdef GAME_DOOFERMUX
             execl("bin/netmux", mudconf.mud_name, mudconf.config_file, NULL);
