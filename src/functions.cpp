@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.153 2002-02-13 00:07:26 sdennis Exp $
+// $Id: functions.cpp,v 1.154 2002-02-25 19:56:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7974,7 +7974,11 @@ FUNCTION(fun_lflags)
             FLAGBITENT *fbe = fp->fbe;
             if (db[target].fs.word[fbe->flagflag] & fbe->flagvalue)
             {
-                if (  (  (fbe->listperm & CA_WIZARD)
+                if (  (  (fbe->listperm & CA_STAFF)
+                      && !Staff(player))
+                   || (  (fbe->listperm & CA_ADMIN)
+                      && !WizRoy(player))
+                   || (  (fbe->listperm & CA_WIZARD)
                       && !Wizard(player))
                    || (  (fbe->listperm & CA_GOD)
                       && !God(player)))

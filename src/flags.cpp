@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.26 2002-02-14 21:37:28 sdennis Exp $
+// $Id: flags.cpp,v 1.27 2002-02-25 19:56:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -314,16 +314,16 @@ static FLAGBITENT fbeVisual         = { VISUAL,       'V',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeWizard         = { WIZARD,       'W',    FLAG_WORD1, 0,                    fh_god};
 static FLAGBITENT fbeSitemon        = { SITEMON,      '$',    FLAG_WORD3, 0,                    fh_wiz};
 #ifdef WOD_REALMS
-static FLAGBITENT fbeFae            = { FAE,          '0',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeChimera        = { CHIMERA,      '1',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbePeering        = { PEERING,      '2',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeUmbra          = { UMBRA,        '3',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeShroud         = { SHROUD,       '4',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeMatrix         = { MATRIX,       '5',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeObf            = { OBF,          '6',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeHss            = { HSS,          '7',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeMedium         = { MEDIUM,       '8',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeDead           = { DEAD,         '9',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeFae            = { FAE,          '0',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
+static FLAGBITENT fbeChimera        = { CHIMERA,      '1',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
+static FLAGBITENT fbePeering        = { PEERING,      '2',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
+static FLAGBITENT fbeUmbra          = { UMBRA,        '3',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
+static FLAGBITENT fbeShroud         = { SHROUD,       '4',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
+static FLAGBITENT fbeMatrix         = { MATRIX,       '5',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
+static FLAGBITENT fbeObf            = { OBF,          '6',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
+static FLAGBITENT fbeHss            = { HSS,          '7',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
+static FLAGBITENT fbeMedium         = { MEDIUM,       '8',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
+static FLAGBITENT fbeDead           = { DEAD,         '9',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
 static FLAGBITENT fbeMarker0        = { MARK_0,       ' ',    FLAG_WORD3, 0,                    fh_god};
 static FLAGBITENT fbeMarker1        = { MARK_1,       ' ',    FLAG_WORD3, 0,                    fh_god};
 static FLAGBITENT fbeMarker2        = { MARK_2,       ' ',    FLAG_WORD3, 0,                    fh_god};
@@ -681,7 +681,11 @@ char *decode_flags(dbref player, FLAGSET *fs)
         }
         if (fs->word[fbe->flagflag] & fbe->flagvalue)
         {
-            if (  (  (fbe->listperm & CA_WIZARD)
+            if (  (  (fbe->listperm & CA_STAFF)
+                  && !Staff(player))
+               || (  (fbe->listperm & CA_ADMIN)
+                  && !WizRoy(player))
+               || (  (fbe->listperm & CA_WIZARD)
                   && !Wizard(player))
                || (  (fbe->listperm & CA_GOD)
                   && !God(player)))
@@ -734,7 +738,11 @@ int has_flag(dbref player, dbref it, char *flagname)
        || (  !fp->bPositive
           && (db[it].fs.word[fbe->flagflag] & fbe->flagvalue) == 0))
     {
-        if (  (  (fbe->listperm & CA_WIZARD)
+        if (  (  (fbe->listperm & CA_STAFF)
+              && !Staff(player))
+           || (  (fbe->listperm & CA_ADMIN)
+              && !WizRoy(player))
+           || (  (fbe->listperm & CA_WIZARD)
               && !Wizard(player))
            || (  (fbe->listperm & CA_GOD)
               && !God(player)))
@@ -793,7 +801,11 @@ char *flag_description(dbref player, dbref target)
         FLAGBITENT *fbe = fp->fbe;
         if (db[target].fs.word[fbe->flagflag] & fbe->flagvalue)
         {
-            if (  (  (fbe->listperm & CA_WIZARD)
+            if (  (  (fbe->listperm & CA_STAFF)
+                  && !Staff(player))
+               || (  (fbe->listperm & CA_ADMIN)
+                  && !WizRoy(player))
+               || (  (fbe->listperm & CA_WIZARD)
                   && !Wizard(player))
                || (  (fbe->listperm & CA_GOD)
                   && !God(player)))
@@ -996,7 +1008,11 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
         for (i = 0; i <= 7 && !handled; i++)
         {
             if (  object_types[i].lett == *s
-               && !(  (  (object_types[i].perm & CA_WIZARD)
+               && !(  (  (object_types[i].perm & CA_STAFF)
+                      && !Staff(player))
+                   || (  (object_types[i].perm & CA_ADMIN)
+                      && !WizRoy(player))
+                   || (  (object_types[i].perm & CA_WIZARD)
                       && !Wizard(player))
                    || (  (object_types[i].perm & CA_GOD)
                       && !God(player))))
@@ -1030,7 +1046,11 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
                 continue;
             }
             if (  fbe->flaglett == *s
-               && !(  (  (fbe->listperm & CA_WIZARD)
+               && !(  (  (fbe->listperm & CA_STAFF)
+                      && !Staff(player))
+                   || (  (fbe->listperm & CA_ADMIN)
+                      && !WizRoy(player))
+                   || (  (fbe->listperm & CA_WIZARD)
                       && !Wizard(player))
                    || (  (fbe->listperm & CA_GOD)
                       && !God(player))))
