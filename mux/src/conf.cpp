@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.10 2002-07-19 12:18:49 jake Exp $
+// $Id: conf.cpp,v 1.11 2002-07-20 13:57:23 jake Exp $
 //
 
 #include "copyright.h"
@@ -691,6 +691,39 @@ CF_HAND(cf_flagalias)
     if (!success)
     {
         cf_log_notfound(player, cmd, "Flag", orig);
+    }
+    return (success ? 0 : -1);
+}
+
+// ---------------------------------------------------------------------------
+// cf_poweralias: define a power alias.
+//
+CF_HAND(cf_poweralias)
+{
+    TINY_STRTOK_STATE tts;
+    Tiny_StrTokString(&tts, str);
+    Tiny_StrTokControl(&tts, " \t=,");
+    char *alias = Tiny_StrTokParse(&tts);
+    char *orig = Tiny_StrTokParse(&tts);
+
+    BOOL success = FALSE;
+    int  nName;
+    BOOL bValid;
+    int *cp;
+    char *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
+    if (  bValid
+       && (cp = hashfindLEN(pName, nName, &mudstate.powers_htab)))
+    {
+        pName = MakeCanonicalFlagName(alias, &nName, &bValid);
+        if (bValid)
+        {
+            hashaddLEN(pName, nName, cp, &mudstate.powers_htab);
+            success = TRUE;
+        }
+    }
+    if (!success)
+    {
+        cf_log_notfound(player, cmd, "Power", orig);
     }
     return (success ? 0 : -1);
 }
@@ -1564,6 +1597,7 @@ CONF conftable[] =
     {"wiznews_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wiznews_file,    NULL, SIZEOF_PATHNAME},
     {"wiznews_index",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wiznews_indx,    NULL, SIZEOF_PATHNAME},
     {"port",                      cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.ports,           NULL, MAX_LISTEN_PORTS},
+    {"power_alias",               cf_poweralias,  CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {"public_flags",              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pub_flags,       NULL,               0},
     {"queue_active_chunk",        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.active_q_chunk,         NULL,               0},
     {"queue_idle_chunk",          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.queue_chunk,            NULL,               0},
