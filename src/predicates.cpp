@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.33 2001-08-24 18:27:33 sdennis Exp $
+// $Id: predicates.cpp,v 1.34 2001-09-14 22:58:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -526,34 +526,45 @@ void handle_ears(dbref thing, int could_hear, int can_hear)
     }
 }
 
-/*
- * for lack of better place the @switch code is here 
- */
-
-void do_switch(dbref player, dbref cause, int key, char *expr, char *args[], int nargs, char *cargs[], int ncargs)
+// For lack of better place the @switch code is here.
+//
+void do_switch
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    char *expr,
+    char *args[],
+    int   nargs,
+    char *cargs[],
+    int   ncargs
+)
 {
     int a, any;
     char *buff, *bp, *str;
 
     if (!expr || (nargs <= 0))
+    {
         return;
+    }
 
-    if (key == SWITCH_DEFAULT) {
+    if (key == SWITCH_DEFAULT)
+    {
         if (mudconf.switch_df_all)
             key = SWITCH_ANY;
         else
             key = SWITCH_ONE;
     }
-    /*
-     * now try a wild card match of buff with stuff in coms 
-     */
 
+    // Now try a wild card match of buff with stuff in coms.
+    //
     any = 0;
     buff = bp = alloc_lbuf("do_switch");
     for (a = 0; (a < (nargs - 1)) && args[a] && args[a + 1]; a += 2) {
         bp = buff;
         str = args[a];
-        TinyExec(buff, &bp, 0, player, cause, EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs, ncargs);
+        TinyExec(buff, &bp, 0, player, cause, EV_FCHECK | EV_EVAL | EV_TOP,
+            &str, cargs, ncargs);
         *bp = '\0';
         if (wild_match(buff, expr)) {
             wait_que(player, cause, 0, NOTHING, 0, args[a + 1],
