@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.8 2002-06-13 22:12:46 jake Exp $
+// $Id: eval.cpp,v 1.9 2002-06-20 16:00:11 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1761,7 +1761,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                             // 40
                             // @
                             //
-                            // iCode == '!'
+                            // iCode == '@'
                             // Caller DB number.
                             //
                             TinyExec_scratch[0] = '#';
