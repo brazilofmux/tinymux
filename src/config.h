@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.12 2000-11-06 18:38:57 sdennis Exp $ */
+/* $Id: config.h,v 1.13 2001-02-06 20:53:08 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -87,7 +87,7 @@
 #define DCL_CDECL __cdecl
 #define DCL_INLINE __inline
 
-typedef __int64 INT64;
+typedef __int64          INT64;
 typedef unsigned __int64 UINT64;
 #define INT64_MAX_VALUE  9223372036854775807i64
 #define INT64_MIN_VALUE  (-9223372036854775807i64 - 1)
@@ -113,7 +113,7 @@ typedef int BOOL;
 #define FALSE   0
 typedef int HANDLE;
 
-typedef long long INT64;
+typedef long long          INT64;
 typedef unsigned long long UINT64;
 #define INT64_MAX_VALUE  9223372036854775807LL
 #define INT64_MIN_VALUE  (-9223372036854775807LL - 1)
@@ -134,6 +134,40 @@ typedef int SOCKET;
 #define SD_BOTH (2)
 
 #endif // WIN32
+
+// Find the minimum-sized integer type that will hold 32-bits.
+// Promote to 64-bits if necessary.
+//
+#if SIZEOF_INT == 4
+typedef int              INT32;
+typedef unsigned int     UINT32;
+#elif SIZEOF_LONG == 4
+typedef long             INT32;
+typedef unsigned long    UINT32;
+#elif SIZEOF_SHORT == 4
+typedef short            INT32;
+typedef unsigned short   UINT32;
+#else
+typedef INT64            INT32;
+typedef UINT64           UINT32;
+#endif
+
+// Find the minimum-sized integer type that will hold 16-bits.
+// Promote to 32-bits if necessary.
+//
+#if SIZEOF_INT == 2
+typedef int              INT16;
+typedef unsigned int     UINT16;
+#elif SIZEOF__LONG == 2
+typedef long             INT16;
+typedef unsigned long    UINT16;
+#elif SIZEOF_SHORT == 2
+typedef short            INT16;
+typedef unsigned short   UINT16;
+#else
+typedef INT32            INT16;
+typedef UINT32           UINT16;
+#endif
 
 extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
 #define Tiny_Assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
