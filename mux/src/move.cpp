@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.6 2002-06-27 07:46:29 jake Exp $
+// $Id: move.cpp,v 1.7 2002-06-27 17:46:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -897,12 +897,12 @@ void do_enter(dbref executor, dbref caller, dbref enactor, int key, char *what)
 void do_leave(dbref executor, dbref caller, dbref enactor, int key)
 {
     dbref loc = Location(executor);
-    dbref newLoc = Location(loc);
+    dbref newLoc = loc;
 
     if (  !Good_obj(loc)
        || Going(loc)
        || !Has_location(loc)
-       || isGarbage(newLoc)
+       || isGarbage(newLoc = Location(loc))
        || !Good_obj(newLoc)
        || Going(newLoc))
     {
