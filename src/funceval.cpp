@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.102 2002-09-25 18:52:55 sdennis Exp $
+// $Id: funceval.cpp,v 1.103 2002-09-25 20:09:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3461,7 +3461,7 @@ CBitField::CBitField(unsigned int nMaximum_arg)
 
         // Allocate array of UINT32s.
         //
-        nInts    = (nMaximum+nBitsPer-1) >> nShift;
+        nInts    = (nMaximum+nBitsPer) >> nShift;
         pMasks   = (UINT32 *)MEMALLOC((nInts+nBitsPer)*sizeof(UINT32));
         (void)ISOUTOFMEMORY(pMasks);
         pInts    = pMasks + nBitsPer;
