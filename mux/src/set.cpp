@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.19 2002-07-09 15:12:14 sdennis Exp $
+// $Id: set.cpp,v 1.20 2002-07-09 19:33:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1636,7 +1636,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
     // Look for the object and get the attribute (possibly wildcarded)
     //
     olist_push();
-    if (!it || !*it || !parse_attrib_wild(executor, it, &thing, 0, 0, 0))
+    if (!it || !*it || !parse_attrib_wild(executor, it, &thing, FALSE, FALSE, FALSE))
     {
         notify_quiet(executor, "No match.");
         return;
@@ -1701,7 +1701,7 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
     dbref thing;
 
     olist_push();
-    if (!it || !*it || !parse_attrib_wild(executor, it, &thing, 0, 0, 1))
+    if (!it || !*it || !parse_attrib_wild(executor, it, &thing, FALSE, FALSE, TRUE))
     {
         notify_quiet(executor, "No match.");
         return;

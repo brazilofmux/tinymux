@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.9 2002-07-09 08:22:49 jake Exp $
+// $Id: match.cpp,v 1.10 2002-07-09 19:33:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -583,7 +583,8 @@ void restore_match_state(MSTATE *mstate)
 void init_match(dbref player, const char *name, int type)
 {
     md.confidence = -1;
-    md.count = md.check_keys = 0;
+    md.count = 0;
+    md.check_keys = FALSE;
     md.pref_type = type;
     md.match = NOTHING;
     md.player = player;
@@ -594,7 +595,7 @@ void init_match(dbref player, const char *name, int type)
 void init_match_check_keys(dbref player, const char *name, int type)
 {
     init_match(player, name, type);
-    md.check_keys = 1;
+    md.check_keys = TRUE;
 }
 
 dbref match_thing(dbref player, char *name)

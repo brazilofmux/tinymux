@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.51 2002-07-09 08:22:48 jake Exp $
+// $Id: functions.cpp,v 1.52 2002-07-09 19:33:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -194,14 +194,10 @@ char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim)
 }
 
 
-/*
- * Trim off leading and trailing spaces if the separator char is a space
- */
-
+// Trim off leading and trailing spaces if the separator char is a space.
+//
 char *trim_space_sep(char *str, char sep)
 {
-    char *p;
-
     if (sep != ' ')
     {
         return str;
@@ -210,6 +206,7 @@ char *trim_space_sep(char *str, char sep)
     {
         str++;
     }
+    char *p;
     for (p = str; *p; p++)
     {
         // Nothing
@@ -250,10 +247,8 @@ char *next_token_LEN(char *str, int *nStr, char sep)
     return pBegin;
 }
 
-/*
- * next_token: Point at start of next token in string
- */
-
+// next_token: Point at start of next token in string
+//
 char *next_token(char *str, char sep)
 {
     while (*str && (*str != sep))
@@ -280,9 +275,8 @@ char *next_token(char *str, char sep)
 //
 char *split_token_LEN(char **sp, int *nStr, char sep, int *nToken)
 {
-    char *str, *save;
-
-    save = str = *sp;
+    char *str = *sp;
+    char *save = str;
     if (!str)
     {
         *nStr = 0;
@@ -320,11 +314,9 @@ char *split_token_LEN(char **sp, int *nStr, char sep, int *nToken)
     return save;
 }
 
-/*
- * split_token: Get next token from string as null-term string.  String is
- * * destructively modified.
- */
-
+// split_token: Get next token from string as null-term string.  String is
+// destructively modified.
+//
 char *split_token(char **sp, char sep)
 {
     char *str = *sp;
@@ -359,9 +351,8 @@ char *split_token(char **sp, char sep)
     return save;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * List management utilities.
+/* ---------------------------------------------------------------------------
+ * List management utilities.
  */
 
 #define ASCII_LIST      1
@@ -486,19 +477,24 @@ static int dbnum(char *dbr)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * nearby_or_control: Check if player is near or controls thing
+/* ---------------------------------------------------------------------------
+ * nearby_or_control: Check if player is near or controls thing
  */
 
 BOOL nearby_or_control(dbref player, dbref thing)
 {
     if (!Good_obj(player) || !Good_obj(thing))
+    {
         return FALSE;
+    }
     if (Controls(player, thing))
+    {
         return TRUE;
+    }
     if (!nearby(player, thing))
+    {
         return FALSE;
+    }
     return TRUE;
 }
 
@@ -607,9 +603,8 @@ static int Tiny_fpclass(double result)
 }
 #endif // HAVE_IEEE_FP_FORMAT
 
-/*
- * ---------------------------------------------------------------------------
- * * fval: copy the floating point value into a buffer and make it presentable
+/* ---------------------------------------------------------------------------
+ * fval: copy the floating point value into a buffer and make it presentable
  */
 static void fval(char *buff, char **bufc, double result)
 {
@@ -621,9 +616,7 @@ static void fval(char *buff, char **bufc, double result)
     {
 #endif // HAVE_IEEE_FP_FORMAT
         double rIntegerPart;
-        double rFractionalPart;
-
-        rFractionalPart = modf(result, &rIntegerPart);
+        double rFractionalPart = modf(result, &rIntegerPart);
         if (  0.0 == rFractionalPart
            && LONG_MIN <= rIntegerPart
            && rIntegerPart <= LONG_MAX)
@@ -654,9 +647,7 @@ static void fval_buf(char *buff, double result)
     {
 #endif // HAVE_IEEE_FP_FORMAT
         double rIntegerPart;
-        double rFractionalPart;
-
-        rFractionalPart = modf(result, &rIntegerPart);
+        double rFractionalPart = modf(result, &rIntegerPart);
         if (  -0.0000005 < rFractionalPart
            &&  rFractionalPart < 0.0000005
            &&  LONG_MIN <= rIntegerPart
@@ -678,15 +669,14 @@ static void fval_buf(char *buff, double result)
 #endif // HAVE_IEEE_FP_FORMAT
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * delim_check: obtain delimiter
+/* ---------------------------------------------------------------------------
+ * delim_check: obtain delimiter
  */
 BOOL delim_check
 (
     char *fargs[], int nfargs, int sep_arg, char *sep, char *buff,
-    char **bufc, int eval, dbref player, dbref caller, dbref enactor,
-    char *cargs[], int ncargs, int allow_special
+    char **bufc, BOOL eval, dbref player, dbref caller, dbref enactor,
+    char *cargs[], int ncargs, BOOL allow_special
 )
 {
     BOOL bSuccess = TRUE;
@@ -698,7 +688,7 @@ BOOL delim_check
         int tlen = strlen(tstr);
         if (tlen <= 1)
         {
-            eval = 0;
+            eval = FALSE;
         }
         if (eval)
         {
@@ -5334,8 +5324,8 @@ FUNCTION(fun_lnum)
 {
     char sep;
     if (  nfargs == 0
-       || !delim_check(fargs, nfargs, 3, &sep, buff, bufc, 0, executor,
-               caller, enactor, cargs, ncargs, 1))
+       || !delim_check(fargs, nfargs, 3, &sep, buff, bufc, FALSE, executor,
+               caller, enactor, cargs, ncargs, TRUE))
     {
         return;
     }
@@ -5845,65 +5835,63 @@ FUNCTION(fun_merge)
     return;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_splice: similar to MERGE(), eplaces by word instead of by character.
+/* ---------------------------------------------------------------------------
+ * fun_splice: similar to MERGE(), eplaces by word instead of by character.
  */
 
 FUNCTION(fun_splice)
 {
-    char *p1, *p2, *q1, *q2, sep;
-    int words, i, first;
-
+    char sep;
     varargs_preamble(4);
 
-    /*
-     * length checks
-     */
-
-    if (countwords(fargs[2], sep) > 1) {
+    // Length checks.
+    //
+    if (countwords(fargs[2], sep) > 1)
+    {
         safe_str("#-1 TOO MANY WORDS", buff, bufc);
         return;
     }
-    words = countwords(fargs[0], sep);
-    if (words != countwords(fargs[1], sep)) {
+    int words = countwords(fargs[0], sep);
+    if (words != countwords(fargs[1], sep))
+    {
         safe_str("#-1 NUMBER OF WORDS MUST BE EQUAL", buff, bufc);
         return;
     }
-    /*
-     * loop through the two lists
-     */
 
-    p1 = fargs[0];
-    q1 = fargs[1];
-    first = 1;
-    for (i = 0; i < words; i++) {
+    // Loop through the two lists.
+    //
+    char *p1 = fargs[0];
+    char *q1 = fargs[1];
+    char *p2, *q2;
+    BOOL first = TRUE;
+    int i;
+    for (i = 0; i < words; i++)
+    {
         p2 = split_token(&p1, sep);
         q2 = split_token(&q1, sep);
         if (!first)
+        {
             safe_chr(sep, buff, bufc);
+        }
         if (!strcmp(p2, fargs[2]))
-            safe_str(q2, buff, bufc);   /*
-                             * replace
-                             */
+        {
+            safe_str(q2, buff, bufc); // replace
+        }
         else
-            safe_str(p2, buff, bufc);   /*
-                             * copy
-                             */
-        first = 0;
+        {
+            safe_str(p2, buff, bufc); // copy
+        }
+        first = FALSE;
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_repeat: repeats a string
+/*---------------------------------------------------------------------------
+ * fun_repeat: repeats a string
  */
 
 FUNCTION(fun_repeat)
 {
-    int times;
-
-    times = Tiny_atol(fargs[1]);
+    int times = Tiny_atol(fargs[1]);
     if (times < 1 || *fargs[0] == '\0')
     {
         // Legal but no work to do.
@@ -5957,11 +5945,10 @@ FUNCTION(fun_repeat)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_parse: Make list from evaluating arg3 with each member of arg2.
- * * arg1 specifies a delimiter character to use in the parsing of arg2.
- * * NOTE: This function expects that its arguments have not been evaluated.
+/* ---------------------------------------------------------------------------
+ * fun_parse: Make list from evaluating arg3 with each member of arg2.
+ * arg1 specifies a delimiter character to use in the parsing of arg2.
+ * NOTE: This function expects that its arguments have not been evaluated.
  */
 
 FUNCTION(fun_parse)
@@ -6050,7 +6037,7 @@ FUNCTION(fun_iter)
 
 FUNCTION(fun_list)
 {
-    char *curr, *objstring, *result, *cp, *dp, *str,sep;
+    char *curr, *objstring, *result, *cp, *dp, *str, sep;
     int number = 0;
 
     evarargs_preamble(3);
@@ -6090,28 +6077,26 @@ FUNCTION(fun_ilev)
     safe_ltoa(mudstate.in_loop-1, buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_fold: iteratively eval an attrib with a list of arguments
- * *        and an optional base case.  With no base case, the first list element
- * *    is passed as %0 and the second is %1.  The attrib is then evaluated
- * *    with these args, the result is then used as %0 and the next arg is
- * *    %1 and so it goes as there are elements left in the list.  The
- * *    optinal base case gives the user a nice starting point.
- * *
- * *    > &REP_NUM object=[%0][repeat(%1,%1)]
- * *    > say fold(OBJECT/REP_NUM,1 2 3 4 5,->)
- * *    You say, "->122333444455555"
- * *
- * *      NOTE: To use added list separator, you must use base case!
+/* ---------------------------------------------------------------------------
+ * fun_fold: Iteratively eval an attrib with a list of arguments and an 
+ *           optional base case.  With no base case, the first list element is
+ *           passed as %0 and the second is %1.  The attrib is then evaluated
+ *           with these args, the result is then used as %0 and the next arg
+ *           is %1 and so it goes as long as there are elements left in the
+ *           list. The optional base case gives the user a nice starting point.
+ *
+ *      > &REP_NUM object=[%0][repeat(%1,%1)]
+ *      > say fold(OBJECT/REP_NUM,1 2 3 4 5,->)
+ *      You say, "->122333444455555"
+ *
+ * NOTE: To use added list separator, you must use base case!
  */
 
 FUNCTION(fun_fold)
 {
-    char *atext, *result, *curr, *bp, *str, *cp, *atextbuf, *clist[2],
-    *rstore, sep;
+    char sep;
 
-    // We need two to four arguements only.
+    // We need two to four arguments only.
     //
     varargs_preamble(4);
 
@@ -6149,7 +6134,7 @@ FUNCTION(fun_fold)
     //
     dbref aowner;
     int   aflags;
-    atext = atr_pget(thing, ap->number, &aowner, &aflags);
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
     if (!atext)
     {
         return;
@@ -6163,10 +6148,12 @@ FUNCTION(fun_fold)
 
     // Evaluate it using the rest of the passed function args.
     //
-    cp = curr = fargs[1];
-    atextbuf = alloc_lbuf("fun_fold");
+    char *curr = fargs[1];
+    char *cp = curr;
+    char *atextbuf = alloc_lbuf("fun_fold");
     StringCopy(atextbuf, atext);
 
+    char *result, *bp, *str, *clist[2];
     // May as well handle first case now.
     //
     if ( nfargs >= 3
@@ -6191,7 +6178,7 @@ FUNCTION(fun_fold)
         *bp = '\0';
     }
 
-    rstore = result;
+    char *rstore = result;
     result = NULL;
 
     while (  cp
@@ -6269,24 +6256,22 @@ FUNCTION(fun_itemize)
     safe_str(word, buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_filter: iteratively perform a function with a list of arguments
- * *              and return the arg, if the function evaluates to TRUE using the
- * *      arg.
- * *
- * *      > &IS_ODD object=mod(%0,2)
- * *      > say filter(object/is_odd,1 2 3 4 5)
- * *      You say, "1 3 5"
- * *      > say filter(object/is_odd,1-2-3-4-5,-)
- * *      You say, "1-3-5"
- * *
- * *  NOTE:  If you specify a separator it is used to delimit returned list
+/* ---------------------------------------------------------------------------
+ * fun_filter: Iteratively perform a function with a list of arguments and
+ *             return the arg, if the function evaluates to TRUE using the arg.
+ *
+ *      > &IS_ODD object=mod(%0,2)
+ *      > say filter(object/is_odd,1 2 3 4 5)
+ *      You say, "1 3 5"
+ *      > say filter(object/is_odd,1-2-3-4-5,-)
+ *      You say, "1-3-5"
+ *
+ *  NOTE:  If you specify a separator, it is used to delimit the returned list.
  */
 
 FUNCTION(fun_filter)
 {
-    char *result, *curr, *objstring, *bp, *str, *cp, *atextbuf, sep;
+    char sep;
 
     varargs_preamble(3);
 
@@ -6338,8 +6323,9 @@ FUNCTION(fun_filter)
 
     // Now iteratively eval the attrib with the argument list.
     //
+    char *result, *curr, *objstring, *bp, *str, *cp; 
     cp = curr = trim_space_sep(fargs[1], sep);
-    atextbuf = alloc_lbuf("fun_filter");
+    char *atextbuf = alloc_lbuf("fun_filter");
     BOOL bFirst = TRUE;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
@@ -6367,21 +6353,19 @@ FUNCTION(fun_filter)
     free_lbuf(atextbuf);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_map: iteratively evaluate an attribute with a list of arguments.
- * *
- * *  > &DIV_TWO object=fdiv(%0,2)
- * *  > say map(1 2 3 4 5,object/div_two)
- * *  You say, "0.5 1 1.5 2 2.5"
- * *  > say map(object/div_two,1-2-3-4-5,-)
- * *  You say, "0.5-1-1.5-2-2.5"
- * *
+/* ---------------------------------------------------------------------------
+ * fun_map: Iteratively evaluate an attribute with a list of arguments.
+ * 
+ *      > &DIV_TWO object=fdiv(%0,2)
+ *      > say map(1 2 3 4 5,object/div_two)
+ *      You say, "0.5 1 1.5 2 2.5"
+ *      > say map(object/div_two,1-2-3-4-5,-)
+ *      You say, "0.5-1-1.5-2-2.5"
  */
 
 FUNCTION(fun_map)
 {
-    char *objstring, *str, *cp, *atextbuf, sep, osep;
+    char sep, osep;
 
     svarargs_preamble(4);
 
@@ -6433,9 +6417,10 @@ FUNCTION(fun_map)
 
     // Now process the list one element at a time.
     //
-    cp = trim_space_sep(fargs[1], sep);
-    atextbuf = alloc_lbuf("fun_map");
+    char *cp = trim_space_sep(fargs[1], sep);
+    char *atextbuf = alloc_lbuf("fun_map");
     BOOL first = TRUE;
+    char *objstring, *str;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
@@ -6468,19 +6453,18 @@ FUNCTION(fun_edit)
     free_lbuf(tstr);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_locate: Search for things with the perspective of another obj.
+/* ---------------------------------------------------------------------------
+ * fun_locate: Search for things with the perspective of another obj.
  */
 
 FUNCTION(fun_locate)
 {
-    int pref_type, check_locks, verbose, multiple;
+    BOOL check_locks, verbose, multiple;
     dbref thing, what;
     char *cp;
 
-    pref_type = NOTYPE;
-    check_locks = verbose = multiple = 0;
+    int pref_type = NOTYPE;
+    check_locks = verbose = multiple = FALSE;
 
     // Find the thing to do the looking, make sure we control it.
     //
@@ -6508,7 +6492,7 @@ FUNCTION(fun_locate)
             pref_type = TYPE_EXIT;
             break;
         case 'L':
-            check_locks = 1;
+            check_locks = TRUE;
             break;
         case 'P':
             pref_type = TYPE_PLAYER;
@@ -6520,10 +6504,10 @@ FUNCTION(fun_locate)
             pref_type = TYPE_THING;
             break;
         case 'V':
-            verbose = 1;
+            verbose = TRUE;
             break;
         case 'X':
-            multiple = 1;
+            multiple = TRUE;
             break;
         }
     }
@@ -6594,21 +6578,20 @@ FUNCTION(fun_locate)
     safe_tprintf_str(buff, bufc, "#%d", what);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_switch: Return value based on pattern matching (ala @switch)
- * * NOTE: This function expects that its arguments have not been evaluated.
+/* ---------------------------------------------------------------------------
+ * fun_switch: Return value based on pattern matching (ala @switch)
+ * NOTE: This function expects that its arguments have not been evaluated.
  */
 
 FUNCTION(fun_switch)
 {
     int i;
-    char *mbuff, *tbuff, *bp, *str;
+    char *mbuff, *tbuff, *bp;
 
     // Evaluate the target in fargs[0].
     //
     mbuff = bp = alloc_lbuf("fun_switch");
-    str = fargs[0];
+    char *str = fargs[0];
     TinyExec(mbuff, &bp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
@@ -6936,8 +6919,7 @@ static void do_asort(char *s[], int n, int sort_type)
 
 FUNCTION(fun_sort)
 {
-    int nitems, sort_type;
-    char *list, sep, osep;
+    char sep, osep;
     char *ptrs[LBUF_SIZE / 2];
 
     // If we are passed an empty arglist return a null string.
@@ -6946,18 +6928,17 @@ FUNCTION(fun_sort)
 
     // Convert the list to an array.
     //
-    list = alloc_lbuf("fun_sort");
+    char *list = alloc_lbuf("fun_sort");
     StringCopy(list, fargs[0]);
-    nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
-    sort_type = get_list_type(fargs, nfargs, 2, ptrs, nitems);
+    int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+    int sort_type = get_list_type(fargs, nfargs, 2, ptrs, nitems);
     do_asort(ptrs, nitems, sort_type);
     arr2list(ptrs, nitems, buff, bufc, osep);
     free_lbuf(list);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_setunion, fun_setdiff, fun_setinter: Set management.
+/* ---------------------------------------------------------------------------
+ * fun_setunion, fun_setdiff, fun_setinter: Set management.
  */
 
 #define SET_UNION     1
@@ -7232,9 +7213,8 @@ FUNCTION(fun_setinter)
     handle_sets(fargs, buff, bufc, SET_INTERSECT, sep, osep);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * rjust, ljust, center: Justify or center text, specifying fill character
+/* ---------------------------------------------------------------------------
+ * rjust, ljust, center: Justify or center text, specifying fill character.
  */
 #define CJC_CENTER 0
 #define CJC_LJUST  1
@@ -7444,9 +7424,8 @@ FUNCTION(fun_center)
     centerjustcombo(CJC_CENTER, buff, bufc, fargs, nfargs);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * setq, setr, r: set and read global registers.
+/* ---------------------------------------------------------------------------
+ * setq, setr, r: set and read global registers.
  */
 
 FUNCTION(fun_setq)
@@ -7508,24 +7487,22 @@ FUNCTION(fun_r)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * isnum: is the argument a number?
+/* ---------------------------------------------------------------------------
+ * isnum: is the argument a number?
  */
 
 FUNCTION(fun_isnum)
 {
-    safe_str((is_real(fargs[0]) ? "1" : "0"), buff, bufc);
+    safe_chr((is_real(fargs[0]) ? '1' : '0'), buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
+/* ---------------------------------------------------------------------------
  * * israt: is the argument an rational?
  */
 
 FUNCTION(fun_israt)
 {
-    safe_str((is_rational(fargs[0]) ? "1" : "0"), buff, bufc);
+    safe_chr((is_rational(fargs[0]) ? '1' : '0'), buff, bufc);
 }
 
 /*
@@ -7535,12 +7512,11 @@ FUNCTION(fun_israt)
 
 FUNCTION(fun_isint)
 {
-    safe_str((is_integer(fargs[0], NULL) ? "1" : "0"), buff, bufc);
+    safe_chr((is_integer(fargs[0], NULL) ? '1' : '0'), buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * isdbref: is the argument a valid dbref?
+/* ---------------------------------------------------------------------------
+ * isdbref: is the argument a valid dbref?
  */
 
 FUNCTION(fun_isdbref)
@@ -7561,9 +7537,8 @@ FUNCTION(fun_isdbref)
     safe_chr(ch, buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * trim: trim off unwanted white space.
+/* ---------------------------------------------------------------------------
+ * trim: trim off unwanted white space.
  */
 
 FUNCTION(fun_trim)
@@ -7586,7 +7561,9 @@ FUNCTION(fun_trim)
             trim = 3;
             break;
         }
-    } else {
+    }
+    else
+    {
         trim = 3;
     }
 
@@ -7607,9 +7584,13 @@ FUNCTION(fun_trim)
         while (*q != '\0')
         {
             if (*q == sep)
+            {
                 q++;
+            }
             else
+            {
                 break;
+            }
         }
     }
     safe_str(q, buff, bufc);
@@ -7954,9 +7935,6 @@ void do_function
 {
     UFUN *ufp, *ufp2;
     ATTR *ap;
-    char *np, *bp;
-    int atr;
-    dbref obj;
 
     if ((key & FN_LIST) || !fname || *fname == '\0')
     {
@@ -7988,6 +7966,10 @@ void do_function
         notify(executor, tprintf("Total User-Defined Functions: %d", count));
         return;
     }
+
+    char *np, *bp;
+    int atr;
+    dbref obj;
 
     // Make a local uppercase copy of the function name.
     //
@@ -8088,33 +8070,41 @@ void do_function
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_functable: List available functions.
+/* ---------------------------------------------------------------------------
+ * list_functable: List available functions.
  */
 
 void list_functable(dbref player)
 {
-    FUN *fp;
-    UFUN *ufp;
-    char *buf, *bp, *cp;
-
-    buf = alloc_lbuf("list_functable");
-    bp = buf;
+    char *buf = alloc_lbuf("list_functable");
+    char *bp = buf;
+    char *cp;
     for (cp = (char *)"Functions:"; *cp; cp++)
+    {
         *bp++ = *cp;
-    for (fp = flist; fp->name; fp++) {
-        if (check_access(player, fp->perms)) {
+    }
+    FUN *fp;
+    for (fp = flist; fp->name; fp++)
+    {
+        if (check_access(player, fp->perms))
+        {
             *bp++ = ' ';
             for (cp = (char *)(fp->name); *cp; cp++)
+            {
                 *bp++ = *cp;
+            }
         }
     }
-    for (ufp = ufun_head; ufp; ufp = ufp->next) {
-        if (check_access(player, ufp->perms)) {
+    UFUN *ufp;
+    for (ufp = ufun_head; ufp; ufp = ufp->next)
+    {
+        if (check_access(player, ufp->perms))
+        {
             *bp++ = ' ';
             for (cp = (char *)(ufp->name); *cp; cp++)
+            {
                 *bp++ = *cp;
+            }
         }
     }
     *bp = '\0';
@@ -8122,21 +8112,22 @@ void list_functable(dbref player)
     free_lbuf(buf);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_func_access: set access on functions
+/* ---------------------------------------------------------------------------
+ * cf_func_access: set access on functions
  */
 
 CF_HAND(cf_func_access)
 {
-    FUN *fp;
-    UFUN *ufp;
     char *ap;
-
-    for (ap = str; *ap && !Tiny_IsSpace[(unsigned char)*ap]; ap++) ;
+    for (ap = str; *ap && !Tiny_IsSpace[(unsigned char)*ap]; ap++)
+    {
+        ; // Nothing.
+    }
     if (*ap)
+    {
         *ap++ = '\0';
-
+    }
+    FUN *fp;
     for (fp = flist; fp->name; fp++)
     {
         if (!string_compare(fp->name, str))
@@ -8144,6 +8135,7 @@ CF_HAND(cf_func_access)
             return cf_modify_bits(&fp->perms, ap, pExtra, nExtra, player, cmd);
         }
     }
+    UFUN *ufp;
     for (ufp = ufun_head; ufp; ufp = ufp->next)
     {
         if (!string_compare(ufp->name, str))
@@ -8271,18 +8263,18 @@ void GeneralTimeConversion
     BOOL bNames
 )
 {
-    char *p = Buffer;
-
     if (Seconds < 0)
     {
         Seconds = 0;
     }
 
+    char *p = Buffer;
+    int iValue;
+
     for (int i = iStartBase; i <= iEndBase; i++)
     {
         if (reTable[i].iBase <= Seconds || i == iEndBase)
         {
-            int iValue;
 
             // Division and remainder.
             //
@@ -8606,11 +8598,11 @@ FUNCTION(fun_lattrcmds)
     // permission, so we don't have to.  Have p_a_w assume the
     // slash-star if it is missing.
     //
-    dbref thing;
-    BOOL isFirst = TRUE;
     olist_push();
+    dbref thing;
     if (parse_attrib_wild(executor, fargs[0], &thing, 0, 0, 1))
     {
+        BOOL isFirst = TRUE;
         char *buf = alloc_lbuf("fun_lattrcmds");
         for (int ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
@@ -8648,8 +8640,8 @@ FUNCTION(fun_lattrcmds)
 FUNCTION(fun_lcmds)
 {
     char sep;
-    if (!delim_check(fargs, nfargs, 2, &sep, buff, bufc, 0, executor,
-                     caller, enactor, cargs, ncargs, 1))
+    if (!delim_check(fargs, nfargs, 2, &sep, buff, bufc, FALSE, executor,
+                     caller, enactor, cargs, ncargs, TRUE))
     {
         return;
     }
@@ -8668,11 +8660,11 @@ FUNCTION(fun_lcmds)
     // permission, so we don't have to.  Have p_a_w assume the
     // slash-star if it is missing.
     //
-    dbref thing;
-    BOOL isFirst = TRUE;
     olist_push();
+    dbref thing;
     if (parse_attrib_wild(executor, fargs[0], &thing, 0, 0, 1))
     {
+        BOOL isFirst = TRUE;
         char *buf = alloc_lbuf("fun_lattrcmds");
         dbref aowner;
         int   aflags;

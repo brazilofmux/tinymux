@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.27 2002-07-09 19:00:34 sdennis Exp $
+// $Id: funceval.cpp,v 1.28 2002-07-09 19:33:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -2352,7 +2352,7 @@ FUNCTION(fun_munge)
     ATTR *ap;
     char *list1, *list2, *rlist;
     char *ptrs1[LBUF_SIZE / 2], *ptrs2[LBUF_SIZE / 2], *results[LBUF_SIZE / 2];
-    char *atext, *bp, *str, sep, *oldp;
+    char *bp, *str, sep, *oldp;
     char *uargs[2], isep[2] = { '\0', '\0' };
 
     oldp = *bufc;
@@ -2363,9 +2363,13 @@ FUNCTION(fun_munge)
     if (parse_attrib(executor, fargs[0], &thing, &anum))
     {
         if ((anum == NOTHING) || !Good_obj(thing))
+        {
             ap = NULL;
+        }
         else
+        {
             ap = atr_num(anum);
+        }
     }
     else
     {
@@ -2377,7 +2381,7 @@ FUNCTION(fun_munge)
     {
         return;
     }
-    atext = atr_pget(thing, ap->number, &aowner, &aflags);
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
     if (!atext)
     {
         return;
@@ -2471,8 +2475,8 @@ FUNCTION(fun_die)
 FUNCTION(fun_lrand)
 {
     char sep;
-    if (!delim_check(fargs, nfargs, 4, &sep, buff, bufc, 0,
-        executor, caller, enactor, cargs, ncargs, 1))
+    if (!delim_check(fargs, nfargs, 4, &sep, buff, bufc, FALSE,
+        executor, caller, enactor, cargs, ncargs, TRUE))
     {
         return;
     }

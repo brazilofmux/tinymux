@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.12 2002-07-09 05:57:33 jake Exp $
+// $Id: look.cpp,v 1.13 2002-07-09 19:33:53 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -1341,7 +1341,7 @@ static void exam_wildattrs
 (
     dbref player,
     dbref thing,
-    int do_parent
+    BOOL do_parent
 )
 {
     int atr;
@@ -1431,12 +1431,6 @@ static void exam_wildattrs
 
 void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
-    dbref thing, content, exit, aowner, loc;
-    char savec;
-    char *temp, *buf, *buf2;
-    BOOLEXP *pBoolExp;
-    int control, aflags, do_parent;
-
     // This command is pointless if the player can't hear.
     //
     if (!Hearer(executor))
@@ -1444,12 +1438,18 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         return;
     }
 
-    do_parent = key & EXAM_PARENT;
+    dbref content, exit, aowner, loc;
+    char savec;
+    char *temp, *buf, *buf2;
+    BOOLEXP *pBoolExp;
+    int aflags;
+    BOOL control;
+    BOOL do_parent = key & EXAM_PARENT;
 
-    thing = NOTHING;
+    dbref thing = NOTHING;
     if (!name || !*name)
     {
-        if ((thing = Location(executor)) == NOTHING)
+        if (Location(executor) == NOTHING)
         {
             return;
         }
@@ -1459,7 +1459,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         // Check for obj/attr first.
         //
         olist_push();
-        if (parse_attrib_wild(executor, name, &thing, do_parent, 1, 0))
+        if (parse_attrib_wild(executor, name, &thing, do_parent, TRUE, FALSE))
         {
             exam_wildattrs(executor, thing, do_parent);
             olist_pop();
@@ -2200,18 +2200,18 @@ void do_decomp
     int val, aflags, ca;
     ATTR *attr;
     NAMETAB *np;
-    int wild_decomp;
+    BOOL wild_decomp;
 
     // Check for obj/attr first.
     //
     olist_push();
-    if (parse_attrib_wild(executor, name, &thing, 0, 1, 0))
+    if (parse_attrib_wild(executor, name, &thing, FALSE, TRUE, FALSE))
     {
-        wild_decomp = 1;
+        wild_decomp = TRUE;
     }
     else
     {
-        wild_decomp = 0;
+        wild_decomp = FALSE;
         init_match(executor, name, TYPE_THING);
         match_everything(MAT_EXIT_PARENTS);
         thing = noisy_match_result();
