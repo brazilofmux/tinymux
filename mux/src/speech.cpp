@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.10 2003-03-01 05:05:12 sdennis Exp $
+// $Id: speech.cpp,v 1.11 2003-03-17 15:35:15 jake Exp $
 //
 
 #include "copyright.h"
@@ -144,6 +144,15 @@ void do_think(dbref executor, dbref caller, dbref enactor, int key,
 
 void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
+    // Make sure speaker is somewhere if speaking in a place
+    //
+    dbref loc = where_is(executor);
+    if ( !(  Good_obj(loc)
+            && sp_ok(executor)))
+    {
+        return;
+    }
+
     int say_flags, depth;
 
     // Convert prefix-coded messages into the normal type
@@ -214,26 +223,6 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         if (messageNew)
         {
             message = messageNew;
-        }
-    }
-
-    // Make sure speaker is somewhere if speaking in a place
-    //
-    dbref loc = where_is(executor);
-    switch (key)
-    {
-    case SAY_SAY:
-    case SAY_POSE:
-    case SAY_POSE_NOSPC:
-    case SAY_EMIT:
-        if ( !(  Good_obj(loc)
-              && sp_ok(executor)))
-        {
-            if (messageNew)
-            {
-                free_lbuf(messageNew);
-            }
-            return;
         }
     }
 
