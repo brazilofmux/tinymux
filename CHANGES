@@ -104,6 +104,7 @@ Feature Additions:
  -- Lists of floating-point numbers (ADD, LADD, and SUB) are added  much
     more precisely.
  -- Updated Mersenne Twister Random Number code to a later version.
+ -- Bug #799 - Update lcmds() to handle spaced commands and ^-listens.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -198,6 +199,8 @@ Bug Fixes:
     new guest system easier.
  -- The names reported in the @chown message were usually wrong.
  -- Fixed typo bug in 2.1.12.37 that disallowed guests from connecting.
+ -- Add /Op compiler option to fix "20:000000000" bug on Win32.
+ -- Bug #799 - SIGSEGV was possible in lcmds().
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
