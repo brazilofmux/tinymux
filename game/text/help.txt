@@ -9257,8 +9257,6 @@ VALID()
   This function returns -1 if the enactor has insufficient permission
   (i.e., not self and no Wizard_Who power).
 
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
 & LCMDS()
   Function: lcmds(<object>)
 
@@ -9272,8 +9270,6 @@ VALID()
     > say lcmds(me)
     You say "command1 command2"
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: lattrcmds().
   
 & STARTSECS()
@@ -9288,8 +9284,6 @@ VALID()
     > say startsecs()
     You say "959093815"
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: secs().
   
 & LATTRCMDS()
@@ -9306,8 +9300,6 @@ VALID()
     > say lcmds(me)
     You say "CMD1 CMD2"
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: lcmds().
   
 & DIGITTIME()
@@ -9323,8 +9315,6 @@ VALID()
     > say digittime(123456)
     You say "1d 10:18"
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: writetime(), singletime(), exptime(), secs(), time().
   
 & WRITETIME()
@@ -9345,8 +9335,6 @@ VALID()
     > say exptime(123456)
     You say "1 day 10 hours 17 minutes 36 seconds"
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: writetime(), singletime(), digittime(), secs(), time().
   
 & EXPTIME()
@@ -9367,8 +9355,6 @@ VALID()
     > say exptime(123456)
     You say "1d 10h 17m 36s"
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: writetime(), singletime(), digittime(), secs(), time().
   
 & SINGLETIME()
@@ -9385,8 +9371,6 @@ VALID()
     > say singletime(123456)
     You say "1d"
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: writetime(), exptime(), digittime(), secs(), time().
   
 & LFLAGS()
@@ -9400,8 +9384,6 @@ VALID()
     > say lflags(me)
     You say "ANSI NOSPOOF WIZARD CONNECTED IMMORTAL SAFE"
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: flags(), type().
   
 & CONNTOTAL()
@@ -9410,8 +9392,6 @@ VALID()
   Returns the number of seconds that <player> has been connected to
   the MUX. This also includes the current connection time.
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: connmax(), connlast(), connnum(), connleft(), secs(),
             conn().
   
@@ -9421,8 +9401,6 @@ VALID()
   Returns the longest connection time that <player> has been
   connected to the MUX -- perhaps even the current session.
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: conntotal(), connlast(), connnum(), connleft(), secs(),
             conn().
   
@@ -9432,8 +9410,6 @@ VALID()
   Returns the number of seconds that <player>'s last connection to
   the MUX was.
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: conntotal(), connmax(), connnum(), connleft(), secs(),
             conn().
   
@@ -9443,8 +9419,6 @@ VALID()
   Returns the number connections that <player> has had to the MUX
   including the current connection.
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: conntotal(), connmax(), connlast(), connleft(), secs(),
             conn().
   
@@ -9455,7 +9429,5 @@ VALID()
   January 1, 1970) that represents when the <player> last
   disconnected from the MUX.
   
-  NOTE: Only available if server built with GAME_DOOFERMUX.
-
   See also: conntotal(), connmax(), connlast(), connnum(), secs(),
             conn().
