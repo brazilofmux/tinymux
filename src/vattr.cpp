@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.5 2000-06-06 00:18:29 sdennis Exp $
+// $Id: vattr.cpp,v 1.6 2000-06-07 10:17:30 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -671,7 +671,7 @@ VATTR *vattr_next(VATTR *vp)
 
 static char *store_string(char *str)
 {
-    int nSize = strlen(str);
+    int nSize = strlen(str) + 1;
 
     // If we have no block, or there's not enough room left in the
     // current one, get a new one.
