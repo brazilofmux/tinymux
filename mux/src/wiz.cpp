@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.5 2003-02-17 02:26:23 sdennis Exp $
+// $Id: wiz.cpp,v 1.6 2003-03-08 06:41:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -524,7 +524,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
 
     if (key & BOOT_PORT)
     {
-        count = boot_by_port(victim, !God(executor), buf);
+        count = boot_by_port(victim, God(executor), buf);
     }
     else
     {
