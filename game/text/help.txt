@@ -5940,65 +5940,66 @@ FUNCTION LIST
   Help is available for the following functions:
     @@()        ABS()       ACOS()      ADD()       AFTER()     ALPHAMAX()
     ALPHAMIN()  AND()       ANDFLAGS()  ANSI()      APOSS()     ART()
-    ASIN()      ATAN()      BAND()      BEEP()      BEFORE()    BNAND()
-    BOR()       CAPSTR()    CASE()      CAT()       CEIL()      CENTER()
-    CHANNELS()  CHILDREN()  CMDS()      COLUMNS()   COMALIAS()  COMP()
-    COMTITLE()  CON()       CONN()      CONNLAST()  CONNLEFT()  CONNMAX()
-    CONNNUM()   CONNTOTAL() CONTROLS()  CONVSECS()  CONVTIME()  COS()
-    CREATE()    CRC32()     CWHO()      DEC()       DECRYPT()   DEFAULT()
-    DELETE()    DIE()       DIGITTIME() DIST2D()    DIST3D()    DOING()
-    E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMPTY()
-    ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()       EXPTIME()
-    EXTRACT()   EVAL()      FDIV()      FILTER()    FINDABLE()  FIRST()
-    FLAGS()     FLOOR()     FLOORDIV()  FOLD()      FOREACH()   FULLNAME()
-    GET()       GET_EVAL()  GRAB()      GREP()      GREPI()     GT()
-    GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()
-    HOME()      IADD()      IDIV()      IDLE()      IFELSE()    IMUL()
-    INC()       INDEX()     INSERT()    INZONE()    ISDBREF()   ISNUM()
-    ISUB()      ISWORD()    ITER()      ITEMS()     LAST()      LATTR()
-    LATTRCMDS() LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
-    LFLAGS()    LIST()      LIT()       LJUST()     LN()        LNUM()
-    LOC()       LOCATE()    LOCK()      LOG()       LPARENT()   LPOS()
+    ASIN()      ATAN()      ATTRCNT()   BAND()      BEEP()      BEFORE()
+    BNAND()     BOR()       CANSEE()    CAPSTR()    CASE()      CAT()
+    CEIL()      CENTER()    CHANNELS()  CHILDREN()  CMDS()      COLUMNS()
+    COMALIAS()  COMP()      COMTITLE()  CON()       CONN()      CONNLAST()
+    CONNLEFT()  CONNMAX()   CONNNUM()   CONNTOTAL() CONTROLS()  CONVSECS()
+    CONVTIME()  COS()       CREATE()    CRC32()     CWHO()      DEC()
+    DECRYPT()   DEFAULT()   DELETE()    DIE()       DIGITTIME() DIST2D()
+    DIST3D()    DOING()     E()         EDEFAULT()  EDIT()      ELEMENTS()
+    ELOCK()     EMPTY()     ENCRYPT()   EQ()        ESCAPE()    EXIT()
+    EXP()       EXPTIME()   EXTRACT()   EVAL()      FDIV()      FILTER()
+    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FOLD()
+    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()
+    GREPI()     GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()
+    HASPOWER()  HASTYPE()   HOME()      IADD()      IDIV()      IDLE()
+    IFELSE()    IMUL()      INC()       INDEX()     INSERT()    INZONE()
+    ISDBREF()   ISNUM()     ISUB()      ISWORD()    ITER()      ITEMS()
+    LAST()      LATTR()     LATTRCMDS() LCMDS()     LCON()      LCSTR()
+    LDELETE()   LEXITS()    LFLAGS()    LIST()      LIT()       LJUST()
+    LN()        LNUM()      LOC()       LOCATE()    LOCK()      LOG()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    LRAND()     LSTACK()    LT()        LTE()       LWHO()      NULL()
-    MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()
-    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
-    MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()
-    NEARBY()    NEQ()       NEXT()      NOT()       NUM()       OBJ()
-    OBJEVAL()   OBJMEM()    OR()        ORFLAGS()   OWNER()     PACK()
-    PARENT()    PARSE()     PEEK()      PEMIT()     PI()        PICKRAND()
-    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
-    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
-    REMAINDER() REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
-    REVWORDS()  RJUST()     RLOC()      ROOM()      ROUND()     S()
-    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
-    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
-    SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()
-    SPACE()     SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
-    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
-    SUB()       SUBJ()      SWITCH()    TABLE()     TAN()       TIME()
-    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
-    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
-    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
-    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
-    WRITETIME() XGET()      XOR()       ZONE()      ZWHO()
+    LPARENT()   LPOS()      LRAND()     LSTACK()    LT()        LTE()
+    LWHO()      NULL()      MAIL()      MAILFROM()  MAP()       MATCH()
+    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
+    MIX()       MOD()       MONEY()     MOTD()      MUDNAME()   MUL()
+    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
+    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OR()        ORFLAGS()
+    OWNER()     PACK()      PARENT()    PARSE()     PEEK()      PEMIT()
+    PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()      POP()
+    PORTS()     POS()       POSS()      POWER()     PUSH()      R()
+    RAND()      REGMATCH()  REMAINDER() REMOVE()    REPEAT()    REPLACE()
+    REST()      REVERSE()   REVWORDS()  RJUST()     RLOC()      ROOM()
+    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
+    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
+    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
+    SORT()      SORTBY()    SPACE()     SPLICE()    SQRT()      SQUISH()
+    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()
+    STRMATCH()  STRTRUNC()  SUB()       SUBJ()      SWITCH()    TABLE()
+    TAN()       TIME()      TRANSLATE() TRIM()      TRUNC()     TYPE()
+    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
+    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
+    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
+    WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()       ZONE()
+    ZWHO()
 
 & FUNCTION CLASSES
 FUNCTION CLASSES
  
-  Arithmetic:                ABS ADD BAND BNAND BOR CRC32 DEC DIE FDIV
+  Arithmetic:                ABS ADD BAND BNAND BOR CEIL CRC32 DEC DIE FDIV
                              FLOORDIV IADD IDIV IMUL INC ISUB MOD MUL PACK
                              POWER RAND REMAINDER SHL SHR SIGN SUB SQRT UNPACK
   Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
   Database Information:      EXIT INZONE LOC LOCATE MAIL NEARBY NEXT NUM RLOC
                              ROOM SEARCH STATS VALID WHERE ZONE ZWHO
   Floating Point Conversion: FLOOR ROUND TRUNC
-  Game Information:          CWHO MOTD MUDNAME POLL VERSION
+  Game Information:          MOTD MUDNAME POLL VERSION
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
                              FOLD GRAB INDEX ITER LAST LNUM MAP MATCH MATCHALL
                              MEMBER MIX MUNGE PARSE PICKRAND LRAND REMOVE REST
@@ -6014,23 +6015,24 @@ FUNCTION CLASSES
 & FUNCTION CLASSES2
 FUNCTION CLASSES (continued)
 
-  Object Information:        ANDFLAGS APOSS CMDS CONTROLS DEFAULT EDEFAULT
-                             ELOCK FLAGS GET GET_EVAL GREP GREPI HASATTR
-                             HASATTRP HASFLAG HASPOWER HASTYPE HOME LATTR
-                             LATTRCMDS LCMDS LCON LEXITS LFLAGS LPARENT
-                             LOCK MONEY NAME OBJ OBJEVAL OBJMEM ORFLAGS
-                             OWNER PARENT PMATCH POSS S SUBJ TYPE U
+  Object Information:        ANDFLAGS APOSS ATTRCNT CHILDREN CMDS CON CONTROLS
+                             DEFAULT EDEFAULT ELOCK FLAGS GET GET_EVAL GREP
+                             GREPI HASATTR HASATTRP HASFLAG HASPOWER HASTYPE
+                             HOME LATTR LATTRCMDS LCMDS LCON LEXITS LFLAGS
+                             LPARENT LOCK MONEY NAME OBJ OBJEVAL OBJMEM
+                             ORFLAGS OWNER PARENT PMATCH POSS S SUBJ TYPE U
                              UDEFAULT ULOCAL V VISIBLE
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNTOTAL
                              DOING FINDABLE IDLE LWHO PLAYMEM PORTS
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ SORT
   Realms:                    CANSEE
   Side-Effect Functions:     LINK TEL
-  Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CAT COMP
-                             DELETE EDIT ESCAPE IFELSE LCSTR LPOS MERGE MID
-                             POS REPEAT REPLACE REVERSE SCRAMBLE SECURE
-                             SPACE SQUISH STRCAT STRLEN STRMATCH TRANSLATE
-                             STRTRUNC SWITCH UCSTR ENCRYPT DECRYPT VALID
+  Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE CAT
+                             CENTER COMP DELETE EDIT ESCAPE IFELSE LCSTR
+                             LJUST LPOS MERGE MID POS REPEAT REPLACE REVERSE
+                             RJUST SCRAMBLE SECURE SPACE SQUISH STRCAT STRLEN
+                             STRMATCH TRANSLATE STRTRUNC SWITCH UCSTR ENCRYPT
+                             DECRYPT VALID
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME WRITETIME
   Trigonometry:              ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
