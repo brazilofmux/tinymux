@@ -1,2 +1,2 @@
 @Echo Off
-..\bin\dbconvert %1 X < %2 > %3
+..\bin\netmux -d%1 -l -i%2 -o%3
