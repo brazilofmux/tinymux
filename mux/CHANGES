@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  September 2003
+Last Update:  October 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -402,4 +402,6 @@ Miscellaneous:
  -- Added nattr (so named by TM3) as an alias for attrcnt (pre-existing MUX2
     feature).
  -- Added docs/LIMITS to describe server limits.
-
+ -- Freshened docs/CONVERSION because support for older database formats
+    was removed in MUX 2.1.
+ -- Switched to using autoconf 2.53.
