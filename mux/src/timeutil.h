@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.9 2004-05-15 15:05:41 sdennis Exp $
+// $Id: timeutil.h,v 1.10 2004-05-15 15:34:39 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -100,6 +100,9 @@ public:
     CLinearTimeDelta(CLinearTimeAbsolute, CLinearTimeAbsolute);
 
     void ReturnTimeValueStruct(struct timeval *tv);
+#ifdef HAVE_NANOSLEEP
+    void ReturnTimeSpecStruct(struct timespec *ts);
+#endif
     long ReturnMilliseconds(void);
     INT64 ReturnMicroseconds(void);
     long ReturnDays(void);

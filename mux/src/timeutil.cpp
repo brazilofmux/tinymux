@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.30 2004-05-15 15:05:41 sdennis Exp $
+// $Id: timeutil.cpp,v 1.31 2004-05-15 15:34:39 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -12,6 +12,7 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
+#include "externs.h"
 
 // for tzset() and localtime()
 //
@@ -694,6 +695,15 @@ void CLinearTimeDelta::ReturnTimeValueStruct(struct timeval *tv)
     tv->tv_sec = (long)i64FloorDivisionMod(m_tDelta, FACTOR_100NS_PER_SECOND, &Leftover);
     tv->tv_usec = (long)i64FloorDivision(Leftover, FACTOR_100NS_PER_MICROSECOND);
 }
+
+#ifdef HAVE_NANOSLEEP
+void CLinearTimeDelta::ReturnTimeSpecStruct(struct timespec *ts)
+{
+    INT64 Leftover;
+    ts->tv_sec = (long)i64FloorDivisionMod(m_tDelta, FACTOR_100NS_PER_SECOND, &Leftover);
+    ts->tv_nsec = (long)Leftover*FACTOR_NANOSECONDS_PER_100NS;
+}
+#endif // HAVE_NANOSLEEP
 
 void CLinearTimeDelta::SetTimeValueStruct(struct timeval *tv)
 {
@@ -1549,21 +1559,34 @@ void GetUTCLinearTime(INT64 *plt)
 
 void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
 {
-//#if   defined(HAVE_NANOSLEEP)
-#if defined(HAVE_USLEEP)
+#if   defined(HAVE_NANOSLEEP)
+    struct timespec req;
+    ltd.ReturnTimeSpecStruct(&req);
+    while (!mudstate.shutdown_flag)
+    {
+        struct timespec rem;
+        if (  nanosleep(&req, &rem) == -1
+           && errno == EINTR)
+        {
+            req = rem;
+        }
+    }
+#elif defined(HAVE_USLEEP)
+#define TIME_1S 1000000
     unsigned long usec;
     INT64 usecTotal = ltd.ReturnMicroseconds();
 
-    while (usecTotal)
+    while (  usecTotal
+          && mudstate.shutdown_flag)
     {
         usec = usecTotal;
-        if (usecTotal <= 1000000)
+        if (usecTotal < TIME_1S)
         {
             usec = usecTotal;
         }
         else
         {
-            usec = 1000000;
+            usec = TIME_1S-1;
         }
         usleep(usec);
         usecTotal -= usec;
