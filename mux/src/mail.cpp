@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.14 2002-07-13 07:23:01 jake Exp $
+// $Id: mail.cpp,v 1.15 2002-07-13 22:11:22 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -4061,8 +4061,10 @@ void do_malias_remove(dbref player, char *alias, char *person)
     for (int i = 0; i < m->numrecep; i++)
     {
         if (ok)
+        {
             m->list[i] = m->list[i + 1];
-        else if ((m->list[i] == thing) && !ok)
+        }
+        else if (m->list[i] == thing)
         {
             m->list[i] = m->list[i + 1];
             ok = TRUE;
@@ -4072,10 +4074,14 @@ void do_malias_remove(dbref player, char *alias, char *person)
     if (ok)
     {
         m->numrecep--;
-    }
-
-    notify(player, tprintf("MAIL: %s removed from alias %s.",
+        notify(player, tprintf("MAIL: %s removed from alias %s.",
                    Name(thing), alias));
+    }
+    else
+    {
+        notify(player, tprintf("MAIL: %s is not a member of alias %s.",
+                   Name(thing), alias));
+    }
 }
 
 void do_malias_rename(dbref player, char *alias, char *newname)
