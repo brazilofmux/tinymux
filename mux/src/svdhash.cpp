@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: svdhash.cpp,v 1.2 2003-01-23 23:50:15 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1051,13 +1051,6 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
         }
         return TRUE;
     }
-
-#ifndef STANDALONE
-    // Don't struggle further.
-    // You'll just make it worse.
-    //
-    mudstate.shutdown_flag = TRUE;
-#endif // STANDALONE
     return FALSE;
 }
 
@@ -1085,13 +1078,6 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
         SetVariablePointers();
         return TRUE;
     }
-
-#ifndef STANDALONE
-    // Don't struggle further.
-    // You'll just make it worse.
-    //
-    mudstate.shutdown_flag = TRUE;
-#endif // STANDALONE
     return FALSE;
 }
 
@@ -1125,12 +1111,8 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
         return TRUE;
     }
 
-#ifndef STANDALONE
-    // Don't struggle further.
-    // You'll just make it worse.
+    // Don't struggle further.  You'll just make it worse.
     //
-    mudstate.shutdown_flag = TRUE;
-#endif // STANDALONE
     return FALSE;
 }
 
@@ -1165,12 +1147,9 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
         return TRUE;
     }
 
-#ifndef STANDALONE
-    // Don't struggle further.
-    // You'll just make it worse.
+    // Don't struggle further.  You'll just make it worse.
     //
     mudstate.shutdown_flag = TRUE;
-#endif // STANDALONE
     return FALSE;
 }
 #endif // WIN32
@@ -1695,12 +1674,13 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
             return FALSE;
         }
 
-#if !defined(STANDALONE) && !defined(WIN32)
+#ifndef WIN32
         // First, if we are @dumping, then we have a @forked process
         // that is also reading from the file. We must pause and let
         // this reader process finish.
         //
-        if (mudstate.dumping)
+        if (  !mudstate.bStandAlone
+           && mudstate.dumping)
         {
             STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
             log_text("Waiting on previously-forked child before page-splitting... ");
@@ -1713,7 +1693,7 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
                 sleep(1);
             } while (mudstate.dumping);
         }
-#endif // !STANDALONE !WIN32
+#endif // !WIN32
 
         // If the depth of this page is already as deep as the directory
         // depth,then we must increase depth of the directory, first.
@@ -2440,9 +2420,12 @@ void CLogFile::WriteBuffer(int nString, const char *pString)
     {
         return;
     }
-#if !defined(STANDALONE) && defined(WIN32)
-    EnterCriticalSection(&csLog);
-#endif // !STANDALONE WIN32
+#ifdef WIN32
+    if (!mudstate.bStandAlone)
+    {
+        EnterCriticalSection(&csLog);
+    }
+#endif // WIN32
     while (nString > 0)
     {
         int nAvailable = SIZEOF_LOG_BUFFER - m_nBuffer;
@@ -2466,9 +2449,12 @@ void CLogFile::WriteBuffer(int nString, const char *pString)
         m_nBuffer += nToMove;
     }
     Flush();
-#if !defined(STANDALONE) && defined(WIN32)
-    LeaveCriticalSection(&csLog);
-#endif // !STANDALONE WIN32
+#ifdef WIN32
+    if (!mudstate.bStandAlone)
+    {
+        LeaveCriticalSection(&csLog);
+    }
+#endif // WIN32
 }
 
 void CLogFile::WriteString(const char *pString)
@@ -2490,15 +2476,15 @@ void DCL_CDECL CLogFile::tinyprintf(char *fmt, ...)
 CLogFile::~CLogFile(void)
 {
     Flush();
-#ifndef STANDALONE
-    CloseLogFile();
+    if (!mudstate.bStandAlone)
+    {
+        CloseLogFile();
 #ifdef WIN32
-    DeleteCriticalSection(&csLog);
+        DeleteCriticalSection(&csLog);
 #endif // WIN32
-#endif // !STANDALONE
+    }
 }
 
-#ifndef STANDALONE
 void MakeLogName(char *szPrefix, CLinearTimeAbsolute lta, char *szLogName)
 {
     strcpy(szLogName, szPrefix);
@@ -2580,22 +2566,21 @@ void CLogFile::ChangePrefix(char *szPrefix)
     }
 }
 
-#endif // !STANDALONE
-
 CLogFile::CLogFile(void)
 {
     m_nBuffer = 0;
 
-#ifndef STANDALONE
+    if (!mudstate.bStandAlone)
+    {
 #ifdef WIN32
-    InitializeCriticalSection(&csLog);
+        InitializeCriticalSection(&csLog);
 #endif // WIN32
-    bEnabled = FALSE;
-    m_hFile = INVALID_HANDLE_VALUE;
-    m_ltaStarted.GetLocal();
-    m_szPrefix[0] = '\0';
-    m_szFilename[0] = '\0';
-#endif // !STANDALONE
+        bEnabled = FALSE;
+        m_hFile = INVALID_HANDLE_VALUE;
+        m_ltaStarted.GetLocal();
+        m_szPrefix[0] = '\0';
+        m_szFilename[0] = '\0';
+    }
 }
 
 #define FILE_SIZE_TRIGGER (512*1024UL)
@@ -2607,38 +2592,42 @@ void CLogFile::Flush(void)
     {
         return;
     }
-#ifdef STANDALONE
-    fwrite(m_aBuffer, m_nBuffer, 1, stderr);
-#else // STANDALONE
-    m_nSize += m_nBuffer;
-    unsigned long nWritten;
+    if (mudstate.bStandAlone)
+    {
+        fwrite(m_aBuffer, m_nBuffer, 1, stderr);
+    }
+    else
+    {
+        m_nSize += m_nBuffer;
+        unsigned long nWritten;
 #ifdef WIN32
-    WriteFile(m_hFile, m_aBuffer, m_nBuffer, &nWritten, NULL);
+        WriteFile(m_hFile, m_aBuffer, m_nBuffer, &nWritten, NULL);
 #else // WIN32
-    write(m_hFile, m_aBuffer, m_nBuffer);
+        write(m_hFile, m_aBuffer, m_nBuffer);
 #endif // WIN32
 
-    if (m_nSize > FILE_SIZE_TRIGGER)
-    {
-        CloseLogFile();
+        if (m_nSize > FILE_SIZE_TRIGGER)
+        {
+            CloseLogFile();
 
-        m_ltaStarted.GetLocal();
-        MakeLogName(m_szPrefix, m_ltaStarted, m_szFilename);
+            m_ltaStarted.GetLocal();
+            MakeLogName(m_szPrefix, m_ltaStarted, m_szFilename);
 
-        CreateLogFile();
+            CreateLogFile();
+        }
     }
-#endif // STANDALONE
     m_nBuffer = 0;
 }
 
 void CLogFile::EnableLogging(void)
 {
     bEnabled = TRUE;
-#ifndef STANDALONE
-    m_ltaStarted.GetLocal();
-    MakeLogName(m_szPrefix, m_ltaStarted, m_szFilename);
-    CreateLogFile();
-#endif
+    if (!mudstate.bStandAlone)
+    {
+        m_ltaStarted.GetLocal();
+        MakeLogName(m_szPrefix, m_ltaStarted, m_szFilename);
+        CreateLogFile();
+    }
 }
 
 #ifdef MEMORY_ACCOUNTING
