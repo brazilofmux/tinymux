@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.2 2003-01-23 17:26:23 sdennis Exp $
+// $Id: externs.h,v 1.3 2003-01-29 23:48:30 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -326,22 +326,10 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define CSET_HEADER     8   /* Sets the channel header, like "[Public]" */
 #define CSET_LOG        9   // Set maximum number of messages to log.
 #define DBCK_DEFAULT    1   /* Get default tests too */
-//#define DBCK_REPORT     2   /* Report info to invoker */
-#define DBCK_FULL       4   /* Do all tests */
-//#define DBCK_FLOATING   8   /* Look for floating rooms */
-//#define DBCK_PURGE      16  /* Purge the db of refs to going objects */
-//#define DBCK_LINKS      32  /* Validate exit and object chains */
-//#define DBCK_WEALTH     64  /* Validate object value/wealth */
-//#define DBCK_OWNER      128 /* Do more extensive owner checking */
-//#define DBCK_OWN_EXIT   256 /* Check exit owner owns src or dest */
-//#define DBCK_WIZARD     512 /* Check for wizards/wiz objects */
-//#define DBCK_TYPES      1024    /* Check for valid & appropriate types */
-//#define DBCK_SPARE      2048    /* Make sure spare header fields are NOTHING */
-//#define DBCK_HOMES      4096    /* Make sure homes and droptos are valid */
+#define DBCK_FULL       2   /* Do all tests */
 #define DECOMP_DBREF    1   /* decompile by dbref */
 //#define DECOMP_PRETTY   2   /* pretty-format output */
 #define DEST_ONE        1   /* object */
-//#define DEST_ALL        2   /* owner */
 #define DEST_OVERRIDE   4   /* override Safe() */
 #define DEST_INSTANT    8   /* instantly destroy */
 #define DIG_TELEPORT    1   /* teleport to room after @digging */
