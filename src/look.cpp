@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.25 2001-07-05 19:42:05 hellspawn Exp $
+// $Id: look.cpp,v 1.26 2001-07-05 23:02:30 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2207,55 +2207,55 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
     }
     else
     {
-       if (key == DECOMP_DBREF)
-	 {
-	    strcpy(thingname, tprintf("#%d", thing));
-	 }
-       else
-	 {
-        switch (Typeof(thing))
+        if (key == DECOMP_DBREF)
         {
-        case TYPE_THING:
-            strcpy(thingname, Name(thing));
-            val = OBJECT_DEPOSIT(Pennies(thing));
-            notify(player,
-                tprintf("@create %s=%d", translate_string(thingname, 1),
-                val));
-            break;
-
-        case TYPE_ROOM:
-            strcpy(thingname, "here");
-            notify(player,
-                tprintf("@dig/teleport %s",
-                translate_string(Name(thing), 1)));
-            break;
-
-        case TYPE_EXIT:
-            strcpy(thingname, Name(thing));
-            notify(player,
-                tprintf("@open %s", translate_string(Name(thing), 1)));
-            for (got = thingname; *got; got++)
-            {
-                if (*got == EXIT_DELIMITER)
-                {
-                    *got = '\0';
-                    break;
-                }
-            }
-            break;
-
-        case TYPE_PLAYER:
-	   if (player == thing)
-	     {
-		strcpy(thingname, "me");
-	     }
-	   else 
-	     {
-		strcpy(thingname, Name(thing));
-	     }
-            break;
+            strcpy(thingname, tprintf("#%d", thing));
         }
-	 }
+        else
+        {
+            switch (Typeof(thing))
+            {
+            case TYPE_THING:
+                strcpy(thingname, Name(thing));
+                val = OBJECT_DEPOSIT(Pennies(thing));
+                notify(player,
+                    tprintf("@create %s=%d", translate_string(thingname, 1),
+                    val));
+                break;
+                
+            case TYPE_ROOM:
+                strcpy(thingname, "here");
+                notify(player,
+                    tprintf("@dig/teleport %s",
+                    translate_string(Name(thing), 1)));
+                break;
+                
+            case TYPE_EXIT:
+                strcpy(thingname, Name(thing));
+                notify(player,
+                    tprintf("@open %s", translate_string(Name(thing), 1)));
+                for (got = thingname; *got; got++)
+                {
+                    if (*got == EXIT_DELIMITER)
+                    {
+                        *got = '\0';
+                        break;
+                    }
+                }
+                break;
+                
+            case TYPE_PLAYER:
+                if (player == thing)
+                {
+                    strcpy(thingname, "me");
+                }
+                else 
+                {
+                    strcpy(thingname, Name(thing));
+                }
+                break;
+            }
+        }
     }
     // Report the lock (if any).
     //
