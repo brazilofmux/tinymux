@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.10 2002-06-18 18:22:58 jake Exp $
+// $Id: db.cpp,v 1.11 2002-06-19 16:00:32 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2034,14 +2034,15 @@ void atr_cpy(dbref dest, dbref source)
         at = atr_num(attr);
         if (attr && at)
         {
-            if (!((at)->flags & (AF_INTERNAL|AF_NOCLONE))
-                && (God(owner) 
-                   || (!God(dest) 
-                      && !((aflags) & AF_LOCK) 
-                      && ((Controls(owner, dest) 
-                         && !((at)->flags & (AF_WIZARD|AF_GOD)) 
-                         && !((aflags) & (AF_WIZARD|AF_GOD))) || 
-                         (Wizard(owner) && !((at)->flags & AF_GOD))))))
+            if (  !(at->flags & (AF_INTERNAL|AF_NOCLONE))
+               && (  God(owner) 
+                  || (  !God(dest) 
+                     && !(aflags & AF_LOCK) 
+                     && (  (  Controls(owner, dest) 
+                           && !(at->flags & (AF_WIZARD|AF_GOD)) 
+                           && !(aflags & (AF_WIZARD|AF_GOD)))
+                        || (  Wizard(owner)
+                           && !(at->flags & AF_GOD))))))
             {
                 // Only set attrs that owner has perm to set.
                 //
