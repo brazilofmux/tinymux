@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.42 2003-02-16 16:39:27 jake Exp $
+// $Id: functions.cpp,v 1.43 2003-02-16 16:45:44 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -6258,23 +6258,12 @@ FUNCTION(fun_fold)
     //
     varargs_preamble(4);
 
+    dbref thing;
+    ATTR *ap;
+
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
-    dbref thing;
-    int   anum;
-    ATTR *ap;
-    if (parse_attrib(executor, fargs[0], &thing, &anum))
-    {
-        if (anum == NOTHING)
-        {
-            ap = NULL;
-        }
-        else
-        {
-            ap = atr_num(anum);
-        }
-    }
-    else
+    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
@@ -6289,15 +6278,20 @@ FUNCTION(fun_fold)
 
     // Use it if we can access it, otherwise return an error.
     //
-    dbref aowner;
-    int   aflags;
-    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext)
+    if (!See_attr(executor, thing, ap))
     {
+        safe_noperm(buff, bufc);
         return;
     }
-    else if (  !*atext
-            || !See_attr(executor, thing, ap))
+
+    dbref aowner;
+    int aflags;
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
+    if (!atext) 
+    {
+        return;
+    } 
+    else if (!*atext)
     {
         free_lbuf(atext);
         return;
@@ -6430,23 +6424,12 @@ FUNCTION(fun_itemize)
 void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor, 
                     char *fargs[], char sep, bool bBool)
 {
+    dbref thing;
+    ATTR *ap;
+
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
-    dbref thing;
-    int   anum;
-    ATTR *ap;
-    if (parse_attrib(executor, fargs[0], &thing, &anum))
-    {
-        if (anum == NOTHING)
-        {
-            ap = NULL;
-        }
-        else
-        {
-            ap = atr_num(anum);
-        }
-    }
-    else
+    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
@@ -6461,15 +6444,20 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
 
     // Use it if we can access it, otherwise return an error.
     //
-    dbref aowner;
-    int   aflags;
-    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext)
+    if (!See_attr(executor, thing, ap))
     {
+        safe_noperm(buff, bufc);
         return;
     }
-    else if (  !*atext
-            || !See_attr(executor, thing, ap))
+
+    dbref aowner;
+    int aflags;
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
+    if (!atext) 
+    {
+        return;
+    } 
+    else if (!*atext)
     {
         free_lbuf(atext);
         return;
