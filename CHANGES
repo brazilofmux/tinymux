@@ -139,6 +139,8 @@ Feature Additions:
  --  Hellspawn added @notify/quiet.
  --  @pemit/list to behave like a series of @pemits. Requested by Alierak.
  --  Added output separator to ITER, PARSE, and MAP. Patch from Ashen-Shugar.
+ --  Added PICKRAND() from ChaoticMUX.
+ --  Added LRAND() from TinyMUSH 3.0.
 
 
 Bug Fixes:
@@ -404,6 +406,8 @@ Bug Fixes:
  --  @nameformat, @conformat and @exitformat global registers are saved and
      cleared. Reported and fixed by Brazil.
  --  Clean up mkindx. Don't use '\r' in the index. Write clean structures.
+ --  conntotal() and friends now account for multiple sessions properly.
+ --  Fixed color leaks in long comsys headers.
 
 
 Performance Enhancements:
