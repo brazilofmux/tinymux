@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules
 //
-// $Id: timeutil.h,v 1.2 2000-04-29 08:02:02 sdennis Exp $
+// $Id: timeutil.h,v 1.3 2000-05-05 19:40:33 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -68,11 +68,16 @@ public:
     BOOL  ReturnFields(FIELDEDTIME *arg_tStruct);
     INT64 ReturnSeconds(void);
     char *ReturnSecondsString(void);
+    INT64 Return100ns(void);
 
     void SetSeconds(INT64 arg_tSeconds);
     void SetSecondsString(char *arg_szSeconds);
     BOOL SetFields(FIELDEDTIME *arg_tStruct);
     BOOL SetString(const char *arg_tBuffer);
+    void Set100ns(INT64 arg_t100ns);
+
+    void UTC2Local(void);
+    void Local2UTC(void);
 };
 
 BOOL FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt);
@@ -84,11 +89,13 @@ class CLinearTimeDelta
     friend int operator<(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
     friend int operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
     friend int operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
+    friend int operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
     friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
     friend CLinearTimeDelta operator-(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
     friend int operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB);
     friend CLinearTimeDelta operator*(const CLinearTimeDelta& ltdA, int nScaler);
     friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& ltdA, const CLinearTimeDelta& ltdB);
+    friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd); 
 
 private:
     INT64 m_tDelta;
@@ -124,5 +131,8 @@ public:
 extern const INT64 FACTOR_100NS_PER_MINUTE;
 extern const INT64 FACTOR_100NS_PER_HOUR;
 extern const INT64 FACTOR_100NS_PER_DAY;
+extern const INT64 FACTOR_100NS_PER_WEEK;
+
+void TIME_Initialize(void);
 
 #endif // TIMEUTIL_H

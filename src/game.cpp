@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.7 2000-04-29 18:24:16 sdennis Exp $
+// $Id: game.cpp,v 1.8 2000-05-05 19:40:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1836,6 +1836,7 @@ int DCL_CDECL main(int argc, char *argv[])
     }
 
     SeedRandomNumberGenerator();
+    TIME_Initialize();
 
 #ifdef MEMORY_ACCOUNTING
     extern CHashFile hfAllocData;

@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.2 2000-04-29 08:02:02 sdennis Exp $
+// $Id: timeutil.cpp,v 1.3 2000-05-05 19:40:33 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -19,6 +19,11 @@
 
 #include "autoconf.h"
 #include "config.h"
+
+// for tzset() and localtime()
+//
+#include <time.h>
+
 #include "timeutil.h"
 #include "stringutil.h"
 
@@ -34,6 +39,11 @@ int iMod(int x, int y)
     }
 }
 
+int iModAdjusted(int x, int y)
+{
+    return iMod(x - 1, y) + 1;
+}
+
 #if 0
 INT64 i64Mod(INT64 x, INT64 y)
 {
@@ -45,11 +55,6 @@ INT64 i64Mod(INT64 x, INT64 y)
     {
         return x % y;
     }
-}
-
-int iModAdjusted(int x, int y)
-{
-    return iMod(x - 1, y) + 1;
 }
 
 INT64 i64ModAdjusted(INT64 x, INT64 y)
@@ -139,6 +144,7 @@ INT64 i64CeilingDivision(INT64 x, INT64 y)
 const INT64 FACTOR_100NS_PER_MINUTE = FACTOR_100NS_PER_SECOND*60;
 const INT64 FACTOR_100NS_PER_HOUR   = FACTOR_100NS_PER_MINUTE*60;
 const INT64 FACTOR_100NS_PER_DAY = FACTOR_100NS_PER_HOUR*24;
+const INT64 FACTOR_100NS_PER_WEEK = FACTOR_100NS_PER_DAY*7;
 
 int CLinearTimeAbsolute::m_nCount = 0;
 char CLinearTimeAbsolute::m_Buffer[204];
@@ -161,9 +167,26 @@ int operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
     return lta.m_tAbsolute == ltb.m_tAbsolute;
 }
 
+int operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb)
+{
+    return lta.m_tDelta == ltb.m_tDelta;
+}
+
+int operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb)
+{
+    return lta.m_tDelta != ltb.m_tDelta;
+}
+
 int operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
 {
     return lta.m_tAbsolute <= ltb.m_tAbsolute;
+}
+
+CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd)
+{
+    CLinearTimeAbsolute t;
+    t.m_tAbsolute = lta.m_tAbsolute - ltd.m_tDelta;
+    return t;
 }
 
 CLinearTimeAbsolute::CLinearTimeAbsolute(const CLinearTimeAbsolute& ltaOrigin, const CLinearTimeDelta& ltdOffset)
@@ -226,7 +249,7 @@ void CLinearTimeDelta::SetMilliseconds(unsigned long arg_dwMilliseconds)
 
 long CLinearTimeDelta::ReturnMilliseconds(void)
 {
-    return (long)i64FloorDivision(m_tDelta, FACTOR_100NS_PER_MILLISECOND);
+    return (long)(m_tDelta/FACTOR_100NS_PER_MILLISECOND);
 }
 
 void CLinearTimeDelta::SetSeconds(INT64 arg_tSeconds)
@@ -242,6 +265,16 @@ void CLinearTimeDelta::Set100ns(INT64 arg_t100ns)
 INT64 CLinearTimeDelta::Return100ns(void)
 {
     return m_tDelta;
+}
+
+void CLinearTimeAbsolute::Set100ns(INT64 arg_t100ns)
+{
+    m_tAbsolute = arg_t100ns;
+}
+
+INT64 CLinearTimeAbsolute::Return100ns(void)
+{
+    return m_tAbsolute;
 }
 
 void CLinearTimeAbsolute::SetSeconds(INT64 arg_tSeconds)
@@ -266,7 +299,7 @@ INT64 CLinearTimeAbsolute::ReturnSeconds(void)
     return i64FloorDivision(m_tAbsolute - EPOCH_OFFSET, FACTOR_100NS_PER_SECOND);
 }
 
-BOOL isLeapYear(unsigned long iYear)
+BOOL isLeapYear(long iYear)
 {
     if (iMod(iYear, 4) != 0)
     {
@@ -577,12 +610,12 @@ CLinearTimeDelta::CLinearTimeDelta(CLinearTimeAbsolute t0, CLinearTimeAbsolute t
 
 long CLinearTimeDelta::ReturnDays(void)
 {
-    return (long)i64FloorDivision(m_tDelta, FACTOR_100NS_PER_DAY);
+    return (long)(m_tDelta/FACTOR_100NS_PER_DAY);
 }
 
 long CLinearTimeDelta::ReturnSeconds(void)
 {
-    return (long)i64FloorDivision(m_tDelta, FACTOR_100NS_PER_SECOND);
+    return (long)(m_tDelta/FACTOR_100NS_PER_SECOND);
 }
 
 BOOL CLinearTimeAbsolute::ReturnFields(FIELDEDTIME *arg_tStruct)
@@ -593,7 +626,6 @@ BOOL CLinearTimeAbsolute::ReturnFields(FIELDEDTIME *arg_tStruct)
 BOOL CLinearTimeAbsolute::SetString(const char *arg_tBuffer)
 {
     FIELDEDTIME ft;
-    GetLocalFieldedTime(&ft);
     if (do_convtime(arg_tBuffer, &ft))
     {
         if (FieldedTimeToLinearTime(&ft, &m_tAbsolute))
@@ -724,10 +756,11 @@ BOOL FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
         return FALSE;
     }
 
-    int iFixedDays = FixedFromGregorian_Adjusted(ft->iYear, ft->iMonth, ft->iDayOfMonth);
-    INT64 lt;
+    int iFixedDay = FixedFromGregorian_Adjusted(ft->iYear, ft->iMonth, ft->iDayOfMonth);
+    ft->iDayOfWeek = iMod(iFixedDay+1, 7);
 
-    lt  = iFixedDays * FACTOR_100NS_PER_DAY;
+    INT64 lt;
+    lt  = iFixedDay * FACTOR_100NS_PER_DAY;
     lt += ft->iHour * FACTOR_100NS_PER_HOUR;
     lt += ft->iMinute * FACTOR_100NS_PER_MINUTE;
     lt += ft->iSecond * FACTOR_100NS_PER_SECOND;
@@ -786,23 +819,7 @@ void CLinearTimeAbsolute::SetSecondsString(char *arg_szSeconds)
 
 void GetUTCLinearTime(INT64 *plt)
 {
-    SYSTEMTIME st;
-    GetSystemTime(&st);
-
-    FIELDEDTIME ft;
-    ft.iYear = st.wYear;
-    ft.iMonth = st.wMonth;
-    ft.iDayOfMonth = st.wDay;
-    ft.iDayOfWeek = st.wDayOfWeek;
-    ft.iDayOfYear = 0;
-    ft.iHour = st.wHour;
-    ft.iMinute = st.wMinute;
-    ft.iSecond = st.wSecond;
-    ft.iMillisecond = st.wMilliseconds;
-    ft.iMicrosecond = 0;
-    ft.iNanosecond = 0;
-
-    FieldedTimeToLinearTime(&ft, plt);
+    GetSystemTimeAsFileTime((struct _FILETIME *)plt);
 }
 
 void GetLocalFieldedTime(FIELDEDTIME *ft)
@@ -862,3 +879,484 @@ void GetLocalFieldedTime(FIELDEDTIME *ft)
 }
 
 #endif // !WIN32
+
+#if 0
+CLinearTimeAbsolute FirstInMonth(int iYear, int iMonth, int iDayOfWeek)
+{
+    FIELDEDTIME ft;
+    memset(&ft, 0, sizeof(FIELDEDTIME));
+    ft.iYear = iYear;
+    ft.iMonth = iMonth;
+    ft.iDayOfMonth = 1;
+    CLinearTimeAbsolute lta;
+    lta.SetFields(&ft);
+    ft.iDayOfMonth = iModAdjusted(ft.iDayOfMonth - ft.iDayOfWeek + iDayOfWeek, 7);
+    lta.SetFields(&ft);
+    return lta;
+}
+
+CLinearTimeAbsolute LastInMonth(int iYear, int iMonth, int iDayOfWeek)
+{
+    FIELDEDTIME ft;
+    memset(&ft, 0, sizeof(FIELDEDTIME));
+    if (iMonth == 12)
+    {
+        ft.iYear = iYear+1;
+        ft.iMonth = 1;
+    }
+    else
+    {
+        ft.iYear = iYear;
+        ft.iMonth = iMonth+1;
+    }
+    ft.iDayOfMonth = 1;
+    CLinearTimeAbsolute lta;
+    lta.SetFields(&ft);
+    ft.iDayOfMonth = iModAdjusted(ft.iDayOfMonth - ft.iDayOfWeek + iDayOfWeek, 7);
+    lta.SetFields(&ft);
+    lta.Set100ns(lta.Return100ns()-FACTOR_100NS_PER_WEEK);
+    return lta;
+}
+#endif
+
+static CLinearTimeAbsolute ltaLowerBound;
+static CLinearTimeAbsolute ltaUpperBound;
+static CLinearTimeDelta    ltdTimeZone;
+
+static int YearType(int iYear)
+{
+    FIELDEDTIME ft;
+    memset(&ft, 0, sizeof(FIELDEDTIME));
+    ft.iYear        = iYear;
+    ft.iMonth       = 1;
+    ft.iDayOfMonth  = 1;
+
+    CLinearTimeAbsolute ltaLocal;
+    ltaLocal.SetFields(&ft);
+    if (isLeapYear(iYear))
+    {
+        return ft.iDayOfWeek + 8;
+    }
+    else
+    {
+        return ft.iDayOfWeek + 1;
+    }
+}
+
+int NearestYearOfType[15];
+
+CLinearTimeDelta ltdIntervalMinimum;
+
+void TIME_Initialize(void)
+{
+    tzset();
+#ifdef WIN32
+    ltaLowerBound.SetSeconds(0);
+#define timezone _timezone
+#else
+    ltaLowerBound.SetSeconds(LONG_MIN);
+#endif
+    ltaUpperBound.SetSeconds(LONG_MAX);
+    ltdTimeZone.SetSeconds(-timezone);
+    ltdIntervalMinimum.Set100ns(FACTOR_100NS_PER_WEEK);
+    for (int i = 0; i < 15; i++)
+    {
+        NearestYearOfType[i] = -1;
+    }
+    int cnt = 14;
+    FIELDEDTIME ft;
+    ltaUpperBound.ReturnFields(&ft);
+    for (i = ft.iYear-1; cnt; i--)
+    {
+        int iYearType = YearType(i);
+        if (NearestYearOfType[iYearType] < 0)
+        {
+            NearestYearOfType[iYearType] = i;
+            cnt--;
+        }
+    }
+}
+
+// Explanation of the table.
+//
+// The table contains intervals of time for which (ltdOffset, isDST)
+// tuples are known.
+//
+// Two intervals may be combined when they share the same tuple
+// value and the time between them is less than ltdIntervalMinimum.
+//
+// Intervals are thrown away in a least-recently-used (LRU) fashion.
+//
+typedef struct
+{
+    CLinearTimeAbsolute ltaStart;
+    CLinearTimeAbsolute ltaEnd;
+    CLinearTimeDelta    ltdOffset;
+    BOOL                isDST;
+    int                 nTouched;
+} OffsetEntry;
+
+#define MAX_OFFSETS 50
+int nOffsetTable = 0;
+int nTouched0 = 0;
+OffsetEntry OffsetTable[MAX_OFFSETS];
+
+// This function finds the entry in the table (0...nOffsetTable-1)
+// whose ltaStart is less than or equal to the search key.
+// If no entry satisfies this search, -1 is returned.
+//
+static int FindOffsetEntry(const CLinearTimeAbsolute& lta)
+{
+    int lo = 0;
+    int hi = nOffsetTable - 1;
+    int mid = 0;
+    while (lo <= hi)
+    {
+        mid = ((hi - lo) >> 1) + lo;
+        if (OffsetTable[mid].ltaStart <= lta)
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid - 1;
+        }
+
+    }
+    return lo-1;
+}
+
+static BOOL QueryOffsetTable
+(
+    CLinearTimeAbsolute lta,
+    CLinearTimeDelta *pltdOffset,
+    BOOL *pisDST,
+    int *piEntry
+)
+{
+    nTouched0++;
+
+    int i = FindOffsetEntry(lta);
+    *piEntry = i;
+
+    // Is the interval defined?
+    //
+    if (  0 <= i
+       && lta <= OffsetTable[i].ltaEnd)
+    {
+        *pltdOffset = OffsetTable[i].ltdOffset;
+        *pisDST = OffsetTable[i].isDST;
+        OffsetTable[i].nTouched = nTouched0;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static void UpdateOffsetTable
+(
+    CLinearTimeAbsolute &lta,
+    CLinearTimeDelta ltdOffset,
+    BOOL isDST,
+    int i
+)
+{
+Again:
+
+    nTouched0++;
+
+    // Is the interval defined?
+    //
+    if (  0 <= i
+       && lta <= OffsetTable[i].ltaEnd)
+    {
+        OffsetTable[i].nTouched = nTouched0;
+        return;
+    }
+
+    BOOL bTryMerge = FALSE;
+
+    // Coalesce new data point into this interval if:
+    //
+    //  1. Tuple for this interval matches the new tuple value.
+    //  2. It's close enough that we can assume all intervening
+    //     values are the same.
+    //
+    if (  0 <= i
+       && OffsetTable[i].ltdOffset == ltdOffset
+       && OffsetTable[i].isDST == isDST
+       && lta <= OffsetTable[i].ltaEnd + ltdIntervalMinimum)
+    {
+        // Cool. We can just extend this interval to include our new
+        // data point.
+        //
+        OffsetTable[i].ltaEnd = lta;
+        OffsetTable[i].nTouched = nTouched0;
+
+        // Since we have changed this interval, we may be able to
+        // coalesce it with the next interval.
+        //
+        bTryMerge = TRUE;
+    }
+
+    // Coalesce new data point into next interval if:
+    //
+    //  1. Next interval exists.
+    //  2. Tuple in next interval matches the new tuple value.
+    //  3. It's close enough that we can assume all intervening
+    //     values are the same.
+    //
+    int iNext = i+1;
+    if (  0 <= iNext
+       && iNext < nOffsetTable
+       && OffsetTable[iNext].ltdOffset == ltdOffset
+       && OffsetTable[iNext].isDST == isDST
+       && OffsetTable[iNext].ltaStart - ltdIntervalMinimum <= lta)
+    {
+        // Cool. We can just extend the next interval to include our
+        // new data point.
+        //
+        OffsetTable[iNext].ltaStart = lta;
+        OffsetTable[iNext].nTouched = nTouched0;
+
+        // Since we have changed the next interval, we may be able
+        // to coalesce it with the previous interval.
+        //
+        bTryMerge = TRUE;
+    }
+
+    if (bTryMerge)
+    {
+        // We should combine the current and next intervals if we can.
+        //
+        if (  0 <= i
+           && iNext < nOffsetTable
+           && OffsetTable[i].ltdOffset == OffsetTable[iNext].ltdOffset
+           && OffsetTable[i].isDST     == OffsetTable[iNext].isDST
+           && OffsetTable[iNext].ltaStart - ltdIntervalMinimum
+              <= OffsetTable[i].ltaEnd)
+        {
+            if (0 <= i && 0 <= iNext)
+            {
+                OffsetTable[i].ltaEnd = OffsetTable[iNext].ltaEnd;
+            }
+            int nSize = sizeof(OffsetEntry)*(nOffsetTable-i-2);
+            memmove(OffsetTable+i+1, OffsetTable+i+2, nSize);
+            nOffsetTable--;
+        }
+    }
+    else
+    {
+        // We'll have'ta create a new interval.
+        //
+        if (nOffsetTable < MAX_OFFSETS)
+        {
+            int nSize = sizeof(OffsetEntry)*(nOffsetTable-i-1);
+            memmove(OffsetTable+i+2, OffsetTable+i+1, nSize);
+            nOffsetTable++;
+            i++;
+            OffsetTable[i].isDST = isDST;
+            OffsetTable[i].ltdOffset = ltdOffset;
+            OffsetTable[i].ltaStart= lta;
+            OffsetTable[i].ltaEnd= lta;
+            OffsetTable[i].nTouched = nTouched0;
+        }
+        else
+        {
+            // We ran out of room. Throw away the least used
+            // interval and try again.
+            //
+            int nMinTouched = OffsetTable[0].nTouched;
+            int iMinTouched = 0;
+            for (int j = 1; j < nOffsetTable; j++)
+            {
+                if (OffsetTable[j].nTouched - nMinTouched < 0)
+                {
+                    nMinTouched = OffsetTable[j].nTouched;
+                    iMinTouched = j;
+                }
+            }
+            int nSize = sizeof(OffsetEntry)*(nOffsetTable-iMinTouched-1);
+            memmove(OffsetTable+iMinTouched, OffsetTable+iMinTouched+1, nSize);
+            nOffsetTable--;
+            goto Again;
+        }
+    }
+}
+
+static CLinearTimeDelta QueryLocalOffsetAt_Internal
+(
+    CLinearTimeAbsolute lta,
+    BOOL *pisDST,
+    int iEntry
+)
+{
+    // At this point, we much use localtime() to discover what the
+    // UTC to local time offset is for the requested UTC time.
+    //
+    // However, localtime() does not support times beyond around
+    // the 2038 year on machines with 32-bit integers, so to
+    // compensant for this, and knowing that we are already dealing
+    // with fictionalized adjustments, we associate a future year
+    // that is outside the supported range with one that is inside
+    // the support range of the same type (there are 14 different
+    // year types depending on leap-year-ness and which day of the
+    // week that January 1st falls on.
+    //
+    // Note: Laws beyond the current year have not been written yet
+    // and are subject to change at any time. For example, Israel
+    // doesn't have regular rules for DST but makes a directive each
+    // year...sometimes to avoid conflicts with Jewish holidays.
+    //
+    if (lta > ltaUpperBound)
+    {
+        // Map the specified year to the closest year with the same
+        // pattern of weeks.
+        //
+        FIELDEDTIME ft;
+        lta.ReturnFields(&ft);
+        ft.iYear = NearestYearOfType[YearType(ft.iYear)];
+        lta.SetFields(&ft);
+    }
+
+    // Rely on localtime() to take a UTC count of seconds and convert
+    // to a fielded local time complete with known timezone and DST
+    // adjustments.
+    //
+    time_t lt = (time_t)lta.ReturnSeconds();
+    struct tm *ptm = localtime(&lt);
+    if (!ptm)
+    {
+        // This should never happen as we have already taken pains
+        // to restrict the range of UTC seconds gives to localtime().
+        //
+        return ltdTimeZone;
+    }
+
+    // With the fielded (or broken down) time from localtime(), we
+    // can convert to a linear time in the same time zone.
+    //
+    FIELDEDTIME ft;
+    ft.iYear        = ptm->tm_year + 1900;
+    ft.iMonth       = ptm->tm_mon + 1;
+    ft.iDayOfMonth  = ptm->tm_mday;
+    ft.iDayOfWeek   = ptm->tm_wday;
+    ft.iDayOfYear   = 0;
+    ft.iHour        = ptm->tm_hour;
+    ft.iMinute      = ptm->tm_min;
+    ft.iSecond      = ptm->tm_sec;
+    ft.iMillisecond = 0;
+    ft.iMicrosecond = 0;
+    ft.iNanosecond  = 0;
+    *pisDST = ptm->tm_isdst > 0 ? TRUE: FALSE;
+
+    CLinearTimeAbsolute ltaLocal;
+    CLinearTimeDelta ltdOffset;
+    ltaLocal.SetFields(&ft);
+    ltdOffset = ltaLocal - lta;
+
+    // We now have a mapping from UTC lta to a (ltdOffset, *pisDST)
+    // tuple which will will use to update the cache.
+    //
+    UpdateOffsetTable(lta, ltdOffset, *pisDST, iEntry);
+    return ltdOffset;
+}
+
+static CLinearTimeDelta QueryLocalOffsetAtUTC
+(
+    const CLinearTimeAbsolute &lta,
+    BOOL *pisDST
+)
+{
+    *pisDST = FALSE;
+
+    // DST started in Britain in May 1916 and in the US in 1918.
+    // Germany used it a little before May 1916, but I'm not sure
+    // of exactly when.
+    //
+    // So, there is locale specific information about DST adjustments
+    // that could reasonable be made between 1916 and 1970.
+    // Because Unix supports negative time_t values while Win32 does
+    // not, it can also support that 1916 to 1970 interval with
+    // timezone information.
+    //
+    // Win32 only supports one timezone rule at a time, or rather
+    // it doesn't have any historical timezone information, but you
+    // can/must provide it yourself. So, in the Win32 case, unless we
+    // are willing to provide historical information (from a tzfile
+    // perhaps), it will only give us the current timezone rule
+    // (the one selected by the control panel or by a TZ environment
+    // variable). It projects this rule forwards and backwards.
+    //
+    // Feel free to fill that gap in yourself with a tzfile file
+    // reader for Win32.
+    //
+    if (lta < ltaLowerBound)
+    {
+        return ltdTimeZone;
+    }
+
+    // Next, we check our table for whether this time falls into a
+    // previously discovered interval. You could view this as a
+    // cache, or you could also view it as a way of reading in the
+    // tzfile without becoming system-dependent enough to actually
+    // read the tzfile.
+    //
+    CLinearTimeDelta ltdOffset;
+    int iEntry;
+    if (QueryOffsetTable(lta, &ltdOffset, pisDST, &iEntry))
+    {
+        return ltdOffset;
+    }
+    ltdOffset = QueryLocalOffsetAt_Internal(lta, pisDST, iEntry);
+
+    // Since the cache failed, let's make sure we have a useful
+    // interval surrounding this last request so that future queries
+    // nearby will be serviced by the cache.
+    //
+    CLinearTimeAbsolute ltaProbe;
+    CLinearTimeDelta ltdDontCare;
+    BOOL bDontCare;
+
+    ltaProbe = lta - ltdIntervalMinimum;
+    if (!QueryOffsetTable(ltaProbe, &ltdDontCare, &bDontCare, &iEntry))
+    {
+        QueryLocalOffsetAt_Internal(ltaProbe, &bDontCare, iEntry);
+    }
+
+    ltaProbe = lta + ltdIntervalMinimum;
+    if (!QueryOffsetTable(ltaProbe, &ltdDontCare, &bDontCare, &iEntry))
+    {
+        QueryLocalOffsetAt_Internal(ltaProbe, &bDontCare, iEntry);
+    }
+    return ltdOffset;
+}
+
+void CLinearTimeAbsolute::UTC2Local(void)
+{
+    BOOL bDST;
+    CLinearTimeDelta ltd = QueryLocalOffsetAtUTC(*this, &bDST);
+    m_tAbsolute += ltd.m_tDelta;
+}
+
+void CLinearTimeAbsolute::Local2UTC(void)
+{
+    BOOL bDST1, bDST2;
+    CLinearTimeDelta ltdOffset1 = QueryLocalOffsetAtUTC(*this, &bDST1);
+    CLinearTimeAbsolute ltaUTC2 = *this - ltdOffset1;
+    CLinearTimeDelta ltdOffset2 = QueryLocalOffsetAtUTC(ltaUTC2, &bDST2);
+
+    CLinearTimeAbsolute ltaLocalGuess = ltaUTC2 + ltdOffset2;
+    if (ltaLocalGuess == *this)
+    {
+        // We found an offset, UTC, local time combination that
+        // works.
+        //
+        m_tAbsolute = ltaUTC2.m_tAbsolute;
+    }
+    else
+    {
+        CLinearTimeAbsolute ltaUTC1 = *this - ltdOffset2;
+        m_tAbsolute = ltaUTC1.m_tAbsolute;
+    }
+}
+

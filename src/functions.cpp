@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.14 2000-05-03 07:09:44 sdennis Exp $
+// $Id: functions.cpp,v 1.15 2000-05-05 19:40:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -848,55 +848,114 @@ FUNCTION(fun_sign)
 }
 
 // ---------------------------------------------------------------------------
-// fun_time: Returns local time in the 'Ddd Mmm DD HH:MM:SS YYYY' format.
+// fun_time:
+//
+// With no arguments, it returns local time in the 'Ddd Mmm DD HH:MM:SS YYYY'
+// format.
+//
+// If an argument is provided, "utc" gives a UTC time string, and "local"
+// gives the local time string.
 //
 FUNCTION(fun_time)
 {
     CLinearTimeAbsolute ltaNow;
-    ltaNow.GetLocal();
+    if (!fn_range_check("TIME", nfargs, 0, 1, buff, bufc))
+    {
+        return;
+    }
+    if (nfargs == 0 || _stricmp("utc", fargs[0]) != 0)
+    {
+        ltaNow.GetLocal();
+    }
+    else
+    {
+        ltaNow.GetUTC();
+    }
     char *temp = ltaNow.ReturnDateString();
     safe_str(temp, buff, bufc);
 }
 
 // ---------------------------------------------------------------------------
-// fun_secs: Seconds since Jan 01 00:00:00 1970 Local Time not counting any
-//      leap seconds.
+// fun_secs.
 //
-// MUX 1.6 originally returned seconds since Jan 01 00:00:00 1970 UTC.
+// With no arguments, it returns seconds since Jan 01 00:00:00 1970 UTC not
+// counting leap seconds.
+//
+// If an argument is provided, "utc" gives UTC seconds, and "local" gives
+// an integer which corresponds to a local time string. It is not useful
+// as a count, but it can be given to convsecs(secs(),raw) to get the
+// corresponding time string.
 //
 FUNCTION(fun_secs)
 {
-    CLinearTimeAbsolute lsaNow;
-    lsaNow.GetLocal();
-    safe_str(lsaNow.ReturnSecondsString(), buff, bufc);
+    CLinearTimeAbsolute ltaNow;
+    if (!fn_range_check("SECS", nfargs, 0, 1, buff, bufc))
+    {
+        return;
+    }
+    if (nfargs == 0 || _stricmp("local", fargs[0]) != 0)
+    {
+        ltaNow.GetUTC();
+    }
+    else
+    {
+        ltaNow.GetLocal();
+    }
+    safe_str(ltaNow.ReturnSecondsString(), buff, bufc);
 }
 
 // ---------------------------------------------------------------------------
-// fun_convsecs: Converts seconds from Jan 01 00:00:00 1970 Local Time to a
-//      local time string in the 'Ddd Mmm DD HH:MM:SS YYYY' format.
+// fun_convsecs.
 //
-// MUX 1.6 originally converted seconds since Jan 01 00:00:00 1970 UTC.
+// With one arguments, it converts seconds from Jan 01 00:00:00 1970 UTC to a
+// local time string in the 'Ddd Mmm DD HH:MM:SS YYYY' format.
+//
+// If a second argument is given, "raw" indicates that no timezone/dst
+// conversions should be applied. This is useful to give a unique one-to-one
+// mapping between an integer and it's corresponding text-string.
 //
 FUNCTION(fun_convsecs)
 {
     CLinearTimeAbsolute lta;
+    if (!fn_range_check("CONVSECS", nfargs, 1, 2, buff, bufc))
+    {
+        return;
+    }
     lta.SetSecondsString(fargs[0]);
+    if (nfargs == 1 || _stricmp("raw", fargs[1]) != 0)
+    {
+        lta.UTC2Local();
+    }
     char *temp = lta.ReturnDateString();
     safe_str(temp, buff, bufc);
 }
 
 // ---------------------------------------------------------------------------
-// fun_convtime: Converts a local time string in the format
-//      '[Ddd] Mmm DD HH:MM:SS YYYY' to a count of seconds from
-//      Jan 01 00:00:00 1970 Local Time.
+// fun_convtime.
 //
-// MUX 1.6 originally converted to seconds from Jan 01 00:00:00 1970 UTC.
+// With one argument, it converts a local time string in the format
+//'[Ddd] Mmm DD HH:MM:SS YYYY' to a count of seconds from Jan 01 00:00:00 1970
+// UTC.
+//
+// If a second argument is given, "raw" indicates that no timezone/DST
+// conversions should be applied. This is useful to give a unique one-to-one
+// mapping between an integer and it's corresponding text-string.
+//
+// This function returns -1 if there was a problem parsing the time string.
 //
 FUNCTION(fun_convtime)
 {
     CLinearTimeAbsolute lta;
+    if (!fn_range_check("CONVTIME", nfargs, 1, 2, buff, bufc))
+    {
+        return;
+    }
     if (lta.SetString(fargs[0]))
     {
+        if (nfargs == 1 || _stricmp("raw", fargs[1]) != 0)
+        {
+            lta.Local2UTC();
+        }
         safe_str(Tiny_i64toa_t(lta.ReturnSeconds()), buff, bufc);
     }
     else
@@ -904,7 +963,6 @@ FUNCTION(fun_convtime)
         safe_str("-1", buff, bufc);
     }
 }
-
 
 /*
  * ---------------------------------------------------------------------------
@@ -5891,8 +5949,8 @@ FUN flist[] =
     {"CON",      fun_con,      1,  0,          CA_PUBLIC},
     {"CONN",     fun_conn,     1,  0,          CA_PUBLIC},
     {"CONTROLS", fun_controls, 2,  0,          CA_PUBLIC},
-    {"CONVSECS", fun_convsecs, 1,  0,          CA_PUBLIC},
-    {"CONVTIME", fun_convtime, 1,  0,          CA_PUBLIC},
+    {"CONVSECS", fun_convsecs, 0,  FN_VARARGS, CA_PUBLIC},
+    {"CONVTIME", fun_convtime, 0,  FN_VARARGS, CA_PUBLIC},
     {"COS",      fun_cos,      1,  0,          CA_PUBLIC},
     {"CREATE",   fun_create,   0,  FN_VARARGS, CA_PUBLIC},
     {"CWHO",     fun_cwho,     1,  0,          CA_PUBLIC},
@@ -6038,7 +6096,7 @@ FUN flist[] =
     {"S",        fun_s,       -1,  0,          CA_PUBLIC},
     {"SCRAMBLE", fun_scramble, 1,  0,          CA_PUBLIC},
     {"SEARCH",   fun_search,  -1,  0,          CA_PUBLIC},
-    {"SECS",     fun_secs,     0,  0,          CA_PUBLIC},
+    {"SECS",     fun_secs,     0,  FN_VARARGS, CA_PUBLIC},
     {"SECURE",   fun_secure,  -1,  0,          CA_PUBLIC},
     {"SET",      fun_set,      2,  0,          CA_PUBLIC},
     {"SETDIFF",  fun_setdiff,  0,  FN_VARARGS, CA_PUBLIC},
@@ -6069,7 +6127,7 @@ FUN flist[] =
     {"SWITCH",   fun_switch,   0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
     {"TAN",      fun_tan,      1,  0,          CA_PUBLIC},
     {"TEL",      fun_tel,      2,  0,          CA_PUBLIC},
-    {"TIME",     fun_time,     0,  0,          CA_PUBLIC},
+    {"TIME",     fun_time,     0,  FN_VARARGS, CA_PUBLIC},
     {"TRANSLATE",fun_translate,2,  0,          CA_PUBLIC},
     {"TRIM",     fun_trim,     0,  FN_VARARGS, CA_PUBLIC},
     {"TRUNC",    fun_trunc,    1,  0,          CA_PUBLIC},
