@@ -1006,7 +1006,7 @@ static Bigint *diff(Bigint *a, Bigint *b)
     return c;
 }
 
-static double ulp(double x)
+double ulp(double x)
 {
     register Long L;
     double a;
