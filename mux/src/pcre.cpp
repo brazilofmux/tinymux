@@ -36,12 +36,18 @@ restrictions:
    things we don't use, like a bunch of API functions and utf-8
    support. If you want the full thing, see http://www.pcre.org. */
 
+#include "autoconf.h"
+#include "config.h"
+
 #include <limits.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include "pcre.h"
+
+#include "externs.h"
+#include "timeutil.h"
 
 /* Bits of PCRE's config.h */
 #define LINK_SIZE 2
@@ -3960,7 +3966,7 @@ code += 1 + LINK_SIZE + skipbytes;
 
 /* Loop for each alternative branch */
 
-for (;;)
+for (;!MuxAlarm.bAlarmed;)
   {
   /* Handle a change of ims options at the start of the branch */
 
@@ -4101,7 +4107,7 @@ for (;;)
   code += 1 + LINK_SIZE;
   ptr++;
   }
-/* Control never reaches here */
+return false;
 }
 
 
@@ -5475,7 +5481,7 @@ if ((flags & match_isgroup) != 0)
 
 /* Now start processing the operations. */
 
-for (;;)
+for (;!MuxAlarm.bAlarmed;)
   {
   op = *ecode;
   minimize = false;
@@ -7030,7 +7036,7 @@ for (;;)
   loop. */
 
   }             /* End of main loop */
-/* Control never reaches here */
+RRETURN(MATCH_NOMATCH);
 }
 
 
