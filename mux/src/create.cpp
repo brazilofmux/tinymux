@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.5 2004-03-08 04:37:40 sdennis Exp $
+// $Id: create.cpp,v 1.6 2004-04-06 05:13:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -299,10 +299,24 @@ void do_link
         }
         else
         {
-            s_Home(thing, room);
+            dbref nHomeOrig = Home(thing);
+            dbref nHomeNew  = room;
+            s_Home(thing, nHomeNew);
             if (!Quiet(executor))
             {
-                notify_quiet(executor, "Home set.");
+                char *buff = alloc_lbuf("do_chown.notify");
+                char *bp = buff;
+
+                char *p;
+                p = tprintf("Home of %s(#%d) changed from ", Name(thing), thing);
+                safe_str(p, buff, &bp);
+                p = tprintf("%s(#%d) to ", Name(nHomeOrig), nHomeOrig);
+                safe_str(p, buff, &bp);
+                p = tprintf("%s(#%d).", Name(nHomeNew), nHomeNew);
+                safe_str(p, buff, &bp);
+                *bp = '\0';
+                notify_quiet(executor, buff);
+                free_lbuf(buff);
             }
         }
         break;
@@ -317,12 +331,14 @@ void do_link
             break;
         }
         room = parse_linkable_room(executor, where);
-        if (!(Good_obj(room) || room == HOME))
+        if (  !Good_obj(room)
+            && room != HOME)
         {
             break;
         }
 
-        if (room != HOME && !isRoom(room))
+        if (  room != HOME
+           && !isRoom(room))
         {
             notify_quiet(executor, "That is not a room!");
         }
@@ -389,7 +405,8 @@ void do_parent
 
     // Make sure we can do it.
     //
-    if (Going(thing) || !Controls(executor, thing))
+    if (  Going(thing)
+       || !Controls(executor, thing))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
         return;
