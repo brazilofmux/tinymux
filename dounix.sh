@@ -58,3 +58,7 @@ if [ -e mux-$NewVersion.unix.tar.gz ]; then
     rm mux-$NewVersion.unix.tar.gz
 fi
 tar czf mux-$NewVersion.unix.tar.gz $DistroDir
+if [ -e mux-$NewVersion.unix.tar.bz2 ]; then
+    rm mux-$NewVersion.unix.tar.bz2
+fi
+tar cjf mux-$NewVersion.unix.tar.bz2 $DistroDir
