@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.70 2001-10-25 16:54:03 sdennis Exp $
+// $Id: funceval.cpp,v 1.71 2001-11-08 03:48:56 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -149,14 +149,14 @@ FUNCTION(fun_link)
 {
     if (check_command(player, "@link", buff, bufc))
         return;
-    do_link(player, cause, 0, fargs[0], fargs[1]);
+    do_link(player, cause, 0, 2, fargs[0], fargs[1]);
 }
 
 FUNCTION(fun_tel)
 {
     if (check_command(player, "@teleport", buff, bufc))
         return;
-    do_teleport(player, cause, 0, fargs[0], fargs[1]);
+    do_teleport(player, cause, 0, 2, fargs[0], fargs[1]);
 }
 
 FUNCTION(fun_pemit)

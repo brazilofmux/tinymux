@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.11 2001-09-28 09:56:11 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.12 2001-11-08 03:48:57 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -489,7 +489,15 @@ static char *dbrefs_to_names(dbref player, char *list, char *namelist, int ismes
     return bp;
 }
 
-void do_page(dbref player, dbref cause, int key, char *tname, char *message)
+void do_page
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *tname,
+    char *message
+)
 {
     dbref target, aowner;
     char *p, *buf1, *bp, *buf2, *bp2, *mp, *str;
@@ -975,7 +983,15 @@ void do_pemit_list
     }
 }
 
-void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message)
+void do_pemit
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *recipient,
+    char *message
+)
 {
     // Decode PEMIT_CONENTS and PEMIT_LIST and remove from key.
     //

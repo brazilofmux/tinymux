@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.17 2001-06-30 17:29:32 sdennis Exp $
+// $Id: wiz.cpp,v 1.18 2001-11-08 03:48:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -21,7 +21,15 @@
 
 extern char *FDECL(crypt, (const char *, const char *));
 
-void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
+void do_teleport
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
 {
     dbref victim, destination, loc;
     char *to;
@@ -267,7 +275,15 @@ void do_force( dbref player, dbref cause, int key, char *what, char *command,
 // ---------------------------------------------------------------------------
 // do_toad: Turn a player into an object.
 //
-void do_toad(dbref player, dbref cause, int key, char *toad, char *newowner)
+void do_toad
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *toad,
+    char *newowner
+)
 {
     dbref victim, recipient, loc, aowner;
     char *buf;
@@ -376,8 +392,15 @@ void do_toad(dbref player, dbref cause, int key, char *toad, char *newowner)
     notify_quiet(player, buf);
 }
 
-void do_newpassword(dbref player, dbref cause, int key, char *name,
-                    char *password)
+void do_newpassword
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *password
+)
 {
     dbref victim;
     char *buf;

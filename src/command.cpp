@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.57 2001-11-02 19:19:53 sdennis Exp $
+// $Id: command.cpp,v 1.58 2001-11-08 03:48:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -591,60 +591,60 @@ CMDENT_ONE_ARG_CMDARG command_table_one_arg_cmdarg[] =
 
 CMDENT_TWO_ARG command_table_two_arg[] =
 {
-    {(char *)"@addcommand",   NULL,       CA_GOD,                                0,         CS_TWO_ARG,           do_addcommand},
-    {(char *)"@admin",        NULL,       CA_WIZARD,                             0,         CS_TWO_ARG|CS_INTERP, do_admin},
-    {(char *)"@alias",        NULL,       CA_NO_GUEST|CA_NO_SLAVE,               0,         CS_TWO_ARG,           do_alias},
-    {(char *)"@attribute",    attrib_sw,  CA_GOD,                                0,         CS_TWO_ARG|CS_INTERP, do_attribute},
-    {(char *)"@cboot",        NULL,       CA_NO_SLAVE|CA_NO_GUEST,               0,         CS_TWO_ARG,           do_chboot},
-    {(char *)"@ccharge",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,               1,         CS_TWO_ARG,           do_editchannel},
-    {(char *)"@cchown",       NULL,       CA_NO_SLAVE|CA_NO_GUEST,               0,         CS_TWO_ARG,           do_editchannel},
-    {(char *)"@cemit",        cemit_sw,   CA_NO_SLAVE|CA_NO_GUEST,               0,         CS_TWO_ARG,           do_cemit},
-    {(char *)"@chown",        NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,  CHOWN_ONE, CS_TWO_ARG|CS_INTERP, do_chown},
-    {(char *)"@chownall",     NULL,       CA_WIZARD|CA_GBL_BUILD,                CHOWN_ALL, CS_TWO_ARG|CS_INTERP, do_chownall},
-    {(char *)"@chzone",       NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,  0,         CS_TWO_ARG|CS_INTERP, do_chzone},
-    {(char *)"@clone",        clone_sw,   CA_NO_SLAVE|CA_GBL_BUILD|CA_CONTENTS|CA_NO_GUEST,   0,      CS_TWO_ARG|CS_INTERP,       do_clone},
-    {(char *)"@coflags",      NULL,       CA_NO_SLAVE,        4,              CS_TWO_ARG,                     do_editchannel},
-    {(char *)"@cpflags",      NULL,       CA_NO_SLAVE,        3,              CS_TWO_ARG,                     do_editchannel},
-    {(char *)"@create",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_CONTENTS|CA_NO_GUEST,   0,      CS_TWO_ARG|CS_INTERP,       do_create},
-    {(char *)"@cset",         cset_sw,    CA_NO_SLAVE,        0,              CS_TWO_ARG|CS_INTERP,           do_chopen},
-    {(char *)"@decompile",    decomp_sw,  0,    0,      CS_TWO_ARG|CS_INTERP,       do_decomp},
-    {(char *)"@delcommand",   NULL,       CA_GOD,    0,      CS_TWO_ARG,         do_delcommand},
-    {(char *)"@drain",        NULL,       CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,    NFY_DRAIN,  CS_TWO_ARG,         do_notify},
-    {(char *)"@femit",        femit_sw,   CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,    PEMIT_FEMIT,    CS_TWO_ARG|CS_INTERP,       do_pemit},
-    {(char *)"@fixdb",        fixdb_sw,   CA_GOD,    0,      CS_TWO_ARG|CS_INTERP,       do_fixdb},
-    {(char *)"@fpose",        fpose_sw,   CA_LOCATION|CA_NO_SLAVE,    PEMIT_FPOSE,    CS_TWO_ARG|CS_INTERP,       do_pemit},
-    {(char *)"@fsay",         NULL,       CA_LOCATION|CA_NO_SLAVE,    PEMIT_FSAY, CS_TWO_ARG|CS_INTERP,       do_pemit},
-    {(char *)"@function",     function_sw,CA_GOD,    0,      CS_TWO_ARG|CS_INTERP,       do_function},
-    {(char *)"@link",         NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_INTERP,       do_link},
-    {(char *)"@lock",         lock_sw,    CA_NO_SLAVE,    0,      CS_TWO_ARG|CS_INTERP,       do_lock},
-    {(char *)"@log",          NULL,       CA_WIZARD,      0,      CS_TWO_ARG, do_log},
-    {(char *)"@mail",         mail_sw,    CA_NO_SLAVE|CA_NO_GUEST,        0,              CS_TWO_ARG|CS_INTERP,          do_mail},
-    {(char *)"@malias",       malias_sw,  CA_NO_SLAVE|CA_NO_GUEST,        0,              CS_TWO_ARG|CS_INTERP,          do_malias},
-    {(char *)"@name",         NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_INTERP,       do_name},
-    {(char *)"@newpassword",  NULL,       CA_WIZARD,    PASS_ANY,   CS_TWO_ARG,         do_newpassword},
-    {(char *)"@notify",       notify_sw,  CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,    0,      CS_TWO_ARG,         do_notify},
-    {(char *)"@oemit",        NULL,       CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,    PEMIT_OEMIT,    CS_TWO_ARG|CS_INTERP,       do_pemit},
-    {(char *)"@parent",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,    0,      CS_TWO_ARG,         do_parent},
-    {(char *)"@password",     NULL,       CA_NO_GUEST,    PASS_MINE,  CS_TWO_ARG,         do_password},
-    {(char *)"@pcreate",      NULL,       CA_WIZARD|CA_GBL_BUILD,    PCRE_PLAYER,    CS_TWO_ARG,         do_pcreate},
-    {(char *)"@pemit",        pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,    PEMIT_PEMIT,    CS_TWO_ARG|CS_INTERP,       do_pemit},
-    {(char *)"@npemit",       pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,    PEMIT_PEMIT,    CS_TWO_ARG|CS_UNPARSE|CS_NOSQUISH,      do_pemit},
-    {(char *)"@power",        NULL,       0,    0,      CS_TWO_ARG,         do_power},
-    {(char *)"@program",      NULL,       CA_PUBLIC,    0,      CS_TWO_ARG|CS_INTERP,           do_prog},
-    {(char *)"@quota",        quota_sw,   0,    0,      CS_TWO_ARG|CS_INTERP,       do_quota},
-    {(char *)"@robot",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST|CA_PLAYER,    PCRE_ROBOT, CS_TWO_ARG,         do_pcreate},
-    {(char *)"@set",          set_sw,     CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,    0,      CS_TWO_ARG, do_set},
-    {(char *)"@teleport",     teleport_sw,CA_NO_GUEST,    TELEPORT_DEFAULT, CS_TWO_ARG|CS_INTERP,     do_teleport},
-    {(char *)"@toad",         toad_sw,    CA_WIZARD,    0,      CS_TWO_ARG|CS_INTERP,       do_toad},
-    {(char *)"addcom",        NULL,       CA_NO_SLAVE,        0,              CS_TWO_ARG,                     do_addcom},
-    {"comtitle",              comtitle_sw, CA_NO_SLAVE,       0,              CS_TWO_ARG,                    do_comtitle},
-    {"give",                  give_sw,    CA_LOCATION|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_INTERP,       do_give},
-    {(char *)"kill",          NULL,       CA_NO_GUEST|CA_NO_SLAVE,    KILL_KILL,  CS_TWO_ARG|CS_INTERP,       do_kill},
-    {(char *)"page",          NULL,       CA_NO_SLAVE,    0,      CS_TWO_ARG|CS_INTERP,       do_page},
-    {(char *)"slay",          NULL,       CA_WIZARD,    KILL_SLAY,  CS_TWO_ARG|CS_INTERP,       do_kill},
-    {(char *)"whisper",       NULL,       CA_LOCATION|CA_NO_SLAVE,    PEMIT_WHISPER,  CS_TWO_ARG|CS_INTERP,       do_pemit},
-    {(char *)"&",             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,     0,      CS_TWO_ARG|CS_LEADIN,       do_setvattr},
-    {(char *)NULL,            NULL,       0,     0,      0,              NULL}
+    {"@addcommand",  NULL,       CA_GOD,                                           0,         CS_TWO_ARG,           do_addcommand},
+    {"@admin",       NULL,       CA_WIZARD,                                        0,         CS_TWO_ARG|CS_INTERP, do_admin},
+    {"@alias",       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,         CS_TWO_ARG,           do_alias},
+    {"@attribute",   attrib_sw,  CA_GOD,                                           0,         CS_TWO_ARG|CS_INTERP, do_attribute},
+    {"@cboot",       NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,         CS_TWO_ARG,           do_chboot},
+    {"@ccharge",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          1,         CS_TWO_ARG,           do_editchannel},
+    {"@cchown",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,         CS_TWO_ARG,           do_editchannel},
+    {"@cemit",       cemit_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,         CS_TWO_ARG,           do_cemit},
+    {"@chown",       NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,             CHOWN_ONE, CS_TWO_ARG|CS_INTERP, do_chown},
+    {"@chownall",    NULL,       CA_WIZARD|CA_GBL_BUILD,                           CHOWN_ALL, CS_TWO_ARG|CS_INTERP, do_chownall},
+    {"@chzone",      NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,             0,         CS_TWO_ARG|CS_INTERP, do_chzone},
+    {"@clone",       clone_sw,   CA_NO_SLAVE|CA_GBL_BUILD|CA_CONTENTS|CA_NO_GUEST, 0,         CS_TWO_ARG|CS_INTERP, do_clone},
+    {"@coflags",     NULL,       CA_NO_SLAVE,                                      4,         CS_TWO_ARG,           do_editchannel},
+    {"@cpflags",     NULL,       CA_NO_SLAVE,                                      3,         CS_TWO_ARG,           do_editchannel},
+    {"@create",      NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_CONTENTS|CA_NO_GUEST, 0,         CS_TWO_ARG|CS_INTERP, do_create},
+    {"@cset",        cset_sw,    CA_NO_SLAVE,                                      0,         CS_TWO_ARG|CS_INTERP, do_chopen},
+    {"@decompile",   decomp_sw,  0,                                                0,         CS_TWO_ARG|CS_INTERP, do_decomp},
+    {"@delcommand",  NULL,       CA_GOD,                                           0,         CS_TWO_ARG,           do_delcommand},
+    {"@drain",       NULL,       CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            NFY_DRAIN, CS_TWO_ARG,           do_notify},
+    {"@femit",       femit_sw,   CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_FEMIT,    CS_TWO_ARG|CS_INTERP,       do_pemit},
+    {"@fixdb",       fixdb_sw,   CA_GOD,                                           0,      CS_TWO_ARG|CS_INTERP,       do_fixdb},
+    {"@fpose",       fpose_sw,   CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FPOSE,     CS_TWO_ARG|CS_INTERP,       do_pemit},
+    {"@fsay",        NULL,       CA_LOCATION|CA_NO_SLAVE,    PEMIT_FSAY, CS_TWO_ARG|CS_INTERP,       do_pemit},
+    {"@function",    function_sw,CA_GOD,    0,      CS_TWO_ARG|CS_INTERP,       do_function},
+    {"@link",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_INTERP,       do_link},
+    {"@lock",        lock_sw,    CA_NO_SLAVE,    0,      CS_TWO_ARG|CS_INTERP,       do_lock},
+    {"@log",         NULL,       CA_WIZARD,      0,      CS_TWO_ARG, do_log},
+    {"@mail",        mail_sw,    CA_NO_SLAVE|CA_NO_GUEST,        0,              CS_TWO_ARG|CS_INTERP,          do_mail},
+    {"@malias",      malias_sw,  CA_NO_SLAVE|CA_NO_GUEST,        0,              CS_TWO_ARG|CS_INTERP,          do_malias},
+    {"@name",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_INTERP,       do_name},
+    {"@newpassword", NULL,       CA_WIZARD,    PASS_ANY,   CS_TWO_ARG,         do_newpassword},
+    {"@notify",      notify_sw,  CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,    0,      CS_TWO_ARG,         do_notify},
+    {"@oemit",       NULL,       CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,    PEMIT_OEMIT,    CS_TWO_ARG|CS_INTERP,       do_pemit},
+    {"@parent",      NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,    0,      CS_TWO_ARG,         do_parent},
+    {"@password",    NULL,       CA_NO_GUEST,    PASS_MINE,  CS_TWO_ARG,         do_password},
+    {"@pcreate",     NULL,       CA_WIZARD|CA_GBL_BUILD,    PCRE_PLAYER,    CS_TWO_ARG,         do_pcreate},
+    {"@pemit",       pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,    PEMIT_PEMIT,    CS_TWO_ARG|CS_INTERP,       do_pemit},
+    {"@npemit",      pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,    PEMIT_PEMIT,    CS_TWO_ARG|CS_UNPARSE|CS_NOSQUISH,      do_pemit},
+    {"@power",       NULL,       0,    0,      CS_TWO_ARG,         do_power},
+    {"@program",     NULL,       CA_PUBLIC,    0,      CS_TWO_ARG|CS_INTERP,           do_prog},
+    {"@quota",       quota_sw,   0,    0,      CS_TWO_ARG|CS_INTERP,       do_quota},
+    {"@robot",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST|CA_PLAYER,    PCRE_ROBOT, CS_TWO_ARG,         do_pcreate},
+    {"@set",         set_sw,     CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,    0,      CS_TWO_ARG, do_set},
+    {"@teleport",    teleport_sw,CA_NO_GUEST,    TELEPORT_DEFAULT, CS_TWO_ARG|CS_INTERP,     do_teleport},
+    {"@toad",        toad_sw,    CA_WIZARD,    0,      CS_TWO_ARG|CS_INTERP,       do_toad},
+    {"addcom",       NULL,       CA_NO_SLAVE,        0,              CS_TWO_ARG,                     do_addcom},
+    {"comtitle",     comtitle_sw,CA_NO_SLAVE,       0,              CS_TWO_ARG,                    do_comtitle},
+    {"give",         give_sw,    CA_LOCATION|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_INTERP,       do_give},
+    {"kill",         NULL,       CA_NO_GUEST|CA_NO_SLAVE,    KILL_KILL,  CS_TWO_ARG|CS_INTERP,       do_kill},
+    {"page",         NULL,       CA_NO_SLAVE,    0,      CS_TWO_ARG|CS_INTERP,       do_page},
+    {"slay",         NULL,       CA_WIZARD,    KILL_SLAY,  CS_TWO_ARG|CS_INTERP,       do_kill},
+    {"whisper",      NULL,       CA_LOCATION|CA_NO_SLAVE,    PEMIT_WHISPER,  CS_TWO_ARG|CS_INTERP,       do_pemit},
+    {"&",            NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,     0,      CS_TWO_ARG|CS_LEADIN,       do_setvattr},
+    {NULL,           NULL,       0,     0,      0,              NULL}
 };
 
 CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
@@ -1015,6 +1015,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
         interp = 0;
     }
 
+    int nargs2;
     switch (cmdp->callseq & CS_NARG_MASK)
     {
     case CS_NO_ARGS: // <cmd>   (no args)
@@ -1155,6 +1156,19 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
         //
         buf2 = parse_to(&arg, '=', EV_STRIP_TS);
 
+        nargs2 = 0;
+        if (buf2)
+        {
+            if (arg)
+            {
+                nargs2 = 2;
+            }
+            else
+            {
+                nargs2 = 1;
+            }
+        }
+
         // Handle when no '=' was specified.
         //
         if (!arg || (arg && !*arg))
@@ -1219,7 +1233,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
             }
             else
             {
-                (*(((CMDENT_TWO_ARG *)cmdp)->handler)) (player, cause, key, buf1, buf2);
+                (*(((CMDENT_TWO_ARG *)cmdp)->handler)) (player, cause, key, nargs2, buf1, buf2);
             }
 
             // Free the buffer, if needed.

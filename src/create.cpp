@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects
 //
-// $Id: create.cpp,v 1.17 2001-10-08 04:23:23 sdennis Exp $
+// $Id: create.cpp,v 1.18 2001-11-08 03:48:56 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -216,7 +216,15 @@ static void link_exit(dbref player, dbref exit, dbref dest)
     }
 }
 
-void do_link(dbref player, dbref cause, int key, char *what, char *where)
+void do_link
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *what,
+    char *where
+)
 {
     dbref thing, room;
     char *buff;
@@ -342,7 +350,15 @@ void do_link(dbref player, dbref cause, int key, char *what, char *where)
 // ---------------------------------------------------------------------------
 // do_parent: Set an object's parent field.
 //
-void do_parent(dbref player, dbref cause, int key, char *tname, char *pname)
+void do_parent
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *tname,
+    char *pname
+)
 {
     dbref thing, parent, curr;
     int lev;
@@ -453,7 +469,15 @@ void do_dig(dbref player, dbref cause, int key, char *name, char *args[], int na
 // ---------------------------------------------------------------------------
 // do_create: Make a new object.
 //
-void do_create(dbref player, dbref cause, int key, char *name, char *coststr)
+void do_create
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *coststr
+)
 {
     dbref thing;
     int cost;
@@ -487,7 +511,15 @@ void do_create(dbref player, dbref cause, int key, char *name, char *coststr)
 // ---------------------------------------------------------------------------
 // do_clone: Create a copy of an object.
 //
-void do_clone(dbref player, dbref cause, int key, char *name, char *arg2)
+void do_clone
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *arg2
+)
 {
     dbref clone, thing, new_owner, loc;
     FLAG rmv_flags;
@@ -686,7 +718,15 @@ void do_clone(dbref player, dbref cause, int key, char *name, char *arg2)
 // ---------------------------------------------------------------------------
 // do_pcreate: Create new players and robots.
 //
-void do_pcreate(dbref player, dbref cause, int key, char *name, char *pass)
+void do_pcreate
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *pass
+)
 {
     int isrobot;
     dbref newplayer;

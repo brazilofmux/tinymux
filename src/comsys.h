@@ -1,6 +1,6 @@
 // Comsys.h
 //
-// $Id: comsys.h,v 1.6 2001-10-17 19:02:40 sdennis Exp $
+// $Id: comsys.h,v 1.7 2001-11-08 03:48:56 sdennis Exp $
 
 #ifndef __COMSYS_H__
 #define __COMSYS_H__
@@ -96,8 +96,16 @@ void do_comconnectchannel(dbref player, char *channel, char *alias, int i);
 void do_comdisconnect(dbref player);
 void do_comconnect(dbref player);
 void do_clearcom(dbref player, dbref unused1, int unused2);
-void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2);
 void do_cheader(dbref player, char *channel, char *header);
+void do_addcom
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+);
 
 comsys_t *get_comsys ();
 comsys_t *create_new_comsys ();

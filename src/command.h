@@ -1,5 +1,5 @@
 /* command.h - declarations used by the command processor */
-/* $Id: command.h,v 1.8 2001-07-31 05:22:00 sdennis Exp $ */
+/* $Id: command.h,v 1.9 2001-11-08 03:48:56 sdennis Exp $ */
 
 #ifndef __COMMAND_H
 #define __COMMAND_H
@@ -7,7 +7,7 @@
 #define CMD_NO_ARG(name)              extern void name(dbref, dbref, int)
 #define CMD_ONE_ARG(name)             extern void name(dbref, dbref, int, char *)
 #define CMD_ONE_ARG_CMDARG(name)      extern void name(dbref, dbref, int, char *, char *[], int)
-#define CMD_TWO_ARG(name)             extern void name(dbref, dbref, int, char *, char *)
+#define CMD_TWO_ARG(name)             extern void name(dbref, dbref, int, int, char *, char *)
 #define CMD_TWO_ARG_CMDARG(name)      extern void name(dbref, dbref, int, char *, char *, char*[], int)
 #define CMD_TWO_ARG_ARGV(name)        extern void name(dbref, dbref, int, char *, char *[], int)
 #define CMD_TWO_ARG_ARGV_CMDARG(name) extern void name(dbref, dbref, int, char *, char *[], int, char*[], int)
@@ -176,7 +176,7 @@ typedef struct
     int     perms;
     int     extra;
     int     callseq;
-    void    (*handler)(dbref, dbref, int, char *, char *);
+    void    (*handler)(dbref, dbref, int, int, char *, char *);
 } CMDENT_TWO_ARG;
 
 typedef struct

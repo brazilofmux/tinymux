@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.66 2001-10-17 20:47:34 sdennis Exp $
+// $Id: externs.h,v 1.67 2001-11-08 03:48:56 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -709,7 +709,7 @@ extern void do_mail_clear(dbref player, char *msglist);
 extern void do_mail_purge(dbref player);
 extern char *upcasestr(char *);
 extern void raw_notify_html(dbref player, const char *msg);
-extern void do_lock(dbref player, dbref cause, int key, char *name, char *keytext);
+extern void do_lock(dbref player, dbref cause, int key, int nargs, char *name, char *keytext);
 extern void check_events(void);
 extern void list_system_resources(dbref player);
 

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.55 2001-10-25 16:52:27 sdennis Exp $
+// $Id: db.cpp,v 1.56 2001-11-08 03:48:56 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -596,7 +596,15 @@ void s_Pass(dbref thing, const char *s)
 
 extern NAMETAB attraccess_nametab[];
 
-void do_attribute(dbref player, dbref cause, int key, char *aname, char *value)
+void do_attribute
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *aname,
+    char *value
+)
 {
     int success, negate, f;
     char *sp;
@@ -700,7 +708,15 @@ void do_attribute(dbref player, dbref cause, int key, char *aname, char *value)
  * do_fixdb: Directly edit database fields
  */
 
-void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
+void do_fixdb
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
 {
     init_match(player, arg1, NOTYPE);
     match_everything(0);

@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.101 2001-11-05 15:42:32 sdennis Exp $
+// $Id: functions.cpp,v 1.102 2001-11-08 03:48:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6901,7 +6901,15 @@ void NDECL(init_functab)
     ufun_head = NULL;
 }
 
-void do_function(dbref player, dbref cause, int key, char *fname, char *target)
+void do_function
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *fname,
+    char *target
+)
 {
     UFUN *ufp, *ufp2;
     ATTR *ap;

@@ -1,7 +1,7 @@
 //
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.12 2001-06-08 23:44:17 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.13 2001-11-08 03:48:57 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -327,7 +327,15 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
     return count;
 }
 
-void do_chownall(dbref player, dbref cause, int key, char *from, char *to)
+void do_chownall
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *from,
+    char *to
+)
 {
     int count;
     dbref victim, recipient;

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.29 2001-10-25 16:49:38 sdennis Exp $
+// $Id: cque.cpp,v 1.30 2001-11-08 03:48:56 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -547,7 +547,15 @@ int nfy_que(dbref sem, int attr, int key, int count)
 // ---------------------------------------------------------------------------
 // do_notify: Command interface to nfy_que
 
-void do_notify(dbref player, dbref cause, int key, char *what, char *count)
+void do_notify
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *what,
+    char *count
+)
 {
     dbref thing, aowner;
     int loccount, attr = 0, aflags;

@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.7 2001-06-29 19:13:03 sdennis Exp $
+// $Id: rob.cpp,v 1.8 2001-11-08 03:48:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -15,7 +15,15 @@
 #include "attrs.h"
 #include "powers.h"
 
-void do_kill(dbref player, dbref cause, int key, char *what, char *costchar)
+void do_kill
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *what,
+    char *costchar
+)
 {
     dbref victim;
     char *buf1, *buf2;
@@ -371,7 +379,15 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     return;
 }
 
-void do_give(dbref player, dbref cause, int key, char *who, char *amnt)
+void do_give
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *who,
+    char *amnt
+)
 {
     // Check recipient.
     //

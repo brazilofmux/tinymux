@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.28 2001-10-25 17:05:26 sdennis Exp $
+// $Id: mail.cpp,v 1.29 2001-11-08 03:48:56 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1858,7 +1858,15 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
 }
 
 
-void do_mail(dbref player, dbref cause, int key, char *arg1, char *arg2)
+void do_mail
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
 {
     if (!mudconf.have_mailer) {
         notify(player, "Mailer is disabled.");
@@ -2899,13 +2907,23 @@ void do_malias_switch(dbref player, char *a1, char *a2)
     }
 }
 
-void do_malias(dbref player, dbref cause, int key, char *arg1, char *arg2)
+void do_malias
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
 {
-    if (!mudconf.have_mailer) {
+    if (!mudconf.have_mailer)
+    {
         notify(player, "Mailer is disabled.");
         return;
     }
-    switch (key) {
+    switch (key)
+    {
     case 0:
         do_malias_switch(player, arg1, arg2);
         break;

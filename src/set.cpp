@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.14 2001-11-02 18:57:14 sdennis Exp $
+// $Id: set.cpp,v 1.15 2001-11-08 03:48:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -88,7 +88,15 @@ dbref match_examinable(dbref player, const char *name)
 }
 
 
-void do_chzone(dbref player, dbref cause, int key, char *name, char *newobj)
+void do_chzone
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *newobj
+)
 {
     if (!mudconf.have_zones)
     {
@@ -175,7 +183,15 @@ void do_chzone(dbref player, dbref cause, int key, char *name, char *newobj)
     notify(player, "Zone changed.");
 }
 
-void do_name(dbref player, dbref cause, int key, char *name, char *newname)
+void do_name
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *newname
+)
 {
     char *buff;
 
@@ -262,7 +278,15 @@ void do_name(dbref player, dbref cause, int key, char *name, char *newname)
  * * do_alias: Make an alias for a player or object.
  */
 
-void do_alias(dbref player, dbref cause, int key, char *name, char *alias)
+void do_alias
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *alias
+)
 {
     dbref aowner;
     int aflags;
@@ -363,7 +387,15 @@ void do_alias(dbref player, dbref cause, int key, char *name, char *alias)
  * * do_lock: Set a lock on an object or attribute.
  */
 
-void do_lock(dbref player, dbref cause, int key, char *name, char *keytext)
+void do_lock
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *keytext
+)
 {
     dbref thing, aowner;
     int atr, aflags;
@@ -588,7 +620,15 @@ void do_unlink(dbref player, dbref cause, int key, char *name)
  * * do_chown: Change ownership of an object or attribute.
  */
 
-void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
+void do_chown
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *newown
+)
 {
     dbref nOwnerOrig;
     dbref nOwnerNew;
@@ -845,7 +885,15 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     }
 }
 
-void do_set(dbref player, dbref cause, int key, char *name, char *flag)
+void do_set
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *flag
+)
 {
     dbref thing, thing2, aowner;
     char *p, *buff;
@@ -1017,7 +1065,15 @@ void do_set(dbref player, dbref cause, int key, char *name, char *flag)
     flag_set(thing, player, flag, key);
 }
 
-void do_power(dbref player, dbref cause, int key, char *name, char *flag)
+void do_power
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *flag
+)
 {
     if (!flag || !*flag)
     {
@@ -1035,7 +1091,15 @@ void do_power(dbref player, dbref cause, int key, char *name, char *flag)
     power_set(thing, player, flag, key);
 }
 
-void do_setattr(dbref player, dbref cause, int attrnum, char *name, char *attrtext)
+void do_setattr
+(
+    dbref player,
+    dbref cause,
+    int   attrnum,
+    int   nargs,
+    char *name,
+    char *attrtext
+)
 {
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
@@ -1069,21 +1133,31 @@ void do_cpattr(dbref player, dbref cause, int key, char *oldpair, char *newpair[
     oldattr = oldpair;
     oldthing = parse_to(&oldattr, '/', 1);
 
-    for (i = 0; i < nargs; i++) {
+    for (i = 0; i < nargs; i++)
+    {
         newattr = newpair[i];
         newthing = parse_to(&newattr, '/', 1);
 
-        if (!oldattr) {
-            if (!newattr) {
-                do_set(player, cause, 0, newthing, tprintf("%s:_%s/%s", oldthing, "me", oldthing));
-            } else {
-                do_set(player, cause, 0, newthing, tprintf("%s:_%s/%s", newattr, "me", oldthing));
+        if (!oldattr)
+        {
+            if (!newattr)
+            {
+                do_set(player, cause, 0, 2, newthing, tprintf("%s:_%s/%s", oldthing, "me", oldthing));
             }
-        } else {
-            if (!newattr) {
-                do_set(player, cause, 0, newthing, tprintf("%s:_%s/%s", oldattr, oldthing, oldattr));
-            } else {
-                do_set(player, cause, 0, newthing, tprintf("%s:_%s/%s", newattr, oldthing, oldattr));
+            else
+            {
+                do_set(player, cause, 0, 2, newthing, tprintf("%s:_%s/%s", newattr, "me", oldthing));
+            }
+        }
+        else
+        {
+            if (!newattr)
+            {
+                do_set(player, cause, 0, 2, newthing, tprintf("%s:_%s/%s", oldattr, oldthing, oldattr));
+            }
+            else
+            {
+                do_set(player, cause, 0, 2, newthing, tprintf("%s:_%s/%s", newattr, oldthing, oldattr));
             }
         }
     }
@@ -1743,7 +1817,15 @@ void do_use(dbref player, dbref cause, int key, char *object)
  * * do_setvattr: Set a user-named (or possibly a predefined) attribute.
  */
 
-void do_setvattr(dbref player, dbref cause, int key, char *arg1, char *arg2)
+void do_setvattr
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
 {
     char *s;
     int anum;
@@ -1770,5 +1852,5 @@ void do_setvattr(dbref player, dbref cause, int key, char *arg1, char *arg2)
         notify_quiet(player, "That's not a good name for an attribute.");
         return;
     }
-    do_setattr(player, cause, anum, s, arg2);
+    do_setattr(player, cause, anum, 2, s, arg2);
 }

@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.49 2001-11-02 17:25:06 sdennis Exp $
+// $Id: conf.cpp,v 1.50 2001-11-08 03:48:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1651,11 +1651,17 @@ void ValidateConfigurationDbrefs(void)
 // ---------------------------------------------------------------------------
 // do_admin: Command handler to set config params at runtime
 //
-void do_admin(dbref player, dbref cause, int extra, char *kw, char *value)
+void do_admin
+(
+    dbref player,
+    dbref cause,
+    int   extra,
+    int   nargs,
+    char *kw,
+    char *value
+)
 {
-    int i;
-
-    i = cf_set(kw, value, player);
+    int i = cf_set(kw, value, player);
     if ((i >= 0) && !Quiet(player))
     {
         notify(player, "Set.");

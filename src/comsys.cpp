@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.59 2001-10-25 16:49:20 sdennis Exp $
+// * $Id: comsys.cpp,v 1.60 2001-11-08 03:48:56 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1207,7 +1207,15 @@ struct comuser *select_user(struct channel *ch, dbref player)
 
 #define MAX_ALIASES_PER_PLAYER 50
 
-void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
+void do_addcom
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
 {
     char channel[MAX_CHANNEL_LEN+1];
     char title_tmp[LBUF_SIZE];
@@ -1683,7 +1691,15 @@ void do_listchannels(dbref player)
     raw_notify(player, "-- End of list of Channels --");
 }
 
-void do_comtitle(dbref player, dbref cause, int key, char *arg1, char *arg2)
+void do_comtitle
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
 {
     char channel[MAX_CHANNEL_LEN+1];
 
@@ -2047,7 +2063,15 @@ void do_comdisconnectchannel(dbref player, char *channel)
     }
 }
 
-void do_editchannel(dbref player, dbref cause, int flag, char *arg1, char *arg2)
+void do_editchannel
+(
+    dbref player,
+    dbref cause,
+    int   flag,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
 {
     char *s;
     int add_remove = 1;
@@ -2276,7 +2300,15 @@ int do_comsystem(dbref who, char *cmd)
     return 1;
 }
 
-void do_cemit(dbref player, dbref cause, int key, char *chan, char *text)
+void do_cemit
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *chan,
+    char *text
+)
 {
     if (!mudconf.have_comsys)
     {
@@ -2304,7 +2336,15 @@ void do_cemit(dbref player, dbref cause, int key, char *chan, char *text)
     }
 }
 
-void do_chopen(dbref player, dbref cause, int key, char *chan, char *value)
+void do_chopen
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *chan,
+    char *value
+)
 {
     if (!mudconf.have_comsys)
     {
@@ -2391,7 +2431,15 @@ void do_chopen(dbref player, dbref cause, int key, char *chan, char *value)
     raw_notify(player, msg);
 }
 
-void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
+void do_chboot
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *channel,
+    char *victim
+)
 {
     // I sure hope it's not going to be that long.
     //

@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands
 //
-// $Id: quota.cpp,v 1.2 2001-07-23 16:45:41 sdennis Exp $
+// $Id: quota.cpp,v 1.3 2001-11-08 03:48:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -147,7 +147,15 @@ static void show_quota(dbref player, dbref victim)
     notify_quiet(player, buff);
 }
 
-void do_quota(dbref player, dbref cause, int key, char *arg1, char *arg2)
+void do_quota
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
 {
     dbref who;
     int set, value, i;

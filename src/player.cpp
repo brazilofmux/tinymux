@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.10 2001-10-25 17:06:41 sdennis Exp $ 
+// $Id: player.cpp,v 1.11 2001-11-08 03:48:57 sdennis Exp $ 
 ///
 
 #include "copyright.h"
@@ -305,14 +305,14 @@ dbref create_player(char *name, char *password, dbref creator, int isrobot, int 
     {
         if (*mudconf.guests_channel)
         {
-            do_addcom(player, player, 0, "g", mudconf.guests_channel);
+            do_addcom(player, player, 0, 2, "g", mudconf.guests_channel);
         }
     }
     else
     {
         if (*mudconf.public_channel)
         {
-            do_addcom(player, player, 0, "pub", mudconf.public_channel);
+            do_addcom(player, player, 0, 2, "pub", mudconf.public_channel);
         }
     }
 
@@ -327,7 +327,15 @@ dbref create_player(char *name, char *password, dbref creator, int isrobot, int 
  * * do_password: Change the password for a player
  */
 
-void do_password(dbref player, dbref cause, int key, char *oldpass, char *newpass)
+void do_password
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *oldpass,
+    char *newpass
+)
 {
     dbref aowner;
     int aflags;

@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.33 2001-10-05 20:30:37 sdennis Exp $
+// $Id: look.cpp,v 1.34 2001-11-08 03:48:56 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2186,7 +2186,15 @@ void do_sweep(dbref player, dbref cause, int key, char *where)
 
 extern NAMETAB indiv_attraccess_nametab[];
 
-void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
+void do_decomp
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *qual
+)
 {
     BOOLEXP *pBoolExp;
     char *got, *thingname, *as, *ltext, *buff;

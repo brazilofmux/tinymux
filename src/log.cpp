@@ -1,7 +1,7 @@
 //
 // log.cpp - logging routines
 //
-// $Id: log.cpp,v 1.10 2001-11-02 17:25:06 sdennis Exp $
+// $Id: log.cpp,v 1.11 2001-11-08 03:48:56 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -246,7 +246,15 @@ void log_type_and_num(dbref thing)
 }
 
 #ifndef STANDALONE
-void do_log(dbref player, dbref cause, int key, char *whichlog, char *logtext)
+void do_log
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *whichlog,
+    char *logtext
+)
 {
     BOOL bValid = TRUE;
 

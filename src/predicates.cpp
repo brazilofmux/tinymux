@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.39 2001-10-25 17:06:51 sdennis Exp $
+// $Id: predicates.cpp,v 1.40 2001-11-08 03:48:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -587,7 +587,15 @@ void do_switch
     }
 }
 
-void do_addcommand(dbref player, dbref cause, int key, char *name, char *command)
+void do_addcommand
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *command
+)
 {
     CMDENT *old, *cmd;
     ADDENT *add, *nextp;
@@ -595,12 +603,16 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
     dbref thing;
     int atr;
 
-    if (!*name) {
+    if (  nargs != 2
+       || name[0] == '\0')
+    {
         notify(player, "Sorry.");
         return;
     }
     
-    if (!parse_attrib(player, command, &thing, &atr) || (atr == NOTHING)) {
+    if (  !parse_attrib(player, command, &thing, &atr)
+       || atr == NOTHING)
+    {
         notify(player, "No such attribute.");
         return;
     }
@@ -612,10 +624,9 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
     
     if (old && (old->callseq & CS_ADDED))
     {
-        
-        /* If it's already found in the hash table, and it's being
-           added using the same object and attribute... */
-           
+        // If it's already found in the hash table, and it's being
+        // added using the same object and attribute...
+        //           
         for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
         {
             if ((nextp->thing == thing) && (nextp->atr == atr))
@@ -639,7 +650,8 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
     {
         if (old)
         {
-            /* Delete the old built-in and rename it __name */
+            // Delete the old built-in and rename it __name.
+            //
             hashdeleteLEN(name, strlen(name), &mudstate.command_htab);
         }
         
@@ -677,8 +689,8 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
         }
     }
     
-    /* We reset the one letter commands here so you can overload them */
-    
+    // We reset the one letter commands here so you can overload them.
+    //
     set_prefix_cmds();
     notify(player, tprintf("%s added.", name));
 }
@@ -740,7 +752,15 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
         notify(player, "No added commands found in command table.");
 }
 
-void do_delcommand(dbref player, dbref cause, int key, char *name, char *command)
+void do_delcommand
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *command
+)
 {
     CMDENT *old, *cmd;
     ADDENT *prev = NULL, *nextp;
@@ -980,7 +1000,15 @@ void do_quitprog(dbref player, dbref cause, int key, char *name)
     notify(doer, "Your @program has been terminated.");
 }
 
-void do_prog(dbref player, dbref cause, int key, char *name, char *command)
+void do_prog
+(
+    dbref player,
+    dbref cause,
+    int   key,
+    int   nargs,
+    char *name,
+    char *command
+)
 {
     DESC *d;
     PROG *program;

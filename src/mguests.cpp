@@ -1,6 +1,6 @@
 // mguests.cpp - multiguest code originally ported from DarkZone 
 //
-// $Id: mguests.cpp,v 1.5 2001-10-08 02:18:03 sdennis Exp $
+// $Id: mguests.cpp,v 1.6 2001-11-08 03:48:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -24,25 +24,26 @@ dbref create_guest(char *name, char *password)
     dbref player;
     char *buff;
 
-    if (!Wizard(mudconf.guest_nuker) || !Good_obj(mudconf.guest_nuker))
+    if (  !Wizard(mudconf.guest_nuker)
+       || !Good_obj(mudconf.guest_nuker))
+    {
         mudconf.guest_nuker = 1;
+    }
 
     buff = alloc_lbuf("create_guest");
 
-    /*
-     * Make the player. 
-     */
-
+    // Make the player.
+    //
     player = create_player(name, password, mudconf.guest_nuker, 0, 1);
 
-    if (player == NOTHING) {
+    if (player == NOTHING)
+    {
         log_text("GUEST: failed in create_player" ENDLINE);
         return NOTHING;
     }
-    /*
-     * Turn the player into a guest. 
-     */
 
+    // Turn the player into a guest.
+    //
     s_Guest(player);
     move_object(player, mudconf.start_room);
     s_Flags(player, Flags(player) & ~WIZARD);
@@ -50,15 +51,13 @@ dbref create_guest(char *name, char *password)
     s_Zone(player, Zone(mudconf.guest_char));
     s_Parent(player, Parent(mudconf.guest_char));
 
-    /*
-     * Make sure the guest is locked. 
-     */
-    do_lock(player, player, A_LOCK, tprintf("#%d", player), "me");
-    do_lock(player, player, A_LENTER, tprintf("#%d", player), "me");
+    // Make sure the guest is locked.
+    //
+    do_lock(player, player, A_LOCK, 2, tprintf("#%d", player), "me");
+    do_lock(player, player, A_LENTER, 2, tprintf("#%d", player), "me");
 
-    /*
-     * Copy all attributes. 
-     */
+    // Copy all attributes.
+    //
     atr_cpy(GOD, player, mudconf.guest_char);
     free_lbuf(buff);
     return player;
