@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.50 2001-08-25 21:07:34 sdennis Exp $
+// $Id: funceval.cpp,v 1.51 2001-08-26 15:59:53 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3432,7 +3432,6 @@ static void room_list
             }
         }
     }
-    
 }
 
 FUNCTION(fun_lrooms) 
