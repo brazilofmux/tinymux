@@ -308,18 +308,24 @@ Bug Fixes:
     against MUX 2.1 and fixed 2001-OCT-16.  The fix wasn't sufficient.
  -- Bug #557, #558, #559, and #560 were all buffers smaller than the
     largest possible result.  All reported by Morgan 2000-OCT-15.  Fixed
-    (finally) by Brazil.
+    (finally) by Brazil.  Bugs from MUX 1.6.
  -- Initialize idle time for the sake of SITEMON-related WHO reports.
+    Zenty's bug.
  -- Protect d->player access with DS_CONNECTED test to avoid depending
     on the existance of #0. Flags on #0 were controlling the behavior
     of logged-out connections. Now, you can load an empty flatfile,
     create a player (which will be dbref #0), and proceed from there.
     This isn't recommended, but the server doesn't crash if you try it.
+    Bug from MUX 1.6.
  -- Kill the slave process on @shutdown.  Reported by nails.  Fixed by
-    Brazil.  This was introduced in MUX 2.0 when the Win32 and Unix
-    sources were merged. The required block of code was accidently left
-    out.
- -- Clean up zombie slave processes on @restart.
+    Brazil.  Brazil's bug.  Introduced in MUX 2.0 when the Win32 and
+    Unix sources were merged. The required block of code was accidently
+    left out. 
+ -- Clean up zombie slave processes on @restart.  Bug from MUX 1.6.
+ -- grep() and grepi() weren't preparing properly for accented
+    characters.  Brazil's bug.
+ -- Execute @hook code in the context of the hook_obj instead of as the
+    player.  Jake's bug.
 
 
 Performance Enhancements:

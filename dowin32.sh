@@ -3,7 +3,7 @@
 # REQUIRED: The two ReferenceDir must already exist. They may be created by
 # untaring a previous distribution.
 #
-OldBuild=60
+OldBuild=59
 OldVersion=2.2.7.$OldBuild
 NewBuild=61
 NewVersion=2.2.7.$NewBuild
