@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.12 2000-06-02 16:18:06 sdennis Exp $
+// $Id: game.cpp,v 1.13 2000-06-04 07:28:49 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1029,22 +1029,18 @@ void do_shutdown(dbref player, dbref cause, int key, char *message)
         }
     }
 
-    /*
-     * Do we perform a normal or an emergency shutdown?  Normal shutdown
-     * * * * * is handled by exiting the main loop in shovechars,
-     * emergency  * * * * shutdown is done here. 
-     */
-
+    // Do we perform a normal or an emergency shutdown? Normal
+    // shutdown is handled by exiting the main loop in shovechars,
+    // emergency shutdown is done here.
+    //
     if (key & SHUTDN_PANIC)
     {
-        /*
-         * Close down the network interface 
-         */
+        // Close down the network interface.
+        //
         emergency_shutdown();
 
-        /*
-         * Close the attribute text db and dump the header db 
-         */
+        // Close the attribute text db and dump the header db.
+        //
         pcache_sync();
         SYNC;
         CLOSE;
@@ -1059,11 +1055,9 @@ void do_shutdown(dbref player, dbref cause, int key, char *message)
         ENDLOG;
     }
 
-    /*
-     * Set up for normal shutdown 
-     */
+    // Set up for normal shutdown.
+    //
     mudstate.shutdown_flag = 1;
-    return;
 }
 
 #ifndef STANDALONE
