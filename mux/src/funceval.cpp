@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.16 2002-06-13 22:12:46 jake Exp $
+// $Id: funceval.cpp,v 1.17 2002-06-15 01:18:07 jake Exp $
 //
 
 #include "copyright.h"
@@ -1500,14 +1500,19 @@ FUNCTION(fun_hasattrp)
 
 // default(), edefault(), and udefault() borrowed from TinyMUSH 2.2
 //
-FUNCTION(fun_default)
+#define DEFAULT_DEFAULT  1
+#define DEFAULT_EDEFAULT 2
+#define DEFAULT_UDEFAULT 4
+
+void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbref enactor,
+                     char *fargs[], int nfargs, char *cargs[], int ncargs, int key)
 {
     dbref thing, aowner;
     int attrib, aflags;
     ATTR *attr;
     char *objname, *atr_gotten, *bp, *str;
 
-    objname = bp = alloc_lbuf("fun_default");
+    objname = bp = alloc_lbuf("default_handler");
     str = fargs[0];
     TinyExec(objname, &bp, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
@@ -1528,7 +1533,23 @@ FUNCTION(fun_default)
                 if (  *atr_gotten
                    && check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
                 {
-                    safe_str(atr_gotten, buff, bufc);
+                    switch (key)
+                    {
+                    case DEFAULT_DEFAULT:
+                        safe_str(atr_gotten, buff, bufc);
+                        break;
+                    case DEFAULT_EDEFAULT:
+                        str = atr_gotten;
+                        TinyExec(buff, bufc, thing, executor, executor,
+                             EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
+                        break;
+                    case DEFAULT_UDEFAULT:
+                        str = atr_gotten;
+                        TinyExec(buff, bufc, thing, caller, enactor,
+                             EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 2);
+                        break;
+
+                    }
                     free_lbuf(atr_gotten);
                     free_lbuf(objname);
                     return;
@@ -1545,108 +1566,25 @@ FUNCTION(fun_default)
     str = fargs[1];
     TinyExec(buff, bufc, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
+}
+
+                   
+FUNCTION(fun_default)
+{
+    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs, 
+        ncargs, DEFAULT_DEFAULT);
 }
 
 FUNCTION(fun_edefault)
 {
-    dbref thing, aowner;
-    int attrib, aflags;
-    ATTR *attr;
-    char *objname, *atr_gotten, *bp, *str;
-
-    objname = bp = alloc_lbuf("fun_edefault");
-    str = fargs[0];
-    TinyExec(objname, &bp, executor, caller, enactor,
-             EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
-    *bp = '\0';
-
-    // First we check to see that the attribute exists on the object.
-    // If so, we grab it and use it.
-    //
-    if (objname != NULL)
-    {
-        if (parse_attrib(executor, objname, &thing, &attrib) &&
-            (attrib != NOTHING))
-        {
-            attr = atr_num(attrib);
-            if (attr && !(attr->flags & AF_IS_LOCK))
-            {
-                atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
-                if (  *atr_gotten
-                   && check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
-                {
-                    str = atr_gotten;
-                    TinyExec(buff, bufc, thing, executor, executor,
-                             EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
-                    free_lbuf(atr_gotten);
-                    free_lbuf(objname);
-                    return;
-                }
-                free_lbuf(atr_gotten);
-            }
-        }
-        free_lbuf(objname);
-    }
-
-    // If we've hit this point, we've not gotten anything useful, so
-    // we go and evaluate the default.
-    //
-    str = fargs[1];
-    TinyExec(buff, bufc, executor, caller, enactor,
-             EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
+    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs, 
+        ncargs, DEFAULT_EDEFAULT);
 }
 
 FUNCTION(fun_udefault)
 {
-    dbref thing, aowner;
-    int aflags, anum;
-    ATTR *ap;
-    char *objname, *atext, *bp, *str;
-
-    str = fargs[0];
-    objname = bp = alloc_lbuf("fun_udefault");
-    TinyExec(objname, &bp, executor, caller, enactor,
-             EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
-    *bp = '\0';
-
-    // First we check to see that the attribute exists on the object.
-    // If so, we grab it and use it.
-    //
-    if (objname != NULL) {
-        if (parse_attrib(executor, objname, &thing, &anum)) {
-            if ((anum == NOTHING) || (!Good_obj(thing)))
-                ap = NULL;
-            else
-                ap = atr_num(anum);
-        } else {
-            thing = executor;
-            ap = atr_str(objname);
-        }
-        if (ap) {
-            atext = atr_pget(thing, ap->number, &aowner, &aflags);
-            if (atext) {
-                if (*atext &&
-                    check_read_perms(executor, thing, ap, aowner, aflags,
-                             buff, bufc)) {
-                    str = atext;
-                    TinyExec(buff, bufc, thing, caller, enactor,
-                             EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 1);
-                    free_lbuf(atext);
-                    free_lbuf(objname);
-                    return;
-                }
-                free_lbuf(atext);
-            }
-        }
-        free_lbuf(objname);
-    }
-
-    // If we've hit this point, we've not gotten anything useful, so we
-    // go and evaluate the default.
-    //
-    str = fargs[1];
-    TinyExec(buff, bufc, executor, caller, enactor,
-             EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
+    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs, 
+        ncargs, DEFAULT_UDEFAULT);
 }
 
 /* ---------------------------------------------------------------------------
