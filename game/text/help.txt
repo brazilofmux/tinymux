@@ -7733,11 +7733,15 @@ REGMATCH()
 & COLUMNS()
 COLUMNS()
 
-  FUNCTION: columns(<list>, <width>[, <delim>])
+  FUNCTION: columns(<list>, <width>[, <delim>[, <indent>]])
 
-  Columns displays <list> formatted into columns containing <width>
-  number of characters. As many columns as possible will be fit
-  onto the screen. Columns takes an optional delimiter.
+  Formats a delimited <list> into fixed-width columns.  Any element
+  longer than <width> is truncated.  <indent> specifies a left margin.
+  This function fits the margin and as many columns as possible into a
+  78-wide screen.
+
+    The input delimeter, <delim>, defaults to a space.
+    The left margin width, <indent>, defaults to zero.
 
   Related Topics: table()
 
