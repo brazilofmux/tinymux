@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.43 2001-10-25 17:10:51 sdennis Exp $
+// $Id: game.cpp,v 1.44 2001-11-19 19:43:26 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2049,7 +2049,6 @@ int DCL_CDECL main(int argc, char *argv[])
     // Reset all the hash stats
     //
     hashreset(&mudstate.command_htab);
-    hashreset(&mudstate.macro_htab);
     hashreset(&mudstate.channel_htab);
     hashreset(&mudstate.mail_htab);
     hashreset(&mudstate.logout_cmd_htab);

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.32 2001-11-19 19:23:22 sdennis Exp $
+// $Id: mudconf.h,v 1.33 2001-11-19 19:43:26 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -153,7 +153,7 @@ struct confdata
     char    *outdb;          /* checkpoint the database to here */
     char    *crashdb;        /* write database here on crash */
     char    *mail_db;        /* name of the @mail database */
-    char    *comsys_db;      /* name of the comsys and macros db */
+    char    *comsys_db;      /* name of the comsys db */
     char    *config_file;    /* name of config file, used by @restart */
     char    *compress;       /* program to run to compress */
     char    *uncompress;     /* program to run to uncompress */
@@ -351,7 +351,6 @@ struct statedata
     dbref   poutobj;        /* Object doing the piping */
 
     CHashTable command_htab;   /* Commands hashtable */
-    CHashTable macro_htab;     /* Macro command hashtable */
     CHashTable channel_htab;   /* Channels hashtable */
     CHashTable mail_htab;      /* Mail players hashtable */
     CHashTable logout_cmd_htab;/* Logged-out commands hashtable (WHO, etc) */
