@@ -1,7 +1,7 @@
 //
 // version.cpp - version information 
 //
-// $Id: version.cpp,v 1.18 2001-07-03 19:44:18 sdennis Exp $ 
+// $Id: version.cpp,v 1.19 2001-09-18 07:18:36 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -25,25 +25,25 @@ void do_version(dbref player, dbref cause, int extra)
 void NDECL(init_version)
 {
 #ifdef WIN32
-#ifdef ALPHA
-        sprintf( mudstate.version, "MUX %s for Win32 #%s [ALPHA]",
+#ifdef BETA
+        sprintf( mudstate.version, "MUX %s for Win32 #%s [BETA]",
             MUX_VERSION, MUX_BUILD_NUM);
         sprintf( mudstate.short_ver, "MUX %s Alpha Win32", MUX_VERSION);
-#else // ALPHA
+#else // BETA
         sprintf( mudstate.version, "MUX %s for Win32 #%s [%s]",
             MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
         sprintf( mudstate.short_ver, "MUX %s Win32", MUX_VERSION);
-#endif // ALPHA
+#endif // BETA
 #else // WIN32
-#ifdef ALPHA
-        sprintf( mudstate.version, "MUX %s #%s [ALPHA]", MUX_VERSION,
+#ifdef BETA
+        sprintf( mudstate.version, "MUX %s #%s [BETA]", MUX_VERSION,
             MUX_BUILD_NUM);
         sprintf( mudstate.short_ver, "MUX %s Alpha", MUX_VERSION);
-#else // ALPHA
+#else // BETA
         sprintf( mudstate.version, "MUX %s #%s [%s]", MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
         sprintf( mudstate.short_ver, "MUX %s", MUX_VERSION);
-#endif // ALPHA
+#endif // BETA
 #endif // WIN32
 
     STARTLOG(LOG_ALWAYS, "INI", "START");

@@ -1,7 +1,7 @@
 //
 // mkindx.cpp -- make help/news file indexes 
 //
-// $Id: mkindx.cpp,v 1.7 2001-07-07 17:54:44 sdennis Exp $ 
+// $Id: mkindx.cpp,v 1.8 2001-09-18 07:18:36 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -23,21 +23,21 @@ int DCL_CDECL main(int argc, char *argv[])
     if (argc < 2 || argc > 3)
     {
 #ifdef WIN32
-#ifdef ALPHA
-        printf("%s from MUX %s for Win32 #%s [ALPHA]\n", argv[0], MUX_VERSION,
+#ifdef BETA
+        printf("%s from MUX %s for Win32 #%s [BETA]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM);
-#else // ALPHA
+#else // BETA
         printf("%s from MUX %s for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#endif // ALPHA
+#endif // BETA
 #else // WIN32
-#ifdef ALPHA
-        printf("%s from MUX %s #%s [ALPHA]\n", argv[0], MUX_VERSION,
+#ifdef BETA
+        printf("%s from MUX %s #%s [BETA]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM);
-#else // ALPHA
+#else // BETA
         printf("%s from MUX %s #%s [%s]\n", argv[0], MUX_VERSION, MUX_BUILD_NUM,
             MUX_RELEASE_DATE);
-#endif // ALPHA
+#endif // BETA
 #endif // WIN32
         printf("Usage:\tmkindx <file_to_be_indexed> <output_index_filename>\n");
         exit(-1);

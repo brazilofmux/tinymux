@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.7 2001-06-30 17:44:17 morgan Exp $ 
+// $Id: dbconvert.cpp,v 1.8 2001-09-18 07:18:36 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -81,21 +81,21 @@ void info(int fmt, int flags, int ver)
 void usage(char *prog)
 {
 #ifdef WIN32
-#ifdef ALPHA
-    Log.tinyprintf("%s from MUX %s for Win32 #%s [ALPHA]\n", prog, MUX_VERSION,
+#ifdef BETA
+    Log.tinyprintf("%s from MUX %s for Win32 #%s [BETA]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM);
-#else // ALPHA
+#else // BETA
     Log.tinyprintf("%s from MUX %s for Win32 #%s [%s]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#endif // ALPHA
+#endif // BETA
 #else // WIN32
-#ifdef ALPHA
-    Log.tinyprintf("%s from MUX %s #%s [ALPHA]\n", prog, MUX_VERSION,
+#ifdef BETA
+    Log.tinyprintf("%s from MUX %s #%s [BETA]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM);
-#else // ALPHA
+#else // BETA
     Log.tinyprintf("%s from MUX %s #%s [%s]\n", prog, MUX_VERSION, MUX_BUILD_NUM,
         MUX_RELEASE_DATE);
-#endif // ALPHA
+#endif // BETA
 #endif // WIN32
     Log.tinyprintf("Usage: %s gamedb-basename [flags] [<in-file] [>out-file]\n", prog);
     Log.WriteString("   Available flags are:\n");

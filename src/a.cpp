@@ -1,6 +1,6 @@
 // a.cpp
 //
-// $Id: a.cpp,v 1.6 2001-06-29 20:00:12 sdennis Exp $
+// $Id: a.cpp,v 1.7 2001-09-18 07:18:36 sdennis Exp $
 //
 // Analyse a MUX database, we chew it in on stdin, extract
 // attributes, and stuff them into a radix tree. We accept a single
@@ -37,21 +37,21 @@ int DCL_CDECL main(int ac, char *av[])
     if (ac != 2)
     {
 #ifdef WIN32
-#ifdef ALPHA
-        fprintf(stderr, "%s from MUX %s for Win32 #%s [ALPHA]\n", av[0],
+#ifdef BETA
+        fprintf(stderr, "%s from MUX %s for Win32 #%s [BETA]\n", av[0],
             MUX_VERSION, MUX_BUILD_NUM);
-#else // ALPHA
+#else // BETA
         fprintf(stderr, "%s from MUX %s for Win32 #%s [%s]\n", av[0],
             MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#endif // ALPHA
+#endif // BETA
 #else // WIN32
-#ifdef ALPHA
-        fprintf(stderr, "%s from MUX %s #%s [ALPHA]\n", av[0], MUX_VERSION,
+#ifdef BETA
+        fprintf(stderr, "%s from MUX %s #%s [BETA]\n", av[0], MUX_VERSION,
             MUX_BUILD_NUM);
-#else // ALPHA
+#else // BETA
         fprintf(stderr, "%s from MUX %s #%s [%s]\n", av[0], MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#endif // ALPHA
+#endif // BETA
 #endif // WIN32
         fprintf(stderr, "usage: %s <max string length>\n", av[0]);
         exit(1);
