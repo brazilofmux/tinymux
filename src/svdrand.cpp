@@ -1,10 +1,8 @@
 // svdrand.cpp -- Random Numbers
 //
-// $Id: svdrand.cpp,v 1.13 2001-09-08 19:27:54 sdennis Exp $
+// $Id: svdrand.cpp,v 1.14 2001-09-08 19:45:53 sdennis Exp $
 //
-// The first version of Random Numbers based on algorithms presented in
-// "Numerical Recipes in C", Cambridge Press, 1992. The second one is
-// from Makoto Matsumoto and Takuji Nishimura.
+// Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 // 
 // RandomINT32() was derived from existing game server code.
 //
