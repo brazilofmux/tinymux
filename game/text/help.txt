@@ -6665,29 +6665,31 @@ SUB()
     > say isub(5,2)
     You say "3"
 
-  See also: add(), dec(), div(), iadd(), idiv(), imul(), inc(), mod(),
+  Related Topics: add(), dec(), div(), iadd(), idiv(), imul(), inc(), mod(),
             mul(), sub().
 
 & MUL()
+MUL()
 
-  Function: mul(<number1>,<number2>[,<numberN>]...)
- 
+  FUNCTION: mul(<number1>[,<numberN>]...)
+
   Returns the result of multiplying its arguments together.
   <numberN> may be a floating point number, and a floating point result
   is returned.
- 
+
   Example:
     > say mul(3,5)
     You say "15"
     > say mul(3,5,-2)
     You say "-30"
 
-  See also: add(), div(), fdiv(), iadd(), imul(), isub(), mod(),
+  Related Topics: add(), div(), fdiv(), iadd(), imul(), isub(), mod()
             round(), sub(), trunc().
 
 & IMUL()
+IMUL()
 
-  Function: imul(<number1>,<number2>[,<numberN>]...)
+  FUNCTION: imul(<number1>[,<numberN>]...)
  
   Returns the result of multiplying its integer arguments together.
   Similiar to mul() except that the mulitplication is done with
