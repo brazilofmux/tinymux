@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.60 2001-08-24 19:17:25 sdennis Exp $
+// $Id: funceval.cpp,v 1.61 2001-08-24 21:16:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3344,12 +3344,6 @@ static void room_list
 
 FUNCTION(fun_lrooms) 
 {
-    if (nfargs < 2 || 3 < nfargs)
-    {
-        safe_str("#-1 FUNCTION (LROOMS) EXPECTS 2 OR 3 ARGUMENTS", buff, bufc);
-        return;
-    }
-
     dbref room = match_thing(player, fargs[0]);
     if (!Good_obj(room) || !isRoom(room))
     {
