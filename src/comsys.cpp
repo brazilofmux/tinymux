@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.15 2000-09-29 21:56:49 sdennis Exp $
+// * $Id: comsys.cpp,v 1.16 2000-09-29 23:42:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -229,7 +229,14 @@ void load_channels(FILE *fp)
             
             for (j = 0; j < c->numchannels; j++)
             {
-                fscanf(fp, "%[^\n]\n", buffer);
+                int n = GetLineTrunc(buffer, sizeof(buffer), fp);
+                if (buffer[n-1] == '\n')
+                {
+                    // Get rid of trailing '\n'.
+                    //
+                    n--;
+                    buffer[n] = '\0';
+                }
                 if (!ParseChannelLine(buffer, c->alias + j * 6, c->channels+j))
                 {
                     c->numchannels--;
@@ -290,8 +297,14 @@ void load_old_channels(FILE *fp)
                 }
                 *t = 0;
                 
-                fscanf(fp, "%[^\n]\n", buffer);
-                c->channels[j] = StringClone(buffer);
+                int n = GetLineTrunc(buffer, sizeof(buffer), fp);
+                if (buffer[n-1] == '\n')
+                {
+                    // Get rid of trailing '\n'.
+                    //
+                    n--;
+                }
+                c->channels[j] = StringCloneLen(buffer, n);
             }
             sort_com_aliases(c);
         }
@@ -556,7 +569,7 @@ void load_comsystem(FILE *fp)
     int nc, new0 = 0;
     struct channel *ch;
     struct comuser *user;
-    char temp[1000];
+    char temp[LBUF_SIZE];
     char buf[8];
     
     num_channels = 0;
@@ -580,11 +593,22 @@ void load_comsystem(FILE *fp)
         ch = (struct channel *)MEMALLOC(sizeof(struct channel));
         ISOUTOFMEMORY(ch);
         
-        fscanf(fp, "%[^\n]\n", temp);
-        strcpy(ch->name, temp);
+        int n = GetLineTrunc(temp, sizeof(temp), fp);
+        if (n > MAX_CHANNEL_LEN)
+        {
+            n = MAX_CHANNEL_LEN;
+        }
+        if (temp[n-1] == '\n')
+        {
+            // Get rid of trailing '\n'.
+            //
+            n--;
+        }
+        memcpy(ch->name, temp, n);
+        ch->name[n] = '\0';
         ch->on_users = NULL;
         
-        hashaddLEN(ch->name, strlen(ch->name), (int *)ch, &mudstate.channel_htab);
+        hashaddLEN(ch->name, n, (int *)ch, &mudstate.channel_htab);
         
         if (new0)
         {
@@ -624,8 +648,23 @@ void load_comsystem(FILE *fp)
                     fscanf(fp, "%d\n", &(user->bUserIsOn));
                 }
                 
-                fscanf(fp, "%[^\n]\n", temp);
-                user->title = StringClone(temp+2);
+                int n = GetLineTrunc(temp, sizeof(temp), fp);
+                if (n > MAX_TITLE_LEN)
+                {
+                    n = MAX_TITLE_LEN;
+                }
+                if (temp[n-1] == '\n')
+                {
+                    // Get rid of trailing '\n'.
+                    //
+                    n--;
+                }
+                if (n < 2)
+                {
+                    n = 2;
+                }
+                n -= 2;
+                user->title = StringCloneLen(temp+2, n);
 
                 if (user->who >= 0 && user->who < mudstate.db_top)
                 {
