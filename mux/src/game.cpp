@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.26 2002-09-29 07:21:45 sdennis Exp $
+// $Id: game.cpp,v 1.27 2003-01-03 23:36:44 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -140,11 +140,11 @@ BOOL regexp_match(char *pattern, char *str, char *args[], int nargs)
 
     for (i = 0; i < matches; ++i)
     {
-      if (ovec[i*2] == -1)
-      {
-          continue;
-      }
-      len = ovec[(i*2)+1] - ovec[i*2];
+        if (ovec[i*2] == -1)
+        {
+            continue;
+        }
+        len = ovec[(i*2)+1] - ovec[i*2];
         args[i] = alloc_lbuf("regexp_match");
         strncpy(args[i], str + ovec[i*2], len);
         args[i][len] = '\0';        /* strncpy() does not null-terminate */
@@ -179,7 +179,8 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
 
         // Never check NOPROG attributes.
         //
-        if (!ap || (ap->flags & AF_NOPROG))
+        if (  !ap
+           || (ap->flags & AF_NOPROG))
         {
             continue;
         }
@@ -200,7 +201,8 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
 
         // Skip if private and on a parent.
         //
-        if (check_exclude && (aflags & AF_PRIVATE))
+        if (  check_exclude
+           && (aflags & AF_PRIVATE))
         {
             continue;
         }
@@ -217,7 +219,8 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
         // This lets non-command attribs on the child block commands
         // on the parent.
         //
-        if ((buff[0] != type) || (aflags & AF_NOPROG))
+        if (  buff[0] != type
+           || (aflags & AF_NOPROG))
         {
             continue;
         }
@@ -393,9 +396,13 @@ static char *dflt_from_msg(dbref sender, dbref sendloc)
     tp = tbuff = alloc_lbuf("notify_check.fwdlist");
     safe_str("From ", tbuff, &tp);
     if (Good_obj(sendloc))
+    {
         safe_str(Name(sendloc), tbuff, &tp);
+    }
     else
+    {
         safe_str(Name(sender), tbuff, &tp);
+    }
     safe_chr(',', tbuff, &tp);
     *tp = '\0';
     return tbuff;
@@ -464,7 +471,9 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
 {
     // If speaker is invalid or message is empty, just exit.
     //
-    if (!Good_obj(target) || !msg || !*msg)
+    if (  !Good_obj(target)
+       || !msg
+       || !*msg)
     {
         return;
     }
@@ -492,7 +501,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
     // Enforce a recursion limit
     //
     mudstate.ntfy_nest_lev++;
-    if (mudstate.ntfy_nest_lev >= mudconf.ntfy_nest_lim)
+    if (mudconf.ntfy_nest_lim <= mudstate.ntfy_nest_lev)
     {
         mudstate.ntfy_nest_lev--;
         return;
@@ -534,8 +543,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             }
             if (sender != mudstate.curr_enactor)
             {
-                sprintf(tbuff, "<-(#%d)",
-                    mudstate.curr_enactor);
+                sprintf(tbuff, "<-(#%d)", mudstate.curr_enactor);
                 safe_str(tbuff, msg_ns, &mp);
             }
             safe_str("] ", msg_ns, &mp);
@@ -608,8 +616,8 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
            && Puppet(target)
            && (target != Owner(target))
            && (  (key & MSG_PUP_ALWAYS)
-              || (  (targetloc != Location(Owner(target)))
-                 && (targetloc != Owner(target)))))
+              || (  targetloc != Location(Owner(target))
+                 && targetloc != Owner(target))))
         {
             tp = tbuff = alloc_lbuf("notify_check.puppet");
             safe_str(Name(target), tbuff, &tp);
@@ -646,7 +654,8 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         BOOL pass_uselock = FALSE;
         if (  (key & MSG_ME)
            && check_listens
-           && (pass_listen || Monitor(target)))
+           && (  pass_listen
+              || Monitor(target)))
         {
             pass_uselock = could_doit(sender, target, A_LUSE);
         }
@@ -686,7 +695,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         //
         if (  (key & MSG_ME)
            && pass_uselock
-           && (sender != target)
+           && sender != target
            && Monitor(target))
         {
             atr_match(target, sender, AMATCH_LISTEN, (char *)msg, FALSE);
@@ -771,9 +780,9 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                    && check_filter(obj, sender, A_FILTER, msg))
                 {
                     tbuff = add_prefix(obj, target, A_PREFIX, buff,
-                            "From a distance,");
+                        "From a distance,");
                     notify_check(recip, sender, tbuff,
-                             MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE);
+                        MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE);
                     free_lbuf(tbuff);
                 }
             }
@@ -794,8 +803,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             //
             if (key & MSG_S_OUTSIDE)
             {
-                buff = add_prefix(target, sender, A_INPREFIX,
-                          msg, "");
+                buff = add_prefix(target, sender, A_INPREFIX, msg, "");
             }
             else
             {
@@ -806,7 +814,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                 if (obj != target)
                 {
                     notify_check(obj, sender, buff,
-                    MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | key & MSG_HTML);
+                        MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | key & MSG_HTML);
                 }
             }
             if (key & MSG_S_OUTSIDE)
@@ -859,16 +867,15 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             if (key & MSG_S_INSIDE)
             {
                 tbuff = dflt_from_msg(sender, target);
-                buff = add_prefix(target, sender, A_PREFIX,
-                          msg, tbuff);
+                buff = add_prefix(target, sender, A_PREFIX, msg, tbuff);
                 free_lbuf(tbuff);
             }
             else
             {
                 buff = (char *)msg;
             }
-            notify_check(targetloc, sender, buff,
-                     MSG_ME | MSG_F_UP | MSG_S_INSIDE);
+            notify_check(targetloc, sender, buff, 
+                MSG_ME | MSG_F_UP | MSG_S_INSIDE);
             if (key & MSG_S_INSIDE)
             {
                 free_lbuf(buff);
@@ -903,13 +910,15 @@ void notify_except2(dbref loc, dbref player, dbref exc1, dbref exc2, const char 
 {
     dbref first;
 
-    if ((loc != exc1) && (loc != exc2))
+    if (  loc != exc1
+       && loc != exc2)
     {
         notify_check(loc, player, msg, (MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A));
     }
     DOLIST(first, Contents(loc))
     {
-        if (first != exc1 && first != exc2)
+        if (  first != exc1
+           && first != exc2)
         {
             notify_check(first, player, msg, (MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE));
         }
@@ -986,7 +995,7 @@ static void report_timecheck
     {
         raw_notify(player,
             tprintf("Counted %d objects using %ld msecs over %d seconds.",
-                obj_counted, ltdTotal.ReturnMilliseconds(), ltdPeriod.ReturnSeconds()));
+            obj_counted, ltdTotal.ReturnMilliseconds(), ltdPeriod.ReturnSeconds()));
     }
 
     if (yes_log)
@@ -1018,13 +1027,18 @@ void do_timecheck(dbref executor, dbref caller, dbref enactor, int key)
     else
     {
         if (key & TIMECHK_RESET)
+        {
             yes_clear = TRUE;
+        }
         if (key & TIMECHK_SCREEN)
+        {
             yes_screen = TRUE;
+        }
         if (key & TIMECHK_LOG)
+        {
             yes_log = TRUE;
+        }
     }
-
     report_timecheck(executor, yes_screen, yes_log, yes_clear);
 }
 
@@ -1141,7 +1155,8 @@ void dump_database_internal(int dump_type)
     char prevfile[SIZEOF_PATHNAME+32];
     FILE *f;
 
-    if (dump_type < 0 || dump_type >= NUM_DUMP_TYPES)
+    if (  dump_type < 0
+       || NUM_DUMP_TYPES <= dump_type)
     {
         return;
     }
@@ -1161,7 +1176,7 @@ void dump_database_internal(int dump_type)
     }
 #endif
 
-    if (dump_type > 0)
+    if (0 < dump_type)
     {
         DUMP_PROCEDURE *dp = &DumpProcedures[dump_type];
 
@@ -1492,7 +1507,7 @@ static int load_game(int ccPageFile)
 
     if (mudconf.compress_db)
     {
-        StringCopy(infile, mudconf.indb);
+        strcpy(infile, mudconf.indb);
         strcat(infile, ".gz");
         if (stat(infile, &statbuf) == 0)
         {
@@ -1507,7 +1522,7 @@ static int load_game(int ccPageFile)
 
     if (!compressed)
     {
-        StringCopy(infile, mudconf.indb);
+        strcpy(infile, mudconf.indb);
         if (stat(infile, &statbuf) != 0)
         {
             // Indicate that we couldn't load because the input db didn't
@@ -1640,7 +1655,8 @@ BOOL list_check(dbref thing, dbref player, char type, char *str, BOOL check_pare
     int limit = mudstate.db_top;
     while (thing != NOTHING)
     {
-        if ((thing != player) && (!(No_Command(thing))))
+        if (  thing != player
+           && !No_Command(thing))
         {
             if (atr_match(thing, player, type, str, check_parent) > 0)
             {
@@ -1663,12 +1679,14 @@ BOOL Hearer(dbref thing)
     int attr, aflags;
     ATTR *ap;
 
-    if (mudstate.inpipe && (thing == mudstate.poutobj))
+    if (  mudstate.inpipe
+       && thing == mudstate.poutobj)
     {
         return TRUE;
     }
 
-    if (Connected(thing) || Puppet(thing))
+    if (  Connected(thing)
+       || Puppet(thing))
     {
         return TRUE;
     }
@@ -1696,7 +1714,8 @@ BOOL Hearer(dbref thing)
         if (Monitor(thing))
         {
             ap = atr_num(attr);
-            if (!ap || (ap->flags & AF_NOPROG))
+            if (  !ap
+               || (ap->flags & AF_NOPROG))
             {
                 continue;
             }
@@ -1705,14 +1724,15 @@ BOOL Hearer(dbref thing)
 
             // Make sure we can execute it.
             //
-            if ((buff[0] != AMATCH_LISTEN) || (aflags & AF_NOPROG))
+            if (  buff[0] != AMATCH_LISTEN
+               || (aflags & AF_NOPROG))
             {
                 continue;
             }
 
             // Make sure there's a : in it.
             //
-            for (s = buff + 1; *s && (*s != ':'); s++)
+            for (s = buff + 1; *s && *s != ':'; s++)
             {
                 ; // Nothing
             }
@@ -1936,7 +1956,8 @@ int DCL_CDECL main(int argc, char *argv[])
         return 101;
     }
 
-    if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+    if (  LOBYTE(wsaData.wVersion) != 2
+       || HIBYTE(wsaData.wVersion) != 2)
     {
         // We can't run on this version of WinSock.
         //
