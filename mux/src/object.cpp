@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.32 2003-12-13 19:29:51 sdennis Exp $
+// $Id: object.cpp,v 1.33 2003-12-14 06:58:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -620,7 +620,8 @@ void divest_object(dbref thing)
            && Has_location(curr)
            && Key(curr)) 
         {
-            if (!Good_obj(Home(curr)))
+            if (  !Good_obj(Home(curr))
+               || Going(Home(curr)))
             {
                 s_Home(curr, new_home(curr));
             }
@@ -660,6 +661,7 @@ void empty_obj(dbref obj)
             s_Location(targ, NOTHING); 
             s_Next(targ, NOTHING);
             if (  !Good_obj(Home(targ))
+               || Going(Home(targ))
                || Home(targ) == obj)
             {
                 s_Home(targ, new_home(targ));
@@ -1614,7 +1616,8 @@ static void check_contents_chains(void)
             Log_simple_err(i, Location(i), "Orphaned object, moved home.");
             s_Location(i, NOTHING); 
             s_Next(i, NOTHING);
-            if (!Good_obj(Home(i)))
+            if (  !Good_obj(Home(i))
+               || Going(Home(i)))
             {
                 s_Home(i, new_home(i));
             }
