@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.5 2002-06-11 19:16:19 jake Exp $
+// $Id: look.cpp,v 1.6 2002-06-12 22:07:13 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -1346,21 +1346,29 @@ static void exam_wildattrs
     int do_parent
 )
 {
-    int atr, aflags, got_any;
-    char *buf;
-    dbref aowner;
-    ATTR *ap;
-
-    got_any = 0;
+    BOOL got_any = FALSE;
+    int atr;
     for (atr = olist_first(); atr != NOTHING; atr = olist_next())
     {
-        ap = atr_num(atr);
+        char *buf;
+        ATTR *ap = atr_num(atr);
         if (!ap)
+        {
             continue;
+        }
+        ATTR ta = *ap;
+        ap = &ta;
+
+        int   aflags;
+        dbref aowner;
         if (do_parent && !(ap->flags & AF_PRIVATE))
+        {
             buf = atr_pget(thing, atr, &aowner, &aflags);
+        }
         else
+        {
             buf = atr_get(thing, atr, &aowner, &aflags);
+        }
 
         // Decide if the player should see the attr: If obj is
         // Examinable and has rights to see, yes. If a player and has
@@ -1372,13 +1380,13 @@ static void exam_wildattrs
         if (  Examinable(player, thing)
            && Read_attr(player, thing, ap, aowner, aflags))
         {
-            got_any = 1;
+            got_any = TRUE;
             view_atr(player, thing, ap, buf, aowner, aflags, 0);
         }
         else if (  (Typeof(thing) == TYPE_PLAYER)
                 && Read_attr(player, thing, ap, aowner, aflags))
         {
-            got_any = 1;
+            got_any = TRUE;
             if (aowner == Owner(player))
             {
                 view_atr(player, thing, ap, buf, aowner, aflags, 0);
@@ -1399,7 +1407,7 @@ static void exam_wildattrs
         }
         else if (Read_attr(player, thing, ap, aowner, aflags))
         {
-            got_any = 1;
+            got_any = TRUE;
             if (aowner == Owner(player))
             {
                 view_atr(player, thing, ap, buf, aowner, aflags, 0);
