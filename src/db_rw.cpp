@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.34 2001-10-17 20:47:34 sdennis Exp $
+// $Id: db_rw.cpp,v 1.35 2001-10-18 04:53:00 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -845,6 +845,8 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
     return 0;
 }
 
+extern int anum_alc_top;
+
 dbref db_write(FILE *f, int format, int version)
 {
     dbref i;
@@ -874,13 +876,15 @@ dbref db_write(FILE *f, int format, int version)
 
     // Dump user-named attribute info.
     //
-    vp = vattr_first();
     char Buffer[LBUF_SIZE];
     Buffer[0] = '+';
     Buffer[1] = 'A';
-    while (vp != NULL)
+    int iAttr;
+    for (iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
     {
-        if (!(vp->flags & AF_DELETED))
+        vp = (VATTR *) anum_get(iAttr);
+        if (  vp != NULL
+           && !(vp->flags & AF_DELETED))
         {
             // Format is: "+A%d\n\"%d:%s\"\n", vp->number, vp->flags, vp->name
             //
@@ -897,7 +901,6 @@ dbref db_write(FILE *f, int format, int version)
             *pBuffer++ = '\n';
             fwrite(Buffer, sizeof(char), pBuffer-Buffer, f);
         }
-        vp = vattr_next(vp);
     }
 
 #ifdef STANDALONE
