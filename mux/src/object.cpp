@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: object.cpp,v 1.2 2003-01-24 06:24:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -21,57 +21,17 @@
 
 static int check_type;
 
-#ifdef STANDALONE
-
-// Functions needed in standalone mode.
-//
-
-// move_object: taken from move.c with look and penny check extracted.
-//
-void move_object(dbref thing, dbref dest)
-{
-    // Remove from the source location.
-    //
-    dbref src = Location(thing);
-    if (src != NOTHING)
-    {
-        s_Contents(src, remove_first(Contents(src), thing));
-    }
-
-    // Special check for HOME.
-    //
-    if (dest == HOME)
-    {
-        dest = Home(thing);
-    }
-
-    // Add to destination location.
-    //
-    if (dest != NOTHING)
-    {
-        s_Contents(dest, insert_first(Contents(dest), thing));
-    }
-    else
-    {
-        s_Next(thing, NOTHING);
-    }
-    s_Location(thing, dest);
-}
-
-#define move_via_generic(obj,where,extra,hush) move_object(obj,where)
-
-#endif
-
 /*
  * ---------------------------------------------------------------------------
  * * Log_pointer_err, Log_header_err, Log_simple_damage: Write errors to the
  * * log file.
  */
 
-static void Log_pointer_err(dbref prior, dbref obj, dbref loc, dbref ref, const char *reftype, const char *errtype)
+static void Log_pointer_err(dbref prior, dbref obj, dbref loc, dbref ref,
+    const char *reftype, const char *errtype)
 {
-    STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG")
-        log_type_and_name(obj);
+    STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
+    log_type_and_name(obj);
     if (loc != NOTHING) 
     {
         log_text(" in ");
@@ -90,13 +50,14 @@ static void Log_pointer_err(dbref prior, dbref obj, dbref loc, dbref ref, const 
     log_type_and_name(ref);
     log_text(" ");
     log_text(errtype);
-    ENDLOG
+    ENDLOG;
 }
 
-static void Log_header_err(dbref obj, dbref loc, dbref val, BOOL is_object, const char *valtype, const char *errtype)
+static void Log_header_err(dbref obj, dbref loc, dbref val, BOOL is_object,
+    const char *valtype, const char *errtype)
 {
-    STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG")
-        log_type_and_name(obj);
+    STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
+    log_type_and_name(obj);
     if (loc != NOTHING) 
     {
         log_text(" in ");
@@ -115,13 +76,13 @@ static void Log_header_err(dbref obj, dbref loc, dbref val, BOOL is_object, cons
     }
     log_text(" ");
     log_text(errtype);
-    ENDLOG
+    ENDLOG;
 }
 
 static void Log_simple_err(dbref obj, dbref loc, const char *errtype)
 {
-    STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG")
-        log_type_and_name(obj);
+    STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
+    log_type_and_name(obj);
     if (loc != NOTHING) 
     {
         log_text(" in ");
@@ -129,7 +90,7 @@ static void Log_simple_err(dbref obj, dbref loc, const char *errtype)
     }
     log_text(": ");
     log_text(errtype);
-    ENDLOG
+    ENDLOG;
 }
 
 /*
@@ -141,7 +102,9 @@ static void Log_simple_err(dbref obj, dbref loc, const char *errtype)
 dbref start_home(void)
 {
     if (mudconf.start_home != NOTHING)
+    {
         return mudconf.start_home;
+    }
     return mudconf.start_room;
 }
 
@@ -209,8 +172,6 @@ dbref clone_home(dbref player, dbref thing)
  * * create_obj: Create an object of the indicated type IF the player can
  * * afford it.
  */
-
-#ifndef STANDALONE
 
 dbref create_obj(dbref player, int objtype, const char *name, int cost)
 {
@@ -424,11 +385,7 @@ dbref create_obj(dbref player, int objtype, const char *name, int cost)
     return obj;
 }
 
-#endif
-
-#ifndef STANDALONE
 extern void stack_clr(dbref obj);
-#endif
 
 /*
  * ---------------------------------------------------------------------------
@@ -438,13 +395,14 @@ extern void stack_clr(dbref obj);
 
 void destroy_bad_obj(dbref obj)
 {
-#ifndef STANDALONE
-    halt_que(NOTHING, obj);
-    nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
-    fwdlist_clr(obj);
-    stack_clr(obj);
-    ReleaseAllResources(obj);
-#endif // STANDALONE
+    if (!mudstate.bStandAlone)
+    {
+        halt_que(NOTHING, obj);
+        nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
+        fwdlist_clr(obj);
+        stack_clr(obj);
+        ReleaseAllResources(obj);
+    }
     atr_free(obj);
     s_Name(obj, NULL);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
@@ -482,21 +440,22 @@ void destroy_obj(dbref obj)
 
     // Halt any pending commands (waiting or semaphore).
     //
-#ifndef STANDALONE
-    if (halt_que(NOTHING, obj) > 0)
+    if (!mudstate.bStandAlone)
     {
-        if (good_owner && !Quiet(obj) && !Quiet(owner))
+        if (  halt_que(NOTHING, obj) > 0
+           && good_owner
+           && !Quiet(obj)
+           && !Quiet(owner))
         {
-            notify(owner, "Halted.");
+                notify(owner, "Halted.");
         }
-    }
-    nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
+        nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
 
-    // Remove forwardlists and stacks.
-    //
-    fwdlist_clr(obj);
-    stack_clr(obj);
-#endif
+        // Remove forwardlists and stacks.
+        //
+        fwdlist_clr(obj);
+        stack_clr(obj);
+    }
 
     // Compensate the owner for the object.
     //
@@ -518,9 +477,6 @@ void destroy_obj(dbref obj)
             break;
 
         case TYPE_EXIT:
-#ifdef STANDALONE
-            val = mudconf.opencost;
-#else
             if (Location(obj) == NOTHING)
             {
                 val = mudconf.opencost;
@@ -529,7 +485,6 @@ void destroy_obj(dbref obj)
             {
                 val = mudconf.opencost + mudconf.linkcost;
             }
-#endif
             quota = mudconf.exit_quota;
             break;
 
@@ -548,7 +503,6 @@ void destroy_obj(dbref obj)
         if (val)
         {
             giveto(owner, val);
-#ifndef STANDALONE
             if (  !Quiet(owner)
                && !Quiet(obj))
             {
@@ -556,7 +510,6 @@ void destroy_obj(dbref obj)
                        "You get back your %d %s deposit for %s(#%d).",
                         val, mudconf.one_coin, Name(obj), obj));
             }
-#endif // STANDALONE
         }
         if (  mudconf.quotas
            && quota)
@@ -564,9 +517,10 @@ void destroy_obj(dbref obj)
             add_quota(owner, quota);
         }
     }
-#ifndef STANDALONE
-    ReleaseAllResources(obj);
-#endif // STANDALONE
+    if (!mudstate.bStandAlone)
+    {
+        ReleaseAllResources(obj);
+    }
     atr_free(obj);
     s_Name(obj, NULL);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
@@ -706,7 +660,6 @@ void destroy_thing(dbref thing)
 
 void destroy_player(dbref player, dbref victim)
 {
-#ifndef STANDALONE
     // Bye bye...
     //
     boot_off(victim, "You have been destroyed!");
@@ -725,7 +678,6 @@ void destroy_player(dbref player, dbref victim)
     move_via_generic(victim, NOTHING, player, 0);
     destroy_obj(victim);
     notify_quiet(player, tprintf("(%d objects @chowned to you)", count));
-#endif
 }
 
 static void purge_going(void)
@@ -843,29 +795,30 @@ static void check_dead_refs(void)
         owner = Owner(i);
         if (!Good_obj(owner)) 
         {
-            if(isPlayer(i))
+            if (isPlayer(i))
             {
-            Log_header_err(i, NOTHING, owner, TRUE,
-                       "Owner", "is invalid.  Set to player.");
-            owner = i;
+                Log_header_err(i, NOTHING, owner, TRUE, "Owner",
+                    "is invalid.  Set to player.");
+                owner = i;
             }
             else
             {
-            Log_header_err(i, NOTHING, owner, TRUE,
-                       "Owner", "is invalid.  Set to GOD.");
-            owner = GOD;
+                Log_header_err(i, NOTHING, owner, TRUE, "Owner",
+                    "is invalid.  Set to GOD.");
+                owner = GOD;
             }
             s_Owner(i, owner);
-#ifndef STANDALONE
-            halt_que(NOTHING, i);
-#endif
+            if (!mudstate.bStandAlone)
+            {
+                halt_que(NOTHING, i);
+            }
             s_Halted(i);
         } 
         else if (check_type & DBCK_FULL) 
         {
             if (Going(owner)) 
             {
-                if(isPlayer(i))
+                if (isPlayer(i))
                 {
                     Log_header_err(i, NOTHING, owner, TRUE,
                        "Owner", "is set GOING.  Set to player.");
@@ -878,9 +831,10 @@ static void check_dead_refs(void)
                     owner = GOD;
                 }
                 s_Owner(i, owner);
-#ifndef STANDALONE
-                halt_que(NOTHING, i);
-#endif
+                if (!mudstate.bStandAlone)
+                {
+                    halt_que(NOTHING, i);
+                }
                 s_Halted(i);
             } 
             else if (!OwnsOthers(owner))
@@ -908,15 +862,20 @@ static void check_dead_refs(void)
             if (Going(targ)) 
             {
                 s_Parent(i, NOTHING);
-#ifndef STANDALONE  
-                if (!Quiet(i) && !Quiet(owner))
+                if (!mudstate.bStandAlone)
                 {
-                    notify(owner, tprintf("Parent cleared on %s(#%d)", Name(i), i));
+                    if (  !Quiet(i)
+                       && !Quiet(owner))
+                    {
+                        notify(owner, tprintf("Parent cleared on %s(#%d)",
+                            Name(i), i));
+                    }
                 }
-#else
-                Log_header_err(i, Location(i), targ, TRUE,
-                     "Parent", "is invalid.  Cleared.");
-#endif
+                else
+                {
+                    Log_header_err(i, Location(i), targ, TRUE, "Parent",
+                        "is invalid.  Cleared.");
+                }
             }
         } 
         else if (targ != NOTHING) 
@@ -934,17 +893,21 @@ static void check_dead_refs(void)
             if (Going(targ))
             {
                 s_Zone(i, NOTHING);
-#ifndef STANDALONE
-                owner = Owner(i);
-                if (!Quiet(i) && !Quiet(owner))
+                if (!mudstate.bStandAlone)
                 {
-                    notify(owner,
-                      tprintf("Zone cleared on %s(#%d)", Name(i), i));
+                    owner = Owner(i);
+                    if (  !Quiet(i)
+                       && !Quiet(owner))
+                    {
+                        notify(owner, tprintf("Zone cleared on %s(#%d)",
+                            Name(i), i));
+                    }
                 }
-#else
-                Log_header_err(i, Location(i), targ, TRUE,
-                    "Zone", "is invalid.  Cleared.");
-#endif
+                else
+                {
+                    Log_header_err(i, Location(i), targ, TRUE, "Zone",
+                        "is invalid.  Cleared.");
+                }
             }
         }
         else if (targ != NOTHING)
@@ -1004,9 +967,11 @@ static void check_dead_refs(void)
         switch (Typeof(i))
         {
         case TYPE_PLAYER:
-            // check home
+            // Check home.
+            //
             targ = Home(i);
-            if (!Good_obj(targ) || !Has_contents(targ))
+            if (  !Good_obj(targ)
+               || !Has_contents(targ))
             {
                 Log_simple_err(i, Location(i), "Bad home. Reset.");
                 s_Home(i, default_home());
@@ -1015,7 +980,8 @@ static void check_dead_refs(void)
             // Check the location.
             //
             targ = Location(i);
-            if (!Good_obj(targ) || !Has_contents(targ))
+            if (  !Good_obj(targ)
+               || !Has_contents(targ))
             {
                 Log_pointer_err(NOTHING, i, NOTHING, targ, "Location",
                     "is invalid.  Moved to home.");
@@ -1032,32 +998,43 @@ static void check_dead_refs(void)
 
             if (check_type & DBCK_FULL) 
             {
-            // check wealth
-            targ = mudconf.paylimit;
-            check_pennies(i, targ, "Wealth");
+                // Check wealth.
+                //
+                targ = mudconf.paylimit;
+                check_pennies(i, targ, "Wealth");
             }
             break;
 
         case TYPE_THING:
             
-            // check home
+            // Check home.
+            //
             targ = Home(i);
-            if (!Good_obj(targ) || !Has_contents(targ))
+            if (  !Good_obj(targ)
+               || !Has_contents(targ))
             {
-#ifndef STANDALONE
-                if (!Quiet(i) && !Quiet(owner))
-                    notify(owner, tprintf("Home reset on %s(#%d)", Name(i), i));
-#else
-                Log_header_err(i, Location(i), targ, TRUE,
-                       "Home", "is invalid.  Cleared.");
+                if (!mudstate.bStandAlone)
+                {
+                    if (  !Quiet(i)
+                       && !Quiet(owner))
+                    {
+                        notify(owner, tprintf("Home reset on %s(#%d)",
+                            Name(i), i));
+                    }
+                    else
+                    {
+                        Log_header_err(i, Location(i), targ, TRUE, "Home",
+                            "is invalid.  Cleared.");
+                    }
+                }
                 s_Home(i, new_home(i));
-#endif
             }
 
             // Check the location.
             //
             targ = Location(i);
-            if (!Good_obj(targ) || !Has_contents(targ))
+            if (  !Good_obj(targ)
+               || !Has_contents(targ))
             {
                 Log_pointer_err(NOTHING, i, NOTHING, targ, "Location",
                     "is invalid.  Moved to home.");
@@ -1091,16 +1068,20 @@ static void check_dead_refs(void)
                 if (Going(targ))
                 {
                     s_Dropto(i, NOTHING);
-#ifndef STANDALONE
-                    if (!Quiet(i) && !Quiet(owner))
+                    if (!mudstate.bStandAlone)
                     {
-                        notify(owner, tprintf("Dropto removed from %s(#%d)",
-                            Name(i), i));
+                        if (  !Quiet(i)
+                           && !Quiet(owner))
+                        {
+                            notify(owner, tprintf("Dropto removed from %s(#%d)",
+                                Name(i), i));
+                        }
                     }
-#else
-                    Log_header_err(i, NOTHING, targ, TRUE, "Dropto",
-                        "is invalid.  Removed.");
-#endif
+                    else
+                    {
+                        Log_header_err(i, NOTHING, targ, TRUE, "Dropto",
+                            "is invalid.  Removed.");
+                    }
                 }
             }
             else if (  targ != NOTHING
@@ -1664,15 +1645,18 @@ static void check_floating(void)
            && !Marked(i))
         {
             owner = Owner(i);
-#ifndef STANDALONE
-            if (Good_owner(owner))
+            if (!mudstate.bStandAlone)
             {
-                notify(owner, tprintf( "You own a floating room: %s(#%d)",
-                    Name(i), i));
+                if (Good_owner(owner))
+                {
+                    notify(owner, tprintf( "You own a floating room: %s(#%d)",
+                        Name(i), i));
+                }
             }
-#else
-            Log_simple_err(i, NOTHING, "Disconnected room.");
-#endif
+            else
+            {
+                Log_simple_err(i, NOTHING, "Disconnected room.");
+            }
         }
     }
 }
@@ -1689,20 +1673,17 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
     check_exit_chains();
     check_contents_chains();
     check_floating();
-#ifndef STANDALONE
-    if (executor != NOTHING)
+    if (  !mudstate.bStandAlone
+       && executor != NOTHING)
     {
         Guest.CleanUp();
     }
-#endif
     purge_going();
     make_freelist();
-#ifndef STANDALONE
-    if (  executor != NOTHING
+    if (  !mudstate.bStandAlone
+       && executor != NOTHING
        && !Quiet(executor))
     {
         notify(executor, "Done.");
     }
-#endif
 }
-
