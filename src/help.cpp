@@ -2,7 +2,7 @@
  * help.c -- commands for giving help 
  */
 /*
- * $Id: help.cpp,v 1.4 2000-06-05 19:09:42 sdennis Exp $ 
+ * $Id: help.cpp,v 1.5 2000-10-28 16:48:41 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -77,7 +77,7 @@ int helpindex_read(CHashTable *htab, char *filename)
         BOOL bOriginal = 1; // First is the longest.
         int nTopic = strlen(entry.topic);
 
-        for (nTopic = strlen(entry.topic); nTopic > 1; nTopic--)
+        for (nTopic = strlen(entry.topic); nTopic > 0; nTopic--)
         {
             if (Tiny_IsSpace[(unsigned char)entry.topic[nTopic-1]])
             {
