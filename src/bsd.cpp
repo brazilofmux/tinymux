@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.2 2000-04-15 16:29:22 sdennis Exp $
+// $Id: bsd.cpp,v 1.3 2000-04-24 18:04:19 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1346,7 +1346,6 @@ void shutdownsock(DESC *d, int reason)
 
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
-        report_logout(d->player, d->connected_at, ltaNow);
 
         // If requested, write an accounting record of the form:
         // Plyr# Flags Cmds ConnTime Loc Money [Site] <DiscRsn> Name 
