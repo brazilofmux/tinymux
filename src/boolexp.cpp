@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.5 2001-06-27 22:27:57 sdennis Exp $
+// $Id: boolexp.cpp,v 1.6 2001-06-28 02:50:11 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -407,7 +407,7 @@ static BOOLEXP *NDECL(parse_boolexp_L)
         // know that object refs are all dbrefs, so we skip the
         // expensive match code.
         //
-		if (parsing_internal)
+        if (parsing_internal)
         {
             if (buf[0] != '#')
             {
