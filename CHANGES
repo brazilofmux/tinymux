@@ -99,6 +99,11 @@ Feature Additions:
     letters '0' through '9' when WOD_REALMS is not defined, but only by name
     if WOD_REALMS is defined.
  -- Added BLIND flag to control * has entered, * has left emits.
+ -- New objects are now allocated from the lowest available dbref instead of
+    the highest.
+ -- Lists of floating-point numbers (ADD, LADD, and SUB) are added  much
+    more precisely.
+ -- Updated Mersenne Twister Random Number code to a later version.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -178,6 +183,20 @@ Bug Fixes:
  -- Bug #783 - Could get a DARK guest by logging into a previous guest player
     with it's dbref. Patch from Zenty.
  -- Fix SIGSEGV bug in new guest system from Build 35.
+ -- Avoid compiler warnings from including malloc.h when the platform prefers
+    stdlib.h
+ -- New connections on WinNT follow a different path and weren't reported
+    to SITEMON-flagged users.
+ -- The CA_STAFF permission on the realms flags are enforced.
+ -- add(1.6,.1) no longer returns 1.7000000000000002. The server uses the
+    briefest base-10 expression of the value that is within the estimated
+    error of the result.
+ -- Fixed round(2,2) and round(0,2) so that they return 2.00 and 0.00,
+    respectively.
+ -- Fixed locks on guests.
+ -- Changed guest password back to 'Guest' to make the transition to the
+    new guest system easier.
+ -- The names reported in the @chown message were usually wrong.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
