@@ -239,14 +239,14 @@ conc: portconc.o
 slave: slave.o
 	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o slave slave.o
 
-mkindx: mkindx.o
-	$(CXX) $(ALLCXXFLAGS) -o mkindx mkindx.o
+mkindx: _build.o mkindx.o
+	$(CXX) $(ALLCXXFLAGS) -o mkindx _build.o mkindx.o
 
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
 
-dbconvert: dbconvert.o $(SA_OBJ) $(ALLOC_O) $(C_RADIX_O) $(LIBOBJS)
-	$(CXX) $(ALLCXXFLAGS) -o dbconvert dbconvert.o $(SA_OBJ) $(COM_OBJ) $(ALLOC_O) $(C_COMPRESS_O) $(LIBS) $(MORELIBS) $(LIBOBJS)
+dbconvert: _build.o dbconvert.o $(SA_OBJ) $(ALLOC_O) $(C_RADIX_O) $(LIBOBJS)
+	$(CXX) $(ALLCXXFLAGS) -o dbconvert _build.o dbconvert.o $(SA_OBJ) $(COM_OBJ) $(ALLOC_O) $(C_COMPRESS_O) $(LIBS) $(MORELIBS) $(LIBOBJS)
 
 saber:	$(SRC)
 	#load $(SRC)
@@ -255,8 +255,9 @@ saber-o: $(OBJ) $(LIBOBJS)
 	#load $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS)
 
 ifdef SWITCH_RADIX_COMPRESSION
-a: a.o radix.o
-	$(CXX) $(ALLCXXFLAGS) -o a a.o radix.o
+a.o: autoconf.h config.h radix.h _build.h
+a: _build.o a.o radix.o
+	$(CXX) $(ALLCXXFLAGS) -o a _build.o a.o radix.o
 endif
 
 netmux: $(OBJ) $(LIBOBJS) $(VER_SRC)

@@ -1,10 +1,7 @@
-/*
- * dbconvert.c - Convert databases to various MUX formats 
- */
-/*
- * $Id: dbconvert.cpp,v 1.2 2000-04-24 22:12:38 sdennis Exp $ 
- */
-
+// dbconvert.cpp - Convert databases to various MUX formats.
+//
+// $Id: dbconvert.cpp,v 1.3 2000-09-18 08:03:42 sdennis Exp $ 
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -13,9 +10,7 @@
 
 #include "db.h"
 #include "vattr.h"
-#ifdef WIN32
 #include "_build.h"
-#endif // WIN32
 
 #ifdef RADIX_COMPRESSION
 #ifndef COMPRESSOR
@@ -86,7 +81,41 @@ void info(int fmt, int flags, int ver)
 void usage(char *prog)
 {
 #ifdef WIN32
-    Log.printf("%s %s #%s\n", prog, szBuildDate, szBuildNum);
+#ifdef BETA
+#if PATCHLEVEL > 0
+    Log.printf("%s from MUX %s.p%d for Win32 #%s [BETA]\n", prog, MUX_VERSION,
+        PATCHLEVEL, MUX_BUILD_NUM);
+#else // PATCHLEVEL
+    Log.printf("%s from MUX %s for Win32 #%s [BETA]\n", prog, MUX_VERSION,
+        MUX_BUILD_NUM);
+#endif // PATCHLEVEL
+#else // BETA
+#if PATCHLEVEL > 0 
+    Log.printf("%s from MUX %s.p%d for Win32 #%s [%s]\n", prog, MUX_VERSION,
+        PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#else // PATCHLEVEL
+    Log.printf("%s from MUX %s for Win32 #%s [%s]\n", prog, MUX_VERSION,
+        MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#endif // PATCHLEVEL
+#endif // BETA
+#else // WIN32
+#ifdef BETA
+#if PATCHLEVEL > 0
+    Log.printf("%s from MUX %s.p%d #%s [BETA]\n", prog, MUX_VERSION,
+        PATCHLEVEL, MUX_BUILD_NUM);
+#else // PATCHLEVEL
+    Log.printf("%s from MUX %s #%s [BETA]\n", prog, MUX_VERSION,
+        MUX_BUILD_NUM);
+#endif // PATCHLEVEL
+#else // BETA
+#if PATCHLEVEL > 0 
+    Log.printf("%s from MUX %s.p%d #%s [%s]\n", prog, MUX_VERSION, PATCHLEVEL,
+        MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#else // PATCHLEVEL
+    Log.printf("%s from MUX %s #%s [%s]\n", prog, MUX_VERSION, MUX_BUILD_NUM,
+        MUX_RELEASE_DATE);
+#endif // PATCHLEVEL
+#endif // BETA
 #endif // WIN32
     Log.printf("Usage: %s gamedb-basename [flags] [<in-file] [>out-file]\n", prog);
     Log.WriteString("   Available flags are:\n");

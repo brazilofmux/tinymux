@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.21 2000-09-17 16:17:27 sdennis Exp $
+// $Id: conf.cpp,v 1.22 2000-09-18 08:03:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -578,7 +578,7 @@ CF_HAND(cf_string_dyn)
     //
     int retval = 0;
     unsigned int nStr = strlen(str);
-    if (extra && extra >= nStr)
+    if (extra && nStr >= extra)
     {                   
         nStr = extra - 1;
         if (mudstate.initializing)

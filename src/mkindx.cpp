@@ -1,18 +1,14 @@
-/*
- * mkindx.c -- make help/news file indexes 
- */
-/*
- * $Id: mkindx.cpp,v 1.1 2000-04-11 07:14:46 sdennis Exp $ 
- */
-
+//
+// mkindx.cpp -- make help/news file indexes 
+//
+// $Id: mkindx.cpp,v 1.2 2000-09-18 08:03:42 sdennis Exp $ 
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 
 #include "help.h"
-#ifdef WIN32
 #include "_build.h"
-#endif // WIN32
 
 #define LINE_SIZE 4096
 
@@ -28,7 +24,41 @@ int DCL_CDECL main(int argc, char *argv[])
     if (argc < 2 || argc > 3)
     {
 #ifdef WIN32
-        printf("mkindx %s #%s\n", szBuildDate, szBuildNum);
+#ifdef BETA
+#if PATCHLEVEL > 0
+        printf("%s from MUX %s.p%d for Win32 #%s [BETA]\n", argv[0],
+            MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
+#else // PATCHLEVEL
+        printf("%s from MUX %s for Win32 #%s [BETA]\n", argv[0], MUX_VERSION,
+            MUX_BUILD_NUM);
+#endif // PATCHLEVEL
+#else // BETA
+#if PATCHLEVEL > 0 
+        printf("%s from MUX %s.p%d for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
+            PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#else // PATCHLEVEL
+        printf("%s from MUX %s for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
+            MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#endif // PATCHLEVEL
+#endif // BETA
+#else // WIN32
+#ifdef BETA
+#if PATCHLEVEL > 0
+        printf("%s from MUX %s.p%d #%s [BETA]\n", argv[0], MUX_VERSION,
+            PATCHLEVEL, MUX_BUILD_NUM);
+#else // PATCHLEVEL
+        printf("%s from MUX %s #%s [BETA]\n", argv[0], MUX_VERSION,
+            MUX_BUILD_NUM);
+#endif // PATCHLEVEL
+#else // BETA
+#if PATCHLEVEL > 0 
+        printf("%s from MUX %s.p%d #%s [%s]\n", argv[0], MUX_VERSION,
+            PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#else // PATCHLEVEL
+        printf("%s from MUX %s #%s [%s]\n", argv[0], MUX_VERSION, MUX_BUILD_NUM,
+            MUX_RELEASE_DATE);
+#endif // PATCHLEVEL
+#endif // BETA
 #endif // WIN32
         printf("Usage:\tmkindx <file_to_be_indexed> <output_index_filename>\n");
         exit(-1);

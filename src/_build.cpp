@@ -1,6 +1,6 @@
-// _build.h
+// _build.cpp
 //
-// $Id: _build.cpp,v 1.4 2000-09-18 05:05:09 sdennis Exp $
+// $Id: _build.cpp,v 1.5 2000-09-18 08:03:42 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -12,5 +12,4 @@
 // Stephen Dennis <sdennis@svdltd.com> for another license.
 //
 char szBuildDate[] = __DATE__ " " __TIME__;
-char szBuildNum[] = "278";
-char szBetaNum[] = "12";
+char szBuildNum[] = "1";

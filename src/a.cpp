@@ -1,13 +1,14 @@
-/*
- * Analyse a MUSH database, we chew it in on stdin, extract
- * attributes, and stuff them into a radix tree. We accept a single
- * parameter telling us what the maximum length word to store is, and
- * then we dump the whole tree out. This gives a complete list of all
- * substrings of length N or less found in a MUSH database, complete
- * with counts, for post-processing.
- * 
- */
-
+// a.cpp
+//
+// $Id: a.cpp,v 1.3 2000-09-18 08:03:42 sdennis Exp $
+//
+// Analyse a MUX database, we chew it in on stdin, extract
+// attributes, and stuff them into a radix tree. We accept a single
+// parameter telling us what the maximum length word to store is, and
+// then we dump the whole tree out. This gives a complete list of all
+// substrings of length N or less found in a MUX database, complete
+// with counts, for post-processing.
+// 
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -16,9 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "radix.h"
-#ifdef WIN32
 #include "_build.h"
-#endif // WIN32
 
 /*
  * forward 
@@ -38,8 +37,42 @@ int DCL_CDECL main(int ac, char *av[])
     if (ac != 2)
     {
 #ifdef WIN32
-        fprintf(stderr, "%s %s #%s\n", av[0], szBuildDate, szBuildNum);
-#endif
+#ifdef BETA
+#if PATCHLEVEL > 0
+        fprintf(stderr, "%s from MUX %s.p%d for Win32 #%s [BETA]\n", av[0],
+            MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
+#else // PATCHLEVEL
+        fprintf(stderr, "%s from MUX %s for Win32 #%s [BETA]\n", av[0],
+            MUX_VERSION, MUX_BUILD_NUM);
+#endif // PATCHLEVEL
+#else // BETA
+#if PATCHLEVEL > 0 
+        fprintf(stderr, "%s from MUX %s.p%d for Win32 #%s [%s]\n", av[0],
+            MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#else // PATCHLEVEL
+        fprintf(stderr, "%s from MUX %s for Win32 #%s [%s]\n", av[0],
+            MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#endif // PATCHLEVEL
+#endif // BETA
+#else // WIN32
+#ifdef BETA
+#if PATCHLEVEL > 0
+        fprintf(stderr, "%s from MUX %s.p%d #%s [BETA]\n", av[0], MUX_VERSION,
+            PATCHLEVEL, MUX_BUILD_NUM);
+#else // PATCHLEVEL
+        fprintf(stderr, "%s from MUX %s #%s [BETA]\n", av[0], MUX_VERSION,
+            MUX_BUILD_NUM);
+#endif // PATCHLEVEL
+#else // BETA
+#if PATCHLEVEL > 0 
+        fprintf(stderr, "%s from MUX %s.p%d #%s [%s]\n", av[0], MUX_VERSION,
+            PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#else // PATCHLEVEL
+        fprintf(stderr, "%s from MUX %s #%s [%s]\n", av[0], MUX_VERSION,
+            MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#endif // PATCHLEVEL
+#endif // BETA
+#endif // WIN32
         fprintf(stderr, "usage: %s <max string length>\n", av[0]);
         exit(1);
     }
