@@ -6,7 +6,7 @@ PATH=/usr/ucb:/bin:/usr/bin:.; export PATH
 #
 . mux.config
 #
-#	Make sure there isn't aready a MUX running.
+#	Make sure there isn't already a MUX running.
 #
 nmux=`ps ux | egrep netmux | wc -l`
 if [ $nmux -gt 1 ]; then
