@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  September 2001
+Last Update:  October 2001
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,6 +37,7 @@ Bug Fixes:
  -- Several semaphores waiting on the same object/attr could be @notified
     out of order.
  -- Channel messages are considered OOC.
+ -- Bug #618 - Logic in new_home enables being inside a garbage object.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
