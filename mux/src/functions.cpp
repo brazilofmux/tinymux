@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.8 2002-06-05 07:04:20 sdennis Exp $
+// $Id: functions.cpp,v 1.9 2002-06-05 07:40:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1707,7 +1707,7 @@ FUNCTION(fun_eval)
     if (eval_it)
     {
         str = atr_gotten;
-        TinyExec(buff, bufc, thing, caller, executor, EV_FIGNORE | EV_EVAL,
+        TinyExec(buff, bufc, thing, executor, enactor, EV_FIGNORE | EV_EVAL,
                  &str, (char **)NULL, 0);
     }
     else
@@ -5656,7 +5656,7 @@ FUNCTION(fun_fold)
         clist[1] = split_token(&cp, sep);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
-        TinyExec(result, &bp, executor, caller, enactor,
+        TinyExec(result, &bp, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
     }
@@ -5666,7 +5666,7 @@ FUNCTION(fun_fold)
         clist[1] = split_token(&cp, sep);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
-        TinyExec(result, &bp, executor, caller, enactor,
+        TinyExec(result, &bp, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
     }
@@ -5682,7 +5682,7 @@ FUNCTION(fun_fold)
         strcpy(atextbuf, atext);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
-        TinyExec(result, &bp, executor, caller, enactor,
+        TinyExec(result, &bp, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
         strcpy(rstore, result);
@@ -5926,7 +5926,7 @@ FUNCTION(fun_map)
         objstring = split_token(&cp, sep);
         strcpy(atextbuf, atext);
         str = atextbuf;
-        TinyExec(buff, bufc, executor, caller, enactor,
+        TinyExec(buff, bufc, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
     }
     free_lbuf(atext);
