@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.4 2003-02-05 06:20:59 jake Exp $
+// $Id: quota.cpp,v 1.5 2003-02-11 13:43:32 jake Exp $
 //
 
 #include "copyright.h"
@@ -17,9 +17,13 @@
 //
 static int count_quota(dbref player)
 {
-    int i, q;
+    if (Owner(player) != player)
+    {
+        return 0;
+    }
+    int q = 0 - mudconf.player_quota;
 
-    q = 0 - mudconf.player_quota;
+    dbref i;
     DO_WHOLE_DB(i)
     {
         if (Owner(i) != player)
@@ -121,6 +125,18 @@ static void mung_quotas(dbref player, int key, int value)
         //
         atr_add_raw(player, A_QUOTA, mux_ltoa_t(aq));
         atr_add_raw(player, A_RQUOTA, mux_ltoa_t(rq));
+    }
+}
+
+void fix_all_quotas(void)
+{
+    dbref i;
+    DO_WHOLE_DB(i)
+    {
+        if (isPlayer(i))
+        {
+            mung_quotas(i, QUOTA_FIX, 0);
+        }
     }
 }
 
