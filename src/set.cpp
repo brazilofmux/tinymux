@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.18 2001-11-28 06:35:54 sdennis Exp $
+// $Id: set.cpp,v 1.19 2002-02-24 21:04:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -846,11 +846,18 @@ void do_chown
         halt_que(NOTHING, thing);
         if (!Quiet(player))
         {
+            char *buff = alloc_lbuf("do_chown.notify");
+            char *bp = buff;
+
             char *p;
-            p = tprintf("Owner of %s(#%d) changed from %s(#%d) to %s(#%d).",
-                Name(thing), thing, Name(nOwnerOrig), nOwnerOrig,
-                Name(nOwnerNew), nOwnerNew);
-            notify_quiet(player, p);
+            p = tprintf("Owner of %s(#%d) changed from ", Name(thing), thing);
+            safe_str(p, buff, &bp);
+            p = tprintf("%s(#%d) to ", Name(nOwnerOrig), nOwnerOrig);
+            safe_str(p, buff, &bp);
+            p = tprintf("%s(#%d).", Name(nOwnerNew), nOwnerNew);
+            safe_str(p, buff, &bp);
+            notify_quiet(player, buff);
+            free_lbuf(buff);
         }
     }
 }
