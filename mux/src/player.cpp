@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.9 2003-07-23 00:27:27 sdennis Exp $
+// $Id: player.cpp,v 1.10 2003-07-23 02:34:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -283,7 +283,7 @@ void ChangePassword(dbref player, const char *szPassword)
 }
 
 #define SHA1_PREFIX_LENGTH 6
-const char szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "|SHA1|";
+const char szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "$SHA1$";
 
 #define MD5_PREFIX_LENGTH 3
 const char szMD5Prefix[MD5_PREFIX_LENGTH+1] = "$1$";
@@ -298,7 +298,7 @@ char *mux_crypt(const char *szPassword, const char *szSalt)
         // the length of the salt in the database, and
         // GenerateSalt() generates exactly the above length.
         //
-        return "|FAIL||";
+        return "$FAIL$$";
     }
 
     // Calculate Hash.
@@ -327,10 +327,10 @@ char *mux_crypt(const char *szPassword, const char *szSalt)
 
     //          1         2         3         4
     // 12345678901234567890123456789012345678901234567
-    // |SHA1|ssssssssssss|hhhhhhhhhhhhhhhhhhhhhhhhhhhh
+    // $SHA1$ssssssssssss$hhhhhhhhhhhhhhhhhhhhhhhhhhhh
     //
     static char buf[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH + 1 + ENCODED_HASH_LENGTH + 1 + 16];
-    sprintf(buf, "%s%s|", szSHA1Prefix, szSalt);
+    sprintf(buf, "%s%s$", szSHA1Prefix, szSalt);
     int n = strlen(buf);
     EncodeBase64(20, szHashRaw, buf + n);
     return buf;
