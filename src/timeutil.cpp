@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.5 2000-05-19 17:15:43 sdennis Exp $
+// $Id: timeutil.cpp,v 1.6 2000-05-22 20:14:23 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -704,6 +704,18 @@ BOOL CLinearTimeAbsolute::SetFields(FIELDEDTIME *arg_tStruct)
     return FieldedTimeToLinearTime(arg_tStruct, &m_tAbsolute);
 }
 
+void SetStructTm(FIELDEDTIME *ft, struct tm *ptm)
+{
+    ft->iYear = ptm->tm_year + 1900;
+    ft->iMonth = ptm->tm_mon + 1;
+    ft->iDayOfMonth = ptm->tm_mday;
+    ft->iDayOfWeek = ptm->tm_wday;
+    ft->iDayOfYear = 0;
+    ft->iHour = ptm->tm_hour;
+    ft->iMinute = ptm->tm_min;
+    ft->iSecond = ptm->tm_sec;
+}
+
 void CLinearTimeAbsolute::ReturnUniqueString(char *buffer)
 {
     FIELDEDTIME ft;
@@ -862,14 +874,7 @@ void GetLocalFieldedTime(FIELDEDTIME *ft)
     time_t seconds = tv.tv_sec;
     struct tm *ptm = localtime(&seconds);
 
-    ft->iYear = ptm->tm_year + 1900;
-    ft->iMonth = ptm->tm_mon + 1;
-    ft->iDayOfMonth = ptm->tm_mday;
-    ft->iDayOfWeek = ptm->tm_wday;
-    ft->iDayOfYear = 0;
-    ft->iHour = ptm->tm_hour;
-    ft->iMinute = ptm->tm_min;
-    ft->iSecond = ptm->tm_sec;
+    SetStructTm(ft, ptm);
     ft->iMillisecond = (tv.tv_usec/1000);
     ft->iMicrosecond = (tv.tv_usec%1000);
     ft->iNanosecond = 0;
@@ -916,10 +921,6 @@ CLinearTimeAbsolute LastInMonth(int iYear, int iMonth, int iDayOfWeek)
 }
 #endif
 
-static CLinearTimeAbsolute ltaLowerBound;
-static CLinearTimeAbsolute ltaUpperBound;
-static CLinearTimeDelta    ltdTimeZone;
-
 static int YearType(int iYear)
 {
     FIELDEDTIME ft;
@@ -940,21 +941,103 @@ static int YearType(int iYear)
     }
 }
 
-int NearestYearOfType[15];
+static CLinearTimeAbsolute ltaLowerBound;
+static CLinearTimeAbsolute ltaUpperBound;
+static CLinearTimeDelta    ltdTimeZoneStandard;
 
-CLinearTimeDelta ltdIntervalMinimum;
+// This determines the valid range of time_t and finds a 'standard'
+// time zone near the earliest supported time_t.
+//
+void test_time_t(void)
+{
+    long ulUpper, ulMid, ulLower;
+
+    // Determine the upper bound.
+    //
+    ulUpper = LONG_MAX;
+    ulLower = 0;
+    if (localtime(&ulUpper) == NULL)
+    {
+        // Search for upper bound.
+        //
+        do
+        {
+            ulMid = (ulLower + ulUpper) >> 1;
+            if (localtime(&ulMid))
+            {
+                ulLower = ulMid;
+            }
+            else
+            {
+                ulUpper = ulMid;
+            }
+        } while (ulLower != ulUpper);
+    }
+    ltaUpperBound.SetSeconds(ulLower);
+
+    // Determine the lower bound.
+    //
+    ulUpper = 0;
+    ulLower = LONG_MIN;
+    if (localtime(&ulLower) == NULL)
+    {
+        // Search for lower bound.
+        //
+        do
+        {
+            ulMid = (ulLower + ulUpper) >> 1;
+            if (localtime(&ulMid))
+            {
+                ulUpper = ulMid;
+            }
+            else
+            {
+                ulLower = ulMid;
+            }
+        } while (ulLower != ulUpper);
+    }
+    ltaLowerBound.SetSeconds(ulLower);
+
+    // Find a time near ulLower for which DST is not in affect.
+    //
+    for (;;)
+    {
+        struct tm *ptm = localtime(&ulLower);
+
+        if (ptm->tm_isdst <= 0)
+        {
+            // Daylight savings time is either not in effect or
+            // we have no way of knowing whether it is in effect
+            // or not.
+            //
+            FIELDEDTIME ft;
+            SetStructTm(&ft, ptm);
+            ft.iMillisecond = 0;
+            ft.iMicrosecond = 0;
+            ft.iNanosecond  = 0;
+
+            CLinearTimeAbsolute ltaLocal;
+            CLinearTimeAbsolute ltaUTC;
+            ltaLocal.SetFields(&ft);
+            ltaUTC.SetSeconds(ulLower);
+            ltdTimeZoneStandard = ltaLocal - ltaUTC;
+            break;
+        }
+
+        // Advance the time by 1 month (expressed as seconds).
+        //
+        ulLower += 30*24*60*60;
+    }
+}
+
+int NearestYearOfType[15];
+static CLinearTimeDelta ltdIntervalMinimum;
 
 void TIME_Initialize(void)
 {
     tzset();
-#ifdef WIN32
-    ltaLowerBound.SetSeconds(0);
-#define timezone _timezone
-#else
-    ltaLowerBound.SetSeconds(LONG_MIN);
-#endif
-    ltaUpperBound.SetSeconds(LONG_MAX);
-    ltdTimeZone.SetSeconds(-timezone);
+
+    test_time_t();
     ltdIntervalMinimum.Set100ns(FACTOR_100NS_PER_WEEK);
     int i;
     for (i = 0; i < 15; i++)
@@ -1227,30 +1310,24 @@ static CLinearTimeDelta QueryLocalOffsetAt_Internal
         // This should never happen as we have already taken pains
         // to restrict the range of UTC seconds gives to localtime().
         //
-        return ltdTimeZone;
+        return ltdTimeZoneStandard;
     }
 
     // With the fielded (or broken down) time from localtime(), we
     // can convert to a linear time in the same time zone.
     //
     FIELDEDTIME ft;
-    ft.iYear        = ptm->tm_year + 1900;
-    ft.iMonth       = ptm->tm_mon + 1;
-    ft.iDayOfMonth  = ptm->tm_mday;
-    ft.iDayOfWeek   = ptm->tm_wday;
-    ft.iDayOfYear   = 0;
-    ft.iHour        = ptm->tm_hour;
-    ft.iMinute      = ptm->tm_min;
-    ft.iSecond      = ptm->tm_sec;
+    SetStructTm(&ft, ptm);
     ft.iMillisecond = 0;
     ft.iMicrosecond = 0;
     ft.iNanosecond  = 0;
-    *pisDST = ptm->tm_isdst > 0 ? TRUE: FALSE;
 
     CLinearTimeAbsolute ltaLocal;
     CLinearTimeDelta ltdOffset;
     ltaLocal.SetFields(&ft);
     ltdOffset = ltaLocal - lta;
+
+    *pisDST = ptm->tm_isdst > 0 ? TRUE: FALSE;
 
     // We now have a mapping from UTC lta to a (ltdOffset, *pisDST)
     // tuple which will will use to update the cache.
@@ -1290,7 +1367,7 @@ static CLinearTimeDelta QueryLocalOffsetAtUTC
     //
     if (lta < ltaLowerBound)
     {
-        return ltdTimeZone;
+        return ltdTimeZoneStandard;
     }
 
     // Next, we check our table for whether this time falls into a
