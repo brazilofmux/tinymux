@@ -5,7 +5,7 @@
 bin      = ".\bin"
 text     = ".\text"
 data     = ".\data"
-gamename = "tinymux"
+gamename = "netmux"
 owner    = "mux_admin@your_site.your_domain"
 '
 '       If you use compression, uncomment this and put the extension here.
