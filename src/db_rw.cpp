@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.32 2001-10-17 18:56:02 sdennis Exp $
+// $Id: db_rw.cpp,v 1.33 2001-10-17 19:28:44 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -523,7 +523,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // USER-NAMED ATTRIBUTE
                 //
                 anum = getref(f);
-                tstr = getstring_noalloc(f, FALSE);
+                tstr = getstring_noalloc(f, TRUE);
                 if (Tiny_IsDigit[(unsigned char)*tstr])
                 {
                     aflags = 0;
@@ -616,7 +616,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             if (read_name)
             {
-                tstr = getstring_noalloc(f, FALSE);
+                tstr = getstring_noalloc(f, TRUE);
                 buff = alloc_lbuf("dbread.s_Name");
                 len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE,
                     &nVisualWidth, ANSI_ENDGOAL_NORMAL);
@@ -693,7 +693,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             //
             if (read_attribs)
             {
-                if (!get_list(f, i, FALSE))
+                if (!get_list(f, i, TRUE))
                 {
                     Log.tinyprintf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
                     return -1;
