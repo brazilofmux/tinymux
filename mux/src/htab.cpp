@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.5 2002-07-23 14:16:24 jake Exp $
+// $Id: htab.cpp,v 1.6 2002-09-22 20:37:29 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -56,7 +56,8 @@ int *hashfindLEN(void *str, int nStr, CHashTable *htab)
         htab->Copy(iDir, &nRecord, &htab_rec);
         int nTarget = nRecord - sizeof(int *);
 
-        if (nTarget == nStr && memcmp(str, htab_rec.aTarget, nStr) == 0)
+        if (  nTarget == nStr
+           && memcmp(str, htab_rec.aTarget, nStr) == 0)
         {
             return htab_rec.hashdata;
         }
@@ -212,29 +213,33 @@ int *hash_nextentry(CHashTable *htab)
     return NULL;
 }
 
-char *hash_firstkey(CHashTable *htab, int *nKeyLength)
+int *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
 {
     HP_HEAPLENGTH nRecord;
     HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec);
     if (iDir != HF_FIND_END)
     {
         *nKeyLength = nRecord-sizeof(int *);
-        return htab_rec.aTarget;
+        *pKey = htab_rec.aTarget;
+        return htab_rec.hashdata;
     }
     *nKeyLength = 0;
+    *pKey = NULL;
     return NULL;
 }
 
-char *hash_nextkey(CHashTable *htab, int *nKeyLength)
+int *hash_nextkey(CHashTable *htab, int *nKeyLength, char **pKey)
 {
     HP_HEAPLENGTH nRecord;
     HP_DIRINDEX iDir = htab->FindNext(&nRecord, &htab_rec);
     if (iDir != HF_FIND_END)
     {
         *nKeyLength = nRecord-sizeof(int *);
-        return htab_rec.aTarget;
+        *pKey = htab_rec.aTarget;
+        return htab_rec.hashdata;
     }
     *nKeyLength = 0;
+    *pKey = NULL;
     return NULL;
 }
 

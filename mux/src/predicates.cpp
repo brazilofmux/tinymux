@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.38 2002-09-13 06:27:54 jake Exp $
+// $Id: predicates.cpp,v 1.39 2002-09-22 20:37:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -687,7 +687,8 @@ void do_addcommand
         //
         for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
         {
-            if ((nextp->thing == thing) && (nextp->atr == atr))
+            if (  nextp->thing == thing
+               && nextp->atr == atr)
             {
                 notify(player, tprintf("%s already added.", pName));
                 return;
@@ -760,8 +761,6 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
     ADDENT *nextp;
     BOOL didit = FALSE;
 
-    char *keyname;
-
     // Let's make this case insensitive...
     //
     _strlwr(name);
@@ -794,18 +793,18 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
     }
     else
     {
-        int nKeyLength;
-        for (keyname = hash_firstkey(&mudstate.command_htab, &nKeyLength); keyname != NULL;
-             keyname = hash_nextkey(&mudstate.command_htab, &nKeyLength))
+        char *pKeyName;
+        int  nKeyName;
+        for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyName, &pKeyName);
+             old != NULL;
+             old = (CMDENT *)hash_nextkey(&mudstate.command_htab, &nKeyName, &pKeyName))
         {
-
-            old = (CMDENT *)hashfindLEN(keyname, nKeyLength, &mudstate.command_htab);
-
-            if (old && (old->callseq & CS_ADDED))
+            if (old->callseq & CS_ADDED)
             {
+                pKeyName[nKeyName] = '\0';
                 for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
                 {
-                    if (strncmp(keyname, nextp->name, nKeyLength))
+                    if (strcmp(pKeyName, nextp->name) != 0)
                     {
                         continue;
                     }
@@ -815,7 +814,8 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
                     {
                         pName = ap->name;
                     }
-                    notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, pName));
+                    notify(player, tprintf("%s: #%d/%s", nextp->name,
+                        nextp->thing, pName));
                     didit = TRUE;
                 }
             }

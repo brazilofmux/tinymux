@@ -1,6 +1,6 @@
 // htab.h - Structures and declarations needed for table hashing.
 //
-// $Id: htab.h,v 1.4 2002-07-23 05:36:13 jake Exp $
+// $Id: htab.h,v 1.5 2002-09-22 20:37:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -48,8 +48,8 @@ extern BOOL hashreplLEN(void *, int, int *, CHashTable *);
 extern void hashreplall(int *, int *, CHashTable *);
 extern int  *hash_nextentry(CHashTable *htab);
 extern int  *hash_firstentry(CHashTable *htab);
-extern char *hash_firstkey(CHashTable *htab, int *);
-extern char *hash_nextkey(CHashTable *htab, int *);
+extern int *hash_firstkey(CHashTable *htab, int *, char **);
+extern int *hash_nextkey(CHashTable *htab, int *, char **);
 
 extern NAMETAB powers_nametab[];
 

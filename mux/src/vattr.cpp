@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.8 2002-08-11 21:46:51 jake Exp $
+// $Id: vattr.cpp,v 1.9 2002-09-22 20:37:29 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -554,18 +554,19 @@ void dbclean_RenumberAttributes(int cVAttributes)
     // Traverse entire @addcommand data structure.
     //
     int nKeyLength;
-    char *keyname;
-    for (keyname = hash_firstkey(&mudstate.command_htab, &nKeyLength); keyname != NULL;
-         keyname = hash_nextkey(&mudstate.command_htab, &nKeyLength))
+    char *pKeyName;
+    CMDENT *old;
+    for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyLength, &pKeyName);
+         old != NULL;
+         old = (CMDENT *)hash_nextkey(&mudstate.command_htab, &nKeyLength, &pKeyName))
     {
-        CMDENT *old = (CMDENT *)hashfindLEN(keyname, nKeyLength, &mudstate.command_htab);
-
         if (old && (old->callseq & CS_ADDED))
         {
+            pKeyName[nKeyLength] = '\0';
             ADDENT *nextp;
             for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
             {
-                if (strncmp(keyname, nextp->name, nKeyLength) != 0)
+                if (strcmp(pKeyName, nextp->name) != 0)
                 {
                     continue;
                 }
