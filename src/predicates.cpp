@@ -1,5 +1,5 @@
 // predicates.cpp
-// $Id: predicates.cpp,v 1.14 2000-06-02 19:13:46 sdennis Exp $
+// $Id: predicates.cpp,v 1.15 2000-06-04 20:41:49 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -675,16 +675,19 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
                 return;
             }
         }
-        
-        /* else tack it on to the existing entry... */
-        
+    
+        // Else tack it on to the existing entry...
+        //
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
+        ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = atr;
-        add->name = (char *)strdup(name);
+        add->name = StringClone(name);
         add->next = old->addent;
         old->addent = add;
-    } else {
+    }
+    else
+    {
         if (old)
         {
             /* Delete the old built-in and rename it __name */
@@ -692,20 +695,24 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
         }
         
         cmd = (CMDENT *)MEMALLOC(sizeof(CMDENT));
-        
-        cmd->cmdname = (char *)strdup(name);
+        ISOUTOFMEMORY(cmd);
+        cmd->cmdname = StringClone(name);
         cmd->switches = NULL;
         cmd->perms = 0;
         cmd->extra = 0;
-        if (old && (old->callseq & CS_LEADIN)) {
+        if (old && (old->callseq & CS_LEADIN))
+        {
             cmd->callseq = CS_ADDED|CS_ONE_ARG|CS_LEADIN;
-        } else {
+        }
+        else
+        {
             cmd->callseq = CS_ADDED|CS_ONE_ARG;
         }
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
+        ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = atr;
-        add->name = (char *)strdup(name);
+        add->name = StringClone(name);
         add->next = NULL;
         cmd->addent = add;
     
@@ -713,7 +720,8 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
         
         if (old)
         {
-            /* Fix any aliases of this command. */
+            // Fix any aliases of this command.
+            //
             hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
             char *p = tprintf("__%s", name);
             hashaddLEN(p, strlen(p), (int *)old, &mudstate.command_htab);
@@ -1041,7 +1049,8 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
     msg = command;
     attrib = parse_to(&msg, ':', 1);
 
-    if (msg && *msg) {
+    if (msg && *msg)
+    {
         notify(doer, msg);
     }
     parse_attrib(player, attrib, &thing, &atr);
@@ -1051,8 +1060,10 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
         if (*pBuffer)
         {
             ap = atr_num(atr);
-            if (God(player) || (!God(thing) && See_attr(player, thing, ap, aowner, aflags) &&
-                   (Wizard(player) || (aowner == Owner(player)))))
+            if (  God(player)
+               || (  !God(thing)
+                  && See_attr(player, thing, ap, aowner, aflags)
+                  && (Wizard(player) || (aowner == Owner(player)))))
             {
                 atr_add_raw(doer, A_PROGCMD, pBuffer);
             }
@@ -1076,17 +1087,19 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
         return;
     }
 
-    /*
-     * Check to see if the cause already has an @prog input pending 
-     */
-    DESC_ITER_PLAYER(doer, d) {
-        if (d->program_data != NULL) {
+    // Check to see if the cause already has an @prog input pending.
+    //
+    DESC_ITER_PLAYER(doer, d)
+    {
+        if (d->program_data != NULL)
+        {
             notify(player, "Input already pending.");
             return;
         }
     }
 
     program = (PROG *)MEMALLOC(sizeof(PROG));
+    ISOUTOFMEMORY(program);
     program->wait_cause = player;
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {
@@ -1094,9 +1107,8 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
         memcpy(program->wait_regs[i], mudstate.global_regs[i], mudstate.glob_reg_len[i]+1);
     }
 
-    /*
-     * Now, start waiting. 
-     */
+    // Now, start waiting.
+    //
     DESC_ITER_PLAYER(doer, d)
     {
         d->program_data = program;
