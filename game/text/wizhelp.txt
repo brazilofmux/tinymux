@@ -850,7 +850,8 @@
   COMMAND: @log <file>=<message>
 
   This logs the message (without timestamp) to the named file. Pathnames
-  are stripped, and the file resides in mux2.0/game/logs/
+  are stripped, and the file resides in 'mux2.1/game/logs' under the name
+  'M-<file>.log'.
 
   The file must already exist for the @log request to succeed, and can only
   be created at the MUX account shell.
