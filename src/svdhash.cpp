@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.26 2001-10-16 21:14:12 sdennis Exp $
+// $Id: svdhash.cpp,v 1.27 2001-10-16 21:15:14 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -201,7 +201,7 @@ UINT32 HASH_ProcessBuffer
         case 7:  ulHash  = CRC32_Table[pBuffer[9] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 5:  ulHash  = CRC32_Table[pBuffer[11] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-#ifdef WIn32
+#ifdef WIN32
         case 4:  ulHash ^= *(UINT32 *)(pBuffer + 12);
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
