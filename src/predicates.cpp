@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.49 2002-05-09 04:28:00 sdennis Exp $
+// $Id: predicates.cpp,v 1.50 2002-05-23 16:23:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1216,8 +1216,19 @@ void do_backup(dbref player, int cause, int key)
     log_name(player);
     ENDLOG;
 
+#if 1
+    // Invoking _backupflat.sh without an argument prompts the backup script
+    // to use dbconvert itself.
+    //
+    dump_database_internal(DUMP_I_NORMAL);
+    system(tprintf("./_backupflat.sh 1>&2"));
+#else
+    // Invoking _backupflat.sh with an argument prompts the backup script
+    // to use it as the flatfile.
+    //
     dump_database_internal(DUMP_I_FLAT);
-    system(tprintf("./_backupflat.sh %s.FLAT 1>&2", mudconf.outdb));
+    system(tprintf("./_backupflat.sh %s.FLAT 1>&2", mudconf.indb));
+#endif
     raw_broadcast(0, "GAME: Backup finished.");
 }
 #endif // WIN32
