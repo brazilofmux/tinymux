@@ -23,7 +23,6 @@ mail.o: mail.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h 
 match.o: match.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h match.h attrs.h powers.h
 mguests.o: mguests.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h mguests.h interface.h attrs.h powers.h
 move.o: move.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h interface.h match.h attrs.h powers.h
-newconc.o: newconc.cpp
 netcommon.o: netcommon.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h file_c.h interface.h command.h attrs.h mguests.h ansi.h powers.h comsys.h svdreport.h functions.h
 object.o: object.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h command.h powers.h attrs.h
 predicates.o: predicates.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h interface.h match.h command.h attrs.h powers.h ansi.h patchlevel.h
