@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.27 2002-06-21 06:34:59 sdennis Exp $
+// $Id: functions.cpp,v 1.28 2002-06-23 23:51:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1697,7 +1697,7 @@ FUNCTION(fun_mid)
        || nLength    < 0 || nLength    > LBUF_SIZE-1
        || iPosition1 > LBUF_SIZE-1)
     {
-        safe_str("#-1 OUT OF RANGE", buff, bufc);
+        safe_range(buff, bufc);
         return;
     }
 
@@ -1743,7 +1743,7 @@ FUNCTION(fun_right)
     
     if (nLength < 0)
     {
-        safe_str("#-1 OUT OF RANGE", buff, bufc);
+        safe_range(buff, bufc);
         return;
     }
 
@@ -2952,6 +2952,98 @@ FUNCTION(fun_spellnum)
 {
     CSpellNum sn;
     sn.SpellNum(fargs[0], buff, bufc);
+}
+
+FUNCTION(fun_roman)
+{
+    const char *number = fargs[0];
+
+    // Trim Spaces from beginning.
+    //
+    while (Tiny_IsSpace[(unsigned char)*number])
+    {
+        number++;
+    }
+
+    // Trim Zeroes from Beginning.
+    //
+    while (*number == '0')
+    {
+        number++;
+    }
+
+    const char *pA = number;
+    while (Tiny_IsDigit[(unsigned char)*number])
+    {
+        number++;
+    }
+    size_t nA = number - pA;
+
+    // Skip trailing spaces.
+    //
+    while (Tiny_IsSpace[*number])
+    {
+        number++;
+    }
+
+    // Validate that argument is numeric with a value between 1 and 3999.
+    //
+    if (*number || nA < 1)
+    {
+        safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
+        return;
+    }
+    else if (  nA > 4
+            || (  nA == 1 
+               && pA[0] == '0')
+            || (  nA == 4
+               && '3' < pA[0]))
+    {
+        safe_range(buff, bufc);
+        return;
+    }
+
+    // I:1, V:5, X:10, L:50, C:100, D:500, M:1000
+    //
+    // Ones:      _ I II III IV V VI VII VIII IX
+    // Tens:      _ X XX XXX XL L LX LXX LXXX XC
+    // Hundreds:  _ C CC CCC CD D DC DCC DCCC CM
+    // Thousands: _ M MM MMM
+    //
+    static const char aLetters[4][3] =
+    {
+        { 'I', 'V', 'X' },
+        { 'X', 'L', 'C' },
+        { 'C', 'D', 'M' },
+        { 'M', ' ', ' ' }
+    };
+ 
+    static const char *aCode[10] =
+    {
+        "",
+        "1",
+        "11",
+        "111",
+        "12",
+        "2",
+        "21",
+        "211",
+        "2111",
+        "13"
+    };
+    
+    while (nA--)
+    {
+        const char *pCode = aCode[*pA - '0'];
+        const char *pLetters = aLetters[nA];
+
+        while (*pCode)
+        {
+            safe_chr(pLetters[*pCode - '1'], buff, bufc);
+            pCode++;
+        }
+        pA++;
+    }
 }
 
 // Compare for decreasing order by absolute value.
@@ -6950,7 +7042,7 @@ void centerjustcombo
     int width = Tiny_atol(fargs[1]);
     if (width <= 0 || LBUF_SIZE <= width)
     {
-        safe_str("#-1 OUT OF RANGE", buff, bufc);
+        safe_range(buff, bufc);
         return;
     }
 
@@ -7535,6 +7627,7 @@ FUN flist[] =
     {"RIGHT",    fun_right,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"RJUST",    fun_rjust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"RLOC",     fun_rloc,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ROMAN",    fun_roman,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ROOM",     fun_room,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ROUND",    fun_round,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"S",        fun_s,        1,       1,  1,       0, CA_PUBLIC},
