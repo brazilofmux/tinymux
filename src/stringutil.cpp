@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.35 2000-12-03 04:18:16 sdennis Exp $
+// $Id: stringutil.cpp,v 1.36 2001-04-03 21:02:09 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2466,20 +2466,17 @@ void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat)
         bmhs->m_d[k] = nPat;
     }
     
+    char chLastPat = pPat[nPat-1];
+    bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
     {
         bmhs->m_d[pPat[k]] = nPat - k - 1;
-    }
-    char chLastPat = pPat[nPat-1];
-    bmhs->m_d[chLastPat] = BMH_LARGE;
-    bmhs->m_skip2 = nPat;
-    for (int i = 0; i < nPat-1; ++i)
-    {
-        if (pPat[i] == chLastPat)
+        if (pPat[k] == chLastPat)
         {
-            bmhs->m_skip2 = nPat - i - 1;
+            bmhs->m_skip2 = nPat - k - 1;
         }
     }
+    bmhs->m_d[chLastPat] = BMH_LARGE;
 }
 
 int BMH_Execute(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
@@ -2524,22 +2521,19 @@ void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
         bmhs->m_d[k] = nPat;
     }
     
+    char chLastPat = pPat[nPat-1];
+    bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
     {
         bmhs->m_d[Tiny_ToUpper[(unsigned char)pPat[k]]] = nPat - k - 1;
         bmhs->m_d[Tiny_ToLower[(unsigned char)pPat[k]]] = nPat - k - 1;
-    }
-    char chLastPat = pPat[nPat-1];
-    bmhs->m_d[Tiny_ToUpper[(unsigned char)chLastPat]] = BMH_LARGE;
-    bmhs->m_d[Tiny_ToLower[(unsigned char)chLastPat]] = BMH_LARGE;
-    bmhs->m_skip2 = nPat;
-    for (int i = 0; i < nPat-1; ++i)
-    {
-        if (pPat[i] == chLastPat)
+        if (pPat[k] == chLastPat)
         {
-            bmhs->m_skip2 = nPat - i - 1;
+            bmhs->m_skip2 = nPat - k - 1;
         }
     }
+    bmhs->m_d[Tiny_ToUpper[(unsigned char)chLastPat]] = BMH_LARGE;
+    bmhs->m_d[Tiny_ToLower[(unsigned char)chLastPat]] = BMH_LARGE;
 }
 
 int BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
