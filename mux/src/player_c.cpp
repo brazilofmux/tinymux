@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.6 2004-08-16 05:14:07 sdennis Exp $
+// $Id: player_c.cpp,v 1.7 2005-01-04 20:54:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -89,7 +89,9 @@ static void pcache_save(PCACHE *pp)
     IBUF tbuf;
 
     if (pp->cflags & PF_DEAD)
+    {
         return;
+    }
     if (pp->cflags & PF_MONEY_CH)
     {
         mux_ltoa(pp->money, tbuf);
@@ -147,17 +149,6 @@ void pcache_sync(void)
         pcache_save(pp);
         pp = pp->next;
     }
-}
-
-void pcache_purge(dbref player)
-{
-    PCACHE *pp = (PCACHE *) hashfindLEN(&player, sizeof(player), &pcache_htab);
-    if (!pp)
-    {
-        return;
-    }
-    pp->cflags = PF_DEAD;
-    hashdeleteLEN(&(pp->player), sizeof(pp->player), &pcache_htab);
 }
 
 int a_Queue(dbref player, int adj)
@@ -220,10 +211,13 @@ int Pennies(dbref obj)
 
 void s_Pennies(dbref obj, int howfew)
 {
-    IBUF tbuf;
-
-    if (  !mudstate.bStandAlone
-       && OwnsOthers(obj))
+    if (mudstate.bStandAlone)
+    {
+        IBUF tbuf;
+        mux_ltoa(howfew, tbuf);
+        atr_add_raw(obj, A_MONEY, tbuf);
+    }
+    else if (OwnsOthers(obj))
     {
         PCACHE *pp = pcache_find(obj);
         if (pp)
@@ -232,6 +226,4 @@ void s_Pennies(dbref obj, int howfew)
             pp->cflags |= PF_MONEY_CH;
         }
     }
-    mux_ltoa(howfew, tbuf);
-    atr_add_raw(obj, A_MONEY, tbuf);
 }
