@@ -1,8 +1,8 @@
+// version.cpp -- Version information.
 //
-// version.cpp - version information 
+// $Id: version.cpp,v 1.21 2001-11-18 18:12:26 sdennis Exp $
 //
-// $Id: version.cpp,v 1.20 2001-09-18 18:09:27 sdennis Exp $ 
-//
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
