@@ -1100,20 +1100,29 @@
   wait_cost  wizard_help_file  wizard_help_index  wizard_motd_file
   wizard_motd_message  wiznews_file  wiznews_index  zone_recursion_limit
  
-& access
+& ACCESS
+ACCESS
+
   Config parameter: access <command> <permlist>
 
   Modifies the permissions needed to execute the indicated command.
   Specifying a permission adds it to the list of permissions required; to
   remove a permission prefix it with a ! character.
-  See also: PERMISSIONS, @list.
 
-& alias
+  Related Topics: PERMISSIONS, @list.
+
+& ALIAS
+ALIAS
+
   Config parameter: alias <new> <old>.
 
   Defines the command <new> to be an alias of the command <old>.
 
-& allow_guest_from_registered_site
+  Releated Topics:
+
+& ALLOW_GUEST_FROM_REGISTERED_SITE
+ALLOW_GUEST_FROM_REGISTERED_SITE
+
   Config parameter: allow_guest_from_registered_site. Default: yes.
 
   With this option turned off, guests are not permitted to connect from
@@ -1123,7 +1132,7 @@
   may be interested in turn this option off. However, game which are
   register_only will probably want to leave this option as defaulted.
 
-  See also: register_site, SITE LISTS
+  Related Topics: register_site, SITE LISTS
 
 & ARTICLE_RULE
 ARTICLE_RULE
@@ -1161,39 +1170,57 @@ ARTICLE_RULE
 
   Related topics: art(), regexps, @admin, config parameters.
 
-& attr_access
+& ATTR_ACCESS
+ATTR_ACCESS
+
   Config parameter: attr_access <attr> [!]<privilege> [[!]<privilege>]...
 
   Changes the access rights to the named attribute.
- 
+
   The following privileges may be used:
+
   private     - The attribute is visible only to those who can examine the
                 object.
   internal    - The attribute is not visible to anyone.
   wizard      - Only wizards may change the attribute.
   hidden      - The attribute is visible only to wizards.
- 
-& attr_alias
+
+  Related Topics:
+
+& ATTR_ALIAS
+ATTR_ALIAS
+
   Config parameter: attr_alias <alias> <attr>.
 
   Makes <alias> an alias for the attribute <attr>.
 
-& attr_cmd_access
+  Related Topics:
+
+& ATTR_CMD_ACCESS
+ATTR_CMD_ACCESS
+
   Config parameter: attr_cmd_access [!]<privilege> [[!]<privilege>]...
 
   Changes the access rights on all attribute-setting commands in parallel.
   Use this parameter to allow or deny access to the attribute-setting commands
   as a group.  This directive should normally be followed by access directives
   to properly set access to restricted attributes.
-  See also: access, PERMISSIONS.
 
-& autozone
+  Related Topics: access, PERMISSION.
+
+& AUTOZONE
+AUTOZONE
+
   Config parameter: autozone.  Default: Yes
 
   Whether newly-created objects are automatically of the same
   zone as their creator, or they are left zone-less.
 
-& bad_name
+  Related Topics:
+
+& BAD_NAME
+BAD_NAME
+
   Config parameter: bad_name <wildcarded-name>.
 
   Specifies that any name that matches <wildcarded-name> may not be used as a
@@ -1202,21 +1229,27 @@ ARTICLE_RULE
   lead off messages from MUX are disallowed, some sites may wish to disallow
   some obscene names as well.
 
-& badsite_file
+  Related Topics:
+
+& BADSITE_FILE
+BADSITE_FILE
+
   Config parameter: badsite_file <path>.  Default: text/badsite.txt
 
   Specifies the name of the file that is sent to new net connections from
   sites that have been blocked from accessing the server.  The connection
   is closed immediately after the file is sent.
-  See also: forbid_site, permit_site.
 
-& cache_depth
+  Related Topics: forbid_site, permit_site.
+
+& CACHE_DEPTH
+CACHE_DEPTH
+
   Config parameter: cache_depth <depth>. Default: none.
-  
-  The cache in MUX 2.0 is handled differently and this option does not
-  apply.
 
-  See also: max_cache_size
+  This option is obsolete. The cache in MUX 2.0 is controlled differently.
+
+  Related Topics: max_cache_size
 
 & cache_trim
   Config parameter: cache_trim <yes/no>.  Default: none.
