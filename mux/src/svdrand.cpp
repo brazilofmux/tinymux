@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.2 2002-06-13 22:12:46 jake Exp $
+// $Id: svdrand.cpp,v 1.3 2002-07-23 05:36:13 jake Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -28,12 +28,12 @@
 typedef BOOL WINAPI FCRYPTACQUIRECONTEXT(HCRYPTPROV *, LPCTSTR, LPCTSTR, DWORD, DWORD);
 typedef BOOL WINAPI FCRYPTRELEASECONTEXT(HCRYPTPROV, DWORD);
 typedef BOOL WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
-#else
+#else // WIN32
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
-#endif
+#endif // WIN32
 
 // Seed the generator.
 //
@@ -71,7 +71,7 @@ void SeedRandomNumberGenerator(void)
             nRandomSystemBytes = len/sizeof(UINT32);
         }
     }
-#endif
+#endif // HAVE_DEV_URANDOM
 #ifdef WIN32
     // The Cryto API became available on Windows with Win95 OSR2. Using Crypto
     // API as follows lets us to fallback gracefully when running on pre-OSR2
@@ -114,7 +114,7 @@ void SeedRandomNumberGenerator(void)
         }
         FreeLibrary(hAdvAPI32);
     }
-#endif
+#endif // WIN32
 
     if (nRandomSystemBytes >= sizeof(UINT32))
     {

@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.10 2002-07-18 19:25:42 sdennis Exp $
+// $Id: boolexp.cpp,v 1.11 2002-07-23 05:36:12 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -364,7 +364,7 @@ static BOOLEXP *parse_boolexp_L(void)
 #ifndef STANDALONE
     MSTATE mstate;
 
-#endif
+#endif // !STANDALONE
 
     buf = NULL;
     skip_whitespace();
@@ -687,6 +687,6 @@ BOOLEXP *parse_boolexp(dbref player, const char *buf, BOOL internal)
     }
 #ifndef STANDALONE
     parsing_internal = internal;
-#endif
+#endif // !STANDALONE
     return parse_boolexp_E();
 }

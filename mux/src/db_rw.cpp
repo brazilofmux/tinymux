@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.6 2002-07-13 07:23:01 jake Exp $
+// $Id: db_rw.cpp,v 1.7 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -748,7 +748,7 @@ static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
 {
 #ifndef STANDALONE
     ATTR *a;
-#endif
+#endif // !STANDALONE
 
     char *got, *as;
     dbref aowner;
@@ -803,9 +803,9 @@ static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
                 continue;
             }
             j = a->number;
-#else
+#else // !STANDALONE
             j = ca;
-#endif
+#endif // !STANDALONE
             if (j < A_USER_START)
             {
                 switch (j)
@@ -866,7 +866,7 @@ dbref db_write(FILE *f, int format, int version)
 #ifdef STANDALONE
     Log.WriteString("Writing ");
     Log.Flush();
-#endif
+#endif // STANDALONE
     i = mudstate.attr_next;
     fprintf(f, "+X%d\n+S%d\n+N%d\n", flags, mudstate.db_top, i);
     fprintf(f, "-R%d\n", mudstate.record_players);
@@ -902,7 +902,7 @@ dbref db_write(FILE *f, int format, int version)
 
 #ifdef STANDALONE
     int iDotCounter = 0;
-#endif
+#endif // STANDALONE
     char buf[SBUF_SIZE];
     buf[0] = '!';
     DO_WHOLE_DB(i)
@@ -931,6 +931,6 @@ dbref db_write(FILE *f, int format, int version)
 #ifdef STANDALONE
     Log.WriteString(ENDLINE);
     Log.Flush();
-#endif
+#endif // STANDALONE
     return mudstate.db_top;
 }

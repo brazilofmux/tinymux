@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.11 2002-07-13 07:23:01 jake Exp $
+// $Id: log.cpp,v 1.12 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -46,10 +46,9 @@ NAMETAB logoptions_nametab[] =
 
 #endif // !STANDALONE
 
-/*
- * ---------------------------------------------------------------------------
- * * start_log: see if it is OK to log something, and if so, start writing the
- * * log entry.
+/* ---------------------------------------------------------------------------
+ * start_log: see if it is OK to log something, and if so, start writing the
+ * log entry.
  */
 
 BOOL start_log(const char *primary, const char *secondary)
@@ -97,9 +96,8 @@ BOOL start_log(const char *primary, const char *secondary)
     return FALSE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * end_log: Finish up writing a log entry
+/* ---------------------------------------------------------------------------
+ * end_log: Finish up writing a log entry
  */
 
 void end_log(void)
@@ -109,9 +107,8 @@ void end_log(void)
     mudstate.logging--;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * log_perror: Write perror message to the log
+/* ---------------------------------------------------------------------------
+ * log_perror: Write perror message to the log
  */
 
 void log_perror(const char *primary, const char *secondary, const char *extra, const char *failing_object)
@@ -136,9 +133,8 @@ void log_perror(const char *primary, const char *secondary, const char *extra, c
     mudstate.logging--;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * log_text, log_number: Write text or number to the log file.
+/* ---------------------------------------------------------------------------
+ * log_text, log_number: Write text or number to the log file.
  */
 
 void log_text(const char *text)
@@ -151,11 +147,10 @@ void log_number(int num)
     Log.WriteInteger(num);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * log_name: write the name, db number, and flags of an object to the log.
- * * If the object does not own itself, append the name, db number, and flags
- * * of the owner.
+/* ---------------------------------------------------------------------------
+ * log_name: write the name, db number, and flags of an object to the log.
+ * If the object does not own itself, append the name, db number, and flags
+ * of the owner.
  */
 
 void log_name(dbref target)
@@ -193,15 +188,16 @@ void log_name(dbref target)
     return;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * log_name_and_loc: Log both the name and location of an object
+/* ---------------------------------------------------------------------------
+ * log_name_and_loc: Log both the name and location of an object
  */
 
 void log_name_and_loc(dbref player)
 {
     log_name(player);
-    if ((mudconf.log_info & LOGOPT_LOC) && Has_location(player)) {
+    if (  (mudconf.log_info & LOGOPT_LOC)
+       && Has_location(player))
+    {
         log_text(" in ");
         log_name(Location(player));
     }

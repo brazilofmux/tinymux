@@ -1,6 +1,6 @@
 // file_c.h -- File cache header file.
 //
-// $Id: file_c.h,v 1.3 2002-06-27 06:38:31 jake Exp $
+// $Id: file_c.h,v 1.4 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -32,4 +32,4 @@ extern void fcache_send(dbref, int);
 extern void fcache_load(dbref);
 extern void fcache_init(void);
 
-#endif
+#endif // !__FILE_C

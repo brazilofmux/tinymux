@@ -1,6 +1,6 @@
 // match.h
 //
-// $Id: match.h,v 1.8 2002-07-09 19:33:53 jake Exp $
+// $Id: match.h,v 1.9 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -49,8 +49,6 @@ extern dbref match_result(void);
 extern dbref last_match_result(void);
 extern dbref match_status(dbref, dbref);
 extern dbref noisy_match_result(void);
-extern dbref dispatched_match_result(dbref);
-extern BOOL matched_locally(void);
 extern void save_match_state(MSTATE *);
 extern void restore_match_state(MSTATE *);
 extern void match_zone_exit(void);
@@ -63,7 +61,4 @@ extern void safe_match_result(dbref it, char *buff, char **bufc);
 #define MAT_NUMERIC         4   /* Check for un-#ified dbrefs */
 #define MAT_HOME            8   /* Check for 'home' */
 
-#define MATCH_CONTROL       1   // Match controlled
-#define MATCH_EXAM          2   // Match examinable
-
-#endif
+#endif // !M_MATCH_H

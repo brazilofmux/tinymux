@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.44 2002-07-21 03:37:16 sdennis Exp $
+// $Id: command.cpp,v 1.45 2002-07-23 05:36:12 jake Exp $
 //
 
 #include "copyright.h"
@@ -531,12 +531,12 @@ CMDENT_NO_ARG command_table_no_arg[] =
     {"comlist",     NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, do_comlist},
     {"clearcom",    NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, do_clearcom},
     {"info",        NULL,       CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, logged_out0},
-    {"inventory",   NULL,       CA_PUBLIC,   LOOK_INVENTORY,    CS_NO_ARGS, do_inventory},
+    {"inventory",   NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, do_inventory},
     {"leave",       leave_sw,   CA_LOCATION, 0,          CS_NO_ARGS, do_leave},
     {"logout",      NULL,       CA_PUBLIC,   CMD_LOGOUT, CS_NO_ARGS, logged_out0},
     {"quit",        NULL,       CA_PUBLIC,   CMD_QUIT,   CS_NO_ARGS, logged_out0},
     {"report",      NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, do_report},
-    {"score",       NULL,       CA_PUBLIC,   LOOK_SCORE, CS_NO_ARGS, do_score},
+    {"score",       NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, do_score},
     {"version",     NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, do_version},
     {NULL,          NULL,       0,           0,          0,          NULL}
 };
@@ -652,12 +652,12 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@mail",        mail_sw,    CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, do_mail},
     {"@malias",      malias_sw,  CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, do_malias},
     {"@name",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG|CS_INTERP, do_name},
-    {"@newpassword", NULL,       CA_WIZARD,                                        PASS_ANY,    CS_TWO_ARG,           do_newpassword},
+    {"@newpassword", NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           do_newpassword},
     {"@notify",      notify_sw,  CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            0,           CS_TWO_ARG,           do_notify},
     {"@npemit",      pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_UNPARSE|CS_NOSQUISH, do_pemit},
     {"@oemit",       NULL,       CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_OEMIT, CS_TWO_ARG|CS_INTERP, do_pemit},
     {"@parent",      NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           do_parent},
-    {"@password",    NULL,       CA_NO_GUEST,                                      PASS_MINE,   CS_TWO_ARG,           do_password},
+    {"@password",    NULL,       CA_NO_GUEST,                                      0,           CS_TWO_ARG,           do_password},
     {"@pcreate",     NULL,       CA_WIZARD|CA_GBL_BUILD,                           PCRE_PLAYER, CS_TWO_ARG,           do_pcreate},
     {"@pemit",       pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_INTERP, do_pemit},
     {"@power",       NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG,           do_power},
@@ -694,7 +694,7 @@ CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
 CMDENT_TWO_ARG_CMDARG command_table_two_arg_cmdarg[] =
 {
     {"@dolist", dolist_sw,  CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_dolist},
-    {"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,    FRC_COMMAND,    CS_TWO_ARG|CS_INTERP|CS_CMDARG, do_force},
+    {"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,    0,    CS_TWO_ARG|CS_INTERP|CS_CMDARG, do_force},
     {"@wait",   wait_sw,    CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_wait},
     {NULL,      NULL,       0,              0,      0,              NULL}
 };

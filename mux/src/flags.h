@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.12 2002-07-19 08:23:25 jake Exp $
+// $Id: flags.h,v 1.13 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -68,7 +68,7 @@
 #define FIXED        0x00000800
 #define UNINSPECTED  0x00001000
 #define NO_COMMAND   0x00002000
-#define DYNAMIC      0x00004000
+//#define DYNAMIC      0x00004000
 #define NOBLEED      0x00008000
 #define STAFF        0x00010000
 #define HAS_DAILY    0x00020000
@@ -176,15 +176,12 @@ extern char *MakeCanonicalFlagName
 #define GOD ((dbref) 1)
 
 /* ---------------------- Object Permission/Attribute Macros */
-/* IS(X,T,F)            - Is X of type T and have flag F set? */
 /* Typeof(X)            - What object type is X */
 /* God(X)               - Is X player #1 */
 /* Robot(X)             - Is X a robot player */
 /* Wizard(X)            - Does X have wizard privs */
 /* Immortal(X)          - Is X unkillable */
-/* Alive(X)             - Is X a player or a puppet */
 /* Dark(X)              - Is X dark */
-/* WHODark(X)           - Should X be hidden from the WHO report */
 /* Floating(X)          - Prevent 'disconnected room' msgs for room X */
 /* Quiet(X)             - Should 'Set.' messages et al from X be disabled */
 /* Verbose(X)           - Should owner receive all commands executed? */
@@ -222,11 +219,9 @@ extern char *MakeCanonicalFlagName
 /* Marked(x)            - Check marked flag on X */
 /* See_attr(P,X.A,O,F)  - Can P see text attr A on X if attr has owner O */
 
-#define IS(thing,type,flag) ((Typeof(thing)==(type)) && (Flags(thing) & (flag)))
 #define Typeof(x)           (Flags(x) & TYPE_MASK)
 #define God(x)              ((x) == GOD)
 #define Robot(x)            (isPlayer(x) && ((Flags(x) & ROBOT) != 0))
-#define Alive(x)            (isPlayer(x) || (Puppet(x) && Has_contents(x)))
 #define OwnsOthers(x)       ((object_types[Typeof(x)].flags & OF_OWNER) != 0)
 #define Has_location(x)     ((object_types[Typeof(x)].flags & OF_LOCATION) != 0)
 #define Has_contents(x)     ((object_types[Typeof(x)].flags & OF_CONTENTS) != 0)
@@ -250,7 +245,7 @@ extern char *MakeCanonicalFlagName
                             ((Flags(Owner(x)) & ROYALTY) && Inherits(x)))
 #define WizRoy(x)           (Royalty(x) || Wizard(x))
 #define Head(x)             ((Flags2(x) & HEAD_FLAG) != 0)
-#define Dynamic(x)          ((Flags2(x) & DYNAMIC) !=0)
+//#define Dynamic(x)          ((Flags2(x) & DYNAMIC) !=0)
 #define Fixed(x)            ((Flags2(x) & FIXED) != 0)
 #define Uninspected(x)      ((Flags2(x) & UNINSPECTED) != 0)
 #define Ansi(x)             ((Flags2(x) & ANSI) != 0)
@@ -261,7 +256,8 @@ extern char *MakeCanonicalFlagName
 #define Link_ok(x)          (((Flags(x) & LINK_OK) != 0) && Has_contents(x))
 #define Wizard(x)           ((Flags(x) & WIZARD) || \
                             ((Flags(Owner(x)) & WIZARD) && Inherits(x)))
-#define Dark(x)             (((Flags(x) & DARK) != 0) && (Wizard(x) || !Alive(x)))
+#define Dark(x)             (((Flags(x) & DARK) != 0) && (Wizard(x) || \
+                            !(isPlayer(x) || (Puppet(x) && Has_contents(x)))))
 #define Jump_ok(x)          (((Flags(x) & JUMP_OK) != 0) && Has_contents(x))
 #define Sticky(x)           ((Flags(x) & STICKY) != 0)
 #define Destroy_ok(x)       ((Flags(x) & DESTROY_OK) != 0)
@@ -277,7 +273,6 @@ extern char *MakeCanonicalFlagName
 #define Chown_ok(x)         ((Flags(x) & CHOWN_OK) != 0)
 #define Enter_ok(x)         (((Flags(x) & ENTER_OK) != 0) && \
                             Has_location(x) && Has_contents(x))
-#define Visual(x)           ((Flags(x) & VISUAL) != 0)
 #define Immortal(x)         ((Flags(x) & IMMORTAL) || \
                             ((Flags(Owner(x)) & IMMORTAL) && Inherits(x)))
 #define Opaque(x)           ((Flags(x) & TM_OPAQUE) != 0)
@@ -330,7 +325,7 @@ extern char *MakeCanonicalFlagName
 #define isFae(x)              ((Flags3(x) & FAE) != 0)
 #define isChimera(x)          ((Flags3(x) & CHIMERA) != 0)
 #define isPeering(x)          ((Flags3(x) & PEERING) != 0)
-#endif
+#endif // WOD_REALMS
 
 #define Parentable(p,x)     (Controls(p,x) || \
                             (Parent_ok(x) && could_doit(p,x,A_LPARENT)))
@@ -375,4 +370,4 @@ extern char *MakeCanonicalFlagName
 #define Has_power(p,x)      (check_access((p),powers_nametab[x].flag))
 #define Html(x)             ((Flags2(x) & HTML) != 0)
 #define s_Html(x)           s_Flags((x), FLAG_WORD2, Flags2(x) | HTML)
-#endif
+#endif // !__FLAGS_H

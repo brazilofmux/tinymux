@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.6 2002-07-21 23:55:01 sdennis Exp $
+// $Id: svdhash.cpp,v 1.7 2002-07-23 05:36:13 jake Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -19,7 +19,7 @@
 
 #ifndef STANDALONE
 #define DO_COMMIT
-#endif
+#endif // !STANDALONE
 
 #define HF_SIZEOF_PAGE 24576
 #define HT_SIZEOF_PAGE 8192
@@ -194,9 +194,9 @@ UINT32 HASH_ProcessBuffer
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
                  return ~ulHash;
-#else
+#else // WIN32
         case 8:  ulHash  = CRC32_Table[pBuffer[8] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-#endif
+#endif // WIN32
 
         case 7:  ulHash  = CRC32_Table[pBuffer[9] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
@@ -208,9 +208,9 @@ UINT32 HASH_ProcessBuffer
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
                  return ~ulHash;
-#else
+#else // WIN32
         case 4:  ulHash  = CRC32_Table[pBuffer[12] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-#endif
+#endif // WIN32
 
         case 3:  ulHash  = CRC32_Table[pBuffer[13] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 2:  ulHash  = CRC32_Table[pBuffer[14] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
@@ -653,7 +653,7 @@ BOOL CHashPage::ValidateFreeList(void)
     }
     return TRUE;
 }
-#endif
+#endif // HP_PROTECTION
 
 // Insert - Inserts a new record if there is room.
 //
@@ -672,7 +672,7 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
             Log.WriteString("CHashPage::Insert - Inserting into the wrong page." ENDLINE);
             return HP_INSERT_ERROR_ILLEGAL;
         }
-#endif
+#endif // HP_PROTECTION
 
         // Where do we begin our first probe?
         //
@@ -727,7 +727,7 @@ HP_DIRINDEX CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
     HP_DIRINDEX nDepth = m_pHeader->m_nDepth;
     if ((nHash & anGroupMask[nDepth]) != m_pHeader->m_nHashGroup)
         return HP_DIR_EMPTY;
-#endif
+#endif // HP_PROTECTION
 
     int nDirSize = m_pHeader->m_nDirSize;
 
@@ -777,7 +777,7 @@ HP_DIRINDEX CHashPage::FindNextKey(HP_DIRINDEX iDir, UINT32 nHash, unsigned int 
     HP_DIRINDEX nDepth = m_pHeader->m_nDepth;
     if ((nHash & anGroupMask[nDepth]) != m_pHeader->m_nHashGroup)
         return HP_DIR_EMPTY;
-#endif
+#endif // HP_PROTECTION
 
     int nDirSize = m_pHeader->m_nDirSize;
 
@@ -842,7 +842,7 @@ BOOL CHashPage::HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash,
             ValidateFreeList();
             return FALSE;
         }
-#endif
+#endif // 0
         unsigned char *pBlockStart = m_pHeapStart + oNext;
         HP_PHEAPNODE pNode = (HP_PHEAPNODE)pBlockStart;
         if (pNode->nBlockSize >= nRequired)
@@ -1012,7 +1012,7 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
         Log.WriteString("Lost something" ENDLINE);
         return FALSE;
     }
-#endif
+#endif // 0
     return TRUE;
 }
 
@@ -1318,7 +1318,7 @@ void CHashFile::WriteDirectory(void)
     SetEndOfFile(m_hDirFile);
 #ifdef DO_COMMIT
     FlushFileBuffers(m_hDirFile);
-#endif
+#endif // DO_COMMIT
 }
 #else // WIN32
 void CHashFile::WriteDirectory(void)
@@ -1330,7 +1330,7 @@ void CHashFile::WriteDirectory(void)
     //SetEndOfFile(m_hDirFile);
 #ifdef DO_COMMIT
     fsync(m_hDirFile);
-#endif
+#endif // DO_COMMIT
 }
 #endif // WIN32
 
@@ -1403,7 +1403,7 @@ BOOL CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
 
 #ifdef DO_COMMIT
     FlushCache(iCache);
-#endif
+#endif // DO_COMMIT
     WriteDirectory();
     return TRUE;
 }
@@ -1621,7 +1621,7 @@ void CHashFile::Sync(void)
 #else // WIN32
         fsync(m_hPageFile);
 #endif // WIN32
-#endif
+#endif // DO_COMMIT
     }
 #ifdef DO_COMMIT
     if (m_hDirFile != INVALID_HANDLE_VALUE)
@@ -1632,7 +1632,7 @@ void CHashFile::Sync(void)
         fsync(m_hDirFile);
 #endif // WIN32
     }
-#endif
+#endif // DO_COMMIT
 }
 
 void CHashFile::CloseAll(void)
@@ -1719,7 +1719,7 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
                 sleep(1);
             } while (mudstate.dumping);
         }
-#endif
+#endif // !STANDALONE !WIN32
 
         // If the depth of this page is already as deep as the directory
         // depth,then we must increase depth of the directory, first.
@@ -1793,7 +1793,7 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 #else // WIN32
         fsync(m_hPageFile);
 #endif // WIN32
-#endif
+#endif // DO_COMMIT
 
         // Now, update the directory.
         //
@@ -1820,7 +1820,7 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 #else // WIN32
         fsync(m_hDirFile);
 #endif // WIN32
-#endif
+#endif // DO_COMMIT
     }
     m_Cache[iCache].m_iState = HF_CACHE_UNPROTECTED;
     return TRUE;
@@ -1928,7 +1928,7 @@ BOOL CHashFile::FlushCache(int iCache)
     case HF_CACHE_UNPROTECTED:
 #ifdef HP_PROTECTION
         m_Cache[iCache].m_hp.Protection();
-#endif
+#endif // HP_PROTECTION
 
     case HF_CACHE_UNWRITTEN:
         if (m_Cache[iCache].m_hp.WritePage(m_hPageFile, m_Cache[iCache].m_o))
@@ -2132,7 +2132,7 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
             Log.WriteString("CHashTable::Insert - iTableDir out of range." ENDLINE);
             return FALSE;
         }
-#endif
+#endif // HP_PROTECTION
         m_hpLast = m_pDir[iTableDir];
         if (!m_hpLast)
         {
@@ -2147,7 +2147,7 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
             Log.WriteString("CHashTable::Insert - Directory points to the wrong page." ENDLINE);
             return FALSE;
         }
-#endif
+#endif // HP_PROTECTION
         int errInserted = m_hpLast->Insert(nRecord, nHash, pRecord);
         if (IS_HP_SUCCESS(errInserted))
         {
@@ -2261,7 +2261,7 @@ HP_DIRINDEX CHashTable::FindFirstKey(UINT32  nHash)
         Log.WriteString("CHashTable::Insert - iTableDir out of range." ENDLINE);
         return HF_FIND_END;
     }
-#endif
+#endif // HP_PROTECTION
     m_hpLast = m_pDir[iTableDir];
     if (!m_hpLast)
     {
@@ -2276,7 +2276,7 @@ HP_DIRINDEX CHashTable::FindFirstKey(UINT32  nHash)
         Log.WriteString("CHashTable::Find - Directory points to the wrong page." ENDLINE);
         return HF_FIND_END;
     }
-#endif
+#endif // HP_PROTECTION
     unsigned int numchecks;
 
     HP_DIRINDEX iDir = m_hpLast->FindFirstKey(nHash, &numchecks);
@@ -2444,7 +2444,7 @@ void CLogFile::WriteBuffer(int nString, const char *pString)
 {
 #if !defined(STANDALONE) && defined(WIN32)
     EnterCriticalSection(&csLog);
-#endif
+#endif // !STANDALONE WIN32
     while (nString > 0)
     {
         int nAvailable = SIZEOF_LOG_BUFFER - m_nBuffer;
@@ -2470,7 +2470,7 @@ void CLogFile::WriteBuffer(int nString, const char *pString)
     Flush();
 #if !defined(STANDALONE) && defined(WIN32)
     LeaveCriticalSection(&csLog);
-#endif
+#endif // !STANDALONE WIN32
 }
 
 void CLogFile::WriteString(const char *pString)
@@ -2496,8 +2496,8 @@ CLogFile::~CLogFile(void)
     CloseLogFile();
 #ifdef WIN32
     DeleteCriticalSection(&csLog);
-#endif
-#endif
+#endif // WIN32
+#endif // !STANDALONE
 }
 
 #ifndef STANDALONE
@@ -2518,9 +2518,9 @@ void CLogFile::CreateLogFile(void)
     m_hFile = CreateFile(m_szFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-#else
+#else // WIN32
     m_hFile = open(m_szFilename, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
-#endif
+#endif // WIN32
 }
 
 void CLogFile::AppendLogFile(void)
@@ -2550,9 +2550,9 @@ void CLogFile::CloseLogFile(void)
     {
 #ifdef WIN32
         CloseHandle(m_hFile);
-#else
+#else // WIN32
         close(m_hFile);
-#endif
+#endif // WIN32
         m_hFile = INVALID_HANDLE_VALUE;
     }
 }
@@ -2573,7 +2573,7 @@ void CLogFile::ChangePrefix(char *szPrefix)
     }
 }
 
-#endif
+#endif // !STANDALONE
 
 CLogFile::CLogFile(void)
 {
@@ -2582,13 +2582,13 @@ CLogFile::CLogFile(void)
 #ifndef STANDALONE
 #ifdef WIN32
     InitializeCriticalSection(&csLog);
-#endif
+#endif // WIN32
     m_hFile = INVALID_HANDLE_VALUE;
     m_szPrefix[0] = '\0';
     m_ltaStarted.GetLocal();
     MakeLogName(m_szPrefix, m_ltaStarted, m_szFilename);
     CreateLogFile();
-#endif
+#endif // !STANDALONE
 }
 
 #define FILE_SIZE_TRIGGER (512*1024UL)
@@ -2601,14 +2601,14 @@ void CLogFile::Flush(void)
     }
 #ifdef STANDALONE
     fwrite(m_aBuffer, m_nBuffer, 1, stderr);
-#else
+#else // STANDALONE
     m_nSize += m_nBuffer;
     unsigned long nWritten;
 #ifdef WIN32
     WriteFile(m_hFile, m_aBuffer, m_nBuffer, &nWritten, NULL);
-#else
+#else // WIN32
     write(m_hFile, m_aBuffer, m_nBuffer);
-#endif
+#endif // WIN32
 
     if (m_nSize > FILE_SIZE_TRIGGER)
     {
@@ -2619,7 +2619,7 @@ void CLogFile::Flush(void)
 
         CreateLogFile();
     }
-#endif
+#endif // STANDALONE
     m_nBuffer = 0;
 }
 
@@ -2885,4 +2885,4 @@ void *MemRealloc(void *pointer, size_t size, const char *file, int line)
     return vp;
 }
 
-#endif
+#endif // MEMORY_ACCOUNTING

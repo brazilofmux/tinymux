@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.11 2002-07-13 07:23:01 jake Exp $
+// $Id: match.cpp,v 1.12 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -542,16 +542,6 @@ dbref match_status(dbref player, dbref match)
 dbref noisy_match_result(void)
 {
     return match_status(md.player, match_result());
-}
-
-dbref dispatched_match_result(dbref player)
-{
-    return match_status(player, match_result());
-}
-
-BOOL matched_locally(void)
-{
-    return (md.confidence & CON_LOCAL);
 }
 
 void save_match_state(MSTATE *mstate)

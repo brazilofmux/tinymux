@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.10 2002-07-19 11:18:28 jake Exp $
+// $Id: command.h,v 1.11 2002-07-23 05:36:12 jake Exp $
 //
 
 #ifndef __COMMAND_H
@@ -33,7 +33,6 @@ CMD_NO_ARG(do_comlist);         /* channel who by alias */
 CMD_TWO_ARG(do_comtitle);       /* sets a title on a channel */
 //CMD_NO_ARG(do_clearcom);      /* clears all comaliases */
 CMD_ONE_ARG(do_delcom);         /* deletes a comalias */
-CMD_TWO_ARG(do_tapcom);         /* taps a channel */
 
 /* from mail.c */
 
@@ -72,7 +71,7 @@ CMD_TWO_ARG(do_fixdb);          /* Database repair functions */
 CMD_TWO_ARG_CMDARG(do_force);   /* Force someone to do something */
 CMD_ONE_ARG_CMDARG(do_force_prefixed);  /* #<num> <cmd> variant of FORCE */
 CMD_TWO_ARG(do_forwardlist);    // Set a forwardlist on something
-CMD_TWO_ARG(do_function);       /* Make iser-def global function */
+CMD_TWO_ARG(do_function);       /* Make user-def global function */
 CMD_ONE_ARG(do_get);            /* Get an object */
 CMD_TWO_ARG(do_give);           /* Give something away */
 CMD_ONE_ARG(do_global);         /* Enable/disable global flags */
@@ -95,7 +94,6 @@ CMD_NO_ARG(do_markall);         /* Mark or unmark all objects */
 CMD_ONE_ARG(do_motd);           /* Set/list MOTD messages */
 CMD_ONE_ARG(do_move);           /* Move about using exits */
 CMD_TWO_ARG_ARGV(do_mvattr);    /* Move attributes on object */
-CMD_TWO_ARG(do_mudwho);         /* WHO for inter-mud page/who suppt */
 CMD_TWO_ARG(do_name);           /* Change the name of something */
 CMD_TWO_ARG(do_newpassword);    /* Change passwords */
 CMD_TWO_ARG(do_notify);         /* Notify or drain semaphore */
@@ -308,4 +306,4 @@ typedef struct
 #define SW_NOEVAL     0x20000000  /* Don't parse args before calling */
                                   /* handler (typically via a switch */
                                   /* alias) */
-#endif
+#endif // !__COMMAND_H

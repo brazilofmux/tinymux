@@ -1,6 +1,6 @@
 // mail.h
 //
-// $Id: mail.h,v 1.4 2002-07-13 07:23:01 jake Exp $
+// $Id: mail.h,v 1.5 2002-07-23 05:36:13 jake Exp $
 //
 
 #ifndef _MAIL_H
@@ -15,7 +15,7 @@
 #define M_URGENT    0x0004
 #define M_MASS      0x0008
 #define M_SAFE      0x0010
-#define M_RECEIPT   0x0020
+//#define M_RECEIPT   0x0020
 #define M_TAG       0x0040
 #define M_FORWARD   0x0080
         /* 0x0100 - 0x0F00 reserved for folder numbers */
@@ -32,7 +32,7 @@
 #define Urgent(m)   (m->read & M_URGENT)
 #define Mass(m)     (m->read & M_MASS)
 #define M_Safe(m)   (m->read & M_SAFE)
-#define Receipt(m)  (m->read & M_RECEIPT)
+//#define Receipt(m)  (m->read & M_RECEIPT)
 #define Forward(m)  (m->read & M_FORWARD)
 #define Tagged(m)   (m->read & M_TAG)
 #define Folder(m)   ((m->read & ~M_FMASK) >> 8)
@@ -41,7 +41,7 @@
 #define Unread(m)   (!Read(m))
 #define All(ms)     (ms.flags & M_ALL)
 #define ExpMail(x)  (Wizard(x))
-#define Reply(m)    (m->read & M_REPLY)
+//#define Reply(m)    (m->read & M_REPLY)
 
 #define MA_INC      2   /* what interval to increase the malias list */
 
@@ -124,4 +124,4 @@ extern char *MessageFetch(int number);
 extern void check_mail_expiration(void);
 extern void check_mail(dbref player, int folder, BOOL silent);
 
-#endif
+#endif // !_MAIL_H

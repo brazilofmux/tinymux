@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.5 2002-06-27 06:38:31 jake Exp $
+// $Id: vattr.cpp,v 1.6 2002-07-23 05:36:13 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -612,7 +612,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
         notify(executor, "Dumping in progress. Try again later.");
         return;
     }
-#endif
+#endif // !WIN32
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
     //
@@ -630,7 +630,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
     dbclean_IntegrityChecking(executor);
     notify(executor, "@dbclean completed..");
 }
-#endif
+#endif // !STANDALONE
 
 void vattr_delete_LEN(char *pName, int nName)
 {

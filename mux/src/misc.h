@@ -1,6 +1,6 @@
 // misc.h -- miscellaneous structures that are needed in more than one file.
 //
-// $Id: misc.h,v 1.5 2002-07-09 08:22:49 jake Exp $
+// $Id: misc.h,v 1.6 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -44,4 +44,4 @@ extern BOOL search_setup(dbref, char *, SEARCH *);
 extern void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *);
 extern BOOL get_stats(dbref, dbref, STATS *);
 
-#endif
+#endif // !_MISC_H

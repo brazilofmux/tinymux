@@ -1,9 +1,9 @@
 // mguests.h
 //
-// $Id: mguests.h,v 1.2 2002-06-13 22:12:46 jake Exp $
+// $Id: mguests.h,v 1.3 2002-07-23 05:36:13 jake Exp $
 //
 
-#ifndef  __MGUESTS_H
+#ifndef __MGUESTS_H
 #define __MGUESTS_H
 
 #include "copyright.h"
@@ -38,4 +38,4 @@ extern CGuests Guest;
 
 #define GUEST_PASSWORD "Guest"
 
-#endif
+#endif // !__MGUESTS_H

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.6 2002-07-13 07:23:01 jake Exp $
+// $Id: mudconf.h,v 1.7 2002-07-23 05:36:13 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -13,7 +13,7 @@
 
 #ifndef WIN32
 #include <netinet/in.h>
-#endif
+#endif // !WIN32
 
 #define WIDTHOF_DOING_STRING 45
 #define SIZEOF_DOING_STRING (2*WIDTHOF_DOING_STRING)
@@ -36,7 +36,7 @@ struct confdata
     BOOL    have_zones;     // Should zones be active?
     IntArray ports;         // user ports.
     int     init_size;      // initial db size.
-    BOOL    have_guest;     // Do we wish to allow a GUEST character?
+    //BOOL    have_guest;     // Do we wish to allow a GUEST character?
     dbref   guest_char;     // player num of prototype GUEST character.
     dbref   guest_nuker;    // Wiz who nukes the GUEST characters.
     int     number_guests;  // number of guest characters allowed.
@@ -178,12 +178,12 @@ struct confdata
     char    mud_name[32];   /* Name of the mud */
     char    one_coin[32];   /* name of one coin (ie. "penny") */
     char    many_coins[32]; /* name of many coins (ie. "pennies") */
-    char    *art_regexp;    /* Basic regexp for determining which article to use. */
+    //char    *art_regexp;    /* Basic regexp for determining which article to use. */
     ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
     dbref   toad_recipient; /* Default @toad recipient. */
     BOOL    run_startup;    // If no, startup attributes aren't processed on load.
     BOOL    safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
-#endif
+#endif // !STANDALONE
     BOOL    cache_names;    /* Should object names be cached separately */
 
     int     paylimit;       /* getting money gets hard over this much */
@@ -290,7 +290,7 @@ struct statedata
 #ifndef WIN32
     BOOL restarting; /* Are we restarting? */
     BOOL dumping;    /* Are we dumping? */
-#endif
+#endif // !WIN32
     int epoch;      /* Generation number for dumps */
     int generation; /* DB global generation number */
     dbref   curr_enactor;   /* Who initiated the current command */
@@ -340,7 +340,7 @@ struct statedata
     CHashTable parent_htab;    /* Parent $-command exclusion */
 #ifdef PARSE_TREES
     CHashTable tree_htab;  /* Parse trees for evaluation */
-#endif
+#endif // PARSE_TREES
     CHashTable news_htab;  /* News topics hashtable */
     CHashTable help_htab;  /* Help topics hashtable */
     CHashTable wizhelp_htab;   /* Wizard help topics hashtable */
@@ -356,7 +356,7 @@ struct statedata
                                // invocations.
     BOOL    bStackLimitReached; // Was stack slammed?
     int     nStackNest;        // Current stack depth.
-#endif
+#endif // !STANDALONE
     int     logging;    /* Are we in the middle of logging? */
     int     attr_next;  /* Next attr to alloc when freelist is empty */
     int     min_size;   /* Minimum db size (from file header) */
@@ -395,7 +395,7 @@ extern STATEDATA mudstate;
 #define CF_DEQUEUE      0x0100      /* Remove entries from the queue */
 #ifdef MUSH3
 #define CF_GODMONITOR   0x0200      // Display commands to the god.
-#endif
+#endif // MUSH3
 #define CF_EVENTCHECK   0x0400      // Allow events checking.
 
 // Host information codes
@@ -431,7 +431,7 @@ extern STATEDATA mudstate;
 #define LOG_SUSPECTCMDS 0x00020000  // Log SUSPECT player keyboard commands.
 #ifdef MUSH3
 #define LOG_KBCOMMANDS  0x00010000  // Log keyboard commands.
-#endif
+#endif // MUSH3
 #define LOG_TIMEUSE     0x00040000  // Log CPU time usage.
 #define LOG_ALWAYS      0x80000000  /* Always log it */
 
@@ -440,4 +440,4 @@ extern STATEDATA mudstate;
 #define LOGOPT_OWNER        0x04    /* Report owner of obj if not obj */
 #define LOGOPT_TIMESTAMP    0x08    /* Timestamp log entries */
 
-#endif
+#endif // !__CONF_H

@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.11 2002-07-21 03:35:42 sdennis Exp $
+// $Id: interface.h,v 1.12 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -16,7 +16,7 @@
 #include <netdb.h>
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
-#endif
+#endif // HAVE_SYS_SELECT_H
 #endif // !WIN32
 
 /* these symbols must be defined by the interface */
@@ -156,7 +156,7 @@ extern void shovecharsNT(int nPorts, PortInfo aPorts[]);
 void process_output9x(void *, int);
 void process_outputNT(void *, int);
 extern FTASK *process_output;
-#else //WIN32
+#else // WIN32
 extern void shovechars(int nPorts, PortInfo aPorts[]);
 extern void process_output(void *, int);
 extern void dump_restart_db(void);
@@ -164,13 +164,12 @@ extern void dump_restart_db(void);
 
 #ifndef SYS_SIGLIST_DECLARED
 extern void BuildSignalNamesTable(void);
-#endif
+#endif // !SYS_SIGLIST_DECLARED
 extern void set_signals(void);
 
 /* from netcommon.c */
 
 extern CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
-extern void handle_http(DESC *, char *);
 extern void raw_notify(dbref, const char *);
 extern void raw_notify_newline(dbref);
 extern void clearstrings(DESC *);
@@ -205,13 +204,13 @@ extern dbref  find_connected_name(dbref, char *);
             n=((d!=NULL) ? d->hashnext : NULL); \
          d; \
          d=n,n=((n!=NULL) ? n->hashnext : NULL))
-#define DESC_SAFEITER_CONN(d,n) \
-    for (d=descriptor_list,n=((d!=NULL) ? d->next : NULL); \
-         d; \
-         d=n,n=((n!=NULL) ? n->next : NULL)) \
-        if ((d)->flags & DS_CONNECTED)
+//#define DESC_SAFEITER_CONN(d,n) \
+//    for (d=descriptor_list,n=((d!=NULL) ? d->next : NULL); \
+//         d; \
+//         d=n,n=((n!=NULL) ? n->next : NULL)) \
+//        if ((d)->flags & DS_CONNECTED)
 #define DESC_SAFEITER_ALL(d,n) \
     for (d=descriptor_list,n=((d!=NULL) ? d->next : NULL); \
          d; \
          d=n,n=((n!=NULL) ? n->next : NULL))
-#endif
+#endif // !__INTERFACE__H

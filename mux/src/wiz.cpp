@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.10 2002-07-14 08:03:44 jake Exp $
+// $Id: wiz.cpp,v 1.11 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -682,7 +682,7 @@ NAMETAB enable_names[] =
     {"dequeueing",      1,  CA_PUBLIC,  CF_DEQUEUE},
 #ifdef MUSH3
     {"god_monitoring",  1,  CA_PUBLIC,  CF_GODMONITOR},
-#endif
+#endif // MUSH3
     {"idlechecking",    2,  CA_PUBLIC,  CF_IDLECHECK},
     {"interpret",       2,  CA_PUBLIC,  CF_INTERP},
     {"logins",          3,  CA_PUBLIC,  CF_LOGIN},

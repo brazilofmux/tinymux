@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.7 2002-07-09 19:33:53 jake Exp $
+// $Id: functions.h,v 1.8 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -97,4 +97,4 @@ extern int list2arr(char *arr[], int maxlen, char *list, char sep);
         TRUE, executor, caller, enactor, cargs, ncargs, TRUE))        \
         return;
 
-#endif
+#endif // !__FUNCTIONS_H

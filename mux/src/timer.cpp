@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.5 2002-06-27 06:38:31 jake Exp $
+// $Id: timer.cpp,v 1.6 2002-07-23 05:36:13 jake Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -39,7 +39,7 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
         do_dbck(NOTHING, NOTHING, NOTHING, 0);
 #ifndef STANDALONE
         Guest.CleanUp();
-#endif
+#endif // !STANDALONE
         pcache_trim();
         pool_reset();
         mudstate.debug_cmd = cmdsave;
@@ -76,7 +76,7 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
             nNextTimeInSeconds = 20;
         }
         else
-#endif
+#endif // !WIN32
         {
             fork_and_dump(0);
         }
@@ -154,7 +154,7 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
     scheduler.DeferTask(ltaNextTime, PRIORITY_SYSTEM, dispatch_CacheTick, 0, 0);
     mudstate.debug_cmd = cmdsave;
 }
-#endif
+#endif // !MEMORY_BASED
 
 #if 0
 void dispatch_CleanChannels(void *pUnused, int iUnused)
@@ -173,7 +173,7 @@ void dispatch_CleanChannels(void *pUnused, int iUnused)
     scheduler.DeferTask(ltaNextTime, PRIORITY_SYSTEM, dispatch_CleanChannels, 0, 0);
     mudstate.debug_cmd = cmdsave;
 }
-#endif
+#endif // 0
 
 void dispatch_CanRestart(void *pUnused, int iUnused)
 {
@@ -215,14 +215,14 @@ void init_timer(void)
     //
     ltd.SetSeconds(30);
     scheduler.DeferTask(ltaNow+ltd, PRIORITY_SYSTEM, dispatch_CacheTick, 0, 0);
-#endif
+#endif // !MEMORY_BASED
 
 #if 0
     // Setup comsys channel scrubbing.
     //
     ltd.SetSeconds(45);
     scheduler.DeferTask(ltaNow+ltd, PRIORITY_SYSTEM, dispatch_CleanChannels, 0, 0);
-#endif
+#endif // 0
 
     // Setup one-shot task to enable restarting 10 seconds after startmux.
     //

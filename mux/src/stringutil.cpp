@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.12 2002-07-18 19:09:52 sdennis Exp $
+// $Id: stringutil.cpp,v 1.13 2002-07-23 05:36:13 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1489,7 +1489,7 @@ int string_compare(const char *s1, const char *s2)
     }
     else
     {
-#endif
+#endif // !STANDALONE
         while (Tiny_IsSpace[(unsigned char)*s1])
             s1++;
         while (Tiny_IsSpace[(unsigned char)*s2])
@@ -1541,7 +1541,7 @@ int string_compare(const char *s1, const char *s2)
         return 0;
 #ifndef STANDALONE
     }
-#endif
+#endif // !STANDALONE
 }
 
 int string_prefix(const char *string, const char *prefix)
@@ -1732,6 +1732,7 @@ char *replace_tokens
     return result;
 }
 
+#if 0
 // Returns the number of identical characters in the two strings.
 //
 int prefix_match(const char *s1, const char *s2)
@@ -1752,6 +1753,7 @@ int prefix_match(const char *s1, const char *s2)
     }
     return count;
 }
+#endif // 0
 
 BOOL minmatch(char *str, char *target, int min)
 {
@@ -1796,6 +1798,7 @@ char *StringClone(const char *str)
     return StringCloneLen(str, strlen(str));
 }
 
+#if 0
 // --------------------------------------------------------------------------
 // BufferCloneLen: allocate memory and copy buffer
 //
@@ -1809,10 +1812,10 @@ char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
     memcpy(buff, pBuffer, nBuffer);
     return buff;
 }
+#endif // 0
 
-/*
- * ---------------------------------------------------------------------------
- * * safe_copy_str, safe_copy_chr - Copy buffers, watching for overflows.
+/* ---------------------------------------------------------------------------
+ * safe_copy_str, safe_copy_chr - Copy buffers, watching for overflows.
  */
 
 void safe_copy_str(const char *src, char *buff, char **bufp, int nSizeOfBuffer)
@@ -2369,9 +2372,9 @@ double Tiny_atof(char *szString)
         //
 #ifdef HAVE_IEEE_FP_FORMAT
         return MakeSpecialFloat(pfr.iString);
-#else
+#else // HAVE_IEEE_FP_FORMAT
         return 0.0;
-#endif
+#endif // HAVE_IEEE_FP_FORMAT
     }
 
     // See if we can shortcut the decoding process.
@@ -2700,7 +2703,7 @@ BOOL is_real(char *str)
     return ParseFloat(&pfr, str);
 }
 
-#endif
+#endif // !STANDALONE
 
 // Tiny_StrTokString, Tiny_StrTokControl, Tiny_StrTokParse.
 //
@@ -2974,16 +2977,16 @@ void _strupr(char *a)
         a++;
     }
 }
-#endif
+#endif // !WIN32
 
 #ifdef WIN32
 #define VSNPRINTF _vsnprintf
-#else
+#else // WIN32
 #ifdef NEED_VSPRINTF_DCL
 extern char *vsprintf(char *, char *, va_list);
-#endif
+#endif // NEED_VSPRINTF_DCL
 #define VSNPRINTF vsnprintf
-#endif
+#endif // WIN32
 
 // Tiny_vsnprintf - Is an sprintf-like function that will not overflow
 // a buffer of specific size. The size is give by count, and count
@@ -3222,7 +3225,7 @@ int BMH_StringSearchI(int nPat, char *pPat, int nSrc, char *pSrc)
 
 #ifndef STANDALONE
 extern void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...);
-#endif
+#endif // !STANDALONE
 
 CF_HAND(cf_art_rule)
 {
@@ -3305,6 +3308,6 @@ CF_HAND(cf_art_rule)
     arNewRule->m_pRegexpStudy = study;
 
     *arRules = arNewRule;
-#endif
+#endif // !STANDALONE
     return 0;
 }

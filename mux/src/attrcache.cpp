@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.3 2002-07-18 19:17:34 sdennis Exp $
+// $Id: attrcache.cpp,v 1.4 2002-07-23 05:36:12 jake Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -17,8 +17,8 @@
 #include "externs.h"
 
 CHashFile hfAttributeFile;
-
 static BOOL cache_initted = FALSE;
+
 #ifdef STANDALONE
 static BOOL cache_redirected = FALSE;
 #define N_TEMP_FILES 4
@@ -296,7 +296,7 @@ char *cache_get(Aname *nam, int *pLen)
 }
 
 
-// cache_put not longer frees the pointer.
+// cache_put no longer frees the pointer.
 //
 BOOL cache_put(Aname *nam, char *value, int len)
 {

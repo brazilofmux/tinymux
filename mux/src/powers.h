@@ -1,6 +1,6 @@
 // powers.h -- Object powers.
 //
-// $Id: powers.h,v 1.4 2002-07-09 08:22:49 jake Exp $
+// $Id: powers.h,v 1.5 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -28,7 +28,7 @@
 #define POW_LONGFINGERS 0x00004000  /* Can get/whisper/etc from a distance */
 #define POW_PROG        0x00008000  /* Can use the @prog command */
 
-/* FREE FREE FREE FREE */
+/* FREE: 0x00010000 - 0x00040000 */
 
 #define POW_COMM_ALL    0x00080000  /* Channel wiz */
 #define POW_SEE_QUEUE   0x00100000  /* Player can see the entire queue */
@@ -73,7 +73,6 @@ extern BOOL has_power(dbref, dbref, char *);
 extern void decompile_powers(dbref, dbref, char *);
 extern BOOL decode_power(dbref player, char *powername, POWERSET *pset);
 
-
 #define s_Change_Quotas(c)  s_Powers((c), Powers(c) | POW_CHG_QUOTAS)
 #define s_Chown_Any(c)      s_Powers((c), Powers(c) | POW_CHOWN_ANY)
 #define s_Announce(c)       s_Powers((c), Powers(c) | POW_ANNOUNCE)
@@ -97,7 +96,6 @@ extern BOOL decode_power(dbref player, char *powername, POWERSET *pset);
 #define s_Can_Poll(c)       s_Powers((c), Powers(c) | POW_POLL)
 #define s_No_Destroy(c)     s_Powers((c), Powers(c) | POW_NO_DESTROY)
 #define s_Guest(c)          s_Powers((c), Powers(c) | POW_GUEST)
-#define s_Set_Maint_Flags(c)    s_Powers((c), Powers(c) | POW_SET_MFLAGS)
 #define s_Stat_Any(c)       s_Powers((c), Powers(c) | POW_STAT_ANY)
 #define s_Steal(c)          s_Powers((c), Powers(c) | POW_STEAL)
 #define s_Tel_Anywhere(c)   s_Powers((c), Powers(c) | POW_TEL_ANYWHR)
@@ -127,7 +125,6 @@ extern BOOL decode_power(dbref player, char *powername, POWERSET *pset);
 #define Can_Poll(c)         (((Powers(c) & POW_POLL) != 0) || Wizard(c))
 #define No_Destroy(c)       (((Powers(c) & POW_NO_DESTROY) != 0) || Wizard(c))
 #define Guest(c)            ((Powers(c) & POW_GUEST) != 0)
-#define Set_Maint_Flags(c)  ((Powers(c) & POW_SET_MFLAGS) != 0)
 #define Stat_Any(c)         ((Powers(c) & POW_STAT_ANY) != 0)
 #define Steal(c)            (((Powers(c) & POW_STEAL) != 0) || Wizard(c))
 #define Tel_Anywhere(c)     (((Powers(c) & POW_TEL_ANYWHR) != 0) || Tel_Anything(c))

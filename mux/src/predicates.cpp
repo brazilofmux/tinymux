@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.33 2002-07-21 03:39:25 sdennis Exp $
+// $Id: predicates.cpp,v 1.34 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -17,7 +17,6 @@
 #include "powers.h"
 
 extern BOOL do_command(DESC *, char *);
-extern void dump_database(void);
 
 char * DCL_CDECL tprintf(const char *fmt,...)
 {
@@ -39,9 +38,8 @@ void DCL_CDECL safe_tprintf_str(char *str, char **bp, const char *fmt,...)
     *bp += len;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * insert_first, remove_first: Insert or remove objects from lists.
+/* ---------------------------------------------------------------------------
+ * insert_first, remove_first: Insert or remove objects from lists.
  */
 
 dbref insert_first(dbref head, dbref thing)
@@ -52,13 +50,17 @@ dbref insert_first(dbref head, dbref thing)
 
 dbref remove_first(dbref head, dbref thing)
 {
+    if (head == thing)
+    {
+        return (Next(thing));
+    }
+
     dbref prev;
 
-    if (head == thing)
-        return (Next(thing));
-
-    DOLIST(prev, head) {
-        if (Next(prev) == thing) {
+    DOLIST(prev, head)
+    {
+        if (Next(prev) == thing)
+        {
             s_Next(prev, Next(thing));
             return head;
         }
@@ -66,9 +68,8 @@ dbref remove_first(dbref head, dbref thing)
     return head;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * reverse_list: Reverse the order of members in a list.
+/* ---------------------------------------------------------------------------
+ * reverse_list: Reverse the order of members in a list.
  */
 
 dbref reverse_list(dbref list)
@@ -76,7 +77,8 @@ dbref reverse_list(dbref list)
     dbref newlist, rest;
 
     newlist = NOTHING;
-    while (list != NOTHING) {
+    while (list != NOTHING)
+    {
         rest = Next(list);
         s_Next(list, newlist);
         newlist = list;
@@ -85,9 +87,8 @@ dbref reverse_list(dbref list)
     return newlist;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * member - indicate if thing is in list
+/* ---------------------------------------------------------------------------
+ * member - indicate if thing is in list
  */
 
 BOOL member(dbref thing, dbref list)
@@ -180,10 +181,10 @@ static BOOL pay_quota(dbref who, int cost)
 
     // determine quota
     //
-    char buf[20], *quota_str;
     dbref aowner;
     int aflags;
-    int quota = Tiny_atol(quota_str = atr_get(Owner(who), A_RQUOTA, &aowner, &aflags));
+    char *quota_str = atr_get(Owner(who), A_RQUOTA, &aowner, &aflags);
+    int quota = Tiny_atol(quota_str);
     free_lbuf(quota_str);
 
     // enough to build?  Wizards always have enough.
@@ -198,6 +199,7 @@ static BOOL pay_quota(dbref who, int cost)
 
     // Dock the quota.
     //
+    char buf[20];
     Tiny_ltoa(quota, buf);
     atr_add_raw(Owner(who), A_RQUOTA, buf);
 
@@ -247,8 +249,6 @@ BOOL canpayfees(dbref player, dbref who, int pennies, int quota)
 
 BOOL payfor(dbref who, int cost)
 {
-    int tmp;
-
     if (  Wizard(who)
        || Wizard(Owner(who))
        || Free_Money(who) 
@@ -257,6 +257,7 @@ BOOL payfor(dbref who, int cost)
         return TRUE;
     }
     who = Owner(who);
+    int tmp;
     if ((tmp = Pennies(who)) >= cost)
     {
         s_Pennies(who, tmp - cost);
@@ -400,7 +401,7 @@ BOOL ValidatePlayerName(const char *pName)
     {
         Tiny_IsPlayerNameCharacter[(unsigned char)' '] = 0;
     }
-#endif
+#endif // !STANDALONE
 
     // Only printable characters besides ARG_DELIMITER, AND_TOKEN,
     // and OR_TOKEN are allowed.
@@ -426,27 +427,23 @@ BOOL ValidatePlayerName(const char *pName)
 
 BOOL ok_password(const char *password, dbref player)
 {
+    if (*password == '\0')
+    {
+        notify_quiet(player, "Null passwords are not allowed.");
+        return FALSE;
+    }
+
     const char *scan;
     int num_upper = 0;
     int num_special = 0;
     int num_lower = 0;
-
-    if (*password == '\0')
-    {
-#ifndef STANDALONE
-        notify_quiet(player, "Null passwords are not allowed.");
-#endif
-        return FALSE;
-    }
 
     for (scan = password; *scan; scan++)
     {
         if (  !Tiny_IsPrint[(unsigned char)*scan]
            || Tiny_IsSpace[(unsigned char)*scan])
         {
-#ifndef STANDALONE
             notify_quiet(player, "Illegal character in password.");
-#endif
             return FALSE;
         }
         if (Tiny_IsUpper[(unsigned char)*scan])
@@ -463,9 +460,7 @@ BOOL ok_password(const char *password, dbref player)
         (password[0] == 'X') &&
         (password[1] == 'X'))
     {
-#ifndef STANDALONE
         notify_quiet(player, "Please choose another password.");
-#endif
         return FALSE;
     }
 
@@ -495,9 +490,8 @@ BOOL ok_password(const char *password, dbref player)
 
 #ifndef STANDALONE
 
-/*
- * ---------------------------------------------------------------------------
- * * handle_ears: Generate the 'grows ears' and 'loses ears' messages.
+/* ---------------------------------------------------------------------------
+ * handle_ears: Generate the 'grows ears' and 'loses ears' messages.
  */
 
 void handle_ears(dbref thing, BOOL could_hear, BOOL can_hear)
@@ -557,9 +551,6 @@ void do_switch
     int   ncargs
 )
 {
-    int a;
-    char *buff, *bp, *str;
-
     if (!expr || (nargs <= 0))
     {
         return;
@@ -568,14 +559,20 @@ void do_switch
     if (key == SWITCH_DEFAULT)
     {
         if (mudconf.switch_df_all)
+        {
             key = SWITCH_ANY;
+        }
         else
+        {
             key = SWITCH_ONE;
+        }
     }
 
     // Now try a wild card match of buff with stuff in coms.
     //
     BOOL any = FALSE;
+    int a;
+    char *buff, *bp, *str;
     buff = bp = alloc_lbuf("do_switch");
     CLinearTimeAbsolute lta;
     for (a = 0; (a < (nargs - 1)) && args[a] && args[a + 1]; a += 2)
@@ -659,12 +656,6 @@ void do_addcommand
     char *command
 )
 {
-    CMDENT *old, *cmd;
-    ADDENT *add, *nextp;
-
-    dbref thing;
-    int atr;
-
     if (  nargs != 2
        || name[0] == '\0')
     {
@@ -672,6 +663,8 @@ void do_addcommand
         return;
     }
 
+    dbref thing;
+    int atr;
     if (  !parse_attrib(player, command, &thing, &atr)
        || atr == NOTHING)
     {
@@ -682,6 +675,8 @@ void do_addcommand
     // Let's make this case insensitive...
     //
     _strlwr(name);
+    CMDENT *old, *cmd;
+    ADDENT *add, *nextp;
     old = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
 
     if (old && (old->callseq & CS_ADDED))
@@ -842,18 +837,14 @@ void do_delcommand
     char *command
 )
 {
-    CMDENT *old, *cmd;
-    ADDENT *prev = NULL, *nextp;
-
-    dbref thing = NOTHING;
-    int atr = NOTHING;
-
     if (!*name)
     {
         notify(player, "Sorry.");
         return;
     }
 
+    dbref thing = NOTHING;
+    int atr = NOTHING;
     if (*command)
     {
         if (!parse_attrib(player, command, &thing, &atr) || (atr == NOTHING))
@@ -867,6 +858,8 @@ void do_delcommand
     //
     _strlwr(name);
 
+    CMDENT *old, *cmd;
+    ADDENT *prev = NULL, *nextp;
     old = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
 
     if (old && (old->callseq & CS_ADDED))
@@ -943,7 +936,9 @@ void do_delcommand
             }
             notify(player, "Command not found in command table.");
         }
-    } else {
+    }
+    else
+    {
         notify(player, "Command not found in command table.");
     }
 }
@@ -957,10 +952,6 @@ void do_delcommand
 
 void handle_prog(DESC *d, char *message)
 {
-    DESC *all;
-    char *cmd;
-    dbref aowner;
-    int aflags, i;
 
     // Allow the player to pipe a command while in interactive mode.
     //
@@ -976,7 +967,9 @@ void handle_prog(DESC *d, char *message)
         }
         return;
     }
-    cmd = atr_get(d->player, A_PROGCMD, &aowner, &aflags);
+    dbref aowner;
+    int aflags, i;
+    char *cmd = atr_get(d->player, A_PROGCMD, &aowner, &aflags);
     CLinearTimeAbsolute lta;
     wait_que(d->program_data->wait_enactor, d->player, d->player, FALSE, lta,
         NOTHING, 0, cmd, (char **)&message, 1,
@@ -984,7 +977,7 @@ void handle_prog(DESC *d, char *message)
 
     // First, set 'all' to a descriptor we find for this player.
     //
-    all = (DESC *)hashfindLEN(&(d->player), sizeof(d->player), &mudstate.desc_htab) ;
+    DESC *all = (DESC *)hashfindLEN(&(d->player), sizeof(d->player), &mudstate.desc_htab) ;
 
     if (all && all->program_data)
     {
@@ -1005,17 +998,13 @@ void handle_prog(DESC *d, char *message)
         DESC_ITER_PLAYER(d->player, all)
             all->program_data = NULL;
     }
-
     atr_clr(d->player, A_PROGCMD);
     free_lbuf(cmd);
 }
 
 void do_quitprog(dbref player, dbref caller, dbref enactor, int key, char *name)
 {
-    DESC *d;
     dbref doer;
-    int i;
-    BOOL isprog = FALSE;
 
     if (*name)
     {
@@ -1041,6 +1030,8 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int key, char *name)
         notify(player, "That player is not connected.");
         return;
     }
+    DESC *d;
+    BOOL isprog = FALSE;
     DESC_ITER_PLAYER(doer, d)
     {
         if (d->program_data != NULL)
@@ -1056,6 +1047,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int key, char *name)
     }
 
     d = (DESC *)hashfindLEN(&doer, sizeof(doer), &mudstate.desc_htab) ;
+    int i;
 
     if (d && d->program_data)
     {
@@ -1073,7 +1065,9 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int key, char *name)
         /* Set info for all player descriptors to NULL */
 
         DESC_ITER_PLAYER(doer, d)
+        {
             d->program_data = NULL;
+        }
     }
 
     atr_clr(doer, A_PROGCMD);
@@ -1099,7 +1093,8 @@ void do_prog
     ATTR *ap;
     char *attrib, *msg;
 
-    if (!name || !*name) {
+    if (!name || !*name)
+    {
         notify(player, "No players specified.");
         return;
     }
@@ -1194,9 +1189,8 @@ void do_prog
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_restart: Restarts the game.
+/* ---------------------------------------------------------------------------
+ * do_restart: Restarts the game.
  */
 void do_restart(dbref player, dbref caller, dbref enactor, int key)
 {
@@ -1258,11 +1252,10 @@ extern SOCKET slave_socket;
 #endif // !WIN32
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_backup: Backs up and restarts the game
- * * By Wadhah Al-Tailji (7-21-97), altailji@nmt.edu
- * * Ported to MUX2 by Patrick Hill (7-5-2001), hellspawn@anomux.org
+/* ---------------------------------------------------------------------------
+ * do_backup: Backs up and restarts the game
+ * By Wadhah Al-Tailji (7-21-97), altailji@nmt.edu
+ * Ported to MUX2 by Patrick Hill (7-5-2001), hellspawn@anomux.org
  */
 
 #ifdef WIN32
@@ -1295,20 +1288,19 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
     //
     dump_database_internal(DUMP_I_NORMAL);
     system(tprintf("./_backupflat.sh 1>&2"));
-#else
+#else // 1
     // Invoking _backupflat.sh with an argument prompts the backup script
     // to use it as the flatfile.
     //
     dump_database_internal(DUMP_I_FLAT);
     system(tprintf("./_backupflat.sh %s.FLAT 1>&2", mudconf.indb));
-#endif
+#endif // 1
     raw_broadcast(0, "GAME: Backup finished.");
 }
 #endif // WIN32
 
-/*
- * ---------------------------------------------------------------------------
- * * do_comment: Implement the @@ (comment) command. Very cpu-intensive :-)
+/* ---------------------------------------------------------------------------
+ * do_comment: Implement the @@ (comment) command. Very cpu-intensive :-)
  */
 
 void do_comment(dbref player, dbref caller, dbref enactor, int key)
@@ -1317,19 +1309,14 @@ void do_comment(dbref player, dbref caller, dbref enactor, int key)
 
 static dbref promote_dflt(dbref old, dbref new0)
 {
-    switch (new0) {
-    case NOPERM:
+    if (old == NOPERM || new0 == NOPERM)
+    {
         return NOPERM;
-    case AMBIGUOUS:
-        if (old == NOPERM)
-            return old;
-        else
-            return new0;
     }
-
-    if ((old == NOPERM) || (old == AMBIGUOUS))
-        return old;
-
+    if (old == AMBIGUOUS || new0 == AMBIGUOUS)
+    {
+        return AMBIGUOUS;
+    }
     return NOTHING;
 }
 
@@ -1345,7 +1332,6 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
     // Didn't find it directly.  Recursively do a contents check.
     //
     dbref result, result1;
-    BOOL control;
     char *buff, *place, *s1, *d1, *temp;
     char *start = target;
     while (*target)
@@ -1374,7 +1360,9 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
         {
             return dflt;
         }
-        if ((*target != 's') && (*target != 'S') && (*target != ' '))
+        if (  (*target != 's')
+           && (*target != 'S')
+           && (*target != ' '))
         {
             continue;
         }
@@ -1425,8 +1413,10 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
 
         // If we don't control it and it is either dark or opaque, skip past.
         //
-        control = Controls(player, result1);
-        if ((Dark(result1) || Opaque(result1)) && !control)
+        BOOL control = Controls(player, result1);
+        if (  (  Dark(result1) 
+              || Opaque(result1)) 
+           && !control)
         {
             dflt = promote_dflt(dflt, NOTHING);
             continue;
@@ -1434,7 +1424,9 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
 
         // Validate object has the ENTER bit set, if requested.
         //
-        if ((check_enter) && !Enter_ok(result1) && !control)
+        if (  check_enter
+           && !Enter_ok(result1)
+           && !control)
         {
             dflt = promote_dflt(dflt, NOPERM);
             continue;
@@ -1445,8 +1437,7 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
         init_match(result1, target, NOTYPE);
         match_possession();
         result = match_result();
-        result = match_possessed(player, result1, target, result,
-                     check_enter);
+        result = match_possessed(player, result1, target, result, check_enter);
         if (Good_obj(result))
         {
             return result;
@@ -1456,21 +1447,20 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
     return dflt;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * parse_range: break up <what>,<low>,<high> syntax
+/* ---------------------------------------------------------------------------
+ * parse_range: break up <what>,<low>,<high> syntax
  */
 
 void parse_range(char **name, dbref *low_bound, dbref *high_bound)
 {
-    char *buff1, *buff2;
-
-    buff1 = *name;
-    if (buff1 && *buff1)
-        *name = parse_to(&buff1, ',', EV_STRIP_TS);
+    char *buff1 = *name;
     if (buff1 && *buff1)
     {
-        buff2 = parse_to(&buff1, ',', EV_STRIP_TS);
+        *name = parse_to(&buff1, ',', EV_STRIP_TS);
+    }
+    if (buff1 && *buff1)
+    {
+        char *buff2 = parse_to(&buff1, ',', EV_STRIP_TS);
         if (buff1 && *buff1)
         {
             while (Tiny_IsSpace[(unsigned char)*buff1])
@@ -1595,7 +1585,7 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
 
 #ifdef STANDALONE
     atr_get_info(target, tattr->number, &aowner, &aflags);
-#else
+#else // STANDALONE
     if (bCheckParent)
     {
         atr_pget_info(target, tattr->number, &aowner, &aflags);
@@ -1604,7 +1594,7 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
     {
         atr_get_info(target, tattr->number, &aowner, &aflags);
     }
-#endif
+#endif // STANDALONE
 
     int mAllow = AF_VISUAL;
     if (  (tattr->flags & mAllow)
@@ -1681,20 +1671,21 @@ BOOL bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * where_is: Returns place where obj is linked into a list.
- * * ie. location for players/things, source for exits, NOTHING for rooms.
+/* ---------------------------------------------------------------------------
+ * where_is: Returns place where obj is linked into a list.
+ * ie. location for players/things, source for exits, NOTHING for rooms.
  */
 
 dbref where_is(dbref what)
 {
-    dbref loc;
-
     if (!Good_obj(what))
+    {
         return NOTHING;
+    }
 
-    switch (Typeof(what)) {
+    dbref loc;
+    switch (Typeof(what))
+    {
     case TYPE_PLAYER:
     case TYPE_THING:
         loc = Location(what);
@@ -1709,17 +1700,17 @@ dbref where_is(dbref what)
     return loc;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * where_room: Return room containing player, or NOTHING if no room or
- * * recursion exceeded.  If player is a room, returns itself.
+/* ---------------------------------------------------------------------------
+ * where_room: Return room containing player, or NOTHING if no room or
+ * recursion exceeded.  If player is a room, returns itself.
  */
 
 dbref where_room(dbref what)
 {
     int count;
 
-    for (count = mudconf.ntfy_nest_lim; count > 0; count--) {
+    for (count = mudconf.ntfy_nest_lim; count > 0; count--)
+    {
         if (!Good_obj(what))
             break;
         if (isRoom(what))
@@ -1762,7 +1753,7 @@ BOOL locatable(dbref player, dbref it, dbref enactor)
     BOOL findable_room;
     if (Good_obj(room_it))
     {
-        findable_room = !Hideout(room_it);
+        findable_room = Findable(room_it);
     }
     else
     {
@@ -1786,10 +1777,9 @@ BOOL locatable(dbref player, dbref it, dbref enactor)
     return FALSE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * nearby: Check if thing is nearby player (in inventory, in same room, or
- * * IS the room.
+/* ---------------------------------------------------------------------------
+ * nearby: Check if thing is nearby player (in inventory, in same room, or
+ * IS the room.
  */
 
 BOOL nearby(dbref player, dbref thing)
@@ -1804,7 +1794,8 @@ BOOL nearby(dbref player, dbref thing)
         return TRUE;
     }
     dbref player_loc = where_is(player);
-    if ((thing_loc == player_loc) || (thing == player_loc))
+    if (  (thing_loc == player_loc)
+       || (thing == player_loc))
     {
         return TRUE;
     }
@@ -1823,7 +1814,7 @@ BOOL exit_visible(dbref exit, dbref player, int key)
     {
         return FALSE;
     }
-#endif
+#endif // WOD_REALMS !STANDALONE
 
     // Exam exit's location
     //
@@ -1864,7 +1855,7 @@ BOOL exit_displayable(dbref exit, dbref player, int key)
     {
         return FALSE;
     }
-#endif
+#endif // WOD_REALMS !STANDALONE
 
     // Light exit
     //
@@ -1887,9 +1878,8 @@ BOOL exit_displayable(dbref exit, dbref player, int key)
 
 #ifndef STANDALONE
 
-/*
- * ---------------------------------------------------------------------------
- * * did_it: Have player do something to/with thing
+/* ---------------------------------------------------------------------------
+ * did_it: Have player do something to/with thing
  */
 
 void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
@@ -1941,20 +1931,18 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             }
             free_lbuf(buff);
         }
-        else if (def)
-        {
-            notify(player, def);
-        }
         free_lbuf(d);
     }
-    else if ((what < 0) && def)
+    if ((what != 0) && def)
     {
         notify(player, def);
     }
 
     // message to neighbors.
     //
-    if ((owhat > 0) && Has_location(player) && Good_obj(loc = Location(player)))
+    if (  (owhat > 0)
+       && Has_location(player)
+       && Good_obj(loc = Location(player)))
     {
         d = atr_pget(thing, owhat, &aowner, &aflags);
         if (*d)
@@ -1975,13 +1963,12 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             }
             free_lbuf(buff);
         }
-        else if (odef)
-        {
-            notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
-        }
         free_lbuf(d);
     }
-    else if ((owhat < 0) && odef && Has_location(player) && Good_obj(loc = Location(player)))
+    if (  (owhat != 0)
+       && odef
+       && Has_location(player)
+       && Good_obj(loc = Location(player)))
     {
         notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
     }
@@ -2032,9 +2019,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_verb: Command interface to did_it.
+/* ---------------------------------------------------------------------------
+ * do_verb: Command interface to did_it.
  */
 
 void do_verb(dbref player, dbref caller, dbref enactor, int key,

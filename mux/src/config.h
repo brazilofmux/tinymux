@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: config.h,v 1.2 2002-07-23 05:36:12 jake Exp $
 //
 
 #ifndef CONFIG_H
@@ -31,9 +31,9 @@
 #define OUTPUT_VERSION  1
 #ifdef MEMORY_BASED
 #define OUTPUT_FLAGS    (MANDFLAGS)
-#else
+#else // MEMORY_BASED
 #define OUTPUT_FLAGS    (MANDFLAGS|OFLAGS)
-#endif
+#endif // MEMORY_BASED
 
 #define UNLOAD_VERSION  1
 #define UNLOAD_FLAGS    (MANDFLAGS)
@@ -67,11 +67,11 @@
 #define INDENT_STR  "  "
 
 /* amount of object endowment, based on cost */
-#define OBJECT_ENDOWMENT(cost) (((cost)/mudconf.sacfactor) +mudconf.sacadjust)
+#define OBJECT_ENDOWMENT(cost) (((cost)/mudconf.sacfactor) + mudconf.sacadjust)
 
 /* !!! added for recycling, return value of object */
 #define OBJECT_DEPOSIT(pennies) \
-    (((pennies)-mudconf.sacadjust)*mudconf.sacfactor)
+    (((pennies) - mudconf.sacadjust)* mudconf.sacfactor)
 
 #ifdef WIN32
 #define DCL_CDECL __cdecl
@@ -96,14 +96,14 @@ typedef unsigned __int64 UINT64;
 #define popen _popen
 #define pclose _pclose
 
-#else
+#else // WIN32
 
 #define DCL_CDECL
 #define DCL_INLINE inline
 #define INVALID_HANDLE_VALUE (-1)
 #ifndef O_BINARY
 #define O_BINARY 0
-#endif
+#endif // O_BINARY
 typedef int BOOL;
 #define TRUE    1
 #define FALSE   0
@@ -118,9 +118,9 @@ typedef unsigned long long UINT64;
 typedef int SOCKET;
 #ifdef PATH_MAX
 #define SIZEOF_PATHNAME (PATH_MAX + 1)
-#else
+#else // PATH_MAX
 #define SIZEOF_PATHNAME (4095 + 1)
-#endif
+#endif // PATH_MAX
 #define SOCKET_WRITE(s,b,n,f) write(s,b,n)
 #define SOCKET_READ(s,b,n,f) read(s,b,n)
 #define SOCKET_CLOSE(s) close(s)
@@ -136,7 +136,7 @@ typedef int SOCKET;
 #define INVALID_SOCKET (-1)
 #define SD_BOTH (2)
 
-#endif
+#endif // WIN32
 
 // Find the minimum-sized integer type that will hold 32-bits.
 // Promote to 64-bits if necessary.
@@ -153,7 +153,7 @@ typedef unsigned short   UINT32;
 #else
 typedef INT64            INT32;
 typedef UINT64           UINT32;
-#endif
+#endif // SIZEOF INT32
 #define INT32_MIN_VALUE  (-2147483647 - 1)
 #define INT32_MAX_VALUE  2147483647
 #define UINT32_MAX_VALUE 0xFFFFFFFFU
@@ -173,14 +173,14 @@ typedef unsigned short   UINT16;
 #else
 typedef INT32            INT16;
 typedef UINT32           UINT16;
-#endif
+#endif // SIZEOF INT16
 #define INT16_MIN_VALUE  (-32768)
 #define INT16_MAX_VALUE  32767
 #define UINT16_MAX_VALUE 0xFFFFU
 
 #ifndef SMALLEST_INT_GTE_NEG_QUOTIENT
 #define LARGEST_INT_LTE_NEG_QUOTIENT
-#endif
+#endif // !SMALLEST_INT_GTE_NEG_QUOTIENT
 
 
 extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
@@ -191,7 +191,7 @@ extern BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo);
 
 #ifndef STANDALONE
 //#define MEMORY_ACCOUNTING
-#endif
+#endif // !STANDALONE
 
 // Memory Allocation Accounting
 //
@@ -202,11 +202,11 @@ extern void *MemRealloc(void *p, size_t n, const char *f, int l);
 #define MEMALLOC(n)          MemAllocate((n), __FILE__, __LINE__)
 #define MEMFREE(p)           MemFree((p), __FILE__, __LINE__)
 #define MEMREALLOC(p, n)     MemRealloc((p), (n), __FILE__, __LINE__)
-#else
+#else // MEMORY_ACCOUNTING
 #define MEMALLOC(n)          malloc((n))
 #define MEMFREE(p)           free((p))
 #define MEMREALLOC(p, n)     realloc((p),(n))
-#endif
+#endif // MEMORY_ACCOUNTING
 
 // If it's Hewlett Packard, then getrusage is provided a different
 // way.
@@ -215,6 +215,6 @@ extern void *MemRealloc(void *p, size_t n, const char *f, int l);
 #define HAVE_GETRUSAGE 1
 #include <sys/syscall.h>
 #define getrusage(x,p)   syscall(SYS_GETRUSAGE,x,p)
-#endif
+#endif // hpux
 
-#endif
+#endif // !CONFIG_H

@@ -1,6 +1,6 @@
 // ansi.h
 //
-// $Id: ansi.h,v 1.3 2002-06-19 06:51:06 sdennis Exp $ */
+// $Id: ansi.h,v 1.4 2002-07-23 05:36:12 jake Exp $ */
 //
 // ANSI control codes for various neat-o terminal effects
 //
@@ -48,4 +48,4 @@
 #define ANSI_BCYAN      "\033[46m"
 #define ANSI_BWHITE     "\033[47m"
 
-#endif
+#endif // !_ANSI_H

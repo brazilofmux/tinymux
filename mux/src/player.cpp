@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.9 2002-07-17 06:58:15 sdennis Exp $
+// $Id: player.cpp,v 1.10 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -46,9 +46,8 @@ struct logindata {
 };
 
 
-/*
- * ---------------------------------------------------------------------------
- * * decrypt_logindata, encrypt_logindata: Decode and encode login info.
+/* ---------------------------------------------------------------------------
+ * decrypt_logindata, encrypt_logindata: Decode and encode login info.
  */
 
 static void decrypt_logindata(char *atrbuf, LDATA *info)
@@ -90,13 +89,11 @@ static void decrypt_logindata(char *atrbuf, LDATA *info)
 
 static void encrypt_logindata(char *atrbuf, LDATA *info)
 {
-    char *bp, nullc;
-    int i;
-
     // Make sure the SPRINTF call tracks NUM_GOOD and NUM_BAD for the number
     // of host/dtm pairs of each type.
     //
-    nullc = '\0';
+    char nullc = '\0';
+    int i;
     for (i = 0; i < NUM_GOOD; i++)
     {
         if (!info->good[i].host)
@@ -111,7 +108,7 @@ static void encrypt_logindata(char *atrbuf, LDATA *info)
         if (!info->bad[i].dtm)
             info->bad[i].dtm = &nullc;
     }
-    bp = alloc_lbuf("encrypt_logindata");
+    char *bp = alloc_lbuf("encrypt_logindata");
     sprintf(bp, "#%d;%s;%s;%s;%s;%s;%s;%s;%s;%d;%d;%s;%s;%s;%s;%s;%s;",
         info->tot_good,
         info->good[0].host, info->good[0].dtm,
@@ -126,21 +123,19 @@ static void encrypt_logindata(char *atrbuf, LDATA *info)
     free_lbuf(bp);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * record_login: Record successful or failed login attempt.
- * * If successful, report last successful login and number of failures since
- * * last successful login.
+/* ---------------------------------------------------------------------------
+ * record_login: Record successful or failed login attempt.
+ * If successful, report last successful login and number of failures since
+ * last successful login.
  */
 
 void record_login(dbref player, BOOL isgood, char *ldate, char *lhost, char *lusername, char *lipaddr)
 {
     LDATA login_info;
-    char *atrbuf;
     dbref aowner;
     int aflags, i;
 
-    atrbuf = atr_get(player, A_LOGINDATA, &aowner, &aflags);
+    char *atrbuf = atr_get(player, A_LOGINDATA, &aowner, &aflags);
     decrypt_logindata(atrbuf, &login_info);
     if (isgood)
     {
@@ -194,9 +189,8 @@ void record_login(dbref player, BOOL isgood, char *ldate, char *lhost, char *lus
     free_lbuf(atrbuf);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * check_pass: Test a password to see if it is correct.
+/* ---------------------------------------------------------------------------
+ * check_pass: Test a password to see if it is correct.
  */
 
 BOOL check_pass(dbref player, const char *password)
@@ -226,9 +220,8 @@ BOOL check_pass(dbref player, const char *password)
     return TRUE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * connect_player: Try to connect to an existing player.
+/* ---------------------------------------------------------------------------
+ * connect_player: Try to connect to an existing player.
  */
 
 dbref connect_player(char *name, char *password, char *host, char *username, char *ipaddr)
@@ -271,9 +264,8 @@ dbref connect_player(char *name, char *password, char *host, char *username, cha
     return player;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * create_player: Create a new player.
+/* ---------------------------------------------------------------------------
+ * create_player: Create a new player.
  */
 
 dbref create_player(char *name, char *password, dbref creator, BOOL isrobot, BOOL isguest)
@@ -319,9 +311,8 @@ dbref create_player(char *name, char *password, dbref creator, BOOL isrobot, BOO
     return player;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_password: Change the password for a player
+/* ---------------------------------------------------------------------------
+ * do_password: Change the password for a player
  */
 
 void do_password
@@ -342,11 +333,7 @@ void do_password
     {
         notify(executor, "Sorry.");
     }
-    else if (!ok_password(newpass, executor))
-    {
-        // Do nothing, notification is handled by ok_password()
-    }
-    else
+    else if (ok_password(newpass, executor))
     {
         atr_add_raw(executor, A_PASS, crypt(newpass, "XX"));
         notify(executor, "Password changed.");
@@ -354,14 +341,14 @@ void do_password
     free_lbuf(target);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_last Display login history data.
+/* ---------------------------------------------------------------------------
+ * do_last: Display login history data.
  */
 
 static void disp_from_on(dbref player, char *dtm_str, char *host_str)
 {
-    if (dtm_str && *dtm_str && host_str && *host_str) {
+    if (dtm_str && *dtm_str && host_str && *host_str)
+    {
         notify(player,
                tprintf("     From: %s   On: %s", dtm_str, host_str));
     }
@@ -370,15 +357,13 @@ static void disp_from_on(dbref player, char *dtm_str, char *host_str)
 void do_last(dbref executor, dbref caller, dbref enactor, int key, char *who)
 {
     dbref target, aowner;
-    LDATA login_info;
-    char *atrbuf;
     int i, aflags;
 
     if (!who || !*who)
     {
         target = Owner(executor);
     }
-    else if (!(string_compare(who, "me")))
+    else if (!string_compare(who, "me"))
     {
         target = Owner(executor);
     }
@@ -397,7 +382,8 @@ void do_last(dbref executor, dbref caller, dbref enactor, int key, char *who)
     }
     else
     {
-        atrbuf = atr_get(target, A_LOGINDATA, &aowner, &aflags);
+        char *atrbuf = atr_get(target, A_LOGINDATA, &aowner, &aflags);
+        LDATA login_info;
         decrypt_logindata(atrbuf, &login_info);
 
         notify(executor, tprintf("Total successful connects: %d", login_info.tot_good));
@@ -414,16 +400,14 @@ void do_last(dbref executor, dbref caller, dbref enactor, int key, char *who)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * add_player_name, delete_player_name, lookup_player:
- * * Manage playername->dbref mapping
+/* ---------------------------------------------------------------------------
+ * add_player_name, delete_player_name, lookup_player:
+ * Manage playername->dbref mapping
  */
 
 BOOL add_player_name(dbref player, char *name)
 {
     int stat;
-    dbref *p;
     char *temp, *tp;
 
     // Convert to all lowercase.
@@ -433,10 +417,9 @@ BOOL add_player_name(dbref player, char *name)
     *tp = '\0';
     _strlwr(temp);
 
-    p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
+    dbref *p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
     if (p)
     {
-
         // Entry found in the hashtable.  If a player, succeed if the
         // numbers match (already correctly in the hash table), fail
         // if they don't. Fail if the name is a disallowed name
@@ -447,7 +430,7 @@ BOOL add_player_name(dbref player, char *name)
             free_lbuf(temp);
             return FALSE;
         }
-        if (Good_obj(*p) && (Typeof(*p) == TYPE_PLAYER))
+        if (Good_obj(*p) && isPlayer(*p))
         {
             free_lbuf(temp);
             if (*p == player)
@@ -485,7 +468,6 @@ BOOL add_player_name(dbref player, char *name)
 
 BOOL delete_player_name(dbref player, char *name)
 {
-    dbref *p;
     char *temp, *tp;
 
     tp = temp = alloc_lbuf("delete_player_name");
@@ -493,7 +475,7 @@ BOOL delete_player_name(dbref player, char *name)
     *tp = '\0';
     _strlwr(temp);
 
-    p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
+    dbref *p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
     if (  !p
        || *p == NOTHING
        || (  player != NOTHING
@@ -511,14 +493,12 @@ BOOL delete_player_name(dbref player, char *name)
 
 dbref lookup_player(dbref doer, char *name, BOOL check_who)
 {
-    dbref *p, thing;
-    char *temp, *tp;
-
     if (!string_compare(name, "me"))
     {
         return doer;
     }
 
+    dbref thing;
     if (*name == NUMBER_TOKEN)
     {
         name++;
@@ -537,11 +517,12 @@ dbref lookup_player(dbref doer, char *name, BOOL check_who)
         }
         return thing;
     }
+    char *temp, *tp;
     tp = temp = alloc_lbuf("lookup_player");
     safe_str(name, temp, &tp);
     *tp = '\0';
     _strlwr(temp);
-    p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
+    dbref *p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
     free_lbuf(temp);
     if (!p)
     {
@@ -597,9 +578,8 @@ void load_player_names(void)
     free_lbuf(alias);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * badname_add, badname_check, badname_list: Add/look for/display bad names.
+/* ---------------------------------------------------------------------------
+ * badname_add, badname_check, badname_list: Add/look for/display bad names.
  */
 
 void badname_add(char *bad_name)
@@ -666,7 +646,8 @@ void badname_list(dbref player, const char *prefix)
     //
     buff = bufp = alloc_lbuf("badname_list");
     safe_str(prefix, buff, &bufp);
-    for (bp = mudstate.badname_head; bp; bp = bp->next) {
+    for (bp = mudstate.badname_head; bp; bp = bp->next)
+    {
         safe_chr(' ', buff, &bufp);
         safe_str(bp->name, buff, &bufp);
     }

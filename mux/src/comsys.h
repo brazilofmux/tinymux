@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.7 2002-07-18 03:56:53 jake Exp $
+// $Id: comsys.h,v 1.8 2002-07-23 05:36:12 jake Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -91,7 +91,9 @@ void do_comlast(dbref player, struct channel *ch, int arg);
 void do_leavechannel(dbref player, struct channel *ch);
 void do_delcomchannel(dbref player, char *channel, BOOL bQuiet);
 void do_listchannels(dbref player);
+#if 0
 void do_cleanupchannels(void);
+#endif // 0
 void do_channelnuke(dbref player);
 void sort_users(struct channel *ch);
 void do_comconnectchannel(dbref player, char *channel, char *alias, int i);
@@ -121,18 +123,9 @@ extern int max_channels;
 extern struct channel **channels;
 
 struct channel *select_channel(char *channel);
-
 struct comuser *select_user(struct channel *ch, dbref player);
 
 char  *get_channel_from_alias();
-
-char  *add_lastcom();
-
-char  *sort_channels();
-char  *check_channel();
-char  *add_spaces();
-
-char  *send_csdebug();
 
 BOOL  do_comsystem(dbref who, char *cmd);
 char  *do_comdisconnectnotify();

@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.6 2002-07-17 06:58:15 sdennis Exp $
+// $Id: timeutil.cpp,v 1.7 2002-07-23 05:36:13 jake Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -145,7 +145,6 @@ int iFloorDivision(int x, int y)
     }
 }
 
-
 INT64 i64FloorDivision(INT64 x, INT64 y)
 {
     if (y < 0)
@@ -256,7 +255,7 @@ INT64 i64CeilingDivision(INT64 x, INT64 y)
         return (x + y - 1) / y;
     }
 }
-#endif
+#endif // 0
 
 #else // LARGEST_INT_LTE_NEG_QUOTIENT
 
@@ -387,7 +386,7 @@ INT64 DCL_INLINE i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
     *piMod = x % y;
     return x / y;
 }
-#endif
+#endif // LARGEST_INT_LTE_NEG_QUOTIENT
 
 int iModAdjusted(int x, int y)
 {
@@ -398,13 +397,13 @@ INT64 i64ModAdjusted(INT64 x, INT64 y)
 {
     return i64Mod(x - 1, y) + 1;
 }
-#endif
+#endif // 0
 
 #ifdef WIN32
 const INT64 FACTOR_100NS_PER_SECOND = 10000000i64;
-#else
+#else // WIN32
 const INT64 FACTOR_100NS_PER_SECOND = 10000000ull;
-#endif
+#endif // WIN32
 const INT64 FACTOR_100NS_PER_MINUTE = FACTOR_100NS_PER_SECOND*60;
 const INT64 FACTOR_100NS_PER_HOUR   = FACTOR_100NS_PER_MINUTE*60;
 const INT64 FACTOR_100NS_PER_DAY = FACTOR_100NS_PER_HOUR*24;
@@ -2680,7 +2679,7 @@ int memicmp(char *p1, char *p2, int n)
     }
     return 0;
 }
-#endif
+#endif // !WIN32
 
 PD_Node *PD_ScanNextToken(char **ppString)
 {

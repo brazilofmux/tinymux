@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.2 2002-07-21 23:55:01 sdennis Exp $
+// $Id: svdhash.h,v 1.3 2002-07-23 05:36:13 jake Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -40,16 +40,16 @@ extern UINT32 HASH_ProcessBuffer
 
 #ifdef STANDALONE
 #define HF_PAGES 650
-#else
+#else // STANDALONE
 #define HF_PAGES 40
-#endif
+#endif // STANDALONE
 
 #ifdef _SGI_SOURCE
 #define EXPAND_TO_BOUNDARY(x) (((x) + 3) & (~3))
 typedef unsigned int HP_HEAPOFFSET, *HP_PHEAPOFFSET;
 typedef unsigned int HP_HEAPLENGTH, *HP_PHEAPLENGTH;
 typedef unsigned int HP_DIRINDEX, *HP_PDIRINDEX;
-#else
+#else //_SGI_SOURCE
 #define EXPAND_TO_BOUNDARY(x) (((x) + 1) & (~1))
 typedef unsigned short HP_HEAPOFFSET, *HP_PHEAPOFFSET;
 typedef unsigned short HP_HEAPLENGTH, *HP_PHEAPLENGTH;
@@ -124,7 +124,7 @@ private:
     BOOL ValidateAllocatedBlock(UINT32 iDir);
     BOOL ValidateFreeBlock(HP_HEAPOFFSET oBlock);
     BOOL ValidateFreeList(void);
-#endif
+#endif // HP_PROTECTION
     BOOL HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
     void SetVariablePointers(void);
     void SetFixedPointers(void);
@@ -138,7 +138,7 @@ public:
 #ifdef HP_PROTECTION
     void Protection(void);
     BOOL Validate(void);
-#endif
+#endif // HP_PROTECTION
 
 #define HP_INSERT_SUCCESS_DEFRAG 0
 #define HP_INSERT_SUCCESS        1
@@ -279,10 +279,10 @@ private:
     CLinearTimeAbsolute m_ltaStarted;
 #ifdef WIN32
     CRITICAL_SECTION csLog;
-#endif
+#endif // WIN32
     HANDLE m_hFile;
     int  m_nSize;
-#endif
+#endif // !STANDALONE
     int  m_nBuffer;
     char m_aBuffer[SIZEOF_LOG_BUFFER];
 #ifndef STANDALONE
@@ -292,7 +292,7 @@ private:
     void CreateLogFile(void);
     void AppendLogFile(void);
     void CloseLogFile(void);
-#endif
+#endif // !STANDALONE
 public:
     CLogFile(void);
     ~CLogFile(void);
@@ -306,5 +306,5 @@ public:
 
 extern CLogFile Log;
 
-#endif
+#endif //!SVDHASH_H
 

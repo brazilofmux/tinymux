@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.11 2002-07-22 06:28:44 sdennis Exp $
+// $Id: bsd.cpp,v 1.12 2002-07-23 05:36:12 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -589,19 +589,12 @@ failure:
 //
 static int get_slave_result()
 {
-    char *buf;
-    char *token;
-    char *os;
-    char *userid;
-    char *host;
     int local_port, remote_port;
-    char *p;
     DESC *d;
-    int len;
 
-    buf = alloc_lbuf("slave_buf");
+    char *buf = alloc_lbuf("slave_buf");
 
-    len = read(slave_socket, buf, LBUF_SIZE-1);
+    int len = read(slave_socket, buf, LBUF_SIZE-1);
     if (len < 0)
     {
         int iSocketError = SOCKET_LAST_ERROR;
@@ -627,16 +620,16 @@ static int get_slave_result()
     }
     buf[len] = '\0';
 
-    token = alloc_lbuf("slave_token");
-    os = alloc_lbuf("slave_os");
-    userid = alloc_lbuf("slave_userid");
-    host = alloc_lbuf("slave_host");
+    char *token = alloc_lbuf("slave_token");
+    char *os = alloc_lbuf("slave_os");
+    char *userid = alloc_lbuf("slave_userid");
+    char *host = alloc_lbuf("slave_host");
 
     if (sscanf(buf, "%s %s", host, token) != 2)
     {
         goto Done;
     }
-    p = strchr(buf, '\n');
+    char *p = strchr(buf, '\n');
     *p = '\0';
     if (mudconf.use_hostname)
     {
@@ -2035,14 +2028,12 @@ FTASK *process_output = 0;
 void process_output9x(void *dvoid, int bHandleShutdown)
 {
     DESC *d = (DESC *)dvoid;
-    TBLOCK *tb;
     int cnt;
-    char *cmdsave;
 
-    cmdsave = mudstate.debug_cmd;
+    char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = "< process_output >";
 
-    tb = d->output_head;
+    TBLOCK *tb = d->output_head;
 
     while (tb != NULL)
     {
@@ -2083,7 +2074,6 @@ void process_output9x(void *dvoid, int bHandleShutdown)
 int AsyncSend(DESC *d, char *buf, int len)
 {
     DWORD nBytes;
-    BOOL bResult;
 
     // Move data from one buffer to another.
     //
@@ -2104,7 +2094,7 @@ int AsyncSend(DESC *d, char *buf, int len)
     d->OutboundOverlapped.Offset = 0;
     d->OutboundOverlapped.OffsetHigh = 0;
 
-    bResult = WriteFile((HANDLE) d->descriptor, d->output_buffer, nBytes, NULL, &d->OutboundOverlapped);
+    BOOL bResult = WriteFile((HANDLE) d->descriptor, d->output_buffer, nBytes, NULL, &d->OutboundOverlapped);
 
     d->bWritePending = FALSE;
 
@@ -2145,14 +2135,12 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
         return;
     }
 
-    TBLOCK *tb, *save;
-    int cnt;
-    char *cmdsave;
-
-    cmdsave = mudstate.debug_cmd;
+    char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = "< process_output >";
 
-    tb = d->output_head;
+    TBLOCK *tb = d->output_head;
+    TBLOCK *save;
+    int cnt;
 
     if (tb != NULL)
     {
@@ -2248,17 +2236,16 @@ void process_output(void *dvoid, int bHandleShutdown)
 
 BOOL process_input_helper(DESC *d, char *buf, int got)
 {
-    char *p, *pend, *q, *qend;
-    int lost, in = got;
-
     if (!d->raw_input)
     {
         d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
         d->raw_input_at = d->raw_input->cmd;
     }
-    p = d->raw_input_at;
-    pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
-    lost = 0;
+    int in = got;
+    int lost = 0;
+    char *p = d->raw_input_at;
+    char *pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
+    char *q, *qend;
     for (q = buf, qend = buf + got; q < qend; q++)
     {
         if (*q == '\n')
@@ -2279,12 +2266,17 @@ BOOL process_input_helper(DESC *d, char *buf, int got)
                 in -= 1;
             }
         }
-        else if ((*q == '\b') || (*q == 127))
+        else if (  (*q == '\b')
+                || (*q == 127))
         {
             if (*q == 127)
+            {
                 queue_string(d, "\b \b");
+            }
             else
+            {
                 queue_string(d, " \b");
+            }
 
             // For the backspace.
             //
@@ -3438,7 +3430,7 @@ void SiteMonSend(int port, const char *address, DESC *d, const char *msg)
         return;
     }
 
-    // Build The msg.
+    // Build the msg.
     //
     char *sendMsg;
     BOOL bSuspect = (d != NULL) && (d->host_info & H_SUSPECT);

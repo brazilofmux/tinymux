@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.7 2002-07-13 07:23:01 jake Exp $
+// $Id: flags.cpp,v 1.8 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -13,9 +13,8 @@
 
 #ifndef STANDALONE
 
-/*
- * ---------------------------------------------------------------------------
- * * fh_any: set or clear indicated bit, no security checking
+/* ---------------------------------------------------------------------------
+ * fh_any: set or clear indicated bit, no security checking
  */
 
 BOOL fh_any(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
@@ -44,9 +43,8 @@ BOOL fh_any(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
     return TRUE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fh_god: only GOD may set or clear the bit
+/* ---------------------------------------------------------------------------
+ * fh_god: only GOD may set or clear the bit
  */
 
 BOOL fh_god(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
@@ -170,7 +168,7 @@ BOOL fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
 
 /*
  * ---------------------------------------------------------------------------
- * * fh_going_bit: manipulate the going bit.  Non-gods may only clear on rooms.
+ * * fh_going_bit: manipulate the going bit.  Non-gods may only clear.
  */
 
 BOOL fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
@@ -191,7 +189,7 @@ BOOL fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
     //
     if (  !reset
        && (  target == 0
-          || target == God(target)
+          || God(target)
           || target == mudconf.start_home
           || target == mudconf.start_room
           || target == mudconf.default_home
@@ -440,7 +438,7 @@ FLAGNAMEENT gen_flag_names[] =
     {NULL,             FALSE, NULL}
 };
 
-#endif
+#endif // !STANDALONE
 
 OBJENT object_types[8] =
 {
@@ -455,9 +453,8 @@ OBJENT object_types[8] =
 
 #ifndef STANDALONE
 
-/*
- * ---------------------------------------------------------------------------
- * * init_flagtab: initialize flag hash tables.
+/* ---------------------------------------------------------------------------
+ * init_flagtab: initialize flag hash tables.
  */
 
 void init_flagtab(void)
@@ -473,9 +470,8 @@ void init_flagtab(void)
     free_sbuf(nbuf);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * display_flags: display available flags.
+/* ---------------------------------------------------------------------------
+ * display_flags: display available flags.
  */
 
 void display_flagtab(dbref player)

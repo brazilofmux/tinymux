@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.33 2002-07-19 08:23:25 jake Exp $
+// $Id: externs.h,v 1.34 2002-07-23 05:36:13 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -37,13 +37,12 @@ extern int  nfy_que(dbref, int, int, int);
 extern int  halt_que(dbref, dbref);
 extern void wait_que(dbref executor, dbref caller, dbref enactor, BOOL,
     CLinearTimeAbsolute&, dbref, int, char *, char *[],int, char *[]);
-extern void recover_queue_deposits(void);
 
-#ifdef WIN32 // WIN32
+#ifdef WIN32
 #include "crypt/crypt.h"
-#else
+#else // WIN32
 extern "C" char *crypt(const char *inptr, const char *inkey);
-#endif
+#endif // WIN32
 
 /* From eval.cpp */
 void tcache_init(void);
@@ -79,8 +78,13 @@ extern const signed char Tiny_IsRegister[256];
 extern void notify_except(dbref, dbref, dbref, const char *, int key);
 extern void notify_except2(dbref, dbref, dbref, dbref, const char *);
 
-extern BOOL check_filter(dbref, dbref, int, const char *);
+#ifdef STANDALONE
+#define notify_check(p,c,m,k) 
+#else
 extern void notify_check(dbref, dbref, const char *, int);
+#endif
+
+extern BOOL check_filter(dbref, dbref, int, const char *);
 extern BOOL Hearer(dbref);
 extern void report(void);
 extern int  atr_match(dbref, dbref, char, char *, BOOL);
@@ -95,7 +99,7 @@ extern BOOL html_escape(const char *src, char *dest, char **destp);
 #define DUMP_I_SIGNAL    4  // UNLOAD to a .FLAT file from signal.
 #define NUM_DUMP_TYPES   5
 extern void dump_database_internal(int);
-#endif
+#endif // !STANDALONE
 
 /* From help.cpp */
 extern void helpindex_clean(CHashTable *htab);
@@ -109,9 +113,9 @@ extern int  cf_ntab_access(int *, char *, void *, UINT32, dbref, char *);
 /* From log.cpp */
 #ifdef WIN32
 #define ENDLINE "\r\n"
-#else
+#else // WIN32
 #define ENDLINE "\n"
-#endif
+#endif // WIN32
 extern BOOL start_log(const char *primary, const char *secondary);
 extern void end_log(void);
 extern void log_perror(const char *, const char *,const char *,
@@ -148,7 +152,6 @@ extern void  empty_obj(dbref);
 
 /* From player.cpp */
 extern void record_login(dbref, BOOL, char *, char *, char *, char *);
-extern BOOL check_pass(dbref, const char *);
 extern dbref connect_player(char *, char *, char *, char *, char *);
 extern dbref create_player(char *, char *, dbref, BOOL, BOOL);
 extern BOOL add_player_name(dbref, char *);
@@ -188,8 +191,6 @@ extern BOOL nearby(dbref, dbref);
 extern BOOL exit_visible(dbref, dbref, int);
 extern BOOL exit_displayable(dbref, dbref, int);
 extern void did_it(dbref, dbref, int, const char *, int, const char *, int, char *[], int);
-extern void list_bufstats(dbref);
-extern void list_buftrace(dbref);
 extern BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bParentCheck);
 extern BOOL bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 
@@ -222,7 +223,7 @@ extern char *split_token(char **sp, char sep);
 #define IEEE_MAKE_NINF 4
 
 double MakeSpecialFloat(int iWhich);
-#endif
+#endif // HAVE_IEEE_FP_FORMAT
 
 /* From unparse.cpp */
 extern char *unparse_boolexp(dbref, BOOLEXP *);
@@ -242,11 +243,6 @@ extern dbref olist_next(void);
 extern BOOL wild(char *, char *, char *[], int);
 extern BOOL wild_match(char *, char *);
 extern BOOL quick_wild(char *, const char *);
-
-/* From compress.cpp */
-extern const char *uncompress(const char *, int);
-extern const char *compress(const char *, int);
-extern char *uncompress_str(char *, const char *, int);
 
 /* From command.cpp */
 extern BOOL check_access(dbref player, int mask);
@@ -273,7 +269,6 @@ extern void fwdlist_clr(dbref);
 extern int  fwdlist_rewrite(FWDLIST *, char *);
 extern FWDLIST *fwdlist_get(dbref);
 extern void clone_object(dbref, dbref);
-extern void init_min_db(void);
 extern void atr_push(void);
 extern void atr_pop(void);
 extern int  atr_head(dbref, char **);
@@ -303,9 +298,9 @@ extern void atr_free(dbref);
 extern BOOL check_zone_handler(dbref player, dbref thing, BOOL bPlayerCheck);
 #ifdef STANDALONE
 #define check_zone(player, thing) FALSE
-#else
+#else // STANDALONE
 #define check_zone(player, thing) check_zone_handler(player, thing, FALSE)
-#endif
+#endif // STANDALONE
 extern void ReleaseAllResources(dbref obj);
 extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 
@@ -320,7 +315,7 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define CEMIT_NOHEADER  1   /* Channel emit without header */
 #define CHOWN_ONE       1   /* item = new_owner */
 #define CHOWN_ALL       2   /* old_owner = new_owner */
-#define CHOWN_NOSTRIP   4   /* Don't strip (most) flags from object */
+//#define CHOWN_NOSTRIP   4   /* Don't strip (most) flags from object */
 #define CHOWN_NOZONE    8   /* Strip zones from objects */
 #define CLIST_FULL      1   /* Full listing of channels */
 #define CLIST_HEADERS   2   /* Lists channel headers, like "[Public]" */
@@ -349,22 +344,22 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define CSET_HEADER     8   /* Sets the channel header, like "[Public]" */
 #define CSET_LOG        9   // Set maximum number of messages to log.
 #define DBCK_DEFAULT    1   /* Get default tests too */
-#define DBCK_REPORT     2   /* Report info to invoker */
+//#define DBCK_REPORT     2   /* Report info to invoker */
 #define DBCK_FULL       4   /* Do all tests */
-#define DBCK_FLOATING   8   /* Look for floating rooms */
-#define DBCK_PURGE      16  /* Purge the db of refs to going objects */
-#define DBCK_LINKS      32  /* Validate exit and object chains */
-#define DBCK_WEALTH     64  /* Validate object value/wealth */
-#define DBCK_OWNER      128 /* Do more extensive owner checking */
-#define DBCK_OWN_EXIT   256 /* Check exit owner owns src or dest */
-#define DBCK_WIZARD     512 /* Check for wizards/wiz objects */
-#define DBCK_TYPES      1024    /* Check for valid & appropriate types */
-#define DBCK_SPARE      2048    /* Make sure spare header fields are NOTHING */
-#define DBCK_HOMES      4096    /* Make sure homes and droptos are valid */
+//#define DBCK_FLOATING   8   /* Look for floating rooms */
+//#define DBCK_PURGE      16  /* Purge the db of refs to going objects */
+//#define DBCK_LINKS      32  /* Validate exit and object chains */
+//#define DBCK_WEALTH     64  /* Validate object value/wealth */
+//#define DBCK_OWNER      128 /* Do more extensive owner checking */
+//#define DBCK_OWN_EXIT   256 /* Check exit owner owns src or dest */
+//#define DBCK_WIZARD     512 /* Check for wizards/wiz objects */
+//#define DBCK_TYPES      1024    /* Check for valid & appropriate types */
+//#define DBCK_SPARE      2048    /* Make sure spare header fields are NOTHING */
+//#define DBCK_HOMES      4096    /* Make sure homes and droptos are valid */
 #define DECOMP_DBREF    1   /* decompile by dbref */
-#define DECOMP_PRETTY   2   /* pretty-format output */
+//#define DECOMP_PRETTY   2   /* pretty-format output */
 #define DEST_ONE        1   /* object */
-#define DEST_ALL        2   /* owner */
+//#define DEST_ALL        2   /* owner */
 #define DEST_OVERRIDE   4   /* override Safe() */
 #define DEST_INSTANT    8   /* instantly destroy */
 #define DIG_TELEPORT    1   /* teleport to room after @digging */
@@ -384,9 +379,8 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define EXAM_LONG       2   /* Nonowner sees public attrs too */
 #define EXAM_DEBUG      4   /* Display more info for finding db problems */
 #define EXAM_PARENT     8   /* Get attr from parent when exam obj/attr */
-#define EXAM_PRETTY     16  /* Pretty-format output */
-#define EXAM_PAIRS      32  /* Print paren matches in color */
-#define EXAM_OWNER      64  /* Nonowner sees just owner */
+//#define EXAM_PRETTY     16  /* Pretty-format output */
+//#define EXAM_PAIRS      32  /* Print paren matches in color */
 #define FIXDB_OWNER     1   /* Fix OWNER field */
 #define FIXDB_LOC       2   /* Fix LOCATION field */
 #define FIXDB_CON       4   /* Fix CONTENTS field */
@@ -397,15 +391,11 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define FIXDB_LINK      128 /* Fix LINK field */
 #define FIXDB_PARENT    256 /* Fix PARENT field */
 #define FIXDB_NAME      2048 /* Set NAME attribute */
-#define FRC_PREFIX      0   /* #num command */
-#define FRC_COMMAND     1   /* what=command */
 #define GET_QUIET       1   /* Don't do osucc/asucc if control */
-#define GIVE_MONEY      1   /* Give money */
-#define GIVE_QUOTA      2   /* Give quota */
 #define GIVE_QUIET      64  /* Inhibit give messages */
 #define GLOB_ENABLE     1   /* key to enable */
 #define GLOB_DISABLE    2   /* key to disable */
-#define GLOB_LIST       3   /* key to list */
+//#define GLOB_LIST       3   /* key to list */
 #define HALT_ALL        1   /* halt everything */
 #define HELP_HELP       1   /* get data from help file */
 #define HELP_NEWS       2   /* get data from news file */
@@ -427,10 +417,6 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define KILL_KILL       1   /* gives victim insurance */
 #define KILL_SLAY       2   /* no insurance */
 #define LOOK_LOOK       1   /* list desc (and succ/fail if room) */
-#define LOOK_EXAM       2   /* full listing of object */
-#define LOOK_DEXAM      3   /* debug listing of object */
-#define LOOK_INVENTORY  4   /* list inventory of object */
-#define LOOK_SCORE      5   /* list score (# coins) */
 #define LOOK_OUTSIDE    8   /* look for object in container of player */
 #define MAIL_STATS      1   /* Mail stats */
 #define MAIL_DSTATS     2   /* More mail stats */
@@ -486,8 +472,6 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define NFY_QUIET       3   /* Suppress "Notified." message */
 #define OPEN_LOCATION   0   /* Open exit in my location */
 #define OPEN_INVENTORY  1   /* Open exit in me */
-#define PASS_ANY        1   /* name=newpass */
-#define PASS_MINE       2   /* oldpass=newpass */
 #define PCRE_PLAYER     1   /* create new player */
 #define PCRE_ROBOT      2   /* create robot player */
 #define PEMIT_PEMIT     1   /* emit to named player */
@@ -513,10 +497,10 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define QUOTA_TOT       4   /* Operate on total quota */
 #define QUOTA_REM       8   /* Operate on remaining quota */
 #define QUOTA_ALL       16  /* Operate on all players */
-#define QUOTA_ROOM      32  /* Room quota set */
-#define QUOTA_EXIT      64  /* Exit quota set */
-#define QUOTA_THING     128 /* Thing quota set */
-#define QUOTA_PLAYER    256 /* Player quota set */
+//#define QUOTA_ROOM      32  /* Room quota set */
+//#define QUOTA_EXIT      64  /* Exit quota set */
+//#define QUOTA_THING     128 /* Thing quota set */
+//#define QUOTA_PLAYER    256 /* Player quota set */
 #define SAY_SAY         1   /* say in current room */
 #define SAY_NOSPACE     1   /* OR with xx_EMIT to get nospace form */
 #define SAY_POSE        2   /* pose in current room */
@@ -600,17 +584,6 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define EV_NO_LOCATION  0x00080000  /* Supresses %l */
 #define EV_NOFCHECK     0x00100000  /* Do not evaluate functions! */
 
-// Termination directives
-//
-#define PT_NOTHING      0x00000000
-#define PT_BRACE        0x00000001
-#define PT_BRACKET      0x00000002
-#define PT_PAREN        0x00000004
-#define PT_COMMA        0x00000008
-#define PT_SEMI         0x00000010
-#define PT_EQUALS       0x00000020
-#define PT_SPACE        0x00000040
-
 /* Message forwarding directives */
 
 #define MSG_PUP_ALWAYS  0x00000001UL    /* Always forward msg to puppet owner */
@@ -645,20 +618,20 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define LK_SHOWVRML     0x0010
 
 /* Quota types */
-#define QTYPE_ALL       0
-#define QTYPE_ROOM      1
-#define QTYPE_EXIT      2
-#define QTYPE_THING     3
-#define QTYPE_PLAYER    4
+//#define QTYPE_ALL       0
+//#define QTYPE_ROOM      1
+//#define QTYPE_EXIT      2
+//#define QTYPE_THING     3
+//#define QTYPE_PLAYER    4
 
 /* Exit visibility precalculation codes */
 
 #define VE_LOC_XAM      0x01    /* Location is examinable */
 #define VE_LOC_DARK     0x02    /* Location is dark */
 #define VE_LOC_LIGHT    0x04    /* Location is light */
-#define VE_BASE_XAM     0x08    /* Base location (pre-parent) is examinable */
+//#define VE_BASE_XAM     0x08    /* Base location (pre-parent) is examinable */
 #define VE_BASE_DARK    0x10    /* Base location (pre-parent) is dark */
-#define VE_BASE_LIGHT   0x20    /* Base location (pre-parent) is light */
+//#define VE_BASE_LIGHT   0x20    /* Base location (pre-parent) is light */
 
 /* Signal handling directives */
 
@@ -745,7 +718,7 @@ extern void list_system_resources(dbref player);
 
 #define REALM_DISABLE_ADESC           0x00000008L
 extern int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state);
-#endif
+#endif // WOD_REALMS
 
 typedef struct
 {
@@ -784,7 +757,7 @@ extern INT64 QP_A;
 extern INT64 QP_B;
 extern INT64 QP_C;
 extern INT64 QP_D;
-#else
+#else // WIN32
 extern pid_t game_pid;
 #endif // WIN32
 

@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.18 2002-07-21 03:37:55 sdennis Exp $
+// $Id: look.cpp,v 1.19 2002-07-23 05:36:13 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -90,11 +90,11 @@ int RealmExitsMap[NUMBER_OF_REALMS][NUMBER_OF_REALMS] =
 int WhichRealm(dbref what, int bPeering)
 {
     int realm = NORMAL_REALM;
-    if (isFae(what))     realm = FAE_REALM;
-    if (isChimera(what)) realm = CHIMERA_REALM;
-    if (isShroud(what))  realm = SHROUD_REALM;
-    if (isUmbra(what))   realm = UMBRA_REALM;
-    if (isMatrix(what))  realm = MATRIX_REALM;
+    if (isMatrix(what))       realm = MATRIX_REALM;
+    else if (isUmbra(what))   realm = UMBRA_REALM;
+    else if (isShroud(what))  realm = SHROUD_REALM;
+    else if (isChimera(what)) realm = CHIMERA_REALM;
+    else if (isFae(what))     realm = FAE_REALM;
 
     if (bPeering)
     {
@@ -256,7 +256,7 @@ int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state)
         }
 
         int iMap = RealmHiddenMap[realmLooker][realmLookee];
-        if ((iMap & MAP_HIDE))
+        if (iMap & MAP_HIDE)
         {
             return REALM_DO_HIDDEN_FROM_YOU;
         }
@@ -405,15 +405,15 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     if (isMatrix(player)) return;
 #endif
 
-    dbref thing, parent;
-    char *buff, *e, *s, *buff1, *e1;
-
     // Make sure location has exits.
     //
     if (!Good_obj(loc) || !Has_exits(loc))
     {
         return;
     }
+
+    dbref thing, parent;
+    char *buff, *e, *s, *buff1, *e1;
 
     // make sure there is at least one visible exit.
     //
@@ -585,20 +585,19 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         }
     }
 
-    if (!(Transparent(loc)))
+    if (!Transparent(loc))
     {
         if (Html(player))
         {
             safe_str("\r\n", buff, &e);
-            *e = 0;
             notify_html(player, buff);
         }
         else
         {
-            *e = 0;
             notify(player, buff);
         }
-    }
+        *e = 0;
+   }
     free_lbuf(buff);
     free_lbuf(buff1);
 }

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.18 2002-07-22 06:29:20 sdennis Exp $
+// $Id: game.cpp,v 1.19 2002-07-23 05:36:13 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2113,7 +2113,7 @@ int DCL_CDECL main(int argc, char *argv[])
     CLOSE;
 
     // Go ahead and explicitly free the memory for these things so
-    // that it's easy to spot unintentionally memory leaks.
+    // that it's easy to spot unintentional memory leaks.
     //
     helpindex_clean(&mudstate.staffhelp_htab);
     helpindex_clean(&mudstate.plushelp_htab);

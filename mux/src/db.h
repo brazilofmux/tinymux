@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.6 2002-07-16 05:28:01 jake Exp $
+// $Id: db.h,v 1.7 2002-07-23 05:36:13 jake Exp $
 //
 
 #ifndef __DB_H
@@ -248,4 +248,4 @@ char *getstring_noalloc(FILE *f, int new_strings);
 #define	DO_WHOLE_DB_BACKWARDS(thing) \
 	for ((thing)=mudstate.db_top-1; (thing)>=0; (thing)--)
 
-#endif // __DB_H
+#endif // !__DB_H

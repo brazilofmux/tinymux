@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.4 2002-07-09 08:22:49 jake Exp $
+// $Id: powers.cpp,v 1.5 2002-07-23 05:36:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -11,11 +11,8 @@
 #include "command.h"
 #include "powers.h"
 
-#ifndef STANDALONE
-
-/*
- * ---------------------------------------------------------------------------
- * * ph_any: set or clear indicated bit, no security checking
+/* ---------------------------------------------------------------------------
+ * ph_any: set or clear indicated bit, no security checking
  */
 
 BOOL ph_any(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
@@ -45,9 +42,8 @@ BOOL ph_any(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
     return TRUE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * ph_god: only GOD may set or clear the bit
+/* ---------------------------------------------------------------------------
+ * ph_god: only GOD may set or clear the bit
  */
 
 BOOL ph_god(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
@@ -59,9 +55,8 @@ BOOL ph_god(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
     return (ph_any(target, player, power, fpowers, reset));
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * ph_wiz: only WIZARDS (or GOD) may set or clear the bit
+/* ---------------------------------------------------------------------------
+ * ph_wiz: only WIZARDS (or GOD) may set or clear the bit
  */
 
 BOOL ph_wiz(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
@@ -73,9 +68,8 @@ BOOL ph_wiz(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
     return (ph_any(target, player, power, fpowers, reset));
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * ph_wizroy: only WIZARDS, ROYALTY, (or GOD) may set or clear the bit
+/* ---------------------------------------------------------------------------
+ * ph_wizroy: only WIZARDS, ROYALTY, (or GOD) may set or clear the bit
  */
 
 BOOL ph_wizroy(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
@@ -87,9 +81,8 @@ BOOL ph_wizroy(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
     return (ph_any(target, player, power, fpowers, reset));
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * ph_inherit: only players may set or clear this bit.
+/* ---------------------------------------------------------------------------
+ * ph_inherit: only players may set or clear this bit.
  */
 
 BOOL ph_inherit(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
@@ -136,17 +129,15 @@ POWERENT gen_powers[] =
     {NULL,              0,              0, 0,   0}
 };
 
-/*
- * ---------------------------------------------------------------------------
- * * init_powertab: initialize power hash tables.
+/* ---------------------------------------------------------------------------
+ * init_powertab: initialize power hash tables.
  */
 
 void init_powertab(void)
 {
     POWERENT *fp;
-    char *nbuf;
+    char *nbuf = alloc_sbuf("init_powertab");
 
-    nbuf = alloc_sbuf("init_powertab");
     for (fp = gen_powers; fp->powername; fp++)
     {
         strncpy(nbuf, fp->powername, SBUF_SIZE);
@@ -157,9 +148,8 @@ void init_powertab(void)
     free_sbuf(nbuf);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * display_powers: display available powers.
+/* ---------------------------------------------------------------------------
+ * display_powers: display available powers.
  */
 
 void display_powertab(dbref player)
@@ -202,12 +192,10 @@ POWERENT *find_power(dbref thing, char *powername)
 
 BOOL decode_power(dbref player, char *powername, POWERSET *pset)
 {
-    POWERENT *pent;
-
     pset->word1 = 0;
     pset->word2 = 0;
 
-    pent = (POWERENT *)hashfindLEN(powername, strlen(powername), &mudstate.powers_htab);
+    POWERENT *pent = (POWERENT *)hashfindLEN(powername, strlen(powername), &mudstate.powers_htab);
     if (!pent)
     {
         notify(player, tprintf("%s: Power not found.", powername));
@@ -224,41 +212,45 @@ BOOL decode_power(dbref player, char *powername, POWERSET *pset)
     return TRUE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * power_set: Set or clear a specified power on an object.
+/* ---------------------------------------------------------------------------
+ * power_set: Set or clear a specified power on an object.
  */
 
 void power_set(dbref target, dbref player, char *power, int key)
 {
-    POWERENT *fp;
-    BOOL result;
-
     // Trim spaces, and handle the negation character.
     //
-    BOOL negate = FALSE;
     while (Tiny_IsSpace[(unsigned char)*power])
+    {
         power++;
+    }
 
+    BOOL negate = FALSE;
     if (*power == '!')
     {
         negate = TRUE;
         power++;
     }
     while (Tiny_IsSpace[(unsigned char)*power])
+    {
         power++;
+    }
 
     // Make sure a power name was specified.
     //
     if (*power == '\0')
     {
         if (negate)
+        {
             notify(player, "You must specify a power to clear.");
+        }
         else
+        {
             notify(player, "You must specify a power to set.");
+        }
         return;
     }
-    fp = find_power(target, power);
+    POWERENT *fp = find_power(target, power);
     if (fp == NULL)
     {
         notify(player, "I don't understand that power.");
@@ -267,7 +259,7 @@ void power_set(dbref target, dbref player, char *power, int key)
 
     // Invoke the power handler, and print feedback.
     //
-    result = fp->handler(target, player, fp->powervalue,
+    BOOL result = fp->handler(target, player, fp->powervalue,
                  fp->powerpower, negate);
     if (!result)
     {
@@ -279,10 +271,8 @@ void power_set(dbref target, dbref player, char *power, int key)
     }
 }
 
-
-/*
- * ---------------------------------------------------------------------------
- * * has_power: does object have power visible to player?
+/* ---------------------------------------------------------------------------
+ * has_power: does object have power visible to player?
  */
 
 BOOL has_power(dbref player, dbref it, char *powername)
@@ -318,21 +308,19 @@ BOOL has_power(dbref player, dbref it, char *powername)
     return FALSE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * power_description: Return an mbuf containing the type and powers on thing.
+/* ---------------------------------------------------------------------------
+ * power_description: Return an mbuf containing the type and powers on thing.
  */
 
 char *power_description(dbref player, dbref target)
 {
     char *buff, *bp;
     POWERENT *fp;
-    int otype;
     POWER fv;
 
     // Allocate the return buffer.
     //
-    otype = Typeof(target);
+    int otype = Typeof(target);
     bp = buff = alloc_mbuf("power_description");
 
     // Store the header strings and object type.
@@ -372,20 +360,18 @@ char *power_description(dbref player, dbref target)
 }
 
 
-/*
- * ---------------------------------------------------------------------------
- * * decompile_powers: Produce commands to set powers on target.
+/* ---------------------------------------------------------------------------
+ * decompile_powers: Produce commands to set powers on target.
  */
 
 void decompile_powers(dbref player, dbref thing, char *thingname)
 {
-    POWER f1, f2;
     POWERENT *fp;
 
     // Report generic powers.
     //
-    f1 = Powers(thing);
-    f2 = Powers2(thing);
+    POWER f1 = Powers(thing);
+    POWER f2 = Powers2(thing);
 
     for (fp = gen_powers; fp->powername; fp++)
     {
@@ -425,5 +411,3 @@ void decompile_powers(dbref player, dbref thing, char *thingname)
         notify(player, tprintf("@power %s=%s", strip_ansi(thingname), fp->powername));
     }
 }
-
-#endif // STANDALONE
