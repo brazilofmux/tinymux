@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.13 2002-07-25 22:10:01 jake Exp $
+// $Id: comsys.h,v 1.14 2002-07-27 04:59:43 sdennis Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -63,13 +63,38 @@ typedef struct tagComsys
 void save_comsys(char *filename);
 void load_comsys(char *filename);
 void del_comsys(dbref who);
+void add_comsys(comsys_t *c);
+BOOL do_test_access(dbref player, long access, struct channel *chan);
+void do_joinchannel(dbref player, struct channel *ch);
+void do_comdisconnectchannel(dbref player, char *channel);
+void load_channels(FILE *fp);
+void purge_comsystem(void);
+void save_channels(FILE *fp);
+void destroy_comsys(comsys_t *c);
+void sort_com_aliases(comsys_t *c);
+void load_comsystem(FILE *fp);
+void save_comsystem(FILE *fp);
+void SendChannelMessage
+(
+    dbref  player,
+    struct channel *ch,
+    char  *msgNormal,
+    char  *msgNoComtitle,
+    BOOL   bRaw
+);
+void do_comwho(dbref player, struct channel *ch);
+void do_comlast(dbref player, struct channel *ch, int arg);
+void do_leavechannel(dbref player, struct channel *ch);
+void do_delcomchannel(dbref player, char *channel, BOOL bQuiet);
 #if 0
 void do_cleanupchannels(void);
 #endif // 0
 void do_channelnuke(dbref player);
+void sort_users(struct channel *ch);
 void do_comdisconnect(dbref player);
 void do_comconnect(dbref player);
 void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2);
+void do_cheader(dbref player, char *channel, char *header);
 void do_addcom
 (
     dbref executor,
@@ -81,7 +106,12 @@ void do_addcom
     char *arg2
 );
 
+comsys_t *create_new_comsys ();
+
 struct channel *select_channel(char *channel);
+struct comuser *select_user(struct channel *ch, dbref player);
+
+char  *get_channel_from_alias();
 
 BOOL  do_comsystem(dbref who, char *cmd);
 void  do_chanlist(dbref executor, dbref caller, dbref enactor, int key);
@@ -97,8 +127,12 @@ void  do_chanlist(dbref executor, dbref caller, dbref enactor, int key);
 #define CHANNEL_SPOOF     0x400
 
 
-// Connected players and non-garbage objects are ok.
+// explanation of logic: If it's not owned by god, and it's either not
+// a player, or a connected player, it's good... If it is owned by god,
+// then if it's going, assume it's already gone, no matter what it is.
+// :)
 //
-#define UNDEAD(x) (Good_obj(x) && ((Typeof(x) != TYPE_PLAYER) || Connected(x)))
+#define UNDEAD(x) (((!God(Owner(x))) || !(Going(x))) && \
+        ((Typeof(x) != TYPE_PLAYER) || (Connected(x))))
 
 #endif // __COMSYS_H__

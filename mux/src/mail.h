@@ -1,6 +1,6 @@
 // mail.h
 //
-// $Id: mail.h,v 1.7 2002-07-25 14:34:25 jake Exp $
+// $Id: mail.h,v 1.8 2002-07-27 05:01:22 sdennis Exp $
 //
 
 #ifndef _MAIL_H
@@ -102,7 +102,5 @@ extern void count_mail(dbref player, int folder, int *rcount, int *ucount, int *
 extern char *MessageFetch(int number);
 extern void check_mail_expiration(void);
 extern void check_mail(dbref player, int folder, BOOL silent);
-extern void malias_cleanup(dbref player);
-extern void remove_from_mail(dbref victim);
 
 #endif // !_MAIL_H
