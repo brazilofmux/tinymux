@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.36 2002-09-09 08:52:36 jake Exp $
+// $Id: mail.cpp,v 1.37 2002-09-09 13:35:32 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3199,7 +3199,7 @@ static char *make_numlist(dbref player, char *arg)
     struct mail *temp;
     dbref target;
     int nRecip = 0;
-    dbref aRecip[(LBUF_SIZE/2)];
+    dbref aRecip[(LBUF_SIZE+1)/2];
 
     char *head = arg;
 
@@ -3278,7 +3278,7 @@ static char *make_numlist(dbref player, char *arg)
         }
     }
 
-    if (!aRecip[0])
+    if (nRecip <= 0)
     {
         notify(player, "MAIL: No players specified.");
         return NULL;
@@ -3292,7 +3292,7 @@ static char *make_numlist(dbref player, char *arg)
         int i;
         for (i = 0; i < nRecip; i++)
         {
-            if (i != nRecip)
+            if (aRecip[i] != NOTHING)
             {
                 for (int j = i + 1; j < nRecip; j++)
                 {
@@ -3301,10 +3301,10 @@ static char *make_numlist(dbref player, char *arg)
                         aRecip[j] = NOTHING;
                     }
                 }
-            }
-            if (Good_obj(aRecip[i]))
-            {
-                ItemToList_AddInteger(&itl, aRecip[i]);
+                if (Good_obj(aRecip[i]))
+                {
+                    ItemToList_AddInteger(&itl, aRecip[i]);
+                }
             }
         }
         ItemToList_Final(&itl);
@@ -3511,8 +3511,8 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
     {
         return;
     }
-    if (  (text[1] == '-') 
-       && (text[2] == '\0'))
+    if (  text[1] == '-' 
+       && text[2] == '\0')
     {
         do_expmail_stop(executor, 0);
         return;
