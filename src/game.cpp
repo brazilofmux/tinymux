@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.26 2000-11-11 05:17:51 sdennis Exp $
+// $Id: game.cpp,v 1.27 2001-01-30 23:52:17 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1098,9 +1098,9 @@ typedef struct
 
 DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 {
-    { 0,               ""       , FALSE, 0,                                "" }, // 0 -- Handled specially.
+    { 0,                ""       , FALSE, 0,                                "" }, // 0 -- Handled specially.
     { &mudconf.crashdb, ""       , FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening crash file" }, // 1
-    { &mudconf.indb,    ""       , TRUE,  OUTPUT_VERSION | OUTPUT_FLAGS,    "Opening outputfile" }, // 2
+    { &mudconf.indb,    ""       , TRUE,  OUTPUT_VERSION | OUTPUT_FLAGS,    "Opening input file" }, // 2
     { &mudconf.outdb,   ".FLAT"  , FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening flatfile"   }, // 3
     { &mudconf.indb,    ".KILLED", FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening killed file"}  // 4
 };
@@ -1321,9 +1321,9 @@ void NDECL(dump_database)
     ENDLOG;
     pcache_sync();
 
+    dump_database_internal(DUMP_I_NORMAL);
     SYNC;
 
-    dump_database_internal(DUMP_I_NORMAL);
     STARTLOG(LOG_DBSAVES, "DMP", "DONE")
     log_text((char *)"Dump complete: ");
     log_text(buff);
