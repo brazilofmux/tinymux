@@ -3029,6 +3029,7 @@ POWERS LIST (continued)
   Related Topics: locate().
 
 & @WAIT
+@WAIT
 
   COMMAND: @wait[/until] <seconds>=<command>
            @wait[/until] <object>[/<seconds>]=<command>
@@ -3044,20 +3045,15 @@ POWERS LIST (continued)
   executed at some future time even if the object's semaphore isn't
   notified. This is sometimes refered to as a 'timeout'.
 
-  The third form allows a semaphore attribute other than 'semaphore' to be
-  specified. While there is no provision for a timeout, yet, it does allow
-  for multiple sets of semaphore-blocked commands to use the same object.
-
-  Refer to @notify for more details, but the semaphore count is incremented
-  on every @wait and decremented on every @notify.
+  The third form allows the use of an attribute other than 'semaphore'. It
+  allows multiple sets of semaphore-blocked commands to use the same object.
 
   This command charges a deposit of 10 coins which is refunded when
   <command> is executed or otherwise leaves the queue.
 
-  Finally, by default, <seconds> is taken to be a relative (i.e., 10 seconds
-  from now). However, if the /until switch is used, <seconds> is taken as
-  an absolute point in time (See secs, convtime and convsecs). <seconds> can
-  express fractional seconds.
+  By default, <seconds> is relative to the time @wait is processed, however
+  if /until used, <seconds> is taken as absolute (See secs, convtime and
+  convsecs). <seconds> can also express fractional seconds.
 
   Examples:
      > @wait 2.001=think FooBar
@@ -3066,10 +3062,9 @@ POWERS LIST (continued)
      1004732313
      > @wait/until 1004732400.5=think FooBar
      FooBar
-     > @dolist [setq(0,iadd(secs(),2))]75 0 50 25=@wait/until %q0.##=think ##
+     > @dolist [setq(0,iadd(secs(),2))]75 0 25=@wait/until %q0.##=think ##
      0
      25
-     50
      75
 
   Related Topics: @drain, @notify, @ps, SEMAPHORES, secs, convtime, convsecs.
