@@ -6,12 +6,17 @@ PATH=/usr/ucb:/bin:/usr/bin:.; export PATH
 #
 . mux.config
 #
-#	Make sure there isn't already a MUX running.  If you are running more
-#	than 1 game, comment the following 4 lines out.
+#	Make sure there isn't already a MUX running.
 #
-nmux=`ps ux | egrep netmux | wc -l`
-if [ $nmux -gt 1 ]; then
-	exit 0
+if [ -r "$PIDFILE" ]; then
+    oldpid=`cat $PIDFILE`
+    if [ "$oldpid" -gt 1 ]; then
+        nmux=`ps | grep $oldpid | grep netmux | wc -l`
+        if [ "$nmux" -gt 0 ]; then
+            echo "The MUX already seems to be running."
+            exit 0
+        fi
+    fi
 fi
 #
 #	Save a copy of the previous input database.
@@ -47,5 +52,5 @@ fi
 #
 #	Kick off MUX
 #
-(nohup $BIN/netmux -c $GAMENAME.conf >/dev/null 2>&1 &)
+(nohup $BIN/netmux -c $GAMENAME.conf -p $PIDFILE >/dev/null 2>&1 &)
 

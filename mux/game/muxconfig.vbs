@@ -20,3 +20,4 @@ input_db  = gamename & ".db" & compression
 gdbm_db   = gamename
 crash_db  = gamename & ".db.CRASH"
 save_db   = gamename & ".db.old" & compression
+pidfile   = gamename & ".pid"
