@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.10 2003-07-23 02:34:23 sdennis Exp $
+// $Id: player.cpp,v 1.11 2003-07-23 02:37:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -360,7 +360,7 @@ bool check_pass(dbref player, const char *pPassword)
             char *pSalt = pTarget + SHA1_PREFIX_LENGTH;
             char *pHash;
             if (  *pSalt
-               && (pHash = strchr(pSalt + 1, '|')))
+               && (pHash = strchr(pSalt + 1, '$')))
             {
                 size_t nSalt = pHash - pSalt;
                 pHash++;
