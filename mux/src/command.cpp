@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.100 2003-01-05 16:42:46 sdennis Exp $
+// $Id: command.cpp,v 1.101 2003-01-05 21:49:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -566,8 +566,6 @@ CMDENT_NO_ARG command_table_no_arg[] =
 
 CMDENT_ONE_ARG command_table_one_arg[] =
 {
-    {"+help",         NULL,       CA_PUBLIC,     HELP_PLUSHELP,   CS_ONE_ARG,           0, do_help},
-    {"+shelp",        NULL,       CA_STAFF,      HELP_STAFFHELP,  CS_ONE_ARG,           0, do_help},
     {"@boot",         boot_sw,    CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG|CS_INTERP, 0, do_boot},
     {"@break",        NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_break},
     {"@ccreate",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_createchannel},
@@ -613,9 +611,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"examine",       examine_sw, CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_examine},
     {"get",           get_sw,     CA_LOCATION|CA_NO_GUEST,    0,  CS_ONE_ARG|CS_INTERP, 0, do_get},
     {"goto",          goto_sw,    CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, 0, do_move},
-    {"help",          NULL,       CA_PUBLIC, HELP_HELP|HELP_NOEVAL,  CS_ONE_ARG,           0, do_help},
     {"look",          look_sw,    CA_LOCATION,        LOOK_LOOK,  CS_ONE_ARG|CS_INTERP, 0, do_look},
-    {"news",          NULL,       CA_PUBLIC,          HELP_NEWS,  CS_ONE_ARG,           0, do_help},
     {"outputprefix",  NULL,       CA_PUBLIC,         CMD_PREFIX,  CS_ONE_ARG,           0, logged_out1},
     {"outputsuffix",  NULL,       CA_PUBLIC,         CMD_SUFFIX,  CS_ONE_ARG,           0, logged_out1},
     {"pose",          pose_sw,    CA_LOCATION|CA_NO_SLAVE,  SAY_POSE,   CS_ONE_ARG|CS_INTERP,   0, do_say},
@@ -626,8 +622,6 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"train",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_train},
     {"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,  0,  CS_ONE_ARG|CS_INTERP, 0, do_use},
     {"who",           NULL,       CA_PUBLIC,            CMD_WHO,  CS_ONE_ARG,           0, logged_out1},
-    {"wizhelp",       NULL,       CA_WIZARD, HELP_WIZHELP|HELP_NOEVAL,  CS_ONE_ARG,           0, do_help},
-    {"wiznews",       NULL,       CA_WIZARD, HELP_WIZNEWS|HELP_NOEVAL,  CS_ONE_ARG,           0, do_help},
     {"\\",            NULL,       CA_NO_GUEST|CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP,   0, do_say},
     {":",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
     {";",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},

@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.12 2003-01-05 19:55:36 sdennis Exp $
+// $Id: help.cpp,v 1.13 2003-01-05 21:49:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -11,15 +11,37 @@
 #include <fcntl.h>
 
 #include "help.h"
+#include "command.h"
 
 // Pointers to this struct is what gets stored in the help_htab's.
 //
 struct help_entry
 {
-    int pos;        // Position, copied from help_indx
+    int  pos;       // Position, copied from help_indx
     char original;  // 1 for the longest name for a topic. 0 for
                     // abbreviations.
     char *key;      // The key this is stored under.
+};
+
+typedef struct
+{
+    const char *CommandName;
+    CHashTable *ht;
+    char       **ppTextFile;
+    char       **ppIndexFile;
+    BOOL       bEval;
+    int        permissions;
+} HELP_FILE_DESC;
+
+#define HFTABLE_SIZE 6
+HELP_FILE_DESC hftable[HFTABLE_SIZE] =
+{
+    { "help",    &mudstate.help_htab,      &mudconf.help_file,      &mudconf.help_indx,      FALSE, CA_PUBLIC },
+    { "news",    &mudstate.news_htab,      &mudconf.news_file,      &mudconf.news_indx,      TRUE,  CA_PUBLIC },
+    { "wizhelp", &mudstate.wizhelp_htab,   &mudconf.whelp_file,     &mudconf.whelp_indx,     FALSE, CA_WIZARD },
+    { "+help",   &mudstate.plushelp_htab,  &mudconf.plushelp_file,  &mudconf.plushelp_indx,  TRUE,  CA_PUBLIC },
+    { "wiznews", &mudstate.wiznews_htab,   &mudconf.wiznews_file,   &mudconf.wiznews_indx,   FALSE, CA_WIZARD },
+    { "+shelp",  &mudstate.staffhelp_htab, &mudconf.staffhelp_file, &mudconf.staffhelp_indx, TRUE,  CA_STAFF  }
 };
 
 void helpindex_clean(CHashTable *htab)
@@ -38,18 +60,21 @@ void helpindex_clean(CHashTable *htab)
     hashflush(htab);
 }
 
-int helpindex_read(CHashTable *htab, char *filename)
+int helpindex_read(int iHelpfile)
 {
+    CHashTable *htab = hftable[iHelpfile].ht;
+    char *filename = *hftable[iHelpfile].ppIndexFile;
+
     help_indx entry;
     char *p;
     int count;
-    FILE *fp;
 
     // Let's clean out our hash table, before we throw it away.
     //
     helpindex_clean(htab);
 
-    if ((fp = fopen(filename, "rb")) == NULL)
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX")
         p = alloc_lbuf("helpindex_read.LOG");
@@ -107,19 +132,27 @@ int helpindex_read(CHashTable *htab, char *filename)
 
 void helpindex_load(dbref player)
 {
-    int shelp= helpindex_read(&mudstate.staffhelp_htab, mudconf.staffhelp_indx);
-    int phelp = helpindex_read(&mudstate.plushelp_htab, mudconf.plushelp_indx);
-    int wnhelp = helpindex_read(&mudstate.wiznews_htab, mudconf.wiznews_indx);
-    int news = helpindex_read(&mudstate.news_htab, mudconf.news_indx);
-    int help = helpindex_read(&mudstate.help_htab, mudconf.help_indx);
-    int whelp = helpindex_read(&mudstate.wizhelp_htab, mudconf.whelp_indx);
+    for (int i = 0; i < HFTABLE_SIZE; i++)
+    {
+        CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)MEMALLOC(sizeof(CMDENT_ONE_ARG));
+
+        cmdp->callseq = CS_ONE_ARG;
+        cmdp->cmdname = StringClone(hftable[i].CommandName);
+        cmdp->extra = i;
+        cmdp->handler = do_help;
+        cmdp->hookmask = 0;
+        cmdp->perms = hftable[i].permissions;
+        cmdp->switches = NULL;
+
+        hashaddLEN(cmdp->cmdname, strlen(cmdp->cmdname),
+            (int *)cmdp, &mudstate.command_htab);
+
+        helpindex_read(i);
+    }
     if (  player != NOTHING
        && !Quiet(player))
     {
-        char *p;
-        p = tprintf("Index entries: News...%d  Help...%d  Wizhelp...%d  +Help...%d  Wiznews...%d",
-            news, help, whelp, phelp, wnhelp);
-        notify(player, p);
+        notify(player, "Cache for help indexes refreshed.");
     }
 }
 
@@ -128,8 +161,12 @@ void helpindex_init(void)
     helpindex_load(NOTHING);
 }
 
-void help_write(dbref player, char *topic_arg, CHashTable *htab, char *filename, BOOL bEval)
+void help_write(dbref player, char *topic_arg, int iHelpfile)
 {
+    BOOL bEval = hftable[iHelpfile].bEval;
+    CHashTable *htab = hftable[iHelpfile].ht;
+    char *filename = *hftable[iHelpfile].ppTextFile;
+
     mux_strlwr(topic_arg);
     const char *topic = topic_arg;
 
@@ -255,23 +292,6 @@ void help_write(dbref player, char *topic_arg, CHashTable *htab, char *filename,
     free_lbuf(result);
 }
 
-typedef struct
-{
-    CHashTable *ht;
-    char       **ppFilename; 
-} HELP_FILE_DESC;
-
-#define HFTABLE_SIZE 6
-HELP_FILE_DESC hftable[HFTABLE_SIZE] =
-{
-    { &mudstate.help_htab, &mudconf.help_file },
-    { &mudstate.news_htab, &mudconf.news_file },
-    { &mudstate.wizhelp_htab, &mudconf.whelp_file },
-    { &mudstate.plushelp_htab, &mudconf.plushelp_file },
-    { &mudstate.wiznews_htab, &mudconf.wiznews_file },
-    { &mudstate.staffhelp_htab, &mudconf.staffhelp_file }
-};
-
 /*
  * ---------------------------------------------------------------------------
  * * do_help: display information from new-format news and help files
@@ -279,8 +299,7 @@ HELP_FILE_DESC hftable[HFTABLE_SIZE] =
 
 void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
-    int iHelpfile = key & ~HELP_NOEVAL;
-    BOOL bEval = (key & HELP_NOEVAL) ? FALSE : TRUE;
+    int iHelpfile = key;
 
     if (  iHelpfile < 0
        || HFTABLE_SIZE <= iHelpfile)
@@ -295,6 +314,5 @@ void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message
         return;
     }
 
-    help_write(executor, message, hftable[iHelpfile].ht,
-        *hftable[iHelpfile].ppFilename, bEval);
+    help_write(executor, message, iHelpfile);
 }
