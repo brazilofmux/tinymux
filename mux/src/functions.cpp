@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.2 2002-05-28 17:52:25 sdennis Exp $
+// $Id: functions.cpp,v 1.3 2002-05-31 06:13:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6149,7 +6149,7 @@ FUNCTION(fun_space)
     // Validate request.
     //
     int num;
-    if (*fargs[0] == '\0')
+    if (nfargs == 0 || *fargs[0] == '\0')
     {
         num = 1;
     }
@@ -7257,7 +7257,7 @@ FUN flist[] =
     {"SINGLETIME", fun_singletime, MAX_ARG, 1, 1,    0, CA_PUBLIC},
     {"SORT",     fun_sort,     MAX_ARG, 1,  4,       0, CA_PUBLIC},
     {"SORTBY",   fun_sortby,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"SPACE",    fun_space,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SPACE",    fun_space,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"SPLICE",   fun_splice,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
     {"SQRT",     fun_sqrt,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SQUISH",   fun_squish,   MAX_ARG, 0,  2,       0, CA_PUBLIC},
