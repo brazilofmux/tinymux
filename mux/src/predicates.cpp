@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.26 2003-02-16 17:07:32 jake Exp $
+// $Id: predicates.cpp,v 1.27 2003-02-16 17:30:51 jake Exp $
 //
 
 #include "copyright.h"
@@ -801,7 +801,7 @@ void do_addcommand
     //
     dbref thing;
     ATTR *attr;
-    if (  !parse_attrib_temp(player, command, &thing, &attr)
+    if (  !parse_attrib(player, command, &thing, &attr)
        || !attr)
     {
         notify(player, "No such attribute.");
@@ -995,7 +995,7 @@ void do_delcommand
     ATTR *attr;
     if (*command)
     {
-        if (  !parse_attrib_temp(player, command, &thing, &attr)
+        if (  !parse_attrib(player, command, &thing, &attr)
            || !attr)
         {
             notify(player, "No such attribute.");
@@ -1313,7 +1313,7 @@ void do_prog
 
     dbref thing;
     ATTR *ap;
-    if (!parse_attrib_temp(player, attrib, &thing, &ap))
+    if (!parse_attrib(player, attrib, &thing, &ap))
     {
         notify(player, NOMATCH_MESSAGE);
         return;

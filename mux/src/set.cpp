@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.13 2003-02-16 17:24:31 jake Exp $
+// $Id: set.cpp,v 1.14 2003-02-16 17:30:51 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -417,7 +417,7 @@ void do_lock
     dbref thing;
     ATTR *ap;
 
-    if (parse_attrib_temp(executor, name, &thing, &ap))
+    if (parse_attrib(executor, name, &thing, &ap))
     {
         if (  ap
            && See_attr(executor, thing, ap))
@@ -512,7 +512,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
     dbref thing;
     ATTR *ap;
 
-    if (  parse_attrib_temp(executor, name, &thing, &ap)
+    if (  parse_attrib(executor, name, &thing, &ap)
        && See_attr(executor, thing, ap))
     {
         // We have been asked to change the ownership of an attribute.
@@ -654,7 +654,7 @@ void do_chown
     bool bDoit;
     ATTR *ap;
 
-    if (  parse_attrib_temp(executor, name, &thing, &ap)
+    if (  parse_attrib(executor, name, &thing, &ap)
        && ap
        && See_attr(executor, thing, ap))
     {
@@ -930,7 +930,7 @@ void do_set
     // See if we have the <obj>/<attr> form, which is how you set
     // attribute flags.
     //
-    if (parse_attrib_temp(executor, name, &thing, &attr))
+    if (parse_attrib(executor, name, &thing, &attr))
     {
         if (  attr
            && See_attr(executor, thing, attr))
@@ -1057,7 +1057,7 @@ void do_set
             dbref thing2;
 
             strcpy(buff, p + 1);
-            if (!( parse_attrib_temp(executor, p + 1, &thing2, &attr2)
+            if (!( parse_attrib(executor, p + 1, &thing2, &attr2)
                 && attr2))
             {
                 notify_quiet(executor, "No match.");
@@ -1324,39 +1324,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
  * * parse_attrib, parse_attrib_wild: parse <obj>/<attr> tokens.
  */
 
-bool parse_attrib(dbref player, char *str, dbref *thing, int *atr)
-{
-    *thing = NOTHING;
-    *atr = NOTHING;
-
-    if (!str)
-    {
-        return false;
-    }
-
-    // Break apart string into obj and attr.  Return on failure.
-    //
-    char *buff = alloc_lbuf("parse_attrib");
-    strcpy(buff, str);
-    if (!parse_thing_slash(player, buff, &str, thing))
-    {
-        free_lbuf(buff);
-        return false;
-    }
-
-    // Get the named attribute from the object if we can.
-    //
-    ATTR *attr = atr_str(str);
-    free_lbuf(buff);
-    if (  attr
-       && See_attr(player, *thing, attr))
-    {
-        *atr = attr->number;
-    }
-    return true;
-}
-
-bool parse_attrib_temp(dbref player, char *str, dbref *thing, ATTR **attr)
+bool parse_attrib(dbref player, char *str, dbref *thing, ATTR **attr)
 {
     ATTR *tattr = NULL;
     *thing = NOTHING;
@@ -1775,7 +1743,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
     dbref thing;
     ATTR *attr;
 
-    if (!( parse_attrib_temp(executor, object, &thing, &attr)
+    if (!( parse_attrib(executor, object, &thing, &attr)
         && attr))
     {
         notify_quiet(executor, "No match.");

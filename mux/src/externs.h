@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.14 2003-02-12 19:04:30 jake Exp $
+// $Id: externs.h,v 1.15 2003-02-16 17:30:51 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -180,8 +180,7 @@ extern bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bParent
 extern bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 
 /* From set.cpp */
-extern bool parse_attrib(dbref, char *, dbref *, int *);
-extern bool parse_attrib_temp(dbref, char *, dbref *, ATTR **);
+extern bool parse_attrib(dbref, char *, dbref *, ATTR **);
 extern bool parse_attrib_wild(dbref, char *, dbref *, bool, bool, bool);
 extern void edit_string(char *, char **, char *, char *);
 extern dbref match_controlled_handler(dbref player, const char *name, bool bQuiet);

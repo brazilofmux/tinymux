@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.28 2003-02-16 16:32:12 jake Exp $
+// $Id: funceval.cpp,v 1.29 2003-02-16 17:30:51 jake Exp $
 //
 
 #include "copyright.h"
@@ -419,7 +419,7 @@ FUNCTION(fun_set)
     // See if we have the <obj>/<attr> form, which is how you set
     // attribute flags.
     //
-    if (parse_attrib_temp(executor, fargs[0], &thing, &attr))
+    if (parse_attrib(executor, fargs[0], &thing, &attr))
     {
         if (  attr
            && See_attr(executor, thing, attr))
@@ -530,7 +530,7 @@ FUNCTION(fun_set)
             dbref thing2;
 
             strcpy(buff2, p + 1);
-            if (!( parse_attrib_temp(executor, p + 1, &thing2, &attr2)
+            if (!( parse_attrib(executor, p + 1, &thing2, &attr2)
                 && attr2))
             {
                 free_lbuf(buff2);
@@ -1649,7 +1649,7 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
     //
     if (objname != NULL)
     {
-        if (parse_attrib_temp(executor, objname, &thing, &attr))
+        if (parse_attrib(executor, objname, &thing, &attr))
         {
             if (  attr
                && See_attr(executor, thing, attr))
@@ -1786,7 +1786,7 @@ FUNCTION(fun_visible)
     bool  result = false;
     dbref thing;
     ATTR  *attr;
-    if (!parse_attrib_temp(executor, fargs[1], &thing, &attr))
+    if (!parse_attrib(executor, fargs[1], &thing, &attr))
     {
         thing = match_thing_quiet(executor, fargs[1]);
         if (!Good_obj(thing))
@@ -2082,7 +2082,7 @@ FUNCTION(fun_sortby)
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
-    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
+    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
@@ -2271,7 +2271,7 @@ FUNCTION(fun_mix)
     dbref thing;
     ATTR *ap;
 
-    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
+    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
@@ -2357,7 +2357,7 @@ FUNCTION(fun_foreach)
     dbref thing;
     ATTR *ap;
 
-    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
+    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
@@ -2464,7 +2464,7 @@ FUNCTION(fun_munge)
     dbref thing;
     ATTR *ap;
 
-    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
+    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);

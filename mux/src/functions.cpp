@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.44 2003-02-16 16:51:01 jake Exp $
+// $Id: functions.cpp,v 1.45 2003-02-16 17:30:51 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -780,7 +780,7 @@ FUNCTION(fun_flags)
 {
     dbref it;
     ATTR  *attr;
-    if (parse_attrib_temp(executor, fargs[0], &it, &attr))
+    if (parse_attrib(executor, fargs[0], &it, &attr))
     {
         if (  attr
            && See_attr(executor, it, attr))
@@ -1400,7 +1400,7 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     }
     dbref thing;
     ATTR *attr;
-    bool bNoMatch = !parse_attrib_temp(executor, pRefAttrib, &thing, &attr);
+    bool bNoMatch = !parse_attrib(executor, pRefAttrib, &thing, &attr);
     if (bFreeBuffer)
     {
         free_lbuf(pRefAttrib);
@@ -1504,7 +1504,7 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
-    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
+    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
@@ -2061,7 +2061,7 @@ FUNCTION(fun_owner)
 {
     dbref it;
     ATTR *attr;
-    if (parse_attrib_temp(executor, fargs[0], &it, &attr))
+    if (parse_attrib(executor, fargs[0], &it, &attr))
     {
         if (  !attr
            || !See_attr(executor, it, attr))
@@ -4931,7 +4931,7 @@ FUNCTION(fun_hasflag)
     dbref it;
     ATTR *attr;
 
-    if (parse_attrib_temp(executor, fargs[0], &it, &attr))
+    if (parse_attrib(executor, fargs[0], &it, &attr))
     {
         if (  !attr
            || !See_attr(executor, it, attr))
@@ -6263,7 +6263,7 @@ FUNCTION(fun_fold)
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
-    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
+    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
@@ -6429,7 +6429,7 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
-    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
+    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
@@ -6535,7 +6535,7 @@ FUNCTION(fun_map)
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
-    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
+    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
@@ -9301,7 +9301,7 @@ void do_function
 
     // Make sure the target object exists.
     //
-    if (!parse_attrib_temp(executor, target, &obj, &attr))
+    if (!parse_attrib(executor, target, &obj, &attr))
     {
         notify_quiet(executor, NOMATCH_MESSAGE);
         free_sbuf(np);
