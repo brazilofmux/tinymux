@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.108 2004-06-30 10:52:40 sdennis Exp $
+// $Id: functions.cpp,v 1.109 2004-06-30 16:42:46 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -6854,7 +6854,13 @@ FUNCTION(fun_choose)
         }
         else
         {
-            sum += num;
+            int sum_next = sum + num;
+            if (sum_next < sum)
+            {
+                safe_str("#-1 OVERFLOW", buff, bufc);
+                return;
+            }
+            sum = sum_next;
             ip[i] = sum;
         }
     }
