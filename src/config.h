@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.18 2001-10-10 02:38:04 sdennis Exp $
+// $Id: config.h,v 1.19 2001-10-17 15:55:57 sdennis Exp $
 //
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -24,22 +24,18 @@
  * Database R/W flags.
  */
 
-#define MANDFLAGS       (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED)
+#define MANDFLAGS  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED)
+#define OFLAGS     (V_GDBM|V_ATRKEY|V_ATRNAME|V_ATRMONEY)
 
-#define OFLAGS1     (V_GDBM|V_ATRKEY)   /* GDBM has these */
-
-#define OFLAGS2     (V_ATRNAME|V_ATRMONEY)
-
-#define OUTPUT_VERSION  1           /* Version 1 */
+#define OUTPUT_VERSION  1
 #ifdef MEMORY_BASED
 #define OUTPUT_FLAGS    (MANDFLAGS)
 #else
-#define OUTPUT_FLAGS    (MANDFLAGS|OFLAGS1|OFLAGS2)
-                        /* format for dumps */
+#define OUTPUT_FLAGS    (MANDFLAGS|OFLAGS)
 #endif
 
-#define UNLOAD_VERSION  1           /* version for export */
-#define UNLOAD_OUTFLAGS (MANDFLAGS)     /* format for export */
+#define UNLOAD_VERSION  1
+#define UNLOAD_FLAGS    (MANDFLAGS)
 
 /* magic lock cookies */
 #define NOT_TOKEN   '!'
