@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.26 2001-06-28 01:20:20 sdennis Exp $
+// $Id: bsd.cpp,v 1.27 2001-06-29 16:15:56 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -23,13 +23,13 @@
 #include "multinet_root:[multinet.include.sys]file.h"
 #include "multinet_root:[multinet.include.sys]ioctl.h"
 #include "multinet_root:[multinet.include]errno.h"
-#else
+#else // VMS
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#endif
+#endif // VMS
 #include <sys/stat.h>
-#endif
+#endif // !WIN32
 
 #include <signal.h>
 
@@ -48,13 +48,13 @@
 #ifdef SOLARIS
 extern const int _sys_nsig;
 #define NSIG _sys_nsig
-#endif
+#endif // SOLARIS
 
 #ifdef CONCENTRATE
 extern struct descriptor_data *ccontrol;
 extern void FDECL(send_killconcid, (DESC *));
 extern long NDECL(make_concid);
-#endif
+#endif // CONCENTRATE
 
 SOCKET MainGameSockPort;
 unsigned int ndescriptors = 0;
@@ -62,12 +62,12 @@ DESC *descriptor_list = NULL;
 
 #ifdef WIN32
 int game_pid;
-#else
+#else // WIN32
 int maxd = 0;
 pid_t slave_pid = 0;
 int slave_socket = INVALID_SOCKET;
 pid_t game_pid;
-#endif
+#endif // WIN32
 
 DESC *initializesock(SOCKET, struct sockaddr_in *);
 DESC *new_connection(SOCKET sock);
@@ -469,7 +469,8 @@ static int get_slave_result(void)
     }
     return 1;
 }
-#else
+
+#else // WIN32
 
 void boot_slave(dbref ref1, dbref ref2, int int3)
 {
@@ -480,9 +481,9 @@ void boot_slave(dbref ref1, dbref ref2, int int3)
 
 #ifdef HAVE_GETDTABLESIZE
     maxfds = getdtablesize();
-#else
+#else // HAVE_GETDTABLESIZE
     maxfds = sysconf(_SC_OPEN_MAX);
-#endif
+#endif // HAVE_GETDTABLESIZE
 
     // Let go of previous slave info.
     //
@@ -677,7 +678,7 @@ Done:
     free_lbuf(host);
     return 0;
 }
-#endif
+#endif // WIN32
 
 SOCKET make_socket(int port)
 {
@@ -768,7 +769,7 @@ SOCKET make_socket(int port)
         Log.printf("Listening (NT-style) on port %d" ENDLINE, port);
         return s;
     }
-#endif
+#endif // WIN32
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (IS_INVALID_SOCKET(s))
@@ -776,7 +777,7 @@ SOCKET make_socket(int port)
         log_perror("NET", "FAIL", NULL, "creating master socket");
 #ifdef WIN32
         WSACleanup();
-#endif
+#endif // WIN32
         exit(3);
     }
     DebugTotalSockets++;
@@ -789,7 +790,7 @@ SOCKET make_socket(int port)
     server.sin_port = htons((unsigned short)port);
 #ifndef WIN32
     if (!mudstate.restarting)
-#endif
+#endif // !WIN32
     {
         int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
         if (IS_SOCKET_ERROR(cc))
@@ -802,7 +803,7 @@ SOCKET make_socket(int port)
             s = INVALID_SOCKET;
 #ifdef WIN32
             WSACleanup();
-#endif
+#endif // WIN32
             exit(4);
         }
     }
@@ -1022,7 +1023,7 @@ void shovecharsNT(int port)
     }
 }
 
-#else
+#else // WIN32
 
 BOOL ValidSocket(SOCKET s)
 {
@@ -1057,9 +1058,9 @@ void shovechars(int port)
 
 #ifdef HAVE_GETDTABLESIZE
     maxfds = getdtablesize();
-#else
+#else // HAVE_GETDTABLESIZE
     maxfds = sysconf(_SC_OPEN_MAX);
-#endif
+#endif // HAVE_GETDTABLESIZE
 
     avail_descriptors = maxfds - 7;
 
@@ -1240,7 +1241,7 @@ void shovechars(int port)
 #ifdef CONCENTRATE
                 if (!(d->cstatus & C_REMOTE))
                 {
-#endif
+#endif // CONCENTRATE
                     if (!process_input(d))
                     {
                         shutdownsock(d, R_SOCKDIED);
@@ -1248,7 +1249,7 @@ void shovechars(int port)
                     }
 #ifdef CONCENTRATE
                 }
-#endif
+#endif // CONCENTRATE
             }
 
             // Process output for sockets with pending output.
@@ -1261,7 +1262,7 @@ void shovechars(int port)
     }
 }
 
-#endif
+#endif // WIN32
 
 DESC *new_connection(SOCKET sock)
 {
@@ -1270,13 +1271,13 @@ DESC *new_connection(SOCKET sock)
     struct sockaddr_in addr;
 #ifdef SOCKLEN_T_DCL
     socklen_t addr_len;
-#else
+#else // SOCKLEN_T_DCL
     int addr_len;
-#endif
+#endif // SOCKLEN_T_DCL
 #ifndef WIN32
     int len;
     char *buf;
-#endif
+#endif // !WIN32
 
     cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< new_connection >";
@@ -1313,7 +1314,7 @@ DESC *new_connection(SOCKET sock)
         buff = alloc_mbuf("new_connection.address");
 #ifndef WIN32
         buf = alloc_lbuf("new_connection.write");
-#endif
+#endif // !WIN32
         StringCopy(buff, inet_ntoa(addr.sin_addr));
 
 #ifdef WIN32
@@ -1344,12 +1345,13 @@ DESC *new_connection(SOCKET sock)
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
             }
         }
-#else
+#else // WIN32
         // Make slave request
         //
         if ((slave_socket != INVALID_SOCKET) && mudconf.use_hostname)
         {
-            sprintf(buf, "%s\n%s,%d,%d\n", inet_ntoa(addr.sin_addr), inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), mudconf.port);
+            sprintf(buf, "%s\n%s,%d,%d\n", inet_ntoa(addr.sin_addr),
+                inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), mudconf.port);
             len = strlen(buf);
             if (write(slave_socket, buf, len) < 0)
             {
@@ -1361,7 +1363,7 @@ DESC *new_connection(SOCKET sock)
             }
         }
         free_lbuf(buf);
-#endif
+#endif // WIN32
 
         STARTLOG(LOG_NET, "NET", "CONN");
         buff1 = alloc_mbuf("new_connection.LOG.open");
@@ -1599,7 +1601,7 @@ void shutdownsock(DESC *d, int reason)
                 Log.printf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
             }
         }
-#endif
+#endif // WIN32
 #ifdef CONCENTRATE
         if (!(d->cstatus & C_REMOTE))
         {
@@ -1615,7 +1617,7 @@ void shutdownsock(DESC *d, int reason)
                     }
                 }
             }
-#endif
+#endif // CONCENTRATE
             shutdown(d->descriptor, SD_BOTH);
             if (SOCKET_CLOSE(d->descriptor) == 0)
             {
@@ -1632,7 +1634,7 @@ void shutdownsock(DESC *d, int reason)
                 if (d->parent == k)
                     send_killconcid(d);
         }
-#endif
+#endif // CONCENTRATE
 
         // Is this desc still in interactive mode?
         //
@@ -1662,7 +1664,7 @@ void shutdownsock(DESC *d, int reason)
         //
         if (platform == VER_PLATFORM_WIN32_NT)
             EnterCriticalSection(&csDescriptorList);
-#endif
+#endif // WIN32
 
         *d->prev = d->next;
         if (d->next)
@@ -1679,7 +1681,7 @@ void shutdownsock(DESC *d, int reason)
         if (platform == VER_PLATFORM_WIN32_NT)
             LeaveCriticalSection(&csDescriptorList);
         else
-#endif
+#endif // WIN32
         {
             // If we don't have queued IOs, then we can free these, now.
             //
@@ -1687,7 +1689,7 @@ void shutdownsock(DESC *d, int reason)
             free_desc(d);
 #ifdef CONCENTRATE
             if (!(d->cstatus & C_REMOTE))
-#endif
+#endif // CONCENTRATE
                 ndescriptors--;
         }
     }
@@ -1747,7 +1749,7 @@ void shutdownsock_brief(DESC *d)
     }
 
 }
-#endif
+#endif // WIN32
 
 void make_nonblocking(SOCKET s)
 {
@@ -1757,19 +1759,19 @@ void make_nonblocking(SOCKET s)
     {
         log_perror("NET", "FAIL", "make_nonblocking", "ioctlsocket");
     }
-#else
+#else // WIN32
 #ifdef FNDELAY
     if (fcntl(s, F_SETFL, FNDELAY) == -1)
     {
         log_perror("NET", "FAIL", "make_nonblocking", "fcntl");
     }
-#else
+#else // FNDELAY
     if (fcntl(s, F_SETFL, O_NDELAY) == -1)
     {
         log_perror("NET", "FAIL", "make_nonblocking", "fcntl");
     }
-#endif
-#endif
+#endif // FNDELAY
+#endif // WIN32
 
 #if defined(HAVE_LINGER) || defined(WIN32)
     struct linger ling;
@@ -1779,7 +1781,7 @@ void make_nonblocking(SOCKET s)
     {
         log_perror("NET", "FAIL", "linger", "setsockopt");
     }
-#endif
+#endif // HAVE_LINGER || WIN32
 }
 
 // This function must be thread safe WinNT
@@ -1794,21 +1796,21 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     //
     if (platform == VER_PLATFORM_WIN32_NT)
         EnterCriticalSection(&csDescriptorList);
-#endif
+#endif // WIN32
 
     d = alloc_desc("init_sock");
 
 #ifdef WIN32
     if (platform == VER_PLATFORM_WIN32_NT)
         LeaveCriticalSection(&csDescriptorList);
-#endif
+#endif // WIN32
 
     d->descriptor = s;
 #ifdef CONCENTRATE
     d->concid = make_concid();
     d->cstatus = 0;
     d->parent = 0;
-#endif
+#endif // CONCENTRATE
     d->flags = 0;
     d->connected_at.GetUTC();
     d->retries_left = mudconf.retry_limit;
@@ -1852,7 +1854,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     //
     if (platform == VER_PLATFORM_WIN32_NT)
         EnterCriticalSection (&csDescriptorList);
-#endif
+#endif // WIN32
 
     ndescriptors++;
 
@@ -1879,7 +1881,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
         d->bConnectionDropped = FALSE; // not dropped yet
         d->bCallProcessOutputLater = FALSE;
     }
-#endif
+#endif // WIN32
     return d;
 }
 
@@ -2040,7 +2042,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
     mudstate.debug_cmd = cmdsave;
 }
 
-#else
+#else // WIN32
 
 void process_output(void *dvoid, int bHandleShutdown)
 {
@@ -2100,7 +2102,7 @@ void process_output(void *dvoid, int bHandleShutdown)
     }
     else
     {
-#endif
+#endif // CONCENTRATE
         while (tb != NULL)
         {
             while (tb->hdr.nchars > 0)
@@ -2113,7 +2115,7 @@ void process_output(void *dvoid, int bHandleShutdown)
                     {
 #ifdef CONCENTRATE
                         if (!(d->cstatus & C_CCONTROL))
-#endif
+#endif // CONCENTRATE
                             shutdownsock(d, R_SOCKDIED);
                     }
                     return;
@@ -2133,11 +2135,11 @@ void process_output(void *dvoid, int bHandleShutdown)
         }
 #ifdef CONCENTRATE
     }
-#endif
+#endif // CONCENTRATE
 
     mudstate.debug_cmd = cmdsave;
 }
-#endif
+#endif // WIN32
 
 int process_input_helper(DESC *d, char *buf, int got)
 {
@@ -2301,9 +2303,9 @@ static void check_panicking(int sig)
         }
 #ifdef WIN32
         abort();
-#else
+#else // WIN32
         kill(getpid(), sig);
-#endif
+#endif // WIN32
     }
     mudstate.panicking = 1;
 }
@@ -2320,9 +2322,9 @@ static void unset_signals(void)
 
 #ifdef _SGI_SOURCE
 #define CAST_SIGNAL_FUNC (SIG_PF)
-#else
+#else // _SGI_SOURCE
 #define CAST_SIGNAL_FUNC
-#endif
+#endif // _SGI_SOURCE
 
 #ifndef SYS_SIGLIST_DECLARED
 
@@ -2342,27 +2344,27 @@ const SIGNALTYPE aSigTypes[] =
     // Hangup detected on controlling terminal or death of controlling process.
     //
     { SIGHUP,   "SIGHUP"},
-#endif
+#endif // SIGHUP
 #ifdef SIGINT
     // Interrupt from keyboard.
     //
     { SIGINT,   "SIGINT"},
-#endif
+#endif // SIGINT
 #ifdef SIGQUIT
     // Quit from keyboard.
     //
     { SIGQUIT,  "SIGQUIT"},
-#endif
+#endif // SIGQUIT
 #ifdef SIGILL
     // Illegal Instruction.
     //
     { SIGILL,   "SIGILL"},
-#endif
+#endif // SIGILL
 #ifdef SIGTRAP
     // Trace/breakpoint trap.
     //
     { SIGTRAP,  "SIGTRAP"},
-#endif
+#endif // SIGTRAP
 #if defined(SIGABRT)
     // Abort signal from abort(3).
     //
@@ -2372,55 +2374,55 @@ const SIGNALTYPE aSigTypes[] =
     // Abort signal from abort(3).
     //
     { SIGIOT,   "SIGIOT"},
-#endif
+#endif // SIGABRT
 #ifdef SIGEMT
     { SIGEMT,   "SIGEMT"},
-#endif
+#endif // SIGEMT
 #ifdef SIGFPE
     // Floating-point exception.
     //
     { SIGFPE,   "SIGFPE"},
-#endif
+#endif // SIGFPE
 #ifdef SIGKILL
     // Kill signal. Not catchable.
     //
     { SIGKILL,  "SIGKILL"},
-#endif
+#endif // SIGKILL
 #ifdef SIGSEGV
     // Invalid memory reference.
     //
     { SIGSEGV,  "SIGSEGV"},
-#endif
+#endif // SIGSEGV
 #ifdef SIGPIPE
     // Broken pipe: write to pipe with no readers.
     //
     { SIGPIPE,  "SIGPIPE"},
-#endif
+#endif // SIGPIPE
 #ifdef SIGALRM
     // Timer signal from alarm(2).
     //
     { SIGALRM,  "SIGALRM"},
-#endif
+#endif // SIGALRM
 #ifdef SIGTERM
     // Termination signal.
     //
     { SIGTERM,  "SIGTERM"},
-#endif
+#endif // SIGTERM
 #ifdef SIGBREAK
     // Ctrl-Break.
     //
     { SIGBREAK, "SIGBREAK"},
-#endif
+#endif // SIGBREAK
 #ifdef SIGUSR1
     // User-defined signal 1.
     //
     { SIGUSR1,  "SIGUSR1"},
-#endif
+#endif // SIGUSR1
 #ifdef SIGUSR2
     // User-defined signal 2.
     //
     { SIGUSR2,  "SIGUSR2"},
-#endif
+#endif // SIGUSR2
 #if defined(SIGCHLD)
     // Child stopped or terminated.
     //
@@ -2430,72 +2432,72 @@ const SIGNALTYPE aSigTypes[] =
     // Child stopped or terminated.
     //
     { SIGCLD,   "SIGCLD"},
-#endif
+#endif // SIGCHLD
 #ifdef SIGCONT
     // Continue if stopped.
     //
     { SIGCONT,  "SIGCONT"},
-#endif
+#endif // SIGCONT
 #ifdef SIGSTOP
     // Stop process. Not catchable.
     //
     { SIGSTOP,  "SIGSTOP"},
-#endif
+#endif // SIGSTOP
 #ifdef SIGTSTP
     // Stop typed at tty
     //
     { SIGTSTP,  "SIGTSTP"},
-#endif
+#endif // SIGTSTP
 #ifdef SIGTTIN
     // tty input for background process.
     //
     { SIGTTIN,  "SIGTTIN"},
-#endif
+#endif // SIGTTIN
 #ifdef SIGTTOU
     // tty output for background process.
     //
     { SIGTTOU,  "SIGTTOU"},
-#endif
+#endif // SIGTTOU
 #ifdef SIGBUS
     // Bus error (bad memory access).
     //
     { SIGBUS,   "SIGBUS"},
-#endif
+#endif // SIGBUS
 #ifdef SIGPROF
     // Profiling timer expired.
     //
     { SIGPROF,  "SIGPROF"},
-#endif
+#endif // SIGPROF
 #ifdef SIGSYS
     // Bad argument to routine (SVID).
     //
     { SIGSYS,   "SIGSYS"},
-#endif
+#endif // SIGSYS
 #ifdef SIGURG
     // Urgent condition on socket (4.2 BSD).
     //
     { SIGURG,   "SIGURG"},
-#endif
+#endif // SIGURG
 #ifdef SIGVTALRM
     // Virtual alarm clock (4.2 BSD).
     //
     { SIGVTALRM, "SIGVTALRM"},
-#endif
+#endif // SIGVTALRM
 #ifdef SIGXCPU
     // CPU time limit exceeded (4.2 BSD).
     //
     { SIGXCPU,  "SIGXCPU"},
-#endif
+#endif // SIGXCPU
 #ifdef SIGXFSZ
     // File size limit exceeded (4.2 BSD).
     //
     { SIGXFSZ,  "SIGXFSZ"},
-#endif
+#endif // SIGXFSZ
 #ifdef SIGSTKFLT
     // Stack fault on coprocessor.
     //
     { SIGSTKFLT, "SIGSTKFLT"},
-#endif
+#endif // SIGSTKFLT
 #if defined(SIGIO)
     // I/O now possible (4.2 BSD). File lock lost.
     //
@@ -2505,10 +2507,10 @@ const SIGNALTYPE aSigTypes[] =
     // Pollable event (Sys V).
     //
     { SIGPOLL,  "SIGPOLL"},
-#endif
+#endif // SIGIO
 #ifdef SIGLOST
     { SIGLOST,  "SIGLOST"},
-#endif
+#endif // SIGLOST
 #if defined(SIGPWR)
     // Power failure (System V).
     //
@@ -2518,12 +2520,12 @@ const SIGNALTYPE aSigTypes[] =
     // Power failure (System V).
     //
     { SIGINFO,  "SIGINFO"},
-#endif
+#endif // SIGPWR
 #ifdef SIGWINCH
     // Window resize signal (4.3 BSD, Sun).
     //
     { SIGWINCH, "SIGWINCH"},
-#endif
+#endif // SIGWINCH
     { 0,        "SIGZERO" },
     { -1, NULL }
 };
@@ -2555,9 +2557,9 @@ void BuildSignalNamesTable(void)
         }
     }
 }
-#else
+#else // SYS_SIGLIST_DECLARED
 #define signames sys_siglist
-#endif
+#endif // SYS_SIGLIST_DECLARED
 
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
@@ -2566,10 +2568,10 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 #ifndef WIN32
 #if defined(HAVE_UNION_WAIT) && defined(NEED_WAIT3_DCL)
     union wait stat_buf;
-#else
+#else // HAVE_UNION_WAIT NEED_WAIT3_DCL
     int stat_buf;
-#endif
-#endif
+#endif // HAVE_UNION_WAIT NEED_WAIT3_DCL
+#endif // !WIN32
 
     switch (sig)
     {
@@ -2606,12 +2608,12 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         //
 #ifndef SIGNAL_SIGCHLD_BRAINDAMAGE
         signal(SIGCHLD, CAST_SIGNAL_FUNC sighandler);
-#endif
+#endif // !SIGNAL_SIGCHLD_BRAINDAMAGE
 #ifdef HAVE_WAIT3
         while (wait3(&stat_buf, WNOHANG, NULL) > 0) ;
-#else
+#else // HAVE_WAIT3
         wait((int *)&stat_buf);
-#endif
+#endif // HAVE_WAIT3
         // Did the child exit?
         //
         if (WEXITSTATUS(stat_buf) == 8)
@@ -2632,7 +2634,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         scheduler.DeferTask(mudstate.dump_counter, PRIORITY_SYSTEM, dispatch_DatabaseDump, 0, 0);
         break;
 
-#endif
+#endif // !WIN32
 
     case SIGINT:
 
@@ -2643,11 +2645,11 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
 #ifndef WIN32
     case SIGQUIT:
-#endif
+#endif // !WIN32
     case SIGTERM:
 #ifdef SIGXCPU
     case SIGXCPU:
-#endif
+#endif // SIGXCPU
         // Time for a normal and short-winded shutdown.
         //
         check_panicking(sig);
@@ -2663,17 +2665,17 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
     case SIGTRAP:
 #ifdef SIGXFSZ
     case SIGXFSZ:
-#endif
+#endif // SIGXFSZ
 #ifdef SIGEMT
     case SIGEMT:
-#endif
+#endif // SIGEMT
 #ifdef SIGBUS
     case SIGBUS:
-#endif
+#endif // SIGBUS
 #ifdef SIGSYS
     case SIGSYS:
-#endif
-#endif
+#endif // SIGSYS
+#endif // !WIN32
 
         // Panic save + restart.
         //
@@ -2702,7 +2704,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             signal(sig, SIG_DFL);
             WSACleanup();
             exit(12345678);
-#else
+#else // WIN32
             shutdown(slave_socket, SD_BOTH);
             if (slave_pid > 0)
             {
@@ -2724,17 +2726,17 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             dump_restart_db();
 #ifdef GAME_DOOFERMUX
             execl("bin/netmux", mudconf.mud_name, mudconf.config_file, NULL);
-#else
+#else // GAME_DOOFERMUX
             execl("bin/netmux", "netmux", mudconf.config_file, NULL);
-#endif
+#endif // GAME_DOOFERMUX
             break;
-#endif
+#endif // WIN32
         }
         else
         {
 #ifdef WIN32
             WSACleanup();
-#endif
+#endif // WIN32
 
             unset_signals();
             signal(sig, SIG_DFL);
@@ -2752,7 +2754,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
 #ifdef WIN32
         WSACleanup();
-#endif
+#endif // WIN32
 
         unset_signals();
         signal(sig, SIG_DFL);
@@ -2762,9 +2764,9 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
     mudstate.panicking = 0;
 #ifdef VMS
     return 1;
-#else
+#else // VMS
     return;
-#endif
+#endif // VMS
 }
 
 NAMETAB sigactions_nametab[] =
@@ -2789,7 +2791,7 @@ void set_signals(void)
 #undef sigprocmask
     sigfillset(&sigs);
     sigprocmask(SIG_UNBLOCK, &sigs, NULL);
-#endif
+#endif // !WIN32
 
     signal(SIGINT,  CAST_SIGNAL_FUNC sighandler);
     signal(SIGTERM, CAST_SIGNAL_FUNC sighandler);
@@ -2810,20 +2812,20 @@ void set_signals(void)
 
 #ifdef SIGXCPU
     signal(SIGXCPU, CAST_SIGNAL_FUNC sighandler);
-#endif
+#endif // SIGXCPU
 #ifdef SIGFSZ
     signal(SIGXFSZ, CAST_SIGNAL_FUNC sighandler);
-#endif
+#endif // SIGFSZ
 #ifdef SIGEMT
     signal(SIGEMT, CAST_SIGNAL_FUNC sighandler);
-#endif
+#endif // SIGEMT
 #ifdef SIGBUS
     signal(SIGBUS, CAST_SIGNAL_FUNC sighandler);
-#endif
+#endif // SIGBUS
 #ifdef SIGSYS
     signal(SIGSYS, CAST_SIGNAL_FUNC sighandler);
-#endif
-#endif
+#endif // SIGSYS
+#endif // !WIN32
 }
 
 void list_system_resources(dbref player)
@@ -2849,7 +2851,7 @@ void list_system_resources(dbref player)
     sprintf(buffer, "Total Semaphores: %ld", DebugTotalSemaphores);
     notify(player, buffer);
     nTotal += DebugTotalSemaphores;
-#endif
+#endif // WIN32
 
     sprintf(buffer, "Total Handles (sum of above): %d", nTotal);
     notify(player, buffer);
@@ -2860,7 +2862,7 @@ void list_system_resources(dbref player)
         sprintf(buffer, "Thread %d at line %d", i+1, SlaveThreadInfo[i].iDoing);
         notify(player, buffer);
     }
-#endif
+#endif // WIN32
 }
 
 #ifdef WIN32
@@ -3274,4 +3276,4 @@ void ProcessWindowsTCP(DWORD dwTimeout)
     }
 }
 
-#endif
+#endif // WIN32
