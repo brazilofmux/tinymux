@@ -54,6 +54,8 @@ Feature Additions:
  -- Enhanced Page command.
  -- Roy Anger's comsys help update.
  -- Reformated wizhelp.txt
+ -- Freshened help for @aconnect and @disconnect.
+ -- Support second argument for squish().
 
 Bug Fixes:
 ~~~~~~~~~
@@ -102,6 +104,9 @@ Bug Fixes:
     attempting '@teleport Foo'.
  -- Fixed bug introduced in 2.1.4.25 where '@create Foo' was not accepted.
  -- Flatten random distribution in how similarly-named things are matched.
+ -- Include resident memory again in @list process report.
+ -- Use mudstate.logging again.
+ -- Remove vestigates of macros.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -120,9 +125,15 @@ Performance Enhancements:
  -- Simplify the varargs_preample family of #defines further.
  -- Use MUXCLI on both Unix and Win32 builds instead of getopt on Unix
     and correct-but-inflexible code on Win32.
+ -- Improve performance of pool_alloc and pool_free.
+ -- Improve performance of @aconnnect/@adisconnect.
+ -- Reduce code size by around 4KB by specializing a few calls.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
+ -- Consistent file headers and comment blocks. Remove trailing spaces and
+    hardtabs.
+ -- Remove unused sections of #ifdef'ed out code.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
