@@ -50,7 +50,7 @@ Feature Additions:
     not catch memory overwrites.
  -- Changed message for @chown to give enough information to a builder to
     check their work. It's something of an audit trail.
- -- Added optional output delimeter to SORT().
+ -- Added optional output delimeter to SORT(). Patch from Ashen-Shugar.
 
 Bug Fixes:
 ~~~~~~~~~
