@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.60 2002-08-02 16:42:57 sdennis Exp $
+// $Id: command.cpp,v 1.61 2002-08-03 07:41:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3995,7 +3995,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
 // Used with express permission of RhostMUSH developers.
 // Bludgeoned into MUX by Jake Nelson 7/2002.
 //
-void show_hook (char *bf, char *bfptr, int key)
+void show_hook(char *bf, char *bfptr, int key)
 {
     if (key & HOOK_BEFORE)
         safe_str("before ", bf, &bfptr);
@@ -4009,31 +4009,59 @@ void show_hook (char *bf, char *bfptr, int key)
         safe_str("igswitch ", bf, &bfptr);
     if (key & HOOK_AFAIL)
         safe_str("afail ", bf, &bfptr);
-    safe_chr('\0', bf, &bfptr);
-    return;
+    *bfptr = '\0';
 }
 
 void hook_loop (dbref executor, CMDENT *cmdp, char *s_ptr, char *s_ptrbuff)
 {
     show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
-    if ( strcmp(cmdp->cmdname, "\"") == 0 )
-        notify(executor, tprintf("S %-30.30s | %s", "('\"' hook on 'say')", s_ptrbuff));
-    else if ( strcmp(cmdp->cmdname, ":") == 0 )
-        notify(executor, tprintf("P %-30.30s | %s", "(':' hook on 'pose')", s_ptrbuff));
-    else if ( strcmp(cmdp->cmdname, ";") == 0 )
-        notify(executor, tprintf("P %-30.30s | %s", "(';' hook on 'pose')", s_ptrbuff));
-    else if ( strcmp(cmdp->cmdname, "\\") == 0 )
-        notify(executor, tprintf("E %-30.30s | %s", "('\\\\' hook on '@emit')", s_ptrbuff));
-    else if ( strcmp(cmdp->cmdname, "#") == 0 )
-        notify(executor, tprintf("F %-30.30s | %s", "('#' hook on '@force')", s_ptrbuff));
-    else if ( strcmp(cmdp->cmdname, "&") == 0 )
-        notify(executor, tprintf("V %-30.30s | %s", "('&' hook on '@set')", s_ptrbuff));
-    else if ( strcmp(cmdp->cmdname, "-") == 0 )
-        notify(executor, tprintf("M %-30.30s | %s", "('-' hook on '@mail')", s_ptrbuff));
-    else if ( strcmp(cmdp->cmdname, "~") == 0 )
-        notify(executor, tprintf("M %-30.30s | %s", "('~' hook on '@mail')", s_ptrbuff));
-    else
-        notify(executor, tprintf("%-32.32s | %s", cmdp->cmdname, s_ptrbuff));
+    const char *pFmt = "%-32.32s | %s";
+    const char *pCmd = cmdp->cmdname;
+    if (  pCmd[0] != '\0'
+       && pCmd[1] == '\0')
+    {
+        if (pCmd[0] == '"')
+        {
+            pFmt = "S %-30.30s | %s";
+            pCmd = "('\"' hook on 'say')";
+        }
+        else if (pCmd[0] == ':')
+        {
+            pFmt = "P %-30.30s | %s";
+            pCmd = "(':' hook on 'pose')";
+        }
+        else if (pCmd[0] == ';')
+        {
+            pFmt = "P %-30.30s | %s";
+            pCmd = "(';' hook on 'pose')";
+        }
+        else if (pCmd[0] == '\\')
+        {
+            pFmt = "E %-30.30s | %s";
+            pCmd = "('\\\\' hook on '@emit')";
+        }
+        else if (pCmd[0] == '#')
+        {
+            pFmt = "F %-30.30s | %s";
+            pCmd = "('#' hook on '@force')";
+        }
+        else if (pCmd[0] == '&')
+        {
+            pFmt = "V %-30.30s | %s";
+            pCmd = "('&' hook on '@set')";
+        }
+        else if (pCmd[0] == '-')
+        {
+            pFmt = "M %-30.30s | %s";
+            pCmd = "('-' hook on '@mail')";
+        }
+        else if (pCmd[0] == '~')
+        {
+            pFmt = "M %-30.30s | %s";
+            pCmd = "('~' hook on '@mail')";
+        }
+    }
+    notify(executor, tprintf(pFmt, pCmd, s_ptrbuff));
 }
 
 void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name) 
