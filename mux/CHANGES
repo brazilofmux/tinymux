@@ -1,5 +1,5 @@
 TinyMUX 2.3:  CHANGES
-Last Update:  February 2003
+Last Update:  March 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -15,6 +15,11 @@ Major changes that may affect performance and require softcode tweaks:
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
  -- Quotas are checked/repaired during @dbck.
+ -- Added support -p option, netmux.pid, and you can run more than one
+    MUX server per Unix account without modifying the Startmux script.
+    This feature first appeared in TinyMUSH 3.0.
+ -- Limit the number of oustanding slave processes at any one time to
+    20.  Introduced by Brazil.  Jointly refined with Alierak.
 
 
 Bug Fixes:
@@ -78,6 +83,13 @@ Bug Fixes:
  -- Bug #557, #558, #559, and #560 were all buffers smaller than the 
     largest possible result.  All reported by Morgan 2000-OCT-15.  Fixed 
     (finally) by Brazil.
+ -- Don't treat a killed slave process as the completion of a dump
+    process.  Implementation worked out jointly with Alierak.
+ -- Kill the slave process on @shutdown.  Reported by nails.  Fixed by
+    Brazil.  This was introduced in MUX 2.0 when the Win32 and Unix
+    sources were merged. The required block of code was accidently left
+    out.
+ -- Clean up zombie slave processe on @restart.
 
 
 Performance Enhancements:
