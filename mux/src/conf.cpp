@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.46 2004-06-01 01:05:46 sdennis Exp $
+// $Id: conf.cpp,v 1.47 2004-06-10 14:44:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -568,14 +568,15 @@ CF_HAND(cf_string)
         char *p = buff;
         char *q = strip_ansi(mudconf.mud_name);
         size_t nLen = 0;
-        while (*q && nLen < SBUF_SIZE)
+        while (  *q
+              && nLen < SBUF_SIZE)
         {
             if (mux_isalnum(*q))
             {
                 *p++ = *q;
                 nLen++;
             }
-            *q++;
+            q++;
         }
         *p = '\0';
         Log.SetPrefix(buff);
