@@ -4,8 +4,8 @@ PATH=/bin:/usr/bin:
 #	Validate MUX V2 flatfile.
 #
 case $# in
-	2)	../bin/netmux -d$1 -k -i$2 >/dev/null 2>&1 ;;
-	3)	../bin/netmux -d$1 -k -i$2 >/dev/null 2>$3 ;;
+	2)	../bin/netmux -d$1 -k -i$2 -o/dev/null 2>&1 ;;
+	3)	../bin/netmux -d$1 -k -i$2 -o/dev/null 2>$3 ;;
 	*)	echo Usage: $0 'basename source_file [log_file]'; exit 1 ;;
 esac
 
