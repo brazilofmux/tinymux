@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.14 2001-06-05 06:07:00 sdennis Exp $
+// $Id: eval.cpp,v 1.15 2001-07-06 16:23:24 sdennis Exp $
 //
 
 // MUX 2.0
@@ -131,6 +131,29 @@ char isSpecial_L4[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0xD0-0xDF
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0xE0-0xEF
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0  // 0xF0-0xFF
+};
+
+// Characters that are valid q-registers, and their offsets in the register
+// array. -1 for invalid registers.
+//
+signed char Tiny_IsRegister[256] =
+{
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0x00-0x0F
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0x10-0x1F
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0x20-0x2F
+     0, 1, 2, 3, 4, 5, 6, 7,  8, 9,-1,-1,-1,-1,-1,-1, // 0x30-0x3F
+    -1,10,11,12,13,14,15,16, 17,18,19,20,21,22,23,24, // 0x40-0x4F
+    25,26,27,28,29,30,31,32, 33,34,35,-1,-1,-1,-1,-1, // 0x50-0x5F
+    -1,10,11,12,13,14,15,16, 17,18,19,20,21,22,23,24, // 0x60-0x6F
+    25,26,27,28,29,30,31,32, 33,34,35,-1,-1,-1,-1,-1, // 0x70-0x7F
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0x80-0x8F
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0x90-0x9F
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0xA0-0xAF
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0xB0-0xBF
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0xC0-0xCF
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0xD0-0xDF
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0xE0-0xEF
+    -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1  // 0xF0-0xFF
 };
 
 // Stephen: Some silly compilers don't handle aliased pointers well. For these
@@ -1561,8 +1584,10 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                                         // iCode == 'Q'
                                         //
                                         pdstr++;
-                                        i = (*pdstr - '0');
-                                        if ((i >= 0) && (i <= 9) && mudstate.global_regs[i])
+                                        i = Tiny_IsRegister[(unsigned char)pdstr[0]];
+                                        if (  i >= 0
+                                           && i < MAX_GLOBAL_REGS
+                                           && mudstate.global_regs[i])
                                         {
                                             safe_copy_buf(mudstate.global_regs[i],
                                                 mudstate.glob_reg_len[i], buff, bufc, LBUF_SIZE-1);
