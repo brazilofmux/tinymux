@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.11 2002-06-19 16:00:32 sdennis Exp $
+// $Id: db.cpp,v 1.12 2002-06-22 01:02:33 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2488,7 +2488,7 @@ void NDECL(db_make_minimal)
     s_Link(0, NOTHING);
     s_Parent(0, NOTHING);
     s_Zone(0, NOTHING);
-    s_Pennies(0, 1);
+    s_Pennies(0, 0);
     s_Owner(0, 1);
 
     // should be #1
