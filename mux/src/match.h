@@ -1,6 +1,6 @@
 // match.h
 //
-// $Id: match.h,v 1.3 2002-06-13 22:12:46 jake Exp $
+// $Id: match.h,v 1.4 2002-06-17 22:18:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -63,7 +63,6 @@ extern dbref match_thing_quiet(dbref player, char *name);
 #define MAT_HOME            8   /* Check for 'home' */
 
 #define MATCH_CONTROL       1   // Match controlled
-#define MATCH_AFFECT        2   // Match affected
-#define MATCH_EXAM          4   // Match examinable
+#define MATCH_EXAM          2   // Match examinable
 
 #endif

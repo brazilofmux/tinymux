@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.13 2002-06-15 03:18:44 jake Exp $
+// $Id: externs.h,v 1.14 2002-06-17 22:18:35 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -203,7 +203,6 @@ extern void FDECL(edit_string, (char *, char **, char *, char *));
 extern dbref match_handler(dbref player, const char *name, int key, BOOL bQuiet);
 #define match_controlled(player,name)       match_handler(player, name, MATCH_CONTROL, FALSE)
 #define match_controlled_quiet(player,name) match_handler(player, name, MATCH_CONTROL, TRUE)
-#define match_affected(player,name)         match_handler(player, name, MATCH_AFFECT, FALSE)
 #define match_examinable(player,name)       match_handler(player, name, MATCH_EXAM, FALSE)
 
 /* From boolexp.cpp */

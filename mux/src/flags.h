@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.4 2002-06-13 07:19:33 jake Exp $
+// $Id: flags.h,v 1.5 2002-06-17 22:18:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -213,7 +213,6 @@ extern char *MakeCanonicalFlagName
 /* Examinable(P,X)      - Can P look at attribs of X */
 /* MyopicExam(P,X)      - Can P look at attribs of X (obeys MYOPIC) */
 /* Controls(P,X)        - Can P force X to do something */
-/* Affects(P,X)         - (Controls in MUSH V1) Is P wiz or same owner as X */
 /* Abode(X)             - Is X an ABODE room */
 /* Link_exit(P,X)       - Can P link from exit X */
 /* Linkable(P,X)        - Can P link to X */
@@ -354,10 +353,6 @@ extern char *MakeCanonicalFlagName
                             (Inherits(p) || !Inherits(x))) || \
                             (check_zone(p,x))))
 
-#define Affects(p,x)        (Good_obj(x) && \
-                            (!(God(x) && !God(p))) && \
-                            (Wizard(p) || \
-                            (Owner(p) == Owner(x))))
 #define Mark(x)             (mudstate.markbits->chunk[(x)>>3] |= \
                             mudconf.markdata[(x)&7])
 #define Unmark(x)           (mudstate.markbits->chunk[(x)>>3] &= \

@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.12 2002-06-16 23:40:58 jake Exp $
+// $Id: set.cpp,v 1.13 2002-06-17 22:18:35 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -32,9 +32,6 @@ dbref match_handler(dbref player, const char *name, int key, BOOL bQuiet)
     {
     case MATCH_CONTROL:
         check = (Good_obj(mat) && !Controls(player, mat));
-        break;
-    case MATCH_AFFECT:
-        check = (mat != NOTHING && !Affects(player, mat));
         break;
     case MATCH_EXAM:
         check = (mat != NOTHING && !Examinable(player, mat));
