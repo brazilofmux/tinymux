@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.28 2003-03-04 15:58:09 sdennis Exp $
+// $Id: conf.cpp,v 1.29 2003-09-07 22:05:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -437,6 +437,16 @@ CF_HAND(cf_int)
     // Copy the numeric value to the parameter.
     //
     *vp = mux_atol(str);
+    return 0;
+}
+
+// ---------------------------------------------------------------------------
+// cf_seconds: Set CLinearTimeDelta in units of seconds.
+//
+CF_HAND(cf_seconds)
+{
+    CLinearTimeDelta *pltd = (CLinearTimeDelta *)vp;
+    pltd->SetSecondsString(str);
     return 0;
 }
 
@@ -2036,6 +2046,11 @@ void cf_display(dbref player, char *param_name, char *buff, char **bufc)
                     }
                     ItemToList_Final(&itl);
                     return;
+                }
+                else if (tp->interpreter == cf_seconds)
+                {
+                    CLinearTimeDelta *pltd = (CLinearTimeDelta *)(tp->loc);
+                    safe_str(pltd->ReturnSecondsString(), buff, bufc);
                 }
             }
             safe_noperm(buff, bufc);
