@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.27 2000-10-04 06:41:58 sdennis Exp $
+// $Id: stringutil.cpp,v 1.28 2000-10-04 21:01:48 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1149,17 +1149,13 @@ int ANSI_TruncateToField
     char *pField0,
     int maxVisualWidth,
     int *pnVisualWidth,
-    BOOL bNoBleed)
+    int  iEndGoal
+)
 {
     if (!szString)
     {
         pField0[0] = '\0';
         return 0;
-    }
-    int iEndGoal = ANSI_ENDGOAL_NORMAL;
-    if (bNoBleed)
-    {
-        iEndGoal = ANSI_ENDGOAL_NOBLEED;
     }
     struct ANSI_In_Context aic;
     struct ANSI_Out_Context aoc;

@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.13 2000-10-04 06:41:59 sdennis Exp $
+// $Id: mail.cpp,v 1.14 2000-10-04 21:01:48 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -564,28 +564,34 @@ void do_mail_read(dbref player, char *msglist)
                 notify(player, DASH_LINE);
                 status = status_string(mp);
                 names = make_namelist(player, (char *)mp->tolist);
+                char szSubjectBuffer[MBUF_SIZE];
+                int iRealVisibleWidth;
 #ifdef RADIX_COMPRESSION
                 string_decompress(mp->subject, subbuff);
                 string_decompress(mp->time, timebuff);
-                notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %-65s",
-                   i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
+                ANSI_TruncateToField(subbuff, sizeof(szSubjectBuffer),
+                    szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+                notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s",
+                               i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
                                timebuff,
-                             (Connected(mp->from) &&
-                  (!Hidden(mp->from) || Hasprivs(player))) ?
-                           " (Conn)" : "      ", folder,
+                              (Connected(mp->from) &&
+                              (!Hidden(mp->from) || Hasprivs(player))) ?
+                              " (Conn)" : "      ", folder,
                                status,
                                names,
-                               subbuff));
+                               szSubjectBuffer));
 #else
-                notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %-65s",
-                   i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
+                ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
+                    szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+                notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s",
+                               i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
                                mp->time,
-                             (Connected(mp->from) &&
-                  (!Hidden(mp->from) || Hasprivs(player))) ?
-                           " (Conn)" : "      ", folder,
+                               (Connected(mp->from) &&
+                               (!Hidden(mp->from) || Hasprivs(player))) ?
+                               " (Conn)" : "      ", folder,
                                status,
                                names,
-                               mp->subject));
+                               szSubjectBuffer));
 #endif // RADIX_COMPRESSION
                 free_lbuf(names);
                 free_lbuf(status);
@@ -699,6 +705,8 @@ void do_mail_review(dbref player, char *name, char *msglist)
     int i = 0, j = 0;
     dbref target;
     char *tbuf1, *msg, *status, *bp, *str;
+    int iRealVisibleWidth;
+    char szSubjectBuffer[MBUF_SIZE];
 
     target = lookup_player(player, name, 1);
     if (target == NOTHING)
@@ -714,27 +722,26 @@ void do_mail_review(dbref player, char *name, char *msglist)
             if (mp->from == player)
             {
                 i++;
-                /*
-                 * list it 
-                 */
 #ifdef RADIX_COMPRESSION
                 string_decompress(get_mail_message(mp->number), msgbuff);
                 string_decompress(mp->time, timebuff);
                 string_decompress(mp->subject, subbuff);
-                notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %.25s",
+                ANSI_TruncateToField(subbuff, sizeof(szSubjectBuffer),
+                    szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+                notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %s",
                                status_chars(mp),
                                i, strlen(msgbuff),
-                      PLAYER_NAME_LIMIT - 6, Name(mp->from),
-                               subbuff));
+                               PLAYER_NAME_LIMIT - 6, Name(mp->from),
+                               szSubjectBuffer));
 #else
-                notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %.25s",
+                ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
+                    szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+                notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %s",
                                status_chars(mp),
-                    i, strlen(get_mail_message(mp->number)),
-                      PLAYER_NAME_LIMIT - 6, Name(mp->from),
-                               mp->subject));
-#endif /*
-        * RADIX_COMPRESSION 
-        */
+                               i, strlen(get_mail_message(mp->number)),
+                               PLAYER_NAME_LIMIT - 6, Name(mp->from),
+                               szSubjectBuffer));
+#endif // RADIX_COMPRESSION
             }
         }
         notify(player, DASH_LINE);
@@ -755,9 +762,6 @@ void do_mail_review(dbref player, char *name, char *msglist)
                 i++;
                 if (mail_match(mp, ms, i))
                 {
-                    /*
-                     * Read it 
-                     */
                     j++;
                     status = status_string(mp);
 #ifdef RADIX_COMPRESSION
@@ -769,27 +773,32 @@ void do_mail_review(dbref player, char *name, char *msglist)
                     str = msgbuff;
                     TinyExec(msg, &bp, 0, player, player, EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
                     *bp = '\0';
+
+                    ANSI_TruncateToField(subbuff, sizeof(szSubjectBuffer),
+                        szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
                     notify(player, DASH_LINE);
-                    notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %-65s",
+                    notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s",
                                    i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
                                    timebuff,
-                             (Connected(mp->from) &&
-                              (!Hidden(mp->from) || Hasprivs(player))) ?
-                            " (Conn)" : "      ", 0,
-                              status, subbuff));
+                                   (Connected(mp->from) &&
+                                   (!Hidden(mp->from) || Hasprivs(player))) ?
+                                   " (Conn)" : "      ", 0,
+                                   status, szSubjectBuffer));
 #else
                     msg = bp = alloc_lbuf("do_mail_review");
                     str = get_mail_message(mp->number);
                     TinyExec(msg, &bp, 0, player, player, EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
                     *bp = '\0';
+                    ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
+                        szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
                     notify(player, DASH_LINE);
-                    notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %-65s",
+                    notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s",
                                    i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
                                    mp->time,
-                             (Connected(mp->from) &&
-                              (!Hidden(mp->from) || Hasprivs(player))) ?
-                            " (Conn)" : "      ", 0,
-                              status, mp->subject));
+                                   (Connected(mp->from) &&
+                                   (!Hidden(mp->from) || Hasprivs(player))) ?
+                                   " (Conn)" : "      ", 0,
+                                   status, szSubjectBuffer));
 #endif // RADIX_COMPRESSION 
                     free_lbuf(status);
                     notify(player, DASH_LINE);
@@ -819,8 +828,11 @@ void do_mail_list(dbref player, char *msglist, int sub)
     struct mail_selector ms;
     int i = 0, folder;
     char *time;
+    int iRealVisibleWidth;
+    char szSubjectBuffer[MBUF_SIZE];
 
-    if (!parse_msglist(msglist, &ms, player)) {
+    if (!parse_msglist(msglist, &ms, player))
+    {
         return;
     }
     folder = player_folder(player);
@@ -835,50 +847,44 @@ void do_mail_list(dbref player, char *msglist, int sub)
             i++;
             if (mail_match(mp, ms, i))
             {
-                /*
-                 * list it 
-                 */
-
 #ifdef RADIX_COMPRESSION
                 string_decompress(get_mail_message(mp->number), msgbuff);
-                string_decompress(mp->subject, subbuff);
                 string_decompress(mp->time, timebuff);
                 time = mail_list_time(timebuff);
                 if (sub)
-                    notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %.25s",
-                               status_chars(mp),
-                             i, strlen(msgbuff),
-                                   PLAYER_NAME_LIMIT - 6, Name(mp->from),
-                                   subbuff));
+                {
+                    string_decompress(mp->subject, subbuff);
+                    ANSI_TruncateToField(subbuff, sizeof(szSubjectBuffer),
+                        szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+                    notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %s",
+                           status_chars(mp), i, strlen(msgbuff),
+                           PLAYER_NAME_LIMIT - 6, Name(mp->from), szSubjectBuffer));
+                }
                 else
+                {
                     notify(player, tprintf("[%s] %-3d (%4d) From: %-*s At: %s %s",
-                               status_chars(mp),
-                             i, strlen(msgbuff),
-                                   PLAYER_NAME_LIMIT - 6, Name(mp->from),
-                                   time,
-                            ((Connected(mp->from) &&
-                              (!Hidden(mp->from) || Hasprivs(player)))
-                             ? "Conn" : " ")));
+                           status_chars(mp), i, strlen(msgbuff),
+                           PLAYER_NAME_LIMIT - 6, Name(mp->from), time,
+                           ((Connected(mp->from) && (!Hidden(mp->from) || Hasprivs(player))) ? "Conn" : " ")));
+                }
 #else
                 time = mail_list_time(mp->time);
                 if (sub)
-                    notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %.25s",
-                               status_chars(mp),
-                                   i, strlen(get_mail_message(mp->number)),
-                                   PLAYER_NAME_LIMIT - 6, Name(mp->from),
-                                   mp->subject));
+                {
+                    ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
+                        szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+                    notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %s",
+                           status_chars(mp), i, strlen(get_mail_message(mp->number)),
+                           PLAYER_NAME_LIMIT - 6, Name(mp->from), szSubjectBuffer));
+                }
                 else
+                {
                     notify(player, tprintf("[%s] %-3d (%4d) From: %-*s At: %s %s",
-                               status_chars(mp),
-                                   i, strlen(get_mail_message(mp->number)),
-                                   PLAYER_NAME_LIMIT - 6, Name(mp->from),
-                                   time,
-                            ((Connected(mp->from) &&
-                              (!Hidden(mp->from) || Hasprivs(player)))
-                             ? "Conn" : " ")));
-#endif /*
-        * RADIX_COMPRESSION 
-        */
+                           status_chars(mp), i, strlen(get_mail_message(mp->number)),
+                           PLAYER_NAME_LIMIT - 6, Name(mp->from), time,
+                            ((Connected(mp->from) && (!Hidden(mp->from) || Hasprivs(player))) ? "Conn" : " ")));
+                }
+#endif // RADIX_COMPRESSION
                 free_lbuf(time);
             }
         }
@@ -3914,6 +3920,8 @@ static void do_mail_proof(dbref player)
     char *mailmsg, *msg, *bp, *str;
     dbref aowner;
     int aflags;
+    int iRealVisibleWidth;
+    char szSubjectBuffer[MBUF_SIZE];
 
     mailto = atr_get(player, A_MAILTO, &aowner, &aflags);
 
@@ -3935,10 +3943,12 @@ static void do_mail_proof(dbref player)
     if (Flags2(player) & PLAYER_MAILS)
     {
         names = make_namelist(player, mailto);
+        ANSI_TruncateToField(atr_get_raw(player, A_MAILSUB),
+            sizeof(szSubjectBuffer), szSubjectBuffer, 35,
+            &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
         notify(player, DASH_LINE);
-        notify(player, tprintf("From:  %-*s  Subject: %-35s\nTo: %s",
-                       PLAYER_NAME_LIMIT - 6, Name(player),
-                    atr_get_raw(player, A_MAILSUB), names));
+        notify(player, tprintf("From:  %-*s  Subject: %s\nTo: %s",
+               PLAYER_NAME_LIMIT - 6, Name(player), szSubjectBuffer, names));
         notify(player, DASH_LINE);
         notify(player, msg);
         notify(player, DASH_LINE);
