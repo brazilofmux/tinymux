@@ -1,17 +1,20 @@
 #!/bin/sh
 #
-OldBuild=42
-OldVersion=2.1.14.$OldBuild
-NewBuild=49
-NewVersion=2.1.15.$NewBuild
+# REQUIRED: The two ReferenceDir must already exist. They may be created by
+# untaring a previous distribution.
+#
+OldBuild=1
+OldVersion=2.2.0.$OldBuild
+NewBuild=2
+NewVersion=2.2.0.$NewBuild
 
 ChangesDir=.
-ReferenceDir=mux2.1_$OldBuild
-DistroDir=mux2.1
-NewDir=mux2.1_$NewBuild
-patchableFiles=`cat TOC21_src.patchable`
-unpatchedFiles=`cat TOC21_src.unpatched`
-removeFiles=`cat TOC21_src.removed`
+ReferenceDir=mux2.2_$OldBuild
+DistroDir=mux2.2
+NewDir=mux2.2_$NewBuild
+patchableFiles=`cat win32/TOC.src.patchable`
+unpatchedFiles=`cat win32/TOC.src.unpatched`
+removeFiles=`cat win32/TOC.src.removed`
 
 # Build source patchfile
 #
@@ -60,9 +63,9 @@ if [ -e mux-$NewVersion.win32.src.zip ]; then
 fi
 pkzip -add -recurse -path -maximum mux-$NewVersion.win32.src.zip $DistroDir\\\*.\*
 
-patchableFiles=`cat TOC21_bin.patchable`
-unpatchedFiles=`cat TOC21_bin.unpatched`
-removeFiles=`cat TOC21_bin.removed`
+patchableFiles=`cat win32/TOC.bin.patchable`
+unpatchedFiles=`cat win32/TOC.bin.unpatched`
+removeFiles=`cat win32/TOC.bin.removed`
 
 # Build binary patchfile
 #
