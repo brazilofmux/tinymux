@@ -4,7 +4,7 @@
 \setlength{\oddsidemargin}{0.5in}
 \setlength{\evensidemargin}{0in}
 \setlength{\textwidth}{6in}
-\title{TinyMUX 2.3 Manual}
+\title{MUX 2.3 Manual}
 \author{Stephen Dennis (AKA Brazil)}
 \date{2003-MAR-04}
 \begin{document}
@@ -23,19 +23,17 @@
 KIRKLAND WA 98034-4305
 \end{minipage}
 
+Copyright (C) 1998 to 2003 Stephen Dennis. All rights reserved.
+
+No part of this book may be reproduced in any form without written permission from the author.
+
 \mainmatter
 \chapter{Introduction}
-\section{Philosophy of this Document}
-There is no single author to this document --- only an editor. There is an
-overarching structure to the document, but otherwise, changes by everyone are
-welcome. Please do your part to make it better.
-
-Things are first broken down into views or perspectives that cater to a
+\section{Overview}
+This document is broken down first into views or perspectives that cater to a
 particular type of reader at a particular experience or skill level and look
-at the subject under discussion from a particular angle. I ask that top-level
-divisions be chosen that way. Sub-divisions from there are much more flexible.
-Some redundancy between perspectives is unavoidable. With an index, this
-redundancy can help to pull the document together.
+at the subject under discussion from a particular angle.
+Some redundancy between perspectives is unavoidable.
 \section{Let's Begin}
 There seem to be two good ways to begin:
 \begin{enumerate}
@@ -43,7 +41,7 @@ There seem to be two good ways to begin:
 Find an expert to answer all your questions and prompt you for the questions
 you would be asking if you even knew where to start.
 \item
-Do some research on your own and learn by quiet trial-and-error.
+Do some research on your own and learn by patient trial-and-error.
 \end{enumerate}
 There are advantages and disadvantages to both approaches. I recommend that
 you rely on yourself and use the experts sparingly in specific areas as a way
@@ -51,35 +49,30 @@ to accelerate yourself through those specific issues. Always be prepared and
 ready to find your own way.
 
 There are only so many experts and their expertise may be narrow. Even experts
-in the same area are known to disagree --- in fact, usually these experts
-aren't talking to each other unless they are talking about something they don't
-know about yet or they are disagreeing. You have little way of knowing whether
-someone is an expert until you are already all wrapped up in their advice and
-the political baggage they may carry with them. You may even need to put
-yourself into the awkward position of having to motivate one of these experts
-to help you. Enough said about that.
+in one area are known to disagree
+You have little way of knowing whether
+someone is an expert in a particular area until you are already all
+wrapped up in their advice and the political baggage they may carry with them.
 
 Solitary reading and trial-and-error has its own problems. Documentation that
 is available is both limited and out of date. In order to get a good idea of
-what you're dealing with, you may need to splice together information from
+what you're dealing with, you may need to stitch together information from
 several
 sources. It is easy to get stuck on a small point and waste a lot of time.
 Also, these game servers are large enough and complicated enough that
-experimentation without the advantage of some experience or history can be
+experimentation without the advantage of some experience or history is
 nearly impossible.
-\chapter{New to TinyMUX}
+\chapter{New to MUX}
 \section{Frequently Asked Questions (FAQ)}
 \subsection{What is a Text-Based Game Server?}
 It is a program that allows a multitude of people to connect to the same
-text-based environment and interact with each other and with the environment.
+text-based environment and interact with each other and the environment.
 The administrator runs this server on top of an operating system and the server
 in turn allows other people to connect. % See Figure 1 below.
 
-These layers are written in a particular computer language. The hardware
-layers have their own C-like language for describing how a body of gates are
-connected logically, geographical, thermally, etc.  Most operating systems are
-written in C/C++ with some assembly language and some higher-level scripting
-or macro languages. This is also sometimes called hardcode.
+These layers are written in a particular computer language.
+Most operating systems are written in C/C++ with some assembly language
+and some higher-level scripting or macro languages.
 
 The term \emph{hardcode} usually means the approximately 93,000 lines of C/C++
 source code that make up the server itself.
@@ -97,35 +90,35 @@ server. You could call
 it softcode, but then you are also probably including non-MUSH family languages
 further away and more incompatible. For the purpose of this document, we'll
 call it softcode with the understanding that we expect it to run on a particular
-set of closely related servers and on TinyMUX 2.3 in particular.
+set of closely related servers and on MUX 2.3 in particular.
 
 \section{I'm using Windows. Why does the log say it can't find it's files?}
-You are probably running the tinymux.exe file directly from the GUI by double
+You are probably running the netmux.exe file directly from the GUI by double
 clicking on the icon. The server needs the current directory to be the game
 sub-directory. All the file names are relative to that point, but when you
-double-click on the tinymux.exe program directly, the current directory might
+double-click on the netmux.exe program directly, the current directory might
 be the game$\backslash$bin or tinymux$\backslash$release directory, or it
 might be somewhere else.  The current directory is too undefined for the game
 to be run this way.
 
 You should open a Command Prompt window (that is, an MS-DOS box), change to
 the drive and `mux2.3$\backslash$game' sub-directory where you extracted the
-distribution, make sure the tinymux.exe, a.exe, dbconvert.exe, and mkindx.exe
-programs are in the `bin' sub-directory, and then run the startmux.bat batch
-file.
-\section{How to Begin Running TinyMUX}
+distribution, make sure the netmux.exe program are in the `bin'
+sub-directory, and then run the ./Startmux script.
+\section{How to Begin Running MUX}
 The first thing you'll need is some server hardware with some flavor of Unix or
 Windows running. It's more than a little helpful if this server has a dedicated
-Internet or Intranet connection, as without it, you'll be using it by yourself.
+Internet or Intranet connection, as without it, you'll be using the
+server all by yourself.
 
 You need to find the latest known-good distribution from
-www.tinymux.com and download it. If you are using a web browser, it will
+www.tinymux.org and download it. If you are using a web browser, it will
 download it in `binary' mode for you automatically, however, if you use an FTP
 client manually, you'll need to be sure to put the transfer into binary. Even
 between Unix machines, Non-binary transfers can be problematic.
 
 Here is a typical manual FTP conversation:
-\footnotesize{\texttt{
+\texttt{\footnotesize
 \begin{verse}
 \$ \emph{ftp ftp.tinymux.org}\\
 Connected to ftp.tinymux.org.\\
@@ -145,7 +138,7 @@ mux-2.3.0.6.unix.tar.gz\\
 mux-2.3.0.6.win32.bin.tar.gz\\
 mux-2.3.0.6.win32.src.tar.gz\\
 226 Transfer complete.\\
-85 bytes received in 0.03Seconds (4.48 Kbytes/sec)\\
+85 bytes received in 0.03Seconds (4.48Kbytes/sec)\\
 ftp$>$ \emph{get mux-2.3.0.6.unix.tar.gz}\\
 200 PORT command successful.\\
 150 Opening BINARY mode data connection for mux-2.3.0.6.unix.tar.gz(859891 bytes).\\
@@ -155,26 +148,26 @@ ftp$>$ \emph{quit}\\
 221\\
 \$
 \end{verse}
-}}
+}
 The suffixes on the end of the filename tell you which tools were used to
 produce the file and in which order. Gzip handles `.gz' files, and tar handled
 `.tar' files. However, tar is able to deal with gzipped files itself. So in
 order to unpack this distribution, we do the following:
-\footnotesize{\texttt{
+\texttt{\footnotesize
 \begin{verse}
 \$ \emph{tar xvzf mux-2.3.0.6.unix.tar.gz}
 \end{verse}
-}}
+}
 These two commands will create a sub-directory called `mux2.3' with all the
 required files in the right places. So, in order to build the game, continue
 as follows:
-\footnotesize{\texttt{
+\texttt{\footnotesize
 \begin{verse}
 \$ \emph{cd mux2.3/src}\\
 \$ \emph{./Configure}\\
 \$ \emph{make}
 \end{verse}
-}}
+}
 On some system `gmake' is required instead of `make'. At the end of this
 process, you should have executable programs built in the mux2.3/src directory
 with links made to the mux2.3/game/bin directory. A link in Unix parlance is
@@ -184,39 +177,39 @@ At this point, if you don't have an existing database to convert or import,
 and if you don't have any configuration changes, you could simply run the
 server and it would create a minimal database and let you connect to port
 2860. This can be done as follows:
-\footnotesize{\texttt{
+\texttt{\footnotesize
 \begin{verse}
 \$ \emph{cd ../game}\\
 \$ \emph{./Startmux}
 \end{verse}
-}}
+}
 The Startmux script will do a few things like index the help files and then
 return to the \$-prompt again. You can verify that the server is running as
 follows:
-\footnotesize{\texttt{
+\texttt{\footnotesize
 \begin{verse}
 \$ \emph{ps u}
 \end{verse}
-}}
+}
 You will see two processes, a netmux game process and a slave process that
 handled reverse DNS lookups and the identd protocol for hosts that support
 it. To connect to the game, do the following:
-\footnotesize{\texttt{
+\texttt{\footnotesize
 \begin{verse}
 \$ \emph{telnet localhost 2860}
 \end{verse}
-}}
+}
 You will see the connect.txt welcome screen contents and then the server will
 wait for you to connect or logon. With a minimal database, there is only one
 player defined: Wizard or \#1. And, there is only one room defined: Limbo or
 \#0. The initial password for \#1 is something of a standard everywhere. You
 should change it right away with the `@password' command. Do the following:
-\footnotesize{\texttt{
+\texttt{\footnotesize
 \begin{verse}
 Connect Wizard potrzebie\\
 @password potrzebie=XXXXXXXX
 \end{verse}
-}}
+}
 where XXXXXX is a password of your own chosing.
 
 Use `help @password' to learn more about the @password command, and
@@ -226,14 +219,14 @@ functions.
 Finally, at some point, you'll want to bring the game down in an orderly way.
 People have stepped over the power cord and other non-orderly ways of bringing
 the game down, but `@shutdown' is recommended instead as follows:
-\footnotesize{\texttt{
+\texttt{\footnotesize
 \begin{verse}
 \emph{@shutdown}\\
 Goodbye.\\
 Connection Lost.\\
 \$
 \end{verse}
-}}
+}
 The database is quite rugged, but there are no guarantees if you make a
 habit of abusing it.
 
@@ -249,7 +242,7 @@ change a running game's behavior. To accomplish that, look at the `@admin' or
 `@restart' commands.
 
 The name of the configuration file is given in the ./Startmux script on the
-command line and it's netmux.conf for Unix installations and tinymux.conf for
+command line and it's netmux.conf for Unix installations and netmux.conf for
 Win32 installations.
 
 If you look at this file, you'll see several lines with `include' in them.
@@ -339,7 +332,7 @@ You might also see me connect from svdltd.com or mirror.svdltd.com, and so,
 for the sake of this example, you have three IP addresses that are close and
 therefore they are probably within the same subnet. It's a fair guess.
 
-\footnotesize{\texttt{
+\texttt{\footnotesize
 \begin{verse}
 $>$ \emph{ping -a svdltd.com}\\
 Pinging svdltd.com [207.153.135.130] with 32 bytes of data.\\
@@ -351,26 +344,25 @@ $>$ \emph{ping -a 207.135.135.134}\\
 Pinging 207.153.135.134 with 32 bytes of data.\\
 \ldots
 \end{verse}
-}}
+}
 
-And now, we need to convert from decimal, to hexadecimal, to binary as
-follows:
+And now, we need to convert from decimal to binary as follows:
 \begin{verse}
-130 ==> 0x82 ==> 1000.0010 binary.\\
-132 ==> 0x84 ==> 1000.0100 binary.\\
-134 ==> 0x86 ==> 1000.0110 binary.
+'pack(130,2)' gives '10000010'.\\
+'pack(132,2)' gives '10000100'.\\
+'pack(134,2)' gives '10000110'.
 \end{verse}
 So, the subnet is at least the lower three binary digits because those three
 digits are the only ones that are changing. Let's try a different fourth bit
-and see if the hostname changes. That is, 1000.1001 binary ==> 137.
-\footnotesize{\texttt{
+and see if the hostname changes.  That is, 'unpack(10001001,2)' gives '137'.
+\texttt{\footnotesize
 \begin{verse}
 $>$ \emph{ping -a 207.153.135.137}\\
 \ldots\\
 request timed out.
 \ldots
 \end{verse}
-}}
+}
 And, for my subnet, it's hard to find another computer nearby. It turns out
 that the lower 4 binary digits are within my subnet, but you couldn't guess
 that unless one of my computers had allocated one of the higher IP addresses
@@ -400,12 +392,12 @@ our example.
 You can apply the \texttt{register\_site} restriction to the desired subnet
 with either of the following commands, but the second format is the preferred
 format:
-\footnotesize{\texttt{{
+\texttt{\footnotesize
 \begin{verse}
 @admin register\_site=207.153.135.128 255.255.255.248\\
 @admin register\_site=207.153.135.128/29
 \end{verse}
-}}
+}
 The 29 at the end represents the number of significant bits in the base subnet
 address.
 \backmatter
