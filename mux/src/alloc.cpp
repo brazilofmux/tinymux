@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.2 2003-04-28 05:01:34 sdennis Exp $
+// $Id: alloc.cpp,v 1.3 2003-04-28 05:29:51 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -42,14 +42,14 @@ typedef struct pool_footer
 
 typedef struct pooldata
 {
-    int pool_size;                  // Size in bytes of a buffer
+    int    pool_size;               // Size in bytes of a buffer
     unsigned int poolmagic;         // Magic number specific to this pool
     POOLHDR *free_head;             // Buffer freelist head
     POOLHDR *chain_head;            // Buffer chain head
-    int tot_alloc;                  // Total buffers allocated
-    int num_alloc;                  // Number of buffers currently allocated
-    int max_alloc;                  // Max # buffers allocated at one time
-    int num_lost;                   // Buffers lost due to corruption
+    UINT64 tot_alloc;               // Total buffers allocated
+    UINT64 num_alloc;               // Number of buffers currently allocated
+    UINT64 max_alloc;               // Max # buffers allocated at one time
+    UINT64 num_lost;                // Buffers lost due to corruption
 } POOL;
 
 POOL pools[NUM_POOLS];
@@ -520,14 +520,24 @@ void list_bufstats(dbref player)
 {
     char buff[MBUF_SIZE];
 
-    notify(player, "Buffer Stats     Size    InUse    Total   Allocs     Lost");
+    notify(player, "Buffer Stats  Size     InUse     Total        Allocs   Lost");
 
     int i;
     for (i = 0; i < NUM_POOLS; i++)
     {
-        sprintf(buff, "%-15s %5d%9d%9d%9d%9d", poolnames[i],
-            pools[i].pool_size, pools[i].num_alloc, pools[i].max_alloc,
-            pools[i].tot_alloc, pools[i].num_lost);
+        char szNumAlloc[22];
+        char szMaxAlloc[22];
+        char szTotAlloc[22];
+        char szNumLost[22];
+
+        mux_i64toa(pools[i].num_alloc, szNumAlloc);
+        mux_i64toa(pools[i].max_alloc, szMaxAlloc);
+        mux_i64toa(pools[i].tot_alloc, szTotAlloc);
+        mux_i64toa(pools[i].num_lost,  szNumLost);
+        
+        sprintf(buff, "%-12s %5d%10s%10s%14s%7s",
+            poolnames[i], pools[i].pool_size,
+            szNumAlloc, szMaxAlloc, szTotAlloc, szNumLost);
         notify(player, buff);
     }
 }
