@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.9 2003-02-05 01:17:56 sdennis Exp $
+// $Id: bsd.cpp,v 1.10 2003-02-05 01:34:45 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2685,9 +2685,9 @@ typedef struct
 {
     const char *pShortName;
     const char *pLongName;
-} TINY_SIGNAMES;
+} MUX_SIGNAMES;
 
-static TINY_SIGNAMES signames[NSIG];
+static MUX_SIGNAMES signames[NSIG];
 
 #if defined(HAVE_SYS_SIGNAME)
 #define SysSigNames sys_signame
@@ -2711,7 +2711,7 @@ void BuildSignalNamesTable(void)
         if (  0 <= sig
            && sig < NSIG)
         {
-            TINY_SIGNAMES *tsn = &signames[sig];
+            MUX_SIGNAMES *tsn = &signames[sig];
             if (tsn->pShortName == NULL)
             {
                 tsn->pShortName = pst->szSignal;
@@ -2739,7 +2739,7 @@ void BuildSignalNamesTable(void)
     }
     for (i = 0; i < NSIG; i++)
     {
-        TINY_SIGNAMES *tsn = &signames[i];
+        MUX_SIGNAMES *tsn = &signames[i];
         if (tsn->pShortName == NULL)
         {
 #ifdef SysSigNames

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.14 2003-02-05 01:13:20 sdennis Exp $
+// $Id: command.cpp,v 1.15 2003-02-05 01:34:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2828,7 +2828,7 @@ CF_HAND(cf_cmd_alias)
     NAMETAB *nt;
     int *hp;
 
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t=,");
     char *alias = mux_strtok_parse(&tts);
@@ -3619,7 +3619,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
         break;
 
     default:
-        TINY_STRTOK_STATE tts;
+        MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, arg);
         mux_strtok_ctl(&tts, " \t=,");
         char *s_option = mux_strtok_parse(&tts);

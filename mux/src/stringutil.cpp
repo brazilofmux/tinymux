@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.37 2003-02-05 00:29:09 sdennis Exp $
+// $Id: stringutil.cpp,v 1.38 2003-02-05 01:34:46 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2899,7 +2899,7 @@ BOOL is_real(char *str)
 // consume -all- of the controlling delimiters that seperate two tokens.
 // It consumes only the first one.
 //
-void mux_strtok_src(TINY_STRTOK_STATE *tts, char *arg_pString)
+void mux_strtok_src(MUX_STRTOK_STATE *tts, char *arg_pString)
 {
     if (!tts || !arg_pString) return;
 
@@ -2908,7 +2908,7 @@ void mux_strtok_src(TINY_STRTOK_STATE *tts, char *arg_pString)
     tts->pString = arg_pString;
 }
 
-void mux_strtok_ctl(TINY_STRTOK_STATE *tts, char *pControl)
+void mux_strtok_ctl(MUX_STRTOK_STATE *tts, char *pControl)
 {
     if (!tts || !pControl) return;
 
@@ -2929,7 +2929,7 @@ void mux_strtok_ctl(TINY_STRTOK_STATE *tts, char *pControl)
     }
 }
 
-char *mux_strtok_parseLEN(TINY_STRTOK_STATE *tts, int *pnLen)
+char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, int *pnLen)
 {
     *pnLen = 0;
     if (!tts)
@@ -2991,7 +2991,7 @@ char *mux_strtok_parseLEN(TINY_STRTOK_STATE *tts, int *pnLen)
     }
 }
 
-char *mux_strtok_parse(TINY_STRTOK_STATE *tts)
+char *mux_strtok_parse(MUX_STRTOK_STATE *tts)
 {
     int nLen;
     char *p = mux_strtok_parseLEN(tts, &nLen);
@@ -3013,7 +3013,7 @@ char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
     int nLen;
     int nLeft = sizeof(Buffer) - 1;
     char *p;
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, pString);
     mux_strtok_ctl(&tts, pSetToRemove);
     for ( p = mux_strtok_parseLEN(&tts, &nLen);

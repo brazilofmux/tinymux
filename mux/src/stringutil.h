@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.29 2003-02-04 22:35:52 sdennis Exp $
+// $Id: stringutil.h,v 1.30 2003-02-05 01:34:46 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -33,12 +33,12 @@ typedef struct
 {
     char *pString;
     char aControl[256];
-} TINY_STRTOK_STATE;
+} MUX_STRTOK_STATE;
 
-void mux_strtok_src(TINY_STRTOK_STATE *tts, char *pString);
-void mux_strtok_ctl(TINY_STRTOK_STATE *tts, char *pControl);
-char *mux_strtok_parseLEN(TINY_STRTOK_STATE *tts, int *pnLen);
-char *mux_strtok_parse(TINY_STRTOK_STATE *tts);
+void mux_strtok_src(MUX_STRTOK_STATE *tts, char *pString);
+void mux_strtok_ctl(MUX_STRTOK_STATE *tts, char *pControl);
+char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, int *pnLen);
+char *mux_strtok_parse(MUX_STRTOK_STATE *tts);
 char *RemoveSetOfCharacters(char *pString, char *pSetToRemove);
 
 int mux_ltoa(long val, char *buf);

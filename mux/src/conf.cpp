@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.11 2003-02-04 22:35:51 sdennis Exp $
+// $Id: conf.cpp,v 1.12 2003-02-05 01:34:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -396,7 +396,7 @@ CF_HAND(cf_int_array)
     unsigned int nPorts = 0;
 
     char *p;
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t\n\r");
     while ((p = mux_strtok_parse(&tts)) != NULL)
@@ -595,7 +595,7 @@ CF_HAND(cf_string_dyn)
 //
 CF_HAND(cf_alias)
 {
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t=,");
     char *alias = mux_strtok_parse(&tts);
@@ -626,7 +626,7 @@ CF_HAND(cf_alias)
 //
 CF_HAND(cf_flagalias)
 {
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t=,");
     char *alias = mux_strtok_parse(&tts);
@@ -659,7 +659,7 @@ CF_HAND(cf_flagalias)
 //
 CF_HAND(cf_poweralias)
 {
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t=,");
     char *alias = mux_strtok_parse(&tts);
@@ -697,7 +697,7 @@ CF_HAND(cf_or_in_bits)
     // Walk through the tokens.
     //
     success = failure = 0;
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t");
     char *sp = mux_strtok_parse(&tts);
@@ -735,7 +735,7 @@ CF_HAND(cf_modify_bits)
     // Walk through the tokens.
     //
     success = failure = 0;
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t");
     char *sp = mux_strtok_parse(&tts);
@@ -786,7 +786,7 @@ CF_HAND(cf_set_bits)
     success = failure = 0;
     *vp = 0;
 
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t");
     char *sp = mux_strtok_parse(&tts);
@@ -823,7 +823,7 @@ CF_HAND(cf_set_flags)
     // Walk through the tokens.
     //
     success = failure = 0;
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t");
     char *sp = mux_strtok_parse(&tts);
@@ -1163,7 +1163,7 @@ CF_HAND(cf_site)
     {
         // Standard IP range and netmask notation.
         //
-        TINY_STRTOK_STATE tts;
+        MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, str);
         mux_strtok_ctl(&tts, " \t=,");
         addr_txt = mux_strtok_parse(&tts);
@@ -1326,7 +1326,7 @@ int add_helpfile(dbref player, char *cmd, char *str, BOOL bRaw)
 {
     // Parse the two arguments.
     //
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t\n\r");
 
@@ -1446,7 +1446,7 @@ CF_HAND(cf_hook)
     int retval = -1;
     memset(playbuff, '\0', sizeof(playbuff));
     strncpy(playbuff, str, 200);
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, playbuff);
     mux_strtok_ctl(&tts, " \t");
     hookcmd = mux_strtok_parse(&tts);

@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.7 2003-02-05 01:13:21 sdennis Exp $
+// $Id: speech.cpp,v 1.8 2003-02-05 01:34:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -626,7 +626,7 @@ void do_page
     {
         // Need to decode requested recipients.
         //
-        TINY_STRTOK_STATE tts;
+        MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, arg1);
         mux_strtok_ctl(&tts, ", ");
         char *p;
@@ -652,7 +652,7 @@ void do_page
         int   aflags;
         char *pLastPage = atr_get(executor, A_LASTPAGE, &aowner, &aflags);
 
-        TINY_STRTOK_STATE tts;
+        MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, pLastPage);
         mux_strtok_ctl(&tts, " ");
         char *p;
@@ -1250,7 +1250,7 @@ void do_pemit_list
     }
 
     char *p;
-    TINY_STRTOK_STATE tts;
+    MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, list);
     mux_strtok_ctl(&tts, " ");
     for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
