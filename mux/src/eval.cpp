@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.28 2003-03-12 14:44:32 sdennis Exp $
+// $Id: eval.cpp,v 1.29 2003-03-13 15:53:14 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2033,8 +2033,8 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     {
         // We need to transfer and/or ANSI optimize the result.
         //
-        struct ANSI_In_Context aic;
-        struct ANSI_Out_Context aoc;
+        static struct ANSI_In_Context aic;
+        static struct ANSI_Out_Context aoc;
 
         ANSI_String_Out_Init(&aoc, TinyExec_scratch, sizeof(TinyExec_scratch),
             sizeof(TinyExec_scratch), ANSI_ENDGOAL_NORMAL);
