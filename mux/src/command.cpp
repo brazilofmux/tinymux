@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.52 2002-08-01 15:05:53 jake Exp $
+// $Id: command.cpp,v 1.53 2002-08-01 17:12:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2050,7 +2050,7 @@ char *process_command
         // Check for a leave alias.
         //
         p = atr_pget(Location(executor), A_LALIAS, &aowner, &aflags);
-        if (p && *p)
+        if (*p)
         {
             if (matches_exit_from_list(LowerCaseCommand, p))
             {
@@ -2098,16 +2098,13 @@ char *process_command
                     return preserve_cmd;
                 }
             }
-            else
-            {
-                free_lbuf(p);
-            }
         }
+        free_lbuf(p);
 
         DOLIST(exit, Contents(Location(executor)))
         {
             p = atr_pget(exit, A_EALIAS, &aowner, &aflags);
-            if (p && *p)
+            if (*p)
             {
                 if (matches_exit_from_list(LowerCaseCommand, p))
                 {
@@ -2162,11 +2159,8 @@ char *process_command
                         return preserve_cmd;
                     }
                 }
-                else
-                {
-                    free_lbuf(p);
-                }
             }
+            free_lbuf(p);
         }
     }
 
