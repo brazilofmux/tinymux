@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.7 2000-10-25 04:29:23 sdennis Exp $
+// $Id: attrcache.cpp,v 1.8 2000-10-25 21:56:32 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -98,7 +98,7 @@ void cache_pass2(void)
         fprintf(stderr, "File %d: ", i);
         fseek(TempFiles[i], 0, SEEK_SET);
         int cnt = 1000;
-        int nSize;
+        size_t nSize;
         for (;;)
         {
             size_t cc = fread(&nSize, 1, sizeof(nSize), TempFiles[i]);
