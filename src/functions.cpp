@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.67 2001-06-27 17:14:40 sdennis Exp $
+// $Id: functions.cpp,v 1.68 2001-06-28 11:59:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6341,7 +6341,7 @@ FUN flist[] =
     {"PFIND",    fun_pfind,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"PI",       fun_pi,       MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"PICKRAND", fun_pickrand, MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"PLAYMEM",  fun_playmem,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"PLAYMEM",  fun_playmem,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"PMATCH",   fun_pmatch,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"POLL",     fun_poll,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"POP",      fun_pop,      MAX_ARG, 0,  2,       0, CA_PUBLIC},
