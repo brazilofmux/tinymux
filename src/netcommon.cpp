@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.6 2000-04-21 05:35:43 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.7 2000-04-24 22:01:14 sdennis Exp $ 
 */
 
 /*
@@ -1614,14 +1614,12 @@ static int check_connect(DESC *d, char *msg)
         {
             failconn("CON", "Connect", "Logins Disabled", d, R_GAMEDOWN, player, FC_CONN_DOWN,
                 mudconf.downmotd_msg, command, user, password, cmdsave);
-            report_deny(player);
             return 0;
         }
         else
         {
             failconn("CON", "Connect", "Game Full", d, R_GAMEFULL, player, FC_CONN_FULL,
                 mudconf.fullmotd_msg, command, user, password, cmdsave);
-            report_deny(player);
             return 0;
         }
     }
@@ -1692,8 +1690,6 @@ static int check_connect(DESC *d, char *msg)
                 d->player = player;
                 fcache_dump(d, FC_CREA_NEW);
                 announce_connect(player, d);
-                
-                report_create(d->player, d->connected_at);
             }
         }
     }
