@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.4 2003-02-03 15:00:33 sdennis Exp $
+// $Id: command.cpp,v 1.5 2003-02-03 20:07:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3287,7 +3287,7 @@ int LeftJustifyString(char *field, int nWidth, const char *value)
 int RightJustifyNumber(char *field, int nWidth, INT64 value)
 {
     char buffer[22];
-    int n = Tiny_i64toa(value, buffer);
+    int n = mux_i64toa(value, buffer);
     int nReturn = n;
     if (n < nWidth)
     {

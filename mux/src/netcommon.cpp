@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.5 2003-02-03 19:38:42 sdennis Exp $
+// $Id: netcommon.cpp,v 1.6 2003-02-03 20:07:23 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2766,7 +2766,7 @@ void put_ConnectionInfoFields
         p += mux_ltoa(anFields[i], p);
         *p++ = ' ';
     }
-    p += Tiny_i64toa(ltaLogout.ReturnSeconds(), p);
+    p += mux_i64toa(ltaLogout.ReturnSeconds(), p);
     *p++ = 0;
 
     atr_add_raw_LEN(target, A_CONNINFO, pConnInfo, p - pConnInfo);
