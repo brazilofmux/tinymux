@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.29 2002-07-13 07:23:01 jake Exp $
+// $Id: funceval.cpp,v 1.30 2002-07-14 00:23:39 jake Exp $
 //
 
 #include "copyright.h"
@@ -173,14 +173,18 @@ static BOOL check_command(dbref player, char *name, char *buff, char **bufc)
 FUNCTION(fun_link)
 {
     if (check_command(executor, "@link", buff, bufc))
+    {
         return;
+    }
     do_link(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
 }
 
 FUNCTION(fun_tel)
 {
     if (check_command(executor, "@teleport", buff, bufc))
+    {
         return;
+    }
     do_teleport(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
 }
 
@@ -600,11 +604,15 @@ void scan_zone
     char **bufc
 )
 {
-    dbref it = match_thing_quiet(player, szZone);
+    if (!mudconf.have_zones)
+    {
+        safe_str("#-1 ZONES DISABLED", buff, bufc);
+        return;
+    }
 
-    if (  !mudconf.have_zones
-       || (  !Controls(player, it)
-          && !WizRoy(player)))
+    dbref it = match_thing_quiet(player, szZone);
+    if (  !Controls(player, it)
+       && !WizRoy(player))
     {
         safe_noperm(buff, bufc);
         return;
@@ -1227,7 +1235,7 @@ static BOOL handle_flaglists(dbref player, char *name, char *fstr, BOOL type)
                 // We've found something we want, in an OR. We OR a TRUE with
                 // the current value.
                 //
-                ret |= 1;
+                ret |= TRUE;
             }
 
             // Otherwise, we don't need to do anything.
