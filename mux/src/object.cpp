@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.9 2003-09-14 19:59:10 jake Exp $
+// $Id: object.cpp,v 1.10 2003-12-13 19:25:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -577,9 +577,14 @@ void divest_object(dbref thing)
 
     SAFE_DOLIST(curr, temp, Contents(thing)) 
     {
-        if (!Controls(thing, curr) &&
-            Has_location(curr) && Key(curr)) 
+        if (  !Controls(thing, curr)
+           && Has_location(curr)
+           && Key(curr)) 
         {
+            if (!Good_obj(Home(curr)))
+            {
+                s_Home(curr, new_home(curr));
+            }
             move_via_generic(curr, HOME, NOTHING, 0);
         }
     }
@@ -615,7 +620,8 @@ void empty_obj(dbref obj)
         {
             s_Location(targ, NOTHING); 
             s_Next(targ, NOTHING);
-            if (Home(targ) == obj)
+            if (  !Good_obj(Home(targ))
+               || Home(targ) == obj)
             {
                 s_Home(targ, new_home(targ));
             }
@@ -1606,6 +1612,10 @@ static void check_contents_chains(void)
             Log_simple_err(i, Location(i), "Orphaned object, moved home.");
             s_Location(i, NOTHING); 
             s_Next(i, NOTHING);
+            if (!Good_obj(Home(i)))
+            {
+                s_Home(i, new_home(i));
+            }
             move_via_generic(i, HOME, NOTHING, 0);
         }
     }
