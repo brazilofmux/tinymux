@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.23 2002-08-09 03:05:35 jake Exp $
+// $Id: game.cpp,v 1.24 2002-08-22 01:00:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -333,6 +333,7 @@ BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
 
     do {
         cp = parse_to(&dp, ',', EV_STRIP_CURLY);
+        mudstate.wild_invk_ctr = 0;
         if (quick_wild(cp, msg))
         {
             free_lbuf(nbuf);

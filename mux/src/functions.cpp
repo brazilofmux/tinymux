@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.81 2002-08-14 00:06:57 jake Exp $
+// $Id: functions.cpp,v 1.82 2002-08-22 01:00:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2316,6 +2316,7 @@ FUNCTION(fun_match)
     char *s = trim_space_sep(fargs[0], sep);
     do {
         char *r = split_token(&s, sep);
+        mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
             safe_ltoa(wcount, buff, bufc);
@@ -2330,6 +2331,7 @@ FUNCTION(fun_strmatch)
 {
     // Check if we match the whole string.  If so, return 1.
     //
+    mudstate.wild_invk_ctr = 0;
     BOOL cc = quick_wild(fargs[1], fargs[0]);
     safe_bool(cc, buff, bufc);
 }

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.10 2002-08-06 01:17:14 jake Exp $
+// $Id: mudconf.h,v 1.11 2002-08-22 01:00:27 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -115,6 +115,7 @@ struct confdata
     int     control_flags;  /* Global runtime control flags */
     int     func_nest_lim;  /* Max nesting of functions */
     int     func_invk_lim;  /* Max funcs invoked by a command */
+    int     wild_invk_lim;  // Max Regular Expression function calls.
     int     lock_nest_lim;  /* Max nesting of lock evals */
     int     parent_nest_lim;/* Max levels of parents */
     int     zone_nest_lim;  /* Max nesting of zones */
@@ -316,6 +317,7 @@ struct statedata
     int     *guest_free;    /* Table to keep track of free guests */
     int     func_nest_lev;  /* Current nesting of functions */
     int     func_invk_ctr;  /* Functions invoked so far by this command */
+    int     wild_invk_ctr;  // Regular Expression function calls.
     int     ntfy_nest_lev;  /* Current nesting of notifys */
     int     lock_nest_lev;  /* Current nesting of lock evals */
     char    *global_regs[MAX_GLOBAL_REGS];  /* Global registers */

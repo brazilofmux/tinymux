@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.29 2002-08-14 00:06:58 jake Exp $
+// $Id: set.cpp,v 1.30 2002-08-22 01:00:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1398,6 +1398,7 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, BOOL check_exc
             ok = See_attr(player, thing, attr);
         }
 
+        mudstate.wild_invk_ctr = 0;
         if (  ok
            && quick_wild(str, attr->name))
         {
