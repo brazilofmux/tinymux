@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.14 2001-02-24 02:40:07 sdennis Exp $
+// $Id: timeutil.cpp,v 1.15 2001-02-24 07:05:19 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -3215,9 +3215,53 @@ BOOL ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *paf)
 	}
 	else if (paf->iWeekOfYear != NOT_PRESENT && paf->iDayOfWeek != NOT_PRESENT)
 	{
-		// Not supported, yet.
+		// Remember that iYear in this case represents an ISO year, which
+		// is not exactly the same thing as a Gregorian year.
 		//
-		return FALSE;
+		FIELDEDTIME ftWD;
+		memset(&ftWD, 0, sizeof(ftWD));
+		ftWD.iYear = paf->iYear - 1;
+		ftWD.iMonth = 12;
+		ftWD.iDayOfMonth = 27;
+		if (!lta.SetFields(&ftWD))
+		{
+			return FALSE;
+		}
+		INT64 i64 = lta.Return100ns();
+		INT64 j64;
+		i64FloorDivisionMod(i64+FACTOR_100NS_PER_DAY, FACTOR_100NS_PER_WEEK, &j64);
+		i64 -= j64;
+
+		// i64 now corresponds to the Sunday that strickly preceeds before
+		// December 28th, and the 28th is guaranteed to be in the previous
+		// year so that the ISO and Gregorian Years are the same thing.
+		//
+		i64 += FACTOR_100NS_PER_WEEK*paf->iWeekOfYear;
+		i64 += FACTOR_100NS_PER_DAY*paf->iDayOfWeek;
+		lta.Set100ns(i64);
+		lta.ReturnFields(&ft);
+
+		// Validate that this week actually has a week 53.
+		//
+		if (paf->iWeekOfYear == 53)
+		{
+			int iDOW_ISO = (ft.iDayOfWeek == 0) ? 7 : ft.iDayOfWeek;
+			int j = ft.iDayOfMonth - iDOW_ISO;
+			if (ft.iMonth == 12)
+			{
+				if (28 <= j)
+				{
+					return FALSE;
+				}
+			}
+			else // if (ft.iMonth == 1)
+			{
+				if (-3 <= j)
+				{
+					return FALSE;
+				}
+			}
+		}
 	}
 	else
 	{
