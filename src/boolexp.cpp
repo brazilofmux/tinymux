@@ -1,9 +1,7 @@
-/*
- * boolexp.cpp 
- */
-/*
- * $Id: boolexp.cpp,v 1.4 2000-06-03 04:31:26 sdennis Exp $ 
- */
+// boolexp.cpp
+//
+// $Id: boolexp.cpp,v 1.5 2001-06-27 22:27:57 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -22,10 +20,9 @@
 
 static int parsing_internal = 0;
 
-/*
- * ---------------------------------------------------------------------------
- * * check_attr: indicate if attribute ATTR on player passes key when checked by
- * * the object lockobj
+/* ---------------------------------------------------------------------------
+ * check_attr: indicate if attribute ATTR on player passes key when checked by
+ * the object lockobj
  */
 
 static int check_attr(dbref player, dbref lockobj, ATTR *attr, char *key)
@@ -37,15 +34,22 @@ static int check_attr(dbref player, dbref lockobj, ATTR *attr, char *key)
     buff = atr_pget(player, attr->number, &aowner, &aflags);
     checkit = 0;
 
-    if (attr->number == A_LENTER) {
-        /* We can see enterlocks... else we'd break zones */
-        checkit = 1;
-    } else if (See_attr(lockobj, player, attr, aowner, aflags)) {
-        checkit = 1;
-    } else if (attr->number == A_NAME) {
+    if (attr->number == A_LENTER)
+    {
+        // We can see enterlocks... else we'd break zones.
+        //
         checkit = 1;
     }
-    if (checkit && (!wild_match(key, buff))) {
+    else if (See_attr(lockobj, player, attr, aowner, aflags))
+    {
+        checkit = 1;
+    }
+    else if (attr->number == A_NAME)
+    {
+        checkit = 1;
+    }
+    if (checkit && !wild_match(key, buff))
+    {
         checkit = 0;
     }
     free_lbuf(buff);
@@ -78,12 +82,11 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         return !eval_boolexp(player, thing, from, b->sub1);
 
     case BOOLEXP_INDIR:
-        /*
-         * BOOLEXP_INDIR (i.e. @) is a unary operation which is replaced at
-         * evaluation time by the lock of the object whose number is the
-         * argument of the operation.
-         */
 
+        // BOOLEXP_INDIR (i.e. @) is a unary operation which is replaced at
+        // evaluation time by the lock of the object whose number is the
+        // argument of the operation.
+        //
         mudstate.lock_nest_lev++;
         if (mudstate.lock_nest_lev >= mudconf.lock_nest_lim)
         {
@@ -94,7 +97,7 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             ENDLOG
             notify(player, "Sorry, broken lock!");
 #else
-            Log.WriteString("Lock exceeded recursion limit.\n");
+            Log.WriteString("Lock exceeded recursion limit." ENDLINE);
 #endif
             mudstate.lock_nest_lev--;
             return (0);
@@ -111,7 +114,7 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             ENDLOG
             notify(player, "Sorry, broken lock!");
 #else
-            Log.WriteString("Broken lock.\n");
+            Log.WriteString("Broken lock." ENDLINE);
 #endif
             mudstate.lock_nest_lev--;
             return (0);
@@ -128,29 +131,36 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
     case BOOLEXP_ATR:
         a = atr_num(b->thing);
         if (!a)
-            return 0;   /*
-                     * no such attribute 
-                     */
+        {
+            // No such attribute.
+            //
+            return 0;
+        }
 
-        /*
-         * First check the object itself, then its contents 
-         */
-
+        // First check the object itself, then its contents.
+        //
         if (check_attr(player, from, a, (char *)b->sub1))
+        {
             return 1;
+        }
         DOLIST(obj, Contents(player))
         {
             if (check_attr(obj, from, a, (char *)b->sub1))
+            {
                 return 1;
+            }
         }
         return 0;
 
     case BOOLEXP_EVAL:
+
         a = atr_num(b->thing);
         if (!a)
-            return 0;   /*
-                     * no such attribute 
-                     */
+        {
+            // No such attribute.
+            //
+            return 0;
+        }
         source = from;
         buff = atr_pget(from, a->number, &aowner, &aflags);
         if (!buff || !*buff)
@@ -160,7 +170,7 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             source = thing;
         }
         checkit = 0;
-        
+
         if ((a->number == A_NAME) || (a->number == A_LENTER))
         {
             checkit = 1;
@@ -185,52 +195,55 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
     case BOOLEXP_IS:
 
-        /*
-         * If an object check, do that 
-         */
-
+        // If an object check, do that.
+        //
         if (b->sub1->type == BOOLEXP_CONST)
+        {
             return (b->sub1->thing == player);
+        }
 
-        /*
-         * Nope, do an attribute check 
-         */
-
+        // Nope, do an attribute check
+        //
         a = atr_num(b->sub1->thing);
         if (!a)
+        {
             return 0;
-        return (check_attr(player, from, a, (char *)(b->sub1)->sub1));
+        }
+        return check_attr(player, from, a, (char *)(b->sub1)->sub1);
 
     case BOOLEXP_CARRY:
 
-        /*
-         * If an object check, do that 
-         */
-
+        // If an object check, do that
+        //
         if (b->sub1->type == BOOLEXP_CONST)
+        {
             return (member(b->sub1->thing, Contents(player)));
+        }
 
-        /*
-         * Nope, do an attribute check 
-         */
-
+        // Nope, do an attribute check
+        //
         a = atr_num(b->sub1->thing);
         if (!a)
+        {
             return 0;
+        }
         DOLIST(obj, Contents(player))
         {
             if (check_attr(obj, from, a, (char *)(b->sub1)->sub1))
+            {
                 return 1;
+            }
         }
         return 0;
 
     case BOOLEXP_OWNER:
+
         return (Owner(b->sub1->thing) == Owner(player));
 
     default:
 
         // Bad type
-        //
+
         Tiny_Assert(0);
         return 0;
     }
@@ -242,24 +255,23 @@ int eval_boolexp_atr(dbref player, dbref thing, dbref from, char *key)
     int ret_value;
 
     b = parse_boolexp(player, key, 1);
-    if (b == NULL) {
+    if (b == NULL)
+    {
         ret_value = 1;
-    } else {
+    }
+    else
+    {
         ret_value = eval_boolexp(player, thing, from, b);
         free_boolexp(b);
     }
-    return (ret_value);
+    return ret_value;
 }
 
 #endif
 
-/*
- * If the parser returns TRUE_BOOLEXP, you lose 
- */
-/*
- * TRUE_BOOLEXP cannot be typed in by the user; use @unlock instead 
- */
-
+// If the parser returns TRUE_BOOLEXP, you lose
+// TRUE_BOOLEXP cannot be typed in by the user; use @unlock instead
+//
 static const char *parsebuf;
 static char parsestore[LBUF_SIZE];
 static dbref parse_player;
@@ -267,7 +279,9 @@ static dbref parse_player;
 static void NDECL(skip_whitespace)
 {
     while (Tiny_IsSpace[(unsigned char)*parsebuf])
+    {
         parsebuf++;
+    }
 }
 
 // Defined below.
@@ -302,9 +316,8 @@ static BOOLEXP *test_atr(char *s)
     attrib = atr_str(buff);
     if (!attrib)
     {
-        /*
-         * Only #1 can lock on numbers 
-         */
+        // Only #1 can lock on numbers
+        //
         if (!God(parse_player)) {
             free_lbuf(buff);
             return ((BOOLEXP *) NULL);
@@ -320,9 +333,8 @@ static BOOLEXP *test_atr(char *s)
         anum = attrib->number;
     }
 
-    /*
-     * made it now make the parse tree node 
-     */
+    // made it now make the parse tree node
+    //
     b = alloc_bool("test_str");
     b->type = locktype;
     b->thing = (dbref) anum;
@@ -331,10 +343,8 @@ static BOOLEXP *test_atr(char *s)
     return b;
 }
 
-/*
- * L -> (E); L -> object identifier 
- */
-
+// L -> (E); L -> object identifier
+//
 static BOOLEXP *NDECL(parse_boolexp_L)
 {
     BOOLEXP *b;
@@ -397,19 +407,24 @@ static BOOLEXP *NDECL(parse_boolexp_L)
         // know that object refs are all dbrefs, so we skip the
         // expensive match code.
         //
-        if (parsing_internal) {
-            if (buf[0] != '#') {
+		if (parsing_internal)
+        {
+            if (buf[0] != '#')
+            {
                 free_lbuf(buf);
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
             b->thing = Tiny_atol(&buf[1]);
-            if (!Good_obj(b->thing)) {
+            if (!Good_obj(b->thing))
+            {
                 free_lbuf(buf);
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
-        } else {
+        }
+        else
+        {
             save_match_state(&mstate);
             init_match(parse_player, buf, TYPE_THING);
             match_everything(MAT_EXIT_PARENTS);
@@ -417,31 +432,34 @@ static BOOLEXP *NDECL(parse_boolexp_L)
             restore_match_state(&mstate);
         }
 
-        if (b->thing == NOTHING) {
+        if (b->thing == NOTHING)
+        {
             notify(parse_player,
                    tprintf("I don't see %s here.", buf));
             free_lbuf(buf);
             free_bool(b);
             return TRUE_BOOLEXP;
         }
-        if (b->thing == AMBIGUOUS) {
-            notify(parse_player,
-                   tprintf("I don't know which %s you mean!",
-                       buf));
+        if (b->thing == AMBIGUOUS)
+        {
+            notify(parse_player, tprintf("I don't know which %s you mean!",
+                buf));
             free_lbuf(buf);
             free_bool(b);
             return TRUE_BOOLEXP;
         }
-#else /*
-       * * STANDALONE ... had better be #<num> or we're hosed  
-       */
-        if (buf[0] != '#') {
+#else
+        // Had better be #<num> or we're hosed.
+        //
+        if (buf[0] != '#')
+        {
             free_lbuf(buf);
             free_bool(b);
             return TRUE_BOOLEXP;
         }
         b->thing = Tiny_atol(&buf[1]);
-        if (b->thing < 0) {
+        if (b->thing < 0)
+        {
             free_lbuf(buf);
             free_bool(b);
             return TRUE_BOOLEXP;
@@ -452,111 +470,144 @@ static BOOLEXP *NDECL(parse_boolexp_L)
     return b;
 }
 
-/*
- * F -> !F; F -> @L; F -> =L; F -> +L; F -> $L 
- */
-/*
- * The argument L must be type BOOLEXP_CONST 
- */
-
+// F -> !F; F -> @L; F -> =L; F -> +L; F -> $L
+// The argument L must be type BOOLEXP_CONST
+//
 static BOOLEXP *NDECL(parse_boolexp_F)
 {
     BOOLEXP *b2;
 
     skip_whitespace();
-    switch (*parsebuf) {
+    switch (*parsebuf)
+    {
     case NOT_TOKEN:
+
         parsebuf++;
         b2 = alloc_bool("parse_boolexp_F.not");
         b2->type = BOOLEXP_NOT;
-        if ((b2->sub1 = parse_boolexp_F()) == TRUE_BOOLEXP) {
+        if ((b2->sub1 = parse_boolexp_F()) == TRUE_BOOLEXP)
+        {
             free_boolexp(b2);
             return (TRUE_BOOLEXP);
-        } else
+        }
+        else
+        {
             return (b2);
-        /*
-         * NOTREACHED 
-         */
+        }
+
+        // NOTREACHED
+        //
         break;
+
     case INDIR_TOKEN:
+
         parsebuf++;
         b2 = alloc_bool("parse_boolexp_F.indir");
         b2->type = BOOLEXP_INDIR;
         b2->sub1 = parse_boolexp_L();
-        if ((b2->sub1) == TRUE_BOOLEXP) {
+        if ((b2->sub1) == TRUE_BOOLEXP)
+        {
             free_boolexp(b2);
             return (TRUE_BOOLEXP);
-        } else if ((b2->sub1->type) != BOOLEXP_CONST) {
+        }
+        else if ((b2->sub1->type) != BOOLEXP_CONST)
+        {
             free_boolexp(b2);
             return (TRUE_BOOLEXP);
-        } else
+        }
+        else
+        {
             return (b2);
-        /*
-         * NOTREACHED 
-         */
+        }
+
+        // NOTREACHED
+        //
         break;
+
     case IS_TOKEN:
+
         parsebuf++;
         b2 = alloc_bool("parse_boolexp_F.is");
         b2->type = BOOLEXP_IS;
         b2->sub1 = parse_boolexp_L();
-        if ((b2->sub1) == TRUE_BOOLEXP) {
+        if ((b2->sub1) == TRUE_BOOLEXP)
+        {
             free_boolexp(b2);
             return (TRUE_BOOLEXP);
-        } else if (((b2->sub1->type) != BOOLEXP_CONST) &&
-               ((b2->sub1->type) != BOOLEXP_ATR)) {
+        }
+        else if (  ((b2->sub1->type) != BOOLEXP_CONST)
+                && ((b2->sub1->type) != BOOLEXP_ATR))
+        {
             free_boolexp(b2);
             return (TRUE_BOOLEXP);
-        } else
+        }
+        else
+        {
             return (b2);
-        /*
-         * NOTREACHED 
-         */
+        }
+
+        // NOTREACHED
+        //
         break;
+
     case CARRY_TOKEN:
+
         parsebuf++;
         b2 = alloc_bool("parse_boolexp_F.carry");
         b2->type = BOOLEXP_CARRY;
         b2->sub1 = parse_boolexp_L();
-        if ((b2->sub1) == TRUE_BOOLEXP) {
+        if ((b2->sub1) == TRUE_BOOLEXP)
+        {
             free_boolexp(b2);
             return (TRUE_BOOLEXP);
-        } else if (((b2->sub1->type) != BOOLEXP_CONST) &&
-               ((b2->sub1->type) != BOOLEXP_ATR)) {
+        }
+        else if (  ((b2->sub1->type) != BOOLEXP_CONST)
+                && ((b2->sub1->type) != BOOLEXP_ATR))
+        {
             free_boolexp(b2);
             return (TRUE_BOOLEXP);
-        } else
+        }
+        else
+        {
             return (b2);
-        /*
-         * NOTREACHED 
-         */
+        }
+
+        // NOTREACHED
+        //
         break;
+
     case OWNER_TOKEN:
+
         parsebuf++;
         b2 = alloc_bool("parse_boolexp_F.owner");
         b2->type = BOOLEXP_OWNER;
         b2->sub1 = parse_boolexp_L();
-        if ((b2->sub1) == TRUE_BOOLEXP) {
+        if ((b2->sub1) == TRUE_BOOLEXP)
+        {
             free_boolexp(b2);
             return (TRUE_BOOLEXP);
-        } else if ((b2->sub1->type) != BOOLEXP_CONST) {
+        }
+        else if ((b2->sub1->type) != BOOLEXP_CONST)
+        {
             free_boolexp(b2);
             return (TRUE_BOOLEXP);
-        } else
+        }
+        else
+        {
             return (b2);
-        /*
-         * NOTREACHED 
-         */
+        }
+
+        // NOTREACHED
+        //
         break;
+
     default:
         return (parse_boolexp_L());
     }
 }
 
-/*
- * T -> F; T -> F & T 
- */
-
+// T -> F; T -> F & T
+//
 static BOOLEXP *NDECL(parse_boolexp_T)
 {
     BOOLEXP *b, *b2;
@@ -579,10 +630,8 @@ static BOOLEXP *NDECL(parse_boolexp_T)
     return b;
 }
 
-/*
- * E -> T; E -> T | E 
- */
-
+// E -> T; E -> T | E
+//
 static BOOLEXP *NDECL(parse_boolexp_E)
 {
     BOOLEXP *b, *b2;
