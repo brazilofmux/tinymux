@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.20 2003-02-05 20:06:34 sdennis Exp $
+// $Id: predicates.cpp,v 1.21 2003-02-14 07:26:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -515,7 +515,7 @@ bool ValidatePlayerName(const char *pName)
     //
     for (unsigned int i = 0; i < nName; i++)
     {
-        if (!mux_ObjectNameSet[(unsigned char)pName[i]])
+        if (!mux_PlayerNameSet[(unsigned char)pName[i]])
         {
             return false;
         }
