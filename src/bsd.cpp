@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.63 2002-12-17 18:22:33 sdennis Exp $
+// $Id: bsd.cpp,v 1.64 2003-01-31 15:13:11 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -94,12 +94,12 @@ static HANDLE hSlaveRequestStackSemaphore;
 #define SLAVE_REQUEST_STACK_SIZE 50
 static SLAVE_REQUEST SlaveRequests[SLAVE_REQUEST_STACK_SIZE];
 static int iSlaveRequest = 0;
-
+#define MAX_STRING 128
 typedef struct
 {
-    char host[128];
-    char token[128];
-    char ident[128];
+    char host[MAX_STRING];
+    char token[MAX_STRING];
+    char ident[MAX_STRING];
 } SLAVE_RESULT;
 
 static HANDLE hSlaveResultStackSemaphore;
@@ -211,13 +211,14 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
             addr = req.sa_in.sin_addr.S_un.S_addr;
             hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
 
-            if (hp)
+            if (  hp
+               && strlen(hp->h_name) < MAX_STRING)
             {
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
 
-                char host[128];
-                char token[128];
-                char szIdent[128];
+                char host[MAX_STRING];
+                char token[MAX_STRING];
+                char szIdent[MAX_STRING];
                 struct sockaddr_in sin;
                 memset(&sin, 0, sizeof(sin));
                 SOCKET s;
@@ -258,7 +259,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                         setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&TurnOn, sizeof(TurnOn));
 
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        char szPortPair[128];
+                        char szPortPair[MAX_STRING];
                         sprintf(szPortPair, "%d, %d\r\n",
                             ntohs(req.sa_in.sin_port), req.port_in);
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
@@ -274,7 +275,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                             int nIdent = 0;
                             int cc;
 
-                            char szIdentBuffer[128];
+                            char szIdentBuffer[MAX_STRING];
                             szIdentBuffer[0] = 0;
                             BOOL bAllDone = FALSE;
 
