@@ -48,23 +48,5 @@ vattr.o: vattr.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h fl
 walkdb.o: walkdb.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h misc.h powers.h attrs.h
 wild.o: wild.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h
 wiz.o: wiz.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h attrs.h command.h file_c.h interface.h powers.h
-sa-db.o: sa-db.cpp db.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h attrs.h comsys.h interface.h powers.h vattr.h
-sa-db_rw.o: sa-db_rw.cpp db_rw.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h attrs.h vattr.h
-sa-boolexp.o: sa-boolexp.cpp boolexp.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h attrs.h
-sa-unparse.o: sa-unparse.cpp unparse.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h
-sa-pred.o: sa-pred.cpp predicates.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h ansi.h attrs.h command.h interface.h powers.h
-sa-stringu.o: sa-stringu.cpp stringutil.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h ansi.h pcre.h
-sa-conf.o: sa-conf.cpp conf.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h attrs.h command.h interface.h 
-sa-log.o: sa-log.cpp log.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h
-sa-object.o: sa-object.cpp object.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h attrs.h command.h mguests.h interface.h powers.h
-sa-vattr.o: sa-vattr.cpp vattr.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h attrs.h command.h functions.h vattr.h
-sa-htab.o: sa-htab.cpp htab.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h
-sa-player_c.o: sa-player_c.cpp player_c.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h attrs.h
-sa-flags.o: sa-flags.cpp flags.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h command.h powers.h
-sa-svdhash.o: sa-svdhash.cpp svdhash.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h
-sa-svdrand.o: sa-svdrand.cpp svdrand.cpp copyright.h autoconf.h config.h timeutil.h svdhash.h svdrand.h
-sa-attrcache.o: sa-attrcache.cpp attrcache.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h
-sa-timeutil.o: sa-timeutil.cpp timeutil.cpp copyright.h autoconf.h config.h timeutil.h stringutil.h
-dbconvert.o: dbconvert.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h mail.h stringutil.h svdrand.h vattr.h _build.h
 unsplit.o: unsplit.cpp copyright.h 
 slave.o: slave.cpp autoconf.h copyright.h config.h slave.h 
