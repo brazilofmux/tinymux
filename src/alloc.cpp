@@ -1,9 +1,8 @@
-/*
- * alloc.cpp - memory allocation subsystem 
- */
-/*
- * $Id: alloc.cpp,v 1.5 2000-10-13 21:05:02 sdennis Exp $ 
- */
+// alloc.cpp - Memory Allocation Subsystem.
+// 
+// $Id: alloc.cpp,v 1.6 2000-10-26 18:41:45 sdennis Exp $
+//
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -13,16 +12,32 @@
 #include "alloc.h"
 #include "mudconf.h"
 
-// The following structure is 64-bit aligned.
+// Do not use the following structure. It is only used to define the
+// POOLHDR that follows. The fields in the following structure must
+// match POOLHDR in type and order. Doing it this way is a workaround
+// for compilers not supporting #pragma pack(sizeof(INT64)).
+//
+typedef struct pool_header_unaligned
+{
+    unsigned int        magicnum;   // For consistency check 
+    int                 pool_size;  // For consistency check
+    struct pool_header *next;       // Next pool header in chain 
+    struct pool_header *nxtfree;    // Next pool header in freelist 
+    char               *buf_tag;    // Debugging/trace tag
+} POOLHDR_UNALIGNED;
+
+// The following structure is 64-bit aligned. The fields in the
+// following structure must match POOLHDR_UNALIGNED in type and
+// order.
 //
 typedef struct pool_header
 {
-    unsigned int magicnum;          // For consistency check 
-    int    pool_size;               // For consistency check
+    unsigned int        magicnum;   // For consistency check 
+    int                 pool_size;  // For consistency check
     struct pool_header *next;       // Next pool header in chain 
     struct pool_header *nxtfree;    // Next pool header in freelist 
-    char  *buf_tag;                 // Debugging/trace tag 
-    int    UnusedFieldForAlignmentToINT64Boundary;
+    char               *buf_tag;    // Debugging/trace tag
+    char  PaddingTo64bits[7 - ((sizeof(POOLHDR_UNALIGNED)-1) & 7)];
 } POOLHDR;
 
 typedef struct pool_footer
