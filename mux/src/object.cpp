@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.14 2002-06-27 09:06:47 jake Exp $
+// $Id: object.cpp,v 1.15 2002-07-08 17:58:11 jake Exp $
 //
 
 #include "copyright.h"
@@ -72,14 +72,18 @@ static void Log_pointer_err(dbref prior, dbref obj, dbref loc, dbref ref, const 
 {
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG")
         log_type_and_name(obj);
-    if (loc != NOTHING) {
+    if (loc != NOTHING) 
+    {
         log_text(" in ");
         log_type_and_name(loc);
     }
     log_text(": ");
-    if (prior == NOTHING) {
+    if (prior == NOTHING) 
+    {
         log_text(reftype);
-    } else {
+    } 
+    else 
+    {
         log_text("Next pointer");
     }
     log_text(" ");
@@ -93,7 +97,8 @@ static void Log_header_err(dbref obj, dbref loc, dbref val, int is_object, const
 {
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG")
         log_type_and_name(obj);
-    if (loc != NOTHING) {
+    if (loc != NOTHING) 
+    {
         log_text(" in ");
         log_type_and_name(loc);
     }
@@ -101,9 +106,13 @@ static void Log_header_err(dbref obj, dbref loc, dbref val, int is_object, const
     log_text(valtype);
     log_text(" ");
     if (is_object)
+    {
         log_type_and_name(val);
+    }
     else
+    {
         log_number(val);
+    }
     log_text(" ");
     log_text(errtype);
     ENDLOG
@@ -113,7 +122,8 @@ static void Log_simple_err(dbref obj, dbref loc, const char *errtype)
 {
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG")
         log_type_and_name(obj);
-    if (loc != NOTHING) {
+    if (loc != NOTHING) 
+    {
         log_text(" in ");
         log_type_and_name(loc);
     }
@@ -536,10 +546,9 @@ void destroy_obj(dbref obj)
             if (  !Quiet(owner)
                && !Quiet(obj))
             {
-                char *p = tprintf(
+                notify(owner, tprintf(
                        "You get back your %d %s deposit for %s(#%d).",
-                        val, mudconf.one_coin, Name(obj), obj);
-                notify(owner, p);
+                        val, mudconf.one_coin, Name(obj), obj));
             }
 #endif // STANDALONE
         }
@@ -599,9 +608,11 @@ void divest_object(dbref thing)
 {
     dbref curr, temp;
 
-    SAFE_DOLIST(curr, temp, Contents(thing)) {
+    SAFE_DOLIST(curr, temp, Contents(thing)) 
+    {
         if (!Controls(thing, curr) &&
-            Has_location(curr) && Key(curr)) {
+            Has_location(curr) && Key(curr)) 
+        {
             move_via_generic(curr, HOME, NOTHING, 0);
         }
     }
@@ -693,7 +704,7 @@ void destroy_player(dbref player, dbref victim)
 #ifndef STANDALONE
     // Bye bye...
     //
-    boot_off(victim, (char *)"You have been destroyed!");
+    boot_off(victim, "You have been destroyed!");
     halt_que(victim, NOTHING);
     int count = chown_all(victim, player, player, CHOWN_NOZONE);
 
@@ -825,7 +836,8 @@ static void check_dead_refs(void)
         // Check the owner.
         //
         owner = Owner(i);
-        if (!Good_obj(owner)) {
+        if (!Good_obj(owner)) 
+        {
             if(isPlayer(i))
             {
             Log_header_err(i, NOTHING, owner, 1,
@@ -843,8 +855,11 @@ static void check_dead_refs(void)
             halt_que(NOTHING, i);
 #endif
             s_Halted(i);
-        } else if (check_type & DBCK_FULL) {
-            if (Going(owner)) {
+        } 
+        else if (check_type & DBCK_FULL) 
+        {
+            if (Going(owner)) 
+            {
                 if(isPlayer(i))
                 {
                     Log_header_err(i, NOTHING, owner, 1,
@@ -862,7 +877,9 @@ static void check_dead_refs(void)
                 halt_que(NOTHING, i);
 #endif
                 s_Halted(i);
-            } else if (!OwnsOthers(owner)) {
+            } 
+            else if (!OwnsOthers(owner))
+            {
                 if(isPlayer(i))
                 {
                     Log_header_err(i, NOTHING, owner, 1,
@@ -881,19 +898,24 @@ static void check_dead_refs(void)
 
         // Check the parent
         targ = Parent(i);
-        if (Good_obj(targ)) {
-            if (Going(targ)) {
+        if (Good_obj(targ)) 
+        {
+            if (Going(targ)) 
+            {
                 s_Parent(i, NOTHING);
-#ifndef STANDALONE
-                
+#ifndef STANDALONE  
                 if (!Quiet(i) && !Quiet(owner))
+                {
                     notify(owner, tprintf("Parent cleared on %s(#%d)", Name(i), i));
+                }
 #else
                 Log_header_err(i, Location(i), targ, 1,
                      "Parent", "is invalid.  Cleared.");
 #endif
             }
-        } else if (targ != NOTHING) {
+        } 
+        else if (targ != NOTHING) 
+        {
             Log_header_err(i, Location(i), targ, 1,
                 "Parent", "is invalid.  Cleared.");
             s_Parent(i, NOTHING);
@@ -929,20 +951,26 @@ static void check_dead_refs(void)
 
         // Check forwardlist
         fp = fwdlist_get(i);
-        if (fp) {
-            for (j = 0; j < fp->count; j++) {
+        if (fp) 
+        {
+            for (j = 0; j < fp->count; j++) 
+            {
                 targ = fp->data[j];
-                if (Good_obj(targ) && Going(targ)) {
+                if (Good_obj(targ) && Going(targ)) 
+                {
                     fp->data[j] = NOTHING;
                     dirty = 1;
-                } else if (!Good_obj(targ) &&
-                       (targ != NOTHING)) {
+                } 
+                else if (  !Good_obj(targ) 
+                        && (targ != NOTHING)) 
+                {
                     fp->data[j] = NOTHING;
                     dirty = 1;
                 }
             }
         }
-        if (dirty) {
+        if (dirty) 
+        {
             str = alloc_lbuf("purge_going");
             (void)fwdlist_rewrite(fp, str);
             atr_get_info(i, A_FORWARDLIST, &owner, &aflags);
@@ -950,15 +978,17 @@ static void check_dead_refs(void)
             free_lbuf(str);
         }
 
-        if (check_type & DBCK_FULL) {
-
+        if (check_type & DBCK_FULL) 
+        {
             // Check for wizards
-            if (Wizard(i)) {
-                if (isPlayer(i)) {
-                    Log_simple_err(i, NOTHING,
-                             "Player is a WIZARD.");
+            if (Wizard(i)) 
+            {
+                if (isPlayer(i)) 
+                {
+                    Log_simple_err(i, NOTHING, "Player is a WIZARD.");
                 }
-                if (!Wizard(Owner(i))) {
+                if (!Wizard(Owner(i))) 
+                {
                     Log_header_err(i, NOTHING, Owner(i), 1,
                                "Owner",
                                "of a WIZARD object is not a wizard");
@@ -988,13 +1018,15 @@ static void check_dead_refs(void)
             }
                         
             // Check for self-referential Next()
-            if (Next(i) == i) {
+            if (Next(i) == i) 
+            {
                 Log_simple_err(i, NOTHING,
                      "Next points to self.  Next cleared.");
                 s_Next(i, NOTHING);
             }
 
-            if (check_type & DBCK_FULL) {
+            if (check_type & DBCK_FULL) 
+            {
             // check wealth
             targ = mudconf.paylimit;
             check_pennies(i, targ, "Wealth");
@@ -1451,8 +1483,6 @@ static void check_misplaced_obj(dbref *obj, dbref back, dbref loc)
 
 static void check_loc_contents(dbref loc)
 {
-    dbref obj, back, temp;
-
     if (!Good_obj(loc))
     {
         return;
@@ -1465,10 +1495,8 @@ static void check_loc_contents(dbref loc)
         return;
     }
 
-    //Check all the exits.
-    //
-    back = NOTHING;
-    obj = Contents(loc);
+    dbref back = NOTHING;
+    dbref obj = Contents(loc);
     while (obj != NOTHING)
     {
         if (!Good_obj(obj))
@@ -1507,7 +1535,7 @@ static void check_loc_contents(dbref loc)
         {
             // Going - silently filter out.
             //
-            temp = Next(obj);
+            dbref temp = Next(obj);
             if (back != NOTHING)
             {
                 s_Next(back, temp);
@@ -1690,3 +1718,4 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
     }
 #endif
 }
+
