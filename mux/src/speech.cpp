@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.23 2002-08-20 08:54:34 jake Exp $
+// $Id: speech.cpp,v 1.24 2002-08-22 05:42:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -18,7 +18,7 @@ char *modSpeech(dbref player, char *message, BOOL bWhich)
     int aflags;
     char *mod = atr_get(player, bWhich ? A_SPEECHMOD : A_SAYSTRING, &aowner, &aflags);
 
-    if(!mod || !*mod)
+    if (mod[0] == '\0')
     {
         free_lbuf(mod);
         return NULL;
@@ -170,9 +170,9 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 
     // Parse speechmod if present.
     //
-    char *messageOrig, *messageNew, *saystring;
-    messageOrig = message;
-    if (messageNew = modSpeech(executor, message, TRUE))
+    char *messageOrig = message;
+    char *messageNew = modSpeech(executor, message, TRUE);
+    if (messageNew)
     {
         message = messageNew;
     }
@@ -186,30 +186,36 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
     case SAY_POSE:
     case SAY_POSE_NOSPC:
     case SAY_EMIT:
-        if (!( Good_obj(loc)
-            && sp_ok(executor)))
+        if ( !(  Good_obj(loc)
+              && sp_ok(executor)))
         {
             if (messageNew)
+            {
                 free_lbuf(messageNew);
+            }
             return;
         }
     }
 
     // Send the message on its way
     //
+    char *saystring;
     switch (key)
     {
     case SAY_SAY:
-        if (saystring = modSpeech(executor, messageOrig, FALSE))
+        saystring = modSpeech(executor, messageOrig, FALSE);
+        if (saystring)
         {
             notify_saypose(executor, tprintf("%s %s \"%s\"", Name(executor), saystring, message));
-            notify_except(loc, executor, executor, tprintf("%s %s \"%s\"", Name(executor), saystring, message), MSG_SAYPOSE);
+            notify_except(loc, executor, executor, tprintf("%s %s \"%s\"",
+                Name(executor), saystring, message), MSG_SAYPOSE);
             free_lbuf(saystring);
         }
         else
         {
             notify_saypose(executor, tprintf("You say \"%s\"", message));
-            notify_except(loc, executor, executor, tprintf("%s says, \"%s\"", Name(executor), message), MSG_SAYPOSE);
+            notify_except(loc, executor, executor, tprintf("%s says, \"%s\"",
+                Name(executor), message), MSG_SAYPOSE);
         }
         break;
 
@@ -222,7 +228,9 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         break;
 
     case SAY_EMIT:
-        if ((say_flags & SAY_HERE) || (say_flags & SAY_HTML) || !say_flags)
+        if (  (say_flags & SAY_HERE)
+           || (say_flags & SAY_HTML)
+           || !say_flags)
         {
             if (say_flags & SAY_HTML)
             {
@@ -235,19 +243,25 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         }
         if (say_flags & SAY_ROOM)
         {
-            if (isRoom(loc) && (say_flags & SAY_HERE))
+            if (  isRoom(loc)
+               && (say_flags & SAY_HERE))
             {
                 if (messageNew)
+                {
                     free_lbuf(messageNew);
+                }
                 return;
             }
             for (depth = 0; !isRoom(loc) && (depth < 20); depth++)
             {
                 loc = Location(loc);
-                if (!Good_obj(loc) || (loc == Location(loc)))
+                if (  !Good_obj(loc)
+                   || (loc == Location(loc)))
                 {
                     if (messageNew)
+                    {
                         free_lbuf(messageNew);
+                    }
                     return;
                 }
             }
@@ -273,9 +287,9 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
 
     // Parse speechmod if present.
     //
-    char *messageOrig, *messageNew;
-    messageOrig = message;
-    if (messageNew = modSpeech(executor, message, TRUE))
+    char *messageOrig = message;
+    char *messageNew = modSpeech(executor, message, TRUE);
+    if (messageNew)
     {
         message = messageNew;
     }
@@ -783,10 +797,10 @@ void do_page
         pageMode = 0;
     }
 
-    char *newMessage;
-    if(newMessage = modSpeech(executor, pMessage, TRUE))
+    char *newMessage = modSpeech(executor, pMessage, TRUE);
+    if (newMessage)
     {
-	   pMessage = newMessage;
+        pMessage = newMessage;
     }
 
     switch (pageMode)
@@ -862,9 +876,9 @@ void do_page
     //
     notify(executor, imessage);
     free_lbuf(imessage);
-    if(newMessage)
+    if (newMessage)
     {
-	    free_lbuf(newMessage);
+        free_lbuf(newMessage);
     }
 }
 
@@ -874,8 +888,8 @@ void do_page
 
 void whisper_pose(dbref player, dbref target, char *message, BOOL bSpace)
 {
-    char *newMessage;
-    if (newMessage = modSpeech(player, message, TRUE))
+    char *newMessage = modSpeech(player, message, TRUE);
+    if (newMessage)
     {
         message = newMessage;
     }
@@ -928,7 +942,8 @@ void do_pemit_single
         target = match_result();
     }
 
-    char *newMessage, *saystring;
+    char *newMessage = NULL;
+    char *saystring = NULL;
 
     switch (target)
     {
@@ -1046,7 +1061,8 @@ void do_pemit_single
                 message++;
 
             default:
-                if (newMessage = modSpeech(player, message, TRUE))
+                newMessage = modSpeech(player, message, TRUE);
+                if (newMessage)
                 {
                     message = newMessage;
                 }
@@ -1078,14 +1094,16 @@ void do_pemit_single
             break;
 
         case PEMIT_FSAY:
-            if (newMessage = modSpeech(target, message, TRUE))
+            newMessage = modSpeech(target, message, TRUE);
+            if (newMessage)
             {
                 message = newMessage;
             }
             notify(target, tprintf("You say, \"%s\"", message));
             if (loc != NOTHING)
             {
-                if (saystring = modSpeech(target, message, FALSE))
+                saystring = modSpeech(target, message, FALSE);
+                if (saystring)
                 {
                     notify_except(loc, player, target,
                         tprintf("%s %s \"%s\"", Name(target), saystring, message), 0);
@@ -1107,7 +1125,8 @@ void do_pemit_single
             break;
 
         case PEMIT_FPOSE:
-            if (newMessage = modSpeech(target, message, TRUE))
+            newMessage = modSpeech(target, message, TRUE);
+            if (newMessage)
             {
                 message = newMessage;
             }
@@ -1120,7 +1139,8 @@ void do_pemit_single
             break;
 
         case PEMIT_FPOSE_NS:
-            if (newMessage = modSpeech(target, message, TRUE))
+            newMessage = modSpeech(target, message, TRUE);
+            if (newMessage)
             {
                 message = newMessage;
             }
