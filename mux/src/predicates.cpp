@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.36 2003-04-23 04:25:41 sdennis Exp $
+// $Id: predicates.cpp,v 1.37 2003-04-23 04:53:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1922,13 +1922,9 @@ bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr)
         {
             mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST|AF_GOD;
         }
-        else if (Controls(executor, target))
-        {
-            mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST|AF_WIZARD|AF_GOD;
-        }
         else
         {
-            return false;
+            mDeny = AF_INTERNAL|AF_IS_LOCK|AF_CONST|AF_WIZARD|AF_GOD;
         }
     }
 
