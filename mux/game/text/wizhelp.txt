@@ -2578,15 +2578,24 @@ HELPFILE
   CONFIG PARAMETER: helpfile <command> <pathname>
   DEFAULT: None
 
-  This configuration directive associates the in-game command, <command>,
-  with a set of help topics contained in the file <pathname>.txt.
+  This configuration directive associates the in-game command, <command>, with
+  a set of help topics contained in the file <pathname>.txt.  By default,
+  <command> has 'public' permissions, but this can be further restricted with
+  the 'access' configuration directive.
 
-  By default, this help command has 'public' permissions, but this can be
-  restricted with the 'access' configuration directive.
+  The associated <command> will have one of the following forms:
 
-  By default, the server does not setup any help files (including help,
-  wizhelp, and news).  It is therefore recommended that your configuration
-  file contain the following lines:
+    <command> <topic>
+    <command> <topic wildcard pattern>
+
+  Unlike raw_helpfile, the associated helpfile <command> evaluates the <topic>
+  before giving the result to the player.  To avoid this evaluation, use the
+  raw_helpfile configuration directive instead.
+
+  The default configuration file contains the following lines already, but
+  the base server does not setup any help files (including help, wizhelp, or
+  news).  Therefore, make sure that your older configuration files contain
+  at least the following lines:
 
     raw_helpfile help text/help
     raw_helpfile wizhelp text/wizhelp
@@ -2596,7 +2605,8 @@ HELPFILE
   the three above lines must occur before alias.conf is included.
 
   To prevent access to arbitrary files after the server has started, this
-  directive cannot be used by via @admin after the server has started.
+  configuration directive cannot be used by via @admin after the server has
+  started.
 
   Examples:
      helpfile wiznews text/wiznews
