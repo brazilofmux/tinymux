@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.17 2000-11-04 05:36:14 sdennis Exp $
+// $Id: bsd.cpp,v 1.18 2000-11-06 15:38:58 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1437,7 +1437,7 @@ void shutdownsock(DESC *d, int reason)
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
 
-        // Added by D.Piper (del@delphinian.com) 1997 & 2000-APR
+        // Added by D.Piper (del@doofer.org) 1997 & 2000-APR
         //
 
         // Reason: attribute (disconnect reason)
