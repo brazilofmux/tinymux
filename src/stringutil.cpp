@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.61 2002-01-25 16:01:20 sdennis Exp $
+// $Id: stringutil.cpp,v 1.62 2002-01-25 17:42:07 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1646,8 +1646,7 @@ char *replace_tokens
     const char *s,
     const char *pBound,
     const char *pListPlace,
-    const char *pSwitch,
-    const char *pNestLevel
+    const char *pSwitch
 )
 {
     if (!s)
@@ -1695,14 +1694,6 @@ char *replace_tokens
                 // SWITCH_VAR
                 //
                 safe_str(pSwitch, result, &r);
-                s += 2;
-            }
-            else if (  s[1] == '!'
-                    && pNestLevel)
-            {
-                // SWITCH_VAR
-                //
-                safe_str(pNestLevel, result, &r);
                 s += 2;
             }
             else

@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.31 2002-01-25 16:01:20 sdennis Exp $
+// $Id: stringutil.h,v 1.32 2002-01-25 17:42:07 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -120,8 +120,7 @@ extern char *replace_tokens
     const char *s,
     const char *pBound,
     const char *pListPlace,
-    const char *pSwitch,
-    const char *pNestLevel
+    const char *pSwitch
 );
 extern int  FDECL(prefix_match, (const char *, const char *));
 extern int  FDECL(minmatch, (char *, char *, int));

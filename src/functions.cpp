@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.131 2002-01-25 17:19:17 sdennis Exp $
+// $Id: functions.cpp,v 1.132 2002-01-25 17:42:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5288,7 +5288,7 @@ FUNCTION(fun_parse)
         first = FALSE;
         number++;
         objstring = split_token(&cp, sep);
-        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number), NULL, NULL);
+        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number), NULL);
         str = buff2;
         TinyExec(buff, bufc, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -5321,9 +5321,6 @@ FUNCTION(fun_iter)
         return;
     }
     BOOL first = TRUE;
-    char *pNestLevel = alloc_sbuf("fun_list.nest");
-    Tiny_ltoa(mudstate.in_loop, pNestLevel);
-    mudstate.in_loop++;
     while (cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
@@ -5335,14 +5332,12 @@ FUNCTION(fun_iter)
         number++;
         objstring = split_token(&cp, sep);
         char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number),
-            NULL, pNestLevel);
+            NULL);
         str = buff2;
         TinyExec(buff, bufc, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
     }
-    free_sbuf(pNestLevel);
-    mudstate.in_loop--;
     free_lbuf(curr);
 }
 
@@ -5362,16 +5357,13 @@ FUNCTION(fun_list)
         free_lbuf(curr);
         return;
     }
-    char *pNestLevel = alloc_sbuf("fun_list.nest");
-    Tiny_ltoa(mudstate.in_loop, pNestLevel);
-    mudstate.in_loop++;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
         number++;
         objstring = split_token(&cp, sep);
         char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number),
-            NULL, pNestLevel);
+            NULL);
         dp = result = alloc_lbuf("fun_list.2");
         str = buff2;
         TinyExec(result, &dp, 0, player, cause,
@@ -5381,8 +5373,6 @@ FUNCTION(fun_list)
         notify(cause, result);
         free_lbuf(result);
     }
-    mudstate.in_loop--;
-    free_sbuf(pNestLevel);
     free_lbuf(curr);
 }
 
@@ -5846,7 +5836,6 @@ FUNCTION(fun_switch)
 
     // Loop through the patterns looking for a match.
     //
-    mudstate.in_switch++;
     for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1]; i += 2)
     {
         tbuff = bp = alloc_lbuf("fun_switch.2");
@@ -5857,14 +5846,12 @@ FUNCTION(fun_switch)
         if (wild_match(tbuff, mbuff))
         {
             free_lbuf(tbuff);
-            tbuff = replace_tokens(fargs[i+1], NULL, NULL, mbuff,
-                Tiny_ltoa_t(mudstate.in_switch));
+            tbuff = replace_tokens(fargs[i+1], NULL, NULL, mbuff);
             free_lbuf(mbuff);
             str = tbuff;
             TinyExec(buff, bufc, 0, player, cause,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
             free_lbuf(tbuff);
-            mudstate.in_switch--;
             return;
         }
         free_lbuf(tbuff);
@@ -5875,14 +5862,13 @@ FUNCTION(fun_switch)
     if (  i < nfargs
        && fargs[i])
     {
-        tbuff = replace_tokens(fargs[i], NULL, NULL, mbuff, NULL);
+        tbuff = replace_tokens(fargs[i], NULL, NULL, mbuff);
         str = tbuff;
         TinyExec(buff, bufc, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(tbuff);
     }
     free_lbuf(mbuff);
-    mudstate.in_switch--;
 }
 
 FUNCTION(fun_case)

@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.45 2002-01-25 16:01:20 sdennis Exp $
+// $Id: predicates.cpp,v 1.46 2002-01-25 17:42:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -562,7 +562,7 @@ void do_switch
         *bp = '\0';
         if (wild_match(buff, expr))
         {
-            char *tbuf = replace_tokens(args[a+1], NULL, NULL, expr, NULL);
+            char *tbuf = replace_tokens(args[a+1], NULL, NULL, expr);
             wait_que(player, cause, FALSE, lta, NOTHING, 0,
                 tbuf, cargs, ncargs, mudstate.global_regs);
             free_lbuf(tbuf);
@@ -579,7 +579,7 @@ void do_switch
        && !any
        && args[a])
     {
-        char *tbuf = replace_tokens(args[a], NULL, NULL, expr, NULL);
+        char *tbuf = replace_tokens(args[a], NULL, NULL, expr);
         wait_que(player, cause, FALSE, lta, NOTHING, 0, tbuf,
             cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
