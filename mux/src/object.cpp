@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
+// $Id: object.cpp,v 1.3 2002-06-11 17:06:15 jake Exp $
 //
 
 #include "copyright.h"
@@ -212,19 +212,11 @@ dbref clone_home(dbref player, dbref thing)
 dbref create_obj(dbref player, int objtype, char *name, int cost)
 {
     dbref obj, owner;
-    int quota, value, self_owned, require_inherit;
+    int quota = 0, value = 0, self_owned = 0, require_inherit = 0, nValidName;
     FLAGSET f;
-    char *buff;
+    char *buff, *pValidName;
     const char *tname;
-
-    value = 0;
-    quota = 0;
-    self_owned = 0;
-    require_inherit = 0;
-
-    int nValidName;
     BOOL okname = FALSE;
-    char *pValidName;
 
     switch (objtype)
     {
@@ -439,10 +431,38 @@ extern void stack_clr(dbref obj);
  * * all lists and has no contents or exits.
  */
 
+void destroy_bad_obj(dbref obj)
+{
+#ifndef STANDALONE
+    halt_que(NOTHING, obj);
+    nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
+    fwdlist_clr(obj);
+    stack_clr(obj);
+    ReleaseAllResources(obj);
+#endif // STANDALONE
+    atr_free(obj);
+    s_Name(obj, NULL);
+    s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
+    s_Flags(obj, FLAG_WORD2, 0);
+    s_Flags(obj, FLAG_WORD3, 0);
+    s_Powers(obj, 0);
+    s_Powers2(obj, 0);
+    s_Location(obj, NOTHING);
+    s_Contents(obj, NOTHING);
+    s_Exits(obj, NOTHING);
+    s_Next(obj, NOTHING);
+    s_Link(obj, NOTHING);
+    s_Owner(obj, GOD);
+    s_Pennies(obj, 0);
+    s_Parent(obj, NOTHING);
+    s_Zone(obj, NOTHING);
+}
+
 void destroy_obj(dbref obj)
 {
     if (!Good_obj(obj))
     {
+        destroy_bad_obj(obj);
         return;
     }
 
@@ -632,7 +652,7 @@ void empty_obj(dbref obj)
         }
     }
 
-    // Destory the exits.
+    // Destroy the exits.
     //
     SAFE_DOLIST(targ, next, Exits(obj))
     {
@@ -801,38 +821,84 @@ static void check_pennies(dbref thing, int limit, const char *qual)
 static NDECL(void check_dead_refs)
 {
     dbref targ, owner, i, j;
-    int aflags, dirty;
+    int aflags, dirty = 0;
     char *str;
     FWDLIST *fp;
 
     DO_WHOLE_DB(i)
     {
-        // Check the parent.
+        // Check the owner.
         //
-        targ = Parent(i);
-        if (Good_obj(targ))
-        {
-            if (Going(targ))
+        owner = Owner(i);
+        if (!Good_obj(owner)) {
+            if(isPlayer(i))
             {
+            Log_header_err(i, NOTHING, owner, 1,
+                       "Owner", "is invalid.  Set to player.");
+            owner = i;
+            }
+            else
+            {
+            Log_header_err(i, NOTHING, owner, 1,
+                       "Owner", "is invalid.  Set to GOD.");
+            owner = GOD;
+            }
+            s_Owner(i, owner);
+#ifndef STANDALONE
+            halt_que(NOTHING, i);
+#endif
+            s_Halted(i);
+        } else if (check_type & DBCK_FULL) {
+            if (Going(owner)) {
+                if(isPlayer(i))
+                {
+                    Log_header_err(i, NOTHING, owner, 1,
+                       "Owner", "is set GOING.  Set to player.");
+                    owner = i;
+                }
+                else
+                {
+                    Log_header_err(i, NOTHING, owner, 1,
+                       "Owner", "is set GOING.  Set to GOD.");
+                    owner = GOD;
+                }
+                s_Owner(i, owner);
+#ifndef STANDALONE
+                halt_que(NOTHING, i);
+#endif
+                s_Halted(i);
+            } else if (!OwnsOthers(owner)) {
+                if(isPlayer(i))
+                {
+                    Log_header_err(i, NOTHING, owner, 1,
+                       "Owner", "is not a valid owner type.  Set to player.");
+                    owner = i;
+                }
+                else
+                {
+                    Log_header_err(i, NOTHING, owner, 1,
+                       "Owner", "is not a valid owner type.  Set to GOD.");
+                    owner = GOD;
+                }
+                s_Owner(i, owner);
+            }
+        }
+
+        // Check the parent
+        targ = Parent(i);
+        if (Good_obj(targ)) {
+            if (Going(targ)) {
                 s_Parent(i, NOTHING);
 #ifndef STANDALONE
-                owner = Owner(i);
-                if (  Good_owner(owner)
-                   && !Quiet(i)
-                   && !Quiet(owner))
-                {
-                    notify(owner,
-                    tprintf("Parent cleared on %s(#%d)",
-                        Name(i), i));
-                }
+                
+                if (!Quiet(i) && !Quiet(owner))
+                    notify(owner, tprintf("Parent cleared on %s(#%d)", Name(i), i));
 #else
                 Log_header_err(i, Location(i), targ, 1,
                      "Parent", "is invalid.  Cleared.");
 #endif
             }
-        }
-        else if (targ != NOTHING)
-        {
+        } else if (targ != NOTHING) {
             Log_header_err(i, Location(i), targ, 1,
                 "Parent", "is invalid.  Cleared.");
             s_Parent(i, NOTHING);
@@ -848,9 +914,7 @@ static NDECL(void check_dead_refs)
                 s_Zone(i, NOTHING);
 #ifndef STANDALONE
                 owner = Owner(i);
-                if (  Good_owner(owner)
-                   && !Quiet(i)
-                   && !Quiet(owner))
+                if (!Quiet(i) && !Quiet(owner))
                 {
                     notify(owner,
                       tprintf("Zone cleared on %s(#%d)", Name(i), i));
@@ -867,52 +931,104 @@ static NDECL(void check_dead_refs)
                 "is invalid.  Cleared.");
             s_Zone(i, NOTHING);
         }
+
+        // Check forwardlist
+        fp = fwdlist_get(i);
+        if (fp) {
+            for (j = 0; j < fp->count; j++) {
+                targ = fp->data[j];
+                if (Good_obj(targ) && Going(targ)) {
+                    fp->data[j] = NOTHING;
+                    dirty = 1;
+                } else if (!Good_obj(targ) &&
+                       (targ != NOTHING)) {
+                    fp->data[j] = NOTHING;
+                    dirty = 1;
+                }
+            }
+        }
+        if (dirty) {
+            str = alloc_lbuf("purge_going");
+            (void)fwdlist_rewrite(fp, str);
+            atr_get_info(i, A_FORWARDLIST, &owner, &aflags);
+            atr_add(i, A_FORWARDLIST, str, owner, aflags);
+            free_lbuf(str);
+        }
+
+        if (check_type & DBCK_FULL) {
+
+            // Check for wizards
+            if (Wizard(i)) {
+                if (isPlayer(i)) {
+                    Log_simple_err(i, NOTHING,
+                             "Player is a WIZARD.");
+                }
+                if (!Wizard(Owner(i))) {
+                    Log_header_err(i, NOTHING, Owner(i), 1,
+                               "Owner",
+                               "of a WIZARD object is not a wizard");
+                }
+            }
+        }
+
         switch (Typeof(i))
         {
         case TYPE_PLAYER:
-        case TYPE_THING:
-
-            if (Going(i))
-                break;
-
-            // Check the home.
-            //
+            // check home
             targ = Home(i);
-            if (Good_obj(targ))
+            if (!Good_obj(targ) || !Has_contents(targ))
             {
-                if (Going(targ))
-                {
-                    s_Home(i, new_home(i));
-#ifndef STANDALONE
-                    owner = Owner(i);
-                    if (  Good_owner(owner)
-                       && !Quiet(i)
-                       && !Quiet(owner))
-                    {
-                        notify(owner, tprintf("Home reset on %s(#%d)",
-                            Name(i), i));
-                    }
-#else
-                    Log_header_err(i, Location(i), targ, 1, "Home",
-                        "is invalid.  Reset.");
-#endif
-                }
-            }
-            else if (targ != NOTHING)
-            {
-                Log_header_err(i, Location(i), targ, 1,
-                       "Home", "is invalid.  Cleared.");
-                s_Home(i, new_home(i));
+                Log_simple_err(i, Location(i), "Bad home. Reset.");
+                s_Home(i, default_home());
             }
 
             // Check the location.
             //
             targ = Location(i);
-            if (!Good_obj(targ))
+            if (!Good_obj(targ) || !Has_contents(targ))
             {
                 Log_pointer_err(NOTHING, i, NOTHING, targ, "Location",
                     "is invalid.  Moved to home.");
-                ZAP_LOC(i);
+                move_object(i, Home(i));
+            }
+                        
+            // Check for self-referential Next()
+            if (Next(i) == i) {
+                Log_simple_err(i, NOTHING,
+                     "Next points to self.  Next cleared.");
+                s_Next(i, NOTHING);
+            }
+
+            if (check_type & DBCK_FULL) {
+            // check wealth
+            targ = mudconf.paylimit;
+            check_pennies(i, targ, "Wealth");
+            }
+            break;
+
+        case TYPE_THING:
+            
+            // check home
+            targ = Home(i);
+            if (!Good_obj(targ) || !Has_contents(targ))
+            {
+#ifndef STANDALONE
+                if (!Quiet(i) && !Quiet(owner))
+                    notify(owner, tprintf("Home reset on %s(#%d)", Name(i), i));
+#else
+                Log_header_err(i, Location(i), targ, 1,
+                       "Home", "is invalid.  Cleared.");
+                s_Home(i, new_home(i));
+#endif
+            }
+
+            // Check the location.
+            //
+            targ = Location(i);
+            if (!Good_obj(targ) || !Has_contents(targ))
+            {
+                Log_pointer_err(NOTHING, i, NOTHING, targ, "Location",
+                    "is invalid.  Moved to home.");
                 move_object(i, HOME);
             }
 
@@ -926,18 +1042,10 @@ static NDECL(void check_dead_refs)
             }
             if (check_type & DBCK_FULL)
             {
-                // Check wealth or value.
+                // Check value.
                 //
                 targ = OBJECT_ENDOWMENT(mudconf.createmax);
-                if (OwnsOthers(i))
-                {
-                    targ += mudconf.paylimit;
-                    check_pennies(i, targ, "Wealth");
-                }
-                else
-                {
-                    check_pennies(i, targ, "Value");
-                }
+                check_pennies(i, targ, "Value");
             }
             break;
 
@@ -952,10 +1060,7 @@ static NDECL(void check_dead_refs)
                 {
                     s_Dropto(i, NOTHING);
 #ifndef STANDALONE
-                    owner = Owner(i);
-                    if (  Good_owner(owner)
-                       && !Quiet(i)
-                       && !Quiet(owner))
+                    if (!Quiet(i) && !Quiet(owner))
                     {
                         notify(owner, tprintf("Dropto removed from %s(#%d)",
                             Name(i), i));
@@ -1075,92 +1180,6 @@ static NDECL(void check_dead_refs)
             //
             Log_simple_err(i, NOTHING, "Funny object type.  Destroyed.");
             destroy_obj(i);
-        }
-
-        // Check forwardlist.
-        //
-        dirty = 0;
-        fp = fwdlist_get(i);
-        if (fp)
-        {
-            for (j = 0; j < fp->count; j++)
-            {
-                targ = fp->data[j];
-                if (Good_obj(targ) && Going(targ))
-                {
-                    fp->data[j] = NOTHING;
-                    dirty = 1;
-                }
-                else if ( !Good_obj(targ)
-                        && targ != NOTHING)
-                {
-                    fp->data[j] = NOTHING;
-                    dirty = 1;
-                }
-            }
-        }
-        if (dirty)
-        {
-            str = alloc_lbuf("purge_going");
-            fwdlist_rewrite(fp, str);
-            atr_get_info(i, A_FORWARDLIST, &owner, &aflags);
-            atr_add(i, A_FORWARDLIST, str, owner, aflags);
-            free_lbuf(str);
-        }
-
-        // Check owner.
-        //
-        owner = Owner(i);
-        if (!Good_obj(owner))
-        {
-            Log_header_err(i, NOTHING, owner, 1, "Owner",
-                "is invalid.  Set to GOD.");
-            owner = GOD;
-            s_Owner(i, owner);
-#ifndef STANDALONE
-            halt_que(NOTHING, i);
-#endif
-            s_Halted(i);
-        }
-        else if (check_type & DBCK_FULL)
-        {
-            if (Going(owner))
-            {
-                Log_header_err(i, NOTHING, owner, 1, "Owner",
-                    "is set GOING.  Set to GOD.");
-                s_Owner(i, owner);
-#ifndef STANDALONE
-                halt_que(NOTHING, i);
-#endif
-                s_Halted(i);
-            }
-            else if (!OwnsOthers(owner))
-            {
-                Log_header_err(i, NOTHING, owner, 1, "Owner",
-                    "is not a valid owner type.");
-            }
-            else if (isPlayer(i) && (owner != i))
-            {
-                Log_header_err(i, NOTHING, owner, 1, "Player",
-                    "is the owner instead of the player.");
-            }
-        }
-        if (check_type & DBCK_FULL)
-        {
-            // Check for wizards.
-            //
-            if (Wizard(i))
-            {
-                if (isPlayer(i))
-                {
-                    Log_simple_err(i, NOTHING, "Player is a WIZARD.");
-                }
-                if (!Wizard(Owner(i)))
-                {
-                    Log_header_err(i, NOTHING, Owner(i), 1, "Owner",
-                        "of a WIZARD object is not a wizard");
-                }
-            }
         }
     }
 }

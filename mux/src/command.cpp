@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.5 2002-06-11 16:52:54 jake Exp $
+// $Id: command.cpp,v 1.6 2002-06-11 17:12:06 jake Exp $
 //
 
 #include "copyright.h"
@@ -85,6 +85,12 @@ NAMETAB cset_sw[] =
     {"quiet",           1,  CA_PUBLIC,  CSET_QUIET},
     {"spoof",           1,  CA_PUBLIC,  CSET_SPOOF},
     {"header",          2,  CA_PUBLIC,  CSET_HEADER},
+    { NULL,             0,          0,  0}
+};
+
+NAMETAB dbck_sw[] =
+{
+    {"full",            1,  CA_WIZARD,  DBCK_FULL},
     { NULL,             0,          0,  0}
 };
 
@@ -483,7 +489,7 @@ CMDENT_NO_ARG command_table_no_arg[] =
     {"@@",          NULL,       0,           0,          CS_NO_ARGS, do_comment},
     {"@backup",     NULL,       CA_WIZARD,   0,          CS_NO_ARGS, do_backup},
     {"@clist",      clist_sw,   CA_NO_SLAVE, 0,          CS_NO_ARGS, do_chanlist},
-    {"@dbck",       NULL,       CA_WIZARD,   0,          CS_NO_ARGS, do_dbck},
+    {"@dbck",       dbck_sw,    CA_WIZARD,   0,          CS_NO_ARGS, do_dbck},
     {"@dbclean",    NULL,       CA_GOD,      0,          CS_NO_ARGS, do_dbclean},
     {"@dump",       dump_sw,    CA_WIZARD,   0,          CS_NO_ARGS, do_dump},
     {"@mark_all",   markall_sw, CA_WIZARD,   MARK_SET,   CS_NO_ARGS, do_markall},

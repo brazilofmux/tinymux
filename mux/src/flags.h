@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: flags.h,v 1.2 2002-06-11 17:07:10 jake Exp $
 //
 
 #include "copyright.h"
@@ -245,7 +245,7 @@ extern char *MakeCanonicalFlagName
 #define isGarbage(x)    (Typeof(x) == TYPE_GARBAGE)
 
 #define Good_obj(x) (((x) >= 0) && ((x) < mudstate.db_top) && \
-             (Typeof(x) < NOTYPE))
+             (Typeof(x) < TYPE_GARBAGE))
 #define Good_owner(x)   (Good_obj(x) && OwnsOthers(x))
 
 #define Staff(x)    (Wizard(x) || Royalty(x) || ((Flags2(x) & STAFF) != 0))
