@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.1 2000-04-11 07:14:44 sdennis Exp $
+// $Id: db.h,v 1.2 2000-04-14 03:49:03 sdennis Exp $
 //
 #ifndef __DB_H
 #define __DB_H
@@ -47,6 +47,9 @@ struct atrlist
     int number;     /* Attribute number. */
 };
 #endif
+
+extern int MakeCanonicalAttributeName(char *pBuffer, const char *pName);
+extern int MakeCanonicalAttributeCommand(char *pBuffer, const char *pName);
 
 typedef struct stack STACK;
 struct stack
