@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.96 2002-05-06 01:06:24 sdennis Exp $
+// $Id: funceval.cpp,v 1.97 2002-06-11 20:09:55 jake Exp $
 //
 
 #include "copyright.h"
@@ -1447,25 +1447,29 @@ FUNCTION(fun_mailfrom)
 
 FUNCTION(fun_hasattr)
 {
-    dbref thing, aowner;
-    int aflags;
-    ATTR *attr;
-    char *tbuf;
-
-    thing = match_thing(player, fargs[0]);
-    if (thing == NOTHING) {
+    dbref thing = match_thing(player, fargs[0]);
+    if (thing == NOTHING) 
+    {
         safe_nomatch(buff, bufc);
         return;
-    } else if (!Examinable(player, thing)) {
-        safe_noperm(buff, bufc);
-        return;
     }
-    attr = atr_str(fargs[1]);
+
+    dbref aowner;
+    int aflags;
+    ATTR *attr = atr_str(fargs[1]);
+    char *tbuf;
     int ch = '0';
+
     if (attr)
     {
         atr_get_info(thing, attr->number, &aowner, &aflags);
-        if (See_attr(player, thing, attr, aowner, aflags))
+        if (   !Examinable(player, thing) 
+            && !Read_attr(player, thing, attr, aowner, aflags))
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
+        else if (See_attr(player, thing, attr, aowner, aflags))
         {
             tbuf = atr_get(thing, attr->number, &aowner, &aflags);
             if (*tbuf)
@@ -1480,27 +1484,31 @@ FUNCTION(fun_hasattr)
 
 FUNCTION(fun_hasattrp)
 {
-    dbref thing, aowner;
-    int aflags;
-    ATTR *attr;
-    char *tbuf;
-
-    thing = match_thing(player, fargs[0]);
-    if (thing == NOTHING) {
+    dbref thing = match_thing(player, fargs[0]);
+    if (thing == NOTHING) 
+    {
         safe_nomatch(buff, bufc);
         return;
-    } else if (!Examinable(player, thing)) {
-        safe_noperm(buff, bufc);
-        return;
     }
-    attr = atr_str(fargs[1]);
+
+    dbref aowner;
+    int aflags;
+    ATTR *attr = atr_str(fargs[1]);
+    char *tbuf;
     int ch = '0';
+
     if (attr)
     {
         atr_pget_info(thing, attr->number, &aowner, &aflags);
-        if (See_attr(player, thing, attr, aowner, aflags))
+        if (   !Examinable(player, thing) 
+            && !Read_attr(player, thing, attr, aowner, aflags))
         {
-            tbuf = atr_pget(thing, attr->number, &aowner, &aflags);
+            safe_noperm(buff, bufc);
+            return;
+        }
+        else if (See_attr(player, thing, attr, aowner, aflags))
+        {
+            tbuf = atr_get(thing, attr->number, &aowner, &aflags);
             if (*tbuf)
             {
                 ch = '1';
