@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.42 2002-07-20 11:09:54 jake Exp $
+// $Id: command.cpp,v 1.43 2002-07-20 11:12:22 jake Exp $
 //
 
 #include "copyright.h"
@@ -1953,22 +1953,18 @@ static void list_cmdtable(dbref player)
 {
     char *buf = alloc_lbuf("list_cmdtable");
     char *bp = buf;
-    char *cp;
-    for (cp = (char *)"Commands:"; *cp; cp++)
-        *bp++ = *cp;
+    ITL itl;
+    ItemToList_Init(&itl, buf, &bp);
+    ItemToList_AddString(&itl, (char *)"Commands:");
 
     {
         CMDENT_NO_ARG *cmdp;
         for (cmdp = command_table_no_arg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+                && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
-                    *bp++ = ' ';
-                    for (cp = cmdp->cmdname; *cp; cp++)
-                        *bp++ = *cp;
-                }
+                ItemToList_AddString(&itl, cmdp->cmdname);
             }
         }
     }
@@ -1976,14 +1972,10 @@ static void list_cmdtable(dbref player)
         CMDENT_ONE_ARG *cmdp;
         for (cmdp = command_table_one_arg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+                && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
-                    *bp++ = ' ';
-                    for (cp = cmdp->cmdname; *cp; cp++)
-                        *bp++ = *cp;
-                }
+                ItemToList_AddString(&itl, cmdp->cmdname);
             }
         }
     }
@@ -1991,14 +1983,10 @@ static void list_cmdtable(dbref player)
         CMDENT_ONE_ARG_CMDARG *cmdp;
         for (cmdp = command_table_one_arg_cmdarg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+                && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
-                    *bp++ = ' ';
-                    for (cp = cmdp->cmdname; *cp; cp++)
-                        *bp++ = *cp;
-                }
+                ItemToList_AddString(&itl, cmdp->cmdname);
             }
         }
     }
@@ -2006,14 +1994,10 @@ static void list_cmdtable(dbref player)
         CMDENT_TWO_ARG *cmdp;
         for (cmdp = command_table_two_arg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+                && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
-                    *bp++ = ' ';
-                    for (cp = cmdp->cmdname; *cp; cp++)
-                        *bp++ = *cp;
-                }
+                ItemToList_AddString(&itl, cmdp->cmdname);
             }
         }
     }
@@ -2021,14 +2005,10 @@ static void list_cmdtable(dbref player)
         CMDENT_TWO_ARG_ARGV *cmdp;
         for (cmdp = command_table_two_arg_argv; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+                && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
-                    *bp++ = ' ';
-                    for (cp = cmdp->cmdname; *cp; cp++)
-                        *bp++ = *cp;
-                }
+                ItemToList_AddString(&itl, cmdp->cmdname);
             }
         }
     }
@@ -2036,14 +2016,10 @@ static void list_cmdtable(dbref player)
         CMDENT_TWO_ARG_CMDARG *cmdp;
         for (cmdp = command_table_two_arg_cmdarg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+                && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
-                    *bp++ = ' ';
-                    for (cp = cmdp->cmdname; *cp; cp++)
-                        *bp++ = *cp;
-                }
+                ItemToList_AddString(&itl, cmdp->cmdname);
             }
         }
     }
@@ -2051,25 +2027,26 @@ static void list_cmdtable(dbref player)
         CMDENT_TWO_ARG_ARGV_CMDARG *cmdp;
         for (cmdp = command_table_two_arg_argv_cmdarg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+                && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
-                    *bp++ = ' ';
-                    for (cp = cmdp->cmdname; *cp; cp++)
-                        *bp++ = *cp;
-                }
+                ItemToList_AddString(&itl, cmdp->cmdname);
             }
         }
     }
+    ItemToList_Final(&itl);
     *bp = '\0';
 
     // Players get the list of logged-out cmds too
     //
     if (Typeof(player) == TYPE_PLAYER)
-        display_nametab(player, logout_cmdtable, buf, 1);
+    {
+        display_nametab(player, logout_cmdtable, buf, TRUE);
+    }
     else
+    {
         notify(player, buf);
+    }
     free_lbuf(buf);
 }
 
@@ -2079,26 +2056,20 @@ static void list_cmdtable(dbref player)
 static void list_attrtable(dbref player)
 {
     ATTR *ap;
-    char *buf, *bp;
-    const char *cp;
 
-    buf = alloc_lbuf("list_attrtable");
-    bp = buf;
-    for (cp = "Attributes:"; *cp; cp++)
-    {
-        *bp++ = *cp;
-    }
+    char *buf = alloc_lbuf("list_attrtable");
+    char *bp = buf;
+    ITL itl;
+    ItemToList_Init(&itl, buf, &bp);
+    ItemToList_AddString(&itl, (char *)"Attributes:");
     for (ap = attr; ap->name; ap++)
     {
         if (See_attr(player, player, ap))
         {
-            *bp++ = ' ';
-            for (cp = ap->name; *cp; cp++)
-            {
-                *bp++ = *cp;
-            }
+            ItemToList_AddString(&itl, (char *)ap->name);
         }
     }
+    ItemToList_Final(&itl);
     *bp = '\0';
     raw_notify(player, buf);
     free_lbuf(buf);
