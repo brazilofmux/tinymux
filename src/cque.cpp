@@ -655,6 +655,10 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
     {
         tmp->env[a] = NULL;
     }
+    for (a = 0; a < MAX_GLOBAL_REGS; a++)
+    {
+        tmp->scr[a] = NULL;
+    }
     if (sargs)
     {
         for (a = 0; a < MAX_GLOBAL_REGS; a++)
@@ -664,10 +668,6 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
                 memcpy(tptr, sargs[a], nLenRegs[a]);
                 tmp->scr[a] = tptr;
                 tptr += nLenRegs[a];
-            }
-            else
-            {
-                tmp->scr[a] = NULL;
             }
         }
     }
