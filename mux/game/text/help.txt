@@ -4646,8 +4646,13 @@ CASE()
 
   FUNCTION: case(<str>[,<pat1>,<res1>]...[,<dflt>])
 
-  case() is like switch() but does not do wildcard matching (i.e., using *).
-  In cases where wildcards are not needed, it performs marginally faster.
+  case() is similar to switch() but does not perform wildcard matching
+  (i.e., using * or ? in the pattern).  In cases where wildcards are not
+  needed, it performs marginally faster.
+
+  Before <resI> is evaluated for return, #$ is substituted with the value
+  of <str>.  In this way, <resI> has a short-hand way of getting at the
+  <str> that matched its corresponding pattern.
 
   Related Topics: @switch, match(), ifelse(), switch().
 
@@ -8972,10 +8977,14 @@ MID()
   <first> and continuing to the right until the end of the string or <length>
   character whichever is satisfied first.
 
-  If <length> is negative, mid() returns a segments of the strings defined in
+  If <length> is negative, mid() returns a segment of the string defined in
   a reverse fashion.  That is, mid() returns a segment of the string ending
   with <first> and continuing to the left until the beginning of the string or
   until <length> characters whichever is satisfied first.
+
+  Note that the first character in a string is numbered zero, and not one.
+
+  Left() is supported as an alias for strtrunc().
 
   Related Topics: right(), strtrunc().
 
@@ -11899,19 +11908,18 @@ SWITCH()
 
   FUNCTION: switch(<str>[,<pat1>,<res1>]...[,<dflt>])
 
-  The switch function compares <str> against each pattern, <patI>,
-  returning the result, <resI> that corresponds to the first pattern that
-  matches <str>. If none match, then the default result, <dflt>, is
-  returned.
+  The switch function compares <str> against each pattern, <patI>, returning
+  the result, <resI> that corresponds to the first pattern that matches <str>.
+  If none match, then the default result, <dflt>, is returned.
 
-  Before <resI> is evaluated for return, #$ is substituted with the value
-  of <str>. In this way, the code in <resI> has a short-hand way of getting
-  at the <str> that matched it's corresponding pattern.
+  Before <resI> is evaluated for return, #$ is substituted with the value of
+  <str>.  In this way, <resI> has a short-hand way of getting at the <str>
+  that matched it's corresponding pattern.
 
   Patterns may include * and ?. * matches any number of characters, and ?
-  matches any 1 character. Instead of pattern matching, it is also possible
-  to compare the alphabetic or numeric value of <str> with <pat> by using
-  the < and > operators.
+  matches any 1 character.  Instead of pattern matching, it is also possible
+  to compare the alphabetic or numeric value of <str> with <pat> by using the
+  < and > operators.
 
   Example:
     > say switch(c,*a*,A,*b*,B,*c*,C,*d*,D,E)
