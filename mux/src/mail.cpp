@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.43 2002-09-11 19:22:32 sdennis Exp $
+// $Id: mail.cpp,v 1.44 2002-09-11 19:35:16 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -378,7 +378,10 @@ void add_folder_name(dbref player, int fld, char *name)
         // It will fit. Append new record.
         //
         q = aFolders + nFolders;
-        *q++ = ' ';
+        if (nFolders)
+        {
+            *q++ = ' ';
+        }
         memcpy(q, aNew, nNew);
         q += nNew;
         *q = '\0';
