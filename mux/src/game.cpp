@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.10 2002-06-27 09:06:47 jake Exp $
+// $Id: game.cpp,v 1.11 2002-07-08 21:11:49 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1044,11 +1044,7 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
     }
     else
     {
-        raw_broadcast(0, "GAME: Fatal Error: %s", message);
-        STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN")
-        log_text("Fatal error: ");
-        log_text(message);
-        ENDLOG
+        raw_broadcast(0, "GAME: %s", message);
     }
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN")
     log_text("Shutdown status: ");
@@ -1058,7 +1054,7 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
     if (fd != -1)
     {
         write(fd, message, strlen(message));
-        write(fd, (char *)ENDLINE, sizeof(ENDLINE)-1);
+        write(fd, ENDLINE, sizeof(ENDLINE)-1);
         DebugTotalFiles++;
         if (close(fd) == 0)
         {

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.4 2002-06-27 06:38:30 jake Exp $
+// $Id: bsd.cpp,v 1.5 2002-07-08 21:11:49 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2772,7 +2772,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         check_panicking(sig);
         log_signal(signames[sig]);
         sprintf(buff, "Caught signal %s, exiting.", signames[sig]);
-        do_shutdown(GOD, GOD, GOD, 0, buff);
+        do_shutdown(NOTHING, GOD, GOD, 0, buff);
         break;
 
     case SIGILL:
