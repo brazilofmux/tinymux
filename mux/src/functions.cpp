@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.3 2003-01-31 06:32:15 sdennis Exp $
+// $Id: functions.cpp,v 1.4 2003-01-31 14:16:40 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -4445,7 +4445,7 @@ FUNCTION(fun_home)
     {
         safe_match_result(it, buff, bufc);
     }
-    if (!Examinable(executor, it))
+    else if (!Examinable(executor, it))
     {
         safe_noperm(buff, bufc);
     }
