@@ -1,5 +1,5 @@
 /* command.h - declarations used by the command processor */
-/* $Id: command.h,v 1.3 2000-05-19 18:59:59 sdennis Exp $ */
+/* $Id: command.h,v 1.4 2000-11-06 18:23:39 sdennis Exp $ */
 
 #ifndef __COMMAND_H
 #define __COMMAND_H
@@ -85,7 +85,7 @@ CMD_TWO_ARG(do_link);           /* Set home, dropto, or dest */
 CMD_ONE_ARG(do_list);           /* List contents of internal tables */
 CMD_ONE_ARG(do_list_file);      /* List contents of message files */
 CMD_TWO_ARG(do_lock);           /* Set a lock on an object */
-CMD_TWO_ARG(do_log);            /* Extra logging routine */
+CMD_TWO_ARG(do_log);        /* Extra logging routine */
 CMD_ONE_ARG(do_look);           /* Look here or at something */
 CMD_NO_ARG(do_markall);         /* Mark or unmark all objects */
 CMD_ONE_ARG(do_motd);           /* Set/list MOTD messages */
@@ -290,4 +290,9 @@ typedef struct
 #define CA_PLAYER     0x40000000  /* Invoker must be a player */
 #define CF_DARK       0x80000000  /* Command doesn't show up in list */
 
+#define SW_MULTIPLE   0x80000000  /* This sw may be spec'd w/others */
+#define SW_GOT_UNIQUE 0x40000000  /* Already have a unique option */
+#define SW_NOEVAL     0x20000000  /* Don't parse args before calling */
+                                  /* handler (typically via a switch */
+                                  /* alias) */
 #endif

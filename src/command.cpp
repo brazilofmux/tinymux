@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.30 2000-11-06 02:04:35 sdennis Exp $
+// $Id: command.cpp,v 1.31 2000-11-06 18:23:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -28,12 +28,6 @@ extern void logged_out0(dbref player, dbref cause, int key);
 extern void logged_out1(dbref player, dbref cause, int key, char *arg);
 extern void boot_slave(dbref, dbref, int);
 extern void NDECL(vattr_clean_db);
-
-#define SW_MULTIPLE   0x80000000    // This sw may be spec'd w/others.
-#define SW_GOT_UNIQUE 0x40000000    // Already have a unique option.
-#define SW_NOEVAL     0x20000000    // Don't parse args before calling
-                                    // handler (typically controlled via
-                                    // a switch).
 
 // Switch tables for the various commands.
 //
