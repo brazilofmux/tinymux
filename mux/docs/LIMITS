@@ -3,7 +3,7 @@ Last Update:  January 2003
 
 While some limits of the server depend on the host environment (CPU
 architecture, compiler, and operating system), there are certain univeral
-limits, and we can also describe typical limits on typical platforms.
+limits, and we can also describe the typical limits on typical platforms.
 
 
 The 8000 character limit:
@@ -56,7 +56,13 @@ which corresponds to -922283539200 through 910638979199.  The precision is
 'Sat Jan 01 00:00:00 -27256 UTC'.
 
 MUX does not account for leap seconds.  It does however, take into account
-what is called 'Summer Time' or 'Daylight Savings Time'.
+what is called 'Summer Time' or 'Daylight Savings Time'.  Given that the
+operating system information about Daylight Savings Time is limited, MUX
+does not apply DST for times that occur earlier the earliest information
+provided by the operating system.  However, for times that occur after the
+latest information provided by the operating system, MUX maps like years
+to like years and borrows DST information from years that are within the
+range supported by the operating system.
 
 
 Typical Platform Limits:
