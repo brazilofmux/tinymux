@@ -4373,9 +4373,13 @@ CMDS()
 
   FUNCTION: cmds(<player>)
 
-  Returns the number of commands entered by a connected 'player'.
-  This function returns -1 if the enactor has insufficient permission
-  (i.e., not self and no Wizard_Who power).
+  Returns the number of commands entered by a connected <player|port>.  If
+  <player|port> is not connected or the enactor has insufficient permissions,
+  then -1 is returned.
+
+  If <player|port> is numeric, it's taken as a port number (as shown in
+  SESSION).  Otherwise, it's treated as a player name.  If the named player is
+  connected more than once, the first connection is returned.
 
   Example:
     > say cmds(me)
@@ -6502,7 +6506,7 @@ IDLE()
   <player|port> is not connected then -1 is returned.
 
   If <player|port> is numeric, it's taken as a port number (as shown in
-  SESSION). Otherwise, it's treated as a player name. If the named player is
+  SESSION).  Otherwise, it's treated as a player name.  If the named player is
   connected more than once, the smallest idle time is returned.
 
   Example:
