@@ -1,7 +1,7 @@
 //
 // mkindx.cpp -- make help/news file indexes 
 //
-// $Id: mkindx.cpp,v 1.3 2000-09-25 04:04:07 sdennis Exp $ 
+// $Id: mkindx.cpp,v 1.4 2001-06-14 03:09:56 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -17,7 +17,6 @@ int DCL_CDECL main(int argc, char *argv[])
 {
     long pos;
     int i, n, lineno, ntopics;
-    char *s, *topic;
     help_indx entry;
     FILE *rfp, *wfp;
 
@@ -76,30 +75,45 @@ int DCL_CDECL main(int argc, char *argv[])
     pos = 0L;
     lineno = 0;
     ntopics = 0;
-    while (fgets(line, LINE_SIZE, rfp) != NULL) {
+    while (fgets(line, LINE_SIZE, rfp) != NULL)
+    {
         ++lineno;
 
         n = strlen(line);
-        if (line[n - 1] != '\n') {
+        if (line[n - 1] != '\n')
+        {
             fprintf(stderr, "line %d: line too long\n", lineno);
         }
-        if (line[0] == '&') {
+        if (line[0] == '&')
+        {
             ++ntopics;
 
-            if (ntopics > 1) {
+            if (ntopics > 1)
+            {
                 entry.len = (int)(pos - entry.pos);
-                if (fwrite(&entry, sizeof(help_indx), 1, wfp) < 1) {
+                if (fwrite(&entry, sizeof(help_indx), 1, wfp) < 1)
+                {
                     fprintf(stderr, "error writing %s\n", argv[2]);
                     exit(-1);
                 }
             }
-            for (topic = &line[1];
-                 (*topic == ' ' || *topic == '\t') && *topic != '\0'; topic++) ;
-            for (i = -1, s = topic; *s != '\n' && *s != '\0'; s++) {
+            char *topic = line+1;
+            while (*topic == ' ' || *topic == '\t' || *topic == '\r')
+            {
+                topic++;
+            }
+            char *s;
+            memset(entry.topic, 0, sizeof(entry.topic));
+            for (i = -1, s = topic; *s != '\n' && *s != '\r' && *s != '\0'; s++)
+            {
                 if (i >= TOPIC_NAME_LEN - 1)
+                {
                     break;
+                }
                 if (*s != ' ' || entry.topic[i] != ' ')
+                {
                     entry.topic[++i] = *s;
+                }
             }
             entry.topic[++i] = '\0';
             entry.pos = pos + (long)n;
@@ -107,7 +121,8 @@ int DCL_CDECL main(int argc, char *argv[])
         pos += n;
     }
     entry.len = (int)(pos - entry.pos);
-    if (fwrite(&entry, sizeof(help_indx), 1, wfp) < 1) {
+    if (fwrite(&entry, sizeof(help_indx), 1, wfp) < 1)
+    {
         fprintf(stderr, "error writing %s\n", argv[2]);
         exit(-1);
     }
