@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.124 2004-09-22 06:25:32 sdennis Exp $
+// $Id: functions.cpp,v 1.125 2004-10-08 21:08:02 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -5474,6 +5474,10 @@ FUNCTION(fun_elock)
     {
         return;
     }
+    else if (!locatable(executor, it, enactor))
+    {
+        safe_nothing(buff, bufc);
+    }
 
     // Get the victim and ensure we can do it.
     //
@@ -5482,12 +5486,12 @@ FUNCTION(fun_elock)
     {
         safe_match_result(victim, buff, bufc);
     }
-    else if (  !nearby_or_control(executor, victim)
-            && !nearby_or_control(executor, it))
+    else if (!locatable(executor, victim, enactor))
     {
-        safe_str("#-1 TOO FAR AWAY", buff, bufc);
+        safe_nothing(buff, bufc);
     }
-    else
+    else if (  nearby_or_control(executor, victim)
+            || nearby_or_control(executor, it))
     {
         char *tbuf = atr_get(it, pattr->number, &aowner, &aflags);
         if (  pattr->number == A_LOCK
@@ -5502,6 +5506,10 @@ FUNCTION(fun_elock)
             safe_chr('0', buff, bufc);
         }
         free_lbuf(tbuf);
+    }
+    else
+    {
+        safe_str("#-1 TOO FAR AWAY", buff, bufc);
     }
 }
 
