@@ -3,7 +3,9 @@ Last Update:  May 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- XXX
+ -- The units on the timeslice configuration option have changed from
+    milliseconds to seconds.  Milliseconds was an integer, where as
+    seconds can be a fraction.  So, this change doesn't take anything away.
 
 
 Feature Additions:
@@ -22,6 +24,15 @@ Feature Additions:
     splice().
  -- Connection, disconnection, partial, and suspect emits now show the
     player's @moniker.
+ -- Added lag_limit configuration option that control how long the server
+    will service commands.  The execution of expensive commands is
+    abbreviated.
+ -- On Win32, use higher-quality time from QueryPerformanceCounter() on
+    Win32 instead of GetSystemTimeAsFileTime().  As soon as the error
+    from using QueryPerformanceCounter() drops below 5ms, the server switches
+    to using it as a time source.  So, if you are doing any softcode
+    profiling on Win32, you need to wait a few seconds after the server is
+    started before beginning your tests.
 
 
 Bug Fixes:
@@ -36,11 +47,13 @@ Bug Fixes:
  -- @backup now works with MEMORY_BASED build.
  -- Added missing @fsay help topic.
  -- Added more messages to @destroy/instant path.
+ -- Guest attributes weren't being wiped as intended.
 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
- -- XXX
+ -- Re-worked update_quotas() so that mudstate.now could be removed.
+ -- Use nanosleep() or usleep() on Unix if available.
 
 
 Cosmetic Changes:
