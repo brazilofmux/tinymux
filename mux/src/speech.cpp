@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.25 2002-08-24 02:33:19 jake Exp $
+// $Id: speech.cpp,v 1.26 2002-08-26 01:07:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -139,8 +139,8 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 
     // Convert prefix-coded messages into the normal type
     //
-    say_flags = key & (SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
-    key &= ~(SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
+    say_flags = key & (SAY_NOEVAL | SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
+    key &= ~(SAY_NOEVAL | SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
 
     char *command;
     if (key == SAY_PREFIX)
@@ -180,10 +180,14 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
     // Parse speechmod if present.
     //
     char *messageOrig = message;
-    char *messageNew = modSpeech(executor, message, TRUE, command);
-    if (messageNew)
+    char *messageNew = NULL;
+    if (!(say_flags & SAY_NOEVAL))
     {
-        message = messageNew;
+        messageNew = modSpeech(executor, message, TRUE, command);
+        if (messageNew)
+        {
+            message = messageNew;
+        }
     }
 
     // Make sure speaker is somewhere if speaking in a place

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.45 2002-08-21 00:20:38 sdennis Exp $
+// $Id: externs.h,v 1.46 2002-08-26 01:07:13 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -507,6 +507,7 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define SAY_POSE_NOSPC  3   /* pose w/o space in current room */
 #define SAY_PREFIX      4   /* first char indicates foratting */
 #define SAY_EMIT        5   /* emit in current room */
+#define SAY_NOEVAL      8   // Don't eval message
 #define SHOUT_SHOUT     1   /* shout to all logged-in players */
 #define SHOUT_WALLPOSE  2   /* Pose to all logged-in players */
 #define SHOUT_WALLEMIT  3   /* Emit to all logged-in players */

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.67 2002-08-22 01:00:27 sdennis Exp $
+// $Id: command.cpp,v 1.68 2002-08-26 01:07:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -426,7 +426,7 @@ NAMETAB quota_sw[] =
 
 NAMETAB say_sw[] =
 {
-    {"noeval",          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
+    {"noeval",          1,  CA_PUBLIC,  SAY_NOEVAL|SW_NOEVAL|SW_MULTIPLE},
     { NULL,             0,          0,  0}
 };
 
