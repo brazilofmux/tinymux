@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.21 2003-03-08 08:48:02 sdennis Exp $
+// $Id: netcommon.cpp,v 1.22 2003-07-16 01:24:27 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1547,7 +1547,7 @@ static void dump_users(DESC *e, char *match, int key)
             }
             else
             {
-                sprintf(buf, "%-16s%9s %4s  %s\r\n",
+                sprintf(buf, "%-16s%9s %4s   %s\r\n",
                     ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
                     "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),

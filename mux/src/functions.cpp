@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.58 2003-05-08 06:24:59 sdennis Exp $
+// $Id: functions.cpp,v 1.59 2003-07-16 01:24:16 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -7978,23 +7978,25 @@ typedef struct
 
 } RADIX_ENTRY;
 
-#define N_RADIX_ENTRIES 6
+#define N_RADIX_ENTRIES 7
 const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
 {
-    { 2592000, 'M', 5, "month"  },
-    {  604800, 'w', 4, "week"   },
-    {   86400, 'd', 3, "day"    },
-    {    3600, 'h', 4, "hour"   },
-    {      60, 'm', 6, "minute" },
-    {       1, 's', 6, "second" }
+    { 31104000, 'y', 4, "year"   },  // 12 'months'
+    {  2592000, 'M', 5, "month"  },  // 30 days.
+    {   604800, 'w', 4, "week"   },  // 7 days.
+    {    86400, 'd', 3, "day"    },
+    {     3600, 'h', 4, "hour"   },
+    {       60, 'm', 6, "minute" },
+    {        1, 's', 6, "second" }
 };
 
-#define IMONTHS  0
-#define IWEEKS   1
-#define IDAYS    2
-#define IHOURS   3
-#define IMINUTES 4
-#define ISECONDS 5
+#define IYEARS   0
+#define IMONTHS  1
+#define IWEEKS   2
+#define IDAYS    3
+#define IHOURS   4
+#define IMINUTES 5
+#define ISECONDS 6
 
 // This routine supports most of the time formats using the above
 // table.
@@ -8064,7 +8066,8 @@ void GeneralTimeConversion
 
 // These buffers are used by:
 //
-//     time_format_1 (23 bytes) uses TimeBuffer80,
+//     digit_format  (23 bytes) uses TimeBuffer80,
+//     time_format_1 (10 bytes) uses TimeBuffer80,
 //     time_format_2 (17 bytes) uses TimeBuffer64,
 //     expand_time   (33 bytes) uses TimeBuffer64,
 //     write_time    (69 bytes) uses TimeBuffer80.
@@ -8082,7 +8085,7 @@ static char TimeBuffer80[80];
 // 2^63/86400 is 1.07E14 which is at most 15 digits.
 // '(15)d (2):(2)\0' is at most 23 characters.
 //
-const char *time_format_1(int Seconds)
+const char *digit_format(int Seconds)
 {
     if (Seconds < 0)
     {
@@ -8113,6 +8116,66 @@ const char *time_format_1(int Seconds)
     return TimeBuffer80;
 }
 
+// Show time in one of the following formats limited by a width of 9 places.
+// Pick one of the following formats:
+//
+//         Z9:99            0 to 86399
+//     Z9d Z9:99        86400 to 8639999
+//     ZZZ9d Z9h      8640000 to 863999999
+//     ZZZ9M Z9d    864000000 and up.
+//
+const char *time_format_1(int Seconds)
+{
+    if (Seconds < 0)
+    {
+        Seconds = 0;
+    }
+
+    int n1, n2, n3;
+    if (Seconds < 8640000)
+    {
+        if (Seconds < 86400)
+        {
+            // Z9:99 Format.
+            //
+            n2 = Seconds / 3600;
+            Seconds -= n2 * 3600;
+            n3 = Seconds / 60;
+            sprintf(TimeBuffer80, "    %2d:%02d", n2, n3);
+        }
+        else
+        {
+            // Z9d Z9:99 Format.
+            //
+            n1 = Seconds / 86400;
+            Seconds -= n1 * 86400;
+            n2 = Seconds / 3600;
+            Seconds -= n2 * 3600;
+            n3 = Seconds / 60;
+            sprintf(TimeBuffer80, "%2dd %2d:%02d", n1, n2, n3);
+        }
+    }
+    else if (Seconds < 864000000)
+    {
+        // ZZZ9d Z9h Format.
+        //
+        n1 = Seconds / 86400;
+        Seconds -= n1 * 86400;
+        n2 = Seconds / 3600;
+        sprintf(TimeBuffer80, "%4dd %2dh", n1, n2);
+    }
+    else
+    {
+        // ZZZ9M Z9d Format.
+        //
+        n1 = Seconds / 2592000;
+        Seconds -= n1 * 2592000;
+        n2 = Seconds / 86400;
+        sprintf(TimeBuffer80, "%4dM %2d", n1, n2);
+    }
+    return TimeBuffer80;
+}
+
 // Show time in days, hours, minutes, or seconds.
 //
 const char *time_format_2(int Seconds)
@@ -8120,7 +8183,7 @@ const char *time_format_2(int Seconds)
     // 2^63/86400 is 1.07E14 which is at most 15 digits.
     // '(15)d\0' is at most 17 characters.
     //
-    GeneralTimeConversion(TimeBuffer64, Seconds, IDAYS, ISECONDS, true, false);
+    GeneralTimeConversion(TimeBuffer64, Seconds, IYEARS, ISECONDS, true, false);
     return TimeBuffer64;
 }
 
@@ -8157,7 +8220,7 @@ const char *write_time(int Seconds)
 FUNCTION(fun_digittime)
 {
     int tt = mux_atol(fargs[0]);
-    safe_str(time_format_1(tt), buff, bufc);
+    safe_str(digit_format(tt), buff, bufc);
 }
 
 // singletime - Single element time from given seconds.
