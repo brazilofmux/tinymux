@@ -16,7 +16,6 @@
 #include "ansi.h"
 #include "patchlevel.h"
 #include "htab.h"
-#include "udb.h"
 
 extern int FDECL(do_command, (DESC *, char *, int));
 extern void NDECL(dump_database);
