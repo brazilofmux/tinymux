@@ -5879,46 +5879,46 @@ FUNCTION LIST
     CONNTOTAL() CONTROLS()  CONVSECS()  CONVTIME()  COS()       CREATE()
     CRC32()     CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()
     DIE()       DIGITTIME() DIST2D()    DIST3D()    DIV()       DOING()
-    E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMPTY()
-    ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()       EXPTIME()
-    EXTRACT()   EVAL()      FDIV()      FILTER()    FINDABLE()  FIRST()
-    FLAGS()     FLOOR()     FLOOR()     FOLD()      FOREACH()   FULLNAME()
-    GET()       GET_EVAL()  GRAB()      GREP()      GREPI()     GT()
-    GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()
-    HOME()      IADD()      IDIV()      IDLE()      IFELSE()    IMUL()
-    INC()       INDEX()     INSERT()    INZONE()    ISDBREF()   ISNUM()
-    ISUB()      ISWORD()    ITER()      ITEMS()     LAST()      LATTR()
-    LATTRCMDS() LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
-    LFLAGS()    LIST()      LIT()       LJUST()     LN()        LNUM()
-    LOC()       LOCATE()    LOCK()      LOG()       LPARENT()   LPOS()
+    DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()
+    EMPTY()     ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()
+    EXPTIME()   EXTRACT()   EVAL()      FDIV()      FILTER()    FINDABLE()
+    FIRST()     FLAGS()     FLOOR()     FLOOR()     FOLD()      FOREACH()
+    FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()      GREPI()
+    GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()
+    HASTYPE()   HOME()      IADD()      IDIV()      IDLE()      IFELSE()
+    IMUL()      INC()       INDEX()     INSERT()    INZONE()    ISDBREF()
+    ISNUM()     ISUB()      ISWORD()    ITER()      ITEMS()     LAST()
+    LATTR()     LATTRCMDS() LCMDS()     LCON()      LCSTR()     LDELETE()
+    LEXITS()    LFLAGS()    LIST()      LIT()       LJUST()     LN()
+    LNUM()      LOC()       LOCATE()    LOCK()      LOG()       LPARENT()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    LRAND()     LSTACK()    LT()        LTE()       LWHO()      MAIL()
-    MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()
-    MERGE()     MID()       MIN()       MIX()       MOD()       MONEY()
-    MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()
-    NEQ()       NEXT()      NOT()       NUM()       OBJ()       OBJEVAL()
-    OBJMEM()    OR()        ORFLAGS()   OWNER()     PACK()      PARENT()
-    PARSE()     PEEK()      PEMIT()     PI()        PICKRAND()  PLAYMEM()
-    PMATCH()    POLL()      POP()       PORTS()     POS()       POSS()
-    POWER()     PUSH()      R()         RAND()      REGMATCH()  REMAINDER()
-    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
-    RJUST()     RLOC()      ROOM()      ROUND()     S()         SCRAMBLE()
-    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
-    SETQ()      SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()
-    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
-    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
-    STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()
-    SUBJ()      SWITCH()    TABLE()     TAN()       TIME()      TRANSLATE()
-    TRIM()      TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()
-    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
-    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
-    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME()
-    XGET()      XOR()       ZONE()      ZWHO()
+    LPOS()      LRAND()     LSTACK()    LT()        LTE()       LWHO()
+    MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()
+    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
+    MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()
+    NEARBY()    NEQ()       NEXT()      NOT()       NUM()       OBJ()
+    OBJEVAL()   OBJMEM()    OR()        ORFLAGS()   OWNER()     PACK()
+    PARENT()    PARSE()     PEEK()      PEMIT()     PI()        PICKRAND()
+    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
+    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
+    REMAINDER() REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
+    REVWORDS()  RJUST()     RLOC()      ROOM()      ROUND()     S()
+    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
+    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
+    SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()
+    SPACE()     SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
+    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
+    SUB()       SUBJ()      SWITCH()    TABLE()     TAN()       TIME()
+    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
+    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
+    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
+    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
+    WRITETIME() XGET()      XOR()       ZONE()      ZWHO()
 
 & FUNCTION CLASSES
 FUNCTION CLASSES
@@ -5931,7 +5931,7 @@ FUNCTION CLASSES
   Database Information:      EXIT INZONE LOC LOCATE MAIL NEARBY NEXT NUM RLOC
                              ROOM SEARCH STATS VALID WHERE ZONE ZWHO
   Floating Point Conversion: FLOOR ROUND TRUNC
-  Game Information:          MOTD MUDNAME POLL VERSION
+  Game Information:          DUMPING MOTD MUDNAME POLL VERSION
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
                              FOLD GRAB INDEX ITER LAST LNUM MAP MATCH MATCHALL
                              MEMBER MIX MUNGE PARSE PICKRAND LRAND REMOVE REST
@@ -10589,7 +10589,7 @@ LAST()
 
   <delim> may be used to specify a word delimiter other than a space.
 
-  Example:
+  Examples:
     > say last(This is a test)
     You say "test"
     > say last(Happy-Fun-Test-Thing,-)
@@ -11319,4 +11319,18 @@ CONNLEFT()
   TinyMUX queue. :)
 
   Related Topics: BOOLEAN VALUES
+
+& DUMPING()
+DUMPING()
+
+  FUNCTION: dumping()
+
+  Return a boolean indicator of whether a forked @dump is currently
+  in progress.
+
+  Example:
+    > think dumping()
+    0
+
+  Related Topics: @dump
 
