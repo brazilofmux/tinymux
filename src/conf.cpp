@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.28 2001-02-07 05:28:50 sdennis Exp $
+// $Id: conf.cpp,v 1.29 2001-02-07 21:39:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -817,9 +817,6 @@ CF_HAND(cf_set_bits)
 
 CF_HAND(cf_set_flags)
 {
-    FLAGENT *fp;
-    FLAGSET *fset;
-
     int success, failure;
 
     // Walk through the tokens.
@@ -829,15 +826,24 @@ CF_HAND(cf_set_flags)
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t");
     char *sp = Tiny_StrTokParse(&tts);
-    fset = (FLAGSET *) vp;
+    FLAGSET *fset = (FLAGSET *) vp;
 
     while (sp != NULL)
     {
-        // Set the appropriate bit.
+        // Canonical Flag Name.
         //
-        fp = (FLAGENT *) hashfindLEN(sp, strlen(sp), &mudstate.flags_htab);
+        int  nName;
+        BOOL bValid;
+        char *pName = MakeCanonicalFlagName(sp, &nName, &bValid);
+        FLAGENT *fp = NULL;
+        if (bValid)
+        {
+            fp = (FLAGENT *)hashfindLEN(pName, nName, &mudstate.flags_htab);
+        }
         if (fp != NULL)
         {
+            // Set the appropriate bit.
+            //
             if (success == 0)
             {
                 (*fset).word1 = 0;
@@ -858,10 +864,8 @@ CF_HAND(cf_set_flags)
             failure++;
         }
 
-        /*
-         * Get the next token 
-         */
-
+        // Get the next token 
+        //
         sp = Tiny_StrTokParse(&tts);
     }
     if ((success == 0) && (failure == 0))
