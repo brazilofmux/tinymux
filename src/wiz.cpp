@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.19 2001-11-08 04:18:31 sdennis Exp $
+// $Id: wiz.cpp,v 1.20 2001-11-08 05:55:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -312,7 +312,8 @@ void do_toad
         notify_quiet(player, "You can't toad that player.");
         return;
     }
-    if ((newowner != NULL) && *newowner)
+    if (  nargs == 2
+       && *newowner )
     {
         init_match(player, newowner, TYPE_PLAYER);
         match_neighbor();
