@@ -45,37 +45,36 @@ Making a New Configuration File:
   are added individually, one per line to the file.  Common additions to 
   this file would be:
 
-                money_name_singular <text>     The name of one coin (penny)
-                money_name_plural <text>       The name of several coins (pennies)
-                fork_dump no                   Do this if you have little swap 
-                                               space.
-                paycheck <amount>              Players get this much money each 
-                                               day they connect.
-                paystart <amount>              Players start out with this much 
-                                               money.
-                payfind <chance>               Each time a player moves, he has a
-                                       1 in <chance> chance of finding a 
-                                       penny.
-                player_starting_room <roomno>  The room that new players are
-                                       created in.
-                mail_expiration <number>           Sets the timeout for @mail.(14 days)
-                master_room <dbref>                        The number of the room you keep yout 
-                                       globals in.
-                quotas <yes/no>                            Enables quotas. (no)
-                starting_quota <number>        How much quota players get. (20)             
-                                       Meaningless without quotas enabled.
-                guests_channel <channel name>  Channel for guests.  See 
-                                               GUESTS for information on the guest 
-                                               system.            
-                public_channel <channel name>  Name for the public channel 
-                                               on your game.
-                dump_message                   Message shown at the beginning of a 
-                                               DB save to disk                          
-                postdump_message               Message shown at the end of a 
-                                               DB save to disk  
-                idle_wiz_dark yes              Sets wizards dark after they have 
-                                               been idle more than the specified 
-                                               timeout                         
+    money_name_singular <text>     The name of one coin (penny)
+    money_name_plural <text>       The name of several coins (pennies)
+    fork_dump no                   Do this if you have little swap 
+                                   space.
+    paycheck <amount>              Players get this much money each 
+                                   day they connect.
+    paystart <amount>              Players start out with this much 
+                                   money.
+    payfind <chance>               Each time a player moves, he has a
+                                   1 in <chance> chance of finding a 
+                                   penny.
+    player_starting_room <roomno>  The room that new players are
+                                   created in.
+    mail_expiration <number>       Sets the timeout for @mail.(14 days)
+    master_room <dbref>            The number of the room you keep yout 
+                                   globals in.
+    quotas <yes/no>                Enables quotas. (no)
+    starting_quota <number>        How much quota players get. (20)
+                                   Meaningless without quotas enabled.
+    guests_channel <channel name>  Channel for guests.  See GUESTS for
+                                   information on the guest system.
+    public_channel <channel name>  Name for the public channel
+                                   on your game.
+    dump_message                   Message shown at the beginning of a
+                                   DB save to disk
+    postdump_message               Message shown at the end of a DB
+                                   save to disk
+    idle_wiz_dark yes              Sets wizards dark after they have
+                                   been idle more than the specified
+                                   timeout.
 
 - WIZHELP is a wealth of information regarding the more esotric aspects of 
   configuration parameters.  There are many more configuration directives 
