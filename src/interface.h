@@ -1,5 +1,5 @@
 /* interface.h */
-/* $Id: interface.h,v 1.1 2000-04-11 07:14:45 sdennis Exp $ */
+/* $Id: interface.h,v 1.2 2000-06-03 09:07:38 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -24,8 +24,6 @@
 #endif // !WIN32
 
 /* these symbols must be defined by the interface */
-
-extern int shutdown_flag; /* if non-zero, interface should shut down */
 
 /* Disconnection reason codes */
 
