@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.105 2002-10-15 13:44:23 sdennis Exp $
+// $Id: funceval.cpp,v 1.106 2002-10-24 05:36:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -100,7 +100,7 @@ FUNCTION(fun_beep)
 //
 FUNCTION(fun_ansi)
 {
-    extern char *ColorTable[256];
+    extern const char *ColorTable[256];
 
     char aTemp[LBUF_SIZE];
     size_t nTemp = LBUF_SIZE-1;
@@ -109,7 +109,7 @@ FUNCTION(fun_ansi)
     const char *s = fargs[0];
     while (*s) 
     {
-        char *pColor = ColorTable[*s];
+        const char *pColor = ColorTable[*s];
         if (pColor)
         {
             size_t n = strlen(pColor);
