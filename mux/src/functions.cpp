@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.92 2004-04-18 22:33:22 sdennis Exp $
+// $Id: functions.cpp,v 1.93 2004-04-20 18:38:55 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -6769,7 +6769,7 @@ FUNCTION(fun_itemize)
  */
 
 void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor, 
-                    char *fargs[], SEP *psep, bool bBool)
+                    char *fargs[], SEP *psep, SEP *posep, bool bBool)
 {
     char *atext;
     dbref thing;
@@ -6803,7 +6803,7 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
         {
             if (!bFirst)
             {
-                safe_chr(psep->str[0], buff, bufc);
+                print_sep(posep, buff, bufc);
             }
             safe_str(objstring, buff, bufc);
             bFirst = false;
@@ -6821,7 +6821,12 @@ FUNCTION(fun_filter)
     {
         return;
     }
-    filter_handler(buff, bufc, executor, enactor, fargs, &sep, false);
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
+    {
+        return;
+    }
+    filter_handler(buff, bufc, executor, enactor, fargs, &sep, &osep, false);
 }
 
 FUNCTION(fun_filterbool)
@@ -6831,7 +6836,12 @@ FUNCTION(fun_filterbool)
     {
         return;
     }
-    filter_handler(buff, bufc, executor, enactor, fargs, &sep, true);
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
+    {
+        return;
+    }
+    filter_handler(buff, bufc, executor, enactor, fargs, &sep, &osep, true);
 }
 
 /* ---------------------------------------------------------------------------
@@ -9531,8 +9541,8 @@ FUN flist[] =
     {"EXPTIME",     fun_exptime,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"EXTRACT",     fun_extract,    MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {"FDIV",        fun_fdiv,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"FILTER",      fun_filter,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"FILTERBOOL",  fun_filterbool, MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {"FILTER",      fun_filter,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {"FILTERBOOL",  fun_filterbool, MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"FINDABLE",    fun_findable,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"FIRST",       fun_first,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"FLAGS",       fun_flags,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
