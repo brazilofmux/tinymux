@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: svdocache.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $
+// $Id: svdocache.cpp,v 1.2 2000-04-16 07:33:28 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -86,6 +86,7 @@ void cache_redirect(void)
         if (TempFiles[i] == NULL)
         {
             Log.printf("Cannot create %s.\n", TempFileName);
+            Log.Flush();
             abort();
         }
         setvbuf(TempFiles[i], NULL, _IOFBF, 16384);
