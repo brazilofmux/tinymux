@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.20 2002-02-07 07:39:58 sdennis Exp $
+// $Id: flags.cpp,v 1.21 2002-02-14 01:42:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -311,18 +311,30 @@ static FLAGBITENT fbeVacation       = { VACATION,     '|',    FLAG_WORD2, 0,    
 static FLAGBITENT fbeVerbose        = { VERBOSE,      'v',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeVisual         = { VISUAL,       'V',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeWizard         = { WIZARD,       'W',    FLAG_WORD1, 0,                    fh_god};
+static FLAGBITENT fbeSitemon        = { SITEMON,      '$',    FLAG_WORD3, 0,                    fh_wiz};
 #ifdef WOD_REALMS
-static FLAGBITENT fbeObf            = { OBF,          'o',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeHss            = { HSS,          'k',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeUmbra          = { UMBRA,        'y',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeShroud         = { SHROUD,       '$',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeMatrix         = { MATRIX,       '/',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeMedium         = { MEDIUM,       '^',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-static FLAGBITENT fbeDead           = { DEAD,         '_',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
 static FLAGBITENT fbeFae            = { FAE,          '0',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
 static FLAGBITENT fbeChimera        = { CHIMERA,      '1',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
 static FLAGBITENT fbePeering        = { PEERING,      '2',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
-#endif
+static FLAGBITENT fbeUmbra          = { UMBRA,        '3',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeShroud         = { SHROUD,       '4',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeMatrix         = { MATRIX,       '5',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeObf            = { OBF,          '6',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeHss            = { HSS,          '7',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeMedium         = { MEDIUM,       '8',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeDead           = { DEAD,         '9',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+#else // WOD_REALMS
+static FLAGBITENT fbeMarker0        = { MARK_0,       '0',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker1        = { MARK_1,       '1',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker2        = { MARK_2,       '2',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker3        = { MARK_3,       '3',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker4        = { MARK_4,       '4',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker5        = { MARK_5,       '5',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker6        = { MARK_6,       '6',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker7        = { MARK_7,       '7',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker8        = { MARK_8,       '8',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker9        = { MARK_9,       '9',    FLAG_WORD3, 0,                    fh_god};
+#endif // WOD_REALMS
 
 FLAGNAMEENT gen_flag_names[] =
 {
@@ -368,6 +380,7 @@ FLAGNAMEENT gen_flag_names[] =
     {"ROBOT",           TRUE, &fbeRobot          },
     {"ROYALTY",         TRUE, &fbeRoyalty        },
     {"SAFE",            TRUE, &fbeSafe           },
+    {"SITEMON",         TRUE, &fbeSitemon        },
     {"SLAVE",           TRUE, &fbeSlave          },
     {"SPOOF",          FALSE, &fbeNoSpoof        },
     {"STAFF",           TRUE, &fbeStaff          },
@@ -393,7 +406,18 @@ FLAGNAMEENT gen_flag_names[] =
     {"FAE",             TRUE, &fbeFae            },
     {"CHIMERA",         TRUE, &fbeChimera        },
     {"PEERING",         TRUE, &fbePeering        },
-#endif
+#else // WOD_REALMS
+    {"MARKER0",         TRUE, &fbeMarker0        },
+    {"MARKER1",         TRUE, &fbeMarker1        },
+    {"MARKER2",         TRUE, &fbeMarker2        },
+    {"MARKER3",         TRUE, &fbeMarker3        },
+    {"MARKER4",         TRUE, &fbeMarker4        },
+    {"MARKER5",         TRUE, &fbeMarker5        },
+    {"MARKER6",         TRUE, &fbeMarker6        },
+    {"MARKER7",         TRUE, &fbeMarker7        },
+    {"MARKER8",         TRUE, &fbeMarker8        },
+    {"MARKER9",         TRUE, &fbeMarker9        },
+#endif // WOD_REALMS
     {NULL, FALSE}
 };
 

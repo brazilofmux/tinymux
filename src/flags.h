@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.14 2002-01-31 12:39:48 sdennis Exp $
+// $Id: flags.h,v 1.15 2002-02-14 01:42:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -94,8 +94,21 @@
 #define DEAD            0x00000040
 #define FAE             0x00000080      // Fae, FAEDESC
 #define CHIMERA         0x00000100      // Fae, FAEDESC
-#define PEERING         0x00000200      // Mean the a looker is seeing a different realm than they are in.
-#endif
+#define PEERING         0x00000200      // Means the a looker is seeing a
+                                        // different realm than they are in.
+#else // WOD_REALMS
+#define MARK_0          0x00400000      // User-defined flags.
+#define MARK_1          0x00800000
+#define MARK_2          0x01000000
+#define MARK_3          0x02000000
+#define MARK_4          0x04000000
+#define MARK_5          0x08000000
+#define MARK_6          0x10000000
+#define MARK_7          0x20000000
+#define MARK_8          0x40000000
+#define MARK_9          0x80000000
+#endif // WOD_REALMS
+#define SITEMON         0x00000400      // Sitemonitor Flag
 
 /* ---------------------------------------------------------------------------
  * FLAGENT: Information about object flags.
@@ -308,6 +321,7 @@ extern char *MakeCanonicalFlagName
 #define s_Connected(x)  s_Flags((x), FLAG_WORD2, Flags2(x) | CONNECTED)
 #define c_Connected(x)  s_Flags((x), FLAG_WORD2, Flags2(x) & ~CONNECTED)
 
+#define SiteMon(x)            ((Flags3(x) & SITEMON) != 0)
 #ifdef WOD_REALMS
 #define isObfuscate(x)        ((Flags3(x) & OBF) != 0)
 #define isHeightenedSenses(x) ((Flags3(x) & HSS) != 0)

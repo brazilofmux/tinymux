@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.66 2002-02-13 18:57:29 sdennis Exp $
+// $Id: conf.cpp,v 1.67 2002-02-14 01:42:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1520,6 +1520,7 @@ CONF conftable[] =
     {"news_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.news_file,       NULL, SIZEOF_PATHNAME},
     {"news_index",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.news_indx,       NULL, SIZEOF_PATHNAME},
     {"newuser_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crea_file,       NULL, SIZEOF_PATHNAME},
+    {"nositemon_site",            cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,     H_NOSITEMON},
     {"notify_recursion_limit",    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.ntfy_nest_lim,          NULL,               0},
     {"open_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               NULL,               0},
     {"output_database",           cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.outdb,           NULL, SIZEOF_PATHNAME},

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.39 2002-02-13 18:57:29 sdennis Exp $
+// $Id: mudconf.h,v 1.40 2002-02-14 01:42:42 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -436,6 +436,7 @@ extern STATEDATA mudstate;
 #define H_FORBIDDEN     0x0002  /* Reject all connects */
 #define H_SUSPECT       0x0004  /* Notify wizards of connects/disconnects */
 #define H_GUEST         0x0008  // Don't permit guests from here
+#define H_NOSITEMON     0x0010  // Block SiteMon Information
 
 // Event flags, for noting when an event has taken place.
 //

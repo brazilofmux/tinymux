@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.61 2002-02-13 22:47:16 sdennis Exp $
+// $Id: netcommon.cpp,v 1.62 2002-02-14 01:42:42 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -694,14 +694,10 @@ static void announce_connect(dbref player, DESC *d)
     temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
     notify_check(player, player, buf, key);
-    if (Suspect(player))
+    if (  Suspect(player)
+       || (d->host_info & H_SUSPECT))
     {
         raw_broadcast(WIZARD, "[Suspect] %s has connected.", Name(player));
-    }
-    if (d->host_info & H_SUSPECT)
-    {
-        raw_broadcast(WIZARD, "[Suspect site: %s] %s has connected.", d->addr,
-            Name(player));
     }
     atr_pget_str_LEN(buf, player, A_ACONNECT, &aowner, &aflags, &nLen);
     CLinearTimeAbsolute lta;
@@ -791,14 +787,10 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
     DESC *dtemp;
     char *argv[1];
 
-    if (Suspect(player))
+    if (  Suspect(player)
+       || (d->host_info & H_SUSPECT))
     {
         raw_broadcast(WIZARD, "[Suspect] %s has disconnected.", Name(player));
-    }
-    if (d->host_info & H_SUSPECT)
-    {
-        raw_broadcast(WIZARD, "[Suspect site: %s] %s has disconnected.",
-            d->addr, Name(d->player));
     }
     loc = Location(player);
     num = 0;
@@ -824,7 +816,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             do_mail_purge(player);
         }
 
-        raw_broadcast(MONITOR, "GAME: %s has disconnected.", Name(player));
+        raw_broadcast(MONITOR, "GAME: %s has disconnected. <%s>", Name(player), reason);
 
         c_Connected(player);
 
@@ -1304,9 +1296,16 @@ static void dump_users(DESC *e, char *match, int key)
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
 
-    DESC_ITER_CONN(d)
+    DESC_ITER_ALL(d)
     {
-        if (!Hidden(d->player) || (e->flags & DS_CONNECTED) && Wizard_Who(e->player))
+        if (  !SiteMon(e->player)
+           && !Connected(d->player))
+        {
+            continue;
+        }
+        if (  !Hidden(d->player)
+           || (e->flags & DS_CONNECTED)
+           && Wizard_Who(e->player))
         {
             count++;
             if (match && !(string_prefix(Name(d->player), match)))
@@ -1371,18 +1370,21 @@ static void dump_users(DESC *e, char *match, int key)
             if ((e->flags & DS_CONNECTED) && Wizard_Who(e->player) && (key == CMD_WHO))
             {
                 sprintf(buf, "%-16s%9s %4s%-3s#%-6d%5d%3s%s\r\n",
-                    trimmed_name(d->player),
+                    (Connected(d->player) ? trimmed_name(d->player) :
+                    "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     flist,
-                    Location(d->player), d->command_count,
+                    (Connected(d->player) ? Location(d->player) : -1),
+                    d->command_count,
                     slist,
                     trimmed_site(((d->username[0] != '\0') ? tprintf("%s@%s", d->username, d->addr) : d->addr)));
             }
             else if (key == CMD_SESSION)
             {
                 sprintf(buf, "%-16s%9s %4s%5d%5d%6d%10d%6d%6d%10d\r\n",
-                    trimmed_name(d->player),
+                    (Connected(d->player) ? trimmed_name(d->player) :
+                    "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     d->descriptor,
@@ -1394,7 +1396,8 @@ static void dump_users(DESC *e, char *match, int key)
             else if (Wizard_Who(e->player))
             {
                 sprintf(buf, "%-16s%9s %4s%-3s%s\r\n",
-                    trimmed_name(d->player),
+                    (Connected(d->player) ? trimmed_name(d->player) :
+                    "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     flist,
@@ -2288,6 +2291,9 @@ static const char *stat_string(int strtype, int flag)
             break;
         case H_GUEST:
             str = "NoGuest";
+            break;
+        case H_NOSITEMON:
+            str = "NoSiteMon";
             break;
         case 0:
             str = "Unrestricted";

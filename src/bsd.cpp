@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.57 2002-02-12 21:39:33 sdennis Exp $
+// $Id: bsd.cpp,v 1.58 2002-02-14 01:42:41 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -57,6 +57,7 @@ pid_t game_pid;
 DESC *initializesock(SOCKET, struct sockaddr_in *);
 DESC *new_connection(PortInfo *Port, int *piError);
 int FDECL(process_input, (DESC *));
+void SiteMonSend(int, const char *, DESC *, const char *);
 
 #ifdef WIN32
 
@@ -1463,6 +1464,10 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         free_mbuf(pBuffM1);
         ENDLOG;
 
+        // Site Monitor information.
+        //
+        SiteMonSend(newsock, pBuffM2, NULL, "Connection refused");
+
         fcache_rawdump(newsock, FC_CONN_SITE);
         shutdown(newsock, SD_BOTH);
         if (SOCKET_CLOSE(newsock) == 0)
@@ -1538,6 +1543,12 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         ENDLOG;
 
         d = initializesock(newsock, &addr);
+
+        // Initalize everything before sending sitemon info, so we can pass
+        // the descriptor, d.
+        //
+        SiteMonSend(newsock, pBuffM2, d, "Connection");
+
         welcome_user(d);
         mudstate.debug_cmd = cmdsave;
     }
@@ -1678,6 +1689,7 @@ void shutdownsock(DESC *d, int reason)
             log_text(buff);
             free_mbuf(buff);
             ENDLOG;
+            SiteMonSend(d->descriptor, d->addr, d, "Disconnection");
         }
 
         // If requested, write an accounting record of the form:
@@ -1709,6 +1721,7 @@ void shutdownsock(DESC *d, int reason)
         log_text(buff);
         free_mbuf(buff);
         ENDLOG;
+        SiteMonSend(d->descriptor, d->addr, d, "N/C Connection Closed");
     }
 
     process_output(d, FALSE);
@@ -3395,3 +3408,38 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 }
 
 #endif // WIN32
+
+void SiteMonSend(int port, const char *address, DESC *d, const char *msg)
+{
+    // Don't do sitemon for blocked sites.
+    //
+    if (  d != NULL
+       && (d->host_info & H_NOSITEMON))
+    {
+        return;
+    }
+
+    // Build The msg.
+    //
+    char *sendMsg;
+    if (  d != NULL
+       && (d->host_info & H_SUSPECT))
+    {
+        sendMsg = tprintf("SITEMON: [%d] %s from %s. (SUSPECT)", port, msg, address);
+    }
+    else
+    {
+        sendMsg = tprintf("SITEMON: [%d] %s from %s.", port, msg, address);
+    }
+    
+    DESC *nd;
+    DESC_ITER_CONN(nd)
+    {
+        if (SiteMon(nd->player))
+        {
+            queue_string(nd, sendMsg);
+            queue_write(nd, "\r\n", 2);
+            process_output(nd, FALSE);
+        }
+    }
+}
