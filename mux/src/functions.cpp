@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.124 2003-01-04 05:07:32 sdennis Exp $
+// $Id: functions.cpp,v 1.125 2003-01-04 18:17:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6421,9 +6421,10 @@ FUNCTION(fun_fold)
     char *curr = fargs[1];
     char *cp = curr;
     char *atextbuf = alloc_lbuf("fun_fold");
-    StringCopy(atextbuf, atext);
+    strcpy(atextbuf, atext);
 
     char *result, *bp, *str, *clist[2];
+
     // May as well handle first case now.
     //
     if ( nfargs >= 3
@@ -6598,7 +6599,7 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
         objstring = split_token(&cp, sep);
-        StringCopy(atextbuf, atext);
+        strcpy(atextbuf, atext);
         result = bp = alloc_lbuf("fun_filter");
         str = atextbuf;
         TinyExec(result, &bp, thing, executor, enactor,
@@ -7215,7 +7216,7 @@ FUNCTION(fun_sort)
     // Convert the list to an array.
     //
     char *list = alloc_lbuf("fun_sort");
-    StringCopy(list, fargs[0]);
+    strcpy(list, fargs[0]);
     int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
     int sort_type = get_list_type(fargs, nfargs, 2, ptrs, nitems);
     do_asort(ptrs, nitems, sort_type);

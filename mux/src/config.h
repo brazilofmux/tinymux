@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.4 2002-09-25 06:50:30 sdennis Exp $
+// $Id: config.h,v 1.5 2003-01-04 18:17:18 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -18,7 +18,6 @@
 #define MAX_GLOBAL_REGS     36  /* r() registers */
 
 #define OUTPUT_BLOCK_SIZE   16384
-#define StringCopy          strcpy
 
 /* ---------------------------------------------------------------------------
  * Database R/W flags.
