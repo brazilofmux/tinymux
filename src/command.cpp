@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.22 2000-09-26 06:27:41 sdennis Exp $
+// $Id: command.cpp,v 1.23 2000-10-07 06:31:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -191,8 +191,8 @@ NAMETAB fpose_sw[] =
 NAMETAB function_sw[] =
 {
     {(char *)"list",        1,  CA_WIZARD,  FN_LIST},
-    {(char *)"preserve",    3,  CA_WIZARD,  FN_PRES},
-    {(char *)"privileged",  3,  CA_WIZARD,  FN_PRIV},
+    {(char *)"preserve",    3,  CA_WIZARD,  FN_PRES|SW_MULTIPLE},
+    {(char *)"privileged",  3,  CA_WIZARD,  FN_PRIV|SW_MULTIPLE},
     { NULL,                 0,          0,        0}
 };
 
