@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.39 2002-08-02 03:03:56 sdennis Exp $
+// $Id: funceval.cpp,v 1.40 2002-08-02 03:09:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -772,7 +772,7 @@ FUNCTION(fun_zfun)
         safe_str("#-1 ZONES DISABLED", buff, bufc);
         return;
     }
-    
+
     dbref zone = Zone(executor);
     if (!Good_obj(zone))
     {
@@ -1623,7 +1623,7 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
 
-                   
+
 FUNCTION(fun_default)
 {
     default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs, 
@@ -3327,7 +3327,7 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
     int ovec[ovecsize];
 
     pcre *re = pcre_compile(pattern, cis ? PCRE_CASELESS : 0,
-                            &errptr, &erroffset, NULL);
+        &errptr, &erroffset, NULL);
     if (!re)
     {
         // Matching error.
@@ -3338,7 +3338,7 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
     }
 
     int matched = pcre_exec(re, NULL, search, strlen(search), 0, 0,
-                            ovec, ovecsize);
+        ovec, ovecsize);
     safe_bool(matched > 0, buff, bufc);
 
     // If we don't have a third argument, we're done.
@@ -3394,12 +3394,12 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
 
 FUNCTION(fun_regmatch)
 {
-  real_regmatch(fargs[0], fargs[1], fargs[2], nfargs, buff, bufc, false);
+    real_regmatch(fargs[0], fargs[1], fargs[2], nfargs, buff, bufc, false);
 }
 
 FUNCTION(fun_regmatchi)
 {
-  real_regmatch(fargs[0], fargs[1], fargs[2], nfargs, buff, bufc, true);
+    real_regmatch(fargs[0], fargs[1], fargs[2], nfargs, buff, bufc, true);
 }
 
 
@@ -3419,7 +3419,7 @@ void real_regrab(char *search, const char *pattern, char sep, char *buff,
     int ovec[ovecsize];
 
     re = pcre_compile(pattern, cis ? PCRE_CASELESS : 0,
-                      &errptr, &erroffset, NULL);
+        &errptr, &erroffset, NULL);
     if (!re)
     {
         // Matching error.
@@ -3428,7 +3428,7 @@ void real_regrab(char *search, const char *pattern, char sep, char *buff,
         safe_str(errptr, buff, bufc);
         return;
     }
-  
+
     if (all)
     {
         study = pcre_study(re, 0, &errptr);
@@ -3438,59 +3438,62 @@ void real_regrab(char *search, const char *pattern, char sep, char *buff,
     char *s = trim_space_sep(search, sep);
     do
     {
-      char *r = split_token(&s, sep);
-      if (pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 1)
-      {
-          if (first) 
-          {
-              first = false;
-          }
-          else
-          {
-              safe_chr(sep, buff, bufc);
-          }
-          safe_str(r, buff, bufc);
-          if (!all)
-            break;
+        char *r = split_token(&s, sep);
+        if (pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 1)
+        {
+            if (first) 
+            {
+                first = false;
+            }
+            else
+            {
+                safe_chr(sep, buff, bufc);
+            }
+            safe_str(r, buff, bufc);
+            if (!all)
+            {
+                break;
+            }
         }
     } while (s);
 
-  MEMFREE(re);
-  if (study)
-    MEMFREE(study);
+    MEMFREE(re);
+    if (study)
+    {
+        MEMFREE(study);
+    }
 }
 
 FUNCTION(fun_regrab) 
 {
-  char sep;
-  varargs_preamble(3);
+    char sep;
+    varargs_preamble(3);
 
-  real_regrab(fargs[0], fargs[1], sep, buff, bufc, false, false);
+    real_regrab(fargs[0], fargs[1], sep, buff, bufc, false, false);
 }
-
 
 FUNCTION(fun_regrabi) 
 {
-  char sep;
-  varargs_preamble(3);
+    char sep;
+    varargs_preamble(3);
 
-  real_regrab(fargs[0], fargs[1], sep, buff, bufc, true, false);
+    real_regrab(fargs[0], fargs[1], sep, buff, bufc, true, false);
 }
 
 FUNCTION(fun_regraball) 
 {
-  char sep;
-  varargs_preamble(3);
+    char sep;
+    varargs_preamble(3);
 
-  real_regrab(fargs[0], fargs[1], sep, buff, bufc, false, true);
+    real_regrab(fargs[0], fargs[1], sep, buff, bufc, false, true);
 }
 
 FUNCTION(fun_regraballi) 
 {
-  char sep;
-  varargs_preamble(3);
+    char sep;
+    varargs_preamble(3);
 
-  real_regrab(fargs[0], fargs[1], sep, buff, bufc, true, true);
+    real_regrab(fargs[0], fargs[1], sep, buff, bufc, true, true);
 }
 
 
