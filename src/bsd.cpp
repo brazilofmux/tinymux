@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.18 2000-11-06 15:38:58 sdennis Exp $
+// $Id: bsd.cpp,v 1.19 2001-01-30 19:57:10 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2459,6 +2459,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             // got.
             //
             dump_database_internal(DUMP_I_RESTART);
+            SYNC;
             CLOSE;
 #ifdef WIN32
             unset_signals();
