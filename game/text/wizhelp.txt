@@ -1070,6 +1070,7 @@
   initial_size  input_database  kill_guarantee_cost  kill_max_cost
   kill_min_cost  list_access  link_cost  lock_recursion_limit  log
   log_options  logout_cmd_access  logout_cmd_alias
+
 { 'wizhelp config parameters2' for more }
 & CONFIG PARAMETERS2
   look_obey_terse  machine_command_cost  mail_database  mail_expiration
@@ -1084,10 +1085,10 @@
   public_flags  queue_active_chunk  queue_idle_chunk  quiet_look
   quiet_whisper  quit_file  quotas  read_remote_desc  read_remote_name
   register_create_file  register_site  retry_limit  robot_cost  robot_flags
-  robot_speech  room_flags  room_quota  sacrifice_adjust  sacrifice_factor
-  search_cost  see_owned_dark  signal_action  site_chars  space_compress
-  stack_limit  starting_money  starting_quota  suspect_site  sweep_dark
-  switch_default_all  terse_shows_contents  terse_shows_exits
+  robot_speech  room_flags  room_quota  run_startup sacrifice_adjust
+  sacrifice_factor  search_cost  see_owned_dark  signal_action  site_chars
+  space_compress  stack_limit  starting_money  starting_quota  suspect_site
+  sweep_dark  switch_default_all  terse_shows_contents  terse_shows_exits
   terse_shows_move_messages  thing_flags  thing_quota  timeslice
   trace_output_limit  trace_topdown  trust_site  uncompress_program
   unowned_safe  use_http  user_attr_flags  wait_cost  wizard_help_file
