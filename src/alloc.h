@@ -1,6 +1,6 @@
 // alloc.h -- External definitions for memory allocation subsystem.
 //
-// $Id: alloc.h,v 1.3 2001-11-19 19:39:33 sdennis Exp $
+// $Id: alloc.h,v 1.4 2001-11-23 23:02:36 sdennis Exp $
 //
 
 #ifndef M_ALLOC_H
@@ -75,7 +75,7 @@ extern void FDECL(list_buftrace, (dbref));
     } \
 }
 
-#define safe_str(s,b,p)     safe_copy_str(s,b,p,(LBUF_SIZE-1))
+#define safe_str(s,b,p)     safe_copy_str_lbuf(s,b,p)
 #define safe_chr(c,b,p)     safe_copy_chr(c,b,p,(LBUF_SIZE-1))
 #define safe_sb_str(s,b,p)  safe_copy_str(s,b,p,(SBUF_SIZE-1))
 #define safe_sb_chr(c,b,p)  safe_copy_chr(c,b,p,(SBUF_SIZE-1))

@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.27 2001-11-18 21:45:45 sdennis Exp $
+// $Id: stringutil.h,v 1.28 2001-11-23 23:02:36 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -122,6 +122,7 @@ extern char *StringCloneLen(const char *str, unsigned int nStr);
 extern char *StringClone(const char *str);
 extern char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
 void safe_copy_str(const char *src, char *buff, char **bufp, int max);
+void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp);
 int safe_fill(char *buff, char **bufc, char chFile, int nSpaces);
 extern int  FDECL(matches_exit_from_list, (char *, char *));
