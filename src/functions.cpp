@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.10 2000-04-16 16:59:18 sdennis Exp $
+// $Id: functions.cpp,v 1.11 2000-04-17 17:49:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3620,16 +3620,22 @@ FUNCTION(fun_haspower)
     dbref it;
 
     it = match_thing(player, fargs[0]);
-    if (!Good_obj(it)) {
+    if (!Good_obj(it))
+    {
         safe_str("#-1 NOT FOUND", buff, bufc);
         return;
     }
-    if (mudconf.pub_flags || Examinable(player, it) || (it == cause)) {
+    if (mudconf.pub_flags || Examinable(player, it) || (it == cause))
+    {
+        int ch = '0';
         if (has_power(player, it, fargs[1]))
-            safe_str("1", buff, bufc);
-        else
-            safe_str("0", buff, bufc);
-    } else {
+        {
+            ch = '1';
+        }
+        safe_chr(ch, buff, bufc);
+    }
+    else
+    {
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
     }
 }
