@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.17 2003-02-04 18:54:22 sdennis Exp $
+// $Id: db.cpp,v 1.18 2003-02-04 22:08:59 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -935,7 +935,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
     static char Buffer[SBUF_SIZE];
 
     if (  !pName
-       || !Tiny_IsFirstAttributeNameCharacter[(unsigned char)*pName])
+       || !mux_AttrNameInitialSet[(unsigned char)*pName])
     {
         *pnName = 0;
         *pbValid = FALSE;
@@ -1032,7 +1032,7 @@ void init_attrtab(void)
     // name.
     //
     mux_AttrNameSet['*'] = TRUE;
-    Tiny_IsFirstAttributeNameCharacter['*'] = TRUE;
+    mux_AttrNameInitialSet['*'] = TRUE;
     for (a = attr; a->number; a++)
     {
         int nLen;
@@ -1046,7 +1046,7 @@ void init_attrtab(void)
         anum_set(a->number, a);
         hashaddLEN(buff, nLen, (int *)a, &mudstate.attr_name_htab);
     }
-    Tiny_IsFirstAttributeNameCharacter['*'] = FALSE;
+    mux_AttrNameInitialSet['*'] = FALSE;
     mux_AttrNameSet['*'] = FALSE;
 }
 

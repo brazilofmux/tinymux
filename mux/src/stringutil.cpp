@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.32 2003-02-04 18:54:22 sdennis Exp $
+// $Id: stringutil.cpp,v 1.33 2003-02-04 22:08:59 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -182,7 +182,7 @@ const char mux_isspace[256] =
 // {'?!`/-_.@#$^&~=+<>()%}. Lower-case letters are turned into uppercase
 // before being used, but lower-case letters are valid input.
 //
-char Tiny_IsFirstAttributeNameCharacter[256] =
+char mux_AttrNameInitialSet[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
