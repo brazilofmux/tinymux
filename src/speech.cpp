@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.12 2001-11-08 03:48:57 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.13 2001-11-08 04:37:35 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -502,7 +502,6 @@ void do_page
     dbref target, aowner;
     char *p, *buf1, *bp, *buf2, *bp2, *mp, *str;
     char targetname[LBUF_SIZE];
-    int ispose = 0;
     int ismessage = 0;
     int count = 0;
     int n = 0;
@@ -514,16 +513,12 @@ void do_page
     buf2 = alloc_lbuf("page_list");
     bp2 = buf2;
 
-    if ((tname[0] == ':') || (tname[0] == ';') || (message[0] == ':') || (message[0] == ';'))
-        ispose = 1;
-
     mp = message;
 
-
-    if (!*message)
+    if (nargs < 2)
     {
         atr_get_str(targetname, player, A_LASTPAGE, &aowner, &aflags);
-        if (!*tname)
+        if (nargs < 1)
         {
             if (!*targetname)
             {
@@ -544,14 +539,26 @@ void do_page
             free_lbuf(buf2);
             return;
         }
-        StringCopy(message, tname);
-        StringCopy(tname, targetname);
+        strcpy(message, tname);
+        strcpy(tname, targetname);
         ismessage = 1;
     }
-    /*
-     * Count the words 
-     */
-    for (n = 0, str = tname; str; str = (char *)next_token(str, ' '), n++) ;
+
+    int ispose = 0;
+    if (  tname[0] == ':'
+       || tname[0] == ';'
+       || message[0] == ':'
+       || message[0] == ';')
+    {
+        ispose = 1;
+    }
+
+    // Count the words.
+    //
+    for (n = 0, str = tname; str; str = next_token(str, ' '), n++)
+    {
+        ; // Nothing.
+    }
 
     if (((target = lookup_player(player, tname, 1)) == NOTHING) && n > 1)
     {
@@ -615,7 +622,9 @@ void do_page
     else
     {
         if (ismessage)
+        {
             target = Tiny_atol(tname);
+        }
 
         if (target == NOTHING)
         {
@@ -678,9 +687,13 @@ void do_page
             else
             {
                 if (mp[0] == ':')
+                {
                     notify(player, tprintf("Long distance to %s: %s %s", buf1, Name(player), mp + 1));
+                }
                 else
+                {
                     notify(player, tprintf("Long distance to %s: %s%s", buf1, Name(player), mp + 1));
+                }
             }
         }
     }
