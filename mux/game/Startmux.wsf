@@ -206,7 +206,7 @@ Do
 
     ' Kick off the MUX
     '
-    ret = shell.run(bin & "\netmux " & gamename & ".conf", SW_HIDE, True)
+    ret = shell.run(bin & "\netmux -c " & gamename & ".conf", SW_HIDE, True)
 Loop While ret = 12345678
 
 ]]>
