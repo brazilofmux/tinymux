@@ -1,10 +1,7 @@
-/*
- * object.c - low-level object manipulation routines 
- */
-/*
- * $Id: object.cpp,v 1.5 2000-06-02 16:18:03 sdennis Exp $ 
- */
-
+// object.cpp - low-level object manipulation routines.
+//
+// $Id: object.cpp,v 1.6 2000-06-05 18:10:16 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -417,6 +414,10 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
 
 #endif
 
+#ifndef STANDALONE
+extern void stack_clr(dbref obj);
+#endif
+
 /*
  * ---------------------------------------------------------------------------
  * * destroy_obj: Destroy an object.  Assumes it has already been removed from
@@ -427,7 +428,6 @@ void destroy_obj(dbref player, dbref obj)
 {
     dbref owner;
     int good_owner, val, quota;
-    STACK *sp, *next;
 
     if (!Good_obj(obj))
     {
@@ -450,6 +450,11 @@ void destroy_obj(dbref player, dbref obj)
         }
     }
     nfy_que(obj, 0, NFY_DRAIN, 0);
+
+    // Remove forwardlists and stacks.
+    //
+    fwdlist_clr(obj);
+    stack_clr(obj);
 #endif
 
     // Compensate the owner for the object.
@@ -536,16 +541,6 @@ void destroy_obj(dbref player, dbref obj)
     s_Owner(obj, GOD);
     s_Pennies(obj, 0);
     s_Zone(obj, NOTHING);
-
-    // Clear the stack.
-    //
-    for (sp = Stack(obj); sp != NULL; sp = next)
-    {
-        next = sp->next;
-        free_lbuf(sp->data);
-        MEMFREE(sp);
-    }
-    s_Stack(obj, NULL);
 }
 
 /*

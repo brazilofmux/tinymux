@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.10 2000-06-02 16:18:07 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.11 2000-06-05 18:10:16 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -368,11 +368,11 @@ FUNCTION(fun_set)
         }
         buff2 = alloc_lbuf("fun_set");
 
-        /*
-         * check for _ 
-         */
-        if (*p == '_') {
-            StringCopy(buff2, p + 1);
+        // check for _
+        //
+        if (*p == '_')
+        {
+            strcpy(buff2, p + 1);
             if (!parse_attrib(player, p + 1, &thing2, &atr2) ||
                 (atr2 == NOTHING)) {
                 free_lbuf(buff2);
@@ -443,7 +443,7 @@ static char *crypt_code(char *code, char *text, int type)
 
     if (!text && !*text)
         return ((char *)"");
-    StringCopy(codebuff, crunch_code(code));
+    strcpy(codebuff, crunch_code(code));
     if (!code || !*code || !codebuff || !*codebuff)
         return (text);
     textbuff[0] = '\0';
@@ -591,7 +591,7 @@ FUNCTION(fun_squish)
     char *p, *q, *bp;
 
     bp = alloc_lbuf("fun_squish");
-    StringCopy(bp, fargs[0]);
+    strcpy(bp, fargs[0]);
     p = q = bp;
     while (*p) {
         while (*p && (*p != ' '))
@@ -1477,7 +1477,7 @@ FUNCTION(fun_elements)
      */
 
     wordlist = alloc_lbuf("fun_elements.wordlist");
-    StringCopy(wordlist, fargs[0]);
+    strcpy(wordlist, fargs[0]);
     nwords = list2arr(ptrs, LBUF_SIZE / 2, wordlist, sep);
 
     s = trim_space_sep(fargs[1], ' ');
@@ -1626,7 +1626,7 @@ static int u_comp(const void *s1, const void *s2)
     tbuf = alloc_lbuf("u_comp");
     elems[0] = (char *)s1;
     elems[1] = (char *)s2;
-    StringCopy(tbuf, ucomp_buff);
+    strcpy(tbuf, ucomp_buff);
     result = bp = alloc_lbuf("u_comp");
     str = tbuf;
     TinyExec(result, &bp, 0, ucomp_player, ucomp_cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(elems[0]), 2);
@@ -1754,12 +1754,12 @@ FUNCTION(fun_sortby)
         free_lbuf(atext);
         return;
     }
-    StringCopy(ucomp_buff, atext);
+    strcpy(ucomp_buff, atext);
     ucomp_player = thing;
     ucomp_cause = cause;
 
     list = alloc_lbuf("fun_sortby");
-    StringCopy(list, fargs[1]);
+    strcpy(list, fargs[1]);
     nptrs = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
 
     if (nptrs > 1)      /*
@@ -1933,7 +1933,7 @@ FUNCTION(fun_mix)
             safe_chr(sep, buff, bufc);
         os[0] = split_token(&cp1, sep);
         os[1] = split_token(&cp2, sep);
-        StringCopy(atextbuf, atext);
+        strcpy(atextbuf, atext);
         str = atextbuf;
         TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(os[0]), 2);
     }
@@ -2010,7 +2010,7 @@ FUNCTION(fun_foreach)
                 }
             }
 
-            StringCopy(atextbuf, atext);
+            strcpy(atextbuf, atext);
             str = atextbuf;
             TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
             prev = cbuf[0];
@@ -2019,7 +2019,7 @@ FUNCTION(fun_foreach)
         while (cp && *cp) {
             cbuf[0] = *cp++;
     
-            StringCopy(atextbuf, atext);
+            strcpy(atextbuf, atext);
             str = atextbuf;
             TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
         }
@@ -2082,8 +2082,8 @@ FUNCTION(fun_munge)
 
     list1 = alloc_lbuf("fun_munge.list1");
     list2 = alloc_lbuf("fun_munge.list2");
-    StringCopy(list1, fargs[1]);
-    StringCopy(list2, fargs[2]);
+    strcpy(list1, fargs[1]);
+    strcpy(list2, fargs[2]);
     nptrs1 = list2arr(ptrs1, LBUF_SIZE / 2, list1, sep);
     nptrs2 = list2arr(ptrs2, LBUF_SIZE / 2, list2, sep);
 
@@ -2517,9 +2517,11 @@ int stacksize(dbref doer)
 {
     int i;
     STACK *sp;
-    
-    for (i = 0, sp = Stack(doer); sp != NULL; sp = sp->next, i++) ;
-    
+    for (i = 0, sp = Stack(doer); sp != NULL; sp = sp->next, i++)
+    {
+        // Nothing
+        ;
+    }
     return i;
 }
 
@@ -2546,18 +2548,36 @@ FUNCTION(fun_lstack)
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
         return;
     }
-    for (sp = Stack(doer); sp != NULL; sp = sp->next) {
+    for (sp = Stack(doer); sp != NULL; sp = sp->next)
+    {
         safe_str(sp->data, buff, bufc);
         safe_chr(' ', buff, bufc);
     }
     
     if (sp)
+    {
         (*bufc)--;
+    }
+}
+
+// stack_clr - clear the stack.
+//
+void stack_clr(dbref obj)
+{
+    // Clear the stack.
+    //
+    STACK *sp, *next;
+    for (sp = Stack(obj); sp != NULL; sp = next)
+    {
+        next = sp->next;
+        free_lbuf(sp->data);
+        MEMFREE(sp);
+    }
+    s_Stack(obj, NULL);
 }
 
 FUNCTION(fun_empty)
 {
-    STACK *sp, *next;
     dbref doer;
 
     if (nfargs > 1)
@@ -2579,14 +2599,7 @@ FUNCTION(fun_empty)
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
         return;
     }
-    for (sp = Stack(doer); sp != NULL; sp = next)
-    {
-        next = sp->next;
-        free_lbuf(sp->data);
-        MEMFREE(sp);
-    }
-
-    s_Stack(doer, NULL);
+    stack_clr(doer);
 }
 
 FUNCTION(fun_items)
@@ -2776,10 +2789,11 @@ FUNCTION(fun_push)
         safe_str("#-1 STACK SIZE EXCEEDED", buff, bufc);
         return;
     }
-    sp = (STACK *) MEMALLOC(sizeof(STACK));
+    sp = (STACK *)MEMALLOC(sizeof(STACK));
+    ISOUTOFMEMORY(sp);
     sp->next = Stack(doer);
     sp->data = alloc_lbuf("push");
-    StringCopy(sp->data, data);
+    strcpy(sp->data, data);
     s_Stack(doer, sp);
 }
 
