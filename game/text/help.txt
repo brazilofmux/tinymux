@@ -7133,7 +7133,7 @@ We would like to thank the following people:
             time on the machine running the MUX. This integer is
             affected by timezones and daylight savings time and is
             therefore primarily useful in conjunction with
-            convsecs(..,raw).
+            convsecs(..,utc).
 
     utc   - Returns the number of seconds (not counting leap seconds)
             since Jan 01 00:00:00 1970 UTC. This count of seconds is
@@ -7829,7 +7829,7 @@ We would like to thank the following people:
 
 & CONVSECS()
 
-  Function: convsecs(<seconds> [, raw])
+  Function: convsecs(<seconds> [, <zonename>])
  
   By default, this function converts an integer (representing a count
   of seconds from Jan 01 00:00:00 1970 UTC) to a local time string --
@@ -7837,10 +7837,16 @@ We would like to thank the following people:
   conversion includes a timezone/daylight savings time conversion
   between UTC and the local time zone.
 
-  With the optional 'raw' parameter, timezone and daylight savings
-  time conversions are not performed. When used this way, there is a
-  unique mapping between integer and time-string which may be used in
-  any timezone and perhaps useful in a fictional setting.
+  If a second argument is given, it is the <zonename>:
+
+   local - indicates that a conversion for timezone/DST of the 'local'
+           server time should be applied (the default).
+
+   utc   - indicates that no timezone/DST conversions should be applied.
+           When used this way, there is a unique one-to-one relationship
+           between an integer and it's corresponding text-string which
+           may be useful for handling other timezones and fictional
+           settings.
 
   Example:
     > say secs()
@@ -7849,14 +7855,14 @@ We would like to thank the following people:
     You say "957532909"
     > say convsecs(957558109)
     You say "Fri May 05 13:21:49 2000"
-    > say convsecs(957532909, raw)
+    > say convsecs(957532909, utc)
     You say "Fri May 05 13:21:49 2000"
 
   See also: convtime(), secs(), time().
 
 & CONVTIME()
 
-  Function: convtime(<time string> [, raw])
+  Function: convtime(<time string> [, <zonename>])
  
   By default, this function converts a time string (of format
   [Ddd] Mmm DD HH:MM:SS YYYY) into an integer which represents a
@@ -7871,17 +7877,23 @@ We would like to thank the following people:
   30826 AD. Year 0 is 1 BC, -1 is 2 BC, ..., so 27257 BC should be
   given as -27256. This follows the astronomical conventions.
 
-  With the optional 'raw' parameter, timezone and daylight savings
-  time conversions are not performed. When used this way, there is a
-  unique mapping between integer and time-string which may be used in
-  any timezone and perhaps useful in a fictional setting.
+  If a second argument is given, it is the <zonename>:
+
+   local - indicates that a conversion for timezone/DST of the 'local'
+           server time should be applied (the default).
+
+   utc   - indicates that no timezone/DST conversions should be applied.
+           When used this way, there is a unique one-to-one relationship
+           between an integer and it's corresponding text-string which
+           may be useful for handling other timezones and fictional
+           settings.
    
   Example:
     > say time()
     You say "Wed Jun 24 10:22:54 1992"
     > say convtime(Wed Jun 24 10:22:54 1992)
     You say "709395774"
-    > say convtime(Wed Jun 24 10:22:54 1992, raw)
+    > say convtime(Wed Jun 24 10:22:54 1992, utc)
     You say "709381374"
 
   See also: convsecs(), secs(), time().

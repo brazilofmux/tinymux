@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.15 2000-05-05 19:40:34 sdennis Exp $
+// $Id: functions.cpp,v 1.16 2000-05-06 18:01:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -910,9 +910,14 @@ FUNCTION(fun_secs)
 // With one arguments, it converts seconds from Jan 01 00:00:00 1970 UTC to a
 // local time string in the 'Ddd Mmm DD HH:MM:SS YYYY' format.
 //
-// If a second argument is given, "raw" indicates that no timezone/dst
-// conversions should be applied. This is useful to give a unique one-to-one
-// mapping between an integer and it's corresponding text-string.
+// If a second argument is given, it is the <zonename>:
+//
+//   local - indicates that a conversion for timezone/DST of the server should
+//           be applied (default if no second argument is given).
+//
+//   utc   - indicates that no timezone/DST conversions should be applied.
+//           This is useful to give a unique one-to-one mapping between an
+//           integer and it's corresponding text-string.
 //
 FUNCTION(fun_convsecs)
 {
@@ -922,7 +927,7 @@ FUNCTION(fun_convsecs)
         return;
     }
     lta.SetSecondsString(fargs[0]);
-    if (nfargs == 1 || _stricmp("raw", fargs[1]) != 0)
+    if (nfargs == 1 || _stricmp("utc", fargs[1]) != 0)
     {
         lta.UTC2Local();
     }
@@ -937,9 +942,14 @@ FUNCTION(fun_convsecs)
 //'[Ddd] Mmm DD HH:MM:SS YYYY' to a count of seconds from Jan 01 00:00:00 1970
 // UTC.
 //
-// If a second argument is given, "raw" indicates that no timezone/DST
-// conversions should be applied. This is useful to give a unique one-to-one
-// mapping between an integer and it's corresponding text-string.
+// If a second argument is given, it is the <zonename>:
+//
+//   local - indicates that the given time string is for the local timezone
+//           local DST adjustments (default if no second argument is given).
+//
+//   utc   - indicates that no timezone/DST conversions should be applied.
+//           This is useful to give a unique one-to-one mapping between an
+//           integer and it's corresponding text-string.
 //
 // This function returns -1 if there was a problem parsing the time string.
 //
@@ -952,7 +962,7 @@ FUNCTION(fun_convtime)
     }
     if (lta.SetString(fargs[0]))
     {
-        if (nfargs == 1 || _stricmp("raw", fargs[1]) != 0)
+        if (nfargs == 1 || _stricmp("utc", fargs[1]) != 0)
         {
             lta.Local2UTC();
         }
