@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.28 2002-09-20 16:46:33 sdennis Exp $
+// $Id: stringutil.cpp,v 1.29 2002-09-23 07:23:44 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2015,20 +2015,21 @@ int Tiny_i64toa(INT64 val, char *buf)
         *p++ = '-';
         val = -val;
     }
+    UINT64 uval = (UINT64)val;
 
     char *q = p;
 
     const char *z;
-    while (val > 99)
+    while (uval > 99)
     {
-        z = Digits100 + ((val % 100) << 1);
-        val /= 100;
+        z = Digits100 + ((uval % 100) << 1);
+        uval /= 100;
         *p++ = *z;
         *p++ = *(z+1);
     }
-    z = Digits100 + (val << 1);
+    z = Digits100 + (uval << 1);
     *p++ = *z;
-    if (val > 9)
+    if (uval > 9)
     {
         *p++ = *(z+1);
     }
