@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.34 2002-09-09 07:29:34 jake Exp $
+// $Id: mail.cpp,v 1.35 2002-09-09 07:31:37 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1168,7 +1168,7 @@ void do_mail_nuke(dbref player)
         }
         hashdeleteLEN(&thing, sizeof(thing), &mudstate.mail_htab);
     }
-    log_text(tprintf("** MAIL PURGE ** done by %s(#%d).", Name(player), player));
+    log_text(tprintf("** MAIL PURGE ** done by %s(#%d)." ENDLINE, Name(player), player));
     notify(player, "You annihilate the post office. All messages cleared.");
 }
 
