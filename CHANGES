@@ -135,6 +135,8 @@ Feature Additions:
  --  Added automagic date parsing as part of convtime. The date parser supports
      free-form dates and also ISO formats including year/day, month/day, and
      weekofyear/dayofweek.
+ --  Morgan added @conformat and @exitformat from PennMUSH.
+ --  Zenty added evaluating comtitles.
 
 
 Bug Fixes:
