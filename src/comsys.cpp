@@ -1,6 +1,6 @@
 7// comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.51 2001-07-02 10:54:27 zenty Exp $
+// * $Id: comsys.cpp,v 1.52 2001-07-02 11:01:13 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1012,9 +1012,12 @@ void SendChannelMessage
         {
             if (do_test_access(user->who, CHANNEL_RECEIVE, ch))
             {
-                if ((Typeof(user->who) == TYPE_PLAYER) && Connected(user->who))
+                if (  isPlayer(user->who)
+                   && Connected(user->who))
                 {
-                    if (user->ComTitleStatus || bSpoof || (msgNoComtitle == NULL))
+                    if (  user->ComTitleStatus
+                       || bSpoof
+                       || msgNoComtitle == NULL)
                     {
                         raw_notify(user->who, msgNormal);
                     }
