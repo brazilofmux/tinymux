@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.20 2003-03-08 06:49:51 sdennis Exp $
+// $Id: netcommon.cpp,v 1.21 2003-03-08 08:48:02 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1351,7 +1351,7 @@ static void dump_users(DESC *e, char *match, int key)
         }
     }
 
-    if (  (e->flags & DS_PUEBLOCLIENT)
+    if (  (e->flags & (DS_PUEBLOCLIENT|DS_CONNECTED))
        && Html(e->player))
     {
         queue_write(e, "<pre>");
@@ -1395,26 +1395,31 @@ static void dump_users(DESC *e, char *match, int key)
 
     DESC_ITER_ALL(d)
     {
-        if (  !SiteMon(e->player)
-           && !Connected(d->player))
+        if (!(  (  (e->flags & DS_CONNECTED)
+                && SiteMon(e->player))
+             || (d->flags & DS_CONNECTED)))
         {
             continue;
         }
-        if (  !Hidden(d->player)
+        if (  !(d->flags & DS_CONNECTED)
+           || !Hidden(d->player)
            || (  (e->flags & DS_CONNECTED)
               && (  Wizard_Who(e->player)
                  || See_Hidden(e->player))))
         {
             count++;
             if (  match
-               && string_prefix(Name(d->player), match) == 0)
+               && (  !(d->flags & DS_CONNECTED)
+                  || string_prefix(Name(d->player), match) == 0))
             {
                 continue;
             }
             if (  key == CMD_SESSION
-               && !(  (e->flags & DS_CONNECTED)
-                  && Wizard_Who(e->player))
-               && d->player != e->player)
+               && (  !(e->flags & DS_CONNECTED)
+                  || !Wizard_Who(e->player))
+               && (  !(e->flags & DS_CONNECTED)
+                  || !(d->flags & DS_CONNECTED)
+                  || d->player != e->player))
             {
                 continue;
             }
@@ -1426,7 +1431,8 @@ static void dump_users(DESC *e, char *match, int key)
             if (  (e->flags & DS_CONNECTED)
                && Wizard_Who(e->player))
             {
-                if (Hidden(d->player))
+                if (  (d->flags & DS_CONNECTED)
+                   && Hidden(d->player))
                 {
                     if (d->flags & DS_AUTODARK)
                     {
@@ -1437,29 +1443,32 @@ static void dump_users(DESC *e, char *match, int key)
                         *fp++ = 'D';
                     }
                 }
-                if (Hideout(d->player))
+                if (d->flags & DS_CONNECTED)
                 {
-                    *fp++ = 'U';
-                }
-                else
-                {
-                    room_it = where_room(d->player);
-                    if (Good_obj(room_it))
+                    if (Hideout(d->player))
                     {
-                        if (Hideout(room_it))
+                        *fp++ = 'U';
+                    }
+                    else
+                    {
+                        room_it = where_room(d->player);
+                        if (Good_obj(room_it))
+                        {
+                            if (Hideout(room_it))
+                            {
+                                *fp++ = 'u';
+                            }
+                        }
+                        else
                         {
                             *fp++ = 'u';
                         }
                     }
-                    else
-                    {
-                        *fp++ = 'u';
-                    }
-                }
 
-                if (Suspect(d->player))
-                {
-                    *fp++ = '+';
+                    if (Suspect(d->player))
+                    {
+                        *fp++ = '+';
+                    }
                 }
                 if (d->host_info & H_FORBIDDEN)
                 {
@@ -1479,18 +1488,17 @@ static void dump_users(DESC *e, char *match, int key)
                 }
             }
             else if (  (e->flags & DS_CONNECTED)
-                    && See_Hidden(e->player))
+                    && (d->flags & DS_CONNECTED)
+                    && See_Hidden(e->player)
+                    && Hidden(d->player))
             {
-                if (Hidden(d->player))
+                if (d->flags & DS_AUTODARK)
                 {
-                    if (d->flags & DS_AUTODARK)
-                    {
-                        *fp++ = 'd';
-                    }
-                    else
-                    {
-                        *fp++ = 'D';
-                    }
+                    *fp++ = 'd';
+                }
+                else
+                {
+                    *fp++ = 'D';
                 }
             }
             *fp = '\0';
@@ -1503,12 +1511,12 @@ static void dump_users(DESC *e, char *match, int key)
                && key == CMD_WHO)
             {
                 sprintf(buf, "%-16s%9s %4s%-3s#%-6d%5d%3s%s\r\n",
-                    (Connected(d->player) ? trimmed_name(d->player) :
+                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
                     "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     flist,
-                    (Connected(d->player) ? Location(d->player) : -1),
+                    ((d->flags & DS_CONNECTED) ? Location(d->player) : -1),
                     d->command_count,
                     slist,
                     trimmed_site(((d->username[0] != '\0') ? tprintf("%s@%s", d->username, d->addr) : d->addr)));
@@ -1516,7 +1524,7 @@ static void dump_users(DESC *e, char *match, int key)
             else if (key == CMD_SESSION)
             {
                 sprintf(buf, "%-16s%9s %4s%5d%5d%6d%10d%6d%6d%10d\r\n",
-                    (Connected(d->player) ? trimmed_name(d->player) :
+                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
                     "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
@@ -1530,7 +1538,7 @@ static void dump_users(DESC *e, char *match, int key)
                     || See_Hidden(e->player))
             {
                 sprintf(buf, "%-16s%9s %4s%-3s%s\r\n",
-                    (Connected(d->player) ? trimmed_name(d->player) :
+                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
                     "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
@@ -1540,7 +1548,8 @@ static void dump_users(DESC *e, char *match, int key)
             else
             {
                 sprintf(buf, "%-16s%9s %4s  %s\r\n",
-                    trimmed_name(d->player),
+                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
+                    "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     d->doing);
@@ -1554,9 +1563,9 @@ static void dump_users(DESC *e, char *match, int key)
     sprintf(buf, "%d Player%slogged in, %d record, %s maximum.\r\n", count,
         (count == 1) ? " " : "s ", mudstate.record_players,
         (mudconf.max_players == -1) ? "no" : mux_ltoa_t(mudconf.max_players));
-    queue_string(e, buf);
+    queue_write(e, buf);
 
-    if (  (e->flags & DS_PUEBLOCLIENT)
+    if (  (e->flags & (DS_PUEBLOCLIENT|DS_CONNECTED))
        && Html(e->player))
     {
         queue_write(e, "</pre>");
@@ -2211,9 +2220,10 @@ bool do_command(DESC *d, char *command)
             queue_write_LEN(d, "\r\n", 2);
         }
     }
-    if (  !check_access(d->player, cp->perm)
-       || (  (cp->perm & CA_PLAYER)
-          && !(d->flags & DS_CONNECTED)))
+    if (  (  (d->flags & DS_CONNECTED)
+          && !check_access(d->player, cp->perm))
+       || ( !(d->flags & DS_CONNECTED)
+          && cp->perm & CA_PLAYER))
     {
         queue_write(d, "Permission denied.\r\n");
     }
