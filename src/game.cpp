@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.33 2001-10-08 00:36:43 sdennis Exp $
+// $Id: game.cpp,v 1.34 2001-10-08 00:46:33 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1761,7 +1761,7 @@ static void NDECL(process_preload)
 
         // Look for a STARTUP attribute in parents.
         //
-        if (mudconf.startup)
+        if (mudconf.run_startup)
         {
             ITER_PARENTS(thing, parent, lev)
             {
