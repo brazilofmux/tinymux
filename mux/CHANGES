@@ -268,6 +268,11 @@ Bug Fixes:
     same time.  It effectively turned off the auto-magic date parsing
     built into convtime(), so if that hasn't been working for you,
     this is the reason why.
+ -- Alierak fixes crash case with obscure god-only lock case.
+ -- Alierak fixes uninitialized use of second subexpression in attr
+    and eval lock cases.
+ -- Alierak fixes several stepping past unparse buffer terminator cases. 
+ -- Alierak perks up boolexp generally.
 
 
 Performance Enhancements:
