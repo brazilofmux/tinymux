@@ -1,6 +1,6 @@
 // Comsys.h
 //
-// $Id: comsys.h,v 1.2 2001-02-10 09:57:06 sdennis Exp $
+// $Id: comsys.h,v 1.3 2001-02-25 23:48:21 sdennis Exp $
 
 #ifndef __COMSYS_H__
 #define __COMSYS_H__
@@ -16,7 +16,7 @@ struct chanentry
 
 #define MAX_CHANNEL_LEN 50
 #define MAX_HEADER_LEN  100
-#define MAX_TITLE_LEN   50
+#define MAX_TITLE_LEN   200
 #define MAX_ALIAS_LEN    6
 
 struct comuser
