@@ -29,8 +29,11 @@ Feature Additions:
  -- Added /now switch to @destroy. Patch from Jake.
  -- Added ability to turn off automatic execution of STARTUP attributes from
     the configuration file. Patch from Jake.
- -- Add safe_wipe configuration option. If enabled, @wipe will not wipe
+ -- Added safe_wipe configuration option. If enabled, @wipe will not wipe
     SAFE-marked objects. Patch from Jake.
+ -- Added destroy_going_now configuration option. If enabled, a second
+    @destroy request causes the object to be destroyed immediately.
+    Added to provide compatibility with PennMUSH. Patch from Jake.
 
 Bug Fixes:
 ~~~~~~~~~

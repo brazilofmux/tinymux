@@ -1056,12 +1056,12 @@
   check_offset  clone_copies_cost  comsys_database  command_quota_increment
   command_quota_max  compress_program  compression  concentrator_port
   config_access  conn_timeout  connect_file  connect_reg_file  crash_database
-  create_max_cost  create_min_cost  dark_sleepers  default_home  dig_cost
-  down_file  down_motd_message  dump_interval  dump_message  dump_offset
-  earn_limit  examine_flags  examine_public_attrs  exit_flags  exit_quota
-  eval_comtitle  events_daily_hour  fascist_teleport  find_money_chance
-  fixed_home_message  fixed_tel_message  flag_access flag_alias
-  forbid_site  fork_dump fork_vfork full_file  full_motd_message
+  create_max_cost  create_min_cost  dark_sleepers  default_home
+  destroy_going_now  dig_cost  down_file  down_motd_message  dump_interval
+  dump_message  dump_offset  earn_limit  examine_flags  examine_public_attrs
+  exit_flags  exit_quota  eval_comtitle  events_daily_hour  fascist_teleport
+  find_money_chance  fixed_home_message  fixed_tel_message  flag_access
+  flag_alias  forbid_site  fork_dump fork_vfork full_file  full_motd_message
   function_access  function_invocation_limit  function_recursion_limit
   game_dir_file  game_page_file  good_name  guest_char_num  guest_file
   guest_nuker  guest_prefix  guests_channel  have_comsys  have_macros
@@ -1390,6 +1390,16 @@ ARTICLE_RULE
   parameter is not set, the value of player_starting_home is used instead.
 
   See also: player_starting_home.
+
+& destroy_going_now
+  Config parameter: destroy_going_now [yes/no].  Default: No
+
+  By default, @destroy only queues an object for destruction
+  on the news auto-@dbck cycle. However, if this configuration
+  option is enabled, a second @destroy on a previously queued
+  request causes the destruction to occur immediately.
+
+  This behavior is for compatbility with PennMUSH.
 
 & dig_cost
   Config parameter: dig_cost <amount>.  Default: 1
