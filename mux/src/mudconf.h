@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.16 2004-04-16 16:39:47 sdennis Exp $
+// $Id: mudconf.h,v 1.17 2004-04-29 05:00:01 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -123,6 +123,7 @@ struct confdata
     int     log_options;        /* What gets logged */
     int     machinecost;        /* One in mc+1 cmds costs 1 penny (POW2-1) */
     int     mail_expiration;    /* Number of days to wait to delete mail */
+    int     mail_per_hour;      // Maximum sent @mail per hour per object.
     int     max_players;        /* Max # of connected players */
     int     min_guests;         // The # we should start nuking at.
     int     nStackLimit;        // Current stack limit.
@@ -152,9 +153,11 @@ struct confdata
     int     timeslice;          /* How often do we bump people's cmd quotas? */
     int     trace_limit;        /* Max lines of trace output if top-down */
     int     vattr_flags;        /* Attr flags for all user-defined attrs */
+    int     vattr_per_hour;     // Maximum allowed vattrs per hour per object.
     int     waitcost;           /* cost of @wait (refunded when finishes) */
     int     wild_invk_lim;      // Max Regular Expression function calls.
     int     zone_nest_lim;      /* Max nesting of zones */
+
     unsigned int    max_cache_size; /* Max size of attribute cache */
     unsigned int    site_chars; // where to truncate site name.
 
