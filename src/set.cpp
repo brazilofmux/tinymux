@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.21 2002-05-31 16:00:04 sdennis Exp $
+// $Id: set.cpp,v 1.22 2002-06-11 21:03:33 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -626,12 +626,10 @@ void do_chown
     char *newown
 )
 {
-    dbref nOwnerOrig;
-    dbref nOwnerNew;
-    int do_it, cost, quota;
+    dbref nOwnerOrig, nOwnerNew, thing;
+    BOOL bDoit;
     ATTR *ap;
 
-    dbref thing;
     int   atr;
     if (  parse_attrib(player, name, &thing, &atr)
        && atr != NOTHING)
@@ -639,7 +637,7 @@ void do_chown
         // An attribute was given, so we worry about changing the owner of the
         // attribute.
         //
-        if (isGarbage(thing))
+        if (!Good_obj(thing))
         {
             notify_quiet(player, "You shouldn't be rummaging through the garbage.");
             return;
@@ -670,7 +668,7 @@ void do_chown
             notify_quiet(player, "Attribute not present on object.");
             return;
         }
-        do_it = 0;
+        bDoit = FALSE;
         if (nOwnerNew == NOTHING)
         {
             notify_quiet(player, "I couldn't find that player.");
@@ -681,7 +679,7 @@ void do_chown
         }
         else if (Wizard(player))
         {
-            do_it = 1;
+            bDoit = TRUE;
         }
         else if (nOwnerNew == Owner(player))
         {
@@ -694,7 +692,7 @@ void do_chown
             }
             else
             {
-                do_it = 1;
+                bDoit = TRUE;
             }
         }
         else if (nOwnerNew == nOwnerOrig)
@@ -708,7 +706,7 @@ void do_chown
             }
             else
             {
-                do_it = 1;
+                bDoit = TRUE;
             }
         }
         else
@@ -716,7 +714,7 @@ void do_chown
             notify_quiet(player, NOPERM_MESSAGE);
         }
 
-        if (!do_it)
+        if (!bDoit)
         {
             return;
         }
@@ -772,8 +770,7 @@ void do_chown
         nOwnerNew = lookup_player(player, newown, 1);
     }
 
-    cost = 1;
-    quota = 1;
+    int cost = 1, quota = 1;
     switch (Typeof(thing))
     {
     case TYPE_ROOM:
@@ -802,8 +799,7 @@ void do_chown
     }
 
     BOOL bPlayerControlsThing = controls(player, thing);
-    if (  isGarbage(thing)
-       && bPlayerControlsThing)
+    if (!Good_obj(thing))
     {
         notify_quiet(player, "You shouldn't be rummaging through the garbage.");
     }
@@ -822,7 +818,8 @@ void do_chown
             || (  isThing(thing)
                && Location(thing) != player
                && !Chown_Any(player))
-            || !controls(player, nOwnerNew))
+            || !controls(player, nOwnerNew)
+            || God(thing))
     {
         notify_quiet(player, NOPERM_MESSAGE);
     }
