@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.142 2002-01-31 11:52:30 sdennis Exp $
+// $Id: functions.cpp,v 1.143 2002-01-31 22:44:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4267,19 +4267,18 @@ FUNCTION(fun_wordpos)
         return;
     }
     safe_nothing(buff, bufc);
-    return;
 }
 
 FUNCTION(fun_type)
 {
-    dbref it;
-
-    it = match_thing(player, fargs[0]);
-    if (!Good_obj(it)) {
+    dbref it = match_thing(player, fargs[0]);
+    if (!Good_obj(it))
+    {
         safe_str("#-1 NOT FOUND", buff, bufc);
         return;
     }
-    switch (Typeof(it)) {
+    switch (Typeof(it))
+    {
     case TYPE_ROOM:
         safe_str("ROOM", buff, bufc);
         break;
@@ -4295,12 +4294,11 @@ FUNCTION(fun_type)
     default:
         safe_str("#-1 ILLEGAL TYPE", buff, bufc);
     }
-    return;
 }
 
 typedef struct
 {
-    char *pName;
+    const char *pName;
     int  iMask;
 } ATR_HAS_FLAG_ENTRY;
 
@@ -4317,7 +4315,7 @@ ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
     { "god",        AF_GOD     },
     { "visual",     AF_VISUAL  },
     { "no_inherit", AF_PRIVATE },
-//  { "const",      AF_CONST   },
+    { "const",      AF_CONST   },
     { NULL,         0          }
 };
 
@@ -4390,15 +4388,15 @@ FUNCTION(fun_hasflag)
 
 FUNCTION(fun_haspower)
 {
-    dbref it;
-
-    it = match_thing(player, fargs[0]);
+    dbref it = match_thing(player, fargs[0]);
     if (!Good_obj(it))
     {
         safe_str("#-1 NOT FOUND", buff, bufc);
         return;
     }
-    if (mudconf.pub_flags || Examinable(player, it) || (it == cause))
+    if (  mudconf.pub_flags
+       || Examinable(player, it)
+       || it == cause)
     {
         int ch = '0';
         if (has_power(player, it, fargs[1]))
