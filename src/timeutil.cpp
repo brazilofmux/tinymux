@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.15 2001-02-24 07:05:19 sdennis Exp $
+// $Id: timeutil.cpp,v 1.16 2001-02-24 07:08:35 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1805,17 +1805,17 @@ extern PD_BREAKDOWN BreakDownTable[];
 #define NOT_PRESENT -9999999
 typedef struct tag_AllFields
 {
-	int iYear;
-	int iDayOfYear;
-	int iMonthOfYear;
-	int iDayOfMonth;
-	int iWeekOfYear;
-	int iDayOfWeek;
-	int iHourTime;
-	int iMinuteTime;
-	int iSecondTime;
-	int iSubSecondTime;
-	int iMinuteTimeZone;
+    int iYear;
+    int iDayOfYear;
+    int iMonthOfYear;
+    int iDayOfMonth;
+    int iWeekOfYear;
+    int iDayOfWeek;
+    int iHourTime;
+    int iMinuteTime;
+    int iSecondTime;
+    int iSubSecondTime;
+    int iMinuteTimeZone;
 } ALLFIELDS;
 
 // isValidYear assumes numeric string.
@@ -2594,7 +2594,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
             }
             if (!bFound)
             {
-				return 0;
+                return 0;
             }
         }
     }
@@ -2956,13 +2956,13 @@ void PD_Pass5(void)
 
 void PD_Pass6(void)
 {
-	int cYear = 0;
-	int cMonth = 0;
-	int cDayOfMonth = 0;
-	int cWeekOfYear = 0;
-	int cDayOfYear = 0;
-	int cDayOfWeek = 0;
-	int cTime = 0;
+    int cYear = 0;
+    int cMonth = 0;
+    int cDayOfMonth = 0;
+    int cWeekOfYear = 0;
+    int cDayOfYear = 0;
+    int cDayOfWeek = 0;
+    int cTime = 0;
 
     PD_Node *pNode = PD_FirstNode();
     while (pNode)
@@ -2999,7 +2999,7 @@ void PD_Pass6(void)
     }
 
     unsigned OnlyOneMask = 0;
-	unsigned CantBeMask = 0;
+    unsigned CantBeMask = 0;
     if (cYear == 1)
     {
         OnlyOneMask |= PDCB_YEAR|PDCB_YD|PDCB_YMD|PDCB_MDY|PDCB_DMY;
@@ -3008,35 +3008,35 @@ void PD_Pass6(void)
     {
         OnlyOneMask |= PDCB_HMS_TIME|PDCB_HOUR_TIME;
     }
-	if (cMonth == 0 || cDayOfMonth == 0)
-	{
-		CantBeMask |= PDCB_MONTH|PDCB_DAY_OF_MONTH;
-	}
-	if (cDayOfWeek == 0)
-	{
-		CantBeMask |= PDCB_WEEK_OF_YEAR;
-	}
+    if (cMonth == 0 || cDayOfMonth == 0)
+    {
+        CantBeMask |= PDCB_MONTH|PDCB_DAY_OF_MONTH;
+    }
+    if (cDayOfWeek == 0)
+    {
+        CantBeMask |= PDCB_WEEK_OF_YEAR;
+    }
     if (  cMonth == 1 && cDayOfMonth == 1
-	   && (cWeekOfYear != 1 || cDayOfWeek != 1)
-	   && cDayOfYear != 1)
+       && (cWeekOfYear != 1 || cDayOfWeek != 1)
+       && cDayOfYear != 1)
     {
         OnlyOneMask |= PDCB_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY;
         OnlyOneMask |= PDCB_DAY_OF_MONTH;
-		CantBeMask |= PDCB_WEEK_OF_YEAR|PDCB_YD;
+        CantBeMask |= PDCB_WEEK_OF_YEAR|PDCB_YD;
     }
-	else if (cDayOfYear == 1 && (cWeekOfYear != 1 || cDayOfWeek != 1))
-	{
+    else if (cDayOfYear == 1 && (cWeekOfYear != 1 || cDayOfWeek != 1))
+    {
         OnlyOneMask |= PDCB_DAY_OF_YEAR|PDCB_YD;
-		CantBeMask |= PDCB_WEEK_OF_YEAR|PDCB_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY;
-		CantBeMask |= PDCB_DAY_OF_MONTH;
-	}
-	else if (cWeekOfYear == 1 && cDayOfWeek == 1)
-	{
+        CantBeMask |= PDCB_WEEK_OF_YEAR|PDCB_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY;
+        CantBeMask |= PDCB_DAY_OF_MONTH;
+    }
+    else if (cWeekOfYear == 1 && cDayOfWeek == 1)
+    {
         OnlyOneMask |= PDCB_WEEK_OF_YEAR;
         OnlyOneMask |= PDCB_DAY_OF_WEEK;
-		CantBeMask |= PDCB_YD|PDCB_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY;
-		CantBeMask |= PDCB_DAY_OF_MONTH;
-	}
+        CantBeMask |= PDCB_YD|PDCB_MONTH|PDCB_YMD|PDCB_MDY|PDCB_DMY;
+        CantBeMask |= PDCB_DAY_OF_MONTH;
+    }
 
     // Also, if we match OnlyOneMask, then force only something in
     // OnlyOneMask.
@@ -3048,27 +3048,27 @@ void PD_Pass6(void)
         {
             pNode->uCouldBe &= OnlyOneMask;
         }
-		if (pNode->uCouldBe & ~CantBeMask)
-		{
-			pNode->uCouldBe &= ~CantBeMask;
-		}
+        if (pNode->uCouldBe & ~CantBeMask)
+        {
+            pNode->uCouldBe &= ~CantBeMask;
+        }
         pNode = PD_NextNode(pNode);
     }
 }
 
 BOOL PD_GetFields(ALLFIELDS *paf)
 {
-	paf->iYear           = NOT_PRESENT;
-	paf->iDayOfYear      = NOT_PRESENT;
-	paf->iMonthOfYear    = NOT_PRESENT;
-	paf->iDayOfMonth     = NOT_PRESENT;
-	paf->iWeekOfYear     = NOT_PRESENT;
-	paf->iDayOfWeek      = NOT_PRESENT;
-	paf->iHourTime       = NOT_PRESENT;
-	paf->iMinuteTime     = NOT_PRESENT;
-	paf->iSecondTime     = NOT_PRESENT;
-	paf->iSubSecondTime  = NOT_PRESENT;
-	paf->iMinuteTimeZone = NOT_PRESENT;
+    paf->iYear           = NOT_PRESENT;
+    paf->iDayOfYear      = NOT_PRESENT;
+    paf->iMonthOfYear    = NOT_PRESENT;
+    paf->iDayOfMonth     = NOT_PRESENT;
+    paf->iWeekOfYear     = NOT_PRESENT;
+    paf->iDayOfWeek      = NOT_PRESENT;
+    paf->iHourTime       = NOT_PRESENT;
+    paf->iMinuteTime     = NOT_PRESENT;
+    paf->iSecondTime     = NOT_PRESENT;
+    paf->iSubSecondTime  = NOT_PRESENT;
+    paf->iMinuteTimeZone = NOT_PRESENT;
 
     PD_Node *pNode = PD_FirstNode();
     while (pNode)
@@ -3183,138 +3183,138 @@ BOOL PD_GetFields(ALLFIELDS *paf)
         }
         else
         {
-			return FALSE;
+            return FALSE;
         }
         pNode = PD_NextNode(pNode);
     }
-	return TRUE;
+    return TRUE;
 }
 
 BOOL ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *paf)
 {
-	FIELDEDTIME ft;
-	memset(&ft, 0, sizeof(ft));
+    FIELDEDTIME ft;
+    memset(&ft, 0, sizeof(ft));
 
-	int iExtraDays = 0;
-	if (paf->iYear == NOT_PRESENT)
-	{
-		return FALSE;
-	}
-	ft.iYear = paf->iYear;
+    int iExtraDays = 0;
+    if (paf->iYear == NOT_PRESENT)
+    {
+        return FALSE;
+    }
+    ft.iYear = paf->iYear;
 
-	if (paf->iMonthOfYear != NOT_PRESENT && paf->iDayOfMonth != NOT_PRESENT)
-	{
-		ft.iMonth = paf->iMonthOfYear;
-		ft.iDayOfMonth = paf->iDayOfMonth;
-	}
-	else if (paf->iDayOfYear != NOT_PRESENT)
-	{
-		iExtraDays = paf->iDayOfYear - 1;
-		ft.iMonth = 1;
-		ft.iDayOfMonth = 1;
-	}
-	else if (paf->iWeekOfYear != NOT_PRESENT && paf->iDayOfWeek != NOT_PRESENT)
-	{
-		// Remember that iYear in this case represents an ISO year, which
-		// is not exactly the same thing as a Gregorian year.
-		//
-		FIELDEDTIME ftWD;
-		memset(&ftWD, 0, sizeof(ftWD));
-		ftWD.iYear = paf->iYear - 1;
-		ftWD.iMonth = 12;
-		ftWD.iDayOfMonth = 27;
-		if (!lta.SetFields(&ftWD))
-		{
-			return FALSE;
-		}
-		INT64 i64 = lta.Return100ns();
-		INT64 j64;
-		i64FloorDivisionMod(i64+FACTOR_100NS_PER_DAY, FACTOR_100NS_PER_WEEK, &j64);
-		i64 -= j64;
+    if (paf->iMonthOfYear != NOT_PRESENT && paf->iDayOfMonth != NOT_PRESENT)
+    {
+        ft.iMonth = paf->iMonthOfYear;
+        ft.iDayOfMonth = paf->iDayOfMonth;
+    }
+    else if (paf->iDayOfYear != NOT_PRESENT)
+    {
+        iExtraDays = paf->iDayOfYear - 1;
+        ft.iMonth = 1;
+        ft.iDayOfMonth = 1;
+    }
+    else if (paf->iWeekOfYear != NOT_PRESENT && paf->iDayOfWeek != NOT_PRESENT)
+    {
+        // Remember that iYear in this case represents an ISO year, which
+        // is not exactly the same thing as a Gregorian year.
+        //
+        FIELDEDTIME ftWD;
+        memset(&ftWD, 0, sizeof(ftWD));
+        ftWD.iYear = paf->iYear - 1;
+        ftWD.iMonth = 12;
+        ftWD.iDayOfMonth = 27;
+        if (!lta.SetFields(&ftWD))
+        {
+            return FALSE;
+        }
+        INT64 i64 = lta.Return100ns();
+        INT64 j64;
+        i64FloorDivisionMod(i64+FACTOR_100NS_PER_DAY, FACTOR_100NS_PER_WEEK, &j64);
+        i64 -= j64;
 
-		// i64 now corresponds to the Sunday that strickly preceeds before
-		// December 28th, and the 28th is guaranteed to be in the previous
-		// year so that the ISO and Gregorian Years are the same thing.
-		//
-		i64 += FACTOR_100NS_PER_WEEK*paf->iWeekOfYear;
-		i64 += FACTOR_100NS_PER_DAY*paf->iDayOfWeek;
-		lta.Set100ns(i64);
-		lta.ReturnFields(&ft);
+        // i64 now corresponds to the Sunday that strickly preceeds before
+        // December 28th, and the 28th is guaranteed to be in the previous
+        // year so that the ISO and Gregorian Years are the same thing.
+        //
+        i64 += FACTOR_100NS_PER_WEEK*paf->iWeekOfYear;
+        i64 += FACTOR_100NS_PER_DAY*paf->iDayOfWeek;
+        lta.Set100ns(i64);
+        lta.ReturnFields(&ft);
 
-		// Validate that this week actually has a week 53.
-		//
-		if (paf->iWeekOfYear == 53)
-		{
-			int iDOW_ISO = (ft.iDayOfWeek == 0) ? 7 : ft.iDayOfWeek;
-			int j = ft.iDayOfMonth - iDOW_ISO;
-			if (ft.iMonth == 12)
-			{
-				if (28 <= j)
-				{
-					return FALSE;
-				}
-			}
-			else // if (ft.iMonth == 1)
-			{
-				if (-3 <= j)
-				{
-					return FALSE;
-				}
-			}
-		}
-	}
-	else
-	{
-		// Under-specified.
-		//
-		return FALSE;
-	}
+        // Validate that this week actually has a week 53.
+        //
+        if (paf->iWeekOfYear == 53)
+        {
+            int iDOW_ISO = (ft.iDayOfWeek == 0) ? 7 : ft.iDayOfWeek;
+            int j = ft.iDayOfMonth - iDOW_ISO;
+            if (ft.iMonth == 12)
+            {
+                if (28 <= j)
+                {
+                    return FALSE;
+                }
+            }
+            else // if (ft.iMonth == 1)
+            {
+                if (-3 <= j)
+                {
+                    return FALSE;
+                }
+            }
+        }
+    }
+    else
+    {
+        // Under-specified.
+        //
+        return FALSE;
+    }
 
-	if (paf->iHourTime != NOT_PRESENT)
-	{
-		ft.iHour = paf->iHourTime;
-		if (paf->iMinuteTime != NOT_PRESENT)
-		{
-			ft.iMinute = paf->iMinuteTime;
-			if (paf->iSecondTime != NOT_PRESENT)
-			{
-				ft.iSecond = paf->iSecondTime;
-				if (paf->iSubSecondTime != NOT_PRESENT)
-				{
-					// TODO:
+    if (paf->iHourTime != NOT_PRESENT)
+    {
+        ft.iHour = paf->iHourTime;
+        if (paf->iMinuteTime != NOT_PRESENT)
+        {
+            ft.iMinute = paf->iMinuteTime;
+            if (paf->iSecondTime != NOT_PRESENT)
+            {
+                ft.iSecond = paf->iSecondTime;
+                if (paf->iSubSecondTime != NOT_PRESENT)
+                {
+                    // TODO:
 #if 0
-					ft.iMillisecond
-					ft.iMicrosecond
-					ft.iNanosecond
+                    ft.iMillisecond
+                    ft.iMicrosecond
+                    ft.iNanosecond
 #endif
-				}
-			}
-		}
-	}
+                }
+            }
+        }
+    }
 
     if (lta.SetFields(&ft))
-	{
-		CLinearTimeDelta ltd;
-		if (paf->iMinuteTimeZone != NOT_PRESENT)
-		{
-			ltd.SetSeconds(60 * paf->iMinuteTimeZone);
-			lta -= ltd;
-		}
-		if (iExtraDays)
-		{
-			ltd.Set100ns(FACTOR_100NS_PER_DAY);
-		    lta += ltd * iExtraDays;
-		}
-		return TRUE;
-	}
-	return FALSE;
+    {
+        CLinearTimeDelta ltd;
+        if (paf->iMinuteTimeZone != NOT_PRESENT)
+        {
+            ltd.SetSeconds(60 * paf->iMinuteTimeZone);
+            lta -= ltd;
+        }
+        if (iExtraDays)
+        {
+            ltd.Set100ns(FACTOR_100NS_PER_DAY);
+            lta += ltd * iExtraDays;
+        }
+        return TRUE;
+    }
+    return FALSE;
 }
 
 BOOL ParseDate
 (
-	CLinearTimeAbsolute &lt,
-	char *pDateString,
-	BOOL *pbZoneSpecified
+    CLinearTimeAbsolute &lt,
+    char *pDateString,
+    BOOL *pbZoneSpecified
 )
 {
     PD_Reset();
@@ -3338,12 +3338,12 @@ BOOL ParseDate
     PD_Pass5();
     PD_Pass6();
 
-	ALLFIELDS af;
+    ALLFIELDS af;
     if (  PD_GetFields(&af)
-	   && ConvertAllFieldsToLinearTime(lt, &af))
-	{
-		*pbZoneSpecified = (af.iMinuteTimeZone != NOT_PRESENT);
-		return TRUE;
-	}
-	return FALSE;
+       && ConvertAllFieldsToLinearTime(lt, &af))
+    {
+        *pbZoneSpecified = (af.iMinuteTimeZone != NOT_PRESENT);
+        return TRUE;
+    }
+    return FALSE;
 }
