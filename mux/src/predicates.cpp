@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.56 2004-08-16 05:14:07 sdennis Exp $
+// $Id: predicates.cpp,v 1.57 2004-08-18 22:35:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -791,14 +791,14 @@ void do_addcommand
     // Validate object/attribute.
     //
     dbref thing;
-    ATTR *attr;
-    if (  !parse_attrib(player, command, &thing, &attr)
-       || !attr)
+    ATTR *pattr;
+    if (  !parse_attrib(player, command, &thing, &pattr)
+       || !pattr)
     {
         notify(player, "No such attribute.");
         return;
     }
-    if (!See_attr(player, thing, attr))
+    if (!See_attr(player, thing, pattr))
     {
         notify(player, NOPERM_MESSAGE);
         return;
@@ -818,7 +818,7 @@ void do_addcommand
         for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
         {
             if (  nextp->thing == thing
-               && nextp->atr == attr->number)
+               && nextp->atr == pattr->number)
             {
                 notify(player, tprintf("%s already added.", pName));
                 return;
@@ -830,7 +830,7 @@ void do_addcommand
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
         ISOUTOFMEMORY(add);
         add->thing = thing;
-        add->atr = attr->number;
+        add->atr = pattr->number;
         add->name = StringClone(pName);
         add->next = old->addent;
         old->addent = add;
@@ -864,7 +864,7 @@ void do_addcommand
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
         ISOUTOFMEMORY(add);
         add->thing = thing;
-        add->atr = attr->number;
+        add->atr = pattr->number;
         add->name = StringClone(pName);
         add->next = NULL;
         cmd->addent = add;
@@ -984,21 +984,21 @@ void do_delcommand
 
     dbref thing = NOTHING;
     int atr = NOTHING;
-    ATTR *attr;
+    ATTR *pattr;
     if (*command)
     {
-        if (  !parse_attrib(player, command, &thing, &attr)
-           || !attr)
+        if (  !parse_attrib(player, command, &thing, &pattr)
+           || !pattr)
         {
             notify(player, "No such attribute.");
             return;
         }
-        if (!See_attr(player, thing, attr))
+        if (!See_attr(player, thing, pattr))
         {
             notify(player, NOPERM_MESSAGE);
             return;
         }
-        atr = attr->number;
+        atr = pattr->number;
     }
 
     // Let's make this case insensitive...
