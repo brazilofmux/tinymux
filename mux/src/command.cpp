@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.54 2002-08-01 17:58:35 jake Exp $
+// $Id: command.cpp,v 1.55 2002-08-01 18:18:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -937,10 +937,8 @@ BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing, char
    return retval;
 }
 
-char *hook_name (char *pCommand, int key)
+char *hook_name(char *pCommand, int key)
 {
-    char *s_uselock = alloc_sbuf("command_hook.hookname");
-    memset(s_uselock, '\0', sizeof(s_uselock));
     char *keylet;
     switch (key)
     {
@@ -960,11 +958,11 @@ char *hook_name (char *pCommand, int key)
         keylet = "P";
         break;
     default:
-        free_sbuf(s_uselock);
         return NULL;
     }
 
-    switch(pCommand[0])
+    char *s_uselock = alloc_sbuf("command_hook.hookname");
+    switch (pCommand[0])
     {
     case '"' :  sprintf(s_uselock, "%s_%s", keylet, "say");
         break;
