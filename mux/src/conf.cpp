@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.14 2002-07-24 03:02:32 jake Exp $
+// $Id: conf.cpp,v 1.15 2002-07-29 23:53:42 jake Exp $
 //
 
 #include "copyright.h"
@@ -250,6 +250,7 @@ void cf_init(void)
     mudconf.safe_wipe = FALSE;
     mudconf.destroy_going_now = FALSE;
     mudconf.nStackLimit = 10000;
+    mudconf.hook_obj = NOTHING;
 
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = FALSE;
@@ -1377,6 +1378,77 @@ CF_HAND(cf_raw_helpfile)
     return -1;
 }
 
+// @hook: run softcode before or after running a hardcode command, or softcode access.
+// Original idea from TinyMUSH 3, code from RhostMUSH.
+// Used with express permission of RhostMUSH developers.
+// Bludgeoned into MUX by Jake Nelson 7/2002.
+//
+NAMETAB hook_names[] =
+{
+    {"before",  3, 0, HOOK_BEFORE},
+    {"after",   3, 0, HOOK_AFTER},
+    {"permit",  3, 0, HOOK_PERMIT},
+    {"ignore",  3, 0, HOOK_IGNORE},
+    {"bfail",   3, 0, HOOK_IGSWITCH},
+    {"afail",   3, 0, HOOK_AFAIL},
+    {NULL,      0, 0, 0}
+};
+
+CF_HAND(cf_hook)
+{
+    char *hookcmd, *hookptr, playbuff[201];
+    int hookflg;
+    CMDENT *cmdp;
+
+    int retval = -1;
+    memset(playbuff, '\0', sizeof(playbuff));
+    strncpy(playbuff, str, 200);
+    TINY_STRTOK_STATE tts;
+    Tiny_StrTokString(&tts, playbuff);
+    Tiny_StrTokControl(&tts, " \t");
+    hookcmd = Tiny_StrTokParse(&tts);
+    if (hookcmd != NULL)
+    {
+       cmdp = (CMDENT *)hashfindLEN(hookcmd, strlen(hookcmd), &mudstate.command_htab);
+    }
+    else
+    {
+       return retval;
+    }
+    if (!cmdp)
+    {
+       return retval;
+    }
+
+    *vp = cmdp->hookmask;
+    strncpy(playbuff, str, 200);
+    hookptr = Tiny_StrTokParse(&tts);
+    while (hookptr != NULL)
+    {
+       if (*hookptr == '!' && *(hookptr + 1))
+       {
+          hookflg = search_nametab(GOD, hook_names, hookptr + 1);
+          if ( hookflg != -1 )
+          {
+             retval = 0;
+             *vp = *vp & ~hookflg;
+          }
+       }
+       else
+       {
+          hookflg = search_nametab(GOD, hook_names, hookptr);
+          if ( hookflg != -1 )
+          {
+             retval = 0;
+             *vp = *vp | hookflg;
+          }
+       }
+       hookptr = Tiny_StrTokParse(&tts);
+    }
+    cmdp->hookmask = *vp;
+    return retval;
+}
+
 // ---------------------------------------------------------------------------
 // cf_include: Read another config file.  Only valid during startup.
 //
@@ -1548,6 +1620,8 @@ CONF conftable[] =
     {"helpfile",                  cf_helpfile,    CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
     {"help_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.help_file,       NULL, SIZEOF_PATHNAME},
     {"help_index",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.help_indx,       NULL, SIZEOF_PATHNAME},
+    {"hook_cmd",                  cf_hook,        CA_GOD,    CA_GOD,      &mudconf.hook_cmd,               NULL,               0},
+    {"hook_obj",                  cf_int,         CA_GOD,    CA_GOD,      &mudconf.hook_obj,               NULL,               0},
     {"hostnames",                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.use_hostname,    NULL,               0},
     {"use_http",                  cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.use_http,        NULL,               0},
     {"idle_wiz_dark",             cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.idle_wiz_dark,   NULL,               0},

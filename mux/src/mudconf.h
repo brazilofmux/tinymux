@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.8 2002-07-23 07:27:55 sdennis Exp $
+// $Id: mudconf.h,v 1.9 2002-07-29 23:53:43 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -182,6 +182,8 @@ struct confdata
     dbref   toad_recipient; /* Default @toad recipient. */
     BOOL    run_startup;    // If no, startup attributes aren't processed on load.
     BOOL    safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
+    dbref   hook_obj;       // Object with @hook data.
+    int     hook_cmd;       // @hooks to be initialized.
 #endif // !STANDALONE
     BOOL    cache_names;    /* Should object names be cached separately */
 
