@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.64 2001-12-06 07:09:02 sdennis Exp $
+// $Id: db.cpp,v 1.65 2002-01-15 05:41:28 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -456,7 +456,7 @@ FWDLIST *fwdlist_get(dbref thing)
     dbref aowner;
     int   aflags;
     char *tp = atr_get(thing, A_FORWARDLIST, &aowner, &aflags);
-    int errors = fwdlist_load(fp, GOD, tp);
+    fwdlist_load(fp, GOD, tp);
     free_lbuf(tp);
 #else // STANDALONE
     FWDLIST *fp = ((FWDLIST *) hashfindLEN(&thing, sizeof(thing), &mudstate.fwdlist_htab));
