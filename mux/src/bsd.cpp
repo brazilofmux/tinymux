@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.14 2003-03-02 05:33:57 sdennis Exp $
+// $Id: bsd.cpp,v 1.15 2003-03-03 05:06:04 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2798,6 +2798,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 #endif // HAVE_UNION_WAIT NEED_WAIT3_DCL
 #endif // !WIN32
 
+    pid_t child;
     switch (sig)
     {
 #ifndef WIN32
@@ -2830,24 +2831,21 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         signal(SIGCHLD, CAST_SIGNAL_FUNC sighandler);
 #endif // !SIGNAL_SIGCHLD_BRAINDAMAGE
 #ifdef HAVE_WAIT3
-        while (wait3(&stat_buf, WNOHANG, NULL) > 0)
+        while ((child = wait3(&stat_buf, WNOHANG, NULL)) > 0)
+#else
+        if ((child = wait((int *)&stat_buf)) > 0)
+#endif // HAVE_WAIT3
         {
-            if (  WIFEXITED(stat_buf)
-               && WEXITSTATUS(stat_buf) == 8)
+            if (  mudconf.fork_dump
+               && mudstate.dumping
+               && child == mudstate.dumper
+               && (  WIFEXITED(stat_buf)
+                  || WIFSIGNALED(stat_buf)))
             {
-                exit(0);
+                mudstate.dumping = false;
+                mudstate.dumper  = 0;
             }
         }
-#else // HAVE_WAIT3
-        wait((int *)&stat_buf);
-        if (  WIFEXITED(stat_buf)
-           && WEXITSTATUS(stat_buf) == 8)
-        {
-            exit(0);
-        }
-#endif // HAVE_WAIT3
-
-        mudstate.dumping = false;
         break;
 
     case SIGHUP:

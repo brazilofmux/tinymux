@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.25 2003-02-27 14:14:53 sdennis Exp $
+// $Id: conf.cpp,v 1.26 2003-03-03 05:06:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -100,6 +100,7 @@ void cf_init(void)
 #ifndef WIN32
     mudconf.fork_dump = true;
     mudstate.dumping  = false;
+    mudstate.dumper   = 0;
 #endif
     mudconf.have_comsys = true;
     mudconf.have_mailer = true;

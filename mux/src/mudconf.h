@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.8 2003-02-05 06:20:59 jake Exp $
+// $Id: mudconf.h,v 1.9 2003-03-03 05:06:04 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -279,8 +279,9 @@ struct statedata
     bool panicking;             // are we in the middle of dying horribly?
     bool shutdown_flag;         /* Should interface be shut down? */
 #ifndef WIN32
-    bool dumping;               /* Are we dumping? */
-    bool restarting;            /* Are we restarting? */
+    bool          restarting;   // Are we restarting?
+    volatile bool dumping;      // Are we dumping?
+    pid_t         dumper;       // PID of dumping process.
 #endif // !WIN32
 
     dbref   curr_enactor;       /* Who initiated the current command */

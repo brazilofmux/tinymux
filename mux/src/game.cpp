@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.21 2003-03-01 21:41:48 sdennis Exp $
+// $Id: game.cpp,v 1.22 2003-03-03 05:06:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1506,6 +1506,7 @@ void fork_and_dump(int key)
         else
         {
             bChildExists = true;
+            mudstate.dumper = child;
         }
     }
 
@@ -1517,6 +1518,7 @@ void fork_and_dump(int key)
         // need to dump the structure or a flatfile.
         //
         mudstate.dumping = false;
+        mudstate.dumper = 0;
     }
 #endif
 
