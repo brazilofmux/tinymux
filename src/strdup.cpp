@@ -8,9 +8,9 @@
 
 char *strdup(const char *s)
 {
-	char *result;
+    char *result;
 
-	result = (char *)malloc(strlen(s) + 1);
-	strcpy(result, s);
-	return result;
+    result = (char *)malloc(strlen(s) + 1);
+    strcpy(result, s);
+    return result;
 }

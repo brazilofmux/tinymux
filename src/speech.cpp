@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.2 2000-05-19 18:45:23 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -750,15 +750,15 @@ void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message
     char *buf2, *bp;
     int do_contents, ok_to_do, depth, pemit_flags;
 
-	if (key & PEMIT_CONTENTS)
+    if (key & PEMIT_CONTENTS)
     {
-		do_contents = 1;
-		key &= ~PEMIT_CONTENTS;
-	}
+        do_contents = 1;
+        key &= ~PEMIT_CONTENTS;
+    }
     else
     {
-		do_contents = 0;
-	}
+        do_contents = 0;
+    }
     if (key & PEMIT_LIST)
     {
         do_pemit_list(player, recipient, message);
