@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.17 2002-07-16 06:05:19 jake Exp $
+// $Id: game.cpp,v 1.18 2002-07-22 06:29:20 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -64,18 +64,19 @@ void report(void)
     log_text("Command: '");
     log_text(mudstate.debug_cmd);
     log_text("'");
-    ENDLOG
+    ENDLOG;
     if (Good_obj(mudstate.curr_executor))
     {
-        STARTLOG(LOG_BUGS, "BUG", "INFO")
+        STARTLOG(LOG_BUGS, "BUG", "INFO");
         log_text("Player: ");
         log_name_and_loc(mudstate.curr_executor);
-        if ((mudstate.curr_enactor != mudstate.curr_executor) && Good_obj(mudstate.curr_enactor))
+        if (  mudstate.curr_enactor != mudstate.curr_executor
+           && Good_obj(mudstate.curr_enactor))
         {
             log_text(" Enactor: ");
             log_name_and_loc(mudstate.curr_enactor);
         }
-        ENDLOG
+        ENDLOG;
     }
 }
 

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.10 2002-07-21 14:48:10 sdennis Exp $
+// $Id: bsd.cpp,v 1.11 2002-07-22 06:28:44 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2801,7 +2801,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         log_signal(signames[sig]);
         report();
         SYNC;
-        if (mudconf.sig_action != SA_EXIT && mudstate.bCanRestart)
+        if (  mudconf.sig_action != SA_EXIT
+           && mudstate.bCanRestart)
         {
             raw_broadcast
             (  0,
