@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.1 2000-04-11 07:14:45 sdennis Exp $
+// $Id: game.cpp,v 1.2 2000-04-11 21:05:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1923,6 +1923,7 @@ int DCL_CDECL main(int argc, char *argv[])
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         mudstate.global_regs[i] = alloc_lbuf("main.global_reg");
+        mudstate.glob_reg_len[i] = 0;
     }
 
     // If master room does not exist in the DB, clear
