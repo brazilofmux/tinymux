@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.25 2003-02-15 17:24:09 jake Exp $
+// $Id: funceval.cpp,v 1.26 2003-02-16 00:07:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -495,7 +495,8 @@ FUNCTION(fun_set)
 
     // Check for attr set first.
     //
-    for (char *p = fargs[1]; *p && *p != ':'; p++)
+    char *p;
+    for (p = fargs[1]; *p && *p != ':'; p++)
     {
         ; // Nothing
     }
