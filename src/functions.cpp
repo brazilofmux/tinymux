@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.96 2001-09-29 07:55:05 sdennis Exp $
+// $Id: functions.cpp,v 1.97 2001-09-29 08:36:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1119,16 +1119,15 @@ FUNCTION(fun_timefmt)
     CLinearTimeAbsolute lta, ltaUTC;
     if (nfargs == 2)
     {
-        lta.SetSecondsString(fargs[1]);
-        ltaUTC = lta;
-        lta.UTC2Local();
+        ltaUTC.SetSecondsString(fargs[1]);
     }
     else
     {
-        lta.GetLocal();
-        ltaUTC = lta;
-        ltaUTC.Local2UTC();
+        ltaUTC.GetUTC();
     }
+    lta = ltaUTC;
+    lta.UTC2Local();
+
     FIELDEDTIME ft;
     lta.ReturnFields(&ft);
 
@@ -1155,7 +1154,7 @@ FUNCTION(fun_timefmt)
     //
     int iWeekOfYearSunday = (ft.iDayOfYear-ft.iDayOfWeek+6)/7;
     int iDayOfWeekMonday  = (ft.iDayOfWeek == 0)?7:ft.iDayOfWeek;
-    int iWeekOfYearMonday = (ft.iDayOfYear-iDayOfWeekMonday+6)/7;
+    int iWeekOfYearMonday = (ft.iDayOfYear-iDayOfWeekMonday+7)/7;
 
 
     char *q;
