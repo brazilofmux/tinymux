@@ -1,7 +1,5 @@
 ALPHA
 CHANGES
-dbconvert.dep
-dbconvert.dsp
 docs/BACKUPS
 docs/CHANGES.1.6
 docs/COMPRESSION
@@ -28,8 +26,6 @@ game/startmuxold.bat
 game/text/help.txt
 game/text/wizhelp.txt
 INSTALL
-mkindx.dep
-mkindx.dsp
 NOTES
 README
 readme.txt
@@ -75,6 +71,8 @@ src/crypt/ufc.cpp
 src/db.cpp
 src/db.h
 src/dbconvert.cpp
+src/dbconvert.dep
+src/dbconvert.dsp
 src/db_rw.cpp
 src/eval.cpp
 src/externs.h
@@ -101,11 +99,16 @@ src/mguests.cpp
 src/mguests.h
 src/misc.h
 src/mkindx.cpp
+src/mkindx.dep
+src/mkindx.dsp
 src/move.cpp
 src/mudconf.h
 src/muxcli.cpp
 src/muxcli.h
 src/netcommon.cpp
+src/netmux.dep
+src/netmux.dsp
+src/netmux.dsw
 src/object.cpp
 src/phase1.awk
 src/phase2.awk
@@ -145,6 +148,3 @@ src/wild.cpp
 src/wiz.cpp
 src/_build.cpp
 src/_build.h
-netmux.dep
-netmux.dsp
-netmux.dsw
