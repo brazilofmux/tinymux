@@ -71,6 +71,8 @@ Feature Additions:
  -- With regard to comalias(), wizards can still get the comalias for anyone.
     Players and objects can still check for themselves. Objects that Inherit
     can now check for their owners.
+ -- Added #$ substitution for switch() and @switch.
+ -- Added ilev() for nesting level of iter() and list().
 
 Bug Fixes:
 ~~~~~~~~~
@@ -155,6 +157,8 @@ Performance Enhancements:
  -- Use /dev/urandom on Unix and Crypto API on Win32 to seed the random
     number generator. Fall back gracefully on pre-OSR2 Win95 to previous
     time/pid scheme.
+ -- Substitutions for ##, #!, and #$ are performed at one time and therefore
+    faster.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
