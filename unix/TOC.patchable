@@ -22,7 +22,6 @@ game/_backupflat.sh
 game/data/db_check
 game/data/db_load
 game/data/db_unload
-game/mux.config
 game/text/help.txt
 game/text/wizhelp.txt
 src/Makefile.in
