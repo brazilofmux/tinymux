@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.21 2000-10-04 06:41:58 sdennis Exp $
+// $Id: predicates.cpp,v 1.22 2000-10-10 23:06:47 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1178,17 +1178,31 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
  */
 void do_restart(dbref player, dbref cause, int key)
 {
+    BOOL bDenied = FALSE;
 #ifndef WIN32
     if (mudstate.dumping)
     {
         notify(player, "Dumping. Please try again later.");
-        return;
+        bDenied = TRUE;
     }
 #endif // WIN32
+    if (!mudstate.bCanRestart)
+    {
+        notify(player, "Server just started. Please try again in a few seconds.");
+        bDenied = TRUE;
+    }
+    if (bDenied)
+    {
+        STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
+        log_text("Restart requested but not executed by ");
+        log_name(player);
+        ENDLOG;
+        return;
+    }
     
     raw_broadcast(0, "Game: Restart by %s, please wait.", Name(Owner(player)));
     STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
-    log_text((char *)"Restart by ");
+    log_text("Restart by ");
     log_name(player);
     ENDLOG;
     
@@ -2047,7 +2061,7 @@ BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo)
 #ifdef STANDALONE
     abort();
 #else // STANDALONE
-    if (mudstate.initializing)
+    if (mudstate.bCanRestart)
     {
         abort();
     }
@@ -2069,7 +2083,7 @@ BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo)
 #ifdef STANDALONE
     abort();
 #else // STANDALONE
-    if (mudstate.initializing)
+    if (mudstate.bCanRestart)
     {
         abort();
     }

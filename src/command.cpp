@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.23 2000-10-07 06:31:38 sdennis Exp $
+// $Id: command.cpp,v 1.24 2000-10-10 23:06:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -771,7 +771,7 @@ int check_access(dbref player, int mask)
     {
         return 0;
     }
-    if (God(player) || mudstate.initializing)
+    if (God(player) || mudstate.bReadingConfiguration)
     {
         return 1;
     }

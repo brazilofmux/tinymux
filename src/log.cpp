@@ -2,7 +2,7 @@
  * log.c - logging routines 
  */
 /*
- * $Id: log.cpp,v 1.2 2000-04-29 08:05:38 sdennis Exp $ 
+ * $Id: log.cpp,v 1.3 2000-10-10 23:06:47 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -135,7 +135,7 @@ void log_perror(const char *primary, const char *secondary, const char *extra, c
  * * log_text, log_number: Write text or number to the log file.
  */
 
-void log_text(char *text)
+void log_text(const char *text)
 {
     Log.WriteString(strip_ansi(text));
 }

@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.31 2000-10-07 02:28:46 sdennis Exp $
+// $Id: externs.h,v 1.32 2000-10-10 23:06:47 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -110,7 +110,7 @@ extern int start_log(const char *primary, const char *secondary);
 extern void NDECL(end_log);
 extern void FDECL(log_perror, (const char *, const char *,const char *,
             const char *));
-extern void FDECL(log_text, (char *));
+extern void log_text(const char *);
 extern void FDECL(log_number, (int));
 extern void FDECL(log_name, (dbref));
 extern void FDECL(log_name_and_loc, (dbref));

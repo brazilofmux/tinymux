@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.2 2000-04-24 21:42:59 sdennis Exp $
+// $Id: timer.cpp,v 1.3 2000-10-10 23:06:47 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -175,6 +175,11 @@ void dispatch_CleanChannels(void *pUnused, int iUnused)
 }
 #endif
 
+void dispatch_CanRestart(void *pUnused, int iUnused)
+{
+    mudstate.bCanRestart = TRUE;
+}
+
 void init_timer(void)
 {
     CLinearTimeAbsolute ltaNow;
@@ -218,6 +223,11 @@ void init_timer(void)
     ltd.SetSeconds(45);
     scheduler.DeferTask(ltaNow+ltd, PRIORITY_SYSTEM, dispatch_CleanChannels, 0, 0);
 #endif
+
+    // Setup one-shot task to enable restarting 10 seconds after startmux.
+    //
+    ltd.SetSeconds(15);
+    scheduler.DeferTask(ltaNow+ltd, PRIORITY_OBJECT, dispatch_CanRestart, 0, 0);
 }
 
 /*

@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.10 2000-10-07 02:28:45 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.11 2000-10-10 23:06:47 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -299,8 +299,9 @@ struct statedata
 
     int record_players; /* The maximum # of player logged on */
 #ifndef STANDALONE
-    int initializing;   /* are we reading config file at startup? */
-    int panicking;  /* are we in the middle of dying horribly? */
+    int bReadingConfiguration;  // are we reading the config file at startup?
+    int bCanRestart;            // are we ready to even attempt a restart.
+    int panicking;              // are we in the middle of dying horribly?
 #if !defined(VMS) && !defined(WIN32)
     int restarting; /* Are we restarting? */
     int dumping;    /* Are we dumping? */

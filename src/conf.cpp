@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.24 2000-10-07 02:28:46 sdennis Exp $
+// $Id: conf.cpp,v 1.25 2000-10-10 23:06:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -262,7 +262,8 @@ void NDECL(cf_init)
     mudconf.cache_names = 1;
     mudconf.toad_recipient = -1;
     mudstate.events_flag = 0;
-    mudstate.initializing = 0;
+    mudstate.bReadingConfiguration = FALSE;
+    mudstate.bCanRestart = FALSE;
     mudstate.panicking = 0;
     mudstate.logging = 0;
     mudstate.epoch = 0;
@@ -374,7 +375,7 @@ void cf_log_notfound(dbref player, char *cmd, const char *thingname, char *thing
 {
     char buff[LBUF_SIZE * 2];
 
-    if (mudstate.initializing) 
+    if (mudstate.bReadingConfiguration) 
     {
         STARTLOG(LOG_STARTUP, "CNF", "NFND");
         sprintf(buff, "%s: %s %s not found", cmd, thingname, thing);
@@ -399,7 +400,7 @@ void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...)
 
     char *buf = alloc_lbuf("cf_log_syntax");
     Tiny_vsnprintf(buf, LBUF_SIZE, fmt, ap);
-    if (mudstate.initializing)
+    if (mudstate.bReadingConfiguration)
     {
         STARTLOG(LOG_STARTUP, "CNF", "SYNTX")
         log_text(cmd);
@@ -440,7 +441,7 @@ int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
 
     if (failure == 0)
     {
-        if (mudstate.initializing)
+        if (mudstate.bReadingConfiguration)
         {
             STARTLOG(LOG_STARTUP, "CNF", "NDATA")
             buff = alloc_lbuf("cf_status_from_succfail.LOG");
@@ -533,7 +534,7 @@ CF_HAND(cf_string)
     if (nStr >= extra)
     {
         nStr = extra - 1;
-        if (mudstate.initializing)
+        if (mudstate.bReadingConfiguration)
         {
             STARTLOG(LOG_STARTUP, "CNF", "NFND");
             char *buff = alloc_lbuf("cf_string.LOG");
@@ -580,7 +581,7 @@ CF_HAND(cf_string_dyn)
     if (extra && nStr >= extra)
     {                   
         nStr = extra - 1;
-        if (mudstate.initializing)
+        if (mudstate.bReadingConfiguration)
         {  
             STARTLOG(LOG_STARTUP, "CNF", "NFND");
             char *logbuff = alloc_lbuf("cf_string.LOG");
@@ -1043,7 +1044,7 @@ CF_HAND(cf_site)
     // processed as you would think they would be, while entries made while
     // running are processed first.
     //
-    if (mudstate.initializing)
+    if (mudstate.bReadingConfiguration)
     {
         if (head == NULL)
         {
@@ -1122,7 +1123,7 @@ CF_HAND(cf_include)
     extern int FDECL(cf_set, (char *, char *, dbref));
 
 
-    if (!mudstate.initializing)
+    if (!mudstate.bReadingConfiguration)
         return -1;
 
     fp = fopen(str, "rb");
@@ -1417,19 +1418,19 @@ int cf_set(char *cp, char *ap, dbref player)
     {
         if (!strcmp(tp->pname, cp))
         {
-            if (  !mudstate.initializing
+            if (  !mudstate.bReadingConfiguration
                && !check_access(player, tp->flags))
             {
                 notify(player, NOPERM_MESSAGE);
                 return -1;
             }
-            if (!mudstate.initializing)
+            if (!mudstate.bReadingConfiguration)
             {
                 buff = alloc_lbuf("cf_set");
                 strcpy(buff, ap);
             }
             i = tp->interpreter(tp->loc, ap, tp->extra, player, cp);
-            if (!mudstate.initializing)
+            if (!mudstate.bReadingConfiguration)
             {
                 STARTLOG(LOG_CONFIGMODS, "CFG", "UPDAT");
                 log_name(player);
@@ -1506,9 +1507,9 @@ int cf_read(void)
 {
     int retval;
 
-    mudstate.initializing = 1;
+    mudstate.bReadingConfiguration = TRUE;
     retval = cf_include(NULL, mudconf.config_file, 0, 0, (char *)"init");
-    mudstate.initializing = 0;
+    mudstate.bReadingConfiguration = FALSE;
 
     // Fill in missing DB file names.
     //

@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.15 2000-10-10 22:56:14 sdennis Exp $
+// $Id: bsd.cpp,v 1.16 2000-10-10 23:06:47 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2264,8 +2264,8 @@ void NDECL(emergency_shutdown)
 void log_signal(const char *signame)
 {
     STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
-    log_text((char *)"Caught signal ");
-    log_text((char *)signame);
+    log_text("Caught signal ");
+    log_text(signame);
     ENDLOG;
 }
 
@@ -2340,8 +2340,19 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
     {
 #ifndef WIN32
     case SIGUSR1:
-        log_signal(signames[sig]);
-        do_restart(1,1,0);
+        if (mudstate.bCanRestart)
+        {
+            log_signal(signames[sig]);
+            do_restart(1,1,0);
+        }
+        else
+        {
+            STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
+            log_text("Caught and ignored signal ");
+            log_text(signames[sig]);
+            log_text(" because server just came up.");
+            ENDLOG;
+        }
         break;
 
     case SIGUSR2:
@@ -2434,15 +2445,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         check_panicking(sig);
         log_signal(signames[sig]);
         report();
-#ifdef WIN32
         SYNC;
-        dump_database_internal(DUMP_I_RESTART);
-        CLOSE;
-        signal(sig, SIG_DFL);
-        WSACleanup();
-        exit(12345678);
-#else // !WIN32
-        if (mudconf.sig_action != SA_EXIT)
+        if (mudconf.sig_action != SA_EXIT && mudstate.bCanRestart)
         {
             raw_broadcast
             (  0,
@@ -2454,9 +2458,14 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             // between unamed attributes and named ones. We go with what we
             // got.
             //
-            SYNC;
             dump_database_internal(DUMP_I_RESTART);
             CLOSE;
+#ifdef WIN32
+            unset_signals();
+            signal(sig, SIG_DFL);
+            WSACleanup();
+            exit(12345678);
+#else // !WIN32
             shutdown(slave_socket, SD_BOTH);
             if (slave_pid > 0)
             {
@@ -2482,6 +2491,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             execl("bin/netmux", "netmux", mudconf.config_file, NULL);
 #endif
             break;
+#endif // WIN32
         }
         else
         {
@@ -2490,7 +2500,6 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             exit(1);
         }
         break;
-#endif // WIN32
 
     case SIGABRT:
     
