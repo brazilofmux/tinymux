@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.68 2002-02-14 20:29:12 sdennis Exp $
+// $Id: stringutil.cpp,v 1.69 2002-02-26 18:28:31 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2475,6 +2475,7 @@ char *Tiny_ftoa(double r, BOOL bRounded, int frac)
     {
         *q++ = '-';
     }
+    int nPad = ndigits - (nDigits - decpt);
     if (decpt == 9999)
     {
         // Inf or NaN
@@ -2485,6 +2486,13 @@ char *Tiny_ftoa(double r, BOOL bRounded, int frac)
     else if (nDigits <= 0)
     {
         *q++ = '0';
+        if (  bRounded
+           && 0 < nPad)
+        {
+            *q++ = '.';
+            memset(q, '0', nPad);
+            q += nPad;
+        }
     }
     else if (decpt <= -6 || 18 <= decpt)
     {
@@ -2508,6 +2516,12 @@ char *Tiny_ftoa(double r, BOOL bRounded, int frac)
         q += -decpt;
         memcpy(q, p, nDigits);
         q += nDigits;
+        if (  bRounded
+           && 0 < nPad)
+        {
+            memset(q, '0', nPad);
+            q += nPad;
+        }
     }
     else // 0 < decpt
     {
@@ -2517,6 +2531,13 @@ char *Tiny_ftoa(double r, BOOL bRounded, int frac)
             q += nDigits;
             memset(q, '0', decpt-nDigits);
             q += decpt-nDigits;
+            if (  bRounded
+               && 0 < nPad)
+            {
+                *q++ = '.';
+                memset(q, '0', nPad);
+                q += nPad;
+            }
         }
         else
         {
@@ -2526,6 +2547,12 @@ char *Tiny_ftoa(double r, BOOL bRounded, int frac)
             *q++ = '.';
             memcpy(q, p, nDigits-decpt);
             q += nDigits-decpt;
+            if (  bRounded
+               && 0 < nPad)
+            {
+                memset(q, '0', nPad);
+                q += nPad;
+            }
         }
     }
     *q = '\0';
