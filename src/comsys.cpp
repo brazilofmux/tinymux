@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.56 2001-09-24 02:41:55 sdennis Exp $
+// * $Id: comsys.cpp,v 1.57 2001-09-28 00:08:05 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1021,11 +1021,11 @@ void SendChannelMessage
                || bSpoof
                || msgNoComtitle == NULL)
             {
-                notify_with_cause(user->who, player, msgNormal);
+                notify_with_cause_ooc(user->who, player, msgNormal);
             }
             else
             {
-                notify_with_cause(user->who, player, msgNoComtitle);
+                notify_with_cause_ooc(user->who, player, msgNoComtitle);
             }
         }
     }
