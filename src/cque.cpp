@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.34 2002-03-02 08:04:59 sdennis Exp $
+// $Id: cque.cpp,v 1.35 2003-11-30 23:08:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -932,9 +932,14 @@ void do_wait
                     }
                     ap = atr_num(attr);
                 }
+                else
+                {
+                    attr = ap->number;
+                }
+
                 dbref aowner;
                 int   aflags;
-                atr_pget_info(thing, ap->number, &aowner, &aflags);
+                atr_pget_info(thing, attr, &aowner, &aflags);
                 if (!Set_attr(player, thing, ap, aflags))
                 {
                     notify_quiet(player, NOPERM_MESSAGE);
