@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.24 2002-07-18 23:14:48 sdennis Exp $
+// $Id: comsys.cpp,v 1.25 2002-07-18 23:57:53 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -928,14 +928,14 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         do_comwho(player, ch);
     }
     else if (  !strncmp(arg2, "last", 4)
-            && (  arg2[4] == ' '
-               || arg2[4] == '\0'))
+            && (  arg2[4] == '\0'
+               || (  arg2[4] == ' '
+                  && is_integer(arg2 + 5, NULL))))
     {
         // Parse optional number after the 'last' command.
         //
         int nRecall = DFLT_RECALL_REQUEST;
-        if (  arg2[4] == ' '
-           && is_integer(arg2 + 5, NULL))
+        if (arg2[4] == ' ')
         {
             nRecall = Tiny_atol(arg2 + 5);
         }
