@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.5 2002-09-23 14:48:57 sdennis Exp $
+// $Id: alloc.cpp,v 1.6 2002-09-23 15:28:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -44,6 +44,7 @@ typedef struct pool_footer
 typedef struct pooldata
 {
     int pool_size;                  // Size in bytes of a buffer
+    unsigned int poolmagic;         // Magic number specific to this pool
     POOLHDR *free_head;             // Buffer freelist head
     POOLHDR *chain_head;            // Buffer chain head
     int tot_alloc;                  // Total buffers allocated
@@ -58,11 +59,10 @@ const char *poolnames[] =
     "Lbufs", "Sbufs", "Mbufs", "Bools", "Descs", "Qentries", "Pcaches"
 };
 
-#define POOL_MAGICNUM 0xdeadbeefU
-
 void pool_init(int poolnum, int poolsize)
 {
     pools[poolnum].pool_size = poolsize;
+    pools[poolnum].poolmagic = CRC32_ProcessInteger2(poolnum, poolsize);
     pools[poolnum].free_head = NULL;
     pools[poolnum].chain_head = NULL;
     pools[poolnum].tot_alloc = 0;
@@ -113,7 +113,7 @@ static void pool_vfy(int poolnum, const char *tag)
         h += pools[poolnum].pool_size;
         pf = (POOLFTR *) h;
 
-        if (ph->magicnum != POOL_MAGICNUM)
+        if (ph->magicnum != pools[poolnum].poolmagic)
         {
             pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph, "Verify",
                      "header corrupted (clearing freelist)");
@@ -136,11 +136,11 @@ static void pool_vfy(int poolnum, const char *tag)
             //
             return;
         }
-        if (pf->magicnum != POOL_MAGICNUM)
+        if (pf->magicnum != pools[poolnum].poolmagic)
         {
-            pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph,
-                 "Verify", "footer corrupted");
-            pf->magicnum = POOL_MAGICNUM;
+            pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph, "Verify",
+                "footer corrupted");
+            pf->magicnum = pools[poolnum].poolmagic;
         }
         if (ph->pool_size != psize)
         {
@@ -170,7 +170,7 @@ char *pool_alloc(int poolnum, const char *tag)
     POOLFTR *pf;
     POOLHDR *ph = (POOLHDR *)pools[poolnum].free_head;
     if (  ph
-       && ph->magicnum == POOL_MAGICNUM)
+       && ph->magicnum == pools[poolnum].poolmagic)
     {
         p = (char *)(ph + 1);
         pf = (POOLFTR *)(p + pools[poolnum].pool_size);
@@ -178,11 +178,11 @@ char *pool_alloc(int poolnum, const char *tag)
 
         // Check for corrupted footer, just report and fix it.
         //
-        if (pf->magicnum != POOL_MAGICNUM)
+        if (pf->magicnum != pools[poolnum].poolmagic)
         {
             pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph, "Alloc",
                 "corrupted buffer footer");
-            pf->magicnum = POOL_MAGICNUM;
+            pf->magicnum = pools[poolnum].poolmagic;
         }
     }
     else
@@ -212,10 +212,10 @@ char *pool_alloc(int poolnum, const char *tag)
         //
         ph->next = pools[poolnum].chain_head;
         ph->nxtfree = NULL;
-        ph->magicnum = POOL_MAGICNUM;
+        ph->magicnum = pools[poolnum].poolmagic;
         ph->pool_size = pools[poolnum].pool_size;
-        pf->magicnum = POOL_MAGICNUM;
-        *((unsigned int *)p) = POOL_MAGICNUM;
+        pf->magicnum = pools[poolnum].poolmagic;
+        *((unsigned int *)p) = pools[poolnum].poolmagic;
         pools[poolnum].chain_head = ph;
         pools[poolnum].max_alloc++;
     }
@@ -236,7 +236,7 @@ char *pool_alloc(int poolnum, const char *tag)
     // If the buffer was modified after it was last freed, log it.
     //
     unsigned int *pui = (unsigned int *)p;
-    if (*pui != POOL_MAGICNUM)
+    if (*pui != pools[poolnum].poolmagic)
     {
         pool_err("BUG", LOG_PROBLEMS, poolnum, tag, ph, "Alloc",
             "buffer modified after free");
@@ -256,7 +256,7 @@ char *pool_alloc_lbuf(const char *tag)
     POOLFTR *pf;
     POOLHDR *ph = (POOLHDR *)pools[POOL_LBUF].free_head;
     if (  ph
-       && ph->magicnum == POOL_MAGICNUM)
+       && ph->magicnum == pools[POOL_LBUF].poolmagic)
     {
         p = (char *)(ph + 1);
         pf = (POOLFTR *)(p + LBUF_SIZE);
@@ -264,11 +264,11 @@ char *pool_alloc_lbuf(const char *tag)
 
         // Check for corrupted footer, just report and fix it.
         //
-        if (pf->magicnum != POOL_MAGICNUM)
+        if (pf->magicnum != pools[POOL_LBUF].poolmagic)
         {
             pool_err("BUG", LOG_ALWAYS, POOL_LBUF, tag, ph, "Alloc",
                 "corrupted buffer footer");
-            pf->magicnum = POOL_MAGICNUM;
+            pf->magicnum = pools[POOL_LBUF].poolmagic;
         }
     }
     else
@@ -298,10 +298,10 @@ char *pool_alloc_lbuf(const char *tag)
         //
         ph->next = pools[POOL_LBUF].chain_head;
         ph->nxtfree = NULL;
-        ph->magicnum = POOL_MAGICNUM;
+        ph->magicnum = pools[POOL_LBUF].poolmagic;
         ph->pool_size = LBUF_SIZE;
-        pf->magicnum = POOL_MAGICNUM;
-        *((unsigned int *)p) = POOL_MAGICNUM;
+        pf->magicnum = pools[POOL_LBUF].poolmagic;
+        *((unsigned int *)p) = pools[POOL_LBUF].poolmagic;
         pools[POOL_LBUF].chain_head = ph;
         pools[POOL_LBUF].max_alloc++;
     }
@@ -322,7 +322,7 @@ char *pool_alloc_lbuf(const char *tag)
     // If the buffer was modified after it was last freed, log it.
     //
     unsigned int *pui = (unsigned int *)p;
-    if (*pui != POOL_MAGICNUM)
+    if (*pui != pools[POOL_LBUF].poolmagic)
     {
         pool_err("BUG", LOG_PROBLEMS, POOL_LBUF, tag, ph, "Alloc",
             "buffer modified after free");
@@ -352,7 +352,7 @@ void pool_free(int poolnum, char *buf)
     // Make sure the buffer header is good.  If it isn't, log the error and
     // throw away the buffer.
     //
-    if (ph->magicnum != POOL_MAGICNUM)
+    if (ph->magicnum != pools[poolnum].poolmagic)
     {
         pool_err("BUG", LOG_ALWAYS, poolnum, ph->buf_tag, ph, "Free",
                  "corrupted buffer header");
@@ -364,11 +364,11 @@ void pool_free(int poolnum, char *buf)
 
     // Verify the buffer footer.  Don't unlink if damaged, just repair.
     //
-    if (pf->magicnum != POOL_MAGICNUM)
+    if (pf->magicnum != pools[poolnum].poolmagic)
     {
         pool_err("BUG", LOG_ALWAYS, poolnum, ph->buf_tag, ph, "Free",
              "corrupted buffer footer");
-        pf->magicnum = POOL_MAGICNUM;
+        pf->magicnum = pools[poolnum].poolmagic;
     }
 
     // Verify that we are not trying to free someone else's buffer.
@@ -393,14 +393,14 @@ void pool_free(int poolnum, char *buf)
     // Make sure we aren't freeing an already free buffer.  If we are, log an
     // error, otherwise update the pool header and stats.
     //
-    if (*pui == POOL_MAGICNUM)
+    if (*pui == pools[poolnum].poolmagic)
     {
         pool_err("BUG", LOG_BUGS, poolnum, ph->buf_tag, ph, "Free",
                  "buffer already freed");
     }
     else
     {
-        *pui = POOL_MAGICNUM;
+        *pui = pools[poolnum].poolmagic;
         ph->nxtfree = pools[poolnum].free_head;
         pools[poolnum].free_head = ph;
         pools[poolnum].num_alloc--;
@@ -425,12 +425,12 @@ void pool_free_lbuf(char *buf)
         pool_check(ph->buf_tag);
     }
 
-    if (  ph->magicnum != POOL_MAGICNUM
-       || pf->magicnum != POOL_MAGICNUM
+    if (  ph->magicnum != pools[POOL_LBUF].poolmagic
+       || pf->magicnum != pools[POOL_LBUF].poolmagic
        || ph->pool_size != LBUF_SIZE
-       || *pui == POOL_MAGICNUM)
+       || *pui == pools[POOL_LBUF].poolmagic)
     {
-        if (ph->magicnum != POOL_MAGICNUM)
+        if (ph->magicnum != pools[POOL_LBUF].poolmagic)
         {
             // The buffer header is damaged. Log the error and throw away the
             // buffer.
@@ -442,13 +442,13 @@ void pool_free_lbuf(char *buf)
             pools[POOL_LBUF].tot_alloc--;
             return;
         }
-        else if (pf->magicnum != POOL_MAGICNUM)
+        else if (pf->magicnum != pools[POOL_LBUF].poolmagic)
         {
             // The buffer footer is damaged.  Don't unlink, just repair.
             //
             pool_err("BUG", LOG_ALWAYS, POOL_LBUF, ph->buf_tag, ph, "Free",
                 "corrupted buffer footer");
-            pf->magicnum = POOL_MAGICNUM;
+            pf->magicnum = pools[POOL_LBUF].poolmagic;
         }
         else if (ph->pool_size != LBUF_SIZE)
         {
@@ -461,7 +461,7 @@ void pool_free_lbuf(char *buf)
 
         // If we are freeing a buffer that was already free, report an error.
         //
-        if (*pui == POOL_MAGICNUM)
+        if (*pui == pools[POOL_LBUF].poolmagic)
         {
             pool_err("BUG", LOG_BUGS, POOL_LBUF, ph->buf_tag, ph, "Free",
                      "buffer already freed");
@@ -480,7 +480,7 @@ void pool_free_lbuf(char *buf)
 
     // Update the pool header and stats.
     //
-    *pui = POOL_MAGICNUM;
+    *pui = pools[POOL_LBUF].poolmagic;
     ph->nxtfree = pools[POOL_LBUF].free_head;
     pools[POOL_LBUF].free_head = ph;
     pools[POOL_LBUF].num_alloc--;
@@ -502,7 +502,7 @@ static void pool_trace(dbref player, int poolnum, const char *text)
     notify(player, tprintf("----- %s -----", text));
     for (ph = pools[poolnum].chain_head; ph != NULL; ph = ph->next)
     {
-        if (ph->magicnum != POOL_MAGICNUM)
+        if (ph->magicnum != pools[poolnum].poolmagic)
         {
             notify(player, "*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***");
             notify(player, tprintf("%d free %s (before corruption)",
@@ -512,7 +512,7 @@ static void pool_trace(dbref player, int poolnum, const char *text)
         char *h = (char *)ph;
         h += sizeof(POOLHDR);
         unsigned int *ibuf = (unsigned int *)h;
-        if (*ibuf != POOL_MAGICNUM)
+        if (*ibuf != pools[poolnum].poolmagic)
         {
             notify(player, ph->buf_tag);
         }
@@ -565,7 +565,7 @@ void pool_reset(void)
             phnext = ph->next;
             h += sizeof(POOLHDR);
             unsigned int *ibuf = (unsigned int *)h;
-            if (*ibuf == POOL_MAGICNUM)
+            if (*ibuf == pools[i].poolmagic)
             {
                 MEMFREE(ph);
                 ph = NULL;
