@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.121 2002-10-13 00:07:29 sdennis Exp $
+// $Id: functions.cpp,v 1.122 2002-11-12 06:26:14 jake Exp $
 //
 
 #include "copyright.h"
@@ -8879,7 +8879,7 @@ void GeneralTimeConversion
     *p++ = '\0';
 }
 
-// These buffers is used by:
+// These buffers are used by:
 //
 //     time_format_1 (23 bytes) uses TimeBuffer80,
 //     time_format_2 (17 bytes) uses TimeBuffer64,
