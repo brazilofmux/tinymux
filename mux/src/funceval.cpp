@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.57 2004-04-28 19:38:12 sdennis Exp $
+// $Id: funceval.cpp,v 1.58 2004-04-30 16:54:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2040,6 +2040,12 @@ FUNCTION(fun_shuffle)
         return;
     }
 
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(3, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
     char *words[LBUF_SIZE];
     int n, i, j;
 
@@ -2055,7 +2061,7 @@ FUNCTION(fun_shuffle)
         words[i] = words[j];
         words[j] = temp;
     }
-    arr2list(words, n, buff, bufc, &sep);
+    arr2list(words, n, buff, bufc, &osep);
 }
 
 // pickrand -- choose a random item from a list.
@@ -2219,6 +2225,12 @@ FUNCTION(fun_sortby)
         return;
     }
 
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
     char *atext;
     dbref thing;
     if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
@@ -2241,7 +2253,7 @@ FUNCTION(fun_sortby)
         sane_qsort((void **)ptrs, 0, nptrs - 1, u_comp);
     }
 
-    arr2list(ptrs, nptrs, buff, bufc, &sep);
+    arr2list(ptrs, nptrs, buff, bufc, &osep);
     free_lbuf(list);
     free_lbuf(atext);
 }

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.93 2004-04-20 18:38:55 sdennis Exp $
+// $Id: functions.cpp,v 1.94 2004-04-30 16:54:20 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -9712,12 +9712,12 @@ FUN flist[] =
     {"SHA1",        fun_sha1,             1, 0,       1,         0, CA_PUBLIC},
     {"SHL",         fun_shl,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SHR",         fun_shr,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"SHUFFLE",     fun_shuffle,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {"SHUFFLE",     fun_shuffle,    MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {"SIGN",        fun_sign,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SIN",         fun_sin,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"SINGLETIME",  fun_singletime, MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SORT",        fun_sort,       MAX_ARG, 1,       4,         0, CA_PUBLIC},
-    {"SORTBY",      fun_sortby,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {"SORTBY",      fun_sortby,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"SPACE",       fun_space,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"SPELLNUM",    fun_spellnum,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SPLICE",      fun_splice,     MAX_ARG, 3,       4,         0, CA_PUBLIC},
