@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.7 2003-01-05 18:08:22 sdennis Exp $
+// $Id: htab.cpp,v 1.8 2003-01-05 19:13:02 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -34,9 +34,13 @@ static struct
  * * hash data.
  */
 
-int *hashfindLEN(void *str, int nStr, CHashTable *htab)
+int *hashfindLEN(const void *str, int nStr, CHashTable *htab)
 {
-    if (str == NULL || nStr <= 0) return NULL;
+    if (  str == NULL
+       || nStr <= 0)
+    {
+        return NULL;
+    }
 
     UINT32 nHash = HASH_ProcessBuffer(0, str, nStr);
 
@@ -63,12 +67,13 @@ int *hashfindLEN(void *str, int nStr, CHashTable *htab)
  * * hashaddLEN: Add a new entry to a hash table.
  */
 
-int hashaddLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
+int hashaddLEN(const void *str, int nStr, int *hashdata, CHashTable *htab)
 {
     // Make sure that the entry isn't already in the hash table.  If it
     // is, exit with an error.
     //
-    if (str == NULL || nStr <= 0)
+    if (  str == NULL
+       || nStr <= 0)
     {
         return -1;
     }
@@ -103,9 +108,13 @@ int hashaddLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
  * * hashdelete: Remove an entry from a hash table.
  */
 
-void hashdeleteLEN(void *str, int nStr, CHashTable *htab)
+void hashdeleteLEN(const void *str, int nStr, CHashTable *htab)
 {
-    if (str == NULL || nStr <= 0) return;
+    if (  str == NULL
+       || nStr <= 0)
+    {
+        return;
+    }
 
     UINT32 nHash = HASH_ProcessBuffer(0, str, nStr);
 
@@ -139,9 +148,10 @@ void hashflush(CHashTable *htab)
  * * hashreplLEN: replace the data part of a hash entry.
  */
 
-BOOL hashreplLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
+BOOL hashreplLEN(const void *str, int nStr, int *hashdata, CHashTable *htab)
 {
-    if (str == NULL || nStr <= 0)
+    if (  str == NULL
+       || nStr <= 0)
     {
         return FALSE;
     }
@@ -155,7 +165,8 @@ BOOL hashreplLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
         htab->Copy(iDir, &nRecord, &htab_rec);
         int nTarget = nRecord - sizeof(int *);
 
-        if (nTarget == nStr && memcmp(str, htab_rec.aTarget, nStr) == 0)
+        if (  nTarget == nStr
+           && memcmp(str, htab_rec.aTarget, nStr) == 0)
         {
             htab_rec.hashdata = hashdata;
             htab->Update(iDir, nRecord, &htab_rec);
@@ -169,7 +180,9 @@ BOOL hashreplLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
 void hashreplall(int *old, int *new0, CHashTable *htab)
 {
     HP_HEAPLENGTH nRecord;
-    for (HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec); iDir != HF_FIND_END; iDir = htab->FindNext(&nRecord, &htab_rec))
+    for (  HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec);
+           iDir != HF_FIND_END;
+           iDir = htab->FindNext(&nRecord, &htab_rec))
     {
         if (htab_rec.hashdata == old)
         {
