@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.53 2001-06-14 09:22:16 sdennis Exp $
+// $Id: externs.h,v 1.54 2001-06-27 20:45:00 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -31,6 +31,7 @@ extern struct mail *FDECL(mail_fetch, (dbref, int));
 
 /* From netcommon.cpp */
 extern void make_ulist(dbref, char *, char **);
+extern void make_port_ulist(dbref, char *, char **);
 extern int fetch_session(dbref target);
 extern int fetch_idle(dbref target);
 extern int fetch_connect(dbref target);
@@ -109,6 +110,11 @@ extern void helpindex_init(void);
 extern int  cf_ntab_access(int *, char *, void *, UINT32, dbref, char *);
 
 /* From log.cpp */
+#ifdef WIN32
+#define ENDLINE "\r\n"
+#else
+#define ENDLINE "\n"
+#endif
 extern int start_log(const char *primary, const char *secondary);
 extern void NDECL(end_log);
 extern void FDECL(log_perror, (const char *, const char *,const char *,
@@ -134,7 +140,6 @@ extern void FDECL(move_exit, (dbref, dbref, int, const char *, int));
 extern void FDECL(do_enter_internal, (dbref, dbref, int));
 
 /* From object.cpp */
-extern dbref    NDECL(start_home);
 extern dbref    NDECL(default_home);
 extern int  FDECL(can_set_home, (dbref, dbref, dbref));
 extern dbref    FDECL(new_home, (dbref));
@@ -378,6 +383,7 @@ extern void ReleaseAllResources(dbref obj);
 #define DOING_MESSAGE   0   /* Set my DOING message */
 #define DOING_HEADER    1   /* Set the DOING header */
 #define DOING_POLL      2   /* List DOING header */
+#define DOING_UNIQUE    3   // Set DOING message for current port only
 #define DROP_QUIET      1   /* Don't do odrop/adrop if control */
 #define DUMP_STRUCT     1   /* Dump flat structure file */
 #define DUMP_TEXT       2   /* Dump text (gdbm) file */
@@ -567,7 +573,7 @@ extern void ReleaseAllResources(dbref obj);
 #define TWARP_DUMP  2   /* Warp the dump interval */
 #define TWARP_CLEAN 4   /* Warp the cleaning interval */
 #define TWARP_IDLE  8   /* Warp the idle check interval */
-/* emprty       16 */
+/* empty       16 */
 #define TWARP_EVENTS    32  /* Warp the events checking interval */
 #define WAIT_UNTIL  1   // Absolute UTC seconds instead of delta.
 
@@ -608,7 +614,7 @@ extern void ReleaseAllResources(dbref obj);
 
 /* Message forwarding directives */
 
-#define MSG_PUP_ALWAYS  0x00000001UL    /* Always forward msg to puppet own */
+#define MSG_PUP_ALWAYS  0x00000001UL    /* Always forward msg to puppet owner */
 #define MSG_INV         0x00000002UL    /* Forward msg to contents */
 #define MSG_INV_L       0x00000004UL    /* ... only if msg passes my @listen */
 #define MSG_INV_EXITS   0x00000008UL    /* Forward through my audible exits */
@@ -624,7 +630,7 @@ extern void ReleaseAllResources(dbref obj);
 #define MSG_S_OUTSIDE   0x00002000UL    /* Originator is outside target */
 #define MSG_HTML        0x00004000UL    /* Don't send \r\n */
 #define MSG_OOC         0x00008000UL    /* Overide visibility rules because it's OOC */
-#define MSG_SAYPOSE     0x00010000UL    /* Indicates that the message is speach. */
+#define MSG_SAYPOSE     0x00010000UL    /* Indicates that the message is speech. */
 
 #define MSG_ME_ALL  (MSG_ME|MSG_INV_EXITS|MSG_FWDLIST)
 #define MSG_F_CONTENTS  (MSG_INV)

@@ -1,6 +1,6 @@
 // alloc.cpp - Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.7 2001-06-27 17:20:42 sdennis Exp $
+// $Id: alloc.cpp,v 1.8 2001-06-27 20:45:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -75,19 +75,31 @@ void pool_init(int poolnum, int poolsize)
     pools[poolnum].num_lost = 0;
 }
 
-static void pool_err(const char *logsys, int logflag, int poolnum, const char *tag, POOLHDR *ph, const char *action, const char *reason)
+static void pool_err
+(
+    const char *logsys,
+    int         logflag,
+    int         poolnum,
+    const char *tag,
+    POOLHDR    *ph,
+    const char *action,
+    const char *reason
+)
 {
     char buffer[2*LBUF_SIZE];
     if (!mudstate.logging)
     {
         STARTLOG(logflag, logsys, "ALLOC");
-        sprintf(buffer, "%s[%d] (tag %s) %s at %lx. (%s)", action, pools[poolnum].pool_size, tag, reason, (long)ph, mudstate.debug_cmd);
+        sprintf(buffer, "%s[%d] (tag %s) %s at %lx. (%s)", action,
+            pools[poolnum].pool_size, tag, reason, (long)ph,
+            mudstate.debug_cmd);
         log_text(buffer);
         ENDLOG;
     }
     else if (logflag != LOG_ALLOCATE)
     {
-        sprintf(buffer, "\n***< %s[%d] (tag %s) %s at %lx. >***", action, pools[poolnum].pool_size, tag, reason, (long)ph);
+        sprintf(buffer, ENDLINE "***< %s[%d] (tag %s) %s at %lx. >***",
+            action, pools[poolnum].pool_size, tag, reason, (long)ph);
         log_text(buffer);
     }
 }
