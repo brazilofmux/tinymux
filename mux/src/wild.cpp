@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.4 2002-07-25 13:17:48 jake Exp $
+// $Id: wild.cpp,v 1.5 2002-08-21 00:20:09 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -18,8 +18,8 @@
 #include "config.h"
 #include "externs.h"
 
-#define EQUAL(a,b) ((a == b) || (Tiny_ToLower[(unsigned char)a] == Tiny_ToLower[(unsigned char)b]))
-#define NOTEQUAL(a,b) ((a != b) && (Tiny_ToLower[(unsigned char)a] != Tiny_ToLower[(unsigned char)b]))
+#define EQUAL(a,b) (Tiny_ToLower[(unsigned char)a] == Tiny_ToLower[(unsigned char)b])
+#define NOTEQUAL(a,b) (Tiny_ToLower[(unsigned char)a] != Tiny_ToLower[(unsigned char)b])
 
 // Argument return space and size.
 //
@@ -88,7 +88,8 @@ BOOL quick_wild(char *tstr, const char *dstr)
 
     // Skip over wildcards.
     //
-    while ((*tstr == '?') || (*tstr == '*'))
+    while (  *tstr == '?'
+          || *tstr == '*')
     {
         if (*tstr == '?')
         {
@@ -275,7 +276,7 @@ BOOL wild1(char *tstr, char *dstr, int arg)
     // Check for possible matches.  This loop terminates either at end of data
     // (resulting in failure), or at a successful match.
     //
-    while (1)
+    while (TRUE)
     {
         // Scan forward until first character matches.
         //
@@ -345,8 +346,6 @@ BOOL wild1(char *tstr, char *dstr, int arg)
 //
 // This routine will cause crashes if fed NULLs instead of strings.
 //
-// This function may crash if alloc_lbuf() fails.
-//
 // Side Effect: this routine modifies the 'arglist' and 'numargs' static
 // global variables.
 //
@@ -364,7 +363,8 @@ BOOL wild(char *tstr, char *dstr, char *args[], int nargs)
 
     // Do fast match.
     //
-    while ((*tstr != '*') && (*tstr != '?'))
+    while (  *tstr != '*'
+          && *tstr != '?')
     {
         if (*tstr == '\\')
         {
@@ -386,7 +386,8 @@ BOOL wild(char *tstr, char *dstr, char *args[], int nargs)
     //
     i = 0;
     scan = tstr;
-    while (*scan && (i < nargs))
+    while (  *scan
+          && i < nargs)
     {
         switch (*scan)
         {
@@ -417,7 +418,9 @@ BOOL wild(char *tstr, char *dstr, char *args[], int nargs)
     //
     for (i = 0; i < nargs; i++)
     {
-        if ((args[i] != NULL) && (!*args[i] || !value))
+        if (  args[i] != NULL
+           && (  !*args[i]
+              || !value))
         {
             free_lbuf(args[i]);
             args[i] = NULL;
@@ -432,14 +435,15 @@ BOOL wild(char *tstr, char *dstr, char *args[], int nargs)
 //
 // This routine will cause crashes if fed NULLs instead of strings.
 //
-BOOL wild_match(char *tstr, char *dstr)
+BOOL wild_match(char *tstr, const char *dstr)
 {
     switch (*tstr)
     {
     case '>':
 
         tstr++;
-        if (Tiny_IsDigit[(unsigned char)*tstr] || (*tstr == '-'))
+        if (  Tiny_IsDigit[(unsigned char)*tstr]
+           || *tstr == '-')
         {
             return (Tiny_atol(tstr) < Tiny_atol(dstr));
         }
@@ -451,7 +455,8 @@ BOOL wild_match(char *tstr, char *dstr)
     case '<':
 
         tstr++;
-        if (Tiny_IsDigit[(unsigned char)*tstr] || (*tstr == '-'))
+        if (  Tiny_IsDigit[(unsigned char)*tstr]
+           || *tstr == '-')
         {
             return (Tiny_atol(tstr) > Tiny_atol(dstr));
         }
@@ -460,6 +465,5 @@ BOOL wild_match(char *tstr, char *dstr)
             return (strcmp(tstr, dstr) > 0);
         }
     }
-
     return quick_wild(tstr, dstr);
 }

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.44 2002-08-08 04:28:47 sdennis Exp $
+// $Id: externs.h,v 1.45 2002-08-21 00:20:38 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -235,7 +235,7 @@ extern dbref olist_next(void);
 
 /* From wild.cpp */
 extern BOOL wild(char *, char *, char *[], int);
-extern BOOL wild_match(char *, char *);
+extern BOOL wild_match(char *, const char *);
 extern BOOL quick_wild(char *, const char *);
 
 /* From command.cpp */
