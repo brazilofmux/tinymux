@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.53 2001-08-24 20:55:18 sdennis Exp $
+// $Id: externs.h,v 1.54 2001-09-09 02:32:04 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -219,6 +219,15 @@ extern char *next_token(char *str, char sep);
 extern char *next_token_LEN(char *str, int *nStr, char sep);
 extern char *split_token_LEN(char **sp, int *nStr, char sep, int *nToken);
 extern char *split_token(char **sp, char sep);
+
+#ifdef HAVE_IEEE_FP_FORMAT
+#define IEEE_MAKE_NAN  1
+#define IEEE_MAKE_IND  2
+#define IEEE_MAKE_PINF 3
+#define IEEE_MAKE_NINF 4
+
+double MakeSpecialFloat(int iWhich);
+#endif
 
 /* From unparse.cpp */
 extern char *   FDECL(unparse_boolexp, (dbref, BOOLEXP *));
