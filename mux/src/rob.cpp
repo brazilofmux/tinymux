@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.2 2003-02-03 06:01:48 sdennis Exp $
+// $Id: rob.cpp,v 1.3 2004-06-10 15:28:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -53,9 +53,9 @@ void do_kill
             break;
         }
         if (  (  Haven(Location(victim))
-              && !Wizard(executor)) 
-           || (  Controls(victim, Location(victim)) 
-              && !Controls(executor, Location(victim))) 
+              && !Wizard(executor))
+           || (  Controls(victim, Location(victim))
+              && !Controls(executor, Location(victim)))
            || Unkillable(victim))
         {
             notify(executor, "Sorry.");
@@ -300,7 +300,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     //
     if (!payfor(giver, amount))
     {
-        notify(giver, tprintf("You don't have that many %s to give!", 
+        notify(giver, tprintf("You don't have that many %s to give!",
             mudconf.many_coins));
         return;
     }

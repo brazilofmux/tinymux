@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.24 2004-05-20 04:31:19 sdennis Exp $
+// $Id: set.cpp,v 1.25 2004-06-10 15:28:43 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -881,7 +881,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     ATTR *attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (  attr
-       && bCanSetAttr(player, thing, attr)) 
+       && bCanSetAttr(player, thing, attr))
     {
         bool could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
@@ -892,8 +892,8 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
         {
             notify_quiet(player, "Set.");
         }
-    } 
-    else 
+    }
+    else
     {
         notify_quiet(player, NOPERM_MESSAGE);
     }
@@ -924,7 +924,7 @@ void do_set
         {
             // You must specify a flag name.
             //
-            if (  !flagname 
+            if (  !flagname
                || flagname[0] == '\0')
             {
                 notify_quiet(executor, "I don't know what you want to set!");

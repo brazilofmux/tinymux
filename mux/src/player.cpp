@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.21 2004-06-10 14:47:45 sdennis Exp $
+// $Id: player.cpp,v 1.22 2004-06-10 15:28:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -225,7 +225,7 @@ void EncodeBase64(size_t nIn, const char *pIn, char *pOut)
         q += 4;
         p += 3;
     }
-    
+
     switch (nLeftover)
     {
     case 1:
@@ -373,7 +373,7 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
         // we assume a fixed salt of 'XX'.  If you have been using a different
         // salt, or if you need to generate a DES-encrypted password, the
         // following code won't work.
-        //        
+        //
         size_t nSetting = strlen(szSetting);
         if (  nSetting == 13
            && memcmp(szSetting, "XX", 2) == 0)

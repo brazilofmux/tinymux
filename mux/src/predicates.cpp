@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.52 2004-05-20 04:31:19 sdennis Exp $
+// $Id: predicates.cpp,v 1.53 2004-06-10 15:28:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -249,7 +249,7 @@ bool payfor(dbref who, int cost)
 {
     if (  Wizard(who)
        || Wizard(Owner(who))
-       || Free_Money(who) 
+       || Free_Money(who)
        || Free_Money(Owner(who)))
     {
         return true;
@@ -1610,8 +1610,8 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, bool 
         // If we don't control it and it is either dark or opaque, skip past.
         //
         bool control = Controls(player, result1);
-        if (  (  Dark(result1) 
-              || Opaque(result1)) 
+        if (  (  Dark(result1)
+              || Opaque(result1))
            && !control)
         {
             dflt = promote_dflt(dflt, NOTHING);
@@ -2010,7 +2010,7 @@ bool locatable(dbref player, dbref it, dbref enactor)
     if (  Examinable(player, it)
        || Find_Unfindable(player)
        || loc_it == player
-       || (  loc_it != NOTHING 
+       || (  loc_it != NOTHING
           && (  Examinable(player, loc_it)
              || loc_it == where_is(player)))
        || Wizard(enactor)
@@ -2449,7 +2449,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int key,
         }
         if (  !ap
            || !bCanReadAttr(executor, victim, ap, false)
-           || (  ap->number == A_DESC 
+           || (  ap->number == A_DESC
               && !mudconf.read_rem_desc
               && !Examinable(executor, victim)
               && !nearby(executor, victim)))

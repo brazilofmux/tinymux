@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.8 2004-06-04 23:10:57 sdennis Exp $
+// $Id: powers.cpp,v 1.9 2004-06-10 15:28:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -317,7 +317,7 @@ char *powers_list(dbref player, dbref target)
 {
     // Allocate the return buffer.
     //
-    char *buff = alloc_lbuf("powers_list"); 
+    char *buff = alloc_lbuf("powers_list");
     char *bp = buff;
 
     bool bFirst = true;
