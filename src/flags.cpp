@@ -2,7 +2,7 @@
  * flags.c - flag manipulation routines 
  */
 /*
- * $Id: flags.cpp,v 1.2 2000-04-11 09:15:54 sdennis Exp $ 
+ * $Id: flags.cpp,v 1.3 2000-05-19 17:18:42 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -646,7 +646,9 @@ char *flag_description(dbref player, dbref target)
             fv = Flags2(target);
         else
             fv = Flags(target);
-        if (fv & fp->flagvalue) {
+
+        if (fv & fp->flagvalue) 
+        {
             if ((fp->listperm & CA_WIZARD) && !Wizard(player))
                 continue;
             if ((fp->listperm & CA_GOD) && !God(player))
