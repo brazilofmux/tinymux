@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.9 2002-06-13 19:56:40 jake Exp $
+// $Id: object.cpp,v 1.10 2002-06-13 20:13:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -18,6 +18,7 @@
 #include "mguests.h"
 
 #define IS_CLEAN(i) (IS(i, TYPE_GARBAGE, GOING) && \
+             ((i) >= 0) && ((i) < mudstate.db_top) && \
              (Location(i) == NOTHING) && \
              (Contents(i) == NOTHING) && (Exits(i) == NOTHING) && \
              (Next(i) == NOTHING) && (Owner(i) == GOD))
