@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.26 2004-08-16 05:14:07 sdennis Exp $
+// $Id: comsys.cpp,v 1.27 2004-09-16 16:44:17 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -756,7 +756,9 @@ void save_comsystem(FILE *fp)
         fprintf(fp, "%s\n", ch->name);
         fprintf(fp, "%s\n", ch->header);
 
-        fprintf(fp, "%d %d %d %d %d %d %d %d\n", ch->type, ch->temp1, ch->temp2, ch->charge, ch->charge_who, ch->amount_col, ch->num_messages, ch->chan_obj);
+        fprintf(fp, "%d %d %d %d %d %d %d %d\n", ch->type, ch->temp1,
+            ch->temp2, ch->charge, ch->charge_who, ch->amount_col,
+            ch->num_messages, ch->chan_obj);
 
         // Count the number of 'valid' users to dump.
         //
@@ -1705,7 +1707,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
     }
     if (!Comm_All(executor))
     {
-        raw_notify(executor, "You do not have permission to do that.");
+        raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
     struct channel *newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
@@ -1791,9 +1793,9 @@ void do_destroychannel(dbref executor, dbref caller, dbref enactor, int key, cha
         return;
     }
     else if (  !Comm_All(executor)
-            && executor != ch->charge_who)
+            && !Controls(executor, ch->charge_who))
     {
-        raw_notify(executor, "You do not have permission to do that. ");
+        raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
     num_channels--;
@@ -1913,7 +1915,9 @@ void do_listchannels(dbref player)
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
-        if (perm || (ch->type & CHANNEL_PUBLIC) || ch->charge_who == player)
+        if (  perm
+           || (ch->type & CHANNEL_PUBLIC)
+           || Controls(player, ch->charge_who))
         {
             sprintf(temp, "%c%c%c %-13.13s %c%c%c/%c%c%c %5d %5d %8d %8d %6d %10d",
                 (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
@@ -2037,7 +2041,7 @@ void do_channelnuke(dbref player)
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
-        if (ch->charge_who == player)
+        if (Controls(player, ch->charge_who))
         {
             num_channels--;
             hashdeleteLEN(ch->name, strlen(ch->name), &mudstate.channel_htab);
@@ -2151,9 +2155,9 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *a
         return;
     }
     if ( !(  Comm_All(executor)
-          || executor == ch->charge_who))
+          || Controls(executor,ch->charge_who)))
     {
-        raw_notify(executor, "You do not have permission to do that. (Not owner or admin.)");
+        raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
     raw_notify(executor, tprintf("-- %s --", ch->name));
@@ -2330,9 +2334,9 @@ void do_editchannel
         return;
     }
     if ( !(  Comm_All(executor)
-          || executor == ch->charge_who))
+          || Controls(executor, ch->charge_who)))
     {
-        raw_notify(executor, "You do not have permission to do that. (Not owner or Admin.)");
+        raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
 
@@ -2567,7 +2571,7 @@ void do_cemit
         raw_notify(executor, tprintf("Channel %s does not exist.", chan));
         return;
     }
-    if (  executor != ch->charge_who
+    if (  !Controls(executor, ch->charge_who)
        && !Comm_All(executor))
     {
         raw_notify(executor, NOPERM_MESSAGE);
@@ -2615,7 +2619,7 @@ void do_chopen
         raw_notify(executor, msg);
         return;
     }
-    if (  executor != ch->charge_who
+    if (  !Controls(executor, ch->charge_who)
        && !Comm_All(executor))
     {
         raw_notify(executor, NOPERM_MESSAGE);
@@ -2728,7 +2732,7 @@ void do_chboot
         raw_notify(executor, "@cboot: You are not on that channel.");
         return;
     }
-    if (  ch->charge_who != executor
+    if (  !Controls(executor, ch->charge_who)
        && !Comm_All(executor))
     {
         raw_notify(executor, "@cboot: You can't do that!");
@@ -2804,7 +2808,7 @@ void do_cheader(dbref player, char *channel, char *header)
         raw_notify(player, "That channel does not exist.");
         return;
     }
-    if (  ch->charge_who != player
+    if (  !Controls(player, ch->charge_who)
        && !Comm_All(player))
     {
         raw_notify(player, NOPERM_MESSAGE);
@@ -2856,7 +2860,7 @@ void do_chanlist(dbref executor, dbref caller, dbref enactor, int key)
     {
         if (  Comm_All(executor)
            || (ch->type & CHANNEL_PUBLIC)
-           || ch->charge_who == executor)
+           || Controls(executor, ch->charge_who))
         {
             char *pBuffer;
             if (key & CLIST_HEADERS)
@@ -3048,9 +3052,9 @@ FUNCTION(fun_channels)
     {
         if (  (  Comm_All(executor)
               || (chn->type & CHANNEL_PUBLIC)
-              || chn->charge_who == executor)
-           && (  chn->charge_who == who
-              || who == NOTHING)
+              || Controls(executor, chn->charge_who))
+           && (  who == NOTHING
+              || Controls(who, chn->charge_who))
            && !ItemToList_AddString(&itl, chn->name))
         {
             break;
