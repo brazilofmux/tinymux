@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.20 2003-02-15 16:31:00 jake Exp $
+// $Id: funceval.cpp,v 1.21 2003-02-15 16:48:26 jake Exp $
 //
 
 #include "copyright.h"
@@ -1634,9 +1634,9 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
                      char *fargs[], int nfargs, char *cargs[], int ncargs, int key)
 {
     dbref thing, aowner;
-    int attrib, aflags;
+    int aflags;
     ATTR *attr;
-    char *objname, *atr_gotten, *bp, *str;
+    char *objname, *bp, *str;
 
     objname = bp = alloc_lbuf("default_handler");
     str = fargs[0];
@@ -1649,14 +1649,13 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
     //
     if (objname != NULL)
     {
-        if (  parse_attrib(executor, objname, &thing, &attrib)
-           && (attrib != NOTHING))
+        if (parse_attrib_temp(executor, objname, &thing, &attr))
         {
-            attr = atr_num(attrib);
-            if (attr && !(attr->flags & AF_IS_LOCK))
+            if (  attr
+               && See_attr(executor, thing, attr))
             {
-                atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
-                if (  *atr_gotten
+                char *atr_gotten = atr_pget(thing, attr->number, &aowner, &aflags);
+                if (  atr_gotten[0] != '\0'
                    && check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
                 {
                     switch (key)
