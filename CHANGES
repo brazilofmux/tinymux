@@ -366,6 +366,7 @@ Bug Fixes:
      particular case.
  --  Bug #664 - The "playername" syntax at the connect screen was broken.
  --  Bug #623 - Interaction between GOING and @restart affected exits.
+ --  Config commands didn't accept upper-case flag names.
 
 
 Performance Enhancements:
