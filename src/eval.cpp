@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.19 2001-04-11 19:29:48 sdennis Exp $
+// $Id: eval.cpp,v 1.20 2001-04-11 19:33:10 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1467,7 +1467,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             ch = Tiny_ToUpper[(unsigned char)ch];
                             i = 100 + ch - 'A';
                             int nAttrGotten;
-                            char *pAttrGotten = atr_pget_LEN(player, i, &aowner, &aflags, &nAttrGotten);
+                            char *pAttrGotten = atr_pget_LEN(player, i,
+                                &aowner, &aflags, &nAttrGotten);
                             if (nAttrGotten > nBufferAvailable)
                             {
                                 nAttrGotten = nBufferAvailable;
@@ -1689,7 +1690,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
             {
                 TempPtr = tbuf;
                 TinyExec( buff, bufc, 0, player, cause,
-                          (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, &TempPtr, cargs, ncargs
+                          (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, &TempPtr,
+                          cargs, ncargs
                         );          
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                 pdstr--;
@@ -1762,12 +1764,15 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                     }
 
                     TempPtr = tbuf;
-                    TinyExec(buff, bufc, 0, player, cause, (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_TOP)), &TempPtr, cargs, ncargs);
+                    TinyExec(buff, bufc, 0, player, cause,
+                        (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_TOP)),
+                        &TempPtr, cargs, ncargs);
                 }
                 else
                 {
                     TempPtr = tbuf;
-                    TinyExec(buff, bufc, 0, player, cause, eval & ~EV_TOP, &TempPtr, cargs, ncargs);
+                    TinyExec(buff, bufc, 0, player, cause, eval & ~EV_TOP,
+                        &TempPtr, cargs, ncargs);
                 }
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
 
@@ -1854,7 +1859,9 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
         // ANSI_NORMAL is guaranteed to be written on the end.
         //
         int nVisualWidth;
-        int nLen = ANSI_TruncateToField(buff, sizeof(TinyExec_scratch), TinyExec_scratch, sizeof(TinyExec_scratch), &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+        int nLen = ANSI_TruncateToField(buff, sizeof(TinyExec_scratch),
+            TinyExec_scratch, sizeof(TinyExec_scratch), &nVisualWidth,
+            ANSI_ENDGOAL_NORMAL);
         memcpy(buff, TinyExec_scratch, nLen+1);
         *bufc = buff + nLen;
     }
