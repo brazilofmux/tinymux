@@ -1,7 +1,7 @@
 // svdrand.cpp -- Random Numbers, CLinearTimeAbsolute, and CLinearTimeDelta
 // modules
 //
-// $Id: svdrand.cpp,v 1.3 2000-04-22 20:41:45 sdennis Exp $
+// $Id: svdrand.cpp,v 1.4 2000-04-24 21:46:10 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
@@ -52,6 +52,7 @@ void SeedRandomNumberGenerator(void)
 static long iy=0;
 static long iv[NTAB];
 
+#if 0
 long ran1(void)
 {
     int j;
@@ -79,7 +80,7 @@ long ran1(void)
     
     return iy;
 }
-
+#endif
 
 #define IM1 2147483563
 #define IM2 2147483399
@@ -125,17 +126,20 @@ long ran2(void)
     return iy;
 }
 
-// fran1 -- return a random floating-point number on the interval [0,1)
-//
 #define AM (1.0/IM)
 #define EPS 1.2e-7
 #define RNMX (1.0-EPS)
+
+#if 0
+// fran1 -- return a random floating-point number on the interval [0,1)
+//
 double fran1(void)
 {
     double temp = AM*ran1();
     if (temp > RNMX) return RNMX;
     else return temp;
 }
+#endif
 
 // fran2 -- return a random floating-point number on the interval [0,1)
 //
