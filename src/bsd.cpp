@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.20 2001-03-15 13:10:39 sdennis Exp $
+// $Id: bsd.cpp,v 1.21 2001-03-23 09:55:06 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2386,6 +2386,11 @@ const SIGNALTYPE aSigTypes[] =
     //
     { SIGTERM,  "SIGTERM"},
 #endif
+#ifdef SIGBREAK
+    // Ctrl-Break.
+    //
+    { SIGBREAK, "SIGBREAK"},
+#endif
 #ifdef SIGUSR1
     // User-defined signal 1.
     //
@@ -2516,7 +2521,7 @@ void BuildSignalNamesTable(void)
     while (  aSigTypes[i].nSignal >= 0
           && aSigTypes[i].nSignal < NSIG)
     {
-        if (signames[i] == NULL)
+        if (signames[aSigTypes[i].nSignal] == NULL)
         {
             signames[aSigTypes[i].nSignal] = aSigTypes[i].szSignal;
         }
@@ -2707,6 +2712,10 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         }
         else
         {
+#ifdef WIN32
+            WSACleanup();
+#endif // WIN32
+
             unset_signals();
             signal(sig, SIG_DFL);
             exit(1);
