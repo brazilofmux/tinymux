@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.16 2003-02-06 17:19:45 sdennis Exp $
+// $Id: conf.cpp,v 1.17 2003-02-07 16:07:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -466,8 +466,7 @@ CF_HAND(cf_bool)
         return -1;
     }
     bool *pb = (bool *)vp;
-    bool b = i;
-    *pb = b;
+    *pb = isTRUE(i);
     return 0;
 }
 
