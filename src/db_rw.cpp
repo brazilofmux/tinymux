@@ -2,7 +2,7 @@
  * db_rw.c 
  */
 /*
- * $Id: db_rw.cpp,v 1.4 2000-04-16 07:48:28 sdennis Exp $ 
+ * $Id: db_rw.cpp,v 1.5 2000-04-24 18:09:07 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -1420,22 +1420,11 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     Log.Flush();
 #endif
     db_free();
-#ifndef MEMORY_BASED
-    int iResetCounter = 0;
-#endif
 #ifdef STANDALONE
     int iDotCounter = 0;
 #endif
     for (i = 0;; i++)
     {
-#ifndef MEMORY_BASED
-        if (!iResetCounter)
-        {
-            iResetCounter = 25;
-            cache_reset(0);
-        }
-        iResetCounter--;
-#endif // MEMORY_BASED
 #ifdef STANDALONE
         if (!iDotCounter)
         {
@@ -2330,22 +2319,11 @@ dbref db_write(FILE *f, int format, int version)
         vp = vattr_next(vp);
     }
 
-#ifndef MEMORY_BASED
-    int iResetCounter = 0;
-#endif
 #ifdef STANDALONE
     int iDotCounter = 0;
 #endif
     DO_WHOLE_DB(i)
     {
-#ifndef MEMORY_BASED
-        if (!iResetCounter)
-        {
-            iResetCounter = 25;
-            cache_reset(0);
-        }
-        iResetCounter--;
-#endif // MEMORY_BASED
 #ifdef STANDALONE
         if (!iDotCounter)
         {
