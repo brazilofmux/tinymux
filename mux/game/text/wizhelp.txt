@@ -2451,8 +2451,8 @@ HELPFILE
   restricted with the 'access' configuration directive.
 
   By default, the server does not setup any help files (including help,
-  wizhelp, and news).  It is therefore recommended that you add the following
-  to your configuration file:
+  wizhelp, and news).  It is therefore recommended that your configuration
+  file contain the following lines:
 
     raw_helpfile help text/help
     raw_helpfile wizhelp text/wizhelp
