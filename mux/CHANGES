@@ -166,6 +166,8 @@ Bug Fixes:
     the problem.
  -- @hook/igswitch didn't work when the built-in command normally
     doesn't take switches.
+ -- A look at a DARK player could show their description without showing their
+    name.  Patch by Sean Hunter.
 
 
 Performance Enhancements:
