@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.8 2000-06-05 18:26:26 sdennis Exp $
+// $Id: look.cpp,v 1.9 2000-06-09 02:07:48 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -610,20 +610,20 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 static void view_atr(dbref player, dbref thing, ATTR *ap, char *text, dbref aowner, int aflags, int skip_tag)
 {
     char *buf;
-    char xbuf[6];
+    char xbuf[8];
     char *xbufp;
     BOOLEXP *pBoolExp;
     
-    if (ap->flags & AF_IS_LOCK) {
+    if (ap->flags & AF_IS_LOCK) 
+    {
         pBoolExp = parse_boolexp(player, text, 1);
         text = unparse_boolexp(player, pBoolExp);
         free_boolexp(pBoolExp);
     }
-    /*
-    * If we don't control the object or own the attribute, hide the * *
-    * * * attr owner and flag info. 
-    */
-    
+
+    // If we don't control the object or own the attribute, hide the
+    // attr owner and flag info.
+    //    
     if (!Controls(player, thing) && (Owner(player) != aowner))
     {
         if (skip_tag && (ap->number == A_DESC))
@@ -633,10 +633,9 @@ static void view_atr(dbref player, dbref thing, ATTR *ap, char *text, dbref aown
         notify(player, buf);
         return;
     }
-    /*
-    * Generate flags 
-    */
-    
+
+    // Generate flags.
+    //   
     xbufp = xbuf;
     if (aflags & AF_LOCK)
         *xbufp++ = '+';
