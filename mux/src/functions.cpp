@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.109 2002-09-21 02:50:12 jake Exp $
+// $Id: functions.cpp,v 1.110 2002-09-22 00:33:00 jake Exp $
 //
 
 #include "copyright.h"
@@ -7984,6 +7984,174 @@ FUNCTION(fun_strip)
     return;
 }
 
+#define DEFAULT_WIDTH 78
+void wrap_send_line (char *buff, char **bufc, char *pLineStart, char cJust, int nWidth, 
+                     char *pLeft, char *pRight, int nHanging, BOOL bFirstLine, BOOL bEnd)
+{
+    if (!bFirstLine && nHanging > 0)
+    {
+        for (int i = 0; i < nHanging; i++)
+        {
+            safe_chr(' ', buff, bufc);
+        }
+    }
+    if (pLeft)
+    {
+        safe_str(pLeft, buff, bufc);
+    }
+    int key = 0;
+    switch (cJust)
+    {
+    case 'L':
+        key = CJC_LJUST;
+        break;
+    case 'R':
+        key = CJC_RJUST;
+        break;
+    case 'C':
+        key = CJC_CENTER;
+        break;
+    }
+    char *jargs[2];
+    jargs[0] = pLineStart;
+    jargs[1] = Tiny_ltoa_t(nWidth);
+    centerjustcombo(key, buff, bufc, jargs, 2);
+    if (pRight)
+    {
+        safe_str(pRight, buff, bufc);
+    }
+    if (!bEnd)
+    {
+        safe_str("\r\n", buff, bufc);
+    }
+}
+
+FUNCTION(fun_wrap)
+{
+    int nWidth = DEFAULT_WIDTH;
+    if (  nfargs >= 2
+       && fargs[1][0] != '\0')
+    {
+        nWidth = Tiny_atol(fargs[1]);
+        if (  nWidth < 1
+           || nWidth >= LBUF_SIZE)
+        {
+            safe_range(buff, bufc);
+            return;
+        }
+    }
+
+    char cJust = 'L';
+    char *pLeft = NULL;
+    char *pRight = NULL;
+    int nHanging = 0;
+
+    if (nfargs >= 3)
+    {
+        cJust = Tiny_ToUpper[*fargs[2]];
+        switch (cJust)
+        {
+        case 'L':
+        case 'R':
+        case 'C':
+            break;
+        default:
+            safe_str("#-1 INVALID JUSTIFICATION SPECIFIED", buff, bufc);
+            return;
+        }
+        if (  nfargs >= 4
+           && fargs[3][0] != '\0')
+        {
+            pLeft = fargs[3];
+        }
+        if (  nfargs >= 5
+           && fargs[4][0] != '\0')
+        {
+            pRight = fargs[4];
+        }
+        if (  nfargs >= 6
+           && fargs[5][0] != '\0')
+        {
+            nHanging = Tiny_atol(fargs[5]);
+        }
+    }
+
+    char *str = alloc_lbuf("fun_wrap.str");
+    strcpy(str, strip_ansi(fargs[0]));
+
+    char *pLineStart = str;
+    char *pThisWord = str;
+    char *pNextWord = str;
+    char cCharSave  = '\0';
+    int  nLineLeft  = 0, nWordLen = 0;
+    BOOL bFirstLine = TRUE, 
+         bFirstWord = TRUE, 
+         bEnd       = FALSE, 
+         bEndOfLine = FALSE;
+
+    while (pThisWord)
+    {
+        nLineLeft = nWidth - (pThisWord - pLineStart);
+        pNextWord = pThisWord;
+        while(*pNextWord && !Tiny_IsSpace[*pNextWord])
+        {
+            pNextWord++;
+        }
+        if (!*pNextWord)
+        {
+            // This is the last word in the list.
+            bEnd = TRUE;
+        }
+        nWordLen = pNextWord - pThisWord;
+        pNextWord++;
+        if (bEnd)
+        {
+            *pNextWord = '\0';
+        }
+        if (nLineLeft < nWordLen)
+        {
+            // Not enough room. If the word is bigger than the field, it'll have
+            // to be truncated. Otherwise, drop it down a line.
+            if (!bFirstWord)
+            {
+                nLineLeft = -1;
+            }
+            cCharSave = *(pThisWord + nLineLeft);
+            *(pThisWord + nLineLeft) = '\0';
+            wrap_send_line(buff, bufc, pLineStart, cJust, nWidth, pLeft, pRight, 
+                            nHanging, bFirstLine, FALSE);
+            *(pThisWord + nLineLeft) = cCharSave;
+            if (bFirstWord)
+            {
+                pThisWord = pThisWord + nLineLeft;
+                bEndOfLine = TRUE;
+            }
+            bFirstLine = FALSE;
+            bFirstWord = TRUE;
+            pLineStart = pThisWord;
+        }
+        else
+        {
+            bFirstWord = FALSE;
+            if (bEnd)
+            {
+                wrap_send_line(buff, bufc, pLineStart, cJust, nWidth, pLeft, pRight, 
+                               nHanging, bFirstLine, TRUE);
+                pNextWord = NULL;
+            }
+        }
+        if (bEndOfLine)
+        {
+            bEndOfLine = FALSE;
+        }
+        else
+        {
+            pThisWord = pNextWord;
+        }
+    }
+    free_lbuf(str);
+}
+
 /* ---------------------------------------------------------------------------
  * flist: List of existing functions in alphabetical order.
  */
@@ -8302,6 +8470,7 @@ FUN flist[] =
     {"WHERE",    fun_where,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"WORDPOS",  fun_wordpos,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"WORDS",    fun_words,    MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"WRAP",     fun_wrap,     MAX_ARG, 1,  6,       0, CA_PUBLIC},
     {"WRITETIME",fun_writetime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"XGET",     fun_xget,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"XOR",      fun_xor,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
