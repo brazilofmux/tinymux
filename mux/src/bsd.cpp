@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.36 2004-06-08 17:33:50 sdennis Exp $
+// $Id: bsd.cpp,v 1.37 2004-06-09 05:53:03 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1007,7 +1007,6 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
         {
         case SOCKET_ERROR:
             {
-                int sockerr = SOCKET_LAST_ERROR;
                 STARTLOG(LOG_NET, "NET", "CONN");
                 log_text("shovechars: Socket error.");
                 ENDLOG;

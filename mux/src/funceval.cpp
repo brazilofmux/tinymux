@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.66 2004-06-04 21:50:58 sdennis Exp $
+// $Id: funceval.cpp,v 1.67 2004-06-09 05:54:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2440,7 +2440,6 @@ FUNCTION(fun_mix)
            nwords = twords;
         }
     }
-    char *oldp = *bufc;
     char *atextbuf = alloc_lbuf("fun_mix");
     char *str, *os[10];
     bool bFirst = true;
