@@ -1,6 +1,6 @@
-// functions.c - MUX function handlers 
+// functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.22 2000-06-05 18:42:41 sdennis Exp $
+// $Id: functions.cpp,v 1.23 2000-06-16 00:33:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2145,17 +2145,20 @@ FUNCTION(fun_num)
 
 FUNCTION(fun_pmatch)
 {
-    dbref thing;
-
-    if (*fargs[0] == '#') {
+    if (*fargs[0] == '#')
+    {
         safe_tprintf_str(buff, bufc, "#%d", match_thing(player, fargs[0]));
         return;
     }
-    if (!((thing = lookup_player(player, fargs[0], 1)) == NOTHING)) {
+    dbref thing = lookup_player(player, fargs[0], 1);
+    if (thing != NOTHING)
+    {
         safe_tprintf_str(buff, bufc, "#%d", thing);
-        return;
-    } else
+    }
+    else
+    {
         safe_str("#-1 NO MATCH", buff, bufc);
+    }
 }
 
 FUNCTION(fun_gt)
