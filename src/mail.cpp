@@ -4,7 +4,7 @@
  * originally taken from PennMUSH 1.50 p10, and has been heavily modified
  * since being included in MUX.
  * 
- * $Id: mail.cpp,v 1.3 2000-04-13 09:48:58 sdennis Exp $
+ * $Id: mail.cpp,v 1.4 2000-04-16 07:39:07 sdennis Exp $
  * -------------------------------------------------------------------
  */
 
@@ -123,7 +123,11 @@ static void mail_db_grow(int newtop)
     newdb = (MENT *) MEMALLOC((newsize + 1) * sizeof(MENT), __FILE__, __LINE__);
 
     if (!newdb)
+    {
+        Log.WriteString("ABORT! mail.cpp, failed to allocate memory.\n");
+        Log.Flush();
         abort();
+    }
 
     if (mudstate.mail_list)
     {
