@@ -475,6 +475,7 @@ Bug Fixes:
  --  Fractional part of time request can get into the timezone info.
  --  @exitformat passed all exits into %0 if at least one of the exits was
      visible to the user.
+ --  Objects could use flags() to see CONNECTED flag of DARK WIZARDs.
 
 
 Performance Enhancements:
