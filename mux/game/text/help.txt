@@ -11385,7 +11385,7 @@ SPELLNUM()
 & SPLICE()
 SPLICE()
 
-  FUNCTION: splice(<list1>, <list2>, <word>[, <delim>])
+  FUNCTION: splice(<list1>, <list2>, <word>[, <idelim>[, <odelilm>]])
 
   This function splices <list1> and <list2> together. <list1> and <list2>
   are space-separated lists of words
@@ -11394,7 +11394,8 @@ SPLICE()
   in the corresponding position in <list2>.  Both lists must have the
   same number of words.
 
-  <delim> may be used to specify a delimiter other than a space.
+  <idelim> may be used to specify an input delimiter other than a space.
+  <odelim> is the output delimiter.
 
   Example:
     > say splice(foo bar baz,eek moof gleep,bar)
