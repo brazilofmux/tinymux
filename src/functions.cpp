@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.82 2001-08-09 15:50:08 sdennis Exp $
+// $Id: functions.cpp,v 1.83 2001-08-23 17:15:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6473,7 +6473,7 @@ FUN flist[] =
     {"SUB",      fun_sub,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"SUBEVAL",  fun_subeval,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SUBJ",     fun_subj,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SWITCH",   fun_switch,   MAX_ARG, 2, MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"SWITCH",   fun_switch,   MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
     {"T",        fun_t,        1,       0,  1,       0, CA_PUBLIC},
     {"TABLE",    fun_table,    MAX_ARG, 1,  6,       0, CA_PUBLIC},
     {"TAN",      fun_tan,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
@@ -6485,13 +6485,13 @@ FUN flist[] =
     {"TYPE",     fun_type,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"U",        fun_u,        MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"UCSTR",    fun_ucstr,    1,       1,  1,       0, CA_PUBLIC},
-    {"UDEFAULT", fun_udefault, MAX_ARG, 2, MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"UDEFAULT", fun_udefault, MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
     {"ULOCAL",   fun_ulocal,   MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"UNPACK",   fun_unpack,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"V",        fun_v,        MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"VADD",     fun_vadd,     MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"VADD",     fun_vadd,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"VALID",    fun_valid,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"VCROSS",   fun_vcross,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"VCROSS",   fun_vcross,   MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"VDIM",     fun_vdim,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"VDOT",     fun_vdot,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"VERSION",  fun_version,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
