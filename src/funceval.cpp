@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.90 2002-03-02 08:04:59 sdennis Exp $
+// $Id: funceval.cpp,v 1.91 2002-04-14 21:11:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -719,8 +719,6 @@ FUNCTION(fun_zfun)
 {
     dbref aowner;
     int aflags;
-    int attrib;
-    char *tbuf1, *str;
 
     dbref zone = Zone(player);
 
@@ -737,20 +735,21 @@ FUNCTION(fun_zfun)
 
     // Find the user function attribute.
     //
-    attrib = get_atr(upcasestr(fargs[0]));
+    int attrib = get_atr(upcasestr(fargs[0]));
     if (!attrib)
     {
         safe_str("#-1 NO SUCH USER FUNCTION", buff, bufc);
         return;
     }
-    tbuf1 = atr_pget(zone, attrib, &aowner, &aflags);
-    if (!See_attr(player, zone, (ATTR *) atr_num(attrib), aowner, aflags))
+    ATTR *attr = atr_num(attrib);
+    char *tbuf1 = atr_pget(zone, attrib, &aowner, &aflags);
+    if (!attr || !See_attr(player, zone, (ATTR *) atr_num(attrib), aowner, aflags))
     {
         safe_str("#-1 NO PERMISSION TO GET ATTRIBUTE", buff, bufc);
         free_lbuf(tbuf1);
         return;
     }
-    str = tbuf1;
+    char *str = tbuf1;
     TinyExec(buff, bufc, 0, zone, player, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, &(fargs[1]), nfargs - 1);
     free_lbuf(tbuf1);
 }
@@ -1693,35 +1692,40 @@ FUNCTION(fun_isword)
  */
 FUNCTION(fun_visible)
 {
-    dbref it, thing, aowner;
-    int aflags, atr;
-    ATTR *ap;
+    char ch = '0';
 
-    if ((it = match_thing(player, fargs[0])) == NOTHING)
+    dbref it = match_thing(player, fargs[0]); 
+    if (it != NOTHING)
     {
-        safe_chr('0', buff, bufc);
-        return;
-    }
-    if (parse_attrib(player, fargs[1], &thing, &atr))
-    {
-        if (Good_obj(thing) && atr != NOTHING)
+        dbref thing;
+        int   atr = NOTHING;
+        if (!parse_attrib(player, fargs[1], &thing, &atr))
         {
-            ap = atr_num(atr);
-            atr_pget_info(thing, atr, &aowner, &aflags);
-            safe_ltoa(See_attr(it, thing, ap, aowner, aflags), buff, bufc);
-            return;
+            thing = match_thing(player, fargs[1]);
+        }
+        if (Good_obj(thing))
+        {
+            if (atr == NOTHING)
+            {
+                if (Examinable(it, thing))
+                {
+                    ch = '1';
+                }
+            }
+            else
+            {
+                ATTR *ap = atr_num(atr);
+                dbref aowner;
+                int  aflags;
+                atr_pget_info(thing, atr, &aowner, &aflags);
+                if (ap && See_attr(it, thing, ap, aowner, aflags))
+                {
+                    ch = '1';
+                }
+            }
         }
     }
-    else
-    {
-        thing = match_thing(player, fargs[1]);
-    }
-    if (!Good_obj(thing))
-    {
-        safe_chr('0', buff, bufc);
-        return;
-    }
-    safe_ltoa(Examinable(it, thing), buff, bufc);
+    safe_chr(ch, buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
@@ -2771,7 +2775,13 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
                 {
                     safe_chr(' ', tbuf1, &bp);
                 }
-                safe_str((char *)(atr_num(ca))->name, tbuf1, &bp);
+                ATTR *ap = atr_num(ca);
+                const char *pName = "(WARNING: Bad Attribute Number)";
+                if (ap)
+                {
+                    pName = ap->name;
+                }
+                safe_str(pName, tbuf1, &bp);
             }
             free_lbuf(attrib);
         }
