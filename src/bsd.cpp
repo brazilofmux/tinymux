@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.62 2002-10-24 05:43:38 sdennis Exp $
+// $Id: bsd.cpp,v 1.63 2002-12-17 18:22:33 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1949,8 +1949,8 @@ void shutdownsock_brief(DESC *d)
 void make_nonblocking(SOCKET s)
 {
 #ifdef WIN32
-    unsigned long arg;
-    if (ioctlsocket(s, FIONBIO, &arg) == SOCKET_ERROR)
+    unsigned long arg_on = 1;
+    if (IS_SOCKET_ERROR(ioctlsocket(s, FIONBIO, &arg_on)))
     {
         log_perror("NET", "FAIL", "make_nonblocking", "ioctlsocket");
     }
