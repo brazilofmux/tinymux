@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.4 2000-06-02 16:18:01 sdennis Exp $
+// $Id: vattr.cpp,v 1.5 2000-06-06 00:18:29 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -76,12 +76,20 @@ VATTR *vattr_alloc_LEN(char *pName, int nName, int flags)
 VATTR *vattr_define_LEN(char *pName, int nName, int number, int flags)
 {
     VATTR *vp = vattr_find_LEN(pName, nName);
-    if (vp) return vp;
+    if (vp)
+    {
+        return vp;
+    }
 
     vp = (VATTR *)MEMALLOC(sizeof(VATTR));
+    if (ISOUTOFMEMORY(vp))
+    {
+        return NULL;
+    }
 
-    // NOTE: By using store_string, the only way to release the memory associated with a user
-    // attribute name is to @restart the game.
+    // NOTE: By using store_string, the only way to release the
+    // memory associated with a user attribute name is to @restart
+    // the game.
     //
     vp->name = store_string(pName);
     vp->flags = flags;
@@ -467,89 +475,91 @@ void dbclean_RenumberAttributes(int cVAttributes)
     int iMapEnd = anum_alc_top;
     int nMap = iMapEnd - iMapStart + 1;
     int *aMap = (int *)MEMALLOC(sizeof(int) * nMap);
-    if (aMap)
+    if (ISOUTOFMEMORY(aMap))
     {
-        int iSweep = A_USER_START;
-        memset(aMap, 0, sizeof(int) * nMap);
-        for (int i = nMap - 1; i >= 0 && iSweep < iMapStart; i--)
-        {
-            int iAttr = iMapStart + i;
-            va = (VATTR *) anum_get(iAttr);
-            if (va != NULL)
-            {
-                while (anum_get(iSweep))
-                {
-                    iSweep++;
-                }
-                int iAllocated = iSweep++;
-                aMap[i] = iAllocated;
-
-
-                // Change vattr_name_htab mapping as well to point to
-                // iAllocated instead of iAttr.
-                //
-                unsigned long nHash;
-                nHash = CRC32_ProcessBuffer(0, va->name, strlen(va->name));
-                CHashTable *pht = &mudstate.vattr_name_htab;
-                HP_DIRINDEX iDir = pht->FindFirstKey(nHash);
-                while (iDir != HF_FIND_END)
-                {
-                    HP_HEAPLENGTH nRecord;
-                    int anum;
-                    pht->Copy(iDir, &nRecord, &anum);
-                    if (anum == iAttr)
-                    {
-                        pht->Update(iDir, sizeof(int), &iAllocated);
-                        break;
-                    }
-                    iDir = pht->FindNextKey(iDir, nHash);
-                }
-
-                va->number = iAllocated;
-                anum_set(iAllocated, (ATTR *)va);
-                anum_set(iAttr, NULL);
-                mudstate.attr_next = iAttr;
-            }
-        }
-
-        // aMap contains a unique map from old, high-numbered attribute
-        // entries to new, low-numbered, empty attribute entries. We can
-        // traverse all the attributes on all the objects again and look for
-        // attributes numbers in the range [iMapStart, iMapEnd]. FETCHing
-        // them out of the database using the old attribute number, STOREing
-        // them in the database using the new attribute number, and
-        // TM_DELETEing them under the old attributes number.
-        //
-        atr_push();
-        dbref iObject;
-        DO_WHOLE_DB(iObject)
-        {
-            char *as;
-
-            for ( int iAttr = atr_head(iObject, &as);
-                  iAttr;
-                  iAttr = atr_next(&as)
-                )
-            {
-                if (iMapStart <= iAttr && iAttr <= iMapEnd)
-                {
-                    int iNew = aMap[iAttr-iMapStart];
-                    if (iNew)
-                    {
-                        dbref iOwner;
-                        int   iFlag;
-                        char *pRecord = atr_get(iObject, iAttr, &iOwner, &iFlag);
-                        atr_add_raw(iObject, iNew, pRecord);
-                        free_lbuf(pRecord);
-                        atr_add_raw(iObject, iAttr, NULL);
-                    }
-                }
-            }
-        }
-        atr_pop();
-
-        MEMFREE((char *)aMap);
+        return;
     }
+
+    int iSweep = A_USER_START;
+    memset(aMap, 0, sizeof(int) * nMap);
+    for (int i = nMap - 1; i >= 0 && iSweep < iMapStart; i--)
+    {
+        int iAttr = iMapStart + i;
+        va = (VATTR *) anum_get(iAttr);
+        if (va != NULL)
+        {
+            while (anum_get(iSweep))
+            {
+                iSweep++;
+            }
+            int iAllocated = iSweep++;
+            aMap[i] = iAllocated;
+
+
+            // Change vattr_name_htab mapping as well to point to
+            // iAllocated instead of iAttr.
+            //
+            unsigned long nHash;
+            nHash = CRC32_ProcessBuffer(0, va->name, strlen(va->name));
+            CHashTable *pht = &mudstate.vattr_name_htab;
+            HP_DIRINDEX iDir = pht->FindFirstKey(nHash);
+            while (iDir != HF_FIND_END)
+            {
+                HP_HEAPLENGTH nRecord;
+                int anum;
+                pht->Copy(iDir, &nRecord, &anum);
+                if (anum == iAttr)
+                {
+                    pht->Update(iDir, sizeof(int), &iAllocated);
+                    break;
+                }
+                iDir = pht->FindNextKey(iDir, nHash);
+            }
+
+            va->number = iAllocated;
+            anum_set(iAllocated, (ATTR *)va);
+            anum_set(iAttr, NULL);
+            mudstate.attr_next = iAttr;
+        }
+    }
+
+    // aMap contains a unique map from old, high-numbered attribute
+    // entries to new, low-numbered, empty attribute entries. We can
+    // traverse all the attributes on all the objects again and look for
+    // attributes numbers in the range [iMapStart, iMapEnd]. FETCHing
+    // them out of the database using the old attribute number, STOREing
+    // them in the database using the new attribute number, and
+    // TM_DELETEing them under the old attributes number.
+    //
+    atr_push();
+    dbref iObject;
+    DO_WHOLE_DB(iObject)
+    {
+        char *as;
+
+        for ( int iAttr = atr_head(iObject, &as);
+              iAttr;
+              iAttr = atr_next(&as)
+            )
+        {
+            if (iMapStart <= iAttr && iAttr <= iMapEnd)
+            {
+                int iNew = aMap[iAttr-iMapStart];
+                if (iNew)
+                {
+                    dbref iOwner;
+                    int   iFlag;
+                    char *pRecord = atr_get(iObject, iAttr, &iOwner, &iFlag);
+                    atr_add_raw(iObject, iNew, pRecord);
+                    free_lbuf(pRecord);
+                    atr_add_raw(iObject, iAttr, NULL);
+                }
+            }
+        }
+    }
+    atr_pop();
+
+    MEMFREE((char *)aMap);
 }
 
 void do_dbclean(dbref player, dbref cause, int key)
@@ -661,27 +671,25 @@ VATTR *vattr_next(VATTR *vp)
 
 static char *store_string(char *str)
 {
-    int len;
-    char *ret;
+    int nSize = strlen(str);
 
-    len = strlen(str);
-
-    /*
-     * If we have no block, or there's not enough room left in the * * *
-     * current one, get a new one. 
-     */
-
-    if (!stringblock || (STRINGBLOCK - stringblock_hwm) < (len + 1))
+    // If we have no block, or there's not enough room left in the
+    // current one, get a new one.
+    //
+    if (!stringblock || (STRINGBLOCK - stringblock_hwm) < nSize)
     {
-        // NOTE: These allocations are -never- freed, and this is intentional.
+        // NOTE: These allocations are -never- freed, and this is
+        // intentional.
         //
         stringblock = (char *)MEMALLOC(STRINGBLOCK);
-        if (!stringblock)
-            return ((char *)0);
+        if (ISOUTOFMEMORY(stringblock))
+        {
+            return NULL;
+        }
         stringblock_hwm = 0;
     }
-    ret = stringblock + stringblock_hwm;
-    StringCopy(ret, str);
-    stringblock_hwm += (len + 1);
-    return (ret);
+    char *ret = stringblock + stringblock_hwm;
+    memcpy(ret, str, nSize);
+    stringblock_hwm += nSize;
+    return ret;
 }
