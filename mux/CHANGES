@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  October 2004
+Last Update:  December 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,6 +118,17 @@ Bug Fixes:
  -- @hook/igswitch tweaked so that if any switch from the user doesn't
     match the built-in hardcoded switched, softcode has a chance to
     process the command.
+ -- Defer closing a session until output is completely flushed
+    (Win32-only issue).
+ -- Don't destroy a channel just because a controlling object is @nuked.
+ -- Fixed SIGSEGV in AFTER() with accent characters in the pattern.
+ -- Fixed uninitialized variable problem with an empty ladd().  It
+    returned the result of the last operation.
+ -- Fix permission hole where a @lock can be used to obtain someone's
+    location.
+ -- Fix TRIM() so that it doesn't leave a separator on the right side.
+ -- Remove the different 'Icons' appearance from a MATRIX room.  There
+    are other ways of accomplishing the same effect now.
 
 
 Performance Enhancements:
