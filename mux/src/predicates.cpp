@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.2 2003-01-23 07:18:41 sdennis Exp $
+// $Id: predicates.cpp,v 1.3 2003-01-23 07:49:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -447,7 +447,7 @@ char *MakeCanonicalExitName(const char *pName, int *pnName, BOOL *pbValid)
 
             // vw should always be equal to n, but we'll just make sure.
             //
-            if (vw == n)
+            if ((unsigned)vw == n)
             {
                 int  nN;
                 BOOL bN;
