@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.99 2004-04-30 22:46:38 sdennis Exp $
+// $Id: functions.cpp,v 1.100 2004-05-01 00:24:34 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -8067,7 +8067,7 @@ FUNCTION(fun_isdbref)
 FUNCTION(fun_trim)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
     {
         return;
     }

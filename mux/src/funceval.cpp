@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.60 2004-04-30 20:59:50 sdennis Exp $
+// $Id: funceval.cpp,v 1.61 2004-05-01 00:24:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2294,16 +2294,21 @@ FUNCTION(fun_last)
     char *pStart = trim_space_sep_LEN(fargs[0], nLen, &sep, &nLen);
     char *pEnd = pStart + nLen - 1;
 
-    if (sep.str[0] == ' ')
+    if (  sep.n == 1
+       && sep.str[0] == ' ')
     {
         // We're dealing with spaces, so trim off the trailing spaces.
         //
-        while (pStart <= pEnd && *pEnd == ' ')
+        while (  pStart <= pEnd
+              && *pEnd == ' ')
         {
             pEnd--;
         }
         pEnd[1] = '\0';
     }
+
+    // QQQ Need to fix this.
+    //
 
     // Find the separator nearest the end.
     //
@@ -2403,7 +2408,9 @@ FUNCTION(fun_mix)
 
     if (nfargs < 4)
     {
+        sep.n = 1;
         sep.str[0] = ' ';
+        sep.str[1] = '\0';
         lastn = nfargs - 1;
     }
     else 
@@ -2443,16 +2450,23 @@ FUNCTION(fun_mix)
     {
         twords = countwords(cp[i-1], &sep);
         if (twords > nwords)
+        {
            nwords = twords;
+        }
     }
     char *oldp = *bufc;
     char *atextbuf = alloc_lbuf("fun_mix");
     char *str, *os[10];
+    bool bFirst = true;
     for (int wc = 0; wc < nwords; wc++) 
     {
-        if (*bufc != oldp)
+        if (!bFirst)
         {
-            safe_chr(sep.str[0], buff, bufc);
+            print_sep(&sep, buff, bufc);
+        }
+        else
+        {
+            bFirst = false;
         }
         for (i = 1; i <= lastn; i++) 
         {
@@ -2495,6 +2509,7 @@ FUNCTION(fun_foreach)
     SEP sep;
     sep.n = 1;
     sep.str[0] = ' ';
+    sep.str[1] = '\0';
     char *cp = trim_space_sep(fargs[1], &sep);
 
     char *bp = cbuf;
@@ -2623,15 +2638,20 @@ FUNCTION(fun_munge)
     //
     nresults = list2arr(results, LBUF_SIZE / 2, rlist, &sep);
 
+    bool bFirst = true;
     for (i = 0; i < nresults; i++)
     {
         for (j = 0; j < nptrs1; j++)
         {
             if (!strcmp(results[i], ptrs1[j]))
             {
-                if (*bufc != oldp)
+                if (!bFirst)
                 {
-                    safe_chr(sep.str[0], buff, bufc);
+                    print_sep(&sep, buff, bufc);
+                }
+                else
+                {
+                    bFirst = false;
                 }
                 safe_str(ptrs2[j], buff, bufc);
                 ptrs1[j][0] = '\0';
