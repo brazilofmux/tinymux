@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.24 2002-07-09 08:22:49 jake Exp $
+// $Id: predicates.cpp,v 1.25 2002-07-09 15:51:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -170,12 +170,14 @@ BOOL can_see(dbref player, dbref thing, BOOL can_see_loc)
 static BOOL pay_quota(dbref who, int cost)
 {
     // If no cost, succeed
+    //
     if (cost <= 0)
     {
         return TRUE;
     }
 
     // determine quota
+    //
     char buf[20], *quota_str;
     dbref aowner;
     int aflags;
@@ -183,10 +185,13 @@ static BOOL pay_quota(dbref who, int cost)
     free_lbuf(quota_str);
 
     // enough to build?  Wizards always have enough.
+    //
     quota -= cost;
-    if ((quota < 0) && !Free_Quota(who) && !Free_Quota(Owner(who)))
+    if (  quota < 0
+       && !Free_Quota(who)
+       && !Free_Quota(Owner(who)))
     {
-        return 0;
+        return FALSE;
     }
 
     // Dock the quota.
