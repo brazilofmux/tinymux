@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.46 2002-09-19 03:00:25 sdennis Exp $
+// $Id: db.cpp,v 1.47 2002-09-19 05:09:40 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -130,9 +130,9 @@ ATTR attr[] =
     {"Mailsucc",    A_MAIL,     AF_ODARK | AF_NOPROG},
     {"Mailto",      A_MAILTO,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"Modified",    A_MODIFIED, AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD},
+    {"Moniker",     A_MONIKER,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
     {"Move",        A_MOVE,     AF_ODARK | AF_NOPROG},
     {"Name",        A_NAME,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-    {"NameAccent",  A_ACCENTNAME, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
     {"NameFormat",  A_NAMEFORMAT, AF_ODARK | AF_NOPROG | AF_WIZARD},
     {"Odesc",       A_ODESC,    AF_ODARK | AF_NOPROG},
     {"Odfail",      A_ODFAIL,   AF_ODARK | AF_NOPROG},
@@ -442,7 +442,7 @@ FWDLIST *fwdlist_get(dbref thing)
 }
 
 // ---------------------------------------------------------------------------
-// Name, PureName, AccentName, s_AccentName, and s_Name: Get or set object's
+// Name, PureName, Moniker, s_Moniker, and s_Name: Get or set object's
 // various names.
 //
 const char *Name(dbref thing)
@@ -519,70 +519,70 @@ const char *PureName(dbref thing)
     return pPureName;
 }
 
-const char *AccentName(dbref thing)
+const char *Moniker(dbref thing)
 {
     if (thing < 0)
     {
         return aszSpecialDBRefNames[-thing];
     }
-    if (db[thing].accentname)
+    if (db[thing].moniker)
     {
-        return db[thing].accentname;
+        return db[thing].moniker;
     }
 
-    // Compare accent-stripped, ansi-stripped version of @accentname against
+    // Compare accent-stripped, ansi-stripped version of @moniker against
     // accent-stripped, ansi-stripped version of @name.
     //
     const char *pPureName = strip_accents(PureName(thing));
     char *pPureNameCopy = StringClone(pPureName);
 
-    int nAccentName;
+    int nMoniker;
     dbref aowner;
     int aflags;
-    char *pAccentName = atr_get_LEN(thing, A_ACCENTNAME, &aowner, &aflags,
-        &nAccentName);
-    char *pPureAccentName = strip_accents(strip_ansi(pAccentName));
+    char *pMoniker = atr_get_LEN(thing, A_MONIKER, &aowner, &aflags,
+        &nMoniker);
+    char *pPureMoniker = strip_accents(strip_ansi(pMoniker));
 
     char *pReturn = NULL;
     static char tbuff[LBUF_SIZE];
-    if (strcmp(pPureNameCopy, pPureAccentName) == 0)
+    if (strcmp(pPureNameCopy, pPureMoniker) == 0)
     {
-        // The stripped version of @nameaccent is the same as the stripped
+        // The stripped version of @moniker is the same as the stripped
         // version of @name, so (possibly cache and) use the unstripped
-        // version of @accentname.
+        // version of @moniker.
         //
         if (mudconf.cache_names)
         {
 #ifdef MEMORY_BASED
-            db[thing].accentname = StringCloneLen(pAccentName, nAccentName);
+            db[thing].moniker = StringCloneLen(pMoniker, nMoniker);
 #else // MEMORY_BASED
-            if (strcmp(pAccentName, Name(thing)) == 0)
+            if (strcmp(pMoniker, Name(thing)) == 0)
             {
-                db[thing].accentname = db[thing].name;
+                db[thing].moniker = db[thing].name;
             }
             else
             {
-                db[thing].accentname = StringCloneLen(pAccentName, nAccentName);
+                db[thing].moniker = StringCloneLen(pMoniker, nMoniker);
             }
 #endif // MEMORY_BASED
-            pReturn = db[thing].accentname;
+            pReturn = db[thing].moniker;
         }
         else
         {
-            memcpy(tbuff, pAccentName, nAccentName+1);
+            memcpy(tbuff, pMoniker, nMoniker+1);
             pReturn = tbuff;
         }
     }
     else
     {
-        // @nameaccent can't be used, so instead reflect @name (whether it
+        // @moniker can't be used, so instead reflect @name (whether it
         // contains ANSI color and accents or not).
         //
 #ifdef MEMORY_BASED
         if (mudconf.cache_names)
         {
-            db[thing].accentname = StringClone(Name(thing));
-            pReturn = db[thing].accentname;
+            db[thing].moniker = StringClone(Name(thing));
+            pReturn = db[thing].moniker;
         }
         else
         {
@@ -591,8 +591,8 @@ const char *AccentName(dbref thing)
 #else // MEMORY_BASED
         if (mudconf.cache_names)
         {
-            db[thing].accentname = db[thing].name;
-            pReturn = db[thing].accentname;
+            db[thing].moniker = db[thing].name;
+            pReturn = db[thing].moniker;
         }
         else
         {
@@ -600,7 +600,7 @@ const char *AccentName(dbref thing)
         }
 #endif // MEMORY_BASED
     }
-    free_lbuf(pAccentName);
+    free_lbuf(pMoniker);
     MEMFREE(pPureNameCopy);
 
     return pReturn;
@@ -618,9 +618,9 @@ void s_Name(dbref thing, const char *s)
             {
                 db[thing].purename = NULL;
             }
-            if (db[thing].name == db[thing].accentname)
+            if (db[thing].name == db[thing].moniker)
             {
-                db[thing].accentname = NULL;
+                db[thing].moniker = NULL;
             }
         }
         MEMFREE(db[thing].name);
@@ -638,29 +638,29 @@ void s_Name(dbref thing, const char *s)
             MEMFREE(db[thing].purename);
             db[thing].purename = NULL;
         }
-        if (db[thing].accentname)
+        if (db[thing].moniker)
         {
-            MEMFREE(db[thing].accentname);
-            db[thing].accentname = NULL;
+            MEMFREE(db[thing].moniker);
+            db[thing].moniker = NULL;
         }
     }
 }
 
-void s_AccentName(dbref thing, const char *s)
+void s_Moniker(dbref thing, const char *s)
 {
-    atr_add_raw(thing, A_ACCENTNAME, s);
+    atr_add_raw(thing, A_MONIKER, s);
     if (mudconf.cache_names)
     {
 #ifndef MEMORY_BASED
-        if (db[thing].name == db[thing].accentname)
+        if (db[thing].name == db[thing].moniker)
         {
-            db[thing].accentname = NULL;
+            db[thing].moniker = NULL;
         }
 #endif // !MEMORY_BASED
-        if (db[thing].accentname)
+        if (db[thing].moniker)
         {
-            MEMFREE(db[thing].accentname);
-            db[thing].accentname = NULL;
+            MEMFREE(db[thing].moniker);
+            db[thing].moniker = NULL;
         }
     }
 }
@@ -2324,7 +2324,7 @@ void initialize_objects(dbref first, dbref last)
         db[thing].name = NULL;
 #endif // MEMORY_BASED
         db[thing].purename = NULL;
-        db[thing].accentname = NULL;
+        db[thing].moniker = NULL;
     }
 }
 

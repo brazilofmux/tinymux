@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.52 2002-09-19 03:00:25 sdennis Exp $
+// $Id: externs.h,v 1.53 2002-09-19 05:09:40 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -255,10 +255,10 @@ extern char *process_command(dbref executor, dbref caller, dbref enactor, BOOL,
 extern BOOL Commer(dbref);
 extern void s_Pass(dbref, const char *);
 extern void s_Name(dbref, const char *);
-extern void s_AccentName(dbref thing, const char *s);
+extern void s_Moniker(dbref thing, const char *s);
 extern const char *Name(dbref thing);
 extern const char *PureName(dbref thing);
-extern const char *AccentName(dbref thing);
+extern const char *Moniker(dbref thing);
 extern int  fwdlist_load(FWDLIST *, dbref, char *);
 extern void fwdlist_set(dbref, FWDLIST *);
 extern void fwdlist_clr(dbref);

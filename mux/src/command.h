@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.20 2002-09-19 03:27:29 sdennis Exp $
+// $Id: command.h,v 1.21 2002-09-19 05:09:40 sdennis Exp $
 //
 
 #ifndef __COMMAND_H
@@ -145,7 +145,7 @@ CMD_TWO_ARG_ARGV(do_icmd);      // Disable commands on a player or room
 CMD_ONE_ARG(do_hook);           // Set additional operations for a command
 CMD_TWO_ARG(do_flag);           // Rename a flag or remove flag aliases
 CMD_ONE_ARG(do_train);          // Display code to room, then execute
-CMD_TWO_ARG(do_accentname);     // Set accented name of object
+CMD_TWO_ARG(do_moniker);        // Set accented, colorized name of object
 
 typedef struct
 {

@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.19 2002-09-19 03:00:25 sdennis Exp $
+// $Id: create.cpp,v 1.20 2002-09-19 05:09:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1013,7 +1013,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
             else
             {
                 char *tname = alloc_lbuf("destroy_obj");
-                strcpy(tname, AccentName(ThingOwner));
+                strcpy(tname, Moniker(ThingOwner));
                 notify(executor, tprintf("Destroyed. %s's %s(#%d)",
                     tname, Name(thing), thing));
                 free_lbuf(tname);

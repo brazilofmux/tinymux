@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.43 2002-09-19 03:27:29 sdennis Exp $
+// $Id: comsys.cpp,v 1.44 2002-09-19 05:09:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -825,16 +825,16 @@ void BuildChannelMessage
         if (!bSpoof)
         {
             safe_chr(' ', *messNormal, &mnptr);
-            safe_str(AccentName(user->who), *messNormal, &mnptr);
-            safe_str(AccentName(user->who), *messNoComtitle, &mncptr);
+            safe_str(Moniker(user->who), *messNormal, &mnptr);
+            safe_str(Moniker(user->who), *messNoComtitle, &mncptr);
         }
     }
     else
     {
-        safe_str(AccentName(user->who), *messNormal, &mnptr);
+        safe_str(Moniker(user->who), *messNormal, &mnptr);
         if (!bSpoof)
         {
-            safe_str(AccentName(user->who), *messNoComtitle, &mncptr);
+            safe_str(Moniker(user->who), *messNoComtitle, &mncptr);
         }
     }
 
@@ -1828,7 +1828,7 @@ void do_cleanupchannels(void)
                         {
                             char *mess = StartBuildChannelMessage(cuVictim->who,
                                 (ch->type & CHANNEL_SPOOF) != 0, ch->header, cuVictim->title,
-                                AccentName(cuVictim->who), ":is booted off the channel by the system.");
+                                Moniker(cuVictim->who), ":is booted off the channel by the system.");
                             do_comsend(ch, mess);
                             EndBuildChannelMessage(mess);
                         }
@@ -2695,14 +2695,14 @@ void do_chboot
     if (!vu)
     {
         raw_notify(executor, tprintf("@cboot: %s is not on the channel.",
-            AccentName(thing)));
+            Moniker(thing)));
         return;
     }
 
     raw_notify(executor, tprintf("You boot %s off channel %s.",
-                                 AccentName(thing), ch->name));
+                                 Moniker(thing), ch->name));
     raw_notify(thing, tprintf("%s boots you off channel %s.",
-                              AccentName(thing), ch->name));
+                              Moniker(thing), ch->name));
 
     if (!(key & CBOOT_QUIET))
     {
@@ -2825,7 +2825,7 @@ void do_chanlist(dbref executor, dbref caller, dbref enactor, int key)
 
                 pBuffer = buf;
             }
-            char *ownername_ansi = ANSI_TruncateAndPad_sbuf(AccentName(ch->charge_who), 15);
+            char *ownername_ansi = ANSI_TruncateAndPad_sbuf(Moniker(ch->charge_who), 15);
             sprintf(temp, "%c%c%c %-13.13s %s %-45.45s",
                 (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
                 (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
