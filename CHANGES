@@ -333,6 +333,7 @@ Bug Fixes:
  -- Document logged-out command 'INFO'.
  -- Alierak fix for buffer overflow exploit in slave process.
  -- Alierak Fix for logic bug in logging.
+ -- Alierak fixes build breakage on Darwin due to inconsistent use of size_t.
 
 
 Performance Enhancements:
