@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.33 2000-11-06 15:51:02 sdennis Exp $
+// $Id: db.cpp,v 1.34 2001-01-08 23:28:04 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3073,10 +3073,8 @@ int init_dbfile(char *game_dir_file, char *game_pag_file)
 
 
 #ifndef STANDALONE
-/*
- * check_zone - checks back through a zone tree for control 
- */
-
+// check_zone - checks back through a zone tree for control.
+//
 int check_zone(dbref player, dbref thing)
 {
     mudstate.zone_nest_num++;

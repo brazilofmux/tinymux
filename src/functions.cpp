@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.50 2000-12-10 23:00:29 sdennis Exp $
+// $Id: functions.cpp,v 1.51 2001-01-08 23:29:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1005,39 +1005,49 @@ FUNCTION(fun_starttime)
  * ---------------------------------------------------------------------------
  * * fun_get, fun_get_eval: Get attribute from object.
  */
-
-int check_read_perms(dbref player, dbref thing, ATTR *attr, int aowner, int aflags, char *buff, char **bufc)
+int check_read_perms
+(
+    dbref player,
+    dbref thing,
+    ATTR *attr,
+    int aowner,
+    int aflags,
+    char *buff,
+    char **bufc
+)
 {
-    int see_it;
-
-    /*
-     * If we have explicit read permission to the attr, return it 
-     */
-
+    // If we have explicit read permission to the attr, return it.
+    //
     if (See_attr_explicit(player, thing, attr, aowner, aflags))
+    {
         return 1;
+    }
 
-    /*
-     * If we are nearby or have examine privs to the attr and it is * * * 
-     * 
-     * * visible to us, return it. 
-     */
-
-    see_it = See_attr(player, thing, attr, aowner, aflags);
-    if ((Examinable(player, thing) || nearby(player, thing) || See_All(player)) && see_it)
+    // If we are nearby or have examine privs to the attr and it is
+    // visible to us, return it. 
+    //
+    int see_it = See_attr(player, thing, attr, aowner, aflags);
+    if (  (  Examinable(player, thing)
+          || nearby(player, thing)
+          || See_All(player))
+       && see_it)
+    {
         return 1;
+    }
 
-    /*
-     * For any object, we can read its visible attributes, EXCEPT * for * 
-     * 
-     * *  * * descs, which are only visible if read_rem_desc is on. 
-     */
-
-    if (see_it) {
-        if (!mudconf.read_rem_desc && (attr->number == A_DESC)) {
+    // For any object, we can read its visible attributes, EXCEPT for
+    // descs, which are only visible if read_rem_desc is on. 
+    //
+    if (see_it)
+    {
+        if (  !mudconf.read_rem_desc
+           && attr->number == A_DESC)
+        {
             safe_str("#-1 TOO FAR AWAY TO SEE", buff, bufc);
             return 0;
-        } else {
+        }
+        else
+        {
             return 1;
         }
     }
