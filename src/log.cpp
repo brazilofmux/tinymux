@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.14 2001-11-28 06:35:54 sdennis Exp $
+// $Id: log.cpp,v 1.15 2002-01-15 05:22:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -294,7 +294,7 @@ void do_log
     }
     else
     {
-        int i;
+        unsigned int i;
         for (i = 0; i < n; i++)
         {
             if (!Tiny_IsAlphaNumeric[(unsigned char)pFilename[i]])
