@@ -1,3 +1,29 @@
+& HELP
+HELP
+
+  This is the MUX online help facility.
+
+     Notes on help descriptions:
+        [text] - Text enclosed in []'s is optional.  The []'s are never typed
+                 in as part of the command.
+        <parameter> - Information parameter for a command.  The <>'s are
+                      never typed in as part of the command.
+
+  -  Syntax of help command:
+       help [<command>]
+
+  -  To get a list of MUX topics:
+       help topics
+
+  -  To get a list of Comsystem commands:
+       help comsys
+
+  -  To get a list of MUX Commands:
+       help commands      (or @list commands)
+
+  Some of the configuration shown in the help.txt might not be the same as
+  the configuration of this MUX. If you notice any errors, contact an Admin.
+
 & "
 "
 
@@ -6893,32 +6919,6 @@ HEAD
   with STAFF, no powers come with it, it is purely a marker.
 
   Related Topics:
-
-& HELP
-HELP
-
-  This is the MUX online help facility.
-
-     Notes on help descriptions:
-        [text] - Text enclosed in []'s is optional.  The []'s are never typed
-                 in as part of the command.
-        <parameter> - Information parameter for a command.  The <>'s are
-                      never typed in as part of the command.
-
-  -  Syntax of help command:
-       help [<command>]
-
-  -  To get a list of MUX topics:
-       help topics
-
-  -  To get a list of Comsystem commands:
-       help comsys
-
-  -  To get a list of MUX Commands:
-       help commands      (or @list commands)
-
-  Some of the configuration shown in the help.txt might not be the same as
-  the configuration of this MUX. If you notice any errors, contact an Admin.
 
 & HERE
 HERE

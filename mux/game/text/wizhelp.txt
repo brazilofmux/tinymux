@@ -2789,7 +2789,7 @@ KILL_MIN_COST
 LAG_MAXIMUM
 
   CONFIG DIRECTIVE: lag_maximum <seconds>
-  DEFAULT: 120
+  DEFAULT: 120.000
 
   Controls when to log expensive commands.  Any command taking longer than
   <seconds> is logged.  Note that the resolution of <seconds> is 100ns
@@ -4165,13 +4165,13 @@ THING_QUOTA
 & TIMESLICE
 TIMESLICE
 
-  CONFIG PARAMETER: timeslice <amount>
+  CONFIG PARAMETER: timeslice <milliseconds>
   DEFAULT: 1000
 
-  Specifies the interval at which connected users' command quotas are
-  increased.  Each command a user types in (commands executed by machines do
-  not count) decreases that user's quota by 1, and the user's commands are
-  only executed if the quota is greater than zero.
+  Specifies the interval (in milliseconds) at which connected users' command
+  quotas are increased.  Each command a user types in (commands executed by
+  machines do not count) decreases that user's quota by 1, and the user's
+  commands are only executed if the quota is greater than zero.
 
   Related Topics: command_quota_incr, command_quota_max.
 
