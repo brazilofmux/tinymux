@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.36 2004-04-13 06:34:22 sdennis Exp $
+// $Id: stringutil.h,v 1.37 2004-04-20 06:23:55 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -180,12 +180,13 @@ typedef struct
     int m_d[256];
     int m_skip2;
 } BMH_State;
-extern void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat);
-extern int  BMH_Execute(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc);
-extern int  BMH_StringSearch(int nPat, char *pPat, int nSrc, char *pSrc);
-extern void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat);
-extern int  BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc);
-extern int  BMH_StringSearchI(int nPat, char *pPat, int nSrc, char *pSrc);
+
+extern void BMH_Prepare(BMH_State *bmhs, int nPat, const char *pPat);
+extern int  BMH_Execute(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const char *pSrc);
+extern int  BMH_StringSearch(int nPat, const char *pPat, int nSrc, const char *pSrc);
+extern void BMH_PrepareI(BMH_State *bmhs, int nPat, const char *pPat);
+extern int  BMH_ExecuteI(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const char *pSrc);
+extern int  BMH_StringSearchI(int nPat, const char *pPat, int nSrc, const char *pSrc);
 
 struct ArtRuleset
 {
