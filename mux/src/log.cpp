@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.5 2002-06-27 09:06:47 jake Exp $
+// $Id: log.cpp,v 1.6 2002-06-28 05:31:07 jake Exp $
 //
 
 #include "copyright.h"
@@ -210,10 +210,8 @@ void log_name_and_loc(dbref player)
 
 char *OBJTYP(dbref thing)
 {
-    if (!Good_obj(thing)) {
-        return (char *)"??OUT-OF-RANGE??";
-    }
-    switch (Typeof(thing)) {
+    switch (Typeof(thing)) 
+    {
     case TYPE_PLAYER:
         return (char *)"PLAYER";
     case TYPE_THING:
@@ -224,9 +222,8 @@ char *OBJTYP(dbref thing)
         return (char *)"EXIT";
     case TYPE_GARBAGE:
         return (char *)"GARBAGE";
-    default:
-        return (char *)"??ILLEGAL??";
     }
+    return (char *)"??ILLEGAL??";
 }
 
 void log_type_and_name(dbref thing)
