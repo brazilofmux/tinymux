@@ -8,19 +8,24 @@ different archive tools (PKZip, JAR from ARJ, and tar/gzip).
 
 Unless you want to build the server yourself, you should use one of the binary
 distributions.  In the binary distributions, the server has been compiled for
-you using the Intel 6.0 compiler with agressive, profile-guided optimizations,
-vectorized loops, and CPU-aware dispatching. You need at least a Pentium Pro
-or above to use these binaries.
+you using the Intel 6.0 compiler with aggressive, profile-guided
+optimizations, vectorized loops, and CPU-aware dispatching.  You need at least
+a Pentium Pro or above to use these binaries.
 
-The source distribution is also provided. If you have Visual C++, you can
-build your own binaries.
+The source distribution is also provided.  If you have Visual C++, you can
+build your own binaries.  If you want to use Cygwin to compile the source,
+then don't use this distribution.  Instead, download one of the Unix
+distributions of MUX and follow the instructions contained there.
 
 Regarding PKZip, you -must- use version 2.50 or use WinZip (www.winzip.com).
-You cannot use PKZip 2.04g. PKZip 2.04g does not support long filenames.
+You cannot use PKZip 2.04g.  PKZip 2.04g does not support long filenames.
 While PKZip 2.04g will unpack the distribution, your filenames will be
-named incorrectly. Use version 2.50 of PKZip or use WinZip.
+named incorrectly.  Use version 2.50 of PKZip or use WinZip.
 
 Regarding tar/gzip on Win32, I'm using the Cygwin version of these tools.
+You can use Cygwin tools to unpack the Win32 distribution. However, as
+mentioned above, you should not be using the Win32 distribution if you want
+to use Cygwin to compile MUX.
 
 Regarding JAR from ARJ Software, this archiving tool produces the smallest
 files. It's available via http://www.arjsoftware.com/jar.htm.
@@ -91,7 +96,7 @@ To load an existing database:
 
 For MUX, all transfers between Unix and Win32 must be performed in -BINARY-
 mode or the copy of your database will be corrupted and you'll get a failed
-assertion message in db_rw.cpp.
+assertion message in db_rw.cpp when the server tries to load your database.
 
 So, if you're using FTP, be sure to use 'binary' command. If you compresssed
 your database with tar/gzip, and are using WinZip to uncompress it on
