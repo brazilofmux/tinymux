@@ -385,7 +385,7 @@
   function result.
 
   If no arguments are given, or if the /list switch is given, the command
-  displays a list of the currently-defined global functions. /priviledged
+  displays a list of the currently-defined global functions. /privileged
   functions are indicated with a 'W' and /preserve functions are indicated
   with a 'p'.
 

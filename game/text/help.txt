@@ -439,9 +439,9 @@
 
     publc   - channel is listed in everyone's @clist.
     private - channel is hidden from the @clist.
-    loud    - channel accounces player connects/disconnects.
+    loud    - channel announces player connects/disconnects.
     mute    - shuts connects/disconnects off.
-    quite   - same as mute.
+    quiet   - same as mute.
     spoof   - allows the comtitle to replace the player's name.
     anon    - same as spoof.
     nospoof - channel will append the player's name to the comtitle.
@@ -1211,14 +1211,17 @@
   form copies <attr> from the object that executes the @cpattr to the
   objects in the list, with the name <attr>.
  
-& @create
+& @CREATE
+@CREATE
 
-  Command: @create <name> [=<cost>]
+  COMMAND: @create <name> [=<cost>]
+
   Creates a thing with the specified name.  Creation costs either <cost>
   or 10 coins, whichever is greater. The value of a thing is proportional
   to its cost, specifically, value=(cost/5)-1.  The value may not be greater
   than 100, values that would be greater than 100 are rounded down to 100.
-  See also: @destroy, TYPES OF OBJECTS.
+
+  Related Topics: @destroy, OBJECT TYPES
 
 & @decompile
 
@@ -7765,7 +7768,7 @@ MEMBER()
     > say member(This is a member test, is a)
     You say "#-1 CAN ONLY TEST ONE ELEMENT"
  
-  Related Topics: LISTS, findelem(), match(), strmatch().
+  Related Topics: LISTS, match(), strmatch().
 
 & REMOVE()
 REMOVE()
@@ -8679,8 +8682,8 @@ SORT()
   Examples:
     > say sort(This is a test)
     You say "This a is test"
-    > say sort(98 99 100 101)
-    You say "98 99 100 102"
+    > say sort(98 100 99 101,n)
+    You say "98 99 100 101"
     > say sort(foo-bar-bletch,,-)
     You say "bar-bletch-foo"
   
@@ -9591,8 +9594,8 @@ ZWHO()
 
   FUNCTION: zwho(<object>)
 
-  Returns a list of players who are in the zone defined by <object>.
-  Currently a wizard/royalty only function.
+  Returns a list of players who are a member of the zone defined by
+  <object>. Currently a wizard/royalty only function.
 
   Related Topics:
 
