@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.13 2003-02-03 19:43:33 sdennis Exp $
+// $Id: stringutil.cpp,v 1.14 2003-02-03 19:49:38 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2529,7 +2529,7 @@ static const double powerstab[10] =
    1000000000.0
 };
 
-double Tiny_atof(char *szString, BOOL bStrict)
+double mux_atof(char *szString, BOOL bStrict)
 {
     PARSE_FLOAT_RESULT pfr;
     if (!ParseFloat(&pfr, szString, bStrict))
@@ -2597,7 +2597,7 @@ double Tiny_atof(char *szString, BOOL bStrict)
     char *pTmp = NULL;
     if (n > ATOF_LIMIT)
     {
-        pTmp = alloc_lbuf("Tiny_atof");
+        pTmp = alloc_lbuf("mux_atof");
         memcpy(pTmp, p, ATOF_LIMIT);
         pTmp[ATOF_LIMIT] = '\0';
         p = pTmp;

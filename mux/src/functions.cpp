@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.13 2003-02-03 19:43:34 sdennis Exp $
+// $Id: functions.cpp,v 1.14 2003-02-03 19:49:38 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -842,7 +842,7 @@ FUNCTION(fun_rand)
 
 FUNCTION(fun_abs)
 {
-    double num = Tiny_atof(fargs[0]);
+    double num = mux_atof(fargs[0]);
     if (num == 0.0)
     {
         safe_chr('0', buff, bufc);
@@ -863,7 +863,7 @@ FUNCTION(fun_abs)
 
 FUNCTION(fun_sign)
 {
-    double num = Tiny_atof(fargs[0]);
+    double num = mux_atof(fargs[0]);
     if (num < 0)
     {
         safe_str("-1", buff, bufc);
@@ -2631,7 +2631,7 @@ FUNCTION(fun_gt)
     }
     else
     {
-        bResult = (Tiny_atof(fargs[0]) > Tiny_atof(fargs[1]));
+        bResult = (mux_atof(fargs[0]) > mux_atof(fargs[1]));
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -2649,7 +2649,7 @@ FUNCTION(fun_gte)
     }
     else
     {
-        bResult = (Tiny_atof(fargs[0]) >= Tiny_atof(fargs[1]));
+        bResult = (mux_atof(fargs[0]) >= mux_atof(fargs[1]));
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -2667,7 +2667,7 @@ FUNCTION(fun_lt)
     }
     else
     {
-        bResult = (Tiny_atof(fargs[0]) < Tiny_atof(fargs[1]));
+        bResult = (mux_atof(fargs[0]) < mux_atof(fargs[1]));
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -2685,7 +2685,7 @@ FUNCTION(fun_lte)
     }
     else
     {
-        bResult = (Tiny_atof(fargs[0]) <= Tiny_atof(fargs[1]));
+        bResult = (mux_atof(fargs[0]) <= mux_atof(fargs[1]));
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -2704,7 +2704,7 @@ FUNCTION(fun_eq)
     else 
     {
         bResult = (  strcmp(fargs[0], fargs[1]) == 0
-                  || Tiny_atof(fargs[0]) == Tiny_atof(fargs[1]));
+                  || mux_atof(fargs[0]) == mux_atof(fargs[1]));
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -2723,7 +2723,7 @@ FUNCTION(fun_neq)
     else 
     {
         bResult = (  strcmp(fargs[0], fargs[1]) != 0
-                  && Tiny_atof(fargs[0]) != Tiny_atof(fargs[1]));
+                  && mux_atof(fargs[0]) != mux_atof(fargs[1]));
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -3384,7 +3384,7 @@ FUNCTION(fun_ladd)
         while (cp)
         {
             char *curr = split_token(&cp, sep);
-            g_aDoubles[n++] = Tiny_atof(curr);
+            g_aDoubles[n++] = mux_atof(curr);
         }
     }
     fval(buff, bufc, AddDoubles(n, g_aDoubles));
@@ -3430,7 +3430,7 @@ FUNCTION(fun_sqrt)
 {
     double val;
 
-    val = Tiny_atof(fargs[0]);
+    val = mux_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if (val < 0.0)
     {
@@ -3469,7 +3469,7 @@ FUNCTION(fun_add)
             //
             for (int j = 0; j < nfargs; j++)
             {
-                g_aDoubles[j] = Tiny_atof(fargs[j]);
+                g_aDoubles[j] = mux_atof(fargs[j]);
             }
             fval(buff, bufc, AddDoubles(nfargs, g_aDoubles));
             return;
@@ -3510,8 +3510,8 @@ FUNCTION(fun_sub)
     }
     else
     {
-        g_aDoubles[0] = Tiny_atof(fargs[0]);
-        g_aDoubles[1] = -Tiny_atof(fargs[1]);
+        g_aDoubles[0] = mux_atof(fargs[0]);
+        g_aDoubles[1] = -mux_atof(fargs[1]);
         fval(buff, bufc, AddDoubles(2, g_aDoubles));
     }
 }
@@ -3521,14 +3521,14 @@ FUNCTION(fun_mul)
     double prod = 1.0;
     for (int i = 0; i < nfargs; i++)
     {
-        prod *= Tiny_atof(fargs[i]);
+        prod *= mux_atof(fargs[i]);
     }
     fval(buff, bufc, NearestPretty(prod));
 }
 
 FUNCTION(fun_floor)
 {
-    double r = floor(Tiny_atof(fargs[0]));
+    double r = floor(mux_atof(fargs[0]));
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = Tiny_fpclass(r);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
@@ -3546,7 +3546,7 @@ FUNCTION(fun_floor)
 
 FUNCTION(fun_ceil)
 {
-    double r = ceil(Tiny_atof(fargs[0]));
+    double r = ceil(mux_atof(fargs[0]));
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = Tiny_fpclass(r);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
@@ -3564,7 +3564,7 @@ FUNCTION(fun_ceil)
 
 FUNCTION(fun_round)
 {
-    double r = Tiny_atof(fargs[0]);
+    double r = mux_atof(fargs[0]);
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = Tiny_fpclass(r);
     if (  TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS
@@ -3588,7 +3588,7 @@ FUNCTION(fun_round)
 
 FUNCTION(fun_trunc)
 {
-    double rArg = Tiny_atof(fargs[0]);
+    double rArg = mux_atof(fargs[0]);
     double rIntegerPart;
     double rFractionalPart;
 
@@ -3644,8 +3644,8 @@ FUNCTION(fun_floordiv)
 
 FUNCTION(fun_fdiv)
 {
-    double bot = Tiny_atof(fargs[1]);
-    double top = Tiny_atof(fargs[0]);
+    double bot = mux_atof(fargs[1]);
+    double top = mux_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if (bot == 0.0)
     {
@@ -3748,7 +3748,7 @@ static double ConvertR2RDG(double d, const char *szUnits)
 
 FUNCTION(fun_sin)
 {
-    double d = Tiny_atof(fargs[0]);
+    double d = mux_atof(fargs[0]);
     if (nfargs == 2)
     {
         d = ConvertRDG2R(d, fargs[1]);
@@ -3758,7 +3758,7 @@ FUNCTION(fun_sin)
 
 FUNCTION(fun_cos)
 {
-    double d = Tiny_atof(fargs[0]);
+    double d = mux_atof(fargs[0]);
     if (nfargs == 2)
     {
         d = ConvertRDG2R(d, fargs[1]);
@@ -3767,7 +3767,7 @@ FUNCTION(fun_cos)
 }
 FUNCTION(fun_tan)
 {
-    double d = Tiny_atof(fargs[0]);
+    double d = mux_atof(fargs[0]);
     if (nfargs == 2)
     {
         d = ConvertRDG2R(d, fargs[1]);
@@ -3777,15 +3777,15 @@ FUNCTION(fun_tan)
 
 FUNCTION(fun_exp)
 {
-    fval(buff, bufc, exp(Tiny_atof(fargs[0])));
+    fval(buff, bufc, exp(mux_atof(fargs[0])));
 }
 
 FUNCTION(fun_power)
 {
     double val1, val2;
 
-    val1 = Tiny_atof(fargs[0]);
-    val2 = Tiny_atof(fargs[1]);
+    val1 = mux_atof(fargs[0]);
+    val2 = mux_atof(fargs[1]);
 #ifndef HAVE_IEEE_FP_SNAN
     if (val1 < 0.0)
     {
@@ -3804,7 +3804,7 @@ FUNCTION(fun_ln)
 {
     double val;
 
-    val = Tiny_atof(fargs[0]);
+    val = mux_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if (val < 0.0)
     {
@@ -3827,7 +3827,7 @@ FUNCTION(fun_log)
 {
     double val;
 
-    val = Tiny_atof(fargs[0]);
+    val = mux_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if (val < 0.0)
     {
@@ -3848,7 +3848,7 @@ FUNCTION(fun_log)
 
 FUNCTION(fun_asin)
 {
-    double val = Tiny_atof(fargs[0]);
+    double val = mux_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if ((val < -1.0) || (val > 1.0))
     {
@@ -3866,7 +3866,7 @@ FUNCTION(fun_asin)
 
 FUNCTION(fun_acos)
 {
-    double val = Tiny_atof(fargs[0]);
+    double val = mux_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if ((val < -1.0) || (val > 1.0))
     {
@@ -3884,7 +3884,7 @@ FUNCTION(fun_acos)
 
 FUNCTION(fun_atan)
 {
-    double val = atan(Tiny_atof(fargs[0]));
+    double val = atan(mux_atof(fargs[0]));
     if (nfargs == 2)
     {
         val = ConvertR2RDG(val, fargs[1]);
@@ -3922,7 +3922,7 @@ FUNCTION(fun_dist3d)
 
 FUNCTION(fun_ctu)
 {
-    double val = Tiny_atof(fargs[0]);
+    double val = mux_atof(fargs[0]);
     val = ConvertRDG2R(val, fargs[1]);
     val = ConvertR2RDG(val, fargs[2]);
     fval(buff, bufc, val);
@@ -3982,7 +3982,7 @@ static void handle_vectors
 
         for (i = 0; i < n; i++)
         {
-            fval_buf(vres[i], Tiny_atof(v1[i]) + Tiny_atof(v2[i]));
+            fval_buf(vres[i], mux_atof(v1[i]) + mux_atof(v2[i]));
             v1[i] = (char *) vres[i];
         }
         arr2list(v1, n, buff, bufc, osep);
@@ -3992,7 +3992,7 @@ static void handle_vectors
 
         for (i = 0; i < n; i++)
         {
-            fval_buf(vres[i], Tiny_atof(v1[i]) - Tiny_atof(v2[i]));
+            fval_buf(vres[i], mux_atof(v1[i]) - mux_atof(v2[i]));
             v1[i] = (char *) vres[i];
         }
         arr2list(v1, n, buff, bufc, osep);
@@ -4005,20 +4005,20 @@ static void handle_vectors
         //
         if (n == 1)
         {
-            scalar = Tiny_atof(v1[0]);
+            scalar = mux_atof(v1[0]);
             for (i = 0; i < m; i++)
             {
-                fval_buf(vres[i], Tiny_atof(v2[i]) * scalar);
+                fval_buf(vres[i], mux_atof(v2[i]) * scalar);
                 v1[i] = (char *) vres[i];
             }
             n = m;
         }
         else if (m == 1)
         {
-            scalar = Tiny_atof(v2[0]);
+            scalar = mux_atof(v2[0]);
             for (i = 0; i < n; i++)
             {
-                fval_buf(vres[i], Tiny_atof(v1[i]) * scalar);
+                fval_buf(vres[i], mux_atof(v1[i]) * scalar);
                 v1[i] = (char *) vres[i];
             }
         }
@@ -4028,7 +4028,7 @@ static void handle_vectors
             //
             for (i = 0; i < n; i++)
             {
-                fval_buf(vres[i], Tiny_atof(v1[i]) * Tiny_atof(v2[i]));
+                fval_buf(vres[i], mux_atof(v1[i]) * mux_atof(v2[i]));
                 v1[i] = (char *) vres[i];
             }
         }
@@ -4040,7 +4040,7 @@ static void handle_vectors
         scalar = 0.0;
         for (i = 0; i < n; i++)
         {
-            scalar += Tiny_atof(v1[i]) * Tiny_atof(v2[i]);
+            scalar += mux_atof(v1[i]) * mux_atof(v2[i]);
         }
         fval(buff, bufc, scalar);
         break;
@@ -4068,8 +4068,8 @@ static void handle_vectors
             double a[2][3];
             for (i = 0; i < 3; i++)
             {
-                a[0][i] = Tiny_atof(v1[i]);
-                a[1][i] = Tiny_atof(v2[i]);
+                a[0][i] = mux_atof(v1[i]);
+                a[1][i] = mux_atof(v2[i]);
                 v1[i] = (char *) vres[i];
             }
             fval_buf(vres[0], (a[0][1] * a[1][2]) - (a[0][2] * a[1][1]));
@@ -4153,7 +4153,7 @@ FUNCTION(fun_vmag)
     //
     for (i = 0; i < n; i++)
     {
-        tmp = Tiny_atof(v1[i]);
+        tmp = mux_atof(v1[i]);
         res += tmp * tmp;
     }
 
@@ -4195,7 +4195,7 @@ FUNCTION(fun_vunit)
     //
     for (i = 0; i < n; i++)
     {
-        tmp = Tiny_atof(v1[i]);
+        tmp = mux_atof(v1[i]);
         res += tmp * tmp;
     }
 
@@ -4207,7 +4207,7 @@ FUNCTION(fun_vunit)
     }
     for (i = 0; i < n; i++)
     {
-        fval_buf(vres[i], Tiny_atof(v1[i]) / sqrt(res));
+        fval_buf(vres[i], mux_atof(v1[i]) / sqrt(res));
         v1[i] = (char *) vres[i];
     }
 
@@ -5895,7 +5895,7 @@ FUNCTION(fun_max)
     double maximum = -DBL_MAX;
     for (int i = 0; i < nfargs; i++)
     {
-        double tval = Tiny_atof(fargs[i]);
+        double tval = mux_atof(fargs[i]);
         if (tval > maximum)
         {
             maximum = tval;
@@ -5909,7 +5909,7 @@ FUNCTION(fun_min)
     double minimum = DBL_MAX;
     for (int i = 0; i < nfargs; i++)
     {
-        double tval = Tiny_atof(fargs[i]);
+        double tval = mux_atof(fargs[i]);
         if (tval < minimum)
         {
             minimum = tval;
@@ -7182,7 +7182,7 @@ static void do_asort(char *s[], int n, int sort_type)
         for (i = 0; i < n; i++)
         {
             fp[i].str = s[i];
-            fp[i].data = Tiny_atof(s[i], FALSE);
+            fp[i].data = mux_atof(s[i], FALSE);
         }
         qsort((void *)fp, n, sizeof(f_rec), f_comp);
         for (i = 0; i < n; i++)
