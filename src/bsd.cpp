@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.44 2001-12-04 01:21:03 sdennis Exp $
+// $Id: bsd.cpp,v 1.45 2001-12-04 02:09:39 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -808,7 +808,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
     // Any existing open port which does not appear in the requested set
     // should be closed.
     //
-    int i, j;
+    int i, j, k;
     BOOL bFound;
     for (i = 0; i < *pnPorts; i++)
     {
@@ -827,10 +827,13 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
             {
                 DebugTotalSockets--;
                 (*pnPorts)--;
-                if (i != *pnPorts)
+                k = *pnPorts;
+                if (i != k)
                 {
-                    aPorts[i] = aPorts[*pnPorts];
+                    aPorts[i] = aPorts[k];
                 }
+                aPorts[k].port = 0;
+                aPorts[k].socket = INVALID_SOCKET;
             }
         }
     }
@@ -843,21 +846,18 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
         bFound = FALSE;
         for (i = 0; i < *pnPorts; i++)
         {
-            if (aPorts[i].socket == INVALID_SOCKET)
-            {
-                continue;
-            }
             if (aPorts[i].port == pia->pi[j])
             {
                 bFound = TRUE;
                 break;
             }
-            if (!bFound)
-            {
-                aPorts[*pnPorts].port = pia->pi[j];
-                (*pnPorts)++;
-                make_socket(aPorts+(*pnPorts)-1);
-            }
+        }
+        if (!bFound)
+        {
+            k = *pnPorts;
+            (*pnPorts)++;
+            aPorts[k].port = pia->pi[j];
+            make_socket(aPorts+k);
         }
     }
 
