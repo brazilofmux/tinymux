@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.68 2002-02-13 06:09:26 sdennis Exp $
+// $Id: comsys.cpp,v 1.69 2002-06-04 04:18:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2513,7 +2513,7 @@ void do_chboot
     struct comuser *vu = select_user(ch, thing);
     if (!vu)
     {
-        raw_notify(player, tprintf("@cboot: %s in not on the channel.", Name(thing)));
+        raw_notify(player, tprintf("@cboot: %s is not on the channel.", Name(thing)));
         return;
     }
 
