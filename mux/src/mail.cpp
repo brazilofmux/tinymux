@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.50 2002-09-12 05:35:13 jake Exp $
+// $Id: mail.cpp,v 1.51 2002-09-12 17:29:19 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -326,11 +326,16 @@ void add_folder_name(dbref player, int fld, char *name)
         *q = '\0';
         size_t nPattern = q - aPattern;
 
-        int i = BMH_StringSearch(nPattern, aPattern, nFolders, aFolders);
-        free_lbuf(aPattern);
-
-        if (0 <= i)
+        BMH_State bmhs;
+        BMH_Prepare(&bmhs, nPattern, aPattern);
+        for (;;)
         {
+            int i = BMH_Execute(&bmhs, nPattern, aPattern, nFolders, aFolders);
+            if (i < 0)
+            {
+                break;
+            }
+
             // Remove old record.
             //
             q = aFolders + i;
@@ -372,6 +377,7 @@ void add_folder_name(dbref player, int fld, char *name)
             *q = '\0';
             nFolders = q - aFolders;
         }
+        free_lbuf(aPattern);
     }
     if (nFolders + 1 + nNew < LBUF_SIZE)
     {
