@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.12 2003-07-23 19:37:07 sdennis Exp $
+// $Id: look.cpp,v 1.13 2003-07-23 19:40:17 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -974,7 +974,7 @@ static bool show_a_desc(dbref player, dbref loc)
                 &DescFormat, ParameterList, 2);
         
         notify(player, FormatOutput); 
-        did_it(player, loc, NULL, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);  
+        did_it(player, loc, 0, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);  
 
         free_lbuf(attrtext); 
         free_lbuf(attrname);
