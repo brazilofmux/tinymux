@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.76 2004-09-15 05:14:14 sdennis Exp $
+// $Id: funceval.cpp,v 1.77 2004-09-22 14:28:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1762,11 +1762,13 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
             case DEFAULT_DEFAULT:
                 safe_str(atr_gotten, buff, bufc);
                 break;
+
             case DEFAULT_EDEFAULT:
                 str = atr_gotten;
                 mux_exec(buff, bufc, thing, executor, executor,
                      EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
                 break;
+
             case DEFAULT_UDEFAULT:
                 {
                     char *xargs[NUM_ENV_VARS];
@@ -1775,10 +1777,10 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
                     for (i = 0; i < nxargs; i++)
                     {
                         xargs[i] = alloc_lbuf("fun_udefault_args");
-                        char *bp = xargs[i];
+                        char *bp2 = xargs[i];
                         str = fargs[i+2];
 
-                        mux_exec(xargs[i], &bp,
+                        mux_exec(xargs[i], &bp2,
                             thing, caller, enactor,
                             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL,
                             &str, cargs, ncargs);
