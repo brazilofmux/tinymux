@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.6 2002-06-27 09:06:47 jake Exp $
+// $Id: match.cpp,v 1.7 2002-06-28 16:35:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -15,9 +15,11 @@ const char *NOMATCH_MESSAGE      = "I don't see that here.";
 const char *AMBIGUOUS_MESSAGE    = "I don't know which one you mean!";
 const char *NOPERM_MESSAGE       = "Permission denied.";
 const char *FUNC_FAIL_MESSAGE    = "#-1";
-const char *FUNC_NOPERM_MESSAGE  = "#-1 PERMISSION DENIED";
 const char *FUNC_NOMATCH_MESSAGE = "#-1 NO MATCH";
 const char *OUT_OF_RANGE         = "#-1 OUT OF RANGE";
+const char *FUNC_NOT_FOUND       = "#-1 NOT FOUND";
+const char *FUNC_AMBIGUOUS       = "#-2 AMBIGUOUS";
+const char *FUNC_NOPERM_MESSAGE  = "#-1 PERMISSION DENIED";
 
 #define CON_LOCAL       0x01    // Match is near me.
 #define CON_TYPE        0x02    // Match is of requested type.
@@ -535,4 +537,16 @@ dbref match_thing_quiet(dbref player, char *name)
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     return match_result();
+}
+
+void safe_match_result(dbref it, char *buff, char **bufc)
+{
+    if (it == AMBIGUOUS)
+    {
+        safe_ambiguous(buff, bufc);
+    }
+    else
+    {
+        safe_notfound(buff, bufc);
+    }
 }

@@ -1,6 +1,6 @@
 // match.h
 //
-// $Id: match.h,v 1.5 2002-06-27 06:38:31 jake Exp $
+// $Id: match.h,v 1.6 2002-06-28 16:35:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -56,6 +56,7 @@ extern void restore_match_state(MSTATE *);
 extern void match_zone_exit(void);
 extern dbref match_thing(dbref player, char *name);
 extern dbref match_thing_quiet(dbref player, char *name);
+extern void safe_match_result(dbref it, char *buff, char **bufc);
 
 #define MAT_NO_EXITS        1   /* Don't check for exits */
 #define MAT_EXIT_PARENTS    2   /* Check for exits in parents */

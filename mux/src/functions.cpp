@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.43 2002-06-28 15:56:54 sdennis Exp $
+// $Id: functions.cpp,v 1.44 2002-06-28 16:35:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -802,24 +802,24 @@ FUNCTION(fun_words)
 
 FUNCTION(fun_flags)
 {
-    dbref result = NOTHING;
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (Good_obj(it))
+    if (!Good_obj(it))
     {
-        if (  mudconf.pub_flags
-           || Examinable(executor, it)
-           || it == enactor)
-        {
-            char *buff2 = decode_flags(executor, &(db[it].fs));
-            safe_str(buff2, buff, bufc);
-            free_sbuf(buff2);
-        }
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (  mudconf.pub_flags
+       || Examinable(executor, it)
+       || it == enactor)
+    {
+        char *buff2 = decode_flags(executor, &(db[it].fs));
+        safe_str(buff2, buff, bufc);
+        free_sbuf(buff2);
     }
     else
     {
-        result = it;
+        safe_noperm(buff, bufc);
     }
-    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
@@ -1671,21 +1671,21 @@ FUNCTION(fun_ulocal)
 
 FUNCTION(fun_parent)
 {
-    dbref result = NOTHING;
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (Good_obj(it))
+    if (!Good_obj(it))
     {
-        if (  Examinable(executor, it)
-           || it == enactor)
-        {
-            result = Parent(it);
-        }
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (  Examinable(executor, it)
+       || it == enactor)
+    {
+        safe_tprintf_str(buff, bufc, "#%d", Parent(it));
     }
     else
     {
-        result = it;
+        safe_noperm(buff, bufc);
     }
-    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
@@ -1894,23 +1894,29 @@ FUNCTION(fun_s)
 
 FUNCTION(fun_con)
 {
-    dbref result = NOTHING;
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (Good_obj(it))
+    if (!Good_obj(it))
     {
-        if (  Has_contents(it)
-           && (  Examinable(executor, it)
-              || where_is(executor) == it
-              || it == enactor))
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (Has_contents(it))
+    {
+        if (  Examinable(executor, it)
+           || where_is(executor) == it
+           || it == enactor)
         {
-            result = Contents(it);
+            safe_tprintf_str(buff, bufc, "#%d", Contents(it));
+        }
+        else
+        {
+            safe_noperm(buff, bufc);
         }
     }
     else
     {
-        result = it;
+        safe_nothing(buff, bufc);
     }
-    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
@@ -1920,41 +1926,42 @@ FUNCTION(fun_con)
 
 FUNCTION(fun_exit)
 {
-    dbref result = NOTHING;
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (Good_obj(it))
+    if (!Good_obj(it))
     {
-        if (  Has_exits(it)
-           && Good_obj(Exits(it)))
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (  Has_exits(it)
+       && Good_obj(Exits(it)))
+    {
+        int key = 0;
+        if (Examinable(executor, it))
         {
-            int key = 0;
-            if (Examinable(executor, it))
+            key |= VE_LOC_XAM;
+        }
+        if (Dark(it))
+        {
+            key |= VE_LOC_DARK;
+        }
+        dbref exit;
+        DOLIST(exit, Exits(it))
+        {
+            if (exit_visible(exit, executor, key))
             {
-                key |= VE_LOC_XAM;
-            }
-            if (Dark(it))
-            {
-                key |= VE_LOC_DARK;
-            }
-            dbref exit;
-            DOLIST(exit, Exits(it))
-            {
-                if (exit_visible(exit, executor, key))
-                {
-                    result = exit;
-                    break;;
-                }
+                safe_tprintf_str(buff, bufc, "#%d", exit);
+                return;
             }
         }
+        safe_notfound(buff, bufc);
     }
     else
     {
-        result = it;
+        safe_nothing(buff, bufc);
     }
-    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
-/*
+/* QQQ
  * ---------------------------------------------------------------------------
  * * fun_next: return next thing in contents or exits chain
  */
@@ -1962,9 +1969,14 @@ FUNCTION(fun_exit)
 FUNCTION(fun_next)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (  Good_obj(it)
-       && Has_siblings(it))
+    if (!Good_obj(it))
     {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (Has_siblings(it))
+    {
+        dbref result = NOTHING;
         dbref loc = where_is(it);
         BOOL ex_here = Good_obj(loc) ? Examinable(executor, loc) : 0;
         if (  ex_here
@@ -1973,8 +1985,7 @@ FUNCTION(fun_next)
         {
             if (!isExit(it))
             {
-                safe_tprintf_str(buff, bufc, "#%d", Next(it));
-                return;
+                result = Next(it);
             }
             else
             {
@@ -1993,11 +2004,12 @@ FUNCTION(fun_next)
                     if (  exit != it
                        && exit_visible(exit, executor, key))
                     {
-                        safe_tprintf_str(buff, bufc, "#%d", exit);
-                        return;
+                        result = exit;
+                        break;
                     }
                 }
             }
+            safe_tprintf_str(buff, bufc, "#%d", result);
         }
     }
     safe_nothing(buff, bufc);
@@ -4764,14 +4776,7 @@ FUNCTION(fun_type)
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        if (it == AMBIGUOUS)
-        {
-            safe_str("#-2 AMBIGUOUS", buff, bufc);
-        }
-        else
-        {
-            safe_str("#-1 NOT FOUND", buff, bufc);
-        }
+        safe_match_result(it, buff, bufc);
         return;
     }
     switch (Typeof(it))
@@ -4867,14 +4872,7 @@ FUNCTION(fun_hasflag)
         it = match_thing_quiet(executor, fargs[0]);
         if (!Good_obj(it))
         {
-            if (it == AMBIGUOUS)
-            {
-                safe_str("#-2 AMBIGUOUS", buff, bufc);
-            }
-            else
-            {
-                safe_str("#-1 NOT FOUND", buff, bufc);
-            }
+            safe_match_result(it, buff, bufc);
         }
         else if (  mudconf.pub_flags
                 || Examinable(executor, it)
@@ -4895,14 +4893,7 @@ FUNCTION(fun_haspower)
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        if (it == AMBIGUOUS)
-        {
-            safe_str("#-2 AMBIGUOUS", buff, bufc);
-        }
-        else
-        {
-            safe_str("#-1 NOT FOUND", buff, bufc);
-        }
+        safe_match_result(it, buff, bufc);
         return;
     }
     if (  mudconf.pub_flags
@@ -5008,14 +4999,7 @@ FUNCTION(fun_elock)
     victim = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(victim))
     {
-        if (victim == AMBIGUOUS)
-        {
-            safe_str("#-2 AMBIGUOUS", buff, bufc);
-        }
-        else
-        {
-            safe_str("#-1 NOT FOUND", buff, bufc);
-        }
+        safe_match_result(victim, buff, bufc);
     }
     else if (  !nearby_or_control(executor, victim)
             && !nearby_or_control(executor, it))
@@ -5072,26 +5056,14 @@ FUNCTION(fun_nearby)
     obj1 = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(obj1))
     {
-        if (obj1 == AMBIGUOUS)
-        {
-            safe_str("#-2 AMBIGUOUS", buff, bufc);
-        }
-        else
-        {
-            safe_str("#-1 NOT FOUND", buff, bufc);
-        }
+        safe_match_result(obj1, buff, bufc);
+        return;
     }
     obj2 = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(obj2))
     {
-        if (obj2 == AMBIGUOUS)
-        {
-            safe_str("#-2 AMBIGUOUS", buff, bufc);
-        }
-        else
-        {
-            safe_str("#-1 NOT FOUND", buff, bufc);
-        }
+        safe_match_result(obj2, buff, bufc);
+        return;
     }
     if (  (  nearby_or_control(executor, obj1)
           || nearby_or_control(executor, obj2))
@@ -5112,14 +5084,7 @@ static void process_sex(dbref player, char *what, const char *token, char *buff,
     dbref it = match_thing_quiet(player, what);
     if (!Good_obj(it))
     {
-        if (it == AMBIGUOUS)
-        {
-            safe_str("#-2 AMBIGUOUS", buff, bufc);
-        }
-        else
-        {
-            safe_str("#-1 NOT FOUND", buff, bufc);
-        }
+        safe_match_result(it, buff, bufc);
         return;
     }
     if (!isPlayer(it) && !nearby_or_control(player, it))
