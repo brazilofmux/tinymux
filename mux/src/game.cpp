@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.27 2003-01-03 23:36:44 sdennis Exp $
+// $Id: game.cpp,v 1.28 2003-01-04 04:26:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -511,7 +511,6 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
     char *args[NUM_ENV_VARS];
     dbref aowner,  recip, obj;
     int i, nargs, aflags;
-    BOOL pass_uselock;
     FWDLIST *fp;
 
     // If we want NOSPOOF output, generate it.  It is only needed if we are

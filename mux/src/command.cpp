@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.98 2003-01-02 14:42:17 sdennis Exp $
+// $Id: command.cpp,v 1.99 2003-01-04 04:26:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -909,7 +909,7 @@ BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
     if (hk_attr)
     {
         dbref aowner;
-        int aflags, x;
+        int aflags;
         int anum = hk_attr->number;
         char *atext = atr_get(thing, anum, &aowner, &aflags);
         if (atext[0] && !(aflags & AF_NOPROG))
@@ -996,7 +996,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
             dbref enactor, BOOL interactive, char *arg, char *unp_command,
             char *cargs[], int ncargs)
 {
-    char *buf1, *buf2, tchar, *bp, *str, *buff, *s, *j, *new0, *dx_tmp, *s_uselock;
+    char *buf1, *buf2, tchar, *bp, *str, *buff, *s, *j, *new0, *s_uselock;
     char *args[MAX_ARG];
     int nargs, i, interp, key, xkey, aflags;
     dbref aowner;

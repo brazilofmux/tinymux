@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.56 2002-12-16 00:21:27 sdennis Exp $
+// $Id: mail.cpp,v 1.57 2003-01-04 04:26:48 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -459,7 +459,6 @@ static int get_folder_number(dbref player, char *name)
     char *aFolders = alloc_lbuf("get_folder_num_str");
     char *pFolders = atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner,
         &aflags, &nFolders);
-    char *p;
     if (nFolders != 0)
     {
         char *aPattern = alloc_lbuf("get_folder_num_pat");
@@ -1634,9 +1633,7 @@ void do_mail_purge(dbref player)
 static char *make_numlist(dbref player, char *arg, BOOL bBlind)
 {
     char *tail, spot;
-    char buf[MBUF_SIZE];
     struct malias *m;
-    struct mail *temp;
     dbref target;
     int nRecip = 0;
     dbref aRecip[(LBUF_SIZE+1)/2];
