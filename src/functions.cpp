@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.18 2000-05-19 17:20:01 sdennis Exp $
+// $Id: functions.cpp,v 1.19 2000-05-19 17:57:04 sdennis Exp $
 //
 
 #include "copyright.h"
