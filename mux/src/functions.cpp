@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.68 2002-07-23 14:04:16 jake Exp $
+// $Id: functions.cpp,v 1.69 2002-07-23 21:24:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3395,17 +3395,56 @@ static double g_aDoubles[(LBUF_SIZE+1)/2];
 
 FUNCTION(fun_ladd)
 {
-    char sep;
-    varargs_preamble(2);
-
     int n = 0;
-    char *cp = trim_space_sep(fargs[0], sep);
-    while (cp)
+    if (0 < nfargs)
     {
-        char *curr = split_token(&cp, sep);
-        g_aDoubles[n++] = Tiny_atof(curr);
+        char sep;
+        varargs_preamble(2);
+
+        char *cp = trim_space_sep(fargs[0], sep);
+        while (cp)
+        {
+            char *curr = split_token(&cp, sep);
+            g_aDoubles[n++] = Tiny_atof(curr);
+        }
     }
     fval(buff, bufc, AddDoubles(n, g_aDoubles));
+}
+
+FUNCTION(fun_land)
+{
+    BOOL bValue = TRUE;
+    if (0 < nfargs)
+    {
+        char sep;
+        varargs_preamble(2);
+
+        char *cp = trim_space_sep(fargs[0], sep);
+        while (cp && bValue)
+        {
+            char *curr = split_token(&cp, sep);
+            bValue = Tiny_atol(curr);
+        }
+    }
+    safe_bool(bValue, buff, bufc);
+}
+
+FUNCTION(fun_lor)
+{
+    BOOL bValue = FALSE;
+    if (0 < nfargs)
+    {
+        char sep;
+        varargs_preamble(2);
+
+        char *cp = trim_space_sep(fargs[0], sep);
+        while (cp && !bValue)
+        {
+            char *curr = split_token(&cp, sep);
+            bValue = Tiny_atol(curr);
+        }
+    }
+    safe_bool(bValue, buff, bufc);
 }
 
 FUNCTION(fun_sqrt)
@@ -7872,7 +7911,8 @@ FUN flist[] =
     {"ITEMIZE",  fun_itemize,  MAX_ARG, 1,  4,       0, CA_PUBLIC},
     {"ITEMS",    fun_items,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"ITER",     fun_iter,     MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
-    {"LADD",     fun_ladd,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"LADD",     fun_ladd,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"LAND",     fun_land,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"LAST",     fun_last,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"LATTR",    fun_lattr,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LATTRCMDS",fun_lattrcmds,MAX_ARG, 1,  1,       0, CA_PUBLIC},
@@ -7894,6 +7934,7 @@ FUN flist[] =
     {"LOCATE",   fun_locate,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
     {"LOCK",     fun_lock,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LOG",      fun_log,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LOR",      fun_lor,      MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LPORTS",   fun_lports,   MAX_ARG, 0,  0,       0, CA_WIZARD},
     {"LPOS",     fun_lpos,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
