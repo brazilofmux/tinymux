@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.47 2001-08-28 15:27:43 sdennis Exp $
+// * $Id: comsys.cpp,v 1.48 2001-09-28 00:09:26 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -939,7 +939,7 @@ void do_comsend(struct channel *ch, char *msgNormal, dbref player)
         if (  user->bUserIsOn
            && do_test_access(user->who, CHANNEL_RECEIVE, ch))
         {
-            notify_with_cause(user->who, player, msgNormal);
+            notify_with_cause_ooc(user->who, player, msgNormal);
         }
     }
 }
