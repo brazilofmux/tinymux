@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.50 2002-08-22 01:00:27 sdennis Exp $
+// $Id: funceval.cpp,v 1.51 2002-09-14 07:15:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -214,7 +214,7 @@ FUNCTION(fun_zone)
 
 static BOOL check_command(dbref player, char *name, char *buff, char **bufc)
 {
-    CMDENT *cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
+    CMDENT_BASIC *cmdp = (CMDENT_BASIC *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
     if (cmdp)
     {
         // Perform checks similiar to (but not exactly like) the

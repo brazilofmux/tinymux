@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.15 2002-09-01 16:31:31 jake Exp $
+// $Id: command.h,v 1.16 2002-09-14 07:15:59 jake Exp $
 //
 
 #ifndef __COMMAND_H
@@ -248,6 +248,18 @@ typedef struct
         ADDENT *addent;
     };
 } CMDENT;
+
+typedef struct
+{
+    char    *cmdname;
+    NAMETAB *switches;
+    int     perms;
+    int     extra;
+    int     callseq;
+    int     hookmask;
+    void    *handler;
+} CMDENT_BASIC;
+
 
 /* Command handler call conventions */
 
