@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.38 2003-04-23 05:06:05 sdennis Exp $
+// $Id: predicates.cpp,v 1.39 2003-04-27 16:14:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1803,19 +1803,14 @@ bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bCheckParent)
     dbref aowner;
     int aflags;
 
-    bool b;
     if (  !mudstate.bStandAlone
        && bCheckParent)
     {
-        b = atr_pget_info(target, tattr->number, &aowner, &aflags);
+        atr_pget_info(target, tattr->number, &aowner, &aflags);
     }
     else
     {
-        b = atr_get_info(target, tattr->number, &aowner, &aflags);
-    }
-    if (!b)
-    {
-        return false;
+        atr_get_info(target, tattr->number, &aowner, &aflags);
     }
 
     int mAllow = AF_VISUAL;
