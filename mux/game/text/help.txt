@@ -6173,6 +6173,28 @@ FAILURE
 
   Related Topics: get, look, @afail, @fail, @lock, @ofail, STRINGS.
 
+& FCOUNT()
+FCOUNT()
+
+  FUNCTION: fcount()
+
+  This function returns the current state of the function invocation
+  counter.  Softcode can use this result to guage its distance from the
+  configured function invocation limit.
+
+  Related Topics: fdepth(), function_invocation_limit in wizhelp
+
+& FDEPTH()
+FDEPTH()
+
+  FUNCTION: fdepth()
+
+  This function returns the current state of the function recursion
+  counter.  Softcode can use this result to guage its distance from the
+  configured function recursion limit.
+
+  Related Topics: fcount(), function_recursion_limit in wizhelp
+
 & FDIV()
 FDIV()
 
@@ -6574,58 +6596,58 @@ FUNCTION LIST
     DIST2D()    DIST3D()    DOING()     DUMPING()   E()         EDEFAULT()
     EDIT()      ELEMENTS()  ELOCK()     EMIT()      EMPTY()     ENCRYPT()
     ENTRANCES() EQ()        ERROR()     ESCAPE()    EVAL()      EXIT()
-    EXP()       EXPTIME()   EXTRACT()   FDIV()      FILTER()    FILTERBOOL()
-    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FOLD()
-    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GRABALL()
+    EXP()       EXPTIME()   EXTRACT()   FCOUNT()    FDEPTH()    FDIV()
+    FILTER()    FILTERBOOL()FINDABLE()  FIRST()     FLAGS()     FLOOR()
+    FLOORDIV()  FOLD()      FOREACH()   FULLNAME()  GET()       GET_EVAL()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    GREP()      GREPI()     GT()        GTE()       HASATTR()   HASATTRP()
-    HASFLAG()   HASPOWER()  HASQUOTA()  HASTYPE()   HOME()      HOST()
-    IABS()      IADD()      IDIV()      IDLE()      IF()        IFELSE()
-    ILEV()      IMUL()      INC()       INDEX()     INSERT()    INZONE()
-    ISDBREF()   ISIGN()     ISINT()     ISNUM()     ISRAT()     ISUB()
-    ISWORD()    ITEMIZE()   ITEMS()     ITER()      LADD()      LAND()
-    LAST()      LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()
-    LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()
-    LIT()       LJUST()     LN()        LNUM()      LOC()       LOCALIZE()
-    LOCATE()    LOCK()      LOG()       LOR()       LPARENT()   LPORTS()
-    LPOS()      LRAND()     LROOMS()    LSTACK()    LT()        LTE()
-    LWHO()      MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()
-    MAX()       MEMBER()    MERGE()     MID()       MIN()       MIX()
-    MOD()       MONEY()     MONIKER()   MOTD()      MTIME()     MUDNAME()
-    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
-    NOT()       NULL()      NUM()       OBJ()       OBJEVAL()   OBJMEM()
-    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()   OWNER()
-    PACK()      PARENT()    PARSE()     PEEK()      PEMIT()     PFIND()
-    PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()      POP()
+    GRAB()      GRABALL()   GREP()      GREPI()     GT()        GTE()
+    HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASQUOTA()  HASTYPE()
+    HOME()      HOST()      IABS()      IADD()      IDIV()      IDLE()
+    IF()        IFELSE()    ILEV()      IMUL()      INC()       INDEX()
+    INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()     ISNUM()
+    ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()     ITER()
+    LADD()      LAND()      LAST()      LATTR()     LATTRCMDS() LATTRP()
+    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()
+    LINK()      LIST()      LIT()       LJUST()     LN()        LNUM()
+    LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()       LOR()
+    LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()    LSTACK()
+    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAP()
+    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
+    MIN()       MIX()       MOD()       MONEY()     MONIKER()   MOTD()
+    MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()
+    NEQ()       NEXT()      NOT()       NULL()      NUM()       OBJ()
+    OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()
+    ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()     PEEK()
+    PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    PORTS()     POS()       POSS()      POWER()     PUSH()      R()
-    RAND()      REGMATCH()  REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()
-    REGRABI()   REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()
-    REST()      REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()
-    ROMAN()     ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()
-    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()
-    SETR()      SETUNION()  SHA1()      SHL()       SHR()       SHUFFLE()
-    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
-    SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
-    STATS()     STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI()
-    STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
-    SWITCH()    T()         TABLE()     TAN()       TEL()       TIME()
-    TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()      U()
-    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
-    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
-    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()
-    WORDS()     WRAP()      WRITETIME() XGET()      XOR()       ZFUN()
-    ZONE()      ZWHO()
+    POLL()      POP()       PORTS()     POS()       POSS()      POWER()
+    PUSH()      R()         RAND()      REGMATCH()  REGMATCHI() REGRAB()
+    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()     REMOVE()
+    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()
+    RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()     S()
+    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
+    SETINTER()  SETQ()      SETR()      SETUNION()  SHA1()      SHL()
+    SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
+    SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()
+    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIP()     STRIPACCENTS()
+    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()
+    SUBJ()      SWITCH()    T()         TABLE()     TAN()       TEL()
+    TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()
+    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
+    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
+    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
+    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()
+    ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
