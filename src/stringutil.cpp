@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.11 2000-06-02 16:18:01 sdennis Exp $
+// $Id: stringutil.cpp,v 1.12 2000-06-02 19:14:03 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1685,9 +1685,8 @@ int minmatch(char *str, char *target, int min)
 char *StringCloneLen(const char *str, unsigned int nStr)
 {
     char *buff = (char *)MEMALLOC(nStr+1);
-    if (!buff)
+    if (ISOUTOFMEMORY(buff))
     {
-        OutOfMemory(__FILE__, __LINE__);
         return 0;
     }
     memcpy(buff, str, nStr);
@@ -1709,9 +1708,8 @@ char *StringClone(const char *str)
 char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
 {
     char *buff = (char *)MEMALLOC(nBuffer);
-    if (!buff)
+    if (ISOUTOFMEMORY(buff))
     {
-        OutOfMemory(__FILE__, __LINE__);
         return 0;
     }
     memcpy(buff, pBuffer, nBuffer);
