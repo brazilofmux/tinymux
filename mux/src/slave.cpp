@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.5 2003-03-03 07:38:49 sdennis Exp $
+// $Id: slave.cpp,v 1.6 2003-03-03 07:53:50 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -254,7 +254,7 @@ RETSIGTYPE alarm_signal(int iSig)
     itime.it_value = interval;
     setitimer(ITIMER_REAL, &itime, 0);
 
-    int sum;
+    int sum = 0;
     int i;
     for (i = 0; i < NUM_PERIODS; i++)
     {
