@@ -34,7 +34,6 @@ game/text/wizhelp.txt
 src/Makefile.in
 src/_build.cpp
 src/_build.h
-src/a.cpp
 src/alloc.cpp
 src/alloc.h
 src/analyse.pre
