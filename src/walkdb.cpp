@@ -1,7 +1,6 @@
-//
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.13 2001-11-08 03:48:57 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.14 2001-11-18 18:06:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -22,7 +21,7 @@
 
 //
 // Bind occurances of the universal var in ACTION to ARG, then run ACTION.
-// Cmds run in low-prio Q after a 1 sec delay for the first one. 
+// Cmds run in low-prio Q after a 1 sec delay for the first one.
 //
 static void bind_and_queue(dbref player, dbref cause, char *action,
                            char *argstr, char *cargs[], int ncargs,
@@ -96,7 +95,7 @@ void do_dolist(dbref player, dbref cause, int key, char *list, char *command,
 }
 
 //
-// Regular @find command 
+// Regular @find command
 //
 void do_find(dbref player, dbref cause, int key, char *name)
 {
@@ -146,7 +145,7 @@ int get_stats(dbref player, dbref who, STATS *info)
         return 0;
     }
 
-    // Can we afford it? 
+    // Can we afford it?
     //
     if (!payfor(player, mudconf.searchcost))
     {
@@ -195,7 +194,7 @@ int get_stats(dbref player, dbref who, STATS *info)
     return 1;
 }
 
-// Reworked by R'nice 
+// Reworked by R'nice
 //
 void do_stats(dbref player, dbref cause, int key, char *name)
 {
@@ -282,38 +281,38 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
                 switch (Typeof(i))
                 {
                 case TYPE_PLAYER:
-                    
+
                     s_Owner(i, i);
                     quota_out += mudconf.player_quota;
                     break;
-                    
+
                 case TYPE_THING:
-                    
+
                     s_Owner(i, to_player);
                     quota_out += mudconf.thing_quota;
                     quota_in -= mudconf.thing_quota;
                     break;
-                    
+
                 case TYPE_ROOM:
-                    
+
                     s_Owner(i, to_player);
                     quota_out += mudconf.room_quota;
                     quota_in -= mudconf.room_quota;
                     break;
-                    
+
                 case TYPE_EXIT:
-                    
+
                     s_Owner(i, to_player);
                     quota_out += mudconf.exit_quota;
                     quota_in -= mudconf.exit_quota;
                     break;
-                    
+
                 default:
-                    
+
                     s_Owner(i, to_player);
                 }
                 s_Flags(i, (Flags(i) & ~(CHOWN_OK | INHERIT)) | HALT);
-                
+
                 if (key & CHOWN_NOZONE)
                 {
                     s_Zone(i, NOTHING);
@@ -394,7 +393,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
     char *pname, *searchtype;
     int err;
 
-    // Crack arg into <pname> <type>=<targ>,<low>,<high> 
+    // Crack arg into <pname> <type>=<targ>,<low>,<high>
     //
     pname = parse_to(&searchfor, '=', EV_STRIP_TS);
     if (!pname || !*pname)
@@ -495,7 +494,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
     switch (searchtype[0])
     {
     case '\0':
-    
+
         // The no class requested class  :)
         //
         break;
@@ -811,7 +810,7 @@ void search_perform(dbref player, dbref cause, SEARCH *parm)
         {
             continue;
         }
-         
+
         // Check for matching power.
         //
         thing1powers = Powers(thing);
@@ -832,10 +831,9 @@ void search_perform(dbref player, dbref cause, SEARCH *parm)
             if (!string_prefix((char *)PureName(thing), parm->s_rst_name))
                 continue;
         }
-        /*
-         * Check for successful evaluation 
-         */
 
+        // Check for successful evaluation.
+        //
         if (parm->s_rst_eval != NULL)
         {
             buff[0] = '#';
@@ -1074,7 +1072,7 @@ void do_search(dbref player, dbref cause, int key, char *arg)
         }
     }
 
-    // Player search 
+    // Player search
     //
     if (  searchparm.s_rst_type == TYPE_PLAYER
        || searchparm.s_rst_type == NOTYPE)
@@ -1186,23 +1184,22 @@ void do_apply_marked( dbref player, dbref cause, int key, char *command,
     }
 }
 
-/* ---------------------------------------------------------------------------
- * * Object list management routines:
- * * olist_push, olist_pop, olist_add, olist_first, olist_next
- */
+// ---------------------------------------------------------------------------
+// Object list management routines: olist_push, olist_pop, olist_add,
+//   olist_first, olist_next
+//
 
-/*
- * olist_push: Create a new object list at the top of the object list stack
- */
+// olist_push: Create a new object list at the top of the object list stack.
+//
 void olist_push(void)
 {
     OLSTK *ol;
-    
+
     ol = (OLSTK *)MEMALLOC(sizeof(OLSTK));
     ISOUTOFMEMORY(ol);
     ol->next = mudstate.olist;
     mudstate.olist = ol;
-    
+
     ol->head = NULL;
     ol->tail = NULL;
     ol->cblock = NULL;
@@ -1210,9 +1207,8 @@ void olist_push(void)
     ol->citm = 0;
 }
 
-/*
- * olist_pop: Pop one entire list off the object list stack
- */
+// olist_pop: Pop one entire list off the object list stack.
+//
 void olist_pop(void)
 {
     OLSTK *ol = mudstate.olist->next;
@@ -1226,13 +1222,12 @@ void olist_pop(void)
     mudstate.olist = ol;
 }
 
-/*
- * olist_add: Add an entry to the object list 
- */
+// olist_add: Add an entry to the object list.
+//
 void olist_add(dbref item)
 {
     OBLOCK *op;
-    
+
     if (!mudstate.olist->head)
     {
         op = (OBLOCK *) alloc_lbuf("olist_add.first");
@@ -1255,10 +1250,8 @@ void olist_add(dbref item)
     op->data[mudstate.olist->count++] = item;
 }
 
-/*
- * olist_first: Return the first entry in the object list 
- */
-
+// olist_first: Return the first entry in the object list.
+//
 dbref olist_first(void)
 {
     if (!mudstate.olist->head)
@@ -1278,7 +1271,7 @@ dbref olist_first(void)
 dbref olist_next(void)
 {
     dbref thing;
-    
+
     if (!mudstate.olist->cblock)
     {
         return NOTHING;
