@@ -346,6 +346,9 @@ Bug Fixes:
  -- Player names weren't validated properly. Instead of 
     Tiny_IsPlayerNameCharacter[], the code was using 
     Tiny_IsObjectNameCharacter[].
+ -- Insurance in several places against character data with high-bit set.
+    In an unpatched MUX 2.1, there is no way to get character data with a
+    high-bit set, but we've added insurance against it anyway.
 
 
 Performance Enhancements:
@@ -400,3 +403,4 @@ Cosmetic Changes:
 Miscellaneous:
 ~~~~~~~~~~~~~
  -- Added Manual in LaTeX format.
+ -- Use '-c' command line switch in @restart to make update to 2.2 possible.
