@@ -356,7 +356,9 @@ Bug Fixes:
     properly because the first-level date parser accepted it as a local
     date (ignoring anything that occured after the year field).  The
     first-level date parser is now more restrictive, and the
-    second-level date parser handles it properly.
+    second-level date parser handles it properly.  Reported by Talim.
+ -- Fix v(), get(), u(), and probably other functions related to
+    attributes on parents.  Broken by Brazil in 2.3.0.11.
 
 
 Performance Enhancements:
