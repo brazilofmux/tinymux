@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.61 2002-07-18 19:09:52 sdennis Exp $
+// $Id: functions.cpp,v 1.62 2002-07-19 11:51:28 jake Exp $
 //
 
 #include "copyright.h"
@@ -5754,7 +5754,7 @@ FUNCTION(fun_stats)
 {
     dbref who;
 
-    if ((!fargs[0]) || !*fargs[0] || !string_compare(fargs[0], "all"))
+    if (nfargs == 0 || (!fargs[0]) || !*fargs[0] || !string_compare(fargs[0], "all"))
     {
         who = NOTHING;
     }
@@ -5763,7 +5763,7 @@ FUNCTION(fun_stats)
         who = lookup_player(executor, fargs[0], TRUE);
         if (who == NOTHING)
         {
-            safe_str("#-1 NOT FOUND", buff, bufc);
+            safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
             return;
         }
     }
@@ -7860,7 +7860,7 @@ FUN flist[] =
     {"SQUISH",   fun_squish,   MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"STARTSECS",fun_startsecs,MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"STARTTIME",fun_starttime,MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"STATS",    fun_stats,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"STATS",    fun_stats,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"STRCAT",   fun_strcat,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"STRIPANSI",fun_stripansi,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"STRLEN",   fun_strlen,   1,       0,  1,       0, CA_PUBLIC},
