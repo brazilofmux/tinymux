@@ -62,7 +62,7 @@ Feature Additions:
     to the 'port' config to take affect across a @restart.
  -- Will now accept '@set FooBar=COMMANDS' and '@set FooBar=!COMMANDS'. BLEED
     and SPOOF also added. 'hasflag(FooBar,COMMANDS)' also supported.
- -- Added LOcALIZE().
+ -- Added LOCALIZE().
  -- Added function invocation limit checking for various loop functions:
     ITER, PARSE, MIX, FILTER, FOLD, MAP, etc.
  -- Clean cygwin builds on Win32 with support for @restart.
