@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.19 2002-07-17 06:58:14 sdennis Exp $
+// $Id: mail.cpp,v 1.20 2002-07-23 12:25:15 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -288,6 +288,28 @@ static void new_mail_message(char *message, int number)
  * do_mail_purge - purge cleared messages
  * do_mail_change_folder - change current folder
  *-------------------------------------------------------------------------*/
+
+void set_player_folder(dbref player, int fnum)
+{
+    // Set a player's folder to fnum.
+    //
+    char *tbuf1 = alloc_lbuf("set_player_folder");
+    Tiny_ltoa(fnum, tbuf1);
+    ATTR *a = atr_num(A_MAILCURF);
+    if (a)
+    {
+        atr_add(player, A_MAILCURF, tbuf1, GOD, a->flags);
+    }
+    else
+    {
+        // Shouldn't happen, but...
+        //
+        atr_add(player, A_MAILCURF, tbuf1, GOD, AF_ODARK | AF_WIZARD | AF_NOPROG | AF_LOCK);
+    }
+    free_lbuf(tbuf1);
+}
+
+
 
 // Change or rename a folder
 //
@@ -867,6 +889,40 @@ void do_mail_purge(dbref player)
         }
     }
     notify(player, "MAIL: Mailbox purged.");
+}
+
+void do_expmail_start(dbref player, char *arg, char *subject)
+{
+    if (!arg || !*arg)
+    {
+        notify(player, "MAIL: I do not know whom you want to mail.");
+        return;
+    }
+    if (!subject || !*subject)
+    {
+        notify(player, "MAIL: No subject.");
+        return;
+    }
+    if (Flags2(player) & PLAYER_MAILS)
+    {
+        notify(player, "MAIL: Mail message already in progress.");
+        return;
+    }
+    char *tolist = make_numlist(player, arg);
+    if (!tolist) 
+    {
+        return;
+    }
+
+    atr_add_raw(player, A_MAILTO, tolist);
+    atr_add_raw(player, A_MAILSUB, subject);
+    atr_add_raw(player, A_MAILFLAGS, "0");
+    atr_clr(player, A_MAILMSG);
+    Flags2(player) |= PLAYER_MAILS;
+    char *names = make_namelist(player, tolist);
+    notify(player, tprintf("MAIL: You are sending mail to '%s'.", names));
+    free_lbuf(names);
+    free_lbuf(tolist);
 }
 
 void do_mail_fwd(dbref player, char *msg, char *tolist)
@@ -1710,124 +1766,29 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
     }
 }
 
-void do_mail
-(
-    dbref executor,
-    dbref caller,
-    dbref enactor,
-    int   key,
-    int   nargs,
-    char *arg1,
-    char *arg2
-)
+void malias_write(FILE *fp)
 {
-    if (!mudconf.have_mailer)
-    {
-        notify(executor, "Mailer is disabled.");
-        return;
-    }
+    int i, j;
+    struct malias *m;
 
-    // HACK: Fix to allow @mail/quick from objects.
-    //
-    if (  (key & ~MAIL_QUOTE) != MAIL_QUICK
-       && !isPlayer(executor))
+    putref(fp, ma_top);
+    for (i = 0; i < ma_top; i++)
     {
-        return;
+        m = malias[i];
+        fprintf(fp, "%d %d\n", m->owner, m->numrecep);
+        fprintf(fp, "N:%s\n", m->name);
+        fprintf(fp, "D:%s\n", m->desc);
+        for (j = 0; j < m->numrecep; j++)
+        {
+            putref(fp, m->list[j]);
+        }
     }
+}
 
-    switch (key & ~MAIL_QUOTE)
-    {
-    case 0:
-        do_mail_stub(executor, arg1, arg2);
-        break;
-    case MAIL_STATS:
-        do_mail_stats(executor, arg1, 0);
-        break;
-    case MAIL_DSTATS:
-        do_mail_stats(executor, arg1, 1);
-        break;
-    case MAIL_FSTATS:
-        do_mail_stats(executor, arg1, 2);
-        break;
-    case MAIL_DEBUG:
-        do_mail_debug(executor, arg1, arg2);
-        break;
-    case MAIL_NUKE:
-        do_mail_nuke(executor);
-        break;
-    case MAIL_FOLDER:
-        do_mail_change_folder(executor, arg1, arg2);
-        break;
-    case MAIL_LIST:
-        do_mail_list(executor, arg1, FALSE);
-        break;
-    case MAIL_READ:
-        do_mail_read(executor, arg1);
-        break;
-    case MAIL_CLEAR:
-        do_mail_clear(executor, arg1);
-        break;
-    case MAIL_UNCLEAR:
-        do_mail_unclear(executor, arg1);
-        break;
-    case MAIL_PURGE:
-        do_mail_purge(executor);
-        break;
-    case MAIL_FILE:
-        do_mail_file(executor, arg1, arg2);
-        break;
-    case MAIL_TAG:
-        do_mail_tag(executor, arg1);
-        break;
-    case MAIL_UNTAG:
-        do_mail_untag(executor, arg1);
-        break;
-    case MAIL_FORWARD:
-        do_mail_fwd(executor, arg1, arg2);
-        break;
-    case MAIL_REPLY:
-        do_mail_reply(executor, arg1, FALSE, key);
-        break;
-    case MAIL_REPLYALL:
-        do_mail_reply(executor, arg1, TRUE, key);
-        break;
-    case MAIL_SEND:
-        do_expmail_stop(executor, 0);
-        break;
-    case MAIL_EDIT:
-        do_edit_msg(executor, arg1, arg2);
-        break;
-    case MAIL_URGENT:
-        do_expmail_stop(executor, M_URGENT);
-        break;
-    case MAIL_ALIAS:
-        do_malias_create(executor, arg1, arg2);
-        break;
-    case MAIL_ALIST:
-        do_malias_list_all(executor);
-        break;
-    case MAIL_PROOF:
-        do_mail_proof(executor);
-        break;
-    case MAIL_ABORT:
-        do_expmail_abort(executor);
-        break;
-    case MAIL_QUICK:
-        do_mail_quick(executor, arg1, arg2);
-        break;
-    case MAIL_REVIEW:
-        do_mail_review(executor, arg1, arg2);
-        break;
-    case MAIL_RETRACT:
-        do_mail_retract(executor, arg1, arg2);
-        break;
-    case MAIL_CC:
-        do_mail_cc(executor, arg1);
-        break;
-    case MAIL_SAFE:
-        do_mail_safe(executor, arg1);
-        break;
-    }
+void save_malias(FILE *fp)
+{
+    fprintf(fp, "*** Begin MALIAS ***\n");
+    malias_write(fp);
 }
 
 int dump_mail(FILE *fp)
@@ -1936,6 +1897,199 @@ void load_mail_V5(FILE *fp)
         int number = Tiny_atol(nbuf1);
         new_mail_message(getstring_noalloc(fp, TRUE), number);
         p = fgets(nbuf1, sizeof(nbuf1), fp);
+    }
+}
+
+// A mail alias can be any combination of upper-case letters, lower-case
+// letters, and digits. No leading digits. No symbols. No ANSI. Length is
+// limited to SIZEOF_MALIAS-1. Case is preserved.
+//
+char *MakeCanonicalMailAlias
+(
+    char *pMailAlias,
+    int *pnValidMailAlias,
+    BOOL *pbValidMailAlias
+)
+{
+    if (  !pMailAlias
+       || !Tiny_IsAlpha[(unsigned char)pMailAlias[0]])
+    {
+        return NULL;
+    }
+
+    static char Buffer[SIZEOF_MALIAS];
+    char *p = Buffer;
+
+    *p++ = pMailAlias[0];
+    pMailAlias += 1;
+    int nLeft = (sizeof(Buffer)-1) - 1;
+
+    while (*pMailAlias && nLeft)
+    {
+        if (  !Tiny_IsAlpha[(unsigned char)*pMailAlias]
+           && !Tiny_IsDigit[(unsigned char)*pMailAlias])
+        {
+            return Buffer;
+        }
+        *p = *pMailAlias;
+        p++;
+        pMailAlias++;
+        nLeft--;
+    }
+    *p = '\0';
+
+    *pnValidMailAlias = p - Buffer;
+    *pbValidMailAlias = TRUE;
+    return Buffer;
+}
+
+// A mail alias description can be any combination of upper-case letters,
+// lower-case letters, digits, blanks, and symbols. ANSI is permitted.
+// Length is limited to SIZEOF_MALIASDESC-1. Visual width is limited to
+// WIDTHOF_MALIASDESC. Case is preserved.
+//
+char *MakeCanonicalMailAliasDesc
+(
+    char *pMailAliasDesc,
+    int *pnValidMailAliasDesc,
+    BOOL *pbValidMailAliasDesc,
+    int *pnVisualWidth
+)
+{
+    if (!pMailAliasDesc)
+    {
+        return NULL;
+    }
+
+    // First, remove all '\r\n\t' from the string.
+    //
+    char *Buffer = RemoveSetOfCharacters(pMailAliasDesc, "\r\n\t");
+
+    // Optimize/terminate any ANSI in the string.
+    //
+    *pnVisualWidth = 0;
+    static char szFittedMailAliasDesc[SIZEOF_MALIASDESC];
+    *pnValidMailAliasDesc = ANSI_TruncateToField
+                            ( Buffer,
+                              SIZEOF_MALIASDESC,
+                              szFittedMailAliasDesc,
+                              WIDTHOF_MALIASDESC,
+                              pnVisualWidth,
+                              ANSI_ENDGOAL_NORMAL
+                             );
+    *pbValidMailAliasDesc = TRUE;
+    return szFittedMailAliasDesc;
+}
+
+void malias_read(FILE *fp)
+{
+    int i, j;
+
+    i = getref(fp);
+    if (i <= 0)
+    {
+        return;
+    }
+    char buffer[LBUF_SIZE];
+    struct malias *m;
+
+    ma_size = ma_top = i;
+
+    malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
+    (void)ISOUTOFMEMORY(malias);
+
+    for (i = 0; i < ma_top; i++)
+    {
+        // Format is: "%d %d\n", &(m->owner), &(m->numrecep)
+        //
+        if (!fgets(buffer, sizeof(buffer), fp))
+        {
+            // We've hit the end of the file. Set the last recognized
+            // @malias, and give up.
+            //
+            ma_top = i;
+            return;
+        }
+
+        m = (struct malias *)MEMALLOC(sizeof(struct malias));
+        (void)ISOUTOFMEMORY(m);
+        malias[i] = m;
+
+        char *p = strchr(buffer, ' ');
+        m->owner = m->numrecep = 0;
+        if (p)
+        {
+            m->owner = Tiny_atol(buffer);
+            m->numrecep = Tiny_atol(p+1);
+        }
+
+        // The format of @malias name is "N:<name>\n".
+        //
+        int nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
+        buffer[nLen-1] = '\0'; // Get rid of trailing '\n'.
+        int  nMailAlias;
+        BOOL bMailAlias;
+        char *pMailAlias = MakeCanonicalMailAlias( buffer+2,
+                                                   &nMailAlias,
+                                                   &bMailAlias);
+        if (bMailAlias)
+        {
+            m->name = StringCloneLen(pMailAlias, nMailAlias);
+        }
+        else
+        {
+            m->name = StringCloneLen("Invalid", 7);
+        }
+
+        // The format of the description is "D:<description>\n"
+        //
+        nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
+        int  nMailAliasDesc;
+        BOOL bMailAliasDesc;
+        int  nVisualWidth;
+        char *pMailAliasDesc = MakeCanonicalMailAliasDesc( buffer+2,
+                                                           &nMailAliasDesc,
+                                                           &bMailAliasDesc,
+                                                           &nVisualWidth);
+        if (bMailAliasDesc)
+        {
+            m->desc = StringCloneLen(pMailAliasDesc, nMailAliasDesc);
+            m->desc_width = nVisualWidth;
+        }
+        else
+        {
+            m->desc = StringCloneLen("Invalid Desc", 12);
+            m->desc_width = 12;
+        }
+
+        if (m->numrecep > 0)
+        {
+            for (j = 0; j < m->numrecep; j++)
+            {
+                m->list[j] = getref(fp);
+            }
+        }
+        else
+        {
+            m->list[0] = 0;
+        }
+    }
+}
+
+void load_malias(FILE *fp)
+{
+    char buffer[200];
+
+    getref(fp);
+    if (  fscanf(fp, "*** Begin %s ***\n", buffer) == 1
+       && !strcmp(buffer, "MALIAS"))
+    {
+        malias_read(fp);
+    }
+    else
+    {
+        Log.WriteString("ERROR: Couldn't find Begin MALIAS." ENDLINE);
+        return;
     }
 }
 
@@ -2113,26 +2267,6 @@ static int player_folder(dbref player)
     int number = Tiny_atol(atrstr);
     free_lbuf(atrstr);
     return number;
-}
-
-void set_player_folder(dbref player, int fnum)
-{
-    // Set a player's folder to fnum.
-    //
-    char *tbuf1 = alloc_lbuf("set_player_folder");
-    Tiny_ltoa(fnum, tbuf1);
-    ATTR *a = atr_num(A_MAILCURF);
-    if (a)
-    {
-        atr_add(player, A_MAILCURF, tbuf1, GOD, a->flags);
-    }
-    else
-    {
-        // Shouldn't happen, but...
-        //
-        atr_add(player, A_MAILCURF, tbuf1, GOD, AF_ODARK | AF_WIZARD | AF_NOPROG | AF_LOCK);
-    }
-    free_lbuf(tbuf1);
 }
 
 static int parse_folder(dbref player, char *folder_string)
@@ -2713,154 +2847,6 @@ static int sign(int x)
     }
 }
 
-
-void do_malias_switch(dbref player, char *a1, char *a2)
-{
-    if ((!a2 || !*a2) && !(!a1 || !*a1))
-    {
-        do_malias_list(player, a1);
-    }
-    else if ((!*a1 || !a1) && (!*a2 || !a2))
-    {
-        do_malias_list_all(player);
-    }
-    else
-    {
-        do_malias_create(player, a1, a2);
-    }
-}
-
-void do_malias
-(
-    dbref executor,
-    dbref caller,
-    dbref enactor,
-    int   key,
-    int   nargs,
-    char *arg1,
-    char *arg2
-)
-{
-    if (!mudconf.have_mailer)
-    {
-        notify(executor, "Mailer is disabled.");
-        return;
-    }
-    switch (key)
-    {
-    case 0:
-        do_malias_switch(executor, arg1, arg2);
-        break;
-    case MALIAS_DESC:
-        do_malias_desc(executor, arg1, arg2);
-        break;
-    case MALIAS_CHOWN:
-        do_malias_chown(executor, arg1, arg2);
-        break;
-    case MALIAS_ADD:
-        do_malias_add(executor, arg1, arg2);
-        break;
-    case MALIAS_REMOVE:
-        do_malias_remove(executor, arg1, arg2);
-        break;
-    case MALIAS_DELETE:
-        do_malias_delete(executor, arg1);
-        break;
-    case MALIAS_RENAME:
-        do_malias_rename(executor, arg1, arg2);
-        break;
-    case 7:
-        // empty
-        break;
-    case MALIAS_LIST:
-        do_malias_adminlist(executor);
-        break;
-    case MALIAS_STATUS:
-        do_malias_status(executor);
-    }
-}
-
-// A mail alias can be any combination of upper-case letters, lower-case
-// letters, and digits. No leading digits. No symbols. No ANSI. Length is
-// limited to SIZEOF_MALIAS-1. Case is preserved.
-//
-char *MakeCanonicalMailAlias
-(
-    char *pMailAlias,
-    int *pnValidMailAlias,
-    BOOL *pbValidMailAlias
-)
-{
-    if (  !pMailAlias
-       || !Tiny_IsAlpha[(unsigned char)pMailAlias[0]])
-    {
-        return NULL;
-    }
-
-    static char Buffer[SIZEOF_MALIAS];
-    char *p = Buffer;
-
-    *p++ = pMailAlias[0];
-    pMailAlias += 1;
-    int nLeft = (sizeof(Buffer)-1) - 1;
-
-    while (*pMailAlias && nLeft)
-    {
-        if (  !Tiny_IsAlpha[(unsigned char)*pMailAlias]
-           && !Tiny_IsDigit[(unsigned char)*pMailAlias])
-        {
-            return Buffer;
-        }
-        *p = *pMailAlias;
-        p++;
-        pMailAlias++;
-        nLeft--;
-    }
-    *p = '\0';
-
-    *pnValidMailAlias = p - Buffer;
-    *pbValidMailAlias = TRUE;
-    return Buffer;
-}
-
-// A mail alias description can be any combination of upper-case letters,
-// lower-case letters, digits, blanks, and symbols. ANSI is permitted.
-// Length is limited to SIZEOF_MALIASDESC-1. Visual width is limited to
-// WIDTHOF_MALIASDESC. Case is preserved.
-//
-char *MakeCanonicalMailAliasDesc
-(
-    char *pMailAliasDesc,
-    int *pnValidMailAliasDesc,
-    BOOL *pbValidMailAliasDesc,
-    int *pnVisualWidth
-)
-{
-    if (!pMailAliasDesc)
-    {
-        return NULL;
-    }
-
-    // First, remove all '\r\n\t' from the string.
-    //
-    char *Buffer = RemoveSetOfCharacters(pMailAliasDesc, "\r\n\t");
-
-    // Optimize/terminate any ANSI in the string.
-    //
-    *pnVisualWidth = 0;
-    static char szFittedMailAliasDesc[SIZEOF_MALIASDESC];
-    *pnValidMailAliasDesc = ANSI_TruncateToField
-                            ( Buffer,
-                              SIZEOF_MALIASDESC,
-                              szFittedMailAliasDesc,
-                              WIDTHOF_MALIASDESC,
-                              pnVisualWidth,
-                              ANSI_ENDGOAL_NORMAL
-                             );
-    *pbValidMailAliasDesc = TRUE;
-    return szFittedMailAliasDesc;
-}
-
 #define GMA_NOTFOUND    1
 #define GMA_FOUND       2
 #define GMA_INVALIDFORM 3
@@ -3219,176 +3205,25 @@ void do_malias_list_all(dbref player)
     notify(player, "*****  End of Mail Aliases *****");
 }
 
-void load_malias(FILE *fp)
-{
-    char buffer[200];
 
-    getref(fp);
-    if (  fscanf(fp, "*** Begin %s ***\n", buffer) == 1
-       && !strcmp(buffer, "MALIAS"))
+
+void do_malias_switch(dbref player, char *a1, char *a2)
+{
+    if ((!a2 || !*a2) && !(!a1 || !*a1))
     {
-        malias_read(fp);
+        do_malias_list(player, a1);
+    }
+    else if ((!*a1 || !a1) && (!*a2 || !a2))
+    {
+        do_malias_list_all(player);
     }
     else
     {
-        Log.WriteString("ERROR: Couldn't find Begin MALIAS." ENDLINE);
-        return;
+        do_malias_create(player, a1, a2);
     }
 }
 
-void save_malias(FILE *fp)
-{
-    fprintf(fp, "*** Begin MALIAS ***\n");
-    malias_write(fp);
-}
 
-void malias_read(FILE *fp)
-{
-    int i, j;
-
-    i = getref(fp);
-    if (i <= 0)
-    {
-        return;
-    }
-    char buffer[LBUF_SIZE];
-    struct malias *m;
-
-    ma_size = ma_top = i;
-
-    malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
-    (void)ISOUTOFMEMORY(malias);
-
-    for (i = 0; i < ma_top; i++)
-    {
-        // Format is: "%d %d\n", &(m->owner), &(m->numrecep)
-        //
-        if (!fgets(buffer, sizeof(buffer), fp))
-        {
-            // We've hit the end of the file. Set the last recognized
-            // @malias, and give up.
-            //
-            ma_top = i;
-            return;
-        }
-
-        m = (struct malias *)MEMALLOC(sizeof(struct malias));
-        (void)ISOUTOFMEMORY(m);
-        malias[i] = m;
-
-        char *p = strchr(buffer, ' ');
-        m->owner = m->numrecep = 0;
-        if (p)
-        {
-            m->owner = Tiny_atol(buffer);
-            m->numrecep = Tiny_atol(p+1);
-        }
-
-        // The format of @malias name is "N:<name>\n".
-        //
-        int nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
-        buffer[nLen-1] = '\0'; // Get rid of trailing '\n'.
-        int  nMailAlias;
-        BOOL bMailAlias;
-        char *pMailAlias = MakeCanonicalMailAlias( buffer+2,
-                                                   &nMailAlias,
-                                                   &bMailAlias);
-        if (bMailAlias)
-        {
-            m->name = StringCloneLen(pMailAlias, nMailAlias);
-        }
-        else
-        {
-            m->name = StringCloneLen("Invalid", 7);
-        }
-
-        // The format of the description is "D:<description>\n"
-        //
-        nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
-        int  nMailAliasDesc;
-        BOOL bMailAliasDesc;
-        int  nVisualWidth;
-        char *pMailAliasDesc = MakeCanonicalMailAliasDesc( buffer+2,
-                                                           &nMailAliasDesc,
-                                                           &bMailAliasDesc,
-                                                           &nVisualWidth);
-        if (bMailAliasDesc)
-        {
-            m->desc = StringCloneLen(pMailAliasDesc, nMailAliasDesc);
-            m->desc_width = nVisualWidth;
-        }
-        else
-        {
-            m->desc = StringCloneLen("Invalid Desc", 12);
-            m->desc_width = 12;
-        }
-
-        if (m->numrecep > 0)
-        {
-            for (j = 0; j < m->numrecep; j++)
-            {
-                m->list[j] = getref(fp);
-            }
-        }
-        else
-        {
-            m->list[0] = 0;
-        }
-    }
-}
-
-void malias_write(FILE *fp)
-{
-    int i, j;
-    struct malias *m;
-
-    putref(fp, ma_top);
-    for (i = 0; i < ma_top; i++)
-    {
-        m = malias[i];
-        fprintf(fp, "%d %d\n", m->owner, m->numrecep);
-        fprintf(fp, "N:%s\n", m->name);
-        fprintf(fp, "D:%s\n", m->desc);
-        for (j = 0; j < m->numrecep; j++)
-        {
-            putref(fp, m->list[j]);
-        }
-    }
-}
-
-void do_expmail_start(dbref player, char *arg, char *subject)
-{
-    if (!arg || !*arg)
-    {
-        notify(player, "MAIL: I do not know whom you want to mail.");
-        return;
-    }
-    if (!subject || !*subject)
-    {
-        notify(player, "MAIL: No subject.");
-        return;
-    }
-    if (Flags2(player) & PLAYER_MAILS)
-    {
-        notify(player, "MAIL: Mail message already in progress.");
-        return;
-    }
-    char *tolist = make_numlist(player, arg);
-    if (!tolist) 
-    {
-        return;
-    }
-
-    atr_add_raw(player, A_MAILTO, tolist);
-    atr_add_raw(player, A_MAILSUB, subject);
-    atr_add_raw(player, A_MAILFLAGS, "0");
-    atr_clr(player, A_MAILMSG);
-    Flags2(player) |= PLAYER_MAILS;
-    char *names = make_namelist(player, tolist);
-    notify(player, tprintf("MAIL: You are sending mail to '%s'.", names));
-    free_lbuf(names);
-    free_lbuf(tolist);
-}
 
 void do_mail_cc(dbref player, char *arg)
 {
@@ -4197,5 +4032,175 @@ void do_malias_status(dbref player)
     {
         notify(player, tprintf("MAIL: Number of mail aliases defined: %d", ma_top));
         notify(player, tprintf("MAIL: Allocated slots %d", ma_size));
+    }
+}
+
+void do_malias
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
+{
+    if (!mudconf.have_mailer)
+    {
+        notify(executor, "Mailer is disabled.");
+        return;
+    }
+    switch (key)
+    {
+    case 0:
+        do_malias_switch(executor, arg1, arg2);
+        break;
+    case MALIAS_DESC:
+        do_malias_desc(executor, arg1, arg2);
+        break;
+    case MALIAS_CHOWN:
+        do_malias_chown(executor, arg1, arg2);
+        break;
+    case MALIAS_ADD:
+        do_malias_add(executor, arg1, arg2);
+        break;
+    case MALIAS_REMOVE:
+        do_malias_remove(executor, arg1, arg2);
+        break;
+    case MALIAS_DELETE:
+        do_malias_delete(executor, arg1);
+        break;
+    case MALIAS_RENAME:
+        do_malias_rename(executor, arg1, arg2);
+        break;
+    case 7:
+        // empty
+        break;
+    case MALIAS_LIST:
+        do_malias_adminlist(executor);
+        break;
+    case MALIAS_STATUS:
+        do_malias_status(executor);
+    }
+}
+
+void do_mail
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   key,
+    int   nargs,
+    char *arg1,
+    char *arg2
+)
+{
+    if (!mudconf.have_mailer)
+    {
+        notify(executor, "Mailer is disabled.");
+        return;
+    }
+
+    // HACK: Fix to allow @mail/quick from objects.
+    //
+    if (  (key & ~MAIL_QUOTE) != MAIL_QUICK
+       && !isPlayer(executor))
+    {
+        return;
+    }
+
+    switch (key & ~MAIL_QUOTE)
+    {
+    case 0:
+        do_mail_stub(executor, arg1, arg2);
+        break;
+    case MAIL_STATS:
+        do_mail_stats(executor, arg1, 0);
+        break;
+    case MAIL_DSTATS:
+        do_mail_stats(executor, arg1, 1);
+        break;
+    case MAIL_FSTATS:
+        do_mail_stats(executor, arg1, 2);
+        break;
+    case MAIL_DEBUG:
+        do_mail_debug(executor, arg1, arg2);
+        break;
+    case MAIL_NUKE:
+        do_mail_nuke(executor);
+        break;
+    case MAIL_FOLDER:
+        do_mail_change_folder(executor, arg1, arg2);
+        break;
+    case MAIL_LIST:
+        do_mail_list(executor, arg1, FALSE);
+        break;
+    case MAIL_READ:
+        do_mail_read(executor, arg1);
+        break;
+    case MAIL_CLEAR:
+        do_mail_clear(executor, arg1);
+        break;
+    case MAIL_UNCLEAR:
+        do_mail_unclear(executor, arg1);
+        break;
+    case MAIL_PURGE:
+        do_mail_purge(executor);
+        break;
+    case MAIL_FILE:
+        do_mail_file(executor, arg1, arg2);
+        break;
+    case MAIL_TAG:
+        do_mail_tag(executor, arg1);
+        break;
+    case MAIL_UNTAG:
+        do_mail_untag(executor, arg1);
+        break;
+    case MAIL_FORWARD:
+        do_mail_fwd(executor, arg1, arg2);
+        break;
+    case MAIL_REPLY:
+        do_mail_reply(executor, arg1, FALSE, key);
+        break;
+    case MAIL_REPLYALL:
+        do_mail_reply(executor, arg1, TRUE, key);
+        break;
+    case MAIL_SEND:
+        do_expmail_stop(executor, 0);
+        break;
+    case MAIL_EDIT:
+        do_edit_msg(executor, arg1, arg2);
+        break;
+    case MAIL_URGENT:
+        do_expmail_stop(executor, M_URGENT);
+        break;
+    case MAIL_ALIAS:
+        do_malias_create(executor, arg1, arg2);
+        break;
+    case MAIL_ALIST:
+        do_malias_list_all(executor);
+        break;
+    case MAIL_PROOF:
+        do_mail_proof(executor);
+        break;
+    case MAIL_ABORT:
+        do_expmail_abort(executor);
+        break;
+    case MAIL_QUICK:
+        do_mail_quick(executor, arg1, arg2);
+        break;
+    case MAIL_REVIEW:
+        do_mail_review(executor, arg1, arg2);
+        break;
+    case MAIL_RETRACT:
+        do_mail_retract(executor, arg1, arg2);
+        break;
+    case MAIL_CC:
+        do_mail_cc(executor, arg1);
+        break;
+    case MAIL_SAFE:
+        do_mail_safe(executor, arg1);
+        break;
     }
 }

@@ -1,6 +1,6 @@
 // mail.h
 //
-// $Id: mail.h,v 1.5 2002-07-23 05:36:13 jake Exp $
+// $Id: mail.h,v 1.6 2002-07-23 12:25:15 jake Exp $
 //
 
 #ifndef _MAIL_H
@@ -98,27 +98,6 @@ struct mail_entry
     int   m_nRefs;
 };
 
-extern void set_player_folder(dbref, int);
-extern void do_malias_send(dbref, char *, char *, char *, int, mail_flag, BOOL);
-extern struct malias *get_malias(dbref, char *);
-extern void load_malias(FILE *);
-extern void save_malias(FILE *);
-extern void malias_read(FILE *);
-extern void malias_write(FILE *);
-extern void do_malias_chown(dbref, char *, char *);
-extern void do_malias_desc(dbref, char *, char *);
-extern void do_expmail_start(dbref, char *, char *);
-extern void do_expmail_stop(dbref, int);
-extern void do_mail_quick(dbref, char *, char *);
-extern void do_malias_rename(dbref, char *, char *);
-extern void do_malias_adminlist(dbref);
-extern void do_malias_delete(dbref, char *);
-extern void do_malias_status(dbref);
-extern void do_malias_create(dbref, char *, char *);
-extern void do_malias_list(dbref, char *);
-extern void do_malias_list_all(dbref);
-extern void do_malias_add(dbref, char *, char *);
-extern void do_malias_remove(dbref, char *, char *);
 extern void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount);
 extern char *MessageFetch(int number);
 extern void check_mail_expiration(void);
