@@ -1,6 +1,6 @@
 // alloc.h -- External definitions for memory allocation subsystem.
 //
-// $Id: alloc.h,v 1.3 2002-07-13 07:23:01 jake Exp $
+// $Id: alloc.h,v 1.4 2002-09-26 13:52:26 jake Exp $
 //
 
 #ifndef M_ALLOC_H
@@ -46,25 +46,25 @@
 #else // STANDALONE
 
 extern void pool_init(int, int);
-extern char *pool_alloc(int, const char *);
-extern char *pool_alloc_lbuf(const char *);
-extern void pool_free(int, char *);
-extern void pool_free_lbuf(char *);
+extern char *pool_alloc(int, const char *, const char *, int);
+extern char *pool_alloc_lbuf(const char *, const char *, int);
+extern void pool_free(int, char *, const char *, int);
+extern void pool_free_lbuf(char *, const char *, int);
 extern void list_bufstats(dbref);
 extern void list_buftrace(dbref);
 
-#define alloc_lbuf(s)   pool_alloc_lbuf(s)
-#define free_lbuf(b)    pool_free_lbuf((char *)(b))
-#define alloc_mbuf(s)   pool_alloc(POOL_MBUF,s)
-#define free_mbuf(b)    pool_free(POOL_MBUF,(char *)(b))
-#define alloc_sbuf(s)   pool_alloc(POOL_SBUF,s)
-#define free_sbuf(b)    pool_free(POOL_SBUF,(char *)(b))
-#define alloc_bool(s)   (struct boolexp *)pool_alloc(POOL_BOOL,s)
-#define free_bool(b)    pool_free(POOL_BOOL,(char *)(b))
-#define alloc_qentry(s) (BQUE *)pool_alloc(POOL_QENTRY,s)
-#define free_qentry(b)  pool_free(POOL_QENTRY,(char *)(b))
-#define alloc_pcache(s) (PCACHE *)pool_alloc(POOL_PCACHE,s)
-#define free_pcache(b)  pool_free(POOL_PCACHE,(char *)(b))
+#define alloc_lbuf(s)   pool_alloc_lbuf(s, __FILE__, __LINE__)
+#define free_lbuf(b)    pool_free_lbuf((char *)(b), __FILE__, __LINE__)
+#define alloc_mbuf(s)   pool_alloc(POOL_MBUF,s, __FILE__, __LINE__)
+#define free_mbuf(b)    pool_free(POOL_MBUF,(char *)(b), __FILE__, __LINE__)
+#define alloc_sbuf(s)   pool_alloc(POOL_SBUF,s, __FILE__, __LINE__)
+#define free_sbuf(b)    pool_free(POOL_SBUF,(char *)(b), __FILE__, __LINE__)
+#define alloc_bool(s)   (struct boolexp *)pool_alloc(POOL_BOOL,s, __FILE__, __LINE__)
+#define free_bool(b)    pool_free(POOL_BOOL,(char *)(b), __FILE__, __LINE__)
+#define alloc_qentry(s) (BQUE *)pool_alloc(POOL_QENTRY,s, __FILE__, __LINE__)
+#define free_qentry(b)  pool_free(POOL_QENTRY,(char *)(b), __FILE__, __LINE__)
+#define alloc_pcache(s) (PCACHE *)pool_alloc(POOL_PCACHE,s, __FILE__, __LINE__)
+#define free_pcache(b)  pool_free(POOL_PCACHE,(char *)(b), __FILE__, __LINE__)
 
 #endif // STANDALONE
 

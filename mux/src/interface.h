@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.13 2002-07-23 14:04:16 jake Exp $
+// $Id: interface.h,v 1.14 2002-09-26 13:52:26 jake Exp $
 //
 
 #include "copyright.h"
@@ -195,8 +195,8 @@ extern dbref  find_connected_name(dbref, char *);
 
 /* From predicates.c */
 
-#define alloc_desc(s) (DESC *)pool_alloc(POOL_DESC,s)
-#define free_desc(b) pool_free(POOL_DESC,(char *)(b))
+#define alloc_desc(s) (DESC *)pool_alloc(POOL_DESC,s, __FILE__, __LINE__)
+#define free_desc(b) pool_free(POOL_DESC,(char *)(b), __FILE__, __LINE__)
 
 // From player.cpp
 extern void record_login(dbref, BOOL, char *, char *, char *, char *);
