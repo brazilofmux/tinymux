@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.70 2004-02-27 17:40:44 sdennis Exp $
+// $Id: functions.cpp,v 1.71 2004-02-28 19:41:35 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -65,6 +65,7 @@ XFUNCTION(fun_edefault);
 XFUNCTION(fun_elements);
 XFUNCTION(fun_empty);
 XFUNCTION(fun_encrypt);
+XFUNCTION(fun_entrances);
 XFUNCTION(fun_findable);
 XFUNCTION(fun_foreach);
 XFUNCTION(fun_grab);
@@ -4295,6 +4296,156 @@ FUNCTION(fun_lexits)
         }
     }
     ItemToList_Final(&pContext);
+}
+
+// ---------------------------------------------------------------------------
+// fun_entrances: Search database for entrances (inverse of exits).
+//
+FUNCTION(fun_entrances)
+{
+    char *p;
+    dbref i;
+
+    dbref low_bound = 0;
+    if (3 <= nfargs)
+    {
+        p = fargs[2];
+        if (NUMBER_TOKEN == p[0])
+        {
+            p++;
+        }
+        i = mux_atol(p);
+        if (Good_dbref(i))
+        {
+            low_bound = i;
+        }
+    }
+
+    dbref high_bound = mudstate.db_top - 1;
+    if (4 == nfargs)
+    {
+        p = fargs[3];
+        if (NUMBER_TOKEN == p[0])
+        {
+            p++;
+        }
+        i = mux_atol(p);
+        if (Good_dbref(i))
+        {
+            high_bound = i;
+        }
+    }
+
+    bool find_ex = false;
+    bool find_th = false;
+    bool find_pl = false;
+    bool find_rm = false;
+
+    if (2 <= nfargs)
+    {
+        for (p = fargs[1]; *p; p++)
+        {
+            switch(mux_toupper(*p))
+            {
+            case 'A':
+                find_ex = find_th = find_pl = find_rm = true;
+                break;
+
+            case 'E':
+                find_ex = true;
+                break;
+
+            case 'T':
+                find_th = true;
+                break;
+
+            case 'P':
+                find_pl = true;
+                break;
+
+            case 'R':
+                find_rm = true;
+                break;
+
+            default:
+                safe_str("#-1 INVALID TYPE", buff, bufc);
+                return;
+            }
+        }
+    }
+
+    if (!(find_ex || find_th || find_pl || find_rm))
+    {
+        find_ex = find_th = find_pl = find_rm = true;
+    }
+
+    dbref thing;
+    if (  nfargs == 0
+       || *fargs[0] == '\0')
+    {
+        if (Has_location(executor))
+        {
+            thing = Location(executor);
+        }
+        else
+        {
+            thing = executor;
+        }
+        if (!Good_obj(thing))
+        {
+            safe_nothing(buff, bufc);
+            return;
+        }
+    }
+    else
+    {
+        init_match(executor, fargs[0], NOTYPE);
+        match_everything(MAT_EXIT_PARENTS);
+        thing = noisy_match_result();
+        if (!Good_obj(thing))
+        {
+            safe_nothing(buff, bufc);
+            return;
+        }
+    }
+
+    if (!payfor(executor, mudconf.searchcost))
+    {
+        notify(executor, tprintf("You don't have enough %s.",
+            mudconf.many_coins));
+        safe_nothing(buff, bufc);
+        return;
+    }
+
+    int control_thing = Examinable(executor, thing);
+    ITL itl;
+    ItemToList_Init(&itl, buff, bufc, '#');
+    for (i = low_bound; i <= high_bound; i++)
+    {
+        if (  control_thing
+           || Examinable(executor, i))
+        {
+            if (  (  find_ex
+                  && isExit(i)
+                  && Location(i) == thing)
+               || (  find_rm
+                  && isRoom(i)
+                  && Dropto(i) == thing)
+               || (  find_th
+                  && isThing(i)
+                  && Home(i) == thing)
+               || (  find_pl
+                  && isPlayer(i)
+                  && Home(i) == thing))
+            {
+                if (!ItemToList_AddInteger(&itl, i))
+                {
+                    break;
+                }
+            }
+        }
+    }
+    ItemToList_Final(&itl);
 }
 
 /*
@@ -9047,6 +9198,7 @@ FUN flist[] =
     {"EMIT",        fun_emit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"EMPTY",       fun_empty,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"ENCRYPT",     fun_encrypt,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"ENTRANCES",   fun_entrances,  MAX_ARG, 0,       4,         0, CA_PUBLIC},
     {"EQ",          fun_eq,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"ERROR",       fun_error,            1, 0,       1,         0, CA_PUBLIC},
     {"ESCAPE",      fun_escape,           1, 1,       1,         0, CA_PUBLIC},
