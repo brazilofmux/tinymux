@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.57 2002-07-17 01:10:33 jake Exp $
+// $Id: functions.cpp,v 1.58 2002-07-17 03:16:06 jake Exp $
 //
 
 #include "copyright.h"
@@ -5037,7 +5037,15 @@ FUNCTION(fun_lwho)
     BOOL bPorts = FALSE;
     if (nfargs == 1)
     {
-        bPorts = (Tiny_atol(fargs[0]) ? TRUE : FALSE);
+        if (Wizard(executor))
+        {
+            bPorts = xlate(fargs[0]);
+        }
+        else
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
     }
     make_ulist(executor, buff, bufc, bPorts);
 }
