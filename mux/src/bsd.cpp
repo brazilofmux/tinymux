@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.16 2002-08-22 15:43:34 sdennis Exp $
+// $Id: bsd.cpp,v 1.17 2002-09-26 06:45:02 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1742,6 +1742,28 @@ void shutdownsock(DESC *d, int reason)
 
     d->flags &= ~DS_CONNECTED;
 
+    // Is this desc still in interactive mode?
+    //
+    if (d->program_data != NULL)
+    {
+        num = 0;
+        DESC_ITER_PLAYER(d->player, dtemp) num++;
+
+        if (num == 0)
+        {
+            for (i = 0; i < MAX_GLOBAL_REGS; i++)
+            {
+                if (d->program_data->wait_regs[i])
+                {
+                    free_lbuf(d->program_data->wait_regs[i]);
+                    d->program_data->wait_regs[i] = NULL;
+                }
+            }
+            MEMFREE(d->program_data);
+            d->program_data = NULL;
+            atr_clr(d->player, A_PROGCMD);
+        }
+    }
     if (reason == R_LOGOUT)
     {
         d->connected_at.GetUTC();
@@ -1802,28 +1824,6 @@ void shutdownsock(DESC *d, int reason)
             DebugTotalSockets--;
         }
         d->descriptor = INVALID_SOCKET;
-
-        // Is this desc still in interactive mode?
-        //
-        if (d->program_data != NULL)
-        {
-            num = 0;
-            DESC_ITER_PLAYER(d->player, dtemp) num++;
-
-            if (num == 0)
-            {
-                for (i = 0; i < MAX_GLOBAL_REGS; i++)
-                {
-                    if (d->program_data->wait_regs[i])
-                    {
-                        free_lbuf(d->program_data->wait_regs[i]);
-                        d->program_data->wait_regs[i] = NULL;
-                    }
-                }
-                MEMFREE(d->program_data);
-                d->program_data = NULL;
-            }
-        }
 
 #ifdef WIN32
         // protect removing the descriptor from our linked list from
