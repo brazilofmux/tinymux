@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.13 2002-07-09 19:33:53 jake Exp $
+// $Id: look.cpp,v 1.14 2002-07-09 20:44:36 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -1449,7 +1449,8 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
     dbref thing = NOTHING;
     if (!name || !*name)
     {
-        if (Location(executor) == NOTHING)
+        thing = Location(executor);
+        if (thing == NOTHING)
         {
             return;
         }
