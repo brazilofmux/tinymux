@@ -8,7 +8,7 @@ Project: "netmux"=.\netmux.dsp - Package Owner=<4>
 Package=<5>
 {{{
     begin source code control
-    "$/TinyMUX22/mux/src", HDGAAAAA
+    "$/TinyMUX23/mux/src", PPGAAAAA
     .
     end source code control
 }}}
@@ -23,6 +23,10 @@ Global:
 
 Package=<5>
 {{{
+    begin source code control
+    "$/TinyMUX23/mux/src", PPGAAAAA
+    .
+    end source code control
 }}}
 
 Package=<3>
