@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.19 2002-02-25 17:04:38 sdennis Exp $
+// $Id: mguests.cpp,v 1.20 2002-02-25 17:33:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -96,7 +96,7 @@ void CGuests::SizeGuests(int nMin)
     {
         nMin = nGuests;
     }
-    if (  nMaxGuests <= nMin + GUEST_HYSTERESIS 
+    if (  nMaxGuests <= nMin + GUEST_HYSTERESIS
        && nMin <= nMaxGuests)
     {
         return;
@@ -138,7 +138,7 @@ char *CGuests::Create(DESC *d)
             Guests[i] = MakeGuestChar();
             return Name(Guests[i]);
         }
-        
+
         if (!Connected(Guests[i]))
         {
             // Lets try to grab our own name, if we don't have it.
@@ -164,13 +164,12 @@ char *CGuests::Create(DESC *d)
             // Make sure they're a guest.
             //
             s_Guest(player);
-            
+
             move_object(player, mudconf.start_room);
             s_Pennies(player, Pennies(mudconf.guest_char));
             s_Zone(player, Zone(mudconf.guest_char));
             s_Parent(player, Parent(mudconf.guest_char));
-                
-            
+
             // Wipe the attributes.
             //
             WipeAttrs(Guests[i]);
@@ -220,7 +219,7 @@ void CGuests::CleanUp(void)
             Guests[i] = MakeGuestChar();
         }
     }
-    
+
     if (nGuests <= mudconf.min_guests)
     {
         return;
