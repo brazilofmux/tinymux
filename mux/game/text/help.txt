@@ -3103,6 +3103,32 @@ Related Topics: @name.
 
   Related Topics: @notify, @wait.
 
+& @QUEUEMAX
+@QUEQUEMAX
+
+  COMMAND:   @quequemax <object> = <number>
+  ATTRIBUTE: QueueMax
+
+  This attribute sets an upper limit on the number, <number>, of
+  outstanding commands in the queue for this <object>.  This attribute
+  is only setable by a Wizard.
+
+  In fact, the server has three overlapping constraints for developing
+  an upper limit per player on the number of oustanding commands in the
+  queue.  This attribute is part of just one of these constraints.  The
+  rules (in priority order) are:
+
+  1) @queuemax <number> described here.
+  2) Current size of database (only applies if executor is Wizard).
+  3) game-wide limit controlled by the player_queue_limit configuration option.
+
+  That is, if @quequemax is set, it overrides the next two rules.  If
+  <object> is a Wizard, the maximum number of outstanding queue entries
+  is player_queue_limit or the size of the database (whichever is
+  larger).  All other cases are covered by player_queue_limit.
+
+  Related Topics: config(), player_queue_limit in wizhelp, @wait.
+
 & @QUITPROGRAM
 @QUITPROGRAM
 
@@ -6620,7 +6646,7 @@ FUNCTION CLASSES (continued)
                              REGRABALL REGRABALLI REGRABI REPEAT REPLACE
                              REVERSE RIGHT RJUST ROMAN SCRAMBLE SECURE SPACE
                              SPELLNUM SQUISH STRCAT STRIP STRIPACCENTS
-                             STRIPANSI STRLEN STRMATCH STRTRUNC SWITCH
+                             STRIPANSI STRLEN STRMATCH STRMEM STRTRUNC SWITCH
                              TRANSLATE TRIM UCSTR WORDPOS WRAP
 
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
@@ -6694,14 +6720,14 @@ FUNCTION LIST (continued)
     SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()
     SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
     STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()    STRMATCH()
-    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
-    TABLE()     TAN()       TEL()       TEXTFILE()  TIME()      TIMEFMT()
-    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
-    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
-    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
-    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
-    WRAP()      WRITETIME() XGET()      XOR()       ZFUN()      ZONE()
-    ZWHO()
+    STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
+    T()         TABLE()     TAN()       TEL()       TEXTFILE()  TIME()
+    TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()      U()
+    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
+    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
+    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()
+    WORDS()     WRAP()      WRITETIME() XGET()      XOR()       ZFUN()
+    ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -11740,7 +11766,7 @@ STRLEN()
 
   FUNCTION: strlen(<string>)
 
-  Returns the number of characters in <string>.
+  Returns the number of visual characters in <string>.
 
   Example:
     > say strlen(This is a test)
@@ -11748,7 +11774,7 @@ STRLEN()
     > say strlen(Would you like coffee, or perhaps tea)
     You say "37"
 
-  Related Topics:
+  Related Topics: strmem().
 
 & STRMATCH()
 STRMATCH()
@@ -11773,6 +11799,21 @@ STRMATCH()
     You say "1"
 
   Related Topics: match(), member(), regmatch().
+
+& STRMEM()
+STRMEM()
+
+  FUNCTION: strmem(<string>)
+
+  Returns the number of bytes required to store <string> in memory.
+
+  Example:
+    > say strmem(This is a test)
+    You say "14"
+    > say strmem(Would you like coffee, or perhaps tea)
+    You say "37"
+
+  Related Topics: strlen().
 
 & STRTRUNC()
 STRTRUNC()
