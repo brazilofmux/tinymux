@@ -3559,9 +3559,9 @@ ACOS()
 
   FUNCTION: acos(<number>[, <units>])
 
-  Returns the arc-cosine of <number>, expressed in <units>.  <units> may be
-  'radians', 'degrees', or 'gradians' or just the first letter of any of
-  these. By default, <units> is 'radians'.
+  Returns the arc-cosine of <number>. The value returned will be expressed in
+  <units>.  <units> may be 'radians', 'degrees', or 'gradians' or just the
+  first letter of any of these. By default, <units> is 'radians'.
 
   In a circle, there are 2*pi() radians, 360 degrees, and 400 gradians.
 
@@ -3884,9 +3884,9 @@ ASIN()
 
   FUNCTION: asin(<number>[, <units>])
 
-  Returns the arcsine of <number>, expressed in <units>.  <units> may be
-  'radians', 'degrees', or 'gradians' or just the first letter of any of
-  these. By default, <units> is 'radians'.
+  Returns the arcsine of <number>. The value returned will be expressed in
+  <units>.  <units> may be 'radians', 'degrees', or 'gradians' or just the
+  first letter of any of these. By default, <units> is 'radians'.
 
   In a circle, there are 2*pi() radians, 360 degrees, and 400 gradians.
 
@@ -3907,9 +3907,9 @@ ATAN()
 
   FUNCTION: atan(<number>[, <units>])
 
-  Returns the arctangent of <number>, expressed in <units>.  <units> may be
-  'radians', 'degrees', or 'gradians' or just the first letter of any of
-  these. By default, <units> is 'radians'.
+  Returns the arctangent of <number>. The value returned will be expressed in
+  <units>.  <units> may be 'radians', 'degrees', or 'gradians' or just the
+  first letter of any of these. By default, <units> is 'radians'.
 
   In a circle, there are 2*pi() radians, 360 degrees, and 400 gradians.
 
@@ -4886,9 +4886,9 @@ COS()
 
   FUNCTION: cos(<number>[, <units>])
 
-  Returns the cosine of <number>, expressed in <units>.  <units> may be
-  'radians', 'degrees', or 'gradians' or just the first letter of any of
-  these. By default, <units> is 'radians'.
+  Returns the cosine of <number> where <number> is expressed in <units>.
+  <units> may be 'radians', 'degrees', or 'gradians' or just the first letter
+  of any of these. By default, <units> is radians.
 
   In a circle, there are 2*pi() radians, 360 degrees, and 400 gradians.
 
@@ -10124,9 +10124,9 @@ SIN()
 
   FUNCTION: sin(<number>[, <units>])
 
-  Returns the sine of <number>, expressed in <units>.  <units> may be
-  'radians', 'degrees', or 'gradians' or just the first letter of any of
-  these. By default, <units> is 'radians'.
+  Returns the sine of <number> where <number> is expressed in <units>.
+  <units> may be 'radians', 'degrees', or 'gradians' or just the first letter
+  of any of these. By default, <units> is radians.
 
   In a circle, there are 2*pi() radians, 360 degrees, and 400 gradians.
 
@@ -10712,9 +10712,9 @@ TAN()
 
   FUNCTION: tan(<number>[, <units>])
 
-  Returns the tangent of <number>, expressed in <units>.  <units> may be
-  'radians', 'degrees', or 'gradians' or just the first letter of any of
-  these. By default, <units> is 'radians'.
+  Returns the tangent of <number> where <number> is expressed in <units>.
+  <units> may be 'radians', 'degrees', or 'gradians' or just the first letter
+  of any of these. By default, <units> is radians.
 
   In a circle, there are 2*pi() radians, 360 degrees, and 400 gradians.
 
