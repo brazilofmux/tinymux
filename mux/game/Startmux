@@ -47,5 +47,5 @@ fi
 #
 #	Kick off MUX
 #
-(nohup $BIN/netmux $GAMENAME.conf >/dev/null 2>&1 &)
+(nohup $BIN/netmux -c $GAMENAME.conf >/dev/null 2>&1 &)
 
