@@ -83,51 +83,51 @@ isn't a limiting factor, we can generally say the following:
 
     a. Advantages:
 
- 	- Does not spend time reading from the disk or asking for data to be
+    - Does not spend time reading from the disk or asking for data to be
       written to the disk. Also, there is some organizational overhead
       to a cache that a memory-based system doesn't pay.
 
-	- A memory-based setup dumps and loads using a flatfile, which is
-	  easier to manage in some ways than trying to share an on-line
+    - A memory-based setup dumps and loads using a flatfile, which is
+      easier to manage in some ways than trying to share an on-line
       database file with the game while it's running.
 
-        - Less chance of an incoherent database. That is, flatfile dumps 
-          have a higher chance of being internally coherent in the face of      
-          system crashes, faults, power glitch and other nasty things.
+    - Less chance of an incoherent database. That is, flatfile dumps 
+      have a higher chance of being internally coherent in the face of      
+      system crashes, faults, power glitch and other nasty things.
 
     b. Disadvantages:
 
-	- Memory usage grows as the size of the database grows.
+    - Memory usage grows as the size of the database grows.
 
-        - Loading and dumping a complete flatfile is more disk and 
-          processor intensive than incrementally managing an on-line disk 
-          database, however there are ways to hiding this activity so that 
-          it doesn't affect your players much.
+    - Loading and dumping a complete flatfile is more disk and 
+      processor intensive than incrementally managing an on-line disk 
+      database, however there are ways to hiding this activity so that 
+      it doesn't affect your players much.
 
-        - Greater chance of loss of data. That is, if your game crashes, 
-          only what successfully made it to disk survives.
+    - Greater chance of loss of data. That is, if your game crashes, 
+      only what successfully made it to disk survives.
           
 2. Disk based:
 
     a. Advantages:
 
-	  - Uses a relatively fixed amount of memory independent of database
+    - Uses a relatively fixed amount of memory independent of database
       size.
       
-      - Faster database saves.
+    - Faster database saves.
         
-        - Less risk of loss of data.
+    - Less risk of loss of data.
 
     b. Disadvantages:
 
-	- If the game is waiting on data from the disk, nothing else happens.
+    - If the game is waiting on data from the disk, nothing else happens.
       However, the cache hit rates are greater than 95% for the games I've
       run, but that depends on the size of the cache. You only pay the IO
       penalty for reads if you the cache doesn't have what you are looking
       for. Disk writes are performed in a lazy fashion by the OS and don't
       affect the comparison much.
 
-        - Greater risk of an incoherent database.
+    - Greater risk of an incoherent database.
 
 
 Memory-based usage is preferred _if_ you have enough memory to support a
@@ -172,4 +172,3 @@ You should juggle these options until you find a setup that works, and gives
 you the best performance. There is no 'right' way to set up a MUX, it always
 depends on the capabilities of the system you are running on, and how much
 of those capabilities you can use.
-
