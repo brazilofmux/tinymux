@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.40 2002-02-11 12:54:06 sdennis Exp $
+// $Id: look.cpp,v 1.41 2002-03-28 06:21:59 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2087,14 +2087,6 @@ void do_sweep(dbref player, dbref cause, int key, char *where)
 {
     dbref here, sweeploc;
     int where_key, what_key;
-
-#ifdef WOD_REALMS
-    if (!Staff(player))
-    {
-        notify(player, "Sorry, only staff can search for bugs...");
-        return;
-    }
-#endif
 
     where_key = key & (SWEEP_ME | SWEEP_HERE | SWEEP_EXITS);
     what_key = key & (SWEEP_COMMANDS | SWEEP_LISTEN | SWEEP_PLAYER | SWEEP_CONNECT);
