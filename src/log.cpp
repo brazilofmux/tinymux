@@ -1,7 +1,7 @@
 //
 // log.cpp - logging routines
 //
-// $Id: log.cpp,v 1.5 2001-06-30 17:44:18 morgan Exp $
+// $Id: log.cpp,v 1.6 2001-07-06 20:26:49 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -261,11 +261,23 @@ void do_log(dbref player, dbref cause, int key, char *whichlog, char *logtext)
     // Check for and disallow leading periods, empty strings
     // and filenames over 30 characters.
     //
-    if (  pFilename[0] == '\0'
-       || pFilename[0] == '.'
-       || strlen(pFilename) > 30)
+    size_t n = strlen(pFilename);
+    if (  n == 0
+       || n > 30)
     {
         bValid = FALSE;
+    }
+    else
+    {
+        int i;
+        for (i = 0; i < n; i++)
+        {
+            if (!Tiny_IsAlphaNumeric[(unsigned char)pFilename[i]])
+            {
+                bValid = FALSE;
+                break;
+            }
+        }
     }
 
     char *pFullName = 0;
@@ -273,7 +285,7 @@ void do_log(dbref player, dbref cause, int key, char *whichlog, char *logtext)
     if (bValid)
     {
         pFullName = alloc_lbuf("do_log_filename");
-        sprintf(pFullName, "logs/%s", pFilename);
+        sprintf(pFullName, "logs/%s.log", pFilename);
 
         // Strip the message of all ANSI.
         //
@@ -293,18 +305,19 @@ void do_log(dbref player, dbref cause, int key, char *whichlog, char *logtext)
         return;
     }
 
-    FILE *hFile = fopen(pFullName, "a");
+    FILE *hFile = fopen(pFullName, "w");
     if (hFile == NULL)
     {
         notify(player, "Not a valid log file.");
         if (pFullName) free_lbuf(pFullName);
         return;
     }
+    fseek(hFile, 0L, SEEK_END);
 
     // Okay, at this point, the file exists.
     //
     fprintf(hFile, "%s" ENDLINE, pMessage);
-    fclose(hFile);                        /* Send and close... */
+    fclose(hFile);
     free_lbuf(pFullName);
 }
 #endif // !STANDALONE
