@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.48 2004-07-24 05:45:10 sdennis Exp $
+// $Id: game.cpp,v 1.49 2004-07-24 06:01:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1094,6 +1094,10 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
         notify(executor, NOPERM_MESSAGE);
         return;
     }
+
+#ifdef BT_ENABLED
+    ResetSpecialObjects();
+#endif
 
     raw_broadcast(0, "GAME: Shutdown by %s", Name(Owner(executor)));
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.41 2004-07-24 05:53:44 sdennis Exp $
+// $Id: command.cpp,v 1.42 2004-07-24 06:04:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -719,11 +719,20 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@set",         set_sw,     CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           0, do_set},
     {"@teleport",    teleport_sw,CA_NO_GUEST,                                      TELEPORT_DEFAULT, CS_TWO_ARG|CS_INTERP, 0, do_teleport},
     {"@toad",        toad_sw,    CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_toad},
+#ifdef BT_ENABLED
+    {"addcom",       NULL,       CA_NO_SLAVE|CA_NO_IC,                             0,           CS_TWO_ARG,           0, do_addcom},
+    {"comtitle",     comtitle_sw,CA_NO_SLAVE|CA_NO_IC,                             0,           CS_TWO_ARG,           0, do_comtitle},
+#else
     {"addcom",       NULL,       CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_addcom},
     {"comtitle",     comtitle_sw,CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_comtitle},
+#endif
     {"give",         give_sw,    CA_LOCATION|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_give},
     {"kill",         NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          KILL_KILL,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
+#ifdef BT_ENABLED
+    {"page",         NULL,       CA_NO_SLAVE|CA_NO_IC,                             0,           CS_TWO_ARG|CS_INTERP, 0, do_page},
+#else
     {"page",         page_sw,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_page},
+#endif
     {"slay",         NULL,       CA_WIZARD,                                        KILL_SLAY,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
     {"whisper",      NULL,       CA_LOCATION|CA_NO_SLAVE,                          PEMIT_WHISPER, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {"&",            NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,                  0,           CS_TWO_ARG|CS_LEADIN, 0, do_setvattr},

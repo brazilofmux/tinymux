@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.26 2004-07-24 05:43:59 sdennis Exp $
+// $Id: set.cpp,v 1.27 2004-07-24 05:55:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -879,13 +879,22 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     dbref aowner;
     int aflags;
     ATTR *attr = atr_num(attrnum);
+#ifdef BT_ENABLED
+    int have_xcode;
+#endif
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (  attr
        && bCanSetAttr(player, thing, attr))
     {
         bool could_hear = Hearer(thing);
+#ifdef BT_ENABLED
+        have_xcode = Hardcode(thing);
+#endif
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));
+#ifdef BT_ENABLED
+        handle_xcode(player, thing, have_xcode, Hardcode(thing));
+#endif
         if (  !(key & SET_QUIET)
            && !Quiet(player)
            && !Quiet(thing))
