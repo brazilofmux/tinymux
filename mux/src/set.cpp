@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.11 2003-02-15 16:32:16 jake Exp $
+// $Id: set.cpp,v 1.12 2003-02-16 00:13:13 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1023,7 +1023,8 @@ void do_set
 
     // Check for attribute set first.
     //
-    for (char *p = flagname; *p && (*p != ':'); p++)
+    char *p;
+    for (p = flagname; *p && (*p != ':'); p++)
     {
         ; // Nothing.
     }
