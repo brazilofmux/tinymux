@@ -32,12 +32,12 @@ do
         rm $NewDir/$i
     fi
 done
-diff -Naudr $DistroDir $NewDir > mux-$OldVersion-$NewVersion.unix.patch
-#makepatch -diff "diff -Naud" $DistroDir $NewDir > mux-$OldVersion-$NewVersion.unix.patch
-#if [ -e mux-$OldVersion-$NewVersion.unix.patch.gz ]; then
-#    rm mux-$OldVersion-$NewVersion.unix.patch.gz
-#fi
-#gzip -9 mux-$OldVersion-$NewVersion.unix.patch
+#diff -Naudr $DistroDir $NewDir > mux-$OldVersion-$NewVersion.unix.patch
+makepatch -diff "diff -Naud" $DistroDir $NewDir > mux-$OldVersion-$NewVersion.unix.patch
+if [ -e mux-$OldVersion-$NewVersion.unix.patch.gz ]; then
+    rm mux-$OldVersion-$NewVersion.unix.patch.gz
+fi
+gzip -9 mux-$OldVersion-$NewVersion.unix.patch
 
 # Build tarball
 #
