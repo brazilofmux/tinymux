@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.76 2002-09-12 03:26:16 jake Exp $
+// $Id: command.cpp,v 1.77 2002-09-14 04:46:06 jake Exp $
 //
 
 #include "copyright.h"
@@ -4134,45 +4134,40 @@ void hook_loop (dbref executor, CMDENT *cmdp, char *s_ptr, char *s_ptrbuff)
     if (  pCmd[0] != '\0'
        && pCmd[1] == '\0')
     {
-        if (pCmd[0] == '"')
+        switch (pCmd[0])
         {
+        case '"':
             pFmt = "S %-30.30s | %s";
             pCmd = "('\"' hook on 'say')";
-        }
-        else if (pCmd[0] == ':')
-        {
+            break;
+        case ':':
             pFmt = "P %-30.30s | %s";
             pCmd = "(':' hook on 'pose')";
-        }
-        else if (pCmd[0] == ';')
-        {
+            break;
+        case ';':
             pFmt = "P %-30.30s | %s";
             pCmd = "(';' hook on 'pose')";
-        }
-        else if (pCmd[0] == '\\')
-        {
+            break;
+        case '\\':
             pFmt = "E %-30.30s | %s";
             pCmd = "('\\\\' hook on '@emit')";
-        }
-        else if (pCmd[0] == '#')
-        {
+            break;
+        case '#':
             pFmt = "F %-30.30s | %s";
             pCmd = "('#' hook on '@force')";
-        }
-        else if (pCmd[0] == '&')
-        {
+            break;
+        case '&':
             pFmt = "V %-30.30s | %s";
             pCmd = "('&' hook on '@set')";
-        }
-        else if (pCmd[0] == '-')
-        {
+            break;
+        case '-':
             pFmt = "M %-30.30s | %s";
             pCmd = "('-' hook on '@mail')";
-        }
-        else if (pCmd[0] == '~')
-        {
+            break;
+        case '~':
             pFmt = "M %-30.30s | %s";
             pCmd = "('~' hook on '@mail')";
+            break;
         }
     }
     notify(executor, tprintf(pFmt, pCmd, s_ptrbuff));
