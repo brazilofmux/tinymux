@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  February 2003
+Last Update:  March 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -405,6 +405,13 @@ Performance Enhancements:
  -- Bug #557, #558, #559, and #560 were all buffers smaller than the 
     largest possible result.  All reported by Morgan 2000-OCT-15.  Fixed 
     (finally) by Brazil.
+ -- Prevent rooms and exits from using the 'home' command.  Patch by
+    Alierak.
+ -- Configuration script bug that affected MacOS build.  Reported by
+    Alierak.
+ -- PushPointers tag was wrong.  Reported by Alierak.
+ -- If a Guest<n> player was renamed, the contents of room #0 would be
+    cleared leaving @dbck to clean it up.
 
 
 Cosmetic Changes:
