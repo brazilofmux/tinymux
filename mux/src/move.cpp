@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.2 2003-02-05 06:20:59 jake Exp $
+// $Id: move.cpp,v 1.3 2003-08-19 01:56:44 jake Exp $
 //
 
 #include "copyright.h"
@@ -421,12 +421,40 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
  * move_exit: Try to move a player through an exit.
  */
 
+dbref get_exit_dest(dbref executor, dbref exit)
+{
+    dbref aowner;
+    int   aflags;
+    char *atr_gotten = atr_pget(exit, A_EXITVARDEST, &aowner, &aflags);
+
+    char *result = alloc_lbuf("get_exit_dest");
+    char *ref = result;
+    char *str = atr_gotten;
+    mux_exec(result, &ref, exit, executor, executor, EV_FIGNORE | EV_EVAL,
+                &str, (char **)NULL, 0);
+    free_lbuf(atr_gotten);
+
+    dbref dest = NOTHING;
+    if (*result == NUMBER_TOKEN)
+    {
+        dest = mux_atol(result + 1);
+    }
+
+    free_lbuf(result);
+    return dest;
+}
+
 void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int hush)
 {
     int oattr, aattr;
     bool bDoit = false;
 
     dbref loc = Location(exit);
+    if (atr_get_raw(exit, A_EXITVARDEST) != NULL)
+    {
+        loc = get_exit_dest(player, exit);
+    }
+
     if (loc == HOME)
     {
         loc = Home(player);

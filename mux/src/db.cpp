@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.32 2003-07-23 19:36:52 sdennis Exp $
+// $Id: db.cpp,v 1.33 2003-08-19 01:56:44 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -89,6 +89,7 @@ ATTR attr[] =
     {"Enter",       A_ENTER,    AF_ODARK | AF_NOPROG},
     {"EnterLock",   A_LENTER,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"ExitFormat",  A_EXITFORMAT, AF_ODARK | AF_NOPROG},
+    {"ExitTo",      A_EXITVARDEST, AF_ODARK | AF_NOPROG | AF_WIZARD},
     {"Fail",        A_FAIL,     AF_ODARK | AF_NOPROG},
     {"Filter",      A_FILTER,   AF_ODARK | AF_NOPROG},
     {"Forwardlist", A_FORWARDLIST, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
