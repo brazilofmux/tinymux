@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.12 2003-02-03 19:38:42 sdennis Exp $
+// $Id: stringutil.cpp,v 1.13 2003-02-03 19:43:33 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2616,7 +2616,7 @@ double Tiny_atof(char *szString, BOOL bStrict)
 extern char *Tiny_dtoa(double d, int mode, int nRequest, int *iDecimalPoint,
                        int *sign, char **rve);
 
-char *Tiny_ftoa(double r, BOOL bRounded, int frac)
+char *mux_ftoa(double r, BOOL bRounded, int frac)
 {
     static char buffer[100];
     char *q = buffer;
