@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.13 2000-09-20 19:28:51 sdennis Exp $
+// $Id: svdhash.cpp,v 1.14 2000-10-10 17:38:16 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -1786,16 +1786,18 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, unsigned long nHash, void *pRecord
         // that is also reading from the file. We must pause and let
         // this reader process finish.
         //
-        STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
-        log_text("Waiting on previously-forked child before page-splitting... ");
-        ENDLOG;
-
-        while (mudstate.dumping)
+        if (mudstate.dumping)
         {
-            // We have a forked dump in progress, so we will wait until the
-            // child exits.
-            //
-            sleep(1);
+            STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
+            log_text("Waiting on previously-forked child before page-splitting... ");
+            ENDLOG;
+            do
+            {
+                // We have a forked dump in progress, so we will wait until the
+                // child exits.
+                //
+                sleep(1);
+            } while (mudstate.dumping);
         }
 #endif
 
