@@ -94,7 +94,7 @@ Feature Additions:
  --  Updated lnum() function to accept three arguments.
  --  Enhanced secs(), convsecs(), time(), and convtime() to handle both
      UTC and local timezones with room for others.
- --  Added the Mersenne Twister random number generator as an option.
+ --  Added the Mersenne Twister random number generator.
  --  Added various time/accounting functions from DooferMUX.  This is
      controlled by the GAME_DOOFERMUX define and it's turned off by default.
      Some of the DooferMUX stuff may be removed at a future time.
@@ -511,13 +511,9 @@ Performance Enhancements:
  --  Re-wrote do_conv to avoid a buffer allocation, safe_db_copy call, etc.
  --  Re-wrote ljust() and rjust() for speed, and they do the right thing
      ANSI-wise as well.
- --  Re-wrote the random number generator to be 32-bit instead of 31-bit,
-     encouraged all 32 of those bits to be 'equally' 'psuedo-random', and
-     saved unused bits from one call to service later calls as a way to
-     improve performance. @wait uses RandomLong to decide whether to ding
-     the invoker for an extra penny.
  --  The random number generators are now given a seed which is based upon
-     the full resolution of the current time (milliseconds or better).
+     the full resolution of the current time (milliseconds or better) and
+     the game's process id.
  --  LAST() is faster.
  --  Removed duplicate code.
  --  Improved speed and consistancy of object name checking.
@@ -547,7 +543,6 @@ Miscellaneous:
  --  Game uses UTC time internally.
  --  Free memory properly when the game exits to allow potential memory 
      leaks to be more easily found.
- --  Replace random number generator. 
  --  Source code untars into its own directory.
  --  Miscellaneous server documentation moved to docs/
  --  Increased the size trigger for rotating logfiles on Win32.
