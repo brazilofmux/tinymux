@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.7 2002-07-23 05:36:13 jake Exp $
+// $Id: mudconf.h,v 1.8 2002-07-23 07:27:55 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -178,7 +178,6 @@ struct confdata
     char    mud_name[32];   /* Name of the mud */
     char    one_coin[32];   /* name of one coin (ie. "penny") */
     char    many_coins[32]; /* name of many coins (ie. "pennies") */
-    //char    *art_regexp;    /* Basic regexp for determining which article to use. */
     ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
     dbref   toad_recipient; /* Default @toad recipient. */
     BOOL    run_startup;    // If no, startup attributes aren't processed on load.
