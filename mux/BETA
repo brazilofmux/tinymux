@@ -1,27 +1,18 @@
 TinyMUX 2.3:  BETA
-Last Update:  January 2003
+Last Update:  December 2003
 
 General Cautions During the Beta Period:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-[QQQ: Need to re-write.]
-
-More so than TinyMUX 2.0 or 2.1, TinyMUX 2.2 has had several coders working
-on the code simultaneously.  We suspect that this will prove to be the cause
-of most of it faults.
-
-Some of the changes to TinyMUX 2.2 were features like @hook, @icmd, and
-support for the caller substitution for functions and commands, but some
-changes were required to fix previously unfixable issues.  So, its a mixed
-bag.
-
-Overall, I expect there to be a few surprises, but after these are found
-and removed, the stability will be equal to that of TinyMUX 2.0 or 2.1.
+Yet again, the work in TinyMUX 2.3 has a different flavor than versions
+2.0, 2.1, or 2.2.  Fewer changes have been made to 2.3 than were made
+in 2.2.  There were fewer contributors and the flow of contributions was
+lower as well.
 
 Please take the time to read the README.  These files should be
-helpful to you.  If they aren't helpful, then please help us improve
-our efforts by suggesting specific changes. Documentation bugs can
-usually be fixed more rapidly than any other type of bug.
+helpful to you.  If they are not helpful, then please help us improve
+the documentation by by suggesting specific changes.  Documentation bugs
+can usually be fixed more rapidly than any other type of bug.
 
 If you port an existing game to this beta:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
