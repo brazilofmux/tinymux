@@ -313,18 +313,26 @@
 
 & @dump
   Command: @dump[/<switches>]
+
   Writes a checkpoint dump of the database to disk.  Checkpoint dumps are
   automatically performed periodically, so there is usually no need to use
   this command.  Switches may be used to either dump just the structure
-  portion of the database to a flat file, or to ensure that all changes to
-  the text database are written out to disk.  The default is to write out
-  both files.
-  The following options are available:
-     structure  - Dump the structure portion of the database to a flat file.
+  or text portions of the database to disk.  The default is to write out
+  both the text and structure portions.
+
+  All of the following switches may by used individually or together:
+
+     flatfile   - Dump an internally consistent flatfile which together
+                  with the mail and comsystem databases represent the
+                  entire database of game -- useful in a variety of ways
+                  including for a backup and for moving from one host to
+                  another.
+     structure  - Dump the structure portion of the database to a linear
+                  human-readable file.
      text       - Ensure that all changes to the text portion of the
                   database are written out to disk.
  
-  Note that these structure and text options will cause your database and
+  Note that the above structure and text options will cause your database and
   certain caches to be out of sync. They should NOT be used in the course
   of normal operation.
  
