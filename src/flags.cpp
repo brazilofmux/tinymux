@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.15 2001-11-28 06:56:05 sdennis Exp $
+// $Id: flags.cpp,v 1.16 2001-11-28 10:23:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -258,75 +258,142 @@ int fh_staff
     return (fh_any(target, player, flag, fflags, reset));
 }
 
-FLAGENT gen_flags[] =
-{
-    {"ABODE",           ABODE,        'A',    FLAG_WORD2, 0,                    fh_any},
-    {"ANSI",            ANSI,         'X',    FLAG_WORD2, 0,                    fh_any},
-    {"AUDITORIUM",      AUDITORIUM,   'b',    FLAG_WORD2, 0,                    fh_any},
-    {"COMPRESS",        COMPRESS,     '.',    FLAG_WORD2, 0,                    fh_any},
-    {"CHOWN_OK",        CHOWN_OK,     'C',    FLAG_WORD1, 0,                    fh_any},
-    {"HAS_DAILY",       HAS_DAILY,    '*',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god},
-    {"PLAYER_MAILS",    PLAYER_MAILS, 'B',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god},
-    {"DARK",            DARK,         'D',    FLAG_WORD1, 0,                    fh_dark_bit},
-    {"FLOATING",        FLOATING,     'F',    FLAG_WORD2, 0,                    fh_any},
-    {"GAGGED",          GAGGED,       'j',    FLAG_WORD2, 0,                    fh_wiz},
-    {"GOING",           GOING,        'G',    FLAG_WORD1, CA_NO_DECOMP,         fh_going_bit},
-    {"HAVEN",           HAVEN,        'H',    FLAG_WORD1, 0,                    fh_any},
-    {"HEAD",            HEAD_FLAG,    '?',    FLAG_WORD2, 0,                    fh_wiz},
-    {"INHERIT",         INHERIT,      'I',    FLAG_WORD1, 0,                    fh_inherit},
-    {"JUMP_OK",         JUMP_OK,      'J',    FLAG_WORD1, 0,                    fh_any},
-    {"KEY",             KEY,          'K',    FLAG_WORD2, 0,                    fh_any},
-    {"LINK_OK",         LINK_OK,      'L',    FLAG_WORD1, 0,                    fh_any},
-    {"MONITOR",         MONITOR,      'M',    FLAG_WORD1, 0,                    fh_hear_bit},
-    {"NOSPOOF",         NOSPOOF,      'N',    FLAG_WORD1, 0,                    fh_any},
-    {"OPAQUE",          TM_OPAQUE,    'O',    FLAG_WORD1, 0,                    fh_any},
-    {"QUIET",           QUIET,        'Q',    FLAG_WORD1, 0,                    fh_any},
-    {"STAFF",           STAFF,        'w',    FLAG_WORD2, 0,                    fh_wiz},
-    {"STICKY",          STICKY,       'S',    FLAG_WORD1, 0,                    fh_any},
-    {"TRACE",           TRACE,        'T',    FLAG_WORD1, 0,                    fh_any},
-    {"UNFINDABLE",      UNFINDABLE,   'U',    FLAG_WORD2, 0,                    fh_any},
-    {"VISUAL",          VISUAL,       'V',    FLAG_WORD1, 0,                    fh_any},
-    {"VACATION",        VACATION,     '|',    FLAG_WORD2, 0,                    fh_restrict_player},
-    {"WIZARD",          WIZARD,       'W',    FLAG_WORD1, 0,                    fh_god},
-    {"PARENT_OK",       PARENT_OK,    'Y',    FLAG_WORD2, 0,                    fh_any},
-    {"ROYALTY",         ROYALTY,      'Z',    FLAG_WORD1, 0,                    fh_wiz},
-    {"FIXED",           FIXED,        'f',    FLAG_WORD2, 0,                    fh_restrict_player},
-    {"UNINSPECTED",     UNINSPECTED,  'g',    FLAG_WORD2, 0,                    fh_wizroy},
-    {"NO_COMMAND",      NO_COMMAND,   'n',    FLAG_WORD2, 0,                    fh_any},
-    {"NOBLEED",         NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any},
-    {"AUDIBLE",         HEARTHRU,     'a',    FLAG_WORD1, 0,                    fh_hear_bit},
-    {"CONNECTED",       CONNECTED,    'c',    FLAG_WORD2, CA_NO_DECOMP,         fh_god},
-    {"DESTROY_OK",      DESTROY_OK,   'd',    FLAG_WORD1, 0,                    fh_any},
-    {"ENTER_OK",        ENTER_OK,     'e',    FLAG_WORD1, 0,                    fh_any},
-    {"HALTED",          HALT,         'h',    FLAG_WORD1, 0,                    fh_any},
-    {"IMMORTAL",        IMMORTAL,     'i',    FLAG_WORD1, 0,                    fh_wiz},
-    {"LIGHT",           LIGHT,        'l',    FLAG_WORD2, 0,                    fh_any},
-    {"MYOPIC",          MYOPIC,       'm',    FLAG_WORD1, 0,                    fh_any},
-    {"PUPPET",          PUPPET,       'p',    FLAG_WORD1, 0,                    fh_hear_bit},
-    {"TERSE",           TERSE,        'q',    FLAG_WORD1, 0,                    fh_any},
-    {"ROBOT",           ROBOT,        'r',    FLAG_WORD1, 0,                    fh_player_bit},
-    {"SAFE",            SAFE,         's',    FLAG_WORD1, 0,                    fh_any},
-    {"TRANSPARENT",     SEETHRU,      't',    FLAG_WORD1, 0,                    fh_any},
-    {"SUSPECT",         SUSPECT,      'u',    FLAG_WORD2, CA_WIZARD,            fh_wiz},
-    {"VERBOSE",         VERBOSE,      'v',    FLAG_WORD1, 0,                    fh_any},
-    {"SLAVE",           SLAVE,        'x',    FLAG_WORD2, CA_WIZARD,            fh_wiz},
-    {"HAS_STARTUP",     HAS_STARTUP,  '+',    FLAG_WORD1, CA_GOD|CA_NO_DECOMP,  fh_god},
-    {"HAS_FORWARDLIST", HAS_FWDLIST,  '&',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god},
-    {"HAS_LISTEN",      HAS_LISTEN,   '@',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god},
-    {"HTML",            HTML,         '(',    FLAG_WORD2, 0,                    fh_any},
+static FLAGBITENT fbeAbode          = { ABODE,        'A',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeAnsi           = { ANSI,         'X',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeAudible        = { HEARTHRU,     'a',    FLAG_WORD1, 0,                    fh_hear_bit};
+static FLAGBITENT fbeAuditorium     = { AUDITORIUM,   'b',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeChownOk        = { CHOWN_OK,     'C',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeCompress       = { COMPRESS,     '.',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeConnected      = { CONNECTED,    'c',    FLAG_WORD2, CA_NO_DECOMP,         fh_god};
+static FLAGBITENT fbeDark           = { DARK,         'D',    FLAG_WORD1, 0,                    fh_dark_bit};
+static FLAGBITENT fbeDestroyOk      = { DESTROY_OK,   'd',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeEnterOk        = { ENTER_OK,     'e',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeFixed          = { FIXED,        'f',    FLAG_WORD2, 0,                    fh_restrict_player};
+static FLAGBITENT fbeFloating       = { FLOATING,     'F',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeGagged         = { GAGGED,       'j',    FLAG_WORD2, 0,                    fh_wiz};
+static FLAGBITENT fbeGoing          = { GOING,        'G',    FLAG_WORD1, CA_NO_DECOMP,         fh_going_bit};
+static FLAGBITENT fbeHalted         = { HALT,         'h',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeHasDaily       = { HAS_DAILY,    '*',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god};
+static FLAGBITENT fbeHasForwardList = { HAS_FWDLIST,  '&',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god};
+static FLAGBITENT fbeHasListen      = { HAS_LISTEN,   '@',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god};
+static FLAGBITENT fbeHasStartup     = { HAS_STARTUP,  '+',    FLAG_WORD1, CA_GOD|CA_NO_DECOMP,  fh_god};
+static FLAGBITENT fbeHaven          = { HAVEN,        'H',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeHead           = { HEAD_FLAG,    '?',    FLAG_WORD2, 0,                    fh_wiz};
+static FLAGBITENT fbeHtml           = { HTML,         '(',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeImmortal       = { IMMORTAL,     'i',    FLAG_WORD1, 0,                    fh_wiz};
+static FLAGBITENT fbeInherit        = { INHERIT,      'I',    FLAG_WORD1, 0,                    fh_inherit};
+static FLAGBITENT fbeJumpOk         = { JUMP_OK,      'J',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeKey            = { KEY,          'K',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeLight          = { LIGHT,        'l',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeLinkOk         = { LINK_OK,      'L',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeMonitor        = { MONITOR,      'M',    FLAG_WORD1, 0,                    fh_hear_bit};
+static FLAGBITENT fbeMyopic         = { MYOPIC,       'm',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeNoCommand      = { NO_COMMAND,   'n',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeNoBleed        = { NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeNoSpoof        = { NOSPOOF,      'N',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeOpaque         = { TM_OPAQUE,    'O',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeParentOk       = { PARENT_OK,    'Y',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbePlayerMails    = { PLAYER_MAILS, 'B',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god};
+static FLAGBITENT fbePuppet         = { PUPPET,       'p',    FLAG_WORD1, 0,                    fh_hear_bit};
+static FLAGBITENT fbeQuiet          = { QUIET,        'Q',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeRobot          = { ROBOT,        'r',    FLAG_WORD1, 0,                    fh_player_bit};
+static FLAGBITENT fbeRoyalty        = { ROYALTY,      'Z',    FLAG_WORD1, 0,                    fh_wiz};
+static FLAGBITENT fbeSafe           = { SAFE,         's',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeSlave          = { SLAVE,        'x',    FLAG_WORD2, CA_WIZARD,            fh_wiz};
+static FLAGBITENT fbeStaff          = { STAFF,        'w',    FLAG_WORD2, 0,                    fh_wiz};
+static FLAGBITENT fbeSticky         = { STICKY,       'S',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeSuspect        = { SUSPECT,      'u',    FLAG_WORD2, CA_WIZARD,            fh_wiz};
+static FLAGBITENT fbeTerse          = { TERSE,        'q',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeTrace          = { TRACE,        'T',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeTransparent    = { SEETHRU,      't',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeUnfindable     = { UNFINDABLE,   'U',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeUninspected    = { UNINSPECTED,  'g',    FLAG_WORD2, 0,                    fh_wizroy};
+static FLAGBITENT fbeVacation       = { VACATION,     '|',    FLAG_WORD2, 0,                    fh_restrict_player};
+static FLAGBITENT fbeVerbose        = { VERBOSE,      'v',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeVisual         = { VISUAL,       'V',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeWizard         = { WIZARD,       'W',    FLAG_WORD1, 0,                    fh_god};
 #ifdef WOD_REALMS
-    {"OBF",             OBF,          'o',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy},
-    {"HSS",             HSS,          'k',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy},
-    {"UMBRA",           UMBRA,        'y',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy},
-    {"SHROUD",          SHROUD,       '$',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy},
-    {"MATRIX",          MATRIX,       '/',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy},
-    {"MEDIUM",          MEDIUM,       '^',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy},
-    {"DEAD",            DEAD,         '_',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy},
-    {"FAE",             FAE,          '0',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy},
-    {"CHIMERA",         CHIMERA,      '1',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy},
-    {"PEERING",         PEERING,      '2',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy},
+static FLAGBITENT fbeObf            = { OBF,          'o',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeHss            = { HSS,          'k',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeUmbra          = { UMBRA,        'y',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeShroud         = { SHROUD,       '$',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeMatrix         = { MATRIX,       '/',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeMedium         = { MEDIUM,       '^',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeDead           = { DEAD,         '_',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeFae            = { FAE,          '0',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeChimera        = { CHIMERA,      '1',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbePeering        = { PEERING,      '2',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
 #endif
-    { NULL,             0,            ' ',    0,          0,                    NULL}
+
+FLAGNAMEENT gen_flag_names[] =
+{
+    {"ABODE",           TRUE, &fbeAbode          },
+    {"ANSI",            TRUE, &fbeAnsi           },
+    {"AUDIBLE",         TRUE, &fbeAudible        },
+    {"AUDITORIUM",      TRUE, &fbeAuditorium     },
+    {"CHOWN_OK",        TRUE, &fbeChownOk        },
+    {"COMPRESS",        TRUE, &fbeCompress       },
+    {"CONNECTED",       TRUE, &fbeConnected      },
+    {"DARK",            TRUE, &fbeDark           },
+    {"DESTROY_OK",      TRUE, &fbeDestroyOk      },
+    {"ENTER_OK",        TRUE, &fbeEnterOk        },
+    {"FIXED",           TRUE, &fbeFixed          },
+    {"FLOATING",        TRUE, &fbeFloating       },
+    {"GAGGED",          TRUE, &fbeGagged         },
+    {"GOING",           TRUE, &fbeGoing          },
+    {"HALTED",          TRUE, &fbeHalted         },
+    {"HAS_DAILY",       TRUE, &fbeHasDaily       },
+    {"HAS_FORWARDLIST", TRUE, &fbeHasForwardList },
+    {"HAS_LISTEN",      TRUE, &fbeHasListen      },
+    {"HAS_STARTUP",     TRUE, &fbeHasStartup     },
+    {"HAVEN",           TRUE, &fbeHaven          },
+    {"HEAD",            TRUE, &fbeHead           },
+    {"HTML",            TRUE, &fbeHtml           },
+    {"IMMORTAL",        TRUE, &fbeImmortal       },
+    {"INHERIT",         TRUE, &fbeInherit        },
+    {"JUMP_OK",         TRUE, &fbeJumpOk         },
+    {"KEY",             TRUE, &fbeKey            },
+    {"LIGHT",           TRUE, &fbeLight          },
+    {"LINK_OK",         TRUE, &fbeLinkOk         },
+    {"MONITOR",         TRUE, &fbeMonitor        },
+    {"MYOPIC",          TRUE, &fbeMyopic         },
+    {"NO_COMMAND",      TRUE, &fbeNoCommand      },
+    {"NOBLEED",         TRUE, &fbeNoBleed        },
+    {"NOSPOOF",         TRUE, &fbeNoSpoof        },
+    {"OPAQUE",          TRUE, &fbeOpaque         },
+    {"PARENT_OK",       TRUE, &fbeParentOk       },
+    {"PLAYER_MAILS",    TRUE, &fbePlayerMails    },
+    {"PUPPET",          TRUE, &fbePuppet         },
+    {"QUIET",           TRUE, &fbeQuiet          },
+    {"ROBOT",           TRUE, &fbeRobot          },
+    {"ROYALTY",         TRUE, &fbeRoyalty        },
+    {"SAFE",            TRUE, &fbeSafe           },
+    {"SLAVE",           TRUE, &fbeSlave          },
+    {"STAFF",           TRUE, &fbeStaff          },
+    {"STICKY",          TRUE, &fbeSticky         },
+    {"SUSPECT",         TRUE, &fbeSuspect        },
+    {"TERSE",           TRUE, &fbeTerse          },
+    {"TRACE",           TRUE, &fbeTrace          },
+    {"TRANSPARENT",     TRUE, &fbeTransparent    },
+    {"UNFINDABLE",      TRUE, &fbeUnfindable     },
+    {"UNINSPECTED",     TRUE, &fbeUninspected    },
+    {"VACATION",        TRUE, &fbeVacation       },
+    {"VERBOSE",         TRUE, &fbeVerbose        },
+    {"VISUAL",          TRUE, &fbeVisual         },
+    {"WIZARD",          TRUE, &fbeWizard         },
+#ifdef WOD_REALMS
+    {"OBF",             TRUE, &fbeObf            },
+    {"HSS",             TRUE, &fbeHss            },
+    {"UMBRA",           TRUE, &fbeUmbra          },
+    {"SHROUD",          TRUE, &fbeShroud         },
+    {"MATRIX",          TRUE, &fbeMatrix         },
+    {"MEDIUM",          TRUE, &fbeMedium         },
+    {"DEAD",            TRUE, &fbeDead           },
+    {"FAE",             TRUE, &fbeFae            },
+    {"CHIMERA",         TRUE, &fbeChimera        },
+    {"PEERING",         TRUE, &fbePeering        },
+#endif
+    {NULL, FALSE}
 };
 
 #endif
@@ -352,7 +419,7 @@ OBJENT object_types[8] =
 void NDECL(init_flagtab)
 {
     char *nbuf = alloc_sbuf("init_flagtab");
-    for (FLAGENT *fp = gen_flags; fp->flagname; fp++)
+    for (FLAGNAMEENT *fp = gen_flag_names; fp->flagname; fp++)
     {
         strncpy(nbuf, fp->flagname, SBUF_SIZE);
         nbuf[SBUF_SIZE-1] = '\0';
@@ -370,19 +437,28 @@ void NDECL(init_flagtab)
 void display_flagtab(dbref player)
 {
     char *buf, *bp;
-    FLAGENT *fp;
+    FLAGNAMEENT *fp;
 
     bp = buf = alloc_lbuf("display_flagtab");
-    safe_str((char *)"Flags:", buf, &bp);
-    for (fp = gen_flags; fp->flagname; fp++) {
-        if ((fp->listperm & CA_WIZARD) && !Wizard(player))
+    safe_str("Flags:", buf, &bp);
+    for (fp = gen_flag_names; fp->flagname; fp++)
+    {
+        FLAGBITENT *fbe = fp->fbe;
+        if (  (  (fbe->listperm & CA_WIZARD)
+              && !Wizard(player))
+           || (  (fbe->listperm & CA_GOD)
+              && !God(player)))
+        {
             continue;
-        if ((fp->listperm & CA_GOD) && !God(player))
-            continue;
+        }
         safe_chr(' ', buf, &bp);
-        safe_str((char *)fp->flagname, buf, &bp);
+        safe_str(fp->flagname, buf, &bp);
         safe_chr('(', buf, &bp);
-        safe_chr(fp->flaglett, buf, &bp);
+        if (!fp->bPositive)
+        {
+            safe_chr('!', buf, &bp);
+        }
+        safe_chr(fbe->flaglett, buf, &bp);
         safe_chr(')', buf, &bp);
     }
     *bp = '\0';
@@ -423,17 +499,17 @@ char *MakeCanonicalFlagName
     }
 }
 
-FLAGENT *find_flag(dbref thing, char *flagname)
+FLAGNAMEENT *find_flag(dbref thing, char *flagname)
 {
     // Convert flagname to canonical lowercase format.
     //
     int nName;
     BOOL bValid;
     char *pName = MakeCanonicalFlagName(flagname, &nName, &bValid);
-    FLAGENT *fe = NULL;
+    FLAGNAMEENT *fe = NULL;
     if (bValid)
     {
-        fe = (FLAGENT *)hashfindLEN(pName, nName, &mudstate.flags_htab);
+        fe = (FLAGNAMEENT *)hashfindLEN(pName, nName, &mudstate.flags_htab);
     }
     return fe;
 }
@@ -496,16 +572,23 @@ void flag_set(dbref target, dbref player, char *flag, int key)
         }
         else
         {
-            FLAGENT *fp = find_flag(target, flag);
+            FLAGNAMEENT *fp = find_flag(target, flag);
             if (!fp)
             {
                 notify(player, "I do not understand that flag.");
             }
             else
             {
+                FLAGBITENT *fbe = fp->fbe;
+
+                if (!fp->bPositive)
+                {
+                    negate = ~negate;
+                }
+
                 // Invoke the flag handler, and print feedback.
                 //
-                if (!fp->handler(target, player, fp->flagvalue, fp->flagflag, negate))
+                if (!fbe->handler(target, player, fbe->flagvalue, fbe->flagflag, negate))
                 {
                     notify(player, NOPERM_MESSAGE);
                 }
@@ -542,16 +625,22 @@ char *decode_flags(dbref player, FLAGSET *fs)
         safe_sb_chr(object_types[flagtype].lett, buf, &bp);
     }
 
-    FLAGENT *fp;
-    for (fp = gen_flags; fp->flagname; fp++)
+    FLAGNAMEENT *fp;
+    for (fp = gen_flag_names; fp->flagname; fp++)
     {
-        if (fs->word[fp->flagflag] & fp->flagvalue)
+        if (!fp->bPositive)
         {
-            if ((fp->listperm & CA_WIZARD) && !Wizard(player))
-            {
-                continue;
-            }
-            if ((fp->listperm & CA_GOD) && !God(player))
+            // Only look at positive-sense entries.
+            //
+            continue;
+        }
+        FLAGBITENT *fbe = fp->fbe;
+        if (fs->word[fbe->flagflag] & fbe->flagvalue)
+        {
+            if (  (  (fbe->listperm & CA_WIZARD)
+                  && !Wizard(player))
+               || (  (fbe->listperm & CA_GOD)
+                  && !God(player)))
             {
                 continue;
             }
@@ -559,14 +648,14 @@ char *decode_flags(dbref player, FLAGSET *fs)
             // Don't show CONNECT on dark wizards to mortals
             //
             if (  isPlayer(player)
-               && (fp->flagvalue == CONNECTED)
-               && (fp->flagflag == FLAG_WORD2)
+               && (fbe->flagvalue == CONNECTED)
+               && (fbe->flagflag == FLAG_WORD2)
                && ((fs->word[FLAG_WORD1] & (WIZARD | DARK)) == (WIZARD | DARK))
                && !Wizard(player))
             {
                 continue;
             }
-            safe_sb_chr(fp->flaglett, buf, &bp);
+            safe_sb_chr(fbe->flaglett, buf, &bp);
         }
     }
     *bp = '\0';
@@ -580,19 +669,22 @@ char *decode_flags(dbref player, FLAGSET *fs)
 
 int has_flag(dbref player, dbref it, char *flagname)
 {
-    FLAGENT *fp = find_flag(it, flagname);
+    FLAGNAMEENT *fp = find_flag(it, flagname);
     if (!fp)
     {
         return 0;
     }
+    FLAGBITENT *fbe = fp->fbe;
 
-    if (db[it].fs.word[fp->flagflag] & fp->flagvalue)
+    if (  (  fp->bPositive
+          && (db[it].fs.word[fbe->flagflag] & fbe->flagvalue))
+       || (  !fp->bPositive
+          && (db[it].fs.word[fbe->flagflag] & fbe->flagvalue) == 0))
     {
-        if ((fp->listperm & CA_WIZARD) && !Wizard(player))
-        {
-            return 0;
-        }
-        if ((fp->listperm & CA_GOD) && !God(player))
+        if (  (  (fbe->listperm & CA_WIZARD)
+              && !Wizard(player))
+           || (  (fbe->listperm & CA_GOD)
+              && !God(player)))
         {
             return 0;
         }
@@ -600,8 +692,8 @@ int has_flag(dbref player, dbref it, char *flagname)
         // Don't show CONNECT on dark wizards to mortals
         //
         if (  isPlayer(it)
-           && (fp->flagvalue == CONNECTED)
-           && (fp->flagflag == FLAG_WORD2)
+           && (fbe->flagvalue == CONNECTED)
+           && (fbe->flagflag == FLAG_WORD2)
            && ((Flags(it) & (WIZARD | DARK)) == (WIZARD | DARK))
            && !Wizard(player))
         {
@@ -638,28 +730,36 @@ char *flag_description(dbref player, dbref target)
 
     // Store the type-invariant flags.
     //
-    FLAGENT *fp;
-    for (fp = gen_flags; fp->flagname; fp++)
+    FLAGNAMEENT *fp;
+    for (fp = gen_flag_names; fp->flagname; fp++)
     {
-        if (db[target].fs.word[fp->flagflag] & fp->flagvalue)
+        if (!fp->bPositive)
         {
-            if ((fp->listperm & CA_WIZARD) && !Wizard(player))
+            continue;
+        }
+        FLAGBITENT *fbe = fp->fbe;
+        if (db[target].fs.word[fbe->flagflag] & fbe->flagvalue)
+        {
+            if (  (  (fbe->listperm & CA_WIZARD)
+                  && !Wizard(player))
+               || (  (fbe->listperm & CA_GOD)
+                  && !God(player)))
+            {
                 continue;
-            if ((fp->listperm & CA_GOD) && !God(player))
-                continue;
-            /*
-             * don't show CONNECT on dark wizards to mortals
-             */
+            }
+
+            // Don't show CONNECT on dark wizards to mortals.
+            //
             if (  isPlayer(target)
-               && (fp->flagvalue == CONNECTED)
-               && (fp->flagflag == FLAG_WORD2)
+               && (fbe->flagvalue == CONNECTED)
+               && (fbe->flagflag == FLAG_WORD2)
                && ((Flags(target) & (WIZARD | DARK)) == (WIZARD | DARK))
                && !Wizard(player))
             {
                 continue;
             }
             safe_mb_chr(' ', buff, &bp);
-            safe_mb_str((char *)fp->flagname, buff, &bp);
+            safe_mb_str(fp->flagname, buff, &bp);
         }
     }
 
@@ -757,21 +857,22 @@ CF_HAND(cf_flag_access)
         return -1;
     }
 
-    FLAGENT *fp;
+    FLAGNAMEENT *fp;
     if ((fp = find_flag(GOD, fstr)) == NULL)
     {
         cf_log_notfound(player, cmd, "No such flag", fstr);
         return -1;
     }
+    FLAGBITENT *fbe = fp->fbe;
 
     // Don't change the handlers on special things.
     //
-    if (  (fp->handler != fh_any)
-       && (fp->handler != fh_wizroy)
-       && (fp->handler != fh_wiz)
-       && (fp->handler != fh_god)
-       && (fp->handler != fh_restrict_player)
-       && (fp->handler != fh_privileged))
+    if (  (fbe->handler != fh_any)
+       && (fbe->handler != fh_wizroy)
+       && (fbe->handler != fh_wiz)
+       && (fbe->handler != fh_god)
+       && (fbe->handler != fh_restrict_player)
+       && (fbe->handler != fh_privileged))
     {
         STARTLOG(LOG_CONFIGMODS, "CFG", "PERM");
         log_text("Cannot change access for flag: ");
@@ -782,31 +883,31 @@ CF_HAND(cf_flag_access)
 
     if (!strcmp(permstr, "any"))
     {
-        fp->handler = fh_any;
+        fbe->handler = fh_any;
     }
     else if (!strcmp(permstr, "royalty"))
     {
-        fp->handler = fh_wizroy;
+        fbe->handler = fh_wizroy;
     }
     else if (!strcmp(permstr, "wizard"))
     {
-        fp->handler = fh_wiz;
+        fbe->handler = fh_wiz;
     }
     else if (!strcmp(permstr, "god"))
     {
-        fp->handler = fh_god;
+        fbe->handler = fh_god;
     }
     else if (!strcmp(permstr, "restrict_player"))
     {
-        fp->handler = fh_restrict_player;
+        fbe->handler = fh_restrict_player;
     }
     else if (!strcmp(permstr, "privileged"))
     {
-        fp->handler = fh_privileged;
+        fbe->handler = fh_privileged;
     }
     else if (!strcmp(permstr, "staff"))
     {
-        fp->handler = fh_staff;
+        fbe->handler = fh_staff;
     }
     else
     {
@@ -866,16 +967,21 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
         {
             continue;
         }
-        FLAGENT *fp;
-        for (fp = gen_flags; fp->flagname && !handled; fp++)
+        FLAGNAMEENT *fp;
+        for (fp = gen_flag_names; fp->flagname && !handled; fp++)
         {
-            if (  fp->flaglett == *s
-               && !(  (  (fp->listperm & CA_WIZARD)
+            if (!fp->bPositive)
+            {
+                continue;
+            }
+            FLAGBITENT *fbe = fp->fbe;
+            if (  fbe->flaglett == *s
+               && !(  (  (fbe->listperm & CA_WIZARD)
                       && !Wizard(player))
-                   || (  (fp->listperm & CA_GOD)
+                   || (  (fbe->listperm & CA_GOD)
                       && !God(player))))
             {
-                flagmask.word[fp->flagflag] |= fp->flagvalue;
+                flagmask.word[fbe->flagflag] |= fbe->flagvalue;
                 handled = 1;
             }
         }
@@ -905,31 +1011,25 @@ void decompile_flags(dbref player, dbref thing, char *thingname)
 {
     // Report generic flags.
     //
-    FLAGENT *fp;
-    for (fp = gen_flags; fp->flagname; fp++)
+    FLAGNAMEENT *fp;
+    for (fp = gen_flag_names; fp->flagname; fp++)
     {
+        FLAGBITENT *fbe = fp->fbe;
+
+        // Only handle positive-sense entries.
         // Skip if we shouldn't decompile this flag.
-        //
-        if (fp->listperm & CA_NO_DECOMP)
-        {
-            continue;
-        }
-
-        // Skip if this flag is not set.
-        //
-        if ((db[thing].fs.word[fp->flagflag] & fp->flagvalue) == 0)
-        {
-            continue;
-        }
-
+        // Skip if this flag isn't set.
         // Skip if we can't see this flag.
         //
-        if (!check_access(player, fp->listperm))
+        if (  !fp->bPositive
+           || (fbe->listperm & CA_NO_DECOMP)
+           || (db[thing].fs.word[fbe->flagflag] & fbe->flagvalue) == 0
+           || !check_access(player, fbe->listperm))
         {
             continue;
         }
 
-        // We made it this far, report this flag.
+        // Report this flag.
         //
         notify(player, tprintf("@set %s=%s", strip_ansi(thingname),
             fp->flagname));

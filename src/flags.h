@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.10 2001-11-28 06:35:53 sdennis Exp $
+// $Id: flags.h,v 1.11 2001-11-28 10:23:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -101,15 +101,22 @@
 /* ---------------------------------------------------------------------------
  * FLAGENT: Information about object flags.
  */
+typedef struct flag_bit_entry
+{
+    int  flagvalue;         // Which bit in the object is the flag.
+    char flaglett;          // Flag letter for listing.
+    int  flagflag;          // Ctrl flags for this flag.
+    int  listperm;          // Who sees this flag when set.
+    int (*handler)(dbref target, dbref player, FLAG flag, int fflags,
+        int reset);         // Handler for setting/clearing this flag.
+} FLAGBITENT;
 
-typedef struct flag_entry {
-    const char *flagname;   /* Name of the flag */
-    int flagvalue;  /* Which bit in the object is the flag */
-    char    flaglett;   /* Flag letter for listing */
-    int flagflag;   /* Ctrl flags for this flag (recursive? :-) */
-    int listperm;   /* Who sees this flag when set */
-    int (*handler)(dbref target, dbref player, FLAG flag, int fflags, int reset);   /* Handler for setting/clearing this flag */
-} FLAGENT;
+typedef struct flag_name_entry
+{
+    const char *flagname;   // Name of the flag;
+    BOOL bPositive;         // Flag sense.
+    FLAGBITENT *fbe;        // Which bit is this associated with?
+} FLAGNAMEENT;
 
 /* ---------------------------------------------------------------------------
  * OBJENT: Fundamental object types
@@ -140,7 +147,7 @@ extern void NDECL(init_flagtab);
 extern void FDECL(display_flagtab, (dbref));
 extern void FDECL(flag_set, (dbref, dbref, char *, int));
 extern char *   FDECL(flag_description, (dbref, dbref));
-extern FLAGENT *FDECL(find_flag, (dbref, char *));
+extern FLAGNAMEENT *find_flag(dbref, char *);
 extern char *decode_flags(dbref, FLAGSET *);
 extern int  FDECL(has_flag, (dbref, dbref, char *));
 extern char *   FDECL(unparse_object, (dbref, dbref, int));

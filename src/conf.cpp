@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.52 2001-11-28 06:35:53 sdennis Exp $
+// $Id: conf.cpp,v 1.53 2001-11-28 10:23:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -784,10 +784,10 @@ CF_HAND(cf_set_flags)
         int  nName;
         BOOL bValid;
         char *pName = MakeCanonicalFlagName(sp, &nName, &bValid);
-        FLAGENT *fp = NULL;
+        FLAGNAMEENT *fp = NULL;
         if (bValid)
         {
-            fp = (FLAGENT *)hashfindLEN(pName, nName, &mudstate.flags_htab);
+            fp = (FLAGNAMEENT *)hashfindLEN(pName, nName, &mudstate.flags_htab);
         }
         if (fp != NULL)
         {
@@ -800,7 +800,15 @@ CF_HAND(cf_set_flags)
                     (*fset).word[i] = 0;
                 }
             }
-            (*fset).word[fp->flagflag] |= fp->flagvalue;
+            FLAGBITENT *fbe = fp->fbe;
+            if (fp->bPositive)
+            {
+                (*fset).word[fbe->flagflag] |= fbe->flagvalue;
+            }
+            else
+            {
+                (*fset).word[fbe->flagflag] &= ~(fbe->flagvalue);
+            }
             success++;
         }
         else

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.112 2001-11-28 06:35:53 sdennis Exp $
+// $Id: functions.cpp,v 1.113 2001-11-28 10:23:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7668,35 +7668,38 @@ FUNCTION(fun_lcmds)
     olist_pop();
 }
 
-extern FLAGENT gen_flags[];
+extern FLAGNAMEENT gen_flag_names[];
 
 // lflags - List flags as names - (modified from 'flag_description()' and
 // MUX flags(). D.Piper - May 1997 & May 2000
 //
 FUNCTION(fun_lflags)
 {
-    dbref target;
-    FLAGENT *fp;
-
     BOOL bFirst = TRUE;
-    target = match_thing(player, fargs[0]);
+    dbref target = match_thing(player, fargs[0]);
     if (  (target != NOTHING)
        && (mudconf.pub_flags || Examinable(player, target) || (target == cause)))
     {
-        for (fp = gen_flags; fp->flagname; fp++)
+        FLAGNAMEENT *fp;
+        for (fp = gen_flag_names; fp->flagname; fp++)
         {
-            if (db[target].fs.word[fp->flagflag] & fp->flagvalue)
+            if (!fp->bPositive)
             {
-                if (  (  (fp->listperm & CA_WIZARD)
+                continue;
+            }
+            FLAGBITENT *fbe = fp->fbe;
+            if (db[target].fs.word[fbe->flagflag] & fbe->flagvalue)
+            {
+                if (  (  (fbe->listperm & CA_WIZARD)
                       && !Wizard(player))
-                   || (  (fp->listperm & CA_GOD)
+                   || (  (fbe->listperm & CA_GOD)
                       && !God(player)))
                 {
                     continue;
                 }
                 if (  isPlayer(target)
-                   && (fp->flagvalue == CONNECTED)
-                   && (fp->flagflag == FLAG_WORD2)
+                   && (fbe->flagvalue == CONNECTED)
+                   && (fbe->flagflag == FLAG_WORD2)
                    && ((Flags(target) & (WIZARD | DARK)) == (WIZARD | DARK))
                    && !Wizard(player))
                 {
