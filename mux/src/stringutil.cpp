@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.61 2004-07-08 22:00:52 sdennis Exp $
+// $Id: stringutil.cpp,v 1.62 2004-07-08 22:13:56 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2024,7 +2024,7 @@ void safe_ltoa(long val, char *buff, char **bufc)
     safe_copy_buf(temp, n, buff, bufc);
 }
 
-int mux_i64toa(INT64 val, char *buf)
+size_t mux_i64toa(INT64 val, char *buf)
 {
     char *p = buf;
 
@@ -2052,7 +2052,7 @@ int mux_i64toa(INT64 val, char *buf)
         *p++ = *(z+1);
     }
 
-    int nLength = p - buf;
+    size_t nLength = p - buf;
     *p-- = '\0';
 
     // The digits are in reverse order with a possible leading '-'
