@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.5 2000-04-16 09:34:46 sdennis Exp $
+// $Id: command.cpp,v 1.6 2000-04-24 22:05:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1213,10 +1213,6 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
     dbref exit, aowner;
     CMDENT *cmdp;
 
-#ifndef MEMORY_BASED
-    cache_reset(0);
-#endif // MEMORY_BASED
-
     // Robustify player.
     //
     cmdsave = mudstate.debug_cmd;
@@ -1319,12 +1315,6 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
         //
         pCommand = pOriginalCommand;
     }
-
-#ifndef MEMORY_BASED
-    // Reset the cache so that unreferenced attributes may be flushed.
-    //
-    cache_reset(0);
-#endif // MEMORY_BASED
 
     // Now comes the fun stuff.  First check for single-letter leadins.
     // We check these before checking HOME because they are among the
@@ -2717,7 +2707,6 @@ extern int cs_writes;       // total writes
 extern int cs_reads;        // total reads
 extern int cs_dels;         // total deletes
 extern int cs_fails;        // attempts to grab nonexistent
-extern int cs_resets;       // total cache resets
 extern int cs_syncs;        // total cache syncs
 extern int cs_dbreads;      // total read-throughs
 extern int cs_dbwrites;     // total write-throughs
@@ -2749,7 +2738,6 @@ static void list_db_stats(dbref player)
     raw_notify(player, tprintf("DB Cache Stats   Writes       Reads  (over %d seconds)", ltd.ReturnSeconds()));
     raw_notify(player, tprintf("Calls      %12d%12d", cs_writes, cs_reads));
     raw_notify(player, tprintf("\nDeletes    %12d", cs_dels));
-    raw_notify(player, tprintf("Resets     %12d", cs_resets));
     raw_notify(player, tprintf("Syncs      %12d", cs_syncs));
     raw_notify(player, tprintf("I/O        %12d%12d", cs_dbwrites, cs_dbreads));
     raw_notify(player, tprintf("Cache Hits %12d%12d", cs_whits, cs_rhits));
