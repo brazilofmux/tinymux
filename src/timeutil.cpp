@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.27 2003-02-26 06:16:11 sdennis Exp $
+// $Id: timeutil.cpp,v 1.28 2003-10-09 01:59:20 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -895,7 +895,7 @@ BOOL ParseThreeLetters(const char **pp, int *piHash)
         p++;
     }
 
-    // Parse space-seperate token.
+    // Parse space-separate token.
     //
     const char *q = p;
     int iHash = 0;
