@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.43 2001-12-03 19:45:16 sdennis Exp $
+// $Id: bsd.cpp,v 1.44 2001-12-04 01:21:03 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -39,7 +39,7 @@ extern const int _sys_nsig;
 #endif // SOLARIS
 
 PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
-int      nMainGamePorts;
+int      nMainGamePorts = 0;
 
 unsigned int ndescriptors = 0;
 DESC *descriptor_list = NULL;
@@ -671,7 +671,7 @@ Done:
 }
 #endif // WIN32
 
-SOCKET make_socket(int port)
+void make_socket(PortInfo *Port)
 {
     SOCKET s;
     struct sockaddr_in server;
@@ -717,7 +717,7 @@ SOCKET make_socket(int port)
 
         // Fill in the the address structure
         //
-        server.sin_port = htons((unsigned short)port);
+        server.sin_port = htons((unsigned short)(Port->port));
         server.sin_family = AF_INET;
         server.sin_addr.s_addr = INADDR_ANY;
 
@@ -750,15 +750,15 @@ SOCKET make_socket(int port)
 
         // Create the MUD listening thread
         //
-        if (_beginthread(MUDListenThread, 0, (void *) s) == (unsigned)(-1))
+        if (_beginthread(MUDListenThread, 0, (void *) Port) == (unsigned)(-1))
         {
             log_perror("NET", "FAIL", "_beginthread", "setsockopt");
             WSACleanup();
             exit(1);
         }
 
-        Log.tinyprintf("Listening (NT-style) on port %d" ENDLINE, port);
-        return s;
+        Port->socket = s;
+        Log.tinyprintf("Listening (NT-style) on port %d" ENDLINE, Port->port);
     }
 #endif // WIN32
 
@@ -778,7 +778,7 @@ SOCKET make_socket(int port)
     }
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
-    server.sin_port = htons((unsigned short)port);
+    server.sin_port = htons((unsigned short)(Port->port));
 #ifndef WIN32
     if (!mudstate.restarting)
 #endif // !WIN32
@@ -799,36 +799,78 @@ SOCKET make_socket(int port)
         }
     }
     listen(s, SOMAXCONN);
-    Log.tinyprintf("Listening on port %d" ENDLINE, port);
-    return s;
+    Port->socket = s;
+    Log.tinyprintf("Listening on port %d" ENDLINE, Port->port);
 }
 
 void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
 {
-    // TODO: Support ability to add and remove ports across a @restart. For
-    // now, we assume the 'port' config option does not change across a
-    // @restart.
+    // Any existing open port which does not appear in the requested set
+    // should be closed.
     //
-    *pnPorts = pia->n;
-#ifndef WIN32
-    maxd = 1;
-#endif
-    for (int i = 0; i < pia->n; i++)
+    int i, j;
+    BOOL bFound;
+    for (i = 0; i < *pnPorts; i++)
     {
-        aPorts[i].port = pia->pi[i];
-#ifndef WIN32
-        if (!mudstate.restarting)
-#endif
+        bFound = FALSE;
+        for (j = 0; j < pia->n; j++)
         {
-            aPorts[i].socket = make_socket(aPorts[i].port);
-#ifndef WIN32
-            if (maxd <= aPorts[i].socket)
+            if (aPorts[i].port == pia->pi[j])
             {
-                maxd = aPorts[i].socket + 1;
+                bFound = TRUE;
+                break;
             }
-#endif
+        }
+        if (!bFound)
+        {
+            if (SOCKET_CLOSE(aPorts[i].socket) == 0)
+            {
+                DebugTotalSockets--;
+                (*pnPorts)--;
+                if (i != *pnPorts)
+                {
+                    aPorts[i] = aPorts[*pnPorts];
+                }
+            }
         }
     }
+
+    // Any requested port which does not appear in the existing open set
+    // of ports should be opened.
+    //
+    for (j = 0; j < pia->n; j++)
+    {
+        bFound = FALSE;
+        for (i = 0; i < *pnPorts; i++)
+        {
+            if (aPorts[i].socket == INVALID_SOCKET)
+            {
+                continue;
+            }
+            if (aPorts[i].port == pia->pi[j])
+            {
+                bFound = TRUE;
+                break;
+            }
+            if (!bFound)
+            {
+                aPorts[*pnPorts].port = pia->pi[j];
+                (*pnPorts)++;
+                make_socket(aPorts+(*pnPorts)-1);
+            }
+        }
+    }
+
+#ifndef WIN32
+    maxd = 1;
+    for (i = 0; i < *pnPorts; i++)
+    {
+        if (maxd <= aPorts[i].socket)
+        {
+            maxd = aPorts[i].socket + 1;
+        }
+    }
+#endif
 }
 
 #ifdef WIN32
@@ -2877,7 +2919,8 @@ void list_system_resources(dbref player)
 //
 void __cdecl MUDListenThread(void * pVoid)
 {
-    SOCKET MUDListenSocket = (SOCKET) pVoid;
+    PortInfo *Port = (PortInfo *)pVoid;
+    //SOCKET MUDListenSocket = (SOCKET) pVoid;
 
     SOCKADDR_IN SockAddr;
     int         nLen;
@@ -2896,7 +2939,8 @@ void __cdecl MUDListenThread(void * pVoid)
         // Block on accept()
         //
         nLen = sizeof(SOCKADDR_IN);
-        SOCKET socketClient = accept(MUDListenSocket, (LPSOCKADDR) &SockAddr, &nLen);
+        SOCKET socketClient = accept(Port->socket, (LPSOCKADDR) &SockAddr,
+            &nLen);
 
         if (socketClient == INVALID_SOCKET)
         {
@@ -2987,7 +3031,7 @@ void __cdecl MUDListenThread(void * pVoid)
             }
         }
     }
-    Log.WriteString("End of MUD listening thread ..." ENDLINE);
+    Log.tinyprintf("End of NT-style listening on port %d" ENDLINE, Port->port);
 }
 
 
