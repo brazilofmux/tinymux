@@ -508,6 +508,12 @@ DELCOM
   and their stats for the channel. If switch is /all, then it also displays
   unconnected players.
 
+  Example:
+    > @cwho Public/all
+    Name Status Player
+    Beowulf on yes
+    Ronan on yes
+
   Related Topics: @clist.
 
 & @CCHOWN
@@ -623,27 +629,35 @@ DELCOM
 CHANNEL OBJECT
 
   In the comsystem, you may specify a channel object for each channel.
-  (@cset/object channel=<object>).
+  (@cset/object channel=<object>). See 'help @cset' for help.
 
   Channel objects allow you to specify a description for a channel, and
-  place certain restrictions on joining, transmitting, and receiving.
+  place certain restrictions on joining, transmitting and receiving.
 
-  NOTE: If a channel flag is set by @cpflags/@coflags, it will ALWAYS
+  NOTE: If a channel flag is set by @cpflags or @coflags, those will ALWAYS
   override the equivalent lock. The flags are set by default, so you will
   have to clear them before your locks work.
 
-  The join lock for a channel is a normal @lock on the channel object.
-  The transmit lock for a channel is a use @lock on the channel object.
-  The receive lock for a channel is an enter @lock on the channel object.
-  The description of a channel is the @desc of the channel object.
+  The join lock for a channel is a normal @lock on the channel object. The
+  transmit lock for a channel is a use @lock on the channel object. The
+  receive lock for a channel is an enter @lock on the channel object. The
+  description of a channel is the @desc of the channel object.
+
+  Related Topics: @ccreate, @create, @cset.
 
 & CWHO()
 CWHO()
 
   FUNCTION: cwho(<channel>)
 
-  Returns a list of dbrefs who are connected, and on that channel.
-  This is limited to wizards and channel owners.
+  Returns a list of dbrefs who are connected and on that channel.  This is
+  limited to wizards and channel owners.
+
+  Example:
+    > say cwho(Public)
+    You say "#13 #11"
+
+  Related Topics: channels(), comalias(), comtitle()
 
 & @MALIAS
 @MALIAS
@@ -10811,7 +10825,11 @@ COMALIAS()
   comalias() returns the alias the player uses to access the named channel.
   Non-wizards can only use it to return their own alias.
 
-  Related Topics: comtitle()
+  Example:
+    > say comalias(me,Public)
+    You say "pub"
+
+  Related Topics: channels(), comtitle(). cwho().
 
 & CHANNELS()
 CHANNELS()
@@ -10820,7 +10838,11 @@ CHANNELS()
 
   This function lists all the channels known to the MUX (that you can see).
 
-  Related Topics:
+  Example:
+    > say channels()
+    You says "Wizard, Staff, Guest, Public, Staff"
+
+  Related Topics: comalias(), comtitle(), cwho()
 
 & COMTITLE()
 COMTITLE()
@@ -10830,7 +10852,11 @@ COMTITLE()
   comtitle() returns the comtitle the player has set on the named channel.
   Non-wizards can only use it to return their own comtitles.
 
-  Related Topics: comalias()
+  Example:
+    > say comtitle(me,Public)
+    You say "The mighty Wizard"
+
+  Related Topics: channels(), comalias(), cwho()
 
 & DOING()
 DOING()
