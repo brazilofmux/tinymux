@@ -243,7 +243,8 @@ Bug Fixes:
  -- Guests were not halted on disconnect. Patch from Zenty.
  -- God was able to @chown itself to other players. Patch from Jake.
  -- Fixed udefault() with %9. Found by Jake. Fixed by Brazil.
- -- Fixed search() with no arguments causing SIGSEGV on Solaris.
+ -- Fixed search() with no arguments causing SIGSEGV on Solaris 8 on Sun
+    hardware and SIGBUS on FreeBSD on x86 (AMD) hardware. Found by nails.
  -- Allow space() to have no arguments.
  -- Fix isnum() parsing when exponents are involved.
  -- Fix the way nanoseconds are broken into milliseconds, microseconds,
