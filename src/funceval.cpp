@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.22 2000-09-29 06:04:42 sdennis Exp $
+// $Id: funceval.cpp,v 1.23 2000-09-30 06:10:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -730,6 +730,196 @@ FUNCTION(fun_columns)
         rturn++;
     }
     free_lbuf(curr);
+}
+
+// table(<list>,<field width>,<line length>,<delimiter>,<output separator>, <padding>)
+//
+// Ported from PennMUSH 1.7.3 by Morgan.
+//
+// TODO: Support ANSI in output separator and padding.
+//
+FUNCTION(fun_table)
+{
+    if (nfargs > 6 || nfargs < 1)
+    {
+        safe_str("#-1 FUNCTION (TABLE) EXPECTS BETWEEN 1 AND 5 ARGUMENTS", buff, bufc);
+        return;
+    }
+
+    // Check argument numbers, assign values and defaults if necessary.
+    //
+    char *pPaddingStart;
+    char *pPaddingEnd;
+    if (nfargs == 6 && *fargs[5])
+    {
+        pPaddingStart = strip_ansi(fargs[5]);
+        pPaddingEnd = strchr(pPaddingStart, '\0');
+    }
+    else
+    {
+        pPaddingStart = NULL;
+    }
+
+    // Get single-character separator.
+    //
+    char cSeparator = ' ';
+    if (nfargs >= 5)
+    {
+        if (*fargs[4] && !*(fargs[4] + 1))
+        {
+            cSeparator = *fargs[4];
+        }
+        else
+        {
+            safe_str("#-1 SEPARATOR MUST BE ONE CHARACTER", buff, bufc);
+            return;
+        }
+    }
+
+    // Get single-character delimiter.
+    //
+    char cDelimiter = ' ';
+    if (nfargs >= 4)
+    {
+        if (*fargs[3] && !*(fargs[3] + 1))
+        {
+            cDelimiter = *fargs[3];
+        }
+        else
+        {
+            safe_str("#-1 DELIMITER MUST BE ONE CHARACTER", buff, bufc);
+            return;
+        }
+    }
+
+    // Get line length.
+    //
+    int nLineLength = 78;
+    if (nfargs >= 3)
+    {
+        nLineLength = Tiny_atol(fargs[2]);
+    }
+
+    // Get field width.
+    //
+    int nFieldWidth = 10;
+    if (nfargs >= 2)
+    {
+        nFieldWidth = Tiny_atol(fargs[1]);
+    }
+    else
+    {
+        nFieldWidth = 10;
+    }
+
+    // Validate nFieldWidth and nLineLength.
+    //
+    if (  nLineLength < 1
+       || LBUF_SIZE   <= nLineLength
+       || nFieldWidth < 1
+       || nLineLength < nFieldWidth)
+    {
+        safe_str("#-1 OUT OF RANGE", buff, bufc);
+        return;
+    }
+
+    int nNumCols = nLineLength / nFieldWidth;
+    char *pNext = trim_space_sep(fargs[0], cDelimiter);
+    if (!*pNext)
+    {
+        return;
+    }
+
+    char *pCurrent = split_token(&pNext, cDelimiter);
+    if (!pCurrent)
+    {
+        return;
+    }
+
+    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    int nCurrentCol = nNumCols - 1;
+    for (;;)
+    {
+        int nVisibleLength, nPaddingLength;
+        int nStringLength =
+            ANSI_TruncateToField( pCurrent, nBufferAvailable, *bufc,
+                                  nFieldWidth, &nVisibleLength, FALSE);
+
+        *bufc += nStringLength;
+        nBufferAvailable -= nStringLength;
+        
+        nPaddingLength = nFieldWidth - nVisibleLength;
+        if (nPaddingLength > nBufferAvailable)
+        {
+            nPaddingLength = nBufferAvailable;
+        }
+        if (nPaddingLength)
+        {
+            nBufferAvailable -= nPaddingLength;
+            if (pPaddingStart)
+            {
+                for (  char *pPaddingCurrent = pPaddingStart;
+                       nPaddingLength > 0;
+                       nPaddingLength--)
+                {
+                    **bufc = *pPaddingCurrent;		   
+                    (*bufc)++;
+                    pPaddingCurrent++;
+
+                    if (pPaddingCurrent == pPaddingEnd)
+                    {
+                        pPaddingCurrent = pPaddingStart;
+                    }
+                }	
+            }
+            else
+            {
+                memset(*bufc, ' ', nPaddingLength);
+                *bufc += nPaddingLength;
+            }
+        }
+
+        pCurrent = split_token(&pNext, cDelimiter);
+        if (!pCurrent)
+        {
+            break;
+        }
+
+        if (!nCurrentCol)
+        {
+            nCurrentCol = nNumCols - 1;
+            if (nBufferAvailable >= 2)
+            {
+                char *p = *bufc;
+                p[0] = '\r';
+                p[1] = '\n';
+                
+                nBufferAvailable -= 2;
+                *bufc += 2;
+            }
+            else
+            {
+                // nBufferAvailable has less than 2 characters left, if there's
+                // no room left just break out.
+                //
+                if (!nBufferAvailable)
+                {
+                    break;
+                }
+            }
+        }
+        else
+        {
+            nCurrentCol--;
+            if (!nBufferAvailable)
+            {
+                break;
+            }
+            **bufc = cSeparator;
+            (*bufc)++;
+            nBufferAvailable--;
+        }
+    }
 }
 
 /*

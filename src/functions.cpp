@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.30 2000-09-28 18:11:51 sdennis Exp $
+// $Id: functions.cpp,v 1.31 2000-09-30 06:10:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -77,6 +77,7 @@ XFUNCTION(fun_squish);
 XFUNCTION(fun_stripansi);
 XFUNCTION(fun_zfun);
 XFUNCTION(fun_columns);
+XFUNCTION(fun_table);
 XFUNCTION(fun_playmem);
 XFUNCTION(fun_objmem);
 XFUNCTION(fun_orflags);
@@ -6291,6 +6292,7 @@ FUN flist[] =
     {"SUB",      fun_sub,      2,  0,          CA_PUBLIC},
     {"SUBJ",     fun_subj,     1,  0,          CA_PUBLIC},
     {"SWITCH",   fun_switch,   0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
+    {"TABLE",    fun_table,    0,  FN_VARARGS, CA_PUBLIC},
     {"TAN",      fun_tan,      1,  0,          CA_PUBLIC},
     {"TEL",      fun_tel,      2,  0,          CA_PUBLIC},
     {"TIME",     fun_time,     0,  FN_VARARGS, CA_PUBLIC},
