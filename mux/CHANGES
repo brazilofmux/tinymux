@@ -263,9 +263,12 @@ Bug Fixes:
     the buffer.  He provided a patch that fixed that while not giving a flat 
     distribution.  This final check-in fixed both issues.  This bug is from
     MUX 1.6.
- -- Bug fix in mux_memicmp().  mux_memicmp("June ", "june", 4) != 0 when it
-    should. Brazil's bug.  mux_memicmp() was added to fix a build problem on
-    QNX, so the bug would have been introduce at the same time.
+ -- Bug fix in mux_memicmp().  mux_memicmp("June ", "june", 4) != 0
+    when it should.  Brazil's bug.  mux_memicmp() was added to fix a
+    build problem on QNX, so the bug would have been introduce at the
+    same time.  It effectively turned off the auto-magic date parsing
+    built into convtime(), so if that hasn't been working for you,
+    this is the reason why.
 
 
 Performance Enhancements:
