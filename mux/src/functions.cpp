@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.105 2002-09-19 03:27:29 sdennis Exp $
+// $Id: functions.cpp,v 1.106 2002-09-19 04:34:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5389,6 +5389,28 @@ FUNCTION(fun_mtime)
     }
 }
 
+// ---------------------------------------------------------------------------
+// fun_iname: Return the value of an object's @nameaccent attribute.
+// ---------------------------------------------------------------------------
+FUNCTION(fun_iname)
+{
+    dbref thing;
+    if (nfargs == 1)
+    {
+        thing = match_thing_quiet(executor, fargs[0]);
+    }
+    else
+    {
+        thing = executor;
+    }
+    if (!Good_obj(thing))
+    {
+        safe_match_result(thing, buff, bufc);
+        return;
+    }
+    safe_str(AccentName(thing), buff, bufc);
+}
+
 void ANSI_TransformTextWithTable
 (
     char *buff,
@@ -8066,6 +8088,7 @@ FUN flist[] =
     {"IFELSE",   fun_ifelse,   MAX_ARG, 3,  3, FN_NO_EVAL, CA_PUBLIC},
     {"ILEV",     fun_ilev,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"IMUL",     fun_imul,     MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"INAME",    fun_iname,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"INC",      fun_inc,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"INDEX",    fun_index,    MAX_ARG, 4,  4,       0, CA_PUBLIC},
     {"INSERT",   fun_insert,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
