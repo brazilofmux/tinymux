@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.5 2003-02-03 20:18:18 sdennis Exp $
+// $Id: mail.cpp,v 1.6 2003-02-03 20:24:45 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1219,7 +1219,7 @@ static char *make_namelist(dbref player, char *arg)
     strcpy(oldarg, arg);
 
     TINY_STRTOK_STATE tts;
-    Tiny_StrTokString(&tts, oldarg);
+    mux_strtok_src(&tts, oldarg);
     Tiny_StrTokControl(&tts, " ");
     BOOL bFirst = TRUE;
     for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
@@ -1859,7 +1859,7 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
         strcpy(oldlist, mp->tolist);
 
         TINY_STRTOK_STATE tts;
-        Tiny_StrTokString(&tts, oldlist);
+        mux_strtok_src(&tts, oldlist);
         Tiny_StrTokControl(&tts, " ");
         char *p;
         for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))

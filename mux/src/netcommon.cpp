@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.7 2003-02-03 20:18:18 sdennis Exp $
+// $Id: netcommon.cpp,v 1.8 2003-02-03 20:24:45 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2723,7 +2723,7 @@ int fetch_cmds(dbref target)
 void ParseConnectionInfoString(char *pConnInfo, char *pFields[5])
 {
     TINY_STRTOK_STATE tts;
-    Tiny_StrTokString(&tts, pConnInfo);
+    mux_strtok_src(&tts, pConnInfo);
     Tiny_StrTokControl(&tts, " ");
     for (int i = 0; i < 5; i++)
     {

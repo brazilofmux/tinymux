@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.9 2003-02-03 20:18:18 sdennis Exp $
+// $Id: db.cpp,v 1.10 2003-02-03 20:24:45 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -708,7 +708,7 @@ void do_attribute
         //
         mux_strupr(value);
         TINY_STRTOK_STATE tts;
-        Tiny_StrTokString(&tts, value);
+        mux_strtok_src(&tts, value);
         Tiny_StrTokControl(&tts, " ");
         sp = mux_strtok_parse(&tts);
         success = FALSE;

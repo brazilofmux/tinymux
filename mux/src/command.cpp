@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.6 2003-02-03 20:18:18 sdennis Exp $
+// $Id: command.cpp,v 1.7 2003-02-03 20:24:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2824,7 +2824,7 @@ CF_HAND(cf_cmd_alias)
     int *hp;
 
     TINY_STRTOK_STATE tts;
-    Tiny_StrTokString(&tts, str);
+    mux_strtok_src(&tts, str);
     Tiny_StrTokControl(&tts, " \t=,");
     char *alias = mux_strtok_parse(&tts);
     char *orig = mux_strtok_parse(&tts);
@@ -3615,7 +3615,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
 
     default:
         TINY_STRTOK_STATE tts;
-        Tiny_StrTokString(&tts, arg);
+        mux_strtok_src(&tts, arg);
         Tiny_StrTokControl(&tts, " \t=,");
         char *s_option = mux_strtok_parse(&tts);
         char *s_sub_option = mux_strtok_parse(&tts);

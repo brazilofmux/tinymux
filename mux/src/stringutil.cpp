@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.18 2003-02-03 20:18:18 sdennis Exp $
+// $Id: stringutil.cpp,v 1.19 2003-02-03 20:24:46 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2886,10 +2886,10 @@ BOOL is_real(char *str)
     return ParseFloat(&pfr, str);
 }
 
-// Tiny_StrTokString, Tiny_StrTokControl, mux_strtok_parse.
+// mux_strtok_src, Tiny_StrTokControl, mux_strtok_parse.
 //
 // These three functions work together to replace the functionality of the
-// strtok() C runtime library function. Call Tiny_StrTokString() first with
+// strtok() C runtime library function. Call mux_strtok_src() first with
 // the string to parse, then Tiny_StrTokControl() with the control
 // characters, and finally mux_strtok_parse() to parse out the tokens.
 //
@@ -2899,7 +2899,7 @@ BOOL is_real(char *str)
 // consume -all- of the controlling delimiters that seperate two tokens.
 // It consumes only the first one.
 //
-void Tiny_StrTokString(TINY_STRTOK_STATE *tts, char *arg_pString)
+void mux_strtok_src(TINY_STRTOK_STATE *tts, char *arg_pString)
 {
     if (!tts || !arg_pString) return;
 
@@ -3014,7 +3014,7 @@ char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
     int nLeft = sizeof(Buffer) - 1;
     char *p;
     TINY_STRTOK_STATE tts;
-    Tiny_StrTokString(&tts, pString);
+    mux_strtok_src(&tts, pString);
     Tiny_StrTokControl(&tts, pSetToRemove);
     for ( p = mux_strtok_parseLEN(&tts, &nLen);
           p && nLeft;

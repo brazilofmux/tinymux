@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.4 2003-02-03 20:18:18 sdennis Exp $
+// $Id: flags.cpp,v 1.5 2003-02-03 20:24:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -916,7 +916,7 @@ char *unparse_object(dbref player, dbref target, BOOL obey_myopic)
 CF_HAND(cf_flag_access)
 {
     TINY_STRTOK_STATE tts;
-    Tiny_StrTokString(&tts, str);
+    mux_strtok_src(&tts, str);
     Tiny_StrTokControl(&tts, " \t=,");
     char *fstr = mux_strtok_parse(&tts);
     char *permstr = mux_strtok_parse(&tts);
@@ -1226,7 +1226,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
 CF_HAND(cf_flag_name)
 {
     TINY_STRTOK_STATE tts;
-    Tiny_StrTokString(&tts, str);
+    mux_strtok_src(&tts, str);
     Tiny_StrTokControl(&tts, " \t=,");
     char *flagstr = mux_strtok_parse(&tts);
     char *namestr = mux_strtok_parse(&tts);
