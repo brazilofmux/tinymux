@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.32 2003-02-02 21:06:23 sdennis Exp $
+// $Id: flags.cpp,v 1.33 2003-02-25 20:14:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1133,17 +1133,17 @@ BOOL flag_rename(char *alias, char *newname)
     {
         return FALSE;
     }
+    char *pAlias = alloc_sbuf("flag_rename.old");
+    memcpy(pAlias, pCheckedAlias, nAlias+1);
 
     int nNewName;
     BOOL bValidNewName;
     char *pCheckedNewName = MakeCanonicalFlagName(newname, &nNewName, &bValidNewName);
     if (!bValidNewName)
     {
+        free_sbuf(pAlias);
         return FALSE;
     }
-
-    char *pAlias = alloc_sbuf("flag_rename.old");
-    memcpy(pAlias, pCheckedAlias, nAlias+1);
     char *pNewName = alloc_sbuf("flag_rename.new");
     memcpy(pNewName, pCheckedNewName, nNewName+1);
 
