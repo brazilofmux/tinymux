@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.103 2003-01-06 07:34:59 sdennis Exp $
+// $Id: command.cpp,v 1.104 2003-01-12 18:18:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3330,9 +3330,10 @@ static void list_hashstats(dbref player)
     list_hashstat(player, "Mail messages", &mudstate.mail_htab);
     list_hashstat(player, "Channel names", &mudstate.channel_htab);
     list_hashstat(player, "Attribute Cache", &mudstate.acache_htab);
-    for (int i = 0; i < HFTABLE_SIZE; i++)
+    for (int i = 0; i < mudstate.nHelpDesc; i++)
     {
-        list_hashstat(player, hftable[i].pBaseFilename, hftable[i].ht);
+        list_hashstat(player, mudstate.aHelpDesc[i].pBaseFilename,
+            mudstate.aHelpDesc[i].ht);
     }
 }
 

@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.16 2003-01-06 07:34:59 sdennis Exp $
+// $Id: help.cpp,v 1.17 2003-01-12 18:18:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -23,19 +23,9 @@ struct help_entry
     char *key;      // The key this is stored under.
 };
 
-HELP_FILE_DESC hftable[HFTABLE_SIZE] =
-{
-    { "help",    NULL, "text/help",      FALSE, CA_PUBLIC },
-    { "news",    NULL, "text/news",       TRUE, CA_PUBLIC },
-    { "wizhelp", NULL, "text/wizhelp",   FALSE, CA_WIZARD },
-    { "+help",   NULL, "text/plushelp",   TRUE, CA_PUBLIC },
-    { "wiznews", NULL, "text/wiznews",   FALSE, CA_WIZARD },
-    { "+shelp",  NULL, "text/staffhelp",  TRUE, CA_STAFF  }
-};
-
 void helpindex_clean(int iHelpfile)
 {
-    CHashTable *htab = hftable[iHelpfile].ht;
+    CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
     if (htab == NULL)
     {
         return;
@@ -50,19 +40,19 @@ void helpindex_clean(int iHelpfile)
         MEMFREE(htab_entry);
         htab_entry = NULL;
     }
-    delete hftable[iHelpfile].ht;
-    hftable[iHelpfile].ht = NULL;
+    delete mudstate.aHelpDesc[iHelpfile].ht;
+    mudstate.aHelpDesc[iHelpfile].ht = NULL;
 }
 
 int helpindex_read(int iHelpfile)
 {
     helpindex_clean(iHelpfile);
 
-    hftable[iHelpfile].ht = new CHashTable;
-    CHashTable *htab = hftable[iHelpfile].ht;
+    mudstate.aHelpDesc[iHelpfile].ht = new CHashTable;
+    CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
 
     char szIndexFilename[SBUF_SIZE+8];
-    sprintf(szIndexFilename, "%s.indx", hftable[iHelpfile].pBaseFilename);
+    sprintf(szIndexFilename, "%s.indx", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     help_indx entry;
 
@@ -125,23 +115,8 @@ int helpindex_read(int iHelpfile)
 
 void helpindex_load(dbref player)
 {
-    for (int i = 0; i < HFTABLE_SIZE; i++)
+    for (int i = 0; i < mudstate.nHelpDesc; i++)
     {
-        CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)MEMALLOC(sizeof(CMDENT_ONE_ARG));
-
-        cmdp->callseq = CS_ONE_ARG;
-        cmdp->cmdname = StringClone(hftable[i].CommandName);
-        cmdp->extra = i;
-        cmdp->handler = do_help;
-        cmdp->hookmask = 0;
-        cmdp->perms = hftable[i].permissions;
-        cmdp->switches = NULL;
-
-        hashdeleteLEN(cmdp->cmdname, strlen(cmdp->cmdname),
-            &mudstate.command_htab);
-        hashaddLEN(cmdp->cmdname, strlen(cmdp->cmdname),
-            (int *)cmdp, &mudstate.command_htab);
-
         helpindex_read(i);
     }
     if (  player != NOTHING
@@ -158,11 +133,11 @@ void helpindex_init(void)
 
 void help_write(dbref player, char *topic_arg, int iHelpfile)
 {
-    BOOL bEval = hftable[iHelpfile].bEval;
-    CHashTable *htab = hftable[iHelpfile].ht;
+    BOOL bEval = mudstate.aHelpDesc[iHelpfile].bEval;
+    CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
 
     char szTextFilename[SBUF_SIZE+8];
-    sprintf(szTextFilename, "%s.txt", hftable[iHelpfile].pBaseFilename);
+    sprintf(szTextFilename, "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     mux_strlwr(topic_arg);
     const char *topic = topic_arg;
@@ -299,7 +274,7 @@ void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message
     int iHelpfile = key;
 
     if (  iHelpfile < 0
-       || HFTABLE_SIZE <= iHelpfile)
+       || mudstate.mHelpDesc <= iHelpfile)
     {
         char *buf = alloc_mbuf("do_help.LOG");
         STARTLOG(LOG_BUGS, "BUG", "HELP");

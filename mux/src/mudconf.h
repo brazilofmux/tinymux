@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.15 2003-01-06 04:18:04 sdennis Exp $
+// $Id: mudconf.h,v 1.16 2003-01-12 18:18:15 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -26,6 +26,14 @@ typedef struct tag_int_array
     int *pi;
 } IntArray;
 
+typedef struct
+{
+    const char *CommandName;
+    CHashTable *ht;
+    char       *pBaseFilename;
+    BOOL       bEval;
+} HELP_DESC;
+
 typedef struct confdata CONFDATA;
 struct confdata
 {
@@ -36,7 +44,6 @@ struct confdata
     BOOL    have_zones;     // Should zones be active?
     IntArray ports;         // user ports.
     int     init_size;      // initial db size.
-    //BOOL    have_guest;     // Do we wish to allow a GUEST character?
     dbref   guest_char;     // player num of prototype GUEST character.
     dbref   guest_nuker;    // Wiz who nukes the GUEST characters.
     int     number_guests;  // number of guest characters allowed.
@@ -339,16 +346,16 @@ struct statedata
 #endif // PARSE_TREES
     CHashTable acache_htab;    // Attribute Cache
 
-    CHashTable *HelpHashTable; // Table of help files hashes.
-    int     nHelpHashTable;    // Number of entries used.
-    int     maxHelpHashTable;  // Number of entries allocated.
+    HELP_DESC *aHelpDesc;      // Table of help files hashes.
+    int     mHelpDesc;         // Number of entries allocated.
+    int     nHelpDesc;         // Number of entries used.
 
     char    version[128];      /* MUX version string */
     char    short_ver[64];     /* Short version number (for INFO) */
     char    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
     int     nObjEvalNest;      // The nesting level of objeval()
                                // invocations.
-    BOOL    bStackLimitReached; // Was stack slammed?
+    BOOL    bStackLimitReached;// Was stack slammed?
     int     nStackNest;        // Current stack depth.
 #endif // !STANDALONE
     int     logging;    /* Are we in the middle of logging? */

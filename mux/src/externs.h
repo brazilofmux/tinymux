@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.63 2003-01-06 07:34:59 sdennis Exp $
+// $Id: externs.h,v 1.64 2003-01-12 18:18:15 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -9,7 +9,6 @@
 #include "db.h"
 #include "match.h"
 #include "mudconf.h"
-#include "svdhash.h"
 #include "svdrand.h"
 
 /* From conf.cpp */
@@ -100,18 +99,6 @@ extern void dump_database_internal(int);
 extern void helpindex_clean(int);
 extern void helpindex_load(dbref);
 extern void helpindex_init(void);
-
-typedef struct
-{
-    const char *CommandName;
-    CHashTable *ht;
-    char       *pBaseFilename;
-    BOOL       bEval;
-    int        permissions;
-} HELP_FILE_DESC;
-
-#define HFTABLE_SIZE 6
-extern HELP_FILE_DESC hftable[HFTABLE_SIZE];
 
 /* From htab.cpp */
 extern int  cf_ntab_access(int *, char *, void *, UINT32, dbref, char *);

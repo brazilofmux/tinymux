@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.30 2003-01-06 04:18:04 sdennis Exp $
+// $Id: conf.cpp,v 1.31 2003-01-12 18:18:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -303,9 +303,9 @@ void cf_init(void)
     mudstate.in_loop = 0;
     mudstate.bStackLimitReached = FALSE;
     mudstate.nStackNest = 0;
-    mudstate.HelpHashTable = NULL;
-    mudstate.nHelpHashTable = 0;
-    mudstate.maxHelpHashTable = 0;
+    mudstate.aHelpDesc = NULL;
+    mudstate.mHelpDesc = 0;
+    mudstate.nHelpDesc = 0;
 
 #else // STANDALONE
     mudconf.paylimit = 10000;
@@ -1376,7 +1376,91 @@ CF_HAND(cf_cf_access)
 //
 int add_helpfile(dbref player, char *cmd, char *str, BOOL bRaw)
 {
-    return -1;
+    // Parse the two arguments.
+    //
+    TINY_STRTOK_STATE tts;
+    Tiny_StrTokString(&tts, str);
+    Tiny_StrTokControl(&tts, " \t\n\r");
+
+    char *pCmdName = Tiny_StrTokParse(&tts);
+    char *pBase = Tiny_StrTokParse(&tts);
+    if (pBase == NULL)
+    {
+        cf_log_syntax(player, cmd, "Missing path for helpfile %s", pCmdName);
+        return -1;
+    }
+    if (  pCmdName[0] == '_'
+       && pCmdName[1] == '_')
+    {
+        cf_log_syntax(player, cmd,
+            "Helpfile %s would conflict with the use of @addcommand.",
+            pCmdName);
+        return -1;
+    }
+    if (SBUF_SIZE <= strlen(pBase))
+    {
+        cf_log_syntax(player, cmd, "Helpfile '%s' filename too long", pBase);
+        return -1;
+    }
+
+    // Allocate an empty place in the table of help file hashes.
+    //
+    if (mudstate.aHelpDesc == NULL)
+    {
+        mudstate.mHelpDesc = 4;
+        mudstate.nHelpDesc = 0;
+        mudstate.aHelpDesc = (HELP_DESC *)MEMALLOC(sizeof(HELP_DESC)
+            *mudstate.mHelpDesc);
+        (void)ISOUTOFMEMORY(mudstate.aHelpDesc);
+    }
+    else if (mudstate.mHelpDesc <= mudstate.nHelpDesc)
+    {
+        int newsize = mudstate.mHelpDesc + 4;
+        HELP_DESC *q = (HELP_DESC *)MEMALLOC(sizeof(HELP_DESC)*newsize);
+        (void)ISOUTOFMEMORY(q);
+        memset(q, 0, sizeof(HELP_DESC)*newsize);
+        memcpy(q, mudstate.aHelpDesc, sizeof(HELP_DESC)*mudstate.mHelpDesc);
+        MEMFREE(mudstate.aHelpDesc);
+        mudstate.aHelpDesc = q;
+        mudstate.mHelpDesc = newsize;
+    }
+
+    // Build HELP_DESC
+    //
+    HELP_DESC *pDesc = mudstate.aHelpDesc + mudstate.nHelpDesc;
+    pDesc->CommandName = StringClone(pCmdName);
+    pDesc->ht = NULL;
+    pDesc->pBaseFilename = StringClone(pBase);
+    pDesc->bEval = !bRaw;
+
+    // Build up Command Entry.
+    //
+    CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)MEMALLOC(sizeof(CMDENT_ONE_ARG));
+    (void)ISOUTOFMEMORY(cmdp);
+
+    cmdp->callseq = CS_ONE_ARG;
+    cmdp->cmdname = StringClone(pCmdName);
+    cmdp->extra = mudstate.nHelpDesc;
+    cmdp->handler = do_help;
+    cmdp->hookmask = 0;
+    cmdp->perms = CA_PUBLIC;
+    cmdp->switches = NULL;
+
+    // TODO: If a command is deleted with one or both of the two
+    // hashdeleteLEN() calls below, what guarantee do we have that parts of
+    // the command weren't dynamically allocated.  This might leak memory.
+    //
+    char *p = cmdp->cmdname;
+    hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
+    hashaddLEN(p, strlen(p), (int *)cmdp, &mudstate.command_htab);
+
+    p = tprintf("__%s", cmdp->cmdname);
+    hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
+    hashaddLEN(p, strlen(p), (int *)cmdp, &mudstate.command_htab);
+
+    mudstate.nHelpDesc++;
+
+    return 0;
 }
 
 CF_HAND(cf_helpfile)
