@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.34 2001-06-24 00:53:35 sdennis Exp $
+// $Id: conf.cpp,v 1.35 2001-06-24 01:26:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -967,7 +967,7 @@ BOOL isValidSubnetMask(unsigned long ulMask)
 CF_HAND(cf_site)
 {
     struct in_addr addr_num, mask_num;
-    unsigned long ulMask;
+    unsigned long ulMask, ulNetBits;
     
     char *addr_txt;
     char *mask_txt = strchr(str, '/');
@@ -986,15 +986,16 @@ CF_HAND(cf_site)
         }
         if (!addr_txt || !*addr_txt || !mask_txt || !*mask_txt)
         {
-            cf_log_syntax(player, cmd, "Missing host address or mask.", (char *)"");
+            cf_log_syntax(player, cmd, "Missing host address or mask.", "");
             return -1;
         }
-        if (  !sane_inet_addr(mask_txt, &mask_num.s_addr)
-           || !isValidSubnetMask(ulMask = ntohl(mask_num.s_addr)))
+        if (  !sane_inet_addr(mask_txt, &ulNetBits)
+           || !isValidSubnetMask(ulMask = ntohl(ulNetBits)))
         {
             cf_log_syntax(player, cmd, "Malformed mask address: %s", mask_txt);
             return -1;
         }
+        mask_num.s_addr = ulNetBits;
     }
     else
     {
@@ -1020,11 +1021,12 @@ CF_HAND(cf_site)
             mask_num.s_addr = htonl(ulMask);
         }
     }
-    if (!sane_inet_addr(addr_txt, &addr_num.s_addr))
+    if (!sane_inet_addr(addr_txt, &ulNetBits))
     {
         cf_log_syntax(player, cmd, "Malformed host address: %s", addr_txt);
         return -1;
     }
+    addr_num.s_addr = ulNetBits;
     unsigned long ulAddr = ntohl(addr_num.s_addr);
 
     if (ulAddr & ~ulMask)
