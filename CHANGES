@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  November 2001
+Last Update:  January 2001
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -465,6 +465,8 @@ Bug Fixes:
  --  Bug #602 - fun_ansi reaches backwards into the buffer.
  --  Bug #786 - Interaction between SUSPECT and 'log all_commands'. If both
      on, SUSPECT actions do not show up in the logs. Patch from Raevnos.
+ --  Try to avoid crashing with MUSH 2.2.x and U1 flatfiles that were garbled
+     in the transfer between Unix and Win32.
 
 
 Performance Enhancements:
