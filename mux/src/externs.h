@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.23 2004-04-18 04:06:36 sdennis Exp $
+// $Id: externs.h,v 1.24 2004-04-18 15:25:45 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -202,8 +202,6 @@ extern bool eval_boolexp_atr(dbref, dbref, dbref, char *);
 
 /* From functions.cpp */
 extern bool xlate(char *);
-extern char *next_token(char *str, char sep);
-extern char *split_token(char **sp, char sep);
 
 #ifdef HAVE_IEEE_FP_FORMAT
 #define IEEE_MAKE_NAN  1

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.86 2004-04-18 06:16:49 sdennis Exp $
+// $Id: functions.cpp,v 1.87 2004-04-18 15:25:45 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -310,7 +310,7 @@ char *split_token_LEN(char **sp, int *nStr, char sep, int *nToken)
 // split_token: Get next token from string as null-term string.  String is
 // destructively modified.
 //
-char *split_token(char **sp, char sep)
+char *split_token(char **sp, SEP *psep)
 {
     char *str = *sp;
     char *save = str;
@@ -320,25 +320,41 @@ char *split_token(char **sp, char sep)
         *sp = NULL;
         return NULL;
     }
-    while (  *str
-          && *str != sep)
+    if (psep->n == 1)
     {
-        str++;
-    }
-    if (*str)
-    {
-        *str++ = '\0';
-        if (sep == ' ')
+        while (  *str
+              && *str != psep->str[0])
         {
-            while (*str == ' ')
+            str++;
+        }
+        if (*str)
+        {
+            *str++ = '\0';
+            if (psep->str[0] == ' ')
             {
-                str++;
+                while (*str == ' ')
+                {
+                    str++;
+                }
             }
+        }
+        else
+        {
+            str = NULL;
         }
     }
     else
     {
-        str = NULL;
+        char *p = strstr(str, psep->str);
+        if (p)
+        {
+            *p = '\0';
+            str = p + psep->n;
+        }
+        else
+        {
+            str = NULL;
+        }
     }
     *sp = str;
     return save;
@@ -435,9 +451,9 @@ int list2arr(char *arr[], int maxlen, char *list, SEP *psep)
     {
         return 0;
     }
-    char *p = split_token(&list, psep->str[0]);
+    char *p = split_token(&list, psep);
     int i;
-    for (i = 0; p && i < maxlen; i++, p = split_token(&list, psep->str[0]))
+    for (i = 0; p && i < maxlen; i++, p = split_token(&list, psep))
     {
         arr[i] = p;
     }
@@ -1697,7 +1713,7 @@ FUNCTION(fun_first)
     }
 
     char *s = trim_space_sep(fargs[0], &sep);
-    char *first = split_token(&s, sep.str[0]);
+    char *first = split_token(&s, &sep);
     if (first)
     {
         safe_str(first, buff, bufc);
@@ -1726,7 +1742,7 @@ FUNCTION(fun_rest)
     }
 
     char *s = trim_space_sep(fargs[0], &sep);
-    split_token(&s, sep.str[0]);
+    split_token(&s, &sep);
     if (s)
     {
         safe_str(s, buff, bufc);
@@ -2199,7 +2215,7 @@ FUNCTION(fun_match)
     int wcount = 1;
     char *s = trim_space_sep(fargs[0], &sep);
     do {
-        char *r = split_token(&s, sep.str[0]);
+        char *r = split_token(&s, &sep);
         mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
@@ -2285,7 +2301,7 @@ FUNCTION(fun_extract)
     if (  s
        && *s)
     {
-        t = split_token(&s, sep.str[0]);
+        t = split_token(&s, &sep);
     }
     safe_str(r, buff, bufc);
 }
@@ -3293,7 +3309,7 @@ FUNCTION(fun_ladd)
         char *cp = trim_space_sep(fargs[0], &sep);
         while (cp)
         {
-            char *curr = split_token(&cp, sep.str[0]);
+            char *curr = split_token(&cp, &sep);
             g_aDoubles[n++] = mux_atof(curr);
         }
     }
@@ -3314,7 +3330,7 @@ FUNCTION(fun_land)
         char *cp = trim_space_sep(fargs[0], &sep);
         while (cp && bValue)
         {
-            char *curr = split_token(&cp, sep.str[0]);
+            char *curr = split_token(&cp, &sep);
             bValue = isTRUE(mux_atol(curr));
         }
     }
@@ -3335,7 +3351,7 @@ FUNCTION(fun_lor)
         char *cp = trim_space_sep(fargs[0], &sep);
         while (cp && !bValue)
         {
-            char *curr = split_token(&cp, sep.str[0]);
+            char *curr = split_token(&cp, &sep);
             bValue = isTRUE(mux_atol(curr));
         }
     }
@@ -4922,11 +4938,13 @@ FUNCTION(fun_remove)
     first = true;
     while (s)
     {
-        sp = split_token(&s, sep.str[0]);
+        sp = split_token(&s, &sep);
         if (found || strcmp(sp, word))
         {
             if (!first)
-                safe_chr(sep.str[0], buff, bufc);
+            {
+                print_sep(&sep, buff, bufc);
+            }
             safe_str(sp, buff, bufc);
             first = false;
         }
@@ -4955,8 +4973,9 @@ FUNCTION(fun_member)
 
     wcount = 1;
     s = trim_space_sep(fargs[0], &sep);
-    do {
-        r = split_token(&s, sep.str[0]);
+    do
+    {
+        r = split_token(&s, &sep);
         if (!strcmp(fargs[1], r))
         {
             safe_ltoa(wcount, buff, bufc);
@@ -5079,7 +5098,7 @@ FUNCTION(fun_wordpos)
         int ncp_trimmed;
         char *tp = &(cp[charpos - 1]);
         cp = trim_space_sep_LEN(cp, ncp, &sep, &ncp_trimmed);
-        char *xp = split_token(&cp, sep.str[0]);
+        char *xp = split_token(&cp, &sep);
 
         int i;
         for (i = 1; xp; i++)
@@ -5088,7 +5107,7 @@ FUNCTION(fun_wordpos)
             {
                 break;
             }
-            xp = split_token(&cp, sep.str[0]);
+            xp = split_token(&cp, &sep);
         }
         safe_ltoa(i, buff, bufc);
         return;
@@ -6231,11 +6250,11 @@ FUNCTION(fun_splice)
     int i;
     for (i = 0; i < words; i++)
     {
-        p2 = split_token(&p1, sep.str[0]);
-        q2 = split_token(&q1, sep.str[0]);
+        p2 = split_token(&p1, &sep);
+        q2 = split_token(&q1, &sep);
         if (!first)
         {
-            safe_chr(sep.str[0], buff, bufc);
+            print_sep(&sep, buff, bufc);
         }
         if (!strcmp(p2, fargs[2]))
         {
@@ -6360,7 +6379,7 @@ FUNCTION(fun_parse)
         }
         first = false;
         number++;
-        char *objstring = split_token(&cp, sep.str[0]);
+        char *objstring = split_token(&cp, &sep);
         mudstate.itext[mudstate.in_loop-1] = objstring;
         mudstate.inum[mudstate.in_loop-1]  = number;
         char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number), NULL);
@@ -6394,7 +6413,7 @@ FUNCTION(fun_iter)
     // Optional Output Delimiter.
     //
     SEP osep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
@@ -6426,7 +6445,7 @@ FUNCTION(fun_iter)
         }
         first = false;
         number++;
-        char *objstring = split_token(&cp, sep.str[0]);
+        char *objstring = split_token(&cp, &sep);
         mudstate.itext[mudstate.in_loop-1] = objstring;
         mudstate.inum[mudstate.in_loop-1]  = number;
         char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
@@ -6510,7 +6529,7 @@ FUNCTION(fun_list)
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
         number++;
-        objstring = split_token(&cp, sep.str[0]);
+        objstring = split_token(&cp, &sep);
         mudstate.itext[mudstate.in_loop-1] = objstring;
         mudstate.inum[mudstate.in_loop-1]  = number;
         char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
@@ -6580,7 +6599,7 @@ FUNCTION(fun_fold)
        && fargs[2])
     {
         clist[0] = fargs[2];
-        clist[1] = split_token(&cp, sep.str[0]);
+        clist[1] = split_token(&cp, &sep);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
@@ -6589,8 +6608,8 @@ FUNCTION(fun_fold)
     }
     else
     {
-        clist[0] = split_token(&cp, sep.str[0]);
-        clist[1] = split_token(&cp, sep.str[0]);
+        clist[0] = split_token(&cp, &sep);
+        clist[1] = split_token(&cp, &sep);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
@@ -6605,7 +6624,7 @@ FUNCTION(fun_fold)
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
         clist[0] = rstore;
-        clist[1] = split_token(&cp, sep.str[0]);
+        clist[1] = split_token(&cp, &sep);
         strcpy(atextbuf, atext);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
@@ -6651,12 +6670,12 @@ FUNCTION(fun_itemize)
 
     int pos = 1;
     char *cp = trim_space_sep(fargs[0], &sep);
-    char *word = split_token(&cp, sep.str[0]);
+    char *word = split_token(&cp, &sep);
     while (cp && *cp)
     {
         pos++;
         safe_str(word, buff, bufc);
-        char *nextword = split_token(&cp, sep.str[0]);
+        char *nextword = split_token(&cp, &sep);
 
         if (!cp || !*cp)
         {
@@ -6713,7 +6732,7 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
-        objstring = split_token(&cp, psep->str[0]);
+        objstring = split_token(&cp, psep);
         strcpy(atextbuf, atext);
         result = bp = alloc_lbuf("fun_filter");
         str = atextbuf;
@@ -6804,7 +6823,7 @@ FUNCTION(fun_map)
             print_sep(&osep, buff, bufc);
         }
         first = false;
-        objstring = split_token(&cp, sep.str[0]);
+        objstring = split_token(&cp, &sep);
         strcpy(atextbuf, atext);
         str = atextbuf;
         mux_exec(buff, bufc, thing, executor, enactor,

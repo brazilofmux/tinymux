@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.52 2004-04-18 06:16:49 sdennis Exp $
+// $Id: funceval.cpp,v 1.53 2004-04-18 15:25:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -984,7 +984,7 @@ FUNCTION(fun_columns)
             nBufferAvailable -= safe_fill(buff, bufc, ' ', nIndent);
         }
 
-        char *objstring = split_token(&cp, sep.str[0]);
+        char *objstring = split_token(&cp, &sep);
         int nVisualWidth;
         int nLen = ANSI_TruncateToField(objstring, nBufferAvailable, *bufc,
             nWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
@@ -1103,7 +1103,7 @@ FUNCTION(fun_table)
         return;
     }
 
-    char *pCurrent = split_token(&pNext, cDelimiter);
+    char *pCurrent = split_token(&pNext, &sep);
     if (!pCurrent)
     {
         return;
@@ -1152,7 +1152,7 @@ FUNCTION(fun_table)
             }
         }
 
-        pCurrent = split_token(&pNext, cDelimiter);
+        pCurrent = split_token(&pNext, &sep);
         if (!pCurrent)
         {
             break;
@@ -1926,7 +1926,7 @@ FUNCTION(fun_elements)
     // corresponding elements.
     //
     do {
-        r = split_token(&s, ' ');
+        r = split_token(&s, &sep_space);
         cur = mux_atol(r) - 1;
         if (  cur >= 0
            && cur < nwords
@@ -1964,7 +1964,7 @@ FUNCTION(fun_grab)
     char *s = trim_space_sep(fargs[0], &sep);
     do
     {
-        char *r = split_token(&s, sep.str[0]);
+        char *r = split_token(&s, &sep);
         mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
@@ -1987,13 +1987,13 @@ FUNCTION(fun_graball)
     char *s = trim_space_sep(fargs[0], &sep);
     do
     {
-        char *r = split_token(&s, sep.str[0]);
+        char *r = split_token(&s, &sep);
         mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
             if (!bFirst)
             {
-                safe_chr(sep.str[0], buff, bufc);
+                print_sep(&sep, buff, bufc);
             }
             else
             {
@@ -2092,7 +2092,7 @@ FUNCTION(fun_pickrand)
         {
             s = next_token(s, sep.str[0]);
         }
-        t = split_token(&s, sep.str[0]);
+        t = split_token(&s, &sep);
         safe_str(t, buff, bufc);
     }
 }
@@ -2314,7 +2314,7 @@ FUNCTION(fun_matchall)
     s = trim_space_sep(fargs[0], &sep);
     do
     {
-        r = split_token(&s, sep.str[0]);
+        r = split_token(&s, &sep);
         mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
@@ -2430,7 +2430,7 @@ FUNCTION(fun_mix)
         }
         for (i = 1; i <= lastn; i++) 
         {
-            os[i - 1] = split_token(&cp[i - 1], sep.str[0]);
+            os[i - 1] = split_token(&cp[i - 1], &sep);
         }
         strcpy(atextbuf, atext);
         str = atextbuf;
@@ -2586,7 +2586,7 @@ FUNCTION(fun_munge)
     bp = rlist = alloc_lbuf("fun_munge");
     str = atext;
     uargs[0] = fargs[1];
-    uargs[1] = &sep;
+    uargs[1] = sep.str;
     mux_exec(rlist, &bp, executor, caller, enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, uargs, 2);
     *bp = '\0';
@@ -3652,7 +3652,7 @@ void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
     char *s = trim_space_sep(search, psep);
     do
     {
-        char *r = split_token(&s, psep->str[0]);
+        char *r = split_token(&s, psep);
         if (pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 1)
         {
             if (first) 
