@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.6 2003-02-03 04:50:57 sdennis Exp $
+// $Id: stringutil.cpp,v 1.7 2003-02-03 05:58:22 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2189,6 +2189,152 @@ INT64 Tiny_atoi64(const char *pString)
     if (LeadingCharacter == '-')
     {
         sum = -sum;
+    }
+    return sum;
+}
+
+// BCD support routines. We can support 15 digits. The top-most digit is
+// reserved for detecting carry outs.
+//
+#ifdef WIN32
+const INT64 BCD_FIVE     = 0x5000000000000000i64;
+const INT64 BCD_MASK     = 0x0FFFFFFFFFFFFFFFi64;
+const INT64 BCD_FIFTEENS = 0xFFFFFFFFFFFFFFFFi64;
+const INT64 BCD_SIXES    = 0x0666666666666666i64;
+const INT64 BCD_ONES     = 0x1111111111111110i64;
+#else // WIN32
+const INT64 BCD_FIVE     = 0x5000000000000000ULL;
+const INT64 BCD_MASK     = 0x0FFFFFFFFFFFFFFFULL;
+const INT64 BCD_FIFTEENS = 0xFFFFFFFFFFFFFFFFULL;
+const INT64 BCD_SIXES    = 0x0666666666666666ULL;
+const INT64 BCD_ONES     = 0x1111111111111110ULL;
+#endif // WIN32
+
+#define BCD_NEG(x) (BCD_FIVE <= (UINT64)(x))
+
+BOOL bcd_valid(INT64 a)
+{
+    return (((a + BCD_SIXES) ^ a) & BCD_ONES) != 0;
+}
+
+INT64 bcd_add(INT64 a, INT64 b)
+{
+    INT64 t1 = a + BCD_SIXES;
+    INT64 t2 = t1 + b;
+    INT64 t3 = t1 ^ b;
+    INT64 t4 = t2 ^ t3;
+    INT64 t5 = ~t4 & BCD_ONES;
+    INT64 t6 = (t5 >> 2) | (t5 >> 3);
+    return t2 - t6;
+}
+
+INT64 bcd_tencomp(INT64 a)
+{
+    INT64 t1 = BCD_FIFTEENS - a;
+    INT64 t2 = -a;
+    INT64 t3 = t1 ^ 1;
+    INT64 t4 = t2 ^ t3;
+    INT64 t5 = ~t4 & BCD_ONES;
+    INT64 t6 = (t5 >> 2) | (t5 >> 3);
+    return  t2 - t6;
+}
+
+int mux_bcdtoa(INT64 val, char *buf)
+{
+    char *p = buf;
+
+    if (BCD_NEG(val))
+    {
+        *p++ = '-';
+        val = bcd_tencomp(val);
+    }
+    UINT64 uval = (UINT64)val;
+
+    char *q = p;
+
+    const char *z;
+    while (uval > 15)
+    {
+        *p++ = '0' + (uval & 15);
+        uval >>= 4;
+    }
+    *p++ = '0' + (uval & 15);
+
+    int nLength = p - buf;
+    *p-- = '\0';
+
+    // The digits are in reverse order with a possible leading '-'
+    // if the value was negative. q points to the first digit,
+    // and p points to the last digit.
+    //
+    while (q < p)
+    {
+        // Swap characters are *p and *q
+        //
+        char temp = *p;
+        *p = *q;
+        *q = temp;
+
+        // Move p and first digit towards the middle.
+        //
+        --p;
+        ++q;
+
+        // Stop when we reach or pass the middle.
+        //
+    }
+    return nLength;
+}
+
+void safe_bcdtoa(INT64 val, char *buff, char **bufc)
+{
+    static char temp[18];
+    int n = mux_bcdtoa(val, temp);
+    safe_copy_buf(temp, n, buff, bufc);
+}
+
+INT64 mux_atobcd(const char *pString)
+{
+    INT64 sum = 0;
+    int LeadingCharacter = 0;
+
+    // Convert ASCII digits
+    //
+    unsigned c1;
+    unsigned c0 = pString[0];
+    if (!Tiny_IsDigit[c0])
+    {
+        while (Tiny_IsSpace[(unsigned char)pString[0]])
+        {
+            pString++;
+        }
+        LeadingCharacter = pString[0];
+        if (  LeadingCharacter == '-'
+           || LeadingCharacter == '+')
+        {
+            pString++;
+        }
+        c0 = pString[0];
+        if (!Tiny_IsDigit[c0])
+        {
+            return 0;
+        }
+    }
+
+    do
+    {
+        sum = (sum << 4) | (c0 - '0');
+        pString++;
+        c0 = pString[0];
+    } while (Tiny_IsDigit[c0]);
+
+    sum &= BCD_MASK;
+
+    // Interpret sign
+    //
+    if (LeadingCharacter == '-')
+    {
+        sum = bcd_tencomp(sum);
     }
     return sum;
 }

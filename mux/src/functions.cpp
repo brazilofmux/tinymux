@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.9 2003-02-03 04:50:57 sdennis Exp $
+// $Id: functions.cpp,v 1.10 2003-02-03 05:58:22 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -654,46 +654,6 @@ static void fval_buf(char *buff, double result)
         strcpy(buff, TinyFPStrings[TINY_FPCLASS(fpc)]);
     }
 #endif // HAVE_IEEE_FP_FORMAT
-}
-
-// BCD support routines. We can support 15 digits. The top-most digit is
-// reserved for detecting carry outs.
-//
-#ifdef WIN32
-const INT64 BCD_FIFTEENS = 0xFFFFFFFFFFFFFFFFi64;
-const INT64 BCD_SIXES    = 0x0666666666666666i64;
-const INT64 BCD_ONES     = 0x1111111111111110i64;
-#else // WIN32
-const INT64 BCD_FIFTEENS = 0xFFFFFFFFFFFFFFFFULL;
-const INT64 BCD_SIXES    = 0x0666666666666666ULL;
-const INT64 BCD_ONES     = 0x1111111111111110ULL;
-#endif // WIN32
-
-BOOL bcd_valid(INT64 a)
-{
-    return (((a + BCD_SIXES) ^ a) & BCD_ONES) != 0;
-}
-
-INT64 bcd_add(INT64 a, INT64 b)
-{
-    INT64 t1 = a + BCD_SIXES;
-    INT64 t2 = t1 + b;
-    INT64 t3 = t1 ^ b;
-    INT64 t4 = t2 ^ t3;
-    INT64 t5 = ~t4 & BCD_ONES;
-    INT64 t6 = (t5 >> 2) | (t5 >> 3);
-    return t2 - t6;
-}
-
-INT64 bcd_tencomp(INT64 a)
-{
-    INT64 t1 = BCD_FIFTEENS - a;
-    INT64 t2 = -a;
-    INT64 t3 = t1 ^ 1;
-    INT64 t4 = t2 ^ t3;
-    INT64 t5 = ~t4 & BCD_ONES;
-    INT64 t6 = (t5 >> 2) | (t5 >> 3);
-    return  t2 - t6;
 }
 
 /* ---------------------------------------------------------------------------
@@ -3524,6 +3484,16 @@ FUNCTION(fun_add)
         sum += Tiny_atol(fargs[i]);
     }
     safe_ltoa(sum, buff, bufc);
+}
+
+FUNCTION(fun_testadd)
+{
+    INT64 sum = 0;
+    for (int i = 0; i < nfargs; i++)
+    {
+        sum = bcd_add(sum, mux_atobcd(fargs[i]));
+    }
+    safe_bcdtoa(sum, buff, bufc);
 }
 
 FUNCTION(fun_sub)
@@ -9054,6 +9024,7 @@ FUN flist[] =
     {"ACCENT",   fun_accent,   MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ACOS",     fun_acos,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"ADD",      fun_add,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"TESTADD",  fun_testadd,  MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"AFTER",    fun_after,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"ALPHAMAX", fun_alphamax, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"ALPHAMIN", fun_alphamin, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},

@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.2 2003-01-28 15:48:00 sdennis Exp $
+// $Id: stringutil.h,v 1.3 2003-02-03 05:58:22 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -51,6 +51,12 @@ long Tiny_atol(const char *pString);
 INT64 Tiny_atoi64(const char *pString);
 double Tiny_atof(char *szString, BOOL bStrict = TRUE);
 char *Tiny_ftoa(double r, BOOL bRounded, int frac);
+BOOL bcd_valid(INT64 a);
+INT64 bcd_add(INT64 a, INT64 b);
+INT64 bcd_tencomp(INT64 a);
+int   mux_bcdtoa(INT64 val, char *buf);
+INT64 mux_atobcd(const char *pString);
+void safe_bcdtoa(INT64 val, char *buff, char **bufc);
 
 BOOL is_integer(char *, int *);
 BOOL is_rational(char *);
