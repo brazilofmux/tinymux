@@ -2,7 +2,7 @@
  * move.c -- Routines for moving about 
  */
 /*
- * $Id: move.cpp,v 1.2 2000-04-13 07:57:55 sdennis Exp $ 
+ * $Id: move.cpp,v 1.3 2000-10-26 08:19:56 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -599,7 +599,7 @@ void do_get(dbref player, dbref cause, int key, char *what)
 
     if (!isRoom(playerloc) && !Enter_ok(playerloc) &&
         !controls(player, playerloc)) {
-        notify(player, "Permission denied.");
+        notify(player, NOPERM_MESSAGE);
         return;
     }
     /*
@@ -687,7 +687,7 @@ void do_get(dbref player, dbref cause, int key, char *what)
 
         playerloc = Location(player);
         if (!Controls(player, thing) && !Controls(player, playerloc)) {
-            notify(player, "Permission denied.");
+            notify(player, NOPERM_MESSAGE);
             break;
         }
         /*
@@ -783,7 +783,7 @@ void do_drop(dbref player, dbref cause, int key, char *name)
             return;
         }
         if (!Controls(player, loc)) {
-            notify(player, "Permission denied.");
+            notify(player, NOPERM_MESSAGE);
             return;
         }
         /*
@@ -859,7 +859,7 @@ void do_enter(dbref player, dbref cause, int key, char *what)
         do_enter_internal(player, thing, quiet);
         break;
     default:
-        notify(player, "Permission denied.");
+        notify(player, NOPERM_MESSAGE);
     }
     return;
 }
