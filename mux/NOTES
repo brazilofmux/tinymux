@@ -57,14 +57,14 @@ Changes to dbconvert:
      This converts flatfiled database to binary for use by the server and 
      would be done with dbconvert thus:
      
-     ../bin/dbconvert netmux X < netmux.flat > netmux.db
+     ../bin/dbconvert -dnetmux -inetmux.flat -onetmux.db -l
    
    - './db_unload netmux netmux.db.new netmux.flat'
      
      This converts binary data to flatfile for would be done with dbconvert 
      thus:
      
-     ../bin/dbconvert netmux x < netmux.db.new > netmux.flat
+     ../bin/dbconvert -dnetmux -inetmux.db.new -onetmux.flat -u
 
 
 On Flatfiles:

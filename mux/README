@@ -61,7 +61,7 @@ the following files:
         
 General Information:
 ~~~~~~~~~~~~~~~~~~~
-TinyMUX 2.3 is currently being developed in parallel under Win32 and SuSE 7.3
+TinyMUX 2.3 is currently being developed in parallel under Win32 and SuSE 8.1
 and is written in C and C++.  It is a continuation of the TinyMUX 1.x line of
 servers.
 
@@ -92,14 +92,14 @@ Reminder of changes to dbconvert from MUX 1.x:
      This converts flatfiled database to binary for use by the server and 
      would be done with dbconvert thus:
      
-     ../bin/dbconvert netmux X < netmux.flat > netmux.db
+     ../bin/dbconvert -dnetmux -inetmux.flat -onetmux.db -l
    
    - './db_unload netmux netmux.db.new netmux.flat'
      
      This converts binary data to flatfile for would be done with dbconvert 
      thus:
      
-     ../bin/dbconvert netmux x < netmux.db.new > netmux.flat
+     ../bin/dbconvert -dnetmux -inetmux.db.new -onetmux.flat -u
 
 
 Conversions from Other Database Formats:
