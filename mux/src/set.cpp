@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.21 2004-04-28 14:20:19 sdennis Exp $
+// $Id: set.cpp,v 1.22 2004-04-30 18:13:11 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1326,20 +1326,20 @@ bool parse_attrib(dbref player, char *str, dbref *thing, ATTR **attr)
     //
     char *buff = alloc_lbuf("parse_attrib");
     strcpy(buff, str);
-    bool retval = parse_thing_slash(player, buff, &str, thing);
+    char AttrName;
+    bool retval = parse_thing_slash(player, buff, &AttrName, thing);
 
     // Get the named attribute from the object if we can.
     //
     if (retval)
     {
-        tattr = atr_str(str);
+        tattr = atr_str(AttrName);
     }
 
     free_lbuf(buff);
     *attr = tattr;
     return retval;
 }
-
 
 static void find_wild_attrs(dbref player, dbref thing, char *str, bool check_exclude, bool hash_insert, bool get_locks)
 {
