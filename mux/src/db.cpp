@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.34 2002-08-03 19:49:20 sdennis Exp $
+// $Id: db.cpp,v 1.35 2002-08-03 19:57:35 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -471,32 +471,32 @@ const char *Name(dbref thing)
 
 const char *PureName(dbref thing)
 {
-    static char tbuff[LBUF_SIZE];
     if (thing < 0)
     {
-        strcpy(tbuff, aszSpecialDBRefNames[-thing]);
-        return tbuff;
+        return aszSpecialDBRefNames[-thing];
     }
 
     dbref aowner;
     int aflags;
 
+    char *pName, *pPureName;
     if (mudconf.cache_names)
     {
         if (!purenames[thing])
         {
             int nName;
-            char *pName, *pPureName;
             size_t nPureName;
 #ifdef MEMORY_BASED
-            pName = atr_get_strLEN(tbuff, thing, A_NAME, &aowner, &aflags, &nName);
+            pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &nName);
             pPureName = strip_ansi(pName, &nPureName);
+            free_lbuf(pName);
             purenames[thing] = StringCloneLen(pPureName, nPureName);
 #else // MEMORY_BASED
             if (!names[thing])
             {
-                atr_get_str_LEN(tbuff, thing, A_NAME, &aowner, &aflags, &nName);
-                names[thing] = StringCloneLen(tbuff, nName);
+                pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &nName);
+                names[thing] = StringCloneLen(pName, nName);
+                free_lbuf(pName);
             }
             pName = names[thing];
             pPureName = strip_ansi(pName, &nPureName);
@@ -512,8 +512,10 @@ const char *PureName(dbref thing)
         }
         return purenames[thing];
     }
-    atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
-    return strip_ansi(tbuff);
+    pName = atr_get(thing, A_NAME, &aowner, &aflags);
+    pPureName = strip_ansi(pName);
+    free_lbuf(pName);
+    return pPureName;
 }
 
 void s_Name(dbref thing, const char *s)
