@@ -6701,15 +6701,19 @@ IMUL()
     > say imul(3,5,-2)
     You say "-30"
 
-  See also: add(), div(), fdiv(), iadd(), isub(), mod(), mul(),
+  Related Topics: add(), div(), fdiv(), iadd(), isub(), mod(), mul(),
             round(), sub(), trunc().
 
 & DIV()
+DIV()
 
-  Function: div(<number1>,<number2>)
+  FUNCTION: div(<number1>,<number2>)
  
   Returns the integer quotient from dividing <number1> by <number2>.
+  Any fractional portion of <number1> or <number2> is ignored.
  
+  This function may also be called as idiv().
+  
   Examples:
     > say div(15,3)
     You say "5"
