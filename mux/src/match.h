@@ -1,6 +1,6 @@
 // match.h
 //
-// $Id: match.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: match.h,v 1.2 2002-06-13 19:56:40 jake Exp $
 //
 
 #include "copyright.h"
@@ -61,7 +61,11 @@ extern dbref match_thing_quiet(dbref player, char *name);
 
 #define MAT_NO_EXITS        1   /* Don't check for exits */
 #define MAT_EXIT_PARENTS    2   /* Check for exits in parents */
-#define MAT_NUMERIC     4   /* Check for un-#ified dbrefs */
-#define MAT_HOME        8   /* Check for 'home' */
+#define MAT_NUMERIC         4   /* Check for un-#ified dbrefs */
+#define MAT_HOME            8   /* Check for 'home' */
+
+#define MATCH_CONTROL       1   // Match controlled
+#define MATCH_AFFECT        2   // Match affected
+#define MATCH_EXAM          4   // Match examinable
 
 #endif

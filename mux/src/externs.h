@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.10 2002-06-13 14:33:57 sdennis Exp $
+// $Id: externs.h,v 1.11 2002-06-13 19:56:40 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -13,6 +13,7 @@
 #include "db.h"
 #include "mudconf.h"
 #include "stringutil.h"
+#include "match.h"
 
 /* From conf.cpp */
 extern int  cf_modify_bits(int *, char *, void *, UINT32, dbref, char *);
@@ -202,9 +203,11 @@ extern int  FDECL(parse_attrib, (dbref, char *, dbref *, int *));
 extern int  FDECL(parse_attrib_wild, (dbref, char *, dbref *, int,
             int, int));
 extern void FDECL(edit_string, (char *, char **, char *, char *));
-extern dbref    FDECL(match_controlled, (dbref, const char *));
-extern dbref    FDECL(match_affected, (dbref, const char *));
-extern dbref    FDECL(match_examinable, (dbref, const char *));
+extern dbref match_handler(dbref player, const char *name, int key, BOOL bQuiet);
+#define match_controlled(player,name)       match_handler(player, name, MATCH_CONTROL, FALSE)
+#define match_controlled_quiet(player,name) match_handler(player, name, MATCH_CONTROL, TRUE)
+#define match_affected(player,name)         match_handler(player, name, MATCH_AFFECT, FALSE)
+#define match_examinable(player,name)       match_handler(player, name, MATCH_EXAM, FALSE)
 
 /* From boolexp.cpp */
 extern int  FDECL(eval_boolexp, (dbref, dbref, dbref, BOOLEXP *));
@@ -305,8 +308,13 @@ extern char *atr_pget_str(char *, dbref, int, dbref *, int *);
 extern int  FDECL(atr_get_info, (dbref, int, dbref *, int *));
 extern int  FDECL(atr_pget_info, (dbref, int, dbref *, int *));
 extern void FDECL(atr_free, (dbref));
-extern int  FDECL(check_zone, (dbref, dbref));
-extern int  FDECL(check_zone_for_player, (dbref, dbref));
+extern BOOL check_zone_handler(dbref player, dbref thing, BOOL bPlayerCheck);
+#ifdef STANDALONE
+extern int check_zone(dbref player, dbref thing);
+#else
+#define check_zone(player, thing) check_zone_handler(player, thing, FALSE)
+#endif
+#define check_zone_for_player(player, thing) check_zone_handler(player, thing, TRUE)
 extern void ReleaseAllResources(dbref obj);
 extern int fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 
@@ -680,7 +688,6 @@ extern const char *FUNC_NOMATCH_MESSAGE;
 extern int ReplaceFile(char *old_name, char *new_name);
 extern void RemoveFile(char *name);
 extern void destroy_player(dbref agent, dbref victim);
-extern dbref match_controlled_quiet(dbref player, const char *name);
 extern void do_pemit_list
 (
     dbref player,

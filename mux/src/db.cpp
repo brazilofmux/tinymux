@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.7 2002-06-12 23:19:35 sdennis Exp $
+// $Id: db.cpp,v 1.8 2002-06-13 19:56:40 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2851,17 +2851,17 @@ int check_zone(dbref player, dbref thing)
 
 // check_zone - checks back through a zone tree for control.
 //
-int check_zone(dbref player, dbref thing)
+BOOL check_zone_handler (dbref player, dbref thing, BOOL bPlayerCheck)
 {
     mudstate.zone_nest_num++;
 
     if (  !mudconf.have_zones
        || !Good_obj(Zone(thing))
        || mudstate.zone_nest_num >= mudconf.zone_nest_lim
-       || isPlayer(thing))
+       || (isPlayer(thing) == bPlayerCheck))
     {
         mudstate.zone_nest_num = 0;
-        return 0;
+        return FALSE;
     }
 
     // If the zone doesn't have an enterlock, DON'T allow control.
@@ -2870,37 +2870,11 @@ int check_zone(dbref player, dbref thing)
        && could_doit(player, Zone(thing), A_LENTER))
     {
         mudstate.zone_nest_num = 0;
-        return 1;
+        return TRUE;
     }
     else if (thing == Zone(thing))
     {
-        return 0;
-    }
-    return check_zone(player, Zone(thing));
-}
-
-int check_zone_for_player(dbref player, dbref thing)
-{
-    mudstate.zone_nest_num++;
-
-    if (  !mudconf.have_zones
-       || !Good_obj(Zone(thing))
-       || mudstate.zone_nest_num >= mudconf.zone_nest_lim
-       || !isPlayer(thing))
-    {
-        mudstate.zone_nest_num = 0;
-        return 0;
-    }
-
-    if (  atr_get_raw(Zone(thing), A_LENTER)
-       && could_doit(player, Zone(thing), A_LENTER))
-    {
-        mudstate.zone_nest_num = 0;
-        return 1;
-    }
-    else if (thing == Zone(thing))
-    {
-        return 0;
+        return FALSE;
     }
     return check_zone(player, Zone(thing));
 }

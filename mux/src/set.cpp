@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.9 2002-06-13 14:33:57 sdennis Exp $
+// $Id: set.cpp,v 1.10 2002-06-13 19:56:40 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -14,16 +14,39 @@
 
 extern NAMETAB indiv_attraccess_nametab[];
 
-dbref match_controlled(dbref player, const char *name)
+dbref match_handler(dbref player, const char *name, int key, BOOL bQuiet)
 {
     dbref mat;
-
+    BOOL check;
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
-    mat = noisy_match_result();
-    if (Good_obj(mat) && !Controls(player, mat))
+    if (bQuiet)
     {
-        notify_quiet(player, NOPERM_MESSAGE);
+        mat = match_result();
+    }
+    else
+    {
+        mat = noisy_match_result();
+    }
+
+    switch (key)
+    {
+    case MATCH_CONTROL:
+        check = (Good_obj(mat) && !Controls(player, mat));
+    case MATCH_AFFECT:
+        check = (mat != NOTHING && !Affects(player, mat));
+    case MATCH_EXAM:
+        check = (mat != NOTHING && !Examinable(player, mat));
+    default:
+        return NOTHING;
+    }
+
+    if (check)
+    {
+        if (!bQuiet)
+        {
+            notify_quiet(player, NOPERM_MESSAGE);
+        }
         return NOTHING;
     }
     else
@@ -31,57 +54,6 @@ dbref match_controlled(dbref player, const char *name)
         return mat;
     }
 }
-
-dbref match_controlled_quiet(dbref player, const char *name)
-{
-    dbref mat;
-
-    init_match(player, name, NOTYPE);
-    match_everything(MAT_EXIT_PARENTS);
-    mat = match_result();
-    if (Good_obj(mat) && !Controls(player, mat)) {
-        return NOTHING;
-    } else {
-        return (mat);
-    }
-}
-
-dbref match_affected(dbref player, const char *name)
-{
-    dbref mat;
-
-    init_match(player, name, NOTYPE);
-    match_everything(MAT_EXIT_PARENTS);
-    mat = noisy_match_result();
-    if (mat != NOTHING && !Affects(player, mat))
-    {
-        notify_quiet(player, NOPERM_MESSAGE);
-        return NOTHING;
-    }
-    else
-    {
-        return mat;
-    }
-}
-
-dbref match_examinable(dbref player, const char *name)
-{
-    dbref mat;
-
-    init_match(player, name, NOTYPE);
-    match_everything(MAT_EXIT_PARENTS);
-    mat = noisy_match_result();
-    if (mat != NOTHING && !Examinable(player, mat))
-    {
-        notify_quiet(player, NOPERM_MESSAGE);
-        return NOTHING;
-    }
-    else
-    {
-        return mat;
-    }
-}
-
 
 void do_chzone
 (
