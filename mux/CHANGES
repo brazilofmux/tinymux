@@ -3,14 +3,23 @@ Last Update:  June 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ -- Removed support for RADIX_COMPRESSION.
+ -- Related to %@ (caller) below, some functions have altered (enactor,
+    caller, executor) than MUX 2.1. In some places, these changes fixed
+    what can certainly be argued as wrong behavior. In some places,
+    the changes are made for the sake of consistency across the codebase.
 
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- Bug #323 - Implement %@ (caller) substitution.
- -- Turned on fractional seconds for time(), secs(), convtime(), and convsecs().
- -- Bug #743 - @doing should allow /unique switch to specify only current port.
-    Patch from Jake.
+ -- Bug #323 - Implemented %@ (caller) substitution as defined previously
+    by PennMUSH.
+ -- Replaced Spencer's regmatch package with Perl regular expressions (PCRE).
+    Implemented by Raevnos.
+ -- Turned on fractional seconds for time(), secs(), convtime(), and
+    convsecs().
+ -- Bug #743 - @doing should allow /unique switch to specify only current
+    port.  Patch from Jake.
  -- Bug #556 - Add PennMUSH's right() function. Patch from Jake.
  -- Bugs #567 and #806 - Add connrecord() that gives the most simultaneous
     connections to the game. Patch from Jake.
@@ -18,6 +27,10 @@ Feature Additions:
  -- Bugs #554, #636, #741, and #742 - doing(), cmds(), idle(), conn(), and 
     host() take port# as an argument. Patch from Jake.
  -- Added @cboot/quiet. Patch from Zenty.
+ -- Implemented SPELLNUM() with same behavior as SPELLNUM() from PennMUSH
+    except that the two-digit-hundred-pattern is sometimes used (e.g,
+    'spellnum(1100)' --> 'eleven hundred' on MUX 2.2 whereas on PennMUSH,
+    'spelnum(1100)' --> 'one thousand one hundred'.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -28,6 +41,9 @@ Bug Fixes:
     available via dbconvert -c. Patch from Jake.
  -- Rework of dbck routines. More thorough checking and removed some God-only
     crash issues. Patch from Jake.
+ -- Fixed entire class of bugs that showed themselves to one degree or
+    another in nearly every part of the server. The issue was first visible
+    with eneter locks on zones.
 
 
 Performance Enhancements:
