@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules
 //
-// $Id: timeutil.h,v 1.4 2001-02-12 07:05:48 sdennis Exp $
+// $Id: timeutil.h,v 1.5 2001-02-23 17:21:22 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -146,5 +146,6 @@ INT64 i64Division(INT64 x, INT64 y);
 INT64 i64Remainder(INT64 x, INT64 y);
 #endif
 
+extern BOOL ParseDate(CLinearTimeAbsolute &lta, char *pDateString, BOOL *pbZoneSpecified);
 
 #endif // TIMEUTIL_H
