@@ -1,5 +1,5 @@
 /* interface.h */
-/* $Id: interface.h,v 1.5 2001-03-31 04:48:59 sdennis Exp $ */
+/* $Id: interface.h,v 1.6 2001-06-11 12:57:02 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -189,9 +189,8 @@ extern void FDECL(save_command, (DESC *, CBLK *));
 extern void FDECL(announce_disconnect, (dbref, DESC *, const char *));
 extern int  FDECL(boot_off, (dbref, char *));
 extern int boot_by_port(SOCKET port, int no_god, char *message);
-extern int  FDECL(fetch_idle, (dbref));
-extern int  FDECL(fetch_connect, (dbref));
-extern void NDECL(check_idle);
+extern void find_oldest(dbref target, DESC *dOldest[2]);
+extern void check_idle(void);
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
 extern int  FDECL(site_check, (struct in_addr, SITE *));
 extern void FDECL(make_ulist, (dbref, char *, char **));

@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.30 2001-05-05 16:04:26 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.31 2001-06-11 12:57:01 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -968,6 +968,23 @@ void desc_reload(dbref player)
 }
 
 // ---------------------------------------------------------------------------
+// fetch_session: Return number of sessions (or 0 if not logged in).
+//
+int fetch_session(dbref target)
+{
+    DESC *d;
+    int nCount = 0;
+    DESC_ITER_PLAYER(target, d)
+    {
+        if (d->flags & DS_CONNECTED)
+        {
+            nCount++;
+        }
+    }
+    return nCount;
+}
+
+// ---------------------------------------------------------------------------
 // fetch_idle: Return smallest idle time for a player (or -1 if not logged in).
 //
 int fetch_idle(dbref target)
@@ -1002,14 +1019,13 @@ int fetch_idle(dbref target)
 }
 
 // ---------------------------------------------------------------------------
-// fetch_connect: Return largest connect time for a player (or -1 if not
-// logged in).
+// find_oldest: Return descriptor with the oldeset connected_at (or NULL if
+// not logged in).
 //
-int fetch_connect(dbref target)
+void find_oldest(dbref target, DESC *dOldest[2])
 {
-    CLinearTimeAbsolute ltaNow;
-    CLinearTimeAbsolute ltaOldestConnectedAt;
-    ltaNow.GetUTC();
+    dOldest[0] = NULL;
+    dOldest[1] = NULL;
     
     DESC *d;
     BOOL bFound = FALSE;
@@ -1017,18 +1033,32 @@ int fetch_connect(dbref target)
     {
         if (d->flags & DS_CONNECTED)
         {
-            if (!bFound || d->connected_at < ltaOldestConnectedAt)
+            if (!bFound || d->connected_at < dOldest[0]->connected_at)
             {
                 bFound = TRUE;
-                ltaOldestConnectedAt = d->connected_at;
+                dOldest[1] = dOldest[0];
+                dOldest[0] = d;
             }
         }
     }
-    if (bFound)
+}
+
+// ---------------------------------------------------------------------------
+// fetch_connect: Return largest connect time for a player (or -1 if not
+// logged in).
+//
+int fetch_connect(dbref target)
+{
+    DESC *dOldest[2];
+    find_oldest(target, dOldest);
+    if (dOldest[0])
     {
-        CLinearTimeDelta ltdResult;
-        ltdResult = ltaNow - ltaOldestConnectedAt;
-        return ltdResult.ReturnSeconds();
+        CLinearTimeAbsolute ltaNow;
+        CLinearTimeDelta ltdOldest;
+
+        ltaNow.GetUTC();
+        ltdOldest = ltaNow - dOldest[0]->connected_at;
+        return ltdOldest.ReturnSeconds();
     }
     else
     {
@@ -1036,7 +1066,7 @@ int fetch_connect(dbref target)
     }
 }
 
-void NDECL(check_idle)
+void check_idle(void)
 {
     DESC *d, *dnext;
     
