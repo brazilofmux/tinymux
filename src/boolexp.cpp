@@ -2,7 +2,7 @@
  * boolexp.cpp 
  */
 /*
- * $Id: boolexp.cpp,v 1.2 2000-04-11 21:18:07 sdennis Exp $ 
+ * $Id: boolexp.cpp,v 1.3 2000-06-02 18:08:45 sdennis Exp $ 
  */
 #include "copyright.h"
 #include "autoconf.h"
@@ -327,9 +327,9 @@ static BOOLEXP *test_atr(char *s)
     b = alloc_bool("test_str");
     b->type = locktype;
     b->thing = (dbref) anum;
-    b->sub1 = (BOOLEXP *) strsave(s);
+    b->sub1 = (BOOLEXP *) StringClone(s);
     free_lbuf(buff);
-    return (b);
+    return b;
 }
 
 /*
