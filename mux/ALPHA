@@ -1,0 +1,54 @@
+TinyMUX 2.2:  ALPHA
+Last Update:  May 2002
+
+General Cautions During the Beta Period:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The breadth of the testing of TinyMUX 2.1 is admittedly not as broad
+as that enjoyed by TinyMUX 2.0 when it entered its first BETA.
+However, TinyMUX 2.1 does build on the bug fixes of TinyMUX 2.0, and
+there are a few production games that have been running it for
+approximately 4 months. Ashen-Shugar continues to beat on it.
+
+The stability of this version of TinyMUX is roughly equal to the
+stability of the TinyMUX 2.0 version.
+
+Please take the time to read the README.  These files should be
+helpful to you.  If they aren't helpful, then please help us improve
+our efforts by suggesting specific changes. Documentation bugs can
+usually be fixed more rapidly than any other type of bug.
+
+If you port an existing game to this beta:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - Make frequent backups.  We cannot stress this enough.  The included 
+      Backup script is your friend and should make this process effortless. 
+    
+    - Make complete backups of all of your config, text, mail, and 
+      comsystems.
+    
+    - Store your backups offsite.  This was always prudent anyway.
+    
+    - Run your game as usual.
+    
+    - Report Bugs to sdennis@svdltd.com following the procedure in README.
+
+
+If you start a new game to this beta:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - Make frequent backups.  We cannot stress this enough.  The included 
+      Backup script is your friend and should make this process effortless. 
+    
+    - Make complete backups of all of your config, text, mail, and 
+      comsystems.
+    
+    - Store your backups offsite.  This was always prudent anyway.
+    
+    - Keep decompiles of anything really big, unique, or irreplaceable 
+      softcode.  This is good coding practice, anyway.
+    
+    - Run your game as usual.
+    
+    - Report Bugs to sdennis@svdltd.com following the prcedure in README.
+
