@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.8 2000-04-29 08:04:55 sdennis Exp $
+// $Id: command.cpp,v 1.9 2000-05-19 19:06:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -31,8 +31,8 @@ extern void NDECL(vattr_clean_db);
 
 #define CACHING "object"
 
-#define	SW_MULTIPLE	  0x80000000	// This sw may be spec'd w/others.
-#define	SW_GOT_UNIQUE 0x40000000	// Already have a unique option.
+#define SW_MULTIPLE   0x80000000    // This sw may be spec'd w/others.
+#define SW_GOT_UNIQUE 0x40000000    // Already have a unique option.
 #define SW_NOEVAL     0x20000000    // Don't parse args before calling
                                     // handler (typically controlled via
                                     // a switch).
@@ -349,7 +349,7 @@ NAMETAB pemit_sw[] =
     {(char *)"contents", 1,  CA_PUBLIC,  PEMIT_CONTENTS|SW_MULTIPLE},
     {(char *)"html",     1,  CA_PUBLIC,  PEMIT_HTML|SW_MULTIPLE},
     {(char *)"list",     1,  CA_PUBLIC,  PEMIT_LIST|SW_MULTIPLE},
-    {(char *)"noeval",   1,	 CA_PUBLIC,	 SW_NOEVAL|SW_MULTIPLE},
+    {(char *)"noeval",   1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
     {(char *)"object",   1,  CA_PUBLIC,  0},
     {(char *)"silent",   1,  CA_PUBLIC,  0},
     { NULL,              0,          0,  0}
@@ -963,23 +963,23 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
     // We are allowed to run the command.  Now, call the handler using
     // the appropriate calling sequence and arguments.
     //
-	//if ((cmdp->callseq & CS_INTERP) && (key & SW_NOEVAL))
-	if (key & SW_NOEVAL)
+    //if ((cmdp->callseq & CS_INTERP) && (key & SW_NOEVAL))
+    if (key & SW_NOEVAL)
     {
-	    // The user specified /noeval on a @pemit or a @npemit,
+        // The user specified /noeval on a @pemit or a @npemit,
         // just do EV_STRIP_CURLY and remove the SW_NOEVAL from the
         // 'key'.
-	    //
-		interp = EV_STRIP_CURLY;
-		key &= ~SW_NOEVAL;
-	}
+        //
+        interp = EV_STRIP_CURLY;
+        key &= ~SW_NOEVAL;
+    }
     else if (  (cmdp->callseq & CS_INTERP)
             || !(interactive
             || (cmdp->callseq & CS_NOINTERP)))
     {
-	    // If the command is interpreted, or we're interactive (and
-	    // the command isn't specified CS_NOINTERP), eval the args.
-	    //
+        // If the command is interpreted, or we're interactive (and
+        // the command isn't specified CS_NOINTERP), eval the args.
+        //
         interp = EV_EVAL | EV_STRIP_CURLY;
     }
     else if (cmdp->callseq & CS_STRIP)
@@ -1227,7 +1227,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
 void process_command(dbref player, dbref cause, int interactive, char *arg_command, char *args[], int nargs)
 {
     char *pOriginalCommand = arg_command;
-	static char SpaceCompressCommand[LBUF_SIZE];
+    static char SpaceCompressCommand[LBUF_SIZE];
     static char LowerCaseCommand[LBUF_SIZE];
     char *pCommand;
     char *p, *q, *arg, *pSlash, *cmdsave, *bp, *str;
@@ -1242,7 +1242,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
 
     if (!pOriginalCommand)
     {
-	    Log.WriteString("ABORT! command.cpp, NULL command in process_command().\n");
+        Log.WriteString("ABORT! command.cpp, NULL command in process_command().\n");
         Log.Flush();
         abort();
     }
