@@ -330,6 +330,7 @@ Bug Fixes:
     Brazil.
  -- Exit names like ';foo' were effectively DARK exits. If set AUDIBLE, they
     were effectively listening devices that didn't show up on a @sweep.
+ -- Document logged-out command 'INFO'.
 
 
 Performance Enhancements:
