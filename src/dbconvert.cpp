@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.4 2000-09-25 04:04:07 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.5 2000-10-25 04:35:54 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -81,15 +81,15 @@ void info(int fmt, int flags, int ver)
 void usage(char *prog)
 {
 #ifdef WIN32
-#ifdef BETA
+#ifdef ALPHA
 #if PATCHLEVEL > 0
-    Log.printf("%s from MUX %sp%d for Win32 #%s [BETA]\n", prog, MUX_VERSION,
+    Log.printf("%s from MUX %sp%d for Win32 #%s [ALPHA]\n", prog, MUX_VERSION,
         PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
-    Log.printf("%s from MUX %s for Win32 #%s [BETA]\n", prog, MUX_VERSION,
+    Log.printf("%s from MUX %s for Win32 #%s [ALPHA]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM);
 #endif // PATCHLEVEL
-#else // BETA
+#else // ALPHA
 #if PATCHLEVEL > 0 
     Log.printf("%s from MUX %sp%d for Win32 #%s [%s]\n", prog, MUX_VERSION,
         PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
@@ -97,17 +97,17 @@ void usage(char *prog)
     Log.printf("%s from MUX %s for Win32 #%s [%s]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #endif // PATCHLEVEL
-#endif // BETA
+#endif // ALPHA
 #else // WIN32
-#ifdef BETA
+#ifdef ALPHA
 #if PATCHLEVEL > 0
-    Log.printf("%s from MUX %sp%d #%s [BETA]\n", prog, MUX_VERSION,
+    Log.printf("%s from MUX %sp%d #%s [ALPHA]\n", prog, MUX_VERSION,
         PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
-    Log.printf("%s from MUX %s #%s [BETA]\n", prog, MUX_VERSION,
+    Log.printf("%s from MUX %s #%s [ALPHA]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM);
 #endif // PATCHLEVEL
-#else // BETA
+#else // ALPHA
 #if PATCHLEVEL > 0 
     Log.printf("%s from MUX %sp%d #%s [%s]\n", prog, MUX_VERSION, PATCHLEVEL,
         MUX_BUILD_NUM, MUX_RELEASE_DATE);
@@ -115,7 +115,7 @@ void usage(char *prog)
     Log.printf("%s from MUX %s #%s [%s]\n", prog, MUX_VERSION, MUX_BUILD_NUM,
         MUX_RELEASE_DATE);
 #endif // PATCHLEVEL
-#endif // BETA
+#endif // ALPHA
 #endif // WIN32
     Log.printf("Usage: %s gamedb-basename [flags] [<in-file] [>out-file]\n", prog);
     Log.WriteString("   Available flags are:\n");
