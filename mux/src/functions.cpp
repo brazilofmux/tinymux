@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.79 2004-04-13 06:34:22 sdennis Exp $
+// $Id: functions.cpp,v 1.80 2004-04-15 16:24:53 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -666,12 +666,12 @@ static void fval_buf(char *buff, double result)
 bool delim_check
 (
     char *fargs[], int nfargs, int sep_arg, char *sep, char *buff,
-    char **bufc, bool eval, dbref player, dbref caller, dbref enactor,
+    char **bufc, bool eval, dbref executor, dbref caller, dbref enactor,
     char *cargs[], int ncargs, bool allow_special
 )
 {
     bool bSuccess = true;
-    if (nfargs >= sep_arg)
+    if (sep_arg <= nfargs)
     {
         // First, we decide whether to evalute fargs[sep_arg-1] or not.
         //
@@ -685,13 +685,13 @@ bool delim_check
         {
             char *str = tstr;
             char *bp = tstr = alloc_lbuf("delim_check");
-            mux_exec(tstr, &bp, player, caller, enactor,
+            mux_exec(tstr, &bp, executor, caller, enactor,
                      EV_EVAL | EV_FCHECK, &str, cargs, ncargs);
             *bp = '\0';
             tlen = bp - tstr;
         }
 
-        // Regardless of evaulation or no, tstr contains the we need to
+        // Regardless of evaulation or no, tstr contains what we need to
         // look at, and tlen is the length of this string.
         //
         if (tlen == 1)
@@ -706,13 +706,14 @@ bool delim_check
         {
             // We might have an issue.
             //
-            if (tlen == 2 && allow_special)
+            if (  tlen == 2
+               && allow_special)
             {
-                if (memcmp(tstr, (char *)NULL_DELIM_VAR, 2) == 0)
+                if (memcmp(tstr, NULL_DELIM_VAR, 2) == 0)
                 {
                     *sep = '\0';
                 }
-                else if (memcmp(tstr, (char *)"\r\n", 2) == 0)
+                else if (memcmp(tstr, "\r\n", 2) == 0)
                 {
                     *sep = '\r';
                 }
