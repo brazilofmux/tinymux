@@ -1,6 +1,6 @@
 
 TinyMUX 2.0:  README (Unix based)
-Last Update:  April 2000
+Last Update:  May 2000
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Congratulations and welcome to the README file for TinyMUX 2.0.  That 
 you have chosen to actually read the file is a sign of bravery equal to 
@@ -66,14 +66,13 @@ the following files:
 General Information:
 ~~~~~~~~~~~~~~~~~~~
 TinyMUX 2.0 is currently being developed in parallel under Win32 and 
-RedHat 6.0 and is written in C and C++.  It is a continuation of the 
+RedHat 6.1 and is written in C and C++.  It is a continuation of the 
 TinyMUX 1.x line of servers and consists largely of bug fixes and a number 
 of performance enhancements.  Features have been added in this release, 
 but they were not the primary focus.  
 
 The latest version of this code can generally be found running at:
 
-childsplay.net 2100
 svdltd.com 6250 
 
 Refer to the file CHANGES for information about new features, commands, 
@@ -165,7 +164,7 @@ platforms:
 RedHat 5.1, 5.2, 6.0
 Slackware 3.6, 4.0, 7.0
 Solaris 2.4, 2.5, 2.6
-Mandrake 6.0
+Mandrake 6.0, 7.0
 Linux Kernels 2.0.35 - 2.2.14
 IRIX (Some versions)
 Debian 2.1, 2.2
