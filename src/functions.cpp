@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.121 2001-12-29 19:20:54 sdennis Exp $
+// $Id: functions.cpp,v 1.122 2001-12-29 19:25:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1766,60 +1766,59 @@ static void do_ufun(char *buff, char **bufc, dbref player, dbref cause,
     //
     if (parse_attrib(player, fargs[0], &thing, &anum))
     {
-        if ((anum == NOTHING) || (!Good_obj(thing)))
+        if (  anum == NOTHING
+           || !Good_obj(thing))
+        {
             ap = NULL;
+        }
         else
+        {
             ap = atr_num(anum);
-    } else {
+        }
+    }
+    else
+    {
         thing = player;
         ap = atr_str(fargs[0]);
     }
 
-    /*
-     * Make sure we got a good attribute
-     */
-
-    if (!ap) {
+    // Make sure we got a good attribute.
+    //
+    if (!ap)
+    {
         return;
     }
-    /*
-     * Use it if we can access it, otherwise return an error.
-     */
 
+    // Use it if we can access it, otherwise return an error.
+    //
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext) {
+    if (*atext == '\0')
+    {
         free_lbuf(atext);
         return;
     }
-    if (!*atext) {
+    if (!check_read_perms(player, thing, ap, aowner, aflags, buff, bufc))
+    {
         free_lbuf(atext);
         return;
     }
-    if (!check_read_perms(player, thing, ap, aowner, aflags, buff, bufc)) {
-        free_lbuf(atext);
-        return;
-    }
-    /*
-     * If we're evaluating locally, preserve the global registers.
-     */
 
+    // If we're evaluating locally, preserve the global registers.
+    //
     if (is_local)
     {
         save_global_regs("fun_ulocal_save", preserve, preserve_len);
     }
 
-    /*
-     * Evaluate it using the rest of the passed function args
-     */
-
+    // Evaluate it using the rest of the passed function args.
+    //
     str = atext;
-    TinyExec(buff, bufc, 0, thing, cause, EV_FCHECK | EV_EVAL, &str, &(fargs[1]), nfargs - 1);
+    TinyExec(buff, bufc, 0, thing, cause, EV_FCHECK | EV_EVAL,
+        &str, &(fargs[1]), nfargs - 1);
     free_lbuf(atext);
 
-    /*
-     * If we're evaluating locally, restore the preserved registers.
-     */
-
+    // If we're evaluating locally, restore the preserved registers.
+    //
     if (is_local)
     {
         restore_global_regs("fun_ulocal_restore", preserve, preserve_len);
