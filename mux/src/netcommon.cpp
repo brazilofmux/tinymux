@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.44 2005-04-02 04:42:38 sdennis Exp $
+// $Id: netcommon.cpp,v 1.45 2005-04-06 18:27:09 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1201,6 +1201,15 @@ void check_idle(void)
         }
         if (d->flags & DS_CONNECTED)
         {
+            if (mudconf.idle_timeout <= 0)
+            {
+                // Idle timeout checking on connected players is effectively disabled.
+                // PennMUSH uses idle_timeout == 0. Rhost uses idel_timeout == -1.
+                // We will be disabled for either setting.
+                //
+                continue;
+            }
+
             CLinearTimeDelta ltdIdle = ltaNow - d->last_time;
             if (Can_Idle(d->player))
             {
@@ -1241,7 +1250,7 @@ void check_idle(void)
                 shutdownsock(d, R_TIMEOUT);
             }
         }
-        else
+        else if (0 < mudconf.conn_timeout)
         {
             CLinearTimeDelta ltdIdle = ltaNow - d->connected_at;
             if (ltdIdle.ReturnSeconds() > mudconf.conn_timeout)
