@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.79 2001-12-29 18:31:07 sdennis Exp $
+// $Id: funceval.cpp,v 1.80 2001-12-29 18:58:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2221,7 +2221,8 @@ FUNCTION(fun_foreach)
     char *atext, *atextbuf, *str, *cp, *bp;
     char cbuf[2], prev = '\0';
 
-    if ((nfargs != 2) && (nfargs != 4))
+    if (  nfargs != 2
+       && nfargs != 4)
     {
         safe_str("#-1 FUNCTION (FOREACH) EXPECTS 2 or 4 ARGUMENTS", buff, bufc);
         return;
@@ -2229,7 +2230,8 @@ FUNCTION(fun_foreach)
 
     if (parse_attrib(player, fargs[0], &thing, &anum))
     {
-        if ((anum == NOTHING) || !Good_obj(thing))
+        if (  anum == NOTHING
+           || !Good_obj(thing))
         {
             ap = NULL;
         }
@@ -2253,7 +2255,8 @@ FUNCTION(fun_foreach)
     {
         return;
     }
-    else if (!*atext || !See_attr(player, thing, ap, aowner, aflags))
+    else if (  !*atext
+            || !See_attr(player, thing, ap, aowner, aflags))
     {
         free_lbuf(atext);
         return;
@@ -2267,13 +2270,17 @@ FUNCTION(fun_foreach)
 
     if (nfargs == 4)
     {
-        while (cp && *cp)
+        while (  cp
+              && *cp
+              && mudstate.func_invk_ctr < mudconf.func_invk_lim)
         {
             cbuf[0] = *cp++;
 
             if (flag)
             {
-                if ((cbuf[0] == *fargs[3]) && (prev != '\\') && (prev != '%'))
+                if (  cbuf[0] == *fargs[3]
+                   && prev != '\\'
+                   && prev != '%')
                 {
                     flag = 0;
                     continue;
@@ -2281,7 +2288,9 @@ FUNCTION(fun_foreach)
             }
             else
             {
-                if ((cbuf[0] == *fargs[2]) && (prev != '\\') && (prev != '%'))
+                if (  cbuf[0] == *fargs[2]
+                   && prev != '\\'
+                   && prev != '%')
                 {
                     flag = 1;
                     continue;
@@ -2295,19 +2304,23 @@ FUNCTION(fun_foreach)
 
             strcpy(atextbuf, atext);
             str = atextbuf;
-            TinyExec(buff, bufc, 0, thing, player, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
+            TinyExec(buff, bufc, 0, thing, player,
+                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
             prev = cbuf[0];
         }
     }
     else
     {
-        while (cp && *cp)
+        while (  cp
+              && *cp
+              && mudstate.func_invk_ctr < mudconf.func_invk_lim)
         {
             cbuf[0] = *cp++;
 
             strcpy(atextbuf, atext);
             str = atextbuf;
-            TinyExec(buff, bufc, 0, thing, player, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
+            TinyExec(buff, bufc, 0, thing, player,
+                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
         }
     }
     free_lbuf(atextbuf);
