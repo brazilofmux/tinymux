@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.17 2002-07-13 22:47:34 jake Exp $
+// $Id: mail.cpp,v 1.18 2002-07-14 00:17:50 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1108,6 +1108,8 @@ static void send_mail
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
 
+    // TODO: Stephen Dennis to fix this with a parameter to ReturnDateString.
+    //
     BOOL bOmitting = FALSE;
     int count = 0;
     for(char *temp = ltaNow.ReturnDateString();*temp;*temp++)
