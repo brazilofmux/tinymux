@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.15 2000-11-15 02:52:31 sdennis Exp $
+// $Id: cque.cpp,v 1.16 2000-11-15 06:48:33 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -249,18 +249,39 @@ void Task_SemaphoreTimeout(void *pExpired, int iUnused)
 
 dbref Halt_Player_Target;
 dbref Halt_Object_Target;
-int Halt_HaltedEntries;
+int   Halt_Entries;
+dbref Halt_Player_Run;
+dbref Halt_Entries_Run;
 
 int CallBack_HaltQueue(PTASK_RECORD p)
 {
-    if (p->fpTask == Task_RunQueueEntry || p->fpTask == Task_SemaphoreTimeout)
+    if (  p->fpTask == Task_RunQueueEntry
+       || p->fpTask == Task_SemaphoreTimeout)
     {
         // This is a @wait or timed semaphore task.
         //
         BQUE *point = (BQUE *)(p->arg_voidptr);
         if (que_want(point, Halt_Player_Target, Halt_Object_Target))
         {
-            Halt_HaltedEntries++;
+            // Accounting for pennies and queue quota.
+            //
+            dbref dbOwner = point->player;
+            if (!isPlayer(dbOwner))
+            {
+                dbOwner = Owner(dbOwner);
+            }
+            if (dbOwner != Halt_Player_Run)
+            {
+                if (Halt_Player_Run != NOTHING)
+                {
+                    giveto(Halt_Player_Run, mudconf.waitcost * Halt_Entries_Run);
+                    a_Queue(Halt_Player_Run, -Halt_Entries_Run);
+                }
+                Halt_Player_Run = dbOwner;
+                Halt_Entries_Run = 0;
+            }
+            Halt_Entries++;
+            Halt_Entries_Run++;
             if (p->fpTask == Task_SemaphoreTimeout)
             {
                 add_to(point->sem, -1, point->attr);
@@ -282,26 +303,21 @@ int halt_que(dbref player, dbref object)
 {
     Halt_Player_Target = player;
     Halt_Object_Target = object;
-    Halt_HaltedEntries = 0;
+    Halt_Entries = 0;
+    Halt_Player_Run    = NOTHING;
+    Halt_Entries_Run   = 0;
 
     // Process @wait, timed semaphores, and untimed semaphores.
     //
     scheduler.TraverseUnordered(CallBack_HaltQueue);
 
-    if (player == NOTHING)
+    if (Halt_Player_Run != NOTHING)
     {
-        player = Owner(object);
+        giveto(Halt_Player_Run, mudconf.waitcost * Halt_Entries_Run);
+        a_Queue(Halt_Player_Run, -Halt_Entries_Run);
+        Halt_Player_Run = NOTHING;
     }
-    giveto(player, (mudconf.waitcost * Halt_HaltedEntries));
-    if (object == NOTHING)
-    {
-        s_Queue(player, 0);
-    }
-    else
-    {
-        a_Queue(player, -Halt_HaltedEntries);
-    }
-    return Halt_HaltedEntries;
+    return Halt_Entries;
 }
 
 /*
