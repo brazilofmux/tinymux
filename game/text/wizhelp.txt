@@ -30,8 +30,8 @@
   @kick          @list          @listcommands  @list_file     @listmotd
   @lock          @log           @mark          @mark_all      @motd
   @newpassword   @pcreate       @poor          @ps            @quota
-  @readcache     @restart       @shutdown      @startslave    @timewarp
-  @toad          @wall
+  @readcache     @restart       @shutdown      @startslave    @timecheck
+  @timewarp      @toad          @wall
  
   @allowance     @comment       @timeout
 
@@ -887,6 +887,29 @@
   Note: these flags may be specified together if desired.
   See also: @list options.
 
+& @timecheck
+  Command: @timecheck[/<switches>]
+ 
+  An accounting of how much total CPU time has been used to execute commands
+  on each object.
+  
+  Win9x caveat:  Win9x does not provide a number of how much CPU time the
+  MUX game server has consumed and so instead of CPU time, we use a
+  high-resolution elapsed time instead. For some CPUs, the resolution of
+  this clock can be as high as the processor itself, but as useful as this
+  is, this accounting does not make a distinction between time spent in the
+  server and time spent in another unrelated application.
+
+  The command takes the following switches:
+ 
+    /screen	Print information to the screen.
+    /log	Print information to the logfile.
+    /clear	Clear the counters.
+ 
+  If no switches are provided, printing to the screen and clearing the
+  counters are assumed. The counters are otherwise not cleared unless
+  /clear is specified.
+ 
 & @toad
   Command: @toad[/<switches>] <victim>[=<recipient>]
   Turns the victim into an object (a slimy toad) and disconnects them from
