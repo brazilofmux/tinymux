@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.51 2001-10-08 07:30:18 sdennis Exp $
+// $Id: command.cpp,v 1.52 2001-10-10 02:37:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -485,30 +485,30 @@ NAMETAB warp_sw[] =
  */
 CMDENT_NO_ARG command_table_no_arg[] =
 {
-    {(char *)"@@",            NULL,       0,  0,      CS_NO_ARGS,         do_comment},
-    {(char *)"@backup",       NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         do_backup},
-    {(char *)"@clist",        clist_sw,   CA_NO_SLAVE,        0,              CS_NO_ARGS,                     do_chanlist},
-    {(char *)"@dbck",         NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         do_dbck},
-    {(char *)"@dbclean",      NULL,       CA_GOD,       0,      CS_NO_ARGS,         do_dbclean},
-    {(char *)"@dump",         dump_sw,    CA_WIZARD,    0,      CS_NO_ARGS,         do_dump},
-    {(char *)"@mark_all",     markall_sw, CA_WIZARD,    MARK_SET,   CS_NO_ARGS,         do_markall},
-    {(char *)"@readcache",    NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         do_readcache},
-    {(char *)"@restart",      NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         do_restart},
+    {"@@",          NULL,       0,           0,          CS_NO_ARGS, do_comment},
+    {"@backup",     NULL,       CA_WIZARD,   0,          CS_NO_ARGS, do_backup},
+    {"@clist",      clist_sw,   CA_NO_SLAVE, 0,          CS_NO_ARGS, do_chanlist},
+    {"@dbck",       NULL,       CA_WIZARD,   0,          CS_NO_ARGS, do_dbck},
+    {"@dbclean",    NULL,       CA_GOD,      0,          CS_NO_ARGS, do_dbclean},
+    {"@dump",       dump_sw,    CA_WIZARD,   0,          CS_NO_ARGS, do_dump},
+    {"@mark_all",   markall_sw, CA_WIZARD,   MARK_SET,   CS_NO_ARGS, do_markall},
+    {"@readcache",  NULL,       CA_WIZARD,   0,          CS_NO_ARGS, do_readcache},
+    {"@restart",    NULL,       CA_WIZARD,   0,          CS_NO_ARGS, do_restart},
 #ifndef WIN32
-    {(char *)"@startslave",   NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         boot_slave},
+    {"@startslave", NULL,       CA_WIZARD,   0,          CS_NO_ARGS, boot_slave},
 #endif // !WIN32
-    {(char *)"@timecheck",    timecheck_sw, CA_WIZARD,  0,        CS_NO_ARGS,       do_timecheck},
-    {(char *)"comlist",       NULL,       CA_NO_SLAVE,        0,              CS_NO_ARGS,                     do_comlist},
-    {(char *)"clearcom",      NULL,       CA_NO_SLAVE,        0,              CS_NO_ARGS,                     do_clearcom},
-    {(char *)"inventory",     NULL,       0,    LOOK_INVENTORY, CS_NO_ARGS,         do_inventory},
-    {(char *)"leave",         leave_sw,   CA_LOCATION,    0,      CS_NO_ARGS|CS_INTERP,       do_leave},
-    {(char *)"score",         NULL,       0,    LOOK_SCORE, CS_NO_ARGS,         do_score},
-    {(char *)"version",       NULL,       0,    0,      CS_NO_ARGS,         do_version},
-    {(char *)"quit",          NULL,       CA_PUBLIC,    CMD_QUIT,   CS_NO_ARGS,         logged_out0},
-    {(char *)"logout",        NULL,       CA_PUBLIC,    CMD_LOGOUT, CS_NO_ARGS,         logged_out0},
-    {(char *)"report",        NULL,       0,    0,      CS_NO_ARGS,   do_report},
-    {(char *)"info",          NULL,       CA_PUBLIC,    CMD_INFO,   CS_NO_ARGS,         logged_out0},
-    {(char *)NULL,            NULL,       0,     0,      0,              NULL}
+    {"@timecheck",  timecheck_sw, CA_WIZARD, 0,          CS_NO_ARGS, do_timecheck},
+    {"comlist",     NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, do_comlist},
+    {"clearcom",    NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, do_clearcom},
+    {"inventory",   NULL,       0,    LOOK_INVENTORY,    CS_NO_ARGS, do_inventory},
+    {"leave",       leave_sw,   CA_LOCATION, 0,          CS_NO_ARGS|CS_INTERP, do_leave},
+    {"score",       NULL,       0,    LOOK_SCORE,        CS_NO_ARGS, do_score},
+    {"version",     NULL,       0,           0,          CS_NO_ARGS, do_version},
+    {"quit",        NULL,       CA_PUBLIC,   CMD_QUIT,   CS_NO_ARGS, logged_out0},
+    {"logout",      NULL,       CA_PUBLIC,   CMD_LOGOUT, CS_NO_ARGS, logged_out0},
+    {"report",      NULL,       0,           0,          CS_NO_ARGS, do_report},
+    {"info",        NULL,       CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, logged_out0},
+    {NULL,          NULL,       0,           0,          0,          NULL}
 };
 
 CMDENT_ONE_ARG command_table_one_arg[] =
@@ -2131,27 +2131,27 @@ NAMETAB attraccess_nametab[] =
     {(char *)"god",         1,  CA_PUBLIC,  AF_GOD},
     {(char *)"hidden",      1,  CA_WIZARD,  AF_MDARK},
     {(char *)"ignore",      2,  CA_WIZARD,  AF_NOCMD},
-    {(char *)"internal",        2,  CA_WIZARD,  AF_INTERNAL},
+    {(char *)"internal",    2,  CA_WIZARD,  AF_INTERNAL},
     {(char *)"is_lock",     4,  CA_PUBLIC,  AF_IS_LOCK},
     {(char *)"locked",      1,  CA_PUBLIC,  AF_LOCK},
-    {(char *)"no_command",      4,  CA_PUBLIC,  AF_NOPROG},
-    {(char *)"no_inherit",      4,  CA_PUBLIC,  AF_PRIVATE},
+    {(char *)"no_command",  4,  CA_PUBLIC,  AF_NOPROG},
+    {(char *)"no_inherit",  4,  CA_PUBLIC,  AF_PRIVATE},
     {(char *)"private",     1,  CA_PUBLIC,  AF_ODARK},
-    {(char *)"regexp",              1,      CA_PUBLIC,      AF_REGEXP},
+    {(char *)"regexp",      1,  CA_PUBLIC,  AF_REGEXP},
     {(char *)"visual",      1,  CA_PUBLIC,  AF_VISUAL},
     {(char *)"wizard",      1,  CA_PUBLIC,  AF_WIZARD},
-    { NULL,             0,  0,      0}
+    { NULL,                 0,          0,          0}
 };
 
 NAMETAB indiv_attraccess_nametab[] =
 {
     {(char *)"hidden",      1,  CA_WIZARD,  AF_MDARK},
     {(char *)"wizard",      1,  CA_WIZARD,  AF_WIZARD},
-    {(char *)"no_command",      4,  CA_PUBLIC,  AF_NOPROG},
-    {(char *)"no_inherit",      4,  CA_PUBLIC,  AF_PRIVATE},
+    {(char *)"no_command",  4,  CA_PUBLIC,  AF_NOPROG},
+    {(char *)"no_inherit",  4,  CA_PUBLIC,  AF_PRIVATE},
     {(char *)"visual",      1,  CA_PUBLIC,  AF_VISUAL},
-    {(char *)"regexp",              1,      CA_PUBLIC,      AF_REGEXP},
-    { NULL,             0,  0,      0}
+    {(char *)"regexp",      1,  CA_PUBLIC,  AF_REGEXP},
+    { NULL,                 0,          0,          0}
 };
 
 static void list_attraccess(dbref player)
