@@ -12574,7 +12574,8 @@ WORDS()
 & WRAP()
 WRAP()
 
-  FUNCTION: wrap(<text>,<width>[,<just>,[<lefttxt>[,<righttxt>[,<hanging>]]]])
+  FUNCTION: wrap(<text>,<width>[,<just>,[<lefttxt>[,<righttxt>
+                [,<hanging>[,<osep>[,<width1>]]]]]])
 
   This function word wraps the text to fit into a column of the specified
   width.  Words are separated by spaces. If a word in the text is longer than
@@ -12590,7 +12591,9 @@ WRAP()
 
   The <hanging> argument specifies an optional number of spaces to insert on
   the left margin for any line that is not the first line. This is commonly
-  called a hanging indent in word processing.
+  called a hanging indent in word processing.  <osep> is the output separator,
+  and it defaults to %r.  <width1> is the width of the first line (default of
+  <width>).
 
 ("help wrap2" for more)
 
