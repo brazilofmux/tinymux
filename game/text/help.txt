@@ -7708,13 +7708,17 @@ HOME()
     Location: The Town Square
     > say home(me)
     You say "#367"
-
+ 
+  Related Topics:
+  
 & MONEY()
+MONEY()
 
-  Function: money(<object>)
+  FUNCTION: money(<object>)
  
   Returns an integer equal to the amount of money <object> has (if it is a
   player) or is worth (otherwise).
+  
   Example:
     > score
     You have 1052 clams.
@@ -7728,10 +7732,13 @@ HOME()
     Location: The Town Square
     > say money(sac test)
     You say "20"
-
+  
+  Related Topics:
+  
 & LCON()
+LCON()
 
-  Function: lcon(<object>)
+  FUNCTION: lcon(<object>)
  
   Returns a space-separated list of the contents of <object> which are
   visible to the person running the function.
@@ -7744,11 +7751,13 @@ HOME()
     You have 42463 clams.
     > say lcon(me)
     You say "#366 #223 #188"
-  See also: lexits(), @dolist.
+  
+  Related Topics: lexits(), @dolist.
 
 & LEXITS()
+LEXITS()
 
-  Function: lexits(<loc>)
+  FUNCTION: lexits(<loc>)
  
   Returns a space-separated list of the exits in <loc> and its parents.
   Dark exits are not returned unless you own the location.
@@ -7761,11 +7770,13 @@ HOME()
     foo  up  southeast  sw  north  
     > say lexits(here)
     You say "#302 #10 #9 #8 #6"
-  See also: lcon(), @dolist, PARENT OBJECTS.
+  
+  Related Topics: lcon(), @dolist, PARENT OBJECTS.
 
 & SECURE()
+SECURE()
 
-  Function: secure(<string>)
+  FUNCTION: secure(<string>)
  
   Returns <string> after replacing the characters [](){};%\$ with spaces.
   This prevents strings entered by players from causing undesired side
@@ -7785,11 +7796,13 @@ HOME()
   produce the expected result because the argument is evaluated BEFORE being
   processed by secure(), therefore the [get()] call has already been
   performed.
-  See also: escape().
+  
+  Related Topics: escape().
 
 & ESCAPE()
+ESCAPE()
 
-  Function: escape(<string>)
+  FUNCTION: escape(<string>)
  
   Returns <string> after adding an escape character (\) at the start of the
   string and also before each of the characters %;[]{}\ that appear in the
@@ -7809,10 +7822,13 @@ HOME()
   produce the expected result because the argument is evaluated BEFORE being
   processed by escape(), therefore the [get()] call has already been
   performed.
-  See also: secure().
+  
+  Related Topics: secure().
 
 & MUDNAME()
-  Function: mudname()
+MUDNAME()
+
+  FUNCTION: mudname()
  
   Returns the name of the MUD.  This is usually (but not necessarily) the name
   that appears in the various mud lists, and is the name that the mud is
@@ -7822,10 +7838,13 @@ HOME()
   Example:
     > say mudname()
     You say "TestMUX"
-
+  
+  Related Topics:
+  
 & CAPSTR()
+CAPSTR()
 
-  Function: capstr(<string>)
+  FUNCTION: capstr(<string>)
  
   Returns <string> with the first character capitalized.  If the first
   character is not a letter, this function returns the string unmodified.
@@ -7833,46 +7852,52 @@ HOME()
   Example:
     > say capstr(this is a string I want capitalized)
     You say "This is a string I want capitalized"
+  
   See also: lcstr(), ucstr().
 
 & LCSTR()
+LCSTR()
 
-  Function: lcstr(<string>)
+  FUNCTION: lcstr(<string>)
  
   Returns <string> with all letters converted to lowercase.
  
   Example:
     > say lcstr(This is something I want to TEST)
     You say "this is something i want to test"
-  See also: capstr(), ucstr().
+  
+  Related Topics: capstr(), ucstr().
 
 & UCSTR()
+UCSTR()
 
-  Function: ucstr(<string>)
+  FUNCTION: ucstr(<string>)
  
   Returns <string> with all letters converted to uppercase.
  
   Example:
     > say ucstr(This is a test, really!)
     You say "THIS IS A TEST, REALLY!"
-  See also: capstr(), lcstr().
+  
+  Related Topics: capstr(), lcstr().
 
 & LNUM()
+LNUM()
 
-  Function:  lnum(<number1>[,<number2>][,<sep>])
- 
+  FUNCTION: lnum(<number1>[,<number2>][,<sep>])
+
   If only given one argument, this function returns a list of numbers from
   0 to <number1>-1. If <number1> less than 1, nothing is returned.
- 
+
   If given at least two arguments, this function returns a list of numbers
   from <number1> to <number2>. If <number2> is less than <number1>, the list
   will be in descending order, otherwise, the list will be in ascending order.
   Negative integers are valid.
 
   <sep> is used as the separator character, if given.
- 
+
   Examples:
-    > say lnum(5) 
+    > say lnum(5)
     You say "0 1 2 3 4"
     > say lnum(3,7)
     You say "3 4 5 6 7"
@@ -7881,9 +7906,12 @@ HOME()
     > say lnum(2,6,@@)
     You say "23456"
 
-& LATTR()
+  Related Topics:
 
-  Function: lattr(<object>[/<wild-pattern>])
+& LATTR()
+LATTR()
+
+  FUNCTION: lattr(<object>[/<wild-pattern>])
  
   Returns a list of the attributes set on <object>.  If <wild-pattern> is
   given, only attributes matching it are returned.
@@ -7903,14 +7931,15 @@ HOME()
     > say lattr(me/v*)
     You say "VC VE VV"
  
-  See also: @dolist.
+  Related Topics: @dolist.
 
 & REVERSE()
+REVERSE()
 
-  Function: reverse(<string>)
+  FUNCTION: reverse(<string>)
  
   Reverses the order of the characters of <string>.
-
+ 
   Examples:
     > say reverse(This is a test)
     You say "tset a si sihT"
@@ -7918,57 +7947,63 @@ HOME()
     You say "...yllaeR ,tset a si sihT"
     > say reverse(A man, a plan, a canal -- Panama!)
     You say "!amanaP -- lanac a ,nalp a ,nam A"
-  See also: revwords().
+  
+  Related Topics: revwords().
 
 & REVWORDS()
+REVWORDS()
 
-  Function: revwords(<string>[, <delim>])
- 
+  FUNCTION: revwords(<string>[, <delim>])
+
   Reverses the order of the words of <string>.  A word is considered to be
   any sequence of nonblank characters, separated by blanks, so punctuation
   characters that follow a word are considered part of the word.
 
   <delim> may be used to specify a delimiter other than a space.
- 
+
   Examples:
     > say revwords(This is a test. Really...)
-    You say "Really... test, a is This"
+    You say "Really... test. a is This"
     > say revwords(Was it a cat I saw?)
     You say "saw? I cat a it Was"
-  See also: reverse().
+
+  Related Topics: reverse().
 
 & BEFORE()
+BEFORE()
 
-  Function: before(<string1>, <string2>)
-
+  FUNCTION: before(<string1>, <string2>)
+  
+  This function is case sensitive.
+  
   Returns the portion of <string1> that occurs before <string2>.  If <string2>
   does not occur in <string1>, the entire string is returned.
   If you want to return the portion of the string after the first space,
   use the first() function instead.
  
-  This function is case sensitive.
-
   Examples:
     > say before(This is a test,a)
     You say "This is "
     > say before(This is a test,is)
     You say "Th"
-    > say before(This is a test, nope)
+    > say before(This is a test, nope) 
     You say "This is a test"
-  See also: after(), first(), rest().
+  
+  Related Topics: after(), first(), rest().
 
 & AFTER()
+AFTER()
 
-  Function: after(<string1>[,<string2>])
+  FUNCTION: after(<string1>[,<string2>])
+
+  This function is case sensitive.
 
   Returns the portion of <string1> that occurs after <string2> or after
   the first word if <string2> isn't given. If <string2> does not occur
   in <string1>, a null string is returned. If you want to return the
   portion of the string after the first space, use the rest() function
   instead.
- 
-  This function is case sensitive.
- 
+
   Examples:
     > say after(This is a test,a)
     You say " test"
@@ -7977,11 +8012,12 @@ HOME()
     > say after(This is a test, nope)
     You say ""
 
-  See also: before(), first(), rest().
+  Related Topics: before(), first(), rest().
 
 & ROOM()
+ROOM()
 
-  Function: room(obj)
+  FUNCTION: room(obj)
  
   Returns the number of the room that <obj> is in, or would be in if it
   executed LEAVE commands until it got to a room.  You can find out the
@@ -8001,11 +8037,13 @@ HOME()
     cat has left.
     > say The cat is in [loc(#325)] within room [room(#325)].
     You say "The cat is in #368 within room #367."
-  See also: loc(), UNFINDABLE.
+  
+  Related Topics: loc(), UNFINDABLE.
 
 & SEARCH()
+SEARCH()
 
-  Function: search([<player>] [<class>=<restriction>[,<low>[,<high>]]])
+  FUNCTION: search([<player>] [<class>=<restriction>[,<low>[,<high>]]])
  
   The search() function returns a list of objects that match the search
   criteria, which are the same as with the @search command.  This function
@@ -8023,11 +8061,13 @@ HOME()
     You say "#289 #325 #364 #368 #369"
     > say search(player=wizard)
     You say "#1"
-  See also: @search, SEARCH CLASSES.
+  
+  Related Topics: @search, SEARCH CLASSES.
 
 & STATS()
+STATS()
 
-  Function: stats([<player>])
+  FUNCTION: stats([<player>])
  
   This function returns information about the number of objects on the MUX,
   much like the @stats command.  If the argument is omitted or is 'all', then
@@ -8048,11 +8088,13 @@ HOME()
     You say "377 51 165 134 20 7"
     > @stats/all
     377 objects = 51 rooms, 165 exits, 134 things, 20 players. (7 garbage)
-  See also: @stats.
+  
+  Related Topics: @stats.
 
 & ITER()
+ITER()
 
-  Function: iter(<list>, <eval>[, <delim>])
+  FUNCTION: iter(<list>, <eval>[, <delim>])
  
   <list> is a <delimter>-separated list of strings, which can be object
   numbers, attributes, or arbitrary words.  <eval> is a string that is to be
@@ -8074,11 +8116,13 @@ HOME()
     You say "test..1 t1..1 radio..1 The Wizard's Pointy Hat..1"
     > say iter(Was it a cat I saw,[words(##)] #@,s)
     You say "1 1 4 2 1 3"
-  See also: @dolist, list(), parse().
+  
+  Related Topics: @dolist, list(), parse().
 
 & LIST()
- 
-  Function: list(<list>, <eval>[, <delim>])
+LIST()
+
+  FUNCTION: list(<list>, <eval>[, <delim>])
  
   This function is exactly like iter() but serves a specialized purpose:
   MUX has a buffer limit, and for things like lists of players, iter() can
@@ -8094,11 +8138,12 @@ HOME()
   the function to be evaluated. Since it does this, it is not hampered by
   the buffer limit.
  
-  See also: iter(), @dolist, parse().
+  Related Topics: iter(), @dolist, parse().
  
 & LOCATE()
+LOCATE()
 
-  Function: locate(<looker>,<string>,<where>)
+  FUNCTION: locate(<looker>,<string>,<where>)
  
   The locate function is used to look for an object from the perspective of
   <looker> (You must own <looker>).  The database number of the item that
@@ -8113,9 +8158,11 @@ HOME()
     n    - Look for <looker>'s neighbors (other objects in the same location).
     p    - Look for player names prefixed by a '*'
     *    - Look for everything in the above list.
+
 { 'help locate2' for more }
 
 & locate2
+LOCATE()2 (continued)
 
   You may also specify qualifiers in <where> to help resolve possible
   ambiguities:
@@ -8138,6 +8185,7 @@ HOME()
 { 'help locate3' for more }
 
 & locate3
+LOCATE()3 (continued)
 
   Examples:
     > i
@@ -8159,8 +8207,9 @@ HOME()
   See also: num(), PARENT OBJECTS.
 
 & EDIT()
+EDIT()
 
-  Function: edit(<string>,<from>,<to>)
+  FUNCTION: edit(<string>,<from>,<to>)
  
   This function edits <string>, replacing all occurrences of the substring
   <from> with the string <to>.  If <from> is '$', then <to> is appended to
@@ -8171,11 +8220,13 @@ HOME()
     You say "Thx x a test"
     > say edit(Atlantic,^,Trans)
     You say "TransAtlantic"
-  See also: @edit.
+  
+  Related Topics: @edit.
 
 & U()
+U()
 
-  Function: u([<obj>/]<attr>[,<arg>]...)
+  FUNCTION: u([<obj>/]<attr>[,<arg>]...)
  
   The u function evaluates an attribute, either from the object performing the
   function or from another object you own, passing in arguments and returning
@@ -8194,11 +8245,13 @@ HOME()
     You say "Word is function., arg2 is ."
     > say u(me/va,6,Foobar)
     You say "Word is u, arg2 is Foobar."
-  See also: s(), v(), get(), get_eval(), map().
+  
+  Related Topics: s(), v(), get(), get_eval(), map().
 
 & SWITCH()
+SWITCH()
 
-  Function: switch(<str>[,<pat1>,<res1>]...[,<dflt>])
+  FUNCTION: switch(<str>[,<pat1>,<res1>]...[,<dflt>])
  
   The switch function compares <str> against <pat1>, <pat2>, etc (allowing *
   to match any number of characters and ? to match any 1 character), and
@@ -8214,20 +8267,23 @@ HOME()
     You say "A"
     > say switch(f,*a*,A,*b*,B,*c*,C,*d*,D)  
     You say ""
-  See also: @switch, match(), ifelse(), case().
+  
+  Related Topics: @switch, match(), ifelse(), case().
 
 & CASE()
+CASE()
 
-  Function: case(<str>[,<pat1>,<res1>]...[,<dflt>])
+  FUNCTION: case(<str>[,<pat1>,<res1>]...[,<dflt>])
  
   case() is like switch() but does not do wildcard matching (i.e., using *).
   In cases where wildcards are not needed, it performs marginally faster.
  
-  See also: @switch, match(), ifelse(), switch().
+  Related Topics: @switch, match(), ifelse(), switch().
 
 & IFELSE()
+IFELSE()
 
-  Function: ifelse(<expression>,<true string>,<false string>)
+  FUNCTION: ifelse(<expression>,<true string>,<false string>)
  
   This function returns <true string> if <expression> is true (greater than
   0), <false string> otherwise. Much more efficient than an equivalent
@@ -8235,11 +8291,12 @@ HOME()
   <expression> is nothing or contains text. For example, 
       ifelse(v(test),Test exists!,Test doesn't exist.)
  
-  See also: switch().
+  Related Topics: switch().
  
 & SPACE()
+SPACE()
 
-  Function: space(<count>)
+  FUNCTION: space(<count>)
  
   Returns the number of indicated spaces.  If <count> is missing, negative,
   or cannot be converted to a number, one space is returned.  This function
@@ -8252,10 +8309,13 @@ HOME()
     You say "    "
     > say edit(Foo bar bletch, space(), X)
     You say "FooXbarXbletch"
+  
+  Related Topics:
 
 & PARENT()
+PARENT()
 
-  Function: parent(<obj>)
+  FUNCTION: parent(<obj>)
  
   Returns the parent of <obj>.  Returns #-1 if <obj> cannot be found or
   if you do not own <obj> and it is not set VISUAL.
@@ -8271,11 +8331,13 @@ HOME()
     You say "#323"
     > say My va is [v(va)].
     You say "My va is Testing 123"
-  See also: @parent, PARENT OBJECTS.
+  
+  Related Topics: @parent, PARENT OBJECTS.
 
 & SIGN()
+SIGN()
 
-  Function: sign(<number>)
+  FUNCTION: sign(<number>)
  
   Returns -1, 0, or 1 depending on whether its argument is negative, zero, or
   positive (respectively).
@@ -8290,9 +8352,12 @@ HOME()
   > say sign(-1)
   You say "-1"
 
+  Related Topics:
+  
 & CONN()
+CONN()
 
-  Function: conn(<player>)
+  FUNCTION: conn(<player>)
  
   Returns the number of seconds that <player> has been connected.  If <player>
   is not connected then -1 is returned.  If <player> is connected more than
@@ -8312,11 +8377,13 @@ HOME()
     You say "770"
     > say conn(frobozz)
     You say "-1"
-  See also: WHO, idle(), lwho().
+  
+  Related Topics: WHO, idle(), lwho().
 
 & IDLE()
+IDLE()
 
-  Function: idle(<player>)
+  FUNCTION: idle(<player>)
  
   Returns the number of seconds that <player> has been idle.  If <player>
   is not connected then -1 is returned.  If <player> is connected more than
