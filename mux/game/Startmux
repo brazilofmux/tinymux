@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+#	Startmux - Kick off the netmux process.
+#
+PATH=/usr/ucb:/bin:/usr/bin:.; export PATH
+#
+. mux.config
+#
+#	Make sure there isn't already a MUX running.  If you are running more
+#	than 1 game, comment the following 4 lines out.
+#
+nmux=`ps ux | egrep netmux | wc -l`
+if [ $nmux -gt 1 ]; then
+	exit 0
+fi
+#
+#	Save a copy of the previous input database.
+#
+if [ -r $DATA/$INPUT_DB ]; then
+	mv -f $DATA/$INPUT_DB $DATA/$SAVE_DB
+fi
+#
+#	If we have a good checkpoint database, make it the input database.
+#	If not, use the backup of the input database.
+#
+if [ -r $DATA/$NEW_DB ]; then
+	mv $DATA/$NEW_DB $DATA/$INPUT_DB
+elif [ -r $DATA/$SAVE_DB ]; then
+	cp $DATA/$SAVE_DB $DATA/$INPUT_DB
+fi
+#
+#	Remove the restart db if there is one.
+#
+if [ -r restart.db ]; then
+	rm restart.db
+fi
+
+#
+#	Refuse to start if CRASH databases are present.
+#
+if [ -r $DATA/$INPUT_DB.CRASH ]; then
+	echo "There is a CRASH database present." 
+	echo "You should salvage what you can before continuing."
+	exit 1
+fi
+
+#
+#	Kick off MUX
+#
+(nohup $BIN/netmux $GAMENAME.conf >/dev/null 2>&1 &)
+

@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# Standard MUSH backup script modified by bem@erisian.net to work with MUX
+#
+PATH=/bin:/usr/bin:/usr/local/bin:.; export PATH
+#
+. mux.config
+#
+# You'll want to use gzip if you have it. If you want really good
+# compression, try 'gzip --best'. If you don't have gzip, use 'compress'.
+ZIP=gzip
+#
+DBDATE=`date +%m%d-%H%M`
+#
+# files to tar up
+TEXT_FILES="$TEXT/badsite.txt $TEXT/connect.txt $TEXT/create_reg.txt $TEXT/down.txt $TEXT/full.txt $TEXT/guest.txt $TEXT/motd.txt $TEXT/news.txt $TEXT/newuser.txt $TEXT/plushelp.txt $TEXT/quit.txt $TEXT/register.txt $TEXT/wizmotd.txt $TEXT/wiznews.txt $TEXT/staffhelp.txt"
+
+CONFIG_FILES="mux.config $GAMENAME.conf"
+
+GAME_DB=$DATA/$GAMENAME.FLAT
+
+if [ -r $DATA/comsys.db ]; then
+    COMM_DB=$DATA/comsys.db
+fi
+
+if [ -r $DATA/mail.db ]; then
+    MAIL_DB=$DATA/mail.db
+fi
+
+if [ -r $DATA/$NEW_DB ]; then
+    $BIN/dbconvert $DATA/$GDBM_DB x < $DATA/$NEW_DB > $DATA/$GAMENAME.FLAT
+else
+    if [ -r $DATA/$INPUT_DB ]; then
+        echo "No recent checkpoint db. Using older db."
+        $BIN/dbconvert $DATA/$GDBM_DB x < $DATA/$INPUT_DB > $DATA/$GAMENAME.FLAT
+    else
+        if [ -r $DATA/$SAVE_DB ]; then
+            echo "No input db. Using backup db."
+            $BIN/dbconvert $DATA/$GDBM_DB x < $DATA/$SAVE_DB > $DATA/$GAMENAME.FLAT
+        else
+            echo "No dbs. Backup attempt failed."
+	    exit
+        fi
+    fi
+fi
+
+tar cf - $GAME_DB $COMM_DB $MAIL_DB $CONFIG_FILES $TEXT_FILES | $ZIP -c > $GAMENAME.$DBDATE.tar.gz
+rm $DATA/$GAMENAME.FLAT

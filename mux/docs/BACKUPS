@@ -1,0 +1,47 @@
+TinyMUX 2.0:  BACKUPS
+Last Update:  April 2000
+
+The importance of good backups:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Experienced MUX users will tell you that having a good, recent backup of 
+your database, configuration files, text files, mail db and comsys db 
+is the best defense against data loss.  In a perfect world, we wouldn't 
+have to deal with random accidents or malicious attacks that wipe out 
+data, but it there are an unfortunate number of cases where these events 
+occur and entire games have disappeared forever because of it.   
+
+Making a backup:
+~~~~~~~~~~~~~~~
+
+In pre 2.0 versions of TinyMUX, the way to make backups was to use 
+db_unload to create a flatfile of the database.  Making a backup by this 
+method is detailed in several places, including NOTES under the heading 
+'Changes to dbconvert'.
+
+The other method, which has been provided with TinyMUX 2.0, is the use 
+of the included Backup script, which is located in the mux2.0/game 
+directory.  This runs the db_unload script for you, collects copies of 
+text files, configuration files, mail and comsystem databases, and then 
+then creates a dated tar.gz file.
+
+Storing your backups:
+~~~~~~~~~~~~~~~~~~~~
+
+Depending on how much disk space your provider allows you, we recommend 
+that you keep a number of the most recent backups on the machine for ready 
+access.  Having to wait while someone ftps the files back to the machine 
+is a tedious process for the person who feels any pressure to restore the 
+game.  Be kind to your site admin--give them something to work with.  
+
+No matter how reliable or redundantly backups are performed on the machine 
+that your game runs on, it is critical that you also store copies of your 
+most recent backups at an offsite location.  Again, we cannot stress this 
+enough.
+
+When you ftp any file that ends in .gz, you must make sure that the file 
+is moved in 'binary' or 'raw data' mode.  Desktop clients vary drastically, 
+but many will move them in binary format automatically.  Where you keep 
+them on your own computer is up to you, but it is always a good idea to put 
+them where you can readily access them and move them back to the game 
+machine is best.
