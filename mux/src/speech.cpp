@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: speech.cpp,v 1.2 2003-01-23 08:02:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -325,7 +325,6 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
 
     // Parse speechmod if present.
     //
-    char *messageOrig = message;
     char *messageNew = modSpeech(executor, message, TRUE, "@wall");
     if (messageNew)
     {

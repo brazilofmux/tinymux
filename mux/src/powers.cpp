@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: powers.cpp,v 1.2 2003-01-23 08:02:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -320,7 +320,6 @@ char *power_description(dbref player, dbref target)
 
     // Allocate the return buffer.
     //
-    int otype = Typeof(target);
     bp = buff = alloc_mbuf("power_description");
 
     // Store the header strings and object type.

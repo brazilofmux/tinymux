@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: funceval.cpp,v 1.2 2003-01-23 08:02:52 jake Exp $
 //
 
 #include "copyright.h"
@@ -479,7 +479,6 @@ FUNCTION(fun_set)
             {
                 aflags |= flagvalue;
             }
-            BOOL could_hear = Hearer(thing);
             atr_set_flags(thing, atr, aflags);
             return;
         }

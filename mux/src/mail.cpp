@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: mail.cpp,v 1.2 2003-01-23 08:02:52 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3661,6 +3661,9 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
 
         free_lbuf(oldmsg);
         size_t nLen;
+
+        // attr isn't used, we just want the length.
+        //
         const char *attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
         notify(executor, tprintf("%d/%d characters prepended.", nLen, LBUF_SIZE-1));
     }
@@ -3714,6 +3717,9 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
 
         free_lbuf(oldmsg);
         size_t nLen;
+
+        // attr isn't used, we just want the length.
+        //
         const char *attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
         notify(executor, tprintf("%d/%d characters added.", nLen, LBUF_SIZE-1));
     }
