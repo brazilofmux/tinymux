@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.85 2001-08-24 19:17:25 sdennis Exp $
+// $Id: functions.cpp,v 1.86 2001-08-24 20:52:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6744,28 +6744,6 @@ CF_HAND(cf_func_access)
     }
     cf_log_notfound(player, cmd, "Function", str);
     return -1;
-}
-
-// Some libraries go nuts...just because you force feed them lots of ASCII.
-//
-#define ATOF_LIMIT 100
-double Tiny_atof(char *szString)
-{
-    double ret;
-
-    int n = strlen(szString);
-    if (n > ATOF_LIMIT)
-    {
-        int ch = szString[ATOF_LIMIT-1];
-        szString[ATOF_LIMIT-1] = '\0';
-        ret = atof(szString);
-        szString[ATOF_LIMIT-1] = ch;
-    }
-    else
-    {
-        ret = atof(szString);
-    }
-    return ret;
 }
 
 /////////////////////////////////////////////////////////////////
