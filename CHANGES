@@ -421,6 +421,7 @@ Bug Fixes:
  --  Workaround nonstandard continuation-line behavior of gcc 2.96 on
      Mandrake 8.0. Thanks Marlek.
  --  On Win32, the logs now use CRLF instead of NL.
+ --  Clean build on gcc 3.0. Thanks Morgan.
 
 
 Performance Enhancements:
