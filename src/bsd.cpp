@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.55 2002-02-07 03:00:30 sdennis Exp $
+// $Id: bsd.cpp,v 1.56 2002-02-12 21:30:12 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -55,7 +55,7 @@ pid_t game_pid;
 #endif // WIN32
 
 DESC *initializesock(SOCKET, struct sockaddr_in *);
-DESC *new_connection(PortInfo *Port);
+DESC *new_connection(PortInfo *Port, int *piError);
 int FDECL(process_input, (DESC *));
 
 #ifdef WIN32
@@ -605,7 +605,9 @@ static int get_slave_result()
     len = read(slave_socket, buf, LBUF_SIZE-1);
     if (len < 0)
     {
-        if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
+        int iSocketError = SOCKET_LAST_ERROR;
+        if (  iSocketError == SOCKET_EAGAIN
+           || iSocketError == SOCKET_EWOULDBLOCK)
         {
             free_lbuf(buf);
             return -1;
@@ -753,7 +755,7 @@ void make_socket(PortInfo *Port)
 
         if (nRet == SOCKET_ERROR)
         {
-            Log.tinyprintf("Error %ld on Win32: bind" ENDLINE, WSAGetLastError ());
+            Log.tinyprintf("Error %ld on Win32: bind" ENDLINE, SOCKET_LAST_ERROR);
             if (closesocket(s) == 0)
             {
                 DebugTotalSockets--;
@@ -769,7 +771,7 @@ void make_socket(PortInfo *Port)
 
         if (nRet)
         {
-            Log.tinyprintf("Error %ld on Win32: listen" ENDLINE, WSAGetLastError ());
+            Log.tinyprintf("Error %ld on Win32: listen" ENDLINE, SOCKET_LAST_ERROR);
             WSACleanup();
             exit(1);
         }
@@ -975,7 +977,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
         {
         case SOCKET_ERROR:
             {
-                int sockerr = WSAGetLastError();
+                int sockerr = SOCKET_LAST_ERROR;
                 STARTLOG(LOG_NET, "NET", "CONN");
                 log_text("shovechars: Socket error.");
                 ENDLOG;
@@ -991,13 +993,12 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
         {
             if (CheckInput(aPorts[i].socket))
             {
-                newd = new_connection(aPorts+i);
+                int iSocketError;
+                newd = new_connection(aPorts+i, &iSocketError);
                 if (!newd)
                 {
-                    if (  errno
-                       && errno != EINTR
-                       && errno != EMFILE
-                       && errno != ENFILE)
+                    if (  iSocketError
+                       && iSocketError != SOCKET_EINTR)
                     {
                         log_perror("NET", "FAIL", NULL, "new_connection");
                     }
@@ -1290,7 +1291,8 @@ void shovechars(int nPorts, PortInfo aPorts[])
 
         if (IS_SOCKET_ERROR(found))
         {
-            if (errno == EBADF)
+            iSocketError = SOCKET_LAST_ERROR;
+            if (iSocketError == SOCKET_EBADF)
             {
                 // This one is bad, as it results in a spiral of
                 // doom, unless we can figure out what the bad file
@@ -1337,7 +1339,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     }
                 }
             }
-            else if (errno != EINTR)
+            else if (iSocketError != SOCKET_EINTR)
             {
                 log_perror("NET", "FAIL", "checking for activity", "select");
             }
@@ -1361,13 +1363,12 @@ void shovechars(int nPorts, PortInfo aPorts[])
         {
             if (CheckInput(aPorts[i].socket))
             {
-                newd = new_connection(aPorts+i);
+                int iSocketError;
+                newd = new_connection(aPorts+i, &iSocketError);
                 if (!newd)
                 {
-                    if (  errno
-                       && errno != EINTR
-                       && errno != EMFILE
-                       && errno != ENFILE)
+                    if (  iSocketError
+                       && iSocketError != SOCKET_EINTR)
                     {
                         log_perror("NET", "FAIL", NULL, "new_connection");
                     }
@@ -1422,7 +1423,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
 
 #endif // WIN32
 
-DESC *new_connection(PortInfo *Port)
+DESC *new_connection(PortInfo *Port, int *piSocketError)
 {
     DESC *d;
     struct sockaddr_in addr;
@@ -1443,6 +1444,7 @@ DESC *new_connection(PortInfo *Port)
 
     if (IS_INVALID_SOCKET(newsock))
     {
+        *piSocketError = SOCKET_LAST_ERROR;
         return 0;
     }
 
@@ -1541,6 +1543,7 @@ DESC *new_connection(PortInfo *Port)
     }
     free_mbuf(pBuffM2);
     mudstate.debug_cmd = cmdsave;
+    *piSocketError = SOCKET_LAST_ERROR;
     return d;
 }
 
@@ -2036,7 +2039,12 @@ void process_output9x(void *dvoid, int bHandleShutdown)
             cnt = SOCKET_WRITE(d->descriptor, tb->hdr.start, tb->hdr.nchars, 0);
             if (IS_SOCKET_ERROR(cnt))
             {
-                if (WSAGetLastError() != WSAEWOULDBLOCK && bHandleShutdown)
+                int iSocketError = SOCKET_LAST_ERROR;
+                if (  iSocketError != SOCKET_EWOULDBLOCK
+#ifdef SOCKET_EAGAIN
+                   && iSocketError != SOCKET_EAGAIN
+#endif // SOCKET_EAGAIN
+                   && bHandleShutdown)
                 {
                     shutdownsock(d, R_SOCKDIED);
                 }
@@ -2195,8 +2203,13 @@ void process_output(void *dvoid, int bHandleShutdown)
             int cnt = SOCKET_WRITE(d->descriptor, tb->hdr.start, tb->hdr.nchars, 0);
             if (IS_SOCKET_ERROR(cnt))
             {
+                int iSocketError = SOCKET_LAST_ERROR;
                 mudstate.debug_cmd = cmdsave;
-                if (errno != EWOULDBLOCK && bHandleShutdown)
+                if (  iSocketError != SOCKET_EWOULDBLOCK
+#ifdef SOCKET_EAGAIN
+                   && iSocketError != SOCKET_EAGAIN
+#endif // SOCKET_EAGAIN
+                   && bHandleShutdown)
                 {
                     shutdownsock(d, R_SOCKDIED);
                 }
@@ -2305,17 +2318,24 @@ int process_input_helper(DESC *d, char *buf, int got)
 
 int process_input(DESC *d)
 {
-    char buf[LBUF_SIZE];
-    int got;
-    char *cmdsave;
-
-    cmdsave = mudstate.debug_cmd;
+    char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = "< process_input >";
 
-    got = SOCKET_READ(d->descriptor, buf, sizeof(buf), 0);
+    char buf[LBUF_SIZE];
+    int got = SOCKET_READ(d->descriptor, buf, sizeof(buf), 0);
     if (IS_SOCKET_ERROR(got) || got == 0)
     {
+        int iSocketError = SOCKET_LAST_ERROR;
         mudstate.debug_cmd = cmdsave;
+        if (  IS_SOCKET_ERROR(got)
+           && (  iSocketError == SOCKET_EWOULDBLOCK
+#ifdef SOCKET_EAGAIN
+              || iSocketError == SOCKET_EAGAIN
+#endif // SOCKET_EAGAIN
+              || iSocketError == SOCKET_EINTR))
+        {
+            return 1;
+        }
         return 0;
     }
     int cc = process_input_helper(d, buf, got);

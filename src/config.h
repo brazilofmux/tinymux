@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.24 2002-01-25 11:37:28 sdennis Exp $
+// $Id: config.h,v 1.25 2002-02-12 21:30:13 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -89,6 +89,10 @@ typedef unsigned __int64 UINT64;
 #define SOCKET_CLOSE(s) closesocket(s)
 #define IS_SOCKET_ERROR(cc) ((cc) == SOCKET_ERROR)
 #define IS_INVALID_SOCKET(s) ((s) == INVALID_SOCKET)
+#define SOCKET_LAST_ERROR (WSAGetLastError())
+#define SOCKET_EINTR       (WSAEINTR)
+#define SOCKET_EWOULDBLOCK (WSAEWOULDBLOCK)
+#define SOCKET_EBADF       (WSAEBADF)
 #define popen _popen
 #define pclose _pclose
 
@@ -122,6 +126,13 @@ typedef int SOCKET;
 #define SOCKET_CLOSE(s) close(s)
 #define IS_SOCKET_ERROR(cc) ((cc) < 0)
 #define IS_INVALID_SOCKET(s) ((s) < 0)
+#define SOCKET_LAST_ERROR (errno)
+#define SOCKET_EINTR       (EINTR)
+#define SOCKET_EWOULDBLOCK (EWOULDBLOCK)
+#ifdef EAGAIN
+#define SOCKET_EAGAIN      (EAGAIN)
+#endif // EAGAIN
+#define SOCKET_EBADF       (EBADF)
 #define INVALID_SOCKET (-1)
 #define SD_BOTH (2)
 
