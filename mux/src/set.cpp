@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.30 2002-08-22 01:00:27 sdennis Exp $
+// $Id: set.cpp,v 1.31 2002-08-25 22:44:35 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -206,6 +206,7 @@ void do_name
         }
         delete_player_name(thing, Name(thing));
         s_Name(thing, buff);
+        set_modified(thing);
         add_player_name(thing, Name(thing));
         if (!Quiet(executor) && !Quiet(thing))
         {
@@ -228,6 +229,7 @@ void do_name
         // Everything ok, change the name.
         //
         s_Name(thing, pValidName);
+        set_modified(thing);
         if (!Quiet(executor) && !Quiet(thing))
         {
             notify_quiet(executor, "Name set.");
