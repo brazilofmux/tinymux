@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.34 2002-09-27 18:51:52 sdennis Exp $
+// $Id: netcommon.cpp,v 1.35 2002-09-28 06:59:19 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -204,9 +204,10 @@ void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
         return;
     }
 
+    char buff[LBUF_SIZE];
+
     va_list ap;
     va_start(ap, fmt);
-    char *buff = alloc_lbuf("raw_broadcast");
     Tiny_vsnprintf(buff, LBUF_SIZE, fmt, ap);
     va_end(ap);
 
@@ -220,7 +221,6 @@ void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
             process_output(d, FALSE);
         }
     }
-    free_lbuf(buff);
 }
 
 /* ---------------------------------------------------------------------------

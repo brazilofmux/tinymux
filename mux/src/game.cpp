@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.24 2002-08-22 01:00:27 sdennis Exp $
+// $Id: game.cpp,v 1.25 2002-09-28 06:59:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1030,25 +1030,24 @@ void do_timecheck(dbref executor, dbref caller, dbref enactor, int key)
 
 void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
-    int fd;
-
-    if (executor != NOTHING)
+    if (Good_obj(executor))
     {
         raw_broadcast(0, "GAME: Shutdown by %s", Name(Owner(executor)));
-        STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN")
+        STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
         log_text("Shutdown by ");
         log_name(executor);
-        ENDLOG
+        ENDLOG;
     }
     else
     {
         raw_broadcast(0, "GAME: %s", message);
     }
-    STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN")
+    STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
     log_text("Shutdown status: ");
     log_text(message);
-    ENDLOG
-    fd = open(mudconf.status_file, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ENDLOG;
+
+    int fd = open(mudconf.status_file, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
     if (fd != -1)
     {
         write(fd, message, strlen(message));

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.17 2002-09-26 06:45:02 sdennis Exp $
+// $Id: bsd.cpp,v 1.18 2002-09-28 06:59:19 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2456,7 +2456,11 @@ static void unset_signals(void)
 #define CAST_SIGNAL_FUNC
 #endif // _SGI_SOURCE
 
-#ifndef SYS_SIGLIST_DECLARED
+#if defined(HAVE_SYS_SIGNAME)
+#define signames sys_signame
+#elif defined(SYS_SIGLIST_DECLARED)
+#define signames sys_siglist
+#else // HAVE_SYS_SIGNAME
 
 // The purpose of the following code is support the case where sys_siglist is
 // is not part of the environment. This is the case for some Unix platforms
@@ -2687,9 +2691,7 @@ void BuildSignalNamesTable(void)
         }
     }
 }
-#else // SYS_SIGLIST_DECLARED
-#define signames sys_siglist
-#endif // SYS_SIGLIST_DECLARED
+#endif // HAVE_SYS_SIGNAME
 
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
@@ -2727,8 +2729,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         // Drop a flatfile.
         //
         log_signal(signames[sig]);
-        sprintf(buff, "Caught signal %s requesting a flatfile @dump. Please wait.", signames[sig]);
-        raw_broadcast(0, buff);
+        raw_broadcast(0, "Caught signal %s requesting a flatfile @dump. Please wait.", signames[sig]);
         dump_database_internal(DUMP_I_SIGNAL);
         break;
 
@@ -2784,8 +2785,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         //
         check_panicking(sig);
         log_signal(signames[sig]);
-        sprintf(buff, "Caught signal %s, exiting.", signames[sig]);
-        do_shutdown(NOTHING, GOD, GOD, 0, buff);
+        raw_broadcast(0, "GAME: Caught signal %s, exiting.", signames[sig]);
+        mudstate.shutdown_flag = TRUE;
         break;
 
     case SIGILL:

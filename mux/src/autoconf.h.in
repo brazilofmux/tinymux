@@ -49,9 +49,9 @@
 /* Define if gettimeofday exists */
 #undef HAVE_GETTIMEOFDAY
 /* Define if sys_siglist[] exists */
-#undef HAVE_SYS_SIGLIST
-/* Define if _sys_siglist[] exists */
-#undef HAVE__SYS_SIGLIST
+#undef SYS_SIGLIST_DECLARED
+/* Define if sys_signame[] exists */
+#undef HAVE_SYS_SIGNAME
 /* Define if index/rindex/mem??? are defined in string.h */
 #undef INDEX_IN_STRING_H
 /* Define if malloc/realloc/free are defined in stdlib.h */
@@ -92,10 +92,6 @@
 #undef NEED_MALLOC_DCL
 /* Define if you need to declare vsprintf yourself */
 #undef NEED_VSPRINTF_DCL
-/* Define if you need to declare sys_siglist yourself */
-#undef NEED_SYS_SIGLIST_DCL
-/* Define if you need to declare _sys_siglist yourself */
-#undef NEED__SYS_SIGLIST_DCL
 /* Define if you need to declare sys_errlist yourself */
 #undef NEED_SYS_ERRLIST_DCL
 /* Define if you need to declare _sys_errlist yourself */
