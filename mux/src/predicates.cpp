@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.30 2002-07-13 07:23:02 jake Exp $
+// $Id: predicates.cpp,v 1.31 2002-07-19 10:22:13 jake Exp $
 //
 
 #include "copyright.h"
@@ -608,6 +608,40 @@ void do_switch
         wait_que(player, caller, enactor, FALSE, lta, NOTHING, 0, tbuf,
             cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
+    }
+}
+
+void do_ifelse
+(
+    dbref player,
+    dbref caller,
+    dbref enactor,
+    int   key,
+    char *expr,
+    char *args[],
+    int   nargs,
+    char *cargs[],
+    int   ncargs
+)
+{
+    if (!expr || (nargs <= 0))
+    {
+        return;
+    }
+
+    char *buff, *bp;
+    CLinearTimeAbsolute lta;
+    buff = bp = alloc_lbuf("do_ifelse");
+
+    TinyExec(buff, &bp, player, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
+            &expr, cargs, ncargs);
+    int a = !xlate(buff);
+    free_lbuf(buff);
+
+    if(a < nargs)
+    {
+        wait_que(player, caller, enactor, FALSE, lta, NOTHING, 0, args[a],
+            cargs, ncargs, mudstate.global_regs);
     }
 }
 
