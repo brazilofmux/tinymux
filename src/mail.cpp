@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.20 2000-10-27 06:54:18 sdennis Exp $
+// $Id: mail.cpp,v 1.21 2000-11-07 22:08:04 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1265,7 +1265,26 @@ static void send_mail
     struct mail *newp = (struct mail *)MEMALLOC(sizeof(struct mail));
     ISOUTOFMEMORY(newp);
     newp->to = target;
-    newp->from = player;
+    // HACK: Allow @mail/quick, if player is an object, then the
+    // object's owner is the sender, if the owner is a wizard, then
+    // we allow the object to be the sender.
+    //
+    if (isPlayer(player))
+    {
+        newp->from = player;
+    }
+    else
+    {
+        dbref mailbag = Owner(player);
+        if (Wizard(mailbag))
+        {
+            newp->from = player;
+        }
+        else
+        {
+            newp->from = mailbag;
+        }
+    }
     newp->tolist = StringClone(tolist);
 
     newp->number = number;
@@ -1840,6 +1859,15 @@ void do_mail(dbref player, dbref cause, int key, char *arg1, char *arg2)
         notify(player, "Mailer is disabled.");
         return;
     }
+
+    // HACK: Fix to allow @mail/quick from objects.
+    //
+    if (  (key & ~MAIL_QUOTE) != MAIL_QUICK
+       && !isPlayer(player))
+    {
+        return;
+    }
+
     switch (key & ~MAIL_QUOTE) {
     case 0:
         do_mail_stub(player, arg1, arg2);
@@ -3777,8 +3805,12 @@ static char *make_namelist(dbref player, char *arg)
         }
         else
         {
-            safe_str(Name(Tiny_atol(p)), names, &bp);
-            safe_str(", ", names, &bp);
+            dbref target = Tiny_atol(p);
+            if (Good_obj(target) && isPlayer(target))
+            {
+                safe_str(Name(target), names, &bp);
+                safe_str(", ", names, &bp);
+            }
         }
     }
     *(bp - 2) = '\0';
@@ -3844,8 +3876,11 @@ static char *make_numlist(dbref player, char *arg)
                 free_lbuf(numbuf);
                 return NULL;
             }
-            sprintf(buf, "%d ", temp->from);
-            safe_str(buf, numbuf, &numbp);
+            if (Good_obj(temp->from) && isPlayer(temp->from))
+            {
+                sprintf(buf, "%d ", temp->from);
+                safe_str(buf, numbuf, &numbp);
+            }
         }
         else if (*head == '*')
         {
