@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.25 2003-02-16 16:58:47 jake Exp $
+// $Id: predicates.cpp,v 1.26 2003-02-16 17:07:32 jake Exp $
 //
 
 #include "copyright.h"
@@ -1277,19 +1277,13 @@ void do_prog
     char *command
 )
 {
-    DESC *d;
-    PROG *program;
-    int i, atr, aflags;
-    dbref thing, aowner;
-    ATTR *ap;
-    char *attrib, *msg;
-
     if (  !name
        || !*name)
     {
         notify(player, "No players specified.");
         return;
     }
+
     dbref doer = match_thing(player, name);
     if (  !(  Prog(player)
            || Prog(Owner(player)))
@@ -1309,20 +1303,28 @@ void do_prog
         notify(player, "That player is not connected.");
         return;
     }
-    msg = command;
-    attrib = parse_to(&msg, ':', 1);
+    char *msg = command;
+    char *attrib = parse_to(&msg, ':', 1);
 
     if (msg && *msg)
     {
         notify(doer, msg);
     }
-    parse_attrib(player, attrib, &thing, &atr);
-    if (atr != NOTHING)
+
+    dbref thing;
+    ATTR *ap;
+    if (!parse_attrib_temp(player, attrib, &thing, &ap))
     {
-        char *pBuffer = atr_get(thing, atr, &aowner, &aflags);
+        notify(player, NOMATCH_MESSAGE);
+        return;
+    }
+    if (ap)
+    {
+        dbref aowner;
+        int aflags;
+        char *pBuffer = atr_get(thing, ap->number, &aowner, &aflags);
         if (*pBuffer)
         {
-            ap = atr_num(atr);
             if (  (   God(player)
                   || !God(thing))
                && ap
@@ -1352,6 +1354,7 @@ void do_prog
 
     // Check to see if the enactor already has an @prog input pending.
     //
+    DESC *d;
     DESC_ITER_PLAYER(doer, d)
     {
         if (d->program_data != NULL)
@@ -1361,10 +1364,10 @@ void do_prog
         }
     }
 
-    program = (PROG *)MEMALLOC(sizeof(PROG));
+    PROG *program = (PROG *)MEMALLOC(sizeof(PROG));
     (void)ISOUTOFMEMORY(program);
     program->wait_enactor = player;
-    for (i = 0; i < MAX_GLOBAL_REGS; i++)
+    for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         program->wait_regs[i] = alloc_lbuf("prog_regs");
         memcpy(program->wait_regs[i], mudstate.global_regs[i], mudstate.glob_reg_len[i]+1);
