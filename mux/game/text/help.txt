@@ -4755,6 +4755,14 @@ CONNNUM()
   Related Topics: conntotal(), connmax(), connlast(), connleft(), secs(),
       conn().
 
+& CONNRECORD()
+CONNRECORD()
+
+  FUNCTION: connrecord()
+
+  Returns the record number of connections to the game since the database was
+  created.
+
 & CONNTOTAL()
 CONNTOTAL()
 
@@ -5909,8 +5917,9 @@ FUNCTION CLASSES (continued)
                              MONEY NAME OBJ OBJEVAL OBJMEM ORFLAGS OWNER
                              PARENT PMATCH POSS S SUBJ TYPE U UDEFAULT ULOCAL
                              V VISIBLE XGET
-  Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNTOTAL
-                             CTIME DOING FINDABLE HOST IDLE LWHO PLAYMEM PORTS
+  Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNRECORD
+                             CONNTOTAL CTIME DOING FINDABLE HOST IDLE LWHO
+                             PLAYMEM PORTS
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ
   Realms:                    CANSEE
   Side-Effect Functions:     EMIT LINK OEMIT PEMIT REMIT TEL
@@ -5939,53 +5948,54 @@ FUNCTION LIST
     BNAND()     BOR()       CANSEE()    CAPSTR()    CASE()      CAT()
     CEIL()      CENTER()    CHANNELS()  CHILDREN()  CMDS()      COLUMNS()
     COMALIAS()  COMP()      COMTITLE()  CON()       CONFIG()    CONN()
-    CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()   CONNTOTAL() CONTROLS()
-    CONVSECS()  CONVTIME()  COS()       CREATE()    CRC32()     CTIME()
-    CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()    DIE()
-    DIGITTIME() DIST2D()    DIST3D()    DOING()     DUMPING()   E()
-    EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMIT()      EMPTY()
-    ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()       EXPTIME()
-    EXTRACT()   EVAL()      FDIV()      FILTER()    FINDABLE()  FIRST()
-    FLAGS()     FLOOR()     FLOORDIV()  FOLD()      FOREACH()   FULLNAME()
-    GET()       GET_EVAL()  GRAB()      GREP()      GREPI()     GT()
-    GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()
-    HOME()      HOST()      IABS()      IADD()      IDIV()      IDLE()
-    IFELSE()    ILEV()      IMUL()      INC()       INDEX()     INSERT()
-    INZONE()    ISDBREF()   ISIGN()     ISNUM()     ISUB()      ISWORD()
-    ITER()      ITEMS()     LADD()      LAST()      LATTR()     LATTRCMDS()
-    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
-    LFLAGS()    LINK()      LIST()      LIT()       LJUST()     LN()
+    CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()   CONNRECORD  CONNTOTAL()
+    CONTROLS()  CONVSECS()  CONVTIME()  COS()       CREATE()    CRC32()
+    CTIME()     CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()
+    DIE()       DIGITTIME() DIST2D()    DIST3D()    DOING()     DUMPING()
+    E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMIT()
+    EMPTY()     ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()
+    EXPTIME()   EXTRACT()   EVAL()      FDIV()      FILTER()    FINDABLE()
+    FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FOLD()      FOREACH()
+    FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()      GREPI()
+    GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()
+    HASTYPE()   HOME()      HOST()      IABS()      IADD()      IDIV()
+    IDLE()      IFELSE()    ILEV()      IMUL()      INC()       INDEX()
+    INSERT()    INZONE()    ISDBREF()   ISIGN()     ISNUM()     ISUB()
+    ISWORD()    ITER()      ITEMS()     LADD()      LAST()      LATTR()
+    LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()
+    LEXITS()    LFLAGS()    LINK()      LIST()      LIT()       LJUST()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()
-    LPARENT()   LPOS()      LRAND()     LROOMS()    LSTACK()    LT()
-    LTE()       LWHO()      NULL()      MAIL()      MAILFROM()  MAP()
-    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
-    MIN()       MIX()       MOD()       MONEY()     MOTD()      MUDNAME()
-    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
-    NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()
-    OR()        ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()
-    PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()
-    PMATCH()    POLL()      POP()       PORTS()     POS()       POSS()
-    POWER()     PUSH()      R()         RAND()      REGMATCH()  REMAINDER()
-    REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
-    REVWORDS()  RIGHT()     RJUST()     RLOC()      ROOM()      ROUND()
-    S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
-    SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHL()
-    SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
-    SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()
-    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()
-    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
-    T()         TABLE()     TAN()       TEL()       TIME()      TIMEFMT()
-    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
-    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
-    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
-    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
-    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
+    LOG()       LPARENT()   LPOS()      LRAND()     LROOMS()    LSTACK()
+    LT()        LTE()       LWHO()      NULL()      MAIL()      MAILFROM()
+    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
+    MID()       MIN()       MIX()       MOD()       MONEY()     MOTD()
+    MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
+    NEXT()      NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()
+    OEMIT()     OR()        ORFLAGS()   OWNER()     PACK()      PARENT()
+    PARSE()     PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()
+    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
+    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
+    REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
+    REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROOM()
+    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
+    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
+    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
+    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()
+    SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIPANSI()
+    STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
+    SWITCH()    T()         TABLE()     TAN()       TEL()       TIME()
+    TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()      U()
+    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
+    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
+    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()
+    WORDS()     WRITETIME() XGET()      XOR()       ZFUN()      ZONE()
+    ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
