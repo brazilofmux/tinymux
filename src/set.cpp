@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.15 2001-11-08 03:48:57 sdennis Exp $
+// $Id: set.cpp,v 1.16 2001-11-08 04:53:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -203,7 +203,8 @@ void do_name
 
     // Check for bad name.
     //
-    if (!newname || !*newname)
+    if (  nargs < 2
+       || newname[0] == '\0')
     {
         notify_quiet(player, "Give it what new name?");
         return;
@@ -213,7 +214,7 @@ void do_name
     //
     if (isPlayer(thing))
     {
-        buff = trim_spaces((char *)newname);
+        buff = trim_spaces(newname);
         if (  !ValidatePlayerName(buff)
            || !badname_check(buff))
         {
@@ -235,7 +236,7 @@ void do_name
         //
         STARTLOG(LOG_SECURITY, "SEC", "CNAME");
         log_name(thing),
-        log_text((char *)" renamed to ");
+        log_text(" renamed to ");
         log_text(buff);
         ENDLOG;
         if (Suspect(thing))
