@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.9 2003-07-22 04:09:32 sdennis Exp $
+// $Id: config.h,v 1.10 2003-07-28 05:00:36 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -139,15 +139,27 @@ typedef int SOCKET;
 #if SIZEOF_INT == 4
 typedef int              INT32;
 typedef unsigned int     UINT32;
+#ifdef CAN_UNALIGN_INT
+#define UNALIGNED32
+#endif
 #elif SIZEOF_LONG == 4
 typedef long             INT32;
 typedef unsigned long    UINT32;
+#ifdef CAN_UNALIGN_LONG
+#define UNALIGNED32
+#endif
 #elif SIZEOF_SHORT == 4
 typedef short            INT32;
 typedef unsigned short   UINT32;
+#ifdef CAN_UNALIGN_SHORT
+#define UNALIGNED32
+#endif
 #else
 typedef INT64            INT32;
 typedef UINT64           UINT32;
+#ifdef CAN_UNALIGN_LONGLONG
+#define UNALIGNED32
+#endif
 #endif // SIZEOF INT32
 #define INT32_MIN_VALUE  (-2147483647 - 1)
 #define INT32_MAX_VALUE  2147483647
@@ -159,15 +171,27 @@ typedef UINT64           UINT32;
 #if SIZEOF_INT == 2
 typedef int              INT16;
 typedef unsigned int     UINT16;
+#ifdef CAN_UNALIGN_INT
+#define UNALIGNED16
+#endif
 #elif SIZEOF_LONG == 2
 typedef long             INT16;
 typedef unsigned long    UINT16;
+#ifdef CAN_UNALIGN_LONG
+#define UNALIGNED16
+#endif
 #elif SIZEOF_SHORT == 2
 typedef short            INT16;
 typedef unsigned short   UINT16;
+#ifdef CAN_UNALIGN_SHORT
+#define UNALIGNED16
+#endif
 #else
 typedef INT32            INT16;
 typedef UINT32           UINT16;
+#ifdef UNALIGNED32
+#define UNALIGNED16
+#endif
 #endif // SIZEOF INT16
 #define INT16_MIN_VALUE  (-32768)
 #define INT16_MAX_VALUE  32767

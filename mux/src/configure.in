@@ -164,15 +164,55 @@ AC_CHECKING(for getrusage dcl)
 AC_EGREP_HEADER(getrusage,sys/resource.h, ,AC_DEFINE(NEED_GETRUSAGE_DCL))
 AC_CHECKING(for getrlimit dcl)
 AC_EGREP_HEADER(getrlimit,sys/resource.h, ,AC_DEFINE(NEED_GETRLIMIT_DCL))
-AC_C_BIGENDIAN(AC_DEFINE(WORDS_BIGENDIAN),AC_DEFINE(WORDS_LITTLEENDIAN),AC_DEFINE(WORDS_UNKNOWN))
 AC_C_CONST
 AC_C_INLINE
+AC_C_BIGENDIAN(AC_DEFINE(WORDS_BIGENDIAN),AC_DEFINE(WORDS_LITTLEENDIAN),AC_DEFINE(WORDS_UNKNOWN))
 AC_CHECK_SIZEOF(short,2)
 AC_CHECK_SIZEOF(unsigned short,2)
 AC_CHECK_SIZEOF(int,4)
 AC_CHECK_SIZEOF(unsigned int,4)
 AC_CHECK_SIZEOF(long,4)
 AC_CHECK_SIZEOF(unsigned long,4)
+AC_CHECKING(whether unaligned 'short' access is permitted)
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+   char foo[sizeof(short)+1];
+   short  *ps = (short *)(foo+1);
+   *ps = 0;
+   return 0;
+}
+],AC_DEFINE(CAN_UNALIGN_SHORT))
+AC_CHECKING(whether unaligned 'int' access is permitted)
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+   char foo[sizeof(int)+1];
+   int  *pi = (int *)(foo+1);
+   *pi = 0;
+   return 0;
+}
+],AC_DEFINE(CAN_UNALIGN_INT))
+AC_CHECKING(whether unaligned 'long' access is permitted)
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+   char foo[sizeof(long)+1];
+   long *pl = (long *)(foo+1);
+   *pl = 0;
+   return 0;
+}
+],AC_DEFINE(CAN_UNALIGN_LONG))
+AC_CHECKING(whether unaligned 'long long' access is permitted)
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+   char foo[sizeof(long long)+1];
+   long long *pll = (long long *)(foo+1);
+   *pll = 0;
+   return 0;
+}
+],AC_DEFINE(CAN_UNALIGN_LONGLONG))
 AC_TRY_COMPILE([#include <sys/types.h>
 #include <sys/socket.h>],
 [struct linger ling; ling.l_onoff = 1;],

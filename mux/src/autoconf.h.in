@@ -86,6 +86,14 @@
 #undef SIZEOF_LONG
 /* sizeof(unsigned long) */
 #undef SIZEOF_UNSIGNED_LONG
+/* Define if unaligned short access is allowed. */
+#undef CAN_UNALIGN_SHORT
+/* Define if unaligned int access is allowed. */
+#undef CAN_UNALIGN_INT
+/* Define if unaligned long access is allowed. */
+#undef CAN_UNALIGN_LONG
+/* Define if unaligned long long access is allowed. */
+#undef CAN_UNALIGN_LONGLONG
 /* Define if inline keyword is broken or nonstandard */
 #undef inline
 /* Define if we need to redef index/bcopy et al to their SYSV counterparts */
