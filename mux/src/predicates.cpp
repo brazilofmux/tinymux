@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.24 2003-02-16 00:14:47 sdennis Exp $
+// $Id: predicates.cpp,v 1.25 2003-02-16 16:58:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -800,11 +800,16 @@ void do_addcommand
     // Validate object/attribute.
     //
     dbref thing;
-    int atr;
-    if (  !parse_attrib(player, command, &thing, &atr)
-       || atr == NOTHING)
+    ATTR *attr;
+    if (  !parse_attrib_temp(player, command, &thing, &attr)
+       || !attr)
     {
         notify(player, "No such attribute.");
+        return;
+    }
+    if (!See_attr(player, thing, attr))
+    {
+        notify(player, NOPERM_MESSAGE);
         return;
     }
 
@@ -822,7 +827,7 @@ void do_addcommand
         for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
         {
             if (  nextp->thing == thing
-               && nextp->atr == atr)
+               && nextp->atr == attr->number)
             {
                 notify(player, tprintf("%s already added.", pName));
                 return;
@@ -834,7 +839,7 @@ void do_addcommand
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
         (void)ISOUTOFMEMORY(add);
         add->thing = thing;
-        add->atr = atr;
+        add->atr = attr->number;
         add->name = StringClone(pName);
         add->next = old->addent;
         old->addent = add;
@@ -867,7 +872,7 @@ void do_addcommand
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
         (void)ISOUTOFMEMORY(add);
         add->thing = thing;
-        add->atr = atr;
+        add->atr = attr->number;
         add->name = StringClone(pName);
         add->next = NULL;
         cmd->addent = add;
@@ -987,13 +992,21 @@ void do_delcommand
 
     dbref thing = NOTHING;
     int atr = NOTHING;
+    ATTR *attr;
     if (*command)
     {
-        if (!parse_attrib(player, command, &thing, &atr) || (atr == NOTHING))
+        if (  !parse_attrib_temp(player, command, &thing, &attr)
+           || !attr)
         {
             notify(player, "No such attribute.");
             return;
         }
+        if (!See_attr(player, thing, attr))
+        {
+            notify(player, NOPERM_MESSAGE);
+            return;
+        }
+        atr = attr->number;
     }
 
     // Let's make this case insensitive...
