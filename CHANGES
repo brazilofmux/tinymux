@@ -35,6 +35,7 @@ Bug Fixes:
  -- Short version string contained 'Alpha' instead of 'Beta'.
  -- Several semaphores waiting on the same object/attr could be @notified
     out of order.
+ -- Channel messages are considered OOC.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
