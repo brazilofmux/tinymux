@@ -650,7 +650,7 @@ Related Topics: @name.
 & @CBOOT
 @CBOOT
 
-  COMMAND: @cboot <channel>=<object>
+  COMMAND: @cboot[/quiet] <channel>=<object>
 
   Only wizards or the owner of the channel can use this command. It
   forcefully removes an object from that channel.
