@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.6 2000-04-24 22:05:43 sdennis Exp $
+// $Id: command.cpp,v 1.7 2000-04-25 00:19:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2699,9 +2699,9 @@ static void list_hashstats(dbref player)
 }
 
 #ifndef MEMORY_BASED
-/*
- * These are from 'udb_cache.c'. 
- */
+//
+// These are from 'svdhash.cpp'.
+//
 extern CLinearTimeAbsolute cs_ltime;
 extern int cs_writes;       // total writes
 extern int cs_reads;        // total reads

@@ -41,7 +41,6 @@ OPTIM = -g -O
 ifdef SWITCH_MEMORY_BASED
 BASED = -DMEMORY_BASED
 endif
-UDB_INC	= udb.h
 
 # Uncomment these definitions to use radix tree string compression. This
 # will result in less memory usage in both memory and disk based schemes, 
@@ -83,11 +82,6 @@ CONC_S =
 CONC_O =
 CONC_DEFS =
 endif
-
-# Standalone cache code.
-SA_UDB_S =
-SA_UDB_O =
-SA_UDB_INC = udb.h
 
 # Source common to netmux and standalone code
 COM_SRC	=
@@ -208,11 +202,10 @@ INSTALL_TARG	= $(INSTALL_PROG) *.txt *.conf
 REINSTALL_TARG	= $(INSTALL_PROG) help.txt wizhelp.txt alias.conf compat.conf
 
 #compiliation source files
-ALLSRC	= $(D_SRC) $(UDB_SRC) $(UDBA_SRC) $(UDBO_SRC) $(VER_SRC) \
-	  $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC)
-ALLINC	= $(D_INC) $(UDB_INC) $(VER_INC) $(NET_INC) $(LIB_INC) $(COMPRESS_INC)
-SRC	= $(D_SRC) $(COM_SRC) $(UDB_S) $(MALLOC_S) $(CONC_S) $(C_COMPRESS_S)
-OBJ	= $(D_OBJ) $(COM_OBJ) $(UDB_O) $(MALLOC_O) $(CONC_O) $(C_COMPRESS_O)
+ALLSRC	= $(D_SRC) $(VER_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC)
+ALLINC	= $(D_INC) $(VER_INC) $(NET_INC) $(LIB_INC) $(COMPRESS_INC)
+SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S) $(CONC_S) $(C_COMPRESS_S)
+OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O) $(CONC_O) $(C_COMPRESS_O)
 
 # Files in the standard distribution
 DIST	= $(ALLSRC) $(ALLINC) $(AUXIL)
@@ -252,8 +245,8 @@ mkindx: mkindx.o
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
 
-dbconvert: dbconvert.o $(SA_OBJ) $(SA_UDB_O) $(ALLOC_O) $(C_RADIX_O) $(LIBOBJS)
-	$(CXX) $(ALLCXXFLAGS) -o dbconvert dbconvert.o $(SA_OBJ) $(COM_OBJ) $(SA_UDB_O) $(ALLOC_O) $(C_COMPRESS_O) $(LIBS) $(MORELIBS) $(LIBOBJS)
+dbconvert: dbconvert.o $(SA_OBJ) $(ALLOC_O) $(C_RADIX_O) $(LIBOBJS)
+	$(CXX) $(ALLCXXFLAGS) -o dbconvert dbconvert.o $(SA_OBJ) $(COM_OBJ) $(ALLOC_O) $(C_COMPRESS_O) $(LIBS) $(MORELIBS) $(LIBOBJS)
 
 saber:	$(SRC)
 	#load $(SRC)
@@ -282,7 +275,7 @@ dist.tar.Z: $(DIST)
 	mv dist.tar.Z.NEW dist.tar.Z
 
 depend: $(ALLSRC) unsplit
-	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(UDBA_SRC) $(UDBO_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) $(CONC_S) slave.cpp portconc.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) $(CONC_S) slave.cpp portconc.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 index: help.indx news.indx wizhelp.indx
