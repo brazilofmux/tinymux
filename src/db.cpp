@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.32 2000-11-03 02:47:36 sdennis Exp $
+// $Id: db.cpp,v 1.33 2000-11-06 15:51:02 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -250,7 +250,7 @@ ATTR attr[] =
     {"VZ", A_VA + 25, AF_ODARK, NULL},
     {"VRML_URL", A_VRML_URL, AF_ODARK, NULL},
     {"HTDesc", A_HTDESC, AF_NOPROG, NULL},
-    // Added by D.Piper (del@delphinian.com) 2000-APR
+    // Added by D.Piper (del@doofer.org) 2000-APR
     //
     {"Reason", A_REASON, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
 #ifdef GAME_DOOFERMUX
