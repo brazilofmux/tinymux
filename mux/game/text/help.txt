@@ -10027,7 +10027,7 @@ REGEXP AMBIGUITY
 
           If a regular expression could match two different parts of
           the input string, it will match the one which begins
-          earliest.  If both begin in the same place    but match
+          earliest.  If both begin in the same place but match
           different lengths, or match the same length in different
           ways, life gets messier, as follows.
 
@@ -10089,7 +10089,7 @@ REGEXP SYNTAX
   The following explanation is taken from Henry Spencer's regexp(3)
   package, the regular expression library used in TinyMUX up to version
   2.2. After that, the PCRE package is used, which has many more features.
-  See a book that covers Perl's regular expressions for details..
+  See a book that covers Perl's regular expressions for details.
 
           A regular expression is zero or more branches, separated by
           `|'.  It matches anything that matches one of the branches.
@@ -10168,10 +10168,11 @@ REGEXPS (continued)
   one character there, so a player can't enter '+setnum cookies='
   or '+setnum =10' or similarly malformed input.
 
-  Also note that regexps are case-sensitive, but wildcard globbing
-  is not. Some regular expression functions offer case-insensitive 
-  versions, and any regexp can be made case-insensitive by putting 
-  (?i) at the start.
+  Also note that regexps are case-sensitive, but wildcard globbing is not.
+  Some regular expression functions offer case-insensitive versions, some
+  regexp can be made case-insensitive by putting (?i) at the start.
+  Setting the CASE attribute flag is another way of selecting
+  case-insensitivity.
 
   Related Topics: regexp syntax
 
