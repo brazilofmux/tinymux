@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.4 2000-04-13 08:36:08 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.5 2000-04-29 08:03:21 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -131,6 +131,7 @@ struct confdata
     int     timeslice;  /* How often do we bump people's cmd quotas? */
     int     cmd_quota_max;  /* Max commands at one time */
     int     cmd_quota_incr; /* Bump #cmds allowed by this each timeslice */
+    int     max_cmdsecs;    /* Threshhold for real time taken by command */
     int     control_flags;  /* Global runtime control flags */
     int     log_options;    /* What gets logged */
     int     log_info;   /* Info that goes into log entries */
@@ -293,6 +294,7 @@ struct statedata
     CLinearTimeAbsolute idle_counter;   /* Countdown to next idle check */
     CLinearTimeAbsolute events_counter; /* Countdown to next events check */
     CLinearTimeAbsolute start_time;     /* When was MUX started */
+    CLinearTimeAbsolute cpu_count_from; /* When did we last reset CPU counters? */
 
     int record_players; /* The maximum # of player logged on */
 #ifndef STANDALONE
@@ -447,8 +449,8 @@ extern STATEDATA mudstate;
 #define LOG_SUSPECTCMDS 0x00020000  // Log SUSPECT player keyboard commands.
 #ifdef MUSH3
 #define LOG_KBCOMMANDS  0x00010000  // Log keyboard commands.
-#define LOG_TIMEUSE     0x00040000  // Log CPU time usage.
 #endif
+#define LOG_TIMEUSE     0x00040000  // Log CPU time usage.
 #define LOG_ALWAYS      0x80000000  /* Always log it */
 
 #define LOGOPT_FLAGS        0x01    /* Report flags on object */
