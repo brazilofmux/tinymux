@@ -332,6 +332,9 @@ Bug Fixes:
     by Alierak.
  -- PushPointers tag was wrong.  Reported by Alierak.
  -- Memory leak in objeval().  Reported by Alierak.
+ -- Guest system would clear contents of starting_room if a guest it
+    created was later re-named.  Zenty's bug.  Fixed by Brazil.
+ -- Documented '~' letter for NOACCENTS.
 
 
 Performance Enhancements:
