@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.22 2002-02-01 00:35:13 sdennis Exp $
+// $Id: timeutil.cpp,v 1.23 2002-05-02 15:59:34 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -400,6 +400,11 @@ INT64 i64ModAdjusted(INT64 x, INT64 y)
 }
 #endif
 
+#ifdef WIN32
+const INT64 FACTOR_100NS_PER_SECOND = 10000000i64;
+#else
+const INT64 FACTOR_100NS_PER_SECOND = 10000000ull;
+#endif
 const INT64 FACTOR_100NS_PER_MINUTE = FACTOR_100NS_PER_SECOND*60;
 const INT64 FACTOR_100NS_PER_HOUR   = FACTOR_100NS_PER_MINUTE*60;
 const INT64 FACTOR_100NS_PER_DAY = FACTOR_100NS_PER_HOUR*24;

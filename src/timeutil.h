@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.11 2002-02-01 00:35:48 sdennis Exp $
+// $Id: timeutil.h,v 1.12 2002-05-02 15:59:34 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -123,12 +123,11 @@ public:
 #define FACTOR_100NS_PER_MICROSECOND 10
 #define FACTOR_100NS_PER_MILLISECOND 10000
 #ifdef WIN32
-#define FACTOR_100NS_PER_SECOND      10000000i64
 #define EPOCH_OFFSET 116444736000000000i64
 #else // WIN32
-#define FACTOR_100NS_PER_SECOND      10000000ULL
 #define EPOCH_OFFSET 116444736000000000ull
 #endif // WIN32
+extern const INT64 FACTOR_100NS_PER_SECOND;
 extern const INT64 FACTOR_100NS_PER_MINUTE;
 extern const INT64 FACTOR_100NS_PER_HOUR;
 extern const INT64 FACTOR_100NS_PER_DAY;
