@@ -1,6 +1,6 @@
-// player_c.cpp - Player cache routines.
+// player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.3 2000-08-23 00:24:11 sdennis Exp $
+// $Id: player_c.cpp,v 1.4 2001-11-20 05:15:39 sdennis Exp $
 //
 
 #include "copyright.h"
