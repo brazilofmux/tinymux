@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.8 2000-05-19 17:20:00 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.9 2000-05-19 18:08:47 sdennis Exp $ 
 */
 
 /*
@@ -2176,11 +2176,11 @@ int fetch_cmds(dbref target)
     BOOL bFound = FALSE;
 
     DESC *d;
-	DESC_ITER_PLAYER(target, d)
+    DESC_ITER_PLAYER(target, d)
     {
         sum += d->command_count;
         bFound = TRUE;
-	}
+    }
 
     if (bFound)
     {

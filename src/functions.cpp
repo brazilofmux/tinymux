@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.19 2000-05-19 17:57:04 sdennis Exp $
+// $Id: functions.cpp,v 1.20 2000-05-19 18:06:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5202,9 +5202,10 @@ FUNCTION(fun_switch)
         str = fargs[i];
         TinyExec(tbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
-        if (quick_wild(tbuff, mbuff)) {
+        if (quick_wild(tbuff, mbuff))
+        {
             free_lbuf(tbuff);
-			str = fargs[i+1];
+            str = fargs[i+1];
             TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
             free_lbuf(mbuff);
             return;
@@ -6686,8 +6687,8 @@ const char *write_time(int Seconds)
 //
 FUNCTION(fun_digittime)
 {
-	int tt = Tiny_atol(fargs[0]);
-	safe_str(time_format_1(tt), buff, bufc);
+    int tt = Tiny_atol(fargs[0]);
+    safe_str(time_format_1(tt), buff, bufc);
 }
 
 // singletime - Single element time from given seconds.
@@ -6695,8 +6696,8 @@ FUNCTION(fun_digittime)
 //
 FUNCTION(fun_singletime)
 {
-	int tt = Tiny_atol(fargs[0]);
-	safe_str(time_format_2(tt), buff, bufc);
+    int tt = Tiny_atol(fargs[0]);
+    safe_str(time_format_2(tt), buff, bufc);
 }
 
 // exptime - Written (short) time from given seconds
@@ -6704,8 +6705,8 @@ FUNCTION(fun_singletime)
 //
 FUNCTION(fun_exptime)
 {
-	int tt = Tiny_atol(fargs[0]);
-	safe_str(expand_time(tt), buff, bufc);
+    int tt = Tiny_atol(fargs[0]);
+    safe_str(expand_time(tt), buff, bufc);
 }
 
 // writetime - Written (long) time from given seconds
@@ -6713,8 +6714,8 @@ FUNCTION(fun_exptime)
 //
 FUNCTION(fun_writetime)
 {
-	int tt = Tiny_atol(fargs[0]);
-	safe_str(write_time(tt), buff, bufc);
+    int tt = Tiny_atol(fargs[0]);
+    safe_str(write_time(tt), buff, bufc);
 }
 
 // cmds - Return player command count (Wizard_Who OR Self ONLY)
@@ -6723,18 +6724,18 @@ FUNCTION(fun_writetime)
 FUNCTION(fun_cmds)
 {
     dbref target = lookup_player(player, fargs[0], 1);
-	if (Good_obj(target) && Connected(target))
-	{
-		if (!(Wizard_Who(player) || Controls(player, target)))
+    if (Good_obj(target) && Connected(target))
+    {
+        if (!(Wizard_Who(player) || Controls(player, target)))
         {
-			target = NOTHING;
+            target = NOTHING;
         }
         safe_ltoa(fetch_cmds(target), buff, bufc, LBUF_SIZE-1);
-	}
-	else
-	{
-		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
-	}
+    }
+    else
+    {
+        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+    }
 }
 
 // startsecs - Time the MUX was started, in seconds
@@ -6742,10 +6743,10 @@ FUNCTION(fun_cmds)
 //
 FUNCTION(fun_startsecs)
 {
-	CLinearTimeAbsolute lta;
-	lta = mudstate.start_time;
-	lta.Local2UTC();
-	safe_str(lta.ReturnSecondsString(), buff, bufc);
+    CLinearTimeAbsolute lta;
+    lta = mudstate.start_time;
+    lta.Local2UTC();
+    safe_str(lta.ReturnSecondsString(), buff, bufc);
 }
 
 // conntotal - Return player's total online time to the MUX
@@ -6754,15 +6755,15 @@ FUNCTION(fun_startsecs)
 FUNCTION(fun_conntotal)
 {
     dbref target = lookup_player(player, fargs[0], 1);
-	if (Good_obj(target))
-	{
+    if (Good_obj(target))
+    {
         long TotalTime = fetch_totaltime(target) + fetch_connect(target);
         safe_ltoa(TotalTime, buff, bufc, LBUF_SIZE-1);
-	}
-	else
-	{
-		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
-	}
+    }
+    else
+    {
+        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+    }
 }
 
 // connmax - Return player's longest session to the MUX
@@ -6771,8 +6772,8 @@ FUNCTION(fun_conntotal)
 FUNCTION(fun_connmax)
 {
     dbref target = lookup_player(player, fargs[0], 1);
-	if (Good_obj(target))
-	{
+    if (Good_obj(target))
+    {
         long Longest = fetch_longestconnect(target);
         long Current = fetch_connect(target);
         if (Longest < Current)
@@ -6780,11 +6781,11 @@ FUNCTION(fun_connmax)
             Longest = Current;
         }
         safe_ltoa(Longest, buff, bufc, LBUF_SIZE-1);
-	}
-	else
-	{
-		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
-	}
+    }
+    else
+    {
+        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+    }
 }
 
 // connlast - Return player's last connection time to the MUX
@@ -6793,14 +6794,14 @@ FUNCTION(fun_connmax)
 FUNCTION(fun_connlast)
 {
     dbref target = lookup_player(player, fargs[0], 1);
-	if (Good_obj(target))
-	{
+    if (Good_obj(target))
+    {
         safe_ltoa(fetch_lastconnect(target), buff, bufc, LBUF_SIZE-1);
-	}
-	else
-	{
-		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
-	}
+    }
+    else
+    {
+        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+    }
 }
 
 // connnum - Return the total number of sessions this player has had
@@ -6809,15 +6810,15 @@ FUNCTION(fun_connlast)
 FUNCTION(fun_connnum)
 {
     dbref target = lookup_player(player, fargs[0], 1);
-	if (Good_obj(target))
-	{
+    if (Good_obj(target))
+    {
         long NumConnections = fetch_numconnections(target) + 1;
         safe_ltoa(NumConnections, buff, bufc, LBUF_SIZE-1);
-	}
-	else
-	{
-		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
-	}
+    }
+    else
+    {
+        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+    }
 }
 
 // connleft - Return when a player last logged off the MUX as
@@ -6826,15 +6827,15 @@ FUNCTION(fun_connnum)
 FUNCTION(fun_connleft)
 {
     dbref target = lookup_player(player, fargs[0], 1);
-	if (Good_obj(target))
-	{
-    	CLinearTimeAbsolute cl = fetch_logouttime(target);
-		safe_str(cl.ReturnSecondsString(), buff, bufc);
-	}
-	else
-	{
-		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
-	}
+    if (Good_obj(target))
+    {
+        CLinearTimeAbsolute cl = fetch_logouttime(target);
+        safe_str(cl.ReturnSecondsString(), buff, bufc);
+    }
+    else
+    {
+        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+    }
 }
 
 // lattrcmds - Output a list of all attributes containing $ commands.
@@ -6911,20 +6912,20 @@ FUNCTION(fun_lcmds)
                 dbref aowner;
                 int   aflags;
                 atr_get_str(buf, thing, attr->number, &aowner, &aflags);
-				if (buf[0] == '$')
-				{
-					if (!first)
-					{
-						safe_chr(' ', buff, bufc);
-					}
+                if (buf[0] == '$')
+                {
+                    if (!first)
+                    {
+                        safe_chr(' ', buff, bufc);
+                    }
 
                     Tiny_StrTokString(&tts, buf+1);
                     char *p = Tiny_StrTokParse(&tts);
                     _strlwr(p);
-					safe_str(p, buff, bufc);
+                    safe_str(p, buff, bufc);
 
-					first = 0;
-				}
+                    first = 0;
+                }
             }
         }
         free_lbuf(buf);
@@ -6943,37 +6944,37 @@ extern FLAGENT gen_flags[];
 //
 FUNCTION(fun_lflags)
 {
-	dbref target;
-	FLAGENT *fp;
-	FLAG fv;
+    dbref target;
+    FLAGENT *fp;
+    FLAG fv;
 
     BOOL bFirst = TRUE;
-	target = match_thing(player, fargs[0]);
-	if (  (target != NOTHING)
+    target = match_thing(player, fargs[0]);
+    if (  (target != NOTHING)
        && (mudconf.pub_flags || Examinable(player, target) || (target == cause)))
-	{
-		for (fp = gen_flags; fp->flagname; fp++)
+    {
+        for (fp = gen_flags; fp->flagname; fp++)
         {
-			if (fp->flagflag & FLAG_WORD3)
-				fv = Flags3(target);
-			else if (fp->flagflag & FLAG_WORD2)
-				fv = Flags2(target);
-			else
-				fv = Flags(target);
+            if (fp->flagflag & FLAG_WORD3)
+                fv = Flags3(target);
+            else if (fp->flagflag & FLAG_WORD2)
+                fv = Flags2(target);
+            else
+                fv = Flags(target);
 
-			if (fv & fp->flagvalue)
+            if (fv & fp->flagvalue)
             {
-				if ((fp->listperm & CA_WIZARD) && !Wizard(player))
-					continue;
-				if ((fp->listperm & CA_GOD) && !God(player))
-					continue;
-				if (  isPlayer(target)
+                if ((fp->listperm & CA_WIZARD) && !Wizard(player))
+                    continue;
+                if ((fp->listperm & CA_GOD) && !God(player))
+                    continue;
+                if (  isPlayer(target)
                    && (fp->flagvalue == CONNECTED)
                    && (fp->flagflag & FLAG_WORD2)
                    && ((Flags(target) & (WIZARD | DARK)) == (WIZARD | DARK))
                    && !Wizard(player))
                 {
-					continue;
+                    continue;
                 }
 
                 if (!bFirst)
@@ -6983,12 +6984,12 @@ FUNCTION(fun_lflags)
                 bFirst = FALSE;
 
                 safe_str(fp->flagname, buff, bufc);
-			}
-		}
-	}
-	else
+            }
+        }
+    }
+    else
     {
-		safe_str("#-1", buff, bufc);
+        safe_str("#-1", buff, bufc);
     }
 }
 

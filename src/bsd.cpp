@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.6 2000-05-19 17:20:04 sdennis Exp $
+// $Id: bsd.cpp,v 1.7 2000-05-19 18:08:46 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1331,11 +1331,11 @@ void shutdownsock(DESC *d, int reason)
 #ifdef GAME_DOOFERMUX
         // Added by D.Piper (del@delphinian.com) 1997 & 2000-APR
         //
-	
-		// Reason: attribute (disconnect reason)
+
+        // Reason: attribute (disconnect reason)
         //
-		atr_add_raw(d->player, A_REASON, (char *)disc_messages[reason]);
-		
+        atr_add_raw(d->player, A_REASON, (char *)disc_messages[reason]);
+
         // Update the A_CONNINFO attribute.
         //
         long anFields[4];
