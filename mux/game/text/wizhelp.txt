@@ -1059,7 +1059,7 @@
   COMMAND: @log <file>=<message>
 
   This logs the message (without timestamp) to the named file. Pathnames
-  are stripped, and the file resides in 'mux2.0/game/logs' under the name
+  are stripped, and the file resides in 'game/logs' under the name
   'M-<file>.log'.
 
   The file must already exist for the @log request to succeed, and can only
