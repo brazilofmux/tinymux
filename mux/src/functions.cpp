@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.19 2002-06-19 06:44:38 sdennis Exp $
+// $Id: functions.cpp,v 1.20 2002-06-20 08:43:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2638,6 +2638,323 @@ FUNCTION(fun_t)
     {
         safe_ltoa(!!xlate(fargs[0]), buff, bufc);
     }
+}
+static const char *bigones[] =
+{
+    "",
+    "thousand",
+    "million",
+    "billion",
+    "trillion"
+};
+
+static const char *singles[] =
+{
+    "",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine"
+};
+
+static const char *teens[] =
+{
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen"
+};
+
+static const char *tens[] =
+{
+    "",
+    "",
+    "twenty",
+    "thirty",
+    "forty",
+    "fifty",
+    "sixty",
+    "seventy",
+    "eighty",
+    "ninety"
+};
+
+static const char *th_prefix[] =
+{
+    "",
+    "ten",
+    "hundred"
+};
+
+class CSpellNum
+{
+public:
+    void SpellNum(const char *p, char *buff_arg, char **bufc_arg);
+
+private:
+    void SpellNumber_Sub0(int n, const char *p, BOOL bHundreds);
+    void SpellNumber_Sub1(int n, const char *p);
+    void SpellNumber_Sub2(const char *p);
+    BOOL SpellNumber_Sub3(const char *p);
+    void StartWord(void);
+    void AddWord(const char *p);
+
+    char *buff;
+    char **bufc;
+    BOOL bNeedSpace;
+};
+
+void CSpellNum::StartWord(void)
+{
+    if (bNeedSpace)
+    {
+        safe_chr(' ', buff, bufc);
+    }
+    bNeedSpace = TRUE;
+}
+
+void CSpellNum::AddWord(const char *p)
+{
+    safe_str(p, buff, bufc);
+}
+
+
+// Handle two-character sequences.
+//
+void CSpellNum::SpellNumber_Sub2(const char *p)
+{
+    int n0 = p[0] - '0';
+    int n1 = p[1] - '0';
+
+    if (n0 == 0)
+    {
+        if (n1 != 0)
+        {
+            StartWord();
+            AddWord(singles[n1]);
+        }
+        return;
+    }
+    else if (n0 == 1)
+    {
+        StartWord();
+        AddWord(teens[n1]);
+        return;
+    }
+    if (n1 == 0)
+    {
+        StartWord();
+        AddWord(tens[n0]);
+    }
+    else
+    {
+        StartWord();
+        AddWord(tens[n0]);
+        AddWord("-");
+        AddWord(singles[n1]);
+    }
+}
+
+// Handle three-character sequences.
+//
+BOOL CSpellNum::SpellNumber_Sub3(const char *p)
+{
+    if (  p[0] == '0'
+       && p[1] == '0'
+       && p[2] == '0')
+    {
+        return FALSE;
+    }
+
+    // Handle hundreds.
+    //
+    if (p[0] != '0')
+    {
+        StartWord();
+        AddWord(singles[p[0]-'0']);
+        StartWord();
+        AddWord("hundred");
+    }
+    SpellNumber_Sub2(p+1);
+    return TRUE;
+}
+
+// Handle a series of patterns of three.
+//
+void CSpellNum::SpellNumber_Sub0(int n, const char *p, BOOL bHundreds)
+{
+    // Handle special Hundreds cases.
+    //
+    if (  bHundreds
+       && n == 4
+       && p[1] != '0')
+    {
+        SpellNumber_Sub2(p);
+        StartWord();
+        AddWord("hundred");
+        SpellNumber_Sub2(p+2);
+        return;
+    }
+
+    // Handle normal cases.
+    //
+    int ndiv = (n + 2) / 3;
+    int nrem = n % 3;
+    BOOL bEmit;
+    char buf[3];
+    if (nrem == 0)
+    {
+        nrem = 3;
+    }
+
+    int j = nrem;
+    for (int i = 2; 0 <= i; i--)
+    {
+        if (j)
+        {
+            j--;
+            buf[i] = p[j];
+        }
+        else
+        {
+            buf[i] = '0';
+        }
+    }
+    bEmit = SpellNumber_Sub3(buf);
+    p += nrem;
+    while (--ndiv)
+    {
+        if (bEmit)
+        {
+            StartWord();
+            AddWord(bigones[ndiv]);
+        }
+        bEmit = SpellNumber_Sub3(p);
+        p += 3;
+    }
+}
+
+// Handle precision ending for part to the right of the decimal place.
+//
+void CSpellNum::SpellNumber_Sub1(int n, const char *p)
+{
+    SpellNumber_Sub0(n, p, FALSE);
+    if (  1 < n
+       && n < 15)
+    {
+        int d = n / 3;
+        int r = n % 3; 
+        StartWord();
+        if (r != 0)
+        {
+            AddWord(th_prefix[r]);
+            AddWord("-");
+        }
+        AddWord(bigones[d]);
+        AddWord("ths");
+    }
+}
+
+void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
+{
+    buff = buff_arg;
+    bufc = bufc_arg;
+    bNeedSpace = FALSE;
+
+    // Trim Spaces from beginning.
+    //
+    while (Tiny_IsSpace[(unsigned char)*number])
+    {
+        number++;
+    }
+
+    if (*number == '-')
+    {
+        StartWord();
+        AddWord("negative");
+        number++;
+    }
+
+    // Trim Zeroes from Beginning.
+    //
+    while (*number == '0')
+    {
+        number++;
+    }
+
+    const char *pA = number;
+    while (Tiny_IsDigit[(unsigned char)*number])
+    {
+        number++;
+    }
+    size_t nA = number - pA;
+
+    const char *pB  = NULL;
+    size_t nB = 0;
+    if (*number == '.')
+    {
+        number++;
+        pB = number;
+        while (Tiny_IsDigit[(unsigned char)*number])
+        {
+            number++;
+        }
+        nB = number - pB;
+    }
+    
+    // Skip trailing spaces.
+    //
+    while (Tiny_IsSpace[*number])
+    {
+        number++;
+    }
+
+    if (  *number
+       || nA >= 16
+       || nB >= 15)
+    {
+        safe_str("#-1 ARGUMENT MUST BE NUMBER", buff, bufc);
+        return;
+    }
+
+    if (nA == 0)
+    {
+        if (nB == 0)
+        {
+            StartWord();
+            AddWord("zero");
+        }
+    }
+    else
+    {
+        SpellNumber_Sub0(nA, pA, TRUE);
+        if (nB)
+        {
+            StartWord();
+            AddWord("and");
+        }
+    }
+    if (nB)
+    {
+        SpellNumber_Sub1(nB, pB);
+    }
+}
+
+FUNCTION(fun_spellnum)
+{
+    CSpellNum sn;
+    sn.SpellNum(fargs[0], buff, bufc);
 }
 
 // Compare for decreasing order by absolute value.
@@ -7267,6 +7584,7 @@ FUN flist[] =
     {"SORT",     fun_sort,     MAX_ARG, 1,  4,       0, CA_PUBLIC},
     {"SORTBY",   fun_sortby,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"SPACE",    fun_space,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"SPELLNUM", fun_spellnum, MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SPLICE",   fun_splice,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
     {"SQRT",     fun_sqrt,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SQUISH",   fun_squish,   MAX_ARG, 0,  2,       0, CA_PUBLIC},
