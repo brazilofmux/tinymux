@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.65 2002-02-05 09:30:53 sdennis Exp $
+// $Id: stringutil.cpp,v 1.66 2002-02-07 08:36:00 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2441,15 +2441,30 @@ double Tiny_atof(char *szString)
 extern char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
                        char **rve);
 
-char *Tiny_ftoa(double r)
+char *Tiny_ftoa(double r, int arg_mode = 0, int frac = 0)
 {
     static char buffer[100];
     char *q = buffer;
     char *rve = NULL;
     int decpt;
     int bNegative;
+    int mode = 0;
+    int ndigits = 50;
 
-    char *p0 = Tiny_dtoa(r, 0, 50, &decpt, &bNegative, &rve);
+    if (arg_mode)
+    {
+        mode = 3;
+        ndigits = frac;
+        if (50 < ndigits)
+        {
+            ndigits = 50;
+        }
+        else if (ndigits < -20)
+        {
+            ndigits = -20;
+        }
+    }
+    char *p0 = Tiny_dtoa(r, mode, ndigits, &decpt, &bNegative, &rve);
     char *p = p0;
     int nDigits = rve - p;
     if (bNegative)

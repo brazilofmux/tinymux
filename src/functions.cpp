@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.147 2002-02-05 19:05:17 sdennis Exp $
+// $Id: functions.cpp,v 1.148 2002-02-07 08:35:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2907,42 +2907,14 @@ FUNCTION(fun_ceil)
 
 FUNCTION(fun_round)
 {
-    const char *fstr;
-    char *oldp;
-
-    oldp = *bufc;
-
-    switch (Tiny_atol(fargs[1]))
-    {
-    case 1:
-        fstr = "%.1f";
-        break;
-    case 2:
-        fstr = "%.2f";
-        break;
-    case 3:
-        fstr = "%.3f";
-        break;
-    case 4:
-        fstr = "%.4f";
-        break;
-    case 5:
-        fstr = "%.5f";
-        break;
-    case 6:
-        fstr = "%.6f";
-        break;
-    default:
-        fstr = "%.0f";
-        break;
-    }
     double r = Tiny_atof(fargs[0]);
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = Tiny_fpclass(r);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
-        safe_tprintf_str(buff, bufc, (char *)fstr, r);
+        int frac = Tiny_atol(fargs[1]);
+        safe_str(Tiny_ftoa(r, 1, frac), buff, bufc);
 #ifdef HAVE_IEEE_FP_FORMAT
     }
     else
