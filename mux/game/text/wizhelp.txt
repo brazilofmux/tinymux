@@ -1750,9 +1750,9 @@ CONFIG PARAMETERS (continued)
   kill_max_cost  kill_min_cost  lag_maximum  link_cost  list_access
   lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
   look_obey_terse  machine_command_cost  mail_database  mail_expiration
-  master_room   match_own_commands  max_cache_size  max_players  min_guests
-  money_name_plural  money_name_singular  motd_file  motd_message  mud_name
-  newuser_file  nositemon_site  notify_recursion_limit  number_guests
+  mail_per_hour  master_room   match_own_commands  max_cache_size  max_players
+  min_guests  money_name_plural  money_name_singular  motd_file  motd_message
+  mud_name  newuser_file  nositemon_site  notify_recursion_limit  number_guests
   open_cost  output_database  output_limit  page_cost  paranoid_allocate
   parent_recursion_limit  paycheck  pemit_any_object  pemit_far_players
   permit_site  player_flags  player_listen  player_match_own_commands
@@ -1774,8 +1774,9 @@ CONFIG PARAMETERS (continued)
   sweep_dark  switch_default_all  terse_shows_contents  terse_shows_exits
   terse_shows_move_messages  thing_flags  thing_quota  timeslice
   toad_recipient  trace_output_limit  trace_topdown  trust_site
-  uncompress_program  unowned_safe  use_http  user_attr_access  wait_cost
-  wizard_motd_file  wizard_motd_message  zone_recursion_limit
+  uncompress_program  unowned_safe  use_http  user_attr_access
+  user_attr_per_hour  wait_cost  wizard_motd_file  wizard_motd_message
+  zone_recursion_limit
 
 & CONFIG_ACCESS
 CONFIG_ACCESS
@@ -2987,6 +2988,19 @@ MAIL_EXPIRATION
   Sets the number of days that a @mail message should last before it is
   automatically deleted by the system. If this parameter is set to a
   negative number, this feature will be disabled.
+
+& MAIL_PER_HOUR
+MAIL_PER_HOUR
+
+  CONFIG DIRECTIVE: mail_per_hour <maximum>
+  DEFAULT: 50
+
+  Specifies the maximum number of @mail items per hour that a mortal
+  may create.  Attempts to create @mail after this limit has been
+  reached are denied.  Any existing @mail-in-progress is still
+  permitted.
+
+  Related Topics: user_attr_per_hour
 
 & MARKED
 MARKED
@@ -4339,6 +4353,19 @@ UNOWNED_SAFE
   are always considered SAFE, and DESTROY_OK things are never considered SAFE.
 
   Related Topics: @destroy, DESTROY_OK, SAFE.
+
+& USER_ATTRIB_PER_HOUR
+USER_ATTRIB_PER_HOUR
+
+  CONFIG DIRECTIVE: user_attrib_per_hour <max>
+  DEFAULT: 5000
+
+  Specifies the maximum number of user-defined attributes per hour that
+  a mortal may create.  Attempts to create user-defined attributes after
+  this limit has been reached are denied.  Only new names are affected.
+  Use of a pre-existing name is not counted towards this limit.
+
+  Related Topics: mail_per_hour
 
 & USER_ATTR_ACCESS
 USER_ATTR_ACCESS
