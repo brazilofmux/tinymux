@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.137 2004-02-27 17:43:39 sdennis Exp $
+// $Id: functions.cpp,v 1.138 2004-04-18 02:48:51 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -190,7 +190,7 @@ char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim)
 
     // Advance over trailing spaces.
     //
-    for (; *pEnd == ' ' && pEnd > pBegin; pEnd--)
+    for (; pEnd > pBegin && *pEnd == ' '; pEnd--)
     {
         // Nothing
     }
@@ -219,7 +219,7 @@ char *trim_space_sep(char *str, char sep)
     {
         // Nothing
     }
-    for (p--; *p == ' ' && p > str; p--)
+    for (p--; p > str && *p == ' '; p--)
     {
         // Nothing
     }
