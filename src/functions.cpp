@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.21 2000-06-02 16:18:07 sdennis Exp $
+// $Id: functions.cpp,v 1.22 2000-06-05 18:42:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5387,43 +5387,58 @@ static void do_asort(char *s[], int n, int sort_type)
     f_rec *fp;
     i_rec *ip;
 
-    switch (sort_type) {
+    switch (sort_type)
+    {
     case ALPHANUM_LIST:
-        qsort((void *)s, n, sizeof(char *), a_comp);
 
+        qsort((void *)s, n, sizeof(char *), a_comp);
         break;
+
     case NUMERIC_LIST:
+
         ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        for (i = 0; i < n; i++) {
+        ISOUTOFMEMORY(ip);
+        for (i = 0; i < n; i++)
+        {
             ip[i].str = s[i];
             ip[i].data = Tiny_atol(s[i]);
         }
         qsort((void *)ip, n, sizeof(i_rec), i_comp);
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < n; i++)
+        {
             s[i] = ip[i].str;
         }
         MEMFREE(ip);
         break;
+
     case DBREF_LIST:
         ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        for (i = 0; i < n; i++) {
+        ISOUTOFMEMORY(ip);
+        for (i = 0; i < n; i++)
+        {
             ip[i].str = s[i];
             ip[i].data = dbnum(s[i]);
         }
         qsort((void *)ip, n, sizeof(i_rec), i_comp);
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < n; i++)
+        {
             s[i] = ip[i].str;
         }
         MEMFREE(ip);
         break;
+
     case FLOAT_LIST:
+
         fp = (f_rec *) MEMALLOC(n * sizeof(f_rec));
-        for (i = 0; i < n; i++) {
+        ISOUTOFMEMORY(fp);
+        for (i = 0; i < n; i++)
+        {
             fp[i].str = s[i];
             fp[i].data = safe_atof(s[i]);
         }
         qsort((void *)fp, n, sizeof(f_rec), f_comp);
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < n; i++)
+        {
             s[i] = fp[i].str;
         }
         MEMFREE(fp);
@@ -6321,7 +6336,8 @@ void do_function(dbref player, dbref cause, int key, char *fname, char *target)
     if (!ufp)
     {
         ufp = (UFUN *) MEMALLOC(sizeof(UFUN));
-        ufp->name = strsave(np);
+        ISOUTOFMEMORY(ufp);
+        ufp->name = StringClone(np);
         _strupr(ufp->name);
         ufp->obj = obj;
         ufp->atr = atr;
@@ -6333,7 +6349,11 @@ void do_function(dbref player, dbref cause, int key, char *fname, char *target)
         }
         else
         {
-            for (ufp2 = ufun_head; ufp2->next; ufp2 = ufp2->next) ;
+            for (ufp2 = ufun_head; ufp2->next; ufp2 = ufp2->next)
+            {
+                // Nothing
+                ;
+            }
             ufp2->next = ufp;
         }
         hashaddLEN(np, strlen(np), (int *)ufp, &mudstate.ufunc_htab);
