@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.33 2001-03-30 19:04:14 zenty Exp $
+// $Id: command.cpp,v 1.34 2001-03-31 01:54:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -832,12 +832,12 @@ int check_access(dbref player, int mask)
             fail++;
     }
     if ((succ == 0) && (mask & CA_UNINS))
-      {
-	if(Uninspected(player))
-	  succ++;
-	else
-	  fail++;
-      }
+    {
+        if (Uninspected(player))
+            succ++;
+        else
+            fail++;
+    }
     if ((succ == 0) && (mask & CA_ROBOT))
     {
         if (Robot(player))
@@ -854,11 +854,11 @@ int check_access(dbref player, int mask)
     //
     if (  !Wizard(player)
        && (  ((mask & CA_NO_HAVEN)   && Player_haven(player))
-	     || ((mask & CA_NO_ROBOT)   && Robot(player))
-	     || ((mask & CA_NO_SLAVE)   && Slave(player))
-	     || ((mask & CA_NO_SUSPECT) && Suspect(player))
-	     || ((mask & CA_NO_GUEST)   && Guest(player))
-	     || ((mask & CA_NO_UNINS)   && Uninspected(player))))
+          || ((mask & CA_NO_ROBOT)   && Robot(player))
+          || ((mask & CA_NO_SLAVE)   && Slave(player))
+          || ((mask & CA_NO_SUSPECT) && Suspect(player))
+          || ((mask & CA_NO_GUEST)   && Guest(player))
+          || ((mask & CA_NO_UNINS)   && Uninspected(player))))
     {
         return 0;
     }
