@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.25 2004-08-16 05:14:07 sdennis Exp $
+// $Id: svdhash.cpp,v 1.26 2004-09-22 14:24:33 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1456,6 +1456,7 @@ void CHashFile::InitCache(int nCachePages)
     //
     m_nCache = nCachePages;
     m_Cache = new HF_CACHE[m_nCache];
+    ISOUTOFMEMORY(m_Cache);
     for (int i = 0; i < m_nCache; i++)
     {
         m_Cache[i].m_hp.Allocate(HF_SIZEOF_PAGE);
@@ -1466,6 +1467,7 @@ void CHashFile::InitCache(int nCachePages)
 
     m_nhpCacheLookup = 2*m_nCache;
     m_hpCacheLookup = new int[m_nhpCacheLookup];
+    ISOUTOFMEMORY(m_hpCacheLookup);
     memset(m_hpCacheLookup, 0, sizeof(int)*m_nhpCacheLookup);
 }
 
