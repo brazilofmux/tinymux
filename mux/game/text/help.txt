@@ -8208,7 +8208,7 @@ LTE()
 
   Related Topics: lt(), gte(), gt(), eq(), neq().
 
-LWHO()
+& LWHO()
 
   FUNCTION: lwho([<boolean>])
 
