@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  October 2002
+Last Update:  December 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,6 +118,9 @@ Feature Additions:
     performed for Wizards. Idea from TinyMUSH 3.0.
  -- Allow #1 to @newpassword herself if it's missing. Idea from Ian.
  -- Backpatch more descriptive messages for two zone functions from MUX 2.2.
+ -- Added KEEPALIVE flag which, if set, periodically causes a TELNET NOP to
+    be sent to the client.  Idea and patch from Soruk.  This approach is less
+    chatty than using the KEEPALIVE option in TCP/IP.
 
 Bug Fixes:
 ~~~~~~~~~
