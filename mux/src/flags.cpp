@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.15 2002-08-29 19:57:05 sdennis Exp $
+// $Id: flags.cpp,v 1.16 2002-09-01 16:53:34 jake Exp $
 //
 
 #include "copyright.h"
@@ -896,14 +896,18 @@ char *unparse_object(dbref player, dbref target, BOOL obey_myopic)
             // show everything
             //
             char *fp = decode_flags(player, &(db[target].fs));
-            sprintf(buf, "%s(#%d%s)", Name(target), target, fp);
+            char *aname = get_ansiname(target);
+            sprintf(buf, "%s(#%d%s)", aname, target, fp);
+            free_lbuf(aname);
             free_sbuf(fp);
         }
         else
         {
             // show only the name.
             //
-            strcpy(buf, Name(target));
+            char *aname = get_ansiname(target);
+            strcpy(buf, get_ansiname(target));
+            free_lbuf(aname);
         }
     }
     return buf;

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.85 2002-09-01 16:31:31 jake Exp $
+// $Id: functions.cpp,v 1.86 2002-09-01 16:53:34 jake Exp $
 //
 
 #include "copyright.h"
@@ -5388,24 +5388,6 @@ FUNCTION(fun_mtime)
 // ---------------------------------------------------------------------------
 // fun_ansiname: Return the value of an object's Ansiname attribute.
 // ---------------------------------------------------------------------------
-char *valid_ansiname(dbref thing)
-{
-    char *ansiname = alloc_lbuf("fun_ansiname.valid");
-    const char *attrtext = atr_get_raw(thing, A_ANSINAME);
-    unsigned int n;
-    if (  !attrtext 
-       || !*attrtext
-       || strcmp(strip_ansi(ansiname, &n), Name(thing)) != 0)
-    {
-        strcpy(ansiname, Name(thing));
-    }
-    else
-    {
-        strcpy(ansiname, attrtext);
-    }
-    return ansiname;
-}
-
 FUNCTION(fun_ansiname)
 {
     dbref thing;
@@ -5422,7 +5404,7 @@ FUNCTION(fun_ansiname)
         safe_match_result(thing, buff, bufc);
         return;
     }
-    char *ansiname = valid_ansiname(thing);
+    char *ansiname = get_ansiname(thing);
     safe_str(ansiname, buff, bufc);
     free_lbuf(ansiname);
 }
