@@ -2,7 +2,7 @@
  * set.c -- commands which set parameters 
  */
 /*
- * $Id: set.cpp,v 1.2 2000-04-11 21:38:01 sdennis Exp $ 
+ * $Id: set.cpp,v 1.3 2000-06-06 21:34:29 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -709,124 +709,135 @@ void do_set(dbref player, dbref cause, int key, char *name, char *flag)
     int atr, atr2, aflags, clear, flagvalue, could_hear;
     ATTR *attr, *attr2;
 
-    /*
-     * See if we have the <obj>/<attr> form, which is how you set * * *
-     * attribute * flags. 
-     */
-
-    if (parse_attrib(player, name, &thing, &atr)) {
-        if (atr != NOTHING) {
-
-            /*
-             * You must specify a flag name 
-             */
-
-            if (!flag || !*flag) {
-                notify_quiet(player,
-                      "I don't know what you want to set!");
+    // See if we have the <obj>/<attr> form, which is how you set
+    // attribute flags.
+    //
+    if (parse_attrib(player, name, &thing, &atr))
+    {
+        if (atr != NOTHING)
+        {
+            // You must specify a flag name.
+            //
+            if (!flag || !*flag)
+            {
+                notify_quiet(player, "I don't know what you want to set!");
                 return;
             }
-            /*
-             * Check for clearing 
-             */
 
+            // Check for clearing.
+            //
             clear = 0;
-            if (*flag == NOT_TOKEN) {
+            if (*flag == NOT_TOKEN)
+            {
                 flag++;
                 clear = 1;
             }
-            /*
-             * Make sure player specified a valid attribute flag 
-             */
 
-            flagvalue = search_nametab(player,
-                        indiv_attraccess_nametab, flag);
-            if (flagvalue < 0) {
+            // Make sure player specified a valid attribute flag.
+            //
+            flagvalue = search_nametab(player, indiv_attraccess_nametab, flag);
+            if (flagvalue < 0)
+            {
                 notify_quiet(player, "You can't set that!");
                 return;
             }
-            /*
-             * Make sure the object has the attribute present 
-             */
 
-            if (!atr_get_info(thing, atr, &aowner, &aflags)) {
-                notify_quiet(player,
-                    "Attribute not present on object.");
+            // Make sure the object has the attribute present.
+            //
+            if (!atr_get_info(thing, atr, &aowner, &aflags))
+            {
+                notify_quiet(player, "Attribute not present on object.");
                 return;
             }
-            /*
-             * Make sure we can write to the attribute 
-             */
 
+            // Make sure we can write to the attribute.
+            //
             attr = atr_num(atr);
-            if (!attr || !Set_attr(player, thing, attr, aflags)) {
+            if (!attr || !Set_attr(player, thing, attr, aflags))
+            {
                 notify_quiet(player, "Permission denied.");
                 return;
             }
-            /*
-             * Go do it 
-             */
 
+            // Go do it.
+            //
             if (clear)
+            {
                 aflags &= ~flagvalue;
+            }
             else
+            {
                 aflags |= flagvalue;
+            }
             could_hear = Hearer(thing);
             atr_set_flags(thing, atr, aflags);
 
-            /*
-             * Tell the player about it. 
-             */
-
+            // Tell the player about it.
+            //
             handle_ears(thing, could_hear, Hearer(thing));
-            if (!(key & SET_QUIET) &&
-                !Quiet(player) && !Quiet(thing)) {
+            if (  !(key & SET_QUIET)
+               && !Quiet(player)
+               && !Quiet(thing))
+            {
                 if (clear)
+                {
                     notify_quiet(player, "Cleared.");
+                }
                 else
+                {
                     notify_quiet(player, "Set.");
+                }
             }
             return;
         }
     }
-    /*
-     * find thing 
-     */
 
+    // Find thing.
+    //
     if ((thing = match_controlled(player, name)) == NOTHING)
+    {
         return;
+    }
 
-    /*
-     * check for attribute set first 
-     */
-    for (p = flag; *p && (*p != ':'); p++) ;
+    // Check for attribute set first.
+    //
+    for (p = flag; *p && (*p != ':'); p++)
+    {
+        // Nothing
+        ;
+    }
 
-    if (*p) {
+    if (*p)
+    {
         *p++ = 0;
         atr = mkattr(flag);
-        if (atr <= 0) {
+        if (atr <= 0)
+        {
             notify_quiet(player, "Couldn't create attribute.");
             return;
         }
         attr = atr_num(atr);
-        if (!attr) {
+        if (!attr)
+        {
             notify_quiet(player, "Permission denied.");
             return;
         }
         atr_get_info(thing, atr, &aowner, &aflags);
-        if (!Set_attr(player, thing, attr, aflags)) {
+        if (!Set_attr(player, thing, attr, aflags))
+        {
             notify_quiet(player, "Permission denied.");
             return;
         }
         buff = alloc_lbuf("do_set");
 
-        /*
-         * check for _ 
-         */
-        if (*p == '_') {
-            StringCopy(buff, p + 1);
-            if (!parse_attrib(player, p + 1, &thing2, &atr2) ||
-                (atr2 == NOTHING)) {
+        // Check for _ 
+        //
+        if (*p == '_')
+        {
+            strcpy(buff, p + 1);
+            if (  !parse_attrib(player, p + 1, &thing2, &atr2)
+               || (atr2 == NOTHING))
+            {
                 notify_quiet(player, "No match.");
                 free_lbuf(buff);
                 return;
@@ -835,25 +846,24 @@ void do_set(dbref player, dbref cause, int key, char *name, char *flag)
             p = buff;
             atr_pget_str(buff, thing2, atr2, &aowner, &aflags);
 
-            if (!attr2 ||
-             !See_attr(player, thing2, attr2, aowner, aflags)) {
+            if (  !attr2
+               || !See_attr(player, thing2, attr2, aowner, aflags))
+            {
                 notify_quiet(player, "Permission denied.");
                 free_lbuf(buff);
                 return;
             }
         }
-        /*
-         * Go set it 
-         */
 
+        // Go set it.
+        //
         set_attr_internal(player, thing, atr, p, key);
         free_lbuf(buff);
         return;
     }
-    /*
-     * Set or clear a flag 
-     */
 
+    // Set or clear a flag.
+    //
     flag_set(thing, player, flag, key);
 }
 
