@@ -1,10 +1,8 @@
-/*
- * version.c - version information 
- */
-/*
- * $Id: version.cpp,v 1.9 2000-08-01 23:59:39 sdennis Exp $ 
- */
-
+//
+// version.cpp - version information 
+//
+// $Id: version.cpp,v 1.10 2000-09-17 21:03:49 sdennis Exp $ 
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -14,13 +12,15 @@
 #include "mudconf.h"
 #include "alloc.h"
 #include "patchlevel.h"
+#ifdef WIN32
+#include "_build.h"
+#define MUX_BUILD_DATE szBuildDate
+#endif // WIN32
 
 void do_version(dbref player, dbref cause, int extra)
 {
-    char *buff;
-
     notify(player, mudstate.version);
-    buff = alloc_mbuf("do_version");
+    char *buff = alloc_mbuf("do_version");
     sprintf(buff, "Build date: %s", MUX_BUILD_DATE);
     notify(player, buff);
     free_mbuf(buff);
@@ -28,31 +28,54 @@ void do_version(dbref player, dbref cause, int extra)
 
 void NDECL(init_version)
 {
+#ifdef WIN32
+#ifdef BETA
+#if PATCHLEVEL > 0
+    sprintf( mudstate.version,
+             "MUX for Win32 Beta %s version %s patchlevel %d #%s",
+             szBetaNum, MUX_VERSION, PATCHLEVEL, szBuildNum);
+#else // PATCHLEVEL
+    sprintf( mudstate.version,
+             "MUX for Win32 Beta %s version %s #%s",
+             szBetaNum, MUX_VERSION, szBuildNum);
+#endif // PATCHLEVEL
+#else // BETA
+#if PATCHLEVEL > 0 
+    sprintf( mudstate.version,
+             "MUX for Win32 version %s patchlevel %d #%s [%s]",
+             MUX_VERSION, PATCHLEVEL, szBuildNum, MUX_RELEASE_DATE);
+#else // PATCHLEVEL
+    sprintf( mudstate.version,
+             "MUX for Win32 version %s #%s [%s]",
+             MUX_VERSION, szBuildNum, MUX_RELEASE_DATE);
+#endif // PATCHLEVEL
+#endif // BETA
+#else // WIN32
 #ifdef BETA
 #if PATCHLEVEL > 0
     sprintf(mudstate.version, "MUX Beta 12 version %s patchlevel %d #%s",
         MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
-#else
-    sprintf(mudstate.version, "MUX Beta 12 version %s #%s",
-        MUX_VERSION, MUX_BUILD_NUM);
+#else // PATCHLEVEL
+    sprintf(mudstate.version, "MUX Beta 12 version %s #%s", MUX_VERSION,
+        MUX_BUILD_NUM);
 #endif // PATCHLEVEL
 #else // BETA
-
 #if PATCHLEVEL > 0
     sprintf(mudstate.version, "MUX version %s patchlevel %d #%s [%s]",
         MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#else
-    sprintf(mudstate.version, "MUX version %s #%s [%s]",
-        MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
+#else // PATCHLEVEL
+    sprintf(mudstate.version, "MUX version %s #%s [%s]", MUX_VERSION,
+        MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #endif // PATCHLEVEL
 #endif // BETA
+#endif // WIN32
 
     STARTLOG(LOG_ALWAYS, "INI", "START");
-    log_text((char *)"Starting: ");
+    log_text("Starting: ");
     log_text(mudstate.version);
     ENDLOG;
     STARTLOG(LOG_ALWAYS, "INI", "START");
-    log_text((char *)"Build date: ");
-    log_text((char *)MUX_BUILD_DATE);
+    log_text("Build date: ");
+    log_text(MUX_BUILD_DATE);
     ENDLOG;
 }
