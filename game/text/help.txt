@@ -7143,13 +7143,17 @@ MUNGE()
   places sorted this way would be "Benden Fort Ista", so we want the final
   list to be "#9000 #20 #5000". The functions, using munge(), are simple:
  
-  > &sort_alpha me=[sort(%0)]
-  > say [munge(sort_alpha,v(places),v(dbrefs))]
-  You say, "#9000 #20 #5000"
+  Example:
+    > &sort_alpha me=[sort(%0)]
+    > say [munge(sort_alpha,v(places),v(dbrefs))]
+    You say, "#9000 #20 #5000"
+  
+  Related Topics:
  
 & OBJEVAL()
+OBJEVAL()
 
-  objeval(<object>,<expression>)
+  FUNCTION: objeval(<object>,<expression>)
  
   Allows you to evaluate <expression> from the viewpoint of <object>.
   You must be a wizard or own <object> to use this function. If <object>
@@ -7158,27 +7162,36 @@ MUNGE()
  
   This function is useful for securing objects which need to evaluate
   attributes on things owned by others.
+  
+  Related Topics:
  
 & OBJMEM()
- 
-  objmem(<object>)
+OBJMEM()
+
+  FUNCTION: objmem(<object>)
  
   Returns the size in bytes of <object>.
   Note that this is the complete struct size of the object, and
   not just the attribute values.
+  
+  Related Topics:
  
 & PLAYMEM()
- 
-  playmem(<player>)
+PLAYMEM()
+
+  FUNCTION: playmem(<player>)
  
   Returns the size in bytes of <player>.
   Note that this is the total number of bytes that the player uses,
   including all objects that they own. You must be a Wizard, or have
   the search power to use this function on another player.
+  
+  Related Topics:
  
 & ANDFLAGS()
+ANDFLAGS()
 
-  andflags(<object>,<list of flags>)
+  FUNCTION: andflags(<object>,<list of flags>)
  
   This function returns 1 if <object> has all the flags in a specified
   list, and 0 if it does not. The list is specified with a single letter
@@ -7192,10 +7205,13 @@ MUNGE()
   If a letter does not correspond to any flag, <object> doesn't have
   it, so the function returns 0. There can be an arbitrary number of
   flags. Do not put spaces between flag letters.
- 
-& ORFLAGS()
 
-  orflags(<object>,<list of flags>)
+  Related Topics: flags(), orflags(). 
+  
+& ORFLAGS()
+ORFLAGS()
+
+  FUNCTION: orflags(<object>,<list of flags>)
  
   This function returns 1 if <object> has at least one of the flags in
   a specified list, and 0 if it does not. The list is specified with a
@@ -7208,15 +7224,18 @@ MUNGE()
   If a letter does not correspond to any flag, <object> doesn't have
   it, so it is simply ignored. There can be an arbitrary number of
   flags. Do not put spaces between flag letters.
+  
+  Related Topics:
  
 & EXTRACT()
+EXTRACT()
 
-  extract(<string>, <first>, <length>[, <delim>])
- 
+  FUNCTION: extract(<string>, <first>, <length>[, <delim>])
+
   Extract returns a string of length words, starting with the first 
   word. Unlike letters, the first word in a string is number 1, 
   instead of 0.
- 
+
   <delim> may be used to specify a delimiter other than a space.
 
   Examples:
@@ -7224,11 +7243,13 @@ MUNGE()
     You say "really neat"
     > say extract(Another@funky@test@for@extract, 3, 3)
     You say "test@for@extract" 
-  See also: index(), insert(), ldelete(), replace().
+  
+  Related Topics: index(), insert(), ldelete(), replace().
 
 & INDEX()
+INDEX()
 
-  Function: index(<list>,<character>,<first>,<length>)
+  FUNCTION: index(<list>,<character>,<first>,<length>)
   
   This function is similar to EXTRACT(), except that an item in the
   list may be more than one word; instead of a space being used to
@@ -7239,35 +7260,44 @@ MUNGE()
   Example:
     > say [index(Cup of Tea | Mug of Beer | Glass of Wine, |, 2, 1)]
     You say, "Mug of Beer"
-  See also: extract().
+  
+  Related Topics: extract().
 
 & FLAGS()
+FLAGS()
 
-  flags(<object>)
+  FUNCTION: flags(<object>)
  
   Flags returns a string consisting of the flags attached to the 
   object. The string is, however, just one word.  Note that @switch
   is case-INsensitive.  i.e. p=P as far as it is concerned.  I wish
   that P=NP....
+  
+  Related Topics:
 
 & NUM()
+NUM()
 
-  num(<object>)
+  FUNCTION: num(<object>)
  
   Returns the dbref number of <object>.
  
-  See also: locate().
+  Related Topics: locate().
 
 & CON()
+CON()
 
-  con(<object>)
+  FUNCTION: con(<object>)
  
   Con returns the first object in the list of objects carried by 
-  thing. Just the first, and only the first.  See NEXT.
+  thing. Just the first, and only the first.  
+  
+  Related Topics: next().
 
 & LOC()
+LOC()
 
-  Function: loc(<object>)
+  FUNCTION: loc(<object>)
  
   Returns the number of the location where <object> is.  You must either
   control the object or be nearby for it to work.  When used on an exit it
@@ -7290,11 +7320,13 @@ MUNGE()
     You say "#368"
     > say loc(here)
     You say "#367"
-  See also: rloc(), room(), where().
+  
+  Related Topics: rloc(), room(), where().
 
 & RLOC()
+RLOC()
 
-  Function: rloc(<object>,<levels>)
+  FUNCTION: rloc(<object>,<levels>)
  
   This function may be used to get the location of an object's location
   (for which you would previously use 'loc(loc(<object>))', which fails if you
@@ -7310,21 +7342,24 @@ MUNGE()
   rloc(<object>,0) is the same as num(<object>), and rloc(<object>,1) is the
   same as loc(<object>).
  
-  See also: loc(), where().
+  Related Topics: loc(), where().
 
 & WHERE()
+WHERE()
 
-  Function: where(<object>)
+  FUNCTION: where(<object>)
  
   This function returns the "true" location of an object. You must control
   the object or be near it in order for it to work. For players and things,
   the "true" location is the normal location of the object. For exits, the
   "true" location is the source room. For rooms, it is #-1.
-  See also: loc(), rloc().
+  
+  Related Topics: loc(), rloc().
 
 & OWNER()
+OWNER()
 
-  Function: owner(<object>)
+  FUNCTION: owner(<object>)
             owner(<object>/<attrib>)
  
   The first form of the owner() function returns the dbref of the owner of the
@@ -7332,75 +7367,87 @@ MUNGE()
  
   The second form returns the owner of an attribute on the named object.
   You must own either the object or the attribute.
+  
+  Related Topics:
 
 & NAME()
+NAME()
 
-  name(<dbref>)
+  FUNCTION: name(<dbref>)
  
   This function returns the name of the indicated object.  When called with
   an exit it returns the only the first alias.
 
-  See also: fullname().
+  Related Topics: fullname().
 
 & FULLNAME()
+FULLNAME()
 
-  Function: fullname(<dbref>)
+  FUNCTION: fullname(<dbref>)
   
   This function returns the full name of the indicated object.  This is the
   same as name() in all cases except when <dbref> is an exit, then all the
   aliases are returned as well.
  
-  See also: name().
+  Related Topics: name().
 
 & NEXT()
+NEXT()
 
-  next(<thing>)
+  FUNCTION: next(<thing>)
  
   If thing is an exit in a room, then next will return the next 
   nondark exit in the list of exits for that room.  If thing is an 
   object, then next will return the next object in the inventory list 
   that the object is in.  Otherwise, it returns a '#-1' string.
-
+  
+  Related Topics:
+  
 & AND()
+AND()
 
-  Function: and(<boolean1>[,<booleanN>]...)
+  FUNCTION: and(<boolean1>,<boolean2>[,<booleanN>]...)
  
-  Takes one or more booleans, and returns 1 if they are all each
+  Takes two or more booleans, and returns 1 if they are all each 
   equivalent to true(1).
  
-  See also: BOOLEAN VALUES, or(), not(), xor().
+  Related Topics: BOOLEAN VALUES, or(), not(), xor().
 
 & OR()
+OR()
 
-  Function: or(<boolean1>,<boolean2>[,<booleanN>]...)
+  FUNCTION: or(<boolean1>,<boolean2>[,<booleanN>]...)
  
   Takes two or more booleans, and returns 1 if at least one is equivalent
   to true(1).
  
-  See also: BOOLEAN VALUES, and(), not(), xor().
+  Related Topics: BOOLEAN VALUES, and(), not(), xor().
 
 & NOT()
+NOT()
 
-  Function: not(<boolean>)
+  FUNCTION: not(<boolean>)
  
   Takes a boolean value, and returns its inverse.  So, if the input is
   equivalent to true(1) it returns a 0, and if the input is equivalent to
   false(0), it returns a 1.
  
-  See also: BOOLEAN VALUES, and(), or(), xor().
+  Related Topics: BOOLEAN VALUES, and(), or(), xor().
 
 & XOR()
+XOR()
 
-  Function: xor(<boolean1>,<boolean2>[,<booleanN>]...)
+  FUNCTION: xor(<boolean1>,<boolean2>[,<booleanN>]...)
  
   Takes two or more booleans, and returns 1 if an odd number of them are
   equivalent to true(1).
  
-  See also: BOOLEAN VALUES, and(), nor(), or().
+  Related Topics: BOOLEAN VALUES, and(), nor(), or().
 
-& gt()
+& GT()
+GT()
 
-  Function: gt(<integer1>,<integer2>)
+  FUNCTION: gt(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if and only if <integer1> is greater than
   <integer2>, and 0 otherwise.  Warning: passing anything but integers will
@@ -7416,11 +7463,13 @@ MUNGE()
     You say "1"
     > say gt(foo, bar)
     You say "0"
-  See also: lt(), lte(), gte(), eq(), neq().
+  
+  Related Topics: lt(), lte(), gte(), eq(), neq().
 
-& gte()
+& GTE()
+GTE()
 
-  Function: gte(<integer1>,<integer2>)
+  FUNCTION: gte(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if and only if <integer1> is greater than
   or equal to <integer2>, and 0 otherwise.  Warning: passing anything but
@@ -7436,11 +7485,13 @@ MUNGE()
     You say "1"
     > say gte(foo, bar)
     You say "1"
-  See also: lt(), lte(), gt(), eq(), neq().
+  
+  Related Topics: lt(), lte(), gt(), eq(), neq().
 
-& lt()
+& LT()
+LT()
 
-  Function: lt(<integer1>,<integer2>)
+  FUNCTION: lt(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if and only if <integer1> is less than
   <integer2>, and 0 otherwise.  Warning: passing anything but integers will
@@ -7456,11 +7507,13 @@ MUNGE()
     You say "0"
     > say lt(foo, bar)
     You say "0"
-  See also: lte(), gte(), gt(), eq(), neq().
+  
+  Related Topics: lte(), gte(), gt(), eq(), neq().
 
-& lte()
+& LTE()
+LTE()
 
-  Function: lte(<integer1>,<integer2>)
+  FUNCTION: lte(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if and only if <integer1> is less than or
   equal to <integer2>, and 0 otherwise.  Warning: passing anything but integers
@@ -7476,11 +7529,13 @@ MUNGE()
     You say "0"
     > say lte(foo, bar)
     You say "1"
-  See also: lt(), gte(), gt(), eq(), neq().
+  
+  Related Topics: lt(), gte(), gt(), eq(), neq().
 
 & EQ()
+EQ()
 
-  Function: eq(<integer1>,<integer2>)
+  FUNCTION: eq(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if they are equal and 0 if they are not.
   Warning: passing anything but integers will produce unexpected results,
@@ -7493,11 +7548,13 @@ MUNGE()
     You say "1"
     > say eq(foo, bar)
     You say "1"
-  See also: lt(), lte(), gte(), gt(), neq().
+    
+  Related Topics: lt(), lte(), gte(), gt(), neq().
 
 & NEQ()
+NEQ()
 
-  Function: neq(<integer1>,<integer2>)
+  FUNCTION: neq(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if they are not equal and 0 if they are
   equal.  Warning: passing anything but integers will produce unexpected
@@ -7510,11 +7567,13 @@ MUNGE()
     You say "0"
     > say neq(foo, bar)
     You say "0"
-  See also: lt(), lte(), gte(), gt(), eq(), not().
+  
+  Related Topics: lt(), lte(), gte(), gt(), eq(), not().
 
 & CAT()
+CAT()
 
-  Function: cat(<string>[,<stringN>])
+  FUNCTION: cat(<string>[,<stringN>])
  
   cat returns a string made up of the contents of string1 through stringN,
   with each string separated from its neighbors by a space.
@@ -7525,9 +7584,12 @@ MUNGE()
     > say cat(This is,another,test of the,CAT function)
     You say "This is another test of the CAT function"
 
+  Related Topics:
+  
 & MEMBER()
+MEMBER()
 
-  Function: member(<list>, <word>[, <delim>])
+  FUNCTION: member(<list>, <word>[, <delim>])
  
   Member takes a list and a word, and returns the position of that word
   within the list.  If the word does not occur in the list, then 0 is
@@ -7548,11 +7610,12 @@ MUNGE()
     > say member(This is a member test, is a)
     You say "#-1 CAN ONLY TEST ONE ELEMENT"
  
-  See also: LISTS, findelem(), match(), strmatch().
+  Related Topics: LISTS, findelem(), match(), strmatch().
 
 & REMOVE()
+REMOVE()
 
-  Function: remove(<list>, <word>[, <delim>])
+  FUNCTION: remove(<list>, <word>[, <delim>])
  
   Remove takes a list and a word, and returns the list, with the word deleted
   from it.  <delim> may be used to specify a delimiter other than a space.
@@ -7566,10 +7629,13 @@ MUNGE()
     You say "#-1 CAN ONLY DELETE ONE ELEMENT"
     > say remove(How about an o-separated list, w ab, o) 
     You say "Hout an o-separated list"
+    
+  Related Topics:
 
 & STARTTIME()
+STARTTIME()
 
-  Function: starttime()
+  FUNCTION: starttime()
  
   Returns a string which is the time the MUX last rebooted.  The time
   is in the same format as the TIME() function returns.
