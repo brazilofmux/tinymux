@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.31 2002-10-20 17:02:49 sdennis Exp $
+// $Id: stringutil.cpp,v 1.32 2002-12-16 00:21:27 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1508,7 +1508,7 @@ int string_compare(const char *s1, const char *s2)
 #ifndef STANDALONE
     if (!mudconf.space_compress)
     {
-        return _stricmp(s1, s2);
+        return mux_stricmp(s1, s2);
     }
     else
     {
@@ -1638,7 +1638,7 @@ char *replace_string(const char *old, const char *new0, const char *s)
     {
         // Find next occurrence of the first character of OLD string.
         //
-        char *p;
+        const char *p;
         if (olen && (p = strchr(s, old[0])))
         {
             // Copy up to the next occurrence of the first char of OLD.
@@ -1700,7 +1700,7 @@ char *replace_tokens
     {
         // Find next '#'.
         //
-        char *p = strchr(s, '#');
+        const char *p = strchr(s, '#');
         if (p)
         {
             // Copy up to the next occurrence of the first character.
@@ -2975,18 +2975,63 @@ void ItemToList_Final(ITL *pContext)
     **(pContext->bufc) = '\0';
 }
 
-#ifndef WIN32
-// _stricmp - Compare two strings ignoring case.
+// mux_stricmp - Compare two strings ignoring case.
 //
-int _stricmp(const char *a, const char *b)
+int mux_stricmp(const char *a, const char *b)
 {
-    return strcasecmp(a,b);
+    while (  *a
+          && *b
+          && Tiny_ToLower[(unsigned char)*a] == Tiny_ToLower[(unsigned char)*b])
+    {
+        a++;
+        b++;
+    }
+    int c1 = Tiny_ToLower[(unsigned char)*a];
+    int c2 = Tiny_ToLower[(unsigned char)*b];
+    if (c1 < c2)
+    {
+        return -1;
+    }
+    else if (c1 > c2)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
-// _strlwr - Convert string to all lower case.
+// mux_memicmp - Compare two buffers ignoring case.
 //
-void _strlwr(char *a)
+int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
 {
+    unsigned char *p1 = (unsigned char *)p1_arg;
+    unsigned char *p2 = (unsigned char *)p2_arg;
+    while (  n--
+          && Tiny_ToLower[(unsigned char)*p1] == Tiny_ToLower[(unsigned char)*p2])
+    {
+        p1++;
+        p2++;
+    }
+    int c1 = Tiny_ToLower[(unsigned char)*p1];
+    int c2 = Tiny_ToLower[(unsigned char)*p2];
+    if (c1 < c2)
+    {
+        return -1;
+    }
+    else if (c1 > c2)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+// mux_strlwr - Convert string to all lower case.
+//
+void mux_strlwr(char *a)
+{
+    char *p = a;
     while (*a)
     {
         *a = Tiny_ToLower[(unsigned char)*a];
@@ -2994,17 +3039,17 @@ void _strlwr(char *a)
     }
 }
 
-// _strupr - Convert string to all upper case.
+// mux_strupr - Convert string to all upper case.
 //
-void _strupr(char *a)
+void mux_strupr(char *a)
 {
+    char *p = a;
     while (*a)
     {
         *a = Tiny_ToUpper[(unsigned char)*a];
         a++;
     }
 }
-#endif // !WIN32
 
 #ifdef WIN32
 #define VSNPRINTF _vsnprintf

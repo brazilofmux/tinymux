@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.12 2002-09-28 23:13:41 sdennis Exp $
+// $Id: walkdb.cpp,v 1.13 2002-12-16 00:21:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -382,7 +382,7 @@ BOOL search_setup(dbref player, char *searchfor, SEARCH *parm)
     }
     else
     {
-        _strlwr(pname);
+        mux_strlwr(pname);
     }
 
     char *searchtype;

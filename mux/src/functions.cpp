@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.122 2002-11-12 06:26:14 jake Exp $
+// $Id: functions.cpp,v 1.123 2002-12-16 00:21:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -904,7 +904,8 @@ FUNCTION(fun_sign)
 FUNCTION(fun_time)
 {
     CLinearTimeAbsolute ltaNow;
-    if (nfargs == 0 || _stricmp("utc", fargs[0]) != 0)
+    if (  nfargs == 0
+       || mux_stricmp("utc", fargs[0]) != 0)
     {
         ltaNow.GetLocal();
     }
@@ -935,7 +936,8 @@ FUNCTION(fun_time)
 FUNCTION(fun_secs)
 {
     CLinearTimeAbsolute ltaNow;
-    if (nfargs == 0 || _stricmp("local", fargs[0]) != 0)
+    if (  nfargs == 0
+       || mux_stricmp("local", fargs[0]) != 0)
     {
         ltaNow.GetUTC();
     }
@@ -970,7 +972,8 @@ FUNCTION(fun_convsecs)
 {
     CLinearTimeAbsolute lta;
     lta.SetSecondsString(fargs[0]);
-    if (nfargs == 1 || _stricmp("utc", fargs[1]) != 0)
+    if (  nfargs == 1
+       || mux_stricmp("utc", fargs[1]) != 0)
     {
         lta.UTC2Local();
     }
@@ -1010,7 +1013,7 @@ FUNCTION(fun_convtime)
     {
         if (  !bZoneSpecified
            && (  nfargs == 1
-              || _stricmp("utc", fargs[1]) != 0))
+              || mux_stricmp("utc", fargs[1]) != 0))
         {
             lta.Local2UTC();
         }
@@ -8474,7 +8477,7 @@ void init_functab(void)
         char *bp = buff;
         safe_sb_str(fp->name, buff, &bp);
         *bp = '\0';
-        _strlwr(buff);
+        mux_strlwr(buff);
         hashaddLEN(buff, strlen(buff), (int *)fp, &mudstate.func_htab);
     }
     free_sbuf(buff);
@@ -8535,7 +8538,7 @@ void do_function
     bp = np = alloc_sbuf("add_user_func");
     safe_sb_str(fname, np, &bp);
     *bp = '\0';
-    _strlwr(np);
+    mux_strlwr(np);
 
     // Verify that the function doesn't exist in the builtin table.
     //
@@ -8599,7 +8602,7 @@ void do_function
         ufp = (UFUN *) MEMALLOC(sizeof(UFUN));
         (void)ISOUTOFMEMORY(ufp);
         ufp->name = StringClone(np);
-        _strupr(ufp->name);
+        mux_strupr(ufp->name);
         ufp->obj = obj;
         ufp->atr = atr;
         ufp->perms = CA_PUBLIC;
@@ -9281,7 +9284,7 @@ FUNCTION(fun_lcmds)
                             print_sep(sep, buff, bufc);
                         }
                         
-                        _strlwr(buf);
+                        mux_strlwr(buf);
                         safe_str(buf+1, buff, bufc);
                         
                         isFirst = FALSE;
@@ -9381,7 +9384,7 @@ FUNCTION(fun_art)
 
     // Drop the input string into lower case.
     //
-    _strlwr(fargs[0]);
+    mux_strlwr(fargs[0]);
 
     // Search for exceptions.
     //

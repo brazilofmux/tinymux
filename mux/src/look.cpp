@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.30 2002-10-01 07:26:02 sdennis Exp $
+// $Id: look.cpp,v 1.31 2002-12-16 00:21:27 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -105,14 +105,14 @@ int WhichRealm(dbref what, BOOL bPeering)
             buff = atr_get(what, iPeeringRealm, &owner, &flags);
             if (*buff)
             {
-                if      (_stricmp(buff, "FAE") == 0)     realm = FAE_REALM;
-                else if (_stricmp(buff, "CHIMERA") == 0) realm = CHIMERA_REALM;
-                else if (_stricmp(buff, "SHROUD") == 0)  realm = SHROUD_REALM;
-                else if (_stricmp(buff, "UMBRA") == 0)   realm = UMBRA_REALM;
-                else if (_stricmp(buff, "MATRIX") == 0)  realm = MATRIX_REALM;
-                else if (_stricmp(buff, "NORMAL") == 0)  realm = NORMAL_REALM;
-                else if (_stricmp(buff, "BLIND") == 0)   realm = BLIND_REALM;
-                else if (_stricmp(buff, "STAFF") == 0)   realm = STAFF_REALM;
+                if      (mux_stricmp(buff, "FAE") == 0)     realm = FAE_REALM;
+                else if (mux_stricmp(buff, "CHIMERA") == 0) realm = CHIMERA_REALM;
+                else if (mux_stricmp(buff, "SHROUD") == 0)  realm = SHROUD_REALM;
+                else if (mux_stricmp(buff, "UMBRA") == 0)   realm = UMBRA_REALM;
+                else if (mux_stricmp(buff, "MATRIX") == 0)  realm = MATRIX_REALM;
+                else if (mux_stricmp(buff, "NORMAL") == 0)  realm = NORMAL_REALM;
+                else if (mux_stricmp(buff, "BLIND") == 0)   realm = BLIND_REALM;
+                else if (mux_stricmp(buff, "STAFF") == 0)   realm = STAFF_REALM;
             }
             free_lbuf(buff);
         }

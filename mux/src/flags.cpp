@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.28 2002-09-19 05:09:40 sdennis Exp $
+// $Id: flags.cpp,v 1.29 2002-12-16 00:21:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -470,7 +470,7 @@ void init_flagtab(void)
         fp->flagname = fp->pOrigName;
         strncpy(nbuf, fp->pOrigName, SBUF_SIZE);
         nbuf[SBUF_SIZE-1] = '\0';
-        _strlwr(nbuf);
+        mux_strlwr(nbuf);
         hashaddLEN(nbuf, strlen(nbuf), (int *)fp, &mudstate.flags_htab);
     }
     free_sbuf(nbuf);
@@ -1160,7 +1160,7 @@ BOOL flag_rename(char *alias, char *newname)
                 MEMFREE(flag1->flagname);
             }
             flag1->flagname = StringCloneLen(pNewName, nNewName);
-            _strupr(flag1->flagname);
+            mux_strupr(flag1->flagname);
 
             free_sbuf(pAlias);
             free_sbuf(pNewName);
@@ -1191,7 +1191,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
             if (lookup)
             {
                 if (  lookup->flagname != lookup->pOrigName
-                   && _stricmp(lookup->flagname, pCheckedAlias) == 0)
+                   && mux_stricmp(lookup->flagname, pCheckedAlias) == 0)
                 {
                     MEMFREE(lookup->flagname);
                     lookup->flagname = lookup->pOrigName;

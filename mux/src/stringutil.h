@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.21 2002-10-20 17:09:49 sdennis Exp $
+// $Id: stringutil.h,v 1.22 2002-12-16 00:21:27 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -139,11 +139,10 @@ int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp);
 int safe_fill(char *buff, char **bufc, char chFile, int nSpaces);
 extern BOOL matches_exit_from_list(char *, const char *);
 extern char *translate_string(const char *, BOOL);
-#ifndef WIN32
-extern int _stricmp(const char *a, const char *b);
-extern void _strlwr(char *tp);
-extern void _strupr(char *a);
-#endif // WIN32
+extern int mux_stricmp(const char *a, const char *b);
+extern int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
+extern void mux_strlwr(char *tp);
+extern void mux_strupr(char *a);
 
 typedef struct tag_itl
 {

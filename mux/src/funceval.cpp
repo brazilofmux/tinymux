@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.62 2002-10-14 06:26:48 sdennis Exp $
+// $Id: funceval.cpp,v 1.63 2002-12-16 00:21:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -55,15 +55,15 @@ FUNCTION(fun_cwho)
     int match_type = CWHO_ON;    
     if (nfargs == 2)
     {
-        if (_stricmp(fargs[1], "all") == 0)
+        if (mux_stricmp(fargs[1], "all") == 0)
         {
             match_type = CWHO_ALL;
         }
-        else if (_stricmp(fargs[1], "off") == 0)
+        else if (mux_stricmp(fargs[1], "off") == 0)
         {
             match_type = CWHO_OFF;
         }
-        else if (_stricmp(fargs[1], "on") == 0)
+        else if (mux_stricmp(fargs[1], "on") == 0)
         {
             match_type = CWHO_ON;
         }
@@ -3013,15 +3013,15 @@ FUNCTION(fun_valid)
     {
         bValid = FALSE;
     }
-    else if (!_stricmp(fargs[0], "name"))
+    else if (!mux_stricmp(fargs[0], "name"))
     {
         MakeCanonicalObjectName(fargs[1], &nValidName, &bValid);
     }
-    else if (!_stricmp(fargs[0], "attrname"))
+    else if (!mux_stricmp(fargs[0], "attrname"))
     {
         MakeCanonicalAttributeName(fargs[1], &nValidName, &bValid);
     }
-    else if (!_stricmp(fargs[0], "playername"))
+    else if (!mux_stricmp(fargs[0], "playername"))
     {
         bValid = ValidatePlayerName(fargs[1]);
     }

@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.13 2002-08-22 01:00:27 sdennis Exp $
+// $Id: player.cpp,v 1.14 2002-12-16 00:21:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -415,7 +415,7 @@ BOOL add_player_name(dbref player, const char *name)
     tp = temp = alloc_lbuf("add_player_name");
     safe_str(name, temp, &tp);
     *tp = '\0';
-    _strlwr(temp);
+    mux_strlwr(temp);
 
     dbref *p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
     if (p)
@@ -473,7 +473,7 @@ BOOL delete_player_name(dbref player, const char *name)
     tp = temp = alloc_lbuf("delete_player_name");
     safe_str(name, temp, &tp);
     *tp = '\0';
-    _strlwr(temp);
+    mux_strlwr(temp);
 
     dbref *p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
     if (  !p
@@ -521,7 +521,7 @@ dbref lookup_player(dbref doer, char *name, BOOL check_who)
     tp = temp = alloc_lbuf("lookup_player");
     safe_str(name, temp, &tp);
     *tp = '\0';
-    _strlwr(temp);
+    mux_strlwr(temp);
     dbref *p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
     free_lbuf(temp);
     if (!p)

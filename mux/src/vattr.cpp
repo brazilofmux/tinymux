@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.9 2002-09-22 20:37:29 sdennis Exp $
+// $Id: vattr.cpp,v 1.10 2002-12-16 00:21:27 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -208,7 +208,7 @@ void dbclean_CheckATtoANH(dbref executor)
                 //
                 char Buffer[SBUF_SIZE];
                 strcpy(Buffer, pa->name);
-                _strupr(Buffer);
+                mux_strupr(Buffer);
 
                 // Fetch the attribute structure pointer -- which should match the one
                 // from the corresponding table entry.

@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.33 2002-09-19 12:26:18 jake Exp $
+// $Id: set.cpp,v 1.34 2002-12-16 00:21:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -74,7 +74,7 @@ void do_chzone
     }
 
     dbref zone;
-    if (!_stricmp(newobj, "none"))
+    if (!mux_stricmp(newobj, "none"))
     {
         zone = NOTHING;
     }

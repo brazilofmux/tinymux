@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.5 2002-07-23 05:36:13 jake Exp $
+// $Id: powers.cpp,v 1.6 2002-12-16 00:21:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -142,7 +142,7 @@ void init_powertab(void)
     {
         strncpy(nbuf, fp->powername, SBUF_SIZE);
         nbuf[SBUF_SIZE-1] = '\0';
-        _strlwr(nbuf);
+        mux_strlwr(nbuf);
         hashaddLEN(nbuf, strlen(nbuf), (int *)fp, &mudstate.powers_htab);
     }
     free_sbuf(nbuf);
@@ -184,7 +184,7 @@ POWERENT *find_power(dbref thing, char *powername)
     char *buff = alloc_sbuf("find_power");
     strncpy(buff, powername, SBUF_SIZE);
     buff[SBUF_SIZE-1] = '\0';
-    _strlwr(buff);
+    mux_strlwr(buff);
     POWERENT *p = (POWERENT *)hashfindLEN(buff, strlen(buff), &mudstate.powers_htab);
     free_sbuf(buff);
     return p;

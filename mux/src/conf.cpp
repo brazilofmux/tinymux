@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.27 2002-11-12 11:38:48 jake Exp $
+// $Id: conf.cpp,v 1.28 2002-12-16 00:21:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -664,11 +664,11 @@ CF_HAND(cf_alias)
 
     if (orig)
     {
-        _strlwr(orig);
+        mux_strlwr(orig);
         int *cp = hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
         if (cp == NULL)
         {
-            _strupr(orig);
+            mux_strupr(orig);
             cp = hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
             if (cp == NULL)
             {
@@ -1161,7 +1161,7 @@ static BOOL MakeCanonicalIPv4(const char *str, in_addr_t *pnIP)
         q++;
     }
 
-    char *p = strchr(q, '.');
+    const char *p = strchr(q, '.');
     int n = 0;
     while (p)
     {
@@ -1972,7 +1972,7 @@ void cf_display(dbref player, char *param_name, char *buff, char **bufc)
 
     for (tp = conftable; tp->pname; tp++)
     {
-        if (!_stricmp(tp->pname, param_name))
+        if (!mux_stricmp(tp->pname, param_name))
         {
             if (check_access(player, tp->rperms))
             {

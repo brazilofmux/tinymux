@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.8 2002-10-12 18:58:04 sdennis Exp $
+// $Id: timeutil.cpp,v 1.9 2002-12-16 00:21:27 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1065,7 +1065,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
     {
         p++;
         size_t n;
-        char *q = strchr(p, ' ');
+        const char *q = strchr(p, ' ');
         if (q)
         {
             n = q - p;
@@ -2659,28 +2659,6 @@ void PD_RemoveNode(PD_Node *pNode)
     }
 }
 
-#ifndef WIN32
-int memicmp(char *p1, char *p2, int n)
-{
-    while (n--)
-    {
-        int c1 = Tiny_ToUpper[(unsigned char)*p1];
-        int c2 = Tiny_ToUpper[(unsigned char)*p2];
-        if (c1 < c2)
-        {
-            return -1;
-        }
-        else if (c1 > c2)
-        {
-            return 1;
-        }
-        p1++;
-        p2++;
-    }
-    return 0;
-}
-#endif // !WIN32
-
 PD_Node *PD_ScanNextToken(char **ppString)
 {
     char *p = *ppString;
@@ -2786,7 +2764,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
             while (PD_TextTable[j].szText)
             {
                 if (  strlen(PD_TextTable[j].szText) == nLen
-                   && memicmp(PD_TextTable[j].szText, pSave, nLen) == 0)
+                   && mux_memicmp(PD_TextTable[j].szText, pSave, nLen) == 0)
                 {
                     pNode->uCouldBe = PD_TextTable[j].uCouldBe;
                     pNode->iToken = PD_TextTable[j].iValue;

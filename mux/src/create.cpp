@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.22 2002-11-12 06:32:07 jake Exp $
+// $Id: create.cpp,v 1.23 2002-12-16 00:21:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -893,7 +893,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
 
     char *NameOfType = alloc_sbuf("do_destroy.NameOfType");
     strcpy(NameOfType, object_types[Typeof(thing)].name);
-    _strlwr(NameOfType);
+    mux_strlwr(NameOfType);
     if (Going(thing))
     {
         if (!mudconf.destroy_going_now)

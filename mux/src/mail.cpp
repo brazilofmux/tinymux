@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.55 2002-11-12 11:38:48 jake Exp $
+// $Id: mail.cpp,v 1.56 2002-12-16 00:21:27 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -184,7 +184,7 @@ static int MessageAdd(char *pMessage)
 //
 static int add_mail_message(dbref player, char *message, BOOL bEval)
 {
-    if (!_stricmp(message, "clear"))
+    if (!mux_stricmp(message, "clear"))
     {
         notify(player, "MAIL: You probably don't wanna send mail saying 'clear'.");
         return NOTHING;
@@ -2447,7 +2447,7 @@ void do_mail_stats(dbref player, char *name, int full)
             target = NOTHING;
         }
     }
-    else if (!_stricmp(name, "me"))
+    else if (!mux_stricmp(name, "me"))
     {
         target = player;
     }
@@ -2660,7 +2660,7 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
 
     // purge a player's mailbox
     //
-    if (!_stricmp(arg1, "purge"))
+    if (!mux_stricmp(arg1, "purge"))
     {
         do_mail_purge(player);
         return;
@@ -2668,12 +2668,12 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
 
     // clear message
     //
-    if (!_stricmp(arg1, "clear"))
+    if (!mux_stricmp(arg1, "clear"))
     {
         do_mail_clear(player, arg2);
         return;
     }
-    if (!_stricmp(arg1, "unclear"))
+    if (!mux_stricmp(arg1, "unclear"))
     {
         do_mail_unclear(player, arg2);
         return;
@@ -3246,7 +3246,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
 
         // Now locate a target.
         //
-        if (!_stricmp(head, "me"))
+        if (!mux_stricmp(head, "me"))
         {
             target = player;
         }

@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.8 2002-08-22 01:00:27 sdennis Exp $
+// $Id: help.cpp,v 1.9 2002-12-16 00:21:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -68,7 +68,7 @@ int helpindex_read(CHashTable *htab, char *filename)
         //
         // Substrings already added will be rejected by hashaddLEN.
         //
-        _strlwr(entry.topic);
+        mux_strlwr(entry.topic);
         BOOL bOriginal = TRUE; // First is the longest.
         int nTopic = strlen(entry.topic);
 
@@ -144,7 +144,7 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, BOO
     }
     else
     {
-        _strlwr(topic);
+        mux_strlwr(topic);
     }
     htab_entry = (struct help_entry *)hashfindLEN(topic, strlen(topic), htab);
     if (htab_entry)

@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.49 2002-09-26 10:23:40 jake Exp $
+// $Id: comsys.cpp,v 1.50 2002-12-16 00:21:26 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2979,7 +2979,7 @@ FUNCTION(fun_channels)
     {
         who = lookup_player(executor, fargs[0], TRUE);
         if (  who == NOTHING
-           && _stricmp(fargs[0], "all") != 0)
+           && mux_stricmp(fargs[0], "all") != 0)
         {
             safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
             return;

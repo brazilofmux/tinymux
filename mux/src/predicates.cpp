@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.41 2002-11-14 12:08:25 jake Exp $
+// $Id: predicates.cpp,v 1.42 2002-12-16 00:21:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -674,7 +674,7 @@ void do_addcommand
 
     // Let's make this case insensitive...
     //
-    _strlwr(name);
+    mux_strlwr(name);
     char *pName = RemoveSetOfCharacters(name, "\r\n\t ");
     CMDENT *old, *cmd;
     ADDENT *add, *nextp;
@@ -763,7 +763,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
 
     // Let's make this case insensitive...
     //
-    _strlwr(name);
+    mux_strlwr(name);
 
     if (*name)
     {
@@ -857,7 +857,7 @@ void do_delcommand
 
     // Let's make this case insensitive...
     //
-    _strlwr(name);
+    mux_strlwr(name);
 
     CMDENT *old, *cmd;
     ADDENT *prev = NULL, *nextp;

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.52 2002-11-25 01:18:42 sdennis Exp $
+// $Id: db.cpp,v 1.53 2002-12-16 00:21:26 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -712,7 +712,7 @@ void do_attribute
 
         // Modify access to user-named attribute
         //
-        _strupr(value);
+        mux_strupr(value);
         TINY_STRTOK_STATE tts;
         Tiny_StrTokString(&tts, value);
         Tiny_StrTokControl(&tts, " ");
