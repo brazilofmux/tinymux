@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.81 2004-04-17 20:48:49 sdennis Exp $
+// $Id: functions.cpp,v 1.82 2004-04-17 22:16:45 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -679,9 +679,10 @@ bool delim_check
         //
         char *tstr = fargs[sep_arg-1];
         int tlen = strlen(tstr);
+
         if (tlen <= 1)
         {
-            dflags &= DELIM_EVAL;
+            dflags &= ~DELIM_EVAL;
         }
         if (dflags & DELIM_EVAL)
         {
@@ -698,38 +699,45 @@ bool delim_check
         //
         if (tlen == 1)
         {
+            sep->n      = 1;
             sep->str[0] = tstr[0];
         }
         else if (tlen == 0)
         {
+            sep->n      = 1;
             sep->str[0] = ' ';
         }
-        else
+        else if (  tlen == 2
+                && (dflags & DELIM_NULL)
+                && memcmp(tstr, NULL_DELIM_VAR, 2) == 0)
         {
-            // We might have an issue.
-            //
-            if (  tlen == 2
-               && dflags & (DELIM_CRLF|DELIM_NULL))
+            sep->n      = 1;
+            sep->str[0] = '\0';
+        }
+        else if (  tlen == 2
+                && (dflags & DELIM_EVAL)
+                && memcmp(tstr, "\r\n", 2) == 0)
+        {
+            sep->n      = 1;
+            sep->str[0] = '\r';
+        }
+        else if (dflags & DELIM_STRING)
+        {
+            if (MAX_SEP_LEN <= tlen)
             {
-                if (  dflags & DELIM_NULL
-                   && memcmp(tstr, NULL_DELIM_VAR, 2) == 0)
-                {
-                    sep->str[0] = '\0';
-                }
-                else if (  (dflags & DELIM_CRLF)
-                        && memcmp(tstr, "\r\n", 2) == 0)
-                {
-                    sep->str[0] = '\r';
-                }
-                else
-                {
-                    bSuccess = false;
-                }
+                sep->n = tlen;
+                memcpy(sep->str, tstr, tlen);
+                sep->str[sep->n] = '\0';
             }
             else
             {
-                bSuccess = false;
+                safe_str("#-1 SEPARATOR MUST BE ONE CHARACTER", buff, bufc);
             }
+        }
+        else
+        {
+            safe_str("#-1 SEPARATOR MUST BE ONE CHARACTER", buff, bufc);
+            bSuccess = false;
         }
 
         // Clean up the evaluation buffer.
@@ -738,17 +746,13 @@ bool delim_check
         {
             free_lbuf(tstr);
         }
-        if (!bSuccess)
-        {
-            safe_str("#-1 SEPARATOR MUST BE ONE CHARACTER", buff, bufc);
-            return false;
-        }
     }
     else
     {
+        sep->n      = 1;
         sep->str[0] = ' ';
     }
-    return true;
+    return bSuccess;
 }
 
 /* ---------------------------------------------------------------------------

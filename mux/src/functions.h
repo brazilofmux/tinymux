@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.4 2004-04-17 20:48:49 sdennis Exp $
+// $Id: functions.h,v 1.5 2004-04-17 22:17:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -54,7 +54,8 @@ if (s) { \
 #define MAX_SEP_LEN 15
 typedef struct
 {
-    char str[MAX_SEP_LEN+1];
+    size_t n;
+    char   str[MAX_SEP_LEN+1];
 } SEP;
 
 // dlfags in delim_check() accepts the following options.
