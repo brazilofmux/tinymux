@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.51 2001-10-06 20:34:58 sdennis Exp $
+// $Id: db.cpp,v 1.52 2001-10-17 17:04:24 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -48,8 +48,6 @@
 // Restart definitions
 //
 #define RS_CONCENTRATE      0x00000002
-#define RS_RECORD_PLAYERS   0x00000004
-#define RS_NEW_STRINGS      0x00000008
 
 OBJ *db = NULL;
 NAME *names = NULL;
@@ -3129,8 +3127,6 @@ void dump_restart_db(void)
 #ifdef CONCENTRATE
     version |= RS_CONCENTRATE;
 #endif // CONCENTRATE
-    version |= RS_RECORD_PLAYERS;
-    version |= RS_NEW_STRINGS;
 
     f = fopen("restart.db", "wb");
     fprintf(f, "+V%d\n", version);
@@ -3174,7 +3170,7 @@ void load_restart_db(void)
      DESC *k;
 #endif // CONCENTRATE
 
-    int val, version, new_strings = 0;
+    int val, version;
     char *temp, buf[8];
 
     f = fopen("restart.db", "r");
@@ -3190,12 +3186,9 @@ void load_restart_db(void)
     version = getref(f);
     MainGameSockPort = getref(f);
 
-    if (version & RS_NEW_STRINGS)
-        new_strings = 1;
-
     maxd = MainGameSockPort + 1;
     mudstate.start_time.SetSeconds(getref(f));
-    strcpy(mudstate.doing_hdr, getstring_noalloc(f, new_strings));
+    strcpy(mudstate.doing_hdr, getstring_noalloc(f, TRUE));
 
     if (version & RS_CONCENTRATE)
     {
@@ -3206,10 +3199,7 @@ void load_restart_db(void)
 #endif // CONCENTRATE
     }
 
-    if (version & RS_RECORD_PLAYERS)
-    {
-        mudstate.record_players = getref(f);
-    }
+    mudstate.record_players = getref(f);
 
     while ((val = getref(f)) != 0)
     {
@@ -3223,7 +3213,7 @@ void load_restart_db(void)
         d->host_info = getref(f);
         d->player = getref(f);
         d->last_time.SetSeconds(getref(f));
-        temp = (char *)getstring_noalloc(f, new_strings);
+        temp = (char *)getstring_noalloc(f, TRUE);
         if (*temp)
         {
             d->output_prefix = alloc_lbuf("set_userstring");
@@ -3233,7 +3223,7 @@ void load_restart_db(void)
         {
             d->output_prefix = NULL;
         }
-        temp = (char *)getstring_noalloc(f, new_strings);
+        temp = (char *)getstring_noalloc(f, TRUE);
         if (*temp)
         {
             d->output_suffix = alloc_lbuf("set_userstring");
@@ -3244,9 +3234,9 @@ void load_restart_db(void)
             d->output_suffix = NULL;
         }
 
-        strcpy(d->addr, getstring_noalloc(f, new_strings));
-        strcpy(d->doing, getstring_noalloc(f, new_strings));
-        strcpy(d->username, getstring_noalloc(f, new_strings));
+        strcpy(d->addr, getstring_noalloc(f, TRUE));
+        strcpy(d->doing, getstring_noalloc(f, TRUE));
+        strcpy(d->username, getstring_noalloc(f, TRUE));
 
         if (version & RS_CONCENTRATE)
         {
