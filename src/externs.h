@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.54 2001-06-27 20:45:00 sdennis Exp $
+// $Id: externs.h,v 1.55 2001-06-27 21:09:51 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -140,6 +140,7 @@ extern void FDECL(move_exit, (dbref, dbref, int, const char *, int));
 extern void FDECL(do_enter_internal, (dbref, dbref, int));
 
 /* From object.cpp */
+extern dbref    NDECL(start_home);
 extern dbref    NDECL(default_home);
 extern int  FDECL(can_set_home, (dbref, dbref, dbref));
 extern dbref    FDECL(new_home, (dbref));
