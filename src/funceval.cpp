@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.8 2000-04-17 18:35:28 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.9 2000-04-24 21:17:09 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -1573,19 +1573,6 @@ FUNCTION(fun_scramble)
 /*
  * Borrowed from PennMUSH 1.50 
  */
-static void swap(char **p, char **q)
-{
-    /*
-     * swaps two points to strings 
-     */
-
-    char *temp;
-
-    temp = *p;
-    *p = *q;
-    *q = temp;
-}
-
 FUNCTION(fun_shuffle)
 {
     char *words[LBUF_SIZE];
@@ -1603,7 +1590,12 @@ FUNCTION(fun_shuffle)
     for (i = 0; i < n; i++)
     {
         j = RandomLong(i, n-1);
-        swap(&words[i], &words[j]);
+
+        // Swap words[i] with words[j]
+        //
+        char *temp = words[i];
+        words[i] = words[j];
+        words[j] = temp;
     }
     arr2list(words, n, buff, bufc, sep);
 }
