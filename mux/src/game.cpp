@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.6 2003-01-24 07:05:08 sdennis Exp $
+// $Id: game.cpp,v 1.7 2003-01-24 15:42:22 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2068,11 +2068,7 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
     }
 }
 
-#ifdef WIN32
-#define DBCONVERT_NAME "dbconvert.exe"
-#else
 #define DBCONVERT_NAME "dbconvert"
-#endif
 
 int DCL_CDECL main(int argc, char *argv[])
 {
@@ -2083,8 +2079,7 @@ int DCL_CDECL main(int argc, char *argv[])
     size_t nProg = strlen(argv[0]);
     const char *pProg = argv[0] + nProg - 1;
     while (  nProg
-          && (  Tiny_IsAlpha[(unsigned char)*pProg]
-             || *pProg == '.'))
+          && Tiny_IsAlpha[(unsigned char)*pProg])
     {
         nProg--;
         pProg--;
