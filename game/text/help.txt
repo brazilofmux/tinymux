@@ -4627,6 +4627,25 @@ CON()
 
   Related Topics: next().
 
+& CONFIG()
+CONFIG()
+
+  FUNCTION: config(<parameter name>)
+
+  Most server configuration options are exposed programatically via this
+  function. Given a <parameter name>, this function returns the value
+  currently in force. Configuration options are determined in order by:
+
+    - Server defaults,
+    - Configuration file, and
+    - @admin changes.
+
+  A complete list of configuration options is given in the wizhelp.txt
+  file, but unfortunately, only WIZARD players are allowed to use the
+  wizhelp command from within the game.
+
+  Related Topics: wizhelp
+
 & CONN()
 CONN()
 
