@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.15 2003-02-06 17:14:40 sdennis Exp $
+// $Id: conf.cpp,v 1.16 2003-02-06 17:19:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1472,10 +1472,11 @@ CF_HAND(cf_hook)
     hookptr = mux_strtok_parse(&tts);
     while (hookptr != NULL)
     {
-       if (*hookptr == '!' && *(hookptr + 1))
+       if (  *hookptr == '!'
+          && *(hookptr + 1))
        {
           hookflg = search_nametab(GOD, hook_names, hookptr + 1);
-          if ( hookflg != -1 )
+          if (0 < hookflg)
           {
              retval = 0;
              *vp = *vp & ~hookflg;
@@ -1484,7 +1485,7 @@ CF_HAND(cf_hook)
        else
        {
           hookflg = search_nametab(GOD, hook_names, hookptr);
-          if ( hookflg != -1 )
+          if (0 < hookflg)
           {
              retval = 0;
              *vp = *vp | hookflg;
