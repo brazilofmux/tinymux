@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.18 2002-01-16 02:10:56 sdennis Exp $
+// $Id: svdrand.cpp,v 1.19 2002-01-22 20:48:05 sdennis Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -21,7 +21,11 @@
 #include "svdrand.h"
 #include "svdhash.h"
 
-#ifndef WIN32
+#ifdef WIN32
+typedef BOOL WINAPI FCRYPTACQUIRECONTEXT(HCRYPTPROV *, LPCTSTR, LPCTSTR, DWORD, DWORD);
+typedef BOOL WINAPI FCRYPTRELEASECONTEXT(HCRYPTPROV, DWORD);
+typedef BOOL WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
+#else
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -54,6 +58,52 @@ void SeedRandomNumberGenerator(void)
         {
             return;
         }
+    }
+#endif
+#ifdef WIN32
+    // The Cryto API became available on Windows with Win95 OSR2. Using Crypto
+    // API as follows lets us to fallback gracefully when running on pre-OSR2
+    // Win95.
+    //
+    HINSTANCE hAdvAPI32 = LoadLibrary("advapi32");
+    if (!hAdvAPI32)
+    {
+        Log.WriteString("Crypto API unavailable.\r\n");
+    }
+    else
+    {
+        FCRYPTACQUIRECONTEXT *fpCryptAcquireContext;
+        FCRYPTRELEASECONTEXT *fpCryptReleaseContext;
+        FCRYPTGENRANDOM *fpCryptGenRandom;
+
+        // Find the entry points for CryptoAcquireContext, CrytpoGenRandom,
+        // and CryptoReleaseContext.
+        //
+        fpCryptAcquireContext = (FCRYPTACQUIRECONTEXT *)
+            GetProcAddress(hAdvAPI32, "CryptAcquireContext");
+        fpCryptReleaseContext = (FCRYPTRELEASECONTEXT *)
+            GetProcAddress(hAdvAPI32, "CryptReleaseContext");
+        fpCryptGenRandom = (FCRYPTGENRANDOM *)
+            GetProcAddress(hAdvAPI32, "CryptGenRandom");
+
+        if (  fpCryptAcquireContext
+           && fpCryptReleaseContext
+           && fpCryptGenRandom)
+        {
+            HCRYPTPROV hProv;
+
+            if (fpCryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, 0))
+            {
+                if (fpCryptGenRandom(hProv, sizeof mt, (BYTE *)mt))
+                {
+                    fpCryptReleaseContext(hProv, 0);
+                    FreeLibrary(hAdvAPI32);
+                    return;
+                }
+                fpCryptReleaseContext(hProv, 0);
+            }
+        }
+        FreeLibrary(hAdvAPI32);
     }
 #endif
 
