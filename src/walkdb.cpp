@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.15 2001-11-28 06:35:55 sdennis Exp $
+// $Id: walkdb.cpp,v 1.16 2001-11-28 07:06:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -798,6 +798,7 @@ void search_perform(dbref player, dbref cause, SEARCH *parm)
             if ((db[thing].fs.word[i] & f) != f)
             {
                 b = TRUE;
+                break;
             }
         }
         if (b)
