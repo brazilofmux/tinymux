@@ -114,6 +114,7 @@ Feature Additions:
  -- Jake added STRIP(). Idea from RhostMUSH.
  -- Jake added WRAP(). Based on RhostMUSH's.
  -- Blank lines in configuration are now ignored as if they were comments.
+ -- Jake added file/line information in ALLOC/BUG messages. From RhostMUSH.
 
 
 Bug Fixes:
@@ -173,6 +174,13 @@ Bug Fixes:
  -- @cemit's to a channel did not affect channel history. Introduced and
     fixed by Jake.
  -- @mail/fwd re-evaluated the fowarded @mail. Fixed by Jake.
+ -- Fixed 'round(100,0)' --> '100.00' instead of '100'.
+ -- Fixed caller (%@) escape in queued commands.
+ -- Bug #157 - @prog + |LOGOUT would crash MUX 1.6, and that was fixed in
+    MUX 2 a long time ago, but this recent fix cleans up the connection
+    further so that the connection can continued to be used for logging into
+    another account. Prompted by Alierak.
+ -- Fixed @cemit alloc/free problems from previous check-in.
 
 
 Performance Enhancements:
