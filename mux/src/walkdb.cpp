@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.6 2002-06-27 09:06:47 jake Exp $
+// $Id: walkdb.cpp,v 1.7 2002-07-09 02:48:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -11,7 +11,6 @@
 #include "misc.h"
 #include "attrs.h"
 
-//
 // Bind occurances of the universal var in ACTION to ARG, then run ACTION.
 // Cmds run in low-prio Q after a 1 sec delay for the first one.
 //
@@ -26,7 +25,6 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
     free_lbuf(command);
 }
 
-//
 // New @dolist.  i.e.:
 // @dolist #12 #34 #45 #123 #34644=@emit [name(##)]
 //
@@ -36,15 +34,14 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
 void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
                char *list, char *command, char *cargs[], int ncargs)
 {
-    char *curr, *objstring, delimiter = ' ';
-    int number = 0;
-
     if (!list || *list == '\0')
     {
         notify(executor, "That's terrific, but what should I do with the list?");
         return;
     }
-    curr = list;
+    char *objstring, delimiter = ' ';
+    int number = 0;
+    char *curr = list;
 
     if (key == DOLIST_DELIMIT)
     {
@@ -72,8 +69,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
     }
     if (key == DOLIST_NOTIFY)
     {
-        char *tbuf;
-        tbuf = alloc_lbuf("dolist.notify_cmd");
+        char *tbuf = alloc_lbuf("dolist.notify_cmd");
         strcpy(tbuf, (char *) "@notify/quiet me");
         CLinearTimeAbsolute lta;
         wait_que(executor, caller, enactor, FALSE, lta, NOTHING, A_SEMAPHORE,
@@ -82,12 +78,10 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
     }
 }
 
-//
 // Regular @find command
 //
 void do_find(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
-    dbref i, low_bound, high_bound;
     char *buff;
 
     if (!payfor(executor, mudconf.searchcost))
@@ -96,6 +90,8 @@ void do_find(dbref executor, dbref caller, dbref enactor, int key, char *name)
         notify_quiet(executor, buff);
         return;
     }
+
+    dbref i, low_bound, high_bound;
     parse_range(&name, &low_bound, &high_bound);
     for (i = low_bound; i <= high_bound; i++)
     {
@@ -116,15 +112,6 @@ void do_find(dbref executor, dbref caller, dbref enactor, int key, char *name)
 //
 int get_stats(dbref player, dbref who, STATS *info)
 {
-    dbref i;
-
-    info->s_total = 0;
-    info->s_rooms = 0;
-    info->s_exits = 0;
-    info->s_things = 0;
-    info->s_players = 0;
-    info->s_garbage = 0;
-
     // Do we have permission?
     //
     if (Good_obj(who) && !Controls(player, who) && !Stat_Any(player))
@@ -137,10 +124,17 @@ int get_stats(dbref player, dbref who, STATS *info)
     //
     if (!payfor(player, mudconf.searchcost))
     {
-        notify(player, tprintf("You don't have enough %s.",
-               mudconf.many_coins));
+        notify(player, tprintf("You don't have enough %s.", mudconf.many_coins));
         return 0;
     }
+    info->s_total = 0;
+    info->s_rooms = 0;
+    info->s_exits = 0;
+    info->s_things = 0;
+    info->s_players = 0;
+    info->s_garbage = 0;
+
+    dbref i;
     DO_WHOLE_DB(i)
     {
         if ((who == NOTHING) || (who == Owner(i)))
@@ -187,8 +181,6 @@ int get_stats(dbref player, dbref who, STATS *info)
 void do_stats(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
     dbref owner;
-    STATS statinfo;
-    char *buff;
 
     switch (key)
     {
@@ -212,7 +204,7 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int key, char *name)
                 nNextFree = mudstate.db_top;
             }
             notify(executor, tprintf("The universe contains %d objects (next free is #%d).",
-            mudstate.db_top, nNextFree));
+                mudstate.db_top, nNextFree));
             return;
         }
         owner = lookup_player(executor, name, 1);
@@ -229,22 +221,20 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int key, char *name)
         return;
     }
 
+    STATS statinfo;
     if (!get_stats(executor, owner, &statinfo))
     {
         return;
     }
-    buff = tprintf(
+    notify(executor, tprintf(
      "%d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)",
                statinfo.s_total, statinfo.s_rooms, statinfo.s_exits,
                statinfo.s_things, statinfo.s_players,
-               statinfo.s_garbage);
-    notify(executor, buff);
+               statinfo.s_garbage));
 }
 
 int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
 {
-    int i, count, quota_out, quota_in;
-
     if (Typeof(from_player) != TYPE_PLAYER)
     {
         from_player = Owner(from_player);
@@ -253,9 +243,8 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
     {
         to_player = Owner(to_player);
     }
-    count = 0;
-    quota_out = 0;
-    quota_in = 0;
+    int i, count, quota_out, quota_in;
+    count = quota_out = quota_in = 0;
     if ((from_player == GOD) && (acting_player != GOD))
     {
         notify(acting_player, "Permission denied.");
@@ -380,12 +369,9 @@ void er_mark_disabled(dbref player)
 //
 int search_setup(dbref player, char *searchfor, SEARCH *parm)
 {
-    char *pname, *searchtype;
-    int err;
-
     // Crack arg into <pname> <type>=<targ>,<low>,<high>
     //
-    pname = parse_to(&searchfor, '=', EV_STRIP_TS);
+    char *pname = parse_to(&searchfor, '=', EV_STRIP_TS);
     if (!pname || !*pname)
     {
         pname = "me";
@@ -395,6 +381,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
         _strlwr(pname);
     }
 
+    char *searchtype;
     if (searchfor && *searchfor)
     {
         searchtype = strrchr(pname, ' ');
@@ -415,6 +402,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
 
     // If the player name is quoted, strip the quotes.
     //
+    int err;
     if (*pname == '\"')
     {
         err = strlen(pname) - 1;
@@ -735,11 +723,10 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
 void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
 {
     POWER thing1powers, thing2powers;
-    char *buff, *result, *bp, *str;
-    int save_invk_ctr;
+    char *result, *bp, *str;
 
-    buff = alloc_sbuf("search_perform.num");
-    save_invk_ctr = mudstate.func_invk_ctr;
+    char *buff = alloc_sbuf("search_perform.num");
+    int save_invk_ctr = mudstate.func_invk_ctr;
 
     dbref thing;
     for (thing = parm->low_bound; thing <= parm->high_bound; thing++)
@@ -855,9 +842,9 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
 static void search_mark(dbref player, int key)
 {
     dbref thing;
-    int nchanged, is_marked;
+    BOOL is_marked;
 
-    nchanged = 0;
+    int nchanged = 0;
     for (thing = olist_first(); thing != NOTHING; thing = olist_next())
     {
         is_marked = Marked(thing);
@@ -1148,16 +1135,14 @@ void do_markall(dbref executor, dbref caller, dbref enactor, int key)
 void do_apply_marked( dbref executor, dbref caller, dbref enactor, int key,
                       char *command, char *cargs[], int ncargs)
 {
-    char *buff;
-    int i;
-    int number = 0;
-
     if (mudconf.control_flags & CF_DBCHECK)
     {
         er_mark_disabled(executor);
         return;
     }
-    buff = alloc_sbuf("do_apply_marked");
+    char *buff = alloc_sbuf("do_apply_marked");
+    int i;
+    int number = 0;
     DO_WHOLE_DB(i)
     {
         if (Marked(i))
@@ -1185,9 +1170,7 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int key,
 //
 void olist_push(void)
 {
-    OLSTK *ol;
-
-    ol = (OLSTK *)MEMALLOC(sizeof(OLSTK));
+    OLSTK *ol = (OLSTK *)MEMALLOC(sizeof(OLSTK));
     (void)ISOUTOFMEMORY(ol);
     ol->next = mudstate.olist;
     mudstate.olist = ol;
@@ -1262,8 +1245,6 @@ dbref olist_first(void)
 
 dbref olist_next(void)
 {
-    dbref thing;
-
     if (!mudstate.olist->cblock)
     {
         return NOTHING;
@@ -1273,7 +1254,7 @@ dbref olist_next(void)
     {
         return NOTHING;
     }
-    thing = mudstate.olist->cblock->data[mudstate.olist->citm++];
+    dbref thing = mudstate.olist->cblock->data[mudstate.olist->citm++];
     if (mudstate.olist->citm >= OBLOCK_SIZE)
     {
         mudstate.olist->cblock = mudstate.olist->cblock->next;
