@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.34 2001-09-14 22:58:19 sdennis Exp $
+// $Id: predicates.cpp,v 1.35 2002-02-02 04:39:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -623,7 +623,7 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
         // Else tack it on to the existing entry...
         //
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
-        ISOUTOFMEMORY(add);
+        (void)ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = atr;
         add->name = StringClone(name);
@@ -639,7 +639,7 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
         }
         
         cmd = (CMDENT *)MEMALLOC(sizeof(CMDENT));
-        ISOUTOFMEMORY(cmd);
+        (void)ISOUTOFMEMORY(cmd);
         cmd->cmdname = StringClone(name);
         cmd->switches = NULL;
         cmd->perms = 0;
@@ -653,7 +653,7 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
             cmd->callseq = CS_ADDED|CS_ONE_ARG;
         }
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
-        ISOUTOFMEMORY(add);
+        (void)ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = atr;
         add->name = StringClone(name);
@@ -1043,7 +1043,7 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
     }
 
     program = (PROG *)MEMALLOC(sizeof(PROG));
-    ISOUTOFMEMORY(program);
+    (void)ISOUTOFMEMORY(program);
     program->wait_cause = player;
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {

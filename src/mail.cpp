@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.28 2001-06-29 18:29:58 sdennis Exp $
+// $Id: mail.cpp,v 1.29 2002-02-02 04:39:03 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -96,7 +96,7 @@ static void mail_db_grow(int newtop)
         }
 
         MENT *newdb = (MENT *)MEMALLOC((newsize + MAIL_FUDGE) * sizeof(MENT));
-        ISOUTOFMEMORY(newdb);
+        (void)ISOUTOFMEMORY(newdb);
         if (mudstate.mail_list)
         {
             mudstate.mail_list -= MAIL_FUDGE;
@@ -1254,7 +1254,7 @@ static void send_mail
     // Initialize the appropriate fields.
     //
     struct mail *newp = (struct mail *)MEMALLOC(sizeof(struct mail));
-    ISOUTOFMEMORY(newp);
+    (void)ISOUTOFMEMORY(newp);
     newp->to = target;
     // HACK: Allow @mail/quick, if player is an object, then the
     // object's owner is the sender, if the owner is a wizard, then
@@ -1400,7 +1400,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
     else if (string_prefix("sanity", action))
     {
         int *ai = (int *)MEMALLOC(mudstate.mail_db_top * sizeof(int));
-        ISOUTOFMEMORY(ai);
+        (void)ISOUTOFMEMORY(ai);
         memset(ai, 0, mudstate.mail_db_top * sizeof(int));
         MAIL_ITER_ALL(mp, thing)
         {
@@ -1482,7 +1482,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
         {
             notify(player, tprintf("Re-counting mailbag reference counts."));
             int *ai = (int *)MEMALLOC(mudstate.mail_db_top * sizeof(int));
-            ISOUTOFMEMORY(ai);
+            (void)ISOUTOFMEMORY(ai);
             memset(ai, 0, mudstate.mail_db_top * sizeof(int));
 
             MAIL_ITER_ALL(mp, thing)
@@ -2050,7 +2050,7 @@ void load_mail_Penn(FILE *fp)
     while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
+        (void)ISOUTOFMEMORY(mp);
 
         mp->to = Tiny_atol(nbuf1);
         mp->from = getref(fp);
@@ -2080,7 +2080,7 @@ void load_mail_V1(FILE *fp)
     while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
+        (void)ISOUTOFMEMORY(mp);
 
         mp->to      = Tiny_atol(nbuf1);
         mp->from    = getref(fp);
@@ -2111,7 +2111,7 @@ void load_mail_V2(FILE *fp)
     while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
+        (void)ISOUTOFMEMORY(mp);
 
         mp->to      = Tiny_atol(nbuf1);
         mp->from    = getref(fp);
@@ -2142,7 +2142,7 @@ void load_mail_V3(FILE *fp)
     while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
+        (void)ISOUTOFMEMORY(mp);
 
         mp->to      = Tiny_atol(nbuf1);
         mp->from    = getref(fp);
@@ -2176,7 +2176,7 @@ void load_mail_V4(FILE *fp)
     while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
+        (void)ISOUTOFMEMORY(mp);
 
         mp->to      = Tiny_atol(nbuf1);
         mp->from    = getref(fp);
@@ -2218,7 +2218,7 @@ void load_mail_V5(FILE *fp)
     while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
+        (void)ISOUTOFMEMORY(mp);
 
         mp->to      = Tiny_atol(nbuf1);
         mp->from    = getref(fp);
@@ -3318,7 +3318,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     dbref target;
 
     int nResult;
-    struct malias *m = get_malias(player, alias, &nResult);
+    get_malias(player, alias, &nResult);
     if (nResult == GMA_INVALIDFORM)
     {
         notify(player, "MAIL: What alias do you want to create?.");
@@ -3335,13 +3335,13 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     {
         ma_size = MA_INC;
         malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
-        ISOUTOFMEMORY(malias);
+        (void)ISOUTOFMEMORY(malias);
     }
     else if (ma_top >= ma_size)
     {
         ma_size += MA_INC;
         nm = (struct malias **)MEMALLOC(sizeof(struct malias *) * (ma_size));
-        ISOUTOFMEMORY(nm);
+        (void)ISOUTOFMEMORY(nm);
 
         for (i = 0; i < ma_top; i++)
         {
@@ -3351,7 +3351,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
         malias = nm;
     }
     malias[ma_top] = (struct malias *)MEMALLOC(sizeof(struct malias));
-    ISOUTOFMEMORY(malias[ma_top]);
+    (void)ISOUTOFMEMORY(malias[ma_top]);
 
     i = 0;
 
@@ -3508,12 +3508,12 @@ void do_malias_list(dbref player, char *alias)
     free_lbuf(buff);
 }
 
-char *Spaces(int n)
+char *Spaces(unsigned int n)
 {
     static char buffer[42] = "                                         ";
     static int nLast = 0;
     buffer[nLast] = ' ';
-    if (0 <= n && n < sizeof(buffer)-1)
+    if (n < sizeof(buffer)-1)
     {
         buffer[n] = '\0';
         nLast = n;
@@ -3587,7 +3587,7 @@ void malias_read(FILE *fp)
     ma_size = ma_top = i;
 
     malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
-    ISOUTOFMEMORY(malias);
+    (void)ISOUTOFMEMORY(malias);
 
     for (i = 0; i < ma_top; i++)
     {
@@ -3603,7 +3603,7 @@ void malias_read(FILE *fp)
         }
 
         m = (struct malias *)MEMALLOC(sizeof(struct malias));
-        ISOUTOFMEMORY(m);
+        (void)ISOUTOFMEMORY(m);
         malias[i] = m;
 
         char *p = strchr(buffer, ' ');
@@ -4452,7 +4452,7 @@ void do_malias_rename(dbref player, char *alias, char *newname)
     if (bValidMailAlias)
     {
         MEMFREE(m->name);
-        m->name = StringClone(newname+1);
+        m->name = StringCloneLen(pValidMailAlias, nValidMailAlias);
         notify(player, "MAIL: Mailing Alias renamed.");
     }
     else

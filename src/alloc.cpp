@@ -2,7 +2,7 @@
  * alloc.cpp - memory allocation subsystem
  */
 /*
- * $Id: alloc.cpp,v 1.7 2001-06-27 20:55:52 sdennis Exp $
+ * $Id: alloc.cpp,v 1.8 2002-02-02 04:39:02 sdennis Exp $
  */
 #include "copyright.h"
 #include "autoconf.h"
@@ -165,7 +165,7 @@ char *pool_alloc(int poolnum, const char *tag)
         if (pools[poolnum].free_head == NULL)
         {
             h = (char *)MEMALLOC(pools[poolnum].pool_size + sizeof(POOLHDR) + sizeof(POOLFTR));
-            ISOUTOFMEMORY(h);
+            (void)ISOUTOFMEMORY(h);
             ph = (POOLHDR *) h;
             h += sizeof(POOLHDR);
             p = (unsigned int *)h;

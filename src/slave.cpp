@@ -4,7 +4,7 @@
  * The philosophy is to keep this program as simple/small as possible.
  * It does normal fork()s, so the smaller it is, the faster it goes.
  * 
- * $Id: slave.cpp,v 1.4 2000-09-07 05:37:54 sdennis Exp $
+ * $Id: slave.cpp,v 1.5 2002-02-02 04:39:03 sdennis Exp $
  */
 
 #include "autoconf.h"
@@ -29,6 +29,10 @@ pid_t parent_pid;
 
 #define MAX_STRING 8000
 char *arg_for_errors;
+
+#ifndef INADDR_NONE
+#define INADDR_NONE ((unsigned long)-1)
+#endif
 
 char *format_inet_addr(char *dest, long addr)
 {
@@ -117,7 +121,7 @@ int query(char *ip, char *orig_arg)
         static char namebuf[128];
 
         defaddr.s_addr = inet_addr(arg);
-        if ((long)defaddr.s_addr == -1)
+        if (defaddr.s_addr == INADDR_NONE)
         {
             return -1;
         }

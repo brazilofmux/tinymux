@@ -1,7 +1,7 @@
 //
 // log.cpp - logging routines
 //
-// $Id: log.cpp,v 1.9 2001-11-03 04:43:30 sdennis Exp $
+// $Id: log.cpp,v 1.10 2002-02-02 04:39:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -270,7 +270,7 @@ void do_log(dbref player, dbref cause, int key, char *whichlog, char *logtext)
     }
     else
     {
-        int i;
+        unsigned int i;
         for (i = 0; i < n; i++)
         {
             if (!Tiny_IsAlphaNumeric[(unsigned char)pFilename[i]])

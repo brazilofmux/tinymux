@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.23 2001-09-25 04:02:17 sdennis Exp $
+// $Id: cque.cpp,v 1.24 2002-02-02 04:39:02 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -204,7 +204,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         log_name_and_loc(player);
                         char *logbuf = alloc_lbuf("do_top.LOG.cpu");
                         long ms = ltd.ReturnMilliseconds();
-                        sprintf(logbuf, " queued command taking %d.%02d secs (enactor #%d): ", ms/100, ms%100, point->cause);
+                        sprintf(logbuf, " queued command taking %ld.%02ld secs (enactor #%d): ", ms/100, ms%100, point->cause);
                         log_text(logbuf);
                         free_lbuf(logbuf);
                         //log_text(log_cmdbuf);
@@ -705,7 +705,7 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
     tmp->comm = NULL;
 
     tptr = tmp->text = (char *)MEMALLOC(tlen);
-    ISOUTOFMEMORY(tptr);
+    (void)ISOUTOFMEMORY(tptr);
 
     if (command)
     {

@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.54 2001-11-23 20:33:19 sdennis Exp $
+// $Id: funceval.cpp,v 1.55 2002-02-02 04:39:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -816,7 +816,7 @@ FUNCTION(fun_table)
     // Check argument numbers, assign values and defaults if necessary.
     //
     char *pPaddingStart;
-    char *pPaddingEnd;
+    char *pPaddingEnd = 0;
     if (nfargs == 6 && *fargs[5])
     {
         pPaddingStart = strip_ansi(fargs[5]);
@@ -2877,7 +2877,7 @@ FUNCTION(fun_valid)
     {
         int nValidName;
         BOOL bValid;
-        char *pValidName = MakeCanonicalObjectName(fargs[1], &nValidName, &bValid);
+        MakeCanonicalObjectName(fargs[1], &nValidName, &bValid);
         char ch = (bValid) ? '1' : '0';
         safe_chr(ch, buff, bufc);
     }
@@ -3246,7 +3246,7 @@ FUNCTION(fun_push)
         return;
     }
     sp = (STACK *)MEMALLOC(sizeof(STACK));
-    ISOUTOFMEMORY(sp);
+    (void)ISOUTOFMEMORY(sp);
     sp->next = Stack(doer);
     sp->data = alloc_lbuf("push");
     strcpy(sp->data, data);
@@ -3403,7 +3403,7 @@ CBitField::CBitField(unsigned int nMaximum_arg)
         //
         nInts    = (nMaximum+nBitsPer-1) >> nShift;
         pMasks   = (UINT32 *)MEMALLOC((nInts+nBitsPer)*sizeof(UINT32));
-        ISOUTOFMEMORY(pMasks);
+        (void)ISOUTOFMEMORY(pMasks);
         pInts    = pMasks + nBitsPer;
 
         // Calculate all possible single bits.

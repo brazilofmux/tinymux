@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.39 2001-11-03 04:43:30 sdennis Exp $
+// $Id: conf.cpp,v 1.40 2002-02-02 04:39:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -924,6 +924,7 @@ BOOL isValidSubnetMask(unsigned long ulMask)
 
 CF_HAND(cf_site)
 {
+    SITE **ppv = (SITE **)vp;
     struct in_addr addr_num, mask_num;
     unsigned long ulMask, ulNetBits;
 
@@ -999,12 +1000,12 @@ CF_HAND(cf_site)
         addr_num.s_addr = htonl(ulAddr);
     }
 
-    SITE *head = (SITE *) * vp;
+    SITE *head = *ppv;
 
     // Parse the access entry and allocate space for it.
     //
     SITE *site = (SITE *)MEMALLOC(sizeof(SITE));
-    ISOUTOFMEMORY(site);
+    (void)ISOUTOFMEMORY(site);
 
     // Initialize the site entry.
     //
@@ -1022,7 +1023,7 @@ CF_HAND(cf_site)
     {
         if (head == NULL)
         {
-            *vp = (int) site;
+            *ppv = site;
         }
         else
         {
@@ -1037,7 +1038,7 @@ CF_HAND(cf_site)
     else
     {
         site->next = head;
-        *vp = (int) site;
+        *ppv = site;
     }
     return 0;
 }
@@ -1516,7 +1517,7 @@ int cf_read(void)
             char *pSuffix = DefaultSuffixes[i].pSuffix;
             int nSuffix = strlen(pSuffix);
             char *buff = (char *)MEMALLOC(nInDB + nSuffix + 1);
-            ISOUTOFMEMORY(buff);
+            (void)ISOUTOFMEMORY(buff);
             memcpy(buff, mudconf.indb, nInDB);
             memcpy(buff + nInDB, pSuffix, nSuffix+1);
             MEMFREE(*p);

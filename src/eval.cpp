@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.17 2001-09-08 19:27:54 sdennis Exp $
+// $Id: eval.cpp,v 1.18 2002-02-02 04:39:02 sdennis Exp $
 //
 
 // MUX 2.0
@@ -1034,7 +1034,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
         realbuff = buff;
         realbp = *bufc;
         buff = (char *)MEMALLOC(LBUF_SIZE);
-        ISOUTOFMEMORY(buff);
+        (void)ISOUTOFMEMORY(buff);
         *bufc = buff;
     }
     

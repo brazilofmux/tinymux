@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.82 2002-01-29 11:01:41 sdennis Exp $
+// $Id: functions.cpp,v 1.83 2002-02-02 04:39:03 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -598,11 +598,11 @@ typedef union
 //
 SpecialFloatUnion SpecialFloatTable[IEEE_MAKE_TABLESIZE] =
 {
-    0, // Unused.
-    IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER,
-    IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER,
-    IEEE_MASK_EXPONENT,
-    IEEE_MASK_EXPONENT | IEEE_MASK_SIGN
+    { 0 }, // Unused.
+    { IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER },
+    { IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER },
+    { IEEE_MASK_EXPONENT },
+    { IEEE_MASK_EXPONENT | IEEE_MASK_SIGN }
 };
 
 double MakeSpecialFloat(int iWhich)
@@ -5730,7 +5730,7 @@ static void do_asort(char *s[], int n, int sort_type)
     case NUMERIC_LIST:
 
         ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        ISOUTOFMEMORY(ip);
+        (void)ISOUTOFMEMORY(ip);
         for (i = 0; i < n; i++)
         {
             ip[i].str = s[i];
@@ -5746,7 +5746,7 @@ static void do_asort(char *s[], int n, int sort_type)
 
     case DBREF_LIST:
         ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        ISOUTOFMEMORY(ip);
+        (void)ISOUTOFMEMORY(ip);
         for (i = 0; i < n; i++)
         {
             ip[i].str = s[i];
@@ -5763,7 +5763,7 @@ static void do_asort(char *s[], int n, int sort_type)
     case FLOAT_LIST:
 
         fp = (f_rec *) MEMALLOC(n * sizeof(f_rec));
-        ISOUTOFMEMORY(fp);
+        (void)ISOUTOFMEMORY(fp);
         for (i = 0; i < n; i++)
         {
             fp[i].str = s[i];
@@ -6835,7 +6835,7 @@ void do_function(dbref player, dbref cause, int key, char *fname, char *target)
     if (!ufp)
     {
         ufp = (UFUN *) MEMALLOC(sizeof(UFUN));
-        ISOUTOFMEMORY(ufp);
+        (void)ISOUTOFMEMORY(ufp);
         ufp->name = StringClone(np);
         _strupr(ufp->name);
         ufp->obj = obj;
