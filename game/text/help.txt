@@ -7875,46 +7875,52 @@ CAPSTR()
   Example:
     > say capstr(this is a string I want capitalized)
     You say "This is a string I want capitalized"
+  
   See also: lcstr(), ucstr().
 
 & LCSTR()
+LCSTR()
 
-  Function: lcstr(<string>)
+  FUNCTION: lcstr(<string>)
  
   Returns <string> with all letters converted to lowercase.
  
   Example:
     > say lcstr(This is something I want to TEST)
     You say "this is something i want to test"
-  See also: capstr(), ucstr().
+  
+  Related Topics: capstr(), ucstr().
 
 & UCSTR()
+UCSTR()
 
-  Function: ucstr(<string>)
+  FUNCTION: ucstr(<string>)
  
   Returns <string> with all letters converted to uppercase.
  
   Example:
     > say ucstr(This is a test, really!)
     You say "THIS IS A TEST, REALLY!"
-  See also: capstr(), lcstr().
+  
+  Related Topics: capstr(), lcstr().
 
 & LNUM()
+LNUM()
 
-  Function:  lnum(<number1>[,<number2>][,<sep>])
- 
+  FUNCTION: lnum(<number1>[,<number2>][,<sep>])
+
   If only given one argument, this function returns a list of numbers from
   0 to <number1>-1. If <number1> less than 1, nothing is returned.
- 
+
   If given at least two arguments, this function returns a list of numbers
   from <number1> to <number2>. If <number2> is less than <number1>, the list
   will be in descending order, otherwise, the list will be in ascending order.
   Negative integers are valid.
 
   <sep> is used as the separator character, if given.
- 
+
   Examples:
-    > say lnum(5) 
+    > say lnum(5)
     You say "0 1 2 3 4"
     > say lnum(3,7)
     You say "3 4 5 6 7"
@@ -7923,9 +7929,12 @@ CAPSTR()
     > say lnum(2,6,@@)
     You say "23456"
 
-& LATTR()
+  Related Topics:
 
-  Function: lattr(<object>[/<wild-pattern>])
+& LATTR()
+LATTR()
+
+  FUNCTION: lattr(<object>[/<wild-pattern>])
  
   Returns a list of the attributes set on <object>.  If <wild-pattern> is
   given, only attributes matching it are returned.
@@ -7945,14 +7954,15 @@ CAPSTR()
     > say lattr(me/v*)
     You say "VC VE VV"
  
-  See also: @dolist.
+  Related Topics: @dolist.
 
 & REVERSE()
+REVERSE()
 
-  Function: reverse(<string>)
+  FUNCTION: reverse(<string>)
  
   Reverses the order of the characters of <string>.
-
+ 
   Examples:
     > say reverse(This is a test)
     You say "tset a si sihT"
@@ -7960,11 +7970,13 @@ CAPSTR()
     You say "...yllaeR ,tset a si sihT"
     > say reverse(A man, a plan, a canal -- Panama!)
     You say "!amanaP -- lanac a ,nalp a ,nam A"
-  See also: revwords().
+  
+  Related Topics: revwords().
 
 & REVWORDS()
+REVWORDS()
 
-  Function: revwords(<string>[, <delim>])
+  FUNCTION: revwords(<string>[, <delim>])
  
   Reverses the order of the words of <string>.  A word is considered to be
   any sequence of nonblank characters, separated by blanks, so punctuation
