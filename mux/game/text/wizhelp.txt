@@ -207,8 +207,8 @@
   periodically, so there is usually no need to use this command.
 
   With the /full switch, @dbck performs more thorough checking, but the
-  additional log messages will need more carefully consideration and
-  interpreation.  Some of these messages can provide very useful insight
+  additional log messages will need more careful consideration and
+  interpretation.  Some of these messages can provide very useful insight
   into the state of the database, but it doesn't make sense to run these
   checks automatically.
 
