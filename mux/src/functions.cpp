@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.62 2002-07-19 11:51:28 jake Exp $
+// $Id: functions.cpp,v 1.63 2002-07-19 12:00:44 jake Exp $
 //
 
 #include "copyright.h"
@@ -3772,7 +3772,13 @@ FUNCTION(fun_dist3d)
     safe_ltoa(d, buff, bufc);
 }
 
-
+FUNCTION(fun_ctu)
+{
+    double val = Tiny_atof(fargs[0]);
+    val = ConvertRDG2R(val, fargs[1]);
+    val = ConvertR2RDG(val, fargs[2]);
+    fval(buff, bufc, val);
+} 
 
 //------------------------------------------------------------------------
 // Vector functions: VADD, VSUB, VMUL, VCROSS, VMAG, VUNIT, VDIM
@@ -7659,6 +7665,7 @@ FUN flist[] =
     {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"CTIME",    fun_ctime,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CTU",      fun_ctu,      MAX_ARG, 3,  3,       0, CA_PUBLIC},
     {"CWHO",     fun_cwho,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"DEC",      fun_dec,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"DECRYPT",  fun_decrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
