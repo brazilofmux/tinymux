@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.20 2003-04-01 20:19:08 sdennis Exp $
+// $Id: bsd.cpp,v 1.21 2003-04-01 20:41:58 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2460,7 +2460,7 @@ static void check_panicking(int sig)
 #ifdef WIN32
         abort();
 #else // WIN32
-        kill(getpid(), sig);
+        kill(game_pid, sig);
 #endif // WIN32
     }
     mudstate.panicking = true;
