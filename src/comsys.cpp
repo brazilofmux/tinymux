@@ -1,6 +1,6 @@
 //comsys.c
 //
-// * $Id: comsys.cpp,v 1.4 2000-06-02 16:22:22 sdennis Exp $
+// * $Id: comsys.cpp,v 1.5 2000-06-02 20:21:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -51,16 +51,7 @@ void do_setnewtitle(dbref player, struct channel *ch, char *pValidatedTitle)
         {
             MEMFREE(user->title);
         }
-        if (pValidatedTitle[0] != '\0')
-        {
-            user->title = (char *)MEMALLOC(strlen(pValidatedTitle) + 1);
-            StringCopy(user->title, pValidatedTitle);
-        }
-        else
-        {
-            user->title = (char *)MEMALLOC(1);
-            user->title[0] = 0;
-        }
+        user->title = StringClone(pValidatedTitle);
     }
 }
 
@@ -158,19 +149,21 @@ void load_channels(FILE *fp)
         if (c->maxchannels > 0)
         {
             c->alias = (char *)MEMALLOC(c->maxchannels * 6);
+            ISOUTOFMEMORY(c->alias);
             c->channels = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
+            ISOUTOFMEMORY(c->channels);
             
             for (j = 0; j < c->numchannels; j++)
             {
                 t = c->alias + j * 6;
                 while ((in = fgetc(fp)) != ' ')
+                {
                     *t++ = in;
+                }
                 *t = 0;
                 
                 fscanf(fp, "%[^\n]\n", buffer);
-                
-                c->channels[j] = (char *)MEMALLOC(strlen(buffer) + 1);
-                StringCopy(c->channels[j], buffer);
+                c->channels[j] = StringClone(buffer);
             }
             sort_com_aliases(c);
         }
@@ -213,19 +206,21 @@ void load_old_channels(FILE *fp)
         if (c->maxchannels > 0)
         {
             c->alias = (char *)MEMALLOC(c->maxchannels * 6);
+            ISOUTOFMEMORY(c->alias);
             c->channels = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
+            ISOUTOFMEMORY(c->channels);
             
             for (j = 0; j < c->numchannels; j++)
             {
                 t = c->alias + j * 6;
                 while ((in = fgetc(fp)) != ' ')
+                {
                     *t++ = in;
+                }
                 *t = 0;
                 
                 fscanf(fp, "%[^\n]\n", buffer);
-                
-                c->channels[j] = (char *)MEMALLOC(strlen(buffer) + 1);
-                StringCopy(c->channels[j], buffer);
+                c->channels[j] = StringClone(buffer);
             }
             sort_com_aliases(c);
         }
@@ -322,11 +317,12 @@ void save_channels(FILE *fp)
     }
 }
 
-comsys_t *create_new_comsys()
+comsys_t *create_new_comsys(void)
 {
     comsys_t *c;
     
     c = (comsys_t *)MEMALLOC(sizeof(comsys_t));
+    ISOUTOFMEMORY(c);
     
     c->who = -1;
     c->numchannels = 0;
@@ -442,9 +438,9 @@ void sort_com_aliases(comsys_t *c)
         {
             if (strcmp(c->alias + i * 6, c->alias + (i + 1) * 6) > 0)
             {
-                StringCopy(buffer, c->alias + i * 6);
-                StringCopy(c->alias + i * 6, c->alias + (i + 1) * 6);
-                StringCopy(c->alias + (i + 1) * 6, buffer);
+                strcpy(buffer, c->alias + i * 6);
+                strcpy(c->alias + i * 6, c->alias + (i + 1) * 6);
+                strcpy(c->alias + (i + 1) * 6, buffer);
                 s = c->channels[i];
                 c->channels[i] = c->channels[i + 1];
                 c->channels[i + 1] = s;
@@ -511,10 +507,10 @@ void load_comsystem(FILE *fp)
     for (i = 0; i < nc; i++)
     {
         ch = (struct channel *)MEMALLOC(sizeof(struct channel));
+        ISOUTOFMEMORY(ch);
         
         fscanf(fp, "%[^\n]\n", temp);
-        
-        StringCopy(ch->name, temp);
+        strcpy(ch->name, temp);
         ch->on_users = NULL;
         
         hashaddLEN(ch->name, strlen(ch->name), (int *)ch, &mudstate.channel_htab);
@@ -543,6 +539,7 @@ void load_comsystem(FILE *fp)
             for (j = 0; j < ch->num_users; j++)
             {
                 user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
+                ISOUTOFMEMORY(user);
                 
                 ch->users[j] = user;
                 
@@ -557,20 +554,13 @@ void load_comsystem(FILE *fp)
                 }
                 
                 fscanf(fp, "%[^\n]\n", temp);
-                
-                if (strlen(temp + 2) > 0)
-                {
-                    user->title = (char *)MEMALLOC(strlen(temp + 2) + 1);
-                    StringCopy(user->title, temp + 2);
-                }
-                else
-                {
-                    user->title = (char *)MEMALLOC(1);
-                    user->title[0] = 0;
-                }
+                user->title = StringClone(temp+2);
+
                 if (user->who >= 0 && user->who < mudstate.db_top)
                 {
-                    if (!(isPlayer(user->who)) && !(Going(user->who) && (God(Owner(user->who)))))
+                    if (  !(isPlayer(user->who))
+                       && !(Going(user->who)
+                       && (God(Owner(user->who)))))
                     {
                         do_joinchannel(user->who, ch);
                         user->on_next = ch->on_users;
@@ -803,6 +793,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         {
             ch->max_users += 10;
             cu = (struct comuser **)MEMALLOC(sizeof(struct comuser *) * ch->max_users);
+            ISOUTOFMEMORY(cu);
             
             for (i = 0; i < (ch->num_users - 1); i++)
             {
@@ -812,6 +803,7 @@ void do_joinchannel(dbref player, struct channel *ch)
             ch->users = cu;
         }
         user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
+        ISOUTOFMEMORY(user);
         
         for (i = ch->num_users - 1; i > 0 && ch->users[i - 1]->who > player; i--)
         {
@@ -822,8 +814,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         user->who = player;
         user->bUserIsOn = 1;
 
-        user->title = (char *)MEMALLOC(1);
-        user->title[0] = 0;
+        user->title = StringClone("");
         
         // if (Connected(player))&&(isPlayer(player))
         //
@@ -1128,11 +1119,13 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
         c->maxchannels += 10;
         
         na = (char *)MEMALLOC(6 * c->maxchannels);
+        ISOUTOFMEMORY(na);
         nc = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
+        ISOUTOFMEMORY(nc);
         
         for (i = 0; i < c->numchannels; i++)
         {
-            StringCopy(na + i * 6, c->alias + i * 6);
+            strcpy(na + i * 6, c->alias + i * 6);
             nc[i] = c->channels[i];
         }
         if (c->alias)
@@ -1149,15 +1142,14 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
     where = c->numchannels++;
     for (i = where; i > j; i--)
     {
-        StringCopy(c->alias + i * 6, c->alias + (i - 1) * 6);
+        strcpy(c->alias + i * 6, c->alias + (i - 1) * 6);
         c->channels[i] = c->channels[i - 1];
     }
     
     where = j;
-    StringCopyTrunc(c->alias + where * 6, arg1, 5);
+    strncpy(c->alias + where * 6, arg1, 5);
     *(c->alias + where * 6 + 5) = '\0';
-    c->channels[where] = (char *)MEMALLOC(strlen(channel) + 1);
-    StringCopy(c->channels[where], channel);
+    c->channels[where] = StringClone(channel);
     
     do_joinchannel(player, ch);
     char *pValidatedTitleValue = RestrictTitleValue(title);
@@ -1202,7 +1194,7 @@ void do_delcom(dbref player, dbref cause, int key, char *arg1)
             c->numchannels--;
             for (; i < c->numchannels; i++)
             {
-                StringCopy(c->alias + i * 6, c->alias + i * 6 + 6);
+                strcpy(c->alias + i * 6, c->alias + i * 6 + 6);
                 c->channels[i] = c->channels[i + 1];
             }
             return;
@@ -1295,8 +1287,9 @@ void do_createchannel(dbref player, dbref cause, int key, char *channel)
         return;
     }
     newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
+    ISOUTOFMEMORY(newchannel);
     
-    StringCopyTrunc(newchannel->name, channel, MAX_CHANNEL_LEN);
+    strncpy(newchannel->name, channel, MAX_CHANNEL_LEN);
     newchannel->name[MAX_CHANNEL_LEN] = '\0';
     newchannel->type = 127;
     newchannel->temp1 = 0;
@@ -1502,7 +1495,7 @@ void do_comtitle(dbref player, dbref cause, int key, char *arg1, char *arg2)
         raw_notify(player, "Need an alias to do comtitle.");
         return;
     }
-    StringCopy(channel, get_channel_from_alias(player, arg1));
+    strcpy(channel, get_channel_from_alias(player, arg1));
     
     if (channel[0] == '\0')
     {
