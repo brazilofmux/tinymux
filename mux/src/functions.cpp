@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.71 2002-07-28 17:11:20 jake Exp $
+// $Id: functions.cpp,v 1.72 2002-07-30 13:40:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -7779,6 +7779,45 @@ FUNCTION(fun_config)
     }
 }
 
+// ---------------------------------------------------------------------------
+// fun_bittype adapted from RhostMUSH. Used with permission.
+//
+int return_bit(dbref player)
+{
+   if (God(player))
+      return 7;
+   // 6 is Rhost Immortal. We don't have an equivalent (yet?).
+   if (Wizard(player))
+      return 5;
+   if (Royalty(player))
+      return 4;
+   if (Staff(player) || Builder(player))
+      return 3;
+   if (Head(player) || Immortal(player))
+      return 2;
+   if (!(Uninspected(player) || Guest(player)))
+      return 1;
+   return 0;
+}
+
+FUNCTION(fun_bittype)
+{
+    dbref target;
+    if (nfargs == 1)
+    {
+        target = match_thing(executor, fargs[0]);
+    }
+    else
+    {
+        target = executor;
+    }
+    if (!Good_obj(target))
+    {
+        return;
+    }
+    safe_ltoa(return_bit(target), buff, bufc);
+}
+
 /* ---------------------------------------------------------------------------
  * flist: List of existing functions in alphabetical order.
  */
@@ -7803,6 +7842,7 @@ FUN flist[] =
     {"ATTRCNT",  fun_attrcnt,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"BAND",     fun_band,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"BEEP",     fun_beep,     MAX_ARG, 0,  0,       0, CA_WIZARD},
+    {"BITTYPE",  fun_bittype,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"BEFORE",   fun_before,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"BNAND",    fun_bnand,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"BOR",      fun_bor,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
