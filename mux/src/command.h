@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: command.h,v 1.2 2004-05-26 02:31:24 sdennis Exp $
 //
 
 #ifndef __COMMAND_H
@@ -135,6 +135,7 @@ CMD_NO_ARG(do_version);         /* List MUX version number */
 CMD_NO_ARG(do_report);          /* Do player/game statistics report */
 CMD_TWO_ARG_ARGV(do_verb);      /* Execute a user-created verb */
 CMD_TWO_ARG_CMDARG(do_wait);    /* Perform command after a wait */
+CMD_TWO_ARG_CMDARG(do_sql);     /* SQL queries */
 CMD_ONE_ARG(do_wipe);           /* Mass-remove attrs from obj */
 CMD_NO_ARG(do_dbclean);         /* Remove stale vattr entries */
 CMD_TWO_ARG(do_addcommand);     /* Add or replace a global command */

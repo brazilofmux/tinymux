@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.19 2004-05-25 19:17:09 sdennis Exp $
+// $Id: cque.cpp,v 1.20 2004-05-26 02:31:24 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -825,6 +825,56 @@ void wait_que
 }
 
 // ---------------------------------------------------------------------------
+// sql_que: Add commands to the sql queue.
+//
+void sql_que
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    bool bTimed,
+    CLinearTimeAbsolute &ltaWhen,
+    dbref thing,
+    int   attr,
+    char *command,
+    char *args[],
+    int   nargs,
+    char *sargs[]
+)
+{
+    if (!(mudconf.control_flags & CF_INTERP))
+    {
+        return;
+    }
+
+    BQUE *tmp = setup_que(executor, caller, enactor, command, args, nargs, sargs);
+    if (!tmp)
+    {
+        return;
+    }
+
+    tmp->IsTimed = bTimed;
+    tmp->waittime = ltaWhen;
+    tmp->sem = thing;
+    tmp->attr = attr;
+
+    int iPriority;
+    if (!tmp->IsTimed)
+    {
+        // In this case, the timeout task below will never run,
+        // but it allows us to manage all semaphores together in
+        // the same data structure.
+        //
+        iPriority = PRIORITY_SUSPEND;
+    }
+    else
+    {
+        iPriority = PRIORITY_OBJECT;
+    }
+    scheduler.DeferTask(tmp->waittime, iPriority, Task_SQLTimeout, tmp, 0);
+}
+
+// ---------------------------------------------------------------------------
 // do_wait: Command interface to wait_que
 //
 void do_wait
@@ -934,6 +984,121 @@ void do_wait
         wait_que(executor, caller, enactor, bTimed, ltaWhen, thing, attr,
             cmd, cargs, ncargs, mudstate.global_regs);
     }
+}
+
+// ---------------------------------------------------------------------------
+// do_sql: Command interface to sql_que
+//
+void do_sql
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int key,
+    char *event,
+    char *cmd,
+    char *cargs[],
+    int ncargs
+)
+{
+    return;
+#if 0
+    CLinearTimeAbsolute ltaWhen;
+    CLinearTimeDelta    ltd;
+
+    // If arg1 is all numeric, do simple (non-sem) timed wait.
+    //
+    if (is_rational(event))
+    {
+        if (key & WAIT_UNTIL)
+        {
+            ltaWhen.SetSecondsString(event);
+        }
+        else
+        {
+            ltaWhen.GetUTC();
+            ltd.SetSecondsString(event);
+            ltaWhen += ltd;
+        }
+        wait_que(executor, caller, enactor, true, ltaWhen, NOTHING, 0, cmd,
+            cargs, ncargs, mudstate.global_regs);
+        return;
+    }
+
+    // Semaphore wait with optional timeout.
+    //
+    char *what = parse_to(&event, '/', 0);
+    init_match(executor, what, NOTYPE);
+    match_everything(0);
+
+    dbref thing = noisy_match_result();
+    if (!Good_obj(thing))
+    {
+        return;
+    }
+    else if (!Controls(executor, thing) && !Link_ok(thing))
+    {
+        notify(executor, NOPERM_MESSAGE);
+    }
+    else
+    {
+        // Get timeout, default 0.
+        //
+        int attr = A_SEMAPHORE;
+        bool bTimed = false;
+        if (event && *event)
+        {
+            if (is_rational(event))
+            {
+                if (key & WAIT_UNTIL)
+                {
+                    ltaWhen.SetSecondsString(event);
+                }
+                else
+                {
+                    ltaWhen.GetUTC();
+                    ltd.SetSecondsString(event);
+                    ltaWhen += ltd;
+                }
+                bTimed = true;
+            }
+            else
+            {
+                ATTR *ap = atr_str(event);
+                if (!ap)
+                {
+                    attr = mkattr(executor, event);
+                    if (attr <= 0)
+                    {
+                        notify_quiet(executor, "Invalid attribute.");
+                        return;
+                    }
+                    ap = atr_num(attr);
+                }
+                else
+                {
+                    attr = ap->number;
+                }
+                if (!bCanSetAttr(executor, thing, ap))
+                {
+                    notify_quiet(executor, NOPERM_MESSAGE);
+                    return;
+                }
+            }
+        }
+
+        int num = add_to(thing, 1, attr);
+        if (num <= 0)
+        {
+            // Thing over-notified, run the command immediately.
+            //
+            thing = NOTHING;
+            bTimed = false;
+        }
+        wait_que(executor, caller, enactor, bTimed, ltaWhen, thing, attr,
+            cmd, cargs, ncargs, mudstate.global_regs);
+    }
+#endif
 }
 
 CLinearTimeAbsolute Show_lsaNow;
