@@ -1,10 +1,7 @@
-/*
- * set.c -- commands which set parameters 
- */
-/*
- * $Id: set.cpp,v 1.4 2000-06-09 19:10:38 sdennis Exp $ 
- */
-
+// set.cpp -- commands which set parameters.
+//
+// $Id: set.cpp,v 1.5 2000-08-09 07:07:54 sdennis Exp $ 
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
