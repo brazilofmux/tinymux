@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.28 2000-08-28 07:35:43 sdennis Exp $
+// $Id: externs.h,v 1.29 2000-08-28 07:52:08 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -299,6 +299,7 @@ extern void ReleaseAllResources(dbref obj);
 #define CEMIT_NOHEADER  1   /* Channel emit without header */
 #define CHOWN_ONE   1   /* item = new_owner */
 #define CHOWN_ALL   2   /* old_owner = new_owner */
+#define CHOWN_NOZONE    8   /* Strip zones from objects */
 #define CLIST_FULL  1   /* Full listing of channels */
 #define CLONE_LOCATION  0   /* Create cloned object in my location */
 #define CLONE_INHERIT   1   /* Keep INHERIT bit if set */
@@ -604,9 +605,6 @@ extern void ReleaseAllResources(dbref obj);
 
 #define SA_EXIT     1   /* Exit, and dump core */
 #define SA_DFLT     2   /* Try to restart on a fatal error */
-
-/* Chownall flags */
-#define CHOWNALL_NOZONE 0x0001
 
 #define STARTLOG(key,p,s) \
     if ((((key) & mudconf.log_options) != 0) && start_log(p, s)) {
