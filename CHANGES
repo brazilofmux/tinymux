@@ -28,7 +28,7 @@ Feature Additions:
  -- Add CREATED attribute (Bug #555 and #608). Patch from Jake.
  -- Added /now switch to @destroy. Patch from Jake.
  -- Added ability to turn off automatic execution of STARTUP attributes from
-    the configuration file.
+    the configuration file. Patch from Jake.
 
 Bug Fixes:
 ~~~~~~~~~
