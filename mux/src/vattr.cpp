@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.7 2002-08-03 18:50:17 sdennis Exp $
+// $Id: vattr.cpp,v 1.8 2002-08-11 21:46:51 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -32,7 +32,7 @@ static char *store_string(char *);
 
 // Current block we're putting stuff in
 //
-static char *stringblock = (char *)0;
+static char *stringblock = (char *)NULL;
 
 // High water mark.
 //

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.19 2002-08-09 15:10:35 sdennis Exp $
+// $Id: stringutil.cpp,v 1.20 2002-08-11 21:46:51 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2717,7 +2717,7 @@ void Tiny_StrTokControl(TINY_STRTOK_STATE *tts, char *pControl)
     //
     memset(tts->aControl, 0, sizeof(tts->aControl));
 
-    // The NUL character is always a control character.
+    // The NULL character is always a control character.
     //
     tts->aControl[0] = 1;
 

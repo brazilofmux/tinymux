@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.16 2002-07-16 07:04:45 sdennis Exp $
+// $Id: move.cpp,v 1.17 2002-08-11 21:46:51 jake Exp $
 //
 
 #include "copyright.h"
@@ -644,7 +644,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
 
     // If we can get it, get it.
     //
-    char *failmsg;
+    const char *failmsg;
     int oattr, aattr;
     BOOL quiet = FALSE;
     switch (Typeof(thing))
@@ -689,11 +689,11 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
             aattr = quiet ? 0 : A_AFAIL;
             if (thingloc != playerloc)
             {
-                failmsg = (char *)"You can't take that from there.";
+                failmsg = "You can't take that from there.";
             }
             else
             {
-                failmsg = (char *)"You can't pick that up.";
+                failmsg = "You can't pick that up.";
             }
             did_it(executor, thing, A_FAIL, failmsg, oattr, NULL, aattr,
                 (char **)NULL, 0);

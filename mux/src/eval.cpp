@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.17 2002-08-03 19:34:21 sdennis Exp $
+// $Id: eval.cpp,v 1.18 2002-08-11 21:46:51 jake Exp $
 //
 
 // MUX 2.1
@@ -1048,28 +1048,6 @@ void PopIntegers(int *pi, int nNeeded)
 void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                dbref enactor, int eval, char **dstr, char *cargs[], int ncargs)
 {
-    char *TempPtr;
-    char *tstr, *tbuf, *start, *oldp, *savestr;
-    const char *constbuf;
-    int ch;
-    char *realbuff = NULL, *realbp = NULL;
-    dbref aowner;
-    int at_space, nfargs, gender, aflags, feval, i;
-    BOOL ansi = FALSE;
-    FUN *fp;
-    UFUN *ufp;
-
-    static const char *subj[5] = {"", "it", "she", "he", "they"};
-    static const char *poss[5] = {"", "its", "her", "his", "their"};
-    static const char *obj[5] =  {"", "it", "her", "him", "them"};
-    static const char *absp[5] = {"", "its", "hers", "his", "theirs"};
-
-    // This is scratch buffer is used potentially on every invocation of
-    // TinyExec. Do not assume that it's contents are valid after you
-    // execute any function that could re-enter TinyExec.
-    //
-    static char TinyExec_scratch[LBUF_SIZE];
-
     if (*dstr == NULL || **dstr == '\0')
     {
         return;
@@ -1083,10 +1061,32 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
         return;
     }
 
+    char *TempPtr;
+    char *tstr, *tbuf, *start, *oldp, *savestr;
+    const char *constbuf;
+    int ch;
+    char *realbuff = NULL, *realbp = NULL;
+    dbref aowner;
+    int nfargs, aflags, feval, i;
+    BOOL ansi = FALSE;
+    FUN *fp;
+    UFUN *ufp;
+
+    static const char *subj[5] = {"", "it", "she", "he", "they"};
+    static const char *poss[5] = {"", "its", "her", "his", "their"};
+    static const char *obj[5] =  {"", "it", "her", "him", "them"};
+    static const char *absp[5] = {"", "its", "hers", "his", "theirs"};
+
+    // This is scratch buffer is used potentially on every invocation of
+    // TinyExec. Do not assume that its contents are valid after you
+    // execute any function that could re-enter TinyExec.
+    //
+    static char TinyExec_scratch[LBUF_SIZE];
+
     char *pdstr = *dstr;
 
-    at_space = 1;
-    gender = -1;
+    int at_space = 1;
+    int gender = -1;
 
     BOOL is_trace = Trace(executor) && !(eval & EV_NOTRACE);
     BOOL is_top = FALSE;
@@ -1130,7 +1130,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     for (;;)
     {
-        // Handle Mudane characters specially. There are usually a lot of them.
+        // Handle mundane characters specially. There are usually a lot of them.
         // Just copy them.
         //
         if (!isSpecial_L1[(unsigned char)*pdstr])
@@ -1138,9 +1138,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             char *p = pdstr + 1;
             while (!isSpecial_L1[(unsigned char)*p++])
             {
-                // Nothing.
-                //
-                ;
+                ; // Nothing.
             }
             i = p - pdstr - 1;
             if (i > nBufferAvailable)

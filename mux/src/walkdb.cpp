@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.10 2002-07-13 07:23:02 jake Exp $
+// $Id: walkdb.cpp,v 1.11 2002-08-11 21:46:51 jake Exp $
 //
 
 #include "copyright.h"
@@ -70,7 +70,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
     if (key == DOLIST_NOTIFY)
     {
         char *tbuf = alloc_lbuf("dolist.notify_cmd");
-        strcpy(tbuf, (char *) "@notify/quiet me");
+        strcpy(tbuf, "@notify/quiet me");
         CLinearTimeAbsolute lta;
         wait_que(executor, caller, enactor, FALSE, lta, NOTHING, A_SEMAPHORE,
             tbuf, cargs, ncargs, mudstate.global_regs);

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.37 2002-08-03 20:24:18 sdennis Exp $
+// $Id: db.cpp,v 1.38 2002-08-11 21:46:51 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -548,7 +548,7 @@ void s_Name(dbref thing, const char *s)
 
 void s_Pass(dbref thing, const char *s)
 {
-    atr_add_raw(thing, A_PASS, (char *)s);
+    atr_add_raw(thing, A_PASS, s);
 }
 
 #ifndef STANDALONE

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.48 2002-08-11 21:35:16 sdennis Exp $
+// $Id: funceval.cpp,v 1.49 2002-08-11 21:46:51 jake Exp $
 //
 
 #include "copyright.h"
@@ -162,11 +162,11 @@ FUNCTION(fun_ansi)
     int iArg0;
     for (iArg0 = 0; iArg0 + 1 < nfargs; iArg0 += 2)
     {
-        char pOut[8];
+        char   pOut[8];
         SimplifyColorLetters(pOut, fargs[iArg0]);
         char tmp[LBUF_SIZE];
         char *bp = tmp;
-    
+
         char *s = pOut;
         while (*s)
         {
@@ -1148,7 +1148,7 @@ static int mem_usage(dbref thing)
         ATTR *attr = atr_num(ca);
         if (attr)
         {
-            str = (char *)attr->name;
+            str = attr->name;
             if (str && *str)
             {
                 k += strlen(str)+1;

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.79 2002-08-11 21:35:16 sdennis Exp $
+// $Id: functions.cpp,v 1.80 2002-08-11 21:46:51 jake Exp $
 //
 
 #include "copyright.h"
@@ -8376,7 +8376,7 @@ void list_functable(dbref player)
         if (check_access(player, fp->perms))
         {
             *bp++ = ' ';
-            for (cp = (char *)(fp->name); *cp; cp++)
+            for (cp = fp->name; *cp; cp++)
             {
                 *bp++ = *cp;
             }
@@ -8388,7 +8388,7 @@ void list_functable(dbref player)
         if (check_access(player, ufp->perms))
         {
             *bp++ = ' ';
-            for (cp = (char *)(ufp->name); *cp; cp++)
+            for (cp = ufp->name; *cp; cp++)
             {
                 *bp++ = *cp;
             }
