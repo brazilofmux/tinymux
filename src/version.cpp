@@ -1,7 +1,7 @@
 //
 // version.cpp - version information 
 //
-// $Id: version.cpp,v 1.12 2000-09-18 08:03:42 sdennis Exp $ 
+// $Id: version.cpp,v 1.13 2000-09-18 08:23:01 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -27,36 +27,36 @@ void NDECL(init_version)
 #ifdef WIN32
 #ifdef BETA
 #if PATCHLEVEL > 0
-        sprintf( mudstate.version, "MUX %s.p%d for Win32 #%s [BETA]\n",
+        sprintf( mudstate.version, "MUX %s.p%d for Win32 #%s [BETA]",
             MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
-        sprintf( mudstate.version, "MUX %s for Win32 #%s [BETA]\n",
+        sprintf( mudstate.version, "MUX %s for Win32 #%s [BETA]",
             MUX_VERSION, MUX_BUILD_NUM);
 #endif // PATCHLEVEL
 #else // BETA
 #if PATCHLEVEL > 0 
-        sprintf( mudstate.version, "MUX %s.p%d for Win32 #%s [%s]\n",
+        sprintf( mudstate.version, "MUX %s.p%d for Win32 #%s [%s]",
             MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #else // PATCHLEVEL
-        sprintf( mudstate.version, "MUX %s for Win32 #%s [%s]\n",
+        sprintf( mudstate.version, "MUX %s for Win32 #%s [%s]",
             MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #endif // PATCHLEVEL
 #endif // BETA
 #else // WIN32
 #ifdef BETA
 #if PATCHLEVEL > 0
-        sprintf( mudstate.version, "MUX %s.p%d #%s [BETA]\n", MUX_VERSION,
+        sprintf( mudstate.version, "MUX %s.p%d #%s [BETA]", MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
-        sprintf( mudstate.version, "MUX %s #%s [BETA]\n", MUX_VERSION,
+        sprintf( mudstate.version, "MUX %s #%s [BETA]", MUX_VERSION,
             MUX_BUILD_NUM);
 #endif // PATCHLEVEL
 #else // BETA
 #if PATCHLEVEL > 0 
-        sprintf( mudstate.version, "MUX %s.p%d #%s [%s]\n", MUX_VERSION,
+        sprintf( mudstate.version, "MUX %s.p%d #%s [%s]", MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #else // PATCHLEVEL
-        sprintf( mudstate.version, "MUX %s #%s [%s]\n", MUX_VERSION,
+        sprintf( mudstate.version, "MUX %s #%s [%s]", MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #endif // PATCHLEVEL
 #endif // BETA
