@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.30 2002-07-25 12:50:39 jake Exp $
+// $Id: comsys.cpp,v 1.31 2002-07-25 13:14:00 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -45,8 +45,7 @@ char *RestrictTitleValue(char *pTitleRequest)
     return pNewTitle;
 }
 
-
-BOOL do_test_access(dbref player, long access, struct channel *chan)
+BOOL test_com_access(dbref player, long access, struct channel *chan)
 {
     if (Comm_All(player))
     {
@@ -211,6 +210,7 @@ void add_comsys(comsys_t *c)
     c->next = comsys_table[c->who % NUM_COMSYS];
     comsys_table[c->who % NUM_COMSYS] = c;
 }
+
 // Aliases must be between 1 and 5 characters. No spaces. No ANSI.
 //
 char *MakeCanonicalComAlias
@@ -395,6 +395,7 @@ void load_channels(FILE *fp)
         purge_comsystem();
     }
 }
+
 void BuildChannelMessage
 (
     BOOL bSpoof,
@@ -517,7 +518,7 @@ void SendChannelMessage
     for (user = ch->on_users; user; user = user->on_next)
     {
         if (  user->bUserIsOn
-           && do_test_access(user->who, CHANNEL_RECEIVE, ch))
+           && test_com_access(user->who, CHANNEL_RECEIVE, ch))
         {
             if (  user->ComTitleStatus
                || bSpoof
@@ -559,7 +560,6 @@ void SendChannelMessage
             atr_add(ch->chan_obj, atr, msgNormal, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
         }
     }
-
 
     // Since msgNormal and msgNoComTitle are no longer needed, free them here.
     //
@@ -1214,6 +1214,7 @@ void do_comdisconnectchannel(dbref player, char *channel)
         }
     }
 }
+
 void do_comwho(dbref player, struct channel *ch)
 {
     struct comuser *user;
@@ -1379,7 +1380,7 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         }
         do_comlast(player, ch, nRecall);
     }
-    else if (!do_test_access(player, CHANNEL_TRANSMIT, ch))
+    else if (!test_com_access(player, CHANNEL_TRANSMIT, ch))
     {
         raw_notify(player, "That channel type cannot be transmitted on.");
         return;
@@ -1407,8 +1408,6 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
     }
 }
-
-
 
 BOOL do_chanlog(dbref player, char *channel, char *arg)
 {
@@ -1523,7 +1522,7 @@ void do_addcom
         raw_notify(executor, tprintf("Channel %s does not exist yet.", Buffer));
         return;
     }
-    if (!do_test_access(executor, CHANNEL_JOIN, ch))
+    if (!test_com_access(executor, CHANNEL_JOIN, ch))
     {
         raw_notify(executor, "Sorry, this channel type does not allow you to join.");
         return;
@@ -1836,7 +1835,7 @@ void do_cleanupchannels(void)
         {
             if (isPlayer(user->who))
             {
-                if (!(do_test_access(user->who, CHANNEL_JOIN, ch)))
+                if (!test_com_access(user->who, CHANNEL_JOIN, ch))
                 //if (!Connected(user->who))
                 {
                     // Go looking for user in the array.
@@ -2239,16 +2238,12 @@ void do_comconnectchannel(dbref player, char *channel, char *alias, int i)
 void do_comdisconnect(dbref player)
 {
     int i;
-    comsys_t *c;
-
-    c = get_comsys(player);
+    comsys_t *c = get_comsys(player);
 
     for (i = 0; i < c->numchannels; i++)
     {
         do_comdisconnectchannel(player, c->channels[i]);
-#ifdef CHANNEL_LOUD
         do_comdisconnectraw_notify(player, c->channels[i]);
-#endif // CHANNEL_LOUD
     }
 }
 
@@ -2472,7 +2467,7 @@ void do_cemit
         raw_notify(executor, tprintf("Channel %s does not exist.", chan));
         return;
     }
-    if ((executor != ch->charge_who) && (!Comm_All(executor)))
+    if ((executor != ch->charge_who) && !Comm_All(executor))
     {
         raw_notify(executor, NOPERM_MESSAGE);
         return;
@@ -2545,7 +2540,7 @@ void do_chopen
         raw_notify(executor, msg);
         return;
     }
-    if ((executor != ch->charge_who) && (!Comm_All(executor)))
+    if ((executor != ch->charge_who) && !Comm_All(executor))
     {
         raw_notify(executor, NOPERM_MESSAGE);
         return;
@@ -2713,7 +2708,6 @@ void do_chboot
     {    
         do_delcomchannel(thing, channel, TRUE);
     }
-    
 }
 
 void do_chanlist(dbref executor, dbref caller, dbref enactor, int key)
