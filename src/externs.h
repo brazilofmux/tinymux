@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.14 2000-04-25 18:32:52 sdennis Exp $
+// $Id: externs.h,v 1.15 2000-04-29 08:06:57 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -500,6 +500,9 @@ extern void FDECL(toast_player, (dbref));
 #define SWEEP_VERBOSE   256 /* Display what pattern matches */
 #define TELEPORT_DEFAULT 1  /* Emit all messages */
 #define TELEPORT_QUIET   2  /* Teleport in quietly */
+#define TIMECHK_RESET   1   /* Reset all counters to zero */
+#define TIMECHK_SCREEN  2   /* Write info to screen */
+#define TIMECHK_LOG 4   /* Write info to log */
 #define TOAD_NO_CHOWN   1   /* Don't change ownership */
 #define TRIG_QUIET  1   /* Don't display 'Triggered.' message. */
 #define TWARP_QUEUE 1   /* Warp the wait and sem queues */
@@ -657,10 +660,23 @@ extern long DebugTotalMemory;
 #endif // MEMORY_ACCOUNTING
 
 #ifdef WIN32
+extern int game_pid;
 extern long DebugTotalThreads;
 extern long DebugTotalSemaphores;
+extern HANDLE hGameProcess;
 typedef BOOL __stdcall FCANCELIO(HANDLE hFile);
+typedef BOOL __stdcall FGETPROCESSTIMES(HANDLE hProcess,
+    LPFILETIME pftCreate, LPFILETIME pftExit, LPFILETIME pftKernel,
+    LPFILETIME pftUser); 
 extern FCANCELIO *fpCancelIo;
+extern FGETPROCESSTIMES *fpGetProcessTimes;
+extern BOOL bQueryPerformanceAvailable;
+extern INT64 QP_A;
+extern INT64 QP_B;
+extern INT64 QP_C;
+extern INT64 QP_D;
+#else
+extern pid_t game_pid;
 #endif // WIN32
 
 extern void init_timer(void);
