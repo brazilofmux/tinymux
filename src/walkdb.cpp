@@ -1,7 +1,7 @@
 //
 // walkdb.c -- Support for commands that walk the entire db 
 //
-// $Id: walkdb.cpp,v 1.3 2000-04-24 21:36:42 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.4 2000-05-19 18:33:28 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -215,8 +215,8 @@ void do_stats(dbref player, dbref cause, int key, char *name)
             {
                 nNextFree = mudstate.db_top;
             }
-			notify(player, tprintf("The universe contains %d objects (next free is #%d).",
-				       mudstate.db_top, nNextFree));
+            notify(player, tprintf("The universe contains %d objects (next free is #%d).",
+            mudstate.db_top, nNextFree));
             return;
         }
         owner = lookup_player(player, name, 1);

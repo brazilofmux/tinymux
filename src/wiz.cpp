@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.1 2000-04-11 07:14:48 sdennis Exp $
+// $Id: wiz.cpp,v 1.2 2000-05-19 18:31:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -336,7 +336,7 @@ void do_newpassword(dbref player, dbref cause, int key, char *name,
     if (*password != '\0' && !ok_password(password, player))
     {
         // Can set null passwords, but not bad passwords.
-	    // Notification of reason done by ok_password().
+        // Notification of reason done by ok_password().
         //
         return;
     }
