@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.148 2002-02-07 08:35:59 sdennis Exp $
+// $Id: functions.cpp,v 1.149 2002-02-07 09:05:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -655,7 +655,7 @@ static void fval(char *buff, char **bufc, double result)
         }
         else
         {
-            safe_str(Tiny_ftoa(result), buff, bufc);
+            safe_str(Tiny_ftoa(result, FALSE, 0), buff, bufc);
         }
 #ifdef HAVE_IEEE_FP_FORMAT
     }
@@ -689,7 +689,7 @@ static void fval_buf(char *buff, double result)
         }
         else
         {
-            strcpy(buff, Tiny_ftoa(result));
+            strcpy(buff, Tiny_ftoa(result, FALSE, 0));
         }
 #ifdef HAVE_IEEE_FP_FORMAT
     }
@@ -2914,7 +2914,7 @@ FUNCTION(fun_round)
     {
 #endif // HAVE_IEEE_FP_FORMAT
         int frac = Tiny_atol(fargs[1]);
-        safe_str(Tiny_ftoa(r, 1, frac), buff, bufc);
+        safe_str(Tiny_ftoa(r, TRUE, frac), buff, bufc);
 #ifdef HAVE_IEEE_FP_FORMAT
     }
     else

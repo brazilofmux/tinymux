@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.35 2002-02-07 08:36:00 sdennis Exp $
+// $Id: stringutil.h,v 1.36 2002-02-07 09:05:02 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -57,7 +57,7 @@ void safe_i64toa(INT64 val, char *buff, char **bufc);
 long Tiny_atol(const char *pString);
 INT64 Tiny_atoi64(const char *pString);
 double Tiny_atof(char *szString);
-char *Tiny_ftoa(double r, int mode = 0, int frac = 0);
+char *Tiny_ftoa(double r, BOOL bRounded, int frac);
 
 BOOL is_integer(char *, int *);
 BOOL is_number(char *);
