@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.29 2002-09-06 20:47:24 jake Exp $
+// $Id: netcommon.cpp,v 1.30 2002-09-17 06:38:35 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -539,7 +539,6 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
     }
     char *p = command;
     while (  *msg
-          && Tiny_IsASCII[(unsigned char)*msg]
           && !Tiny_IsSpace[(unsigned char)*msg])
     {
         *p++ = *msg++;
@@ -586,7 +585,6 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
     else
     {
         while (  *msg
-              && Tiny_IsASCII[(unsigned char)*msg]
               && !Tiny_IsSpace[(unsigned char)*msg])
         {
             *p++ = *msg++;
@@ -599,7 +597,6 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
     }
     p = pass;
     while (  *msg
-          && Tiny_IsASCII[(unsigned char)*msg]
           && !Tiny_IsSpace[(unsigned char)*msg])
     {
         *p++ = *msg++;
