@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.69 2003-01-31 22:43:43 sdennis Exp $
+// $Id: funceval.cpp,v 1.70 2003-03-11 06:25:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -757,6 +757,7 @@ FUNCTION(fun_objeval)
     *bp = '\0';
 
     dbref obj = match_thing_quiet(executor, name);
+    free_lbuf(name);
     if (!Good_obj(obj))
     {
         safe_match_result(obj, buff, bufc);
@@ -776,7 +777,6 @@ FUNCTION(fun_objeval)
     str = fargs[1];
     TinyExec(buff, bufc, obj, executor, enactor,
              EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
-    free_lbuf(name);
     mudstate.nObjEvalNest--;
 }
 
