@@ -2,7 +2,7 @@
  * player.c 
  */
 /*
- * $Id: player.cpp,v 1.4 2000-06-05 19:00:01 sdennis Exp $ 
+ * $Id: player.cpp,v 1.5 2000-06-16 00:22:32 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -503,17 +503,26 @@ dbref lookup_player(dbref doer, char *name, int check_who)
     char *temp, *tp;
 
     if (!string_compare(name, "me"))
+    {
         return doer;
+    }
 
-    if (*name == NUMBER_TOKEN) {
+    if (*name == NUMBER_TOKEN)
+    {
         name++;
         if (!is_number(name))
+        {
             return NOTHING;
+        }
         thing = Tiny_atol(name);
         if (!Good_obj(thing))
+        {
             return NOTHING;
-        if (!((Typeof(thing) == TYPE_PLAYER) || God(doer)))
+        }
+        if (!(isPlayer(thing) || God(doer)))
+        {
             thing = NOTHING;
+        }
         return thing;
     }
     tp = temp = alloc_lbuf("lookup_player");
@@ -528,7 +537,9 @@ dbref lookup_player(dbref doer, char *name, int check_who)
         {
             thing = find_connected_name(doer, name);
             if (Dark(thing))
+            {
                 thing = NOTHING;
+            }
         }
         else
         {
