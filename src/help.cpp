@@ -2,7 +2,7 @@
  * help.c -- commands for giving help 
  */
 /*
- * $Id: help.cpp,v 1.1 2000-04-11 07:14:45 sdennis Exp $ 
+ * $Id: help.cpp,v 1.2 2000-05-19 18:56:22 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -170,8 +170,8 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
                     buffp = topic_list;
                 }
                 safe_str(htab_entry->key, topic_list, &buffp);
-				safe_chr(' ', topic_list, &buffp);
-				safe_chr(' ', topic_list, &buffp);
+                safe_chr(' ', topic_list, &buffp);
+                safe_chr(' ', topic_list, &buffp);
             }
         }
         if (matched == 0)
