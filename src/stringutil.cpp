@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.17 2000-07-08 13:49:31 sdennis Exp $
+// $Id: stringutil.cpp,v 1.18 2000-07-30 14:47:55 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -614,7 +614,8 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
     }
 }
 
-// The following is really 30 (E[0mE[1mE[4mE[5mE[7mE[33mE[43m) but we are being conservative
+// The following is really 30 (E[0mE[1mE[4mE[5mE[7mE[33mE[43m) but we are
+// being conservative.
 //
 #define ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH 60
 
@@ -682,7 +683,7 @@ char *ANSI_TransitionColorBinary(ANSI_ColorState *acsCurrent, ANSI_ColorState *a
         memcpy(p, ANSI_FOREGROUND, sizeof(ANSI_FOREGROUND)-1);
         p += sizeof(ANSI_FOREGROUND)-1;
         *p++ = acsNext->iForeground + '0';
-        *p++ =  ANSI_ATTR_CMD;
+        *p++ = ANSI_ATTR_CMD;
     }
     if (tmp.iBackground != acsNext->iBackground)
     {
