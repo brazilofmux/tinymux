@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.8 2003-02-12 19:04:30 jake Exp $
+// $Id: set.cpp,v 1.9 2003-02-13 12:02:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1349,15 +1349,10 @@ bool parse_attrib(dbref player, char *str, dbref *thing, int *atr)
     //
     ATTR *attr = atr_str(str);
     free_lbuf(buff);
-    if (attr)
+    if (  attr
+       && See_attr(player, *thing, attr))
     {
-        dbref aowner;
-        int aflags;
-        atr_pget_info(*thing, attr->number, &aowner, &aflags);
-        if (See_attr(player, *thing, attr))
-        {
-            *atr = attr->number;
-        }
+        *atr = attr->number;
     }
     return true;
 }
@@ -1365,6 +1360,7 @@ bool parse_attrib(dbref player, char *str, dbref *thing, int *atr)
 bool parse_attrib_temp(dbref player, char *str, dbref *thing, ATTR **attr)
 {
     *thing = NOTHING;
+    *attr = NULL;
 
     if (!str)
     {
@@ -1383,10 +1379,6 @@ bool parse_attrib_temp(dbref player, char *str, dbref *thing, ATTR **attr)
     if (retval)
     {
         *attr = atr_str(str);
-    }
-    else
-    {
-        *attr = NULL;
     }
     return retval;
 }
