@@ -1,5 +1,5 @@
 TinyMUX 2.3:  CHANGES
-Last Update:  July 2003
+Last Update:  September 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,6 +28,9 @@ Feature Additions:
     'On For' column with more care.  A range of years can be represented
     with a resolution of minutes at most, however, with limited
     available width resolution is gracefully sacrified.
+ -- The lag_maximum configuration option now accepts fractional seconds.
+ -- Jake added support for variable exits.
+ -- Support for larger CHashpage sizes (based on value of LBUF_SIZE).
 
 
 Bug Fixes:
@@ -166,6 +169,18 @@ Bug Fixes:
     the problem.
  -- @hook/igswitch didn't work when the built-in command normally
     doesn't take switches.
+ -- Fix problem with comsys aliases potentially hiding the 'home' command
+    an exit names.  Fix by Jake.
+ -- Documented lag_maximum configuration option.
+ -- ALIAS attribute wasn't available to other players.
+ -- RIGHT() had problems with ANSI.
+ -- Fixed cor(), cand(), corbool(), and candbool().  Fix by Sean Hunter.
+ -- GCC 3.2 with high-optimizations couldn't compare properly with
+    -DBL_MAX.  Reported on Shangrila.
+ -- WRAP() thoroughly updated by Jake.
+ -- @descformat updated to evaluate the description.  Fix by Sean Hunter.
+ -- Workaround a bug in Microsoft Visual C/C++ compiler (Version 12.0 which
+    is part of Visual Studio 6.0.  This bug affects PCRE.
 
 
 Performance Enhancements:
