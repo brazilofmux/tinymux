@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.9 2002-07-13 07:23:02 jake Exp $
+// $Id: wiz.cpp,v 1.10 2002-07-14 08:03:44 jake Exp $
 //
 
 #include "copyright.h"
@@ -457,14 +457,14 @@ void do_newpassword
 
 void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
-    dbref victim;
-    int count;
-
-    if (!(Can_Boot(executor)))
+    if (!Can_Boot(executor))
     {
         notify(executor, NOPERM_MESSAGE);
         return;
     }
+
+    dbref victim;
+    int count;
     if (key & BOOT_PORT)
     {
         if (is_integer(name, NULL))
@@ -565,23 +565,9 @@ void do_poor(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 //
 void do_cut(dbref executor, dbref caller, dbref enactor, int key, char *thing)
 {
-    dbref object;
-
-    object = match_controlled(executor, thing);
-    switch (object)
+    dbref object = match_controlled(executor, thing);
+    if (Good_obj(object))
     {
-    case NOTHING:
-
-        notify_quiet(executor, "No match.");
-        break;
-
-    case AMBIGUOUS:
-
-        notify_quiet(executor, "I don't know which one");
-        break;
-
-    default:
-
         s_Next(object, NOTHING);
         notify_quiet(executor, "Cut.");
     }

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.10 2002-07-13 07:23:01 jake Exp $
+// $Id: cque.cpp,v 1.11 2002-07-14 08:03:44 jake Exp $
 //
 
 #include "copyright.h"
@@ -560,11 +560,11 @@ void do_notify
     match_everything(0);
 
     dbref thing = noisy_match_result();
-    if (thing < 0)
+    if (!Good_obj(thing))
     {
-        notify(executor, "No match.");
+        return;
     }
-    else if (!Controls(executor, thing) && !Link_ok(thing))
+    if (!Controls(executor, thing) && !Link_ok(thing))
     {
         notify(executor, NOPERM_MESSAGE);
     }
@@ -884,7 +884,7 @@ void do_wait
     dbref thing = noisy_match_result();
     if (!Good_obj(thing))
     {
-        notify(executor, "No match.");
+        return;
     }
     else if (!Controls(executor, thing) && !Link_ok(thing))
     {
