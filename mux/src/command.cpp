@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.94 2002-09-29 23:03:05 jake Exp $
+// $Id: command.cpp,v 1.95 2002-09-29 23:15:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1466,7 +1466,8 @@ int zonecmdtest(dbref player, char *cmd)
     return i_ret;
 }
 
-int higcheck (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *pCommand)
+int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
+             char *pCommand)
 {
     if (  Good_obj(mudconf.hook_obj)
        && !Going(mudconf.hook_obj))
@@ -1478,7 +1479,8 @@ int higcheck (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *p
         {
             s_uselock = hook_name(cmdp->cmdname, HOOK_IGNORE);
             checkattr = atr_str(s_uselock);
-            bResult = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, checkattr, TRUE);
+            bResult = process_hook(executor, caller, enactor, mudconf.hook_obj,
+                s_uselock, checkattr, TRUE);
             free_sbuf(s_uselock);
             if (!bResult)
             {
@@ -1489,7 +1491,8 @@ int higcheck (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *p
         {
             s_uselock = hook_name(cmdp->cmdname, HOOK_PERMIT);
             checkattr = atr_str(s_uselock);
-            bResult = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, checkattr, TRUE);
+            bResult = process_hook(executor, caller, enactor, mudconf.hook_obj,
+                s_uselock, checkattr, TRUE);
             free_sbuf(s_uselock);
             if (!bResult)
             {
@@ -1500,14 +1503,16 @@ int higcheck (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *p
     return 0;
 }
 
-void hook_fail (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *pCommand)
+void hook_fail(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
+               char *pCommand)
 {
-    if(  Good_obj(mudconf.hook_obj)
-        && !Going(mudconf.hook_obj))
+    if (  Good_obj(mudconf.hook_obj)
+       && !Going(mudconf.hook_obj))
     {
         char *s_uselock = hook_name(cmdp->cmdname, HOOK_AFAIL);
         ATTR *hk_ap2 = atr_str(s_uselock);
-        BOOL hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, FALSE);
+        BOOL hk_retval = process_hook(executor, caller, enactor,
+            mudconf.hook_obj, s_uselock, hk_ap2, FALSE);
         free_sbuf(s_uselock);
     }
 }
