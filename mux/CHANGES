@@ -129,14 +129,25 @@ Bug Fixes:
  -- Previous work on slave left zombie slave processes.
  -- Some SIGCHLD signals from the dumping process were not getting
     through.
- -- Disallow parsing of 'Fri Apr 04 07:15:04 2003 utc' by first-level
-    date parser so that second-level parser can deal properly with it.
-    Reported by Talim.
+ -- Fix @unlock with respect to attribute locks.  Attributes could be
+    locked, but not @unlocked (except by #1).  Introduced by Jake.
+    Reported by Sean Hunter.  Fixed by Brazil.
+ -- MakeCanonicalMailAlias() could return a result which was not
+    null-terminated.  Reported by Ita'istar@Tandoria. Introduced and fixed
+    by Brazil.  Related to the @malias command.
+ -- MUX previously wouldn't handle convtime(Sat Apr 26 22:32:24 2003 utc)
+    properly because the first-level date parser accepted it as a local
+    date (ignoring anything that occured after the year field).  The
+    first-level date parser is now more restrictive, and the
+    second-level date parser handles it properly.  Reported by Talim.
 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
  -- Jake sorted the mudconf structures first by type and then by name.
+ -- Raevnos updated PCRE.  The updated version does not require
+    Raevnos' fix (implemented with C++ exceptions). With this release,
+    MUX 2.3 not longer depends on C++ exceptions.
 
 
 Cosmetic Changes:
