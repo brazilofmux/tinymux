@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.38 2003-02-16 16:06:26 jake Exp $
+// $Id: functions.cpp,v 1.39 2003-02-16 16:14:24 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1391,40 +1391,9 @@ bool check_read_perms
     char **bufc
 )
 {
-    // If we have explicit read permission to the attr, return it.
-    //
-    if (See_attr_explicit(player, thing, attr, aowner, aflags))
+    if (See_attr(player, thing, attr))
     {
         return true;
-    }
-
-    // If we are nearby or have examine privs to the attr and it is
-    // visible to us, return it.
-    //
-    bool see_it = See_attr(player, thing, attr);
-    if (  (  Examinable(player, thing)
-          || nearby(player, thing)
-          || See_All(player))
-       && see_it)
-    {
-        return true;
-    }
-
-    // For any object, we can read its visible attributes, EXCEPT for
-    // descs, which are only visible if read_rem_desc is on.
-    //
-    if (see_it)
-    {
-        if (  !mudconf.read_rem_desc
-           && attr->number == A_DESC)
-        {
-            safe_str("#-1 TOO FAR AWAY TO SEE", buff, bufc);
-            return false;
-        }
-        else
-        {
-            return true;
-        }
     }
     safe_noperm(buff, bufc);
     return false;
@@ -1454,16 +1423,19 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     if (bFreeBuffer)
     {
         free_lbuf(pRefAttrib);
-        bFreeBuffer = false;
     }
     if (bNoMatch)
     {
         safe_nomatch(buff, bufc);
         return;
     }
-
     if (!attr)
     {
+        return;
+    }
+    if (!See_attr(executor, thing, attr))
+    {
+        safe_noperm(buff, bufc);
         return;
     }
 
@@ -1472,24 +1444,18 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     size_t nLen = 0;
     char *atr_gotten = atr_pget_LEN(thing, attr->number, &aowner, &aflags, &nLen);
 
-    // Perform access checks.  check_read_perms() fills buff with an error message
-    // if needed.
-    //
-    if (check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
+    if (  key == GET_EVAL
+       || key == GET_GEVAL)
     {
-        if (  key == GET_EVAL
-           || key == GET_GEVAL)
+        char *str = atr_gotten;
+        mux_exec(buff, bufc, thing, executor, executor, EV_FIGNORE | EV_EVAL,
+                    &str, (char **)NULL, 0);
+    }
+    else
+    {
+        if (nLen)
         {
-            char *str = atr_gotten;
-            mux_exec(buff, bufc, thing, executor, executor, EV_FIGNORE | EV_EVAL,
-                     &str, (char **)NULL, 0);
-        }
-        else
-        {
-            if (nLen)
-            {
-                safe_copy_buf(atr_gotten, nLen, buff, bufc);
-            }
+            safe_copy_buf(atr_gotten, nLen, buff, bufc);
         }
     }
     free_lbuf(atr_gotten);
