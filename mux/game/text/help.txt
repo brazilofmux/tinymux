@@ -4820,9 +4820,9 @@ COMMANDS (continued)
   @oenter      @ofail       @ogfail      @okill       @oleave      @olfail
   @omove       @opay        @orfail      @osuccess    @otfail      @otofail
   @otport      @oufail      @ouse        @oxenter     @oxleave     @oxtport
-  @pay         @prefix      @reject      @rfail       @runout      @sex
-  @signature   @startup     @success     @tfail       @tofail      @tport
-  @ufail       @use
+  @pay         @prefix      @reject      @rfail       @runout      @saystring
+  @sex         @signature   @speechmod   @startup     @success     @tfail
+  @tofail      @tport       @ufail       @use
 
 & COMP()
 COMP()
