@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.63 2001-07-02 23:08:12 sdennis Exp $
+// $Id: functions.cpp,v 1.64 2001-07-03 12:04:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -109,7 +109,6 @@ XFUNCTION(fun_vdim);
 XFUNCTION(fun_strcat);
 XFUNCTION(fun_grep);
 XFUNCTION(fun_grepi);
-XFUNCTION(fun_art);
 XFUNCTION(fun_alphamax);
 XFUNCTION(fun_alphamin);
 XFUNCTION(fun_valid);
@@ -146,6 +145,8 @@ XFUNCTION(fun_connmax);
 XFUNCTION(fun_connlast);
 XFUNCTION(fun_connnum);
 XFUNCTION(fun_connleft);
+XFUNCTION(fun_art); 
+XFUNCTION(fun_t);
  
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
@@ -2405,6 +2406,19 @@ FUNCTION(fun_xor)
 FUNCTION(fun_not)
 {
     safe_ltoa(!xlate(fargs[0]), buff, bufc, LBUF_SIZE-1);
+}
+
+FUNCTION(fun_t)
+{
+    if (  nfargs <= 0
+       || fargs[0][0] == '\0')
+    {
+        safe_chr('0', buff, bufc);
+    }
+    else
+    {
+        safe_ltoa(!!xlate(fargs[0]), buff, bufc, LBUF_SIZE-1);
+    }
 }
 
 /*-------------------------------------------------------------------------
@@ -6561,6 +6575,7 @@ FUN flist[] =
     {"SUB",      fun_sub,      2,  0,          CA_PUBLIC},
     {"SUBJ",     fun_subj,     1,  0,          CA_PUBLIC},
     {"SWITCH",   fun_switch,   0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
+    {"T",        fun_t,       -1,  0,          CA_PUBLIC},
     {"TABLE",    fun_table,    0,  FN_VARARGS, CA_PUBLIC},
     {"TAN",      fun_tan,      1,  0,          CA_PUBLIC},
     {"TEL",      fun_tel,      2,  0,          CA_PUBLIC},
