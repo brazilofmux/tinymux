@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.31 2001-10-17 18:42:30 sdennis Exp $
+// $Id: db_rw.cpp,v 1.32 2001-10-17 18:56:02 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -459,7 +459,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     dbref i, anum;
     int ch;
     const char *tstr;
-    int aflags, f1, f2, f3;
+    int aflags;
     BOOLEXP *tempbool;
     char *buff;
     int len;
