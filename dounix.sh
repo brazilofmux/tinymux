@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# REQUIRED: ReferenceDir must already exist. It may be created by untaring a
+# previous distribution.
+#
 OldBuild=1
 OldVersion=2.2.0.$OldBuild
 NewBuild=2
