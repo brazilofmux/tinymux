@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.4 2003-01-23 07:50:44 sdennis Exp $
+// $Id: predicates.cpp,v 1.5 2003-01-24 04:36:03 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -102,8 +102,6 @@ BOOL member(dbref thing, dbref list)
     }
     return FALSE;
 }
-
-#ifndef STANDALONE
 
 BOOL could_doit(dbref player, dbref thing, int locknum)
 {
@@ -265,8 +263,6 @@ BOOL payfor(dbref who, int cost)
     }
     return FALSE;
 }
-
-#endif // STANDALONE
 
 void add_quota(dbref who, int payment)
 {
@@ -504,8 +500,8 @@ BOOL ValidatePlayerName(const char *pName)
         return FALSE;
     }
 
-#ifndef STANDALONE
-    if (mudconf.name_spaces)
+    if (  mudstate.bStandAlone
+       || mudconf.name_spaces)
     {
         Tiny_IsPlayerNameCharacter[(unsigned char)' '] = 1;
     }
@@ -513,7 +509,6 @@ BOOL ValidatePlayerName(const char *pName)
     {
         Tiny_IsPlayerNameCharacter[(unsigned char)' '] = 0;
     }
-#endif // !STANDALONE
 
     // Only printable characters besides ARG_DELIMITER, AND_TOKEN,
     // and OR_TOKEN are allowed.
@@ -583,8 +578,8 @@ BOOL ok_password(const char *password, dbref player)
         return FALSE;
     }
 
-#ifndef STANDALONE
-    if (mudconf.safer_passwords)
+    if (  !mudstate.bStandAlone
+       && mudconf.safer_passwords)
     {
         if (num_upper < 1)
         {
@@ -603,12 +598,8 @@ BOOL ok_password(const char *password, dbref player)
             return FALSE;
         }
     }
-#endif // STANDALONE
-
     return TRUE;
 }
-
-#ifndef STANDALONE
 
 /* ---------------------------------------------------------------------------
  * handle_ears: Generate the 'grows ears' and 'loses ears' messages.
@@ -1732,8 +1723,6 @@ BOOL get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *er
     return TRUE;
 }
 
-#endif // STANDALONE
-
 // ---------------------------------------------------------------------------
 // bCanReadAttr, bCanSetAttr: Verify permission to affect attributes.
 // ---------------------------------------------------------------------------
@@ -1743,10 +1732,8 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
     dbref aowner;
     int aflags;
 
-#ifdef STANDALONE
-    atr_get_info(target, tattr->number, &aowner, &aflags);
-#else // STANDALONE
-    if (bCheckParent)
+    if (  !mudstate.bStandAlone
+       && bCheckParent)
     {
         atr_pget_info(target, tattr->number, &aowner, &aflags);
     }
@@ -1754,16 +1741,13 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
     {
         atr_get_info(target, tattr->number, &aowner, &aflags);
     }
-#endif // STANDALONE
 
     int mAllow = AF_VISUAL;
     if (  (tattr->flags & mAllow)
        || (aflags & mAllow))
     {
-#ifdef STANDALONE
-        return TRUE;
-#else
-        if (  tattr->number != A_DESC
+        if (  mudstate.bStandAlone
+           || tattr->number != A_DESC
            || mudconf.read_rem_desc
            || nearby(executor, target))
         {
@@ -1773,7 +1757,6 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
         {
             return FALSE;
         }
-#endif
     }
     int mDeny = 0;
     if (WizRoy(executor))
@@ -1988,13 +1971,17 @@ BOOL nearby(dbref player, dbref thing)
  */
 BOOL exit_visible(dbref exit, dbref player, int key)
 {
-#if defined(WOD_REALMS) && !defined(STANDALONE)
-    int iRealmDirective = DoThingToThingVisibility(player, exit, ACTION_IS_STATIONARY);
-    if (REALM_DO_HIDDEN_FROM_YOU == iRealmDirective)
+#ifdef WOD_REALMS
+    if (!mudstate.bStandAlone)
     {
-        return FALSE;
+        int iRealmDirective = DoThingToThingVisibility(player, exit,
+            ACTION_IS_STATIONARY);
+        if (REALM_DO_HIDDEN_FROM_YOU == iRealmDirective)
+        {
+            return FALSE;
+        }
     }
-#endif // WOD_REALMS !STANDALONE
+#endif // WOD_REALMS
 
     // Exam exit's location
     //
@@ -2029,13 +2016,17 @@ BOOL exit_displayable(dbref exit, dbref player, int key)
         return FALSE;
     }
 
-#if defined(WOD_REALMS) && !defined(STANDALONE)
-    int iRealmDirective = DoThingToThingVisibility(player, exit, ACTION_IS_STATIONARY);
-    if (REALM_DO_HIDDEN_FROM_YOU == iRealmDirective)
+#ifdef WOD_REALMS
+    if (!mudstate.bStandAlone)
     {
-        return FALSE;
+        int iRealmDirective = DoThingToThingVisibility(player, exit,
+            ACTION_IS_STATIONARY);
+        if (REALM_DO_HIDDEN_FROM_YOU == iRealmDirective)
+        {
+            return FALSE;
+        }
     }
-#endif // WOD_REALMS !STANDALONE
+#endif // WOD_REALMS
 
     // Light exit
     //
@@ -2055,8 +2046,6 @@ BOOL exit_displayable(dbref exit, dbref player, int key)
     //
     return TRUE;
 }
-
-#ifndef STANDALONE
 
 /* ---------------------------------------------------------------------------
  * did_it: Have player do something to/with thing
@@ -2386,8 +2375,6 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int key,
     }
 }
 
-#endif // STANDALONE
-
 // --------------------------------------------------------------------------
 // OutOfMemory: handle an out of memory condition.
 //
@@ -2395,10 +2382,8 @@ BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo)
 {
     Log.tinyprintf("%s(%u): Out of memory." ENDLINE, SourceFile, LineNo);
     Log.Flush();
-#ifdef STANDALONE
-    abort();
-#else // STANDALONE
-    if (mudstate.bCanRestart)
+    if (  !mudstate.bStandAlone
+       && mudstate.bCanRestart)
     {
         do_restart(GOD, GOD, GOD, 0);
     }
@@ -2406,7 +2391,6 @@ BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo)
     {
         abort();
     }
-#endif // STANDALONE
     return TRUE;
 }
 
@@ -2417,10 +2401,8 @@ BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo)
 {
     Log.tinyprintf("%s(%u): Assertion failed." ENDLINE, SourceFile, LineNo);
     Log.Flush();
-#ifdef STANDALONE
-    abort();
-#else // STANDALONE
-    if (mudstate.bCanRestart)
+    if (  !mudstate.bStandAlone
+       && mudstate.bCanRestart)
     {
         do_restart(GOD, GOD, GOD, 0);
     }
@@ -2428,7 +2410,5 @@ BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo)
     {
         abort();
     }
-#endif // STANDALONE
     return FALSE;
 }
-

@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.3 2003-01-24 03:28:08 sdennis Exp $
+// $Id: svdhash.cpp,v 1.4 2003-01-24 04:36:03 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -11,9 +11,7 @@
 #include "config.h"
 #include "externs.h"
 
-#ifndef STANDALONE
 #define DO_COMMIT
-#endif // !STANDALONE
 
 #define HF_SIZEOF_PAGE 24576
 #define HT_SIZEOF_PAGE 8192
