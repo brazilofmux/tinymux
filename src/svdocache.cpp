@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: svdocache.cpp,v 1.2 2000-04-16 07:33:28 sdennis Exp $
+// $Id: svdocache.cpp,v 1.3 2000-04-24 22:31:41 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -133,11 +133,6 @@ void cache_close(void)
 {
     hfAttributeFile.CloseAll();
     cache_initted = FALSE;
-}
-
-void cache_reset(int trim)
-{
-    hfAttributeFile.Reset();
 }
 
 void cache_tick(void)
