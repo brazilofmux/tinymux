@@ -135,8 +135,11 @@
   typically of use only to wizards and/or the game maintainer.
   See also: the source code.
 
-& @addcommand
-  Command: @addcommand <name>=<thing>/<attribute>
+& @ADDCOMMAND
+@ADDCOMMAND
+
+  COMMAND: @addcommand <name>=<thing>/<attribute>
+
   This command has the capability of adding a softcoded command to the MUX's
   built-in command table. If <name> already exists as a built-in command,
   such as 'look' or 'WHO', it will actually replace the functionality of
@@ -144,7 +147,7 @@
   case, the aliases 'l', 'lo', and 'loo', and the main command 'look' will
   all point to these softcoded commands. The syntax of <thing>/<attribute> is
   like any normal $command. 
- 
+
   For example:
 
   > &LOOK me=$look:say I looked here!
@@ -153,10 +156,12 @@
   > @addcommand look=me/look
   > @addcommand look=me/look_with_arg
   > @addcommand look=me/look_outside
- 
-  { 'help @addcommand2' for more }
- 
-& @addcommand2
+
+{ 'help @addcommand2' for more }
+
+& @ADDCOMMAND2
+@ADDCOMMAND (continued)
+
   Yes, you can specify more than one attribute to go with <name>. When you
   type 'look' or 'look sofa', the game will execute all attributes that
   match what you have typed in. Aliases like 'l' are expanded to 'look' so
@@ -164,23 +169,26 @@
   consideration. If none of the attributes attached match (the attribute
   *must* begin with $<name> in order to match at all!), no output will
   be generated.
- 
+
   Another use is to speed up use of a particular global command. Just use
   @addcommand to add it to the built-in list, and it will be looked up
   much faster.
- 
-  See also: @delcommand, @listcommands.
- 
-& @delcommand
-  Command: @delcommand <name>[=<thing>/<attribute>]
-  Deletes a command added by @addcommand. With only <name> specified, deletes
-  all added commands under <name>. When you specify <thing> and <attribute>,
-  it only deletes that specific entry. If the command or commands you are
-  deleting had replaced a built-in command, the built-in command and all
-  aliases are restored to their normal names and actions.
- 
-  See also: @addcommand, @listcommands.
- 
+
+  Related Topics: @delcommand, @listcommands.
+
+& @DELCOMMAND
+@DELCOMMAND
+
+  COMMAND: @delcommand <name>[=<thing>/<attribute>]
+
+  Deletes a command added by @addcommand.  With only <name> specified,
+  deletes all added commands under <name>.  When you specify <thing> and
+  <attribute>, it only deletes that specific entry.  If the command or
+  commands you are deleting had replaced a built-in command, the built-in
+  command and all aliases are restored to their normal names and actions.
+
+  Related Topics: @addcommand, @listcommands.
+
 & @listcommands
   Command: @listcommands [<name>]
   Lists commands added by @addcommand. With <name> specified, lists all
@@ -189,26 +197,37 @@
  
   See also: @addcommand, @listcommands.
  
-& @admin
-  Command: @admin <param>=<value>
-  Sets a TinyMUX configuration parameter to the indicated value.
-  Type 'wizhelp config parameters' for a list of the config parameters that
+& @ADMIN
+@ADMIN
+
+  COMMAND: @admin <param>=<value>
+
+  Sets a TinyMUX configuration parameter to the indicated value. Type
+  'wizhelp config parameters' for a list of the config parameters that
   may be set.
 
-& @apply_marked
-  Command: @apply_marked <command>
+& @APPLY_MARKED
+@APPLY_MARKED
+
+  COMMAND: @apply_marked <command>
+
   Performs <command> once for each object in the database that has its MARK
   flag set, substituting the characters ## for the object number of the
   marked object.  The command is performed by the player invoking the
   @apply_marked command, not by the marked object.  This command may only
   be used when database cleaning is disabled (via @disable cleaning),
   as cleaning uses the MARKED flag to check connectivity.
-  See also: @mark, @mark_all, MARKED.
 
-& @attribute
-  Command: @attribute[/<switch>] <attrib>[=<value>]
+  Related Topics: @mark, @mark_all, MARKED.
+
+& @ATTRIBUTE
+@ATTRIBUTE
+
+  COMMAND: @attribute[/<switch>] <attrib>[=<value>]
+
   Performs operations on user-named attributes depending on the switch used.
   The following switches are available:
+
      /access   - Changes the access to the named attribute.  <value> is a
                  space-separated list of permissions to add or remove from
                  the attribute's access permissions.
@@ -218,10 +237,11 @@
                  user-named attribute that re-uses the attribute number
                  of the deleted attribute.
      /rename   - Changes the name of the named attribute to <value>.
+
   Note that changes to user-named attributes performed by this command
   are permanent and do not need to be performed each time the MUX is
   restarted.
- 
+
 & @BOOT
 @BOOT
 
@@ -239,54 +259,73 @@
     /port  - Disconnects only a specific port.  In this case, <port#> must
              be the port number obtained from the SESSION command.
 
-  See also: @destroy, @toad, SESSION.
+  Related Topics: @destroy, @toad, SESSION.
 
-& @chown
-  Command: @chown <object>=<player>
- 
+& @CHOWN
+@CHOWN
+
+  COMMAND: @chown <object>=<player>
+
   Wizards may @chown objects, rooms, and exits to other players.
   @Chowned objects are set HALT.
- 
-  See also: @chownall.
 
-& @clone
-  Command: @clone[/<switches>] <object>
+  Related Topics: @chownall.
+
+& @CLONE
+@CLONE
+
+  COMMAND: @clone[/<switches>] <object>
+
   Wizards may also specify the /preserve switch, which preserves the original
   owner of the object in the new copy, instead of creating the copy as being
   owned by the wizard.
 
-& @chownall
-  Command: @chownall <victim>[=<recipient>]
+& @CHOWNALL
+@CHOWNALL
+
+  COMMAND: @chownall <victim>[=<recipient>]
+
   Changes the ownership of all of the victim's objects, rooms, and exits to
   the indicated recipient (or to the wizard performing the @chownall if
   no recipient is specified).  All objects, rooms, and exits are set HALTED.
-  See also: @chown.
 
-& @cut
-  Command: @cut <object/exit>
+  Related Topics: @chown.
+
+& @CUT
+@CUT
+
+  COMMAND: @cut <object/exit>
+
   Cuts off the object or exit list for the current location at the indicated
   object or exit by setting [next(thing)] to NOTHING.  Objects or exits that
   follow in the chain are not moved or otherwise changed, and are only
   accessable by object number.  This command is intended for performing
   database repair, and should be used only with extreme caution.
 
-& @dbck
-  Command: @dbck
+& @DBCK
+@DBCK
+
+  COMMAND: @dbck
+
   Performs a scan of the database looking for inconsistencies in the object
   chains, disconnected rooms, rooms waiting to be destroyed, and problems in
   the object free list.  Problems that are found are reported to the log
   file, disconnected rooms are reported to their owners, and players are
   credited for rooms destroyed.  Database checks are automatically run
   periodically, so there is usually no need to use this command.
-  See also: @admin, @disable, @enable, @list.
 
-& @dbclean
-  Command: @dbclean
+  Related Topics: @admin, @disable, @enable, @list.
+
+& @DBCLEAN
+@DBCLEAN
+
+  COMMAND: @dbclean
+
   This command searches the entire database and removes any stale
-  user-defined attributes. It should be used sparingly, as it may take many
-  minutes to execute, depending upon database size and machine speed. Only
+  user-defined attributes.  It should be used sparingly, as it may take many
+  minutes to execute, depending upon database size and machine speed.  Only
   God may execute this command.
- 
+
 & @destroy
   Command: @destroy[/<switches>] <object>
   Players are always considered SAFE.  Objects owned by other players are
@@ -1002,20 +1041,29 @@
   owning Wizard has his INHERIT flag set.
   See also: CONTROL, INHERIT.
 
-& @allowance
-  Attribute: Allowance
-  Command: @allowance <object>[=<amount>]
+& @ALLOWANCE
+@ALLOWANCE
+
+  ATTRIBUTE: Allowance
+
+  COMMAND: @allowance <object>[=<amount>]
+
   Sets the amount of money that the player receives each day he/she connects
   to the MUX.  The Allowance attribute overrides the default allowance
   specified by the paycheck config parameter.
+
   This attribute is only visible and settable by wizards.  It is only
   meaningful for players, and has no effect on other object types.
 
-& @comment
-  Attribute: Comment
-  Command: @comment <object>[=<text>]
-  Sets a wizard-visible comment on the indicated object.
-  This attribute is only visible and settable by wizards.
+& @COMMENT
+@COMMENT
+
+  ATTRIBUTE: Comment
+
+  COMMAND: @comment <object>[=<text>]
+
+  Sets a wizard-visible comment on the indicated object. This attribute is
+  only visible and settable by wizards.
 
 & @timeout
   Attribute: Timeout
