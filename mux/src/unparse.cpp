@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: unparse.cpp,v 1.2 2003-01-23 15:48:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -44,11 +44,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 {
     ATTR *ap;
     char *tbuf, sep_ch;
-
-#ifndef STANDALONE
     char *buff;
-
-#endif // !STANDALONE
 
     if ((b == TRUE_BOOLEXP))
     {
@@ -108,78 +104,81 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
         break;
     case BOOLEXP_CONST:
 
-#ifdef STANDALONE
-        safe_str(unparse_object_quiet(player, b->thing),
-             boolexp_buf, &buftop);
-#else // STANDALONE
-        switch (format)
+        if (mudstate.bStandAlone)
         {
-        case F_QUIET:
-
-            // Quiet output - for dumps and internal use. Always #Num.
-            //
             safe_str(unparse_object_quiet(player, b->thing),
-                 boolexp_buf, &buftop);
-            break;
-
-        case F_EXAMINE:
-
-            // Examine output - informative. Name(#Num) or Name.
-            //
-            buff = unparse_object(player, b->thing, FALSE);
-            safe_str(buff, boolexp_buf, &buftop);
-            free_lbuf(buff);
-            break;
-
-        case F_DECOMPILE:
-
-            // Decompile output - should be usable on other MUXes. Name if
-            // player, Name if thing, else #Num.
-            //
-            switch (Typeof(b->thing))
+                boolexp_buf, &buftop);
+        }
+        else
+        {
+            switch (format)
             {
-            case TYPE_PLAYER:
-
-                safe_chr('*', boolexp_buf, &buftop);
-
-            case TYPE_THING:
-
-                safe_str(Name(b->thing), boolexp_buf, &buftop);
+            case F_QUIET:
+    
+                // Quiet output - for dumps and internal use. Always #Num.
+                //
+                safe_str(unparse_object_quiet(player, b->thing),
+                     boolexp_buf, &buftop);
                 break;
-
-            default:
-
-                buff = alloc_sbuf("unparse_boolexp1");
-                buff[0] = '#';
-                Tiny_ltoa(b->thing, buff+1);
+    
+            case F_EXAMINE:
+    
+                // Examine output - informative. Name(#Num) or Name.
+                //
+                buff = unparse_object(player, b->thing, FALSE);
                 safe_str(buff, boolexp_buf, &buftop);
-                free_sbuf(buff);
-            }
-            break;
-
-        case F_FUNCTION:
-
-            // Function output - must be usable by @lock cmd. Name if player,
-            // else #Num.
-            //
-            switch (Typeof(b->thing))
-            {
-            case TYPE_PLAYER:
-
-                safe_chr('*', boolexp_buf, &buftop);
-                safe_str(Name(b->thing), boolexp_buf, &buftop);
+                free_lbuf(buff);
                 break;
-
-            default:
-
-                buff = alloc_sbuf("unparse_boolexp1");
-                buff[0] = '#';
-                Tiny_ltoa(b->thing, buff+1);
-                safe_str(buff, boolexp_buf, &buftop);
-                free_sbuf(buff);
+    
+            case F_DECOMPILE:
+    
+                // Decompile output - should be usable on other MUXes. Name if
+                // player, Name if thing, else #Num.
+                //
+                switch (Typeof(b->thing))
+                {
+                case TYPE_PLAYER:
+    
+                    safe_chr('*', boolexp_buf, &buftop);
+    
+                case TYPE_THING:
+    
+                    safe_str(Name(b->thing), boolexp_buf, &buftop);
+                    break;
+    
+                default:
+    
+                    buff = alloc_sbuf("unparse_boolexp1");
+                    buff[0] = '#';
+                    Tiny_ltoa(b->thing, buff+1);
+                    safe_str(buff, boolexp_buf, &buftop);
+                    free_sbuf(buff);
+                }
+                break;
+    
+            case F_FUNCTION:
+    
+                // Function output - must be usable by @lock cmd. Name if player,
+                // else #Num.
+                //
+                switch (Typeof(b->thing))
+                {
+                case TYPE_PLAYER:
+    
+                    safe_chr('*', boolexp_buf, &buftop);
+                    safe_str(Name(b->thing), boolexp_buf, &buftop);
+                    break;
+    
+                default:
+    
+                    buff = alloc_sbuf("unparse_boolexp1");
+                    buff[0] = '#';
+                    Tiny_ltoa(b->thing, buff+1);
+                    safe_str(buff, boolexp_buf, &buftop);
+                    free_sbuf(buff);
+                }
             }
         }
-#endif // STANDALONE
         break;
 
     case BOOLEXP_ATR:
@@ -235,8 +234,6 @@ char *unparse_boolexp_quiet(dbref player, BOOLEXP *b)
     return boolexp_buf;
 }
 
-#ifndef STANDALONE
-
 char *unparse_boolexp(dbref player, BOOLEXP *b)
 {
     buftop = boolexp_buf;
@@ -260,5 +257,3 @@ char *unparse_boolexp_function(dbref player, BOOLEXP *b)
     *buftop++ = '\0';
     return boolexp_buf;
 }
-
-#endif // !STANDALONE
