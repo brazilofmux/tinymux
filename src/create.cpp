@@ -2,7 +2,7 @@
  * create.c -- Commands that create new objects 
  */
 /*
- * $Id: create.cpp,v 1.3 2000-05-19 18:08:46 sdennis Exp $ 
+ * $Id: create.cpp,v 1.4 2000-05-25 02:46:05 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -755,152 +755,158 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
 {
     dbref thing;
 
-    /*
-     * You can destroy anything you control 
-     */
-
+    // You can destroy anything you control.
+    //
     thing = match_controlled_quiet(player, what);
 
-    /*
-     * If you own a location, you can destroy its exits 
-     */
-
-    if ((thing == NOTHING) && controls(player, Location(player))) {
+    // If you own a location, you can destroy its exits.
+    //
+    if ((thing == NOTHING) && controls(player, Location(player)))
+    {
         init_match(player, what, TYPE_EXIT);
         match_exit();
         thing = last_match_result();
     }
-    /*
-     * You may destroy DESTROY_OK things in your inventory 
-     */
 
-    if (thing == NOTHING) {
+    // You may destroy DESTROY_OK things in your inventory.
+    //
+    if (thing == NOTHING)
+    {
         init_match(player, what, TYPE_THING);
         match_possession();
         thing = last_match_result();
-        if ((thing != NOTHING) && !(isThing(thing) && Destroy_ok(thing))) {
+        if ((thing != NOTHING) && !(isThing(thing) && Destroy_ok(thing)))
+        {
             thing = NOPERM;
         }
     }
-    /*
-     * Return an error if we didn't find anything to destroy 
-     */
 
-    if (match_status(player, thing) == NOTHING) {
+    // Return an error if we didn't find anything to destroy.
+    //
+    if (match_status(player, thing) == NOTHING)
+    {
         return;
     }
-    /*
-     * Check SAFE and DESTROY_OK flags 
-     */
 
-    if (Safe(thing, player) && !(key & DEST_OVERRIDE) &&
-        !(isThing(thing) && Destroy_ok(thing))) {
-        notify_quiet(player,
-                 "Sorry, that object is protected.  Use @destroy/override to destroy it.");
+    // Check SAFE and DESTROY_OK flags.
+    //
+    if (  Safe(thing, player) && !(key & DEST_OVERRIDE)
+       && !(isThing(thing) && Destroy_ok(thing)))
+    {
+        notify_quiet(player, "Sorry, that object is protected.  Use @destroy/override to destroy it.");
         return;
     }
-    /*
-     * Make sure we're not trying to destroy a special object 
-     */
 
-    if (!destroyable(thing)) {
+    // Make sure we're not trying to destroy a special object.
+    //
+    if (!destroyable(thing))
+    {
         notify_quiet(player, "You can't destroy that!");
         return;
     }
-    /*
-     * Go do it 
-     */
 
-    switch (Typeof(thing)) {
+    // Make sure we can do it, on a type-specific basis.
+    //
+    char *NameOfType;
+    int can_doit;
+    switch (Typeof(thing))
+    {
     case TYPE_EXIT:
-        if (can_destroy_exit(player, thing)) {
-            if (Going(thing)) {
-                notify_quiet(player, "No sense beating a dead exit.");
-            } else {
-                if (Destroy_ok(thing) || Destroy_ok(Owner(thing))) {
-                    destroy_exit(thing);
-                } else {
-                    notify(player, "The exit shakes and begins to crumble.");
-                    if (!Quiet(thing) && !Quiet(Owner(thing)))
-                        notify_quiet(Owner(thing),
-                                 tprintf("You will be rewarded shortly for %s(#%d).",
-                               Name(thing), thing));
-                    if ((Owner(thing) != player) && !Quiet(player))
-                        notify_quiet(player,
-                                 tprintf("Destroyed. %s's %s(#%d)",
-                                     Name(Owner(thing)), Name(thing), thing));
-                    s_Going(thing);
-                }
-            }
-        }
-        break;
-    case TYPE_THING:
-        if (Going(thing)) {
-            notify_quiet(player, "No sense beating a dead object.");
-        } else {
-            if (Destroy_ok(thing) || Destroy_ok(Owner(thing))) {
-                destroy_thing(thing);
-            } else {
-                notify(player, "The object shakes and begins to crumble.");
-                if (!Quiet(thing) && !Quiet(Owner(thing)))
-                    notify_quiet(Owner(thing),
-                             tprintf("You will be rewarded shortly for %s(#%d).",
-                               Name(thing), thing));
-                if ((Owner(thing) != player) && !Quiet(player))
-                    notify_quiet(player,
-                      tprintf("Destroyed. %s's %s(#%d)",
-                          Name(Owner(thing)), Name(thing), thing));
-                s_Going(thing);
-            }
-        }
+        NameOfType = "exit";
+        can_doit = can_destroy_exit(player, thing);
         break;
 
     case TYPE_PLAYER:
-
-        if (can_destroy_player(player, thing))
-        {
-            if (Going(thing))
-            {
-                notify_quiet(player, "No sense beating a dead player.");
-            }
-            else
-            {
-                if (Destroy_ok(thing))
-                {
-                    atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(player));
-                    destroy_player(thing);
-                }
-                else
-                {
-                    notify(player, "The player shakes and begins to crumble.");
-                    s_Going(thing);
-                    atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(player));
-                }
-            }
-        }
+        NameOfType = "player";
+        can_doit = can_destroy_player(player, thing);
         break;
 
     case TYPE_ROOM:
+        NameOfType = "room";
+        can_doit = 1;
+        break;
 
-        if (Going(thing)) {
-            notify_quiet(player, "No sense beating a dead room.");
-        } else {
-            if (Destroy_ok(thing) || Destroy_ok(Owner(thing))) {
-                empty_obj(thing);
-                destroy_obj(NOTHING, thing);
-            } else {
-                notify_all(thing, player,
-                  "The room shakes and begins to crumble.");
-                if (!Quiet(thing) && !Quiet(Owner(thing)))
-                    notify_quiet(Owner(thing),
-                             tprintf("You will be rewarded shortly for %s(#%d).",
-                               Name(thing), thing));
-                if ((Owner(thing) != player) && !Quiet(player))
-                    notify_quiet(player,
-                      tprintf("Destroyed. %s's %s(#%d)",
-                          Name(Owner(thing)), Name(thing), thing));
-                s_Going(thing);
-            }
-        }
+    case TYPE_THING:
+        NameOfType = "thing";
+        can_doit = 1;
+        break;
+
+    default:
+        NameOfType = "weird";
+        can_doit = 1;
+        break;
     }
+    if (!can_doit)
+    {
+        return;
+    }
+
+    if (Going(thing))
+    {
+        notify_quiet(player, tprintf("No sense beating a dead %s.", NameOfType));
+        return;
+    }
+
+    // Check whether we should perform instant destruction.
+    //    
+    if (Destroy_ok(thing) || Destroy_ok(Owner(thing)))
+    {
+        switch (Typeof(thing))
+        {
+        case TYPE_EXIT:
+            destroy_exit(thing);
+            break;
+
+        case TYPE_PLAYER:
+            atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(player));
+            //QQQ: destroy_player(player, thing);
+            destroy_player(thing);
+            break;
+
+        case TYPE_ROOM:
+            empty_obj(thing);
+            destroy_obj(NOTHING, thing);
+            break;
+
+        case TYPE_THING:
+            destroy_thing(thing);
+            break;
+
+        default:
+            notify(player, "Weird object type cannot be destroyed.");
+            break;
+        }
+        return;
+    }
+    
+    // Otherwise we queue things up for destruction.
+    //
+    if (!isRoom(thing))
+    {
+        notify(player, tprintf("The %s shakes and begins to crumble.", NameOfType));
+    }
+    else
+    {
+        notify_all(thing, player, "The room shakes and begins to crumble.");
+    }
+    
+    if (!Quiet(thing) && !Quiet(Owner(thing)))
+    {
+        notify_quiet(Owner(thing),
+            tprintf("You will be rewarded shortly for %s(#%d).",
+            Name(thing), thing));
+    }
+    
+    if ((Owner(thing) != player) && !Quiet(player))
+    {
+        notify_quiet(player, tprintf("Destroyed. %s's %s(#%d)",
+            Name(Owner(thing)), Name(thing), thing));
+    }
+    
+    if (isPlayer(thing))
+    {
+        atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(player));
+    }
+ 
+    s_Going(thing);
 }
