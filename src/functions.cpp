@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.56 2001-04-09 23:20:41 morgan Exp $
+// $Id: functions.cpp,v 1.57 2001-04-09 23:31:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7377,29 +7377,32 @@ FUNCTION(fun_lflags)
 
 FUNCTION(fun_art)
 {
-	// Drop the input string into lower case.
-	_strlwr(fargs[0]);
+    // Drop the input string into lower case.
+    //
+    _strlwr(fargs[0]);
 
-	// Search for exceptions.
-	ArtRuleset *arRule = mudconf.art_rules;
+    // Search for exceptions.
+    //
+    ArtRuleset *arRule = mudconf.art_rules;
 
-	while ( arRule != NULL )
-	{
-		regexp* reRuleRegexp = (regexp *) arRule->m_pRegexp; 
+    while (arRule != NULL)
+    {
+        regexp* reRuleRegexp = (regexp *) arRule->m_pRegexp; 
 
-		if ( regexec(reRuleRegexp, fargs[0]) )
-		{
-			safe_str(arRule->m_bUseAn ? "an" : "a", buff, bufc);
-			MEMFREE(reRuleRegexp);
+        if (regexec(reRuleRegexp, fargs[0]))
+        {
+            safe_str(arRule->m_bUseAn ? "an" : "a", buff, bufc);
+            MEMFREE(reRuleRegexp);
 
-			return;
-		}
-	
-		MEMFREE(reRuleRegexp);
-		arRule = arRule->m_pNextRule;
-	}
+            return;
+        }
+    
+        MEMFREE(reRuleRegexp);
+        arRule = arRule->m_pNextRule;
+    }
 
-	// Default to 'a'.
-	safe_str( "a", buff, bufc);
+    // Default to 'a'.
+    //
+    safe_str( "a", buff, bufc);
 }
 
