@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.57 2002-08-02 04:23:27 sdennis Exp $
+// $Id: command.cpp,v 1.58 2002-08-02 04:36:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -952,27 +952,25 @@ char *hook_name(char *pCommand, int key)
         return NULL;
     }
 
-    char *s_uselock = alloc_sbuf("command_hook.hookname");
-    switch (pCommand[0])
+    const char *cmdName = pCommand;
+    if (  pCommand[0]
+       && !pCommand[0])
     {
-    case '"' :  sprintf(s_uselock, "%s_%s", keylet, "say");
-        break;
-    case ':' :  
-    case ';' :  sprintf(s_uselock, "%s_%s", keylet, "pose");
-        break;
-    case '\\':  sprintf(s_uselock, "%s_%s", keylet, "@emit");
-        break;
-    case '#' :  sprintf(s_uselock, "%s_%s", keylet, "@force");
-        break;
-    case '&' :  sprintf(s_uselock, "%s_%s", keylet, "@set");
-        break;
-    case '-' :  sprintf(s_uselock, "%s_%s", keylet, "@mail");
-        break;
-    case '~' :  sprintf(s_uselock, "%s_%s", keylet, "@mail");
-        break;
-    default  :  sprintf(s_uselock, "%s_%s", keylet, pCommand);
-        break;
+        switch (pCommand[0])
+        {
+        case '"' : cmdName = "say";    break;
+        case ':' :  
+        case ';' : cmdName = "pose";   break;
+        case '\\': cmdName = "@emit";  break;
+        case '#' : cmdName = "@force"; break;
+        case '&' : cmdName = "@set";   break;
+        case '-' : cmdName = "@mail";  break;
+        case '~' : cmdName = "@mail";  break;
+        }
     }
+
+    char *s_uselock = alloc_sbuf("command_hook.hookname");
+    sprintf(s_uselock, "%s_%s", keylet, cmdName);
     return s_uselock;
 }
 
