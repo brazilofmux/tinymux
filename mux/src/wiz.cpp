@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.8 2003-07-23 00:19:54 sdennis Exp $
+// $Id: wiz.cpp,v 1.9 2003-07-23 19:36:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -12,8 +12,6 @@
 #include "command.h"
 #include "file_c.h"
 #include "powers.h"
-
-extern char *crypt(const char *, const char *);
 
 void do_teleport
 (
