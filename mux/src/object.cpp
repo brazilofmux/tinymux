@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.25 2002-07-28 15:42:39 jake Exp $
+// $Id: object.cpp,v 1.26 2002-08-03 18:50:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -733,7 +733,7 @@ static void purge_going(void)
             continue;
         }
 
-        char *p;
+        const char *p;
         switch (Typeof(i))
         {
         case TYPE_PLAYER:

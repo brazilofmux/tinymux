@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.4 2002-07-23 15:51:11 jake Exp $
+// $Id: player_c.cpp,v 1.5 2002-08-03 18:50:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -37,7 +37,7 @@ void pcache_init(void)
 
 static void pcache_reload1(dbref player, PCACHE *pp)
 {
-    char *cp = atr_get_raw(player, A_MONEY);
+    const char *cp = atr_get_raw(player, A_MONEY);
     if (cp && *cp)
         pp->money = Tiny_atol(cp);
     else
@@ -213,7 +213,7 @@ int Pennies(dbref obj)
         }
     }
 #endif
-    char *cp = atr_get_raw(obj, A_MONEY);
+    const char *cp = atr_get_raw(obj, A_MONEY);
     if (cp)
     {
         return Tiny_atol(cp);

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.40 2002-08-02 04:21:48 sdennis Exp $
+// $Id: externs.h,v 1.41 2002-08-03 18:50:17 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -273,8 +273,8 @@ extern void atr_add_raw_LEN(dbref, int, char *, int);
 extern void atr_add_raw(dbref, int, char *);
 extern void atr_add(dbref, int, char *, dbref, int);
 extern void atr_set_flags(dbref, int, int);
-extern char *atr_get_raw_LEN(dbref, int, int*);
-extern char *atr_get_raw(dbref, int);
+extern const char *atr_get_raw_LEN(dbref, int, int*);
+extern const char *atr_get_raw(dbref, int);
 extern char *atr_get_LEN(dbref, int, dbref *, int *, int *);
 extern char *atr_get(dbref, int, dbref *, int *);
 extern char *atr_pget_LEN(dbref, int, dbref *, int *, int *);

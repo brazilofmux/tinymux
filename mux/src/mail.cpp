@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.31 2002-07-27 16:38:09 sdennis Exp $
+// $Id: mail.cpp,v 1.32 2002-08-03 18:50:17 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -862,7 +862,7 @@ void do_mail_fwd(dbref player, char *msg, char *tolist)
     }
     do_expmail_start(player, tolist, tprintf("%s (fwd from %s)", mp->subject, Name(mp->from)));
     atr_add_raw(player, A_MAILMSG, MessageFetch(mp->number));
-    char *pValue = atr_get_raw(player, A_MAILFLAGS);
+    const char *pValue = atr_get_raw(player, A_MAILFLAGS);
     int iFlag = M_FORWARD;
     if (pValue)
     {
@@ -956,7 +956,7 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
     // because we are not passing a pointer to atr_add_raw() that came
     // directly from atr_get_raw().
     //
-    char *pValue = atr_get_raw(player, A_MAILFLAGS);
+    const char *pValue = atr_get_raw(player, A_MAILFLAGS);
     int iFlag = M_REPLY;
     if (pValue)
     {
@@ -3153,7 +3153,7 @@ void do_mail_cc(dbref player, char *arg)
     char *bp = fulllist;
 
     safe_str(tolist, fulllist, &bp);
-    char *pPlayerMailTo = atr_get_raw(player, A_MAILTO);
+    const char *pPlayerMailTo = atr_get_raw(player, A_MAILTO);
     if (pPlayerMailTo)
     {
         safe_chr(' ', fulllist, &bp);
@@ -3489,7 +3489,7 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
 
         free_lbuf(oldmsg);
         int nLen;
-        char *attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
+        const char *attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
         notify(executor, tprintf("%d/%d characters prepended.", nLen, LBUF_SIZE-1));
     }
     else
@@ -3534,7 +3534,7 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
 
         free_lbuf(oldmsg);
         int nLen;
-        char *attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
+        const char *attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
         notify(executor, tprintf("%d/%d characters added.", nLen, LBUF_SIZE-1));
     }
     else

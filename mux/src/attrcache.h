@@ -1,6 +1,6 @@
 // attrcache.h
 //
-// $Id: attrcache.h,v 1.4 2002-08-03 18:32:03 sdennis Exp $
+// $Id: attrcache.h,v 1.5 2002-08-03 18:50:17 sdennis Exp $
 //
 
 #ifndef _ATTRCACHE_H
@@ -12,7 +12,7 @@ typedef struct Aname
     unsigned int    attrnum;
 } Aname;
 
-extern char *cache_get(Aname *nam, int *pLen);
+extern const char *cache_get(Aname *nam, int *pLen);
 extern BOOL cache_put(Aname *nam, const char *obj, int len);
 extern int  cache_init(const char *game_dir_file, const char *game_pag_file);
 extern void cache_close(void);

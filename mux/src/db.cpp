@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.31 2002-08-03 17:27:20 sdennis Exp $
+// $Id: db.cpp,v 1.32 2002-08-03 18:50:17 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1210,7 +1210,7 @@ char *al_fetch(dbref thing)
     //
     al_store();
     int len;
-    char *astr = atr_get_raw_LEN(thing, A_LIST, &len);
+    const char *astr = atr_get_raw_LEN(thing, A_LIST, &len);
     if (astr)
     {
         al_extend(&mudstate.mod_alist, &mudstate.mod_size, len+1, FALSE);
@@ -1418,7 +1418,8 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
 // ---------------------------------------------------------------------------
 // atr_decode: Decode an attribute string.
 //
-static void atr_decode_LEN(char *iattr, int nLen, char *oattr, dbref thing, dbref *owner, int *flags, int *pLen)
+static void atr_decode_LEN(const char *iattr, int nLen, char *oattr,
+                           dbref thing, dbref *owner, int *flags, int *pLen)
 {
     // Default the owner
     //
@@ -1780,20 +1781,20 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 
 #else // MEMORY_BASED
 
-char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
+const char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 {
     Aname okey;
 
     makekey(thing, atr, &okey);
     int nLen;
-    char *a = cache_get(&okey, &nLen);
+    const char *a = cache_get(&okey, &nLen);
     nLen = a ? (nLen-1) : 0;
     *pLen = nLen;
     return a;
 }
 #endif // MEMORY_BASED
 
-char *atr_get_raw(dbref thing, int atr)
+const char *atr_get_raw(dbref thing, int atr)
 {
     int Len;
     return atr_get_raw_LEN(thing, atr, &Len);
@@ -1801,7 +1802,7 @@ char *atr_get_raw(dbref thing, int atr)
 
 char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, int *pLen)
 {
-    char *buff = atr_get_raw_LEN(thing, atr, pLen);
+    const char *buff = atr_get_raw_LEN(thing, atr, pLen);
     if (!buff)
     {
         *owner = Owner(thing);
@@ -1838,7 +1839,7 @@ char *atr_get(dbref thing, int atr, dbref *owner, int *flags)
 BOOL atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
 {
     int nLen;
-    char *buff = atr_get_raw_LEN(thing, atr, &nLen);
+    const char *buff = atr_get_raw_LEN(thing, atr, &nLen);
     if (!buff)
     {
         *owner = Owner(thing);
@@ -1856,7 +1857,7 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
     dbref parent;
     int lev;
     ATTR *ap;
-    char *buff;
+    const char *buff;
 
     ITER_PARENTS(thing, parent, lev)
     {
@@ -1864,16 +1865,20 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
         if (buff && *buff)
         {
             atr_decode_LEN(buff, *pLen, s, thing, owner, flags, pLen);
-            if ((lev == 0) || !(*flags & AF_PRIVATE))
+            if (  lev == 0
+               || !(*flags & AF_PRIVATE))
             {
                 return s;
             }
         }
-        if ((lev == 0) && Good_obj(Parent(parent)))
+        if (  lev == 0
+           && Good_obj(Parent(parent)))
         {
             ap = atr_num(atr);
             if (!ap || ap->flags & AF_PRIVATE)
+            {
                 break;
+            }
         }
     }
     *owner = Owner(thing);
@@ -1904,7 +1909,6 @@ char *atr_pget(dbref thing, int atr, dbref *owner, int *flags)
 
 BOOL atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
 {
-    char *buff;
     dbref parent;
     int lev;
     ATTR *ap;
@@ -1912,7 +1916,7 @@ BOOL atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
     ITER_PARENTS(thing, parent, lev)
     {
         int nLen;
-        buff = atr_get_raw_LEN(parent, atr, &nLen);
+        const char *buff = atr_get_raw_LEN(parent, atr, &nLen);
         if (buff && *buff)
         {
             atr_decode_LEN(buff, nLen, NULL, thing, owner, flags, &nLen);
@@ -2132,7 +2136,7 @@ int atr_head(dbref thing, char **attrp)
     }
     return 0;
 #else // MEMORY_BASED
-    char *astr;
+    const char *astr;
     int alen;
 
     // Get attribute list.  Save a read if it is in the modify atr list

@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.7 2002-07-23 05:36:13 jake Exp $
+// $Id: db_rw.cpp,v 1.8 2002-08-03 18:50:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -831,11 +831,11 @@ static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
             }
             // Format is: ">%d\n", j
             //
-            got = atr_get_raw(i, j);
+            const char *p = atr_get_raw(i, j);
             int n = Tiny_ltoa(j, buf+1) + 1;
             buf[n++] = '\n';
             fwrite(buf, sizeof(char), n, f);
-            putstring(f, got);
+            putstring(f, p);
         }
         fwrite("<\n", sizeof(char), 2, f);
     }

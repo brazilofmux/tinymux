@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.6 2002-07-23 05:36:13 jake Exp $
+// $Id: vattr.cpp,v 1.7 2002-08-03 18:50:17 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -288,7 +288,7 @@ void dbclean_CheckALISTtoAT(dbref executor)
                 {
                     // We can try to fix this one.
                     //
-                    char *pRecord = atr_get_raw(iObject, iAttr);
+                    const char *pRecord = atr_get_raw(iObject, iAttr);
                     if (pRecord)
                     {
                         // If the attribute exists in the DB, then the easiest thing to do
@@ -343,7 +343,7 @@ void dbclean_CheckALISTtoDB(dbref executor)
             }
             else if (iAttr <= anum_alc_top)
             {
-                char *pRecord = atr_get_raw(iObject, iAttr);
+                const char *pRecord = atr_get_raw(iObject, iAttr);
                 if (!pRecord)
                 {
                     // The contents are gone. The easiest thing to do is remove it from the ALIST.
