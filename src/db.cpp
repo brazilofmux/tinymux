@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.40 2001-06-05 02:09:18 sdennis Exp $
+// $Id: db.cpp,v 1.41 2001-06-27 07:22:35 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -46,7 +46,7 @@
 #endif
 
 /*
- * Restart definitions 
+ * Restart definitions
  */
 #define RS_CONCENTRATE      0x00000002
 #define RS_RECORD_PLAYERS   0x00000004
@@ -62,7 +62,7 @@ extern SOCKET MainGameSockPort;
 #ifdef CONCENTRATE
 extern int conc_pid;
 #endif
-#endif // WIN32
+#endif
 
 extern void FDECL(desc_addhash, (DESC *));
 
@@ -87,7 +87,7 @@ struct atrcount {
 };
 
 /*
- * Check routine forward declaration. 
+ * Check routine forward declaration.
  */
 extern int FDECL(fwdlist_ck, (int, dbref, dbref, int, char *));
 
@@ -95,7 +95,7 @@ extern void FDECL(pcache_reload, (dbref));
 extern void FDECL(desc_reload, (dbref));
 
 /*
- * list of attributes 
+ * list of attributes
  */
 ATTR attr[] =
 {
@@ -259,7 +259,7 @@ ATTR attr[] =
     {"Reason", A_REASON, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
 #ifdef GAME_DOOFERMUX
     {"RegInfo", A_REGINFO, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_WIZARD, NULL},
-#endif // GAME_DOOFERMUX
+#endif
     {"ConnInfo", A_CONNINFO, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
     {"*Password", A_PASS, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
     {"*Privileges", A_PRIVS, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
@@ -322,7 +322,7 @@ void fwdlist_clr(dbref thing)
     FWDLIST *xfp;
 
     /*
-     * If a forwardlist exists, delete it 
+     * If a forwardlist exists, delete it
      */
 
     xfp = fwdlist_get(thing);
@@ -546,7 +546,7 @@ char *Name(dbref thing)
 #else
     atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
     return tbuff;
-#endif // MEMORY_BASED
+#endif
 }
 
 char *PureName(dbref thing)
@@ -570,7 +570,7 @@ char *PureName(dbref thing)
         set_string(&names[thing], buff);
         free_lbuf(buff);
     }
-#endif                
+#endif
 
     if (mudconf.cache_names)
     {
@@ -582,7 +582,7 @@ char *PureName(dbref thing)
         }
         return purenames[thing];
     }
-    
+
     atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
     return strip_ansi(tbuff);
 }
@@ -840,7 +840,7 @@ void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
 }
 
 
-#endif // STANDALONE
+#endif
 
 // MakeCanonicalAttributeName
 //
@@ -1235,7 +1235,7 @@ int Commer(dbref thing)
 }
 
 /*
- * routines to handle object attribute lists 
+ * routines to handle object attribute lists
  */
 
 #ifndef MEMORY_BASED
@@ -1245,13 +1245,13 @@ int Commer(dbref thing)
  */
 
 /*
- * al_extend: Get more space for attributes, if needed 
+ * al_extend: Get more space for attributes, if needed
  */
 
 void al_extend(char **buffer, int *bufsiz, int len, int copy)
 {
     char *tbuff;
-    
+
     if (len > *bufsiz)
     {
         int newsize = len + ATR_BUF_CHUNK;
@@ -1272,7 +1272,7 @@ void al_extend(char **buffer, int *bufsiz, int len, int copy)
 }
 
 /*
- * al_store: Write modified attribute list 
+ * al_store: Write modified attribute list
  */
 
 void NDECL(al_store)
@@ -1292,7 +1292,7 @@ void NDECL(al_store)
 }
 
 /*
- * al_fetch: Load attribute list 
+ * al_fetch: Load attribute list
  */
 
 char *al_fetch(dbref thing)
@@ -1376,7 +1376,7 @@ BOOL al_add(dbref thing, int attrnum)
 }
 
 /*
- * al_delete: Remove an attribute from an attribute list 
+ * al_delete: Remove an attribute from an attribute list
  */
 
 void al_delete(dbref thing, int attrnum)
@@ -1432,14 +1432,12 @@ void al_destroy(dbref thing)
 {
     if (mudstate.mod_al_id == thing)
         al_store(); /*
-                 * remove from cache 
+                 * remove from cache
                  */
     atr_clr(thing, A_LIST);
 }
 
-#endif /*
-        * * MEMORY_BASED  
-        */
+#endif
 
 /*
  * ---------------------------------------------------------------------------
@@ -1449,18 +1447,14 @@ void al_destroy(dbref thing)
 static char *atr_encode(char *iattr, dbref thing, dbref owner, int flags, int atr)
 {
 
-    /*
-     * If using the default owner and flags (almost all attributes will),
-     * * * * * * * just store the string. 
-     */
-
+    // If using the default owner and flags (almost all attributes will),
+    // just store the string.
+    //
     if (((owner == Owner(thing)) || (owner == NOTHING)) && !flags)
         return iattr;
 
-    /*
-     * Encode owner and flags into the attribute text 
-     */
-
+    // Encode owner and flags into the attribute text.
+    //
     if (owner == NOTHING)
         owner = Owner(thing);
     return tprintf("%c%d:%d:%s", ATR_INFO_CHAR, owner, flags, iattr);
@@ -1503,7 +1497,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
     {
         tmp_owner = -tmp_owner;
     }
-    
+
     // If delimiter is not ':', just return attribute
     //
     if (*cp++ != ':')
@@ -1562,7 +1556,7 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
     makekey(thing, atr, &okey);
     a = FETCH(&okey, &nLen);
     nLen = a ? (nLen-1) : 0;
-#endif // MEMORY_BASED
+#endif
 
     *owner = Owner(thing);
     if (!a)
@@ -1621,10 +1615,10 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
             *pLen = nLen;
         }
     }
-#endif // MEMORY_BASED
+#endif
     return 1;
 }
-#endif // RADIX_COMPRESSION
+#endif
 
 // ---------------------------------------------------------------------------
 // atr_decode: Decode an attribute string.
@@ -1699,9 +1693,7 @@ void atr_clr(dbref thing, int atr)
     makekey(thing, atr, &okey);
     TM_DELETE(&okey);
     al_delete(thing, atr);
-#endif /*
-        * * MEMORY_BASED  
-        */
+#endif
     switch (atr) {
     case A_STARTUP:
         s_Flags(thing, Flags(thing) & ~HAS_STARTUP);
@@ -1711,7 +1703,7 @@ void atr_clr(dbref thing, int atr)
         break;
     case A_FORWARDLIST:
         s_Flags2(thing, Flags2(thing) & ~HAS_FWDLIST);
-#ifndef STANDALONE       
+#ifndef STANDALONE
         fwdlist_clr(thing); // We should clear the hashtable too
 #endif
         break;
@@ -1756,9 +1748,9 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
 #ifdef RADIX_COMPRESSION
     int nCompressedValue = string_compress(szValue, compress_buff);
     text = BufferCloneLen(compress_buff, nCompressedValue);
-#else // RADIX_COMPRESSION
+#else
     text = StringCloneLen(szValue, nValue);
-#endif // RADIX_COMPRESSION
+#endif
 
     if (!db[thing].ahead)
     {
@@ -1770,9 +1762,9 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
         list[0].data = text;
 #ifdef RADIX_COMPRESSION
         list[0].size = nCompressedValue;
-#else // RADIX_COMPRESSION
+#else
         list[0].size = nValue+1;
-#endif // RADIX_COMPRESSION
+#endif
         found = 1;
     }
     else
@@ -1792,9 +1784,9 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
                 list[mid].data = text;
 #ifdef  RADIX_COMPRESSION
                 list[mid].size = nCompressedValue;
-#else // RADIX_COMPRESSION
+#else
                 list[mid].size = nValue+1;
-#endif // RADIX_COMPRESSION
+#endif
                 found = 1;
                 break;
             }
@@ -1836,14 +1828,14 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
             list[lo].number = atr;
 #ifdef RADIX_COMPRESSION
             list[lo].size = nCompressedValue;
-#else // RADIX_COMPRESSION
+#else
             list[lo].size = nValue+1;
-#endif // RADIX_COMPRESSION
+#endif
             db[thing].at_count++;
             db[thing].ahead = list;
         }
     }
-#else // !MEMORY_BASED
+#else
     Aname okey;
 
     makekey(thing, atr, &okey);
@@ -1878,11 +1870,11 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
         //
         int nCompressedValue = string_compress(szValue, compress_buff);
         STORE(&okey, compress_buff, nCompressedValue);
-#else // RADIX_COMPRESSION
+#else
         STORE(&okey, szValue, nValue+1);
-#endif // RADIX_COMPRESSION
+#endif
     }
-#endif // MEMORY_BASED
+#endif
 
     switch (atr)
     {
@@ -1997,7 +1989,7 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 #else
             *pLen = list[mid].size - 1;
             return list[mid].data;
-#endif // RADIX_COMPRESSION
+#endif
         }
         else if (list[mid].number > atr)
         {
@@ -2032,9 +2024,9 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 #else
     *pLen = nLen;
     return a;
-#endif // RADIX_COMPRESSION
+#endif
 }
-#endif // MEMORY_BASED
+#endif
 
 char *atr_get_raw(dbref thing, int atr)
 {
@@ -2061,7 +2053,7 @@ char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, i
     {
         atr_decode_LEN(buff, *pLen, s, thing, owner, flags, pLen);
     }
-#endif // RADIX_COMPRESSION  
+#endif
     return s;
 }
 
@@ -2104,7 +2096,7 @@ int atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
     }
     atr_decode_LEN(buff, nLen, NULL, thing, owner, flags, &nLen);
     return 1;
-#endif // RADIX_COMPRESSION
+#endif
 }
 
 #ifndef STANDALONE
@@ -2119,7 +2111,7 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
     int retval;
 #else
     char *buff;
-#endif // RADIX_COMPRESSION
+#endif
 
     ITER_PARENTS(thing, parent, lev)
     {
@@ -2139,7 +2131,7 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
                 return s;
             }
         }
-#endif // RADIX_COMPRESSION  
+#endif
         if ((lev == 0) && Good_obj(Parent(parent)))
         {
             ap = atr_num(atr);
@@ -2204,7 +2196,7 @@ int atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
     return 0;
 }
 
-#endif // STANDALONE
+#endif
 
 /*
  * ---------------------------------------------------------------------------
@@ -2230,7 +2222,7 @@ void atr_free(dbref thing)
     }
     atr_pop();
     al_destroy(thing); // Just to be on the safe side.
-#endif // MEMORY_BASED
+#endif
 }
 
 /*
@@ -2264,7 +2256,7 @@ void atr_cpy(dbref player, dbref dest, dbref source)
             if (Write_attr(owner, dest, at, aflags))
             {
                 /*
-                 * Only set attrs that owner has perm to set 
+                 * Only set attrs that owner has perm to set
                  */
                 atr_add(dest, attr, buf, aowner, aflags);
             }
@@ -2333,7 +2325,7 @@ int atr_next(char **attrp)
     {
         return al_decode(attrp);
     }
-#endif // MEMORY_BASED
+#endif
 }
 
 /*
@@ -2352,7 +2344,7 @@ void NDECL(atr_push)
     mudstate.iter_alist.data = NULL;
     mudstate.iter_alist.len = 0;
     mudstate.iter_alist.next = new_alist;
-#endif // MEMORY_BASED
+#endif
 }
 
 void NDECL(atr_pop)
@@ -2378,7 +2370,7 @@ void NDECL(atr_pop)
         mudstate.iter_alist.len = 0;
         mudstate.iter_alist.next = NULL;
     }
-#endif // MEMORY_BASED
+#endif
 }
 
 /*
@@ -2406,7 +2398,7 @@ int atr_head(dbref thing, char **attrp)
     int alen;
 
     /*
-     * Get attribute list.  Save a read if it is in the modify atr list 
+     * Get attribute list.  Save a read if it is in the modify atr list
      */
 
     if (thing == mudstate.mod_al_id)
@@ -2432,7 +2424,7 @@ int atr_head(dbref thing, char **attrp)
     memcpy(mudstate.iter_alist.data, astr, alen+1);
     *attrp = mudstate.iter_alist.data;
     return atr_next(attrp);
-#endif // MEMORY_BASED
+#endif
 }
 
 
@@ -2465,7 +2457,7 @@ void initialize_objects(dbref first, dbref last)
 #ifdef MEMORY_BASED
         db[thing].ahead = NULL;
         db[thing].at_count = 0;
-#endif // MEMORY_BASED
+#endif
     }
 }
 
@@ -2483,27 +2475,20 @@ void db_grow(dbref newtop)
     delta = 1000;
 #endif
 
-    /*
-     * Determine what to do based on requested size, current top and  * * 
-     * 
-     * *  * *  * *  * * size.  Make sure we grow in reasonable-sized
-     * chunks to * * prevent *  * *  * frequent reallocations of the db
-     * array. 
-     */
-
-    /*
-     * If requested size is smaller than the current db size, ignore it 
-     */
-
+    // Determine what to do based on requested size, current top and size.
+    // Make sure we grow in reasonable-sized chunks to prevent frequent
+    // reallocations of the db array.
+    //
+    // If requested size is smaller than the current db size, ignore it.
+    //
     if (newtop <= mudstate.db_top) {
         return;
     }
-    /*
-     * If requested size is greater than the current db size but smaller
-     * * * * * * * than the amount of space we have allocated, raise the
-     * db  * *  * size * * and * initialize the new area. 
-     */
 
+    // If requested size is greater than the current db size but smaller than
+    // the amount of space we have allocated, raise the db size and initialize
+    // the new area.
+    //
     if (newtop <= mudstate.db_size) {
         for (i = mudstate.db_top; i < newtop; i++) {
 #ifndef MEMORY_BASED
@@ -2517,7 +2502,7 @@ void db_grow(dbref newtop)
         return;
     }
     /*
-     * Grow by a minimum of delta objects 
+     * Grow by a minimum of delta objects
      */
 
     if (newtop <= mudstate.db_size + delta) {
@@ -2527,14 +2512,14 @@ void db_grow(dbref newtop)
     }
 
     /*
-     * Enforce minimumdatabase size 
+     * Enforce minimumdatabase size
      */
 
     if (newsize < mudstate.min_size)
         newsize = mudstate.min_size + delta;;
 
     /*
-     * Grow the name tables 
+     * Grow the name tables
      */
 
 #ifndef MEMORY_BASED
@@ -2603,7 +2588,7 @@ void db_grow(dbref newtop)
     }
 
     /*
-     * Grow the db array 
+     * Grow the db array
      */
 
     // NOTE: There is always one copy of 'db' around that isn't freed even just before the process terminates.
@@ -2631,7 +2616,7 @@ void db_grow(dbref newtop)
 #ifdef MEMORY_BASED
             db[i].ahead = NULL;
             db[i].at_count = 0;
-#endif // MEMORY_BASED  
+#endif
             s_Owner(i, GOD);
             s_Flags(i, (TYPE_GARBAGE | GOING));
             s_Powers(i, 0);
@@ -2653,7 +2638,7 @@ void db_grow(dbref newtop)
     {
 #ifndef MEMORY_BASED
         names[i] = NULL;
-#endif              
+#endif
         if (mudconf.cache_names)
         {
             purenames[i] = NULL;
@@ -2718,7 +2703,7 @@ void NDECL(db_make_minimal)
     s_Owner(0, 1);
 
     /*
-     * should be #1 
+     * should be #1
      */
     load_player_names();
     obj = create_player((char *)"Wizard", (char *)"potrzebie", NOTHING, 0, 0);
@@ -2728,7 +2713,7 @@ void NDECL(db_make_minimal)
     s_Pennies(obj, 1000);
 
     /*
-     * Manually link to Limbo, just in case 
+     * Manually link to Limbo, just in case
      */
     s_Location(obj, 0);
     s_Next(obj, NOTHING);
@@ -2744,7 +2729,7 @@ dbref parse_dbref(const char *s)
     int x;
 
     /*
-     * Enforce completely numeric dbrefs 
+     * Enforce completely numeric dbrefs
      */
 
     for (p = s; *p; p++)
@@ -2808,24 +2793,24 @@ void putstring(FILE *f, const char *pRaw)
 // Code 1 - CR (0x0D)
 // Code 2 - '"' (0x22)
 // Code 3 - '\\' (0x5C)
-// 
+//
 char xlat_table[256] =
 {
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
@@ -2842,7 +2827,8 @@ char xlat_table[256] =
 
 int action_table[2][4] =
 {
-//   Any '\0' "   \ 
+//   Any '\0' "   back
+//                slash
     { 0,  1,  3,  4 }, // STATE_START
     { 2,  1,  2,  2 }  // STATE_ESC
 };
@@ -2944,7 +2930,7 @@ char *getstring_noalloc(FILE *f, int new_strings)
     {
         ungetc(c, f);
 
-        char *p = buf;        
+        char *p = buf;
         for (;;)
         {
             // Fetch up to and including the next LF.
@@ -3076,7 +3062,7 @@ int init_dbfile(char *game_dir_file, char *game_pag_file)
     }
     return cc;
 }
-#endif // MEMORY_BASED
+#endif
 
 
 #ifndef STANDALONE
@@ -3094,7 +3080,7 @@ int check_zone(dbref player, dbref thing)
         mudstate.zone_nest_num = 0;
         return 0;
     }
-    
+
     // If the zone doesn't have an enterlock, DON'T allow control.
     //
     if (  atr_get_raw(Zone(thing), A_LENTER)
@@ -3164,7 +3150,7 @@ int check_zone(dbref player, dbref thing)
     return 0;
 }
 
-#endif // STANDALONE
+#endif
 
 #if !defined(STANDALONE) && !defined(VMS) && !defined(WIN32)
 /*
@@ -3180,13 +3166,13 @@ void dump_restart_db(void)
     /* We maintain a version number for the restart database,
        so we can restart even if the format of the restart db
        has been changed in the new executable. */
-       
+
 #ifdef CONCENTRATE
     version |= RS_CONCENTRATE;
 #endif
     version |= RS_RECORD_PLAYERS;
     version |= RS_NEW_STRINGS;
-    
+
     f = fopen("restart.db", "wb");
     fprintf(f, "+V%d\n", version);
     putref(f, MainGameSockPort);
@@ -3247,7 +3233,7 @@ void load_restart_db(void)
 
     if (version & RS_NEW_STRINGS)
         new_strings = 1;
-        
+
     maxd = MainGameSockPort + 1;
     mudstate.start_time.SetSeconds(getref(f));
     strcpy(mudstate.doing_hdr, getstring_noalloc(f, new_strings));
@@ -3260,12 +3246,12 @@ void load_restart_db(void)
         (void)getref(f);
 #endif
     }
-    
+
     if (version & RS_RECORD_PLAYERS)
     {
         mudstate.record_players = getref(f);
     }
-    
+
     while ((val = getref(f)) != 0)
     {
         ndescriptors++;
@@ -3381,7 +3367,7 @@ void load_restart_db(void)
     remove("restart.db");
     raw_broadcast(0, "Game: Restart finished.");
 }
-#endif // !STANDALONE && !WIN32
+#endif
 
 #ifdef WIN32
 
@@ -3404,7 +3390,7 @@ void RemoveFile(char *name)
     DeleteFile(name);
 }
 
-#else // WIN32
+#else
 
 int ReplaceFile(char *old_name, char *new_name)
 {
@@ -3423,5 +3409,5 @@ void RemoveFile(char *name)
 {
     unlink(name);
 }
-#endif // WIN32
+#endif
 
