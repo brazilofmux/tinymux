@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.4 2003-01-23 02:33:19 sdennis Exp $
+// $Id: game.cpp,v 1.5 2003-01-23 23:49:37 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2094,7 +2094,6 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     pProg++;
     mudstate.bStandAlone = FALSE;
-    fprintf(stderr, "%s\n", pProg);
     if (mux_stricmp(pProg, DBCONVERT_NAME) == 0)
     {
         mudstate.bStandAlone = TRUE;
