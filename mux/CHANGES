@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  July 2004
+Last Update:  August 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,6 +56,10 @@ Feature Additions:
     Re-implemented from TM3.1 help topic.  Originally from PennMUSH.
  -- Added guests_channel_alias and public_channel_alias configuration
     options.
+ -- Extended behavior of MID() to more easily cover the the LEFT() and
+    RIGHT() behaviors.
+ -- Added optional second argument to RAND().
+ -- Added patch surface for BTMUX.
 
 
 Bug Fixes:
@@ -89,6 +93,9 @@ Bug Fixes:
     @destroy.
  -- Add ',()^$' to the set of characters escaped by ESCAPE().
  -- Fix unlikely but reproducible case of hanging @dump/@backup.
+ -- Fixed suggestions/bugs from static analysis tool.
+ -- Fixed some 64-bit warnings.
+ -- Release comsys and @mail properly for guests.
 
 
 Performance Enhancements:
