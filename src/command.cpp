@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.15 2000-07-31 16:04:39 sdennis Exp $
+// $Id: command.cpp,v 1.16 2000-07-31 16:13:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -288,7 +288,7 @@ NAMETAB mail_sw[] =
     {(char *)"tag",         1,      CA_PUBLIC,      MAIL_TAG},
     {(char *)"unclear",     1,      CA_PUBLIC,      MAIL_UNCLEAR},
     {(char *)"untag",       1,      CA_PUBLIC,      MAIL_UNTAG},
-    {(char *)"urgent",      1,      CA_PUBLIC,      MAIL_URGENT}
+    {(char *)"urgent",      1,      CA_PUBLIC,      MAIL_URGENT},
     { NULL,                 0,              0,      0}
 };
 
@@ -301,7 +301,7 @@ NAMETAB malias_sw[] =
     {(char *)"delete",      1,      CA_PUBLIC,      MALIAS_DELETE},
     {(char *)"rename",      1,      CA_PUBLIC,      MALIAS_RENAME},
     {(char *)"list",        1,      CA_PUBLIC,      MALIAS_LIST},
-    {(char *)"status",      1,      CA_PUBLIC,      MALIAS_STATUS}
+    {(char *)"status",      1,      CA_PUBLIC,      MALIAS_STATUS},
     { NULL,                 0,              0,      0}
 };
 
