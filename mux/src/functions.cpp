@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.29 2002-06-24 08:24:04 sdennis Exp $
+// $Id: functions.cpp,v 1.30 2002-06-24 22:58:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2848,7 +2848,7 @@ void CSpellNum::SpellNumber_Sub0(int n, const char *p, BOOL bHundreds)
 void CSpellNum::SpellNumber_Sub1(int n, const char *p)
 {
     SpellNumber_Sub0(n, p, FALSE);
-    if (  1 < n
+    if (  0 < n
        && n < 15)
     {
         int d = n / 3;
@@ -2857,10 +2857,18 @@ void CSpellNum::SpellNumber_Sub1(int n, const char *p)
         if (r != 0)
         {
             AddWord(th_prefix[r]);
-            AddWord("-");
+            if (d != 0)
+            {
+                AddWord("-");
+            }
         }
         AddWord(bigones[d]);
-        AddWord("ths");
+        AddWord("th");
+        INT64 i64 = Tiny_atoi64(p);
+        if (i64 != 1)
+        {
+            AddWord("s");
+        }
     }
 }
 
