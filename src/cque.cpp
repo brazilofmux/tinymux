@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.13 2000-08-03 21:42:18 sdennis Exp $
+// $Id: cque.cpp,v 1.14 2000-11-01 07:08:35 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -757,33 +757,35 @@ void wait_que(dbref player, dbref cause, int wait, dbref sem, int attr, char *co
  * * do_wait: Command interface to wait_que
  */
 
-void do_wait(dbref player, dbref cause, int key, char *event, char *cmd, char *cargs[], int ncargs)
+void do_wait
+(
+    dbref player,
+    dbref cause,
+    int key,
+    char *event,
+    char *cmd,
+    char *cargs[],
+    int ncargs
+)
 {
-    dbref thing, aowner;
-    int howlong, num, attr, aflags;
-    char *what;
-    ATTR *ap;
+    int howlong = 0;
     
-
-    /*
-     * If arg1 is all numeric, do simple (non-sem) timed wait. 
-     */
-
+    // If arg1 is all numeric, do simple (non-sem) timed wait.
+    //
     if (is_number(event))
     {
         howlong = Tiny_atol(event);
         wait_que(player, cause, howlong, NOTHING, 0, cmd, cargs, ncargs, mudstate.global_regs);
         return;
     }
-    /*
-     * Semaphore wait with optional timeout 
-     */
 
-    what = parse_to(&event, '/', 0);
+    // Semaphore wait with optional timeout.
+    //
+    char *what = parse_to(&event, '/', 0);
     init_match(player, what, NOTYPE);
     match_everything(0);
 
-    thing = noisy_match_result();
+    dbref thing = noisy_match_result();
     if (!Good_obj(thing))
     {
         notify(player, "No match.");
@@ -794,55 +796,44 @@ void do_wait(dbref player, dbref cause, int key, char *event, char *cmd, char *c
     }
     else 
     {
-
-        /*
-         * Get timeout, default 0 
-         */
-
-        if (event && *event && is_number(event))
+        // Get timeout, default 0.
+        //
+        int attr = A_SEMAPHORE;
+        if (event && *event)
         {
-            attr = A_SEMAPHORE;
-            howlong = Tiny_atol(event);
-        }
-        else
-        {
-            attr = A_SEMAPHORE;
-            howlong = 0;
-        }
-
-        if (event && *event && !is_number(event))
-        {
-            ap = atr_str(event);
-            if (!ap)
+            if (is_number(event))
             {
-                attr = mkattr(event);
-                if (attr <= 0) {
-                    notify_quiet(player, "Invalid attribute.");
-                    return;
-                }
-                ap = atr_num(attr);
-            }
-            atr_pget_info(thing, ap->number, &aowner, &aflags);
-            if (attr && Set_attr(player, thing, ap, aflags))
-            {
-                attr = ap->number;
-                howlong = 0;
+                howlong = Tiny_atol(event);
             }
             else
             {
-                notify_quiet(player, NOPERM_MESSAGE);
-                return;
+                ATTR *ap = atr_str(event);
+                if (!ap)
+                {
+                    attr = mkattr(event);
+                    if (attr <= 0)
+                    {
+                        notify_quiet(player, "Invalid attribute.");
+                        return;
+                    }
+                    ap = atr_num(attr);
+                }
+                dbref aowner;
+                int   aflags;
+                atr_pget_info(thing, ap->number, &aowner, &aflags);
+                if (!Set_attr(player, thing, ap, aflags))
+                {
+                    notify_quiet(player, NOPERM_MESSAGE);
+                    return;
+                }
             }
         }
         
-        num = add_to(thing, 1, attr);
+        int num = add_to(thing, 1, attr);
         if (num <= 0)
         {
-
-            /*
-             * thing over-notified, run the command immediately 
-             */
-
+            // Thing over-notified, run the command immediately.
+            //
             thing = NOTHING;
             howlong = 0;
         }
