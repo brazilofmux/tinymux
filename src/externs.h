@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.50 2001-06-09 08:48:44 sdennis Exp $
+// $Id: externs.h,v 1.51 2001-06-11 13:12:51 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -30,9 +30,10 @@ extern void NDECL(mail_init);
 extern struct mail *FDECL(mail_fetch, (dbref, int));
 
 /* From netcommon.cpp */
-extern void FDECL(make_ulist, (dbref, char *, char **));
-extern int  FDECL(fetch_idle, (dbref));
-extern int  FDECL(fetch_connect, (dbref));
+extern void make_ulist(dbref, char *, char **);
+extern int fetch_session(dbref target);
+extern int fetch_idle(dbref target);
+extern int fetch_connect(dbref target);
 extern void DCL_CDECL raw_broadcast(int, char *, ...);
 extern const char *time_format_1(int Seconds);
 extern const char *time_format_2(int Seconds);

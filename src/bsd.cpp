@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.24 2001-03-31 00:08:05 sdennis Exp $
+// $Id: bsd.cpp,v 1.25 2001-06-11 13:12:51 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1456,15 +1456,46 @@ void shutdownsock(DESC *d, int reason)
         //
         long anFields[4];
         fetch_ConnectionInfoFields(d->player, anFields);
-        int nConnected = fetch_connect(d->player);
 
-        anFields[CIF_TOTALTIME] += nConnected;
-        if (anFields[CIF_LONGESTCONNECT] < nConnected)
-        {
-            anFields[CIF_LONGESTCONNECT] = nConnected;
-        }
-        anFields[CIF_LASTCONNECT] = nConnected;
+        // One of the active sessions is going away. It doesn't matter which
+        // one.
+        //
         anFields[CIF_NUMCONNECTS]++;
+
+        // What are the two longest sessions?
+        //
+        DESC *dOldest[2];
+        find_oldest(d->player, dOldest);
+
+        CLinearTimeDelta ltdFull;
+        ltdFull = ltaNow - dOldest[0]->connected_at;
+        long tFull = ltdFull.ReturnSeconds();
+        if (dOldest[0] == d)
+        {
+            // We are dropping the oldest connection.
+            //
+            CLinearTimeDelta ltdPart;
+            if (dOldest[1])
+            {
+                // There is another (more recently made) connection.
+                //
+                ltdPart = dOldest[1]->connected_at - dOldest[0]->connected_at;
+            }
+            else
+            {
+                // There is only one connection.
+                //
+                ltdPart = ltdFull;
+            }
+            long tPart = ltdPart.ReturnSeconds();
+
+            anFields[CIF_TOTALTIME] += tPart;
+            if (anFields[CIF_LONGESTCONNECT] < tFull)
+            {
+                anFields[CIF_LONGESTCONNECT] = tFull;
+            }
+        }
+        anFields[CIF_LASTCONNECT] = tFull;
 
         put_ConnectionInfoFields(d->player, anFields, ltaNow);
 

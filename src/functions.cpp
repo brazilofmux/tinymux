@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.60 2001-06-05 06:16:37 sdennis Exp $
+// $Id: functions.cpp,v 1.61 2001-06-11 13:12:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7128,7 +7128,11 @@ FUNCTION(fun_conntotal)
     dbref target = lookup_player(player, fargs[0], 1);
     if (Good_obj(target))
     {
-        long TotalTime = fetch_totaltime(target) + fetch_connect(target);
+        long TotalTime = fetch_totaltime(target);
+        if (Connected(target))
+        {
+            TotalTime += fetch_connect(target);
+        }
         safe_ltoa(TotalTime, buff, bufc, LBUF_SIZE-1);
     }
     else
@@ -7176,14 +7180,18 @@ FUNCTION(fun_connlast)
 }
 
 // connnum - Return the total number of sessions this player has had
-// to the MUX (including the current one). D.Piper - May 1997
+// to the MUX (including any current ones). D.Piper - May 1997
 //
 FUNCTION(fun_connnum)
 {
     dbref target = lookup_player(player, fargs[0], 1);
     if (Good_obj(target))
     {
-        long NumConnections = fetch_numconnections(target) + 1;
+        long NumConnections = fetch_numconnections(target);
+        if (Connected(target))
+        {
+            NumConnections += fetch_session(target);
+        }
         safe_ltoa(NumConnections, buff, bufc, LBUF_SIZE-1);
     }
     else
