@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.80 2002-09-14 08:30:48 jake Exp $
+// $Id: command.cpp,v 1.81 2002-09-14 08:43:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -2278,9 +2278,10 @@ NAMETAB access_nametab[] =
 static void list_cmdaccess(dbref player)
 {
     ATTR *ap;
+    CMDENT_BASIC *cmdp;
 
     char *buff = alloc_sbuf("list_cmdaccess");
-    for (CMDENT_BASIC *cmdp = command_table; cmdp->cmdname; cmdp++)
+    for (cmdp = command_table; cmdp->cmdname; cmdp++)
     {
         if (  check_access(player, cmdp->perms)
             && !(cmdp->perms & CF_DARK))
