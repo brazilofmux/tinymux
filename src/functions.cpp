@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.146 2002-02-05 09:30:53 sdennis Exp $
+// $Id: functions.cpp,v 1.147 2002-02-05 19:05:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -635,8 +635,6 @@ static int Tiny_fpclass(double result)
  */
 static void fval(char *buff, char **bufc, double result)
 {
-    char *pBegin = *bufc;
-
     // Get double val into buffer.
     //
 #ifdef HAVE_IEEE_FP_FORMAT
@@ -670,8 +668,6 @@ static void fval(char *buff, char **bufc, double result)
 
 static void fval_buf(char *buff, double result)
 {
-    char *pBegin = buff;
-
     // Get double val into buffer.
     //
 #ifdef HAVE_IEEE_FP_FORMAT
@@ -3219,53 +3215,47 @@ FUNCTION(fun_log)
 FUNCTION(fun_asin)
 {
     double val = Tiny_atof(fargs[0]);
+#ifndef HAVE_IEEE_FP_SNAN
+    if ((val < -1.0) || (val > 1.0))
+    {
+        safe_str("Ind", buff, bufc);
+        return;
+    }
+#endif
+    val = asin(val);
     if (nfargs == 2)
     {
         val = ConvertR2RDG(val, fargs[1]);
     }
-#ifdef HAVE_IEEE_FP_SNAN
-    fval(buff, bufc, asin(val));
-#else
-    if ((val < -1.0) || (val > 1.0))
-    {
-        safe_str("Ind", buff, bufc);
-    }
-    else
-    {
-        fval(buff, bufc, asin(val));
-    }
-#endif
+    fval(buff, bufc, val);
 }
 
 FUNCTION(fun_acos)
 {
     double val = Tiny_atof(fargs[0]);
+#ifndef HAVE_IEEE_FP_SNAN
+    if ((val < -1.0) || (val > 1.0))
+    {
+        safe_str("Ind", buff, bufc);
+        return;
+    }
+#endif
+    val = acos(val);
     if (nfargs == 2)
     {
         val = ConvertR2RDG(val, fargs[1]);
     }
-#ifdef HAVE_IEEE_FP_SNAN
-    fval(buff, bufc, acos(val));
-#else
-    if ((val < -1.0) || (val > 1.0))
-    {
-        safe_str("Ind", buff, bufc);
-    }
-    else
-    {
-        fval(buff, bufc, acos(val));
-    }
-#endif
+    fval(buff, bufc, val);
 }
 
 FUNCTION(fun_atan)
 {
-    double val = Tiny_atof(fargs[0]);
+    double val = atan(Tiny_atof(fargs[0]));
     if (nfargs == 2)
     {
         val = ConvertR2RDG(val, fargs[1]);
     }
-    fval(buff, bufc, atan(val));
+    fval(buff, bufc, val);
 }
 
 FUNCTION(fun_dist2d)
