@@ -119,8 +119,8 @@ Feature Additions:
  -- Allow #1 to @newpassword herself if it's missing. Idea from Ian.
  -- Backpatch more descriptive messages for two zone functions from MUX 2.2.
  -- Added KEEPALIVE flag which, if set, periodically causes a TELNET NOP to
-    be sent to the client.  Idea and patch from Soruk.  This approach is less
-    chatty than using the KEEPALIVE option in TCP/IP.
+    be sent to the client.  Idea and patch from Soruk.  This is not the same
+    as the TCP/IP option by the same name.
 
 Bug Fixes:
 ~~~~~~~~~
