@@ -1,6 +1,6 @@
 // look.c -- commands which look at things
 //
-// $Id: look.cpp,v 1.3 2000-04-13 07:53:47 sdennis Exp $
+// $Id: look.cpp,v 1.4 2000-04-14 04:04:04 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -1386,7 +1386,7 @@ void do_examine(dbref player, dbref cause, int key, char *name)
         free_mbuf(buf2);
         
     }
-    if (key & EXAM_BRIEF)
+    if (!(key & EXAM_BRIEF))
     {
         look_atrs(player, thing, do_parent);
     }
