@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.53 2001-07-02 11:16:34 sdennis Exp $
+// * $Id: comsys.cpp,v 1.54 2001-07-26 16:45:32 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -268,7 +268,9 @@ void load_channels(FILE *fp)
         }
         if (c->who >= 0 && c->who < mudstate.db_top)
         {
-            if ((Typeof(c->who) == TYPE_PLAYER) || (!God(Owner(c->who))) || ((!Going(c->who))))
+            if (  isPlayer(c->who)
+               || !God(Owner(c->who))
+               || !Going(c->who))
             {
                 add_comsys(c);
             }
@@ -331,7 +333,9 @@ void load_old_channels(FILE *fp)
         }
         if (c->who >= 0 && c->who < mudstate.db_top)
         {
-            if ((Typeof(c->who) == TYPE_PLAYER) || (!God(Owner(c->who))) || ((!Going(c->who))))
+            if (  isPlayer(c->who)
+               || !God(Owner(c->who))
+               || !Going(c->who))
             {
                 add_comsys(c);
             }
@@ -366,11 +370,12 @@ void purge_comsystem(void)
                 del_comsys(d->who);
                 continue;
             }
-            // if ((Typeof(d->who) != TYPE_PLAYER) && (God(Owner(d->who))) &&
-            // (Going(d->who)))
-            if (Typeof(d->who) == TYPE_PLAYER)
+            if (isPlayer(d->who))
+            {
                 continue;
-            if (God(Owner(d->who)) && Going(d->who))
+            }
+            if (  God(Owner(d->who))
+               && Going(d->who))
             {
                 del_comsys(d->who);
                 continue;
@@ -1195,7 +1200,7 @@ void do_comwho(dbref player, struct channel *ch)
     raw_notify(player, "-- Players --");
     for (user = ch->on_users; user; user = user->on_next)
     {
-        if (Typeof(user->who) == TYPE_PLAYER)
+        if (isPlayer(user->who))
         {
             if (Connected(user->who) && (!Dark(user->who) || Wizard_Who(player)))
             {
@@ -1213,7 +1218,7 @@ void do_comwho(dbref player, struct channel *ch)
     raw_notify(player, "-- Objects --");
     for (user = ch->on_users; user; user = user->on_next)
     {
-        if (Typeof(user->who) != TYPE_PLAYER)
+        if (!isPlayer(user->who))
         {
             if ((Going(user->who)) && (God(Owner(user->who))))
             {
@@ -1636,7 +1641,7 @@ void do_cleanupchannels(void)
         struct comuser *user, *prevuser = NULL;
         for (user = ch->on_users; user; )
         {
-            if (Typeof(user->who) == TYPE_PLAYER)
+            if (isPlayer(user->who))
             {
                 if (!(do_test_access(user->who, CHANNEL_JOIN, ch)))
                 //if (!Connected(user->who))
@@ -1978,7 +1983,9 @@ void do_channelwho(dbref player, dbref cause, int key, char *arg1)
         if ((flag || UNDEAD(user->who)) && (!Dark(user->who) || Wizard_Who(player)))
         {
             buff = unparse_object(player, user->who, 0);
-            sprintf(temp, "%-29.29s %-6.6s %-6.6s", strip_ansi(buff), ((user->bUserIsOn) ? "on " : "off"), (Typeof(user->who) == TYPE_PLAYER) ? "yes" : "no ");
+            sprintf(temp, "%-29.29s %-6.6s %-6.6s", strip_ansi(buff),
+                user->bUserIsOn ? "on " : "off",
+                isPlayer(user->who) ? "yes" : "no ");
             raw_notify(player, temp);
             free_lbuf(buff);
         }
@@ -2287,7 +2294,7 @@ int do_test_access(dbref player, long access, struct channel *chan)
         }
     }
 
-    if (Typeof(player) == TYPE_PLAYER)
+    if (isPlayer(player))
     {
         flag_value *= CHANNEL_PL_MULT;
     }
