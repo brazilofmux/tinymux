@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.11 2000-06-02 19:14:50 sdennis Exp $
+// $Id: command.cpp,v 1.12 2000-06-03 04:38:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1240,12 +1240,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
     cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< process_command >";
 
-    if (!pOriginalCommand)
-    {
-        Log.WriteString("ABORT! command.cpp, NULL command in process_command().\n");
-        Log.Flush();
-        abort();
-    }
+    Tiny_Assert(pOriginalCommand);
 
     if (!Good_obj(player))
     {
