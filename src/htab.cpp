@@ -1,6 +1,6 @@
-// htab.cpp - table hashing routines 
+// htab.cpp - table hashing routines
 //
-// $Id: htab.cpp,v 1.5 2001-02-07 05:28:14 sdennis Exp $
+// $Id: htab.cpp,v 1.6 2001-06-29 11:30:18 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -188,7 +188,7 @@ void hashreplall(int *old, int *new0, CHashTable *htab)
 }
 
 /*
- * Returns the key for the first hash entry in 'htab'. 
+ * Returns the key for the first hash entry in 'htab'.
  */
 
 int *hash_firstentry(CHashTable *htab)
@@ -421,4 +421,4 @@ CF_HAND(cf_ntab_access)
     return -1;
 }
 
-#endif STANDALONE
+#endif // !STANDALONE
