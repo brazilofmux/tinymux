@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.22 2003-03-03 05:06:04 sdennis Exp $
+// $Id: game.cpp,v 1.23 2003-03-03 18:32:52 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1506,7 +1506,9 @@ void fork_and_dump(int key)
         else
         {
             bChildExists = true;
+#ifndef WIN32
             mudstate.dumper = child;
+#endif
         }
     }
 
