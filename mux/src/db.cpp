@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.29 2002-07-31 17:02:31 jake Exp $
+// $Id: db.cpp,v 1.30 2002-08-03 17:25:56 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -440,25 +440,6 @@ FWDLIST *fwdlist_get(dbref thing)
     return fp;
 }
 
-static char *set_string(char **ptr, char *new0)
-{
-    // if pointer not null unalloc it.
-    //
-    if (*ptr)
-    {
-        MEMFREE(*ptr);
-    }
-    *ptr = NULL;
-
-    // If new string is not null allocate space for it and copy it.
-    //
-    if (new0)
-    {
-        *ptr = StringClone(new0);
-    }
-    return *ptr;
-}
-
 /* ---------------------------------------------------------------------------
  * Name, s_Name: Get or set an object's name.
  */
@@ -474,27 +455,15 @@ char *Name(dbref thing)
 
     dbref aowner;
     int aflags;
-    char *buff;
-
-    if (mudconf.cache_names)
-    {
-        if (!purenames[thing])
-        {
-            buff = atr_get(thing, A_NAME, &aowner, &aflags);
-            set_string(&purenames[thing], strip_ansi(buff));
-            free_lbuf(buff);
-        }
-    }
-
 #ifdef MEMORY_BASED
     atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
     return tbuff;
 #else // MEMORY_BASED
     if (!names[thing])
     {
-        buff = atr_get(thing, A_NAME, &aowner, &aflags);
-        set_string(&names[thing], buff);
-        free_lbuf(buff);
+        int len;
+        atr_get_str_LEN(tbuff, thing, A_NAME, &aowner, &aflags, &len);
+        names[thing] = StringCloneLen(tbuff, len);
     }
     return names[thing];
 #endif // MEMORY_BASED
@@ -505,35 +474,44 @@ char *PureName(dbref thing)
     char tbuff[LBUF_SIZE];
     if (thing < 0)
     {
-        char *p = alloc_lbuf("PureName");
-        strcpy(p, aszSpecialDBRefNames[-thing]);
-        return p;
+        strcpy(tbuff, aszSpecialDBRefNames[-thing]);
+        return tbuff;
     }
 
     dbref aowner;
     int aflags;
-    char *buff;
-
-#ifndef MEMORY_BASED
-    if (!names[thing])
-    {
-        buff = atr_get(thing, A_NAME, &aowner, &aflags);
-        set_string(&names[thing], buff);
-        free_lbuf(buff);
-    }
-#endif // !MEMORY_BASED
 
     if (mudconf.cache_names)
     {
         if (!purenames[thing])
         {
-            buff = atr_get(thing, A_NAME, &aowner, &aflags);
-            set_string(&purenames[thing], strip_ansi(buff));
-            free_lbuf(buff);
+            int nName;
+            char *pName, *pPureName;
+            size_t nPureName;
+#ifdef MEMORY_BASED
+            pName = atr_get_strLEN(tbuff, thing, A_NAME, &aowner, &aflags, &nName);
+            pPureName = strip_ansi(pName, &nPureName);
+            purenames[thing] = StringCloneLen(pPureName, nPureName);
+#else // MEMORY_BASED
+            if (!names[thing])
+            {
+                atr_get_str_LEN(tbuff, thing, A_NAME, &aowner, &aflags, &nName);
+                names[thing] = StringCloneLen(tbuff, nName);
+            }
+            pName = names[thing];
+            pPureName = strip_ansi(pName, &nPureName);
+            if (nPureName == nName)
+            {
+                purenames[thing] = pName;
+            }
+            else
+            {
+                purenames[thing] = StringCloneLen(pPureName, nPureName);
+            }
+#endif // MEMORY_BASED
         }
         return purenames[thing];
     }
-
     atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
     return strip_ansi(tbuff);
 }
@@ -543,11 +521,22 @@ void s_Name(dbref thing, char *s)
     atr_add_raw(thing, A_NAME, s);
     set_modified(thing);
 #ifndef MEMORY_BASED
-    set_string(&names[thing], s);
-#endif // !MEMORY_BASED
-    if (mudconf.cache_names)
+    if (names[thing])
     {
-        set_string(&purenames[thing], strip_ansi(s));
+        if (  mudconf.cache_names
+           && names[thing] == purenames[thing])
+        {
+            purenames[thing] = NULL;
+        }
+        MEMFREE(names[thing]);
+    }
+    names[thing] = StringClone(s);
+#endif // !MEMORY_BASED
+    if (  mudconf.cache_names
+       && purenames[thing])
+    {
+        MEMFREE(purenames[thing]);
+        purenames[thing] = NULL;
     }
 }
 
