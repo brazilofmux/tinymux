@@ -2367,7 +2367,7 @@ HELP_INDEX
 
   Related Topics: help, @readcache, help_file
 
-&HOOK_CMD
+& HOOK_CMD
 HOOK_CMD
 
   Config parameter: hook_cmd <command> <hooks/!hooks>
@@ -2380,11 +2380,13 @@ HOOK_CMD
          - permit      establish functionary lock of attribute/command.
          - ignore      establish ignore inheritance of attribute/command.
          - igswitch    specifies if command bypasses failed /switch notices.
-  
+
   For detailed information on how to set up hooks, please see wizhelp on:
                                 HOOK SETUP
-  
-  Related Topics: @hook, hook_obj, HOOK SETUP.&HOOK_OBJ
+
+  Related Topics: @hook, hook_obj, HOOK SETUP.
+
+& HOOK_OBJ
 HOOK_OBJ
 
   Config parameter: hook_obj <dbref>.  Default: -1
@@ -2395,11 +2397,13 @@ HOOK_OBJ
           P_<command> - permit configuration
           A_<command> - after configuration
           B_<command> - before configuration
-  
+
   For detailed information on how to set up hooks, please see wizhelp on:
                                 HOOK SETUP
-  
-  Related Topics: @hook, hook_cmd, HOOK SETUP.&HOOK SETUP
+
+  Related Topics: @hook, hook_cmd, HOOK SETUP.
+
+&HOOK SETUP
 HOOK SETUP
 
   Hooks are set up by following the shown methods.
