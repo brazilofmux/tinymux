@@ -97,7 +97,6 @@ src/pcre.cpp
 src/pcre.h
 src/player.cpp
 src/player_c.cpp
-src/portconc.cpp
 src/powers.cpp
 src/powers.h
 src/predicates.cpp
