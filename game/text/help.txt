@@ -6249,11 +6249,15 @@ HASATTRP()
 & HASFLAG()
 HASFLAG()
 
-  FUNCTION: hasflag(<object>,<flag>)
+  FUNCTION: hasflag(<object>[/<attribute>],<flag>)
 
-  Returns true if object <object> has the flag named <flag> set on it.
-  You may not be able to retrieve information for objects that you do not
-  own.
+  Returns true if object <object> has the flag named <flag> set on it. You
+  may not be able to retrieve information for objects that you do not own.
+
+  When an <attribute> is given, the following <flag> values can be used.
+
+    const, no_command, dark, god, hidden, html, no_inherit, locked, no_parse,
+    regexp, visual, and wizard.
 
   Example:
     > say hasflag(me, wizard)
