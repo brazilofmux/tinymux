@@ -1,5 +1,5 @@
-TinyMUX 2.0:  REALMS
-Last Update:  December 2001
+TinyMUX 2.1:  REALMS
+Last Update:  January 2002
 
 What are Realms?:
 ~~~~~~~~~~~~~~~~
@@ -58,7 +58,7 @@ add adds one hardcode function:
 
 Out of Character (OOC) commands like page, @mail, etc. are not effected by
 the realms rules. If you don't set any flags, the realms rules do not 
-effect anything, only may affection performance very slightly if at all.
+affect anything except possibly performance very slightly if at all.
 
 Even with use of these flags and attributes, if you are wizard, royalty,
 or staff, you are always seen, and you see everything. This allows staff to
