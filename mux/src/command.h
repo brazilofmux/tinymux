@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.17 2002-09-14 07:55:38 jake Exp $
+// $Id: command.h,v 1.18 2002-09-15 00:38:22 jake Exp $
 //
 
 #ifndef __COMMAND_H
@@ -249,18 +249,6 @@ typedef struct
     };
 } CMDENT;
 
-typedef struct
-{
-    char    *cmdname;
-    NAMETAB *switches;
-    int     perms;
-    int     extra;
-    int     callseq;
-    int     hookmask;
-    void    *handler;
-} CMDENT_BASIC;
-
-
 /* Command handler call conventions */
 
 #define CS_NO_ARGS    0x0000    /* No arguments */
@@ -319,8 +307,6 @@ typedef struct
 #define CA_DISABLED   0x02000000  /* Command completely disabled */
 #define CA_STATIC     0x04000000  /* Cannot be changed at runtime */
 #define CA_NO_DECOMP  0x08000000  /* Don't include in @decompile */
-
-#define CA_CAN_BUILD  (CA_GBL_BUILD|CA_NO_SLAVE|CA_NO_GUEST) // Need to be able to build.
 
 #define CA_LOCATION   0x10000000  /* Invoker must have location */
 #define CA_CONTENTS   0x20000000  /* Invoker must have contents */

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.21 2002-09-14 07:15:59 jake Exp $
+// $Id: conf.cpp,v 1.22 2002-09-15 00:42:43 jake Exp $
 //
 
 #include "copyright.h"
@@ -1410,7 +1410,7 @@ CF_HAND(cf_hook)
 {
     char *hookcmd, *hookptr, playbuff[201];
     int hookflg;
-    CMDENT_BASIC *cmdp;
+    CMDENT *cmdp;
 
     int retval = -1;
     memset(playbuff, '\0', sizeof(playbuff));
@@ -1421,7 +1421,7 @@ CF_HAND(cf_hook)
     hookcmd = Tiny_StrTokParse(&tts);
     if (hookcmd != NULL)
     {
-       cmdp = (CMDENT_BASIC *)hashfindLEN(hookcmd, strlen(hookcmd), &mudstate.command_htab);
+       cmdp = (CMDENT *)hashfindLEN(hookcmd, strlen(hookcmd), &mudstate.command_htab);
     }
     else
     {
