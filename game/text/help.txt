@@ -1198,7 +1198,7 @@ WHO
   installers (such as /quotable text files).  Note that @@ must be
   followed by a space or it will return an error message.
 
-  Always be doubly sure  that ()'s and {}'s in the (otherwise ignored)
+  Always be doubly sure that ()'s and {}'s in the (otherwise ignored)
   arguments are nested correctly, so that any semicolons used to separate it
   from subsequent code in the line are recognized by the parser.
 
@@ -7141,6 +7141,22 @@ IADD()
 
   Related Topics: add(), dec(), div(), idiv(), imul(), inc(), isub(),
             mod(), mul(), sub().
+& LADD()
+LADD()
+
+  FUNCTION: ladd(<list of numbers>[,<delim>])
+
+  Adds a list of numbers together. These numbers may be integer or
+  floating-point.
+
+  Examples:
+    > say [ladd(1 2 3 -1)]
+    You say, "5"
+    > say [ladd(4|5.1|6,|)]
+    You say, "15.1"
+
+  Related Topics: add(), iadd().
+
 & INC()
 INC()
 
