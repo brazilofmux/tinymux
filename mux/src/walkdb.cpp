@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.7 2003-03-17 15:35:40 jake Exp $
+// $Id: walkdb.cpp,v 1.8 2004-03-01 06:38:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -717,8 +717,8 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
     if (!payfor(player, mudconf.searchcost))
     {
         notify(player,
-        tprintf( "You don't have enough %s to search. (You need %d)",
-                 mudconf.many_coins, mudconf.searchcost) );
+            tprintf("You don't have enough %s to search. (You need %d)",
+                 mudconf.many_coins, mudconf.searchcost));
         return false;
     }
     return true;
