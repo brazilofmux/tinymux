@@ -8404,12 +8404,14 @@ IDLE()
     You say "371"
     > say idle(frobozz)
     You say "-1"
-  See also: WHO, conn(), lwho().
+  
+  Related Topics: WHO, conn(), lwho().
 
 & CONVSECS()
+CONVSECS()
 
-  Function: convsecs(<seconds> [, <zonename>])
- 
+  FUNCTION: convsecs(<seconds> [, <zonename>])
+
   By default, this function converts an integer (representing a count
   of seconds from Jan 01 00:00:00 1970 UTC) to a local time string --
   where local time is the time at the machine running the MUX. This
@@ -8437,12 +8439,13 @@ IDLE()
     > say convsecs(957532909, utc)
     You say "Fri May 05 13:21:49 2000"
 
-  See also: convtime(), secs(), time().
+  Related Topics: convtime(), secs(), time().
 
 & CONVTIME()
+CONVTIME()
+   
+  FUNCTION: convtime(<time string> [, <zonename>])
 
-  Function: convtime(<time string> [, <zonename>])
- 
   By default, this function converts a time string (of format
   [Ddd] Mmm DD HH:MM:SS YYYY) into an integer which represents a
   count of seconds since Jan 01 00:00:00 1970 UTC not including leap
@@ -8466,8 +8469,8 @@ IDLE()
            between an integer and it's corresponding text-string which
            may be useful for handling other timezones and fictional
            settings.
-   
-  Example:
+
+  Examples:
     > say time()
     You say "Wed Jun 24 10:22:54 1992"
     > say convtime(Wed Jun 24 10:22:54 1992)
@@ -8475,11 +8478,12 @@ IDLE()
     > say convtime(Wed Jun 24 10:22:54 1992, utc)
     You say "709381374"
 
-  See also: convsecs(), secs(), time().
+  Related Topics: convsecs(), secs(), time().
 
 & SORT()
+SORT()
 
-  Function: sort(<list>[, <sort type>[, <delim>]])
+  FUNCTION: sort(<list>[, <sort type>[, <delim>]])
  
   Takes a list of words, numbers, or dbref, and sorts them into ascending
   order.  Lexicographic order is used for words, and numeric order is used
@@ -8501,10 +8505,13 @@ IDLE()
     You say "98 99 100 102"
     > say sort(foo-bar-bletch,,-)
     You say "bar-bletch-foo"
+  
+  Related Topics:
 
 & SETDIFF()
+SETDIFF()
 
-  Function: setdiff(<list1>, <list2>[, <delim>])
+  FUNCTION: setdiff(<list1>, <list2>[, <delim>])
  
   This function returns the difference of two sets -- i.e., the elements in
   <list1> that aren't in <list2>. The list that is returned is sorted.
@@ -8515,11 +8522,13 @@ IDLE()
   Example:
     > say setdiff(foo baz gleep bar, bar moof gleep)
     You say, "baz foo"
-  See also: setinter(), setunion(), sort().
+  
+  Related Topics: setinter(), setunion(), sort().
 
 & SETINTER()
+SETINTER()
 
-  Function: setinter(<list1>, <list2>[, <delim>])
+  FUNCTION: setinter(<list1>, <list2>[, <delim>])
  
   This function returns the intersection of two sets -- i.e., the elements
   that are in both <list1> and <list2>. The list that is returned is sorted.
@@ -8530,11 +8539,13 @@ IDLE()
   Example:
     > say setinter(foo baz gleep bar, bar moof gleep)
     You say, "bar gleep"
-  See also: setdiff(), setunion(), sort().
+  
+  Related Topics: setdiff(), setunion(), sort().
 
 & SETUNION()
+SETUNION()
 
-  Function: setunion(<list1>, <list2>[, <delim>])
+  FUNCTION: setunion(<list1>, <list2>[, <delim>])
  
   This function returns the union of two sets -- i.e., all the elements of
   both <list1> and <list2>, minus any duplicate elements. Think of it as
@@ -8546,11 +8557,13 @@ IDLE()
   Example:
     > say setunion(foo baz gleep bar, bar moof gleep)
     You say, "bar baz foo gleep moof"
-  See also: setdiff(), setinter(), sort().
+  
+  Related Topics: setdiff(), setinter(), sort().
 
 & MERGE()
+MERGE()
 
-  Function: merge(<string1>,<string2>,<character>)
+  FUNCTION: merge(<string1>,<string2>,<character>)
   
   This function merges <string1> and <string2>, depending on <character>.
   If a character in <string1> is the same as <character>, it is replaced
@@ -8565,11 +8578,13 @@ IDLE()
     You say, "ABcdEF"
     > say merge(AB[space(2)]EF,abcdef,)
     You say, "ABcdEF"
-  See also: splice().
+  
+  Related Topics: splice().
 
 & REPEAT()
+REPEAT()
 
-  Function: repeat(<string>,<number>)
+  FUNCTION: repeat(<string>,<number>)
   
   This function simply repeats <string>, <number> times.  No spaces are
   inserted between each repetition.
@@ -8577,10 +8592,13 @@ IDLE()
   Example:
     > say repeat(Test, 5)
     You say, "TestTestTestTestTest"
+  
+  Related Topics:
 
 & SPLICE()
+SPLICE()
 
-  Function: splice(<list1>, <list2>, <word>[, <delim>])
+  FUNCTION: splice(<list1>, <list2>, <word>[, <delim>])
   
   This function splices <list1> and <list2> together. <list1> and <list2>
   are space-separated lists of words
@@ -8594,32 +8612,39 @@ IDLE()
   Example:
     > say splice(foo bar baz,eek moof gleep,bar)
     You say, "foo moof baz"
-  See also: merge().
+  
+  Related Topics: merge().
 
 & PI()
+PI()
 
-  Function: pi()
+  FUNCTION: pi()
  
   Returns the value of the trigonometric constant pi to nine decimal places.
  
   Example:
     > say pi()
     You say "3.141592654"
-  See also: acos(), asin(), atan(), cos(), sin(), tan().
+  
+  Related Topics: acos(), asin(), atan(), cos(), sin(), tan().
 
 & E()
+E()
 
-  Function: e()
+  FUNCTION: e()
+  
   Returns the value of the numeric constant e to nine decimal places.
  
   Example:
     > say e()
     You say "2.718281828"
-  See also: exp(), ln(), log(), power().
+  
+  Related Topics: exp(), ln(), log(), power().
 
 & SIN()
+SIN()
 
-  Function: sin(<number>)
+  FUNCTION: sin(<number>)
  
   Returns the sine of <number>, expressed in radians.
  
@@ -8632,11 +8657,13 @@ IDLE()
     You say "0.707107"
     > say sin(fdiv(pi(),6))
     You say "0.5"
-  See also: acos(), asin(), atan(), cos(), pi(), tan().
+  
+  Related Topics: acos(), asin(), atan(), cos(), pi(), tan().
 
 & COS()
+COS()
 
-  Function: cos(<number>)
+  FUNCTION: cos(<number>)
  
   Returns the cosine of <number>, expressed in radians.
  
@@ -8649,11 +8676,13 @@ IDLE()
     You say "0.707107"
     > say cos(fdiv(pi(),6))
     You say "0.866025"
-  See also: acos(), asin(), atan(), pi(), sin(), tan().
+  
+  Related Topics: acos(), asin(), atan(), pi(), sin(), tan().
 
 & TAN()
+TAN()
 
-  Function: tan(<number>)
+  FUNCTION: tan(<number>)
  
   Returns the tangent of <number>, expressed in radians.
  
@@ -8664,11 +8693,13 @@ IDLE()
     You say "1.557408"
     > say tan(fdiv(pi(),4))
     You say "1"
-  See also: acos(), asin(), atan(), cos(), pi(), sin().
+  
+  Related Topics: acos(), asin(), atan(), cos(), pi(), sin().
 
 & ASIN()
+ASIN()
 
-  Function: asin(<number>)
+  FUNCTION: asin(<number>)
  
   Returns the arcsine of <number>, expressed in radians.
  
@@ -8681,11 +8712,13 @@ IDLE()
     You say "0.78539"
     > say asin(0.5)
     You say "0.523599"
-  See also: acos(), atan(), cos(), pi(), sin(), tan().
+  
+  Related Topics: acos(), atan(), cos(), pi(), sin(), tan().
 
 & ACOS()
+ACOS()
 
-  Function: acos(<number>)
+  FUNCTION: acos(<number>)
  
   Returns the arc-cosine of <number>, expressed in radians.
  
@@ -8698,11 +8731,13 @@ IDLE()
     You say "0.785406"
     > say acos(0.866025)
     You say "0.5236"
-  See also: asin(), atan(), cos(), pi(), sin(), tan().
+  
+  Related Topics: asin(), atan(), cos(), pi(), sin(), tan().
 
 & ATAN()
+ATAN()
 
-  Function: atan(<number>)
+  FUNCTION: atan(<number>)
  
   Returns the arctangent of <number>, expressed in radians.
  
@@ -8713,11 +8748,13 @@ IDLE()
     You say "0.785398"
     > say atan(1.557408)
     You say "1"
-  See also: acos(), asin(), cos(), pi(), sin(), tan().
+  
+  Related Topics: acos(), asin(), cos(), pi(), sin(), tan().
 
 & FLOOR()
+FLOOR()
 
-  Function: floor(<number>)
+  FUNCTION: floor(<number>)
  
   Returns the largest integer less than or equal to <number>.  <number> may be
   a floating point number, and an integer result is returned.
@@ -8733,11 +8770,13 @@ IDLE()
     You say "-5"
     > say floor(-5.2)
     You say "-6"
-  See also: ceil(), div(), mod(), round(), trunc().
+  
+  Related Topics: ceil(), div(), mod(), round(), trunc().
 
 & CEIL()
+CEIL()
 
-  Function: ceil(<number>)
+  FUNCTION: ceil(<number>)
  
   Returns the smallest integer greater than or equal to <number>.  <number>
   may be a floating point number, and an integer result is returned.
