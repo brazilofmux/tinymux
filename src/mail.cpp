@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.21 2000-11-07 21:42:36 sdennis Exp $
+// $Id: mail.cpp,v 1.22 2001-02-09 09:29:41 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -679,8 +679,8 @@ void do_mail_retract(dbref player, char *name, char *msglist)
                         mp->next->prev = mp->prev;
 
                     nextp = mp->next;
-                    MEMFREE((char *)mp->subject);
                     MessageReferenceDec(mp->number);
+                    MEMFREE((char *)mp->subject);
                     MEMFREE((char *)mp->time);
                     MEMFREE((char *)mp->tolist);
                     MEMFREE(mp);
@@ -980,16 +980,9 @@ void do_mail_purge(dbref player)
             if (mp->next != NULL)
                 mp->next->prev = mp->prev;
 
-            /*
-             * save the pointer 
-             */
             nextp = mp->next;
-
-            /*
-             * then wipe 
-             */
-            MEMFREE((char *)mp->subject);
             MessageReferenceDec(mp->number);
+            MEMFREE((char *)mp->subject);
             MEMFREE((char *)mp->time);
             MEMFREE((char *)mp->tolist);
             MEMFREE(mp);
@@ -1342,25 +1335,28 @@ static void send_mail
 
 void do_mail_nuke(dbref player)
 {
-    struct mail *mp, *nextp;
-    dbref thing;
-
     if (!God(player))
     {
         notify(player, "The postal service issues a warrant for your arrest.");
         return;
     }
-    /*
-     * walk the list 
-     */
-    MAIL_ITER_SAFE(mp, thing, nextp)
-    {
-        nextp = mp->next;
-        MessageReferenceDec(mp->number);
-        MEMFREE((char *)mp->subject);
-        MEMFREE((char *)mp->tolist);
-        MEMFREE((char *)mp->time);
-        MEMFREE(mp);
+
+    // Walk the list.
+	//
+    for (dbref thing = 0; thing < mudstate.db_top; thing++)
+	{
+		struct mail *mp = (struct mail *)hashfindLEN(&thing, sizeof(thing), &mudstate.mail_htab);
+		while (mp)
+		{
+			struct mail *nextp = mp->next;
+			MessageReferenceDec(mp->number);
+			MEMFREE((char *)mp->subject);
+			MEMFREE((char *)mp->tolist);
+			MEMFREE((char *)mp->time);
+			MEMFREE(mp);
+			mp = nextp;
+		}
+		hashdeleteLEN(&thing, sizeof(thing), &mudstate.mail_htab);
     }
 
     log_text(tprintf("** MAIL PURGE ** done by %s(#%d).",
@@ -1552,10 +1548,10 @@ void do_mail_debug(dbref player, char *action, char *victim)
                     mp->prev->next = mp->next;
                 if (mp->next != NULL)
                     mp->next->prev = mp->prev;
-                nextp = mp->next;
 
-                MEMFREE((char *)mp->subject);
+                nextp = mp->next;
                 MessageReferenceDec(mp->number);
+                MEMFREE((char *)mp->subject);
                 MEMFREE((char *)mp->time);
                 MEMFREE((char *)mp->tolist);
                 MEMFREE(mp);
@@ -2943,16 +2939,10 @@ void check_mail_expiration(void)
             mp->prev->next = mp->next;
         if (mp->next != NULL)
             mp->next->prev = mp->prev;
-        /*
-         * save the pointer 
-         */
-        nextp = mp->next;
 
-        /*
-         * then wipe 
-         */
-        MEMFREE((char *)mp->subject);
+        nextp = mp->next;
         MessageReferenceDec(mp->number);
+        MEMFREE((char *)mp->subject);
         MEMFREE((char *)mp->tolist);
         MEMFREE((char *)mp->time);
         MEMFREE(mp);
