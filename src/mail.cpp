@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.17 2000-10-07 05:12:26 sdennis Exp $
+// $Id: mail.cpp,v 1.18 2000-10-09 05:22:45 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -719,7 +719,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
     struct mail_selector ms;
     int i = 0, j = 0;
     dbref target;
-    char *tbuf1, *msg, *status, *bp, *str;
+    char *msg, *status, *bp, *str;
     int iRealVisibleWidth;
     char szSubjectBuffer[MBUF_SIZE];
 
@@ -763,11 +763,8 @@ void do_mail_review(dbref player, char *name, char *msglist)
     }
     else
     {
-        tbuf1 = alloc_lbuf("do_mail_read");
-
         if (!parse_msglist(msglist, &ms, target))
         {
-            free_lbuf(tbuf1);
             return;
         }
         for (mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab); mp; mp = mp->next)
@@ -817,8 +814,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
 #endif // RADIX_COMPRESSION 
                     free_lbuf(status);
                     notify(player, DASH_LINE);
-                    strcpy(tbuf1, msg);
-                    notify(player, tbuf1);
+                    notify(player, msg);
                     notify(player, DASH_LINE);
                     free_lbuf(msg);
                 }
@@ -833,7 +829,6 @@ void do_mail_review(dbref player, char *name, char *msglist)
              */
             notify(player, "MAIL: You don't have that many matching messages!");
         }
-        free_lbuf(tbuf1);
     }
 }
 
