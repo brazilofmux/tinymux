@@ -8585,8 +8585,7 @@ MAIL-SENDING
         the message as urgent, and should not be used often.
 
   @mail/cc <player-list>
-        This replaces the current player list with a new one for carbon
-        copying. It does _not_ add onto the existing list.
+        This adds <player-list> to the current list of recipients.
 
 { 'help mail-sending2' for more }
 
