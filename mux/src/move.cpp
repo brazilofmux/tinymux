@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.12 2002-07-13 07:23:01 jake Exp $
+// $Id: move.cpp,v 1.13 2002-07-14 00:38:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -47,11 +47,13 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, BOOL canhear
     // EXCEPT if we were called with the HUSH_LEAVE key.
     //
 
-    quiet = (  (  !(Wizard(loc)
-               || (!Dark(thing) && !Dark(loc))
-               || (  canhear
-                  && !(Wizard(thing) && Dark(thing)))))
-            || (hush & HUSH_LEAVE));
+    quiet = (  (hush & HUSH_LEAVE)
+            || (  (  !Wizard(loc)
+                  && (  Dark(thing)
+                     || Dark(loc))
+                  && (  !canhear
+                     || (Wizard(thing) && Dark(thing))))));
+
     oattr = quiet ? 0 : A_OLEAVE;
     aattr = quiet ? 0 : A_ALEAVE;
     pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_LEAVE;
