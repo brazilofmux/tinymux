@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.16 2003-03-17 00:30:25 sdennis Exp $
+// $Id: set.cpp,v 1.17 2003-03-18 06:11:45 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -523,6 +523,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
     ATTR *ap;
 
     if (  parse_attrib(executor, name, &thing, &ap)
+       && ap
        && See_attr(executor, thing, ap))
     {
         // We have been asked to change the ownership of an attribute.
