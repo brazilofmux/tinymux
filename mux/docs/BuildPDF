@@ -1,4 +1,4 @@
 #! /bin/sh
-latex mux2.2-man.tex
-dvips mux2.2-man.dvi
-ps2pdf mux2.2-man.ps
+latex muxman.tex
+dvips muxman.dvi
+ps2pdf muxman.ps
