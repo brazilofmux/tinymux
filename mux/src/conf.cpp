@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.50 2004-07-08 19:24:51 sdennis Exp $
+// $Id: conf.cpp,v 1.51 2004-07-24 05:49:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -55,6 +55,14 @@ void cf_init(void)
     mudconf.game_pag = StringClone("");
     mudconf.mail_db   = StringClone("mail.db");
     mudconf.comsys_db = StringClone("comsys.db");
+
+#ifdef BT_ENABLED
+    mudconf.hcode_db = StringClone("data/hcode.db");
+    mudconf.econ_db = StringClone("data/econ.db");
+    mudconf.mech_db = StringClone("mechs");
+    mudconf.map_db = StringClone("maps");
+#endif
+
     mudconf.compress_db = false;
     mudconf.compress = StringClone("gzip");
     mudconf.uncompress = StringClone("gzip -d");
@@ -1741,6 +1749,12 @@ CONF conftable[] =
     {"look_obey_terse",           cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_look,      NULL,               0},
     {"machine_command_cost",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.machinecost,            NULL,               0},
     {"mail_database",             cf_string_dyn,  CA_GOD,    CA_GOD,      (int *)&mudconf.mail_db,         NULL, SIZEOF_PATHNAME},
+#ifdef BT_ENABLED
+    {"hcode_database",            cf_string_dyn,  CA_GOD,    CA_GOD,      (int *)&mudconf.hcode_db,        NULL, SIZEOF_PATHNAME},
+    {"econ_database",             cf_string_dyn,  CA_GOD,    CA_GOD,      (int *)&mudconf.econ_db,         NULL, SIZEOF_PATHNAME},
+    {"mech_database",             cf_string_dyn,  CA_GOD,    CA_GOD,      (int *)&mudconf.mech_db,         NULL, SIZEOF_PATHNAME},
+    {"map_database",              cf_string_dyn,  CA_GOD,    CA_GOD,      (int *)&mudconf.map_db,          NULL, SIZEOF_PATHNAME},
+#endif
     {"mail_expiration",           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_expiration,        NULL,               0},
     {"mail_per_hour",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_per_hour,          NULL,               0},
     {"master_room",               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.master_room,            NULL,               0},

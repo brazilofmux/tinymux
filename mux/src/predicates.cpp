@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.54 2004-07-09 15:23:34 sdennis Exp $
+// $Id: predicates.cpp,v 1.55 2004-07-24 05:44:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1396,6 +1396,11 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
         bDenied = true;
     }
 #endif // !WIN32
+
+#if BT_ENABLED
+    ResetSpecialObjects();
+#endif
+
     if (!mudstate.bCanRestart)
     {
         notify(executor, "Server just started. Please try again in a few seconds.");

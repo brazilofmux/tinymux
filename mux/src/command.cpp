@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.40 2004-07-08 18:54:25 sdennis Exp $
+// $Id: command.cpp,v 1.41 2004-07-24 05:53:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -573,8 +573,13 @@ CMDENT_NO_ARG command_table_no_arg[] =
     {"@startslave", NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, boot_slave},
 #endif // !WIN32
     {"@timecheck",  timecheck_sw, CA_WIZARD, 0,          CS_NO_ARGS, 0, do_timecheck},
+#ifdef BT_ENABLED
+    {"clearcom",    NULL,       CA_NO_SLAVE|CA_NO_IC, 0,          CS_NO_ARGS, 0, do_clearcom},
+    {"comlist",     NULL,       CA_NO_SLAVE|CA_NO_IC, 0,          CS_NO_ARGS, 0, do_comlist},
+#else
     {"clearcom",    NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_clearcom},
     {"comlist",     NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_comlist},
+#endif
     {"info",        NULL,       CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, 0, logged_out0},
     {"inventory",   NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_inventory},
     {"leave",       leave_sw,   CA_LOCATION, 0,          CS_NO_ARGS, 0, do_leave},
@@ -624,8 +629,13 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"@unlock",       lock_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_unlock},
     {"@wall",         wall_sw,    CA_ANNOUNCE,      SHOUT_SHOUT,  CS_ONE_ARG|CS_INTERP, 0, do_shout},
     {"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_ONE_ARG|CS_INTERP,   0, do_wipe},
+#ifdef BT_ENABLED
+    {"allcom",        NULL,       CA_NO_SLAVE|CA_NO_IC,       0,  CS_ONE_ARG,           0, do_allcom},
+    {"delcom",        NULL,       CA_NO_SLAVE|CA_NO_IC,       0,  CS_ONE_ARG,           0, do_delcom},
+#else
     {"allcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_allcom},
     {"delcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_delcom},
+#endif 
     {"doing",         NULL,       CA_PUBLIC,          CMD_DOING,  CS_ONE_ARG,           0, logged_out1},
     {"drop",          drop_sw,    CA_NO_SLAVE|CA_CONTENTS|CA_LOCATION|CA_NO_GUEST,  0,  CS_ONE_ARG|CS_INTERP,   0, do_drop},
     {"enter",         enter_sw,   CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, 0, do_enter},
@@ -846,6 +856,31 @@ void set_prefix_cmds()
     prefix_cmds['~']  = (CMDENT *) hashfindLEN((char *)"~",  1, &mudstate.command_htab);
 }
 
+#ifdef BT_ENABLED
+
+int In_IC_Loc(dbref player)
+{
+    dbref d = Location(player);
+    int z = 0;
+
+    while (isPlayer(d))
+    {
+        int od = d;
+
+        if ((d = Location(d)) == od)
+        {
+            break;
+        }
+        if (z++ >= 100)
+        {
+            break;
+        }
+    }
+    return In_Character(d);
+} 
+
+#endif
+
 // ---------------------------------------------------------------------------
 // check_access: Check if player has access to function.
 //
@@ -905,7 +940,11 @@ bool check_access(dbref player, int mask)
            || ((mask & CA_NO_SLAVE)   && Slave(player))
            || ((mask & CA_NO_SUSPECT) && Suspect(player))
            || ((mask & CA_NO_GUEST)   && Guest(player))
-           || ((mask & CA_NO_UNINS)   && Uninspected(player)))
+           || ((mask & CA_NO_UNINS)   && Uninspected(player))
+#ifdef BT_ENABLED
+           || ((mask & CA_NO_IC)      && In_IC_Loc(player))
+#endif
+           )
         {
             return false;
         }

@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.17 2004-06-10 15:39:34 sdennis Exp $
+// $Id: flags.cpp,v 1.18 2004-07-24 05:46:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -223,6 +223,20 @@ bool fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
     return true;
 }
 
+#ifdef BT_ENABLED
+bool fh_xcode_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+{
+    int got_xcode;
+    int new_xcode;
+                                                                                                                                                                                      
+    got_xcode = Hardcode(target);
+    fh_wiz(target, player, flag, fflags, reset);
+    new_xcode = Hardcode(target);
+    handle_xcode(player, target, got_xcode, new_xcode);
+    return 1;
+} 
+#endif
+
 /* ---------------------------------------------------------------------------
  * fh_player_bit: Can set and reset this on everything but players.
  */
@@ -342,6 +356,12 @@ static FLAGBITENT fbeMarker7        = { MARK_7,       ' ',    FLAG_WORD3, 0,    
 static FLAGBITENT fbeMarker8        = { MARK_8,       ' ',    FLAG_WORD3, 0,                    fh_god};
 static FLAGBITENT fbeMarker9        = { MARK_9,       ' ',    FLAG_WORD3, 0,                    fh_god};
 #else // WOD_REALMS
+#ifdef BT_ENABLED
+static FLAGBITENT fbeHardcode       = { HARDCODE,     'X',    FLAG_WORD3, CA_WIZARD,            fh_xcode_bit};
+static FLAGBITENT fbeAnsimap        = { ANSIMAP,      'P',    FLAG_WORD3, 0,                    fh_any};
+static FLAGBITENT fbeIn_Character   = { IN_CHARACTER, '#',    FLAG_WORD3, CA_WIZARD,            fh_wiz};
+static FLAGBITENT fbeZombie         = { ZOMBIE,       'z',    FLAG_WORD3, CA_WIZARD,            fh_wiz};
+#endif
 static FLAGBITENT fbeMarker0        = { MARK_0,       '0',    FLAG_WORD3, 0,                    fh_god};
 static FLAGBITENT fbeMarker1        = { MARK_1,       '1',    FLAG_WORD3, 0,                    fh_god};
 static FLAGBITENT fbeMarker2        = { MARK_2,       '2',    FLAG_WORD3, 0,                    fh_god};
@@ -440,6 +460,12 @@ FLAGNAMEENT gen_flag_names[] =
     {"MEDIUM",          true, &fbeMedium         },
     {"DEAD",            true, &fbeDead           },
 #endif // WOD_REALMS
+#ifdef BT_ENABLED
+    {"ZOMBIE",          true, &fbeZombie         },
+    {"IN_CHARACTER",    true, &fbeIn_Character   },
+    {"XCODE",           true, &fbeHardcode       },
+    {"ANSIMAP",         true, &fbeAnsimap        },
+#endif
     {NULL,             false, NULL}
 };
 

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.48 2004-06-10 15:39:34 sdennis Exp $
+// $Id: db.cpp,v 1.49 2004-07-24 05:48:27 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -217,6 +217,38 @@ ATTR attr[] =
     {"*Password",   A_PASS,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"*Privileges", A_PRIVS,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"*Money",      A_MONEY,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+#ifdef BT_ENABLED
+    {"Luck",           A_LUCK,          AF_WIZARD | AF_MDARK | AF_NOPROG},
+    {"Mechskills",     A_MECHSKILLS,    AF_MDARK},
+    {"Xtype",          A_XTYPE,         AF_MDARK | AF_WIZARD},
+    {"Tacsize",        A_TACHEIGHT,     AF_ODARK},
+    {"LRSheight",      A_LRSHEIGHT,     AF_ODARK},
+    {"Contactoptions", A_CONTACTOPT,    AF_ODARK},
+    {"Mechname",       A_MECHNAME,      AF_MDARK},
+    {"Mechtype",       A_MECHTYPE,      AF_MDARK},
+    {"Mechdesc",       A_MECHDESC,      AF_MDARK},
+    {"Mechstatus",     A_MECHSTATUS,    AF_MDARK | AF_WIZARD},
+    {"Mwtemplate",     A_MWTEMPLATE,    AF_MDARK},
+    {"Faction",        A_FACTION,       AF_MDARK | AF_WIZARD},
+    {"Job",            A_JOB,           AF_MDARK | AF_WIZARD},
+    {"Ranknum",        A_RANKNUM,       AF_MDARK | AF_WIZARD},
+    {"Buildlinks",     A_BUILDLINKS,    AF_MDARK | AF_WIZARD},
+    {"Buildentrance",  A_BUILDENTRANCE, AF_MDARK | AF_WIZARD},
+    {"Buildcoord",     A_BUILDCOORD,    AF_MDARK | AF_WIZARD},
+    {"Pilot",          A_PILOTNUM,      AF_MDARK},
+    {"Mapvis",         A_MAPVIS,        AF_MDARK | AF_WIZARD},
+    {"Techtime",       A_TECHTIME,      AF_MDARK | AF_WIZARD},
+    {"*EconParts",     A_ECONPARTS,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {"PCequip",        A_PCEQUIP,       AF_MDARK},
+    {"Amechdest",      A_AMECHDEST,     AF_MDARK}, 
+    {"MechPrefID",     A_MECHPREFID,    AF_MDARK|AF_WIZARD}, 
+    {"Heatchars",      A_HEATCHARS,     AF_ODARK},
+#define PLSTAT_MODE (AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL)
+    {"PLHEALTH",       A_HEALTH,        PLSTAT_MODE},
+    {"PLATTRS",        A_ATTRS,         PLSTAT_MODE},
+    {"PLADVS",         A_ADVS,          PLSTAT_MODE},
+    {"PLSKILLS",       A_SKILLS,        PLSTAT_MODE},
+#endif
     {NULL,          0,          0}
 };
 
