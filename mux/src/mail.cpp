@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.42 2002-09-11 16:24:23 sdennis Exp $
+// $Id: mail.cpp,v 1.43 2002-09-11 19:22:32 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -289,74 +289,117 @@ void set_player_folder(dbref player, int fnum)
 
 void add_folder_name(dbref player, int fld, char *name)
 {
-    // Muck with the player's MAILFOLDERS attrib to add a string of the form:
-    // number:name:number to it, replacing any such string with a matching
-    // number.
+    // Fetch current list of folders
     //
-    char *new0 = alloc_lbuf("add_folder_name.new");
-    char *pat  = alloc_lbuf("add_folder_name.pat");
-    char *str  = alloc_lbuf("add_folder_name.str");
-    char *tbuf = alloc_lbuf("add_folder_name.tbuf");
-
-    _strupr(name);
-    sprintf(new0, "%d:%s:%d ", fld, name, fld);
-    sprintf(pat, "%d:", fld);
-
-    // get the attrib and the old string, if any
-    char *old = NULL;
     int aflags;
+    int nFolders;
+    dbref aowner;
+    char *aFolders = alloc_lbuf("add_folder_name.str");
+    char *pFolders = atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner,
+        &aflags, &nFolders);
 
-    char *atrstr = atr_get(player, A_MAILFOLDERS, &player, &aflags);
-    if (*atrstr)
-    {
-        strcpy(str, atrstr);
-        old = (char *)string_match(str, pat);
-    }
-
-    char *res, *r;
-    if (old && *old)
-    {
-        strcpy(tbuf, str);
-        r = old;
-        while (!Tiny_IsSpace[(unsigned char)*r])
-        {
-            r++;
-        }
-        *r = '\0';
-        res = replace_string(old, new0, tbuf);
-    }
-    else
-    {
-        r = res = alloc_lbuf("mail_folders");
-        if (*atrstr)
-        {
-            safe_str(str, res, &r);
-        }
-        safe_str(new0, res, &r);
-        *r = '\0';
-    }
-
-    // put the attrib back
+    // Build new record ("%d:%s:%d", fld, uppercase(name), fld);
     //
-    atr_add(player, A_MAILFOLDERS, res, player, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_LOCK);
-    free_lbuf(str);
-    free_lbuf(pat);
-    free_lbuf(new0);
-    free_lbuf(tbuf);
-    free_lbuf(atrstr);
-    free_lbuf(res);
+    char *aNew = alloc_lbuf("add_folder_name.new");
+    char *q = aNew;
+    q += Tiny_ltoa(fld, q);
+    *q++ = ':';
+    char *p = name;
+    while (*p)
+    {
+        *q++ = Tiny_ToUpper[(unsigned char)*p];
+        p++;
+    }
+    *q++ = ':';
+    q += Tiny_ltoa(fld, q);
+    *q = '\0';
+    size_t nNew = q - aNew;
+
+    if (nFolders != 0)
+    {
+        // Build pattern ("%d:", fld)
+        //
+        char *aPattern = alloc_lbuf("add_folder_name.pat");
+        q = aPattern;
+        q += Tiny_ltoa(fld, q);
+        *q++ = ':';
+        *q = '\0';
+        size_t nPattern = q - aPattern;
+
+        int i = BMH_StringSearch(nPattern, aPattern, nFolders, aFolders);
+        free_lbuf(aPattern);
+
+        if (0 <= i)
+        {
+            // Remove old record.
+            //
+            q = aFolders + i;
+            p = q + nPattern;
+
+            // Eat leading spaces.
+            //
+            while (  aFolders < q
+                  && Tiny_IsSpace[(unsigned char)q[-1]])
+            {
+                q--;
+            }
+
+            // Skip past old record and trailing spaces.
+            //
+            while (  *p
+                  && *p != ':')
+            {
+                p++;
+            }
+            while (  *p
+                  && !Tiny_IsSpace[(unsigned char)*p])
+            {
+                p++;
+            }
+            while (Tiny_IsSpace[(unsigned char)*p])
+            {
+                p++;
+            }
+
+            if (*p)
+            {
+                *q++ = ' ';
+                do
+                {
+                    *q++ = *p++;
+                } while (*p);
+            }
+            *q = '\0';
+            nFolders = q - aFolders;
+        }
+    }
+    if (nFolders + 1 + nNew < LBUF_SIZE)
+    {
+        // It will fit. Append new record.
+        //
+        q = aFolders + nFolders;
+        *q++ = ' ';
+        memcpy(q, aNew, nNew);
+        q += nNew;
+        *q = '\0';
+
+        atr_add(player, A_MAILFOLDERS, aFolders, player,
+            AF_MDARK | AF_WIZARD | AF_NOPROG | AF_LOCK);
+    }
+    free_lbuf(aFolders);
+    free_lbuf(aNew);
 }
 
 static char *get_folder_name(dbref player, int fld)
 {
     // Get the name of the folder, or return "unamed".
     //
-    int flags;
+    int aflags;
     int nFolders;
     dbref aowner;
     static char aFolders[LBUF_SIZE];
     char *pFolders = atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner,
-        &flags, &nFolders);
+        &aflags, &nFolders);
     char *p;
     if (nFolders != 0)
     {
@@ -374,7 +417,8 @@ static char *get_folder_name(dbref player, int fld)
         {
             p = aFolders + i + nPattern;
             char *q = p;
-            while (*q != ':')
+            while (  *q
+                  && *q != ':')
             {
                 q++;
             }
@@ -390,12 +434,12 @@ static int get_folder_number(dbref player, char *name)
 {
     // Look up a folder name and return the corresponding folder number.
     //
-    int flags;
+    int aflags;
     int nFolders;
     dbref aowner;
     char *aFolders = alloc_lbuf("get_folder_num_str");
     char *pFolders = atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner,
-        &flags, &nFolders);
+        &aflags, &nFolders);
     char *p;
     if (nFolders != 0)
     {
@@ -418,7 +462,8 @@ static int get_folder_number(dbref player, char *name)
         {
             p = aFolders + i + nPattern;
             q = p;
-            while (!Tiny_IsSpace[(unsigned char)*q])
+            while (  *q
+                  && !Tiny_IsSpace[(unsigned char)*q])
             {
                 q++;
             }
