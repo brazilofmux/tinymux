@@ -6082,45 +6082,65 @@ HASATTR()
  
   Hasattr() doesn't check for attributes inherited from parent
   objects. Use hasattrp() for that.
+  
+  Related Topics:
+
 & HASATTRP()
-  hasattrp(<object>, <attribute name>)
+HASATTRP()
+
+  FUNCTION: hasattrp(<object>, <attribute name>)
  
   Returns 1 if the object or its parent has the named attribute,
   and 0 if it does not. If the object does not exist or the player
   does not have the ability to examine the object, #-1 will be returned.
  
   Use hasattr() to check for attributes without checking parents.
+
+  Related Topics:
+  
 & HASTYPE()
-  hastype(<object>, <type>)
+HASTYPE()
+
+  FUNCTION: hastype(<object>, <type>)
 
   Returns 1 if the object is of the named type, otherwise 0.
   Valid types are: ROOM, EXIT, PLAYER, THING.
   If an invalid type is given, #-1 is returned.
 
+  Related Topics:
+  
 & SHL()
-  shl(<number>,<count>)
+SHL()
+
+  FUNCTION: shl(<number>,<count>)
 
   Performs a leftwards bit-shift on <number>, shifting it <count> times.
   This is equivalent to imul(<number>,pow(2,<count>), but much faster.
-
+ 
+  Example:
     > think shl(2,10)
     2048
 
-  See also: shr(), band(), bnand(), bor().
+  Related Topics: shr(), band(), bnand(), bor().
 
 & SHR()
-  shr(<number>,<count>)
+SHR()
+
+  FUNCTION: shr(<number>,<count>)
 
   Performs a rightwards bit-shift on <number>, shifting it <count> times.
-  This is equivalent to div(<number>,pow(2,<count>), but much faster.
+  This is equivalent to idiv(<number>,pow(2,<count>), but much faster.
 
+  Example:
     > think shr(1309,5)
     40
 
-  See also: shl(), band(), bnand(), bor().
+  Related Topics: shl(), band(), bnand(), bor().
 
 & BAND()
-  band(<number>, <number>)
+BAND()
+
+  FUNCTION:  band(<number>, <number>)
  
   Both arguments are an integer that is treated as a bitfield. It
   performs a bitwise logical AND between these two bitfields and
@@ -6150,7 +6170,9 @@ HASATTR()
   See also: shl(), shr(), bnand(), bor().
  
 & BNAND()
-  band(<number1>, <number2>)
+BNAND()
+
+  FUNCTION:  bnand(<number1>, <number2>)
 
   Both arguments are an integer that is treated as a bitfield. It
   performs a bitwise logical AND between <number1> and the complement
@@ -6176,7 +6198,9 @@ HASATTR()
   See also: shl(), shr(), band(), bor().
  
 & BOR()
-  bor(<number>, <number>)
+BOR()
+
+  FUNCTION:  bor(<number>, <number>)
  
   Both arguments are an integer that is treated as a bitfield. It
   performs a bitwise logical OR which has the effect of forcing certain
@@ -6197,20 +6221,22 @@ HASATTR()
   The result may be expressed as 39B in base 16 or 923 in base 10.
  
   See also: shl(), shr(), band(), bnand().
-
+ 
 & CRC32()
-  crc32(<string1>, ..., <stringN>)
+CRC32()
+
+  FUNCTION: crc32(<string1>, ..., <stringN>)
 
   Returns the Cyclic Redundancy Check of the strings or sequences of
   strings as a positive number. The answer for the same sequence of
   strings is always the same.
   
-  The usefulness of this number is broad, but include as a unique
-  fingerprint or checksum pattern, or as a high-quality hash
-  function.
+  The usefulness of this number is broad, but could provide a unique
+  fingerprint, checksum pattern, or high-quality hash function.
 
-  > think crc32(MUX)
-  629126998
+  Example:
+    > think crc32(MUX)
+    629126998
 
 & PACK()
   pack(<number>[,<radix>])
@@ -6251,18 +6277,25 @@ HASATTR()
   See also: pack()
 
 & VADD()
-  vadd(<vector>,<vector>[,<delim>][,<output delim>])
- 
+VADD()
+
+  FUNCTION:  vadd(<vector>,<vector>[,<delimiter>])
+
   Returns the sum of two vectors. A vector is a list of numbers
   separated by spaces or a delimiter, and may have up to 20 dimensions.
- 
-  > @pemit me=vadd(1 2 3,4 5 6)
-  5 7 9
-  > @pemit me=vadd(0|0|0,1|2|3,|,-)
-  1-2-3
+
+  Example:
+    > think vadd(1 2 3,4 5 6)
+    5 7 9
+    > think vadd(0|0|0,1|2|3,|)
+    1|2|3
+  
+  Related Topics:
 
 & VCROSS()
-  vcross(<vector>,<vector>[,<delim>][,<output delim>])
+VCROSS()
+
+  FUCNTION:  vcross(<vector>,<vector>[,<delim>][,<output delim>])
  
   Returns the cross product of two vectors. The cross product of two
   vectors is a vector.
@@ -6272,75 +6305,110 @@ HASATTR()
 
   where i, j, and k are taken as unit vectors in cartisian space.
    
-  > @pemit me=vcross(1 2 3,2 3 4)
-  -1 2 -1
+  Example:
+    > @pemit me=vcross(1 2 3,2 3 4)
+    -1 2 -1
+
 & VDIM()
-  vdim(<vector>[,<delim>])
- 
-  Returns the dimensions of a vector.
- 
-  > @pemit me=vdim(1 2 3 4)
-  4
+VDIM()
+
+  FUNCTION:  vdim(<vector>[,<delimiter>])
+
+  Returns the dimensionality of a vector.
+
+  Example:
+    > think vdim(1 2 3 4)
+    4
+  
+  Related Topics:
+
 & VDOT()
-  vdot(<vector>,<vector>[,<delim>][,<output delim>])
+VDOT()
+
+  FUNCTION:  vdot(<vector>,<vector>[,<delim>][,<output delim>])
  
   Returns the dot product of two vectors. The dot product of two
   vectors is a scalar. (a,b,c) * (x,y,z) = aw + bx + cz
  
-  > @pemit me=vdot(1 2 3,2 3 4)
-  20
+  Example:
+    > @pemit me=vdot(1 2 3,2 3 4)
+    20
+
 & VMAG()
-  vmag(<vector>[,<delim>]
- 
-  Returns the magnitude of a vector using a euclidean distance metric.
+VMAG()
+
+  FUNCTION:  vmag(<vector>[,<delimiter>]
+
+  Returns the magnitude of a vector, using a euclidean distance metric.
   That is, for vector a b c d, returns sqrt(a^2+b^2+c^2+d^2).
+
+  Example:
+    > think vmag(3 4) 
+    5
   
-  > @pemit me=vmag(3 4) 
-  5
+  Related Topics:
 
 & VMUL()
-  vmul(<vector|number>,<vector|number>[,<delim>][,<output delim>])
- 
+VMUL()
+
+  FUNCTION:  vmul(<vector|number>,<vector|number>[,<delimiter>])
+
   Returns the result of either multiplying a vector by a number (scalar
   multiplication), or an elementwise multiplication of two vectors.
- 
-  > @pemit me=vmul(1 2 3,2)
-  2 4 6
-  > @pemit me=vmul(1 2 3,2 3 4)
-  2 6 12
-& VSUB()
-  vsub(<vector>,<vector>[,<delim>][,<output delim>])
- 
-  Returns the difference between two vectors.
- 
-  > @pemit me=vsub(3 4 5,3 2 1)
-  0 2 4
-  > @pemit me=vsub(6-4-2,5-2-0,-)
-  1-2-2
-& VUNIT()
 
-  vunit(<vector>[,<delim>])
- 
-  Returns the unit vector (a vector of magnitude 1) which points
+  Example:
+    > think vmul(1 2 3,2)
+    2 4 6
+    > think vmul(1 2 3,2 3 4)
+    2 6 12
+  
+  Related Topics: vdot(), vcross()
+
+& VSUB()
+VSUB()
+
+  FUNCTION:  vsub(<vector>,<vector>[,<delimiter>])
+
+  Returns the difference between two vectors.
+
+  Example:
+    > think vsub(3 4 5,3 2 1)
+    0 2 4
+  
+  Related Topics:
+
+& VUNIT()
+VUNIT()
+
+  FUNCTION:  vunit(<vector>[,<delimiter>]
+
+  Returns the unit vector (a vector of magnitude 1), which points
   in the same direction as the given vector.
- 
-  > @pemit me=vunit(2 0 0)
-  1 0 0
-  > @pemit me=vmul(vunit(5 6 7),vmag(5 6 7))
-  5 6 7
+
+  Example:
+    > think vunit(2 0 0)
+    1 0 0
+    > think vmul(vunit(5 6 7),vmag(5 6 7))
+    5 6 7
+  
+  Related Topics:
 
 & NEARBY()
+NEARBY()
 
-  Function: nearby(obj1,obj2)
+  FUNCTION: nearby(obj1,obj2)
  
   Tests if obj1 is near obj2 (if it is in the same location, in obj2's
   inventory, or is obj2's location).  You must control either obj1 or obj2, or
   be near either one of them, if both of these tests fail then 0 is returned.
   This function returns 1 if the two objects are nearby and 0 if not.
 
+  Related Topics:
+  
 & GET()
+GET()
 
-  Function: get(<object>/<attribute>)
+  FUNCTION: get(<object>/<attribute>)
  
   The get function fetches the specified attribute from the named object.
   It can be used to get attributes from objects you own, public and visual
@@ -6351,20 +6419,23 @@ HASATTR()
   Example:
     > read me
     > say get(me/desc)
-  See also: get_eval(), eval(), xget().
+  
+  Related Topics: get_eval(), eval(), xget().
 
 & XGET()
+XGET()
 
-  Function: xget(<object>,<attribute>)
+  FUNCTION: xget(<object>,<attribute>)
  
   This function works exactly like get(), but uses the object and attribute
   seperated into two arguments.
  
-  See also: get(), eval(), get_eval().
+  Related Topics: get(), eval(), get_eval().
  
 & EVAL()
+EVAL()
 
-  Function: eval(<object>,<attribute>)
+  FUNCTION: eval(<object>,<attribute>)
             eval(<string>)
  
   The first form of the eval function works exactly like the get_eval
@@ -6373,11 +6444,13 @@ HASATTR()
   PennMUSH 1.50. The second form simply evaluates <string>. This is normally
   done when a function is called, however, it is useful in evaluating %q and
   %v substitutions.
-  See also: get_eval(), get(), xget().
+  
+  Related Topics: get_eval(), get(), xget().
  
 & GET_EVAL()
+GET_EVAL()
 
-  Function: get_eval(<object>/<attribute>)
+  FUNCTION: get_eval(<object>/<attribute>)
  
   The get_eval function returns the specified attribute from the named object
   (just like the get function), except that function references and
