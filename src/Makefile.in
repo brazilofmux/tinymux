@@ -91,28 +91,28 @@ COM_OBJ	=
 SA_SRC	= sa-db.cpp sa-db_rw.cpp sa-boolexp.cpp sa-unparse.cpp \
 	  sa-pred.cpp sa-stringu.cpp sa-conf.cpp sa-log.cpp sa-object.cpp \
 	  sa-vattr.cpp sa-htab.cpp sa-player_c.cpp sa-flags.cpp \
-	  sa-svdhash.cpp sa-svdrand.cpp sa-attrcache.cpp
+	  sa-svdhash.cpp sa-svdrand.cpp sa-attrcache.cpp sa-timeutil.cpp
 SA_OBJ	= sa-db.o sa-db_rw.o sa-boolexp.o sa-unparse.o \
 	  sa-pred.o sa-stringu.o sa-conf.o sa-log.o sa-object.o \
 	  sa-vattr.o sa-htab.o sa-player_c.o sa-flags.o sa-svdhash.o \
-	  sa-svdrand.o sa-attrcache.o
+	  sa-svdrand.o sa-attrcache.o sa-timeutil.o
 
 # Distribution source files
-D_SRC	= create.cpp game.cpp help.cpp look.cpp match.cpp move.cpp player.cpp \
-	  predicates.cpp rob.cpp set.cpp speech.cpp wiz.cpp walkdb.cpp \
-	  timer.cpp boolexp.cpp log.cpp cque.cpp unparse.cpp eval.cpp \
-	  command.cpp wild.cpp netcommon.cpp functions.cpp vattr.cpp db.cpp \
-	  db_rw.cpp stringutil.cpp object.cpp conf.cpp flags.cpp htab.cpp \
-	  file_c.cpp player_c.cpp bsd.cpp alloc.cpp comsys.cpp \
-	  mail.cpp mguests.cpp powers.cpp newconc.cpp funceval.cpp regexp.cpp \
-	  svdrand.cpp attrcache.cpp svdhash.cpp svdreport.cpp quota.cpp
-D_OBJ	= create.o game.o help.o look.o match.o move.o player.o predicates.o \
-	  rob.o set.o speech.o wiz.o walkdb.o timer.o boolexp.o log.o cque.o \
-	  unparse.o eval.o command.o wild.o netcommon.o functions.o vattr.o \
-	  db.o db_rw.o stringutil.o object.o conf.o flags.o htab.o \
-          file_c.o player_c.o bsd.o alloc.o comsys.o mail.o \
-          mguests.o powers.o newconc.o funceval.o regexp.o svdrand.o \
-	  attrcache.o svdhash.o svdreport.o quota.o
+D_SRC	= alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp comsys.cpp \
+	conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp eval.cpp file_c.cpp \
+	flags.cpp funceval.cpp functions.cpp game.cpp help.cpp htab.cpp \
+	log.cpp look.cpp mail.cpp match.cpp mguests.cpp move.cpp newconc.cpp \
+	netcommon.cpp object.cpp predicates.cpp player.cpp player_c.cpp \
+	powers.cpp quota.cpp rob.cpp regexp.cpp set.cpp speech.cpp \
+	stringutil.cpp svdrand.cpp svdhash.cpp svdreport.cpp timer.cpp \
+	timeutil.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp
+D_OBJ	= alloc.o attrcache.o boolexp.o bsd.o command.o comsys.o conf.o \
+	cque.o create.o db.o db_rw.o eval.o file_c.o flags.o funceval.o \
+	functions.o game.o help.o htab.o log.o look.o mail.o match.o \
+	mguests.o move.o newconc.o netcommon.o object.o predicates.o \
+	player.o player_c.o powers.o quota.o rob.o regexp.o set.o speech.o \
+	stringutil.o svdrand.o svdhash.o svdreport.o timer.o timeutil.o \
+	unparse.o vattr.o walkdb.o wild.o wiz.o
 D_INC	= copyright.h flags.h help.h htab.h interface.h match.h functions.h \
 	  command.h config.h db.h externs.h mudconf.h misc.h \
 	  vattr.h file_c.h fifo.h alloc.h attrs.h comsys.h macro.h \
