@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.37 2001-10-12 21:01:00 sdennis Exp $
+// $Id: game.cpp,v 1.38 2001-10-13 07:49:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1803,7 +1803,7 @@ long DebugTotalSockets = 0;
 #ifdef WIN32
 long DebugTotalThreads = 1;
 long DebugTotalSemaphores = 0;
-#endif // WIN32
+#endif
 
 #define CLI_DO_CONFIG_FILE CLI_USER+0
 #define CLI_DO_MINIMAL     CLI_USER+1
@@ -1851,6 +1851,10 @@ int DCL_CDECL main(int argc, char *argv[])
     BuildSignalNamesTable();
 #endif
 
+    SeedRandomNumberGenerator();
+    TIME_Initialize();
+    game_pid = getpid();
+
     // Parse the command line
     //
     CLI_Process(argc, argv, OptionTable, 2, CLI_CallBack);
@@ -1859,10 +1863,6 @@ int DCL_CDECL main(int argc, char *argv[])
         printf("Usage: %s [-s] [[-c] config-file]\n", argv[0]);
         return 1;
     }
-
-    SeedRandomNumberGenerator();
-    TIME_Initialize();
-    game_pid = getpid();
 
 #ifdef WIN32
     // Find which version of Windows we are using - Completion ports do
@@ -1930,7 +1930,8 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         // We can't run on this version of WinSock.
         //
-        Log.tinyprintf("INFO: We requested WinSock v2.2, but only WinSock v%d.%d was available." ENDLINE, LOBYTE(wsaData.wVersion), HIBYTE(wsaData.wVersion));
+        Log.tinyprintf("INFO: WinSock v%d.%d instead of v2.2." ENDLINE,
+            LOBYTE(wsaData.wVersion), HIBYTE(wsaData.wVersion));
         //WSACleanup();
         //return 102;
     }
