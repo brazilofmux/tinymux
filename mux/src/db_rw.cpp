@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.11 2003-02-17 01:51:11 sdennis Exp $
+// $Id: db_rw.cpp,v 1.12 2003-02-17 02:34:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -218,7 +218,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->thing = b->thing * 10 + c - '0';
             }
         }
-        else if (mux_AttrNameInitialSet[(unsigned char)c])
+        else if (mux_AttrNameInitialSet(c))
         {
             buff = alloc_lbuf("getboolexp1.atr_name");
 

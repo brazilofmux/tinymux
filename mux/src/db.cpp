@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.24 2003-02-17 02:26:23 sdennis Exp $
+// $Id: db.cpp,v 1.25 2003-02-17 02:34:21 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -938,7 +938,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, bool *pbValid)
     static char Buffer[SBUF_SIZE];
 
     if (  !pName
-       || !mux_AttrNameInitialSet[(unsigned char)*pName])
+       || !mux_AttrNameInitialSet(*pName))
     {
         *pnName = 0;
         *pbValid = false;
@@ -948,7 +948,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, bool *pbValid)
     char *p = Buffer;
     while (*pName && nLeft)
     {
-        if (!mux_AttrNameSet[(unsigned char)*pName])
+        if (!mux_AttrNameSet(*pName))
         {
             *pnName = 0;
             *pbValid = false;
@@ -968,7 +968,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, bool *pbValid)
     //
     while (*pName)
     {
-        if (!mux_AttrNameSet[(unsigned char)*pName])
+        if (!mux_AttrNameSet(*pName))
         {
             *pnName = 0;
             *pbValid = false;

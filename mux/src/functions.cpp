@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.50 2003-02-17 02:26:23 sdennis Exp $
+// $Id: functions.cpp,v 1.51 2003-02-17 02:34:21 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1720,7 +1720,7 @@ FUNCTION(fun_v)
     ATTR *ap;
 
     tbuf = fargs[0];
-    if (mux_AttrNameInitialSet[(unsigned char)tbuf[0]] && tbuf[1])
+    if (mux_AttrNameInitialSet(tbuf[0]) && tbuf[1])
     {
         // Fetch an attribute from me. First see if it exists,
         // returning a null string if it does not.
