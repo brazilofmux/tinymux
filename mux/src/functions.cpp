@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.66 2003-08-29 06:06:24 sdennis Exp $
+// $Id: functions.cpp,v 1.67 2003-09-06 16:23:13 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -7735,43 +7735,113 @@ FUNCTION(fun_strip)
 }
 
 #define DEFAULT_WIDTH 78
-void wrap_send_line (char *buff, char **bufc, char *pLineStart, char cJust, int nWidth, 
-                     char *pLeft, char *pRight, int nHanging, bool bFirstLine, bool bEnd)
+char *expand_tabs(const char *str)
 {
-    if (!bFirstLine && nHanging > 0)
+    static char tbuf1[LBUF_SIZE];
+    char *bp = tbuf1;
+
+    if (str)
     {
-        safe_fill(buff, bufc, ' ', nHanging);
+        unsigned int n = 0;
+        bool ansi = false;
+
+        for (unsigned int i = 0; str[i]; i++)
+        {
+            switch (str[i])
+            {
+            case '\t':
+                safe_fill(tbuf1, &bp, ' ', 8 - n % 8);
+                // FALL THROUGH
+            case '\r':  
+                // FALL THROUGH
+            case '\n':
+                n = 0;
+                break;
+            case ESC_CHAR:
+                ansi = true;
+                break;
+            case ANSI_ATTR_CMD:
+                if (ansi)
+                {
+                    ansi = false;
+                }
+                else
+                {
+                    n++;
+                }
+                break;
+            case BEEP_CHAR:
+                break;
+            default:
+                if (!ansi)
+                {
+                    n++;
+                }
+            }
+            safe_chr(str[i], tbuf1, &bp);
+        }
     }
-    safe_str(pLeft, buff, bufc);
-    int key = 0;
-    switch (cJust)
+    *bp = '\0';
+    return tbuf1;
+}
+
+static int wraplen(char *str, const int nWidth, bool &newline)
+{
+    const int length = strlen(str);
+    newline = false;
+    if (length <= nWidth) 
     {
-    case 'L':
-        key = CJC_LJUST;
-        break;
-    case 'R':
-        key = CJC_RJUST;
-        break;
-    case 'C':
-        key = CJC_CENTER;
-        break;
+        /* Find the first return char
+        * so %r will not mess with any alignment
+        * functions.
+        */
+        for (int i = 0; i < length; i++) 
+        {
+            if (  str[i] == '\n'
+               || str[i] == '\r')
+            {
+                newline = true;
+                return i+2;
+            }
+        }
+        return length;
     }
-    char *jargs[2];
-    jargs[0] = pLineStart;
-    jargs[1] = mux_ltoa_t(nWidth);
-    centerjustcombo(key, buff, bufc, jargs, 2);
-    safe_str(pRight, buff, bufc);
-    if (!bEnd)
+
+    /* Find the first return char
+    * so %r will not mess with any alignment
+    * functions.
+    */
+    for (int i = 0; i < nWidth; i++)
     {
-        safe_str("\r\n", buff, bufc);
+        if (  str[i] == '\n' 
+           || str[i] == '\r')
+        {
+            newline = true;
+            return i+2;
+        }
     }
+
+    /* No return char was found. Now 
+    * find the last space in str.
+    */
+    int maxlen = nWidth;
+    while (str[maxlen] != ' ' && maxlen > 0)
+    {
+        maxlen--;
+    }
+    if (str[maxlen] != ' ')
+    {
+        maxlen = nWidth;
+    }
+    return (maxlen ? maxlen : -1);
 }
 
 FUNCTION(fun_wrap)
 {
+    // ARG 2: Width. Default: 78.
     int nWidth = DEFAULT_WIDTH;
     if (  nfargs >= 2
-       && fargs[1][0] != '\0')
+       && fargs[1][0])
     {
         nWidth = mux_atol(fargs[1]);
         if (  nWidth < 1
@@ -7782,114 +7852,137 @@ FUNCTION(fun_wrap)
         }
     }
 
-    char cJust = 'L';
-    char *pLeft = NULL;
-    char *pRight = NULL;
-    int nHanging = 0;
-
-    if (nfargs >= 3)
+    // ARG 3: Justification. Default: Left.
+    int iJustKey = CJC_LJUST;
+    if (  nfargs >= 3
+       && fargs[2][0])
     {
-        cJust = mux_toupper(*fargs[2]);
+        char cJust = mux_toupper(fargs[2][0]);
         switch (cJust)
         {
         case 'L':
+            iJustKey = CJC_LJUST;
+            break;
         case 'R':
+            iJustKey = CJC_RJUST;
+            break;
         case 'C':
+            iJustKey = CJC_CENTER;
             break;
         default:
             safe_str("#-1 INVALID JUSTIFICATION SPECIFIED", buff, bufc);
             return;
         }
-        if (  nfargs >= 4
-           && fargs[3][0] != '\0')
-        {
-            pLeft = fargs[3];
-        }
-        if (  nfargs >= 5
-           && fargs[4][0] != '\0')
-        {
-            pRight = fargs[4];
-        }
-        if (  nfargs >= 6
-           && fargs[5][0] != '\0')
-        {
-            nHanging = mux_atol(fargs[5]);
-        }
     }
 
-    char *str = alloc_lbuf("fun_wrap.str");
-    strcpy(str, strip_ansi(fargs[0]));
-
-    char *pLineStart = str;
-    char *pThisWord = str;
-    char *pNextWord = str;
-    char cCharSave  = '\0';
-    int  nLineLeft  = 0, nWordLen = 0;
-    bool bFirstLine = true, 
-         bFirstWord = true, 
-         bEnd       = false, 
-         bEndOfLine = false;
-
-    while (pThisWord)
+    // ARG 4: Left padding. Default: blank.
+    char *pLeft = NULL;
+    if (  nfargs >= 4
+       && fargs[3][0])
     {
-        nLineLeft = nWidth - (pThisWord - pLineStart);
-        pNextWord = pThisWord;
-        while(*pNextWord && !mux_isspace(*pNextWord))
+        pLeft = fargs[3];
+    }
+
+    // ARG 5: Right padding. Default: blank.
+    char *pRight = NULL;
+    if (  nfargs >= 5
+       && fargs[4][0])
+    {
+        pRight = fargs[4];
+    }
+
+    // ARG 6: Hanging indent. Default: 0.
+    int nHanging = 0;
+    if (  nfargs >= 6
+       && fargs[5][0])
+    {
+        nHanging = mux_atol(fargs[5]);
+    }
+
+    // ARG 7: Output separator. Default: line break.
+    char *pOSep = "\r\n";
+    if (  nfargs >= 7
+       && fargs[6][0])
+    {
+        if (!strcmp(fargs[6], "@@"))
         {
-            pNextWord++;
-        }
-        nWordLen = pNextWord - pThisWord;
-        if (!*pNextWord)
-        {
-            // This is the last word in the list.
-            bEnd = true;
-        }
-        else
-        {
-            pNextWord++;
-        }
-        if (nLineLeft < nWordLen)
-        {
-            // Not enough room. If the word is bigger than the field, it'll have
-            // to be truncated. Otherwise, drop it down a line.
-            if (!bFirstWord)
-            {
-                nLineLeft = -1;
-            }
-            cCharSave = *(pThisWord + nLineLeft);
-            *(pThisWord + nLineLeft) = '\0';
-            wrap_send_line(buff, bufc, pLineStart, cJust, nWidth, pLeft, pRight, 
-                            nHanging, bFirstLine, false);
-            *(pThisWord + nLineLeft) = cCharSave;
-            if (bFirstWord)
-            {
-                pThisWord = pThisWord + nLineLeft;
-                bEndOfLine = true;
-            }
-            bFirstLine = false;
-            bFirstWord = true;
-            pLineStart = pThisWord;
+            pOSep = NULL;
         }
         else
         {
-            bFirstWord = false;
-            if (bEnd)
-            {
-                wrap_send_line(buff, bufc, pLineStart, cJust, nWidth, pLeft, pRight, 
-                               nHanging, bFirstLine, true);
-                pNextWord = NULL;
-            }
-        }
-        if (bEndOfLine)
-        {
-            bEndOfLine = false;
-        }
-        else
-        {
-            pThisWord = pNextWord;
+            pOSep = fargs[6];
         }
     }
+
+    // ARG 8: First line width. Default: same as arg 2.
+    int nFirstWidth = nWidth;
+    if (  nfargs >= 8
+       && fargs[7][0])
+    {
+        nFirstWidth = mux_atol(fargs[7]);
+        if (  nFirstWidth < 1
+           || nFirstWidth >= LBUF_SIZE)
+        {
+            safe_range(buff, bufc);
+            return;
+        }
+    }
+
+    char *str = alloc_lbuf("fun_mywrap.str");
+    char *tstr = alloc_lbuf("fun_mywrap.str2");
+    strcpy(tstr, expand_tabs(fargs[0]));
+    strcpy(str,strip_ansi(tstr));
+    int nLength = 0;
+    bool newline = false;
+    char *jargs[2];
+    struct ANSI_In_Context aic;
+    struct ANSI_Out_Context aoc;
+    char *mbufc;
+    char *mbuf = mbufc = alloc_lbuf("fun_mywrap.out");
+    int nBufferAvailable, nSize;
+    int nDone;
+    int i = 0;
+
+    while (str[i])
+    {
+        nLength = wraplen(str + i, i == 0 ? nFirstWidth : nWidth, newline);
+        mbufc = mbuf;
+
+        ANSI_String_In_Init(&aic, tstr, ANSI_ENDGOAL_NORMAL);
+        ANSI_String_Skip(&aic, i, &nDone);
+        if (nDone < i || nLength == 0)
+        {
+            break;
+        }
+        if (i > 0)
+        {
+            safe_str(pOSep, buff, bufc);
+            if (nHanging > 0)
+            {
+                safe_fill(buff, bufc, ' ', nHanging);
+            }
+        }
+        nBufferAvailable = LBUF_SIZE - (mbufc - mbuf) - 1;
+        ANSI_String_Out_Init(&aoc, mbufc, nBufferAvailable, nLength-(newline ? 2 : 0), ANSI_ENDGOAL_NORMAL);
+        ANSI_String_Copy(&aoc, &aic, nLength-(newline ? 2 : 0));
+        nSize = ANSI_String_Finalize(&aoc, &nDone);
+        mbufc += nSize;
+
+        jargs[0] = mbuf;
+        jargs[1] = mux_ltoa_t(i == 0 ? nFirstWidth : nWidth);
+        safe_str(pLeft,buff,bufc);
+        centerjustcombo(iJustKey, buff, bufc, jargs, 2);
+        safe_str(pRight, buff, bufc);
+
+        i += nLength;
+        if (str[i] == ' ' && str[i+1] != ' ')
+        {
+            i++;
+        }
+    }
+    free_lbuf(mbuf);
     free_lbuf(str);
+    free_lbuf(tstr);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -9188,7 +9281,7 @@ FUN flist[] =
     {"WHERE",       fun_where,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"WORDPOS",     fun_wordpos,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"WORDS",       fun_words,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"WRAP",        fun_wrap,       MAX_ARG, 1,       6,         0, CA_PUBLIC},
+    {"WRAP",        fun_wrap,       MAX_ARG, 1,       8,         0, CA_PUBLIC},
     {"WRITETIME",   fun_writetime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"XGET",        fun_xget,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"XOR",         fun_xor,        MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
