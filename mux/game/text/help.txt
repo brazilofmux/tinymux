@@ -5906,10 +5906,10 @@ FUNCTION CLASSES (continued)
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE CAT
                              CENTER COMP DECRYPT DELETE EDIT ENCRYPT ESCAPE
                              IFELSE LCSTR LJUST LPOS MERGE MID POS REGMATCH
-                             REPEAT REPLACE REVERSE RJUST SCRAMBLE SECURE
-                             SPACE SPELLNUM SQUISH STRCAT STRIPANSI STRLEN
-                             STRMATCH STRTRUNC SWITCH TRANSLATE TRIM UCSTR
-                             WORDPOS
+                             REPEAT REPLACE REVERSE RIGHT RJUST SCRAMBLE
+                             SECURE SPACE SPELLNUM SQUISH STRCAT STRIPANSI
+                             STRLEN STRMATCH STRTRUNC SWITCH TRANSLATE TRIM
+                             UCSTR WORDPOS
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
                              WRITETIME
@@ -5960,20 +5960,20 @@ FUNCTION LIST (continued)
     PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()
     POP()       PORTS()     POS()       POSS()      POWER()     PUSH()
     R()         RAND()      REGMATCH()  REMAINDER() REMIT()     REMOVE()
-    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RJUST()
-    RLOC()      ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()
-    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()
-    SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()
-    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()
-    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
-    STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()
-    SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()     TAN()
-    TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()
-    TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()
-    V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
-    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
-    WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()
-    ZFUN()      ZONE()      ZWHO()
+    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()
+    RJUST()     RLOC()      ROOM()      ROUND()     S()         SCRAMBLE()
+    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
+    SETQ()      SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()
+    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
+    SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
+    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
+    SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()
+    TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()
+    TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()
+    UNPACK()    V()         VADD()      VALID()     VCROSS()    VDIM()
+    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
+    VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()
+    XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -8047,9 +8047,13 @@ MID()
 
   FUNCTION: mid(<string>, <first>, <length>)
 
-  Mid returns a segment of the string, the <length> characters to the
-  right of the <first> character.  Note that the first character in a
-  string is numbered zero, and not one.
+  Mid returns a segment of the string, the <length> characters to the right
+  of the <first> character.  Note that the first character in a string is
+  numbered zero, and not one.
+
+  If you are looking for left(), then look at strtrunc() as an equivalent.
+
+  Related Topics: right(), strtrunc().
 
 & MIN()
 MIN()
@@ -9632,6 +9636,18 @@ REVWORDS()
     You say "saw? I cat a it Was"
 
   Related Topics: reverse().
+
+& RIGHT()
+RIGHT()
+
+  FUNCTION: right(<string>, <length>)
+
+  This returns the right-most <length> characters from the <string>.
+
+  If you are looking for left(), the corresponding function to right(), then
+  look at strtrunc() as an equivalent.
+
+  Related Topics: mid(), strtrunc().
 
 & RJUST()
 RJUST()
