@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.18 2003-04-23 04:25:41 sdennis Exp $
+// $Id: set.cpp,v 1.19 2003-04-23 05:09:55 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -527,8 +527,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
         {
             aflags &= ~AF_LOCK;
             atr_set_flags(thing, ap->number, aflags);
-            if (  Owner(executor) != Owner(thing)
-               && !Quiet(executor)
+            if (  !Quiet(executor)
                && !Quiet(thing))
             {
                 notify_quiet(executor, "Attribute unlocked.");
