@@ -1,4 +1,5 @@
 & HELP
 NEWS
 
-   See http://alloymux.sourceforge.net
+  See http://www.tinymux.com
+
