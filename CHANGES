@@ -151,6 +151,9 @@ Feature Additions:
  --  Added if() from PennMUSH. Thanks Raevnos.
  --  Hellspawn added @backup from ChaoticMUX with corresponding backup
      script.
+ --  @break command from Raevnos and PennMUSH.
+ --  LROOMS() function from Marlek and RhostMUSH.
+ --  No longer require that lock code require surrounding brackets.
 
 
 Bug Fixes:
@@ -437,6 +440,12 @@ Bug Fixes:
  --  Possible check_pennies() SIGSEGV bug. Thanks Jake.
  --  Fix/extend the display of help so that blank lines in the help files
      are displayed as blank lines.
+ --  The inet_ntoa() return value is to a static buffer, so it's value must
+     be used or copied before making any other socket calls.
+ --  TRACE output didn't keep track of the original player dbref.
+ --  Bug #686 - Fix to @listcommands. @addcommand'ed commands weren't shown.
+ --  Bug #710 - Leaving an object that is inside a garbage object may garble
+     your location and randomly put the server into an endless loop.
 
 
 Performance Enhancements:
@@ -527,6 +536,10 @@ Performance Enhancements:
  --  Rewrote parse_msglist to avoid an extra buffer. The parse is no longer
      destructive.
  --  Improved speed of Tiny_atol and Tiny_atoi64 by 68%.
+ --  Improved speed of Tiny_atof by 13 times for common cases.
+ --  Changed fval() to avoid using sprintf() and strip_useless_zeros for
+     the common cases.
+ --  Minor typo in quota.cpp that didn't change the statements logic.
 
 
 Cosmetic Changes:
