@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.15 2002-07-13 22:11:22 jake Exp $
+// $Id: mail.cpp,v 1.16 2002-07-13 22:22:51 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3842,7 +3842,12 @@ static void do_edit_msg(dbref player, char *from, char *to)
 
 static void do_mail_proof(dbref player)
 {
-    char *names;
+    if (!(Flags2(player) & PLAYER_MAILS))
+    {
+        notify(player, "MAIL: No message in progress.");
+        return;
+    }
+
     char *mailmsg, *msg, *bp, *str;
     dbref aowner;
     int aflags;
@@ -3850,41 +3855,24 @@ static void do_mail_proof(dbref player)
     char szSubjectBuffer[MBUF_SIZE];
 
     char *mailto = atr_get(player, A_MAILTO, &aowner, &aflags);
+    str = mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
+    bp = msg = alloc_lbuf("do_mail_proof");
+    TinyExec(msg, &bp, player, player, player, EV_EVAL | EV_FCHECK,
+                &str, (char **)NULL, 0);
+    *bp = '\0';
+    free_lbuf(mailmsg);
 
-    if (!atr_get_raw(player, A_MAILMSG))
-    {
-        notify(player, "MAIL: No text.");
-        free_lbuf(mailto);
-        return;
-    }
-    else
-    {
-        str = mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
-        bp = msg = alloc_lbuf("do_mail_proof");
-        TinyExec(msg, &bp, player, player, player, EV_EVAL | EV_FCHECK,
-                 &str, (char **)NULL, 0);
-        *bp = '\0';
-        free_lbuf(mailmsg);
-    }
-
-    if (Flags2(player) & PLAYER_MAILS)
-    {
-        names = make_namelist(player, mailto);
-        ANSI_TruncateToField(atr_get_raw(player, A_MAILSUB),
-            sizeof(szSubjectBuffer), szSubjectBuffer, 35,
-            &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
-        notify(player, DASH_LINE);
-        notify(player, tprintf("From:  %-*s  Subject: %s\nTo: %s",
-               PLAYER_NAME_LIMIT - 6, Name(player), szSubjectBuffer, names));
-        notify(player, DASH_LINE);
-        notify(player, msg);
-        notify(player, DASH_LINE);
-        free_lbuf(names);
-    }
-    else
-    {
-        notify(player, "MAIL: No message in progress.");
-    }
+    char *names = make_namelist(player, mailto);
+    ANSI_TruncateToField(atr_get_raw(player, A_MAILSUB),
+        sizeof(szSubjectBuffer), szSubjectBuffer, 35,
+        &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+    notify(player, DASH_LINE);
+    notify(player, tprintf("From:  %-*s  Subject: %s\nTo: %s",
+            PLAYER_NAME_LIMIT - 6, Name(player), szSubjectBuffer, names));
+    notify(player, DASH_LINE);
+    notify(player, msg);
+    notify(player, DASH_LINE);
+    free_lbuf(names);
     free_lbuf(mailto);
     free_lbuf(msg);
 }
