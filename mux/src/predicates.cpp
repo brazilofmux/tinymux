@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: predicates.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -557,7 +557,7 @@ void do_switch
     {
         bp = buff;
         str = args[a];
-        TinyExec(buff, &bp, 0, player, cause, EV_FCHECK | EV_EVAL | EV_TOP,
+        TinyExec(buff, &bp, player, CALLERQQQ, cause, EV_FCHECK | EV_EVAL | EV_TOP,
             &str, cargs, ncargs);
         *bp = '\0';
         if (wild_match(buff, expr))
@@ -1744,7 +1744,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
             save_global_regs("did_it_save", preserve, preserve_len);
             buff = bp = alloc_lbuf("did_it.1");
             str = d;
-            TinyExec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
+            TinyExec(buff, &bp, thing, CALLERQQQ, player,
+                EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
             *bp = '\0';
             if (what == A_HTDESC) {
                 safe_str("\r\n", buff, &bp);
@@ -1776,7 +1777,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
             }
             buff = bp = alloc_lbuf("did_it.2");
             str = d;
-            TinyExec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
+            TinyExec(buff, &bp, thing, CALLERQQQ, player,
+                     EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
             *bp = '\0';
             if (*buff)
             {
@@ -1914,7 +1916,7 @@ void do_verb(dbref player, dbref cause, int key, char *victim_str, char *args[],
     owhatd = NULL;
     nxargs = 0;
 
-    // Get invoker message attribute.
+    // Get enactor message attribute.
     //
     if (nargs >= 2)
     {
@@ -1925,7 +1927,7 @@ void do_verb(dbref player, dbref cause, int key, char *victim_str, char *args[],
         }
     }
 
-    // Get invoker message default.
+    // Get enactor message default.
     //
     if ((nargs >= 3) && args[2] && *args[2])
     {
@@ -1965,7 +1967,7 @@ void do_verb(dbref player, dbref cause, int key, char *victim_str, char *args[],
     //
     if (nargs >= 7)
     {
-        parse_arglist(victim, actor, args[6], '\0',
+        parse_arglist(victim, CALLERQQQ, actor, args[6], '\0',
             EV_STRIP_LS | EV_STRIP_TS, xargs, 10, (char **)NULL, 0, &nxargs);
     }
 

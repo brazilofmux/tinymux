@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.1 2002-05-24 06:53:14 sdennis Exp $
+// $Id: command.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -887,7 +887,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
     //
     if (Invalid_Objtype(player))
     {
-        notify(player, "Command incompatible with invoker type.");
+        notify(player, "Command incompatible with enactor type.");
         return;
     }
 
@@ -1035,7 +1035,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
         {
             buf1 = bp = alloc_lbuf("process_cmdent");
             str = arg;
-            TinyExec(buf1, &bp, 0, player, cause, interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
+            TinyExec(buf1, &bp, player, CALLERQQQ, cause, interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
             *bp = '\0';
         }
         else
@@ -1172,14 +1172,14 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
         }
         buf1 = bp = alloc_lbuf("process_cmdent.2");
         str = buf2;
-        TinyExec(buf1, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs, ncargs);
+        TinyExec(buf1, &bp, player, CALLERQQQ, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs, ncargs);
         *bp = '\0';
 
         if (cmdp->callseq & CS_ARGV)
         {
             // Arg2 is ARGV style.  Go get the args.
             //
-            parse_arglist(player, cause, arg, '\0', interp | EV_STRIP_LS | EV_STRIP_TS, args, MAX_ARG, cargs, ncargs, &nargs);
+            parse_arglist(player, CALLERQQQ, cause, arg, '\0', interp | EV_STRIP_LS | EV_STRIP_TS, args, MAX_ARG, cargs, ncargs, &nargs);
 
             // Call the correct command handler.
             //
@@ -1207,7 +1207,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
             {
                 buf2 = bp = alloc_lbuf("process_cmdent.3");
                 str = arg;
-                TinyExec(buf2, &bp, 0, player, cause, interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
+                TinyExec(buf2, &bp, player, CALLERQQQ, cause, interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
                 *bp = '\0';
             }
             else if (cmdp->callseq & CS_UNPARSE)
@@ -1508,7 +1508,7 @@ char *process_command
     //
     bp = LowerCaseCommand;
     str = pCommand;
-    TinyExec(LowerCaseCommand, &bp, 0, player, cause, EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str, args, nargs);
+    TinyExec(LowerCaseCommand, &bp, player, CALLERQQQ, cause, EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str, args, nargs);
     *bp = '\0';
     succ = 0;
 

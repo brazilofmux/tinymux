@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: comsys.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -818,8 +818,8 @@ void BuildChannelMessage
             char TempToEval[LBUF_SIZE];
             strcpy(TempToEval, user->title);
             char *q = TempToEval;
-            TinyExec(*messNormal, &mnptr, 0, user->who, user->who, EV_FCHECK
-                | EV_EVAL | EV_TOP, &q, (char **)NULL, 0);
+            TinyExec(*messNormal, &mnptr, user->who, CALLERQQQ, user->who,
+                EV_FCHECK | EV_EVAL | EV_TOP, &q, (char **)NULL, 0);
         }
         else
         {

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.3 2002-05-31 06:13:05 sdennis Exp $
+// $Id: functions.cpp,v 1.4 2002-06-03 20:01:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -697,7 +697,8 @@ int delim_check
         {
             char *str = tstr;
             char *bp = tstr = alloc_lbuf("delim_check");
-            TinyExec(tstr, &bp, 0, player, cause, EV_EVAL | EV_FCHECK, &str, cargs, ncargs);
+            TinyExec(tstr, &bp, player, CALLERQQQ, cause,
+                     EV_EVAL | EV_FCHECK, &str, cargs, ncargs);
             *bp = '\0';
             tlen = bp - tstr;
         }
@@ -1613,7 +1614,8 @@ FUNCTION(fun_get_eval)
     if (eval_it)
     {
         str = atr_gotten;
-        TinyExec(buff, bufc, 0, thing, player, EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
+        TinyExec(buff, bufc, thing, CALLERQQQ, player, EV_FIGNORE | EV_EVAL,
+                 &str, (char **)NULL, 0);
     }
     else
     {
@@ -1627,7 +1629,9 @@ FUNCTION(fun_get_eval)
 FUNCTION(fun_subeval)
 {
     char *str = fargs[0];
-    TinyExec(buff, bufc, 0, player, cause, EV_EVAL|EV_NO_LOCATION|EV_NOFCHECK|EV_FIGNORE|EV_NO_COMPRESS, &str, (char **)NULL, 0);
+    TinyExec(buff, bufc, player, CALLERQQQ, cause,
+             EV_EVAL|EV_NO_LOCATION|EV_NOFCHECK|EV_FIGNORE|EV_NO_COMPRESS,
+             &str, (char **)NULL, 0);
 }
 
 FUNCTION(fun_eval)
@@ -1641,7 +1645,8 @@ FUNCTION(fun_eval)
     if (nfargs == 1)
     {
         str = fargs[0];
-        TinyExec(buff, bufc, 0, player, cause, EV_EVAL, &str, (char **)NULL, 0);
+        TinyExec(buff, bufc, player, CALLERQQQ, cause, EV_EVAL, &str,
+                 (char **)NULL, 0);
         return;
     }
     if (!*fargs[0] || !*fargs[1])
@@ -1700,7 +1705,8 @@ FUNCTION(fun_eval)
     if (eval_it)
     {
         str = atr_gotten;
-        TinyExec(buff, bufc, 0, thing, player, EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
+        TinyExec(buff, bufc, thing, CALLERQQQ, player, EV_FIGNORE | EV_EVAL,
+                 &str, (char **)NULL, 0);
     }
     else
     {
@@ -1781,7 +1787,7 @@ static void do_ufun(char *buff, char **bufc, dbref player, dbref cause,
     // Evaluate it using the rest of the passed function args.
     //
     str = atext;
-    TinyExec(buff, bufc, 0, thing, cause, EV_FCHECK | EV_EVAL,
+    TinyExec(buff, bufc, thing, CALLERQQQ, cause, EV_FCHECK | EV_EVAL,
         &str, &(fargs[1]), nfargs - 1);
     free_lbuf(atext);
 
@@ -1958,7 +1964,8 @@ FUNCTION(fun_v)
     safe_sb_str(fargs[0], sbuf, &sbufc);
     *sbufc = '\0';
     str = sbuf;
-    TinyExec(buff, bufc, 0, player, cause, EV_EVAL|EV_FIGNORE, &str, cargs, ncargs);
+    TinyExec(buff, bufc, player, CALLERQQQ, cause, EV_EVAL|EV_FIGNORE, &str,
+             cargs, ncargs);
     free_sbuf(sbuf);
 }
 
@@ -1970,7 +1977,8 @@ FUNCTION(fun_v)
 FUNCTION(fun_s)
 {
     char *str = fargs[0];
-    TinyExec(buff, bufc, 0, player, cause, EV_FIGNORE | EV_EVAL, &str, cargs, ncargs);
+    TinyExec(buff, bufc, player, CALLERQQQ, cause, EV_FIGNORE | EV_EVAL, &str,
+             cargs, ncargs);
 }
 
 /*
@@ -4628,7 +4636,7 @@ static void process_sex(dbref player, char *what, const char *token, char *buff,
     else
     {
         str = (char *)token;
-        TinyExec(buff, bufc, 0, it, it, EV_EVAL, &str, (char **)NULL, 0);
+        TinyExec(buff, bufc, it, CALLERQQQ, it, EV_EVAL, &str, (char **)NULL, 0);
     }
 }
 
@@ -5437,7 +5445,7 @@ FUNCTION(fun_parse)
     sevarargs_preamble(4);
     cp = curr = dp = alloc_lbuf("fun_parse");
     str = fargs[0];
-    TinyExec(curr, &dp, 0, player, cause,
+    TinyExec(curr, &dp, player, CALLERQQQ, cause,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
     cp = trim_space_sep(cp, sep);
@@ -5459,7 +5467,7 @@ FUNCTION(fun_parse)
         objstring = split_token(&cp, sep);
         char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number), NULL);
         str = buff2;
-        TinyExec(buff, bufc, 0, player, cause,
+        TinyExec(buff, bufc, player, CALLERQQQ, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
     }
@@ -5480,7 +5488,7 @@ FUNCTION(fun_iter)
     sevarargs_preamble(4);
     dp = cp = curr = alloc_lbuf("fun_iter");
     str = fargs[0];
-    TinyExec(curr, &dp, 0, player, cause,
+    TinyExec(curr, &dp, player, CALLERQQQ, cause,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
     cp = trim_space_sep(cp, sep);
@@ -5504,7 +5512,7 @@ FUNCTION(fun_iter)
         char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number),
             NULL);
         str = buff2;
-        TinyExec(buff, bufc, 0, player, cause,
+        TinyExec(buff, bufc, player, CALLERQQQ, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
     }
@@ -5520,7 +5528,7 @@ FUNCTION(fun_list)
     evarargs_preamble(3);
     cp = curr = dp = alloc_lbuf("fun_list");
     str = fargs[0];
-    TinyExec(curr, &dp, 0, player, cause,
+    TinyExec(curr, &dp, player, CALLERQQQ, cause,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     cp = trim_space_sep(cp, sep);
     if (!*cp)
@@ -5538,7 +5546,7 @@ FUNCTION(fun_list)
             NULL);
         dp = result = alloc_lbuf("fun_list.2");
         str = buff2;
-        TinyExec(result, &dp, 0, player, cause,
+        TinyExec(result, &dp, player, CALLERQQQ, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *dp = '\0';
         free_lbuf(buff2);
@@ -5640,7 +5648,7 @@ FUNCTION(fun_fold)
         clist[1] = split_token(&cp, sep);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
-        TinyExec(result, &bp, 0, player, cause,
+        TinyExec(result, &bp, player, CALLERQQQ, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
     }
@@ -5650,7 +5658,7 @@ FUNCTION(fun_fold)
         clist[1] = split_token(&cp, sep);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
-        TinyExec(result, &bp, 0, player, cause,
+        TinyExec(result, &bp, player, CALLERQQQ, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
     }
@@ -5666,7 +5674,7 @@ FUNCTION(fun_fold)
         strcpy(atextbuf, atext);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
-        TinyExec(result, &bp, 0, player, cause,
+        TinyExec(result, &bp, player, CALLERQQQ, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
         strcpy(rstore, result);
@@ -5812,7 +5820,7 @@ FUNCTION(fun_filter)
         StringCopy(atextbuf, atext);
         result = bp = alloc_lbuf("fun_filter");
         str = atextbuf;
-        TinyExec(result, &bp, 0, player, cause,
+        TinyExec(result, &bp, player, CALLERQQQ, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
         *bp = '\0';
         if (!first && *result == '1')
@@ -5910,7 +5918,7 @@ FUNCTION(fun_map)
         objstring = split_token(&cp, sep);
         strcpy(atextbuf, atext);
         str = atextbuf;
-        TinyExec(buff, bufc, 0, player, cause,
+        TinyExec(buff, bufc, player, CALLERQQQ, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
     }
     free_lbuf(atext);
@@ -6063,7 +6071,7 @@ FUNCTION(fun_switch)
     //
     mbuff = bp = alloc_lbuf("fun_switch");
     str = fargs[0];
-    TinyExec(mbuff, &bp, 0, player, cause,
+    TinyExec(mbuff, &bp, player, CALLERQQQ, cause,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -6073,7 +6081,7 @@ FUNCTION(fun_switch)
     {
         tbuff = bp = alloc_lbuf("fun_switch.2");
         str = fargs[i];
-        TinyExec(tbuff, &bp, 0, player, cause,
+        TinyExec(tbuff, &bp, player, CALLERQQQ, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         if (wild_match(tbuff, mbuff))
@@ -6082,7 +6090,7 @@ FUNCTION(fun_switch)
             tbuff = replace_tokens(fargs[i+1], NULL, NULL, mbuff);
             free_lbuf(mbuff);
             str = tbuff;
-            TinyExec(buff, bufc, 0, player, cause,
+            TinyExec(buff, bufc, player, CALLERQQQ, cause,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
             free_lbuf(tbuff);
             return;
@@ -6097,7 +6105,7 @@ FUNCTION(fun_switch)
     {
         tbuff = replace_tokens(fargs[i], NULL, NULL, mbuff);
         str = tbuff;
-        TinyExec(buff, bufc, 0, player, cause,
+        TinyExec(buff, bufc, player, CALLERQQQ, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(tbuff);
     }
@@ -6113,7 +6121,8 @@ FUNCTION(fun_case)
     //
     mbuff = bp = alloc_lbuf("fun_case");
     str = fargs[0];
-    TinyExec(mbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    TinyExec(mbuff, &bp, player, CALLERQQQ, cause,
+             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
     // Loop through the patterns looking for a match.
@@ -6123,7 +6132,8 @@ FUNCTION(fun_case)
         if (!string_compare(fargs[i], mbuff))
         {
             str = fargs[i+1];
-            TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            TinyExec(buff, bufc, player, CALLERQQQ, cause,
+                     EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
             free_lbuf(mbuff);
             return;
         }
@@ -6135,7 +6145,8 @@ FUNCTION(fun_case)
     if ((i < nfargs) && fargs[i])
     {
         str = fargs[i];
-        TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        TinyExec(buff, bufc, player, CALLERQQQ, cause,
+                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     }
 }
 

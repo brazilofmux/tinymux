@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: look.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -501,7 +501,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         int preserve_len[MAX_GLOBAL_REGS];
         save_and_clear_global_regs("look_exits_save", preserve, preserve_len);
 
-        TinyExec(FormatOutput, &tPtr, 0, loc, player,
+        TinyExec(FormatOutput, &tPtr, loc, CALLERQQQ, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &ExitFormat, &VisibleObjectList, 1);
 
@@ -664,7 +664,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         int preserve_len[MAX_GLOBAL_REGS];
         save_and_clear_global_regs("look_contents_save", preserve, preserve_len);
 
-        TinyExec(FormatOutput, &tPtr, 0, loc, player,
+        TinyExec(FormatOutput, &tPtr, loc, CALLERQQQ, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &ContentsFormat, ParameterList, 2);
 
@@ -1077,7 +1077,7 @@ void look_in(dbref player, dbref loc, int key)
         int preserve_len[MAX_GLOBAL_REGS];
         save_and_clear_global_regs("look_in_save", preserve, preserve_len);
 
-        TinyExec(FormatOutput, &tPtr, 0, loc, player,
+        TinyExec(FormatOutput, &tPtr, loc, CALLERQQQ, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &NameFormat, 0, 0);
 

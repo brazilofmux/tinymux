@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: eval.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
 //
 
 // MUX 2.1
@@ -710,7 +710,7 @@ TryAgain:
 // is unterminated, a NULL is returned.  The original arglist is destructively
 // modified.
 //
-char *parse_arglist( dbref player, dbref cause, char *dstr, char delim,
+char *parse_arglist( dbref player, dbref caller, dbref cause, char *dstr, char delim,
                      dbref eval, char *fargs[], dbref nfargs, char *cargs[],
                      dbref ncargs, int *nArgsParsed )
 {
@@ -741,8 +741,8 @@ char *parse_arglist( dbref player, dbref cause, char *dstr, char delim,
         if (eval & EV_EVAL)
         {
             str = tstr;
-            TinyExec(fargs[arg], &bp, 0, player, cause, eval | EV_FCHECK,
-                     &str, cargs, ncargs);
+            TinyExec(fargs[arg], &bp, player, CALLERQQQ, cause,
+                     eval | EV_FCHECK, &str, cargs, ncargs);
             *bp = '\0';
         }
         else
@@ -793,7 +793,8 @@ char *parse_arglist_lite( dbref player, dbref cause, char *dstr, char delim,
 
         bp = fargs[arg] = alloc_lbuf("parse_arglist");
         str = tstr;
-        TinyExec( fargs[arg], &bp, 0, player, cause, peval, &str, cargs, ncargs );
+        TinyExec(fargs[arg], &bp, player, CALLERQQQ, cause, peval, &str,
+                 cargs, ncargs);
         *bp = '\0';
         arg++;
     }
@@ -1048,8 +1049,8 @@ static DCL_INLINE void PopIntegers(int *pi, int nNeeded)
     pIntsFrame->nints += nNeeded;
 }
 
-void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
-               int eval, char **dstr, char *cargs[], int ncargs)
+void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
+               dbref cause, int eval, char **dstr, char *cargs[], int ncargs)
 {
     char *TempPtr;
     char *tstr, *tbuf, *start, *oldp, *savestr;
@@ -1311,7 +1312,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             save_global_regs("eval_save", preserve, preserve_len);
                         }
 
-                        TinyExec(buff, &oldp, 0, i, cause, feval, &TempPtr, fargs, nfargs);
+                        TinyExec(buff, &oldp, i, caller, cause, feval,
+                                 &TempPtr, fargs, nfargs);
 
                         if (ufp->flags & FN_PRES)
                         {
@@ -1438,7 +1440,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         // 23
                         // #
                         //
-                        // Invoker DB number.
+                        // Enactor DB number.
                         //
                         TinyExec_scratch[0] = '#';
                         i = Tiny_ltoa(cause, TinyExec_scratch+1);
@@ -1541,7 +1543,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         // 4C
                         // L
                         //
-                        // Invoker location db#
+                        // Enactor Location DB Ref
                         //
                         if (!(eval & EV_NO_LOCATION))
                         {
@@ -1604,7 +1606,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             // 4E
                             // N
                             //
-                            // Invoker name
+                            // Enactor name
                             //
                             safe_str(Name(cause), buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
@@ -1785,7 +1787,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
             else
             {
                 TempPtr = tbuf;
-                TinyExec( buff, bufc, 0, player, cause,
+                TinyExec( buff, bufc, player, caller, cause,
                           (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, &TempPtr,
                           cargs, ncargs
                         );
@@ -1860,14 +1862,14 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                     }
 
                     TempPtr = tbuf;
-                    TinyExec(buff, bufc, 0, player, cause,
+                    TinyExec(buff, bufc, player, caller, cause,
                         (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_TOP)),
                         &TempPtr, cargs, ncargs);
                 }
                 else
                 {
                     TempPtr = tbuf;
-                    TinyExec(buff, bufc, 0, player, cause, eval & ~EV_TOP,
+                    TinyExec(buff, bufc, player, caller, cause, eval & ~EV_TOP,
                         &TempPtr, cargs, ncargs);
                 }
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;

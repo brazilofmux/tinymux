@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: mail.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -246,11 +246,13 @@ static int add_mail_message(dbref player, char *message)
     char *atrstr = atr_get(player, A_SIGNATURE, &aowner, &aflags);
     char *execstr = bp = alloc_lbuf("add_mail_message");
     char *str = atrstr;
-    TinyExec(execstr, &bp, 0, player, player, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
+    TinyExec(execstr, &bp, player, CALLERQQQ, player,
+             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
     *bp = '\0';
     char *msg = bp = alloc_lbuf("add_mail_message.2");
     str = message;
-    TinyExec(msg, &bp, 0, player, player, EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
+    TinyExec(msg, &bp, player, CALLERQQQ, player,
+             EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
     *bp = '\0';
 
     // Save message body and return a reference to it.
@@ -766,7 +768,9 @@ void do_mail_review(dbref player, char *name, char *msglist)
 
                     msg = bp = alloc_lbuf("do_mail_review");
                     str = msgbuff;
-                    TinyExec(msg, &bp, 0, player, player, EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
+                    TinyExec(msg, &bp, player, CALLERQQQ, player,
+                             EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str,
+                             (char **)NULL, 0);
                     *bp = '\0';
 
                     ANSI_TruncateToField(subbuff, sizeof(szSubjectBuffer),
@@ -782,7 +786,9 @@ void do_mail_review(dbref player, char *name, char *msglist)
 #else
                     msg = bp = alloc_lbuf("do_mail_review");
                     str = MessageFetch(mp->number);
-                    TinyExec(msg, &bp, 0, player, player, EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
+                    TinyExec(msg, &bp, player, CALLERQQQ, player,
+                             EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str,
+                             (char **)NULL, 0);
                     *bp = '\0';
                     ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                         szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
@@ -4025,7 +4031,8 @@ static void do_mail_proof(dbref player)
     {
         str = mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
         bp = msg = alloc_lbuf("do_mail_proof");
-        TinyExec(msg, &bp, 0, player, player, EV_EVAL | EV_FCHECK, &str, (char **)NULL, 0);
+        TinyExec(msg, &bp, player, CALLERQQQ, player, EV_EVAL | EV_FCHECK,
+                 &str, (char **)NULL, 0);
         *bp = '\0';
         free_lbuf(mailmsg);
     }

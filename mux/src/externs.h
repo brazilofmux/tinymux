@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: externs.h,v 1.2 2002-06-03 20:01:09 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -55,11 +55,14 @@ extern "C" char *crypt(const char *inptr, const char *inkey);
 #endif
 
 /* From eval.cpp */
+#define CALLERQQQ (-1)
 void tcache_init(void);
 char *parse_to(char **, char, int);
-char *parse_arglist(dbref, dbref, char *, char, int, char *[], int, char*[], int, int *);
+char *parse_arglist(dbref, dbref, dbref, char *, char, int, char *[], int,
+                    char*[], int, int *);
 int get_gender(dbref);
-void TinyExec(char *buff, char **bufc, int tflags, dbref player, dbref cause, int eval, char **dstr, char *cargs[], int ncargs);
+void TinyExec(char *buff, char **bufc, dbref player, dbref caller, dbref cause,
+              int eval, char **dstr, char *cargs[], int ncargs);
 extern void save_global_regs(const char *, char *[], int []);
 extern void save_and_clear_global_regs(const char *, char *[], int[]);
 extern void restore_global_regs(const char *, char *[], int []);
