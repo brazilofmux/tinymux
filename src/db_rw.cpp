@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.15 2001-06-28 10:26:30 sdennis Exp $
+// $Id: db_rw.cpp,v 1.16 2001-06-28 10:59:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2019,6 +2019,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 #endif
                 return mudstate.db_top;
             }
+
+        case EOF:
+            Log.printf(ENDLINE "Unexpected end of file near object #%d" ENDLINE, i);
+            return -1;
 
         default:
             if (Tiny_IsPrint[(unsigned char)ch])
