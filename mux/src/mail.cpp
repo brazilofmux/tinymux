@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.37 2002-09-09 13:35:32 sdennis Exp $
+// $Id: mail.cpp,v 1.38 2002-09-10 03:35:06 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -28,7 +28,7 @@ void add_folder_name(dbref, int, char *);
 static char *get_folder_name(dbref, int);
 static char *mail_list_time(const char *);
 static char *make_numlist(dbref, char *);
-static char *make_namelist(char *);
+static char *make_namelist(dbref, char *);
 static void mail_to_list(dbref, char *, char *, char *, int, BOOL);
 
 #define SIZEOF_MALIAS 13
@@ -523,7 +523,7 @@ void do_mail_read(dbref player, char *msglist)
                 }
                 notify(player, DASH_LINE);
                 status = status_string(mp);
-                names = make_namelist(mp->tolist);
+                names = make_namelist(player, mp->tolist);
                 char szSubjectBuffer[MBUF_SIZE];
                 int iRealVisibleWidth;
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
@@ -823,7 +823,7 @@ void do_expmail_start(dbref player, char *arg, char *subject)
     atr_add_raw(player, A_MAILFLAGS, "0");
     atr_clr(player, A_MAILMSG);
     Flags2(player) |= PLAYER_MAILS;
-    char *names = make_namelist(tolist);
+    char *names = make_namelist(player, tolist);
     notify(player, tprintf("MAIL: You are sending mail to '%s'.", names));
     free_lbuf(names);
     free_lbuf(tolist);
@@ -3158,14 +3158,14 @@ void do_mail_cc(dbref player, char *arg)
     *bp = '\0';
 
     atr_add_raw(player, A_MAILTO, fulllist);
-    char *names = make_namelist(fulllist);
+    char *names = make_namelist(player, fulllist);
     notify(player, tprintf("MAIL: You are sending mail to '%s'.", names));
     free_lbuf(names);
     free_lbuf(tolist);
     free_lbuf(fulllist);
 }
 
-static char *make_namelist(char *arg)
+static char *make_namelist(dbref player, char *arg)
 {
     char *p;
     char *oldarg = alloc_lbuf("make_namelist.oldarg");
@@ -3184,6 +3184,20 @@ static char *make_namelist(char *arg)
         {
             safe_str(Name(target), names, &bp);
             safe_str(", ", names, &bp);
+        }
+        else
+        {
+            int nResult;
+            struct malias *m = get_malias(player, tprintf("*%s",p), &nResult);
+            if (  nResult != GMA_NOTFOUND
+               && nResult != GMA_INVALIDFORM)
+            {
+                for (int i = 0; i < m->numrecep; i++)
+                {
+                    safe_str(Name(m->list[i]), names, &bp);
+                    safe_str(", ", names, &bp);
+                }
+            }
         }
     }
     *(bp - 2) = '\0';
@@ -3592,7 +3606,7 @@ static void do_mail_proof(dbref player)
     *bp = '\0';
     free_lbuf(mailmsg);
 
-    char *names = make_namelist(mailto);
+    char *names = make_namelist(player, mailto);
     ANSI_TruncateToField(atr_get_raw(player, A_MAILSUB),
         sizeof(szSubjectBuffer), szSubjectBuffer, 35,
         &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
