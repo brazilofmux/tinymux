@@ -2157,7 +2157,7 @@ FLAG_ALIAS
 & FLAG_NAME
 FLAG_NAME
 
-  Config parameter: flag_name <newflagname> <oldflagname>
+  Config parameter: flag_name <oldflagname> <newflagname>
 
   Redefines what the given flag is called.  This config parameter is only
   useable within the conf file.  Use @flag to change them online.
