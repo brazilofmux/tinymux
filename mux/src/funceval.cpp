@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.48 2004-04-17 20:48:49 sdennis Exp $
+// $Id: funceval.cpp,v 1.49 2004-04-18 00:35:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -336,8 +336,11 @@ FUNCTION(fun_remit)
 FUNCTION(fun_create)
 {
     SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
-    varargs_preamble(3);
     char *name = fargs[0];
 
     if (!name || !*name)
@@ -859,7 +862,10 @@ FUNCTION(fun_squish)
     }
 
     SEP sep;
-    varargs_preamble(2);
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     char *p;
     char *q = fargs[0];
@@ -926,7 +932,10 @@ FUNCTION(fun_zfun)
 FUNCTION(fun_columns)
 {
     SEP sep;
-    evarargs_preamble(3);
+    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL))
+    {
+        return;
+    }
 
     int nWidth = mux_atol(fargs[1]);
     int nIndent = 0;
@@ -1888,12 +1897,15 @@ FUNCTION(fun_visible)
  */
 FUNCTION(fun_elements)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     int nwords, cur;
     char *ptrs[LBUF_SIZE / 2];
     char *wordlist, *s, *r;
-    SEP sep;
-
-    varargs_preamble(3);
     bool bFirst = true;
 
     // Turn the first list into an array.
@@ -1936,7 +1948,10 @@ FUNCTION(fun_elements)
 FUNCTION(fun_grab)
 {
     SEP sep;
-    varargs_preamble(3);
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     // Walk the wordstring, until we find the word we want.
     //
@@ -1956,7 +1971,11 @@ FUNCTION(fun_grab)
 FUNCTION(fun_graball)
 {
     SEP sep;
-    varargs_preamble(3);
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     bool bFirst = true;
 
     char *s = trim_space_sep(fargs[0], sep.str[0]);
@@ -2008,11 +2027,14 @@ FUNCTION(fun_scramble)
  */
 FUNCTION(fun_shuffle)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     char *words[LBUF_SIZE];
     int n, i, j;
-    SEP sep;
-
-    varargs_preamble(2);
 
     n = list2arr(words, LBUF_SIZE, fargs[0], sep.str[0]);
 
@@ -2033,12 +2055,17 @@ FUNCTION(fun_shuffle)
 //
 FUNCTION(fun_pickrand)
 {
-    if (nfargs == 0 || fargs[0][0] == '\0')
+    if (  nfargs == 0
+       || fargs[0][0] == '\0')
     {
         return;
     }
+
     SEP sep;
-    varargs_preamble(2);
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     char *s = trim_space_sep(fargs[0], sep.str[0]);
     char *t = s;
@@ -2180,7 +2207,10 @@ loop:
 FUNCTION(fun_sortby)
 {
     SEP sep;
-    varargs_preamble(3);
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     char *atext;
     dbref thing;
@@ -2221,7 +2251,10 @@ FUNCTION(fun_last)
     }
 
     SEP sep;
-    varargs_preamble(2);
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     // Trim leading spaces.
     //
@@ -2258,11 +2291,14 @@ FUNCTION(fun_last)
 //
 FUNCTION(fun_matchall)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     int wcount;
     char *r, *s, *old, tbuf[8];
-    SEP sep;
-
-    varargs_preamble(3);
     old = *bufc;
 
     // Check each word individually, returning the word number of all that
@@ -2340,7 +2376,10 @@ FUNCTION(fun_mix)
     }
     else 
     {
-        varargs_preamble(nfargs);
+        if (!OPTIONAL_DELIM(nfargs, sep, DELIM_DFLT))
+        {
+            return;
+        }
         lastn = nfargs - 2;
     }
 
@@ -2494,7 +2533,10 @@ FUNCTION(fun_foreach)
 FUNCTION(fun_munge)
 {
     SEP sep;
-    varargs_preamble(4);
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     // Find our object and attribute.
     //
@@ -3628,32 +3670,40 @@ void real_regrab(char *search, const char *pattern, char sep, char *buff,
 FUNCTION(fun_regrab) 
 {
     SEP sep;
-    varargs_preamble(3);
-
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
     real_regrab(fargs[0], fargs[1], sep.str[0], buff, bufc, false, false);
 }
 
 FUNCTION(fun_regrabi) 
 {
     SEP sep;
-    varargs_preamble(3);
-
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
     real_regrab(fargs[0], fargs[1], sep.str[0], buff, bufc, true, false);
 }
 
 FUNCTION(fun_regraball) 
 {
     SEP sep;
-    varargs_preamble(3);
-
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
     real_regrab(fargs[0], fargs[1], sep.str[0], buff, bufc, false, true);
 }
 
 FUNCTION(fun_regraballi) 
 {
     SEP sep;
-    varargs_preamble(3);
-
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
     real_regrab(fargs[0], fargs[1], sep.str[0], buff, bufc, true, true);
 }
 

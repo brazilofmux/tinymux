@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.82 2004-04-17 22:16:45 sdennis Exp $
+// $Id: functions.cpp,v 1.83 2004-04-18 00:35:05 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -747,7 +747,7 @@ bool delim_check
             free_lbuf(tstr);
         }
     }
-    else
+    else if (!(dflags & DELIM_INIT))
     {
         sep->n      = 1;
         sep->str[0] = ' ';
@@ -785,7 +785,11 @@ FUNCTION(fun_words)
     }
 
     SEP sep;
-    varargs_preamble(2);
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     safe_ltoa(countwords(strip_ansi(fargs[0]), sep.str[0]), buff, bufc);
 }
 
@@ -1688,8 +1692,12 @@ FUNCTION(fun_first)
     {
         return;
     }
+
     SEP sep;
-    varargs_preamble(2);
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     char *s = trim_space_sep(fargs[0], sep.str[0]);
     char *first = split_token(&s, sep.str[0]);
@@ -1713,8 +1721,12 @@ FUNCTION(fun_rest)
     {
         return;
     }
+
     SEP sep;
-    varargs_preamble(2);
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     char *s = trim_space_sep(fargs[0], sep.str[0]);  // leading spaces ...
     split_token(&s, sep.str[0]);
@@ -2179,7 +2191,10 @@ FUNCTION(fun_name)
 FUNCTION(fun_match)
 {
     SEP sep;
-    varargs_preamble(3);
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     // Check each word individually, returning the word number of the first
     // one that matches.  If none match, return 0.
@@ -2220,11 +2235,14 @@ FUNCTION(fun_strmatch)
 
 FUNCTION(fun_extract)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     int start, len;
     char *r, *s, *t;
-    SEP sep;
-
-    varargs_preamble(4);
 
     s = fargs[0];
     start = mux_atol(fargs[1]);
@@ -3266,7 +3284,10 @@ FUNCTION(fun_ladd)
     if (0 < nfargs)
     {
         SEP sep;
-        varargs_preamble(2);
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+        {
+            return;
+        }
 
         char *cp = trim_space_sep(fargs[0], sep.str[0]);
         while (cp)
@@ -3284,7 +3305,10 @@ FUNCTION(fun_land)
     if (0 < nfargs)
     {
         SEP sep;
-        varargs_preamble(2);
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+        {
+            return;
+        }
 
         char *cp = trim_space_sep(fargs[0], sep.str[0]);
         while (cp && bValue)
@@ -3302,7 +3326,10 @@ FUNCTION(fun_lor)
     if (0 < nfargs)
     {
         SEP sep;
-        varargs_preamble(2);
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+        {
+            return;
+        }
 
         char *cp = trim_space_sep(fargs[0], sep.str[0]);
         while (cp && !bValue)
@@ -3965,22 +3992,49 @@ static void handle_vectors
 
 FUNCTION(fun_vadd)
 {
-    SEP sep, osep;
-    svarargs_preamble(4);
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    {
+        return;
+    }
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep.str[0], osep.str[0], VADD_F);
 }
 
 FUNCTION(fun_vsub)
 {
-    SEP sep, osep;
-    svarargs_preamble(4);
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    {
+        return;
+    }
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep.str[0], osep.str[0], VSUB_F);
 }
 
 FUNCTION(fun_vmul)
 {
-    SEP sep, osep;
-    svarargs_preamble(4);
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    {
+        return;
+    }
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep.str[0], osep.str[0], VMUL_F);
 }
 
@@ -3988,8 +4042,17 @@ FUNCTION(fun_vdot)
 {
     // dot product: (a,b,c) . (d,e,f) = ad + be + cf
     //
-    SEP sep, osep;
-    svarargs_preamble(4);
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    {
+        return;
+    }
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep.str[0], osep.str[0], VDOT_F);
 }
 
@@ -3997,19 +4060,31 @@ FUNCTION(fun_vcross)
 {
     // cross product: (a,b,c) x (d,e,f) = (bf - ce, cd - af, ae - bd)
     //
-    SEP sep, osep;
-    svarargs_preamble(4);
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    {
+        return;
+    }
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep.str[0], osep.str[0], VCROSS_F);
 }
 
 FUNCTION(fun_vmag)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     char *v1[LBUF_SIZE];
     int n, i;
     double tmp, res = 0.0;
-    SEP sep;
-
-    varargs_preamble(2);
 
     // Split the list up, or return if the list is empty.
     //
@@ -4045,13 +4120,16 @@ FUNCTION(fun_vmag)
 
 FUNCTION(fun_vunit)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     char *v1[LBUF_SIZE];
     char vres[MAXDIM][LBUF_SIZE];
     int n, i;
     double tmp, res = 0.0;
-    SEP sep;
-
-    varargs_preamble(2);
 
     // Split the list up, or return if the list is empty.
     //
@@ -4092,14 +4170,17 @@ FUNCTION(fun_vunit)
 
 FUNCTION(fun_vdim)
 {
-    SEP sep;
     if (fargs == 0)
     {
         safe_chr('0', buff, bufc);
     }
     else
     {
-        varargs_preamble(2);
+        SEP sep;
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+        {
+            return;
+        }
         safe_ltoa(countwords(fargs[0],sep.str[0]), buff, bufc);
     }
 }
@@ -4765,28 +4846,40 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
 
 FUNCTION(fun_ldelete)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     // Delete a word at position X of a list.
     //
-    SEP sep;
-    varargs_preamble(3);
     do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), NULL, sep.str[0], IF_DELETE);
 }
 
 FUNCTION(fun_replace)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     // Replace a word at position X of a list.
     //
-    SEP sep;
-    varargs_preamble(4);
     do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], sep.str[0], IF_REPLACE);
 }
 
 FUNCTION(fun_insert)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     // Insert a word at position X of a list.
     //
-    SEP sep;
-    varargs_preamble(4);
     do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], sep.str[0], IF_INSERT);
 }
 
@@ -4797,11 +4890,15 @@ FUNCTION(fun_insert)
 
 FUNCTION(fun_remove)
 {
-    char *s, *sp, *word;
     SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
+    char *s, *sp, *word;
     bool first, found;
 
-    varargs_preamble(3);
     if (strchr(fargs[1], sep.str[0]))
     {
         safe_str("#-1 CAN ONLY DELETE ONE ELEMENT", buff, bufc);
@@ -4840,11 +4937,15 @@ FUNCTION(fun_remove)
 
 FUNCTION(fun_member)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     int wcount;
     char *r, *s;
-    SEP sep;
 
-    varargs_preamble(3);
     wcount = 1;
     s = trim_space_sep(fargs[0], sep.str[0]);
     do {
@@ -4956,12 +5057,15 @@ FUNCTION(fun_escape)
  */
 FUNCTION(fun_wordpos)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     unsigned charpos;
     int i;
     char *cp, *tp, *xp;
-    SEP sep;
-
-    varargs_preamble(3);
 
     charpos = mux_atol(fargs[1]);
     cp = fargs[0];
@@ -5823,7 +5927,10 @@ FUNCTION(fun_revwords)
         return;
     }
     SEP sep;
-    varargs_preamble(2);
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
     ReverseWordsInText_Seperator = sep.str[0];
     ANSI_TransformTextReverseWithFunction(buff, bufc, fargs[0], ReverseWordsInText);
 }
@@ -6075,7 +6182,10 @@ FUNCTION(fun_merge)
 FUNCTION(fun_splice)
 {
     SEP sep;
-    varargs_preamble(4);
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     // Length checks.
     //
@@ -6186,11 +6296,25 @@ FUNCTION(fun_repeat)
 
 FUNCTION(fun_parse)
 {
+    // Optional Input Delimiter.
+    //
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL))
+    {
+        return;
+    }
+
+    // Optional Output Delimiter.
+    //
+    SEP osep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF))
+    {
+        return;
+    }
+
     char *curr, *objstring, *cp, *dp;
     char *str;
-    SEP sep, osep;
 
-    sevarargs_preamble(4);
     cp = curr = dp = alloc_lbuf("fun_parse");
     str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
@@ -6239,10 +6363,24 @@ FUNCTION(fun_parse)
 
 FUNCTION(fun_iter)
 {
-    char *curr, *cp, *dp, *str;
-    SEP sep, osep;
+    // Optional Input Delimiter.
+    //
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL))
+    {
+        return;
+    }
 
-    sevarargs_preamble(4);
+    // Optional Output Delimiter.
+    //
+    SEP osep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF))
+    {
+        return;
+    }
+
+    char *curr, *cp, *dp, *str;
+
     dp = cp = curr = alloc_lbuf("fun_iter");
     str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
@@ -6324,10 +6462,14 @@ FUNCTION(fun_inum)
 
 FUNCTION(fun_list)
 {
-    char *curr, *objstring, *result, *cp, *dp, *str;
     SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL))
+    {
+        return;
+    }
 
-    evarargs_preamble(3);
+    char *curr, *objstring, *result, *cp, *dp, *str;
+
     cp = curr = dp = alloc_lbuf("fun_list");
     str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
@@ -6389,10 +6531,10 @@ FUNCTION(fun_ilev)
 FUNCTION(fun_fold)
 {
     SEP sep;
-
-    // We need two to four arguments only.
-    //
-    varargs_preamble(4);
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
     char *atext;
     dbref thing;
@@ -6469,7 +6611,11 @@ FUNCTION(fun_fold)
 FUNCTION(fun_itemize)
 { 
     SEP sep;
-    varargs_preamble(2);
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     const char *lconj = "and";
     if (nfargs > 2)
     {
@@ -6573,16 +6719,20 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
 FUNCTION(fun_filter)
 {
     SEP sep;
-
-    varargs_preamble(3);
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
     filter_handler(buff, bufc, executor, enactor, fargs, sep.str[0], false);
 }
 
 FUNCTION(fun_filterbool)
 {
     SEP sep;
-
-    varargs_preamble(3);
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
     filter_handler(buff, bufc, executor, enactor, fargs, sep.str[0], true);
 }
 
@@ -6598,9 +6748,17 @@ FUNCTION(fun_filterbool)
 
 FUNCTION(fun_map)
 {
-    SEP sep, osep;
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
-    svarargs_preamble(4);
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    {
+        return;
+    }
 
     char *atext;
     dbref thing;
@@ -7132,12 +7290,19 @@ static void do_asort(char *s[], int n, int sort_type)
 
 FUNCTION(fun_sort)
 {
-    SEP sep, osep;
-    char *ptrs[LBUF_SIZE / 2];
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
 
-    // If we are passed an empty arglist return a null string.
-    //
-    svarargs_preamble(4);
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    {
+        return;
+    }
+
+    char *ptrs[LBUF_SIZE / 2];
 
     // Convert the list to an array.
     //
@@ -7407,22 +7572,49 @@ static void handle_sets
 
 FUNCTION(fun_setunion)
 {
-    SEP sep, osep;
-    svarargs_preamble(4);
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    {
+        return;
+    }
     handle_sets(fargs, buff, bufc, SET_UNION, sep.str[0], osep.str[0]);
 }
 
 FUNCTION(fun_setdiff)
 {
-    SEP sep, osep;
-    svarargs_preamble(4);
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    {
+        return;
+    }
     handle_sets(fargs, buff, bufc, SET_DIFF, sep.str[0], osep.str[0]);
 }
 
 FUNCTION(fun_setinter)
 {
-    SEP sep, osep;
-    svarargs_preamble(4);
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    {
+        return;
+    }
     handle_sets(fargs, buff, bufc, SET_INTERSECT, sep.str[0], osep.str[0]);
 }
 
@@ -7751,11 +7943,14 @@ FUNCTION(fun_isdbref)
 
 FUNCTION(fun_trim)
 {
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
     char *p, *lastchar, *q;
     int trim;
-    SEP sep;
-
-    varargs_preamble(3);
     if (nfargs >= 2)
     {
         switch (mux_tolower(*fargs[1]))
