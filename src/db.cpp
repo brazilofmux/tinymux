@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.59 2001-12-03 17:49:06 sdennis Exp $
+// $Id: db.cpp,v 1.60 2001-12-04 08:15:46 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3153,7 +3153,7 @@ void dump_restart_db(void)
     f = fopen("restart.db", "wb");
     fprintf(f, "+V%d\n", version);
     putref(f, nMainGamePorts);
-    for (int i = 0; i < nMainGamePorts; ++i)
+    for (int i = 0; i < nMainGamePorts; i++)
     {
         putref(f, aMainGamePorts[i].port);
         putref(f, aMainGamePorts[i].socket);
@@ -3197,6 +3197,7 @@ void load_restart_db(void)
         mudstate.restarting = 0;
         return;
     }
+    DebugTotalFiles++;
     mudstate.restarting = 1;
 
     fgets(buf, 3, f);
@@ -3231,6 +3232,7 @@ void load_restart_db(void)
         nMainGamePorts = 1;
         maxd = aMainGamePorts[0].socket + 1;
     }
+    DebugTotalSockets += nMainGamePorts;
 
     mudstate.start_time.SetSeconds(getref(f));
     strcpy(mudstate.doing_hdr, getstring_noalloc(f, TRUE));
@@ -3239,6 +3241,7 @@ void load_restart_db(void)
     while ((val = getref(f)) != 0)
     {
         ndescriptors++;
+        DebugTotalSockets++;
         d = alloc_desc("restart");
         d->descriptor = val;
         d->flags = getref(f);
@@ -3322,7 +3325,10 @@ void load_restart_db(void)
         }
     }
 
-    fclose(f);
+    if (fclose(f) == 0)
+    {
+        DebugTotalFiles--;
+    }
     remove("restart.db");
     raw_broadcast(0, "Game: Restart finished.");
 }

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.45 2001-12-04 02:09:39 sdennis Exp $
+// $Id: bsd.cpp,v 1.46 2001-12-04 08:15:46 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -43,6 +43,7 @@ int      nMainGamePorts = 0;
 
 unsigned int ndescriptors = 0;
 DESC *descriptor_list = NULL;
+BOOL bDescriptorListInit = FALSE;
 
 #ifdef WIN32
 int game_pid;
@@ -481,7 +482,10 @@ void boot_slave(dbref ref1, dbref ref2, int int3)
     if (!IS_INVALID_SOCKET(slave_socket))
     {
         shutdown(slave_socket, SD_BOTH);
-        close(slave_socket);
+        if (close(slave_socket) == 0)
+        {
+            DebugTotalSockets--;
+        }
         slave_socket = INVALID_SOCKET;
     }
     if (slave_pid > 0)
@@ -536,7 +540,7 @@ void boot_slave(dbref ref1, dbref ref2, int int3)
         {
             _exit(1);
         }
-        for (i = 3; i < maxfds; ++i)
+        for (i = 3; i < maxfds; i++)
         {
             close(i);
         }
@@ -546,10 +550,16 @@ void boot_slave(dbref ref1, dbref ref2, int int3)
     close(sv[1]);
 
     slave_socket = sv[0];
+    DebugTotalSockets++;
     if (fcntl(slave_socket, F_SETFL, FNDELAY) == -1)
     {
         pFailedFunc = "fcntl() error: ";
-        close(slave_socket);
+        shutdown(slave_socket, SD_BOTH);
+        if (close(slave_socket) == 0)
+        {
+            DebugTotalSockets--;
+        }
+        slave_socket = INVALID_SOCKET;
         goto failure;
     }
 
@@ -561,6 +571,10 @@ void boot_slave(dbref ref1, dbref ref2, int int3)
 
 failure:
 
+    if (slave_pid > 0)
+    {
+        kill(slave_pid, SIGKILL);
+    }
     slave_pid = 0;
     STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
     log_text(pFailedFunc);
@@ -592,7 +606,11 @@ static int get_slave_result()
             free_lbuf(buf);
             return -1;
         }
-        close(slave_socket);
+        shutdown(slave_socket, SD_BOTH);
+        if (close(slave_socket) == 0)
+        {
+            DebugTotalSockets--;
+        }
         slave_socket = INVALID_SOCKET;
         free_lbuf(buf);
         return -1;
@@ -697,9 +715,12 @@ void make_socket(PortInfo *Port)
             exit(1);
         }
 
-        // initialise the critical section
+        // Initialize the critical section
         //
-        InitializeCriticalSection(&csDescriptorList);
+        if (!bDescriptorListInit)
+        {
+            InitializeCriticalSection(&csDescriptorList);
+        }
 
         // Create a TCP/IP stream socket
         //
@@ -759,6 +780,7 @@ void make_socket(PortInfo *Port)
 
         Port->socket = s;
         Log.tinyprintf("Listening (NT-style) on port %d" ENDLINE, Port->port);
+        return;
     }
 #endif // WIN32
 
@@ -779,24 +801,19 @@ void make_socket(PortInfo *Port)
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons((unsigned short)(Port->port));
-#ifndef WIN32
-    if (!mudstate.restarting)
-#endif // !WIN32
+    int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
+    if (IS_SOCKET_ERROR(cc))
     {
-        int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
-        if (IS_SOCKET_ERROR(cc))
+        log_perror("NET", "FAIL", NULL, "bind");
+        if (SOCKET_CLOSE(s) == 0)
         {
-            log_perror("NET", "FAIL", NULL, "bind");
-            if (SOCKET_CLOSE(s) == 0)
-            {
-                DebugTotalSockets--;
-            }
-            s = INVALID_SOCKET;
-#ifdef WIN32
-            WSACleanup();
-#endif // WIN32
-            exit(4);
+            DebugTotalSockets--;
         }
+        s = INVALID_SOCKET;
+#ifdef WIN32
+        WSACleanup();
+#endif // WIN32
+        exit(4);
     }
     listen(s, SOMAXCONN);
     Port->socket = s;
@@ -1274,7 +1291,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     if (!ValidSocket(d->descriptor))
                     {
                         STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                        log_text((char *) "Bad descriptor ");
+                        log_text("Bad descriptor ");
                         log_number(d->descriptor);
                         ENDLOG;
                         shutdownsock(d, R_SOCKDIED);
@@ -1287,7 +1304,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     // died.
                     //
                     STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                    log_text((char *) "Bad slave descriptor ");
+                    log_text("Bad slave descriptor ");
                     log_number(slave_socket);
                     ENDLOG;
                     boot_slave(0, 0, 0);
@@ -1299,7 +1316,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                         // That's it. Game over.
                         //
                         STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                        log_text((char *) "Bad game port descriptor ");
+                        log_text("Bad game port descriptor ");
                         log_number(aPorts[i].socket);
                         ENDLOG;
                         return;
@@ -1483,6 +1500,7 @@ DESC *new_connection(PortInfo *Port)
             len = strlen(pBuffL1);
             if (write(slave_socket, pBuffL1, len) < 0)
             {
+                shutdown(slave_socket, SD_BOTH);
                 if (close(slave_socket) == 0)
                 {
                     DebugTotalSockets--;
@@ -2757,10 +2775,16 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             exit(12345678);
 #else // WIN32
             shutdown(slave_socket, SD_BOTH);
+            if (close(slave_socket) == 0)
+            {
+                DebugTotalSockets--;
+            }
+            slave_socket = INVALID_SOCKET;
             if (slave_pid > 0)
             {
                 kill(slave_pid, SIGKILL);
             }
+            slave_pid = 0;
 
             // Try our best to dump a core first
             //
@@ -2920,7 +2944,6 @@ void list_system_resources(dbref player)
 void __cdecl MUDListenThread(void * pVoid)
 {
     PortInfo *Port = (PortInfo *)pVoid;
-    //SOCKET MUDListenSocket = (SOCKET) pVoid;
 
     SOCKADDR_IN SockAddr;
     int         nLen;
@@ -2928,7 +2951,7 @@ void __cdecl MUDListenThread(void * pVoid)
 
     struct descriptor_data * d;
 
-    Log.WriteString("Starting MUD listening thread ..." ENDLINE);
+    Log.tinyprintf("Starting NT-style listening on port %d" ENDLINE, Port->port);
 
     //
     // Loop forever accepting connections

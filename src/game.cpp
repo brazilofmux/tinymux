@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.49 2001-12-03 19:42:55 sdennis Exp $
+// $Id: game.cpp,v 1.50 2001-12-04 08:15:46 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2069,7 +2069,6 @@ int DCL_CDECL main(int argc, char *argv[])
 
 #ifndef WIN32
     load_restart_db();
-
     if (!mudstate.restarting)
 #endif // !WIN32
     {
@@ -2082,14 +2081,10 @@ int DCL_CDECL main(int argc, char *argv[])
             DebugTotalFiles--;
         }
     }
-
+    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports);
     boot_slave(0, 0, 0);
-
-    // go do it.
-    //
     init_timer();
 
-    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports);
 #ifdef WIN32
     if (platform == VER_PLATFORM_WIN32_NT)
     {
