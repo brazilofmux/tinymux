@@ -8766,16 +8766,18 @@ STATS()
 & ITER()
 ITER()
 
-  FUNCTION: iter(<list>, <eval>[, <delim>])
+  FUNCTION: iter(<list>,<eval>[,<input delim>[,<output delim>]])
 
-  <list> is a <delimter>-separated list of strings, which can be object
+  <list> is a <input delim>-separated list of strings, which can be object
   numbers, attributes, or arbitrary words.  <eval> is a string that is to be
   evaluated once for each item in <list>, replacing the special symbol ## with
   the corresponding item from <list>, and the symbol #@ with the position
-  within the list being iterated.  A space-separated list of the results
-  of these evaluations is returned to the caller.  The effect is very similar
-  to @dolist, except that the results are made into a list and returned, not
-  executed.
+  within the list being iterated.  An <output delim>-separated list of the
+  results of these evaluations is returned to the caller.  The effect is very
+  similar to @dolist, except that the results are made into a list and
+  returned, not executed.
+
+  Input and output delimiters are both space by default.
 
   Examples:
     > say iter(This is a test,strlen(##))
@@ -9634,11 +9636,11 @@ EXP()
 & PARSE()
 PARSE()
 
-  FUNCTION: parse(<list>,<eval>[,<delimiter>])
+  FUNCTION: parse(<list>,<eval>[,<input delim>[,<output delim>]])
 
   This function takes each element of <list>, evaluates <eval> after
-  substituting it for ##, and constructs a space-separated list of the
-  results.
+  substituting it for ##, and constructs a list of the results. Input
+  and output delimiters are both space by default.
 
   Examples:
     > say parse(1 2 3 4 5,add(##,1))
@@ -9668,14 +9670,13 @@ CONTROLS()
 & MAP()
 MAP()
 
-  FUNCTION: map([<obj>/]<attr>, <list>[, <delim>])
+  FUNCTION: map([<obj>/]<attr>,<list>[,<input delim>[,<output delim>]])
 
   This function is nearly identical to an iter() operating on u() function.
   Each member of <list> is passed to the result of fetching <attr> as %0, and
-  the results are used to form a new list, separated by the delimiter
-  character.
+  the results are used to form a new list.
 
-  <delimiter> may be used to specify a delimiter other than space.
+  Input and output delimiters are both space by default.
 
   Examples:
     > &ADD_ONE object=add(%0,1)

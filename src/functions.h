@@ -1,6 +1,6 @@
 // functions.h - declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.2 2000-11-16 07:46:49 sdennis Exp $
+// $Id: functions.h,v 1.3 2001-06-14 09:22:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -88,6 +88,16 @@ extern int list2arr(char *arr[], int maxlen, char *list, char sep);
         osep = sep;                                                   \
     else if (!delim_check(fargs, nfargs, xnargs, &osep, buff, bufc,   \
         0, player, cause, cargs, ncargs, 1))                          \
+        return;
+
+#define sevarargs_preamble(xname,xnargs)                              \
+    if (!delim_check(fargs, nfargs, xnargs-1, &sep, buff, bufc, 1,    \
+        player, cause, cargs, ncargs, 0))                             \
+        return;                                                       \
+    if (nfargs < xnargs)                                              \
+        osep = sep;                                                   \
+    else if (!delim_check(fargs, nfargs, xnargs, &osep, buff, bufc,   \
+        1, player, cause, cargs, ncargs, 1))                          \
         return;
 
 #endif

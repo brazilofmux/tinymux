@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.62 2001-06-12 08:32:15 sdennis Exp $
+// $Id: functions.cpp,v 1.63 2001-06-14 09:22:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4698,8 +4698,6 @@ FUNCTION(fun_repeat)
     }
 }
 
-#if 1
-
 /*
  * ---------------------------------------------------------------------------
  * * fun_parse: Make list from evaluating arg3 with each member of arg2.
@@ -4709,11 +4707,11 @@ FUNCTION(fun_repeat)
 
 FUNCTION(fun_parse)
 {
-    char *curr, *objstring, *buff2, *buff3, *cp, sep;
-    char *dp, *str;
+    char *curr, *objstring, *buff2, *buff3, *cp, *dp, sep, osep;
+    char *str;
     int first, number = 0;
 
-    evarargs_preamble("PARSE", 3);
+    sevarargs_preamble("PARSE", 4);
     cp = curr = dp = alloc_lbuf("fun_parse");
     str = fargs[0];
     TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -4727,7 +4725,9 @@ FUNCTION(fun_parse)
     while (cp)
     {
         if (!first)
-            safe_chr(' ', buff, bufc);
+        {
+            print_sep(osep, buff, bufc);
+        }
         first = 0;
         number++;
         objstring = split_token(&cp, sep);
@@ -4749,11 +4749,11 @@ FUNCTION(fun_parse)
 
 FUNCTION(fun_iter)
 {
-    char *curr, *objstring, *buff2, *buff3, *cp, *dp, sep,
+    char *curr, *objstring, *buff2, *buff3, *cp, *dp, sep, osep,
     *str;
     int first, number = 0;
 
-    evarargs_preamble("ITER", 3);
+    sevarargs_preamble("ITER", 4);
     dp = cp = curr = alloc_lbuf("fun_iter");
     str = fargs[0];
     TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -4769,7 +4769,7 @@ FUNCTION(fun_iter)
     {
         if (!first)
         {
-            safe_chr(' ', buff, bufc);
+            print_sep(osep, buff, bufc);
         }
         first = 0;
         number++;
@@ -4817,206 +4817,6 @@ FUNCTION(fun_list)
     }
     free_lbuf(curr);
 }
-
-#else
-
-/* ---------------------------------------------------------------------------
- * fun_loop and fun_parse exist for reasons of backwards compatibility.
- * See notes on fun_iter for the explanation.
- */
-
-static void perform_loop
-(
-    char  *buff,
-    char  **bufc,
-    dbref player,
-    dbref cause,
-    char  *list,
-    char  *exprstr,
-    char  *cargs[],
-    int   ncargs,
-    char  sep,
-    char  osep,
-    int   flag       // 0 is parse(), 1 is loop()
-)
-{
-    char *curr, *objstring, *buff2, *buff3, *cp, *dp, *str, *result, *bb_p;
-    int number = 0;
-    
-    dp = cp = curr = alloc_lbuf("perform_loop.1");
-    str = list;
-    TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-    *dp = '\0';
-    cp = trim_space_sep(cp, sep);
-    if (!*cp)
-    {
-        free_lbuf(curr);
-        return;
-    }
-
-    bb_p = *bufc;
-
-    while (cp && (mudstate.func_invk_ctr < mudconf.func_invk_lim))
-    {
-        if (!flag && (*bufc != bb_p))
-        {
-            print_sep(osep, buff, bufc);
-        }
-        number++;
-        objstring = split_token(&cp, sep);
-        buff2 = replace_string(BOUND_VAR, objstring, exprstr);
-        buff3 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), buff2);
-        str = buff3;
-        if (!flag)
-        {
-            TinyExec(buff, bufc, 0, player, cause,
-                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-        }
-        else
-        {
-            dp = result = alloc_lbuf("perform_loop.2");
-            TinyExec(result, &dp, 0, player, cause,
-                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-            *dp = '\0';
-            notify(cause, result);
-            free_lbuf(result);
-        }
-        free_lbuf(buff2);
-        free_lbuf(buff3);
-    }
-    free_lbuf(curr);
-}
-
-FUNCTION(fun_parse)
-{
-    char sep, osep;
-
-    if (!delim_check(fargs, nfargs, 4-1, &sep, buff, bufc, 1, player,
-        cause, cargs, ncargs, 0))
-    {
-        return;
-    }
-    if (!delim_check(fargs, nfargs, 4, &osep, buff, bufc, 1, player,
-        cause, cargs, ncargs, 1))
-    {
-        return;
-    }
-    perform_loop(buff, bufc, player, cause, fargs[0], fargs[1],
-        cargs, ncargs, sep, osep, 0);
-}
-
-FUNCTION(fun_loop)
-{
-    char sep;
-
-    varargs_preamble("LOOP", 3);
-    perform_loop(buff, bufc, player, cause, fargs[0], fargs[1],
-        cargs, ncargs, sep, ' ', 1);
-}
-
-/* ---------------------------------------------------------------------------
- * fun_iter() and fun_list() parse an expression, substitute elements of
- * a list, one at a time, using the '##' replacement token. Uses of these
- * functions can be nested.
- * In older versions of MUSH, these functions could not be nested.
- * parse() and loop() exist for reasons of backwards compatibility,
- * since the peculiarities of the way substitutions were done in the string
- * replacements make it necessary to provide some way of doing backwards
- * compatibility, in order to avoid breaking a lot of code that relies upon
- * particular patterns of necessary escaping.
- */
-
-static void perform_iter
-(
-    char  *buff,
-    char  **bufc,
-    dbref player,
-    dbref cause,
-    char  *list,
-    char  *exprstr,
-    char  *cargs[],
-    int   ncargs,
-    char  sep,
-    char  osep,
-    int   flag      // 0 is iter(), 1 is list()
-)
-{
-    char *list_str, *lp, *str, *input_p, *bb_p, *save_token, *work_buf;
-    char *dp, *result;
-    int save_num;
-    
-    /* The list argument is unevaluated. Go evaluate it. */
-    
-    input_p = lp = list_str = alloc_lbuf("perform_iter.list");
-    str = list;
-    TinyExec(list_str, &lp, 0, player, cause,
-        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-    *lp = '\0';
-    input_p = trim_space_sep(input_p, sep);
-    if (!*input_p)
-    {
-        free_lbuf(list_str);
-        return;
-    }
-    
-    mudstate.in_loop++;QQQ
-    save_token = mudstate.loop_token;
-    save_num = mudstate.loop_number;
-    mudstate.loop_number = 0;
-    
-    bb_p = *bufc;
-    
-    while (input_p && (mudstate.func_invk_ctr < mudconf.func_invk_lim))
-    {
-        if (!flag && (*bufc != bb_p))
-        {
-            print_sep(osep, buff, bufc);
-        }
-        mudstate.loop_token = split_token(&input_p, sep);
-        mudstate.loop_number++;
-        work_buf = alloc_lbuf("perform_iter.eval");
-        strcpy(work_buf, exprstr); /* we might nibble this */
-        str = work_buf;
-        if (!flag)
-        {
-            TinyExec(buff, bufc, 0, player, cause,
-                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-        }
-        else
-        {
-            dp = result = alloc_lbuf("perform_iter.out");
-            TinyExec(result, &dp, 0, player, cause,
-                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-            *dp = '\0';
-            notify(cause, result);
-            free_lbuf(result);
-        }
-        free_lbuf(work_buf);
-    }
-    
-    free_lbuf(list_str);
-    mudstate.loop_token = save_token;
-    mudstate.loop_number = save_num;
-    mudstate.in_loop--;
-}
-
-FUNCTION(fun_iter)
-{
-    char sep, osep;
-    
-    evarargs_preamble("ITER", 2, 4);
-    perform_iter(buff, bufc, player, cause, fargs[0], fargs[1],
-        cargs, ncargs, sep, osep, 0);
-}
-
-FUNCTION(fun_list)
-{
-    char sep;
-    varargs_preamble("LIST", 3);
-    perform_iter(buff, bufc, player, cause, fargs[0], fargs[1],
-        cargs, ncargs, sep, ' ', 1);
-}
-#endif
 
 /*
  * ---------------------------------------------------------------------------
@@ -5233,9 +5033,9 @@ FUNCTION(fun_map)
     dbref aowner, thing;
     int aflags, anum, first;
     ATTR *ap;
-    char *atext, *objstring, *str, *cp, *atextbuf, sep;
+    char *atext, *objstring, *str, *cp, *atextbuf, sep, osep;
 
-    varargs_preamble("MAP", 3);
+    svarargs_preamble("MAP", 4);
 
     /*
      * Two possibilities for the second arg: <obj>/<attr> and <attr>. 
@@ -5278,7 +5078,9 @@ FUNCTION(fun_map)
     first = 1;
     while (cp) {
         if (!first)
-            safe_chr(sep, buff, bufc);
+        {
+            print_sep(osep, buff, bufc);
+        }
         first = 0;
         objstring = split_token(&cp, sep);
         StringCopy(atextbuf, atext);
@@ -6424,7 +6226,7 @@ FUN flist[] =
     {"ISNUM",    fun_isnum,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISUB",     fun_isub,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ISWORD",   fun_isword,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ITER",     fun_iter,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
+    {"ITER",     fun_iter,     MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
     {"ITEMS",    fun_items,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"LAST",     fun_last,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"LATTR",    fun_lattr,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
@@ -6451,7 +6253,7 @@ FUN flist[] =
     {"LWHO",     fun_lwho,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"MAIL",     fun_mail,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"MAILFROM", fun_mailfrom, MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"MAP",      fun_map,      MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"MAP",      fun_map,      MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"MATCH",    fun_match,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"MATCHALL", fun_matchall, MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"MAX",      fun_max,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
