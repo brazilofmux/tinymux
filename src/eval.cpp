@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.9 2000-09-25 07:51:03 sdennis Exp $
+// $Id: eval.cpp,v 1.10 2000-10-04 06:42:00 sdennis Exp $
 //
 
 // MUX 2.0
@@ -1893,7 +1893,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
         // ANSI_NORMAL is guaranteed to be written on the end.
         //
         int nVisualWidth;
-        int nLen = ANSI_TruncateToField(buff, sizeof(TinyExec_scratch), TinyExec_scratch, sizeof(TinyExec_scratch), &nVisualWidth, FALSE);
+        int nLen = ANSI_TruncateToField(buff, sizeof(TinyExec_scratch), TinyExec_scratch, sizeof(TinyExec_scratch), &nVisualWidth, ANSI_ENDGOAL_NORMAL);
         memcpy(buff, TinyExec_scratch, nLen+1);
         *bufc = buff + nLen;
     }

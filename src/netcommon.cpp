@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.21 2000-09-18 18:26:24 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.22 2000-10-04 06:41:58 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1342,7 +1342,7 @@ char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, BOOL *pbValidDoing)
                       szFittedDoing,
                       WIDTHOF_DOING_STRING,
                       &nVisualWidth,
-                      FALSE
+                      ANSI_ENDGOAL_NORMAL
                     );
     *pbValidDoing = TRUE;
     return szFittedDoing;

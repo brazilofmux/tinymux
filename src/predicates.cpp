@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.20 2000-09-17 21:31:20 sdennis Exp $
+// $Id: predicates.cpp,v 1.21 2000-10-04 06:41:58 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -420,7 +420,7 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
     // checks, this is what we will return as a result.
     //
     int nVisualWidth;
-    int nBuf = ANSI_TruncateToField(pName, sizeof(Buf), Buf, MBUF_SIZE, &nVisualWidth, 0);
+    int nBuf = ANSI_TruncateToField(pName, sizeof(Buf), Buf, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
 
     // Disallow pure ANSI names. There must be at least -something-
     // visible.

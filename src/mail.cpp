@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.12 2000-09-29 23:41:49 sdennis Exp $
+// $Id: mail.cpp,v 1.13 2000-10-04 06:41:59 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2951,7 +2951,7 @@ char *MakeCanonicalMailAliasDesc
                               szFittedMailAliasDesc,
                               WIDTHOF_MALIASDESC,
                               pnVisualWidth,
-                              FALSE
+                              ANSI_ENDGOAL_NORMAL
                              );
     *pbValidMailAliasDesc = TRUE;
     return szFittedMailAliasDesc;

@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.24 2000-10-01 20:30:21 sdennis Exp $
+// $Id: funceval.cpp,v 1.25 2000-10-04 06:42:00 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -101,7 +101,7 @@ FUNCTION(fun_ansi)
     //
     char Temp[LBUF_SIZE];
     int nVisualWidth;
-    int nLen = ANSI_TruncateToField(buff, LBUF_SIZE, Temp, sizeof(Temp), &nVisualWidth, FALSE);
+    int nLen = ANSI_TruncateToField(buff, LBUF_SIZE, Temp, sizeof(Temp), &nVisualWidth, ANSI_ENDGOAL_NORMAL);
     memcpy(buff, Temp, nLen+1);
     *bufc = buff + nLen;
 }
@@ -705,7 +705,7 @@ FUNCTION(fun_columns)
     {
         objstring = split_token(&cp, sep);
         int nVisualWidth;
-        int nLen = ANSI_TruncateToField(objstring, nBufferAvailable, *bufc, nWidth, &nVisualWidth, FALSE);
+        int nLen = ANSI_TruncateToField(objstring, nBufferAvailable, *bufc, nWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
         *bufc += nLen;
         nBufferAvailable -= nLen;
 
@@ -842,7 +842,7 @@ FUNCTION(fun_table)
         int nVisibleLength, nPaddingLength;
         int nStringLength =
             ANSI_TruncateToField( pCurrent, nBufferAvailable, *bufc,
-                                  nFieldWidth, &nVisibleLength, FALSE);
+                                  nFieldWidth, &nVisibleLength, ANSI_ENDGOAL_NORMAL);
 
         *bufc += nStringLength;
         nBufferAvailable -= nStringLength;
@@ -1117,7 +1117,7 @@ FUNCTION(fun_strtrunc)
     }
     int nVisualWidth;
     char buf[LBUF_SIZE+1];
-    ANSI_TruncateToField(fargs[0], LBUF_SIZE, buf, maxVisualWidth, &nVisualWidth, FALSE);
+    ANSI_TruncateToField(fargs[0], LBUF_SIZE, buf, maxVisualWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
     safe_str(buf, buff, bufc);
 }
 

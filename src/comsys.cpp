@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.16 2000-09-29 23:42:31 sdennis Exp $
+// * $Id: comsys.cpp,v 1.17 2000-10-04 06:42:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -38,7 +38,7 @@ char *RestrictTitleValue(char *pTitleRequest)
     //
     char NewTitle_ANSI[MAX_TITLE_LEN+1];
     int nVisualWidth;
-    int nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI), NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth, FALSE);
+    int nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI), NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth, ANSI_ENDGOAL_NORMAL);
     memcpy(pNewTitle, NewTitle_ANSI, nLen+1);
     return pNewTitle;
 }
@@ -1206,7 +1206,7 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
     if (!ch)
     {
         int nVisualWidth;
-        ANSI_TruncateToField(channel, sizeof(Buffer), Buffer, sizeof(Buffer), &nVisualWidth, FALSE);
+        ANSI_TruncateToField(channel, sizeof(Buffer), Buffer, sizeof(Buffer), &nVisualWidth, ANSI_ENDGOAL_NORMAL);
         raw_notify(player, tprintf("Channel %s does not exist yet.", Buffer));
         return;
     }

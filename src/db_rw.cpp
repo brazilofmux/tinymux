@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.9 2000-09-07 14:48:13 sdennis Exp $ 
+// $Id: db_rw.cpp,v 1.10 2000-10-04 06:42:01 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1732,7 +1732,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             p = getstring_noalloc(f, 0);
             buff = alloc_lbuf("dbread.s_Name");
-            len = ANSI_TruncateToField(p, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, 0);
+            len = ANSI_TruncateToField(p, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
             s_Name(i, buff);
             free_lbuf(buff);
 
@@ -1822,7 +1822,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             {
                 tstr = getstring_noalloc(f, read_new_strings);
                 buff = alloc_lbuf("dbread.s_Name");
-                len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, 0);
+                len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
                 s_Name(i, buff);
                 free_lbuf(buff);
 
@@ -1957,7 +1957,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                         else
                         {
                             buff = alloc_lbuf("dbread.s_Name");
-                            len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, 0);
+                            len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
                             s_Name(i, buff);
                             free_lbuf(buff);
 
@@ -1968,7 +1968,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     else
                     {
                         buff = alloc_lbuf("dbread.s_Name");
-                        len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, 0);
+                        len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
                         s_Name(i, buff);
                         free_lbuf(buff);
 

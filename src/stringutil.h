@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.13 2000-10-01 20:41:26 sdennis Exp $
+// $Id: stringutil.h,v 1.14 2000-10-04 06:41:58 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -71,37 +71,45 @@ typedef struct
 
 struct ANSI_In_Context
 {
-    ANSI_ColorState acsCurrent;
-    const char *pString;
-    int   nString;
-    BOOL  bSawNormal;
+    ANSI_ColorState m_acs;
+    const char     *m_p;
+    int             m_n;
+    BOOL            m_bSawNormal;
 };
 
 struct ANSI_Out_Context
 {
-    ANSI_ColorState acsPrevious;
-    ANSI_ColorState acsFinal;
-    BOOL  bNoBleed;
+    int             m_iEndGoal;
+    ANSI_ColorState m_acs;
+    BOOL            m_bDone; // some constraint was met.
+    char           *m_p;
+    int             m_n;
+    int             m_nMax;
+    int             m_vw;
+    int             m_vwMax;
 };
 
-void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, BOOL bNoBleed);
-void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, BOOL bNoBleed);
+#define ANSI_ENDGOAL_NORMAL  0
+#define ANSI_ENDGOAL_NOBLEED 1
+#define ANSI_ENDGOAL_LEAK    2
+
+void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, int iEndGoal);
+void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, char *pField, int nField, int vwMax, int iEndGoal);
 void ANSI_String_Skip(struct ANSI_In_Context *pacIn, int maxVisualWidth, int *pnVisualWidth);
-int ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, int nField, char *pField0, int maxVisualWidth, int *pnVisualWidth);
-int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, BOOL bNoBleed);
+void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, int nField, int vwMax);
+int ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, int *pnVisualWidth);
+int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, int iEndGoal);
 extern char *strip_ansi(const char *szString, unsigned int *pnString = 0);
 extern char *normal_to_white(const char *);
-extern char *   FDECL(munge_space, (char *));
-extern char *   FDECL(trim_spaces, (char *));
-extern char *   FDECL(grabto, (char **, char));
-extern int  FDECL(string_compare, (const char *, const char *));
-extern int  FDECL(string_prefix, (const char *, const char *));
-extern const char * FDECL(string_match, (const char * ,const char *));
-extern char *   FDECL(dollar_to_space, (const char *));
-extern char *   FDECL(replace_string, (const char *, const char *,
-            const char *));
-extern char *   FDECL(replace_string_inplace, (const char *,  const char *,
-            char *));
+extern char *munge_space(char *);
+extern char *trim_spaces(char *);
+extern char *grabto(char **, char);
+extern int  string_compare(const char *, const char *);
+extern int  string_prefix(const char *, const char *);
+extern const char * string_match(const char * ,const char *);
+extern char *dollar_to_space(const char *);
+extern char *replace_string(const char *, const char *, const char *);
+extern char *replace_string_inplace(const char *,  const char *, char *);
 extern int  FDECL(prefix_match, (const char *, const char *));
 extern int  FDECL(minmatch, (char *, char *, int));
 extern char *StringCloneLen(const char *str, unsigned int nStr);

@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.32 2000-10-01 20:41:26 sdennis Exp $
+// $Id: functions.cpp,v 1.33 2000-10-04 06:41:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1538,17 +1538,19 @@ FUNCTION(fun_mid)
     // numbers which may -still- not refer to valid data in the string.
     //
     struct ANSI_In_Context aic;
-    struct ANSI_Out_Context aoc;
-    ANSI_String_In_Init(&aic, fargs[0], FALSE);
-    ANSI_String_Out_Init(&aoc, FALSE);
+    ANSI_String_In_Init(&aic, fargs[0], ANSI_ENDGOAL_NORMAL);
     int nDone;
     ANSI_String_Skip(&aic, iPosition0, &nDone);
     if (nDone < iPosition0)
     {
         return;
     }
+
+    struct ANSI_Out_Context aoc;
     int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    int nSize = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, nLength, &nDone);
+    ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable, nLength, ANSI_ENDGOAL_NORMAL);
+    ANSI_String_Copy(&aoc, &aic, nBufferAvailable, nLength);
+    int nSize = ANSI_String_Finalize(&aoc, &nDone);
     *bufc += nSize;
 }
 
@@ -5881,16 +5883,6 @@ FUNCTION(fun_rjust)
     safe_str(fargs[0], buff, bufc);
 }
 
-// TODO:
-//
-//  1) bNoBleed needs to be turned into an ANSI ending goal so that
-//     the normal or nobleed ending is not placed on the end of the
-//     pad string,
-//
-//  2) The speed needs to be revisited so that perhaps if ANSI is not
-//     involved, an ANSI_String_Copy can be turned into a straight
-//     memcpy.
-//
 FUNCTION(fun_center)
 {
     if (!fn_range_check("CENTER", nfargs, 2, 3, buff, bufc))
@@ -5922,9 +5914,10 @@ FUNCTION(fun_center)
     if (nfargs == 3 && *fargs[2])
     {
         char *p = RemoveSetOfCharacters(fargs[2], "\r\n\t");
-        ANSI_String_In_Init(&aic, p, FALSE);
-        ANSI_String_Out_Init(&aoc, FALSE);
-        nPad = ANSI_String_Copy(&aoc, &aic, sizeof(aPad), aPad, SBUF_SIZE, &vwPad);
+        ANSI_String_In_Init(&aic, p, ANSI_ENDGOAL_NORMAL);
+        ANSI_String_Out_Init(&aoc, aPad, sizeof(aPad), sizeof(aPad), ANSI_ENDGOAL_LEAK);
+        ANSI_String_Copy(&aoc, &aic, sizeof(aPad), sizeof(aPad));
+        nPad = ANSI_String_Finalize(&aoc, &vwPad);
     }
     if (nPad <= 0)
     {
@@ -5937,7 +5930,7 @@ FUNCTION(fun_center)
     int  vwStr;
     char aStr[LBUF_SIZE];
     int nStr = ANSI_TruncateToField(fargs[0], sizeof(aStr), aStr,
-        width, &vwStr, FALSE);
+        width, &vwStr, ANSI_ENDGOAL_NORMAL);
 
     // If the visual width of the text fits exactly into the field,
     // then we are done. ANSI_TruncateToField insures that it's
@@ -5984,72 +5977,63 @@ FUNCTION(fun_center)
     int nTrailFull      = vwTrailing / vwPad;
     int vwTrailPartial1 = vwTrailing - nTrailFull * vwPad;
 
-    ANSI_String_Out_Init(&aoc, FALSE);
-    int    vwDone;
-
     int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable,
+        LBUF_SIZE-1, ANSI_ENDGOAL_NORMAL);
+    int    vwDone;
 
     // Output the runs of full leading padding.
     //
     int i, n;
     for (i = 0; i < nLeadFull; i++)
     {
-        ANSI_String_In_Init(&aic, aPad, FALSE);
-        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, vwPad, &vwDone);
-        *bufc += n;
-        nBufferAvailable -= n;
+        ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
+        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, vwPad);
     }
 
     // Output the partial leading padding segment.
     //
     if (vwLeadPartial)
     {
-        ANSI_String_In_Init(&aic, aPad, FALSE);
-        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, vwLeadPartial, &vwDone);
-        *bufc += n;
-        nBufferAvailable -= n;
+        ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
+        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, vwLeadPartial);
     }
 
     // Output the main string to be centered.
     //
     if (nStr)
     {
-        ANSI_String_In_Init(&aic, aStr, FALSE);
-        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, LBUF_SIZE-1, &vwDone);
-        *bufc += n;
-        nBufferAvailable -= n;
+        ANSI_String_In_Init(&aic, aStr, ANSI_ENDGOAL_NORMAL);
+        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, LBUF_SIZE-1);
     }
 
     // Output the first partial trailing padding segment.
     //
     if (vwTrailPartial0)
     {
-        ANSI_String_In_Init(&aic, aPad, FALSE);
+        ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
         ANSI_String_Skip(&aic, vwTrailSkip0, &vwDone);
-        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, LBUF_SIZE-1, &vwDone);
-        *bufc += n;
-        nBufferAvailable -= n;
+        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, LBUF_SIZE-1);
     }
 
     // Output the runs of full trailing padding.
     //
     for (i = 0; i < nTrailFull; i++)
     {
-        ANSI_String_In_Init(&aic, aPad, FALSE);
-        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, vwPad, &vwDone);
-        *bufc += n;
-        nBufferAvailable -= n;
+        ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
+        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, vwPad);
     }
 
     // Output the second partial trailing padding segment.
     //
     if (vwTrailPartial1)
     {
-        ANSI_String_In_Init(&aic, aPad, FALSE);
-        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, vwTrailPartial1, &vwDone);
-        *bufc += n;
-        nBufferAvailable -= n;
+        ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
+        ANSI_String_Copy(&aoc, &aic, nBufferAvailable, vwTrailPartial1);
     }
+
+    n = ANSI_String_Finalize(&aoc, &vwDone);
+    *bufc += n;
 }
 
 /*
