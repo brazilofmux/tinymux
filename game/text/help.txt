@@ -3769,6 +3769,7 @@ ANSI CODES
 
         f - flash                       i - inverse
         h - hilite                      n - normal
+        u - underline
 
         x - black foreground            X - black background
         r - red foreground              R - red background
@@ -5760,10 +5761,9 @@ FLAGS()
 
   FUNCTION: flags(<object>)
 
-  Flags returns a string consisting of the flags attached to the
-  object. The string is, however, just one word.  Note that @switch
-  is case-INsensitive.  i.e. p=P as far as it is concerned.  I wish
-  that P=NP....
+  Flags() returns a string of letters as a single word.  Each letter in this
+  word represents a flag associated with <object>.  Some flags are not
+  revealed due to visibility and permissions.
 
   Related Topics: andflags(), orflags()
 
