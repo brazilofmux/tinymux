@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.65 2002-05-03 03:10:47 sdennis Exp $
+// $Id: netcommon.cpp,v 1.66 2002-05-03 03:12:24 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -666,7 +666,8 @@ static void announce_connect(dbref player, DESC *d)
         {
             do_comconnect(player);
         }
-        if (Hidden(player))
+        if (  Hidden(player)
+           && Can_Hide(player))
         {
             pMonitorAnnounceFmt = "GAME: %s has DARK-connected.";
         }
