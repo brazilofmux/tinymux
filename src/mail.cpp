@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.16 2000-10-07 02:28:45 sdennis Exp $
+// $Id: mail.cpp,v 1.17 2000-10-07 05:12:26 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1391,33 +1391,133 @@ void do_mail_debug(dbref player, char *action, char *victim)
     }
     else if (string_prefix("sanity", action))
     {
+        int *ai = (int *)MEMALLOC(mudstate.mail_db_top * sizeof(int));
+        ISOUTOFMEMORY(ai);
+        memset(ai, 0, mudstate.mail_db_top * sizeof(int));
         MAIL_ITER_ALL(mp, thing)
         {
+            BOOL bGoodReference;
+            if (0 <= mp->number && mp->number < mudstate.mail_db_top)
+            {
+                ai[mp->number]++;
+                bGoodReference = TRUE;
+            }
+            else
+            {
+                bGoodReference = FALSE;
+            }
             if (!Good_obj(mp->to))
             {
-                notify(player, tprintf("Bad object #%d has mail.", mp->to));
+                if (bGoodReference)
+                {
+                    notify(player, tprintf("Bad object #%d has mail.", mp->to));
+                }
+                else
+                {
+                    notify(player, tprintf("Bad object #%d has mail which refers to a non-existant mailbag item.", mp->to));
+                }
             }
             else if (!isPlayer(mp->to))
             {
-                notify(player, tprintf("%s(#%d) has mail but is not a player.",
+                if (bGoodReference)
+                {
+                    notify(player, tprintf("%s(#%d) has mail but is not a player.",
                              Name(mp->to), mp->to));
+                }
+                else
+                {
+                    notify(player, tprintf("%s(#%d) is not a player, but has mail which refers to a non-existant mailbag item.",
+                             Name(mp->to), mp->to));
+                }
+            }
+            else if (!bGoodReference)
+            {
+                notify(player, tprintf("%s(#%d) has mail which refers to a non-existant mailbag item.", Name(mp->to), mp->to));
             }
         }
+
+        // Check ref counts.
+        //
+        if (mudstate.mail_list)
+        {
+            int i;
+            int nCountHigher = 0;
+            int nCountLower  = 0;
+            for (i = 0; i < mudstate.mail_db_top; i++)
+            {
+                if (mudstate.mail_list[i].m_nRefs < ai[i])
+                {
+                    nCountLower++;
+                }
+                else if (mudstate.mail_list[i].m_nRefs > ai[i])
+                {
+                    nCountHigher++;
+                }
+            }
+            if (nCountLower)
+            {
+                notify(player, "Some mailbag items are referred to more often than the mailbag item indicates.");
+            }
+            if (nCountHigher)
+            {
+                notify(player, "Some mailbag items are referred to less often than the mailbag item indicates.");
+            }
+        }
+        MEMFREE(ai);
         notify(player, "Mail sanity check completed.");
     }
     else if (string_prefix("fix", action))
     {
+        // First, we should fixup the reference counts.
+        //
+        if (mudstate.mail_list)
+        {
+            notify(player, tprintf("Re-counting mailbag reference counts."));
+            int *ai = (int *)MEMALLOC(mudstate.mail_db_top * sizeof(int));
+            ISOUTOFMEMORY(ai);
+            memset(ai, 0, mudstate.mail_db_top * sizeof(int));
+
+            MAIL_ITER_ALL(mp, thing)
+            {
+                if (0 <= mp->number && mp->number < mudstate.mail_db_top)
+                {
+                    ai[mp->number]++;
+                }
+                else
+                {
+                    mp->number = NOTHING;
+                }
+            }
+            int i;
+            int nCountWrong = 0;
+            for (i = 0; i < mudstate.mail_db_top; i++)
+            {
+                if (mudstate.mail_list[i].m_nRefs != ai[i])
+                {
+                    mudstate.mail_list[i].m_nRefs = ai[i];
+                    nCountWrong++;
+                }
+            }
+            if (nCountWrong)
+            {
+                notify(player, "Some reference counts were wrong [FIXED].");
+            }
+            MEMFREE(ai);
+        }
+
+        notify(player, tprintf("Removing @mail that is associated with non-players."));
+
+        // Now, remove all mail to non-good or non-players, or mail that
+        // points to non-existant mailbag items.
+        //
         MAIL_ITER_SAFE(mp, thing, nextp)
         {
-            if (!Good_obj(mp->to) || !isPlayer(mp->to))
+            if (!Good_obj(mp->to) || !isPlayer(mp->to) || mp->number == NOTHING)
             {
+                // Delete this item.
+                //
                 notify(player, tprintf("Fixing mail for #%d.", mp->to));
-                /*
-                 * Delete this one 
-                 */
-                /*
-                 * head and tail of the list are * special 
-                 */
+
                 if (mp->prev == NULL)
                 {
                     if (mp->next == NULL)
@@ -1434,20 +1534,12 @@ void do_mail_debug(dbref player, char *action, char *victim)
                     mp->prev->next = NULL;
                 }
 
-                /*
-                 * relink the list 
-                 */
                 if (mp->prev != NULL)
                     mp->prev->next = mp->next;
                 if (mp->next != NULL)
                     mp->next->prev = mp->prev;
-                /*
-                 * save the pointer 
-                 */
                 nextp = mp->next;
-                /*
-                 * then wipe 
-                 */
+
                 MEMFREE((char *)mp->subject);
                 MessageReferenceDec(mp->number);
                 MEMFREE((char *)mp->time);
