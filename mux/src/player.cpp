@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.5 2003-02-18 17:41:39 jake Exp $
+// $Id: player.cpp,v 1.6 2003-07-22 04:10:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -14,18 +14,7 @@
 #include "interface.h"
 #include "powers.h"
 #include "svdreport.h"
-
-// The following is sometime useful if you don't have access to a crypt
-// library. It does however make your flatfiles password incompatible with
-// Unix flatfiles, but there are ways of getting around that as well.
-//
-#if 0
-char *crypt(const char *inptr, const char *inkey)
-{
-    return (char *)inptr;
-}
-#endif
-
+#include "sha1.h"
 
 #define NUM_GOOD    4   // # of successful logins to save data for.
 #define NUM_BAD     3   // # of failed logins to save data for.
@@ -210,35 +199,113 @@ void record_login
     free_lbuf(atrbuf);
 }
 
+const char *GenerateSalt(void)
+{
+    static char szSalt[12];
+    INT64 iSalt = (((INT64)RandomINT32(0, INT32_MAX_VALUE)) << 32)
+                | (((INT64)RandomINT32(0, INT32_MAX_VALUE)) <<  1)
+                | (((INT64)RandomINT32(0, 1))                    );
+    mux_Pack(iSalt, 64, szSalt);
+    return szSalt;
+}
+
+const char *szSHA1Prefix = "|SHA1|";
+size_t     nSHA1Prefix = strlen(szSHA1Prefix);
+
+char *mux_crypt(const char *szPassword, const char *szSalt)
+{
+    SHA1_CONTEXT shac;
+    static char buf[80]; // 74 plus 6 safety.
+    int  i;
+
+    SHA1_Init(&shac);
+    SHA1_Compute(&shac, strlen(szSalt), szSalt);
+    SHA1_Compute(&shac, strlen(szPassword), szPassword);
+    SHA1_Final(&shac);
+
+    sprintf(buf, "%s%s|", szSHA1Prefix, szSalt);
+    for (i = 0; i <= 4; i++)
+    {
+        char szPart[12];
+        mux_Pack(shac.H[i], 64, szPart);
+        strcat(buf, szPart);
+    }
+    return buf;
+}
+
 /* ---------------------------------------------------------------------------
  * check_pass: Test a password to see if it is correct.
  */
 
-bool check_pass(dbref player, const char *password)
+bool check_pass(dbref player, const char *pPassword)
 {
+    bool  bValidPass = false;
+    bool  bUpdatePass = false;
+
     int   aflags;
     dbref aowner;
-    char *target = atr_get(player, A_PASS, &aowner, &aflags);
-    if (  *target
-       && strcmp(target, password)
-       && strcmp(crypt(password, "XX"), target))
+    char *pTarget = atr_get(player, A_PASS, &aowner, &aflags);
+    if (*pTarget)
     {
-        free_lbuf(target);
-        return false;
+        size_t nTarget = strlen(pTarget);
+        size_t nPassword = strlen(pPassword);
+        if (  nSHA1Prefix <= nTarget
+           && memcmp(szSHA1Prefix, pTarget, nSHA1Prefix) == 0)
+        {
+            // SHA-1 password.
+            //
+            char *pSalt = pTarget + nSHA1Prefix;
+            char *pHash;
+            if (  *pSalt
+               && (pHash = strchr(pSalt + 1, '|')))
+            {
+                size_t nSalt = pHash - pSalt;
+                pHash++;
+
+                if (nSalt <= 11)
+                {
+                    char szSalt[12];
+                    memcpy(szSalt, pSalt, nSalt);
+                    szSalt[nSalt] = '\0';
+
+                    if (strcmp(mux_crypt(pPassword, szSalt), pTarget) == 0)
+                    {
+                        bValidPass = true;
+                    }
+                }
+            }
+        }
+        else if (  nTarget == 13
+                && memcmp("XX", pTarget, 2) == 0)
+        {
+            // Crypt-based password.
+            //
+            if (strcmp(crypt(pPassword, "XX"), pTarget) == 0)
+            {
+                bValidPass = true;
+                bUpdatePass = true;
+            }
+        }
+        else
+        {
+            // Clear-text password.
+            //
+            if (strcmp(pTarget, pPassword) == 0)
+            {
+                bValidPass = true;
+                bUpdatePass = true;
+            }
+        }
     }
-    free_lbuf(target);
 
-
-    // This is needed to prevent entering the raw encrypted password from
-    // working.  Do it better if you like, but it's needed.
-    //
-    if (  strlen(password) == 13
-       && password[0] == 'X'
-       && password[1] == 'X')
+    if (bUpdatePass)
     {
-        return false;
+        // Upgrade password to SHA-1.
+        //
+        atr_add_raw(player, A_PASS, mux_crypt(pPassword, GenerateSalt()));
     }
-    return true;
+    free_lbuf(pTarget);
+    return bValidPass;
 }
 
 /* ---------------------------------------------------------------------------
