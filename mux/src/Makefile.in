@@ -59,16 +59,6 @@ endif
 COM_SRC	=
 COM_OBJ	=
 
-# Everything needed to use the database in standalone mode.
-SA_SRC	= sa-db.cpp sa-db_rw.cpp sa-boolexp.cpp sa-unparse.cpp \
-	  sa-pred.cpp sa-stringu.cpp sa-conf.cpp sa-log.cpp sa-object.cpp \
-	  sa-vattr.cpp sa-htab.cpp sa-player_c.cpp sa-flags.cpp \
-	  sa-svdhash.cpp sa-svdrand.cpp sa-attrcache.cpp sa-timeutil.cpp
-SA_OBJ	= sa-db.o sa-db_rw.o sa-boolexp.o sa-unparse.o \
-	  sa-pred.o sa-stringu.o sa-conf.o sa-log.o sa-object.o \
-	  sa-vattr.o sa-htab.o sa-player_c.o sa-flags.o sa-svdhash.o \
-	  sa-svdrand.o sa-attrcache.o sa-timeutil.o
-
 # Distribution source files
 D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
 	comsys.cpp conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp eval.cpp \
@@ -144,7 +134,7 @@ NET_O	= bsd.o
 
 # Auxiliary source files: only used by offline utilities.
 #
-AUX_SRC	= dbconvert.cpp unsplit.cpp
+AUX_SRC	= unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
 ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(REALMS)
@@ -165,11 +155,11 @@ AUXIL	= $(A_INST) $(A_TXT) $(A_SH) $(A_CONF) $(A_MISC) $(A_RT) $(A_VMS) \
 
 # Compiliation source files.
 #
-ALLSRC	= $(D_SRC) $(VER_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC)
+ALLSRC	= $(D_SRC) $(VER_SRC) $(COM_SRC) $(AUX_SRC) $(LIB_SRC)
 SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S)
 OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O)
 
-OUT	= netmux dbconvert
+OUT	= netmux 
 
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
@@ -180,8 +170,8 @@ all: slave $(OUT) links
 TAGS: *.cpp *.h
 	etags *.cpp *.h
 
-links: dbconvert netmux slave
-	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/dbconvert dbconvert
+links: netmux slave
+	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/netmux dbconvert
 	cd ../game/bin ; rm -f netmux ; ln -s ../../src/netmux netmux
 	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
 
@@ -191,23 +181,14 @@ slave: slave.o
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
 
-dbconvert: _build.o dbconvert.o $(SA_OBJ) $(ALLOC_O) $(LIBOBJS)
-	$(CXX) $(ALLCXXFLAGS) -o dbconvert _build.o dbconvert.o $(SA_OBJ) $(COM_OBJ) $(ALLOC_O) $(LIBS) $(MORELIBS) $(LIBOBJS)
-
 netmux: $(OBJ) $(LIBOBJS) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
 	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(LIBOBJS) $(VER_OBJ) $(LIBS) $(MORELIBS)
 
-cvs:
-	rm -f buildnum.data
-	echo "0" > buildnum.data
-
 depend: $(ALLSRC) unsplit
 	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
-
-index: help.indx news.indx wizhelp.indx
 
 verify:
 	runtest --tool mux --src ./testsuite

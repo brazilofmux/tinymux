@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.3 2003-01-23 01:52:13 sdennis Exp $
+// $Id: game.cpp,v 1.4 2003-01-23 02:33:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -246,7 +246,8 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
         if (  (  (aflags & AF_REGEXP)
               && regexp_match(buff + 1, str,
                      ((aflags & AF_CASE) ? 0 : PCRE_CASELESS), args, NUM_ENV_VARS))
-           || wild(buff + 1, str, args, NUM_ENV_VARS))
+           || (  (aflags & AF_REGEXP) == 0
+              && wild(buff + 1, str, args, NUM_ENV_VARS)))
         {
             match = 1;
             CLinearTimeAbsolute lta;
@@ -1886,7 +1887,6 @@ void dbconvert(int argc, char *argv[])
 
     SeedRandomNumberGenerator();
 
-    mudstate.bStandAlone = TRUE;
     cf_init();
 
     // Decide what conversions to do and how to format the output file.
@@ -2021,18 +2021,20 @@ long DebugTotalMemory = 0;
 #define CLI_DO_MINIMAL     CLI_USER+1
 #define CLI_DO_VERSION     CLI_USER+2
 #define CLI_DO_USAGE       CLI_USER+3
+#define CLI_DO_STANDALONE  CLI_USER+4
 
 BOOL bMinDB = FALSE;
 BOOL bSyntaxError = FALSE;
 char *conffile = NULL;
 BOOL bVersion = FALSE;
 
-CLI_OptionEntry OptionTable[4] =
+CLI_OptionEntry OptionTable[5] =
 {
     { "c", CLI_REQUIRED, CLI_DO_CONFIG_FILE },
     { "s", CLI_NONE,     CLI_DO_MINIMAL     },
     { "v", CLI_NONE,     CLI_DO_VERSION     },
-    { "h", CLI_NONE,     CLI_DO_USAGE       }
+    { "h", CLI_NONE,     CLI_DO_USAGE       },
+    { "d", CLI_NONE,     CLI_DO_STANDALONE  }
 };
 
 void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
@@ -2053,6 +2055,10 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
             bVersion = TRUE;
             break;
 
+        case CLI_DO_STANDALONE:
+            mudstate.bStandAlone = TRUE;
+            break;
+
         case CLI_DO_USAGE:
         default:
             bSyntaxError = TRUE;
@@ -2065,15 +2071,44 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
     }
 }
 
+#ifdef WIN32
+#define DBCONVERT_NAME "dbconvert.exe"
+#else
+#define DBCONVERT_NAME "dbconvert"
+#endif
+
 int DCL_CDECL main(int argc, char *argv[])
 {
     build_version();
+
+    // Look for dbconvert[.exe] in the program name.
+    //
+    size_t nProg = strlen(argv[0]);
+    const char *pProg = argv[0] + nProg - 1;
+    while (  nProg
+          && (  Tiny_IsAlpha[(unsigned char)*pProg]
+             || *pProg == '.'))
+    {
+        nProg--;
+        pProg--;
+    }
+    pProg++;
+    mudstate.bStandAlone = FALSE;
+    fprintf(stderr, "%s\n", pProg);
+    if (mux_stricmp(pProg, DBCONVERT_NAME) == 0)
+    {
+        mudstate.bStandAlone = TRUE;
+    }
 
     // Parse the command line
     //
     CLI_Process(argc, argv, OptionTable,
         sizeof(OptionTable)/sizeof(CLI_OptionEntry), CLI_CallBack);
-    if (bVersion)
+    if (mudstate.bStandAlone)
+    {
+        dbconvert(argc, argv);
+    }
+    else if (bVersion)
     {
         fprintf(stderr, "Version: %s" ENDLINE, mudstate.version);
         return 1;
@@ -2082,11 +2117,12 @@ int DCL_CDECL main(int argc, char *argv[])
        || conffile == NULL)
     {
         fprintf(stderr, "Version: %s" ENDLINE, mudstate.version);
-        fprintf(stderr, "Usage: %s [-h] [-v] [-s] [-c filename]" ENDLINE, argv[0]);
-        fprintf(stderr, "  -v  Display version string." ENDLINE);
-        fprintf(stderr, "  -s  Start with a minimal database." ENDLINE);
+        fprintf(stderr, "Usage: %s [-c filename] [-d] [-h] [-s] [-v]" ENDLINE, argv[0]);
         fprintf(stderr, "  -c  Specify configuration file." ENDLINE);
+        fprintf(stderr, "  -d  Run in standalone db-convertor mode." ENDLINE);
         fprintf(stderr, "  -h  Display this help." ENDLINE);
+        fprintf(stderr, "  -s  Start with a minimal database." ENDLINE);
+        fprintf(stderr, "  -v  Display version string." ENDLINE);
         return 1;
     }
 
