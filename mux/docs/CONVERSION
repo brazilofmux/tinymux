@@ -1,35 +1,35 @@
-TinyMUX 2.0: CONVERSION
-Last Update: April 2000
+TinyMUX 2.1: CONVERSION
+Last Update: September 2003
 
 Conversions from Other Database Formats:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-TinyMUX 2.0 has been proven to read the following database formats:
-   TinyMUX 1.4, 1.5, 1.6 (not beta)
+TinyMUX 2.1 has been proven to read the following database formats:
+   TinyMUX 1.4, 1.5, 1.6 (not beta), 2.0
    TinyMUX(Win32Beta) 1.5, 1.6, 2.0
-   TinyMUSH 2.0 (all versions)
-   TinyMUSH 2.2.2, 2.2.3, 2.2.4 release version (not beta)
-   TinyMUSH 2.2.4U1 release version (not beta)
 
 Upgrading An Existing TinyMUX:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  - @shutdown the game. Make a flatfile of your DB and move it to a safe 
    location.
  
- - Compile MUX 2.0 per INSTALL.  Note that MUX 2.0 untars into a 
+ - Compile MUX 2.1 per INSTALL.  Note that MUX 2.1 untars into a 
    seperate directory.
  
- - Copy the flatfile to game/data in the MUX 2.0 directory and use 
+ - Copy the flatfile to game/data in the MUX 2.1 directory and use 
    db_load to convert the database to binary.
  
  - Copy .txt files to text/ 
  
  - Copy existing mux.config
  
- - **Important** Your old GAMENAME.conf file will not work under MUX 2.0.
-   To make a proper file, you must edit the GAMENAME.conf in the MUX 2.0 
+ - **Important** Your old GAMENAME.conf file will not work under MUX 2.1
+   if you are converting from a version prior to MUX 2.0.
+
+   To make a proper file, you must edit the GAMENAME.conf in the MUX 2.1 
    game/ and add in the config parameters.
-   - You can save a little time by 'cat oldfile >> newfile' and using 
-     the editor to remove unneeded lines.
+
+ - You can save a little time by 'cat oldfile >> newfile' and using 
+   the editor to remove unneeded lines.
  
  - Copy any existing comsys.db and mail.db files to game/data.  If your 
    game comes up and the mail and/or comsys are not working, make sure 
@@ -38,54 +38,28 @@ Upgrading An Existing TinyMUX:
  - Restart the game.
 
 
-Converting From TinyMUSH 2.0 and TinyMUSH 2.2 to MUX 2.0:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-MUX 2.0 is capable of doing straight conversions of listed TinyMUSH 
-versions.  No outside conversion scripts are needed.
-
- - @shutdown the game and make a flatfile.
- 
- - Compile MUX 2.0 per INSTALL.  Note that MUX 2.0 untars into a 
-   seperate directory.
- 
- - Copy the flatfile to game/data in the MUX 2.0 directory and use 
-   db_load to convert the database to binary.
- 
- - Copy .txt files to text/ 
- 
- - Copy existing mush.config information into mux.config and put this 
-   into game/.
- 
- - Copy GAMENAME.conf to game/
-        - Be sure to make any pertinent changes to configuration options.  
-          They are different between TinyMUSH and TinyMUX.  wizhelp.txt 
-          should become a close personal friend while you learn them.
- 
- - Restart the game.
-
 Changes to dbconvert:
 ~~~~~~~~~~~~~~~~~~~~
- - One of the major and important changes to MUX 2.0 is the use of CHash 
-   in the place of GDBM.  You will notice the changes primarily in the way 
-   dbconvert and the db_unload and db_load scripts work.  
+ - One of the major and important changes since MUX 2.0 is the use of CHash
+   in the place of GDBM.  You will notice the changes primarily in the way
+   dbconvert and the db_unload and db_load scripts work.
  
- - dbconvert is the means by which the binary game data is converted to 
-   flatfile format and back again.  The db_load and db_unload scripts 
-   simplify the process for the user. 
+ - dbconvert is the means by which the binary game data is converted to
+   flatfile format and back again.  The db_load and db_unload scripts
+   simplify the process for the user.
  
  - The syntax of the scripts is:
    
    - './db_load netmux netmux.flat netmux.db'
      
-     This converts flatfiled database to binary for use by the server and 
+     This converts flatfiled database to binary for use by the server and
      would be done with dbconvert thus:
      
      ../bin/dbconvert netmux X < netmux.flat > netmux.db
-   
+
    - './db_unload netmux netmux.db.new netmux.flat'
-     
-     This converts binary data to flatfile for would be done with dbconvert 
+
+     This converts binary data to flatfile for would be done with dbconvert
      thus:
-     
+
      ../bin/dbconvert netmux x < netmux.db.new > netmux.flat
