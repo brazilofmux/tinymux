@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.22 2001-02-09 09:29:41 sdennis Exp $
+// $Id: mail.cpp,v 1.23 2001-02-09 10:06:09 zenty Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -4053,7 +4053,12 @@ void do_expmail_stop(dbref player, int flags)
     mailsub = atr_get(player, A_MAILSUB, &aowner, &aflags);
     mailflags = atr_get(player, A_MAILFLAGS, &aowner, &aflags);
 
-    if (!*tolist || !*mailmsg || !(Flags2(player) & PLAYER_MAILS))
+    if (!*mailmsg) {
+      notify(player, "MAIL: No message to send. Use - to add a message.");
+      return;
+    }
+
+    if (!*tolist || !(Flags2(player) & PLAYER_MAILS))
     {
         notify(player, "MAIL: No such message to send.");
         free_lbuf(tolist);
