@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.32 2002-07-19 11:18:28 jake Exp $
+// $Id: predicates.cpp,v 1.33 2002-07-21 03:39:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1928,7 +1928,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             TinyExec(buff, &bp, thing, player, player,
                 EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
             *bp = '\0';
-            if (what == A_HTDESC)
+            if (  (aflags & AF_HTML)
+               && Html(player))
             {
                 safe_str("\r\n", buff, &bp);
                 *bp = '\0';

@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.22 2002-07-20 13:11:18 jake Exp $
+// $Id: netcommon.cpp,v 1.23 2002-07-21 03:38:35 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -127,12 +127,14 @@ void raw_notify_html(dbref player, const char *msg)
         return;
     }
 
-    if (mudstate.inpipe && (player == mudstate.poutobj))
+    if (  mudstate.inpipe
+       && player == mudstate.poutobj)
     {
         safe_str(msg, mudstate.poutnew, &mudstate.poutbufc);
         return;
     }
-    if (!Connected(player))
+    if (  !Connected(player)
+       || !Html(player))
     {
         return;
     }
@@ -1286,8 +1288,11 @@ static void dump_users(DESC *e, char *match, int key)
             match = NULL;
     }
 
-    if (e->flags & DS_PUEBLOCLIENT)
+    if (  (e->flags & DS_PUEBLOCLIENT)
+       && Html(e->player))
+    {
         queue_string(e, "<pre>");
+    }
 
     buf = alloc_mbuf("dump_users");
     if (key == CMD_SESSION)
@@ -1462,9 +1467,11 @@ static void dump_users(DESC *e, char *match, int key)
         (mudconf.max_players == -1) ? "no" : Tiny_ltoa_t(mudconf.max_players));
     queue_string(e, buf);
 
-    if (e->flags & DS_PUEBLOCLIENT)
+    if (  (e->flags & DS_PUEBLOCLIENT)
+       && Html(e->player))
+    {
         queue_string(e, "</pre>");
-
+    }
     free_mbuf(buf);
 }
 

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.43 2002-07-20 11:12:22 jake Exp $
+// $Id: command.cpp,v 1.44 2002-07-21 03:37:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2383,6 +2383,7 @@ NAMETAB attraccess_nametab[] =
 NAMETAB indiv_attraccess_nametab[] =
 {
     {"hidden",              1,  CA_WIZARD,  AF_MDARK},
+    {"html",                2,  CA_PUBLIC,  AF_HTML},
     {"no_command",          4,  CA_PUBLIC,  AF_NOPROG},
     {"no_inherit",          4,  CA_PUBLIC,  AF_PRIVATE},
     {"regexp",              1,  CA_PUBLIC,  AF_REGEXP},

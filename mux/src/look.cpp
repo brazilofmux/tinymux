@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.17 2002-07-17 03:46:30 sdennis Exp $
+// $Id: look.cpp,v 1.18 2002-07-21 03:37:55 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -554,7 +554,6 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
                     //
                     // chop off first exit alias to display
                     //
-
                     if (buff != e)
                     {
                         safe_str("  ", buff, &e);
@@ -588,9 +587,17 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
 
     if (!(Transparent(loc)))
     {
-        safe_str("\r\n", buff, &e);
-        *e = 0;
-        notify_html(player, buff);
+        if (Html(player))
+        {
+            safe_str("\r\n", buff, &e);
+            *e = 0;
+            notify_html(player, buff);
+        }
+        else
+        {
+            *e = 0;
+            notify(player, buff);
+        }
     }
     free_lbuf(buff);
     free_lbuf(buff1);
@@ -764,7 +771,7 @@ static void view_atr
 )
 {
     char *buf;
-    char xbuf[8];
+    char xbuf[9];
     char *xbufp;
     BOOLEXP *pBoolExp;
 
@@ -800,6 +807,8 @@ static void view_atr
         *xbufp++ = '+';
     if (aflags & AF_NOPROG)
         *xbufp++ = '$';
+    if (aflags & AF_HTML)
+        *xbufp++ = 'H';
     if (aflags & AF_PRIVATE)
         *xbufp++ = 'I';
     if (aflags & AF_REGEXP)
@@ -1091,7 +1100,16 @@ void look_in(dbref player, dbref loc, int key)
         // Okay, no @NameFormat.  Show the normal name.
         //
         char *buff = unparse_object(player, loc, TRUE);
-        notify(player, buff);
+        if (Html(player))
+        {
+            notify_html(player, "<center><h3>");
+            notify(player, buff);
+            notify_html(player, "</h3></center>");
+        }
+        else
+        {
+            notify(player, buff);
+        }
         free_lbuf(buff);
     }
     free_lbuf(NameFormatBuffer);
