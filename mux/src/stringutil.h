@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.10 2002-07-23 05:36:13 jake Exp $
+// $Id: stringutil.h,v 1.11 2002-07-23 12:26:49 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -139,7 +139,6 @@ extern BOOL matches_exit_from_list(char *, char *);
 extern char *translate_string(const char *, BOOL);
 #ifndef WIN32
 extern int _stricmp(const char *a, const char *b);
-extern int _strnicmp(const char *a, const char *b, int n);
 extern void _strlwr(char *tp);
 extern void _strupr(char *a);
 #endif // WIN32

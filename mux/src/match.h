@@ -1,6 +1,6 @@
 // match.h
 //
-// $Id: match.h,v 1.9 2002-07-23 05:36:13 jake Exp $
+// $Id: match.h,v 1.10 2002-07-23 12:26:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -33,10 +33,8 @@ extern void init_match(dbref, const char *, int);
 extern void init_match_check_keys(dbref, const char *, int);
 extern void match_player(void);
 extern void match_absolute(void);
-extern void match_numeric(void);
 extern void match_me(void);
 extern void match_here(void);
-extern void match_home(void);
 extern void match_possession(void);
 extern void match_neighbor(void);
 extern void match_exit(void);

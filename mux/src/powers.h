@@ -1,6 +1,6 @@
 // powers.h -- Object powers.
 //
-// $Id: powers.h,v 1.5 2002-07-23 05:36:13 jake Exp $
+// $Id: powers.h,v 1.6 2002-07-23 12:26:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -68,7 +68,6 @@ extern void init_powertab(void);
 extern void display_powertab(dbref);
 extern void power_set(dbref, dbref, char *, int);
 extern char *power_description(dbref, dbref);
-extern POWERENT *find_power(dbref, char *);
 extern BOOL has_power(dbref, dbref, char *);
 extern void decompile_powers(dbref, dbref, char *);
 extern BOOL decode_power(dbref player, char *powername, POWERSET *pset);
