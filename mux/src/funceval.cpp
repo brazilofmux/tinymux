@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.54 2004-04-18 21:54:40 sdennis Exp $
+// $Id: funceval.cpp,v 1.55 2004-04-18 22:33:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -932,7 +932,7 @@ FUNCTION(fun_zfun)
 FUNCTION(fun_columns)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL|DELIM_STRING))
     {
         return;
     }
@@ -1901,7 +1901,7 @@ FUNCTION(fun_visible)
 FUNCTION(fun_elements)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -1954,7 +1954,7 @@ FUNCTION(fun_elements)
 FUNCTION(fun_grab)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -1977,7 +1977,7 @@ FUNCTION(fun_grab)
 FUNCTION(fun_graball)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -2034,7 +2034,7 @@ FUNCTION(fun_scramble)
 FUNCTION(fun_shuffle)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -2068,7 +2068,7 @@ FUNCTION(fun_pickrand)
     }
 
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -2213,7 +2213,7 @@ loop:
 FUNCTION(fun_sortby)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -2257,7 +2257,7 @@ FUNCTION(fun_last)
     }
 
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -2298,7 +2298,7 @@ FUNCTION(fun_last)
 FUNCTION(fun_matchall)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -2382,7 +2382,7 @@ FUNCTION(fun_mix)
     }
     else 
     {
-        if (!OPTIONAL_DELIM(nfargs, sep, DELIM_DFLT))
+        if (!OPTIONAL_DELIM(nfargs, sep, DELIM_DFLT|DELIM_STRING))
         {
             return;
         }
@@ -2542,7 +2542,7 @@ FUNCTION(fun_foreach)
 FUNCTION(fun_munge)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -2649,8 +2649,7 @@ FUNCTION(fun_die)
 FUNCTION(fun_lrand)
 {
     SEP sep;
-    if (!delim_check(buff, bufc, executor, caller, enactor,
-        fargs, nfargs, cargs, ncargs, 4, &sep, DELIM_NULL|DELIM_CRLF))
+    if (!OPTIONAL_DELIM(4, sep, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
@@ -3681,7 +3680,7 @@ void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
 FUNCTION(fun_regrab) 
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -3691,7 +3690,7 @@ FUNCTION(fun_regrab)
 FUNCTION(fun_regrabi) 
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -3701,7 +3700,7 @@ FUNCTION(fun_regrabi)
 FUNCTION(fun_regraball) 
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -3711,7 +3710,7 @@ FUNCTION(fun_regraball)
 FUNCTION(fun_regraballi) 
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }

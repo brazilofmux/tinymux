@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.91 2004-04-18 21:54:40 sdennis Exp $
+// $Id: functions.cpp,v 1.92 2004-04-18 22:33:22 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -854,7 +854,7 @@ FUNCTION(fun_words)
     }
 
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -1763,7 +1763,7 @@ FUNCTION(fun_first)
     }
 
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -1792,7 +1792,7 @@ FUNCTION(fun_rest)
     }
 
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -2260,7 +2260,7 @@ FUNCTION(fun_name)
 FUNCTION(fun_match)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -2305,7 +2305,7 @@ FUNCTION(fun_strmatch)
 FUNCTION(fun_extract)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -3357,7 +3357,7 @@ FUNCTION(fun_ladd)
     if (0 < nfargs)
     {
         SEP sep;
-        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
         {
             return;
         }
@@ -3378,7 +3378,7 @@ FUNCTION(fun_land)
     if (0 < nfargs)
     {
         SEP sep;
-        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
         {
             return;
         }
@@ -3399,7 +3399,7 @@ FUNCTION(fun_lor)
     if (0 < nfargs)
     {
         SEP sep;
-        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
         {
             return;
         }
@@ -4066,13 +4066,13 @@ static void handle_vectors
 FUNCTION(fun_vadd)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
     SEP osep = sep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
     {
         return;
     }
@@ -4082,13 +4082,13 @@ FUNCTION(fun_vadd)
 FUNCTION(fun_vsub)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
     SEP osep = sep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
     {
         return;
     }
@@ -4098,13 +4098,13 @@ FUNCTION(fun_vsub)
 FUNCTION(fun_vmul)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
     SEP osep = sep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
     {
         return;
     }
@@ -4116,13 +4116,13 @@ FUNCTION(fun_vdot)
     // dot product: (a,b,c) . (d,e,f) = ad + be + cf
     //
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
     SEP osep = sep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
     {
         return;
     }
@@ -4134,13 +4134,13 @@ FUNCTION(fun_vcross)
     // cross product: (a,b,c) x (d,e,f) = (bf - ce, cd - af, ae - bd)
     //
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
     SEP osep = sep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
     {
         return;
     }
@@ -4150,7 +4150,7 @@ FUNCTION(fun_vcross)
 FUNCTION(fun_vmag)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -4194,7 +4194,7 @@ FUNCTION(fun_vmag)
 FUNCTION(fun_vunit)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -4250,7 +4250,7 @@ FUNCTION(fun_vdim)
     else
     {
         SEP sep;
-        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
         {
             return;
         }
@@ -4926,7 +4926,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el,
 FUNCTION(fun_ldelete)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -4939,7 +4939,7 @@ FUNCTION(fun_ldelete)
 FUNCTION(fun_replace)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -4952,7 +4952,7 @@ FUNCTION(fun_replace)
 FUNCTION(fun_insert)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -4970,7 +4970,7 @@ FUNCTION(fun_insert)
 FUNCTION(fun_remove)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -5019,7 +5019,7 @@ FUNCTION(fun_remove)
 FUNCTION(fun_member)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -5140,7 +5140,7 @@ FUNCTION(fun_escape)
 FUNCTION(fun_wordpos)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -6278,7 +6278,7 @@ FUNCTION(fun_merge)
 FUNCTION(fun_splice)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -6395,7 +6395,7 @@ FUNCTION(fun_parse)
     // Optional Input Delimiter.
     //
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL|DELIM_STRING))
     {
         return;
     }
@@ -6403,7 +6403,7 @@ FUNCTION(fun_parse)
     // Optional Output Delimiter.
     //
     SEP osep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
@@ -6558,7 +6558,7 @@ FUNCTION(fun_inum)
 FUNCTION(fun_list)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL|DELIM_STRING))
     {
         return;
     }
@@ -6628,7 +6628,7 @@ FUNCTION(fun_ilev)
 FUNCTION(fun_fold)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -6708,7 +6708,7 @@ FUNCTION(fun_fold)
 FUNCTION(fun_itemize)
 { 
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -6817,7 +6817,7 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
 FUNCTION(fun_filter)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -6827,7 +6827,7 @@ FUNCTION(fun_filter)
 FUNCTION(fun_filterbool)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
@@ -6847,13 +6847,13 @@ FUNCTION(fun_filterbool)
 FUNCTION(fun_map)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
     SEP osep = sep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
     {
         return;
     }
@@ -7389,13 +7389,13 @@ static void do_asort(char *s[], int n, int sort_type)
 FUNCTION(fun_sort)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
     SEP osep = sep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
     {
         return;
     }
@@ -7671,13 +7671,13 @@ static void handle_sets
 FUNCTION(fun_setunion)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
     SEP osep = sep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
     {
         return;
     }
@@ -7687,13 +7687,13 @@ FUNCTION(fun_setunion)
 FUNCTION(fun_setdiff)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
     SEP osep = sep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
     {
         return;
     }
@@ -7703,13 +7703,13 @@ FUNCTION(fun_setdiff)
 FUNCTION(fun_setinter)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
     SEP osep = sep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT))
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
     {
         return;
     }
@@ -8042,7 +8042,7 @@ FUNCTION(fun_isdbref)
 FUNCTION(fun_trim)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
