@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.16 2003-04-23 04:24:55 sdennis Exp $
+// $Id: externs.h,v 1.17 2003-07-22 04:10:06 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -193,6 +193,9 @@ extern void set_modified(dbref thing);
 extern bool eval_boolexp(dbref, dbref, dbref, BOOLEXP *);
 extern BOOLEXP *parse_boolexp(dbref, const char *, bool);
 extern bool eval_boolexp_atr(dbref, dbref, dbref, char *);
+
+/* From funceval.cpp */
+size_t mux_Pack(INT64 val, int iRadix, char *buf);
 
 /* From functions.cpp */
 extern bool xlate(char *);

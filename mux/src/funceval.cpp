@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.37 2003-03-17 15:04:02 sdennis Exp $
+// $Id: funceval.cpp,v 1.38 2003-07-22 04:10:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2715,33 +2715,9 @@ FUNCTION(fun_unpack)
     safe_i64toa(sum, buff, bufc);
 }
 
-FUNCTION(fun_pack)
+size_t mux_Pack(INT64 val, int iRadix, char *buf)
 {
-    // Validate the arguments are numeric.
-    //
-    if (  !is_integer(fargs[0], NULL)
-       || (nfargs == 2 && !is_integer(fargs[1], NULL)))
-    {
-        safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
-        return;
-    }
-    INT64 val = mux_atoi64(fargs[0]);
-
-    // Validate the radix is between 2 and 64.
-    //
-    INT64 iRadix = 64;
-    if (nfargs == 2)
-    {
-        iRadix = mux_atoi64(fargs[1]);
-        if (iRadix < 2 || 64 < iRadix)
-        {
-            safe_str("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64", buff, bufc);
-            return;
-        }
-    }
-
-    char TempBuffer[76]; // 1 '-', 63 binary digits, 1 '\0', 11 for safety.
-    char *p = TempBuffer;
+    char *p = buf;
 
     // Handle sign.
     //
@@ -2761,7 +2737,7 @@ FUNCTION(fun_pack)
     }
     *p++ = aRadixTable[val];
 
-    int nLength = p - TempBuffer;
+    int nLength = p - buf;
     *p-- = '\0';
 
     // The digits are in reverse order with a possible leading '-'
@@ -2784,6 +2760,36 @@ FUNCTION(fun_pack)
         // Stop when we reach or pass the middle.
         //
     }
+    return nLength;
+}
+
+FUNCTION(fun_pack)
+{
+    // Validate the arguments are numeric.
+    //
+    if (  !is_integer(fargs[0], NULL)
+       || (nfargs == 2 && !is_integer(fargs[1], NULL)))
+    {
+        safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
+        return;
+    }
+    INT64 val = mux_atoi64(fargs[0]);
+
+    // Validate the radix is between 2 and 64.
+    //
+    int iRadix = 64;
+    if (nfargs == 2)
+    {
+        iRadix = mux_atol(fargs[1]);
+        if (iRadix < 2 || 64 < iRadix)
+        {
+            safe_str("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64", buff, bufc);
+            return;
+        }
+    }
+
+    char TempBuffer[76]; // 1 '-', 63 binary digits, 1 '\0', 11 for safety.
+    int nLength = mux_Pack(val, iRadix, TempBuffer);
     safe_copy_buf(TempBuffer, nLength, buff, bufc);
 }
 
