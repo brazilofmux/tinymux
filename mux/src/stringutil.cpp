@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.39 2003-02-16 20:53:20 sdennis Exp $
+// $Id: stringutil.cpp,v 1.40 2003-02-20 06:40:54 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1257,7 +1257,7 @@ LITERAL_STRING_STRUCT MU_Substitutes[] =
     { 2, "\\\\" } // 13
 };
 
-const char MU_EscapeConvert[256] =
+const unsigned char MU_EscapeConvert[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -1280,7 +1280,7 @@ const char MU_EscapeConvert[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const char MU_EscapeNoConvert[256] =
+const unsigned char MU_EscapeNoConvert[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -1324,7 +1324,7 @@ char *translate_string(const char *szString, BOOL bConvert)
     acsCurrent = acsRestingStates[ANSI_ENDGOAL_NOBLEED];
     acsPrevious = acsCurrent;
     BOOL bSawNormal = FALSE;
-    const char *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
+    const unsigned char *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
     while (nString)
     {
         int nTokenLength0;
@@ -1345,8 +1345,8 @@ char *translate_string(const char *szString, BOOL bConvert)
 
             while (nTokenLength0--)
             {
-                int ch = *pString++;
-                int code = MU_EscapeChar[ch];
+                unsigned char ch = *pString++;
+                unsigned char code = MU_EscapeChar[ch];
                 if (code)
                 {
                     // The following can look one ahead off the end of the
