@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.84 2001-08-24 16:29:58 sdennis Exp $
+// $Id: functions.cpp,v 1.85 2001-08-24 19:17:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -153,6 +153,7 @@ XFUNCTION(fun_connleft);
 XFUNCTION(fun_art); 
 XFUNCTION(fun_t);
 XFUNCTION(fun_dumping);
+XFUNCTION(fun_lrooms);
 
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
@@ -6361,6 +6362,7 @@ FUN flist[] =
     {"LCSTR",    fun_lcstr,    1,       1,  1,       0, CA_PUBLIC},
     {"LDELETE",  fun_ldelete,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"LEXITS",   fun_lexits,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LROOMS",   fun_lrooms,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LIST",     fun_list,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
     {"LIT",      fun_lit,      MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
