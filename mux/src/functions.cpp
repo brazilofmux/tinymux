@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.83 2004-04-18 00:35:05 sdennis Exp $
+// $Id: functions.cpp,v 1.84 2004-04-18 02:08:19 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2248,7 +2248,8 @@ FUNCTION(fun_extract)
     start = mux_atol(fargs[1]);
     len = mux_atol(fargs[2]);
 
-    if ((start < 1) || (len < 1))
+    if (  start < 1
+       || len < 1)
     {
         return;
     }
@@ -2257,7 +2258,8 @@ FUNCTION(fun_extract)
     //
     start--;
     s = trim_space_sep(s, sep.str[0]);
-    while (start && s)
+    while (  start 
+          && s)
     {
         s = next_token(s, sep.str[0]);
         start--;
@@ -2274,7 +2276,8 @@ FUNCTION(fun_extract)
     //
     r = s;
     len--;
-    while (len && s)
+    while (  len 
+          && s)
     {
         s = next_token(s, sep.str[0]);
         len--;
@@ -2282,7 +2285,8 @@ FUNCTION(fun_extract)
 
     // Chop off the rest of the string, if needed.
     //
-    if (s && *s)
+    if (  s
+       && *s)
     {
         t = split_token(&s, sep.str[0]);
     }
@@ -5063,21 +5067,24 @@ FUNCTION(fun_wordpos)
         return;
     }
 
-    unsigned charpos;
-    int i;
-    char *cp, *tp, *xp;
-
-    charpos = mux_atol(fargs[1]);
-    cp = fargs[0];
-    if ((charpos > 0) && (charpos <= strlen(cp)))
+    unsigned int charpos = mux_atol(fargs[1]);
+    char *cp = fargs[0];
+    size_t ncp = strlen(cp);
+    if (  charpos > 0
+       && charpos <= ncp)
     {
-        tp = &(cp[charpos - 1]);
-        cp = trim_space_sep(cp, sep.str[0]);
-        xp = split_token(&cp, sep.str[0]);
+        int ncp_trimmed;
+        char *tp = &(cp[charpos - 1]);
+        cp = trim_space_sep_LEN(cp, ncp, sep.str[0], &ncp_trimmed);
+        char *xp = split_token(&cp, sep.str[0]);
+
+        int i;
         for (i = 1; xp; i++)
         {
-            if (tp < (xp + strlen(xp)))
+            if (tp < xp + strlen(xp))
+            {
                 break;
+            }
             xp = split_token(&cp, sep.str[0]);
         }
         safe_ltoa(i, buff, bufc);
@@ -5959,7 +5966,8 @@ FUNCTION(fun_after)
         mlen = 1;
     }
 
-    if ((mlen == 1) && (*mp == ' '))
+    if (  mlen == 1
+       && *mp == ' ')
     {
         bp = trim_space_sep(bp, ' ');
     }
@@ -5998,7 +6006,8 @@ FUNCTION(fun_before)
         mlen = 1;
     }
 
-    if ((mlen == 1) && (*mp == ' '))
+    if (  mlen == 1
+       && *mp == ' ')
     {
         bp = trim_space_sep(bp, ' ');
     }
@@ -6312,15 +6321,14 @@ FUNCTION(fun_parse)
         return;
     }
 
-    char *curr, *objstring, *cp, *dp;
-    char *str;
-
-    cp = curr = dp = alloc_lbuf("fun_parse");
-    str = fargs[0];
+    char *curr = alloc_lbuf("fun_parse");
+    char *dp   = curr;
+    char *str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
-    cp = trim_space_sep(cp, sep.str[0]);
+    int ncp;
+    char *cp = trim_space_sep_LEN(curr, dp-curr, sep.str[0], &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -6340,7 +6348,7 @@ FUNCTION(fun_parse)
         }
         first = false;
         number++;
-        objstring = split_token(&cp, sep.str[0]);
+        char *objstring = split_token(&cp, sep.str[0]);
         mudstate.itext[mudstate.in_loop-1] = objstring;
         mudstate.inum[mudstate.in_loop-1]  = number;
         char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number), NULL);
@@ -6379,14 +6387,14 @@ FUNCTION(fun_iter)
         return;
     }
 
-    char *curr, *cp, *dp, *str;
-
-    dp = cp = curr = alloc_lbuf("fun_iter");
-    str = fargs[0];
+    char *curr = alloc_lbuf("fun_iter");
+    char *dp = curr;
+    char *str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
-    cp = trim_space_sep(cp, sep.str[0]);
+    int ncp;
+    char *cp = trim_space_sep_LEN(curr, dp-curr, sep.str[0], &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -6468,13 +6476,15 @@ FUNCTION(fun_list)
         return;
     }
 
-    char *curr, *objstring, *result, *cp, *dp, *str;
+    char *objstring, *result, *str;
 
-    cp = curr = dp = alloc_lbuf("fun_list");
+    char *curr = alloc_lbuf("fun_list");
+    char *dp   = curr;
     str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-    cp = trim_space_sep(cp, sep.str[0]);
+    int ncp;
+    char *cp = trim_space_sep_LEN(curr, dp-curr, sep.str[0], &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
