@@ -2,7 +2,7 @@
  * db_rw.c 
  */
 /*
- * $Id: db_rw.cpp,v 1.3 2000-04-15 17:25:47 sdennis Exp $ 
+ * $Id: db_rw.cpp,v 1.4 2000-04-16 07:48:28 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -48,10 +48,14 @@ static BOOLEXP *getboolexp1(FILE *f)
          * break; 
          */
     case EOF:
-        abort();    /*
-                 * unexpected EOF in boolexp 
-                 */
+
+        // Unexpected EOF in boolexp.
+        //
+        Log.WriteString("ABORT! db_rw.cpp, unexpected end of file (EOF) in getboolexp1().\n");
+        Log.Flush();
+        abort();
         break;
+
     case '(':
         b = alloc_bool("getboolexp1.openparen");
         switch (c = getc(f)) {
@@ -117,17 +121,26 @@ static BOOLEXP *getboolexp1(FILE *f)
                 goto error;
             return b;
         }
-    case '-':       /*
-                 * obsolete NOTHING key, eat it 
-                 */
+
+    case '-':
+    
+        // obsolete NOTHING key, eat it.
+        //
         while ((c = getc(f)) != '\n')
+        {
             if (c == EOF)
-                abort();    /*
-                         * unexp EOF 
-                         */
+            {
+                // Unexpected EOF
+                //
+                Log.WriteString("ABORT! db_rw.cpp, unexpected end of file (EOF) in getboolexp1().\n");
+                Log.Flush();
+                abort();
+            }
+        }
         ungetc(c, f);
         return TRUE_BOOLEXP;
         break;
+
     case '"':
         ungetc(c, f);
         buff = alloc_lbuf("getboolexp_quoted");
@@ -248,10 +261,13 @@ static BOOLEXP *getboolexp1(FILE *f)
         return b;
     }
 
-      error:
-    abort();        /*
-                 * bomb out 
-                 */
+error:
+
+    // Bomb Out.
+    //
+    Log.WriteString("ABORT! db_rw.cpp, unexpected error in in getboolexp1().\n");
+    Log.Flush();
+    abort();
     return TRUE_BOOLEXP;
 }
 
@@ -267,19 +283,25 @@ static BOOLEXP *getboolexp(FILE *f)
 
     b = getboolexp1(f);
     if (getc(f) != '\n')
-        abort();    /*
-                 * parse error, we lose 
-                 */
+    {
+        // Parse Error. We lose.
+        //
+        Log.WriteString("ABORT! db_rw.cpp, parse error in getboolexp().\n");
+        Log.Flush();
+        abort();
+    }
 
-    /*
-     * MUSH (except for PernMUSH) and MUSE can have an extra CR, * MUD *
-     * * * * * does not. 
-     */
-
-    if (((g_format == F_MUSH) && (g_version != 2)) ||
-        (g_format == F_MUSE) || (g_format == F_MUX)) {
+    // MUSH (except for PernMUSH) and MUSE can have an extra CR, MUD
+    // does not.
+    //
+    if (  ((g_format == F_MUSH) && (g_version != 2))
+       || (g_format == F_MUSE)
+       || (g_format == F_MUX))
+    {
         if ((c = getc(f)) != '\n')
+        {
             ungetc(c, f);
+        }
     }
     return b;
 }
