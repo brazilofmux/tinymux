@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.7 2003-09-07 22:25:44 sdennis Exp $
+// $Id: cque.cpp,v 1.8 2003-11-30 23:04:44 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -920,6 +920,10 @@ void do_wait
                         return;
                     }
                     ap = atr_num(attr);
+                }
+                else
+                {
+                    attr = ap->number;
                 }
                 if (!bCanSetAttr(executor, thing, ap))
                 {
