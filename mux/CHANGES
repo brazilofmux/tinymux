@@ -3,7 +3,13 @@ Last Update:  January 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- AAA.
+ -- Dbconvert is now depreciated in favor of the same features in a
+    stand-alone mode of netmux.  On Unix, there is a symbolic link for
+    dbconvert to netmux.  But, on both Win32 and Unix, all the features
+    of stand-alone mode are accessible via new command line options as
+    follows:
+
+        netmux -d<basename> -i<infile> -o<outfile> [-l|-u|-k]
 
 
 Feature Additions:
