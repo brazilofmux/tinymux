@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.17 2004-05-25 00:51:29 sdennis Exp $
+// $Id: cque.cpp,v 1.18 2004-05-25 19:15:26 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -212,9 +212,13 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 //
 static bool que_want(BQUE *entry, dbref ptarg, dbref otarg)
 {
-    if ((ptarg != NOTHING) && (ptarg != Owner(entry->executor)))
+    if (  ptarg != NOTHING
+       && ptarg != Owner(entry->executor))
+    {
         return false;
-    return ((otarg == NOTHING) || (otarg == entry->executor));
+    }
+    return (  otarg == NOTHING
+           || otarg == entry->executor);
 }
 
 void Task_SemaphoreTimeout(void *pExpired, int iUnused)
@@ -227,6 +231,14 @@ void Task_SemaphoreTimeout(void *pExpired, int iUnused)
     Task_RunQueueEntry(point, 0);
 }
 
+void Task_SQLTimeout(void *pExpired, int iUnused)
+{
+    // A SQL Query has timed out.
+    //
+    BQUE *point = (BQUE *)pExpired;
+    Task_RunQueueEntry(point, 0);
+}
+
 dbref Halt_Player_Target;
 dbref Halt_Object_Target;
 int   Halt_Entries;
@@ -236,9 +248,10 @@ dbref Halt_Entries_Run;
 int CallBack_HaltQueue(PTASK_RECORD p)
 {
     if (  p->fpTask == Task_RunQueueEntry
-       || p->fpTask == Task_SemaphoreTimeout)
+       || p->fpTask == Task_SemaphoreTimeout
+       || p->fpTask == Task_SQLTimeout)
     {
-        // This is a @wait or timed semaphore task.
+        // This is a @wait, timed Semaphore Task, or timed SQL Query.
         //
         BQUE *point = (BQUE *)(p->arg_voidptr);
         if (que_want(point, Halt_Player_Target, Halt_Object_Target))
@@ -929,6 +942,8 @@ int Total_RunQueueEntry;
 int Shown_RunQueueEntry;
 int Total_SemaphoreTimeout;
 int Shown_SemaphoreTimeout;
+int Total_SQLTimeout;
+int Shown_SQLTimeout;
 dbref Show_Player_Target;
 dbref Show_Object_Target;
 int Show_Key;
@@ -1084,6 +1099,32 @@ int CallBack_ShowSemaphore(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
+int CallBack_ShowSQLQueries(PTASK_RECORD p)
+{
+    if (p->fpTask != Task_SQLTimeout)
+    {
+        return IU_NEXT_TASK;
+    }
+
+    Total_SQLTimeout++;
+    BQUE *tmp = (BQUE *)(p->arg_voidptr);
+    if (que_want(tmp, Show_Player_Target, Show_Object_Target))
+    {
+        Shown_SQLTimeout++;
+        if (Show_Key == PS_SUMM)
+        {
+            return IU_NEXT_TASK;
+        }
+        if (Show_bFirstLine)
+        {
+            notify(Show_Player, "----- SQL Queries -----");
+            Show_bFirstLine = false;
+        }
+        ShowPsLine(tmp);
+    }
+    return IU_NEXT_TASK;
+}
+
 // ---------------------------------------------------------------------------
 // do_ps: tell executor what commands they have pending in the queue
 //
@@ -1162,6 +1203,8 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
     scheduler.TraverseOrdered(CallBack_ShowWait);
     Show_bFirstLine = true;
     scheduler.TraverseOrdered(CallBack_ShowSemaphore);
+    Show_bFirstLine = true;
+    scheduler.TraverseOrdered(CallBack_ShowSQLQueries);
     if (Wizard(executor))
     {
         notify(executor, "----- System Queue -----");
@@ -1171,9 +1214,10 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
     // Display stats.
     //
     bufp = alloc_mbuf("do_ps");
-    sprintf(bufp, "Totals: Wait Queue...%d/%d  Semaphores...%d/%d",
+    sprintf(bufp, "Totals: Wait Queue...%d/%d  Semaphores...%d/%d  SQL %d/%d",
         Shown_RunQueueEntry, Total_RunQueueEntry,
-        Shown_SemaphoreTimeout, Total_SemaphoreTimeout);
+        Shown_SemaphoreTimeout, Total_SemaphoreTimeout,
+        Shown_SQLTimeout, Total_SQLTimeout);
     notify(executor, bufp);
     if (Wizard(executor))
     {
