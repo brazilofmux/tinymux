@@ -6864,11 +6864,13 @@ REST()
     You say "you like coffee, or perhaps tea"
     > say rest(List!with!different!delimiters,!)
     You say "with!different!delimiters"
-  See also: first().
+  
+  Related Topics: first().
 
 & STRLEN()
+STRLEN()
 
-  Function: strlen(<string>)
+  FUNCTION: strlen(<string>)
  
   Returns the number of characters in <string>.
  
@@ -6877,36 +6879,44 @@ REST()
     You say "14"
     > say strlen(Would you like coffee, or perhaps tea)
     You say "37"
-
+  
+  Related Topics:
+  
 & STRTRUNC()
+STRTRUNC()
 
-  Function: strtrunc(<string>,<number>)
+  FUNCTION: strtrunc(<string>,<number>)
  
   This function returns <string> truncated if it is longer than <number>. If
   <number> is greater than the length of <string>, it just returns <string>.
   Much more efficient than the equivalent mid().
  
-  See also: mid(), ljust().
+  Related Topics: mid(), ljust().
  
 & MID()
+MID()
 
-  mid(<string>, <first>, <length>)
+  FUNCTION: mid(<string>, <first>, <length>)
  
   Mid returns a segment of the string, the <length> characters to the
   right of the <first> character.  Note that the first character in a
   string is numbered zero, and not one.
 
 & COMP()
+COMP()
 
-  comp(<string1>, <string2>)
+  FUNCTION: comp(<string1>, <string2>)
  
   Comp compares two strings.  It returns 0 if they are the same, 1 if
   string2 is less than/precedes alphabetically string1, and -1 
   otherwise.
+  
+  Related Topics:
 
 & S()
+S()
 
-  s(string)
+  FUNCTION: s(string)
  
   This function performs pronoun substitution in a string, and then returns
   that string.  As usually, %n is the name, %s the subjective pronoun, %o the
@@ -6917,10 +6927,13 @@ REST()
   type @trigger <object>/ve, it would return "This is <myname>", but 
   if vf were @trigger me/ve, then triggering the vf makes the ve 
   return "This is <object>"
+  
+  Related Topics:
 
 & LPOS()
+LPOS()
 
-  lpos(<string>, <character>)
+  FUNCTION:  lpos(<string>, <character>)
  
   This function returns a list of the positions that <character> occupies
   in <string>, with the first character of the string being 0. (Note that
@@ -6934,18 +6947,22 @@ REST()
     You say "1 4 8"
  
 & POS()
+POS()
 
-  pos(<string1>,<string2>)
+  FUNCTION: pos(<string1>,<string2>)
  
   This function returns the position that string1 begins in string2,
   with the first position being 1.
   If string1 is not in string2, then it returns -1.
  
   Example: pos(man,superman) returns 6
+  
+  Related Topics:
 
 & MATCH()
+MATCH()
 
-  Function: match(<string>, <pattern>[, <delim>])
+  FUNCTION: match(<string>, <pattern>[, <delim>])
  
   This function matches <pattern> against each word of <string>, returning
   the number of the first word that matches.  If no words match then 0 is
@@ -6969,11 +6986,13 @@ REST()
     You say "0"
     > say match(This is a test, is a)
     You say "0"
-  See also: LISTS, member(), strmatch().
+  
+  Related Topics: LISTS, member(), strmatch().
 
 & STRMATCH()
+STRMATCH()
 
-  Function: strmatch(<string>,<pattern>)
+  FUNCTION: strmatch(<string>,<pattern>)
  
   This function matches <pattern> against the entire <string>, returning 1
   if it matches and 0 if it does not.  The case of the characters being
@@ -6991,10 +7010,13 @@ REST()
     You say "0"
     > say strmatch(This is a test,*is*is*)
     You say "1"
-  See also: match(), member(), regmatch().
+  
+  Related Topics: match(), member(), regmatch().
 
 & REGMATCH()
-  regmatch(<string>,<regexp>[,<register list>])
+REGMATCH()
+
+  FUNCTION: regmatch(<string>,<regexp>[,<register list>])
  
   This function matches the regular expression <regexp> against the
   entirety of <string>, returning 1 if it matches and 0 if it does not.
@@ -7017,14 +7039,18 @@ REST()
   See 'help regexp syntax' for an explanation of regular expressions.
 
 & COLUMNS()
+COLUMNS()
 
-  columns(<list>, <width>[, <delim>])
+  FUNCTION: columns(<list>, <width>[, <delim>])
  
   Columns displays <list> formatted into columns containing <width>
   number of characters. As many columns as possible will be fit
   onto the screen. Columns takes an optional delimiter.
+  
+  Related Topics:
  
 & TABLE()
+TABLE ()
 
   table(<list>,<field width>,<line length>,<delimiter>,
         <output separator>,<padding>)
@@ -7041,22 +7067,19 @@ REST()
     the end of a table entry and the next column. Default: White space.
 
   Examples:
-  > think table(a b areallylongone d)
-  a          b          areallylon d
+    > think table(a b areallylongone d)
+    a          b          areallylon d
+    > think table(the quick brown fox,10,25, ,|)
+    the       |quick
+    brown     |fox
+    > think table(foo bar baz,101,25,0,|,.\,)
+    foo.,.,.,.|bar.,.,.,.
+    baz.,.,.,.
 
-  > think table(the quick brown fox,10,25, ,|)
-  the       |quick
-  brown     |fox
+  Related Topics: columns()& FOREACH()
+FOREACH()
 
-  > think table(foo bar baz,101,25,0,|,.\,)
-  foo.,.,.,.|bar.,.,.,.
-  baz.,.,.,.
-
-  See also: columns()
-
-& FOREACH()
-
-  foreach([<object>/]<attribute>,<string>[,<begin>, <end>])
+  FUNCTION: foreach([<object>/]<attribute>,<string>[,<begin>, <end>])
  
   Maps a function onto a string.
  
@@ -7076,30 +7099,33 @@ REST()
     > &add_one me=[add(%0,1)]
     > say [foreach(add_one, This adds #0# to numbers in this string,#,#)]
     You say, "This adds 1 to numbers in this string."
- 
+
+  Related Topics: 
+  
 & MIX()
- 
-  mix([<object>/]<attribute>,<list 1>,<list 2>[,<delim>])
+MIX()
+
+  FUNCTION: mix([<object>/]<attribute>,<list 1>,<list 2>[,<delim>])
  
   This function is similar to MAP(), except that it takes the elements
   of both lists, one by one, and passes them to the user-defined function
   as %0 and %1, respectively, for elements of <list 1> and <list 2>.
   <delim> is used to separate elements; if it is not specified, it
- defaults to a space. The lists must have the same number of elements.
+  defaults to a space. The lists must have the same number of elements.
  
   Examples:
- 
-  > &add_nums me=[add(%0,%1)]
- 
-  > say [mix(add_nums,1 2 3 4 5,2 4 6 8 10)]
-  You say, "3 6 9 12 15"
- 
-  > say [mix(add_nums,1:3:5:7,0:2:4:6,:)]
-  You say, "1:5:9:13"
- 
+    > &add_nums me=[add(%0,%1)]
+    > say [mix(add_nums,1 2 3 4 5,2 4 6 8 10)]
+    You say, "3 6 9 12 15"
+    > say [mix(add_nums,1:3:5:7,0:2:4:6,:)]
+    You say, "1:5:9:13"
+
+  Related Topics:
+   
 & MUNGE()
- 
-  munge([<object>/]<attribute>,<list 1>,<list 2>[,<delimiter>])
+MUNGE()
+
+  FUNCTION: munge([<object>/]<attribute>,<list 1>,<list 2>[,<delimiter>])
  
   This function takes two lists of equal length. It passes the entirety of
   <list 1> to the user-defined function as %0. Then, this resulting list
