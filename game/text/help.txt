@@ -5971,28 +5971,45 @@ GREP()
   NOT wildcard matched.
 
   This function is case-sensitive. grepi() is a case-insensitive version.
+
+  Related Topics:
+  
 & LPARENT()
-  lparent(<object>)
+LPARENT()
+
+  FUNCTION:  lparent(<object>)
   
   This function returns a list consisting of the object's db# (as per
   num()), the db# of its parent, grandparent, greatgrandparent, etc.
   The list will not, however, show parents of objects which the player
   is not privileged to examine.
+  
+  Related Topics:
 
 & STRCAT()
-  strcat(<string1>, <stringN>, ...)
+STRCAT()
+
+  FUNCTION: strcat(<string1>, <stringN>, ...)
  
   Concatanates two or more strings together, with no space between them.
   For example, strcat(foo,bar,baz,blech) will return the string
   "foobarbazblech".
+  
+  Related Topics:
  
 & STRIPANSI()
-  stripansi(<string>)
+STRIPANSI()
+
+  FUNCTION: stripansi(<string>)
  
   Strips the ansi codes from <string>.
+  
+  Related Topics: ANSI, ansi()
  
 & PMATCH()
-  pmatch(<string>)
+PMATCH()
+
+  FUNCTION: pmatch(<string>)
  
   Given the partial name of a player, it returns that player's dbref
   number. This partial name completion works identically to the partial
@@ -6004,7 +6021,9 @@ GREP()
   
   Pmatch() will also accept *<player> or #<db#>. If given a non-player
   dbref #, pmatch() will return #-1.
-
+  
+  Related Topics:
+ 
 & PFIND()
   pfind(<string>)
  
@@ -6013,33 +6032,51 @@ GREP()
   of pmatch() is still required.
 
   See: pmatch()
-   
+
 & DIE()
-  die(<number of times to roll die>, <number of sides on die>)
+DIE()
+
+  FUNCTION: die(<number of times to roll die>, <number of sides on die>)
  
   This function simulates rolling dice. It "rolls" a die with a given
   number of sides, a certain number of times, and sums the results.
   For example, DIE(2, 6) would roll "2d6" - two six-sided dice,
   generating a result in the range 2-12.
-& ALPHAMIN()
+  
+  Related Topics:
 
-  alphamin(<word1>, <word2>, <word3>, ...)
+& ALPHAMIN()
+ALPHAMIN()
+
+  FUNCTION: alphamin(<word1>, <word2>, <word3>, ...)
 
   Returns the word whose order is lexicographically first.
-
+  
+  Related Topics: alphamax().
+  
 & ALPHAMAX()
-
-  alphamax(<word1>, <word2>, <word3>, ...)
+ALPHAMAX()
+  
+  FUNCTION: alphamax(<word1>, <word2>, <word3>, ...)
 
   Returns the word whose order is lexicographically last.
 
+  Related Topics: alphamin().  
+
 & ART()
-  art(<string>)
+ART()
+  
+  FUNCTION: art(<string>)
 
   This function returns the proper article, "a" or "an", based on whether
   or not <string> begins with a vowel.
+
+  Related Topics:
+  
 & HASATTR()
-  hasattr(<object>, <attribute name>)
+HASATTR()
+
+  FUNCTION: hasattr(<object>, <attribute name>)
  
   Returns 1 if the object has the named attribute, and 0 if it does
   not. If the object does not exist or the player does not have the
