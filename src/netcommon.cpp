@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.34 2001-03-31 02:22:25 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.35 2001-05-05 16:40:21 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -976,16 +976,13 @@ void desc_reload(dbref player)
     }
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * fetch_idle, fetch_connect: Return smallest idle time/largest connec time
-* * for a player (or -1 if not logged in)
-*/
-
+// ---------------------------------------------------------------------------
+// fetch_idle: Return smallest idle time for a player (or -1 if not logged in).
+//
 int fetch_idle(dbref target)
 {
-    CLinearTimeDelta ltdResult;
     CLinearTimeAbsolute ltaNow;
+    CLinearTimeAbsolute ltaNewestLastTime;
     ltaNow.GetUTC();
     
     DESC *d;
@@ -994,16 +991,17 @@ int fetch_idle(dbref target)
     {
         if (d->flags & DS_CONNECTED)
         {
-            CLinearTimeDelta ltdIdle = ltaNow - d->last_time;
-            if (!bFound || ltdIdle < ltdResult)
+            if (!bFound || ltaNewestLastTime < d->last_time)
             {
                 bFound = TRUE;
-                ltdResult = ltdIdle;
+                ltaNewestLastTime = d->last_time;
             }
         }
     }
     if (bFound)
     {
+        CLinearTimeDelta ltdResult;
+        ltdResult = ltaNow - ltaNewestLastTime;
         return ltdResult.ReturnSeconds();
     }
     else
@@ -1012,10 +1010,14 @@ int fetch_idle(dbref target)
     }
 }
 
+// ---------------------------------------------------------------------------
+// fetch_connect: Return largest connect time for a player (or -1 if not
+// logged in).
+//
 int fetch_connect(dbref target)
 {
-    CLinearTimeDelta ltdResult;
     CLinearTimeAbsolute ltaNow;
+    CLinearTimeAbsolute ltaOldestConnectedAt;
     ltaNow.GetUTC();
     
     DESC *d;
@@ -1024,16 +1026,17 @@ int fetch_connect(dbref target)
     {
         if (d->flags & DS_CONNECTED)
         {
-            CLinearTimeDelta ltdConntime = ltaNow - d->connected_at;
-            if (!bFound || ltdConntime < ltdResult)
+            if (!bFound || d->connected_at < ltaOldestConnectedAt)
             {
                 bFound = TRUE;
-                ltdResult = ltdConntime;
+                ltaOldestConnectedAt = d->connected_at;
             }
         }
     }
     if (bFound)
     {
+        CLinearTimeDelta ltdResult;
+        ltdResult = ltaNow - ltaOldestConnectedAt;
         return ltdResult.ReturnSeconds();
     }
     else
