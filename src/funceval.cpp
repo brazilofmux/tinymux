@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.97 2002-06-11 20:09:55 jake Exp $
+// $Id: funceval.cpp,v 1.98 2002-06-15 01:19:20 jake Exp $
 //
 
 #include "copyright.h"
@@ -1653,7 +1653,7 @@ FUNCTION(fun_udefault)
                     check_read_perms(player, thing, ap, aowner, aflags,
                              buff, bufc)) {
                     str = atext;
-                    TinyExec(buff, bufc, 0, thing, cause, EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 1);
+                    TinyExec(buff, bufc, 0, thing, cause, EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 2);
                     free_lbuf(atext);
                     free_lbuf(objname);
                     return;
