@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.15 2004-07-19 21:33:54 sdennis Exp $
+// $Id: htab.cpp,v 1.16 2004-08-18 21:51:22 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -307,25 +307,25 @@ NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, char *flagname)
 
 void display_nametab(dbref player, NAMETAB *ntab, char *prefix, bool list_if_none)
 {
-    char *buf, *bp, *cp;
     NAMETAB *nt;
     bool got_one = false;
-    bp = buf = alloc_lbuf("display_nametab");
+    char *buf = alloc_lbuf("display_nametab");
+    char *bp = buf;
 
-    for (cp = prefix; *cp; cp++)
-        *bp++ = *cp;
+    safe_str(prefix, buf, &bp);
     for (nt = ntab; nt->name; nt++)
     {
-        if (God(player) || check_access(player, nt->perm))
+        if (  God(player)
+           || check_access(player, nt->perm))
         {
-            *bp++ = ' ';
-            for (cp = nt->name; *cp; cp++)
-                *bp++ = *cp;
+            safe_chr(' ', buf, &bp);
+            safe_str(nt->name, buf, &bp);
             got_one = true;
         }
     }
     *bp = '\0';
-    if (got_one || list_if_none)
+    if (  got_one
+       || list_if_none)
     {
         notify(player, buf);
     }
