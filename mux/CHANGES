@@ -141,8 +141,21 @@ Bug Fixes:
  -- Idle time didn't update while in an @program. Fixed by Jake.
  -- Allow exits to commit suicide (www.livejournal.com, mushcode journal,
     _Programming Suicidal Exits_ by DrDubious).
- --  Fixed @listcommand when @addcommand'ed commands have previous aliases.
-     It only affected the report.
+ -- Fixed @listcommand when @addcommand'ed commands have previous aliases.
+    It only affected the report.
+ -- Magic numbers in buffer allocations are now unique to the pool type.
+    Recommended by Alierak because on some systems, two of the header sizes
+    are equal.
+ -- pool_check() needed to verify PCACHE pool as well. Reported by Alierak.
+ -- Fix three places where changes from (char) to (const char) broke the
+    MEMORY_BASED build. Reported by Chaos from Rogue Space MUX.
+ -- Use A_VA name instead of equivalent literal 100. Reported by Alierak.
+ -- Fix Prefix-without-suffix bug. Reported by Alierak.
+ -- Fix '-0' display for 'think imul(1024,1024,1024,1024,1024,1024,8)'
+    Reported by Alierak.
+ -- Fix seeding random numbers on Win32. The call to CryptAcquireContext
+    was likely to fail.
+
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
