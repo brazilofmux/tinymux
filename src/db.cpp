@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.44 2001-06-29 11:10:24 sdennis Exp $
+// $Id: db.cpp,v 1.45 2001-06-29 11:23:58 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -362,15 +362,15 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
         if ((*dp++ == '#') && Tiny_IsDigit[(unsigned char)*dp])
         {
             target = Tiny_atol(dp);
-#ifndef STANDALONE
+#ifdef STANDALONE
+            fail = !Good_obj(target);
+#else // STANDALONE
             fail = (!Good_obj(target) ||
                 (!God(player) &&
                  !controls(player, target) &&
                  (!Link_ok(target) ||
                   !could_doit(player, target, A_LLINK))));
-#else // !STANDALONE
-            fail = !Good_obj(target);
-#endif // !STANDALONE
+#endif // STANDALONE
             if (fail)
             {
 #ifndef STANDALONE
@@ -427,7 +427,11 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
 
 int fwdlist_ck(int key, dbref player, dbref thing, int anum, char *atext)
 {
-#ifndef STANDALONE
+#ifdef STANDALONE
+
+    return 1;
+
+#else // STANDALONE
 
     FWDLIST *fp;
     int count;
@@ -453,9 +457,8 @@ int fwdlist_ck(int key, dbref player, dbref thing, int anum, char *atext)
         free_lbuf(fp);
     }
     return ((count > 0) || !atext || !*atext);
-#else // !STANDALONE
-    return 1;
-#endif // !STANDALONE
+
+#endif // STANDALONE
 }
 
 FWDLIST *fwdlist_get(dbref thing)
@@ -523,7 +526,10 @@ char *Name(dbref thing)
         }
     }
 
-#ifndef MEMORY_BASED
+#ifdef MEMORY_BASED
+    atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
+    return tbuff;
+#else // MEMORY_BASED
     if (!names[thing])
     {
         buff = atr_get(thing, A_NAME, &aowner, &aflags);
@@ -531,10 +537,7 @@ char *Name(dbref thing)
         free_lbuf(buff);
     }
     return names[thing];
-#else // !MEMORY_BASED
-    atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
-    return tbuff;
-#endif // !MEMORY_BASED
+#endif // MEMORY_BASED
 }
 
 char *PureName(dbref thing)
@@ -1017,11 +1020,11 @@ void anum_extend(int newtop)
     ATTR **anum_table2;
     int delta, i;
 
-#ifndef STANDALONE
-    delta = mudconf.init_size;
-#else // !STANDALONE
+#ifdef STANDALONE
     delta = 1000;
-#endif // !STANDALONE
+#else // STANDALONE
+    delta = mudconf.init_size;
+#endif // STANDALONE
     if (newtop <= anum_alc_top)
     {
         return;
@@ -2423,11 +2426,11 @@ void db_grow(dbref newtop)
     NAME *newpurenames;
     char *cp;
 
-#ifndef STANDALONE
-    delta = mudconf.init_size;
-#else // !STANDALONE
+#ifdef STANDALONE
     delta = 1000;
-#endif // !STANDALONE
+#else // STANDALONE
+    delta = mudconf.init_size;
+#endif // STANDALONE
 
     // Determine what to do based on requested size, current top and size.
     // Make sure we grow in reasonable-sized chunks to prevent frequent
@@ -2677,7 +2680,6 @@ void NDECL(db_make_minimal)
     s_Contents(0, obj);
     s_Link(obj, 0);
 }
-
 #endif // !STANDALONE
 
 dbref parse_dbref(const char *s)
@@ -3019,7 +3021,15 @@ int init_dbfile(char *game_dir_file, char *game_pag_file)
 #endif // !MEMORY_BASED
 
 
-#ifndef STANDALONE
+#ifdef STANDALONE
+
+int check_zone(dbref player, dbref thing)
+{
+    return 0;
+}
+
+#else // STANDALONE
+
 // check_zone - checks back through a zone tree for control.
 //
 int check_zone(dbref player, dbref thing)
@@ -3097,14 +3107,7 @@ void ReleaseAllResources(dbref obj)
     }
 }
 
-#else // !STANDALONE
-
-int check_zone(dbref player, dbref thing)
-{
-    return 0;
-}
-
-#endif // !STANDALONE
+#endif // STANDALONE
 
 #if !defined(STANDALONE) && !defined(VMS) && !defined(WIN32)
 /* ---------------------------------------------------------------------------
