@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.135 2002-01-27 13:17:34 sdennis Exp $
+// $Id: functions.cpp,v 1.136 2002-01-28 17:32:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -319,15 +319,16 @@ char *split_token_LEN(char **sp, int *nStr, char sep, int *nToken)
 
 char *split_token(char **sp, char sep)
 {
-    char *str, *save;
+    char *str = *sp;
+    char *save = str;
 
-    save = str = *sp;
     if (!str)
     {
         *sp = NULL;
         return NULL;
     }
-    while (*str && (*str != sep))
+    while (  *str
+          && *str != sep)
     {
         str++;
     }
@@ -467,11 +468,10 @@ static int get_list_type
 
 int list2arr(char *arr[], int maxlen, char *list, char sep)
 {
-    char *p;
     int i;
 
     list = trim_space_sep(list, sep);
-    p = split_token(&list, sep);
+    char *p = split_token(&list, sep);
     for (i = 0; p && i < maxlen; i++, p = split_token(&list, sep))
     {
         arr[i] = p;
@@ -6157,76 +6157,86 @@ FUNCTION(fun_sort)
  * * fun_setunion, fun_setdiff, fun_setinter: Set management.
  */
 
-#define SET_UNION   1
-#define SET_INTERSECT   2
-#define SET_DIFF    3
+#define SET_UNION     1
+#define SET_INTERSECT 2
+#define SET_DIFF      3
 
 static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char sep)
 {
-    char *list1, *list2, *oldp;
     char *ptrs1[LBUF_SIZE], *ptrs2[LBUF_SIZE];
-    int i1, i2, n1, n2, val, first;
+    int val;
 
-    list1 = alloc_lbuf("fun_setunion.1");
-    StringCopy(list1, fargs[0]);
-    n1 = list2arr(ptrs1, LBUF_SIZE, list1, sep);
+    char *list1 = alloc_lbuf("fun_setunion.1");
+    strcpy(list1, fargs[0]);
+    int n1 = list2arr(ptrs1, LBUF_SIZE, list1, sep);
     do_asort(ptrs1, n1, ALPHANUM_LIST);
 
-    list2 = alloc_lbuf("fun_setunion.2");
-    StringCopy(list2, fargs[1]);
-    n2 = list2arr(ptrs2, LBUF_SIZE, list2, sep);
+    char *list2 = alloc_lbuf("fun_setunion.2");
+    strcpy(list2, fargs[1]);
+    int n2 = list2arr(ptrs2, LBUF_SIZE, list2, sep);
     do_asort(ptrs2, n2, ALPHANUM_LIST);
 
-    i1 = i2 = 0;
-    first = 1;
-    oldp = *bufc;
+    int i1 = 0;
+    int i2 = 0;
+    char *oldp = *bufc;
+    char *bb_p = *bufc;
     **bufc = '\0';
 
-    switch (oper) {
-    case SET_UNION: /*
-                 * Copy elements common to both lists
-                 */
-
-        /*
-         * Handle case of two identical single-element lists
-         */
-
-        if ((n1 == 1) && (n2 == 1) &&
-            (!strcmp(ptrs1[0], ptrs2[0]))) {
+    switch (oper)
+    {
+    case SET_UNION:
+    
+        // Copy elements common to both lists.
+        //
+        // Handle case of two identical single-element lists.
+        //
+        if (  n1 == 1
+           && n2 == 1
+           && strcmp(ptrs1[0], ptrs2[0]) == 0)
+        {
             safe_str(ptrs1[0], buff, bufc);
             break;
         }
-        /*
-         * Process until one list is empty
-         */
 
-        while ((i1 < n1) && (i2 < n2)) {
-
-            /*
-             * Skip over duplicates
-             */
-
-            if ((i1 > 0) || (i2 > 0)) {
-                while ((i1 < n1) && !strcmp(ptrs1[i1],
-                                oldp))
+        // Process until one list is empty.
+        //
+        while (  i1 < n1
+              && i2 < n2)
+        {
+            // Skip over duplicates.
+            //
+            if (  i1 > 0
+               || i2 > 0)
+            {
+                while (  i1 < n1
+                      && strcmp(ptrs1[i1], oldp) == 0)
+                {
                     i1++;
-                while ((i2 < n2) && !strcmp(ptrs2[i2],
-                                oldp))
+                }
+                while (  i2 < n2
+                      && strcmp(ptrs2[i2], oldp) == 0)
+                {
                     i2++;
+                }
             }
-            /*
-             * Compare and copy
-             */
 
-            if ((i1 < n1) && (i2 < n2)) {
-                if (!first)
+            // Compare and copy.
+            //
+            if (  i1 < n1
+               && i2 < n2)
+            {
+                if (*bufc != bb_p)
+                {
                     safe_chr(sep, buff, bufc);
-                first = 0;
+                }
                 oldp = *bufc;
-                if (strcmp(ptrs1[i1], ptrs2[i2]) < 0) {
+                if (strcmp(ptrs1[i1], ptrs2[i2]) < 0)
+                {
                     safe_str(ptrs1[i1], buff, bufc);
                     i1++;
-                } else {
+                }
+                else
+                {
                     safe_str(ptrs2[i2], buff, bufc);
                     i2++;
                 }
@@ -6234,118 +6244,149 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             }
         }
 
-        /*
-         * Copy rest of remaining list, stripping duplicates
-         */
-
-        for (; i1 < n1; i1++) {
-            if (strcmp(oldp, ptrs1[i1])) {
-                if (!first)
+        // Copy rest of remaining list, stripping duplicates.
+        //
+        for (; i1 < n1; i1++)
+        {
+            if (strcmp(oldp, ptrs1[i1]))
+            {
+                if (*bufc != bb_p)
+                {
                     safe_chr(sep, buff, bufc);
-                first = 0;
+                }
                 oldp = *bufc;
                 safe_str(ptrs1[i1], buff, bufc);
                 **bufc = '\0';
             }
         }
-        for (; i2 < n2; i2++) {
-            if (strcmp(oldp, ptrs2[i2])) {
-                if (!first)
+        for (; i2 < n2; i2++)
+        {
+            if (strcmp(oldp, ptrs2[i2]))
+            {
+                if (*bufc != bb_p)
+                {
                     safe_chr(sep, buff, bufc);
-                first = 0;
+                }
                 oldp = *bufc;
                 safe_str(ptrs2[i2], buff, bufc);
                 **bufc = '\0';
             }
         }
         break;
-    case SET_INTERSECT: /*
-                 * Copy elements not in both lists
-                 */
 
-        while ((i1 < n1) && (i2 < n2)) {
+    case SET_INTERSECT:
+    
+        // Copy elements not in both lists.
+        //
+        while (  i1 < n1
+              && i2 < n2)
+        {
             val = strcmp(ptrs1[i1], ptrs2[i2]);
-            if (!val) {
-
-                /*
-                 * Got a match, copy it
-                 */
-
-                if (!first)
+            if (!val)
+            {
+                // Got a match, copy it.
+                //
+                if (*bufc != bb_p)
+                {
                     safe_chr(sep, buff, bufc);
-                first = 0;
+                }
                 oldp = *bufc;
                 safe_str(ptrs1[i1], buff, bufc);
                 i1++;
                 i2++;
-                while ((i1 < n1) && !strcmp(ptrs1[i1], oldp))
+                while (  i1 < n1
+                      && strcmp(ptrs1[i1], oldp) == 0)
+                {
                     i1++;
-                while ((i2 < n2) && !strcmp(ptrs2[i2], oldp))
+                }
+                while (  i2 < n2
+                      && strcmp(ptrs2[i2], oldp) == 0)
+                {
                     i2++;
-            } else if (val < 0) {
+                }
+            }
+            else if (val < 0)
+            {
                 i1++;
-            } else {
+            }
+            else
+            {
                 i2++;
             }
         }
         break;
-    case SET_DIFF:      /*
-                 * Copy elements unique to list1
-                 */
 
-        while ((i1 < n1) && (i2 < n2)) {
+    case SET_DIFF:
+    
+        // Copy elements unique to list1.
+        //
+        while (  i1 < n1
+              && i2 < n2)
+        {
             val = strcmp(ptrs1[i1], ptrs2[i2]);
-            if (!val) {
-
-                /*
-                 * Got a match, increment pointers
-                 */
-
+            if (!val)
+            {
+                // Got a match, increment pointers.
+                //
                 oldp = ptrs1[i1];
-                while ((i1 < n1) && !strcmp(ptrs1[i1], oldp))
+                while (  i1 < n1
+                      && strcmp(ptrs1[i1], oldp) == 0)
+                {
                     i1++;
-                while ((i2 < n2) && !strcmp(ptrs2[i2], oldp))
+                }
+                while (  i2 < n2
+                      && strcmp(ptrs2[i2], oldp) == 0)
+                {
                     i2++;
-            } else if (val < 0) {
-
-                /*
-                 * Item in list1 not in list2, copy
-                 */
-
-                if (!first)
+                }
+            }
+            else if (val < 0)
+            {
+                // Item in list1 not in list2, copy.
+                //
+                if (*bufc != bb_p)
+                {
                     safe_chr(sep, buff, bufc);
-                first = 0;
+                }
                 safe_str(ptrs1[i1], buff, bufc);
                 oldp = ptrs1[i1];
                 i1++;
-                while ((i1 < n1) && !strcmp(ptrs1[i1], oldp))
+                while (  i1 < n1
+                      && strcmp(ptrs1[i1], oldp) == 0)
+                {
                     i1++;
-            } else {
-
-                /*
-                 * Item in list2 but not in list1, discard
-                 */
-
+                }
+            }
+            else
+            {
+                // Item in list2 but not in list1, discard.
+                //
                 oldp = ptrs2[i2];
                 i2++;
-                while ((i2 < n2) && !strcmp(ptrs2[i2], oldp))
+                while (  i2 < n2
+                      && strcmp(ptrs2[i2], oldp) == 0)
+                {
                     i2++;
+                }
             }
         }
 
-        /*
-         * Copy remainder of list1
-         */
-
-        while (i1 < n1) {
-            if (!first)
+        // Copy remainder of list1.
+        //
+        while (i1 < n1)
+        {
+            if (*bufc != bb_p)
+            {
                 safe_chr(sep, buff, bufc);
-            first = 0;
+            }
             safe_str(ptrs1[i1], buff, bufc);
             oldp = ptrs1[i1];
             i1++;
-            while ((i1 < n1) && !strcmp(ptrs1[i1], oldp))
+            while (  i1 < n1
+                  && strcmp(ptrs1[i1], oldp) == 0)
+            {
                 i1++;
+            }
         }
     }
     free_lbuf(list1);
