@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects
 //
-// $Id: create.cpp,v 1.11 2001-06-29 03:26:07 sdennis Exp $
+// $Id: create.cpp,v 1.12 2001-10-02 05:35:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -754,15 +754,14 @@ static int can_destroy_player(dbref player, dbref victim)
 
 void do_destroy(dbref player, dbref cause, int key, char *what)
 {
-    dbref thing;
-
     // You can destroy anything you control.
     //
-    thing = match_controlled_quiet(player, what);
+    dbref thing = match_controlled_quiet(player, what);
 
     // If you own a location, you can destroy its exits.
     //
-    if ((thing == NOTHING) && controls(player, Location(player)))
+    if (  thing == NOTHING
+       && controls(player, Location(player)))
     {
         init_match(player, what, TYPE_EXIT);
         match_exit();
@@ -776,7 +775,8 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
         init_match(player, what, TYPE_THING);
         match_possession();
         thing = last_match_result();
-        if ((thing != NOTHING) && !(isThing(thing) && Destroy_ok(thing)))
+        if ( thing != NOTHING
+           && !(isThing(thing) && Destroy_ok(thing)))
         {
             thing = NOPERM;
         }
@@ -791,7 +791,8 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
 
     // Check SAFE and DESTROY_OK flags.
     //
-    if (  Safe(thing, player) && !(key & DEST_OVERRIDE)
+    if (  Safe(thing, player)
+       && !(key & DEST_OVERRIDE)
        && !(isThing(thing) && Destroy_ok(thing)))
     {
         notify_quiet(player, "Sorry, that object is protected.  Use @destroy/override to destroy it.");
@@ -850,64 +851,116 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
 
     // Check whether we should perform instant destruction.
     //
-    if (  Destroy_ok(thing)
-       || Destroy_ok(Owner(thing)))
+    dbref ThingOwner = Owner(thing);
+    BOOL bInstant = Destroy_ok(thing) || Destroy_ok(ThingOwner);
+
+    char *p;
+    if (!bInstant)
     {
+        // Pre-destruction 'crumble' emits and one last possible showstopper.
+        //
         switch (Typeof(thing))
         {
-        case TYPE_EXIT:
-            destroy_exit(thing);
+        case TYPE_ROOM:
+            notify_all(thing, player, "The room shakes and begins to crumble.");
             break;
 
         case TYPE_PLAYER:
             atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(player));
-            destroy_player(player, thing);
-            break;
+            p = atr_get_raw(thing, A_DESTROYER);
+            if (!p)
+            {
+                // Not a likely situation, but the player has too many
+                // attributes to remember it's destroyer, so we we need to
+                // take care of this more immediately.
+                //
+                bInstant = TRUE;
+                notify(player, "Player has a lot of attributes. Performing destruction immediately.");
+                break;
+            }
 
-        case TYPE_ROOM:
-            empty_obj(thing);
-            destroy_obj(NOTHING, thing);
-            break;
+            // FALL THROUGH
 
+        case TYPE_EXIT:
         case TYPE_THING:
-            destroy_thing(thing);
+            notify(player, tprintf("The %s shakes and begins to crumble.",
+                NameOfType));
             break;
 
         default:
             notify(player, "Weird object type cannot be destroyed.");
-            break;
+            return;
         }
+
+        if (  !bInstant
+           && !Quiet(thing)
+           && !Quiet(ThingOwner))
+        {
+            notify_quiet(ThingOwner,
+                tprintf("You will be rewarded shortly for %s(#%d).",
+                Name(thing), thing));
+        }
+    }
+
+
+    // Imperative Destruction emits.
+    //
+    if (  (  !bInstant
+          || isPlayer(thing))
+       && !Quiet(player))
+    {
+        if (  Good_owner(ThingOwner)
+           && Owner(player) != ThingOwner)
+        {
+            if (ThingOwner == thing)
+            {
+                notify(player, tprintf("Destroyed. %s(#%d)",
+                    Name(thing), thing));
+            }
+            else
+            {
+                char *tname = alloc_sbuf("destroy_obj");
+                strcpy(tname, Name(ThingOwner));
+                notify(player, tprintf("Destroyed. %s's %s(#%d)",
+                    tname, Name(thing), thing));
+                free_sbuf(tname);
+            }
+        }
+        else if (!Quiet(thing))
+        {
+            notify(player, "Destroyed.");
+        }
+    }
+
+    if (!bInstant)
+    {
+        s_Going(thing);
         return;
     }
 
-    // Otherwise we queue things up for destruction.
+    // Instant destruction by type.
     //
-    if (!isRoom(thing))
+    switch (Typeof(thing))
     {
-        notify(player, tprintf("The %s shakes and begins to crumble.", NameOfType));
-    }
-    else
-    {
-        notify_all(thing, player, "The room shakes and begins to crumble.");
-    }
+    case TYPE_EXIT:
+        destroy_exit(thing);
+        break;
 
-    if (!Quiet(thing) && !Quiet(Owner(thing)))
-    {
-        notify_quiet(Owner(thing),
-            tprintf("You will be rewarded shortly for %s(#%d).",
-            Name(thing), thing));
-    }
+    case TYPE_PLAYER:
+        destroy_player(player, thing);
+        break;
 
-    if ((Owner(thing) != player) && !Quiet(player))
-    {
-        notify_quiet(player, tprintf("Destroyed. %s's %s(#%d)",
-            Name(Owner(thing)), Name(thing), thing));
-    }
+    case TYPE_ROOM:
+        empty_obj(thing);
+        destroy_obj(thing);
+        break;
 
-    if (isPlayer(thing))
-    {
-        atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(player));
-    }
+    case TYPE_THING:
+        destroy_thing(thing);
+        break;
 
-    s_Going(thing);
+    default:
+        notify(player, "Weird object type cannot be destroyed.");
+        break;
+    }
 }

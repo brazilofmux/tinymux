@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.54 2001-09-09 02:32:04 sdennis Exp $
+// $Id: externs.h,v 1.55 2001-10-02 05:35:25 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -147,7 +147,7 @@ extern dbref    FDECL(new_home, (dbref));
 extern dbref    FDECL(clone_home, (dbref, dbref));
 extern void FDECL(divest_object, (dbref));
 extern dbref    FDECL(create_obj, (dbref, int, char *, int));
-extern void FDECL(destroy_obj, (dbref, dbref));
+extern void destroy_obj(dbref);
 extern void FDECL(empty_obj, (dbref));
 
 /* From player.cpp */
