@@ -456,6 +456,7 @@ Bug Fixes:
  --  Bug #618 - Logic in new_home enables being inside a garbage object.
  --  Bug #424 - Linking deposit refund. Patch from Jake.
  --  Bug #585 - Parent isn't cleared during @destroy process. Patch from Jake.
+ --  Bug #602 - fun_ansi reaches backwards into the buffer.
 
 
 Performance Enhancements:
