@@ -10,7 +10,7 @@ Major changes that may affect performance and require softcode tweaks:
     the changes are made for the sake of consistency across the codebase.
  -- convtime() now returns '#-1 INVALID DATE' instead of -1 when it cannot
     parse the time string because '-1' is a valid time stamp.
- -- IFELSE() now uses the BOOLEAN convention instead of psuedo-BOOLEAN-Z
+ -- IFELSE() now uses the BOOLEAN convention instead of pseudo-BOOLEAN-Z
     convention.
 
 
@@ -172,7 +172,7 @@ Bug Fixes:
     like something that's been in there awhile.  Reported by Alierak.
  -- @cemit's to a channel did not affect channel history. Introduced and
     fixed by Jake.
- -- @mail/fwd re-evaluated the fowarded @mail.
+ -- @mail/fwd re-evaluated the fowarded @mail. Fixed by Jake.
 
 
 Performance Enhancements:
