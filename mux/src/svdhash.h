@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.4 2003-01-05 18:08:59 sdennis Exp $
+// $Id: svdhash.h,v 1.5 2003-01-22 01:00:17 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -279,6 +279,7 @@ private:
 #endif // !STANDALONE
     int  m_nBuffer;
     char m_aBuffer[SIZEOF_LOG_BUFFER];
+    BOOL bEnabled;
 #ifndef STANDALONE
     char m_szPrefix[32];
     char m_szFilename[SIZEOF_PATHNAME];
@@ -296,6 +297,7 @@ public:
     void DCL_CDECL tinyprintf(char *pFormatSpec, ...);
     void Flush(void);
     void ChangePrefix(char *p);
+    void EnableLogging(void);
 };
 
 extern CLogFile Log;

@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.8 2003-01-05 18:08:59 sdennis Exp $
+// $Id: svdhash.cpp,v 1.9 2003-01-22 01:00:17 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2436,6 +2436,10 @@ void CLogFile::WriteInteger(int iNumber)
 
 void CLogFile::WriteBuffer(int nString, const char *pString)
 {
+    if (!bEnabled)
+    {
+        return;
+    }
 #if !defined(STANDALONE) && defined(WIN32)
     EnterCriticalSection(&csLog);
 #endif // !STANDALONE WIN32
@@ -2555,15 +2559,24 @@ void CLogFile::ChangePrefix(char *szPrefix)
 {
     if (strcmp(szPrefix, m_szPrefix) != 0)
     {
-        CloseLogFile();
+        if (bEnabled)
+        {
+            CloseLogFile();
+        }
 
         char szNewName[SIZEOF_PATHNAME];
         MakeLogName(szPrefix, m_ltaStarted, szNewName);
-        ReplaceFile(m_szFilename, szNewName);
+        if (bEnabled)
+        {
+            ReplaceFile(m_szFilename, szNewName);
+        }
         strcpy(m_szPrefix, szPrefix);
         strcpy(m_szFilename, szNewName);
 
-        AppendLogFile();
+        if (bEnabled)
+        {
+            AppendLogFile();
+        }
     }
 }
 
@@ -2577,11 +2590,11 @@ CLogFile::CLogFile(void)
 #ifdef WIN32
     InitializeCriticalSection(&csLog);
 #endif // WIN32
+    bEnabled = FALSE;
     m_hFile = INVALID_HANDLE_VALUE;
-    m_szPrefix[0] = '\0';
     m_ltaStarted.GetLocal();
-    MakeLogName(m_szPrefix, m_ltaStarted, m_szFilename);
-    CreateLogFile();
+    m_szPrefix[0] = '\0';
+    m_szFilename[0] = '\0';
 #endif // !STANDALONE
 }
 
@@ -2589,7 +2602,8 @@ CLogFile::CLogFile(void)
 
 void CLogFile::Flush(void)
 {
-    if (m_nBuffer <= 0)
+    if (  m_nBuffer <= 0
+       || !bEnabled)
     {
         return;
     }
@@ -2615,6 +2629,16 @@ void CLogFile::Flush(void)
     }
 #endif // STANDALONE
     m_nBuffer = 0;
+}
+
+void CLogFile::EnableLogging(void)
+{
+    bEnabled = TRUE;
+#ifndef STANDALONE
+    m_ltaStarted.GetLocal();
+    MakeLogName(m_szPrefix, m_ltaStarted, m_szFilename);
+    CreateLogFile();
+#endif
 }
 
 #ifdef MEMORY_ACCOUNTING

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.34 2003-01-21 23:09:05 sdennis Exp $
+// $Id: game.cpp,v 1.35 2003-01-22 01:00:17 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1908,6 +1908,8 @@ int DCL_CDECL main(int argc, char *argv[])
         printf("  -h  Display this help." ENDLINE);
         return 1;
     }
+
+    Log.EnableLogging();
 
     BuildSignalNamesTable();
 
