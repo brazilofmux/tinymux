@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.21 2002-02-14 01:42:42 sdennis Exp $
+// $Id: flags.cpp,v 1.22 2002-02-14 05:31:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -323,6 +323,16 @@ static FLAGBITENT fbeObf            = { OBF,          '6',    FLAG_WORD3, CA_ADM
 static FLAGBITENT fbeHss            = { HSS,          '7',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
 static FLAGBITENT fbeMedium         = { MEDIUM,       '8',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
 static FLAGBITENT fbeDead           = { DEAD,         '9',    FLAG_WORD3, CA_ADMIN|CA_STAFF,    fh_wizroy};
+static FLAGBITENT fbeMarker0        = { MARK_0,       ' ',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker1        = { MARK_1,       ' ',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker2        = { MARK_2,       ' ',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker3        = { MARK_3,       ' ',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker4        = { MARK_4,       ' ',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker5        = { MARK_5,       ' ',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker6        = { MARK_6,       ' ',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker7        = { MARK_7,       ' ',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker8        = { MARK_8,       ' ',    FLAG_WORD3, 0,                    fh_god};
+static FLAGBITENT fbeMarker9        = { MARK_9,       ' ',    FLAG_WORD3, 0,                    fh_god};
 #else // WOD_REALMS
 static FLAGBITENT fbeMarker0        = { MARK_0,       '0',    FLAG_WORD3, 0,                    fh_god};
 static FLAGBITENT fbeMarker1        = { MARK_1,       '1',    FLAG_WORD3, 0,                    fh_god};
