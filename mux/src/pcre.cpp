@@ -47,6 +47,8 @@ restrictions:
     * Converted to C++ for MUX.
 */
 
+#include "copyright.h"
+#include "autoconf.h"
 #include "config.h"
 #define BACKTRACK_LIMIT 2500
 
@@ -78,6 +80,17 @@ public:
   T* get() const { return ptr; }
   T& operator[](int n) { return ptr[n]; }
 };
+
+
+/* Standard C headers plus the external interface definition */
+
+
+/* In case there is no definition of offsetof() provided - though any proper
+Standard C system should have one. */
+
+#ifndef offsetof
+#define offsetof(p_type,field) ((size_t)&(((p_type *)0)->field))
+#endif
 
 /* Private options flags start at the most significant end of the four bytes,
 but skip the top bit so we can use ints for convenience without getting tangled
@@ -538,14 +551,6 @@ typedef struct eptrblock {
 /*************************************************
 *               Global variables                 *
 *************************************************/
-
-/* PCRE is thread-clean and doesn't use any global variables in the normal
-sense. However, it calls memory allocation and free functions via the two
-indirections below, which are can be changed by the caller, but are shared
-between all threads. */
-
-#define pcre_malloc malloc
-#define pcre_free free
 
 /*************************************************
 *    Macros and tables for character handling    *

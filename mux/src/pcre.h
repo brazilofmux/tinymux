@@ -50,24 +50,6 @@ make changes to pcre.in. */
 #define PCRE_MINOR          7
 #define PCRE_DATE           29-Oct-2001
 
-/* Win32 uses DLL by default */
-
-#ifdef _WIN32
-# ifdef STATIC
-#  define PCRE_DL_IMPORT
-# else
-#  define PCRE_DL_IMPORT __declspec(dllimport)
-# endif
-#else
-# define PCRE_DL_IMPORT
-#endif
-
-/* Have to include stdlib.h in order to ensure that size_t is defined;
-it is needed here for malloc. */
-
-#include "config.h"
-#include <stdlib.h>
-
 /* Options */
 
 #define PCRE_CASELESS        0x0001
@@ -124,16 +106,6 @@ extern int pcre_exec(const pcre *, const pcre_extra *, const char *,
 extern const unsigned char *pcre_maketables(void);
 extern pcre_extra *pcre_study(const pcre *, int, const char **);
 
-
-/* Standard C headers plus the external interface definition */
-
-
-/* In case there is no definition of offsetof() provided - though any proper
-Standard C system should have one. */
-
-#ifndef offsetof
-#define offsetof(p_type,field) ((size_t)&(((p_type *)0)->field))
-#endif
 
 /* These are the public options that can change during matching. */
 
