@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.4 2002-07-16 06:41:41 jake Exp $
+// $Id: unparse.cpp,v 1.5 2003-02-04 08:33:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -42,14 +42,6 @@ static char *buftop;
 
 static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int format)
 {
-    ATTR *ap;
-    char *tbuf, sep_ch;
-
-#ifndef STANDALONE
-    char *buff;
-
-#endif // !STANDALONE
-
     if ((b == TRUE_BOOLEXP))
     {
         if (format == F_EXAMINE)
@@ -124,6 +116,8 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
         case F_EXAMINE:
 
+            char *buff;
+
             // Examine output - informative. Name(#Num) or Name.
             //
             buff = unparse_object(player, b->thing, FALSE);
@@ -149,11 +143,8 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
             default:
 
-                buff = alloc_sbuf("unparse_boolexp1");
-                buff[0] = '#';
-                Tiny_ltoa(b->thing, buff+1);
-                safe_str(buff, boolexp_buf, &buftop);
-                free_sbuf(buff);
+                safe_tprintf_str(boolexp_buf, &buftop, "#%d", b->thing);
+                break;
             }
             break;
 
@@ -172,11 +163,8 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
             default:
 
-                buff = alloc_sbuf("unparse_boolexp1");
-                buff[0] = '#';
-                Tiny_ltoa(b->thing, buff+1);
-                safe_str(buff, boolexp_buf, &buftop);
-                free_sbuf(buff);
+                safe_tprintf_str(boolexp_buf, &buftop, "#%d", b->thing);
+                break;
             }
         }
 #endif // STANDALONE
@@ -184,36 +172,34 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
     case BOOLEXP_ATR:
     case BOOLEXP_EVAL:
-        if (b->type == BOOLEXP_EVAL)
-        {
-            sep_ch = '/';
-        }
-        else
-        {
-            sep_ch = ':';
-        }
+        ATTR *ap;
+
         ap = atr_num(b->thing);
         if (ap && ap->number)
         {
+            // Use the attribute name if the attribute exists.
+            //
             safe_str(ap->name, boolexp_buf, &buftop);
-            safe_chr(sep_ch, boolexp_buf, &buftop);
-            safe_str((char *)b->sub1, boolexp_buf, &buftop);
-        }
-        else if (b->thing > 0)
-        {
-            tbuf = alloc_sbuf("unparse_boolexp1.atr_num");
-            Tiny_ltoa(b->thing, tbuf);
-            safe_str(tbuf, boolexp_buf, &buftop);
-            safe_chr(sep_ch, boolexp_buf, &buftop);
-            safe_str((char *)b->sub1, boolexp_buf, &buftop);
-            free_sbuf(tbuf);
         }
         else
         {
-            safe_str((char *)b->sub2, boolexp_buf, &buftop);
-            safe_chr(sep_ch, boolexp_buf, &buftop);
-            safe_str((char *)b->sub1, boolexp_buf, &buftop);
+            // Otherwise use the attribute number.
+            //
+            // Only god or the db loader can create a new boolexp
+            // with an invalid attribute, but anyone may keep a lock
+            // whose attribute has subsequently disappeared.
+            //
+            safe_ltoa(b->thing, boolexp_buf, &buftop);
         }
+        if (b->type == BOOLEXP_EVAL)
+        {
+            safe_chr('/', boolexp_buf, &buftop);
+        }
+        else
+        {
+            safe_chr(':', boolexp_buf, &buftop);
+        }
+        safe_str((char *)b->sub1, boolexp_buf, &buftop);
         break;
 
     default:
@@ -231,7 +217,7 @@ char *unparse_boolexp_quiet(dbref player, BOOLEXP *b)
 {
     buftop = boolexp_buf;
     unparse_boolexp1(player, b, BOOLEXP_CONST, F_QUIET);
-    *buftop++ = '\0';
+    *buftop = '\0';
     return boolexp_buf;
 }
 
@@ -241,7 +227,7 @@ char *unparse_boolexp(dbref player, BOOLEXP *b)
 {
     buftop = boolexp_buf;
     unparse_boolexp1(player, b, BOOLEXP_CONST, F_EXAMINE);
-    *buftop++ = '\0';
+    *buftop = '\0';
     return boolexp_buf;
 }
 
@@ -249,7 +235,7 @@ char *unparse_boolexp_decompile(dbref player, BOOLEXP *b)
 {
     buftop = boolexp_buf;
     unparse_boolexp1(player, b, BOOLEXP_CONST, F_DECOMPILE);
-    *buftop++ = '\0';
+    *buftop = '\0';
     return boolexp_buf;
 }
 
@@ -257,7 +243,7 @@ char *unparse_boolexp_function(dbref player, BOOLEXP *b)
 {
     buftop = boolexp_buf;
     unparse_boolexp1(player, b, BOOLEXP_CONST, F_FUNCTION);
-    *buftop++ = '\0';
+    *buftop = '\0';
     return boolexp_buf;
 }
 
