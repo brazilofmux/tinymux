@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.13 2002-07-23 05:36:13 jake Exp $
+// $Id: stringutil.cpp,v 1.14 2002-07-23 12:29:14 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2947,13 +2947,6 @@ void ItemToList_Final(ITL *pContext)
 int _stricmp(const char *a, const char *b)
 {
     return strcasecmp(a,b);
-}
-
-// _stricmp - Compare two strings ignoring case.
-//
-int _strnicmp(const char *a, const char *b, int n)
-{
-    return strncasecmp(a,b,n);
 }
 
 // _strlwr - Convert string to all lower case.
