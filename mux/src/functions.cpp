@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.21 2002-06-20 18:45:22 sdennis Exp $
+// $Id: functions.cpp,v 1.22 2002-06-20 19:08:43 jake Exp $
 //
 
 #include "copyright.h"
@@ -6443,7 +6443,7 @@ FUNCTION(fun_idle)
         if (foundit)
         {
             if (  d->player != executor
-               && !Wizard_Who(executor)))
+               && !Wizard_Who(executor))
             {
                 safe_ltoa(NOTHING, buff, bufc);
                 return;
