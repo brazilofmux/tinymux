@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.66 2002-02-13 18:57:29 sdennis Exp $
+// $Id: command.cpp,v 1.67 2002-02-13 19:16:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2952,31 +2952,31 @@ static void list_process(dbref player)
 
 NAMETAB list_names[] =
 {
-    {(char *)"allocations",     2,  CA_WIZARD,  LIST_ALLOCATOR},
-    {(char *)"attr_permissions",    5,  CA_WIZARD,  LIST_ATTRPERMS},
-    {(char *)"attributes",      2,  CA_PUBLIC,  LIST_ATTRIBUTES},
-    {(char *)"bad_names",       2,  CA_WIZARD,  LIST_BADNAMES},
-    {(char *)"buffers",     2,  CA_WIZARD,  LIST_BUFTRACE},
-    {(char *)"commands",        3,  CA_PUBLIC,  LIST_COMMANDS},
-    {(char *)"config_permissions",  3,  CA_GOD,     LIST_CONF_PERMS},
-    {(char *)"costs",       3,  CA_PUBLIC,  LIST_COSTS},
-    {(char *)"db_stats",        2,  CA_WIZARD,  LIST_DB_STATS},
-    {(char *)"default_flags",   1,  CA_PUBLIC,  LIST_DF_FLAGS},
-    {(char *)"flags",       2,  CA_PUBLIC,  LIST_FLAGS},
-    {(char *)"functions",       2,  CA_PUBLIC,  LIST_FUNCTIONS},
-    {(char *)"globals",     2,  CA_WIZARD,  LIST_GLOBALS},
-    {(char *)"hashstats",       1,  CA_WIZARD,  LIST_HASHSTATS},
-    {(char *)"logging",     1,  CA_GOD,     LIST_LOGGING},
-    {(char *)"options",     1,  CA_PUBLIC,  LIST_OPTIONS},
-    {(char *)"permissions",     2,  CA_WIZARD,  LIST_PERMS},
-    {(char *)"powers",      2,  CA_WIZARD,  LIST_POWERS},
-    {(char *)"process",     2,  CA_WIZARD,  LIST_PROCESS},
-    {(char *)"resources",     1,  CA_WIZARD,  LIST_RESOURCES},
-    {(char *)"site_information",    2,  CA_WIZARD,  LIST_SITEINFO},
-    {(char *)"switches",        2,  CA_PUBLIC,  LIST_SWITCHES},
-    {(char *)"user_attributes", 1,  CA_WIZARD,  LIST_VATTRS},
-    {(char *)"guests",      2,   CA_WIZARD, LIST_GUESTS},
-    { NULL,             0,  0,      0}
+    {"allocations",        2,  CA_WIZARD,  LIST_ALLOCATOR},
+    {"attr_permissions",   5,  CA_WIZARD,  LIST_ATTRPERMS},
+    {"attributes",         2,  CA_PUBLIC,  LIST_ATTRIBUTES},
+    {"bad_names",          2,  CA_WIZARD,  LIST_BADNAMES},
+    {"buffers",            2,  CA_WIZARD,  LIST_BUFTRACE},
+    {"commands",           3,  CA_PUBLIC,  LIST_COMMANDS},
+    {"config_permissions", 3,  CA_GOD,     LIST_CONF_PERMS},
+    {"costs",              3,  CA_PUBLIC,  LIST_COSTS},
+    {"db_stats",           2,  CA_WIZARD,  LIST_DB_STATS},
+    {"default_flags",      1,  CA_PUBLIC,  LIST_DF_FLAGS},
+    {"flags",              2,  CA_PUBLIC,  LIST_FLAGS},
+    {"functions",          2,  CA_PUBLIC,  LIST_FUNCTIONS},
+    {"globals",            2,  CA_WIZARD,  LIST_GLOBALS},
+    {"hashstats",          1,  CA_WIZARD,  LIST_HASHSTATS},
+    {"logging",            1,  CA_GOD,     LIST_LOGGING},
+    {"options",            1,  CA_PUBLIC,  LIST_OPTIONS},
+    {"permissions",        2,  CA_WIZARD,  LIST_PERMS},
+    {"powers",             2,  CA_WIZARD,  LIST_POWERS},
+    {"process",            2,  CA_WIZARD,  LIST_PROCESS},
+    {"resources",          1,  CA_WIZARD,  LIST_RESOURCES},
+    {"site_information",   2,  CA_WIZARD,  LIST_SITEINFO},
+    {"switches",           2,  CA_PUBLIC,  LIST_SWITCHES},
+    {"user_attributes",    1,  CA_WIZARD,  LIST_VATTRS},
+    {"guests",             2,  CA_WIZARD,  LIST_GUESTS},
+    { NULL,                0,  0,          0}
 };
 
 extern NAMETAB enable_names[];
