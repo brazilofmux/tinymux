@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.35 2003-01-04 18:55:55 sdennis Exp $
+// $Id: speech.cpp,v 1.36 2003-01-08 12:11:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -181,7 +181,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 
         default:
             key = SAY_EMIT;
-            break;;
+            break;
         }
     }
 
