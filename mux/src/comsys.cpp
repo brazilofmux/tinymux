@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.20 2002-07-18 03:56:53 jake Exp $
+// $Id: comsys.cpp,v 1.21 2002-07-18 05:19:40 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1009,7 +1009,8 @@ void SendChannelMessage
         {
             if (logmax > MAX_RECALL)
             {
-                atr_add(ch->chan_obj, attr->number, Tiny_ltoa_t(MAX_RECALL), GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
+                logmax = MAX_RECALL;
+                atr_add(ch->chan_obj, attr->number, Tiny_ltoa_t(logmax), GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
             }
             int atr = mkattr(tprintf("HISTORY_%d", iMod(ch->num_messages, logmax)));
             atr_add(ch->chan_obj, atr, msgNormal, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
