@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: slave.cpp,v 1.2 2003-01-31 02:39:41 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -28,7 +28,7 @@
 
 pid_t parent_pid;
 
-#define MAX_STRING 8000
+#define MAX_STRING 1000
 char *arg_for_errors;
 
 #ifndef INADDR_NONE
@@ -72,9 +72,9 @@ int query(char *ip, char *orig_arg)
     int s;
     FILE *f;
     char result[MAX_STRING];
-    char buf[MAX_STRING];
-    char buf2[MAX_STRING];
-    char buf3[MAX_STRING*2];
+    char buf[MAX_STRING * 2];
+    char buf2[MAX_STRING * 2];
+    char buf3[MAX_STRING * 4];
     char arg[MAX_STRING];
     size_t len;
     char *p;
@@ -88,7 +88,7 @@ int query(char *ip, char *orig_arg)
     const char *pHName = ip;
     hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
     if (  hp
-       && strlen(hp->h_name) < MAX_STRING / 2)
+       && strlen(hp->h_name) < MAX_STRING)
     {
         pHName = hp->h_name;
     }
@@ -120,7 +120,7 @@ int query(char *ip, char *orig_arg)
         static struct hostent def;
         static struct in_addr defaddr;
         static char *alist[1];
-        static char namebuf[128];
+        static char namebuf[MAX_STRING];
 
         defaddr.s_addr = inet_addr(arg);
         if (defaddr.s_addr == INADDR_NONE)
@@ -242,7 +242,7 @@ RETSIGTYPE alarm_signal(int iSig)
 
 int main(int argc, char *argv[])
 {
-    char arg[MAX_STRING + 1];
+    char arg[MAX_STRING];
     char *p;
     int len;
 
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
 
     for (;;)
     {
-        len = read(0, arg, MAX_STRING);
+        len = read(0, arg, MAX_STRING - 1);
         if (len == 0)
         {
             break;
