@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.47 2002-09-12 04:48:37 jake Exp $
+// $Id: mail.cpp,v 1.48 2002-09-12 05:07:59 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1206,8 +1206,18 @@ static char *make_namelist(dbref player, char *arg)
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, oldarg);
     Tiny_StrTokControl(&tts, " ");
+    BOOL bFirst = TRUE;
     for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
     {
+        if (bFirst)
+        {
+            bFirst = FALSE;
+        }
+        else
+        {
+            safe_str(", ", names, &bp);
+        }
+
         if (*p == '!')
         {
             safe_chr('!', names, &bp);
@@ -1217,22 +1227,17 @@ static char *make_namelist(dbref player, char *arg)
         if (Good_obj(target) && isPlayer(target))
         {
             safe_str(Name(target), names, &bp);
-            safe_str(", ", names, &bp);
+        }
+        else if (!strcmp(p, "-1"))
+        {
+            safe_str("*HIDDEN*", names, &bp);
         }
         else
         {
-            if (!strcmp(p, "-1"))
-            {
-                safe_str("*HIDDEN*  ", names, &bp);
-            }
-            else if (*p == '*')
-            {
-                safe_str(p, names, &bp);
-                safe_str(", ", names, &bp);
-            }
+            safe_str(p, names, &bp);
         }
     }
-    *(bp - 2) = '\0';
+    *bp = '\0';
     free_lbuf(oldarg);
     return names;
 }
