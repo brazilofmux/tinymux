@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.32 2003-02-05 06:20:58 jake Exp $
+// $Id: functions.cpp,v 1.33 2003-02-05 06:40:11 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2733,7 +2733,7 @@ FUNCTION(fun_and)
     bool val = true;
     for (int i = 0; i < nfargs && val; i++)
     {
-        val = isTRUE(mux_atol(fargs[i]));
+        val = mux_atol(fargs[i]);
     }
     safe_bool(val, buff, bufc);
 }
@@ -2743,7 +2743,7 @@ FUNCTION(fun_or)
     bool val = false;
     for (int i = 0; i < nfargs && !val; i++)
     {
-        val = isTRUE(mux_atol(fargs[i]));
+        val = mux_atol(fargs[i]);
     }
     safe_bool(val, buff, bufc);
 }
@@ -2779,7 +2779,7 @@ FUNCTION(fun_cand)
         mux_exec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = isTRUE(mux_atol(temp));
+        val = mux_atol(temp);
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -2796,7 +2796,7 @@ FUNCTION(fun_cor)
         mux_exec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = isTRUE(mux_atol(temp));
+        val = mux_atol(temp);
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -3402,7 +3402,7 @@ FUNCTION(fun_land)
         while (cp && bValue)
         {
             char *curr = split_token(&cp, sep);
-            bValue = isTRUE(mux_atol(curr));
+            bValue = mux_atol(curr);
         }
     }
     safe_bool(bValue, buff, bufc);
@@ -3420,7 +3420,7 @@ FUNCTION(fun_lor)
         while (cp && !bValue)
         {
             char *curr = split_token(&cp, sep);
-            bValue = isTRUE(mux_atol(curr));
+            bValue = mux_atol(curr);
         }
     }
     safe_bool(bValue, buff, bufc);
