@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.8 2000-06-02 16:18:12 sdennis Exp $
+// $Id: bsd.cpp,v 1.9 2000-08-03 04:57:49 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -28,6 +28,7 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #endif // VMS
+#include <sys/stat.h>
 #endif // WIN32
 
 #include <signal.h>
@@ -63,7 +64,7 @@ DESC *descriptor_list = NULL;
 int game_pid;
 #else // WIN32
 int maxd = 0;
-pid_t slave_pid;
+pid_t slave_pid = 0;
 int slave_socket = INVALID_SOCKET;
 pid_t game_pid;
 #endif // WIN32
@@ -167,9 +168,9 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
         for (;;)
         {
             // Go take the request off the stack, but not if it takes more
-            // than 5 seconds to do it. Go back to sleep if we time out. The request
-            // can wait: either another thread will pick it up, or we'll wakeup in
-            // 60 seconds anyway.
+            // than 5 seconds to do it. Go back to sleep if we time out. The
+            // request can wait: either another thread will pick it up, or
+            // we'll wakeup in 60 seconds anyway.
             //
             SlaveThreadInfo[iSlave].iDoing = __LINE__;
             if (WAIT_OBJECT_0 != WaitForSingleObject(hSlaveRequestStackSemaphore, 5000))
@@ -462,6 +463,7 @@ static int get_slave_result(void)
 
 void boot_slave(dbref ref1, dbref ref2, int int3)
 {
+    char *pFailedFunc = 0;
     int sv[2];
     int i;
     int maxfds;
@@ -472,41 +474,68 @@ void boot_slave(dbref ref1, dbref ref2, int int3)
     maxfds = sysconf(_SC_OPEN_MAX);
 #endif
 
-    if (slave_socket != -1) {
+    // Let go of previous slave info.
+    //
+    if (!IS_INVALID_SOCKET(slave_socket))
+    {
+        shutdown(slave_socket, SD_BOTH);
         close(slave_socket);
-        slave_socket = -1;
+        slave_socket = INVALID_SOCKET;
     }
-    if (socketpair(AF_UNIX, SOCK_DGRAM, 0, sv) < 0) {
-        return;
+    if (slave_pid > 0)
+    {
+        kill(slave_pid, SIGKILL);
     }
-    /*
-     * set to nonblocking 
-     */
-    if (fcntl(sv[0], F_SETFL, FNDELAY) == -1) {
+    slave_pid = 0;
+
+    if (socketpair(AF_UNIX, SOCK_DGRAM, 0, sv) < 0)
+    {
+        pFailedFunc = "socketpair() error: ";
+        goto failure;
+    }
+
+    // Set to nonblocking.
+    //
+    if (fcntl(sv[0], F_SETFL, FNDELAY) == -1)
+    {
+        pFailedFunc = "fcntl() error: ";
         close(sv[0]);
         close(sv[1]);
-        return;
+        goto failure;
     }
     slave_pid = vfork();
-    switch (slave_pid) {
+    switch (slave_pid)
+    {
     case -1:
+
+        pFailedFunc = "vfork() error: ";
         close(sv[0]);
         close(sv[1]);
-        return;
+        goto failure;
 
-    case 0:        /*
-                 * * child  
-                 */
+    case 0:
+
+        // Child.
+        //
         close(sv[0]);
-        close(0);
-        close(1);
-        if (dup2(sv[1], 0) == -1) {
+        if (sv[1] != 0)
+        {
+            close(0);
+        }
+        if (sv[1] != 1)
+        {
+            close(1);
+        }
+        if (dup2(sv[1], 0) == -1)
+        {
             _exit(1);
         }
-        if (dup2(sv[1], 1) == -1) {
+        if (dup2(sv[1], 1) == -1)
+        {
             _exit(1);
         }
-        for (i = 3; i < maxfds; ++i) {
+        for (i = 3; i < maxfds; ++i)
+        {
             close(i);
         }
         execlp("bin/slave", "slave", NULL);
@@ -514,11 +543,27 @@ void boot_slave(dbref ref1, dbref ref2, int int3)
     }
     close(sv[1]);
 
-    if (fcntl(sv[0], F_SETFL, FNDELAY) == -1) {
-        close(sv[0]);
-        return;
-    }
     slave_socket = sv[0];
+    if (fcntl(slave_socket, F_SETFL, FNDELAY) == -1)
+    {
+        pFailedFunc = "fcntl() error: ";
+        close(slave_socket);
+        goto failure;
+    }
+
+    STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
+    log_text("DNS lookup slave started on fd ");
+    log_number(slave_socket);
+    ENDLOG;
+    return;
+
+failure:
+
+    slave_pid = 0;
+    STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
+    log_text(pFailedFunc);
+    log_number(errno);
+    ENDLOG;
 }
 
 // Get a result from the slave
@@ -537,19 +582,23 @@ static int get_slave_result()
 
     buf = alloc_lbuf("slave_buf");
 
-    len = read(slave_socket, buf, LBUF_SIZE - 1);
-    if (len < 0) {
-        if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+    len = read(slave_socket, buf, LBUF_SIZE-1);
+    if (len < 0)
+    {
+        if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
+        {
             free_lbuf(buf);
-            return (-1);
+            return -1;
         }
         close(slave_socket);
-        slave_socket = -1;
+        slave_socket = INVALID_SOCKET;
         free_lbuf(buf);
-        return (-1);
-    } else if (len == 0) {
+        return -1;
+    }
+    else if (len == 0)
+    {
         free_lbuf(buf);
-        return (-1);
+        return -1;
     }
     buf[len] = '\0';
 
@@ -558,21 +607,18 @@ static int get_slave_result()
     userid = alloc_lbuf("slave_userid");
     host = alloc_lbuf("slave_host");
 
-    if (sscanf(buf, "%s %s",
-           host, token) != 2) {
-        free_lbuf(buf);
-        free_lbuf(token);
-        free_lbuf(os);
-        free_lbuf(userid);
-        free_lbuf(host);
-        return (0);
+    if (sscanf(buf, "%s %s", host, token) != 2)
+    {
+        goto Done;
     }
     p = strchr(buf, '\n');
     *p = '\0';
-    for (d = descriptor_list; d; d = d->next) {
+    for (d = descriptor_list; d; d = d->next)
+    {
         if (strcmp(d->addr, host))
             continue;
-        if (mudconf.use_hostname) {
+        if (mudconf.use_hostname)
+        {
             StringCopyTrunc(d->addr, token, 50);
             d->addr[50] = '\0';
             if (d->player != 0) {
@@ -588,36 +634,29 @@ static int get_slave_result()
     if (sscanf(p + 1, "%s %d , %d : %s : %s : %s",
            host,
            &remote_port, &local_port,
-           token, os, userid) != 6) {
-        free_lbuf(buf);
-        free_lbuf(token);
-        free_lbuf(os);
-        free_lbuf(userid);
-        free_lbuf(host);
-        return (0);
+           token, os, userid) != 6)
+    {
+        goto Done;
     }
-    for (d = descriptor_list; d; d = d->next) {
+    for (d = descriptor_list; d; d = d->next)
+    {
         if (ntohs((d->address).sin_port) != remote_port)
             continue;
         StringCopyTrunc(d->username, userid, 10);
         d->username[10] = '\0';
-        if (d->player != 0) {
+        if (d->player != 0)
+        {
             atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s",
                              d->username, d->addr));
         }
-        free_lbuf(buf);
-        free_lbuf(token);
-        free_lbuf(os);
-        free_lbuf(userid);
-        free_lbuf(host);
-        return (0);
     }
+Done:
     free_lbuf(buf);
     free_lbuf(token);
     free_lbuf(os);
     free_lbuf(userid);
     free_lbuf(host);
-    return (0);
+    return 0;
 }
 #endif // WIN32
 
@@ -735,18 +774,24 @@ SOCKET make_socket(int port)
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons((unsigned short)port);
-    if (IS_SOCKET_ERROR(bind(s, (struct sockaddr *)&server, sizeof(server))))
-    {
-        log_perror("NET", "FAIL", NULL, "bind");
-        if (SOCKET_CLOSE(s) == 0)
-        {
-            DebugTotalSockets--;
-        }
-        s = INVALID_SOCKET;
-#ifdef WIN32
-        WSACleanup();
+#ifndef WIN32
+    if (!mudstate.restarting)
 #endif // WIN32
-        exit(4);
+    {
+        int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
+        if (IS_SOCKET_ERROR(cc))
+        {
+            log_perror("NET", "FAIL", NULL, "bind");
+            if (SOCKET_CLOSE(s) == 0)
+            {
+                DebugTotalSockets--;
+            }
+            s = INVALID_SOCKET;
+#ifdef WIN32
+            WSACleanup();
+#endif // WIN32
+            exit(4);
+        }
     }
     listen(s, SOMAXCONN);
     return s;
@@ -756,7 +801,7 @@ SOCKET make_socket(int port)
 void shovechars9x(int port)
 {
     fd_set input_set, output_set;
-    int found, check;
+    int found;
     DESC *d, *dnext, *newd;
 
 #define CheckInput(x)   FD_ISSET(x, &input_set)
@@ -837,7 +882,7 @@ void shovechars9x(int port)
                 int sockerr = WSAGetLastError();
                 STARTLOG(LOG_NET, "NET", "CONN");
                 log_text("shovechars: Socket error.");
-                ENDLOG
+                ENDLOG;
             }
 
         case 0:
@@ -851,8 +896,10 @@ void shovechars9x(int port)
             newd = new_connection(MainGameSockPort);
             if (!newd)
             {
-                check = (errno && (errno != EINTR) && (errno != EMFILE) && (errno != ENFILE));
-                if (check)
+                if (  errno
+                   && errno != EINTR
+                   && errno != EMFILE
+                   && errno != ENFILE)
                 {
                     log_perror("NET", "FAIL", NULL, "new_connection");
                 }
@@ -974,10 +1021,20 @@ void shovecharsNT(int port)
 
 #else // WIN32
 
+BOOL ValidSocket(SOCKET s)
+{
+    struct stat fstatbuf;
+    if (fstat(s, &fstatbuf) < 0)
+    {
+        return FALSE;
+    }
+    return TRUE;
+}
+
 void shovechars(int port)
 {
     fd_set input_set, output_set;
-    int found, check;
+    int found;
     DESC *d, *dnext, *newd;
     unsigned int avail_descriptors;
     int maxfds;
@@ -1041,98 +1098,144 @@ void shovechars(int port)
         FD_ZERO(&input_set);
         FD_ZERO(&output_set);
 
-        /*
-         * Listen for new connections if there are free descriptors 
-         */
-        if (ndescriptors < avail_descriptors) {
+        // Listen for new connections if there are free descriptors.
+        //
+        if (ndescriptors < avail_descriptors)
+        {
             FD_SET(MainGameSockPort, &input_set);
         }
 
-        /*
-         * Listen for replies from the slave socket 
-         */
-        if (slave_socket != -1) {
+        // Listen for replies from the slave socket.
+        //
+        if (!IS_INVALID_SOCKET(slave_socket))
+        {
             FD_SET(slave_socket, &input_set);
         }
 
-        /*
-         * Mark sockets that we want to test for change in status 
-         */
-        DESC_ITER_ALL(d) {
+        // Mark sockets that we want to test for change in status.
+        //
+        DESC_ITER_ALL(d)
+        {
             if (!d->input_head)
                 FD_SET(d->descriptor, &input_set);
             if (d->output_head)
                 FD_SET(d->descriptor, &output_set);
         }
 
-        /*
-         * Wait for something to happen 
-         */
+        // Wait for something to happen.
+        //
         struct timeval timeout;
         CLinearTimeDelta ltdTimeout = ltaWakeUp - ltaCurrent;
         ltdTimeout.ReturnTimeValueStruct(&timeout);
         found = select(maxd, &input_set, &output_set, (fd_set *) NULL,
                    &timeout);
 
-        if (found < 0) {
-            if (errno != EINTR) {
-                log_perror("NET", "FAIL",
-                     "checking for activity", "select");
+        if (IS_SOCKET_ERROR(found))
+        {
+            if (errno == EBADF)
+            {
+                // This one is bad, as it results in a spiral of
+                // doom, unless we can figure out what the bad file
+                // descriptor is and get rid of it.
+                //
+                log_perror("NET", "FAIL", "checking for activity", "select");
+
+                // Search for a bad socket amoungst the players.
+                //
+                DESC_ITER_ALL(d)
+                {
+                    if (!ValidSocket(d->descriptor))
+                    {
+                        STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
+                        log_text((char *) "Bad descriptor ");
+                        log_number(d->descriptor);
+                        ENDLOG;
+                        shutdownsock(d, R_SOCKDIED);
+                    }
+                }
+                if (  !IS_INVALID_SOCKET(slave_socket)
+                   && !ValidSocket(slave_socket))
+                {
+                    // Try to restart the slave, since it presumably
+                    // died.
+                    //
+                    STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
+                    log_text((char *) "Bad slave descriptor ");
+                    log_number(slave_socket);
+                    ENDLOG;
+                    boot_slave(0, 0, 0);
+                }
+                if (!ValidSocket(MainGameSockPort))
+                {
+                    // That's it. Game over.
+                    //
+                    STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
+                    log_text((char *) "Bad game port descriptor ");
+                    log_number(MainGameSockPort);
+                    ENDLOG;
+                    break;
+                }
+            }
+            else if (errno != EINTR)
+            {
+                log_perror("NET", "FAIL", "checking for activity", "select");
             }
             continue;
         }
 
-        /*
-         * Get usernames and hostnames 
-         */
-
-        if (slave_socket != -1 &&
-            FD_ISSET(slave_socket, &input_set)) {
-            while (get_slave_result() == 0) ;
-        }
-        /*
-         * Check for new connection requests 
-         */
-
-        if (CheckInput(MainGameSockPort)) {
-            newd = new_connection(MainGameSockPort);
-            if (!newd) {
-                check = (errno && (errno != EINTR) &&
-                     (errno != EMFILE) &&
-                     (errno != ENFILE));
-                if (check) {
-                    log_perror("NET", "FAIL", NULL,
-                           "new_connection");
-                }
-            } else {
-                if (newd->descriptor >= maxd)
-                    maxd = newd->descriptor + 1;
+        // Get usernames and hostnames.
+        //
+        if (  !IS_INVALID_SOCKET(slave_socket)
+           && FD_ISSET(slave_socket, &input_set))
+        {
+            while (get_slave_result() == 0)
+            {
+                ; // Nothing.
             }
         }
-        /*
-         * Check for activity on user sockets 
-         */
 
-        DESC_SAFEITER_ALL(d, dnext) {
-
-            /*
-             * Process input from sockets with pending input 
-             */
-
-            if (CheckInput(d->descriptor)) {
-
-                /*
-                 * Undo autodark 
-                 */
-
-                if (d->flags & DS_AUTODARK) {
-                    d->flags &= ~DS_AUTODARK;
-                    s_Flags(d->player,
-                        Flags(d->player) & ~DARK);
+        // Check for new connection requests.
+        //
+        if (CheckInput(MainGameSockPort))
+        {
+            newd = new_connection(MainGameSockPort);
+            if (!newd)
+            {
+                if (  errno
+                   && errno != EINTR
+                   && errno != EMFILE
+                   && errno != ENFILE)
+                {
+                    log_perror("NET", "FAIL", NULL, "new_connection");
                 }
-                /*
-                 * Process received data 
-                 */
+            }
+            else
+            {
+                if (newd->descriptor >= maxd)
+                {
+                    maxd = newd->descriptor + 1;
+                }
+            }
+        }
+
+        // Check for activity on user sockets.
+        //
+        DESC_SAFEITER_ALL(d, dnext)
+        {
+            // Process input from sockets with pending input.
+            //
+            if (CheckInput(d->descriptor))
+            {
+                // Undo autodark 
+                //
+                if (d->flags & DS_AUTODARK)
+                {
+                    d->flags &= ~DS_AUTODARK;
+                    s_Flags(d->player, Flags(d->player) & ~DARK);
+                }
+
+                // Process received data.
+                //
 #ifdef CONCENTRATE
                 if (!(d->cstatus & C_REMOTE))
                 {
@@ -1146,10 +1249,9 @@ void shovechars(int port)
                 }
 #endif
             }
-            /*
-             * Process output for sockets with pending output 
-             */
 
+            // Process output for sockets with pending output.
+            //
             if (CheckOutput(d->descriptor))
             {
                 process_output(d, TRUE);
@@ -2337,17 +2439,24 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 #else // !WIN32
         if (mudconf.sig_action != SA_EXIT)
         {
-            raw_broadcast(0, "Game: Fatal signal %s caught, restarting with previous database.", signames[sig]);
+            raw_broadcast
+            (  0,
+               "Game: Fatal signal %s caught, restarting.",
+               signames[sig]
+            );
 
-            // There is no older DB. It's a fiction.
-            // Our only choice is between unamed attributes and named ones.
-            // We go with what we got.
+            // There is no older DB. It's a fiction. Our only choice is
+            // between unamed attributes and named ones. We go with what we
+            // got.
             //
             SYNC;
             dump_database_internal(DUMP_RESTART);
             CLOSE;
             shutdown(slave_socket, SD_BOTH);
-            kill(slave_pid, SIGKILL);
+            if (slave_pid > 0)
+            {
+                kill(slave_pid, SIGKILL);
+            }
 
             // Try our best to dump a core first 
             //
