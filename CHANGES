@@ -128,6 +128,8 @@ Feature Additions:
  --  Can now use @set and set() to set multiple flags at a time.
  --  Added ChaoticMUX's colored channel names including the same file format.
  --  Added floordiv(), remainder(), and changed mod().
+ --  Added INFO command which can be used at the connect screen and from within
+     the game.
 
 
 Bug Fixes:
