@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.17 2003-02-12 18:33:47 jake Exp $
+// $Id: funceval.cpp,v 1.18 2003-02-15 16:02:39 jake Exp $
 //
 
 #include "copyright.h"
@@ -413,38 +413,39 @@ FUNCTION(fun_set)
         return;
     }
 
-    dbref thing, thing2, aowner;
-    char *p, *buff2;
-    bool clear;
-    int atr, atr2, aflags, flagvalue;
-    ATTR *attr, *attr2;
+    dbref thing, aowner;
+    int aflags, flagvalue;
+    ATTR *attr;
 
     // obj/attr form?
     //
-    if (parse_attrib(executor, fargs[0], &thing, &atr))
+    if (parse_attrib_temp(executor, fargs[0], &thing, &attr))
     {
-        if (atr != NOTHING)
+        if (  attr
+           && See_attr(executor, thing, attr))
         {
-            clear = false;
+            bool clear = false;
 
-            p = fargs[1];
-            if (p[0] == '\0')
+            char *flagname = fargs[1];
+            if (flagname[0] == '\0')
             {
                 // Must specify flag name
                 //
                 safe_str("#-1 UNSPECIFIED PARAMETER", buff, bufc);
+                return;
             }
-            else if (p[0] == NOT_TOKEN)
+
+            if (flagname[0] == NOT_TOKEN)
             {
                 // We are clearing a flag instead of setting it.
                 //
-                p++;
+                flagname++;
                 clear = true;
             }
 
             // valid attribute flag?
             //
-            flagvalue = search_nametab(executor, indiv_attraccess_nametab, p);
+            flagvalue = search_nametab(executor, indiv_attraccess_nametab, flagname);
             if (flagvalue < 0)
             {
                 safe_str("#-1 CAN NOT SET", buff, bufc);
@@ -453,7 +454,7 @@ FUNCTION(fun_set)
 
             // Make sure attribute is present
             //
-            if (!atr_get_info(thing, atr, &aowner, &aflags))
+            if (!atr_get_info(thing, attr->number, &aowner, &aflags))
             {
                 safe_str("#-1 ATTRIBUTE NOT PRESENT ON OBJECT", buff, bufc);
                 return;
@@ -461,9 +462,7 @@ FUNCTION(fun_set)
 
             // Can we write to attribute?
             //
-            attr = atr_num(atr);
-            if (  !attr
-               || !bCanSetAttr(executor, thing, attr))
+            if (!bCanSetAttr(executor, thing, attr))
             {
                 safe_noperm(buff, bufc);
                 return;
@@ -479,14 +478,15 @@ FUNCTION(fun_set)
             {
                 aflags |= flagvalue;
             }
-            atr_set_flags(thing, atr, aflags);
+            atr_set_flags(thing, attr->number, aflags);
             return;
         }
     }
 
     // Find thing.
     //
-    if ((thing = match_controlled(executor, fargs[0])) == NOTHING)
+    thing = match_controlled_quiet(executor, fargs[0]);
+    if (thing == NOTHING)
     {
         safe_nothing(buff, bufc);
         return;
@@ -494,7 +494,7 @@ FUNCTION(fun_set)
 
     // Check for attr set first.
     //
-    for (p = fargs[1]; *p && *p != ':'; p++)
+    for (char *p = fargs[1]; *p && *p != ':'; p++)
     {
         ; // Nothing
     }
@@ -502,7 +502,7 @@ FUNCTION(fun_set)
     if (*p)
     {
         *p++ = 0;
-        atr = mkattr(fargs[1]);
+        int atr = mkattr(fargs[1]);
         if (atr <= 0)
         {
             safe_str("#-1 UNABLE TO CREATE ATTRIBUTE", buff, bufc);
@@ -519,25 +519,29 @@ FUNCTION(fun_set)
             safe_noperm(buff, bufc);
             return;
         }
-        buff2 = alloc_lbuf("fun_set");
+        char *buff2 = alloc_lbuf("fun_set");
 
         // check for _
         //
         if (*p == '_')
         {
+            int atr2;
+            ATTR *attr2;
+            dbref thing2;
+
             strcpy(buff2, p + 1);
-            if (  !parse_attrib(executor, p + 1, &thing2, &atr2)
-               || atr2 == NOTHING)
+            if (!( parse_attrib_temp(executor, p + 1, &thing2, &attr2)
+                && attr2))
             {
                 free_lbuf(buff2);
                 safe_nomatch(buff, bufc);
                 return;
             }
-            attr2 = atr_num(atr);
+            atr2 = attr2->number;
             p = buff2;
+            atr_pget_str(buff2, thing2, atr2, &aowner, &aflags);
 
-            if (  !attr2
-               || !See_attr(executor, thing2, attr2))
+            if (!See_attr(executor, thing2, attr2))
             {
                 free_lbuf(buff2);
                 safe_noperm(buff, bufc);
@@ -548,7 +552,6 @@ FUNCTION(fun_set)
         // Set it.
         //
         set_attr_internal(executor, thing, atr, p, 0, buff, bufc);
-        free_lbuf(buff2);
         return;
     }
 
