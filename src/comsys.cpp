@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.18 2001-02-10 09:57:06 sdennis Exp $
+// * $Id: comsys.cpp,v 1.19 2001-02-10 16:58:35 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -38,7 +38,9 @@ char *RestrictTitleValue(char *pTitleRequest)
     //
     char NewTitle_ANSI[MAX_TITLE_LEN+1];
     int nVisualWidth;
-    int nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI), NewTitle_ANSI, sizeof(NewTitle_ANSI)*4, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+    int nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI),
+        NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth,
+        ANSI_ENDGOAL_NORMAL);
     memcpy(pNewTitle, NewTitle_ANSI, nLen+1);
     return pNewTitle;
 }
@@ -661,7 +663,7 @@ void load_comsystem(FILE *fp)
             }
             int vwVisual;
             n = ANSI_TruncateToField(temp, MAX_HEADER_LEN+1, ch->header,
-                (MAX_HEADER_LEN+1)*4, &vwVisual, ANSI_ENDGOAL_NORMAL);
+                MAX_HEADER_LEN+1, &vwVisual, ANSI_ENDGOAL_NORMAL);
         }
 
         fscanf(fp, "%d\n", &(ch->num_users));
