@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.13 2001-02-25 17:55:07 sdennis Exp $ 
+// $Id: db_rw.cpp,v 1.14 2001-04-11 18:04:34 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -171,15 +171,11 @@ static BOOLEXP *getboolexp1(FILE *f)
         b->type = BOOLEXP_CONST;
         b->thing = 0;
 
-        /*
-         * This is either an attribute, eval, or constant lock.
-         * Constant locks are of the form <num>, while
-         * attribute * and * * * * eval locks are of the form
-         * <anam-or-anum>:<string> or
-         * <aname-or-anum>/<string> respectively. The
-         * characters <nl>, |, and & terminate the string. 
-         */
-
+        // This is either an attribute, eval, or constant lock. Constant locks
+        // are of the form <num>, while attribute and eval locks are of the
+        // form <anam-or-anum>:<string> or <aname-or-anum>/<string>
+        // respectively. The characters <nl>, |, and & terminate the string. 
+        //
         if (Tiny_IsDigit[(unsigned int)c])
         {
             while (Tiny_IsDigit[(unsigned int)(c = getc(f))])
@@ -187,7 +183,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->thing = b->thing * 10 + c - '0';
             }
         }
-        else if (Tiny_IsAlpha[(unsigned char)c])
+        else if (Tiny_IsAlpha[(unsigned char)c] || c == '_')
         {
             buff = alloc_lbuf("getboolexp1.atr_name");
 
@@ -204,30 +200,30 @@ static BOOLEXP *getboolexp1(FILE *f)
             }
             *s = '\0';
 
-            /*
-             * Look the name up as an attribute.  If not found,
-             * create a new attribute. 
-             */
-
+            // Look the name up as an attribute. If not found, create a new
+            // attribute.
+            //
             anum = mkattr(buff);
-            if (anum <= 0) {
+            if (anum <= 0)
+            {
                 free_bool(b);
                 free_lbuf(buff);
                 goto error;
             }
             free_lbuf(buff);
             b->thing = anum;
-        } else {
+        }
+        else
+        {
             free_bool(b);
             goto error;
         }
 
-        /*
-         * if last character is : then this is an attribute lock. A 
-         * last character of / means an eval lock 
-         */
-
-        if ((c == ':') || (c == '/')) {
+        // if last character is : then this is an attribute lock. A last
+        // character of / means an eval lock.
+        //
+        if ((c == ':') || (c == '/'))
+        {
             if (c == '/')
                 b->type = BOOLEXP_EVAL;
             else
