@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.11 2003-01-05 19:14:55 sdennis Exp $
+// $Id: help.cpp,v 1.12 2003-01-05 19:55:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -107,16 +107,12 @@ int helpindex_read(CHashTable *htab, char *filename)
 
 void helpindex_load(dbref player)
 {
-    int news, help, whelp;
-    int phelp, wnhelp;
-    int shelp;
-
-    shelp= helpindex_read(&mudstate.staffhelp_htab, mudconf.staffhelp_indx);
-    phelp = helpindex_read(&mudstate.plushelp_htab, mudconf.plushelp_indx);
-    wnhelp = helpindex_read(&mudstate.wiznews_htab, mudconf.wiznews_indx);
-    news = helpindex_read(&mudstate.news_htab, mudconf.news_indx);
-    help = helpindex_read(&mudstate.help_htab, mudconf.help_indx);
-    whelp = helpindex_read(&mudstate.wizhelp_htab, mudconf.whelp_indx);
+    int shelp= helpindex_read(&mudstate.staffhelp_htab, mudconf.staffhelp_indx);
+    int phelp = helpindex_read(&mudstate.plushelp_htab, mudconf.plushelp_indx);
+    int wnhelp = helpindex_read(&mudstate.wiznews_htab, mudconf.wiznews_indx);
+    int news = helpindex_read(&mudstate.news_htab, mudconf.news_indx);
+    int help = helpindex_read(&mudstate.help_htab, mudconf.help_indx);
+    int whelp = helpindex_read(&mudstate.wizhelp_htab, mudconf.whelp_indx);
     if (  player != NOTHING
        && !Quiet(player))
     {
@@ -259,6 +255,23 @@ void help_write(dbref player, char *topic_arg, CHashTable *htab, char *filename,
     free_lbuf(result);
 }
 
+typedef struct
+{
+    CHashTable *ht;
+    char       **ppFilename; 
+} HELP_FILE_DESC;
+
+#define HFTABLE_SIZE 6
+HELP_FILE_DESC hftable[HFTABLE_SIZE] =
+{
+    { &mudstate.help_htab, &mudconf.help_file },
+    { &mudstate.news_htab, &mudconf.news_file },
+    { &mudstate.wizhelp_htab, &mudconf.whelp_file },
+    { &mudstate.plushelp_htab, &mudconf.plushelp_file },
+    { &mudstate.wiznews_htab, &mudconf.wiznews_file },
+    { &mudstate.staffhelp_htab, &mudconf.staffhelp_file }
+};
+
 /*
  * ---------------------------------------------------------------------------
  * * do_help: display information from new-format news and help files
@@ -266,15 +279,15 @@ void help_write(dbref player, char *topic_arg, CHashTable *htab, char *filename,
 
 void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
-    int nHelpfile = key & ~HELP_NOEVAL;
+    int iHelpfile = key & ~HELP_NOEVAL;
     BOOL bEval = (key & HELP_NOEVAL) ? FALSE : TRUE;
 
-    if (  nHelpfile < HELP_FIRST
-       || HELP_LAST < nHelpfile)
+    if (  iHelpfile < 0
+       || HFTABLE_SIZE <= iHelpfile)
     {
         char *buf = alloc_mbuf("do_help.LOG");
         STARTLOG(LOG_BUGS, "BUG", "HELP");
-        sprintf(buf, "Unknown help file number: %d", nHelpfile);
+        sprintf(buf, "Unknown help file number: %d", iHelpfile);
         log_text(buf);
         ENDLOG;
         free_mbuf(buf);
@@ -282,30 +295,6 @@ void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message
         return;
     }
 
-    switch (nHelpfile)
-    {
-    case HELP_HELP:
-        help_write(executor, message, &mudstate.help_htab, mudconf.help_file, bEval);
-        break;
-
-    case HELP_NEWS:
-        help_write(executor, message, &mudstate.news_htab, mudconf.news_file, bEval);
-        break;
-
-    case HELP_WIZHELP:
-        help_write(executor, message, &mudstate.wizhelp_htab, mudconf.whelp_file, bEval);
-        break;
-
-    case HELP_PLUSHELP:
-        help_write(executor, message, &mudstate.plushelp_htab, mudconf.plushelp_file, bEval);
-        break;
-
-    case HELP_STAFFHELP:
-        help_write(executor, message, &mudstate.staffhelp_htab, mudconf.staffhelp_file, bEval);
-        break;
-
-    case HELP_WIZNEWS:
-        help_write(executor, message, &mudstate.wiznews_htab, mudconf.wiznews_file, bEval);
-        break;
-    }
+    help_write(executor, message, hftable[iHelpfile].ht,
+        *hftable[iHelpfile].ppFilename, bEval);
 }
