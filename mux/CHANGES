@@ -40,6 +40,13 @@ Feature Additions:
     removed in favor of returning '#-2 AMBIGUOUS' and other error messages
     like '#-1 PERMISSION DENIED', "#-1 NOT FOUND', etc. Command continue
     notify the enactor.
+ -- Added optional argument to lwho() to request the return the corresponding
+    port numbers. Patch by Jake.
+ -- Added optional argument to channels to get channels for a particular
+    player. Patch by Jake.
+ -- Added filterbool(). Patch by Jake.
+ -- Added non-evaluating say and pose. Patch by Jake.
+ -- Permit '#' and '.' as leading attribute name characters.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -67,4 +74,6 @@ Cosmetic Changes:
 
 Miscellaneous:
 ~~~~~~~~~~~~~
+ -- Added nattr (so named by TM3) as an alias for attrcnt (pre-existing MUX2
+    feature).
 
