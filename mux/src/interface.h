@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.4 2003-03-08 06:41:37 sdennis Exp $
+// $Id: interface.h,v 1.5 2003-03-11 07:01:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -214,11 +214,6 @@ extern dbref connect_player(char *, char *, char *, char *, char *);
             n=((d!=NULL) ? d->hashnext : NULL); \
          d; \
          d=n,n=((n!=NULL) ? n->hashnext : NULL))
-//#define DESC_SAFEITER_CONN(d,n) \
-//    for (d=descriptor_list,n=((d!=NULL) ? d->next : NULL); \
-//         d; \
-//         d=n,n=((n!=NULL) ? n->next : NULL)) \
-//        if ((d)->flags & DS_CONNECTED)
 #define DESC_SAFEITER_ALL(d,n) \
     for (d=descriptor_list,n=((d!=NULL) ? d->next : NULL); \
          d; \
