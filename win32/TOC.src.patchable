@@ -71,7 +71,6 @@ src/crypt/ufc.cpp
 src/db.cpp
 src/db.h
 src/dbconvert.cpp
-src/dbconvert.dep
 src/dbconvert.dsp
 src/db_rw.cpp
 src/eval.cpp
@@ -99,14 +98,12 @@ src/mguests.cpp
 src/mguests.h
 src/misc.h
 src/mkindx.cpp
-src/mkindx.dep
 src/mkindx.dsp
 src/move.cpp
 src/mudconf.h
 src/muxcli.cpp
 src/muxcli.h
 src/netcommon.cpp
-src/netmux.dep
 src/netmux.dsp
 src/netmux.dsw
 src/object.cpp
