@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.19 2002-09-03 18:21:36 sdennis Exp $
+// $Id: flags.cpp,v 1.20 2002-09-03 19:54:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1173,21 +1173,28 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
 {
     if (key & FLAG_REMOVE)
     {
-        if (*flag2)
+        if (nargs == 2)
         {
             notify(executor, "Extra argument ignored.");
         }
-        FLAGNAMEENT *lookup = (FLAGNAMEENT *)hashfindLEN(flag1, strlen(flag1), &mudstate.flags_htab);
-        if (lookup != NULL) 
+        int nAlias;
+        BOOL bValidAlias;
+        char *pCheckedAlias = MakeCanonicalFlagName(flag1, &nAlias, &bValidAlias);
+        if (bValidAlias)
         {
-            if (!_stricmp(lookup->flagname, flag1))
+            FLAGNAMEENT *lookup;
+            lookup = (FLAGNAMEENT *)hashfindLEN(pCheckedAlias, nAlias, &mudstate.flags_htab);
+            if (lookup)
             {
-	            notify(executor, "Error: You can't remove the present flag name from the hash table.");
-            }
-            else
-            {
-	            hashdeleteLEN(flag1, strlen(flag1), &mudstate.flags_htab);
-	            notify(executor, tprintf("Flag name '%s' removed from the hash table.", flag1));
+                if (_stricmp(lookup->flagname, pCheckedAlias) != 0)
+                {
+                    notify(executor, "Error: You can't remove the present flag name from the hash table.");
+                }
+                else
+                {
+                    hashdeleteLEN(pCheckedAlias, nAlias, &mudstate.flags_htab);
+                    notify(executor, tprintf("Flag name '%s' removed from the hash table.", pCheckedAlias));
+                }
             }
         }
     }
@@ -1198,13 +1205,13 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
             notify(executor, "You must specify a flag and a name.");
             return;
         }
-        if (!flag_rename(flag1, flag2))
+        if (flag_rename(flag1, flag2))
         {
-            notify(executor, "Error: Bad flagname given or flag not found.");
+            notify(executor, "Flag name changed.");
         }
         else
         {
-            notify(executor, "Flag name changed.");
+            notify(executor, "Error: Bad flagname given or flag not found.");
         }
     }
 }
