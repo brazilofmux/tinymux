@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.4 2002-06-11 17:38:21 jake Exp $
+// $Id: object.cpp,v 1.5 2002-06-12 02:48:29 jake Exp $
 //
 
 #include "copyright.h"
@@ -21,8 +21,6 @@
              (Location(i) == NOTHING) && \
              (Contents(i) == NOTHING) && (Exits(i) == NOTHING) && \
              (Next(i) == NOTHING) && (Owner(i) == GOD))
-
-#define ZAP_LOC(i)  { s_Location(i, NOTHING); s_Next(i, NOTHING); }
 
 static int check_type;
 
@@ -642,7 +640,8 @@ void empty_obj(dbref obj)
         }
         else
         {
-            ZAP_LOC(targ);
+            s_Location(targ, NOTHING); 
+            s_Next(targ, NOTHING);
             if (Home(targ) == obj)
             {
                 s_Home(targ, new_home(targ));
@@ -1596,7 +1595,8 @@ static void NDECL(check_contents_chains)
         if (!Going(i) && !Marked(i) && Has_location(i))
         {
             Log_simple_err(i, Location(i), "Orphaned object, moved home.");
-            ZAP_LOC(i);
+            s_Location(i, NOTHING); 
+            s_Next(i, NOTHING);
             move_via_generic(i, HOME, NOTHING, 0);
         }
     }
