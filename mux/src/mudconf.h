@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.4 2003-01-29 23:22:30 jake Exp $
+// $Id: mudconf.h,v 1.5 2003-01-30 06:21:21 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -37,170 +37,176 @@ typedef struct
 typedef struct confdata CONFDATA;
 struct confdata
 {
-    int     active_q_chunk; /* # cmds to run from queue when active */
-    BOOL    allow_guest_from_registered_site; // Whether guests from registered sites are allowed.
-    ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
-    BOOL    autozone;       // New objects are automatically zoned.
-    BOOL    cache_names;    /* Should object names be cached separately */
-    int     check_interval; /* interval between db check/cleans in secs */
-    int     check_offset;   /* when to perform first check and clean */
-    BOOL    clone_copy_cost;/* Does @clone copy value? */
-    int     cmd_quota_incr; /* Bump #cmds allowed by this each timeslice */
-    int     cmd_quota_max;  /* Max commands at one time */
-    char    *compress;       /* program to run to compress */
     BOOL    compress_db;    // should we use compress.
-    char    *comsys_db;      /* name of the comsys db */
-    char    *config_file;    /* name of config file, used by @restart */
-    char    *conn_file;      /* display on connect if no registration */
-    int     conn_timeout;   /* Allow this long to connect before booting */
-    int     control_flags;  /* Global runtime control flags */
-    char    *crashdb;        /* write database here on crash */
-    char    *crea_file;      /* display this on login for new users */
-    int     createmax;      /* max cost of @create command */
-    int     createmin;      /* default (and minimum) cost of @create cmd */
-    char    *creg_file;      /* display on connect if registration */
-    BOOL    dark_sleepers;  /* Are sleeping players 'dark'? */
-    dbref   default_home;   // HOME when home is inaccessable.
-    BOOL    destroy_going_now;  // Does GOING act like DESTROY_OK?
-    int     digcost;        /* cost of @dig command */
-    char    *down_file;      /* display this file if no logins */
-    char    downmotd_msg[GBUF_SIZE];  /* Settable 'logins disabled' message */
-    int     dump_interval;  /* interval between ckp dumps in seconds */
-    char    dump_msg[128];  /* Message displayed when @dump-ing */
-    int     dump_offset;    /* when to take first checkpoint dump */
-    BOOL    eval_comtitle;  /* Should Comtitles Evaluate? */
-    int     events_daily_hour; /* At what hour should @daily be executed? */
-    BOOL    ex_flags;       /* TRUE = show flags on examine */
-    BOOL    exam_public;    /* Does EXAM show public attrs by default? */
-    FLAGSET exit_flags;     /* Flags exits start with */
-    int     exit_quota;     /* quota needed to make an exit */
-    BOOL    fascist_tport;  /* Src of teleport must be owned/JUMP_OK */
-    char    fixed_home_msg[128];  /* Message displayed when going home and FIXED */
-    char    fixed_tel_msg[128]; /* Message displayed when teleporting and FIXED */
-    int     fork_dump;      // perform dump in a forked process.
-    char    *full_file;      /* display when max users exceeded */
-    char    fullmotd_msg[GBUF_SIZE];  /* Settable 'Too many players' message */
-    int     func_invk_lim;  /* Max funcs invoked by a command */
-    int     func_nest_lim;  /* Max nesting of functions */
-    char    *game_dir;      /* use this game CHashFile DIR file if we need one */
-    char    *game_pag;      /* use this game CHashFile PAG file if we need one */
-    dbref   global_error_obj;    // Object that is used to generate error messages.
-    dbref   guest_char;     // player num of prototype GUEST character.
-    char    *guest_file;     /* display if guest connects */
-    dbref   guest_nuker;    // Wiz who nukes the GUEST characters.
-    char    guest_prefix[32]; /* Prefix for the guest char's name */
-    char    guests_channel[32]; /* Name of guests channel */
     BOOL    have_comsys;    // Should the comsystem be active?
     BOOL    have_mailer;    // Should @mail be active?
     BOOL    have_zones;     // Should zones be active?
-    int     hook_cmd;       // @hooks to be initialized.
-    dbref   hook_obj;       // Object with @hook data.
-    int     idle_interval;  /* when to check for idle users */
-    int     idle_timeout;   /* Boot off players idle this long in secs */
-    BOOL    idle_wiz_dark;  /* Do idling wizards get set dark? */
-    char    *indb;           /* database file name */
-    BOOL    indent_desc;    // Newlines before and after descs?
-    int     init_size;      // initial db size.
-    int     killguarantee;  /* cost of kill cmd that guarantees success */
-    int     killmax;        /* max cost of kill command */
-    int     killmin;        /* default (and minimum) cost of kill cmd */
-    int     linkcost;       /* cost of @link command */
-    int     lock_nest_lim;  /* Max nesting of lock evals */
-    int     log_info;       /* Info that goes into log entries */
-    int     log_options;    /* What gets logged */
-    int     machinecost;    /* One in mc+1 cmds costs 1 penny (POW2-1) */
-    char    *mail_db;        /* name of the @mail database */
-    int     mail_expiration; /* Number of days to wait to delete mail */
-    char    many_coins[32]; /* name of many coins (ie. "pennies") */
-    unsigned char   markdata[8];    /* Masks for marking/unmarking */
-    dbref   master_room;    // Room containing default cmds/exits/etc.
-    BOOL    match_mine;     /* Should you check yourself for $-commands? */
-    BOOL    match_mine_pl;  /* Should players check selves for $-cmds? */
-    unsigned int max_cache_size; /* Max size of attribute cache */
-    int     max_cmdsecs;    /* Threshhold for real time taken by command */
-    int     max_players;    /* Max # of connected players */
-    int     min_guests;     // The # we should start nuking at.
-    char    *motd_file;      /* display this file on login */
-    char    motd_msg[GBUF_SIZE]; /* Wizard-settable login message */
-    char    mud_name[32];   /* Name of the mud */
-    BOOL    name_spaces;    // allow player names to have spaces.
-    int     nStackLimit;    // Current stack limit.
-    int     ntfy_nest_lim;  /* Max nesting of notifys */
-    int     number_guests;  // number of guest characters allowed.
-    char    one_coin[32];   /* name of one coin (ie. "penny") */
-    int     opencost;       /* cost of @open command */
-    char    *outdb;          /* checkpoint the database to here */
-    int     output_limit;   /* Max # chars queued for output */
-    int     pagecost;       /* cost of @page command */
-    BOOL    paranoid_alloc; /* Rigorous buffer integrity checks */
-    int     parent_nest_lim;/* Max levels of parents */
-    int     paycheck;       /* players earn this much each day connected */
-    int     payfind;        /* chance to find a penny with wandering */
-    int     paylimit;       /* getting money gets hard over this much */
-    int     paystart;       /* new players start with this much money */
-    BOOL    pemit_any;      /* Can you @pemit to ANY remote object? */
-    BOOL    pemit_players;  /* Can you @pemit to faraway players? */
-    BOOL    player_listen;  /* Are AxHEAR triggered on players? */
-    FLAGSET player_flags;   /* Flags players start with */
-    int     player_quota;   /* quota needed to make a robot player */
     IntArray ports;         // user ports.
-    char    postdump_msg[128];  /* Message displayed after @dump-ing */
-    BOOL    pub_flags;      /* TRUE = flags() works on anything */
-    char    public_channel[32]; /* Name of public channel */
-    char    pueblo_msg[GBUF_SIZE];   /* Message displayed to Pueblo clients */
-    int     queue_chunk;    /* # cmds to run from queue when idle */
+    int     init_size;      // initial db size.
+    dbref   guest_char;     // player num of prototype GUEST character.
+    dbref   guest_nuker;    // Wiz who nukes the GUEST characters.
+    int     number_guests;  // number of guest characters allowed.
+    int     min_guests;     // The # we should start nuking at.
+    BOOL    indent_desc;    // Newlines before and after descs?
+    BOOL    name_spaces;    // allow player names to have spaces.
+    unsigned int site_chars;// where to truncate site name.
+    int     fork_dump;      // perform dump in a forked process.
+    int     sig_action;     // What to do with fatal signals.
+    BOOL    paranoid_alloc; /* Rigorous buffer integrity checks */
+    int     max_players;    /* Max # of connected players */
+    int     dump_interval;  /* interval between ckp dumps in seconds */
+    int     check_interval; /* interval between db check/cleans in secs */
+    int     events_daily_hour; /* At what hour should @daily be executed? */
+    int     dump_offset;    /* when to take first checkpoint dump */
+    int     check_offset;   /* when to perform first check and clean */
+    int     idle_timeout;   /* Boot off players idle this long in secs */
+    int     conn_timeout;   /* Allow this long to connect before booting */
+    int     idle_interval;  /* when to check for idle users */
+    int     retry_limit;    /* close conn after this many bad logins */
+    int     output_limit;   /* Max # chars queued for output */
+    int     paycheck;       /* players earn this much each day connected */
+    int     paystart;       /* new players start with this much money */
+    int     start_quota;    /* Quota for new players */
+    int     payfind;        /* chance to find a penny with wandering */
+    int     linkcost;       /* cost of @link command */
+    int     killmin;        /* default (and minimum) cost of kill cmd */
+    int     killmax;        /* max cost of kill command */
+    int     killguarantee;  /* cost of kill cmd that guarantees success */
+    int     pagecost;       /* cost of @page command */
+    int     searchcost;     /* cost of commands that search the whole DB */
+    int     waitcost;       /* cost of @wait (refunded when finishes) */
+    int     mail_expiration; /* Number of days to wait to delete mail */
+    BOOL    use_http;       /* Should we allow http access? */
     int     queuemax;       /* max commands a player may have in queue */
+    int     queue_chunk;    /* # cmds to run from queue when idle */
+    int     active_q_chunk; /* # cmds to run from queue when active */
+    int     machinecost;    /* One in mc+1 cmds costs 1 penny (POW2-1) */
+    BOOL    clone_copy_cost;/* Does @clone copy value? */
+    BOOL    use_hostname;   /* TRUE = use machine NAME rather than quad */
+    BOOL    ex_flags;       /* TRUE = show flags on examine */
+    BOOL    robot_speak;    /* TRUE = allow robots to speak */
+    BOOL    pub_flags;      /* TRUE = flags() works on anything */
     BOOL    quiet_look;     /* TRUE = don't see attribs when looking */
-    BOOL    quiet_whisper;  /* Can others tell when you whisper? */
-    char    *quit_file;      /* display on quit */
-    BOOL    quotas;         /* TRUE = have building quotas */
+    BOOL    exam_public;    /* Does EXAM show public attrs by default? */
     BOOL    read_rem_desc;  /* Can the DESCs of nonlocal objs be read? */
     BOOL    read_rem_name;  /* Can the NAMEs of nonlocal objs be read? */
-    char    *regf_file;      /* display on (failed) create if reg is on */
-    int     retry_limit;    /* close conn after this many bad logins */
-    int     robotcost;      /* cost of @robot command */
-    FLAGSET robot_flags;    /* Flags robots start with */
-    BOOL    robot_speak;    /* TRUE = allow robots to speak */
-    FLAGSET room_flags;     /* Flags rooms start with */
-    int     room_quota;     /* quota needed to make a room */
-    BOOL    run_startup;    // If no, startup attributes aren't processed on load.
-    int     sacadjust;      /* sacrifice earns (obj_cost/sfactor) + sadj */
-    int     sacfactor;      /* sacrifice earns (obj_cost/sfactor) + sadj */
-    BOOL    safe_unowned;   /* Are objects not owned by you safe? */
-    BOOL    safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
-    BOOL    safer_passwords;/* enforce reasonably good password choices? */
-    int     searchcost;     /* cost of commands that search the whole DB */
-    BOOL    see_own_dark;   /* Do you see your own dark stuff? */
-    int     sig_action;     // What to do with fatal signals.
-    unsigned int site_chars;// where to truncate site name.
-    char    *site_file;      /* display if conn from bad site */
-    BOOL    space_compress; /* Convert multiple spaces into one space */
-    int     stack_limit;    /* How big can stacks get? */
-    dbref   start_home;     // initial HOME for players.
-    int     start_quota;    /* Quota for new players */
-    dbref   start_room;     // initial location and home for players.
-    char    *status_file;    /* Where to write arg to @shutdown */
     BOOL    sweep_dark;     /* Can you sweep dark places? */
+    BOOL    player_listen;  /* Are AxHEAR triggered on players? */
+    BOOL    quiet_whisper;  /* Can others tell when you whisper? */
+    BOOL    dark_sleepers;  /* Are sleeping players 'dark'? */
+    BOOL    destroy_going_now;  // Does GOING act like DESTROY_OK?
+    BOOL    see_own_dark;   /* Do you see your own dark stuff? */
+    BOOL    idle_wiz_dark;  /* Do idling wizards get set dark? */
+    BOOL    pemit_players;  /* Can you @pemit to faraway players? */
+    BOOL    pemit_any;      /* Can you @pemit to ANY remote object? */
+    BOOL    match_mine;     /* Should you check yourself for $-commands? */
+    BOOL    match_mine_pl;  /* Should players check selves for $-cmds? */
     BOOL    switch_df_all;  /* Should @switch match all by default? */
+    BOOL    fascist_tport;  /* Src of teleport must be owned/JUMP_OK */
+    BOOL    safer_passwords;/* enforce reasonably good password choices? */
+    int     stack_limit;    /* How big can stacks get? */
+    BOOL    safe_unowned;   /* Are objects not owned by you safe? */
+    BOOL    space_compress; /* Convert multiple spaces into one space */
+    BOOL    terse_look;     /* Does manual look obey TERSE */
     BOOL    terse_contents; /* Does TERSE look show exits */
     BOOL    terse_exits;    /* Does TERSE look show obvious exits */
-    BOOL    terse_look;     /* Does manual look obey TERSE */
     BOOL    terse_movemsg;  /* Show move msgs (SUCC/LEAVE/etc) if TERSE? */
-    FLAGSET thing_flags;    /* Flags things start with */
-    int     thing_quota;    /* quota needed to make a thing */
-    int     timeslice;      /* How often do we bump people's cmd quotas? */
-    dbref   toad_recipient; /* Default @toad recipient. */
-    int     trace_limit;    /* Max lines of trace output if top-down */
     BOOL    trace_topdown;  /* Is TRACE output top-down or bottom-up? */
-    char    *uncompress;     /* program to run to uncompress */
-    BOOL    use_hostname;   /* TRUE = use machine NAME rather than quad */
-    BOOL    use_http;       /* Should we allow http access? */
-    int     vattr_flags;    /* Attr flags for all user-defined attrs */
-    int     waitcost;       /* cost of @wait (refunded when finishes) */
+    int     trace_limit;    /* Max lines of trace output if top-down */
+    dbref   master_room;    // Room containing default cmds/exits/etc.
+    int     timeslice;      /* How often do we bump people's cmd quotas? */
+    int     cmd_quota_max;  /* Max commands at one time */
+    int     cmd_quota_incr; /* Bump #cmds allowed by this each timeslice */
+    int     max_cmdsecs;    /* Threshhold for real time taken by command */
+    int     control_flags;  /* Global runtime control flags */
+    int     func_nest_lim;  /* Max nesting of functions */
+    int     func_invk_lim;  /* Max funcs invoked by a command */
     int     wild_invk_lim;  // Max Regular Expression function calls.
-    char    *wizmotd_file;   /* display this file on login to wizards */
-    char    wizmotd_msg[GBUF_SIZE];  /* Login message for wizards only */
+    int     lock_nest_lim;  /* Max nesting of lock evals */
+    int     parent_nest_lim;/* Max levels of parents */
     int     zone_nest_lim;  /* Max nesting of zones */
+    BOOL    allow_guest_from_registered_site; // Whether guests from registered sites are allowed.
+    BOOL    eval_comtitle;  /* Should Comtitles Evaluate? */
+    BOOL    autozone;       // New objects are automatically zoned.
+    int     nStackLimit;    // Current stack limit.
+
+    unsigned int max_cache_size; /* Max size of attribute cache */
+
+    FLAGSET player_flags;   /* Flags players start with */
+    FLAGSET room_flags;     /* Flags rooms start with */
+    FLAGSET exit_flags;     /* Flags exits start with */
+    FLAGSET thing_flags;    /* Flags things start with */
+    FLAGSET robot_flags;    /* Flags robots start with */
+
+    char    *indb;           /* database file name */
+    char    *outdb;          /* checkpoint the database to here */
+    char    *crashdb;        /* write database here on crash */
+    char    *mail_db;        /* name of the @mail database */
+    char    *comsys_db;      /* name of the comsys db */
+    char    *config_file;    /* name of config file, used by @restart */
+    char    *compress;       /* program to run to compress */
+    char    *uncompress;     /* program to run to uncompress */
+    char    *status_file;    /* Where to write arg to @shutdown */
+    char    guest_prefix[32]; /* Prefix for the guest char's name */
+    char    *guest_file;     /* display if guest connects */
+    char    *conn_file;      /* display on connect if no registration */
+    char    *creg_file;      /* display on connect if registration */
+    char    *regf_file;      /* display on (failed) create if reg is on */
+    char    *motd_file;      /* display this file on login */
+    char    *wizmotd_file;   /* display this file on login to wizards */
+    char    *quit_file;      /* display on quit */
+    char    *down_file;      /* display this file if no logins */
+    char    *full_file;      /* display when max users exceeded */
+    char    *site_file;      /* display if conn from bad site */
+    char    *crea_file;      /* display this on login for new users */
+    char    motd_msg[GBUF_SIZE]; /* Wizard-settable login message */
+    char    wizmotd_msg[GBUF_SIZE];  /* Login message for wizards only */
+    char    downmotd_msg[GBUF_SIZE];  /* Settable 'logins disabled' message */
+    char    fullmotd_msg[GBUF_SIZE];  /* Settable 'Too many players' message */
+    char    dump_msg[128];  /* Message displayed when @dump-ing */
+    char    postdump_msg[128];  /* Message displayed after @dump-ing */
+    char    fixed_home_msg[128];  /* Message displayed when going home and FIXED */
+    char    fixed_tel_msg[128]; /* Message displayed when teleporting and FIXED */
+    char    public_channel[32]; /* Name of public channel */
+    char    guests_channel[32]; /* Name of guests channel */
+    char    pueblo_msg[GBUF_SIZE];   /* Message displayed to Pueblo clients */
+    char    mud_name[32];   /* Name of the mud */
+    char    one_coin[32];   /* name of one coin (ie. "penny") */
+    char    many_coins[32]; /* name of many coins (ie. "pennies") */
+    ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
+    dbref   toad_recipient; /* Default @toad recipient. */
+    BOOL    run_startup;    // If no, startup attributes aren't processed on load.
+    BOOL    safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
+    dbref   hook_obj;       // Object with @hook data.
+    int     hook_cmd;       // @hooks to be initialized.
+    dbref   global_error_obj;    // Object that is used to generate error messages.
+
+    BOOL    cache_names;    /* Should object names be cached separately */
+
+    int     paylimit;       /* getting money gets hard over this much */
+    int     digcost;        /* cost of @dig command */
+    int     opencost;       /* cost of @open command */
+    int     robotcost;      /* cost of @robot command */
+    int     createmin;      /* default (and minimum) cost of @create cmd */
+    int     createmax;      /* max cost of @create command */
+    int     sacfactor;      /* sacrifice earns (obj_cost/sfactor) + sadj */
+    int     sacadjust;      /* ... */
+    int     room_quota;     /* quota needed to make a room */
+    int     exit_quota;     /* quota needed to make an exit */
+    int     thing_quota;    /* quota needed to make a thing */
+    int     player_quota;   /* quota needed to make a robot player */
+    BOOL    quotas;         /* TRUE = have building quotas */
+    dbref   start_room;     // initial location and home for players.
+    dbref   start_home;     // initial HOME for players.
+    dbref   default_home;   // HOME when home is inaccessable.
+    int     vattr_flags;    /* Attr flags for all user-defined attrs */
+    int     log_options;    /* What gets logged */
+    int     log_info;       /* Info that goes into log entries */
+    int     ntfy_nest_lim;  /* Max nesting of notifys */
+    unsigned char   markdata[8];    /* Masks for marking/unmarking */
+
+    char    *game_dir;      /* use this game CHashFile DIR file if we need one */
+    char    *game_pag;      /* use this game CHashFile PAG file if we need one */
 };
 
 extern CONFDATA mudconf;
