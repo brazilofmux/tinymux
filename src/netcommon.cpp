@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.12 2000-06-02 16:18:03 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.13 2000-06-03 09:37:52 sdennis Exp $ 
 */
 
 /*
@@ -225,6 +225,7 @@ void add_to_output_queue(DESC *d, const char *b, int n)
     if (d->output_head == NULL)
     {
         tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
+        ISOUTOFMEMORY(tp);
         tp->hdr.nxt = NULL;
         tp->hdr.start = tp->data;
         tp->hdr.end = tp->data;
@@ -265,6 +266,7 @@ void add_to_output_queue(DESC *d, const char *b, int n)
                 n -= left;
             }
             tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
+            ISOUTOFMEMORY(tp);
             tp->hdr.nxt = NULL;
             tp->hdr.start = tp->data;
             tp->hdr.end = tp->data;
