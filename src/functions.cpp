@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.65 2001-06-18 16:22:34 sdennis Exp $
+// $Id: functions.cpp,v 1.66 2001-06-27 16:33:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4525,42 +4525,29 @@ FUNCTION(fun_min)
 
 FUNCTION(fun_search)
 {
-    dbref thing;
-    char *bp, *nbuf;
+    // Set up for the search.  If any errors, abort.
+    //
     SEARCH searchparm;
-
-    /*
-     * Set up for the search.  If any errors, abort. 
-     */
-
-    if (!search_setup(player, fargs[0], &searchparm)) {
+    if (!search_setup(player, fargs[0], &searchparm))
+    {
         safe_str("#-1 ERROR DURING SEARCH", buff, bufc);
         return;
     }
-    /*
-     * Do the search and report the results 
-     */
 
+    // Do the search and report the results.
+    //
     olist_push();
     search_perform(player, cause, &searchparm);
-    bp = *bufc;
-    nbuf = alloc_sbuf("fun_search");
+    dbref thing;
+    DTB pContext;
+    DbrefToBuffer_Init(&pContext, buff, bufc);
     for (thing = olist_first(); thing != NOTHING; thing = olist_next())
     {
-        if (bp == *bufc)
+        if (!DbrefToBuffer_Add(&pContext, thing))
         {
-            nbuf[0] = '#';
-            Tiny_ltoa(thing, nbuf+1);
+            break;
         }
-        else
-        {
-            nbuf[0] = ' ';
-            nbuf[1] = '#';
-            Tiny_ltoa(thing, nbuf+2);
-        }
-        safe_str(nbuf, buff, bufc);
     }
-    free_sbuf(nbuf);
     olist_pop();
 }
 
