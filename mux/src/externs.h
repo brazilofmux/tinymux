@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.32 2002-07-18 03:56:53 jake Exp $
+// $Id: externs.h,v 1.33 2002-07-19 08:23:25 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -413,6 +413,17 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define HELP_PLUSHELP   4   /* get data from plushelp file */
 #define HELP_WIZNEWS    5   /* wiznews file */
 #define HELP_STAFFHELP  6   /* get data from staffhelp file */
+#define ICMD_DISABLE    0
+#define ICMD_IGNORE     1
+#define ICMD_ON         2
+#define ICMD_OFF        4
+#define ICMD_CLEAR      8
+#define ICMD_CHECK      16
+#define ICMD_DROOM      32
+#define ICMD_IROOM      64
+#define ICMD_CROOM      128
+#define ICMD_LROOM      256
+#define ICMD_LALLROOM   512
 #define KILL_KILL       1   /* gives victim insurance */
 #define KILL_SLAY       2   /* no insurance */
 #define LOOK_LOOK       1   /* list desc (and succ/fail if room) */

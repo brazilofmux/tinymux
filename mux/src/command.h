@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.7 2002-07-16 23:10:29 jake Exp $
+// $Id: command.h,v 1.8 2002-07-19 08:23:25 jake Exp $
 //
 
 #ifndef __COMMAND_H
@@ -142,6 +142,7 @@ CMD_TWO_ARG(do_addcommand);     /* Add or replace a global command */
 CMD_TWO_ARG(do_delcommand);     /* Delete an added global command */
 CMD_ONE_ARG(do_listcommands);   /* List added global commands */
 CMD_ONE_ARG(do_break);          /* Stop evaluating an action list */
+CMD_TWO_ARG_ARGV(do_icmd);      // Disable commands on a player or room
 
 typedef struct
 {

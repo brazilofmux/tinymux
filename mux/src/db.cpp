@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.18 2002-07-17 03:46:30 sdennis Exp $
+// $Id: db.cpp,v 1.19 2002-07-19 08:23:25 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -84,6 +84,7 @@ ATTR attr[] =
     {"Ause",        A_AUSE,     AF_ODARK},
     {"Away",        A_AWAY,     AF_ODARK | AF_NOPROG},
     {"Charges",     A_CHARGES,  AF_ODARK | AF_NOPROG},
+    {"CmdCheck",    A_CMDCHECK, AF_DARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_PRIVATE | AF_CONST},
     {"Comment",     A_COMMENT,  AF_MDARK | AF_WIZARD},
     {"ConFormat",   A_CONFORMAT, AF_ODARK | AF_NOPROG},
     {"Cost",        A_COST,     AF_ODARK},

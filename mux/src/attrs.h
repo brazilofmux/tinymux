@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.1 2002-05-24 06:53:14 sdennis Exp $
+// $Id: attrs.h,v 1.2 2002-07-19 08:23:25 jake Exp $
 //
 
 #ifndef _ATTRS_H
@@ -8,7 +8,7 @@
 
 /* Attribute flags */
 #define AF_ODARK    0x00001 /* players other than owner can't see it */
-#define AF_DARK     0x00002 /* No one can see it */
+#define AF_DARK     0x00002 /* Only #1 can see it */
 #define AF_WIZARD   0x00004 /* only wizards can change it */
 #define AF_MDARK    0x00008 /* Only wizards can see it. Dark to mortals */
 #define AF_INTERNAL 0x00010 /* Don't show even to #1 */
@@ -154,6 +154,8 @@
 #define A_FAEDESC    147
 #define A_MATRIXDESC 148
 #endif // WOD_REALMS
+
+#define A_CMDCHECK  198 // For @icmd. (From RhostMUSH)
 
 #define A_LASTPAGE  200 /* Player last paged */
 #define A_MAIL      201 /* Message echoed to sender */

@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.11 2002-07-13 07:23:01 jake Exp $
+// $Id: flags.h,v 1.12 2002-07-19 08:23:25 jake Exp $
 //
 
 #include "copyright.h"
@@ -98,6 +98,7 @@
                                      // different realm than they are in.
 #endif // WOD_REALMS
 #define SITEMON      0x00000400      // Sitemonitor Flag
+#define CMDCHECK     0x00000800      // Has @icmd set
 #define MARK_0       0x00400000      // User-defined flags.
 #define MARK_1       0x00800000
 #define MARK_2       0x01000000
@@ -317,6 +318,7 @@ extern char *MakeCanonicalFlagName
 #define c_Connected(x)      s_Flags((x), FLAG_WORD2, Flags2(x) & ~CONNECTED)
 
 #define SiteMon(x)          ((Flags3(x) & SITEMON) != 0)
+#define CmdCheck(x)         ((Flags3(x) & CMDCHECK) != 0)
 #ifdef WOD_REALMS
 #define isObfuscate(x)        ((Flags3(x) & OBF) != 0)
 #define isHeightenedSenses(x) ((Flags3(x) & HSS) != 0)

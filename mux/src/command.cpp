@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.35 2002-07-18 03:56:53 jake Exp $
+// $Id: command.cpp,v 1.36 2002-07-19 08:23:25 jake Exp $
 //
 
 #include "copyright.h"
@@ -229,6 +229,22 @@ NAMETAB halt_sw[] =
 {
     {"all",             1,  CA_PUBLIC,  HALT_ALL},
     { NULL,             0,          0,  0}
+};
+
+NAMETAB icmd_sw[] =
+{
+    {"check",           2,     CA_GOD, ICMD_CHECK},
+    {"disable",         1,     CA_GOD, ICMD_DISABLE},
+    {"ignore",          1,     CA_GOD, ICMD_IGNORE},
+    {"on",              2,     CA_GOD, ICMD_ON},
+    {"off",             2,     CA_GOD, ICMD_OFF},
+    {"clear",           2,     CA_GOD, ICMD_CLEAR},
+    {"droom",           2,     CA_GOD, ICMD_DROOM},
+    {"iroom",           2,     CA_GOD, ICMD_IROOM},
+    {"croom",           2,     CA_GOD, ICMD_CROOM},
+    {"lroom",           2,     CA_GOD, ICMD_LROOM},
+    {"lallroom",        2,     CA_GOD, ICMD_LALLROOM},
+    {NULL,              0,          0,  0}
 };
 
 NAMETAB leave_sw[] =
@@ -667,6 +683,7 @@ CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
     {"@cpattr",     NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV,             do_cpattr},
     {"@dig",        dig_sw,     CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   do_dig},
     {"@edit",       NULL,       CA_NO_SLAVE|CA_NO_GUEST,              0,  CS_TWO_ARG|CS_ARGV|CS_STRIP_AROUND, do_edit},
+    {"@icmd",       icmd_sw,    CA_GOD,                               0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   do_icmd},
     {"@mvattr",     NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV,             do_mvattr},
     {"@open",       open_sw,    CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST, 0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   do_open},
     {"@trigger",    trig_sw,    CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV,             do_trigger},
@@ -1244,6 +1261,63 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
     return;
 }
 
+int cmdtest(dbref player, char *cmd)
+{
+    char *buff1, *pt1, *pt2;
+    dbref aowner;
+    int aflags, rval;
+
+    rval = 0;
+    buff1 = atr_get(player, A_CMDCHECK, &aowner, &aflags);
+    pt1 = buff1;
+    while (pt1 && *pt1)
+    {
+        pt2 = strchr(pt1, ':');
+        if (!pt2 || (pt2 == pt1))
+            break;
+        if (!strncmp(pt2+1, cmd, strlen(cmd)))
+        {
+            if (*(pt2-1) == '1')
+                rval = 1;
+            else
+                rval = 2;
+            break;
+        }
+        pt1 = strchr(pt2+1,' ');
+        if (pt1 && *pt1)
+            while (isspace(*pt1))
+                pt1++;
+    }
+    free_lbuf(buff1);
+    return rval;
+}
+
+int zonecmdtest(dbref player, char *cmd)
+{
+    if (!Good_obj(player) || God(player))
+    {
+        return 0;
+    }
+    dbref loc = Location(player);
+
+    int i_ret = 0;
+    if (Good_obj(loc))
+    {
+        i_ret = cmdtest(loc, cmd); 
+        if ( i_ret == 0 )
+        {
+            dbref zone = Zone(loc);
+            if (  Good_obj(zone)
+                && (  isRoom(zone)
+                   || isThing(zone)))
+            {
+                i_ret = cmdtest(zone, cmd);
+            }
+        }
+    }
+    return i_ret;
+}
+
 // ---------------------------------------------------------------------------
 // process_command: Execute a command.
 //
@@ -1263,7 +1337,7 @@ char *process_command
     static char SpaceCompressCommand[LBUF_SIZE];
     static char LowerCaseCommand[LBUF_SIZE];
     char *pCommand;
-    char *p, *q, *arg, *pSlash, *cmdsave, *bp, *str;
+    char *p, *q, *arg, *pSlash, *cmdsave, *bp, *str, check2[2];
     int aflags, i;
     dbref exit, aowner;
     CMDENT *cmdp;
@@ -1274,6 +1348,7 @@ char *process_command
     mudstate.debug_cmd = (char *)"< process_command >";
     mudstate.nStackNest = 0;
     mudstate.bStackLimitReached = FALSE;
+    *(check2 + 1) = '\0';
 
     Tiny_Assert(pOriginalCommand);
 
@@ -1376,8 +1451,40 @@ char *process_command
     // HOME command.
     //
     i = pCommand[0] & 0xff;
-    if (i && (prefix_cmds[i] != NULL))
+    int cval;
+    if (pCommand[0]) 
     {
+        // CmdCheck: Test for @icmd. From RhostMUSH.
+        // cval values: 0 normal, 1 disable, 2 ignore
+        *check2 = i;
+        if (CmdCheck(executor))
+        {
+            cval = cmdtest(executor, check2);
+        }
+        else if (CmdCheck(Owner(executor)))
+        {
+            cval = cmdtest(Owner(executor), check2);
+        }
+        else
+        {
+            cval = 0;
+        }
+        if (cval == 0)
+        {
+            cval = zonecmdtest(executor, check2);
+        }
+    }
+    else
+    {
+        cval = 0;
+    }
+    if (i && (prefix_cmds[i] != NULL) && (cval != 2))
+    {
+        if (cval)
+        {
+            notify(executor, NOPERM_MESSAGE);
+            return preserve_cmd;
+        }
         process_cmdent(prefix_cmds[i], NULL, executor, caller, enactor,
             interactive, pCommand, pCommand, args, nargs);
         if (mudstate.bStackLimitReached)
@@ -1395,7 +1502,7 @@ char *process_command
     }
 
     if (  mudconf.have_comsys
-       && !(Slave(executor))
+       && !Slave(executor)
        && !do_comsystem(executor, pCommand))
     {
         return preserve_cmd;
@@ -1405,44 +1512,97 @@ char *process_command
     //
     if (string_compare(pCommand, "home") == 0)
     {
-        if (  (  Fixed(executor)
-              || Fixed(Owner(executor)))
-           && !WizRoy(executor))
+        // CmdCheck: Test for @icmd. From RhostMUSH.
+        // cval values: 0 normal, 1 disable, 2 ignore
+        if (CmdCheck(executor))
         {
-            notify(executor, mudconf.fixed_home_msg);
+            cval = cmdtest(executor, "home");
+        }
+        else if (CmdCheck(Owner(executor)))
+        {
+            cval = cmdtest(Owner(executor), "home");
+        }
+        else
+        {
+            cval = 0;
+        }
+        if (cval == 0)
+        {
+            cval = zonecmdtest(executor, "home");
+        }
+        if ( cval == 0 )
+        {
+            if (  (  Fixed(executor)
+                  || Fixed(Owner(executor)))
+               && !WizRoy(executor))
+            {
+                notify(executor, mudconf.fixed_home_msg);
+                return preserve_cmd;
+            }
+            do_move(executor, caller, enactor, 0, "home");
+            mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
-        do_move(executor, caller, enactor, 0, "home");
-        mudstate.debug_cmd = cmdsave;
-        return preserve_cmd;
+        else if (cval == 1)
+        {
+            notify_quiet(executor, NOPERM_MESSAGE);
+            return preserve_cmd;
+        }
     }
 
     // Only check for exits if we may use the goto command.
     //
     if (check_access(executor, goto_cmdp->perms))
     {
-        // Check for an exit name.
-        //
-        init_match_check_keys(executor, pCommand, TYPE_EXIT);
-        match_exit_with_parents();
-        exit = last_match_result();
-        if (exit != NOTHING)
+        // CmdCheck: Test for @icmd. From RhostMUSH.
+        // cval values: 0 normal, 1 disable, 2 ignore
+        // Master room exits are not affected.
+        if (CmdCheck(executor))
         {
-            move_exit(executor, exit, FALSE, "You can't go that way.", 0);
-            mudstate.debug_cmd = cmdsave;
-            return preserve_cmd;
+            cval = cmdtest(executor, "goto");
         }
-
-        // Check for an exit in the master room.
-        //
-        init_match_check_keys(executor, pCommand, TYPE_EXIT);
-        match_master_exit();
-        exit = last_match_result();
-        if (exit != NOTHING)
+        else if (CmdCheck(Owner(executor)))
         {
-            move_exit(executor, exit, TRUE, NULL, 0);
-            mudstate.debug_cmd = cmdsave;
-            return preserve_cmd;
+            cval = cmdtest(Owner(executor), "goto");
+        }
+        else
+        {
+            cval = 0;
+        }
+        if (cval == 0)
+        {
+            cval = zonecmdtest(executor, "goto");
+        }
+        if (cval != 2)
+        {
+            // Check for an exit name.
+            //
+            init_match_check_keys(executor, pCommand, TYPE_EXIT);
+            match_exit_with_parents();
+            exit = last_match_result();
+            if (exit != NOTHING)
+            {
+                if (cval)
+                {
+                    notify_quiet(executor, NOPERM_MESSAGE);
+                    return preserve_cmd;
+                }
+                move_exit(executor, exit, FALSE, "You can't go that way.", 0);
+                mudstate.debug_cmd = cmdsave;
+                return preserve_cmd;
+            }
+
+            // Check for an exit in the master room.
+            //
+            init_match_check_keys(executor, pCommand, TYPE_EXIT);
+            match_master_exit();
+            exit = last_match_result();
+            if (exit != NOTHING)
+            {
+                move_exit(executor, exit, TRUE, NULL, 0);
+                mudstate.debug_cmd = cmdsave;
+                return preserve_cmd;
+            }
         }
     }
 
@@ -1485,9 +1645,35 @@ char *process_command
     }
 
     // Check for a builtin command (or an alias of a builtin command)
-    //
+    //        
+    // CmdCheck: Test for @icmd. From RhostMUSH.
+    // cval values: 0 normal, 1 disable, 2 ignore
     cmdp = (CMDENT *)hashfindLEN(LowerCaseCommand, nLowerCaseCommand, &mudstate.command_htab);
-    if (cmdp != NULL)
+    if (cmdp)
+    {
+        if (CmdCheck(executor))
+        {
+            cval = cmdtest(executor, cmdp->cmdname);
+        }
+        else if (CmdCheck(Owner(executor)))
+        {
+            cval = cmdtest(Owner(executor), cmdp->cmdname);
+        }
+        else
+        {
+            cval = 0;
+        }
+        if (cval == 0)
+        {
+            cval = zonecmdtest(executor, cmdp->cmdname);
+        }
+    }
+    else
+    {
+        cval = 0;
+    }
+    if (  cmdp != NULL
+       && cval == 0)
     {
         if (mudconf.space_compress && (cmdp->callseq & CS_NOSQUISH))
         {
@@ -1522,6 +1708,11 @@ char *process_command
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
     }
+    else if (cval == 1)
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
+        return preserve_cmd;
+    }
 
     // Check for enter and leave aliases, user-defined commands on the
     // player, other objects where the player is, on objects in the
@@ -1540,35 +1731,87 @@ char *process_command
     //
     if (Has_location(executor) && Good_obj(Location(executor)))
     {
-        // Check for a leave alias.
-        //
-        p = atr_pget(Location(executor), A_LALIAS, &aowner, &aflags);
-        if (p && *p)
+        // CmdCheck: Test for @icmd. From RhostMUSH.
+        // cval values: 0 normal, 1 disable, 2 ignore
+        if (CmdCheck(executor))
         {
-            if (matches_exit_from_list(LowerCaseCommand, p))
-            {
-                free_lbuf(p);
-                do_leave(executor, caller, executor, 0);
-                return preserve_cmd;
-            }
+            cval = cmdtest(executor, "leave");
         }
-        free_lbuf(p);
-
-        // Check for enter aliases.
-        //
-        DOLIST(exit, Contents(Location(executor)))
+        else if (CmdCheck(Owner(executor)))
         {
-            p = atr_pget(exit, A_EALIAS, &aowner, &aflags);
+            cval = cmdtest(Owner(executor), "leave");
+        }
+        else
+        {
+            cval = 0;
+        }
+        if (cval == 0)
+        {
+            cval = zonecmdtest(executor, "leave");
+        }
+        if ( cval == 0 )
+        {
+            // Check for a leave alias.
+            //
+            p = atr_pget(Location(executor), A_LALIAS, &aowner, &aflags);
             if (p && *p)
             {
                 if (matches_exit_from_list(LowerCaseCommand, p))
                 {
                     free_lbuf(p);
-                    do_enter_internal(executor, exit, FALSE);
+                    do_leave(executor, caller, executor, 0);
                     return preserve_cmd;
                 }
             }
             free_lbuf(p);
+        }
+        else if (cval == 1)
+        {
+            notify_quiet(executor, NOPERM_MESSAGE);
+            return preserve_cmd;
+        }
+
+        // Check for enter aliases.
+        //
+        // CmdCheck: Test for @icmd. From RhostMUSH.
+        // cval values: 0 normal, 1 disable, 2 ignore
+        if (CmdCheck(executor))
+        {
+            cval = cmdtest(executor, "enter");
+        }
+        else if (CmdCheck(Owner(executor)))
+        {
+            cval = cmdtest(Owner(executor), "enter");
+        }
+        else
+        {
+            cval = 0;
+        }
+        if (cval == 0)
+        {
+            cval = zonecmdtest(executor, "enter");
+        }
+        if ( cval == 0 )
+        {
+            DOLIST(exit, Contents(Location(executor)))
+            {
+                p = atr_pget(exit, A_EALIAS, &aowner, &aflags);
+                if (p && *p)
+                {
+                    if (matches_exit_from_list(LowerCaseCommand, p))
+                    {
+                        free_lbuf(p);
+                        do_enter_internal(executor, exit, FALSE);
+                        return preserve_cmd;
+                    }
+                }
+                free_lbuf(p);
+            }
+        }
+        else if (cval == 1)
+        {
+            notify_quiet(executor, NOPERM_MESSAGE);
+            return preserve_cmd;
         }
     }
 
@@ -3133,4 +3376,397 @@ void do_break(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
     extern BOOL break_called;
     break_called = xlate(arg1);
+}
+
+// do_icmd: Ignore or disable commands on a per-player or per-room basis.
+// Used with express permission of RhostMUSH developers.
+// Bludgeoned into MUX by Jake Nelson 7/2002.
+//
+void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
+        char *args[], int nargs)
+{
+    CMDENT *cmdp;
+    NAMETAB *logcmdp;
+    char *buff1, *pt1, *pt2, *pt3, *atrpt, pre[2], *pt4, *pt5, *message;
+    int x, set, aflags, y, home, loc_set;
+    dbref target, aowner, zone;
+    BOOL bFound;
+
+    loc_set = -1;
+    if (  (key == ICMD_IROOM)
+       || (key == ICMD_DROOM)
+       || (key == ICMD_CROOM)
+       || (key == ICMD_LROOM)
+       || (key == ICMD_LALLROOM))
+    {
+        if ( key != ICMD_LALLROOM )
+        {
+            target = match_thing_quiet(player, name);
+        }
+        else
+        {
+            target = NOTHING;
+        }
+        if (  !(key == ICMD_LALLROOM)
+           && (  !Good_obj(target)
+              || !( isRoom(target)
+                 || isThing(target))))
+        {
+            notify(player, "@icmd: Bad Location.");
+            return;
+        }
+        if (key == ICMD_CROOM)
+        {
+            atr_clr(target,A_CMDCHECK);
+            notify(player,"@icmd: Location - All cleared.");
+            notify(player,"@icmd: Done.");
+            return;
+        }
+        else if ( key == ICMD_LROOM)
+        {
+            atrpt = atr_get(target,A_CMDCHECK,&aowner,&aflags);
+            if (*atrpt)
+            {
+                notify(player,"Location CmdCheck attribute is:");
+                notify(player,atrpt);
+            }
+            else
+            {
+                notify(player, "Location CmdCheck attribute is empty.");
+            }
+            free_lbuf(atrpt);
+            notify(player,"@icmd: Done");
+            return;
+        }
+        else if ( key == ICMD_LALLROOM)
+        {
+            target = Location(player);
+            if (  !Good_obj(target)
+               || Going(target)
+               || isPlayer(target))
+            {
+                notify(player, "@icmd: Bad Location.");
+                return;
+            }
+            notify(player, "Scanning all locations and zones from your current location:");
+            bFound = FALSE;
+            atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
+            if (*atrpt)
+            {
+                notify(player,tprintf("%c     --- At %s(#%d) :", 
+                    (Zone(target) == target ? '*' : ' '), Name(target), target));
+                notify(player,atrpt);
+                bFound = TRUE;
+            }
+            free_lbuf(atrpt);
+            if (Zone(target) != target)
+            {
+                zone = Zone(target);
+                if (  Good_obj(zone)
+                   && (  isRoom(zone)
+                      || isThing(zone)))
+                {
+                    atrpt = atr_get(zone, A_CMDCHECK, &aowner, &aflags);
+                    if (*atrpt)
+                    {
+                        notify(player,tprintf("%c     z-- At %s(#%d) :", 
+                            '*', Name(zone), zone));
+                        notify(player,atrpt);
+                        bFound = TRUE;
+                    }
+                    free_lbuf(atrpt);
+                }
+            }
+            if (!bFound)
+            {
+                notify(player, "@icmd: Location - No icmd's found at current location.");
+            }
+            notify(player, "@icmd: Done.");
+            return;
+        }
+        else if (key == ICMD_IROOM)
+        {
+            loc_set = 1;
+        }
+        else if (key == ICMD_DROOM)
+        {
+            loc_set = 0;
+        }
+    }
+
+    if (loc_set == -1 )
+    {
+        target = lookup_player(player, name, FALSE);
+        if (!Good_obj(target) || God(target))
+        {
+            notify(player, "@icmd: Bad player.");
+            return;
+        }
+        if ((key == ICMD_OFF) || (key == ICMD_CLEAR))
+        {
+            s_Flags(target, FLAG_WORD3, Flags3(target) & ~CMDCHECK);
+            if (key == ICMD_CLEAR)
+            {
+                atr_clr(target,A_CMDCHECK);
+            }
+            notify(player,"@icmd: All cleared.");
+            notify(player,"@icmd: Done.");
+            return;
+        }
+        else if (key == ICMD_ON)
+        {
+            s_Flags(target, FLAG_WORD3, Flags3(target) | CMDCHECK);
+            notify(player,"@icmd: Activated.");
+            notify(player,"@icmd: Done.");
+            return;
+        }
+        else if (key == ICMD_CHECK)
+        {
+            if (CmdCheck(target))
+            {
+                notify(player,"CmdCheck is active.");
+            }
+            else
+            {
+                notify(player,"CmdCheck is not active.");
+            }
+            atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
+            if (*atrpt)
+            {
+                notify(player, "CmdCheck attribute is:");
+                notify(player, atrpt);
+            }
+            else
+            {
+                notify(player, "CmdCheck attribute is empty.");
+            }
+            free_lbuf(atrpt);
+            notify(player,"@icmd: Done.");
+            return;
+        }
+    }
+    else
+    {
+        key = loc_set;
+    }
+    buff1 = alloc_lbuf("do_icmd");
+    for (x = 0; x < nargs; x++)
+    {
+        pt1 = args[x];
+        pt2 = buff1;
+        while (*pt1)
+            *pt2++ = tolower(*pt1++);
+        *pt2 = '\0';
+        if ((*buff1 == '!') && (*(buff1+1) != '\0'))
+        {
+            pt4 = args[x] + 1;
+            pt1 = buff1+1;
+            set = 0;
+        }
+        else
+        {
+            pt4 = args[x];
+            set = 1;
+            pt1 = buff1;
+        }
+        if (*pt1)
+        {
+            home = 0;
+            *pre = '\0';
+            *(pre+1) = '\0';
+            logcmdp = (NAMETAB *) hashfindLEN(pt4, strlen(pt4), &mudstate.logout_cmd_htab);
+            if (!logcmdp)
+            {
+                cmdp = (CMDENT *) hashfindLEN(pt1, strlen(pt1), &mudstate.command_htab);
+                if (!cmdp)
+                {
+                    if (!string_compare(pt1,"home"))
+                    {
+                        home = 1;
+                    }
+                    else if (prefix_cmds[*pt1] && !*(pt1+1))
+                    {
+                        *pre = *pt1;
+                    }
+                }
+            }
+            else
+            {
+                cmdp = NULL;
+            }
+            if (cmdp || logcmdp || home || *pre)
+            {
+                atrpt = atr_get(target,A_CMDCHECK,&aowner,&aflags);
+                if (cmdp)
+                {
+                    aflags = strlen(cmdp->cmdname);
+                }
+                else if (logcmdp)
+                {
+                    aflags = strlen(logcmdp->name);
+                }
+                else if (home)
+                {
+                    aflags = 4;
+                }
+                else
+                {
+                    aflags = 1;
+                }
+                pt5 = atrpt;
+                while (pt1)
+                {
+                    if (cmdp)
+                    {
+                        pt1 = strstr(pt5,cmdp->cmdname);
+                    }
+                    else if (logcmdp)
+                    {
+                        pt1 = strstr(pt5,logcmdp->name);
+                    }
+                    else if (home)
+                    {
+                        pt1 = strstr(pt5,"home");
+                    }
+                    else if (*pre == ':')
+                    {
+                        pt1 = strstr(pt5,"::");
+                        if (pt1)
+                        {
+                            pt1++;
+                        }
+                    }
+                    else
+                    {
+                        pt1 = strstr(pt5,pre);
+                    }
+                    if (  pt1
+                       && (pt1 > atrpt)
+                       && (*(pt1-1) == ':')
+                       && (  isspace(*(pt1 + aflags))
+                          || !*(pt1 + aflags)))
+                    {
+                        break;
+                    }
+                    else if (pt1)
+                    {
+                        if (*pt1)
+                        {
+                            pt5 = pt1+1;
+                        }
+                        else
+                        {
+                            pt1 = NULL;
+                            break;
+                        }
+                    }
+                }
+                if (set)
+                {
+                    if (!pt1)
+                    {
+                        if (*atrpt && (strlen(atrpt) < LBUF_SIZE-2))
+                        {
+                            strcat(atrpt," ");
+                        }
+                        if (cmdp)
+                        {
+                            pt3 = tprintf("%d:%s", key+1, cmdp->cmdname);
+                        }
+                        else if (logcmdp)
+                        {
+                            pt3 = tprintf("%d:%s", key+1, logcmdp->name);
+                        }
+                        else if (home)
+                        {
+                            pt3 = tprintf("%d:home", key+1);
+                        }
+                        else
+                        {
+                            pt3 = tprintf("%d:%c", key+1, *pre);
+                        }
+                        if ((strlen(atrpt) + strlen(pt3)) < LBUF_SIZE -1)
+                        {
+                            strcat(atrpt, pt3);
+                            atr_add_raw(target, A_CMDCHECK, atrpt);
+                            if ( loc_set == -1 )
+                            {
+                                s_Flags(target, FLAG_WORD3, Flags3(target) | CMDCHECK);
+                            }
+                            message = "Set";
+                        }
+                    }
+                    else
+                    {
+                        message = "Command already present";
+                    }
+                }
+                else
+                {
+                    if (pt1)
+                    {
+                        pt2 = pt1-1;
+                        while ((pt2 > atrpt) && !isspace(*pt2))
+                        {
+                            pt2--;
+                        }
+                        y = pt2-atrpt+1;
+                        strncpy(buff1,atrpt,y);
+                        if (y == 1)
+                        {
+                            *atrpt = '\0';
+                        }
+                        *(atrpt + y) = '\0';
+                        pt2 = pt1+aflags;
+                        if (*pt2)
+                        {
+                            while (*pt2 && (isspace(*pt2)))
+                            {
+                                pt2++;
+                            }
+                            if (*pt2)
+                            {
+                                strcat(atrpt,pt2);
+                            }
+                        }
+                        if ((y > 1) && !*pt2)
+                        {
+                            pt2 = atrpt+y;
+                            while ((pt2 > atrpt) && isspace(*pt2))
+                            {
+                                pt2--;
+                            }
+                            *(pt2+1) = '\0';
+                        }
+                        if ((y == 1) && !*pt2) 
+                        {
+                            atr_clr(target, A_CMDCHECK);
+                            if (loc_set == -1)
+                            {
+                                s_Flags(target, FLAG_WORD3, Flags3(target) & ~CMDCHECK);
+                            }
+                            message = "Cleared";
+                        }
+                        else
+                        {
+                            atr_add_raw(target, A_CMDCHECK, atrpt);
+                            message = "Cleared";
+                        }
+                    }
+                    else
+                    {
+                        message = "Command not present";
+                    }
+                }
+                free_lbuf(atrpt);
+            }
+            else
+            {
+                message = "Bad command";
+            }
+            notify(player, tprintf("@icmd:%s %s.",(loc_set == -1) ? "" : " Location -", message));
+        }
+    }
+    free_lbuf(buff1);
+    notify(player,"Icmd: Done.");
 }
