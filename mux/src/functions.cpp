@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.64 2003-08-07 05:37:20 sdennis Exp $
+// $Id: functions.cpp,v 1.65 2003-08-22 08:56:39 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1629,7 +1629,7 @@ FUNCTION(fun_right)
     // Initial checks for iPosition0 [0,LBUF_SIZE), nLength [0,LBUF_SIZE),
     // and iPosition1 [0,LBUF_SIZE).
 
-    int iPosition1 = strlen(fargs[0]);
+    int iPosition1 = strlen(strip_ansi(fargs[0]));
     int nLength = mux_atol(fargs[1]);
     int iPosition0 = iPosition1 - nLength;   
 
