@@ -80,18 +80,36 @@ Bug Fixes:
  
     A broader case of this one was originally reported by Lucifer 
     against MUX 2.1 and fixed 2001-OCT-16.  The fix wasn't sufficient.
- -- Bug #557, #558, #559, and #560 were all buffers smaller than the 
-    largest possible result.  All reported by Morgan 2000-OCT-15.  Fixed 
-    (finally) by Brazil.
+ -- Bug #557, #558, #559, and #560 were all buffers smaller than the
+    largest possible result.  All reported by Morgan 2000-OCT-15.  Fixed
+    (finally) by Brazil.  Bugs from MUX 1.6.
+ -- Initialize idle time for the sake of SITEMON-related WHO reports.
+    Zenty's bug.
+ -- Protect d->player access with DS_CONNECTED test to avoid depending
+    on the existance of #0. Flags on #0 were controlling the behavior
+    of logged-out connections. Now, you can load an empty flatfile,
+    create a player (which will be dbref #0), and proceed from there.
+    This isn't recommended, but the server doesn't crash if you try it.
+    Bug from MUX 1.6.
+ -- Kill the slave process on @shutdown.  Reported by nails.  Fixed by
+    Brazil.  Brazil's bug.  Introduced in MUX 2.0 when the Win32 and
+    Unix sources were merged. The required block of code was accidently
+    left out. 
  -- Don't treat a killed slave process as the completion of a dump
     process.  Implementation worked out jointly with Alierak.
- -- Kill the slave process on @shutdown.  Reported by nails.  Fixed by
-    Brazil.  This was introduced in MUX 2.0 when the Win32 and Unix
-    sources were merged. The required block of code was accidently left
-    out.
  -- Clean up zombie slave processe on @restart.
  -- set() function free the wrong buffer.  Introduced by Jake in
     MUX 2.3.0.5.  Reported by A_Character.  Fixed by Brazil.
+ -- grep() and grepi() weren't preparing properly for accented
+    characters.  Brazil's bug.
+ -- Execute @hook code in the context of the hook_obj instead of as the
+    player.  Jake's bug.
+ -- Configuration script bug that affected MacOS build.  Reported by
+    Alierak.
+ -- Fixed ANSI color leak for case near the size of an LBUF.  Reported
+    by Alierak.
+ -- PushPointers tag was wrong.  Reported by Alierak.
+ -- Memory leak in objeval().  Reported by Alierak.
 
 
 Performance Enhancements:
