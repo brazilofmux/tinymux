@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.36 2002-08-03 20:00:18 sdennis Exp $
+// $Id: db.cpp,v 1.37 2002-08-03 20:24:18 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -531,8 +531,12 @@ void s_Name(dbref thing, const char *s)
             purenames[thing] = NULL;
         }
         MEMFREE(names[thing]);
+        names[thing] = NULL;
     }
-    names[thing] = StringClone(s);
+    if (s)
+    {
+        names[thing] = StringClone(s);
+    }
 #endif // !MEMORY_BASED
     if (  mudconf.cache_names
        && purenames[thing])
