@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  May 2001
+Last Update:  June 2001
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,6 +23,8 @@ Feature Additions:
 
 Bug Fixes:
 ~~~~~~~~~
+ -- inet_addr() re-write to handle netmask of 255.255.255.255 and Berkeley
+    a, a.b, and a.b.c numeric IP formats.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
