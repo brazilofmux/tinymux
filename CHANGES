@@ -51,6 +51,7 @@ Feature Additions:
  -- Changed message for @chown to give enough information to a builder to
     check their work. It's something of an audit trail.
  -- Added optional output delimeter to SORT(). Patch from Ashen-Shugar.
+ -- Enhanced Page command.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -94,6 +95,9 @@ Bug Fixes:
  -- Bug #786 - Logging of commands by players set suspect now works. Patch
     from Shawn Wagner.
  -- '@mail/' was interpreted as '@mail/abort'. Reported by Cloud@Ashes.
+ -- Bug #404 - Support 'page =Hi there. =)'. Reported by Silk.
+ -- Recognize '@teleport Foo=' and issue an error message instead of
+    attempting '@teleport Foo'.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
