@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.5 2003-01-05 18:08:59 sdennis Exp $
+// $Id: timeutil.h,v 1.6 2003-09-07 22:06:04 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -91,6 +91,7 @@ class CLinearTimeDelta
 
 private:
     INT64 m_tDelta;
+    static char m_Buffer[204];
 
 public:
     CLinearTimeDelta(void);
@@ -100,6 +101,7 @@ public:
     long ReturnMilliseconds(void);
     long ReturnDays(void);
     long ReturnSeconds(void);
+    char *ReturnSecondsString(int nFracDigits = 0);
     INT64 Return100ns(void);
 
     void SetTimeValueStruct(struct timeval *tv);

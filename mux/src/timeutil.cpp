@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.14 2003-04-01 22:42:14 sdennis Exp $
+// $Id: timeutil.cpp,v 1.15 2003-09-07 22:06:04 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -404,6 +404,7 @@ const INT64 FACTOR_100NS_PER_WEEK = FACTOR_100NS_PER_DAY*7;
 
 int CLinearTimeAbsolute::m_nCount = 0;
 char CLinearTimeAbsolute::m_Buffer[204];
+char CLinearTimeDelta::m_Buffer[204];
 
 void GetUTCLinearTime(INT64 *plt);
 void GetLocalFieldedTime(FIELDEDTIME *ft);
@@ -605,14 +606,15 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
     return TRUE;
 }
 
-char *CLinearTimeAbsolute::ReturnSecondsString(int nFracDigits)
+void ConvertToSecondsString(char *buffer, INT64 n64, int nFracDigits)
 {
     INT64 Leftover;
-    INT64 lt = i64FloorDivisionMod(m_tAbsolute - EPOCH_OFFSET, FACTOR_100NS_PER_SECOND, &Leftover);
-    int n = Tiny_i64toa(lt, m_Buffer);
+    INT64 lt = i64FloorDivisionMod(n64, FACTOR_100NS_PER_SECOND, &Leftover);
+
+    int n = Tiny_i64toa(lt, buffer);
     if (Leftover == 0)
     {
-        return m_Buffer;
+        return;
     }
 
     // Sanitize Precision Request.
@@ -629,7 +631,7 @@ char *CLinearTimeAbsolute::ReturnSecondsString(int nFracDigits)
     }
     if (0 < nFracDigits)
     {
-        char *p = m_Buffer + n;
+        char *p = buffer + n;
         *p++ = '.';
         char *q = p;
 
@@ -646,6 +648,17 @@ char *CLinearTimeAbsolute::ReturnSecondsString(int nFracDigits)
         p++;
         *p = '\0';
     }
+}
+
+char *CLinearTimeDelta::ReturnSecondsString(int nFracDigits)
+{
+    ConvertToSecondsString(m_Buffer, m_tDelta, nFracDigits);
+    return m_Buffer;
+}
+
+char *CLinearTimeAbsolute::ReturnSecondsString(int nFracDigits)
+{
+    ConvertToSecondsString(m_Buffer, m_tAbsolute - EPOCH_OFFSET, nFracDigits);
     return m_Buffer;
 }
 
