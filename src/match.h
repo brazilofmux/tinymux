@@ -1,5 +1,5 @@
 /* match.h */
-/* $Id: match.h,v 1.2 2000-11-12 04:39:07 sdennis Exp $ */
+/* $Id: match.h,v 1.3 2000-11-12 11:06:14 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -56,11 +56,6 @@ extern void FDECL(restore_match_state, (MSTATE *));
 extern void match_zone_exit(void);
 extern dbref match_thing(dbref player, char *name);
 extern dbref match_thing_quiet(dbref player, char *name);
-
-
-#define NOMATCH_MESSAGE "I don't see that here."
-#define AMBIGUOUS_MESSAGE "I don't know which one you mean!"
-#define NOPERM_MESSAGE "Permission denied."
 
 #define MAT_NO_EXITS        1   /* Don't check for exits */
 #define MAT_EXIT_PARENTS    2   /* Check for exits in parents */

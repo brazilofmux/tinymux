@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.5 2000-11-04 11:19:02 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.6 2000-11-12 11:06:12 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -854,7 +854,7 @@ void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message
         }
         if (do_contents && !Controls(player, target) &&
             !mudconf.pemit_any) {
-            notify(player, "Permission denied.");
+            notify(player, NOPERM_MESSAGE);
             return;
         }
         loc = where_is(target);

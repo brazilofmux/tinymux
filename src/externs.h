@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.39 2000-11-06 19:23:09 sdennis Exp $
+// $Id: externs.h,v 1.40 2000-11-12 11:06:15 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -657,9 +657,16 @@ extern void ReleaseAllResources(dbref obj);
 #define test_top()      ((mudstate.qfirst != NULL) ? 1 : 0)
 #define controls(p,x)       Controls(p,x)
 
-#define safe_nothing(b,p)   safe_copy_buf("#-1",3,(b),(p),(LBUF_SIZE-1))
-#define safe_noperm(b,p)    safe_copy_buf("#-1 PERMISSION DENIED",21,(b),(p),(LBUF_SIZE-1))
-#define safe_nomatch(b,p)   safe_copy_buf("#-1 NO MATCH",12,(b),(p),(LBUF_SIZE-1))
+extern const char *NOMATCH_MESSAGE;
+extern const char *AMBIGUOUS_MESSAGE;
+extern const char *NOPERM_MESSAGE;
+extern const char *FUNC_FAIL_MESSAGE;
+extern const char *FUNC_NOPERM_MESSAGE;
+extern const char *FUNC_NOMATCH_MESSAGE;
+
+#define safe_nothing(b,p)   safe_copy_buf(FUNC_FAIL_MESSAGE,3,(b),(p),(LBUF_SIZE-1))
+#define safe_noperm(b,p)    safe_copy_buf(FUNC_NOPERM_MESSAGE,21,(b),(p),(LBUF_SIZE-1))
+#define safe_nomatch(b,p)   safe_copy_buf(FUNC_NOMATCH_MESSAGE,12,(b),(p),(LBUF_SIZE-1))
 
 extern int ReplaceFile(char *old_name, char *new_name);
 extern void RemoveFile(char *name);

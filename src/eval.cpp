@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.15 2000-11-06 02:04:35 sdennis Exp $
+// $Id: eval.cpp,v 1.16 2000-11-12 11:06:16 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1212,7 +1212,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         }
                         else if (!check_access(player, ufp->perms))
                         {
-                            safe_str("#-1 PERMISSION DENIED", buff, &oldp);
+                            safe_noperm(buff, &oldp);
                         }
                         else
                         {
@@ -1268,7 +1268,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             }
                             else if (!check_access(player, fp->perms))
                             {
-                                safe_str("#-1 PERMISSION DENIED", buff, &oldp);
+                                safe_noperm(buff, &oldp);
                             }
                             else
                             {

@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.6 2000-09-29 21:40:47 sdennis Exp $ 
+// $Id: set.cpp,v 1.7 2000-11-12 11:06:13 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -26,11 +26,14 @@ dbref match_controlled(dbref player, const char *name)
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     mat = noisy_match_result();
-    if (Good_obj(mat) && !Controls(player, mat)) {
-        notify_quiet(player, "Permission denied.");
+    if (Good_obj(mat) && !Controls(player, mat))
+    {
+        notify_quiet(player, NOPERM_MESSAGE);
         return NOTHING;
-    } else {
-        return (mat);
+    }
+    else
+    {
+        return mat;
     }
 }
 
@@ -55,11 +58,14 @@ dbref match_affected(dbref player, const char *name)
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     mat = noisy_match_result();
-    if (mat != NOTHING && !Affects(player, mat)) {
-        notify_quiet(player, "Permission denied.");
+    if (mat != NOTHING && !Affects(player, mat))
+    {
+        notify_quiet(player, NOPERM_MESSAGE);
         return NOTHING;
-    } else {
-        return (mat);
+    }
+    else
+    {
+        return mat;
     }
 }
 
@@ -70,11 +76,14 @@ dbref match_examinable(dbref player, const char *name)
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     mat = noisy_match_result();
-    if (mat != NOTHING && !Examinable(player, mat)) {
-        notify_quiet(player, "Permission denied.");
+    if (mat != NOTHING && !Examinable(player, mat))
+    {
+        notify_quiet(player, NOPERM_MESSAGE);
         return NOTHING;
-    } else {
-        return (mat);
+    }
+    else
+    {
+        return mat;
     }
 }
 
@@ -264,27 +273,25 @@ void do_alias(dbref player, dbref cause, int key, char *name, char *alias)
         oldalias = atr_pget(thing, A_ALIAS, &aowner, &aflags);
         trimalias = trim_spaces(alias);
 
-        if (!Controls(player, thing)) {
-
-            /*
-             * Make sure we have rights to do it.  We can't do *
-             * * * * the normal Set_attr check because ALIAS is * 
-             * only * * * writable by GOD and we want to keep *
-             * people * from * * doing &ALIAS and bypassing the * 
-             * player * name checks. 
-             */
-
-            notify_quiet(player, "Permission denied.");
-        } else if (!*trimalias) {
-
-            /*
-             * New alias is null, just clear it 
-             */
-
+        if (!Controls(player, thing))
+        {
+            // Make sure we have rights to do it. We can't do the
+            // normal Set_attr check because ALIAS is only
+            // writable by GOD and we want to keep people from
+            // doing &ALIAS and bypassing the player name checks.
+            //
+            notify_quiet(player, NOPERM_MESSAGE);
+        }
+        else if (!*trimalias)
+        {
+            // New alias is null, just clear it.
+            //
             delete_player_name(thing, oldalias);
             atr_clr(thing, A_ALIAS);
             if (!Quiet(player))
+            {
                 notify_quiet(player, "Alias removed.");
+            }
         }
         else if (lookup_player(NOTHING, trimalias, 0) != NOTHING)
         {
@@ -317,19 +324,24 @@ void do_alias(dbref player, dbref cause, int key, char *name, char *alias)
         }
         free_lbuf(trimalias);
         free_lbuf(oldalias);
-    } else {
+    }
+    else
+    {
         atr_pget_info(thing, A_ALIAS, &aowner, &aflags);
 
-        /*
-         * Make sure we have rights to do it 
-         */
-
-        if (!Set_attr(player, thing, ap, aflags)) {
-            notify_quiet(player, "Permission denied.");
-        } else {
+        // Make sure we have rights to do it.
+        //
+        if (!Set_attr(player, thing, ap, aflags))
+        {
+            notify_quiet(player, NOPERM_MESSAGE);
+        }
+        else
+        {
             atr_add(thing, A_ALIAS, alias, Owner(player), aflags);
             if (!Quiet(player))
+            {
                 notify_quiet(player, "Set.");
+            }
         }
     }
 }
@@ -378,7 +390,7 @@ void do_lock(dbref player, dbref cause, int key, char *name, char *keytext)
             }
             else
             {
-                notify_quiet(player, "Permission denied.");
+                notify_quiet(player, NOPERM_MESSAGE);
             }
             return;
         }
@@ -466,18 +478,25 @@ void do_unlock(dbref player, dbref cause, int key, char *name)
                     if (!Quiet(player) && !Quiet(thing))
                         notify_quiet(player,
                              "Attribute unlocked.");
-            } else {
-                notify_quiet(player, "Permission denied.");
+            }
+            else
+            {
+                notify_quiet(player, NOPERM_MESSAGE);
             }
             return;
         }
     }
     if (!key)
+    {
         key = A_LOCK;
-    if ((thing = match_controlled(player, name)) != NOTHING) {
+    }
+    if ((thing = match_controlled(player, name)) != NOTHING)
+    {
         atr_clr(thing, key);
         if (!Quiet(player) && !Quiet(thing))
+        {
             notify_quiet(player, "Unlocked.");
+        }
     }
 }
 
@@ -494,30 +513,48 @@ void do_unlink(dbref player, dbref cause, int key, char *name)
     match_everything(0);
     exit = match_result();
 
-    switch (exit) {
+    switch (exit)
+    {
     case NOTHING:
+
         notify_quiet(player, "Unlink what?");
         break;
+
     case AMBIGUOUS:
+
         notify_quiet(player, "I don't know which one you mean!");
         break;
+
     default:
-        if (!controls(player, exit)) {
-            notify_quiet(player, "Permission denied.");
-        } else {
-            switch (Typeof(exit)) {
+
+        if (!controls(player, exit))
+        {
+            notify_quiet(player, NOPERM_MESSAGE);
+        }
+        else
+        {
+            switch (Typeof(exit))
+            {
             case TYPE_EXIT:
+
                 s_Location(exit, NOTHING);
                 if (!Quiet(player))
+                {
                     notify_quiet(player, "Unlinked.");
+                }
                 break;
+
             case TYPE_ROOM:
+
                 s_Dropto(exit, NOTHING);
                 if (!Quiet(player))
-                    notify_quiet(player,
-                             "Dropto removed.");
+                {
+                    notify_quiet(player, "Dropto removed.");
+                }
                 break;
+
             default:
+
                 notify_quiet(player, "You can't unlink that!");
                 break;
             }
@@ -546,75 +583,79 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
                 owner = lookup_player(player, newown, 1);
             }
 
-            /*
-             * You may chown an attr to yourself if you own the * 
-             * 
-             * *  * *  * * object and the attr is not locked. *
-             * You * may * chown  * an attr to the owner of the
-             * object * if * * you own * the attribute. * To do
-             * anything * else you  * must be a  * wizard. * Only 
-             * #1 can * chown * attributes on #1. 
-             */
-
-            if (!atr_get_info(thing, atr, &aowner, &aflags)) {
-                notify_quiet(player,
-                    "Attribute not present on object.");
+            // You may chown an attr to yourself if you own the
+            // object and the attr is not locked. You may chown
+            // an attr to the owner of the object if you own the
+            // attribute. To do anything else you must be a
+            // wizard. Only #1 can chown attributes on #1.
+            //
+            if (!atr_get_info(thing, atr, &aowner, &aflags))
+            {
+                notify_quiet(player, "Attribute not present on object.");
                 return;
             }
             do_it = 0;
-            if (owner == NOTHING) {
-                notify_quiet(player,
-                         "I couldn't find that player.");
-            } else if (God(thing) && !God(player)) {
-                notify_quiet(player, "Permission denied.");
-            } else if (Wizard(player)) {
+            if (owner == NOTHING)
+            {
+                notify_quiet(player, "I couldn't find that player.");
+            }
+            else if (God(thing) && !God(player))
+            {
+                notify_quiet(player, NOPERM_MESSAGE);
+            }
+            else if (Wizard(player))
+            {
                 do_it = 1;
-            } else if (owner == Owner(player)) {
-
-                /*
-                 * chown to me: only if I own the obj and * * 
-                 * 
-                 * *  * * !locked 
-                 */
-
+            }
+            else if (owner == Owner(player))
+            {
+                // Chown to me: only if I own the obj and !locked
+                //
                 if (!Controls(player, thing) ||
-                    (aflags & AF_LOCK)) {
-                    notify_quiet(player,
-                             "Permission denied.");
-                } else {
+                    (aflags & AF_LOCK))
+                {
+                    notify_quiet(player, NOPERM_MESSAGE);
+                }
+                else
+                {
                     do_it = 1;
                 }
-            } else if (owner == Owner(thing)) {
-
-                /*
-                 * chown to obj owner: only if I own attr * * 
-                 * 
-                 * *  * * and !locked 
-                 */
-
+            }
+            else if (owner == Owner(thing))
+            {
+                // chown to obj owner: only if I own attr and !locked
+                //
                 if ((Owner(player) != aowner) ||
-                    (aflags & AF_LOCK)) {
-                    notify_quiet(player,
-                             "Permission denied.");
-                } else {
+                    (aflags & AF_LOCK))
+                {
+                    notify_quiet(player, NOPERM_MESSAGE);
+                }
+                else
+                {
                     do_it = 1;
                 }
-            } else {
-                notify_quiet(player, "Permission denied.");
+            }
+            else
+            {
+                notify_quiet(player, NOPERM_MESSAGE);
             }
 
             if (!do_it)
+            {
                 return;
+            }
 
             ap = atr_num(atr);
-            if (!ap || !Set_attr(player, player, ap, aflags)) {
-                notify_quiet(player, "Permission denied.");
+            if (!ap || !Set_attr(player, player, ap, aflags))
+            {
+                notify_quiet(player, NOPERM_MESSAGE);
                 return;
             }
             atr_set_owner(thing, atr, owner);
             if (!Quiet(player))
-                notify_quiet(player,
-                         "Attribute owner changed.");
+            {
+                notify_quiet(player, "Attribute owner changed.");
+            }
             return;
         }
     }
@@ -670,7 +711,7 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
              !Chown_ok(thing)) || (isThing(thing) &&
                        (Location(thing) != player) &&
                !Chown_Any(player))) || (!controls(player, owner))) {
-        notify_quiet(player, "Permission denied.");
+        notify_quiet(player, NOPERM_MESSAGE);
     } else if (canpayfees(player, owner, cost, quota)) {
         giveto(Owner(thing), cost);
         if (mudconf.quotas)
@@ -713,7 +754,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
         if (!(key & SET_QUIET) && !Quiet(player) && !Quiet(thing))
             notify_quiet(player, "Set.");
     } else {
-        notify_quiet(player, "Permission denied.");
+        notify_quiet(player, NOPERM_MESSAGE);
     }
 }
 
@@ -770,7 +811,7 @@ void do_set(dbref player, dbref cause, int key, char *name, char *flag)
             attr = atr_num(atr);
             if (!attr || !Set_attr(player, thing, attr, aflags))
             {
-                notify_quiet(player, "Permission denied.");
+                notify_quiet(player, NOPERM_MESSAGE);
                 return;
             }
 
@@ -834,13 +875,13 @@ void do_set(dbref player, dbref cause, int key, char *name, char *flag)
         attr = atr_num(atr);
         if (!attr)
         {
-            notify_quiet(player, "Permission denied.");
+            notify_quiet(player, NOPERM_MESSAGE);
             return;
         }
         atr_get_info(thing, atr, &aowner, &aflags);
         if (!Set_attr(player, thing, attr, aflags))
         {
-            notify_quiet(player, "Permission denied.");
+            notify_quiet(player, NOPERM_MESSAGE);
             return;
         }
         buff = alloc_lbuf("do_set");
@@ -864,7 +905,7 @@ void do_set(dbref player, dbref cause, int key, char *name, char *flag)
             if (  !attr2
                || !See_attr(player, thing2, attr2, aowner, aflags))
             {
-                notify_quiet(player, "Permission denied.");
+                notify_quiet(player, NOPERM_MESSAGE);
                 free_lbuf(buff);
                 return;
             }
@@ -1513,7 +1554,7 @@ void do_trigger(dbref player, dbref cause, int key, char *object, char *argv[], 
         return;
     }
     if (!controls(player, thing)) {
-        notify_quiet(player, "Permission denied.");
+        notify_quiet(player, NOPERM_MESSAGE);
         return;
     }
     did_it(player, thing, 0, NULL, 0, NULL, attrib, argv, nargs);

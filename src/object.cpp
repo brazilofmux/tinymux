@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.8 2000-09-18 18:56:28 sdennis Exp $
+// $Id: object.cpp,v 1.9 2000-11-12 11:06:13 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -343,7 +343,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
     {
         if (!Inherits(player))
         {
-            notify(player, "Permission denied.");
+            notify(player, NOPERM_MESSAGE);
             return NOTHING;
         }
     }

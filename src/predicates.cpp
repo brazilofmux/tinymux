@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.24 2000-11-04 08:54:01 sdennis Exp $
+// $Id: predicates.cpp,v 1.25 2000-11-12 11:06:13 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1035,15 +1035,18 @@ void do_quitprog(dbref player, dbref cause, int key, char *name)
         doer = player;
     }
 
-    if (!(Prog(player) || Prog(Owner(player))) && (player != doer)) {
-        notify(player, "Permission denied.");
+    if (!(Prog(player) || Prog(Owner(player))) && (player != doer))
+    {
+        notify(player, NOPERM_MESSAGE);
         return;
     }
-    if (!isPlayer(doer) || !Good_obj(doer)) {
+    if (!isPlayer(doer) || !Good_obj(doer))
+    {
         notify(player, "That is not a player.");
         return;
     }
-    if (!Connected(doer)) {
+    if (!Connected(doer))
+    {
         notify(player, "That player is not connected.");
         return;
     }

@@ -1,9 +1,7 @@
-/*
- * player.c 
- */
-/*
- * $Id: player.cpp,v 1.6 2000-09-18 18:26:24 sdennis Exp $ 
- */
+// player.cpp
+//
+// $Id: player.cpp,v 1.7 2000-11-12 11:06:13 sdennis Exp $ 
+///
 
 #include "copyright.h"
 #include "autoconf.h"
@@ -384,7 +382,7 @@ void do_last(dbref player, dbref cause, int key, char *who)
     }
     else if (!Controls(player, target))
     {
-        notify(player, "Permission denied.");
+        notify(player, NOPERM_MESSAGE);
     }
     else
     {

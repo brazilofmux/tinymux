@@ -1,10 +1,7 @@
-/*
- * rob.c -- Commands dealing with giving/taking/killing things or money 
- */
-/*
- * $Id: rob.cpp,v 1.3 2000-10-26 08:26:50 sdennis Exp $ 
- */
-
+// rob.cpp -- Commands dealing with giving/taking/killing things or money.
+//
+// $Id: rob.cpp,v 1.4 2000-11-12 11:06:13 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

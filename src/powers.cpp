@@ -3,7 +3,7 @@
  * powers.c - power manipulation routines 
  */
 /*
- * $Id: powers.cpp,v 1.2 2000-04-17 17:49:35 sdennis Exp $ 
+ * $Id: powers.cpp,v 1.3 2000-11-12 11:06:13 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -251,10 +251,13 @@ void power_set(dbref target, dbref player, char *power, int key)
     result = fp->handler(target, player, fp->powervalue,
                  fp->powerpower, negate);
     if (!result)
-        notify(player, "Permission denied.");
+    {
+        notify(player, NOPERM_MESSAGE);
+    }
     else if (!(key & SET_QUIET) && !Quiet(player))
+    {
         notify(player, (negate ? "Cleared." : "Set."));
-    return;
+    }
 }
 
 

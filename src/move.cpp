@@ -1,9 +1,7 @@
-/*
- * move.c -- Routines for moving about 
- */
-/*
- * $Id: move.cpp,v 1.4 2000-11-04 11:06:10 sdennis Exp $ 
- */
+// move.cpp -- Routines for moving about 
+//
+// $Id: move.cpp,v 1.5 2000-11-12 11:06:14 sdennis Exp $
+//
 
 #include "copyright.h"
 #include "autoconf.h"
@@ -845,20 +843,27 @@ void do_enter_internal(dbref player, dbref thing, int quiet)
     dbref loc;
     int oattr, aattr;
 
-    if (!Enter_ok(thing) && !controls(player, thing)) {
+    if (!Enter_ok(thing) && !controls(player, thing))
+    {
         oattr = quiet ? 0 : A_OEFAIL;
         aattr = quiet ? 0 : A_AEFAIL;
-        did_it(player, thing, A_EFAIL, "Permission denied.",
+        did_it(player, thing, A_EFAIL, NOPERM_MESSAGE,
                oattr, NULL, aattr, (char **)NULL, 0);
-    } else if (player == thing) {
+    }
+    else if (player == thing)
+    {
         notify(player, "You can't enter yourself!");
-    } else if (could_doit(player, thing, A_LENTER)) {
+    }
+    else if (could_doit(player, thing, A_LENTER))
+    {
         loc = Location(player);
         oattr = quiet ? HUSH_ENTER : 0;
         move_via_generic(player, thing, NOTHING, oattr);
         divest_object(player);
         process_sticky_dropto(loc, player);
-    } else {
+    }
+    else
+    {
         oattr = quiet ? 0 : A_OEFAIL;
         aattr = quiet ? 0 : A_AEFAIL;
         did_it(player, thing, A_EFAIL, "You can't enter that.",

@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.4 2000-11-12 04:39:07 sdennis Exp $
+// $Id: match.cpp,v 1.5 2000-11-12 11:06:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -12,6 +12,13 @@
 #include "match.h"
 #include "attrs.h"
 #include "powers.h"
+
+const char *NOMATCH_MESSAGE      = "I don't see that here.";
+const char *AMBIGUOUS_MESSAGE    = "I don't know which one you mean!";
+const char *NOPERM_MESSAGE       = "Permission denied.";
+const char *FUNC_FAIL_MESSAGE    = "#-1";
+const char *FUNC_NOPERM_MESSAGE  = "#-1 PERMISSION DENIED";
+const char *FUNC_NOMATCH_MESSAGE = "#-1 NO MATCH";
 
 #define CON_LOCAL       0x01    // Match is near me.
 #define CON_TYPE        0x02    // Match is of requested type.

@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.16 2000-10-25 04:29:23 sdennis Exp $
+// $Id: stringutil.h,v 1.17 2000-11-12 11:06:12 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -141,7 +141,6 @@ void DbrefToBuffer_Final(DTB *pContext);
 int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va);
 int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);
 
-#ifdef MUX21
 typedef struct
 {
     int m_d[128];
@@ -153,6 +152,5 @@ extern int  BMH_StringSearch(int nPat, char *pPat, int nSrc, char *pSrc);
 extern void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat);
 extern int  BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc);
 extern int  BMH_StringSearchI(int nPat, char *pPat, int nSrc, char *pSrc);
-#endif // MUX21
 
 #endif // STRINGUTIL_H

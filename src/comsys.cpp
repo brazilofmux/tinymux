@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.17 2000-10-04 06:42:01 sdennis Exp $
+// * $Id: comsys.cpp,v 1.18 2000-11-12 11:06:16 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2499,7 +2499,7 @@ FUNCTION(fun_comtitle)
 
     if (!onchannel)
     {
-        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+        safe_noperm(buff, bufc);
         return;
     }
 
@@ -2563,7 +2563,7 @@ FUNCTION(fun_comalias)
 
     if (!onchannel)
     {
-        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+        safe_noperm(buff, bufc);
         return;
     }
 

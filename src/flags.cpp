@@ -1,6 +1,6 @@
 // flags.cpp - flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.7 2000-10-24 22:26:28 sdennis Exp $ 
+// $Id: flags.cpp,v 1.8 2000-11-12 11:06:15 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -524,9 +524,13 @@ void flag_set(dbref target, dbref player, char *flag, int key)
 
     result = fp->handler(target, player, fp->flagvalue, fp->flagflag, negate);
     if (!result)
-        notify(player, "Permission denied.");
+    {
+        notify(player, NOPERM_MESSAGE);
+    }
     else if (!(key & SET_QUIET) && !Quiet(player))
+    {
         notify(player, (negate ? "Cleared." : "Set."));
+    }
     return;
 }
 

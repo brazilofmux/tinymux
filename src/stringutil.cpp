@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.33 2000-11-03 06:55:36 sdennis Exp $
+// $Id: stringutil.cpp,v 1.34 2000-11-12 11:06:12 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2443,8 +2443,6 @@ int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
     return lenBuffer;
 }
 
-#ifdef MUX21
-
 // Method: Boyer-Moore-Horspool
 //
 // This method is a simplification of the Boyer-Moore String Searching
@@ -2455,35 +2453,35 @@ int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
 // the full Boyer-Moore would make more sense.
 //
 #define BMH_LARGE 32767
-void BMH_Prepare(BMH_State *bmhState, int nPat, char *pPat)
+void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat)
 {
     int k;
     for (k = 0; k < 128; k++)
     {
-        bmhState->m_d[k] = nPat;
+        bmhs->m_d[k] = nPat;
     }
     
     for (k = 0; k < nPat - 1; k++)
     {
-        bmhState->m_d[pPat[k]] = nPat - k - 1;
+        bmhs->m_d[pPat[k]] = nPat - k - 1;
     }
     char chLastPat = pPat[nPat-1];
-    bmhState->m_d[chLastPat] = BMH_LARGE;
-    bmhState->m_skip2 = nPat;
+    bmhs->m_d[chLastPat] = BMH_LARGE;
+    bmhs->m_skip2 = nPat;
     for (int i = 0; i < nPat-1; ++i)
     {
         if (pPat[i] == chLastPat)
         {
-            bmhState->m_skip2 = nPat - i - 1;
+            bmhs->m_skip2 = nPat - i - 1;
         }
     }
 }
 
 int BMH_Execute(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
 {
-    for (int i = nPat-1; i < nSrc; i += bmhState->m_skip2)
+    for (int i = nPat-1; i < nSrc; i += bmhs->m_skip2)
     {
-        while ((i += bmhState->m_d[(unsigned char)(pSrc[i])]) < nSrc)
+        while ((i += bmhs->m_d[(unsigned char)(pSrc[i])]) < nSrc)
         {
             ; // Nothing.
         }
@@ -2518,32 +2516,32 @@ void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
     int k;
     for (k = 0; k < 128; k++)
     {
-        bmhState->m_d[k] = nPat;
+        bmhs->m_d[k] = nPat;
     }
     
     for (k = 0; k < nPat - 1; k++)
     {
-        bmhState->m_d[Tiny_ToUpper[(unsigned char)pPat[k]]] = nPat - k - 1;
-        bmhState->m_d[Tiny_ToLower[(unsigned char)pPat[k]]] = nPat - k - 1;
+        bmhs->m_d[Tiny_ToUpper[(unsigned char)pPat[k]]] = nPat - k - 1;
+        bmhs->m_d[Tiny_ToLower[(unsigned char)pPat[k]]] = nPat - k - 1;
     }
     char chLastPat = pPat[nPat-1];
-    bmhState->m_d[Tiny_ToUpper[(unsigned char)chLastPat]] = BMH_LARGE;
-    bmhState->m_d[Tiny_ToLower[(unsigned char)chLastPat]] = BMH_LARGE;
-    bmhState->m_skip2 = nPat;
+    bmhs->m_d[Tiny_ToUpper[(unsigned char)chLastPat]] = BMH_LARGE;
+    bmhs->m_d[Tiny_ToLower[(unsigned char)chLastPat]] = BMH_LARGE;
+    bmhs->m_skip2 = nPat;
     for (int i = 0; i < nPat-1; ++i)
     {
         if (pPat[i] == chLastPat)
         {
-            bmhState->m_skip2 = nPat - i - 1;
+            bmhs->m_skip2 = nPat - i - 1;
         }
     }
 }
 
 int BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
 {
-    for (int i = nPat-1; i < nSrc; i += bmhState->m_skip2)
+    for (int i = nPat-1; i < nSrc; i += bmhs->m_skip2)
     {
-        while ((i += bmhState->m_d[(unsigned char)(pSrc[i])]) < nSrc)
+        while ((i += bmhs->m_d[(unsigned char)(pSrc[i])]) < nSrc)
         {
             ; // Nothing.
         }
@@ -2569,9 +2567,7 @@ int BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
 
 int BMH_StringSearchI(int nPat, char *pPat, int nSrc, char *pSrc)
 {
-    BMH_State *bmhs;
+    BMH_State bmhs;
     BMH_PrepareI(&bmhs, nPat, pPat);
     return BMH_ExecuteI(&bmhs, nPat, pPat, nSrc, pSrc);
 }
-
-#endif // MUX21

@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects 
 //
-// $Id: create.cpp,v 1.9 2000-11-06 15:44:18 sdennis Exp $ 
+// $Id: create.cpp,v 1.10 2000-11-12 11:06:16 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -251,11 +251,10 @@ void do_link(dbref player, dbref cause, int key, char *what, char *where)
     case TYPE_PLAYER:
     case TYPE_THING:
 
-        /*
-         * Set home 
-         */
-
-        if (!Controls(player, thing)) {
+        // Set home.
+        //
+        if (!Controls(player, thing))
+        {
             notify_quiet(player, NOPERM_MESSAGE);
             break;
         }
@@ -263,59 +262,82 @@ void do_link(dbref player, dbref cause, int key, char *what, char *where)
         match_everything(MAT_NO_EXITS);
         room = noisy_match_result();
         if (!Good_obj(room))
+        {
             break;
-        if (!Has_contents(room)) {
+        }
+        if (!Has_contents(room))
+        {
             notify_quiet(player, "Can't link to an exit.");
             break;
         }
-        if (!can_set_home(player, thing, room) ||
-            !could_doit(player, room, A_LLINK)) {
-            notify_quiet(player, "Permission denied.");
-        } else if (room == HOME) {
+        if (  !can_set_home(player, thing, room)
+           || !could_doit(player, room, A_LLINK))
+        {
+            notify_quiet(player, NOPERM_MESSAGE);
+        }
+        else if (room == HOME)
+        {
             notify_quiet(player, "Can't set home to home.");
-        } else {
+        }
+        else
+        {
             s_Home(thing, room);
             if (!Quiet(player))
+            {
                 notify_quiet(player, "Home set.");
+            }
         }
         break;
+
     case TYPE_ROOM:
 
-        /*
-         * Set dropto 
-         */
-
-        if (!Controls(player, thing)) {
-            notify_quiet(player, "Permission denied.");
+        // Set dropto.
+        //
+        if (!Controls(player, thing))
+        {
+            notify_quiet(player, NOPERM_MESSAGE);
             break;
         }
         room = parse_linkable_room(player, where);
         if (!(Good_obj(room) || (room == HOME)))
+        {
             break;
+        }
 
-        if ((room != HOME) && !isRoom(room)) {
+        if ((room != HOME) && !isRoom(room))
+        {
             notify_quiet(player, "That is not a room!");
-        } else if ((room != HOME) &&
-               ((!controls(player, room) && !Link_ok(room)) ||
-                !could_doit(player, room, A_LLINK))) {
-            notify_quiet(player, "Permission denied.");
-        } else {
+        }
+        else if (  (room != HOME)
+                && (  (!controls(player, room) && !Link_ok(room))
+                   || !could_doit(player, room, A_LLINK)))
+        {
+            notify_quiet(player, NOPERM_MESSAGE);
+        }
+        else
+        {
             s_Dropto(thing, room);
             if (!Quiet(player))
+            {
                 notify_quiet(player, "Dropto set.");
+            }
         }
         break;
+
     case TYPE_GARBAGE:
-        notify_quiet(player, "Permission denied.");
+
+        notify_quiet(player, NOPERM_MESSAGE);
         break;
+
     default:
-        STARTLOG(LOG_BUGS, "BUG", "OTYPE")
-            buff = alloc_mbuf("do_link.LOG.badtype");
+
+        STARTLOG(LOG_BUGS, "BUG", "OTYPE");
+        buff = alloc_mbuf("do_link.LOG.badtype");
         sprintf(buff, "Strange object type: object #%d = %d",
             thing, Typeof(thing));
         log_text(buff);
         free_mbuf(buff);
-        ENDLOG
+        ENDLOG;
     }
 }
 
@@ -361,7 +383,7 @@ void do_parent(dbref player, dbref cause, int key, char *tname, char *pname)
         //
         if (!Parentable(player, parent))
         {
-            notify_quiet(player, "Permission denied.");
+            notify_quiet(player, NOPERM_MESSAGE);
             return;
         }
 
@@ -501,7 +523,7 @@ void do_clone(dbref player, dbref cause, int key, char *name, char *arg2)
     //
     if (!Examinable(player, thing))
     {
-        notify_quiet(player, "Permission denied.");
+        notify_quiet(player, NOPERM_MESSAGE);
         return;
     }
     if (isPlayer(thing))
@@ -531,7 +553,9 @@ void do_clone(dbref player, dbref cause, int key, char *name, char *arg2)
         if (cost > mudconf.createmax)
             cost = mudconf.createmax;
         arg2 = NULL;
-    } else {
+    }
+    else
+    {
         cost = 1;
         switch (Typeof(thing)) {
         case TYPE_THING:
@@ -542,8 +566,10 @@ void do_clone(dbref player, dbref cause, int key, char *name, char *arg2)
             cost = mudconf.digcost;
             break;
         case TYPE_EXIT:
-            if (!Controls(player, loc)) {
-                notify_quiet(player, "Permission denied.");
+
+            if (!Controls(player, loc))
+            {
+                notify_quiet(player, NOPERM_MESSAGE);
                 return;
             }
             cost = mudconf.digcost;

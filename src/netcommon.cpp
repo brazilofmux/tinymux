@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.28 2000-11-06 03:17:15 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.29 2000-11-12 11:06:13 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1403,7 +1403,7 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
     {
         if (!(Can_Poll(player)))
         {
-            notify(player, "Permission denied.");
+            notify(player, NOPERM_MESSAGE);
             return;
         }
         if (nValidDoing == 0)

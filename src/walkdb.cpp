@@ -1,7 +1,7 @@
 //
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.10 2000-11-04 08:54:01 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.11 2000-11-12 11:06:12 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -132,7 +132,7 @@ int get_stats(dbref player, dbref who, STATS *info)
     //
     if (Good_obj(who) && !Controls(player, who) && !Stat_Any(player))
     {
-        notify(player, "Permission denied.");
+        notify(player, NOPERM_MESSAGE);
         return 0;
     }
 
