@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.6 2002-06-13 07:19:33 jake Exp $
+// $Id: predicates.cpp,v 1.7 2002-06-13 07:51:23 jake Exp $
 //
 
 #include "copyright.h"
@@ -1571,7 +1571,6 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
     }
     else
     {
-        return TRUE; // I don't know what would reach this point. --JN
         STARTLOG(LOG_BUGS, "BUG", "UNIMP");
         log_text("bCanRead fell through. Executor:");
         log_text(Tiny_ltoa_t(executor));
@@ -1580,6 +1579,7 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
         log_text("Attr:");
         log_text(tattr->name);
         ENDLOG;
+        return TRUE; // I don't know what would reach this point. --JN
 
     }
 }
