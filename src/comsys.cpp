@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.37 2001-03-31 08:41:40 sdennis Exp $
+// * $Id: comsys.cpp,v 1.38 2001-04-11 04:57:15 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -589,7 +589,7 @@ void load_comsystem(FILE *fp)
         // +V2 has colored headers
         //
         ver = Tiny_atol(temp + 2);
-        if (ver < 1 || 2 < ver)
+        if (ver < 1 || 3 < ver)
         {
             return;
         }
@@ -621,7 +621,7 @@ void load_comsystem(FILE *fp)
         memcpy(ch->name, temp, nChannel);
         ch->name[nChannel] = '\0';
 
-        if (ver == 2)
+        if (ver >= 2)
         {
             int nHeader = GetLineTrunc(temp, sizeof(temp), fp);
             if (nHeader > MAX_HEADER_LEN)
@@ -640,7 +640,7 @@ void load_comsystem(FILE *fp)
         
         hashaddLEN(ch->name, nChannel, (int *)ch, &mudstate.channel_htab);
         
-        if (ver)
+        if (ver >= 1)
         {
             fscanf(fp, "%d %d %d %d %d %d %d %d\n",
                 &(ch->type), &(ch->temp1), &(ch->temp2),
@@ -655,9 +655,9 @@ void load_comsystem(FILE *fp)
                 &(ch->amount_col), &(ch->num_messages), &(ch->chan_obj));
         }
         
-        if (ver != 2)
+        if (ver <= 1)
         {
-            // Build colored header if not +V2 db.
+            // Build colored header if not +V2 or later db.
             //
             if (ch->type & CHANNEL_PUBLIC)
             {
@@ -687,15 +687,23 @@ void load_comsystem(FILE *fp)
                 struct comuser t_user;
                 memset(&t_user, 0, sizeof(t_user));
 
-                if (ver)
+                if (ver == 3)
                 {
                     fscanf(fp, "%d %d %d\n", &(t_user.who), &(t_user.bUserIsOn),
                         &(t_user.ComTitleStatus));
                 }
                 else
                 {
-                    fscanf(fp, "%d %d %d", &(t_user.who), &(dummy), &(dummy));
-                    fscanf(fp, "%d\n", &(t_user.bUserIsOn));
+                    t_user.ComTitleStatus = TRUE;
+                    if (ver)
+                    {
+                        fscanf(fp, "%d %d\n", &(t_user.who), &(t_user.bUserIsOn));
+                    }
+                    else
+                    {
+                        fscanf(fp, "%d %d %d", &(t_user.who), &(dummy), &(dummy));
+                        fscanf(fp, "%d\n", &(t_user.bUserIsOn));
+                    }
                 }
 
                 // Read Comtitle.
@@ -766,7 +774,7 @@ void save_comsystem(FILE *fp)
     struct comuser *user;
     int j;
     
-    fprintf(fp, "+V2\n");
+    fprintf(fp, "+V3\n");
     fprintf(fp, "%d\n", num_channels);
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab); ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
