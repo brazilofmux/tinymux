@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.19 2003-04-01 19:13:08 sdennis Exp $
+// $Id: bsd.cpp,v 1.20 2003-04-01 20:19:08 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2794,11 +2794,7 @@ void log_signal_ignore(int iSignal)
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
 #ifndef WIN32
-#if defined(HAVE_UNION_WAIT) && defined(NEED_WAIT3_DCL)
-    union wait stat_buf;
-#else // HAVE_UNION_WAIT NEED_WAIT3_DCL
     int stat_buf;
-#endif // HAVE_UNION_WAIT NEED_WAIT3_DCL
     pid_t child;
 #endif // !WIN32
 
