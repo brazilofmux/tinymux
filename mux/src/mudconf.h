@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.3 2002-06-13 22:12:46 jake Exp $
+// $Id: mudconf.h,v 1.4 2002-06-19 21:52:38 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -26,12 +26,9 @@ typedef struct tag_int_array
     int *pi;
 } IntArray;
 
-typedef unsigned char Uchar;
-
 typedef struct confdata CONFDATA;
 struct confdata
 {
-    int     cache_names;           /* Should object names be cached separately */
 #ifndef STANDALONE
     int     compress_db;    // should we use compress.
     int     have_comsys;    // Should the comsystem be active?
@@ -61,46 +58,33 @@ struct confdata
     int     idle_interval;  /* when to check for idle users */
     int     retry_limit;    /* close conn after this many bad logins */
     int     output_limit;   /* Max # chars queued for output */
-    int     paycheck;   /* players earn this much each day connected */
-    int     paystart;   /* new players start with this much money */
-    int     paylimit;   /* getting money gets hard over this much */
+    int     paycheck;       /* players earn this much each day connected */
+    int     paystart;       /* new players start with this much money */
     int     start_quota;    /* Quota for new players */
-    int     payfind;    /* chance to find a penny with wandering */
-    int     digcost;    /* cost of @dig command */
-    int     linkcost;   /* cost of @link command */
-    int     opencost;   /* cost of @open command */
-    int     createmin;  /* default (and minimum) cost of @create cmd */
-    int     createmax;  /* max cost of @create command */
-    int     killmin;    /* default (and minimum) cost of kill cmd */
-    int     killmax;    /* max cost of kill command */
+    int     payfind;        /* chance to find a penny with wandering */
+    int     linkcost;       /* cost of @link command */
+    int     killmin;        /* default (and minimum) cost of kill cmd */
+    int     killmax;        /* max cost of kill command */
     int     killguarantee;  /* cost of kill cmd that guarantees success */
-    int     robotcost;  /* cost of @robot command */
-    int     pagecost;   /* cost of @page command */
-    int     searchcost; /* cost of commands that search the whole DB */
-    int     waitcost;   /* cost of @wait (refunded when finishes) */
+    int     pagecost;       /* cost of @page command */
+    int     searchcost;     /* cost of commands that search the whole DB */
+    int     waitcost;       /* cost of @wait (refunded when finishes) */
     int     mail_expiration; /* Number of days to wait to delete mail */
-    int     use_http;   /* Should we allow http access? */
-    int     queuemax;   /* max commands a player may have in queue */
+    int     use_http;       /* Should we allow http access? */
+    int     queuemax;       /* max commands a player may have in queue */
     int     queue_chunk;    /* # cmds to run from queue when idle */
     int     active_q_chunk; /* # cmds to run from queue when active */
     int     machinecost;    /* One in mc+1 cmds costs 1 penny (POW2-1) */
-    int     room_quota; /* quota needed to make a room */
-    int     exit_quota; /* quota needed to make an exit */
-    int     thing_quota;    /* quota needed to make a thing */
-    int     player_quota;   /* quota needed to make a robot player */
-    int     sacfactor;  /* sacrifice earns (obj_cost/sfactor) + sadj */
-    int     sacadjust;  /* ... */
     int     clone_copy_cost;/* Does @clone copy value? */
     int     use_hostname;   /* TRUE = use machine NAME rather than quad */
-    int     quotas;     /* TRUE = have building quotas */
-    int     ex_flags;   /* TRUE = show flags on examine */
+    int     ex_flags;       /* TRUE = show flags on examine */
     int     robot_speak;    /* TRUE = allow robots to speak */
-    int     pub_flags;  /* TRUE = flags() works on anything */
-    int     quiet_look; /* TRUE = don't see attribs when looking */
+    int     pub_flags;      /* TRUE = flags() works on anything */
+    int     quiet_look;     /* TRUE = don't see attribs when looking */
     int     exam_public;    /* Does EXAM show public attrs by default? */
     int     read_rem_desc;  /* Can the DESCs of nonlocal objs be read? */
     int     read_rem_name;  /* Can the NAMEs of nonlocal objs be read? */
-    int     sweep_dark; /* Can you sweep dark places? */
+    int     sweep_dark;     /* Can you sweep dark places? */
     int     player_listen;  /* Are AxHEAR triggered on players? */
     int     quiet_whisper;  /* Can others tell when you whisper? */
     int     dark_sleepers;  /* Are sleeping players 'dark'? */
@@ -108,8 +92,8 @@ struct confdata
     int     see_own_dark;   /* Do you see your own dark stuff? */
     int     idle_wiz_dark;  /* Do idling wizards get set dark? */
     int     pemit_players;  /* Can you @pemit to faraway players? */
-    int     pemit_any;  /* Can you @pemit to ANY remote object? */
-    int     match_mine; /* Should you check yourself for $-commands? */
+    int     pemit_any;      /* Can you @pemit to ANY remote object? */
+    int     match_mine;     /* Should you check yourself for $-commands? */
     int     match_mine_pl;  /* Should players check selves for $-cmds? */
     int     switch_df_all;  /* Should @switch match all by default? */
     int     fascist_tport;  /* Src of teleport must be owned/JUMP_OK */
@@ -117,27 +101,20 @@ struct confdata
     int     stack_limit;    /* How big can stacks get? */
     int     safe_unowned;   /* Are objects not owned by you safe? */
     int     space_compress; /* Convert multiple spaces into one space */
-    dbref   start_room;     // initial location and home for players.
-    dbref   start_home;     // initial HOME for players.
-    int     terse_look; /* Does manual look obey TERSE */
+    int     terse_look;     /* Does manual look obey TERSE */
     int     terse_contents; /* Does TERSE look show exits */
     int     terse_exits;    /* Does TERSE look show obvious exits */
     int     terse_movemsg;  /* Show move msgs (SUCC/LEAVE/etc) if TERSE? */
     int     trace_topdown;  /* Is TRACE output top-down or bottom-up? */
     int     trace_limit;    /* Max lines of trace output if top-down */
-    dbref   default_home;   // HOME when home is inaccessable.
     dbref   master_room;    // Room containing default cmds/exits/etc.
-    int     vattr_flags;    /* Attr flags for all user-defined attrs */
-    int     timeslice;  /* How often do we bump people's cmd quotas? */
+    int     timeslice;      /* How often do we bump people's cmd quotas? */
     int     cmd_quota_max;  /* Max commands at one time */
     int     cmd_quota_incr; /* Bump #cmds allowed by this each timeslice */
     int     max_cmdsecs;    /* Threshhold for real time taken by command */
     int     control_flags;  /* Global runtime control flags */
-    int     log_options;    /* What gets logged */
-    int     log_info;   /* Info that goes into log entries */
     int     func_nest_lim;  /* Max nesting of functions */
     int     func_invk_lim;  /* Max funcs invoked by a command */
-    int     ntfy_nest_lim;  /* Max nesting of notifys */
     int     lock_nest_lim;  /* Max nesting of lock evals */
     int     parent_nest_lim;/* Max levels of parents */
     int     zone_nest_lim;  /* Max nesting of zones */
@@ -153,7 +130,6 @@ struct confdata
     FLAGSET thing_flags;    /* Flags things start with */
     FLAGSET robot_flags;    /* Flags robots start with */
 
-    Uchar   markdata[8];     /* Masks for marking/unmarking */
     char    *indb;           /* database file name */
     char    *outdb;          /* checkpoint the database to here */
     char    *crashdb;        /* write database here on crash */
@@ -206,33 +182,33 @@ struct confdata
     int     toad_recipient; /* Default @toad recipient. */
     int     run_startup;    // If no, startup attributes aren't processed on load.
     int     safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
-#else
-    int     paylimit;   /* getting money gets hard over this much */
-    int     digcost;    /* cost of @dig command */
-    int     opencost;   /* cost of @open command */
-    int     robotcost;  /* cost of @robot command */
-    int     createmin;  /* default (and minimum) cost of @create cmd */
-    int     createmax;  /* max cost of @create command */
-    int     sacfactor;  /* sacrifice earns (obj_cost/sfactor) + sadj */
-    int     sacadjust;  /* ... */
-    int     room_quota; /* quota needed to make a room */
-    int     exit_quota; /* quota needed to make an exit */
+#endif
+    int     cache_names;    /* Should object names be cached separately */
+
+    int     paylimit;       /* getting money gets hard over this much */
+    int     digcost;        /* cost of @dig command */
+    int     opencost;       /* cost of @open command */
+    int     robotcost;      /* cost of @robot command */
+    int     createmin;      /* default (and minimum) cost of @create cmd */
+    int     createmax;      /* max cost of @create command */
+    int     sacfactor;      /* sacrifice earns (obj_cost/sfactor) + sadj */
+    int     sacadjust;      /* ... */
+    int     room_quota;     /* quota needed to make a room */
+    int     exit_quota;     /* quota needed to make an exit */
     int     thing_quota;    /* quota needed to make a thing */
     int     player_quota;   /* quota needed to make a robot player */
-    int     quotas;     /* TRUE = have building quotas */
+    int     quotas;         /* TRUE = have building quotas */
     dbref   start_room;     // initial location and home for players.
     dbref   start_home;     // initial HOME for players.
     dbref   default_home;   // HOME when home is inaccessable.
     int     vattr_flags;    /* Attr flags for all user-defined attrs */
     int     log_options;    /* What gets logged */
-    int     log_info;   /* Info that goes into log entries */
+    int     log_info;       /* Info that goes into log entries */
     int     ntfy_nest_lim;  /* Max nesting of notifys */
+    unsigned char   markdata[8];    /* Masks for marking/unmarking */
 
-    Uchar   markdata[8];    /* Masks for marking/unmarking */
-#endif
-
-    char    *game_dir;   /* use this game CHashFile DIR file if we need one */
-    char    *game_pag;   /* use this game CHashFile PAG file if we need one */
+    char    *game_dir;      /* use this game CHashFile DIR file if we need one */
+    char    *game_pag;      /* use this game CHashFile PAG file if we need one */
 };
 
 extern CONFDATA mudconf;
@@ -313,7 +289,6 @@ struct statedata
     int restarting; /* Are we restarting? */
     int dumping;    /* Are we dumping? */
 #endif
-    int logging;    /* Are we in the middle of logging? */
     int epoch;      /* Generation number for dumps */
     int generation; /* DB global generation number */
     dbref   curr_enactor;   /* Who initiated the current command */
@@ -324,24 +299,17 @@ struct statedata
     char    *curr_cmd;      /* The current command */
     SITE    *access_list;   /* Access states for sites */
     SITE    *suspect_list;  /* Sites that are suspect */
-    int     attr_next;  /* Next attr to alloc when freelist is empty */
     BADNAME *badname_head;  /* List of disallowed names */
     int mstat_ixrss[2]; /* Summed shared size */
     int mstat_idrss[2]; /* Summed private data size */
     int mstat_isrss[2]; /* Summed private stack size */
     int mstat_secs[2];  /* Time of samples */
     int mstat_curr; /* Which sample is latest */
-    ALIST   iter_alist; /* Attribute list for iterations */
     OLSTK   *olist;     /* Stack of object lists for nested searches */
-    dbref   freelist;   /* Head of object freelist */
-    int min_size;   /* Minimum db size (from file header) */
-    int db_top;     /* Number of items in the db */
-    int     db_size;        /* Allocated size of db structure */
     int     mail_db_top;    /* Like db_top */
     int     mail_db_size;   /* Like db_size */
     MENT    *mail_list;     /* The mail database */
     int     *guest_free;    /* Table to keep track of free guests */
-    MARKBUF *markbits;      /* temp storage for marking/unmarking */
     int     func_nest_lev;  /* Current nesting of functions */
     int     func_invk_ctr;  /* Functions invoked so far by this command */
     int     ntfy_nest_lev;  /* Current nesting of notifys */
@@ -384,7 +352,7 @@ struct statedata
     char    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
     int     nObjEvalNest;      // The nesting level of objeval()
                                // invocations.
-#else
+#endif
     int     logging;    /* Are we in the middle of logging? */
     int     attr_next;  /* Next attr to alloc when freelist is empty */
     int     min_size;   /* Minimum db size (from file header) */
@@ -393,8 +361,7 @@ struct statedata
     dbref   freelist;   /* Head of object freelist */
     MARKBUF *markbits;  /* temp storage for marking/unmarking */
 
-    ALIST      iter_alist;     /* Attribute list for iterations */
-#endif
+    ALIST   iter_alist;     /* Attribute list for iterations */
     char    *mod_alist; /* Attribute list for modifying */
     int     mod_alist_len; /* Length of mod_alist */
     int     mod_size;   /* Length of modified buffer */
