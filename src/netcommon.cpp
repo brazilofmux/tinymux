@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.19 2000-09-07 06:55:07 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.20 2000-09-07 07:04:41 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2003,12 +2003,13 @@ int do_command(DESC *d, char *command, int first)
 
         default:
 
-            STARTLOG(LOG_BUGS, "BUG", "PARSE");
-            arg = alloc_lbuf("do_command.LOG");
-            sprintf(arg, "Prefix command with no handler: '%s'", command);
-            log_text(arg);
-            free_lbuf(arg);
-            ENDLOG;
+            {
+                char buf[LBUF_SIZE * 2];
+                STARTLOG(LOG_BUGS, "BUG", "PARSE");
+                sprintf(buf, "Prefix command with no handler: '%s'", command);
+                log_text(buf);
+                ENDLOG;
+            }
         }
     }
     if (!(cp->flag & CMD_NOxFIX))
