@@ -5853,7 +5853,7 @@ files.
   See also: shl(), shr(), bnand(), bor().
  
 & BNAND()
-  band(<number1>, <number2>)
+  bnand(<number1>, <number2>)
 
   Both arguments are an integer that is treated as a bitfield. It
   performs a bitwise logical AND between <number1> and the complement
