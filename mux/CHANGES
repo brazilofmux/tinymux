@@ -36,6 +36,11 @@ Feature Additions:
     softcode profiling on Win32, you need to wait a few seconds after
     the server is started before beginning your tests.
  -- Updated PCRE from version 4.2 to version 4.5.
+ -- Added BXOR() function.
+ -- Added siteadmin @power to permit mortals to operate @shutdown and
+    @restart.  The idea is that the site administrator will have access
+    to the shell account, but may also need access to site-related
+    facilaties within the game.
 
 
 Bug Fixes:
@@ -51,6 +56,8 @@ Bug Fixes:
  -- Added missing @fsay help topic.
  -- Added more messages to @destroy/instant path.
  -- Guest attributes weren't being wiped as intended.
+ -- Fixed @hook IGSWITCH again.  This time, the bug is related to the
+    search_nametab() interface.
 
 
 Performance Enhancements:
