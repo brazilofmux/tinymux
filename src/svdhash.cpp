@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.19 2001-06-29 18:16:31 sdennis Exp $
+// $Id: svdhash.cpp,v 1.20 2001-06-30 17:16:48 morgan Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -1105,7 +1105,7 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
     UINT32 temp;
     hp0.GetStats(0, &nRecords0, &nAllocatedSize0, &temp);
     hp1.GetStats(0, &nRecords1, &nAllocatedSize1, &temp);
-    Log.printf("Split (%d %d) page into (%d %d) and (%d %d)" ENDLINE,
+    Log.tinyprintf("Split (%d %d) page into (%d %d) and (%d %d)" ENDLINE,
         nRecords, nAllocatedSize, nRecords0, nAllocatedSize0, nRecords1,
         nAllocatedSize1);
     if (nRecords0 + nRecords1 != nRecords)
@@ -1143,7 +1143,7 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
     {
         if (SetFilePointer(hFile, oWhere, 0, FILE_BEGIN) == 0xFFFFFFFFUL)
         {
-            Log.printf("CHashPage::Write - SetFilePointer error %u." ENDLINE, GetLastError());
+            Log.tinyprintf("CHashPage::Write - SetFilePointer error %u." ENDLINE, GetLastError());
             continue;
         }
         DWORD nWritten;
@@ -1152,7 +1152,7 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
             UINT32 cc = GetLastError();
             if (cc != ERROR_LOCK_VIOLATION)
             {
-                Log.printf("CHashPage::Write - WriteFile error %u." ENDLINE, cc);
+                Log.tinyprintf("CHashPage::Write - WriteFile error %u." ENDLINE, cc);
             }
             continue;
         }
@@ -1176,7 +1176,7 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     {
         if (SetFilePointer(hFile, oWhere, 0, FILE_BEGIN) == 0xFFFFFFFFUL)
         {
-            Log.printf("CHashPage::Read - SetFilePointer error %u." ENDLINE, GetLastError());
+            Log.tinyprintf("CHashPage::Read - SetFilePointer error %u." ENDLINE, GetLastError());
             continue;
         }
         DWORD nRead;
@@ -1185,7 +1185,7 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
             UINT32 cc = GetLastError();
             if (cc != ERROR_LOCK_VIOLATION)
             {
-                Log.printf("CHashPage::Read - ReadFile error %u." ENDLINE, cc);
+                Log.tinyprintf("CHashPage::Read - ReadFile error %u." ENDLINE, cc);
             }
             continue;
         }
@@ -1211,7 +1211,7 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
     {
         if (lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
-            Log.printf("CHashPage::Write - lseek error %u." ENDLINE, errno);
+            Log.tinyprintf("CHashPage::Write - lseek error %u." ENDLINE, errno);
             continue;
         }
         int cc = write(hFile, m_pPage, m_nPageSize);
@@ -1219,14 +1219,14 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
         {
             if (cc == -1)
             {
-                Log.printf("CHashPage::Write - write error %u." ENDLINE, errno);
+                Log.tinyprintf("CHashPage::Write - write error %u." ENDLINE, errno);
             }
             else
             {
                 // Our write request was only partially filled. The disk is
                 // probably full.
                 //
-                Log.printf("CHashPage::Write - partial write." ENDLINE);
+                Log.tinyprintf("CHashPage::Write - partial write." ENDLINE);
             }
         }
         return TRUE;
@@ -1250,7 +1250,7 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     {
         if (lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
-            Log.printf("CHashPage::Read - lseek error %u." ENDLINE, errno);
+            Log.tinyprintf("CHashPage::Read - lseek error %u." ENDLINE, errno);
             continue;
         }
         int cc = read(hFile, m_pPage, m_nPageSize);
@@ -1258,13 +1258,13 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
         {
             if (cc == -1)
             {
-                Log.printf("CHashPage::Read - read error %u." ENDLINE, errno);
+                Log.tinyprintf("CHashPage::Read - read error %u." ENDLINE, errno);
             }
             else
             {
                 // Our read request was only partially filled. Surrender.
                 //
-                Log.printf("CHashPage::Read - partial read." ENDLINE);
+                Log.tinyprintf("CHashPage::Read - partial read." ENDLINE);
             }
             continue;
         }
@@ -2556,7 +2556,7 @@ void CLogFile::WriteString(const char *pString)
     WriteBuffer(nString, pString);
 }
 
-void DCL_CDECL CLogFile::printf(char *fmt, ...)
+void DCL_CDECL CLogFile::tinyprintf(char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);

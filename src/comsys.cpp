@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.44 2001-06-29 19:02:02 sdennis Exp $
+// * $Id: comsys.cpp,v 1.45 2001-06-30 17:16:47 morgan Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -72,12 +72,12 @@ void load_comsys(char *filename)
     FILE *fp = fopen(filename, "rb");
     if (!fp)
     {
-        Log.printf("Error: Couldn't find %s." ENDLINE, filename);
+        Log.tinyprintf("Error: Couldn't find %s." ENDLINE, filename);
     }
     else
     {
         DebugTotalFiles++;
-        Log.printf("LOADING: %s" ENDLINE, filename);
+        Log.tinyprintf("LOADING: %s" ENDLINE, filename);
         if (fscanf(fp, "*** Begin %s ***\n", buffer) == 1 && !strcmp(buffer, "COMMAC"))
         {
             load_old_channels(fp);
@@ -88,7 +88,7 @@ void load_comsys(char *filename)
         }
         else
         {
-            Log.printf("Error: Couldn't find Begin CHANNELS in %s.", filename);
+            Log.tinyprintf("Error: Couldn't find Begin CHANNELS in %s.", filename);
             return;
         }
 
@@ -98,7 +98,7 @@ void load_comsys(char *filename)
         }
         else
         {
-            Log.printf("Error: Couldn't find Begin COMSYS in %s.", filename);
+            Log.tinyprintf("Error: Couldn't find Begin COMSYS in %s.", filename);
             return;
         }
 
@@ -106,7 +106,7 @@ void load_comsys(char *filename)
         {
             DebugTotalFiles--;
         }
-        Log.printf("LOADING: %s (done)" ENDLINE, filename);
+        Log.tinyprintf("LOADING: %s (done)" ENDLINE, filename);
     }
 }
 
@@ -118,7 +118,7 @@ void save_comsys(char *filename)
     FILE *fp = fopen(buffer, "wb");
     if (!fp)
     {
-        Log.printf("Unable to open %s for writing." ENDLINE, buffer);
+        Log.tinyprintf("Unable to open %s for writing." ENDLINE, buffer);
         return;
     }
     DebugTotalFiles++;
@@ -261,7 +261,7 @@ void load_channels(FILE *fp)
         }
         else
         {
-            Log.printf("dbref %d out of range [0, %d)" ENDLINE, c->who, mudstate.db_top);
+            Log.tinyprintf("dbref %d out of range [0, %d)" ENDLINE, c->who, mudstate.db_top);
         }
         purge_comsystem();
     }
@@ -324,7 +324,7 @@ void load_old_channels(FILE *fp)
         }
         else
         {
-            Log.printf("load_old_channels: dbref %d out of range [0, %d)" ENDLINE, c->who, mudstate.db_top);
+            Log.tinyprintf("load_old_channels: dbref %d out of range [0, %d)" ENDLINE, c->who, mudstate.db_top);
         }
         purge_comsystem();
     }
@@ -441,7 +441,7 @@ void add_comsys(comsys_t *c)
 {
     if (c->who < 0 || c->who >= mudstate.db_top)
     {
-        Log.printf("add_comsys: dbref %d out of range [0, %d)" ENDLINE, c->who, mudstate.db_top);
+        Log.tinyprintf("add_comsys: dbref %d out of range [0, %d)" ENDLINE, c->who, mudstate.db_top);
         return;
     }
 
@@ -456,7 +456,7 @@ void del_comsys(dbref who)
 
     if (who < 0 || who >= mudstate.db_top)
     {
-        Log.printf("del_comsys: dbref %d out of range [0, %d)" ENDLINE, who, mudstate.db_top);
+        Log.tinyprintf("del_comsys: dbref %d out of range [0, %d)" ENDLINE, who, mudstate.db_top);
         return;
     }
 
@@ -733,7 +733,7 @@ void load_comsystem(FILE *fp)
                 }
                 else
                 {
-                    Log.printf("load_comsystem: dbref %d out of range [0, %d)" ENDLINE, t_user.who, mudstate.db_top);
+                    Log.tinyprintf("load_comsystem: dbref %d out of range [0, %d)" ENDLINE, t_user.who, mudstate.db_top);
                 }
             }
             ch->num_users = jAdded;

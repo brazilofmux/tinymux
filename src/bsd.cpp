@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.28 2001-06-29 17:27:22 sdennis Exp $
+// $Id: bsd.cpp,v 1.29 2001-06-30 17:16:47 morgan Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -687,7 +687,7 @@ SOCKET make_socket(int port)
 
         if (!CompletionPort)
         {
-            Log.printf("Error %ld on CreateIoCompletionPort" ENDLINE,  GetLastError());
+            Log.tinyprintf("Error %ld on CreateIoCompletionPort" ENDLINE,  GetLastError());
             WSACleanup();     // clean up
             exit(1);
         }
@@ -722,7 +722,7 @@ SOCKET make_socket(int port)
 
         if (nRet == SOCKET_ERROR)
         {
-            Log.printf("Error %ld on Win32: bind" ENDLINE, WSAGetLastError ());
+            Log.tinyprintf("Error %ld on Win32: bind" ENDLINE, WSAGetLastError ());
             if (closesocket(s) == 0)
             {
                 DebugTotalSockets--;
@@ -738,7 +738,7 @@ SOCKET make_socket(int port)
 
         if (nRet)
         {
-            Log.printf("Error %ld on Win32: listen" ENDLINE, WSAGetLastError ());
+            Log.tinyprintf("Error %ld on Win32: listen" ENDLINE, WSAGetLastError ());
             WSACleanup();     // clean up
             exit(1);
         }
@@ -752,7 +752,7 @@ SOCKET make_socket(int port)
             exit(1);
         }
 
-        Log.printf("Listening (NT-style) on port %d" ENDLINE, port);
+        Log.tinyprintf("Listening (NT-style) on port %d" ENDLINE, port);
         return s;
     }
 #endif // WIN32
@@ -1580,7 +1580,7 @@ void shutdownsock(DESC *d, int reason)
             //
             if (!fpCancelIo((HANDLE) d->descriptor))
             {
-                Log.printf("Error %ld on CancelIo" ENDLINE, GetLastError());
+                Log.tinyprintf("Error %ld on CancelIo" ENDLINE, GetLastError());
             }
 
             // post a notification that it is safe to free the descriptor
@@ -1590,7 +1590,7 @@ void shutdownsock(DESC *d, int reason)
             //
             if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted))
             {
-                Log.printf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
+                Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
             }
         }
 #endif // WIN32
@@ -1705,7 +1705,7 @@ void shutdownsock_brief(DESC *d)
     //
     if (!fpCancelIo((HANDLE) d->descriptor))
     {
-        Log.printf("Error %ld on CancelIo" ENDLINE, GetLastError());
+        Log.tinyprintf("Error %ld on CancelIo" ENDLINE, GetLastError());
     }
 
     shutdown(d->descriptor, SD_BOTH);
@@ -1737,7 +1737,7 @@ void shutdownsock_brief(DESC *d)
     //
     if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted))
     {
-        Log.printf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
+        Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
     }
 
 }
@@ -1962,10 +1962,10 @@ int AsyncSend(DESC *d, char *buf, int len)
                 // Do no more writes and post a notification that the descriptor should be shutdown.
                 //
                 d->bConnectionDropped = TRUE;
-                Log.printf("AsyncSend(%d) failed with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
+                Log.tinyprintf("AsyncSend(%d) failed with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                 if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                 {
-                    Log.printf("Error %ld on PostQueuedCompletionStatus in AsyncSend" ENDLINE, GetLastError());
+                    Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in AsyncSend" ENDLINE, GetLastError());
                 }
             }
             return 0;
@@ -2680,7 +2680,7 @@ void __cdecl MUDListenThread(void * pVoid)
         if (site_check(SockAddr.sin_addr, mudstate.access_list) == H_FORBIDDEN)
         {
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-            Log.printf("[%d/%s] Connection refused.  (Remote port %d)", socketClient, inet_ntoa(SockAddr.sin_addr), ntohs(SockAddr.sin_port));
+            Log.tinyprintf("[%d/%s] Connection refused.  (Remote port %d)", socketClient, inet_ntoa(SockAddr.sin_addr), ntohs(SockAddr.sin_port));
             ENDLOG;
 
             //fcache_rawdump(socketClient, FC_CONN_SITE);
@@ -2727,14 +2727,14 @@ void __cdecl MUDListenThread(void * pVoid)
 
         if (!CompletionPort)
         {
-            Log.printf("Error %ld on CreateIoCompletionPort for socket %ld" ENDLINE, GetLastError(), socketClient);
+            Log.tinyprintf("Error %ld on CreateIoCompletionPort for socket %ld" ENDLINE, GetLastError(), socketClient);
             shutdownsock_brief(d);
             continue;
         }
 
         if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_welcome))
         {
-            Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
+            Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
             shutdownsock_brief(d);
             continue;
         }
@@ -2748,10 +2748,10 @@ void __cdecl MUDListenThread(void * pVoid)
             // Post a notification that the descriptor should be shutdown, and do no more IO.
             //
             d->bConnectionDropped = TRUE;
-            Log.printf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, GetLastError());
+            Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, GetLastError());
             if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
             {
-                Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (initial read)" ENDLINE, GetLastError());
+                Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (initial read)" ENDLINE, GetLastError());
             }
         }
     }
@@ -2829,17 +2829,17 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
                     // Post a notification that the descriptor should be shutdown
                     //
-                    Log.printf("ProcessWindowsTCP(%d) failed IO with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
+                    Log.tinyprintf("ProcessWindowsTCP(%d) failed IO with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                     if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                     {
-                        Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE, GetLastError());
+                        Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE, GetLastError());
                     }
                 }
             }
         }
         else if (lpo == &d->OutboundOverlapped && !d->bConnectionDropped)
         {
-            //Log.printf("Write(%d bytes)." ENDLINE, nbytes);
+            //Log.tinyprintf("Write(%d bytes)." ENDLINE, nbytes);
 
             // Write completed
             //
@@ -2872,12 +2872,12 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     d->output_head = tp;
                     if (tp == NULL)
                     {
-                        //Log.printf("Write...%d bytes taken from a queue of %d bytes...Empty Queue, now." ENDLINE, nBytes, d->output_size);
+                        //Log.tinyprintf("Write...%d bytes taken from a queue of %d bytes...Empty Queue, now." ENDLINE, nBytes, d->output_size);
                         d->output_tail = NULL;
                     }
                     else
                     {
-                        //Log.printf("Write...%d bytes taken from a queue of %d bytes...more buffers in Queue" ENDLINE, nBytes, d->output_size);
+                        //Log.tinyprintf("Write...%d bytes taken from a queue of %d bytes...more buffers in Queue" ENDLINE, nBytes, d->output_size);
                     }
                 }
                 else
@@ -2888,7 +2888,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     memcpy(d->output_buffer, tp->hdr.start, nBytes);
                     tp->hdr.nchars -= nBytes;
                     tp->hdr.start += nBytes;
-                    //Log.printf("Write...%d bytes taken from a queue of %d bytes...buffer still has bytes" ENDLINE, nBytes, d->output_size);
+                    //Log.tinyprintf("Write...%d bytes taken from a queue of %d bytes...buffer still has bytes" ENDLINE, nBytes, d->output_size);
                 }
                 d->output_size -= nBytes;
 
@@ -2917,16 +2917,16 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 //
                 d->bWritePending = FALSE;
                 d->bConnectionDropped = TRUE;
-                Log.printf("ProcessWindowsTCP(%d) cannot queue write request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
+                Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue write request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                 if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                 {
-                    Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE, GetLastError());
+                    Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE, GetLastError());
                 }
             }
         }
         else if (lpo == &d->InboundOverlapped && !d->bConnectionDropped)
         {
-            //Log.printf("Read(%d bytes)." ENDLINE, nbytes);
+            //Log.tinyprintf("Read(%d bytes)." ENDLINE, nbytes);
             // The read operation completed
             //
             if (nbytes == 0)
@@ -2937,10 +2937,10 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 // Post a notification that the descriptor should be shutdown
                 //
                 d->bConnectionDropped = TRUE;
-                Log.printf("ProcessWindowsTCP(%d) zero-length read. Requesting port shutdown." ENDLINE, d->descriptor);
+                Log.tinyprintf("ProcessWindowsTCP(%d) zero-length read. Requesting port shutdown." ENDLINE, d->descriptor);
                 if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                 {
-                    Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
+                    Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
                 }
                 continue;
             }
@@ -2978,17 +2978,17 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     // Post a notification that the descriptor should be shutdown, and do no more IO.
                     //
                     d->bConnectionDropped = TRUE;
-                    Log.printf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
+                    Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                     if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                     {
-                        Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
+                        Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
                     }
                 }
             }
         }
         else if (lpo == &lpo_welcome)
         {
-            //Log.printf("Welcome." ENDLINE);
+            //Log.tinyprintf("Welcome." ENDLINE);
             //
             if (d->descriptor != INVALID_SOCKET)
             {
@@ -2997,7 +2997,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 char *buff = alloc_mbuf("ProcessWindowsTCP.Welcome");
                 StringCopy(buff, inet_ntoa(d->address.sin_addr));
                 STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN")
-                Log.printf("[%d/%s] Connection opened (remote port %d)", d->descriptor, buff, ntohs(d->address.sin_port));
+                Log.tinyprintf("[%d/%s] Connection opened (remote port %d)", d->descriptor, buff, ntohs(d->address.sin_port));
                 ENDLOG
                 free_mbuf(buff);
                 welcome_user(d);
@@ -3010,10 +3010,10 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 char *buff = alloc_mbuf("ProcessWindowsTCP.Premature");
                 StringCopy(buff, inet_ntoa(d->address.sin_addr));
                 STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN")
-                Log.printf("[UNKNOWN/%s] Connection opened (remote port %d)", buff, ntohs(d->address.sin_port));
+                Log.tinyprintf("[UNKNOWN/%s] Connection opened (remote port %d)", buff, ntohs(d->address.sin_port));
                 ENDLOG
                 STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC")
-                Log.printf("[UNKNOWN/%s] Connection closed prematurely (remote port %d)", buff, ntohs(d->address.sin_port));
+                Log.tinyprintf("[UNKNOWN/%s] Connection closed prematurely (remote port %d)", buff, ntohs(d->address.sin_port));
                 ENDLOG
                 free_mbuf(buff);
             }
@@ -3033,7 +3033,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             //
             if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted_final))
             {
-                Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (aborted)" ENDLINE, GetLastError());
+                Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (aborted)" ENDLINE, GetLastError());
             }
         }
         else if (lpo == &lpo_aborted_final)

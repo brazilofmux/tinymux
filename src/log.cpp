@@ -1,7 +1,7 @@
 //
 // log.cpp - logging routines
 //
-// $Id: log.cpp,v 1.4 2001-06-29 18:16:30 sdennis Exp $
+// $Id: log.cpp,v 1.5 2001-06-30 17:16:48 morgan Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -83,9 +83,9 @@ int start_log(const char *primary, const char *secondary)
      */
 
     if (secondary && *secondary)
-        Log.printf("%s%s %3s/%-5s: ", buffer, mudconf.mud_name, primary, secondary);
+        Log.tinyprintf("%s%s %3s/%-5s: ", buffer, mudconf.mud_name, primary, secondary);
     else
-        Log.printf("%s%s %-9s: ", buffer, mudconf.mud_name, primary);
+        Log.tinyprintf("%s%s %-9s: ", buffer, mudconf.mud_name, primary);
 #endif // !STANDALONE
 
     return 1;
@@ -153,7 +153,7 @@ void log_number(int num)
 void log_name(dbref target)
 {
 #ifdef STANDALONE
-    Log.printf("%s(#%d)", Name(target), target);
+    Log.tinyprintf("%s(#%d)", Name(target), target);
 #else // STANDALONE
     char *tp;
 
@@ -169,7 +169,7 @@ void log_name(dbref target)
             tp = unparse_object((dbref) GOD, Owner(target), 0);
         else
             tp = unparse_object_numonly(Owner(target));
-        Log.printf("[%s]", strip_ansi(tp));
+        Log.tinyprintf("[%s]", strip_ansi(tp));
         free_lbuf(tp);
     }
 #endif // STANDALONE

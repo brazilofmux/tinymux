@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.5 2001-06-29 20:00:01 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.6 2001-06-30 17:16:48 morgan Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -52,7 +52,7 @@ void info(int fmt, int flags, int ver)
         cp = "*unknown*";
         break;
     }
-    Log.printf("%s version %d:", cp, ver);
+    Log.tinyprintf("%s version %d:", cp, ver);
     if (flags & V_ZONE)
         Log.WriteString(" Zone");
     if (flags & V_LINK)
@@ -82,22 +82,22 @@ void usage(char *prog)
 {
 #ifdef WIN32
 #ifdef BETA
-    Log.printf("%s from MUX %s for Win32 #%s [BETA]\n", prog, MUX_VERSION,
+    Log.tinyprintf("%s from MUX %s for Win32 #%s [BETA]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM);
 #else // BETA
-    Log.printf("%s from MUX %s for Win32 #%s [%s]\n", prog, MUX_VERSION,
+    Log.tinyprintf("%s from MUX %s for Win32 #%s [%s]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #endif // BETA
 #else // WIN32
 #ifdef BETA
-    Log.printf("%s from MUX %s #%s [BETA]\n", prog, MUX_VERSION,
+    Log.tinyprintf("%s from MUX %s #%s [BETA]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM);
 #else // BETA
-    Log.printf("%s from MUX %s #%s [%s]\n", prog, MUX_VERSION, MUX_BUILD_NUM,
+    Log.tinyprintf("%s from MUX %s #%s [%s]\n", prog, MUX_VERSION, MUX_BUILD_NUM,
         MUX_RELEASE_DATE);
 #endif // BETA
 #endif // WIN32
-    Log.printf("Usage: %s gamedb-basename [flags] [<in-file] [>out-file]\n", prog);
+    Log.tinyprintf("Usage: %s gamedb-basename [flags] [<in-file] [>out-file]\n", prog);
     Log.WriteString("   Available flags are:\n");
     Log.WriteString("      C - Perform consistency check\n");
     Log.WriteString("      G - Write in dir/pag format     g - Write in flat file format\n");
@@ -217,7 +217,7 @@ int DCL_CDECL main(int argc, char *argv[])
                 ver = ver * 10 + (*fp - '0');
                 break;
             default:
-                Log.printf("Unknown flag: '%c'\n", *fp);
+                Log.tinyprintf("Unknown flag: '%c'\n", *fp);
                 usage(argv[0]);
                 exit(1);
             }
@@ -242,14 +242,14 @@ int DCL_CDECL main(int argc, char *argv[])
     int cc = init_dbfile(dirfile, pagfile);
     if (cc == HF_OPEN_STATUS_ERROR)
     {
-        Log.printf("Can't open database in (%s, %s) files\n", dirfile, pagfile);
+        Log.tinyprintf("Can't open database in (%s, %s) files\n", dirfile, pagfile);
         exit(1);
     }
     else if (cc == HF_OPEN_STATUS_OLD)
     {
         if (setflags == OUTPUT_FLAGS)
         {
-            Log.printf("Would overwrite existing database (%s, %s)\n", dirfile, pagfile);
+            Log.tinyprintf("Would overwrite existing database (%s, %s)\n", dirfile, pagfile);
             CLOSE;
             exit(1);
         }
@@ -258,7 +258,7 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         if (setflags == UNLOAD_OUTFLAGS)
         {
-            Log.printf("Database (%s, %s) is empty.\n", dirfile, pagfile);
+            Log.tinyprintf("Database (%s, %s) is empty.\n", dirfile, pagfile);
             CLOSE;
             exit(1);
         }
