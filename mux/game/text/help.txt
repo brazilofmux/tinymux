@@ -4563,7 +4563,7 @@ CHR()
   Returns a single character that corresponds to the <ord>'th position in the
   character set.
 
-  Related Topics:
+  Related Topics: ord().
 
 & CLEARCOM
 CLEARCOM
@@ -6208,27 +6208,40 @@ FUNCTION CLASSES
                              FLOORDIV IABS IADD IDIV IMUL INC ISIGN ISUB MOD
                              MUL PACK POWER RAND REMAINDER SHL SHR SIGN SUB
                              SQRT UNPACK
+
   Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
+
   Database Information:      EXIT INZONE LOC LOCATE LROOMS MAIL MAILFROM
                              NEARBY NEXT NUM RLOC ROOM SEARCH STATS VALID
                              WHERE ZFUN ZONE ZWHO
+
   Floating Point Conversion: FLOOR ROUND TRUNC
+
   Game Information:          CONFIG DUMPING MOTD MUDNAME POLL VERSION
+
+{ 'help function classes2' for more }
+
+& FUNCTION CLASSES2
+FUNCTION CLASSES (continued)
+
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FILTERBOOL
                              FIRST FOLD GRAB ILEV INDEX INSERT ITEMIZE ITER
                              LADD LAST LDELETE LIST LNUM LRAND MAP MATCH
                              MATCHALL MEMBER MIX MUNGE PARSE PICKRAND REMOVE
                              REST REVWORDS SETDIFF SETINTER SETUNION SHUFFLE
                              SORT SORTBY SPLICE TABLE WORDS
+
   Logarithms:                E EXP LOG LN
+
   Logical:                   AND ANDBOOL CAND CANDBOOL COR CORBOOL LAND LOR
                              NOT OR ORBOOL T XOR
+
   Miscellaneous:             @@ ANSI ART R BEEP ERROR ISDBREF ISINT ISNUM ISRAT
                              ISWORD LIT NULL R SETQ SETR SUBEVAL
  
-{ 'help function classes2' for more }
+{ 'help function classes3' for more }
 
-& FUNCTION CLASSES2
+& FUNCTION CLASSES3
 FUNCTION CLASSES (continued)
 
   Object Information:        ANDFLAGS APOSS ATTRCNT BITTYPE CHILDREN CMDS CON
@@ -6239,24 +6252,37 @@ FUNCTION CLASSES (continued)
                              LOCK MONEY MTIME NAME OBJ OBJEVAL OBJMEM ORFLAGS
                              OWNER PARENT PFIND PMATCH POSS S SUBJ TYPE U
                              UDEFAULT ULOCAL V VISIBLE XGET
+
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNRECORD
                              CONNTOTAL DOING FINDABLE HASQUOTA HOST IDLE LWHO
                              LPORTS PLAYMEM PORTS
+
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ
+
   Realms:                    CANSEE
+
   Side-Effect Functions:     CREATE EMIT LINK OEMIT PEMIT REMIT SET TEL
+
+{ 'help function classes4' for more }
+
+& FUNCTION CLASSES4
+FUNCTION CLASSES (continued)
+
   Stack:                     EMPTY ITEMS LSTACK PEEK POP PUSH
+
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE CAT
                              CENTER CHR COMP DECRYPT DELETE EDIT ENCRYPT
-                             ESCAPE IF IFELSE LCSTR LJUST LPOS MERGE MID POS
-                             REGMATCH REGMATCHI REGRAB REGRABALL REGRABALLI
-                             REGRABI REPEAT REPLACE REVERSE RIGHT RJUST ROMAN
-                             SCRAMBLE SECURE SPACE SPELLNUM SQUISH STRCAT
-                             STRIPANSI STRLEN STRMATCH STRTRUNC SWITCH
+                             ESCAPE IF IFELSE LCSTR LJUST LPOS MERGE MID ORD
+                             POS REGMATCH REGMATCHI REGRAB REGRABALL
+                             REGRABALLI REGRABI REPEAT REPLACE REVERSE RIGHT
+                             RJUST ROMAN SCRAMBLE SECURE SPACE SPELLNUM SQUISH
+                             STRCAT STRIPANSI STRLEN STRMATCH STRTRUNC SWITCH
                              TRANSLATE TRIM UCSTR WORDPOS
+
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
                              WRITETIME
+
   Trigonometric:             ACOS ASIN ATAN COS CTU DIST2D DIST3D PI SIN TAN
                              VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
 
@@ -6303,32 +6329,32 @@ FUNCTION LIST (continued)
     MIN()       MIX()       MOD()       MONEY()     MOTD()      MTIME()
     MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
     NEXT()      NOT()       NULL()      NUM()       OBJ()       OBJEVAL()
-    OBJMEM()    OEMIT()     OR()        ORBOOL()    ORFLAGS()   OWNER()
-    PACK()      PARENT()    PARSE()     PEEK()      PEMIT()     PFIND()
-    PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()      POP()
-    PORTS()     POS()       POSS()      POWER()     PUSH()      R()
+    OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()
+    OWNER()     PACK()      PARENT()    PARSE()     PEEK()      PEMIT()
+    PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()
+    POP()       PORTS()     POS()       POSS()      POWER()     PUSH()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    RAND()      REGMATCH()  REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()
-    REGRABI()   REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()
-    REST()      REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()
-    ROMAN()     ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()
-    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()
-    SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()
-    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()
-    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
-    STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()
-    SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()     TAN()
-    TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()
-    TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()
-    V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
-    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
-    WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()
-    ZFUN()      ZONE()      ZWHO()
+    R()         RAND()      REGMATCH()  REGMATCHI() REGRAB()    REGRABALL()
+    REGRABALLI()REGRABI()   REMAINDER() REMIT()     REMOVE()    REPEAT()
+    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()     RJUST()
+    RLOC()      ROMAN()     ROOM()      ROUND()     S()         SCRAMBLE()
+    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
+    SETQ()      SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()
+    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
+    SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
+    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
+    SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()
+    TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()
+    TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()
+    UNPACK()    V()         VADD()      VALID()     VCROSS()    VDIM()
+    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
+    VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()
+    XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -9142,6 +9168,16 @@ ORBOOL()
   argument is TRUE.
 
   Related Topics: andbool(), BOOLEAN VALUES, not(), or(), t().
+
+& ORD()
+ORD()
+
+  FUNCTION: ord(<letter>)
+
+  Returns an integer that represents the relative position of <letter> in the
+  character set.
+
+  Related Topics: chr().
 
 & ORFLAGS()
 ORFLAGS()
