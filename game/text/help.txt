@@ -8792,11 +8792,13 @@ CEIL()
     You say "-5"
     > say ceil(-5.2)
     You say "-5"
-  See also: div(), floor(), mod(), round(), trunc().
+  
+  Related Topics: div(), floor(), mod(), round(), trunc().
 
 & TRUNC()
+TRUNC()
 
-  Function: trunc(<number>)
+  FUNCTION: trunc(<number>)
  
   Returns the value of <number> after truncating off any fractional value.
   <number> may be a floating point number, and an integer result is returned.
@@ -8812,11 +8814,13 @@ CEIL()
     You say "-5"
     > say trunc(-5.2)
     You say "-5"
-  See also: div(), floor(), mod(), round().
+  
+  Related Topics: div(), floor(), mod(), round().
 
 & ROUND()
+ROUND()
 
-  Function: round(<number>,<places>)
+  FUNCTION: round(<number>,<places>)
  
   Rounds <number> to <places> decimal places.  <number> may be
   a floating point number, and an integer result is returned.
@@ -8832,11 +8836,13 @@ CEIL()
     You say "6"
     > say round(-5.5,0)
     You say "-6"
-  See also: div(), floor(), mod(), trunc().
+  
+  Related Topics: div(), floor(), mod(), trunc().
 
 & SQRT()
+SQRT()
 
-  Function: sqrt(<number>)
+  FUNCTION: sqrt(<number>)
  
   Returns the square root of <number>.  <number> may be a floating point
   number, and a floating point result is returned.  <number> may not be
@@ -8851,19 +8857,24 @@ CEIL()
     You say "0"
     > say sqrt(-1)
     You say "#-1 SQUARE ROOT OF NEGATIVE"
-  See also: power().
+  
+  Related Topics: power().
 
 & SQUISH()
- 
-  Function: squish(<text>)
+SQUISH()
+
+  FUNCTION: squish(<text>)
  
   This function literally 'squishes' the given text, reducing multiple
   instances of spaces to a single space, after evaluating everything
   normally.
+  
+  Related Topics:
 
 & POWER()
+POWER()
 
-  Function: power(<number>, <power>)
+  FUNCTION: power(<number>, <power>)
  
   Returns the result of raising <number> to the <power>'th power.
   <number> may not be negative.  <number> and <power> may be floating point
@@ -8884,11 +8895,13 @@ CEIL()
     You say "0.125"
     > say power(-2,3)
     You say "#-1 POWER OF NEGATIVE"
-  See also: exp(), ln(), log(), sqrt()
+  
+  Related Topics: exp(), ln(), log(), sqrt()
 
 & LN()
+LN()
 
-  Function: ln(<number>)
+  FUNCTION: ln(<number>)
  
   Returns the result of taking the natural logarithm (base e) of <number>.
   <number> may be a floating point number, and a floating point result
@@ -8903,11 +8916,13 @@ CEIL()
     You say "1"
     > say ln(10)
     You say "2.302585"
-  See also: e(), exp(), log(), power().
+  
+  Related Topics: e(), exp(), log(), power().
 
 & LOG()
+LOG()
 
-  Function: log(<number>)
+  FUNCTION: log(<number>)
  
   Returns the result of taking the common logarithm (base 10) of <number>.
   <number> may be a floating point number, and a floating point result
@@ -8922,11 +8937,13 @@ CEIL()
     You say "1"
     > say log(e())
     You say "0.434294"
-  See also: e(), exp(), ln(), power().
+  
+  Related Topics: e(), exp(), ln(), power().
 
 & EXP()
+EXP()
 
-  Function: exp(<power>)
+  FUNCTION: exp(<power>)
  
   Returns the result of raising the numeric constant e to <power>.
   <power> may be a floating point number, and a floating point result
@@ -8939,10 +8956,13 @@ CEIL()
     You say "2.718282"
     > say exp(2)
     You say "7.389056"
-  See also: e(), log(), ln(), power().
-& PARSE()
+  
+  Related Topics: e(), log(), ln(), power().
 
-  Function: parse(<list>,<eval>[,<delimiter>])
+& PARSE()
+PARSE()
+
+  FUNCTION: parse(<list>,<eval>[,<delimiter>])
 
   This function takes each element of <list>, evaluates <eval> after
   substituting it for ##, and constructs a space-separated list of the
@@ -8953,11 +8973,13 @@ CEIL()
     You say "2 3 4 5 6"
     > say parse(This|is|a|string|length|test,strlen(##),|)
     You say "4 2 1 6 6 4"
-  See also: @dolist, iter(), map().
+  
+  Related Topics: @dolist, iter(), map().
 
 & CONTROLS()
+CONTROLS()
 
-  Function: controls(<object>,<victim>)
+  FUNCTION: controls(<object>,<victim>)
  
   Returns 1 if <object> controls <victim>, 0 otherwise.
  
@@ -8969,11 +8991,12 @@ CEIL()
   > say controls(#1,me)
   You say "1"
  
-  See also: CONTROL.
+  Related Topics: CONTROL.
 
-& map()
+& MAP()
+MAP()
 
-  Function: map([<obj>/]<attr>, <list>[, <delim>])
+  FUNCTION: map([<obj>/]<attr>, <list>[, <delim>])
   
   This function is nearly identical to an iter() operating on u() function.
   Each member of <list> is passed to the result of fetching <attr> as %0, and
@@ -8983,15 +9006,16 @@ CEIL()
   <delimiter> may be used to specify a delimiter other than space.
   
   Examples: 
-  > &ADD_ONE object=add(%0,1)
-  > say map(object/add_one,1 2 3 4 5)
-  You say "2 3 4 5 6"
+    > &ADD_ONE object=add(%0,1)
+    > say map(object/add_one,1 2 3 4 5)
+    You say "2 3 4 5 6"
   
-  See also: filter(), fold(), iter(), parse(), u().
+  Related Topics: filter(), fold(), iter(), parse(), u().
 
-& filter()
+& FILTER()
+FILTER()
 
-  Function: filter([<obj>/]<attr>, <list>[, <delim>])
+  FUNCTION: filter([<obj>/]<attr>, <list>[, <delim>])
 
   This function evaluates the contents of <attr> for each element of <list>,
   passing it in as %0.  A <delimiter>-separated list is returned of those
@@ -9003,11 +9027,13 @@ CEIL()
     > &IS_ODD object=mod(%0,2)
     > say filter(object/is_odd,1 2 3 4 5)
     You say "1 3 5"
-  See also: u(), map(), fold()
+  
+  Related Topics: u(), map(), fold()
 
-& fold()
+& FOLD()
+FOLD()
 
-  Function: fold([<obj>/]<attr>, <list>[, <base-case>[, <delim>])
+  FUNCTION: fold([<obj>/]<attr>, <list>[, <base-case>[, <delim>])
 
   This function iteratively processes a list through a function, feeding
   the result of one step into the next step as %0, passing in the next element
@@ -9027,11 +9053,13 @@ CEIL()
     > &ADD_NUMS object=add(%0,%1)
     > say fold(object/add_nums,1 2 3 4 5)
     You say "15"
-  See also: u(), iter(), map(), filter()
+  
+  Related Topics: u(), iter(), map(), filter()
 
 & RJUST()
+RJUST()
 
-  Function: rjust(<string>, <length>[, <fill>])
+  FUNCTION: rjust(<string>, <length>[, <fill>])
  
   This function pads a string with leading <fill> characters, or with spaces
   if no fill character is given) ("right-justifies") so it is <length> long.
@@ -9047,11 +9075,13 @@ CEIL()
     01234567"
     > say =[rjust(bar,5,.)]=
     You say "=..bar="
-  See also: ljust(), strlen().
+  
+  Related Topics: ljust(), strlen().
 
 & LJUST()
+LJUST()
 
-  Functions: ljust(<string>, <length>[, <fill>])
+  FUNCTION: ljust(<string>, <length>[, <fill>])
  
   This function pads a string with trailing <fill> characters, or with spaces
   if no fill character is given) ("left-justifies") so it is <length> long.
@@ -9067,11 +9097,13 @@ CEIL()
     01234567"
     > say =[ljust(bar,5,.)]=
     You say "=bar..="
-  See also: rjust(), strlen().
+  
+  Related Topics: rjust(), strlen().
 
 & R()
+R()
 
-  Function: r(<number>)
+  FUNCTION: r(<number>)
  
   The r() function is used to access "local registers", and returns
   the contents of the specified register. There are ten such registers,
@@ -9080,11 +9112,12 @@ CEIL()
   an actionlist, as well as commands that directly trigger actionlists, such
   as @switch, @trigger, and @dolist.
  
-  See also: setq(), setr().
+  Related Topics: setq(), setr().
 
 & SETQ()
+SETQ()
 
-  Function: setq(<number>,<string>)
+  FUNCTION: setq(<number>,<string>)
  
   The setq() function is used to copy strings into local registers.
   It returns a null string; it is a purely "side effect" function.
@@ -9104,19 +9137,22 @@ CEIL()
     > &TEST me=Test on [mudname()] at [time()].
     > say [setq(0,u(TEST))]'[r(0)]' has length [strlen(r(0))].
     You say "'Test on TestMUX at Tue Feb 23 17:00:51 1993.' has length 45."
-  See also: r(), setr().
+  
+  Related Topics: r(), setr().
 
 & SETR()
+SETR()
 
-  Function: setr(<number>,<string>)
+  FUNCTION: setr(<number>,<string>)
  
   This function is identical to setq(), but returns <string>.
  
-  See also: setq(), r().
+  Related Topics: setq(), r().
  
 & SHUFFLE()
+SHUFFLE()
 
-  Function:  shuffle(<word1> <word2> <...<wordN>[,<delimiter>])
+  FUNCTION:  shuffle(<word1> <word2> <...<wordN>[,<delimiter>])
  
   This function shuffles the order of words in a list, returning a random
   permutation of its elements.
@@ -9124,10 +9160,13 @@ CEIL()
   Example:
     > say shuffle(foo bar baz gleep)
     You say "baz foo gleep bar"
- 
-& SCRAMBLE()
 
-  Function:  scramble(<string>)
+  Related Topics:
+   
+& SCRAMBLE()
+SCRAMBLE()
+
+  FUNCTION:  scramble(<string>)
  
   This function scrambles a string, returning a random permutation of its
   characters. Note that this function does not pay any attention to spaces
@@ -9138,11 +9177,12 @@ CEIL()
     > say scramble(abcdef)
     You say "cfaedb"
  
-  See also:  SHUFFLE()
+  Related Topics:  SHUFFLE()
 
 & SORTBY()
+SORTBY()
 
-  Function: sortby([<obj>/]<attrib>,<list>[,<delimiter>])
+  FUNCTION: sortby([<obj>/]<attrib>,<list>[,<delimiter>])
  
   This sorts an arbitrary list according to the u-function <obj>/<attrib>.
   This u-function should compare two arbitrary elements, %0 and %1, and
@@ -9162,19 +9202,25 @@ CEIL()
   Warning: the function invocation limit applies to this function. If
   this limit is exceeded, the function will fail _silently_. List and
   function sizes should be kept reasonable.
- 
+  
+  Related Topics:
+  
 & TRANSLATE()
+TRANSLATE()
  
-  Function: translate(<string>, <type>)
+  FUNCTION: translate(<string>, <type>)
  
   This function takes <string>, and converts all raw ANSI color codes and
   carriage returns to either MUX substitutions, or to spaces. If <type> is
   0 or 's', the raw codes are converted to spaces, if it is 1 or 'p', the
-  codes are converted to MUX %x and %r substitutions.
+  codes are converted to MUX %c and %r substitutions.
+  
+  Related Topics:
 
 & TRIM()
+TRIM()
 
-  Function: trim(<string> [,<trim style> [,<trim character>]])
+  FUNCTION: trim(<string> [,<trim style> [,<trim character>]])
  
   This function will trim trailing and/or lead characters on the string
   that you specify.  <trim character> specifies the character to trim (default
@@ -9194,11 +9240,13 @@ CEIL()
     You say "    Polly Parrot"
     > say trim(---Trim Rules!---,-,l)
     You say "Trim Rules!---"
-  See also: center(), ljust(), rjust().
+  
+  Related Topics: center(), ljust(), rjust().
 
 & CENTER()
+CENTER()
 
-  Function: center(<string>,<width>[,<fill>])
+  FUNCTION: center(<string>,<width>[,<fill>])
  
   This function will center a string in a string <width> characters wide,
   using <fil> characters for padding on either end of the string for
@@ -9212,9 +9260,12 @@ CEIL()
     > say center(*BAMF*,15)
     You say "    *BAMF*     "
 
+  Related Topics:
+  
 & INSERT()
+INSERT()
 
-  Function: insert(<list>, <pos>, <word>[, <sep>])
+  FUNCTION: insert(<list>, <pos>, <word>[, <sep>])
  
   This function inserts a word into <list> so that the word becomes the
   <pos>'th element of the list, and all subsequent list elements are moved
@@ -9229,11 +9280,13 @@ CEIL()
     You say "This is a new test"
     > say insert(Yet@Another@List, 3, Funky, @)
     You say "Yet@Another@Funky@List"
-  See also: extract(), ldelete(), replace().
+  
+  Related Topics: extract(), ldelete(), replace().
 
 & REPLACE()
+REPLACE()
 
-  Function: replace(<list>, <pos>, <word>[, <sep>])
+  FUNCTION: replace(<list>, <pos>, <word>[, <sep>])
  
   This function inserts a word into <list> so that the word becomes the
   <pos>'th element of the list, and the word previously in that position
@@ -9248,11 +9301,13 @@ CEIL()
     You say "This is a quiz"
     > say replace(Yet@Another@Mundane@List, 3, Funky, @)
     You say "Yet@Another@Funky@List"
-  See also: extract(), insert(), ldelete().
+  
+  Related Topics: extract(), insert(), ldelete().
 
 & LDELETE()
+LDELETE()
 
-  Function: ldelete(<list>, <pos>[, <sep>])
+  FUNCTION: ldelete(<list>, <pos>[, <sep>])
  
   This function removes a word from <list> by position.
   <delim> may be used to specify a delimiter other than a space.
