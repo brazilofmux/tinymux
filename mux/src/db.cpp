@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.35 2002-08-03 19:57:35 sdennis Exp $
+// $Id: db.cpp,v 1.36 2002-08-03 20:00:18 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -446,24 +446,24 @@ FWDLIST *fwdlist_get(dbref thing)
 
 const char *Name(dbref thing)
 {
-    static char tbuff[LBUF_SIZE];
     if (thing < 0)
     {
-        strcpy(tbuff, aszSpecialDBRefNames[-thing]);
-        return tbuff;
+        return aszSpecialDBRefNames[-thing];
     }
 
     dbref aowner;
     int aflags;
 #ifdef MEMORY_BASED
+    static char tbuff[LBUF_SIZE];
     atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
     return tbuff;
 #else // MEMORY_BASED
     if (!names[thing])
     {
         int len;
-        atr_get_str_LEN(tbuff, thing, A_NAME, &aowner, &aflags, &len);
-        names[thing] = StringCloneLen(tbuff, len);
+        char *pName = atr_get_LEN( thing, A_NAME, &aowner, &aflags, &len);
+        names[thing] = StringCloneLen(pName, len);
+        free_lbuf(pName);
     }
     return names[thing];
 #endif // MEMORY_BASED
