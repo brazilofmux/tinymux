@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.48 2002-09-26 10:18:52 jake Exp $
+// $Id: comsys.cpp,v 1.49 2002-09-26 10:23:40 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1293,7 +1293,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
         arg = logmax;
     }
 
-    char *message = alloc_lbuf("do_comlast");
+    char *message;
     int histnum = ch->num_messages - arg;
 
     raw_notify(player, "-- Begin Comsys Recall --");
@@ -1303,12 +1303,11 @@ void do_comlast(dbref player, struct channel *ch, int arg)
         attr = atr_str(tprintf("HISTORY_%d", iMod(histnum, logmax)));
         if (attr)
         {
-            free_lbuf(message);
             message = atr_get(obj, attr->number, &aowner, &aflags);
+            raw_notify(player, message);
+            free_lbuf(message);
         }
-        raw_notify(player, message);
     }
-    free_lbuf(message);
     raw_notify(player, "-- End Comsys Recall --");
 }
 
