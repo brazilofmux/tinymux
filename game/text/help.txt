@@ -8618,7 +8618,7 @@ PARENT ROOMS
   evaluation on a parent room is slower than command evaluation on a ZMO.
   Large numbers of parent rooms may slow down the game significantly.
 
-  Related Topics: ZONE OBJECTS and COMMAND EVALUATION
+  Related Topics: ZONES and COMMAND EVALUATION
 
 & PARENT()
 PARENT()
@@ -10734,7 +10734,7 @@ TOPICS
   PUPPETS             REGEXPS             ROBBERY             SEARCH CLASSES
   SEMAPHORES          SPOOFING            STACK               SUBSTITUTIONS
   SUCCESS             SWITCHES            VERBS               WIZARDS
-  ZONE OBJECTS
+  ZONES
 
 & TRACE
 TRACE
@@ -11430,6 +11430,24 @@ ZFUN()
 & ZONE OBJECTS
 ZONE OBJECTS
 
+  Every object in the database has the potential of being associated with a
+  zone object. For more details on how zones work, see the related topic.
+
+  Related Topics: zones
+
+& ZONE()
+ZONE()
+
+  FUNCTION: zone(<object>)
+
+  Returns the object's 'zone'. This is the dbref of the master object
+  which defines the zone.
+
+  Related Topics:
+
+& ZONES
+ZONES
+
   Zones are areas of the MUX which may be controlled by many people.
   Essentially, they allow group ownership of objects.
 
@@ -11445,18 +11463,8 @@ ZONE OBJECTS
 
 { 'help zones2' for more }
 
-& ZONE()
-ZONE()
-
-  FUNCTION: zone(<object>)
-
-  Returns the object's 'zone'. This is the dbref of the master object
-  which defines the zone.
-
-  Related Topics:
-
 & ZONES2
-ZONE OBJECTS (continued)
+ZONES (continued)
 
   Anyone who can pass the Enter lock of the ZMO has control over all
   objects in that zone. This, in essence, gives that player wizard
@@ -11471,7 +11479,7 @@ ZONE OBJECTS (continued)
 { 'help zones3' for more }
 
 & ZONES3
-ZONE OBJECTS (continued)
+ZONES (continued)
 
   Some suggested uses of zones:
 
@@ -11491,7 +11499,7 @@ ZONE OBJECTS (continued)
 { 'help zones4' for more }
 
 & ZONES4
-ZONE OBJECTS (continued)
+ZONES (continued)
 
   More possible uses for zones:
 
