@@ -185,7 +185,7 @@ WIZHELP
   > @addcommand look=me/look_with_arg
   > @addcommand look=me/look_outside
 
-{ 'help @addcommand2' for more }
+{ 'wizhelp @addcommand2' for more }
 
 & @ADDCOMMAND2
 @ADDCOMMAND (continued)
@@ -1235,27 +1235,38 @@ WIZHELP
   The message is also written to the log file.
 
 & INHERIT
-  Flag: INHERIT(I) (all types)
+INHERIT
+
+  FLAG: INHERIT(I) (all types)
+
   When set on an object, gives the object access to the WIZARD and IMMORTAL
   powers that its owner has, and also allows that object to control the player
   and other INHERIT objects owned by that player.
+
   When set on a player, gives all of that player's objects access to the
   WIZARD and IMMORTAL powers of their owner, and allows them to control the
   player or any object owned by the player.
 
 & MARKED
-  Flag: MARKED(m) (all types)
+MARKED
+
+  FLAG: MARKED(m) (all types)
+
   This flag is used by the database cleaning routines to check the
   connectivity of the database, and also by the @mark commands to select
   objects for special attention.  Since database cleaning is performed
   automatically from time to time, automatic cleaning must be disabled
   before using the @mark commands, and the command @mark_all/clear should
   be run immediately before turning automatic cleaning back on.
-  See also: @apply_marked, @dbck, @disable, @enable, @list, @mark,
-            @mark_all.
+
+  Related Topics: @apply_marked, @dbck, @disable, @enable, @list, @mark,
+                  @mark_all.
 
 & STARTUP
-  Flag: STARTUP(z) (all types)
+STARTUP
+
+  FLAG: STARTUP(z) (all types)
+
   This flag is managed internally by the server and it is not directly
   settable.  It indicates whether or not the object has a STARTUP attribute
   that is to be run when the MUX is booted.  This saves a considerable amount
@@ -1263,16 +1274,23 @@ WIZHELP
   This flag is set automatically when the STARTUP attribute is set to a
   non-empty string, and cleared when the STARTUP attribute is removed or
   set to a null string.
-  See also: @startup.
+
+  Related Topics: @startup.
 
 & SUSPECT
-  Flag: SUSPECT(u) (players)
+SUSPECT
+
+  FLAG: SUSPECT(u) (players)
+
   When set on a player, causes connects, disconnects, name changes, kills,
   and attempted kills to be reported to all connected wizards.
   This flag is only visible and settable by wizards.
 
 & WIZARD
-  Flag: WIZARD(W) (all types)
+WIZARD
+
+  FLAG: WIZARD(W) (all types)
+
   A player or object that is set WIZARD controls all of the objects in the
   database (except for player #1), regardless of their ownership or flags.
   In general, WIZARDs can do anything using #<number> or *<player>.
@@ -1281,7 +1299,8 @@ WIZHELP
   Only player #1 can set or clear this flag.  An object owned by a Wizard has
   wizard privileges only if its WIZARD or INHERIT flag is set, or if the
   owning Wizard has his INHERIT flag set.
-  See also: CONTROL, INHERIT.
+
+  Related Topics: CONTROL, INHERIT.
 
 & @ALLOWANCE
 @ALLOWANCE
@@ -1351,8 +1370,6 @@ MASTER ROOM
 & CONFIG PARAMETERS
 CONFIG PARAMETERS
 
-  Topic: CONFIG PARAMETERS
-
   The following configuration parameters may be specified in the configuration
   file, or given to the @admin command.  Type 'wizhelp <param>' for help on a
   particular parameter.
@@ -1406,7 +1423,7 @@ CONFIG PARAMETERS (continued)
 & ACCESS
 ACCESS
 
-  Config parameter: access <command> <permlist>
+  CONFIG PARAMETER: access <command> <permlist>
 
   Modifies the permissions needed to execute the indicated command.
   Specifying a permission adds it to the list of permissions required; to
@@ -1417,7 +1434,7 @@ ACCESS
 & ALIAS
 ALIAS
 
-  Config parameter: alias <new> <old>.
+  CONFIG PARAMETER: alias <new> <old>.
 
   Defines the command <new> to be an alias of the command <old>.
 
@@ -1426,7 +1443,8 @@ ALIAS
 & ALLOW_GUEST_FROM_REGISTERED_SITE
 ALLOW_GUEST_FROM_REGISTERED_SITE
 
-  Config parameter: allow_guest_from_registered_site. Default: yes.
+  CONFIG PARAMETER: allow_guest_from_registered_site
+  DEFAULT: yes.
 
   With this option turned off, guests are not permitted to connect from
   sites which have been register_site'd.
@@ -1440,9 +1458,8 @@ ALLOW_GUEST_FROM_REGISTERED_SITE
 & ARTICLE_RULE
 ARTICLE_RULE
 
-  CONFIG_PARAMETER: article_rule <article> <regular expression>
-
-  Default: All articles default to a.
+  CONFIG PARAMETER: article_rule <article> <regular expression>
+  DEFAULT: All articles default to a.
 
   article_rule adds a new rule to the list which the art function uses to
   determine which article to use for a particular word (either a or an). New
@@ -1476,7 +1493,7 @@ ARTICLE_RULE
 & ATTR_ACCESS
 ATTR_ACCESS
 
-  Config parameter: attr_access <attr> [!]<privilege> [[!]<privilege>]...
+  CONFIG PARAMETER: attr_access <attr> [!]<privilege> [[!]<privilege>]...
 
   Changes the access rights to the named attribute.
 
@@ -1493,7 +1510,7 @@ ATTR_ACCESS
 & ATTR_ALIAS
 ATTR_ALIAS
 
-  Config parameter: attr_alias <alias> <attr>.
+  CONFIG PARAMETER: attr_alias <alias> <attr>.
 
   Makes <alias> an alias for the attribute <attr>.
 
@@ -1502,7 +1519,7 @@ ATTR_ALIAS
 & ATTR_CMD_ACCESS
 ATTR_CMD_ACCESS
 
-  Config parameter: attr_cmd_access [!]<privilege> [[!]<privilege>]...
+  CONFIG PARAMETER: attr_cmd_access [!]<privilege> [[!]<privilege>]...
 
   Changes the access rights on all attribute-setting commands in parallel.
   Use this parameter to allow or deny access to the attribute-setting commands
@@ -1514,7 +1531,8 @@ ATTR_CMD_ACCESS
 & AUTOZONE
 AUTOZONE
 
-  Config parameter: autozone.  Default: Yes
+  CONFIG PARAMETER: autozone
+  DEFAULT: Yes
 
   Whether newly-created objects are automatically of the same
   zone as their creator, or they are left zone-less.
@@ -1524,7 +1542,7 @@ AUTOZONE
 & BAD_NAME
 BAD_NAME
 
-  Config parameter: bad_name <wildcarded-name>.
+  CONFIG PARAMETER: bad_name <wildcarded-name>
 
   Specifies that any name that matches <wildcarded-name> may not be used as a
   player name.  Attempts to create a player with a disallowed name (or to
@@ -1537,7 +1555,8 @@ BAD_NAME
 & BADSITE_FILE
 BADSITE_FILE
 
-  Config parameter: badsite_file <path>.  Default: text/badsite.txt
+  CONFIG PARAMETER: badsite_file <path>
+  DEFAULT: text/badsite.txt
 
   Specifies the name of the file that is sent to new net connections from
   sites that have been blocked from accessing the server.  The connection
@@ -1548,7 +1567,8 @@ BADSITE_FILE
 & CACHE_DEPTH
 CACHE_DEPTH
 
-  Config parameter: cache_depth <depth>. Default: none.
+  CONFIG PARAMETER: cache_depth <depth>
+  DEFAULT: none.
 
   This option is obsolete. The cache in MUX 2.0 is controlled differently.
 
@@ -1557,7 +1577,8 @@ CACHE_DEPTH
 & CACHE_TRIM
 CACHE_TRIM
 
-  Config parameter: cache_trim <yes/no>.  Default: none.
+  CONFIG PARAMETER: cache_trim <yes/no>
+  DEFAULT: none.
 
   This option is obsolete. The cache in MUX 2.0 is controlled differently.
 
@@ -1566,7 +1587,8 @@ CACHE_TRIM
 & CACHE_WIDTH
 CACHE_WIDTH
 
-  Config parameter: cache_width <depth>.  Default: none.
+  CONFIG PARAMETER: cache_width <depth>
+  DEFAULT: none.
 
   This option is obsolete. The cache in MUX 2.0 is controlled differently.
 
@@ -1575,7 +1597,8 @@ CACHE_WIDTH
 & CHECK_INTERVAL
 CHECK_INTERVAL
 
-  Config parameter: check_interval <secs>.  Default: 600.
+  CONFIG PARAMETER: check_interval <secs>
+  DEFAULT: 600.
 
   Specifies how often (in seconds) the database is to be automatically
   scanned for inconsistencies and purged of references to destroyed objects.
@@ -1586,7 +1609,8 @@ CHECK_INTERVAL
 & CHECK_OFFSET
 CHECK_OFFSET
 
-  Config parameter: check_offset <secs>.  Default: 300.
+  CONFIG PARAMETER: check_offset <secs>
+  DEFAULT: 300.
 
   Specifies how long after startup the first automatic database check is
   to be performed.  Subsequent checks are performed every check_interval
@@ -1597,7 +1621,8 @@ CHECK_OFFSET
 & CLONE_COPIES_COST
 CLONE_COPIES_COST
 
-  Config parameter: clone_copies_cost <yes/no>.  Default: NO
+  CONFIG PARAMETER: clone_copies_cost <yes/no>
+  DEFAULT: NO
 
   Indicates whether or not @cloned objects inherit the cost of the original.
   If disabled, @cloned objects cost the same as a @create that doesn't specify
@@ -1609,7 +1634,8 @@ CLONE_COPIES_COST
 & COMSYS_DATABASE
 COMSYS_DATABASE
 
-  Config parameter: comsys_database <path>.  Default: comsys.db
+  CONFIG PARAMETER: comsys_database <path>
+  DEFAULT: comsys.db
 
   Specifies the file that comsystem and macro information is stored in.
   This database is loaded at startup if either have_comsys or have_macros
@@ -1620,7 +1646,8 @@ COMSYS_DATABASE
 & COMMAND_QUOTA_INCREMENT
 COMMAND_QUOTA_INCREMENT
 
-  Config parameter: command_quota_increment <amount>. Default: 1
+  CONFIG PARAMETER: command_quota_increment <amount>
+  DEFAULT: 1
 
   Specifies the number of commands by which the command quota for connected
   users each timeslice.  Each command a user types in (commands executed by
@@ -1632,7 +1659,8 @@ COMMAND_QUOTA_INCREMENT
 & COMMAND_QUOTA_MAX
 COMMAND_QUOTA_MAX
 
-  Config parameter: command_quota_max <amount>. Default: 100
+  CONFIG PARAMETER: command_quota_max <amount>
+  DEFAULT: 100
 
   Specifies the maximum value for the command quota for connected users.
   A user's command quota is only increased if it is below this value.
@@ -1645,7 +1673,8 @@ COMMAND_QUOTA_MAX
 & COMPRESS_PROGRAM
 COMPRESS_PROGRAM
 
-  Config parameter: compress_program <path>.  Default: gzip
+  CONFIG PARAMETER: compress_program <path>
+  DEFAULT: gzip
 
   Specifies the program to be run to compress the database file when it is
   written.  If database file compression is enabled, database dumps are piped
@@ -1656,7 +1685,8 @@ COMPRESS_PROGRAM
 & COMPRESSION
 COMPRESSION
 
-  Config parameter: compress <yes/no>.  Default: no
+  CONFIG PARAMETER: compress <yes/no>
+  DEFAULT: no
 
   Indicates whether or not the database is to be compressed using the
   compress_program when it is written, and whether or not to check for a
@@ -1667,7 +1697,7 @@ COMPRESSION
 & CONFIG_ACCESS
 CONFIG_ACCESS
 
-  Config parameter: config_access <param> [!]<privilege> [[!]<privilege>]...
+  CONFIG PARAMETER: config_access <param> [!]<privilege> [[!]<privilege>]...
 
   Changes the privileges needed to change the specified configuration
   parameter.  The value 'disabled' indicates that the parameter may only
@@ -1680,7 +1710,8 @@ CONFIG_ACCESS
 & CONN_TIMEOUT
 CONN_TIMEOUT
 
-  Config parameter: conn_timeout <num>.  Default: 60
+  CONFIG PARAMETER: conn_timeout <num>
+  DEFAULT: 60
 
   Specifies how many seconds a new network connection may remain open before
   connecting to a character before being automatically disconnected.
@@ -1688,7 +1719,8 @@ CONN_TIMEOUT
 & CONNECT_FILE
 CONNECT_FILE
 
-  Config parameter: connect_file <path>.  Default: text/connect.txt
+  CONFIG PARAMETER: connect_file <path>
+  DEFAULT: text/connect.txt
 
   Specifies the name of the file that a user sees immediately after connecting
   to the MUX if registration is not enabled.  This file normally contains
@@ -1700,7 +1732,8 @@ CONNECT_FILE
 & CONNECT_REG_FILE
 CONNECT_REG_FILE
 
-  Config parameter: connect_reg_file <path>.  Default: text/register.txt
+  CONFIG PARAMETER: connect_reg_file <path>
+  DEFAULT: text/register.txt
 
   Specifies the name of the file that a user sees immediately after connecting
   to the MUX if registration is enabled.  This file normally contains
@@ -1713,7 +1746,8 @@ CONNECT_REG_FILE
 & CRASH_DATABASE
 CRASH_DATABASE
 
-  Config parameter: crash_database <path>.  Default: <input db>.CRASH
+  CONFIG PARAMETER: crash_database <path>
+  DEFAULT: <input db>.CRASH
 
   Specifies the name of the database file that should be written when MUX
   detects an internal error and is about to crash. The file is generated
@@ -1722,7 +1756,8 @@ CRASH_DATABASE
 & CREATE_MAX_COST
 CREATE_MAX_COST
 
-  Config directive: create_max_cost <amount>.  Default: 505
+  CONFIG DIRECTIVE: create_max_cost <amount>
+  DEFAULT: 505
 
   Specifies the maximum amount of money that is used in calculating the value
   of a created object.  Specifying more than this amount of money in a @create
@@ -1733,7 +1768,8 @@ CREATE_MAX_COST
 & CREATE_MIN_COST
 CREATE_MIN_COST
 
-  Config directive: create_min_cost <amount>.  Default: 10
+  CONFIG DIRECTIVE: create_min_cost <amount>
+  DEFAULT: 10
 
   Specifies the minimum (and default) cost for creating an object.
 
@@ -1742,7 +1778,8 @@ CREATE_MIN_COST
 & DARK_SLEEPERS
 DARK_SLEEPERS
 
-  Config directive: dark_sleepers <yes/no>.  Default: yes
+  CONFIG DIRECTIVE: dark_sleepers <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not disconnected players are to be considered 'dark',
   so that they do not show up when a player looks in the room that they are
@@ -1752,7 +1789,8 @@ DARK_SLEEPERS
 & DEFAULT_HOME
 DEFAULT_HOME
 
-  Config directive: default_home <location>.  Default (player_starting_home)
+  CONFIG DIRECTIVE: default_home <location>
+  DEFAULT: (player_starting_home)
 
   Sets the home location for objects which have an invalid home (whether
   because the home location was deleted, or is owned by another player and
@@ -1764,7 +1802,8 @@ DEFAULT_HOME
 & DESTROY_GOING_NOW
 DESTROY_GOING_NOW
 
-  Config parameter: destroy_going_now [yes/no].  Default: No
+  CONFIG PARAMETER: destroy_going_now [yes/no]
+  DEFAULT: No
 
   By default, @destroy only queues an object for destruction on the news
   auto-@dbck cycle. However, if this configuration option is enabled, a
@@ -1776,14 +1815,16 @@ DESTROY_GOING_NOW
 & DIG_COST
 DIG_COST
 
-  Config parameter: dig_cost <amount>.  Default: 1
+  CONFIG PARAMETER: dig_cost <amount>
+  DEFAULT: 1
 
   Specifies how much the @dig command costs.
 
 & DOWN_FILE
 DOWN_FILE
 
-  Config parameter: down_file <pathname>.  Default: text/down.txt
+  CONFIG PARAMETER: down_file <pathname>.
+  DEFAULT: text/down.txt
 
   Specifies the name of the file that is displayed when players attempt to
   connect to a non-wizard character when logins are disabled.
@@ -1793,7 +1834,8 @@ DOWN_FILE
 & DOWN_MOTD_MESSAGE
 DOWN_MOTD_MESSAGE
 
-  Config parameter: down_motd_message <message>.  Default: text/down.txt
+  CONFIG PARAMETER: down_motd_message <message>
+  DEFAULT: text/down.txt
 
   Sets the message that is displayed when a player attempts to connect to a
   non-wizard character when logins are disabled.  This message is displayed
@@ -1804,7 +1846,8 @@ DOWN_MOTD_MESSAGE
 & DUMP_INTERVAL
 DUMP_INTERVAL
 
-  Config parameter: dump_interval <amount>.  Default: 3600
+  CONFIG PARAMETER: dump_interval <amount>
+  DEFAULT: 3600
 
   Specifies the time in seconds between automatic database dumps.
 
@@ -1813,7 +1856,8 @@ DUMP_INTERVAL
 & DUMP_MESSAGE
 DUMP_MESSAGE
 
-  Config parameter: dump_message <message>.  Default: blank
+  CONFIG PARAMETER: dump_message <message>
+  DEFAULT: blank
 
   Sets the message that is sent to everyone before the database is being
   dumped to disk, whether automatically or via the @dump command.
@@ -1823,7 +1867,8 @@ DUMP_MESSAGE
 & DUMP_OFFSET
 DUMP_OFFSET
 
-  Config parameter: dump_offset <amount>.  Default: 0
+  CONFIG PARAMETER: dump_offset <amount>
+  DEFAULT: 0
 
   Specifies the time in seconds between startup and the first database dump.
   If zero, the value of the dump_interval parameter is used.
@@ -1833,7 +1878,8 @@ DUMP_OFFSET
 & EARN_LIMIT
 EARN_LIMIT
 
-  Config parameter: earn_limit <amount>.  Default: 10000
+  CONFIG PARAMETER: earn_limit <amount>
+  DEFAULT: 10000
 
   Specifies the threshold at which earning additional money becomes
   difficult.  Specifically, players with more than this much money no longer
@@ -1845,7 +1891,8 @@ EARN_LIMIT
 & EXAMINE_FLAGS
 EXAMINE_FLAGS
 
-  Config parameter: examine_flags <yes/no>.  Default: yes
+  CONFIG PARAMETER: examine_flags <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not the examine command should include an expanded
   flags list in the description of the object.
@@ -1855,7 +1902,8 @@ EXAMINE_FLAGS
 & EXAMINE_PUBLIC_ATTRS
 EXAMINE_PUBLIC_ATTRS
 
-  Config parameter: examine_public_attrs <yes/no>.  Default: yes
+  CONFIG PARAMETER: examine_public_attrs <yes/no>
+  DEFAULT: yes
 
   Indicate whether or not the examine command should display the public
   attributes of the object by default when used by a player who does not
@@ -1868,7 +1916,8 @@ EXAMINE_PUBLIC_ATTRS
 & EXIT_FLAGS
 EXIT_FLAGS
 
-  Config parameter: exit_flags <flags>.  Default: blank
+  CONFIG PARAMETER: exit_flags <flags>
+  DEFAULT: blank
 
   Modifies the set of flags that an exit receives when it is created via the
   @open command or via the optional exit creation parameters of the @dig or
@@ -1880,7 +1929,8 @@ EXIT_FLAGS
 & EXIT_QUOTA
 EXIT_QUOTA
 
-  Config parameter: exit_quota <amount>.  Default: 1
+  CONFIG PARAMETER: exit_quota <amount>
+  DEFAULT: 1
 
   Sets how much quota it costs to create an exit (and also how much the
   remaining quota is increased when an exit is @destroyed.
@@ -1890,7 +1940,8 @@ EXIT_QUOTA
 & EVENTS_DAILY_HOUR
 EVENTS_DAILY_HOUR
 
-  Config parameter: events_daily_hour <hour>.  Default: 7.
+  CONFIG PARAMETER: events_daily_hour <hour>
+  DEFAULT: 7
 
   Specifies the hour that @daily is executed. No guarantee is made as to what
   time during this hour it is executed. This should be a integer between 0 and
@@ -1899,7 +1950,8 @@ EVENTS_DAILY_HOUR
 & FASCIST_TELEPORT
 FASCIST_TELEPORT
 
-  Config parameter: fascist_teleport <yes/no>.  Default: no
+  CONFIG PARAMETER: fascist_teleport <yes/no>
+  DEFAULT: no
 
   If this parameter is set to yes, then players (and objects) may not
   teleport out of locations that they do not control or which are not set
@@ -1909,7 +1961,8 @@ FASCIST_TELEPORT
 & FIND_MONEY_CHANCE
 FIND_MONEY_CHANCE
 
-  Config parameter: find_money_chance <amount>.  Default: 0
+  CONFIG PARAMETER: find_money_chance <amount>
+  DEFAULT: 0
 
   Indicates the chance that players have of finding money when entering a
   new room.  The chance is 1 / find_money_chance, except that finding money
@@ -1920,7 +1973,8 @@ FIND_MONEY_CHANCE
 & FIXED_HOME_MESSAGE
 FIXED_HOME_MESSAGE
 
-  Config parameter: fixed_home_message <string>.  Default: none
+  CONFIG PARAMETER: fixed_home_message <string>
+  DEFAULT: none
 
   Specifies the string that is sent to a player when they try to go home
   while they are set with the FIXED flag.
@@ -1930,7 +1984,8 @@ FIXED_HOME_MESSAGE
 & FIXED_TEL_MESSAGE
 FIXED_TEL_MESSAGE
 
-  Config parameter: fixed_tel_message <string>.  Default: none
+  CONFIG PARAMETER: fixed_tel_message <string>
+  DEFAULT: none
 
   Specifies the string that is sent to a player when they try to teleport
   while they are set with the FIXED flag.
@@ -1940,14 +1995,14 @@ FIXED_TEL_MESSAGE
 & FLAG_ALIAS
 FLAG_ALIAS
 
-  Config parameter: flag_alias <alias> <flagname>.
+  CONFIG PARAMETER: flag_alias <alias> <flagname>
 
   Defines <alias> as a synonym for the flag <flagname>.
 
 & FLAG_ACCESS
 FLAG_ACCESS
 
-  Config parameter: flag_access <flag name> <access>
+  CONFIG PARAMETER: flag_access <flag name> <access>
 
   Changes who can set a flag. <access> can be:
 
@@ -1969,7 +2024,8 @@ FLAG_ACCESS
 & FORBID_SITE
 FORBID_SITE
 
-  Config parameter: forbid_site <addr> <mask>.
+  CONFIG PARAMETER: forbid_site <addr> <mask>
+                    forbid_site <addr>/<mask>
 
   Indicates that connections are to be rejected from sites whose address
   matches the specified address when ANDed with the mask.  The contents of
@@ -2151,7 +2207,8 @@ HAVE_COMSYS
 & EVAL_COMTITLE
 EVAL_COMTITLE
 
-  Config parameter: eval_comtitle <yes/no>.  Default: yes
+  CONFIG PARAMETER: eval_comtitle <yes/no>
+  DEFAULT: yes
 
   Specifies whether or not comtitles are evaluated as code each time
   a pose is made on channel.
@@ -3616,46 +3673,85 @@ REGISTRATION
 & SITE LISTS
 SITE LISTS
 
-  There are two site lists, one for controlling access and registration, and
-  one for suspect warning.  The first list is controlled by the forbid_site,
-  permit_site, and register_site parameters, the second by the suspect_site
-  and trust_site parameters. The syntax of these parameters is:
-  <param-name> <address> <mask>, where:
+  Site lists match the numeric IP address of the connecting player, and help
+  to manage client access to the MUX.
 
-  Address  - Four-part decimal Internet address, specified as a.b.c.d,
-             of the host or network to which this parameter applies.
-  Mask     - Four-part decimal Internet address, specified as a.b.c.d
-             The mask is used to determine which parts of the address are
-             to be used for comparison, it is ANDed with both the address
-             of the host and the address in the directive.
+  There are two site lists:
 
-  The parameters are applied in the order specified in the configuration file,
-  and the first one that matches is used.  Therefore, you should put
-  the more-specific parameters before the more general ones.
+      Access Control List  - forbid_site, permit_site and register_site.
+      Suspects             - suspect_site and trust_site
+
+  Both contain an ordered list of 'sites', 'subnets', or 'hosts' specified
+  with a notation explained in the 'SITE NOTATION' topic.
+
+  Each site in the list is matched in the order it appears in the
+  configuration file, and the first one that matches is used.  Therefore, you
+  should put the more narrowly-defined sites before the more broadly-defined
+  ones. Otherwise, the more narrowly-defined site (the one covering a subset
+  of IP addresses within the more broadly-defined site) will never be in
+  force.
+
   Additions made to the lists after startup with the @admin command are put
   at the front of the list, and are checked before entries from the config
   file and previous entries made by the @admin command.
 
 { 'wizhelp site lists2' for more }
 
-& site lists2
+& SITE LISTS2
 SITE LISTS (continued)
 
   Example:  Restricting Access
-
+ 
   register_site  135.246.4.40 255.255.255.255  <- Allow this site w/reg
   forbid_site    135.246.4.0  255.255.255.0    <- Disallow a class C subnet
   permit_site    135.246.0.0  255.255.0.0      <- Permit a class B network
   register_site  195.3.17.1   255.255.255.255  <- Permit this site w/reg.
   forbid_site    0.0.0.0      0.0.0.0          <- DIsallow everyone else
-
+ 
   These directives only allow access from 135.346.*.* and 195.3.17.1, except
   that all hosts in the 135.246.4 subnet except for 135.246.4.40 are also
   not allowed access.  People connecting from 135.246.4.40 and 195.3.17.1
   are not allowed to create their own characters (registration is enabled
   for those sites), while people connecting from elsewhere on the 135.246
   net are allowed to create their own characters.
+ 
+  Related Topics: @admin, forbid_site, @list site_information, permit_site,
+                  register_site, SITE NOTATION, suspect_site, trust_site.
+& SITE NOTATION
+SITE NOTATION
 
-  Related Topics: @admin, @list site_information, forbid_site, permit_site,
-                  register_site, suspect_site, trust_site.
+ Site notation specifies a range of numeric IP addresses.  A particular range
+ can include a single IP address or the entire Internet.
+
+ There are several variations:
+
+   <address> <mask>    - The <address> and <mask> are both dotted IPv4
+                         notation, but the <mask> is further restricted that
+                         it's '1' bits are all together and form a prefix.
+                         The <mask> specifies which bits in the <address> are
+                         significant.
+
+   <address>/<N>       - The <address> is a dotted IPv4 number, but <N> is an
+                         integer from 0 to 32 that specifies the number of
+                         significant bits in left-most part of the <address>.
+                         This notation is called CIDR IP prefix notation or
+                         'slash notation'.
+
+{ 'wizhelp site notation2' for more }
+
+& SITE NOTATION2
+SITE NOTATION (continued)
+
+ Dotted IPv4 addresses are of the form: a.b.c.d, where a, b, c, and d
+ are integers from 0 to 255.
+
+ Examples:
+
+   135.246.4.40 255.255.255.255   - Single host.
+   135.246.4.0  255.255.255.0     - Class C subnet.
+   135.246.4.0/24                 - Same as above in CIDR IP format.
+   135.246.0.0/16                 - Class B subnet.
+   135.0.0.0/8                    - Class A subnet in CIDR IP format.
+   0.0.0.0 0.0.0.0                - The entire Internet
+   0.0.0.0/0                      - Same as above in CIDR IP format.
 
