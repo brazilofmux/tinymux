@@ -17,10 +17,10 @@ elif [ -r $DATA/$NEW_DB ]; then
     $BIN/netmux -d$DATA/$GDBM_DB -i$DATA/$NEW_DB -o$DATA/$GAMENAME.$DBDATE -u
 elif [ -r $DATA/$INPUT_DB ]; then
     echo "No recent checkpoint db. Using older db."
-    $BIN/dbconvert -d$DATA/$GDBM_DB -i$DATA/$INPUT_DB -o$DATA/$GAMENAME.$DBDATE -u
+    $BIN/netmux -d$DATA/$GDBM_DB -i$DATA/$INPUT_DB -o$DATA/$GAMENAME.$DBDATE -u
 elif [ -r $DATA/$SAVE_DB ]; then
     echo "No input db. Using backup db."
-    $BIN/dbconvert -d$DATA/$GDBM_DB -i$DATA/$SAVE_DB -o$DATA/$GAMENAME.$DBDATE -u
+    $BIN/netmux -d$DATA/$GDBM_DB -i$DATA/$SAVE_DB -o$DATA/$GAMENAME.$DBDATE -u
 else
     echo "No dbs. Backup attempt failed."
 fi
