@@ -385,7 +385,7 @@ WIZHELP
                     on the queue.
     logins        - Allows nonwizard players to connect to their characters.
     eventchecking - Enables certain attribute events (@daily, etc) to occur.
- 
+
   These parameters are all enabled by default.
 
   Related Topics: @enable, @list.
@@ -420,11 +420,11 @@ WIZHELP
                   human-readable file.
      text       - Ensure that all changes to the text portion of the
                   database are written out to disk.
- 
+
   Note that the above structure and text options will cause your database and
   certain caches to be out of sync. They should NOT be used in the course
   of normal operation.
- 
+
   Related Topics: @admin, @disable, @enable, @list, @shutdown.
 
 & @ENABLE
@@ -542,14 +542,14 @@ WIZHELP
 
   Lists information from internal databases.  Information is available
   about the following options:
- 
+
     allocations         attr_permissions    attributes          bad_names
     buffers             commands            costs               db_stats
     default_flags       flags               functions           globals
     hashstats           logging             options             permissions
     powers              process             site_info           switches
     user_attributes
- 
+
   Type wizhelp @list <option> for help with a particular option.
 
 & @LIST ALLOCATIONS
@@ -682,7 +682,7 @@ WIZHELP
 
   Lists the global parameters that may be set or cleared by the @enable and
   @disable commands.  The following parameters are displayed.
- 
+
     building      - Indicates whether or not commands that alter the
                     stricture of the database are allowed.
     checkpointing - Indicates whether or not the database is to be
@@ -909,7 +909,7 @@ WIZHELP
                        site.
      connect          - shown when a connection is opened from a site for
                         which registration is not enforced.
-     create_register  - shown when the 'create' command is used from a site 
+     create_register  - shown when the 'create' command is used from a site
                         for which registration is enforced.
      down             - shown when a non-wizard attempts to connect to or
                         create a character when logins are disabled.
@@ -1186,7 +1186,7 @@ WIZHELP
   server and time spent in another unrelated application.
 
   The command takes the following switches:
- 
+
     /screen     Print information to the screen.
     /log        Print information to the logfile.
     /reset      Clear the counters.
@@ -1324,27 +1324,29 @@ WIZHELP
   Related Topics: idle_timeout.
 
 & MASTER ROOM
-  The master room contains the default exits and $-commands for the MUX.
-  The exits in the master room are checked if a command doesn't match an exit
-  in the player's current room, and the $-commands on the room and its
-  contents.
- 
+MASTER ROOM
+
+  The master room contains the default exits and $-commands for the MUX.  The
+  exits in the master room are checked if a command doesn't match an exit in
+  the player's current room, and the $-commands on the room and its contents.
+
   Caution: Do not allow players into the master room, as they can leave
   objects that will be searched for $-commands.  Make sure that the room is
-  not JUMP_OK or LINK_OK, and that any exits leading to the room are locked so
-  that only wizards may use them.
- 
+  not JUMP_OK or LINK_OK, and that any exits leading to the room are locked
+  so that only wizards may use them.
+
   To make global commands, make an exit in the master room that is locked to
   #0 (or some other impossible lock) and has an appropriate Afail action (and
   possibly Fail and Ofail messages).  You can make global exits by having an
   unlocked exit from the master room (or an exit locked to a desired key
   object) lead to the desired destination.  When a player goes through one of
   these exits, any KEY objects are returned home, as is done with @teleport.
- 
+
   Do not put too many objects in the room, because each object is searched
   for $-command every time anyone (or anything) anywhere on the MUX enters
   an unrecognized command.
-  See also: @link, @lock, @open, master_room.
+
+  Related Topics: @link, @lock, @open, master_room.
 
 & CONFIG PARAMETERS
 CONFIG PARAMETERS
@@ -1658,7 +1660,7 @@ COMPRESSION
 
   Indicates whether or not the database is to be compressed using the
   compress_program when it is written, and whether or not to check for a
-  compressed database to uncompress at startup.  
+  compressed database to uncompress at startup.
 
   Related Topics: compress_program, uncompress_program.
 
@@ -1670,7 +1672,7 @@ CONFIG_ACCESS
   Changes the privileges needed to change the specified configuration
   parameter.  The value 'disabled' indicates that the parameter may only
   be specified in the configuration file at startup.  Setting privileges
-  to anything other than disabled or god is meaningless unless the 
+  to anything other than disabled or god is meaningless unless the
   restriction on the @admin command is weakened.
 
   Related Topics: @admin, @list config_permissions, PERMISSIONS.
@@ -2005,7 +2007,7 @@ FULL_FILE
 FUNCTION_ACCESS
 
   Config parameter: function_access <function> [!]<priv> [[!]<priv>]...
- 
+
   Changes the privileges needed to call the MUX function <function>.
   If you do not have permission to call a function, the function
   returns the value "#-1 PERMISSION DENIED" instead of the value it
@@ -2031,7 +2033,7 @@ FUNCTION_INVOCATION_LIMIT
   Config directive: function_invocation_limit <num>.  Default: 2500
 
   This directive sets the maximum number of times that a command may make
-  function calls.  If the invocation limit is exceeded, the string 
+  function calls.  If the invocation limit is exceeded, the string
   '#-1 FUNCTION INVOCATION LIMIT EXCEEDED' is returned.  This limit is
   intended to prevent long hangs from creative uses of u() and iter().
   Note: @search is treated specially, each object examined with the
@@ -2193,24 +2195,34 @@ HELP_INDEX
 
   Related Topics: help, @readcache, help_file
 
-& parent_recursion_limit
+& PARENT_RECURSION_LIMIT
+PARENT_RECURSION_LIMIT
+
   Config directive: parent_recursion_limit <num>.  Default: 10
- 
+
   This directive specifies how far back to check parents for commands
-  and attributes. 
+  and attributes.
 
-& plushelp_file
+& PLUSHELP_FILE
+PLUSHELP_FILE
+
   Config parameter: plushelp_file <path>.  Default: text/plushelp.txt
-  Specifies the name of the file containing the text used by the +help command.
-  See also: plushelp_index
 
-& plushelp_index
+  Specifies the name of the file containing the text used by the +help command.
+
+  Related Topics: plushelp_index
+
+& PLUSHELP_INDEX
+PLUSHELP_INDEX
+
   Config parameter: plushelp_index <path>.  Default: text/plushelp.indx
+
   Specifies the name of the index file used by the +help command.  This file
-  must be generated by mkindx from the plushelp file.  The contents of
-  this file are read in to a hash table when the game is started and whenever
-  a @readcache command is executed.
-  See also: @readcache, plushelp_file
+  must be generated by mkindx from the plushelp file.  The contents of this
+  file are read in to a hash table when the game is started and whenever a
+  @readcache command is executed.
+
+  Related Topics: @readcache, plushelp_file
 
 & wiznews_file
   Config parameter: wiznews_file <path>.  Default: text/wiznews.txt
@@ -2645,124 +2657,186 @@ OUTPUT_LIMIT
   Specifies how many bytes should be output before the output is flushed,
   and characters are lost.
 
-& page_cost
-  Config parameter: page_cost <amount>.  Default: 10
-  Specifies the cost of using the page command.
-  See also: page.
+& PAGE_COST
+PAGE_COST
 
-& paranoid_allocate
+  Config parameter: page_cost <amount>.  Default: 10
+
+  Specifies the cost of using the page command.
+
+  Related Topics: page.
+
+& PARANOID_ALLOCATE
+PARANOID_ALLOCATE
+
   Config parameter: paranoid_allocate <yes/no>.  Default: no
 
   Controls whether or not the game performs a consistency check on the entire
   set of xbuf buffers each time one is allocated or freed.  This check
-  involves making sure that nobody has written to the memory immediately before
-  and after each buffer.  Normally, only the buffer being allocated or freed
-  is checked.
+  involves making sure that nobody has written to the memory immediately
+  before and after each buffer.  Normally, only the buffer being allocated or
+  freed is checked.
 
-& paycheck
+& PAYCHECK
+PAYCHECK
+
   Config parameter: paycheck <amount>.  Default: 0
+
   Specifies the default amount of money that players receive each day they
   connect.  This parameter may be overridden by setting the ALLOWANCE
   attribute on the player to a different value.
-  See also: @allowance, earn_limit, starting_money.
 
-& pemit_any_object
+  Related Topics: @allowance, earn_limit, starting_money.
+
+& PEMIT_ANY_OBJECT
+PEMIT_ANY_OBJECT
+
   Config parameter: pemit_any_object <yes/no>.  Default: no
+
   Indicates whether or not players may @pemit to faraway objects they do not
   control.  It does not affect @pemits to faraway players, the
   pemit_far_players directive is used for that purpose.
-  See also: pemit_far_players.
 
-& pemit_far_players
+  Related Topics: pemit_far_players.
+
+& PEMIT_FAR_PLAYERS
+PEMIT_FAR_PLAYERS
+
   Config parameter: pemit_far_players <yes/no>.  Default: no
+
   Controls whether or not players may use the @pemit command to send messages
   to other connected players that are not in the same room.  The rules and
   costs for this form of @pemit are the same as for page.
-  See also: pemit_any_object.
 
-& permit_site
+  Related Topics: pemit_any_object.
+
+& PERMIT_SITE
+PERMIT_SITE
+
   Config parameter: permit_site <addr> <mask>.
+
   Indicates that connections are to be accepted and registration is not to be
   enforced from sites whose address matches the specified address when ANDed
   with the mask.  This directive is typically used to enable connections from
   a few selected hosts or subnets that would otherwise be disallowed by a
   forbid_site directive.  The default is all sites permitted, none forbidden.
-  See also: badsite_file, forbid_site, register_site, SITE LISTS.
 
-& player_flags
+  Related Topics: badsite_file, forbid_site, register_site, SITE LISTS.
+
+& PLAYER_FLAGS
+PLAYER_FLAGS
+
   Config parameter: player_flags <flags>.  Default: blank
+
   Modifies the set of flags that a player receives when it is created via the
   @pcreate command or via the connection screen.  Flags prefixed by a ! remove
   the indicated flag from the set.
-  See also: @list, exit_flags, robot_flags, room_flags, thing_flags.
 
-& player_listen
+  Related Topics: @list, exit_flags, robot_flags, room_flags, thing_flags.
+
+& PLAYER_LISTEN
+PLAYER_LISTEN
+
   Config parameter: player_listen.  Default: no
+
   Indicates whether the Listen, Aahear, Ahear, and Amhear attributes on
   player objects are to be obeyed.
 
-& player_match_own_commands
+& PLAYER_MATCH_OWN_COMMANDS
+PLAYER_MATCH_OWN_COMMANDS
+
   Config parameter: player_match_own_commands <yes/no>.  Default: no
+
   Specifies whether or not players should check themselves for $-commands.
   This parameter is only checked if the match_own_commands parameter is
   set to yes.
-  See also: match_own_commands.
 
-& player_name_spaces
+  Related Topics: match_own_commands.
+
+& PLAYER_NAME_SPACES
+PLAYER_NAME_SPACES
+
   Config parameter: player_name_spaces.  Default: yes
 
   Specifies whether or not player names are permitted to contain spaces.
 
-& player_queue_limit
+& PLAYER_QUEUE_LIMIT
+PLAYER_QUEUE_LIMIT
+
   Config parameter: player_queue_limit.  Default: 100
+
   Sets the maximum number of commands that non-wizard players may have on the
   queue at one time.  An attempt to queue more commands than allowed will
   halt the object performing the command.
 
-& player_quota
+& PLAYER_QUOTA
+PLAYER_QUOTA
+
   Config parameter: player_quota <amount>.  Default: 1
+
   Sets how much quota it costs to create a robot player (and also how much the
   remaining quota is increased when a robot is @destroyed.
-  See also: @quota, exit_quota, room_quota, thing_quota, QUOTAS.
 
-& player_starting_home
+  Related Topics: @quota, exit_quota, room_quota, thing_quota, QUOTAS.
+
+& PLAYER_STARTING_HOME
+PLAYER_STARTING_HOME
+
   Config parameter: player_starting_home.  Default: <player_starting_room>
+
   Specifies the room to which the home of new players is set.  If this
   parameter has not been set, then the value of the player_starting_room
   parameter is used instead.
-  See also: default_home, player_starting_room, @pcreate, player_flags.
 
-& player_starting_room
+  Related Topics: default_home, player_starting_room, @pcreate, player_flags.
+
+& PLAYER_STARTING_ROOM
+PLAYER_STARTING_ROOM
+
   Config parameter: player_starting_room.  Default: 0
+
   Specifies the room that new players start out in.  If the
   player_starting_home parameter has not been set, then player_starting_room
   is used for both.
-  See also: player_starting_home, @pcreate, player_flags.
+
+  Related Topics: player_starting_home, @pcreate, player_flags.
 
 & port
   Config parameter: port <port>.  Default: 6250
   Specifies the IP port on which the game listens for new connections.
 
-& postdump_message
+& POSTDUMP_MESSAGE
+POSTDUMP_MESSAGE
+
   Config parameter: postdump_message <message>.  Default: blank
+
   Sets the message that is sent to everyone after a database dump
   whether automatically or via the @dump command.
-  See also: @dump, dump_message.
 
-& public_flags
+  Related Topics: @dump, dump_message.
+
+& PUBLIC_FLAGS
+PUBLIC_FLAGS
+
   Config parameter: public_flags <yes/no>.  Default: yes
+
   If enabled, indicates that players may get the flags of any object with the
   flags() function call.  Otherwise, they may only get the flags for objects
   that are examinable by them.
-  See also: flags().
 
-& public_channel
+  Related Topics: flags().
+
+& PUBLIC_CHANNEL
+PUBLIC_CHANNEL
+
   Config parameter: public_channel <name>. Default: Public
+
   Specifies the name of the channel that new players join when they are
   created. You must have previously created the channel. To disable this
   feature, simply set this parameter to nothing.
-  See also: guests_channel.
- 
+
+  Related Topics: guests_channel.
+
 & queue_active_chunk
   Config parameter: queue_active_chunk <num>.  Default: 0
   Specifies the number of commands to be run from the player queue when the
