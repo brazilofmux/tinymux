@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.56 2001-06-27 16:31:50 sdennis Exp $
+// $Id: functions.cpp,v 1.57 2001-06-27 17:13:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4706,6 +4706,7 @@ FUNCTION(fun_search)
             break;
         }
     }
+    DbrefToBuffer_Final(&pContext);
     olist_pop();
 }
 
