@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.5 2003-02-03 15:00:34 sdennis Exp $
+// $Id: stringutil.h,v 1.6 2003-02-03 19:38:42 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -159,7 +159,7 @@ BOOL ItemToList_AddString(ITL *pContext, char *pStr);
 BOOL ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr);
 void ItemToList_Final(ITL *pContext);
 
-int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va);
+int DCL_CDECL mux_vsnprintf(char *buff, int count, const char *fmt, va_list va);
 int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);
 
 typedef struct

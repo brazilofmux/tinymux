@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.11 2003-02-03 15:00:34 sdennis Exp $
+// $Id: stringutil.cpp,v 1.12 2003-02-03 19:38:42 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3207,14 +3207,14 @@ extern char *vsprintf(char *, char *, va_list);
 #define VSNPRINTF vsnprintf
 #endif // WIN32
 
-// Tiny_vsnprintf - Is an sprintf-like function that will not overflow
+// mux_vsnprintf - Is an sprintf-like function that will not overflow
 // a buffer of specific size. The size is give by count, and count
 // should be chosen to include the '\0' termination.
 //
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
 //
-int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va)
+int DCL_CDECL mux_vsnprintf(char *buff, int count, const char *fmt, va_list va)
 {
     // From the manuals:
     //

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.4 2003-02-03 06:01:48 sdennis Exp $
+// $Id: conf.cpp,v 1.5 2003-02-03 19:38:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -334,7 +334,7 @@ void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...)
     va_start(ap, fmt);
 
     char *buf = alloc_lbuf("cf_log_syntax");
-    Tiny_vsnprintf(buf, LBUF_SIZE, fmt, ap);
+    mux_vsnprintf(buf, LBUF_SIZE, fmt, ap);
     if (mudstate.bReadingConfiguration)
     {
         STARTLOG(LOG_STARTUP, "CNF", "SYNTX")
