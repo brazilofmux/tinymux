@@ -7190,8 +7190,8 @@ ADD()
     > say add(5,3,7,-4)
     You say "11"
 
-  Related Topics: dec(), div(), iadd(), idiv(), imul(), inc(), isub(),
-            mod(), mul(), sub().
+  Related Topics: dec(), iadd(), idiv(), imul(), inc(), isub(),
+            fdiv(), mod(), mul(), sub().
 
 & IADD()
 IADD()
@@ -7208,8 +7208,8 @@ IADD()
     > say iadd(5,3,7,-4)
     You say "11"
 
-  Related Topics: add(), dec(), div(), idiv(), imul(), inc(), isub(),
-            mod(), mul(), sub().
+  Related Topics: add(), dec(), idiv(), imul(), inc(), isub(), mod(),
+            mul(), sub().
 & LADD()
 LADD()
 
@@ -7259,8 +7259,8 @@ SUB()
     > say sub(5,2)
     You say "3"
 
-  Related Topics: add(), dec(), div(), iadd(), idiv(), imul(), inc(),
-            isub(), mod(), mul().
+  Related Topics: add(), dec(), iadd(), idiv(), imul(), inc(), isub(),
+            fdiv(), mod(), mul().
 
 & ISUB()
 ISUB()
@@ -7275,8 +7275,8 @@ ISUB()
     > say isub(5,2)
     You say "3"
 
-  Related Topics: add(), dec(), div(), iadd(), idiv(), imul(), inc(), mod(),
-            mul(), sub().
+  Related Topics: add(), dec(), iadd(), idiv(), imul(), inc(), mod(),
+            sub().
 
 & MUL()
 MUL()
@@ -7293,8 +7293,8 @@ MUL()
     > say mul(3,5,-2)
     You say "-30"
 
-  Related Topics: add(), div(), fdiv(), iadd(), imul(), isub(), mod()
-            round(), sub(), trunc().
+  Related Topics: add(), fdiv(), iadd(), idiv(), imul(), isub(),
+            mod(), round(), sub(), trunc().
 
 & IMUL()
 IMUL()
@@ -7311,7 +7311,7 @@ IMUL()
     > say imul(3,5,-2)
     You say "-30"
 
-  Related Topics: add(), div(), fdiv(), iadd(), isub(), mod(), mul(),
+  Related Topics: add(), fdiv(), iadd(), idiv(), isub(), mod(), mul(),
             round(), sub(), trunc().
 
 & IDIV()
@@ -7346,6 +7346,15 @@ IDIV()
 
   Related Topics: fdiv(), floordiv(), iadd(), imul(), isub(), mod(),
                   remainder().
+
+& DIV()
+DIV()
+
+  FUNCTION: div(<number1>,<number2>)
+
+  div() is an alias for idiv().
+
+  Related Topics: idiv().
 
 & FLOORDIV()
 FLOORDIV()
@@ -7404,7 +7413,7 @@ FDIV()
     > say fdiv(10,3.5)
     You say "2.857143"
 
-  Related Topics: add(), div(), mod(), mul(), round(), sub(), trunc().
+  Related Topics: add(), mod(), mul(), round(), sub(), trunc().
 
 & MOD()
 MOD()
@@ -9580,7 +9589,7 @@ FLOOR()
     > say floor(-5.2)
     You say "-6"
 
-  Related Topics: ceil(), div(), mod(), round(), trunc().
+  Related Topics: ceil(), fdiv(), mod(), round(), trunc().
 
 & CEIL()
 CEIL()
@@ -9602,7 +9611,7 @@ CEIL()
     > say ceil(-5.2)
     You say "-5"
 
-  Related Topics: div(), floor(), mod(), round(), trunc().
+  Related Topics: fdiv(), floor(), idiv(), mod(), round(), trunc().
 
 & TRUNC()
 TRUNC()
@@ -9624,7 +9633,7 @@ TRUNC()
     > say trunc(-5.2)
     You say "-5"
 
-  Related Topics: div(), floor(), mod(), round().
+  Related Topics: fdiv(), floor(), mod(), round().
 
 & ROUND()
 ROUND()
@@ -9646,7 +9655,7 @@ ROUND()
     > say round(-5.5,0)
     You say "-6"
 
-  Related Topics: div(), floor(), mod(), trunc().
+  Related Topics: fdiv(), floor(), mod(), trunc().
 
 & SQRT()
 SQRT()
