@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.178 2002-08-22 01:12:09 sdennis Exp $
+// $Id: functions.cpp,v 1.179 2002-09-25 20:20:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2086,14 +2086,15 @@ FUNCTION(fun_loc)
 
 FUNCTION(fun_where)
 {
-    dbref it;
-
-    it = match_thing(player, fargs[0]);
+    dbref it = match_thing(player, fargs[0]);
     if (locatable(player, it, cause))
+    {
         safe_tprintf_str(buff, bufc, "#%d", where_is(it));
+    }
     else
+    {
         safe_nothing(buff, bufc);
-    return;
+    }
 }
 
 /*
@@ -2103,19 +2104,27 @@ FUNCTION(fun_where)
 
 FUNCTION(fun_rloc)
 {
-    int i, levels;
-    dbref it;
-
-    levels = Tiny_atol(fargs[1]);
+    int levels = Tiny_atol(fargs[1]);
     if (levels > mudconf.ntfy_nest_lim)
+    {
         levels = mudconf.ntfy_nest_lim;
+    }
 
-    it = match_thing(player, fargs[0]);
-    if (locatable(player, it, cause)) {
-        for (i = 0; i < levels; i++) {
-            if (!Good_obj(it) || !Has_location(it))
+    dbref it = match_thing(player, fargs[0]);
+    if (locatable(player, it, cause))
+    {
+        for (int i = 0; i < levels; i++)
+        {
+            if (  Good_obj(it)
+               && (  isExit(it)
+                  || Has_location(it)))
+            {
+                it = Location(it);
+            }
+            else
+            {
                 break;
-            it = Location(it);
+            }
         }
         safe_tprintf_str(buff, bufc, "#%d", it);
         return;
