@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.14 2001-03-23 08:46:35 sdennis Exp $
+// $Id: look.cpp,v 1.15 2001-03-23 09:11:06 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -618,7 +618,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         {
 #ifdef WOD_REALMS
             if (  can_see(player, thing, can_see_loc)
-               && (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisiblity(player,
+               && (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(player,
                                                 thing, ACTION_IS_STATIONARY)) )
 #else
             if (can_see(player, thing, can_see_loc))
