@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.7 2002-06-13 22:12:46 jake Exp $
+// $Id: netcommon.cpp,v 1.8 2002-06-21 00:19:04 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2444,57 +2444,50 @@ FUNCTION(fun_doing)
 {
     if (is_rational(fargs[0]))
     {
-        int foundit = 0;
+        SOCKET s = Tiny_atol(fargs[0]);
+        BOOL bFound = FALSE;
         DESC *d;
         DESC_ITER_CONN(d)
         {
-            if (((long)d->descriptor) == Tiny_atol(fargs[0])) 
+            if (d->descriptor == s) 
             {
-                    foundit = 1;
-                    break;
+                bFound = TRUE;
+                break;
             }
         }
-        if(foundit)
+        if (  bFound
+           && (  d->player == executor
+              || Wizard_Who(executor)))
         {
-            if (!((d->player == executor) || Wizard_Who(executor)))
-            {
-                safe_ltoa(NOTHING, buff, bufc);
-                return;
-            }
-            else
-            {
-                safe_str(d->doing, buff, bufc);
-                return;
-            }
+            safe_str(d->doing, buff, bufc);
         }
         else
         {
-            safe_ltoa(NOTHING, buff, bufc);
-            return;
+            safe_nothing(buff, bufc);
         }
-    } else {
-    dbref victim = lookup_player(executor, fargs[0], 1);
-    if (victim == NOTHING)
-    {
-        safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
-        return;
     }
-
-    if (!Wizard_Who(executor) && Hidden(victim))
+    else
     {
-        safe_str("#-1 NOT A CONNECTED PLAYER", buff, bufc);
-        return;
-    }
-
-    for (DESC *d = descriptor_list; d; d = d->next)
-    {
-        if (d->player == victim)
+        dbref victim = lookup_player(executor, fargs[0], 1);
+        if (victim == NOTHING)
         {
-            safe_str(d->doing, buff, bufc);
+            safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
             return;
         }
-    }
-    safe_str("#-1 NOT A CONNECTED PLAYER", buff, bufc);
+    
+        if (  Wizard_Who(executor)
+           || !Hidden(victim))
+        {
+            for (DESC *d = descriptor_list; d; d = d->next)
+            {
+                if (d->player == victim)
+                {
+                    safe_str(d->doing, buff, bufc);
+                    return;
+                }
+            }
+        }
+        safe_str("#-1 NOT A CONNECTED PLAYER", buff, bufc);
     }
 }
 
