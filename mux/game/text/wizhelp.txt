@@ -406,6 +406,81 @@
 
   Related Topics: @drain, @notify, kill, HALTED, SEMAPHORES.
 
+& @ICMD
+@ICMD
+
+  Command: @icmd</switch> <player [= arguments]>
+
+  This command sets personal command permissions on a player.
+  It only is useful for removing commands and not granting them.
+  This command is available only to immortals.
+  Possible switches are:
+    /ON       - Turn on personal command parsing so that it checks
+                against invalid commands for the player. (Default)
+    /OFF      - Turn off personal command parsing so that commands
+                by player parses normally.
+    /DISABLE  - Disables the given command so it returns a
+                Permission Denied. (Default)
+    /IGNORE   - This command actually removes from existance the
+                specified commands from the user's standpoint so
+                that it is skipped upon command execution checks.
+    /CHECK    - Displays a list of the specified players current
+                disabled commands and at what level.
+                1=disabled   2=ignored
+    /CLEAR    - Removes all icmd information from player.
+
+{ Type 'wizhelp @icmd2' for more switches }
+
+& @ICMD2
+@ICMD (continued)
+
+  Command: @icmd</switch> <player [= arguments]>
+  Continued Switches:
+
+    /IROOM    - This sets commands ignored on the location.
+                This is a NON-PLAYER.
+    /DROOM    - This sets commands disabled on the location.
+                This is a NON-PLAYER.
+    /CROOM    - Clears disabled/ignored commands on target location.
+                This is a NON-PLAYER.
+    /LROOM    - List disabled/ignored commands on target location.
+                This is a NON-PLAYER.
+    /LALLROOM - List all disabled/ignored commands at location
+                and zones from location.  Listings that start with
+                'z' are zonemasters.  Anything with a '*' shows
+                that the location has the IGNOREZONE @toggle.
+
+{ Type 'wizhelp @icmd3' for examples and syntax }
+
+& @ICMD3
+@ICMD (continued)
+
+  Command: @icmd</switch> <player [= arguments]>
+  
+  The commands can be specified on the player in the form of:
+  COMMAND, !COMMAND, COMMAND, ..., etc
+  
+  To remove the command from the player, a ! must be specified.
+  To change the level from DISABLE to IGNORE or visa versa, it
+  must first be REMOVED then ADDED.  For example:
+  
+    @icmd/disable TinyJerk=page, whisper, @emit, @pemit
+    @icmd/ignore TinyJerk=!@pemit, !@emit, @pemit, @emit
+  
+  The above would first set all four to disable.  The second
+  would remove @emit and @pemit and then re-add it as ignored.
+  The /disable switch is the default and assumed if no switches
+  are specified.  All aliases are taken into effect automatically.
+  For rooms you could do the following:
+    
+    @icmd/droom here=page, whisper, @emit, @pemit
+    @icmd/iroom here=!@pemit, !@emit, @pemit, @emit
+  
+  Example:  @icmd/ignore majortwit=page,",:,say,pose,@emit,@pemit,whisper,;
+            @icmd/ignore dimwit=page,!say,!",pose,:
+
+  Related Topics: access
+
 & @KICK
 @KICK
 
