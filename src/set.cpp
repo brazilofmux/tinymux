@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.19 2002-02-24 21:04:27 sdennis Exp $
+// $Id: set.cpp,v 1.20 2002-03-01 05:39:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -856,6 +856,7 @@ void do_chown
             safe_str(p, buff, &bp);
             p = tprintf("%s(#%d).", Name(nOwnerNew), nOwnerNew);
             safe_str(p, buff, &bp);
+            *bp = '\0';
             notify_quiet(player, buff);
             free_lbuf(buff);
         }
