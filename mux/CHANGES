@@ -81,6 +81,9 @@ Feature Additions:
  -- SUSPECT messages now report partial connections/disconnections. Added by
     Jake.
  -- Jake added @if (originally from ChaoticMUX).
+ -- Jake added Modified timestamp attribute.
+ -- Jake added mtime() function, to retrieve Modified. Aliased to modifytime
+    and lastmodify for Rhost and TM3 compatibility.
 
 Bug Fixes:
 ~~~~~~~~~
