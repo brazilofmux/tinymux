@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.110 2004-06-30 18:14:40 sdennis Exp $
+// $Id: functions.cpp,v 1.111 2004-07-06 06:45:25 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -5105,7 +5105,7 @@ FUNCTION(fun_secure)
 }
 
 // fun_escape: This function prepends a '\' to the beginning of a
-// string and before any character which occurs in the set "%\[]{};".
+// string and before any character which occurs in the set '%\[]{};,()^$'.
 // It handles ANSI by not treating the '[' character within an ANSI
 // sequence as a special character.
 //
