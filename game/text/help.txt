@@ -10012,7 +10012,13 @@ VALID()
   of characters.
 
 & CMDS()
-  Function: cmds(<player>)
+CMDS()
+
+  FUNCTION: cmds(<player>)
+  
+  Returns the number of commands entered by a connected 'player'.
+  This function returns -1 if the enactor has insufficient permission
+  (i.e., not self and no Wizard_Who power).
   
   Example:
     > say cmds(me)
@@ -10020,12 +10026,12 @@ VALID()
     > say cmds(me)
     You say "101"
   
-  Returns the number of commands entered by a connected 'player'.
-  This function returns -1 if the enactor has insufficient permission
-  (i.e., not self and no Wizard_Who power).
+  Related Topics:
 
 & LCMDS()
-  Function: lcmds(<object>)
+LCMDS()
+
+  FUNCTION: lcmds(<object>)
 
   Returns the attribute names of any commands on a specific <object>
   
