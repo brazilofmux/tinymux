@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.7 2000-04-16 08:05:22 sdennis Exp $
+// $Id: db.cpp,v 1.8 2000-04-16 08:38:24 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1605,7 +1605,7 @@ void atr_clr(dbref thing, int atr)
 
     if (db[thing].at_count < 0)
     {
-        Log.WriteBuffer("ABORT! db.cpp, negative attribute count in atr_clr().\n");
+        Log.WriteString("ABORT! db.cpp, negative attribute count in atr_clr().\n");
         Log.Flush();
         abort();
     }
