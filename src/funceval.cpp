@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.72 2001-11-20 05:17:54 sdennis Exp $
+// $Id: funceval.cpp,v 1.73 2001-11-23 20:26:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -677,23 +677,28 @@ FUNCTION(fun_null)
 
 FUNCTION(fun_squish)
 {
-    char *p, *q, *bp;
-
-    bp = alloc_lbuf("fun_squish");
-    strcpy(bp, fargs[0]);
-    p = q = bp;
-    while (*p) {
-        while (*p && (*p != ' '))
-            *q++ = *p++;
-        while (*p && (*p == ' '))
-            p++;
-        if (*p)
-            *q++ = ' ';
+    if (nfargs == 0)
+    {
+        return;
     }
-    *q = '\0';
 
-    safe_str(bp, buff, bufc);
-    free_lbuf(bp);
+    char sep;
+    varargs_preamble(2);
+
+    char *p;
+    char *q = fargs[0];
+    while ((p = strchr(q, sep)) != NULL)
+    {
+        p = p + 1;
+        size_t nLen = p - q;
+        safe_copy_buf(q, nLen, buff, bufc);
+        q = p;
+        while (*q == sep)
+        {
+            q++;
+        }
+    }
+    safe_str(q, buff, bufc);
 }
 
 FUNCTION(fun_stripansi)

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.104 2001-11-22 19:15:45 sdennis Exp $
+// $Id: functions.cpp,v 1.105 2001-11-23 20:26:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6801,7 +6801,7 @@ FUN flist[] =
     {"SPACE",    fun_space,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SPLICE",   fun_splice,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
     {"SQRT",     fun_sqrt,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SQUISH",   fun_squish,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SQUISH",   fun_squish,   MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"STARTTIME",fun_starttime,MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"STATS",    fun_stats,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"STRCAT",   fun_strcat,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
