@@ -386,6 +386,7 @@ Bug Fixes:
      paging an unconnected player.
  --  Bug #661 - comtitles near the maximum length were truncated when the game
      first starts.
+ --  Bug #693 - TRACE with large output causes SIGSEGV.
 
 
 Performance Enhancements:
