@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.80 2001-12-29 18:58:05 sdennis Exp $
+// $Id: funceval.cpp,v 1.81 2001-12-30 05:21:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -662,6 +662,19 @@ FUNCTION(fun_objeval)
     TinyExec(buff, bufc, 0, obj, cause, EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     free_lbuf(name);
     mudstate.nObjEvalNest--;
+}
+
+FUNCTION(fun_localize)
+{
+    char *preserve[MAX_GLOBAL_REGS];
+    int preserve_len[MAX_GLOBAL_REGS];
+    save_global_regs("fun_localize", preserve, preserve_len);
+
+    char *str = fargs[0];
+    TinyExec(buff, bufc, 0, player, cause,
+        EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
+
+    restore_global_regs("fun_localize", preserve, preserve_len);
 }
 
 FUNCTION(fun_null)

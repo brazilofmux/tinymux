@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.122 2001-12-29 19:25:15 sdennis Exp $
+// $Id: functions.cpp,v 1.123 2001-12-30 05:21:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -71,6 +71,7 @@ XFUNCTION(fun_children);
 XFUNCTION(fun_encrypt);
 XFUNCTION(fun_decrypt);
 XFUNCTION(fun_objeval);
+XFUNCTION(fun_localize);
 XFUNCTION(fun_null);
 XFUNCTION(fun_squish);
 XFUNCTION(fun_stripansi);
@@ -2001,9 +2002,7 @@ FUNCTION(fun_v)
 
 FUNCTION(fun_s)
 {
-    char *str;
-
-    str = fargs[0];
+    char *str = fargs[0];
     TinyExec(buff, bufc, 0, player, cause, EV_FIGNORE | EV_EVAL, &str, cargs, ncargs);
 }
 
@@ -6824,6 +6823,7 @@ FUN flist[] =
     {"LNUM",     fun_lnum,     MAX_ARG, 0,  3,       0, CA_PUBLIC},
     {"LOC",      fun_loc,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LOCATE",   fun_locate,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"LOCALIZE", fun_localize, MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
     {"LOCK",     fun_lock,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LOG",      fun_log,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
