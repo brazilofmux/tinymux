@@ -49,8 +49,11 @@ Feature Additions:
     but @ps would show them if there were.  @halt and @kick would also
     interact with them.
  -- Added CHOOSE().  CHOOSE() is like PICKRAND() except that the
-    distribution is weighted.
+    distribution is weighted.  The idea was originally implemented by
+    Catherine@Firan.  The code included here is based on a
+    re-implementation of that in TM3.1 by Lydia.
  -- Added HELPTEXT() to allow easier softcode access to helpfile topics.
+    Re-implemented from TM3.1 help topic.
 
 
 Bug Fixes:
