@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.4 2000-05-05 19:48:48 sdennis Exp $
+// $Id: timeutil.cpp,v 1.5 2000-05-19 17:15:43 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -284,9 +284,6 @@ void CLinearTimeAbsolute::SetSeconds(INT64 arg_tSeconds)
 
     // Epoch difference between (00:00:00 UTC, January 1, 1970) and
     // (00:00:00 UTC, January 1, 1601).
-    //
-    // TODO: Verify that I haven't included an extra 8 hours in here
-    // because I'm in PST zone.
     //
     m_tAbsolute += EPOCH_OFFSET;
 }
