@@ -2211,7 +2211,7 @@ Related Topics: @name.
   A <msg-list> is one of the following:
         A single msg # (ex: 3)
         A message range (ex: 2-5, -7, 3-)
-        A sender (ex: *lauren)
+        A sender (ex: *Hunger)
         An age of mail in days (ex: ~3 (exactly 3), <2, >1)
            "days" here means 24-hour periods from the current time.
         One of the following: "read", "unread", "cleared", "tagged", "urgent"
@@ -2355,7 +2355,7 @@ Related Topics: @name.
 
   COMMAND: @nameformat <object> [=<format>]
 
-  By default, when an object is looked at, the object's real name is shown.
+  By default, when an object is looked at, the object's name is shown.
   And, if you can link to the object, it's flag letters and dbref are also
   shown. However, with @nameformat, you can control exactly what is shown.
 
@@ -5554,7 +5554,7 @@ DIE()
   For example, DIE(2, 6) would roll "2d6" - two six-sided dice,
   generating a result in the range 2-12.
 
-  Related Topics:
+  Related Topics: lrand(), pickrand(), rand(), shuffle()
 
 & DIGITTIME()
 DIGITTIME()
@@ -5975,10 +5975,13 @@ EXITS
 
   You may pick up exits that you own, and drop exits into locations that
   you own.  When you pick up or drop an exit, anyone in the exit's new
-  location may use the exit and travel to its destination.
+  location may use the exit and travel to its destination.  Exits may also
+  be @teleported from one room to another.
 
   If an exit is set DARK it will not show up in the list of obvious exits in
   a room.
+
+  If multiple exits match in name, MUX chooses between them randomly.
 
   Related Topics: @link, @open.
 
@@ -8254,7 +8257,7 @@ LRAND()
   For instance, 'lrand(3, 6, 5)' would generate five random numbers
   in the range 3 - 6 (i.e., 3, 4, 5, or 6), such as '4 6 3 5 6'.
 
-  Related topics: rand(), die(), lnum()
+  Related Topics: die(), lnum(), pickrand(), rand(), shuffle()
 
 & LROOMS()
 LROOMS()
@@ -8475,8 +8478,8 @@ MAIL-OTHER
         afterward). If no msg-list is specified, all messages in the
         current folder are tagged/untagged. If "all" is given as the
         msg-list, all mail in *all* folders is tagged/untagged.
-        (Ex: To clear all mail from Lauren and Crusade,
-        @mail/tag *lauren, @mail/tag *crusade, @mail/clear tagged,
+        (Ex: To clear all mail from Temperance and Sloth,
+        @mail/tag *temperance, @mail/tag *sloth, @mail/clear tagged,
         @mail/untag all).
 
 { 'help mail-other2' for more }
@@ -8744,7 +8747,7 @@ MEMBER()
     > say member(This is a member test, *e*)
     You say "0"
     > say member(This is a member test, is a)
-    You say "#-1 CAN ONLY TEST ONE ELEMENT"
+    You say "0"
 
   Related Topics: LISTS, match(), strmatch().
 
@@ -9763,7 +9766,7 @@ PICKRAND()
     > say pickrand(foo bar baz)
     You say "bar"
 
-  Related Topics: rand(), lrand(), die().
+  Related Topics: die(), lrand(), rand(), rand(), shuffle()
 
 & PIPING
 PIPING
@@ -9784,7 +9787,7 @@ PIPING
   > &SAYDESC me=$+saydesc *:look %0 ;| say %r%|
   > +saydesc me
   You say "
-  Lauren(#5PXMWc)
+  Idoru(#5PXMWc)
   You see nothing special.
   "
 
@@ -10087,7 +10090,7 @@ RAND()
     > say rand(10)
     You say "1"
 
-  Related Topics:
+  Related Topics: die(), lrand(), pickrand(), shuffle()
 
 & READ
 READ
@@ -10293,20 +10296,21 @@ REGMATCHI()
 
 & REGRAB()
 REGRAB()
-REGRABI()
-REGRABALL()
-REGRABALLI()
 
   FUNCTION: regrab(<list>, <regexp>[, <separator>])
+            regrabi(<list>, <regexp>[, <separator>])
             regraball(<list>, <regexp>[, <separator>])
+            regraballi(<list>, <regexp>[, <separator>])
 
   These functions act like grab() and graball(), respectively, except
   instead of matching with a wildcard pattern, they use a regular
-  expression. regrab() returns the first element of the list that matches
-  the regexp, and regraball() returns all the elements that match.
-  They are case-sensitive. The versions ending in 'i' are case-insensitive.
+  expression.  regrab() returns the first element of the list that
+  matches the regexp, and regraball() returns all the elements that
+  match.  They are case-sensitive. The versions ending in 'i' are
+  case-insensitive.
 
-  See 'help regexp syntax' for an explanation of regular expressions.
+  Related Topics: grab(), graball(), regrabi(), regraball(),
+      regraballi(), regexp syntax.
 
 & REMAINDER()
 REMAINDER()
@@ -11057,7 +11061,7 @@ SHUFFLE()
     > say shuffle(foo bar baz gleep)
     You say "baz foo gleep bar"
 
-  Related Topics:
+  Related Topics: die(), lrand(), pickrand(), rand()
 
 & SIGN()
 SIGN()
