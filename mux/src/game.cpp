@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.40 2003-12-03 20:11:47 sdennis Exp $
+// $Id: game.cpp,v 1.41 2003-12-03 20:15:06 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -707,7 +707,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         if (  (key & MSG_ME)
            && pass_listen
            && pass_uselock
-           && mudstate.nHearNest <=2 )
+           && mudstate.nHearNest <= 2)
         {
             mudstate.nHearNest++;
             if (sender != target)
