@@ -1,15 +1,11 @@
-// svdrand.h -- Random Numbers, CLinearTimeAbsolute, and CLinearTimeDelta
-// modules
+// svdrand.h -- Random Numbers
 //
-// $Id: svdrand.h,v 1.2 2000-04-21 18:07:39 sdennis Exp $
+// $Id: svdrand.h,v 1.3 2000-04-25 18:32:28 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
 // 
-// Date/Time code based on algorithms presented in "Calendrical Calculations",
-// Cambridge Press, 1998.
-//
-// RandomLong() and do_convtime() were derived from existing game server code.
+// RandomLong() was derived from existing game server code.
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -27,94 +23,4 @@ void SeedRandomNumberGenerator(void);
 double RandomFloat(double flLow, double flHigh);
 long RandomLong(long lLow, long lHigh);
 
-typedef struct
-{
-             short iYear;       // 1900 would be stored as 1900.
-    unsigned short iMonth;      // January is 1. December is 12.
-    unsigned short iDayOfWeek;  // 0 is Sunday, 1 is Monday, etc.
-    unsigned short iDayOfMonth; // Day of Month, 1..31
-    unsigned short iDayOfYear;  // January 1st is 1, etc.
-    unsigned short iHour;
-    unsigned short iMinute;
-    unsigned short iSecond;
-    unsigned short iMillisecond; // Milliseconds less than a second.
-    unsigned short iMicrosecond; // Microseconds less than a Millisecond.
-    unsigned short iNanosecond;  // Nanoseconds less than a Microsecond.
-} FIELDEDTIME;
-
-class CLinearTimeAbsolute
-{
-    friend class CLinearTimeDelta;
-    friend int operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend int operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend int operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend int operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd); 
-    friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd); 
-    friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-
-private:
-    INT64  m_tAbsolute;
-    static int m_nCount;
-    static char m_Buffer[204];
-
-public:
-    //CLinearTimeAbsolute(int tInitial);
-    CLinearTimeAbsolute(void);
-    CLinearTimeAbsolute(const CLinearTimeAbsolute& ltaOrigin, const CLinearTimeDelta& ltdOffset);
-    CLinearTimeAbsolute(const CLinearTimeAbsolute& lta);
-    void operator=(const CLinearTimeAbsolute& lta);
-    void operator+=(const CLinearTimeDelta& ltdOffset);
-    void operator-=(const CLinearTimeDelta& ltdOffset);
-
-    void GetUTC(void);
-    void GetLocal(void);
-
-    void  ReturnUniqueString(char *buffer);
-    char *ReturnDateString(void);
-    BOOL  ReturnFields(FIELDEDTIME *arg_tStruct);
-    INT64 ReturnSeconds(void);
-    char *ReturnSecondsString(void);
-
-    void SetSeconds(INT64 arg_tSeconds);
-    void SetSecondsString(char *arg_szSeconds);
-    BOOL SetFields(FIELDEDTIME *arg_tStruct);
-    BOOL SetString(const char *arg_tBuffer);
-};
-
-BOOL FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt);
-BOOL LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft);
-
-class CLinearTimeDelta
-{
-    friend class CLinearTimeAbsolute;
-    friend int operator<(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend int operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend int operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend CLinearTimeDelta operator-(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend int operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB);
-    friend CLinearTimeDelta operator*(const CLinearTimeDelta& ltdA, int nScaler);
-    friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& ltdA, const CLinearTimeDelta& ltdB);
-
-private:
-    INT64 m_tDelta;
-
-public:
-    CLinearTimeDelta(void);
-    CLinearTimeDelta(CLinearTimeAbsolute, CLinearTimeAbsolute);
-
-    void ReturnTimeValueStruct(struct timeval *tv);
-    long ReturnMilliseconds(void);
-    long ReturnDays(void);
-    long ReturnSeconds(void);
-
-    void SetTimeValueStruct(struct timeval *tv);
-    void SetMilliseconds(unsigned long arg_dwMilliseconds);
-    void SetSeconds(INT64 arg_tSeconds);
-    void Set100ns(INT64 arg_t100ns);
-
-    void operator+=(const CLinearTimeDelta& ltd);
-};
-
-#endif
+#endif // SVDRAND_H
