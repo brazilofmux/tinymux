@@ -8972,11 +8972,16 @@ SWITCH()
 
   FUNCTION: switch(<str>[,<pat1>,<res1>]...[,<dflt>])
 
-  The switch function compares <str> against <pat1>, <pat2>, etc (allowing *
-  to match any number of characters and ? to match any 1 character), and
-  returns the corresponding <resN> parameter for the first <patN> pattern
-  that matches.  If none match, then the default result <dflt> is returned.
+  The switch function compares <str> against each pattern, <patI>,
+  returning the result, <resI> that corresponds to the first pattern that
+  matches <str>. If none match, then the default result, <dflt>, is
+  returned.
 
+  Patterns may include * and ?. * matches any number of characters, and ?
+  matches any 1 character. Instead of pattern matching, it is also possible
+  to compare the alphabetic or numberic value of <str> with <pat> by using
+  the < and > operators.
+  
   Example:
     > say switch(c,*a*,A,*b*,B,*c*,C,*d*,D,E)
     You say "C"
