@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  September 2004
+Last Update:  October 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -115,6 +115,9 @@ Bug Fixes:
  -- Clarified help topics 'helpfile' and 'raw_helpfile'.
  -- The minimal set of guests were never being added back to the Guests
     channel.
+ -- @hook/igswitch tweaked so that if any switch from the user doesn't
+    match the built-in hardcoded switched, softcode has a chance to
+    process the command.
 
 
 Performance Enhancements:
