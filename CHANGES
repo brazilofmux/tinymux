@@ -78,6 +78,10 @@ Bug Fixes:
  -- Fixed memory leak of Bools upon a @backup or @dump/flatfile. Bug
     originated in MUX 1.6, first fixed in Chaotic MUX, and is already
     fixed in MUSH 3.0.
+ -- Left out a definition for SMALLEST_INT_GTE_NEG_QUOTIENT on Win32 which
+    affected FLOORDIV, REMAINDER, and dates with negative years. The
+    ./configure process on Unix builds it's own autoconf.h file. This is not
+    an issue for those running on Unix.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
