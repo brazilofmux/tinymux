@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.14 2004-08-16 05:57:44 sdennis Exp $
+// $Id: mguests.cpp,v 1.15 2004-09-21 04:18:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -15,6 +15,7 @@
 #include "attrs.h"
 #include "mguests.h"
 #include "powers.h"
+#include "comsys.h"
 
 #define GUEST_HYSTERESIS 20
 
@@ -159,6 +160,7 @@ const char *CGuests::Create(DESC *d)
                 // Release comsys and @mail state.
                 //
                 ReleaseAllResources(guest_player);
+				AddToGuestChannel(guest_player);
             }
 
             // Reset the flags back to the default.
@@ -298,7 +300,7 @@ dbref CGuests::MakeGuestChar(void)
     // Make the player.
     //
     const char *pmsg;
-    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, false, true, &pmsg);
+    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, false, &pmsg);
 
     // No Player Created?? Return error.
     //
@@ -311,6 +313,7 @@ dbref CGuests::MakeGuestChar(void)
     // Lets make the player a guest, move it into the starting room,
     // don't let it be a wizard, and setup other basics.
     //
+    AddToGuestChannel(player);
     s_Guest(player);
     move_object(player, mudconf.start_room);
     db[player].fs.word[FLAG_WORD1] &= ~WIZARD;
@@ -419,6 +422,16 @@ void CGuests::ListAll(dbref player)
     free_lbuf(LastSite);
     notify(player, tprintf("-----------------------------  Total Guests: %-3d -----------------------------", nGuests));
     free_lbuf(buff);
+}
+
+void CGuests::AddToGuestChannel(dbref player)
+{
+	if (  mudconf.guests_channel[0] != '\0'
+	   && mudconf.guests_channel_alias[0] != '\0')
+	{
+		do_addcom(player, player, player, 0, 2,
+			mudconf.guests_channel_alias, mudconf.guests_channel);
+	}
 }
 
 char CGuests::name[50];

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.30 2004-09-14 13:19:29 sdennis Exp $
+// $Id: externs.h,v 1.31 2004-09-21 04:18:40 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -161,7 +161,8 @@ extern void  destroy_obj(dbref);
 extern void  empty_obj(dbref);
 
 /* From player.cpp */
-extern dbref create_player(char *, char *, dbref, bool, bool, const char **pmsg);
+extern dbref create_player(char *name, char *pass, dbref executor, bool isrobot, const char **pmsg);
+extern void AddToPublicChannel(dbref player);
 extern bool add_player_name(dbref, const char *);
 extern bool delete_player_name(dbref, const char *);
 extern dbref lookup_player(dbref, char *, bool);

@@ -1,6 +1,6 @@
 // mguests.h
 //
-// $Id: mguests.h,v 1.2 2003-02-05 06:20:59 jake Exp $
+// $Id: mguests.h,v 1.3 2004-09-21 04:18:40 sdennis Exp $
 //
 
 #ifndef __MGUESTS_H
@@ -22,6 +22,7 @@ private:
     int   MakeGuestChar(void);     // Make the guest character
     void  DestroyGuestChar(dbref); // Destroy the guest character
     void  WipeAttrs(dbref guest);  // Wipe all the attrbutes
+	void  AddToGuestChannel(dbref player);
 
 public:
     CGuests(void);

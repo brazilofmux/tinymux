@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.51 2004-08-25 19:35:51 sdennis Exp $
+// $Id: db.cpp,v 1.52 2004-09-21 04:18:40 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2562,7 +2562,7 @@ void db_make_minimal(void)
     //
     load_player_names();
     const char *pmsg;
-    dbref obj = create_player("Wizard", "potrzebie", NOTHING, false, false, &pmsg);
+    dbref obj = create_player("Wizard", "potrzebie", NOTHING, false, &pmsg);
     s_Flags(obj, FLAG_WORD1, Flags(obj) | WIZARD);
     s_Powers(obj, 0);
     s_Powers2(obj, 0);

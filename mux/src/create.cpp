@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.13 2004-08-16 05:14:07 sdennis Exp $
+// $Id: create.cpp,v 1.14 2004-09-21 04:18:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -786,12 +786,13 @@ void do_pcreate
 {
     const char *pmsg;
     bool isrobot = (key == PCRE_ROBOT);
-    dbref newplayer = create_player(name, pass, executor, isrobot, false, &pmsg);
+    dbref newplayer = create_player(name, pass, executor, isrobot, &pmsg);
     if (newplayer == NOTHING)
     {
         notify_quiet(executor, tprintf("Failure creating '%s'.  %s", name, pmsg));
         return;
     }
+    AddToPublicChannel(newplayer);
     if (isrobot)
     {
         move_object(newplayer, Location(executor));

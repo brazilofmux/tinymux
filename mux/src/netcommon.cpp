@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.42 2004-08-16 05:14:07 sdennis Exp $
+// $Id: netcommon.cpp,v 1.43 2004-09-21 04:18:40 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2095,7 +2095,7 @@ static bool check_connect(DESC *d, char *msg)
         else
         {
             const char *pmsg;
-            player = create_player(user, password, NOTHING, false, false, &pmsg);
+            player = create_player(user, password, NOTHING, false, &pmsg);
             if (player == NOTHING)
             {
                 queue_write(d, pmsg);
@@ -2109,6 +2109,7 @@ static bool check_connect(DESC *d, char *msg)
             }
             else
             {
+                AddToPublicChannel(player);
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
                 sprintf(buff, "[%d/%s] Created ", d->descriptor, d->addr);
