@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.37 2001-06-27 14:38:08 sdennis Exp $
+// $Id: conf.cpp,v 1.38 2001-06-28 05:10:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -19,27 +19,23 @@
 #include "powers.h"
 #include "match.h"
 
-/*
- * ---------------------------------------------------------------------------
- * * CONFPARM: Data used to find fields in CONFDATA.
- */
-
+// ---------------------------------------------------------------------------
+// CONFPARM: Data used to find fields in CONFDATA.
+//
 typedef struct confparm
 {
-    char *pname;            // parm name 
+    char *pname;            // parm name
     int (*interpreter)(int *vp, char *str, void *pExtra, UINT32 nExtra,
-                       dbref player, char *cmd); // routine to interp parameter 
-    int flags;              // control flags 
-    int *loc;               // where to store value 
+                       dbref player, char *cmd); // routine to interp parameter
+    int flags;              // control flags
+    int *loc;               // where to store value
     void *pExtra;           // extra pointer for interpreter
-    UINT32 nExtra;          // extra data for interpreter 
+    UINT32 nExtra;          // extra data for interpreter
 } CONF;
 
-/*
- * ---------------------------------------------------------------------------
- * * External symbols.
- */
-
+// ---------------------------------------------------------------------------
+// External symbols.
+//
 CONFDATA mudconf;
 STATEDATA mudstate;
 
@@ -54,11 +50,9 @@ extern CONF conftable[];
 
 #endif
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_init: Initialize mudconf to default values.
- */
-
+// ---------------------------------------------------------------------------
+// cf_init: Initialize mudconf to default values.
+//
 void NDECL(cf_init)
 {
 #ifndef STANDALONE
@@ -123,7 +117,7 @@ void NDECL(cf_init)
 #if !defined(VMS) && !defined(WIN32)
     mudconf.fork_dump = 1;
     mudstate.dumping = 0;
-#endif // WIN32
+#endif
     mudconf.have_comsys = 1;
     mudconf.have_mailer = 1;
     mudconf.have_zones = 1;
@@ -255,7 +249,11 @@ void NDECL(cf_init)
     mudconf.stack_limit = 50;
     mudconf.cache_names = 1;
     mudconf.toad_recipient = -1;
-    mudconf.eval_comtitle = 1; // Should Comtitles Evaluate?
+    mudconf.eval_comtitle = 1;
+	strcpy(mudconf.log_prefix, "MUX");
+    mudconf.no_startup = FALSE;
+    mudconf.safe_wipe = FALSE;
+    mudconf.destroy_going_now = FALSE;
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = FALSE;
     mudstate.bCanRestart = FALSE;
@@ -357,21 +355,19 @@ void NDECL(cf_init)
     mudstate.db_size = 0;
     mudstate.freelist = NOTHING;
     mudstate.markbits = NULL;
-#endif // STANDALONE
+#endif
 }
 
 #ifndef STANDALONE
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_log_notfound: Log a 'parameter not found' error.
- */
-
+// ---------------------------------------------------------------------------
+// cf_log_notfound: Log a 'parameter not found' error.
+//
 void cf_log_notfound(dbref player, char *cmd, const char *thingname, char *thing)
 {
     char buff[LBUF_SIZE * 2];
 
-    if (mudstate.bReadingConfiguration) 
+    if (mudstate.bReadingConfiguration)
     {
         STARTLOG(LOG_STARTUP, "CNF", "NFND");
         sprintf(buff, "%s: %s %s not found", cmd, thingname, thing);
@@ -385,10 +381,9 @@ void cf_log_notfound(dbref player, char *cmd, const char *thingname, char *thing
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_log_syntax: Log a syntax error.
- */
+// ---------------------------------------------------------------------------
+// cf_log_syntax: Log a syntax error.
+//
 void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...)
 {
     va_list ap;
@@ -412,29 +407,22 @@ void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...)
     va_end(ap);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_status_from_succfail: Return command status from succ and fail info
- */
-
+// ---------------------------------------------------------------------------
+// cf_status_from_succfail: Return command status from succ and fail info
+//
 int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
 {
     char *buff;
 
-    /*
-     * If any successes, return SUCCESS(0) if no failures or * * * * *
-     * PARTIAL_SUCCESS(1) if any failures. 
-     */
-
+    // If any successes, return SUCCESS(0) if no failures or
+	// PARTIAL_SUCCESS(1) if any failures.
+    //
     if (success > 0)
         return ((failure == 0) ? 0 : 1);
 
-    /*
-     * No successes.  If no failures indicate nothing done. Always return 
-     * 
-     * *  * *  * *  * *  * * FAILURE(-1) 
-     */
-
+    // No successes.  If no failures indicate nothing done. Always return
+	// FAILURE(-1)
+    //
     if (failure == 0)
     {
         if (mudstate.bReadingConfiguration)
@@ -454,11 +442,9 @@ int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
     return -1;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_int: Set integer parameter.
- */
-
+// ---------------------------------------------------------------------------
+// cf_int: Set integer parameter.
+//
 CF_HAND(cf_int)
 {
     // Copy the numeric value to the parameter.
@@ -467,10 +453,9 @@ CF_HAND(cf_int)
     return 0;
 }
 
-/* ---------------------------------------------------------------------------
- * cf_bool: Set boolean parameter.
- */
-
+// ---------------------------------------------------------------------------
+// cf_bool: Set boolean parameter.
+//
 NAMETAB bool_names[] =
 {
     {(char *)"true",    1,  0,  1},
@@ -490,11 +475,9 @@ CF_HAND(cf_bool)
     return 0;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_option: Select one option from many choices.
- */
-
+// ---------------------------------------------------------------------------
+// cf_option: Select one option from many choices.
+//
 CF_HAND(cf_option)
 {
     int i;
@@ -509,11 +492,9 @@ CF_HAND(cf_option)
     return 0;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_string: Set string parameter.
- */
-
+// ---------------------------------------------------------------------------
+// cf_string: Set string parameter.
+//
 CF_HAND(cf_string)
 {
     char *pc = (char *)vp;
@@ -549,22 +530,18 @@ CF_HAND(cf_string)
     pc[nStr] = '\0';
 
 #ifdef WIN32
-    if (pc == mudconf.mud_name)
-    {
-        // We are changing the name of the MUD. Let the logger know.
-        //
-        Log.ChangePrefix(mudconf.mud_name);
-    }
-#endif // WIN32
+	if (pc == mudconf.log_prefix)
+	{
+		Log.ChangePrefix(pc);
+	}
+#endif
 
     return retval;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_string_dyn: Set string parameter using dynamically allocated memory.
- */
-
+// ---------------------------------------------------------------------------
+// cf_string_dyn: Set string parameter using dynamically allocated memory.
+//
 CF_HAND(cf_string_dyn)
 {
     char **ppc = (char **)vp;
@@ -575,10 +552,10 @@ CF_HAND(cf_string_dyn)
     int retval = 0;
     unsigned int nStr = strlen(str);
     if (nExtra && nStr >= nExtra)
-    {                   
+    {
         nStr = nExtra - 1;
         if (mudstate.bReadingConfiguration)
-        {  
+        {
             STARTLOG(LOG_STARTUP, "CNF", "NFND");
             char *logbuff = alloc_lbuf("cf_string.LOG");
             sprintf(logbuff, "%s: String truncated", cmd);
@@ -587,11 +564,11 @@ CF_HAND(cf_string_dyn)
             ENDLOG;
         }
         else
-        {  
+        {
             notify(player, "String truncated");
         }
         retval = 1;
-    }             
+    }
     char *confbuff = StringCloneLen(str, nStr);
 
     // Free previous memory for buffer.
@@ -602,14 +579,12 @@ CF_HAND(cf_string_dyn)
     }
     *ppc = confbuff;
 
-    return retval; 
+    return retval;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_alias: define a generic hash table alias.
- */
-
+// ---------------------------------------------------------------------------
+// cf_alias: define a generic hash table alias.
+//
 CF_HAND(cf_alias)
 {
     TINY_STRTOK_STATE tts;
@@ -638,11 +613,9 @@ CF_HAND(cf_alias)
     return -1;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_flagalias: define a flag alias.
- */
-
+// ---------------------------------------------------------------------------
+// cf_flagalias: define a flag alias.
+//
 CF_HAND(cf_flagalias)
 {
     TINY_STRTOK_STATE tts;
@@ -673,11 +646,9 @@ CF_HAND(cf_flagalias)
     return ((success > 0) ? 0 : -1);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_or_in_bits: OR in bits from namelist to a word.
- */
-
+// ---------------------------------------------------------------------------
+// cf_or_in_bits: OR in bits from namelist to a word.
+//
 CF_HAND(cf_or_in_bits)
 {
     int f, success, failure;
@@ -712,10 +683,9 @@ CF_HAND(cf_or_in_bits)
     return cf_status_from_succfail(player, cmd, success, failure);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_modify_bits: set or clear bits in a flag word from a namelist.
- */
+// ---------------------------------------------------------------------------
+// cf_modify_bits: set or clear bits in a flag word from a namelist.
+//
 CF_HAND(cf_modify_bits)
 {
     int f, negate, success, failure;
@@ -762,19 +732,15 @@ CF_HAND(cf_modify_bits)
     return cf_status_from_succfail(player, cmd, success, failure);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_set_bits: Clear flag word and then set specified bits from namelist.
- */
-
+// ---------------------------------------------------------------------------
+// cf_set_bits: Clear flag word and then set specified bits from namelist.
+//
 CF_HAND(cf_set_bits)
 {
     int f, success, failure;
 
-    /*
-     * Walk through the tokens 
-     */
-
+    // Walk through the tokens
+    //
     success = failure = 0;
     *vp = 0;
 
@@ -805,11 +771,9 @@ CF_HAND(cf_set_bits)
     return cf_status_from_succfail(player, cmd, success, failure);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_set_flags: Clear flag word and then set from a flags htab.
- */
-
+// ---------------------------------------------------------------------------
+// cf_set_flags: Clear flag word and then set from a flags htab.
+//
 CF_HAND(cf_set_flags)
 {
     int success, failure;
@@ -859,7 +823,7 @@ CF_HAND(cf_set_flags)
             failure++;
         }
 
-        // Get the next token 
+        // Get the next token
         //
         sp = Tiny_StrTokParse(&tts);
     }
@@ -877,11 +841,9 @@ CF_HAND(cf_set_flags)
     return -1;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_badname: Disallow use of player name/alias.
- */
-
+// ---------------------------------------------------------------------------
+// cf_badname: Disallow use of player name/alias.
+//
 CF_HAND(cf_badname)
 {
     if (nExtra)
@@ -1137,16 +1099,14 @@ BOOL isValidSubnetMask(unsigned long ulMask)
     return FALSE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_site: Update site information
- */
+// ---------------------------------------------------------------------------
+// cf_site: Update site information
 
 CF_HAND(cf_site)
 {
     struct in_addr addr_num, mask_num;
     unsigned long ulMask, ulNetBits;
-    
+
     char *addr_txt;
     char *mask_txt = strchr(str, '/');
     if (!mask_txt)
@@ -1218,21 +1178,21 @@ CF_HAND(cf_site)
         ulAddr &= ulMask;
         addr_num.s_addr = htonl(ulAddr);
     }
-    
+
     SITE *head = (SITE *) * vp;
 
     // Parse the access entry and allocate space for it.
     //
     SITE *site = (SITE *)MEMALLOC(sizeof(SITE));
     ISOUTOFMEMORY(site);
-    
+
     // Initialize the site entry.
     //
     site->address.s_addr = addr_num.s_addr;
     site->mask.s_addr = mask_num.s_addr;
     site->flag = nExtra;
     site->next = NULL;
-    
+
     // Link in the entry. Link it at the start if not initializing, at the
     // end if initializing. This is so that entries in the config file are
     // processed as you would think they would be, while entries made while
@@ -1262,11 +1222,9 @@ CF_HAND(cf_site)
     return 0;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_cf_access: Set access on config directives
- */
-
+// ---------------------------------------------------------------------------
+// cf_cf_access: Set access on config directives
+//
 CF_HAND(cf_cf_access)
 {
     CONF *tp;
@@ -1304,11 +1262,9 @@ CF_HAND(cf_cf_access)
     return -1;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_include: Read another config file.  Only valid during startup.
- */
-
+// ---------------------------------------------------------------------------
+// cf_include: Read another config file.  Only valid during startup.
+//
 CF_HAND(cf_include)
 {
     FILE *fp;
@@ -1399,9 +1355,8 @@ extern CF_HAND(cf_func_access);
 extern CF_HAND(cf_flag_access);
 extern CF_HAND(cf_art_rule);
 
-/* ---------------------------------------------------------------------------
- * conftable: Table for parsing the configuration file.
- */
+// ---------------------------------------------------------------------------
+// conftable: Table for parsing the configuration file.
 
 CONF conftable[] =
 {
@@ -1432,6 +1387,7 @@ CONF conftable[] =
     {"create_min_cost",           cf_int,         CA_GOD,    &mudconf.createmin,              NULL,               0},
     {"dark_sleepers",             cf_bool,        CA_GOD,    &mudconf.dark_sleepers,          NULL,               0},
     {"default_home",              cf_int,         CA_GOD,    &mudconf.default_home,           NULL,               0},
+    {"destroy_going_now",         cf_bool,        CA_GOD,    &mudconf.destroy_going_now,      NULL,               0},
     {"dig_cost",                  cf_int,         CA_GOD,    &mudconf.digcost,                NULL,               0},
     {"down_file",                 cf_string_dyn,  CA_STATIC, (int *)&mudconf.down_file,       NULL, SIZEOF_PATHNAME},
     {"down_motd_message",         cf_string,      CA_GOD,    (int *)mudconf.downmotd_msg,     NULL,       GBUF_SIZE},
@@ -1456,7 +1412,7 @@ CONF conftable[] =
     {"forbid_site",               cf_site,        CA_GOD,    (int *)&mudstate.access_list,    NULL,     H_FORBIDDEN},
 #if !defined(VMS) && !defined(WIN32)
     {"fork_dump",                 cf_bool,        CA_GOD,    &mudconf.fork_dump,              NULL,               0},
-#endif // WIN32
+#endif
     {"full_file",                 cf_string_dyn,  CA_STATIC, (int *)&mudconf.full_file,       NULL, SIZEOF_PATHNAME},
     {"full_motd_message",         cf_string,      CA_GOD,    (int *)mudconf.fullmotd_msg,     NULL,       GBUF_SIZE},
     {"function_access",           cf_func_access, CA_GOD,    NULL,                            access_nametab,     0},
@@ -1496,6 +1452,7 @@ CONF conftable[] =
     {"lock_recursion_limit",      cf_int,         CA_WIZARD, &mudconf.lock_nest_lim,          NULL,               0},
     {"log",                       cf_modify_bits, CA_GOD,    &mudconf.log_options,            logoptions_nametab, 0},
     {"log_options",               cf_modify_bits, CA_GOD,    &mudconf.log_info,               logdata_nametab,    0},
+	{"log_prefix",                cf_string,      CA_STATIC, (int *)mudconf.log_prefix,       NULL,              32},
     {"logout_cmd_access",         cf_ntab_access, CA_GOD,    (int *)logout_cmdtable,          access_nametab,     0},
     {"logout_cmd_alias",          cf_alias,       CA_GOD,    (int *)&mudstate.logout_cmd_htab,NULL,               0},
     {"look_obey_terse",           cf_bool,        CA_GOD,    &mudconf.terse_look,             NULL,               0},
@@ -1514,6 +1471,7 @@ CONF conftable[] =
     {"news_file",                 cf_string_dyn,  CA_STATIC, (int *)&mudconf.news_file,       NULL, SIZEOF_PATHNAME},
     {"news_index",                cf_string_dyn,  CA_STATIC, (int *)&mudconf.news_indx,       NULL, SIZEOF_PATHNAME},
     {"newuser_file",              cf_string_dyn,  CA_STATIC, (int *)&mudconf.crea_file,       NULL, SIZEOF_PATHNAME},
+    {"no_startup",                cf_bool,        CA_STATIC, &mudconf.no_startup,             NULL,               0},
     {"notify_recursion_limit",    cf_int,         CA_GOD,    &mudconf.ntfy_nest_lim,          NULL,               0},
     {"open_cost",                 cf_int,         CA_GOD,    &mudconf.opencost,               NULL,               0},
     {"output_database",           cf_string_dyn,  CA_STATIC, (int *)&mudconf.outdb,           NULL, SIZEOF_PATHNAME},
@@ -1561,6 +1519,7 @@ CONF conftable[] =
     {"room_quota",                cf_int,         CA_GOD,    &mudconf.room_quota,             NULL,               0},
     {"sacrifice_adjust",          cf_int,         CA_GOD,    &mudconf.sacadjust,              NULL,               0},
     {"sacrifice_factor",          cf_int,         CA_GOD,    &mudconf.sacfactor,              NULL,               0},
+    {"safe_wipe",                 cf_bool,        CA_GOD,    &mudconf.safe_wipe,              NULL,               0},
     {"safer_passwords",           cf_bool,        CA_GOD,    &mudconf.safer_passwords,        NULL,               0},
     {"search_cost",               cf_int,         CA_GOD,    &mudconf.searchcost,             NULL,               0},
     {"see_owned_dark",            cf_bool,        CA_GOD,    &mudconf.see_own_dark,           NULL,               0},
@@ -1596,11 +1555,9 @@ CONF conftable[] =
     { NULL,                       NULL,           0,         NULL,                            NULL,               0}
 };
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_set: Set config parameter.
- */
-
+// ---------------------------------------------------------------------------
+// cf_set: Set config parameter.
+//
 int cf_set(char *cp, char *ap, dbref player)
 {
     CONF *tp;
@@ -1692,11 +1649,9 @@ void ValidateConfigurationDbrefs(void)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_admin: Command handler to set config params at runtime 
- */
-
+// ---------------------------------------------------------------------------
+// do_admin: Command handler to set config params at runtime
+//
 void do_admin(dbref player, dbref cause, int extra, char *kw, char *value)
 {
     int i;
@@ -1709,11 +1664,9 @@ void do_admin(dbref player, dbref cause, int extra, char *kw, char *value)
     ValidateConfigurationDbrefs();
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_read: Read in config parameters from named file
- */
-
+// ---------------------------------------------------------------------------
+// cf_read: Read in config parameters from named file
+//
 struct
 {
     char **pFilename;
@@ -1760,25 +1713,24 @@ int cf_read(void)
     return retval;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_cf_access: List access to config directives.
- */
-
+// ---------------------------------------------------------------------------
+// list_cf_access: List access to config directives.
+//
 void list_cf_access(dbref player)
 {
     CONF *tp;
     char *buff;
 
     buff = alloc_mbuf("list_cf_access");
-    for (tp = conftable; tp->pname; tp++) {
-        if (God(player) || check_access(player, tp->flags)) {
+    for (tp = conftable; tp->pname; tp++)
+    {
+        if (God(player) || check_access(player, tp->flags))
+        {
             sprintf(buff, "%s:", tp->pname);
-            listset_nametab(player, access_nametab, tp->flags,
-                    buff, 1);
+            listset_nametab(player, access_nametab, tp->flags, buff, 1);
         }
     }
     free_mbuf(buff);
 }
 
-#endif // STANDALONE
+#endif
