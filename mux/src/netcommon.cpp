@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.36 2002-12-30 16:55:34 sdennis Exp $
+// $Id: netcommon.cpp,v 1.37 2003-01-01 09:08:03 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -113,7 +113,9 @@ CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& ltaLast, const CLin
         {
             d->quota += nExtraQuota;
             if (d->quota > mudconf.cmd_quota_max)
+            {
                 d->quota = mudconf.cmd_quota_max;
+            }
         }
     }
     return ltaLast + ltdTimeSlice * nSlices;
@@ -270,7 +272,8 @@ void add_to_output_queue(DESC *d, const char *b, int n)
 
     // Now tp points to the last buffer in the chain.
     //
-    do {
+    do
+    {
         // See if there is enough space in the buffer to hold the
         // string.  If so, copy it and update the pointers..
         //
@@ -513,7 +516,9 @@ void save_command(DESC *d, CBLK *command)
 static void set_userstring(char **userstring, const char *command)
 {
     while (Tiny_IsSpace[(unsigned char)*command])
+    {
         command++;
+    }
 
     if (!*command)
     {
@@ -529,7 +534,7 @@ static void set_userstring(char **userstring, const char *command)
         {
             *userstring = alloc_lbuf("set_userstring");
         }
-        StringCopy(*userstring, command);
+        strcpy(*userstring, command);
     }
 }
 
@@ -558,15 +563,19 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
         msg++;
     }
     p = user;
-    if (mudconf.name_spaces && (*msg == '\"'))
+    if (  mudconf.name_spaces
+       && *msg == '\"')
     {
         for (; *msg && (*msg == '\"' || Tiny_IsSpace[(unsigned char)*msg]); msg++)
         {
             // Nothing.
         }
-        while (*msg && *msg != '\"')
+        while (  *msg
+              && *msg != '\"')
         {
-            while (*msg && !Tiny_IsSpace[(unsigned char)*msg] && (*msg != '\"'))
+            while (  *msg
+                  && !Tiny_IsSpace[(unsigned char)*msg]
+                  && *msg != '\"')
             {
                 *p++ = *msg++;
             }
@@ -581,12 +590,14 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
                 msg++;
             }
 
-            if (*msg && (*msg != '\"'))
+            if (  *msg
+               && *msg != '\"')
             {
                 *p++ = ' ';
             }
         }
-        while (*msg && *msg == '\"')
+        while (  *msg
+              && *msg == '\"')
         {
              msg++;
         }
@@ -655,8 +666,8 @@ static void announce_connect(dbref player, DESC *d)
 
     if (Wizard(player))
     {
-        raw_notify( player, tprintf("%sWIZMOTD:%s %s\n", ANSI_HILITE,
-                    ANSI_NORMAL, mudconf.wizmotd_msg));
+        raw_notify(player, tprintf("%sWIZMOTD:%s %s\n", ANSI_HILITE,
+            ANSI_NORMAL, mudconf.wizmotd_msg));
 
         if (!(mudconf.control_flags & CF_LOGIN))
         {
@@ -697,7 +708,7 @@ static void announce_connect(dbref player, DESC *d)
             pMonitorAnnounceFmt = "GAME: %s has connected.";
         }
         if (  Suspect(player)
-        || (d->host_info & H_SUSPECT))
+           || (d->host_info & H_SUSPECT))
         {
             raw_broadcast(WIZARD, "[Suspect] %s has connected.", Name(player));
         }
@@ -707,7 +718,7 @@ static void announce_connect(dbref player, DESC *d)
         pRoomAnnounceFmt = "%s has reconnected.";
         pMonitorAnnounceFmt = "GAME: %s has reconnected.";
         if (  Suspect(player)
-        || (d->host_info & H_SUSPECT))
+           || (d->host_info & H_SUSPECT))
         {
             raw_broadcast(WIZARD, "[Suspect] %s has reconnected.", Name(player));
         }
@@ -824,7 +835,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
     if (num < 2)
     {
         if (  Suspect(player)
-        || (d->host_info & H_SUSPECT))
+           || (d->host_info & H_SUSPECT))
         {
             raw_broadcast(WIZARD, "[Suspect] %s has disconnected.", Name(player));
         }
@@ -832,7 +843,9 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
 
         sprintf(buf, "%s has disconnected.", Name(player));
         key = MSG_INV;
-        if ((loc != NOTHING) && !(Hidden(player) && Can_Hide(player)))
+        if (  loc != NOTHING
+           && !(  Hidden(player)
+               && Can_Hide(player)))
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
@@ -952,14 +965,16 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
     else
     {
         if (  Suspect(player)
-        || (d->host_info & H_SUSPECT))
+           || (d->host_info & H_SUSPECT))
         {
             raw_broadcast(WIZARD, "[Suspect] %s has partially disconnected.", Name(player));
         }
         char *mbuf = alloc_mbuf("announce_disconnect.partial");
         sprintf(mbuf, "%s has partially disconnected.", Name(player));
         key = MSG_INV;
-        if ((loc != NOTHING) && !(Hidden(player) && Can_Hide(player)))
+        if (  loc != NOTHING
+           && !(  Hidden(player)
+               && Can_Hide(player)))
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
@@ -1062,7 +1077,8 @@ int fetch_idle(dbref target)
     BOOL bFound = FALSE;
     DESC_ITER_PLAYER(target, d)
     {
-        if (!bFound || ltaNewestLastTime < d->last_time)
+        if (  !bFound
+           || ltaNewestLastTime < d->last_time)
         {
             bFound = TRUE;
             ltaNewestLastTime = d->last_time;
@@ -1093,7 +1109,8 @@ void find_oldest(dbref target, DESC *dOldest[2])
     BOOL bFound = FALSE;
     DESC_ITER_PLAYER(target, d)
     {
-        if (!bFound || d->connected_at < dOldest[0]->connected_at)
+        if (  !bFound
+           || d->connected_at < dOldest[0]->connected_at)
         {
             bFound = TRUE;
             dOldest[1] = dOldest[0];
@@ -1224,19 +1241,23 @@ void check_events(void)
     // Resetting every midnight.
     //
     static int iLastHourChecked = 25;
-    if (iLastHourChecked == 23 && ft.iHour < iLastHourChecked)
+    if (  iLastHourChecked == 23
+       && ft.iHour < iLastHourChecked)
     {
         mudstate.events_flag &= ~ET_DAILY;
     }
     iLastHourChecked = ft.iHour;
 
-    if ((ft.iHour == mudconf.events_daily_hour) && !(mudstate.events_flag & ET_DAILY))
+    if (  ft.iHour == mudconf.events_daily_hour
+       && !(mudstate.events_flag & ET_DAILY))
     {
         mudstate.events_flag |= ET_DAILY;
         DO_WHOLE_DB(thing)
         {
             if (Going(thing))
+            {
                 continue;
+            }
 
             ITER_PARENTS(thing, parent, lev)
             {
@@ -1299,10 +1320,14 @@ static void dump_users(DESC *e, char *match, int key)
     if (match)
     {
         while (Tiny_IsSpace[(unsigned char)*match])
+        {
             match++;
+        }
 
         if (!*match)
+        {
             match = NULL;
+        }
     }
 
     if (  (e->flags & DS_PUEBLOCLIENT)
@@ -1322,13 +1347,16 @@ static void dump_users(DESC *e, char *match, int key)
     {
         queue_string(e, "Port Pend  Lost     Total  Pend  Lost     Total\r\n");
     }
-    else if ((e->flags & DS_CONNECTED) && (Wizard_Who(e->player)) && (key == CMD_WHO))
+    else if (  (e->flags & DS_CONNECTED)
+            && Wizard_Who(e->player)
+            && key == CMD_WHO)
     {
         queue_string(e, "  Room    Cmds   Host\r\n");
     }
     else
     {
-        if (Wizard_Who(e->player) || See_Hidden(e->player))
+        if (  Wizard_Who(e->player)
+           || See_Hidden(e->player))
         {
             queue_string(e, "  ");
         }
@@ -1379,9 +1407,13 @@ static void dump_users(DESC *e, char *match, int key)
                 if (Hidden(d->player))
                 {
                     if (d->flags & DS_AUTODARK)
+                    {
                         *fp++ = 'd';
+                    }
                     else
+                    {
                         *fp++ = 'D';
+                    }
                 }
                 if (Hideout(d->player))
                 {
@@ -1393,7 +1425,9 @@ static void dump_users(DESC *e, char *match, int key)
                     if (Good_obj(room_it))
                     {
                         if (Hideout(room_it))
+                        {
                             *fp++ = 'u';
+                        }
                     }
                     else
                     {
@@ -1402,15 +1436,25 @@ static void dump_users(DESC *e, char *match, int key)
                 }
 
                 if (Suspect(d->player))
+                {
                     *fp++ = '+';
+                }
                 if (d->host_info & H_FORBIDDEN)
+                {
                     *sp++ = 'F';
+                }
                 if (d->host_info & H_REGISTRATION)
+                {
                     *sp++ = 'R';
+                }
                 if (d->host_info & H_SUSPECT)
+                {
                     *sp++ = '+';
+                }
                 if (d->host_info & H_GUEST)
+                {
                     *sp++ = 'G';
+                }
             }
             else if (  (e->flags & DS_CONNECTED)
                     && See_Hidden(e->player))
@@ -1418,9 +1462,13 @@ static void dump_users(DESC *e, char *match, int key)
                 if (Hidden(d->player))
                 {
                     if (d->flags & DS_AUTODARK)
+                    {
                         *fp++ = 'd';
+                    }
                     else
+                    {
                         *fp++ = 'D';
+                    }
                 }
             }
             *fp = '\0';
@@ -1428,7 +1476,9 @@ static void dump_users(DESC *e, char *match, int key)
 
             CLinearTimeDelta ltdConnected = ltaNow - d->connected_at;
             CLinearTimeDelta ltdLastTime  = ltaNow - d->last_time;
-            if ((e->flags & DS_CONNECTED) && Wizard_Who(e->player) && (key == CMD_WHO))
+            if (  (e->flags & DS_CONNECTED)
+               && Wizard_Who(e->player)
+               && key == CMD_WHO)
             {
                 sprintf(buf, "%-16s%9s %4s%-3s#%-6d%5d%3s%s\r\n",
                     (Connected(d->player) ? trimmed_name(d->player) :
@@ -1754,7 +1804,8 @@ static BOOL check_connect(DESC *d, char *msg)
     // At this point, command, user, and password are all less than
     // MBUF_SIZE.
     //
-    if (!strncmp(command, "co", 2) || !strncmp(command, "cd", 2))
+    if (  !strncmp(command, "co", 2)
+       || !strncmp(command, "cd", 2))
     {
         if (string_prefix(user, mudconf.guest_prefix))
         {
@@ -2327,9 +2378,13 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                 d->input_size -= (strlen(t->cmd) + 1);
                 d->last_time = mudstate.now;
                 if (d->program_data != NULL)
+                {
                     handle_prog(d, t->cmd);
+                }
                 else
+                {
                     do_command(d, t->cmd);
+                }
                 free_lbuf(t);
             }
             else
@@ -2356,7 +2411,9 @@ int site_check(struct in_addr host, SITE *site_list)
     for (this0 = site_list; this0; this0 = this0->next)
     {
         if ((host.s_addr & this0->mask.s_addr) == this0->address.s_addr)
+        {
             return this0->flag;
+        }
     }
     return 0;
 }
@@ -2376,9 +2433,13 @@ static const char *stat_string(int strtype, int flag)
     {
     case S_SUSPECT:
         if (flag)
+        {
             str = "Suspected";
+        }
         else
+        {
             str = "Trusted";
+        }
         break;
 
     case S_ACCESS:
@@ -2387,18 +2448,23 @@ static const char *stat_string(int strtype, int flag)
         case H_FORBIDDEN:
             str = "Forbidden";
             break;
+
         case H_REGISTRATION:
             str = "Registration";
             break;
+
         case H_GUEST:
             str = "NoGuest";
             break;
+
         case H_NOSITEMON:
             str = "NoSiteMon";
             break;
+
         case 0:
             str = "Unrestricted";
             break;
+
         default:
             str = "Strange";
             break;
@@ -2425,9 +2491,9 @@ static void list_sites(dbref player, SITE *site_list, const char *header_txt, in
     for (this0 = site_list; this0; this0 = this0->next)
     {
         str = (char *)stat_string(stat_type, this0->flag);
-        StringCopy(buff1, inet_ntoa(this0->mask));
-        sprintf(buff, "%-20s %-20s %s",
-            inet_ntoa(this0->address), buff1, str);
+        strcpy(buff1, inet_ntoa(this0->mask));
+        sprintf(buff, "%-20s %-20s %s", inet_ntoa(this0->address), buff1,
+            str);
         notify(player, buff);
     }
     free_mbuf(buff);
@@ -2673,7 +2739,8 @@ void fetch_ConnectionInfoFields(dbref target, long anFields[4])
     for (int i = 0; i < 4; i++)
     {
         long result;
-        if (!aFields[i] || (result = Tiny_atol(aFields[i])) < 0)
+        if (  !aFields[i]
+           || (result = Tiny_atol(aFields[i])) < 0)
         {
             result = 0;
         }
@@ -2712,7 +2779,8 @@ long fetch_ConnectionInfoField(dbref target, int iField)
     ParseConnectionInfoString(pConnInfo, aFields);
 
     long result;
-    if (!aFields[iField] || (result = Tiny_atol(aFields[iField])) < 0)
+    if (  !aFields[iField]
+       || (result = Tiny_atol(aFields[iField])) < 0)
     {
         result = 0;
     }
