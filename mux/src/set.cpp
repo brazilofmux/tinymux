@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.32 2002-09-01 18:15:47 jake Exp $
+// $Id: set.cpp,v 1.33 2002-09-19 12:26:18 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -371,14 +371,14 @@ void do_forwardlist
     }
     else if (!*newlist)
     {
-            // New forwardlist is null, just clear it.
-            //
-            atr_clr(thing, A_FORWARDLIST);
-            set_modified(thing);
-            if (!Quiet(executor))
-            {
-                notify_quiet(executor, "Forwardlist removed.");
-            }
+        // New forwardlist is null, just clear it.
+        //
+        atr_clr(thing, A_FORWARDLIST);
+        set_modified(thing);
+        if (!Quiet(executor))
+        {
+            notify_quiet(executor, "Forwardlist removed.");
+        }
     }
     else if (!fwdlist_ck(executor, thing, A_FORWARDLIST, newlist))
     {
