@@ -258,6 +258,7 @@ Bug Fixes:
  -- Fix ancient filter() bug where a prefix of '1' was enough to test true.
     Fixed by Raevnos.
  -- @chzone should have cleared powers. Fix by Jake.
+ -- Fix MAT_HOME bug. Found by Alierak.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
