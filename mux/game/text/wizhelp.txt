@@ -1521,6 +1521,38 @@ CACHE_NAMES
 
   Related Topics:
 
+& CACHE_PAGES
+CACHE_PAGES
+
+  CONFIG PARAMETER: cache_pages <num>
+  DEFAULT: 40
+
+  Specifies the size of the hashpage cache.  This is the lowest-level
+  caching (not counting the operating system's caching).  Don't set
+  this too low (e.g., less than 10) or the server's performance will
+  degrade dramatically.
+
+  The most effective type of caching occurs one level higher
+  (see max_cache_size), however for larger games, it may be necessary to
+  increase cache_pages somewhat.  Estimate that you will need one page
+  per active player.  So, the default of 40 is tuned to perform well
+  for up to 100 players.
+
+  Related Topics: cache_pages, max_cache_size.
+
+& CACHE_TICK_PERIOD
+CACHE_TICK_PERIOD
+
+  CONFIG PARAMETER: cache_tick_period <seconds>
+  DEFAULT: 30.0
+
+  Specifies the cache maintenance period in seconds.  Currently, cache
+  maintenance only involves flushing dirty pages.  With a short period,
+  the work is spread out more evenly.  Therefore, a short period is
+  usually best for large games.
+
+  Related Topics: cache_pages, max_cache_size.
+
 & CACHE_TRIM
 CACHE_TRIM
 
@@ -1678,32 +1710,32 @@ CONFIG PARAMETERS
 
   access  alias  allow_guest_from_registered_site  article_rule  attr_access
   attr_alias  attr_cmd_access  autozone  bad_name  badsite_file  cache_names
-  check_interval  check_offset  clone_copies_cost  command_quota_increment
-  command_quota_max  compress_program  compression  comsys_database
-  config_access  conn_timeout  connect_file  connect_reg_file  crash_database
-  create_max_cost  create_min_cost  dark_sleepers  default_home
-  destroy_going_now  dig_cost  down_file  down_motd_message  dump_interval
-  dump_message  dump_offset  earn_limit  eval_comtitle  events_daily_hour
-  examine_flags  examine_public_attrs  exit_flags  exit_quota
-  fascist_teleport  find_money_chance  fixed_home_message  fixed_tel_message
-  flag_access  flag_alias  flag_name  forbid_site  fork_dump  full_file
-  full_motd_message  function_access  function_alias
-  function_invocation_limit  function_recursion_limit  game_dir_file
-  game_pag_file  global_error_obj  good_name  guest_char_num  guest_file
-  guest_nuker  guest_prefix  guest_site  guests_channel  have_comsys
-  have_mailer  have_zones  helpfile hook_cmd  hook_obj  hostnames
-  idle_interval  idle_timeout  idle_wiz_dark  include  indent_desc
-  initial_size  input_database  kill_guarantee_cost  kill_max_cost
-  kill_min_cost  lag_maximum  link_cost  list_access  lock_recursion_limit
+  cache_pages  cache_tick_period  check_interval  check_offset
+  clone_copies_cost  command_quota_increment  command_quota_max
+  compress_program  compression  comsys_database  config_access  conn_timeout
+  connect_file  connect_reg_file  crash_database  create_max_cost
+  create_min_cost  dark_sleepers  default_home  destroy_going_now  dig_cost
+  down_file  down_motd_message  dump_interval  dump_message  dump_offset
+  earn_limit  eval_comtitle  events_daily_hour  examine_flags
+  examine_public_attrs  exit_flags  exit_quota  fascist_teleport
+  find_money_chance  fixed_home_message  fixed_tel_message  flag_access
+  flag_alias  flag_name  forbid_site  fork_dump  full_file  full_motd_message
+  function_access  function_alias  function_invocation_limit
+  function_recursion_limit  game_dir_file  game_pag_file  global_error_obj
+  good_name  guest_char_num  guest_file  guest_nuker  guest_prefix  guest_site
 
 { 'wizhelp config parameters2' for more }
 
 & CONFIG PARAMETERS2
 CONFIG PARAMETERS (continued)
 
-  log  log_options  logout_cmd_access  logout_cmd_alias  look_obey_terse
-  machine_command_cost  mail_database  mail_expiration  master_room
-  match_own_commands  max_cache_size  max_players  min_guests
+  guests_channel  have_comsys  have_mailer  have_zones  helpfile hook_cmd
+  hook_obj  hostnames  idle_interval  idle_timeout  idle_wiz_dark  include
+  indent_desc  initial_size  input_database  kill_guarantee_cost
+  kill_max_cost  kill_min_cost  lag_maximum  link_cost  list_access
+  lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
+  look_obey_terse  machine_command_cost  mail_database  mail_expiration
+  master_room   match_own_commands  max_cache_size  max_players  min_guests
   money_name_plural  money_name_singular  motd_file  motd_message  mud_name
   newuser_file  nositemon_site  notify_recursion_limit  number_guests
   open_cost  output_database  output_limit  page_cost  paranoid_allocate
@@ -1717,6 +1749,12 @@ CONFIG PARAMETERS (continued)
   robot_cost  robot_flags  robot_speech  room_flags  room_quota  run_startup
   sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords  search_cost
   see_owned_dark  signal_action  site_chars  space_compress  stack_limit
+
+{ 'wizhelp config parameters3' for more }
+
+& CONFIG PARAMETERS3
+CONFIG PARAMETERS (continued)
+
   starting_money  starting_quota  status_file  suspect_site  sweep_dark
   switch_default_all  terse_shows_contents  terse_shows_exits
   terse_shows_move_messages  thing_flags  thing_quota  timeslice
@@ -2954,6 +2992,8 @@ MAX_CACHE_SIZE
 
   Expressed in bytes, this is the maximum size the server will use for caching
   attribute values from the database.
+
+  Related Topics: cache_pages, cache_tick_period.
 
 & MAX_PLAYERS
 MAX_PLAYERS
