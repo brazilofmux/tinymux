@@ -467,28 +467,6 @@ Related Topics: @name.
 
   Related Topics: @move, @omove.
 
-& @ANSINAME
-@ANSINAME
-
-  Command: @ansiname <object> = <string>
-  Attribute: AnsiName
-
-  The @ansiname command allows you to set multi-color names for an item.
-  This affects contents, inventories, the normal 'look', softcode that
-  uses the ansiname() function, and a large number of other cases.
-  Also, the name in @ansiname MUST match the name returned by name()
-  (minus ansi codes), i.e. stripansi(ansiname(object)) = name(object)
-
-  Examples:
-    > @name object=99 Red Balloons
-    Name set.
-    > @ansiname object=99 [ansi(hr,Red)] Baboons
-    String entered must match name of target, '99 Red Balloons'.
-    > @ansiname object=99 [ansi(hr,Red)] Balloons
-    Ansi string entered for 99 Red Balloons of '99 Red Balloons'.
-
-  Related Topics: @name, ansi(), ansiname().
-
 & @APAY
 @APAY
 
@@ -2342,6 +2320,30 @@ Related Topics: @name.
   See '@list options' as to whether or not a player name may contain
   spaces.
 
+& @NAMEACCENT
+@NAMEACCENT
+
+  Command: @nameaccent <object> = <string>
+  Attribute: NameAccent
+
+  The @nameaccent command allows you to set accented, multi-color names for
+  an item.  This affects contents, inventories, the normal 'look', and
+  many other cases.
+
+  The name in @nameaccent MUST match the name returned by name() minus ANSI
+  codes and accent marks.
+
+  Examples:
+    > @name object=99 Red Balloons
+    Name set.
+    > @ansiname object=99 [ansi(hr,Red)] Baboons
+    String entered must match name of target, '99 Red Balloons'.
+    > @ansiname object=99 [ansi(hr,Red)] Balloons
+    Ansi string entered for 99 Red Balloons of '99 Red Balloons'.
+
+  Related Topics: accent(), ansi(), chr(), @name, NOACCENT, ord(),
+                  stripaccents(), and stripansi().
+
 & @NAMEFORMAT
 @NAMEFORMAT
 
@@ -3985,17 +3987,6 @@ ANSI()
   utilized in the order they are specified.
 
   Related Topics: ANSI CODES, ANSI SUBSTITUTION.
-
-& ANSINAME()
-ANSINAME()
-
-  Function: ansiname(<object>)
-
-  This function returns the value of an object's ANSINAME attribute.
-  If the ansiname (minus ansi codes) does not match the name, the 
-  uncolored name will be returned.
-
-  Related Topics: @name, ansi(), @ansiname.
 
 & APOSS()
 APOSS()
