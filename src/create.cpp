@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.25 2001-12-06 03:20:01 sdennis Exp $
+// $Id: create.cpp,v 1.26 2002-01-25 04:18:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -753,8 +753,8 @@ void do_pcreate
     {
         move_object(newplayer, mudconf.start_room);
         notify_quiet(player,
-               tprintf("New player '%s' created with password '%s'",
-                   name, pass));
+               tprintf("New player '%s' (#%d) created with password '%s'",
+                   name, newplayer, pass));
         STARTLOG(LOG_PCREATES | LOG_WIZARD, "WIZ", "PCREA");
         log_name(newplayer);
         log_text(" created by ");
