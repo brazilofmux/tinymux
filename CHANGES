@@ -335,6 +335,8 @@ Bug Fixes:
  -- Alierak Fix for logic bug in logging.
  -- Alierak fixes build breakage on Darwin due to inconsistent use of size_t.
  -- Fix SIGSEGV in SCRAMBLE().
+ -- Alierak fixes strcat() given that its assumptions about TinyExec are no
+    longer true.
 
 
 Performance Enhancements:
