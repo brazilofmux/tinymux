@@ -1,16 +1,19 @@
-TinyMUX 2.0:  README (Unix based)
-Last Update:  February 2000
 
+TinyMUX 2.0:  README (Unix based)
+Last Update:  April 2000
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Congratulations and welcome to the README file for TinyMUX 2.0.  That 
 you have chosen to actually read the file is a sign of bravery equal to 
-that of Beowulf in the face of Grendel or anyone who has ever faced the 
-garden variety behemoth.  We know that README files are often turgid and 
-vague, filled with techno-babble that ties the reader up in corundrums, 
-to often ending in countless hours of someone having to help someone else 
-type a few lines that were there the whole time, buried beyond view.
+that of Beowulf facing Grendel or anyone who has ever faced the garden
+variety lumbering behemoth.  
+
+We know that README files are often turgid and vague, filled with 
+technobabble that ties the reader up needlessly in corundums of little 
+purpose.  Too often, the story  ends with someone spending a lot of time 
+with someone else in countless hours of consultation, all to type a few 
+lines that were there the whole time, buried beyond view.
   
-In the past, this has resulted in README becoming tossed aside, unread, 
+In the past, this has resulted in README being tossed aside, unread, 
 unwanted, unloved, and probably bitter from the experience.  However, 
 because we want you to succeed, we are happy to provide a file that will, 
 in our sincerest hopes, provide you with enough information to make that 
@@ -35,6 +38,8 @@ the following files:
                       compiling issues.  Contains basic conversion 
                       information. 
   
+  docs/BACKUP         A file about the MUX 2.0 Backup script.
+  
   docs/COMPRESSION    How to set up and run your game under RADIX 
                       compression.
   
@@ -54,16 +59,15 @@ the following files:
   docs/MEMORY         Explanations about how to set up disk and 
                       memory-based operation plus tips on saving memory.
   
-  docs/NEWBIES        A file created just for those who have never run a 
-                      game server before and who probably haven't been told 
-                      all the stuff that the dinosaurs know.
+  docs/PATCHES        A very basic introduction to applying patches to the 
+                      server.
 ===========================================================================
         
 General Information:
 ~~~~~~~~~~~~~~~~~~~
 TinyMUX 2.0 is currently being developed in parallel under Win32 and 
 RedHat 6.0 and is written in C and C++.  It is a continuation of the 
-TinyMUX 1.x line of servers and consists largely of bugfixes and a number 
+TinyMUX 1.x line of servers and consists largely of bug fixes and a number 
 of performance enhancements.  Features have been added in this release, 
 but they were not the primary focus.  
 
@@ -113,8 +117,9 @@ TinyMUX 2.0 has been proven to read the following database formats:
    TinyMUSH 2.2.2, 2.2.3, 2.2.4 release version (not beta)
    TinyMUSH 2.2.4U1 release version (not beta)
 
-The Care and Feeding of Bugs When You Find Them:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BUGS! and bug reporting:
+~~~~~~~~~~~~~~~~~~~~~~~
+
 First things first....  Bugs happen in any large and complex piece of 
 code.  The important thing to understand is that the dev team has worked 
 very hard to ferret out and fix as many of the crashing/corrupting bugs 
@@ -157,17 +162,19 @@ compiler that groks function prototypes. It is 64-bit 'clean' code.  It
 has been compiled and run successfully 'out of the box' on the following 
 platforms:
 
-RedHat 6.0
-Slackware 3.6, 4.0
+RedHat 5.1, 6.0
+Slackware 3.6, 4.0, 7.0
 Solaris 2.4, 2.5, 2.6
 Mandrake 6.0
-Linux Kernels 2.0.35, 2.0.36, 2.2.13
-RedHat 5.1
+Linux Kernels 2.0.35 - 2.2.14
+IRIX (Some versions)
+Debian 2.1, 2.2
+FreeBSD
+OpenBSD
 
 TinyMUX 2.0 has been compiled and successfully run on the following with 
 minor changes(see NOTES):
 
-FreeBSD 
 RedHat 5.2
 
 If you get TinyMUX 2.0 working on another platform, please let us know

@@ -1,5 +1,5 @@
 TinyMUX 2.0: NOTES
-Last Update: February 2000
+Last Update: April 2000
 
 This is a list of information that never seems to be handy enough when you 
 need it.
@@ -11,8 +11,8 @@ Handy Stuff:
  - For new games, change the password to #1 first thing and *write it down* 
    in a safe place offline.  
  
- - It is worth noting that keeping a record of changes in this password 
-   might save you some flatfile hacking for forgotten passwords.
+ - It is worth noting that keeping a record of changes in the #1 character 
+   password might save you some flatfile hacking for forgotten passwords.
  
  - The default port has been changed to 2860.  Change this in the 
    netmux.conf or GAMENAME.conf file.
@@ -25,7 +25,7 @@ Handy Stuff:
    The MUX won't be able to find your DB otherwise.
  
  - Read 'wizhelp config parameters' when you get the MUX started. If you 
-   are upgrading from PennMUSH, for example where the master room is set 
+   are porting from PennMUSH, for example, where the master room is set 
    as #2, you would have to place the config parameter 'master_room 2' in 
    your configuration file.
  
@@ -39,7 +39,14 @@ Handy Stuff:
  
  - If you do not want to use the built-in +help command, redefine 
    PLUSHELP_COMMAND in config.h to be something else.
-
+   
+ - 'Backup' has superceeded the traditional use of db_unload for making 
+    flatfiles.  The script makes a flatfile of the DB and also creates a 
+    tar.gz file containing the mail,db, comsys.db, configuration files, 
+    and the customized files in game/text.  When porting, all you have to do 
+    is place the backup in the game directory, extract the archive and db_load 
+    before restarting the game.
+    
 Changes to dbconvert:
 ~~~~~~~~~~~~~~~~~~~~
  - One of the major and important changes to MUX 2.0 is the use of CHash 
@@ -124,10 +131,6 @@ We are trying hard to conquer build issues on various platforms.  Current
 attention has been devoted to various flavors of Linux, HPUX, IRIX, 
 and others.  Listed below are OS which we have managed to get MUX 2.0 to 
 run and the modifications needed to make it run.
-
-- FreeBSD:  You have to define DONT_USE_UNION_WAIT in the Makefile.
-
-- OpenBSD:  You have to define DONT_USE_UNION_WAIT in the Makefile.
 
 - RH 5.2:   edit ./configure, search for 'errno.h' and immediately after 
   it add 'errnos.h'.(From Soruk)
