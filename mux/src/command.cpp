@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.111 2003-03-23 20:53:49 sdennis Exp $
+// $Id: command.cpp,v 1.112 2003-07-22 19:35:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1900,21 +1900,20 @@ char *process_command
         {
             hval = higcheck(executor, caller, enactor, cmdp, LowerCaseCommand);
         }
-        if (cmdp->hookmask & HOOK_IGSWITCH)
+
+        // If the command contains a switch, but the command doesn't support
+        // any switches or the command contains one that isn't supported,
+        // HOOK_IGSWITCH will allow us to treat the entire command as if it
+        // weren't a built-in command.
+        //
+        if (  (cmdp->hookmask & HOOK_IGSWITCH)
+           && pSlash
+           && ( !(cmdp->switches)
+              || search_nametab(executor, cmdp->switches, pSlash) < 0))
         {
-            if (pSlash && cmdp->switches)
-            {
-                int xkey = search_nametab(executor, cmdp->switches, pSlash);
-                if (xkey == -1)
-                {
-                    cval = 2;
-                }
-            }
-            else if (!(cmdp->switches)) 
-            {
-                cval = 2;
-            }
+            cval = 2;
         }
+
         if ((cval != 2) && (hval != 2))
         {
             if (cval == 1 || hval == 1)
