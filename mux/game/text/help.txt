@@ -10674,15 +10674,24 @@ SUBSTITUTIONS
 
 { 'help substitutions2' for more }
 
-& substitutions2
+& SUBSTITUTIONS2
+SUBSTITUTIONS (continued)
 
     %#      = Database number of the object that caused the message to be
-              displayed or the action list to be run.
+              displayed or the action list to be run (Enactor).
+
+    %@      = Database number of the object immediately calling %! (Caller).
+              This number starts as the same as %#, but can be affected by
+              u()-type functions, zones, and @function.
+
+    %!      = Database number of the object holding the message or running
+              the action list (Executor).
+
     %l      = Database number of the location of the object that caused the
               message to be displayed or the action list to be run.
-    %!      = Database number of the object holding the message or running
-              the action list.
+
     %x %c   = ANSI color codes. See 'help ansi()' for more information.
+
     %|      = A string piped from the previous command in a pipe.
  
   If the letter following the % is capitalized, the first letter of the
