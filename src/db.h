@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.6 2001-06-29 07:34:30 sdennis Exp $
+// $Id: db.h,v 1.7 2001-06-29 07:44:54 sdennis Exp $
 //
 #ifndef __DB_H
 #define __DB_H
@@ -11,13 +11,13 @@
 #define FETCH(key, pLen)        cache_get(key, pLen)
 #define SYNC                    cache_sync()
 #define CLOSE                   cache_close()
-#else
+#else // !MEMORY_BASED
 #define STORE(key, attr, len)
 #define TM_DELETE(key)
 #define FETCH(key, pLen)
 #define SYNC
 #define CLOSE
-#endif // MEMORY_BASED
+#endif // !MEMORY_BASED
 
 #include "attrcache.h"
 
@@ -201,9 +201,9 @@ extern NAME *names;
 #ifndef MEMORY_BASED
 #define i_Name(t)       names[t] = NULL;    \
                 if (mudconf.cache_names) purenames[t] = NULL;
-#else // MEMORY_BASED
+#else // !MEMORY_BASED
 #define i_Name(t)       if (mudconf.cache_names) purenames[t] = NULL;
-#endif // MEMORY_BASED
+#endif // !MEMORY_BASED
 
 #define s_Location(t,n)     db[t].location = (n)
 
