@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.15 2003-07-24 03:18:00 sdennis Exp $
+// $Id: look.cpp,v 1.16 2003-08-26 13:36:01 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -960,14 +960,22 @@ static bool show_a_desc(dbref player, dbref loc)
 
         ATTR *cattr = atr_num(iDescDefault);
 
-        char *attrtext = atr_get(loc, iDescDefault, &aowner, &aflags);
+        char *tbuf1 = atr_pget(loc, iDescDefault, &aowner, &aflags);
+        char *str = tbuf1;
+        char *temp = alloc_lbuf("look_description.ET");
+        char *bp = temp; 
+        mux_exec(temp, &bp, loc, player, player,
+               EV_FCHECK | EV_EVAL | EV_TOP,
+               &str, (char **)NULL, 0);
+        *bp = '\0';
+
         char *attrname = alloc_lbuf("look_description.AN");
         char *cp = attrname;
 
         safe_str(cattr->name, attrname, &cp);
         *cp = '\0';
         char* ParameterList[] =
-            { attrtext, attrname };
+            { temp, attrname };
 
         mux_exec(FormatOutput, &tPtr, loc, player, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
@@ -976,9 +984,10 @@ static bool show_a_desc(dbref player, dbref loc)
         notify(player, FormatOutput); 
         did_it(player, loc, 0, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);  
 
-        free_lbuf(attrtext); 
+        free_lbuf(tbuf1); 
         free_lbuf(attrname);
         free_lbuf(FormatOutput);
+        free_lbuf(temp);
 
         ret = true;
     }
@@ -1071,6 +1080,7 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
         if (!show_a_desc(player,thing))
         {
             notify(player, "You see nothing special.");
+            did_it(player, thing, 0, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);	
         }
 
         if (  !mudconf.quiet_look
