@@ -6117,14 +6117,29 @@ ALPHAMAX()
 
 & ART()
 ART()
-  
+
   FUNCTION: art(<string>)
 
-  This function returns the proper article, "a" or "an", based on whether
-  or not <string> begins with a vowel.
+  This function returns the proper article, "a" or "an", for the <string> by
+  attempting to match it against a set of rules. This function isn't always
+  right, but it makes a good guess most of the time.
 
-  Related Topics:
-  
+  Example:
+    > say art(TinyMUX)
+    You say "a"
+    > say art(umbrella)
+    You say "an"
+    > say art(unicycle)
+    You say "a"
+    > say art(ytterbium)
+    You say "an"
+    > say art(one-sided)
+    You say "a"
+    > say art(avocado)
+    You say "an"
+
+  Related Topics: article_rule.
+
 & HASATTR()
 HASATTR()
 

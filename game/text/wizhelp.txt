@@ -1119,6 +1119,42 @@
 
   See also: register_site, SITE LISTS
 
+& ARTICLE_RULE
+ARTICLE_RULE
+
+  CONFIG_PARAMETER: article_rule <article> <regular expression>
+
+  Default: All articles default to a.
+
+  article_rule adds a new rule to the list which the art function uses to
+  determine which article to use for a particular word (either a or an). New
+  rules are moved to the head of the rule-list so rules appearing later in the
+  configuration will override rules at the beginning; hence the most general
+  rules should come first followed by a set of exceptions. The art() function
+  tests for matches  in order, so only the first matching rule counts.
+
+  <article> is either 'a' or 'an' stating what article to give when art()
+  matches input to a rule.
+
+  <regular expression> is a regex which forms the body of the rule.
+
+  For most games the default set of rules in the configuration files should be
+  sufficient.
+
+  Example:
+    > @admin article_rule=an ^[aeiou]
+    > @admin article_rule=an ^herb
+    > say art(avocado)
+    You say "an"
+    > say art(head)
+    You say "a"
+    > say art(herb)
+    You say "an"
+    > say art(herbal)
+    You say "an"
+
+  Related topics: art(), regexps, @admin, config parameters.
+
 & attr_access
   Config parameter: attr_access <attr> [!]<privilege> [[!]<privilege>]...
 
