@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.43 2004-04-29 05:01:22 sdennis Exp $
+// $Id: db.cpp,v 1.44 2004-04-29 05:03:58 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1166,7 +1166,7 @@ bool ThrottleAttributeNames(dbref executor)
 {
     if (db[executor].tThrottleExpired <= mudstate.now)
     {
-        SetupThrottle();
+        SetupThrottle(executor);
     }
     if (0 < ThAttrib(executor))
     {
@@ -1180,7 +1180,7 @@ bool ThrottleMail(dbref executor)
 {
     if (db[executor].tThrottleExpired <= mudstate.now)
     {
-        SetupThrottle();
+        SetupThrottle(executor);
     }
     if (0 < ThMail(executor))
     {
