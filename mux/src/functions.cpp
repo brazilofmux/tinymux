@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.113 2004-07-13 01:58:15 sdennis Exp $
+// $Id: functions.cpp,v 1.114 2004-07-13 23:47:46 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1679,18 +1679,23 @@ FUNCTION(fun_mid)
     //
     int iPosition0 = mux_atol(fargs[1]);
     int nLength = mux_atol(fargs[2]);
-    int iPosition1 = iPosition0 + nLength;
-
-    if (  iPosition0 < 0 || iPosition0 > LBUF_SIZE-1
-       || nLength    < 0 || nLength    > LBUF_SIZE-1
-       || iPosition1 > LBUF_SIZE-1)
+    if (nLength < 0)
     {
-        safe_range(buff, bufc);
-        return;
+        iPosition0 += nLength;
+        nLength = -nLength;
     }
 
-    // At this point, iPosition0, nLength, and iPosition1 are reasonable
-    // numbers which may -still- not refer to valid data in the string.
+    if (iPosition0 < 0)
+    {
+        iPosition0 = 0;
+    }
+    else if (LBUF_SIZE-1 < iPosition0)
+    {
+        iPosition0 = LBUF_SIZE-1;
+    }
+
+    // At this point, iPosition0, nLength are reasonable numbers which may
+    // -still- not refer to valid data in the string.
     //
     struct ANSI_In_Context aic;
     ANSI_String_In_Init(&aic, fargs[0], ANSI_ENDGOAL_NORMAL);
