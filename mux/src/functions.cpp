@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.90 2002-09-02 18:42:21 jake Exp $
+// $Id: functions.cpp,v 1.91 2002-09-03 01:53:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6221,9 +6221,9 @@ FUNCTION(fun_iter)
         free_lbuf(curr);
         return;
     }
-    mudstate.in_loop++;
     BOOL first = TRUE;
-    mudstate.itext[mudstate.in_loop-1] = alloc_lbuf("itext_save");
+    mudstate.itext[mudstate.in_loop] = alloc_lbuf("itext_save");
+    mudstate.in_loop++;
     char *itptr, *itptr2;
     while (cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
@@ -6246,9 +6246,9 @@ FUNCTION(fun_iter)
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
     }
-    free_lbuf(mudstate.itext[mudstate.in_loop-1]);
-    mudstate.inum[mudstate.in_loop-1] = NULL;
     mudstate.in_loop--;
+    free_lbuf(mudstate.itext[mudstate.in_loop]);
+    mudstate.inum[mudstate.in_loop] = 0;
     free_lbuf(curr);
 }
 
