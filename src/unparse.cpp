@@ -1,10 +1,7 @@
-/*
- * unparse.c 
- */
-/*
- * $Id: unparse.cpp,v 1.3 2001-06-29 16:58:04 sdennis Exp $ 
- */
-
+// unparse.cpp
+//
+// $Id: unparse.cpp,v 1.4 2001-06-29 16:58:57 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
