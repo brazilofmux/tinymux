@@ -987,23 +987,35 @@ OUTPUTSUFFIX
 & PAGE
 PAGE
 
-  COMMAND: page <player-list> [=[<control>]<message>]
+  COMMAND: page <players>=[<prefix>]<message>
+           page [<prefix>]<message>
+           page
 
-  This command sends <message> to <player-list>.  If you do not specify a
-  name, it defaults to the players you last paged.  You may use either the
-  player's name or alias, a list of names and/or aliases, and you may also
-  give a string that uniquely matches the start of a player's name on the
-  WHO list.
+  This command sends <message> to <players>.  The second form sends the given
+  message to the same <players> given on the previous page command. The last
+  form reports to you which players you paged on the previous page command.
 
-  You can format the message one of several ways by specifying ':', ';', or
-  '"' as the first character of the message.  ':' and ';' format the message
-  as 'From afar, <player> <message>', with ';' omitting the space between
-  <player> and <message>.  '"' formats the message in normal page format
-  (this is the default).
+  <Players> is one or more player names or aliases delimited by spaces. A
+  player's name may also be any unique prefix of players who are currently on
+  the WHO list.
 
-  If your Idle attribute is set to something, then it is sent to anyone
-  who successfully pages you.  This is useful for when you are away from
-  your terminal for a short while.
+  By default, the message is delivered like:
+
+    > page me=Test
+    Foo pages: Test
+    You paged Foo with 'Test'.
+
+    > page me=:tests.
+    From afar, Foo tests.
+    Long distance to Foo: Foo tests.
+
+    > page me=;'s character tests.
+    From afar, Foo's character tests.
+    Long distance to Foo: Foo's character tests.
+    
+  If your Idle attribute is set to something, then it is sent to anyone who
+  successfully pages you.  This is useful for when you are away from your
+  terminal for a short while.
 
 { 'help page2' for more }
 
@@ -1025,10 +1037,9 @@ PAGE (continued)
   will see the message.
 
   Example:
-    > p darkenelf lauren = Hi
-    You paged (Darkenelf Lauren) with 'Hi'.
-
-    To (Darkenelf Lauren), Dreamline pages: Hi
+    > p Foo Bar = Hi
+    You paged (Foo, Bar) with 'Hi'.
+    To (Foo, Bar), Widget pages: Hi
 
   You only need to type the player-list once, then the next time you page that
   player or set of players, you can abbreviate it with:
