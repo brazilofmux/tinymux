@@ -1046,11 +1046,11 @@
 
 & CONFIG PARAMETERS
   Topic: CONFIG PARAMETERS
- 
+
   The following configuration parameters may be specified in the configuration
   file, or given to the @admin command.  Type 'wizhelp <param>' for help on a
   particular parameter.
- 
+
   access  alias  allow_guest_from_registered_site  attr_access  attr_alias
   attr_cmd_access  bad_name  badsite_file  check_interval  check_offset
   clone_copies_cost  comsys_database  command_quota_increment
@@ -1548,8 +1548,8 @@ ARTICLE_RULE
   See also: fork_dump.
 
 & full_file
-  Config parameter: down_file <pathname>.  Default: text/full.txt
- 
+  Config parameter: full_file <pathname>.  Default: text/full.txt
+
   Specifies the name of the file that is displayed when players attempt to
   connect to a non-wizard character when the number of connected players
   is not less than the number of players allowed by the max_players directive.
