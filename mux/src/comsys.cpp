@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.5 2003-02-03 15:00:33 sdennis Exp $
+// $Id: comsys.cpp,v 1.6 2003-02-04 00:07:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -208,7 +208,7 @@ BOOL ParseChannelLine(char *pBuffer, char *pAlias5, char **ppChannelName)
     // Skip any leading space before the channel name.
     //
     p++;
-    while (Tiny_IsSpace[(unsigned char)*p])
+    while (mux_isspace[(unsigned char)*p])
     {
         p++;
     }

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.9 2003-02-03 22:40:15 sdennis Exp $
+// $Id: conf.cpp,v 1.10 2003-02-04 00:07:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1286,7 +1286,7 @@ CF_HAND(cf_cf_access)
     CONF *tp;
     char *ap;
 
-    for (ap = str; *ap && !Tiny_IsSpace[(unsigned char)*ap]; ap++)
+    for (ap = str; *ap && !mux_isspace[(unsigned char)*ap]; ap++)
     {
         ; // Nothing
     }
@@ -1536,11 +1536,11 @@ CF_HAND(cf_include)
 
         // Strip spaces.
         //
-        for (cp = buf; Tiny_IsSpace[(unsigned char)*cp]; cp++) ;
+        for (cp = buf; mux_isspace[(unsigned char)*cp]; cp++) ;
 
         // Skip over command.
         //
-        for (ap = cp; *ap && !Tiny_IsSpace[(unsigned char)*ap]; ap++) ;
+        for (ap = cp; *ap && !mux_isspace[(unsigned char)*ap]; ap++) ;
 
         // Trim command.
         //
@@ -1556,21 +1556,31 @@ CF_HAND(cf_include)
 
         // Skip Spaces.
         //
-        for (; Tiny_IsSpace[(unsigned char)*ap]; ap++) ;
+        for (; mux_isspace[(unsigned char)*ap]; ap++)
+        {
+            ; // Nothing.
+        }
 
         // Find comment.
         //
-        for (zp = ap; *zp && (*zp != '#'); zp++) ;
+        for (zp = ap; *zp && (*zp != '#'); zp++)
+        {
+            ; // Nothing.
+        }
 
         // Zap comment.
         //
         if (*zp)
+        {
             *zp = '\0';
+        }
 
         // Zap trailing spaces.
         //
-        for (zp = zp - 1; zp >= ap && Tiny_IsSpace[(unsigned char)*zp]; zp--)
+        for (zp = zp - 1; zp >= ap && mux_isspace[(unsigned char)*zp]; zp--)
+        {
             *zp = '\0';
+        }
 
         cf_set(cp, ap, player);
         fgets(buf, LBUF_SIZE, fp);

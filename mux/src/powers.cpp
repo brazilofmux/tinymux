@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.2 2003-01-23 08:02:53 jake Exp $
+// $Id: powers.cpp,v 1.3 2003-02-04 00:07:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -220,7 +220,7 @@ void power_set(dbref target, dbref player, char *power, int key)
 {
     // Trim spaces, and handle the negation character.
     //
-    while (Tiny_IsSpace[(unsigned char)*power])
+    while (mux_isspace[(unsigned char)*power])
     {
         power++;
     }
@@ -231,7 +231,7 @@ void power_set(dbref target, dbref player, char *power, int key)
         negate = TRUE;
         power++;
     }
-    while (Tiny_IsSpace[(unsigned char)*power])
+    while (mux_isspace[(unsigned char)*power])
     {
         power++;
     }

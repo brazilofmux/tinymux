@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: match.cpp,v 1.2 2003-02-04 00:07:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -108,7 +108,7 @@ static char *munge_space_for_match(char *name)
     {
         // Remove Initial spaces.
         //
-        while (Tiny_IsSpace[(unsigned char)*p])
+        while (mux_isspace[(unsigned char)*p])
         {
             p++;
         }
@@ -116,12 +116,12 @@ static char *munge_space_for_match(char *name)
         while (*p)
         {
             while (  *p
-                  && !Tiny_IsSpace[(unsigned char)*p])
+                  && !mux_isspace[(unsigned char)*p])
             {
                 *q++ = *p++;
             }
 
-            while (Tiny_IsSpace[(unsigned char)*p])
+            while (mux_isspace[(unsigned char)*p])
             {
                 p++;
             }
@@ -153,7 +153,7 @@ void match_player(void)
     if (*md.string == LOOKUP_TOKEN)
     {
         char *p;
-        for (p = md.string + 1; Tiny_IsSpace[(unsigned char)*p]; p++) ;
+        for (p = md.string + 1; mux_isspace[(unsigned char)*p]; p++) ;
         dbref match = lookup_player(NOTHING, p, TRUE);
         if (Good_obj(match))
         {

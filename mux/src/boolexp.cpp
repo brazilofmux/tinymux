@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
+// $Id: boolexp.cpp,v 1.4 2003-02-04 00:07:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -289,7 +289,7 @@ static dbref parse_player;
 
 static void skip_whitespace(void)
 {
-    while (Tiny_IsSpace[(unsigned char)*parsebuf])
+    while (mux_isspace[(unsigned char)*parsebuf])
     {
         parsebuf++;
     }
@@ -407,7 +407,7 @@ static BOOLEXP *parse_boolexp_L(void)
         // Strip trailing whitespace.
         //
         *p-- = '\0';
-        while (Tiny_IsSpace[(unsigned char)*p])
+        while (mux_isspace[(unsigned char)*p])
         {
             *p-- = '\0';
         }

@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.2 2003-02-01 04:00:31 jake Exp $
+// $Id: set.cpp,v 1.3 2003-02-04 00:07:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1865,7 +1865,7 @@ void do_setvattr
 
     // Take to the space
     //
-    for (s = arg1; *s && !Tiny_IsSpace[(unsigned char)*s]; s++) ;
+    for (s = arg1; *s && !mux_isspace[(unsigned char)*s]; s++) ;
 
     // Split it
     //

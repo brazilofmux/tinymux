@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.13 2003-02-03 22:48:34 sdennis Exp $
+// $Id: db.cpp,v 1.14 2003-02-04 00:07:28 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -297,11 +297,14 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
     {
         // Skip spaces.
         //
-        for (; Tiny_IsSpace[(unsigned char)*bp]; bp++) ;
+        for (; mux_isspace[(unsigned char)*bp]; bp++)
+        {
+            ; // Nothing.
+        }
 
         // Remember string.
         //
-        for (dp = bp; *bp && !Tiny_IsSpace[(unsigned char)*bp]; bp++) ;
+        for (dp = bp; *bp && !mux_isspace[(unsigned char)*bp]; bp++) ;
 
         // Terminate string.
         //

@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.7 2003-02-03 22:40:15 sdennis Exp $
+// $Id: flags.cpp,v 1.8 2003-02-04 00:07:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -570,7 +570,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
     {
         // Trim spaces, and handle the negation character.
         //
-        while (Tiny_IsSpace[(unsigned char)*flag])
+        while (mux_isspace[(unsigned char)*flag])
         {
             flag++;
         }
@@ -582,14 +582,14 @@ void flag_set(dbref target, dbref player, char *flag, int key)
             do
             {
                 flag++;
-            } while (Tiny_IsSpace[(unsigned char)*flag]);
+            } while (mux_isspace[(unsigned char)*flag]);
         }
 
         // Beginning of flag name is now 'flag'.
         //
         char *nflag = flag;
         while (  *nflag != '\0'
-              && !Tiny_IsSpace[(unsigned char)*nflag])
+              && !mux_isspace[(unsigned char)*nflag])
         {
             nflag++;
         }

@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.10 2003-02-03 19:38:42 sdennis Exp $
+// $Id: predicates.cpp,v 1.11 2003-02-04 00:07:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -329,8 +329,8 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
     // as the first character, or SPACE as the last character
     //
     if (  strchr("*!#", *pStripped)
-       || Tiny_IsSpace[(unsigned char)pStripped[0]]
-       || Tiny_IsSpace[(unsigned char)pStripped[nStripped-1]])
+       || mux_isspace[(unsigned char)pStripped[0]]
+       || mux_isspace[(unsigned char)pStripped[nStripped-1]])
     {
         return NULL;
     }
@@ -494,8 +494,8 @@ BOOL ValidatePlayerName(const char *pName)
     // as the first character, or SPACE as the last character
     //
     if (  strchr("*!#", *pName)
-       || Tiny_IsSpace[(unsigned char)pName[0]]
-       || Tiny_IsSpace[(unsigned char)pName[nName-1]])
+       || mux_isspace[(unsigned char)pName[0]]
+       || mux_isspace[(unsigned char)pName[nName-1]])
     {
         return FALSE;
     }
@@ -548,7 +548,7 @@ BOOL ok_password(const char *password, dbref player)
     for (scan = password; *scan; scan++)
     {
         if (  !Tiny_IsPrint[(unsigned char)*scan]
-           || Tiny_IsSpace[(unsigned char)*scan])
+           || mux_isspace[(unsigned char)*scan])
         {
             notify_quiet(player, "Illegal character in password.");
             return FALSE;
@@ -1602,7 +1602,7 @@ void parse_range(char **name, dbref *low_bound, dbref *high_bound)
         char *buff2 = parse_to(&buff1, ',', EV_STRIP_TS);
         if (buff1 && *buff1)
         {
-            while (Tiny_IsSpace[(unsigned char)*buff1])
+            while (mux_isspace[(unsigned char)*buff1])
             {
                 buff1++;
             }
@@ -1623,7 +1623,7 @@ void parse_range(char **name, dbref *low_bound, dbref *high_bound)
             *high_bound = mudstate.db_top - 1;
         }
 
-        while (Tiny_IsSpace[(unsigned char)*buff2])
+        while (mux_isspace[(unsigned char)*buff2])
         {
             buff2++;
         }

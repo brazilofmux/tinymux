@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.19 2003-02-03 23:48:38 sdennis Exp $
+// $Id: functions.cpp,v 1.20 2003-02-04 00:07:28 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2436,7 +2436,7 @@ BOOL xlate(char *arg)
         }
         return FALSE;
     }
-    while (Tiny_IsSpace[(unsigned char)*p])
+    while (mux_isspace[(unsigned char)*p])
     {
         p++;
     }
@@ -3105,7 +3105,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
 
     // Trim Spaces from beginning.
     //
-    while (Tiny_IsSpace[(unsigned char)*number])
+    while (mux_isspace[(unsigned char)*number])
     {
         number++;
     }
@@ -3146,7 +3146,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
     
     // Skip trailing spaces.
     //
-    while (Tiny_IsSpace[*number])
+    while (mux_isspace[*number])
     {
         number++;
     }
@@ -3194,7 +3194,7 @@ FUNCTION(fun_roman)
 
     // Trim Spaces from beginning.
     //
-    while (Tiny_IsSpace[(unsigned char)*number])
+    while (mux_isspace[(unsigned char)*number])
     {
         number++;
     }
@@ -3215,7 +3215,7 @@ FUNCTION(fun_roman)
 
     // Skip trailing spaces.
     //
-    while (Tiny_IsSpace[*number])
+    while (mux_isspace[*number])
     {
         number++;
     }
@@ -8073,7 +8073,7 @@ FUNCTION(fun_wrap)
     {
         nLineLeft = nWidth - (pThisWord - pLineStart);
         pNextWord = pThisWord;
-        while(*pNextWord && !Tiny_IsSpace[*pNextWord])
+        while(*pNextWord && !mux_isspace[*pNextWord])
         {
             pNextWord++;
         }
@@ -9555,7 +9555,7 @@ void list_functable(dbref player)
 CF_HAND(cf_func_access)
 {
     char *ap;
-    for (ap = str; *ap && !Tiny_IsSpace[(unsigned char)*ap]; ap++)
+    for (ap = str; *ap && !mux_isspace[(unsigned char)*ap]; ap++)
     {
         ; // Nothing.
     }
