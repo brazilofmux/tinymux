@@ -1,4 +1,4 @@
-/* $Id: udb.h,v 1.1 2000-04-11 07:14:48 sdennis Exp $ */
+/* $Id: udb.h,v 1.2 2000-04-24 22:42:14 sdennis Exp $ */
 
 #ifndef _UDB_H
 #define _UDB_H
@@ -72,7 +72,6 @@ extern int cache_check(void);
 extern int cache_init(const char *game_dir_file, const char *game_pag_file);
 extern void cache_close(void);
 extern int  cache_optimize(void);
-extern void cache_reset(int trim);
 extern void cache_tick(void);
 extern int cache_sync(void);
 extern void cache_del(Aname *nam);
