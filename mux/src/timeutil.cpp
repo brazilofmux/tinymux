@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
+// $Id: timeutil.cpp,v 1.4 2003-02-03 19:55:34 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -600,7 +600,7 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
     }
     else
     {
-        i64 = Tiny_atoi64(aBuffer);
+        i64 = mux_atoi64(aBuffer);
     }
     return TRUE;
 }

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.8 2003-02-03 15:00:33 sdennis Exp $
+// $Id: funceval.cpp,v 1.9 2003-02-03 19:55:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2719,7 +2719,7 @@ FUNCTION(fun_unpack)
     if (nfargs == 2)
     {
         if (  !is_integer(fargs[1], NULL)
-           || (iRadix = Tiny_atoi64(fargs[1])) < 2
+           || (iRadix = mux_atoi64(fargs[1])) < 2
            || 64 < iRadix)
         {
             safe_str("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64", buff, bufc);
@@ -2789,14 +2789,14 @@ FUNCTION(fun_pack)
         safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
         return;
     }
-    INT64 val = Tiny_atoi64(fargs[0]);
+    INT64 val = mux_atoi64(fargs[0]);
 
     // Validate the radix is between 2 and 64.
     //
     INT64 iRadix = 64;
     if (nfargs == 2)
     {
-        iRadix = Tiny_atoi64(fargs[1]);
+        iRadix = mux_atoi64(fargs[1]);
         if (iRadix < 2 || 64 < iRadix)
         {
             safe_str("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64", buff, bufc);

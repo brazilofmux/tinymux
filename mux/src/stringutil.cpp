@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.14 2003-02-03 19:49:38 sdennis Exp $
+// $Id: stringutil.cpp,v 1.15 2003-02-03 19:55:34 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2141,7 +2141,7 @@ long mux_atol(const char *pString)
     return sum;
 }
 
-INT64 Tiny_atoi64(const char *pString)
+INT64 mux_atoi64(const char *pString)
 {
     INT64 sum = 0;
     int LeadingCharacter = 0;

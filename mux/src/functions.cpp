@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.14 2003-02-03 19:49:38 sdennis Exp $
+// $Id: functions.cpp,v 1.15 2003-02-03 19:55:34 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3089,7 +3089,7 @@ void CSpellNum::FractionalDigits(int n, const char *p)
         }
         AddWord(bigones[d]);
         AddWord("th");
-        INT64 i64 = Tiny_atoi64(p);
+        INT64 i64 = mux_atoi64(p);
         if (i64 != 1)
         {
             AddWord("s");
@@ -3612,14 +3612,14 @@ FUNCTION(fun_idiv)
 {
     INT64 bot, top;
 
-    bot = Tiny_atoi64(fargs[1]);
+    bot = mux_atoi64(fargs[1]);
     if (bot == 0)
     {
         safe_str("#-1 DIVIDE BY ZERO", buff, bufc);
     }
     else
     {
-        top = Tiny_atoi64(fargs[0]);
+        top = mux_atoi64(fargs[0]);
         top = i64Division(top, bot);
         safe_i64toa(top, buff, bufc);
     }
@@ -3629,14 +3629,14 @@ FUNCTION(fun_floordiv)
 {
     INT64 bot, top;
 
-    bot = Tiny_atoi64(fargs[1]);
+    bot = mux_atoi64(fargs[1]);
     if (bot == 0)
     {
         safe_str("#-1 DIVIDE BY ZERO", buff, bufc);
     }
     else
     {
-        top = Tiny_atoi64(fargs[0]);
+        top = mux_atoi64(fargs[0]);
         top = i64FloorDivision(top, bot);
         safe_i64toa(top, buff, bufc);
     }
@@ -3675,12 +3675,12 @@ FUNCTION(fun_mod)
 {
     INT64 bot, top;
 
-    bot = Tiny_atoi64(fargs[1]);
+    bot = mux_atoi64(fargs[1]);
     if (bot == 0)
     {
         bot = 1;
     }
-    top = Tiny_atoi64(fargs[0]);
+    top = mux_atoi64(fargs[0]);
     top = i64Mod(top, bot);
     safe_i64toa(top, buff, bufc);
 }
@@ -3689,12 +3689,12 @@ FUNCTION(fun_remainder)
 {
     INT64 bot, top;
 
-    bot = Tiny_atoi64(fargs[1]);
+    bot = mux_atoi64(fargs[1]);
     if (bot == 0)
     {
         bot = 1;
     }
-    top = Tiny_atoi64(fargs[0]);
+    top = mux_atoi64(fargs[0]);
     top = i64Remainder(top, bot);
     safe_i64toa(top, buff, bufc);
   }
@@ -8142,7 +8142,7 @@ FUNCTION(fun_iadd)
     INT64 sum = 0;
     for (int i = 0; i < nfargs; i++)
     {
-        sum += Tiny_atoi64(fargs[i]);
+        sum += mux_atoi64(fargs[i]);
     }
     safe_i64toa(sum, buff, bufc);
 }
@@ -8155,7 +8155,7 @@ FUNCTION(fun_iadd)
 
 FUNCTION(fun_isub)
 {
-    INT64 diff = Tiny_atoi64(fargs[0]) - Tiny_atoi64(fargs[1]);
+    INT64 diff = mux_atoi64(fargs[0]) - mux_atoi64(fargs[1]);
     safe_i64toa(diff, buff, bufc);
 }
 
@@ -8170,7 +8170,7 @@ FUNCTION(fun_imul)
     INT64 prod = 1;
     for (int i = 0; i < nfargs; i++)
     {
-        prod *= Tiny_atoi64(fargs[i]);
+        prod *= mux_atoi64(fargs[i]);
     }
     safe_i64toa(prod, buff, bufc);
 }
@@ -8179,7 +8179,7 @@ FUNCTION(fun_imul)
 //
 FUNCTION(fun_iabs)
 {
-    INT64 num = Tiny_atoi64(fargs[0]);
+    INT64 num = mux_atoi64(fargs[0]);
 
     if (num == 0)
     {
@@ -8199,7 +8199,7 @@ FUNCTION(fun_iabs)
 //
 FUNCTION(fun_isign)
 {
-    INT64 num = Tiny_atoi64(fargs[0]);
+    INT64 num = mux_atoi64(fargs[0]);
 
     if (num < 0)
     {
