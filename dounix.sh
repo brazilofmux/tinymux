@@ -28,7 +28,7 @@ done
 for i in $removeFiles;
 do
     if [ -e $NewDir/$i ]; then
-        Echo Removing: $NewDir/$i
+        echo Removing: $NewDir/$i
         rm $NewDir/$i
     fi
 done

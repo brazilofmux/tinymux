@@ -6,6 +6,9 @@ dbconvert.dep
 dbconvert.dsp
 dbconvert.mak
 docs/COMPRESSION
+docs/CHANGES.1.6
+docs/CREDITS.1.6
+docs/NOTES.1.6
 docs/mux2.1-man.pdf
 docs/mux2.1-man.tex
 game/bin/TinyMUX.exe

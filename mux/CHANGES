@@ -12,6 +12,7 @@ Major changes that may affect performance and require softcode tweaks:
     parse the time string because '-1' is a valid time stamp.
  -- IFELSE() now uses the BOOLEAN convention instead of pseudo-BOOLEAN-Z
     convention.
+ -- Released sources and binaries under the Artistic License.
 
 
 Feature Additions:
