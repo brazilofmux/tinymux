@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.113 2002-09-25 20:31:21 sdennis Exp $
+// $Id: functions.cpp,v 1.114 2002-09-26 03:55:42 jake Exp $
 //
 
 #include "copyright.h"
@@ -8004,10 +8004,7 @@ void wrap_send_line (char *buff, char **bufc, char *pLineStart, char cJust, int 
     jargs[0] = pLineStart;
     jargs[1] = Tiny_ltoa_t(nWidth);
     centerjustcombo(key, buff, bufc, jargs, 2);
-    if (pRight)
-    {
-        safe_str(pRight, buff, bufc);
-    }
+    safe_str(pRight, buff, bufc);
     if (!bEnd)
     {
         safe_str("\r\n", buff, bufc);
