@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.28 2004-10-25 15:45:12 sdennis Exp $
+// $Id: comsys.cpp,v 1.29 2004-12-30 23:29:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1403,14 +1403,7 @@ struct channel *select_channel(char *channel)
 {
     struct channel *cp = (struct channel *)hashfindLEN(channel,
         strlen(channel), &mudstate.channel_htab);
-    if (!cp)
-    {
-        return NULL;
-    }
-    else
-    {
-        return cp;
-    }
+    return cp;
 }
 
 struct comuser *select_user(struct channel *ch, dbref player)
@@ -2261,8 +2254,24 @@ void do_comdisconnect(dbref player)
 
     for (i = 0; i < c->numchannels; i++)
     {
-        do_comdisconnectchannel(player, c->channels[i]);
-        do_comdisconnectraw_notify(player, c->channels[i]);
+        char *CurrentChannel = c->channels[i];
+        bool bFound = false;
+        int j;
+ 
+        for (j = 0; j < i; j++)
+        {
+            if (strcmp(c->channels[j], CurrentChannel) == 0)
+            {
+                bFound = true;
+                break;
+            }
+        }
+
+        if (!bFound)
+        {
+            do_comdisconnectchannel(player, CurrentChannel);
+            do_comdisconnectraw_notify(player, CurrentChannel);
+        }
     }
 }
 
@@ -2273,8 +2282,24 @@ void do_comconnect(dbref player)
 
     for (i = 0; i < c->numchannels; i++)
     {
-        do_comconnectchannel(player, c->channels[i], c->alias, i);
-        do_comconnectraw_notify(player, c->channels[i]);
+        char *CurrentChannel = c->channels[i];
+        bool bFound = false;
+        int j;
+ 
+        for (j = 0; j < i; j++)
+        {
+            if (strcmp(c->channels[j], CurrentChannel) == 0)
+            {
+                bFound = true;
+                break;
+            }
+        }
+
+        if (!bFound)
+        {
+            do_comconnectchannel(player, CurrentChannel, c->alias, i);
+            do_comconnectraw_notify(player, CurrentChannel);
+        }
     }
 }
 
