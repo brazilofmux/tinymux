@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.65 2002-01-31 12:29:29 sdennis Exp $
+// $Id: command.cpp,v 1.66 2002-02-13 18:57:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -16,6 +16,7 @@
 #include "powers.h"
 #include "vattr.h"
 #include "comsys.h"
+#include "mguests.h"
 
 extern void FDECL(list_cf_access, (dbref));
 extern void FDECL(list_siteinfo, (dbref));
@@ -2947,6 +2948,7 @@ static void list_process(dbref player)
 #define LIST_PROCESS    21
 #define LIST_BADNAMES   22
 #define LIST_RESOURCES  23
+#define LIST_GUESTS     24
 
 NAMETAB list_names[] =
 {
@@ -2962,7 +2964,7 @@ NAMETAB list_names[] =
     {(char *)"default_flags",   1,  CA_PUBLIC,  LIST_DF_FLAGS},
     {(char *)"flags",       2,  CA_PUBLIC,  LIST_FLAGS},
     {(char *)"functions",       2,  CA_PUBLIC,  LIST_FUNCTIONS},
-    {(char *)"globals",     1,  CA_WIZARD,  LIST_GLOBALS},
+    {(char *)"globals",     2,  CA_WIZARD,  LIST_GLOBALS},
     {(char *)"hashstats",       1,  CA_WIZARD,  LIST_HASHSTATS},
     {(char *)"logging",     1,  CA_GOD,     LIST_LOGGING},
     {(char *)"options",     1,  CA_PUBLIC,  LIST_OPTIONS},
@@ -2973,6 +2975,7 @@ NAMETAB list_names[] =
     {(char *)"site_information",    2,  CA_WIZARD,  LIST_SITEINFO},
     {(char *)"switches",        2,  CA_PUBLIC,  LIST_SWITCHES},
     {(char *)"user_attributes", 1,  CA_WIZARD,  LIST_VATTRS},
+    {(char *)"guests",      2,   CA_WIZARD, LIST_GUESTS},
     { NULL,             0,  0,      0}
 };
 
@@ -3061,6 +3064,9 @@ void do_list(dbref player, dbref cause, int extra, char *arg)
         break;
     case LIST_RESOURCES:
         list_system_resources(player);
+        break;
+    case LIST_GUESTS:
+        Guest.ListAll(player);
         break;
     default:
         display_nametab(player, list_names,

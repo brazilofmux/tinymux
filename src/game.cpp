@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.52 2002-02-05 09:29:59 sdennis Exp $
+// $Id: game.cpp,v 1.53 2002-02-13 18:57:29 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -15,6 +15,7 @@
 #include "attrs.h"
 #include "comsys.h"
 #include "muxcli.h"
+#include "mguests.h"
 
 #ifdef RADIX_COMPRESSION
 #include "radix.h"
@@ -2037,6 +2038,7 @@ int DCL_CDECL main(int argc, char *argv[])
         }
     }
     set_signals();
+    Guest.StartUp();
 
     // Do a consistency check and set up the freelist
     //

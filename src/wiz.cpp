@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.23 2001-12-06 05:37:23 sdennis Exp $
+// $Id: wiz.cpp,v 1.24 2002-02-13 18:57:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -697,6 +697,7 @@ NAMETAB enable_names[] =
     {"idlechecking",    2,  CA_PUBLIC,  CF_IDLECHECK},
     {"interpret",       2,  CA_PUBLIC,  CF_INTERP},
     {"logins",          3,  CA_PUBLIC,  CF_LOGIN},
+    {"guests",          2,  CA_PUBLIC,  CF_GUEST},
     {"eventchecking",   2,  CA_PUBLIC,  CF_EVENTCHECK},
     { NULL,             0,  0,          0}
 };

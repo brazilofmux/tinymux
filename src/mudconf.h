@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.38 2002-01-26 01:01:50 sdennis Exp $
+// $Id: mudconf.h,v 1.39 2002-02-13 18:57:29 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -46,6 +46,7 @@ struct confdata
     dbref   guest_char;     // player num of prototype GUEST character.
     dbref   guest_nuker;    // Wiz who nukes the GUEST characters.
     int     number_guests;  // number of guest characters allowed.
+    int     min_guests;     // The # we should start nuking at.
     int     indent_desc;    // Newlines before and after descs?
     int     name_spaces;    // allow player names to have spaces.
     unsigned int site_chars;// where to truncate site name.
@@ -421,7 +422,7 @@ extern STATEDATA mudstate;
 #define CF_CHECKPOINT   0x0008      /* Perform auto-checkpointing */
 #define CF_DBCHECK      0x0010      /* Periodically check/clean the DB */
 #define CF_IDLECHECK    0x0020      /* Periodically check for idle users */
-/* empty        0x0040 */
+#define CF_GUEST        0x0040      /* Allow guest logins to the mux */
 /* empty        0x0080 */
 #define CF_DEQUEUE      0x0100      /* Remove entries from the queue */
 #ifdef MUSH3

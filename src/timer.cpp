@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.9 2001-11-28 06:35:55 sdennis Exp $
+// $Id: timer.cpp,v 1.10 2002-02-13 18:57:29 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -21,6 +21,7 @@
 
 #include "interface.h"
 #include "command.h"
+#include "mguests.h"
 
 extern void NDECL(pool_reset);
 extern void FDECL(fork_and_dump, (int key));
@@ -37,6 +38,9 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
         char *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = (char *)"< dbck >";
         do_dbck(NOTHING, NOTHING, 0);
+#ifndef STANDALONE
+        Guest.CleanUp();
+#endif
         pcache_trim();
         pool_reset();
         mudstate.debug_cmd = cmdsave;

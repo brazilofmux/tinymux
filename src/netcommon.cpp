@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.55 2002-02-07 03:00:31 sdennis Exp $
+// $Id: netcommon.cpp,v 1.56 2002-02-13 18:57:29 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -778,6 +778,11 @@ static void announce_connect(dbref player, DESC *d)
         inet_ntoa((d->address).sin_addr));
     look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
     mudstate.curr_enactor = temp;
+    if (Guest(player))
+    {
+        db[player].fs.word[FLAG_WORD1] &= ~DARK;
+    }
+    
 }
 
 void announce_disconnect(dbref player, DESC *d, const char *reason)
@@ -1673,7 +1678,15 @@ static int check_connect(DESC *d, char *msg)
             if ((mudconf.guest_char != NOTHING) &&
                 (mudconf.control_flags & CF_LOGIN))
             {
-                if ((p = make_guest(d)) == NULL)
+                if(!(mudconf.control_flags & CF_GUEST)) {
+                    queue_string(d, "Guest logins are disabled.\n");
+                    free_lbuf(command);
+                    free_lbuf(user);
+                    free_lbuf(password);
+                    return 0;
+                }
+                            
+                if ((p = Guest.Create(d)) == NULL)
                 {
                     queue_string(d, "All guests are tied up, please try again later.\n");
                     free_lbuf(command);
@@ -1682,7 +1695,7 @@ static int check_connect(DESC *d, char *msg)
                     return 0;
                 }
                 StringCopy(user, p);
-                StringCopy(password, mudconf.guest_prefix);
+                StringCopy(password, GUEST_PASSWORD);
             }
         }
 

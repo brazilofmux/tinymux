@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.65 2002-02-02 05:15:20 sdennis Exp $
+// $Id: conf.cpp,v 1.66 2002-02-13 18:57:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -74,6 +74,7 @@ void NDECL(cf_init)
     mudconf.guest_char = -1;
     mudconf.guest_nuker = 1;
     mudconf.number_guests = 30;
+    mudconf.min_guests = 1;
     strcpy(mudconf.guest_prefix, "Guest");
     mudconf.guest_file     = StringClone("text/guest.txt");
     mudconf.conn_file      = StringClone("text/connect.txt");
@@ -1510,6 +1511,7 @@ CONF conftable[] =
     {"match_own_commands",        cf_bool,        CA_GOD,    CA_PUBLIC,   &mudconf.match_mine,             NULL,               0},
     {"max_players",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_players,            NULL,               0},
     {"max_cache_size",            cf_int,         CA_GOD,    CA_GOD,      (int *)&mudconf.max_cache_size,  NULL,               0},
+    {"min_guests",                cf_int,         CA_STATIC, CA_GOD,      (int *)&mudconf.min_guests,      NULL,               0},
     {"money_name_plural",         cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.many_coins,       NULL,              32},
     {"money_name_singular",       cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.one_coin,         NULL,              32},
     {"motd_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.motd_file,       NULL, SIZEOF_PATHNAME},
