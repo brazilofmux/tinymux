@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.31 2000-10-16 07:28:44 sdennis Exp $
+// $Id: funceval.cpp,v 1.32 2000-10-24 22:06:06 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -667,7 +667,7 @@ FUNCTION(fun_zfun)
         safe_str("#-1 ZONES DISABLED", buff, bufc);
         return;
     }
-    if (zone == NOTHING)
+    if (!Good_obj(zone))
     {
         safe_str("#-1 INVALID ZONE", buff, bufc);
         return;
