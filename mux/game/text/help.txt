@@ -2120,6 +2120,7 @@ Related Topics: @name.
                                    location is LINK_OK (for linking exits or
                                    setting drop-tos) or ABODE (for setting
                                    homes)
+     MailLock:     Players:        controls who may @mail the player.
      PageLock:     Players:        controls who may page the player.
      ParentLock:   All:            controls who may make @parent links to the
                                    object.
@@ -4311,7 +4312,7 @@ BLIND
 
   FLAG: BLIND(B)
 
-  This flag supresses the '<who> has arrived.' and '<who> has left.' messages.
+  This flag suppresses the '<who> has arrived.' and '<who> has left.' messages.
   When set on a player, the messages caused by their movement are suppressed.
   When set on a location, the messages for everyone entering or leaving that
   location are suppressed.
@@ -4434,9 +4435,9 @@ CAND()
   FUNCTION: cand(<boolean1>[,<booleanN>]...)
 
   Takes one or more BOOLEAN-Z values, and returns 1 (TRUE) if all arguments
-  are TRUE.  cand() evaluates its arguments from left to right until either
-  all arguments evalute to TRUE or one of the arguments evalute to FALSE. This
-  is unlike and() in that some arguments may not be evaluated.
+  are TRUE. cand() evaluates its arguments from left to right until either
+  all arguments evaluate to TRUE or one of the arguments evaluate to FALSE.
+  This is unlike and() in that some arguments may not be evaluated.
 
   Related Topics: and(), candbool(), BOOLEAN VALUES, cor().
 
@@ -4689,7 +4690,7 @@ COLUMNS()
   This function fits the margin and as many columns as possible into a
   78-wide screen.
 
-    The input delimeter, <delim>, defaults to a space.
+    The input delimiter, <delim>, defaults to a space.
     The left margin width, <indent>, defaults to zero.
 
   Related Topics: table()
@@ -7121,9 +7122,9 @@ INUM()
   in which the current iter() is nested, etc.
 
   Unlike the ## and #@ substitutions which are substituted in the evaluation
-  string before it is evaluted, itext(), inum(), and ilev() substitute their
+  string before it is evaluated, itext(), inum(), and ilev() substitute their
   values as part of evaluation. In this way, the use of these functions is
-  safer than the ## and #@ substitutions and is therefore prefered.
+  safer than the ## and #@ substitutions and is therefore preferred.
    
   > say [iter(red blue green,iter(fish shoe, #@:##))]
   You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
@@ -7223,8 +7224,8 @@ ISNUM()
 
   FUNCTION: isnum(<string>)
 
-  This function will return return 1 (TRUE) if the argument is a valid number
-  and 0 (FALSE) otherwise. This definition of a number includes scientific
+  This function will return 1 (TRUE) if the argument is a valid number and 
+  0 (FALSE) otherwise. This definition of a number includes scientific
   notation as well as a certain case-insensitive 'special words': NaN, -Inf,
   +Inf, and Ind.
 
@@ -7344,7 +7345,7 @@ ITER()
   the special symbol ## with the corresponding item from <list> and the symbol
   #@ with the position within the list being iterated. Remember that <eval> is
   evaluated after ## and #@ are substituted.  For this reason, itext() is
-  preferred over ##, and inum() is prefered over #@.
+  preferred over ##, and inum() is preferred over #@.
 
   An <output delim>-separated list of the results of these evaluations is
   returned to the caller.  The effect is very similar to @dolist except that
@@ -7379,9 +7380,9 @@ ITEXT()
   in which the current iter() is nested, etc.
 
   Unlike the ## and #@ substitutions which are substituted in the evaluation
-  string before it is evaluted, itext(), inum(), and ilev() substitute their
+  string before it is evaluated, itext(), inum(), and ilev() substitute their
   values as part of evaluation. In this way, the use of these functions is
-  safer than the ## and #@ substitutions and is therefore prefered.
+  safer than the ## and #@ substitutions and is therefore preferred.
    
   > say [iter(red blue green,iter(fish shoe, #@:##))]
   You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
@@ -8689,9 +8690,9 @@ MIX()
 
   FUNCTION: mix([<object>/]<attribute>,<list 1>,<list 2>[,<list N>][,<delim>])
   
-  This function is similiar to map(), except it takes the arguments in the 
+  This function is similar to map(), except it takes the arguments in the 
   lists and passes them into the attribute as %0 (for list1), %1 (for list2),
-  up to %9 (for list10).  <delim> is used as the delimiter to seperate items
+  up to %9 (for list10).  <delim> is used as the delimiter to separate items
   in each of the lists.  If the number of lists is 2, the delimiter may be
   optional, otherwise you are forced to provide a delimiter.  If no delimiter
   is specified, it defaults to a space but only for the above condition.
@@ -11024,7 +11025,7 @@ SORT()
   alphanumeric).  If omitted or left blank, the sort() function will
   try to determine the type of sort to perform automatically.
 
-  By default, the output delimeter, <odelim>, defaults to the input delimiter,
+  By default, the output delimiter, <odelim>, defaults to the input delimiter,
   <idelim>, which itself defaults to a space. Delimiters here, like most other
   functions, are used to separate items in a list.
 

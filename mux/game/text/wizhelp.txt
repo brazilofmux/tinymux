@@ -1488,6 +1488,16 @@ CACHE_DEPTH
 
   Related Topics: max_cache_size
 
+& CACHE_NAMES
+CACHE_NAMES
+
+  CONFIG PARAMETER: cache_names
+  DEFAULT: Yes
+
+  Whether or not to use object name caches.
+
+  Related Topics:
+
 & CACHE_TRIM
 CACHE_TRIM
 
@@ -1643,52 +1653,56 @@ CONFIG PARAMETERS
   file, or given to the @admin command.  Type 'wizhelp <param>' for help on a
   particular parameter.
 
-  access  alias  allow_guest_from_registered_site  attr_access  attr_alias
-  attr_cmd_access  autozone  bad_name  badsite_file  check_interval
-  check_offset  clone_copies_cost  comsys_database  command_quota_increment
-  command_quota_max  compress_program  compression  config_access
-  conn_timeout  connect_file  connect_reg_file  crash_database  create_max_cost
-  create_min_cost  dark_sleepers  default_home  destroy_going_now  dig_cost
-  down_file  down_motd_message  dump_interval  dump_message  dump_offset
-  earn_limit  examine_flags  examine_public_attrs  exit_flags  exit_quota
-  eval_comtitle  events_daily_hour  fascist_teleport  find_money_chance
-  fixed_home_message  fixed_tel_message  flag_access  flag_alias  forbid_site
-  fork_dump fork_vfork full_file  full_motd_message  function_access
+  access  alias  allow_guest_from_registered_site  article_rule  attr_access
+  attr_alias  attr_cmd_access  autozone  bad_name  badsite_file  cache_names
+  check_interval  check_offset  clone_copies_cost  command_quota_increment
+  command_quota_max  compress_program  compression  comsys_database
+  config_access  conn_timeout  connect_file  connect_reg_file  crash_database
+  create_max_cost  create_min_cost  dark_sleepers  default_home
+  destroy_going_now  dig_cost  down_file  down_motd_message  dump_interval
+  dump_message  dump_offset  earn_limit  eval_comtitle  events_daily_hour
+  examine_flags  examine_public_attrs  exit_flags  exit_quota
+  fascist_teleport  find_money_chance  fixed_home_message  fixed_tel_message
+  flag_access  flag_alias  flag_name  forbid_site  fork_dump  full_file
+  full_motd_message  function_access  function_alias
   function_invocation_limit  function_recursion_limit  game_dir_file
-  game_page_file  good_name  guest_char_num  guest_file  guest_nuker
-  guest_prefix  guest_site  guests_channel  have_comsys  have_macros
-  have_mailer  have_zones  help_file  help_index  hostnames  idle_interval
-  idle_timeout  idle_wiz_dark  include  indent_desc  initial_size
-  input_database  kill_guarantee_cost  kill_max_cost  kill_min_cost
+  game_pag_file  global_error_obj  good_name  guest_char_num  guest_file
+  guest_nuker  guest_prefix  guest_site  guests_channel  have_comsys
+  have_mailer  have_zones  help_file  help_index  hook_cmd  hook_obj
+  hostnames  idle_interval  idle_timeout  idle_wiz_dark  include  indent_desc
+  initial_size  input_database  kill_guarantee_cost  kill_max_cost
+  kill_min_cost  lag_maximum  link_cost  list_access  lock_recursion_limit
 
 { 'wizhelp config parameters2' for more }
 
 & CONFIG PARAMETERS2
 CONFIG PARAMETERS (continued)
 
-  list_access  link_cost  lock_recursion_limit  log  log_options
-  logout_cmd_access  logout_cmd_alias look_obey_terse  machine_command_cost
-  mail_database  mail_expiration  master_room  match_own_commands
-  max_cache_size  max_players  money_name_plural  money_name_singular
-  motd_file  motd_message  mud_name  news_file  news_index  newuser_file
-  nositemon_site  notify_recursion_limit  open_cost  output_database
-  output_limit  page_cost  paranoid_allocate  parent_recursion_limit
-  paycheck  pemit_any_object  pemit_far_players  permit_site  player_flags
-  player_listen  player_match_own_commands  player_queue_limit  player_quota
-  player_starting_home  player_starting_room  plushelp_file  plushelp_index
-  port  postdump_message  public_channel  public_flags  queue_active_chunk
-  queue_idle_chunk  quiet_look  quiet_whisper  quit_file  quotas
-  read_remote_desc  read_remote_name  register_create_file  register_site
-  retry_limit  robot_cost  robot_flags  robot_speech  room_flags  room_quota
-  run_startup sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords
-  search_cost  see_owned_dark  signal_action  site_chars  space_compress
-  stack_limit  starting_money  starting_quota  suspect_site  sweep_dark
-  switch_default_all  terse_shows_contents  terse_shows_exits
-  terse_shows_move_messages  thing_flags  thing_quota  timeslice
-  trace_output_limit  trace_topdown  trust_site  uncompress_program
-  unowned_safe  use_http  user_attr_flags  wait_cost  wizard_help_file
-  wizard_help_index  wizard_motd_file  wizard_motd_message  wiznews_file
-  wiznews_index  zone_recursion_limit
+  log  log_options  logout_cmd_access  logout_cmd_alias  look_obey_terse
+  machine_command_cost  mail_database  mail_expiration  master_room
+  match_own_commands  max_cache_size  max_players  min_guests
+  money_name_plural  money_name_singular  motd_file  motd_message  mud_name
+  news_file  news_index  newuser_file  nositemon_site  notify_recursion_limit
+  number_guests  open_cost  output_database  output_limit  page_cost
+  paranoid_allocate  parent_recursion_limit  paycheck  pemit_any_object
+  pemit_far_players  permit_site  player_flags  player_listen
+  player_match_own_commands  player_name_spaces  player_queue_limit
+  player_quota  player_starting_home  player_starting_room  plushelp_file
+  plushelp_index  port  postdump_message  power_alias  public_channel
+  public_flags  pueblo_message  queue_active_chunk  queue_idle_chunk
+  quiet_look  quiet_whisper  quit_file  quotas  read_remote_desc
+  read_remote_name  register_create_file  register_site  retry_limit
+  robot_cost  robot_flags  robot_speech  room_flags  room_quota  run_startup
+  sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords  search_cost
+  see_owned_dark  signal_action  site_chars  space_compress  stack_limit
+  staffhelp_file  staffhelp_index  starting_money  starting_quota
+  status_file  suspect_site  sweep_dark  switch_default_all
+  terse_shows_contents  terse_shows_exits  terse_shows_move_messages
+  thing_flags  thing_quota  timeslice  toad_recipient  trace_output_limit
+  trace_topdown  trust_site  uncompress_program  unowned_safe  use_http
+  user_attr_access  wait_cost  wizard_help_file  wizard_help_index
+  wizard_motd_file  wizard_motd_message  wiznews_file  wiznews_index
+  zone_recursion_limit
 
 & CONFIG_ACCESS
 CONFIG_ACCESS
@@ -2161,7 +2175,7 @@ FORK_DUMP
   the amount of time needed to perform the dump, it requires that the system
   have enough free swap space to hold a second copy of the running game.
 
-  Related Topics: fork_vfork.
+  Related Topics:
 
 & FULL_FILE
 FULL_FILE
@@ -3371,6 +3385,17 @@ PUBLIC_FLAGS
 
   Related Topics: flags().
 
+& PUEBLO_MESSAGE
+PUEBLO_MESSAGE
+
+  CONFIG PARAMETER: pueblo_message <message>
+  DEFAULT: "</xch_mudtext><img xch_mode=html>"
+
+  Sets the message that is sent to Pueblo clients as a reponse to the
+  PUEBLOCLIENT command.
+
+  Related Topics: pueblo.
+
 & QUEUE_ACTIVE_CHUNK
 QUEUE_ACTIVE_CHUNK
 
@@ -3847,6 +3872,30 @@ STACK_LIMIT
   The number of items that are allowed on an object's stack. You should be
   sparse with this parameter, as stack items are retained until they are
   removed.
+
+& STAFFHELP_FILE
+STAFFHELP_FILE
+
+  CONFIG PARAMETER: staffhelp_file <path>
+  DEFAULT: text/staffhelp.txt
+
+  Specifies the name of the file containing the text used by the +shelp
+  command.
+
+  Related Topics: +shelp, staffhelp_index.
+
+& STAFFHELP_INDEX
+STAFFHELP_INDEX
+
+  CONFIG PARAMETER: staffhelp_index <path>
+  DEFAULT: text/staffhelp.indx
+
+  Specifies the name of the index file used by the +shelp command.  This file
+  must be generated by mkindex from the staff help file.  The contents of
+  this file are read in to a hash table when the game is started and whenever
+  a @readcache command is executed.
+
+  Related Topics: +shelp, @readcache, staffhelp_file.
 
 & STARTING_MONEY
 STARTING_MONEY
