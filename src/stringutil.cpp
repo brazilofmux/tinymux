@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.2 2000-04-12 01:50:32 sdennis Exp $
+// $Id: stringutil.cpp,v 1.3 2000-04-12 02:37:11 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2005,9 +2005,9 @@ void _strupr(char *a)
 #define VSNPRINTF _vsnprintf
 #else // WIN32
 #ifdef NEED_VSPRINTF_DCL
-extern char *vsnprintf(char *, char *, va_list);
+extern char *vsprintf(char *, char *, va_list);
 #endif
-#define VSNPRINTF vsnprint
+#define VSNPRINTF vsnprintf
 #endif // WIN32
 
 // Tiny_vsnprintf - Is an sprintf-like function that will not overflow
