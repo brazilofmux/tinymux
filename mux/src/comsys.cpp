@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.13 2003-03-05 23:12:30 sdennis Exp $
+// $Id: comsys.cpp,v 1.14 2003-05-01 04:48:20 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -641,22 +641,28 @@ void load_comsystem(FILE *fp)
                 t_user.bUserIsOn = false;
                 t_user.ComTitleStatus = false;
 
+                int iUserIsOn;
                 if (ver == 3)
                 {
-                    fscanf(fp, "%d %d %d\n", &(t_user.who), &(t_user.bUserIsOn),
-                        &(t_user.ComTitleStatus));
+                    int iComTitleStatus;
+                    fscanf(fp, "%d %d %d\n", &(t_user.who), &iUserIsOn,
+                        &iComTitleStatus);
+                    t_user.bUserIsOn = iUserIsOn;
+                    t_user.ComTitleStatus = iComTitleStatus;
                 }
                 else
                 {
                     t_user.ComTitleStatus = true;
                     if (ver)
                     {
-                        fscanf(fp, "%d %d\n", &(t_user.who), &(t_user.bUserIsOn));
+                        fscanf(fp, "%d %d\n", &(t_user.who), &iUserIsOn);
+                        t_user.bUserIsOn = iUserIsOn;
                     }
                     else
                     {
                         fscanf(fp, "%d %d %d", &(t_user.who), &(dummy), &(dummy));
-                        fscanf(fp, "%d\n", &(t_user.bUserIsOn));
+                        fscanf(fp, "%d\n", &iUserIsOn);
+                        t_user.bUserIsOn = iUserIsOn;
                     }
                 }
 
@@ -1336,7 +1342,7 @@ bool do_chanlog(dbref player, char *channel, char *arg)
     char *oldvalue;
     dbref aowner;
     int aflags;
-    if (oldvalue = atr_get(ch->chan_obj, atr, &aowner, &aflags))
+    if ((oldvalue = atr_get(ch->chan_obj, atr, &aowner, &aflags)))
     {
         int oldnum = mux_atol(oldvalue);
         if (oldnum > value)
