@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.19 2001-02-07 05:28:14 sdennis Exp $
+// $Id: svdhash.cpp,v 1.20 2001-02-10 04:08:03 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -519,7 +519,7 @@ void CHashPage::Empty(HP_DIRINDEX arg_nDepth, UINT32 arg_nHashGroup, HP_DIRINDEX
 }
 
 #ifdef HP_PROTECTION
-void CHashPage::Protect(void)
+void CHashPage::Protection(void)
 {
     UINT32 ul = HASH_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
     m_pTrailer->m_checksum = ul;
@@ -1890,7 +1890,9 @@ BOOL CHashFile::FlushCache(int iCache)
     switch (m_Cache[iCache].m_iState)
     {
     case HF_CACHE_UNPROTECTED:
-        //m_Cache[iCache].m_hp.Protect();
+#ifdef HP_PROTECTION
+        m_Cache[iCache].m_hp.Protection();
+#endif
 
     case HF_CACHE_UNWRITTEN:
         if (m_Cache[iCache].m_hp.WritePage(m_hPageFile, m_Cache[iCache].m_o))
