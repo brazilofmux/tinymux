@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.17 2000-10-25 04:29:23 sdennis Exp $
+// $Id: bsd.cpp,v 1.18 2000-11-01 15:50:01 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -820,8 +820,6 @@ void shovechars9x(int port)
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
 
-    CLinearTimeDelta ltdOneSecond;
-    ltdOneSecond.SetSeconds(1);
     while (mudstate.shutdown_flag == 0)
     {
         CLinearTimeAbsolute ltaCurrent;
@@ -841,7 +839,7 @@ void shovechars9x(int port)
         // Check the scheduler. Run a little ahead into the future so that
         // we tend to sleep longer.
         //
-        scheduler.RunTasks(ltaCurrent + ltdOneSecond);
+        scheduler.RunTasks(ltaCurrent);
         CLinearTimeAbsolute ltaWakeUp;
         if (!scheduler.WhenNext(&ltaWakeUp))
         {
@@ -961,8 +959,6 @@ void shovecharsNT(int port)
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
 
-    CLinearTimeDelta ltdOneSecond;
-    ltdOneSecond.SetSeconds(1);
     for (;;)
     {
         CLinearTimeAbsolute ltaCurrent;
@@ -982,7 +978,7 @@ void shovecharsNT(int port)
         // Check the scheduler. Run a little ahead into the future so that
         // we tend to sleep longer.
         //
-        scheduler.RunTasks(ltaCurrent + ltdOneSecond);
+        scheduler.RunTasks(ltaCurrent);
         CLinearTimeAbsolute ltaWakeUp;
         if (!scheduler.WhenNext(&ltaWakeUp))
         {
@@ -1067,8 +1063,6 @@ void shovechars(int port)
 
     avail_descriptors = maxfds - 7;
 
-    CLinearTimeDelta ltdOneSecond;
-    ltdOneSecond.SetSeconds(1);
     while (mudstate.shutdown_flag == 0)
     {
         CLinearTimeAbsolute ltaCurrent;
@@ -1083,7 +1077,7 @@ void shovechars(int port)
         // Check the scheduler. Run a little ahead into the future so that
         // we tend to sleep longer.
         //
-        scheduler.RunTasks(ltaCurrent + ltdOneSecond);
+        scheduler.RunTasks(ltaCurrent);
         CLinearTimeAbsolute ltaWakeUp;
         if (scheduler.WhenNext(&ltaWakeUp))
         {
