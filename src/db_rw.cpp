@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.10 2000-10-04 06:42:01 sdennis Exp $ 
+// $Id: db_rw.cpp,v 1.11 2000-10-24 23:29:41 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1881,7 +1881,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     (void)getref(f);
 
                 s_Owner(i, getref(f));
-                s_Zone(i, getref(f));
+                int zone = getref(f);
+                if (zone < NOTHING)
+                {
+                    zone = NOTHING;
+                }
+                s_Zone(i, zone);
                 s_Pennies(i, getref(f));
                 f1 = getref(f);
                 f2 = getref(f);
@@ -1980,16 +1985,24 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     s_Location(i, getref(f));
                 }
 
-                /*
-                 * ZONE on MUSE databases and some others 
-                 */
-
+                // ZONE on MUSE databases and some others.
+                //
                 if (read_zone)
-                    s_Zone(i, getref(f));
-/*
- * else
- * * s_Zone(i, NOTHING); 
- */
+                {
+                    int zone = getref(f);
+                    if (zone < NOTHING)
+                    {
+                        zone = NOTHING;
+                    }
+                    s_Zone(i, zone);
+                }
+#if 0
+                else
+                {
+                    s_Zone(i, NOTHING);
+                }
+
+#endif
 
                 /*
                  * CONTENTS and EXITS 
