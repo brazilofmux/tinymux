@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.15 2003-03-08 03:24:41 sdennis Exp $
+// $Id: netcommon.cpp,v 1.16 2003-03-08 05:25:50 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -378,26 +378,34 @@ void queue_write(DESC *d, const char *b)
 
 void queue_string(DESC *d, const char *s)
 {
-    const char *new0;
+    const char *p = s;
 
-    if (!Ansi(d->player) && strchr(s, ESC_CHAR))
+    if (d->flags & DS_CONNECTED)
     {
-        new0 = strip_ansi(s);
-    }
-    else if (NoBleed(d->player))
-    {
-        new0 = normal_to_white(s);
+        if (  !Ansi(d->player)
+           && strchr(s, ESC_CHAR))
+        {
+            p = strip_ansi(p);
+        }
+        else if (NoBleed(d->player))
+        {
+            p = normal_to_white(p);
+        }
+
+        if (NoAccents(d->player))
+        {
+            p = strip_accents(p);
+        }
     }
     else
     {
-        new0 = s;
+        if (strchr(s, ESC_CHAR))
+        {
+            p = strip_ansi(p);
+        }
+        p = strip_accents(p);
     }
-
-    if (NoAccents(d->player))
-    {
-        new0 = strip_accents(new0);
-    }
-    queue_write(d, new0);
+    queue_write(d, p);
 }
 
 void freeqs(DESC *d)
