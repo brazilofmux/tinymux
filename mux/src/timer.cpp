@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: timer.cpp,v 1.2 2003-01-22 21:24:06 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -31,9 +31,7 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
         char *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = (char *)"< dbck >";
         do_dbck(NOTHING, NOTHING, NOTHING, 0);
-#ifndef STANDALONE
         Guest.CleanUp();
-#endif // !STANDALONE
         pcache_trim();
         pool_reset();
         mudstate.debug_cmd = cmdsave;
@@ -46,7 +44,8 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
     CLinearTimeDelta ltd;
     ltd.SetSeconds(mudconf.check_interval);
     mudstate.check_counter = ltaNow + ltd;
-    scheduler.DeferTask(mudstate.check_counter, PRIORITY_SYSTEM, dispatch_FreeListReconstruction, 0, 0);
+    scheduler.DeferTask(mudstate.check_counter, PRIORITY_SYSTEM,
+        dispatch_FreeListReconstruction, 0, 0);
 }
 
 // Database Dump Task routine.
