@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.12 2002-07-23 05:36:13 jake Exp $
+// $Id: match.cpp,v 1.13 2002-08-03 19:49:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -289,7 +289,7 @@ static void match_list(dbref first, int local)
          * would overwrite Name()'s static buffer which is
          * needed by string_match(). 
          */
-        char *namebuf = PureName(first);
+        const char *namebuf = PureName(first);
 
         if (!string_compare(namebuf, md.string))
         {

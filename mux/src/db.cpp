@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.33 2002-08-03 19:34:21 sdennis Exp $
+// $Id: db.cpp,v 1.34 2002-08-03 19:49:20 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -469,7 +469,7 @@ const char *Name(dbref thing)
 #endif // MEMORY_BASED
 }
 
-char *PureName(dbref thing)
+const char *PureName(dbref thing)
 {
     static char tbuff[LBUF_SIZE];
     if (thing < 0)

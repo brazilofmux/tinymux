@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.16 2002-08-03 19:34:21 sdennis Exp $
+// $Id: stringutil.cpp,v 1.17 2002-08-03 19:49:20 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1855,7 +1855,7 @@ int safe_fill(char *buff, char **bufc, char chFill, int nSpaces)
     return nSpaces;
 }
 
-BOOL matches_exit_from_list(char *str, char *pattern)
+BOOL matches_exit_from_list(char *str, const char *pattern)
 {
     char *s;
 

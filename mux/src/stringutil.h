@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.13 2002-08-03 19:34:21 sdennis Exp $
+// $Id: stringutil.h,v 1.14 2002-08-03 19:49:20 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -135,7 +135,7 @@ void safe_copy_str(const char *src, char *buff, char **bufp, int max);
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp);
 int safe_fill(char *buff, char **bufc, char chFile, int nSpaces);
-extern BOOL matches_exit_from_list(char *, char *);
+extern BOOL matches_exit_from_list(char *, const char *);
 extern char *translate_string(const char *, BOOL);
 #ifndef WIN32
 extern int _stricmp(const char *a, const char *b);

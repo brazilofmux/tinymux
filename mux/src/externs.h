@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.42 2002-08-03 19:34:21 sdennis Exp $
+// $Id: externs.h,v 1.43 2002-08-03 19:49:20 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -255,7 +255,7 @@ extern BOOL Commer(dbref);
 extern void s_Pass(dbref, const char *);
 extern void s_Name(dbref, const char *);
 extern const char *Name(dbref);
-extern char *PureName(dbref);
+extern const char *PureName(dbref);
 extern int  fwdlist_load(FWDLIST *, dbref, char *);
 extern void fwdlist_set(dbref, FWDLIST *);
 extern void fwdlist_clr(dbref);
