@@ -4,7 +4,7 @@
  * originally taken from PennMUSH 1.50 p10, and has been heavily modified
  * since being included in MUX.
  * 
- * $Id: mail.cpp,v 1.4 2000-04-16 07:39:07 sdennis Exp $
+ * $Id: mail.cpp,v 1.5 2000-04-24 23:56:48 sdennis Exp $
  * -------------------------------------------------------------------
  */
 
@@ -1128,7 +1128,7 @@ void do_mail_reply(dbref player, char *msg, int all, int key)
     string_decompress(mp->subject, subbuff);
     pSubject = subbuff;
     string_decompress(get_mail_message(mp->number), msgbuff);
-    pMessage = msgbuf;
+    pMessage = msgbuff;
     string_decompress(mp->time, timebuff);
     pTime = timebuff;
 #else
