@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.11 2000-09-07 06:15:42 sdennis Exp $
+// * $Id: comsys.cpp,v 1.12 2000-09-07 07:31:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2159,14 +2159,12 @@ int do_comsystem(dbref who, char *cmd)
 
 void do_cemit(dbref player, dbref cause, int key, char *chan, char *text)
 {
-    
     if (!mudconf.have_comsys)
     {
         raw_notify(player, "Comsys disabled.");
         return;
     }
     struct channel *ch = select_channel(chan);
-    
     if (!ch)
     {
         raw_notify(player, tprintf("Channel %s does not exist.", chan));
@@ -2183,9 +2181,7 @@ void do_cemit(dbref player, dbref cause, int key, char *chan, char *text)
     }
     else
     {
-        char buff[LBUF_SIZE];
-        sprintf(buff, "[%s] %s", chan, text);
-        do_comsend(ch, buff);
+        do_comsend(ch, tprintf("[%s] %s", chan, text));
     }
 }
 
