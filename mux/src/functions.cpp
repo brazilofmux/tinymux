@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.25 2002-06-21 00:59:24 sdennis Exp $
+// $Id: functions.cpp,v 1.26 2002-06-21 01:07:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8143,53 +8143,39 @@ FUNCTION(fun_writetime)
 //
 FUNCTION(fun_cmds)
 {
+    long nCmds = -1;
     if (is_rational(fargs[0]))
     {
-        int foundit = 0;
+        SOCKET s = Tiny_atol(fargs[0]);
+        BOOL bFound = FALSE;
         DESC *d;
         DESC_ITER_CONN(d) 
         {
-            if (((long)d->descriptor) == Tiny_atol(fargs[0]))
+            if (d->descriptor == s)
             {
-                    foundit = 1;
-                    break;
+                bFound = TRUE;
+                break;
             }
         }
-        if (foundit)
+        if (  bFound
+           && (  d->player == executor
+              || Wizard_Who(executor)))
         {
-            if (!((d->player == executor) || Wizard_Who(executor)))
-            {
-                safe_ltoa(NOTHING, buff, bufc);
-                return;
-            }
-            else
-            {
-                safe_ltoa(d->command_count, buff, bufc);
-                return;
-            }
-        }
-        else
-        {
-            safe_ltoa(NOTHING, buff, bufc);
-            return;
+            nCmds = d->command_count;
         }
     }
     else
     {
         dbref target = lookup_player(executor, fargs[0], 1);
-        if (Good_obj(target) && Connected(target))
+        if (  Good_obj(target)
+           && Connected(target)
+           && (  Wizard_Who(executor)
+              || Controls(executor, target)))
         {
-            if (!(Wizard_Who(executor) || Controls(executor, target)))
-            {
-                target = NOTHING;
-            }
-            safe_ltoa(fetch_cmds(target), buff, bufc);
-        }
-        else
-        {
-            safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+            nCmds = fetch_cmds(target);
         }
     }
+    safe_ltoa(nCmds, buff, bufc);
 }
 
 // startsecs - Time the MUX was started, in seconds
