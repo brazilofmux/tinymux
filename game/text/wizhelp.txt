@@ -1482,8 +1482,8 @@ CONFIG PARAMETERS (continued)
   look_obey_terse  machine_command_cost  mail_database  mail_expiration
   master_room  match_own_commands  max_cache_size  max_players
   money_name_plural  money_name_singular  motd_file  motd_message  mud_name
-  news_file  news_index  newuser_file  notify_recursion_limit  open_cost
-  output_database  output_limit  page_cost  paranoid_allocate
+  news_file  news_index  newuser_file  nositemon_site  notify_recursion_limit
+  open_cost  output_database  output_limit  page_cost  paranoid_allocate
   parent_recursion_limit  paycheck  pemit_any_object  pemit_far_players
   permit_site  player_flags  player_listen  player_match_own_commands
   player_queue_limit  player_quota  player_starting_home  player_starting_room
