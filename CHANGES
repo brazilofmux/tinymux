@@ -27,6 +27,11 @@ Bug Fixes:
 ~~~~~~~~~
  -- inet_addr() re-write to handle netmask of 255.255.255.255 and Berkeley
     a, a.b, and a.b.c numeric IP formats.
+ -- article_rule wasn't parsed correctly, and art() always returned 'a'.
+ -- @cboot would SIGSEGV on @cset/anon channels.
+ -- Documented comtitle/{on,off}.
+ -- Typo bug in RADIX_COMPRESSION build.
+ -- Short version string contained 'Alpha' instead of 'Beta'.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
