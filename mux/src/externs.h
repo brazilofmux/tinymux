@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.25 2004-05-15 01:34:48 sdennis Exp $
+// $Id: externs.h,v 1.26 2004-06-30 10:52:40 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -97,6 +97,7 @@ extern void dump_database_internal(int);
 extern void helpindex_clean(int);
 extern void helpindex_load(dbref);
 extern void helpindex_init(void);
+extern void help_helper(dbref executor, int iHelpfile, char *topic_arg, char *buff, char **bufc);
 
 /* From htab.cpp */
 extern int  cf_ntab_access(int *, char *, void *, UINT32, dbref, char *);

@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.8 2004-06-10 15:39:34 sdennis Exp $
+// $Id: help.cpp,v 1.9 2004-06-30 10:52:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -227,80 +227,82 @@ void helpindex_init(void)
     helpindex_load(NOTHING);
 }
 
-void help_write(dbref player, char *topic_arg, int iHelpfile)
+const char *MakeCanonicalTopicName(char *topic_arg)
 {
-    bool bEval = mudstate.aHelpDesc[iHelpfile].bEval;
-    CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
-
-    char szTextFilename[SBUF_SIZE+8];
-    sprintf(szTextFilename, "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
-
-    mux_strlwr(topic_arg);
-    const char *topic = topic_arg;
-
-    if (topic[0] == '\0')
+    const char *topic;
+    if (topic_arg[0] == '\0')
     {
         topic = "help";
     }
-    struct help_entry *htab_entry =
-        (struct help_entry *)hashfindLEN(topic, strlen(topic), htab);
-    if (!htab_entry)
+    else
     {
-        bool matched = false;
-        char *topic_list = NULL;
-        char *buffp = NULL;
-        for (htab_entry = (struct help_entry *)hash_firstentry(htab);
-             htab_entry != NULL;
-             htab_entry = (struct help_entry *)hash_nextentry(htab))
-        {
-            mudstate.wild_invk_ctr = 0;
-            if (  htab_entry->original
-               && quick_wild(topic, htab_entry->key))
-            {
-                if (!matched)
-                {
-                    matched = true;
-                    topic_list = alloc_lbuf("help_write");
-                    buffp = topic_list;
-                }
-                safe_str(htab_entry->key, topic_list, &buffp);
-                safe_chr(' ', topic_list, &buffp);
-                safe_chr(' ', topic_list, &buffp);
-            }
-        }
-        if (!matched)
-        {
-            notify(player, tprintf("No entry for '%s'.", topic));
-        }
-        else
-        {
-            notify(player, tprintf("Here are the entries which match '%s':", topic));
-            *buffp = '\0';
-            notify(player, topic_list);
-            free_lbuf(topic_list);
-        }
-        return;
+        mux_strlwr(topic_arg);
+        topic = topic_arg;
     }
+    return topic;
+}
+
+void ReportMatchedTopics(dbref executor, const char *topic, CHashTable *htab)
+{
+    bool matched = false;
+    char *topic_list = NULL;
+    char *buffp = NULL;
+    struct help_entry *htab_entry;
+    for (htab_entry = (struct help_entry *)hash_firstentry(htab);
+         htab_entry != NULL;
+         htab_entry = (struct help_entry *)hash_nextentry(htab))
+    {
+        mudstate.wild_invk_ctr = 0;
+        if (  htab_entry->original
+           && quick_wild(topic, htab_entry->key))
+        {
+            if (!matched)
+            {
+                matched = true;
+                topic_list = alloc_lbuf("help_write");
+                buffp = topic_list;
+            }
+            safe_str(htab_entry->key, topic_list, &buffp);
+            safe_chr(' ', topic_list, &buffp);
+            safe_chr(' ', topic_list, &buffp);
+        }
+    }
+    if (!matched)
+    {
+        notify(executor, tprintf("No entry for '%s'.", topic));
+    }
+    else
+    {
+        notify(executor, tprintf("Here are the entries which match '%s':", topic));
+        *buffp = '\0';
+        notify(executor, topic_list);
+        free_lbuf(topic_list);
+    }
+}
+
+bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelpfile,
+    char *result)
+{
+    char szTextFilename[SBUF_SIZE+8];
+    sprintf(szTextFilename, "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     int offset = htab_entry->pos;
     FILE *fp = fopen(szTextFilename, "rb");
     if (fp == NULL)
     {
-        notify(player, "Sorry, that function is temporarily unavailable.");
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
-        char *line = alloc_lbuf("help_write.LOG.open");
+        char *line = alloc_lbuf("ReportTopic.open");
         sprintf(line, "Can't open %s for reading.", szTextFilename);
         log_text(line);
         free_lbuf(line);
         ENDLOG;
-        return;
+        return false;
     }
     DebugTotalFiles++;
     if (fseek(fp, offset, 0) < 0L)
     {
-        notify(player, "Sorry, that function is temporarily unavailable.");
         STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");
-        char *line = alloc_lbuf("help_write.LOG.seek");
+        char *line = alloc_lbuf("ReportTopic.seek");
         sprintf(line, "Seek error in file %s.", szTextFilename);
         log_text(line);
         free_lbuf(line);
@@ -309,10 +311,10 @@ void help_write(dbref player, char *topic_arg, int iHelpfile)
         {
             DebugTotalFiles--;
         }
-        return;
+        return false;
     }
-    char *line = alloc_lbuf("help_write");
-    char *result = alloc_lbuf("help_write.2");
+    char *line = alloc_lbuf("ReportTopic");
+    char *bp = result;
     for (;;)
     {
         if (  fgets(line, LBUF_SIZE - 1, fp) == NULL
@@ -321,43 +323,69 @@ void help_write(dbref player, char *topic_arg, int iHelpfile)
         {
             break;
         }
-        if (  line[0] == '\n'
-           || line[0] == '\r')
-        {
-            line[0] = ' ';
-            line[1] = '\0';
-        }
-        else
-        {
-            for (char *p = line + 1; *p; p++)
-            {
-                if (*p == '\n' || *p == '\r')
-                {
-                    *p = '\0';
-                    break;
-                }
-            }
-        }
+
+        bool bEval = mudstate.aHelpDesc[iHelpfile].bEval;
         if (bEval)
         {
             char *str = line;
-            char *bp = result;
-            mux_exec(result, &bp, player, player, player,
+            mux_exec(result, &bp, executor, executor, executor,
                      EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
-            *bp = '\0';
-            notify(player, result);
         }
         else
         {
-            notify(player, line);
+            safe_str(line, result, &bp); 
         }
     }
+    *bp = '\0';
     if (fclose(fp) == 0)
     {
         DebugTotalFiles--;
     }
     free_lbuf(line);
-    free_lbuf(result);
+    return true;
+}
+
+void help_write(dbref executor, char *topic_arg, int iHelpfile)
+{
+    const char *topic = MakeCanonicalTopicName(topic_arg);
+
+    CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
+    struct help_entry *htab_entry =
+        (struct help_entry *)hashfindLEN(topic, strlen(topic), htab);
+    if (htab_entry)
+    {
+        char *result = alloc_lbuf("help_write");
+        if (ReportTopic(executor, htab_entry, iHelpfile, result))
+        {
+            notify(executor, result);
+        }
+        else
+        {
+            notify(executor, "Sorry, that function is temporarily unavailable.");
+        }
+        free_lbuf(result);
+    }
+    else
+    {
+        ReportMatchedTopics(executor, topic, htab);
+        return;
+    }
+}
+
+bool ValidateHelpFileIndex(int iHelpfile)
+{
+    if (  iHelpfile < 0
+       || mudstate.mHelpDesc <= iHelpfile)
+    {
+        char *buf = alloc_mbuf("do_help.LOG");
+        STARTLOG(LOG_BUGS, "BUG", "HELP");
+        sprintf(buf, "Unknown help file number: %d", iHelpfile);
+        log_text(buf);
+        ENDLOG;
+        free_mbuf(buf);
+        return false;
+    }
+    return true;
 }
 
 /*
@@ -369,18 +397,34 @@ void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message
 {
     int iHelpfile = key;
 
-    if (  iHelpfile < 0
-       || mudstate.mHelpDesc <= iHelpfile)
+    if (!ValidateHelpFileIndex(iHelpfile))
     {
-        char *buf = alloc_mbuf("do_help.LOG");
-        STARTLOG(LOG_BUGS, "BUG", "HELP");
-        sprintf(buf, "Unknown help file number: %d", iHelpfile);
-        log_text(buf);
-        ENDLOG;
-        free_mbuf(buf);
         notify(executor, "No such indexed file found.");
         return;
     }
-
     help_write(executor, message, iHelpfile);
+}
+
+void help_helper(dbref executor, int iHelpfile, char *topic_arg,
+    char *buff, char **bufc)
+{
+    if (!ValidateHelpFileIndex(iHelpfile))
+    {
+        return;
+    }
+
+    const char *topic = MakeCanonicalTopicName(topic_arg);
+
+    CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
+    struct help_entry *htab_entry =
+        (struct help_entry *)hashfindLEN(topic, strlen(topic), htab);
+    if (htab_entry)
+    {
+        char *result = alloc_lbuf("help_helper");
+        if (ReportTopic(executor, htab_entry, iHelpfile, result))
+        {
+            safe_str(result, buff, bufc);
+        }
+        free_lbuf(result);
+    }
 }

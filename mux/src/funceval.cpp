@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.69 2004-06-23 01:23:24 sdennis Exp $
+// $Id: funceval.cpp,v 1.70 2004-06-30 10:52:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -254,7 +254,7 @@ FUNCTION(fun_zone)
 
 #ifdef SIDE_EFFECT_FUNCTIONS
 
-static bool check_command(dbref player, char *name, char *buff, char **bufc)
+bool check_command(dbref player, char *name, char *buff, char **bufc)
 {
     CMDENT *cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
     if (cmdp)
@@ -415,6 +415,27 @@ FUNCTION(fun_create)
         break;
     }
     safe_tprintf_str(buff, bufc, "#%d", thing);
+}
+
+FUNCTION(fun_helptext)
+{
+    mux_strlwr(fargs[0]);
+
+    CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)hashfindLEN(fargs[0],
+        strlen(fargs[0]), &mudstate.command_htab);
+    if (  !cmdp
+       || cmdp->handler != do_help)
+    {
+        safe_str("#-1 NOT FOUND", buff, bufc);
+        return;
+    }
+
+    if (check_command(executor, fargs[0], buff, bufc))
+    {
+        return;
+    }
+
+    help_helper(executor, cmdp->extra, fargs[1], buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
