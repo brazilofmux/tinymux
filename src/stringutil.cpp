@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.48 2001-09-09 02:32:17 sdennis Exp $
+// $Id: stringutil.cpp,v 1.49 2001-09-23 08:36:26 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3047,7 +3047,7 @@ CF_HAND(cf_art_rule)
     }
 
 
-    while (!Tiny_IsSpace[(unsigned char)*pCurrent] && *pCurrent != '\0')
+    while (Tiny_IsSpace[(unsigned char)*pCurrent])
     {
         pCurrent++;
     }
