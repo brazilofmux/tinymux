@@ -1,10 +1,10 @@
 // _build.h
 //
-// $Id: _build.h,v 1.29 2004-06-07 05:33:21 sdennis Exp $
+// $Id: _build.h,v 1.30 2004-06-10 15:21:04 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 #ifndef MUX_BUILD_NUM
 extern char szBuildNum[];

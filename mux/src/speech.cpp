@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.14 2004-05-15 20:44:55 sdennis Exp $
+// $Id: speech.cpp,v 1.15 2004-06-10 15:27:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -32,7 +32,7 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command)
     char *args[2];
     args[0] = message;
     args[1] = command;
-    mux_exec(new_message, &t_ptr, player, player, player, 
+    mux_exec(new_message, &t_ptr, player, player, player,
         EV_FCHECK | EV_EVAL | EV_TOP, &mod, args, 2);
     free_lbuf(mod_orig);
     return new_message;
@@ -645,7 +645,7 @@ void do_page
             {
                 *q = '\0';
             }
-    
+
             // Decode space-delimited or comma-delimited recipients.
             //
             MUX_STRTOK_STATE tts;
@@ -996,9 +996,9 @@ void whisper_pose(dbref player, dbref target, char *message, bool bSpace)
     }
     char *buff = alloc_lbuf("do_pemit.whisper.pose");
     strcpy(buff, Moniker(player));
-    notify(player, tprintf("%s senses \"%s%s%s\"", Moniker(target), buff, 
+    notify(player, tprintf("%s senses \"%s%s%s\"", Moniker(target), buff,
         bSpace ? " " : "", message));
-    notify_with_cause(target, player, tprintf("You sense %s%s%s", buff, 
+    notify_with_cause(target, player, tprintf("You sense %s%s%s", buff,
         bSpace ? " " : "", message));
     free_lbuf(buff);
     if (newMessage)

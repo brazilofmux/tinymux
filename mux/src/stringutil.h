@@ -1,10 +1,10 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.37 2004-04-20 06:23:55 sdennis Exp $
+// $Id: stringutil.h,v 1.38 2004-06-10 15:23:32 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H

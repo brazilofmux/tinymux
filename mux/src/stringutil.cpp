@@ -1,10 +1,10 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.58 2004-04-20 06:23:55 sdennis Exp $
+// $Id: stringutil.cpp,v 1.59 2004-06-10 15:27:14 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 #include "copyright.h"
 #include "autoconf.h"

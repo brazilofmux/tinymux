@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.4 2003-02-05 06:20:58 jake Exp $
+// $Id: flags.h,v 1.5 2004-06-10 15:21:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -120,7 +120,7 @@ typedef struct flag_bit_entry
     char flaglett;          // Flag letter for listing.
     int  flagflag;          // Ctrl flags for this flag.
     int  listperm;          // Who sees this flag when set.
-    bool (*handler)(dbref target, dbref player, FLAG flag, int fflags, 
+    bool (*handler)(dbref target, dbref player, FLAG flag, int fflags,
         bool reset);         // Handler for setting/clearing this flag.
 } FLAGBITENT;
 

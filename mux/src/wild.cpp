@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.7 2003-02-17 03:05:55 sdennis Exp $
+// $Id: wild.cpp,v 1.8 2004-06-10 15:24:24 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -227,7 +227,7 @@ bool wild1(char *tstr, char *dstr, int arg)
         if (argpos < arg)
         {
             // Fill in arguments if someone put another '*' before a fixed
-            // string. 
+            // string.
             //
             arglist[argpos][0] = '\0';
             argpos++;

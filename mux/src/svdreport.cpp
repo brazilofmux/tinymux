@@ -1,10 +1,10 @@
 // svdreport.cpp -- Aggregate User Statistics module.
 //
-// $Id: svdreport.cpp,v 1.3 2004-04-13 06:34:22 sdennis Exp $
+// $Id: svdreport.cpp,v 1.4 2004-06-10 15:27:14 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 #include "copyright.h"
 #include "autoconf.h"

@@ -1,10 +1,10 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.5 2004-04-13 06:34:22 sdennis Exp $
+// $Id: vattr.cpp,v 1.6 2004-06-10 15:24:24 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -542,7 +542,7 @@ void dbclean_RenumberAttributes(int cVAttributes)
             }
         }
     }
-    
+
     // Traverse entire @addcommand data structure.
     //
     int nKeyLength;

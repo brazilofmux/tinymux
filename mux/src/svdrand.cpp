@@ -1,10 +1,10 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.5 2004-04-13 06:34:22 sdennis Exp $
+// $Id: svdrand.cpp,v 1.6 2004-06-10 15:27:14 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -51,8 +51,8 @@ void SeedRandomNumberGenerator(void)
     unsigned int nRandomSystemBytes = 0;
 
 #ifdef HAVE_DEV_URANDOM
-    // Try to seed the PRNG from /dev/urandom 
-    // If it doesn't work, just seed the normal way 
+    // Try to seed the PRNG from /dev/urandom
+    // If it doesn't work, just seed the normal way
     //
     int fd = open("/dev/urandom", O_RDONLY);
 

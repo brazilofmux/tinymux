@@ -1,6 +1,6 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.4 2004-04-13 06:34:22 sdennis Exp $ */
+/* $Id: copyright.h,v 1.5 2004-06-10 15:21:31 sdennis Exp $ */
 
 /*
  * MUX Source Code (version 2.0 through 2.4).
@@ -42,7 +42,7 @@
  * and (2) distributions including binary code include the above copyright
  * notice and this paragraph in its entirety in the documentation or other
  * materials provided with the distribution.  The names of the copyright
- * holders may not be used to endorse or promote products derived from 
+ * holders may not be used to endorse or promote products derived from
  * this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED

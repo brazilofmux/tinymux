@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.5 2003-02-05 06:20:59 jake Exp $
+// $Id: unparse.cpp,v 1.6 2004-06-10 15:25:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -110,15 +110,15 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
             switch (format)
             {
             case F_QUIET:
-    
+
                 // Quiet output - for dumps and internal use. Always #Num.
                 //
                 safe_str(unparse_object_quiet(player, b->thing),
                      boolexp_buf, &buftop);
                 break;
-    
+
             case F_EXAMINE:
-    
+
                 // Examine output - informative. Name(#Num) or Name.
                 //
                 char *buff;
@@ -127,45 +127,45 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
                 safe_str(buff, boolexp_buf, &buftop);
                 free_lbuf(buff);
                 break;
-    
+
             case F_DECOMPILE:
-    
+
                 // Decompile output - should be usable on other MUXes. Name if
                 // player, Name if thing, else #Num.
                 //
                 switch (Typeof(b->thing))
                 {
                 case TYPE_PLAYER:
-    
+
                     safe_chr('*', boolexp_buf, &buftop);
-    
+
                 case TYPE_THING:
-    
+
                     safe_str(Name(b->thing), boolexp_buf, &buftop);
                     break;
-    
+
                 default:
-    
+
                     safe_tprintf_str(boolexp_buf, &buftop, "#%d", b->thing);
                     break;
                 }
                 break;
-    
+
             case F_FUNCTION:
-    
+
                 // Function output - must be usable by @lock cmd. Name if player,
                 // else #Num.
                 //
                 switch (Typeof(b->thing))
                 {
                 case TYPE_PLAYER:
-    
+
                     safe_chr('*', boolexp_buf, &buftop);
                     safe_str(Name(b->thing), boolexp_buf, &buftop);
                     break;
-    
+
                 default:
-    
+
                     safe_tprintf_str(boolexp_buf, &buftop, "#%d", b->thing);
                     break;
                 }
