@@ -402,8 +402,8 @@ Bug Fixes:
      Hellspawn. Bug from MUX 1.6
  --  Bug #757 - @wall/admin double emits. Report by many. Fixed by Hellspawn.
      Bug from MUX 1.6.
- --  @nameformat, @conformat and @exitformat global registers are saved and
-     cleared. Reported and fixed by Brazil.
+ --  Bug #751 - @nameformat, @conformat and @exitformat global registers are
+     saved and cleared. Reported and fixed by Brazil.
  --  Clean up mkindx. Don't use '\r' in the index. Write clean structures.
  --  conntotal() and friends now account for multiple sessions properly.
  --  Fixed color leaks in long comsys headers.
