@@ -170,7 +170,7 @@ Bug Fixes:
  -- @hook/igswitch didn't work when the built-in command normally
     doesn't take switches.
  -- Fix problem with comsys aliases potentially hiding the 'home' command
-    an exit names.  Fix by Jake.
+    and exit names.  Fix by Jake.
  -- Documented lag_maximum configuration option.
  -- ALIAS attribute wasn't available to other players.
  -- RIGHT() had problems with ANSI.
