@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.114 2004-07-13 23:47:46 sdennis Exp $
+// $Id: functions.cpp,v 1.115 2004-07-22 19:30:55 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -919,14 +919,49 @@ FUNCTION(fun_flags)
 
 FUNCTION(fun_rand)
 {
-    int num = mux_atol(fargs[0]);
-    if (num < 1)
+    int nDigits;
+    switch (nfargs)
     {
-        safe_chr('0', buff, bufc);
-    }
-    else
-    {
-        safe_ltoa(RandomINT32(0,num-1), buff, bufc);
+    case 1:
+        if (is_integer(fargs[0], &nDigits))
+        {
+            int num = mux_atol(fargs[0]);
+            if (num < 1)
+            {
+                safe_chr('0', buff, bufc);
+            }
+            else
+            {
+                safe_ltoa(RandomINT32(0, num-1), buff, bufc);
+            }
+        }
+        else
+        {
+            safe_str("#-1 ARGUMENT MUST BE INTEGER", buff, bufc);
+        }
+        break;
+
+    case 2:
+        if (  is_integer(fargs[0], &nDigits)
+           && is_integer(fargs[1], &nDigits))
+        {
+            int lower = mux_atol(fargs[0]);
+            int higher = mux_atol(fargs[1]);
+            if (  lower <= higher
+               && (unsigned int)(higher-lower) <= INT32_MAX_VALUE)
+            {
+                safe_ltoa(RandomINT32(lower, higher), buff, bufc);
+            }
+            else
+            {
+                safe_range(buff, bufc);
+            }
+        }
+        else
+        {
+            safe_str("#-1 ARGUMENT MUST BE INTEGER", buff, bufc);
+        }
+        break;
     }
 }
 
@@ -9828,7 +9863,7 @@ FUN flist[] =
     {"POWERS",      fun_powers,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"PUSH",        fun_push,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"R",           fun_r,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"RAND",        fun_rand,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {"RAND",        fun_rand,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"REGMATCH",    fun_regmatch,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"REGMATCHI",   fun_regmatchi,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"REGRAB",      fun_regrab,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
