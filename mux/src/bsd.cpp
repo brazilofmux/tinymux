@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.22 2003-04-01 20:49:26 sdennis Exp $
+// $Id: bsd.cpp,v 1.23 2003-04-01 21:03:24 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2934,8 +2934,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             if (slave_pid > 0)
             {
                 kill(slave_pid, SIGKILL);
-                sleep(1);
-                waitpid(slave_pid, NULL, WNOHANG);
+                waitpid(slave_pid, NULL, 0);
             }
             slave_pid = 0;
 
