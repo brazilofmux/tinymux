@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.52 2003-02-17 02:49:34 sdennis Exp $
+// $Id: functions.cpp,v 1.53 2003-02-17 02:50:12 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -4771,7 +4771,7 @@ FUNCTION(fun_escape)
             nString -= nTokenLength0;
             while (nTokenLength0--)
             {
-                if (  mux_isescape[(unsigned char)*pString]
+                if (  mux_isescape(*pString)
                    || pString == fargs[0])
                 {
                     safe_chr('\\', buff, bufc);
