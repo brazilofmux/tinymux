@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.44 2001-06-29 06:07:26 sdennis Exp $
+// $Id: db.cpp,v 1.45 2001-06-29 11:10:36 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -19,7 +19,7 @@
 #include "config.h"
 #ifdef STANDALONE
 #undef MEMORY_BASED
-#endif
+#endif // STANDALONE
 #include "externs.h"
 
 #define __DB_C
@@ -37,13 +37,13 @@
 #ifdef RADIX_COMPRESSION
 #ifndef COMPRESSOR
 #define COMPRESSOR
-#endif
+#endif // !COMPRESSOR
 #include "radix.h"
-#endif
+#endif // RADIX_COMPRESSION
 
 #ifndef O_ACCMODE
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)
-#endif
+#endif // O_ACCMODE
 
 // Restart definitions
 //
@@ -60,8 +60,8 @@ extern SOCKET MainGameSockPort;
 
 #ifdef CONCENTRATE
 extern int conc_pid;
-#endif
-#endif
+#endif // CONCENTRATE
+#endif // !WIN32
 
 extern void FDECL(desc_addhash, (DESC *));
 
@@ -76,7 +76,7 @@ extern void FDECL(desc_addhash, (DESC *));
 char decomp_buff[LBUF_SIZE];
 char compress_buff[LBUF_SIZE + (LBUF_SIZE >> 1) + 1];
 
-#endif
+#endif // RADIX_COMPRESSION
 
 typedef struct atrcount ATRCOUNT;
 struct atrcount {
@@ -255,7 +255,7 @@ ATTR attr[] =
     {"Reason", A_REASON, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
 #ifdef GAME_DOOFERMUX
     {"RegInfo", A_REGINFO, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_WIZARD, NULL},
-#endif
+#endif // GAME_DOOFERMUX
     {"ConnInfo", A_CONNINFO, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
     {"*Password", A_PASS, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
     {"*Privileges", A_PRIVS, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
@@ -327,7 +327,7 @@ void fwdlist_clr(dbref thing)
     }
 }
 
-#endif
+#endif // !STANDALONE
 
 /* ---------------------------------------------------------------------------
  * fwdlist_load: Load text into a forwardlist.
@@ -369,16 +369,16 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
                  !controls(player, target) &&
                  (!Link_ok(target) ||
                   !could_doit(player, target, A_LLINK))));
-#else
+#else // !STANDALONE
             fail = !Good_obj(target);
-#endif
+#endif // !STANDALONE
             if (fail)
             {
 #ifndef STANDALONE
                 notify(player,
                        tprintf("Cannot forward to #%d: Permission denied.",
                            target));
-#endif
+#endif // !STANDALONE
                 errors++;
             }
             else
@@ -454,9 +454,9 @@ int fwdlist_ck(int key, dbref player, dbref thing, int anum, char *atext)
         free_lbuf(fp);
     }
     return ((count > 0) || !atext || !*atext);
-#else
+#else // !STANDALONE
     return 1;
-#endif
+#endif // !STANDALONE
 }
 
 FWDLIST *fwdlist_get(dbref thing)
@@ -472,9 +472,9 @@ FWDLIST *fwdlist_get(dbref thing)
     char *tp = atr_get(thing, A_FORWARDLIST, &aowner, &aflags);
     int errors = fwdlist_load(fp, GOD, tp);
     free_lbuf(tp);
-#else
+#else // STANDALONE
     FWDLIST *fp = ((FWDLIST *) hashfindLEN(&thing, sizeof(thing), &mudstate.fwdlist_htab));
-#endif
+#endif // STANDALONE
     return fp;
 }
 
@@ -532,10 +532,10 @@ char *Name(dbref thing)
         free_lbuf(buff);
     }
     return names[thing];
-#else
+#else // !MEMORY_BASED
     atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
     return tbuff;
-#endif
+#endif // !MEMORY_BASED
 }
 
 char *PureName(dbref thing)
@@ -559,7 +559,7 @@ char *PureName(dbref thing)
         set_string(&names[thing], buff);
         free_lbuf(buff);
     }
-#endif
+#endif // !MEMORY_BASED
 
     if (mudconf.cache_names)
     {
@@ -581,7 +581,7 @@ void s_Name(dbref thing, char *s)
     atr_add_raw(thing, A_NAME, s);
 #ifndef MEMORY_BASED
     set_string(&names[thing], s);
-#endif
+#endif // !MEMORY_BASED
     if (mudconf.cache_names)
     {
         set_string(&purenames[thing], strip_ansi(s));
@@ -826,8 +826,7 @@ void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
     }
 }
 
-
-#endif
+#endif // !STANDALONE
 
 // MakeCanonicalAttributeName
 //
@@ -1021,9 +1020,9 @@ void anum_extend(int newtop)
 
 #ifndef STANDALONE
     delta = mudconf.init_size;
-#else
+#else // !STANDALONE
     delta = 1000;
-#endif
+#endif // !STANDALONE
     if (newtop <= anum_alc_top)
     {
         return;
@@ -1405,7 +1404,7 @@ void al_destroy(dbref thing)
     atr_clr(thing, A_LIST);
 }
 
-#endif
+#endif // !MEMORY_BASED
 
 /* ---------------------------------------------------------------------------
  * atr_encode: Encode an attribute string.
@@ -1517,13 +1516,13 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
 
 #ifdef MEMORY_BASED
     a = (char *)atr_get_raw_LEN(thing, atr, &nLen);
-#else
+#else // MEMORY_BASED
     Aname okey;
     Tiny_Assert(atr != A_LIST);
     makekey(thing, atr, &okey);
     a = FETCH(&okey, &nLen);
     nLen = a ? (nLen-1) : 0;
-#endif
+#endif // MEMORY_BASED
 
     *owner = Owner(thing);
     if (!a)
@@ -1553,7 +1552,7 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
         memcpy(oattr, a1, nLen + 1);
     }
 
-#else
+#else // MEMORY_BASED
 
     // We now have a compressed attribute, decompress it into oattr.
     // and decode it.
@@ -1582,10 +1581,10 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
             *pLen = nLen;
         }
     }
-#endif
+#endif // MEMORY_BASED
     return 1;
 }
-#endif
+#endif // RADIX_COMPRESSION
 
 // ---------------------------------------------------------------------------
 // atr_decode: Decode an attribute string.
@@ -1653,13 +1652,13 @@ void atr_clr(dbref thing, int atr)
             lo = mid + 1;
         }
     }
-#else
+#else // MEMORY_BASED
     Aname okey;
 
     makekey(thing, atr, &okey);
     TM_DELETE(&okey);
     al_delete(thing, atr);
-#endif
+#endif // MEMORY_BASED
     switch (atr) {
     case A_STARTUP:
         s_Flags(thing, Flags(thing) & ~HAS_STARTUP);
@@ -1671,7 +1670,7 @@ void atr_clr(dbref thing, int atr)
         s_Flags2(thing, Flags2(thing) & ~HAS_FWDLIST);
 #ifndef STANDALONE
         fwdlist_clr(thing); // We should clear the hashtable too
-#endif
+#endif // !STANDALONE
         break;
     case A_LISTEN:
         s_Flags2(thing, Flags2(thing) & ~HAS_LISTEN);
@@ -1683,7 +1682,7 @@ void atr_clr(dbref thing, int atr)
     case A_QUEUEMAX:
         pcache_reload(thing);
         break;
-#endif
+#endif // !STANDALONE
     }
 }
 
@@ -1713,9 +1712,9 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
 #ifdef RADIX_COMPRESSION
     int nCompressedValue = string_compress(szValue, compress_buff);
     text = BufferCloneLen(compress_buff, nCompressedValue);
-#else
+#else // RADIX_COMPRESSION
     text = StringCloneLen(szValue, nValue);
-#endif
+#endif // RADIX_COMPRESSION
 
     if (!db[thing].ahead)
     {
@@ -1727,9 +1726,9 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
         list[0].data = text;
 #ifdef RADIX_COMPRESSION
         list[0].size = nCompressedValue;
-#else
+#else // RADIX_COMPRESSION
         list[0].size = nValue+1;
-#endif
+#endif // RADIX_COMPRESSION
         found = 1;
     }
     else
@@ -1749,9 +1748,9 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
                 list[mid].data = text;
 #ifdef  RADIX_COMPRESSION
                 list[mid].size = nCompressedValue;
-#else
+#else // RADIX_COMPRESSION
                 list[mid].size = nValue+1;
-#endif
+#endif // RADIX_COMPRESSION
                 found = 1;
                 break;
             }
@@ -1793,14 +1792,14 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
             list[lo].number = atr;
 #ifdef RADIX_COMPRESSION
             list[lo].size = nCompressedValue;
-#else
+#else // RADIX_COMPRESSION
             list[lo].size = nValue+1;
-#endif
+#endif // RADIX_COMPRESSION
             db[thing].at_count++;
             db[thing].ahead = list;
         }
     }
-#else
+#else // MEMORY_BASED
     Aname okey;
 
     makekey(thing, atr, &okey);
@@ -1835,11 +1834,11 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
         //
         int nCompressedValue = string_compress(szValue, compress_buff);
         STORE(&okey, compress_buff, nCompressedValue);
-#else
+#else // RADIX_COMPRESSION
         STORE(&okey, szValue, nValue+1);
-#endif
+#endif // RADIX_COMPRESSION
     }
-#endif
+#endif // MEMORY_BASED
 
     switch (atr)
     {
@@ -1862,7 +1861,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     case A_QUEUEMAX:
         pcache_reload(thing);
         break;
-#endif
+#endif // !STANDALONE
     }
 }
 
@@ -1950,10 +1949,10 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 #ifdef RADIX_COMPRESSION
             *pLen = string_decompress(list[mid].data, decomp_buff);
             return decomp_buff;
-#else
+#else // RADIX_COMPRESSION
             *pLen = list[mid].size - 1;
             return list[mid].data;
-#endif
+#endif // RADIX_COMPRESSION
         }
         else if (list[mid].number > atr)
         {
@@ -1967,7 +1966,9 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
     *pLen = 0;
     return NULL;
 }
-#else
+
+#else // MEMORY_BASED
+
 char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 {
     char *a;
@@ -1985,12 +1986,12 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
     }
     *pLen = string_decompress(a, decomp_buff) - 1;
     return decomp_buff;
-#else
+#else // RADIX_COMPRESSION
     *pLen = nLen;
     return a;
-#endif
+#endif // RADIX_COMPRESSION
 }
-#endif
+#endif // MEMORY_BASED
 
 char *atr_get_raw(dbref thing, int atr)
 {
@@ -2002,7 +2003,7 @@ char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, i
 {
 #ifdef RADIX_COMPRESSION
     (void)atr_get_raw_decode_LEN(thing, s, owner, flags, atr, pLen);
-#else
+#else // RADIX_COMPRESSION
     char *buff;
 
     buff = atr_get_raw_LEN(thing, atr, pLen);
@@ -2017,7 +2018,7 @@ char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, i
     {
         atr_decode_LEN(buff, *pLen, s, thing, owner, flags, pLen);
     }
-#endif
+#endif // RADIX_COMPRESSION
     return s;
 }
 
@@ -2048,7 +2049,7 @@ int atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
 
     retval = atr_get_raw_decode_LEN(thing, NULL, owner, flags, atr, &nLen);
     return retval;
-#else
+#else // RADIX_COMPRESSION
     char *buff;
 
     buff = atr_get_raw_LEN(thing, atr, &nLen);
@@ -2060,7 +2061,7 @@ int atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
     }
     atr_decode_LEN(buff, nLen, NULL, thing, owner, flags, &nLen);
     return 1;
-#endif
+#endif // RADIX_COMPRESSION
 }
 
 #ifndef STANDALONE
@@ -2073,9 +2074,9 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
 
 #ifdef RADIX_COMPRESSION
     int retval;
-#else
+#else // RADIX_COMPRESSION
     char *buff;
-#endif
+#endif // RADIX_COMPRESSION
 
     ITER_PARENTS(thing, parent, lev)
     {
@@ -2085,7 +2086,7 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
         {
             return s;
         }
-#else
+#else // RADIX_COMPRESSION
         buff = atr_get_raw_LEN(parent, atr, pLen);
         if (buff && *buff)
         {
@@ -2095,7 +2096,7 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
                 return s;
             }
         }
-#endif
+#endif // RADIX_COMPRESSION
         if ((lev == 0) && Good_obj(Parent(parent)))
         {
             ap = atr_num(atr);
@@ -2160,7 +2161,7 @@ int atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
     return 0;
 }
 
-#endif
+#endif // !STANDALONE
 
 /* ---------------------------------------------------------------------------
  * atr_free: Return all attributes of an object.
@@ -2175,7 +2176,7 @@ void atr_free(dbref thing)
     }
     db[thing].ahead = NULL;
     db[thing].at_count = 0;
-#else
+#else // MEMORY_BASED
     int attr;
     char *as;
     atr_push();
@@ -2185,7 +2186,7 @@ void atr_free(dbref thing)
     }
     atr_pop();
     al_destroy(thing); // Just to be on the safe side.
-#endif
+#endif // MEMORY_BASED
 }
 
 /* ---------------------------------------------------------------------------
@@ -2275,7 +2276,7 @@ int atr_next(char **attrp)
         return db[atr->thing].ahead[atr->count - 1].number;
     }
 
-#else
+#else // MEMORY_BASED
     if (!*attrp || !**attrp)
     {
         return 0;
@@ -2284,7 +2285,7 @@ int atr_next(char **attrp)
     {
         return al_decode(attrp);
     }
-#endif
+#endif // MEMORY_BASED
 }
 
 /* ---------------------------------------------------------------------------
@@ -2302,7 +2303,7 @@ void NDECL(atr_push)
     mudstate.iter_alist.data = NULL;
     mudstate.iter_alist.len = 0;
     mudstate.iter_alist.next = new_alist;
-#endif
+#endif // !MEMORY_BASED
 }
 
 void NDECL(atr_pop)
@@ -2328,7 +2329,7 @@ void NDECL(atr_pop)
         mudstate.iter_alist.len = 0;
         mudstate.iter_alist.next = NULL;
     }
-#endif
+#endif // !MEMORY_BASED
 }
 
 /* ---------------------------------------------------------------------------
@@ -2350,7 +2351,7 @@ int atr_head(dbref thing, char **attrp)
         return db[thing].ahead[0].number;
     }
     return 0;
-#else
+#else // MEMORY_BASED
     char *astr;
     int alen;
 
@@ -2379,7 +2380,7 @@ int atr_head(dbref thing, char **attrp)
     memcpy(mudstate.iter_alist.data, astr, alen+1);
     *attrp = mudstate.iter_alist.data;
     return atr_next(attrp);
-#endif
+#endif // MEMORY_BASED
 }
 
 
@@ -2411,7 +2412,7 @@ void initialize_objects(dbref first, dbref last)
 #ifdef MEMORY_BASED
         db[thing].ahead = NULL;
         db[thing].at_count = 0;
-#endif
+#endif // MEMORY_BASED
     }
 }
 
@@ -2425,9 +2426,9 @@ void db_grow(dbref newtop)
 
 #ifndef STANDALONE
     delta = mudconf.init_size;
-#else
+#else // !STANDALONE
     delta = 1000;
-#endif
+#endif // !STANDALONE
 
     // Determine what to do based on requested size, current top and size.
     // Make sure we grow in reasonable-sized chunks to prevent frequent
@@ -2450,7 +2451,7 @@ void db_grow(dbref newtop)
         {
 #ifndef MEMORY_BASED
             names[i] = NULL;
-#endif
+#endif // !MEMORY_BASED
             if (mudconf.cache_names)
                 purenames[i] = NULL;
         }
@@ -2510,7 +2511,7 @@ void db_grow(dbref newtop)
     }
     names = newnames + SIZE_HACK;
     newnames = NULL;
-#endif
+#endif // !MEMORY_BASED
 
     if (mudconf.cache_names)
     {
@@ -2575,7 +2576,7 @@ void db_grow(dbref newtop)
 #ifdef MEMORY_BASED
             db[i].ahead = NULL;
             db[i].at_count = 0;
-#endif
+#endif // MEMORY_BASED
             s_Owner(i, GOD);
             s_Flags(i, (TYPE_GARBAGE | GOING));
             s_Powers(i, 0);
@@ -2597,7 +2598,7 @@ void db_grow(dbref newtop)
     {
 #ifndef MEMORY_BASED
         names[i] = NULL;
-#endif
+#endif // !MEMORY_BASED
         if (mudconf.cache_names)
         {
             purenames[i] = NULL;
@@ -2678,7 +2679,7 @@ void NDECL(db_make_minimal)
     s_Link(obj, 0);
 }
 
-#endif
+#endif // !STANDALONE
 
 dbref parse_dbref(const char *s)
 {
@@ -2782,8 +2783,7 @@ char xlat_table[256] =
 
 int action_table[2][4] =
 {
-//   Any '\0' "   back
-//                slash
+//   Any '\0' "   backslash
     { 0,  1,  3,  4 }, // STATE_START
     { 2,  1,  2,  2 }  // STATE_ESC
 };
@@ -3002,22 +3002,22 @@ int init_dbfile(char *game_dir_file, char *game_pag_file)
 {
 #ifdef STANDALONE
     Log.printf("Opening (%s,%s)" ENDLINE, game_dir_file, game_pag_file);
-#endif
+#endif // STANDALONE
     int cc = cache_init(game_dir_file, game_pag_file);
     if (cc != HF_OPEN_STATUS_ERROR)
     {
 #ifdef STANDALONE
         Log.printf("Done opening (%s,%s)." ENDLINE, game_dir_file, game_pag_file);
-#else
+#else // STANDALONE
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
         Log.printf("Using game db files: (%s,%s).", game_dir_file, game_pag_file);
         ENDLOG;
-#endif
+#endif // STANDALONE
         db_free();
     }
     return cc;
 }
-#endif
+#endif // !MEMORY_BASED
 
 
 #ifndef STANDALONE
@@ -3098,14 +3098,14 @@ void ReleaseAllResources(dbref obj)
     }
 }
 
-#else
+#else // !STANDALONE
 
 int check_zone(dbref player, dbref thing)
 {
     return 0;
 }
 
-#endif
+#endif // !STANDALONE
 
 #if !defined(STANDALONE) && !defined(VMS) && !defined(WIN32)
 /* ---------------------------------------------------------------------------
@@ -3123,7 +3123,7 @@ void dump_restart_db(void)
 
 #ifdef CONCENTRATE
     version |= RS_CONCENTRATE;
-#endif
+#endif // CONCENTRATE
     version |= RS_RECORD_PLAYERS;
     version |= RS_NEW_STRINGS;
 
@@ -3134,7 +3134,7 @@ void dump_restart_db(void)
     putstring(f, mudstate.doing_hdr);
 #ifdef CONCENTRATE
     putref(f, conc_pid);
-#endif
+#endif // CONCENTRATE
     putref(f, mudstate.record_players);
     DESC_ITER_ALL(d) {
         putref(f, d->descriptor);
@@ -3153,7 +3153,7 @@ void dump_restart_db(void)
 #ifdef CONCENTRATE
         putref(f, d->concid);
         putref(f, d->cstatus);
-#endif
+#endif // CONCENTRATE
     }
     putref(f, 0);
 
@@ -3167,7 +3167,7 @@ void load_restart_db(void)
     DESC *p;
 #ifdef CONCENTRATE
      DESC *k;
-#endif
+#endif // CONCENTRATE
 
     int val, version, new_strings = 0;
     char *temp, buf[8];
@@ -3196,9 +3196,9 @@ void load_restart_db(void)
     {
 #ifdef CONCENTRATE
         conc_pid = getref(f);
-#else
+#else // CONCENTRATE
         (void)getref(f);
-#endif
+#endif // CONCENTRATE
     }
 
     if (version & RS_RECORD_PLAYERS)
@@ -3248,10 +3248,10 @@ void load_restart_db(void)
 #ifdef CONCENTRATE
             d->concid = getref(f);
             d->cstatus = getref(f);
-#else
+#else // CONCENTRATE
             (void)getref(f);
             (void)getref(f);
-#endif
+#endif // CONCENTRATE
         }
         d->output_size = 0;
         d->output_tot = 0;
@@ -3290,7 +3290,7 @@ void load_restart_db(void)
         desc_addhash(d);
 #ifdef CONCENTRATE
         if (!(d->cstatus & C_CCONTROL))
-#endif
+#endif // CONCENTRATE
         if (isPlayer(d->player))
         {
             s_Flags2(d->player, Flags2(d->player) | CONNECTED);
@@ -3314,14 +3314,14 @@ void load_restart_db(void)
                 }
             }
         }
-#endif
+#endif // CONCENTRATE
     }
 
     fclose(f);
     remove("restart.db");
     raw_broadcast(0, "Game: Restart finished.");
 }
-#endif
+#endif // !STANDALONE !VMS !WIN32
 
 #ifdef WIN32
 
@@ -3344,7 +3344,7 @@ void RemoveFile(char *name)
     DeleteFile(name);
 }
 
-#else
+#else // WIN32
 
 int ReplaceFile(char *old_name, char *new_name)
 {
@@ -3363,5 +3363,5 @@ void RemoveFile(char *name)
 {
     unlink(name);
 }
-#endif
+#endif // WIN32
 
