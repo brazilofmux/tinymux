@@ -5039,33 +5039,33 @@ We would like to thank the following people:
     INDEX()     INSERT()    INZONE()    ISDBREF()   ISNUM()     ISUB()
     ISWORD()    ITER()      ITEMS()     LAST()      LATTR()     LCON()
     LCSTR()     LDELETE()   LEXITS()    LIST()      LIT()       LJUST()
-    LN()        LNUM()      LPARENT()   LOC()       LOCATE()    LOCK()
-    LOG()       LSTACK()    LT()        LTE()       LWHO()      MAIL()
+    LN()        LNUM()      LOC()       LOCATE()    LOCK()      LOG()
+    LPARENT()   LPOS()      LSTACK()    LT()        LTE()       LWHO()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
  
-    MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()
-    MERGE()     MID()       MIN()       MIX()       MOD()       MONEY()
-    MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()
-    NEQ()       NEXT()      NOT()       NUM()       OBJ()       OBJEVAL()
-    OBJMEM()    OR()        ORFLAGS()   OWNER()     PARENT()    PARSE()
-    PEEK()      PEMIT()     PI()        PLAYMEM()   PMATCH()    POLL()
-    POP()       PORTS()     POS()       POSS()      POWER()     PUSH()
-    R()         RAND()      REGMATCH()  REMOVE()    REPEAT()    REPLACE()
-    REST()      REVERSE()   REVWORDS()  RJUST()     RLOC()      ROOM()
-    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
-    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
-    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SORT()
-    SORTBY()    SPACE()     SPLICE()    SQRT()      SQUISH()    STARTTIME()
-    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
-    SUB()       SUBJ()      SWITCH()    TAN()       TIME()      TRANSLATE()
-    TRIM()      TRUNC()     TYPE()      U()         ULOCAL()    UCSTR()
-    UDEFAULT()  V()         VADD()      VCROSS()    VDIM()      VDOT()
-    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
-    WHERE()     WORDPOS()   WORDS()     XGET()      XOR()       ZONE()
-    ZWHO()
+    MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()
+    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
+    MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()
+    NEARBY()    NEQ()       NEXT()      NOT()       NUM()       OBJ()
+    OBJEVAL()   OBJMEM()    OR()        ORFLAGS()   OWNER()     PARENT()
+    PARSE()     PEEK()      PEMIT()     PI()        PLAYMEM()   PMATCH()
+    POLL()      POP()       PORTS()     POS()       POSS()      POWER()
+    PUSH()      R()         RAND()      REGMATCH()  REMOVE()    REPEAT()
+    REPLACE()   REST()      REVERSE()   REVWORDS()  RJUST()     RLOC()
+    ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()
+    SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
+    SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
+    SORT()      SORTBY()    SPACE()     SPLICE()    SQRT()      SQUISH()
+    STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()
+    STRTRUNC()  SUB()       SUBJ()      SWITCH()    TAN()       TIME()
+    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         ULOCAL()
+    UCSTR()     UDEFAULT()  V()         VADD()      VCROSS()    VDIM()
+    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
+    VUNIT()     WHERE()     WORDPOS()   WORDS()     XGET()      XOR()
+    ZONE()      ZWHO()
   
 & FUNCTION CLASSES
 
@@ -5101,9 +5101,9 @@ We would like to thank the following people:
   Player Information:        CONN DOING FINDABLE IDLE LWHO PLAYMEM PORTS
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ SORT
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CAT COMP
-                             DELETE EDIT ESCAPE IFELSE LCSTR MERGE MID POS
-                             REPEAT REPLACE REVERSE SCRAMBLE SECURE SPACE
-                             SQUISH STRCAT STRLEN STRMATCH TRANSLATE
+                             DELETE EDIT ESCAPE IFELSE LCSTR LPOS MERGE MID
+                             POS REPEAT REPLACE REVERSE SCRAMBLE SECURE
+                             SPACE SQUISH STRCAT STRLEN STRMATCH TRANSLATE
                              STRTRUNC SWITCH UCSTR ENCRYPT DECRYPT
   Time:                      CONVSECS CONVTIME SECS STARTTIME TIME
   Trigonometry:              ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
@@ -6383,6 +6383,21 @@ We would like to thank the following people:
   if vf were @trigger me/ve, then triggering the vf makes the ve 
   return "This is <object>"
 
+& LPOS()
+
+  lpos(<string>, <character>)
+ 
+  This function returns a list of the positions that <character> occupies
+  in <string>, with the first character of the string being 0. (Note that
+  this differs from the pos() function, but it consistent with functions
+  such as mid().)
+ 
+  If <character> is null, a space is assumed.
+ 
+  Example:
+    > say lpos(a-bc-def-g,-)
+    You say "1 4 8"
+ 
 & POS()
 
   pos(<string1>,<string2>)
