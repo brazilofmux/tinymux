@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.2 2001-11-20 05:17:54 sdennis Exp $
+// $Id: file_c.cpp,v 1.3 2001-11-22 19:28:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -75,7 +75,8 @@ void do_list_file(dbref player, dbref cause, int extra, char *arg)
     int flagvalue;
 
     flagvalue = search_nametab(player, list_files, arg);
-    if (flagvalue < 0) {
+    if (flagvalue < 0)
+    {
         display_nametab(player, list_files,
                 (char *)"Unknown file.  Use one of:", 1);
         return;
@@ -107,22 +108,19 @@ static int fcache_read(FBLOCK **cp, char *filename)
     char *buff;
     FBLOCK *fp, *tfp;
 
-    /*
-     * Free a prior buffer chain
-     */
-
+    // Free a prior buffer chain.
+    //
     fp = *cp;
-    while (fp != NULL) {
+    while (fp != NULL)
+    {
         tfp = fp->hdr.nxt;
         free_mbuf(fp);
         fp = tfp;
     }
     *cp = NULL;
 
-    /*
-     * Read the text file into a new chain
-     */
-
+    // Read the text file into a new chain.
+    //
     if ((fd = open(filename, O_RDONLY|O_BINARY)) == -1)
     {
         // Failure: log the event
@@ -138,20 +136,16 @@ static int fcache_read(FBLOCK **cp, char *filename)
     DebugTotalFiles++;
     buff = alloc_lbuf("fcache_read.temp");
 
-    /*
-     * Set up the initial cache buffer to make things easier
-     */
-
+    // Set up the initial cache buffer to make things easier.
+    //
     fp = (FBLOCK *) alloc_mbuf("fcache_read.first");
     fp->hdr.nxt = NULL;
     fp->hdr.nchars = 0;
     *cp = fp;
     tchars = 0;
 
-    /*
-     * Process the file, one lbuf at a time
-     */
-
+    // Process the file, one lbuf at a time.
+    //
     nmax = read(fd, buff, LBUF_SIZE);
     while (nmax > 0) {
 
@@ -179,10 +173,8 @@ static int fcache_read(FBLOCK **cp, char *filename)
         DebugTotalFiles--;
     }
 
-    /*
-     * If we didn't read anything in, toss the initial buffer
-     */
-
+    // If we didn't read anything in, toss the initial buffer.
+    //
     if (fp->hdr.nchars == 0)
     {
         *cp = NULL;
@@ -198,17 +190,22 @@ void fcache_rawdump(SOCKET fd, int num)
     FBLOCK *fp;
 
     if ((num < 0) || (num > FC_LAST))
+    {
         return;
+    }
     fp = fcache[num].fileblock;
 
-    while (fp != NULL) {
+    while (fp != NULL)
+    {
         start = fp->data;
         remaining = fp->hdr.nchars;
-        while (remaining > 0) {
-
+        while (remaining > 0)
+        {
             cnt = SOCKET_WRITE(fd, start, remaining, 0);
             if (cnt < 0)
+            {
                 return;
+            }
             remaining -= cnt;
             start += cnt;
         }
@@ -219,13 +216,14 @@ void fcache_rawdump(SOCKET fd, int num)
 
 void fcache_dump(DESC *d, int num)
 {
-    FBLOCK *fp;
-
     if ((num < 0) || (num > FC_LAST))
+    {
         return;
-    fp = fcache[num].fileblock;
+    }
+    FBLOCK *fp = fcache[num].fileblock;
 
-    while (fp != NULL) {
+    while (fp != NULL)
+    {
         queue_write(d, fp->data, fp->hdr.nchars);
         fp = fp->hdr.nxt;
     }
@@ -264,7 +262,8 @@ void fcache_load(dbref player)
         }
     }
     *bufc = '\0';
-    if ((player != NOTHING) && !Quiet(player)) {
+    if ((player != NOTHING) && !Quiet(player))
+    {
         notify(player, buff);
     }
     free_lbuf(buff);
