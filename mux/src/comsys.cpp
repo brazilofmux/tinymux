@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.26 2002-07-23 08:38:59 jake Exp $
+// $Id: comsys.cpp,v 1.27 2002-07-23 09:33:39 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1380,16 +1380,6 @@ void do_addcom
     char *arg2
 )
 {
-    char channel[MAX_CHANNEL_LEN+1];
-    char title_tmp[LBUF_SIZE];
-    char Buffer[MAX_CHANNEL_LEN+1];
-    struct channel *ch;
-    char *s, *t;
-    int i, j, where;
-    comsys_t *c;
-    char *na;
-    char **nc;
-
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -1403,14 +1393,15 @@ void do_addcom
         raw_notify(executor, "You need to specify a valid alias.");
         return;
     }
-    s = arg2;
+    char *s = arg2;
     if (!*s)
     {
         raw_notify(executor, "You need to specify a channel.");
         return;
     }
-    t = channel;
-    while (*s && (*s != ',') && ((t - channel) < MAX_CHANNEL_LEN))
+    char channel[MAX_CHANNEL_LEN+1];
+    char *t = channel;
+    while (*s && ((t - channel) < MAX_CHANNEL_LEN))
     {
         if (*s != ' ')
             *t++ = *s++;
@@ -1419,22 +1410,11 @@ void do_addcom
     }
     *t = '\0';
 
-    t = title_tmp;
-    *t = '\0';
-    if (*s)
-    {
-        // Read title
-        //
-        s++;
-        int n = sizeof(title_tmp) - 1;
-        while (  *s
-              && t - title_tmp < n)
-        {
-            *t++ = *s++;
-        }
-        *t = '\0';
-    }
-    ch = select_channel(channel);
+    int i, j, where;
+    char *na;
+    char **nc;
+    struct channel *ch = select_channel(channel);
+    char Buffer[MAX_CHANNEL_LEN+1];
     if (!ch)
     {
         int nVisualWidth;
@@ -1447,7 +1427,7 @@ void do_addcom
         raw_notify(executor, "Sorry, this channel type does not allow you to join.");
         return;
     }
-    c = get_comsys(executor);
+    comsys_t *c = get_comsys(executor);
     if (c->numchannels >= MAX_ALIASES_PER_PLAYER)
     {
         raw_notify(executor, tprintf("Sorry, but you have reached the maximum number of aliases allowed."));
@@ -1507,17 +1487,8 @@ void do_addcom
     {
         do_joinchannel(executor, ch);
     }
-    char *pValidatedTitleValue = RestrictTitleValue(title_tmp);
-    do_setnewtitle(executor, ch, pValidatedTitleValue);
 
-    if (pValidatedTitleValue[0] == '\0')
-    {
-        raw_notify(executor, tprintf("Channel %s added with alias %s.", channel, pValidAlias));
-    }
-    else
-    {
-        raw_notify(executor, tprintf("Channel %s added with alias %s and title %s.", channel, pValidAlias, pValidatedTitleValue));
-    }
+    raw_notify(executor, tprintf("Channel %s added with alias %s.", channel, pValidAlias));
 }
 
 void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
