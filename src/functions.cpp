@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.87 2001-08-25 07:00:33 sdennis Exp $
+// $Id: functions.cpp,v 1.88 2001-08-25 21:08:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6392,7 +6392,7 @@ FUN flist[] =
     {"LCSTR",    fun_lcstr,    1,       1,  1,       0, CA_PUBLIC},
     {"LDELETE",  fun_ldelete,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"LEXITS",   fun_lexits,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LROOMS",   fun_lrooms,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"LROOMS",   fun_lrooms,   MAX_ARG, 1,  3,       0, CA_PUBLIC},
     {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LIST",     fun_list,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
     {"LIT",      fun_lit,      MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
