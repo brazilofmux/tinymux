@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.27 2000-10-13 17:47:36 sdennis Exp $
+// $Id: db.cpp,v 1.28 2000-10-15 19:53:03 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -840,7 +840,7 @@ void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
 
 // MakeCanonicalAttributeName
 //
-// First letter must be alphabetic.
+// First letter must be alphabetic or '_'.
 // Other letters can be alphanumeric or one of "'?!`/-_.@#$^&~=+<>()%".
 // Letters are converted to uppercase.
 //
@@ -856,7 +856,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
     static char Buffer[SBUF_SIZE];
 
     if (  !pName
-       || !Tiny_IsAlpha[(unsigned char)*pName])
+       || !(Tiny_IsAlpha[(unsigned char)*pName] || *pName == '_'))
     {
         *pnName = 0;
         *pbValid = FALSE;
