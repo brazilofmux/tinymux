@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.4 2001-11-20 04:51:53 sdennis Exp $
+// $Id: quota.cpp,v 1.5 2002-02-12 23:52:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -11,6 +11,8 @@
 #include "attrs.h"
 #include "powers.h"
 #include "match.h"
+#include "mudconf.h"
+#include "functions.h"
 
 // ---------------------------------------------------------------------------
 // count_quota, mung_quota, show_quota, do_quota: Manage quotas.
@@ -157,9 +159,6 @@ void do_quota
     char *arg2
 )
 {
-    dbref who;
-    int set, value, i;
-
     if (!(mudconf.quotas || Quota(player)))
     {
         notify_quiet(player, "Quotas are not enabled.");
@@ -171,10 +170,11 @@ void do_quota
         return;
     }
 
+    dbref who;
+    int set = 0, value = 0, i;
+
     // Show or set all quotas if requested.
     //
-    value = 0;
-    set = 0;
     if (key & QUOTA_ALL)
     {
         if (arg1 && *arg1)
@@ -259,4 +259,42 @@ void do_quota
         mung_quotas(who, key, value);
     }
     show_quota(player, who);
+}
+
+FUNCTION(fun_hasquota)
+{
+        
+    if (!mudconf.quotas)
+    {
+        safe_str("#-1 Quotas are not enabled.", buff, bufc);
+        return;
+    }
+
+    // Find out whose quota to show.
+    //
+    dbref who = lookup_player(player, fargs[0], 1);
+    if (!Good_obj(who))
+    {
+        safe_str("#-1 NOT FOUND", buff, bufc);
+        return;
+    }
+
+    // Make sure we have permission to do it.
+    //
+    if (  Owner(player) != who
+       && !Quota(player))
+    {
+        safe_str(NOPERM_MESSAGE, buff, bufc);
+        return;
+    }
+
+    BOOL bResult = TRUE;
+    if (!Free_Quota(who))
+    {
+        int aflags;
+        dbref aowner;
+        int rq = Tiny_atol(atr_get(who, A_RQUOTA, &aowner, &aflags));
+        bResult = (rq >= Tiny_atol(fargs[1]));
+    }
+    safe_ltoa(bResult ? '1' : '0', buff, bufc);
 }

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.150 2002-02-08 00:15:42 sdennis Exp $
+// $Id: functions.cpp,v 1.151 2002-02-12 23:52:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7016,6 +7016,7 @@ FUN flist[] =
     {"HASATTRP", fun_hasattrp, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"HASFLAG",  fun_hasflag,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"HASPOWER", fun_haspower, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASQUOTA", fun_hasquota, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"HASTYPE",  fun_hastype,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"HOME",     fun_home,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"IABS",     fun_iabs,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
