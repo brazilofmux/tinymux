@@ -23,6 +23,67 @@ extern int FDECL(a_Queue, (dbref, int));
 extern void FDECL(s_Queue, (dbref, int));
 extern int FDECL(QueueMax, (dbref));
 
+#ifdef WIN32
+CLinearTimeDelta GetProcessorUsage(void)
+{
+    CLinearTimeDelta ltd;
+    if (platform == VER_PLATFORM_WIN32_NT)
+    {
+        FILETIME ftCreate;
+        FILETIME ftExit;
+        FILETIME ftKernel;
+        FILETIME ftUser;
+        fpGetProcessTimes(hGameProcess, &ftCreate, &ftExit, &ftKernel, &ftUser);
+        ltd.Set100ns(*(INT64 *)(&ftUser));
+        return ltd;
+    }
+
+    // Win9x - We can really only report the system time with a
+    // high-resolution timer. This doesn't seperate the time from
+    // this process from other processes that are also running on
+    // the same machine, but it's the best we can do on Win9x.
+    //
+    // The scheduling in Win9x is totally screwed up, so even if
+    // Win9x did provide the information, it would certainly be
+    // wrong.
+    //
+    if (bQueryPerformanceAvailable)
+    {
+        // The QueryPerformanceFrequency call at game startup
+        // succeeded. The frequency number is the number of ticks
+        // per second.
+        //
+        INT64 li;
+        if (QueryPerformanceCounter((LARGE_INTEGER *)&li))
+        {
+            li = QP_A*li + (QP_B*li+QP_C)/QP_D;
+            ltd.Set100ns(li);
+            return ltd;
+        }
+        bQueryPerformanceAvailable = FALSE;
+    }
+
+    // Nothing left to do but to use the time.
+    //
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetLocal();
+    ltd = ltaNow - mudstate.start_time;
+    return ltd;
+}
+
+#else // WIN32
+
+CLinearTimeDelta GetProcessorUsage(void)
+{
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    CLinearTimeDelta ltd;
+    ltd.SetTimeValueStruct(&usage.ru_utime);
+    return ltd;
+}
+
+#endif // WIN32
+
 /*
  * ---------------------------------------------------------------------------
  * * add_to: Adjust an object's queue or semaphore count.
@@ -100,6 +161,8 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         mudstate.poutbufc = mudstate.poutnew;
                         mudstate.poutobj = player;
 
+                        // No lag check on piped commands.
+                        //
                         process_command(player, point->cause, 0, cp, point->env, point->nargs);
                         if (mudstate.pout)
                         {
@@ -113,12 +176,38 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     } 
                     mudstate.inpipe = 0;
 
+                    CLinearTimeAbsolute ltaBegin;
+                    ltaBegin.GetUTC();
+                    CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
+
                     process_command(player, point->cause, 0, cp, point->env, point->nargs);
                     if (mudstate.pout)
                     {
                         free_lbuf(mudstate.pout);
                         mudstate.pout = NULL;
                     }
+
+                    CLinearTimeAbsolute ltaEnd;
+                    ltaEnd.GetUTC();
+                    CLinearTimeDelta ltdUsageEnd = GetProcessorUsage();
+
+                    CLinearTimeDelta ltd;
+                    ltd = ltaEnd - ltaBegin;
+                    if (ltd.ReturnSeconds() >= mudconf.max_cmdsecs)
+                    {
+                        STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
+                        log_name_and_loc(player);
+                        char *logbuf = alloc_lbuf("do_top.LOG.cpu");
+                        long ms = ltd.ReturnMilliseconds();
+                        sprintf(logbuf, " queued command taking %d.%02d secs (enactor #%d): ", ms/100, ms%100, point->cause);
+                        log_text(logbuf);
+                        free_lbuf(logbuf);
+                        //log_text(log_cmdbuf);
+                        ENDLOG;
+                    }
+
+                    ltd = ltdUsageEnd - ltdUsageBegin;
+                    db[player].cpu_time_used += ltd;
                 }
             }
         }
