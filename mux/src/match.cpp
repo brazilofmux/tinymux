@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.2 2002-06-13 22:12:46 jake Exp $
+// $Id: match.cpp,v 1.3 2002-06-23 23:50:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -17,6 +17,7 @@ const char *NOPERM_MESSAGE       = "Permission denied.";
 const char *FUNC_FAIL_MESSAGE    = "#-1";
 const char *FUNC_NOPERM_MESSAGE  = "#-1 PERMISSION DENIED";
 const char *FUNC_NOMATCH_MESSAGE = "#-1 NO MATCH";
+const char *OUT_OF_RANGE         = "#-1 OUT OF RANGE";
 
 #define CON_LOCAL       0x01    // Match is near me.
 #define CON_TYPE        0x02    // Match is of requested type.
