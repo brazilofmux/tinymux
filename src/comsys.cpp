@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.67 2002-02-13 05:55:54 zenty Exp $
+// $Id: comsys.cpp,v 1.68 2002-02-13 06:09:26 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1302,13 +1302,6 @@ void do_addcom
         raw_notify(player, "Sorry, this channel type does not allow you to join.");
         return;
     }
-#if 0
-    // Why bother printing this warning? it's printed later anyways.
-    if (select_user(ch, player))
-    {
-        raw_notify(player, tprintf("Warning: You are already on that channel."));
-    }
-#endif
     c = get_comsys(player);
     if (c->numchannels >= MAX_ALIASES_PER_PLAYER)
     {
@@ -1365,8 +1358,10 @@ void do_addcom
     *(c->alias + where * 6 + nValidAlias) = '\0';
     c->channels[where] = StringClone(channel);
 
-    if(!select_user(ch, player))
+    if (!select_user(ch, player))
+    {
         do_joinchannel(player, ch);
+    }
     char *pValidatedTitleValue = RestrictTitleValue(title_tmp);
     do_setnewtitle(player, ch, pValidatedTitleValue);
 
@@ -1402,17 +1397,24 @@ void do_delcom(dbref player, dbref cause, int key, char *arg1)
         if (!strcmp(arg1, c->alias + i * 6))
         {
             int itmp, found=0;
-            for(itmp = 0;itmp < c->numchannels; itmp++) {
-                if(!strcmp(c->channels[itmp],c->channels[i]))
+            for (itmp = 0;itmp < c->numchannels; itmp++)
+            {
+                if (!strcmp(c->channels[itmp],c->channels[i]))
+                {
                     found++;
+                }
             }
 
             // If we found no other channels, delete it
-            if(found <= 1) {
+            //
+            if (found <= 1)
+            {
                 do_delcomchannel(player, c->channels[i]);
                 raw_notify(player, tprintf("Channel %s deleted.", c->channels[i]));
                 MEMFREE(c->channels[i]);
-            } else {
+            }
+            else
+            {
                 raw_notify(player, tprintf("Alias for channel %s deleted.",
                                            c->channels[i]));
             }
