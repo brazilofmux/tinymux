@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.10 2001-07-04 08:09:50 sdennis Exp $
+// $Id: object.cpp,v 1.11 2001-07-04 08:24:10 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -467,10 +467,11 @@ void destroy_obj(dbref player, dbref obj)
 
     // Compensate the owner for the object.
     //
-    int val = 1;
-    int quota = 1;
-    if (good_owner && (owner != obj))
+    if (  good_owner
+       && owner != obj)
     {
+        int val = 0;
+        int quota = 0;
         switch (Typeof(obj))
         {
         case TYPE_ROOM:
@@ -495,26 +496,26 @@ void destroy_obj(dbref player, dbref obj)
                 val = 0;
             quota = mudconf.player_quota;
             break;
-
-        default:
-            val = 0;
-            quota = 0;
-            break;
         }
-        giveto(owner, val);
-        if (mudconf.quotas)
+        if (val)
+        {
+            giveto(owner, val);
+#ifndef STANDALONE
+            if (  !Quiet(owner)
+               && !Quiet(obj))
+            {
+                char *p = tprintf(
+                       "You get back your %d %s deposit for %s(#%d).",
+                        val, mudconf.one_coin, Name(obj), obj);
+                notify(owner, p);
+            }
+#endif // STANDALONE
+        }
+        if (  mudconf.quotas
+           && quota)
         {
             add_quota(owner, quota);
         }
-
-#ifndef STANDALONE
-        if (!Quiet(owner) && !Quiet(obj))
-        {
-            notify(owner,
-                   tprintf("You get back your %d %s deposit for %s(#%d).",
-                    val, mudconf.one_coin, Name(obj), obj));
-        }
-#endif
     }
 #ifndef STANDALONE
     ReleaseAllResources(obj);
@@ -539,7 +540,7 @@ void destroy_obj(dbref player, dbref obj)
             notify(player, "Destroyed.");
         }
     }
-#endif
+#endif // STANDALONE
     atr_free(obj);
     s_Name(obj, NULL);
     s_Flags(obj, (TYPE_GARBAGE | GOING));
