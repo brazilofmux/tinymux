@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: alloc.cpp,v 1.2 2003-04-28 05:01:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -487,15 +487,6 @@ void pool_free_lbuf(char *buf, const char *file, const int line)
     pools[POOL_LBUF].num_alloc--;
 }
 
-static char *pool_stats(int poolnum, const char *text)
-{
-    char *buf = alloc_mbuf("pool_stats");
-    sprintf(buf, "%-15s %5d%9d%9d%9d%9d", text, pools[poolnum].pool_size,
-        pools[poolnum].num_alloc, pools[poolnum].max_alloc,
-        pools[poolnum].tot_alloc, pools[poolnum].num_lost);
-    return buf;
-}
-
 static void pool_trace(dbref player, int poolnum, const char *text)
 {
     POOLHDR *ph;
@@ -525,21 +516,19 @@ static void pool_trace(dbref player, int poolnum, const char *text)
     notify(player, tprintf("%d free %s", numfree, text));
 }
 
-static void list_bufstat(dbref player, int poolnum)
-{
-    char *buff = pool_stats(poolnum, poolnames[poolnum]);
-    notify(player, buff);
-    free_mbuf(buff);
-}
-
 void list_bufstats(dbref player)
 {
+    char buff[MBUF_SIZE];
+
     notify(player, "Buffer Stats     Size    InUse    Total   Allocs     Lost");
 
     int i;
     for (i = 0; i < NUM_POOLS; i++)
     {
-        list_bufstat(player, i);
+        sprintf(buff, "%-15s %5d%9d%9d%9d%9d", poolnames[i],
+            pools[i].pool_size, pools[i].num_alloc, pools[i].max_alloc,
+            pools[i].tot_alloc, pools[i].num_lost);
+        notify(player, buff);
     }
 }
 
