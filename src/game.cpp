@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.35 2001-10-10 07:05:42 sdennis Exp $
+// $Id: game.cpp,v 1.36 2001-10-12 19:23:08 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -22,6 +22,7 @@
 #include "slave.h"
 #include "comsys.h"
 #include "vattr.h"
+#include "muxcli.h"
 
 #ifdef RADIX_COMPRESSION
 #include "radix.h"
@@ -1804,111 +1805,62 @@ long DebugTotalThreads = 1;
 long DebugTotalSemaphores = 0;
 #endif // WIN32
 
-#ifdef WIN32         // workaround till we have a getopt for windows
-#undef USE_GETOPT    // ugly but easy to remove :)  -- carsten
-#endif
+#define CLI_DO_CONFIG_FILE CLI_USER+0
+#define CLI_DO_MINIMAL     CLI_USER+1
 
-#ifdef USE_GETOPT
-    extern char *optarg;
-#endif
+int  bMinDB = FALSE;
+int  bSyntaxError = FALSE;
+char *conffile = NULL;
+
+CLI_OptionEntry OptionTable[2] =
+{
+    { "c", CLI_REQUIRED, CLI_DO_CONFIG_FILE },
+    { "s", CLI_NONE,     CLI_DO_MINIMAL  }
+};
+
+void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
+{
+    if (!p)
+    {
+        // Non-option argument.
+        //
+        conffile = pValue;
+    }
+    else
+    {
+        switch (p->m_Unique)
+        {
+        case CLI_DO_CONFIG_FILE:
+            conffile = pValue;
+            break;
+
+        case CLI_DO_MINIMAL:
+            bMinDB = TRUE;
+            break;
+
+        default:
+            bSyntaxError = TRUE;
+            break;
+        }
+    }
+}
 
 int DCL_CDECL main(int argc, char *argv[])
 {
     int bMinDB = FALSE;
     int bSyntaxError = FALSE;
     char *conffile = NULL;
-#ifdef USE_GETOPT
-    int ch;
-#else // USE_GETOPT
-    int iConfig = 0; // DEFAULT
-#endif // USE_GETOPT
 
 #ifndef SYS_SIGLIST_DECLARED
     BuildSignalNamesTable();
 #endif
 
-#ifdef USE_GETOPT
-    while ((ch = getopt(argc, argv, "?sc:")) != -1)
-    {
-        switch (ch)
-        {
-        case 's':
-
-            bMinDB = TRUE;
-            break;
-
-        case 'c':
-
-            conffile = optarg;
-            break;
-
-        case ':':
-
-        default :
-
-            // Syntax error.
-            //
-            bSyntaxError = TRUE;
-        }
-    }
-#else // USE_GETOPT
-    switch (argc)
-    {
-    case 1:
-
-        // Use default config file.
-        //
-        break;
-
-    case 2:
-
-        // Use the specified config file.
-        //
-        if (strcmp(argv[1], "-s") == 0)
-        {
-            bMinDB = TRUE;
-        }
-        else
-        {
-            iConfig = 1; // argv[1];
-        }
-        break;
-
-    case 3:
-
-        if (strcmp(argv[1], "-s") == 0)
-        {
-            // First parameter is "-s", second paramter is the config file.
-            //
-            bMinDB = TRUE;
-            iConfig = 2; // argv[2];
-        }
-        else if (strcmp(argv[2], "-s") == 0)
-        {
-            bMinDB = TRUE;
-            iConfig = 1; // argv[1];
-        }
-        else
-        {
-            bSyntaxError = TRUE;
-        }
-        break;
-
-    default:
-
-        // Syntax error.
-        //
-        bSyntaxError = TRUE;
-    }
-    if (iConfig)
-    {
-        conffile = argv[iConfig];
-    }
-#endif // USE_GETOPT
-
+    // Parse the command line
+    //
+    CLI_Process(argc, argv, OptionTable, 2, CLI_CallBack);
     if (bSyntaxError)
     {
-        printf("Usage: %s [-s] [config-file]\n", argv[0]);
+        printf("Usage: %s [-s] [[-c] config-file]\n", argv[0]);
         return 1;
     }
 
