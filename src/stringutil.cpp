@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.30 2000-10-25 04:29:23 sdennis Exp $
+// $Id: stringutil.cpp,v 1.31 2000-10-27 06:54:13 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2371,8 +2371,16 @@ int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va)
 //
 int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
 {
-    fgets(Buffer, nBuffer, fp);
-    int lenBuffer = strlen(Buffer);
+    int lenBuffer = 0;
+    if (fgets(Buffer, nBuffer, fp))
+    {
+        lenBuffer = strlen(Buffer);
+    }
+    if (lenBuffer <= 0)
+    {
+        memcpy(Buffer, "\n", 2);
+        return 1;
+    }
     if (Buffer[lenBuffer-1] != '\n')
     {
         // The line was too long for the buffer. Continue reading until the
@@ -2382,7 +2390,10 @@ int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
         int lenTruncBuffer;
         do
         {
-            fgets(TruncBuffer, sizeof(TruncBuffer), fp);
+            if (!fgets(TruncBuffer, sizeof(TruncBuffer), fp))
+            {
+                break;
+            }
             lenTruncBuffer = strlen(TruncBuffer);
         }
         while (TruncBuffer[lenTruncBuffer-1] != '\n');

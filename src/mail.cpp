@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.19 2000-10-12 22:14:23 sdennis Exp $
+// $Id: mail.cpp,v 1.20 2000-10-27 06:54:18 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -68,7 +68,7 @@ struct malias {
 int ma_size = 0;
 int ma_top = 0;
 
-struct malias **malias;
+struct malias **malias = NULL;
 
 // Handling functions for the database of mail messages.
 //
@@ -2030,10 +2030,12 @@ void load_mail_Penn(FILE *fp)
 
     // Toss away the number of messages.
     //
-    fgets(nbuf1, sizeof(nbuf1), fp);
-
-    fgets(nbuf1, sizeof(nbuf1), fp);
-    while (strncmp(nbuf1, "***", 3) != 0)
+    if (!fgets(nbuf1, sizeof(nbuf1), fp))
+    {
+        return;
+    }
+    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
+    while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
         ISOUTOFMEMORY(mp);
@@ -2055,15 +2057,15 @@ void load_mail_Penn(FILE *fp)
         mp->read = getref(fp);
         SaveMailStruct(mp);
 
-        fgets(nbuf1, sizeof(nbuf1), fp);
+        p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
 }
 
 void load_mail_V1(FILE *fp)
 {
     char nbuf1[8];
-    fgets(nbuf1, sizeof(nbuf1), fp);
-    while (strncmp(nbuf1, "***", 3) != 0)
+    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
+    while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
         ISOUTOFMEMORY(mp);
@@ -2086,15 +2088,15 @@ void load_mail_V1(FILE *fp)
         mp->read    = getref(fp);
         SaveMailStruct(mp);
 
-        fgets(nbuf1, sizeof(nbuf1), fp);
+        p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
 }
 
 void load_mail_V2(FILE *fp)
 {
     char nbuf1[8];
-    fgets(nbuf1, sizeof(nbuf1), fp);
-    while (strncmp(nbuf1, "***", 3) != 0)
+    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
+    while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
         ISOUTOFMEMORY(mp);
@@ -2117,15 +2119,15 @@ void load_mail_V2(FILE *fp)
         mp->read = getref(fp);
         SaveMailStruct(mp);
 
-        fgets(nbuf1, sizeof(nbuf1), fp);
+        p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
 }
 
 void load_mail_V3(FILE *fp)
 {
     char nbuf1[8];
-    fgets(nbuf1, sizeof(nbuf1), fp);
-    while (strncmp(nbuf1, "***", 3) != 0)
+    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
+    while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
         ISOUTOFMEMORY(mp);
@@ -2148,7 +2150,7 @@ void load_mail_V3(FILE *fp)
         mp->read = getref(fp);
         SaveMailStruct(mp);
 
-        fgets(nbuf1, sizeof(nbuf1), fp);
+        p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
 }
 
@@ -2158,8 +2160,8 @@ void load_mail_V4(FILE *fp)
     mail_db_grow(mail_top + 1);
 
     char nbuf1[8];
-    fgets(nbuf1, sizeof(nbuf1), fp);
-    while (strncmp(nbuf1, "***", 3) != 0)
+    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
+    while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
         ISOUTOFMEMORY(mp);
@@ -2182,16 +2184,15 @@ void load_mail_V4(FILE *fp)
         mp->read    = getref(fp);
         SaveMailStruct(mp);
 
-        fgets(nbuf1, sizeof(nbuf1), fp);
+        p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
 
-    fgets(nbuf1, sizeof(nbuf1), fp);
-
-    while (strncmp(nbuf1, "+++", 3))
+    p = fgets(nbuf1, sizeof(nbuf1), fp);
+    while (p && strncmp(nbuf1, "+++", 3))
     {
         int number = Tiny_atol(nbuf1);
         new_mail_message(getstring_noalloc(fp, FALSE), number);
-        fgets(nbuf1, sizeof(nbuf1), fp);
+        p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
 }
 
@@ -2201,8 +2202,8 @@ void load_mail_V5(FILE *fp)
     mail_db_grow(mail_top + 1);
 
     char nbuf1[8];
-    fgets(nbuf1, sizeof(nbuf1), fp);
-    while (strncmp(nbuf1, "***", 3) != 0)
+    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
+    while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
         ISOUTOFMEMORY(mp);
@@ -2226,16 +2227,15 @@ void load_mail_V5(FILE *fp)
         mp->read    = getref(fp);
         SaveMailStruct(mp);
 
-        fgets(nbuf1, sizeof(nbuf1), fp);
+        p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
 
-    fgets(nbuf1, sizeof(nbuf1), fp);
-
-    while (strncmp(nbuf1, "+++", 3))
+    p = fgets(nbuf1, sizeof(nbuf1), fp);
+    while (p && strncmp(nbuf1, "+++", 3))
     {
         int number = Tiny_atol(nbuf1);
         new_mail_message(getstring_noalloc(fp, TRUE), number);
-        fgets(nbuf1, sizeof(nbuf1), fp);
+        p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
 }
 
@@ -2245,7 +2245,10 @@ void load_mail(FILE *fp)
 
     // Read the version number.
     //
-    fgets(nbuf1, sizeof(nbuf1), fp);
+    if (!fgets(nbuf1, sizeof(nbuf1), fp))
+    {
+        return;
+    }
     if (!strncmp(nbuf1, "+V5", 3))
     {
         load_mail_V5(fp);
@@ -3576,28 +3579,33 @@ void malias_read(FILE *fp)
     char buffer[LBUF_SIZE];
     struct malias *m;
 
-    ma_top = getref(fp);
-    if (ma_top <= 0)
+    i = getref(fp);
+    if (i <= 0)
     {
-        ma_size = ma_top = 0;
-        malias = NULL;
         return;
     }
-    ma_size = ma_top;
+    ma_size = ma_top = i;
 
     malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
     ISOUTOFMEMORY(malias);
 
     for (i = 0; i < ma_top; i++)
     {
-        m = (struct malias *)MEMALLOC(sizeof(struct malias));
-        ISOUTOFMEMORY(m);
-
-        malias[i] = m;
-
         // Format is: "%d %d\n", &(m->owner), &(m->numrecep)
         //
-        fgets(buffer, sizeof(buffer), fp);
+        if (!fgets(buffer, sizeof(buffer), fp))
+        {
+            // We've hit the end of the file. Set the last recognized
+            // @malias, and give up.
+            //
+            ma_top = i;
+            return;
+        }
+
+        m = (struct malias *)MEMALLOC(sizeof(struct malias));
+        ISOUTOFMEMORY(m);
+        malias[i] = m;
+
         char *p = strchr(buffer, ' ');
         m->owner = m->numrecep = 0;
         if (p)
