@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.58 2001-12-17 05:31:55 sdennis Exp $
+// $Id: stringutil.cpp,v 1.59 2001-12-29 20:25:50 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1639,22 +1639,6 @@ char *replace_string(const char *old, const char *new0, const char *string)
     }
     *r = '\0';
     return result;
-}
-
-/*
- * Returns string STRING with all occurances * of OLD replaced by NEW. OLD
- * and NEW may be different lengths. Modifies string, so: Note - STRING must
- * already be allocated large enough to handle the new size. (mitch 1 feb 91)
- */
-
-char *replace_string_inplace(const char *old, const char *new0, char *string)
-{
-    char *s;
-
-    s = replace_string(old, new0, string);
-    StringCopy(string, s);
-    free_lbuf(s);
-    return string;
 }
 
 /*
