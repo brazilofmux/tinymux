@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.19 2000-05-25 04:34:43 sdennis Exp $
+// $Id: externs.h,v 1.20 2000-06-02 03:42:53 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -13,24 +13,23 @@
 #include "regexp.h"
 #include "stringutil.h"
 
-/* From regexp.c (extract from Henry Spencer's package) */
+/* From regexp.cpp (extract from Henry Spencer's package) */
 
 extern regexp *FDECL(regcomp, (char *));
 extern int FDECL(regexec, (register regexp *, register char *));
 extern void FDECL(regerror, (char *));
 extern char regexp_errbuf[];
 
-/* From conf.c */
+/* From conf.cpp */
 extern int  cf_modify_bits(int *, char *, unsigned int, dbref, char *);
-extern char *StringClone(const char *str);
 
-/* From mail.c*/
+/* From mail.cpp */
 extern int  FDECL(load_mail, (FILE *));
 extern int  FDECL(dump_mail, (FILE *));
 extern void NDECL(mail_init);
 extern struct mail *FDECL(mail_fetch, (dbref, int));
 
-/* From netcommon.c */
+/* From netcommon.cpp */
 extern void FDECL(make_ulist, (dbref, char *, char **));
 extern int  FDECL(fetch_idle, (dbref));
 extern int  FDECL(fetch_connect, (dbref));
@@ -38,7 +37,7 @@ extern void DCL_CDECL raw_broadcast(int, char *, ...);
 extern const char *time_format_1(int Seconds);
 extern const char *time_format_2(int Seconds);
 
-/* From cque.c */
+/* From cque.cpp */
 extern int  FDECL(nfy_que, (dbref, int, int, int));
 extern int  FDECL(halt_que, (dbref, dbref));
 extern void FDECL(wait_que, (dbref, dbref, int, dbref, int, char *, char *[],int, char *[]));
@@ -50,7 +49,7 @@ extern void NDECL(recover_queue_deposits);
 extern "C" char *crypt(const char *inptr, const char *inkey);
 #endif
 
-/* From eval.c */
+/* From eval.cpp */
 void tcache_init(void);
 char *parse_to(char **, char, int);
 char *parse_arglist(dbref, dbref, char *, char, int, char *[], int, char*[], int, int *);
@@ -59,7 +58,7 @@ void TinyExec(char *buff, char **bufc, int tflags, dbref player, dbref cause, in
 extern void save_global_regs(const char *, char *[], int []);
 extern void restore_global_regs(const char *, char *[], int []);
 
-/* From game.c */
+/* From game.cpp */
 #define notify(p,m)                         notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)
 #define notify_saypose(p,m)                 notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_SAYPOSE)
 #define notify_html(p,m)                    notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN|MSG_HTML)
@@ -97,16 +96,16 @@ extern int  FDECL(html_escape, (const char *src, char *dest, char **destp));
 extern void dump_database_internal(int);
 #endif
 
-/* From help.c */
+/* From help.cpp */
 extern void helpindex_clean(CHashTable *htab);
 extern int  helpindex_read(CHashTable *, char *);
 extern void helpindex_load(dbref);
 extern void helpindex_init(void);
 
-/* From htab.c */
+/* From htab.cpp */
 extern int  cf_ntab_access(int *, char *, unsigned int, dbref, char *);
 
-/* From log.c */
+/* From log.cpp */
 extern int start_log(const char *primary, const char *secondary);
 extern void NDECL(end_log);
 extern void FDECL(log_perror, (const char *, const char *,const char *,
@@ -119,11 +118,11 @@ extern char *   FDECL(OBJTYP, (dbref));
 extern void FDECL(log_type_and_name, (dbref));
 extern void FDECL(log_type_and_num, (dbref));
 
-/* From look.c */
+/* From look.cpp */
 extern void FDECL(look_in, (dbref,dbref, int));
 extern void FDECL(show_vrml_url, (dbref, dbref));
 
-/* From move.c */
+/* From move.cpp */
 extern void FDECL(move_object, (dbref, dbref));
 extern void FDECL(move_via_generic, (dbref, dbref, dbref, int));
 extern void FDECL(move_via_exit, (dbref, dbref, dbref, dbref, int));
@@ -131,7 +130,7 @@ extern int  FDECL(move_via_teleport, (dbref, dbref, dbref, int));
 extern void FDECL(move_exit, (dbref, dbref, int, const char *, int));
 extern void FDECL(do_enter_internal, (dbref, dbref, int));
 
-/* From object.c */
+/* From object.cpp */
 extern dbref    NDECL(start_home);
 extern dbref    NDECL(default_home);
 extern int  FDECL(can_set_home, (dbref, dbref, dbref));
@@ -142,7 +141,7 @@ extern dbref    FDECL(create_obj, (dbref, int, char *, int));
 extern void FDECL(destroy_obj, (dbref, dbref));
 extern void FDECL(empty_obj, (dbref));
 
-/* From player.c */
+/* From player.cpp */
 extern void FDECL(record_login, (dbref, int, char *, char *, char *));
 extern int  FDECL(check_pass, (dbref, const char *));
 extern dbref    FDECL(connect_player, (char *, char *, char *, char *));
@@ -156,7 +155,7 @@ extern void FDECL(badname_remove, (char *));
 extern int  FDECL(badname_check, (char *));
 extern void FDECL(badname_list, (dbref, const char *));
 
-/* From predicates.c */
+/* From predicates.cpp */
 extern char * DCL_CDECL tprintf(const char *, ...);
 extern void DCL_CDECL safe_tprintf_str(char *, char **, char *, ...);
 extern dbref    FDECL(insert_first, (dbref, dbref));
@@ -190,8 +189,11 @@ extern void FDECL(did_it, (dbref, dbref, int, const char *, int,
             const char *, int, char *[], int));
 extern void FDECL(list_bufstats, (dbref));
 extern void FDECL(list_buftrace, (dbref));
+extern void OutOfMemory(const char *SourceFile, unsigned int LineNo);
+extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
+#define Tiny_Assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
 
-/* From set.c */
+/* From set.cpp */
 extern int  FDECL(parse_attrib, (dbref, char *, dbref *, int *));
 extern int  FDECL(parse_attrib_wild, (dbref, char *, dbref *, int,
             int, int));
@@ -200,22 +202,22 @@ extern dbref    FDECL(match_controlled, (dbref, const char *));
 extern dbref    FDECL(match_affected, (dbref, const char *));
 extern dbref    FDECL(match_examinable, (dbref, const char *));
 
-/* From boolexp.c */
+/* From boolexp.cpp */
 extern int  FDECL(eval_boolexp, (dbref, dbref, dbref, BOOLEXP *));
 extern BOOLEXP *FDECL(parse_boolexp, (dbref,const char *, int));
 extern int  FDECL(eval_boolexp_atr, (dbref, dbref, dbref, char *));
 
-/* From functions.c */
+/* From functions.cpp */
 extern int  FDECL(xlate, (char *));
 extern double safe_atof(char *szString);
 
-/* From unparse.c */
+/* From unparse.cpp */
 extern char *   FDECL(unparse_boolexp, (dbref, BOOLEXP *));
 extern char *   FDECL(unparse_boolexp_quiet, (dbref, BOOLEXP *));
 extern char *   FDECL(unparse_boolexp_decompile, (dbref, BOOLEXP *));
 extern char *   FDECL(unparse_boolexp_function, (dbref, BOOLEXP *));
 
-/* From walkdb.c */
+/* From walkdb.cpp */
 int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key);
 extern void olist_push(void);
 extern void olist_pop(void);
@@ -223,22 +225,22 @@ extern void olist_add(dbref);
 extern dbref olist_first(void);
 extern dbref olist_next(void);
 
-/* From wild.c */
+/* From wild.cpp */
 extern int  FDECL(wild, (char *, char *, char *[], int));
 extern int  FDECL(wild_match, (char *, char *));
 extern int  FDECL(quick_wild, (char *, char *));
 
-/* From compress.c */
+/* From compress.cpp */
 extern const char * FDECL(uncompress, (const char *, int));
 extern const char * FDECL(compress, (const char *, int));
 extern char *   FDECL(uncompress_str, (char *, const char *, int));
 
-/* From command.c */
+/* From command.cpp */
 extern int  check_access(dbref player, int mask);
 extern void set_prefix_cmds(void);
 extern void process_command(dbref, dbref, int, char *, char *[], int);
 
-/* from db.c */
+/* from db.cpp */
 extern int  FDECL(Commer, (dbref));
 extern void FDECL(s_Pass, (dbref, const char *));
 extern void FDECL(s_Name, (dbref, char *));

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.9 2000-04-16 07:37:09 sdennis Exp $
+// $Id: stringutil.cpp,v 1.10 2000-06-02 03:42:52 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1679,13 +1679,54 @@ int minmatch(char *str, char *target, int min)
     return ((min <= 0) ? 1 : 0);
 }
 
+// --------------------------------------------------------------------------
+// StringCloneLen: allocate memory and copy string
+//
+char *StringCloneLen(const char *str, unsigned int nStr)
+{
+    char *buff = (char *)MEMALLOC(nStr+1, __FILE__, __LINE__);
+    if (!buff)
+    {
+        OutOfMemory(__FILE__, __LINE__);
+        return 0;
+    }
+    memcpy(buff, str, nStr);
+    buff[nStr] = '\0';
+    return buff;
+}
+
+// --------------------------------------------------------------------------
+// StringClone: allocate memory and copy string
+//
+char *StringClone(const char *str)
+{
+    return StringCloneLen(str, strlen(str));
+}
+
+// --------------------------------------------------------------------------
+// BufferCloneLen: allocate memory and copy buffer
+//
+char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
+{
+    char *buff = (char *)MEMALLOC(nBuffer, __FILE__, __LINE__);
+    if (!buff)
+    {
+        OutOfMemory(__FILE__, __LINE__);
+        return 0;
+    }
+    memcpy(buff, pBuffer, nBuffer);
+    return buff;
+}
+
+// TODO: remove the following function.
+//
 char *strsave(const char *s)
 {
-    char *p;
-    p = (char *)MEMALLOC(sizeof(char) * (strlen(s) + 1), __FILE__, __LINE__);
-
+    char *p = (char *)MEMALLOC(strlen(s) + 1, __FILE__, __LINE__);
     if (p)
-        StringCopy(p, s);
+    {
+        strcpy(p, s);
+    }
     return p;
 }
 

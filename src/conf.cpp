@@ -2,7 +2,7 @@
  * conf.cpp: set up configuration information and static data 
  */
 /*
- * $Id: conf.cpp,v 1.11 2000-05-24 08:36:45 sdennis Exp $ 
+ * $Id: conf.cpp,v 1.12 2000-06-02 03:42:53 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -59,32 +59,6 @@ extern NAMETAB attraccess_nametab[];
 extern NAMETAB list_names[];
 extern NAMETAB sigactions_nametab[];
 extern CONF conftable[];
-
-#endif
-
-#ifndef STANDALONE
-
-/*
- * ---------------------------------------------------------------------------
- * * StringClone: allocate memory and copy string
- */
-
-char *StringClone(const char *str)
-{
-    unsigned int nStr = strlen(str);
-    char *buff = (char *)MEMALLOC(nStr+1, __FILE__, __LINE__);
-    if (buff)
-    {
-        memcpy(buff, str, nStr+1);
-    }
-    else if (mudstate.initializing)
-    {
-        Log.WriteString("ABORT! conf.cpp, failed to allocate memory in StringClone().\n");
-        Log.Flush();
-        abort();
-    }
-    return buff;
-}
 
 #endif
 

@@ -1,5 +1,5 @@
 // predicates.cpp
-// $Id: predicates.cpp,v 1.11 2000-05-19 17:20:00 sdennis Exp $
+// $Id: predicates.cpp,v 1.12 2000-06-02 03:42:52 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1965,3 +1965,47 @@ void do_verb(dbref player, dbref cause, int key, char *victim_str, char *args[],
 }
 
 #endif // STANDALONE
+
+// --------------------------------------------------------------------------
+// OutOfMemory: handle an out of memory condition.
+//
+void OutOfMemory(const char *SourceFile, unsigned int LineNo)
+{
+    Log.printf("%s(%u): Out of memory.\n", SourceFile, LineNo);
+    Log.Flush();
+#ifdef STANDALONE
+    abort();
+#else // STANDALONE
+    if (mudstate.initializing)
+    {
+        abort();
+    }
+    else
+    {
+        do_restart(1,1,0);
+    }
+#endif // STANDALONE
+}
+
+// --------------------------------------------------------------------------
+// AssertionFailed: A logical assertion has failed.
+//
+BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo)
+{
+    Log.printf("%s(%u): Assertion failed.\n", SourceFile, LineNo);
+    Log.Flush();
+#ifdef STANDALONE
+    abort();
+#else // STANDALONE
+    if (mudstate.initializing)
+    {
+        abort();
+    }
+    else
+    {
+        do_restart(1,1,0);
+    }
+#endif // STANDALONE
+    return TRUE;
+}
+
