@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.29 2002-12-16 00:21:26 sdennis Exp $
+// $Id: flags.cpp,v 1.30 2002-12-30 16:55:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -289,6 +289,7 @@ static FLAGBITENT fbeHtml           = { HTML,         '(',    FLAG_WORD2, 0,    
 static FLAGBITENT fbeImmortal       = { IMMORTAL,     'i',    FLAG_WORD1, 0,                    fh_wiz};
 static FLAGBITENT fbeInherit        = { INHERIT,      'I',    FLAG_WORD1, 0,                    fh_inherit};
 static FLAGBITENT fbeJumpOk         = { JUMP_OK,      'J',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeKeepAlive      = { CKEEPALIVE,   'k',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeKey            = { KEY,          'K',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeLight          = { LIGHT,        'l',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeLinkOk         = { LINK_OK,      'L',    FLAG_WORD1, 0,                    fh_any};
@@ -385,6 +386,7 @@ FLAGNAMEENT gen_flag_names[] =
     {"IMMORTAL",        TRUE, &fbeImmortal       },
     {"INHERIT",         TRUE, &fbeInherit        },
     {"JUMP_OK",         TRUE, &fbeJumpOk         },
+    {"KEEPALIVE",       TRUE, &fbeKeepAlive      },
     {"KEY",             TRUE, &fbeKey            },
     {"LIGHT",           TRUE, &fbeLight          },
     {"LINK_OK",         TRUE, &fbeLinkOk         },

@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.35 2002-09-28 06:59:19 sdennis Exp $
+// $Id: netcommon.cpp,v 1.36 2002-12-30 16:55:34 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -155,7 +155,9 @@ void raw_notify(dbref player, const char *msg)
     DESC *d;
 
     if (!msg || !*msg)
+    {
         return;
+    }
 
     if (mudstate.inpipe && (player == mudstate.poutobj))
     {
@@ -165,7 +167,9 @@ void raw_notify(dbref player, const char *msg)
     }
 
     if (!Connected(player))
+    {
         return;
+    }
 
     DESC_ITER_PLAYER(player, d)
     {
@@ -1138,6 +1142,13 @@ void check_idle(void)
 
     DESC_SAFEITER_ALL(d, dnext)
     {
+        if (KeepAlive(d->player))
+        {
+            // Send a Telnet NOP code - creates traffic to keep NAT routers
+            // happy.  Hopefully this only runs once a minute.
+            //
+            queue_string(d, "\377\361");
+        }
         if (d->flags & DS_AUTODARK)
         {
             continue;

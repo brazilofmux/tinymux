@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.18 2002-09-18 04:19:42 sdennis Exp $
+// $Id: flags.h,v 1.19 2002-12-30 16:55:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -68,7 +68,7 @@
 #define FIXED        0x00000800
 #define UNINSPECTED  0x00001000
 #define NO_COMMAND   0x00002000
-//#define DYNAMIC      0x00004000
+#define CKEEPALIVE   0x00004000  /* User receives keepalives from the MUX */
 #define NOBLEED      0x00008000
 #define STAFF        0x00010000
 #define HAS_DAILY    0x00020000
@@ -77,7 +77,7 @@
 #define VACATION     0x01000000
 #define PLAYER_MAILS 0x02000000
 #define HTML         0x04000000  /* Player supports HTML */
-#define BLIND        0x08000000  // Surpress has arrived / left messages.
+#define BLIND        0x08000000  // Suppress has arrived / left messages.
 #define SUSPECT      0x10000000  /* Report some activities to wizards */
 #define NOACCENTS    0x20000000  // Strip accented characters.
 #define CONNECTED    0x40000000  /* Player is connected */
@@ -219,6 +219,7 @@ extern char *MakeCanonicalFlagName
 /* Unmark(x)            - Clear marked flag on X */
 /* Marked(x)            - Check marked flag on X */
 /* See_attr(P,X.A,O,F)  - Can P see text attr A on X if attr has owner O */
+/* KeepAlive(x)         - Does the user want keepalives? */
 
 #define Typeof(x)           (Flags(x) & TYPE_MASK)
 #define God(x)              ((x) == GOD)
@@ -246,13 +247,13 @@ extern char *MakeCanonicalFlagName
                             ((Flags(Owner(x)) & ROYALTY) && Inherits(x)))
 #define WizRoy(x)           (Royalty(x) || Wizard(x))
 #define Head(x)             ((Flags2(x) & HEAD_FLAG) != 0)
-//#define Dynamic(x)          ((Flags2(x) & DYNAMIC) !=0)
 #define Fixed(x)            ((Flags2(x) & FIXED) != 0)
 #define Uninspected(x)      ((Flags2(x) & UNINSPECTED) != 0)
 #define Ansi(x)             ((Flags2(x) & ANSI) != 0)
 #define NoAccents(x)        ((Flags2(x) & NOACCENTS) != 0)
 #define No_Command(x)       ((Flags2(x) & NO_COMMAND) != 0)
 #define NoBleed(x)          ((Flags2(x) & NOBLEED) != 0)
+#define KeepAlive(x)        ((Flags2(x) & CKEEPALIVE) != 0)
 
 #define Transparent(x)      ((Flags(x) & SEETHRU) != 0)
 #define Link_ok(x)          (((Flags(x) & LINK_OK) != 0) && Has_contents(x))
