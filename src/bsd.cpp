@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.65 2003-01-31 16:15:14 sdennis Exp $
+// $Id: bsd.cpp,v 1.66 2003-02-18 04:34:00 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2899,9 +2899,9 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             //
             dump_restart_db();
 #ifdef GAME_DOOFERMUX
-            execl("bin/netmux", mudconf.mud_name, mudconf.config_file, NULL);
+            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, NULL);
 #else // GAME_DOOFERMUX
-            execl("bin/netmux", "netmux", mudconf.config_file, NULL);
+            execl("bin/netmux", "netmux", "-c", mudconf.config_file, NULL);
 #endif // GAME_DOOFERMUX
             break;
 #endif // WIN32
