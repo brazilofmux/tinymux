@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.6 2000-05-20 06:22:37 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.7 2000-06-07 23:51:57 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -372,6 +372,8 @@ struct statedata
 
     char    version[128];   /* MUX version string */
     char    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
+    int     nObjEvalNest;      // The nesting level of objeval()
+                               // invocations.
 #else
     int     logging;    /* Are we in the middle of logging? */
     int     attr_next;  /* Next attr to alloc when freelist is empty */

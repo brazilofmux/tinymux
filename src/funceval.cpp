@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.14 2000-06-07 23:22:07 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.15 2000-06-07 23:51:57 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -590,9 +590,11 @@ FUNCTION(fun_objeval)
         obj = player;
     }
 
+    mudstate.nObjEvalNest++;
     str = fargs[1];
     TinyExec(buff, bufc, 0, obj, cause, EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     free_lbuf(name);
+    mudstate.nObjEvalNest--;
 }
 
 FUNCTION(fun_squish)
@@ -1032,7 +1034,8 @@ FUNCTION(fun_mail)
             safe_str("#-1 NO SUCH PLAYER", buff, bufc);
             return;
         }
-        else if (playerask == player || God(player))
+        else if (  (playerask == player && !mudstate.nObjEvalNest)
+                || God(player))
         {
             num = Tiny_atol(fargs[1]);
         }
