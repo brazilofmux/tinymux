@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.129 2005-01-05 15:31:17 sdennis Exp $
+// $Id: functions.cpp,v 1.130 2005-01-05 17:59:43 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -9662,13 +9662,13 @@ FUN flist[] =
     {"ASIN",        fun_asin,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"ATAN",        fun_atan,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"ATTRCNT",     fun_attrcnt,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"BAND",        fun_band,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"BAND",        fun_band,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {"BEEP",        fun_beep,       MAX_ARG, 0,       0,         0, CA_WIZARD},
     {"BEFORE",      fun_before,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"BITTYPE",     fun_bittype,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"BNAND",       fun_bnand,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"BOR",         fun_bor,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"BXOR",        fun_bxor,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"BOR",         fun_bor,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {"BXOR",        fun_bxor,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {"CAND",        fun_cand,       MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {"CANDBOOL",    fun_candbool,   MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
 #ifdef WOD_REALMS

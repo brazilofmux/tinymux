@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.77 2004-09-22 14:28:27 sdennis Exp $
+// $Id: funceval.cpp,v 1.78 2005-01-05 17:59:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2786,28 +2786,38 @@ FUNCTION(fun_shr)
 
 FUNCTION(fun_band)
 {
-    if (  is_integer(fargs[0], NULL)
-       && is_integer(fargs[1], NULL))
+    UINT64 val = UINT64_MAX_VALUE;
+    for (int i = 0; i < nfargs; i++)
     {
-        safe_i64toa(mux_atoi64(fargs[0]) & mux_atoi64(fargs[1]), buff, bufc);
+        if (is_integer(fargs[i], NULL))
+        {
+            val &= mux_atoi64(fargs[i]);
+        }
+        else
+        {
+            safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+            return;
+        }
     }
-    else
-    {
-        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
-    }
+    safe_i64toa(val, buff, bufc);
 }
 
 FUNCTION(fun_bor)
 {
-    if (  is_integer(fargs[0], NULL)
-       && is_integer(fargs[1], NULL))
+    UINT64 val = 0;
+    for (int i = 0; i < nfargs; i++)
     {
-        safe_i64toa(mux_atoi64(fargs[0]) | mux_atoi64(fargs[1]), buff, bufc);
+        if (is_integer(fargs[i], NULL))
+        {
+            val |= mux_atoi64(fargs[i]);
+        }
+        else
+        {
+            safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+            return;
+        }
     }
-    else
-    {
-        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
-    }
+    safe_i64toa(val, buff, bufc);
 }
 
 FUNCTION(fun_bnand)
@@ -2825,15 +2835,20 @@ FUNCTION(fun_bnand)
 
 FUNCTION(fun_bxor)
 {
-    if (  is_integer(fargs[0], NULL)
-       && is_integer(fargs[1], NULL))
+    UINT64 val = 0;
+    for (int i = 0; i < nfargs; i++)
     {
-        safe_i64toa(mux_atoi64(fargs[0]) ^ mux_atoi64(fargs[1]), buff, bufc);
+        if (is_integer(fargs[i], NULL))
+        {
+            val ^= mux_atoi64(fargs[i]);
+        }
+        else
+        {
+            safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+            return;
+        }
     }
-    else
-    {
-        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
-    }
+    safe_i64toa(val, buff, bufc);
 }
 
 FUNCTION(fun_crc32)
