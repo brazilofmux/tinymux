@@ -465,6 +465,8 @@ Bug Fixes:
  --  Bug #602 - fun_ansi reaches backwards into the buffer.
  --  Bug #786 - Interaction between SUSPECT and 'log all_commands'. If both
      on, SUSPECT actions do not show up in the logs. Patch from Raevnos.
+ --  The slave boot code doesn't update maxd which (depending on the descriptor
+     value of the slave) can prevent communication with it.
  --  Try to avoid crashing with MUSH 2.2.x and U1 flatfiles that were garbled
      in the transfer between Unix and Win32.
 
