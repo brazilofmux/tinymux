@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.69 2002-08-28 16:13:27 jake Exp $
+// $Id: command.cpp,v 1.70 2002-08-31 01:59:50 jake Exp $
 //
 
 #include "copyright.h"
@@ -618,6 +618,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"say",           say_sw,     CA_LOCATION|CA_NO_SLAVE,  SAY_SAY,    CS_ONE_ARG|CS_INTERP,   0, do_say},
     {"session",       NULL,       CA_PUBLIC,        CMD_SESSION,  CS_ONE_ARG,           0, logged_out1},
     {"think",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_think},
+    {"train",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_train},
     {"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,  0,  CS_ONE_ARG|CS_INTERP, 0, do_use},
     {"who",           NULL,       CA_PUBLIC,            CMD_WHO,  CS_ONE_ARG,           0, logged_out1},
     {"wizhelp",       NULL,       CA_WIZARD,       HELP_WIZHELP,  CS_ONE_ARG,           0, do_help},
@@ -4015,6 +4016,28 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
     }
     free_lbuf(buff1);
     notify(player,"@icmd: Done.");
+}
+
+// do_train: show someone else in the same room what code you're entering and the result
+// From RhostMUSH, changed to use notify_all_from_inside.
+//
+void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string)
+{
+   dbref loc = Location(executor);
+   if (!Good_obj(loc))
+   {
+      notify(executor, "Bad location.");
+      return;
+   }
+   if (  !string
+      || !*string)
+   {
+      notify(executor, "Train requires an argument.");
+      return;
+   }
+
+   notify_all_from_inside(loc, executor, tprintf("%s types -=> %s", Name(executor), string));
+   process_command(executor, caller, enactor, TRUE, string, (char **)NULL, 0);
 }
 
 // do_hook: run softcode before or after running a hardcode command, or softcode access.
