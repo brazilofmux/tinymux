@@ -1762,25 +1762,25 @@ CONFIG PARAMETERS (continued)
   permit_site  player_flags  player_listen  player_match_own_commands
   player_name_spaces  player_queue_limit  player_quota  player_starting_home
   player_starting_room  port  postdump_message  power_alias  public_channel
-  public_flags  pueblo_message  queue_active_chunk  queue_idle_chunk
-  quiet_look  quiet_whisper  quit_file  quotas  raw_helpfile  read_remote_desc
-  read_remote_name  register_create_file  register_site  reset_players
-  retry_limit  robot_cost  robot_flags  robot_speech  room_flags  room_quota
-  run_startup  sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords
+  public_channel_alias  public_flags  pueblo_message  queue_active_chunk
+  queue_idle_chunk  quiet_look  quiet_whisper  quit_file  quotas  raw_helpfile
+  read_remote_desc  read_remote_name  register_create_file  register_site
+  reset_players  retry_limit  robot_cost  robot_flags  robot_speech
+  room_flags  room_quota  run_startup  sacrifice_adjust  sacrifice_factor
 
 { 'wizhelp config parameters3' for more }
 
 & CONFIG PARAMETERS3
 CONFIG PARAMETERS (continued)
 
-  search_cost  see_owned_dark  signal_action  site_chars  space_compress
-  stack_limit  starting_money  starting_quota  status_file  suspect_site
-  sweep_dark  switch_default_all  terse_shows_contents  terse_shows_exits
-  terse_shows_move_messages  thing_flags  thing_quota  timeslice
-  toad_recipient  trace_output_limit  trace_topdown  trust_site
-  uncompress_program  unowned_safe  use_http  user_attr_access
-  user_attr_per_hour  wait_cost  wizard_motd_file  wizard_motd_message
-  zone_recursion_limit
+  safe_wipe  safer_passwords  search_cost  see_owned_dark  signal_action
+  site_chars  space_compress  stack_limit  starting_money  starting_quota
+  status_file  suspect_site  sweep_dark  switch_default_all
+  terse_shows_contents  terse_shows_exits  terse_shows_move_messages
+  thing_flags  thing_quota  timeslice  toad_recipient  trace_output_limit
+  trace_topdown  trust_site  uncompress_program  unowned_safe  use_http
+  user_attr_access  user_attr_per_hour  wait_cost  wizard_motd_file
+  wizard_motd_message  zone_recursion_limit
 
 & CONFIG_ACCESS
 CONFIG_ACCESS
@@ -2449,7 +2449,7 @@ GUESTS_CHANNEL
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
-  Related Topics: public_channel.
+  Related Topics: guests_channel_alias, public_channel, public_channel_alias
 
 & GUESTS_CHANNEL_ALIAS
 GUESTS_CHANNEL_ALIAS
@@ -2463,7 +2463,7 @@ GUESTS_CHANNEL_ALIAS
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
-  Related Topics: guests_channel_alias, public_channel
+  Related Topics: guests_channel_alias, public_channel, public_channel_alias
 
 & GUEST_CHAR_NUM
 GUEST_CHAR_NUM
@@ -3559,7 +3559,21 @@ PUBLIC_CHANNEL
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
-  Related Topics: guests_channel.
+  Related Topics: guests_channel, guests_channel_alias, public_channel_alias
+
+& PUBLIC_CHANNEL_ALIAS
+PUBLIC_CHANNEL_ALIAS
+
+  CONFIG PARAMETER: public_channel_alias <name>
+  DEFAULT: pub
+
+  Specifies the name of the channel alias that new players join when they are
+  created.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
+  Related Topics: guests_channel, guests_channel_alias, public_channel
 
 & PUBLIC_FLAGS
 PUBLIC_FLAGS
