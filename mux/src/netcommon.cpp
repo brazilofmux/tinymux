@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.30 2004-04-01 22:00:42 sdennis Exp $
+// $Id: netcommon.cpp,v 1.31 2004-04-23 13:35:19 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1296,7 +1296,7 @@ void check_events(void)
 #define MAX_TRIMMED_NAME_LENGTH 16
 static const char *trimmed_name(dbref player, int *pvw)
 {
-    static char cbuff[4*MAX_TRIMMED_NAME_LENGTH+1];
+    static char cbuff[MBUF_SIZE];
 
     size_t nName = ANSI_TruncateToField(
                      Moniker(player),
