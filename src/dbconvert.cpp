@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.3 2000-09-18 08:03:42 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.4 2000-09-25 04:04:07 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -83,7 +83,7 @@ void usage(char *prog)
 #ifdef WIN32
 #ifdef BETA
 #if PATCHLEVEL > 0
-    Log.printf("%s from MUX %s.p%d for Win32 #%s [BETA]\n", prog, MUX_VERSION,
+    Log.printf("%s from MUX %sp%d for Win32 #%s [BETA]\n", prog, MUX_VERSION,
         PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
     Log.printf("%s from MUX %s for Win32 #%s [BETA]\n", prog, MUX_VERSION,
@@ -91,7 +91,7 @@ void usage(char *prog)
 #endif // PATCHLEVEL
 #else // BETA
 #if PATCHLEVEL > 0 
-    Log.printf("%s from MUX %s.p%d for Win32 #%s [%s]\n", prog, MUX_VERSION,
+    Log.printf("%s from MUX %sp%d for Win32 #%s [%s]\n", prog, MUX_VERSION,
         PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #else // PATCHLEVEL
     Log.printf("%s from MUX %s for Win32 #%s [%s]\n", prog, MUX_VERSION,
@@ -101,7 +101,7 @@ void usage(char *prog)
 #else // WIN32
 #ifdef BETA
 #if PATCHLEVEL > 0
-    Log.printf("%s from MUX %s.p%d #%s [BETA]\n", prog, MUX_VERSION,
+    Log.printf("%s from MUX %sp%d #%s [BETA]\n", prog, MUX_VERSION,
         PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
     Log.printf("%s from MUX %s #%s [BETA]\n", prog, MUX_VERSION,
@@ -109,7 +109,7 @@ void usage(char *prog)
 #endif // PATCHLEVEL
 #else // BETA
 #if PATCHLEVEL > 0 
-    Log.printf("%s from MUX %s.p%d #%s [%s]\n", prog, MUX_VERSION, PATCHLEVEL,
+    Log.printf("%s from MUX %sp%d #%s [%s]\n", prog, MUX_VERSION, PATCHLEVEL,
         MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #else // PATCHLEVEL
     Log.printf("%s from MUX %s #%s [%s]\n", prog, MUX_VERSION, MUX_BUILD_NUM,

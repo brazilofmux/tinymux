@@ -1,6 +1,6 @@
 // a.cpp
 //
-// $Id: a.cpp,v 1.3 2000-09-18 08:03:42 sdennis Exp $
+// $Id: a.cpp,v 1.4 2000-09-25 04:04:06 sdennis Exp $
 //
 // Analyse a MUX database, we chew it in on stdin, extract
 // attributes, and stuff them into a radix tree. We accept a single
@@ -39,7 +39,7 @@ int DCL_CDECL main(int ac, char *av[])
 #ifdef WIN32
 #ifdef BETA
 #if PATCHLEVEL > 0
-        fprintf(stderr, "%s from MUX %s.p%d for Win32 #%s [BETA]\n", av[0],
+        fprintf(stderr, "%s from MUX %sp%d for Win32 #%s [BETA]\n", av[0],
             MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
         fprintf(stderr, "%s from MUX %s for Win32 #%s [BETA]\n", av[0],
@@ -47,7 +47,7 @@ int DCL_CDECL main(int ac, char *av[])
 #endif // PATCHLEVEL
 #else // BETA
 #if PATCHLEVEL > 0 
-        fprintf(stderr, "%s from MUX %s.p%d for Win32 #%s [%s]\n", av[0],
+        fprintf(stderr, "%s from MUX %sp%d for Win32 #%s [%s]\n", av[0],
             MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #else // PATCHLEVEL
         fprintf(stderr, "%s from MUX %s for Win32 #%s [%s]\n", av[0],
@@ -57,7 +57,7 @@ int DCL_CDECL main(int ac, char *av[])
 #else // WIN32
 #ifdef BETA
 #if PATCHLEVEL > 0
-        fprintf(stderr, "%s from MUX %s.p%d #%s [BETA]\n", av[0], MUX_VERSION,
+        fprintf(stderr, "%s from MUX %sp%d #%s [BETA]\n", av[0], MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
         fprintf(stderr, "%s from MUX %s #%s [BETA]\n", av[0], MUX_VERSION,
@@ -65,7 +65,7 @@ int DCL_CDECL main(int ac, char *av[])
 #endif // PATCHLEVEL
 #else // BETA
 #if PATCHLEVEL > 0 
-        fprintf(stderr, "%s from MUX %s.p%d #%s [%s]\n", av[0], MUX_VERSION,
+        fprintf(stderr, "%s from MUX %sp%d #%s [%s]\n", av[0], MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #else // PATCHLEVEL
         fprintf(stderr, "%s from MUX %s #%s [%s]\n", av[0], MUX_VERSION,

@@ -1,7 +1,7 @@
 //
 // mkindx.cpp -- make help/news file indexes 
 //
-// $Id: mkindx.cpp,v 1.2 2000-09-18 08:03:42 sdennis Exp $ 
+// $Id: mkindx.cpp,v 1.3 2000-09-25 04:04:07 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -26,7 +26,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #ifdef WIN32
 #ifdef BETA
 #if PATCHLEVEL > 0
-        printf("%s from MUX %s.p%d for Win32 #%s [BETA]\n", argv[0],
+        printf("%s from MUX %sp%d for Win32 #%s [BETA]\n", argv[0],
             MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
         printf("%s from MUX %s for Win32 #%s [BETA]\n", argv[0], MUX_VERSION,
@@ -34,7 +34,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #endif // PATCHLEVEL
 #else // BETA
 #if PATCHLEVEL > 0 
-        printf("%s from MUX %s.p%d for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
+        printf("%s from MUX %sp%d for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #else // PATCHLEVEL
         printf("%s from MUX %s for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
@@ -44,7 +44,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #else // WIN32
 #ifdef BETA
 #if PATCHLEVEL > 0
-        printf("%s from MUX %s.p%d #%s [BETA]\n", argv[0], MUX_VERSION,
+        printf("%s from MUX %sp%d #%s [BETA]\n", argv[0], MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
         printf("%s from MUX %s #%s [BETA]\n", argv[0], MUX_VERSION,
@@ -52,7 +52,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #endif // PATCHLEVEL
 #else // BETA
 #if PATCHLEVEL > 0 
-        printf("%s from MUX %s.p%d #%s [%s]\n", argv[0], MUX_VERSION,
+        printf("%s from MUX %sp%d #%s [%s]\n", argv[0], MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #else // PATCHLEVEL
         printf("%s from MUX %s #%s [%s]\n", argv[0], MUX_VERSION, MUX_BUILD_NUM,

@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.12 2000-09-07 07:31:38 sdennis Exp $
+// * $Id: comsys.cpp,v 1.13 2000-09-25 04:04:06 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1584,7 +1584,6 @@ void do_comtitle(dbref player, dbref cause, int key, char *arg1, char *arg2)
             do_setnewtitle(player, ch, pValidatedTitleValue);
             raw_notify(player, tprintf("Title set to '%s' on channel %s.",
                        pValidatedTitleValue, channel));
-            free_lbuf(pValidatedTitleValue);
         }
     }
     else
