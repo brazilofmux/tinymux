@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.8 2001-06-29 14:11:00 sdennis Exp $ 
+// $Id: set.cpp,v 1.9 2001-06-29 15:15:07 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -571,6 +571,11 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
         // An attribute was given, so we worry about changing the owner of the
         // attribute.
         //
+        if (isGarbage(thing))
+        {
+            notify_quiet(player, "You shouldn't be rummaging through the garbage.");
+            return;
+        }
         if (!*newown)
         {
             owner = Owner(thing);
