@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
+// $Id: netcommon.cpp,v 1.3 2002-06-05 05:07:46 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -704,7 +704,7 @@ static void announce_connect(dbref player, DESC *d)
     CLinearTimeAbsolute lta;
     if (nLen)
     {
-        wait_que(player, CALLERQQQ, player, FALSE, lta, NOTHING, 0, buf,
+        wait_que(player, player, player, FALSE, lta, NOTHING, 0, buf,
             (char **)NULL, 0, NULL);
     }
     if (mudconf.master_room != NOTHING)
@@ -713,7 +713,7 @@ static void announce_connect(dbref player, DESC *d)
             &aflags, &nLen);
         if (nLen)
         {
-            wait_que(mudconf.master_room, CALLERQQQ, player, FALSE, lta,
+            wait_que(mudconf.master_room, player, player, FALSE, lta,
                 NOTHING, 0, buf, (char **)NULL, 0, NULL);
         }
         DOLIST(obj, Contents(mudconf.master_room))
@@ -721,7 +721,7 @@ static void announce_connect(dbref player, DESC *d)
             atr_pget_str_LEN(buf, obj, A_ACONNECT, &aowner, &aflags, &nLen);
             if (nLen)
             {
-                wait_que(obj, CALLERQQQ, player, FALSE, lta, NOTHING, 0, buf,
+                wait_que(obj, player, player, FALSE, lta, NOTHING, 0, buf,
                     (char **)NULL, 0, NULL);
             }
         }
@@ -739,7 +739,7 @@ static void announce_connect(dbref player, DESC *d)
             atr_pget_str_LEN(buf, zone, A_ACONNECT, &aowner, &aflags, &nLen);
             if (nLen)
             {
-                wait_que(zone, CALLERQQQ, player, FALSE, lta, NOTHING, 0, buf,
+                wait_que(zone, player, player, FALSE, lta, NOTHING, 0, buf,
                     (char **)NULL, 0, NULL);
             }
             break;
@@ -754,7 +754,7 @@ static void announce_connect(dbref player, DESC *d)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(obj, CALLERQQQ, player, FALSE, lta, NOTHING, 0,
+                    wait_que(obj, player, player, FALSE, lta, NOTHING, 0,
                         buf, (char **)NULL, 0, NULL);
                 }
             }
@@ -832,7 +832,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
         if (nLen)
         {
-            wait_que(player, CALLERQQQ, player, FALSE, lta, NOTHING, 0, buf,
+            wait_que(player, player, player, FALSE, lta, NOTHING, 0, buf,
                 argv, 1, NULL);
         }
         if (mudconf.master_room != NOTHING)
@@ -841,7 +841,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                 &aflags, &nLen);
             if (nLen)
             {
-                wait_que(mudconf.master_room, CALLERQQQ, player, FALSE, lta,
+                wait_que(mudconf.master_room, player, player, FALSE, lta,
                     NOTHING, 0, buf, (char **)NULL, 0, NULL);
             }
             DOLIST(obj, Contents(mudconf.master_room))
@@ -850,7 +850,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(obj, CALLERQQQ, player, FALSE, lta, NOTHING, 0,
+                    wait_que(obj, player, player, FALSE, lta, NOTHING, 0,
                         buf, (char **)NULL, 0, NULL);
                 }
             }
@@ -868,7 +868,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(zone, CALLERQQQ, player, FALSE, lta, NOTHING, 0,
+                    wait_que(zone, player, player, FALSE, lta, NOTHING, 0,
                         buf, (char **)NULL, 0, NULL);
                 }
                 break;
@@ -883,7 +883,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                         &nLen);
                     if (nLen)
                     {
-                        wait_que(obj, CALLERQQQ, player, FALSE, lta, NOTHING,
+                        wait_que(obj, player, player, FALSE, lta, NOTHING,
                             0, buf, (char **)NULL, 0, NULL);
                     }
                 }
@@ -2011,7 +2011,7 @@ int do_command(DESC *d, char *command, int first)
             CLinearTimeAbsolute ltaBegin;
             ltaBegin.GetUTC();
 
-            char *log_cmdbuf = process_command(d->player, CALLERQQQ, d->player,
+            char *log_cmdbuf = process_command(d->player, d->player, d->player,
                 1, command, (char **)NULL, 0);
 
             CLinearTimeAbsolute ltaEnd;
@@ -2217,7 +2217,7 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg
 
 void logged_out0(dbref executor, dbref caller, dbref enactor, int key)
 {
-    logged_out1(executor, CALLERQQQ, enactor, key, "");
+    logged_out1(executor, caller, enactor, key, "");
 }
 
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
