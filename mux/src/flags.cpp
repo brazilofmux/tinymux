@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.18 2002-09-01 19:36:02 jake Exp $
+// $Id: flags.cpp,v 1.19 2002-09-03 18:21:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1122,37 +1122,40 @@ BOOL flag_rename(char *alias, char *newname)
 {
     int nAlias;
     BOOL bValidAlias;
-    char *pAlias = alloc_sbuf("flag_rename.old");
-    char *pAlias2 = pAlias;
-    safe_sb_str(MakeCanonicalFlagName(alias, &nAlias, &bValidAlias), pAlias, &pAlias2);
-    *pAlias2 = '\0';
+    char *pCheckedAlias = MakeCanonicalFlagName(alias, &nAlias, &bValidAlias);
     if (!bValidAlias)
     {
-        free_sbuf(pAlias);
         return FALSE;
     }
 
     int nNewName;
     BOOL bValidNewName;
-    char *pNewName = alloc_sbuf("flag_rename.new");
-    char *pNewName2 = pNewName;
-    safe_sb_str(MakeCanonicalFlagName(newname, &nNewName, &bValidNewName), pNewName, &pNewName2);
-    *pNewName2 = '\0';
+    char *pCheckedNewName = MakeCanonicalFlagName(newname, &nNewName, &bValidNewName);
     if (!bValidNewName)
     {
-        free_sbuf(pAlias);
-        free_sbuf(pNewName);
         return FALSE;
     }
 
-    FLAGNAMEENT *flag1 = NULL, *flag2 = NULL;
+    char *pAlias = alloc_sbuf("flag_rename.old");
+    memcpy(pAlias, pCheckedAlias, nAlias+1);
+    char *pNewName = alloc_sbuf("flag_rename.new");
+    memcpy(pNewName, pCheckedNewName, nNewName+1);
+
+    FLAGNAMEENT *flag1;
     flag1 = (FLAGNAMEENT *)hashfindLEN(pAlias, nAlias, &mudstate.flags_htab);
     if (flag1 != NULL)
     {
+        FLAGNAMEENT *flag2;
         flag2 = (FLAGNAMEENT *)hashfindLEN(pNewName, nNewName, &mudstate.flags_htab);
         if (flag2 == NULL)
         {
             hashaddLEN(pNewName, nNewName, (int *)flag1, &mudstate.flags_htab);
+
+            // BUGBUG (Jake): flag1->flagname may not have enough room for
+            // pNewName. Also, flag1->flagname is usually going to be a
+            // literal string (const char *) so you're going to crash on some
+            // systems if you even try to use that memory.
+            //
             _strupr(pNewName);
             strcpy(flag1->flagname, pNewName);
             free_sbuf(pAlias);
@@ -1165,7 +1168,8 @@ BOOL flag_rename(char *alias, char *newname)
     return FALSE;
 }
 
-void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs, char *flag1, char *flag2)
+void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
+             char *flag1, char *flag2)
 {
     if (key & FLAG_REMOVE)
     {
