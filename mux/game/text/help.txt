@@ -9625,9 +9625,9 @@ PACK()
 & PAGE
 PAGE
 
-  COMMAND: page <players>=[<prefix>]<message>
-           page =[<prefix>]<message>
-           page [<prefix>]<message>
+  COMMAND: page[/noeval] <players>=[<prefix>]<message>
+           page[/noeval] =[<prefix>]<message>
+           page[/noeval] [<prefix>]<message>
            page <players>=
            page
 
