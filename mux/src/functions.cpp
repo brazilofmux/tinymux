@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.30 2002-06-24 22:58:06 sdennis Exp $
+// $Id: functions.cpp,v 1.31 2002-06-24 23:40:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1421,45 +1421,44 @@ int check_read_perms
 
 void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key)
 {
-    dbref thing, aowner;
-    int attrib, aflags;
-    ATTR *attr;
-    char *atr_gotten;
-    BOOL bNoMatch;
-    BOOL bFreeBuffer = TRUE;
-    BOOL bEval = TRUE;
+    BOOL bFreeBuffer = FALSE;
+    char *pRefAttrib = fargs[0];
 
-    switch(key)
+    if (  key == GET_XGET
+       || key == GET_EVAL)
     {
-    case GET_GET:
-    case GET_GEVAL:
-        bNoMatch = !parse_attrib(executor, fargs[0], &thing, &attrib);
-        break;
-    case GET_XGET:
-    case GET_EVAL:
-        bNoMatch = !parse_attrib(executor, tprintf("%s/%s", fargs[0], fargs[1]), &thing, &attrib);
-        break;
-    default:
-        bNoMatch = TRUE;
+        pRefAttrib = alloc_lbuf("get_handler");
+        char *bufp = pRefAttrib;
+        safe_tprintf_str(pRefAttrib, &bufp, "%s/%s", fargs[0], fargs[1]);
+        bFreeBuffer = TRUE;
+    }
+    dbref thing;
+    int   attrib;
+    BOOL bNoMatch = !parse_attrib(executor, pRefAttrib, &thing, &attrib);
+    if (bFreeBuffer)
+    {
+        free_lbuf(pRefAttrib);
+        bFreeBuffer = FALSE;
     }
     if (bNoMatch)
     {
         safe_nomatch(buff, bufc);
         return;
     }
-    if (attrib == NOTHING)
+
+    ATTR *attr;
+    if (  attrib == NOTHING
+       || (attr = atr_num(attrib)) == NULL)
     {
         return;
     }
 
-    // We need the attr's flags for this:
-    //
-    attr = atr_num(attrib);
-    if (!attr)
-    {
-        return;
-    }
+    dbref aowner;
+    int   aflags;
     int nLen = 0;
+    bFreeBuffer = FALSE;
+    BOOL bEval = TRUE;
+    char *atr_gotten = NULL;
     if (attr->flags & AF_IS_LOCK)
     {
         atr_gotten = atr_get_LEN(thing, attrib, &aowner, &aflags, &nLen);
@@ -1476,12 +1475,12 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
             // TODO: This is bad practice.
             atr_gotten = (char *)FUNC_NOPERM_MESSAGE;
         }
-        bFreeBuffer = FALSE;
         bEval = FALSE;
     }
     else
     {
         atr_gotten = atr_pget_LEN(thing, attrib, &aowner, &aflags, &nLen);
+        bFreeBuffer = TRUE;
     }
 
     // Perform access checks.  check_read_perms() fills buff with an error message
