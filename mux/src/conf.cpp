@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.37 2004-04-01 22:00:41 sdennis Exp $
+// $Id: conf.cpp,v 1.38 2004-04-06 21:54:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -440,6 +440,27 @@ CF_HAND(cf_int)
     // Copy the numeric value to the parameter.
     //
     *vp = mux_atol(str);
+    return 0;
+}
+
+// ---------------------------------------------------------------------------
+// cf_dbref: Set dbref parameter....looking for an ignoring the leading '#'.
+//
+CF_HAND(cf_dbref)
+{
+    char *p = str;
+    while (mux_isspace(*p))
+    {
+        p++;
+    }
+    if (*p == '#')
+    {
+        p++;
+    }
+
+    // Copy the numeric value to the parameter.
+    //
+    *vp = mux_atol(p);
     return 0;
 }
 
@@ -1653,7 +1674,7 @@ CONF conftable[] =
     {"create_max_cost",           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmax,              NULL,               0},
     {"create_min_cost",           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmin,              NULL,               0},
     {"dark_sleepers",             cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.dark_sleepers,   NULL,               0},
-    {"default_home",              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.default_home,           NULL,               0},
+    {"default_home",              cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.default_home,           NULL,               0},
     {"destroy_going_now",         cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.destroy_going_now, NULL,               0},
     {"dig_cost",                  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.digcost,                NULL,               0},
     {"down_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.down_file,       NULL, SIZEOF_PATHNAME},
@@ -1687,11 +1708,11 @@ CONF conftable[] =
     {"function_recursion_limit",  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_nest_lim,          NULL,               0},
     {"game_dir_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_dir,        NULL, SIZEOF_PATHNAME},
     {"game_pag_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_pag,        NULL, SIZEOF_PATHNAME},
-    {"global_error_obj",          cf_int,         CA_GOD,    CA_GOD,      &mudconf.global_error_obj,       NULL,               0},
+    {"global_error_obj",          cf_dbref,       CA_GOD,    CA_GOD,      &mudconf.global_error_obj,       NULL,               0},
     {"good_name",                 cf_badname,     CA_GOD,    CA_DISABLED, NULL,                            NULL,               1},
-    {"guest_char_num",            cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.guest_char,             NULL,               0},
+    {"guest_char_num",            cf_dbref,       CA_STATIC, CA_WIZARD,   &mudconf.guest_char,             NULL,               0},
     {"guest_file",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.guest_file,      NULL, SIZEOF_PATHNAME},
-    {"guest_nuker",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.guest_nuker,            NULL,               0},
+    {"guest_nuker",               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.guest_nuker,            NULL,               0},
     {"guest_prefix",              cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guest_prefix,     NULL,              32},
     {"guest_site",                cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,         H_GUEST},
     {"guests_channel",            cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guests_channel,   NULL,              32},
@@ -1700,7 +1721,7 @@ CONF conftable[] =
     {"have_zones",                cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_zones,      NULL,               0},
     {"helpfile",                  cf_helpfile,    CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
     {"hook_cmd",                  cf_hook,        CA_GOD,    CA_GOD,      &mudconf.hook_cmd,               NULL,               0},
-    {"hook_obj",                  cf_int,         CA_GOD,    CA_GOD,      &mudconf.hook_obj,               NULL,               0},
+    {"hook_obj",                  cf_dbref,       CA_GOD,    CA_GOD,      &mudconf.hook_obj,               NULL,               0},
     {"hostnames",                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.use_hostname,    NULL,               0},
     {"idle_interval",             cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.idle_interval,          NULL,               0},
     {"idle_timeout",              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.idle_timeout,           NULL,               0},
@@ -1724,7 +1745,7 @@ CONF conftable[] =
     {"machine_command_cost",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.machinecost,            NULL,               0},
     {"mail_database",             cf_string_dyn,  CA_GOD,    CA_GOD,      (int *)&mudconf.mail_db,         NULL, SIZEOF_PATHNAME},
     {"mail_expiration",           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_expiration,        NULL,               0},
-    {"master_room",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.master_room,            NULL,               0},
+    {"master_room",               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.master_room,            NULL,               0},
     {"match_own_commands",        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.match_mine,      NULL,               0},
     {"max_cache_size",            cf_int,         CA_GOD,    CA_GOD,      (int *)&mudconf.max_cache_size,  NULL,               0},
     {"max_players",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_players,            NULL,               0},
@@ -1754,8 +1775,8 @@ CONF conftable[] =
     {"player_name_spaces",        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.name_spaces,     NULL,               0},
     {"player_queue_limit",        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.queuemax,               NULL,               0},
     {"player_quota",              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.player_quota,           NULL,               0},
-    {"player_starting_home",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_home,             NULL,               0},
-    {"player_starting_room",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_room,             NULL,               0},
+    {"player_starting_home",      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_home,             NULL,               0},
+    {"player_starting_room",      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_room,             NULL,               0},
     {"port",                      cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.ports,           NULL, MAX_LISTEN_PORTS},
     {"postdump_message",          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     NULL,             128},
     {"power_alias",               cf_poweralias,  CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
@@ -1802,7 +1823,7 @@ CONF conftable[] =
     {"thing_flags",               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.thing_flags,     NULL,               0},
     {"thing_quota",               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.thing_quota,            NULL,               0},
     {"timeslice",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.timeslice,              NULL,               0},
-    {"toad_recipient",            cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.toad_recipient,         NULL,               0},
+    {"toad_recipient",            cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.toad_recipient,         NULL,               0},
     {"trace_output_limit",        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.trace_limit,            NULL,               0},
     {"trace_topdown",             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.trace_topdown,   NULL,               0},
     {"trust_site",                cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.suspect_list,   NULL,               0},
@@ -2018,6 +2039,12 @@ void cf_display(dbref player, char *param_name, char *buff, char **bufc)
             {
                 if (tp->interpreter == cf_int)
                 {
+                    safe_ltoa(*(tp->loc), buff, bufc);
+                    return;
+                }
+                else if (tp->interpreter == cf_dbref)
+                {
+                    safe_chr('#', buff, bufc);
                     safe_ltoa(*(tp->loc), buff, bufc);
                     return;
                 }
