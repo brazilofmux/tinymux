@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.28 2001-11-28 06:35:53 sdennis Exp $
+// $Id: eval.cpp,v 1.29 2001-12-01 04:14:25 sdennis Exp $
 //
 
 // MUX 2.1
@@ -983,13 +983,81 @@ unsigned char isSpecial_L2[256] =
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0  // 0xF0-0xFF
 };
 
-void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
-               int eval, char **dstr, char *cargs[], int ncargs
-             )
+#define PTRS_PER_FRAME ((LBUF_SIZE - sizeof(char *) - sizeof(int))/sizeof(char *))
+typedef struct tag_ptrsframe
 {
-    char *fargs[MAX_ARG];
-    char *preserve[MAX_GLOBAL_REGS];
-    int preserve_len[MAX_GLOBAL_REGS];
+    int   nptrs;
+    char *ptrs[PTRS_PER_FRAME];
+    struct tag_ptrsframe *next;
+} PtrsFrame;
+
+static PtrsFrame *pPtrsFrame = NULL;
+
+static DCL_INLINE char **PushPointers(int nNeeded)
+{
+    if (  !pPtrsFrame
+       || nNeeded > pPtrsFrame->nptrs)
+    {
+        PtrsFrame *p = (PtrsFrame *)alloc_lbuf("PushPointers");
+        p->next = pPtrsFrame;
+        p->nptrs = PTRS_PER_FRAME;
+        pPtrsFrame = p;
+    }
+    pPtrsFrame->nptrs -= nNeeded;
+    return pPtrsFrame->ptrs + pPtrsFrame->nptrs;
+}
+
+static DCL_INLINE void PopPointers(char **p, int nNeeded)
+{
+    if (pPtrsFrame->nptrs == PTRS_PER_FRAME)
+    {
+        PtrsFrame *p = pPtrsFrame->next;
+        free_lbuf((char *)pPtrsFrame);
+        pPtrsFrame = p;
+    }
+    //Tiny_Assert(p == pPtrsFrame->ptrs + pPtrsFrame->nptrs);
+    pPtrsFrame->nptrs += nNeeded;
+}
+
+#define INTS_PER_FRAME ((LBUF_SIZE - sizeof(char *) - sizeof(int))/sizeof(int))
+typedef struct tag_intsframe
+{
+    int   nints;
+    int   ints[INTS_PER_FRAME];
+    struct tag_intsframe *next;
+} IntsFrame;
+
+static IntsFrame *pIntsFrame = NULL;
+
+static DCL_INLINE int *PushIntegers(int nNeeded)
+{
+    if (  !pIntsFrame
+       || nNeeded > pIntsFrame->nints)
+    {
+        IntsFrame *p = (IntsFrame *)alloc_lbuf("PushPointers");
+        p->next = pIntsFrame;
+        p->nints = INTS_PER_FRAME;
+        pIntsFrame = p;
+    }
+    pIntsFrame->nints -= nNeeded;
+    return pIntsFrame->ints + pIntsFrame->nints;
+}
+
+static DCL_INLINE void PopIntegers(int *pi, int nNeeded)
+{
+    if (pIntsFrame->nints == INTS_PER_FRAME)
+    {
+        IntsFrame *p = pIntsFrame->next;
+        free_lbuf((char *)pIntsFrame);
+        pIntsFrame = p;
+    }
+    //Tiny_Assert(pi == pIntsFrame->ints + pIntsFrame->nints);
+    pIntsFrame->nints += nNeeded;
+}
+
+void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
+               int eval, char **dstr, char *cargs[], int ncargs)
+{
     char *TempPtr;
     char *tstr, *tbuf, *start, *oldp, *savestr;
     int ch;
@@ -1190,6 +1258,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                 {
                     feval = eval & ~EV_TOP;
                 }
+
+                char **fargs = PushPointers(MAX_ARG);
                 pdstr = parse_arglist_lite(player, cause, pdstr + 1,
                       ')', feval, fargs, nfargs, cargs, ncargs, &nfargs);
 
@@ -1238,8 +1308,13 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             i = player;
                         TempPtr = tstr;
 
+                        char **preserve = NULL;
+                        int *preserve_len = NULL;
+
                         if (ufp->flags & FN_PRES)
                         {
+                            preserve = PushPointers(MAX_GLOBAL_REGS);
+                            preserve_len = PushIntegers(MAX_GLOBAL_REGS);
                             save_global_regs("eval_save", preserve, preserve_len);
                         }
 
@@ -1248,6 +1323,10 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         if (ufp->flags & FN_PRES)
                         {
                             restore_global_regs("eval_restore", preserve, preserve_len);
+                            PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+                            PopPointers(preserve, MAX_GLOBAL_REGS);
+                            preserve = NULL;
+                            preserve_len = NULL;
                         }
                         free_lbuf(tstr);
                     }
@@ -1290,6 +1369,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                 {
                     free_lbuf(fargs[i]);
                 }
+                PopPointers(fargs, MAX_ARG);
+                fargs = NULL;
             }
             eval &= ~EV_FCHECK;
             isSpecial_L1['('] = 0;
