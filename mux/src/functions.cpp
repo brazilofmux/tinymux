@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.91 2002-09-03 01:53:29 sdennis Exp $
+// $Id: functions.cpp,v 1.92 2002-09-06 16:50:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6248,6 +6248,7 @@ FUNCTION(fun_iter)
     }
     mudstate.in_loop--;
     free_lbuf(mudstate.itext[mudstate.in_loop]);
+    mudstate.itext[mudstate.in_loop] = NULL;
     mudstate.inum[mudstate.in_loop] = 0;
     free_lbuf(curr);
 }
