@@ -547,7 +547,7 @@ void do_notify(dbref player, dbref cause, int key, char *what, char *count)
 
 static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], int nargs, char *sargs[])
 {
-    int a, tlen;
+    int a;
     BQUE *tmp;
     char *tptr;
 
@@ -573,7 +573,8 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
     // limited to QUEUE_QUOTA. -mnp
     //
     a = QueueMax(Owner(player));
-    if (a_Queue(Owner(player), 1) > a) {
+    if (a_Queue(Owner(player), 1) > a)
+    {
         notify(Owner(player),
             "Run away objects: too many commands queued.  Halted.");
         halt_que(Owner(player), NOTHING);
@@ -589,10 +590,15 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
 
     // Calculate the length of the save string.
     //
-    tlen = 0;
+    unsigned int tlen = 0;
+    static unsigned int nCommand;
+    static unsigned int nLenEnv[NUM_ENV_VARS];
+    static unsigned int nLenRegs[MAX_GLOBAL_REGS];
+
     if (command)
     {
-        tlen = strlen(command) + 1;
+        nCommand = strlen(command) + 1;
+        tlen = nCommand;
     }
     if (nargs > NUM_ENV_VARS)
     {
@@ -602,48 +608,8 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
     {
         if (args[a])
         {
-            tlen += (strlen(args[a]) + 1);
-        }
-    }
-    if (sargs)
-    {
-        for (a = 0; a < NUM_ENV_VARS; a++)
-        {
-            if (sargs[a])
-            {
-                tlen += (strlen(sargs[a]) + 1);
-            }
-        }
-    }
-
-    // Create the qeue entry and load the save string.
-    //
-    tmp = alloc_qentry("setup_que.qblock");
-    tmp->comm = NULL;
-    for (a = 0; a < NUM_ENV_VARS; a++)
-    {
-        tmp->env[a] = NULL;
-    }
-    for (a = 0; a < MAX_GLOBAL_REGS; a++)
-    {
-        tmp->scr[a] = NULL;
-    }
-
-    tptr = tmp->text = (char *)MEMALLOC(tlen);
-
-    if (command)
-    {
-        StringCopy(tptr, command);
-        tmp->comm = tptr;
-        tptr += (strlen(command) + 1);
-    }
-    for (a = 0; a < nargs; a++)
-    {
-        if (args[a])
-        {
-            StringCopy(tptr, args[a]);
-            tmp->env[a] = tptr;
-            tptr += (strlen(args[a]) + 1);
+            nLenEnv[a] = strlen(args[a]) + 1;
+            tlen += nLenEnv[a];
         }
     }
     if (sargs)
@@ -652,9 +618,52 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
         {
             if (sargs[a])
             {
-                StringCopy(tptr, sargs[a]);
+                nLenRegs[a] = strlen(sargs[a]) + 1;
+                tlen += nLenRegs[a];
+            }
+        }
+    }
+
+    // Create the qeue entry and load the save string.
+    //
+    tmp = alloc_qentry("setup_que.qblock");
+    tmp->comm = NULL;
+
+    tptr = tmp->text = (char *)MEMALLOC(tlen);
+    ISOUTOFMEMORY(tptr);
+
+    if (command)
+    {
+        memcpy(tptr, command, nCommand);
+        tmp->comm = tptr;
+        tptr += nCommand;
+    }
+    for (a = 0; a < nargs; a++)
+    {
+        if (args[a])
+        {
+            memcpy(tptr, args[a], nLenEnv[a]);
+            tmp->env[a] = tptr;
+            tptr += nLenEnv[a];
+        }
+        else
+        {
+            tmp->env[a] = NULL;
+        }
+    }
+    if (sargs)
+    {
+        for (a = 0; a < MAX_GLOBAL_REGS; a++)
+        {
+            if (sargs[a])
+            {
+                memcpy(tptr, sargs[a], nLenRegs[a]);
                 tmp->scr[a] = tptr;
-                tptr += (strlen(sargs[a]) + 1);
+                tptr += nLenRegs[a];
+            }
+            else
+            {
+                tmp->scr[a] = NULL;
             }
         }
     }
@@ -926,7 +935,7 @@ void ShowPsLine(BQUE *tmp)
     char *bp = bufp;
     if (Show_Key == PS_LONG)
     {
-        for (int i = 0; i < (tmp->nargs); i++)
+        for (int i = 0; i < tmp->nargs; i++)
         {
             if (tmp->env[i] != NULL)
             {
