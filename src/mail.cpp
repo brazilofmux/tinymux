@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.10 2000-09-07 23:10:14 sdennis Exp $
+// $Id: mail.cpp,v 1.11 2000-09-20 22:49:28 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3029,12 +3029,9 @@ struct malias *get_malias(dbref player, char *alias, int *pnResult)
 
 void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int number, mail_flag flags, int silent)
 {
-    int k;
     dbref vic;
-    struct malias *m;
-
     int nResult;
-    m = get_malias(player, tolist, &nResult);
+    struct malias *m = get_malias(player, tolist, &nResult);
     if (nResult == GMA_INVALIDFORM)
     {
         char *p;
@@ -3053,6 +3050,7 @@ void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int
 
     // Parse the player list.
     //
+    int k;
     for (k = 0; k < m->numrecep; k++)
     {
         vic = m->list[k];
@@ -3725,7 +3723,6 @@ void do_mail_quick(dbref player, char *arg1, char *arg2)
 void mail_to_list(dbref player, char *list, char *subject, char *message, int flags, int silent)
 {
     char *head, *tail, spot, *tolist;
-    struct malias *m;
     dbref target;
     int number;
 
