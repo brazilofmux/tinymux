@@ -398,8 +398,8 @@ Bug Fixes:
      Fixed by Brazil. Bug from MUX 1.6.
  --  Bug #706 - WIZARD could @chownall #1. Reported by Ashen-Shugar. Fixed by
      Hellspawn. Bug from MUX 1.6.
- --  Bug #708 - give to garbage objects. Reported by Ashen-Shugar. Fixed by
-     Hellspawn. Bug from MUX 1.6
+ --  Bug #708 - give to garbage objects. Reported by Ashen-Shugar. Partial
+     fix by Hellspawn. Final fix by Marlek. Bug from MUX 1.6
  --  Bug #757 - @wall/admin double emits. Report by many. Fixed by Hellspawn.
      Bug from MUX 1.6.
  --  Bug #751 - @nameformat, @conformat and @exitformat global registers are
@@ -410,6 +410,11 @@ Bug Fixes:
  --  Work-around in sane_inet_addr() to handle 255.255.255.255.
  --  Bug #707 - Wizard can @chown garbage objects. Marlek fix. Reported
      by Ashen-Shugar. Bug from MUX 1.6.
+ --  Bug #709 - Wizard can tel into objects that are inside garbage objects.
+     Found by Ashen-Shugar. Fixed by Marlek.
+ --  Bug #752 - pmatch() doesn't accept '*' as described in the help.
+     Found by Ashen-Shugar. Fixed by Marlek.
+ --  Can give objects to themselves. Fixed by Marlek.
 
 
 Performance Enhancements:
