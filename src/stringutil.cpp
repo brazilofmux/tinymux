@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.57 2001-12-07 09:36:52 sdennis Exp $
+// $Id: stringutil.cpp,v 1.58 2001-12-17 05:31:55 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1183,18 +1183,65 @@ char *normal_to_white(const char *szString)
     return Buffer;
 }
 
-const char MU_EscapeChar[256] =
+typedef struct
+{
+    int len;
+    char *p;
+} LITERAL_STRING_STRUCT;
+
+LITERAL_STRING_STRUCT MU_Substitutes[] =
+{
+    { 1, " "  },  // 0
+    { 1, " "  },  // 1
+    { 2, "%t" },  // 2
+    { 2, "%r" },  // 3
+    { 0, NULL },  // 4
+    { 2, "%b" },  // 5
+    { 2, "%%" },  // 6
+    { 2, "%(" },  // 7
+    { 2, "%)" },  // 8
+    { 2, "%[" },  // 9
+    { 2, "%]" },  // 10
+    { 2, "%{" },  // 11
+    { 2, "%}" },  // 12
+    { 2, "\\\\" } // 13
+};
+
+const char MU_EscapeConvert[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 0, 0, 4, 0, 0,  // 0
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
-    1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,  // 2
+    1, 0, 0, 0, 0, 6, 0, 0, 7, 8, 0, 0, 0, 0, 0, 0,  // 2
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 4
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0,  // 5
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,13,10, 0, 0,  // 5
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 6
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,  // 7
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,11, 0,12, 0, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+const char MU_EscapeNoConvert[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 4, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 4
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 5
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 6
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 7
 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
@@ -1227,6 +1274,7 @@ char *translate_string(const char *szString, int bConvert)
     acsCurrent = acsRestingStates[ANSI_ENDGOAL_NOBLEED];
     acsPrevious = acsCurrent;
     BOOL bSawNormal = FALSE;
+    const char *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
     while (nString)
     {
         int nTokenLength0;
@@ -1248,37 +1296,8 @@ char *translate_string(const char *szString, int bConvert)
             while (nTokenLength0--)
             {
                 int ch = *pString++;
-                if (MU_EscapeChar[ch] == 0)
-                {
-                    // Common case: mundane character.
-                    //
-                    safe_chr(ch, szTranslatedString, &pTranslatedString);
-                    continue;
-                }
-
-                // Handle special characters. '\0' doesn't occur because
-                // nLengthToken0 controls us.
-                //
-                if (ch <= '\n')
-                {
-                    // LF CR
-                    //
-                    if (ch == '\n')
-                    {
-                        if (bConvert)
-                        {
-                            safe_copy_buf("%r", 2, szTranslatedString, &pTranslatedString);
-                        }
-                        else
-                        {
-                            safe_chr(' ', szTranslatedString, &pTranslatedString);
-                        }
-                    }
-
-                    // Ignore CR on purpose.
-                    //
-                }
-                else if (ch == ' ')
+                int code = MU_EscapeChar[ch];
+                if (code)
                 {
                     // The following can look one ahead off the end of the
                     // current token (and even at the '\0' at the end of the
@@ -1286,36 +1305,16 @@ char *translate_string(const char *szString, int bConvert)
                     // always see either ESC from the next ANSI sequence,
                     // or the '\0' on the end of the string. No harm done.
                     //
-                    if (pString[0] == ' ' && bConvert)
+                    if (ch == ' ' && pString[0] == ' ')
                     {
-                        safe_str("%b", szTranslatedString, &pTranslatedString);
+                        code = 5;
                     }
-                    else
-                    {
-                        safe_chr(' ', szTranslatedString, &pTranslatedString);
-                    }
-                }
-                else if (ch == '\\')
-                {
-                    // backslash
-                    //
-                    if (bConvert)
-                    {
-                        safe_copy_buf("\\\\", 2, szTranslatedString, &pTranslatedString);
-                    }
-                    else
-                    {
-                        safe_chr('\\', szTranslatedString, &pTranslatedString);
-                    }
+                    safe_copy_buf(MU_Substitutes[code].p,
+                        MU_Substitutes[code].len, szTranslatedString,
+                        &pTranslatedString);
                 }
                 else
                 {
-                    // % ( ) [ ] { }
-                    //
-                    if (bConvert)
-                    {
-                        safe_chr('%', szTranslatedString, &pTranslatedString);
-                    }
                     safe_chr(ch, szTranslatedString, &pTranslatedString);
                 }
             }
