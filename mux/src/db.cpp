@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.5 2002-06-12 16:43:57 jake Exp $
+// $Id: db.cpp,v 1.6 2002-06-12 17:35:20 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -580,7 +580,7 @@ void do_attribute
 {
     int success, negate, f;
     char *sp;
-    VATTR *va;
+    ATTR *va;
     ATTR *va2;
 
     // Look up the user-named attribute we want to play with.
@@ -588,7 +588,7 @@ void do_attribute
     int nName;
     int bValid;
     char *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
-    if (!bValid || !(va = (VATTR *)vattr_find_LEN(pName, nName)))
+    if (!bValid || !(va = (ATTR *)vattr_find_LEN(pName, nName)))
     {
         notify(executor, "No such user-named attribute.");
         return;
@@ -968,7 +968,7 @@ ATTR *atr_str(char *s)
 
     // Nope, look for a user attribute.
     //
-    VATTR *va = (VATTR *)vattr_find_LEN(buff, nBuffer);
+    ATTR *va = (ATTR *)vattr_find_LEN(buff, nBuffer);
 
     // If we got one, load tattr and return a pointer to it.
     //
@@ -1043,7 +1043,7 @@ void anum_extend(int newtop)
 //
 ATTR *atr_num(int anum)
 {
-    VATTR *va;
+    ATTR *va;
     static ATTR tattr;
 
     // Look for a predefined attribute.
@@ -1056,7 +1056,7 @@ ATTR *atr_num(int anum)
 
     // It's a user-defined attribute, we need to copy data.
     //
-    va = (VATTR *)anum_get(anum);
+    va = (ATTR *)anum_get(anum);
     if (va != NULL)
     {
         tattr.name = va->name;
@@ -1084,7 +1084,7 @@ int mkattr(char *buff)
         int nName;
         BOOL bValid;
         char *pName = MakeCanonicalAttributeName(buff, &nName, &bValid);
-        VATTR *va;
+        ATTR *va;
         if (bValid)
         {
             int aflags = mudconf.vattr_flags;

@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
+// $Id: vattr.cpp,v 1.3 2002-06-12 17:35:20 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -38,7 +38,7 @@ static char *stringblock = (char *)0;
 //
 static int stringblock_hwm = 0;
 
-VATTR *vattr_find_LEN(char *pAttrName, int nAttrName)
+ATTR *vattr_find_LEN(const char *pAttrName, int nAttrName)
 {
     UINT32 nHash = HASH_ProcessBuffer(0, pAttrName, nAttrName);
 
@@ -49,7 +49,7 @@ VATTR *vattr_find_LEN(char *pAttrName, int nAttrName)
         HP_HEAPLENGTH nRecord;
         int anum;
         pht->Copy(iDir, &nRecord, &anum);
-        VATTR *va = (VATTR *)anum_table[anum];
+        ATTR *va = (ATTR *)anum_table[anum];
         if (strcmp(pAttrName, va->name) == 0)
         {
             return va;
@@ -59,22 +59,22 @@ VATTR *vattr_find_LEN(char *pAttrName, int nAttrName)
     return NULL;
 }
 
-VATTR *vattr_alloc_LEN(char *pName, int nName, int flags)
+ATTR *vattr_alloc_LEN(char *pName, int nName, int flags)
 {
     int number = mudstate.attr_next++;
     anum_extend(number);
     return vattr_define_LEN(pName, nName, number, flags);
 }
 
-VATTR *vattr_define_LEN(char *pName, int nName, int number, int flags)
+ATTR *vattr_define_LEN(char *pName, int nName, int number, int flags)
 {
-    VATTR *vp = vattr_find_LEN(pName, nName);
+    ATTR *vp = vattr_find_LEN(pName, nName);
     if (vp)
     {
         return vp;
     }
 
-    vp = (VATTR *)MEMALLOC(sizeof(VATTR));
+    vp = (ATTR *)MEMALLOC(sizeof(ATTR));
     if (ISOUTOFMEMORY(vp))
     {
         return NULL;
@@ -147,7 +147,7 @@ void dbclean_CheckANHtoAT(dbref executor)
         }
     }
 
-    for (VATTR *va = vattr_first(); va; va = vattr_next(va))
+    for (ATTR *va = vattr_first(); va; va = vattr_next(va))
     {
         nAttributes++;
         int iAttr = va->number;
@@ -166,7 +166,7 @@ void dbclean_CheckANHtoAT(dbref executor)
                 nUserDefined++;
             }
 
-            VATTR *vb = (VATTR *) anum_get(iAttr);
+            ATTR *vb = (ATTR *) anum_get(iAttr);
             if (vb != va)
             {
                 nInvalid++;
@@ -226,12 +226,12 @@ void dbclean_CheckATtoANH(dbref executor)
         }
         else
         {
-            VATTR *va = (VATTR *) anum_get(iAttr);
+            ATTR *va = (ATTR *) anum_get(iAttr);
             if (va)
             {
                 nUserDefined++;
                 nAttributes++;
-                VATTR *vb = vattr_find_LEN(va->name, strlen(va->name));
+                ATTR *vb = vattr_find_LEN(va->name, strlen(va->name));
                 if (vb != va)
                 {
                     nInvalid++;
@@ -283,7 +283,7 @@ void dbclean_CheckALISTtoAT(dbref executor)
             }
             else if (iAttr <= anum_alc_top)
             {
-                VATTR *va = (VATTR *) anum_get(iAttr);
+                ATTR *va = (ATTR *) anum_get(iAttr);
                 if (va == NULL)
                 {
                     // We can try to fix this one.
@@ -373,7 +373,7 @@ void dbclean_IntegrityChecking(dbref executor)
 
 int dbclean_RemoveStaleAttributeNames(void)
 {
-    VATTR *va;
+    ATTR *va;
 
     // Clear every valid attribute's AF_ISUSED flag
     //
@@ -381,7 +381,7 @@ int dbclean_RemoveStaleAttributeNames(void)
     int iAttr;
     for (iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
     {
-        va = (VATTR *) anum_get(iAttr);
+        va = (ATTR *) anum_get(iAttr);
         if (va != NULL)
         {
             va->flags &= ~AF_ISUSED;
@@ -400,7 +400,7 @@ int dbclean_RemoveStaleAttributeNames(void)
         {
             if (attr >= A_USER_START)
             {
-                va = (VATTR *) anum_get(attr);
+                va = (ATTR *) anum_get(attr);
                 if (va != NULL)
                 {
                     va->flags |= AF_ISUSED;
@@ -416,7 +416,7 @@ int dbclean_RemoveStaleAttributeNames(void)
     int cVAttributes = 0;
     for (iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
     {
-        va = (VATTR *) anum_get(iAttr);
+        va = (ATTR *) anum_get(iAttr);
         if (va != NULL)
         {
             if ((AF_ISUSED & (va->flags)) != AF_ISUSED)
@@ -455,7 +455,7 @@ int dbclean_RemoveStaleAttributeNames(void)
 
 void dbclean_RenumberAttributes(int cVAttributes)
 {
-    VATTR *va;
+    ATTR *va;
 
     // Now that all the stale attribute entries have been removed, we can
     // begin the interesting task of renumbering the attributes that remain.
@@ -479,7 +479,7 @@ void dbclean_RenumberAttributes(int cVAttributes)
     for (int i = nMap - 1; i >= 0 && iSweep < iMapStart; i--)
     {
         int iAttr = iMapStart + i;
-        va = (VATTR *) anum_get(iAttr);
+        va = (ATTR *) anum_get(iAttr);
         if (va != NULL)
         {
             while (anum_get(iSweep))
@@ -646,7 +646,7 @@ void vattr_delete_LEN(char *pName, int nName)
         pht->Copy(iDir, &nRecord, &anum);
         if (strcmp(pName, anum_table[anum]->name) == 0)
         {
-            VATTR *vp = (VATTR *)anum_table[anum];
+            ATTR *vp = (ATTR *)anum_table[anum];
             anum_set(anum, NULL);
             pht->Remove(iDir);
             MEMFREE(vp);
@@ -656,7 +656,7 @@ void vattr_delete_LEN(char *pName, int nName)
     }
 }
 
-VATTR *vattr_rename_LEN(char *pOldName, int nOldName, char *pNewName, int nNewName)
+ATTR *vattr_rename_LEN(char *pOldName, int nOldName, char *pNewName, int nNewName)
 {
     // Find and Delete old name from hashtable.
     //
@@ -668,7 +668,7 @@ VATTR *vattr_rename_LEN(char *pOldName, int nOldName, char *pNewName, int nNewNa
         HP_HEAPLENGTH nRecord;
         int anum;
         pht->Copy(iDir, &nRecord, &anum);
-        VATTR *vp = (VATTR *)anum_table[anum];
+        ATTR *vp = (ATTR *)anum_table[anum];
         if (strcmp(pOldName, vp->name) == 0)
         {
             pht->Remove(iDir);
@@ -679,27 +679,27 @@ VATTR *vattr_rename_LEN(char *pOldName, int nOldName, char *pNewName, int nNewNa
             vp->name = store_string(pNewName);
             nHash = HASH_ProcessBuffer(0, pNewName, nNewName);
             pht->Insert(sizeof(int), nHash, &anum);
-            return (VATTR *)anum_table[anum];
+            return (ATTR *)anum_table[anum];
         }
         iDir = pht->FindNextKey(iDir, nHash);
     }
     return NULL;
 }
 
-VATTR *NDECL(vattr_first)
+ATTR *NDECL(vattr_first)
 {
     HP_HEAPLENGTH nRecord;
     int anum;
     HP_DIRINDEX iDir = mudstate.vattr_name_htab.FindFirst(&nRecord, &anum);
     if (iDir != HF_FIND_END)
     {
-        return (VATTR *)anum_table[anum];
+        return (ATTR *)anum_table[anum];
     }
     return NULL;
 
 }
 
-VATTR *vattr_next(VATTR *vp)
+ATTR *vattr_next(ATTR *vp)
 {
     if (vp == NULL)
         return vattr_first();
@@ -709,7 +709,7 @@ VATTR *vattr_next(VATTR *vp)
     HP_DIRINDEX iDir = mudstate.vattr_name_htab.FindNext(&nRecord, &anum);
     if (iDir != HF_FIND_END)
     {
-        return (VATTR *)anum_table[anum];
+        return (ATTR *)anum_table[anum];
     }
     return NULL;
 }

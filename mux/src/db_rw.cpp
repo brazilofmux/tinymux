@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: db_rw.cpp,v 1.2 2002-06-12 17:35:20 jake Exp $
 //
 
 #include "copyright.h"
@@ -847,7 +847,7 @@ dbref db_write(FILE *f, int format, int version)
 {
     dbref i;
     int flags;
-    VATTR *vp;
+    ATTR *vp;
 
 #ifndef MEMORY_BASED
     al_store();
@@ -878,7 +878,7 @@ dbref db_write(FILE *f, int format, int version)
     int iAttr;
     for (iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
     {
-        vp = (VATTR *) anum_get(iAttr);
+        vp = (ATTR *) anum_get(iAttr);
         if (  vp != NULL
            && !(vp->flags & AF_DELETED))
         {

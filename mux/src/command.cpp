@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.8 2002-06-12 16:43:57 jake Exp $
+// $Id: command.cpp,v 1.9 2002-06-12 17:35:20 jake Exp $
 //
 
 #include "copyright.h"
@@ -2725,7 +2725,7 @@ static void list_vattrs(dbref player, char *s_mask, int wild_mtch)
         wild_mtch ? "(wildmatched) " : "");
     raw_notify(player, p);
 
-    VATTR *va;
+    ATTR *va;
     int na;
     int wna = 0;
     for (va = vattr_first(), na = 0; va; va = vattr_next(va), na++)
@@ -2736,7 +2736,7 @@ static void list_vattrs(dbref player, char *s_mask, int wild_mtch)
             //
             if (wild_mtch)
             {
-                if (s_mask && *s_mask && !quick_wild(s_mask, va->name))
+                if (s_mask && *s_mask && !quick_wild(s_mask, (char *)va->name))
                 {
                    continue;
                 }
