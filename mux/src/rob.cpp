@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.6 2002-07-09 21:24:45 jake Exp $
+// $Id: rob.cpp,v 1.7 2002-07-09 22:22:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -211,8 +211,8 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
         return;
     }
     if (  (!isThing(thing) && !isPlayer(thing))
-       || !(Enter_ok(recipient)
-       || Controls(giver, recipient))
+       || !(  Enter_ok(recipient)
+          ||  Controls(giver, recipient))
        || isGarbage(recipient))
     {
         notify(giver, NOPERM_MESSAGE);
