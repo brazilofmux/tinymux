@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.110 2002-09-22 00:33:00 jake Exp $
+// $Id: functions.cpp,v 1.111 2002-09-23 01:03:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7967,21 +7967,19 @@ FUNCTION(fun_strip)
     {
         return;
     }
-    char *pInput = alloc_lbuf("fun_strip.1");
-    strcpy(pInput, strip_ansi(fargs[0]));
+    size_t n;
+    char  *p = strip_ansi(fargs[0], &n);
     if (  nfargs < 2
        || fargs[1][0] == '\0')
     {
-        safe_str(pInput, buff, bufc);
-        free_lbuf(pInput);
+        safe_copy_buf(p, n, buff, bufc);
         return;
     }
-    char *pToStrip = alloc_lbuf("fun_strip.2");
-    strcpy(pToStrip, strip_ansi(fargs[1]));
-    safe_str(RemoveSetOfCharacters(pInput, pToStrip), buff, bufc);
+    char *pInput = alloc_lbuf("fun_strip.1");
+    memcpy(pInput, p, n+1);
+    p = strip_ansi(fargs[1], &n);
+    safe_str(RemoveSetOfCharacters(pInput, p), buff, bufc);
     free_lbuf(pInput);
-    free_lbuf(pToStrip);
-    return;
 }
 
 #define DEFAULT_WIDTH 78
