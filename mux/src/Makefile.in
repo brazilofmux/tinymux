@@ -32,24 +32,25 @@ endif
 #OPTIM = -g -pg -O
 OPTIM = -g -O
 
-# By default, WOD_REALMS is not enabled. If you wish to use WOD_REALMS,
-# uncomment the first 'switch' definition. Please read the docs/REALMS.
+# By default, WOD_REALMS is not enabled.  If you wish to use WOD_REALMS,
+# run configure with --enable-wodrealms.  Please read the docs/REALMS.
 #
 # NOTE: To ensure a clean build, please 'make clean' first.
 #
-#SWITCH_WOD_REALMS=Uncomment me.
+@def_wodrealms@
 ifdef SWITCH_WOD_REALMS
 REALMS = -DWOD_REALMS
 endif
 
-# Disk-based caching is the default. If you wish to use memory-based,
-# uncomment the first 'switch' definition. Disk-based usually uses less memory,
-# but more disk space. Memory-based usually uses more memory, less disk-space,
-# and some gain in performance.
+# Disk-based caching is the default.  If you wish to use memory-based, run
+# configure with --enable-memorybased.  Disk-based usually uses less memory,
+# but more disk space.  Memory-based usually uses more memory, less
+# disk-space, and some gain in performance for a very narrow set of
+# operations.
 #
 # NOTE: To ensure a clean build, please 'make clean' first.
 #
-#SWITCH_MEMORY_BASED=Uncomment me.
+@def_memorybased@
 ifdef SWITCH_MEMORY_BASED
 BASED = -DMEMORY_BASED
 endif
@@ -57,8 +58,8 @@ endif
 # BattleTech hooks are off by default.  At this point, the hooks are
 # experimental.
 #
-#SWITCH_BT=Uncomment me.
-ifdef SWITCH_BT
+@def_exile@
+ifdef SWITCH_EXILE
 BTBASED = -DBT_ENABLED
 BTLIBS = -Ihcode -Lhcode -Ihcode/btech -Lhcode/btech -lhcode -lbtech
 endif
