@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.16 2002-07-16 23:10:29 jake Exp $
+// $Id: speech.cpp,v 1.17 2002-07-16 23:23:25 jake Exp $
 //
 
 #include "copyright.h"
@@ -226,7 +226,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
 
     switch (key)
     {
-    case SAY_SHOUT:
+    case SHOUT_SHOUT:
         switch (*message)
         {
         case ':':
@@ -259,7 +259,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
         ENDLOG;
         break;
 
-    case SAY_WIZSHOUT:
+    case SHOUT_WIZSHOUT:
         switch (*message)
         {
         case ':':
@@ -292,7 +292,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
         ENDLOG;
         break;
 
-    case SAY_ADMINSHOUT:
+    case SHOUT_ADMINSHOUT:
         switch (*message)
         {
         case ':':
@@ -325,7 +325,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
         ENDLOG;
         break;
 
-    case SAY_WALLPOSE:
+    case SHOUT_WALLPOSE:
         if (say_flags & SAY_NOTAG)
         {
             wall_broadcast(0, executor, tprintf("%s %s", Name(executor), message));
@@ -341,7 +341,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
         ENDLOG;
         break;
 
-    case SAY_WIZPOSE:
+    case SHOUT_WIZPOSE:
         if (say_flags & SAY_NOTAG)
         {
             wall_broadcast(SHOUT_WIZARD, executor, tprintf("%s %s", Name(executor), message));
@@ -357,7 +357,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
         ENDLOG;
         break;
 
-    case SAY_WALLEMIT:
+    case SHOUT_WALLEMIT:
         if (say_flags & SAY_NOTAG)
         {
             wall_broadcast(0, executor, tprintf("%s", message));
@@ -373,7 +373,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
         ENDLOG;
         break;
 
-    case SAY_WIZEMIT:
+    case SHOUT_WIZEMIT:
         if (say_flags & SAY_NOTAG)
         {
             wall_broadcast(SHOUT_WIZARD, executor, tprintf("%s", message));

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.29 2002-07-16 23:10:29 jake Exp $
+// $Id: command.cpp,v 1.30 2002-07-16 23:23:25 jake Exp $
 //
 
 #include "copyright.h"
@@ -153,6 +153,7 @@ NAMETAB emit_sw[] =
 {
     {"here",            2,  CA_PUBLIC,  SAY_HERE|SW_MULTIPLE},
     {"html",            2,  CA_PUBLIC,  SAY_HTML|SW_MULTIPLE},
+    {"noeval",          1,  CA_PUBLIC,  SAY_NOEVAL|SW_MULTIPLE},
     {"room",            1,  CA_PUBLIC,  SAY_ROOM|SW_MULTIPLE},
     { NULL,             0,          0,  0}
 };
@@ -371,7 +372,8 @@ NAMETAB pemit_sw[] =
 NAMETAB pose_sw[] =
 {
     {"default",         1,  CA_PUBLIC,  0},
-    {"nospace",         1,  CA_PUBLIC,  SAY_NOSPACE},
+    {"noeval",          3,  CA_PUBLIC,  SAY_NOEVAL},
+    {"nospace",         3,  CA_PUBLIC,  SAY_NOSPACE},
     { NULL,             0,          0,  0}
 };
 
@@ -391,6 +393,12 @@ NAMETAB quota_sw[] =
     {"remaining",       1,  CA_WIZARD,  QUOTA_REM|SW_MULTIPLE},
     {"set",             1,  CA_WIZARD,  QUOTA_SET},
     {"total",           1,  CA_WIZARD,  QUOTA_TOT|SW_MULTIPLE},
+    { NULL,             0,          0,  0}
+};
+
+NAMETAB say_sw[] =
+{
+    {"noeval",          1,  CA_PUBLIC,  SAY_NOEVAL},
     { NULL,             0,          0,  0}
 };
 
@@ -463,11 +471,11 @@ NAMETAB wait_sw[] =
 
 NAMETAB wall_sw[] =
 {
-    {"emit",            1,  CA_ANNOUNCE, SAY_WALLEMIT},
+    {"emit",            1,  CA_ANNOUNCE, SHOUT_WALLEMIT},
     {"no_prefix",       1,  CA_ANNOUNCE, SAY_NOTAG|SW_MULTIPLE},
-    {"pose",            1,  CA_ANNOUNCE, SAY_WALLPOSE},
-    {"wizard",          1,  CA_ANNOUNCE, SAY_WIZSHOUT|SW_MULTIPLE},
-    {"admin",           1,  CA_ADMIN,    SAY_ADMINSHOUT},
+    {"pose",            1,  CA_ANNOUNCE, SHOUT_WALLPOSE},
+    {"wizard",          1,  CA_ANNOUNCE, SHOUT_WIZSHOUT|SW_MULTIPLE},
+    {"admin",           1,  CA_ADMIN,    SHOUT_ADMINSHOUT},
     { NULL,             0,          0,  0}
 };
 
@@ -555,7 +563,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"@timewarp",     warp_sw,    CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, do_timewarp},
     {"@unlink",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD,   0,  CS_ONE_ARG|CS_INTERP, do_unlink},
     {"@unlock",       lock_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, do_unlock},
-    {"@wall",         wall_sw,    CA_ANNOUNCE,        SAY_SHOUT,  CS_ONE_ARG|CS_INTERP, do_shout},
+    {"@wall",         wall_sw,    CA_ANNOUNCE,      SHOUT_SHOUT,  CS_ONE_ARG|CS_INTERP, do_shout},
     {"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_ONE_ARG|CS_INTERP,   do_wipe},
     {"allcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_allcom},
     {"delcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_delcom},
@@ -570,7 +578,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"outputprefix",  NULL,       CA_PUBLIC,         CMD_PREFIX,  CS_ONE_ARG,           logged_out1},
     {"outputsuffix",  NULL,       CA_PUBLIC,         CMD_SUFFIX,  CS_ONE_ARG,           logged_out1},
     {"pose",          pose_sw,    CA_LOCATION|CA_NO_SLAVE,  SAY_POSE,   CS_ONE_ARG|CS_INTERP,   do_say},
-    {"say",           NULL,       CA_LOCATION|CA_NO_SLAVE,  SAY_SAY,    CS_ONE_ARG|CS_INTERP,   do_say},
+    {"say",           say_sw,     CA_LOCATION|CA_NO_SLAVE,  SAY_SAY,    CS_ONE_ARG|CS_INTERP,   do_say},
     {"session",       NULL,       CA_PUBLIC,        CMD_SESSION,  CS_ONE_ARG,           logged_out1},
     {"think",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_think},
     {"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,  0,  CS_ONE_ARG|CS_INTERP, do_use},
