@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.21 2003-02-17 03:05:55 sdennis Exp $
+// $Id: conf.cpp,v 1.22 2003-02-27 13:53:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -309,19 +309,17 @@ void cf_init(void)
 //
 void cf_log_notfound(dbref player, char *cmd, const char *thingname, char *thing)
 {
-    char buff[LBUF_SIZE * 2];
-
     if (mudstate.bReadingConfiguration)
-    {
+    {   
         STARTLOG(LOG_STARTUP, "CNF", "NFND");
+        char buff[LBUF_SIZE * 2];
         sprintf(buff, "%s: %s %s not found", cmd, thingname, thing);
         log_text(buff);
         ENDLOG;
     }
     else
-    {
-        sprintf(buff, "%s %s not found", thingname, thing);
-        notify(player, buff);
+    {   
+        notify(player, tprintf("%s %s not found", thingname, thing));
     }
 }
 
