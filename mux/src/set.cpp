@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.3 2002-06-04 00:47:28 sdennis Exp $
+// $Id: set.cpp,v 1.4 2002-06-05 05:17:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1154,22 +1154,22 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int key,
         {
             if (!newattr)
             {
-                do_set(executor, CALLERQQQ, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", oldthing, "me", oldthing));
+                do_set(executor, caller, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", oldthing, "me", oldthing));
             }
             else
             {
-                do_set(executor, CALLERQQQ, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", newattr, "me", oldthing));
+                do_set(executor, caller, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", newattr, "me", oldthing));
             }
         }
         else
         {
             if (!newattr)
             {
-                do_set(executor, CALLERQQQ, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", oldattr, oldthing, oldattr));
+                do_set(executor, caller, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", oldattr, oldthing, oldattr));
             }
             else
             {
-                do_set(executor, CALLERQQQ, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", newattr, oldthing, oldattr));
+                do_set(executor, caller, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", newattr, oldthing, oldattr));
             }
         }
     }
@@ -1887,5 +1887,5 @@ void do_setvattr
         notify_quiet(executor, "That's not a good name for an attribute.");
         return;
     }
-    do_setattr(executor, CALLERQQQ, enactor, anum, 2, s, arg2);
+    do_setattr(executor, caller, enactor, anum, 2, s, arg2);
 }

@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.4 2002-06-05 05:12:31 sdennis Exp $
+// $Id: speech.cpp,v 1.5 2002-06-05 05:16:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -389,7 +389,7 @@ static void page_return(dbref player, dbref target, const char *tag, int anum, c
     {
         str2 = bp = alloc_lbuf("page_return");
         buf = str;
-        TinyExec(str2, &bp, target, CALLERQQQ, player,
+        TinyExec(str2, &bp, target, player, player,
                  EV_FCHECK | EV_EVAL | EV_TOP | EV_NO_LOCATION, &buf,
                  (char **)NULL, 0);
         *bp = '\0';
