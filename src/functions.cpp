@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.179 2002-09-25 20:20:18 sdennis Exp $
+// $Id: functions.cpp,v 1.180 2002-09-25 20:24:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2069,14 +2069,15 @@ FUNCTION(fun_next)
 
 FUNCTION(fun_loc)
 {
-    dbref it;
-
-    it = match_thing(player, fargs[0]);
+    dbref it = match_thing(player, fargs[0]);
     if (locatable(player, it, cause))
+    {
         safe_tprintf_str(buff, bufc, "#%d", Location(it));
+    }
     else
+    {
         safe_nothing(buff, bufc);
-    return;
+    }
 }
 
 /*
