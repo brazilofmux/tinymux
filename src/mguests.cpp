@@ -1,6 +1,6 @@
 // mguests.cpp - multiguest code originally ported from DarkZone 
 //
-// $Id: mguests.cpp,v 1.3 2000-05-25 04:33:20 sdennis Exp $
+// $Id: mguests.cpp,v 1.4 2001-06-29 18:16:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -36,7 +36,7 @@ dbref create_guest(char *name, char *password)
     player = create_player(name, password, mudconf.guest_nuker, 0, 1);
 
     if (player == NOTHING) {
-        log_text("GUEST: failed in create_player\n");
+        log_text("GUEST: failed in create_player" ENDLINE);
         return NOTHING;
     }
     /*
