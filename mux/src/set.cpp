@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.4 2002-06-05 05:17:25 sdennis Exp $
+// $Id: set.cpp,v 1.5 2002-06-11 20:53:43 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -631,20 +631,18 @@ void do_chown
     char *newown
 )
 {
-    dbref nOwnerOrig;
-    dbref nOwnerNew;
-    int do_it, cost, quota;
+    dbref nOwnerOrig, nOwnerNew, thing;
+    int atr;
+    BOOL bDoit;
     ATTR *ap;
 
-    dbref thing;
-    int   atr;
     if (  parse_attrib(executor, name, &thing, &atr)
        && atr != NOTHING)
     {
         // An attribute was given, so we worry about changing the owner of the
         // attribute.
         //
-        if (isGarbage(thing))
+        if (!Good_obj(thing))
         {
             notify_quiet(executor, "You shouldn't be rummaging through the garbage.");
             return;
@@ -675,7 +673,7 @@ void do_chown
             notify_quiet(executor, "Attribute not present on object.");
             return;
         }
-        do_it = 0;
+        bDoit = FALSE;
         if (nOwnerNew == NOTHING)
         {
             notify_quiet(executor, "I couldn't find that player.");
@@ -686,7 +684,7 @@ void do_chown
         }
         else if (Wizard(executor))
         {
-            do_it = 1;
+            bDoit = TRUE;
         }
         else if (nOwnerNew == Owner(executor))
         {
@@ -699,7 +697,7 @@ void do_chown
             }
             else
             {
-                do_it = 1;
+                bDoit = TRUE;
             }
         }
         else if (nOwnerNew == nOwnerOrig)
@@ -713,7 +711,7 @@ void do_chown
             }
             else
             {
-                do_it = 1;
+                bDoit = TRUE;
             }
         }
         else
@@ -721,7 +719,7 @@ void do_chown
             notify_quiet(executor, NOPERM_MESSAGE);
         }
 
-        if (!do_it)
+        if (bDoit == FALSE)
         {
             return;
         }
@@ -777,8 +775,8 @@ void do_chown
         nOwnerNew = lookup_player(executor, newown, 1);
     }
 
-    cost = 1;
-    quota = 1;
+    int cost = 1, quota = 1;
+
     switch (Typeof(thing))
     {
     case TYPE_ROOM:
@@ -827,7 +825,8 @@ void do_chown
             || (  isThing(thing)
                && Location(thing) != executor
                && !Chown_Any(executor))
-            || !controls(executor, nOwnerNew))
+            || !controls(executor, nOwnerNew)
+            || God(thing))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
     }
