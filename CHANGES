@@ -124,7 +124,7 @@ Feature Additions:
      @restart requests, and any SIGSEGVs during this period do not cause a
      @restart either, but a prompt abort.
  --  Added CRC32, PACK, and UNPACK softcode functions.
- --  Included changes from port to True64 Unix.
+ --  Included changes from port to Tru64 Unix.
 
 
 Bug Fixes:
