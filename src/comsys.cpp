@@ -1,7 +1,8 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.32 2001-03-30 23:18:18 sdennis Exp $
+// * $Id: comsys.cpp,v 1.33 2001-03-31 00:19:20 sdennis Exp $
 //
+#define QQQ
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -798,7 +799,6 @@ void save_comsystem(FILE *fp)
 typedef struct
 {
     char *mess;
-    char *pAllocatedComTitleBuffer;
 } BCP, *PBCP;
 
 char *StartBuildChannelPose
@@ -812,7 +812,7 @@ char *StartBuildChannelPose
     const char *pPose
 )
 {
-    pC->pAllocatedComTitleBuffer = NULL;
+    char *pAllocatedComTitleBuffer = NULL;
     pC->mess = alloc_lbuf("do_processcom");
 
     // New Comtitle
@@ -823,8 +823,8 @@ char *StartBuildChannelPose
     //
     BOOL hasComTitle = (pUserTitle[0] != '\0');
 
-    // Don't evaluate a title if there isn't one to parse or evaluation
-    // of comtitles is disabled.
+    // Don't evaluate a title if there isn't one to parse or evaluation of
+    // comtitles is disabled.
     //
     if (hasComTitle && mudconf.eval_comtitle)
     {
@@ -835,10 +835,10 @@ char *StartBuildChannelPose
         char TempToEval[LBUF_SIZE];
         strcpy(TempToEval, pUserTitle);
         char *q = TempToEval;
-        TinyExec(p0, &p, 0, player, player, EV_FCHECK |
-                 EV_EVAL | EV_TOP, &q, (char **)NULL, 0);
+        TinyExec(p0, &p, 0, player, player, EV_FCHECK | EV_EVAL | EV_TOP, &q,
+            (char **)NULL, 0);
 
-        nComTitle = pC->pAllocatedComTitleBuffer = p0;
+        nComTitle = pAllocatedComTitleBuffer = p0;
     }
     else
     {
@@ -863,6 +863,10 @@ char *StartBuildChannelPose
     {
         safe_str(pPlayerName, pC->mess, &bp);
     }
+    if (pAllocatedComTitleBuffer)
+    {
+        free_lbuf(pAllocatedComTitleBuffer);
+    }
 
     if (':' == pPose[0])
     {
@@ -886,14 +890,6 @@ void EndBuildChannelPose(PBCP pC)
 {
     free_lbuf(pC->mess);
     pC->mess = NULL;
-
-    // Free the comtitle buffer if one was allocated.
-    //
-    if (pC->pAllocatedComTitleBuffer)
-    {
-        free_lbuf(pC->pAllocatedComTitleBuffer);
-        pC->pAllocatedComTitleBuffer = NULL;
-    }
 }
 
 #else // QQQ
