@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.18 2001-11-08 03:48:57 sdennis Exp $
+// $Id: wiz.cpp,v 1.19 2001-11-08 04:18:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -47,12 +47,12 @@ void do_teleport
 
     // Get victim.
     //
-    if (*arg2 == '\0')
+    if (nargs == 1)
     {
         victim = player;
         to = arg1;
     }
-    else
+    else if (nargs == 2)
     {
         init_match(player, arg1, NOTYPE);
         match_everything(0);
@@ -63,6 +63,10 @@ void do_teleport
             return;
         }
         to = arg2;
+    }
+    else
+    {
+        return;
     }
 
     // Validate type of victim.
