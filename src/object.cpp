@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.14 2001-07-04 18:08:10 sdennis Exp $
+// $Id: object.cpp,v 1.15 2001-10-01 04:25:52 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -672,7 +672,23 @@ void destroy_player(dbref agent, dbref victim)
 #ifndef STANDALONE
     // Bye bye...
     //
-    dbref player = (dbref) Tiny_atol(atr_get_raw(victim, A_DESTROYER));
+    char *p = atr_get_raw(victim, A_DESTROYER);
+    if (!p)
+    {
+        STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
+        log_type_and_name(victim);
+        dbref loc = Location(victim);
+        if (loc != NOTHING)
+        {
+            log_text(" in ");
+            log_type_and_name(loc);
+        }
+        log_text("GOING object doesn't remember it's destroyer. GOING reset.");
+        ENDLOG;
+        s_Flags(victim, Flags(victim) & ~(GOING));
+        return;
+    }
+    dbref player = (dbref) Tiny_atol(p);
     boot_off(victim, (char *)"You have been destroyed!");
     halt_que(victim, NOTHING);
     int count = chown_all(victim, player, player, CHOWN_NOZONE);
