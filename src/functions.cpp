@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.155 2002-02-26 09:15:48 sdennis Exp $
+// $Id: functions.cpp,v 1.156 2002-02-26 09:19:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2902,7 +2902,9 @@ FUNCTION(fun_sub)
     }
     else
     {
-        fval(buff, bufc, Tiny_atof(fargs[0]) - Tiny_atof(fargs[1]));
+        g_aDoubles[0] = Tiny_atof(fargs[0]);
+        g_aDoubles[1] = -Tiny_atof(fargs[1]);
+        fval(buff, bufc, AddDoubles(2, g_aDoubles));
     }
 }
 
