@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.2 2003-01-22 22:12:28 sdennis Exp $
+// $Id: conf.cpp,v 1.3 2003-01-24 14:52:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -33,7 +33,6 @@ typedef struct confparm
 CONFDATA mudconf;
 STATEDATA mudstate;
 
-#ifndef STANDALONE
 extern NAMETAB logdata_nametab[];
 extern NAMETAB logoptions_nametab[];
 extern NAMETAB access_nametab[];
@@ -42,14 +41,11 @@ extern NAMETAB list_names[];
 extern NAMETAB sigactions_nametab[];
 extern CONF conftable[];
 
-#endif // !STANDALONE
-
 // ---------------------------------------------------------------------------
 // cf_init: Initialize mudconf to default values.
 //
 void cf_init(void)
 {
-#ifndef STANDALONE
     int i;
 
     mudconf.indb = StringClone("netmux.db");
@@ -306,55 +302,7 @@ void cf_init(void)
     mudstate.aHelpDesc = NULL;
     mudstate.mHelpDesc = 0;
     mudstate.nHelpDesc = 0;
-
-#else // STANDALONE
-    mudconf.paylimit = 10000;
-    mudconf.digcost = 10;
-    mudconf.opencost = 1;
-    mudconf.robotcost = 1000;
-    mudconf.createmin = 5;
-    mudconf.createmax = 505;
-    mudconf.sacfactor = 5;
-    mudconf.sacadjust = -1;
-    mudconf.room_quota = 1;
-    mudconf.exit_quota = 1;
-    mudconf.thing_quota = 1;
-    mudconf.player_quota = 1;
-    mudconf.quotas = FALSE;
-    mudconf.start_room = 0;
-    mudconf.start_home = NOTHING;
-    mudconf.default_home = NOTHING;
-    mudconf.vattr_flags = AF_ODARK;
-    mudconf.log_options = 0xffffffff;
-    mudconf.log_info = 0;
-    mudconf.markdata[0] = 0x01;
-    mudconf.markdata[1] = 0x02;
-    mudconf.markdata[2] = 0x04;
-    mudconf.markdata[3] = 0x08;
-    mudconf.markdata[4] = 0x10;
-    mudconf.markdata[5] = 0x20;
-    mudconf.markdata[6] = 0x40;
-    mudconf.markdata[7] = 0x80;
-    mudconf.ntfy_nest_lim = 20;
-
-    mudstate.logging = 0;
-    mudstate.attr_next = A_USER_START;
-    mudstate.iter_alist.data = NULL;
-    mudstate.iter_alist.len = 0;
-    mudstate.iter_alist.next = NULL;
-    mudstate.mod_alist = NULL;
-    mudstate.mod_alist_len = 0;
-    mudstate.mod_size = 0;
-    mudstate.mod_al_id = NOTHING;
-    mudstate.min_size = 0;
-    mudstate.db_top = 0;
-    mudstate.db_size = 0;
-    mudstate.freelist = NOTHING;
-    mudstate.markbits = NULL;
-#endif // STANDALONE
 }
-
-#ifndef STANDALONE
 
 // ---------------------------------------------------------------------------
 // cf_log_notfound: Log a 'parameter not found' error.
@@ -2100,5 +2048,3 @@ void cf_list(dbref player, char *buff, char **bufc)
     ItemToList_Final(&itl);
     return;
 }
-
-#endif // !STANDALONE
