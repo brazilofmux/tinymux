@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.33 2001-03-31 04:48:59 sdennis Exp $
+// $Id: conf.cpp,v 1.34 2001-06-24 00:53:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -911,23 +911,34 @@ CF_HAND(cf_badname)
  * Avoiding a SIGSEGV on certain operating systems is better than supporting
  * niche formats that are only available on Berkeley Unix.
  */
-static unsigned long sane_inet_addr(char *str)
+static BOOL sane_inet_addr(char *str, unsigned long *pnu32)
 {
+    *pnu32 = 0;
     int i;
     
     char *p = str;
-    for (i = 1; (p = (char *) strchr(p, '.')) != NULL; i++, p++)
+    for (i = 1; (p = strchr(p, '.')) != NULL; i++, p++)
     {
         // Nothing
     }
     if (i < 4)
     {
-        return (unsigned long)INADDR_NONE;
+        return FALSE;
     }
     else
     {
-        return inet_addr(str);
+        if (strcmp("255.255.255.255", str) == 0)
+        {
+            *pnu32 = 0xFFFFFFFFUL;
+            return TRUE;
+        }
+        *pnu32 = inet_addr(str);
+        if (*pnu32 == INADDR_NONE)
+        {
+            return FALSE;
+        }
     }
+    return TRUE;
 }
 
 // Given a host-ordered mask, this function will determine whether it is a
@@ -978,8 +989,7 @@ CF_HAND(cf_site)
             cf_log_syntax(player, cmd, "Missing host address or mask.", (char *)"");
             return -1;
         }
-        mask_num.s_addr = sane_inet_addr(mask_txt);
-        if (  mask_num.s_addr == INADDR_NONE
+        if (  !sane_inet_addr(mask_txt, &mask_num.s_addr)
            || !isValidSubnetMask(ulMask = ntohl(mask_num.s_addr)))
         {
             cf_log_syntax(player, cmd, "Malformed mask address: %s", mask_txt);
@@ -1010,8 +1020,7 @@ CF_HAND(cf_site)
             mask_num.s_addr = htonl(ulMask);
         }
     }
-    addr_num.s_addr = sane_inet_addr(addr_txt);
-    if (addr_num.s_addr == INADDR_NONE)
+    if (!sane_inet_addr(addr_txt, &addr_num.s_addr))
     {
         cf_log_syntax(player, cmd, "Malformed host address: %s", addr_txt);
         return -1;
