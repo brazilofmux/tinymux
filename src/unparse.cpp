@@ -2,7 +2,7 @@
  * unparse.c 
  */
 /*
- * $Id: unparse.cpp,v 1.1 2000-04-11 07:14:48 sdennis Exp $ 
+ * $Id: unparse.cpp,v 1.2 2000-04-16 07:32:01 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -235,7 +235,8 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
         // Bad type.
         //
-        Log.WriteString("Fell off the end of switch in unparse_boolexp1()\n");
+        Log.WriteString("ABORT! unparse.cpp, fell off the end of switch in unparse_boolexp1()\n");
+        Log.Flush();
         abort();
         break;
     }
