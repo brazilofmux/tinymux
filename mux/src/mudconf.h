@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.11 2002-08-22 01:00:27 sdennis Exp $
+// $Id: mudconf.h,v 1.12 2002-09-02 18:33:12 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -274,6 +274,8 @@ struct forward_list
     int data[1000];
 };
 
+#define MAX_ITEXT 100
+
 typedef struct statedata STATEDATA;
 struct statedata
 {
@@ -329,6 +331,8 @@ struct statedata
     char    *poutbufc;      /* Buffer position for poutnew */
     dbref   poutobj;        /* Object doing the piping */
     int     in_loop;        // Loop nesting level.
+    char    *itext[MAX_ITEXT];       // Text of iter(). Equivalent to ##.
+    int     inum[MAX_ITEXT];        // Number of iter(). Equivalent to #@.
 
     CHashTable command_htab;   /* Commands hashtable */
     CHashTable channel_htab;   /* Channels hashtable */

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.87 2002-09-01 18:15:47 jake Exp $
+// $Id: functions.cpp,v 1.88 2002-09-02 18:33:12 jake Exp $
 //
 
 #include "copyright.h"
@@ -6223,6 +6223,8 @@ FUNCTION(fun_iter)
     }
     mudstate.in_loop++;
     BOOL first = TRUE;
+    mudstate.itext[mudstate.in_loop-1] = alloc_lbuf("itext_save");
+    char *itptr, *itptr2;
     while (cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
@@ -6233,6 +6235,10 @@ FUNCTION(fun_iter)
         first = FALSE;
         number++;
         objstring = split_token(&cp, sep);
+        itptr2 = itptr = mudstate.itext[mudstate.in_loop-1];
+        safe_str(objstring, itptr, &itptr2);
+        *itptr2 = '\0';
+        mudstate.inum[mudstate.in_loop-1] = number;
         char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number),
             NULL);
         str = buff2;
@@ -6240,8 +6246,46 @@ FUNCTION(fun_iter)
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
     }
+    free_lbuf(mudstate.itext[mudstate.in_loop-1]);
+    mudstate.inum[mudstate.in_loop-1] = NULL;
     mudstate.in_loop--;
     free_lbuf(curr);
+}
+
+void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, BOOL bWhich)
+{
+    int number = 0;
+    if (nfargs > 0)
+    {
+        number = Tiny_atol(fargs[0]);
+        if (number < 0)
+        {
+            number = 0;
+        }
+    }
+
+    number++;
+    if (number <= mudstate.in_loop)
+    {
+        if (bWhich)
+        {
+            safe_ltoa(mudstate.inum[mudstate.in_loop-number], buff, bufc);
+        }
+        else
+        {
+            safe_str(mudstate.itext[mudstate.in_loop-number], buff, bufc);
+        } 
+    }
+}
+
+FUNCTION(fun_itext)
+{
+    iter_value(buff, bufc, fargs, nfargs, FALSE);
+}
+
+FUNCTION(fun_inum)
+{
+    iter_value(buff, bufc, fargs, nfargs, TRUE);
 }
 
 FUNCTION(fun_list)
@@ -8028,6 +8072,7 @@ FUN flist[] =
     {"INC",      fun_inc,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"INDEX",    fun_index,    MAX_ARG, 4,  4,       0, CA_PUBLIC},
     {"INSERT",   fun_insert,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"INUM",     fun_inum,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"INZONE",   fun_inzone,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISDBREF",  fun_isdbref,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISIGN",    fun_isign,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
@@ -8039,6 +8084,7 @@ FUN flist[] =
     {"ITEMIZE",  fun_itemize,  MAX_ARG, 1,  4,       0, CA_PUBLIC},
     {"ITEMS",    fun_items,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"ITER",     fun_iter,     MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
+    {"ITEXT",    fun_itext,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"LADD",     fun_ladd,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"LAND",     fun_land,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"LAST",     fun_last,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
