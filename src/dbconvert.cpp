@@ -2,7 +2,7 @@
  * dbconvert.c - Convert databases to various MUX formats 
  */
 /*
- * $Id: dbconvert.cpp,v 1.1 2000-04-11 07:14:44 sdennis Exp $ 
+ * $Id: dbconvert.cpp,v 1.2 2000-04-24 22:12:38 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -222,7 +222,6 @@ int DCL_CDECL main(int argc, char *argv[])
     // Open the database
     //
     init_attrtab();
-    vattr_init();
 
     char dirfile[SIZEOF_PATHNAME];
     char pagfile[SIZEOF_PATHNAME];
