@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.139 2002-01-29 07:24:43 sdennis Exp $
+// $Id: functions.cpp,v 1.140 2002-01-29 08:33:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6164,7 +6164,15 @@ FUNCTION(fun_sort)
 #define SET_INTERSECT 2
 #define SET_DIFF      3
 
-static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char sep)
+static void handle_sets
+(
+    char *fargs[],
+    char *buff,
+    char **bufc,
+    int  oper,
+    char sep,
+    char osep
+)
 {
     char *ptrs1[LBUF_SIZE], *ptrs2[LBUF_SIZE];
     int val;
@@ -6230,7 +6238,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             {
                 if (!bFirst)
                 {
-                    safe_chr(sep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 bFirst = FALSE;
                 oldp = *bufc;
@@ -6256,7 +6264,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             {
                 if (!bFirst)
                 {
-                    safe_chr(sep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 bFirst = FALSE;
                 oldp = *bufc;
@@ -6270,7 +6278,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             {
                 if (!bFirst)
                 {
-                    safe_chr(sep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 bFirst = FALSE;
                 oldp = *bufc;
@@ -6294,7 +6302,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
                 //
                 if (!bFirst)
                 {
-                    safe_chr(sep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 bFirst = FALSE;
                 oldp = *bufc;
@@ -6353,7 +6361,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
                 //
                 if (!bFirst)
                 {
-                    safe_chr(sep, buff, bufc);
+                    print_sep(osep, buff, bufc);
                 }
                 bFirst = FALSE;
                 safe_str(ptrs1[i1], buff, bufc);
@@ -6385,7 +6393,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
         {
             if (!bFirst)
             {
-                safe_chr(sep, buff, bufc);
+                print_sep(osep, buff, bufc);
             }
             bFirst = FALSE;
             safe_str(ptrs1[i1], buff, bufc);
@@ -6405,25 +6413,25 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
 
 FUNCTION(fun_setunion)
 {
-    char sep;
-    varargs_preamble(3);
-    handle_sets(fargs, buff, bufc, SET_UNION, sep);
+    char sep, osep;
+    svarargs_preamble(4);
+    handle_sets(fargs, buff, bufc, SET_UNION, sep, osep);
     return;
 }
 
 FUNCTION(fun_setdiff)
 {
-    char sep;
-    varargs_preamble(3);
-    handle_sets(fargs, buff, bufc, SET_DIFF, sep);
+    char sep, osep;
+    svarargs_preamble(4);
+    handle_sets(fargs, buff, bufc, SET_DIFF, sep, osep);
     return;
 }
 
 FUNCTION(fun_setinter)
 {
-    char sep;
-    varargs_preamble(3);
-    handle_sets(fargs, buff, bufc, SET_INTERSECT, sep);
+    char sep, osep;
+    svarargs_preamble(4);
+    handle_sets(fargs, buff, bufc, SET_INTERSECT, sep, osep);
     return;
 }
 
@@ -7019,11 +7027,11 @@ FUN flist[] =
     {"SECS",     fun_secs,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"SECURE",   fun_secure,   1,       1,  1,       0, CA_PUBLIC},
     {"SET",      fun_set,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"SETDIFF",  fun_setdiff,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"SETINTER", fun_setinter, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"SETDIFF",  fun_setdiff,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"SETINTER", fun_setinter, MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"SETQ",     fun_setq,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"SETR",     fun_setr,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"SETUNION", fun_setunion, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"SETUNION", fun_setunion, MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"SHL",      fun_shl,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"SHR",      fun_shr,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"SHUFFLE",  fun_shuffle,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
