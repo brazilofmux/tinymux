@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.53 2004-04-18 15:25:45 sdennis Exp $
+// $Id: funceval.cpp,v 1.54 2004-04-18 21:54:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2080,7 +2080,7 @@ FUNCTION(fun_pickrand)
         return;
     }
     INT32 n;
-    for (n = 0; t; t = next_token(t, sep.str[0]), n++)
+    for (n = 0; t; t = next_token(t, &sep), n++)
     {
         ; // Nothing
     }
@@ -2090,7 +2090,7 @@ FUNCTION(fun_pickrand)
         INT32 w = RandomINT32(0, n-1);
         for (n = 0; n < w; n++)
         {
-            s = next_token(s, sep.str[0]);
+            s = next_token(s, &sep);
         }
         t = split_token(&s, &sep);
         safe_str(t, buff, bufc);

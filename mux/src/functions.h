@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.9 2004-04-18 15:25:45 sdennis Exp $
+// $Id: functions.h,v 1.10 2004-04-18 21:54:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -72,7 +72,7 @@ extern bool delim_check
 extern int list2arr(char *arr[], int maxlen, char *list, SEP *psep);
 extern char *trim_space_sep(char *str, SEP *psep);
 extern char *trim_space_sep_LEN(char *str, int nStr, SEP *psep, int *nTrim);
-extern char *next_token(char *str, char sep);
+extern char *next_token(char *str, SEP *psep);
 extern char *split_token(char **sp, SEP *psep);
 
 // This is the prototype for functions

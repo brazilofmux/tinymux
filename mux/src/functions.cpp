@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.90 2004-04-18 18:31:38 sdennis Exp $
+// $Id: functions.cpp,v 1.91 2004-04-18 21:54:40 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -216,24 +216,41 @@ char *trim_space_sep(char *str, SEP *sep)
 // next_token: Point at start of next token in string -- known length
 // version.
 //
-char *next_token_LEN(char *str, int *nStr, char sep)
+char *next_token_LEN(char *str, int *nStr, SEP *psep)
 {
     char *pBegin = str;
-    while (*pBegin && (*pBegin != sep))
+    if (psep->n == 1)
     {
-        pBegin++;
-    }
-    if (!*pBegin)
-    {
-        *nStr = 0;
-        return NULL;
-    }
-    pBegin++;
-    if (sep == ' ')
-    {
-        while (*pBegin == ' ')
+        while (  *pBegin != '\0'
+              && *pBegin != psep->str[0])
         {
             pBegin++;
+        }
+        if (!*pBegin)
+        {
+            *nStr = 0;
+            return NULL;
+        }
+        pBegin++;
+        if (psep->str[0] == ' ')
+        {
+            while (*pBegin == ' ')
+            {
+                pBegin++;
+            }
+        }
+    }
+    else
+    {
+        char *p = strstr(pBegin, psep->str);
+        if (p)
+        {
+            pBegin = p + psep->n;
+        }
+        else
+        {
+            *nStr = 0;
+            return NULL;
         }
     }
     *nStr -= pBegin - str;
@@ -242,22 +259,38 @@ char *next_token_LEN(char *str, int *nStr, char sep)
 
 // next_token: Point at start of next token in string
 //
-char *next_token(char *str, char sep)
+char *next_token(char *str, SEP *psep)
 {
-    while (*str && (*str != sep))
+    if (psep->n == 1)
     {
-        str++;
-    }
-    if (!*str)
-    {
-        return NULL;
-    }
-    str++;
-    if (sep == ' ')
-    {
-        while (*str == ' ')
+        while (  *str != '\0'
+              && *str != psep->str[0])
         {
             str++;
+        }
+        if (!*str)
+        {
+            return NULL;
+        }
+        str++;
+        if (psep->str[0] == ' ')
+        {
+            while (*str == ' ')
+            {
+                str++;
+            }
+        }
+    }
+    else
+    {
+        char *p = strstr(str, psep->str);
+        if (p)
+        {
+            str = p + psep->n;
+        }
+        else
+        {
+            return NULL;
         }
     }
     return str;
@@ -805,7 +838,7 @@ int countwords(char *str, SEP *psep)
     {
         return 0;
     }
-    for (n = 0; str; str = next_token(str, psep->str[0]), n++)
+    for (n = 0; str; str = next_token(str, psep), n++)
     {
         ; // Nothing.
     }
@@ -2297,7 +2330,7 @@ FUNCTION(fun_extract)
     while (  start 
           && s)
     {
-        s = next_token(s, sep.str[0]);
+        s = next_token(s, &sep);
         start--;
     }
 
@@ -2315,7 +2348,7 @@ FUNCTION(fun_extract)
     while (  len 
           && s)
     {
-        s = next_token(s, sep.str[0]);
+        s = next_token(s, &sep);
         len--;
     }
 
@@ -4788,7 +4821,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el,
         overrun = true;
         for (  ct = el;
                ct > 2 && eptr;
-               eptr = next_token_LEN(eptr, &elen, psep->str[0]), ct--)
+               eptr = next_token_LEN(eptr, &elen, psep), ct--)
         {
             // Nothing
         }
