@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.88 2004-04-18 15:37:19 sdennis Exp $
+// $Id: functions.cpp,v 1.89 2004-04-18 16:17:03 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -6411,7 +6411,7 @@ FUNCTION(fun_iter)
     // Optional Input Delimiter.
     //
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL|DELIM_STRING))
     {
         return;
     }
