@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.56 2003-03-02 03:58:46 jake Exp $
+// $Id: functions.cpp,v 1.57 2003-03-03 17:09:03 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -754,8 +754,13 @@ int countwords(char *str, char sep)
 
     str = trim_space_sep(str, sep);
     if (!*str)
+    {
         return 0;
-    for (n = 0; str; str = next_token(str, sep), n++) ;
+    }
+    for (n = 0; str; str = next_token(str, sep), n++)
+    {
+        ; // Nothing.
+    }
     return n;
 }
 
