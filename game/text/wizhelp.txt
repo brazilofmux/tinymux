@@ -107,17 +107,22 @@
 
      /access   - Changes the access to the named attribute.  <value> is a
                  space-separated list of permissions to add or remove from
-                 the attribute's access permissions.
+                 the attribute's access permissions. For a list of possible
+                 values, see the related topic given below.
+
      /delete   - Removes the named attribute from the attribute table.
                  This switch does not remove instances of the attribute from
                  objects, and any that remain will be renamed to the
                  user-named attribute that re-uses the attribute number
                  of the deleted attribute.
+
      /rename   - Changes the name of the named attribute to <value>.
 
   Note that changes to user-named attributes performed by this command
   are permanent and do not need to be performed each time the MUX is
   restarted.
+
+  Related Topics: attribute permissions
 
 & @BOOT
 @BOOT
@@ -1238,6 +1243,16 @@ ATTR_CMD_ACCESS
   to properly set access to restricted attributes.
 
   Related Topics: access, PERMISSION.
+
+& ATTRIBUTE PERMISSIONS
+ATTRIBUTE PERMISSIONS
+
+  The following attribute flags are available:
+
+    const dark deleted god hidden ignore is_lock locked no_command no_inherit
+    private visual wizard.
+
+  Related Topics: @attribute.
 
 & AUTOZONE
 AUTOZONE
