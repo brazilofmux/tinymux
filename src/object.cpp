@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.16 2001-10-02 03:57:57 sdennis Exp $
+// $Id: object.cpp,v 1.17 2001-10-06 06:15:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -149,31 +149,43 @@ dbref NDECL(default_home)
 
 int can_set_home(dbref player, dbref thing, dbref home)
 {
-    if (!Good_obj(player) || !Good_obj(home) || (thing == home))
+    if (  !Good_obj(player)
+       || !Good_obj(home)
+       || thing == home)
+    {
         return 0;
+    }
 
-    switch (Typeof(home)) {
+    switch (Typeof(home))
+    {
     case TYPE_PLAYER:
     case TYPE_ROOM:
     case TYPE_THING:
         if (Going(home))
+        {
             return 0;
-        if (Controls(player, home) || Abode(home))
+        }
+        if (  Controls(player, home)
+           || Abode(home))
+        {
             return 1;
+        }
     }
     return 0;
 }
 
 dbref new_home(dbref player)
 {
-    dbref loc;
-
-    loc = Location(player);
+    dbref loc = Location(player);
     if (can_set_home(Owner(player), player, loc))
+    {
         return loc;
+    }
     loc = Home(Owner(player));
     if (can_set_home(Owner(player), player, loc))
+    {
         return loc;
+    }
     return default_home();
 }
 
