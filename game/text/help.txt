@@ -9943,21 +9943,27 @@ POLL()
   value MUST be in all uppercase letters.
 
 & CANSEE()
+CANSEE()
 
-  Syntax: CANSEE(looker, lookee[,lookee_action])
+  FUNCTION: CANSEE(looker, lookee[,lookee_action])
 
-  This is useful for wizard code in the master room, help it decide
-  who/what should be able to see who/what, and saves the softcoders the hassle of
-  duplicating these rules in softcode. The third parameter is optional,
-  but if present should be 0 for standing still, 1 for moving, and 2 for
-  talking. CANSEE returns 1 or 0 depending on whether it's possible or not
-  to see, respectively. 
+  Only usable is Realms package is enabled.
 
-  
+  CANSEE returns 1 or 0 depending on whether it's possible for the looker
+  to see the lookee or not. This is useful for wizard code in the master 
+  room, help it decide who/what should be able to see who/what, and saves 
+  the softcoders the hassle of duplicating these rules in softcode. 
+
+  The third parameter is optional, but if present should be 0 for standing 
+  still, 1 for moving, and 2 for talking. 
+
+  Related Topics:
+
 & LINK()
 LINK()
 
-  Function: link(<name>,<destination>)
+  FUNCTION: link(<name>,<destination>)
+  
   Works the same as @link, <name> and <destination> are equivalent to what
   comes before and after the '=' sign. Returns nothing. This is a side
   effect function, and should only be used when necessary.
