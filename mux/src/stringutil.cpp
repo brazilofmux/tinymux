@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.40 2003-02-16 18:26:56 jake Exp $
+// $Id: stringutil.cpp,v 1.41 2003-02-16 20:34:30 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -464,7 +464,7 @@ int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthT
         // Find the terminating character.
         //
         const char *q = p+2;
-        while (ANSI_TokenTerminatorTable[*q] == 0)
+        while (ANSI_TokenTerminatorTable[(unsigned char)*q] == 0)
         {
             q++;
         }
@@ -2100,7 +2100,7 @@ long mux_atol(const char *pString)
     //
     unsigned c1;
     unsigned c0 = pString[0];
-    if (!mux_isdigit[c0])
+    if (!mux_isdigit[(unsigned char)c0])
     {
         while (mux_isspace[(unsigned char)pString[0]])
         {
@@ -2113,7 +2113,7 @@ long mux_atol(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!mux_isdigit[c0])
+        if (!mux_isdigit[(unsigned char)c0])
         {
             return 0;
         }
@@ -2122,7 +2122,7 @@ long mux_atol(const char *pString)
     do
     {
         c1 = pString[1];
-        if (mux_isdigit[c1])
+        if (mux_isdigit[(unsigned char)c1])
         {
             sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
             pString += 2;
@@ -2132,7 +2132,7 @@ long mux_atol(const char *pString)
             sum = 10 * sum + (c0-'0');
             break;
         }
-    } while (mux_isdigit[c0 = pString[0]]);
+    } while (mux_isdigit[(unsigned char)(c0 = pString[0])]);
 
     // Interpret sign
     //
@@ -2152,7 +2152,7 @@ INT64 mux_atoi64(const char *pString)
     //
     unsigned c1;
     unsigned c0 = pString[0];
-    if (!mux_isdigit[c0])
+    if (!mux_isdigit[(unsigned char)c0])
     {
         while (mux_isspace[(unsigned char)pString[0]])
         {
@@ -2165,7 +2165,7 @@ INT64 mux_atoi64(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!mux_isdigit[c0])
+        if (!mux_isdigit[(unsigned char)c0])
         {
             return 0;
         }
@@ -2174,7 +2174,7 @@ INT64 mux_atoi64(const char *pString)
     do
     {
         c1 = pString[1];
-        if (mux_isdigit[c1])
+        if (mux_isdigit[(unsigned char)c1])
         {
             sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
             pString += 2;
@@ -2184,7 +2184,7 @@ INT64 mux_atoi64(const char *pString)
             sum = 10 * sum + (c0-'0');
             break;
         }
-    } while (mux_isdigit[c0 = pString[0]]);
+    } while (mux_isdigit[(unsigned char)(c0 = pString[0])]);
 
     // Interpret sign
     //
@@ -2302,7 +2302,7 @@ INT64 mux_atobcd(const char *pString)
     // Convert ASCII digits
     //
     unsigned c0 = pString[0];
-    if (!mux_isdigit[c0])
+    if (!mux_isdigit[(unsigned char)c0])
     {
         while (mux_isspace[(unsigned char)pString[0]])
         {
@@ -2315,7 +2315,7 @@ INT64 mux_atobcd(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!mux_isdigit[c0])
+        if (!mux_isdigit[(unsigned char)c0])
         {
             return 0;
         }
@@ -2326,7 +2326,7 @@ INT64 mux_atobcd(const char *pString)
         sum = (sum << 4) | (c0 - '0');
         pString++;
         c0 = pString[0];
-    } while (mux_isdigit[c0]);
+    } while (mux_isdigit[(unsigned char)c0]);
 
     sum &= BCD_MASK;
 
