@@ -1,6 +1,6 @@
 +X992001
 +S11
-+N437
++N438
 -R1
 +A317
 "1:CMD-IC"
@@ -364,6 +364,8 @@
 "1:EVAL_OBJ"
 +A366
 "1:SETUP_FN"
++A437
+"1:CMD-INFO-SEE"
 !0
 "Limbo"
 -1
@@ -719,6 +721,8 @@
 "$+timestop:@remit [loc(%#)]=JUDGE : %N calls a Timestop![setq(0,TIMESTOP: Created by %N [time()] at [name(loc(%#))]<[loc(%#)]>)];@create %q0;@lock [setq(1,locate(me,%q0,iT))]%q1=#0;@set %q1=enter_ok;@set %q1=!opaque;@set %q1=commands;@set %q1=unfindable;@tel %q1=[loc(%#)];@dolist lwho()=@switch isstaff(##)=1,@pemit ##=>> %q0 <<"
 >436
 "$+warn *:@switch [loc(*%0)]=#-1,{@pemit %#=[capstr(%0)] is not a valid player name or alias.},[loc(%#)],{@pemit %#=You issue an OOC warning to [name(*%0)].;@pemit *%0=[u(line)]OOC WARNING : You are in a potentially dangerous situation. Willfully initiating or entering combat or continuing with this RP could result in either injury, some other harm, or death for your character. By continuing this situation you accept the consequences of your IC actions.%r[u(line)]},{@pemit %#=That person is not in the same location as you are.}"
+>437
+"$+info *:@pemit %#=[switch(num(*%0),#-1,That is not a player.,{[center(%b[capstr(%0)]'s Info%b,78,=)]%rGeneral: [switch(hasattr(*%0,info-general),0,Unset.,get(*%0/info-general))][iter(edit(lattr(*%0/info-*),INFO-GENERAL,),[switch(or(match(squish(edit([string(%#,race)] [string(%#,tradition)] [string(%#,tribe)] [string(%#,clan)] [string(%#,faction)],NOT SET,)),after(##,INFO-)),isstaff(%#)),0,,%r[capstr(lcstr(edit(##,INFO-,)))]: [get(*%0/##)])])]%r[repeat(=,78)]})]"
 <
 !7
 "SGP - Wizard Globals"
