@@ -4,7 +4,7 @@
 // The philosophy is to keep this program as simple/small as possible.
 // It does normal fork()s, so the smaller it is, the faster it goes.
 // 
-// $Id: slave.cpp,v 1.6 2000-12-03 04:51:45 sdennis Exp $
+// $Id: slave.cpp,v 1.7 2001-02-09 18:13:28 sdennis Exp $
 //
 #include "autoconf.h"
 
@@ -26,87 +26,122 @@
 pid_t parent_pid;
 
 #define MAX_STRING 8000
-char *arg_for_errors;
 
-char *format_inet_addr(char *dest, long addr)
-{
-    sprintf(dest, "%ld.%ld.%ld.%ld",
-        (addr & 0xFF000000) >> 24,
-        (addr & 0x00FF0000) >> 16,
-        (addr & 0x0000FF00) >> 8,
-        (addr & 0x000000FF));
-    return (dest + strlen(dest));
-}
+#define NO_PRINTF
+#ifdef NO_PRINTF
+const char Digits100[201] =
+"001020304050607080900111213141516171819102122232425262728292\
+031323334353637383930414243444546474849405152535455565758595\
+061626364656667686960717273747576777879708182838485868788898\
+09192939495969798999";
 
-//
-// copy a string, returning pointer to the null terminator of dest 
-//
-char *stpcpy(char *dest, const char *src)
+int Tiny_ltoa(long val, char *buf)
 {
-    while ((*dest = *src))
+    char *p = buf;
+    
+    if (val < 0)
     {
-        ++dest;
-        ++src;
+        *p++ = '-';
+        val = -val;
     }
-    return (dest);
+    unsigned int uval = (unsigned int)val;
+    
+    char *q = p;
+    
+    const char *z;
+    while (uval > 99)
+    {
+        z = Digits100 + ((uval % 100) << 1);
+        uval /= 100;
+        *p++ = *z;
+        *p++ = *(z+1);
+    }
+    z = Digits100 + (uval << 1);
+    *p++ = *z;
+    if (uval > 9)
+    {
+        *p++ = *(z+1);
+    }
+
+    int nLength = p - buf;
+    *p-- = '\0';
+
+    // The digits are in reverse order with a possible leading '-'
+    // if the value was negative. q points to the first digit,
+    // and p points to the last digit.
+    //
+    while (q < p)
+    {
+        // Swap characters are *p and *q
+        //
+        char temp = *p;
+        *p = *q;
+        *q = temp;
+
+        // Move p and first digit towards the middle.
+        //
+        --p;
+        ++q;
+
+        // Stop when we reach or pass the middle.
+        //
+    }
+    return nLength;
 }
+#endif // NO_PRINTF
 
 RETSIGTYPE child_timeout_signal(int iSig)
 {
     exit(1);
 }
 
-int query(char *ip, char *orig_arg)
+int query(int nIP, char *pIP, int nLine2, char *pLine2)
 {
-    char *comma;
-    char *port_pair;
-    struct hostent *hp;
     struct sockaddr_in sin;
     int s;
-    FILE *f;
-    char result[MAX_STRING];
-    char buf[MAX_STRING];
-    char buf2[MAX_STRING];
-    char buf3[MAX_STRING*2];
-    char arg[MAX_STRING];
-    size_t len;
-    char *p;
-    long addr;
 
-    addr = inet_addr(ip);
+    long addr = inet_addr(pIP);
     if (addr == -1)
     {
         return -1;
     }
-    char *pHName = ip;
-    hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
+    char *pHostName = pIP;
+    int   nHostName = nIP;
+    struct hostent *hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
     if (hp)
     {
-        pHName = hp->h_name;
+        pHostName = hp->h_name;
+        nHostName = strlen(pHostName);
     }
-    p = stpcpy(buf, ip);
+    char buf[MAX_STRING];
+    char *p = buf;
+    memcpy(p, pIP, nIP);
+    p += nIP;
     *p++ = ' ';
-    p = stpcpy(p, pHName);
+    memcpy(p, pHostName, nHostName);
+    p += nHostName;
     *p++ = '\n';
-    *p++ = '\0';
+    *p   = '\0';
+    size_t nbuf = p - buf;
 
-    arg_for_errors = orig_arg;
-    strcpy(arg, orig_arg);
-    comma = (char *)strrchr(arg, ',');
-    if (comma == NULL)
+    int i = nLine2;
+    for (int j = 0; j < 2; j++)
     {
-        return -1;
+        for (i--; 0 <= i && pLine2[i] != ','; i--)
+        {
+            ; // Nothing
+        }
+        if (i < 0)
+        {
+            return -1;
+        }
     }
-    *comma = 0;
-    port_pair = (char *)strrchr(arg, ',');
-    if (port_pair == NULL)
-    {
-        return -1;
-    }
-    *port_pair++ = 0;
-    *comma = ',';
+    char *pPortPair = pLine2 + i;
+    *pPortPair++ = '\0';
+    size_t nPortPair = nLine2 - i - 1;
+    nLine2 = i;
 
-    hp = gethostbyname(arg);
+    hp = gethostbyname(pLine2);
     if (hp == NULL)
     {
         static struct hostent def;
@@ -114,12 +149,12 @@ int query(char *ip, char *orig_arg)
         static char *alist[1];
         static char namebuf[128];
 
-        defaddr.s_addr = inet_addr(arg);
+        defaddr.s_addr = inet_addr(pLine2);
         if ((long)defaddr.s_addr == -1)
         {
             return -1;
         }
-        strcpy(namebuf, arg);
+        memcpy(namebuf, pLine2, nLine2);
         def.h_name = namebuf;
         def.h_addr_list = alist;
         def.h_addr = (char *)&defaddr;
@@ -130,14 +165,18 @@ int query(char *ip, char *orig_arg)
         hp = &def;
     }
     sin.sin_family = hp->h_addrtype;
-    bcopy(hp->h_addr, (char *)&sin.sin_addr, hp->h_length);
+    memcpy((char *)&sin.sin_addr, hp->h_addr, hp->h_length);
     sin.sin_port = htons(113); // ident port
     s = socket(hp->h_addrtype, SOCK_STREAM, 0);
     if (s < 0)
     {
         return -1;
     }
-    if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+    char buf2[MAX_STRING];
+    int  nbuf2 = 0;
+    buf2[0] = '\0';
+    if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0)
+    {
         if (   errno != ECONNREFUSED
             && errno != ETIMEDOUT
             && errno != ENETUNREACH
@@ -146,52 +185,70 @@ int query(char *ip, char *orig_arg)
             close(s);
             return -1;
         }
-        buf2[0] = '\0';
     }
     else
     {
-        len = strlen(port_pair);
-        if ((size_t)write(s, port_pair, len) != len)
+        int c;
+        if (write(s, pPortPair, nPortPair) != nPortPair)
         {
             close(s);
-            return (-1);
+            return -1;
         }
         if (write(s, "\r\n", 2) != 2)
         {
             close(s);
-            return (-1);
+            return -1;
         }
-        f = fdopen(s, "r");
+        FILE *f = fdopen(s, "r");
+        char pResult[MAX_STRING];
+        p = pResult;
+        while ((c = fgetc(f)) != EOF)
         {
-            int c;
-
-            p = result;
-            while ((c = fgetc(f)) != EOF)
+            if (c == '\n')
             {
-                if (c == '\n')
+                break;
+            }
+            if (0x20 <= c && c <= 0x7E)
+            {
+                *p++ = c;
+                if (p - pResult == MAX_STRING - 1)
                 {
                     break;
                 }
-                if (0x20 <= c && c <= 0x7E)
-                {
-                    *p++ = c;
-                    if (p - result == MAX_STRING - 1)
-                    {
-                        break;
-                    }
-                }
             }
-            *p = '\0';
         }
+        *p = '\0';
+        size_t nResult = p - pResult;
         fclose(f);
-        p = (char *)format_inet_addr(buf2, ntohl(sin.sin_addr.s_addr));
+        p = buf2;
+#ifdef NO_PRINTF
+        p += Tiny_ltoa((addr >> 24) & 0xFF, p);
+        *p++ = '.';
+        p += Tiny_ltoa((addr >> 16) & 0xFF, p);
+        *p++ = '.';
+        p += Tiny_ltoa((addr >> 8) & 0xFF, p);
+        *p++ = '.';
+        p += Tiny_ltoa(addr & 0xFF, p);
+#else
+        sprintf(p, "%ld.%ld.%ld.%ld", (addr >> 24) & 0xFF,
+            (addr >> 16) & 0xFF, (addr >> 8) & 0xFF, addr & 0xFF);
+        p += strlen(p);
+#endif
         *p++ = ' ';
-        p = stpcpy(p, result);
+        memcpy(p, pResult, nResult);
+        p += nResult;
         *p++ = '\n';
-        *p++ = '\0';
+        *p   = '\0';
+        nbuf2 = p - buf2;
     }
-    sprintf(buf3, "%s%s", buf, buf2);
-    write(1, buf3, strlen(buf3));
+    char buf3[MAX_STRING*2];
+    p = buf3;
+    memcpy(p, buf, nbuf);
+    p += nbuf;
+    memcpy(p, buf2, nbuf2);
+    p += nbuf2;
+    size_t nbuf3 = p - buf3;
+    write(1, buf3, nbuf3);
     return 0;
 }
 
@@ -234,9 +291,7 @@ RETSIGTYPE alarm_signal(int iSig)
 
 int main(int argc, char *argv[])
 {
-    char arg[MAX_STRING + 1];
-    char *p;
-    int len;
+    char aIP[MAX_STRING + 1];
 
     parent_pid = getppid();
     if (parent_pid == 1)
@@ -249,12 +304,12 @@ int main(int argc, char *argv[])
 
     for (;;)
     {
-        len = read(0, arg, MAX_STRING);
-        if (len == 0)
+        int nRead = read(0, aIP, MAX_STRING);
+        if (nRead == 0)
         {
             break;
         }
-        if (len < 0)
+        if (nRead < 0)
         {
             if (errno == EINTR)
             {
@@ -263,11 +318,20 @@ int main(int argc, char *argv[])
             }
             break;
         }
-        arg[len] = '\0';
-        p = strchr(arg, '\n');
-        if (p)
+        if (aIP[nRead-1] == '\n')
         {
-            *p = '\0';
+            nRead--;
+        }
+        aIP[nRead] = '\0';
+
+        int nIP = nRead;
+        int nLine2 = 0;
+        char *pLine2 = strchr(aIP, '\n');
+        if (pLine2)
+        {
+            nIP    = pLine2 - aIP;
+            nLine2 = nRead  - nIP;
+            *pLine2++ = '\0';
         }
         switch (fork())
         {
@@ -288,7 +352,7 @@ int main(int argc, char *argv[])
                 signal(SIGALRM, CAST_SIGNAL_FUNC child_timeout_signal);
                 setitimer(ITIMER_REAL, &itime, 0);
             }
-            exit(query(arg, p + 1) != 0);
+            exit(query(nIP, aIP, nLine2, pLine2) != 0);
         }
 
         // collect any children 
