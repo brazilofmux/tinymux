@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.47 2002-06-28 19:41:37 sdennis Exp $
+// $Id: functions.cpp,v 1.48 2002-06-28 19:44:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6593,7 +6593,7 @@ FUNCTION(fun_locate)
     safe_tprintf_str(buff, bufc, "#%d", what);
 }
 
-/* QQQ
+/*
  * ---------------------------------------------------------------------------
  * * fun_switch: Return value based on pattern matching (ala @switch)
  * * NOTE: This function expects that its arguments have not been evaluated.
@@ -8751,10 +8751,14 @@ FUNCTION(fun_lflags)
 {
     BOOL bFirst = TRUE;
     dbref target = match_thing_quiet(executor, fargs[0]);
-    if (  (target != NOTHING)
-       && (  mudconf.pub_flags
-          || Examinable(executor, target)
-          || (target == enactor)))
+    if (!Good_obj(target))
+    {
+        safe_match_result(target, buff, bufc);
+        return;
+    }
+    if (  mudconf.pub_flags
+       || Examinable(executor, target)
+       || target == enactor)
     {
         FLAGNAMEENT *fp;
         for (fp = gen_flag_names; fp->flagname; fp++)
@@ -8798,7 +8802,7 @@ FUNCTION(fun_lflags)
     }
     else
     {
-        safe_nothing(buff, bufc);
+        safe_noperm(buff, bufc);
     }
 }
 
