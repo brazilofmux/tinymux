@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.81 2001-07-07 04:27:49 morgan Exp $
+// $Id: functions.cpp,v 1.82 2001-08-09 15:50:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3403,6 +3403,7 @@ FUNCTION(fun_pos)
 
     // Search for pattern string inside source string.
     //
+    int i = -1;
     if (nPat == 1)
     {
         // We can optimize the single-character case.
@@ -3410,23 +3411,24 @@ FUNCTION(fun_pos)
         char *p = strchr(pSrc, aPatBuf[0]);
         if (p)
         {
-            int i = p - pSrc + 1;
-            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
-            return;
+            i = p - pSrc + 1;
         }
     }
     else if (nPat > 1)
     {
         // We have a multi-byte pattern.
         //
-        int i = BMH_StringSearch(nPat, aPatBuf, nSrc, pSrc)+1;
-        if (i >= 0)
-        {
-            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
-            return;
-        }
+        i = BMH_StringSearch(nPat, aPatBuf, nSrc, pSrc)+1;
     }
-    safe_nothing(buff, bufc);
+
+    if (i > 0)
+    {
+        safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+    }
+    else
+    {
+        safe_nothing(buff, bufc);
+    }
 }
 
 /* ---------------------------------------------------------------------------
