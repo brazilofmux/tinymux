@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.53 2002-09-19 05:09:40 sdennis Exp $
+// $Id: externs.h,v 1.54 2002-09-27 18:51:52 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -364,6 +364,8 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define DOING_HEADER    1   /* Set the DOING header */
 #define DOING_POLL      2   /* List DOING header */
 #define DOING_UNIQUE    3   // Set DOING message for current port only
+#define DOING_MASK     15   // Lower four bits form non-SW_MULTIPLE part.
+#define DOING_QUIET    16   // Set DOING messages without 'Set.' message.
 #define DROP_QUIET      1   /* Don't do odrop/adrop if control */
 #define DUMP_STRUCT     1   /* Dump flat structure file */
 #define DUMP_TEXT       2   /* Dump to external attribute database. */

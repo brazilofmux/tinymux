@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.33 2002-09-26 07:20:47 sdennis Exp $
+// $Id: netcommon.cpp,v 1.34 2002-09-27 18:51:52 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1572,6 +1572,8 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
         }
     }
 
+    BOOL bQuiet = ((key & DOING_QUIET) == DOING_QUIET);
+    key &= DOING_MASK;
     if (key == DOING_MESSAGE)
     {
         DESC *d;
@@ -1583,7 +1585,8 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
         }
         if (bFound)
         {
-            if (!Quiet(executor))
+            if (  !bQuiet
+               && !Quiet(executor))
             {
                 notify(executor, "Set.");
             }
@@ -1610,7 +1613,8 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
         if (dMax)
         {
             memcpy(dMax->doing, szValidDoing, nValidDoing+1);
-            if (!Quiet(executor))
+            if (  !bQuiet
+               && !Quiet(executor))
             {
                 notify(executor, "Set.");
             }
@@ -1635,7 +1639,8 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
         {
             memcpy(mudstate.doing_hdr, szValidDoing, nValidDoing+1);
         }
-        if (!Quiet(executor))
+        if (  !bQuiet
+           && !Quiet(executor))
         {
             notify(executor, "Set.");
         }

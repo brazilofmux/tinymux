@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.91 2002-09-19 16:31:24 sdennis Exp $
+// $Id: command.cpp,v 1.92 2002-09-27 18:51:52 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -124,6 +124,7 @@ NAMETAB doing_sw[] =
     {"message",         1,  CA_PUBLIC,  DOING_MESSAGE},
     {"poll",            1,  CA_PUBLIC,  DOING_POLL},
     {"unique",          1,  CA_PUBLIC,  DOING_UNIQUE},
+    {"quiet",           1,  CA_PUBLIC,  DOING_QUIET|SW_MULTIPLE},
     { NULL,             0,          0,  0}
 };
 
