@@ -8931,11 +8931,14 @@ files.
   ports(<player name>)
  
   This function returns the list of descriptors ("ports") that a player,
-  specified by full player name, or by dbref, is connected to. Only Wizards
-  may use this function; if a user lacks the privileges, or the player is
-  not connected, an empty list is returned. Otherwise, a list of ports is
-  returned in order of most recent connection to least recent connection.
-  These ports correspond to those given by the SESSION command.
+  specified by full player name, or by dbref, is connected to. Wizards
+  can use this function on anyone, but mortals can only use it on
+  themselves.
+
+  If the <player> is not connected, an empty list is returned. Otherwise,
+  a list of ports is returned in order of most recent connection to least
+  recent connection. These ports correspond to those given by the SESSION
+  command.
   
 & ELEMENTS()
 

@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.40 2000-11-17 07:57:39 sdennis Exp $
+// $Id: funceval.cpp,v 1.41 2000-11-17 08:47:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -53,7 +53,7 @@ FUNCTION(fun_cwho)
     }
     if (!mudconf.have_comsys || (!Comm_All(player) && (player != ch->charge_who)))
     {
-        safe_str("#-1 NO PERMISSION TO USE", buff, bufc);
+        safe_noperm(buff, bufc);
         return;
     }
     DTB pContext;
@@ -560,7 +560,7 @@ void scan_zone
        || (  !Controls(player, it = match_thing_quiet(player, szZone))
           && !WizRoy(player)))
     {
-        safe_str("#-1 NO PERMISSION TO USE", buff, bufc);
+        safe_noperm(buff, bufc);
         return;
     }
     else if (!Good_obj(it))
@@ -602,7 +602,7 @@ FUNCTION(fun_children)
     dbref it = match_thing(player, fargs[0]);
     if (!(WizRoy(player) || Controls(player, it)))
     {
-        safe_str("#-1 NO PERMISSION TO USE", buff, bufc);
+        safe_noperm(buff, bufc);
         return;
     }
 
@@ -2091,16 +2091,25 @@ FUNCTION(fun_matchall)
  */
 FUNCTION(fun_ports)
 {
-    dbref target;
-
-    if (!Wizard(player)) {
-        return;
+    dbref target = lookup_player(player, fargs[0], 1);
+    if (Good_obj(target))
+    {
+        if (target == player || Wizard(player))
+        {
+            if (Connected(target))
+            {
+                make_portlist(player, target, buff, bufc);
+            }
+        }
+        else
+        {
+            safe_noperm(buff, bufc);
+        }
     }
-    target = lookup_player(player, fargs[0], 1);
-    if (!Good_obj(target) || !Connected(target)) {
-        return;
+    else
+    {
+        safe_nomatch(buff, bufc);
     }
-    make_portlist(player, target, buff, bufc);
 }
 
 /*
