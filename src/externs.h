@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.5 2000-04-12 01:48:03 sdennis Exp $
+// $Id: externs.h,v 1.6 2000-04-12 03:13:30 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -287,6 +287,18 @@ extern int _strnicmp(const char *a, const char *b, int n);
 extern void _strlwr(char *tp);
 extern void _strupr(char *a);
 #endif // WIN32
+
+typedef struct tag_dtb
+{
+    int bFirst;
+    char *buff;
+    char **bufc;
+    int nBufferAvailable;
+} DTB;
+
+void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc);
+int DbrefToBuffer_Add(DTB *pContext, int i);
+void DbrefToBuffer_Final(DTB *pContext);
 int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, ...);
 
 /* From boolexp.c */

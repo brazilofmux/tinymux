@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.2 2000-04-11 21:18:05 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.3 2000-04-12 03:13:30 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -46,14 +46,6 @@ extern int FDECL(countwords, (char *, char));
 extern int FDECL(check_read_perms, (dbref, dbref, ATTR *, int, int, char *, char **));
 extern void arr2list(char *arr[], int alen, char *list, char **bufc, char sep);
 extern void FDECL(make_portlist, (dbref, dbref, char *, char **));
-
-typedef struct tag_dtb
-{
-    int bFirst;
-    char *buff;
-    char **bufc;
-    int nBufferAvailable;
-} DTB;
 
 void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc)
 {

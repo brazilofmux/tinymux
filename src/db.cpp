@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.1 2000-04-11 07:14:44 sdennis Exp $
+// $Id: db.cpp,v 1.2 2000-04-12 03:13:31 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -413,26 +413,23 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
 
 int fwdlist_rewrite(FWDLIST *fp, char *atext)
 {
-    char *tp, *bp;
-    int i, count;
+    int count = 0;
+    atext[0] = '\0';
 
-    if (fp && fp->count) {
-        count = fp->count;
-        tp = alloc_sbuf("fwdlist_rewrite.errors");
-        bp = atext;
-        for (i = 0; i < fp->count; i++) {
-            if (Good_obj(fp->data[i])) {
-                sprintf(tp, "#%d ", fp->data[i]);
-                safe_str(tp, atext, &bp);
-            } else {
-                count--;
+    if (fp && fp->count)
+    {
+        char *bp = atext;
+        DTB pContext;
+        DbrefToBuffer_Init(&pContext, atext, &bp);
+        for (int i = 0; i < fp->count; i++)
+        {
+            if (  Good_obj(fp->data[i])
+               && DbrefToBuffer_Add(&pContext, fp->data[i]))
+            {
+                count++;
             }
         }
-        *bp = '\0';
-        free_sbuf(tp);
-    } else {
-        count = 0;
-        *atext = '\0';
+        DbrefToBuffer_Final(&pContext);
     }
     return count;
 }
