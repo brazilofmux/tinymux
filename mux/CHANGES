@@ -72,6 +72,7 @@ Feature Additions:
     object that controls the channel owner can use cemit()/@cemit.
  -- vadd() now allows addition of a vector by a scalar similiar to
     vmul().
+ -- Remove the 20-argument limit from the vector functions.
 
 
 Bug Fixes:
@@ -112,6 +113,8 @@ Bug Fixes:
  -- Attribute permissions are documented more completely in the
     'attribute permission' topic.
  -- Clarified help topics 'helpfile' and 'raw_helpfile'.
+ -- The minimal set of guests were never being added back to the Guests
+    channel.
 
 
 Performance Enhancements:
