@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.33 2000-11-16 16:02:12 sdennis Exp $
+// $Id: funceval.cpp,v 1.34 2000-11-17 07:59:49 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -581,7 +581,7 @@ FUNCTION(fun_inzone)
 FUNCTION(fun_children)
 {
     dbref it = match_thing(player, fargs[0]);
-    if (!(Controls(player, it)) || !(WizRoy(player)))
+    if (!(WizRoy(player) || Controls(player, it)))
     {
         safe_str("#-1 NO PERMISSION TO USE", buff, bufc);
         return;
