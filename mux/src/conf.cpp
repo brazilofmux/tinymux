@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.11 2002-07-20 13:57:23 jake Exp $
+// $Id: conf.cpp,v 1.12 2002-07-22 00:04:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -576,14 +576,12 @@ CF_HAND(cf_string)
     memcpy(pc, str, nStr+1);
     pc[nStr] = '\0';
 
-#ifdef WIN32
     if (pc == mudconf.mud_name)
     {
         // We are changing the name of the MUD. Let the logger know.
         //
         Log.ChangePrefix(mudconf.mud_name);
     }
-#endif // WIN32
 
     return retval;
 }
