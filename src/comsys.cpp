@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.40 2001-03-31 04:48:59 sdennis Exp $
+// * $Id: comsys.cpp,v 1.41 2001-06-11 01:54:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2512,13 +2512,15 @@ void do_cheader(dbref player, char *channel, char *header)
         return;
     }
     char *p = RemoveSetOfCharacters(header, "\r\n\t");
-    int n = strlen(p);
-    if (n > MAX_HEADER_LEN)
-    {
-        n = MAX_HEADER_LEN;
-    }
-    p[n] = '\0';
-    memcpy(ch->header, p, n+1);
+
+    // Optimize/terminate any ANSI in the string.
+    //
+    char NewHeader_ANSI[MAX_HEADER_LEN+1];
+    int nVisualWidth;
+    int nLen = ANSI_TruncateToField(p, sizeof(NewHeader_ANSI),
+        NewHeader_ANSI, sizeof(NewHeader_ANSI), &nVisualWidth,
+        ANSI_ENDGOAL_NORMAL);
+    memcpy(ch->header, NewHeader_ANSI, nLen+1);
 }
 
 
