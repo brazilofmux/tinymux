@@ -473,6 +473,8 @@ Bug Fixes:
      in the transfer between Unix and Win32.
  --  Unterminated buffer operation in setinter().
  --  Fractional part of time request can get into the timezone info.
+ --  @exitformat passed all exits into %0 if at least one of the exits was
+     visible to the user.
 
 
 Performance Enhancements:

@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.27 2001-09-08 19:27:54 sdennis Exp $
+// $Id: look.cpp,v 1.28 2002-02-11 12:52:07 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -481,7 +481,8 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
             BOOL bShortCircuit = FALSE;
             DOLIST(thing, Exits(parent))
             {
-                if (!DbrefToBuffer_Add(&pContext, thing))
+                if (  exit_displayable(thing, player, key)
+                   && !DbrefToBuffer_Add(&pContext, thing))
                 {
                     bShortCircuit = TRUE;
                     break;
