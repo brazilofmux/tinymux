@@ -9,7 +9,7 @@ case $# in
 	2)	../bin/dbconvert $1 x <$2 ;;
 	3)	../bin/dbconvert $1 x <$2 >$3 ;;
 	*)	echo Usage: $0 'basename [structfile [flatfile]]';
-                echo i.e., $0 netmux netmux.db netmux.flat;
+                echo i.e., $0 netmux netmux.db.new netmux.flat;
                 exit 1 ;;
 esac
 
