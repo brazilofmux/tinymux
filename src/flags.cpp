@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.18 2001-11-28 10:51:00 sdennis Exp $
+// $Id: flags.cpp,v 1.19 2002-01-15 05:25:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -263,7 +263,6 @@ static FLAGBITENT fbeAnsi           = { ANSI,         'X',    FLAG_WORD2, 0,    
 static FLAGBITENT fbeAudible        = { HEARTHRU,     'a',    FLAG_WORD1, 0,                    fh_hear_bit};
 static FLAGBITENT fbeAuditorium     = { AUDITORIUM,   'b',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeChownOk        = { CHOWN_OK,     'C',    FLAG_WORD1, 0,                    fh_any};
-static FLAGBITENT fbeCompress       = { COMPRESS,     '.',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeConnected      = { CONNECTED,    'c',    FLAG_WORD2, CA_NO_DECOMP,         fh_god};
 static FLAGBITENT fbeDark           = { DARK,         'D',    FLAG_WORD1, 0,                    fh_dark_bit};
 static FLAGBITENT fbeDestroyOk      = { DESTROY_OK,   'd',    FLAG_WORD1, 0,                    fh_any};
@@ -334,7 +333,6 @@ FLAGNAMEENT gen_flag_names[] =
     {"BLEED",          FALSE, &fbeNoBleed        },
     {"COMMANDS",       FALSE, &fbeNoCommand      },
     {"CHOWN_OK",        TRUE, &fbeChownOk        },
-    {"COMPRESS",        TRUE, &fbeCompress       },
     {"CONNECTED",       TRUE, &fbeConnected      },
     {"DARK",            TRUE, &fbeDark           },
     {"DESTROY_OK",      TRUE, &fbeDestroyOk      },

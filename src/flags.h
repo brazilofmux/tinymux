@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.11 2001-11-28 10:23:10 sdennis Exp $
+// $Id: flags.h,v 1.12 2002-01-15 05:25:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -79,7 +79,6 @@
 #define HTML        0x04000000      /* Player supports HTML */
 
 #define SUSPECT     0x10000000  /* Report some activities to wizards */
-#define COMPRESS    0x20000000  /* Output is compressed */
 #define CONNECTED   0x40000000  /* Player is connected */
 #define SLAVE       0x80000000  /* Disallow most commands */
 
@@ -248,7 +247,6 @@ extern char *MakeCanonicalFlagName
 #define Ansi(x)         ((Flags2(x) & ANSI) != 0)
 #define No_Command(x)   ((Flags2(x) & NO_COMMAND) != 0)
 #define NoBleed(x)      ((Flags2(x) & NOBLEED) != 0)
-#define Compress(x) ((Flags2(x) & COMPRESS) != 0)
 
 #define Transparent(x)  ((Flags(x) & SEETHRU) != 0)
 #define Link_ok(x)  (((Flags(x) & LINK_OK) != 0) && Has_contents(x))
