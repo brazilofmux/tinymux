@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.106 2002-10-24 05:36:34 sdennis Exp $
+// $Id: funceval.cpp,v 1.107 2003-01-04 17:07:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -376,15 +376,16 @@ FUNCTION(fun_set)
             // Are we clearing?
             //
             clear = 0;
-            if (*fargs[0] == NOT_TOKEN)
+            p = fargs[1];
+            if (p[0] == NOT_TOKEN)
             {
-                fargs[0]++;
+                p++;
                 clear = 1;
             }
 
             // valid attribute flag?
             //
-            flagvalue = search_nametab(player, indiv_attraccess_nametab, fargs[1]);
+            flagvalue = search_nametab(player, indiv_attraccess_nametab, p);
             if (flagvalue < 0)
             {
                 safe_str("#-1 CAN NOT SET", buff, bufc);
