@@ -2450,11 +2450,19 @@ HELPFILE
   By default, this help command has 'public' permissions, but this can be
   restricted with the 'access' configuration directive.
 
-  There are three built-in help commands: help, wizhelp, and news.   All
-  other help/news files are added and only permitted to be added by using
-  this directive (and raw_helpfile) to the server's configuration file
-  (netmux.conf).  To prevent access to arbitrary files after the server
-  has started, this directive cannot be used outside the configuration file.
+  By default, the server does not setup any help files (including help,
+  wizhelp, and news).  It is therefore recommended that you add the following
+  to your configuration file:
+
+    raw_helpfile help text/help
+    raw_helpfile wizhelp text/wizhelp
+    access wizhelp wizard
+
+  Also, in order for the help aliases in alias.conf to be setup properly,
+  the three above lines must occur before alias.conf is included.
+
+  To prevent access to arbitrary files after the server has started, this
+  directive cannot be used by via @admin after the server has started.
 
   Examples:
      helpfile wiznews text/wiznews
