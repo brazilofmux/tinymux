@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.35 2000-10-07 06:17:53 sdennis Exp $
+// $Id: functions.cpp,v 1.36 2000-10-09 05:24:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5947,6 +5947,44 @@ void centerjustcombo
     {
         vwLeading = width - vwStr;
     }
+    int vwTrailing      = width - vwLeading - vwStr;
+
+    // Shortcut this function if nPad == 1 (i.e., the padding is a single
+    // character).
+    //
+    if (nPad == 1 && vwPad == 1)
+    {
+        // Put out leading characters.
+        //
+        int nBufferAvailable;
+        if (vwLeading)
+        {
+            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+            if (vwLeading > nBufferAvailable)
+            {
+                vwLeading = nBufferAvailable;
+            }
+            memset(*bufc, aPad[0], vwLeading);
+            *bufc += vwLeading;
+        }
+
+        safe_copy_buf(aStr, nStr, buff, bufc, LBUF_SIZE-1);
+
+        // Put out trailing characters.
+        //
+        if (vwTrailing)
+        {
+            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+            if (vwTrailing > nBufferAvailable)
+            {
+                vwTrailing = nBufferAvailable;
+            }
+            memset(*bufc, aPad[0], vwTrailing );
+            *bufc += vwTrailing;
+        }
+        return;
+    }
+
 
     // Calculate the necessary info about the leading padding.
     // The origin on the padding is at byte 0 at beginning of the
@@ -5978,7 +6016,6 @@ void centerjustcombo
     int vwTrailPartial0 = 0;
     int nTrailFull      = 0;
     int vwTrailPartial1 = 0;
-    int vwTrailing      = width - vwLeading - vwStr;
     if (vwTrailing)
     {
         vwTrailSkip0    = (vwLeading + vwStr) % vwPad;
