@@ -5744,7 +5744,16 @@ files.
   
   Pmatch() will also accept *<player> or #<db#>. If given a non-player
   dbref #, pmatch() will return #-1.
+
+& PFIND()
+  pfind(<string>)
  
+  This function behaves just like pmatch() except that it will match
+  a non-player dbref. This function is provided in case the old behavior
+  of pmatch() is still required.
+
+  See: pmatch()
+   
 & DIE()
   die(<number of times to roll die>, <number of sides on die>)
  
