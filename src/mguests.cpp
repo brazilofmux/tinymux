@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.9 2002-02-13 18:57:29 sdennis Exp $
+// $Id: mguests.cpp,v 1.10 2002-02-13 19:42:52 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -24,57 +24,66 @@ CGuests Guest;
 
 void CGuests::StartUp(void) 
 {
-    int i;
-    static char name[50];
-    dbref player;
-
     // Reset the Number of Guests.
-    nGuests=0;
+    //
+    nGuests = 0;
 
     // No Main Guest Char, or number_guests 0
-    if(!Good_obj(mudconf.guest_char) ||
-       (mudconf.number_guests <= 0))
+    //
+    if (  !Good_obj(mudconf.guest_char)
+       || mudconf.number_guests <= 0)
+    {
         return;
-    
-    
-    
+    }
+
+    dbref player;
+
     // Search the Database for Guest chars and snag em.
-    for (i = 0; i <= mudconf.number_guests; i++) {
-        sprintf(name, "%s%d", mudconf.guest_prefix, i + 1);        
+    //
+    int i;
+    static char name[50];
+    for (i = 0; i < mudconf.number_guests; i++)
+    {
+        sprintf(name, "%s%d", mudconf.guest_prefix, i + 1);
         player = lookup_player(GOD, name, 0);
-        if((player != NOTHING) && Guest(player)) {
+        if (  player != NOTHING
+           && Guest(player))
+        {
             GrowGuests(1);
-            Guests[nGuests]=player;
+            Guests[nGuests] = player;
             nGuests++;
         }
     }
     
-    // Create the Minimum # of guests
-    for(;nGuests<mudconf.min_guests;nGuests++) {
+    // Create the Minimum # of guests.
+    //
+    for (; nGuests < mudconf.min_guests; nGuests++)
+    {
         GrowGuests(1);
-        Guests[nGuests]=MakeGuestChar();
-        // If we Couldn't create char character, break out and let
-        // Later functions handle it.
-        if(Guests[nGuests] == NOTHING)
+        Guests[nGuests] = MakeGuestChar();
+
+        // If we couldn't create guest character, break out and let later
+        // functions handle it.
+        //
+        if (Guests[nGuests] == NOTHING)
+        {
             break;
+        }
     }
 }
 
 void CGuests::GrowGuests(int amount)
 {
-    char *cp;
-    int tGrow=nGuests + amount;
-    dbref *newGuests=(dbref *)MEMALLOC((tGrow) * sizeof(dbref));
+    int tGrow = nGuests + amount;
+    dbref *newGuests = (dbref *)MEMALLOC((tGrow) * sizeof(dbref));
     memset(newGuests, 0, (tGrow * sizeof(dbref)));
-    if(Guests) {
+    if (Guests)
+    {
         memcpy(newGuests, Guests, (tGrow * sizeof(dbref)));
-        cp=(char *)Guests;
-        MEMFREE(cp);
-        cp=NULL;
-        Guests=newGuests;
-    } else {
-        Guests=newGuests;
+        MEMFREE(Guests);
+        Guests = NULL;
     }
+    Guests = newGuests;
 }
 
 char *CGuests::Create(DESC *d) 
