@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.23 2004-07-08 19:18:00 sdennis Exp $
+// $Id: player.cpp,v 1.24 2004-07-08 19:24:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -567,14 +567,17 @@ dbref create_player
         if (  mudconf.guests_channel[0] != '\0'
            && mudconf.guests_channel_alias[0] != '\0')
         {
-            do_addcom(player, player, player, 0, 2, mudconf.guests_channel, mudconf.guests_channel);
+            do_addcom(player, player, player, 0, 2,
+                mudconf.guests_channel_alias, mudconf.guests_channel);
         }
     }
     else
     {
-        if (*mudconf.public_channel)
+        if (  mudconf.public_channel[0] != '\0'
+           && mudconf.public_channel_alias[0] != '\0')
         {
-            do_addcom(player, player, player, 0, 2, "pub", mudconf.public_channel);
+            do_addcom(player, player, player, 0, 2,
+                mudconf.public_channel_alias, mudconf.public_channel);
         }
     }
 

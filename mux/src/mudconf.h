@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.22 2004-07-08 19:18:00 sdennis Exp $
+// $Id: mudconf.h,v 1.23 2004-07-08 19:24:51 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -169,6 +169,7 @@ struct confdata
     char    mud_name[32];       /* Name of the mud */
     char    one_coin[32];       /* name of one coin (ie. "penny") */
     char    public_channel[32]; /* Name of public channel */
+    char    public_channel_alias[32]; /* Name of public channel alias */
     char    dump_msg[128];      /* Message displayed when @dump-ing */
     char    fixed_home_msg[128];    /* Message displayed when going home and FIXED */
     char    fixed_tel_msg[128]; /* Message displayed when teleporting and FIXED */

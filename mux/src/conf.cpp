@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.49 2004-07-08 19:18:00 sdennis Exp $
+// $Id: conf.cpp,v 1.50 2004-07-08 19:24:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -92,6 +92,7 @@ void cf_init(void)
     mudconf.fixed_home_msg[0] = '\0';
     mudconf.fixed_tel_msg[0] = '\0';
     strcpy(mudconf.public_channel, "Public");
+    strcpy(mudconf.public_channel_alias, "pub");
     strcpy(mudconf.guests_channel, "Guests");
     strcpy(mudconf.guests_channel_alias, "g");
     strcpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>");
@@ -1778,6 +1779,7 @@ CONF conftable[] =
     {"postdump_message",          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     NULL,             128},
     {"power_alias",               cf_poweralias,  CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {"public_channel",            cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.public_channel,   NULL,              32},
+    {"public_channel_alias",      cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.public_channel_alias, NULL,          32},
     {"public_flags",              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pub_flags,       NULL,               0},
     {"pueblo_message",            cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.pueblo_msg,       NULL,       GBUF_SIZE},
     {"queue_active_chunk",        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.active_q_chunk,         NULL,               0},
