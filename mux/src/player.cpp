@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.14 2003-07-24 00:21:45 sdennis Exp $
+// $Id: player.cpp,v 1.15 2003-07-24 04:12:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -299,6 +299,14 @@ void ChangePassword(dbref player, const char *szPassword)
 
 const char szFail[] = "$FAIL$$";
 
+// REMOVE: After 2006-JUL-23, remove support for DES-encrypted passwords on
+// Win32 build.  This should allow support for DES-encrypted passwords to
+// strattle three distinct versions of MUX.  After that, to convert the older
+// passwords automatically would require going through one of these three
+// older versions of the server.  Alternatively, since crypt and DES-encrypted
+// passwords should be supported on Unix for even longer, converting the
+// flatfile on a Unix box remains an option.
+//
 const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType)
 {
     char   *pSaltField;
