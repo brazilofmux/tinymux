@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.10 2000-06-02 16:18:12 sdennis Exp $
+// $Id: command.cpp,v 1.11 2000-06-02 19:14:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -691,7 +691,8 @@ void NDECL(init_cmdtab)
         }
 
         cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG));
-        cp2a->cmdname = (char *)strsave(cbuff);
+        ISOUTOFMEMORY(cp2a);
+        cp2a->cmdname = (char *)StringClone(cbuff);
         cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
         cp2a->switches = NULL;
         if (ap->flags & (AF_WIZARD | AF_MDARK))
@@ -735,18 +736,17 @@ void NDECL(init_cmdtab)
 
 void set_prefix_cmds()
 {
-int i;
+    int i;
 
-    /*
-     * Load the command prefix table.  Note - these commands can never *
-     * * * * * * be typed in by a user because commands are lowercased *
-     * before  * * * * the  * hash table is checked. The names are *
-     * abbreviated to * * * minimise * * name checking time. 
-     */
-
-    for (i = 0; i < A_USER_START; i++)
+    // Load the command prefix table. Note - these commands can never
+    // be typed in by a user because commands are lowercased before
+    // the hash table is checked. The names are abbreviated to
+    // minimise name checking time.
+    //
+    for (i = 0; i < 256; i++)
+    {
         prefix_cmds[i] = NULL;
-
+    }
     prefix_cmds['"']  = (CMDENT *) hashfindLEN((char *)"\"", 1, &mudstate.command_htab);
     prefix_cmds[':']  = (CMDENT *) hashfindLEN((char *)":",  1, &mudstate.command_htab);
     prefix_cmds[';']  = (CMDENT *) hashfindLEN((char *)";",  1, &mudstate.command_htab);
@@ -2307,17 +2307,19 @@ CF_HAND(cf_cmd_alias)
             cf_log_notfound(player, cmd, "Switch", ap);
             return -1;
         }
-        /*
-         * Got it, create the new command table entry 
-         */
 
+        // Got it, create the new command table entry.
+        //
         cmd2 = (CMDENT *)MEMALLOC(sizeof(CMDENT));
-        cmd2->cmdname = strsave(alias);
+        ISOUTOFMEMORY(cmd2);
+        cmd2->cmdname = StringClone(alias);
         cmd2->switches = cmdp->switches;
         cmd2->perms = cmdp->perms | nt->perm;
         cmd2->extra = (cmdp->extra | nt->flag) & ~SW_MULTIPLE;
         if (!(nt->flag & SW_MULTIPLE))
+        {
             cmd2->extra |= SW_GOT_UNIQUE;
+        }
         cmd2->callseq = cmdp->callseq;
         cmd2->handler = cmdp->handler;
         if (hashaddLEN(cmd2->cmdname, strlen(cmd2->cmdname), (int *)cmd2, (CHashTable *) vp))
