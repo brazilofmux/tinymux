@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.17 2001-10-06 06:15:48 sdennis Exp $
+// $Id: object.cpp,v 1.18 2001-10-06 08:14:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -397,7 +397,14 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
     s_Link(obj, NOTHING);
     s_Parent(obj, NOTHING);
 
-    s_Zone(obj, Zone(player));
+    if (mudconf.autozone && player != NOTHING)
+    {
+        s_Zone(obj, Zone(player));
+    }
+    else
+    {
+        s_Zone(obj, NOTHING);
+    }
     s_Flags(obj, objtype | f1);
     s_Flags2(obj, f2);
     s_Flags3(obj, f3);

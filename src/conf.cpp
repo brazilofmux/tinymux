@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.41 2001-06-29 16:37:21 sdennis Exp $
+// $Id: conf.cpp,v 1.42 2001-10-06 08:14:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -194,6 +194,7 @@ void NDECL(cf_init)
     mudconf.trace_limit = 200;
     mudconf.safe_unowned = 0;
     mudconf.safer_passwords = 0;
+    mudconf.autozone = TRUE;
 
     // -- ??? Running SC on a non-SC DB may cause problems.
     //

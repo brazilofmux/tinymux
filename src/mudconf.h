@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.23 2001-06-29 07:00:05 sdennis Exp $
+// $Id: mudconf.h,v 1.24 2001-10-06 08:14:14 sdennis Exp $
 //
 #ifndef __CONF_H
 #define __CONF_H
@@ -144,6 +144,7 @@ struct confdata
     int     zone_nest_lim;  /* Max nesting of zones */
     int     allow_guest_from_registered_site; // Whether guests from registered sites are allowed.
     int     eval_comtitle;  /* Should Comtitles Evaluate? */
+    int     autozone;       // New objects are automatically zoned.
     unsigned int max_cache_size; /* Max size of attribute cache */
 
     FLAGSET player_flags;   /* Flags players start with */
