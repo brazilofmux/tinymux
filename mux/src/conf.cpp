@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.26 2003-03-03 05:06:04 sdennis Exp $
+// $Id: conf.cpp,v 1.27 2003-03-04 12:27:12 jake Exp $
 //
 
 #include "copyright.h"
@@ -48,261 +48,278 @@ void cf_init(void)
 {
     int i;
 
-    mudconf.indb = StringClone("netmux.db");
-    mudconf.outdb = StringClone("");
-    mudconf.crashdb = StringClone("");
-    mudconf.game_dir = StringClone("");
-    mudconf.game_pag = StringClone("");
-    mudconf.mail_db   = StringClone("mail.db");
-    mudconf.comsys_db = StringClone("comsys.db");
-    mudconf.compress_db = false;
-    mudconf.compress = StringClone("gzip");
-    mudconf.uncompress = StringClone("gzip -d");
-    mudconf.status_file = StringClone("shutdown.status");
-    mudconf.max_cache_size = 1*1024*1024;
-
-    mudconf.ports.n = 1;
-    mudconf.ports.pi = (int *)MEMALLOC(sizeof(int));
-    (void)ISOUTOFMEMORY(mudconf.ports.pi);
-    mudconf.ports.pi[0] = 2860;
-
-    mudconf.init_size = 1000;
-    mudconf.guest_char = -1;
-    mudconf.guest_nuker = GOD;
-    mudconf.number_guests = 30;
-    mudconf.min_guests = 1;
-    strcpy(mudconf.guest_prefix, "Guest");
-    mudconf.guest_file     = StringClone("text/guest.txt");
-    mudconf.conn_file      = StringClone("text/connect.txt");
-    mudconf.creg_file      = StringClone("text/register.txt");
-    mudconf.regf_file      = StringClone("text/create_reg.txt");
-    mudconf.motd_file      = StringClone("text/motd.txt");
-    mudconf.wizmotd_file   = StringClone("text/wizmotd.txt");
-    mudconf.quit_file      = StringClone("text/quit.txt");
-    mudconf.down_file      = StringClone("text/down.txt");
-    mudconf.full_file      = StringClone("text/full.txt");
-    mudconf.site_file      = StringClone("text/badsite.txt");
-    mudconf.crea_file      = StringClone("text/newuser.txt");
-    mudconf.motd_msg[0] = '\0';
-    mudconf.wizmotd_msg[0] = '\0';
-    mudconf.downmotd_msg[0] = '\0';
-    mudconf.fullmotd_msg[0] = '\0';
-    mudconf.dump_msg[0] = '\0';
-    mudconf.postdump_msg[0] = '\0';
-    mudconf.fixed_home_msg[0] = '\0';
-    mudconf.fixed_tel_msg[0] = '\0';
-    strcpy(mudconf.public_channel, "Public");
-    strcpy(mudconf.guests_channel, "Guests");
-    strcpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>");
-    mudconf.art_rules = NULL;
-    mudconf.indent_desc = false;
-    mudconf.name_spaces = true;
-#ifndef WIN32
-    mudconf.fork_dump = true;
-    mudstate.dumping  = false;
-    mudstate.dumper   = 0;
-#endif
-    mudconf.have_comsys = true;
-    mudconf.have_mailer = true;
-    mudconf.have_zones = true;
-    mudconf.paranoid_alloc = false;
-    mudconf.sig_action = SA_DFLT;
-    mudconf.max_players = -1;
-    mudconf.dump_interval = 3600;
-    mudconf.check_interval = 600;
-    mudconf.events_daily_hour = 7;
-    mudconf.dump_offset = 0;
-    mudconf.check_offset = 300;
-    mudconf.idle_timeout = 3600;
-    mudconf.conn_timeout = 120;
-    mudconf.idle_interval = 60;
-    mudconf.retry_limit = 3;
-    mudconf.output_limit = 16384;
-    mudconf.paycheck = 0;
-    mudconf.paystart = 0;
-    mudconf.paylimit = 10000;
-    mudconf.start_quota = 20;
-    mudconf.site_chars = 25;
-    mudconf.payfind = 0;
-    mudconf.digcost = 10;
-    mudconf.linkcost = 1;
-    mudconf.opencost = 1;
-    mudconf.createmin = 10;
-    mudconf.createmax = 505;
-    mudconf.killmin = 10;
-    mudconf.killmax = 100;
-    mudconf.killguarantee = 100;
-    mudconf.robotcost = 1000;
-    mudconf.pagecost = 10;
-    mudconf.searchcost = 100;
-    mudconf.waitcost = 10;
-    mudconf.machinecost = 64;
-    mudconf.exit_quota = 1;
-    mudconf.player_quota = 1;
-    mudconf.room_quota = 1;
-    mudconf.thing_quota = 1;
-    mudconf.mail_expiration = 14;
-    mudconf.use_http = false;
-    mudconf.queuemax = 100;
-    mudconf.queue_chunk = 10;
-    mudconf.active_q_chunk = 10;
-    mudconf.sacfactor = 5;
-    mudconf.sacadjust = -1;
-    mudconf.use_hostname    = true;
-    mudconf.quotas          = false;
-    mudconf.ex_flags        = true;
-    mudconf.robot_speak     = true;
-    mudconf.clone_copy_cost = false;
-    mudconf.pub_flags       = true;
-    mudconf.quiet_look      = true;
-    mudconf.exam_public     = true;
-    mudconf.read_rem_desc   = false;
-    mudconf.read_rem_name   = false;
-    mudconf.sweep_dark      = false;
-    mudconf.player_listen   = false;
-    mudconf.quiet_whisper   = true;
-    mudconf.dark_sleepers   = true;
-    mudconf.see_own_dark    = true;
-    mudconf.idle_wiz_dark   = false;
-    mudconf.pemit_players   = false;
-    mudconf.pemit_any       = false;
-    mudconf.match_mine      = true;
-    mudconf.match_mine_pl   = true;
-    mudconf.switch_df_all   = true;
-    mudconf.fascist_tport   = false;
-    mudconf.terse_look      = true;
-    mudconf.terse_contents  = true;
-    mudconf.terse_exits     = true;
-    mudconf.terse_movemsg   = true;
-    mudconf.trace_topdown   = true;
-    mudconf.trace_limit     = 200;
-    mudconf.safe_unowned    = false;
-    mudconf.safer_passwords = false;
-    mudconf.autozone        = true;
-
-    // -- ??? Running SC on a non-SC DB may cause problems.
-    //
-    mudconf.space_compress = true;
     mudconf.allow_guest_from_registered_site = true;
-    mudconf.start_room = 0;
-    mudconf.start_home = NOTHING;
-    mudconf.default_home = NOTHING;
-    mudconf.master_room = NOTHING;
+    mudconf.autozone            = true;
+    mudconf.cache_names         = true;
+    mudconf.clone_copy_cost     = false;
+    mudconf.compress_db         = false;
+    mudconf.dark_sleepers       = true;
+    mudconf.destroy_going_now   = false;
+    mudconf.eval_comtitle       = true;
+    mudconf.ex_flags            = true;
+    mudconf.exam_public         = true;
+    mudconf.fascist_tport       = false;
+#ifndef WIN32
+    mudconf.fork_dump           = true;
+#endif
+    mudconf.have_comsys         = true;
+    mudconf.have_mailer         = true;
+    mudconf.have_zones          = true;
+    mudconf.idle_wiz_dark       = false;
+    mudconf.indent_desc         = false;
+    mudconf.match_mine          = true;
+    mudconf.match_mine_pl       = true;
+    mudconf.name_spaces         = true;
+    mudconf.paranoid_alloc      = false;
+    mudconf.pemit_any           = false;
+    mudconf.pemit_players       = false;
+    mudconf.player_listen       = false;
+    mudconf.pub_flags           = true;
+    mudconf.quiet_look          = true;
+    mudconf.quiet_whisper       = true;
+    mudconf.quotas              = false;
+    mudconf.read_rem_desc       = false;
+    mudconf.read_rem_name       = false;
+    mudconf.robot_speak         = true;
+    mudconf.run_startup         = true;
+    mudconf.safe_unowned        = false;
+    mudconf.safe_wipe           = false;
+    mudconf.safer_passwords     = false;
+    mudconf.see_own_dark        = true;
+    mudconf.space_compress      = true;
+    mudconf.sweep_dark          = false;
+    mudconf.switch_df_all       = true;
+    mudconf.terse_contents      = true;
+    mudconf.terse_exits         = true;
+    mudconf.terse_look          = true;
+    mudconf.terse_movemsg       = true;
+    mudconf.trace_topdown       = true;
+    mudconf.use_hostname        = true;
+    mudconf.use_http            = false;
+
+    mudconf.default_home        = NOTHING;
+    mudconf.global_error_obj    = NOTHING;
+    mudconf.guest_char          = NOTHING;
+    mudconf.guest_nuker         = GOD;
+    mudconf.hook_obj            = NOTHING;
+    mudconf.master_room         = NOTHING;
+    mudconf.start_home          = NOTHING;
+    mudconf.start_room          = 0;
+    mudconf.toad_recipient      = NOTHING;
+
+    mudconf.active_q_chunk      = 10;
+    mudconf.check_interval      = 600;
+    mudconf.check_offset        = 300;
+    mudconf.cmd_quota_incr      = 1;
+    mudconf.cmd_quota_max       = 100;
+    mudconf.conn_timeout        = 120;
+    mudconf.control_flags       = 0xffffffff; // Everything for now...
+    mudconf.createmax           = 505;
+    mudconf.createmin           = 10;
+    mudconf.digcost             = 10;
+    mudconf.dump_interval       = 3600;
+    mudconf.dump_offset         = 0;
+    mudconf.events_daily_hour   = 7;
+    mudconf.exit_quota          = 1;
+    mudconf.func_invk_lim       = 2500;
+    mudconf.func_nest_lim       = 50;
+    //      hook_cmd
+    mudconf.idle_interval       = 60;
+    mudconf.idle_timeout        = 3600;
+    mudconf.init_size           = 1000;
+    mudconf.killguarantee       = 100;
+    mudconf.killmax             = 100;
+    mudconf.killmin             = 10;
+    mudconf.linkcost            = 1;
+    mudconf.lock_nest_lim       = 20;
+    mudconf.log_info            = LOGOPT_TIMESTAMP | LOGOPT_LOC;
+    mudconf.log_options         = LOG_ALWAYS | LOG_BUGS | LOG_SECURITY |
+                    LOG_NET | LOG_LOGIN | LOG_DBSAVES | LOG_CONFIGMODS |
+                    LOG_SHOUTS | LOG_STARTUP | LOG_WIZARD | LOG_SUSPECTCMDS |
+                    LOG_PROBLEMS | LOG_PCREATES | LOG_TIMEUSE;
+    mudconf.machinecost         = 64;
+    mudconf.mail_expiration     = 14;
+    mudconf.max_cmdsecs         = 120;
+    mudconf.max_players         = -1;
+    mudconf.min_guests          = 1;
+    mudconf.nStackLimit         = 10000;
+    mudconf.ntfy_nest_lim       = 20;
+    mudconf.number_guests       = 30;
+    mudconf.opencost            = 1;
+    mudconf.output_limit        = 16384;
+    mudconf.pagecost            = 10;
+    mudconf.parent_nest_lim     = 10;
+    mudconf.paycheck            = 0;
+    mudconf.payfind             = 0;
+    mudconf.paylimit            = 10000;
+    mudconf.paystart            = 0;
+    mudconf.player_quota        = 1;
+    mudconf.queue_chunk         = 10;
+    mudconf.queuemax            = 100;
+    mudconf.retry_limit         = 3;
+    mudconf.robotcost           = 1000;
+    mudconf.room_quota          = 1;
+    mudconf.sacadjust           = -1;
+    mudconf.sacfactor           = 5;
+    mudconf.searchcost          = 100;
+    mudconf.sig_action          = SA_DFLT;
+    mudconf.stack_limit         = 50;
+    mudconf.start_quota         = 20;
+    mudconf.thing_quota         = 1;
+    mudconf.timeslice           = 1000;
+    mudconf.trace_limit         = 200;
+    mudconf.vattr_flags         = AF_ODARK;
+    mudconf.waitcost            = 10;
+    mudconf.wild_invk_lim       = 100000;
+    mudconf.zone_nest_lim       = 20;
+    mudconf.max_cache_size      = 1*1024*1024;
+    mudconf.site_chars          = 25;
+
+    mudconf.ports.n             = 1;
+    mudconf.ports.pi            = (int *)MEMALLOC(sizeof(int));
+    (void)ISOUTOFMEMORY(mudconf.ports.pi);
+    mudconf.ports.pi[0]         = 2860;
+
+    strcpy(mudconf.guest_prefix, "Guest");
+    strcpy(mudconf.guests_channel, "Guests");
+    strcpy(mudconf.many_coins, "pennies");
+    strcpy(mudconf.mud_name, "MUX");
+    strcpy(mudconf.one_coin, "penny");
+    strcpy(mudconf.public_channel, "Public");
+    mudconf.dump_msg[0]         = '\0';
+    mudconf.fixed_home_msg[0]   = '\0';
+    mudconf.fixed_tel_msg[0]    = '\0';
+    mudconf.postdump_msg[0]     = '\0';
+    mudconf.downmotd_msg[0]     = '\0';
+    mudconf.fullmotd_msg[0]     = '\0';
+    mudconf.motd_msg[0]         = '\0';
+    strcpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>");
+    mudconf.wizmotd_msg[0]      = '\0';
+    mudconf.compress            = StringClone("gzip");
+    mudconf.comsys_db           = StringClone("comsys.db");
+    //      config_file
+    mudconf.conn_file           = StringClone("text/connect.txt");
+    mudconf.crashdb             = StringClone("");
+    mudconf.crea_file           = StringClone("text/newuser.txt");
+    mudconf.creg_file           = StringClone("text/register.txt");
+    mudconf.down_file           = StringClone("text/down.txt");
+    mudconf.full_file           = StringClone("text/full.txt");
+    mudconf.game_dir            = StringClone("");
+    mudconf.game_pag            = StringClone("");
+    mudconf.guest_file          = StringClone("text/guest.txt");
+    mudconf.indb                = StringClone("netmux.db");
+    mudconf.mail_db             = StringClone("mail.db");
+    mudconf.motd_file           = StringClone("text/motd.txt");
+    mudconf.outdb               = StringClone("");
+    mudconf.quit_file           = StringClone("text/quit.txt");
+    mudconf.regf_file           = StringClone("text/create_reg.txt");
+    mudconf.site_file           = StringClone("text/badsite.txt");
+    mudconf.status_file         = StringClone("shutdown.status");
+    mudconf.uncompress          = StringClone("gzip -d");
+    mudconf.wizmotd_file        = StringClone("text/wizmotd.txt");
+
+    mudconf.markdata[0]         = 0x01;
+    mudconf.markdata[1]         = 0x02;
+    mudconf.markdata[2]         = 0x04;
+    mudconf.markdata[3]         = 0x08;
+    mudconf.markdata[4]         = 0x10;
+    mudconf.markdata[5]         = 0x20;
+    mudconf.markdata[6]         = 0x40;
+    mudconf.markdata[7]         = 0x80;
 
     for (i = FLAG_WORD1; i <= FLAG_WORD3; i++)
     {
+        mudconf.exit_flags.word[i]  = 0;
         mudconf.player_flags.word[i] = 0;
-        mudconf.room_flags.word[i] = 0;
-        mudconf.exit_flags.word[i] = 0;
-        mudconf.thing_flags.word[i] = 0;
         mudconf.robot_flags.word[i] = 0;
+        mudconf.room_flags.word[i]  = 0;
+        mudconf.thing_flags.word[i] = 0;
     }
     mudconf.robot_flags.word[FLAG_WORD1] |= ROBOT;
 
-    mudconf.vattr_flags = AF_ODARK;
-    strcpy(mudconf.mud_name, "MUX");
-    strcpy(mudconf.one_coin, "penny");
-    strcpy(mudconf.many_coins, "pennies");
-    mudconf.timeslice = 1000;
-    mudconf.cmd_quota_max = 100;
-    mudconf.cmd_quota_incr = 1;
-    mudconf.max_cmdsecs = 120;
-    mudconf.control_flags = 0xffffffff; // Everything for now...
-    mudconf.log_options = LOG_ALWAYS | LOG_BUGS | LOG_SECURITY |
-        LOG_NET | LOG_LOGIN | LOG_DBSAVES | LOG_CONFIGMODS |
-        LOG_SHOUTS | LOG_STARTUP | LOG_WIZARD | LOG_SUSPECTCMDS |
-        LOG_PROBLEMS | LOG_PCREATES | LOG_TIMEUSE;
-    mudconf.log_info = LOGOPT_TIMESTAMP | LOGOPT_LOC;
-    mudconf.markdata[0] = 0x01;
-    mudconf.markdata[1] = 0x02;
-    mudconf.markdata[2] = 0x04;
-    mudconf.markdata[3] = 0x08;
-    mudconf.markdata[4] = 0x10;
-    mudconf.markdata[5] = 0x20;
-    mudconf.markdata[6] = 0x40;
-    mudconf.markdata[7] = 0x80;
-    mudconf.func_nest_lim = 50;
-    mudconf.func_invk_lim = 2500;
-    mudconf.wild_invk_lim = 100000;
-    mudconf.ntfy_nest_lim = 20;
-    mudconf.lock_nest_lim = 20;
-    mudconf.parent_nest_lim = 10;
-    mudconf.zone_nest_lim = 20;
-    mudconf.stack_limit = 50;
-    mudconf.cache_names = true;
-    mudconf.toad_recipient = -1;
-    mudconf.eval_comtitle = true;
-    mudconf.run_startup = true;
-    mudconf.safe_wipe = false;
-    mudconf.destroy_going_now = false;
-    mudconf.nStackLimit = 10000;
-    mudconf.hook_obj = NOTHING;
-    mudconf.global_error_obj = NOTHING;
+    mudconf.art_rules           = NULL;
 
-    mudstate.events_flag = 0;
+
+    mudstate.bCanRestart        = false;
     mudstate.bReadingConfiguration = false;
-    mudstate.bCanRestart = false;
-    mudstate.panicking = false;
-    mudstate.logging = 0;
-    mudstate.epoch = 0;
-    mudstate.generation = 0;
-    mudstate.curr_executor = NOTHING;
-    mudstate.curr_enactor = NOTHING;
-    mudstate.shutdown_flag  = false;
-    mudstate.attr_next = A_USER_START;
-    mudstate.debug_cmd = "< init >";
-    mudstate.curr_cmd  = "< none >";
-    strcpy(mudstate.doing_hdr, "Doing");
-    mudstate.access_list = NULL;
-    mudstate.suspect_list = NULL;
-    mudstate.badname_head = NULL;
-    mudstate.mstat_ixrss[0] = 0;
-    mudstate.mstat_ixrss[1] = 0;
-    mudstate.mstat_idrss[0] = 0;
-    mudstate.mstat_idrss[1] = 0;
-    mudstate.mstat_isrss[0] = 0;
-    mudstate.mstat_isrss[1] = 0;
-    mudstate.mstat_secs[0] = 0;
-    mudstate.mstat_secs[1] = 0;
-    mudstate.mstat_curr = 0;
-    mudstate.iter_alist.data = NULL;
-    mudstate.iter_alist.len = 0;
-    mudstate.iter_alist.next = NULL;
-    mudstate.mod_alist = NULL;
-    mudstate.mod_alist_len = 0;
-    mudstate.mod_size = 0;
-    mudstate.mod_al_id = NOTHING;
-    mudstate.olist = NULL;
-    mudstate.min_size = 0;
-    mudstate.db_top = 0;
-    mudstate.db_size = 0;
-    mudstate.mail_db_top = 0;
-    mudstate.mail_db_size = 0;
-    mudstate.freelist = NOTHING;
-    mudstate.markbits = NULL;
-    mudstate.func_nest_lev = 0;
-    mudstate.func_invk_ctr = 0;
-    mudstate.wild_invk_ctr = 0;
-    mudstate.ntfy_nest_lev = 0;
-    mudstate.lock_nest_lev = 0;
-    mudstate.zone_nest_num = 0;
-    mudstate.inpipe = false;
-    mudstate.pout = NULL;
-    mudstate.poutnew = NULL;
-    mudstate.poutbufc = NULL;
-    mudstate.poutobj = -1;
+    mudstate.bStackLimitReached = false;
+    //       bStandAlone
+    mudstate.inpipe             = false;
+    mudstate.panicking          = false;
+    mudstate.shutdown_flag      = false;
+#ifndef WIN32
+    //       restarting
+    mudstate.dumping            = false;
+    mudstate.dumper             = 0;
+#endif
+
+    mudstate.curr_enactor       = NOTHING;
+    mudstate.curr_executor      = NOTHING;
+    mudstate.freelist           = NOTHING;
+    mudstate.mod_al_id          = NOTHING;
+    mudstate.poutobj            = NOTHING;
+    mudstate.attr_next          = A_USER_START;
+    mudstate.db_size            = 0;
+    mudstate.db_top             = 0;
+    mudstate.epoch              = 0;
+    mudstate.events_flag        = 0;
+    mudstate.func_invk_ctr      = 0;
+    mudstate.func_nest_lev      = 0;
+    mudstate.generation         = 0;
+    mudstate.in_loop            = 0;
+    mudstate.lock_nest_lev      = 0;
+    mudstate.logging            = 0;
+    mudstate.mail_db_size       = 0;
+    mudstate.mail_db_top        = 0;
+    mudstate.mHelpDesc          = 0;
+    mudstate.min_size           = 0;
+    mudstate.mstat_curr         = 0;
+    mudstate.nHelpDesc          = 0;
+    mudstate.nObjEvalNest       = 0;
+    mudstate.nStackNest         = 0;
+    mudstate.ntfy_nest_lev      = 0;
+    //       record_players
+    mudstate.wild_invk_ctr      = 0;
+    mudstate.zone_nest_num      = 0;
+    mudstate.mstat_idrss[0]     = 0;
+    mudstate.mstat_idrss[1]     = 0;
+    mudstate.mstat_isrss[0]     = 0;
+    mudstate.mstat_isrss[1]     = 0;
+    mudstate.mstat_ixrss[0]     = 0;
+    mudstate.mstat_ixrss[1]     = 0;
+    mudstate.mstat_secs[0]      = 0;
+    mudstate.mstat_secs[1]      = 0;
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {
-        mudstate.global_regs[i] = NULL;
         mudstate.glob_reg_len[i] = 0;
+        mudstate.global_regs[i] = NULL;
     }
-    mudstate.nObjEvalNest = 0;
-    mudstate.in_loop = 0;
-    mudstate.bStackLimitReached = false;
-    mudstate.nStackNest = 0;
-    mudstate.aHelpDesc = NULL;
-    mudstate.mHelpDesc = 0;
-    mudstate.nHelpDesc = 0;
+    //       inum
+    //       guest_free
+    mudstate.mod_alist_len      = 0;
+    mudstate.mod_size           = 0;
+
+    //       short_ver
+    strcpy(mudstate.doing_hdr, "Doing");
+    //       version
+    mudstate.curr_cmd           = "< none >";
+    mudstate.debug_cmd          = "< init >";
+    mudstate.mod_alist          = NULL;
+    mudstate.pout               = NULL;
+    mudstate.poutbufc           = NULL;
+    mudstate.poutnew            = NULL;
+    //       global_regs
+    //       itext
+    mudstate.iter_alist.data    = NULL;
+    mudstate.iter_alist.len     = 0;
+    mudstate.iter_alist.next    = NULL;
+    mudstate.badname_head       = NULL;
+    mudstate.aHelpDesc          = NULL;
+    mudstate.markbits           = NULL;
+    //       mail_list
+    mudstate.olist              = NULL;
+    mudstate.suspect_list       = NULL;
+    mudstate.access_list        = NULL;
 }
 
 // ---------------------------------------------------------------------------
