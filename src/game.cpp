@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.50 2001-12-04 08:15:46 sdennis Exp $
+// $Id: game.cpp,v 1.51 2001-12-04 09:27:02 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1031,7 +1031,7 @@ void do_shutdown(dbref player, dbref cause, int key, char *message)
 
     if (player != NOTHING)
     {
-        raw_broadcast(0, "Game: Shutdown by %s", Name(Owner(player)));
+        raw_broadcast(0, "GAME: Shutdown by %s", Name(Owner(player)));
         STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN")
         log_text((char *)"Shutdown by ");
         log_name(player);
@@ -1039,7 +1039,7 @@ void do_shutdown(dbref player, dbref cause, int key, char *message)
     }
     else
     {
-        raw_broadcast(0, "Game: Fatal Error: %s", message);
+        raw_broadcast(0, "GAME: Fatal Error: %s", message);
         STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN")
         log_text((char *)"Fatal error: ");
         log_text(message);

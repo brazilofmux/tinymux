@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.46 2001-12-04 08:15:46 sdennis Exp $
+// $Id: bsd.cpp,v 1.47 2001-12-04 09:27:02 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -879,7 +879,6 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
     }
 
 #ifndef WIN32
-    maxd = 1;
     for (i = 0; i < *pnPorts; i++)
     {
         if (maxd <= aPorts[i].socket)
@@ -1261,9 +1260,13 @@ void shovechars(int nPorts, PortInfo aPorts[])
         DESC_ITER_ALL(d)
         {
             if (!d->input_head)
+            {
                 FD_SET(d->descriptor, &input_set);
+            }
             if (d->output_head)
+            {
                 FD_SET(d->descriptor, &output_set);
+            }
         }
 
         // Wait for something to happen.
@@ -1358,12 +1361,9 @@ void shovechars(int nPorts, PortInfo aPorts[])
                         log_perror("NET", "FAIL", NULL, "new_connection");
                     }
                 }
-                else
+                else if (maxd <= newd->descriptor)
                 {
-                    if (newd->descriptor >= maxd)
-                    {
-                        maxd = newd->descriptor + 1;
-                    }
+                    maxd = newd->descriptor + 1;
                 }
             }
         }
@@ -1420,7 +1420,7 @@ DESC *new_connection(PortInfo *Port)
 #endif // !WIN32
 
     char *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (char *)"< new_connection >";
+    mudstate.debug_cmd = "< new_connection >";
     addr_len = sizeof(struct sockaddr);
 
     SOCKET newsock = accept(Port->socket, (struct sockaddr *)&addr, &addr_len);
@@ -1957,7 +1957,6 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->raw_input_at = NULL;
     d->quota = mudconf.cmd_quota_max;
     d->program_data = NULL;
-    //d->last_time = 0;
     d->address = *a;
     strncpy(d->addr, inet_ntoa(a->sin_addr), 50);
     d->addr[50] = '\0';
@@ -2757,7 +2756,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         {
             raw_broadcast
             (  0,
-               "Game: Fatal signal %s caught, restarting.",
+               "GAME: Fatal signal %s caught, restarting.",
                signames[sig]
             );
 

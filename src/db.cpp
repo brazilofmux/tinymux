@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.60 2001-12-04 08:15:46 sdennis Exp $
+// $Id: db.cpp,v 1.61 2001-12-04 09:27:02 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3208,7 +3208,6 @@ void load_restart_db(void)
         // Started on 2001-DEC-03
         //
         nMainGamePorts = getref(f);
-        maxd = 1;
         for (int i = 0; i < nMainGamePorts; i++)
         {
             aMainGamePorts[i].port   = getref(f);
@@ -3306,7 +3305,7 @@ void load_restart_db(void)
             descriptor_list = d;
         }
 
-        if (d->descriptor >= maxd)
+        if (maxd <= d->descriptor)
         {
             maxd = d->descriptor + 1;
         }
@@ -3330,7 +3329,7 @@ void load_restart_db(void)
         DebugTotalFiles--;
     }
     remove("restart.db");
-    raw_broadcast(0, "Game: Restart finished.");
+    raw_broadcast(0, "GAME: Restart finished.");
 }
 #endif // !STANDALONE !WIN32
 

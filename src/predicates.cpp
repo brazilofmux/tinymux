@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.42 2001-11-28 06:35:54 sdennis Exp $
+// $Id: predicates.cpp,v 1.43 2001-12-04 09:27:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1125,7 +1125,7 @@ void do_restart(dbref player, dbref cause, int key)
         return;
     }
 
-    raw_broadcast(0, "Game: Restart by %s, please wait.", Name(Owner(player)));
+    raw_broadcast(0, "GAME: Restart by %s, please wait.", Name(Owner(player)));
     STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
     log_text("Restart by ");
     log_name(player);
