@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  June 2004
+Last Update:  July 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,6 +54,8 @@ Feature Additions:
     re-implementation of that in TM3.1 by Lydia.
  -- Added HELPTEXT() to allow easier softcode access to helpfile topics.
     Re-implemented from TM3.1 help topic.
+ -- Added guests_channel_alias and public_channel_alias configuration
+    options.
 
 
 Bug Fixes:
