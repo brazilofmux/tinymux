@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.183 2002-10-03 23:18:02 sdennis Exp $
+// $Id: functions.cpp,v 1.184 2002-10-13 00:06:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3371,16 +3371,15 @@ static void handle_vectors
     // It's okay to have vmul() be passed a scalar first or second arg,
     // but everything else has to be same-dimensional.
     //
-    if (  (n != m)
-       && (  (flag != VMUL_F)
-          || ((n != 1) && (m != 1))
-          )
-       )
+    if (  n != m
+       && !(  flag == VMUL_F
+           && (n == 1 || m == 1)))
     {
         safe_str("#-1 VECTORS MUST BE SAME DIMENSIONS", buff, bufc);
         return;
     }
-    if (n > MAXDIM)
+    if (  MAXDIM < n
+       || MAXDIM < m)
     {
         safe_str("#-1 TOO MANY DIMENSIONS ON VECTORS", buff, bufc);
         return;
