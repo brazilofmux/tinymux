@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.70 2002-04-13 21:27:39 sdennis Exp $
+// $Id: db.cpp,v 1.71 2002-05-23 19:22:50 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -838,8 +838,7 @@ void do_fixdb
 // necessary, but we will validate the remaining characters anyway.
 //
 // NOTE: Refer to init_attrtab() where is directly manipulates
-// Tiny_IsAlpha and Tiny_IsAttributeNameCharacter to allow the
-// attribute name: "*Password".
+// Tiny_IsAttributeNameCharacter to allow the attribute name: "*Password".
 //
 char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
 {
@@ -942,8 +941,8 @@ void NDECL(init_attrtab)
     // initialization because it's part of the A_PASS attribute
     // name.
     //
-    Tiny_IsAlpha['*'] = TRUE;
     Tiny_IsAttributeNameCharacter['*'] = TRUE;
+    Tiny_IsFirstAttributeNameCharacter['*'] = TRUE;
     for (a = attr; a->number; a++)
     {
         int nLen;
@@ -957,7 +956,7 @@ void NDECL(init_attrtab)
         anum_set(a->number, a);
         hashaddLEN(buff, nLen, (int *)a, &mudstate.attr_name_htab);
     }
-    Tiny_IsAlpha['*'] = FALSE;
+    Tiny_IsFirstAttributeNameCharacter['*'] = FALSE;
     Tiny_IsAttributeNameCharacter['*'] = FALSE;
 }
 
