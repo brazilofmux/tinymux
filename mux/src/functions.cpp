@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.77 2002-08-09 04:08:20 sdennis Exp $
+// $Id: functions.cpp,v 1.78 2002-08-09 05:03:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7891,7 +7891,7 @@ FUN flist[] =
     {"AND",      fun_and,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"ANDBOOL",  fun_andbool,  MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"ANDFLAGS", fun_andflags, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"ANSI",     fun_ansi,     MAX_ARG, 2,  MAX_ARG, 0, CA_PUBLIC},
+    {"ANSI",     fun_ansi,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"APOSS",    fun_aposs,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ART",      fun_art,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ASIN",     fun_asin,     MAX_ARG, 1,  2,       0, CA_PUBLIC},

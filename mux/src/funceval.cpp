@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.46 2002-08-09 05:00:58 sdennis Exp $
+// $Id: funceval.cpp,v 1.47 2002-08-09 05:03:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -159,33 +159,29 @@ void SimplifyColorLetters(char *pOut, char *pIn)
 //
 FUNCTION(fun_ansi)
 {
-    int iArg0;
-    for (iArg0 = 0; iArg0 + 1 < nfargs; iArg0 += 2)
-    {
-        char   pOut[8];
-        SimplifyColorLetters(pOut, fargs[iArg0]);
-        char tmp[2*LBUF_SIZE];
-        char *bp = tmp;
+    char pOut[8];
+    SimplifyColorLetters(pOut, fargs[0]);
+    char tmp[2*LBUF_SIZE];
+    char *bp = tmp;
 
-        char *s = pOut;
-        while (*s)
+    char *s = pOut;
+    while (*s)
+    {
+        extern const char *ColorTable[256];
+        const char *pColor = ColorTable[(unsigned char)*s];
+        if (pColor)
         {
-            extern const char *ColorTable[256];
-            const char *pColor = ColorTable[(unsigned char)*s];
-            if (pColor)
-            {
-                safe_str(pColor, tmp, &bp);
-            }
-            s++;
+            safe_str(pColor, tmp, &bp);
         }
-        safe_str(fargs[iArg0+1], tmp, &bp);
-        *bp = '\0';
-        int nVisualWidth;
-        size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-        size_t nLen = ANSI_TruncateToField(tmp, nBufferAvailable, *bufc,
-            LBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-        *bufc += nLen;
+        s++;
     }
+    safe_str(fargs[1], tmp, &bp);
+    *bp = '\0';
+    int nVisualWidth;
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t nLen = ANSI_TruncateToField(tmp, nBufferAvailable, *bufc,
+        LBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+    *bufc += nLen;
 }
 
 FUNCTION(fun_zone)
