@@ -3,6 +3,7 @@ docs/COMPRESSION
 docs/CHANGES.1.6
 docs/CREDITS.1.6
 docs/NOTES.1.6
+game/text/Makefile
 src/regexp.cpp
 src/regexp.h
 src/macro.h
