@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.14 2001-06-16 02:22:19 sdennis Exp $ 
+// $Id: db_rw.cpp,v 1.15 2001-06-28 10:26:30 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -25,9 +25,8 @@ static int g_version;
 static int g_format;
 static int g_flags;
 
-/*
- * ---------------------------------------------------------------------------
- * * getboolexp1: Get boolean subexpression from file.
+/* ---------------------------------------------------------------------------
+ * getboolexp1: Get boolean subexpression from file.
  */
 
 static BOOLEXP *getboolexp1(FILE *f)
@@ -117,7 +116,7 @@ static BOOLEXP *getboolexp1(FILE *f)
         }
 
     case '-':
-    
+
         // obsolete NOTHING key, eat it.
         //
         while ((c = getc(f)) != '\n')
@@ -171,15 +170,11 @@ static BOOLEXP *getboolexp1(FILE *f)
         b->type = BOOLEXP_CONST;
         b->thing = 0;
 
-        /*
-         * This is either an attribute, eval, or constant lock.
-         * Constant locks are of the form <num>, while
-         * attribute * and * * * * eval locks are of the form
-         * <anam-or-anum>:<string> or
-         * <aname-or-anum>/<string> respectively. The
-         * characters <nl>, |, and & terminate the string. 
-         */
-
+        // This is either an attribute, eval, or constant lock. Constant locks
+        // are of the form <num>, while attribute and eval locks are of the
+        // form <anam-or-anum>:<string> or <aname-or-anum>/<string>
+        // respectively. The characters <nl>, |, and & terminate the string.
+        //
         if (Tiny_IsDigit[(unsigned int)c])
         {
             while (Tiny_IsDigit[(unsigned int)(c = getc(f))])
@@ -204,11 +199,9 @@ static BOOLEXP *getboolexp1(FILE *f)
             }
             *s = '\0';
 
-            /*
-             * Look the name up as an attribute.  If not found,
-             * create a new attribute. 
-             */
-
+            // Look the name up as an attribute.  If not found, create a new
+            // attribute.
+            //
             anum = mkattr(buff);
             if (anum <= 0) {
                 free_bool(b);
@@ -222,11 +215,9 @@ static BOOLEXP *getboolexp1(FILE *f)
             goto error;
         }
 
-        /*
-         * if last character is : then this is an attribute lock. A 
-         * last character of / means an eval lock 
-         */
-
+        // If last character is : then this is an attribute lock. A last
+        // character of / means an eval lock.
+        //
         if ((c == ':') || (c == '/')) {
             if (c == '/')
                 b->type = BOOLEXP_EVAL;
@@ -234,7 +225,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->type = BOOLEXP_ATR;
             buff = alloc_lbuf("getboolexp1.attr_lock");
             for (  s = buff;
-            
+
                    ((c = getc(f)) != EOF)
                 && (c != '\n')
                 && (c != ')')
@@ -263,9 +254,8 @@ error:
     return TRUE_BOOLEXP;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * getboolexp: Read a boolean expression from the flat file.
+/* ---------------------------------------------------------------------------
+ * getboolexp: Read a boolean expression from the flat file.
  */
 
 static BOOLEXP *getboolexp(FILE *f)
@@ -293,9 +283,8 @@ static BOOLEXP *getboolexp(FILE *f)
 }
 
 #ifdef STANDALONE
-/*
- * ---------------------------------------------------------------------------
- * * unscramble_attrnum: Fix up attribute numbers from foreign muds
+/* ---------------------------------------------------------------------------
+ * unscramble_attrnum: Fix up attribute numbers from foreign muds
  */
 
 static int unscramble_attrnum(int attrnum)
@@ -310,9 +299,7 @@ static int unscramble_attrnum(int attrnum)
         case 40:
             return A_AWAY;
         case 41:
-            return 0;   /*
-                     * mailk 
-                     */
+            return 0;   // mailk
         case 42:
             return A_ALIAS;
         case 43:
@@ -322,9 +309,7 @@ static int unscramble_attrnum(int attrnum)
         case 45:
             return A_AEFAIL;
         case 46:
-            return 0;   /*
-                     * it 
-                     */
+            return 0;   // it
         case 47:
             return A_LEAVE;
         case 48:
@@ -332,29 +317,19 @@ static int unscramble_attrnum(int attrnum)
         case 49:
             return A_ALEAVE;
         case 50:
-            return 0;   /*
-                     * channel 
-                     */
+            return 0;   // channel
         case 51:
             return A_QUOTA;
         case 52:
-            return A_TEMP;  /*
-                     * temp for pennies 
-                     */
+            return A_TEMP;  // temp for pennies
         case 53:
-            return 0;   /*
-                     * huhto 
-                     */
+            return 0;   // huhto
         case 54:
-            return 0;   /*
-                     * haven 
-                     */
+            return 0;   // haven
         case 57:
             return mkattr((char *)"TZ");
         case 58:
-            return 0;   /*
-                     * doomsday 
-                     */
+            return 0;   // doomsday
         case 59:
             return mkattr((char *)"Email");
         case 98:
@@ -366,10 +341,8 @@ static int unscramble_attrnum(int attrnum)
         }
     case F_MUSH:
 
-        /*
-         * Only need to muck with Pern variants 
-         */
-
+        // Only need to muck with Pern variants
+        //
         if (g_version != 2)
             return attrnum;
         switch (attrnum) {
@@ -406,9 +379,8 @@ static int unscramble_attrnum(int attrnum)
 }
 #endif
 
-/*
- * ---------------------------------------------------------------------------
- * * get_list: Read attribute list from flat file.
+/* ---------------------------------------------------------------------------
+ * get_list: Read attribute list from flat file.
  */
 
 static int get_list(FILE *f, dbref i, int new_strings)
@@ -425,65 +397,54 @@ static int get_list(FILE *f, dbref i, int new_strings)
     buff = alloc_lbuf("get_list");
     while (1) {
         switch (c = getc(f)) {
-        case '>':   /*
-                 * read # then string 
-                 */
+        case '>':   // read # then string
 #ifdef STANDALONE
             atr = unscramble_attrnum(getref(f));
 #else
             atr = getref(f);
 #endif
-            if (atr > 0) {
-                /*
-                 * Store the attr 
-                 */
-
+            if (atr > 0)
+            {
+                // Store the attr
+                //
                 atr_add_raw(i, atr,
                      (char *)getstring_noalloc(f, new_strings));
-            } else {
-                /*
-                 * Silently discard 
-                 */
-
+            }
+            else
+            {
+                // Silently discard
+                //
                 getstring_noalloc(f, new_strings);
             }
             break;
 #ifdef STANDALONE
-        case ']':   /*
-                 * Pern 1.13 style text attribute 
-                 */
+        case ']':   // Pern 1.13 style text attribute
             StringCopy(buff, (char *)getstring_noalloc(f, new_strings));
 
-            /*
-             * Get owner number 
-             */
-
+            // Get owner number
+            //
             ownp = (char *)strchr(buff, '^');
             if (!ownp)
             {
-                Log.printf("Bad format in attribute on object %d\n", i);
+                Log.printf("Bad format in attribute on object %d" ENDLINE, i);
                 free_lbuf(buff);
                 return 0;
             }
             *ownp++ = '\0';
 
-            /*
-             * Get attribute flags 
-             */
-
+            // Get attribute flags
+            //
             flagp = (char *)strchr(ownp, '^');
             if (!flagp)
             {
-                Log.printf("Bad format in attribute on object %d\n", i);
+                Log.printf("Bad format in attribute on object %d" ENDLINE, i);
                 free_lbuf(buff);
                 return 0;
             }
             *flagp++ = '\0';
 
-            /*
-             * Convert Pern-style owner and flags to 2.0 format 
-             */
-
+            // Convert Pern-style owner and flags to 2.0 format
+            //
             aowner = Tiny_atol(ownp);
             xflags = Tiny_atol(flagp);
             aflags = 0;
@@ -496,20 +457,19 @@ static int get_list(FILE *f, dbref i, int new_strings)
                 aflags |= AF_NOPROG;
 
             if (!strcmp(buff, "XYXXY"))
+            {
                 s_Pass(i, (char *)getstring_noalloc(f, new_strings));
-            else {
-                /*
-                 * Look up the attribute name in the
-                 * attribute table. * If the name isn't
-                 * found, create a new  * attribute. If the
-                 * create fails, try prefixing * the attr
-                 * name with ATR_ (Pern allows   * attributes 
-                 * to start with a * non-alphabetic
-                 * character. 
-                 */
-
+            }
+            else
+            {
+                // Look up the attribute name in the attribute table. If the
+                // name isn't found, create a new attribute. If the create
+                // fails, try prefixing the attr name with ATR_ (Pern allows
+                // attributes to start with a non-alphabetic character.)
+                //
                 anum = mkattr(buff);
-                if (anum < 0) {
+                if (anum < 0)
+                {
                     buf2 = alloc_mbuf("get_list.new_attr_name");
                     buf2p = buf2;
                     safe_mb_str((char *)"ATR_", buf2, &buf2p);
@@ -518,17 +478,17 @@ static int get_list(FILE *f, dbref i, int new_strings)
                     anum = mkattr(buf2);
                     free_mbuf(buf2);
                 }
-                /*
-                 * MAILFOLDERS under MUX must be owned by the 
-                 * player, not GOD 
-                 */
 
-                if (!strcmp(buff, "MAILFOLDERS")) {
+                // MAILFOLDERS under MUX must be owned by the
+                // player, not GOD
+                //
+                if (!strcmp(buff, "MAILFOLDERS"))
+                {
                     aowner = Owner(i);
                 }
                 if (anum < 0)
                 {
-                    Log.printf("Bad attribute name '%s' on object %d, ignoring...\n", buff, i);
+                    Log.printf("Bad attribute name '%s' on object %d, ignoring..." ENDLINE, buff, i);
                     (void)getstring_noalloc(f, new_strings);
                 }
                 else
@@ -538,38 +498,34 @@ static int get_list(FILE *f, dbref i, int new_strings)
             }
             break;
 #endif
-        case '\n':  /*
-                 * ignore newlines. They're due to v(r). 
-                 */
+        case '\n':  // ignore newlines. They're due to v(r).
+
             break;
-        case '<':   /*
-                 * end of list 
-                 */
+
+        case '<':   // end of list
+
             free_lbuf(buff);
             c = getc(f);
             if (c != '\n')
             {
                 ungetc(c, f);
-                Log.printf("No line feed on object %d\n", i);
+                Log.printf("No line feed on object %d" ENDLINE, i);
                 return 1;
             }
             return 1;
 
         default:
-            Log.printf("Bad character '%c' when getting attributes on object %d\n", c, i);
-            /*
-             * We've found a bad spot.  I hope things aren't * *
-             * * * * * too bad. 
-             */
+            Log.printf("Bad character '%c' when getting attributes on object %d" ENDLINE, c, i);
 
-            (void)getstring_noalloc(f, new_strings);
+            // We've found a bad spot.  I hope things aren't too bad.
+            //
+            getstring_noalloc(f, new_strings);
         }
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * putbool_subexp: Write a boolean sub-expression to the flat file.
+/* ---------------------------------------------------------------------------
+ * putbool_subexp: Write a boolean sub-expression to the flat file.
  */
 static void putbool_subexp(FILE *f, BOOLEXP *b)
 {
@@ -667,14 +623,14 @@ static void putbool_subexp(FILE *f, BOOLEXP *b)
         break;
 
     default:
-        Log.printf("Unknown boolean type in putbool_subexp: %d\n", b->type);
+
+        Log.printf("Unknown boolean type in putbool_subexp: %d" ENDLINE, b->type);
         break;
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * putboolexp: Write boolean expression to the flat file.
+/* ---------------------------------------------------------------------------
+ * putboolexp: Write boolean expression to the flat file.
  */
 
 static void putboolexp(FILE *f, BOOLEXP *b)
@@ -686,9 +642,8 @@ static void putboolexp(FILE *f, BOOLEXP *b)
 }
 
 #ifdef STANDALONE
-/*
- * ---------------------------------------------------------------------------
- * * upgrade_flags: Convert foreign flags to MUSH format.
+/* ---------------------------------------------------------------------------
+ * upgrade_flags: Convert foreign flags to MUSH format.
  */
 
 static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing, int db_format, int db_version)
@@ -701,12 +656,10 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
     newf1 = 0;
     newf2 = 0;
     newf3 = 0;
-    if (db_format == F_MUD) {
-
-        /*
-         * Old TinyMUD format 
-         */
-
+    if (db_format == F_MUD)
+    {
+        // Old TinyMUD format
+        //
         newf1 = f1 & (TYPE_MASK | WIZARD | LINK_OK | DARK | STICKY | HAVEN);
         if (f1 & MUD_ABODE)
             newf2 |= ABODE;
@@ -715,79 +668,55 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
         if (f1 & MUD_CHOWN_OK)
             newf1 |= CHOWN_OK;
 
-    } else if (db_format == F_MUSE) {
+    }
+    else if (db_format == F_MUSE)
+    {
         if (db_version == 1)
             return;
 
-        /*
-         * Convert level-based players to normal 
-         */
-
-        switch (f1 & 0xf) {
-        case 0: /*
-                 * * room  
-                 */
-        case 1: /*
-                 * * thing  
-                 */
-        case 2: /*
-                 * * exit  
-                 */
+        // Convert level-based players to normal
+        //
+        switch (f1 & 0xf)
+        {
+        case 0: // room
+        case 1: // thing
+        case 2: // exit
             newf1 = f1 & 0x3;
             break;
-        case 8: /*
-                 * * guest  
-                 */
-        case 9: /*
-                 * * trial player  
-                 */
-        case 10:    /*
-                 * member 
-                 */
-        case 11:    /*
-                 * junior official 
-                 */
-        case 12:    /*
-                 * official 
-                 */
+
+        case 8: // guest
+        case 9: // trial player
+        case 10: // member
+        case 11: // junior official
+        case 12: // official
             newf1 = TYPE_PLAYER;
             break;
-        case 13:    /*
-                 * honorary wizard 
-                 */
-        case 14:    /*
-                 * administrator 
-                 */
-        case 15:    /*
-                 * director 
-                 */
+
+        case 13: // honorary wizard
+        case 14: // administrator
+        case 15: // director
             newf1 = TYPE_PLAYER | WIZARD;
             break;
-        default:    /*
-                 * A bad type, mark going 
-                 */
-            Log.printf("Funny object type for #%d\n", thing);
+
+        default: // A bad type, mark going
+            Log.printf("Funny object type for #%d" ENDLINE, thing);
             *flags1 = GOING;
             return;
         }
 
-        /*
-         * Player #1 is always a wizard 
-         */
-
+        // Player #1 is always a wizard
+        //
         if (thing == (dbref) 1)
             newf1 |= WIZARD;
 
-        /*
-         * Set type-specific flags 
-         */
+        // Set type-specific flags
+        //
+        switch (newf1 & TYPE_MASK)
+        {
+        case TYPE_PLAYER:
 
-        switch (newf1 & TYPE_MASK) {
-        case TYPE_PLAYER:   /*
-                     * Lose CONNECT TERSE QUITE NOWALLS * 
-                     * 
-                     * *  * *  * *  * * WARPTEXT 
-                     */
+            // Lose CONNECT TERSE QUITE NOWALLS WARPTEXT
+            //
             if (f1 & MUSE_BUILD)
                 s_Powers(thing, Powers(thing) | POW_BUILDER);
             if (f1 & MUSE_SLAVE)
@@ -795,31 +724,34 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
             if (f1 & MUSE_UNFIND)
                 newf2 |= UNFINDABLE;
             break;
-        case TYPE_THING:    /*
-                     * lose LIGHT SACR_OK 
-                     */
+
+        case TYPE_THING:
+
+            // Lose LIGHT SACR_OK
+            //
             if (f1 & MUSE_KEY)
                 newf2 |= KEY;
             if (f1 & MUSE_DEST_OK)
                 newf1 |= DESTROY_OK;
             break;
+
         case TYPE_ROOM:
+
             if (f1 & MUSE_ABODE)
                 newf2 |= ABODE;
             break;
+
         case TYPE_EXIT:
+
             if (f1 & MUSE_SEETHRU)
                 newf1 |= SEETHRU;
+
         default:
             break;
         }
 
-        /*
-         * Convert common flags 
-         */
-        /*
-         * Lose: MORTAL ACCESSED MARKED SEE_OK UNIVERSAL 
-         */
+        // Convert common flags
+        // Lose: MORTAL ACCESSED MARKED SEE_OK UNIVERSAL
 
         if (f1 & MUSE_CHOWN_OK)
             newf1 |= CHOWN_OK;
@@ -845,13 +777,11 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
             newf1 |= TM_OPAQUE;
         if (f1 & MUSE_QUIET)
             newf1 |= QUIET;
-
-    } else if ((db_format == F_MUSH) && (db_version == 2)) {
-
-        /*
-         * Pern variants 
-         */
-
+    }
+    else if ((db_format == F_MUSH) && (db_version == 2))
+    {
+        // Pern variants
+        //
         newf1 = (f1 & TYPE_MASK);
         newf2 = 0;
 
@@ -905,7 +835,8 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
         if (f1 & PENN_NO_COMMAND)
             newf2 |= NO_COMMAND;
 
-        switch (newf1 & TYPE_MASK) {
+        switch (newf1 & TYPE_MASK)
+        {
         case TYPE_PLAYER:
             if (f2 & PENN_PLAYER_TERSE)
                 newf1 |= TERSE;
@@ -960,22 +891,18 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
             if (f2 & PENN_ROOM_UNINSPECT)
                 newf2 |= UNINSPECTED;
         }
-    } else if ((db_format == F_MUSH) && (db_version >= 3)) {
+    }
+    else if ((db_format == F_MUSH) && (db_version >= 3))
+    {
         newf1 = f1;
         newf2 = f2;
         switch (db_version) {
         case 3:
-            (newf1 &= ~V2_ACCESSED);    /*
-                             * Clear ACCESSED 
-                             */
+            (newf1 &= ~V2_ACCESSED);  // Clear ACCESSED
         case 4:
-            (newf1 &= ~V3_MARKED);  /*
-                         * Clear MARKED 
-                         */
+            (newf1 &= ~V3_MARKED);  // Clear MARKED
         case 5:
-            /*
-             * Merge GAGGED into SLAVE, move SUSPECT 
-             */
+            // Merge GAGGED into SLAVE, move SUSPECT
 
             if ((newf1 & TYPE_MASK) == TYPE_PLAYER) {
                 if (newf1 & V4_GAGGED) {
@@ -1040,9 +967,7 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
             }
         case 7:
             if (newf1 & ROYALTY) {
-                newf1 &= ~ROYALTY;  /*
-                             * CONTROL_OK 
-                             */
+                newf1 &= ~ROYALTY;  // CONTROL_OK
             }
             break;
         }
@@ -1058,9 +983,8 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
 }
 
 
-/*
- * ---------------------------------------------------------------------------
- * * efo_convert: Fix things up for Exits-From-Objects
+/* ---------------------------------------------------------------------------
+ * efo_convert: Fix things up for Exits-From-Objects
  */
 
 void NDECL(efo_convert)
@@ -1073,9 +997,7 @@ void NDECL(efo_convert)
         case TYPE_PLAYER:
         case TYPE_THING:
 
-            /*
-             * swap Exits and Link 
-             */
+            // swap Exits and Link
 
             link = Link(i);
             s_Link(i, Exits(i));
@@ -1084,9 +1006,8 @@ void NDECL(efo_convert)
         }
     }
 }
-/*
- * ---------------------------------------------------------------------------
- * * unscraw_foreign: Fix up strange object linking conventions for other formats
+/* ---------------------------------------------------------------------------
+ * unscraw_foreign: Fix up strange object linking conventions for other formats
  */
 
 void unscraw_foreign(int db_format, int db_version, int db_flags)
@@ -1100,26 +1021,19 @@ void unscraw_foreign(int db_format, int db_version, int db_flags)
     case F_MUSE:
         DO_WHOLE_DB(i)
         {
-            if (Typeof(i) == TYPE_EXIT) 
+            if (Typeof(i) == TYPE_EXIT)
             {
-
-                /*
-                 * MUSE exits are bass-ackwards 
-                 */
-
+                // MUSE exits are bass-ackwards
+                //
                 tmp = Exits(i);
                 s_Exits(i, Location(i));
                 s_Location(i, tmp);
             }
             if (db_version > 3)
             {
-
-                /*
-                 * MUSEs with pennies in an attribute have 
-                 * it stored in attr 255 (see 
-                 * unscramble_attrnum) 
-                 */
-
+                // MUSEs with pennies in an attribute have it stored in attr
+                // 255 (see unscramble_attrnum)
+                //
                 p_str = atr_get(i, A_TEMP, &aowner, &aflags);
                 s_Pennies(i, Tiny_atol(p_str));
                 free_lbuf(p_str);
@@ -1133,13 +1047,11 @@ void unscraw_foreign(int db_format, int db_version, int db_flags)
         break;
 
     case F_MUSH:
+
         if ((db_version <= 5) && (db_flags & V_GDBM))
         {
-
-            /*
-             * Check for FORWARDLIST attribute 
-             */
-
+            // Check for FORWARDLIST attribute
+            //
             DO_WHOLE_DB(i)
             {
                 if (atr_get_raw(i, A_FORWARDLIST))
@@ -1152,43 +1064,36 @@ void unscraw_foreign(int db_format, int db_version, int db_flags)
         {
             DO_WHOLE_DB(i)
             {
-                /*
-                 * Make sure A_QUEUEMAX is empty 
-                 */
+                // Make sure A_QUEUEMAX is empty
+                //
                 atr_clr(i, A_QUEUEMAX);
 
                 if (db_flags & V_GDBM)
                 {
 
-                    /*
-                     * HAS_LISTEN now tracks LISTEN attr 
-                     */
-
+                    // HAS_LISTEN now tracks LISTEN attr
+                    //
                     if (atr_get_raw(i, A_LISTEN))
                         s_Flags2(i, Flags2(i) | HAS_LISTEN);
 
-                    /*
-                     * Undo V6 overloading of HAS_STARTUP
-                     * * * * * * * with HAS_FWDLIST 
-                     */
-
+                    // Undo V6 overloading of HAS_STARTUP
+                    // with HAS_FWDLIST
+                    //
                     if (  (db_version == 6)
                        && (Flags2(i) & HAS_STARTUP)
                        && atr_get_raw(i, A_FORWARDLIST))
                     {
 
-                        /*
-                         * We have FORWARDLIST 
-                         */
-
+                        // We have FORWARDLIST
+                        //
                         s_Flags2(i, Flags2(i) | HAS_FWDLIST);
 
-                        /*
-                         * Maybe no STARTUP 
-                         */
-
+                        // Maybe no STARTUP
+                        //
                         if (!atr_get_raw(i, A_STARTUP))
+                        {
                             s_Flags2(i, Flags2(i) & ~HAS_STARTUP);
+                        }
                     }
                 }
             }
@@ -1200,10 +1105,9 @@ void unscraw_foreign(int db_format, int db_version, int db_flags)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * getlist_discard, get_atrdefs_discard: Throw away data from MUSE that we
- * * don't use.
+/* ---------------------------------------------------------------------------
+ * getlist_discard, get_atrdefs_discard: Throw away data from MUSE that we
+ * don't use.
  */
 
 static void getlist_discard(FILE *f, dbref i, int set)
@@ -1224,17 +1128,11 @@ static void get_atrdefs_discard(FILE *f)
     const char *sp;
 
     for (;;) {
-        sp = getstring_noalloc(f, 0);   /*
-                         * flags or endmarker 
-                         */
+        sp = getstring_noalloc(f, 0);   // flags or endmarker
         if (*sp == '\\')
             return;
-        sp = getstring_noalloc(f, 0);   /*
-                         * object 
-                         */
-        sp = getstring_noalloc(f, 0);   /*
-                         * name 
-                         */
+        sp = getstring_noalloc(f, 0);   // object
+        sp = getstring_noalloc(f, 0);   // name
     }
 }
 
@@ -1244,12 +1142,8 @@ static void fix_typed_quotas(dbref i)
     dbref aowner;
     int aflags, total = 0;
 
-    /*
-     * For 2.2's 'typed quotas'... 
-     */
-    /*
-     * I guess we have to add them up... 
-     */
+    // For 2.2's 'typed quotas'...
+    // I guess we have to add them up...
 
     if (!(isPlayer(i)))
         return;
@@ -1290,12 +1184,12 @@ static void getpenn_new_locks(FILE *f, int i)
     }
 
     *p = '\0';
-    
+
     tempbool = getboolexp(f);
-    
+
     if (tempbool == TRUE_BOOLEXP)
         return;
-        
+
     if (!strcmp(buf, "Basic"))
         atr_add_raw(i, A_LOCK,
                 unparse_boolexp_quiet(1, tempbool));
@@ -1331,7 +1225,7 @@ static void getpenn_new_locks(FILE *f, int i)
                 unparse_boolexp_quiet(1, tempbool));
     free_lbuf(buf);
 }
-#endif 
+#endif
 
 dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 {
@@ -1430,10 +1324,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
         switch (ch = getc(f))
         {
-        case '-':   /* Misc tag */
+        case '-':   // Misc tag
             switch (ch = getc(f))
-            {   
-            case 'R':   /* Record number of players */
+            {
+            case 'R':   // Record number of players
                 mudstate.record_players = getref(f);
                 break;
             default:
@@ -1442,23 +1336,18 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             break;
 
 #ifdef STANDALONE
-        case '~':   /*
-                 * Database size tag 
-                 */
+        case '~':   // Database size tag
             is_penn = 1;
             if (!is_dark && penn_version) {
                 g_format = F_MUSH;
                 g_version = (((penn_version - 2) / 256) - 5);
-                /*
-                 * Okay, let's try and unscraw version
-                 * encoding method they use in later Penn 
-                 * 1.50. 
+                /* Okay, let's try and unscraw version
+                 * encoding method they use in later Penn
+                 * 1.50.
                  */
 
-                /*
-                 * Handle Pern veriants specially 
-                 */
-
+                // Handle Pern variants specially.
+                //
                 if (g_version & 0x20)
                     read_new_strings = 1;
 
@@ -1481,30 +1370,30 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
             if (size_gotten)
             {
-                Log.printf("\nDuplicate size entry at object %d, ignored.\n", i);
-                tstr = getstring_noalloc(f, 0); /*
-                                 * junk 
-                                 */
+                Log.printf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
+                tstr = getstring_noalloc(f, 0); // junk
                 break;
             }
             mudstate.min_size = getref(f);
             size_gotten = 1;
             break;
 #endif
-        case '+':   /*
-                 * MUX and MUSH header 
-                 */
-            switch (ch = getc(f)) {     /*
-                             * 2nd char selects 
-                             * type 
-                             */
+        case '+':
+
+            // MUX and MUSH header
+            //
+            switch (ch = getc(f))
+            {
+                // 2nd char selects type
+                //
 #ifdef STANDALONE
-            case 'V':   /*
-                     * MUSH VERSION 
-                     */
+            case 'V':
+
+                // MUSH VERSION
+                //
                 if (header_gotten)
                 {
-                    Log.printf("\nDuplicate MUSH version header entry at object %d, ignored.\n", i);
+                    Log.printf(ENDLINE "Duplicate MUSH version header entry at object %d, ignored." ENDLINE, i);
                     tstr = getstring_noalloc(f, 0);
                     break;
                 }
@@ -1514,11 +1403,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 g_version = getref(f);
                 penn_version = g_version;
 
-                /*
-                 * Otherwise extract feature flags 
-                 */
-
-                if (g_version & V_GDBM) {
+                // Otherwise extract feature flags
+                //
+                if (g_version & V_GDBM)
+                {
                     read_attribs = 0;
                     read_name = !(g_version & V_ATRNAME);
                 }
@@ -1536,12 +1424,13 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 deduce_zone = 0;
                 break;
 #endif
-            case 'X':   /*
-                     * MUX VERSION 
-                     */
+            case 'X':
+
+                // MUX VERSION
+                //
                 if (header_gotten)
                 {
-                    Log.printf("\nDuplicate MUX version header entry at object %d, ignored.\n", i);
+                    Log.printf(ENDLINE "Duplicate MUX version header entry at object %d, ignored." ENDLINE, i);
                     tstr = getstring_noalloc(f, 0);
                     break;
                 }
@@ -1550,11 +1439,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 g_format = F_MUX;
                 g_version = getref(f);
 
-                /*
-                 * Otherwise extract feature flags 
-                 */
-
-                if (g_version & V_GDBM) {
+                // Otherwise extract feature flags
+                //
+                if (g_version & V_GDBM)
+                {
                     read_attribs = 0;
                     read_name = !(g_version & V_ATRNAME);
                 }
@@ -1575,15 +1463,13 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 deduce_zone = 0;
                 break;
 #ifdef STANDALONE
-            case 'K':   /*
-                     * Kalkin's DarkZone dist 
-                     */
-                /*
-                 * Him and his #defines... 
-                 */
+            case 'K':
+
+                // Kalkin's DarkZone dist. Him and his #defines...
+                //
                 if (header_gotten)
                 {
-                    Log.printf("\nDuplicate MUSH version header entry at object %d, ignored.\n", i);
+                    Log.printf(ENDLINE "Duplicate MUSH version header entry at object %d, ignored." ENDLINE, i);
                     tstr = getstring_noalloc(f, 0);
                     break;
                 }
@@ -1618,12 +1504,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 g_version = 2;
                 break;
 #endif
-            case 'S':   /*
-                     * SIZE 
-                     */
+            case 'S':   // SIZE
                 if (size_gotten)
                 {
-                    Log.printf("\nDuplicate size entry at object %d, ignored.\n", i);
+                    Log.printf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
                     tstr = getstring_noalloc(f, 0);
                 }
                 else
@@ -1633,9 +1517,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 size_gotten = 1;
                 break;
 
-            case 'A':   /*
-                     * USER-NAMED ATTRIBUTE 
-                     */
+            case 'A':   // USER-NAMED ATTRIBUTE
                 anum = getref(f);
                 tstr = getstring_noalloc(f, read_new_strings);
                 if (Tiny_IsDigit[(unsigned char)*tstr])
@@ -1662,19 +1544,14 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 }
                 break;
 
-            case 'F':   /*
-                     * OPEN USER ATTRIBUTE SLOT 
-                     */
+            case 'F':   // OPEN USER ATTRIBUTE SLOT
                 anum = getref(f);
                 break;
 
-            case 'N':   /*
-                     * NEXT ATTR TO ALLOC WHEN NO
-                     * FREELIST 
-                     */
+            case 'N':   // NEXT ATTR TO ALLOC WHEN NO FREELIST
                 if (nextattr_gotten)
                 {
-                    Log.printf("\nDuplicate next free vattr entry at object %d, ignored.\n", i);
+                    Log.printf(ENDLINE "Duplicate next free vattr entry at object %d, ignored." ENDLINE, i);
                     tstr = getstring_noalloc(f, 0);
                 }
                 else
@@ -1685,18 +1562,16 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 break;
 
             default:
-                Log.printf("\nUnexpected character '%c' in MUX header near object #%d, ignored.\n", ch, i);
+                Log.printf(ENDLINE "Unexpected character '%c' in MUX header near object #%d, ignored." ENDLINE, ch, i);
                 tstr = getstring_noalloc(f, 0);
             }
             break;
 
 #ifdef STANDALONE
-        case '@':   /*
-                 * MUSE header 
-                 */
+        case '@':   // MUSE header
             if (header_gotten)
             {
-                Log.printf("\nDuplicate MUSE header entry at object #%d.\n", i);
+                Log.printf(ENDLINE "Duplicate MUSE header entry at object #%d." ENDLINE, i);
                 return -1;
             }
             header_gotten = 1;
@@ -1723,12 +1598,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
             if (g_format != F_MUD)
             {
-                Log.printf("\nMUD-style object found in non-MUD database at object #%d\n", i);
+                Log.printf(ENDLINE "MUD-style object found in non-MUD database at object #%d" ENDLINE, i);
                 return -1;
             }
             if (i != getref(f))
             {
-                Log.printf("\nSequence error at object #%d\n", i);
+                Log.printf(ENDLINE "Sequence error at object #%d" ENDLINE, i);
                 return -1;
             }
             db_grow(i + 1);
@@ -1745,9 +1620,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             s_Exits(i, getref(f));
             s_Link(i, NOTHING);
             s_Next(i, getref(f));
-/*
- * s_Zone(i, NOTHING); 
- */
+            // s_Zone(i, NOTHING);
             tempbool = getboolexp(f);
             atr_add_raw(i, A_LOCK,
                     unparse_boolexp_quiet(1, tempbool));
@@ -1776,20 +1649,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 ungetc(peek, f);
             }
             if (read_timestamps) {
-                aflags = getref(f); /*
-                             * created 
-                             */
-                aflags = getref(f); /*
-                             * lastused 
-                             */
-                aflags = getref(f); /*
-                             * usecount 
-                             */
+                aflags = getref(f); // created
+                aflags = getref(f); // lastused
+                aflags = getref(f); // usecount
             }
             break;
-        case '&':   /*
-                 * MUSH 2.0a stub entry/MUSE zoned entry 
-                 */
+        case '&':   // MUSH 2.0a stub entry/MUSE zoned entry
             if (deduce_version) {
                 deduce_version = 0;
                 g_format = F_MUSH;
@@ -1804,9 +1669,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 g_flags |= V_ZONE;
             }
 #endif
-        case '!':   /*
-                 * MUX entry/MUSH entry/MUSE non-zoned entry 
-                 */
+        case '!':   // MUX entry/MUSH entry/MUSE non-zoned entry
             if (deduce_version) {
                 g_format = F_MUX;
                 g_version = 1;
@@ -1833,22 +1696,22 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 s_Contents(i, getref(f));
                 s_Exits(i, getref(f));
                 s_Next(i, getref(f));
-                /*
-                 * have no equivalent to multi-parents yet,
-                 * so we have to throw
-                 * them away... 
-                 */
 
-                if (read_dark_mpar) {
-                    /*
-                     * Parents 
-                     */
+                // have no equivalent to multi-parents yet,
+                // so we have to throw them away...
+                //
+                if (read_dark_mpar)
+                {
+                    // Parents
+                    //
                     getlist_discard(f, i, 1);
-                    /*
-                     * Children 
-                     */
+
+                    // Children
+                    //
                     getlist_discard(f, i, 0);
-                } else {
+                }
+                else
+                {
                     s_Parent(i, getref(f));
                 }
 
@@ -1903,32 +1766,31 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (read_pern_powers)
                     (void)getref(f);
 
-                /*
-                 * Kalkin's extra two powers words... 
-                 */
-                if (read_dark_threepow) {
+                // Kalkin's extra two powers words...
+                //
+                if (read_dark_threepow)
+                {
                     (void)getref(f);
                     (void)getref(f);
                 }
-                /*
-                 * Kalkin's @class 
-                 */
+
+                // Kalkin's @class
+                //
                 if (read_dark_class)
                     (void)getref(f);
 
-                /*
-                 * Kalkin put his creation times BEFORE * * * 
-                 * 
-                 * *  * * channels * unlike standard Penn... 
-                 */
-
+                // Kalkin put his creation times BEFORE channels
+                // unlike standard Penn...
+                //
                 if (read_dark_mc)
                 {
                     (void)getref(f);
                     (void)getref(f);
                 }
                 if (read_pern_comm || read_dark_comm)
+                {
                     (void)getref(f);
+                }
 
                 if (read_pern_warnings)
                     (void)getref(f);
@@ -1938,19 +1800,21 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     (void)getref(f);
                     (void)getref(f);
                 }
-                /*
-                 * In Penn, clear the player's parent. 
-                 */
+
+                // In Penn, clear the player's parent.
+                //
                 if (isPlayer(i))
                 {
                     s_Parent(i, NOTHING);
                 }
                 if (!get_list(f, i, read_new_strings))
                 {
-                    Log.printf("\nError reading attrs for object #%d\n", i);
+                    Log.printf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
                     return -1;
                 }
-            } else {
+            }
+            else
+            {
 #endif
                 if (read_name)
                 {
@@ -2004,86 +1868,69 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     s_Zone(i, NOTHING);
                 }
-
 #endif
 
-                /*
-                 * CONTENTS and EXITS 
-                 */
-
+                // CONTENTS and EXITS
+                //
                 s_Contents(i, getref(f));
                 s_Exits(i, getref(f));
 
-                /*
-                 * LINK 
-                 */
-
+                // LINK
+                //
                 if (read_link)
                     s_Link(i, getref(f));
                 else
                     s_Link(i, NOTHING);
 
-                /*
-                 * NEXT 
-                 */
-
+                // NEXT
+                //
                 s_Next(i, getref(f));
 
-                /*
-                 * LOCK
-                 */
-
-                if (read_key) {
+                // LOCK
+                //
+                if (read_key)
+                {
                     tempbool = getboolexp(f);
                     atr_add_raw(i, A_LOCK,
                     unparse_boolexp_quiet(1, tempbool));
                     free_boolexp(tempbool);
                 }
-                /*
-                 * OWNER 
-                 */
 
+                // OWNER
+                //
                 s_Owner(i, getref(f));
 
-                /*
-                 * PARENT: PennMUSH uses this field for ZONE
-                 * (which we  use as PARENT if we
-                 * didn't already read in a  
-                 * non-NOTHING parent. 
-                 */
-
-                if (read_parent) {
+                // PARENT: PennMUSH uses this field for ZONE (which we use as
+                // PARENT if we didn't already read in a non-NOTHING parent.)
+                //
+                if (read_parent)
+                {
                     s_Parent(i, getref(f));
-                } else {
+                }
+                else
+                {
                     s_Parent(i, NOTHING);
                 }
 
-                /*
-                 * PENNIES 
-                 */
-
-                if (read_money)     /*
-                             *  if not fix in
-                             * unscraw_foreign  
-                             */
+                // PENNIES
+                //
+                if (read_money)     // if not fix in unscraw_foreign
                     s_Pennies(i, getref(f));
 
-                /*
-                 * FLAGS 
-                 */
-
+                // FLAGS
+                //
                 f1 = getref(f);
                 if (read_extflags)
                     f2 = getref(f);
                 else
                     f2 = 0;
-                
+
                 if (read_3flags)
                     f3 = getref(f);
                 else
                     f3 = 0;
 
-#ifdef STANDALONE                   
+#ifdef STANDALONE
                 upgrade_flags(&f1, &f2, &f3, i, g_format, g_version);
 #endif
                 s_Flags(i, f1);
@@ -2092,10 +1939,8 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
 
 #ifdef STANDALONE
-                /*
-                 * POWERS from MUSE.  Discard. 
-                 */
-
+                // POWERS from MUSE.  Discard.
+                //
                 if (read_powers_any ||
                     ((Typeof(i) == TYPE_PLAYER) && read_powers_player))
                     (void)getstring_noalloc(f, 0);
@@ -2107,48 +1952,40 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     s_Powers(i, f1);
                     s_Powers2(i, f2);
                 }
-                
-                /*
-                 * ATTRIBUTES 
-                 */
 
+                // ATTRIBUTES
+                //
                 if (read_attribs)
                 {
                     if (!get_list(f, i, read_new_strings))
                     {
-                        Log.printf("\nError reading attrs for object #%d\n", i);
+                        Log.printf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
                         return -1;
                     }
                 }
 
 #ifdef STANDALONE
-                /*
-                 * PARENTS from MUSE.  Ewwww. 
-                 */
-
+                // PARENTS from MUSE.  Ewwww.
+                //
                 if (read_muse_parents) {
                     getlist_discard(f, i, 1);
                     getlist_discard(f, i, 0);
                 }
-                /*
-                 * ATTRIBUTE DEFINITIONS from MUSE.  Ewwww. * 
-                 * Ewwww. 
-                 */
 
+                // ATTRIBUTE DEFINITIONS from MUSE.  Ewwww.
+                //
                 if (read_muse_atrdefs) {
                     get_atrdefs_discard(f);
                 }
-                /*
-                 * Fix up MUSH 2.2's weird quota system 
-                 */
+
+                // Fix up MUSH 2.2's weird quota system
+                //
                 if ((g_format == F_MUSH) && (g_version == 8))
                     fix_typed_quotas(i);
 
 #endif
-                /*
-                 * check to see if it's a player 
-                 */
-
+                // check to see if it's a player
+                //
                 if (Typeof(i) == TYPE_PLAYER) {
                     c_Connected(i);
                 }
@@ -2156,25 +1993,21 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
 #endif
             break;
-        case '*':   /*
-                 * EOF marker 
-                 */
+        case '*':   // EOF marker
             tstr = getstring_noalloc(f, 0);
             if (strncmp(tstr, "**END OF DUMP***", 16))
             {
-                Log.printf("\nBad EOF marker at object #%d\n", i);
+                Log.printf(ENDLINE "Bad EOF marker at object #%d" ENDLINE, i);
                 return -1;
             }
-            else 
+            else
             {
 #ifdef STANDALONE
-                Log.WriteString("\n");
+                Log.WriteString(ENDLINE);
                 Log.Flush();
 #endif
-                /*
-                 * Fix up bizarro foreign DBs 
-                 */
-
+                // Fix up bizarro foreign DBs
+                //
 #ifdef STANDALONE
                 unscraw_foreign(g_format, g_version, g_flags);
 #endif
@@ -2190,11 +2023,11 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
         default:
             if (Tiny_IsPrint[(unsigned char)ch])
             {
-                Log.printf("\nIllegal character '%c' near object #%d\n", ch, i);
+                Log.printf(ENDLINE "Illegal character '%c' near object #%d" ENDLINE, ch, i);
             }
             else
             {
-                Log.printf("\nIllegal character 0x%02x near object #%d\n", ch, i);
+                Log.printf(ENDLINE "Illegal character 0x%02x near object #%d" ENDLINE, ch, i);
             }
             return -1;
         }
@@ -2325,7 +2158,7 @@ dbref db_write(FILE *f, int format, int version)
 
 #ifndef MEMORY_BASED
     al_store();
-#endif // MEMORY_BASED
+#endif
 
     switch (format)
     {
@@ -2333,7 +2166,7 @@ dbref db_write(FILE *f, int format, int version)
         flags = version;
         break;
     default:
-        Log.WriteString("Can only write MUX format.\n");
+        Log.WriteString("Can only write MUX format." ENDLINE);
         return -1;
     }
 #ifdef STANDALONE
@@ -2343,7 +2176,7 @@ dbref db_write(FILE *f, int format, int version)
     i = mudstate.attr_next;
     fprintf(f, "+X%d\n+S%d\n+N%d\n", flags, mudstate.db_top, i);
     fprintf(f, "-R%d\n", mudstate.record_players);
-    
+
     // Dump user-named attribute info.
     //
     vp = vattr_first();
@@ -2387,7 +2220,7 @@ dbref db_write(FILE *f, int format, int version)
             fflush(stderr);
         }
         iDotCounter--;
-#endif // STANDALONE
+#endif
 
         if (!(isGarbage(i)))
         {
@@ -2401,7 +2234,7 @@ dbref db_write(FILE *f, int format, int version)
     }
     fputs("***END OF DUMP***\n", f);
 #ifdef STANDALONE
-    Log.WriteString("\n");
+    Log.WriteString(ENDLINE);
     Log.Flush();
 #endif
     return mudstate.db_top;
