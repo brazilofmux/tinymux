@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.43 2003-02-16 20:58:49 sdennis Exp $
+// $Id: stringutil.cpp,v 1.44 2003-02-17 01:51:11 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -609,7 +609,7 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
         // typically).
         //
         const char *p = pANSI;
-        while (mux_isdigit[(unsigned char)*p])
+        while (mux_isdigit(*p))
         {
             p++;
         }
@@ -2100,7 +2100,7 @@ long mux_atol(const char *pString)
     //
     unsigned int c1;
     unsigned int c0 = pString[0];
-    if (!mux_isdigit[(unsigned char)c0])
+    if (!mux_isdigit(c0))
     {
         while (mux_isspace[(unsigned char)pString[0]])
         {
@@ -2113,7 +2113,7 @@ long mux_atol(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!mux_isdigit[(unsigned char)c0])
+        if (!mux_isdigit(c0))
         {
             return 0;
         }
@@ -2122,7 +2122,7 @@ long mux_atol(const char *pString)
     do
     {
         c1 = pString[1];
-        if (mux_isdigit[(unsigned char)c1])
+        if (mux_isdigit(c1))
         {
             sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
             pString += 2;
@@ -2132,7 +2132,7 @@ long mux_atol(const char *pString)
             sum = 10 * sum + (c0-'0');
             break;
         }
-    } while (mux_isdigit[(unsigned char)(c0 = pString[0])]);
+    } while (mux_isdigit(c0 = pString[0]));
 
     // Interpret sign
     //
@@ -2152,7 +2152,7 @@ INT64 mux_atoi64(const char *pString)
     //
     unsigned int c1;
     unsigned int c0 = pString[0];
-    if (!mux_isdigit[(unsigned char)c0])
+    if (!mux_isdigit(c0))
     {
         while (mux_isspace[(unsigned char)pString[0]])
         {
@@ -2165,7 +2165,7 @@ INT64 mux_atoi64(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!mux_isdigit[(unsigned char)c0])
+        if (!mux_isdigit(c0))
         {
             return 0;
         }
@@ -2174,7 +2174,7 @@ INT64 mux_atoi64(const char *pString)
     do
     {
         c1 = pString[1];
-        if (mux_isdigit[(unsigned char)c1])
+        if (mux_isdigit(c1))
         {
             sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
             pString += 2;
@@ -2184,7 +2184,7 @@ INT64 mux_atoi64(const char *pString)
             sum = 10 * sum + (c0-'0');
             break;
         }
-    } while (mux_isdigit[(unsigned char)(c0 = pString[0])]);
+    } while (mux_isdigit(c0 = pString[0]));
 
     // Interpret sign
     //
@@ -2302,7 +2302,7 @@ INT64 mux_atobcd(const char *pString)
     // Convert ASCII digits
     //
     unsigned int c0 = pString[0];
-    if (!mux_isdigit[(unsigned char)c0])
+    if (!mux_isdigit(c0))
     {
         while (mux_isspace[(unsigned char)pString[0]])
         {
@@ -2315,7 +2315,7 @@ INT64 mux_atobcd(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!mux_isdigit[(unsigned char)c0])
+        if (!mux_isdigit(c0))
         {
             return 0;
         }
@@ -2326,7 +2326,7 @@ INT64 mux_atobcd(const char *pString)
         sum = (sum << 4) | (c0 - '0');
         pString++;
         c0 = pString[0];
-    } while (mux_isdigit[(unsigned char)c0]);
+    } while (mux_isdigit(c0));
 
     sum &= BCD_MASK;
 
@@ -2356,7 +2356,7 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
     //
     unsigned char ch0;
     pfr->pMeat = str;
-    if (  !mux_isdigit[(unsigned char)*str]
+    if (  !mux_isdigit(*str)
        && *str != '.')
     {
         while (mux_isspace[(unsigned char)*str])
@@ -2376,7 +2376,7 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
             str++;
         }
 
-        if (  !mux_isdigit[(unsigned char)*str]
+        if (  !mux_isdigit(*str)
            && *str != '.')
         {
             // Look for three magic strings.
@@ -2442,7 +2442,7 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
     // we either have a digit or a decimal point.
     //
     pfr->pDigitsA = str;
-    while (mux_isdigit[(unsigned char)*str])
+    while (mux_isdigit(*str))
     {
         pfr->nDigitsA++;
         str++;
@@ -2454,7 +2454,7 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
     }
 
     pfr->pDigitsB = str;
-    while (mux_isdigit[(unsigned char)*str])
+    while (mux_isdigit(*str))
     {
         pfr->nDigitsB++;
         str++;
@@ -2483,13 +2483,14 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
             str++;
         }
         pfr->pDigitsC = str;
-        while (mux_isdigit[(unsigned char)*str])
+        while (mux_isdigit(*str))
         {
             pfr->nDigitsC++;
             str++;
         }
 
-        if (pfr->nDigitsC < 1 || 4 < pfr->nDigitsC)
+        if (  pfr->nDigitsC < 1
+           || 4 < pfr->nDigitsC)
         {
             return false;
         }
@@ -2776,7 +2777,7 @@ bool is_integer(char *str, int *pDigits)
 
     // Need at least 1 integer
     //
-    if (!mux_isdigit[(unsigned char)*str])
+    if (!mux_isdigit(*str))
     {
         return false;
     }
@@ -2787,7 +2788,7 @@ bool is_integer(char *str, int *pDigits)
     {
         str++;
         nDigits++;
-    } while (mux_isdigit[(unsigned char)*str]);
+    } while (mux_isdigit(*str));
 
     if (pDigits)
     {
@@ -2830,14 +2831,14 @@ bool is_rational(char *str)
     // Need at least one digit.
     //
     bool got_one = false;
-    if (mux_isdigit[(unsigned char)*str])
+    if (mux_isdigit(*str))
     {
         got_one = true;
     }
 
     // The number (int)
     //
-    while (mux_isdigit[(unsigned char)*str])
+    while (mux_isdigit(*str))
     {
         str++;
     }
@@ -2851,7 +2852,7 @@ bool is_rational(char *str)
 
     // Need at least one digit
     //
-    if (mux_isdigit[(unsigned char)*str])
+    if (mux_isdigit(*str))
     {
         got_one = true;
     }
@@ -2863,7 +2864,7 @@ bool is_rational(char *str)
 
     // The number (fract)
     //
-    while (mux_isdigit[(unsigned char)*str])
+    while (mux_isdigit(*str))
     {
         str++;
     }

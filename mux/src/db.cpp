@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.22 2003-02-16 20:34:05 sdennis Exp $
+// $Id: db.cpp,v 1.23 2003-02-17 01:51:11 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -314,7 +314,7 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
         }
 
         if (  *dp++ == '#'
-           && mux_isdigit[(unsigned char)*dp])
+           && mux_isdigit(*dp))
         {
             target = mux_atol(dp);
             if (mudstate.bStandAlone)
@@ -1493,7 +1493,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
     }
     int tmp_owner = 0;
     unsigned int ch = *cp;
-    while (mux_isdigit[(unsigned char)ch])
+    while (mux_isdigit(ch))
     {
         cp++;
         tmp_owner = 10*tmp_owner + (ch-'0');
@@ -1515,7 +1515,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
     //
     int tmp_flags = 0;
     ch = *cp;
-    while (mux_isdigit[(unsigned char)ch])
+    while (mux_isdigit(ch))
     {
         cp++;
         tmp_flags = 10*tmp_flags + (ch-'0');
@@ -2477,17 +2477,17 @@ void db_make_minimal(void)
 dbref parse_dbref(const char *s)
 {
     const char *p;
-    int x;
 
     // Enforce completely numeric dbrefs
     //
     for (p = s; *p; p++)
     {
-        if (!mux_isdigit[(unsigned char)*p])
+        if (!mux_isdigit(*p))
+        {
             return NOTHING;
+        }
     }
-
-    x = mux_atol(s);
+    int x = mux_atol(s);
     return ((x >= 0) ? x : NOTHING);
 }
 
