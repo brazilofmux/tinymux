@@ -1,7 +1,8 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.40 2001-11-08 03:48:57 sdennis Exp $
+// $Id: predicates.cpp,v 1.41 2001-11-20 04:54:40 sdennis Exp $
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -128,12 +129,10 @@ int could_doit(dbref player, dbref thing, int locknum)
 
 int can_see(dbref player, dbref thing, int can_see_loc)
 {
-    /*
-     * Don't show if all the following apply: * Sleeping players should * 
-     * 
-     * *  * * not be seen. * The thing is a disconnected player. * The
-     * player * is  *  * * not a puppet. 
-     */
+    // Don't show if all the following apply: Sleeping players should not be
+    // seen.  The thing is a disconnected player.  The player is not a
+    // puppet.
+    //
     if (mudconf.dark_sleepers && isPlayer(thing) &&
         !Connected(thing) && !Puppet(thing))
     {
@@ -141,20 +140,18 @@ int can_see(dbref player, dbref thing, int can_see_loc)
     }
 
     /*
-     * You don't see yourself or exits 
+     * You don't see yourself or exits
      */
     if ((player == thing) || isExit(thing))
     {
         return 0;
     }
 
-    /*
-     * If loc is not dark, you see it if it's not dark or you control it.
-     * * * * * If loc is dark, you see it if you control it.  Seeing your
-     * * own * * * dark objects is controlled by mudconf.see_own_dark. *
-     * In * dark *  * locations, you also see things that are LIGHT and
-     * !DARK. 
-     */
+    // If loc is not dark, you see it if it's not dark or you control it.  If
+    // loc is dark, you see it if you control it.  Seeing your own dark
+    // objects is controlled by mudconf.see_own_dark.  In dark locations, you
+    // also see things that are LIGHT and !DARK.
+    //
     if (can_see_loc)
     {
         return (!Dark(thing) ||
@@ -174,21 +171,21 @@ static int pay_quota(dbref who, int cost)
     char buf[20], *quota_str;
 
     /*
-     * If no cost, succeed 
+     * If no cost, succeed
      */
 
     if (cost <= 0)
         return 1;
 
     /*
-     * determine quota 
+     * determine quota
      */
 
     quota = Tiny_atol(quota_str = atr_get(Owner(who), A_RQUOTA, &aowner, &aflags));
     free_lbuf(quota_str);
 
     /*
-     * enough to build?  Wizards always have enough. 
+     * enough to build?  Wizards always have enough.
      */
 
     quota -= cost;
@@ -253,7 +250,7 @@ int payfor(dbref who, int cost)
 }
 
 #endif /*
-        * STANDALONE 
+        * STANDALONE
         */
 
 void add_quota(dbref who, int payment)
@@ -418,7 +415,7 @@ int ok_password(const char *password, dbref player)
     int num_upper = 0;
     int num_special = 0;
     int num_lower = 0;
-    
+
     if (*password == '\0')
     {
 #ifndef STANDALONE
@@ -426,7 +423,7 @@ int ok_password(const char *password, dbref player)
 #endif
         return 0;
     }
-    
+
     for (scan = password; *scan; scan++)
     {
         if (  !Tiny_IsPrint[(unsigned char)*scan]
@@ -444,7 +441,7 @@ int ok_password(const char *password, dbref player)
         else if ((*scan != '\'') && (*scan != '-'))
             num_special++;
     }
-    
+
     // Needed.  Change it if you like, but be sure yours is the same.
     //
     if ((strlen(password) == 13) &&
@@ -456,7 +453,7 @@ int ok_password(const char *password, dbref player)
 #endif
         return 0;
     }
-    
+
 #ifndef STANDALONE
     if (mudconf.safer_passwords)
     {
@@ -609,24 +606,24 @@ void do_addcommand
         notify(player, "Sorry.");
         return;
     }
-    
+
     if (  !parse_attrib(player, command, &thing, &atr)
        || atr == NOTHING)
     {
         notify(player, "No such attribute.");
         return;
     }
-    
+
     // Let's make this case insensitive...
     //
     _strlwr(name);
     old = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
-    
+
     if (old && (old->callseq & CS_ADDED))
     {
         // If it's already found in the hash table, and it's being
         // added using the same object and attribute...
-        //           
+        //
         for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
         {
             if ((nextp->thing == thing) && (nextp->atr == atr))
@@ -635,7 +632,7 @@ void do_addcommand
                 return;
             }
         }
-    
+
         // Else tack it on to the existing entry...
         //
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
@@ -654,7 +651,7 @@ void do_addcommand
             //
             hashdeleteLEN(name, strlen(name), &mudstate.command_htab);
         }
-        
+
         cmd = (CMDENT *)MEMALLOC(sizeof(CMDENT));
         ISOUTOFMEMORY(cmd);
         cmd->cmdname = StringClone(name);
@@ -676,9 +673,9 @@ void do_addcommand
         add->name = StringClone(name);
         add->next = NULL;
         cmd->addent = add;
-    
+
         hashaddLEN(name, strlen(name), (int *)cmd, &mudstate.command_htab);
-        
+
         if (old)
         {
             // Fix any aliases of this command.
@@ -688,7 +685,7 @@ void do_addcommand
             hashaddLEN(p, strlen(p), (int *)old, &mudstate.command_htab);
         }
     }
-    
+
     // We reset the one letter commands here so you can overload them.
     //
     set_prefix_cmds();
@@ -706,17 +703,16 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
     // Let's make this case insensitive...
     //
     _strlwr(name);
-     
+
     if (*name)
     {
         old = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
-        
+
         if (old && (old->callseq & CS_ADDED))
         {
-            
-            /* If it's already found in the hash table, and it's being
-               added using the same object and attribute... */
-               
+            // If it's already found in the hash table, and it's being added
+            // using the same object and attribute...
+            //
             for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
             {
                 notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, ((ATTR *)atr_num(nextp->atr))->name));
@@ -736,9 +732,9 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
         {
 
             old = (CMDENT *)hashfindLEN(keyname, nKeyLength, &mudstate.command_htab);
-        
+
             if (old && (old->callseq & CS_ADDED)) {
-                
+
                 for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next) {
                     if (strncmp(keyname, nextp->name, nKeyLength))
                         continue;
@@ -773,7 +769,7 @@ void do_delcommand
         notify(player, "Sorry.");
         return;
     }
-    
+
     if (*command)
     {
         if (!parse_attrib(player, command, &thing, &atr) || (atr == NOTHING))
@@ -782,13 +778,13 @@ void do_delcommand
             return;
         }
     }
-    
+
     // Let's make this case insensitive...
     //
     _strlwr(name);
-     
+
     old = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
-    
+
     if (old && (old->callseq & CS_ADDED))
     {
         char *p__Name = tprintf("__%s", name);
@@ -882,10 +878,8 @@ void handle_prog(DESC *d, char *message)
     dbref aowner;
     int aflags, i;
 
-    /*
-     * Allow the player to pipe a command while in interactive mode. 
-     */
-
+    // Allow the player to pipe a command while in interactive mode.
+    //
     if (*message == '|')
     {
         do_command(d, message + 1, 1);
@@ -904,9 +898,8 @@ void handle_prog(DESC *d, char *message)
         NOTHING, 0, cmd, (char **)&message, 1,
         (char **)d->program_data->wait_regs);
 
-    /* First, set 'all' to a descriptor we find for this player */
-    
-
+    // First, set 'all' to a descriptor we find for this player.
+    //
     all = (DESC *)hashfindLEN(&(d->player), sizeof(d->player), &mudstate.desc_htab) ;
 
     if (all && all->program_data)
@@ -928,7 +921,7 @@ void handle_prog(DESC *d, char *message)
         DESC_ITER_PLAYER(d->player, all)
             all->program_data = NULL;
     }
-    
+
     atr_clr(d->player, A_PROGCMD);
     free_lbuf(cmd);
 }
@@ -1135,13 +1128,13 @@ void do_restart(dbref player, dbref cause, int key)
         ENDLOG;
         return;
     }
-    
+
     raw_broadcast(0, "Game: Restart by %s, please wait.", Name(Owner(player)));
     STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
     log_text("Restart by ");
     log_name(player);
     ENDLOG;
-    
+
     dump_database_internal(DUMP_I_RESTART);
     SYNC;
     CLOSE;
@@ -1196,13 +1189,13 @@ void do_backup(dbref player, int cause, int key)
         notify(player, "Dumping. Please try again later.");
     }
 #endif // !WIN32
-   
+
     raw_broadcast(0, "GAME: Backing up database. Please wait.");
     STARTLOG(LOG_ALWAYS, "WIZ", "BACK");
     log_text((char *)"Backup by ");
     log_name(player);
     ENDLOG;
-     
+
     dump_database_internal(DUMP_I_FLAT);
     system(tprintf("./_backupflat.sh %s.FLAT 1>&2", mudconf.outdb));
     raw_broadcast(0, "GAME: Backup finished.");
@@ -1242,31 +1235,25 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int c
     int control;
     char *buff, *start, *place, *s1, *d1, *temp;
 
-    /*
-     * First, check normally 
-     */
-
+    // First, check normally.
+    //
     if (Good_obj(dflt))
         return dflt;
 
-    /*
-     * Didn't find it directly.  Recursively do a contents check 
-     */
-
+    // Didn't find it directly.  Recursively do a contents check.
+    //
     start = target;
-    while (*target) {
-
-        /*
-         * Fail if no ' characters 
-         */
-
+    while (*target)
+    {
+        // Fail if no ' characters.
+        //
         place = target;
         target = (char *)strchr(place, '\'');
         if ((target == NULL) || !*target)
             return dflt;
 
         /*
-         * If string started with a ', skip past it 
+         * If string started with a ', skip past it
          */
 
         if (place == target) {
@@ -1274,7 +1261,7 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int c
             continue;
         }
         /*
-         * If next character is not an s or a space, skip past 
+         * If next character is not an s or a space, skip past
          */
 
         temp = target++;
@@ -1283,33 +1270,27 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int c
         if ((*target != 's') && (*target != 'S') && (*target != ' '))
             continue;
 
-        /*
-         * If character was not a space make sure the following * * * 
-         * 
-         * * character is a space. 
-         */
-
-        if (*target != ' ') {
+        // If character was not a space make sure the following character is
+        // a space.
+        //
+        if (*target != ' ')
+        {
             target++;
             if (!*target)
                 return dflt;
             if (*target != ' ')
                 continue;
         }
-        /*
-         * Copy the container name to a new buffer so we can * * * *
-         * terminate it. 
-         */
 
+        // Copy the container name to a new buffer so we can terminate it.
+        //
         buff = alloc_lbuf("is_posess");
         for (s1 = start, d1 = buff; *s1 && (s1 < temp); *d1++ = (*s1++)) ;
         *d1 = '\0';
 
-        /*
-         * Look for the container here and in our inventory.  Skip *
-         * * * * past if we can't find it. 
-         */
-
+        // Look for the container here and in our inventory.  Skip past if we
+        // can't find it.
+        //
         init_match(thing, buff, NOTYPE);
         if (player == thing) {
             match_neighbor();
@@ -1324,28 +1305,25 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int c
             dflt = promote_dflt(dflt, result1);
             continue;
         }
-        /*
-         * If we don't control it and it is either dark or opaque, *
-         * * * * skip past. 
-         */
 
+        // If we don't control it and it is either dark or opaque, skip past.
+        //
         control = Controls(player, result1);
         if ((Dark(result1) || Opaque(result1)) && !control) {
             dflt = promote_dflt(dflt, NOTHING);
             continue;
         }
-        /*
-         * Validate object has the ENTER bit set, if requested 
-         */
 
-        if ((check_enter) && !Enter_ok(result1) && !control) {
+        // Validate object has the ENTER bit set, if requested.
+        //
+        if ((check_enter) && !Enter_ok(result1) && !control)
+        {
             dflt = promote_dflt(dflt, NOPERM);
             continue;
         }
-        /*
-         * Look for the object in the container 
-         */
 
+        // Look for the object in the container.
+        //
         init_match(result1, target, NOTYPE);
         match_possession();
         result = match_result();
@@ -1411,15 +1389,12 @@ int parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
 {
     char *str;
 
-    /*
-     * get name up to / 
-     */
+    // Get name up to '/'.
+    //
     for (str = thing; *str && (*str != '/'); str++) ;
 
-    /*
-     * If no / in string, return failure 
-     */
-
+    // If no '/' in string, return failure.
+    //
     if (!*str) {
         *after = NULL;
         *it = NOTHING;
@@ -1429,7 +1404,7 @@ int parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
     *after = str;
 
     /*
-     * Look for the object 
+     * Look for the object.
      */
 
     init_match(player, thing, NOTYPE);
@@ -1437,7 +1412,7 @@ int parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
     *it = match_result();
 
     /*
-     * Return status of search 
+     * Return status of search.
      */
 
     return (Good_obj(*it));
@@ -1455,7 +1430,7 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
     if (parse_thing_slash(player, tbuf, &str, it)) {
 
         /*
-         * <obj>/<lock> syntax, use the named lock 
+         * <obj>/<lock> syntax, use the named lock.
          */
 
         anum = search_nametab(player, lock_sw, str);
@@ -1467,7 +1442,7 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
     } else {
 
         /*
-         * Not <obj>/<lock>, do a normal get of the default lock 
+         * Not <obj>/<lock>, do a normal get of the default lock.
          */
 
         *it = match_thing(player, what);
@@ -1480,7 +1455,7 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
     }
 
     /*
-     * Get the attribute definition, fail if not found 
+     * Get the attribute definition, fail if not found.
      */
 
     free_lbuf(tbuf);
@@ -1493,7 +1468,7 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
 }
 
 #endif /*
-        * STANDALONE 
+        * STANDALONE
         */
 
 /*
@@ -1552,7 +1527,7 @@ int locatable(dbref player, dbref it, dbref cause)
     int findable_room;
 
     /*
-     * No sense if trying to locate a bad object 
+     * No sense if trying to locate a bad object
      */
 
     if (!Good_obj(it))
@@ -1560,13 +1535,10 @@ int locatable(dbref player, dbref it, dbref cause)
 
     loc_it = where_is(it);
 
-    /*
-     * Succeed if we can examine the target, if we are the target, * if * 
-     * 
-     * *  * * we can examine the location, if a wizard caused the lookup, 
-     * * or  * *  * if the target caused the lookup. 
-     */
-
+    // Succeed if we can examine the target, if we are the target, if we can
+    // examine the location, if a wizard caused the lookup, or if the target
+    // caused the lookup.
+    //
     if (Examinable(player, it) ||
         Find_Unfindable(player) ||
         (loc_it == player) ||
@@ -1582,19 +1554,15 @@ int locatable(dbref player, dbref it, dbref cause)
     else
         findable_room = 1;
 
-    /*
-     * Succeed if we control the containing room or if the target is * *
-     * * * findable and the containing room is not unfindable. 
-     */
-
+    // Succeed if we control the containing room or if the target is findable
+    // and the containing room is not unfindable.
+    //
     if (((room_it != NOTHING) && Examinable(player, room_it)) ||
         Find_Unfindable(player) || (Findable(it) && findable_room))
         return 1;
 
-    /*
-     * We can't do it. 
-     */
-
+    // We can't do it.
+    //
     return 0;
 }
 
@@ -1769,7 +1737,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
         notify(player, def);
     }
     /*
-     * message to neighbors 
+     * message to neighbors
      */
 
     if ((owhat > 0) && Has_location(player) && Good_obj(loc = Location(player)))
@@ -1901,7 +1869,7 @@ void do_verb(dbref player, dbref cause, int key, char *victim_str, char *args[],
 
     // Check permissions.  There are two possibilities:
     //
-    //    1. Player controls both victim and actor. In this case, 
+    //    1. Player controls both victim and actor. In this case,
     //       victim runs his action list.
     //
     //    2. Player controls actor. In this case victim does not run
@@ -1957,7 +1925,7 @@ void do_verb(dbref player, dbref cause, int key, char *victim_str, char *args[],
     {
         owhatd = args[4];
     }
-    
+
     // Get action attribute.
     //
     if (nargs >= 6)
