@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.30 2001-10-17 17:30:08 sdennis Exp $
+// $Id: db_rw.cpp,v 1.31 2001-10-17 18:42:30 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -459,7 +459,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     dbref i, anum;
     int ch;
     const char *tstr;
-    int read_money, read_timestamps;
     int aflags, f1, f2, f3;
     BOOLEXP *tempbool;
     char *buff;
@@ -477,8 +476,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     BOOL read_attribs = TRUE;
     BOOL read_name = TRUE;
     BOOL read_key = TRUE;
-    read_money = 1;
-    read_timestamps = 0;
+    BOOL read_money = TRUE;
+
+    int nName;
+    BOOL bValid;
+    char *pName;
+
 #ifdef STANDALONE
     Log.WriteString("Reading ");
     Log.Flush();
@@ -497,16 +500,16 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
         iDotCounter--;
 #endif
 
-        switch (ch = getc(f))
+        ch = getc(f);
+        switch (ch)
         {
         case '-':   // Misc tag
-            switch (ch = getc(f))
+            ch = getc(f);
+            if (ch == 'R')
             {
-            case 'R':   // Record number of players
+                // Record number of players
+                //
                 mudstate.record_players = getref(f);
-                break;
-            default:
-                getstring_noalloc(f, 0);
             }
             break;
 
@@ -514,51 +517,11 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             // MUX header
             //
-            switch (ch = getc(f))
+            ch = getc(f);
+            if (ch == 'A')
             {
-            case 'X':
-
-                // MUX VERSION
+                // USER-NAMED ATTRIBUTE
                 //
-                if (header_gotten)
-                {
-                    Log.tinyprintf(ENDLINE "Duplicate MUX version header entry at object %d, ignored." ENDLINE, i);
-                    tstr = getstring_noalloc(f, 0);
-                    break;
-                }
-                header_gotten = TRUE;
-                g_format = F_MUX;
-                g_version = getref(f);
-                Tiny_Assert((g_version & MANDFLAGS) == MANDFLAGS);
-
-                // Otherwise extract feature flags
-                //
-                if (g_version & V_GDBM)
-                {
-                    read_attribs = FALSE;
-                    read_name = !(g_version & V_ATRNAME);
-                }
-                read_key = !(g_version & V_ATRKEY);
-                read_money = !(g_version & V_ATRMONEY);
-                g_flags = g_version & ~V_MASK;
-
-                g_version &= V_MASK;
-                break;
-
-            case 'S':   // SIZE
-                if (size_gotten)
-                {
-                    Log.tinyprintf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
-                    tstr = getstring_noalloc(f, 0);
-                }
-                else
-                {
-                    mudstate.min_size = getref(f);
-                    size_gotten = TRUE;
-                }
-                break;
-
-            case 'A':   // USER-NAMED ATTRIBUTE
                 anum = getref(f);
                 tstr = getstring_noalloc(f, FALSE);
                 if (Tiny_IsDigit[(unsigned char)*tstr])
@@ -574,22 +537,61 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     aflags = mudconf.vattr_flags;
                 }
+                pName = MakeCanonicalAttributeName(tstr, &nName, &bValid);
+                if (bValid)
                 {
-                    int nName;
-                    BOOL bValid;
-                    char *pName = MakeCanonicalAttributeName(tstr, &nName, &bValid);
-                    if (bValid)
-                    {
-                        vattr_define_LEN(pName, nName, anum, aflags);
-                    }
+                    vattr_define_LEN(pName, nName, anum, aflags);
                 }
-                break;
+            }
+            else if (ch == 'X')
+            {
+                // MUX VERSION
+                //
+                if (header_gotten)
+                {
+                    Log.tinyprintf(ENDLINE "Duplicate MUX version header entry at object %d, ignored." ENDLINE, i);
+                    tstr = getstring_noalloc(f, 0);
+                }
+                else
+                {
+                    header_gotten = TRUE;
+                    g_format = F_MUX;
+                    g_version = getref(f);
+                    Tiny_Assert((g_version & MANDFLAGS) == MANDFLAGS);
 
-            case 'F':   // OPEN USER ATTRIBUTE SLOT
-                anum = getref(f);
-                break;
+                    // Otherwise extract feature flags
+                    //
+                    if (g_version & V_GDBM)
+                    {
+                        read_attribs = FALSE;
+                        read_name = !(g_version & V_ATRNAME);
+                    }
+                    read_key = !(g_version & V_ATRKEY);
+                    read_money = !(g_version & V_ATRMONEY);
+                    g_flags = g_version & ~V_MASK;
 
-            case 'N':   // NEXT ATTR TO ALLOC WHEN NO FREELIST
+                    g_version &= V_MASK;
+                }
+            }
+            else if (ch == 'S')
+            {
+                // SIZE
+                //
+                if (size_gotten)
+                {
+                    Log.tinyprintf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
+                    tstr = getstring_noalloc(f, 0);
+                }
+                else
+                {
+                    mudstate.min_size = getref(f);
+                    size_gotten = TRUE;
+                }
+            }
+            else if (ch == 'N')
+            {
+                // NEXT ATTR TO ALLOC WHEN NO FREELIST
+                //
                 if (nextattr_gotten)
                 {
                     Log.tinyprintf(ENDLINE "Duplicate next free vattr entry at object %d, ignored." ENDLINE, i);
@@ -600,9 +602,9 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     mudstate.attr_next = getref(f);
                     nextattr_gotten = TRUE;
                 }
-                break;
-
-            default:
+            }
+            else
+            {
                 Log.tinyprintf(ENDLINE "Unexpected character '%c' in MUX header near object #%d, ignored." ENDLINE, ch, i);
                 tstr = getstring_noalloc(f, 0);
             }
