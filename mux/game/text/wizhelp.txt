@@ -1849,8 +1849,15 @@ CONN_TIMEOUT
   CONFIG PARAMETER: conn_timeout <num>
   DEFAULT: 60
 
-  Specifies how many seconds a new network connection may remain open before
-  connecting to a character before being automatically disconnected.
+  If greater than zero, this parameter determines how many seconds a new
+  network connection may remain open while connecting to a character before
+  being automatically disconnected.
+
+  If zero or negative, this parameter effectively disables login-time
+  connection timeouts. While supported, disabling login-time connections is
+  not recommended.
+
+  Related Topics: idle_interval, idle_timeout.
 
 & CONTACT INFO
 CONTACT INFO
@@ -2753,9 +2760,13 @@ IDLE_TIMEOUT
   CONFIG PARAMETER: idle_timeout <secs>
   DEFAULT: 3600 (one hour)
 
-  Sets the amount of time that a player may remain idle before being
-  automatically disconnected.  Players idle longer than this parameter are
-  disconnected when the next check for idle players is done.
+  If greater than zero, this parameter determines the amount of time that a
+  player may remain idle before being automatically disconnected.  Idle
+  players by this measure are disconnected when the next check for idle
+  players is done.
+
+  If zero or negative, this parameter effectively disables idleness-based
+  connection timeouts.
 
   Related Topics: conn_timeout, idle_interval.
 
