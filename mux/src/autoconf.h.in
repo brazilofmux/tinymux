@@ -155,7 +155,7 @@
  * Load system-dependent header files.
  */
 
-#if !defined(STDC_HEADERS) || !defined(__STDC__) || __STDC__ != 1
+#if !defined(STDC_HEADERS)
 #error MUX requires standard headers.
 #endif
 
