@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.28 2001-03-15 13:14:50 sdennis Exp $
+// $Id: game.cpp,v 1.29 2001-06-29 18:00:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -25,7 +25,7 @@
 
 #ifdef RADIX_COMPRESSION
 #include "radix.h"
-#endif
+#endif // RADIX_COMPRESSION
 
 extern void NDECL(init_attrtab);
 extern void NDECL(init_cmdtab);
@@ -46,7 +46,7 @@ void NDECL(dump_database);
 void NDECL(pcache_sync);
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 static void NDECL(init_rlimit);
-#endif
+#endif // HAVE_SETRLIMIT RLIMIT_NOFILE
 
 int reserved;
 
@@ -55,11 +55,11 @@ extern CRITICAL_SECTION csDescriptorList;      // for thread synchronisation
 #else // WIN32
 #ifdef CONCENTRATE
 int conc_pid = 0;
-#endif
+#endif // CONCENTRATE
 #endif // WIN32
 #ifdef MEMORY_BASED
 int corrupt = 0;
-#endif
+#endif // MEMORY_BASED
 
 
 // used to allocate storage for temporary stuff, cleared before command
@@ -79,7 +79,7 @@ void do_dump(dbref player, dbref cause, int key)
 }
 
 /*
- * print out stuff into error file 
+ * print out stuff into error file
  */
 
 void NDECL(report)
@@ -113,13 +113,13 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
     regexp *re;
     int got_match;
     int i, len;
-    
+
     /*
      * Load the regexp pattern. This allocates memory which must be
      * later freed. A free() of the regexp does free all structures
      * under it.
      */
-    
+
     if ((re = regcomp(pattern)) == NULL)
     {
         /*
@@ -129,8 +129,8 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
          */
         return 0;
     }
-    
-    /* 
+
+    /*
      * Now we try to match the pattern. The relevant fields will
      * automatically be filled in by this.
      */
@@ -140,24 +140,24 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
         MEMFREE(re);
         return 0;
     }
-    
+
     /*
      * Now we fill in our args vector. Note that in regexp matching,
      * 0 is the entire string matched, and the parenthesized strings
      * go from 1 to 9. We DO PRESERVE THIS PARADIGM, for consistency
      * with other languages.
      */
-    
+
     for (i = 0; i < nargs; i++)
     {
         args[i] = NULL;
     }
-    
+
     /* Convenient: nargs and NSUBEXP are the same.
      * We are also guaranteed that our buffer is going to be LBUF_SIZE
      * so we can copy without fear.
      */
-    
+
     for (i = 0; (i < NSUBEXP) && (re->startp[i]) && (re->endp[i]); i++)
     {
         len = re->endp[i] - re->startp[i];
@@ -165,7 +165,7 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
         strncpy(args[i], re->startp[i], len);
         args[i][len] = '\0';        /* strncpy() does not null-terminate */
     }
-    
+
     MEMFREE(re);
     return 1;
 }
@@ -275,14 +275,14 @@ int atr_match(dbref thing, dbref player, char type, char *str, int check_parents
     dbref parent;
 
     /*
-     * If thing is halted, don't check anything 
+     * If thing is halted, don't check anything
      */
 
     if (Halted(thing))
         return 0;
 
     /*
-     * If not checking parents, just check the thing 
+     * If not checking parents, just check the thing
      */
 
     match = 0;
@@ -290,7 +290,7 @@ int atr_match(dbref thing, dbref player, char type, char *str, int check_parents
         return atr_match1(thing, thing, player, type, str, 0, 0);
 
     /*
-     * Check parents, ignoring halted objects 
+     * Check parents, ignoring halted objects
      */
 
     exclude = 0;
@@ -305,7 +305,7 @@ int atr_match(dbref thing, dbref player, char type, char *str, int check_parents
         {
             match = 1;
         }
-        else if (result < 0) 
+        else if (result < 0)
         {
             return match;
         }
@@ -474,7 +474,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
     FWDLIST *fp;
 
     /*
-     * If speaker is invalid or message is empty, just exit 
+     * If speaker is invalid or message is empty, just exit
      */
 
     if (!Good_obj(target) || !msg || !*msg)
@@ -498,38 +498,33 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             }
         }
     }
-#endif
+#endif // WOD_REALMS
 
-
-    /*
-     * Enforce a recursion limit 
-     */
-
+    // Enforce a recursion limit
+    //
     mudstate.ntfy_nest_lev++;
-    if (mudstate.ntfy_nest_lev >= mudconf.ntfy_nest_lim) {
+    if (mudstate.ntfy_nest_lev >= mudconf.ntfy_nest_lim)
+    {
         mudstate.ntfy_nest_lev--;
         return;
     }
-    
-    /*
-     * If we want NOSPOOF output, generate it.  It is only needed if 
-     * we are sending the message to the target object 
-     */
 
-    if (key & MSG_ME) {
+    // If we want NOSPOOF output, generate it.  It is only needed if we are
+    // sending the message to the target object.
+    //
+    if (key & MSG_ME)
+    {
         mp = msg_ns = alloc_lbuf("notify_check");
-        if (Nospoof(target) &&
-            (target != sender) &&
-            (target != mudstate.curr_enactor) &&
-            (target != mudstate.curr_player)) {
+        if (  Nospoof(target)
+           && target != sender
+           && target != mudstate.curr_enactor
+           && target != mudstate.curr_player)
+        {
 
-            /*
-             * I'd really like to use tprintf here but I can't 
-             * because the caller may have.
-             * notify(target, tprintf(...)) is quite common 
-             * in the code. 
-             */
-
+            // I'd really like to use tprintf here but I can't because the
+            // caller may have.  notify(target, tprintf(...)) is quite common
+            // in the code.
+            //
             tbuff = alloc_sbuf("notify_check.nospoof");
             safe_chr('[', msg_ns, &mp);
             safe_str(Name(sender), msg_ns, &mp);
@@ -556,7 +551,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
     }
 
     /*
-     * msg contains the raw message, msg_ns contains the NOSPOOFed msg 
+     * msg contains the raw message, msg_ns contains the NOSPOOFed msg
      */
 
     check_listens = Halted(target) ? 0 : 1;
@@ -585,7 +580,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                     raw_notify(target, msg_ns);
                 }
             }
-        }   
+        }
         if (!mudconf.player_listen)
         {
             check_listens = 0;
@@ -604,7 +599,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         {
             raw_notify(target, msg_ns);
         }
-        
+
         // Forward puppet message if it is for me.
         //
         has_neighbors = Has_location(target);
@@ -777,17 +772,14 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             }
         }
         /*
-         * Deliver message to contents 
+         * Deliver message to contents
          */
 
         if (((key & MSG_INV) || ((key & MSG_INV_L) && pass_listen)) &&
             (check_filter(target, sender, A_INFILTER, msg))) {
 
-            /*
-             * Don't prefix the message if we were given the * *
-             * * * MSG_NOPREFIX key. 
-             */
-
+            // Don't prefix the message if we were given the MSG_NOPREFIX key.
+            //
             if (key & MSG_S_OUTSIDE) {
                 buff = add_prefix(target, sender, A_INPREFIX,
                           msg, "");
@@ -804,7 +796,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                 free_lbuf(buff);
         }
         /*
-         * Deliver message to neighbors 
+         * Deliver message to neighbors
          */
 
         if (has_neighbors &&
@@ -830,7 +822,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             }
         }
         /*
-         * Deliver message to container 
+         * Deliver message to container
          */
 
         if (has_neighbors &&
@@ -860,7 +852,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
 void notify_except(dbref loc, dbref player, dbref exception, const char *msg, int key)
 {
     dbref first;
-    
+
     if (loc != exception)
     {
         notify_check(loc, player, msg, (MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A | key));
@@ -877,7 +869,7 @@ void notify_except(dbref loc, dbref player, dbref exception, const char *msg, in
 void notify_except2(dbref loc, dbref player, dbref exc1, dbref exc2, const char *msg)
 {
     dbref first;
-    
+
     if ((loc != exc1) && (loc != exc2))
     {
         notify_check(loc, player, msg, (MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A));
@@ -908,7 +900,7 @@ static void report_timecheck
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
     ltdPeriod = ltaNow - mudstate.cpu_count_from;
-    
+
     if (! (yes_log && (LOG_TIMEUSE & mudconf.log_options) != 0))
     {
         yes_log = 0;
@@ -916,7 +908,7 @@ static void report_timecheck
         log_name(player);
         log_text((char *) " checks object time use over ");
         log_number(ltdPeriod.ReturnSeconds());
-        log_text((char *) " seconds\n");
+        log_text((char *) " seconds" ENDLINE);
         ENDLOG;
     }
     else
@@ -925,12 +917,12 @@ static void report_timecheck
         log_name(player);
         log_text((char *) " checks object time use over ");
         log_number(ltdPeriod.ReturnSeconds());
-        log_text((char *) " seconds\n");
+        log_text((char *) " seconds" ENDLINE);
     }
-        
+
     obj_counted = 0;
     ltdTotal.Set100ns(0);
-    
+
     // Step through the db. Care only about the ones that are nonzero.
     //
     DO_WHOLE_DB(thing)
@@ -943,7 +935,7 @@ static void report_timecheck
             obj_counted++;
             if (yes_log)
             {
-                Log.printf("#%d\t%ld\n", thing, used_msecs);
+                Log.printf("#%d\t%ld" ENDLINE, thing, used_msecs);
             }
             if (yes_screen)
             {
@@ -955,21 +947,21 @@ static void report_timecheck
             }
         }
     }
-    
+
     if (yes_screen)
     {
         raw_notify(player,
             tprintf("Counted %d objects using %ld msecs over %d seconds.",
                 obj_counted, ltdTotal.ReturnMilliseconds(), ltdPeriod.ReturnSeconds()));
     }
-    
+
     if (yes_log)
     {
         Log.printf("Counted %d objects using %ld msecs over %d seconds.",
             obj_counted, ltdTotal.ReturnMilliseconds(), ltdPeriod.ReturnSeconds());
         end_log();
     }
-    
+
     if (yes_clear)
     {
         mudstate.cpu_count_from = ltaNow;
@@ -979,9 +971,9 @@ static void report_timecheck
 void do_timecheck(dbref player, dbref cause, int key)
 {
     int yes_screen, yes_log, yes_clear;
-    
+
     yes_screen = yes_log = yes_clear = 0;
-    
+
     if (key == 0)
     {
         // No switches, default to printing to screen and clearing counters.
@@ -998,7 +990,7 @@ void do_timecheck(dbref player, dbref cause, int key)
         if (key & TIMECHK_LOG)
             yes_log = 1;
     }
-    
+
     report_timecheck(player, yes_screen, yes_log, yes_clear);
 }
 
@@ -1029,8 +1021,8 @@ void do_shutdown(dbref player, dbref cause, int key, char *message)
     fd = open(mudconf.status_file, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
     if (fd != -1)
     {
-        (void)write(fd, message, strlen(message));
-        (void)write(fd, (char *)"\n", 1);
+        write(fd, message, strlen(message));
+        write(fd, (char *)ENDLINE, sizeof(ENDLINE)-1);
         DebugTotalFiles++;
         if (close(fd) == 0)
         {
@@ -1108,7 +1100,7 @@ DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 #ifdef WIN32
 #define POPEN_READ_OP "rb"
 #define POPEN_WRITE_OP "wb"
-#else
+#else // WIN32
 #define POPEN_READ_OP "r"
 #define POPEN_WRITE_OP "w"
 #endif // WIN32
@@ -1149,9 +1141,9 @@ void dump_database_internal(int dump_type)
         {
 #ifdef VMS
             sprintf(tmpfile, "%s.-%d-", outfn, mudstate.epoch);
-#else
+#else // VMS
             sprintf(tmpfile, "%s.#%d#", outfn, mudstate.epoch);
-#endif
+#endif // VMS
             RemoveFile(tmpfile);
             f = fopen(tmpfile, "wb");
         }
@@ -1203,7 +1195,7 @@ void dump_database_internal(int dump_type)
         }
         return;
     }
-    
+
     // Nuke our predecessor
     //
     if (mudconf.compress_db)
@@ -1283,7 +1275,7 @@ void dump_database_internal(int dump_type)
         save_comsys(mudconf.comsys_db);
     }
 }
-#endif
+#endif // !STANDALONE
 
 void NDECL(dump_database)
 {
@@ -1307,11 +1299,11 @@ void NDECL(dump_database)
         }
     }
     mudstate.dumping = 1;
-#endif
+#endif // !VMS !WIN32
     buff = alloc_mbuf("dump_database");
 #ifdef VMS
     sprintf(buff, "%s.-%d-", mudconf.outdb, mudstate.epoch);
-#else
+#else // VMS
     sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
 #endif // VMS
 
@@ -1335,7 +1327,7 @@ void NDECL(dump_database)
     // leave it in.
     //
     mudstate.dumping = 0;
-#endif
+#endif // !VMS !WIN32
 }
 
 void fork_and_dump(int key)
@@ -1348,7 +1340,7 @@ void fork_and_dump(int key)
     //
     if (mudstate.dumping) return;
     mudstate.dumping = 1;
-#endif
+#endif // !VMS !WIN32
 
     // If no options were given, then it means DUMP_TEXT+DUMP_STRUCT.
     //
@@ -1377,10 +1369,10 @@ void fork_and_dump(int key)
         if (key & DUMP_STRUCT)
         {
             mudstate.epoch++;
-#ifndef VMS
-            sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
-#else
+#ifdef VMS
             sprintf(buff, "%s.-%d-", mudconf.outdb, mudstate.epoch);
+#else // VMS
+            sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
 #endif // VMS
             log_text("Checkpointing: ");
             log_text(buff);
@@ -1401,13 +1393,13 @@ void fork_and_dump(int key)
     //
     al_store();
 #endif // MEMORY_BASED
-    
+
     if (key & DUMP_TEXT)
     {
         pcache_sync();
     }
     SYNC;
-    
+
     int child = 0;
     BOOL bChildExists = FALSE;
     if (key & (DUMP_STRUCT|DUMP_FLATFILE))
@@ -1417,7 +1409,7 @@ void fork_and_dump(int key)
         {
             child = fork();
         }
-#endif // VMS
+#endif // !VMS !WIN32
         if (child == 0)
         {
             if (key & DUMP_STRUCT)
@@ -1433,7 +1425,7 @@ void fork_and_dump(int key)
             {
                 _exit(0);
             }
-#endif // VMS
+#endif // !VMS !WIN32
         }
         else if (child < 0)
         {
@@ -1444,7 +1436,7 @@ void fork_and_dump(int key)
             bChildExists = TRUE;
         }
     }
-    
+
 #if !defined(VMS) && !defined(WIN32)
     if (!bChildExists)
     {
@@ -1454,8 +1446,8 @@ void fork_and_dump(int key)
         //
         mudstate.dumping = 0;
     }
-#endif
-        
+#endif // !VMS !WIN32
+
     if (*mudconf.postdump_msg)
     {
         raw_broadcast(0, "%s", mudconf.postdump_msg);
@@ -1469,9 +1461,9 @@ void fork_and_dump(int key)
 
 #ifdef MEMORY_BASED
 static int load_game(void)
-#else
+#else // MEMORY_BASED
 static int load_game(int ccPageFile)
-#endif
+#endif // MEMORY_BASED
 {
     FILE *f = NULL;
     char infile[SIZEOF_PATHNAME+8];
@@ -1495,7 +1487,7 @@ static int load_game(int ccPageFile)
             }
         }
     }
-#endif // VMS
+#endif // !VMS
 
     if (compressed == 0)
     {
@@ -1504,7 +1496,7 @@ static int load_game(int ccPageFile)
         {
             // Indicate that we couldn't load because the input db didn't
             // exist.
-            // 
+            //
             return LOAD_GAME_NO_INPUT_DB;
         }
         if ((f = fopen(infile, "rb")) == NULL)
@@ -1589,7 +1581,7 @@ static int load_game(int ccPageFile)
             ENDLOG;
         }
     }
-#endif
+#endif // !MEMORY_BASED
 
     if (mudconf.have_comsys || mudconf.have_macros)
     {
@@ -1603,9 +1595,9 @@ static int load_game(int ccPageFile)
         {
             DebugTotalFiles++;
             setvbuf(f, NULL, _IOFBF, 16384);
-            Log.printf("LOADING: %s\n", mudconf.mail_db);
+            Log.printf("LOADING: %s" ENDLINE, mudconf.mail_db);
             load_mail(f);
-            Log.printf("LOADING: %s (done)\n", mudconf.mail_db);
+            Log.printf("LOADING: %s (done)" ENDLINE, mudconf.mail_db);
             if (fclose(f) == 0)
             {
                 DebugTotalFiles--;
@@ -1622,7 +1614,7 @@ static int load_game(int ccPageFile)
 
 
 /*
- * match a list of things, using the no_command flag 
+ * match a list of things, using the no_command flag
  */
 
 int list_check(dbref thing, dbref player, char type, char *str, int check_parent)
@@ -1676,14 +1668,14 @@ int Hearer(dbref thing)
             atr_get_str(buff, thing, attr, &aowner, &aflags);
 
             /*
-             * Make sure we can execute it 
+             * Make sure we can execute it
              */
 
             if ((buff[0] != AMATCH_LISTEN) || (aflags & AF_NOPROG))
                 continue;
 
             /*
-             * Make sure there's a : in it 
+             * Make sure there's a : in it
              */
 
             for (s = buff + 1; *s && (*s != ':'); s++) ;
@@ -1719,7 +1711,7 @@ static void NDECL(process_preload)
     DO_WHOLE_DB(thing)
     {
         /*
-         * Ignore GOING objects 
+         * Ignore GOING objects
          */
 
         if (Going(thing))
@@ -1728,7 +1720,7 @@ static void NDECL(process_preload)
         scheduler.RunTasks(10);
 
         /*
-         * Look for a STARTUP attribute in parents 
+         * Look for a STARTUP attribute in parents
          */
 
         ITER_PARENTS(thing, parent, lev)
@@ -1745,7 +1737,7 @@ static void NDECL(process_preload)
         }
 
         /*
-         * Look for a FORWARDLIST attribute 
+         * Look for a FORWARDLIST attribute
          */
 
         if (H_Fwdlist(thing))
@@ -1785,17 +1777,41 @@ int DCL_CDECL main(int argc, char *argv[])
     int bMinDB = FALSE;
     int bSyntaxError = FALSE;
     char *conffile = NULL;
-#ifndef USE_GETOPT
-    int iConfig = 0; // DEFAULT
-#else
+#ifdef USE_GETOPT
     int ch;
-#endif
+#else // USE_GETOPT
+    int iConfig = 0; // DEFAULT
+#endif // USE_GETOPT
 
 #ifndef SYS_SIGLIST_DECLARED
     BuildSignalNamesTable();
 #endif
 
-#ifndef USE_GETOPT
+#ifdef USE_GETOPT
+    while ((ch = getopt(argc, argv, "?sc:")) != -1)
+    {
+        switch (ch)
+        {
+        case 's':
+
+            bMinDB = TRUE;
+            break;
+
+        case 'c':
+
+            conffile = optarg;
+            break;
+
+        case ':':
+
+        default :
+
+            // Syntax error.
+            //
+            bSyntaxError = TRUE;
+        }
+    }
+#else // USE_GETOPT
     switch (argc)
     {
     case 1:
@@ -1848,31 +1864,7 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         conffile = argv[iConfig];
     }
-#else
-    while ((ch = getopt(argc, argv, "?sc:")) != -1)
-    {
-        switch (ch)
-        {
-        case 's':
-
-            bMinDB = TRUE;
-            break;
-
-        case 'c':
-
-            conffile = optarg;
-            break;
-
-        case ':':
-
-        default :
-
-        // Syntax error.
-        //
-            bSyntaxError = TRUE;
-        }
-    }
-#endif
+#endif // USE_GETOPT
 
     if (bSyntaxError)
     {
@@ -1896,14 +1888,14 @@ int DCL_CDECL main(int argc, char *argv[])
     hGameProcess = GetCurrentProcess();
     if (platform == VER_PLATFORM_WIN32_NT)
     {
-        Log.WriteString("Running under Windows NT\n");
+        Log.WriteString("Running under Windows NT" ENDLINE);
 
         // Get a handle to the kernel32 DLL
         //
         HINSTANCE hInstKernel32 = LoadLibrary("kernel32");
         if (!hInstKernel32)
         {
-            Log.WriteString("LoadLibrary of kernel32 for a CancelIo entry point failed. Cannot continue.\n");
+            Log.WriteString("LoadLibrary of kernel32 for a CancelIo entry point failed. Cannot continue." ENDLINE);
             return 1;
         }
 
@@ -1914,19 +1906,19 @@ int DCL_CDECL main(int argc, char *argv[])
         fpCancelIo = (FCANCELIO *)GetProcAddress(hInstKernel32, "CancelIo");
         if (fpCancelIo == NULL)
         {
-            Log.WriteString("GetProcAddress of _CancelIo failed. Cannot continue.\n");
+            Log.WriteString("GetProcAddress of _CancelIo failed. Cannot continue." ENDLINE);
             return 1;
         }
         fpGetProcessTimes = (FGETPROCESSTIMES *)GetProcAddress(hInstKernel32, "GetProcessTimes");
         if (fpGetProcessTimes == NULL)
         {
-            Log.WriteString("GetProcAddress of GetProcessTimes failed. Cannot continue.\n");
+            Log.WriteString("GetProcAddress of GetProcessTimes failed. Cannot continue." ENDLINE);
             return 1;
         }
     }
     else
     {
-        Log.WriteString("Running under Windows 95/98\n");
+        Log.WriteString("Running under Windows 95/98" ENDLINE);
     }
     if (QueryPerformanceFrequency((LARGE_INTEGER *)&QP_D))
     {
@@ -1942,7 +1934,7 @@ int DCL_CDECL main(int argc, char *argv[])
     WSADATA wsaData;
     if (WSAStartup(wVersionRequested, &wsaData) != 0)
     {
-        Log.WriteString("ERROR: Could not initialize WinSock.\n");
+        Log.WriteString("ERROR: Could not initialize WinSock." ENDLINE);
         return 101;
     }
 
@@ -1950,7 +1942,7 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         // We can't run on this version of WinSock.
         //
-        Log.printf("INFO: We requested WinSock v2.2, but only WinSock v%d.%d was available.\n", LOBYTE(wsaData.wVersion), HIBYTE(wsaData.wVersion));
+        Log.printf("INFO: We requested WinSock v2.2, but only WinSock v%d.%d was available." ENDLINE, LOBYTE(wsaData.wVersion), HIBYTE(wsaData.wVersion));
         //WSACleanup();
         //return 102;
     }
@@ -1964,7 +1956,7 @@ int DCL_CDECL main(int argc, char *argv[])
     // Database isn't corrupted.
     //
     corrupt = 0;
-#endif
+#endif // MEMORY_BASED
     mudstate.start_time.GetLocal();
     mudstate.cpu_count_from.GetUTC();
     pool_init(POOL_LBUF, LBUF_SIZE);
@@ -1979,7 +1971,7 @@ int DCL_CDECL main(int argc, char *argv[])
     cf_init();
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
     init_rlimit();
-#endif
+#endif // HAVE_SETRLIMIT RLIMIT_NOFILE
     init_cmdtab();
     init_logout_cmdtab();
     init_flagtab();
@@ -2031,9 +2023,9 @@ int DCL_CDECL main(int argc, char *argv[])
     {
 #ifdef MEMORY_BASED
         int ccInFile = load_game();
-#else
+#else // MEMORY_BASED
         int ccInFile = load_game(ccPageFile);
-#endif
+#endif // MEMORY_BASED
         if (LOAD_GAME_NO_INPUT_DB == ccInFile)
         {
             // The input file didn't exist.
@@ -2062,11 +2054,11 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     set_signals();
 
-    // Do a consistency check and set up the freelist 
+    // Do a consistency check and set up the freelist
     //
     do_dbck(NOTHING, NOTHING, 0);
 
-    // Reset all the hash stats 
+    // Reset all the hash stats
     //
     hashreset(&mudstate.command_htab);
     hashreset(&mudstate.macro_htab);
@@ -2099,7 +2091,7 @@ int DCL_CDECL main(int argc, char *argv[])
     load_restart_db();
 
     if (!mudstate.restarting)
-#endif // WIN32
+#endif // !WIN32
     {
         if (fclose(stdout) == 0)
         {
@@ -2116,7 +2108,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #if defined(CONCENTRATE) && !defined(VMS) && !defined(WIN32)
     if (!mudstate.restarting)
     {
-        // Start up the port concentrator. 
+        // Start up the port concentrator.
         //
         conc_pid = fork();
         if (conc_pid < 0)
@@ -2139,7 +2131,7 @@ int DCL_CDECL main(int argc, char *argv[])
         log_text(tprintf("Main: %d Conc: %d", mudconf.port, mudconf.conc_port));
         ENDLOG;
     }
-#endif // CONCENTRATE && !WIN32
+#endif // CONCENTRATE !VMS !WIN32
 
     // go do it.
     //
@@ -2156,7 +2148,7 @@ int DCL_CDECL main(int argc, char *argv[])
         process_output = process_output9x;
         shovechars9x(mudconf.port);
     }
-#else // !WIN32
+#else // WIN32
     shovechars(mudconf.port);
 #endif // WIN32
 
@@ -2183,7 +2175,7 @@ int DCL_CDECL main(int argc, char *argv[])
         DeleteCriticalSection(&csDescriptorList);
     }
     WSACleanup();
-#endif
+#endif // WIN32
 
     return 0;
 }
@@ -2209,4 +2201,4 @@ static void NDECL(init_rlimit)
     free_lbuf(rlp);
 
 }
-#endif // HAVE_SETRLIMIT
+#endif // HAVE_SETRLIMIT RLIMIT_NOFILE
