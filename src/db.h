@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.4 2000-04-25 00:07:04 sdennis Exp $
+// $Id: db.h,v 1.5 2000-04-29 08:03:55 sdennis Exp $
 //
 #ifndef __DB_H
 #define __DB_H
@@ -165,6 +165,8 @@ struct object
     POWER   powers2;    /* ALL: even more powers */
     
     STACK   *stackhead; /* Every object has a stack. */
+
+    CLinearTimeDelta cpu_time_used; /* ALL: CPU time eaten */
 
 #ifdef MEMORY_BASED
     ATRLIST *ahead;     /* The head of the attribute list. */
