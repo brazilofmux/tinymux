@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
+// $Id: move.cpp,v 1.5 2002-06-27 06:54:43 jake Exp $
 //
 
 #include "copyright.h"
@@ -249,7 +249,7 @@ static void process_sticky_dropto(dbref loc, dbref player)
     //
     DOLIST(thing, Contents(loc)) 
     {
-        if (Dropper(thing))
+        if ((Connected(Owner(thing)) && Hearer(thing)))
             return;
     }
 
