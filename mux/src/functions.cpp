@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.96 2002-09-17 22:43:00 sdennis Exp $
+// $Id: functions.cpp,v 1.97 2002-09-17 23:25:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -161,6 +161,7 @@ XFUNCTION(fun_dumping);
 XFUNCTION(fun_lrooms);
 XFUNCTION(fun_hasquota);
 XFUNCTION(fun_chr);
+XFUNCTION(fun_ord);
 
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
@@ -8165,6 +8166,7 @@ FUN flist[] =
     {"OEMIT",    fun_oemit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"OR",       fun_or,       MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"ORBOOL",   fun_orbool,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"ORD",      fun_ord,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ORFLAGS",  fun_orflags,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"OWNER",    fun_owner,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"PACK",     fun_pack,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
@@ -9216,6 +9218,26 @@ FUNCTION(fun_art)
     // Default to 'a'.
     //
     safe_str( "a", buff, bufc);
+}
+ 
+// ---------------------------------------------------------------------------
+// fun_ord:
+//
+// Takes a single character and returns the corresponding ordinal of its
+// position in the character set.
+//
+FUNCTION(fun_ord)
+{ 
+    size_t n;
+    char *p  = strip_ansi(fargs[0], &n);
+    if (n == 1)
+    {
+        safe_ltoa(p[0], buff, bufc);
+    }
+    else
+    {
+        safe_str("#-1 FUNCTION EXPECTS ONE CHARACTER", buff, bufc);
+    }
 }
 
 // ---------------------------------------------------------------------------
