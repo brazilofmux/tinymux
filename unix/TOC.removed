@@ -10,3 +10,5 @@ src/phase1.awk
 src/phase2.awk
 src/analyse.pre
 src/portconc.cpp
+src/compresstab.h
+src/compresstab.h.dumb
