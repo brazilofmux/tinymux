@@ -280,6 +280,10 @@ Bug Fixes:
     Tiny_IsPlayerNameCharacter[], the code was using
     Tiny_IsObjectNameCharacter[].
  -- Fixed the bCanRead/read_remote_desc bugs.
+ -- Fixed SIGSEGV bugs related to characters with the high-order bit
+    set.  Introduced, found, and fixed by Brazil.
+ -- Same as above in translate_string() reported by Sean Hunter.  Fixed
+    by Brazil.
 
 
 Performance Enhancements:
