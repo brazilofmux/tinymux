@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.45 2004-04-02 14:11:06 sdennis Exp $
+// $Id: funceval.cpp,v 1.46 2004-04-06 18:27:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2056,9 +2056,11 @@ static int u_comp(const void *s1, const void *s2)
     char *result, *tbuf, *elems[2], *bp, *str;
     int n;
 
-    if ((mudstate.func_invk_ctr > mudconf.func_invk_lim) ||
-        (mudstate.func_nest_lev > mudconf.func_nest_lim))
+    if (  mudstate.func_invk_ctr > mudconf.func_invk_lim
+       || mudstate.func_nest_lev > mudconf.func_nest_lim)
+    {
         return 0;
+    }
 
     tbuf = alloc_lbuf("u_comp");
     elems[0] = (char *)s1;
@@ -2070,8 +2072,11 @@ static int u_comp(const void *s1, const void *s2)
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(elems[0]), 2);
     *bp = '\0';
     if (!result)
+    {
         n = 0;
-    else {
+    }
+    else
+    {
         n = mux_atol(result);
         free_lbuf(result);
     }
@@ -2093,7 +2098,9 @@ static void sane_qsort(void *array[], int left, int right, PV compare)
 loop:
 
     if (left >= right)
+    {
         return;
+    }
 
     // Pick something at random at swap it into the leftmost slot
     // This is the pivot, we'll put it back in the right spot later.
@@ -2113,7 +2120,9 @@ loop:
         {
             last++;
             if (last == i)
+            {
                 continue;
+            }
 
             tmp = array[last];
             array[last] = array[i];
@@ -2541,13 +2550,15 @@ FUNCTION(fun_die)
     int n = mux_atol(fargs[0]);
     int die = mux_atol(fargs[1]);
 
-    if ((n == 0) || (die <= 0))
+    if (  n == 0
+       || die <= 0)
     {
         safe_chr('0', buff, bufc);
         return;
     }
 
-    if ((n < 1) || (n > 100))
+    if (  n < 1
+       || n > 100)
     {
         safe_range(buff, bufc);
         return;
@@ -2608,42 +2619,67 @@ FUNCTION(fun_lit)
 //
 FUNCTION(fun_shl)
 {
-    if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
-        safe_ltoa(mux_atol(fargs[0]) << mux_atol(fargs[1]), buff, bufc);
+    if (  is_integer(fargs[0], NULL)
+       && is_integer(fargs[1], NULL))
+    {
+        safe_i64toa(mux_atoi64(fargs[0]) << mux_atol(fargs[1]), buff, bufc);
+    }
     else
+    {
         safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+    }
 }
 
 FUNCTION(fun_shr)
 {
-    if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
-        safe_ltoa(mux_atol(fargs[0]) >> mux_atol(fargs[1]), buff, bufc);
+    if (  is_integer(fargs[0], NULL)
+       && is_integer(fargs[1], NULL))
+    {
+        safe_i64toa(mux_atoi64(fargs[0]) >> mux_atol(fargs[1]), buff, bufc);
+    }
     else
+    {
         safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+    }
 }
 
 FUNCTION(fun_band)
 {
-    if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
-        safe_ltoa(mux_atol(fargs[0]) & mux_atol(fargs[1]), buff, bufc);
+    if (  is_integer(fargs[0], NULL)
+       && is_integer(fargs[1], NULL))
+    {
+        safe_i64toa(mux_atoi64(fargs[0]) & mux_atoi64(fargs[1]), buff, bufc);
+    }
     else
+    {
         safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+    }
 }
 
 FUNCTION(fun_bor)
 {
-    if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
-        safe_ltoa(mux_atol(fargs[0]) | mux_atol(fargs[1]), buff, bufc);
+    if (  is_integer(fargs[0], NULL)
+       && is_integer(fargs[1], NULL))
+    {
+        safe_i64toa(mux_atoi64(fargs[0]) | mux_atoi64(fargs[1]), buff, bufc);
+    }
     else
+    {
         safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+    }
 }
 
 FUNCTION(fun_bnand)
 {
-    if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
-        safe_ltoa(mux_atol(fargs[0]) & ~(mux_atol(fargs[1])), buff, bufc);
+    if (  is_integer(fargs[0], NULL)
+       && is_integer(fargs[1], NULL))
+    {
+        safe_i64toa(mux_atoi64(fargs[0]) & ~(mux_atoi64(fargs[1])), buff, bufc);
+    }
     else
+    {
         safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+    }
 }
 
 FUNCTION(fun_crc32)
