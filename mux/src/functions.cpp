@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.36 2003-02-12 18:33:47 jake Exp $
+// $Id: functions.cpp,v 1.37 2003-02-15 18:03:44 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -779,18 +779,15 @@ FUNCTION(fun_words)
 FUNCTION(fun_flags)
 {
     dbref it;
-    int   atr;
-    if (parse_attrib(executor, fargs[0], &it, &atr))
+    ATTR  *attr;
+    if (parse_attrib_temp(executor, fargs[0], &it, &attr))
     {
-        if (!Good_obj(it))
-        {
-            safe_match_result(it, buff, bufc);
-        }
-        else
+        if (  attr
+           && See_attr(executor, it, attr))
         {
             dbref aowner;
             int   aflags;
-            atr_pget_info(it, atr, &aowner, &aflags);
+            atr_pget_info(it, attr->number, &aowner, &aflags);
             char xbuf[10];
             decode_attr_flags(aflags, xbuf);
             safe_str(xbuf, buff, bufc);
