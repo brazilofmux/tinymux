@@ -60,6 +60,12 @@
 #undef HAVE_SYS_SELECT_H
 /* Define if sys/rusage.h exists */
 #undef HAVE_SYS_RUSAGE_H
+/* Define if Big Endian */ 
+/* #undef WORDS_BIGENDIAN */
+/* Define if Little Endian */
+#define WORDS_LITTLEENDIAN 1
+/* Define if Unknown Endian */
+/* #undef WORDS_UNKNOWN */ 
 /* Define if const is broken */
 #undef const
 /* sizeof(short) */
