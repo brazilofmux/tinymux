@@ -23,6 +23,7 @@ Feature Additions:
  -- Support 36 global registers instead of 10.
  -- Add TIMEFMT() function.
  -- Added null() and @@(). The former evaluates. The latter doesn't.
+ -- Added GetFromLock. Patch from Draken-Korin.
 
 Bug Fixes:
 ~~~~~~~~~
