@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.6 2003-03-14 07:49:49 sdennis Exp $
+// $Id: mguests.cpp,v 1.7 2003-03-14 07:55:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -273,14 +273,14 @@ dbref CGuests::MakeGuestChar(void)
     //
     int i;
     dbref player;
-    bool bFound = FALSE;
+    bool bFound = false;
     for (i = 0; i < mudconf.number_guests;i++)
     {
         sprintf(name, "%s%d", mudconf.guest_prefix, i + 1);
         player = lookup_player(GOD, name, false);
         if (player == NOTHING)
         {
-            bFound = TRUE;
+            bFound = true;
             break;
         }
     }
