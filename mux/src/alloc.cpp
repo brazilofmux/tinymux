@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.3 2002-07-18 19:17:34 sdennis Exp $
+// $Id: alloc.cpp,v 1.4 2002-09-19 12:31:07 jake Exp $
 //
 
 #include "copyright.h"
@@ -334,6 +334,13 @@ char *pool_alloc_lbuf(const char *tag)
 
 void pool_free(int poolnum, char *buf)
 {
+    if (buf == NULL)
+    {
+        STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
+        log_text("Attempt to free null pointer.");
+        ENDLOG
+        return;
+    }
     POOLHDR *ph = ((POOLHDR *)(buf)) - 1;
     POOLFTR *pf = (POOLFTR *)(buf + pools[poolnum].pool_size);
     unsigned int *pui = (unsigned int *)buf;
@@ -403,6 +410,13 @@ void pool_free(int poolnum, char *buf)
 
 void pool_free_lbuf(char *buf)
 {
+    if (buf == NULL)
+    {
+        STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
+        log_text("Attempt to free_lbuf null pointer.");
+        ENDLOG
+        return;
+    }
     POOLHDR *ph = ((POOLHDR *)(buf)) - 1;
     POOLFTR *pf = (POOLFTR *)(buf + LBUF_SIZE);
     unsigned int *pui = (unsigned int *)buf;
