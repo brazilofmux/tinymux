@@ -8442,6 +8442,25 @@ LEXITS()
 
   Related Topics: lcon(), @dolist, PARENT OBJECTS.
 
+& LROOMS()
+LROOMS()
+
+  FUNCTION: lrooms(<loc>, <depth> [,<all>])
+
+  Returns a space-separated list of the rooms connected to <loc>
+  taking into account parentage and permissions.
+
+  Example:
+    > look here
+    The Town Square
+    You are in the town square.  All around you .....
+    Obvious exits:
+    foo  up  southeast  sw  north
+    > say lrooms(here,1)
+    You say "#3 #12 #91 #82 #63"
+
+  Related Topics: @dolist, lexits(), PARENT OBJECTS
+
 & SECURE()
 SECURE()
 
