@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.9 2002-06-12 17:35:20 jake Exp $
+// $Id: command.cpp,v 1.10 2002-06-12 17:56:56 zenty Exp $
 //
 
 #include "copyright.h"
@@ -41,6 +41,13 @@ NAMETAB boot_sw[] =
     {"quiet",           1,  CA_WIZARD,  BOOT_QUIET|SW_MULTIPLE},
     { NULL,             0,          0,  0}
 };
+
+NAMETAB cboot_sw[] =
+{
+    {"quiet",           1,  CA_PUBLIC,  CBOOT_QUIET},
+    { NULL,             0,          0,  0}
+};
+    
 
 NAMETAB comtitle_sw[] =
 {
@@ -596,7 +603,7 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@admin",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, do_admin},
     {"@alias",       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           do_alias},
     {"@attribute",   attrib_sw,  CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, do_attribute},
-    {"@cboot",       NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           do_chboot},
+    {"@cboot",       cboot_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           do_chboot},
     {"@ccharge",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          1,           CS_TWO_ARG,           do_editchannel},
     {"@cchown",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           do_editchannel},
     {"@cemit",       cemit_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           do_cemit},

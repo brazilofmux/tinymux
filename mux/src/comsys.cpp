@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.5 2002-06-05 05:22:14 sdennis Exp $
+// $Id: comsys.cpp,v 1.6 2002-06-12 17:56:56 zenty Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1410,7 +1410,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
             //
             if (found <= 1)
             {
-                do_delcomchannel(executor, c->channels[i]);
+                do_delcomchannel(executor, c->channels[i],0);
                 raw_notify(executor, tprintf("Channel %s deleted.", c->channels[i]));
                 MEMFREE(c->channels[i]);
             }
@@ -1434,7 +1434,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
     raw_notify(executor, "Unable to find that alias.");
 }
 
-void do_delcomchannel(dbref player, char *channel)
+void do_delcomchannel(dbref player, char *channel, int quiet)
 {
     struct comuser *user;
     int i;
@@ -1454,15 +1454,18 @@ void do_delcomchannel(dbref player, char *channel)
             if (user->who == player)
             {
                 do_comdisconnectchannel(player, channel);
-                if (user->bUserIsOn && (!Dark(player)))
-                {
-                    char *messNormal, *messNoComtitle;
-                    BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
-                        ch->header, user, ":has left this channel.",
-                        &messNormal, &messNoComtitle);
-                    SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
+                if(!quiet) {
+                    if (user->bUserIsOn && (!Dark(player)))
+                    {
+                        char *messNormal, *messNoComtitle;
+                        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
+                                            ch->header, user, ":has left this channel.",
+                                            &messNormal, &messNoComtitle);
+                        SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
+                    }
+                    raw_notify(player, tprintf("You have left channel %s.", channel));
                 }
-                raw_notify(player, tprintf("You have left channel %s.", channel));
+                
 
                 if (user->title)
                 {
@@ -2523,40 +2526,50 @@ void do_chboot
         return;
     }
 
-    char *mess1, *mess1nct;
-    char *mess2, *mess2nct;
-    BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-        ":boots", &mess1, &mess1nct);
-    BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, 0, vu,
-        ":off the channel.", &mess2, &mess2nct);
-    char *messNormal = alloc_lbuf("do_chboot.messnormal");
-    char *messNoComtitle = alloc_lbuf("do_chboot.messnocomtitle");
-    char *mnp = messNormal;
-    char *mnctp = messNoComtitle;
-    if (mess1)
-    {
-        safe_str(mess1, messNormal, &mnp);
-        free_lbuf(mess1);
+    raw_notify(executor, tprintf("You boot %s off channel %s.",
+                                 Name(thing), ch->name));
+    raw_notify(thing, tprintf("%s boots you off channel %s.",
+                              Name(thing), ch->name));
+
+    if(!(key & CBOOT_QUIET)) {
+        char *mess1, *mess1nct;
+        char *mess2, *mess2nct;
+        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
+                            ":boots", &mess1, &mess1nct);
+        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, 0, vu,
+                            ":off the channel.", &mess2, &mess2nct);
+        char *messNormal = alloc_lbuf("do_chboot.messnormal");
+        char *messNoComtitle = alloc_lbuf("do_chboot.messnocomtitle");
+        char *mnp = messNormal;
+        char *mnctp = messNoComtitle;
+        if (mess1)
+        {
+            safe_str(mess1, messNormal, &mnp);
+            free_lbuf(mess1);
+        }
+        if (mess2)
+        {
+            safe_str(mess2, messNormal, &mnp);
+            free_lbuf(mess2);
+        }
+        *mnp = '\0';
+        if (mess1nct)
+        {
+            safe_str(mess1nct, messNoComtitle, &mnctp);
+            free_lbuf(mess1nct);
+        }
+        if (mess2nct)
+        {
+            safe_str(mess2nct, messNoComtitle, &mnctp);
+            free_lbuf(mess2nct);
+        }
+        *mnctp = '\0';
+        SendChannelMessage(executor, ch, messNormal, messNoComtitle, FALSE);
+        do_delcomchannel(thing, channel,0);
+    } else {    
+        do_delcomchannel(thing, channel,1);
     }
-    if (mess2)
-    {
-        safe_str(mess2, messNormal, &mnp);
-        free_lbuf(mess2);
-    }
-    *mnp = '\0';
-    if (mess1nct)
-    {
-        safe_str(mess1nct, messNoComtitle, &mnctp);
-        free_lbuf(mess1nct);
-    }
-    if (mess2nct)
-    {
-        safe_str(mess2nct, messNoComtitle, &mnctp);
-        free_lbuf(mess2nct);
-    }
-    *mnctp = '\0';
-    SendChannelMessage(executor, ch, messNormal, messNoComtitle, FALSE);
-    do_delcomchannel(thing, channel);
+    
 }
 
 void do_cheader(dbref player, char *channel, char *header)

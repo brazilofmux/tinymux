@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.7 2002-06-12 16:43:57 jake Exp $
+// $Id: externs.h,v 1.8 2002-06-12 17:56:56 zenty Exp $
 //
 
 #ifndef EXTERNS_H
@@ -331,6 +331,7 @@ extern int fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define CLONE_SET_LOC   16  /* ARG2 is location of cloned object */
 #define CLONE_SET_NAME  32  /* ARG2 is alternate name of cloned object */
 #define CLONE_PARENT    64  /* Set parent on obj instd of cloning attrs */
+#define CBOOT_QUIET     1   // Cboot without a message
 #define COMTITLE_ON     1   // Turn Comtitles on.
 #define COMTITLE_OFF    2   // Turn Comtitles off.
 #define CRE_INVENTORY   0   /* Create object in my inventory */
