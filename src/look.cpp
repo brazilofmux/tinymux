@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.32 2001-09-28 12:38:44 sdennis Exp $
+// $Id: look.cpp,v 1.33 2001-10-05 20:30:37 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2235,7 +2235,7 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
     //
     if (qual && *qual)
     {
-        StringCopy(thingname, qual);
+        strcpy(thingname, qual);
     }
     else
     {
@@ -2290,11 +2290,18 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
         }
     }
 
+    // Strip out ANSI in one place rather than have it done in
+    // several places.
+    //
+    size_t len;
+    memcpy(thingname, strip_ansi(thingname, &len), len+1);
+
     // Report the lock (if any).
     //
-    if (!wild_decomp && (pBoolExp != TRUE_BOOLEXP))
+    if (  !wild_decomp
+       && pBoolExp != TRUE_BOOLEXP)
     {
-        notify(player, tprintf("@lock %s=%s", strip_ansi(thingname),
+        notify(player, tprintf("@lock %s=%s", thingname,
             unparse_boolexp_decompile(player, pBoolExp)));
     }
     free_boolexp(pBoolExp);
@@ -2306,7 +2313,8 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
         (wild_decomp) ? (ca != NOTHING) : (ca != 0);
         ca = (wild_decomp ? olist_next() : atr_next(&as)))
     {
-        if ((ca == A_NAME) || (ca == A_LOCK))
+        if (  ca == A_NAME
+           || ca == A_LOCK)
         {
             continue;
         }
@@ -2315,7 +2323,8 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
         {
             continue;
         }
-        if ((attr->flags & AF_NOCMD) && !(attr->flags & AF_IS_LOCK))
+        if (  (attr->flags & AF_NOCMD)
+           && !(attr->flags & AF_IS_LOCK))
         {
             continue;
         }
@@ -2328,27 +2337,28 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
                 pBoolExp = parse_boolexp(player, got, 1);
                 ltext = unparse_boolexp_decompile(player, pBoolExp);
                 free_boolexp(pBoolExp);
-                notify(player, tprintf("@lock/%s %s=%s", attr->name, thingname, ltext));
+                notify(player, tprintf("@lock/%s %s=%s", attr->name,
+                    thingname, ltext));
             }
             else
             {
-                StringCopy(buff, attr->name);
+                strcpy(buff, attr->name);
                 notify(player, tprintf("%c%s %s=%s", ((ca < A_USER_START) ?
-                    '@' : '&'), buff, strip_ansi(thingname), got));
+                    '@' : '&'), buff, thingname, got));
                 for (np = indiv_attraccess_nametab; np->name; np++)
                 {
                     if (  (aflags & np->flag)
                        && check_access(player, np->perm)
                        && (!(np->perm & CA_NO_DECOMP)))
                     {
-                        notify(player, tprintf("@set %s/%s = %s", strip_ansi(thingname),
+                        notify(player, tprintf("@set %s/%s = %s", thingname,
                             buff, np->name));
                     }
                 }
 
                 if (aflags & AF_LOCK)
                 {
-                    notify(player, tprintf("@lock %s/%s", strip_ansi(thingname), buff));
+                    notify(player, tprintf("@lock %s/%s", thingname, buff));
                 }
             }
         }
@@ -2364,17 +2374,19 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
 
     // If the object has a parent, report it.
     //
-    if (!wild_decomp && (Parent(thing) != NOTHING))
+    if (  !wild_decomp
+       && (Parent(thing) != NOTHING))
     {
-        notify(player, tprintf("@parent %s=#%d", strip_ansi(thingname), Parent(thing)));
+        notify(player, tprintf("@parent %s=#%d", thingname, Parent(thing)));
     }
 
     // If the object has a zone, report it.
     //
     int zone;
-    if (!wild_decomp && Good_obj(zone = Zone(thing)))
+    if (  !wild_decomp
+       && Good_obj(zone = Zone(thing)))
     {
-        notify(player, tprintf("@chzone %s=#%d", strip_ansi(thingname), zone));
+        notify(player, tprintf("@chzone %s=#%d", thingname, zone));
     }
 
     free_lbuf(thingname);
