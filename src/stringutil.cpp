@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.51 2001-10-11 21:10:00 sdennis Exp $
+// $Id: stringutil.cpp,v 1.52 2001-11-09 00:05:29 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2742,6 +2742,45 @@ int DbrefToBuffer_Add(DTB *pContext, int i)
 }
 
 void DbrefToBuffer_Final(DTB *pContext)
+{
+    **(pContext->bufc) = '\0';
+}
+
+void IntegerToBuffer_Init(ITB *p, char *arg_buff, char **arg_bufc)
+{
+    p->bFirst = 1;
+    p->buff = arg_buff;
+    p->bufc = arg_bufc;
+    p->nBufferAvailable = LBUF_SIZE - (*arg_bufc - arg_buff) - 1;
+}
+
+int IntegerToBuffer_Add(ITB *pContext, int i)
+{
+    char smbuf[SBUF_SIZE];
+    char *p = smbuf;
+    if (pContext->bFirst)
+    {
+        pContext->bFirst = 0;
+    }
+    else
+    {
+        *p++ = ' ';
+    }
+    p += Tiny_ltoa(i, p);
+    int nLen = p - smbuf;
+    if (nLen > pContext->nBufferAvailable)
+    {
+        // Out of room.
+        //
+        return 0;
+    }
+    memcpy(*(pContext->bufc), smbuf, nLen);
+    *(pContext->bufc) += nLen;
+    pContext->nBufferAvailable -= nLen;
+    return 1;
+}
+
+void IntegerToBuffer_Final(ITB *pContext)
 {
     **(pContext->bufc) = '\0';
 }

@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.15 2001-11-08 06:11:23 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.16 2001-11-09 00:05:29 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -489,238 +489,307 @@ static char *dbrefs_to_names(dbref player, char *list, char *namelist, int ismes
     return bp;
 }
 
+//
+// The combinations are:
+//
+//           nargs  arg1[0]  arg2[0]
+//   ''        1      '\0'    '\0'      Report LastPaged to player.
+//   'a'       1      'a'     '\0'      Page LastPaged with A
+//   'a='      2      'a'     '\0'      Page A. LastPaged <- A
+//   '=b'      2      '\0'    'b'       Page LastPaged with B
+//   'a=b'     2      'a'     'b'       Page A with B. LastPaged <- A
+//   'a=b1=[b2=]*...'                   All treated the same as 'a=b'.
+//
 void do_page
 (
     dbref player,
     dbref cause,
     int   key,
     int   nargs,
-    char *tname,
-    char *message
+    char *arg1,
+    char *arg2
 )
 {
-    dbref target, aowner;
-    char *p, *str;
-    char targetname[LBUF_SIZE];
-    int ismessage = 0;
-    int count = 0;
-    int n = 0;
-    int aflags = 0;
+    int   nPlayers = 0;
+    dbref aPlayers[(LBUF_SIZE+1)/2];
 
-    char *buf1 = alloc_lbuf("page_return_list");
-    char *bp = buf1;
-
-    char *buf2 = alloc_lbuf("page_list");
-    char *bp2 = buf2;
-
-    char *mp = message;
-
-    if (nargs < 2)
-    {
-        atr_get_str(targetname, player, A_LASTPAGE, &aowner, &aflags);
-        if (  nargs < 1
-           || tname[0] == '\0')
-        {
-            if (targetname[0] == '\0')
-            {
-                notify(player, "You have not paged anyone.");
-            }
-            else
-            {
-                TINY_STRTOK_STATE tts;
-                Tiny_StrTokString(&tts, targetname);
-                Tiny_StrTokControl(&tts, " ");
-                for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
-                {
-                    target = Tiny_atol(p);
-                    notify(player, tprintf("You last paged %s.", Name(target)));
-                }
-            }
-            free_lbuf(buf1);
-            free_lbuf(buf2);
-            return;
-        }
-        strcpy(message, tname);
-        strcpy(tname, targetname);
-        ismessage = 1;
-    }
-
-    int ispose = 0;
-    if (  tname[0] == ':'
-       || tname[0] == ';'
-       || message[0] == ':'
-       || message[0] == ';')
-    {
-        ispose = 1;
-    }
-
-    // Count the words.
+    // Either we have been given a recipient list, or we are relying on an
+    // existing A_LASTPAGE.
     //
-    for (n = 0, str = tname; str; str = next_token(str, ' '), n++)
+    BOOL bModified = FALSE;
+    if (  nargs == 2
+       && arg1[0] != '\0')
     {
-        ; // Nothing.
-    }
-
-    if (((target = lookup_player(player, tname, 1)) == NOTHING) && n > 1)
-    {
-        bp = dbrefs_to_names(player, tname, buf1, ismessage);
+        // Need to decode requested recipients.
+        //
         TINY_STRTOK_STATE tts;
-        Tiny_StrTokString(&tts, tname);
-        Tiny_StrTokControl(&tts, " ");
+        Tiny_StrTokString(&tts, arg1);
+        Tiny_StrTokControl(&tts, ", ");
+        char *p;
         for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
         {
-            // If it's a memory page, grab the number from the list.
-            //
-            if (ismessage)
+            dbref target = lookup_player(player,p, 1);
+            if (target != NOTHING)
             {
-                target = Tiny_atol(p);
+                aPlayers[nPlayers++] = target;
             }
             else
-            {
-                target = lookup_player(player, p, 1);
-            }
-
-            message = mp;
-
-            if (target == NOTHING)
             {
                 notify(player, tprintf("I don't recognize \"%s\".", p));
             }
-            else if (!page_check(player, target))
-            {
-                ;
-            }
-            else
-            {
-                switch (*message)
-                {
-                case ':':
-                    notify_with_cause_ooc(target, player, tprintf("From afar, to (%s): %s %s", buf1, Name(player), message + 1));
-                    break;
-
-                case ';':
-                    message++;
-                    notify_with_cause_ooc(target, player, tprintf("From afar, to (%s): %s%s", buf1, Name(player), message));
-                    break;
-
-                case '"':
-                    message++;
-
-                default:
-                    notify_with_cause_ooc(target, player, tprintf("To (%s), %s pages: %s", buf1, Name(player), message));
-
-                }
-                if (fetch_idle(target) >= idle_timeout_val(target))
-                {
-                    page_return(player, target, "Idle", A_IDLE, NULL);
-                }
-
-                safe_str(tprintf("%d ", target), buf2, &bp2);
-                count++;
-            }
         }
+        bModified = TRUE;
     }
     else
     {
-        if (ismessage)
-        {
-            target = Tiny_atol(tname);
-        }
+        // Need to decode the A_LASTPAGE.
+        //
+        dbref aowner;
+        int   aflags;
+        char *pLastPage = atr_get(player, A_LASTPAGE, &aowner, &aflags);
 
-        if (target == NOTHING)
+        TINY_STRTOK_STATE tts;
+        Tiny_StrTokString(&tts, pLastPage);
+        Tiny_StrTokControl(&tts, " ");
+        char *p;
+        for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
         {
-            notify(player, tprintf("I don't recognize \"%s\".", tname));
+            dbref target = Tiny_atol(p);
+            if (  Good_obj(target)
+               && isPlayer(target))
+            {
+                aPlayers[nPlayers++] = target;
+            }
+            else
+            {
+                notify(player, tprintf("I don't recognized #%d.", target));
+                bModified = TRUE;
+            }
         }
-        else if (!page_check(player, target))
+        free_lbuf(pLastPage);
+    }
+
+    int nValid = nPlayers;
+
+    // Remove duplicate dbrefs.
+    //
+    int i;
+    for (i = 0; i < nPlayers-1; i++)
+    {
+        if (aPlayers[i] != NOTHING)
         {
-            ;
+            int j;
+            for (j = i+1; j < nPlayers; j++)
+            {
+                if (aPlayers[j] == aPlayers[i])
+                {
+                    aPlayers[j] = NOTHING;
+                    bModified = TRUE;
+                    nValid--;
+                }
+            }
+        }
+    }
+
+    // If we are doing more than reporting, we need to further validated the
+    // dbrefs.
+    //
+    if (  nargs == 2
+       || arg1[0] != '\0')
+    {
+        for (i = 0; i < nPlayers; i++)
+        {
+            if (  aPlayers[i] != NOTHING
+               && !page_check(player, aPlayers[i]))
+            {
+                aPlayers[i] = NOTHING;
+                bModified = TRUE;
+                nValid--;
+            }
+        }
+    }
+
+    if (bModified)
+    {
+        // Our aPlayers could be different that the one on A_LASTPAGE.
+        // Update the database.
+        //
+        ITB itb;
+        char *pBuff = alloc_lbuf("do_page.lastpage");
+        char *pBufc = pBuff;
+        IntegerToBuffer_Init(&itb, pBuff, &pBufc);
+        int i;
+        for (i = 0; i < nPlayers; i++)
+        {
+            if (  aPlayers[i] != NOTHING
+               && !IntegerToBuffer_Add(&itb, aPlayers[i]))
+            {
+                break;
+            }
+        }
+        IntegerToBuffer_Final(&itb);
+        atr_add_raw(player, A_LASTPAGE, pBuff);
+        free_lbuf(pBuff);
+    }
+
+    // Verify that the receipient list isn't empty.
+    //
+    if (nValid == 0)
+    {
+        if (  nargs == 1
+           && arg1[0] == '\0')
+        {
+            notify(player, "You have not paged anyone.");
         }
         else
         {
+            notify(player, "No one to page.");
+        }
+        return;
+    }
 
-            switch (*message)
+    // Build a friendly representation of the recipient list.
+    //
+    char *aFriendly = alloc_lbuf("do_page.friendly");
+    char *pFriendly = aFriendly;
+    
+    if (nValid > 1)
+    {
+        safe_chr('(', aFriendly, &pFriendly);
+    }
+    BOOL bFirst = TRUE;
+    for (i = 0; i < nPlayers; i++)
+    {
+        if (aPlayers[i] != NOTHING)
+        {
+            if (bFirst)
             {
-            case ':':
-                notify_with_cause_ooc(target, player, tprintf("From afar, %s %s", Name(player), message + 1));
-                break;
-
-            case ';':
-                message++;
-                notify_with_cause_ooc(target, player, tprintf("From afar, %s%s", Name(player), message));
-                break;
-
-            case '"':
-                message++;
-
-            default:
-                notify_with_cause_ooc(target, player, tprintf("%s pages: %s", Name(player), message));
-
+                bFirst = FALSE;
             }
+            else
+            {
+                safe_copy_buf(", ", 2, aFriendly, &pFriendly);
+            }
+            safe_str(Name(aPlayers[i]), aFriendly, &pFriendly);
+        }
+    }
+    if (nValid > 1)
+    {
+        safe_chr(')', aFriendly, &pFriendly);
+    }
+    *pFriendly = '\0';
+
+    // We may be able to proceed directly to the reporting case.
+    //
+    if (  nargs == 1
+       && arg1[0] == '\0')
+    {
+        notify(player, tprintf("You last paged %s.", aFriendly));
+        free_lbuf(aFriendly);
+        return;
+    }
+
+    // Build messages.
+    //
+    char *omessage = alloc_lbuf("do_page.omessage");
+    char *imessage = alloc_lbuf("do_page.imessage");
+    char *omp = omessage;
+    char *imp = imessage;
+
+    char *pMessage;
+    if (nargs == 1)
+    {
+        // 'page A' form.
+        //
+        pMessage = arg1;
+    }
+    else
+    {
+        // 'page A=', 'page =B', and 'page A=B' forms.
+        //
+        pMessage = arg2;
+    }
+
+    switch (*pMessage)
+    {
+    case '\0':
+        // 'page A=' form.
+        //
+        if (nValid == 1)
+        {
+            safe_tprintf_str(omessage, &omp, "From afar, %s pages you.",
+                Name(player));
+        }
+        else
+        {
+            safe_tprintf_str(omessage, &omp, "From afar, %s pages %s.",
+                Name(player), aFriendly);
+        }
+        safe_tprintf_str(imessage, &imp, "You page %s.", aFriendly);
+        break;
+
+    case ':':
+        pMessage++;
+        safe_str("From afar, ", omessage, &omp);
+        if (nValid > 1)
+        {
+            safe_tprintf_str(omessage, &omp, "to %s: ", aFriendly);
+        }
+        safe_tprintf_str(omessage, &omp, "%s %s", Name(player), pMessage);
+        safe_tprintf_str(imessage, &imp, "Long distance to %s: %s %s",
+            aFriendly, Name(player), pMessage);
+        break;
+
+    case ';':
+        pMessage++;
+        safe_str("From afar, ", omessage, &omp);
+        if (nValid > 1)
+        {
+            safe_tprintf_str(omessage, &omp, "to %s: ", aFriendly);
+        }
+        safe_tprintf_str(omessage, &omp, "%s%s", Name(player), pMessage);
+        safe_tprintf_str(imessage, &imp, "Long distance to %s: %s%s",
+            aFriendly, Name(player), pMessage);
+        break;
+
+    case '"':
+        pMessage++;
+
+        // FALL THROUGH
+
+    default:
+        if (nValid > 1)
+        {
+            safe_tprintf_str(omessage, &omp, "To %s, ", aFriendly);
+        }
+        safe_tprintf_str(omessage, &omp, "%s pages: %s", Name(player),
+            pMessage);
+        safe_tprintf_str(imessage, &imp, "You paged %s with '%s'.",
+            aFriendly, pMessage);
+        break;
+    }
+    free_lbuf(aFriendly);
+
+    // Send message to recipients.
+    //
+    for (i = 0; i < nPlayers; i++)
+    {
+        dbref target = aPlayers[i];
+        if (target != NOTHING)
+        {
+            notify_with_cause_ooc(target, player, omessage);
             if (fetch_idle(target) >= idle_timeout_val(target))
             {
                 page_return(player, target, "Idle", A_IDLE, NULL);
             }
-
-            safe_str(tprintf("%d ", target), buf2, &bp2);
-            safe_str(tprintf("%s, ", Name(target)), buf1, &bp);
-            count++;
-        }
-        *(bp - 2) = '\0';
-    }
-
-    if (count == 0)
-    {
-        free_lbuf(buf1);
-        free_lbuf(buf2);
-        return;
-    }
-    *(bp2 - 1) = '\0';
-    atr_add(player, A_LASTPAGE, buf2, Owner(player), aflags);
-
-    if (count == 1)
-    {
-        if (*buf1)
-        {
-            if (ispose != 1)
-            {
-                notify(player, tprintf("You paged %s with '%s'.", buf1, mp));
-            }
-            else
-            {
-                if (mp[0] == ':')
-                {
-                    notify(player, tprintf("Long distance to %s: %s %s", buf1, Name(player), mp + 1));
-                }
-                else
-                {
-                    notify(player, tprintf("Long distance to %s: %s%s", buf1, Name(player), mp + 1));
-                }
-            }
         }
     }
-    else
-    {
-        *(bp - 2) = ')';
-        *(bp - 1) = '\0';
+    free_lbuf(omessage);
 
-        if (*buf1)
-        {
-            if (ispose != 1)
-            {
-                notify(player, tprintf("You paged (%s with '%s'.", buf1, mp));
-            }
-            else
-            {
-                if (mp[0] == ':')
-                    notify(player, tprintf("Long distance to (%s: %s %s", buf1, Name(player), mp + 1));
-                else
-                    notify(player, tprintf("Long distance to (%s: %s%s", buf1, Name(player), mp + 1));
-            }
-        }
-    }
-
-    free_lbuf(buf1);
-    free_lbuf(buf2);
+    // Send message to send.
+    //
+    notify(player, imessage);
+    free_lbuf(imessage);
 }
 
 /*
