@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.27 2004-04-15 18:50:12 sdennis Exp $
+// $Id: mail.cpp,v 1.28 2004-04-16 05:21:44 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3037,7 +3037,6 @@ void malias_read(FILE *fp)
                 {
                     m->list[j] = k;
                 }
-
             }
         }
         else
