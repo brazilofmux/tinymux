@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.51 2003-01-31 06:34:19 sdennis Exp $
+// $Id: comsys.cpp,v 1.52 2003-03-05 23:12:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -178,7 +178,7 @@ char *MakeCanonicalComAlias
     if (  n < 1
        || MAX_ALIAS_LEN < n)
     {
-        return FALSE;
+        return NULL;
     }
     *nValidAlias = n;
     *bValidAlias = TRUE;
