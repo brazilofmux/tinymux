@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.79 2001-07-05 18:40:18 hellspawn Exp $
+// $Id: functions.cpp,v 1.80 2001-07-06 16:24:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6098,10 +6098,10 @@ FUNCTION(fun_center)
 
 FUNCTION(fun_setq)
 {
-    int regnum;
-
-    regnum = Tiny_atol(fargs[0]);
-    if ((regnum < 0) || (regnum >= MAX_GLOBAL_REGS))
+    int regnum = Tiny_IsRegister[fargs[0][0]];
+    if (  regnum < 0
+       || regnum >= MAX_GLOBAL_REGS
+       || fargs[0][1] != '\0')
     {
         safe_str("#-1 INVALID GLOBAL REGISTER", buff, bufc);
     }
@@ -6119,14 +6119,12 @@ FUNCTION(fun_setq)
 
 FUNCTION(fun_setr)
 {
-    int regnum;
-
-    regnum = Tiny_atol(fargs[0]);
-    int n;
-    if ((regnum < 0) || (regnum >= MAX_GLOBAL_REGS))
+    int regnum = Tiny_IsRegister[fargs[0][0]];
+    if (  regnum < 0
+       || regnum >= MAX_GLOBAL_REGS
+       || fargs[0][1] != '\0')
     {
         safe_str("#-1 INVALID GLOBAL REGISTER", buff, bufc);
-        return;
     }
     else
     {
@@ -6134,19 +6132,19 @@ FUNCTION(fun_setr)
         {
             mudstate.global_regs[regnum] = alloc_lbuf("fun_setq");
         }
-        n = strlen(fargs[1]);
+        int n = strlen(fargs[1]);
         memcpy(mudstate.global_regs[regnum], fargs[1], n+1);
         mudstate.glob_reg_len[regnum] = n;
+        safe_copy_buf(fargs[1], n, buff, bufc, LBUF_SIZE-1);
     }
-    safe_copy_buf(fargs[1], n, buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_r)
 {
-    int regnum;
-
-    regnum = Tiny_atol(fargs[0]);
-    if ((regnum < 0) || (regnum >= MAX_GLOBAL_REGS))
+    int regnum = Tiny_IsRegister[(unsigned char)fargs[0][0]];
+    if (  regnum < 0
+       || regnum >= MAX_GLOBAL_REGS
+       || fargs[0][1] != '\0')
     {
         safe_str("#-1 INVALID GLOBAL REGISTER", buff, bufc);
     }

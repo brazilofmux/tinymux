@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.16 2001-06-28 07:47:32 sdennis Exp $
+// $Id: config.h,v 1.17 2001-07-06 16:24:21 sdennis Exp $
 //
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -14,7 +14,7 @@
 #define PLAYER_NAME_LIMIT   22  /* Max length for player names */
 #define NUM_ENV_VARS        10  /* Number of env vars (%0 et al) */
 #define MAX_ARG             100 /* max # args from command processor */
-#define MAX_GLOBAL_REGS     10  /* r() registers */
+#define MAX_GLOBAL_REGS     36  /* r() registers */
 
 #define OUTPUT_BLOCK_SIZE   16384
 #define StringCopy          strcpy

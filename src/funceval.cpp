@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.57 2001-07-05 23:12:30 sdennis Exp $
+// $Id: funceval.cpp,v 1.58 2001-07-06 16:24:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3202,12 +3202,11 @@ FUNCTION(fun_regmatch)
     for (int i = 0; i < nqregs; i++)
     {
         int curq;
-        int nIntLen;
         if (  qregs[i]
            && *qregs[i]
-           && is_integer(qregs[i], &nIntLen)
-           && (curq = Tiny_atol(qregs[i])) >= 0
-           && curq <= 9)
+           && (curq = Tiny_IsRegister[qregs[i][0]]) != -1
+           && qregs[i][1] == '\0'
+           && curq < MAX_GLOBAL_REGS)
         {
             if (!mudstate.global_regs[curq])
             {
