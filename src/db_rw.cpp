@@ -2,7 +2,7 @@
  * db_rw.c 
  */
 /*
- * $Id: db_rw.cpp,v 1.1 2000-04-11 07:14:44 sdennis Exp $ 
+ * $Id: db_rw.cpp,v 1.2 2000-04-13 07:45:27 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -931,12 +931,6 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
         case TYPE_EXIT:
             if (f2 & PENN_EXIT_LIGHT)
                 newf2 |= LIGHT;
-#ifdef DSPACE
-            if (f2 & PENN_EXIT_DSPACE)
-                newf2 |= DYNAMIC;
-#endif /*
-        * * DSPACE  
-        */
             break;
         case TYPE_THING:
             if (f2 & PENN_THING_DEST_OK)
@@ -957,12 +951,6 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
                 newf1 |= MONITOR;
             if (f2 & PENN_ROOM_UNINSPECT)
                 newf2 |= UNINSPECTED;
-#ifdef DSPACE
-            if (f2 & PENN_ROOM_DSPACE)
-                newf2 |= DYNAMIC;
-#endif /*
-        * * DSPACE  
-        */
         }
     } else if ((db_format == F_MUSH) && (db_version >= 3)) {
         newf1 = f1;
@@ -1176,7 +1164,9 @@ void unscraw_foreign(int db_format, int db_version, int db_flags)
                      * * * * * * * with HAS_FWDLIST 
                      */
 
-                    if ((db_version == 6) && (Flags2(i) & HAS_STARTUP) && atr_get_raw(i, A_FORWARDLIST))
+                    if (  (db_version == 6)
+                       && (Flags2(i) & HAS_STARTUP)
+                       && atr_get_raw(i, A_FORWARDLIST))
                     {
 
                         /*
