@@ -9073,9 +9073,9 @@ NOT()
 
   FUNCTION: not(<boolean>)
 
-  Takes a boolean value, and returns its inverse.  So, if the input is
-  equivalent to true(1) it returns a 0, and if the input is equivalent to
-  false(0), it returns a 1.
+  Takes a BOOLEAN value, and returns its inverse.  So, if the input is
+  equivalent to TRUE it returns a FALSE(0), and if the input is equivalent to
+  FALSE, it returns a TRUE(1).
 
   Related Topics: BOOLEAN VALUES, and(), or(), t(), xor().
 
