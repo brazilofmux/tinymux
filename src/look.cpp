@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.41 2002-03-28 06:21:59 sdennis Exp $
+// $Id: look.cpp,v 1.42 2002-05-09 04:28:00 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -410,7 +410,6 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
 
     dbref thing, parent;
     char *buff, *e, *s, *buff1, *e1;
-    int foundany, lev, key;
 
     // Make sure location has exits.
     //
@@ -421,8 +420,10 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
 
     // make sure there is at least one visible exit.
     //
-    foundany = 0;
-    key = 0;
+    BOOL bFoundAnyDisplayable = FALSE;
+    BOOL bFoundAny = FALSE;
+    int key = 0;
+    int lev;
     if (Dark(loc))
     {
         key |= VE_BASE_DARK;
@@ -436,18 +437,23 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         }
         DOLIST(thing, Exits(parent))
         {
+            bFoundAny = TRUE;
             if (exit_displayable(thing, player, key))
             {
-                foundany = 1;
+                bFoundAnyDisplayable = TRUE;
                 break;
             }
         }
-        if (foundany)
+        if (bFoundAnyDisplayable)
+        {
             break;
+        }
     }
 
-    if (!foundany)
+    if (!bFoundAny)
+    {
         return;
+    }
 
     // Retrieve the ExitFormat attribute from the location, evaluate and display
     // the results in lieu of the traditional exits list if it exists.

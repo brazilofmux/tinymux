@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.48 2002-04-14 21:23:52 sdennis Exp $
+// $Id: predicates.cpp,v 1.49 2002-05-09 04:28:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1624,28 +1624,20 @@ int exit_visible(dbref exit, dbref player, int key)
 
     // Exam exit's location
     //
-    if (key & VE_LOC_XAM)
+    if (  (key & VE_LOC_XAM)
+       || Examinable(player, exit)
+       || Light(exit))
+    {
         return 1;
-
-    // Exam exit
-    //
-    if (Examinable(player, exit))
-        return 1;
-
-    // Exit is light
-    //
-    if (Light(exit))
-        return 1;
+    }
 
     // Dark location or base
     //
-    if (key & (VE_LOC_DARK | VE_BASE_DARK))
+    if (  (key & (VE_LOC_DARK | VE_BASE_DARK))
+       || Dark(exit))
+    {
         return 0;
-
-    // Dark exit
-    //
-    if (Dark(exit))
-        return 0;
+    }
 
     // Default
     //
