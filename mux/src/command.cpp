@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.92 2002-09-27 18:51:52 sdennis Exp $
+// $Id: command.cpp,v 1.93 2002-09-29 16:41:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -933,7 +933,7 @@ BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
                 PopIntegers(preserve_len, MAX_GLOBAL_REGS);
                 PopPointers(preserve, MAX_GLOBAL_REGS);
             }
-            retval = (Tiny_atol(buff) > 0);
+            retval = xlate(buff);
             free_lbuf(buff);
         }
     }
@@ -1484,10 +1484,10 @@ int higcheck (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *p
         ATTR *hk_ap2 = atr_str(s_uselock);
         BOOL hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, TRUE);
         free_sbuf(s_uselock);
-        if (cmdp->hookmask & HOOK_IGNORE)
+        if (  !hk_retval
+           && (cmdp->hookmask & HOOK_IGNORE))
         {
-            if (  hk_retval
-               && (cmdp->hookmask & HOOK_PERMIT))
+            if (cmdp->hookmask & HOOK_PERMIT)
             {
                 cmdp->hookmask = cmdp->hookmask & ~HOOK_IGNORE;
                 hval = higcheck(executor, caller, enactor, cmdp, pCommand);
