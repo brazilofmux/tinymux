@@ -366,6 +366,13 @@ Bug Fixes:
     On non-debug builds, this would tend to leave the command in a
     @hook/ignore state.  Therefore, even though the @addcommand was
     successful, a user would still receive a 'Huh?' message.
+ -- Specific to the Win32 build with the Intel Compiler,
+    'mul(288,power(10,9))' --> '287:00000000' instead of '288000000000'.
+    It transformed a floating-point division in Tiny_dtoa() into a
+    floating-point multiplication (tangentially, using MMX instructions
+    as well).  The -Qprec_div option prevents this optimization and fixes
+    the behavior.  As insurance, some additional code also will fix the
+    the problem.
 
 
 Performance Enhancements:
