@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.9 2000-04-24 22:25:01 sdennis Exp $
+// $Id: db.cpp,v 1.10 2000-04-24 23:28:52 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1483,7 +1483,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
 
 static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *flags, int atr, int *pLen)
 {
-    Attr *a;
+    char *a;
     int nLen;
     if (!Good_obj(thing))
         return 0;
@@ -1700,11 +1700,11 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     text = (char *)MEMALLOC(nCompressedValue, __FILE__, __LINE__);
     if (!text) return;
     memcpy(text, compress_buff, nCompressedValue);
-#else
+#else // RADIX_COMPRESSION
     text = (char *)MEMALLOC(nValue, __FILE__, __LINE__);
     if (!text) return;
     memcpy(text, szValue, nValue+1);
-#endif
+#endif // RADIX_COMPRESSION
 
     if (!db[thing].ahead)
     {
@@ -1720,7 +1720,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
         list[0].data = text;
 #ifdef RADIX_COMPRESSION
         list[0].size = nCompressedValue;
-#else
+#else // RADIX_COMPRESSION
         list[0].size = nValue+1;
 #endif // RADIX_COMPRESSION
         found = 1;
@@ -1742,7 +1742,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
                 list[mid].data = text;
 #ifdef  RADIX_COMPRESSION
                 list[mid].size = nCompressedValue;
-#else
+#else // RADIX_COMPRESSION
                 list[mid].size = nValue+1;
 #endif // RADIX_COMPRESSION
                 found = 1;
@@ -1791,14 +1791,14 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
             list[lo].number = atr;
 #ifdef RADIX_COMPRESSION
             list[lo].size = nCompressedValue;
-#else
+#else // RADIX_COMPRESSION
             list[lo].size = nValue+1;
 #endif // RADIX_COMPRESSION
             db[thing].at_count++;
             db[thing].ahead = list;
         }
     }
-#else
+#else // !MEMORY_BASED
     Aname okey;
 
     makekey(thing, atr, &okey);
@@ -1832,11 +1832,8 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
         // It's not an A_LIST, so compress it into a buffer and store that.
         //
         int nCompressedValue = string_compress(szValue, compress_buff);
-        Attr *a= (Attr *)MEMALLOC(nCompressedValue, __FILE__, __LINE__);
-        if (!a) return;
-        memcpy(a, compress_buff, nCompressedValue);
-        STORE(&okey, a, nCompressedValue);
-#else
+        STORE(&okey, compress_buff, nCompressedValue);
+#else // RADIX_COMPRESSION
         STORE(&okey, szValue, nValue+1);
 #endif // RADIX_COMPRESSION
     }
@@ -1972,7 +1969,7 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 #else
 char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 {
-    Attr *a;
+    char *a;
     Aname okey;
 
     makekey(thing, atr, &okey);
