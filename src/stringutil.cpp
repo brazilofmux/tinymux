@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.44 2001-08-25 05:26:08 sdennis Exp $
+// $Id: stringutil.cpp,v 1.45 2001-08-25 05:34:40 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2158,6 +2158,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
 {
     // Parse Input
     //
+    unsigned char ch0;
     pfr->pMeat = str;
     if (  !Tiny_IsDigit[(unsigned char)*str]
        && *str != '.')
@@ -2262,7 +2263,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
         return FALSE;
     }
 
-    unsigned char ch0 = Tiny_ToUpper[(unsigned char)*str];
+    ch0 = Tiny_ToUpper[(unsigned char)*str];
     if (ch0 == 'E')
     {
         // There is an exponent portion.
