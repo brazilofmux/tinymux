@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.83 2001-08-23 17:15:15 sdennis Exp $
+// $Id: functions.cpp,v 1.84 2001-08-24 16:29:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -850,7 +850,7 @@ FUNCTION(fun_abs)
 {
     double num;
 
-    num = safe_atof(fargs[0]);
+    num = Tiny_atof(fargs[0]);
     if (num == 0.0)
     {
         safe_chr('0', buff, bufc);
@@ -874,7 +874,7 @@ FUNCTION(fun_sign)
 {
     double num;
 
-    num = safe_atof(fargs[0]);
+    num = Tiny_atof(fargs[0]);
     if (num < 0)
     {
         safe_str("-1", buff, bufc);
@@ -2204,7 +2204,7 @@ FUNCTION(fun_gt)
             ch = '1';
         }
     }
-    else if (safe_atof(fargs[0]) > safe_atof(fargs[1]))
+    else if (Tiny_atof(fargs[0]) > Tiny_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2225,7 +2225,7 @@ FUNCTION(fun_gte)
             ch = '1';
         }
     }
-    else if (safe_atof(fargs[0]) >= safe_atof(fargs[1]))
+    else if (Tiny_atof(fargs[0]) >= Tiny_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2246,7 +2246,7 @@ FUNCTION(fun_lt)
             ch = '1';
         }
     }
-    else if (safe_atof(fargs[0]) < safe_atof(fargs[1]))
+    else if (Tiny_atof(fargs[0]) < Tiny_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2267,7 +2267,7 @@ FUNCTION(fun_lte)
             ch = '1';
         }
     }
-    else if (safe_atof(fargs[0]) <= safe_atof(fargs[1]))
+    else if (Tiny_atof(fargs[0]) <= Tiny_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2289,7 +2289,7 @@ FUNCTION(fun_eq)
         }
     }
     else if (  strcmp(fargs[0], fargs[1]) == 0
-            || safe_atof(fargs[0]) == safe_atof(fargs[1]))
+            || Tiny_atof(fargs[0]) == Tiny_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2311,7 +2311,7 @@ FUNCTION(fun_neq)
         }
     }
     else if (  strcmp(fargs[0], fargs[1]) != 0
-            && safe_atof(fargs[0]) != safe_atof(fargs[1]))
+            && Tiny_atof(fargs[0]) != Tiny_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2381,7 +2381,7 @@ FUNCTION(fun_ladd)
     while (cp)
     {
         char *curr = split_token(&cp, sep);
-        sum += safe_atof(curr);
+        sum += Tiny_atof(curr);
     }
     fval(buff, bufc, sum);
 }
@@ -2390,7 +2390,7 @@ FUNCTION(fun_sqrt)
 {
     double val;
 
-    val = safe_atof(fargs[0]);
+    val = Tiny_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if (val < 0.0)
     {
@@ -2415,14 +2415,14 @@ FUNCTION(fun_add)
     double sum = 0.0;
     for (int i = 0; i < nfargs; i++)
     {
-        sum += safe_atof(fargs[i]);
+        sum += Tiny_atof(fargs[i]);
     }
     fval(buff, bufc, sum);
 }
 
 FUNCTION(fun_sub)
 {
-    fval(buff, bufc, safe_atof(fargs[0]) - safe_atof(fargs[1]));
+    fval(buff, bufc, Tiny_atof(fargs[0]) - Tiny_atof(fargs[1]));
 }
 #else
 static long nMaximums[10] =
@@ -2446,7 +2446,7 @@ FUNCTION(fun_add)
             double sum = 0.0;
             for (int j = 0; j < nfargs; j++)
             {
-                sum += safe_atof(fargs[j]);
+                sum += Tiny_atof(fargs[j]);
             }
             fval(buff, bufc, sum);
             return;
@@ -2477,7 +2477,7 @@ FUNCTION(fun_sub)
     }
     else
     {
-        fval(buff, bufc, safe_atof(fargs[0]) - safe_atof(fargs[1]));
+        fval(buff, bufc, Tiny_atof(fargs[0]) - Tiny_atof(fargs[1]));
     }
 }
 
@@ -2488,14 +2488,14 @@ FUNCTION(fun_mul)
     double prod = 1.0;
     for (int i = 0; i < nfargs; i++)
     {
-        prod *= safe_atof(fargs[i]);
+        prod *= Tiny_atof(fargs[i]);
     }
     fval(buff, bufc, prod);
 }
 
 FUNCTION(fun_floor)
 {
-    double r = floor(safe_atof(fargs[0]));
+    double r = floor(Tiny_atof(fargs[0]));
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = Tiny_fpclass(r);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
@@ -2513,7 +2513,7 @@ FUNCTION(fun_floor)
 
 FUNCTION(fun_ceil)
 {
-    double r = ceil(safe_atof(fargs[0]));
+    double r = ceil(Tiny_atof(fargs[0]));
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = Tiny_fpclass(r);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
@@ -2560,7 +2560,7 @@ FUNCTION(fun_round)
         fstr = "%.0f";
         break;
     }
-    double r = safe_atof(fargs[0]);
+    double r = Tiny_atof(fargs[0]);
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = Tiny_fpclass(r);
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
@@ -2578,7 +2578,7 @@ FUNCTION(fun_round)
 
 FUNCTION(fun_trunc)
 {
-    double rArg = safe_atof(fargs[0]);
+    double rArg = Tiny_atof(fargs[0]);
     double rIntegerPart;
     double rFractionalPart;
 
@@ -2634,8 +2634,8 @@ FUNCTION(fun_floordiv)
 
 FUNCTION(fun_fdiv)
 {
-    double bot = safe_atof(fargs[1]);
-    double top = safe_atof(fargs[0]);
+    double bot = Tiny_atof(fargs[1]);
+    double top = Tiny_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if (bot == 0.0)
     {
@@ -2700,28 +2700,28 @@ FUNCTION(fun_e)
 
 FUNCTION(fun_sin)
 {
-    fval(buff, bufc, sin(safe_atof(fargs[0])));
+    fval(buff, bufc, sin(Tiny_atof(fargs[0])));
 }
 FUNCTION(fun_cos)
 {
-    fval(buff, bufc, cos(safe_atof(fargs[0])));
+    fval(buff, bufc, cos(Tiny_atof(fargs[0])));
 }
 FUNCTION(fun_tan)
 {
-    fval(buff, bufc, tan(safe_atof(fargs[0])));
+    fval(buff, bufc, tan(Tiny_atof(fargs[0])));
 }
 
 FUNCTION(fun_exp)
 {
-    fval(buff, bufc, exp(safe_atof(fargs[0])));
+    fval(buff, bufc, exp(Tiny_atof(fargs[0])));
 }
 
 FUNCTION(fun_power)
 {
     double val1, val2;
 
-    val1 = safe_atof(fargs[0]);
-    val2 = safe_atof(fargs[1]);
+    val1 = Tiny_atof(fargs[0]);
+    val2 = Tiny_atof(fargs[1]);
 #ifndef HAVE_IEEE_FP_SNAN
     if (val1 < 0.0)
     {
@@ -2740,7 +2740,7 @@ FUNCTION(fun_ln)
 {
     double val;
 
-    val = safe_atof(fargs[0]);
+    val = Tiny_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if (val < 0.0)
     {
@@ -2763,7 +2763,7 @@ FUNCTION(fun_log)
 {
     double val;
 
-    val = safe_atof(fargs[0]);
+    val = Tiny_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if (val < 0.0)
     {
@@ -2784,7 +2784,7 @@ FUNCTION(fun_log)
 
 FUNCTION(fun_asin)
 {
-    double val = safe_atof(fargs[0]);
+    double val = Tiny_atof(fargs[0]);
 #ifdef HAVE_IEEE_FP_SNAN
     fval(buff, bufc, asin(val));
 #else
@@ -2801,7 +2801,7 @@ FUNCTION(fun_asin)
 
 FUNCTION(fun_acos)
 {
-    double val = safe_atof(fargs[0]);
+    double val = Tiny_atof(fargs[0]);
 #ifdef HAVE_IEEE_FP_SNAN
     fval(buff, bufc, acos(val));
 #else
@@ -2818,7 +2818,7 @@ FUNCTION(fun_acos)
 
 FUNCTION(fun_atan)
 {
-    fval(buff, bufc, atan(safe_atof(fargs[0])));
+    fval(buff, bufc, atan(Tiny_atof(fargs[0])));
 }
 
 FUNCTION(fun_dist2d)
@@ -2906,7 +2906,7 @@ static void handle_vectors
 
         for (i = 0; i < n; i++)
         {
-            fval_buf(vres[i], safe_atof(v1[i]) + safe_atof(v2[i]));
+            fval_buf(vres[i], Tiny_atof(v1[i]) + Tiny_atof(v2[i]));
             v1[i] = (char *) vres[i];
         }
         arr2list(v1, n, buff, bufc, osep);
@@ -2916,7 +2916,7 @@ static void handle_vectors
 
         for (i = 0; i < n; i++)
         {
-            fval_buf(vres[i], safe_atof(v1[i]) - safe_atof(v2[i]));
+            fval_buf(vres[i], Tiny_atof(v1[i]) - Tiny_atof(v2[i]));
             v1[i] = (char *) vres[i];
         }
         arr2list(v1, n, buff, bufc, osep);
@@ -2929,20 +2929,20 @@ static void handle_vectors
         //
         if (n == 1)
         {
-            scalar = safe_atof(v1[0]);
+            scalar = Tiny_atof(v1[0]);
             for (i = 0; i < m; i++)
             {
-                fval_buf(vres[i], safe_atof(v2[i]) * scalar);
+                fval_buf(vres[i], Tiny_atof(v2[i]) * scalar);
                 v1[i] = (char *) vres[i];
             }
             n = m;
         }
         else if (m == 1)
         {
-            scalar = safe_atof(v2[0]);
+            scalar = Tiny_atof(v2[0]);
             for (i = 0; i < n; i++)
             {
-                fval_buf(vres[i], safe_atof(v1[i]) * scalar);
+                fval_buf(vres[i], Tiny_atof(v1[i]) * scalar);
                 v1[i] = (char *) vres[i];
             }
         }
@@ -2958,7 +2958,7 @@ static void handle_vectors
             //
             for (i = 0; i < n; i++)
             {
-                fval_buf(vres[i], safe_atof(v1[i]) * safe_atof(v2[i]));
+                fval_buf(vres[i], Tiny_atof(v1[i]) * Tiny_atof(v2[i]));
                 v1[i] = (char *) vres[i];
             }
         }
@@ -2970,7 +2970,7 @@ static void handle_vectors
         scalar = 0.0;
         for (i = 0; i < n; i++)
         {
-            scalar += safe_atof(v1[i]) * safe_atof(v2[i]);
+            scalar += Tiny_atof(v1[i]) * Tiny_atof(v2[i]);
         }
         fval(buff, bufc, scalar);
         break;
@@ -2998,8 +2998,8 @@ static void handle_vectors
             double a[2][3];
             for (i = 0; i < 3; i++)
             {
-                a[0][i] = safe_atof(v1[i]);
-                a[1][i] = safe_atof(v2[i]);
+                a[0][i] = Tiny_atof(v1[i]);
+                a[1][i] = Tiny_atof(v2[i]);
                 v1[i] = (char *) vres[i];
             }
             fval_buf(vres[0], (a[0][1] * a[1][2]) - (a[0][2] * a[1][1]));
@@ -3083,7 +3083,7 @@ FUNCTION(fun_vmag)
     //
     for (i = 0; i < n; i++)
     {
-        tmp = safe_atof(v1[i]);
+        tmp = Tiny_atof(v1[i]);
         res += tmp * tmp;
     }
     
@@ -3125,7 +3125,7 @@ FUNCTION(fun_vunit)
     //
     for (i = 0; i < n; i++)
     {
-        tmp = safe_atof(v1[i]);
+        tmp = Tiny_atof(v1[i]);
         res += tmp * tmp;
     }
     
@@ -3137,7 +3137,7 @@ FUNCTION(fun_vunit)
     }
     for (i = 0; i < n; i++)
     {
-        fval_buf(vres[i], safe_atof(v1[i]) / sqrt(res));
+        fval_buf(vres[i], Tiny_atof(v1[i]) / sqrt(res));
         v1[i] = (char *) vres[i];
     }
     
@@ -4568,7 +4568,7 @@ FUNCTION(fun_max)
     double maximum = -DBL_MAX;
     for (int i = 0; i < nfargs; i++)
     {
-        double tval = safe_atof(fargs[i]);
+        double tval = Tiny_atof(fargs[i]);
         if (tval > maximum)
         {
             maximum = tval;
@@ -4582,7 +4582,7 @@ FUNCTION(fun_min)
     double minimum = DBL_MAX;
     for (int i = 0; i < nfargs; i++) 
     {
-        double tval = safe_atof(fargs[i]);
+        double tval = Tiny_atof(fargs[i]);
         if (tval < minimum)
         {
             minimum = tval;
@@ -5597,7 +5597,7 @@ static void do_asort(char *s[], int n, int sort_type)
         for (i = 0; i < n; i++)
         {
             fp[i].str = s[i];
-            fp[i].data = safe_atof(s[i]);
+            fp[i].data = Tiny_atof(s[i]);
         }
         qsort((void *)fp, n, sizeof(f_rec), f_comp);
         for (i = 0; i < n; i++)
@@ -6747,7 +6747,7 @@ CF_HAND(cf_func_access)
 // Some libraries go nuts...just because you force feed them lots of ASCII.
 //
 #define ATOF_LIMIT 100
-double safe_atof(char *szString)
+double Tiny_atof(char *szString)
 {
     double ret;
 
