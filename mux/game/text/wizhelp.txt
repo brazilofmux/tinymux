@@ -442,29 +442,37 @@
   This command will set up 'hooks' to be applied to various commands or
   attributes.  You may specify multiple hooks on items.  The HOOK_OBJ is
   an @admin param that specifies the hook object.  The following hooks exist:
-         /before    - Set up a BEFORE hook on a command.  This will execute
-                      functionality BEFORE the command/attribute is done.
-                      The attribute is 'b_<command>' on the HOOK_OBJ.
-         /after     - Set up an AFTER hook on a command.  This will execute
-                      functionality AFTER the command/attribute is done.
-                      The attribute is 'a_<command> on the HOOK_OBJ.
-         /permit    - Set up a permission for a command.  Anything but '1'
-                      will return a 'Permission denied.' for the enactor.
-                      The attribute is 'p_<command> on the HOOK_OBJ.
-         /ignore    - Set up a fall-through on the command.  Anything but '1'
-                      causes the command to fall through to be handled by any
-                      matching softcode by the same name.
-                      The attribute is 'i_<command> on the HOOK_OBJ.
+
+         /before    - Set up a BEFORE hook which will execute before the
+                      corresponding built-in command/attribute is executed.
+                      The HOOK_OBJ attribute is b_<command>.
+
+         /after     - Set up an AFTER hook on a command which will execute
+                      after the corresponding built-in command/attribute is
+                      executed.  The HOOK_OBJ attribute is a_<command>.
+
+         /permit    - Affects command permission.  Return BOOLEAN TRUE to
+                      permit. Return FALSE to notify the enactor with
+                      'Permission denied.'.  The HOOK_OBJ attribute is
+                      p_<command>.
+
+         /ignore    - Return BOOLEAN FALSE to ignore the corresponding
+                      built-in command.  Any matching softcoded commands
+                      continue to be handled.  The HOOK_OBJ attribute is
+                      i_<command>.
+
          /igswitch  - Specifies that any non-matching /switch to the command
                       falls through and is handled by softcode.  This allows
-                      you to softcode switches to existing commands.
+                      you to softcode switches to built-in commands.
+
+         /fail      - Set up a FAIL hook which executes if the command is
+                      somehow block by a @hook/permit or @icmd/disable.
+                      The HOOK_OBJ attribute is af_<command>.
+
          /clear     - When used in junction with any of the above switches, 
                       will clear the hook from being applied.
+
          /list      - This lists the current commands/attributes with hooks.
-         /fail      - Set up a FAIL hook on a command.  This will execute
-                      functionality if the command/attribute is blocked to
-                      the player by an @hook/permit or @icmd/disable.
-                      The attribute is 'af_<command> on the HOOK_OBJ.
 
 { 'wizhelp @hook2' for examples}
 
