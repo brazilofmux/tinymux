@@ -959,7 +959,7 @@ static double b2d(Bigint *a, int *e)
     y = xa > xa0 ? *--xa : 0;
     d1 = w << k + 16 | y << k;
 #endif
- ret_d:
+ret_d:
 #ifdef VAX
     word0(d) = d0 >> 16 | d0 << 16;
     word1(d) = d1 >> 16 | d1 << 16;
@@ -1310,7 +1310,7 @@ double Tiny_strtod(const char *s00, char **se)
         }
         for (; c >= '0' && c <= '9'; c = *++s)
         {
- have_dig:
+have_dig:
             nz++;
             if (c -= '0')
             {
@@ -1457,7 +1457,7 @@ dig_done:
                 /* VAX exponent range is so narrow we must
                  * worry about overflow here...
                  */
- vax_ovfl_check:
+vax_ovfl_check:
                 word0(rv) -= P*Exp_msk1;
                 /* value(rv) = */ rounded_product(value(rv),
                     tens[e]);
@@ -1919,19 +1919,19 @@ drop_down:
                 break;
             }
         }
- cont:
+cont:
         Bfree(bb);
         Bfree(bd);
         Bfree(bs);
         Bfree(delta);
     }
- retfree:
+retfree:
     Bfree(bb);
     Bfree(bd);
     Bfree(bs);
     Bfree(bd0);
     Bfree(delta);
- ret:
+ret:
     if (se)
     {
         /* LINTED interface specification */
@@ -2459,7 +2459,7 @@ char *Tiny_dtoa(double _d, int mode, int ndigits, int *decpt, int *sign,
 #ifndef No_leftright
         }
 #endif
- fast_failed:
+fast_failed:
         s = s0;
         value(d) = value(d2);
         k = k0;
@@ -2499,7 +2499,7 @@ char *Tiny_dtoa(double _d, int mode, int ndigits, int *decpt, int *sign,
                 value(d) += value(d);
                 if (value(d) > ds || (value(d) == ds && L & 1))
                 {
- bump_up:
+bump_up:
                     while (*--s == '9')
                     {
                         if (s == s0)
@@ -2674,11 +2674,11 @@ char *Tiny_dtoa(double _d, int mode, int ndigits, int *decpt, int *sign,
         if (ilim < 0 || cmp(b,S = multadd(S,5,0)) <= 0)
         {
             /* no digits, fcvt style */
- no_digits:
+no_digits:
             k = -1 - ndigits;
             goto ret;
         }
- one_digit:
+one_digit:
         *s++ = '1';
         k++;
         goto ret;
@@ -2794,7 +2794,7 @@ round_9_up:
     j = cmp(b, S);
     if (j > 0 || (j == 0 && dig & 1))
     {
- roundoff:
+roundoff:
         while (*--s == '9')
         {
             if (s == s0)
@@ -2814,7 +2814,7 @@ round_9_up:
         }
         s++;
     }
- ret:
+ret:
     Bfree(S);
     if (mhi)
     {
@@ -2824,7 +2824,7 @@ round_9_up:
         }
         Bfree(mhi);
     }
- ret1:
+ret1:
     Bfree(b);
     if (s == s0)
     {
