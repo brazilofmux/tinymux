@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.52 2002-01-15 05:14:16 sdennis Exp $
+// $Id: bsd.cpp,v 1.53 2002-01-16 07:20:36 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1017,7 +1017,13 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
                 //
                 if (d->flags & DS_AUTODARK)
                 {
-                    d->flags &= ~DS_AUTODARK;
+                    // Clear the DS_AUTODARK on every related session.
+                    //
+                    DESC *d1;
+                    DESC_ITER_PLAYER(d->player, d1)
+                    {
+                        d1->flags &= ~DS_AUTODARK;
+                    }
                     db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
                 }
 
@@ -1385,7 +1391,13 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 //
                 if (d->flags & DS_AUTODARK)
                 {
-                    d->flags &= ~DS_AUTODARK;
+                    // Clear the DS_AUTODARK on every related session.
+                    //
+                    DESC *d1;
+                    DESC_ITER_PLAYER(d->player, d1)
+                    {
+                        d1->flags &= ~DS_AUTODARK;
+                    }
                     db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
                 }
 
@@ -3254,8 +3266,19 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             //
             if (d->flags & DS_AUTODARK)
             {
-                d->flags &= ~DS_AUTODARK;
-                db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
+                // Don't clear the DARK flag on the player unless there are
+                // no other sessions.
+                //
+                DESC *d1;
+                int num = 0;
+                DESC_ITER_PLAYER(d->player, d1)
+                {
+                    num++;
+                }
+                if (num == 1)
+                {
+                    db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
+                }
             }
 
             // process the player's input

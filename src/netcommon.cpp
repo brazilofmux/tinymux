@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.52 2002-01-15 15:40:23 sdennis Exp $
+// $Id: netcommon.cpp,v 1.53 2002-01-16 07:20:37 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -900,8 +900,19 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         free_lbuf(buf);
         if (d->flags & DS_AUTODARK)
         {
-            db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
-            d->flags &= ~DS_AUTODARK;
+            // Don't clear the DARK flag on the player unless there are
+            // no other sessions.
+            //
+            DESC *d1;
+            int num = 0;
+            DESC_ITER_PLAYER(d->player, d1)
+            {
+                num++;
+            }
+            if (num == 1)
+            {
+                db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
+            }
         }
 
         if (Guest(player))
@@ -1001,10 +1012,7 @@ int fetch_session(dbref target)
     int nCount = 0;
     DESC_ITER_PLAYER(target, d)
     {
-        if (d->flags & DS_CONNECTED)
-        {
-            nCount++;
-        }
+        nCount++;
     }
     return nCount;
 }
@@ -1022,13 +1030,10 @@ int fetch_idle(dbref target)
     BOOL bFound = FALSE;
     DESC_ITER_PLAYER(target, d)
     {
-        if (d->flags & DS_CONNECTED)
+        if (!bFound || ltaNewestLastTime < d->last_time)
         {
-            if (!bFound || ltaNewestLastTime < d->last_time)
-            {
-                bFound = TRUE;
-                ltaNewestLastTime = d->last_time;
-            }
+            bFound = TRUE;
+            ltaNewestLastTime = d->last_time;
         }
     }
     if (bFound)
@@ -1056,14 +1061,11 @@ void find_oldest(dbref target, DESC *dOldest[2])
     BOOL bFound = FALSE;
     DESC_ITER_PLAYER(target, d)
     {
-        if (d->flags & DS_CONNECTED)
+        if (!bFound || d->connected_at < dOldest[0]->connected_at)
         {
-            if (!bFound || d->connected_at < dOldest[0]->connected_at)
-            {
-                bFound = TRUE;
-                dOldest[1] = dOldest[0];
-                dOldest[0] = d;
-            }
+            bFound = TRUE;
+            dOldest[1] = dOldest[0];
+            dOldest[0] = d;
         }
     }
 }
@@ -1091,6 +1093,14 @@ int fetch_connect(dbref target)
     }
 }
 
+// A NOTE about AUTODARK: It only works for wizard players. Wizard players
+// are automatically set DARK if they are not already set DARK and they have
+// no session which is unidle.
+//
+// The AUTODARK state is cleared when at least one session becomes unidle.
+// The AUTODARK state is also cleared when the last idle session is
+// disconnected from the server (session shutdown or @shutdown).
+//
 void check_idle(void)
 {
     DESC *d, *dnext;
@@ -1100,17 +1110,44 @@ void check_idle(void)
 
     DESC_SAFEITER_ALL(d, dnext)
     {
+        if (d->flags & DS_AUTODARK)
+        {
+            continue;
+        }
         if (d->flags & DS_CONNECTED)
         {
             CLinearTimeDelta ltdIdle = ltaNow - d->last_time;
             if (Can_Idle(d->player))
             {
                 if (  mudconf.idle_wiz_dark
-                   && ltdIdle.ReturnSeconds() > mudconf.idle_timeout
-                   && !Dark(d->player))
+                   && (Flags(d->player) & (WIZARD|DARK)) == WIZARD
+                   && ltdIdle.ReturnSeconds() > mudconf.idle_timeout)
                 {
-                    db[d->player].fs.word[FLAG_WORD1] |= DARK;
-                    d->flags |= DS_AUTODARK;
+                    // Make sure this Wizard player does not have some other
+                    // active session.
+                    //
+                    DESC *d1;
+                    BOOL bFound = FALSE;
+                    DESC_ITER_PLAYER(d->player, d1)
+                    {
+                        if (d1 != d)
+                        {
+                            CLinearTimeDelta ltd = ltaNow - d1->last_time;
+                            if (ltd.ReturnSeconds() <= mudconf.idle_timeout)
+                            {
+                                 bFound = TRUE;
+                                 break;
+                            }
+                        }
+                    }
+                    if (!bFound)
+                    {
+                        db[d->player].fs.word[FLAG_WORD1] |= DARK;
+                        DESC_ITER_PLAYER(d->player, d1)
+                        {
+                            d1->flags |= DS_AUTODARK;
+                        }
+                    }
                 }
             }
             else if (ltdIdle.ReturnSeconds() > d->timeout)
