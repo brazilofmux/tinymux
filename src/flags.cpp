@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.23 2002-02-14 06:55:41 sdennis Exp $
+// $Id: flags.cpp,v 1.24 2002-02-14 09:01:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -262,6 +262,7 @@ static FLAGBITENT fbeAbode          = { ABODE,        'A',    FLAG_WORD2, 0,    
 static FLAGBITENT fbeAnsi           = { ANSI,         'X',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeAudible        = { HEARTHRU,     'a',    FLAG_WORD1, 0,                    fh_hear_bit};
 static FLAGBITENT fbeAuditorium     = { AUDITORIUM,   'b',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeBlind          = { BLIND,        'B',    FLAG_WORD2, 0,                    fh_wiz};
 static FLAGBITENT fbeChownOk        = { CHOWN_OK,     'C',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeConnected      = { CONNECTED,    'c',    FLAG_WORD2, CA_NO_DECOMP,         fh_god};
 static FLAGBITENT fbeDark           = { DARK,         'D',    FLAG_WORD1, 0,                    fh_dark_bit};
@@ -292,7 +293,7 @@ static FLAGBITENT fbeNoBleed        = { NOBLEED,      '-',    FLAG_WORD2, 0,    
 static FLAGBITENT fbeNoSpoof        = { NOSPOOF,      'N',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeOpaque         = { TM_OPAQUE,    'O',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeParentOk       = { PARENT_OK,    'Y',    FLAG_WORD2, 0,                    fh_any};
-static FLAGBITENT fbePlayerMails    = { PLAYER_MAILS, 'B',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god};
+static FLAGBITENT fbePlayerMails    = { PLAYER_MAILS, ' ',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god};
 static FLAGBITENT fbePuppet         = { PUPPET,       'p',    FLAG_WORD1, 0,                    fh_hear_bit};
 static FLAGBITENT fbeQuiet          = { QUIET,        'Q',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeRobot          = { ROBOT,        'r',    FLAG_WORD1, 0,                    fh_player_bit};
