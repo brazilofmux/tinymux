@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: db.cpp,v 1.2 2003-01-22 23:54:32 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -455,7 +455,7 @@ const char *Name(dbref thing)
     if (!db[thing].name)
     {
         size_t len;
-        char *pName = atr_get_LEN( thing, A_NAME, &aowner, &aflags, &len);
+        char *pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &len);
         db[thing].name = StringCloneLen(pName, len);
         free_lbuf(pName);
     }
