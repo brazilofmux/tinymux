@@ -137,6 +137,8 @@ Feature Additions:
  --  Marlek added @nameformat.
  --  Hellspawn added @dolist/notify.
  --  Hellspawn added @notify/quiet.
+ --  @pemit/list to behave like a series of @pemits. Requested by Alierak.
+ --  Added output separator to ITER, PARSE, and MAP. Patch from Ashen-Shugar.
 
 
 Bug Fixes:
@@ -401,6 +403,7 @@ Bug Fixes:
      Bug from MUX 1.6.
  --  @nameformat, @conformat and @exitformat global registers are saved and
      cleared. Reported and fixed by Brazil.
+ --  Clean up mkindx. Don't use '\r' in the index. Write clean structures.
 
 
 Performance Enhancements:
