@@ -14,13 +14,13 @@ if [ "$1" -a -r "$1" ]; then
     echo "Using flatfile from $1, renaming to $DATA/$GAMENAME.$DBDATE"
     mv $1 $DATA/$GAMENAME.$DBDATE
 elif [ -r $DATA/$NEW_DB ]; then
-    $BIN/dbconvert $DATA/$GDBM_DB x < $DATA/$NEW_DB > $DATA/$GAMENAME.$DBDATE
+    $BIN/netmux -d$DATA/$GDBM_DB -i$DATA/$NEW_DB -o$DATA/$GAMENAME.$DBDATE -u
 elif [ -r $DATA/$INPUT_DB ]; then
     echo "No recent checkpoint db. Using older db."
-    $BIN/dbconvert $DATA/$GDBM_DB x < $DATA/$INPUT_DB > $DATA/$GAMENAME.$DBDATE
+    $BIN/dbconvert -d$DATA/$GDBM_DB -i$DATA/$INPUT_DB -o$DATA/$GAMENAME.$DBDATE -u
 elif [ -r $DATA/$SAVE_DB ]; then
     echo "No input db. Using backup db."
-    $BIN/dbconvert $DATA/$GDBM_DB x < $DATA/$SAVE_DB > $DATA/$GAMENAME.$DBDATE
+    $BIN/dbconvert -d$DATA/$GDBM_DB -i$DATA/$SAVE_DB -o$DATA/$GAMENAME.$DBDATE -u
 else
     echo "No dbs. Backup attempt failed."
 fi
