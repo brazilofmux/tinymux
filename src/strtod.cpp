@@ -77,7 +77,6 @@
  *  underflow (i.e., that flush to zero on underflow).
  * #define IBM for IBM mainframe-style floating-point arithmetic.
  * #define VAX for VAX-style floating-point arithmetic.
- * #define Unsigned_Shifts if >> does treats its left operand as unsigned.
  * #define No_leftright to omit left-right logic in fast floating-point
  *  computation of dtoa.
  * #define Check_FLT_ROUNDS if FLT_ROUNDS can assume the values 2 or 3.
@@ -167,11 +166,7 @@
 #include "math.h"
 #endif
 
-#ifdef Unsigned_Shifts
 #define Sign_Extend(a,b) if (b < 0) a |= 0xffff0000;
-#else
-#define Sign_Extend(a,b) /*no-op*/
-#endif
 
 #if defined(IEEE_8087) + defined(IEEE_MC68k) + defined(VAX) + \
     defined(IBM) != 1
