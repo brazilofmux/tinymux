@@ -6300,6 +6300,26 @@ HASPOWER()
 
   Related Topics:
 
+& HASQUOTA()
+HASQUOTA()
+
+  FUNCTION: hasquota(<object>, <quota>[, <type>])
+
+  Returns true if object <object> has enough quota to build anything
+  requiring <quota> quota. If <type> is given, the function returns true if
+  there is enough quota to build a <type> object requiring <quota> quota.
+
+  Currently, MUX doesn't support typed quotas, but if it did, a type-specific
+  query may return true while a generic query would return false.
+
+  Example:
+    > say hasquota(me, 100)
+    You say "0"
+    > say hasquota(me, 1)
+    You say "1"
+
+  Related Topics: @quota
+
 & HASTYPE()
 HASTYPE()
 
