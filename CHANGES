@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  April 2000
+Last Update:  May 2000
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,6 +94,15 @@ Feature Additions:
  --  Updated lnum() function to accept three arguments.
  --  Enhanced secs(), convsecs(), time(), and convtime() to handle both
      UTC and local timezones with room for others.
+ --  Added the Mersenne Twister random number generator as an option.
+ --  Added various time/accounting functions from DooferMUX.  This is
+     controlled by the GAME_DOOFERMUX define and it's turned off by default.
+     Some of the DooferMUX stuff may be removed at a future time.
+ --  Subnets can now be expressed with the 'slash' notation. i.e, a.b.c.d/e
+ --  guest_site configuration option is in, but based on input from ChaoticMUX,
+     and RHostMUSH, this may be accomplished in another way or with a different
+     name. And, there is currently no help for this option.
+
 
 Bug Fixes:
 ~~~~~~~~~
@@ -213,6 +222,11 @@ Bug Fixes:
  --  Found typo that prevented !MEMORY_BASED + RADIX_COMPRESSION configuration
      from compiling.
  --  Fixed the way convtime() mishandled daylight savings time.
+ --  TRUNC(5.0) would return 0 because the fractional part was zero and
+     fun_trunc was testing the wrong number. This bug was introduced at the
+     time as the IEEE floating-point Ind/+Inf/-Inf stuff was introduced.
+ --  Subnet masks for restricted sites are now validated.
+ --  Bits in the base IP address for restricted subnets are now removed.
 
 
 Performance Enhancements:
@@ -296,6 +310,8 @@ Performance Enhancements:
      saved unused bits from one call to service later calls as a way to
      improve performance. @wait uses RandomLong to decide whether to ding
      the invoker for an extra penny.
+ --  The random number generators are now given a seed which is based upon
+     the full resolution of the current time (milliseconds or better). 
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
