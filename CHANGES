@@ -29,6 +29,8 @@ Feature Additions:
  -- Added /now switch to @destroy. Patch from Jake.
  -- Added ability to turn off automatic execution of STARTUP attributes from
     the configuration file. Patch from Jake.
+ -- Add safe_wipe configuration option. If enabled, @wipe will not wipe
+    SAFE-marked objects. Patch from Jake.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -47,6 +49,7 @@ Bug Fixes:
  -- Bug #424 - Linking deposit refund. Patch from Jake.
  -- Bug #585 - Parent isn't cleared during @destroy process. Patch from Jake.
  -- Bug #765 - whispering to objects with ears should still be allowed.
+ -- Document safer_passwords configuration option.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~

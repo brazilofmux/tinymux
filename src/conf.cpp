@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.44 2001-10-08 00:46:33 sdennis Exp $
+// $Id: conf.cpp,v 1.45 2001-10-08 03:27:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -252,6 +252,7 @@ void NDECL(cf_init)
     mudconf.toad_recipient = -1;
     mudconf.eval_comtitle = 1;
     mudconf.run_startup = TRUE;
+    mudconf.safe_wipe = FALSE;
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = FALSE;
     mudstate.bCanRestart = FALSE;
@@ -1517,6 +1518,7 @@ CONF conftable[] =
     {"run_startup",               cf_bool,        CA_STATIC, &mudconf.run_startup,            NULL,               0},
     {"sacrifice_adjust",          cf_int,         CA_GOD,    &mudconf.sacadjust,              NULL,               0},
     {"sacrifice_factor",          cf_int,         CA_GOD,    &mudconf.sacfactor,              NULL,               0},
+    {"safe_wipe",                 cf_bool,        CA_GOD,    &mudconf.safe_wipe,              NULL,               0},
     {"safer_passwords",           cf_bool,        CA_GOD,    &mudconf.safer_passwords,        NULL,               0},
     {"search_cost",               cf_int,         CA_GOD,    &mudconf.searchcost,             NULL,               0},
     {"see_owned_dark",            cf_bool,        CA_GOD,    &mudconf.see_own_dark,           NULL,               0},

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.26 2001-10-08 00:46:33 sdennis Exp $
+// $Id: mudconf.h,v 1.27 2001-10-08 03:27:38 sdennis Exp $
 //
 #ifndef __CONF_H
 #define __CONF_H
@@ -205,6 +205,7 @@ struct confdata
     ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
     int     toad_recipient; /* Default @toad recipient. */
     int     run_startup;    // If no, startup attributes aren't processed on load.
+    int     safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
 #else
     int     paylimit;   /* getting money gets hard over this much */
     int     digcost;    /* cost of @dig command */

@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.10 2001-06-29 15:13:58 sdennis Exp $
+// $Id: set.cpp,v 1.11 2001-10-08 03:27:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1583,6 +1583,12 @@ void do_wipe(dbref player, dbref cause, int key, char *it)
     if (!it || !*it || !parse_attrib_wild(player, it, &thing, 0, 0, 1))
     {
         notify_quiet(player, "No match.");
+        return;
+    }
+    if (  mudconf.safe_wipe
+       && has_flag(NOTHING, thing, "SAFE"))
+    {
+        notify_quiet(player, "SAFE objects may not be @wiped.");
         return;
     }
 
