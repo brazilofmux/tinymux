@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.98 2002-06-15 01:19:20 jake Exp $
+// $Id: funceval.cpp,v 1.99 2002-06-15 05:31:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1508,7 +1508,7 @@ FUNCTION(fun_hasattrp)
         }
         else if (See_attr(player, thing, attr, aowner, aflags))
         {
-            tbuf = atr_get(thing, attr->number, &aowner, &aflags);
+            tbuf = atr_pget(thing, attr->number, &aowner, &aflags);
             if (*tbuf)
             {
                 ch = '1';
