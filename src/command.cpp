@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.74 2003-03-23 20:55:37 sdennis Exp $
+// $Id: command.cpp,v 1.75 2003-03-23 21:18:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1392,7 +1392,7 @@ char *process_command
 
     // Check for the HOME command.
     //
-    if (  Has_location(executor)
+    if (  Has_location(player)
        && string_compare(pCommand, "home") == 0)
     {
         if (((Fixed(player)) || (Fixed(Owner(player)))) &&
