@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: player_c.cpp,v 1.2 2003-01-24 00:42:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9,8 +9,6 @@
 #include "externs.h"
 
 #include "attrs.h"
-
-#ifndef STANDALONE
 
 typedef struct player_cache {
     dbref player;
@@ -192,19 +190,19 @@ int QueueMax(dbref player)
             {
                 m = mudstate.db_top + 1;
                 if (m < mudconf.queuemax)
+                {
                     m = mudconf.queuemax;
+                }
             }
         }
     }
     return m;
 }
 
-#endif
-
 int Pennies(dbref obj)
 {
-#ifndef STANDALONE
-    if (OwnsOthers(obj))
+    if (  !mudstate.bStandAlone
+       && OwnsOthers(obj))
     {
         PCACHE *pp = pcache_find(obj);
         if (pp)
@@ -212,7 +210,6 @@ int Pennies(dbref obj)
             return pp->money;
         }
     }
-#endif
     const char *cp = atr_get_raw(obj, A_MONEY);
     if (cp)
     {
@@ -225,8 +222,8 @@ void s_Pennies(dbref obj, int howfew)
 {
     IBUF tbuf;
 
-#ifndef STANDALONE
-    if (OwnsOthers(obj))
+    if (  !mudstate.bStandAlone
+       && OwnsOthers(obj))
     {
         PCACHE *pp = pcache_find(obj);
         if (pp)
@@ -235,7 +232,6 @@ void s_Pennies(dbref obj, int howfew)
             pp->cflags |= PF_MONEY_CH;
         }
     }
-#endif
     Tiny_ltoa(howfew, tbuf);
     atr_add_raw(obj, A_MONEY, tbuf);
 }
