@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.26 2004-08-26 16:36:03 sdennis Exp $
+// $Id: look.cpp,v 1.27 2004-10-28 04:03:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -383,13 +383,6 @@ void LetDescriptionsDefault(dbref thing, int *piDESC, int *piADESC, int RealmDir
 
 static void look_exits(dbref player, dbref loc, const char *exit_name)
 {
-#ifdef WOD_REALMS
-    if (isMatrix(player))
-    {
-        return;
-    }
-#endif
-
     // Make sure location has exits.
     //
     if (  !Good_obj(loc)
@@ -1239,18 +1232,7 @@ void look_in(dbref player, dbref loc, int key)
     if (  !is_terse
        || mudconf.terse_contents)
     {
-#ifdef WOD_REALMS
-        if (isMatrix(player))
-        {
-            look_contents(player, loc, "|Icons|", CONTENTS_LOCAL);
-        }
-        else
-        {
-            look_contents(player, loc, "Contents:", CONTENTS_LOCAL);
-        }
-#else
         look_contents(player, loc, "Contents:", CONTENTS_LOCAL);
-#endif
     }
     if (  (key & LK_SHOWEXIT)
        && (  !is_terse
@@ -1700,18 +1682,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         //
         if (Contents(thing) != NOTHING)
         {
-#ifdef WOD_REALMS
-            if (isMatrix(executor))
-            {
-                notify(executor, "|Icons|");
-            }
-            else
-            {
-                notify(executor, "Contents:");
-            }
-#else
             notify(executor, "Contents:");
-#endif
             DOLIST(content, Contents(thing))
             {
                 buf2 = unparse_object(executor, content, false);
@@ -1825,18 +1796,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
     {
         if (Has_contents(thing))
         {
-#ifdef WOD_REALMS
-            if (isMatrix(executor))
-            {
-                look_contents(executor, thing, "|Icons|", CONTENTS_REMOTE);
-            }
-            else
-            {
-                look_contents(executor, thing, "Contents:", CONTENTS_REMOTE);
-            }
-#else
             look_contents(executor, thing, "Contents:", CONTENTS_REMOTE);
-#endif
         }
         if (!isExit(thing))
         {
