@@ -651,6 +651,10 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
             tmp->env[a] = NULL;
         }
     }
+    for ( ; a < NUM_ENV_VARS; a++)
+    {
+        tmp->env[a] = NULL;
+    }
     if (sargs)
     {
         for (a = 0; a < MAX_GLOBAL_REGS; a++)
