@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.96 2002-10-01 07:46:14 jake Exp $
+// $Id: command.cpp,v 1.97 2002-11-12 11:40:54 jake Exp $
 //
 
 #include "copyright.h"
@@ -288,6 +288,7 @@ NAMETAB lock_sw[] =
     {"givelock",        1,  CA_PUBLIC,  A_LGIVE},
     {"leavelock",       2,  CA_PUBLIC,  A_LLEAVE},
     {"linklock",        2,  CA_PUBLIC,  A_LLINK},
+    {"maillock",        1,  CA_PUBLIC,  A_LMAIL},
     {"openlock",        1,  CA_PUBLIC,  A_LOPEN},
     {"pagelock",        3,  CA_PUBLIC,  A_LPAGE},
     {"parentlock",      3,  CA_PUBLIC,  A_LPARENT},

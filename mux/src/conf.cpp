@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.26 2002-11-12 08:40:10 jake Exp $
+// $Id: conf.cpp,v 1.27 2002-11-12 11:38:48 jake Exp $
 //
 
 #include "copyright.h"
@@ -1635,7 +1635,7 @@ CONF conftable[] =
     {"function_recursion_limit",  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_nest_lim,          NULL,               0},
     {"game_dir_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_dir,        NULL, SIZEOF_PATHNAME},
     {"game_pag_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_pag,        NULL, SIZEOF_PATHNAME},
-    {"global_error_obj" ,         cf_int,         CA_GOD,    CA_GOD,      &mudconf.global_error_obj,       NULL,               0},
+    {"global_error_obj",          cf_int,         CA_GOD,    CA_GOD,      &mudconf.global_error_obj,       NULL,               0},
     {"good_name",                 cf_badname,     CA_GOD,    CA_DISABLED, NULL,                            NULL,               1},
     {"guest_char_num",            cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.guest_char,             NULL,               0},
     {"guest_file",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.guest_file,      NULL, SIZEOF_PATHNAME},

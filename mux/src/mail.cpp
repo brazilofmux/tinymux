@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.54 2002-09-26 09:40:30 jake Exp $
+// $Id: mail.cpp,v 1.55 2002-11-12 11:38:48 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2002,6 +2002,68 @@ void urgent_mail(dbref player, int folder, int *ucount)
     *ucount = uc;
 }
 
+static void mail_return(dbref player, dbref target)
+{
+    dbref aowner;
+    int aflags;
+
+    char *str = atr_pget(target, A_REJECT, &aowner, &aflags);
+    if (*str)
+    {
+        char *str2, *buf, *bp;
+        str2 = bp = alloc_lbuf("mail_return");
+        buf = str;
+        TinyExec(str2, &bp, target, player, player,
+                 EV_FCHECK | EV_EVAL | EV_TOP | EV_NO_LOCATION, &buf,
+                 (char **)NULL, 0);
+        *bp = '\0';
+        if (*str2)
+        {
+            CLinearTimeAbsolute ltaNow;
+            ltaNow.GetLocal();
+            FIELDEDTIME ft;
+            ltaNow.ReturnFields(&ft);
+
+            notify_with_cause_ooc(player, target, tprintf("MAIL: Reject message from %s: %s",
+                Moniker(target), str2));
+            notify_with_cause_ooc(target, player, tprintf("[%d:%02d] MAIL: Reject message sent to %s.",
+                ft.iHour, ft.iMinute, Moniker(player)));
+        }
+        free_lbuf(str2);
+    }
+    else
+    {
+        notify_with_cause_ooc(player, target, tprintf("Sorry, %s is not accepting mail.", Moniker(target)));
+    }
+    free_lbuf(str);
+}
+
+static BOOL mail_check(dbref player, dbref target)
+{
+    if (!could_doit(player, target, A_LMAIL))
+    {
+        mail_return(player, target);
+    }
+    else if (!could_doit(target, player, A_LMAIL))
+    {
+        if (Wizard(player))
+        {
+            notify(player, tprintf("Warning: %s can't return your mail.", Moniker(target)));
+            return TRUE;
+        }
+        else
+        {
+            notify(player, tprintf("Sorry, %s can't return your mail.", Moniker(target)));
+            return FALSE;
+        }
+    }
+    else
+    {
+        return TRUE;
+    }
+    return FALSE;
+}
+
 static void send_mail
 (
     dbref player,
@@ -2017,6 +2079,10 @@ static void send_mail
     if (!isPlayer(target))
     {
         notify(player, "MAIL: You cannot send mail to non-existent people.");
+        return;
+    }
+    if (!mail_check(player, target))
+    {
         return;
     }
     CLinearTimeAbsolute ltaNow;
