@@ -44,6 +44,10 @@ Feature Additions:
     ability, yet.
  -- Attributes are now output in numeric order. With this, it is now
     possible to make reasonable-sized patches between two flatfiles.
+ -- Added MEMORY_ACCOUNTING routines that match malloc/free calls, detect
+    memory leaks, account for which lines of code are allocating and
+    deallocating memory, validating the malloc/free protocol itself. It does
+    not catch memory overwrites.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -82,6 +86,8 @@ Bug Fixes:
     affected FLOORDIV, REMAINDER, and dates with negative years. The
     ./configure process on Unix builds it's own autoconf.h file. This is not
     an issue for those running on Unix.
+ -- Fixed a vicious heap-corrupting bug in HASH_ProcessBuffer (demonstrated
+    in MUX 2.1.3.23 Unix-only). My bug.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
