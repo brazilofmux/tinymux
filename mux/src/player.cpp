@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.8 2003-07-23 00:19:53 sdennis Exp $
+// $Id: player.cpp,v 1.9 2003-07-23 00:27:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -285,6 +285,9 @@ void ChangePassword(dbref player, const char *szPassword)
 #define SHA1_PREFIX_LENGTH 6
 const char szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "|SHA1|";
 
+#define MD5_PREFIX_LENGTH 3
+const char szMD5Prefix[MD5_PREFIX_LENGTH+1] = "$1$";
+
 #define ENCODED_HASH_LENGTH ENCODED_LENGTH(5*sizeof(UINT32))
 
 char *mux_crypt(const char *szPassword, const char *szSalt)
@@ -375,10 +378,12 @@ bool check_pass(dbref player, const char *pPassword)
                 }
             }
         }
-        else if (  nTarget == 13
-                && memcmp("XX", pTarget, 2) == 0)
+        else if (  (  nTarget == 13
+                   && memcmp("XX", pTarget, 2) == 0)
+                || (  MD5_PREFIX_LENGTH <= nTarget
+                   && memcmp(szMD5Prefix, pTarget, MD5_PREFIX_LENGTH) == 0))
         {
-            // Crypt-based password.
+            // Crypt-based password (which might be DES or MD5).
             //
             if (strcmp(crypt(pPassword, "XX"), pTarget) == 0)
             {
