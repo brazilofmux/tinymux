@@ -2428,7 +2428,7 @@ HELP
   This attribute is meaningful for players, things, and rooms, and will never
   be automatically triggered on exits.
 
-  Example: @oxenter wormhole = enters the wormhole from normal space.
+  Example: @oenter wormhole = enters the wormhole from normal space.
 
   Related Topics: enter, @aenter, @enter, @oxenter.
 
@@ -4969,16 +4969,21 @@ CTIME()
 & CWHO()
 CWHO()
 
-  FUNCTION: cwho(<channel>)
+  FUNCTION: cwho(<channel> [, <select>])
 
-  Returns a list of dbrefs who are connected and on that channel.  This is
-  limited to wizards and channel owners.
+  Returns a list of dbrefs from that channel. Use of this function is limited
+  to wizards and channel owners. If not given, <select> defaults to 'on',
+  but if given, may be any of the following:
+
+    on  - all objects and connected players who are 'on' the channel.
+    off - all objects and connected players who are 'off' the channel.
+    all - all objects and players associated with the channel.
 
   Example:
     > say cwho(Public)
     You say "#13 #11"
 
-  Related Topics: channels(), comalias(), comtitle()
+  Related Topics: alias, channels(), comalias(), comtitle().
 
 & DARK
 DARK
