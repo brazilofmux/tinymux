@@ -106,8 +106,14 @@ int member(dbref thing, dbref list)
  * * is_integer, is_number: see if string contains just a number.
  */
 
-int is_integer(char *str)
+int is_integer(char *str, int *pDigits)
 {
+    int nDigits = 0;
+    if (pDigits)
+    {
+        *pDigits = 0;
+    }
+
     // Leading spaces.
     //
     while (Tiny_IsSpace[(unsigned char)*str])
@@ -136,7 +142,12 @@ int is_integer(char *str)
     //
     while (Tiny_IsDigit[(unsigned char)*str])
     {
+        nDigits++;
         str++;
+    }
+    if (pDigits)
+    {
+        *pDigits = nDigits;
     }
 
     // Trailing Spaces.

@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.4 2000-04-13 09:48:59 sdennis Exp $
+// $Id: functions.cpp,v 1.5 2000-04-14 04:11:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -362,7 +362,7 @@ static int autodetect_list(char *ptrs[], int nitems)
                     p = ptrs[i];
                     if (*p++ != NUMBER_TOKEN) {
                         return ALPHANUM_LIST;
-                    } else if (is_integer(p)) {
+                    } else if (is_integer(p, 0)) {
                         sort_type = DBREF_LIST;
                     } else {
                         return ALPHANUM_LIST;
@@ -384,7 +384,7 @@ static int autodetect_list(char *ptrs[], int nitems)
             p = ptrs[i];
             if (*p++ != NUMBER_TOKEN)
                 return ALPHANUM_LIST;
-            if (!is_integer(p))
+            if (!is_integer(p, 0))
                 return ALPHANUM_LIST;
             break;
         default:
@@ -1932,7 +1932,7 @@ int xlate(char *arg)
 
     if (arg[0] == '#') {
         arg++;
-        if (is_integer(arg)) {
+        if (is_integer(arg, 0)) {
             temp = Tiny_atol(arg);
             if (temp == -1)
                 temp = 0;
@@ -1943,7 +1943,7 @@ int xlate(char *arg)
     temp2 = trim_space_sep(arg, ' ');
     if (!*temp2)
         return 0;
-    if (is_integer(temp2))
+    if (is_integer(temp2, 0))
         return Tiny_atol(temp2);
     return 1;
 }
@@ -2061,9 +2061,12 @@ FUNCTION(fun_pmatch)
 FUNCTION(fun_gt)
 {
     int ch = '0';
-    if (  (  is_integer(fargs[0])
-          && is_integer(fargs[1])
-          && Tiny_atoi64(fargs[0]) > Tiny_atoi64(fargs[1]))
+    int nDigits0, nDigits1;
+    if (  (  is_integer(fargs[0], &nDigits0)
+          && nDigits0 <= 9
+          && is_integer(fargs[1], &nDigits1)
+          && nDigits1 <= 9
+          && Tiny_atol(fargs[0]) > Tiny_atol(fargs[1]))
        || safe_atof(fargs[0]) > safe_atof(fargs[1]))
     {
         ch = '1';
@@ -2074,9 +2077,12 @@ FUNCTION(fun_gt)
 FUNCTION(fun_gte)
 {
     int ch = '0';
-    if (  (  is_integer(fargs[0])
-          && is_integer(fargs[1])
-          && Tiny_atoi64(fargs[0]) >= Tiny_atoi64(fargs[1]))
+    int nDigits0, nDigits1;
+    if (  (  is_integer(fargs[0], &nDigits0)
+          && nDigits0 <= 9
+          && is_integer(fargs[1], &nDigits1)
+          && nDigits1 <= 9
+          && Tiny_atol(fargs[0]) >= Tiny_atol(fargs[1]))
        || safe_atof(fargs[0]) >= safe_atof(fargs[1]))
     {
         ch = '1';
@@ -2087,9 +2093,12 @@ FUNCTION(fun_gte)
 FUNCTION(fun_lt)
 {
     int ch = '0';
-    if (  (  is_integer(fargs[0])
-          && is_integer(fargs[1])
-          && Tiny_atoi64(fargs[0]) < Tiny_atoi64(fargs[1]))
+    int nDigits0, nDigits1;
+    if (  (  is_integer(fargs[0], &nDigits0)
+          && nDigits0 <= 9
+          && is_integer(fargs[1], &nDigits1)
+          && nDigits1 <= 9
+          && Tiny_atol(fargs[0]) < Tiny_atol(fargs[1]))
        || safe_atof(fargs[0]) < safe_atof(fargs[1]))
     {
         ch = '1';
@@ -2100,9 +2109,12 @@ FUNCTION(fun_lt)
 FUNCTION(fun_lte)
 {
     int ch = '0';
-    if (  (  is_integer(fargs[0])
-          && is_integer(fargs[1])
-          && Tiny_atoi64(fargs[0]) <= Tiny_atoi64(fargs[1]))
+    int nDigits0, nDigits1;
+    if (  (  is_integer(fargs[0], &nDigits0)
+          && nDigits0 <= 9
+          && is_integer(fargs[1], &nDigits1)
+          && nDigits1 <= 9
+          && Tiny_atol(fargs[0]) <= Tiny_atol(fargs[1]))
        || safe_atof(fargs[0]) <= safe_atof(fargs[1]))
     {
         ch = '1';
@@ -2113,9 +2125,12 @@ FUNCTION(fun_lte)
 FUNCTION(fun_eq)
 {
     int ch = '0';
-    if (  (  is_integer(fargs[0])
-          && is_integer(fargs[1])
-          && Tiny_atoi64(fargs[0]) == Tiny_atoi64(fargs[1]))
+    int nDigits0, nDigits1;
+    if (  (  is_integer(fargs[0], &nDigits0)
+          && nDigits0 <= 9
+          && is_integer(fargs[1], &nDigits1)
+          && nDigits1 <= 9
+          && Tiny_atol(fargs[0]) == Tiny_atol(fargs[1]))
        || safe_atof(fargs[0]) == safe_atof(fargs[1]))
     {
         ch = '1';
@@ -2126,9 +2141,12 @@ FUNCTION(fun_eq)
 FUNCTION(fun_neq)
 {
     int ch = '0';
-    if (  (  is_integer(fargs[0])
-          && is_integer(fargs[1])
-          && Tiny_atoi64(fargs[0]) != Tiny_atoi64(fargs[1]))
+    int nDigits0, nDigits1;
+    if (  (  is_integer(fargs[0], &nDigits0)
+          && nDigits0 <= 9
+          && is_integer(fargs[1], &nDigits1)
+          && nDigits1 <= 9
+          && Tiny_atol(fargs[0]) != Tiny_atol(fargs[1]))
        || safe_atof(fargs[0]) != safe_atof(fargs[1]))
     {
         ch = '1';
@@ -5105,7 +5123,7 @@ FUNCTION(fun_space)
             // If 'space(0)', 'space(00)', ..., then allow num == 0,
             // otherwise, we force to num to be 1.
             //
-            if (!is_integer(fargs[0]))
+            if (!is_integer(fargs[0], 0))
             {
                 num = 1;
             }

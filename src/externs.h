@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.9 2000-04-13 09:49:01 sdennis Exp $
+// $Id: externs.h,v 1.10 2000-04-14 04:11:58 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -164,7 +164,7 @@ extern dbref    FDECL(insert_first, (dbref, dbref));
 extern dbref    FDECL(remove_first, (dbref, dbref));
 extern dbref    FDECL(reverse_list, (dbref));
 extern int  FDECL(member, (dbref, dbref));
-extern int  FDECL(is_integer, (char *));
+extern int  is_integer(char *, int *);
 extern int  FDECL(is_number, (char *));
 extern int  FDECL(could_doit, (dbref, dbref, int));
 extern int  FDECL(can_see, (dbref, dbref, int));
