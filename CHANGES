@@ -58,6 +58,10 @@ Feature Additions:
  -- Support second argument for squish().
  -- attrcnt() function from Jake.
  -- ctime() function from Jake.
+ -- Added ability for the server to listen to multiple ports and for changes
+    to the 'port' config to take affect across a @restart.
+ -- Will now accept '@set FooBar=COMMANDS' and '@set FooBar=!COMMANDS'. BLEED
+    and SPOOF also added. 'hasflag(FooBar,COMMANDS)' also supported.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -130,6 +134,10 @@ Performance Enhancements:
  -- Improve performance of pool_alloc and pool_free.
  -- Improve performance of @aconnnect/@adisconnect.
  -- Reduce code size by around 4KB by specializing a few calls.
+ -- Improve parser performance by making certain tables 'static const' or
+    'const'.
+ -- Reduce stack frame per-invocation overhead of TinyExec() by 688 bytes to
+    138 bytes.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
