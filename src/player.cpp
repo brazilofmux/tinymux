@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.16 2002-05-08 15:55:42 sdennis Exp $
+// $Id: player.cpp,v 1.17 2002-05-23 19:22:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -204,7 +204,7 @@ void record_login(dbref player, int isgood, char *ldate, char *lhost, char *luse
 
 int check_pass(dbref player, const char *password)
 {
-    int aflags;
+    int   aflags;
     dbref aowner;
     char *target = atr_get(player, A_PASS, &aowner, &aflags);
     if (  *target
@@ -338,10 +338,8 @@ void do_password
 )
 {
     dbref aowner;
-    int aflags;
-    char *target;
-
-    target = atr_get(player, A_PASS, &aowner, &aflags);
+    int   aflags;
+    char *target = atr_get(player, A_PASS, &aowner, &aflags);
     if (!*target || !check_pass(player, oldpass))
     {
         notify(player, "Sorry.");
