@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.46 2002-08-26 01:07:13 jake Exp $
+// $Id: externs.h,v 1.47 2002-08-28 16:13:27 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -383,6 +383,7 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define FIXDB_LINK      128 /* Fix LINK field */
 #define FIXDB_PARENT    256 /* Fix PARENT field */
 #define FIXDB_NAME      2048 /* Set NAME attribute */
+#define FLAG_REMOVE     1   // Remove a flag alias
 #define GET_QUIET       1   /* Don't do osucc/asucc if control */
 #define GIVE_QUIET      64  /* Inhibit give messages */
 #define GLOB_ENABLE     1   /* key to enable */

@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.11 2002-07-31 17:02:31 jake Exp $
+// $Id: flags.cpp,v 1.12 2002-08-28 16:13:27 jake Exp $
 //
 
 #include "copyright.h"
@@ -1112,6 +1112,94 @@ void decompile_flags(dbref player, dbref thing, char *thingname)
         //
         notify(player, tprintf("@set %s=%s", strip_ansi(thingname),
             fp->flagname));
+    }
+}
+
+BOOL flag_rename(char *alias, char *newname)
+{
+    int pnAlias;
+    BOOL pbValidAlias;
+    char *pAlias = alloc_sbuf("flag_rename.old");
+    char *pAlias2 = pAlias;
+    safe_sb_str(MakeCanonicalFlagName(alias, &pnAlias, &pbValidAlias), pAlias, &pAlias2);
+    *pAlias2 = '\0';
+    if (!pbValidAlias)
+    {
+        free_sbuf(pAlias);
+        return FALSE;
+    }
+
+    int pnNewName;
+    BOOL pbValidNewName;
+    char *pNewName = alloc_sbuf("flag_rename.new");
+    char *pNewName2 = pNewName;
+    safe_sb_str(MakeCanonicalFlagName(newname, &pnNewName, &pbValidNewName), pNewName, &pNewName2);
+    *pNewName2 = '\0';
+    if (!pbValidNewName)
+    {
+        free_sbuf(pAlias);
+        free_sbuf(pNewName);
+        return FALSE;
+    }
+
+    FLAGNAMEENT *flag1 = NULL, *flag2 = NULL;
+    flag1 = (FLAGNAMEENT *)hashfindLEN(pAlias, pnAlias, &mudstate.flags_htab);
+    notify(GOD, pAlias);
+    notify(GOD, Tiny_ltoa_t(pnAlias));
+    if (flag1 != NULL)
+    {
+        flag2 = (FLAGNAMEENT *)hashfindLEN(pNewName, pnNewName, &mudstate.flags_htab);
+        if (flag2 == NULL)
+        {
+            _strupr(pNewName);
+            strcpy(flag1->flagname, pNewName);
+            free_sbuf(pAlias);
+            free_sbuf(pNewName);
+            return TRUE;
+        }
+    }
+    free_sbuf(pAlias);
+    free_sbuf(pNewName);
+    return FALSE;
+}
+
+void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs, char *flag1, char *flag2)
+{
+    if (key & FLAG_REMOVE)
+    {
+        if (*flag2)
+        {
+            notify(executor, "Extra argument ignored.");
+        }
+        FLAGNAMEENT *lookup = (FLAGNAMEENT *)hashfindLEN(flag1, strlen(flag1), &mudstate.flags_htab);
+        if (lookup != NULL) 
+        {
+            if (!stricmp(lookup->flagname, flag1))
+            {
+	            notify(executor, "Error: You can't remove the present flag name from the hash table.");
+            }
+            else
+            {
+	            hashdeleteLEN(flag1, strlen(flag1), &mudstate.flags_htab);
+	            notify(executor, tprintf("Flag name '%s' removed from the hash table.", flag1));
+            }
+        }
+    }
+    else
+    {
+        if (nargs < 2)
+        {
+            notify(executor, "You must specify a flag and a name.");
+            return;
+        }
+        if (!flag_rename(flag1, flag2))
+        {
+            notify(executor, "Error: Bad flagname given or flag not found.");
+        }
+        else
+        {
+            notify(executor, "Flag name changed.");
+        }
     }
 }
 

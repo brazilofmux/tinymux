@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.68 2002-08-26 01:07:13 jake Exp $
+// $Id: command.cpp,v 1.69 2002-08-28 16:13:27 jake Exp $
 //
 
 #include "copyright.h"
@@ -187,6 +187,12 @@ NAMETAB fixdb_sw[] =
     {"owner",           1,     CA_GOD,  FIXDB_OWNER},
     {"pennies",         1,     CA_GOD,  FIXDB_PENNIES},
     {"rename",          1,     CA_GOD,  FIXDB_NAME},
+    { NULL,             0,          0,  0}
+};
+
+NAMETAB flag_sw[] =
+{
+    {"remove",          1,     CA_GOD,  FLAG_REMOVE},
     { NULL,             0,          0,  0}
 };
 
@@ -655,6 +661,7 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@drain",       NULL,       CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            NFY_DRAIN,   CS_TWO_ARG,           0, do_notify},
     {"@femit",       femit_sw,   CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_FEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {"@fixdb",       fixdb_sw,   CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_fixdb},
+    {"@flag",        flag_sw,    CA_GOD,                                           0,           CS_TWO_ARG,           0, do_flag},
     {"@forwardlist", NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_forwardlist},
     {"@fpose",       fpose_sw,   CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FPOSE, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {"@fsay",        NULL,       CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FSAY,  CS_TWO_ARG|CS_INTERP, 0, do_pemit},
