@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.47 2001-12-04 09:27:02 sdennis Exp $
+// $Id: bsd.cpp,v 1.48 2001-12-04 16:19:51 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -561,6 +561,10 @@ void boot_slave(dbref ref1, dbref ref2, int int3)
         }
         slave_socket = INVALID_SOCKET;
         goto failure;
+    }
+    if (maxd <= slave_socket)
+    {
+        maxd = slave_socket + 1;
     }
 
     STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
