@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.39 2001-06-06 03:33:18 sdennis Exp $
+// $Id: stringutil.cpp,v 1.40 2001-06-27 07:33:19 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -923,7 +923,7 @@ void ANSI_String_Skip
 // 3. acsFinal is the required color state at the end. This is usually
 //    the normal state or in the case of NOBLEED, it's a specific (and
 //    somewhate arbitrary) foreground/background combination.
-// 
+//
 void ANSI_String_Copy
 (
     struct ANSI_Out_Context *pacOut,
@@ -1293,7 +1293,7 @@ char *translate_string(const char *szString, int bConvert)
                             //
                             if (pString[0] == ' ' && bConvert)
                                 safe_str("%b", szTranslatedString, &pTranslatedString);
-                            else 
+                            else
                                 safe_chr(' ', szTranslatedString, &pTranslatedString);
                         }
                         else if (ch == '%')
@@ -1320,7 +1320,7 @@ char *translate_string(const char *szString, int bConvert)
                     //
                     if (ch <= '\\')
                     {
-                        // ) [ \ 
+                        // ) [ backslash
                         //
                         if (ch == ')')
                         {
@@ -1338,7 +1338,7 @@ char *translate_string(const char *szString, int bConvert)
                         }
                         else
                         {
-                            // \ 
+                            // backslash
                             //
                             if (bConvert)
                                 safe_str("\\\\", szTranslatedString, &pTranslatedString);
@@ -1607,7 +1607,7 @@ int string_prefix(const char *string, const char *prefix)
 }
 
 /*
- * accepts only nonempty matches starting at the beginning of a word 
+ * accepts only nonempty matches starting at the beginning of a word
  */
 
 const char *string_match(const char *src, const char *sub)
@@ -1716,7 +1716,7 @@ char *replace_string_inplace(const char *old, const char *new0, char *string)
 }
 
 /*
- * returns the number of identical characters in the two strings 
+ * returns the number of identical characters in the two strings
  */
 int prefix_match(const char *s1, const char *s2)
 {
@@ -1827,7 +1827,7 @@ int matches_exit_from_list(char *str, char *pattern)
 
     while (*pattern) {
         for (s = str;   /*
-                 * check out this one 
+                 * check out this one
                  */
              ( *s
              && (Tiny_ToLower[(unsigned char)*s] == Tiny_ToLower[(unsigned char)*pattern])
@@ -1836,27 +1836,27 @@ int matches_exit_from_list(char *str, char *pattern)
              s++, pattern++) ;
 
         /*
-         * Did we match it all? 
+         * Did we match it all?
          */
 
         if (*s == '\0') {
 
             /*
-             * Make sure nothing afterwards 
+             * Make sure nothing afterwards
              */
 
             while (Tiny_IsSpace[(unsigned char)*pattern])
                 pattern++;
 
             /*
-             * Did we get it? 
+             * Did we get it?
              */
 
             if (!*pattern || (*pattern == EXIT_DELIMITER))
                 return 1;
         }
         /*
-         * We didn't get it, find next string to test 
+         * We didn't get it, find next string to test
          */
 
         while (*pattern && *pattern++ != EXIT_DELIMITER) ;
@@ -2025,7 +2025,7 @@ long Tiny_atol(const char *pString)
 {
     long sum = 0;
     int LeadingCharacter = 0;
-    
+
     // Convert ASCII digits
     //
     unsigned c1;
@@ -2063,7 +2063,7 @@ long Tiny_atol(const char *pString)
             break;
         }
     } while (Tiny_IsDigit[c0 = pString[0]]);
-    
+
     // Interpret sign
     //
     if (LeadingCharacter == '-')
@@ -2077,7 +2077,7 @@ INT64 Tiny_atoi64(const char *pString)
 {
     INT64 sum = 0;
     int LeadingCharacter = 0;
-    
+
     // Convert ASCII digits
     //
     unsigned c1;
@@ -2115,7 +2115,7 @@ INT64 Tiny_atoi64(const char *pString)
             break;
         }
     } while (Tiny_IsDigit[c0 = pString[0]]);
-    
+
     // Interpret sign
     //
     if (LeadingCharacter == '-')
@@ -2318,7 +2318,7 @@ int _stricmp(const char *a, const char *b)
 {
     return strcasecmp(a,b);
 }
- 
+
 // _stricmp - Compare two strings ignoring case.
 //
 int _strnicmp(const char *a, const char *b, int n)
@@ -2347,16 +2347,16 @@ void _strupr(char *a)
         a++;
     }
 }
-#endif // WIN32
+#endif
 
 #ifdef WIN32
 #define VSNPRINTF _vsnprintf
-#else // WIN32
+#else
 #ifdef NEED_VSPRINTF_DCL
 extern char *vsprintf(char *, char *, va_list);
 #endif
 #define VSNPRINTF vsnprintf
-#endif // WIN32
+#endif
 
 // Tiny_vsnprintf - Is an sprintf-like function that will not overflow
 // a buffer of specific size. The size is give by count, and count
@@ -2412,7 +2412,7 @@ int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va)
     return len;
 }
 
-// This function acts like fgets except that any data on the end of the 
+// This function acts like fgets except that any data on the end of the
 // line past the buffer size is truncated instead of being returned on
 // the next call.
 //
@@ -2579,7 +2579,7 @@ int BMH_StringSearchI(int nPat, char *pPat, int nSrc, char *pSrc)
 
 #ifndef STANDALONE
 extern void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...);
-#endif // STANDALONE
+#endif
 
 CF_HAND(cf_art_rule)
 {
@@ -2656,6 +2656,6 @@ CF_HAND(cf_art_rule)
     arNewRule->m_pRegexp = reNewRegexp;
     
     *arRules = arNewRule;
-#endif //STANDALONE
+#endif
     return 0;
 }
