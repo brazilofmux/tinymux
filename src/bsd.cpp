@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.66 2003-02-18 04:34:00 sdennis Exp $
+// $Id: bsd.cpp,v 1.67 2003-03-01 23:17:23 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2788,7 +2788,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         {
             exit(0);
         }
-        mudstate.dumping = 0;
+        mudstate.dumping = FALSE;
         break;
 
     case SIGHUP:
