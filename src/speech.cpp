@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.9 2001-06-14 08:34:13 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.10 2001-09-28 09:57:39 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -845,7 +845,7 @@ void do_pemit_single
             break;
 
         case PEMIT_WHISPER:
-            if (!Connected(target))
+            if (isPlayer(target) && !Connected(target))
             {
                 page_return(player, target, "Away", A_AWAY, tprintf("Sorry, %s is not connected.", Name(target)));
                 return;
