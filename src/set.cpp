@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.12 2001-10-08 05:25:39 sdennis Exp $
+// $Id: set.cpp,v 1.13 2001-10-08 05:31:32 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -562,6 +562,7 @@ void do_unlink(dbref player, dbref cause, int key, char *name)
                 {
                     notify_quiet(player, "Unlinked.");
                 }
+                giveto(Owner(exit), mudconf.linkcost);
                 break;
 
             case TYPE_ROOM:
