@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  April 2004
+Last Update:  May 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -20,6 +20,8 @@ Feature Additions:
  -- Add output delimiter to elements(), extract(), filter(),
     filterbool(), graball(), remove(), shuffle(), sortby(), and
     splice().
+ -- Connection, disconnection, partial, and suspect emits now show the
+    player's @moniker.
 
 
 Bug Fixes:
@@ -32,6 +34,8 @@ Bug Fixes:
     100 members for awhile, it did not protect itself properly against
     mail aliases saved in older mail.db files.
  -- @backup now works with MEMORY_BASED build.
+ -- Added missing @fsay help topic.
+ -- Added more messages to @destroy/instant path.
 
 
 Performance Enhancements:
