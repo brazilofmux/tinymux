@@ -14,8 +14,8 @@ docs/NOTES.1.6
 docs/PATCHES
 docs/REALMS
 docs/latticeS.ps
-docs/mux2.1-man.pdf
-docs/mux2.1-man.tex
+docs/mux2.2-man.pdf
+docs/mux2.2-man.tex
 game/alias.conf
 game/compat.conf
 game/data/db_load.bat
