@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.13 2000-05-01 11:53:39 sdennis Exp $
+// $Id: functions.cpp,v 1.14 2000-05-03 07:09:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -847,11 +847,9 @@ FUNCTION(fun_sign)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_time: Returns nicely-formatted time.
- */
-
+// ---------------------------------------------------------------------------
+// fun_time: Returns local time in the 'Ddd Mmm DD HH:MM:SS YYYY' format.
+//
 FUNCTION(fun_time)
 {
     CLinearTimeAbsolute ltaNow;
@@ -860,23 +858,25 @@ FUNCTION(fun_time)
     safe_str(temp, buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_time: Seconds since 0:00 1/1/70
- */
-
+// ---------------------------------------------------------------------------
+// fun_secs: Seconds since Jan 01 00:00:00 1970 Local Time not counting any
+//      leap seconds.
+//
+// MUX 1.6 originally returned seconds since Jan 01 00:00:00 1970 UTC.
+//
 FUNCTION(fun_secs)
 {
     CLinearTimeAbsolute lsaNow;
     lsaNow.GetLocal();
-    safe_tprintf_str(buff, bufc, "%s", lsaNow.ReturnSecondsString());
+    safe_str(lsaNow.ReturnSecondsString(), buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_convsecs: converts seconds to time string, based off 0:00 1/1/70
- */
-
+// ---------------------------------------------------------------------------
+// fun_convsecs: Converts seconds from Jan 01 00:00:00 1970 Local Time to a
+//      local time string in the 'Ddd Mmm DD HH:MM:SS YYYY' format.
+//
+// MUX 1.6 originally converted seconds since Jan 01 00:00:00 1970 UTC.
+//
 FUNCTION(fun_convsecs)
 {
     CLinearTimeAbsolute lta;
@@ -886,7 +886,11 @@ FUNCTION(fun_convsecs)
 }
 
 // ---------------------------------------------------------------------------
-// fun_convtime: converts time string to seconds, based off 0:00 1/1/70
+// fun_convtime: Converts a local time string in the format
+//      '[Ddd] Mmm DD HH:MM:SS YYYY' to a count of seconds from
+//      Jan 01 00:00:00 1970 Local Time.
+//
+// MUX 1.6 originally converted to seconds from Jan 01 00:00:00 1970 UTC.
 //
 FUNCTION(fun_convtime)
 {
@@ -5139,53 +5143,43 @@ FUNCTION(fun_switch)
 FUNCTION(fun_case)
 {
     int i;
-    char *mbuff, *buf, *bp, *str;
+    char *mbuff, *bp, *str;
 
-    /*
-     * If we don't have at least 2 args, return nothing 
-     */
-
-    if (nfargs < 2) {
+    // If we don't have at least 2 args, return nothing.
+    //
+    if (nfargs < 2)
+    {
         return;
     }
-    /*
-     * Evaluate the target in fargs[0] 
-     */
 
+    // Evaluate the target in fargs[0]
+    //
     mbuff = bp = alloc_lbuf("fun_switch");
     str = fargs[0];
     TinyExec(mbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
-    /*
-     * Loop through the patterns looking for a match 
-     */
-
-    for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1]; i += 2) {
-        if (*fargs[i] == *mbuff) {
-            buf = alloc_lbuf("fun_switch");
-            StringCopy(buf, fargs[i + 1]);
-            str = buf;
+    // Loop through the patterns looking for a match.
+    //
+    for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1]; i += 2)
+    {
+        if (!string_compare(fargs[i], mbuff))
+        {
+            str = fargs[i+1];
             TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-            free_lbuf(buf);
             free_lbuf(mbuff);
             return;
         }
     }
     free_lbuf(mbuff);
 
-    /*
-     * Nope, return the default if there is one 
-     */
-
-    if ((i < nfargs) && fargs[i]) {
-        buf = alloc_lbuf("fun_switch");
-        StringCopy(buf, fargs[i]);
-        str = buf;
+    // Nope, return the default if there is one.
+    //
+    if ((i < nfargs) && fargs[i])
+    {
+        str = fargs[i];
         TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-        free_lbuf(buf);
     }
-    return;
 }
 
 /*
