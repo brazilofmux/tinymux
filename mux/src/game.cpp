@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.32 2003-12-06 01:57:32 sdennis Exp $
+// $Id: game.cpp,v 1.33 2004-03-17 20:30:08 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1919,7 +1919,8 @@ void dbconvert(void)
     int setflags, clrflags, ver;
     int db_ver, db_format, db_flags;
 
-    Log.EnableLogging();
+    Log.SetBasename("-");
+    Log.StartLogging();
 
     SeedRandomNumberGenerator();
 
@@ -2084,14 +2085,17 @@ long DebugTotalMemory = 0;
 #define CLI_DO_UNLOAD      CLI_USER+8
 #define CLI_DO_BASENAME    CLI_USER+9
 #define CLI_DO_PID_FILE    CLI_USER+10
+#define CLI_DO_ERRORPATH   CLI_USER+11
 
 bool bMinDB = false;
 bool bSyntaxError = false;
 char *conffile = NULL;
 bool bVersion = false;
 char *pidfile = "netmux.pid";
+char *pErrorBasename = "";
+bool bServerOption = false;
 
-CLI_OptionEntry OptionTable[11] =
+CLI_OptionEntry OptionTable[12] =
 {
     { "c", CLI_REQUIRED, CLI_DO_CONFIG_FILE },
     { "s", CLI_NONE,     CLI_DO_MINIMAL     },
@@ -2103,7 +2107,8 @@ CLI_OptionEntry OptionTable[11] =
     { "l", CLI_NONE,     CLI_DO_LOAD        },
     { "u", CLI_NONE,     CLI_DO_UNLOAD      },
     { "d", CLI_REQUIRED, CLI_DO_BASENAME    },
-    { "p", CLI_REQUIRED, CLI_DO_PID_FILE    }
+    { "p", CLI_REQUIRED, CLI_DO_PID_FILE    },
+    { "e", CLI_REQUIRED, CLI_DO_ERRORPATH   }
 };
 
 void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
@@ -2113,19 +2118,28 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
         switch (p->m_Unique)
         {
         case CLI_DO_PID_FILE:
+            bServerOption = true;
             pidfile = pValue;
             break;
 
         case CLI_DO_CONFIG_FILE:
+            bServerOption = true;
             conffile = pValue;
             break;
 
         case CLI_DO_MINIMAL:
+            bServerOption = true;
             bMinDB = true;
             break;
 
         case CLI_DO_VERSION:
+            bServerOption = true;
             bVersion = true;
+            break;
+
+        case CLI_DO_ERRORPATH:
+            bServerOption = true;
+            pErrorBasename = pValue;
             break;
 
         case CLI_DO_INFILE:
@@ -2218,13 +2232,15 @@ int DCL_CDECL main(int argc, char *argv[])
         if (  !standalone_basename
            || !standalone_infile
            || !standalone_outfile
-           || n != 1)
+           || n != 1
+           || bServerOption)
         {
             bSyntaxError = true;
         }
         else
         {
             dbconvert();
+            return 0;
         }
     }
     else if (bVersion)
@@ -2233,7 +2249,8 @@ int DCL_CDECL main(int argc, char *argv[])
         return 1;
     }
     if (  bSyntaxError
-       || conffile == NULL)
+       || conffile == NULL
+       || !bServerOption)
     {
         fprintf(stderr, "Version: %s" ENDLINE, mudstate.version);
         if (mudstate.bStandAlone)
@@ -2250,9 +2267,10 @@ int DCL_CDECL main(int argc, char *argv[])
         {
             fprintf(stderr, "Usage: %s [-c <filename>] [-p <filename>] [-h] [-s] [-v]" ENDLINE, pProg);
             fprintf(stderr, "  -c  Specify configuration file." ENDLINE);
+            fprintf(stderr, "  -e  Specify logfile basename (or '-' for stderr)." ENDLINE);
             fprintf(stderr, "  -h  Display this help." ENDLINE);
-            fprintf(stderr, "  -s  Start with a minimal database." ENDLINE);
             fprintf(stderr, "  -p  Specify process ID file." ENDLINE);
+            fprintf(stderr, "  -s  Start with a minimal database." ENDLINE);
             fprintf(stderr, "  -v  Display version string." ENDLINE ENDLINE);
         }
         return 1;
@@ -2260,7 +2278,8 @@ int DCL_CDECL main(int argc, char *argv[])
 
     mudstate.bStandAlone = false;
 
-    Log.EnableLogging();
+    Log.SetBasename(pErrorBasename);
+    Log.StartLogging();
     game_pid = getpid();
     write_pidfile(pidfile);
 

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.34 2003-12-06 01:57:32 sdennis Exp $
+// $Id: conf.cpp,v 1.35 2004-03-17 20:30:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -551,7 +551,7 @@ CF_HAND(cf_string)
             *q++;
         }
         *p = '\0';
-        Log.ChangePrefix(buff);
+        Log.SetPrefix(buff);
         free_sbuf(buff);
     }
     return retval;

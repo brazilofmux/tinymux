@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.18 2004-02-17 15:34:37 sdennis Exp $
+// $Id: svdhash.cpp,v 1.19 2004-03-17 20:30:08 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2460,12 +2460,11 @@ void CLogFile::WriteBuffer(int nString, const char *pString)
     {
         return;
     }
+
 #ifdef WIN32
-    if (!mudstate.bStandAlone)
-    {
-        EnterCriticalSection(&csLog);
-    }
+    EnterCriticalSection(&csLog);
 #endif // WIN32
+
     while (nString > 0)
     {
         int nAvailable = SIZEOF_LOG_BUFFER - m_nBuffer;
@@ -2489,11 +2488,9 @@ void CLogFile::WriteBuffer(int nString, const char *pString)
         m_nBuffer += nToMove;
     }
     Flush();
+
 #ifdef WIN32
-    if (!mudstate.bStandAlone)
-    {
-        LeaveCriticalSection(&csLog);
-    }
+    LeaveCriticalSection(&csLog);
 #endif // WIN32
 }
 
@@ -2513,37 +2510,30 @@ void DCL_CDECL CLogFile::tinyprintf(char *fmt, ...)
     WriteBuffer(nString, aTempBuffer);
 }
 
-void CLogFile::Stop(void)
+void MakeLogName
+(
+    const char *pBasename,
+    const char *szPrefix,
+    CLinearTimeAbsolute lta,
+    char *szLogName
+)
 {
-    Flush();
-
-    if (!mudstate.bStandAlone)
+    char szTimeStamp[18];
+    lta.ReturnUniqueString(szTimeStamp);
+    if (  pBasename
+       && pBasename[0] != '\0')
     {
-        CloseLogFile();
-        bEnabled = false;
-        m_szPrefix[0] = '\0';
-        m_szFilename[0] = '\0';
+        sprintf(szLogName, "%s/%s-%s.log",
+            pBasename,
+            szPrefix,
+            szTimeStamp);
     }
-}
-
-CLogFile::~CLogFile(void)
-{
-    Flush();
-    if (!mudstate.bStandAlone)
+    else
     {
-        CloseLogFile();
-#ifdef WIN32
-        DeleteCriticalSection(&csLog);
-#endif // WIN32
+        sprintf(szLogName, "%s-%s.log",
+            szPrefix,
+            szTimeStamp);
     }
-}
-
-void MakeLogName(char *szPrefix, CLinearTimeAbsolute lta, char *szLogName)
-{
-    strcpy(szLogName, szPrefix);
-    strcat(szLogName, "-");
-    lta.ReturnUniqueString(szLogName+strlen(szLogName));
-    strcat(szLogName, ".log");
 }
 
 void CLogFile::CreateLogFile(void)
@@ -2571,6 +2561,7 @@ void CLogFile::AppendLogFile(void)
 #else // WIN32
     m_hFile = open(m_szFilename, O_RDWR|O_BINARY, 0600);
 #endif // WIN32
+
     if (m_hFile != INVALID_HANDLE_VALUE)
     {
 #ifdef WIN32
@@ -2594,48 +2585,6 @@ void CLogFile::CloseLogFile(void)
     }
 }
 
-void CLogFile::ChangePrefix(char *szPrefix)
-{
-    if (strcmp(szPrefix, m_szPrefix) != 0)
-    {
-        if (bEnabled)
-        {
-            CloseLogFile();
-        }
-
-        char szNewName[SIZEOF_PATHNAME];
-        MakeLogName(szPrefix, m_ltaStarted, szNewName);
-        if (bEnabled)
-        {
-            ReplaceFile(m_szFilename, szNewName);
-        }
-        strcpy(m_szPrefix, szPrefix);
-        strcpy(m_szFilename, szNewName);
-
-        if (bEnabled)
-        {
-            AppendLogFile();
-        }
-    }
-}
-
-CLogFile::CLogFile(void)
-{
-    m_nBuffer = 0;
-
-    if (!mudstate.bStandAlone)
-    {
-#ifdef WIN32
-        InitializeCriticalSection(&csLog);
-#endif // WIN32
-        bEnabled = false;
-        m_hFile = INVALID_HANDLE_VALUE;
-        m_ltaStarted.GetLocal();
-        m_szPrefix[0] = '\0';
-        m_szFilename[0] = '\0';
-    }
-}
-
 #define FILE_SIZE_TRIGGER (512*1024UL)
 
 void CLogFile::Flush(void)
@@ -2645,7 +2594,7 @@ void CLogFile::Flush(void)
     {
         return;
     }
-    if (mudstate.bStandAlone)
+    if (bUseStderr)
     {
         fwrite(m_aBuffer, m_nBuffer, 1, stderr);
     }
@@ -2664,7 +2613,7 @@ void CLogFile::Flush(void)
             CloseLogFile();
 
             m_ltaStarted.GetLocal();
-            MakeLogName(m_szPrefix, m_ltaStarted, m_szFilename);
+            MakeLogName(m_pBasename, m_szPrefix, m_ltaStarted, m_szFilename);
 
             CreateLogFile();
         }
@@ -2672,15 +2621,105 @@ void CLogFile::Flush(void)
     m_nBuffer = 0;
 }
 
-void CLogFile::EnableLogging(void)
+void CLogFile::SetPrefix(const char *szPrefix)
 {
-    bEnabled = true;
-    if (!mudstate.bStandAlone)
+    if (  !bUseStderr
+       && strcmp(szPrefix, m_szPrefix) != 0)
+    {
+        if (bEnabled)
+        {
+            CloseLogFile();
+        }
+
+        char szNewName[SIZEOF_PATHNAME];
+        MakeLogName(m_pBasename, szPrefix, m_ltaStarted, szNewName);
+        if (bEnabled)
+        {
+            ReplaceFile(m_szFilename, szNewName);
+        }
+        strcpy(m_szPrefix, szPrefix);
+        strcpy(m_szFilename, szNewName);
+
+        if (bEnabled)
+        {
+            AppendLogFile();
+        }
+    }
+}
+
+void CLogFile::SetBasename(const char *pBasename)
+{
+    if (m_pBasename)
+    {
+        MEMFREE(m_pBasename);
+        m_pBasename = NULL;
+    }
+    if (  pBasename
+       && strcmp(pBasename, "-") == 0)
+    {
+        bUseStderr = true;
+    }
+    else
+    {
+        bUseStderr = false;
+        if (pBasename)
+        {
+            m_pBasename = StringClone(pBasename);
+        }
+        else
+        {
+            m_pBasename = StringClone("");
+        }
+    }
+}
+
+CLogFile::CLogFile(void)
+{
+#ifdef WIN32
+    InitializeCriticalSection(&csLog);
+#endif // WIN32
+
+    m_ltaStarted.GetLocal();
+    m_hFile = INVALID_HANDLE_VALUE;
+    m_nSize = 0;
+    m_nBuffer = 0;
+    bEnabled = false;
+    bUseStderr = true;
+    m_pBasename = NULL;
+    m_szPrefix[0] = '\0';
+    m_szFilename[0] = '\0';
+}
+
+void CLogFile::StartLogging()
+{
+    if (!bUseStderr)
     {
         m_ltaStarted.GetLocal();
-        MakeLogName(m_szPrefix, m_ltaStarted, m_szFilename);
+        MakeLogName(m_pBasename, m_szPrefix, m_ltaStarted, m_szFilename);
         CreateLogFile();
     }
+    bEnabled = true;
+}
+
+void CLogFile::StopLogging(void)
+{
+    Flush();
+    bEnabled = false;
+    if (!bUseStderr)
+    {
+        CloseLogFile();
+        m_szPrefix[0] = '\0';
+        m_szFilename[0] = '\0';
+        SetBasename(NULL);
+    }
+}
+
+CLogFile::~CLogFile(void)
+{
+    StopLogging();
+#ifdef WIN32
+    DeleteCriticalSection(&csLog);
+#endif // WIN32
 }
 
 #ifdef MEMORY_ACCOUNTING
