@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.38 2001-03-30 16:43:41 zenty Exp $
+// $Id: externs.h,v 1.39 2001-03-31 04:48:59 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -91,7 +91,7 @@ extern int  FDECL(html_escape, (const char *src, char *dest, char **destp));
 #define DUMP_I_PANIC     1  // UNLOAD to a crashdb
 #define DUMP_I_RESTART   2  // OUTPUT to the inputdb
 #define DUMP_I_FLAT      3  // UNLOAD to a .FLAT file
-#define DUMP_I_SIGNAL    4  // UNLOAD to a .FLAT file from signal.
+#define DUMP_I_SIGNAL    4  // UNLOAD to a .KILLED file
 #define NUM_DUMP_TYPES 5
 extern void dump_database_internal(int);
 #endif
@@ -142,9 +142,9 @@ extern void FDECL(destroy_obj, (dbref, dbref));
 extern void FDECL(empty_obj, (dbref));
 
 /* From player.cpp */
-extern void FDECL(record_login, (dbref, int, char *, char *, char *, char *));
+extern void FDECL(record_login, (dbref, int, char *, char *, char *));
 extern int  FDECL(check_pass, (dbref, const char *));
-extern dbref    FDECL(connect_player, (char *, char *, char *, char *, char *));
+extern dbref    FDECL(connect_player, (char *, char *, char *, char *));
 extern dbref    FDECL(create_player, (char *, char *, dbref, int, int));
 extern int  FDECL(add_player_name, (dbref, char *));
 extern int  FDECL(delete_player_name, (dbref, char *));

@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.49 2001-03-31 02:22:54 sdennis Exp $
+// $Id: functions.cpp,v 1.50 2001-03-31 04:48:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2217,8 +2217,7 @@ void internalPlayerFind
     else
     {
         thing = lookup_player(player, name, 1);
-        if (  (thing == NOTHING)
-           || (!isPlayer(thing) && bVerifyPlayer))
+        if (thing == NOTHING)
         {
             safe_str("#-1 NO MATCH", buff, bufc);
             return;

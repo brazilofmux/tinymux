@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.28 2001-03-31 02:22:54 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.29 2001-03-31 04:49:00 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -758,8 +758,7 @@ static void announce_connect(dbref player, DESC *d)
     ltaNow.GetLocal();
     time_str = ltaNow.ReturnDateString();
     
-    record_login(player, 1, time_str, d->addr, d->username,
-        inet_ntoa((d->address).sin_addr));
+    record_login(player, 1, time_str, d->addr, d->username);
     look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
     mudstate.curr_enactor = temp;
 }
@@ -1593,7 +1592,7 @@ static int check_connect(DESC *d, char *msg)
             }
         }
         
-        player = connect_player(user, password, d->addr, d->username, inet_ntoa((d->address).sin_addr));
+        player = connect_player(user, password, d->addr, d->username);
         if (player == NOTHING)
         {
             // Not a player, or wrong password.

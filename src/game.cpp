@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.25 2001-03-15 13:10:39 sdennis Exp $
+// $Id: game.cpp,v 1.26 2001-03-31 04:48:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1105,8 +1105,8 @@ DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
     { 0,                ""       , FALSE, 0,                                "" }, // 0 -- Handled specially.
     { &mudconf.crashdb, ""       , FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening crash file" }, // 1
     { &mudconf.indb,    ""       , TRUE,  OUTPUT_VERSION | OUTPUT_FLAGS,    "Opening input file" }, // 2
-    { &mudconf.indb,   ".FLAT"   , FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening flatfile"   }, // 3
-    { &mudconf.indb,   ".SIG"    , FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening signalled flatfile"}  // 4
+    { &mudconf.outdb,   ".FLAT"  , FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening flatfile"   }, // 3
+    { &mudconf.indb,    ".KILLED", FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening killed file"}  // 4
 };
 
 #ifdef WIN32
@@ -1794,11 +1794,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #else
     int ch;
 #endif
-
-#ifndef SYS_SIGLIST_DECLARED
-    BuildSignalNamesTable();
-#endif
-
+    
 #ifndef USE_GETOPT
     switch (argc)
     {

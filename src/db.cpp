@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.37 2001-03-31 02:05:02 sdennis Exp $
+// $Id: db.cpp,v 1.38 2001-03-31 04:48:59 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -159,7 +159,6 @@ ATTR attr[] =
     {"Last", A_LAST, AF_WIZARD | AF_NOCMD | AF_NOPROG, NULL},
     {"Lastpage", A_LASTPAGE, AF_INTERNAL | AF_NOCMD | AF_NOPROG | AF_GOD | AF_PRIVATE, NULL},
     {"Lastsite", A_LASTSITE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
-    {"LastIP", A_LASTIP, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
     {"Leave", A_LEAVE, AF_ODARK, NULL},
     {"LeaveLock", A_LLEAVE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
     {"Lfail", A_LFAIL, AF_ODARK | AF_NOPROG, NULL},

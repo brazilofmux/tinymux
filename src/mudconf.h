@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.17 2001-03-22 04:14:47 zenty Exp $ */
+/* $Id: mudconf.h,v 1.18 2001-03-31 04:49:00 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -141,7 +141,6 @@ struct confdata
     int     parent_nest_lim;/* Max levels of parents */
     int     zone_nest_lim;  /* Max nesting of zones */
     int     allow_guest_from_registered_site; // Whether guests from registered sites are allowed.
-    int     eval_comtitle;  /* Should Comtitles Evaluate? */
     unsigned int max_cache_size; /* Max size of attribute cache */
 
     FLAGSET player_flags;   /* Flags players start with */

@@ -1,6 +1,6 @@
 // Comsys.h
 //
-// $Id: comsys.h,v 1.4 2001-03-31 03:58:50 zenty Exp $
+// $Id: comsys.h,v 1.5 2001-03-31 04:48:59 sdennis Exp $
 
 #ifndef __COMSYS_H__
 #define __COMSYS_H__
@@ -24,7 +24,6 @@ struct comuser
     dbref who;
     int bUserIsOn;
     char *title;
-    int ComTitleStatus;
     struct comuser *on_next;
 };
 
@@ -78,7 +77,7 @@ void destroy_comsys(comsys_t *c);
 void sort_com_aliases(comsys_t *c);
 void load_comsystem(FILE *fp);
 void save_comsystem(FILE *fp);
-void SendChannelMessage(struct channel *ch, char *msgNormal, char *msgNoComtitle, int raw);
+void do_comsend(struct channel *ch, char *msgNormal);
 void do_comwho(dbref player, struct channel *ch);
 void do_leavechannel(dbref player, struct channel *ch);
 void do_delcomchannel(dbref player, char *channel);

@@ -1,5 +1,5 @@
 /* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.6 2001-03-30 16:43:41 zenty Exp $ */
+/* $Id: attrs.h,v 1.7 2001-03-31 04:48:59 sdennis Exp $ */
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -137,7 +137,6 @@
 #define A_TOFAIL    141 /* Teleport (from) fail message */
 #define A_OTOFAIL   142 /* Others teleport (from) fail message */
 #define A_ATOFAIL   143 /* Teleport (from) fail action */
-#define A_LASTIP    144 /* Last IP logged in from */
 
 // Optional WoD Realm descriptions.
 //

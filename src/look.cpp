@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.16 2001-03-23 09:57:53 sdennis Exp $
+// $Id: look.cpp,v 1.17 2001-03-31 04:48:59 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -543,17 +543,11 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
                     //
                     // chop off first exit alias to display
                     //
-                   
+                    
                     if (buff != e)
-                    {
                         safe_str((char *)"  ", buff, &e);
-                    }
-
                     for (s = Name(thing); *s && (*s != ';'); s++)
-                    {
                         safe_chr(*s, buff1, &e1);
-                    }
-
                     *e1 = 0;
                     /* Copy the exit name into 'buff' */
                     if (Html(player))
@@ -574,7 +568,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
             }
         }
     }
-   
+    
     if (!(Transparent(loc)))
     {
         safe_str((char *)"\r\n", buff, &e);

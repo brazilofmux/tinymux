@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.35 2001-03-31 03:58:50 zenty Exp $
+// $Id: command.cpp,v 1.36 2001-03-31 04:48:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -51,12 +51,6 @@ NAMETAB boot_sw[] =
     {(char *)"quiet",   1,  CA_WIZARD,  BOOT_QUIET|SW_MULTIPLE},
     { NULL,         0,  0,      0}
 };
-
-NAMETAB comtitle_sw[] =
-  {
-    {(char *)"off",      2,  CA_PUBLIC,  1},
-    {(char *)"on",       2,  CA_PUBLIC,  2},
-  };
 
 NAMETAB cemit_sw[] =
 {
@@ -631,7 +625,7 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {(char *)"@teleport",     teleport_sw,CA_NO_GUEST,    TELEPORT_DEFAULT, CS_TWO_ARG|CS_INTERP,     do_teleport},
     {(char *)"@toad",         toad_sw,    CA_WIZARD,    0,      CS_TWO_ARG|CS_INTERP,       do_toad},
     {(char *)"addcom",        NULL,       CA_NO_SLAVE,        0,              CS_TWO_ARG,                     do_addcom},
-    {(char *)"comtitle",      comtitle_sw, CA_NO_SLAVE,       0,              CS_TWO_ARG,                    do_comtitle},
+    {(char *)"comtitle",      NULL,       CA_NO_SLAVE,        0,              CS_TWO_ARG,                    do_comtitle},
     {(char *)"give",          give_sw,    CA_LOCATION|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_INTERP,       do_give},
     {(char *)"kill",          NULL,       CA_NO_GUEST|CA_NO_SLAVE,    KILL_KILL,  CS_TWO_ARG|CS_INTERP,       do_kill},
     {(char *)"page",          NULL,       CA_NO_SLAVE,    0,      CS_TWO_ARG|CS_INTERP,       do_page},
@@ -837,13 +831,6 @@ int check_access(dbref player, int mask)
         else
             fail++;
     }
-    if ((succ == 0) && (mask & CA_UNINS))
-    {
-        if (Uninspected(player))
-            succ++;
-        else
-            fail++;
-    }
     if ((succ == 0) && (mask & CA_ROBOT))
     {
         if (Robot(player))
@@ -863,8 +850,7 @@ int check_access(dbref player, int mask)
           || ((mask & CA_NO_ROBOT)   && Robot(player))
           || ((mask & CA_NO_SLAVE)   && Slave(player))
           || ((mask & CA_NO_SUSPECT) && Suspect(player))
-          || ((mask & CA_NO_GUEST)   && Guest(player))
-          || ((mask & CA_NO_UNINS)   && Uninspected(player))))
+          || ((mask & CA_NO_GUEST)   && Guest(player))))
     {
         return 0;
     }
@@ -1842,11 +1828,9 @@ NAMETAB access_nametab[] =
     {(char *)"no_slave",      5, CA_PUBLIC, CA_NO_SLAVE},
     {(char *)"no_suspect",    5, CA_WIZARD, CA_NO_SUSPECT},
     {(char *)"no_guest",      5, CA_WIZARD, CA_NO_GUEST},
-    {(char *)"no_uninspected",5, CA_WIZARD, CA_NO_UNINS},
     {(char *)"robot",         2, CA_WIZARD, CA_ROBOT},
     {(char *)"staff",         4, CA_WIZARD, CA_STAFF},
     {(char *)"static",        4, CA_GOD,    CA_STATIC},
-    {(char *)"uninspected",   5, CA_WIZARD, CA_UNINS},
     {(char *)"wizard",        3, CA_WIZARD, CA_WIZARD},
     {NULL,                    0, 0,         0}
 };

@@ -1,5 +1,5 @@
 /* interface.h */
-/* $Id: interface.h,v 1.4 2001-03-15 13:10:39 sdennis Exp $ */
+/* $Id: interface.h,v 1.5 2001-03-31 04:48:59 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -172,10 +172,7 @@ extern void process_output(void *, int);
 extern void dump_restart_db(void);
 #endif // WIN32
 
-#ifndef SYS_SIGLIST_DECLARED
-extern void BuildSignalNamesTable(void);
-#endif
-extern void set_signals(void);
+extern void NDECL(set_signals);
 
 /* from netcommon.c */
 
