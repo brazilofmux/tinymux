@@ -3,7 +3,7 @@
  * powers.c - power manipulation routines 
  */
 /*
- * $Id: powers.cpp,v 1.1 2000-04-11 07:14:46 sdennis Exp $ 
+ * $Id: powers.cpp,v 1.2 2000-04-17 17:49:35 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -177,7 +177,9 @@ POWERENT *find_power(dbref thing, char *powername)
     strncpy(buff, powername, SBUF_SIZE);
     buff[SBUF_SIZE-1] = '\0';
     _strlwr(buff);
-    return (POWERENT *)hashfindLEN(buff, strlen(buff), &mudstate.powers_htab);
+    POWERENT *p = (POWERENT *)hashfindLEN(buff, strlen(buff), &mudstate.powers_htab);
+    free_sbuf(buff);
+    return p;
 }
 
 int decode_power(dbref player, char *powername, POWERSET *pset)
@@ -263,19 +265,20 @@ void power_set(dbref target, dbref player, char *power, int key)
 
 int has_power(dbref player, dbref it, char *powername)
 {
-    POWERENT *fp;
-    POWER fv;
-
-    fp = find_power(it, powername);
-    if (fp == NULL)
+    POWERENT *fp = find_power(it, powername);
+    if (!fp)
+    {
         return 0;
+    }
 
+    POWER fv;
     if (fp->powerpower & POWER_EXT)
         fv = Powers2(it);
     else
         fv = Powers(it);
 
-    if (fv & fp->powervalue) {
+    if (fv & fp->powervalue)
+    {
         if ((fp->listperm & CA_WIZARD) && !Wizard(player))
             return 0;
         if ((fp->listperm & CA_GOD) && !God(player))
