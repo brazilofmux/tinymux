@@ -65,7 +65,7 @@ or staff, you are always seen, and you see everything. This allows staff to
 administrate the situation from the 'outside'.
 
 Let's talk about Obfuscation and Auspex first. There are many races that
-have different gifts or ways of taping into this feature, so don't get too
+have different gifts or ways of tapping into this feature, so don't get too
 attached to the names for it. If a player is marked OBF, then the code 
 starts looking for a special attribute: OBF_LEVEL. If OBF_LEVEL is 1, then 
 they are invisible as long as they don't move through an exit. OBF_LEVEL of 
