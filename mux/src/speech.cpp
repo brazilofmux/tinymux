@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.27 2002-09-01 18:15:47 jake Exp $
+// $Id: speech.cpp,v 1.28 2002-09-18 21:24:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -909,7 +909,7 @@ void whisper_pose(dbref player, dbref target, char *message, BOOL bSpace)
         message = newMessage;
     }
     char *buff = alloc_lbuf("do_pemit.whisper.pose");
-    StringCopy(buff, get_ansiname(player));
+    strcpy(buff, get_ansiname(player));
     notify(player, tprintf("%s senses \"%s%s%s\"", get_ansiname(target), buff, 
         bSpace ? " " : "", message));
     notify_with_cause(target, player, tprintf("You sense %s%s%s", buff, 
