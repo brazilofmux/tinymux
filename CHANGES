@@ -101,6 +101,7 @@ Bug Fixes:
  -- Recognize '@teleport Foo=' and issue an error message instead of
     attempting '@teleport Foo'.
  -- Fixed bug introduced in 2.1.4.25 where '@create Foo' was not accepted.
+ -- Flatten random distribution in how similarly-named things are matched.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
