@@ -5048,7 +5048,6 @@ We would like to thank the following people:
   See also: @list functions, FUNCTION CLASSES, FUNCTION LIST.
 
 & FUNCTION LIST
-
   Topic: FUNCTION LIST
  
   Help is available for the following functions:
@@ -5056,46 +5055,49 @@ We would like to thank the following people:
     AND()       ANDFLAGS()  ANSI()      APOSS()     ART()       ASIN()
     ATAN()      BAND()      BEEP()      BEFORE()    BNAND()     BOR()
     CAPSTR()    CASE()      CAT()       CEIL()      CENTER()    CHANNELS()
-    CHILDREN()  COLUMNS()   COMALIAS()  COMP()      COMTITLE()  CON()
-    CONN()      CONTROLS()  CONVSECS()  CONVTIME()  COS()       CREATE()
+    CHILDREN()  CMDS()      COLUMNS()   COMALIAS()  COMP()      COMTITLE()
+    CON()       CONN()      CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()
+    CONNTOTAL() CONTROLS()  CONVSECS()  CONVTIME()  COS()       CREATE()
     CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()    DIE()
-    DIST2D()    DIST3D()    DIV()       DOING()     E()         EDEFAULT()
-    EDIT()      ELEMENTS()  ELOCK()     EMPTY()     ENCRYPT()   EQ()
-    ESCAPE()    EXIT()      EXP()       EXTRACT()   EVAL()      FDIV()
-    FILTER()    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FOLD()
-    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()
-    GREPI()     GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()
-    HASPOWER()  HASTYPE()   HOME()      IADD()      IDIV()      IDLE()
-    IFELSE()    IMUL()      INC()       INDEX()     INSERT()    INZONE()
-    ISDBREF()   ISNUM()     ISUB()      ISWORD()    ITER()      ITEMS()
-    LAST()      LATTR()     LCON()      LCSTR()     LDELETE()   LEXITS()
-    LIST()      LIT()       LJUST()     LN()        LNUM()      LOC()
-    LOCATE()    LOCK()      LOG()       LPARENT()   LPOS()      LSTACK()
-    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAP()
+    DIGITTIME() DIST2D()    DIST3D()    DIV()       DOING()     E()
+    EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMPTY()     ENCRYPT()
+    EQ()        ESCAPE()    EXIT()      EXP()       EXPTIME()   EXTRACT()
+    EVAL()      FDIV()      FILTER()    FINDABLE()  FIRST()     FLAGS()
+    FLOOR()     FOLD()      FOREACH()   FULLNAME()  GET()       GET_EVAL()
+    GRAB()      GREP()      GREPI()     GT()        GTE()       HASATTR()
+    HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()   HOME()      IADD()
+    IDIV()      IDLE()      IFELSE()    IMUL()      INC()       INDEX()
+    INSERT()    INZONE()    ISDBREF()   ISNUM()     ISUB()      ISWORD()
+    ITER()      ITEMS()     LAST()      LATTR()     LATTRCMDS() LCMDS()
+    LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LIST()
+    LIT()       LJUST()     LN()        LNUM()      LOC()       LOCATE()
+    LOCK()      LOG()       LPARENT()   LPOS()      LSTACK()    LT()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
- 
-    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
-    MIN()       MIX()       MOD()       MONEY()     MOTD()      MUDNAME()
-    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
-    NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()    OR()
-    ORFLAGS()   OWNER()     PARENT()    PARSE()     PEEK()      PEMIT()
-    PI()        PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()
-    POS()       POSS()      POWER()     PUSH()      R()         RAND()
-    REGMATCH()  REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
-    REVWORDS()  RJUST()     RLOC()      ROOM()      ROUND()     S()
-    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
-    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
-    SHUFFLE()   SIGN()      SIN()       SORT()      SORTBY()    SPACE()
-    SPLICE()    SQRT()      SQUISH()    STARTTIME() STATS()     STRCAT()
-    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBJ()
-    SWITCH()    TAN()       TIME()      TRANSLATE() TRIM()      TRUNC()
-    TYPE()      U()         ULOCAL()    UCSTR()     UDEFAULT()  V()
-    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
-    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WORDPOS()   WORDS()     XGET()      XOR()       ZONE()      ZWHO()
+
+    LTE()       LWHO()      MAIL()      MAILFROM()  MAP()       MATCH()
+    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
+    MIX()       MOD()       MONEY()     MOTD()      MUDNAME()   MUL()
+    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
+    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OR()        ORFLAGS()
+    OWNER()     PARENT()    PARSE()     PEEK()      PEMIT()     PI()
+    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
+    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
+    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
+    RJUST()     RLOC()      ROOM()      ROUND()     S()         SCRAMBLE()
+    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
+    SETQ()      SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()
+    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
+    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
+    STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()
+    SUBJ()      SWITCH()    TAN()       TIME()      TRANSLATE() TRIM()
+    TRUNC()     TYPE()      U()         ULOCAL()    UCSTR()     UDEFAULT()
+    V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
+    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
+    WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()
+    ZONE()      ZWHO()
   
 & FUNCTION CLASSES
 
@@ -9242,3 +9244,218 @@ VALID()
   the attempt will succeed. It only looks at <argument> as a string
   of characters.
 
+& CMDS()
+  Function: cmds(<player>)
+  
+  Example:
+    > say cmds(me)
+    You say "100"
+    > say cmds(me)
+    You say "101"
+  
+  Returns the number of commands entered by a connected 'player'.
+  This function returns -1 if the enactor has insufficient permission
+  (i.e., not self and no Wizard_Who power).
+
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+& LCMDS()
+  Function: lcmds(<object>)
+
+  Returns the attribute names of any commands on a specific <object>
+  
+  Example:
+    > &CMD1 me=$command1:@pemit me=blah
+    Set.
+    > &CMD2 me=$command2:@pemit me=blah blah
+    Set.
+    > say lcmds(me)
+    You say "command1 command2"
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: lattrcmds().
+  
+& STARTSECS()
+  Function: startsecs()
+  
+  Returns the number of seconds that represents the time the MUX last
+  rebooted. The time is measured in the same way as the secs()
+  function. This is easier and more efficient than using
+  convtime(starttime()).
+  
+  Example:
+    > say startsecs()
+    You say "959093815"
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: secs().
+  
+& LATTRCMDS()
+  Function: lcmds(<object>)
+
+  Returns the names of the attributes that contain commands on a
+  specific <object>.
+  
+  Example:
+    > &CMD1 me=$command1:@pemit me=blah
+    Set.
+    > &CMD2 me=$command2:@pemit me=blah blah
+    Set.
+    > say lcmds(me)
+    You say "CMD1 CMD2"
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: lcmds().
+  
+& DIGITTIME()
+  Function: digittime(<seconds>)
+  
+  This function converts a number of <seconds> to a digital time
+  string and prepends the number of days if the time is greater than
+  23:59.
+  
+  Example:
+    > say digittime(2345)
+    You say "00:39"
+    > say digittime(123456)
+    You say "1d 10:18"
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: writetime(), singletime(), exptime(), secs(), time().
+  
+& WRITETIME()
+  Function: exptime(<seconds>)
+  
+  This function converts seconds to a number of time elements (hours,
+  minutes, seconds) that is equivalent to the given number of
+  <seconds>.
+  
+  This is very similar to the exptime() function, but the elements
+  are given their long names instead of short names.
+  
+  Example:
+    > say exptime(45)
+    You say "45 seconds"
+    > say exptime(12345)
+    You say "3 hours 25 minutes 45 seconds"
+    > say exptime(123456)
+    You say "1 day 10 hours 17 minutes 36 seconds"
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: writetime(), singletime(), digittime(), secs(), time().
+  
+& EXPTIME()
+  Function: exptime(<seconds>)
+  
+  This function converts seconds to a number of time elements (hours,
+  minutes, seconds) that is equivalent to the given number of
+  <seconds>.
+  
+  This is very similar to the writetime() function, but the elements
+  are given their short names instead of long names.
+  
+  Example:
+    > say exptime(45)
+    You say "45s"
+    > say exptime(12345)
+    You say "3h 25m 45s"
+    > say exptime(123456)
+    You say "1d 10h 17m 36s"
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: writetime(), singletime(), digittime(), secs(), time().
+  
+& SINGLETIME()
+  Function: singletime(<seconds>)
+  
+  This function converts seconds to a single time element which is
+  the lowest approximation to the given number of <seconds>.
+  
+  Example:
+    > say singletime(45)
+    You say "45s"
+    > say singletime(12345)
+    You say "3h"
+    > say singletime(123456)
+    You say "1d"
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: writetime(), exptime(), digittime(), secs(), time().
+  
+& LFLAGS()
+  Function lflags(<object>)
+  
+  Returns the flags of <object> written out with their actual names.
+  
+  Example:
+    > say flags(me)
+    You say "PXNWcis"
+    > say lflags(me)
+    You say "ANSI NOSPOOF WIZARD CONNECTED IMMORTAL SAFE"
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: flags(), type().
+  
+& CONNTOTAL()
+  Function conntotal(<player>)
+  
+  Returns the number of seconds that <player> has been connected to
+  the MUX. This also includes the current connection time.
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: connmax(), connlast(), connnum(), connleft(), secs(),
+            conn().
+  
+& CONNMAX()
+  Function connmax(<player>)
+  
+  Returns the longest connection time that <player> has been
+  connected to the MUX -- perhaps even the current session.
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: conntotal(), connlast(), connnum(), connleft(), secs(),
+            conn().
+  
+& CONNLAST()
+  Function connlast(<player>)
+  
+  Returns the number of seconds that <player>'s last connection to
+  the MUX was.
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: conntotal(), connmax(), connnum(), connleft(), secs(),
+            conn().
+  
+& CONNNUM()
+  Function connnum(<player>)
+  
+  Returns the number connections that <player> has had to the MUX
+  including the current connection.
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: conntotal(), connmax(), connlast(), connleft(), secs(),
+            conn().
+  
+& CONNLEFT()
+  Function connleft(<player>)
+  
+  Returns the time stamp (number of seconds elapsed since midnight,
+  January 1, 1970) that represents when the <player> last
+  disconnected from the MUX.
+  
+  NOTE: Only available if server built with GAME_DOOFERMUX.
+
+  See also: conntotal(), connmax(), connlast(), connnum(), secs(),
+            conn().
