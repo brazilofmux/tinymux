@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.1 2000-04-11 07:14:46 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.2 2000-04-11 20:44:40 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -245,6 +245,17 @@ struct objlist_block {
 
 #define OBLOCK_SIZE ((LBUF_SIZE - sizeof(OBLOCK *)) / sizeof(dbref))
 
+typedef struct objlist_stack OLSTK;
+struct objlist_stack
+{
+    struct objlist_stack *next; /* Next object list in stack */
+    OBLOCK  *head;              /* Head of object list */
+    OBLOCK  *tail;              /* Tail of object list */
+    OBLOCK  *cblock;            /* Current block for scan */
+    int count;                  /* Number of objs in last obj list block */
+    int citm;                   /* Current item for scan */
+};
+
 typedef struct markbuf MARKBUF;
 struct markbuf
 {
@@ -332,6 +343,7 @@ struct statedata
     int     ntfy_nest_lev;  /* Current nesting of notifys */
     int     lock_nest_lev;  /* Current nesting of lock evals */
     char    *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
+    int     glob_reg_len[MAX_GLOBAL_REGS];  /* Length of strs */
     int     zone_nest_num;  /* Global current zone nest position */
     int     inpipe;         /* Boolean flag for command piping */
     char    *pout;          /* The output of the pipe used in %| */
