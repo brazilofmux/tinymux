@@ -121,29 +121,29 @@ Here is a typical manual FTP conversation:
 \texttt{\footnotesize
 \begin{verse}
 \$ \emph{ftp ftp.tinymux.org}\\
-Connected to ftp.tinymux.org.\\
+Connected to ftp.tinymux.org (4.23.75.99).\\
 220 sdennis5 Microsoft FTP Service (Version 5.0).\\
-User (ftp.tinymux.org:(none)): \emph{anonymous}\\
+Name (ftp.tinymux.org:sdennis): \emph{anonymous}\\
 331 Anonymous access allowed, send identity (e-mail name) as password.\\
 Password: \emph{sdennis@svdltd.com}\\
 230 Anonymous user logged in.\\
-ftp$>$ \emph{cd TinyMUX/tinymux-2.3/alpha/6}\\
-250 CWD command successful.\\
 ftp$>$ \emph{binary}\\
 200 Type set to I.\\
+ftp$>$ \emph{cd TinyMUX/tinymux-2.3/alpha/7}\\
+250 CWD command successful.\\
 ftp$>$ \emph{ls *.tar.gz}\\
 200 PORT command successful.\\
 150 Opening ASCII mode data connection for file list.\\
-mux-2.3.0.6.unix.tar.gz\\
-mux-2.3.0.6.win32.bin.tar.gz\\
-mux-2.3.0.6.win32.src.tar.gz\\
+mux-2.3.0.7.unix.tar.gz\\
+mux-2.3.0.7.win32.bin.tar.gz\\
+mux-2.3.0.7.win32.src.tar.gz\\
 226 Transfer complete.\\
 85 bytes received in 0.03Seconds (4.48Kbytes/sec)\\
-ftp$>$ \emph{get mux-2.3.0.6.unix.tar.gz}\\
+ftp$>$ \emph{get mux-2.3.0.7.unix.tar.gz}\\
 200 PORT command successful.\\
-150 Opening BINARY mode data connection for mux-2.3.0.6.unix.tar.gz(859891 bytes).\\
+150 Opening BINARY mode data connection for mux-2.3.0.7.unix.tar.gz(854541 bytes).\\
 226 Transfer complete.\\
-859891 bytes received in 8.61Seconds (99.85Kbytes/sec)\\
+854541 bytes received in 0.0888 secs (9.4e+03 Kbytes/sec)\\
 ftp$>$ \emph{quit}\\
 221\\
 \$
@@ -155,7 +155,7 @@ produce the file and in which order. Gzip handles `.gz' files, and tar handled
 order to unpack this distribution, we do the following:
 \texttt{\footnotesize
 \begin{verse}
-\$ \emph{tar xvzf mux-2.3.0.6.unix.tar.gz}
+\$ \emph{tar xvzf mux-2.3.0.7.unix.tar.gz}
 \end{verse}
 }
 These two commands will create a sub-directory called `mux2.3' with all the
