@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.21 2002-08-02 04:25:27 sdennis Exp $
+// $Id: game.cpp,v 1.22 2002-08-08 15:43:09 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -228,16 +228,16 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
             continue;
         }
         *s++ = '\0';
-        char *args[10];
+        char *args[NUM_ENV_VARS];
         if (  (  (aflags & AF_REGEXP)
-              && regexp_match(buff + 1, str, args, 10))
-           || wild(buff + 1, str, args, 10))
+              && regexp_match(buff + 1, str, args, NUM_ENV_VARS))
+           || wild(buff + 1, str, args, NUM_ENV_VARS))
         {
             match = 1;
             CLinearTimeAbsolute lta;
             wait_que(thing, player, player, FALSE, lta, NOTHING, 0, s,
-                args, 10, mudstate.global_regs);
-            for (int i = 0; i < 10; i++)
+                args, NUM_ENV_VARS, mudstate.global_regs);
+            for (int i = 0; i < NUM_ENV_VARS; i++)
             {
                 if (args[i])
                 {
@@ -496,7 +496,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
     }
 
     char *msg_ns, *mp, *tbuff, *tp, *buff;
-    char *args[10];
+    char *args[NUM_ENV_VARS];
     dbref aowner,  recip, obj;
     int i, nargs, aflags;
     BOOL pass_uselock;
@@ -626,13 +626,11 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
            && H_Listen(target))
         {
             tp = atr_get(target, A_LISTEN, &aowner, &aflags);
-            if (*tp && wild(tp, (char *)msg, args, 10))
+            if (*tp && wild(tp, (char *)msg, args, NUM_ENV_VARS))
             {
-                for (nargs = 10; nargs && (!args[nargs - 1] || !(*args[nargs - 1])); nargs--)
+                for (nargs = NUM_ENV_VARS; nargs && (!args[nargs - 1] || !(*args[nargs - 1])); nargs--)
                 {
-                    // Nothing
-                    //
-                    ;
+                    ; // Nothing
                 }
                 pass_listen = TRUE;
             }
@@ -672,7 +670,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         //
         if (pass_listen)
         {
-            for (i = 0; i < 10; i++)
+            for (i = 0; i < nargs; i++)
             {
                 if (args[i] != NULL)
                 {
