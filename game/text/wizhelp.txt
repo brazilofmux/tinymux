@@ -1,3 +1,24 @@
+& HELP
+
+  This is the MUX online help facility for wizard commands and topics.
+  The information provided by this command is generally not useful for
+  anyone other than wizards and game maintainers, as the features described
+  here are only accessable to characters whose WIZARD bit is set, or to those
+  who have access to the directory where the MUX data files reside.
+
+  Syntax of help command:
+     wizhelp [<command/topic>]
+
+  To get a list of MUX wizard topics:
+     wizhelp topics
+
+  To get a list of MUX wizard commands:
+     wizhelp commands
+
+  If there are any errors in the help text, please notify a Wizard.
+
+  Related Topics: help.
+
 & @ADDCOMMAND
 @ADDCOMMAND
 
@@ -2061,27 +2082,6 @@ HAVE_ZONES
   Specifies whether zones should be active. If this is off, zone connects
   and disconnects, zone commands, and the control aspects will all be
   disabled.
-
-& HELP
-
-  This is the MUX online help facility for wizard commands and topics.
-  The information provided by this command is generally not useful for
-  anyone other than wizards and game maintainers, as the features described
-  here are only accessable to characters whose WIZARD bit is set, or to those
-  who have access to the directory where the MUX data files reside.
-
-  Syntax of help command:
-     wizhelp [<command/topic>]
-
-  To get a list of MUX wizard topics:
-     wizhelp topics
-
-  To get a list of MUX wizard commands:
-     wizhelp commands
-
-  If there are any errors in the help text, please notify a Wizard.
-
-  Related Topics: help.
 
 & HELP_FILE
 HELP_FILE
