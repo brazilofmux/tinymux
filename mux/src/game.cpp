@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.13 2002-07-09 08:22:49 jake Exp $
+// $Id: game.cpp,v 1.14 2002-07-09 18:57:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -269,13 +269,14 @@ int atr_match(dbref thing, dbref player, char type, char *str, BOOL check_parent
     dbref parent;
 
     // If thing is halted, don't check anything
+    //
     if (Halted(thing))
     {
         return FALSE;
     }
 
     // If not checking parents, just check the thing
-
+    //
     BOOL match = FALSE;
     if (!check_parents)
     {
