@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.12 2000-05-19 17:20:03 sdennis Exp $
+// $Id: db.cpp,v 1.13 2000-05-24 08:34:13 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1708,7 +1708,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     if (!text) return;
     memcpy(text, compress_buff, nCompressedValue);
 #else // RADIX_COMPRESSION
-    text = (char *)MEMALLOC(nValue, __FILE__, __LINE__);
+    text = (char *)MEMALLOC(nValue+1, __FILE__, __LINE__);
     if (!text) return;
     memcpy(text, szValue, nValue+1);
 #endif // RADIX_COMPRESSION
