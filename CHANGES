@@ -165,6 +165,7 @@ Cosmetic Changes:
  -- Consistent file headers and comment blocks. Remove trailing spaces and
     hardtabs.
  -- Remove unused sections of #ifdef'ed out code.
+ -- @pcreate and @robot now report the created dbref.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
