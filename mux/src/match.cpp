@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.13 2002-08-03 19:49:20 sdennis Exp $
+// $Id: match.cpp,v 1.14 2002-10-14 06:12:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -162,19 +162,16 @@ void match_player(void)
 /*
  * returns nnn if name = #nnn, else NOTHING 
  */
-static dbref absolute_name(int need_pound)
+static dbref absolute_name(BOOL bNeedPound)
 {
     char *mname = md.string;
-    if (need_pound) 
+    if (bNeedPound)
     {
-        if (*md.string != NUMBER_TOKEN) 
+        if (*mname != NUMBER_TOKEN)
         {
             return NOTHING;
-        } 
-        else 
-        {
-            mname++;
         }
+        mname++;
     }
     if (*mname)
     {
@@ -205,7 +202,7 @@ void match_numeric(void)
     {
         return;
     }
-    dbref match = absolute_name(0);
+    dbref match = absolute_name(FALSE);
     if (Good_obj(match))
     {
         promote_match(match, CON_DBREF);
@@ -579,7 +576,7 @@ void init_match(dbref player, const char *name, int type)
     md.match = NOTHING;
     md.player = player;
     md.string = munge_space_for_match((char *)name);
-    md.absolute_form = absolute_name(1);
+    md.absolute_form = absolute_name(TRUE);
 }
 
 void init_match_check_keys(dbref player, const char *name, int type)
