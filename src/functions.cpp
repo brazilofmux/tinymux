@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.34 2000-10-04 07:38:54 sdennis Exp $
+// $Id: functions.cpp,v 1.35 2000-10-07 06:17:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2175,23 +2175,54 @@ FUNCTION(fun_num)
     safe_tprintf_str(buff, bufc, "#%d", match_thing(player, fargs[0]));
 }
 
-FUNCTION(fun_pmatch)
+void internalPlayerFind
+(
+    char* buff,
+    char** bufc,
+    dbref player,
+    char* name,
+    int bVerifyPlayer
+)
 {
-    if (*fargs[0] == '#')
+    dbref thing;
+    if (*name == '#')
     {
-        safe_tprintf_str(buff, bufc, "#%d", match_thing(player, fargs[0]));
-        return;
-    }
-    dbref thing = lookup_player(player, fargs[0], 1);
-    if (thing != NOTHING)
-    {
-        safe_tprintf_str(buff, bufc, "#%d", thing);
+        thing = match_thing(player, name);
+        if (bVerifyPlayer)
+        {
+            if (!Good_obj(thing) || !isPlayer(thing))
+            {
+                safe_str("#-1 NO MATCH", buff, bufc);
+                return;
+            }
+        }
     }
     else
     {
-        safe_str("#-1 NO MATCH", buff, bufc);
+        thing = lookup_player(player, name, 1);
+        if (thing == NOTHING)
+        {
+            safe_str("#-1 NO MATCH", buff, bufc);
+            return;
+        }
     }
+    DTB pContext;
+    DbrefToBuffer_Init(&pContext, buff, bufc);
+    DbrefToBuffer_Add(&pContext, thing);
+    DbrefToBuffer_Final(&pContext);
 }
+
+
+FUNCTION(fun_pmatch)
+{
+    internalPlayerFind(buff, bufc, player, fargs[0], TRUE);
+}
+
+FUNCTION(fun_pfind)
+{
+    internalPlayerFind(buff, bufc, player, fargs[0], FALSE);
+}    
+
 
 FUNCTION(fun_gt)
 {
@@ -6355,6 +6386,7 @@ FUN flist[] =
     {"PARSE",    fun_parse,    0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
     {"PEEK",     fun_peek,     0,  FN_VARARGS, CA_PUBLIC},
     {"PEMIT",    fun_pemit,    2,  0,          CA_PUBLIC},
+    {"PFIND",    fun_pfind,    1,  0,          CA_PUBLIC},
     {"PI",       fun_pi,       0,  0,          CA_PUBLIC},
     {"PLAYMEM",  fun_playmem,  1,  0,          CA_PUBLIC},
     {"PMATCH",   fun_pmatch,   1,  0,          CA_PUBLIC},
