@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.28 2000-09-20 22:22:47 sdennis Exp $
+// $Id: functions.cpp,v 1.29 2000-09-27 19:11:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3273,25 +3273,55 @@ FUNCTION(fun_money)
 
 FUNCTION(fun_pos)
 {
-    int i = 1;
-    char *s, *t, *u;
+    // Strip ANSI from pattern and save.
+    //
+    // Note: We need to save it because the next call to strip_ansi()
+    // will overwrite the prior result.  Also, we save the pattern
+    // instead of the source because the the pattern will tend to be
+    // smaller (i.e., on average, fewer bytes to move).
+    //
+    unsigned int nPat;
+    char aPatBuf[LBUF_SIZE];
+    memcpy(aPatBuf, strip_ansi(fargs[0], &nPat), nPat);
 
-    i = 1;
-    s = fargs[1];
-    while (*s) {
-        u = s;
-        t = fargs[0];
-        while (*t && *t == *u)
-            ++t, ++u;
-        if (*t == '\0')
+    // Strip ANSI from source.
+    //
+    unsigned int nSrc;
+    char *pSrc = strip_ansi(fargs[1], &nSrc);
+
+    // Search for pattern string inside source string.
+    //
+    int i = 1;
+    if (nPat == 1)
+    {
+        // We can optimize the single-character case.
+        //
+        char *p = strchr(pSrc, aPatBuf[0]);
+        if (p)
         {
+            i = p - pSrc + 1;
             safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
             return;
         }
-        ++i, ++s;
+    }
+    else
+    {
+        // We have a multi-byte pattern.
+        //
+        while (nSrc)
+        {
+            if (  nPat <= nSrc
+               && memcmp(pSrc, aPatBuf, nPat) == 0)
+            {
+                safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+                return;
+            }
+            i++;
+            pSrc++;
+            nSrc--;
+        }
     }
     safe_str("#-1", buff, bufc);
-    return;
 }
 
 /* ---------------------------------------------------------------------------
