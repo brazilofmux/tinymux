@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.3 2000-04-12 01:53:33 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.4 2000-04-12 21:10:19 sdennis Exp $ 
 */
 
 /*
@@ -2126,16 +2126,19 @@ void list_siteinfo(dbref player)
 void make_ulist(dbref player, char *buff, char **bufc)
 {
     DESC *d;
-    char *cp;
-    
-    cp = *bufc;
-    DESC_ITER_CONN(d) {
+    char *cp = *bufc;
+    DESC_ITER_CONN(d)
+    {
         if (!WizRoy(player) && Hidden(d->player))
+        {
             continue;
+        }
         if (cp != *bufc)
+        {
             safe_chr(' ', buff, bufc);
+        }
         safe_chr('#', buff, bufc);
-        safe_str(Tiny_ltoa_t(d->player), buff, bufc);
+        safe_ltoa(d->player, buff, bufc, LBUF_SIZE-1);
     }
 }
 
