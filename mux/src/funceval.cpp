@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.29 2003-02-16 17:30:51 jake Exp $
+// $Id: funceval.cpp,v 1.30 2003-02-16 17:55:10 jake Exp $
 //
 
 #include "copyright.h"
@@ -30,6 +30,48 @@ extern NAMETAB indiv_attraccess_nametab[];
 extern int countwords(char *, char);
 extern void arr2list(char *arr[], int alen, char *list, char **bufc, char sep);
 extern void make_portlist(dbref, dbref, char *, char **);
+
+bool parse_and_get_attrib(dbref executor, char *fargs[], char **atext, dbref *thing, char *buff, char **bufc)
+{
+    ATTR *ap;
+
+    // Two possibilities for the first arg: <obj>/<attr> and <attr>.
+    //
+    if (!parse_attrib(executor, fargs[0], thing, &ap)) 
+    {
+        *thing = executor;
+        ap = atr_str(fargs[0]);
+    }
+
+    // Make sure we got a good attribute.
+    //
+    if (!ap)
+    {
+        return false;
+    }
+
+    // Use it if we can access it, otherwise return an error.
+    //
+    if (!See_attr(executor, *thing, ap))
+    {
+        safe_noperm(buff, bufc);
+        return false;
+    }
+
+    dbref aowner;
+    int aflags;
+    *atext = atr_pget(*thing, ap->number, &aowner, &aflags);
+    if (!*atext) 
+    {
+        return false;
+    } 
+    else if (!**atext)
+    {
+        free_lbuf(*atext);
+        return false;
+    }
+    return true;
+}
 
 #define CWHO_ON  0
 #define CWHO_OFF 1
@@ -2077,38 +2119,10 @@ FUNCTION(fun_sortby)
     char sep;
     varargs_preamble(3);
 
+    char *atext;
     dbref thing;
-    ATTR *ap;
-
-    // Two possibilities for the first arg: <obj>/<attr> and <attr>.
-    //
-    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
     {
-        thing = executor;
-        ap = atr_str(fargs[0]);
-    }
-
-    if (!ap)
-    {
-        return;
-    }
-
-    if (!See_attr(executor, thing, ap))
-    {
-        safe_noperm(buff, bufc);
-        return;
-    }
-
-    dbref aowner;
-    int aflags;
-    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext) 
-    {
-        return;
-    } 
-    else if (!*atext)
-    {
-        free_lbuf(atext);
         return;
     }
 
@@ -2269,30 +2283,9 @@ FUNCTION(fun_mix)
     // Get the attribute, check the permissions. 
     // 
     dbref thing;
-    ATTR *ap;
-
-    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
+    char *atext;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc)) 
     {
-        thing = executor;
-        ap = atr_str(fargs[0]);
-    }
-
-    if (  !ap
-       || !See_attr(executor, thing, ap))
-    {
-        return;
-    }
-
-    dbref aowner;
-    int aflags;
-    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext)
-    {
-        return;
-    }
-    else if (!*atext) 
-    {
-        free_lbuf(atext);
         return;
     }
 
@@ -2354,33 +2347,13 @@ FUNCTION(fun_foreach)
         return;
     }
 
+    char *atext;
     dbref thing;
-    ATTR *ap;
-
-    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
-    {
-        thing = executor;
-        ap = atr_str(fargs[0]);
-    }
-
-    if (  !ap
-       || !See_attr(executor, thing, ap))
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
     {
         return;
     }
 
-    dbref aowner;
-    int aflags;
-    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext)
-    {
-        return;
-    }
-    else if (!*atext)
-    {
-        free_lbuf(atext);
-        return;
-    }
     char *str;
     char cbuf[2], prev = '\0';
     char *atextbuf = alloc_lbuf("fun_foreach");
@@ -2461,31 +2434,10 @@ FUNCTION(fun_munge)
 
     // Find our object and attribute.
     //
+    char *atext;
     dbref thing;
-    ATTR *ap;
-
-    if (!parse_attrib(executor, fargs[0], &thing, &ap)) 
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
     {
-        thing = executor;
-        ap = atr_str(fargs[0]);
-    }
-
-    if (  !ap
-       || !See_attr(executor, thing, ap))
-    {
-        return;
-    }
-
-    dbref aowner;
-    int aflags;
-    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext) 
-    {
-        return;
-    } 
-    else if (!*atext)
-    {
-        free_lbuf(atext);
         return;
     }
 
