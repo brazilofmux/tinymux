@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.74 2002-08-06 01:17:37 jake Exp $
+// $Id: functions.cpp,v 1.75 2002-08-06 01:29:41 jake Exp $
 //
 
 #include "copyright.h"
@@ -7850,8 +7850,6 @@ FUNCTION(fun_error)
     }
     else
     {
-        // We use LowerCaseCommand for another purpose.
-        //
         safe_str("Huh?  (Type \"help\" for help.)", buff, bufc);
     }
 }
