@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.69 2001-11-28 06:35:53 sdennis Exp $
+// $Id: externs.h,v 1.70 2001-12-03 06:19:39 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -63,7 +63,7 @@ void TinyExec(char *buff, char **bufc, int tflags, dbref player, dbref cause, in
 extern void save_global_regs(const char *, char *[], int []);
 extern void save_and_clear_global_regs(const char *, char *[], int[]);
 extern void restore_global_regs(const char *, char *[], int []);
-extern signed char Tiny_IsRegister[256];
+extern const signed char Tiny_IsRegister[256];
 
 /* From game.cpp */
 #define notify(p,m)                         notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)

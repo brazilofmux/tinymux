@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.29 2001-12-01 04:14:25 sdennis Exp $
+// $Id: eval.cpp,v 1.30 2001-12-03 06:19:39 sdennis Exp $
 //
 
 // MUX 2.1
@@ -91,7 +91,7 @@ static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
 // A code 4 or above means that the client-specified delim cannot override it.
 // A code 8 is temporary.
 //
-char isSpecial_L3[256] =
+static char isSpecial_L3[256] =
 {
     7, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x00-0x0F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 4, 0, 0, 0, 0, // 0x10-0x1F
@@ -111,7 +111,7 @@ char isSpecial_L3[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0  // 0xF0-0xFF
 };
 
-char isSpecial_L4[256] =
+static const char isSpecial_L4[256] =
 {
     4, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x00-0x0F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 1, 0, 0, 0, 0, // 0x10-0x1F
@@ -134,7 +134,7 @@ char isSpecial_L4[256] =
 // Characters that are valid q-registers, and their offsets in the register
 // array. -1 for invalid registers.
 //
-signed char Tiny_IsRegister[256] =
+const signed char Tiny_IsRegister[256] =
 {
     -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0x00-0x0F
     -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, // 0x10-0x1F
@@ -911,7 +911,7 @@ static void tcache_finish(void)
     tcache_count = 0;
 }
 
-char *ColorTable[256] =
+const char *ColorTable[256] =
 {
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x00-0x0F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x10-0x1F
@@ -943,7 +943,7 @@ char *ColorTable[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0       // 0xF0-0xFF
 };
 
-char isSpecial_L1[256] =
+static char isSpecial_L1[256] =
 {
     1, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x00-0x0F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 1, 0, 0, 0, 0, // 0x10-0x1F
@@ -963,7 +963,7 @@ char isSpecial_L1[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0  // 0xF0-0xFF
 };
 
-unsigned char isSpecial_L2[256] =
+static const unsigned char isSpecial_L2[256] =
 {
      18,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x00-0x0F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x10-0x1F
@@ -1486,7 +1486,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         //
                         // Color
                         //
-                        char *pColor = ColorTable[(unsigned char)pdstr[1]];
+                        const char *pColor = ColorTable[(unsigned char)pdstr[1]];
                         if (pColor)
                         {
                             pdstr++;
