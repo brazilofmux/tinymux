@@ -1,260 +1,31 @@
-TinyMUX 2.3:  CHANGES
+TinyMUX 2.4:  CHANGES
 Last Update:  April 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- Dbconvert is now depreciated in favor of the same features in a
-    stand-alone mode of netmux.  On Unix, there is a symbolic link for
-    dbconvert to netmux.  But, on both Win32 and Unix, all the features
-    of stand-alone mode are accessible via new command line options as
-    follows:
-
-        netmux -d<basename> -i<infile> -o<outfile> [-l|-u|-k]
+ -- XXX
 
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- Quotas are checked/repaired during @dbck.
- -- Added support -p option, netmux.pid, and you can run more than one
-    MUX server per Unix account without modifying the Startmux script.
-    This feature first appeared in TinyMUSH 3.0.
- -- Limit the number of oustanding slave processes at any one time to
-    20.  Introduced by Brazil.  Jointly refined with Alierak.
- -- Expand @list alloc report to 14 digits for total allocations column.
- -- Added @descformat.  Patch provided by Sean Hunter.
- -- Added SHA1() to calculate SHA-1 cryptographically secure hashes.
- -- Existing encrypt passwords are converted to SHA-1 format.
- -- The WHO/SESSION/DOING report manages the width and format of
-    'On For' column with more care.  A range of years can be represented
-    with a resolution of minutes at most, however, with limited
-    available width resolution is gracefully sacrified.
- -- The lag_maximum configuration option now accepts fractional seconds.
- -- Jake added support for variable exits.
- -- Support for larger CHashpage sizes (based on value of LBUF_SIZE).
- -- Added ENTRANCES().
- -- Added GRABALL().
- -- Added -e command-line option which can be used to redirect the log
-    back to the standard error stream (i.e., stderr) or to specify a
-    basename to locate the logfiles in a directory other than the game
-    sub-directory.
- -- Allow WHO report to be affected by @moniker.
- -- dist2d() and dist3d() changed to use floating-point instead of integer
-    math.
- -- Turned 'all' message spec back on.  '@mail/clear all' works again.
-    This option (which is described in the help files) was commented out
-    in TinyMUX 1.6p0 or earlier.  I'm not sure why it was commented out,
-    but I've turned support for it back on.  Unlike the other options,
-    this one will now require that you spell the entire word out.
- -- Players with the hidden power can now hide on channels as well.
- -- Added cf_dbref() and changed the way configuration files are parsed
-    to support 'master_room #2' and '@admin master_room=#2'.  Previously,
-    'master_room 2' and '@admin master_room=2' was required.  The latter
-    continue to be supported.
- -- Improved messages when home or dropto is changed.
- -- inc, dec, shl, shr, sort(,n), band, bnand, bor are all extended to
-    64-bit integers.
- -- Added /noeval switch to page.
- -- Added support to page for quoting names.  Add double quotes around
-    any player name that contains spaces to avoid the space in their
-    name from acting as a delimiter.
+ -- XXX
 
 
 Bug Fixes:
 ~~~~~~~~~
- -- Alierak fix for buffer overflow exploit in slave process.
- -- Alierak fix for logic bug in logging.
- -- Alierak fixes build breakage on Darwin due to inconsistent use of
-    size_t.
- -- Fix SIGSEGV in SCRAMBLE().
- -- Alierak fixes strcat() given that its assumptions about TinyExec are
-    no longer true.
- -- Alierak fix for home(bad_obj) logic.
- -- Alierak fixes off-by-one error in wrap().
- -- Only allow printable characters in identd.  The slave process on
-    Unix does this.  The threaded implementation for Win32 didn't.
- -- Alierak reported that SCRAMBLE still scrambles characters off the
-    end of the buffer.  He provided a patch that fixed that while not
-    giving a flat distribution.  This final check-in fixed both issues.
- -- Bug fix in mux_memicmp().  mux_memicmp("June ", "june", 4) != 0
-    when it should.  Brazil's bug.  mux_memicmp() was added to fix a
-    build problem on QNX, so the bug would have been introduce at the
-    same time.  It effectively turned off the auto-magic date parsing
-    built into convtime(), so if that hasn't been working for you,
-    this is the reason why.
- -- Alierak fixes crash case with obscure god-only lock case.
- -- Alierak fixes uninitialized use of second subexpression in attr
-    and eval lock cases.
- -- Alierak fixes several stepping past unparse buffer terminator cases. 
- -- Alierak perks up boolexp generally.
- -- cf_bool() and config() briefly didn't handle bool type correctly.
- -- Players creating themselves from the welcome screen could cause
-    NOSPOOF-related messages to show a random executor to other players
-    on the Public channel.
- -- Player names weren't validated properly. Instead of mux_PlayerNameSet[],
-    the code was using mux_ObjectNameSet[].
- -- Fixed the bCanRead/read_remote_desc bugs.
- -- Rename and turn character-typing tables into macros.
- -- Fixed SIGSEGV bugs related to characters with the high-order bit
-    set.  Introduced, found, and fixed by Brazil.
- -- Same as above in translate_string() reported by Sean Hunter.  Fixed
-    by Brazil.
- -- Fixed test_time_t() for 64-bit platforms. Reported by Alierak.  
-    Fixed with Alierak.  Daylight Savings Time information would have
-    been missing on at least some and possibly all 64-bit platforms.
- -- Fixed @flag so that it functions.  Reported by Marlek.  Brazil's bug.
-    Fixed by Brazil.
- -- Fixed flag_name documentation.
- -- Fixed SIGSEGV bug in UpdateOffsetTable(). This function maintains
-    a table of DST/zone differences and the interval of time over which
-    the DST/zone difference is valid. There are typically two intervals
-    per calendar year (DST in force and not).  The table can whole 50 
-    entries (or 25 years worth).  
-
-    If the table was full, and the Least-Recently-Used (LRU) entry is 
-    the last entry in the table, and we are adding an entry beyond the 
-    interval covered by the last entry, then a SIGSEGV can occur.  
-    Reported by Anomaly/nails.  Brazil's bug.  Fixed by Brazil.
- 
-    A broader case of this one was originally reported by Lucifer 
-    against MUX 2.1 and fixed 2001-OCT-16.  The fix wasn't sufficient.
- -- Bug #557, #558, #559, and #560 were all buffers smaller than the
-    largest possible result.  All reported by Morgan 2000-OCT-15.  Fixed
-    (finally) by Brazil.  Bugs from MUX 1.6.
- -- Initialize idle time for the sake of SITEMON-related WHO reports.
-    Zenty's bug.
- -- Protect d->player access with DS_CONNECTED test to avoid depending
-    on the existance of #0. Flags on #0 were controlling the behavior
-    of logged-out connections. Now, you can load an empty flatfile,
-    create a player (which will be dbref #0), and proceed from there.
-    This isn't recommended, but the server doesn't crash if you try it.
-    Bug from MUX 1.6.
- -- Kill the slave process on @shutdown.  Reported by nails.  Fixed by
-    Brazil.  Brazil's bug.  Introduced in MUX 2.0 when the Win32 and
-    Unix sources were merged. The required block of code was accidently
-    left out. 
- -- Don't treat a killed slave process as the completion of a dump
-    process.  Implementation worked out jointly with Alierak.
- -- Clean up zombie slave processe on @restart.
- -- set() function free the wrong buffer.  Introduced by Jake in
-    MUX 2.3.0.5.  Reported by A_Character.  Fixed by Brazil.
- -- grep() and grepi() weren't preparing properly for accented
-    characters.  Brazil's bug.
- -- Execute @hook code in the context of the hook_obj instead of as the
-    player.  Jake's bug.
- -- Configuration script bug that affected MacOS build.  Reported by
-    Alierak.
- -- Fixed ANSI color leak for case near the size of an LBUF.  Reported
-    by Alierak.
- -- PushPointers tag was wrong.  Reported by Alierak.
- -- Memory leak in objeval().  Reported by Alierak.
- -- Guest system would clear contents of starting_room if a guest it
-    created was later re-named.  Zenty's bug.  Fixed by Brazil.
- -- Documented '~' letter for NOACCENTS.
- -- Prevent rooms and exits from using the 'home' command.  Patch by
-    Alierak.
- -- cache_names=no configuration would SIGSEGV.  Introduced and fixed by
-    Brazil.
- -- encrypt() and decrypt() couldn't handle accented characters.
-    Reported by Alierak.  Introduced and fixed by Brazil.
- -- While exits are checked and canonicalized at creation time, it was
-    possible to re-@name an exit to a broader range of names.  Patch
-    from Alierak.
- -- Document that y-umlaut is not supported.
- -- Fix help topic for conn() and idle().  Reported by Talim.
- -- Use waitpid() everywhere instead of wait() or wait3().
- -- Freshen getpagesize() for QNX.
- -- Previous work on slave left zombie slave processes.
- -- Some SIGCHLD signals from the dumping process were not getting
-    through.
- -- Fix @unlock with respect to attribute locks.  Attributes could be
-    locked, but not @unlocked (except by #1).  Introduced by Jake.
-    Reported by Sean Hunter.  Fixed by Brazil.
- -- MakeCanonicalMailAlias() could return a result which was not
-    null-terminated.  Reported by Ita'istar@Tandoria. Introduced and fixed
-    by Brazil.  Related to the @malias command.
- -- MUX previously wouldn't handle convtime(Sat Apr 26 22:32:24 2003 utc)
-    properly because the first-level date parser accepted it as a local
-    date (ignoring anything that occured after the year field).  The
-    first-level date parser is now more restrictive, and the
-    second-level date parser handles it properly.  Reported by Talim.
- -- Fix v(), get(), u(), and probably other functions related to
-    attributes on parents.  Broken by Brazil in 2.3.0.11.
- -- Fix to new PCRE code to avoid error in gcc 2.95.
- -- Support obj(name(<dbref>)) where name(<dbref>) contains ANSI color.
-    Reported by Bellemore.
- -- @addcommand wasn't initializing @hook command information properly.
-    On non-debug builds, this would tend to leave the command in a
-    @hook/ignore state.  Therefore, even though the @addcommand was
-    successful, a user would still receive a 'Huh?' message.
- -- Specific to the Win32 build with the Intel Compiler,
-    'mul(288,power(10,9))' --> '287:00000000' instead of '288000000000'.
-    It transformed a floating-point division in mux_dtoa() into a
-    floating-point multiplication (tangentially, using MMX instructions
-    as well).  The -Qprec_div option prevents this optimization and fixes
-    the behavior.  As insurance, some additional code also will fix the
-    the problem.
- -- @hook/igswitch didn't work when the built-in command normally
-    doesn't take switches.
- -- Fix problem with comsys aliases potentially hiding the 'home' command
-    and exit names.  Fix by Jake.
- -- Documented lag_maximum configuration option.
- -- ALIAS attribute wasn't available to other players.
- -- RIGHT() had problems with ANSI.
- -- Fixed cor(), cand(), corbool(), and candbool().  Fix by Sean Hunter.
- -- GCC 3.2 with high-optimizations couldn't compare properly with
-    -DBL_MAX.  Reported on Shangrila.
- -- WRAP() thoroughly updated by Jake.
- -- @descformat updated to evaluate the description.  Fix by Sean Hunter.
- -- Workaround a bug in Microsoft Visual C/C++ compiler (Version 12.0 which
-    is part of Visual Studio 6.0.  This bug affects PCRE.
- -- Added cache_pages and cache_tick_period configuration options to better
-    support very large games.
- -- Fix minor bug in wrap().  Introduced and fixed by Jake.
- -- Fix @aahear denial-of-service exploit by preventing @aahear actions
-    from nesting beyond 3 levels.  Demonstrated on Shangrila.  Fixed by
-    Brazil.
- -- Fixed '@wait obj/attr=...' form of semaphores.  It would work
-    exactly once if 'attr' wasn't previously defined in the game.
-    Caused by and fixed by Brazil.  Reported by Ian.
- -- regmatch() wasn't handling the full range of return codes from PCRE
-    properly.  PCRE contributed by Raevnos.  Fixed by Brazil.
- -- Fix hang in @dbck when orphaned objects lose both their home and
-    their current location.  This crashing bug was probably introduced
-    inadvertantly by Jake when he changed the defintion of a good object.
-    Fixed by Brazil.
- -- Give detailed message at the welcome screen about why a password
-    doesn't meet with the requirements of the safer_password
-    configuration option.
- -- Fixed obscure buffer overflow in wRAP().
- -- Fixed buffer overflow in @list functions.
- -- Fixed permission issue with visual attributes on objects which are
-    not nearby.
- -- Fixed @mail/bcc behavior so that bcc'ed recipients are hidden from
-    non-bcc'ed recipients.
- -- Removed '%' as a valid attribute name character.
- -- Fixed MEMORY_BASED build.
- -- Allow @dolist to accept the /notify and /delimit flags together.
+ -- XXX
 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
- -- Jake sorted the mudconf structures first by type and then by name.
- -- Raevnos updated PCRE.  The updated version does not require
-    Raevnos' fix (implemented with C++ exceptions). With this release,
-    MUX 2.3 no longer depends on C++ exceptions.
+ -- XXX
 
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
- -- Alierak fix for typos in NOTES.
- -- Spell 'separate' correctly in the help files and the source code.
- -- Improved grammer of the emit the sender sees from the page command.
+ -- XXX
 
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- Switched all internal use of BOOL type to bool type.
- -- Documented flag attributes.
- -- Updated CONVERSION.
- -- Remove vestigial code related to old-style variable function
-    arguments and autoconf.h.in clean up in general.
+ -- XXX
