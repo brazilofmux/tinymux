@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.48 2002-06-28 19:44:11 sdennis Exp $
+// $Id: functions.cpp,v 1.49 2002-06-29 22:15:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2848,10 +2848,11 @@ public:
     void SpellNum(const char *p, char *buff_arg, char **bufc_arg);
 
 private:
-    void SpellNumber_Sub0(int n, const char *p, BOOL bHundreds);
-    void SpellNumber_Sub1(int n, const char *p);
-    void SpellNumber_Sub2(const char *p);
-    void SpellNumber_Sub3(const char *p, int iBigOne);
+    void TwoDigits(const char *p);
+    void ThreeDigits(const char *p, int iBigOne);
+    void ManyDigits(int n, const char *p, BOOL bHundreds);
+    void FractionalDigits(int n, const char *p);
+
     void StartWord(void);
     void AddWord(const char *p);
 
@@ -2876,7 +2877,7 @@ void CSpellNum::AddWord(const char *p)
 
 // Handle two-character sequences.
 //
-void CSpellNum::SpellNumber_Sub2(const char *p)
+void CSpellNum::TwoDigits(const char *p)
 {
     int n0 = p[0] - '0';
     int n1 = p[1] - '0';
@@ -2912,7 +2913,7 @@ void CSpellNum::SpellNumber_Sub2(const char *p)
 
 // Handle three-character sequences.
 //
-void CSpellNum::SpellNumber_Sub3(const char *p, int iBigOne)
+void CSpellNum::ThreeDigits(const char *p, int iBigOne)
 {
     if (  p[0] == '0'
        && p[1] == '0'
@@ -2930,7 +2931,7 @@ void CSpellNum::SpellNumber_Sub3(const char *p, int iBigOne)
         StartWord();
         AddWord("hundred");
     }
-    SpellNumber_Sub2(p+1);
+    TwoDigits(p+1);
     if (iBigOne > 0)
     {
         StartWord();
@@ -2940,7 +2941,7 @@ void CSpellNum::SpellNumber_Sub3(const char *p, int iBigOne)
 
 // Handle a series of patterns of three.
 //
-void CSpellNum::SpellNumber_Sub0(int n, const char *p, BOOL bHundreds)
+void CSpellNum::ManyDigits(int n, const char *p, BOOL bHundreds)
 {
     // Handle special Hundreds cases.
     //
@@ -2948,10 +2949,10 @@ void CSpellNum::SpellNumber_Sub0(int n, const char *p, BOOL bHundreds)
        && n == 4
        && p[1] != '0')
     {
-        SpellNumber_Sub2(p);
+        TwoDigits(p);
         StartWord();
         AddWord("hundred");
-        SpellNumber_Sub2(p+2);
+        TwoDigits(p+2);
         return;
     }
 
@@ -2978,20 +2979,20 @@ void CSpellNum::SpellNumber_Sub0(int n, const char *p, BOOL bHundreds)
             buf[i] = '0';
         }
     }
-    SpellNumber_Sub3(buf, ndiv);
+    ThreeDigits(buf, ndiv);
     p += nrem;
     while (ndiv-- > 0)
     {
-        SpellNumber_Sub3(p, ndiv);
+        ThreeDigits(p, ndiv);
         p += 3;
     }
 }
 
 // Handle precision ending for part to the right of the decimal place.
 //
-void CSpellNum::SpellNumber_Sub1(int n, const char *p)
+void CSpellNum::FractionalDigits(int n, const char *p)
 {
-    SpellNumber_Sub0(n, p, FALSE);
+    ManyDigits(n, p, FALSE);
     if (  0 < n
        && n < 15)
     {
@@ -3088,7 +3089,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
     }
     else
     {
-        SpellNumber_Sub0(nA, pA, TRUE);
+        ManyDigits(nA, pA, TRUE);
         if (nB)
         {
             StartWord();
@@ -3097,7 +3098,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
     }
     if (nB)
     {
-        SpellNumber_Sub1(nB, pB);
+        FractionalDigits(nB, pB);
     }
 }
 
