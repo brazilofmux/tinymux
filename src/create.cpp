@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects
 //
-// $Id: create.cpp,v 1.15 2001-10-06 06:15:28 sdennis Exp $
+// $Id: create.cpp,v 1.16 2001-10-07 22:34:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -882,7 +882,7 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
     // Check whether we should perform instant destruction.
     //
     dbref ThingOwner = Owner(thing);
-    BOOL bInstant = Destroy_ok(thing) || Destroy_ok(ThingOwner);
+    BOOL bInstant = (key & DEST_INSTANT) || Destroy_ok(thing) || Destroy_ok(ThingOwner);
 
     char *p;
     if (!bInstant)

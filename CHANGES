@@ -26,6 +26,7 @@ Feature Additions:
  -- Added GetFromLock. Patch from Draken-Korin.
  -- Added autozone configuration option (Bug #194 and Bug #635).
  -- Add CREATED attribute (Bug #555 and #608). Patch from Jake.
+ -- Added /now switch to @destroy. Patch from Jake.
 
 Bug Fixes:
 ~~~~~~~~~

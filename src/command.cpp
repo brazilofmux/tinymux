@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.48 2001-09-28 22:32:23 sdennis Exp $
+// $Id: command.cpp,v 1.49 2001-10-07 22:34:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -100,7 +100,8 @@ NAMETAB decomp_sw[] =
 
 NAMETAB destroy_sw[] =
 {
-    {(char *)"override",    8,  CA_PUBLIC,  DEST_OVERRIDE},
+    {"now",         8,  CA_PUBLIC,  DEST_INSTANT},
+    {"override",    8,  CA_PUBLIC,  DEST_OVERRIDE},
     { NULL,         0,  0,      0}
 };
 
