@@ -6307,74 +6307,112 @@ VCROSS()
 
   where i, j, and k are taken as unit vectors in cartisian space.
    
-  > @pemit me=vcross(1 2 3,2 3 4)
-  -1 2 -1
+  Example:
+    > @pemit me=vcross(1 2 3,2 3 4)
+    -1 2 -1
+
 & VDIM()
-  vdim(<vector>[,<delim>])
- 
-  Returns the dimensions of a vector.
- 
-  > @pemit me=vdim(1 2 3 4)
-  4
+VDIM()
+
+  FUNCTION:  vdim(<vector>[,<delimiter>])
+
+  Returns the dimensionality of a vector.
+
+  Example:
+    > think vdim(1 2 3 4)
+    4
+  
+  Related Topics:
+
 & VDOT()
-  vdot(<vector>,<vector>[,<delim>][,<output delim>])
+VDOT()
+
+  FUNCTION:  vdot(<vector>,<vector>[,<delim>][,<output delim>])
  
   Returns the dot product of two vectors. The dot product of two
   vectors is a scalar. (a,b,c) * (x,y,z) = aw + bx + cz
  
-  > @pemit me=vdot(1 2 3,2 3 4)
-  20
-& VMAG()
+  Example:
+    > @pemit me=vdot(1 2 3,2 3 4)
+    20
 
-  vmag(<vector>[,<delim>])
- 
+& VMAG()
+VMAG()
+
+  FUNCTION:  vmag(<vector>[,<delimiter>]
+
   Returns the magnitude of a vector using a euclidean distance metric.
-  That is, for vector a b c d, returns sqrt(a^2+b^2+c^2+d^2).
+  That is, for vector a b c d, it returns sqrt(a^2+b^2+c^2+d^2).
+
+  Example:
+    > think vmag(3 4) 
+    5
   
-  > @pemit me=vmag(3 4) 
-  5
+  Related Topics:
 
 & VMUL()
-  vmul(<vector|number>,<vector|number>[,<delim>][,<output delim>])
- 
+VMUL()
+
+  FUNCTION: vmul(<vector|num>,<vector|num>[,<delim>][,<output delim>])
+
   Returns the result of either multiplying a vector by a number (scalar
-  multiplication), or an elementwise multiplication of two vectors.
- 
-  > @pemit me=vmul(1 2 3,2)
-  2 4 6
-  > @pemit me=vmul(1 2 3,2 3 4)
-  2 6 12
+  multiplication) or an elementwise multiplication of two vectors.
+
+  Example:
+    > think vmul(1 2 3,2)
+    2 4 6
+    > think vmul(1 2 3,2 3 4)
+    2 6 12
+
+  Related Topics: vdot(), vcross()
+
 & VSUB()
-  vsub(<vector>,<vector>[,<delim>][,<output delim>])
- 
+VSUB()
+
+  FUNCTION:  vsub(<vector>,<vector>[,<delimiter>][,<output delimiter>])
+
   Returns the difference between two vectors.
- 
-  > @pemit me=vsub(3 4 5,3 2 1)
-  0 2 4
-  > @pemit me=vsub(6-4-2,5-2-0,-)
-  1-2-2
+
+  Example:
+    > think vsub(3 4 5,3 2 1)
+    0 2 4
+    > think vsub(3 4 5,3 2 1,,|)
+    0|2|4
+
+  Related Topics:
+
 & VUNIT()
-  vunit(<vector>[,<delim>])
- 
+VUNIT()
+
+  FUNCTION:  vunit(<vector>[,<delimiter>])
+
   Returns the unit vector (a vector of magnitude 1) which points
   in the same direction as the given vector.
- 
-  > @pemit me=vunit(2 0 0)
-  1 0 0
-  > @pemit me=vmul(vunit(5 6 7),vmag(5 6 7))
-  5 6 7
-& NEARBY()
 
-  Function: nearby(obj1,obj2)
+  Example:
+    > think vunit(2 0 0)
+    1 0 0
+    > think vmul(vunit(5 6 7),vmag(5 6 7))
+    5 6 7
+  
+  Related Topics:
+
+& NEARBY()
+NEARBY()
+
+  FUNCTION: nearby(obj1,obj2)
  
   Tests if obj1 is near obj2 (if it is in the same location, in obj2's
   inventory, or is obj2's location).  You must control either obj1 or obj2, or
   be near either one of them, if both of these tests fail then 0 is returned.
   This function returns 1 if the two objects are nearby and 0 if not.
 
+  Related Topics:
+  
 & GET()
+GET()
 
-  Function: get(<object>/<attribute>)
+  FUNCTION: get(<object>/<attribute>)
  
   The get function fetches the specified attribute from the named object.
   It can be used to get attributes from objects you own, public and visual
