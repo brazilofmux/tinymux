@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.157 2002-02-26 11:05:42 sdennis Exp $
+// $Id: functions.cpp,v 1.158 2002-02-26 18:43:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3002,8 +3002,13 @@ FUNCTION(fun_round)
     double r = Tiny_atof(fargs[0]);
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = Tiny_fpclass(r);
-    if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
+    if (  TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS
+       || TINY_FPGROUP(fpc) == TINY_FPGROUP_ZERO)
     {
+        if (TINY_FPGROUP(fpc) == TINY_FPGROUP_ZERO)
+        {
+            r = 0.0;
+        }
 #endif // HAVE_IEEE_FP_FORMAT
         int frac = Tiny_atol(fargs[1]);
         safe_str(Tiny_ftoa(r, TRUE, frac), buff, bufc);

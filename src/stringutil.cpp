@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.69 2002-02-26 18:28:31 sdennis Exp $
+// $Id: stringutil.cpp,v 1.70 2002-02-26 18:43:32 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2446,8 +2446,8 @@ char *Tiny_ftoa(double r, BOOL bRounded, int frac)
     static char buffer[100];
     char *q = buffer;
     char *rve = NULL;
-    int decpt;
-    int bNegative;
+    int decpt = 0;
+    int bNegative = 0;
     int mode = 0;
     int ndigits = 50;
 
