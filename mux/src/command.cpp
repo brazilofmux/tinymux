@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.53 2002-08-01 17:12:27 sdennis Exp $
+// $Id: command.cpp,v 1.54 2002-08-01 17:58:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -886,7 +886,7 @@ BOOL check_access(dbref player, int mask)
 /*****************************************************************************
  * Process the various hook calls.
  * Idea taken from TinyMUSH3, code from RhostMUSH, ported by Jake Nelson.
- * Hooks processed:  before, after, ignore, permit
+ * Hooks processed:  before, after, ignore, permit, fail
  *****************************************************************************/
 BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing, char *s_uselock, ATTR *hk_attr, BOOL save_flg)
 {
@@ -935,6 +935,56 @@ BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing, char
         }
     }
    return retval;
+}
+
+char *hook_name (char *pCommand, int key)
+{
+    char *s_uselock = alloc_sbuf("command_hook.hookname");
+    memset(s_uselock, '\0', sizeof(s_uselock));
+    char *keylet;
+    switch (key)
+    {
+    case HOOK_AFAIL:
+        keylet = "AF";
+        break;
+    case HOOK_AFTER:
+        keylet = "A";
+        break;
+    case HOOK_BEFORE:
+        keylet = "B";
+        break;
+    case HOOK_IGNORE:
+        keylet = "I";
+        break;
+    case HOOK_PERMIT:
+        keylet = "P";
+        break;
+    default:
+        free_sbuf(s_uselock);
+        return NULL;
+    }
+
+    switch(pCommand[0])
+    {
+    case '"' :  sprintf(s_uselock, "%s_%s", keylet, "say");
+        break;
+    case ':' :  
+    case ';' :  sprintf(s_uselock, "%s_%s", keylet, "pose");
+        break;
+    case '\\':  sprintf(s_uselock, "%s_%s", keylet, "@emit");
+        break;
+    case '#' :  sprintf(s_uselock, "%s_%s", keylet, "@force");
+        break;
+    case '&' :  sprintf(s_uselock, "%s_%s", keylet, "@set");
+        break;
+    case '-' :  sprintf(s_uselock, "%s_%s", keylet, "@mail");
+        break;
+    case '~' :  sprintf(s_uselock, "%s_%s", keylet, "@mail");
+        break;
+    default  :  sprintf(s_uselock, "%s_%s", keylet, pCommand);
+        break;
+    }
+    return s_uselock;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1053,35 +1103,9 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
        && Good_obj(mudconf.hook_obj)
        && !Going(mudconf.hook_obj))
     {
-        s_uselock = alloc_sbuf("command_hook_process");
-        memset(s_uselock, '\0', sizeof(s_uselock));
-        if ( strcmp(cmdp->cmdname, "\"") == 0 )
-            strcpy(s_uselock, "B_SAY");
-        else if ( strcmp(cmdp->cmdname, ":") == 0 )
-            strcpy(s_uselock, "B_POSE");
-        else if ( strcmp(cmdp->cmdname, ";") == 0 )
-            strcpy(s_uselock, "B_POSE");
-        else if ( strcmp(cmdp->cmdname, "\\") == 0 )
-            strcpy(s_uselock, "B_@EMIT");
-        else if ( strcmp(cmdp->cmdname, "#") == 0 )
-            strcpy(s_uselock, "B_@FORCE");
-        else if ( strcmp(cmdp->cmdname, "&") == 0 )
-            strcpy(s_uselock, "B_@SET");
-        else if ( strcmp(cmdp->cmdname, "~") == 0 )
-            strcpy(s_uselock, "B_@MAIL");
-        else if ( strcmp(cmdp->cmdname, "-") == 0 )
-            strcpy(s_uselock, "B_@MAIL");
-        else
-            sprintf(s_uselock, "B_%.29s", cmdp->cmdname);
-        //dx_tmp = s_uselock;
-        //while (*dx_tmp)
-        //{
-        //   if ( !isalnum(*dx_tmp) && *dx_tmp != '_' && *dx_tmp != '@' && *dx_tmp != '-' )
-        //      *dx_tmp = 'X';
-        //   dx_tmp++;
-        //}
+        s_uselock = hook_name(cmdp->cmdname, HOOK_BEFORE);
         hk_ap2 = atr_str(s_uselock);
-        process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, 0);
+        process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, FALSE);
         free_sbuf(s_uselock);
     }
 
@@ -1374,34 +1398,9 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         && Good_obj(mudconf.hook_obj)
         && !Going(mudconf.hook_obj))
     {
-        s_uselock = alloc_sbuf("command_hook_process");
-        memset(s_uselock, '\0', sizeof(s_uselock));
-        if (strcmp(cmdp->cmdname, "\"") == 0)
-            strcpy(s_uselock, "A_SAY");
-        else if (strcmp(cmdp->cmdname, ":") == 0)
-            strcpy(s_uselock, "A_POSE");
-        else if (strcmp(cmdp->cmdname, ";") == 0)
-            strcpy(s_uselock, "A_POSE");
-        else if (strcmp(cmdp->cmdname, "\\") == 0)
-            strcpy(s_uselock, "A_@EMIT");
-        else if (strcmp(cmdp->cmdname, "#") == 0)
-            strcpy(s_uselock, "A_@FORCE");
-        else if (strcmp(cmdp->cmdname, "&") == 0)
-            strcpy(s_uselock, "A_@SET");
-        else if (strcmp(cmdp->cmdname, "~") == 0)
-            strcpy(s_uselock, "A_@MAIL");
-        else if (strcmp(cmdp->cmdname, "-") == 0)
-            strcpy(s_uselock, "A_@MAIL");
-        else
-            sprintf(s_uselock, "A_%.29s", cmdp->cmdname);
-        //dx_tmp = s_uselock;
-        //while (*dx_tmp) {
-        //   if ( !isalnum(*dx_tmp) && *dx_tmp != '_' && *dx_tmp != '@' && *dx_tmp != '-' )
-        //      *dx_tmp = 'X';
-        //   dx_tmp++;
-        //}
+        s_uselock = hook_name(cmdp->cmdname, HOOK_AFTER);
         hk_ap2 = atr_str(s_uselock);
-        hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, 0);
+        hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, FALSE);
         free_sbuf(s_uselock);
     }
     return;
@@ -1474,60 +1473,15 @@ int higcheck (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *p
     if(  Good_obj(mudconf.hook_obj)
         && !Going(mudconf.hook_obj))
     {
-        char *s_uselock = alloc_sbuf("command_hook.higcheck");
-        memset(s_uselock, '\0', sizeof(s_uselock));
+        char *s_uselock;
         if (cmdp->hookmask & HOOK_IGNORE)
         {
-            switch(pCommand[0])
-            {
-            case '"' :  sprintf(s_uselock, "I_%s", "say");
-                break;
-            case ':' :  
-            case ';' :  sprintf(s_uselock, "I_%s", "pose");
-                break;
-            case '\\':  sprintf(s_uselock, "I_%s", "@emit");
-                break;
-            case '#' :  sprintf(s_uselock, "I_%s", "@force");
-                break;
-            case '&' :  sprintf(s_uselock, "I_%s", "@set");
-                break;
-            case '-' :  sprintf(s_uselock, "I_%s", "@mail");
-                break;
-            case '~' :  sprintf(s_uselock, "I_%s", "@mail");
-                break;
-            default  :  sprintf(s_uselock, "I_%s", pCommand);
-                break;
-            }
+            s_uselock = hook_name(cmdp->cmdname, HOOK_IGNORE);
         }
         else
         {
-            switch(pCommand[0])
-            {
-            case '"' :  sprintf(s_uselock, "P_%s", "say");
-                break;
-            case ':' :  
-            case ';' :  sprintf(s_uselock, "P_%s", "pose");
-                break;
-            case '\\':  sprintf(s_uselock, "P_%s", "@emit");
-                break;
-            case '#' :  sprintf(s_uselock, "P_%s", "@force");
-                break;
-            case '&' :  sprintf(s_uselock, "P_%s", "@set");
-                break;
-            case '-' :  sprintf(s_uselock, "P_%s", "@mail");
-                break;
-            case '~' :  sprintf(s_uselock, "P_%s", "@mail");
-                break;
-            default  :  sprintf(s_uselock, "P_%s", pCommand);
-                break;
-            }
+            s_uselock = hook_name(cmdp->cmdname, HOOK_PERMIT);
         }
-        //dx_tmp = s_uselock;
-        //    while (*dx_tmp) {
-        //        if ( !isalnum(*dx_tmp) && *dx_tmp != '_' && *dx_tmp != '@' && *dx_tmp != '-' ) 
-        //            *dx_tmp = 'X';
-        //        dx_tmp++;
-        //    }
         ATTR *hk_ap2 = atr_str(s_uselock);
         BOOL hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, TRUE);
         free_sbuf(s_uselock);
@@ -1558,34 +1512,7 @@ void hook_fail (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char 
     if(  Good_obj(mudconf.hook_obj)
         && !Going(mudconf.hook_obj))
     {
-        char *s_uselock = alloc_sbuf("command_hook.higcheck");
-        memset(s_uselock, '\0', sizeof(s_uselock));
-        switch(pCommand[0])
-        {
-        case '"' :  sprintf(s_uselock, "AF_%s", "say");
-            break;
-        case ':' :  
-        case ';' :  sprintf(s_uselock, "AF_%s", "pose");
-            break;
-        case '\\':  sprintf(s_uselock, "AF_%s", "@emit");
-            break;
-        case '#' :  sprintf(s_uselock, "AF_%s", "@force");
-            break;
-        case '&' :  sprintf(s_uselock, "AF_%s", "@set");
-            break;
-        case '-' :  sprintf(s_uselock, "AF_%s", "@mail");
-            break;
-        case '~' :  sprintf(s_uselock, "AF_%s", "@mail");
-            break;
-        default  :  sprintf(s_uselock, "AF_%s", pCommand);
-            break;
-        }
-        //dx_tmp = s_uselock;
-        //    while (*dx_tmp) {
-        //        if ( !isalnum(*dx_tmp) && *dx_tmp != '_' && *dx_tmp != '@' && *dx_tmp != '-' ) 
-        //            *dx_tmp = 'X';
-        //        dx_tmp++;
-        //    }
+        char *s_uselock = hook_name(pCommand, HOOK_AFAIL);
         ATTR *hk_ap2 = atr_str(s_uselock);
         BOOL hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, FALSE);
         free_sbuf(s_uselock);
