@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.16 2002-06-18 20:19:35 jake Exp $
+// $Id: predicates.cpp,v 1.17 2002-06-27 05:00:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -1548,18 +1548,6 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
             || Owner(executor) == aowner)
     {
         mDeny = AF_INTERNAL|AF_DARK|AF_MDARK;
-    }
-    else if (tattr->number == A_DESC)
-    {
-#ifdef STANDALONE
-        if (nearby(executor, target))
-#else
-        if (  mudconf.read_rem_desc
-           || nearby(executor, target))
-#endif
-        {
-            mDeny = AF_INTERNAL|AF_DARK|AF_MDARK|AF_ODARK;
-        }
     }
     if (mDeny)
     {
