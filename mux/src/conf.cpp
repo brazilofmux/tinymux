@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.34 2003-02-06 17:23:04 sdennis Exp $
+// $Id: conf.cpp,v 1.35 2003-02-27 14:20:13 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -361,19 +361,15 @@ void cf_init(void)
 //
 void cf_log_notfound(dbref player, char *cmd, const char *thingname, char *thing)
 {
-    char buff[LBUF_SIZE * 2];
-
     if (mudstate.bReadingConfiguration)
-    {
+    {   
         STARTLOG(LOG_STARTUP, "CNF", "NFND");
-        sprintf(buff, "%s: %s %s not found", cmd, thingname, thing);
-        log_text(buff);
+        Log.tinyprintf("%s: %s %s not found", cmd, thingname, thing);
         ENDLOG;
     }
     else
-    {
-        sprintf(buff, "%s %s not found", thingname, thing);
-        notify(player, buff);
+    {   
+        notify(player, tprintf("%s %s not found", thingname, thing));
     }
 }
 
@@ -563,10 +559,7 @@ CF_HAND(cf_string)
         if (mudstate.bReadingConfiguration)
         {
             STARTLOG(LOG_STARTUP, "CNF", "NFND");
-            char *buff = alloc_lbuf("cf_string.LOG");
-            sprintf(buff, "%s: String truncated", cmd);
-            log_text(buff);
-            free_lbuf(buff);
+            Log.tinyprintf("%s: String truncated", cmd);
             ENDLOG;
         }
         else
@@ -621,10 +614,7 @@ CF_HAND(cf_string_dyn)
         if (mudstate.bReadingConfiguration)
         {
             STARTLOG(LOG_STARTUP, "CNF", "NFND");
-            char *logbuff = alloc_lbuf("cf_string.LOG");
-            sprintf(logbuff, "%s: String truncated", cmd);
-            log_text(logbuff);
-            free_lbuf(logbuff);
+            Log.tinyprintf("%s: String truncated", cmd);
             ENDLOG;
         }
         else
