@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.35 2001-06-24 01:06:13 sdennis Exp $
+// $Id: conf.cpp,v 1.36 2001-06-24 01:23:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -904,10 +904,10 @@ static BOOL DecodeN(int nType, size_t len, const char *p, unsigned long *pu32)
 {
     static DECODEIPV4 DecodeIPv4Table[4] =
     {
-        { 8,         255,  3,  3, 2 },
-        { 16,      65535,  6,  5, 4 },
-        { 24,   16777215,  8,  8, 6 },
-        { 32, 4294967295, 11, 10, 8 }
+        { 8,         255UL,  3,  3, 2 },
+        { 16,      65535UL,  6,  5, 4 },
+        { 24,   16777215UL,  8,  8, 6 },
+        { 32, 4294967295UL, 11, 10, 8 }
     };
 
     *pu32 <<= DecodeIPv4Table[nType].nShift;
@@ -1145,7 +1145,7 @@ BOOL isValidSubnetMask(unsigned long ulMask)
 CF_HAND(cf_site)
 {
     struct in_addr addr_num, mask_num;
-    unsigned long ulMask;
+    unsigned long ulMask, ulNetBits;
     
     char *addr_txt;
     char *mask_txt = strchr(str, '/');
@@ -1164,15 +1164,16 @@ CF_HAND(cf_site)
         }
         if (!addr_txt || !*addr_txt || !mask_txt || !*mask_txt)
         {
-            cf_log_syntax(player, cmd, "Missing host address or mask.", (char *)"");
+            cf_log_syntax(player, cmd, "Missing host address or mask.", "");
             return -1;
         }
-        if (  !MakeCanonicalIPv4(mask_txt, &mask_num.s_addr)
-           || !isValidSubnetMask(ulMask = ntohl(mask_num.s_addr)))
+        if (  !MakeCanonicalIPv4(mask_txt, &ulNetBits)
+           || !isValidSubnetMask(ulMask = ntohl(ulNetBits)))
         {
             cf_log_syntax(player, cmd, "Malformed mask address: %s", mask_txt);
             return -1;
         }
+        mask_num.s_addr = ulNetBits;
     }
     else
     {
@@ -1198,11 +1199,12 @@ CF_HAND(cf_site)
             mask_num.s_addr = htonl(ulMask);
         }
     }
-    if (!MakeCanonicalIPv4(addr_txt, &addr_num.s_addr))
+    if (!MakeCanonicalIPv4(addr_txt, &ulNetBits))
     {
         cf_log_syntax(player, cmd, "Malformed host address: %s", addr_txt);
         return -1;
     }
+    addr_num.s_addr = ulNetBits;
     unsigned long ulAddr = ntohl(addr_num.s_addr);
 
     if (ulAddr & ~ulMask)
