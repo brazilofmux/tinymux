@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.5 2000-04-15 17:25:48 sdennis Exp $
+// $Id: db.cpp,v 1.6 2000-04-16 07:58:57 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1604,7 +1604,11 @@ void atr_clr(dbref thing, int atr)
         return;
 
     if (db[thing].at_count < 0)
+    {
+        Log.WriteBuffer("ABORT! db.cpp, negative attribute count in atr_clr().\n");
+        Log.Flush();
         abort();
+    }
 
     /*
      * Binary search for the attribute. 
@@ -2509,7 +2513,8 @@ void db_grow(dbref newtop)
     NAME *newnames = (NAME *) MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME), __FILE__, __LINE__);
     if (!newnames)
     {
-        LOG_SIMPLE(LOG_ALWAYS, "ALC", "DB", tprintf("Could not allocate space for %d item name cache.", newsize));
+        Log.printf("ABORT! db.cpp, could not allocate space for %d item name cache in db_grow().\n", newsize);
+        Log.Flush();
         abort();
     }
 
@@ -2548,7 +2553,8 @@ void db_grow(dbref newtop)
 
         if (!newpurenames)
         {
-            LOG_SIMPLE(LOG_ALWAYS, "ALC", "DB", tprintf("Could not allocate space for %d item name cache.", newsize));
+            Log.printf("ABORT! db.cpp, could not allocate space for %d item purename cache in db_grow().\n", newsize);
+            Log.Flush();
             abort();
         }
         bzero((char *)newpurenames, (newsize + SIZE_HACK) * sizeof(NAME));
@@ -2587,8 +2593,8 @@ void db_grow(dbref newtop)
     newdb = (OBJ *)MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ), __FILE__, __LINE__);
     if (!newdb)
     {
-
-        LOG_SIMPLE(LOG_ALWAYS, "ALC", "DB", tprintf("Could not allocate space for %d item struct database.", newsize));
+        Log.printf("ABORT! db.cpp, could not allocate space for %d item struct database.", newsize);
+        Log.Flush();
         abort();
     }
     if (db)
@@ -3206,6 +3212,8 @@ void load_restart_db(void)
     fgets(buf, 3, f);
     if (strncmp(buf, "+V", 2))
     {
+        Log.WriteBuffer("ABORT! db.cpp, load_restart_db sees no version magic (+V..) in restart.db.\n");
+        Log.Flush();
         abort();
     }
     version = getref(f);
