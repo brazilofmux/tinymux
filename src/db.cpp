@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.3 2000-04-13 09:49:02 sdennis Exp $
+// $Id: db.cpp,v 1.4 2000-04-14 04:08:06 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -641,22 +641,10 @@ void do_attribute(dbref player, dbref cause, int key, char *aname, char *value)
     VATTR *va;
     ATTR *va2;
 
-    /*
-     * Look up the user-named attribute we want to play with 
-     */
-
+    // Look up the user-named attribute we want to play with.
+    //
     buff = alloc_sbuf("do_attribute");
-    int nBuffer = strlen(aname);
-    if (nBuffer >= SBUF_SIZE-1)
-    {
-        nBuffer = SBUF_SIZE-1;
-    }
-    for (int i = 0; i < nBuffer; i++)
-    {
-        buff[i] = Tiny_ToUpper[(unsigned char)aname[i]];
-    }
-    buff[nBuffer] = '\0';
-
+    int nBuffer = MakeCanonicalAttributeName(buff, aname);
     va = (VATTR *)vattr_findLEN(buff, nBuffer);
     if (!va)
     {
@@ -848,6 +836,42 @@ void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
 
 #endif // STANDALONE
 
+// MakeCanonicalAttributeName
+//
+int MakeCanonicalAttributeName(char *pBuffer, const char *pName)
+{
+    int nLeft = SBUF_SIZE-1;
+    char *p = pBuffer;
+    while (*pName && nLeft)
+    {
+        *p = Tiny_ToUpper[(unsigned char)*pName];
+        p++;
+        pName++;
+        nLeft--;
+    }
+    *p = '\0';
+    return p - pBuffer;
+}
+
+// MakeCanonicalAttributeCommand
+//
+int MakeCanonicalAttributeCommand(char *pBuffer, const char *pName)
+{
+    int nLeft = SBUF_SIZE-2;
+    char *p = pBuffer;
+
+    *p++ = '@';
+    while (*pName && nLeft)
+    {
+        *p = Tiny_ToLower[(unsigned char)*pName];
+        p++;
+        pName++;
+        nLeft--;
+    }
+    *p = '\0';
+    return p - pBuffer;
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * init_attrtab: Initialize the attribute hash tables.
@@ -864,10 +888,8 @@ void NDECL(init_attrtab)
         anum_extend(a->number);
         anum_set(a->number, a);
 
-        strncpy(buff, a->name, SBUF_SIZE);
-        buff[SBUF_SIZE-1] = '\0';
-        _strupr(buff);
-        hashaddLEN(buff, strlen(buff), (int *)a, &mudstate.attr_name_htab);
+        int nLen = MakeCanonicalAttributeName(buff, a->name);
+        hashaddLEN(buff, nLen, (int *)a, &mudstate.attr_name_htab);
     }
     free_sbuf(buff);
 }
@@ -889,19 +911,10 @@ ATTR *atr_str(char *s)
         return NULL;
     }
 
-    // Convert the buffer name to uppercase.
+    // Make attribute name canonical.
     //
-    int nBuffer = strlen(s);
-    if (nBuffer >= SBUF_SIZE-1)
-    {
-        nBuffer = SBUF_SIZE-1;
-    }
     buff = alloc_sbuf("atr_str");
-    for (int i = 0; i < nBuffer; i++)
-    {
-        buff[i] = Tiny_ToUpper[(unsigned char)s[i]];
-    }
-    buff[nBuffer] = '\0';
+    int nBuffer = MakeCanonicalAttributeName(buff, s);
 
     // Look for a predefined attribute.
     //
