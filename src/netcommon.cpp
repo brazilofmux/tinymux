@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.20 2000-09-07 07:04:41 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.21 2000-09-18 18:26:24 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1251,8 +1251,8 @@ static void dump_users(DESC *e, char *match, int key)
                     *sp++ = 'R';
                 if (d->host_info & H_SUSPECT)
                     *sp++ = '+';
-		        if (d->host_info & H_GUEST)
-		            *sp++ = 'G';
+                if (d->host_info & H_GUEST)
+                    *sp++ = 'G';
             }
             *fp = '\0';
             *sp = '\0';
@@ -2195,9 +2195,9 @@ static const char *stat_string(int strtype, int flag)
         case H_REGISTRATION:
             str = "Registration";
             break;
-		case H_GUEST:
-			str = "NoGuest";
-			break;
+        case H_GUEST:
+            str = "NoGuest";
+            break;
         case 0:
             str = "Unrestricted";
             break;

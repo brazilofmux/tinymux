@@ -2,7 +2,7 @@
  * player.c 
  */
 /*
- * $Id: player.cpp,v 1.5 2000-06-16 00:22:32 sdennis Exp $ 
+ * $Id: player.cpp,v 1.6 2000-09-18 18:26:24 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -335,7 +335,7 @@ void do_password(dbref player, dbref cause, int key, char *oldpass, char *newpas
     }
     else if (!ok_password(newpass, player))
     {
-	    // Do nothing, notification is handled by ok_password()
+        // Do nothing, notification is handled by ok_password()
     }
     else
     {
