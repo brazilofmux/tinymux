@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.80 2001-07-06 16:24:21 sdennis Exp $
+// $Id: functions.cpp,v 1.81 2001-07-07 04:27:49 morgan Exp $
 //
 
 #include "copyright.h"
@@ -7371,12 +7371,9 @@ FUNCTION(fun_art)
         if (regexec(reRuleRegexp, fargs[0]))
         {
             safe_str(arRule->m_bUseAn ? "an" : "a", buff, bufc);
-            MEMFREE(reRuleRegexp);
-
             return;
         }
-    
-        MEMFREE(reRuleRegexp);
+
         arRule = arRule->m_pNextRule;
     }
 
