@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about 
 //
-// $Id: move.cpp,v 1.8 2001-07-17 15:41:11 sdennis Exp $
+// $Id: move.cpp,v 1.9 2001-09-28 10:12:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -93,50 +93,56 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, int canhear,
 
 static void process_enter_loc(dbref thing, dbref src, dbref cause, int canhear, int hush)
 {
-    dbref loc;
-    int quiet, pattr, oattr, aattr;
-
-    loc = Location(thing);
-    if ((loc == NOTHING) || (loc == src))
+    dbref loc = Location(thing);
+    if (  loc == NOTHING
+       || loc == src)
+    {
         return;
+    }
 
     show_vrml_url(thing, loc);
     
-    /*
-     * Run the ENTER attributes in the current room if we meet any of * * 
-     * 
-     * *  * * following criteria: * - The current room has wizard privs.
-     * * - * * * Neither the current room nor the moving object are dark. 
-     * * - The * *  * moving object can hear and does not hav wizard
-     * privs. * EXCEPT  * if * * we were called with the HUSH_ENTER key. 
-     */
+    // Run the ENTER attributes in the current room if we meet any of following
+    // criteria:
+    //
+    //  - The current room has wizard privs.
+    //  - Neither the current room nor the moving object are dark.
+    //  - The moving object can hear and does not have wizard privs.
+    //
+    // EXCEPT if we were called with the HUSH_ENTER key.
+    //
+    int quiet =    (hush & HUSH_ENTER)
+                || (  !Wizard(loc)
+                   && (  Dark(thing)
+                      || Dark(loc))
+                   && (  !canhear
+                      || (  Wizard(thing)
+                         && Dark(thing))));
 
-    quiet = (!(Wizard(loc) ||
-           (!Dark(thing) && !Dark(loc)) ||
-           (canhear && !(Wizard(thing) && Dark(thing))))) ||
-        (hush & HUSH_ENTER);
-    oattr = quiet ? 0 : A_OENTER;
-    aattr = quiet ? 0 : A_AENTER;
-    pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_ENTER;
+    int oattr = quiet ? 0 : A_OENTER;
+    int aattr = quiet ? 0 : A_AENTER;
+    int pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_ENTER;
+
     did_it(thing, loc, pattr, NULL, oattr, NULL, aattr,
            (char **)NULL, 0);
 
-    /*
-     * Do OXLEAVE for sending room 
-     */
-
-    if ((src != NOTHING) && !quiet)
+    // Do OXLEAVE for sending room.
+    //
+    if (  src != NOTHING
+       && !quiet)
     {
         did_it(thing, src, 0, NULL, A_OXLEAVE, NULL, 0, (char **)NULL, 0);
     }
 
-    /*
-     * Display the 'has arrived' message if we meet all of the following
-     * * * * * criteria: * - The moving object can hear. * - The object
-     * is * * not * a dark wizard. 
-     */
-
-    if (!quiet && canhear && !(Dark(thing) && Wizard(thing)))
+    // Display the 'has arrived' message if we meet all of the following
+    // criteria:
+    //
+    //  - The moving object can hear.
+    //  - The object is not a dark wizard.
+    //
+    if (  !quiet
+       && canhear
+       && !(Dark(thing) && Wizard(thing)))
     {
         notify_except2(loc, thing, thing, cause,
                    tprintf("%s has arrived.", Name(thing)));
