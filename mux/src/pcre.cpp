@@ -1581,11 +1581,9 @@ else
     in future, so I haven't "optimized" it. */
 
     default:
-    if ((options & PCRE_EXTRA) != 0) switch(c)
+    if ((options & PCRE_EXTRA) != 0)
       {
-      default:
       *errorptr = ERR3;
-      break;
       }
     break;
     }
