@@ -42,12 +42,7 @@ Feature Additions:
     removed in favor of returning '#-2 AMBIGUOUS' and other error messages
     like '#-1 PERMISSION DENIED', "#-1 NOT FOUND', etc. Command continue
     notify the enactor.
- -- Added optional argument to lwho() to request the return the corresponding
-    port numbers. Patch by Jake.
- -- Added optional argument to channels to get channels for a particular
-    player. Patch by Jake.
- -- Added filterbool(). Patch by Jake.
- -- Added non-evaluating say and pose. Patch by Jake.
+ -- Jake added filterbool().
  -- Permit '#' and '.' as leading attribute name characters.
  -- Log files on the Unix distribution are now handled by the server instead
     of the Startmux script in the same way that log files are handled by
@@ -60,11 +55,11 @@ Feature Additions:
     associated channel object.
  -- Added ANDBOOL(), CAND(), CANDBOOL(), COR(), CORBOOL(), LAND(), LOR(), and
     ORBOOL().
- -- Jake added CTU() which stands for 'Convert Trigometric Units' for
+ -- Added CTU() which stands for 'Convert Trigonometric Units' for
     compatibility with RhostMUSH.
- -- Jake added optional argument to CHANNELS() to restict the list to channels
+ -- Jake added optional argument to CHANNELS() to restrict the list to channels
     owned by a particular player.
- -- Jake changed config() so that if used with an argument, would return a
+ -- Jake changed config() so that if used with no argument, would return a
     list of available configuration options that are available to that
     particular player.
  -- Adds optional precision argument to time(), secs(), convtime(), convsecs().
@@ -72,7 +67,6 @@ Feature Additions:
     can be requested. Some parts of the server always record 7 decimal places
     (connection times, object creation and modification times). Some parts of
     the server continue to use 0 decimal places (@mail).
- -- Added FILTERBOOL().
  -- LWHO() now has an optional argument which also returns the port number
     with the player's dbref. Added by Jake.
  -- Jake added @ICMD from RhostMUSH which stands for 'Ignore Command'. It's
@@ -81,13 +75,12 @@ Feature Additions:
  -- Added HTML attribute flag.
  -- Remove player objects cleanly from @malias and as channel objects at @toad
     and @destroy time. Added by Jake.
- -- Added power_alias configuration option.
+ -- Jake added power_alias configuration option.
  -- Jake made the arguments to PLAYMEM() and STATS() optional.
  -- Jake added the ability to retract @mail from a @malias.
  -- SUSPECT messages now report partial connections/disconnections. Added by
     Jake.
  -- Jake added @if (originally from ChaoticMUX).
- -- Allow '#' and '.' as leading first characters in attribute names.
 
 Bug Fixes:
 ~~~~~~~~~
