@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.20 2000-09-07 08:30:44 sdennis Exp $
+// $Id: conf.cpp,v 1.21 2000-09-17 16:17:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -917,7 +917,7 @@ static unsigned long sane_inet_addr(char *str)
     }
     if (i < 4)
     {
-        return INADDR_NONE;
+        return (unsigned long)INADDR_NONE;
     }
     else
     {
