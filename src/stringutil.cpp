@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.16 2000-06-12 18:17:47 sdennis Exp $
+// $Id: stringutil.cpp,v 1.17 2000-07-08 13:49:31 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -213,6 +213,10 @@ char Tiny_IsSpace[256] =
 // letters are turned into uppercase before being used,
 // but lower-case letters are valid input and the check
 // for the first character is handled seperately.
+//
+// NOTE: At intialization time, the '*' is allowed as it's
+// part of the A_PASS attribute name. Otherwise, it's not
+// allowed.
 //
 char Tiny_IsAttributeNameCharacter[256] =
 {

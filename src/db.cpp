@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.19 2000-06-09 19:10:41 sdennis Exp $
+// $Id: db.cpp,v 1.20 2000-07-08 13:48:43 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -945,6 +945,11 @@ void NDECL(init_attrtab)
 {
     ATTR *a;
 
+    // We specifically allow the '*' character at server
+    // initialization because it's part of the A_PASS attribute
+    // name.
+    //
+    Tiny_IsAttributeNameCharacter['*'] = TRUE;
     for (a = attr; a->number; a++)
     {
         int nLen;
@@ -958,6 +963,7 @@ void NDECL(init_attrtab)
         anum_set(a->number, a);
         hashaddLEN(buff, nLen, (int *)a, &mudstate.attr_name_htab);
     }
+    Tiny_IsAttributeNameCharacter['*'] = FALSE;
 }
 
 /*
