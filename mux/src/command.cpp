@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.58 2002-08-02 04:36:45 sdennis Exp $
+// $Id: command.cpp,v 1.59 2002-08-02 16:40:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4038,229 +4038,233 @@ void hook_loop (dbref executor, CMDENT *cmdp, char *s_ptr, char *s_ptrbuff)
 
 void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name) 
 {
-   BOOL negate, found;
-   char *s_ptr, *s_ptrbuff, *cbuff, *p, *q;
-   CMDENT *cmdp = (CMDENT *)NULL;
-
-   if (  (  key 
-         && !(key & HOOK_LIST))
-      || (  (  !key 
-            || (key & HOOK_LIST)) 
-         && *name) )
-   {
-      cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
-      if (!cmdp)
-      { 
-         notify(executor, "@hook: Non-existent command name given."); 
-         return;
-      }
-   }
-   if (  (key & HOOK_CLEAR)
-      && (key & HOOK_LIST))
-   {
-      notify(executor, "@hook: Incompatible switches.");
-      return;
-   }
-
-   if (key & HOOK_CLEAR)
-   {
-      negate = TRUE;
-      key = key & ~HOOK_CLEAR;
-      key = key & ~SW_MULTIPLE;
-   }
-   else
-   {
-      negate = FALSE;
-   }
-
-   if (key & (HOOK_BEFORE|HOOK_AFTER|HOOK_PERMIT|HOOK_IGNORE|HOOK_IGSWITCH|HOOK_AFAIL))
-   {
-      if (negate)
-      {
-         cmdp->hookmask = cmdp->hookmask & ~key;
-      }
-      else
-      {
-         cmdp->hookmask = cmdp->hookmask | key;
-      }
-      if (cmdp->hookmask)
-      {
-         s_ptr = s_ptrbuff = alloc_lbuf("@hook");
-         show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
-         notify(executor, tprintf("@hook: New mask for '%s' -> %s", cmdp->cmdname, s_ptrbuff));
-         free_lbuf(s_ptrbuff);
-      }
-      else
-      {
-         notify(executor, tprintf("@hook: New mask for '%s' is empty.", cmdp->cmdname));
-      }
-   }
-   if (  (key & HOOK_LIST)
-      || !key)
-   {
-      if (cmdp)
-      {
-         if (cmdp->hookmask)
-         {
+    BOOL negate, found;
+    char *s_ptr, *s_ptrbuff, *cbuff, *p, *q;
+    CMDENT *cmdp = (CMDENT *)NULL;
+    
+    if (  (  key 
+       && !(key & HOOK_LIST))
+       || (  (  !key 
+       || (key & HOOK_LIST)) 
+       && *name) )
+    {
+        cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
+        if (!cmdp)
+        { 
+            notify(executor, "@hook: Non-existent command name given."); 
+            return;
+        }
+    }
+    if (  (key & HOOK_CLEAR)
+       && (key & HOOK_LIST))
+    {
+        notify(executor, "@hook: Incompatible switches.");
+        return;
+    }
+    
+    if (key & HOOK_CLEAR)
+    {
+        negate = TRUE;
+        key = key & ~HOOK_CLEAR;
+        key = key & ~SW_MULTIPLE;
+    }
+    else
+    {
+        negate = FALSE;
+    }
+    
+    if (key & (HOOK_BEFORE|HOOK_AFTER|HOOK_PERMIT|HOOK_IGNORE|HOOK_IGSWITCH|HOOK_AFAIL))
+    {
+        if (negate)
+        {
+            cmdp->hookmask = cmdp->hookmask & ~key;
+        }
+        else
+        {
+            cmdp->hookmask = cmdp->hookmask | key;
+        }
+        if (cmdp->hookmask)
+        {
             s_ptr = s_ptrbuff = alloc_lbuf("@hook");
             show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
-            notify(executor, tprintf("@hook: Mask for hashed command '%s' -> %s", cmdp->cmdname, s_ptrbuff));
+            notify(executor, tprintf("@hook: New mask for '%s' -> %s", cmdp->cmdname, s_ptrbuff));
             free_lbuf(s_ptrbuff);
-         }
-         else
-         {
-            notify(executor, tprintf("@hook: Mask for hashed command '%s' is empty.", cmdp->cmdname));
-         }
-      }
-      else
-      {
-         notify(executor, tprintf("%.32s-+-%s",
-                "--------------------------------",
-                "--------------------------------------------"));
-         notify(executor, tprintf("%-32s | %s", "Built-in Command", "Hook Mask Values"));
-         notify(executor, tprintf("%.32s-+-%s",
-                "--------------------------------",
-                "--------------------------------------------"));
-         found = FALSE;
-         s_ptr = s_ptrbuff = alloc_lbuf("@hook");
-         {
-             CMDENT_NO_ARG *cmdp;
-             for (cmdp = command_table_no_arg; cmdp->cmdname; cmdp++)
-             {
-                 memset(s_ptrbuff, '\0', sizeof(s_ptrbuff));
-                 s_ptr = s_ptrbuff;
-                 if (cmdp->hookmask)
-                 {
-                     found = TRUE;
-                     hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
-                 }
-             }
-         }
-         {
-             CMDENT_ONE_ARG *cmdp;
-             for (cmdp = command_table_one_arg; cmdp->cmdname; cmdp++)
-             {
-                 memset(s_ptrbuff, '\0', sizeof(s_ptrbuff));
-                 s_ptr = s_ptrbuff;
-                 if (cmdp->hookmask)
-                 {
-                     found = TRUE;
-                     hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
-                 }
-             }
-         }
-         {
-            CMDENT_ONE_ARG_CMDARG *cmdp;
-            for (cmdp = command_table_one_arg_cmdarg; cmdp->cmdname; cmdp++)
-             {
-                 memset(s_ptrbuff, '\0', sizeof(s_ptrbuff));
-                 s_ptr = s_ptrbuff;
-                 if (cmdp->hookmask)
-                 {
-                     found = TRUE;
-                     hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
-                 }
-             }
-         }
-         {
-            CMDENT_TWO_ARG *cmdp;
-            for (cmdp = command_table_two_arg; cmdp->cmdname; cmdp++)
-             {
-                 memset(s_ptrbuff, '\0', sizeof(s_ptrbuff));
-                 s_ptr = s_ptrbuff;
-                 if (cmdp->hookmask)
-                 {
-                     found = TRUE;
-                     hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
-                 }
-             }
-         }
-         {
-            CMDENT_TWO_ARG_ARGV *cmdp;
-            for (cmdp = command_table_two_arg_argv; cmdp->cmdname; cmdp++)
-             {
-                 memset(s_ptrbuff, '\0', sizeof(s_ptrbuff));
-                 s_ptr = s_ptrbuff;
-                 if (cmdp->hookmask)
-                 {
-                     found = TRUE;
-                     hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
-                 }
-             }
-         }
-         {
-            CMDENT_TWO_ARG_CMDARG *cmdp;
-            for (cmdp = command_table_two_arg_cmdarg; cmdp->cmdname; cmdp++)
-             {
-                 memset(s_ptrbuff, '\0', sizeof(s_ptrbuff));
-                 s_ptr = s_ptrbuff;
-                 if (cmdp->hookmask)
-                 {
-                     found = TRUE;
-                     hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
-                 }
-             }
-         }
-         {
-            CMDENT_TWO_ARG_ARGV_CMDARG *cmdp;
-            for (cmdp = command_table_two_arg_argv_cmdarg; cmdp->cmdname; cmdp++)
-             {
-                 memset(s_ptrbuff, '\0', sizeof(s_ptrbuff));
-                 s_ptr = s_ptrbuff;
-                 if (cmdp->hookmask)
-                 {
-                     found = TRUE;
-                     hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
-                 }
-             }
-         }
-         if (!found)
-         {
-            notify(executor, tprintf("%26s -- No @hooks defined --", " "));
-         }
-         found = FALSE;
-         /* We need to search the attribute table as well */
-         notify(executor, tprintf("%.32s-+-%s",
-                "--------------------------------",
-                "--------------------------------------------"));
-         notify(executor, tprintf("%-32s | %s", "Built-in Attribute", "Hook Mask Values"));
-         notify(executor, tprintf("%.32s-+-%s",
-                "--------------------------------",
-                "--------------------------------------------"));
-         cbuff = alloc_sbuf("cbuff_hook");
-         for (ATTR *ap = attr; ap->name; ap++)
-         {
-            if (ap->flags & AF_NOCMD)
+        }
+        else
+        {
+            notify(executor, tprintf("@hook: New mask for '%s' is empty.", cmdp->cmdname));
+        }
+    }
+    if (  (key & HOOK_LIST)
+       || !key)
+    {
+        if (cmdp)
+        {
+            if (cmdp->hookmask)
             {
-                continue;
+                s_ptr = s_ptrbuff = alloc_lbuf("@hook");
+                show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
+                notify(executor, tprintf("@hook: Mask for hashed command '%s' -> %s", cmdp->cmdname, s_ptrbuff));
+                free_lbuf(s_ptrbuff);
             }
-            memset(s_ptrbuff, '\0', sizeof(s_ptrbuff));
-            s_ptr = s_ptrbuff;            
-
-            p = cbuff;
-            *p++ = '@';
-            for (q = (char *) ap->name; *q; p++, q++)
+            else
             {
-                *p = Tiny_ToLower[(unsigned char)*q];
+                notify(executor, tprintf("@hook: Mask for hashed command '%s' is empty.", cmdp->cmdname));
             }
-            *p = '\0';
-            cmdp = (CMDENT *)hashfindLEN(cbuff, strlen(cbuff), &mudstate.command_htab);
-            if ( cmdp && cmdp->hookmask )
-            {
-               found = TRUE;
-               show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
-               notify(executor, tprintf("%-32.32s | %s", cmdp->cmdname, s_ptrbuff));
-            }
-         }
-         free_sbuf(cbuff);
-         if (!found)
-            notify(executor, tprintf("%26s -- No @hooks defined --", " "));
-         free_lbuf(s_ptrbuff);
-         notify(executor, tprintf("%.32s-+-%s",
+        }
+        else
+        {
+            notify(executor, tprintf("%.32s-+-%s",
                 "--------------------------------",
                 "--------------------------------------------"));
-         notify(executor, tprintf("The hook object is currently: #%d (%s)", mudconf.hook_obj,
-                ((Good_obj(mudconf.hook_obj) && !Going(mudconf.hook_obj)) ? "VALID" : "INVALID")));
-      }
-   }
+            notify(executor, tprintf("%-32s | %s", "Built-in Command", "Hook Mask Values"));
+            notify(executor, tprintf("%.32s-+-%s",
+                "--------------------------------",
+                "--------------------------------------------"));
+            found = FALSE;
+            s_ptr = s_ptrbuff = alloc_lbuf("@hook");
+            {
+                CMDENT_NO_ARG *cmdp;
+                for (cmdp = command_table_no_arg; cmdp->cmdname; cmdp++)
+                {
+                    s_ptrbuff[0] = '\0';
+                    s_ptr = s_ptrbuff;
+                    if (cmdp->hookmask)
+                    {
+                        found = TRUE;
+                        hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
+                    }
+                }
+            }
+            {
+                CMDENT_ONE_ARG *cmdp;
+                for (cmdp = command_table_one_arg; cmdp->cmdname; cmdp++)
+                {
+                    s_ptrbuff[0] = '\0';
+                    s_ptr = s_ptrbuff;
+                    if (cmdp->hookmask)
+                    {
+                        found = TRUE;
+                        hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
+                    }
+                }
+            }
+            {
+                CMDENT_ONE_ARG_CMDARG *cmdp;
+                for (cmdp = command_table_one_arg_cmdarg; cmdp->cmdname; cmdp++)
+                {
+                    s_ptrbuff[0] = '\0';
+                    s_ptr = s_ptrbuff;
+                    if (cmdp->hookmask)
+                    {
+                        found = TRUE;
+                        hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
+                    }
+                }
+            }
+            {
+                CMDENT_TWO_ARG *cmdp;
+                for (cmdp = command_table_two_arg; cmdp->cmdname; cmdp++)
+                {
+                    s_ptrbuff[0] = '\0';
+                    s_ptr = s_ptrbuff;
+                    if (cmdp->hookmask)
+                    {
+                        found = TRUE;
+                        hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
+                    }
+                }
+            }
+            {
+                CMDENT_TWO_ARG_ARGV *cmdp;
+                for (cmdp = command_table_two_arg_argv; cmdp->cmdname; cmdp++)
+                {
+                    s_ptrbuff[0] = '\0';
+                    s_ptr = s_ptrbuff;
+                    if (cmdp->hookmask)
+                    {
+                        found = TRUE;
+                        hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
+                    }
+                }
+            }
+            {
+                CMDENT_TWO_ARG_CMDARG *cmdp;
+                for (cmdp = command_table_two_arg_cmdarg; cmdp->cmdname; cmdp++)
+                {
+                    s_ptrbuff[0] = '\0';
+                    s_ptr = s_ptrbuff;
+                    if (cmdp->hookmask)
+                    {
+                        found = TRUE;
+                        hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
+                    }
+                }
+            }
+            {
+                CMDENT_TWO_ARG_ARGV_CMDARG *cmdp;
+                for (cmdp = command_table_two_arg_argv_cmdarg; cmdp->cmdname; cmdp++)
+                {
+                    s_ptrbuff[0] = '\0';
+                    s_ptr = s_ptrbuff;
+                    if (cmdp->hookmask)
+                    {
+                        found = TRUE;
+                        hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
+                    }
+                }
+            }
+            if (!found)
+            {
+                notify(executor, tprintf("%26s -- No @hooks defined --", " "));
+            }
+            found = FALSE;
+            /* We need to search the attribute table as well */
+            notify(executor, tprintf("%.32s-+-%s",
+                "--------------------------------",
+                "--------------------------------------------"));
+            notify(executor, tprintf("%-32s | %s", "Built-in Attribute", "Hook Mask Values"));
+            notify(executor, tprintf("%.32s-+-%s",
+                "--------------------------------",
+                "--------------------------------------------"));
+            cbuff = alloc_sbuf("cbuff_hook");
+            for (ATTR *ap = attr; ap->name; ap++)
+            {
+                if (ap->flags & AF_NOCMD)
+                {
+                    continue;
+                }
+                s_ptrbuff[0] = '\0';
+                s_ptr = s_ptrbuff;            
+                
+                p = cbuff;
+                *p++ = '@';
+                for (q = (char *) ap->name; *q; p++, q++)
+                {
+                    *p = Tiny_ToLower[(unsigned char)*q];
+                }
+                *p = '\0';
+                cmdp = (CMDENT *)hashfindLEN(cbuff, strlen(cbuff), &mudstate.command_htab);
+                if (cmdp && cmdp->hookmask)
+                {
+                    found = TRUE;
+                    show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
+                    notify(executor, tprintf("%-32.32s | %s", cmdp->cmdname, s_ptrbuff));
+                }
+            }
+            free_sbuf(cbuff);
+            if (!found)
+            {
+                notify(executor, tprintf("%26s -- No @hooks defined --", " "));
+            }
+            free_lbuf(s_ptrbuff);
+            notify(executor, tprintf("%.32s-+-%s",
+                "--------------------------------",
+                "--------------------------------------------"));
+            notify(executor, tprintf("The hook object is currently: #%d (%s)",
+                mudconf.hook_obj,
+                (  Good_obj(mudconf.hook_obj)
+                && !Going(mudconf.hook_obj)) ? "VALID" : "INVALID")));
+        }
+    }
 }
