@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.137 2002-01-29 00:07:40 sdennis Exp $
+// $Id: functions.cpp,v 1.138 2002-01-29 00:21:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6179,7 +6179,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
     int i1 = 0;
     int i2 = 0;
     char *oldp = *bufc;
-    BOOLEAN bFirst = TRUE;
+    BOOL bFirst = TRUE;
     **bufc = '\0';
 
     switch (oper)
