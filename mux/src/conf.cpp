@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.18 2002-08-22 01:00:27 sdennis Exp $
+// $Id: conf.cpp,v 1.19 2002-08-29 16:43:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -1542,6 +1542,7 @@ extern CF_HAND(cf_acmd_access);
 extern CF_HAND(cf_attr_access);
 extern CF_HAND(cf_func_access);
 extern CF_HAND(cf_flag_access);
+extern CF_HAND(cf_flag_name);
 extern CF_HAND(cf_art_rule);
 
 // ---------------------------------------------------------------------------
@@ -1597,6 +1598,7 @@ CONF conftable[] =
     {"find_money_chance",         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.payfind,                NULL,               0},
     {"flag_access",               cf_flag_access, CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {"flag_alias",                cf_flagalias,   CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
+    {"flag_name",                 cf_flag_name,   CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {"forbid_site",               cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,     H_FORBIDDEN},
 #ifndef WIN32
     {"fork_dump",                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.fork_dump,       NULL,               0},

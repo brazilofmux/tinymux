@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.13 2002-08-29 04:16:11 jake Exp $
+// $Id: flags.cpp,v 1.14 2002-08-29 16:43:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -1115,27 +1115,30 @@ void decompile_flags(dbref player, dbref thing, char *thingname)
     }
 }
 
+// do_flag: Rename flags or remove flag aliases.
+// Based on RhostMUSH code.
+//
 BOOL flag_rename(char *alias, char *newname)
 {
-    int pnAlias;
-    BOOL pbValidAlias;
+    int nAlias;
+    BOOL bValidAlias;
     char *pAlias = alloc_sbuf("flag_rename.old");
     char *pAlias2 = pAlias;
-    safe_sb_str(MakeCanonicalFlagName(alias, &pnAlias, &pbValidAlias), pAlias, &pAlias2);
+    safe_sb_str(MakeCanonicalFlagName(alias, &nAlias, &bValidAlias), pAlias, &pAlias2);
     *pAlias2 = '\0';
-    if (!pbValidAlias)
+    if (!bValidAlias)
     {
         free_sbuf(pAlias);
         return FALSE;
     }
 
-    int pnNewName;
-    BOOL pbValidNewName;
+    int nNewName;
+    BOOL bValidNewName;
     char *pNewName = alloc_sbuf("flag_rename.new");
     char *pNewName2 = pNewName;
-    safe_sb_str(MakeCanonicalFlagName(newname, &pnNewName, &pbValidNewName), pNewName, &pNewName2);
+    safe_sb_str(MakeCanonicalFlagName(newname, &nNewName, &bValidNewName), pNewName, &pNewName2);
     *pNewName2 = '\0';
-    if (!pbValidNewName)
+    if (!bValidNewName)
     {
         free_sbuf(pAlias);
         free_sbuf(pNewName);
@@ -1143,12 +1146,13 @@ BOOL flag_rename(char *alias, char *newname)
     }
 
     FLAGNAMEENT *flag1 = NULL, *flag2 = NULL;
-    flag1 = (FLAGNAMEENT *)hashfindLEN(pAlias, pnAlias, &mudstate.flags_htab);
+    flag1 = (FLAGNAMEENT *)hashfindLEN(pAlias, nAlias, &mudstate.flags_htab);
     if (flag1 != NULL)
     {
-        flag2 = (FLAGNAMEENT *)hashfindLEN(pNewName, pnNewName, &mudstate.flags_htab);
+        flag2 = (FLAGNAMEENT *)hashfindLEN(pNewName, nNewName, &mudstate.flags_htab);
         if (flag2 == NULL)
         {
+            hashaddLEN(pNewName, nNewName, (int *)flag1, &mudstate.flags_htab);
             _strupr(pNewName);
             strcpy(flag1->flagname, pNewName);
             free_sbuf(pAlias);
@@ -1198,6 +1202,36 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs, ch
         {
             notify(executor, "Flag name changed.");
         }
+    }
+}
+
+/* ---------------------------------------------------------------------------
+ * cf_flag_name: Rename a flag. Counterpart to @flag.
+ */
+
+CF_HAND(cf_flag_name)
+{
+    TINY_STRTOK_STATE tts;
+    Tiny_StrTokString(&tts, str);
+    Tiny_StrTokControl(&tts, " \t=,");
+    char *flagstr = Tiny_StrTokParse(&tts);
+    char *namestr = Tiny_StrTokParse(&tts);
+
+    if (  !flagstr 
+       || !*flagstr
+       || !namestr
+       || !*namestr)
+    {
+        return -1;
+    }
+
+    if(flag_rename(flagstr, namestr))
+    {
+        return 0;
+    }
+    else
+    {
+        return -1;
     }
 }
 
