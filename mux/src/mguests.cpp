@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.11 2004-05-15 01:12:26 sdennis Exp $
+// $Id: mguests.cpp,v 1.12 2004-05-15 01:13:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -354,7 +354,7 @@ void CGuests::WipeAttrs(dbref guest)
 
     int attr;
     char *as;
-    for (attr = atr_head(guest, &as); attr ; attr = atr_next(&as))
+    for (attr = atr_head(guest, &as); attr; attr = atr_next(&as))
     {
         ATTR *ap = atr_num(attr);
         if (ap)
