@@ -1,0 +1,131 @@
+\documentclass[letterpaper]{book}
+\title{TinyMUX 2.0 Manual}
+\author{Stephen Dennis (AKA Brazil)}
+\begin{document}
+\maketitle
+\chapter{Introduction}
+\section{Philosophy of this Document}
+There is no single author to this document --- only an editor. There is an
+overarching structure to the document, but otherwise, changes by everyone are
+welcome. Please do your part to make it better.
+
+Things are first broken down into views or perspectives that cater to a
+particular type of reader at a particular experience or skill level and look
+at the subject under discussion from a particular angle. I ask that top-level
+divisions be chosen that way. Sub-divisions from there are much more flexible.
+Some redundancy between perspectives is unavoidable. With an index, this
+redundancy can help to pull the document together.
+\section{Let's Begin}
+There seem to be two good ways to begin:
+\begin{enumerate}
+\item
+Find an expert to answer all your questions and prompt you for the questions
+you would be asking if you even knew where to start.
+\item
+Do some research on your own and learn by quiet trial-and-error.
+\end{enumerate}
+There are advantages and disadvantages to both approaches. I recommend that
+you rely on yourself and use the experts sparingly in specific areas as a way
+to accelerate yourself through those specific issues. Always be prepared and
+ready to find your own way.
+
+There are only so many experts and their expertise may be narrow. Even experts
+in the same area are known to disagree --- in fact, usually these experts
+aren't talking to each other unless they are talking about something they don't
+know about yet or they are disagreeing. You have little way of knowing whether
+someone is an expert until you are already all wrapped up in their advice and
+the political baggage they may carry with them. You may even need to put
+yourself into the awkward position of having to motivate one of these experts
+to help you. Enough said about that.
+
+Solitary reading and trial-and-error has its own problems. Documentation that
+is available is both limited and out of date. In order to get a good idea of
+what you're dealing, you may need to splice together information from several
+sources. It is easy to get stuck on a small point and waste a lot of time.
+Also, these game servers are large enough and complicated enough that
+experimentation without the advantage of some experience or history can be
+nearly impossible.
+\chapter{New to TinyMUX}
+\section{Frequently Asked Questions (FAQ)}
+\subsection{What is a Text-based Game Server?}
+It is a program that allows a multitude of people to connect to the same
+text-based environment and interact with each other and with the environment.
+The administrator runs this server on top of an operating system and the server
+in turn allows other people to connect. % See Figure 1 below.
+
+These layers are written in a particular computer language. The hardware
+layers have their own C-like language for describing how a body of gates are
+connected logically, geographical, thermally, etc.  Most operating systems are
+written in C/C++ with some assembly language and some higher level scripting
+or macro languages. This is also sometimes called hardcode.
+
+All of the MUSH-type text-based game servers are written in C except MUX 2.0
+which is a combination of C and C++. This is what people call hardcode.
+
+All of the Softcode Global Packages are written in a mostly universal language
+that doesn't have a name. You could call it MUSHcode, but then you are probably
+referring specifically to MUSH 2.2.x or U1 or perhaps MUSH 3.0. You could call
+it softcode, but then you are also probably including non-MUSH family languages
+further away and more incompatible. For the purpose of this document, we'll
+call it softcode with the understanding that we expect it to run on a particular
+set of closely related servers and on TinyMUX 2.0 in particular.
+
+\section{How to Begin Running TinyMUX}
+The first thing you'll need is some server hardware with some flavor of Unix or
+Windows running. It's more than a little helpful if this server has a dedicated
+Internet or Intranet connection, as without it, you'll be using it by yourself.
+
+You need to find the latest known-good distribution from
+www.tinymux.com and download it. If you are using a web browser, it will
+download it in 'binary' mode for you automatically, however, if you use an FTP
+client manually, you'll need to be sure to put the transfer into binary. Even
+between Unix machines, Non-binary transfers can be problematic.
+
+Here is a typical manual FTP conversation:
+\footnotesize{\texttt{
+\begin{verse}
+\$ \emph{ftp svdltd.com}\\
+Connected to svdltd.com.\\
+220 sdennis0 Microsoft FTP Service (Version 4.0).\\
+User (svdltd.com:(none)): \emph{anonymous}\\
+331 Anonymous access allowed, send identity (e-mail name) as password.\\
+Password: \emph{sdennis@svdltd.com}\\
+230-Welcome to Solid Vertical Domains, Ltd.\\
+230 Anonymous user logged in.\\
+ftp$>$ \emph{cd TinyMUX}\\
+250 CWD command successful.\\
+ftp$>$ \emph{binary}\\
+200 Type set to I.\\
+ftp$>$ \emph{ls *.tar.gz}\\
+200 PORT command successful.\\
+150 Opening ASCII mode data connection for file list.\\
+miam.tar.gz\\
+mux2.0-B1.tar.gz\\
+mux2.0-B2.tar.gz\\
+mux2.0-B3.tar.gz\\
+mux2.0-B4.tar.gz\\
+mux2.0-B5.tar.gz\\
+mux2.0-B6.tar.gz\\
+mux2.0-B7.tar.gz\\
+226 Transfer complete.\\
+139 bytes received in 0.03 seconds (4.48 Kbytes/sec)\\
+ftp$>$ \emph{get mux2.0-B7.tar.gz}\\
+200 PORT command successful.\\
+150 Opening BINARY mode data connection for mux2.0-B7.tar.gz(655702 bytes).\\
+226 Transfer complete.\\
+655702 bytes received in 0.09 seconds (6975.55 Kbytes/sec)\\
+ftp$>$ \emph{quit}\\
+221 Goodbye from Solid Vertical Domains, Ltd.\\
+\$
+\end{verse}
+}}
+The suffixes on the end of the filename tell you which tools were used to
+produce the file and in which order. Gzip handles '.gz' files, and tar handled
+'.tar' files. So in order to unpack this distribution, we do the following:
+\footnotesize{\texttt{
+\begin{verse}
+\$ \emph{gzip -d mux2.0-B7.tar.gz}\\
+\$ \emph{tar xvf mux2.0-B7.tar}\\
+\end{verse}
+}}
+\end{document}
