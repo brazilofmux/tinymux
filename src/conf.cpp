@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.31 2001-03-22 04:14:47 zenty Exp $
+// $Id: conf.cpp,v 1.32 2001-03-23 07:05:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -312,7 +312,7 @@ void NDECL(cf_init)
     mudstate.pout = NULL;
     mudstate.poutnew = NULL;
     mudstate.poutbufc = NULL;
-    mudstate.poutobj = -1;    
+    mudstate.poutobj = -1;
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         mudstate.global_regs[i] = NULL;

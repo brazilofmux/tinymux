@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.27 2001-03-22 04:14:47 zenty Exp $
+// * $Id: comsys.cpp,v 1.28 2001-03-23 07:05:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -854,36 +854,30 @@ void do_processcom(dbref player, char *arg1, char *arg2)
             giveto(ch->charge_who, ch->charge);
         }
 
-	char *nComTitle=alloc_lbuf("do_processcom.ct"); // New Comtitle	
+        // New Comtitle
+        //
+        char *nComTitle = user->title;
+        char *pAllocatedComTitleBuffer = NULL;
 
-	// Comtitle Check
-	int hasComTitle=(user->title[0] != '\0');
+        // Comtitle Check
+        //
+        BOOL hasComTitle = (user->title[0] != '\0');
 
-	// If they have no title, why parse nothing?
+        // Don't evaluate a title if there isn't one to parse or evaluation
+        // of comtitles is disabled.
+        //
+        if (hasComTitle && mudconf.eval_comtitle)
+        {
+            pAllocatedComTitleBuffer = alloc_lbuf("do_processcom.ct");
+            nComTitle = pAllocatedComTitleBuffer;
 
-        if (hasComTitle) {
-	   if(mudconf.eval_comtitle) {
-	      /*
-	       * I wonder if the next 4 lines are all really necessary. I couldn't
-	       * find any other way to do this... not without a leak, or loosing
-	       * parts of user->title.
-	       */
-	      char *pnComTitle=nComTitle; // Pointer to new ComTitle
-	      char *ComTitle=strdup(user->title); // Pointer to Comtitle copy
-	      char *pComTitle=ComTitle; // Pointer to Pointer of Copy
-	      
-	      // Parse The comtitle, saving into New ComTitle
-	      TinyExec(nComTitle, &pnComTitle, 0, player, player, EV_FCHECK |
-		       EV_EVAL | EV_TOP, &pComTitle, (char **)NULL, 0);
-	      
-	      // Free up the copy.
-	      free(ComTitle);
-	   } else {
-	      // Just copy thier title into our space.
-	      strcpy(nComTitle, user->title);
-	   }
-	}
-   
+            // Evaluate the comtitle as code.
+            //
+            char *pnComTitle = nComTitle;
+            char *pComTitle = user->title;
+            TinyExec(nComTitle, &pnComTitle, 0, player, player, EV_FCHECK |
+                     EV_EVAL | EV_TOP, &pComTitle, (char **)NULL, 0);
+        }
    
         bp = mess = alloc_lbuf("do_processcom");
         
@@ -950,8 +944,13 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         
         do_comsend(ch, mess);
         free_lbuf(mess);
-	// Free the new comtitle... **always exists**
-       free_lbuf(nComTitle);
+
+        // Free the comtitle buffer if one was allocated.
+        //
+        if (pAllocatedComTitleBuffer)
+        {
+            free_lbuf(pAllocatedComTitleBuffer);
+        }
     }
 }
 
