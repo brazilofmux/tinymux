@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.8 2003-02-04 05:38:04 sdennis Exp $
+// $Id: bsd.cpp,v 1.9 2003-02-05 01:17:56 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1065,7 +1065,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
     }
 }
 
-LRESULT WINAPI TinyWindowProc
+LRESULT WINAPI mux_WindowProc
 (
     HWND   hWin,
     UINT   msg,
@@ -1088,14 +1088,14 @@ LRESULT WINAPI TinyWindowProc
     return DefWindowProc(hWin, msg, wParam, lParam);
 }
 
-const char szApp[] = "TinyMUX";
+const char szApp[] = "MUX2";
 
 DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 {
     WNDCLASS wc;
 
     wc.style         = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc   = TinyWindowProc;
+    wc.lpfnWndProc   = mux_WindowProc;
     wc.cbClsExtra    = 0;
     wc.cbWndExtra    = 0;
     wc.hInstance     = 0;
