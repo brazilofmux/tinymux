@@ -2256,7 +2256,7 @@ Related Topics: @name.
   A <msg-list> is one of the following:
         A single msg # (ex: 3)
         A message range (ex: 2-5, -7, 3-)
-        A sender (ex: *lauren)
+        A sender (ex: *Hunger)
         An age of mail in days (ex: ~3 (exactly 3), <2, >1)
            "days" here means 24-hour periods from the current time.
         One of the following: "read", "unread", "cleared", "tagged", "urgent"
@@ -2400,7 +2400,7 @@ Related Topics: @name.
 
   COMMAND: @nameformat <object> [=<format>]
 
-  By default, when an object is looked at, the object's real name is shown.
+  By default, when an object is looked at, the object's name is shown.
   And, if you can link to the object, it's flag letters and dbref are also
   shown. However, with @nameformat, you can control exactly what is shown.
 
@@ -8578,8 +8578,8 @@ MAIL-OTHER
         afterward). If no msg-list is specified, all messages in the
         current folder are tagged/untagged. If "all" is given as the
         msg-list, all mail in *all* folders is tagged/untagged.
-        (Ex: To clear all mail from Lauren and Crusade,
-        @mail/tag *lauren, @mail/tag *crusade, @mail/clear tagged,
+        (Ex: To clear all mail from Temperance and Sloth,
+        @mail/tag *temperance, @mail/tag *sloth, @mail/clear tagged,
         @mail/untag all).
 
 { 'help mail-other2' for more }
@@ -9887,7 +9887,7 @@ PIPING
   > &SAYDESC me=$+saydesc *:look %0 ;| say %r%|
   > +saydesc me
   You say "
-  Lauren(#5PXMWc)
+  Idoru(#5PXMWc)
   You see nothing special.
   "
 
