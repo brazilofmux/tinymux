@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.16 2001-11-09 00:05:29 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.17 2001-11-09 04:02:57 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -591,8 +591,8 @@ void do_page
         }
     }
 
-    // If we are doing more than reporting, we need to further validated the
-    // dbrefs.
+    // If we are doing more than reporting, we have some other dbref
+    // validation to do.
     //
     if (  nargs == 2
        || arg1[0] != '\0')
@@ -611,7 +611,7 @@ void do_page
 
     if (bModified)
     {
-        // Our aPlayers could be different that the one on A_LASTPAGE.
+        // Our aPlayers could be different than the one encoded on A_LASTPAGE.
         // Update the database.
         //
         ITB itb;
@@ -632,7 +632,7 @@ void do_page
         free_lbuf(pBuff);
     }
 
-    // Verify that the receipient list isn't empty.
+    // Verify that the recipient list isn't empty.
     //
     if (nValid == 0)
     {
