@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.44 2002-06-28 16:35:06 sdennis Exp $
+// $Id: functions.cpp,v 1.45 2002-06-28 18:15:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1961,7 +1961,7 @@ FUNCTION(fun_exit)
     }
 }
 
-/* QQQ
+/*
  * ---------------------------------------------------------------------------
  * * fun_next: return next thing in contents or exits chain
  */
@@ -1976,7 +1976,6 @@ FUNCTION(fun_next)
     }
     if (Has_siblings(it))
     {
-        dbref result = NOTHING;
         dbref loc = where_is(it);
         BOOL ex_here = Good_obj(loc) ? Examinable(executor, loc) : 0;
         if (  ex_here
@@ -1985,7 +1984,7 @@ FUNCTION(fun_next)
         {
             if (!isExit(it))
             {
-                result = Next(it);
+                safe_tprintf_str(buff, bufc, "#%d", Next(it));
             }
             else
             {
@@ -2004,12 +2003,16 @@ FUNCTION(fun_next)
                     if (  exit != it
                        && exit_visible(exit, executor, key))
                     {
-                        result = exit;
-                        break;
+                        safe_tprintf_str(buff, bufc, "#%d", exit);
+                        return;
                     }
                 }
+                safe_notfound(buff, bufc);
             }
-            safe_tprintf_str(buff, bufc, "#%d", result);
+        }
+        else
+        {
+            safe_noperm(buff, bufc);
         }
     }
     safe_nothing(buff, bufc);
@@ -2022,20 +2025,17 @@ FUNCTION(fun_next)
 
 FUNCTION(fun_loc)
 {
-    dbref result = NOTHING;
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (Good_obj(it))
+    if (!Good_obj(it))
     {
-        if (locatable(executor, it, enactor))
-        {
-            result = Location(it);
-        }
+        safe_match_result(it, buff, bufc);
+        return;
     }
-    else
+    if (locatable(executor, it, enactor))
     {
-        result = it;
+        safe_tprintf_str(buff, bufc, "#%d", Location(it));
     }
-    safe_tprintf_str(buff, bufc, "#%d", result);
+    safe_nothing(buff, bufc);
 }
 
 /*
@@ -2045,23 +2045,20 @@ FUNCTION(fun_loc)
 
 FUNCTION(fun_where)
 {
-    dbref result = NOTHING;
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (Good_obj(it))
+    if (!Good_obj(it))
     {
-        if (locatable(executor, it, enactor))
-        {
-            result = where_is(it);
-        }
+        safe_match_result(it, buff, bufc);
+        return;
     }
-    else
+    if (locatable(executor, it, enactor))
     {
-        result = it;
+        safe_tprintf_str(buff, bufc, "#%d", where_is(it));
     }
-    safe_tprintf_str(buff, bufc, "#%d", result);
+    safe_nothing(buff, bufc);
 }
 
-/*
+/* QQQ
  * ---------------------------------------------------------------------------
  * * fun_rloc: Returns the recursed location of something (specifying #levels)
  */
