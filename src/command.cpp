@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.25 2000-10-24 23:54:08 sdennis Exp $
+// $Id: command.cpp,v 1.26 2000-11-04 05:36:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2598,8 +2598,6 @@ static void list_options(dbref player)
     if (mudconf.fork_dump)
     {
         raw_notify(player, "Database dumps are performed by a fork()ed process.");
-        if (mudconf.fork_vfork)
-            raw_notify(player, "The 'vfork()' call is used to perform the fork.");
     }
 #endif // WIN32
     if (mudconf.max_players >= 0)

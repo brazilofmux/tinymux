@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.16 2000-10-10 23:06:47 sdennis Exp $
+// $Id: bsd.cpp,v 1.17 2000-11-04 05:36:14 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -510,12 +510,12 @@ void boot_slave(dbref ref1, dbref ref2, int int3)
         close(sv[1]);
         goto failure;
     }
-    slave_pid = vfork();
+    slave_pid = fork();
     switch (slave_pid)
     {
     case -1:
 
-        pFailedFunc = "vfork() error: ";
+        pFailedFunc = "fork() error: ";
         close(sv[0]);
         close(sv[1]);
         goto failure;
