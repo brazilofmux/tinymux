@@ -166,6 +166,7 @@ AC_CHECKING(for getrusage dcl)
 AC_EGREP_HEADER(getrusage,sys/resource.h, ,AC_DEFINE(NEED_GETRUSAGE_DCL))
 AC_CHECKING(for getrlimit dcl)
 AC_EGREP_HEADER(getrlimit,sys/resource.h, ,AC_DEFINE(NEED_GETRLIMIT_DCL))
+AC_C_BIGENDIAN
 AC_C_CONST
 AC_C_INLINE
 AC_CHECK_SIZEOF(short,2)

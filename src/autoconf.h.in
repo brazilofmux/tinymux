@@ -70,6 +70,8 @@
 #undef HAVE_SYS_SELECT_H
 /* Define if sys/rusage.h exists */
 #undef HAVE_SYS_RUSAGE_H
+/* Define if Big Endian */
+#undef WORDS_BIGENDIAN
 /* Define if const is broken */
 #undef const
 /* sizeof(short) */
