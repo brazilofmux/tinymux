@@ -245,6 +245,7 @@ Bug Fixes:
     were effectively listening devices that didn't show up on a @sweep.
  -- Fixed behavior of read_remote_desc configuration option.  Bug introduced
     by Jake.  Fixed by Brazil.
+ -- Document INFO logged-out command.
 
 
 
