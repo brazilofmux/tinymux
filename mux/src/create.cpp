@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
+// $Id: create.cpp,v 1.3 2002-06-04 18:10:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -241,7 +241,7 @@ void do_link
     //
     if (!where || !*where)
     {
-        do_unlink(executor, CALLERQQQ, enactor, key, what);
+        do_unlink(executor, caller, enactor, key, what);
         return;
     }
     switch (Typeof(thing))

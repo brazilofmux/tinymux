@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
+// $Id: mguests.cpp,v 1.3 2002-06-04 18:12:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -310,8 +310,8 @@ int CGuests::MakeGuestChar(void)
 
     // Lock em!
     //
-    do_lock(player, CALLERQQQ, player, A_LOCK, 2, tprintf("#%d", player), "=me");
-    do_lock(player, CALLERQQQ, player, A_LENTER, 2, tprintf("#%d", player), "=me");
+    do_lock(player, player, player, A_LOCK, 2, tprintf("#%d", player), "=me");
+    do_lock(player, player, player, A_LENTER, 2, tprintf("#%d", player), "=me");
 
     // return em!
     //
