@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.38 2004-05-15 20:44:55 sdennis Exp $
+// $Id: game.cpp,v 1.39 2004-05-15 22:45:55 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -108,9 +108,9 @@ bool regexp_match
      * under it.
      */
 
-    pcre *re = pcre_compile(pattern, case_opt, &errptr, &erroffset, NULL);
+    pcre *re;
     if (  MuxAlarm.bAlarmed
-       || re == NULL)
+       || (re = pcre_compile(pattern, case_opt, &errptr, &erroffset, NULL)) == NULL)
     {
         /*
          * This is a matching error. We have an error message in
