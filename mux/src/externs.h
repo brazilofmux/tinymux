@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.50 2002-09-12 03:27:53 jake Exp $
+// $Id: externs.h,v 1.51 2002-09-19 01:40:01 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -124,7 +124,6 @@ extern void log_type_and_name(dbref);
 extern void look_in(dbref,dbref, int);
 extern void show_vrml_url(dbref, dbref);
 size_t decode_attr_flags(int aflags, char *buff);
-extern const char *get_ansiname(dbref thing);
 
 /* From move.cpp */
 extern void move_object(dbref, dbref);
@@ -256,8 +255,12 @@ extern char *process_command(dbref executor, dbref caller, dbref enactor, BOOL,
 extern BOOL Commer(dbref);
 extern void s_Pass(dbref, const char *);
 extern void s_Name(dbref, const char *);
-extern const char *Name(dbref);
-extern const char *PureName(dbref);
+extern void s_AccentName(dbref thing, const char *s);
+extern void s_AnsiName(dbref thing, const char *s);
+extern const char *Name(dbref thing);
+extern const char *PureName(dbref thing);
+extern const char *AccentName(dbref thing);
+extern const char *AnsiName(dbref thing);
 extern int  fwdlist_load(FWDLIST *, dbref, char *);
 extern void fwdlist_set(dbref, FWDLIST *);
 extern void fwdlist_clr(dbref);

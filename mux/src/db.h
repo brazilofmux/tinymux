@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.9 2002-09-18 21:26:44 sdennis Exp $
+// $Id: db.h,v 1.10 2002-09-19 01:40:01 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -156,6 +156,8 @@ struct object
     CLinearTimeDelta cpu_time_used; /* ALL: CPU time eaten */
 
     char    *purename;
+    char    *ansiname;
+    char    *accentname;
 
 #ifdef MEMORY_BASED
     ATRLIST *ahead;     /* The head of the attribute list. */
@@ -185,13 +187,6 @@ extern OBJ *db;
 #define Stack(t)        db[t].stackhead
 #define Home(t)         Link(t)
 #define Dropto(t)       Location(t)
-
-#ifndef MEMORY_BASED
-#define i_Name(t)       names[t] = NULL;    \
-                if (mudconf.cache_names) purenames[t] = NULL;
-#else // !MEMORY_BASED
-#define i_Name(t)       if (mudconf.cache_names) purenames[t] = NULL;
-#endif // !MEMORY_BASED
 
 #define s_Location(t,n)     db[t].location = (n)
 

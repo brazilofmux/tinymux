@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.85 2002-09-18 21:23:16 sdennis Exp $
+// $Id: command.cpp,v 1.86 2002-09-19 01:40:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -643,6 +643,7 @@ CMDENT_ONE_ARG_CMDARG command_table_one_arg_cmdarg[] =
 
 CMDENT_TWO_ARG command_table_two_arg[] =
 {
+    {"@accentname",  NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_accentname},
     {"@addcommand",  NULL,       CA_GOD,                                           0,           CS_TWO_ARG,           0, do_addcommand},
     {"@admin",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_admin},
     {"@alias",       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_alias},
@@ -4040,14 +4041,16 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
         return;
     }
 
-    notify_all_from_inside(loc, executor, tprintf("%s types -=> %s", get_ansiname(executor), string));
+    notify_all_from_inside(loc, executor, tprintf("%s types -=> %s",
+        AnsiName(executor), string));
     process_command(executor, caller, enactor, TRUE, string, (char **)NULL, 0);
 }
 
 // do_ansiname: set ansified name for something.
 // From RhostMUSH, used with permission.
 //
-void do_ansiname(dbref executor, dbref caller, dbref enactor, int key, int nfargs, char *name, char *instr)
+void do_ansiname(dbref executor, dbref caller, dbref enactor, int key,
+                 int nfargs, char *name, char *instr)
 {
     dbref thing = match_thing(executor, name);
     if ( !(  Good_obj(thing)
@@ -4060,48 +4063,48 @@ void do_ansiname(dbref executor, dbref caller, dbref enactor, int key, int nfarg
     if (  instr == NULL
        || instr[0] == '\0')
     {
-        notify(executor, "Ansi string cleared.");
-        atr_clr(thing, A_ANSINAME);
+        notify_quiet(executor, "ANSI name cleared.");
+        s_AnsiName(thing, NULL);
     }
     else
     {
-        char *namebuff, *namebuffptr;
-        namebuffptr = namebuff = alloc_lbuf("do_ansiname.name");
-
-        if (isExit(thing)) 
+        s_AnsiName(thing, instr);
+        if (  !Quiet(executor)
+           && !Quiet(thing))
         {
-            for (const char *s = PureName(thing); *s && (*s != ';'); s++)
-            {
-                safe_chr(*s, namebuff, &namebuffptr);
-            }
+            notify_quiet(executor, "ANSI name set.");
         }
-        else
-        {
-            safe_str(PureName(thing), namebuff, &namebuffptr);
-        }
-        *namebuffptr = '\0';
-
-        char *retbuff, *retbuffptr;
-        retbuffptr = retbuff = alloc_lbuf("do_ansiname.ret");
-        TinyExec(retbuff, &retbuffptr, executor, caller, enactor, 
-            EV_EVAL | EV_FCHECK | EV_TOP, &instr, (char **)NULL, 0);
-
-        unsigned int n;
-        if (strcmp(strip_ansi(retbuff, &n), namebuff) != 0)
-        {
-            notify(executor, tprintf("String entered must match name of target, '%s'.", Name(thing)));
-            free_lbuf(retbuff);
-            free_lbuf(namebuff);
-            return;
-        }
-        else
-        {
-            notify(executor, tprintf("Ansi string entered for %s of '%s'.", namebuff, retbuff));
-            atr_add_raw(thing, A_ANSINAME, retbuff);
-        }
-        free_lbuf(retbuff);
-        free_lbuf(namebuff);
     }
+    set_modified(thing);
+}
+
+void do_accentname(dbref executor, dbref caller, dbref enactor, int key,
+                 int nfargs, char *name, char *instr)
+{
+    dbref thing = match_thing(executor, name);
+    if ( !(  Good_obj(thing)
+          && Controls(executor, thing)))
+    {
+        notify(executor, "Permission denied.");
+        return;
+    }
+
+    if (  instr == NULL
+       || instr[0] == '\0')
+    {
+        notify_quiet(executor, "Accent name cleared.");
+        s_AccentName(thing, NULL);
+    }
+    else
+    {
+        s_AccentName(thing, instr);
+        if (  !Quiet(executor)
+           && !Quiet(thing))
+        {
+            notify_quiet(executor, "Accent name set.");
+        }
+    }
+    set_modified(thing);
 }
 
 // do_hook: run softcode before or after running a hardcode command, or

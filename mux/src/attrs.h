@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.6 2002-09-01 16:31:30 jake Exp $
+// $Id: attrs.h,v 1.7 2002-09-19 01:40:00 sdennis Exp $
 //
 
 #ifndef _ATTRS_H
@@ -155,7 +155,8 @@
 #define A_MATRIXDESC 148
 #endif // WOD_REALMS
 
-// 149 - 197 unused
+// 149 - 196 unused
+#define A_ACCENTNAME 197 // Accented name of object.
 #define A_CMDCHECK  198 // For @icmd. (From RhostMUSH)
 #define A_ANSINAME  199 // Ansi colored name of object. (From RhostMUSH)
 #define A_LASTPAGE  200 /* Player last paged */

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.43 2002-09-18 21:26:44 sdennis Exp $
+// $Id: db.cpp,v 1.44 2002-09-19 01:40:01 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -133,6 +133,7 @@ ATTR attr[] =
     {"Modified",    A_MODIFIED, AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD},
     {"Move",        A_MOVE,     AF_ODARK | AF_NOPROG},
     {"Name",        A_NAME,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {"NameAccent",  A_ACCENTNAME, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
     {"NameFormat",  A_NAMEFORMAT, AF_ODARK | AF_NOPROG | AF_WIZARD},
     {"Odesc",       A_ODESC,    AF_ODARK | AF_NOPROG},
     {"Odfail",      A_ODFAIL,   AF_ODARK | AF_NOPROG},
@@ -442,7 +443,8 @@ FWDLIST *fwdlist_get(dbref thing)
 }
 
 // ---------------------------------------------------------------------------
-// Name, PureName, and s_Name: Get or set an object's name.
+// Name, PureName, AnsiName, AccentName, s_AnsiName, s_AccentName, and s_Name:
+// Get or set object's various names.
 //
 const char *Name(dbref thing)
 {
@@ -518,16 +520,199 @@ const char *PureName(dbref thing)
     return pPureName;
 }
 
+const char *AnsiName(dbref thing)
+{
+    if (thing < 0)
+    {
+        return aszSpecialDBRefNames[-thing];
+    }
+    if (db[thing].ansiname)
+    {
+        return db[thing].ansiname;
+    }
+
+    // Construct the stripped versions of both @ansiname and @name.
+    //
+    const char *pPureName = PureName(thing);
+    char *pPureNameCopy = StringClone(pPureName);
+
+    int nAnsiName;
+    dbref aowner;
+    int aflags;
+    const char *pAnsiName = atr_get_LEN(thing, A_ANSINAME, &aowner, &aflags,
+        &nAnsiName);
+    char *pPureAnsiName = strip_ansi(pAnsiName);
+
+    char *pReturn = NULL;
+    static char tbuff[LBUF_SIZE];
+    if (strcmp(pPureNameCopy, pPureAnsiName) == 0)
+    {
+        // The stripped version of @ansiname is the same as the stripped
+        // version of @name, so (possibly cache and) use the unstripped
+        // version of @ansiname.
+        //
+        if (mudconf.cache_names)
+        {
+#ifdef MEMORY_BASED
+            db[thing].ansiname = StringCloneLen(pAnsiName, nAnsiName);
+#else // MEMORY_BASED
+            if (strcmp(pAnsiName, Name(thing)) == 0)
+            {
+                db[thing].ansiname = db[thing].name;
+            }
+            else
+            {
+                db[thing].ansiname = StringCloneLen(pAnsiName, nAnsiName);
+            }
+#endif // MEMORY_BASED
+            pReturn = db[thing].ansiname;
+        }
+        else
+        {
+            memcpy(tbuff, pAnsiName, nAnsiName+1);
+            pReturn = tbuff;
+        }
+    }
+    else
+    {
+        // @ansiname can't be used, so instead reflect @name (whether it
+        // contains ANSI color or not).
+        //
+#ifdef MEMORY_BASED
+        if (mudconf.cache_names)
+        {
+            db[thing].ansiname = StringClone(Name(thing));
+            pReturn = db[thing].ansiname;
+        }
+        else
+        {
+            pReturn = Name(thing);
+        }
+#else // MEMORY_BASED
+        if (mudconf.cache_names)
+        {
+            db[thing].ansiname = db[thing].name;
+            pReturn = db[thing].ansiname;
+        }
+        else
+        {
+            pReturn = db[thing].name;
+        }
+#endif // MEMORY_BASED
+    }
+    free_lbuf(pAnsiName);
+    MEMFREE(pPureNameCopy);
+
+    return pReturn;
+}
+
+const char *AccentName(dbref thing)
+{
+    if (thing < 0)
+    {
+        return aszSpecialDBRefNames[-thing];
+    }
+    if (db[thing].accentname)
+    {
+        return db[thing].accentname;
+    }
+
+    // Compare accent-stripped, ansi-stripped version of @accentname against
+    // accent-stripped, ansi-stripped version of @name.
+    //
+    const char *pPureName = strip_accents(PureName(thing));
+    char *pPureNameCopy = StringClone(pPureName);
+
+    int nAccentName;
+    dbref aowner;
+    int aflags;
+    const char *pAccentName = atr_get_LEN(thing, A_ACCENTNAME, &aowner, &aflags,
+        &nAccentName);
+    char *pPureAccentName = strip_accents(strip_ansi(pAccentName));
+
+    char *pReturn = NULL;
+    static char tbuff[LBUF_SIZE];
+    if (strcmp(pPureNameCopy, pPureAccentName) == 0)
+    {
+        // The stripped version of @nameaccent is the same as the stripped
+        // version of @name, so (possibly cache and) use the unstripped
+        // version of @accentname.
+        //
+        if (mudconf.cache_names)
+        {
+#ifdef MEMORY_BASED
+            db[thing].accentname = StringCloneLen(pAccentName, nAccentName);
+#else // MEMORY_BASED
+            if (strcmp(pAccentName, Name(thing)) == 0)
+            {
+                db[thing].accentname = db[thing].name;
+            }
+            else
+            {
+                db[thing].accentname = StringCloneLen(pAccentName, nAccentName);
+            }
+#endif // MEMORY_BASED
+            pReturn = db[thing].accentname;
+        }
+        else
+        {
+            memcpy(tbuff, pAccentName, nAccentName+1);
+            pReturn = tbuff;
+        }
+    }
+    else
+    {
+        // @nameaccent can't be used, so instead reflect @name (whether it
+        // contains ANSI color and accents or not).
+        //
+#ifdef MEMORY_BASED
+        if (mudconf.cache_names)
+        {
+            db[thing].accentname = StringClone(Name(thing));
+            pReturn = db[thing].accentname;
+        }
+        else
+        {
+            pReturn = Name(thing);
+        }
+#else // MEMORY_BASED
+        if (mudconf.cache_names)
+        {
+            db[thing].accentname = db[thing].name;
+            pReturn = db[thing].accentname;
+        }
+        else
+        {
+            pReturn = db[thing].name;
+        }
+#endif // MEMORY_BASED
+    }
+    free_lbuf(pAccentName);
+    MEMFREE(pPureNameCopy);
+
+    return pReturn;
+}
+
 void s_Name(dbref thing, const char *s)
 {
     atr_add_raw(thing, A_NAME, s);
 #ifndef MEMORY_BASED
     if (db[thing].name)
     {
-        if (  mudconf.cache_names
-           && db[thing].name == db[thing].purename)
+        if (mudconf.cache_names)
         {
-            db[thing].purename = NULL;
+            if (db[thing].name == db[thing].purename)
+            {
+                db[thing].purename = NULL;
+            }
+            if (db[thing].name == db[thing].ansiname)
+            {
+                db[thing].ansiname = NULL;
+            }
+            if (db[thing].name == db[thing].accentname)
+            {
+                db[thing].accentname = NULL;
+            }
         }
         MEMFREE(db[thing].name);
         db[thing].name = NULL;
@@ -537,11 +722,61 @@ void s_Name(dbref thing, const char *s)
         db[thing].name = StringClone(s);
     }
 #endif // !MEMORY_BASED
-    if (  mudconf.cache_names
-       && db[thing].purename)
+    if (mudconf.cache_names)
     {
-        MEMFREE(db[thing].purename);
-        db[thing].purename = NULL;
+        if (db[thing].purename)
+        {
+            MEMFREE(db[thing].purename);
+            db[thing].purename = NULL;
+        }
+        if (db[thing].ansiname)
+        {
+            MEMFREE(db[thing].ansiname);
+            db[thing].ansiname = NULL;
+        }
+        if (db[thing].accentname)
+        {
+            MEMFREE(db[thing].accentname);
+            db[thing].accentname = NULL;
+        }
+    }
+}
+
+void s_AnsiName(dbref thing, const char *s)
+{
+    atr_add_raw(thing, A_ANSINAME, s);
+    if (mudconf.cache_names)
+    {
+#ifndef MEMORY_BASED
+        if (db[thing].name == db[thing].ansiname)
+        {
+            db[thing].ansiname = NULL;
+        }
+#endif // !MEMORY_BASED
+        if (db[thing].ansiname)
+        {
+            MEMFREE(db[thing].ansiname);
+            db[thing].ansiname = NULL;
+        }
+    }
+}
+
+void s_AccentName(dbref thing, const char *s)
+{
+    atr_add_raw(thing, A_ACCENTNAME, s);
+    if (mudconf.cache_names)
+    {
+#ifndef MEMORY_BASED
+        if (db[thing].name == db[thing].accentname)
+        {
+            db[thing].accentname = NULL;
+        }
+#endif // !MEMORY_BASED
+        if (db[thing].accentname)
+        {
+            MEMFREE(db[thing].accentname);
+            db[thing].accentname = NULL;
+        }
     }
 }
 
@@ -2203,24 +2438,18 @@ void initialize_objects(dbref first, dbref last)
 #else
         db[thing].name = NULL;
 #endif // MEMORY_BASED
-        if (mudconf.cache_names)
-        {
-            db[thing].purename = NULL;
-        }
+        db[thing].purename = NULL;
+        db[thing].ansiname = NULL;
+        db[thing].accentname = NULL;
     }
 }
 
 void db_grow(dbref newtop)
 {
-    int newsize, marksize, delta, i;
-    MARKBUF *newmarkbuf;
-    OBJ *newdb;
-    char *cp;
-
 #ifdef STANDALONE
-    delta = 1000;
+    const int delta = 1000;
 #else // STANDALONE
-    delta = mudconf.init_size;
+    const int delta = mudconf.init_size;
 #endif // STANDALONE
 
     // Determine what to do based on requested size, current top and size.
@@ -2247,6 +2476,7 @@ void db_grow(dbref newtop)
 
     // Grow by a minimum of delta objects
     //
+    int newsize;
     if (newtop <= mudstate.db_size + delta)
     {
         newsize = mudstate.db_size + delta;
@@ -2270,7 +2500,7 @@ void db_grow(dbref newtop)
     // just before the process terminates. We rely (quite safely) on the OS
     // to reclaim the memory.
     //
-    newdb = (OBJ *)MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ));
+    OBJ *newdb = (OBJ *)MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ));
     (void)ISOUTOFMEMORY(newdb);
     if (db)
     {
@@ -2278,14 +2508,12 @@ void db_grow(dbref newtop)
         //
         db -= SIZE_HACK;
         memcpy(newdb, db, (mudstate.db_top + SIZE_HACK) * sizeof(OBJ));
-        cp = (char *)db;
-        MEMFREE(cp);
-        cp = NULL;
+        MEMFREE(db);
     }
     else
     {
         // Creating a brand new struct database. Fill in the 'reserved' area
-        // in case it gets referenced.
+        // in case it is referenced.
         //
         db = newdb;
         initialize_objects(0, SIZE_HACK);
@@ -2299,17 +2527,15 @@ void db_grow(dbref newtop)
 
     // Grow the db mark buffer.
     //
-    marksize = (newsize + 7) >> 3;
-    newmarkbuf = (MARKBUF *)MEMALLOC(marksize);
+    int marksize = (newsize + 7) >> 3;
+    MARKBUF *newmarkbuf = (MARKBUF *)MEMALLOC(marksize);
     (void)ISOUTOFMEMORY(newmarkbuf);
     memset(newmarkbuf, 0, marksize);
     if (mudstate.markbits)
     {
         marksize = (newtop + 7) >> 3;
         memcpy(newmarkbuf, mudstate.markbits, marksize);
-        cp = (char *)mudstate.markbits;
-        MEMFREE(cp);
-        cp = NULL;
+        MEMFREE(mudstate.markbits);
     }
     mudstate.markbits = newmarkbuf;
 }

@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.28 2002-09-18 21:26:44 sdennis Exp $
+// $Id: look.cpp,v 1.29 2002-09-19 01:40:01 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2469,20 +2469,4 @@ void show_vrml_url(dbref thing, dbref loc)
         notify_html(thing, "<img xch_graph=hide>");
     }
     free_lbuf(vrml_url);
-}
-
-const char *get_ansiname(dbref thing)
-{
-    const char *attrtext = atr_get_raw(thing, A_ANSINAME);
-    unsigned int n;
-    if (  !attrtext 
-       || !*attrtext
-       || strcmp(strip_ansi(attrtext, &n), PureName(thing)) != 0)
-    {
-        return Name(thing);
-    }
-    else
-    {
-        return attrtext;
-    }
 }
