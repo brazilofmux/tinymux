@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.13 2001-11-24 20:07:09 sdennis Exp $
+// $Id: alloc.cpp,v 1.14 2001-11-24 20:51:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -59,7 +59,7 @@ typedef struct pooldata
 POOL pools[NUM_POOLS];
 const char *poolnames[] =
 {
-    "Sbufs", "Mbufs", "Lbufs", "Bools", "Descs", "Qentries", "Pcaches"
+    "Lbufs", "Sbufs", "Mbufs", "Bools", "Descs", "Qentries", "Pcaches"
 };
 
 #define POOL_MAGICNUM 0xdeadbeefU
