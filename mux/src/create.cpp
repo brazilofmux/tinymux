@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.6 2004-04-06 05:13:37 sdennis Exp $
+// $Id: create.cpp,v 1.7 2004-04-06 05:23:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -304,7 +304,7 @@ void do_link
             s_Home(thing, nHomeNew);
             if (!Quiet(executor))
             {
-                char *buff = alloc_lbuf("do_chown.notify");
+                char *buff = alloc_lbuf("do_link.notify");
                 char *bp = buff;
 
                 char *p;
@@ -351,10 +351,24 @@ void do_link
         }
         else
         {
+            dbref nDroptoOrig = Dropto(thing);
+            dbref nDroptoNew  = room;
             s_Dropto(thing, room);
             if (!Quiet(executor))
             {
-                notify_quiet(executor, "Dropto set.");
+                char *buff = alloc_lbuf("do_link2.notify");
+                char *bp = buff;
+
+                char *p;
+                p = tprintf("Dropto of %s(#%d) changed from ", Name(thing), thing);
+                safe_str(p, buff, &bp);
+                p = tprintf("%s(#%d) to ", Name(nDroptoOrig), nDroptoOrig);
+                safe_str(p, buff, &bp);
+                p = tprintf("%s(#%d).", Name(nDroptoNew), nDroptoNew);
+                safe_str(p, buff, &bp);
+                *bp = '\0';
+                notify_quiet(executor, buff);
+                free_lbuf(buff);
             }
         }
         break;
