@@ -1391,7 +1391,7 @@ WHO
   from destruction.
 
   If a thing OR it's owner is set DESTROY_OK, the thing will be destroyed
-  with no delay. This can also be performed with the /now switch.
+  with no delay. This can also be performed with the /instant switch.
 
   The @destroy command will not destroy objects with the SAFE flag set unless
   the /override switch is specified.  The DESTROY_OK flag overrides the
@@ -1399,7 +1399,7 @@ WHO
 
   The following switches are available:
     /override  - Negate protection offered by the SAFE flag.
-    /now       - Destroy with no delay.
+    /instant   - Destroy with no delay.
 
   Related Topics: DESTROY_OK, SAFE.
 
