@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.22 2001-02-07 05:28:14 sdennis Exp $
+// $Id: cque.cpp,v 1.23 2001-02-13 07:07:55 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -452,6 +452,7 @@ int CallBack_NotifySemaphore(PTASK_RECORD p)
                 {
                     p->iPriority = PRIORITY_OBJECT;
                 }
+                p->ltaWhen = mudstate.now;
                 p->fpTask = Task_RunQueueEntry;
                 return IU_UPDATE_TASK;
             }
@@ -763,11 +764,7 @@ void wait_que
     }
 
     tmp->IsTimed = bTimed;
-    if (bTimed)
-    {
-        tmp->waittime = ltaWhen;
-    }
-
+    tmp->waittime = ltaWhen;
     tmp->sem = sem;
     tmp->attr = attr;
 
