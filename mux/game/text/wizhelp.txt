@@ -1169,11 +1169,9 @@
 
   COMMAND: @readcache
 
-  Reads the commonly-used text files and help indexes on the game directory
-  into an internal cache, destroying the prior contents of the cache.  Use
-  this command whenever you change one of the text of index files in the game
-  directory. Be sure and run mkindx to produce new index files before you run
-  this command.
+  Reads the commonly-used text files and re-indexes the help files into an
+  internal cache.  Use this command whenever you change one of the game's
+  text files.
 
 & @RESTART
 @RESTART
@@ -2032,7 +2030,6 @@ FILES
                   a site for which registration is enforced.
   down.txt:       Displayed when someone tries to connect to a non-wizard
                   character when logins are disabled.
-  help.indx:      Index for the help.txt file, produced by the mkindx program.
   help.txt:       File containing information displayed by the help command.
 
 { 'wizhelp files2' for more }
@@ -2044,7 +2041,6 @@ FILES (continued)
                   specified by the guest_character config parameter.
   motd.txt:       Displayed after someone connects to an existing character.
   netmux.conf:    Configuration directives read at startup.
-  news.indx:      Index for the news.txt file, produced by the mkindx program.
   news.txt:       File containing information displayed by the news command.
   newuser.txt:    Displayed after someone creates a new character or connects
                   to their character for the first time.
@@ -2052,16 +2048,13 @@ FILES (continued)
                   is closed.
   register.txt:   Displayed when someone connects from a site for which
                   registration is enabled.
-  wizhelp.indx:   Index for the wizhelp.txt file, produced by the mkindx
-                  program.
   wizhelp.txt:    File containing information displayed by the wizhelp
                   command.
   wizmotd.txt:    Displayed to wizards when they connect to their characters.
 
   Related Topics: badsite_file, connect_file, connect_reg_file, down_file,
-                  guest_file, help_file, help_index, motd_file, news_file,
-                  news_index, newuser_file, quit_file, register_create_file,
-                  wizard_help_file, wizard_help_index, wizard_motd_file.
+                  guest_file, helpfile, raw_helpfile, motd_file, newuser_file,
+                  quit_file, register_create_file, wizard_motd_file.
 
 & FIND_MONEY_CHANCE
 FIND_MONEY_CHANCE
@@ -2468,7 +2461,7 @@ HELPFILE
      helpfile wiznews text/wiznews
      access wiznews wizard
 
-  Related Topics: access, mkindx, raw_helpfile
+  Related Topics: access, raw_helpfile
 
 & HOOK SETUP
 HOOK SETUP
