@@ -157,6 +157,8 @@ Feature Additions:
  --  switch() function now accepts < and > operators like @switch.
  --  Roy Anger updated comsys help.
  --  Reformatted wizhelp.txt.
+ --  Freshened help for @aconnect and @adisconnect.
+ --  Support second argument for squish().
 
 
 Bug Fixes:
