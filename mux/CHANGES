@@ -102,6 +102,7 @@ Feature Additions:
     levels of iter(). Idea from PennMUSH.
  -- Added CHR() from PennMUSH.
  -- Added ORD() from PennMUSH.
+ -- Added STRIPACCENTS() from PennMUSH.
 
 Bug Fixes:
 ~~~~~~~~~
