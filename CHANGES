@@ -67,6 +67,7 @@ Feature Additions:
     ITER, PARSE, MIX, FILTER, FOLD, MAP, etc.
  -- Clean cygwin builds on Win32 with support for @restart.
  -- Remove support for the COMPRESS flag.
+ -- Added softcode config() from TM3.
 
 Bug Fixes:
 ~~~~~~~~~
