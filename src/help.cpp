@@ -2,7 +2,7 @@
  * help.c -- commands for giving help 
  */
 /*
- * $Id: help.cpp,v 1.6 2001-07-02 15:53:27 sdennis Exp $ 
+ * $Id: help.cpp,v 1.7 2001-07-07 01:43:54 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -215,18 +215,22 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
         {
             break;
         }
-        for (p = line; *p != '\0'; p++)
-        {
-            if (*p == '\n' || *p == '\r')
-            {
-                *p = '\0';
-                break;
-            }
-        }
-        if (line[0] == '\0')
+        if (  line[0] == '\n'
+           || line[0] == '\r')
         {
             line[0] = ' ';
             line[1] = '\0';
+        }
+        else
+        {
+            for (p = line + 1; *p; p++)
+            {
+                if (*p == '\n' || *p == '\r')
+                {
+                    *p = '\0';
+                    break;
+                }
+            }
         }
         if (eval)
         {
