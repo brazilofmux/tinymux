@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: stringutil.cpp,v 1.2 2003-01-24 00:36:52 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1497,20 +1497,19 @@ char *grabto(char **str, char targ)
 
 int string_compare(const char *s1, const char *s2)
 {
-#ifndef STANDALONE
-    if (!mudconf.space_compress)
+    if (  mudstate.bStandAlone
+       || mudconf.space_compress)
     {
-        return mux_stricmp(s1, s2);
-    }
-    else
-    {
-#endif // !STANDALONE
         while (Tiny_IsSpace[(unsigned char)*s1])
+        {
             s1++;
+        }
         while (Tiny_IsSpace[(unsigned char)*s2])
+        {
             s2++;
+        }
 
-        while (*s1 && *s2
+        while (  *s1 && *s2
               && (  (Tiny_ToLower[(unsigned char)*s1] == Tiny_ToLower[(unsigned char)*s2])
                  || (Tiny_IsSpace[(unsigned char)*s1] && Tiny_IsSpace[(unsigned char)*s2])))
         {
@@ -1534,29 +1533,39 @@ int string_compare(const char *s1, const char *s2)
                 s2++;
             }
         }
-        if ((*s1) && (*s2))
+        if (  *s1
+           && *s2)
+        {
             return 1;
+        }
 
         if (Tiny_IsSpace[(unsigned char)*s1])
         {
             while (Tiny_IsSpace[(unsigned char)*s1])
+            {
                 s1++;
-
+            }
             return *s1;
         }
         if (Tiny_IsSpace[(unsigned char)*s2])
         {
             while (Tiny_IsSpace[(unsigned char)*s2])
+            {
                 s2++;
-
+            }
             return *s2;
         }
-        if ((*s1) || (*s2))
+        if (  *s1
+           || *s2)
+        {
             return 1;
+        }
         return 0;
-#ifndef STANDALONE
     }
-#endif // !STANDALONE
+    else
+    {
+        return mux_stricmp(s1, s2);
+    }
 }
 
 int string_prefix(const char *string, const char *prefix)
@@ -2184,8 +2193,6 @@ INT64 Tiny_atoi64(const char *pString)
     return sum;
 }
 
-#ifndef STANDALONE
-
 // Floating-point strings match one of the following patterns:
 //
 // [+\-]?[0-9]?.[0-9]+([eE][+\-]?[0-9]{1,3})?
@@ -2735,8 +2742,6 @@ BOOL is_real(char *str)
     memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
     return ParseFloat(&pfr, str);
 }
-
-#endif // !STANDALONE
 
 // Tiny_StrTokString, Tiny_StrTokControl, Tiny_StrTokParse.
 //
@@ -3292,13 +3297,10 @@ int BMH_StringSearchI(int nPat, char *pPat, int nSrc, char *pSrc)
 // Add an article rule to the ruleset.
 //
 
-#ifndef STANDALONE
 extern void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...);
-#endif // !STANDALONE
 
 CF_HAND(cf_art_rule)
 {
-#ifndef STANDALONE
     char* pCurrent = str;
 
     while (Tiny_IsSpace[(unsigned char)*pCurrent])
@@ -3377,7 +3379,6 @@ CF_HAND(cf_art_rule)
     arNewRule->m_pRegexpStudy = study;
 
     *arRules = arNewRule;
-#endif // !STANDALONE
     return 0;
 }
 
