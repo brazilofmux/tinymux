@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.14 2002-08-29 16:43:08 jake Exp $
+// $Id: flags.cpp,v 1.15 2002-08-29 19:57:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1176,7 +1176,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs, ch
         FLAGNAMEENT *lookup = (FLAGNAMEENT *)hashfindLEN(flag1, strlen(flag1), &mudstate.flags_htab);
         if (lookup != NULL) 
         {
-            if (!stricmp(lookup->flagname, flag1))
+            if (!_stricmp(lookup->flagname, flag1))
             {
 	            notify(executor, "Error: You can't remove the present flag name from the hash table.");
             }
