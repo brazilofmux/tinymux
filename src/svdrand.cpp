@@ -1,7 +1,7 @@
 // svdrand.cpp -- Random Numbers, CLinearTimeAbsolute, and CLinearTimeDelta
 // modules
 //
-// $Id: svdrand.cpp,v 1.2 2000-04-21 18:07:39 sdennis Exp $
+// $Id: svdrand.cpp,v 1.3 2000-04-22 20:41:45 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
@@ -585,146 +585,149 @@ void GregorianFromFixed_Adjusted(int iFixedDay, int &iYear, int &iMonth, int &iD
     GregorianFromFixed(iFixedDay + 584389, iYear, iMonth, iDayOfYear, iDayOfMonth, iDayOfWeek);
 }
 
-/*
- * converts time string to a struct tm. Returns 1 on success, 0 on fail.
- * * Time string format is always 24 characters long, in format
- * * Ddd Mmm DD HH:MM:SS YYYY
- */
+// do_convtime()
+//
+// converts time string to time structure (fielded time). Returns 1 on
+// success, 0 on fail. Time string format is:
+//
+//     [Ddd] Mmm DD HH:MM:SS YYYY
+//
+// The initial Day-of-week token is optional.
+//
+int MonthTabHash[12] =
+{
+    0x004a414e, 0x00464542, 0x004d4152, 0x00415052,
+    0x004d4159, 0x004a554e, 0x004a554c, 0x00415547,
+    0x00534550, 0x004f4354, 0x004e4f56, 0x00444543
+};
 
-#define get_substr(buf, p) { \
-    p = (char *)strchr(buf, ' '); \
-    if (p) { \
-        *p++ = '\0'; \
-        while (*p == ' ') p++; \
-    } \
+BOOL ParseThreeLetters(const char **pp, int *piHash)
+{
+    *piHash = 0;
+
+    // Skip Initial spaces
+    //
+    const char *p = *pp;
+    while (*p == ' ')
+    {
+        p++;
+    }
+
+    // Parse space-seperate token.
+    //
+    const char *q = p;
+    int iHash = 0;
+    while (*q && *q != ' ')
+    {
+        if (!Tiny_IsAlpha[(unsigned char)*q])
+        {
+            return FALSE;
+        }
+        iHash = (iHash << 8) | Tiny_ToUpper[(unsigned char)*q];
+        q++;
+    }
+
+    // Must be exactly 3 letters long.
+    //
+    if (q - p != 3)
+    {
+        return FALSE;
+    }
+    p = q;
+
+    // Skip final spaces
+    //
+    while (*p == ' ')
+    {
+        p++;
+    }
+
+    *pp = p;
+    *piHash = iHash;
+    return TRUE;
 }
 
 int do_convtime(const char *str, FIELDEDTIME *ft)
 {
-    char *buf, *p, *q;
-    int i;
-    
     if (!str || !ft)
-        return 0;
-
-    while (*str == ' ')
-        str++;
-
-    // Make a temp copy of arg.
-    //
-    buf = p = alloc_sbuf("do_convtime");
-    safe_sb_str(str, buf, &p);
-    *p = '\0';
-
-    // Day-of-week or month.
-    //
-    get_substr(buf, p);
-    if (!p || strlen(buf) != 3)
     {
-        free_sbuf(buf);
         return 0;
     }
-    for (i = 0; (i < 12) && string_compare(monthtab[i], p); i++) ;
+
+    // Day-of-week OR month.
+    //
+    const char *p = str;
+    int i, iHash;
+    if (!ParseThreeLetters(&p, &iHash))
+    {
+        return 0;
+    }
+    for (i = 0; (i < 12) && iHash != MonthTabHash[i]; i++) ;
     if (i == 12)
     {
-        // Month
+        // The above three letters were probably the Day-Of-Week, the
+        // next three letters are required to be the month name.
         //
-        get_substr(p, q);
-        if (!q || strlen(p) != 3)
+        if (!ParseThreeLetters(&p, &iHash))
         {
-            free_sbuf(buf);
             return 0;
         }
-        for (i = 0; (i < 12) && string_compare(monthtab[i], p); i++) ;
+        for (i = 0; (i < 12) && iHash != MonthTabHash[i]; i++) ;
         if (i == 12)
         {
-            free_sbuf(buf);
             return 0;
         }
-        p = q;
     }
     ft->iMonth = i + 1; // January = 1, February = 2, etc.
     
     // Day of month.
     //
-    get_substr(p, q);
-    if (!q || (ft->iDayOfMonth = (unsigned short)Tiny_atol(p)) < 1 || ft->iDayOfMonth > daystab[i])
+    ft->iDayOfMonth = (unsigned short)Tiny_atol(p);
+    if (ft->iDayOfMonth < 1 || daystab[i] < ft->iDayOfMonth)
     {
-        free_sbuf(buf);
         return 0;
     }
+    while (*p && *p != ' ') p++;
+    while (*p == ' ') p++;
 
     // Hours
     //
-    p = (char *)strchr(q, ':');
-    if (!p)
+    ft->iHour = (unsigned short)Tiny_atol(p);
+    if (ft->iHour > 23 || (ft->iHour == 0 && *p != '0'))
     {
-        free_sbuf(buf);
         return 0;
     }
-    *p++ = '\0';
-    ft->iHour = (unsigned short)Tiny_atol(q);
-    if (ft->iHour > 23)
-    {
-        free_sbuf(buf);
-        return 0;
-    }
-    if (ft->iHour == 0)
-    {
-        while (Tiny_IsSpace[(unsigned char)*q])
-            q++;
-
-        if (*q != '0')
-        {
-            free_sbuf(buf);
-            return 0;
-        }
-    }
+    while (*p && *p != ':') p++;
+    if (*p == ':') p++;
+    while (*p == ' ') p++;
 
     // Minutes
     //
-    q = (char *)strchr(p, ':');
-    if (!q)
+    ft->iMinute = (unsigned short)Tiny_atol(p);
+    if (ft->iMinute > 59 || (ft->iMinute == 0 && *p != '0'))
     {
-        free_sbuf(buf);
         return 0;
     }
-    *q++ = '\0';
-    if ((ft->iMinute = (unsigned short)Tiny_atol(p)) > 59)
-    {
-        free_sbuf(buf);
-        return 0;
-    }
-    if (ft->iMinute == 0)
-    {
-        while (Tiny_IsSpace[(unsigned char)*p])
-            p++;
-
-        if (*p != '0')
-        {
-            free_sbuf(buf);
-            return 0;
-        }
-    }
+    while (*p && *p != ':') p++;
+    if (*p == ':') p++;
+    while (*p == ' ') p++;
 
     // Seconds
     //
-    get_substr(q, p);
-    if (!p || (ft->iSecond = (unsigned short)Tiny_atol(q)) > 59)
+    ft->iSecond = (unsigned short)Tiny_atol(p);
+    if (ft->iSecond > 59 || (ft->iSecond == 0 && *p != '0'))
     {
-        free_sbuf(buf);
         return 0;
     }
-    if (ft->iSecond == 0)
-    {
-        while (Tiny_IsSpace[(unsigned char)*q])
-            q++;
+    while (*p && *p != ' ') p++;
+    while (*p == ' ') p++;
 
-        if (*q != '0')
-        {
-            free_sbuf(buf);
-            return 0;
-        }
+    // Year
+    //
+    ft->iYear = (short)Tiny_atol(p);
+    if (ft->iYear == 0 && *p != '0')
+    {
+        return 0;
     }
 
     // Milliseconds, Microseconds and Nanoseconds
@@ -738,22 +741,6 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iDayOfYear = 0;
     ft->iDayOfWeek = 0;
 
-    // Year
-    //
-    get_substr(p, q);
-    ft->iYear = (short)Tiny_atol(p);
-    if (ft->iYear == 0)
-    {
-        while (Tiny_IsSpace[(unsigned char)*p])
-            p++;
-
-        if (*p != '0')
-        {
-            free_sbuf(buf);
-            return 0;
-        }
-    }
-    free_sbuf(buf);
     return isValidDate(ft->iYear, ft->iMonth, ft->iDayOfMonth);
 }
 
