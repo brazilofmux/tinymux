@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.12 2003-05-01 04:54:06 sdennis Exp $
+// $Id: svdhash.cpp,v 1.13 2003-07-26 00:26:25 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -13,8 +13,10 @@
 
 #define DO_COMMIT
 
-#define HF_SIZEOF_PAGE 24576
-#define HT_SIZEOF_PAGE 8192
+#define SECTOR_SIZE     512
+#define LBUF_BLOCKED   (SECTOR_SIZE*((LBUF_SIZE+SECTOR_SIZE-1)/SECTOR_SIZE))
+#define HT_SIZEOF_PAGE (1*LBUF_BLOCKED)
+#define HF_SIZEOF_PAGE (3*LBUF_BLOCKED)
 
 int cs_writes   = 0;    // total writes
 int cs_reads    = 0;    // total reads
