@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.63 2002-02-01 00:35:13 sdennis Exp $
+// $Id: stringutil.cpp,v 1.64 2002-02-02 10:36:08 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1800,11 +1800,10 @@ void safe_copy_str(const char *src, char *buff, char **bufp, int nSizeOfBuffer)
     if (src == NULL) return;
 
     char *tp = *bufp;
-    int left = (buff + nSizeOfBuffer) - tp;
-    while (*src && left > 0)
+    char *maxtp = buff + nSizeOfBuffer;
+    while (tp < maxtp && *src)
     {
         *tp++ = *src++;
-        left--;
     }
     *bufp = tp;
 }
@@ -1814,11 +1813,10 @@ void safe_copy_str_lbuf(const char *src, char *buff, char **bufp)
     if (src == NULL) return;
 
     char *tp = *bufp;
-    int left = (buff + LBUF_SIZE - 1) - tp;
-    while (*src && left > 0)
+    char *maxtp = buff + LBUF_SIZE - 1;
+    while (tp < maxtp && *src)
     {
         *tp++ = *src++;
-        left--;
     }
     *bufp = tp;
 }
