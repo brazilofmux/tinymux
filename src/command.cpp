@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.69 2002-04-14 18:11:13 sdennis Exp $
+// $Id: command.cpp,v 1.70 2002-04-14 18:14:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3100,15 +3100,15 @@ void do_list(dbref player, dbref cause, int extra, char *arg)
         char *s_sub_option = Tiny_StrTokParse(&tts);
         if (s_option)
         {
-           flagvalue = search_nametab(player, list_names, s_option);
+            flagvalue = search_nametab(player, list_names, s_option);
         }
         if (flagvalue == LIST_VATTRS)
         {
-           list_vattrs(player, s_sub_option, 1);
+            list_vattrs(player, s_sub_option, 1);
         }
         else
         {
-           display_nametab(player, list_names, "Unknown option.  Use one of:", 1);
+            display_nametab(player, list_names, "Unknown option.  Use one of:", 1);
         }
     }
 }
