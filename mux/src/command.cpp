@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.21 2003-03-09 14:38:20 sdennis Exp $
+// $Id: command.cpp,v 1.22 2003-03-13 15:57:57 jake Exp $
 //
 
 #include "copyright.h"
@@ -905,8 +905,8 @@ bool check_access(dbref player, int mask)
  * Idea taken from TinyMUSH3, code from RhostMUSH, ported by Jake Nelson.
  * Hooks processed:  before, after, ignore, permit, fail
  *****************************************************************************/
-bool process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
-                  char *s_uselock, ATTR *hk_attr, bool save_flg)
+bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_attr, 
+                  bool save_flg)
 {
     bool retval = true;
     if (hk_attr)
@@ -1109,7 +1109,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
     {
         s_uselock = hook_name(cmdp->cmdname, HOOK_BEFORE);
         hk_ap2 = atr_str(s_uselock);
-        process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, false);
+        process_hook(executor, mudconf.hook_obj, s_uselock, hk_ap2, false);
         free_sbuf(s_uselock);
     }
 
@@ -1406,7 +1406,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
     {
         s_uselock = hook_name(cmdp->cmdname, HOOK_AFTER);
         hk_ap2 = atr_str(s_uselock);
-        hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, false);
+        hk_retval = process_hook(executor, mudconf.hook_obj, s_uselock, hk_ap2, false);
         free_sbuf(s_uselock);
     }
     return;
@@ -1486,8 +1486,8 @@ int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
         {
             s_uselock = hook_name(cmdp->cmdname, HOOK_IGNORE);
             checkattr = atr_str(s_uselock);
-            bResult = process_hook(executor, caller, enactor, mudconf.hook_obj,
-                s_uselock, checkattr, true);
+            bResult = process_hook(executor, mudconf.hook_obj, s_uselock,
+                checkattr, true);
             free_sbuf(s_uselock);
             if (!bResult)
             {
@@ -1498,8 +1498,8 @@ int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
         {
             s_uselock = hook_name(cmdp->cmdname, HOOK_PERMIT);
             checkattr = atr_str(s_uselock);
-            bResult = process_hook(executor, caller, enactor, mudconf.hook_obj,
-                s_uselock, checkattr, true);
+            bResult = process_hook(executor, mudconf.hook_obj, s_uselock, 
+                checkattr, true);
             free_sbuf(s_uselock);
             if (!bResult)
             {
@@ -1510,16 +1510,14 @@ int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
     return 0;
 }
 
-void hook_fail(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
-               char *pCommand)
+void hook_fail(dbref executor, CMDENT *cmdp, char *pCommand)
 {
     if (  Good_obj(mudconf.hook_obj)
        && !Going(mudconf.hook_obj))
     {
         char *s_uselock = hook_name(cmdp->cmdname, HOOK_AFAIL);
         ATTR *hk_ap2 = atr_str(s_uselock);
-        process_hook(executor, caller, enactor, mudconf.hook_obj, 
-            s_uselock, hk_ap2, false);
+        process_hook(executor, mudconf.hook_obj, s_uselock, hk_ap2, false);
         free_sbuf(s_uselock);
     }
 }
@@ -1692,7 +1690,7 @@ char *process_command
             {
                 if (prefix_cmds[i]->hookmask & HOOK_AFAIL)
                 {
-                    hook_fail(executor, caller, enactor, prefix_cmds[i], pCommand);
+                    hook_fail(executor, prefix_cmds[i], pCommand);
                 }
                 else
                 {
@@ -1808,7 +1806,7 @@ char *process_command
                 {
                     if (goto_cmdp->hookmask & HOOK_AFAIL)
                     {
-                        hook_fail(executor, caller, enactor, goto_cmdp, "goto");
+                        hook_fail(executor, goto_cmdp, "goto");
                     }
                     else
                     {
@@ -1924,7 +1922,7 @@ char *process_command
             {
                 if (cmdp->hookmask & HOOK_AFAIL)
                 {
-                    hook_fail(executor, caller, enactor, cmdp, LowerCaseCommand);
+                    hook_fail(executor, cmdp, LowerCaseCommand);
                 }
                 else
                 {
@@ -2023,7 +2021,7 @@ char *process_command
                     {
                         if (cmdp->hookmask & HOOK_AFAIL)
                         {
-                            hook_fail(executor, caller, enactor, cmdp, "leave");
+                            hook_fail(executor, cmdp, "leave");
                         }
                         else
                         {
@@ -2079,7 +2077,7 @@ char *process_command
                         {
                             if (cmdp->hookmask & HOOK_AFAIL)
                             {
-                                hook_fail(executor, caller, enactor, cmdp, "enter");
+                                hook_fail(executor, cmdp, "enter");
                             }
                             else
                             {
