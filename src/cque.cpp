@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.20 2000-11-15 06:47:11 sdennis Exp $
+// $Id: cque.cpp,v 1.21 2001-01-26 18:35:45 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -40,7 +40,7 @@ CLinearTimeDelta GetProcessorUsage(void)
     }
 
     // Win9x - We can really only report the system time with a
-    // high-resolution timer. This doesn't seperate the time from
+    // high-resolution timer. This doesn't separate the time from
     // this process from other processes that are also running on
     // the same machine, but it's the best we can do on Win9x.
     //
