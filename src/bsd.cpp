@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.40 2001-12-03 17:49:06 sdennis Exp $
+// $Id: bsd.cpp,v 1.41 2001-12-03 18:53:08 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -814,7 +814,10 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
 #define CheckOutput(x)  FD_ISSET(x, &output_set)
 
     mudstate.debug_cmd = (char *)"< shovechars >";
-    MainGameSocket = make_socket(port);
+    for (int i = 0; i < nPorts; i++)
+    {
+        aPorts[i].socket = make_socket(aPorts[i].port);
+    }
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -857,9 +860,12 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
         FD_ZERO(&input_set);
         FD_ZERO(&output_set);
 
-        // Listen for new connections if there are free descriptors
+        // Listen for new connections.
         //
-        FD_SET(MainGameSocket, &input_set);
+        for (i = 0; i < nPorts; i++)
+        {
+            FD_SET(aPorts[i].socket, &input_set);
+        }
 
         // Mark sockets that we want to test for change in status.
         //
@@ -894,17 +900,20 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
 
         // Check for new connection requests.
         //
-        if (CheckInput(MainGameSocket))
+        for (i = 0; i < nPorts; i++)
         {
-            newd = new_connection(port, MainGameSocket);
-            if (!newd)
+            if (CheckInput(aPorts[i].socket))
             {
-                if (  errno
-                   && errno != EINTR
-                   && errno != EMFILE
-                   && errno != ENFILE)
+                newd = new_connection(aPorts+i);
+                if (!newd)
                 {
-                    log_perror("NET", "FAIL", NULL, "new_connection");
+                    if (  errno
+                       && errno != EINTR
+                       && errno != EMFILE
+                       && errno != ENFILE)
+                    {
+                        log_perror("NET", "FAIL", NULL, "new_connection");
+                    }
                 }
             }
         }
@@ -1002,10 +1011,13 @@ DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
     return 1;
 }
 
-void shovecharsNT(int port)
+void shovecharsNT(int nPorts, PortInfo aPorts[])
 {
     mudstate.debug_cmd = (char *)"< shovechars >";
-    MainGameSocket = make_socket(port);
+    for (int i = 0; i < nPorts; i++)
+    {
+        aPorts[i].socket = make_socket(aPorts[i].port);
+    }
 
     CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
 

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.47 2001-12-03 17:49:06 sdennis Exp $
+// $Id: game.cpp,v 1.48 2001-12-03 18:53:09 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2057,7 +2057,8 @@ int DCL_CDECL main(int argc, char *argv[])
     hashreset(&mudstate.wiznews_htab);
     hashreset(&mudstate.desc_htab);
 
-    for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+    int i;
+    for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         mudstate.global_regs[i] = alloc_lbuf("main.global_reg");
         mudstate.glob_reg_len[i] = 0;
@@ -2093,7 +2094,7 @@ int DCL_CDECL main(int argc, char *argv[])
     // @restart.
     //
     nMainGamePorts = mudconf.ports.n;
-    for (int i = 0; i < nMainGamePorts; i++)
+    for (i = 0; i < nMainGamePorts; i++)
     {
         aMainGamePorts[i].port = mudconf.ports.pi[i];
     }
@@ -2101,12 +2102,12 @@ int DCL_CDECL main(int argc, char *argv[])
     if (platform == VER_PLATFORM_WIN32_NT)
     {
         process_output = process_outputNT;
-        shovecharsNT(mudconf.ports.pi[0]);
+        shovecharsNT(nMainGamePorts, aMainGamePorts);
     }
     else
     {
         process_output = process_output9x;
-        shovechars9x(mudconf.ports.pi[0]);
+        shovechars9x(nMainGamePorts, aMainGamePorts);
     }
 #else // WIN32
     shovechars(nMainGamePorts, aMainGamePorts);
