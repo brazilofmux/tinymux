@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.48 2003-01-20 05:26:01 sdennis Exp $
+// $Id: predicates.cpp,v 1.49 2003-01-23 07:19:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -442,7 +442,7 @@ char *MakeCanonicalExitName(const char *pName, int *pnName, BOOL *pbValid)
             // semi-colon.
             //
             int vw;
-            int nN = ANSI_TruncateToField(pName, sizeof(Out), Out, n, &vw,
+            ANSI_TruncateToField(pName, sizeof(Out), Out, n, &vw,
                 ANSI_ENDGOAL_NORMAL);
 
             // vw should always be equal to n, but we'll just make sure.
