@@ -101,6 +101,7 @@ Feature Additions:
  -- Jake added itext() and inum() functions. Equivalent to ## and #@, for multiple
     levels of iter(). Idea from PennMUSH.
  -- Added CHR() from PennMUSH.
+ -- Added ORD() from PennMUSH.
 
 Bug Fixes:
 ~~~~~~~~~
