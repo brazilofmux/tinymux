@@ -1747,15 +1747,16 @@ CONFIG PARAMETERS
 & CONFIG PARAMETERS2
 CONFIG PARAMETERS (continued)
 
-  guests_channel  have_comsys  have_mailer  have_zones  helpfile hook_cmd
-  hook_obj  hostnames  idle_interval  idle_timeout  idle_wiz_dark  include
-  indent_desc  initial_size  input_database  kill_guarantee_cost
-  kill_max_cost  kill_min_cost  lag_limit  lag_maximum  link_cost  list_access
-  lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
-  look_obey_terse  machine_command_cost  mail_database  mail_expiration
-  mail_per_hour  master_room   match_own_commands  max_cache_size  max_players
-  min_guests  money_name_plural  money_name_singular  motd_file  motd_message
-  mud_name  newuser_file  nositemon_site  notify_recursion_limit  number_guests
+  guests_channel  guests_channel_alias  have_comsys  have_mailer  have_zones
+  helpfile hook_cmd  hook_obj  hostnames  idle_interval  idle_timeout
+  idle_wiz_dark  include  indent_desc  initial_size  input_database
+  kill_guarantee_cost  kill_max_cost  kill_min_cost  lag_limit  lag_maximum
+  link_cost  list_access  lock_recursion_limit  log  log_options
+  logout_cmd_access  logout_cmd_alias  look_obey_terse  machine_command_cost
+  mail_database  mail_expiration  mail_per_hour  master_room
+  match_own_commands  max_cache_size  max_players  min_guests
+  money_name_plural  money_name_singular  motd_file  motd_message  mud_name
+  newuser_file  nositemon_site  notify_recursion_limit  number_guests
   open_cost  output_database  output_limit  page_cost  paranoid_allocate
   parent_recursion_limit  paycheck  pemit_any_object  pemit_far_players
   permit_site  player_flags  player_listen  player_match_own_commands
@@ -1766,13 +1767,13 @@ CONFIG PARAMETERS (continued)
   read_remote_name  register_create_file  register_site  reset_players
   retry_limit  robot_cost  robot_flags  robot_speech  room_flags  room_quota
   run_startup  sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords
-  search_cost  see_owned_dark  signal_action  site_chars  space_compress
 
 { 'wizhelp config parameters3' for more }
 
 & CONFIG PARAMETERS3
 CONFIG PARAMETERS (continued)
 
+  search_cost  see_owned_dark  signal_action  site_chars  space_compress
   stack_limit  starting_money  starting_quota  status_file  suspect_site
   sweep_dark  switch_default_all  terse_shows_contents  terse_shows_exits
   terse_shows_move_messages  thing_flags  thing_quota  timeslice
@@ -2449,6 +2450,20 @@ GUESTS_CHANNEL
   can only be changed via the configuration file.
 
   Related Topics: public_channel.
+
+& GUESTS_CHANNEL_ALIAS
+GUESTS_CHANNEL_ALIAS
+
+  CONFIG PARAMETER: guests_channel_alias <name>
+  DEFAULT: g
+
+  Specifies the name of the channel alias that guests are assigned when they
+  connect.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
+  Related Topics: guests_channel_alias, public_channel
 
 & GUEST_CHAR_NUM
 GUEST_CHAR_NUM

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.48 2004-06-10 15:39:34 sdennis Exp $
+// $Id: conf.cpp,v 1.49 2004-07-08 19:18:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -93,6 +93,7 @@ void cf_init(void)
     mudconf.fixed_tel_msg[0] = '\0';
     strcpy(mudconf.public_channel, "Public");
     strcpy(mudconf.guests_channel, "Guests");
+    strcpy(mudconf.guests_channel_alias, "g");
     strcpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>");
     mudconf.art_rules = NULL;
     mudconf.indent_desc = false;
@@ -1710,6 +1711,7 @@ CONF conftable[] =
     {"guest_prefix",              cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guest_prefix,     NULL,              32},
     {"guest_site",                cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,         H_GUEST},
     {"guests_channel",            cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guests_channel,   NULL,              32},
+    {"guests_channel_alias",      cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guests_channel_alias, NULL,          32},
     {"have_comsys",               cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_comsys,     NULL,               0},
     {"have_mailer",               cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_mailer,     NULL,               0},
     {"have_zones",                cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_zones,      NULL,               0},

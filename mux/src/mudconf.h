@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.21 2004-06-01 01:05:46 sdennis Exp $
+// $Id: mudconf.h,v 1.22 2004-07-08 19:18:00 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -164,6 +164,7 @@ struct confdata
 
     char    guest_prefix[32];   /* Prefix for the guest char's name */
     char    guests_channel[32]; /* Name of guests channel */
+    char    guests_channel_alias[32]; /* Name of guests channel alias */
     char    many_coins[32];     /* name of many coins (ie. "pennies") */
     char    mud_name[32];       /* Name of the mud */
     char    one_coin[32];       /* name of one coin (ie. "penny") */
