@@ -7030,6 +7030,35 @@ TIME()
 
   Related Topics: convsecs(), convtime(), secs().
 
+& TIMEFMT()
+TIMEFMT()
+
+  FUNCTION: timefmt(<format>[, <secs>])
+
+  If <secs> isn't given, the current time is used. Escape sequences
+  in <format> are expanded out.
+
+  All escape sequences start with a $. Any unrecognized codes or other
+  text will be returned unchanged.
+
+    $a - Abbreviated weekday name  $p - AM/PM  ($P may also work)
+    $A - Full weekday name         $S - Seconds after the minute
+    $b - Abbreviated month name
+    $B - Full month name           $w - Day of the week. 0 = Sunday
+    $c - Date and time
+    $d - Day of the month          $x - Date
+    $H - Hour of the 24-hour day   $X - Time
+    $I - Hour of the 12-hour day   $y - Two-digit year
+    $j - Day of the year           $Y - Four-digit year
+    $m - Month of the year         $z - Time zone offset.
+    $M - Minutes after the hour    $$ - $ character.
+
+  Example:
+    > think timefmt($A\, the $dth day of $B.)
+    Monday, the 17th day of July.
+
+  Related Topics: convtime(), convsecs().
+
 & RAND()
 RAND()
 
