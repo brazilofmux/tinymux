@@ -1,17 +1,22 @@
-TinyMUX 2.3: INSTALL
-Last Update: January 2003
+TinyMUX 2.4: INSTALL
+Last Update: September 2004
 
-Please note that there are two sets of instructions included in this 
-file.  Please skip to 'Instructions for Existing Games' for how to 
-upgrade your server or to compile in preparation for moving an existing 
+Please note that there are two sets of instructions included in this
+file.  Please skip to 'Instructions for Existing Games' for how to
+upgrade your server or to compile in preparation for moving an existing
 game.
 
 
 Instructions for New Installations:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1.  cd src/ to the source directory. Run './configure'.  This will 
-    customize autoconf.h and Makefile for your system.
+1.  cd src/ to the source directory.  Run './configure'.
+
+    This will customize autoconf.h and Makefile for your system.  Add
+    the option '--enable-wodrealms' to enable WOD Realms (See
+    docs/REALMS).  Add '--enable-memorybased' to enable Memory-Based
+    database handling (as opposed to the default disk-based database
+    handling.  See docs/MEMORY).
     
 2.  Edit the Configuration section of the Makefile.  This is usually 
     not needed. Most likely, all you will need to change are any C++ 
@@ -20,11 +25,6 @@ Instructions for New Installations:
     system. There may also be some #defines in config.h that you may want 
     to change, but in general, the defaults should not be changed.
 
-----> Within the Makefile, you can also enable:
-      - Memory based database handling (as opposed to the default disk
-            based handling. (see docs/MEMORY)
-      - Enable WOD REALMS. (see docs/REALMS)
-          
 3.  Run make depend, then make.  This will produce netmux, slave,
     and dbconvert.
     
@@ -80,8 +80,13 @@ before you delete your old distribution.  We cannot stress enough to
 you the importance of protecting your data throughout any conversion 
 or upgrade.]
 
-1.  cd src/ to the source directory. Run './configure'.  This will 
-    customize autoconf.h and Makefile for your system.
+1.  cd src/ to the source directory.  Run './configure'.
+
+    This will customize autoconf.h and Makefile for your system.  Add
+    the option '--enable-wodrealms' to enable WOD Realms (See
+    docs/REALMS).  Add '--enable-memorybased' to enable Memory-Based
+    database handling (as opposed to the default disk-based database
+    handling.  See docs/MEMORY).
     
 2.  Edit the Configuration section of the Makefile.  This is usually 
     not needed. Most likely, all you will need to change are any C++ 
@@ -90,11 +95,6 @@ or upgrade.]
     system. There may also be some #defines in config.h that you may want 
     to change, but in general, the defaults should not be changed.
 
-  --> Within the Makefile, you can also enable:
-      - Memory based database handling (as opposed to the default disk
-            based handling. (see docs/MEMORY)
-      - Enable WOD REALMS. (see docs/REALMS)
-          
 3.  Run make depend, then make.  This will produce netmux, slave,
     and dbconvert.
     
