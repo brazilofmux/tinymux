@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.59 2001-06-29 07:28:01 sdennis Exp $
+// $Id: functions.cpp,v 1.60 2001-06-29 19:24:13 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2226,7 +2226,14 @@ void internalPlayerFind
     }
     else
     {
-        thing = lookup_player(player, name, 1);
+        char *nptr = name;
+        if (*nptr == '*')
+        {
+            // Start with the second character in the name string.
+            //
+            nptr++;
+        }
+        thing = lookup_player(player, nptr, 1);
         if (thing == NOTHING)
         {
             safe_str("#-1 NO MATCH", buff, bufc);
