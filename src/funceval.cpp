@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.104 2002-10-13 19:31:16 sdennis Exp $
+// $Id: funceval.cpp,v 1.105 2002-10-15 13:44:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -100,32 +100,43 @@ FUNCTION(fun_beep)
 //
 FUNCTION(fun_ansi)
 {
-    extern const char *ColorTable[256];
+    extern char *ColorTable[256];
 
-    char *s = fargs[0];
-    char *bufc_save = *bufc;
-
-    while (*s)
+    char aTemp[LBUF_SIZE];
+    size_t nTemp = LBUF_SIZE-1;
+    char *pTemp = aTemp;
+ 
+    const char *s = fargs[0];
+    while (*s) 
     {
-        const char *pColor = ColorTable[(unsigned char)*s];
+        char *pColor = ColorTable[*s];
         if (pColor)
         {
-            safe_str(pColor, buff, bufc);
+            size_t n = strlen(pColor);
+            if (n < nTemp)
+            {
+                memcpy(pTemp, pColor, n);
+                pTemp += n;
+                nTemp -= n;
+            }
+            else
+            {
+                break;
+            }
         }
         s++;
     }
-    safe_str(fargs[1], buff, bufc);
-    **bufc = '\0';
+    safe_str(fargs[1], aTemp, &pTemp);
+    *pTemp = '\0';
+    nTemp = pTemp - aTemp;
 
     // ANSI_NORMAL is guaranteed to be written on the end.
     //
-    char Temp[LBUF_SIZE];
     int nVisualWidth;
     int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    int nLen = ANSI_TruncateToField(bufc_save, nBufferAvailable, Temp, sizeof(Temp),
-        &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-    memcpy(bufc_save, Temp, nLen);
-    *bufc = bufc_save + nLen;
+    int nLen = ANSI_TruncateToField(aTemp, nBufferAvailable, *bufc,
+        nBufferAvailable, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+    *bufc += nLen;
 }
 
 FUNCTION(fun_zone)
