@@ -1,10 +1,10 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.3 2003-02-05 01:23:41 sdennis Exp $ */
+/* $Id: copyright.h,v 1.4 2004-04-13 06:34:22 sdennis Exp $ */
 
 /*
- * MUX Source Code (version 2.0 through 2.3).
- * Copyright (C) 1999-2003 by Solid Vertical Domains, Ltd.
+ * MUX Source Code (version 2.0 through 2.4).
+ * Copyright (C) 1999-2004 by Solid Vertical Domains, Ltd.
  * Contact: Stephen Dennis
  *
  * TinyMUX Source Code (versions 1.0 through 1.6)

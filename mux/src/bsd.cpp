@@ -1,9 +1,9 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.26 2003-08-14 19:05:20 sdennis Exp $
+// $Id: bsd.cpp,v 1.27 2004-04-13 06:34:22 sdennis Exp $
 //
-// MUX 2.3
-// Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
+// MUX 2.4
+// Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved.  
 //
 #include "copyright.h"
