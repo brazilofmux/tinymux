@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.7 2000-08-28 07:52:08 sdennis Exp $
+// $Id: wiz.cpp,v 1.8 2000-09-26 06:50:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -128,7 +128,14 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
             return;
         }
     }
-    if (Has_contents(destination))
+    if (isGarbage(destination))
+    {
+        // @Teleporting into garbage is never permitted.
+        //
+        notify_quiet(player, "Bad destination.");
+        return;
+    }
+    else if (Has_contents(destination))
     {
         // You must control the destination, or it must be a JUMP_OK
         // room where you pass its TELEPORT lock.
