@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.22 2001-11-20 05:17:56 sdennis Exp $
+// $Id: object.cpp,v 1.23 2001-11-28 06:35:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -212,7 +212,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
 {
     dbref obj, owner;
     int quota, value, self_owned, require_inherit;
-    FLAG f1, f2, f3;
+    FLAGSET f;
     char *buff;
     const char *tname;
 
@@ -231,9 +231,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
 
         cost = mudconf.digcost;
         quota = mudconf.room_quota;
-        f1 = mudconf.room_flags.word1;
-        f2 = mudconf.room_flags.word2;
-        f3 = mudconf.room_flags.word3;
+        f = mudconf.room_flags;
         pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
         tname = "a room";
         break;
@@ -245,9 +243,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
         if (cost > mudconf.createmax)
             cost = mudconf.createmax;
         quota = mudconf.thing_quota;
-        f1 = mudconf.thing_flags.word1;
-        f2 = mudconf.thing_flags.word2;
-        f3 = mudconf.thing_flags.word3;
+        f = mudconf.thing_flags;
         value = OBJECT_ENDOWMENT(cost);
         pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
         tname = "a thing";
@@ -257,9 +253,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
 
         cost = mudconf.opencost;
         quota = mudconf.exit_quota;
-        f1 = mudconf.exit_flags.word1;
-        f2 = mudconf.exit_flags.word2;
-        f3 = mudconf.exit_flags.word3;
+        f = mudconf.exit_flags;
         pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
         tname = "an exit";
         break;
@@ -270,9 +264,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
         {
             cost = mudconf.robotcost;
             quota = mudconf.player_quota;
-            f1 = mudconf.robot_flags.word1;
-            f2 = mudconf.robot_flags.word2;
-            f3 = mudconf.robot_flags.word3;
+            f = mudconf.robot_flags;
             value = 0;
             tname = "a robot";
             require_inherit = 1;
@@ -281,9 +273,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
         {
             cost = 0;
             quota = 0;
-            f1 = mudconf.player_flags.word1;
-            f2 = mudconf.player_flags.word2;
-            f3 = mudconf.player_flags.word3;
+            f = mudconf.player_flags;
             value = mudconf.paystart;
             quota = mudconf.start_quota;
             self_owned = 1;
@@ -406,9 +396,8 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
     {
         s_Zone(obj, NOTHING);
     }
-    s_Flags(obj, objtype | f1);
-    s_Flags2(obj, f2);
-    s_Flags3(obj, f3);
+    f.word[FLAG_WORD1] |= objtype;
+    db[obj].fs = f;
     s_Owner(obj, (self_owned ? obj : owner));
     s_Pennies(obj, value);
     Unmark(obj);
@@ -551,9 +540,9 @@ void destroy_obj(dbref obj)
 #endif // STANDALONE
     atr_free(obj);
     s_Name(obj, NULL);
-    s_Flags(obj, (TYPE_GARBAGE | GOING));
-    s_Flags2(obj, 0);
-    s_Flags3(obj, 0);
+    s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
+    s_Flags(obj, FLAG_WORD2, 0);
+    s_Flags(obj, FLAG_WORD3, 0);
     s_Powers(obj, 0);
     s_Powers2(obj, 0);
     s_Location(obj, NOTHING);
@@ -735,7 +724,7 @@ static void NDECL(purge_going)
                 }
                 log_text("GOING object doesn't remember it's destroyer. GOING reset.");
                 ENDLOG;
-                s_Flags(i, Flags(i) & ~(GOING));
+                db[i].fs.word[FLAG_WORD1] &= ~GOING;
             }
             else
             {

@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.8 2001-11-20 05:17:55 sdennis Exp $
+// $Id: htab.cpp,v 1.9 2001-11-28 06:35:54 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -18,13 +18,6 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-
-#include "db.h"
-#include "htab.h"
-#include "alloc.h"
-
-#include "mudconf.h"
-#include "svdhash.h"
 
 /*
  * ---------------------------------------------------------------------------

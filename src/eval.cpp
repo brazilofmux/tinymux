@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.27 2001-11-20 05:17:54 sdennis Exp $
+// $Id: eval.cpp,v 1.28 2001-11-28 06:35:53 sdennis Exp $
 //
 
 // MUX 2.1
@@ -20,10 +20,8 @@
 #include "config.h"
 #include "externs.h"
 
-#include "db.h"
 #include "attrs.h"
 #include "functions.h"
-#include "alloc.h"
 #include "ansi.h"
 
 //-----------------------------------------------------------------------------

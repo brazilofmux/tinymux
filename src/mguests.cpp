@@ -1,6 +1,6 @@
 // mguests.cpp -- Multiguest code originally ported from DarkZone.
 //
-// $Id: mguests.cpp,v 1.7 2001-11-20 05:17:55 sdennis Exp $
+// $Id: mguests.cpp,v 1.8 2001-11-28 06:35:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -47,7 +47,7 @@ dbref create_guest(char *name, char *password)
     //
     s_Guest(player);
     move_object(player, mudconf.start_room);
-    s_Flags(player, Flags(player) & ~WIZARD);
+    db[player].fs.word[FLAG_WORD1] &= ~WIZARD;
     s_Pennies(player, Pennies(mudconf.guest_char));
     s_Zone(player, Zone(mudconf.guest_char));
     s_Parent(player, Parent(mudconf.guest_char));

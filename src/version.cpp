@@ -1,6 +1,6 @@
 // version.cpp -- Version information.
 //
-// $Id: version.cpp,v 1.21 2001-11-18 18:12:26 sdennis Exp $
+// $Id: version.cpp,v 1.22 2001-11-28 06:35:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,9 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "db.h"
-#include "mudconf.h"
-#include "alloc.h"
 #include "_build.h"
 
 void do_version(dbref player, dbref cause, int extra)

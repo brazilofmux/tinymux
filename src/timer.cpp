@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.8 2001-11-18 20:59:54 sdennis Exp $
+// $Id: timer.cpp,v 1.9 2001-11-28 06:35:55 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -19,12 +19,8 @@
 
 #include <signal.h>
 
-#include "mudconf.h"
-#include "db.h"
 #include "interface.h"
-#include "match.h"
 #include "command.h"
-#include "comsys.h"
 
 extern void NDECL(pool_reset);
 extern void FDECL(fork_and_dump, (int key));

@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.21 2001-11-20 05:17:54 sdennis Exp $
+// $Id: create.cpp,v 1.22 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,12 +8,8 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mudconf.h"
-#include "db.h"
-#include "interface.h"
 #include "match.h"
 #include "command.h"
-#include "alloc.h"
 #include "attrs.h"
 #include "powers.h"
 
@@ -205,7 +201,8 @@ static void link_exit(dbref player, dbref exit, dbref dest)
         giveto(Owner(exit), mudconf.opencost);
         add_quota(Owner(exit), quot);
         s_Owner(exit, Owner(player));
-        s_Flags(exit, (Flags(exit) & ~(INHERIT | WIZARD)) | HALT);
+        db[exit].fs.word[FLAG_WORD1] &= ~(INHERIT | WIZARD);
+        db[exit].fs.word[FLAG_WORD1] |= HALT;
     }
 
     // Link has been validated and paid for, do it and tell the player
@@ -643,8 +640,10 @@ void do_clone
     //
     rmv_flags = WIZARD;
     if (!(key & CLONE_INHERIT) || (!Inherits(player)))
+    {
         rmv_flags |= INHERIT | IMMORTAL;
-    s_Flags(clone, Flags(thing) & ~rmv_flags);
+    }
+    db[clone].fs.word[FLAG_WORD1] &= ~rmv_flags;
 
     // Tell creator about it
     //

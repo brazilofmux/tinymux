@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.11 2001-11-20 05:17:55 sdennis Exp $
+// $Id: help.cpp,v 1.12 2001-11-28 06:35:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -10,12 +10,7 @@
 
 #include <fcntl.h>
 
-#include "mudconf.h"
-#include "db.h"
-#include "interface.h"
 #include "help.h"
-#include "htab.h"
-#include "alloc.h"
 
 /*
  * Pointers to this struct is what gets stored in the help_htab's

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.36 2001-11-20 05:17:53 sdennis Exp $
+// $Id: bsd.cpp,v 1.37 2001-11-28 06:35:53 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -28,17 +28,10 @@
 
 #include <signal.h>
 
-#include "mudconf.h"
-#include "db.h"
 #include "file_c.h"
-#include "interface.h"
-#include "flags.h"
-#include "powers.h"
-#include "alloc.h"
 #include "command.h"
 #include "slave.h"
 #include "attrs.h"
-#include "svdreport.h"
 
 #ifdef SOLARIS
 extern const int _sys_nsig;
@@ -920,7 +913,7 @@ void shovechars9x(int port)
                 if (d->flags & DS_AUTODARK)
                 {
                     d->flags &= ~DS_AUTODARK;
-                    s_Flags(d->player, Flags(d->player) & ~DARK);
+                    db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
                 }
 
                 // Process received data
@@ -1567,7 +1560,7 @@ void shutdownsock(DESC *d, int reason)
         CLinearTimeDelta ltd = ltaNow - d->connected_at;
         int Seconds = ltd.ReturnSeconds();
         buff = alloc_lbuf("shutdownsock.LOG.accnt");
-        buff2 = decode_flags(GOD, Flags(d->player), Flags2(d->player), Flags3(d->player));
+        buff2 = decode_flags(GOD, &(db[d->player].fs));
         sprintf(buff, "%d %s %d %d %d %d [%s] <%s> %s", d->player, buff2, d->command_count,
                 Seconds, Location(d->player), Pennies(d->player), d->addr, disc_reasons[reason],
                 Name(d->player));
@@ -3140,7 +3133,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             if (d->flags & DS_AUTODARK)
             {
                 d->flags &= ~DS_AUTODARK;
-                s_Flags(d->player, Flags(d->player) & ~DARK);
+                db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
             }
 
             // process the player's input

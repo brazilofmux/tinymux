@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.16 2001-11-20 05:17:53 sdennis Exp $
+// $Id: attrcache.cpp,v 1.17 2001-11-28 06:35:52 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -15,8 +15,6 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-
-#include "mudconf.h"
 
 CHashFile hfAttributeFile;
 

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.44 2001-11-19 19:43:26 sdennis Exp $
+// $Id: game.cpp,v 1.45 2001-11-28 06:35:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -10,18 +10,10 @@
 #include <sys/stat.h>
 #include <signal.h>
 
-#include "mudconf.h"
 #include "file_c.h"
-#include "db.h"
-#include "interface.h"
-#include "match.h"
-#include "flags.h"
 #include "powers.h"
 #include "attrs.h"
-#include "alloc.h"
-#include "slave.h"
 #include "comsys.h"
-#include "vattr.h"
 #include "muxcli.h"
 
 #ifdef RADIX_COMPRESSION

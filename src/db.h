@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.13 2001-11-19 19:42:18 sdennis Exp $
+// $Id: db.h,v 1.14 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -152,9 +152,7 @@ struct object
 
     dbref   zone;       /* Whatever the object is zoned to.*/
 
-    FLAG    flags;      /* ALL: Flags set on the object */
-    FLAG    flags2;     /* ALL: even more flags */
-    FLAG    flags3;     /* ALL: yet _more_ flags */
+    FLAGSET fs;         // ALL: Flags set on the object.
 
     POWER   powers;     /* ALL: Powers on object */
     POWER   powers2;    /* ALL: even more powers */
@@ -184,9 +182,9 @@ extern NAME *names;
 #define Link(t)         db[t].link
 #define Owner(t)        db[t].owner
 #define Parent(t)       db[t].parent
-#define Flags(t)        db[t].flags
-#define Flags2(t)       db[t].flags2
-#define Flags3(t)       db[t].flags3
+#define Flags(t)        db[t].fs.word[FLAG_WORD1]
+#define Flags2(t)       db[t].fs.word[FLAG_WORD2]
+#define Flags3(t)       db[t].fs.word[FLAG_WORD3]
 #define Powers(t)       db[t].powers
 #define Powers2(t)      db[t].powers2
 #define Stack(t)        db[t].stackhead
@@ -210,9 +208,7 @@ extern NAME *names;
 #define s_Link(t,n)         db[t].link = (n)
 #define s_Owner(t,n)        db[t].owner = (n)
 #define s_Parent(t,n)       db[t].parent = (n)
-#define s_Flags(t,n)        db[t].flags = (n)
-#define s_Flags2(t,n)       db[t].flags2 = (n)
-#define s_Flags3(t,n)       db[t].flags3 = (n)
+#define s_Flags(t,f,n)      db[t].fs.word[f] = (n)
 #define s_Powers(t,n)       db[t].powers = (n)
 #define s_Powers2(t,n)      db[t].powers2 = (n)
 #define s_Stack(t,n)        db[t].stackhead = (n)

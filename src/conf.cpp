@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.51 2001-11-20 05:17:54 sdennis Exp $
+// $Id: conf.cpp,v 1.52 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,16 +8,9 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mudconf.h"
-#include "db.h"
 #include "interface.h"
 #include "command.h"
-#include "htab.h"
-#include "alloc.h"
 #include "attrs.h"
-#include "flags.h"
-#include "powers.h"
-#include "match.h"
 
 // ---------------------------------------------------------------------------
 // CONFPARM: Data used to find fields in CONFDATA.
@@ -203,21 +196,17 @@ void NDECL(cf_init)
     mudconf.start_home = NOTHING;
     mudconf.default_home = NOTHING;
     mudconf.master_room = NOTHING;
-    mudconf.player_flags.word1 = 0;
-    mudconf.player_flags.word2 = 0;
-    mudconf.player_flags.word3 = 0;
-    mudconf.room_flags.word1 = 0;
-    mudconf.room_flags.word2 = 0;
-    mudconf.room_flags.word3 = 0;
-    mudconf.exit_flags.word1 = 0;
-    mudconf.exit_flags.word2 = 0;
-    mudconf.exit_flags.word3 = 0;
-    mudconf.thing_flags.word1 = 0;
-    mudconf.thing_flags.word2 = 0;
-    mudconf.thing_flags.word3 = 0;
-    mudconf.robot_flags.word1 = ROBOT;
-    mudconf.robot_flags.word2 = 0;
-    mudconf.robot_flags.word3 = 0;
+
+    for (i = FLAG_WORD1; i <= FLAG_WORD3; i++)
+    {
+        mudconf.player_flags.word[i] = 0;
+        mudconf.room_flags.word[i] = 0;
+        mudconf.exit_flags.word[i]= 0;
+        mudconf.thing_flags.word[i] = 0;
+        mudconf.robot_flags.word[i] = 0;
+    }
+    mudconf.robot_flags.word[FLAG_WORD1] |= ROBOT;
+
     mudconf.vattr_flags = AF_ODARK;
     strcpy(mudconf.mud_name, "MUX");
     strcpy(mudconf.one_coin, "penny");
@@ -806,16 +795,12 @@ CF_HAND(cf_set_flags)
             //
             if (success == 0)
             {
-                (*fset).word1 = 0;
-                (*fset).word2 = 0;
-                (*fset).word3 = 0;
+                for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
+                {
+                    (*fset).word[i] = 0;
+                }
             }
-            if (fp->flagflag & FLAG_WORD3)
-                (*fset).word3 |= fp->flagvalue;
-            else if (fp->flagflag & FLAG_WORD2)
-                (*fset).word2 |= fp->flagvalue;
-            else
-                (*fset).word1 |= fp->flagvalue;
+            (*fset).word[fp->flagflag] |= fp->flagvalue;
             success++;
         }
         else
@@ -830,9 +815,10 @@ CF_HAND(cf_set_flags)
     }
     if ((success == 0) && (failure == 0))
     {
-        (*fset).word1 = 0;
-        (*fset).word2 = 0;
-        (*fset).word3 = 0;
+        for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
+        {
+            (*fset).word[i] = 0;
+        }
         return 0;
     }
     if (success > 0)

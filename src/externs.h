@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.68 2001-11-19 19:42:56 sdennis Exp $
+// $Id: externs.h,v 1.69 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -9,6 +9,7 @@
 #include "svdrand.h"
 #include "timeutil.h"
 #include "svdhash.h"
+#include "flags.h"
 #include "db.h"
 #include "mudconf.h"
 #include "regexp.h"

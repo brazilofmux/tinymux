@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.13 2001-11-24 05:21:57 sdennis Exp $
+// $Id: log.cpp,v 1.14 2001-11-28 06:35:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9,14 +9,6 @@
 #include "externs.h"
 
 #include <sys/types.h>
-
-#include "db.h"
-#include "mudconf.h"
-#include "flags.h"
-#include "powers.h"
-#include "alloc.h"
-#include "htab.h"
-#include "ansi.h"
 
 #ifndef STANDALONE
 

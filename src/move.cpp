@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.11 2001-11-20 05:17:55 sdennis Exp $
+// $Id: move.cpp,v 1.12 2001-11-28 06:35:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,8 +8,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mudconf.h"
-#include "db.h"
 #include "interface.h"
 #include "match.h"
 #include "attrs.h"
@@ -30,11 +28,11 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, int canhear,
     if ((loc == NOTHING) || (loc == dest))
         return;
 
-
     if (dest == HOME)
         dest = Home(thing);
 
-    if (Html(thing)) {
+    if (Html(thing))
+    {
         notify_html(thing, "<xch_page clear=links>");
     }
 

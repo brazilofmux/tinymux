@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.47 2001-11-20 05:17:55 sdennis Exp $
+// $Id: netcommon.cpp,v 1.48 2001-11-28 06:35:54 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -634,7 +634,7 @@ static void announce_connect(dbref player, DESC *d)
 
     // Reset vacation flag.
     //
-    s_Flags2(player, Flags2(player) & ~VACATION);
+    s_Flags(player, FLAG_WORD2, Flags2(player) & ~VACATION);
 
     char *pRoomAnnounceFmt;
     char *pMonitorAnnounceFmt;
@@ -879,13 +879,13 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         free_lbuf(buf);
         if (d->flags & DS_AUTODARK)
         {
-            s_Flags(d->player, Flags(d->player) & ~DARK);
+            s_Flags(d->player, FLAG_WORD1, Flags(d->player) & ~DARK);
             d->flags &= ~DS_AUTODARK;
         }
 
         if (Guest(player))
         {
-            s_Flags(player, Flags(player) | DARK);
+            db[player].fs.word[FLAG_WORD1] |= DARK;
         }
     }
     else
@@ -1091,7 +1091,7 @@ void check_idle(void)
                 && (ltdIdle.ReturnSeconds() > mudconf.idle_timeout)
                 && Can_Idle(d->player) && !Dark(d->player))
             {
-                s_Flags(d->player, Flags(d->player) | DARK);
+                db[d->player].fs.word[FLAG_WORD1] |= DARK;
                 d->flags |= DS_AUTODARK;
             }
         }
@@ -1668,7 +1668,7 @@ static int check_connect(DESC *d, char *msg)
             if (  !strncmp(command, "cd", 2)
                && (Wizard(player) || God(player)))
             {
-                s_Flags(player, Flags(player) | DARK);
+                db[player].fs.word[FLAG_WORD1] |= DARK;
             }
 
             // Make sure we don't have a guest from an unwanted host.

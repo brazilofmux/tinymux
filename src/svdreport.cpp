@@ -1,6 +1,6 @@
 // svdreport.cpp -- Aggregate User Statistics module.
 //
-// $Id: svdreport.cpp,v 1.4 2001-09-08 19:25:47 sdennis Exp $
+// $Id: svdreport.cpp,v 1.5 2001-11-28 06:35:55 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -16,11 +16,7 @@
 #include "config.h"
 #include "externs.h"
 
-#include <math.h>
-
 #include "attrs.h"
-#include "functions.h"
-#include "svdreport.h"
 
 #define NPERIODS 24
 void do_report(dbref player, dbref cause, int extra)

@@ -1,20 +1,15 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.7 2001-08-01 05:28:13 sdennis Exp $
+// $Id: boolexp.cpp,v 1.8 2001-11-28 06:35:53 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
 
-#include "db.h"
 #include "match.h"
-#include "mudconf.h"
-#include "interface.h"
 #include "attrs.h"
-#include "flags.h"
 #include "powers.h"
-#include "alloc.h"
 
 #ifndef STANDALONE
 

@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.9 2001-11-19 19:38:19 sdennis Exp $
+// $Id: flags.h,v 1.10 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,13 +8,9 @@
 #ifndef __FLAGS_H
 #define __FLAGS_H
 
-#include "htab.h"
-#include "db.h"
-
-
-
-#define FLAG_WORD2    0x1 /* 2nd word of flags. */
-#define FLAG_WORD3    0x2 /* 3rd word of flags. */
+#define FLAG_WORD1    0x0 // 1st word of flags.
+#define FLAG_WORD2    0x1 // 2nd word of flags.
+#define FLAG_WORD3    0x2 // 3rd word of flags.
 
 /* Object types */
 #define TYPE_ROOM     0x0
@@ -135,10 +131,9 @@ extern OBJENT object_types[8];
 #define OF_OWNER    0x0020      /* Object can own other objects */
 #define OF_SIBLINGS 0x0040      /* Object has siblings: Next() */
 
-typedef struct flagset {
-    FLAG    word1;
-    FLAG    word2;
-    FLAG    word3;
+typedef struct flagset
+{
+    FLAG  word[3];
 } FLAGSET;
 
 extern void NDECL(init_flagtab);
@@ -146,7 +141,7 @@ extern void FDECL(display_flagtab, (dbref));
 extern void FDECL(flag_set, (dbref, dbref, char *, int));
 extern char *   FDECL(flag_description, (dbref, dbref));
 extern FLAGENT *FDECL(find_flag, (dbref, char *));
-extern char *   FDECL(decode_flags, (dbref, FLAG, int, int));
+extern char *decode_flags(dbref, FLAGSET *);
 extern int  FDECL(has_flag, (dbref, dbref, char *));
 extern char *   FDECL(unparse_object, (dbref, dbref, int));
 extern char *   FDECL(unparse_object_numonly, (dbref));
@@ -158,8 +153,6 @@ extern char *MakeCanonicalFlagName
     int *pnName,
     BOOL *pbValid
 );
-
-#define unparse_flags(p,t) decode_flags(p,Flags(t),Flags2(t),Flags3(t))
 
 #define GOD ((dbref) 1)
 
@@ -305,10 +298,10 @@ extern char *MakeCanonicalFlagName
 #define H_Fwdlist(x)    ((Flags2(x) & HAS_FWDLIST) != 0)
 #define H_Listen(x) ((Flags2(x) & HAS_LISTEN) != 0)
 
-#define s_Halted(x) s_Flags((x), Flags(x) | HALT)
-#define s_Going(x)  s_Flags((x), Flags(x) | GOING)
-#define s_Connected(x)  s_Flags2((x), Flags2(x) | CONNECTED)
-#define c_Connected(x)  s_Flags2((x), Flags2(x) & ~CONNECTED)
+#define s_Halted(x) s_Flags((x), FLAG_WORD1, Flags(x) | HALT)
+#define s_Going(x)  s_Flags((x), FLAG_WORD1, Flags(x) | GOING)
+#define s_Connected(x)  s_Flags((x), FLAG_WORD2, Flags2(x) | CONNECTED)
+#define c_Connected(x)  s_Flags((x), FLAG_WORD2, Flags2(x) & ~CONNECTED)
 
 #ifdef WOD_REALMS
 #define isObfuscate(x)        ((Flags3(x) & OBF) != 0)
@@ -408,5 +401,5 @@ extern char *MakeCanonicalFlagName
                  !((a)->flags & AF_GOD))))))
 #define Has_power(p,x)  (check_access((p),powers_nametab[x].flag))
 #define Html(x) ((Flags2(x) & HTML) != 0)
-#define s_Html(x) s_Flags2((x), Flags2(x) | HTML)
+#define s_Html(x) s_Flags((x), FLAG_WORD2, Flags2(x) | HTML)
 #endif

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.61 2001-11-22 19:16:36 sdennis Exp $
+// $Id: command.cpp,v 1.62 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,18 +8,13 @@
 #include "config.h"
 #include "externs.h"
 
-#include "db.h"
 #include "interface.h"
-#include "mudconf.h"
 #include "command.h"
 #include "functions.h"
 #include "match.h"
 #include "attrs.h"
-#include "flags.h"
 #include "powers.h"
-#include "alloc.h"
 #include "vattr.h"
-#include "mail.h"
 #include "comsys.h"
 
 extern void FDECL(list_cf_access, (dbref));
@@ -2387,39 +2382,41 @@ CF_HAND(cf_cmd_alias)
 //
 static void list_df_flags(dbref player)
 {
-    char *playerb, *roomb, *thingb, *exitb, *robotb, *buff;
+    FLAGSET fs;
 
-    playerb = decode_flags(player,
-                   (mudconf.player_flags.word1 | TYPE_PLAYER),
-                   mudconf.player_flags.word2,
-                   mudconf.player_flags.word3);
-    roomb = decode_flags(player,
-                 (mudconf.room_flags.word1 | TYPE_ROOM),
-                 mudconf.room_flags.word2,
-                 mudconf.room_flags.word3);
-    exitb = decode_flags(player,
-                 (mudconf.exit_flags.word1 | TYPE_EXIT),
-                 mudconf.exit_flags.word2,
-                 mudconf.exit_flags.word3);
-    thingb = decode_flags(player,
-                  (mudconf.thing_flags.word1 | TYPE_THING),
-                  mudconf.thing_flags.word2,
-                  mudconf.thing_flags.word3);
-    robotb = decode_flags(player,
-                  (mudconf.robot_flags.word1 | TYPE_PLAYER),
-                  mudconf.robot_flags.word2,
-                  mudconf.robot_flags.word3);
-    buff = alloc_lbuf("list_df_flags");
+    fs = mudconf.player_flags;
+    fs.word[FLAG_WORD1] |= TYPE_PLAYER;
+    char *playerb = decode_flags(player, &fs);
+
+    fs = mudconf.room_flags;
+    fs.word[FLAG_WORD1] |= TYPE_ROOM;
+    char *roomb = decode_flags(player, &fs);
+
+    fs = mudconf.exit_flags;
+    fs.word[FLAG_WORD1] |= TYPE_EXIT;
+    char *exitb = decode_flags(player, &fs);
+
+    fs = mudconf.thing_flags;
+    fs.word[FLAG_WORD1] |= TYPE_THING;
+    char *thingb = decode_flags(player, &fs);
+
+    fs = mudconf.robot_flags;
+    fs.word[FLAG_WORD1] |= TYPE_PLAYER;
+    char *robotb = decode_flags(player, &fs);
+
+    char *buff = alloc_lbuf("list_df_flags");
     sprintf(buff,
         "Default flags: Players...%s Rooms...%s Exits...%s Things...%s Robots...%s",
         playerb, roomb, exitb, thingb, robotb);
-    raw_notify(player, buff);
-    free_lbuf(buff);
+
     free_sbuf(playerb);
     free_sbuf(roomb);
     free_sbuf(exitb);
     free_sbuf(thingb);
     free_sbuf(robotb);
+
+    raw_notify(player, buff);
+    free_lbuf(buff);
 }
 
 // ---------------------------------------------------------------------------

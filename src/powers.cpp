@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.5 2001-11-20 05:10:12 sdennis Exp $
+// $Id: powers.cpp,v 1.6 2001-11-28 06:35:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,11 +8,8 @@
 #include "config.h"
 #include "externs.h"
 
-#include "db.h"
-#include "mudconf.h"
 #include "command.h"
 #include "powers.h"
-#include "alloc.h"
 
 #ifndef STANDALONE
 

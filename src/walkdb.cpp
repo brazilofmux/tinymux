@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.14 2001-11-18 18:06:38 sdennis Exp $
+// $Id: walkdb.cpp,v 1.15 2001-11-28 06:35:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,15 +8,8 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mudconf.h"
-#include "db.h"
-#include "interface.h"
 #include "match.h"
-#include "command.h"
-#include "flags.h"
-#include "powers.h"
 #include "misc.h"
-#include "alloc.h"
 #include "attrs.h"
 
 //
@@ -311,7 +304,8 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
 
                     s_Owner(i, to_player);
                 }
-                s_Flags(i, (Flags(i) & ~(CHOWN_OK | INHERIT)) | HALT);
+                s_Flags(i, FLAG_WORD1,
+                    (Flags(i) & ~(CHOWN_OK | INHERIT)) | HALT);
 
                 if (key & CHOWN_NOZONE)
                 {
@@ -485,9 +479,10 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
     parm->s_rst_type = NOTYPE;
     parm->s_parent = NOTHING;
     parm->s_zone = NOTHING;
-    parm->s_fset.word1 = 0;
-    parm->s_fset.word2 = 0;
-    parm->s_fset.word3 = 0;
+    for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
+    {
+        parm->s_fset.word[i] = 0;
+    }
     parm->s_pset.word1 = 0;
     parm->s_pset.word2 = 0;
 
@@ -743,15 +738,14 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
 
 void search_perform(dbref player, dbref cause, SEARCH *parm)
 {
-    FLAG thing1flags, thing2flags, thing3flags;
     POWER thing1powers, thing2powers;
-    dbref thing;
     char *buff, *buff2, *result, *bp, *str;
     int save_invk_ctr;
 
     buff = alloc_sbuf("search_perform.num");
     save_invk_ctr = mudstate.func_invk_ctr;
 
+    dbref thing;
     for (thing = parm->low_bound; thing <= parm->high_bound; thing++)
     {
         mudstate.func_invk_ctr = save_invk_ctr;
@@ -774,9 +768,10 @@ void search_perform(dbref player, dbref cause, SEARCH *parm)
 
         // Toss out destroyed things.
         //
-        thing1flags = Flags(thing);
-        if ((Typeof(thing) == TYPE_THING) && (thing1flags & GOING))
+        if (isThing(thing) && (Flags(thing) & GOING))
+        {
             continue;
+        }
 
         // Check for matching parent.
         //
@@ -796,17 +791,16 @@ void search_perform(dbref player, dbref cause, SEARCH *parm)
 
         // Check for matching flags.
         //
-        thing3flags = Flags3(thing);
-        thing2flags = Flags2(thing);
-        if ((thing1flags & parm->s_fset.word1) != parm->s_fset.word1)
+        BOOL b = FALSE;
+        for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
         {
-            continue;
+            FLAG f = parm->s_fset.word[i];
+            if ((db[thing].fs.word[i] & f) != f)
+            {
+                b = TRUE;
+            }
         }
-        if ((thing2flags & parm->s_fset.word2) != parm->s_fset.word2)
-        {
-            continue;
-        }
-        if ((thing3flags & parm->s_fset.word3) != parm->s_fset.word3)
+        if (b)
         {
             continue;
         }

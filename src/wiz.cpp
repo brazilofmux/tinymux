@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.21 2001-11-18 17:52:06 sdennis Exp $
+// $Id: wiz.cpp,v 1.22 2001-11-28 06:35:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,14 +8,9 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mudconf.h"
 #include "file_c.h"
-#include "db.h"
-#include "interface.h"
 #include "match.h"
 #include "command.h"
-#include "htab.h"
-#include "alloc.h"
 #include "attrs.h"
 #include "powers.h"
 
@@ -357,9 +352,9 @@ void do_toad
         s_Owner(victim, recipient);
         s_Zone(victim, NOTHING);
     }
-    s_Flags(victim, TYPE_THING | HALT);
-    s_Flags2(victim, 0);
-    s_Flags3(victim, 0);
+    s_Flags(victim, FLAG_WORD1, TYPE_THING | HALT);
+    s_Flags(victim, FLAG_WORD2, 0);
+    s_Flags(victim, FLAG_WORD3, 0);
     s_Pennies(victim, 1);
 
     // Notify people.

@@ -1,19 +1,12 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.5 2001-11-18 20:54:26 sdennis Exp $
+// $Id: unparse.cpp,v 1.6 2001-11-28 06:35:55 sdennis Exp $
 //
 
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-
-#include "db.h"
-#include "mudconf.h"
-#include "interface.h"
-#include "flags.h"
-#include "powers.h"
-#include "alloc.h"
 
 /*
  * Boolexp decompile formats

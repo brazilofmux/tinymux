@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.3 2001-11-22 19:28:56 sdennis Exp $
+// $Id: file_c.cpp,v 1.4 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,11 +8,8 @@
 #include "config.h"
 #include "externs.h"
 
-#include "interface.h"
-#include "mudconf.h"
 #include "command.h"
 #include "file_c.h"
-#include "alloc.h"
 
 typedef struct filecache_block_hdr FBLKHDR;
 typedef struct filecache_block FBLOCK;

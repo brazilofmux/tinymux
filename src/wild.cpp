@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.2 2001-11-18 17:53:48 sdennis Exp $
+// $Id: wild.cpp,v 1.3 2001-11-28 06:35:55 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -17,10 +17,6 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-
-#include "db.h"
-#include "mudconf.h"
-#include "alloc.h"
 
 #define EQUAL(a,b) ((a == b) || (Tiny_ToLower[(unsigned char)a] == Tiny_ToLower[(unsigned char)b]))
 #define NOTEQUAL(a,b) ((a != b) && (Tiny_ToLower[(unsigned char)a] != Tiny_ToLower[(unsigned char)b]))

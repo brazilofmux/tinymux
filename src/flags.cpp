@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.13 2001-11-20 05:17:54 sdennis Exp $
+// $Id: flags.cpp,v 1.14 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,11 +8,7 @@
 #include "config.h"
 #include "externs.h"
 
-#include "db.h"
-#include "mudconf.h"
 #include "command.h"
-#include "flags.h"
-#include "alloc.h"
 #include "powers.h"
 
 extern void FDECL(cf_log_notfound, (dbref, char *, const char *, char *));
@@ -30,9 +26,8 @@ int fh_any(dbref target, dbref player, FLAG flag, int fflags, int reset)
     //
     if (  God(target)
        && reset
-       && (flag == WIZARD)
-       && !(fflags & FLAG_WORD2)
-       && !(fflags & FLAG_WORD3))
+       && flag == WIZARD
+       && fflags == FLAG_WORD1)
     {
         notify(player, "You cannot make God mortal.");
         return 0;
@@ -40,26 +35,13 @@ int fh_any(dbref target, dbref player, FLAG flag, int fflags, int reset)
 
     // Otherwise we can go do it.
     //
-    if (fflags & FLAG_WORD3)
+    if (reset)
     {
-        if (reset)
-            s_Flags3(target, Flags3(target) & ~flag);
-        else
-            s_Flags3(target, Flags3(target) | flag);
-    }
-    else if (fflags & FLAG_WORD2)
-    {
-        if (reset)
-            s_Flags2(target, Flags2(target) & ~flag);
-        else
-            s_Flags2(target, Flags2(target) | flag);
+        db[target].fs.word[fflags] &= ~flag;
     }
     else
     {
-        if (reset)
-            s_Flags(target, Flags(target) & ~flag);
-        else
-            s_Flags(target, Flags(target) | flag);
+        db[target].fs.word[fflags] |= flag;
     }
     return 1;
 }
@@ -138,33 +120,12 @@ int fh_privileged
     int reset
 )
 {
-    int has_it;
-
     if (!God(player))
     {
-        if (!isPlayer(player) || (player != Owner(player)))
-        {
-            return 0;
-        }
-        if (isPlayer(target))
-        {
-            return 0;
-        }
-
-        if (fflags & FLAG_WORD3)
-        {
-            has_it = (Flags3(player) & flag) ? 1 : 0;
-        }
-        else if (fflags & FLAG_WORD2)
-        {
-            has_it = (Flags2(player) & flag) ? 1 : 0;
-        }
-        else
-        {
-            has_it = (Flags(player) & flag) ? 1 : 0;
-        }
-
-        if (!has_it)
+        if (  !isPlayer(player)
+           || player != Owner(player)
+           || isPlayer(target)
+           || (db[player].fs.word[fflags] & flag) != 0)
         {
             return 0;
         }
@@ -303,53 +264,53 @@ FLAGENT gen_flags[] =
     {"ANSI",            ANSI,         'X',    FLAG_WORD2, 0,                    fh_any},
     {"AUDITORIUM",      AUDITORIUM,   'b',    FLAG_WORD2, 0,                    fh_any},
     {"COMPRESS",        COMPRESS,     '.',    FLAG_WORD2, 0,                    fh_any},
-    {"CHOWN_OK",        CHOWN_OK,     'C',    0,          0,                    fh_any},
+    {"CHOWN_OK",        CHOWN_OK,     'C',    FLAG_WORD1, 0,                    fh_any},
     {"HAS_DAILY",       HAS_DAILY,    '*',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god},
     {"PLAYER_MAILS",    PLAYER_MAILS, 'B',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god},
-    {"DARK",            DARK,         'D',    0,          0,                    fh_dark_bit},
+    {"DARK",            DARK,         'D',    FLAG_WORD1, 0,                    fh_dark_bit},
     {"FLOATING",        FLOATING,     'F',    FLAG_WORD2, 0,                    fh_any},
     {"GAGGED",          GAGGED,       'j',    FLAG_WORD2, 0,                    fh_wiz},
-    {"GOING",           GOING,        'G',    0,          CA_NO_DECOMP,         fh_going_bit},
-    {"HAVEN",           HAVEN,        'H',    0,          0,                    fh_any},
+    {"GOING",           GOING,        'G',    FLAG_WORD1, CA_NO_DECOMP,         fh_going_bit},
+    {"HAVEN",           HAVEN,        'H',    FLAG_WORD1, 0,                    fh_any},
     {"HEAD",            HEAD_FLAG,    '?',    FLAG_WORD2, 0,                    fh_wiz},
-    {"INHERIT",         INHERIT,      'I',    0,          0,                    fh_inherit},
-    {"JUMP_OK",         JUMP_OK,      'J',    0,          0,                    fh_any},
+    {"INHERIT",         INHERIT,      'I',    FLAG_WORD1, 0,                    fh_inherit},
+    {"JUMP_OK",         JUMP_OK,      'J',    FLAG_WORD1, 0,                    fh_any},
     {"KEY",             KEY,          'K',    FLAG_WORD2, 0,                    fh_any},
-    {"LINK_OK",         LINK_OK,      'L',    0,          0,                    fh_any},
-    {"MONITOR",         MONITOR,      'M',    0,          0,                    fh_hear_bit},
-    {"NOSPOOF",         NOSPOOF,      'N',    0,          0,                    fh_any},
-    {"OPAQUE",          TM_OPAQUE,    'O',    0,          0,                    fh_any},
-    {"QUIET",           QUIET,        'Q',    0,          0,                    fh_any},
+    {"LINK_OK",         LINK_OK,      'L',    FLAG_WORD1, 0,                    fh_any},
+    {"MONITOR",         MONITOR,      'M',    FLAG_WORD1, 0,                    fh_hear_bit},
+    {"NOSPOOF",         NOSPOOF,      'N',    FLAG_WORD1, 0,                    fh_any},
+    {"OPAQUE",          TM_OPAQUE,    'O',    FLAG_WORD1, 0,                    fh_any},
+    {"QUIET",           QUIET,        'Q',    FLAG_WORD1, 0,                    fh_any},
     {"STAFF",           STAFF,        'w',    FLAG_WORD2, 0,                    fh_wiz},
-    {"STICKY",          STICKY,       'S',    0,          0,                    fh_any},
-    {"TRACE",           TRACE,        'T',    0,          0,                    fh_any},
+    {"STICKY",          STICKY,       'S',    FLAG_WORD1, 0,                    fh_any},
+    {"TRACE",           TRACE,        'T',    FLAG_WORD1, 0,                    fh_any},
     {"UNFINDABLE",      UNFINDABLE,   'U',    FLAG_WORD2, 0,                    fh_any},
-    {"VISUAL",          VISUAL,       'V',    0,          0,                    fh_any},
+    {"VISUAL",          VISUAL,       'V',    FLAG_WORD1, 0,                    fh_any},
     {"VACATION",        VACATION,     '|',    FLAG_WORD2, 0,                    fh_restrict_player},
-    {"WIZARD",          WIZARD,       'W',    0,          0,                    fh_god},
+    {"WIZARD",          WIZARD,       'W',    FLAG_WORD1, 0,                    fh_god},
     {"PARENT_OK",       PARENT_OK,    'Y',    FLAG_WORD2, 0,                    fh_any},
-    {"ROYALTY",         ROYALTY,      'Z',    0,          0,                    fh_wiz},
+    {"ROYALTY",         ROYALTY,      'Z',    FLAG_WORD1, 0,                    fh_wiz},
     {"FIXED",           FIXED,        'f',    FLAG_WORD2, 0,                    fh_restrict_player},
     {"UNINSPECTED",     UNINSPECTED,  'g',    FLAG_WORD2, 0,                    fh_wizroy},
     {"NO_COMMAND",      NO_COMMAND,   'n',    FLAG_WORD2, 0,                    fh_any},
     {"NOBLEED",         NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any},
-    {"AUDIBLE",         HEARTHRU,     'a',    0,          0,                    fh_hear_bit},
+    {"AUDIBLE",         HEARTHRU,     'a',    FLAG_WORD1, 0,                    fh_hear_bit},
     {"CONNECTED",       CONNECTED,    'c',    FLAG_WORD2, CA_NO_DECOMP,         fh_god},
-    {"DESTROY_OK",      DESTROY_OK,   'd',    0,          0,                    fh_any},
-    {"ENTER_OK",        ENTER_OK,     'e',    0,          0,                    fh_any},
-    {"HALTED",          HALT,         'h',    0,          0,                    fh_any},
-    {"IMMORTAL",        IMMORTAL,     'i',    0,          0,                    fh_wiz},
+    {"DESTROY_OK",      DESTROY_OK,   'd',    FLAG_WORD1, 0,                    fh_any},
+    {"ENTER_OK",        ENTER_OK,     'e',    FLAG_WORD1, 0,                    fh_any},
+    {"HALTED",          HALT,         'h',    FLAG_WORD1, 0,                    fh_any},
+    {"IMMORTAL",        IMMORTAL,     'i',    FLAG_WORD1, 0,                    fh_wiz},
     {"LIGHT",           LIGHT,        'l',    FLAG_WORD2, 0,                    fh_any},
-    {"MYOPIC",          MYOPIC,       'm',    0,          0,                    fh_any},
-    {"PUPPET",          PUPPET,       'p',    0,          0,                    fh_hear_bit},
-    {"TERSE",           TERSE,        'q',    0,          0,                    fh_any},
-    {"ROBOT",           ROBOT,        'r',    0,          0,                    fh_player_bit},
-    {"SAFE",            SAFE,         's',    0,          0,                    fh_any},
-    {"TRANSPARENT",     SEETHRU,      't',    0,          0,                    fh_any},
+    {"MYOPIC",          MYOPIC,       'm',    FLAG_WORD1, 0,                    fh_any},
+    {"PUPPET",          PUPPET,       'p',    FLAG_WORD1, 0,                    fh_hear_bit},
+    {"TERSE",           TERSE,        'q',    FLAG_WORD1, 0,                    fh_any},
+    {"ROBOT",           ROBOT,        'r',    FLAG_WORD1, 0,                    fh_player_bit},
+    {"SAFE",            SAFE,         's',    FLAG_WORD1, 0,                    fh_any},
+    {"TRANSPARENT",     SEETHRU,      't',    FLAG_WORD1, 0,                    fh_any},
     {"SUSPECT",         SUSPECT,      'u',    FLAG_WORD2, CA_WIZARD,            fh_wiz},
-    {"VERBOSE",         VERBOSE,      'v',    0,          0,                    fh_any},
+    {"VERBOSE",         VERBOSE,      'v',    FLAG_WORD1, 0,                    fh_any},
     {"SLAVE",           SLAVE,        'x',    FLAG_WORD2, CA_WIZARD,            fh_wiz},
-    {"HAS_STARTUP",     HAS_STARTUP,  '+',    0,          CA_GOD|CA_NO_DECOMP,  fh_god},
+    {"HAS_STARTUP",     HAS_STARTUP,  '+',    FLAG_WORD1, CA_GOD|CA_NO_DECOMP,  fh_god},
     {"HAS_FORWARDLIST", HAS_FWDLIST,  '&',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god},
     {"HAS_LISTEN",      HAS_LISTEN,   '@',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god},
     {"HTML",            HTML,         '(',    FLAG_WORD2, 0,                    fh_any},
@@ -564,13 +525,9 @@ void flag_set(dbref target, dbref player, char *flag, int key)
  * * decode_flags: converts a flags word into corresponding letters.
  */
 
-char *decode_flags(dbref player, FLAG flagword, FLAG flag2word, FLAG flag3word)
+char *decode_flags(dbref player, FLAGSET *fs)
 {
     char *buf, *bp;
-    FLAGENT *fp;
-    int flagtype;
-    FLAG fv;
-
     buf = bp = alloc_sbuf("decode_flags");
     *bp = '\0';
 
@@ -579,27 +536,16 @@ char *decode_flags(dbref player, FLAG flagword, FLAG flag2word, FLAG flag3word)
         StringCopy(buf, "#-2 ERROR");
         return buf;
     }
-    flagtype = (flagword & TYPE_MASK);
+    int flagtype = fs->word[FLAG_WORD1] & TYPE_MASK;
     if (object_types[flagtype].lett != ' ')
     {
         safe_sb_chr(object_types[flagtype].lett, buf, &bp);
     }
 
+    FLAGENT *fp;
     for (fp = gen_flags; fp->flagname; fp++)
     {
-        if (fp->flagflag & FLAG_WORD3)
-        {
-            fv = flag3word;
-        }
-        else if (fp->flagflag & FLAG_WORD2)
-        {
-            fv = flag2word;
-        }
-        else
-        {
-            fv = flagword;
-        }
-        if (fv & fp->flagvalue)
+        if (fs->word[fp->flagflag] & fp->flagvalue)
         {
             if ((fp->listperm & CA_WIZARD) && !Wizard(player))
             {
@@ -614,8 +560,8 @@ char *decode_flags(dbref player, FLAG flagword, FLAG flag2word, FLAG flag3word)
             //
             if (  isPlayer(player)
                && (fp->flagvalue == CONNECTED)
-               && (fp->flagflag & FLAG_WORD2)
-               && ((flagword & (WIZARD | DARK)) == (WIZARD | DARK))
+               && (fp->flagflag == FLAG_WORD2)
+               && ((fs->word[FLAG_WORD1] & (WIZARD | DARK)) == (WIZARD | DARK))
                && !Wizard(player))
             {
                 continue;
@@ -623,7 +569,6 @@ char *decode_flags(dbref player, FLAG flagword, FLAG flag2word, FLAG flag3word)
             safe_sb_chr(fp->flaglett, buf, &bp);
         }
     }
-
     *bp = '\0';
     return buf;
 }
@@ -641,21 +586,7 @@ int has_flag(dbref player, dbref it, char *flagname)
         return 0;
     }
 
-    FLAG fv;
-    if (fp->flagflag & FLAG_WORD3)
-    {
-        fv = Flags3(it);
-    }
-    else if (fp->flagflag & FLAG_WORD2)
-    {
-        fv = Flags2(it);
-    }
-    else
-    {
-        fv = Flags(it);
-    }
-
-    if (fv & fp->flagvalue)
+    if (db[it].fs.word[fp->flagflag] & fp->flagvalue)
     {
         if ((fp->listperm & CA_WIZARD) && !Wizard(player))
         {
@@ -670,7 +601,7 @@ int has_flag(dbref player, dbref it, char *flagname)
         //
         if (  isPlayer(it)
            && (fp->flagvalue == CONNECTED)
-           && (fp->flagflag & FLAG_WORD2)
+           && (fp->flagflag == FLAG_WORD2)
            && ((Flags(it) & (WIZARD | DARK)) == (WIZARD | DARK))
            && !Wizard(player))
         {
@@ -688,15 +619,11 @@ int has_flag(dbref player, dbref it, char *flagname)
 
 char *flag_description(dbref player, dbref target)
 {
-    char *buff, *bp;
-    FLAGENT *fp;
-    int otype;
-    FLAG fv;
-
     // Allocate the return buffer.
     //
-    otype = Typeof(target);
-    bp = buff = alloc_mbuf("flag_description");
+    int otype = Typeof(target);
+    char *buff = alloc_mbuf("flag_description");
+    char *bp = buff;
 
     // Store the header strings and object type.
     //
@@ -711,16 +638,10 @@ char *flag_description(dbref player, dbref target)
 
     // Store the type-invariant flags.
     //
+    FLAGENT *fp;
     for (fp = gen_flags; fp->flagname; fp++)
     {
-        if (fp->flagflag & FLAG_WORD3)
-            fv = Flags3(target);
-        else if (fp->flagflag & FLAG_WORD2)
-            fv = Flags2(target);
-        else
-            fv = Flags(target);
-
-        if (fv & fp->flagvalue)
+        if (db[target].fs.word[fp->flagflag] & fp->flagvalue)
         {
             if ((fp->listperm & CA_WIZARD) && !Wizard(player))
                 continue;
@@ -731,7 +652,7 @@ char *flag_description(dbref player, dbref target)
              */
             if (  isPlayer(target)
                && (fp->flagvalue == CONNECTED)
-               && (fp->flagflag & FLAG_WORD2)
+               && (fp->flagflag == FLAG_WORD2)
                && ((Flags(target) & (WIZARD | DARK)) == (WIZARD | DARK))
                && !Wizard(player))
             {
@@ -805,7 +726,7 @@ char *unparse_object(dbref player, dbref target, int obey_myopic)
         {
             // show everything
             //
-            fp = unparse_flags(player, target);
+            fp = decode_flags(player, &(db[target].fs));
             sprintf(buf, "%s(#%d%s)", Name(target), target, fp);
             free_sbuf(fp);
         }
@@ -853,37 +774,37 @@ CF_HAND(cf_flag_access)
        && (fp->handler != fh_privileged))
     {
         STARTLOG(LOG_CONFIGMODS, "CFG", "PERM");
-        log_text((char *) "Cannot change access for flag: ");
-        log_text((char *) fp->flagname);
+        log_text("Cannot change access for flag: ");
+        log_text(fp->flagname);
         ENDLOG;
         return -1;
     }
 
-    if (!strcmp(permstr, (char *) "any"))
+    if (!strcmp(permstr, "any"))
     {
         fp->handler = fh_any;
     }
-    else if (!strcmp(permstr, (char *) "royalty"))
+    else if (!strcmp(permstr, "royalty"))
     {
         fp->handler = fh_wizroy;
     }
-    else if (!strcmp(permstr, (char *) "wizard"))
+    else if (!strcmp(permstr, "wizard"))
     {
         fp->handler = fh_wiz;
     }
-    else if (!strcmp(permstr, (char *) "god"))
+    else if (!strcmp(permstr, "god"))
     {
         fp->handler = fh_god;
     }
-    else if (!strcmp(permstr, (char *) "restrict_player"))
+    else if (!strcmp(permstr, "restrict_player"))
     {
         fp->handler = fh_restrict_player;
     }
-    else if (!strcmp(permstr, (char *) "privileged"))
+    else if (!strcmp(permstr, "privileged"))
     {
         fp->handler = fh_privileged;
     }
-    else if (!strcmp(permstr, (char *) "staff"))
+    else if (!strcmp(permstr, "staff"))
     {
         fp->handler = fh_staff;
     }
@@ -903,31 +824,35 @@ CF_HAND(cf_flag_access)
 
 int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
 {
-    int i, handled;
+    FLAG type = NOTYPE;
+    FLAGSET flagmask;
+    int i;
+    for (i = FLAG_WORD1; i <= FLAG_WORD3; i++)
+    {
+        flagmask.word[i] = 0;
+    }
+
     char *s;
-    FLAG flag1mask, flag2mask, flag3mask, type;
-    FLAGENT *fp;
+    for (s = flaglist; *s; s++)
+    {
+        int handled = 0;
 
-    flag1mask = flag2mask = flag3mask = 0;
-    type = NOTYPE;
-
-    for (s = flaglist; *s; s++) {
-        handled = 0;
-
-        /*
-         * Check for object type
-         */
-
-        for (i = 0; (i <= 7) && !handled; i++) {
-            if ((object_types[i].lett == *s) &&
-                !(((object_types[i].perm & CA_WIZARD) &&
-                   !Wizard(player)) ||
-                  ((object_types[i].perm & CA_GOD) &&
-                   !God(player)))) {
-                if ((type != NOTYPE) && (type != i)) {
-                    notify(player,
-                           tprintf("%c: Conflicting type specifications.",
-                               *s));
+        // Check for object type.
+        //
+        for (i = 0; i <= 7 && !handled; i++)
+        {
+            if (  object_types[i].lett == *s
+               && !(  (  (object_types[i].perm & CA_WIZARD)
+                      && !Wizard(player))
+                   || (  (object_types[i].perm & CA_GOD)
+                      && !God(player))))
+            {
+                if (  type != NOTYPE
+                   && type != i)
+                {
+                    char *p = tprintf("%c: Conflicting type specifications.",
+                        *s);
+                    notify(player, p);
                     return 0;
                 }
                 type = i;
@@ -935,29 +860,28 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
             }
         }
 
-        /*
-         * Check generic flags
-         */
-
+        // Check generic flags.
+        //
         if (handled)
+        {
             continue;
-        for (fp = gen_flags; (fp->flagname) && !handled; fp++) {
-            if ((fp->flaglett == *s) &&
-                !(((fp->listperm & CA_WIZARD) &&
-                   !Wizard(player)) ||
-                  ((fp->listperm & CA_GOD) &&
-                   !God(player)))) {
-                if (fp->flagflag & FLAG_WORD3)
-                    flag3mask |= fp->flagvalue;
-                else if (fp->flagflag & FLAG_WORD2)
-                    flag2mask |= fp->flagvalue;
-                else
-                    flag1mask |= fp->flagvalue;
+        }
+        FLAGENT *fp;
+        for (fp = gen_flags; fp->flagname && !handled; fp++)
+        {
+            if (  fp->flaglett == *s
+               && !(  (  (fp->listperm & CA_WIZARD)
+                      && !Wizard(player))
+                   || (  (fp->listperm & CA_GOD)
+                      && !God(player))))
+            {
+                flagmask.word[fp->flagflag] |= fp->flagvalue;
                 handled = 1;
             }
         }
 
-        if (!handled) {
+        if (!handled)
+        {
             notify(player,
                    tprintf("%c: Flag unknown or not valid for specified object type",
                        *s));
@@ -965,13 +889,9 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
         }
     }
 
-    /*
-     * return flags to search for and type
-     */
-
-    (*fset).word1 = flag1mask;
-    (*fset).word2 = flag2mask;
-    (*fset).word3 = flag3mask;
+    // Return flags to search for and type.
+    //
+    *fset = flagmask;
     *p_type = type;
     return 1;
 }
@@ -983,53 +903,36 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
 
 void decompile_flags(dbref player, dbref thing, char *thingname)
 {
-    FLAG f1, f2, f3;
+    // Report generic flags.
+    //
     FLAGENT *fp;
-
-    /*
-     * Report generic flags
-     */
-
-    f1 = Flags(thing);
-    f2 = Flags2(thing);
-    f3 = Flags3(thing);
-
-    for (fp = gen_flags; fp->flagname; fp++) {
-
-        /*
-         * Skip if we shouldn't decompile this flag
-         */
-
+    for (fp = gen_flags; fp->flagname; fp++)
+    {
+        // Skip if we shouldn't decompile this flag.
+        //
         if (fp->listperm & CA_NO_DECOMP)
+        {
             continue;
-
-        /*
-         * Skip if this flag is not set
-         */
-
-        if (fp->flagflag & FLAG_WORD3) {
-            if (!(f3 & fp->flagvalue))
-                continue;
-        } else if (fp->flagflag & FLAG_WORD2) {
-            if (!(f2 & fp->flagvalue))
-                continue;
-        } else {
-            if (!(f1 & fp->flagvalue))
-                continue;
         }
 
-        /*
-         * Skip if we can't see this flag
-         */
-
-        if (!check_access(player, fp->listperm))
+        // Skip if this flag is not set.
+        //
+        if ((db[thing].fs.word[fp->flagflag] & fp->flagvalue) == 0)
+        {
             continue;
+        }
 
-        /*
-         * We made it this far, report this flag
-         */
+        // Skip if we can't see this flag.
+        //
+        if (!check_access(player, fp->listperm))
+        {
+            continue;
+        }
 
-        notify(player, tprintf("@set %s=%s", strip_ansi(thingname), fp->flagname));
+        // We made it this far, report this flag.
+        //
+        notify(player, tprintf("@set %s=%s", strip_ansi(thingname),
+            fp->flagname));
     }
 }
 

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.111 2001-11-25 18:20:59 sdennis Exp $
+// $Id: functions.cpp,v 1.112 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -12,18 +12,12 @@
 #include <math.h>
 #include <float.h>
 
-#include "mudconf.h"
-#include "db.h"
-#include "flags.h"
-#include "powers.h"
 #include "attrs.h"
 #include "match.h"
 #include "command.h"
 #include "functions.h"
 #include "misc.h"
-#include "alloc.h"
 #include "ansi.h"
-#include "comsys.h"
 
 UFUN *ufun_head;
 
@@ -868,17 +862,20 @@ FUNCTION(fun_words)
 
 FUNCTION(fun_flags)
 {
-    dbref it;
-    char *buff2;
-
-    it = match_thing(player, fargs[0]);
-    if ((it != NOTHING) &&
-        (mudconf.pub_flags || Examinable(player, it) || (it == cause))) {
-        buff2 = unparse_flags(player, it);
+    dbref it = match_thing(player, fargs[0]);
+    if (  it != NOTHING
+       && (  mudconf.pub_flags
+          || Examinable(player, it)
+          || it == cause))
+    {
+        char *buff2 = decode_flags(player, &(db[it].fs));
         safe_str(buff2, buff, bufc);
         free_sbuf(buff2);
-    } else
+    }
+    else
+    {
         safe_nothing(buff, bufc);
+    }
     return;
 }
 
@@ -7680,7 +7677,6 @@ FUNCTION(fun_lflags)
 {
     dbref target;
     FLAGENT *fp;
-    FLAG fv;
 
     BOOL bFirst = TRUE;
     target = match_thing(player, fargs[0]);
@@ -7689,22 +7685,18 @@ FUNCTION(fun_lflags)
     {
         for (fp = gen_flags; fp->flagname; fp++)
         {
-            if (fp->flagflag & FLAG_WORD3)
-                fv = Flags3(target);
-            else if (fp->flagflag & FLAG_WORD2)
-                fv = Flags2(target);
-            else
-                fv = Flags(target);
-
-            if (fv & fp->flagvalue)
+            if (db[target].fs.word[fp->flagflag] & fp->flagvalue)
             {
-                if ((fp->listperm & CA_WIZARD) && !Wizard(player))
+                if (  (  (fp->listperm & CA_WIZARD)
+                      && !Wizard(player))
+                   || (  (fp->listperm & CA_GOD)
+                      && !God(player)))
+                {
                     continue;
-                if ((fp->listperm & CA_GOD) && !God(player))
-                    continue;
+                }
                 if (  isPlayer(target)
                    && (fp->flagvalue == CONNECTED)
-                   && (fp->flagflag & FLAG_WORD2)
+                   && (fp->flagflag == FLAG_WORD2)
                    && ((Flags(target) & (WIZARD | DARK)) == (WIZARD | DARK))
                    && !Wizard(player))
                 {

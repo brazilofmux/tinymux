@@ -1,16 +1,12 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.14 2001-11-24 20:51:54 sdennis Exp $
+// $Id: alloc.cpp,v 1.15 2001-11-28 06:35:52 sdennis Exp $
 //
 
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-
-#include "db.h"
-#include "alloc.h"
-#include "mudconf.h"
 
 // Do not use the following structure. It is only used to define the
 // POOLHDR that follows. The fields in the following structure must

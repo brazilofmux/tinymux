@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.74 2001-11-25 05:27:06 sdennis Exp $
+// $Id: funceval.cpp,v 1.75 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -11,17 +11,11 @@
 #include <limits.h>
 #include <math.h>
 
-#include "mudconf.h"
-#include "db.h"
-#include "flags.h"
-#include "powers.h"
 #include "attrs.h"
-#include "externs.h"
 #include "match.h"
 #include "command.h"
 #include "functions.h"
 #include "misc.h"
-#include "alloc.h"
 #include "ansi.h"
 #include "comsys.h"
 #ifdef RADIX_COMPRESSION
@@ -1126,14 +1120,15 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
         {
             // Does the object have this flag?
             //
-            if ((Flags(it) & fset.word1) ||
-                (Flags2(it) & fset.word2) ||
-                (Flags3(it) & fset.word3) ||
-                (Typeof(it) == p_type))
+            if (  (Flags(it) & fset.word[FLAG_WORD1])
+               || (Flags2(it) & fset.word[FLAG_WORD2])
+               || (Flags3(it) & fset.word[FLAG_WORD3])
+               || Typeof(it) == p_type)
             {
-                if (isPlayer(it) && (fset.word2 == CONNECTED) &&
-                    ((Flags(it) & (WIZARD | DARK)) == (WIZARD | DARK)) &&
-                    !Wizard(player))
+                if (  isPlayer(it)
+                   && fset.word[FLAG_WORD2] == CONNECTED
+                   && (Flags(it) & (WIZARD | DARK)) == (WIZARD | DARK)
+                   && !Wizard(player))
                 {
                     temp = 0;
                 }
@@ -1147,7 +1142,9 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
                 temp = 0;
             }
 
-            if ((type == 1) && ((negate && temp) || (!negate && !temp)))
+            if (  type == 1
+               && (  (negate && temp)
+                  || (!negate && !temp)))
             {
                 // Too bad there's no NXOR function. At this point we've
                 // either got a flag and we don't want it, or we don't have a
@@ -1157,7 +1154,8 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
 
             }
             else if (  type == 0
-                    && ((!negate && temp) || (negate && !temp)))
+                    && (  (!negate && temp)
+                       || (negate && !temp)))
             {
                 // We've found something we want, in an OR. We OR a true with
                 // the current value.

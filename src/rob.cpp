@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.9 2001-11-20 04:49:38 sdennis Exp $
+// $Id: rob.cpp,v 1.10 2001-11-28 06:35:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8,11 +8,7 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mudconf.h"
-#include "db.h"
-#include "interface.h"
 #include "match.h"
-#include "alloc.h"
 #include "attrs.h"
 #include "powers.h"
 

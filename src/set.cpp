@@ -1,20 +1,15 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.17 2001-11-20 04:21:04 sdennis Exp $
+// $Id: set.cpp,v 1.18 2001-11-28 06:35:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
 
-#include "mudconf.h"
-#include "db.h"
 #include "match.h"
-#include "interface.h"
-#include "flags.h"
 #include "powers.h"
 #include "attrs.h"
-#include "alloc.h"
 #include "ansi.h"
 
 extern NAMETAB indiv_attraccess_nametab[];
@@ -844,7 +839,8 @@ void do_chown
         }
         s_Owner(thing, nOwnerNew);
         atr_chown(thing);
-        s_Flags(thing, (Flags(thing) & ~(CHOWN_OK | INHERIT)) | HALT);
+        db[thing].fs.word[FLAG_WORD1] &= ~(CHOWN_OK | INHERIT);
+        db[thing].fs.word[FLAG_WORD1] |= HALT;
         s_Powers(thing, 0);
         s_Powers2(thing, 0);
         halt_que(NOTHING, thing);

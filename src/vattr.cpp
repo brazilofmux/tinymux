@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.14 2001-11-18 20:45:54 sdennis Exp $
+// $Id: vattr.cpp,v 1.15 2001-11-28 06:35:55 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -19,10 +19,7 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mudconf.h"
 #include "vattr.h"
-#include "alloc.h"
-#include "htab.h"
 #include "attrs.h"
 
 static char FDECL(*store_string, (char *));

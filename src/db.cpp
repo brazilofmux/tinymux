@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.56 2001-11-08 03:48:56 sdennis Exp $
+// $Id: db.cpp,v 1.57 2001-11-28 06:35:53 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -22,16 +22,11 @@
 #endif // STANDALONE
 #include "externs.h"
 
-#define __DB_C
-#include "mudconf.h"
-#include "db.h"
 #include "attrs.h"
 #include "vattr.h"
 #include "match.h"
-#include "alloc.h"
 #include "powers.h"
 #include "interface.h"
-#include "flags.h"
 #include "comsys.h"
 
 #ifdef RADIX_COMPRESSION
@@ -1671,29 +1666,42 @@ void atr_clr(dbref thing, int atr)
     TM_DELETE(&okey);
     al_delete(thing, atr);
 #endif // MEMORY_BASED
-    switch (atr) {
+    switch (atr)
+    {
     case A_STARTUP:
-        s_Flags(thing, Flags(thing) & ~HAS_STARTUP);
+
+        db[thing].fs.word[FLAG_WORD1] &= ~HAS_STARTUP;
         break;
+
     case A_DAILY:
-        s_Flags2(thing, Flags2(thing) & ~HAS_DAILY);
+
+        db[thing].fs.word[FLAG_WORD2] &= ~HAS_DAILY;
         break;
+
     case A_FORWARDLIST:
-        s_Flags2(thing, Flags2(thing) & ~HAS_FWDLIST);
+
+        db[thing].fs.word[FLAG_WORD2] &= ~HAS_FWDLIST;
 #ifndef STANDALONE
         fwdlist_clr(thing); // We should clear the hashtable too
 #endif // !STANDALONE
         break;
+
     case A_LISTEN:
-        s_Flags2(thing, Flags2(thing) & ~HAS_LISTEN);
+
+        db[thing].fs.word[FLAG_WORD2] &= ~HAS_LISTEN;
         break;
+
 #ifndef STANDALONE
     case A_TIMEOUT:
+
         desc_reload(thing);
         break;
+
     case A_QUEUEMAX:
+
         pcache_reload(thing);
         break;
+
 #endif // !STANDALONE
     }
 }
@@ -1856,24 +1864,36 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     switch (atr)
     {
     case A_STARTUP:
-        s_Flags(thing, Flags(thing) | HAS_STARTUP);
+
+        db[thing].fs.word[FLAG_WORD1] |= HAS_STARTUP;
         break;
+
     case A_DAILY:
-        s_Flags2(thing, Flags2(thing) | HAS_DAILY);
+
+        db[thing].fs.word[FLAG_WORD2] |= HAS_DAILY;
         break;
+
     case A_FORWARDLIST:
-        s_Flags2(thing, Flags2(thing) | HAS_FWDLIST);
+
+        db[thing].fs.word[FLAG_WORD2] |= HAS_FWDLIST;
         break;
+
     case A_LISTEN:
-        s_Flags2(thing, Flags2(thing) | HAS_LISTEN);
+
+        db[thing].fs.word[FLAG_WORD2] |= HAS_LISTEN;
         break;
+
 #ifndef STANDALONE
     case A_TIMEOUT:
+
         desc_reload(thing);
         break;
+
     case A_QUEUEMAX:
+
         pcache_reload(thing);
         break;
+
 #endif // !STANDALONE
     }
 }
@@ -2412,7 +2432,7 @@ void initialize_objects(dbref first, dbref last)
     for (thing = first; thing < last; thing++)
     {
         s_Owner(thing, GOD);
-        s_Flags(thing, (TYPE_GARBAGE | GOING));
+        s_Flags(thing, FLAG_WORD1, (TYPE_GARBAGE | GOING));
         s_Powers(thing, 0);
         s_Powers2(thing, 0);
         s_Location(thing, NOTHING);
@@ -2593,7 +2613,7 @@ void db_grow(dbref newtop)
             db[i].at_count = 0;
 #endif // MEMORY_BASED
             s_Owner(i, GOD);
-            s_Flags(i, (TYPE_GARBAGE | GOING));
+            s_Flags(i, FLAG_WORD1, (TYPE_GARBAGE | GOING));
             s_Powers(i, 0);
             s_Powers2(i, 0);
             s_Location(i, NOTHING);
@@ -2665,9 +2685,9 @@ void NDECL(db_make_minimal)
     db_free();
     db_grow(1);
     s_Name(0, "Limbo");
-    s_Flags(0, TYPE_ROOM);
-    s_Flags2(0, 0);
-    s_Flags3(0, 0);
+    s_Flags(0, FLAG_WORD1, TYPE_ROOM);
+    s_Flags(0, FLAG_WORD2, 0);
+    s_Flags(0, FLAG_WORD3, 0);
     s_Powers(0, 0);
     s_Powers2(0, 0);
     s_Location(0, NOTHING);
@@ -2682,7 +2702,7 @@ void NDECL(db_make_minimal)
     //
     load_player_names();
     obj = create_player((char *)"Wizard", (char *)"potrzebie", NOTHING, 0, 0);
-    s_Flags(obj, Flags(obj) | WIZARD);
+    s_Flags(obj, FLAG_WORD1, Flags(obj) | WIZARD);
     s_Powers(obj, 0);
     s_Powers2(obj, 0);
     s_Pennies(obj, 1000);

@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.37 2001-11-20 05:17:54 sdennis Exp $
+// $Id: db_rw.cpp,v 1.38 2001-11-28 06:35:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -11,12 +11,8 @@
 #endif
 #include "externs.h"
 
-#include "mudconf.h"
-#include "db.h"
 #include "vattr.h"
 #include "attrs.h"
-#include "alloc.h"
-#include "powers.h"
 
 extern void FDECL(db_grow, (dbref));
 
@@ -680,9 +676,9 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             // FLAGS
             //
-            s_Flags(i, getref(f));
-            s_Flags2(i, getref(f));
-            s_Flags3(i, getref(f));
+            s_Flags(i, FLAG_WORD1, getref(f));
+            s_Flags(i, FLAG_WORD2, getref(f));
+            s_Flags(i, FLAG_WORD3, getref(f));
 
             // POWERS
             //
