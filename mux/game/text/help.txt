@@ -4314,13 +4314,19 @@ CHANNEL OBJECT
 & CHANNELS()
 CHANNELS()
 
-  FUNCTION: channels()
+  FUNCTION: channels([player])
 
-  This function lists all the channels known to the MUX (that you can see).
+  This function lists channels that you can see, much like @clist. If the
+  argument is omitted or is 'all', then all are returned, otherwise only
+  those owned by the named player are returned.
 
   Example:
     > say channels()
-    You says "Wizard, Staff, Guest, Public, Staff"
+    You say, "Wizard, Staff, Guest, Public, Code"
+    > say channels(#1)
+    You say, "Wizard, Staff, Guest, Public"
+    > say channels(me)
+    You say, "Code"
 
   Related Topics: comalias(), comtitle(), cwho()
 
