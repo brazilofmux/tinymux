@@ -484,9 +484,6 @@
   @malias *<alias>          Displays a list of people on that alias.
   @malias *<alias>=<list>   Creates that mailing list, using <list>.
   
-  For more help, see the following help topics.  All errors can be
-  sent to *Bugs, or Lauren.
- 
 { 'help @malias2' for more }
  
 & @malias2
@@ -4449,7 +4446,6 @@ ANSI SUBSTITUTION
 
   Related Topics: ansi(), ANSI CODES  
 
- 
 & WIZARD
 WIZARD
 
@@ -4983,9 +4979,9 @@ SLAVE
 
 TinyMUX 2.0 is based on TinyMUX 1.5 and 1.6. It is currently maintained
 by Stephen Dennis (AKA Brazil). There is a more complete list of credits
-in the readme files for the server itself.
+in the README files for the server itself.
 
-See http://www.tinymux.com for an on-line version of these readme files.
+See http://www.tinymux.com for an on-line version of these README files.
  
 & DROP-TOS
 
@@ -5249,9 +5245,9 @@ FUNCTION CLASSES
   Logical:                   AND NOT OR XOR
   Miscellaneous:             ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM ISWORD
                              LIT SETR SUBEVAL
-
-{ 'help function classes2' for more }
  
+{ 'help function classes2' for more }
+
 & FUNCTION CLASSES2
 FUNCTION CLASSES (continued)
 
@@ -5749,11 +5745,11 @@ SET()
   function, and should only be used when necessary.
   
   Related Topics:
- 
+
 & WORDPOS()
 WORDPOS()
 
-  FUNCTION: wordpos(<string>, <charpos>[, <delim>)
+  FUNCTION: wordpos(<string>, <charpos>[, <delim>])
  
   Returns the number of the word within <string> where the character position
   <charpos> falls.  Spaces between words are treated as belonging to the word
@@ -5771,10 +5767,14 @@ WORDPOS()
     You say "2"
     > say wordpos(This is a test, 20)
     You say "#-1"
+  
+  Related Topics:
 
-& type()
+& TYPE()
+TYPE()
 
-  Function: type(<object>)
+  FUNCTION: type(<object>)
+  
   Returns a string indicating the object type of <object>, either EXIT,
   PLAYER, ROOM, or THING.
  
@@ -5784,9 +5784,13 @@ WORDPOS()
     > say type(here)
     You say "ROOM"
 
-& hasflag()
+  Related Topics:
+  
+& HASFLAG()
+HASFLAG()
 
-  Function: hasflag(<object>,<flag>)
+  FUNCTION: hasflag(<object>,<flag>)
+  
   Returns true if object <object> has the flag named <flag> set on it.
   You may not be able to retrieve information for objects that you do not
   own.
@@ -5796,10 +5800,14 @@ WORDPOS()
     You say "0"
     > say hasflag(me, connect) 
     You say "1"
- 
-& haspower()
 
-  Function: haspower(<object>,<power>)
+  Related Topics:
+   
+& HASPOWER()
+HASPOWER()
+
+  FUNCTION: haspower(<object>,<power>)
+  
   Returns true if object <object> has the power named <power> set on it.
   You may not be able to retrieve information for objects that you do not
   own.
@@ -5809,10 +5817,14 @@ WORDPOS()
     You say "0"
     > say hasflag(me, extended_who) 
     You say "1"
- 
-& delete()
 
-  Function: delete(<string>,<first>,<len>)
+  Related Topics:
+   
+& DELETE()
+DELETE()
+
+  FUNCTION: delete(<string>,<first>,<len>)
+  
   Returns <string>, but with <len> characters starting after the character
   at position <first> removed.  In other words, this function copies <first>
   characters, skips <len> characters, and then copies the remainder of the 
@@ -5824,22 +5836,33 @@ WORDPOS()
     > say delete(Would you like coffee or perhaps tea?, 15, 18)
     You say "Would you like tea?"
 
-& lock()
+  Related Topics:
+  
+& LOCK()
+LOCK()
 
-  Function: lock(<object>[/<whichlock>])
+  FUNCTION: lock(<object>[/<whichlock>])
  
   Returns the named lock on <object>.  If you don't specify the lock to get,
   the default lock is returned.  You must control <object>.
 
-& elock()
+  Related Topics:
+  
+& ELOCK()
+ELOCK()
 
-  Function: elock(<object>[/<whichlock>],<victim>)
+  FUNCTION: elock(<object>[/<whichlock>],<victim>)
+  
   Checks if <victim> would pass the named lock on <object>.  Only the object's
   owner may test locks other than the default lock.
+  
+  Related Topics:
 
-& lwho()
+& LWHO()
+LWHO()
 
-  Function: lwho()
+  FUNCTION: lwho()
+  
   Returns a list of the db numbers of connected players.
  
   Example:
@@ -5851,42 +5874,57 @@ WORDPOS()
     3 Players logged in.
     > say lwho()
     You say "#226 #271 #1"
-  See also: WHO, conn(), idle().
+  
+  Related Topics: WHO, conn(), idle().
 
 & OBJ()
+OBJ()
 
-  Function: obj(<object>)
+  FUNCTION: obj(<object>)
  
   Returns the proper objective pronoun (him, her, it, them) for referring to
   <object>, based on the object's Sex attribute.  You must either control
   or be near <object>.
-
+  
+  Related Topics:
+  
 & POSS()
+POSS()
 
-  Function: poss(<object>)
+  FUNCTION: poss(<object>)
  
   Returns the proper possessive pronoun (his, her, its, their) for referring
   to <object>, based on the object's Sex attribute.  You must either control
   or be near <object>.
+  
+  Related Topics:
 
 & APOSS()
+APOSS()
 
-  Function: aposs(<object>)
+  FUNCTION: aposs(<object>)
  
   Returns the proper absolute possessive pronoun (his, hers, its, theirs) for
-  referring to <object>, based on the object's Sex attribute.  You must either
+  referring to <object>, based on the object's sex attribute.  You must either
   control or be near <object>.
 
+  Related Topics:
+  
 & SUBJ()
+SUBJ()
 
-  Function: subj(<object>)
+  FUNCTION: subj(<object>)
  
   Returns the proper subjective pronoun (he, she, it, they) for referring to
   <object>, based on the object's Sex attribute.  You must either control
   or be near <object>.
+  
+  Related Topics:
 
 & LIT()
-  lit(<string>)
+LIT()
+
+  FUNCTION: lit(<string>)
 
   This function returns the string literally - without even squishing
   spaces, and without evaluating *anything*. This can be useful for
@@ -5896,6 +5934,7 @@ WORDPOS()
   attrib, however, since spaces are usually squished in setting an
   attribute. This example illustrates how to make it work:
 
+  Example:
     > @va me=$test: think {[lit(near       far)]}
     Set.
     > ex me/va
@@ -5904,14 +5943,22 @@ WORDPOS()
     near       far
 
   Leaving out the {}'s will not work in the above.
+  
+  Related Topics:
 
 & GREPI()
-  grepi(<object>,<attrs>,<pattern>)
+GREPI()
+
+  FUNCTION: grepi(<object>,<attrs>,<pattern>)
  
   This function works exactly like grep, but is case-insensitive.
-  See "help grep()" for details. 
+  
+  Related Topics: grep() 
+
 & GREP()
-  grep(<object>,<attrs>,<pattern>)
+GREP()
+
+  FUNCTION: grep(<object>,<attrs>,<pattern>)
   
   This function returns a list of attributes on <object> containing
   <pattern>.  <attrs> is a wildcard pattern for attribute names to
@@ -5922,28 +5969,45 @@ WORDPOS()
   NOT wildcard matched.
 
   This function is case-sensitive. grepi() is a case-insensitive version.
+
+  Related Topics:
+  
 & LPARENT()
-  lparent(<object>)
+LPARENT()
+
+  FUNCTION:  lparent(<object>)
   
   This function returns a list consisting of the object's db# (as per
   num()), the db# of its parent, grandparent, greatgrandparent, etc.
   The list will not, however, show parents of objects which the player
   is not privileged to examine.
+  
+  Related Topics:
 
 & STRCAT()
-  strcat(<string1>, <stringN>, ...)
+STRCAT()
+
+  FUNCTION: strcat(<string1>, <stringN>, ...)
  
   Concatanates two or more strings together, with no space between them.
   For example, strcat(foo,bar,baz,blech) will return the string
   "foobarbazblech".
+  
+  Related Topics:
  
 & STRIPANSI()
-  stripansi(<string>)
+STRIPANSI()
+
+  FUNCTION: stripansi(<string>)
  
   Strips the ansi codes from <string>.
+  
+  Related Topics: ANSI, ansi()
  
 & PMATCH()
-  pmatch(<string>)
+PMATCH()
+
+  FUNCTION: pmatch(<string>)
  
   Given the partial name of a player, it returns that player's dbref
   number. This partial name completion works identically to the partial
@@ -5955,7 +6019,9 @@ WORDPOS()
   
   Pmatch() will also accept *<player> or #<db#>. If given a non-player
   dbref #, pmatch() will return #-1.
-
+  
+  Related Topics:
+ 
 & PFIND()
   pfind(<string>)
  
@@ -5964,33 +6030,51 @@ WORDPOS()
   of pmatch() is still required.
 
   See: pmatch()
-   
+
 & DIE()
-  die(<number of times to roll die>, <number of sides on die>)
+DIE()
+
+  FUNCTION: die(<number of times to roll die>, <number of sides on die>)
  
   This function simulates rolling dice. It "rolls" a die with a given
   number of sides, a certain number of times, and sums the results.
   For example, DIE(2, 6) would roll "2d6" - two six-sided dice,
   generating a result in the range 2-12.
-& ALPHAMIN()
+  
+  Related Topics:
 
-  alphamin(<word1>, <word2>, <word3>, ...)
+& ALPHAMIN()
+ALPHAMIN()
+
+  FUNCTION: alphamin(<word1>, <word2>, <word3>, ...)
 
   Returns the word whose order is lexicographically first.
+ 
+  Related Topics: alphamax().
 
 & ALPHAMAX()
+ALPHAMAX()
 
-  alphamax(<word1>, <word2>, <word3>, ...)
+  FUNCTION: alphamax(<word1>, <word2>, <word3>, ...)
 
   Returns the word whose order is lexicographically last.
 
+  Related Topics: alphamin().  
+
 & ART()
-  art(<string>)
+ART()
+  
+  FUNCTION: art(<string>)
 
   This function returns the proper article, "a" or "an", based on whether
   or not <string> begins with a vowel.
+
+  Related Topics:
+  
 & HASATTR()
-  hasattr(<object>, <attribute name>)
+HASATTR()
+
+  FUNCTION: hasattr(<object>, <attribute name>)
  
   Returns 1 if the object has the named attribute, and 0 if it does
   not. If the object does not exist or the player does not have the
