@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.10 2000-05-20 06:22:37 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.11 2000-05-25 03:44:12 sdennis Exp $ 
 */
 
 /*
@@ -762,54 +762,62 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         sprintf(buf, "%s has disconnected.", Name(player));
         key = MSG_INV;
         if ((loc != NOTHING) && !(Dark(player) && Wizard(player)))
+        {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
+        }
         notify_check(player, player, buf, key);
         free_mbuf(buf);
         
-        if (mudconf.have_comsys)
-            do_comdisconnect(player);
-        
         if (mudconf.have_mailer)
+        {
             do_mail_purge(player);
+        }
         
         raw_broadcast(MONITOR, (char *)"GAME: %s has disconnected.", Name(player), 0, 0, 0, 0, 0);
-        
-        if (Guest(player) && mudconf.have_comsys)
-            toast_player(player);
+       
+        c_Connected(player);
+
+        if (mudconf.have_comsys)
+        {
+            do_comdisconnect(player);
+        }
         
         argv[0] = (char *)reason;
-        c_Connected(player);
-        
         atr_temp = atr_pget(player, A_ADISCONNECT, &aowner, &aflags);
-        if (atr_temp && *atr_temp)
+        if (*atr_temp)
+        {
             wait_que(player, player, 0, NOTHING, 0, atr_temp, argv, 1, NULL);
+        }
         free_lbuf(atr_temp);
-        if (mudconf.master_room != NOTHING) {
+        if (mudconf.master_room != NOTHING)
+        {
             atr_temp = atr_pget(mudconf.master_room, A_ADISCONNECT, &aowner, &aflags);
-            if (atr_temp)
+            if (*atr_temp)
+            {
                 wait_que(mudconf.master_room, player, 0, NOTHING, 0, atr_temp, (char **)NULL, 0, NULL);
+            }
             free_lbuf(atr_temp);
             DOLIST(obj, Contents(mudconf.master_room))
             {
                 atr_temp = atr_pget(obj, A_ADISCONNECT, &aowner, &aflags);
-                if (atr_temp)
+                if (*atr_temp)
                 {
                     wait_que(obj, player, 0, NOTHING, 0, atr_temp, (char **)NULL, 0, NULL);
                 }
                 free_lbuf(atr_temp);
             }
         }
-        /*
-        * do the zone of the player's location's possible * * *
-        * adisconnect 
-        */
+
+        // Do the zone of the player's location's possible adisconnect.
+        //
         if (mudconf.have_zones && ((zone = Zone(loc)) != NOTHING))
         {
             switch (Typeof(zone))
             {
             case TYPE_THING:
+
                 atr_temp = atr_pget(zone, A_ADISCONNECT, &aowner, &aflags);
-                if (atr_temp)
+                if (*atr_temp)
                 {
                     wait_que(zone, player, 0, NOTHING, 0, atr_temp, (char **)NULL, 0, NULL);
                 }
@@ -823,13 +831,14 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                 DOLIST(obj, Contents(zone))
                 {
                     atr_temp = atr_pget(obj, A_ADISCONNECT, &aowner, &aflags);
-                    if (atr_temp)
+                    if (*atr_temp)
                     {
                         wait_que(obj, player, 0, NOTHING, 0, atr_temp, (char **)NULL, 0, NULL);
                     }
                     free_lbuf(atr_temp);
                 }
                 break;
+
             default:
                 log_text(tprintf("Invalid zone #%d for %s(#%d) has bad type %d", zone, Name(player), player, Typeof(zone)));
             }
@@ -841,7 +850,9 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         }
         
         if (Guest(player))
+        {
             s_Flags(player, Flags(player) | DARK);  
+        }
     }
     else
     {
@@ -849,7 +860,9 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         sprintf(buf, "%s has partially disconnected.", Name(player));
         key = MSG_INV;
         if ((loc != NOTHING) && !(Dark(player) && Wizard(player)))
+        {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
+        }
         notify_check(player, player, buf, key);
         raw_broadcast(MONITOR, (char *)"GAME: %s has partially disconnected.", Name(player), 0, 0, 0, 0, 0);
         free_mbuf(buf);
