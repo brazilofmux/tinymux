@@ -11313,9 +11313,9 @@ VALID()
 
   Possible values for <category>:
 
-     name       Test for object name.
-     player     Test for player name.
-     attrname   Test for attribute name.
+     name        Test for object name.
+     playername  Test for player name.
+     attrname    Test for attribute name.
 
   Valid() does not check the database for existance and it does not guarantee
   that an attempt to use such an object will succeed. It only looks at
