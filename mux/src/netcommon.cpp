@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.14 2003-02-17 02:26:23 sdennis Exp $
+// $Id: netcommon.cpp,v 1.15 2003-03-08 03:24:41 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -176,7 +176,7 @@ void raw_notify(dbref player, const char *msg)
     DESC_ITER_PLAYER(player, d)
     {
         queue_string(d, msg);
-        queue_write(d, "\r\n", 2);
+        queue_write_LEN(d, "\r\n", 2);
     }
 }
 
@@ -195,7 +195,7 @@ void raw_notify_newline(dbref player)
     DESC *d;
     DESC_ITER_PLAYER(player, d)
     {
-        queue_write(d, "\r\n", 2);
+        queue_write_LEN(d, "\r\n", 2);
     }
 }
 
@@ -223,7 +223,7 @@ void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
         if ((Flags(d->player) & inflags) == inflags)
         {
             queue_string(d, buff);
-            queue_write(d, "\r\n", 2);
+            queue_write_LEN(d, "\r\n", 2);
             process_output(d, false);
         }
     }
@@ -314,7 +314,7 @@ void add_to_output_queue(DESC *d, const char *b, int n)
  * queue_write: Add text to the output queue for the indicated descriptor.
  */
 
-void queue_write(DESC *d, const char *b, int n)
+void queue_write_LEN(DESC *d, const char *b, int n)
 {
     if (n <= 0)
     {
@@ -371,6 +371,11 @@ void queue_write(DESC *d, const char *b, int n)
 #endif
 }
 
+void queue_write(DESC *d, const char *b)
+{
+    queue_write_LEN(d, b, strlen(b));
+}
+
 void queue_string(DESC *d, const char *s)
 {
     const char *new0;
@@ -392,7 +397,7 @@ void queue_string(DESC *d, const char *s)
     {
         new0 = strip_accents(new0);
     }
-    queue_write(d, new0, strlen(new0));
+    queue_write(d, new0);
 }
 
 void freeqs(DESC *d)
@@ -1767,7 +1772,7 @@ static void failconn(const char *logcode, const char *logtype, const char *logre
     if (*motd_msg)
     {
         queue_string(d, motd_msg);
-        queue_write(d, "\r\n", 2);
+        queue_write_LEN(d, "\r\n", 2);
     }
     free_lbuf(command);
     free_lbuf(user);
@@ -2127,7 +2132,7 @@ bool do_command(DESC *d, char *command)
             if (d->output_prefix)
             {
                 queue_string(d, d->output_prefix);
-                queue_write(d, "\r\n", 2);
+                queue_write_LEN(d, "\r\n", 2);
             }
             mudstate.curr_executor = d->player;
             mudstate.curr_enactor = d->player;
@@ -2164,7 +2169,7 @@ bool do_command(DESC *d, char *command)
             if (d->output_suffix)
             {
                 queue_string(d, d->output_suffix);
-                queue_write(d, "\r\n", 2);
+                queue_write_LEN(d, "\r\n", 2);
             }
             mudstate.debug_cmd = cmdsave;
             return true;
@@ -2188,7 +2193,7 @@ bool do_command(DESC *d, char *command)
         if (d->output_prefix)
         {
             queue_string(d, d->output_prefix);
-            queue_write(d, "\r\n", 2);
+            queue_write_LEN(d, "\r\n", 2);
         }
     }
     if (  !check_access(d->player, cp->perm)
@@ -2275,7 +2280,7 @@ bool do_command(DESC *d, char *command)
         if (d->output_suffix)
         {
             queue_string(d, d->output_suffix);
-            queue_write(d, "\r\n", 2);
+            queue_write_LEN(d, "\r\n", 2);
         }
     }
     mudstate.debug_cmd = cmdsave;
