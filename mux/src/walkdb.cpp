@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.3 2002-06-04 00:47:28 sdennis Exp $
+// $Id: walkdb.cpp,v 1.4 2002-06-05 06:27:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -22,7 +22,7 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
 {
     char *command = replace_tokens(action, argstr, Tiny_ltoa_t(number), NULL);
     CLinearTimeAbsolute lta;
-    wait_que(executor, CALLERQQQ, enactor, FALSE, lta, NOTHING, 0, command,
+    wait_que(executor, caller, enactor, FALSE, lta, NOTHING, 0, command,
         cargs, ncargs, mudstate.global_regs);
     free_lbuf(command);
 }
@@ -67,7 +67,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
         {
             number++;
             objstring = parse_to(&curr, delimiter, EV_STRIP_CURLY);
-            bind_and_queue(executor, CALLERQQQ, enactor, command, objstring,
+            bind_and_queue(executor, caller, enactor, command, objstring,
                 cargs, ncargs, number);
         }
     }
@@ -77,7 +77,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
         tbuf = alloc_lbuf("dolist.notify_cmd");
         strcpy(tbuf, (char *) "@notify/quiet me");
         CLinearTimeAbsolute lta;
-        wait_que(executor, CALLERQQQ, enactor, FALSE, lta, NOTHING, A_SEMAPHORE,
+        wait_que(executor, caller, enactor, FALSE, lta, NOTHING, A_SEMAPHORE,
             tbuf, cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
     }
@@ -833,7 +833,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
             char *buff2 = replace_tokens(parm->s_rst_eval, buff, NULL, NULL);
             result = bp = alloc_lbuf("search_perform");
             str = buff2;
-            TinyExec(result, &bp, executor, CALLERQQQ, enactor,
+            TinyExec(result, &bp, executor, caller, enactor,
                 EV_FCHECK | EV_EVAL | EV_NOTRACE, &str, (char **)NULL, 0);
             *bp = '\0';
             free_lbuf(buff2);
@@ -907,7 +907,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
         return;
     }
     olist_push();
-    search_perform(executor, CALLERQQQ, enactor, &searchparm);
+    search_perform(executor, caller, enactor, &searchparm);
     destitute = 1;
 
     // If we are doing a @mark command, handle that here.
@@ -1166,7 +1166,7 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int key,
             buff[0] = '#';
             Tiny_ltoa(i, buff+1);
             number++;
-            bind_and_queue(executor, CALLERQQQ, enactor, command, buff,
+            bind_and_queue(executor, caller, enactor, command, buff,
                 cargs, ncargs, number);
         }
     }

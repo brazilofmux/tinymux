@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.3 2002-06-04 00:47:28 sdennis Exp $
+// $Id: mail.cpp,v 1.4 2002-06-05 06:26:21 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -246,12 +246,12 @@ static int add_mail_message(dbref player, char *message)
     char *atrstr = atr_get(player, A_SIGNATURE, &aowner, &aflags);
     char *execstr = bp = alloc_lbuf("add_mail_message");
     char *str = atrstr;
-    TinyExec(execstr, &bp, player, CALLERQQQ, player,
+    TinyExec(execstr, &bp, player, player, player,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
     *bp = '\0';
     char *msg = bp = alloc_lbuf("add_mail_message.2");
     str = message;
-    TinyExec(msg, &bp, player, CALLERQQQ, player,
+    TinyExec(msg, &bp, player, player, player,
              EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
     *bp = '\0';
 
@@ -768,7 +768,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
 
                     msg = bp = alloc_lbuf("do_mail_review");
                     str = msgbuff;
-                    TinyExec(msg, &bp, player, CALLERQQQ, player,
+                    TinyExec(msg, &bp, player, player, player,
                              EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str,
                              (char **)NULL, 0);
                     *bp = '\0';
@@ -786,7 +786,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
 #else
                     msg = bp = alloc_lbuf("do_mail_review");
                     str = MessageFetch(mp->number);
-                    TinyExec(msg, &bp, player, CALLERQQQ, player,
+                    TinyExec(msg, &bp, player, player, player,
                              EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str,
                              (char **)NULL, 0);
                     *bp = '\0';
@@ -4035,7 +4035,7 @@ static void do_mail_proof(dbref player)
     {
         str = mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
         bp = msg = alloc_lbuf("do_mail_proof");
-        TinyExec(msg, &bp, player, CALLERQQQ, player, EV_EVAL | EV_FCHECK,
+        TinyExec(msg, &bp, player, player, player, EV_EVAL | EV_FCHECK,
                  &str, (char **)NULL, 0);
         *bp = '\0';
         free_lbuf(mailmsg);

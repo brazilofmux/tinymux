@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
+// $Id: cque.cpp,v 1.3 2002-06-05 06:25:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -166,7 +166,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 
                         // No lag check on piped commands.
                         //
-                        process_command(executor, CALLERQQQ, point->enactor,
+                        process_command(executor, point->caller, point->enactor,
                             0, cp, point->env, point->nargs);
                         if (mudstate.pout)
                         {
@@ -184,7 +184,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     ltaBegin.GetUTC();
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
-                    char *log_cmdbuf = process_command(executor, CALLERQQQ,
+                    char *log_cmdbuf = process_command(executor, point->caller,
                         point->enactor, 0, cp, point->env, point->nargs);
 
                     CLinearTimeAbsolute ltaEnd;
@@ -802,7 +802,7 @@ void wait_que
         return;
     }
 
-    BQUE *tmp = setup_que(executor, CALLERQQQ, enactor, command, args, nargs, sargs);
+    BQUE *tmp = setup_que(executor, caller, enactor, command, args, nargs, sargs);
     if (!tmp)
     {
         return;
@@ -883,7 +883,7 @@ void do_wait
             ltd.SetSecondsString(event);
             ltaWhen += ltd;
         }
-        wait_que(executor, CALLERQQQ, enactor, TRUE, ltaWhen, NOTHING, 0, cmd,
+        wait_que(executor, caller, enactor, TRUE, ltaWhen, NOTHING, 0, cmd,
             cargs, ncargs, mudstate.global_regs);
         return;
     }
@@ -957,7 +957,7 @@ void do_wait
             thing = NOTHING;
             bTimed = FALSE;
         }
-        wait_que(executor, CALLERQQQ, enactor, bTimed, ltaWhen, thing, attr,
+        wait_que(executor, caller, enactor, bTimed, ltaWhen, thing, attr,
             cmd, cargs, ncargs, mudstate.global_regs);
     }
 }
