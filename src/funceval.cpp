@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.18 2000-07-17 18:52:45 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.19 2000-07-31 16:38:03 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -39,7 +39,6 @@
  */
 
 extern NAMETAB indiv_attraccess_nametab[];
-extern char *FDECL(trim_space_sep, (char *, char));
 extern char *FDECL(next_token, (char *, char));
 extern char *FDECL(split_token, (char **, char));
 extern int FDECL(countwords, (char *, char));
@@ -1805,47 +1804,49 @@ FUNCTION(fun_sortby)
     free_lbuf(atext);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_last: Returns last word in a string
- */
-
-/*
- * Borrowed from TinyMUSH 2.2 
- */
+// fun_last: Returns last word in a string. Borrowed from TinyMUSH 2.2.
+//
 FUNCTION(fun_last)
 {
-    char *s, *last, sep;
-    int len, i;
+    char sep;
 
-    /*
-     * If we are passed an empty arglist return a null string 
-     */
-
+    // If we are passed an empty arglist return a null string.
+    //
     if (nfargs <= 0)
     {
         return;
     }
     varargs_preamble("LAST", 2);
-    s = trim_space_sep(fargs[0], sep);  /*
-                         * trim leading spaces 
-                         */
 
-    /*
-     * If we're dealing with spaces, trim off the trailing stuff 
-     */
+    // Trim leading spaces.
+    //
+    int nLen = strlen(fargs[0]);
+    char *pStart = trim_space_sep_LEN(fargs[0], nLen, sep, &nLen);
+    char *pEnd = pStart + nLen - 1;
 
-    if (sep == ' ') {
-        len = strlen(s);
-        for (i = len - 1; s[i] == ' '; i--) ;
-        if (i + 1 <= len)
-            s[i + 1] = '\0';
+    if (sep == ' ')
+    {
+        // We're dealing with spaces, so trim off the trailing spaces.
+        //
+        while (pStart <= pEnd && *pEnd == ' ')
+        {
+            pEnd--;
+        }
+        pEnd[1] = '\0';
     }
-    last = (char *)strrchr(s, sep);
-    if (last)
-        safe_str(++last, buff, bufc);
-    else
-        safe_str(s, buff, bufc);
+
+    // Find the separator nearest the end.
+    //
+    char *p = pEnd;
+    while (pStart <= p && *p != sep)
+    {
+        p--;
+    }
+
+    // Return the last token.
+    //
+    nLen = pEnd - p;
+    safe_copy_buf(p+1, nLen, buff, bufc, LBUF_SIZE-1);
 }
 
 /*
