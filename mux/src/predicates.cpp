@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.11 2002-06-13 22:12:46 jake Exp $
+// $Id: predicates.cpp,v 1.12 2002-06-14 05:52:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1510,6 +1510,7 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
 // bCanReadAttr, bCanSetAttr: Verify permission to affect attributes.
 // ---------------------------------------------------------------------------
 
+
 BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
 {
     dbref aowner;
@@ -1528,59 +1529,54 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
     }
 #endif
 
-    if (   (tattr->flags & AF_INTERNAL)
-        || (aflags & AF_INTERNAL))
+    int mDeny = 0;
+    int mAllow = AF_VISUAL;
+    if (WizRoy(executor)
     {
-        return FALSE;
-    }
-    else if (  (  (tattr->flags & AF_DARK)
-               || (aflags & AF_DARK))
-             && !God(executor))
-    {
-        return FALSE;
-    }
-    else if (  (  (tattr->flags & AF_MDARK)
-               || (tattr->flags & AF_ODARK)
-               || (aflags & AF_MDARK)
-               || (aflags & AF_ODARK))
-             && !WizRoy(executor))
-    {
-        return FALSE;
-    }
-    else if (   (tattr->flags & AF_VISUAL)
-             || (aflags & AF_VISUAL)
-             || Examinable(executor, target))
-    {
-        return TRUE;
-    }
-    else if (tattr->number == A_DESC)
-    {
-        if (nearby(executor, target))
+        if (God(executor))
         {
-            return TRUE;
+            mDeny = AF_INTERNAL;
         }
         else
         {
-#ifdef STANDALONE
-            return FALSE;
-#else
-            return mudconf.read_rem_desc;
-#endif
+            mDeny = AF_INTERNAL|AF_DARK;
         }
     }
-    else
+    else if (  Examinable(executor, target)
+            || owner(executor) == aowner)
     {
-        STARTLOG(LOG_BUGS, "BUG", "UNIMP");
-        log_text("bCanRead fell through. Executor:");
-        log_text(Tiny_ltoa_t(executor));
-        log_text("Target:");
-        log_text(Tiny_ltoa_t(target));
-        log_text("Attr:");
-        log_text(tattr->name);
-        ENDLOG;
-        return TRUE; // I don't know what would reach this point. --JN
-
+        mDeny = AF_INTERNAL|AF_DARK|AF_MDARK;
     }
+    else if (tattr->number == A_DESC)
+    {
+#ifdef STANDALONE
+        if (nearby(executor, target))
+#else
+        if (  mudconf.read_rem_desc
+           || nearby(executor, target))
+#endif
+        {
+            mDeny = AF_INTERNAL|AF_DARK|AF_MDARK|AF_ODARK;
+        }
+    }
+    if (  (tattr->flags & mAllow)
+       || (aflags & mAllow))
+    {
+        return TRUE;
+    }
+    if (mDeny)
+    {
+        if (  (tattr->flags & mDeny)
+           || (aflags & mDeny))
+        {
+            return FALSE;
+        }
+        else
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 BOOL bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
