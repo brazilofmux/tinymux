@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.41 2003-02-16 16:33:14 jake Exp $
+// $Id: functions.cpp,v 1.42 2003-02-16 16:39:27 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2073,7 +2073,7 @@ FUNCTION(fun_owner)
         {
             dbref aowner;
             int   aflags;
-            atr_pget_info(it, atr, &aowner, &aflags);
+            atr_pget_info(it, attr->number, &aowner, &aflags);
             it = aowner;
         }
     }
@@ -4929,21 +4929,21 @@ static bool atr_has_flag
 FUNCTION(fun_hasflag)
 {
     dbref it;
-    int atr;
+    ATTR *attr;
 
-    if (parse_attrib(executor, fargs[0], &it, &atr))
+    if (parse_attrib_temp(executor, fargs[0], &it, &attr))
     {
-        ATTR *ap;
-        if (atr == NOTHING || !(ap = atr_num(atr)))
+        if (  !attr
+           || !See_attr(executor, it, attr))
         {
-            safe_str("#-1 NOT FOUND", buff, bufc);
+            safe_notfound(buff, bufc);
         }
         else
         {
             int aflags;
             dbref aowner;
-            atr_pget_info(it, atr, &aowner, &aflags);
-            bool cc = atr_has_flag(executor, it, ap, aowner, aflags, fargs[1]);
+            atr_pget_info(it, attr->number, &aowner, &aflags);
+            bool cc = atr_has_flag(executor, it, attr, aowner, aflags, fargs[1]);
             safe_bool(cc, buff, bufc);
         }
     }
