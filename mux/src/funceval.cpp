@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.71 2003-03-17 15:00:32 sdennis Exp $
+// $Id: funceval.cpp,v 1.72 2003-10-23 05:23:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3438,9 +3438,17 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
         return;
     }
 
-    int matched = pcre_exec(re, NULL, search, strlen(search), 0, 0,
+    int novec = pcre_exec(re, NULL, search, strlen(search), 0, 0,
         ovec, ovecsize);
-    safe_bool(matched > 0, buff, bufc);
+    if (novec == 0)
+    {
+        novec == ovecsize;
+    }
+    safe_bool(novec > 0, buff, bufc);
+    if (novec < 0)
+    {
+        novec = 0;
+    }
 
     // If we don't have a third argument, we're done.
     //
@@ -3471,11 +3479,14 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
                 mudstate.global_regs[curq] = alloc_lbuf("fun_regmatch");
             }
             int len = 0;
-            if (matched >= i - 1 && ovec[i*2] >= 0)
+            int iStart = i*2;
+            int iEnd   = iStart+1;
+            if (  iEnd < novec
+               && 0 <= ovec[iStart])
             {
                 // We have a subexpression.
                 //
-                len = ovec[(i*2)+1] - ovec[i*2];
+                len = ovec[iEnd] - ovec[iStart];
                 if (len > LBUF_SIZE - 1)
                 {
                     len = LBUF_SIZE - 1;
@@ -3484,7 +3495,7 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
                 {
                     len = 0;
                 }
-                memcpy(mudstate.global_regs[curq], search + ovec[i*2], len);
+                memcpy(mudstate.global_regs[curq], search + ovec[iStart], len);
             }
             mudstate.global_regs[curq][len] = '\0';
             mudstate.glob_reg_len[curq] = len;
