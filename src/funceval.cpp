@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.17 2000-06-09 19:10:39 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.18 2000-07-17 18:52:45 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -590,13 +590,11 @@ FUNCTION(fun_objeval)
     *bp = '\0';
     dbref obj = match_thing(player, name);
 
-    if (  obj == NOTHING
-       || obj == GOD
-       || (Owner(obj) != Owner(player) && !Wizard(player)))
+    if (!Controls(player, obj))
     {
-        // The right circumstance were not met, so we are evaluating
-        // as the player who gave the command instead of the requested
-        // object.
+        // The right circumstances were not met, so we are evaluating
+        // as the player who gave the command instead of the
+        // requested object.
         //
         obj = player;
     }
