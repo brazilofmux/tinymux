@@ -33,7 +33,7 @@ ones are used.
 
 Range and precision of Dates:
 
-MUX supports a proleptic Gregorian calendard with dates in the range of
+MUX supports a proleptic Gregorian calendar with dates in the range of
 'Sat Jan 01 00:00:00 -27256 UTC' through 'Thu Dec 31 23:59:59 30826 UTC'
 which corresponds to -922283539200 through 910638979199.  The precision is
 100 nanoseconds, and 0 (the epoch) corresponds to
