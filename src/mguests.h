@@ -1,6 +1,6 @@
 // mguests.h
 //
-// $Id: mguests.h,v 1.4 2002-02-13 19:21:41 sdennis Exp $
+// $Id: mguests.h,v 1.5 2002-02-13 20:17:28 sdennis Exp $
 //
 
 #ifndef  __MGUESTS_H
@@ -15,6 +15,7 @@
 class CGuests
 {
 private:
+    static char name[50];
     dbref *Guests;                 // Main housing of guest dbrefs
     int   nGuests;                 // Number of them
     void  GrowGuests(int);         // They keep growing and growing
