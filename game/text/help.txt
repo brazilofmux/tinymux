@@ -1419,7 +1419,7 @@ WHO
   The following switches are available:
 
     /poll - Displays the current poll message from the WHO report.
-    /poll <message> - Sets a new poll message in the WHO report.
+    /header <message> - Sets a new poll message in the WHO report.
 
   Related Topics: WHO, @poll.
 
@@ -2427,6 +2427,16 @@ PARENT OBJECTS (continued)
   any type.
 
   Related Topics: powers list
+
+& @POLL
+@POLL
+
+  COMMAND: @poll [<message>]
+
+  Sets a new poll message in the WHO report. The command is an
+  alias for @doing/header.
+
+  Related Topics: WHO, @doing
 
 & POWERS LIST
 POWERS LIST
