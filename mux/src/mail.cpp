@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.10 2003-02-04 06:03:12 sdennis Exp $
+// $Id: mail.cpp,v 1.11 2003-02-04 08:45:49 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1108,7 +1108,7 @@ char *MakeCanonicalMailAlias
 )
 {
     if (  !pMailAlias
-       || !Tiny_IsAlpha[(unsigned char)pMailAlias[0]])
+       || !mux_isalpha[(unsigned char)pMailAlias[0]])
     {
         return NULL;
     }
@@ -1122,7 +1122,7 @@ char *MakeCanonicalMailAlias
 
     while (*pMailAlias && nLeft)
     {
-        if (  !Tiny_IsAlpha[(unsigned char)*pMailAlias]
+        if (  !mux_isalpha[(unsigned char)*pMailAlias]
            && !mux_isdigit[(unsigned char)*pMailAlias])
         {
             return Buffer;

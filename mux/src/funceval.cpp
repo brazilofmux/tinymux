@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.12 2003-02-04 05:38:04 sdennis Exp $
+// $Id: funceval.cpp,v 1.13 2003-02-04 08:45:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1755,7 +1755,7 @@ FUNCTION(fun_isword)
 
     for (p = fargs[0]; *p; p++)
     {
-        if (!Tiny_IsAlpha[(unsigned char)*p])
+        if (!mux_isalpha[(unsigned char)*p])
         {
             result = FALSE;
             break;
