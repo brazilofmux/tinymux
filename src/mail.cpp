@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.23 2001-02-09 10:06:09 zenty Exp $
+// $Id: mail.cpp,v 1.24 2001-02-09 18:17:00 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -4044,33 +4044,39 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
 
 void do_expmail_stop(dbref player, int flags)
 {
-    char *tolist, *mailsub, *mailmsg, *mailflags;
-    dbref aowner;
-    dbref aflags;
-
-    tolist = atr_get(player, A_MAILTO, &aowner, &aflags);
-    mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
-    mailsub = atr_get(player, A_MAILSUB, &aowner, &aflags);
-    mailflags = atr_get(player, A_MAILFLAGS, &aowner, &aflags);
-
-    if (!*mailmsg) {
-      notify(player, "MAIL: No message to send. Use - to add a message.");
-      return;
+    if ((Flags2(player) & PLAYER_MAILS) != PLAYER_MAILS)
+    {
+        notify(player, "MAIL: No message started.");
+        return;
     }
 
-    if (!*tolist || !(Flags2(player) & PLAYER_MAILS))
+    dbref aowner;
+    dbref aflags;
+    char *tolist = atr_get(player, A_MAILTO, & aowner, &aflags);
+    if (*tolist == '\0')
     {
-        notify(player, "MAIL: No such message to send.");
-        free_lbuf(tolist);
+        notify(player, "MAIL: No recipients.");
     }
     else
     {
-        mail_to_list(player, tolist, mailsub, mailmsg, flags | Tiny_atol(mailflags), 0);
+        char *mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
+        if (*mailmsg == '\0')
+        {
+            notify(player, "MAIL: The body of this message is empty.  Use - to add to the message.");
+        }
+        else
+        {
+            char *mailsub   = atr_get(player, A_MAILSUB, &aowner, &aflags);
+            char *mailflags = atr_get(player, A_MAILFLAGS, &aowner, &aflags);
+            mail_to_list(player, tolist, mailsub, mailmsg, flags | Tiny_atol(mailflags), 0);
+            free_lbuf(mailflags);
+            free_lbuf(mailsub);
+
+            Flags2(player) &= ~PLAYER_MAILS;
+        }
+        free_lbuf(mailmsg);
     }
-    free_lbuf(mailflags);
-    free_lbuf(mailmsg);
-    free_lbuf(mailsub);
-    Flags2(player) &= ~PLAYER_MAILS;
+    free_lbuf(tolist);
 }
 
 void do_expmail_abort(dbref player)
