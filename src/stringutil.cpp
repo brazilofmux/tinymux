@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.38 2001-04-09 23:44:49 sdennis Exp $
+// $Id: stringutil.cpp,v 1.39 2001-06-06 03:33:18 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2656,7 +2656,6 @@ CF_HAND(cf_art_rule)
     arNewRule->m_pRegexp = reNewRegexp;
     
     *arRules = arNewRule;
-
-    return 0;
 #endif //STANDALONE
+    return 0;
 }
