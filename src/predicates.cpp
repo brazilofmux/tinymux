@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.37 2001-09-14 22:56:47 sdennis Exp $
+// $Id: predicates.cpp,v 1.38 2001-09-18 05:35:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -33,7 +33,7 @@ char * DCL_CDECL tprintf(const char *fmt,...)
     return buff;
 }
 
-void DCL_CDECL safe_tprintf_str(char *str, char **bp, char *fmt,...)
+void DCL_CDECL safe_tprintf_str(char *str, char **bp, const char *fmt,...)
 {
     va_list ap;
     va_start(ap, fmt);

@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.62 2001-09-09 02:32:17 sdennis Exp $
+// $Id: externs.h,v 1.63 2001-09-18 05:35:40 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -167,7 +167,7 @@ extern void FDECL(badname_list, (dbref, const char *));
 
 /* From predicates.cpp */
 extern char * DCL_CDECL tprintf(const char *, ...);
-extern void DCL_CDECL safe_tprintf_str(char *, char **, char *, ...);
+extern void DCL_CDECL safe_tprintf_str(char *, char **, const char *, ...);
 extern dbref    FDECL(insert_first, (dbref, dbref));
 extern dbref    FDECL(remove_first, (dbref, dbref));
 extern dbref    FDECL(reverse_list, (dbref));
