@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.11 2004-06-23 01:23:24 sdennis Exp $
+// $Id: functions.h,v 1.12 2004-07-13 01:58:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -44,7 +44,7 @@ extern void list_functable(dbref);
 
 #define print_sep(ps,b,p) safe_copy_buf((ps)->str,(ps)->n,(b),(p))
 
-#define MAX_SEP_LEN 15
+#define MAX_SEP_LEN 50
 typedef struct
 {
     size_t n;

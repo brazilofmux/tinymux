@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.112 2004-07-09 14:49:42 sdennis Exp $
+// $Id: functions.cpp,v 1.113 2004-07-13 01:58:15 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -805,7 +805,7 @@ bool delim_check
             }
             else
             {
-                safe_str("#-1 SEPARATOR MUST BE ONE CHARACTER", buff, bufc);
+                safe_str("#-1 SEPARATOR IS TOO LARGE", buff, bufc);
                 bSuccess = false;
             }
         }
