@@ -15,7 +15,6 @@ docs/mux2.2-man.pdf
 docs/mux2.2-man.tex
 game/alias.conf
 game/bin/netmux.exe
-game/bin/dbconvert.exe
 game/compat.conf
 game/data/db_load.bat
 game/data/db_unload.bat
