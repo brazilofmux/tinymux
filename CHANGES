@@ -428,9 +428,10 @@ Bug Fixes:
  --  On Win32, the logs now use CRLF instead of NL.
  --  Clean build on gcc 3.0. Thanks Morgan.
  --  SIGSEGV bug in revwords(). Bug from Treyvan.
- --  Code review and changes to object.cpp. Thanks Jake.
  --  lparent() and lcon() now use the DbrefToBuffer() calls to ensure that
      returned dbrefs aren't truncated in the middle of the number.
+ --  Missing type case in destroy_obj(). Thanks Jake
+ --  Possible check_pennies() SIGSEGV bug. Thanks Jake.
 
 
 Performance Enhancements:

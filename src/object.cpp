@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.11 2001-07-04 08:24:10 sdennis Exp $
+// $Id: object.cpp,v 1.12 2001-07-04 16:13:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -746,30 +746,35 @@ static void NDECL(purge_going)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * check_dead_refs: Look for references to GOING or illegal objects.
- */
-
+// ---------------------------------------------------------------------------
+// check_dead_refs: Look for references to GOING or illegal objects.
+//
 static void check_pennies(dbref thing, int limit, const char *qual)
 {
-    int j;
-
     if (Going(thing))
+    {
         return;
-    j = Pennies(thing);
-    if (isRoom(thing) || isExit(thing)) {
-        if (j) {
-            Log_header_err(thing, NOTHING, j, 0,
-                       qual, "is strange.  Reset.");
-            s_Pennies(j, 0);
+    }
+    int j = Pennies(thing);
+    if (j)
+    {
+        if (isRoom(thing) || isExit(thing))
+        {
+            Log_header_err(thing, NOTHING, j, 0, qual, "is strange.  Reset.");
+            s_Pennies(thing, 0);
         }
-    } else if (j == 0) {
+        else if (j < 0)
+        {
+            Log_header_err(thing, NOTHING, j, 0, qual, "is negative.");
+        }
+        else if (limit < j)
+        {
+            Log_header_err(thing, NOTHING, j, 0, qual, "is excessive.");
+        }
+    }
+    else
+    {
         Log_header_err(thing, NOTHING, j, 0, qual, "is zero.");
-    } else if (j < 0) {
-        Log_header_err(thing, NOTHING, j, 0, qual, "is negative.");
-    } else if (j > limit) {
-        Log_header_err(thing, NOTHING, j, 0, qual, "is excessive.");
     }
 }
 
