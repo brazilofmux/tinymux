@@ -105,6 +105,8 @@ Feature Additions:
     more precisely.
  -- Updated Mersenne Twister Random Number code to a later version.
  -- Bug #799 - Update lcmds() to handle spaced commands and ^-listens.
+ -- Add isint() and israt().
+ -- Improve auto-detection of list type. Affects sort().
 
 Bug Fixes:
 ~~~~~~~~~
@@ -199,10 +201,15 @@ Bug Fixes:
     new guest system easier.
  -- The names reported in the @chown message were usually wrong.
  -- Fixed typo bug in 2.1.12.37 that disallowed guests from connecting.
- -- Add /Op compiler option to fix "20:000000000" bug on Win32.
+ -- To fix "20:000000000" bug on Win32, set the floating-point processor to
+    53-bits of precision on both Win32 and Linux. The bug is not currently
+    an issue on Linux, but this fix prevents it from become one.
  -- Bug #799 - SIGSEGV was possible in lcmds().
  -- Guest password is reset to ease transitions.
  -- @chown success message was not null-terminated.
+ -- Updated strtod.cpp to later version.
+ -- In places that check for integers, also allow a plus sign. Changed by
+    Raevnos.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
