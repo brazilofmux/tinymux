@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.125 2002-01-15 06:50:01 sdennis Exp $
+// $Id: functions.cpp,v 1.126 2002-01-15 15:40:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4424,6 +4424,15 @@ FUNCTION(fun_lwho)
     make_ulist(player, buff, bufc);
 }
 
+// ---------------------------------------------------------------------------
+// fun_lports: Return list of ports of connected users.
+// ---------------------------------------------------------------------------
+
+FUNCTION(fun_lports)
+{
+    make_port_ulist(player, buff, bufc);
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_nearby: Return whether or not obj1 is near obj2.
@@ -6826,6 +6835,7 @@ FUN flist[] =
     {"LOCALIZE", fun_localize, MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
     {"LOCK",     fun_lock,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LOG",      fun_log,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LPORTS",   fun_lports,   MAX_ARG, 0,  0,       0, CA_WIZARD},
     {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LROOMS",   fun_lrooms,   MAX_ARG, 1,  3,       0, CA_PUBLIC},
     {"LPOS",     fun_lpos,     MAX_ARG, 2,  2,       0, CA_PUBLIC},

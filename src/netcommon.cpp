@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.51 2002-01-15 06:30:51 sdennis Exp $
+// $Id: netcommon.cpp,v 1.52 2002-01-15 15:40:23 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -39,24 +39,45 @@ extern OVERLAPPED lpo_shutdown; // special to indicate a player should do a shut
 #endif
 
 /*
-* ---------------------------------------------------------------------------
-* * make_portlist: Make a list of ports for PORTS().
-*/
+ * ---------------------------------------------------------------------------
+ * * make_portlist: Make a list of ports for PORTS().
+ */
 
 void make_portlist(dbref player, dbref target, char *buff, char **bufc)
 {
-    DESC *d;
-    int i = 0;
+    ITB itb;
+    IntegerToBuffer_Init(&itb, buff, bufc);
 
-    DESC_ITER_CONN(d) {
-        if (d->player == target) {
-            safe_str(tprintf("%d ", d->descriptor), buff, bufc);
-            i = 1;
+    DESC *d;
+    DESC_ITER_CONN(d)
+    {
+        if (  d->player == target
+           && !IntegerToBuffer_Add(&itb, d->descriptor))
+        {
+            break;
         }
     }
-    if (i)
-        (*bufc)--;
-    **bufc = '\0';
+    IntegerToBuffer_Final(&itb);
+}
+
+// ---------------------------------------------------------------------------
+// make_port_ulist: Make a list of connected user numbers for the LPORTS function.
+// ---------------------------------------------------------------------------
+
+void make_port_ulist(dbref player, char *buff, char **bufc)
+{
+    ITB itb;
+    IntegerToBuffer_Init(&itb, buff, bufc);
+
+    DESC *d;
+    DESC_ITER_CONN(d)
+    {
+        if (!IntegerToBuffer_Add(&itb, d->descriptor))
+        {
+            break;
+        }
+    }
+    IntegerToBuffer_Final(&itb);
 }
 
 /*
