@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects
 //
-// $Id: create.cpp,v 1.12 2001-10-02 05:35:25 sdennis Exp $
+// $Id: create.cpp,v 1.13 2001-10-06 06:23:33 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -932,9 +932,10 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
         }
     }
 
+    s_Going(thing);
+
     if (!bInstant)
     {
-        s_Going(thing);
         return;
     }
 
