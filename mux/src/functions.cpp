@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.71 2004-02-28 19:41:35 sdennis Exp $
+// $Id: functions.cpp,v 1.72 2004-03-12 19:45:05 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3361,16 +3361,6 @@ FUNCTION(fun_add)
         sum += mux_atol(fargs[i]);
     }
     safe_ltoa(sum, buff, bufc);
-}
-
-FUNCTION(fun_testadd)
-{
-    INT64 sum = 0;
-    for (int i = 0; i < nfargs; i++)
-    {
-        sum = bcd_add(sum, mux_atobcd(fargs[i]));
-    }
-    safe_bcdtoa(sum, buff, bufc);
 }
 
 FUNCTION(fun_sub)
@@ -9123,7 +9113,6 @@ FUN flist[] =
     {"ACCENT",      fun_accent,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"ACOS",        fun_acos,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"ADD",         fun_add,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"TESTADD",     fun_testadd,    MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {"AFTER",       fun_after,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"ALPHAMAX",    fun_alphamax,   MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {"ALPHAMIN",    fun_alphamin,   MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
