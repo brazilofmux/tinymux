@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.7 2000-06-02 16:18:05 sdennis Exp $
+// $Id: look.cpp,v 1.8 2000-06-05 18:26:26 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -684,22 +684,26 @@ static void look_atrs1(dbref player, dbref thing, dbref othing, int check_exclud
     char *as, *buf;
     
     cattr = (ATTR *)MEMALLOC(sizeof(ATTR));
-    for (ca = atr_head(thing, &as); ca; ca = atr_next(&as)) {
+    ISOUTOFMEMORY(cattr);
+    for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
+    {
         if ((ca == A_DESC) || (ca == A_LOCK))
+        {
             continue;
+        }
         attr = atr_num(ca);
         if (!attr)
+        {
             continue;
+        }
         
         memcpy(cattr, attr, sizeof(ATTR));
         
-        /*
-        * Should we exclude this attr? 
-        */
-        
-        if (check_exclude &&
-            ((attr->flags & AF_PRIVATE) ||
-            hashfindLEN(&ca, sizeof(ca), &mudstate.parent_htab)))
+        // Should we exclude this attr?
+        //        
+        if (  check_exclude
+           && (  (attr->flags & AF_PRIVATE)
+              || hashfindLEN(&ca, sizeof(ca), &mudstate.parent_htab)))
         {
             continue;
         }
