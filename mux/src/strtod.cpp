@@ -1339,7 +1339,7 @@ static CONST double tinytens[] = { 1e-16, 1e-32 };
 #endif
 #endif
 
-double Tiny_strtod(CONST char *s00, char **se)
+double mux_strtod(CONST char *s00, char **se)
 {
 #ifdef Avoid_Underflow
     int scale;
