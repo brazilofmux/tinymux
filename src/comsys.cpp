@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.28 2001-03-23 07:05:01 sdennis Exp $
+// * $Id: comsys.cpp,v 1.29 2001-03-23 07:53:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -874,7 +874,9 @@ void do_processcom(dbref player, char *arg1, char *arg2)
             // Evaluate the comtitle as code.
             //
             char *pnComTitle = nComTitle;
-            char *pComTitle = user->title;
+            char TempToEval[LBUF_SIZE];
+            strcpy(TempToEval, user->title);
+            char *pComTitle = TempToEval;
             TinyExec(nComTitle, &pnComTitle, 0, player, player, EV_FCHECK |
                      EV_EVAL | EV_TOP, &pComTitle, (char **)NULL, 0);
         }
