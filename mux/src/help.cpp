@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.9 2004-06-30 10:52:40 sdennis Exp $
+// $Id: help.cpp,v 1.10 2004-07-13 16:38:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -425,6 +425,14 @@ void help_helper(dbref executor, int iHelpfile, char *topic_arg,
         {
             safe_str(result, buff, bufc);
         }
+        else
+        {
+            safe_str("#-1 ERROR", buff, bufc);
+        }
         free_lbuf(result);
+    }
+    else
+    {
+        safe_str("#-1 TOPIC DOES NOT EXIST", buff, bufc);
     }
 }
