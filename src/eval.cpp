@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.8 2000-06-13 23:29:10 sdennis Exp $
+// $Id: eval.cpp,v 1.9 2000-09-25 07:51:03 sdennis Exp $
 //
 
 // MUX 2.0
@@ -1197,7 +1197,14 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                     if (ufp)
                     {
                         mudstate.func_nest_lev++;
-                        if (!check_access(player, ufp->perms))
+                        if ( mudstate.ufunc_nest_lev >= mudconf.func_nest_lim )
+                        {
+                             safe_str( "#-1 FUNCTION RECURSION LIMIT EXCEEDED",
+                                       buff, &oldp);
+                             *bufc = oldp;
+                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                        }
+                        else if (!check_access(player, ufp->perms))
                         {
                             safe_str("#-1 PERMISSION DENIED", buff, &oldp);
                             *bufc = oldp;
@@ -1212,6 +1219,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                                 i = player;
                             TempPtr = tstr;
                             
+                            mudstate.ufunc_nest_lev++;
                             if (ufp->flags & FN_PRES)
                             {
                                 save_global_regs("eval_save", preserve, preserve_len);
@@ -1225,6 +1233,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             {
                                 restore_global_regs("eval_restore", preserve, preserve_len);
                             }
+                            mudstate.ufunc_nest_lev--;
                             free_lbuf(tstr);
                         }
                         mudstate.func_nest_lev--;
