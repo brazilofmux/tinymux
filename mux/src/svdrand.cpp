@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.3 2002-07-23 05:36:13 jake Exp $
+// $Id: svdrand.cpp,v 1.4 2002-09-23 21:10:14 sdennis Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -89,7 +89,7 @@ void SeedRandomNumberGenerator(void)
         // and CryptoReleaseContext.
         //
         fpCryptAcquireContext = (FCRYPTACQUIRECONTEXT *)
-            GetProcAddress(hAdvAPI32, "CryptAcquireContext");
+            GetProcAddress(hAdvAPI32, "CryptAcquireContextA");
         fpCryptReleaseContext = (FCRYPTRELEASECONTEXT *)
             GetProcAddress(hAdvAPI32, "CryptReleaseContext");
         fpCryptGenRandom = (FCRYPTGENRANDOM *)
@@ -101,7 +101,8 @@ void SeedRandomNumberGenerator(void)
         {
             HCRYPTPROV hProv;
 
-            if (fpCryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, 0))
+            if (  fpCryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, 0)
+               || fpCryptAcquireContext(&hProv, NULL, NULL, PROV_DSS, CRYPT_NEWKEYSET))
             {
                 if (fpCryptGenRandom(hProv, sizeof aRandomSystemBytes,
                     (BYTE *)aRandomSystemBytes))
