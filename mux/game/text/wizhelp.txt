@@ -1727,13 +1727,12 @@ COMSYS_DATABASE
   DEFAULT: comsys.db
 
   Specifies the file that comsystem and macro information is stored in.
-  This database is loaded at startup if either have_comsys or have_macros
-  are on.
+  This database is loaded at startup if have_comsys is on.
 
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
-  Related Topics: have_comsys, have_macros.
+  Related Topics: have_comsys.
 
 & CONFIG PARAMETERS
 CONFIG PARAMETERS
@@ -2568,7 +2567,7 @@ HAVE_COMSYS
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
-  Related Topics: comsys_database, have_macros.
+  Related Topics: comsys_database.
 
 & HAVE_MAILER
 HAVE_MAILER
