@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.2 2000-05-19 18:31:57 sdennis Exp $
+// $Id: wiz.cpp,v 1.3 2000-05-25 04:11:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -315,8 +315,13 @@ void do_toad(dbref player, dbref cause, int key, char *toad, char *newowner)
     delete_player_name(victim, buf);
     free_lbuf(buf);
 
-    count = boot_off( victim,
-                      (char *)"You have been turned into a slimy toad!");
+    // Boot off.
+    //
+    count = boot_off(victim, (char *)"You have been turned into a slimy toad!");
+
+    // Release comsys and @mail resources.
+    //
+    ReleaseAllResources(victim);
 
     buf = tprintf("%d connection%s closed.", count, (count == 1 ? "" : "s"));
     notify_quiet(player, buf);
