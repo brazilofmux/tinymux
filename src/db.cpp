@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.21 2000-08-01 20:02:46 sdennis Exp $
+// $Id: db.cpp,v 1.22 2000-08-02 23:34:34 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -58,8 +58,6 @@ NAME *purenames = NULL;
 
 #ifndef WIN32
 extern SOCKET MainGameSockPort;
-extern SOCKET slave_socket;
-extern pid_t slave_pid;
 
 #ifdef CONCENTRATE
 extern int conc_pid;
