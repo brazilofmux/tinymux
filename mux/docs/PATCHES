@@ -1,7 +1,7 @@
-TinyMUX 2.0:  PATCHES
-Last Update:  April 2000
+TinyMUX 2.4:  PATCHES
+Last Update:  September 2004
 
-A Word About Patches for TinyMUX 2.0:
+A Word About Patches for TinyMUX 2.4:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As part of the server development process, and especially during periods 
@@ -36,7 +36,7 @@ this enough*.  Shutdown the game and use the provided Backup script, or
 db_load by hand.  In most cases, this is totally unneeded, but if something 
 goes wrong and you didn't, you won't be real happy.
 
-Unzip and move the patch file to the directory where you see the mux2.0/ 
+Unzip and move the patch file to the directory where you see the mux2.4/ 
 directory listed.
 
 At the prompt, type 'patch -p1 <patchfile'.  The actual file name of the
@@ -57,5 +57,5 @@ If you have problems:
 ~~~~~~~~~~~~~~~~~~~~
 
 If the patch fails and you were applying it to a standard beta or release
-version of TinyMUX 2.0, then collect the error messages and report it to
-sdennis@svdltd.com following the bug reporting procedures in README.
+version of TinyMUX 2.4, then collect the error messages and report it to
+brazilofmux@gmail.com following the bug reporting procedures in README.
