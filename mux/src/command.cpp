@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.18 2002-06-30 06:24:28 sdennis Exp $
+// $Id: command.cpp,v 1.19 2002-06-30 06:38:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1417,7 +1417,7 @@ char *process_command
             log_text(pOriginalCommand);
             ENDLOG; 
         }
-        mudstate.bStackLimitReached = 0;
+        mudstate.bStackLimitReached = FALSE;
 
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
@@ -1546,7 +1546,7 @@ char *process_command
             log_text(pOriginalCommand);
             ENDLOG; 
         }
-        mudstate.bStackLimitReached = 0;
+        mudstate.bStackLimitReached = FALSE;
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
     }
