@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.26 2002-07-14 03:48:31 sdennis Exp $
+// $Id: command.cpp,v 1.27 2002-07-14 04:23:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -796,8 +796,7 @@ BOOL check_access(dbref player, int mask)
 
     if (mask & CA_MUSTBE_MASK)
     {
-        if (  !((mask & CA_GOD)      && God(player))
-           && !((mask & CA_WIZARD)   && Wizard(player))
+        if (  !((mask & CA_WIZARD)   && Wizard(player))
            && !((mask & CA_ADMIN)    && WizRoy(player))
            && !((mask & CA_BUILDER)  && Builder(player))
            && !((mask & CA_STAFF)    && Staff(player))
