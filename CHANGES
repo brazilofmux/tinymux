@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  May 2000
+Last Update:  July 2000
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -233,6 +233,40 @@ Bug Fixes:
      (introduced in Beta 9).
  --  cf_log_syntax showed gibberish because of the way va_start/va_end-type
      arguments were handled (introduced in Beta 9).
+ --  Setting #1 GOING is no longer permitted.
+ --  @create no longer can create things with blank names. @create(%b,)
+ --  MUX is more restrictive when loading comsys.db
+ --  A KILLED database didn't have passwords in it (also with MEMORY_BASED).
+     Introduced in Beta 10 (Build #267).
+ --  objeval() security was too lax.
+ --  The mail_sw and malias_sw tables were not terminated.
+ --  Side-effect functions now enforce the same security that the
+     corresponding commands enforce.
+ --  CR, LF, and TAB are not allowed in @doing and @doing headers.
+ --  Creating an exit like 'tes%crt;t' would leak ANSI color.
+ --  Using a pipe with an unconnect player would duplicate output.
+ --  Security flaw in @mail allowed WIZARD to use objeval to read @mail.
+ --  Guests can no longer set attributes on themselves.
+ --  @addcom allowed empty aliases.
+ --  Strange player names are no longer allowed with
+     '@wait 0=@pcreate %b=blah'.
+ --  Buffer in view_atr was too small. No ill effects however.
+ --  Bug with %v in the parser -- only apparent with syntactically
+     incorrect use of %v.
+ --  GetProcessorUsage assumed HAVE_GETRUSAGE.
+ --  conn() now returns -1 for unconnected players as documented.
+ --  A MEMORY_BASED build will now properly create a minimal
+     database.
+ --  Forward list length is now checked to avoid SIGSEGV.
+ --  @toad now releases comsys and @mail resources associated with
+     player.
+ --  Bug in set_prefix_cmds that would effect space mods.
+ --  Fixed minor bug in dbnum() used with sorting dbrefs. It's also
+     smaller and faster.
+ --  Fixed minor bug in GeneralTimeConversion with how to express the
+     pluralization of '0'.
+ --  Use time_t instead of long in test_time_t().
+
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -316,7 +350,13 @@ Performance Enhancements:
      improve performance. @wait uses RandomLong to decide whether to ding
      the invoker for an extra penny.
  --  The random number generators are now given a seed which is based upon
-     the full resolution of the current time (milliseconds or better). 
+     the full resolution of the current time (milliseconds or better).
+ --  Spelling error in 'wizhelp have_macros' topic.
+ --  LAST() is faster.
+ --  Removed duplicate code.
+ --  Improved speed and consistancy of object name checking.
+ --  Use assert checking macros.
+ --  Improve speed of queue argument and environment passing.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
@@ -334,3 +374,4 @@ Miscellaneous:
  --  Replace random number generator. 
  --  Source code untars into its own directory.
  --  Miscellaneous server documentation moved to docs/
+ --  Increased the size trigger for rotating logfiles on Win32.
