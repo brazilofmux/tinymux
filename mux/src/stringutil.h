@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.32 2003-02-05 06:20:59 jake Exp $
+// $Id: stringutil.h,v 1.33 2003-02-16 18:26:56 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -9,19 +9,19 @@
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
-extern const char mux_isprint[256];
-extern const char mux_isdigit[256];
-extern const char mux_isalpha[256];
-extern const char mux_isalnum[256];
-extern const char mux_islower[256];
-extern const char mux_isupper[256];
-extern const char mux_isspace[256];
-extern char mux_AttrNameInitialSet[256];
-extern char mux_AttrNameSet[256];
-extern const char mux_ObjectNameSet[256];
-extern char mux_PlayerNameSet[256];
-extern const char mux_issecure[256];
-extern const char mux_isescape[256];
+extern const bool mux_isprint[256];
+extern const bool mux_isdigit[256];
+extern const bool mux_isalpha[256];
+extern const bool mux_isalnum[256];
+extern const bool mux_islower[256];
+extern const bool mux_isupper[256];
+extern const bool mux_isspace[256];
+extern bool mux_AttrNameInitialSet[256];
+extern bool mux_AttrNameSet[256];
+extern const bool mux_ObjectNameSet[256];
+extern bool mux_PlayerNameSet[256];
+extern const bool mux_issecure[256];
+extern const bool mux_isescape[256];
 extern const unsigned char mux_toupper[256];
 extern const unsigned char mux_tolower[256];
 extern const unsigned char mux_StripAccents[256];

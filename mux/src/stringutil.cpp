@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.39 2003-02-05 06:20:59 jake Exp $
+// $Id: stringutil.cpp,v 1.40 2003-02-16 18:26:56 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -14,7 +14,7 @@
 #include "ansi.h"
 #include "pcre.h"
 
-const char mux_isprint[256] =
+const bool mux_isprint[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -37,7 +37,7 @@ const char mux_isprint[256] =
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-const char mux_isdigit[256] =
+const bool mux_isdigit[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -60,7 +60,7 @@ const char mux_isdigit[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const char mux_isalpha[256] =
+const bool mux_isalpha[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -83,7 +83,7 @@ const char mux_isalpha[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-const char mux_isalnum[256] =
+const bool mux_isalnum[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -106,7 +106,7 @@ const char mux_isalnum[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-const char mux_isupper[256] =
+const bool mux_isupper[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -129,7 +129,7 @@ const char mux_isupper[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const char mux_islower[256] =
+const bool mux_islower[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -152,7 +152,7 @@ const char mux_islower[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-const char mux_isspace[256] =
+const bool mux_isspace[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -182,7 +182,7 @@ const char mux_isspace[256] =
 // {'?!`/-_.@#$^&~=+<>()%}. Lower-case letters are turned into uppercase
 // before being used, but lower-case letters are valid input.
 //
-char mux_AttrNameInitialSet[256] =
+bool mux_AttrNameInitialSet[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -205,7 +205,7 @@ char mux_AttrNameInitialSet[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-char mux_AttrNameSet[256] =
+bool mux_AttrNameSet[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -231,7 +231,7 @@ char mux_AttrNameSet[256] =
 // Valid characters for an object name are all printable
 // characters except those from the set {=&|}.
 //
-const char mux_ObjectNameSet[256] =
+const bool mux_ObjectNameSet[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -257,7 +257,7 @@ const char mux_ObjectNameSet[256] =
 // Valid characters for a player name are all alphanumeric plus
 // {`$_-.,'} plus SPACE depending on configuration.
 //
-char mux_PlayerNameSet[256] =
+bool mux_PlayerNameSet[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -283,7 +283,7 @@ char mux_PlayerNameSet[256] =
 // Characters which should be escaped for the secure()
 // function: '%$\[](){},;'.
 //
-const char mux_issecure[256] =
+const bool mux_issecure[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -309,7 +309,7 @@ const char mux_issecure[256] =
 // Characters which should be escaped for the escape()
 // function: '%\[]{};'.
 //
-const char mux_isescape[256] =
+const bool mux_isescape[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -332,7 +332,7 @@ const char mux_isescape[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const char ANSI_TokenTerminatorTable[256] =
+const bool ANSI_TokenTerminatorTable[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
