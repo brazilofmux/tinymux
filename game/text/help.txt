@@ -6074,6 +6074,7 @@ SUBSTITUTIONS
     %%      = literal '%' character
     %0-%9   = Value of positional parameter/stack location 0 through 9.
     %q0-%q9 = Value of temporary (setq) register 0 through 9.
+    %qa-%qz = Value of temporary (setq) register A through Z.
     %va-%vz = Contents of attribute va through vz
 
 { 'help substitutions2' for more }
@@ -7648,9 +7649,9 @@ REGMATCH()
   If <register list> is specified, there is a side-effect: any
   parenthesized substrings within the regular expression will be set
   into the specified local registers, in the order they were specified
-  in the list. <register list> can be a list of one through nine numbers.
-  If the specified register is -1, the substring is not copied into a
-  register.
+  in the list. <register list> can be a list of one through nine
+  numbers or A through Z.  If the specified register is -1, the
+  substring is not copied into a register.
 
   For example, if <string> is 'cookies=30', and <regexp> is '(.+)=([0-9]*)'
   (parsed; note that escaping may be necessary), then the 0th substring
@@ -8965,8 +8966,11 @@ IFELSE()
   0), <false string> otherwise. Much more efficient than an equivalent
   switch(). It can also return different messages based on whether
   <expression> is nothing or contains text. if() does the same thing,
-  but the third, <false string> argument is optional. For example,
-      ifelse(v(test),Test exists!,Test doesn't exist.)
+  but the third, <false string> argument is optional.
+
+  Example:
+    > think ifelse(v(test),Test exists!,Test doesn't exist.)
+    Test doesn't exist.
 
   Related Topics: switch().
 
@@ -9808,11 +9812,12 @@ R()
   FUNCTION: r(<number>)
 
   The r() function is used to access "local registers", and returns
-  the contents of the specified register. There are ten such registers,
-  numbered 0 through 9.  The local registers are normally cleared at the
-  start of each command, but are preserved across the commands that compose
-  an actionlist, as well as commands that directly trigger actionlists, such
-  as @switch, @trigger, and @dolist.
+  the contents of the specified register. There are thirty-six such
+  registers, numbered 0 through 9 and Z through Z.  The local
+  registers are normally cleared at the start of each command, but are
+  preserved across the commands that compose an actionlist, as well as
+  commands that directly trigger actionlists, such as @switch,
+  @trigger, and @dolist.
 
   Related Topics: setq(), setr().
 
@@ -9824,13 +9829,14 @@ SETQ()
   The setq() function is used to copy strings into local registers.
   It returns a null string; it is a purely "side effect" function.
 
-  There are ten local registers, numbered 0 through 9. They are cleared
-  at the start of each interactive command, but are preserved across the
-  command queue. They are most useful for storing complex function
-  evaluations which are used repeatedly within a single command.
-  The local registers may be read via the r() function, and a common use
-  of setq()/r() is to temporarily store the result of a complex evaluation
-  whose result is needed more than once.
+  There are thirty-six local registers, numbered 0 through 9 and A
+  through Z. They are cleared at the start of each interactive
+  command, but are preserved across the command queue. They are most
+  useful for storing complex function evaluations which are used
+  repeatedly within a single command.  The local registers may be read
+  via the r() function, and a common use of setq()/r() is to
+  temporarily store the result of a complex evaluation whose result is
+  needed more than once.
 
   setq() can be used to improve the readability of MUX code, as well as to
   cut down the amount of time needed to do complex evaluations.
@@ -10263,11 +10269,11 @@ ULOCAL()
   attribute, %# refers to the original enactor and not the 'calling' object;
   'me' refers to the object that supplied the attribute.
 
-  However, unlike the u() function, the global registers r(0) through r(9)
-  (%q0 - %q9) are preserved in their initial state. This means that functions
-  "below" the level of the u() can reset global registers for temporary
-  calculations, without needing to worry about "clobbering" the original
-  values.
+  However, unlike the u() function, the global registers r(0) through
+  r(9) and r(A) through r(Z) (%q0 - %q9, %qA - %qZ) are preserved in
+  their initial state. This means that functions "below" the level of
+  the u() can reset global registers for temporary calculations,
+  without needing to worry about "clobbering" the original values.
 
   This makes ulocal() particularly useful for global or shared code which
   calls arbitrary u() functions, where global register values need to be
