@@ -2,7 +2,7 @@
  * unsplit.c -- filter for re-combining continuation lines 
  */
 /*
- * $Id: unsplit.cpp,v 1.1 2000-04-11 07:14:48 sdennis Exp $ 
+ * $Id: unsplit.cpp,v 1.2 2000-11-07 05:39:36 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -36,6 +36,5 @@ int main(int argc, char *argv[])
             putchar(c);
         }
     }
-    fflush(stdout);
-    exit(0);
+    return 0;
 }
