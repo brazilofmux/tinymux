@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.131 2005-01-05 18:50:20 sdennis Exp $
+// $Id: functions.cpp,v 1.132 2005-01-06 18:04:28 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -3986,7 +3986,8 @@ static void handle_vectors
     //
     if (  n != m
        && !(  (  flag == VMUL_F
-              || flag == VADD_F)
+              || flag == VADD_F
+              || flag == VSUB_F)
            && (  n == 1
               || m == 1)))
     {
@@ -4041,13 +4042,46 @@ static void handle_vectors
 
     case VSUB_F:
 
-        for (i = 0; i < n; i++)
+        if (n == 1)
         {
-            if (i != 0)
+            // This is a scalar minus a vector.
+            //
+            scalar = mux_atof(v1[0]);
+            for (i = 0; i < m; i++)
             {
-                print_sep(posep, buff, bufc);
+                if (i != 0)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                fval(buff, bufc, scalar - mux_atof(v2[i]));
             }
-            fval(buff, bufc, mux_atof(v1[i]) - mux_atof(v2[i]));
+        }
+        else if (m == 1)
+        {
+            // This is a vector minus a scalar.
+            //
+            scalar = mux_atof(v2[0]);
+            for (i = 0; i < n; i++)
+            {
+                if (i != 0)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                fval(buff, bufc, mux_atof(v1[i]) - scalar);
+            }
+        }
+        else
+        {
+            // This is a vector minus a vector.
+            //
+            for (i = 0; i < n; i++)
+            {
+                if (i != 0)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                fval(buff, bufc, mux_atof(v1[i]) - mux_atof(v2[i]));
+            }
         }
         break;
 
