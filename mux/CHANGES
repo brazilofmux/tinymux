@@ -1,267 +1,32 @@
-TinyMUX 2.2:  CHANGES
+TinyMUX 2.3:  CHANGES
 Last Update:  January 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- Removed support for RADIX_COMPRESSION.
- -- Related to %@ (caller) below, some functions have altered (enactor,
-    caller, executor) than MUX 2.1. In some places, these changes fixed
-    what can certainly be argued as wrong behavior. In some places,
-    the changes are made for the sake of consistency across the codebase.
- -- convtime() now returns '#-1 INVALID DATE' instead of -1 when it cannot
-    parse the time string because '-1' is a valid time stamp.
- -- IFELSE() now uses the BOOLEAN convention instead of pseudo-BOOLEAN-Z
-    convention.
- -- Released sources and binaries under the Artistic License.
+ -- AAA.
 
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- Bug #323 - Implemented %@ (caller) substitution as defined previously
-    by PennMUSH.
- -- Replaced Spencer's regmatch package with Perl regular expressions (PCRE).
-    Implemented by Raevnos.
- -- Turned on fractional seconds for time(), secs(), convtime(), and
-    convsecs().
- -- Bug #743 - @doing should allow /unique switch to specify only current
-    port.  Patch from Jake.
- -- Bug #556 - Add PennMUSH's right() function. Patch from Jake.
- -- Bugs #567 and #806 - Add connrecord() that gives the most simultaneous
-    connections to the game. Patch from Jake.
- -- Bugs #553 and #795 - Add host() function. Patch from Jake.
- -- Bugs #554, #636, #741, and #742 - doing(), cmds(), idle(), conn(), and 
-    host() take port# as an argument. Patch from Jake.
- -- Added @cboot/quiet. Patch from Zenty.
- -- Implemented SPELLNUM() with PennMUSH behavior except that the
-    two-digit-hundred-pattern is sometimes used (e.g, 'spellnum(1100)' -->
-    'eleven hundred' on MUX 2.2 whereas on PennMUSH, 'spellnum(1100)' -->
-    'one thousand one hundred'.
- -- Added ROMAN() function which converts numbers between 1-3999 to their
-    Roman numeric equivalents.
- -- Changed BOOLEAN VALUES to be consistent more PennMUSH. I needed to be
-    able to handle '#-2 AMBIGUOUS' at the least.
- -- In MUX 2.0 and 2.1, many functions would notify the enactor of certain
-    error messages (e.g., I don't know which one you mean). This has been
-    removed in favor of returning '#-2 AMBIGUOUS' and other error messages
-    like '#-1 PERMISSION DENIED', "#-1 NOT FOUND', etc. Command continue
-    notify the enactor.
- -- Jake added filterbool().
- -- Permit '#' and '.' as leading attribute name characters.
- -- Log files on the Unix distribution are now handled by the server instead
-    of the Startmux script in the same way that log files are handled by
-    Win32 distribution. That is, log files are limited to 500KB in size, and
-    the server creates log files with the name <mudname>-<date>-<time>.log.
- -- Jake added non-evaluating say/noeval and pose/noeval which are aliased
-    to nsay and npose.
- -- Jake added history support for the comsys history. The command is
-    '<alias> last[ <n>]'.  See @cset/log. It requires that the channel have an
-    associated channel object.
- -- Added ANDBOOL(), CAND(), CANDBOOL(), COR(), CORBOOL(), LAND(), LOR(), and
-    ORBOOL().
- -- Added CTU() which stands for 'Convert Trigonometric Units' for
-    compatibility with RhostMUSH.
- -- Jake added optional argument to CHANNELS() to restrict the list to channels
-    owned by a particular player.
- -- Jake changed config() so that if used with no argument, would return a
-    list of available configuration options that are available to that
-    particular player.
- -- Adds optional precision argument to time(), secs(), convtime(), convsecs().
-    By default, the precision is 0 decimal places, but up to 7 decimal places
-    can be requested. Some parts of the server always record 7 decimal places
-    (connection times, object creation and modification times). Some parts of
-    the server continue to use 0 decimal places (@mail).
- -- LWHO() now has an optional argument which also returns the port number
-    with the player's dbref. Added by Jake.
- -- Jake added @ICMD from RhostMUSH which stands for 'Ignore Command'. It's
-    a GOD-only command for selectively disabling access to certain commands,
-    exits, triggers, etc. against certain players or within certain rooms.
- -- Added HTML attribute flag.
- -- Remove player objects cleanly from @malias and as channel objects at @toad
-    and @destroy time. Added by Jake.
- -- Jake added power_alias configuration option.
- -- Jake made the arguments to PLAYMEM() and STATS() optional.
- -- Jake added the ability to retract @mail from a @malias.
- -- SUSPECT messages now report partial connections/disconnections. Added by
-    Jake.
- -- Jake added @if (originally from ChaoticMUX).
- -- Jake added Modified timestamp attribute.
- -- Jake added mtime() function, to retrieve Modified. Aliased to modifytime
-    and lastmod for Rhost and TM3 compatibility.
- -- Jake added OPEN_OK for opening links to a room, player, or thing.
- -- Jake added @hook. Idea from TinyMUSH 3.x. Code from RhostMUSH with permission.
- -- Jake added OpenLock.
- -- Jake added hook_obj and hook_cmd configuration options.
- -- Jake added BITTYPE() from RhostMUSH with permission.
- -- Made ansi() take multiple arguments. Duplicates RhostMUSH behavior.
- -- Lit() doesn't give an error when fed commas. Added by Jake.
- -- Jake added error().
- -- Added flags(<object>/<attr>) form.
- -- Jake added @speechmod. Originally from ChaoticMUX, code derived from Morgan's.
- -- Jake added @saystring. Originally from RhostMUSH, code derived from Morgan's.
- -- Jake added global_error_obj from RhostMUSH.
- -- Jake added @flag and flag_name. Based on RhostMUSH's.
- -- Jake added train from RhostMUSH.
- -- Jake added itext() and inum() functions. Equivalent to ## and #@, for multiple
-    levels of iter(). Idea from PennMUSH.
- -- Added CHR() from RhostMUSH.
- -- Added ORD() from RhostMUSH.
- -- Added STRIPACCENTS() from PennMUSH.
- -- Added NOACCENTS flag from PennMUSH.
- -- Added ACCENT() from PennMUSH.
- -- Added @MONIKER as a combination of @NAMEACCENT from PennMUSH and @ANSINAME
-    from RhostMUSH.
- -- Added MONIKER() as a combination of INAME() from PennMUSH and ANSINAME()
-    from RhostMUSH.
- -- Jake added STRIP(). Idea from RhostMUSH.
- -- Jake added WRAP(). Based on RhostMUSH's.
- -- Blank lines in configuration are now ignored as if they were comments.
- -- Jake added file/line information in ALLOC/BUG messages. From RhostMUSH.
- -- Added /QUIET switch to @doing command.
- -- Improved signal names from 'SIGTERM' to 'SIGTERM (Terminated)' and from
-    'SIGUSR1' to 'SIGUSR1 (Restart Server)'.
- -- Jake extended MIX() from 2 lists to 10 based on code from RhostMUSH.
- -- Let alloc file/line number of atr_get() series of calls point to the file
-    and line number where atr_get() was originally called from. Code from
-    RhostMUSH. Jake.
- -- Extended exptime() and writetime() to use weeks and 30-day months.
- -- Added MailLock as a new @lock.  Incoming @mail must pass the MailLock or
-    it is returned.  Added by Jake.
- -- Added KEEPALIVE flag which, if set, periodically causes a TELNET NOP to
-    be sent to the client.  Idea and patch from Soruk.  This is not the same
-    as the TCP/IP by the same name.
- -- Added helpfile and raw_helpfile configuration options.
- -- Support sort(-1.05:abc -1.1:def,f).  The previous example is not 
-    auto-detected as floating-point number, and this is by design.  However,
-    if floating-point is selected explicitly, it will sort by the 
-    floating-point prefix.
- -- Enhance validation of exit names. Each segment of an exit name must be
-    a valid object name on its own. Also, ANSI is only allowed in the first
-    segment. ANSI color in other parts of the name is stripped.
- -- Removed mkindx in favor of having netmux read and index the help files
-    itself. The .indx files in the text sub-directory are no longer updated
-    or needed.
- -- Added command line options to nextmux for obtaining usage and version
-    string.
+ -- AAA.
 
 
 Bug Fixes:
 ~~~~~~~~~
- -- @mvattr would erase source attribute even if it wasn't allowed to write to
-    any of its destinations.
- -- Fixed isnum() with exponents. Uninitialized structure.
- -- Added @dbck/full. Allows in-game access to an option previously only 
-    available via dbconvert -c. Patch from Jake.
- -- Rework of dbck routines. More thorough checking and removed some God-only
-    crash issues. Patch from Jake.
- -- Fixed entire class of bugs from MUX 1.x that show themselves to one degree
-    or another in nearly every part of the server. The issue was first visible
-    with enter locks on zones.
- -- Fixed ancient filter() bug where only a prefix of '1' was counted as true.
-    Fixed by Raevnos.
- -- Fix uninitialized variable in a utility object used by LROOMS(). Also a
-    bug in MUX 2.0 and MUX 2.1. A patch for those will be provided separately.
- -- Fixed SIGSEGV bug in ANSI_String_Copy() which is used by CENTER/LJUST/RJUST
-    softcode functions.
- -- Limit how much work can be done in a regular expression.
- -- Bug #438: When a player is @toaded or destroyed, they are not cleaned off
-    the @malias. Fixed by Jake.
- -- Adding an additional alias for a channel cleared the comtitle for that
-    channel. Fixed by Jake.
- -- Visible() could be used to detect dark wizards.
- -- Bug #597, @mail/proof and blank message. Fixed by Jake.
- -- Idle time didn't update while in an @program. Fixed by Jake.
- -- Allow exits to commit suicide (www.livejournal.com, mushcode journal,
-    _Programming Suicidal Exits_ by DrDubious).
- -- Fixed @listcommand when @addcommand'ed commands have previous aliases.
-    It only affected the report.
- -- Magic numbers in buffer allocations are now unique to the pool type.
-    Recommended by Alierak because on some systems, two of the header sizes
-    are equal.
- -- pool_check() needed to verify PCACHE pool as well. Reported by Alierak.
- -- Fix three places where changes from (char) to (const char) broke the
-    MEMORY_BASED build. Reported by Chaos from Rogue Space MUX.
- -- Use A_VA name instead of equivalent literal 100. Reported by Alierak.
- -- Fix Prefix-without-suffix bug. Reported by Alierak.
- -- Fix '-0' display for 'think imul(1024,1024,1024,1024,1024,1024,8)'
-    Reported by Alierak.
- -- Fix seeding random numbers on Win32. The call to CryptAcquireContext
-    was likely to fail.
- -- On a NetBSD/Alpha system in which sizeof(unsigned long) == 8, IPv4 mask
-    validation gave false negatives.  Reported by Alierak.
- -- On same NetBSD/Alpha system, reverse-DNS slave was non-functional because
-    gethostbyname() choked on the eight-byte IPv4 argument. Reported by 
-    Alierak.
- -- IP ranges of the form 'a.b.c.d/m' would allow 'm' to be text and take it
-    as a zero value. For example, 'forbid_site 1.2.3.4/foobar' would effectly
-    block every IP address -- too easy to shoot yourself in the foot. Reported
-    by Alierak.
- -- LROOMS() would not consider the database's last valid dbref. Reported by
-    Alierak. Bug introduced by Brazil.
- -- For exits, loc(foo) did not return the same answer as rloc(foo,1). Looks
-    like something that's been in there awhile.  Reported by Alierak.
- -- @cemit's to a channel did not affect channel history. Introduced and
-    fixed by Jake.
- -- @mail/fwd re-evaluated the fowarded @mail. Fixed by Jake.
- -- Fixed 'round(100,0)' --> '100.00' instead of '100'.
- -- Fixed caller (%@) escape in queued commands.
- -- Bug #157 - @prog + |LOGOUT would crash MUX 1.6, and that was fixed in
-    MUX 2 a long time ago, but this recent fix cleans up the connection
-    further so that the connection can continued to be used for logging into
-    another account. Prompted by Alierak.
- -- Fixed @cemit alloc/free problems from previous check-in.
- -- Fixed @hook/ignore so that it can sometimes not ignore.
- -- Raw_broadcast is sometimes called from the signal handlers, therefore is
-    should not be calling memory allocation.
- -- Check in the slave for long hostnames. Alierak.
- -- Long signal names have always been non-functional. Reported by Alierak.
- -- Not an issue due to above bug, but avoid using a temporary buffer that
-    would have been too small for the long signal names.  Reported by Alierak.
- -- Use God() macro in chown_all() in case someone tries the multiple-GOD
-    hack. Reported by Alierak.
- -- comtitle switch table needed to be terminated. Jake fixed.
- -- Fixed interaction of @hook/ignore and @hook/permit. Jake.
- -- Fixed two memcpy/strip-ansi idioms (one in pos() and one in @decomp).
-    Found by Jake.  Bug introduced by Brazil.
- -- Fixed vmul() SIGSEGV.  Reported by Alierak.  Bug from MUX 1.6.
- -- Fixed unlikely SIGSEGV in function table initialization.  Brazil's bug.
-    Fixed by Brazil.  Reported by Kieran Boru.
- -- OutOfMemory() and AssertionFailed() reversed sense of bCanRestart.
-    Reported by Alierak.  Brazil's bug.
- -- Fixed convtime() SIGSEGV.  Reported by Alierak.  Brazil's bug.
- -- Fixed recently-added zone bug introduce when check_zone() and
-    check_zone_for_player() functions were merged.
- -- Fixed crashbug in @speechmod. Some code paths left argument 2
-    uninitialized. Bug introduced by Jake. Found and fixed by Brazil.
- -- Fixed set(me/attribute,!flag) form. It was looking for the '!' in the
-    first argument instead of the second one. Reported by Sean Hunter.
- -- Fixed bug in fh_god where permission failures were still reported as
-    success.  Reported by Sean Hunter.
- -- Accept a single '\' as well as the previously accepted '\\' for an @emit.
-    Reported by Vadiv while he was comparing to PennMUSH.  The Tiny* servers
-    escape the single '\' away early in the command processing.
- -- Fix ANSI bleeding in exit names. Reported by Jeremy Weatherford. Fix by
-    Brazil.
- -- Exit names like ';foo' were effectively DARK exits. If set AUDIBLE, they
-    were effectively listening devices that didn't show up on a @sweep.
- -- Fixed behavior of read_remote_desc configuration option.  Bug introduced
-    by Jake.  Fixed by Brazil.
-
+ -- AAA.
 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
- -- Optimized check_access() hardcode function which is frequently used.
- -- Took out unnecessary test against Tiny_IsASCII character class in bsd.cpp
+ -- AAA.
 
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
- -- Added grammatically correct comma after 'shouts'.
+ -- AAA.
 
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- Added nattr (so named by TM3) as an alias for attrcnt (pre-existing MUX2
-    feature).
- -- Added docs/LIMITS to describe server limits.
+ -- AAA.
 

@@ -25,7 +25,7 @@ Instructions for New Installations:
             based handling. (see docs/MEMORY)
       - Enable WOD REALMS. (see docs/REALMS)
           
-3.  Run make depend, then make.  This will produce netmux, mkindx, slave,
+3.  Run make depend, then make.  This will produce netmux, slave,
     and dbconvert.
     
 4.  When starting from a MUX from scratch, do the following:
