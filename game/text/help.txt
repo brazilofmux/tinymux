@@ -4110,7 +4110,7 @@ BLIND
 
   FLAG: BLIND(B)
 
-  This flag supresses the '<who> has arrived.' and '<who> has left.' messages.
+  This flag suppresses the '<who> has arrived.' and '<who> has left.' messages.
   When set on a player, the messages caused by their movement are suppressed.
   When set on a location, the messages for everyone entering or leaving that
   location are suppressed.
@@ -4422,7 +4422,7 @@ COLUMNS()
   This function fits the margin and as many columns as possible into a
   78-wide screen.
 
-    The input delimeter, <delim>, defaults to a space.
+    The input delimiter, <delim>, defaults to a space.
     The left margin width, <indent>, defaults to zero.
 
   Related Topics: table()
@@ -6754,8 +6754,8 @@ ISNUM()
 
   FUNCTION: isnum(<string>)
 
-  This function will return return 1 (TRUE) if the argument is a valid number
-  and 0 (FALSE) otherwise. This definition of a number includes scientific
+  This function will return 1 (TRUE) if the argument is a valid number and 
+  0 (FALSE) otherwise. This definition of a number includes scientific
   notation as well as a certain case-insensitive 'special words': NaN, -Inf,
   +Inf, and Ind.
 
@@ -10352,7 +10352,7 @@ SORT()
   alphanumeric).  If omitted or left blank, the sort() function will
   try to determine the type of sort to perform automatically.
 
-  By default, the output delimeter, <odelim>, defaults to the input delimiter,
+  By default, the output delimiter, <odelim>, defaults to the input delimiter,
   <idelim>, which itself defaults to a space. Delimiters here, like most other
   functions, are used to separate items in a list.
 
