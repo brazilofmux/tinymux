@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.27 2004-07-24 05:55:59 sdennis Exp $
+// $Id: set.cpp,v 1.28 2004-08-26 16:39:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -878,13 +878,13 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
 {
     dbref aowner;
     int aflags;
-    ATTR *attr = atr_num(attrnum);
+    ATTR *pattr = atr_num(attrnum);
 #ifdef BT_ENABLED
     int have_xcode;
 #endif
     atr_pget_info(thing, attrnum, &aowner, &aflags);
-    if (  attr
-       && bCanSetAttr(player, thing, attr))
+    if (  pattr
+       && bCanSetAttr(player, thing, pattr))
     {
         bool could_hear = Hearer(thing);
 #ifdef BT_ENABLED
@@ -924,15 +924,15 @@ void do_set
 #ifdef BT_ENABLED
     int have_xcode;
 #endif
-    ATTR *attr;
+    ATTR *pattr;
 
     // See if we have the <obj>/<attr> form, which is how you set
     // attribute flags.
     //
-    if (parse_attrib(executor, name, &thing, &attr))
+    if (parse_attrib(executor, name, &thing, &pattr))
     {
-        if (  attr
-           && See_attr(executor, thing, attr))
+        if (  pattr
+           && See_attr(executor, thing, pattr))
         {
             // You must specify a flag name.
             //
@@ -963,7 +963,7 @@ void do_set
 
             // Make sure the object has the attribute present.
             //
-            if (!atr_get_info(thing, attr->number, &aowner, &aflags))
+            if (!atr_get_info(thing, pattr->number, &aowner, &aflags))
             {
                 notify_quiet(executor, "Attribute not present on object.");
                 return;
@@ -971,7 +971,7 @@ void do_set
 
             // Make sure we can write to the attribute.
             //
-            if (!bCanSetAttr(executor, thing, attr))
+            if (!bCanSetAttr(executor, thing, pattr))
             {
                 notify_quiet(executor, NOPERM_MESSAGE);
                 return;
@@ -992,7 +992,7 @@ void do_set
 #ifdef BT_ENABLED
             have_xcode = Hardcode(thing);
 #endif
-            atr_set_flags(thing, attr->number, aflags);
+            atr_set_flags(thing, pattr->number, aflags);
 
             // Tell the player about it.
             //
@@ -1043,13 +1043,13 @@ void do_set
             notify_quiet(executor, "Couldn't create attribute.");
             return;
         }
-        attr = atr_num(atr);
-        if (!attr)
+        pattr = atr_num(atr);
+        if (!pattr)
         {
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        if (!bCanSetAttr(executor, thing, attr))
+        if (!bCanSetAttr(executor, thing, pattr))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
@@ -1060,21 +1060,21 @@ void do_set
         //
         if (*p == '_')
         {
-            ATTR *attr2;
+            ATTR *pattr2;
             dbref thing2;
 
             strcpy(buff, p + 1);
-            if (!( parse_attrib(executor, p + 1, &thing2, &attr2)
-                && attr2))
+            if (!( parse_attrib(executor, p + 1, &thing2, &pattr2)
+                && pattr2))
             {
                 notify_quiet(executor, "No match.");
                 free_lbuf(buff);
                 return;
             }
             p = buff;
-            atr_pget_str(buff, thing2, attr2->number, &aowner, &aflags);
+            atr_pget_str(buff, thing2, pattr2->number, &aowner, &aflags);
 
-            if (!See_attr(executor, thing2, attr2))
+            if (!See_attr(executor, thing2, pattr2))
             {
                 notify_quiet(executor, NOPERM_MESSAGE);
                 free_lbuf(buff);
@@ -1363,7 +1363,7 @@ bool parse_attrib(dbref player, char *str, dbref *thing, ATTR **attr)
 
 static void find_wild_attrs(dbref player, dbref thing, char *str, bool check_exclude, bool hash_insert, bool get_locks)
 {
-    ATTR *attr;
+    ATTR *pattr;
     char *as;
     dbref aowner;
     int ca, ok, aflags;
@@ -1373,17 +1373,17 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, bool check_exc
     atr_push();
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
-        attr = atr_num(ca);
+        pattr = atr_num(ca);
 
         // Discard bad attributes and ones we've seen before.
         //
-        if (!attr)
+        if (!pattr)
         {
             continue;
         }
 
         if (  check_exclude
-           && (  (attr->flags & AF_PRIVATE)
+           && (  (pattr->flags & AF_PRIVATE)
               || hashfindLEN(&ca, sizeof(ca), &mudstate.parent_htab)))
         {
             continue;
@@ -1401,28 +1401,29 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, bool check_exc
 
         if (get_locks)
         {
-            ok = bCanReadAttr(player, thing, attr, false);
+            ok = bCanReadAttr(player, thing, pattr, false);
         }
         else
         {
-            ok = See_attr(player, thing, attr);
+            ok = See_attr(player, thing, pattr);
         }
 
         mudstate.wild_invk_ctr = 0;
         if (  ok
-           && quick_wild(str, attr->name))
+           && quick_wild(str, pattr->name))
         {
             olist_add(ca);
             if (hash_insert)
             {
-                hashaddLEN(&ca, sizeof(ca), attr, &mudstate.parent_htab);
+                hashaddLEN(&ca, sizeof(ca), pattr, &mudstate.parent_htab);
             }
         }
     }
     atr_pop();
 }
 
-bool parse_attrib_wild(dbref player, char *str, dbref *thing, bool check_parents, bool get_locks, bool df_star)
+bool parse_attrib_wild(dbref player, char *str, dbref *thing,
+    bool check_parents, bool get_locks, bool df_star)
 {
     if (!str)
     {
@@ -1604,7 +1605,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
              char *args[], int nargs)
 {
     dbref thing, aowner;
-    int attr, aflags;
+    int atr, aflags;
     bool bGotOne;
     char *from, *to, *result, *returnstr, *atext;
     ATTR *ap;
@@ -1637,9 +1638,9 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
     atext = alloc_lbuf("do_edit.atext");
     bool could_hear = Hearer(thing);
 
-    for (attr = olist_first(); attr != NOTHING; attr = olist_next())
+    for (atr = olist_first(); atr != NOTHING; atr = olist_next())
     {
-        ap = atr_num(attr);
+        ap = atr_num(atr);
         if (ap)
         {
             // Get the attr and make sure we can modify it.
@@ -1706,13 +1707,13 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
 
     // Iterate through matching attributes, zapping the writable ones
     //
-    int attr;
+    int atr;
     ATTR *ap;
     bool bGotOne = false, could_hear = Hearer(thing);
 
-    for (attr = olist_first(); attr != NOTHING; attr = olist_next())
+    for (atr = olist_first(); atr != NOTHING; atr = olist_next())
     {
-        ap = atr_num(attr);
+        ap = atr_num(atr);
         if (ap)
         {
             // Get the attr and make sure we can modify it.
@@ -1748,10 +1749,10 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
                 char *object, char *argv[], int nargs)
 {
     dbref thing;
-    ATTR *attr;
+    ATTR *pattr;
 
-    if (!( parse_attrib(executor, object, &thing, &attr)
-        && attr))
+    if (!( parse_attrib(executor, object, &thing, &pattr)
+        && pattr))
     {
         notify_quiet(executor, "No match.");
         return;
@@ -1761,7 +1762,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
         notify_quiet(executor, NOPERM_MESSAGE);
         return;
     }
-    did_it(executor, thing, 0, NULL, 0, NULL, attr->number, argv, nargs);
+    did_it(executor, thing, 0, NULL, 0, NULL, pattr->number, argv, nargs);
 
     // TODO: Be more descriptive as to what was triggered?
     //

@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.25 2004-06-26 06:24:52 sdennis Exp $
+// $Id: look.cpp,v 1.26 2004-08-26 16:36:03 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -861,7 +861,7 @@ static void look_atrs1
 {
     dbref aowner;
     int ca, aflags;
-    ATTR *attr;
+    ATTR *pattr;
     char *as, *buf;
 
     ATTR cattr;
@@ -872,18 +872,18 @@ static void look_atrs1
         {
             continue;
         }
-        attr = atr_num(ca);
-        if (!attr)
+        pattr = atr_num(ca);
+        if (!pattr)
         {
             continue;
         }
 
-        memcpy(&cattr, attr, sizeof(ATTR));
+        memcpy(&cattr, pattr, sizeof(ATTR));
 
         // Should we exclude this attr?
         //
         if (  check_exclude
-           && (  (attr->flags & AF_PRIVATE)
+           && (  (pattr->flags & AF_PRIVATE)
               || hashfindLEN(&ca, sizeof(ca), &mudstate.parent_htab)))
         {
             continue;
@@ -896,7 +896,7 @@ static void look_atrs1
             {
                 if (hash_insert)
                 {
-                    hashaddLEN(&ca, sizeof(ca), attr,
+                    hashaddLEN(&ca, sizeof(ca), pattr,
                         &mudstate.parent_htab);
                 }
                 view_atr(player, thing, &cattr, buf, aowner, aflags, false);
@@ -1363,7 +1363,7 @@ static void debug_examine(dbref player, dbref thing)
     char *buf;
     int aflags, ca;
     BOOLEXP *pBoolExp;
-    ATTR *attr;
+    ATTR *pattr;
     char *as, *cp;
 
     notify(player, tprintf("Number  = %d", thing));
@@ -1399,20 +1399,20 @@ static void debug_examine(dbref player, dbref thing)
 
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
-        attr = atr_num(ca);
-        if (!attr)
+        pattr = atr_num(ca);
+        if (!pattr)
         {
             continue;
         }
 
         atr_get_info(thing, ca, &aowner, &aflags);
-        if (bCanReadAttr(player, thing, attr, false))
+        if (bCanReadAttr(player, thing, pattr, false))
         {
-            if (attr)
+            if (pattr)
             {
                 // Valid attr.
                 //
-                safe_str(attr->name, buf, &cp);
+                safe_str(pattr->name, buf, &cp);
                 safe_chr(' ', buf, &cp);
             }
             else
@@ -1427,16 +1427,16 @@ static void debug_examine(dbref player, dbref thing)
 
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
-        attr = atr_num(ca);
-        if (!attr)
+        pattr = atr_num(ca);
+        if (!pattr)
         {
             continue;
         }
 
         buf = atr_get(thing, ca, &aowner, &aflags);
-        if (bCanReadAttr(player, thing, attr, false))
+        if (bCanReadAttr(player, thing, pattr, false))
         {
-            view_atr(player, thing, attr, buf, aowner, aflags, 0);
+            view_atr(player, thing, pattr, buf, aowner, aflags, 0);
         }
         free_lbuf(buf);
     }
@@ -2034,7 +2034,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
 static void sweep_check(dbref player, dbref what, int key, bool is_loc)
 {
     dbref aowner, parent;
-    int attr, aflags, lev;
+    int atr, aflags, lev;
     char *buf, *buf2, *bp, *as, *buff, *s;
     ATTR *ap;
 
@@ -2060,23 +2060,23 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
             buff = alloc_lbuf("Hearer");
         }
 
-        for (attr = atr_head(what, &as); attr; attr = atr_next(&as))
+        for (atr = atr_head(what, &as); atr; atr = atr_next(&as))
         {
-            if (attr == A_LISTEN)
+            if (atr == A_LISTEN)
             {
                 canhear = true;
                 break;
             }
             if (Monitor(what))
             {
-                ap = atr_num(attr);
+                ap = atr_num(atr);
                 if (  !ap
                    || (ap->flags & AF_NOPROG))
                 {
                     continue;
                 }
 
-                atr_get_str(buff, what, attr, &aowner, &aflags);
+                atr_get_str(buff, what, atr, &aowner, &aflags);
 
                 // Make sure we can execute it.
                 //
@@ -2321,7 +2321,7 @@ void do_decomp
     char *got, *thingname, *as, *ltext, *buff;
     dbref aowner, thing;
     int val, aflags, ca;
-    ATTR *attr;
+    ATTR *pattr;
     NAMETAB *np;
     bool wild_decomp;
 
@@ -2447,31 +2447,31 @@ void do_decomp
         {
             continue;
         }
-        attr = atr_num(ca);
-        if (!attr)
+        pattr = atr_num(ca);
+        if (!pattr)
         {
             continue;
         }
-        if (  (attr->flags & AF_NOCMD)
-           && !(attr->flags & AF_IS_LOCK))
+        if (  (pattr->flags & AF_NOCMD)
+           && !(pattr->flags & AF_IS_LOCK))
         {
             continue;
         }
 
         got = atr_get(thing, ca, &aowner, &aflags);
-        if (bCanReadAttr(executor, thing, attr, false))
+        if (bCanReadAttr(executor, thing, pattr, false))
         {
-            if (attr->flags & AF_IS_LOCK)
+            if (pattr->flags & AF_IS_LOCK)
             {
                 pBoolExp = parse_boolexp(executor, got, true);
                 ltext = unparse_boolexp_decompile(executor, pBoolExp);
                 free_boolexp(pBoolExp);
-                notify(executor, tprintf("@lock/%s %s=%s", attr->name,
+                notify(executor, tprintf("@lock/%s %s=%s", pattr->name,
                     thingname, ltext));
             }
             else
             {
-                strcpy(buff, attr->name);
+                strcpy(buff, pattr->name);
                 notify(executor, tprintf("%c%s %s=%s", ((ca < A_USER_START) ?
                     '@' : '&'), buff, thingname, got));
                 for (np = indiv_attraccess_nametab; np->name; np++)
