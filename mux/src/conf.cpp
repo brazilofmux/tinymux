@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.24 2003-02-27 13:57:41 sdennis Exp $
+// $Id: conf.cpp,v 1.25 2003-02-27 14:14:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -561,10 +561,7 @@ CF_HAND(cf_string_dyn)
         if (mudstate.bReadingConfiguration)
         {
             STARTLOG(LOG_STARTUP, "CNF", "NFND");
-            char *logbuff = alloc_lbuf("cf_string.LOG");
-            sprintf(logbuff, "%s: String truncated", cmd);
-            log_text(logbuff);
-            free_lbuf(logbuff);
+            Log.tinyprintf("%s: String truncated", cmd);
             ENDLOG;
         }
         else
