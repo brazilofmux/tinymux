@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.23 2000-06-09 19:10:40 sdennis Exp $
+// $Id: externs.h,v 1.24 2000-06-30 21:31:44 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -686,13 +686,15 @@ extern pid_t game_pid;
 
 extern void init_timer(void);
 
-// Using a heap as the data structure for representing this priority has some attributes which we depend on:
+// Using a heap as the data structure for representing this priority
+// has some attributes which we depend on:
 //
-// 1. Most importantly, actions scheduled for the same time (i.e., immediately) keep the order that they were
-//    inserted into the heap.
+// 1. Most importantly, actions scheduled for the same time (i.e.,
+//    immediately) keep the order that they were inserted into the
+//    heap.
 //
-// If you ever re-implement this object using another data structure, please remember to maintain the properties
-// properties.
+// If you ever re-implement this object using another data structure,
+// please remember to maintain the properties properties.
 //
 typedef void FTASK(void *, int);
 
