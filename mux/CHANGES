@@ -136,6 +136,8 @@ Bug Fixes:
  -- Visible() could be used to detect dark wizards.
  -- Bug #597, @mail/proof and blank message. Fixed by Jake.
  -- Idle time didn't update while in an @program. Fixed by Jake.
+ -- Allow exits to commit suicide (www.livejournal.com, mushcode journal,
+    _Programming Suicidal Exits_ by DrDubious).
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
