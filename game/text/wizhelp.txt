@@ -1618,7 +1618,7 @@
  
 & have_macros
   Config parameter: have_macros <yes/no>.  Default: yes
-  Specifies whether or not the macro system should b active.
+  Specifies whether or not the macro system should be active.
   See also: comsys_database, have_comsys.
  
 & have_mailer
