@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.33 2002-08-03 19:34:21 sdennis Exp $
+// $Id: mail.cpp,v 1.34 2002-09-09 07:29:34 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3202,13 +3202,10 @@ static char *make_numlist(dbref player, char *arg)
     struct malias *m;
     struct mail *temp;
     dbref target;
-    int num;
+    int nRecip = 0;
+    dbref aRecip[(LBUF_SIZE/2)];
 
-    ITL itl;
-    char *numbuf = alloc_lbuf("make_numlist");
-    char *numbp = numbuf;
     char *head = arg;
-    ItemToList_Init(&itl, numbuf, &numbp);
 
     while (head && *head)
     {
@@ -3249,20 +3246,16 @@ static char *make_numlist(dbref player, char *arg)
             if (nResult == GMA_NOTFOUND)
             {
                 notify(player, tprintf("MAIL: Alias '%s' does not exist.", head));
-                ItemToList_Final(&itl);
-                free_lbuf(numbuf);
                 return NULL;
             }
             else if (nResult == GMA_INVALIDFORM)
             {
                 notify(player, tprintf("MAIL: '%s' is a badly-formed alias.", head));
-                ItemToList_Final(&itl);
-                free_lbuf(numbuf);
                 return NULL;
             }
             for (int i = 0; i < m->numrecep; i++)
             {
-                ItemToList_AddInteger(&itl, m->list[i]);
+                 aRecip[nRecip++] = m->list[i];
             }
         }
         else
@@ -3270,13 +3263,11 @@ static char *make_numlist(dbref player, char *arg)
             target = lookup_player(player, head, TRUE);
             if (Good_obj(target))
             {
-                ItemToList_AddInteger(&itl, target);
+                aRecip[nRecip++] = target;
             }
             else
             {
                 notify(player, tprintf("MAIL: '%s' does not exist.", head));
-                ItemToList_Final(&itl);
-                free_lbuf(numbuf);
                 return NULL;
             }
         }
@@ -3291,15 +3282,35 @@ static char *make_numlist(dbref player, char *arg)
         }
     }
 
-    if (!*numbuf)
+    if (!aRecip[0])
     {
         notify(player, "MAIL: No players specified.");
-        ItemToList_Final(&itl);
-        free_lbuf(numbuf);
         return NULL;
     }
     else
     {
+        ITL itl;
+        char *numbuf, *numbp;
+        numbp = numbuf = alloc_lbuf("mail.make_numlist");
+        ItemToList_Init(&itl, numbuf, &numbp);
+        int i;
+        for (i = 0; i < nRecip; i++)
+        {
+            if (i != nRecip)
+            {
+                for (int j = i + 1; j < nRecip; j++)
+                {
+                    if (aRecip[i] == aRecip[j])
+                    {
+                        aRecip[j] = NOTHING;
+                    }
+                }
+            }
+            if (Good_obj(aRecip[i]))
+            {
+                ItemToList_AddInteger(&itl, aRecip[i]);
+            }
+        }
         ItemToList_Final(&itl);
         return numbuf;
     }
