@@ -153,7 +153,7 @@ void SHA1_Final(SHA1_CONTEXT *p)
 #define TEST_STRING "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
 int main(int argc, char *argv[])
 {
-    unsigned char buffer[] = TEST_STRING;
+    char buffer[] = TEST_STRING;
 
     SHA1_CONTEXT shac;
     SHA1_Init(&shac);
