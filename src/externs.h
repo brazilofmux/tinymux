@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.35 2001-02-10 09:57:05 sdennis Exp $
+// $Id: externs.h,v 1.36 2001-02-10 17:54:06 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -321,7 +321,7 @@ extern void ReleaseAllResources(dbref obj);
 #define CSET_OBJECT  5   /* Sets the channel object for the channel */
 #define CSET_SPOOF   6   /* Sets the channel spoofable */
 #define CSET_NOSPOOF 7   /* Sets the channel non-spoofable */
-#define CSET_HEADER	 8	/* Sets the channel header, like "[Public]" */
+#define CSET_HEADER  8   /* Sets the channel header, like "[Public]" */
 #define DBCK_DEFAULT    1   /* Get default tests too */
 #define DBCK_REPORT 2   /* Report info to invoker */
 #define DBCK_FULL   4   /* Do all tests */

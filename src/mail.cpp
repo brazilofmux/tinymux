@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.24 2001-02-09 18:17:00 sdennis Exp $
+// $Id: mail.cpp,v 1.25 2001-02-10 17:54:06 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1342,21 +1342,21 @@ void do_mail_nuke(dbref player)
     }
 
     // Walk the list.
-	//
+    //
     for (dbref thing = 0; thing < mudstate.db_top; thing++)
-	{
-		struct mail *mp = (struct mail *)hashfindLEN(&thing, sizeof(thing), &mudstate.mail_htab);
-		while (mp)
-		{
-			struct mail *nextp = mp->next;
-			MessageReferenceDec(mp->number);
-			MEMFREE((char *)mp->subject);
-			MEMFREE((char *)mp->tolist);
-			MEMFREE((char *)mp->time);
-			MEMFREE(mp);
-			mp = nextp;
-		}
-		hashdeleteLEN(&thing, sizeof(thing), &mudstate.mail_htab);
+    {
+        struct mail *mp = (struct mail *)hashfindLEN(&thing, sizeof(thing), &mudstate.mail_htab);
+        while (mp)
+        {
+            struct mail *nextp = mp->next;
+            MessageReferenceDec(mp->number);
+            MEMFREE((char *)mp->subject);
+            MEMFREE((char *)mp->tolist);
+            MEMFREE((char *)mp->time);
+            MEMFREE(mp);
+            mp = nextp;
+        }
+        hashdeleteLEN(&thing, sizeof(thing), &mudstate.mail_htab);
     }
 
     log_text(tprintf("** MAIL PURGE ** done by %s(#%d).",

@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.19 2001-02-10 16:58:35 sdennis Exp $
+// * $Id: comsys.cpp,v 1.20 2001-02-10 17:54:06 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -298,6 +298,7 @@ void load_old_channels(FILE *fp)
                     *t++ = in;
                 }
                 *t = 0;
+
                 int n = GetLineTrunc(buffer, sizeof(buffer), fp);
                 if (buffer[n-1] == '\n')
                 {
@@ -575,11 +576,11 @@ void load_comsystem(FILE *fp)
     num_channels = 0;
         
     fgets(temp, sizeof(temp), fp);
-   	if (!strncmp(temp, "+V", 2))
+    if (!strncmp(temp, "+V", 2))
     {
         // +V2 has colored headers
         //
-		ver = Tiny_atol(temp + 2);
+        ver = Tiny_atol(temp + 2);
         if (ver < 1 || 2 < ver)
         {
             return;
@@ -612,7 +613,7 @@ void load_comsystem(FILE *fp)
         memcpy(ch->name, temp, n);
         ch->name[n] = '\0';
 
-		if (ver == 2)
+        if (ver == 2)
         {
             int nHeader = GetLineTrunc(temp, sizeof(temp), fp);
             if (nHeader > MAX_HEADER_LEN)
@@ -625,7 +626,7 @@ void load_comsystem(FILE *fp)
             }
             memcpy(ch->header, temp, nHeader);
             ch->header[nHeader] = '\0';
-		} 
+        } 
 
         ch->on_users = NULL;
         
@@ -646,7 +647,7 @@ void load_comsystem(FILE *fp)
                 &(ch->amount_col), &(ch->num_messages), &(ch->chan_obj));
         }
         
-		if (ver != 2)
+        if (ver != 2)
         {
             // Build colored header if not +V2 db.
             //
@@ -747,7 +748,7 @@ void save_comsystem(FILE *fp)
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab); ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
         fprintf(fp, "%s\n", ch->name);
-		fprintf(fp, "%s\n", ch->header);
+        fprintf(fp, "%s\n", ch->header);
         
         fprintf(fp, "%d %d %d %d %d %d %d %d\n", ch->type, ch->temp1, ch->temp2, ch->charge, ch->charge_who, ch->amount_col, ch->num_messages, ch->chan_obj);
         
@@ -2353,10 +2354,10 @@ void do_chopen(dbref player, dbref cause, int key, char *chan, char *value)
         }
         break;
 
-	case CSET_HEADER:
+    case CSET_HEADER:
         do_cheader(player, chan, value);
         msg = "Set.";
-		break;
+        break;
     }
     raw_notify(player, msg);
 }
@@ -2446,17 +2447,17 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
 
 void do_cheader(dbref player, char *channel, char *header)
 {
-	struct channel *ch = select_channel(channel);
-	if (!ch)
+    struct channel *ch = select_channel(channel);
+    if (!ch)
     {
-		raw_notify(player, "That channel does not exist.");
-		return;
-	}
-	if (!(ch->charge_who == player) && !Comm_All(player))
+        raw_notify(player, "That channel does not exist.");
+        return;
+    }
+    if (!(ch->charge_who == player) && !Comm_All(player))
     {
-		raw_notify(player, "Permission denied.");
-		return;
-	}
+        raw_notify(player, "Permission denied.");
+        return;
+    }
     char *p = RemoveSetOfCharacters(header, "\r\n\t");
     int n = strlen(p);
     if (n > MAX_HEADER_LEN)
@@ -2492,11 +2493,11 @@ void do_chanlist(dbref player, dbref cause, int key)
     temp = alloc_mbuf("do_chanlist_temp");
     buf = alloc_mbuf("do_chanlist_buf");
 
-	if (key & CLIST_HEADERS)
+    if (key & CLIST_HEADERS)
     {
         raw_notify(player, "*** Channel       Owner           Header");
     }
-	else
+    else
     {
         raw_notify(player, "*** Channel       Owner           Description");
     }
@@ -2508,7 +2509,7 @@ void do_chanlist(dbref player, dbref cause, int key)
             ch->charge_who == player)
         {
             char *pBuffer;
-		    if (key & CLIST_HEADERS)
+            if (key & CLIST_HEADERS)
             {
                 pBuffer = ch->header;
             }
