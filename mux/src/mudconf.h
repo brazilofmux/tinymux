@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.10 2003-03-04 09:03:47 jake Exp $
+// $Id: mudconf.h,v 1.11 2003-03-04 12:26:36 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -124,9 +124,9 @@ struct confdata
     int     max_cmdsecs;        /* Threshhold for real time taken by command */
     int     max_players;        /* Max # of connected players */
     int     min_guests;         // The # we should start nuking at.
+    int     nStackLimit;        // Current stack limit.
     int     ntfy_nest_lim;      /* Max nesting of notifys */
     int     number_guests;      // number of guest characters allowed.
-    int     nStackLimit;        // Current stack limit.
     int     opencost;           /* cost of @open command */
     int     output_limit;       /* Max # chars queued for output */
     int     pagecost;           /* cost of @page command */
