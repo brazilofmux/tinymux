@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.24 2002-06-21 00:46:15 sdennis Exp $
+// $Id: functions.cpp,v 1.25 2002-06-21 00:59:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2924,7 +2924,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
        || nA >= 16
        || nB >= 15)
     {
-        safe_str("#-1 ARGUMENT MUST BE NUMBER", buff, bufc);
+        safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
         return;
     }
 
