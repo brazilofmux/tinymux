@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.32 2002-08-03 18:50:17 sdennis Exp $
+// $Id: mail.cpp,v 1.33 2002-08-03 19:34:21 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3051,7 +3051,7 @@ void do_malias_list(dbref player, char *alias)
     safe_tprintf_str(buff, &bp, "MAIL: Alias *%s: ", m->name);
     for (int i = m->numrecep - 1; i > -1; i--)
     {
-        char *p = Name(m->list[i]);
+        const char *p = Name(m->list[i]);
         if (strchr(p, ' '))
         {
             safe_chr('"', buff, &bp);

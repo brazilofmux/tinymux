@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.10 2002-07-23 05:36:13 jake Exp $
+// $Id: player.cpp,v 1.11 2002-08-03 19:34:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -405,7 +405,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int key, char *who)
  * Manage playername->dbref mapping
  */
 
-BOOL add_player_name(dbref player, char *name)
+BOOL add_player_name(dbref player, const char *name)
 {
     int stat;
     char *temp, *tp;
@@ -466,7 +466,7 @@ BOOL add_player_name(dbref player, char *name)
     return stat;
 }
 
-BOOL delete_player_name(dbref player, char *name)
+BOOL delete_player_name(dbref player, const char *name)
 {
     char *temp, *tp;
 

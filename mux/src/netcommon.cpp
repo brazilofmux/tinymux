@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.26 2002-07-25 13:17:48 jake Exp $
+// $Id: netcommon.cpp,v 1.27 2002-08-03 19:34:21 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1239,9 +1239,9 @@ void check_events(void)
 }
 
 #define MAX_TRIMMED_NAME_LENGTH 16
-static char *trimmed_name(dbref player)
+static const char *trimmed_name(dbref player)
 {
-    char *pName = Name(player);
+    const char *pName = Name(player);
     int nName = strlen(pName);
     if (nName <= MAX_TRIMMED_NAME_LENGTH)
     {
@@ -1716,7 +1716,7 @@ static BOOL check_connect(DESC *d, char *msg)
     dbref player, aowner;
     int aflags, nplayers;
     DESC *d2;
-    char *p;
+    const char *p;
     BOOL isGuest = FALSE;
 
     char *cmdsave = mudstate.debug_cmd;

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.15 2002-07-23 14:04:16 jake Exp $
+// $Id: stringutil.cpp,v 1.16 2002-08-03 19:34:21 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1363,10 +1363,10 @@ char *translate_string(const char *szString, BOOL bConvert)
  * munge_space: Compress multiple spaces to one space, also remove leading and
  * trailing spaces.
  */
-char *munge_space(char *string)
+char *munge_space(const char *string)
 {
     char *buffer = alloc_lbuf("munge_space");
-    char *p = string;
+    const char *p = string;
     char *q = buffer;
 
     if (p)

@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.12 2002-07-27 10:49:02 jake Exp $
+// $Id: wiz.cpp,v 1.13 2002-08-03 19:34:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -356,7 +356,7 @@ void do_toad
     //
     loc = Location(victim);
     buf = alloc_mbuf("do_toad");
-    char *pVictimName = Name(victim);
+    const char *pVictimName = Name(victim);
     sprintf(buf, "%s has been turned into a slimy toad!", pVictimName);
     notify_except2(loc, executor, victim, executor, buf);
     sprintf(buf, "You toaded %s! (%d objects @chowned)", pVictimName, count + 1);

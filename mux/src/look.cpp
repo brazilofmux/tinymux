@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.22 2002-07-27 10:49:01 jake Exp $
+// $Id: look.cpp,v 1.23 2002-08-03 19:34:21 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -411,7 +411,8 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     }
 
     dbref thing, parent;
-    char *buff, *e, *s, *buff1, *e1;
+    char *buff, *e, *buff1, *e1;
+    const char *s;
 
     // make sure there is at least one visible exit.
     //
@@ -1809,7 +1810,8 @@ void do_score(dbref executor, dbref caller, dbref enactor, int key)
 void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
 {
     dbref thing;
-    char *buff, *s, *e;
+    char *buff, *e;
+    const char *s;
 
     thing = Contents(executor);
     if (thing == NOTHING)

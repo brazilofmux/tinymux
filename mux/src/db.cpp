@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.32 2002-08-03 18:50:17 sdennis Exp $
+// $Id: db.cpp,v 1.33 2002-08-03 19:34:21 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -444,7 +444,7 @@ FWDLIST *fwdlist_get(dbref thing)
  * Name, s_Name: Get or set an object's name.
  */
 
-char *Name(dbref thing)
+const char *Name(dbref thing)
 {
     static char tbuff[LBUF_SIZE];
     if (thing < 0)
@@ -516,7 +516,7 @@ char *PureName(dbref thing)
     return strip_ansi(tbuff);
 }
 
-void s_Name(dbref thing, char *s)
+void s_Name(dbref thing, const char *s)
 {
     atr_add_raw(thing, A_NAME, s);
     set_modified(thing);
@@ -1533,7 +1533,7 @@ void atr_clr(dbref thing, int atr)
  * atr_add_raw, atr_add: add attribute of type atr to list
  */
 
-void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
+void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
 {
 #ifdef MEMORY_BASED
 
@@ -1639,7 +1639,6 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     if (nValue > LBUF_SIZE-1)
     {
         nValue = LBUF_SIZE-1;
-        szValue[nValue] = '\0';
     }
 
     if (atr == A_LIST)
@@ -1695,7 +1694,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     }
 }
 
-void atr_add_raw(dbref thing, int atr, char *szValue)
+void atr_add_raw(dbref thing, int atr, const char *szValue)
 {
     atr_add_raw_LEN(thing, atr, szValue, szValue ? strlen(szValue) : 0);
 }

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.41 2002-08-03 18:50:17 sdennis Exp $
+// $Id: externs.h,v 1.42 2002-08-03 19:34:21 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -138,14 +138,14 @@ extern BOOL  can_set_home(dbref, dbref, dbref);
 extern dbref new_home(dbref);
 extern dbref clone_home(dbref, dbref);
 extern void  divest_object(dbref);
-extern dbref create_obj(dbref, int, char *, int);
+extern dbref create_obj(dbref, int, const char *, int);
 extern void  destroy_obj(dbref);
 extern void  empty_obj(dbref);
 
 /* From player.cpp */
 extern dbref create_player(char *, char *, dbref, BOOL, BOOL);
-extern BOOL add_player_name(dbref, char *);
-extern BOOL delete_player_name(dbref, char *);
+extern BOOL add_player_name(dbref, const char *);
+extern BOOL delete_player_name(dbref, const char *);
 extern dbref lookup_player(dbref, char *, BOOL);
 extern void load_player_names(void);
 extern void badname_add(char *);
@@ -253,8 +253,8 @@ extern char *process_command(dbref executor, dbref caller, dbref enactor, BOOL,
 /* from db.cpp */
 extern BOOL Commer(dbref);
 extern void s_Pass(dbref, const char *);
-extern void s_Name(dbref, char *);
-extern char *Name(dbref);
+extern void s_Name(dbref, const char *);
+extern const char *Name(dbref);
 extern char *PureName(dbref);
 extern int  fwdlist_load(FWDLIST *, dbref, char *);
 extern void fwdlist_set(dbref, FWDLIST *);
@@ -269,8 +269,8 @@ extern int  init_dbfile(char *game_dir_file, char *game_pag_file);
 extern void atr_cpy(dbref dest, dbref source);
 extern void atr_chown(dbref);
 extern void atr_clr(dbref, int);
-extern void atr_add_raw_LEN(dbref, int, char *, int);
-extern void atr_add_raw(dbref, int, char *);
+extern void atr_add_raw_LEN(dbref, int, const char *, int);
+extern void atr_add_raw(dbref, int, const char *);
 extern void atr_add(dbref, int, char *, dbref, int);
 extern void atr_set_flags(dbref, int, int);
 extern const char *atr_get_raw_LEN(dbref, int, int*);

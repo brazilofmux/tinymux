@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.10 2002-07-13 07:23:01 jake Exp $
+// $Id: mguests.cpp,v 1.11 2002-08-03 19:34:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -109,7 +109,7 @@ void CGuests::SizeGuests(int nMin)
     nMaxGuests = nMin;
 }
 
-char *CGuests::Create(DESC *d)
+const char *CGuests::Create(DESC *d)
 {
     // We don't have a main guest character, break out.
     //

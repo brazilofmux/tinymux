@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.16 2002-08-02 04:21:48 sdennis Exp $
+// $Id: eval.cpp,v 1.17 2002-08-03 19:34:21 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1050,6 +1050,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
 {
     char *TempPtr;
     char *tstr, *tbuf, *start, *oldp, *savestr;
+    const char *constbuf;
     int ch;
     char *realbuff = NULL, *realbp = NULL;
     dbref aowner;
@@ -1642,13 +1643,13 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                             }
                             if (!gender)
                             {
-                                tbuf = Name(enactor);
+                                constbuf  = Name(enactor);
                             }
                             else
                             {
-                                tbuf = (char *)subj[gender];
+                                constbuf  = subj[gender];
                             }
-                            safe_str(tbuf, buff, bufc);
+                            safe_str(constbuf, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
@@ -1698,13 +1699,13 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                             }
                             if (!gender)
                             {
-                                tbuf = Name(enactor);
+                                constbuf = Name(enactor);
                             }
                             else
                             {
-                                tbuf = (char *)obj[gender];
+                                constbuf = obj[gender];
                             }
-                            safe_str(tbuf, buff, bufc);
+                            safe_str(constbuf, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
