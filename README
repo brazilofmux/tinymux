@@ -66,7 +66,7 @@ the following files:
 General Information:
 ~~~~~~~~~~~~~~~~~~~
 TinyMUX 2.0 is currently being developed in parallel under Win32 and 
-RedHat 6.0 and is written in C and C++.  It is a continuation of the 
+RedHat 6.2 and is written in C and C++.  It is a continuation of the 
 TinyMUX 1.x line of servers and consists largely of bug fixes and a number 
 of performance enhancements.  Features have been added in this release, 
 but they were not the primary focus.  
