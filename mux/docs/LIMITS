@@ -19,13 +19,13 @@ reduces its usable size.
 
 Object Limit:
 
-The number of objects is limited to the maximum value on a 'signed integer'.
+The number of objects is limited to the maximum value on a 'int'.
 
 
 Attribute Name Limit:
 
 The number of unique attribute names is limited to the maximum value of a
-'signed integer'.
+'int'.
 
 
 Attributes per Object:
@@ -61,9 +61,14 @@ what is called 'Summer Time' or 'Daylight Savings Time'.
 
 Typical Platform Limits:
 
-A 'signed integer' is typically 32-bits and can represent values from
+A 'int' is typically 32-bits and can represent values from
 -2147483648 through 2147483647.
 
 Many platforms employ the IEEE floating-point formats. The range of
 floating-point numbers which may be represented is approximately 1e-323
 through 1e+308.
+
+A 'long long' is typically 64-bits and can represent values from 
+-9223372036854775808 to 9223372036854775807.  This it the internal
+data type used for for mod(), remainder(), floordiv(), pack(), unpack(),
+iadd(), isub(), imul(), and idiv().
