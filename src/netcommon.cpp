@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.25 2001-02-01 05:32:28 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.26 2001-02-10 23:58:24 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1318,6 +1318,36 @@ static void dump_users(DESC *e, char *match, int key)
     free_mbuf(buf);
 }
 
+static void dump_info(DESC *arg_desc)
+{
+    queue_string(arg_desc, "### Begin INFO 1\r\n");
+
+    queue_string(arg_desc, tprintf("Name: %s\r\n", mudconf.mud_name));
+
+    char *temp = mudstate.start_time.ReturnDateString();
+    queue_string(arg_desc, tprintf("Uptime: %s\r\n", temp));
+
+    DESC *d;
+    int count = 0;
+    DESC_ITER_CONN(d)
+    {
+        if (!Good_obj(d->player))
+        {
+            continue;
+        }
+        if (  !Hidden(d->player)
+           || ( (arg_desc->flags & DS_CONNECTED)
+              && See_Hidden(arg_desc->player)))
+        {
+            count++;
+        }
+    }
+    queue_string(arg_desc, tprintf("Connected: %d\r\n", count));
+    queue_string(arg_desc, tprintf("Size: %d\r\n", mudstate.db_top));
+    queue_string(arg_desc, tprintf("Version: %s\r\n", mudstate.short_ver));
+    queue_string(arg_desc, "### End INFO\r\n");
+}
+
 char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, BOOL *pbValidDoing)
 {
     *pnValidDoing = 0;
@@ -1419,15 +1449,16 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
 
 NAMETAB logout_cmdtable[] =
 {
-    {(char *)"DOING",   5,  CA_PUBLIC,  CMD_DOING},
-    {(char *)"LOGOUT",  6,  CA_PUBLIC,  CMD_LOGOUT},
-    {(char *)"OUTPUTPREFIX",12, CA_PUBLIC,  CMD_PREFIX|CMD_NOxFIX},
-    {(char *)"OUTPUTSUFFIX",12, CA_PUBLIC,  CMD_SUFFIX|CMD_NOxFIX},
-    {(char *)"QUIT",    4,  CA_PUBLIC,  CMD_QUIT},
-    {(char *)"SESSION", 7,  CA_PUBLIC,  CMD_SESSION},
-    {(char *)"WHO",     3,  CA_PUBLIC,  CMD_WHO},
-    {(char *)"PUEBLOCLIENT", 12,    CA_PUBLIC,      CMD_PUEBLOCLIENT},
-    {NULL,          0,  0,      0}
+    {(char *)"DOING",         5,  CA_PUBLIC,  CMD_DOING},
+    {(char *)"LOGOUT",        6,  CA_PUBLIC,  CMD_LOGOUT},
+    {(char *)"OUTPUTPREFIX", 12,  CA_PUBLIC,  CMD_PREFIX|CMD_NOxFIX},
+    {(char *)"OUTPUTSUFFIX", 12,  CA_PUBLIC,  CMD_SUFFIX|CMD_NOxFIX},
+    {(char *)"QUIT",          4,  CA_PUBLIC,  CMD_QUIT},
+    {(char *)"SESSION",       7,  CA_PUBLIC,  CMD_SESSION},
+    {(char *)"WHO",           3,  CA_PUBLIC,  CMD_WHO},
+    {(char *)"PUEBLOCLIENT", 12,  CA_PUBLIC,  CMD_PUEBLOCLIENT},
+    {(char *)"INFO",          4,  CA_PUBLIC,  CMD_INFO},
+    {NULL,                    0,          0,         0}
 };
 
 void NDECL(init_logout_cmdtab)
@@ -1990,6 +2021,11 @@ int do_command(DESC *d, char *command, int first)
             set_userstring(&d->output_suffix, arg);
             break;
 
+        case CMD_INFO:
+
+            dump_info(d);
+            break;
+
         case CMD_PUEBLOCLIENT:
 
             // Set the descriptor's flag.
@@ -2039,59 +2075,47 @@ void logged_out1(dbref player, dbref cause, int key, char *arg)
     {
         CLinearTimeDelta ltdIdle = lsaNow - d->last_time;
         int idletime = ltdIdle.ReturnSeconds();
-        
-        switch (key)
+
+        if (idletime == 0)
         {
-        case CMD_QUIT:
-            if (idletime == 0)
+            switch (key)
             {
+            case CMD_QUIT:
                 shutdownsock(d, R_QUIT);
                 return;
-            }
-            break;
-        case CMD_LOGOUT:
-            if (idletime == 0)
-            {
+
+            case CMD_LOGOUT:
                 shutdownsock(d, R_LOGOUT);
                 return;
-            }
-            break;
-        case CMD_WHO:
-            if (idletime == 0)
-            {
+
+            case CMD_WHO:
                 dump_users(d, arg, CMD_WHO);
                 return;
-            }
-            break;
-        case CMD_DOING:
-            if (idletime == 0)
-            {
+
+            case CMD_DOING:
                 dump_users(d, arg, CMD_DOING);
                 return;
-            }
-            break;
-        case CMD_SESSION:
-            if (idletime == 0)
-            {
+
+            case CMD_SESSION:
                 dump_users(d, arg, CMD_SESSION);
                 return;
-            }
-            break;
-        case CMD_PREFIX:
-            if (idletime == 0)
-            {
+
+            case CMD_PREFIX:
                 set_userstring(&d->output_prefix, arg);
                 return;
-            }
-            break;
-        case CMD_SUFFIX:
-            if (idletime == 0)
-            {
+
+            case CMD_SUFFIX:
                 set_userstring(&d->output_suffix, arg);
                 return;
+
+            case CMD_INFO:
+                dump_info(d);
+                return;
             }
-            break;
-        case CMD_PUEBLOCLIENT:
+        }
+
+        if (key == CMD_PUEBLOCLIENT)
+        {
             /* Set the descriptor's flag */
             d->flags |= DS_PUEBLOCLIENT;
             /* If we're already connected, set the player's flag */
@@ -2101,7 +2125,6 @@ void logged_out1(dbref player, dbref cause, int key, char *arg)
             }
             queue_string(d, mudconf.pueblo_msg);
             queue_string(d, "\r\n");
-            break;
         }
     }
 }
