@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.18 2002-07-16 06:41:41 jake Exp $
+// $Id: netcommon.cpp,v 1.19 2002-07-17 00:51:10 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -60,18 +60,27 @@ void make_portlist(dbref player, dbref target, char *buff, char **bufc)
 
 void make_port_ulist(dbref player, char *buff, char **bufc)
 {
-    ITB itb;
-    IntegerToBuffer_Init(&itb, buff, bufc);
-
     DESC *d;
+    BOOL bFirst = TRUE;
+    char *tbuff;
     DESC_ITER_CONN(d)
     {
-        if (!IntegerToBuffer_Add(&itb, d->descriptor))
+        if (!See_Hidden(player) && Hidden(d->player))
+        {
+            continue;
+        }
+        if (!bFirst)
+        {
+            safe_chr(' ', buff, bufc);
+        }
+        tbuff = tprintf("#%d:%d", d->player, d->descriptor);
+        if (strlen(buff) > (LBUF_SIZE - (strlen(tbuff) + 2)))
         {
             break;
         }
+        safe_str(tbuff, buff, bufc);
+        bFirst = FALSE;
     }
-    IntegerToBuffer_Final(&itb);
 }
 
 /* ---------------------------------------------------------------------------
@@ -2388,23 +2397,30 @@ void list_siteinfo(dbref player)
  * make_ulist: Make a list of connected user numbers for the LWHO function.
  */
 
-void make_ulist(dbref player, char *buff, char **bufc)
+void make_ulist(dbref player, char *buff, char **bufc, BOOL bPorts)
 {
     DESC *d;
-    DTB pContext;
-    DbrefToBuffer_Init(&pContext, buff, bufc);
-    DESC_ITER_CONN(d)
+    if (bPorts)
     {
-        if (!See_Hidden(player) && Hidden(d->player))
-        {
-            continue;
-        }
-        if (!DbrefToBuffer_Add(&pContext, d->player))
-        {
-            break;
-        }
+        make_port_ulist(player, buff, bufc);
     }
-    DbrefToBuffer_Final(&pContext);
+    else
+    {
+        DTB pContext;
+        DbrefToBuffer_Init(&pContext, buff, bufc);
+        DESC_ITER_CONN(d)
+        {
+            if (!See_Hidden(player) && Hidden(d->player))
+            {
+                continue;
+            }
+            if (!DbrefToBuffer_Add(&pContext, d->player))
+            {
+                break;
+            }
+        }
+        DbrefToBuffer_Final(&pContext);
+    }
 }
 
 /* ---------------------------------------------------------------------------

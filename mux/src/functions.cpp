@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.55 2002-07-16 22:03:37 jake Exp $
+// $Id: functions.cpp,v 1.56 2002-07-17 00:51:10 jake Exp $
 //
 
 #include "copyright.h"
@@ -5029,12 +5029,17 @@ FUNCTION(fun_elock)
 }
 
 /* ---------------------------------------------------------------------------
- * * fun_lwho: Return list of connected users.
+ * fun_lwho: Return list of connected users.
  */
 
 FUNCTION(fun_lwho)
 {
-    make_ulist(executor, buff, bufc);
+    BOOL bPorts = FALSE;
+    if (nfargs == 1)
+    {
+        bPorts = (Tiny_atol(fargs[0]) ? TRUE : FALSE);
+    }
+    make_ulist(executor, buff, bufc, bPorts);
 }
 
 // ---------------------------------------------------------------------------
@@ -7715,7 +7720,7 @@ FUN flist[] =
     {"LSTACK",   fun_lstack,   MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"LT",       fun_lt,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"LTE",      fun_lte,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"LWHO",     fun_lwho,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"LWHO",     fun_lwho,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"MAIL",     fun_mail,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"MAILFROM", fun_mailfrom, MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"MAP",      fun_map,      MAX_ARG, 2,  4,       0, CA_PUBLIC},

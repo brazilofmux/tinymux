@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.9 2002-07-14 08:06:07 jake Exp $
+// $Id: interface.h,v 1.10 2002-07-17 00:51:10 jake Exp $
 //
 
 #include "copyright.h"
@@ -185,7 +185,6 @@ extern void find_oldest(dbref target, DESC *dOldest[2]);
 extern void check_idle(void);
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
 extern int site_check(struct in_addr, SITE *);
-extern void make_ulist(dbref, char *, char **);
 extern dbref  find_connected_name(dbref, char *);
 
 /* From predicates.c */

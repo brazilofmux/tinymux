@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.30 2002-07-16 23:51:21 jake Exp $
+// $Id: externs.h,v 1.31 2002-07-17 00:51:10 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -23,7 +23,7 @@ extern void mail_init(void);
 extern struct mail *mail_fetch(dbref, int);
 
 /* From netcommon.cpp */
-extern void make_ulist(dbref, char *, char **);
+extern void make_ulist(dbref, char *, char **, BOOL);
 extern void make_port_ulist(dbref, char *, char **);
 extern int fetch_session(dbref target);
 extern int fetch_idle(dbref target);
