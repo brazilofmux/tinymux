@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.4 2003-02-17 16:26:06 jake Exp $
+// $Id: mguests.cpp,v 1.5 2003-02-18 01:55:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -56,8 +56,8 @@ void CGuests::StartUp(void)
     dbref thing;
     DO_WHOLE_DB(thing)
     {
-        if(  Guest(thing)
-          && isPlayer(thing))
+        if (  Guest(thing)
+           && isPlayer(thing))
         {
             SizeGuests(nGuests+1);
             Guests[nGuests] = thing;
