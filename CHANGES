@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  September 2002
+Last Update:  October 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -292,6 +292,12 @@ Bug Fixes:
     MUX 2 a long time ago, but this recent fix cleans up the connection
     further so that the connection can continued to be used for logging into
     another account. Prompted by Alierak.
+ -- Use long signal names if they are available. Bug from MUX 1.6.
+ -- raw_broadcast() can be called from a signal handler and therefore, it
+    shouldn't be allocating/freeing memory.
+ -- comtitle switch table needed to be terminated. Jake fixed.
+ -- Fixed two memcpy/strip-ansi idioms (one in pos() and one in @decomp).
+    Found by Jake.  Bug introduced by Brazil.
 
 
 Performance Enhancements:
