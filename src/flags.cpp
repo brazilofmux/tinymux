@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.22 2002-02-14 05:31:14 sdennis Exp $
+// $Id: flags.cpp,v 1.23 2002-02-14 06:55:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -377,6 +377,16 @@ FLAGNAMEENT gen_flag_names[] =
     {"KEY",             TRUE, &fbeKey            },
     {"LIGHT",           TRUE, &fbeLight          },
     {"LINK_OK",         TRUE, &fbeLinkOk         },
+    {"MARKER0",         TRUE, &fbeMarker0        },
+    {"MARKER1",         TRUE, &fbeMarker1        },
+    {"MARKER2",         TRUE, &fbeMarker2        },
+    {"MARKER3",         TRUE, &fbeMarker3        },
+    {"MARKER4",         TRUE, &fbeMarker4        },
+    {"MARKER5",         TRUE, &fbeMarker5        },
+    {"MARKER6",         TRUE, &fbeMarker6        },
+    {"MARKER7",         TRUE, &fbeMarker7        },
+    {"MARKER8",         TRUE, &fbeMarker8        },
+    {"MARKER9",         TRUE, &fbeMarker9        },
     {"MONITOR",         TRUE, &fbeMonitor        },
     {"MYOPIC",          TRUE, &fbeMyopic         },
     {"NO_COMMAND",      TRUE, &fbeNoCommand      },
@@ -416,17 +426,6 @@ FLAGNAMEENT gen_flag_names[] =
     {"FAE",             TRUE, &fbeFae            },
     {"CHIMERA",         TRUE, &fbeChimera        },
     {"PEERING",         TRUE, &fbePeering        },
-#else // WOD_REALMS
-    {"MARKER0",         TRUE, &fbeMarker0        },
-    {"MARKER1",         TRUE, &fbeMarker1        },
-    {"MARKER2",         TRUE, &fbeMarker2        },
-    {"MARKER3",         TRUE, &fbeMarker3        },
-    {"MARKER4",         TRUE, &fbeMarker4        },
-    {"MARKER5",         TRUE, &fbeMarker5        },
-    {"MARKER6",         TRUE, &fbeMarker6        },
-    {"MARKER7",         TRUE, &fbeMarker7        },
-    {"MARKER8",         TRUE, &fbeMarker8        },
-    {"MARKER9",         TRUE, &fbeMarker9        },
 #endif // WOD_REALMS
     {NULL, FALSE}
 };
@@ -488,13 +487,16 @@ void display_flagtab(dbref player)
         }
         safe_chr(' ', buf, &bp);
         safe_str(fp->flagname, buf, &bp);
-        safe_chr('(', buf, &bp);
-        if (!fp->bPositive)
+        if (fbe->flaglett != ' ')
         {
-            safe_chr('!', buf, &bp);
+            safe_chr('(', buf, &bp);
+            if (!fp->bPositive)
+            {
+                safe_chr('!', buf, &bp);
+            }
+            safe_chr(fbe->flaglett, buf, &bp);
+            safe_chr(')', buf, &bp);
         }
-        safe_chr(fbe->flaglett, buf, &bp);
-        safe_chr(')', buf, &bp);
     }
     *bp = '\0';
     notify(player, buf);
@@ -652,25 +654,29 @@ char *decode_flags(dbref player, FLAGSET *fs)
 
     if (!Good_obj(player))
     {
-        StringCopy(buf, "#-2 ERROR");
+        strcpy(buf, "#-2 ERROR");
         return buf;
     }
     int flagtype = fs->word[FLAG_WORD1] & TYPE_MASK;
+    BOOL bNeedColon = TRUE;
     if (object_types[flagtype].lett != ' ')
     {
         safe_sb_chr(object_types[flagtype].lett, buf, &bp);
+        bNeedColon = FALSE;
     }
 
     FLAGNAMEENT *fp;
     for (fp = gen_flag_names; fp->flagname; fp++)
     {
-        if (!fp->bPositive)
+        FLAGBITENT *fbe = fp->fbe;
+        if (  !fp->bPositive
+           || fbe->flaglett == ' ')
         {
-            // Only look at positive-sense entries.
+            // Only look at positive-sense entries that have non-space flag
+            // letters.
             //
             continue;
         }
-        FLAGBITENT *fbe = fp->fbe;
         if (fs->word[fbe->flagflag] & fbe->flagvalue)
         {
             if (  (  (fbe->listperm & CA_WIZARD)
@@ -691,7 +697,16 @@ char *decode_flags(dbref player, FLAGSET *fs)
             {
                 continue;
             }
+
+            if (  bNeedColon
+               && Tiny_IsDigit[(unsigned char)fbe->flaglett])
+            {
+                // We can't allow numerical digits at the beginning.
+                //
+                safe_sb_chr(':', buf, &bp);
+            }
             safe_sb_chr(fbe->flaglett, buf, &bp);
+            bNeedColon = FALSE;
         }
     }
     *bp = '\0';
@@ -1006,11 +1021,12 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
         FLAGNAMEENT *fp;
         for (fp = gen_flag_names; fp->flagname && !handled; fp++)
         {
-            if (!fp->bPositive)
+            FLAGBITENT *fbe = fp->fbe;
+            if (  !fp->bPositive
+               || fbe->flaglett == ' ')
             {
                 continue;
             }
-            FLAGBITENT *fbe = fp->fbe;
             if (  fbe->flaglett == *s
                && !(  (  (fbe->listperm & CA_WIZARD)
                       && !Wizard(player))
