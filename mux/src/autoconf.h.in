@@ -48,8 +48,6 @@
 #undef HAVE_GETPAGESIZE
 /* Define if gettimeofday exists */
 #undef HAVE_GETTIMEOFDAY
-/* Define if srandom exists */
-#undef HAVE_SRANDOM
 /* Define if sys_siglist[] exists */
 #undef HAVE_SYS_SIGLIST
 /* Define if _sys_siglist[] exists */
@@ -134,10 +132,6 @@
 #undef NEED_GETTIMEOFDAY_DCL
 /* Define if you need to declare wait3 yourself */
 #undef NEED_WAIT3_DCL
-/* Define if you need to declare srandom yourself */
-#undef NEED_SRANDOM_DCL
-/* Define if you need to declare random yourself */
-#undef NEED_RANDOM_DCL
 /* Define if you need to declare getpagesize yourself */
 #undef NEED_GETPAGESIZE_DCL
 /* Define if you have IEEE floating-point formatted numbers */
@@ -320,20 +314,6 @@ extern time_t timelocal(struct tm *);
 #endif /* HAVE_MKTIME */
 
 #endif /* HAVE_TIMELOCAL */
-
-#ifndef HAVE_SRANDOM
-#define random rand
-#define srandom srand
-#else
-#ifdef NEED_SRANDOM_DCL
-#ifndef random  // only if not a macro
-#ifdef NEED_RANDOM_DCL
-extern long random(void);
-#endif // NEED_RANDOM_DCL
-#endif
-extern int srandom(int);
-#endif // NEED_SRANDOM_DCL
-#endif // HAVE_SRANDOM
 
 #include <sys/types.h>
 #include <stdio.h>
