@@ -10012,6 +10012,7 @@ POWERS LIST
 POWERS LIST (continued)
 
   monitor           Can set or reset monitor flag.
+  pass_locks        Can successfully pass all locks.
   poll              Can set the @poll.
   prog              Can use @program on players other than themself.
   search            Can @search anyone.
