@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.7 2001-06-29 07:44:54 sdennis Exp $
+// $Id: db.h,v 1.8 2002-01-22 21:28:55 sdennis Exp $
 //
 #ifndef __DB_H
 #define __DB_H
@@ -249,6 +249,7 @@ extern void FDECL(destroy_thing, (dbref));
 extern void FDECL(destroy_exit, (dbref));
 extern void putstring(FILE *f, const char *s);
 char *getstring_noalloc(FILE *f, int new_strings);
+char *getstring_noalloc_limited(FILE *f);
 
 #define DOLIST(thing,list) \
     for ((thing)=(list); \

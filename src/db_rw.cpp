@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.18 2001-10-17 03:54:05 sdennis Exp $
+// $Id: db_rw.cpp,v 1.19 2002-01-22 21:28:55 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1519,7 +1519,20 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             case 'A':   // USER-NAMED ATTRIBUTE
                 anum = getref(f);
-                tstr = getstring_noalloc(f, read_new_strings);
+                if (read_new_strings == 0)
+                {
+                    // U1, MUSH 2.2. There aren't any quotes. This is fine,
+                    // except that the normal-case routine can run afoul of
+                    // CRLF sequences caused by non-binary transfers between
+                    // Unix and Win32. For safety sake, we need to call
+                    // something that doesn't try to continue lines.
+                    //
+                    tstr = getstring_noalloc_limited(f);
+                }
+                else
+                {
+                    tstr = getstring_noalloc(f, read_new_strings);
+                }
                 if (Tiny_IsDigit[(unsigned char)*tstr])
                 {
                     aflags = 0;

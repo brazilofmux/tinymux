@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.49 2001-09-24 02:54:05 sdennis Exp $
+// $Id: db.cpp,v 1.50 2002-01-22 21:28:55 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2922,6 +2922,34 @@ char *getstring_noalloc(FILE *f, int new_strings)
     }
 }
 
+char *getstring_noalloc_limited(FILE *f)
+{
+
+    // Fetch up to and including the next LF.
+    //
+    static char buf[2*LBUF_SIZE + 20];
+    if (fgets(buf, LBUF_SIZE, f) == NULL)
+    {
+        // EOF or ERROR.
+        //
+        buf[0] = 0;
+    }
+    else
+    {
+        // How much data did we fetch?
+        //
+        int nLine = strlen(buf);
+        if (nLine >= 2)
+        {
+            Tiny_Assert(buf[nLine-2] != '\r');
+
+            // Eat '\n'
+            //
+            buf[nLine-1] = '\0';
+        }
+    }
+    return buf;
+}
 dbref getref(FILE *f)
 {
     static char buf[SBUF_SIZE];
