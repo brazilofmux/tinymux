@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.37 2001-03-30 15:18:37 sdennis Exp $
+// $Id: db.cpp,v 1.38 2001-03-31 02:06:05 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -159,6 +159,7 @@ ATTR attr[] =
     {"Last", A_LAST, AF_WIZARD | AF_NOCMD | AF_NOPROG, NULL},
     {"Lastpage", A_LASTPAGE, AF_INTERNAL | AF_NOCMD | AF_NOPROG | AF_GOD | AF_PRIVATE, NULL},
     {"Lastsite", A_LASTSITE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
+    {"LastIP", A_LASTIP, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
     {"Leave", A_LEAVE, AF_ODARK, NULL},
     {"LeaveLock", A_LLEAVE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
     {"Lfail", A_LFAIL, AF_ODARK | AF_NOPROG, NULL},
@@ -1710,7 +1711,7 @@ void atr_clr(dbref thing, int atr)
     case A_FORWARDLIST:
         s_Flags2(thing, Flags2(thing) & ~HAS_FWDLIST);
 #ifndef STANDALONE       
-	fwdlist_clr(thing); // We should clear the hashtable too
+        fwdlist_clr(thing); // We should clear the hashtable too
 #endif
         break;
     case A_LISTEN:
