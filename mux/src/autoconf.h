@@ -114,7 +114,8 @@
 #define SMALLEST_INT_GTE_NEG_QUOTIENT 1
 /* Define if the character special file /dev/urandom is present */
 #undef HAVE_DEV_URANDOM
-
+/* Define if your system has the in_addr_t type */
+#undef HAVE_IN_ADDR_T
 
 /* ---------------------------------------------------------------------------
  * Setup section:
