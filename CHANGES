@@ -326,7 +326,7 @@ Bug Fixes:
  -- Fixed crashbug related to kill_guarantee_cost -- iff kill_guarantee_cost
     was configured to zero.  By default, it is 100.  Also improved messages 
     that report on costs of killing.  Crashbug reported by Jeremy Weatherford.
- -- Fix ANSI bleeding in exit names. Reported by Jeremy weatherford. Fix by
+ -- Fix ANSI bleeding in exit names. Reported by Jeremy Weatherford. Fix by
     Brazil.
  -- Exit names like ';foo' were effectively DARK exits. If set AUDIBLE, they
     were effectively listening devices that didn't show up on a @sweep.
