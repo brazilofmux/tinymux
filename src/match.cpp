@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.3 2000-06-16 00:33:06 sdennis Exp $
+// $Id: match.cpp,v 1.4 2001-02-07 05:28:51 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -72,7 +72,7 @@ static void promote_match(dbref what, int confidence)
 
     // Equal confidence, pick randomly.
     //
-    if (RandomLong(0,1))
+    if (RandomINT32(0,1))
     {
         md.match = what;
     }

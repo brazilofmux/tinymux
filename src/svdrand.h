@@ -1,11 +1,11 @@
 // svdrand.h -- Random Numbers
 //
-// $Id: svdrand.h,v 1.3 2000-04-25 18:32:28 sdennis Exp $
+// $Id: svdrand.h,v 1.4 2001-02-07 05:28:51 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
 // 
-// RandomLong() was derived from existing game server code.
+// RandomINT32() was derived from existing game server code.
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -21,6 +21,6 @@
 
 void SeedRandomNumberGenerator(void);
 double RandomFloat(double flLow, double flHigh);
-long RandomLong(long lLow, long lHigh);
+INT32 RandomINT32(INT32 lLow, INT32 lHigh);
 
 #endif // SVDRAND_H

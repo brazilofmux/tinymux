@@ -1,6 +1,6 @@
 // htab.cpp - table hashing routines 
 //
-// $Id: htab.cpp,v 1.2 2001-02-01 23:51:16 sdennis Exp $
+// $Id: htab.cpp,v 1.3 2001-02-07 05:28:51 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -53,7 +53,7 @@ int *hashfindLEN(void *str, int nStr, CHashTable *htab)
 {
     if (str == NULL || nStr <= 0) return NULL;
 
-    unsigned long nHash = CRC32_ProcessBuffer(0, str, nStr);
+    UINT32 nHash = CRC32_ProcessBuffer(0, str, nStr);
 
     HP_DIRINDEX iDir = HF_FIND_FIRST;
     iDir = htab->FindFirstKey(nHash);
@@ -84,7 +84,7 @@ int hashaddLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
     //
     if (str == NULL || nStr <= 0) return -1;
 
-    unsigned long nHash = CRC32_ProcessBuffer(0, str, nStr);
+    UINT32 nHash = CRC32_ProcessBuffer(0, str, nStr);
 
     HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -118,7 +118,7 @@ void hashdeleteLEN(void *str, int nStr, CHashTable *htab)
 {
     if (str == NULL || nStr <= 0) return;
 
-    unsigned long nHash = CRC32_ProcessBuffer(0, str, nStr);
+    UINT32 nHash = CRC32_ProcessBuffer(0, str, nStr);
 
     HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -154,7 +154,7 @@ int hashreplLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
 {
     if (str == NULL || nStr <= 0) return 0;
 
-    unsigned long nHash = CRC32_ProcessBuffer(0, str, nStr);
+    UINT32 nHash = CRC32_ProcessBuffer(0, str, nStr);
 
     HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -250,12 +250,18 @@ int search_nametab(dbref player, NAMETAB *ntab, char *flagname)
 {
     NAMETAB *nt;
 
-    for (nt = ntab; nt->name; nt++) {
-        if (minmatch(flagname, nt->name, nt->minlen)) {
-            if (check_access(player, nt->perm)) {
+    for (nt = ntab; nt->name; nt++)
+    {
+        if (minmatch(flagname, nt->name, nt->minlen))
+        {
+            if (check_access(player, nt->perm))
+            {
                 return nt->flag;
-            } else
+            }
+            else
+            {
                 return -2;
+            }
         }
     }
     return -1;
@@ -270,9 +276,12 @@ NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, char *flagname)
 {
     NAMETAB *nt;
 
-    for (nt = ntab; nt->name; nt++) {
-        if (minmatch(flagname, nt->name, nt->minlen)) {
-            if (check_access(player, nt->perm)) {
+    for (nt = ntab; nt->name; nt++)
+    {
+        if (minmatch(flagname, nt->name, nt->minlen))
+        {
+            if (check_access(player, nt->perm))
+            {
                 return nt;
             }
         }
@@ -405,7 +414,7 @@ CF_HAND(cf_ntab_access)
     {
         if (minmatch(str, np->name, np->minlen))
         {
-            return cf_modify_bits(&(np->perm), ap, extra, player, cmd);
+            return cf_modify_bits(&(np->perm), ap, pExtra, nExtra, player, cmd);
         }
     }
     cf_log_notfound(player, cmd, "Entry", str);

@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.14 2000-11-05 19:01:26 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.15 2001-02-07 05:28:51 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -397,7 +397,7 @@ extern STATEDATA mudstate;
 
 /* Configuration parameter handler definition */
 
-#define CF_HAND(proc)   int proc(int *vp, char *str, unsigned int extra, dbref player, char *cmd)
+#define CF_HAND(proc)   int proc(int *vp, char *str, void *pExtra, UINT32 nExtra, dbref player, char *cmd)
 
 /* Global flags */
 

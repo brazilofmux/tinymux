@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.34 2000-11-17 07:59:49 sdennis Exp $
+// $Id: funceval.cpp,v 1.35 2001-02-07 05:28:50 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1816,7 +1816,7 @@ FUNCTION(fun_scramble)
 
     for (i = 0; i < n; i++)
     {
-        j = RandomLong(i, n-1);
+        j = RandomINT32(i, n-1);
         c = old[i];
         old[i] = old[j];
         old[j] = c;
@@ -1847,7 +1847,7 @@ FUNCTION(fun_shuffle)
 
     for (i = 0; i < n; i++)
     {
-        j = RandomLong(i, n-1);
+        j = RandomINT32(i, n-1);
 
         // Swap words[i] with words[j]
         //
@@ -1924,7 +1924,7 @@ static void sane_qsort(void *array[], int left, int right, PV compare)
      * This is the pivot, we'll put it back in the right spot later 
      */
 
-    i = RandomLong(0, right - left);
+    i = RandomINT32(0, right - left);
     tmp = array[left + i];
     array[left + i] = array[left];
     array[left] = tmp;
@@ -2416,7 +2416,7 @@ FUNCTION(fun_die)
     }
     for (count = 0; count < n; count++)
     {
-        total += RandomLong(1, die);
+        total += RandomINT32(1, die);
     }
 
     safe_ltoa(total, buff, bufc, LBUF_SIZE-1);
@@ -2478,7 +2478,7 @@ FUNCTION(fun_bnand)
 
 FUNCTION(fun_crc32)
 {
-    unsigned long ulCRC32 = 0;
+    UINT32 ulCRC32 = 0;
     for (int i = 0; i < nfargs; i++)
     {
         int n = strlen(fargs[i]);

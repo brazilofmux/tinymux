@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.7 2000-10-25 22:02:20 sdennis Exp $
+// $Id: attrcache.cpp,v 1.8 2001-02-07 05:28:50 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -233,7 +233,7 @@ char *cache_get(Aname *nam, int *pLen)
     }
 #endif // DO_CACHEING
 
-    unsigned long nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
+    UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 
     HP_DIRINDEX iDir;
     iDir = hfAttributeFile.FindFirstKey(nHash);
@@ -307,7 +307,7 @@ BOOL cache_put(Aname *nam, char *value, int len)
 
     // Removal from DB.
     //
-    unsigned long nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
+    UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 
 #ifdef STANDALONE
     if (cache_redirected)
@@ -317,7 +317,7 @@ BOOL cache_put(Aname *nam, char *value, int len)
         TempRecord.attrText[len-1] = '\0';
 
         int iFile = (N_TEMP_FILES-1) & (nHash >> 30);
-        int nSize = len+sizeof(Aname);
+        size_t nSize = len+sizeof(Aname);
         fwrite(&nSize, 1, sizeof(nSize), TempFiles[iFile]);
         fwrite(&TempRecord, 1, nSize, TempFiles[iFile]);
         return TRUE;
@@ -330,7 +330,8 @@ BOOL cache_put(Aname *nam, char *value, int len)
         HP_HEAPLENGTH nRecord;
         hfAttributeFile.Copy(iDir, &nRecord, &TempRecord);
 
-        if ((TempRecord.attrKey.attrnum == nam->attrnum) && (TempRecord.attrKey.object == nam->object))
+        if (  TempRecord.attrKey.attrnum == nam->attrnum
+           && TempRecord.attrKey.object  == nam->object)
         {
             hfAttributeFile.Remove(iDir);
         }
@@ -411,7 +412,7 @@ void cache_del(Aname *nam)
     if (!nam || !cache_initted)
         return;
 
-    unsigned long nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
+    UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 
     HP_DIRINDEX iDir = hfAttributeFile.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)

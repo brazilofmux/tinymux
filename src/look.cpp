@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.12 2001-01-09 08:35:53 sdennis Exp $
+// $Id: look.cpp,v 1.13 2001-02-07 05:28:51 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -169,7 +169,7 @@ int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
             }
             else if (iObfuscateLevel == iHeightenSensesLevel)
             {
-                if (RandomLong(0,1))
+                if (RandomINT32(0,1))
                 {
                     iReturn = REALM_DO_HIDDEN_FROM_YOU;
                 }

@@ -2,7 +2,7 @@
  * rob.c -- Commands dealing with giving/taking/killing things or money 
  */
 /*
- * $Id: rob.cpp,v 1.2 2000-06-07 10:55:33 sdennis Exp $ 
+ * $Id: rob.cpp,v 1.3 2001-02-07 05:28:51 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -81,7 +81,10 @@ void do_kill(dbref player, dbref cause, int key, char *what, char *costchar)
             cost = 0;
         }
 
-        if (mudconf.killguarantee && !((RandomLong(0, mudconf.killguarantee-1) < cost) || (key == KILL_SLAY)) || Wizard(victim))
+        if (  mudconf.killguarantee
+           && !(  (RandomINT32(0, mudconf.killguarantee-1) < cost)
+               || (key == KILL_SLAY))
+           || Wizard(victim))
         {
 
             /*

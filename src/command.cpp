@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.29 2001-02-01 23:51:16 sdennis Exp $
+// $Id: command.cpp,v 1.30 2001-02-07 05:28:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2182,11 +2182,15 @@ CF_HAND(cf_access)
     if (cmdp != NULL)
     {
         if (set_switch)
-            return cf_ntab_access((int *)cmdp->switches, ap,
-                          extra, player, cmd);
+        {
+            return cf_ntab_access((int *)cmdp->switches, ap, pExtra, nExtra,
+                                  player, cmd);
+        }
         else
-            return cf_modify_bits(&(cmdp->perms), ap,
-                          extra, player, cmd);
+        {
+            return cf_modify_bits(&(cmdp->perms), ap, pExtra, nExtra, player,
+                                  cmd);
+        }
     }
     else
     {
@@ -2218,7 +2222,8 @@ CF_HAND(cf_acmd_access)
         if (cmdp != NULL)
         {
             int save = cmdp->perms;
-            int failure = cf_modify_bits(&(cmdp->perms), str, extra, player, cmd);
+            int failure = cf_modify_bits(&(cmdp->perms), str, pExtra, nExtra,
+                 player, cmd);
             if (failure != 0)
             {
                 cmdp->perms = save;
@@ -2240,16 +2245,26 @@ CF_HAND(cf_attr_access)
     ATTR *ap;
     char *sp;
 
-    for (sp = str; *sp && !Tiny_IsSpace[(unsigned char)*sp]; sp++) ;
+    for (sp = str; *sp && !Tiny_IsSpace[(unsigned char)*sp]; sp++) 
+    {
+        ; // Nothing
+    }
     if (*sp)
+    {
         *sp++ = '\0';
+    }
     while (Tiny_IsSpace[(unsigned char)*sp])
+    {
         sp++;
+    }
 
     ap = atr_str(str);
-    if (ap != NULL)
-        return cf_modify_bits(&(ap->flags), sp, extra, player, cmd);
-    else {
+    if (ap)
+    {
+        return cf_modify_bits(&(ap->flags), sp, pExtra, nExtra, player, cmd);
+    }
+    else
+    {
         cf_log_notfound(player, cmd, "Attribute", str);
         return -1;
     }
