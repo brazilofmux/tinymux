@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.20 2003-02-05 06:20:58 jake Exp $
+// $Id: db.cpp,v 1.21 2003-02-06 14:10:25 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2781,13 +2781,13 @@ BOOLEXP *dup_bool(BOOLEXP *b)
 }
 
 #ifndef MEMORY_BASED
-int init_dbfile(char *game_dir_file, char *game_pag_file)
+int init_dbfile(char *game_dir_file, char *game_pag_file, int nCachePages)
 {
     if (mudstate.bStandAlone)
     {
         Log.tinyprintf("Opening (%s,%s)" ENDLINE, game_dir_file, game_pag_file);
     }
-    int cc = cache_init(game_dir_file, game_pag_file);
+    int cc = cache_init(game_dir_file, game_pag_file, nCachePages);
     if (cc != HF_OPEN_STATUS_ERROR)
     {
         if (mudstate.bStandAlone)

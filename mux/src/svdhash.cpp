@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.10 2003-02-05 06:20:59 jake Exp $
+// $Id: svdhash.cpp,v 1.11 2003-02-06 14:10:25 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1250,10 +1250,10 @@ HP_DIRINDEX CHashPage::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
 CHashFile::CHashFile(void)
 {
     SeedRandomNumberGenerator();
-    for (int i = 0; i < HF_PAGES; i++)
-    {
-        m_Cache[i].m_hp.Allocate(HF_SIZEOF_PAGE);
-    }
+    m_Cache = NULL;
+    m_hpCacheLookup = NULL;
+    m_nhpCacheLookup = 0;
+    m_nCache = 0;
     Init();
 }
 
@@ -1268,13 +1268,6 @@ void CHashFile::Init(void)
     iCache = 0;
     m_iLastEmpty = 0;
     m_iLastFlushed = 0;
-    for (int i = 0; i < HF_PAGES; i++)
-    {
-        m_Cache[i].m_iState = HF_CACHE_EMPTY;
-        m_Cache[i].m_o = 0L;
-        m_Cache[i].m_Age = 0;
-    }
-    memset(m_hpCacheLookup, 0, sizeof(m_hpCacheLookup));
 }
 
 #ifdef WIN32
@@ -1464,9 +1457,35 @@ bool CHashFile::ReadDirectory(void)
     return true;
 }
 
-int CHashFile::Open(const char *szDirFile, const char *szPageFile)
+void CHashFile::InitCache(int nCachePages)
+{
+    if (m_Cache)
+    {
+        return;
+    }
+
+    // Allocate hash page cache.
+    //
+    m_nCache = nCachePages;
+    m_Cache = new HF_CACHE[m_nCache];
+    for (int i = 0; i < m_nCache; i++)
+    {
+        m_Cache[i].m_hp.Allocate(HF_SIZEOF_PAGE);
+        m_Cache[i].m_iState = HF_CACHE_EMPTY;
+        m_Cache[i].m_o = 0L;
+        m_Cache[i].m_Age = 0;
+    }
+
+    m_nhpCacheLookup = 2*m_nCache;
+    m_hpCacheLookup = new int[m_nhpCacheLookup];
+    memset(m_hpCacheLookup, 0, sizeof(int)*m_nhpCacheLookup);
+}
+
+int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePages)
 {
     CloseAll();
+    FinalCache();
+    InitCache(nCachePages);
 
     // First let's try to open the page file. This is the more important file.
     //
@@ -1577,7 +1596,7 @@ void CHashFile::Sync(void)
     {
         cs_syncs++;
         bool bAllFlushed = true;
-        for (int i = 0; i < HF_PAGES; i++)
+        for (int i = 0; i < m_nCache; i++)
         {
             bAllFlushed &= FlushCache(i);
         }
@@ -1632,9 +1651,25 @@ void CHashFile::CloseAll(void)
     Init();
 }
 
+void CHashFile::FinalCache(void)
+{
+    if (m_Cache)
+    {
+        delete [] m_Cache;
+        m_Cache = NULL;
+        m_nCache = 0;
+    }
+    if (m_hpCacheLookup)
+    {
+        delete [] m_hpCacheLookup;
+        m_hpCacheLookup = NULL;
+        m_nhpCacheLookup = 0;
+    }
+}
 
 CHashFile::~CHashFile(void)
 {
+    FinalCache();
     CloseAll();
 }
 
@@ -1920,13 +1955,13 @@ again:
     bool bFoundOldest = false;
     int iOldest = 0;
     int iOldestAge = 0;
-    for (int cnt = HF_PAGES, i = m_iLastEmpty+1; cnt--; i++)
+    for (int cnt = m_nCache, i = m_iLastEmpty+1; cnt--; i++)
     {
         // Modulus
         //
-        if (i >= HF_PAGES)
+        if (i >= m_nCache)
         {
-            i -= HF_PAGES;
+            i -= m_nCache;
         }
 
         bool bExclude = false;
@@ -1982,13 +2017,14 @@ again:
 
 void CHashFile::Tick(void)
 {
-    for (int i = 0; i < (HF_PAGES+119)/120; i++)
+    for (int i = 0; i < (m_nCache+119)/120; i++)
     {
-        // Go ahead and flush a cache entry...just to keep the sync load down a bit. This gives
-        // the cache time to age, and yet, pushes the pages off to the disk eventually and gradually.
+        // Go ahead and flush a cache entry...just to keep the sync load
+        // down a bit. This gives the cache time to age, and yet, pushes
+        // the pages off to the disk eventually and gradually.
         //
         FlushCache(m_iLastFlushed++);
-        if (m_iLastFlushed >= HF_PAGES)
+        if (m_iLastFlushed >= m_nCache)
         {
             m_iLastFlushed = 0;
         }
@@ -2004,7 +2040,7 @@ typedef struct tagCacheLookup
 int CHashFile::ReadCache(HF_FILEOFFSET oPage, int *phits)
 {
     UINT32  nHash = CRC32_ProcessInteger(oPage);
-    nHash = nHash % (2*HF_PAGES);
+    nHash = nHash % m_nhpCacheLookup;
 
     int i = m_hpCacheLookup[nHash];
 
@@ -2015,7 +2051,7 @@ int CHashFile::ReadCache(HF_FILEOFFSET oPage, int *phits)
         return i;
     }
 
-    for (i = 0; i < HF_PAGES; i++)
+    for (i = 0; i < m_nCache; i++)
     {
         if (m_Cache[i].m_iState != HF_CACHE_EMPTY && m_Cache[i].m_o == oPage)
         {

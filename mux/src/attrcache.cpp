@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.6 2003-02-05 06:20:58 jake Exp $
+// $Id: attrcache.cpp,v 1.7 2003-02-06 14:10:25 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -42,14 +42,15 @@ PCENT_HDR pCacheHead = 0;
 PCENT_HDR pCacheTail = 0;
 unsigned int CacheSize = 0;
 
-int cache_init(const char *game_dir_file, const char *game_pag_file)
+int cache_init(const char *game_dir_file, const char *game_pag_file,
+    int nCachePages)
 {
     if (cache_initted)
     {
         return HF_OPEN_STATUS_ERROR;
     }
 
-    int cc = hfAttributeFile.Open(game_dir_file, game_pag_file);
+    int cc = hfAttributeFile.Open(game_dir_file, game_pag_file, nCachePages);
     if (cc != HF_OPEN_STATUS_ERROR)
     {
         // Mark caching system live

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.17 2003-02-05 06:20:59 jake Exp $
+// $Id: game.cpp,v 1.18 2003-02-06 14:10:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1941,7 +1941,7 @@ void dbconvert(void)
     strcpy(pagfile, standalone_basename);
     strcat(pagfile, ".pag");
 
-    int cc = init_dbfile(dirfile, pagfile);
+    int cc = init_dbfile(dirfile, pagfile, 650);
     if (cc == HF_OPEN_STATUS_ERROR)
     {
         Log.tinyprintf("Can't open database in (%s, %s) files\n", dirfile, pagfile);
@@ -2230,8 +2230,8 @@ int DCL_CDECL main(int argc, char *argv[])
     extern CHashFile hfAllocData;
     extern CHashFile hfIdentData;
     extern bool bMemAccountingInitialized;
-    hfAllocData.Open("svdptrs.dir", "svdptrs.pag");
-    hfIdentData.Open("svdlines.dir", "svdlines.pag");
+    hfAllocData.Open("svdptrs.dir", "svdptrs.pag", 40);
+    hfIdentData.Open("svdlines.dir", "svdlines.pag", 40);
     bMemAccountingInitialized = true;
 #endif
 
@@ -2352,7 +2352,7 @@ int DCL_CDECL main(int argc, char *argv[])
         RemoveFile(mudconf.game_dir);
         RemoveFile(mudconf.game_pag);
     }
-    int ccPageFile = init_dbfile(mudconf.game_dir, mudconf.game_pag);
+    int ccPageFile = init_dbfile(mudconf.game_dir, mudconf.game_pag, 40);
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");

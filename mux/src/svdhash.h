@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.4 2003-02-05 06:20:59 jake Exp $
+// $Id: svdhash.h,v 1.5 2003-02-06 14:10:25 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -31,8 +31,6 @@ extern UINT32 HASH_ProcessBuffer
     const void  *arg_pBuffer,
     unsigned int nBuffer
 );
-
-#define HF_PAGES 40
 
 #ifdef _SGI_SOURCE
 #define EXPAND_TO_BOUNDARY(x) (((x) + 3) & (~3))
@@ -180,12 +178,14 @@ private:
     int             iCache;
     int             m_iLastEmpty;
     int             m_iLastFlushed;
-    int             m_hpCacheLookup[HF_PAGES*2];
+    int             *m_hpCacheLookup;
+    int             m_nhpCacheLookup;
     int             m_iAgeNext;
     HF_FILEOFFSET   oEndOfFile;
     unsigned int    m_nDir;
     unsigned int    m_nDirDepth;
-    HF_CACHE        m_Cache[HF_PAGES];
+    HF_CACHE        *m_Cache;
+    int             m_nCache;
     HF_PFILEOFFSET  m_pDir;
     bool DoubleDirectory(void);
 
@@ -196,6 +196,8 @@ private:
     bool EmptyDirectory(void);
 
     void Init(void);
+    void InitCache(int nCachePages);
+    void FinalCache(void);
 
     bool CreateFileSet(const char *szDirFile, const char *szPageFile);
     bool RebuildDirectory(void);
@@ -206,7 +208,7 @@ public:
 #define HF_OPEN_STATUS_ERROR -1
 #define HF_OPEN_STATUS_NEW    0
 #define HF_OPEN_STATUS_OLD    1
-    int Open(const char *szDirFile, const char *szPageFile);
+    int Open(const char *szDirFile, const char *szPageFile, int nCachePages);
     bool Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
     HP_DIRINDEX FindFirstKey(UINT32 nHash);
     HP_DIRINDEX FindNextKey(HP_DIRINDEX iDir, UINT32 nHash);
