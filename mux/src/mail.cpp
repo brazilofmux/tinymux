@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.22 2003-05-01 05:04:08 sdennis Exp $
+// $Id: mail.cpp,v 1.23 2004-03-01 06:38:48 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3488,7 +3488,8 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
         char *tail, spot;
         dbref target;
         char *head = list;
-        while (head && *head)
+        while (  head
+              && *head)
         {
             while (*head == ' ')
             {
@@ -3496,17 +3497,23 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
             }
 
             tail = head;
-            while (*tail && (*tail != ' '))
+            while (  *tail
+                  && *tail != ' ')
             {
                 if (*tail == '"')
                 {
                     head++;
                     tail++;
-                    while (*tail && (*tail != '"'))
+                    while (  *tail
+                          && *tail != '"')
+                    {
                         tail++;
+                    }
                 }
                 if (*tail)
+                {
                     tail++;
+                }
             }
             tail--;
             if (*tail != '"')
@@ -3535,7 +3542,7 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
                 }
             }
 
-            // Get the next recip.
+            // Get the next recipient.
             //
             *tail = spot;
             head = tail;
