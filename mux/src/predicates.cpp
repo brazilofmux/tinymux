@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.43 2003-01-01 17:43:08 sdennis Exp $
+// $Id: predicates.cpp,v 1.44 2003-01-03 04:46:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -518,7 +518,10 @@ void handle_ears(dbref thing, BOOL could_hear, BOOL can_hear)
         strcpy(buff, Name(thing));
         if (isExit(thing))
         {
-            for (bp = buff; *bp && *bp != ';'; bp++) ;
+            for (bp = buff; *bp && *bp != ';'; bp++)
+            {
+                ; // Nothing.
+            }
             *bp = '\0';
         }
         gender = get_gender(thing);
@@ -534,7 +537,10 @@ void handle_ears(dbref thing, BOOL could_hear, BOOL can_hear)
         strcpy(buff, Name(thing));
         if (isExit(thing))
         {
-            for (bp = buff; *bp && *bp != ';'; bp++) ;
+            for (bp = buff; *bp && *bp != ';'; bp++)
+            {
+                ; // Nothing.
+            }
             *bp = '\0';
         }
         gender = get_gender(thing);
