@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.3 2002-06-04 15:33:34 sdennis Exp $
+// $Id: boolexp.cpp,v 1.4 2002-06-13 07:19:33 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -35,7 +35,7 @@ static int check_attr(dbref player, dbref lockobj, ATTR *attr, char *key)
         //
         checkit = 1;
     }
-    else if (See_attr(lockobj, player, attr, aowner, aflags))
+    else if (See_attr(lockobj, player, attr))
     {
         checkit = 1;
     }

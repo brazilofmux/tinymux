@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.5 2002-06-13 04:22:38 jake Exp $
+// $Id: predicates.cpp,v 1.6 2002-06-13 07:19:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -1029,8 +1029,8 @@ void do_prog
 {
     DESC *d;
     PROG *program;
-    int i, atr, aflags;
-    dbref doer, thing, aowner;
+    int i, atr;
+    dbref doer, thing;
     ATTR *ap;
     char *attrib, *msg;
 
@@ -1062,15 +1062,14 @@ void do_prog
     parse_attrib(player, attrib, &thing, &atr);
     if (atr != NOTHING)
     {
-        char *pBuffer = atr_get(thing, atr, &aowner, &aflags);
+        char *pBuffer = atr_get_raw(thing, atr);
         if (*pBuffer)
         {
             ap = atr_num(atr);
-            if (  God(player)
-               || (  !God(thing)
-                  && ap
-                  && See_attr(player, thing, ap, aowner, aflags)
-                  && (Wizard(player) || (aowner == Owner(player)))))
+            if ( (   God(player)
+                  || !God(thing))
+               && ap
+               && See_attr(player, thing, ap))
             {
                 atr_add_raw(doer, A_PROGCMD, pBuffer);
             }
@@ -1555,7 +1554,7 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
     {
         return TRUE;
     }
-    else if (tattr->name == "Desc")
+    else if (tattr->number == A_DESC)
     {
         if (nearby(executor, target))
         {

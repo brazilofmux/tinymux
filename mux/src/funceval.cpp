@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.11 2002-06-12 16:43:57 jake Exp $
+// $Id: funceval.cpp,v 1.12 2002-06-13 07:19:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -311,7 +311,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     }
     attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
-    if (attr && Set_attr(player, thing, attr, aflags))
+    if (attr && bCanSetAttr(player, thing, attr))
     {
         could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
@@ -383,7 +383,7 @@ FUNCTION(fun_set)
             // Can we write to attribute?
             //
             attr = atr_num(atr);
-            if (!attr || !Set_attr(executor, thing, attr, aflags))
+            if (!attr || !bCanSetAttr(executor, thing, attr))
             {
                 safe_noperm(buff, bufc);
                 return;
@@ -434,7 +434,7 @@ FUNCTION(fun_set)
             return;
         }
         atr_get_info(thing, atr, &aowner, &aflags);
-        if (!Set_attr(executor, thing, attr, aflags))
+        if (!bCanSetAttr(executor, thing, attr))
         {
             safe_noperm(buff, bufc);
             return;
@@ -455,10 +455,9 @@ FUNCTION(fun_set)
             }
             attr2 = atr_num(atr);
             p = buff2;
-            atr_pget_str(buff2, thing2, atr2, &aowner, &aflags);
 
             if (  !attr2
-               || !See_attr(executor, thing2, attr2, aowner, aflags))
+               || !See_attr(executor, thing2, attr2))
             {
                 free_lbuf(buff2);
                 safe_noperm(buff, bufc);
@@ -738,16 +737,13 @@ FUNCTION(fun_stripansi)
 //
 FUNCTION(fun_zfun)
 {
-    dbref aowner;
-    int aflags;
-
-    dbref zone = Zone(executor);
-
     if (!mudconf.have_zones)
     {
         safe_str("#-1 ZONES DISABLED", buff, bufc);
         return;
     }
+    
+    dbref zone = Zone(executor);
     if (!Good_obj(zone))
     {
         safe_str("#-1 INVALID ZONE", buff, bufc);
@@ -762,11 +758,13 @@ FUNCTION(fun_zfun)
         safe_str("#-1 NO SUCH USER FUNCTION", buff, bufc);
         return;
     }
+    dbref aowner;
+    int aflags;
     ATTR *attr = atr_num(attrib);
     char *tbuf1 = atr_pget(zone, attrib, &aowner, &aflags);
-    if (!attr || !See_attr(executor, zone, (ATTR *) atr_num(attrib), aowner, aflags))
+    if (!attr || !See_attr(executor, zone, atr_num(attrib)))
     {
-        safe_str("#-1 NO PERMISSION TO GET ATTRIBUTE", buff, bufc);
+        safe_noperm(buff, bufc);
         free_lbuf(tbuf1);
         return;
     }
@@ -1430,7 +1428,8 @@ FUNCTION(fun_mailfrom)
 // Hasattr (and hasattrp, which is derived from hasattr) borrowed from
 // TinyMUSH 2.2.
 
-FUNCTION(fun_hasattr)
+void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
+                   BOOL bCheckParent)
 {
     dbref thing = match_thing(executor, fargs[0]);
     if (thing == NOTHING) 
@@ -1439,24 +1438,29 @@ FUNCTION(fun_hasattr)
         return;
     }
 
-    dbref aowner;
-    int aflags;
     ATTR *attr = atr_str(fargs[1]);
     char *tbuf;
     int ch = '0';
 
     if (attr)
     {
-        atr_get_info(thing, attr->number, &aowner, &aflags);
-        if (   !Examinable(executor, thing) 
-            && !Read_attr(executor, thing, attr, aowner, aflags))
+        if (!bCanReadAttr(executor, thing, attr, bCheckParent))
         {
             safe_noperm(buff, bufc);
             return;
         }
-        else if (See_attr(executor, thing, attr, aowner, aflags))
+        else
         {
-            tbuf = atr_get(thing, attr->number, &aowner, &aflags);
+            if (bCheckParent)
+            {
+                dbref aowner;
+                int aflags;
+                tbuf = atr_pget(thing, attr->number, &aowner, &aflags);
+            }
+            else
+            {
+                tbuf = atr_get_raw(thing, attr->number);
+            }
             if (*tbuf)
             {
                 ch = '1';
@@ -1467,41 +1471,13 @@ FUNCTION(fun_hasattr)
     safe_chr(ch, buff, bufc);
 }
 
+FUNCTION(fun_hasattr)
+{
+    hasattr_handler(buff, bufc, executor, fargs, FALSE);
+}
 FUNCTION(fun_hasattrp)
 {
-    dbref thing = match_thing(executor, fargs[0]);
-    if (thing == NOTHING) 
-    {
-        safe_nomatch(buff, bufc);
-        return;
-    }
-
-    dbref aowner;
-    int aflags;
-    ATTR *attr = atr_str(fargs[1]);
-    char *tbuf;
-    int ch = '0';
-
-    if (attr)
-    {
-        atr_pget_info(thing, attr->number, &aowner, &aflags);
-        if (   !Examinable(executor, thing) 
-            && !Read_attr(executor, thing, attr, aowner, aflags))
-        {
-            safe_noperm(buff, bufc);
-            return;
-        }
-        else if (See_attr(executor, thing, attr, aowner, aflags))
-        {
-            tbuf = atr_get(thing, attr->number, &aowner, &aflags);
-            if (*tbuf)
-            {
-                ch = '1';
-            }
-            free_lbuf(tbuf);
-        }
-    }
-    safe_chr(ch, buff, bufc);
+    hasattr_handler(buff, bufc, executor, fargs, TRUE);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1743,10 +1719,7 @@ FUNCTION(fun_visible)
             else
             {
                 ATTR *ap = atr_num(atr);
-                dbref aowner;
-                int  aflags;
-                atr_pget_info(thing, atr, &aowner, &aflags);
-                if (ap && See_attr(it, thing, ap, aowner, aflags))
+                if (ap && See_attr(it, thing, ap))
                 {
                     ch = '1';
                 }
@@ -2040,7 +2013,7 @@ FUNCTION(fun_sortby)
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
     if (!atext) {
         return;
-    } else if (!*atext || !See_attr(executor, thing, ap, aowner, aflags)) {
+    } else if (!*atext || !See_attr(executor, thing, ap)) {
         free_lbuf(atext);
         return;
     }
@@ -2215,7 +2188,7 @@ FUNCTION(fun_mix)
         return;
     }
     else if (  !*atext
-            || !See_attr(executor, thing, ap, aowner, aflags))
+            || !See_attr(executor, thing, ap))
     {
         free_lbuf(atext);
         return;
@@ -2302,7 +2275,7 @@ FUNCTION(fun_foreach)
         return;
     }
     else if (  !*atext
-            || !See_attr(executor, thing, ap, aowner, aflags))
+            || !See_attr(executor, thing, ap))
     {
         free_lbuf(atext);
         return;
@@ -2413,7 +2386,7 @@ FUNCTION(fun_munge)
     {
         return;
     }
-    else if (!*atext || !See_attr(executor, thing, ap, aowner, aflags))
+    else if (!*atext || !See_attr(executor, thing, ap))
     {
         free_lbuf(atext);
         return;

@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.7 2002-06-12 18:04:44 jake Exp $
+// $Id: set.cpp,v 1.8 2002-06-13 07:19:33 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -366,7 +366,7 @@ void do_alias
 
         // Make sure we have rights to do it.
         //
-        if (!Set_attr(executor, thing, ap, aflags))
+        if (!bCanSetAttr(executor, thing, ap))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
         }
@@ -473,7 +473,7 @@ void do_lock
             if (  ap
                && (  God(executor)
                   || (  !God(thing)
-                     && Set_attr(executor, executor, ap, 0)
+                     && bCanSetAttr(executor, executor, ap)
                      && (  Wizard(executor)
                         || (aowner == Owner(executor))))))
             {
@@ -567,7 +567,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
         if (  ap
            && (  God(executor)
               || (  !God(thing)
-                 && Set_attr(executor, executor, ap, 0)
+                 && bCanSetAttr(executor, executor, ap)
                  && (  Wizard(executor)
                     || aowner == Owner(executor)))))
         {
@@ -778,7 +778,7 @@ void do_chown
 
         ap = atr_num(atr);
         if (  !ap
-           || !Set_attr(executor, executor, ap, aflags))
+           || !bCanSetAttr(executor, executor, ap))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
@@ -932,13 +932,16 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
 
     attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
-    if (attr && Set_attr(player, thing, attr, aflags)) {
+    if (attr && bCanSetAttr(player, thing, attr)) 
+    {
         could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));
         if (!(key & SET_QUIET) && !Quiet(player) && !Quiet(thing))
             notify_quiet(player, "Set.");
-    } else {
+    } 
+    else 
+    {
         notify_quiet(player, NOPERM_MESSAGE);
     }
 }
@@ -1003,7 +1006,7 @@ void do_set
             // Make sure we can write to the attribute.
             //
             attr = atr_num(atr);
-            if (!attr || !Set_attr(executor, thing, attr, aflags))
+            if (!attr || !bCanSetAttr(executor, thing, attr))
             {
                 notify_quiet(executor, NOPERM_MESSAGE);
                 return;
@@ -1079,8 +1082,7 @@ void do_set
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        atr_get_info(thing, atr, &aowner, &aflags);
-        if (!Set_attr(executor, thing, attr, aflags))
+        if (bCanSetAttr(executor, thing, attr))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
@@ -1101,10 +1103,9 @@ void do_set
             }
             attr2 = atr_num(atr2);
             p = buff;
-            atr_pget_str(buff, thing2, atr2, &aowner, &aflags);
 
             if (  !attr2
-               || !See_attr(executor, thing2, attr2, aowner, aflags))
+               || !See_attr(executor, thing2, attr2))
             {
                 notify_quiet(executor, NOPERM_MESSAGE);
                 free_lbuf(buff);
@@ -1256,9 +1257,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
     }
     else
     {
-        dbref aowner;
-        atr_get_str(astr, thing, in_attr->number, &aowner, &aflags);
-        if (See_attr(executor, thing, in_attr, aowner, aflags))
+        if (See_attr(executor, thing, in_attr))
         {
             in_anum = in_attr->number;
         }
@@ -1294,10 +1293,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
         }
         else
         {
-            dbref axowner;
-            int   axflags;
-            atr_get_info(thing, out_attr->number, &axowner, &axflags);
-            if (!Set_attr(executor, thing, out_attr, axflags))
+            if (!bCanSetAttr(executor, thing, out_attr))
             {
                 notify_quiet(executor, tprintf("%s: Permission denied.", args[i]));
             }
@@ -1333,7 +1329,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
         in_attr = atr_num(in_anum);
         if (in_attr)
         {
-            if (Set_attr(executor, thing, in_attr, aflags))
+            if (bCanSetAttr(executor, thing, in_attr))
             {
                 atr_clr(thing, in_attr->number);
                 if (!Quiet(executor))
@@ -1391,7 +1387,7 @@ int parse_attrib(dbref player, char *str, dbref *thing, int *atr)
     if (attr)
     {
         atr_pget_info(*thing, attr->number, &aowner, &aflags);
-        if (See_attr(player, *thing, attr, aowner, aflags))
+        if (See_attr(player, *thing, attr))
         {
             *atr = attr->number;
         }
@@ -1439,22 +1435,11 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, int check_excl
 
         if (get_locks)
         {
-            ok = Read_attr(player, thing, attr, aowner, aflags);
+            ok = bCanReadAttr(player, thing, attr, FALSE);
         }
         else
         {
-            ok = See_attr(player, thing, attr, aowner, aflags);
-        }
-
-        // Enforce locality restriction on descriptions.
-        //
-        if (  ok
-           && attr->number == A_DESC
-           && !mudconf.read_rem_desc
-           && !Examinable(player, thing)
-           && !nearby(player, thing))
-        {
-            ok = 0;
+            ok = See_attr(player, thing, attr);
         }
 
         if (  ok
@@ -1651,7 +1636,8 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
              char *args[], int nargs)
 {
     dbref thing, aowner;
-    int attr, got_one, aflags, doit;
+    int attr, aflags;
+    BOOL bGotOne;
     char *from, *to, *result, *returnstr, *atext;
     ATTR *ap;
 
@@ -1676,7 +1662,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
 
     // Iterate through matching attributes, performing edit.
     //
-    got_one = 0;
+    bGotOne = 0;
     atext = alloc_lbuf("do_edit.atext");
     int could_hear = Hearer(thing);
 
@@ -1688,21 +1674,16 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
             // Get the attr and make sure we can modify it.
             //
             atr_get_str(atext, thing, ap->number, &aowner, &aflags);
-            if (Set_attr(executor, thing, ap, aflags))
+            if (bCanSetAttr(executor, thing, ap))
             {
                 // Do the edit and save the result
                 //
-                got_one = 1;
+                bGotOne = TRUE;
                 edit_string_ansi(atext, &result, &returnstr, from, to);
-                doit = 1;
-                if (doit)
+                atr_add(thing, ap->number, result, Owner(executor), aflags);
+                if (!Quiet(executor))
                 {
-                    atr_add(thing, ap->number, result,
-                        Owner(executor), aflags);
-                    if (!Quiet(executor))
-                        notify_quiet(executor,
-                             tprintf("Set - %s: %s",
-                                 ap->name,
+                    notify_quiet(executor, tprintf("Set - %s: %s", ap->name,
                                  returnstr));
                 }
                 free_lbuf(result);
@@ -1725,7 +1706,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
     free_lbuf(atext);
     olist_pop();
 
-    if (!got_one)
+    if (!bGotOne)
     {
         notify_quiet(executor, "No matching attributes.");
     }
@@ -1737,10 +1718,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
 
 void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
 {
-    dbref thing, aowner;
-    int attr, got_one, aflags;
-    ATTR *ap;
-    char *atext;
+    dbref thing;
 
     olist_push();
     if (!it || !*it || !parse_attrib_wild(executor, it, &thing, 0, 0, 1))
@@ -1757,9 +1735,9 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
 
     // Iterate through matching attributes, zapping the writable ones
     //
-    got_one = 0;
-    atext = alloc_lbuf("do_wipe.atext");
-    int could_hear = Hearer(thing);
+    int attr;
+    ATTR *ap;
+    BOOL bGotOne = FALSE, could_hear = Hearer(thing);
 
     for (attr = olist_first(); attr != NOTHING; attr = olist_next())
     {
@@ -1768,21 +1746,19 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
         {
             // Get the attr and make sure we can modify it.
             //
-            atr_get_str(atext, thing, ap->number, &aowner, &aflags);
-            if (Set_attr(executor, thing, ap, aflags))
+            if (bCanSetAttr(executor, thing, ap))
             {
                 atr_clr(thing, ap->number);
-                got_one = 1;
+                bGotOne = TRUE;
             }
         }
     }
 
     // Clean up
     //
-    free_lbuf(atext);
     olist_pop();
 
-    if (!got_one)
+    if (!bGotOne)
     {
         notify_quiet(executor, "No matching attributes.");
     }

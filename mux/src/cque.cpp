@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.3 2002-06-05 06:25:38 sdennis Exp $
+// $Id: cque.cpp,v 1.4 2002-06-13 07:19:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -561,8 +561,8 @@ void do_notify
     char *count
 )
 {
-    dbref thing, aowner;
-    int loccount, attr = 0, aflags;
+    dbref thing;
+    int loccount, attr = 0;
     ATTR *ap;
     char *obj;
 
@@ -597,9 +597,7 @@ void do_notify
         {
             // Do they have permission to set this attribute?
             //
-            atr_pget_info(thing, ap->number, &aowner, &aflags);
-
-            if (Set_attr(executor, thing, ap, aflags))
+            if (bCanSetAttr(executor, thing, ap))
             {
                 attr = ap->number;
             }
@@ -938,10 +936,7 @@ void do_wait
                     }
                     ap = atr_num(attr);
                 }
-                dbref aowner;
-                int   aflags;
-                atr_pget_info(thing, ap->number, &aowner, &aflags);
-                if (!Set_attr(executor, thing, ap, aflags))
+                if (!bCanSetAttr(executor, thing, ap))
                 {
                     notify_quiet(executor, NOPERM_MESSAGE);
                     return;

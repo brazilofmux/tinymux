@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.14 2002-06-12 14:48:45 jake Exp $
+// $Id: functions.cpp,v 1.15 2002-06-13 07:19:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -1386,7 +1386,7 @@ int check_read_perms
     // If we are nearby or have examine privs to the attr and it is
     // visible to us, return it.
     //
-    int see_it = See_attr(player, thing, attr, aowner, aflags);
+    int see_it = See_attr(player, thing, attr);
     if (  (  Examinable(player, thing)
           || nearby(player, thing)
           || See_All(player))
@@ -2004,7 +2004,7 @@ FUNCTION(fun_v)
         //
         int nLen;
         tbuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
-        if (See_attr(executor, executor, ap, aowner, aflags))
+        if (See_attr(executor, executor, ap))
         {
             safe_copy_buf(tbuf, nLen, buff, bufc);
         }
@@ -4444,7 +4444,7 @@ static int atr_has_flag
     const char *flagname
 )
 {
-    if (See_attr(player, thing, attr, aowner, aflags))
+    if (See_attr(player, thing, attr))
     {
         ATR_HAS_FLAG_ENTRY *pEntry = atr_has_flag_table;
         while (pEntry->pName)
@@ -4936,7 +4936,7 @@ FUNCTION(fun_lnum)
  */
 
 void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
-                   BOOL check_parent)
+                   BOOL bCheckParent)
 {
     dbref thing;
     int ca;
@@ -4949,7 +4949,7 @@ void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
     //
     bFirst = TRUE;
     olist_push();
-    if (parse_attrib_wild(executor, fargs[0], &thing, check_parent, 0, 1))
+    if (parse_attrib_wild(executor, fargs[0], &thing, bCheckParent, 0, 1))
     {
         for (ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
@@ -5702,7 +5702,7 @@ FUNCTION(fun_fold)
         return;
     }
     else if (  !*atext
-            || !See_attr(executor, thing, ap, aowner, aflags))
+            || !See_attr(executor, thing, ap))
     {
         free_lbuf(atext);
         return;
@@ -5877,7 +5877,7 @@ FUNCTION(fun_filter)
         return;
     }
     else if (  !*atext
-            || !See_attr(executor, thing, ap, aowner, aflags))
+            || !See_attr(executor, thing, ap))
     {
         free_lbuf(atext);
         return;
@@ -5971,7 +5971,7 @@ FUNCTION(fun_map)
         return;
     }
     else if (  !*atext
-            || !See_attr(executor, thing, ap, aowner, aflags))
+            || !See_attr(executor, thing, ap))
     {
         free_lbuf(atext);
         return;
@@ -7505,8 +7505,8 @@ void do_function
     UFUN *ufp, *ufp2;
     ATTR *ap;
     char *np, *bp;
-    int atr, aflags;
-    dbref obj, aowner;
+    int atr;
+    dbref obj;
 
     if ((key & FN_LIST) || !fname || *fname == '\0')
     {
@@ -7583,8 +7583,7 @@ void do_function
         free_sbuf(np);
         return;
     }
-    atr_get_info(obj, atr, &aowner, &aflags);
-    if (!See_attr(executor, obj, ap, aowner, aflags))
+    if (!See_attr(executor, obj, ap))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
         free_sbuf(np);
