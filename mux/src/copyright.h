@@ -1,6 +1,6 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.6 2004-09-24 17:25:07 sdennis Exp $ */
+/* $Id: copyright.h,v 1.7 2004-12-24 15:22:58 sdennis Exp $ */
 
 /*
  * MUX Source Code (version 2.0 through 2.4).
@@ -51,7 +51,7 @@
  *
  *
  *
- * TinyMUX 2.2 Copyright: The Artistic License
+ * TinyMUX 2.4 Copyright: The Artistic License
  *
  * Preamble
  *
