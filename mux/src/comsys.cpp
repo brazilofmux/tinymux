@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.25 2002-07-18 23:57:53 sdennis Exp $
+// $Id: comsys.cpp,v 1.26 2002-07-23 08:38:59 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -152,7 +152,7 @@ char *MakeCanonicalComAlias
     BOOL *bValidAlias
 )
 {
-    static char Buffer[6];
+    static char Buffer[MAX_ALIAS_LEN];
     *nValidAlias = 0;
     *bValidAlias = FALSE;
 
@@ -169,7 +169,7 @@ char *MakeCanonicalComAlias
         {
             return NULL;
         }
-        if (n <= 5)
+        if (n < MAX_ALIAS_LEN)
         {
             n++;
             *q++ = *p;
@@ -177,7 +177,7 @@ char *MakeCanonicalComAlias
         p++;
     }
     *q = '\0';
-    if (n < 1 || 5 < n)
+    if (n < 1 || n >= MAX_ALIAS_LEN)
     {
         return FALSE;
     }
@@ -242,7 +242,7 @@ void load_channels(FILE *fp)
         c->maxchannels = c->numchannels;
         if (c->maxchannels > 0)
         {
-            c->alias = (char *)MEMALLOC(c->maxchannels * 6);
+            c->alias = (char *)MEMALLOC(c->maxchannels * MAX_ALIAS_LEN);
             (void)ISOUTOFMEMORY(c->alias);
             c->channels = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
             (void)ISOUTOFMEMORY(c->channels);
@@ -257,7 +257,7 @@ void load_channels(FILE *fp)
                     n--;
                     buffer[n] = '\0';
                 }
-                if (!ParseChannelLine(buffer, c->alias + j * 6, c->channels+j))
+                if (!ParseChannelLine(buffer, c->alias + j * MAX_ALIAS_LEN, c->channels+j))
                 {
                     c->numchannels--;
                     j--;
@@ -348,7 +348,7 @@ void save_channels(FILE *fp)
             fprintf(fp, "%d %d\n", c->who, c->numchannels);
             for (j = 0; j < c->numchannels; j++)
             {
-                fprintf(fp, "%s %s\n", c->alias + j * 6, c->channels[j]);
+                fprintf(fp, "%s %s\n", c->alias + j * MAX_ALIAS_LEN, c->channels[j]);
             }
             c = c->next;
         }
@@ -473,11 +473,11 @@ void sort_com_aliases(comsys_t *c)
         cont = FALSE;
         for (i = 0; i < c->numchannels - 1; i++)
         {
-            if (strcmp(c->alias + i * 6, c->alias + (i + 1) * 6) > 0)
+            if (strcmp(c->alias + i * MAX_ALIAS_LEN, c->alias + (i + 1) * MAX_ALIAS_LEN) > 0)
             {
-                strcpy(buffer, c->alias + i * 6);
-                strcpy(c->alias + i * 6, c->alias + (i + 1) * 6);
-                strcpy(c->alias + (i + 1) * 6, buffer);
+                strcpy(buffer, c->alias + i * MAX_ALIAS_LEN);
+                strcpy(c->alias + i * MAX_ALIAS_LEN, c->alias + (i + 1) * MAX_ALIAS_LEN);
+                strcpy(c->alias + (i + 1) * MAX_ALIAS_LEN, buffer);
                 s = c->channels[i];
                 c->channels[i] = c->channels[i + 1];
                 c->channels[i + 1] = s;
@@ -500,7 +500,7 @@ char *get_channel_from_alias(dbref player, char *alias)
     while (dir && (first <= last))
     {
         current = (first + last) / 2;
-        dir = strcmp(alias, c->alias + 6 * current);
+        dir = strcmp(alias, c->alias + MAX_ALIAS_LEN * current);
         if (dir < 0)
             last = current - 1;
         else
@@ -1442,7 +1442,7 @@ void do_addcom
         raw_notify(executor, tprintf("Channel %s does not exist yet.", Buffer));
         return;
     }
-    if (!(do_test_access(executor, CHANNEL_JOIN, ch)))
+    if (!do_test_access(executor, CHANNEL_JOIN, ch))
     {
         raw_notify(executor, "Sorry, this channel type does not allow you to join.");
         return;
@@ -1453,12 +1453,12 @@ void do_addcom
         raw_notify(executor, tprintf("Sorry, but you have reached the maximum number of aliases allowed."));
         return;
     }
-    for (j = 0; j < c->numchannels && (strcmp(pValidAlias, c->alias + j * 6) > 0); j++)
+    for (j = 0; j < c->numchannels && (strcmp(pValidAlias, c->alias + j * MAX_ALIAS_LEN) > 0); j++)
     {
         // Nothing
         ;
     }
-    if (j < c->numchannels && !strcmp(pValidAlias, c->alias + j * 6))
+    if (j < c->numchannels && !strcmp(pValidAlias, c->alias + j * MAX_ALIAS_LEN))
     {
         char *p = tprintf("That alias is already in use for channel %s.", c->channels[j]);
         raw_notify(executor, p);
@@ -1468,14 +1468,14 @@ void do_addcom
     {
         c->maxchannels += 10;
 
-        na = (char *)MEMALLOC(6 * c->maxchannels);
+        na = (char *)MEMALLOC(MAX_ALIAS_LEN * c->maxchannels);
         (void)ISOUTOFMEMORY(na);
         nc = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
         (void)ISOUTOFMEMORY(nc);
 
         for (i = 0; i < c->numchannels; i++)
         {
-            strcpy(na + i * 6, c->alias + i * 6);
+            strcpy(na + i * MAX_ALIAS_LEN, c->alias + i * MAX_ALIAS_LEN);
             nc[i] = c->channels[i];
         }
         if (c->alias)
@@ -1494,13 +1494,13 @@ void do_addcom
     where = c->numchannels++;
     for (i = where; i > j; i--)
     {
-        strcpy(c->alias + i * 6, c->alias + (i - 1) * 6);
+        strcpy(c->alias + i * MAX_ALIAS_LEN, c->alias + (i - 1) * MAX_ALIAS_LEN);
         c->channels[i] = c->channels[i - 1];
     }
 
     where = j;
-    memcpy(c->alias + where * 6, pValidAlias, nValidAlias);
-    *(c->alias + where * 6 + nValidAlias) = '\0';
+    memcpy(c->alias + where * MAX_ALIAS_LEN, pValidAlias, nValidAlias);
+    *(c->alias + where * MAX_ALIAS_LEN + nValidAlias) = '\0';
     c->channels[where] = StringClone(channel);
 
     if (!select_user(ch, executor))
@@ -1522,9 +1522,6 @@ void do_addcom
 
 void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
-    int i;
-    comsys_t *c;
-
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -1535,11 +1532,12 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
         raw_notify(executor, "Need an alias to delete.");
         return;
     }
-    c = get_comsys(executor);
+    comsys_t *c = get_comsys(executor);
+    int i;
 
     for (i = 0; i < c->numchannels; i++)
     {
-        if (!strcmp(arg1, c->alias + i * 6))
+        if (!strcmp(arg1, c->alias + i * MAX_ALIAS_LEN))
         {
             int itmp, found=0;
             for (itmp = 0;itmp < c->numchannels; itmp++)
@@ -1569,7 +1567,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
             
             for (; i < c->numchannels; i++)
             {
-                strcpy(c->alias + i * 6, c->alias + i * 6 + 6);
+                strcpy(c->alias + i * MAX_ALIAS_LEN, c->alias + i * MAX_ALIAS_LEN + MAX_ALIAS_LEN);
                 c->channels[i] = c->channels[i + 1];
             }
             return;
@@ -1964,12 +1962,12 @@ void do_comlist(dbref executor, dbref caller, dbref enactor, int key)
         struct comuser *user = select_user(select_channel(c->channels[i]), executor);
         if (user)
         {
-            char *p = tprintf("%-9.9s %-18.18s %s %s %s", c->alias + i * 6, c->channels[i], (user->bUserIsOn ? "on " : "off"), (user->ComTitleStatus ? "con " : "coff"), user->title);
+            char *p = tprintf("%-9.9s %-18.18s %s %s %s", c->alias + i * MAX_ALIAS_LEN, c->channels[i], (user->bUserIsOn ? "on " : "off"), (user->ComTitleStatus ? "con " : "coff"), user->title);
             raw_notify(executor, p);
         }
         else
         {
-            raw_notify(executor, tprintf("Bad Comsys Alias: %s for Channel: %s", c->alias + i * 6, c->channels[i]));
+            raw_notify(executor, tprintf("Bad Comsys Alias: %s for Channel: %s", c->alias + i * MAX_ALIAS_LEN, c->channels[i]));
         }
     }
     raw_notify(executor, "-- End of comlist --");
@@ -2015,7 +2013,7 @@ void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2)
 
     for (i = (c->numchannels) - 1; i > -1; --i)
     {
-        do_delcom(executor, caller, enactor, 0, c->alias + i * 6);
+        do_delcom(executor, caller, enactor, 0, c->alias + i * MAX_ALIAS_LEN);
     }
 }
 
@@ -2180,13 +2178,13 @@ void do_comconnectchannel(dbref player, char *channel, char *alias, int i)
             }
             else
             {
-                raw_notify(player, tprintf("Bad Comsys Alias: %s for Channel: %s", alias + i * 6, channel));
+                raw_notify(player, tprintf("Bad Comsys Alias: %s for Channel: %s", alias + i * MAX_ALIAS_LEN, channel));
             }
         }
     }
     else
     {
-        raw_notify(player, tprintf("Bad Comsys Alias: %s for Channel: %s", alias + i * 6, channel));
+        raw_notify(player, tprintf("Bad Comsys Alias: %s for Channel: %s", alias + i * MAX_ALIAS_LEN, channel));
     }
 }
 
@@ -2930,7 +2928,7 @@ FUNCTION(fun_comalias)
     {
         if (!strcmp(fargs[1], cc->channels[i]))
         {
-            safe_str(cc->alias + i * 6, buff, bufc);
+            safe_str(cc->alias + i * MAX_ALIAS_LEN, buff, bufc);
             return;
         }
     }
