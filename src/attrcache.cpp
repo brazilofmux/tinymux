@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.9 2001-02-07 05:28:13 sdennis Exp $
+// $Id: attrcache.cpp,v 1.10 2001-06-27 17:27:19 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -55,7 +55,7 @@ typedef struct tagCacheEntryHeader
 PCENT_HDR pCacheHead = 0;
 PCENT_HDR pCacheTail = 0;
 unsigned int CacheSize = 0;
-#endif // DO_CACHEING
+#endif
 
 int cache_init(const char *game_dir_file, const char *game_pag_file)
 {
@@ -212,7 +212,7 @@ void ADD_ENTRY(PCENT_HDR pEntry)
         pCacheTail = pCacheHead;
     }
 }
-#endif // DO_CACHEING
+#endif
 
 char *cache_get(Aname *nam, int *pLen)
 {
@@ -236,7 +236,7 @@ char *cache_get(Aname *nam, int *pLen)
         *pLen = pCacheEntry->nSize - sizeof(CENT_HDR);
         return (char *)(pCacheEntry+1);
     }
-#endif // DO_CACHEING
+#endif
 
     UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 
@@ -283,7 +283,7 @@ char *cache_get(Aname *nam, int *pLen)
                     MEMFREE(pCacheEntry, __FILE__, __LINE__);
                 }
             }
-#endif // DO_CACHEING
+#endif
             return TempRecord.attrText;
         }
         iDir = hfAttributeFile.FindNextKey(iDir, nHash);
@@ -397,7 +397,7 @@ BOOL cache_put(Aname *nam, char *value, int len)
             MEMFREE(pCacheEntry, __FILE__, __LINE__);
         }
     }
-#endif // DO_CACHEING
+#endif
 
     return TRUE;
 }
@@ -446,5 +446,5 @@ void cache_del(Aname *nam)
         hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
         MEMFREE(pCacheEntry, __FILE__, __LINE__);
     }
-#endif // DO_CACHEING
+#endif
 }
