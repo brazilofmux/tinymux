@@ -181,6 +181,21 @@ Bug Fixes:
  -- @descformat updated to evaluate the description.  Fix by Sean Hunter.
  -- Workaround a bug in Microsoft Visual C/C++ compiler (Version 12.0 which
     is part of Visual Studio 6.0.  This bug affects PCRE.
+ -- Added cache_pages and cache_tick_period configuration options to better
+    support very large games.
+ -- Fix minor bug in wrap().  Introduced and fixed by Jake.
+ -- Fix @aahear denial-of-service exploit by preventing @aahear actions
+    from nesting beyond 3 levels.  Demonstrated on Shangrila.  Fixed by
+    Brazil.
+ -- Fixed '@wait obj/attr=...' form of semaphores.  It would work
+    exactly once if 'attr' wasn't previously defined in the game.
+    Caused by and fixed by Brazil.  Reported by Ian.
+ -- regmatch() wasn't handling the full range of return codes from PCRE
+    properly.  PCRE contributed by Raevnos.  Fixed by Brazil.
+ -- Fix hang in @dbck when orphaned objects lose both their home and
+    their current location.  This crashing bug was probably introduced
+    inadvertantly by Jake when he changed the defintion of a good object.
+    Fixed by Brazil.
 
 
 Performance Enhancements:
@@ -194,9 +209,13 @@ Performance Enhancements:
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
  -- Alierak fix for typos in NOTES.
+ -- Spell 'separate' correctly in the help files and the source code.
 
 
 Miscellaneous:
 ~~~~~~~~~~~~~
  -- Switched all internal use of BOOL type to bool type.
-
+ -- Documented flag attributes.
+ -- Updated CONVERSION.
+ -- Remove vestigial code related to old-style variable function
+    arguments and autoconf.h.in clean up in general.
