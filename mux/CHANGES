@@ -126,8 +126,8 @@ Feature Additions:
  -- Added MailLock as a new @lock.  Incoming @mail must pass the MailLock or
     it is returned.  Added by Jake.
  -- Added KEEPALIVE flag which, if set, periodically causes a TELNET NOP to
-    be sent to the client.  Idea and patch from Soruk.  This approach is less
-    chatty than using the KEEPALIVE option in TCP/IP.
+    be sent to the client.  Idea and patch from Soruk.  This is not the same
+    as the TCP/IP by the same name.
 
 
 Bug Fixes:
