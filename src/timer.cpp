@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.6 2001-09-25 04:00:25 sdennis Exp $
+// $Id: timer.cpp,v 1.7 2001-10-17 18:08:32 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -65,7 +65,7 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
     {
         char *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = (char *)"< dump >";
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
         if (mudstate.dumping)
         {
             // There is a dump in progress. These usually happen very quickly.
@@ -76,7 +76,7 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
             nNextTimeInSeconds = 20;
         }
         else
-#endif // !VMS && !WIN32
+#endif
         {
             fork_and_dump(0);
         }

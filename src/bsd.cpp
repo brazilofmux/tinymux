@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.33 2001-10-17 17:30:08 sdennis Exp $
+// $Id: bsd.cpp,v 1.34 2001-10-17 17:57:09 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -19,15 +19,9 @@
 #include "externs.h"
 
 #ifndef WIN32
-#ifdef VMS
-#include "multinet_root:[multinet.include.sys]file.h"
-#include "multinet_root:[multinet.include.sys]ioctl.h"
-#include "multinet_root:[multinet.include]errno.h"
-#else // VMS
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#endif // VMS
 #include <sys/stat.h>
 #endif // !WIN32
 
@@ -2727,11 +2721,6 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
     }
     signal(sig, CAST_SIGNAL_FUNC sighandler);
     mudstate.panicking = 0;
-#ifdef VMS
-    return 1;
-#else // VMS
-    return;
-#endif // VMS
 }
 
 NAMETAB sigactions_nametab[] =

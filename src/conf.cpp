@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.47 2001-10-17 17:30:08 sdennis Exp $
+// $Id: conf.cpp,v 1.48 2001-10-17 18:00:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -113,10 +113,10 @@ void NDECL(cf_init)
     mudconf.art_rules = NULL;
     mudconf.indent_desc = 0;
     mudconf.name_spaces = 1;
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
     mudconf.fork_dump = 1;
     mudstate.dumping = 0;
-#endif // !VMS !WIN32
+#endif
     mudconf.have_comsys = 1;
     mudconf.have_mailer = 1;
     mudconf.have_zones = 1;
@@ -1410,9 +1410,9 @@ CONF conftable[] =
     {"flag_access",               cf_flag_access, CA_GOD,    NULL,                            NULL,               0},
     {"flag_alias",                cf_flagalias,   CA_GOD,    NULL,                            NULL,               0},
     {"forbid_site",               cf_site,        CA_GOD,    (int *)&mudstate.access_list,    NULL,     H_FORBIDDEN},
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
     {"fork_dump",                 cf_bool,        CA_GOD,    &mudconf.fork_dump,              NULL,               0},
-#endif // !VMS !WIN32
+#endif
     {"full_file",                 cf_string_dyn,  CA_STATIC, (int *)&mudconf.full_file,       NULL, SIZEOF_PATHNAME},
     {"full_motd_message",         cf_string,      CA_GOD,    (int *)mudconf.fullmotd_msg,     NULL,       GBUF_SIZE},
     {"function_access",           cf_func_access, CA_GOD,    NULL,                            access_nametab,     0},

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.40 2001-10-17 17:30:08 sdennis Exp $
+// $Id: game.cpp,v 1.41 2001-10-17 18:05:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -64,13 +64,13 @@ int corrupt = 0;
 //
 void do_dump(dbref player, dbref cause, int key)
 {
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
     if (mudstate.dumping)
     {
         notify(player, "Dumping in progress. Try again later.");
         return;
     }
-#endif // !VMS && !WIN32
+#endif
     notify(player, "Dumping...");
     fork_and_dump(key);
 }
@@ -1155,7 +1155,7 @@ void dump_database_internal(int dump_type)
     }
 
     BOOL bPotentialConflicts = FALSE;
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
     // If we are already dumping for some reason, and suddenly get a type 1 or
     // type 4 dump, basically don't touch mail and comsys files. The other
     // dump will take care of them as well as can be expected for now, and if
@@ -1167,7 +1167,7 @@ void dump_database_internal(int dump_type)
     {
         bPotentialConflicts = TRUE;
     }
-#endif // !VMS && !WIN32
+#endif
 
     if (dump_type > 0)
     {
@@ -1176,11 +1176,7 @@ void dump_database_internal(int dump_type)
         sprintf(outfn, "%s%s", *(dp->ppszOutputBase), dp->szOutputSuffix);
         if (dp->bUseTemporary)
         {
-#ifdef VMS
-            sprintf(tmpfile, "%s.-%d-", outfn, mudstate.epoch);
-#else // VMS
             sprintf(tmpfile, "%s.#%d#", outfn, mudstate.epoch);
-#endif // VMS
             RemoveFile(tmpfile);
             f = fopen(tmpfile, "wb");
         }
@@ -1320,7 +1316,7 @@ void NDECL(dump_database)
 
     mudstate.epoch++;
 
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
     if (mudstate.dumping)
     {
         STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
@@ -1336,13 +1332,9 @@ void NDECL(dump_database)
         }
     }
     mudstate.dumping = 1;
-#endif // !VMS !WIN32
+#endif
     buff = alloc_mbuf("dump_database");
-#ifdef VMS
-    sprintf(buff, "%s.-%d-", mudconf.outdb, mudstate.epoch);
-#else // VMS
     sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
-#endif // VMS
 
     STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
     log_text((char *)"Dumping: ");
@@ -1359,25 +1351,28 @@ void NDECL(dump_database)
     ENDLOG;
     free_mbuf(buff);
 
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
     // This doesn't matter. We are about the stop the game. However,
     // leave it in.
     //
     mudstate.dumping = 0;
-#endif // !VMS !WIN32
+#endif
 }
 
 void fork_and_dump(int key)
 {
     char *buff;
 
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
     // fork_and_dump is never called with mudstate.dumping == 1, but we'll
     // ensure assertion now.
     //
-    if (mudstate.dumping) return;
+    if (mudstate.dumping)
+    {
+        return;
+    }
     mudstate.dumping = 1;
-#endif // !VMS !WIN32
+#endif
 
     // If no options were given, then it means DUMP_TEXT+DUMP_STRUCT.
     //
@@ -1406,11 +1401,7 @@ void fork_and_dump(int key)
         if (key & DUMP_STRUCT)
         {
             mudstate.epoch++;
-#ifdef VMS
-            sprintf(buff, "%s.-%d-", mudconf.outdb, mudstate.epoch);
-#else // VMS
             sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
-#endif // VMS
             log_text("Checkpointing: ");
             log_text(buff);
         }
@@ -1441,12 +1432,12 @@ void fork_and_dump(int key)
     BOOL bChildExists = FALSE;
     if (key & (DUMP_STRUCT|DUMP_FLATFILE))
     {
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
         if (mudconf.fork_dump)
         {
             child = fork();
         }
-#endif // !VMS !WIN32
+#endif
         if (child == 0)
         {
             if (key & DUMP_STRUCT)
@@ -1457,12 +1448,12 @@ void fork_and_dump(int key)
             {
                 dump_database_internal(DUMP_I_FLAT);
             }
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
             if (mudconf.fork_dump)
             {
                 _exit(0);
             }
-#endif // !VMS !WIN32
+#endif
         }
         else if (child < 0)
         {
@@ -1474,7 +1465,7 @@ void fork_and_dump(int key)
         }
     }
 
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
     if (!bChildExists)
     {
         // We have the ability to fork children, but we are not configured to
@@ -1483,7 +1474,7 @@ void fork_and_dump(int key)
         //
         mudstate.dumping = 0;
     }
-#endif // !VMS !WIN32
+#endif
 
     if (*mudconf.postdump_msg)
     {
@@ -1509,7 +1500,6 @@ static int load_game(int ccPageFile)
 
     int compressed = 0;
 
-#ifndef VMS
     if (mudconf.compress_db)
     {
         StringCopy(infile, mudconf.indb);
@@ -1524,7 +1514,6 @@ static int load_game(int ccPageFile)
             }
         }
     }
-#endif // !VMS
 
     if (compressed == 0)
     {

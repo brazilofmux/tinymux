@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.53 2001-10-17 17:30:08 sdennis Exp $
+// $Id: db.cpp,v 1.54 2001-10-17 18:03:51 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3102,7 +3102,7 @@ void ReleaseAllResources(dbref obj)
 
 #endif // STANDALONE
 
-#if !defined(STANDALONE) && !defined(VMS) && !defined(WIN32)
+#if !defined(STANDALONE) && !defined(WIN32)
 /* ---------------------------------------------------------------------------
  * dump_restart_db: Writes out socket information.
  */
@@ -3255,7 +3255,7 @@ void load_restart_db(void)
     remove("restart.db");
     raw_broadcast(0, "Game: Restart finished.");
 }
-#endif // !STANDALONE !VMS !WIN32
+#endif // !STANDALONE !WIN32
 
 #ifdef WIN32
 

@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.53 2001-10-10 07:01:27 sdennis Exp $
+// $Id: command.cpp,v 1.54 2001-10-17 17:58:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2604,12 +2604,12 @@ static void list_options(dbref player)
         raw_notify(player, "The buffer pools are checked for consistency on each allocate or free.");
     if (mudconf.cache_names)
         raw_notify(player, "A seperate name cache is used.");
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
     if (mudconf.fork_dump)
     {
         raw_notify(player, "Database dumps are performed by a fork()ed process.");
     }
-#endif // !VMS !WIN32
+#endif
     if (mudconf.max_players >= 0)
         raw_notify(player,
         tprintf("There may be at most %d players logged in at once.",
