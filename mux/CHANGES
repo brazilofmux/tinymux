@@ -335,6 +335,16 @@ Bug Fixes:
  -- Guest system would clear contents of starting_room if a guest it
     created was later re-named.  Zenty's bug.  Fixed by Brazil.
  -- Documented '~' letter for NOACCENTS.
+ -- Prevent rooms and exits from using the 'home' command.  Patch by
+    Alierak.
+ -- cache_names=no configuration would SIGSEGV.  Introduced and fixed by
+    Brazil.
+ -- encrypt() and decrypt() couldn't handle accented characters.
+    Reported by Alierak.  Introduced and fixed by Brazil.
+ -- While exits are checked and canonicalized at creation time, it was
+    possible to re-@name an exit to a broader range of names.  Patch
+    from Alierak.
+ -- Document that y-umlaut is not supported.
 
 
 Performance Enhancements:
