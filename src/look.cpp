@@ -1,6 +1,6 @@
-// look.cpp -- commands which look at things
+// look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.34 2001-11-08 03:48:56 sdennis Exp $
+// $Id: look.cpp,v 1.35 2001-11-20 05:17:55 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.

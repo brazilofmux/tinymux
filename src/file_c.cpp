@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.1 2000-04-11 07:14:44 sdennis Exp $
+// $Id: file_c.cpp,v 1.2 2001-11-20 05:17:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -108,7 +108,7 @@ static int fcache_read(FBLOCK **cp, char *filename)
     FBLOCK *fp, *tfp;
 
     /*
-     * Free a prior buffer chain 
+     * Free a prior buffer chain
      */
 
     fp = *cp;
@@ -120,12 +120,12 @@ static int fcache_read(FBLOCK **cp, char *filename)
     *cp = NULL;
 
     /*
-     * Read the text file into a new chain 
+     * Read the text file into a new chain
      */
 
     if ((fd = open(filename, O_RDONLY|O_BINARY)) == -1)
     {
-        // Failure: log the event 
+        // Failure: log the event
         //
         STARTLOG(LOG_PROBLEMS, "FIL", "OPEN");
         buff = alloc_mbuf("fcache_read.LOG");
@@ -139,7 +139,7 @@ static int fcache_read(FBLOCK **cp, char *filename)
     buff = alloc_lbuf("fcache_read.temp");
 
     /*
-     * Set up the initial cache buffer to make things easier 
+     * Set up the initial cache buffer to make things easier
      */
 
     fp = (FBLOCK *) alloc_mbuf("fcache_read.first");
@@ -149,7 +149,7 @@ static int fcache_read(FBLOCK **cp, char *filename)
     tchars = 0;
 
     /*
-     * Process the file, one lbuf at a time 
+     * Process the file, one lbuf at a time
      */
 
     nmax = read(fd, buff, LBUF_SIZE);
@@ -180,7 +180,7 @@ static int fcache_read(FBLOCK **cp, char *filename)
     }
 
     /*
-     * If we didn't read anything in, toss the initial buffer 
+     * If we didn't read anything in, toss the initial buffer
      */
 
     if (fp->hdr.nchars == 0)

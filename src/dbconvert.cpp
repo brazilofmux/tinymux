@@ -1,7 +1,8 @@
-// dbconvert.cpp - Convert databases to various MUX formats.
+// dbconvert.cpp -- Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.14 2001-10-17 21:09:21 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.15 2001-11-20 05:17:54 sdennis Exp $ 
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

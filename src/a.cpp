@@ -1,6 +1,6 @@
 // a.cpp
 //
-// $Id: a.cpp,v 1.7 2001-09-18 07:18:36 sdennis Exp $
+// $Id: a.cpp,v 1.8 2001-11-20 05:17:53 sdennis Exp $
 //
 // Analyse a MUX database, we chew it in on stdin, extract
 // attributes, and stuff them into a radix tree. We accept a single
@@ -8,7 +8,7 @@
 // then we dump the whole tree out. This gives a complete list of all
 // substrings of length N or less found in a MUX database, complete
 // with counts, for post-processing.
-// 
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -20,7 +20,7 @@
 #include "_build.h"
 
 /*
- * forward 
+ * forward
  */
 void eatline(void);
 void copyattr(char *buff);
@@ -120,7 +120,7 @@ int DCL_CDECL main(int ac, char *av[])
 }
 
 /*
- * Consume a line up to and including the newline 
+ * Consume a line up to and including the newline
  */
 
 void eatline(void)
@@ -143,7 +143,7 @@ void copyattr(char *buff)
     int i;
     char ch = '\0';     /*
 
-                 * anything other than a \r 
+                 * anything other than a \r
                  */
 
     i = 0;
@@ -153,7 +153,7 @@ void copyattr(char *buff)
         buff[i++] = ch;
 
         /*
-         * Internal newlines are escaped as \r\n 
+         * Internal newlines are escaped as \r\n
          */
 
         if (ch == '\n' && last == '\r') {
@@ -162,6 +162,6 @@ void copyattr(char *buff)
         }
     } while ((ch != '\n' || last == '\r') && ch != EOF && i < 4000);
     buff[i - 1] = '\0'; /*
-                 * Whack trailing newline 
+                 * Whack trailing newline
                  */
 }

@@ -1,7 +1,8 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.30 2001-11-08 03:48:56 sdennis Exp $
+// $Id: cque.cpp,v 1.31 2001-11-20 05:17:54 sdennis Exp $
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

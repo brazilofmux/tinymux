@@ -1,11 +1,12 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.29 2001-11-08 03:48:56 sdennis Exp $
+// $Id: mail.cpp,v 1.30 2001-11-20 05:17:55 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
 // since being included in MUX.
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

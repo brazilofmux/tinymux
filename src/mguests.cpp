@@ -1,7 +1,8 @@
-// mguests.cpp - multiguest code originally ported from DarkZone 
+// mguests.cpp -- Multiguest code originally ported from DarkZone.
 //
-// $Id: mguests.cpp,v 1.6 2001-11-08 03:48:57 sdennis Exp $
+// $Id: mguests.cpp,v 1.7 2001-11-20 05:17:55 sdennis Exp $
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -87,7 +88,7 @@ char *make_guest(DESC *d)
     static char name[50];
 
     /*
-     * Nuke extra guests as new guests connect. 
+     * Nuke extra guests as new guests connect.
      */
 
     for (i = 0; i < mudconf.number_guests; i++) {
@@ -98,7 +99,7 @@ char *make_guest(DESC *d)
     }
 
     /*
-     * Locate a free guest ID, and eat it. 
+     * Locate a free guest ID, and eat it.
      */
 
     for (i = 0; i < mudconf.number_guests; i++) {

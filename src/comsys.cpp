@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.60 2001-11-08 03:48:56 sdennis Exp $
+// $Id: comsys.cpp,v 1.61 2001-11-20 05:17:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -950,7 +950,7 @@ void SendChannelMessage
     struct comuser *user;
     for (user = ch->on_users; user; user = user->on_next)
     {
-        if (  user->bUserIsOn 
+        if (  user->bUserIsOn
            && do_test_access(user->who, CHANNEL_RECEIVE, ch))
         {
             if (  user->ComTitleStatus

@@ -1,6 +1,9 @@
-// Compression library. Uses a radix tree to compress substrings
-// down to 12 bit codes.
+// complib.cpp -- Compression library. Uses a radix tree to compress
+//                substrings down to 12 bit codes.
 //
+// $Id: complib.cpp,v 1.5 2001-11-20 05:17:54 sdennis Exp $
+//
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

@@ -1,6 +1,6 @@
-// alloc.cpp - Memory Allocation Subsystem.
+// alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.9 2001-10-25 09:12:42 sdennis Exp $
+// $Id: alloc.cpp,v 1.10 2001-11-20 05:17:53 sdennis Exp $
 //
 
 #include "copyright.h"

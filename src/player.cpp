@@ -1,7 +1,7 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.11 2001-11-08 03:48:57 sdennis Exp $ 
-///
+// $Id: player.cpp,v 1.12 2001-11-20 05:17:56 sdennis Exp $
+//
 
 #include "copyright.h"
 #include "autoconf.h"
@@ -31,10 +31,10 @@ char *crypt(const char *inptr, const char *inkey)
 
 
 #define NUM_GOOD    4   /*
-                 * # of successful logins to save data for 
+                 * # of successful logins to save data for
                  */
 #define NUM_BAD     3   /*
-                 * # of failed logins to save data for 
+                 * # of failed logins to save data for
                  */
 
 typedef struct hostdtm HOSTDTM;
@@ -95,20 +95,19 @@ static void encrypt_logindata(char *atrbuf, LDATA *info)
     char *bp, nullc;
     int i;
 
-    /*
-     * Make sure the SPRINTF call tracks NUM_GOOD and NUM_BAD for the * * 
-     * 
-     * *  * * number of host/dtm pairs of each type. 
-     */
-
+    // Make sure the SPRINTF call tracks NUM_GOOD and NUM_BAD for the number
+    // of host/dtm pairs of each type.
+    //
     nullc = '\0';
-    for (i = 0; i < NUM_GOOD; i++) {
+    for (i = 0; i < NUM_GOOD; i++)
+    {
         if (!info->good[i].host)
             info->good[i].host = &nullc;
         if (!info->good[i].dtm)
             info->good[i].dtm = &nullc;
     }
-    for (i = 0; i < NUM_BAD; i++) {
+    for (i = 0; i < NUM_BAD; i++)
+    {
         if (!info->bad[i].host)
             info->bad[i].host = &nullc;
         if (!info->bad[i].dtm)
@@ -386,7 +385,7 @@ void do_last(dbref player, dbref cause, int key, char *who)
     {
         target = Owner(player);
     }
-    else 
+    else
     {
         target = lookup_player(player, who, 1);
     }
@@ -430,10 +429,8 @@ int add_player_name(dbref player, char *name)
     dbref *p;
     char *temp, *tp;
 
-    /*
-     * Convert to all lowercase 
-     */
-
+    // Convert to all lowercase.
+    //
     tp = temp = alloc_lbuf("add_player_name");
     safe_str(name, temp, &tp);
     *tp = '\0';
@@ -650,16 +647,15 @@ int badname_check(char *bad_name)
 {
     BADNAME *bp;
 
-    /*
-     * Walk the badname list, doing wildcard matching.  If we get a hit * 
-     * 
-     * *  * *  * * then return false.  If no matches in the list, return
-     * true.  
-     */
-
-    for (bp = mudstate.badname_head; bp; bp = bp->next) {
+    // Walk the badname list, doing wildcard matching.  If we get a hit then
+    // return false.  If no matches in the list, return true.
+    //
+    for (bp = mudstate.badname_head; bp; bp = bp->next)
+    {
         if (quick_wild(bp->name, bad_name))
+        {
             return 0;
+        }
     }
     return 1;
 }
@@ -669,10 +665,8 @@ void badname_list(dbref player, const char *prefix)
     BADNAME *bp;
     char *buff, *bufp;
 
-    /*
-     * Construct an lbuf with all the names separated by spaces 
-     */
-
+    // Construct an lbuf with all the names separated by spaces.
+    //
     buff = bufp = alloc_lbuf("badname_list");
     safe_str((char *)prefix, buff, &bufp);
     for (bp = mudstate.badname_head; bp; bp = bp->next) {
@@ -681,10 +675,8 @@ void badname_list(dbref player, const char *prefix)
     }
     *bufp = '\0';
 
-    /*
-     * Now display it 
-     */
-
+    // Now display it.
+    //
     notify(player, buff);
     free_lbuf(buff);
 }

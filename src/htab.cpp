@@ -1,6 +1,6 @@
-// htab.cpp - table hashing routines
+// htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.7 2001-09-08 18:52:38 sdennis Exp $
+// $Id: htab.cpp,v 1.8 2001-11-20 05:17:55 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.

@@ -1,6 +1,6 @@
-// eval.cpp - command evaluation and cracking 
+// eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.26 2001-10-11 21:09:59 sdennis Exp $
+// $Id: eval.cpp,v 1.27 2001-11-20 05:17:54 sdennis Exp $
 //
 
 // MUX 2.1
@@ -52,7 +52,7 @@ static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
        && (*rstr == '{')
        && (zstr > strFirewall)
        && (zstr[-1] == '}')
-       ) 
+       )
     {
         rstr++;
         if (mudconf.space_compress && !(eval & EV_NO_COMPRESS) || (eval & EV_STRIP_LS))
@@ -1037,9 +1037,9 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
         ISOUTOFMEMORY(buff);
         *bufc = buff;
     }
-    
+
     oldp = start = *bufc;
-    
+
     // If we are tracing, save a copy of the starting buffer.
     //
     savestr = NULL;
@@ -1055,7 +1055,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
     char bSpaceIsSpecialSave = isSpecial_L1[' '];
     char bParenthesisIsSpecialSave = isSpecial_L1['('];
     char bBracketIsSpecialSave = isSpecial_L1['['];
-    
+
     // Setup New Parser Mode.
     //
     char bSpaceIsSpecial = mudconf.space_compress && !(eval & EV_NO_COMPRESS);
@@ -1239,14 +1239,14 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         else
                             i = player;
                         TempPtr = tstr;
-                        
+
                         if (ufp->flags & FN_PRES)
                         {
                             save_global_regs("eval_save", preserve, preserve_len);
                         }
-                        
+
                         TinyExec(buff, &oldp, 0, i, cause, feval, &TempPtr, fargs, nfargs);
-                        
+
                         if (ufp->flags & FN_PRES)
                         {
                             restore_global_regs("eval_restore", preserve, preserve_len);
@@ -1717,7 +1717,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                 TinyExec( buff, bufc, 0, player, cause,
                           (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, &TempPtr,
                           cargs, ncargs
-                        );          
+                        );
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                 pdstr--;
             }

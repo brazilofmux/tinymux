@@ -1,7 +1,6 @@
+// help.cpp -- Commands for giving help.
 //
-// help.cpp -- commands for giving help 
-//
-// $Id: help.cpp,v 1.10 2001-11-18 04:47:54 sdennis Exp $ 
+// $Id: help.cpp,v 1.11 2001-11-20 05:17:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -19,7 +18,7 @@
 #include "alloc.h"
 
 /*
- * Pointers to this struct is what gets stored in the help_htab's 
+ * Pointers to this struct is what gets stored in the help_htab's
  */
 struct help_entry
 {

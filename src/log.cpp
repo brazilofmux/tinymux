@@ -1,8 +1,8 @@
+// log.cpp -- Logging routines.
 //
-// log.cpp - logging routines
+// $Id: log.cpp,v 1.12 2001-11-20 05:17:55 sdennis Exp $
 //
-// $Id: log.cpp,v 1.11 2001-11-08 03:48:56 sdennis Exp $
-//
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

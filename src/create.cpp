@@ -1,7 +1,8 @@
-// create.cpp -- Commands that create new objects
+// create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.20 2001-11-14 17:38:34 sdennis Exp $
+// $Id: create.cpp,v 1.21 2001-11-20 05:17:54 sdennis Exp $
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

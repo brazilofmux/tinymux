@@ -1,7 +1,8 @@
-// flags.cpp - flag manipulation routines.
+// flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.12 2001-10-24 18:43:38 sdennis Exp $
+// $Id: flags.cpp,v 1.13 2001-11-20 05:17:54 sdennis Exp $
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

@@ -1,6 +1,6 @@
 // muxcli.cpp
 //
-// $Id: muxcli.cpp,v 1.2 2001-09-08 19:25:47 sdennis Exp $
+// $Id: muxcli.cpp,v 1.3 2001-11-20 05:17:55 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -11,7 +11,6 @@
 // building/hosting text-based game servers, contact the author at
 // Stephen Dennis <sdennis@svdltd.com> for another license.
 //
-
 
 #include <string.h>
 #include "muxcli.h"
@@ -190,7 +189,7 @@ void CLI_Process
                         if (*p)
                         {
                             // Value follows option letter
-                            // 
+                            //
                             if (*p == '=')
                             {
                                 p++;

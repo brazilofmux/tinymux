@@ -1,7 +1,8 @@
-// funceval.cpp - MUX function handlers.
+// funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.71 2001-11-08 03:48:56 sdennis Exp $
+// $Id: funceval.cpp,v 1.72 2001-11-20 05:17:54 sdennis Exp $
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -3430,7 +3431,7 @@ static void room_list
     if (  (  level == maxlevels
           || showall)
        && (  Examinable(player, room)
-          || Location(player) == room 
+          || Location(player) == room
           || room == cause))
     {
         bfReport.Set(room);
@@ -3484,7 +3485,7 @@ static void room_list
     }
 }
 
-FUNCTION(fun_lrooms) 
+FUNCTION(fun_lrooms)
 {
     dbref room = match_thing(player, fargs[0]);
     if (!Good_obj(room) || !isRoom(room))

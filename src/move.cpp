@@ -1,6 +1,6 @@
-// move.cpp -- Routines for moving about 
+// move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.10 2001-09-28 22:32:23 sdennis Exp $
+// $Id: move.cpp,v 1.11 2001-11-20 05:17:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -38,14 +38,15 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, int canhear,
         notify_html(thing, "<xch_page clear=links>");
     }
 
-    /*
-     * Run the LEAVE attributes in the current room if we meet any of * * 
-     * 
-     * *  * * following criteria: * - The current room has wizard privs.
-     * * - * * * Neither the current room nor the moving object are dark. 
-     * * - The * *  * moving object can hear and does not hav wizard
-     * privs. * EXCEPT  * if * * we were called with the HUSH_LEAVE key. 
-     */
+    // Run the LEAVE attributes in the current room if we meet any of
+    // following criteria:
+    //
+    //   - The current room has wizard privs.
+    //   - Neither the current room nor the moving object are dark.
+    //   - The moving object can hear and does not hav wizard privs.
+    //
+    // EXCEPT if we were called with the HUSH_LEAVE key.
+    //
 
     quiet = (!(Wizard(loc) ||
            (!Dark(thing) && !Dark(loc)) ||
@@ -58,7 +59,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, int canhear,
            (char **)NULL, 0);
 
     /*
-     * Do OXENTER for receiving room 
+     * Do OXENTER for receiving room
      */
 
     if ((dest != NOTHING) && !quiet)
@@ -66,14 +67,12 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, int canhear,
         did_it(thing, dest, 0, NULL, A_OXENTER, NULL, 0, (char **)NULL, 0);
     }
 
-    /*
-     * Display the 'has left' message if we meet any of the following * * 
-     * 
-     * *  * * criteria: * - Neither the current room nor the moving
-     * object are  * *  * dark. * - The object can hear and is not a dark 
-     * wizard. 
-     */
-
+    // Display the 'has left' message if we meet any of the following
+    // criteria:
+    //
+    //   - Neither the current room nor the moving object are dark.
+    //   - The object can hear and is not a dark wizard. 
+    //
     if (!quiet)
     {
         if ((!Dark(thing) && !Dark(loc)) ||

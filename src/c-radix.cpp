@@ -1,9 +1,7 @@
-/*
- * Compressor radix.cpp
- */
-/*
- * $Id: c-radix.cpp,v 1.1 2000-04-11 07:14:43 sdennis Exp $ 
- */
+// c-radix.cpp
+//
+// $Id: c-radix.cpp,v 1.2 2001-11-20 05:17:54 sdennis Exp $
+//
 
 #define COMPRESSOR
 #include "radix.cpp"

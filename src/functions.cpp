@@ -1,6 +1,6 @@
-// functions.cpp - MUX function handlers 
+// functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.102 2001-11-08 03:48:56 sdennis Exp $
+// $Id: functions.cpp,v 1.103 2001-11-20 05:17:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -32,7 +32,7 @@ extern NAMETAB indiv_attraccess_nametab[];
 extern void FDECL(cf_log_notfound, (dbref player, char *cmd, const char *thingname, char *thing));
 
 /*
- * Function definitions from funceval.c 
+ * Function definitions from funceval.c
  */
 
 #define XFUNCTION(x) extern void x(char *buff, char **bufc, dbref player, dbref cause, char *fargs[], int nfargs, char *cargs[], int ncargs)
@@ -151,7 +151,7 @@ XFUNCTION(fun_connmax);
 XFUNCTION(fun_connlast);
 XFUNCTION(fun_connnum);
 XFUNCTION(fun_connleft);
-XFUNCTION(fun_art); 
+XFUNCTION(fun_art);
 XFUNCTION(fun_t);
 XFUNCTION(fun_dumping);
 XFUNCTION(fun_lrooms);
@@ -191,7 +191,7 @@ char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim)
 
 
 /*
- * Trim off leading and trailing spaces if the separator char is a space 
+ * Trim off leading and trailing spaces if the separator char is a space
  */
 
 char *trim_space_sep(char *str, char sep)
@@ -247,7 +247,7 @@ char *next_token_LEN(char *str, int *nStr, char sep)
 }
 
 /*
- * next_token: Point at start of next token in string 
+ * next_token: Point at start of next token in string
  */
 
 char *next_token(char *str, char sep)
@@ -382,7 +382,7 @@ static int autodetect_list(char *ptrs[], int nitems)
                 // is the first element and it is a good dbref, switch to a
                 // dbref sort. We're a little looser than the normal 'good
                 // dbref' rules, any number following # the #-sign is
-                // accepted.  
+                // accepted.
                 //
                 if (i == 0)
                 {
@@ -618,7 +618,7 @@ static int Tiny_fpclass(double result)
     UINT64 i64;
 
     *((double *)&i64) = result;
- 
+
     if ((i64 & IEEE_MASK_EXPONENT) == 0)
     {
         if (i64 & IEEE_MASK_MANTISSA)
@@ -1110,7 +1110,7 @@ char *MonthTableLong[] =
 };
 
 int Map24to12[24] =
-{   
+{
     12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
     12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
 };
@@ -1380,7 +1380,7 @@ FUNCTION(fun_timefmt)
         case '$': // $$
             safe_chr(ch, buff, bufc);
             break;
- 
+
         default:
             safe_chr('$', buff, bufc);
             p = q + 1;
@@ -1413,7 +1413,7 @@ int check_read_perms
     }
 
     // If we are nearby or have examine privs to the attr and it is
-    // visible to us, return it. 
+    // visible to us, return it.
     //
     int see_it = See_attr(player, thing, attr, aowner, aflags);
     if (  (  Examinable(player, thing)
@@ -1425,7 +1425,7 @@ int check_read_perms
     }
 
     // For any object, we can read its visible attributes, EXCEPT for
-    // descs, which are only visible if read_rem_desc is on. 
+    // descs, which are only visible if read_rem_desc is on.
     //
     if (see_it)
     {
@@ -1608,7 +1608,7 @@ FUNCTION(fun_get_eval)
     free_buffer = 1;
     eval_it = 1;
     attr = atr_num(attrib); /*
-                 * We need the attr's flags for this: 
+                 * We need the attr's flags for this:
                  */
     if (!attr) {
         return;
@@ -1653,7 +1653,7 @@ FUNCTION(fun_subeval)
 {
     char *str = fargs[0];
     TinyExec(buff, bufc, 0, player, cause, EV_EVAL|EV_NO_LOCATION|EV_NOFCHECK|EV_FIGNORE|EV_NO_COMPRESS, &str, (char **)NULL, 0);
-}   
+}
 
 FUNCTION(fun_eval)
 {
@@ -1769,14 +1769,14 @@ static void do_ufun(char *buff, char **bufc, dbref player, dbref cause,
     }
 
     /*
-     * Make sure we got a good attribute 
+     * Make sure we got a good attribute
      */
 
     if (!ap) {
         return;
     }
     /*
-     * Use it if we can access it, otherwise return an error. 
+     * Use it if we can access it, otherwise return an error.
      */
 
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
@@ -1793,7 +1793,7 @@ static void do_ufun(char *buff, char **bufc, dbref player, dbref cause,
         return;
     }
     /*
-     * If we're evaluating locally, preserve the global registers. 
+     * If we're evaluating locally, preserve the global registers.
      */
 
     if (is_local)
@@ -1802,7 +1802,7 @@ static void do_ufun(char *buff, char **bufc, dbref player, dbref cause,
     }
 
     /*
-     * Evaluate it using the rest of the passed function args 
+     * Evaluate it using the rest of the passed function args
      */
 
     str = atext;
@@ -1810,7 +1810,7 @@ static void do_ufun(char *buff, char **bufc, dbref player, dbref cause,
     free_lbuf(atext);
 
     /*
-     * If we're evaluating locally, restore the preserved registers. 
+     * If we're evaluating locally, restore the preserved registers.
      */
 
     if (is_local)
@@ -1915,7 +1915,7 @@ FUNCTION(fun_first)
 
 /*
  * ---------------------------------------------------------------------------
- * * fun_rest: Returns all but the first word in a string 
+ * * fun_rest: Returns all but the first word in a string
  */
 
 
@@ -1931,7 +1931,7 @@ FUNCTION(fun_rest)
     }
     varargs_preamble(2);
     s = trim_space_sep(fargs[0], sep);  /*
-                         * leading spaces ... 
+                         * leading spaces ...
                          */
     first = split_token(&s, sep);
     if (s) {
@@ -2329,7 +2329,7 @@ FUNCTION(fun_strmatch)
  * * extract(foo bar baz,1,2) returns 'foo bar'
  * * extract(foo bar baz,2,1) returns 'bar'
  * * extract(foo bar baz,2,2) returns 'bar baz'
- * * 
+ * *
  * * Now takes optional separator extract(foo-bar-baz,1,2,-) returns 'foo-bar'
  */
 
@@ -2581,7 +2581,7 @@ FUNCTION(fun_pmatch)
 FUNCTION(fun_pfind)
 {
     internalPlayerFind(buff, bufc, player, fargs[0], FALSE);
-}    
+}
 
 FUNCTION(fun_gt)
 {
@@ -2926,9 +2926,9 @@ FUNCTION(fun_round)
 {
     const char *fstr;
     char *oldp;
-    
+
     oldp = *bufc;
-    
+
     switch (Tiny_atol(fargs[1]))
     {
     case 1:
@@ -3265,7 +3265,7 @@ static void handle_vectors
     char vres[MAXDIM][LBUF_SIZE];
     double scalar;
     int n, m, i;
-    
+
     // Split the list up, or return if the list is empty.
     //
     if (!vecarg1 || !*vecarg1 || !vecarg2 || !*vecarg2)
@@ -3274,7 +3274,7 @@ static void handle_vectors
     }
     n = list2arr(v1, (LBUF_SIZE+1)/2, vecarg1, sep);
     m = list2arr(v2, (LBUF_SIZE+1)/2, vecarg2, sep);
-    
+
     // It's okay to have vmul() be passed a scalar first or second arg,
     // but everything else has to be same-dimensional.
     //
@@ -3292,7 +3292,7 @@ static void handle_vectors
         safe_str("#-1 TOO MANY DIMENSIONS ON VECTORS", buff, bufc);
         return;
     }
-    
+
     switch (flag)
     {
     case VADD_F:
@@ -3455,9 +3455,9 @@ FUNCTION(fun_vmag)
     int n, i;
     double tmp, res = 0.0;
     char sep;
-    
+
     varargs_preamble(2);
-    
+
     // Split the list up, or return if the list is empty.
     //
     if (!fargs[0] || !*fargs[0])
@@ -3465,7 +3465,7 @@ FUNCTION(fun_vmag)
         return;
     }
     n = list2arr(v1, LBUF_SIZE, fargs[0], sep);
-    
+
     if (n > MAXDIM)
     {
         safe_str("#-1 TOO MANY DIMENSIONS ON VECTORS", buff, bufc);
@@ -3479,7 +3479,7 @@ FUNCTION(fun_vmag)
         tmp = Tiny_atof(v1[i]);
         res += tmp * tmp;
     }
-    
+
     if (res > 0)
     {
         fval(buff, bufc, sqrt(res));
@@ -3497,9 +3497,9 @@ FUNCTION(fun_vunit)
     int n, i;
     double tmp, res = 0.0;
     char sep;
-    
+
     varargs_preamble(2);
-    
+
     // Split the list up, or return if the list is empty.
     //
     if (!fargs[0] || !*fargs[0])
@@ -3507,7 +3507,7 @@ FUNCTION(fun_vunit)
         return;
     }
     n = list2arr(v1, LBUF_SIZE, fargs[0], sep);
-    
+
     if (n > MAXDIM)
     {
         safe_str("#-1 TOO MANY DIMENSIONS ON VECTORS", buff, bufc);
@@ -3521,7 +3521,7 @@ FUNCTION(fun_vunit)
         tmp = Tiny_atof(v1[i]);
         res += tmp * tmp;
     }
-    
+
     if (res <= 0)
     {
         safe_str("#-1 CAN'T MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR",
@@ -3533,7 +3533,7 @@ FUNCTION(fun_vunit)
         fval_buf(vres[i], Tiny_atof(v1[i]) / sqrt(res));
         v1[i] = (char *) vres[i];
     }
-    
+
     arr2list(v1, n, buff, bufc, sep);
 }
 
@@ -3734,7 +3734,7 @@ FUNCTION(fun_lexits)
 
 /*
  * --------------------------------------------------------------------------
- * * fun_home: Return an object's home 
+ * * fun_home: Return an object's home
  */
 
 FUNCTION(fun_home)
@@ -3773,7 +3773,7 @@ FUNCTION(fun_money)
 
 /*
  * ---------------------------------------------------------------------------
- * * fun_pos: Find a word in a string 
+ * * fun_pos: Find a word in a string
  */
 
 FUNCTION(fun_pos)
@@ -3836,7 +3836,7 @@ FUNCTION(fun_lpos)
     {
         return;
     }
-    
+
     char c = *fargs[1];
     if (!c)
     {
@@ -3970,7 +3970,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
     switch (flag)
     {
     case IF_DELETE:
-    
+
         // deletion
         //
         if (sptr)
@@ -4005,7 +4005,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         break;
 
     case IF_INSERT:
-    
+
         // Insertion.
         //
         if (sptr)
@@ -4220,9 +4220,9 @@ FUNCTION(fun_wordpos)
     unsigned charpos;
     int i;
     char *cp, *tp, *xp, sep;
-    
+
     varargs_preamble(3);
-    
+
     charpos = Tiny_atol(fargs[1]);
     cp = fargs[0];
     if ((charpos > 0) && (charpos <= strlen(cp)))
@@ -4361,14 +4361,14 @@ FUNCTION(fun_lock)
     struct boolexp *pBoolExp;
 
     /*
-     * Parse the argument into obj + lock 
+     * Parse the argument into obj + lock
      */
 
     if (!get_obj_and_lock(player, fargs[0], &it, &attr, buff, bufc))
         return;
 
     /*
-     * Get the attribute and decode it if we can read it 
+     * Get the attribute and decode it if we can read it
      */
 
     tbuf = atr_get(it, attr->number, &aowner, &aflags);
@@ -4473,7 +4473,7 @@ static void process_sex(dbref player, char *what, const char *token, char *buff,
     {
         safe_str("#-1 NO MATCH", buff, bufc);
     }
-    else 
+    else
     {
         str = (char *)token;
         TinyExec(buff, bufc, 0, it, it, EV_EVAL, &str, (char **)NULL, 0);
@@ -4973,7 +4973,7 @@ FUNCTION(fun_max)
 FUNCTION(fun_min)
 {
     double minimum = DBL_MAX;
-    for (int i = 0; i < nfargs; i++) 
+    for (int i = 0; i < nfargs; i++)
     {
         double tval = Tiny_atof(fargs[i]);
         if (tval < minimum)
@@ -5049,7 +5049,7 @@ FUNCTION(fun_stats)
 /*
  * ---------------------------------------------------------------------------
  * * fun_merge:  given two strings and a character, merge the two strings
- * *   by replacing characters in string1 that are the same as the given 
+ * *   by replacing characters in string1 that are the same as the given
  * *   character by the corresponding character in string2 (by position).
  * *   The strings must be of the same length.
  */
@@ -5107,7 +5107,7 @@ FUNCTION(fun_splice)
     varargs_preamble(4);
 
     /*
-     * length checks 
+     * length checks
      */
 
     if (countwords(fargs[2], sep) > 1) {
@@ -5120,7 +5120,7 @@ FUNCTION(fun_splice)
         return;
     }
     /*
-     * loop through the two lists 
+     * loop through the two lists
      */
 
     p1 = fargs[0];
@@ -5133,11 +5133,11 @@ FUNCTION(fun_splice)
             safe_chr(sep, buff, bufc);
         if (!strcmp(p2, fargs[2]))
             safe_str(q2, buff, bufc);   /*
-                             * replace 
+                             * replace
                              */
         else
             safe_str(p2, buff, bufc);   /*
-                             * copy 
+                             * copy
                              */
         first = 0;
     }
@@ -5444,7 +5444,7 @@ FUNCTION(fun_fold)
 /*
  * ---------------------------------------------------------------------------
  * * fun_filter: iteratively perform a function with a list of arguments
- * *              and return the arg, if the function evaluates to TRUE using the 
+ * *              and return the arg, if the function evaluates to TRUE using the
  * *      arg.
  * *
  * *      > &IS_ODD object=mod(%0,2)
@@ -5467,7 +5467,7 @@ FUNCTION(fun_filter)
     varargs_preamble(3);
 
     /*
-     * Two possibilities for the first arg: <obj>/<attr> and <attr>. 
+     * Two possibilities for the first arg: <obj>/<attr> and <attr>.
      */
 
     if (parse_attrib(player, fargs[0], &thing, &anum)) {
@@ -5481,14 +5481,14 @@ FUNCTION(fun_filter)
     }
 
     /*
-     * Make sure we got a good attribute 
+     * Make sure we got a good attribute
      */
 
     if (!ap) {
         return;
     }
     /*
-     * Use it if we can access it, otherwise return an error. 
+     * Use it if we can access it, otherwise return an error.
      */
 
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
@@ -5499,7 +5499,7 @@ FUNCTION(fun_filter)
         return;
     }
     /*
-     * Now iteratively eval the attrib with the argument list 
+     * Now iteratively eval the attrib with the argument list
      */
 
     cp = curr = trim_space_sep(fargs[1], sep);
@@ -5546,7 +5546,7 @@ FUNCTION(fun_map)
     svarargs_preamble(4);
 
     /*
-     * Two possibilities for the second arg: <obj>/<attr> and <attr>. 
+     * Two possibilities for the second arg: <obj>/<attr> and <attr>.
      */
 
     if (parse_attrib(player, fargs[0], &thing, &anum)) {
@@ -5560,14 +5560,14 @@ FUNCTION(fun_map)
     }
 
     /*
-     * Make sure we got a good attribute 
+     * Make sure we got a good attribute
      */
 
     if (!ap) {
         return;
     }
     /*
-     * Use it if we can access it, otherwise return an error. 
+     * Use it if we can access it, otherwise return an error.
      */
 
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
@@ -5578,7 +5578,7 @@ FUNCTION(fun_map)
         return;
     }
     /*
-     * now process the list one element at a time 
+     * now process the list one element at a time
      */
 
     cp = trim_space_sep(fargs[1], sep);
@@ -5628,7 +5628,7 @@ FUNCTION(fun_locate)
     check_locks = verbose = multiple = 0;
 
     /*
-     * Find the thing to do the looking, make sure we control it. 
+     * Find the thing to do the looking, make sure we control it.
      */
 
     if (See_All(player))
@@ -5641,7 +5641,7 @@ FUNCTION(fun_locate)
         return;
     }
     /*
-     * Get pre- and post-conditions and modifiers 
+     * Get pre- and post-conditions and modifiers
      */
 
     for (cp = fargs[2]; *cp; cp++) {
@@ -5671,7 +5671,7 @@ FUNCTION(fun_locate)
     }
 
     /*
-     * Set up for the search 
+     * Set up for the search
      */
 
     if (check_locks)
@@ -5680,7 +5680,7 @@ FUNCTION(fun_locate)
         init_match(thing, fargs[1], pref_type);
 
     /*
-     * Search for each requested thing 
+     * Search for each requested thing
      */
 
     for (cp = fargs[2]; *cp; cp++) {
@@ -5716,7 +5716,7 @@ FUNCTION(fun_locate)
     }
 
     /*
-     * Get the result and return it to the caller 
+     * Get the result and return it to the caller
      */
 
     if (multiple)
@@ -6041,11 +6041,11 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
 
     switch (oper) {
     case SET_UNION: /*
-                 * Copy elements common to both lists 
+                 * Copy elements common to both lists
                  */
 
         /*
-         * Handle case of two identical single-element lists 
+         * Handle case of two identical single-element lists
          */
 
         if ((n1 == 1) && (n2 == 1) &&
@@ -6054,13 +6054,13 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             break;
         }
         /*
-         * Process until one list is empty 
+         * Process until one list is empty
          */
 
         while ((i1 < n1) && (i2 < n2)) {
 
             /*
-             * Skip over duplicates 
+             * Skip over duplicates
              */
 
             if ((i1 > 0) || (i2 > 0)) {
@@ -6072,7 +6072,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
                     i2++;
             }
             /*
-             * Compare and copy 
+             * Compare and copy
              */
 
             if ((i1 < n1) && (i2 < n2)) {
@@ -6092,7 +6092,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
         }
 
         /*
-         * Copy rest of remaining list, stripping duplicates 
+         * Copy rest of remaining list, stripping duplicates
          */
 
         for (; i1 < n1; i1++) {
@@ -6117,7 +6117,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
         }
         break;
     case SET_INTERSECT: /*
-                 * Copy elements not in both lists 
+                 * Copy elements not in both lists
                  */
 
         while ((i1 < n1) && (i2 < n2)) {
@@ -6125,7 +6125,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             if (!val) {
 
                 /*
-                 * Got a match, copy it 
+                 * Got a match, copy it
                  */
 
                 if (!first)
@@ -6147,7 +6147,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
         }
         break;
     case SET_DIFF:      /*
-                 * Copy elements unique to list1 
+                 * Copy elements unique to list1
                  */
 
         while ((i1 < n1) && (i2 < n2)) {
@@ -6155,7 +6155,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             if (!val) {
 
                 /*
-                 * Got a match, increment pointers 
+                 * Got a match, increment pointers
                  */
 
                 oldp = ptrs1[i1];
@@ -6166,7 +6166,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             } else if (val < 0) {
 
                 /*
-                 * Item in list1 not in list2, copy 
+                 * Item in list1 not in list2, copy
                  */
 
                 if (!first)
@@ -6180,7 +6180,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             } else {
 
                 /*
-                 * Item in list2 but not in list1, discard 
+                 * Item in list2 but not in list1, discard
                  */
 
                 oldp = ptrs2[i2];
@@ -6191,7 +6191,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
         }
 
         /*
-         * Copy remainder of list1 
+         * Copy remainder of list1
          */
 
         while (i1 < n1) {
@@ -6924,7 +6924,7 @@ void do_function
         notify(player, tprintf("%28s   %8s  %30s %4s",
             "----------------------------", "--------",
             "------------------------------", " -- "));
-        
+
         int count = 0;
         for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
         {
@@ -6934,14 +6934,14 @@ void do_function
                 ((ufp2->flags & FN_PRES) ? 'p' : '-')));
             count++;
         }
-        
+
         notify(player, tprintf("%28s   %8s  %30s %4s",
             "----------------------------", "--------",
             "------------------------------", " -- "));
 
         notify(player, tprintf("Total User-Defined Functions: %d", count));
         return;
-    }                                                                                                             
+    }
 
     // Make a local uppercase copy of the function name.
     //
@@ -7115,7 +7115,7 @@ CF_HAND(cf_func_access)
 //
 // Written by : Chris Rouse (Seraphim) 04/04/2000
 /////////////////////////////////////////////////////////////////
- 
+
 FUNCTION(fun_iadd)
 {
     INT64 sum = 0;
@@ -7125,13 +7125,13 @@ FUNCTION(fun_iadd)
     }
     safe_i64toa(sum, buff, bufc);
 }
- 
+
 /////////////////////////////////////////////////////////////////
 // Function : isub(Arg[0], Arg[1])
 //
 // Written by : Chris Rouse (Seraphim) 04/04/2000
 /////////////////////////////////////////////////////////////////
- 
+
 FUNCTION(fun_isub)
 {
     INT64 diff = Tiny_atoi64(fargs[0]) - Tiny_atoi64(fargs[1]);
@@ -7143,7 +7143,7 @@ FUNCTION(fun_isub)
 //
 // Written by : Chris Rouse (Seraphim) 04/04/2000
 /////////////////////////////////////////////////////////////////
- 
+
 FUNCTION(fun_imul)
 {
     INT64 prod = 1;
@@ -7222,7 +7222,7 @@ void GeneralTimeConversion
     long Seconds,
     int iStartBase,
     int iEndBase,
-    BOOL bSingleTerm, 
+    BOOL bSingleTerm,
     BOOL bNames
 )
 {
@@ -7313,12 +7313,12 @@ const char *time_format_1(int Seconds)
     //
     int Days = Seconds / 86400;
     Seconds -= Days * 86400;
-    
+
     int Hours = Seconds / 3600;
     Seconds -= Hours * 3600;
-    
+
     int Minutes = Seconds / 60;
-    
+
     if (Days > 0)
     {
         sprintf(TimeBuffer64, "%dd %02d:%02d", Days, Hours, Minutes);
@@ -7712,7 +7712,7 @@ FUNCTION(fun_art)
 
     while (arRule != NULL)
     {
-        regexp* reRuleRegexp = (regexp *) arRule->m_pRegexp; 
+        regexp* reRuleRegexp = (regexp *) arRule->m_pRegexp;
 
         if (regexec(reRuleRegexp, fargs[0]))
         {

@@ -1,11 +1,12 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.46 2001-11-17 07:23:44 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.47 2001-11-20 05:17:55 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
 // portions of the descriptor data structure are not used.
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -46,7 +47,7 @@ void make_portlist(dbref player, dbref target, char *buff, char **bufc)
 {
     DESC *d;
     int i = 0;
-    
+
     DESC_ITER_CONN(d) {
         if (d->player == target) {
             safe_str(tprintf("%d ", d->descriptor), buff, bufc);
@@ -66,13 +67,13 @@ void make_portlist(dbref player, dbref target, char *buff, char **bufc)
 CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& ltaLast, const CLinearTimeAbsolute& ltaCurrent)
 {
     if (ltaCurrent < ltaLast) return ltaCurrent;
-    
+
     CLinearTimeDelta ltdDiff = ltaCurrent - ltaLast;
     CLinearTimeDelta ltdTimeSlice;
     ltdTimeSlice.SetMilliseconds(mudconf.timeslice);
     int nSlices = ltdDiff / ltdTimeSlice;
     int nExtraQuota = mudconf.cmd_quota_incr * nSlices;
-    
+
     if (nExtraQuota > 0)
     {
         DESC *d;
@@ -90,10 +91,10 @@ CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& ltaLast, const CLin
 void raw_notify_html(dbref player, const char *msg)
 {
     DESC *d;
-    
+
     if (!msg || !*msg)
         return;
-    
+
     if (mudstate.inpipe && (player == mudstate.poutobj))
     {
         safe_str(msg, mudstate.poutnew, &mudstate.poutbufc);
@@ -101,7 +102,7 @@ void raw_notify_html(dbref player, const char *msg)
     }
     if (!Connected(player))
         return;
-    
+
     DESC_ITER_PLAYER(player, d)
     {
         queue_string(d, msg);
@@ -116,20 +117,20 @@ void raw_notify_html(dbref player, const char *msg)
 void raw_notify(dbref player, const char *msg)
 {
     DESC *d;
-    
+
     if (!msg || !*msg)
         return;
-    
+
     if (mudstate.inpipe && (player == mudstate.poutobj))
     {
         safe_str(msg, mudstate.poutnew, &mudstate.poutbufc);
         safe_str("\r\n", mudstate.poutnew, &mudstate.poutbufc);
         return;
     }
-    
+
     if (!Connected(player))
         return;
-    
+
     DESC_ITER_PLAYER(player, d)
     {
         queue_string(d, msg);
@@ -140,7 +141,7 @@ void raw_notify(dbref player, const char *msg)
 void raw_notify_newline(dbref player)
 {
     DESC *d;
-    
+
     if (mudstate.inpipe && (player == mudstate.poutobj))
     {
         safe_str("\r\n", mudstate.poutnew, &mudstate.poutbufc);
@@ -148,7 +149,7 @@ void raw_notify_newline(dbref player)
     }
     if (!Connected(player))
         return;
-    
+
     DESC_ITER_PLAYER(player, d)
     {
         queue_write(d, "\r\n", 2);
@@ -207,7 +208,7 @@ void add_to_output_queue(DESC *d, const char *b, int n)
 {
     TBLOCK *tp;
     int left;
-    
+
     // Allocate an output buffer if needed.
     //
     if (d->output_head == NULL)
@@ -225,7 +226,7 @@ void add_to_output_queue(DESC *d, const char *b, int n)
     {
         tp = d->output_tail;
     }
-    
+
     // Now tp points to the last buffer in the chain.
     //
     do {
@@ -275,13 +276,13 @@ void queue_write(DESC *d, const char *b, int n)
     TBLOCK *tp;
     char *buf;
     int left;
-    
+
     if (n <= 0)
         return;
-    
+
     if (d->output_size + n > mudconf.output_limit)
         process_output(d, FALSE);
-    
+
     left = mudconf.output_limit - d->output_size - n;
     if (left < 0)
     {
@@ -312,11 +313,11 @@ void queue_write(DESC *d, const char *b, int n)
             tp = NULL;
         }
     }
-    
+
     add_to_output_queue(d, b, n);
     d->output_size += n;
     d->output_tot += n;
-    
+
 #ifdef WIN32
     if (platform == VER_PLATFORM_WIN32_NT && !(d->bWritePending) && !(d->bConnectionDropped))
     {
@@ -328,7 +329,7 @@ void queue_write(DESC *d, const char *b, int n)
 void queue_string(DESC *d, const char *s)
 {
     char *new0;
-    
+
     if (!Ansi(d->player) && strchr(s, ESC_CHAR))
         new0 = strip_ansi(s);
     else if (NoBleed(d->player))
@@ -342,7 +343,7 @@ void freeqs(DESC *d)
 {
     TBLOCK *tb, *tnext;
     CBLK *cb, *cnext;
-    
+
     tb = d->output_head;
     while (tb)
     {
@@ -352,7 +353,7 @@ void freeqs(DESC *d)
     }
     d->output_head = NULL;
     d->output_tail = NULL;
-    
+
     cb = d->input_head;
     while (cb)
     {
@@ -360,10 +361,10 @@ void freeqs(DESC *d)
         free_lbuf(cb);
         cb = cnext;
     }
-    
+
     d->input_head = NULL;
     d->input_tail = NULL;
-    
+
     if (d->raw_input)
         free_lbuf(d->raw_input);
     d->raw_input = NULL;
@@ -379,7 +380,7 @@ void desc_addhash(DESC *d)
 {
     dbref player;
     DESC *hdesc;
-    
+
     player = d->player;
     hdesc = (DESC *)hashfindLEN(&player, sizeof(player), &mudstate.desc_htab);
     if (hdesc == NULL)
@@ -403,7 +404,7 @@ static void desc_delhash(DESC *d)
 {
     DESC *hdesc, *last;
     dbref player;
-    
+
     player = d->player;
     last = NULL;
     hdesc = (DESC *)hashfindLEN(&player, sizeof(player), &mudstate.desc_htab);
@@ -444,12 +445,11 @@ void welcome_user(DESC *d)
 
 void save_command(DESC *d, CBLK *command)
 {
-    
     command->hdr.nxt = NULL;
     if (d->input_tail == NULL)
     {
         d->input_head = command;
-        
+
         // We have added our first command to an empty list. Go process it later.
         //
         scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
@@ -487,7 +487,7 @@ static void set_userstring(char **userstring, const char *command)
 static void parse_connect(const char *msg, char *command, char *user, char *pass)
 {
     char *p;
-    
+
     if (strlen(msg) > MBUF_SIZE)
     {
         *command = '\0';
@@ -570,19 +570,19 @@ static void announce_connect(dbref player, DESC *d)
 {
     dbref loc, aowner, temp;
     dbref zone, obj;
-    
+
     int aflags, num, key, count;
     char *time_str;
     DESC *dtemp;
-    
+
     desc_addhash(d);
-    
+
     count = 0;
     DESC_ITER_CONN(dtemp)
     {
         count++;
     }
-    
+
     if (mudstate.record_players < count)
     {
         mudstate.record_players = count;
@@ -599,15 +599,15 @@ static void announce_connect(dbref player, DESC *d)
             d->timeout = mudconf.idle_timeout;
         }
     }
-    
+
     loc = Location(player);
     s_Connected(player);
-    
+
     if (d->flags & DS_PUEBLOCLIENT)
     {
         s_Html(player);
     }
-    
+
     raw_notify( player, tprintf("\n%sMOTD:%s %s\n", ANSI_HILITE,
                 ANSI_NORMAL, mudconf.motd_msg));
 
@@ -631,11 +631,11 @@ static void announce_connect(dbref player, DESC *d)
     {
         num++;
     }
-    
+
     // Reset vacation flag.
     //
     s_Flags2(player, Flags2(player) & ~VACATION);
-    
+
     char *pRoomAnnounceFmt;
     char *pMonitorAnnounceFmt;
     if (num < 2)
@@ -650,7 +650,7 @@ static void announce_connect(dbref player, DESC *d)
             pMonitorAnnounceFmt = "GAME: %s has DARK-connected.";
         }
         else
-        { 
+        {
             pMonitorAnnounceFmt = "GAME: %s has connected.";
         }
     }
@@ -661,7 +661,7 @@ static void announce_connect(dbref player, DESC *d)
     }
     sprintf(buf, pRoomAnnounceFmt, Name(player));
     raw_broadcast(MONITOR, pMonitorAnnounceFmt, Name(player));
-    
+
     key = MSG_INV;
     if (  loc != NOTHING
        && !(  Dark(player)
@@ -669,7 +669,7 @@ static void announce_connect(dbref player, DESC *d)
     {
         key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
     }
-    
+
     temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
     notify_check(player, player, buf, key);
@@ -752,7 +752,7 @@ static void announce_connect(dbref player, DESC *d)
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
     time_str = ltaNow.ReturnDateString();
-    
+
     record_login(player, 1, time_str, d->addr, d->username,
         inet_ntoa((d->address).sin_addr));
     look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
@@ -765,7 +765,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
     int num, aflags, key;
     DESC *dtemp;
     char *argv[1];
-    
+
     if (Suspect(player))
     {
         raw_broadcast(WIZARD, "[Suspect] %s has disconnected.", Name(player));
@@ -778,14 +778,14 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
     loc = Location(player);
     num = 0;
     DESC_ITER_PLAYER(player, dtemp) num++;
-    
+
     temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
-    
+
     if (num < 2)
     {
         char *buf = alloc_lbuf("announce_disconnect.only");
-        
+
         sprintf(buf, "%s has disconnected.", Name(player));
         key = MSG_INV;
         if ((loc != NOTHING) && !(Dark(player) && Wizard(player)))
@@ -793,21 +793,21 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
         notify_check(player, player, buf, key);
-        
+
         if (mudconf.have_mailer)
         {
             do_mail_purge(player);
         }
-        
+
         raw_broadcast(MONITOR, "GAME: %s has disconnected.", Name(player));
-       
+
         c_Connected(player);
 
         if (mudconf.have_comsys)
         {
             do_comdisconnect(player);
         }
-       
+
         int nLen;
         argv[0] = (char *)reason;
         CLinearTimeAbsolute lta;
@@ -854,7 +854,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                         (char **)NULL, 0, NULL);
                 }
                 break;
-                
+
             case TYPE_ROOM:
 
                 // check every object in the room for a connect action.
@@ -882,10 +882,10 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             s_Flags(d->player, Flags(d->player) & ~DARK);
             d->flags &= ~DS_AUTODARK;
         }
-        
+
         if (Guest(player))
         {
-            s_Flags(player, Flags(player) | DARK);  
+            s_Flags(player, Flags(player) | DARK);
         }
     }
     else
@@ -902,7 +902,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             Name(player));
         free_mbuf(mbuf);
     }
-    
+
     mudstate.curr_enactor = temp;
     desc_delhash(d);
 }
@@ -911,7 +911,7 @@ int boot_off(dbref player, char *message)
 {
     DESC *d, *dnext;
     int count;
-    
+
     count = 0;
     DESC_SAFEITER_PLAYER(player, d, dnext)
     {
@@ -930,7 +930,7 @@ int boot_by_port(SOCKET port, int no_god, char *message)
 {
     DESC *d, *dnext;
     int count;
-    
+
     count = 0;
     DESC_SAFEITER_ALL(d, dnext)
     {
@@ -959,7 +959,7 @@ void desc_reload(dbref player)
     char *buf;
     dbref aowner;
     FLAG aflags;
-    
+
     DESC_ITER_PLAYER(player, d) {
         buf = atr_pget(player, A_TIMEOUT, &aowner, &aflags);
         if (buf) {
@@ -996,7 +996,7 @@ int fetch_idle(dbref target)
     CLinearTimeAbsolute ltaNow;
     CLinearTimeAbsolute ltaNewestLastTime;
     ltaNow.GetUTC();
-    
+
     DESC *d;
     BOOL bFound = FALSE;
     DESC_ITER_PLAYER(target, d)
@@ -1030,7 +1030,7 @@ void find_oldest(dbref target, DESC *dOldest[2])
 {
     dOldest[0] = NULL;
     dOldest[1] = NULL;
-    
+
     DESC *d;
     BOOL bFound = FALSE;
     DESC_ITER_PLAYER(target, d)
@@ -1073,10 +1073,10 @@ int fetch_connect(dbref target)
 void check_idle(void)
 {
     DESC *d, *dnext;
-    
+
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
-    
+
     DESC_SAFEITER_ALL(d, dnext)
     {
         if (d->flags & DS_CONNECTED)
@@ -1086,7 +1086,7 @@ void check_idle(void)
             {
                 queue_string(d, "*** Inactivity Timeout ***\r\n");
                 shutdownsock(d, R_TIMEOUT);
-            } 
+            }
             else if (  mudconf.idle_wiz_dark
                 && (ltdIdle.ReturnSeconds() > mudconf.idle_timeout)
                 && Can_Idle(d->player) && !Dark(d->player))
@@ -1111,16 +1111,16 @@ void check_events(void)
 {
     dbref thing, parent;
     int lev;
-    
+
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
-    
+
     FIELDEDTIME ft;
     if (!ltaNow.ReturnFields(&ft))
     {
         return;
     }
-    
+
     // Resetting every midnight.
     //
     static int iLastHourChecked = 25;
@@ -1137,7 +1137,7 @@ void check_events(void)
         {
             if (Going(thing))
                 continue;
-            
+
             ITER_PARENTS(thing, parent, lev)
             {
                 if (Flags2(thing) & HAS_DAILY)
@@ -1148,7 +1148,7 @@ void check_events(void)
             }
         }
     }
-   
+
 }
 
 #define MAX_TRIMMED_NAME_LENGTH 16
@@ -1172,7 +1172,7 @@ static char *trimmed_name(dbref player)
 static char *trimmed_site(char *szName)
 {
     static char buff[MBUF_SIZE];
-    
+
     unsigned int nLen = strlen(szName);
     if (  mudconf.site_chars <= 0
        || nLen <= mudconf.site_chars)
@@ -1195,7 +1195,7 @@ static void dump_users(DESC *e, char *match, int key)
     int count;
     char *buf, *fp, *sp, flist[4], slist[4];
     dbref room_it;
-    
+
     if (match)
     {
         while (Tiny_IsSpace[(unsigned char)*match])
@@ -1204,10 +1204,10 @@ static void dump_users(DESC *e, char *match, int key)
         if (!*match)
             match = NULL;
     }
-    
+
     if (e->flags & DS_PUEBLOCLIENT)
         queue_string(e, "<pre>");
-    
+
     buf = alloc_mbuf("dump_users");
     if (key == CMD_SESSION)
     {
@@ -1223,7 +1223,7 @@ static void dump_users(DESC *e, char *match, int key)
     {
         queue_string(e, "  Room    Cmds   Host\r\n");
     }
-    else 
+    else
     {
         if (Wizard_Who(e->player))
             queue_string(e, "  ");
@@ -1233,22 +1233,29 @@ static void dump_users(DESC *e, char *match, int key)
         queue_string(e, "\r\n");
     }
     count = 0;
-    
+
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
-    
+
     DESC_ITER_CONN(d)
     {
         if (!Hidden(d->player) || (e->flags & DS_CONNECTED) & Wizard_Who(e->player))
         {
             count++;
             if (match && !(string_prefix(Name(d->player), match)))
+            {
                 continue;
-            if ((key == CMD_SESSION) && !(Wizard_Who(e->player) && (e->flags & DS_CONNECTED)) && (d->player != e->player))
+            }
+            if (  key == CMD_SESSION
+               && !(  Wizard_Who(e->player)
+                  && (e->flags & DS_CONNECTED))
+               && d->player != e->player)
+            {
                 continue;
+            }
 
             // Get choice flags for wizards.
-            //            
+            //
             fp = flist;
             sp = slist;
             if ((e->flags & DS_CONNECTED) && Wizard_Who(e->player))
@@ -1277,7 +1284,7 @@ static void dump_users(DESC *e, char *match, int key)
                         *fp++ = 'u';
                     }
                 }
-                
+
                 if (Suspect(d->player))
                     *fp++ = '+';
                 if (d->host_info & H_FORBIDDEN)
@@ -1291,7 +1298,7 @@ static void dump_users(DESC *e, char *match, int key)
             }
             *fp = '\0';
             *sp = '\0';
-            
+
             CLinearTimeDelta ltdConnected = ltaNow - d->connected_at;
             CLinearTimeDelta ltdLastTime  = ltaNow - d->last_time;
             if ((e->flags & DS_CONNECTED) && Wizard_Who(e->player) && (key == CMD_WHO))
@@ -1337,19 +1344,17 @@ static void dump_users(DESC *e, char *match, int key)
             queue_string(e, buf);
         }
     }
-    
-    /*
-    * sometimes I like the ternary operator.... 
-    */
-    
+
+    // Sometimes I like the ternary operator.
+    //
     sprintf(buf, "%d Player%slogged in, %d record, %s maximum.\r\n", count,
         (count == 1) ? " " : "s ", mudstate.record_players,
         (mudconf.max_players == -1) ? "no" : Tiny_ltoa_t(mudconf.max_players));
     queue_string(e, buf);
-    
+
     if (e->flags & DS_PUEBLOCLIENT)
         queue_string(e, "</pre>");
-    
+
     free_mbuf(buf);
 }
 
@@ -1401,7 +1406,7 @@ char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, BOOL *pbValidDoing)
     {
         return NULL;
     }
-    
+
     // First, remove all '\r\n\t' from the string.
     //
     char *Buffer = RemoveSetOfCharacters(pDoing, "\r\n\t");
@@ -1443,7 +1448,7 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
             nValidDoing = 0;
         }
     }
-    
+
     if (key == DOING_MESSAGE)
     {
         int foundany = 0;
@@ -1476,7 +1481,7 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
         {
             strcpy(mudstate.doing_hdr, "Doing");
         }
-        else 
+        else
         {
             memcpy(mudstate.doing_hdr, szValidDoing, nValidDoing+1);
         }
@@ -1508,13 +1513,10 @@ NAMETAB logout_cmdtable[] =
 void NDECL(init_logout_cmdtab)
 {
     NAMETAB *cp;
-    
-    /*
-    * Make the htab bigger than the number of entries so that we find
-    * things on the first check.  Remember that the admin can add
-    * aliases. 
-    */
-    
+
+    // Make the htab bigger than the number of entries so that we find things
+    // on the first check.  Remember that the admin can add aliases.
+    //
     for (cp = logout_cmdtable; cp->flag; cp++)
     {
         hashaddLEN(cp->name, strlen(cp->name), (int *)cp, &mudstate.logout_cmd_htab);
@@ -1527,7 +1529,7 @@ static void failconn(const char *logcode, const char *logtype, const char *logre
                      char *user, char *password, char *cmdsave)
 {
     char *buff;
-    
+
     STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, "RJCT");
     buff = alloc_mbuf("failconn.LOG");
     sprintf(buff, "[%d/%s] %s rejected to ", d->descriptor, d->addr, logtype);
@@ -1565,21 +1567,21 @@ static int check_connect(DESC *d, char *msg)
     int aflags, nplayers;
     DESC *d2;
     char *p;
-    
+
     cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< check_connect >";
-    
+
     // Hide the password length from SESSION.
-    //    
+    //
     d->input_tot -= (strlen(msg) + 1);
-    
+
     // Crack the command apart.
-    //    
+    //
     command = alloc_lbuf("check_conn.cmd");
     user = alloc_lbuf("check_conn.user");
     password = alloc_lbuf("check_conn.pass");
     parse_connect(msg, command, user, password);
-    
+
     // At this point, command, user, and password are all less than
     // MBUF_SIZE.
     //
@@ -1620,7 +1622,7 @@ static int check_connect(DESC *d, char *msg)
                 StringCopy(password, mudconf.guest_prefix);
             }
         }
-        
+
         // See if this connection would exceed the max #players.
         //
         if (mudconf.max_players < 0)
@@ -1635,12 +1637,12 @@ static int check_connect(DESC *d, char *msg)
                 nplayers++;
             }
         }
-        
+
         player = connect_player(user, password, d->addr, d->username, inet_ntoa((d->address).sin_addr));
         if (player == NOTHING)
         {
             // Not a player, or wrong password.
-            //            
+            //
             queue_string(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
@@ -1668,7 +1670,7 @@ static int check_connect(DESC *d, char *msg)
             {
                 s_Flags(player, Flags(player) | DARK);
             }
-            
+
             // Make sure we don't have a guest from an unwanted host.
             // The majority of these are handled above.
             //
@@ -1707,10 +1709,10 @@ static int check_connect(DESC *d, char *msg)
             d->flags |= DS_CONNECTED;
             d->connected_at.GetUTC();
             d->player = player;
-            
+
             // Check to see if the player is currently running an
             // @program. If so, drop the new descriptor into it.
-            //           
+            //
             DESC_ITER_PLAYER(player, d2)
             {
                 if (d2->program_data != NULL)
@@ -1719,11 +1721,11 @@ static int check_connect(DESC *d, char *msg)
                     break;
                 }
             }
-            
+
             // Give the player the MOTD file and the settable MOTD
             // message(s). Use raw notifies so the player doesn't try
             // to match on the text.
-            //            
+            //
             if (Guest(player))
             {
                 fcache_dump(d, FC_CONN_GUEST);
@@ -1740,14 +1742,14 @@ static int check_connect(DESC *d, char *msg)
                 free_lbuf(buff);
             }
             announce_connect(player, d);
-            
+
             // If stuck in an @prog, show the prompt.
-            //            
+            //
             if (d->program_data != NULL)
             {
                 queue_string(d, ">\377\371");
             }
-            
+
         }
         else if (!(mudconf.control_flags & CF_LOGIN))
         {
@@ -1765,7 +1767,7 @@ static int check_connect(DESC *d, char *msg)
     else if (!strncmp(command, "cr", 2))
     {
         // Enforce game down.
-        //        
+        //
         if (!(mudconf.control_flags & CF_LOGIN))
         {
             failconn("CRE", "Create", "Logins Disabled", d, R_GAMEDOWN, NOTHING, FC_CONN_DOWN,
@@ -1774,7 +1776,7 @@ static int check_connect(DESC *d, char *msg)
         }
 
         // Enforce max #players.
-        //        
+        //
         if (mudconf.max_players < 0)
         {
             nplayers = mudconf.max_players;
@@ -1790,7 +1792,7 @@ static int check_connect(DESC *d, char *msg)
         if (nplayers > mudconf.max_players)
         {
             // Too many players on, reject the attempt.
-            //            
+            //
             failconn("CRE", "Create", "Game Full", d,
                 R_GAMEFULL, NOTHING, FC_CONN_FULL,
                 mudconf.fullmotd_msg, command, user, password,
@@ -1846,7 +1848,7 @@ static int check_connect(DESC *d, char *msg)
     free_lbuf(command);
     free_lbuf(user);
     free_lbuf(password);
-    
+
     mudstate.debug_cmd = cmdsave;
     return 1;
 }
@@ -1855,26 +1857,26 @@ int do_command(DESC *d, char *command, int first)
 {
     char *arg, *cmdsave;
     NAMETAB *cp;
-    
+
     cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< do_command >";
     d->last_time = mudstate.now;
-    
-    /*
-    * Split off the command from the arguments 
-    */
-    
+
+    // Split off the command from the arguments.
+    //
     arg = command;
     while (*arg && !Tiny_IsSpace[(unsigned char)*arg])
+    {
         arg++;
+    }
 
     if (*arg)
     {
         *arg++ = '\0';
     }
-    
+
     // Look up the command.  If we don't find it, turn it over to the normal
-    // logged-in command processor or to create/connect 
+    // logged-in command processor or to create/connect.
     //
     cp = NULL;
     if (!(d->flags & DS_CONNECTED))
@@ -1947,7 +1949,7 @@ int do_command(DESC *d, char *command, int first)
     // The command was in the logged-out command table. Perform
     // prefix and suffix processing, and invoke the command
     // handler.
-    //    
+    //
     d->command_count++;
     if (!(cp->flag & CMD_NOxFIX))
     {
@@ -2052,7 +2054,7 @@ void logged_out1(dbref player, dbref cause, int key, char *arg)
 {
     CLinearTimeAbsolute lsaNow;
     lsaNow.GetUTC();
-    
+
     DESC *d;
     DESC_ITER_PLAYER(player, d)
     {
@@ -2167,7 +2169,7 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
 int site_check(struct in_addr host, SITE *site_list)
 {
     SITE *this0;
-    
+
     for (this0 = site_list; this0; this0 = this0->next)
     {
         if ((host.s_addr & this0->mask.s_addr) == this0->address.s_addr)
@@ -2187,7 +2189,7 @@ int site_check(struct in_addr host, SITE *site_list)
 static const char *stat_string(int strtype, int flag)
 {
     const char *str;
-    
+
     switch (strtype)
     {
     case S_SUSPECT:
@@ -2229,7 +2231,7 @@ static void list_sites(dbref player, SITE *site_list, const char *header_txt, in
 {
     char *buff, *buff1, *str;
     SITE *this0;
-    
+
     buff = alloc_mbuf("list_sites.buff");
     buff1 = alloc_sbuf("list_sites.addr");
     sprintf(buff, "----- %s -----", header_txt);
@@ -2292,7 +2294,7 @@ dbref find_connected_name(dbref player, char *name)
 {
     DESC *d;
     dbref found;
-    
+
     found = NOTHING;
     DESC_ITER_CONN(d)
     {

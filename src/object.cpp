@@ -1,7 +1,8 @@
-// object.cpp - low-level object manipulation routines.
+// object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.21 2001-10-06 20:34:58 sdennis Exp $
+// $Id: object.cpp,v 1.22 2001-11-20 05:17:56 sdennis Exp $
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
