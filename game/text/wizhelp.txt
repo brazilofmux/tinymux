@@ -2772,10 +2772,15 @@ PERMISSIONS
   Access to many MUX features is controlled by a set of permissions, which
   can usually be changed via the configuration file or the @admin command.
 
-  In the following, 'WIZARD' means the WIZARD flag, but 'Wizard' means
-  Wizard-level authority. The latter can be achieved by being set WIZARD, or
-  set INHERIT with an owner that is set WIZARD, and of course #1 is always set
-  WIZARD.
+  There are three different senses of Wizard:
+
+    1) 'WIZARD' means the WIZARD flag,
+    2) 'Wizard' means Wizard-level authority which can be achieved either by
+       being set WIZARD or by inheriting that authority from a WIZARD-owned
+       object with the INHERIT flag, and
+    3) Wizard(#1) who is always set WIZARD and has other special priviledges.
+
+  The follow uses two of those senses: 'Wizard' and Wizard(#1).
 
   This is a list of the valid permissions and their meanings:
 
