@@ -1417,38 +1417,38 @@ CONFIG PARAMETERS
   fork_vfork  full_file  full_motd_message function_access
   function_invocation_limit  function_recursion_limit  game_dir_file
   game_page_file  good_name  guest_char_num  guest_file  guest_nuker
-  guest_prefix  guests_channel  have_comsys  have_macros  have_mailer
-  have_zones  help_file  help_index  hostnames  idle_interval  idle_timeout
-  idle_wiz_dark  include  indent_desc  initial_size  input_database
-  kill_guarantee_cost  kill_max_cost  kill_min_cost  list_access  link_cost
-  lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
+  guest_prefix  guest_site  guests_channel  have_comsys  have_macros
+  have_mailer  have_zones  help_file  help_index  hostnames  idle_interval
+  idle_timeout  idle_wiz_dark  include  indent_desc  initial_size
+  input_database  kill_guarantee_cost  kill_max_cost  kill_min_cost
 
 { 'wizhelp config parameters2' for more }
 
 & CONFIG PARAMETERS2
 CONFIG PARAMETERS (continued)
 
-  look_obey_terse  machine_command_cost  mail_database  mail_expiration
-  master_room  match_own_commands  max_cache_size  max_players
-  money_name_plural  money_name_singular  motd_file  motd_message  mud_name
-  news_file  news_index  newuser_file  notify_recursion_limit  open_cost
-  output_database  output_limit  page_cost  paranoid_allocate
-  parent_recursion_limit  paycheck  pemit_any_object  pemit_far_players
-  permit_site  player_flags  player_listen  player_match_own_commands
-  player_queue_limit  player_quota  player_starting_home  player_starting_room
-  plushelp_file  plushelp_index  port  postdump_message  public_channel
-  public_flags  queue_active_chunk  queue_idle_chunk  quiet_look
-  quiet_whisper  quit_file  quotas  read_remote_desc  read_remote_name
-  register_create_file  register_site  retry_limit  robot_cost  robot_flags
-  robot_speech  room_flags  room_quota  sacrifice_adjust  sacrifice_factor
-  search_cost  see_owned_dark  signal_action  site_chars  space_compress
-  stack_limit  starting_money  starting_quota  suspect_site  sweep_dark
-  switch_default_all  terse_shows_contents  terse_shows_exits
-  terse_shows_move_messages  thing_flags  thing_quota  timeslice
-  trace_output_limit  trace_topdown  trust_site  uncompress_program
-  unowned_safe  use_http  user_attr_flags  wait_cost  wizard_help_file
-  wizard_help_index  wizard_motd_file  wizard_motd_message
-  wiznews_file  wiznews_index  zone_recursion_limit
+  list_access  link_cost  lock_recursion_limit  log  log_options
+  logout_cmd_access  logout_cmd_alias  look_obey_terse  machine_command_cost
+  mail_database  mail_expiration  master_room  match_own_commands
+  max_cache_size  max_players  money_name_plural  money_name_singular
+  motd_file  motd_message  mud_name  news_file  news_index  newuser_file
+  notify_recursion_limit  open_cost  output_database  output_limit  page_cost
+  paranoid_allocate  parent_recursion_limit  paycheck  pemit_any_object
+  pemit_far_players  permit_site  player_flags  player_listen
+  player_match_own_commands  player_queue_limit  player_quota
+  player_starting_home  player_starting_room  plushelp_file  plushelp_index
+  port  postdump_message  public_channel  public_flags  queue_active_chunk
+  queue_idle_chunk  quiet_look  quiet_whisper  quit_file  quotas
+  read_remote_desc  read_remote_name  register_create_file  register_site
+  retry_limit  robot_cost  robot_flags  robot_speech  room_flags  room_quota
+  sacrifice_adjust  sacrifice_factor  search_cost  see_owned_dark
+  signal_action  site_chars  space_compress  stack_limit  starting_money
+  starting_quota  suspect_site  sweep_dark  switch_default_all
+  terse_shows_contents  terse_shows_exits  terse_shows_move_messages
+  thing_flags  thing_quota  timeslice  trace_output_limit  trace_topdown
+  trust_site  uncompress_program  unowned_safe  use_http  user_attr_flags
+  wait_cost  wizard_help_file  wizard_help_index  wizard_motd_file
+  wizard_motd_message  wiznews_file  wiznews_index  zone_recursion_limit
 
 & CONFIG_ACCESS
 CONFIG_ACCESS
