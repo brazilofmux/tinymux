@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.3 2002-06-04 00:47:27 sdennis Exp $
+// $Id: funceval.cpp,v 1.4 2002-06-05 06:49:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -171,14 +171,14 @@ FUNCTION(fun_link)
 {
     if (check_command(executor, "@link", buff, bufc))
         return;
-    do_link(executor, CALLERQQQ, enactor, 0, 2, fargs[0], fargs[1]);
+    do_link(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
 }
 
 FUNCTION(fun_tel)
 {
     if (check_command(executor, "@teleport", buff, bufc))
         return;
-    do_teleport(executor, CALLERQQQ, enactor, 0, 2, fargs[0], fargs[1]);
+    do_teleport(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
 }
 
 FUNCTION(fun_pemit)
@@ -205,7 +205,7 @@ FUNCTION(fun_emit)
     {
         return;
     }
-    do_say(executor, CALLERQQQ, executor, SAY_EMIT, fargs[0]);
+    do_say(executor, caller, enactor, SAY_EMIT, fargs[0]);
 }
 
 FUNCTION(fun_remit)
@@ -671,7 +671,7 @@ FUNCTION(fun_objeval)
     char *name = alloc_lbuf("fun_objeval");
     char *bp = name;
     char *str = fargs[0];
-    TinyExec(name, &bp, executor, CALLERQQQ, enactor,
+    TinyExec(name, &bp, executor, caller, enactor,
              EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
     dbref obj = match_thing(executor, name);
@@ -687,7 +687,7 @@ FUNCTION(fun_objeval)
 
     mudstate.nObjEvalNest++;
     str = fargs[1];
-    TinyExec(buff, bufc, obj, CALLERQQQ, enactor,
+    TinyExec(buff, bufc, obj, executor, enactor,
              EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     free_lbuf(name);
     mudstate.nObjEvalNest--;
@@ -700,7 +700,7 @@ FUNCTION(fun_localize)
     save_global_regs("fun_localize", preserve, preserve_len);
 
     char *str = fargs[0];
-    TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
+    TinyExec(buff, bufc, executor, caller, enactor,
         EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
 
     restore_global_regs("fun_localize", preserve, preserve_len);
@@ -779,7 +779,7 @@ FUNCTION(fun_zfun)
         return;
     }
     char *str = tbuf1;
-    TinyExec(buff, bufc, zone, CALLERQQQ, executor,
+    TinyExec(buff, bufc, zone, caller, executor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, &(fargs[1]), nfargs - 1);
     free_lbuf(tbuf1);
 }
@@ -813,7 +813,7 @@ FUNCTION(fun_columns)
     char *cp = curr;
     char *bp = curr;
     char *str = fargs[0];
-    TinyExec(curr, &bp, executor, CALLERQQQ, enactor,
+    TinyExec(curr, &bp, executor, caller, enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
     cp = trim_space_sep(cp, sep);
@@ -1243,7 +1243,7 @@ FUNCTION(fun_ifelse)
     char *lbuff = alloc_lbuf("fun_ifelse");
     char *bp = lbuff;
     char *str = fargs[0];
-    TinyExec(lbuff, &bp, executor, CALLERQQQ, enactor,
+    TinyExec(lbuff, &bp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -1254,14 +1254,14 @@ FUNCTION(fun_ifelse)
         if (nfargs == 3)
         {
             str = fargs[2];
-            TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
+            TinyExec(buff, bufc, executor, caller, enactor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         }
     }
     else
     {
         str = fargs[1];
-        TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
+        TinyExec(buff, bufc, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     }
     free_lbuf(lbuff);
@@ -1534,7 +1534,7 @@ FUNCTION(fun_default)
 
     objname = bp = alloc_lbuf("fun_default");
     str = fargs[0];
-    TinyExec(objname, &bp, executor, CALLERQQQ, enactor,
+    TinyExec(objname, &bp, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -1568,7 +1568,7 @@ FUNCTION(fun_default)
     // we go and evaluate the default.
     //
     str = fargs[1];
-    TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
+    TinyExec(buff, bufc, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
 
@@ -1581,7 +1581,7 @@ FUNCTION(fun_edefault)
 
     objname = bp = alloc_lbuf("fun_edefault");
     str = fargs[0];
-    TinyExec(objname, &bp, executor, CALLERQQQ, enactor,
+    TinyExec(objname, &bp, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -1601,7 +1601,7 @@ FUNCTION(fun_edefault)
                    && check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
                 {
                     str = atr_gotten;
-                    TinyExec(buff, bufc, thing, CALLERQQQ, executor,
+                    TinyExec(buff, bufc, thing, executor, executor,
                              EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
                     free_lbuf(atr_gotten);
                     free_lbuf(objname);
@@ -1617,7 +1617,7 @@ FUNCTION(fun_edefault)
     // we go and evaluate the default.
     //
     str = fargs[1];
-    TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
+    TinyExec(buff, bufc, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
 
@@ -1630,7 +1630,7 @@ FUNCTION(fun_udefault)
 
     str = fargs[0];
     objname = bp = alloc_lbuf("fun_udefault");
-    TinyExec(objname, &bp, executor, CALLERQQQ, enactor,
+    TinyExec(objname, &bp, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -1654,7 +1654,7 @@ FUNCTION(fun_udefault)
                     check_read_perms(executor, thing, ap, aowner, aflags,
                              buff, bufc)) {
                     str = atext;
-                    TinyExec(buff, bufc, thing, CALLERQQQ, enactor,
+                    TinyExec(buff, bufc, thing, caller, enactor,
                              EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 1);
                     free_lbuf(atext);
                     free_lbuf(objname);
@@ -1670,7 +1670,7 @@ FUNCTION(fun_udefault)
     // go and evaluate the default.
     //
     str = fargs[1];
-    TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
+    TinyExec(buff, bufc, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
 
@@ -1927,9 +1927,10 @@ FUNCTION(fun_pickrand)
 
 // sortby() code borrowed from TinyMUSH 2.2
 //
-static char ucomp_buff[LBUF_SIZE];
+static char  ucomp_buff[LBUF_SIZE];
+static dbref ucomp_executor;
+static dbref ucomp_caller;
 static dbref ucomp_enactor;
-static dbref ucomp_player;
 
 static int u_comp(const void *s1, const void *s2)
 {
@@ -1949,7 +1950,7 @@ static int u_comp(const void *s1, const void *s2)
     strcpy(tbuf, ucomp_buff);
     result = bp = alloc_lbuf("u_comp");
     str = tbuf;
-    TinyExec(result, &bp, ucomp_player, CALLERQQQ, ucomp_enactor,
+    TinyExec(result, &bp, ucomp_executor, ucomp_caller, ucomp_enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(elems[0]), 2);
     *bp = '\0';
     if (!result)
@@ -2054,8 +2055,9 @@ FUNCTION(fun_sortby)
         return;
     }
     strcpy(ucomp_buff, atext);
-    ucomp_player = thing;
-    ucomp_enactor = enactor;
+    ucomp_executor = thing;
+    ucomp_caller   = executor;
+    ucomp_enactor  = enactor;
 
     list = alloc_lbuf("fun_sortby");
     strcpy(list, fargs[1]);
@@ -2254,7 +2256,7 @@ FUNCTION(fun_mix)
         os[1] = split_token(&cp2, sep);
         strcpy(atextbuf, atext);
         str = atextbuf;
-        TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
+        TinyExec(buff, bufc, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(os[0]), 2);
     }
     free_lbuf(atext);
@@ -2358,7 +2360,7 @@ FUNCTION(fun_foreach)
 
             strcpy(atextbuf, atext);
             str = atextbuf;
-            TinyExec(buff, bufc, thing, CALLERQQQ, executor,
+            TinyExec(buff, bufc, thing, caller, executor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
             prev = cbuf[0];
         }
@@ -2373,7 +2375,7 @@ FUNCTION(fun_foreach)
 
             strcpy(atextbuf, atext);
             str = atextbuf;
-            TinyExec(buff, bufc, thing, CALLERQQQ, executor,
+            TinyExec(buff, bufc, thing, caller, executor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
         }
     }
@@ -2449,7 +2451,7 @@ FUNCTION(fun_munge)
     //
     bp = rlist = alloc_lbuf("fun_munge");
     str = atext;
-    TinyExec(rlist, &bp, executor, CALLERQQQ, enactor,
+    TinyExec(rlist, &bp, executor, caller, enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &fargs[1], 1);
     *bp = '\0';
 
@@ -2508,7 +2510,7 @@ FUNCTION(fun_lrand)
 {
     char sep;
     if (!delim_check(fargs, nfargs, 4, &sep, buff, bufc, 0,
-        executor, CALLERQQQ, enactor, cargs, ncargs, 1))
+        executor, caller, enactor, cargs, ncargs, 1))
     {
         return;
     }
