@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.17 2001-09-18 05:22:26 sdennis Exp $
+// $Id: timeutil.cpp,v 1.18 2001-10-16 15:45:58 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1650,7 +1650,7 @@ Again:
         //
         if (nOffsetTable < MAX_OFFSETS)
         {
-            int nSize = sizeof(OffsetEntry)*(nOffsetTable-i-1);
+            size_t nSize = sizeof(OffsetEntry)*(nOffsetTable-i-1);
             memmove(OffsetTable+i+2, OffsetTable+i+1, nSize);
             nOffsetTable++;
             i++;
@@ -1678,6 +1678,10 @@ Again:
             int nSize = sizeof(OffsetEntry)*(nOffsetTable-iMinTouched-1);
             memmove(OffsetTable+iMinTouched, OffsetTable+iMinTouched+1, nSize);
             nOffsetTable--;
+            if (iMinTouched < i)
+            {
+                i--;
+            }
             goto Again;
         }
     }
@@ -1690,7 +1694,7 @@ static CLinearTimeDelta QueryLocalOffsetAt_Internal
     int iEntry
 )
 {
-    // At this point, we much use localtime() to discover what the
+    // At this point, we must use localtime() to discover what the
     // UTC to local time offset is for the requested UTC time.
     //
     // However, localtime() does not support times beyond around
