@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.50 2003-02-20 06:29:48 sdennis Exp $
+// $Id: stringutil.cpp,v 1.51 2003-03-10 01:30:04 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3334,7 +3334,7 @@ void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat)
         return;
     }
     int k;
-    for (k = 0; k < 128; k++)
+    for (k = 0; k < 256; k++)
     {
         bmhs->m_d[k] = nPat;
     }
@@ -3397,7 +3397,7 @@ void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
         return;
     }
     int k;
-    for (k = 0; k < 128; k++)
+    for (k = 0; k < 256; k++)
     {
         bmhs->m_d[k] = nPat;
     }
