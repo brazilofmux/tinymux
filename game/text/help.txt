@@ -5821,10 +5821,10 @@ FUNCTION CLASSES
   Floating Point Conversion: FLOOR ROUND TRUNC
   Game Information:          DUMPING MOTD MUDNAME POLL VERSION
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
-                             FOLD GRAB INDEX ITER LAST LNUM MAP MATCH MATCHALL
-                             MEMBER MIX MUNGE PARSE PICKRAND LRAND REMOVE REST
-                             REVWORDS SETDIFF SETINTER SETUNION SHUFFLE SORT
-                             SORTBY SPLICE TABLE WORDS
+                             FOLD GRAB INDEX INSERT ITER LAST LNUM MAP MATCH
+                             MATCHALL MEMBER MIX MUNGE PARSE PICKRAND LRAND
+                             REMOVE REST REVWORDS SETDIFF SETINTER SETUNION
+                             SHUFFLE SORT SORTBY SPLICE TABLE WORDS
   Logarithms:                E EXP LOG LN
   Logical:                   AND NOT OR XOR
   Miscellaneous:             @@ ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM
@@ -6367,6 +6367,7 @@ IADD()
 
   Related Topics: add(), dec(), idiv(), imul(), inc(), isub(), mod(),
             mul(), sub().
+
 & IDIV()
 IDIV()
 
