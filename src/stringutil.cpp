@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.59 2001-12-29 20:25:50 sdennis Exp $
+// $Id: stringutil.cpp,v 1.60 2002-01-25 11:37:07 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1585,18 +1585,15 @@ const char *string_match(const char *src, const char *sub)
  * * (mitch 1 feb 91)
  */
 
-char *replace_string(const char *old, const char *new0, const char *string)
+char *replace_string(const char *old, const char *new0, const char *s)
 {
-    char *result, *r, *s;
-    int olen;
-
-    if (!string)
+    if (!s)
     {
         return NULL;
     }
-    s = (char *)string;
-    olen = strlen(old);
-    r = result = alloc_lbuf("replace_string");
+    int olen = strlen(old);
+    char *result = alloc_lbuf("replace_string");
+    char *r = result;
     while (*s)
     {
         // Find next occurrence of the first character of OLD string.
@@ -1619,13 +1616,76 @@ char *replace_string(const char *old, const char *new0, const char *string)
             //
             if (!strncmp(old, s, olen))
             {
-                safe_str((char *)new0, result, &r);
+                safe_str(new0, result, &r);
                 s += olen;
             }
             else
             {
                 safe_chr(*s, result, &r);
                 s++;
+            }
+        }
+        else
+        {
+            // Finish copying source string. No matches. No further
+            // work to perform.
+            //
+            safe_str(s, result, &r);
+            break;
+        }
+    }
+    *r = '\0';
+    return result;
+}
+
+// ---------------------------------------------------------------------------
+// replace_tokens: Performs ## and #@ substitution.
+//
+char *replace_tokens(const char *s, const char *pBound, const char *pListPlace)
+{
+    if (!s)
+    {
+        return NULL;
+    }
+    char *result = alloc_lbuf("replace_tokens");
+    char *r = result;
+
+    while (*s)
+    {
+        // Find next '#'.
+        //
+        char *p = strchr(s, '#');
+        if (p)
+        {
+            // Copy up to the next occurrence of the first character.
+            //
+            int n = p - s;
+            if (n)
+            {
+                safe_copy_buf(s, n, result, &r);
+                s += n;
+            }
+
+            switch (s[1])
+            {
+            case '#':
+                // BOUND_VAR
+                //
+                safe_str(pBound, result, &r);
+                s += 2;
+                break;
+
+            case '@':
+                // LISTPLACE_VAR
+                //
+                safe_str(pListPlace, result, &r);
+                s += 2;
+                break;
+
+            default:
+                safe_chr(*s, result, &r);
+                s++;
+                break;
             }
         }
         else

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.128 2002-01-25 00:27:01 sdennis Exp $
+// $Id: functions.cpp,v 1.129 2002-01-25 11:37:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5281,8 +5281,6 @@ FUNCTION(fun_parse)
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
-        char *buff2, *buff3;
-
         if (!first)
         {
             print_sep(osep, buff, bufc);
@@ -5290,13 +5288,11 @@ FUNCTION(fun_parse)
         first = FALSE;
         number++;
         objstring = split_token(&cp, sep);
-        buff2 = replace_string(BOUND_VAR, objstring, fargs[1]);
-        buff3 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), buff2);
-        str = buff3;
+        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number));
+        str = buff2;
         TinyExec(buff, bufc, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
-        free_lbuf(buff3);
     }
     free_lbuf(curr);
 }
@@ -5328,8 +5324,6 @@ FUNCTION(fun_iter)
     while (cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
-        char *buff2, *buff3;
-
         if (!first)
         {
             print_sep(osep, buff, bufc);
@@ -5337,13 +5331,11 @@ FUNCTION(fun_iter)
         first = FALSE;
         number++;
         objstring = split_token(&cp, sep);
-        buff2 = replace_string(BOUND_VAR, objstring, fargs[1]);
-        buff3 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), buff2);
-        str = buff3;
+        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number));
+        str = buff2;
         TinyExec(buff, bufc, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
-        free_lbuf(buff3);
     }
     free_lbuf(curr);
 }
@@ -5367,19 +5359,15 @@ FUNCTION(fun_list)
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
-        char *buff2, *buff3;
-
         number++;
         objstring = split_token(&cp, sep);
-        buff2 = replace_string(BOUND_VAR, objstring, fargs[1]);
-        buff3 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), buff2);
+        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number));
         dp = result = alloc_lbuf("fun_list.2");
-        str = buff3;
+        str = buff2;
         TinyExec(result, &dp, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *dp = '\0';
         free_lbuf(buff2);
-        free_lbuf(buff3);
         notify(cause, result);
         free_lbuf(result);
     }

@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.17 2002-01-15 06:36:49 sdennis Exp $
+// $Id: walkdb.cpp,v 1.18 2002-01-25 11:37:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -20,15 +20,11 @@ static void bind_and_queue(dbref player, dbref cause, char *action,
                            char *argstr, char *cargs[], int ncargs,
                            int number)
 {
-    // Allocated by replace_string.
-    //
-    char *command = replace_string(BOUND_VAR, argstr, action);
-    char *command2 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), command);
+    char *command = replace_tokens(action, argstr, Tiny_ltoa_t(number));
     CLinearTimeAbsolute lta;
-    wait_que(player, cause, FALSE, lta, NOTHING, 0, command2, cargs,
+    wait_que(player, cause, FALSE, lta, NOTHING, 0, command, cargs,
         ncargs, mudstate.global_regs);
     free_lbuf(command);
-    free_lbuf(command2);
 }
 
 //
@@ -739,7 +735,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
 void search_perform(dbref player, dbref cause, SEARCH *parm)
 {
     POWER thing1powers, thing2powers;
-    char *buff, *buff2, *result, *bp, *str;
+    char *buff, *result, *bp, *str;
     int save_invk_ctr;
 
     buff = alloc_sbuf("search_perform.num");
@@ -833,7 +829,7 @@ void search_perform(dbref player, dbref cause, SEARCH *parm)
         {
             buff[0] = '#';
             Tiny_ltoa(thing, buff+1);
-            buff2 = replace_string(BOUND_VAR, buff, parm->s_rst_eval);
+            char *buff2 = replace_tokens(parm->s_rst_eval, buff, NULL);
             result = bp = alloc_lbuf("search_perform");
             str = buff2;
             TinyExec(result, &bp, 0, player, cause,

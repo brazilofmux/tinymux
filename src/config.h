@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.23 2001-12-30 06:32:01 sdennis Exp $
+// $Id: config.h,v 1.24 2002-01-25 11:37:28 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -57,14 +57,6 @@
 #define EXIT_DELIMITER  ';'
 #define ARG_DELIMITER   '='
 #define ARG_LIST_DELIM  ','
-
-/* These chars get replaced by the current item from a list in commands and
- * functions that do iterative replacement, such as @apply_marked, dolist,
- * the eval= operator for @search, and iter().
- */
-
-#define BOUND_VAR   "##"
-#define LISTPLACE_VAR   "#@"
 
 /* This token is used to denote a null output delimiter. */
 
