@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.16 2001-11-28 10:23:10 sdennis Exp $
+// $Id: flags.cpp,v 1.17 2001-11-28 10:45:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -331,6 +331,8 @@ FLAGNAMEENT gen_flag_names[] =
     {"ANSI",            TRUE, &fbeAnsi           },
     {"AUDIBLE",         TRUE, &fbeAudible        },
     {"AUDITORIUM",      TRUE, &fbeAuditorium     },
+    {"BLEED",          FALSE, &fbeNoBleed        },
+    {"COMMANDS",       FALSE, &fbeNoCommand      },
     {"CHOWN_OK",        TRUE, &fbeChownOk        },
     {"COMPRESS",        TRUE, &fbeCompress       },
     {"CONNECTED",       TRUE, &fbeConnected      },
@@ -369,6 +371,7 @@ FLAGNAMEENT gen_flag_names[] =
     {"ROYALTY",         TRUE, &fbeRoyalty        },
     {"SAFE",            TRUE, &fbeSafe           },
     {"SLAVE",           TRUE, &fbeSlave          },
+    {"SPOOF",          FALSE, &fbeNoSpoof        },
     {"STAFF",           TRUE, &fbeStaff          },
     {"STICKY",          TRUE, &fbeSticky         },
     {"SUSPECT",         TRUE, &fbeSuspect        },
@@ -583,7 +586,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
 
                 if (!fp->bPositive)
                 {
-                    negate = ~negate;
+                    negate = !negate;
                 }
 
                 // Invoke the flag handler, and print feedback.
