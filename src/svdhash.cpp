@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.12 2000-09-20 19:22:31 sdennis Exp $
+// $Id: svdhash.cpp,v 1.13 2000-09-20 19:28:51 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -1781,7 +1781,7 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, unsigned long nHash, void *pRecord
             return FALSE;
         }
 
-#if !defined(VMS) && !defined(WIN32)
+#if !defined(STANDALONE) && !defined(VMS) && !defined(WIN32)
         // First, if we are @dumping, then we have a @forked process
         // that is also reading from the file. We must pause and let
         // this reader process finish.
