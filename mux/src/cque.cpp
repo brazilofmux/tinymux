@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.15 2002-08-14 00:06:57 jake Exp $
+// $Id: cque.cpp,v 1.16 2002-09-26 16:20:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -754,6 +754,7 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
     tmp->sem = NOTHING;
     tmp->attr = 0;
     tmp->enactor = enactor;
+    tmp->caller = caller;
     tmp->nargs = nargs;
     return tmp;
 }
