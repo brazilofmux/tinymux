@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.50 2004-08-16 05:14:07 sdennis Exp $
+// $Id: db.cpp,v 1.51 2004-08-25 19:35:51 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1337,18 +1337,18 @@ static char *al_code(char *ap, int atrnum)
 bool Commer(dbref thing)
 {
     char *s, *as, c;
-    int attr, aflags;
+    int atr, aflags;
     dbref aowner;
     ATTR *ap;
 
     atr_push();
-    for (attr = atr_head(thing, &as); attr; attr = atr_next(&as))
+    for (atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
-        ap = atr_num(attr);
+        ap = atr_num(atr);
         if (!ap || (ap->flags & AF_NOPROG))
             continue;
 
-        s = atr_get(thing, attr, &aowner, &aflags);
+        s = atr_get(thing, atr, &aowner, &aflags);
         c = *s;
         free_lbuf(s);
         if ((c == '$') && !(aflags & AF_NOPROG))
@@ -2162,16 +2162,18 @@ void atr_free(dbref thing)
     db[thing].ahead = NULL;
     db[thing].at_count = 0;
 #else // MEMORY_BASED
-    int attr;
+    int atr;
     char *as;
     atr_push();
-    for (attr = atr_head(thing, &as); attr; attr = atr_next(&as))
+    for (atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
-        atr_clr(thing, attr);
+        atr_clr(thing, atr);
     }
     atr_pop();
     if (mudstate.mod_al_id == thing)
+    {
         al_store(); // remove from cache
+    }
     atr_clr(thing, A_LIST);
 #endif // MEMORY_BASED
 }
@@ -2182,24 +2184,25 @@ void atr_free(dbref thing)
 
 void atr_cpy(dbref dest, dbref source)
 {
-    int attr, aflags;
+    int atr, aflags;
     dbref aowner;
     char *as, *buf;
     ATTR *at;
 
     dbref owner = Owner(dest);
     atr_push();
-    for (attr = atr_head(source, &as); attr; attr = atr_next(&as))
+    for (atr = atr_head(source, &as); atr; atr = atr_next(&as))
     {
-        buf = atr_get(source, attr, &aowner, &aflags);
+        buf = atr_get(source, atr, &aowner, &aflags);
         if (!(aflags & AF_LOCK))
         {
             // Change owner.
             //
             aowner = owner;
         }
-        at = atr_num(attr);
-        if (attr && at)
+        at = atr_num(atr);
+        if (  atr
+           && at)
         {
             if (  !(at->flags & (AF_INTERNAL|AF_NOCLONE))
                && (  God(owner)
@@ -2213,7 +2216,7 @@ void atr_cpy(dbref dest, dbref source)
             {
                 // Only set attrs that owner has perm to set.
                 //
-                atr_add(dest, attr, buf, aowner, aflags);
+                atr_add(dest, atr, buf, aowner, aflags);
             }
         }
         free_lbuf(buf);
@@ -2228,17 +2231,20 @@ void atr_cpy(dbref dest, dbref source)
 
 void atr_chown(dbref obj)
 {
-    int attr, aflags;
+    int atr, aflags;
     dbref aowner;
     char *as, *buf;
 
     dbref owner = Owner(obj);
     atr_push();
-    for (attr = atr_head(obj, &as); attr; attr = atr_next(&as))
+    for (atr = atr_head(obj, &as); atr; atr = atr_next(&as))
     {
-        buf = atr_get(obj, attr, &aowner, &aflags);
-        if ((aowner != owner) && !(aflags & AF_LOCK))
-            atr_add(obj, attr, buf, owner, aflags);
+        buf = atr_get(obj, atr, &aowner, &aflags);
+        if (  aowner != owner
+           && !(aflags & AF_LOCK))
+        {
+            atr_add(obj, atr, buf, owner, aflags);
+        }
         free_lbuf(buf);
     }
     atr_pop();
