@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.24 2000-10-10 23:06:47 sdennis Exp $
+// $Id: command.cpp,v 1.25 2000-10-24 23:54:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1547,62 +1547,66 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
         succ += list_check(Contents(player), player, AMATCH_CMD, LowerCaseCommand, 1);
     }
 
-    // now do check on zones.
-    //
-    if ((!succ) && mudconf.have_zones &&
-        (Zone(Location(player)) != NOTHING))
+    if (  !succ
+       && mudconf.have_zones)
     {
-        if (Typeof(Zone(Location(player))) == TYPE_ROOM)
+        // now do check on zones.
+        //
+        dbref zone = Zone(player);
+        dbref loc = Location(player);
+        dbref zone_loc = NOTHING;
+        if (  Good_obj(loc)
+           && Good_obj(zone_loc = Zone(loc)))
         {
-            // zone of player's location is a parent room.
-            //
-            if (Location(player) != Zone(player))
+            if (isRoom(zone_loc))
             {
-                // check parent room exits.
+                // zone of player's location is a parent room.
                 //
-                init_match_check_keys(player, pCommand, TYPE_EXIT);
-                match_zone_exit();
-                exit = last_match_result();
-                if (exit != NOTHING)
+                if (loc != zone)
                 {
-                    move_exit(player, exit, 1, NULL, 0);
-                    mudstate.debug_cmd = cmdsave;
-                    return;
-                }
-                succ += list_check(Contents(Zone(Location(player))), player,
-                           AMATCH_CMD, LowerCaseCommand, 1);
+                    // check parent room exits.
+                    //
+                    init_match_check_keys(player, pCommand, TYPE_EXIT);
+                    match_zone_exit();
+                    exit = last_match_result();
+                    if (exit != NOTHING)
+                    {
+                        move_exit(player, exit, 1, NULL, 0);
+                        mudstate.debug_cmd = cmdsave;
+                        return;
+                    }
+                    succ += list_check(Contents(zone_loc), player,
+                               AMATCH_CMD, LowerCaseCommand, 1);
 
-                // end of parent room checks.
-                //
+                    // end of parent room checks.
+                    //
+                }
             }
-        }
-        else
-        {
-            // try matching commands on area zone object.
-            //
-            if (  (!succ)
-               && mudconf.have_zones
-               && (Zone(Location(player)) != NOTHING)
-               && (!(No_Command(Zone(Location(player))))))
+            else
             {
-               succ += atr_match(Zone(Location(player)), player, AMATCH_CMD, LowerCaseCommand, 1);
+                // try matching commands on area zone object.
+                //
+                if (!No_Command(zone_loc))
+                {
+                   succ += atr_match(zone_loc, player, AMATCH_CMD,
+                       LowerCaseCommand, 1);
+                }
             }
         }
-    }
-    
-    // End of matching on zone of player's location.
-    //
-    
-    // if nothing matched with parent room/zone object, try matching
-    // zone commands on the player's personal zone.
-    //
-    if (  (!succ)
-       && mudconf.have_zones
-       && (Zone(player) != NOTHING)
-       && (!(No_Command(Zone(player))))
-       && (Zone(Location(player)) != Zone(player)))
-    {
-        succ += atr_match(Zone(player), player, AMATCH_CMD, LowerCaseCommand, 1);
+
+        // End of matching on zone of player's location.
+        //
+
+        // if nothing matched with parent room/zone object, try matching
+        // zone commands on the player's personal zone.
+        //
+        if (  !succ
+           && Good_obj(zone)
+           && !No_Command(zone)
+           && zone_loc != zone)
+        {
+            succ += atr_match(zone, player, AMATCH_CMD, LowerCaseCommand, 1);
+        }
     }
 
     // If we didn't find anything, try in the master room.
