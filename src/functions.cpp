@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.60 2001-06-29 19:24:13 sdennis Exp $
+// $Id: functions.cpp,v 1.61 2001-06-30 20:27:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2405,6 +2405,25 @@ FUNCTION(fun_xor)
 FUNCTION(fun_not)
 {
     safe_ltoa(!xlate(fargs[0]), buff, bufc, LBUF_SIZE-1);
+}
+
+/*-------------------------------------------------------------------------
+ * List-based numeric functions.
+ */
+
+FUNCTION(fun_ladd)
+{
+    char sep;
+    varargs_preamble("LADD", 2);
+
+    double sum = 0.0;
+    char *cp = trim_space_sep(fargs[0], sep);
+    while (cp)
+    {
+        char *curr = split_token(&cp, sep);
+        sum += safe_atof(curr);
+    }
+    fval(buff, bufc, sum);
 }
 
 FUNCTION(fun_sqrt)
@@ -6477,6 +6496,7 @@ FUN flist[] =
     {"NOT",      fun_not,      1,  0,          CA_PUBLIC},
     {"NUM",      fun_num,      1,  0,          CA_PUBLIC},
     {"ITEMS",    fun_items,    0,  FN_VARARGS, CA_PUBLIC},
+    {"LADD",     fun_ladd,     0,  FN_VARARGS, CA_PUBLIC},
     {"OBJ",      fun_obj,      1,  0,          CA_PUBLIC},
     {"OBJEVAL",  fun_objeval,  2,  FN_NO_EVAL, CA_PUBLIC},
     {"OBJMEM",   fun_objmem,   1,  0,          CA_PUBLIC},
