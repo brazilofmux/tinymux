@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.28 2004-04-16 05:21:44 sdennis Exp $
+// $Id: mail.cpp,v 1.29 2004-04-29 05:01:22 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1842,6 +1842,12 @@ void do_expmail_start(dbref player, char *arg, char *subject)
         notify(player, "MAIL: Mail message already in progress.");
         return;
     }
+    if (  !Wizard(player)
+       && ThrottleMail(player))
+    {
+        notify(player, "MAIL: Too much @mail sent recently.");
+        return;
+    }
     char *tolist = make_numlist(player, arg, false);
     if (!tolist) 
     {
@@ -1874,6 +1880,12 @@ void do_mail_fwd(dbref player, char *msg, char *tolist)
     if (!tolist || !*tolist)
     {
         notify(player, "MAIL: To whom should I forward?");
+        return;
+    }
+    if (  !Wizard(player)
+       && ThrottleMail(player))
+    {
+        notify(player, "MAIL: Too much @mail sent recently.");
         return;
     }
     int num = mux_atol(msg);
@@ -1909,6 +1921,12 @@ void do_mail_reply(dbref player, char *msg, bool all, int key)
     if (!msg || !*msg)
     {
         notify(player, "MAIL: No message list.");
+        return;
+    }
+    if (  !Wizard(player)
+       && ThrottleMail(player))
+    {
+        notify(player, "MAIL: Too much @mail sent recently.");
         return;
     }
     int num = mux_atol(msg);
@@ -3721,6 +3739,12 @@ void do_mail_quick(dbref player, char *arg1, char *arg2)
     if (Flags2(player) & PLAYER_MAILS)
     {
         notify(player, "MAIL: Mail message already in progress.");
+        return;
+    }
+    if (  !Wizard(player)
+       && ThrottleMail(player))
+    {
+        notify(player, "MAIL: Too much @mail sent recently.");
         return;
     }
     char *buf = alloc_lbuf("do_mail_quick");

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.42 2004-04-28 14:20:19 sdennis Exp $
+// $Id: db.cpp,v 1.43 2004-04-29 05:01:22 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1152,6 +1152,44 @@ ATTR *atr_num(int anum)
     return  anum_get(anum);
 }
 
+void SetupThrottle(dbref executor)
+{
+    CLinearTimeDelta ltdHour;
+    ltdHour.SetSeconds(24*60*60);
+
+    db[executor].tThrottleExpired = mudstate.now + ltdHour;
+    s_ThAttrib(executor, mudconf.vattr_per_hour);
+    s_ThMail(executor, mudconf.mail_per_hour);
+}
+
+bool ThrottleAttributeNames(dbref executor)
+{
+    if (db[executor].tThrottleExpired <= mudstate.now)
+    {
+        SetupThrottle();
+    }
+    if (0 < ThAttrib(executor))
+    {
+        s_ThAttrib(executor, ThAttrib(executor)-1);
+        return false;
+    }
+    return true;
+}
+
+bool ThrottleMail(dbref executor)
+{
+    if (db[executor].tThrottleExpired <= mudstate.now)
+    {
+        SetupThrottle();
+    }
+    if (0 < ThMail(executor))
+    {
+        s_ThMail(executor, ThMail(executor)-1);
+        return false;
+    }
+    return true;
+}
+
 /* ---------------------------------------------------------------------------
  * mkattr: Lookup attribute by name, creating if needed.
  */
@@ -1169,7 +1207,8 @@ int mkattr(dbref executor, char *buff)
         ATTR *va;
         if (bValid)
         {
-            if (!Good_obj(executor))
+            if (  !Wizard(executor)
+               && ThrottleAttributeNames(executor))
             {
                 return -1;
             }
@@ -2320,6 +2359,10 @@ void initialize_objects(dbref first, dbref last)
         s_Parent(thing, NOTHING);
         s_Stack(thing, NULL);
         db[thing].cpu_time_used.Set100ns(0);
+        db[thing].tThrottleExpired.Set100ns(0);
+        s_ThAttrib(thing, 0);
+        s_ThMail(thing, 0);
+
 #ifdef MEMORY_BASED
         db[thing].ahead = NULL;
         db[thing].at_count = 0;

@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.11 2003-12-14 06:56:16 sdennis Exp $
+// $Id: object.cpp,v 1.12 2004-04-29 05:01:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -370,6 +370,10 @@ dbref create_obj(dbref player, int objtype, const char *name, int cost)
     s_Name(obj, pValidName);
     free_lbuf(pValidName);
     db[obj].cpu_time_used.Set100ns(0);
+
+    db[obj].tThrottleExpired.Set100ns(0);
+    s_ThAttrib(obj, 0);
+    s_ThMail(obj, 0);
 
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();

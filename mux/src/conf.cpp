@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.40 2004-04-16 16:39:47 sdennis Exp $
+// $Id: conf.cpp,v 1.41 2004-04-29 05:01:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -242,6 +242,8 @@ void cf_init(void)
     mudconf.hook_obj = NOTHING;
     mudconf.global_error_obj = NOTHING;
     mudconf.cache_pages = 40;
+    mudconf.mail_per_hour = 50;
+    mudconf.vattr_per_hour = 5000;
 
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = false;
@@ -1738,6 +1740,7 @@ CONF conftable[] =
     {"machine_command_cost",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.machinecost,            NULL,               0},
     {"mail_database",             cf_string_dyn,  CA_GOD,    CA_GOD,      (int *)&mudconf.mail_db,         NULL, SIZEOF_PATHNAME},
     {"mail_expiration",           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_expiration,        NULL,               0},
+    {"mail_per_hour",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_per_hour,          NULL,               0},
     {"master_room",               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.master_room,            NULL,               0},
     {"match_own_commands",        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.match_mine,      NULL,               0},
     {"max_cache_size",            cf_int,         CA_GOD,    CA_GOD,      (int *)&mudconf.max_cache_size,  NULL,               0},
@@ -1825,6 +1828,7 @@ CONF conftable[] =
     {"unowned_safe",              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.safe_unowned,    NULL,               0},
     {"use_http",                  cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.use_http,        NULL,               0},
     {"user_attr_access",          cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.vattr_flags,            attraccess_nametab, 0},
+    {"user_attr_per_hour",        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.vattr_per_hour,         NULL,               0},
     {"wait_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.waitcost,               NULL,               0},
     {"wizard_motd_file",          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wizmotd_file,    NULL, SIZEOF_PATHNAME},
     {"wizard_motd_message",       cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.wizmotd_msg,      NULL,       GBUF_SIZE},
