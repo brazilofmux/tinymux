@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.58 2003-04-23 17:35:30 sdennis Exp $
+// $Id: predicates.cpp,v 1.59 2003-04-27 16:13:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1793,23 +1793,18 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
     dbref aowner;
     int aflags;
 
-    BOOL b;
 #ifdef STANDALONE
-    b = atr_get_info(target, tattr->number, &aowner, &aflags);
+    atr_get_info(target, tattr->number, &aowner, &aflags);
 #else // STANDALONE
     if (bCheckParent)
     {
-        b = atr_pget_info(target, tattr->number, &aowner, &aflags);
+        atr_pget_info(target, tattr->number, &aowner, &aflags);
     }
     else
     {
-        b = atr_get_info(target, tattr->number, &aowner, &aflags);
+        atr_get_info(target, tattr->number, &aowner, &aflags);
     }
 #endif // STANDALONE
-    if (!b)
-    {
-        return FALSE;
-    }
 
     int mAllow = AF_VISUAL;
     if (  (tattr->flags & mAllow)
