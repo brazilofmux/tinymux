@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.25 2000-07-30 16:15:22 sdennis Exp $
+// $Id: functions.cpp,v 1.26 2000-09-05 20:28:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -126,7 +126,6 @@ XFUNCTION(fun_comalias);   // in comsys.cpp
 XFUNCTION(fun_iadd);
 XFUNCTION(fun_isub);
 XFUNCTION(fun_imul);
-#ifdef GAME_DOOFERMUX
 XFUNCTION(fun_digittime);
 XFUNCTION(fun_singletime);
 XFUNCTION(fun_exptime);
@@ -141,7 +140,6 @@ XFUNCTION(fun_connmax);
 XFUNCTION(fun_connlast);
 XFUNCTION(fun_connnum);
 XFUNCTION(fun_connleft);
-#endif // GAME_DOOFERMUX
  
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
@@ -6230,7 +6228,6 @@ FUN flist[] =
     {"ZFUN",     fun_zfun,     0,  FN_VARARGS, CA_PUBLIC},
     {"ZONE",     fun_zone,     1,  0,          CA_PUBLIC},
     {"ZWHO",     fun_zwho,     1,  0,          CA_PUBLIC},
-#ifdef GAME_DOOFERMUX
     // Added by D.Piper (del@delphinian.com) 1997 and 2000-APR
     //
     {"DIGITTIME",fun_digittime,1,  0,          CA_PUBLIC},
@@ -6247,7 +6244,6 @@ FUN flist[] =
     {"CONNLAST", fun_connlast, 1,  0,          CA_PUBLIC},
     {"CONNNUM",  fun_connnum,  1,  0,          CA_PUBLIC},
     {"CONNLEFT", fun_connleft, 1,  0,          CA_PUBLIC},
-#endif // GAME_DOOFERMUX
     {NULL,       NULL,         0,  0,          0}
 };
 
@@ -6705,8 +6701,6 @@ const char *time_format_2(int Seconds)
     return TimeBuffer32;
 }
 
-#ifdef GAME_DOOFERMUX
-
 // Del's added functions for dooferMUX ! :)
 // D.Piper (del@delphinian.com) 1997 & 2000
 //
@@ -7044,5 +7038,3 @@ FUNCTION(fun_lflags)
         safe_str("#-1", buff, bufc);
     }
 }
-
-#endif // GAME_DOOFERMUX

@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.12 2000-08-04 08:53:01 sdennis Exp $
+// $Id: bsd.cpp,v 1.13 2000-09-05 20:28:53 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1437,7 +1437,6 @@ void shutdownsock(DESC *d, int reason)
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
 
-#ifdef GAME_DOOFERMUX
         // Added by D.Piper (del@delphinian.com) 1997 & 2000-APR
         //
 
@@ -1460,7 +1459,6 @@ void shutdownsock(DESC *d, int reason)
         anFields[CIF_NUMCONNECTS]++;
 
         put_ConnectionInfoFields(d->player, anFields, ltaNow);
-#endif // GAME_DOOFERMUX
 
         // If we are doing a LOGOUT, keep the connection open so that the
         // player can connect to a different character. Otherwise, we

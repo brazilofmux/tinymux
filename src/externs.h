@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.29 2000-08-28 07:52:08 sdennis Exp $
+// $Id: externs.h,v 1.30 2000-09-05 20:28:53 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -788,8 +788,6 @@ public:
 
 extern CScheduler scheduler;
 
-#ifdef GAME_DOOFERMUX
-
 extern int fetch_cmds(dbref target);
 void fetch_ConnectionInfoFields(dbref target, long anFields[4]);
 long fetch_ConnectionInfoField(dbref target, int iField);
@@ -800,6 +798,8 @@ void put_ConnectionInfoFields
     CLinearTimeAbsolute &ltaLogout
 );
 
+// Added by D.Piper (del@delphinian.com) 2000-APR
+//
 // In order:
 //
 //     Total online time
@@ -818,5 +818,4 @@ void put_ConnectionInfoFields
 #define fetch_numconnections(t) (fetch_ConnectionInfoField((t), CIF_NUMCONNECTS))
 CLinearTimeAbsolute fetch_logouttime(dbref target);
 
-#endif // GAME_DOOFERMUX
 #endif // EXTERNS_H

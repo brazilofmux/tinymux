@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.25 2000-08-23 00:15:42 sdennis Exp $
+// $Id: db.cpp,v 1.26 2000-09-05 20:28:53 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -250,13 +250,13 @@ ATTR attr[] =
     {"VZ", A_VA + 25, AF_ODARK, NULL},
     {"VRML_URL", A_VRML_URL, AF_ODARK, NULL},
     {"HTDesc", A_HTDESC, AF_NOPROG, NULL},
-#ifdef GAME_DOOFERMUX
     // Added by D.Piper (del@delphinian.com) 2000-APR
     //
     {"Reason", A_REASON, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
+#ifdef GAME_DOOFERMUX
     {"RegInfo", A_REGINFO, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_WIZARD, NULL},
-    {"ConnInfo", A_CONNINFO, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
 #endif // GAME_DOOFERMUX
+    {"ConnInfo", A_CONNINFO, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
     {"*Password", A_PASS, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
     {"*Privileges", A_PRIVS, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
     {"*Money", A_MONEY, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},

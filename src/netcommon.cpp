@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.17 2000-08-09 06:51:50 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.18 2000-09-05 20:28:53 sdennis Exp $ 
 */
 
 /*
@@ -2280,8 +2280,6 @@ FUNCTION(fun_motd)
     safe_str(mudconf.motd_msg, buff, bufc);
 }
 
-#ifdef GAME_DOOFERMUX
-
 // fetch_cmds - Retrieve Player's number of commands entered.
 //
 int fetch_cmds(dbref target)
@@ -2310,20 +2308,7 @@ void ParseConnectionInfoString(char *pConnInfo, char *pFields[5])
 {
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, pConnInfo);
-
-    // NOTE: Temporarily, the minus and space are both allowed,
-    // however, eventually only space will be permitted because
-    // of the confusion for parsers between a '-' as a minus sign
-    // and a '-' as a separator. The connection info is always
-    // written back with spaces, so normal usage will convert
-    // from 'n-n-n-n-n' to 'n n n n n'.
-    //
-#if 1
-    Tiny_StrTokControl(&tts, "- ");
-#else
     Tiny_StrTokControl(&tts, " ");
-#endif
-
     for (int i = 0; i < 5; i++)
     {
         pFields[i] = Tiny_StrTokParse(&tts);
@@ -2410,5 +2395,3 @@ CLinearTimeAbsolute fetch_logouttime(dbref target)
     free_lbuf(pConnInfo);
     return lta;
 }
-
-#endif // GAME_DOOFERMUX

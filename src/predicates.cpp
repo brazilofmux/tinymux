@@ -1,5 +1,5 @@
 // predicates.cpp
-// $Id: predicates.cpp,v 1.18 2000-08-04 08:31:19 sdennis Exp $
+// $Id: predicates.cpp,v 1.19 2000-09-05 20:28:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1218,7 +1218,7 @@ extern SOCKET slave_socket;
     execl("bin/netmux", mudconf.mud_name, mudconf.config_file, NULL);
 #else
     execl("bin/netmux", "netmux", mudconf.config_file, NULL);
-#endif // GAME_DOOFER_MUX
+#endif // GAME_DOOFERMUX
 #endif // !WIN32
 }
 
