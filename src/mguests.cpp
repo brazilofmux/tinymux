@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.20 2002-02-25 17:33:31 sdennis Exp $
+// $Id: mguests.cpp,v 1.21 2002-02-27 20:54:44 zenty Exp $
 //
 
 #include "copyright.h"
@@ -173,6 +173,7 @@ char *CGuests::Create(DESC *d)
             // Wipe the attributes.
             //
             WipeAttrs(Guests[i]);
+            s_Pass(player, crypt(GUEST_PASSWORD, "XX"));
 
             // Copy them back.
             //
