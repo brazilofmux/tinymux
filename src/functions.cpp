@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.160 2002-03-01 00:30:08 sdennis Exp $
+// $Id: functions.cpp,v 1.161 2002-03-01 00:51:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8002,7 +8002,11 @@ FUNCTION(fun_lattrcmds)
 FUNCTION(fun_lcmds)
 {
     char sep;
-    evarargs_preamble(2);
+    if (!delim_check(fargs, nfargs, 2, &sep, buff, bufc, 0, player,
+                     cause, cargs, ncargs, 1))
+    {
+        return;
+    }
     
     // Check to see what type of command matching we will do. '$' commands
     // or '^' listens.  We default with '$' commands.
