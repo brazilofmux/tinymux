@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.187 2003-01-31 16:36:49 sdennis Exp $
+// $Id: functions.cpp,v 1.188 2003-07-24 00:23:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3136,7 +3136,7 @@ static double ConvertRDG2R(double d, const char *szUnits)
     case 'g':
         // Gradians to Radians.
         //
-        d *= 0.011570796326794896;
+        d *= 0.015707963267948967;
         break;
     }
     return d;
