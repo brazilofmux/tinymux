@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.107 2003-01-22 07:39:44 sdennis Exp $
+// $Id: command.cpp,v 1.108 2003-01-23 02:00:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1258,7 +1258,8 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
                       && regexp_match(buff + 1, new0,
                              ((aflags & AF_CASE) ? 0 : PCRE_CASELESS), aargs,
                              NUM_ENV_VARS))
-                   || wild(buff + 1, new0, aargs, NUM_ENV_VARS))
+                   || (  (aflags & AF_REGEXP) == 0
+                      && wild(buff + 1, new0, aargs, NUM_ENV_VARS)))
                 {
                     CLinearTimeAbsolute lta;
                     wait_que(add->thing, caller, executor, FALSE, lta,

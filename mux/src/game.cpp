@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.35 2003-01-22 01:00:17 sdennis Exp $
+// $Id: game.cpp,v 1.36 2003-01-23 02:00:23 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -246,7 +246,8 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
         if (  (  (aflags & AF_REGEXP)
               && regexp_match(buff + 1, str,
                      ((aflags & AF_CASE) ? 0 : PCRE_CASELESS), args, NUM_ENV_VARS))
-           || wild(buff + 1, str, args, NUM_ENV_VARS))
+           || (  (aflags & AF_REGEXP) == 0
+              && wild(buff + 1, str, args, NUM_ENV_VARS)))
         {
             match = 1;
             CLinearTimeAbsolute lta;
