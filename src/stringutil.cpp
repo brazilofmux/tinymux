@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.82 2002-09-26 14:51:30 sdennis Exp $
+// $Id: stringutil.cpp,v 1.83 2003-01-14 17:52:36 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2206,7 +2206,7 @@ typedef struct
 
 } PARSE_FLOAT_RESULT;
 
-BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
+BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str, BOOL bStrict)
 {
     // Parse Input
     //
@@ -2362,7 +2362,14 @@ LastSpaces:
         str++;
     }
 
-    return (*str ? FALSE : TRUE);
+    if (bStrict)
+    {
+        return (!*str);
+    }
+    else
+    {
+        return TRUE;
+    }
 }
 
 #define ATOF_LIMIT 100
@@ -2380,14 +2387,14 @@ static const double powerstab[10] =
    1000000000.0
 };
 
-double Tiny_atof(char *szString)
+double Tiny_atof(char *szString, BOOL bStrict)
 {
     // Initialize structure.
     //
     PARSE_FLOAT_RESULT pfr;
     memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
 
-    if (!ParseFloat(&pfr, szString))
+    if (!ParseFloat(&pfr, szString, bStrict))
     {
         return 0.0;
     }
@@ -2730,7 +2737,7 @@ BOOL is_real(char *str)
 {
     PARSE_FLOAT_RESULT pfr;
     memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
-    return ParseFloat(&pfr, str);
+    return ParseFloat(&pfr, str, TRUE);
 }
 
 #endif
