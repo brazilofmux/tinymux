@@ -1,6 +1,6 @@
 // Comsys.h
 //
-// $Id: comsys.h,v 1.5 2001-08-28 15:21:57 sdennis Exp $
+// $Id: comsys.h,v 1.6 2001-10-17 19:02:40 sdennis Exp $
 
 #ifndef __COMSYS_H__
 #define __COMSYS_H__
@@ -71,7 +71,6 @@ void do_comdisconnectraw_notify(dbref player, char *chan);
 void do_comconnectraw_notify(dbref player, char *chan);
 void do_comdisconnectchannel(dbref player, char *channel);
 void load_channels(FILE *fp);
-void load_old_channels(FILE *fp);
 void purge_comsystem(void);
 void save_channels(FILE *fp);
 void destroy_comsys(comsys_t *c);

@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.57 2001-09-28 00:08:05 sdennis Exp $
+// * $Id: comsys.cpp,v 1.58 2001-10-17 19:02:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -87,11 +87,7 @@ void load_comsys(char *filename)
     {
         DebugTotalFiles++;
         Log.tinyprintf("LOADING: %s" ENDLINE, filename);
-        if (fscanf(fp, "*** Begin %s ***\n", buffer) == 1 && !strcmp(buffer, "COMMAC"))
-        {
-            load_old_channels(fp);
-        }
-        else if (!strcmp(buffer, "CHANNELS"))
+        if (fscanf(fp, "*** Begin %s ***\n", buffer) == 1 && !strcmp(buffer, "CHANNELS"))
         {
             load_channels(fp);
         }
@@ -278,71 +274,6 @@ void load_channels(FILE *fp)
         else
         {
             Log.tinyprintf("dbref %d out of range [0, %d)" ENDLINE, c->who, mudstate.db_top);
-        }
-        purge_comsystem();
-    }
-}
-
-void load_old_channels(FILE *fp)
-{
-    int i, j, k;
-    char buffer[LBUF_SIZE];
-    int np;
-    comsys_t *c;
-    char *t;
-    char in;
-
-    fscanf(fp, "%d\n", &np);
-    for (i = 0; i < np; i++)
-    {
-        c = create_new_comsys();
-        // Trash the old values!
-        fscanf(fp, "%d %d %d %d %d %d %d %d\n", &(c->who), &(c->numchannels), &k, &k, &k, &k, &k, &k);
-        c->maxchannels = c->numchannels;
-        if (c->maxchannels > 0)
-        {
-            c->alias = (char *)MEMALLOC(c->maxchannels * 6);
-            ISOUTOFMEMORY(c->alias);
-            c->channels = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
-            ISOUTOFMEMORY(c->channels);
-
-            for (j = 0; j < c->numchannels; j++)
-            {
-                t = c->alias + j * 6;
-                while ((in = fgetc(fp)) != ' ')
-                {
-                    *t++ = in;
-                }
-                *t = 0;
-
-                int n = GetLineTrunc(buffer, sizeof(buffer), fp);
-                if (buffer[n-1] == '\n')
-                {
-                    // Get rid of trailing '\n'.
-                    //
-                    n--;
-                }
-                c->channels[j] = StringCloneLen(buffer, n);
-            }
-            sort_com_aliases(c);
-        }
-        else
-        {
-            c->alias = NULL;
-            c->channels = NULL;
-        }
-        if (c->who >= 0 && c->who < mudstate.db_top)
-        {
-            if (  isPlayer(c->who)
-               || !God(Owner(c->who))
-               || !Going(c->who))
-            {
-                add_comsys(c);
-            }
-        }
-        else
-        {
-            Log.tinyprintf("load_old_channels: dbref %d out of range [0, %d)" ENDLINE, c->who, mudstate.db_top);
         }
         purge_comsystem();
     }
