@@ -8,7 +8,7 @@ OldVersion=2.2.0.$OldBuild
 NewBuild=2
 NewVersion=2.2.0.$NewBuild
 
-ChangesDir=.
+ChangesDir=mux
 ReferenceDir=mux2.2_$OldBuild
 DistroDir=mux2.2
 NewDir=mux2.2_$NewBuild
