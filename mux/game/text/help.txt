@@ -5093,7 +5093,7 @@ CONFIG()
     - Configuration file, and
     - @admin changes.
 
-  Related Topics: BOOLEAN, wizhelp
+  Related Topics: BOOLEAN, CONFIG PARAMETERS in wizhelp
 
 & CONN()
 CONN()
