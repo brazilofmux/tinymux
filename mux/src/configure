@@ -4273,7 +4273,7 @@ else
 fi
 rm -f conftest*
 
-if test $ac_cv_header_malloc_h = no && $querymalloc = yes; then
+if test $ac_cv_header_malloc_h = no && test $querymalloc = yes; then
     cat >>confdefs.h <<\EOF
 #define NEED_MALLOC_DCL 1
 EOF
