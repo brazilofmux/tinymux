@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  August 2002
+Last Update:  September 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -100,6 +100,7 @@ Feature Additions:
  -- Jake added train from RhostMUSH.
  -- Jake added itext() and inum() functions. Equivalent to ## and #@, for multiple
     levels of iter(). Idea from PennMUSH.
+ -- Added CHR() from PennMUSH.
 
 Bug Fixes:
 ~~~~~~~~~
