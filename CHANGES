@@ -143,6 +143,7 @@ Feature Additions:
  --  Added LRAND() from TinyMUSH 3.0.
  --  GAGGED players no longer allowed to speak on channels.
  --  The WOD_REALMS option now shows up in INFO.
+ --  Added LADD() from TinyMUSH 3.0.
 
 
 Bug Fixes:
