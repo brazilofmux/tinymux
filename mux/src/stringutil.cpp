@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.20 2002-08-11 21:46:51 jake Exp $
+// $Id: stringutil.cpp,v 1.21 2002-09-01 18:15:47 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1184,6 +1184,21 @@ int ANSI_TruncateToField
     ANSI_String_Out_Init(&aoc, pField0, nField, maxVisualWidth, iEndGoal);
     ANSI_String_Copy(&aoc, &aic, maxVisualWidth);
     return ANSI_String_Finalize(&aoc, pnVisualWidth);
+}
+
+char *ANSI_TruncateAndPad_sbuf(const char *pString, int nMaxVisualWidth, char fill)
+{
+    char *pStringModified = alloc_sbuf("ANSI_TruncateAndPad_sbuf");
+    int nVisualWidth;
+    int nLen = ANSI_TruncateToField(pString, SBUF_SIZE,
+        pStringModified, nMaxVisualWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+    for (int i = nMaxVisualWidth - nVisualWidth; i > 0; i--)
+    {
+        pStringModified[nLen] = fill;
+        nLen++;
+    }
+    pStringModified[nLen] = '\0';
+    return pStringModified;
 }
 
 char *normal_to_white(const char *szString)

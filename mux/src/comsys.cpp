@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.39 2002-08-24 02:33:19 jake Exp $
+// $Id: comsys.cpp,v 1.40 2002-09-01 18:15:47 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -825,16 +825,16 @@ void BuildChannelMessage
         if (!bSpoof)
         {
             safe_chr(' ', *messNormal, &mnptr);
-            safe_str(Name(user->who), *messNormal, &mnptr);
-            safe_str(Name(user->who), *messNoComtitle, &mncptr);
+            safe_str(get_ansiname(user->who), *messNormal, &mnptr);
+            safe_str(get_ansiname(user->who), *messNoComtitle, &mncptr);
         }
     }
     else
     {
-        safe_str(Name(user->who), *messNormal, &mnptr);
+        safe_str(get_ansiname(user->who), *messNormal, &mnptr);
         if (!bSpoof)
         {
-            safe_str(Name(user->who), *messNoComtitle, &mncptr);
+            safe_str(get_ansiname(user->who), *messNoComtitle, &mncptr);
         }
     }
 
@@ -1828,7 +1828,7 @@ void do_cleanupchannels(void)
                         {
                             char *mess = StartBuildChannelMessage(cuVictim->who,
                                 (ch->type & CHANNEL_SPOOF) != 0, ch->header, cuVictim->title,
-                                Name(cuVictim->who), ":is booted off the channel by the system.");
+                                get_ansiname(cuVictim->who), ":is booted off the channel by the system.");
                             do_comsend(ch, mess);
                             EndBuildChannelMessage(mess);
                         }
@@ -2694,14 +2694,14 @@ void do_chboot
     struct comuser *vu = select_user(ch, thing);
     if (!vu)
     {
-        raw_notify(executor, tprintf("@cboot: %s is not on the channel.", Name(thing)));
+        raw_notify(executor, tprintf("@cboot: %s is not on the channel.", get_ansiname(thing)));
         return;
     }
 
     raw_notify(executor, tprintf("You boot %s off channel %s.",
-                                 Name(thing), ch->name));
+                                 get_ansiname(thing), ch->name));
     raw_notify(thing, tprintf("%s boots you off channel %s.",
-                              Name(thing), ch->name));
+                              get_ansiname(thing), ch->name));
 
     if (!(key & CBOOT_QUIET))
     {
@@ -2824,11 +2824,13 @@ void do_chanlist(dbref executor, dbref caller, dbref enactor, int key)
 
                 pBuffer = buf;
             }
-            sprintf(temp, "%c%c%c %-13.13s %-15.15s %-45.45s",
+            char *ownername_ansi = ANSI_TruncateAndPad_sbuf(get_ansiname(ch->charge_who), 15);
+            sprintf(temp, "%c%c%c %-13.13s %s %-45.45s",
                 (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
                 (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
                 (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-',
-                ch->name, Name(ch->charge_who), pBuffer);
+                ch->name, ownername_ansi, pBuffer);
+            free_sbuf(ownername_ansi);
 
             raw_notify(executor, temp);
         }

@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.31 2002-08-25 22:44:35 jake Exp $
+// $Id: set.cpp,v 1.32 2002-09-01 18:15:47 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -154,8 +154,6 @@ void do_name
     char *newname
 )
 {
-    char *buff;
-
     dbref thing = match_controlled(executor, name);
     if (thing == NOTHING)
     {
@@ -175,7 +173,7 @@ void do_name
     //
     if (isPlayer(thing))
     {
-        buff = trim_spaces(newname);
+        char *buff = trim_spaces(newname);
         if (  !ValidatePlayerName(buff)
            || !badname_check(buff))
         {
@@ -253,11 +251,6 @@ void do_alias
     char *alias
 )
 {
-    dbref aowner;
-    int aflags;
-    ATTR *ap;
-    char *oldalias, *trimalias;
-
     dbref thing = match_controlled(executor, name);
     if (thing == NOTHING)
     {
@@ -266,13 +259,15 @@ void do_alias
 
     // Check for renaming a player.
     //
-    ap = atr_num(A_ALIAS);
+    dbref aowner;
+    int aflags;
+    ATTR *ap = atr_num(A_ALIAS);
     if (isPlayer(thing))
     {
         // Fetch the old alias.
         //
-        oldalias = atr_pget(thing, A_ALIAS, &aowner, &aflags);
-        trimalias = trim_spaces(alias);
+        char *oldalias = atr_pget(thing, A_ALIAS, &aowner, &aflags);
+        char *trimalias = trim_spaces(alias);
 
         if (!Controls(executor, thing))
         {

@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.26 2002-08-26 01:07:13 jake Exp $
+// $Id: speech.cpp,v 1.27 2002-09-01 18:15:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -111,9 +111,9 @@ void wall_broadcast(int target, dbref player, char *message)
 static void say_shout(int target, const char *prefix, int flags, dbref player, char *message)
 {
     if (flags & SAY_NOTAG)
-        wall_broadcast(target, player, tprintf("%s%s", Name(player), message));
+        wall_broadcast(target, player, tprintf("%s%s", get_ansiname(player), message));
     else
-        wall_broadcast(target, player, tprintf("%s%s%s", prefix, Name(player), message));
+        wall_broadcast(target, player, tprintf("%s%s%s", prefix, get_ansiname(player), message));
 }
 
 static const char *announce_msg = "Announcement: ";
@@ -219,25 +219,25 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         saystring = modSpeech(executor, messageOrig, FALSE, command);
         if (saystring)
         {
-            notify_saypose(executor, tprintf("%s %s \"%s\"", Name(executor), saystring, message));
+            notify_saypose(executor, tprintf("%s %s \"%s\"", get_ansiname(executor), saystring, message));
             notify_except(loc, executor, executor, tprintf("%s %s \"%s\"",
-                Name(executor), saystring, message), MSG_SAYPOSE);
+                get_ansiname(executor), saystring, message), MSG_SAYPOSE);
             free_lbuf(saystring);
         }
         else
         {
             notify_saypose(executor, tprintf("You say \"%s\"", message));
             notify_except(loc, executor, executor, tprintf("%s says, \"%s\"",
-                Name(executor), message), MSG_SAYPOSE);
+                get_ansiname(executor), message), MSG_SAYPOSE);
         }
         break;
 
     case SAY_POSE:
-        notify_all_from_inside_saypose(loc, executor, tprintf("%s %s", Name(executor), message));
+        notify_all_from_inside_saypose(loc, executor, tprintf("%s %s", get_ansiname(executor), message));
         break;
 
     case SAY_POSE_NOSPC:
-        notify_all_from_inside_saypose(loc, executor, tprintf("%s%s", Name(executor), message));
+        notify_all_from_inside_saypose(loc, executor, tprintf("%s%s", get_ansiname(executor), message));
         break;
 
     case SAY_EMIT:
@@ -411,11 +411,11 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
     case SHOUT_WALLPOSE:
         if (say_flags & SAY_NOTAG)
         {
-            wall_broadcast(0, executor, tprintf("%s %s", Name(executor), message));
+            wall_broadcast(0, executor, tprintf("%s %s", get_ansiname(executor), message));
         }
         else
         {
-            wall_broadcast(0, executor, tprintf("Announcement: %s %s", Name(executor), message));
+            wall_broadcast(0, executor, tprintf("Announcement: %s %s", get_ansiname(executor), message));
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
         log_name(executor);
@@ -427,11 +427,11 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
     case SHOUT_WIZPOSE:
         if (say_flags & SAY_NOTAG)
         {
-            wall_broadcast(SHOUT_WIZARD, executor, tprintf("%s %s", Name(executor), message));
+            wall_broadcast(SHOUT_WIZARD, executor, tprintf("%s %s", get_ansiname(executor), message));
         }
         else
         {
-            wall_broadcast(SHOUT_WIZARD, executor, tprintf("Broadcast: %s %s", Name(executor), message));
+            wall_broadcast(SHOUT_WIZARD, executor, tprintf("Broadcast: %s %s", get_ansiname(executor), message));
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
         log_name(executor);
@@ -505,8 +505,10 @@ static void page_return(dbref player, dbref target, const char *tag, int anum, c
             FIELDEDTIME ft;
             ltaNow.ReturnFields(&ft);
 
-            notify_with_cause_ooc(player, target, tprintf("%s message from %s: %s", tag, Name(target), str2));
-            notify_with_cause_ooc(target, player, tprintf("[%d:%02d] %s message sent to %s.", ft.iHour, ft.iMinute, tag, Name(player)));
+            notify_with_cause_ooc(player, target, tprintf("%s message from %s: %s", tag,
+                get_ansiname(target), str2));
+            notify_with_cause_ooc(target, player, tprintf("[%d:%02d] %s message sent to %s.",
+                ft.iHour, ft.iMinute, tag, get_ansiname(player)));
         }
         free_lbuf(str2);
     }
@@ -526,7 +528,7 @@ static BOOL page_check(dbref player, dbref target)
     else if (!Connected(target))
     {
         page_return(player, target, "Away", A_AWAY,
-            tprintf("Sorry, %s is not connected.", Name(target)));
+            tprintf("Sorry, %s is not connected.", get_ansiname(target)));
     }
     else if (!could_doit(player, target, A_LPAGE))
     {
@@ -535,24 +537,24 @@ static BOOL page_check(dbref player, dbref target)
            && !See_Hidden(player))
         {
             page_return(player, target, "Away", A_AWAY,
-                tprintf("Sorry, %s is not connected.", Name(target)));
+                tprintf("Sorry, %s is not connected.", get_ansiname(target)));
         }
         else
         {
             page_return(player, target, "Reject", A_REJECT,
-                tprintf("Sorry, %s is not accepting pages.", Name(target)));
+                tprintf("Sorry, %s is not accepting pages.", get_ansiname(target)));
         }
     }
     else if (!could_doit(target, player, A_LPAGE))
     {
         if (Wizard(player))
         {
-            notify(player, tprintf("Warning: %s can't return your page.", Name(target)));
+            notify(player, tprintf("Warning: %s can't return your page.", get_ansiname(target)));
             return TRUE;
         }
         else
         {
-            notify(player, tprintf("Sorry, %s can't return your page.", Name(target)));
+            notify(player, tprintf("Sorry, %s can't return your page.", get_ansiname(target)));
             return FALSE;
         }
     }
@@ -744,7 +746,7 @@ void do_page
             {
                 safe_copy_buf(", ", 2, aFriendly, &pFriendly);
             }
-            safe_str(Name(aPlayers[i]), aFriendly, &pFriendly);
+            safe_str(get_ansiname(aPlayers[i]), aFriendly, &pFriendly);
         }
     }
     if (nValid > 1)
@@ -824,12 +826,12 @@ void do_page
         if (nValid == 1)
         {
             safe_tprintf_str(omessage, &omp, "From afar, %s pages you.",
-                Name(executor));
+                get_ansiname(executor));
         }
         else
         {
             safe_tprintf_str(omessage, &omp, "From afar, %s pages %s.",
-                Name(executor), aFriendly);
+                get_ansiname(executor), aFriendly);
         }
         safe_tprintf_str(imessage, &imp, "You page %s.", aFriendly);
         break;
@@ -840,9 +842,9 @@ void do_page
         {
             safe_tprintf_str(omessage, &omp, "to %s: ", aFriendly);
         }
-        safe_tprintf_str(omessage, &omp, "%s %s", Name(executor), pMessage);
+        safe_tprintf_str(omessage, &omp, "%s %s", get_ansiname(executor), pMessage);
         safe_tprintf_str(imessage, &imp, "Long distance to %s: %s %s",
-            aFriendly, Name(executor), pMessage);
+            aFriendly, get_ansiname(executor), pMessage);
         break;
 
     case 3:
@@ -851,9 +853,9 @@ void do_page
         {
             safe_tprintf_str(omessage, &omp, "to %s: ", aFriendly);
         }
-        safe_tprintf_str(omessage, &omp, "%s%s", Name(executor), pMessage);
+        safe_tprintf_str(omessage, &omp, "%s%s", get_ansiname(executor), pMessage);
         safe_tprintf_str(imessage, &imp, "Long distance to %s: %s%s",
-            aFriendly, Name(executor), pMessage);
+            aFriendly, get_ansiname(executor), pMessage);
         break;
 
     default:
@@ -861,7 +863,7 @@ void do_page
         {
             safe_tprintf_str(omessage, &omp, "To %s, ", aFriendly);
         }
-        safe_tprintf_str(omessage, &omp, "%s pages: %s", Name(executor),
+        safe_tprintf_str(omessage, &omp, "%s pages: %s", get_ansiname(executor),
             pMessage);
         safe_tprintf_str(imessage, &imp, "You paged %s with '%s'.",
             aFriendly, pMessage);
@@ -907,8 +909,8 @@ void whisper_pose(dbref player, dbref target, char *message, BOOL bSpace)
         message = newMessage;
     }
     char *buff = alloc_lbuf("do_pemit.whisper.pose");
-    StringCopy(buff, Name(player));
-    notify(player, tprintf("%s senses \"%s%s%s\"", Name(target), buff, 
+    StringCopy(buff, get_ansiname(player));
+    notify(player, tprintf("%s senses \"%s%s%s\"", get_ansiname(target), buff, 
         bSpace ? " " : "", message));
     notify_with_cause(target, player, tprintf("You sense %s%s%s", buff, 
         bSpace ? " " : "", message));
@@ -1055,7 +1057,7 @@ void do_pemit_single
                && !Connected(target))
             {
                 page_return(player, target, "Away", A_AWAY,
-                    tprintf("Sorry, %s is not connected.", Name(target)));
+                    tprintf("Sorry, %s is not connected.", get_ansiname(target)));
                 return;
             }
             switch (chPoseType)
@@ -1080,9 +1082,9 @@ void do_pemit_single
                     message = newMessage;
                 }
                 notify(player, tprintf("You whisper \"%s\" to %s.", message,
-                    Name(target)));
+                    get_ansiname(target)));
                 notify_with_cause(target, player,
-                    tprintf("%s whispers \"%s\"", Name(player), message));
+                    tprintf("%s whispers \"%s\"", get_ansiname(player), message));
                 if (newMessage)
                 {
                     free_lbuf(newMessage);
@@ -1096,9 +1098,9 @@ void do_pemit_single
                 {
                     buf2 = alloc_lbuf("do_pemit.whisper.buzz");
                     bp = buf2;
-                    safe_str(Name(player), buf2, &bp);
+                    safe_str(get_ansiname(player), buf2, &bp);
                     safe_str(" whispers something to ", buf2, &bp);
-                    safe_str(Name(target), buf2, &bp);
+                    safe_str(get_ansiname(target), buf2, &bp);
                     *bp = '\0';
                     notify_except2(loc, player, player, target, buf2);
                     free_lbuf(buf2);
@@ -1119,12 +1121,12 @@ void do_pemit_single
                 if (saystring)
                 {
                     notify_except(loc, player, target,
-                        tprintf("%s %s \"%s\"", Name(target), saystring, message), 0);
+                        tprintf("%s %s \"%s\"", get_ansiname(target), saystring, message), 0);
                 }
                 else
                 {
                     notify_except(loc, player, target,
-                        tprintf("%s says, \"%s\"", Name(target), message), 0);
+                        tprintf("%s says, \"%s\"", get_ansiname(target), message), 0);
                 }
             }
             if (saystring)
@@ -1143,7 +1145,7 @@ void do_pemit_single
             {
                 message = newMessage;
             }
-            notify_all_from_inside(loc, player, tprintf("%s %s", Name(target),
+            notify_all_from_inside(loc, player, tprintf("%s %s", get_ansiname(target),
                 message));
             if (newMessage)
             {
@@ -1157,7 +1159,7 @@ void do_pemit_single
             {
                 message = newMessage;
             }
-            notify_all_from_inside(loc, player, tprintf("%s%s", Name(target),
+            notify_all_from_inside(loc, player, tprintf("%s%s", get_ansiname(target),
                 message));
             if (newMessage)
             {

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.71 2002-09-01 16:31:31 jake Exp $
+// $Id: command.cpp,v 1.72 2002-09-01 18:15:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -4038,7 +4038,7 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
       return;
    }
 
-   notify_all_from_inside(loc, executor, tprintf("%s types -=> %s", Name(executor), string));
+   notify_all_from_inside(loc, executor, tprintf("%s types -=> %s", get_ansiname(executor), string));
    process_command(executor, caller, enactor, TRUE, string, (char **)NULL, 0);
 }
 
