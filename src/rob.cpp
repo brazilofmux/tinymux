@@ -2,7 +2,7 @@
  * rob.c -- Commands dealing with giving/taking/killing things or money 
  */
 /*
- * $Id: rob.cpp,v 1.4 2001-06-09 08:43:23 sdennis Exp $ 
+ * $Id: rob.cpp,v 1.5 2001-06-29 19:12:44 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -210,6 +210,11 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
         notify(giver, "You can't give yourself away!");
         return;
     }
+    if (thing == recipient)
+    {
+        notify(giver, "You can't give an object to itself.");
+        return;
+    }
     if (  (!isThing(thing) && !isPlayer(thing))
        || !(Enter_ok(recipient) || controls(giver, recipient))
        || isGarbage(recipient))
@@ -393,6 +398,11 @@ void do_give(dbref player, dbref cause, int key, char *who, char *amnt)
         return;
     }
 
+    if (isGarbage(recipient))
+    {
+        notify(player, "Garbage objects can't receive gifts.");
+        return;
+    }
     if (isExit(recipient))
     {
         notify(player, "You can't give anything to an exit.");
