@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.10 2000-06-30 22:00:46 sdennis Exp $
+// $Id: cque.cpp,v 1.11 2000-06-30 23:09:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -183,16 +183,20 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
                     process_command(player, point->cause, 0, cp, point->env, point->nargs);
+
+                    CLinearTimeAbsolute ltaEnd;
+                    ltaEnd.GetUTC();
+
+                    CLinearTimeDelta ltdUsageEnd = GetProcessorUsage();
+                    CLinearTimeDelta ltd = ltdUsageEnd - ltdUsageBegin;
+                    db[player].cpu_time_used += ltd;
+
                     if (mudstate.pout)
                     {
                         free_lbuf(mudstate.pout);
                         mudstate.pout = NULL;
                     }
 
-                    CLinearTimeAbsolute ltaEnd;
-                    ltaEnd.GetUTC();
-
-                    CLinearTimeDelta ltd;
                     ltd = ltaEnd - ltaBegin;
                     if (ltd.ReturnSeconds() >= mudconf.max_cmdsecs)
                     {
@@ -206,10 +210,6 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         //log_text(log_cmdbuf);
                         ENDLOG;
                     }
-
-                    CLinearTimeDelta ltdUsageEnd = GetProcessorUsage();
-                    ltd = ltdUsageEnd - ltdUsageBegin;
-                    db[player].cpu_time_used += ltd;
                 }
             }
         }
