@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.54 2002-02-01 00:33:45 sdennis Exp $
+// $Id: bsd.cpp,v 1.55 2002-02-07 03:00:30 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -3266,19 +3266,14 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             //
             if (d->flags & DS_AUTODARK)
             {
-                // Don't clear the DARK flag on the player unless there are
-                // no other sessions.
+                // Clear the DS_AUTODARK on every related session.
                 //
                 DESC *d1;
-                int num = 0;
                 DESC_ITER_PLAYER(d->player, d1)
                 {
-                    num++;
+                    d1->flags &= ~DS_AUTODARK;
                 }
-                if (num == 1)
-                {
-                    db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
-                }
+                db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
             }
 
             // process the player's input
