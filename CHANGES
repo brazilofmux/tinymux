@@ -136,6 +136,7 @@ Feature Additions:
  --  Morgan added @conformat and @exitformat from PennMUSH.
  --  Marlek added @nameformat.
  --  Hellspawn added @dolist/notify.
+ --  Hellspawn added @notify/quiet.
 
 
 Bug Fixes:
