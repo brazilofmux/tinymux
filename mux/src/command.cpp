@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.42 2004-07-24 06:04:43 sdennis Exp $
+// $Id: command.cpp,v 1.43 2004-08-16 05:14:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -802,7 +802,7 @@ void init_cmdtab(void)
         }
 
         cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG));
-        (void)ISOUTOFMEMORY(cp2a);
+        ISOUTOFMEMORY(cp2a);
         cp2a->cmdname = StringClone(cbuff);
         cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
         cp2a->switches = NULL;
@@ -1695,7 +1695,9 @@ char *process_command
         q = SpaceCompressCommand;
         while (*p)
         {
-            while (*p && !mux_isspace(*p))
+            while (  *p
+                  && !mux_isspace(*p)
+                  && q < SpaceCompressCommand + LBUF_SIZE)
             {
                 *q++ = *p++;
             }
@@ -2939,7 +2941,7 @@ CF_HAND(cf_cmd_alias)
         // Got it, create the new command table entry.
         //
         cmd2 = (CMDENT *)MEMALLOC(sizeof(CMDENT));
-        (void)ISOUTOFMEMORY(cmd2);
+        ISOUTOFMEMORY(cmd2);
         cmd2->cmdname = StringClone(alias);
         cmd2->switches = cmdp->switches;
         cmd2->perms = cmdp->perms | nt->perm;
@@ -3890,7 +3892,8 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
     {
         pt1 = args[x];
         pt2 = buff1;
-        while (*pt1)
+        while (  *pt1
+              && pt2 < buff1 + LBUF_SIZE)
         {
             *pt2++ = mux_tolower(*pt1++);
         }
@@ -4434,13 +4437,14 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
 
                 p = cbuff;
                 *p++ = '@';
-                for (q = (char *) ap->name; *q; p++, q++)
+                for (q = (char *) ap->name; *q && p < cbuff + SBUF_SIZE; p++, q++)
                 {
                     *p = mux_tolower(*q);
                 }
                 *p = '\0';
                 cmdp = (CMDENT *)hashfindLEN(cbuff, strlen(cbuff), &mudstate.command_htab);
-                if (cmdp && cmdp->hookmask)
+                if (  cmdp
+                   && cmdp->hookmask)
                 {
                     found = true;
                     show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);

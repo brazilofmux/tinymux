@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.25 2004-06-10 15:39:34 sdennis Exp $
+// $Id: eval.cpp,v 1.26 2004-08-16 05:14:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1125,7 +1125,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
         realbuff = buff;
         realbp = *bufc;
         buff = (char *)MEMALLOC(LBUF_SIZE);
-        (void)ISOUTOFMEMORY(buff);
+        ISOUTOFMEMORY(buff);
         *bufc = buff;
     }
 

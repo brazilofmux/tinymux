@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.5 2004-04-01 22:00:42 sdennis Exp $
+// $Id: player_c.cpp,v 1.6 2004-08-16 05:14:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -168,8 +168,8 @@ int a_Queue(dbref player, int adj)
         if (pp)
         {
             pp->queue += adj;
+            return pp->queue;
         }
-        return pp->queue;
     }
     return 0;
 }

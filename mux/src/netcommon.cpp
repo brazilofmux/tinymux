@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.41 2004-06-10 15:39:34 sdennis Exp $
+// $Id: netcommon.cpp,v 1.42 2004-08-16 05:14:07 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -263,7 +263,7 @@ void add_to_output_queue(DESC *d, const char *b, int n)
     if (d->output_head == NULL)
     {
         tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
-        (void)ISOUTOFMEMORY(tp);
+        ISOUTOFMEMORY(tp);
         tp->hdr.nxt = NULL;
         tp->hdr.start = tp->data;
         tp->hdr.end = tp->data;
@@ -305,7 +305,7 @@ void add_to_output_queue(DESC *d, const char *b, int n)
                 n -= left;
             }
             tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
-            (void)ISOUTOFMEMORY(tp);
+            ISOUTOFMEMORY(tp);
             tp->hdr.nxt = NULL;
             tp->hdr.start = tp->data;
             tp->hdr.end = tp->data;

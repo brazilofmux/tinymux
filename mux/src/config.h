@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.10 2003-07-28 05:00:36 sdennis Exp $
+// $Id: config.h,v 1.11 2004-08-16 05:14:07 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -211,8 +211,8 @@ typedef UINT32 in_addr_t;
 extern bool AssertionFailed(const char *SourceFile, unsigned int LineNo);
 #define mux_assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
 
-extern bool OutOfMemory(const char *SourceFile, unsigned int LineNo);
-#define ISOUTOFMEMORY(exp) (!(exp) && OutOfMemory(__FILE__, __LINE__))
+extern void OutOfMemory(const char *SourceFile, unsigned int LineNo);
+#define ISOUTOFMEMORY(exp) {if (!(exp)) { OutOfMemory(__FILE__, __LINE__); }}
 
 //#define MEMORY_ACCOUNTING
 

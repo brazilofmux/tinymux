@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.7 2004-06-10 15:39:34 sdennis Exp $
+// $Id: alloc.cpp,v 1.8 2004-08-16 05:14:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -204,7 +204,7 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
 
         ph = (POOLHDR *)MEMALLOC(pools[poolnum].pool_size + sizeof(POOLHDR)
            + sizeof(POOLFTR));
-        (void)ISOUTOFMEMORY(ph);
+        ISOUTOFMEMORY(ph);
         p = (char *)(ph + 1);
         pf = (POOLFTR *)(p + pools[poolnum].pool_size);
 
@@ -290,7 +290,7 @@ char *pool_alloc_lbuf(const char *tag, const char *file, const int line)
 
         ph = (POOLHDR *)MEMALLOC(LBUF_SIZE + sizeof(POOLHDR)
            + sizeof(POOLFTR));
-        (void)ISOUTOFMEMORY(ph);
+        ISOUTOFMEMORY(ph);
         p = (char *)(ph + 1);
         pf = (POOLFTR *)(p + LBUF_SIZE);
 

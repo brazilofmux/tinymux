@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.51 2004-07-24 05:49:49 sdennis Exp $
+// $Id: conf.cpp,v 1.52 2004-08-16 05:14:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -71,7 +71,7 @@ void cf_init(void)
 
     mudconf.ports.n = 1;
     mudconf.ports.pi = (int *)MEMALLOC(sizeof(int));
-    (void)ISOUTOFMEMORY(mudconf.ports.pi);
+    ISOUTOFMEMORY(mudconf.ports.pi);
     mudconf.ports.pi[0] = 2860;
 
     mudconf.init_size = 1000;
@@ -408,7 +408,7 @@ int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
 CF_HAND(cf_int_array)
 {
     int *aPorts = (int *)MEMALLOC(nExtra*sizeof(int));
-    (void)ISOUTOFMEMORY(aPorts);
+    ISOUTOFMEMORY(aPorts);
     unsigned int nPorts = 0;
 
     char *p;
@@ -437,7 +437,7 @@ CF_HAND(cf_int_array)
             pia->pi = NULL;
         }
         pia->pi = (int *)MEMALLOC(nPorts * sizeof(int));
-        (void)ISOUTOFMEMORY(pia->pi);
+        ISOUTOFMEMORY(pia->pi);
         pia->n = nPorts;
         for (unsigned int i = 0; i < nPorts; i++)
         {
@@ -1282,7 +1282,7 @@ CF_HAND(cf_site)
     // Parse the access entry and allocate space for it.
     //
     SITE *site = (SITE *)MEMALLOC(sizeof(SITE));
-    (void)ISOUTOFMEMORY(site);
+    ISOUTOFMEMORY(site);
 
     // Initialize the site entry.
     //
@@ -1401,13 +1401,13 @@ int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
         mudstate.nHelpDesc = 0;
         mudstate.aHelpDesc = (HELP_DESC *)MEMALLOC(sizeof(HELP_DESC)
             *mudstate.mHelpDesc);
-        (void)ISOUTOFMEMORY(mudstate.aHelpDesc);
+        ISOUTOFMEMORY(mudstate.aHelpDesc);
     }
     else if (mudstate.mHelpDesc <= mudstate.nHelpDesc)
     {
         int newsize = mudstate.mHelpDesc + 4;
         HELP_DESC *q = (HELP_DESC *)MEMALLOC(sizeof(HELP_DESC)*newsize);
-        (void)ISOUTOFMEMORY(q);
+        ISOUTOFMEMORY(q);
         memset(q, 0, sizeof(HELP_DESC)*newsize);
         memcpy(q, mudstate.aHelpDesc, sizeof(HELP_DESC)*mudstate.mHelpDesc);
         MEMFREE(mudstate.aHelpDesc);
@@ -1426,7 +1426,7 @@ int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
     // Build up Command Entry.
     //
     CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)MEMALLOC(sizeof(CMDENT_ONE_ARG));
-    (void)ISOUTOFMEMORY(cmdp);
+    ISOUTOFMEMORY(cmdp);
 
     cmdp->callseq = CS_ONE_ARG;
     cmdp->cmdname = StringClone(pCmdName);
@@ -2008,7 +2008,7 @@ int cf_read(void)
             char *pSuffix = DefaultSuffixes[i].pSuffix;
             int nSuffix = strlen(pSuffix);
             char *buff = (char *)MEMALLOC(nInDB + nSuffix + 1);
-            (void)ISOUTOFMEMORY(buff);
+            ISOUTOFMEMORY(buff);
             memcpy(buff, mudconf.indb, nInDB);
             memcpy(buff + nInDB, pSuffix, nSuffix+1);
             MEMFREE(*p);

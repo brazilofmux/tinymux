@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.7 2004-07-07 17:00:47 sdennis Exp $
+// $Id: vattr.cpp,v 1.8 2004-08-16 05:14:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -67,10 +67,7 @@ ATTR *vattr_define_LEN(char *pName, size_t nName, int number, int flags)
     }
 
     vp = (ATTR *)MEMALLOC(sizeof(ATTR));
-    if (ISOUTOFMEMORY(vp))
-    {
-        return NULL;
-    }
+    ISOUTOFMEMORY(vp);
 
     // NOTE: By using store_string, the only way to release the
     // memory associated with a user attribute name is to @restart
@@ -461,10 +458,7 @@ void dbclean_RenumberAttributes(int cVAttributes)
     int iMapEnd = anum_alc_top;
     int nMap = iMapEnd - iMapStart + 1;
     int *aMap = (int *)MEMALLOC(sizeof(int) * nMap);
-    if (ISOUTOFMEMORY(aMap))
-    {
-        return;
-    }
+    ISOUTOFMEMORY(aMap);
 
     int iSweep = A_USER_START;
     memset(aMap, 0, sizeof(int) * nMap);
@@ -723,10 +717,7 @@ static char *store_string(char *str)
         // intentional.
         //
         stringblock = (char *)MEMALLOC(STRINGBLOCK);
-        if (ISOUTOFMEMORY(stringblock))
-        {
-            return NULL;
-        }
+        ISOUTOFMEMORY(stringblock);
         stringblock_hwm = 0;
     }
     char *ret = stringblock + stringblock_hwm;

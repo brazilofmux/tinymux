@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.49 2004-07-24 06:01:59 sdennis Exp $
+// $Id: game.cpp,v 1.50 2004-08-16 05:14:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1759,7 +1759,7 @@ bool Hearer(dbref thing)
 {
     char *as, *buff, *s;
     dbref aowner;
-    int attr, aflags;
+    int atr, aflags;
     ATTR *ap;
 
     if (  mudstate.inpipe
@@ -1783,27 +1783,28 @@ bool Hearer(dbref thing)
         buff = NULL;
     }
     atr_push();
-    for (attr = atr_head(thing, &as); attr; attr = atr_next(&as))
+    for (atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
-        if (attr == A_LISTEN)
+        if (atr == A_LISTEN)
         {
             if (buff)
             {
                 free_lbuf(buff);
+                buff = NULL;
             }
             atr_pop();
             return true;
         }
-        if (Monitor(thing))
+        if (buff)
         {
-            ap = atr_num(attr);
+            ap = atr_num(atr);
             if (  !ap
                || (ap->flags & AF_NOPROG))
             {
                 continue;
             }
 
-            atr_get_str(buff, thing, attr, &aowner, &aflags);
+            atr_get_str(buff, thing, atr, &aowner, &aflags);
 
             // Make sure we can execute it.
             //
@@ -1822,6 +1823,7 @@ bool Hearer(dbref thing)
             if (s)
             {
                 free_lbuf(buff);
+                buff = NULL;
                 atr_pop();
                 return true;
             }
@@ -1830,6 +1832,7 @@ bool Hearer(dbref thing)
     if (buff)
     {
         free_lbuf(buff);
+        buff = NULL;
     }
     atr_pop();
     return false;

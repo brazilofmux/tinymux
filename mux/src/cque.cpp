@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.25 2004-07-12 18:50:52 sdennis Exp $
+// $Id: cque.cpp,v 1.26 2004-08-16 05:14:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -586,19 +586,19 @@ void do_notify
     }
     else
     {
-        int attr = A_SEMAPHORE;
+        int atr = A_SEMAPHORE;
         if (  what
            && what[0] != '\0')
         {
             int i = mkattr(executor, what);
             if (0 < i)
             {
-                attr = i;
-                if (attr != A_SEMAPHORE)
+                atr = i;
+                if (atr != A_SEMAPHORE)
                 {
                     // Do they have permission to set this attribute?
                     //
-                    ATTR *ap = (ATTR *)anum_get(attr);
+                    ATTR *ap = (ATTR *)anum_get(atr);
                     if (!bCanSetAttr(executor, thing, ap))
                     {
                         notify_quiet(executor, NOPERM_MESSAGE);
@@ -620,7 +620,7 @@ void do_notify
         }
         if (loccount > 0)
         {
-            nfy_que(thing, attr, key, loccount);
+            nfy_que(thing, atr, key, loccount);
             if (  (!(Quiet(executor) || Quiet(thing)))
                && key != NFY_QUIET)
             {
@@ -725,7 +725,7 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
     tmp->comm = NULL;
 
     char *tptr = tmp->text = (char *)MEMALLOC(tlen);
-    (void)ISOUTOFMEMORY(tptr);
+    ISOUTOFMEMORY(tptr);
 
     if (command)
     {
@@ -957,7 +957,7 @@ void do_wait
     {
         // Get timeout, default 0.
         //
-        int attr = A_SEMAPHORE;
+        int atr = A_SEMAPHORE;
         bool bTimed = false;
         if (event && *event)
         {
@@ -980,17 +980,17 @@ void do_wait
                 ATTR *ap = atr_str(event);
                 if (!ap)
                 {
-                    attr = mkattr(executor, event);
-                    if (attr <= 0)
+                    atr = mkattr(executor, event);
+                    if (atr <= 0)
                     {
                         notify_quiet(executor, "Invalid attribute.");
                         return;
                     }
-                    ap = atr_num(attr);
+                    ap = atr_num(atr);
                 }
                 else
                 {
-                    attr = ap->number;
+                    atr = ap->number;
                 }
                 if (!bCanSetAttr(executor, thing, ap))
                 {
@@ -1000,7 +1000,7 @@ void do_wait
             }
         }
 
-        int num = add_to(thing, 1, attr);
+        int num = add_to(thing, 1, atr);
         if (num <= 0)
         {
             // Thing over-notified, run the command immediately.
@@ -1008,7 +1008,7 @@ void do_wait
             thing = NOTHING;
             bTimed = false;
         }
-        wait_que(executor, caller, enactor, bTimed, ltaWhen, thing, attr,
+        wait_que(executor, caller, enactor, bTimed, ltaWhen, thing, atr,
             cmd, cargs, ncargs, mudstate.global_regs);
     }
 }

@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.15 2004-06-25 17:02:56 sdennis Exp $
+// $Id: boolexp.cpp,v 1.16 2004-08-16 05:14:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -377,8 +377,9 @@ static BOOLEXP *test_atr(char *s)
 static BOOLEXP *parse_boolexp_L(void)
 {
     BOOLEXP *b;
-    char *p, *buf;
-    MSTATE mstate;
+    char    *p;
+    char    *buf;
+    MSTATE  mstate;
 
     buf = NULL;
     skip_whitespace();
@@ -405,7 +406,8 @@ static BOOLEXP *parse_boolexp_L(void)
         while (  *parsebuf
               && *parsebuf != AND_TOKEN
               && *parsebuf != OR_TOKEN
-              && *parsebuf != ')')
+              && *parsebuf != ')'
+              && p < buf + LBUF_SIZE)
         {
             *p++ = *parsebuf++;
         }
@@ -693,7 +695,12 @@ static BOOLEXP *parse_boolexp_E(void)
 
 BOOLEXP *parse_boolexp(dbref player, const char *buf, bool internal)
 {
-    strcpy(parsestore, buf);
+    size_t n = strlen(buf);
+    if (n > sizeof(parsestore)-1)
+    {
+        n = sizeof(parsestore)-1;
+    }
+    memcpy(parsestore, buf, n+1);
     parsebuf = parsestore;
     parse_player = player;
     if (  buf == NULL

@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.25 2004-07-19 21:33:54 sdennis Exp $
+// $Id: player.cpp,v 1.26 2004-08-16 05:14:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -730,7 +730,7 @@ bool add_player_name(dbref player, const char *name)
         //
         MEMFREE(p);
         p = (dbref *)MEMALLOC(sizeof(int));
-        (void)ISOUTOFMEMORY(p);
+        ISOUTOFMEMORY(p);
 
         *p = player;
         stat = hashreplLEN(temp, strlen(temp), p, &mudstate.player_htab);
@@ -739,7 +739,7 @@ bool add_player_name(dbref player, const char *name)
     else
     {
         p = (dbref *)MEMALLOC(sizeof(int));
-        (void)ISOUTOFMEMORY(p);
+        ISOUTOFMEMORY(p);
 
         *p = player;
         stat = (hashaddLEN(temp, strlen(temp), p, &mudstate.player_htab) >= 0);
@@ -874,7 +874,7 @@ void badname_add(char *bad_name)
     // Make a new node and link it in at the top.
     //
     BADNAME *bp = (BADNAME *)MEMALLOC(sizeof(BADNAME));
-    (void)ISOUTOFMEMORY(bp);
+    ISOUTOFMEMORY(bp);
     bp->name = StringClone(bad_name);
     bp->next = mudstate.badname_head;
     mudstate.badname_head = bp;

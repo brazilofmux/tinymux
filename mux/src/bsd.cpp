@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.39 2004-07-24 05:25:58 sdennis Exp $
+// $Id: bsd.cpp,v 1.40 2004-08-16 05:14:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -281,7 +281,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                                 szIdentBuffer[nIdentBuffer] = 0;
 
                                 char *p = szIdentBuffer;
-                                for (;;)
+                                for (; nIdent < sizeof(szIdent)-1;)
                                 {
                                     if (  *p == '\0'
                                        || *p == '\r'
@@ -293,11 +293,6 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                                     if (mux_isprint(*p))
                                     {
                                         szIdent[nIdent++] = *p;
-                                        if (sizeof(szIdent) - 1 <= nIdent)
-                                        {
-                                            bAllDone = true;
-                                            break;
-                                        }
                                     }
                                     p++;
                                 }
@@ -379,11 +374,11 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 
 static int get_slave_result(void)
 {
-    char host[128];
-    char token[128];
-    char ident[128];
-    char os[128];
-    char userid[128];
+    char host[MAX_STRING];
+    char token[MAX_STRING];
+    char ident[MAX_STRING];
+    char os[MAX_STRING];
+    char userid[MAX_STRING];
     DESC *d;
     int local_port, remote_port;
 
@@ -2230,28 +2225,31 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
             }
         }
 
-        if (tb != NULL && tb->hdr.nchars > 0)
+        if (tb != NULL)
         {
-            cnt = AsyncSend(d, tb->hdr.start, tb->hdr.nchars);
-            if (cnt <= 0)
+            if (tb->hdr.nchars > 0)
             {
-                mudstate.debug_cmd = cmdsave;
-                return;
+                cnt = AsyncSend(d, tb->hdr.start, tb->hdr.nchars);
+                if (cnt <= 0)
+                {
+                    mudstate.debug_cmd = cmdsave;
+                    return;
+                }
+                d->output_size -= cnt;
+                tb->hdr.nchars -= cnt;
+                tb->hdr.start += cnt;
             }
-            d->output_size -= cnt;
-            tb->hdr.nchars -= cnt;
-            tb->hdr.start += cnt;
-        }
-        if (tb->hdr.nchars <= 0)
-        {
-            save = tb;
-            tb = tb->hdr.nxt;
-            MEMFREE(save);
-            save = NULL;
-            d->output_head = tb;
-            if (tb == NULL)
+            if (tb->hdr.nchars <= 0)
             {
-                d->output_tail = NULL;
+                save = tb;
+                tb = tb->hdr.nxt;
+                MEMFREE(save);
+                save = NULL;
+                d->output_head = tb;
+                if (tb == NULL)
+                {
+                    d->output_tail = NULL;
+                }
             }
         }
     }

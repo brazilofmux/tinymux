@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.11 2004-07-07 18:34:35 sdennis Exp $
+// $Id: attrcache.cpp,v 1.12 2004-08-16 05:14:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -82,7 +82,9 @@ void cache_pass2(void)
     for (int i = 0; i < N_TEMP_FILES; i++)
     {
         fprintf(stderr, "File %d: ", i);
-        fseek(TempFiles[i], 0, SEEK_SET);
+        long int li = fseek(TempFiles[i], 0, SEEK_SET);
+        mux_assert(0L == li);
+
         int cnt = 1000;
         size_t nSize;
         for (;;)
@@ -289,7 +291,8 @@ bool cache_put(Aname *nam, const char *value, size_t len)
 {
     if (  !value
        || !nam
-       || !cache_initted)
+       || !cache_initted
+       || len == 0)
     {
         return false;
     }
@@ -357,11 +360,12 @@ bool cache_put(Aname *nam, const char *value, size_t len)
 
         // Add information about the new entry back into the cache.
         //
-        pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+len);
+        size_t nSizeOfEntry = sizeof(CENT_HDR) + len;
+        pCacheEntry = (PCENT_HDR)MEMALLOC(nSizeOfEntry);
         if (pCacheEntry)
         {
             pCacheEntry->attrKey = *nam;
-            pCacheEntry->nSize = len + sizeof(CENT_HDR);
+            pCacheEntry->nSize = nSizeOfEntry;
             CacheSize += pCacheEntry->nSize;
             memcpy((char *)(pCacheEntry+1), TempRecord.attrText, len);
             ADD_ENTRY(pCacheEntry);

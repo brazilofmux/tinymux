@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.66 2004-07-12 14:38:20 sdennis Exp $
+// $Id: stringutil.cpp,v 1.67 2004-08-16 05:14:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1812,10 +1812,7 @@ bool minmatch(char *str, char *target, int min)
 char *StringCloneLen(const char *str, size_t nStr)
 {
     char *buff = (char *)MEMALLOC(nStr+1);
-    if (ISOUTOFMEMORY(buff))
-    {
-        return 0;
-    }
+    ISOUTOFMEMORY(buff);
     memcpy(buff, str, nStr);
     buff[nStr] = '\0';
     return buff;
@@ -1836,10 +1833,7 @@ char *StringClone(const char *str)
 char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
 {
     char *buff = (char *)MEMALLOC(nBuffer);
-    if (ISOUTOFMEMORY(buff))
-    {
-        return 0;
-    }
+    ISOUTOFMEMORY(buff);
     memcpy(buff, pBuffer, nBuffer);
     return buff;
 }
@@ -2231,7 +2225,7 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
 
     // Parse Input
     //
-    unsigned char ch0;
+    unsigned char ch;
     pfr->pMeat = str;
     if (  !mux_isdigit(*str)
        && *str != '.')
@@ -2258,16 +2252,16 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
         {
             // Look for three magic strings.
             //
-            unsigned char ch0 = mux_toupper(str[0]);
-            if (ch0 == 'I')
+            ch = mux_toupper(str[0]);
+            if (ch == 'I')
             {
                 // Could be 'Inf' or 'Ind'
                 //
-                ch0 = mux_toupper(str[1]);
-                if (ch0 == 'N')
+                ch = mux_toupper(str[1]);
+                if (ch == 'N')
                 {
-                    ch0 = mux_toupper(str[2]);
-                    if (ch0 == 'F')
+                    ch = mux_toupper(str[2]);
+                    if (ch == 'F')
                     {
                         // Inf
                         //
@@ -2282,7 +2276,7 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
                         str += 3;
                         goto LastSpaces;
                     }
-                    else if (ch0 == 'D')
+                    else if (ch == 'D')
                     {
                         // Ind
                         //
@@ -2292,15 +2286,15 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
                     }
                 }
             }
-            else if (ch0 == 'N')
+            else if (ch == 'N')
             {
                 // Could be 'Nan'
                 //
-                ch0 = mux_toupper(str[1]);
-                if (ch0 == 'A')
+                ch = mux_toupper(str[1]);
+                if (ch == 'A')
                 {
-                    ch0 = mux_toupper(str[2]);
-                    if (ch0 == 'N')
+                    ch = mux_toupper(str[2]);
+                    if (ch == 'N')
                     {
                         // Nan
                         //
@@ -2343,8 +2337,8 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
         return false;
     }
 
-    ch0 = mux_toupper(*str);
-    if (ch0 == 'E')
+    ch = mux_toupper(*str);
+    if (ch == 'E')
     {
         // There is an exponent portion.
         //

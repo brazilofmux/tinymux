@@ -421,7 +421,7 @@ static Bigint *Balloc(int k)
         x = 1 << k;
 #ifdef Omit_Private_Memory
         rv = (Bigint *)MEMALLOC(sizeof(Bigint) + (x-1)*sizeof(ULong));
-        (void)ISOUTOFMEMORY(rv);
+        ISOUTOFMEMORY(rv);
 #else
         len = (sizeof(Bigint) + (x-1)*sizeof(ULong) + sizeof(double) - 1)
             /sizeof(double);
@@ -433,7 +433,7 @@ static Bigint *Balloc(int k)
         else
         {
             rv = (Bigint*)MEMALLOC(len*sizeof(double));
-            (void)ISOUTOFMEMORY(rv);
+            ISOUTOFMEMORY(rv);
         }
 #endif
         rv->k = k;
@@ -631,7 +631,7 @@ static int lo0bits(ULong *y)
     {
         k++;
         x >>= 1;
-        if (!x & 1)
+        if (!(x & 1))
         {
             return 32;
         }

@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.10 2004-07-07 16:45:53 sdennis Exp $
+// $Id: walkdb.cpp,v 1.11 2004-08-16 05:14:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1138,7 +1138,7 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int key,
 void olist_push(void)
 {
     OLSTK *ol = (OLSTK *)MEMALLOC(sizeof(OLSTK));
-    (void)ISOUTOFMEMORY(ol);
+    ISOUTOFMEMORY(ol);
     ol->next = mudstate.olist;
     mudstate.olist = ol;
 

@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.31 2004-06-10 15:39:34 sdennis Exp $
+// $Id: mail.cpp,v 1.32 2004-08-16 05:14:07 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -62,7 +62,7 @@ static void mail_db_grow(int newtop)
         }
 
         MENT *newdb = (MENT *)MEMALLOC((newsize + MAIL_FUDGE) * sizeof(MENT));
-        (void)ISOUTOFMEMORY(newdb);
+        ISOUTOFMEMORY(newdb);
         if (mudstate.mail_list)
         {
             mudstate.mail_list -= MAIL_FUDGE;
@@ -2184,7 +2184,7 @@ static void send_mail
     // Initialize the appropriate fields.
     //
     struct mail *newp = (struct mail *)MEMALLOC(sizeof(struct mail));
-    (void)ISOUTOFMEMORY(newp);
+    ISOUTOFMEMORY(newp);
     newp->to = target;
 
     // HACK: Allow @mail/quick, if player is an object, then the
@@ -2332,7 +2332,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
     else if (string_prefix("sanity", action))
     {
         int *ai = (int *)MEMALLOC(mudstate.mail_db_top * sizeof(int));
-        (void)ISOUTOFMEMORY(ai);
+        ISOUTOFMEMORY(ai);
         memset(ai, 0, mudstate.mail_db_top * sizeof(int));
 
         MAIL_ITER_ALL(mp, thing)
@@ -2416,7 +2416,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
         {
             notify(player, tprintf("Re-counting mailbag reference counts."));
             int *ai = (int *)MEMALLOC(mudstate.mail_db_top * sizeof(int));
-            (void)ISOUTOFMEMORY(ai);
+            ISOUTOFMEMORY(ai);
             memset(ai, 0, mudstate.mail_db_top * sizeof(int));
 
             MAIL_ITER_ALL(mp, thing)
@@ -2902,7 +2902,7 @@ void load_mail_V5(FILE *fp)
     while (p && strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        (void)ISOUTOFMEMORY(mp);
+        ISOUTOFMEMORY(mp);
 
         mp->to      = mux_atol(nbuf1);
         mp->from    = getref(fp);
@@ -2981,7 +2981,7 @@ void malias_read(FILE *fp)
     ma_size = ma_top = i;
 
     malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
-    (void)ISOUTOFMEMORY(malias);
+    ISOUTOFMEMORY(malias);
 
     for (i = 0; i < ma_top; i++)
     {
@@ -2997,7 +2997,7 @@ void malias_read(FILE *fp)
         }
 
         m = (struct malias *)MEMALLOC(sizeof(struct malias));
-        (void)ISOUTOFMEMORY(m);
+        ISOUTOFMEMORY(m);
         malias[i] = m;
 
         char *p = strchr(buffer, ' ');
@@ -3294,13 +3294,13 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     {
         ma_size = MA_INC;
         malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
-        (void)ISOUTOFMEMORY(malias);
+        ISOUTOFMEMORY(malias);
     }
     else if (ma_top >= ma_size)
     {
         ma_size += MA_INC;
         nm = (struct malias **)MEMALLOC(sizeof(struct malias *) * (ma_size));
-        (void)ISOUTOFMEMORY(nm);
+        ISOUTOFMEMORY(nm);
 
         for (i = 0; i < ma_top; i++)
         {
@@ -3310,7 +3310,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
         malias = nm;
     }
     malias[ma_top] = (struct malias *)MEMALLOC(sizeof(struct malias));
-    (void)ISOUTOFMEMORY(malias[ma_top]);
+    ISOUTOFMEMORY(malias[ma_top]);
 
 
     // Parse the player list.

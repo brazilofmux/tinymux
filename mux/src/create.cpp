@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.12 2004-07-24 05:48:56 sdennis Exp $
+// $Id: create.cpp,v 1.13 2004-08-16 05:14:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -304,19 +304,19 @@ void do_link
             s_Home(thing, nHomeNew);
             if (!Quiet(executor))
             {
-                char *buff = alloc_lbuf("do_link.notify");
-                char *bp = buff;
+                char *buff1 = alloc_lbuf("do_link.notify");
+                char *bp = buff1;
 
                 char *p;
                 p = tprintf("Home of %s(#%d) changed from ", Name(thing), thing);
-                safe_str(p, buff, &bp);
+                safe_str(p, buff1, &bp);
                 p = tprintf("%s(#%d) to ", Name(nHomeOrig), nHomeOrig);
-                safe_str(p, buff, &bp);
+                safe_str(p, buff1, &bp);
                 p = tprintf("%s(#%d).", Name(nHomeNew), nHomeNew);
-                safe_str(p, buff, &bp);
+                safe_str(p, buff1, &bp);
                 *bp = '\0';
-                notify_quiet(executor, buff);
-                free_lbuf(buff);
+                notify_quiet(executor, buff1);
+                free_lbuf(buff1);
             }
         }
         break;
@@ -356,19 +356,19 @@ void do_link
             s_Dropto(thing, room);
             if (!Quiet(executor))
             {
-                char *buff = alloc_lbuf("do_link2.notify");
-                char *bp = buff;
+                char *buff1 = alloc_lbuf("do_link2.notify");
+                char *bp = buff1;
 
                 char *p;
                 p = tprintf("Dropto of %s(#%d) changed from ", Name(thing), thing);
-                safe_str(p, buff, &bp);
+                safe_str(p, buff1, &bp);
                 p = tprintf("%s(#%d) to ", Name(nDroptoOrig), nDroptoOrig);
-                safe_str(p, buff, &bp);
+                safe_str(p, buff1, &bp);
                 p = tprintf("%s(#%d).", Name(nDroptoNew), nDroptoNew);
-                safe_str(p, buff, &bp);
+                safe_str(p, buff1, &bp);
                 *bp = '\0';
-                notify_quiet(executor, buff);
-                free_lbuf(buff);
+                notify_quiet(executor, buff1);
+                free_lbuf(buff1);
             }
         }
         break;

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.72 2004-06-30 18:59:20 sdennis Exp $
+// $Id: funceval.cpp,v 1.73 2004-08-16 05:14:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3557,7 +3557,7 @@ FUNCTION(fun_push)
         return;
     }
     STACK *sp = (STACK *)MEMALLOC(sizeof(STACK));
-    (void)ISOUTOFMEMORY(sp);
+    ISOUTOFMEMORY(sp);
     sp->next = Stack(doer);
     sp->data = alloc_lbuf("push");
     strcpy(sp->data, data);
@@ -3856,7 +3856,7 @@ CBitField::CBitField(unsigned int nMaximum_arg)
         //
         nInts    = (nMaximum+nBitsPer) >> nShift;
         pMasks   = (UINT32 *)MEMALLOC((nInts+nBitsPer)*sizeof(UINT32));
-        (void)ISOUTOFMEMORY(pMasks);
+        ISOUTOFMEMORY(pMasks);
         pInts    = pMasks + nBitsPer;
 
         // Calculate all possible single bits.

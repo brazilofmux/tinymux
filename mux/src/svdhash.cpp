@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.24 2004-07-09 07:33:17 sdennis Exp $
+// $Id: svdhash.cpp,v 1.25 2004-08-16 05:14:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1303,10 +1303,7 @@ bool CHashFile::EmptyDirectory(void)
     m_nDirDepth = 1;
 
     m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
-    if (ISOUTOFMEMORY(m_pDir))
-    {
-        return false;
-    }
+    ISOUTOFMEMORY(m_pDir);
     m_pDir[0] = m_pDir[1] = 0xFFFFFFFFUL;
     return true;
 }
@@ -1429,10 +1426,7 @@ bool CHashFile::ReadDirectory(void)
     m_nDir = (int)(cc / HF_SIZEOF_FILEOFFSET);
     m_nDirDepth = 0;
     m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
-    if (ISOUTOFMEMORY(m_pDir))
-    {
-        return false;
-    }
+    ISOUTOFMEMORY(m_pDir);
     int n = m_nDir;
     n >>= 1;
     while (n)
@@ -1832,10 +1826,7 @@ bool CHashFile::DoubleDirectory(void)
     HP_DIRINDEX nNewDirDepth = m_nDirDepth + 1;
 
     HF_PFILEOFFSET pNewDir = (HF_PFILEOFFSET)MEMALLOC(sizeof(HF_FILEOFFSET)*nNewDir);
-    if (ISOUTOFMEMORY(pNewDir))
-    {
-        return false;
-    }
+    ISOUTOFMEMORY(pNewDir);
 
     unsigned int iNewDir = 0;
     for (unsigned int iDir = 0; iDir < m_nDir; iDir++)

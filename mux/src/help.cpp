@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.10 2004-07-13 16:38:40 sdennis Exp $
+// $Id: help.cpp,v 1.11 2004-08-16 05:14:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -181,7 +181,7 @@ int helpindex_read(int iHelpfile)
                 continue;
             }
             struct help_entry *htab_entry = (struct help_entry *)MEMALLOC(sizeof(struct help_entry));
-            (void)ISOUTOFMEMORY(htab_entry);
+            ISOUTOFMEMORY(htab_entry);
             htab_entry->pos = entry.pos;
             htab_entry->original = bOriginal;
             bOriginal = false;

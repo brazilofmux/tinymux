@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.25 2004-07-24 05:50:24 sdennis Exp $
+// $Id: comsys.cpp,v 1.26 2004-08-16 05:14:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -168,7 +168,8 @@ char *MakeCanonicalComAlias
         {
             return NULL;
         }
-        if (n <= MAX_ALIAS_LEN)
+        if (  n <= MAX_ALIAS_LEN
+           && q < Buffer + ALIAS_SIZE)
         {
             n++;
             *q++ = *p;
@@ -232,20 +233,22 @@ void load_channels(FILE *fp)
     comsys_t *c;
 
     int np = 0;
-    fscanf(fp, "%d\n", &np);
+    int cc = fscanf(fp, "%d\n", &np);
+    mux_assert(1 == cc);
     for (i = 0; i < np; i++)
     {
         c = create_new_comsys();
         c->who = 0;
         c->numchannels = 0;
-        fscanf(fp, "%d %d\n", &(c->who), &(c->numchannels));
+        cc = fscanf(fp, "%d %d\n", &(c->who), &(c->numchannels));
+        mux_assert(2 == cc);
         c->maxchannels = c->numchannels;
         if (c->maxchannels > 0)
         {
             c->alias = (char *)MEMALLOC(c->maxchannels * ALIAS_SIZE);
-            (void)ISOUTOFMEMORY(c->alias);
+            ISOUTOFMEMORY(c->alias);
             c->channels = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
-            (void)ISOUTOFMEMORY(c->channels);
+            ISOUTOFMEMORY(c->channels);
 
             for (j = 0; j < c->numchannels; j++)
             {
@@ -353,7 +356,7 @@ void save_channels(FILE *fp)
 comsys_t *create_new_comsys(void)
 {
     comsys_t *c = (comsys_t *)MEMALLOC(sizeof(comsys_t));
-    (void)ISOUTOFMEMORY(c);
+    ISOUTOFMEMORY(c);
 
     c->who         = NOTHING;
     c->numchannels = 0;
@@ -532,7 +535,9 @@ void load_comsystem(FILE *fp)
         {
             return;
         }
-        fscanf(fp, "%d\n", &nc);
+        int cc;
+        cc = fscanf(fp, "%d\n", &nc);
+        mux_assert(1 == cc);
     }
     else
     {
@@ -544,7 +549,7 @@ void load_comsystem(FILE *fp)
     for (i = 0; i < nc; i++)
     {
         ch = (struct channel *)MEMALLOC(sizeof(struct channel));
-        (void)ISOUTOFMEMORY(ch);
+        ISOUTOFMEMORY(ch);
 
         int nChannel = GetLineTrunc(temp, sizeof(temp), fp);
         if (nChannel > MAX_CHANNEL_LEN)
@@ -588,19 +593,22 @@ void load_comsystem(FILE *fp)
         ch->num_messages = 0;
         ch->chan_obj     = NOTHING;
 
+        int cc;
         if (ver >= 1)
         {
-            fscanf(fp, "%d %d %d %d %d %d %d %d\n",
+            cc = fscanf(fp, "%d %d %d %d %d %d %d %d\n",
                 &(ch->type), &(ch->temp1), &(ch->temp2),
                 &(ch->charge), &(ch->charge_who),
                 &(ch->amount_col), &(ch->num_messages), &(ch->chan_obj));
+            mux_assert(8 == cc);
         }
         else
         {
-            fscanf(fp, "%d %d %d %d %d %d %d %d %d %d\n",
+            cc = fscanf(fp, "%d %d %d %d %d %d %d %d %d %d\n",
                 &(ch->type), &(dummy), &(ch->temp1), &(ch->temp2),
                 &(dummy), &(ch->charge), &(ch->charge_who),
                 &(ch->amount_col), &(ch->num_messages), &(ch->chan_obj));
+            mux_assert(10 == cc);
         }
 
         if (ver <= 1)
@@ -624,12 +632,13 @@ void load_comsystem(FILE *fp)
         }
 
         ch->num_users = 0;
-        fscanf(fp, "%d\n", &(ch->num_users));
+        cc =fscanf(fp, "%d\n", &(ch->num_users));
+        mux_assert(1 == cc);
         ch->max_users = ch->num_users;
         if (ch->num_users > 0)
         {
             ch->users = (struct comuser **)calloc(ch->max_users, sizeof(struct comuser *));
-            (void)ISOUTOFMEMORY(ch->users);
+            ISOUTOFMEMORY(ch->users);
 
             int jAdded = 0;
             for (j = 0; j < ch->num_users; j++)
@@ -645,8 +654,9 @@ void load_comsystem(FILE *fp)
                 if (ver == 3)
                 {
                     int iComTitleStatus;
-                    fscanf(fp, "%d %d %d\n", &(t_user.who), &iUserIsOn,
+                    cc = fscanf(fp, "%d %d %d\n", &(t_user.who), &iUserIsOn,
                         &iComTitleStatus);
+                    mux_assert(3 == cc);
                     t_user.bUserIsOn = (iUserIsOn ? true : false);
                     t_user.ComTitleStatus = (iComTitleStatus ? true : false);
                 }
@@ -655,13 +665,16 @@ void load_comsystem(FILE *fp)
                     t_user.ComTitleStatus = true;
                     if (ver)
                     {
-                        fscanf(fp, "%d %d\n", &(t_user.who), &iUserIsOn);
+                        cc = fscanf(fp, "%d %d\n", &(t_user.who), &iUserIsOn);
+                        mux_assert(2 == cc);
                         t_user.bUserIsOn = (iUserIsOn ? true : false);
                     }
                     else
                     {
-                        fscanf(fp, "%d %d %d", &(t_user.who), &(dummy), &(dummy));
-                        fscanf(fp, "%d\n", &iUserIsOn);
+                        cc = fscanf(fp, "%d %d %d", &(t_user.who), &(dummy), &(dummy));
+                        mux_assert(3 == cc);
+                        cc = fscanf(fp, "%d\n", &iUserIsOn);
+                        mux_assert(1 == cc);
                         t_user.bUserIsOn = (iUserIsOn ? true : false);
                     }
                 }
@@ -698,7 +711,7 @@ void load_comsystem(FILE *fp)
                     }
 
                     struct comuser *user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
-                    (void)ISOUTOFMEMORY(user);
+                    ISOUTOFMEMORY(user);
                     memcpy(user, &t_user, sizeof(struct comuser));
 
                     user->title = StringCloneLen(pTitle, nTitle);
@@ -1066,11 +1079,11 @@ void SendChannelMessage
         int aflags;
         int logmax = DFLT_MAX_LOG;
         char *maxbuf;
-        ATTR *attr;
-        if (  (attr = atr_str("MAX_LOG"))
-           && attr->number)
+        ATTR *pattr;
+        if (  (pattr = atr_str("MAX_LOG"))
+           && pattr->number)
         {
-            maxbuf = atr_get(obj, attr->number, &aowner, &aflags);
+            maxbuf = atr_get(obj, pattr->number, &aowner, &aflags);
             logmax = mux_atol(maxbuf);
             free_lbuf(maxbuf);
         }
@@ -1079,12 +1092,12 @@ void SendChannelMessage
             if (logmax > MAX_RECALL_REQUEST)
             {
                 logmax = MAX_RECALL_REQUEST;
-                atr_add(ch->chan_obj, attr->number, mux_ltoa_t(logmax), GOD,
+                atr_add(ch->chan_obj, pattr->number, mux_ltoa_t(logmax), GOD,
                     AF_CONST|AF_NOPROG|AF_NOPARSE);
             }
             char *p = tprintf("HISTORY_%d", iMod(ch->num_messages, logmax));
             int atr = mkattr(GOD, p);
-            if (0 < attr)
+            if (0 < atr)
             {
                 atr_add(ch->chan_obj, atr, msgNormal, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
             }
@@ -1122,7 +1135,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         {
             ch->max_users += 10;
             cu = (struct comuser **)MEMALLOC(sizeof(struct comuser *) * ch->max_users);
-            (void)ISOUTOFMEMORY(cu);
+            ISOUTOFMEMORY(cu);
 
             for (i = 0; i < (ch->num_users - 1); i++)
             {
@@ -1132,7 +1145,7 @@ void do_joinchannel(dbref player, struct channel *ch)
             ch->users = cu;
         }
         user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
-        (void)ISOUTOFMEMORY(user);
+        ISOUTOFMEMORY(user);
 
         for (i = ch->num_users - 1; i > 0 && ch->users[i - 1]->who > player; i--)
         {
@@ -1294,11 +1307,11 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     int aflags;
     dbref obj = ch->chan_obj;
     int logmax = MAX_RECALL_REQUEST;
-    ATTR *attr;
-    if (  (attr = atr_str("MAX_LOG"))
-       && (atr_get_info(obj, attr->number, &aowner, &aflags)))
+    ATTR *pattr;
+    if (  (pattr = atr_str("MAX_LOG"))
+       && (atr_get_info(obj, pattr->number, &aowner, &aflags)))
     {
-        char *maxbuf = atr_get(obj, attr->number, &aowner, &aflags);
+        char *maxbuf = atr_get(obj, pattr->number, &aowner, &aflags);
         logmax = mux_atol(maxbuf);
         free_lbuf(maxbuf);
     }
@@ -1323,10 +1336,10 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     for (int count = 0; count < arg; count++)
     {
         histnum++;
-        attr = atr_str(tprintf("HISTORY_%d", iMod(histnum, logmax)));
-        if (attr)
+        pattr = atr_str(tprintf("HISTORY_%d", iMod(histnum, logmax)));
+        if (pattr)
         {
-            message = atr_get(obj, attr->number, &aowner, &aflags);
+            message = atr_get(obj, pattr->number, &aowner, &aflags);
             raw_notify(player, message);
             free_lbuf(message);
         }
@@ -1525,9 +1538,9 @@ void do_addcom
         c->maxchannels += 10;
 
         na = (char *)MEMALLOC(ALIAS_SIZE * c->maxchannels);
-        (void)ISOUTOFMEMORY(na);
+        ISOUTOFMEMORY(na);
         nc = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
-        (void)ISOUTOFMEMORY(nc);
+        ISOUTOFMEMORY(nc);
 
         for (i = 0; i < c->numchannels; i++)
         {
@@ -1696,7 +1709,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
         return;
     }
     struct channel *newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
-    (void)ISOUTOFMEMORY(newchannel);
+    ISOUTOFMEMORY(newchannel);
 
     int   vwChannel;
     size_t nNameNoANSI;
@@ -2505,7 +2518,7 @@ bool do_comsystem(dbref who, char *cmd)
     char *t;
     char *alias = alloc_lbuf("do_comsystem");
     char *s = alias;
-    for (t = cmd; *t && *t != ' '; *s++ = *t++)
+    for (t = cmd; *t && *t != ' ' && s < alias + LBUF_SIZE; *s++ = *t++)
     {
         ; // Nothing.
     }
@@ -2853,10 +2866,15 @@ void do_chanlist(dbref executor, dbref caller, dbref enactor, int key)
             else
             {
                 atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
-                if ((ch->chan_obj == NOTHING) || !*atrstr)
+                if (  NOTHING == ch->chan_obj
+                   || !*atrstr)
+                {
                     strcpy(buf, "No description.");
+                }
                 else
+                {
                     sprintf(buf, "%-54.54s", atrstr);
+                }
                 free_lbuf(atrstr);
 
                 pBuffer = buf;

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.115 2004-07-22 19:30:55 sdennis Exp $
+// $Id: functions.cpp,v 1.116 2004-08-16 05:14:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -7524,7 +7524,7 @@ static void do_asort(char *s[], int n, int sort_type)
     case NUMERIC_LIST:
 
         i64p = (i64_rec *) MEMALLOC(n * sizeof(i64_rec));
-        (void)ISOUTOFMEMORY(i64p);
+        ISOUTOFMEMORY(i64p);
         for (i = 0; i < n; i++)
         {
             i64p[i].str = s[i];
@@ -7541,7 +7541,7 @@ static void do_asort(char *s[], int n, int sort_type)
 
     case DBREF_LIST:
         ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        (void)ISOUTOFMEMORY(ip);
+        ISOUTOFMEMORY(ip);
         for (i = 0; i < n; i++)
         {
             ip[i].str = s[i];
@@ -7559,7 +7559,7 @@ static void do_asort(char *s[], int n, int sort_type)
     case FLOAT_LIST:
 
         fp = (f_rec *) MEMALLOC(n * sizeof(f_rec));
-        (void)ISOUTOFMEMORY(fp);
+        ISOUTOFMEMORY(fp);
         for (i = 0; i < n; i++)
         {
             fp[i].str = s[i];
@@ -10089,7 +10089,7 @@ void do_function
     if (!ufp)
     {
         ufp = (UFUN *) MEMALLOC(sizeof(UFUN));
-        (void)ISOUTOFMEMORY(ufp);
+        ISOUTOFMEMORY(ufp);
         ufp->name = StringClone(np);
         mux_strupr(ufp->name);
         ufp->obj = obj;

@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.55 2004-07-24 05:44:29 sdennis Exp $
+// $Id: predicates.cpp,v 1.56 2004-08-16 05:14:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -828,7 +828,7 @@ void do_addcommand
         // Otherwise, add another (thing,atr) to the list.
         //
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
-        (void)ISOUTOFMEMORY(add);
+        ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = attr->number;
         add->name = StringClone(pName);
@@ -846,7 +846,7 @@ void do_addcommand
         }
 
         cmd = (CMDENT *)MEMALLOC(sizeof(CMDENT));
-        (void)ISOUTOFMEMORY(cmd);
+        ISOUTOFMEMORY(cmd);
         cmd->cmdname = StringClone(pName);
         cmd->switches = NULL;
         cmd->perms = 0;
@@ -862,7 +862,7 @@ void do_addcommand
         }
         cmd->hookmask = 0;
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
-        (void)ISOUTOFMEMORY(add);
+        ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = attr->number;
         add->name = StringClone(pName);
@@ -1357,7 +1357,7 @@ void do_prog
     }
 
     PROG *program = (PROG *)MEMALLOC(sizeof(PROG));
-    (void)ISOUTOFMEMORY(program);
+    ISOUTOFMEMORY(program);
     program->wait_enactor = player;
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
@@ -2496,7 +2496,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int key,
 // --------------------------------------------------------------------------
 // OutOfMemory: handle an out of memory condition.
 //
-bool OutOfMemory(const char *SourceFile, unsigned int LineNo)
+void OutOfMemory(const char *SourceFile, unsigned int LineNo)
 {
     Log.tinyprintf("%s(%u): Out of memory." ENDLINE, SourceFile, LineNo);
     Log.Flush();
@@ -2509,7 +2509,6 @@ bool OutOfMemory(const char *SourceFile, unsigned int LineNo)
     {
         abort();
     }
-    return true;
 }
 
 // --------------------------------------------------------------------------
