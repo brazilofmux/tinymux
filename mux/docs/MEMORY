@@ -1,31 +1,21 @@
-TinyMUX 2.1: MEMORY
-Last Update: February 2002
+TinyMUX 2.4: MEMORY
+Last Update: September 2004
 
 This file will explain how to configure for the two memory options of MUX as
 well as the procedure for converting between them.
 
-The default build procedure creates a disk-based server. MUX is also able to
+The default build procedure creates a disk-based server.  MUX is also able to
 run in a memory-based mode and this version of MUX continues to support that
-style. However, to create a memory-based server, you need to change your
-Makefile at a specific time in the build process.
+style.  However, to create a memory-based server, you need to enable it at a
+specific time in the build process.
 
-  ./configure
-  # <---Edit your Makefile to define MEMORY_BASED at this point.
+  ./configure --enable-memory-based
   make depend
   make
 
-The way to turn on MEMORY_BASED is to edit the makefile and remove the leading
-comment character ('#') from the line that looks like the following:
-
-  #SWITCH_MEMORY_BASED=Uncomment me.
-
-to make it look like the following:
-
-  SWITCH_MEMORY_BASED=Uncomment me.
-
 It is critically important that -all- of your source code is built for the
-same memory mode. If you are building cleanly, there is no special action to
-take. However,if you have previously built for one memory mode and are now
+same memory mode.  If you are building cleanly, there is no special action to
+take.  However, if you have previously built for one memory mode and are now
 building for the other memory mode, you must interject the following step
 between editing your Makefile and the 'make depend' and 'make' steps:
 
@@ -46,32 +36,30 @@ NOTE: In all four of these procedures, the word 'GAMENAME' is the same as the
       this readme file.
 
 
-Procedure 1. Converting from Memory-Based to Disk-Based:
+Procedure 1.  Converting from Memory-Based to Disk-Based:
 -------------------------------------------------------
 
 The first part of converting a database from Memory-Based mode to Disk-Based
-mode is easy as a Memory-Based server always dumps a Flatfile. Look in your
+mode is easy as a Memory-Based server always dumps a Flatfile.  Look in your
 config file for your specific setting, but the name of the output file is
 normally 'GAMENAME.db.new' ('netmux.db.new' is the default).
 
 If you want to perform some simple checking, look for '***END OF DUMP***'
-on the end and look for attributes values throughout the flatfile. If
+on the end and look for attributes values throughout the flatfile.  If
 '***END OF DUMP***' is not at the end, the flatfile has been abbreviated
 (disk quotas, the site operator shutdown the entire server, etc).
 If there are no attribute values throughout the flatfile, it's not a true
 flatfile, but instead what is sometimes called a 'structure' file.
 
-A Structure file is the type of dump performed by a Disk-Based server. You
-aren't running in Memory-Based mode. There is no need to convert.
+A Structure file is the type of dump performed by a Disk-Based server.  You
+aren't running in Memory-Based mode.  There is no need to convert.
 Alternatively, if this file is from a backup, you have some problems as there
 isn't enough information in this file alone to run a game.
 
 However, assuming that your flatfile is good and true:
 
   1. 'cd src'
-  2. Edit your Makefile to add the '#' symbol in from of the
-     SWITCH_MEMORY_BASED line. The effect is the reverse of what was
-     described above.
+  2. ./configure --disable-memorybased
   3. 'make clean' to remove all intermediate files.
   4. 'make' to build a disk-based server.
   5. 'cd ../game/data'
@@ -110,7 +98,7 @@ Then, with 'GAMENAME.FLAT' in hand, you can re-build the server for
 Memory-Based mode:
 
   3. 'cd ../../src'
-  4. Uncomment the SWITCH_MEMORY_BASED line in your Makefile.
+  4. ./configure --enable-memorybased
   5. 'make clean' to remove all intermediate files.
   6. 'make' the game.
   7. 'cd ../game/data'.
