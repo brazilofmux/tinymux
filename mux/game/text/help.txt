@@ -4365,7 +4365,7 @@ BOOLEAN VALUES
 
   There are three types of Boolean Values in MUX: BITS, BOOLEAN, and
   BOOLEAN-Z. In each case, a Boolean Value is either TRUE or FALSE, and all
-  possible strings are mapped onto one those two.
+  possible strings are mapped onto one of those two.
 
    1. The most comprehensive definition of Boolean Value is denoted simply as
       BOOLEAN. Newer functions and features use the BOOLEAN definition of a
@@ -8209,6 +8209,7 @@ LTE()
   Related Topics: lt(), gte(), gt(), eq(), neq().
 
 & LWHO()
+LWHO()
 
   FUNCTION: lwho([<boolean>])
 
