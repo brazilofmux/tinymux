@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.15 2003-12-06 01:57:32 sdennis Exp $
+// $Id: mudconf.h,v 1.16 2004-04-16 16:39:47 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -67,6 +67,7 @@ struct confdata
     bool    quotas;             /* true = have building quotas */
     bool    read_rem_desc;      /* Can the DESCs of nonlocal objs be read? */
     bool    read_rem_name;      /* Can the NAMEs of nonlocal objs be read? */
+    bool    reset_players;      // Reset the maximum player stat.
     bool    robot_speak;        /* true = allow robots to speak */
     bool    run_startup;        // If no, startup attributes aren't processed on load.
     bool    safe_unowned;       /* Are objects not owned by you safe? */

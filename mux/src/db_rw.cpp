@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.12 2003-02-17 02:34:21 sdennis Exp $
+// $Id: db_rw.cpp,v 1.13 2004-04-16 16:39:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -559,6 +559,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // Record number of players
                 //
                 mudstate.record_players = getref(f);
+                if (mudconf.reset_players)
+                {
+                    mudstate.record_players = 0;
+                }
             }
             break;
 

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.39 2004-04-07 04:37:37 sdennis Exp $
+// $Id: conf.cpp,v 1.40 2004-04-16 16:39:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -142,43 +142,45 @@ void cf_init(void)
     mudconf.room_quota = 1;
     mudconf.thing_quota = 1;
     mudconf.mail_expiration = 14;
-    mudconf.use_http = false;
     mudconf.queuemax = 100;
     mudconf.queue_chunk = 10;
-    mudconf.active_q_chunk = 10;
-    mudconf.sacfactor = 5;
-    mudconf.sacadjust = -1;
+    mudconf.active_q_chunk  = 10;
+    mudconf.sacfactor       = 5;
+    mudconf.sacadjust       = -1;
+    mudconf.trace_limit     = 200;
+
+    mudconf.autozone        = true;
     mudconf.use_hostname    = true;
-    mudconf.quotas          = false;
-    mudconf.ex_flags        = true;
-    mudconf.robot_speak     = true;
     mudconf.clone_copy_cost = false;
-    mudconf.pub_flags       = true;
-    mudconf.quiet_look      = true;
-    mudconf.exam_public     = true;
-    mudconf.read_rem_desc   = false;
-    mudconf.read_rem_name   = false;
-    mudconf.sweep_dark      = false;
-    mudconf.player_listen   = false;
-    mudconf.quiet_whisper   = true;
     mudconf.dark_sleepers   = true;
-    mudconf.see_own_dark    = true;
+    mudconf.ex_flags        = true;
+    mudconf.exam_public     = true;
+    mudconf.fascist_tport   = false;
     mudconf.idle_wiz_dark   = false;
-    mudconf.pemit_players   = false;
-    mudconf.pemit_any       = false;
     mudconf.match_mine      = true;
     mudconf.match_mine_pl   = true;
-    mudconf.switch_df_all   = true;
-    mudconf.fascist_tport   = false;
-    mudconf.terse_look      = true;
-    mudconf.terse_contents  = true;
-    mudconf.terse_exits     = true;
-    mudconf.terse_movemsg   = true;
-    mudconf.trace_topdown   = true;
-    mudconf.trace_limit     = 200;
+    mudconf.pemit_players   = false;
+    mudconf.pemit_any       = false;
+    mudconf.player_listen   = false;
+    mudconf.pub_flags       = true;
+    mudconf.quiet_look      = true;
+    mudconf.quiet_whisper   = true;
+    mudconf.quotas          = false;
+    mudconf.read_rem_desc   = false;
+    mudconf.read_rem_name   = false;
+    mudconf.reset_players   = false;
+    mudconf.robot_speak     = true;
     mudconf.safe_unowned    = false;
     mudconf.safer_passwords = false;
-    mudconf.autozone        = true;
+    mudconf.see_own_dark    = true;
+    mudconf.sweep_dark      = false;
+    mudconf.switch_df_all   = true;
+    mudconf.terse_contents  = true;
+    mudconf.terse_exits     = true;
+    mudconf.terse_look      = true;
+    mudconf.terse_movemsg   = true;
+    mudconf.trace_topdown   = true;
+    mudconf.use_http        = false;
 
     // -- ??? Running SC on a non-SC DB may cause problems.
     //
@@ -1785,6 +1787,7 @@ CONF conftable[] =
     {"read_remote_name",          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.read_rem_name,   NULL,               0},
     {"register_create_file",      cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.regf_file,       NULL, SIZEOF_PATHNAME},
     {"register_site",             cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,  H_REGISTRATION},
+    {"reset_players",             cf_bool,        CA_GOD,    CA_DISABLED, (int *)&mudconf.reset_players,   NULL,               0},
     {"retry_limit",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.retry_limit,            NULL,               0},
     {"robot_cost",                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.robotcost,              NULL,               0},
     {"robot_flags",               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.robot_flags,     NULL,               0},

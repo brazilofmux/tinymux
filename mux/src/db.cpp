@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.39 2004-04-14 02:35:49 sdennis Exp $
+// $Id: db.cpp,v 1.40 2004-04-16 16:39:47 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2957,6 +2957,10 @@ void load_restart_db(void)
     mudstate.start_time.SetSeconds(getref(f));
     strcpy(mudstate.doing_hdr, getstring_noalloc(f, true));
     mudstate.record_players = getref(f);
+    if (mudconf.reset_players)
+    {
+        mudstate.record_players = 0;
+    }
 
     while ((val = getref(f)) != 0)
     {
