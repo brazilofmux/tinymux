@@ -10,7 +10,7 @@ Major changes that may affect performance and require softcode tweaks:
     related to Pern, MUD, MUSH, and Penn.
  -- dbconvert now only support three options: Load, Unload, and Check.
  -- It became necessary to move the flag letters for WOD_REALMS into
-    then '0' to '9' range. Flatfiles are still compatible, but softcode
+    the '0' to '9' range. Flatfiles are still compatible, but softcode
     that uses orflags(), andflags(), and flags() could be affected.
     
 
@@ -95,6 +95,9 @@ Feature Additions:
  -- Added @list guests which tracks guest characters. Zenty patch. Rhost idea.
  -- Added SITEMON flag to track connections and disconnections from site.
     Patch from Zenty.
+ -- Added MARKER0 through MARKER9 flagnames. They are accessible as flag
+    letters '0' through '9' when WOD_REALMS is not defined, but only by name
+    if WOD_REALMS is defined.
 
 Bug Fixes:
 ~~~~~~~~~
