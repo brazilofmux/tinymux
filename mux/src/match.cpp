@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.7 2002-06-28 16:35:06 sdennis Exp $
+// $Id: match.cpp,v 1.8 2002-07-09 00:04:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -37,7 +37,9 @@ static void promote_match(dbref what, int confidence)
     if (md.pref_type != NOTYPE)
     {
         if (Good_obj(what) && (Typeof(what) == md.pref_type))
+        {
             confidence |= CON_TYPE;
+        }
     }
     if (md.check_keys)
     {
@@ -96,22 +98,25 @@ static void promote_match(dbref what, int confidence)
 static char *munge_space_for_match(char *name)
 {
     static char buffer[LBUF_SIZE];
-    char *p, *q;
 
-    p = name;
-    q = buffer;
+    char *p = name;
+    char *q = buffer;
 
     if (p)
     {
         // Remove Initial spaces.
         //
         while (Tiny_IsSpace[(unsigned char)*p])
+        {
             p++;
+        }
 
         while (*p)
         {
             while (*p && !Tiny_IsSpace[(unsigned char)*p])
+            {
                 *q++ = *p++;
+            }
 
             while (Tiny_IsSpace[(unsigned char)*p])
             {
@@ -119,7 +124,9 @@ static char *munge_space_for_match(char *name)
             }
 
             if (*p)
+            {
                 *q++ = ' ';
+            }
         }
     }
 
@@ -131,9 +138,6 @@ static char *munge_space_for_match(char *name)
 
 void match_player(void)
 {
-    dbref match;
-    char *p;
-
     if (md.confidence >= CON_DBREF)
     {
         return;
@@ -145,8 +149,9 @@ void match_player(void)
     }
     if (*md.string == LOOKUP_TOKEN)
     {
+        char *p;
         for (p = md.string + 1; Tiny_IsSpace[(unsigned char)*p]; p++) ;
-        match = lookup_player(NOTHING, p, 1);
+        dbref match = lookup_player(NOTHING, p, 1);
         if (Good_obj(match))
         {
             promote_match(match, CON_TOKEN);
@@ -159,20 +164,21 @@ void match_player(void)
  */
 static dbref absolute_name(int need_pound)
 {
-    dbref match;
-    char *mname;
-
-    mname = md.string;
-    if (need_pound) {
-        if (*md.string != NUMBER_TOKEN) {
+    char *mname = md.string;
+    if (need_pound) 
+    {
+        if (*md.string != NUMBER_TOKEN) 
+        {
             return NOTHING;
-        } else {
+        } 
+        else 
+        {
             mname++;
         }
     }
     if (*mname)
     {
-        match = parse_dbref(mname);
+        dbref match = parse_dbref(mname);
         if (Good_obj(match))
         {
             return match;
@@ -184,48 +190,65 @@ static dbref absolute_name(int need_pound)
 void match_absolute(void)
 {
     if (md.confidence >= CON_DBREF)
+    {
         return;
+    }
     if (Good_obj(md.absolute_form))
+    {
         promote_match(md.absolute_form, CON_DBREF);
+    }
 }
 
 void match_numeric(void)
 {
-    dbref match;
-
     if (md.confidence >= CON_DBREF)
+    {
         return;
-    match = absolute_name(0);
+    }
+    dbref match = absolute_name(0);
     if (Good_obj(match))
+    {
         promote_match(match, CON_DBREF);
+    }
 }
 
 void match_me(void)
 {
     if (md.confidence >= CON_DBREF)
+    {
         return;
-    if (Good_obj(md.absolute_form) && (md.absolute_form == md.player)) {
+    }
+    if (Good_obj(md.absolute_form) && (md.absolute_form == md.player)) 
+    {
         promote_match(md.player, CON_DBREF | CON_LOCAL);
         return;
     }
     if (!string_compare(md.string, "me"))
+    {
         promote_match(md.player, CON_TOKEN | CON_LOCAL);
+    }
     return;
 }
 
 void match_home(void)
 {
     if (md.confidence >= CON_DBREF)
+    {
         return;
+    }
     if (!string_compare(md.string, "home"))
+    {
         promote_match(HOME, CON_TOKEN);
+    }
     return;
 }
 
 void match_here(void)
 {
     if (md.confidence >= CON_DBREF)
+    {
         return;
+    }
     if (Good_obj(md.player) && Has_location(md.player)) 
     {
         dbref loc = Location(md.player);
@@ -249,12 +272,14 @@ void match_here(void)
 
 static void match_list(dbref first, int local)
 {
-    char *namebuf;
-
     if (md.confidence >= CON_DBREF)
+    {
         return;
-    DOLIST(first, first) {
-        if (first == md.absolute_form) {
+    }
+    DOLIST(first, first)
+    {
+        if (first == md.absolute_form) 
+        {
             promote_match(first, CON_DBREF | local);
             return;
         }
@@ -264,11 +289,14 @@ static void match_list(dbref first, int local)
          * would overwrite Name()'s static buffer which is
          * needed by string_match(). 
          */
-        namebuf = PureName(first);
+        char *namebuf = PureName(first);
 
-        if (!string_compare(namebuf, md.string)) {
+        if (!string_compare(namebuf, md.string))
+        {
             promote_match(first, CON_COMPLETE | local);
-        } else if (string_match(namebuf, md.string)) {
+        }
+        else if (string_match(namebuf, md.string))
+        {
             promote_match(first, local);
         }
     }
@@ -277,15 +305,21 @@ static void match_list(dbref first, int local)
 void match_possession(void)
 {
     if (md.confidence >= CON_DBREF)
+    {
         return;
+    }
     if (Good_obj(md.player) && Has_contents(md.player))
+    {
         match_list(Contents(md.player), CON_LOCAL);
+    }
 }
 
 void match_neighbor(void)
 {
     if (md.confidence >= CON_DBREF)
+    {
         return;
+    }
     if (Good_obj(md.player) && Has_location(md.player)) 
     {
         dbref loc = Location(md.player);
@@ -299,13 +333,16 @@ void match_neighbor(void)
 static int match_exit_internal(dbref loc, dbref baseloc, int local)
 {
     if (!Good_obj(loc) || !Has_exits(loc))
+    {
         return 1;
+    }
 
     dbref exit;
     int result = 0;
     int key;
 
-    DOLIST(exit, Exits(loc)) {
+    DOLIST(exit, Exits(loc)) 
+    {
         if (exit == md.absolute_form) 
         {
             key = 0;
@@ -333,25 +370,34 @@ static int match_exit_internal(dbref loc, dbref baseloc, int local)
 void match_exit(void)
 {
     if (md.confidence >= CON_DBREF)
+    {
         return;
+    }
 
     dbref loc = Location(md.player);
     if (Good_obj(md.player) && Has_location(md.player))
+    {
         (void)match_exit_internal(loc, loc, CON_LOCAL);
+    }
 }
 
 void match_exit_with_parents(void)
 {
-    dbref loc, parent;
-    int lev;
-
     if (md.confidence >= CON_DBREF)
+    {
         return;
-    if (Good_obj(md.player) && Has_location(md.player)) {
-        loc = Location(md.player);
-        ITER_PARENTS(loc, parent, lev) {
+    }
+    if (Good_obj(md.player) && Has_location(md.player))
+    {
+        dbref parent;
+        int lev;
+        dbref loc = Location(md.player);
+        ITER_PARENTS(loc, parent, lev)
+        {
             if (match_exit_internal(parent, loc, CON_LOCAL))
+            {
                 break;
+            }
         }
     }
 }
@@ -359,23 +405,33 @@ void match_exit_with_parents(void)
 void match_carried_exit(void)
 {
     if (md.confidence >= CON_DBREF)
+    {
         return;
+    }
     if (Good_obj(md.player) && Has_exits(md.player))
+    {
         (void)match_exit_internal(md.player, md.player, CON_LOCAL);
+    }
 }
 
 void match_carried_exit_with_parents(void)
 {
-    dbref parent;
-    int lev;
-
     if (md.confidence >= CON_DBREF)
+    {
         return;
-    if (Good_obj(md.player) && (Has_exits(md.player) ||
-                    isRoom(md.player))) {
-        ITER_PARENTS(md.player, parent, lev) {
+    }
+    if (  Good_obj(md.player) 
+       && (  Has_exits(md.player) 
+          || isRoom(md.player)))
+    {
+        dbref parent;
+        int lev;
+        ITER_PARENTS(md.player, parent, lev) 
+        {
             if (match_exit_internal(parent, md.player, CON_LOCAL))
+            {
                 break;
+            }
         }
     }
 }
@@ -383,19 +439,25 @@ void match_carried_exit_with_parents(void)
 void match_master_exit(void)
 {
     if (md.confidence >= CON_DBREF)
+    {
         return;
+    }
     if (Good_obj(md.player) && Has_exits(md.player))
-        (void)match_exit_internal(mudconf.master_room,
-                      mudconf.master_room, 0);
+    {
+        (void)match_exit_internal(mudconf.master_room, mudconf.master_room, 0);
+    }
 }
 
 void match_zone_exit(void)
 {
     if (md.confidence >= CON_DBREF)
+    {
         return;
+    }
     if (Good_obj(md.player) && Has_exits(md.player))
-        (void)match_exit_internal(Zone(md.player),
-                      Zone(md.player), 0);
+    {
+        (void)match_exit_internal(Zone(md.player), Zone(md.player), 0);
+    }
 }
 
 void match_everything(int key)
@@ -410,18 +472,28 @@ void match_everything(int key)
     match_here();
     match_absolute();
     if (key & MAT_NUMERIC)
+    {
         match_numeric();
+    }
     if (key & MAT_HOME)
+    {
         match_home();
+    }
     match_player();
     if (md.confidence >= CON_TOKEN)
+    {
         return;
+    }
 
-    if (!(key & MAT_NO_EXITS)) {
-        if (key & MAT_EXIT_PARENTS) {
+    if (!(key & MAT_NO_EXITS))
+    {
+        if (key & MAT_EXIT_PARENTS)
+        {
             match_carried_exit_with_parents();
             match_exit_with_parents();
-        } else {
+        }
+        else
+        {
             match_carried_exit();
             match_exit();
         }
@@ -432,7 +504,8 @@ void match_everything(int key)
 
 dbref match_result(void)
 {
-    switch (md.count) {
+    switch (md.count)
+    {
     case 0:
         return NOTHING;
     case 1:
@@ -442,10 +515,8 @@ dbref match_result(void)
     }
 }
 
-/*
- * use this if you don't care about ambiguity 
- */
-
+// Use this if you don't care about ambiguity.
+//
 dbref last_match_result(void)
 {
     return md.match;
@@ -453,7 +524,8 @@ dbref last_match_result(void)
 
 dbref match_status(dbref player, dbref match)
 {
-    switch (match) {
+    switch (match) 
+    {
     case NOTHING:
         notify(player, NOMATCH_MESSAGE);
         return NOTHING;
