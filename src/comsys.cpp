@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.55 2001-08-28 15:21:57 sdennis Exp $
+// * $Id: comsys.cpp,v 1.56 2001-09-24 02:41:55 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2491,14 +2491,28 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     char *messNoComtitle = alloc_lbuf("do_chboot.messnocomtitle");
     char *mnp = messNormal;
     char *mnctp = messNoComtitle;
-    safe_str(mess1, messNormal, &mnp);
-    safe_str(mess2, messNormal, &mnp);
-    safe_str(mess1nct, messNoComtitle, &mnctp);
-    safe_str(mess2nct, messNoComtitle, &mnctp);
+    if (mess1)
+    {
+        safe_str(mess1, messNormal, &mnp);
+        free_lbuf(mess1);
+    }
+    if (mess2)
+    {
+        safe_str(mess2, messNormal, &mnp);
+        free_lbuf(mess2);
+    }
     *mnp = '\0';
+    if (mess1nct)
+    {
+        safe_str(mess1nct, messNoComtitle, &mnctp);
+        free_lbuf(mess1nct);
+    }
+    if (mess2nct)
+    {
+        safe_str(mess2nct, messNoComtitle, &mnctp);
+        free_lbuf(mess2nct);
+    }
     *mnctp = '\0';
-    free_lbuf(mess1); free_lbuf(mess1nct);
-    free_lbuf(mess2); free_lbuf(mess2nct);
     SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
     do_delcomchannel(thing, channel);
 }
