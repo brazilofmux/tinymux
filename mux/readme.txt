@@ -8,7 +8,7 @@ different archive tools (PKZip, JAR from ARJ, and tar/gzip).
 
 Unless you want to build the server yourself, you should use one of the binary
 distributions.  In the binary distributions, the server has been compiled for
-you using the Intel 6.0 compiler with aggressive, profile-guided
+you using the Intel 7.0 compiler with aggressive, profile-guided
 optimizations, vectorized loops, and CPU-aware dispatching.  You need at least
 a Pentium Pro or above to use these binaries.
 
@@ -38,15 +38,15 @@ To use a binary distribution:
    following lines (depending on which archiving program you have choosen to
    use).
 
-        jar32 x mux-2.2.0.32.win32.bin.j
-        tar xzf mux-2.2.0.32.win32.bin.tar.gz
-        pkzip -extract -directories mux-2.2.0.32.win32.bin.zip
+        jar32 x mux-2.3.0.32.win32.bin.j
+        tar xzf mux-2.3.0.32.win32.bin.tar.gz
+        pkzip -extract -directories mux-2.3.0.32.win32.bin.zip
 
    -OR-
 
-   Unpack the mux-2.2.0.32.win32.bin.zip using WinZip.
+   Unpack the mux-2.3.0.32.win32.bin.zip using WinZip.
 
-2. cd mux22/game
+2. cd mux2.3/game
 
 3. Possibly edit netmux.conf and mux.config to tweak the configuration.
 
@@ -67,19 +67,19 @@ To use a source distribution:
    following lines (depending on which archiving program you have choosen to
    use).
 
-        jar32 x mux-2.2.0.32.win32.src.j
-        tar xzf mux-2.2.0.32.win32.src.tar.gz
-        pkzip -extract -directories mux-2.2.0.32.win32.src.zip
+        jar32 x mux-2.3.0.32.win32.src.j
+        tar xzf mux-2.3.0.32.win32.src.tar.gz
+        pkzip -extract -directories mux-2.3.0.32.win32.src.zip
 
    -OR-
 
-   Unpack the mux-2.2.0.32.win32.src.zip using WinZip.
+   Unpack the mux-2.3.0.32.win32.src.zip using WinZip.
 
-2. Start Visual C++ and open the workspace file (mux22/src/netmux.dsw).
+2. Start Visual C++ and open the workspace file (mux2.3/src/netmux.dsw).
 
-3. Within Visual C++, Do a batch build in order to get mkindx.exe,
-   dbconvert.exe, and tinymux.exe. The non-debug versions of these files will
-   be place in mux22/src/bin_release and must be copied over to mux2/game/bin.
+3. Within Visual C++, Do a batch build in order to produce netmux.exe.  The
+   non-debug version will be placed in mux2.3/src/bin_release and must be
+   copied over to mux2.3/game/bin.
 
 4. Start the server with the following:
 
@@ -112,13 +112,9 @@ way.
 
    -OR-
 
-   Use dbconvert directly:
+   Use netmux in the stand-alone mode directly:
 
-       ..\bin\dbconvert netmux X < netmux.flat > netmux.db
-
-   Note the upper-case 'X' on the above line. A lower-case 'x' does something
-   different.
-
+       ..\bin\netmux -dnetmux -inetmux.flat -onetmux.db -l
 
 *  Use db_unload to unload your database:
 
@@ -126,14 +122,9 @@ way.
 
    -OR-
 
-   Use dbconvert directly:
+   Use netmux in the the stand-alone mode directly:
 
-       ..\bin\dbconvert netmux x < netmux.db.new > netmux.flat
+       ..\bin\netmux -dnetmux -inetmux.db.new -onetmux.flat -u
 
-   Note the lower-case 'x' on the above line. An upper-case 'X' does
-   something different.
-
-
-
-NOTE:  Do not simply double-click on any these programs. You must open an
+NOTE:  Do not simply double-click on any program or script. You must open a
 'Command Prompt' window and start the game via 'startmux'.
