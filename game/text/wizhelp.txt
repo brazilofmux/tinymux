@@ -2041,6 +2041,11 @@
   set to yes.
   See also: match_own_commands.
 
+& player_name_spaces
+  Config parameter: player_name_spaces.  Default: yes
+
+  Specifies whether or not player names are permitted to contain spaces.
+
 & player_queue_limit
   Config parameter: player_queue_limit.  Default: 100
   Sets the maximum number of commands that non-wizard players may have on the
