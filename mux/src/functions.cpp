@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.109 2004-06-30 16:42:46 sdennis Exp $
+// $Id: functions.cpp,v 1.110 2004-06-30 18:14:40 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -145,7 +145,7 @@ XFUNCTION(fun_pemit);
 XFUNCTION(fun_remit);
 XFUNCTION(fun_set);
 XFUNCTION(fun_tel);
-XFUNCTION(fun_helptext);
+XFUNCTION(fun_textfile);
 #endif
 // In netcommon.cpp
 XFUNCTION(fun_doing);
@@ -9695,7 +9695,6 @@ FUN flist[] =
     {"HASPOWER",    fun_haspower,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"HASQUOTA",    fun_hasquota,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"HASTYPE",     fun_hastype,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"HELPTEXT",    fun_helptext,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"HOME",        fun_home,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"HOST",        fun_host,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"IABS",        fun_iabs,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -9873,6 +9872,7 @@ FUN flist[] =
     {"TABLE",       fun_table,      MAX_ARG, 1,       6,         0, CA_PUBLIC},
     {"TAN",         fun_tan,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"TEL",         fun_tel,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"TEXTFILE",    fun_textfile,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"TIME",        fun_time,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"TIMEFMT",     fun_timefmt,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"TRANSLATE",   fun_translate,  MAX_ARG, 2,       2,         0, CA_PUBLIC},

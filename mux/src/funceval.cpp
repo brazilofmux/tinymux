@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.70 2004-06-30 10:52:40 sdennis Exp $
+// $Id: funceval.cpp,v 1.71 2004-06-30 18:14:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -417,7 +417,7 @@ FUNCTION(fun_create)
     safe_tprintf_str(buff, bufc, "#%d", thing);
 }
 
-FUNCTION(fun_helptext)
+FUNCTION(fun_textfile)
 {
     mux_strlwr(fargs[0]);
 
