@@ -22,6 +22,7 @@ Feature Additions:
  -- Added generalized article guessing (see art() and article_rule).
  -- Support 36 global registers instead of 10.
  -- Add TIMEFMT() function.
+ -- Added null() and @@(). The former evaluates. The latter doesn't.
 
 Bug Fixes:
 ~~~~~~~~~
