@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.72 2003-10-23 05:23:44 sdennis Exp $
+// $Id: funceval.cpp,v 1.73 2003-10-23 05:44:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3442,12 +3442,16 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
         ovec, ovecsize);
     if (novec == 0)
     {
-        novec == ovecsize;
+        novec == (ovecsize-1)/2;
     }
     safe_bool(novec > 0, buff, bufc);
     if (novec < 0)
     {
         novec = 0;
+    }
+    else
+    {
+        novec *= 2;
     }
 
     // If we don't have a third argument, we're done.
@@ -3465,7 +3469,9 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
     const int NSUBEXP = 36;
     char *qregs[NSUBEXP];
     int nqregs = list2arr(qregs, NSUBEXP, registers, ' ');
-    for (int i = 0; i < nqregs; i++)
+    int iStart;
+    int i;
+    for (i = 0, iStart = 0; i < nqregs; i++, iStart += 2)
     {
         int curq;
         if (  qregs[i]
@@ -3479,7 +3485,6 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
                 mudstate.global_regs[curq] = alloc_lbuf("fun_regmatch");
             }
             int len = 0;
-            int iStart = i*2;
             int iEnd   = iStart+1;
             if (  iEnd < novec
                && 0 <= ovec[iStart])
