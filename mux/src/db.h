@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.4 2004-04-28 14:20:19 sdennis Exp $
+// $Id: db.h,v 1.5 2004-04-29 04:59:17 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -155,6 +155,12 @@ struct object
 
     CLinearTimeDelta cpu_time_used; /* ALL: CPU time eaten */
 
+    // ALL: When to refurbish throttled counters.
+    //
+    CLinearTimeAbsolute tThrottleExpired;
+    int     throttled_attributes;
+    int     throttled_mail;
+
     char    *purename;
     char    *moniker;
 
@@ -186,6 +192,8 @@ extern OBJ *db;
 #define Stack(t)        db[t].stackhead
 #define Home(t)         Link(t)
 #define Dropto(t)       Location(t)
+#define ThAttrib(t)     db[t].throttled_attributes
+#define ThMail(t)       db[t].throttled_mail
 
 #define s_Location(t,n)     db[t].location = (n)
 
@@ -203,6 +211,8 @@ extern OBJ *db;
 #define s_Stack(t,n)        db[t].stackhead = (n)
 #define s_Home(t,n)         s_Link(t,n)
 #define s_Dropto(t,n)       s_Location(t,n)
+#define s_ThAttrib(t,n)     db[t].throttled_attributes = (n);
+#define s_ThMail(t,n)       db[t].throttled_mail = (n);
 
 extern int  Pennies(dbref);
 extern void s_Pennies(dbref, int);
@@ -215,6 +225,8 @@ extern dbref    getref(FILE *);
 extern void putref(FILE *, dbref);
 extern void free_boolexp(BOOLEXP *);
 extern dbref    parse_dbref(const char *);
+extern bool ThrottleMail(dbref executor);
+extern bool ThrottleAttributeNames(dbref executor);
 extern int  mkattr(dbref executor, char *);
 extern void al_store(void);
 extern void db_grow(dbref);
