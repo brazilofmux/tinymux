@@ -250,6 +250,7 @@ Bug Fixes:
  -- Document INFO logged-out command.
  -- @dbck didn't reset bogus home as it intended.
  -- Alierak fix for buffer overflow exploit in slave process.
+ -- Alierak Fix for logic bug in logging.
 
 
 Performance Enhancements:
