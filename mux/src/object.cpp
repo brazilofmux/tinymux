@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.22 2002-07-23 07:25:47 sdennis Exp $
+// $Id: object.cpp,v 1.23 2002-07-25 14:34:25 jake Exp $
 //
 
 #include "copyright.h"
@@ -558,14 +558,14 @@ void destroy_obj(dbref obj)
             add_quota(owner, quota);
         }
     }
-#ifndef STANDALONE
-    ReleaseAllResources(obj);
-#endif // STANDALONE
-    atr_free(obj);
-    s_Name(obj, NULL);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
     s_Flags(obj, FLAG_WORD2, 0);
     s_Flags(obj, FLAG_WORD3, 0);
+#ifndef STANDALONE
+    ReleaseAllResources(obj);
+#endif // STANDALONE
+    s_Name(obj, NULL);
+    atr_free(obj);
     s_Powers(obj, 0);
     s_Powers2(obj, 0);
     s_Location(obj, NOTHING);

@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.24 2002-07-25 13:17:48 jake Exp $
+// $Id: mail.cpp,v 1.25 2002-07-25 14:34:25 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -4029,6 +4029,45 @@ void do_malias_status(dbref player)
     }
 }
 
+int malias_cleanup1 (struct malias *m)
+{
+    int count = 0;
+    dbref j;
+    for (int i = 0; i < m->numrecep; i++)
+    {
+         j = m->list[i];
+         if (  !Good_obj(j)
+            || !isPlayer(j))
+         {
+            count++;
+         }
+         if (count)
+         {
+            m->list[i] = m->list[i + count];
+         }
+    }
+    m->numrecep -= count;
+    return count;
+}
+
+void malias_cleanup (dbref player)
+{
+    if (Good_obj(player) && !ExpMail(player))
+    {
+        notify(player, "MAIL: Permission denied.");
+    }
+    else
+    {
+        int count = 0;
+        for (int i = 0; i < ma_top; i++)
+        {
+            count += malias_cleanup1(malias[i]);
+        }
+        notify(player, tprintf("%d invalid reference%s found in %d mail aliases.", 
+            count, (count == 1) ? "" : "s", ma_top));
+    }
+}
+
 void do_malias
 (
     dbref executor,
@@ -4068,8 +4107,8 @@ void do_malias
     case MALIAS_RENAME:
         do_malias_rename(executor, arg1, arg2);
         break;
-    case 7:
-        // empty
+    case MALIAS_CLEANUP:
+        malias_cleanup(executor);
         break;
     case MALIAS_LIST:
         do_malias_adminlist(executor);

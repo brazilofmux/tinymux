@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.22 2002-07-25 13:17:48 jake Exp $
+// $Id: db.cpp,v 1.23 2002-07-25 14:34:25 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2846,6 +2846,7 @@ void ReleaseAllResources(dbref obj)
     {
         do_mail_clear(obj, NULL);
         do_mail_purge(obj);
+        malias_cleanup(NOTHING);
     }
 }
 
