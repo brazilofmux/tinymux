@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.4 2003-02-05 06:20:59 jake Exp $
+// $Id: player.cpp,v 1.5 2003-02-18 17:41:39 jake Exp $
 //
 
 #include "copyright.h"
@@ -520,6 +520,10 @@ dbref lookup_player(dbref doer, char *name, bool check_who)
         return doer;
     }
 
+    while (*name == LOOKUP_TOKEN)
+    {
+        name++;
+    }
     dbref thing;
     if (*name == NUMBER_TOKEN)
     {
