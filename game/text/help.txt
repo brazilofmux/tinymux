@@ -4989,54 +4989,54 @@ files.
     CHILDREN()  CMDS()      COLUMNS()   COMALIAS()  COMP()      COMTITLE()
     CON()       CONN()      CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()
     CONNTOTAL() CONTROLS()  CONVSECS()  CONVTIME()  COS()       CREATE()
-    CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()    DIE()
-    DIGITTIME() DIST2D()    DIST3D()    DIV()       DOING()     E()
-    EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMPTY()     ENCRYPT()
-    EQ()        ESCAPE()    EXIT()      EXP()       EXPTIME()   EXTRACT()
-    EVAL()      FDIV()      FILTER()    FINDABLE()  FIRST()     FLAGS()
-    FLOOR()     FOLD()      FOREACH()   FULLNAME()  GET()       GET_EVAL()
-    GRAB()      GREP()      GREPI()     GT()        GTE()       HASATTR()
-    HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()   HOME()      IADD()
-    IDIV()      IDLE()      IFELSE()    IMUL()      INC()       INDEX()
-    INSERT()    INZONE()    ISDBREF()   ISNUM()     ISUB()      ISWORD()
-    ITER()      ITEMS()     LAST()      LATTR()     LATTRCMDS() LCMDS()
-    LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LIST()
-    LIT()       LJUST()     LN()        LNUM()      LOC()       LOCATE()
-    LOCK()      LOG()       LPARENT()   LPOS()      LSTACK()    LT()
+    CRC32()     CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()
+    DIE()       DIGITTIME() DIST2D()    DIST3D()    DIV()       DOING()
+    E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMPTY()
+    ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()       EXPTIME()
+    EXTRACT()   EVAL()      FDIV()      FILTER()    FINDABLE()  FIRST()
+    FLAGS()     FLOOR()     FOLD()      FOREACH()   FULLNAME()  GET()
+    GET_EVAL()  GRAB()      GREP()      GREPI()     GT()        GTE()
+    HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()   HOME()
+    IADD()      IDIV()      IDLE()      IFELSE()    IMUL()      INC()
+    INDEX()     INSERT()    INZONE()    ISDBREF()   ISNUM()     ISUB()
+    ISWORD()    ITER()      ITEMS()     LAST()      LATTR()     LATTRCMDS()
+    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()
+    LIST()      LIT()       LJUST()     LN()        LNUM()      LOC()
+    LOCATE()    LOCK()      LOG()       LPARENT()   LPOS()      LSTACK()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 
-    LTE()       LWHO()      MAIL()      MAILFROM()  MAP()       MATCH()
-    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
-    MIX()       MOD()       MONEY()     MOTD()      MUDNAME()   MUL()
-    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
-    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OR()        ORFLAGS()
-    OWNER()     PARENT()    PARSE()     PEEK()      PEMIT()     PI()
-    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
-    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
-    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
-    RJUST()     RLOC()      ROOM()      ROUND()     S()         SCRAMBLE()
-    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
-    SETQ()      SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()
-    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
-    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
-    STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()
-    SUBJ()      SWITCH()    TABLE()     TAN()       TIME()      TRANSLATE()
-    TRIM()      TRUNC()     TYPE()      U()         ULOCAL()    UCSTR()
-    UDEFAULT()  V()         VADD()      VALID()     VCROSS()    VDIM()
-    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
-    VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()
-    XOR()       ZONE()      ZWHO()
+    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAP()
+    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
+    MIN()       MIX()       MOD()       MONEY()     MOTD()      MUDNAME()
+    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
+    NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()    OR()
+    ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()     PEEK()
+    PEMIT()     PI()        PLAYMEM()   PMATCH()    POLL()      POP()
+    PORTS()     POS()       POSS()      POWER()     PUSH()      R()
+    RAND()      REGMATCH()  REMOVE()    REPEAT()    REPLACE()   REST()
+    REVERSE()   REVWORDS()  RJUST()     RLOC()      ROOM()      ROUND()
+    S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
+    SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHL()
+    SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
+    SORTBY()    SPACE()     SPLICE()    SQRT()      SQUISH()    STARTSECS()
+    STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()
+    STRTRUNC()  SUB()       SUBJ()      SWITCH()    TABLE()     TAN()
+    TIME()      TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         
+    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
+    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
+    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()
+    WORDS()     WRITETIME() XGET()      XOR()       ZONE()      ZWHO()
   
 & FUNCTION CLASSES
 
   Topic: FUNCTION CLASSES
  
-  Arithmetic:                ABS ADD BAND BNAND BOR DEC DIE DIV FDIV IADD IDIV
-                             IMUL INC ISUB MOD MUL POWER RAND SHL SHR SIGN SUB
-                             SQRT
+  Arithmetic:                ABS ADD BAND BNAND BOR CRC32 DEC DIE DIV FDIV
+                             IADD IDIV IMUL INC ISUB MOD MUL PACK POWER RAND
+                             SHL SHR SIGN SUB SQRT UNPACK
   Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
   Database Information:      EXIT INZONE LOC LOCATE MAIL NEARBY NEXT NUM RLOC
                              ROOM SEARCH STATS VALID WHERE ZONE ZWHO
@@ -5900,7 +5900,59 @@ files.
   The result may be expressed as 39B in base 16 or 923 in base 10.
  
   See also: shl(), shr(), band(), bnand().
- 
+
+& CRC32()
+  crc32(<string1>, ..., <stringN>)
+
+  Returns the Cyclic Redundancy Check of the strings or sequences of
+  strings as a positive number. The answer for the same sequence of
+  strings is always the same.
+  
+  The usefulness of this number is broad, but include as a unique
+  fingerprint or checksum pattern, or as a high-quality hash
+  function.
+
+  > think crc32(MUX)
+  629126998
+
+& PACK()
+  pack(<number>[,<radix>])
+
+  Returns the equivalent of the given number using the specified base.
+  The default radix is 64. Bases greater than 10 will be more compact
+  than the original number. Bases less than 10 will be more expanded.
+
+  The inverse function of pack is unpack. pack and unpack are designed
+  to support the base-36 radix conversion used in Myrddin's popular
+  Bulletin Board. For this reason, and to support bases: 2, 8, and 16,
+  this conversion is not the radix-64 conversion used in unix-to-unix
+  copy (uuencode).
+
+  >think pack(629126998)
+  bVxTM
+  >think pack(629126998,16)
+  257FB756
+  >think pack(629126998,2)
+  100101011111111011011101010110
+  >think pack(-629126998)
+  -bVxTM
+
+  See also: unpack
+
+& UNPACK()
+  unpack(<packed number>[,<radix>])
+
+  Returns the equivalent normal base-10 number of the given
+  packed-number using the specified base. The default radix is 64.
+  The inverse function of unpack is pack.
+
+  >think unpack(bVxTM)
+  629126998
+  >think unpack(1111,2)
+  15
+  
+  See also: pack()
+
 & VADD()
   vadd(<vector>,<vector>[,<delim>][,<output delim>])
  

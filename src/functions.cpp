@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.38 2000-10-15 17:48:39 sdennis Exp $
+// $Id: functions.cpp,v 1.39 2000-10-16 07:28:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -95,6 +95,9 @@ XFUNCTION(fun_shr);
 XFUNCTION(fun_band);
 XFUNCTION(fun_bor);
 XFUNCTION(fun_bnand);
+XFUNCTION(fun_crc32);
+XFUNCTION(fun_pack);
+XFUNCTION(fun_unpack);
 XFUNCTION(fun_vadd);
 XFUNCTION(fun_vsub);
 XFUNCTION(fun_vmul);
@@ -1010,7 +1013,7 @@ FUNCTION(fun_convtime)
         {
             lta.Local2UTC();
         }
-        safe_str(Tiny_i64toa_t(lta.ReturnSeconds()), buff, bufc);
+        safe_i64toa(lta.ReturnSeconds(), buff, bufc, LBUF_SIZE-1);
     }
     else
     {
@@ -2548,7 +2551,7 @@ FUNCTION(fun_div)
     }
     else
     {
-        safe_str(Tiny_i64toa_t(top/bot), buff, bufc);
+        safe_i64toa(top/bot, buff, bufc, LBUF_SIZE-1);
     }
 }
 
@@ -2591,7 +2594,7 @@ FUNCTION(fun_mod)
     {
         bot = 1;
     }
-    safe_str(Tiny_i64toa_t(top%bot), buff, bufc);
+    safe_i64toa(top%bot, buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_pi)
@@ -6307,6 +6310,7 @@ FUN flist[] =
     {"CONVTIME", fun_convtime, 0,  FN_VARARGS, CA_PUBLIC},
     {"COS",      fun_cos,      1,  0,          CA_PUBLIC},
     {"CREATE",   fun_create,   0,  FN_VARARGS, CA_PUBLIC},
+    {"CRC32",    fun_crc32,    0,  FN_VARARGS, CA_PUBLIC},
     {"CWHO",     fun_cwho,     1,  0,          CA_PUBLIC},
     {"DEC",      fun_dec,      0,  FN_VARARGS, CA_PUBLIC},
     {"DECRYPT",  fun_decrypt,  2,  0,          CA_PUBLIC},
@@ -6419,6 +6423,7 @@ FUN flist[] =
     {"OR",       fun_or,       0,  FN_VARARGS, CA_PUBLIC},
     {"ORFLAGS",  fun_orflags,  2,  0,          CA_PUBLIC},
     {"OWNER",    fun_owner,    1,  0,          CA_PUBLIC},
+    {"PACK",     fun_pack,     1,  FN_VARARGS, CA_PUBLIC},
     {"PARENT",   fun_parent,   1,  0,          CA_PUBLIC},
     {"PARSE",    fun_parse,    0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
     {"PEEK",     fun_peek,     0,  FN_VARARGS, CA_PUBLIC},
@@ -6492,6 +6497,7 @@ FUN flist[] =
     {"UCSTR",    fun_ucstr,   -1,  0,          CA_PUBLIC},
     {"UDEFAULT", fun_udefault, 0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
     {"ULOCAL",   fun_ulocal,   0,  FN_VARARGS, CA_PUBLIC},
+    {"UNPACK",   fun_unpack,   1,  FN_VARARGS, CA_PUBLIC},
     {"V",        fun_v,        1,  0,          CA_PUBLIC},
     {"VADD",     fun_vadd,     0,  FN_VARARGS, CA_PUBLIC},
     {"VALID",    fun_valid,    2,  0,          CA_PUBLIC},
@@ -6788,7 +6794,7 @@ FUNCTION(fun_iadd)
     {
         sum += Tiny_atoi64(fargs[i]);
     }
-    safe_str(Tiny_i64toa_t(sum), buff, bufc);
+    safe_i64toa(sum, buff, bufc, LBUF_SIZE-1);
 }
  
 /////////////////////////////////////////////////////////////////
@@ -6800,7 +6806,7 @@ FUNCTION(fun_iadd)
 FUNCTION(fun_isub)
 {
     INT64 diff = Tiny_atoi64(fargs[0]) - Tiny_atoi64(fargs[1]);
-    safe_str(Tiny_i64toa_t(diff), buff, bufc);
+    safe_i64toa(diff, buff, bufc, LBUF_SIZE-1);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -6821,7 +6827,7 @@ FUNCTION(fun_imul)
     {
         prod *= Tiny_atoi64(fargs[i]);
     }
-    safe_str(Tiny_i64toa_t(prod), buff, bufc);
+    safe_i64toa(prod, buff, bufc, LBUF_SIZE-1);
 }
 
 typedef struct

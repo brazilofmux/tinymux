@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.30 2000-10-16 00:09:38 sdennis Exp $
+// $Id: funceval.cpp,v 1.31 2000-10-16 07:28:44 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2468,6 +2468,177 @@ FUNCTION(fun_bnand)
         safe_ltoa(Tiny_atol(fargs[0]) & ~(Tiny_atol(fargs[1])), buff, bufc, LBUF_SIZE-1);
     else
         safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
+}
+
+FUNCTION(fun_crc32)
+{
+    unsigned long ulCRC32 = 0;
+    for (int i = 0; i < nfargs; i++)
+    {
+        int n = strlen(fargs[i]);
+        ulCRC32 = CRC32_ProcessBuffer(ulCRC32, fargs[i], n);
+    }
+    safe_i64toa(ulCRC32, buff, bufc, LBUF_SIZE-1);
+}
+
+// The following table contains 64 symbols, so this supports -a-
+// radix-64 encoding. It is not however 'unix-to-unix' encoding.
+// All of the following characters are valid for an attribute
+// name, but not for the first character of an attribute name.
+//
+static char aRadixTable[] =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@$";
+
+FUNCTION(fun_unpack)
+{
+    if (!fn_range_check("UNPACK", nfargs, 1, 2, buff, bufc))
+    {
+        return;
+    }
+
+    // Validate radix if present.
+    //
+    INT64 iRadix = 64;
+    if (nfargs == 2)
+    {
+        int nDigits;
+        if (  !is_integer(fargs[1], &nDigits)
+           || (iRadix = Tiny_atoi64(fargs[1])) < 2
+           || 64 < iRadix)
+        {
+            safe_str("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64", buff, bufc);
+            return;
+        }
+    }
+
+    // Build Table of valid characters.
+    //
+    char MatchTable[256];
+    memset(MatchTable, 0, sizeof(MatchTable));
+    for (int i = 0; i < iRadix; i++)
+    {
+        MatchTable[aRadixTable[i]] = i+1;
+    }
+
+    // Validate that first argument contains only characters from the
+    // subset of permitted characters.
+    //
+    char *pString = fargs[0];
+    INT64 sum;
+    int c;
+    int LeadingCharacter;
+    
+    // Leading whitespace
+    //
+    while (Tiny_IsSpace[(unsigned char)*pString])
+    {
+        pString++;
+    }
+
+    // Possible sign
+    //
+    LeadingCharacter = c = *pString++;
+    if (c == '-' || c == '+')
+    {
+        c = *pString++;
+    }
+    
+    sum = 0;
+    
+    // Convert symbols
+    //
+    int iValue;
+    while ((iValue = MatchTable[(unsigned int)c]))
+    {
+        sum = iRadix * sum + iValue - 1;
+        c = *pString++;
+    }
+    
+    // Interpret sign
+    //
+    if (LeadingCharacter == '-')
+    {
+        sum = -sum;
+    }
+    safe_i64toa(sum, buff, bufc, LBUF_SIZE-1);
+}
+
+FUNCTION(fun_pack)
+{
+    if (!fn_range_check("PACK", nfargs, 1, 2, buff, bufc))
+    {
+        return;
+    }
+
+    // Validate the arguments are numeric.
+    //
+    int nDigits;
+    if (  !is_integer(fargs[0], &nDigits)
+       || (nfargs == 2 && !is_integer(fargs[1], &nDigits)))
+    {
+        safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
+        return;
+    }
+    INT64 val = Tiny_atoi64(fargs[0]);
+
+    // Validate the radix is between 2 and 64.
+    //
+    INT64 iRadix = 64;
+    if (nfargs == 2)
+    {
+        iRadix = Tiny_atoi64(fargs[1]);
+        if (iRadix < 2 || 64 < iRadix)
+        {
+            safe_str("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64", buff, bufc);
+            return;
+        }
+    }
+
+    char TempBuffer[76]; // 1 '-', 63 binary digits, 1 '\0', 11 for safety.
+    char *p = TempBuffer;
+
+    // Handle sign.
+    //
+    if (val < 0)
+    {
+        *p++ = '-';
+        val = -val;
+    }
+    
+    char *q = p;
+    while (val > iRadix-1)
+    {
+        INT64 iDiv  = val / iRadix;
+        INT64 iTerm = val - iDiv * iRadix;
+        val = iDiv;
+        *p++ = aRadixTable[iTerm];
+    }
+    *p++ = aRadixTable[val];
+
+    int nLength = p - TempBuffer;
+    *p-- = '\0';
+
+    // The digits are in reverse order with a possible leading '-'
+    // if the value was negative. q points to the first digit,
+    // and p points to the last digit.
+    //
+    while (q < p)
+    {
+        // Swap characters are *p and *q
+        //
+        char temp = *p;
+        *p = *q;
+        *q = temp;
+
+        // Move p and first digit towards the middle.
+        //
+        --p;
+        ++q;
+
+        // Stop when we reach or pass the middle.
+        //
+    }
+    safe_copy_buf(TempBuffer, nLength, buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_strcat)
