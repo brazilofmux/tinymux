@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.120 2001-12-29 19:17:35 sdennis Exp $
+// $Id: functions.cpp,v 1.121 2001-12-29 19:20:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5613,62 +5613,74 @@ FUNCTION(fun_filter)
 
 FUNCTION(fun_map)
 {
-    dbref aowner, thing;
-    int aflags, anum, first;
-    ATTR *ap;
-    char *atext, *objstring, *str, *cp, *atextbuf, sep, osep;
+    char *objstring, *str, *cp, *atextbuf, sep, osep;
 
     svarargs_preamble(4);
 
-    /*
-     * Two possibilities for the second arg: <obj>/<attr> and <attr>.
-     */
-
-    if (parse_attrib(player, fargs[0], &thing, &anum)) {
-        if ((anum == NOTHING) || (!Good_obj(thing)))
+    // Two possibilities for the second arg: <obj>/<attr> and <attr>.
+    //
+    dbref thing;
+    int   anum;
+    ATTR *ap;
+    if (parse_attrib(player, fargs[0], &thing, &anum))
+    {
+        if (  anum == NOTHING
+           || !Good_obj(thing))
+        {
             ap = NULL;
+        }
         else
+        {
             ap = atr_num(anum);
-    } else {
+        }
+    }
+    else
+    {
         thing = player;
         ap = atr_str(fargs[0]);
     }
 
-    /*
-     * Make sure we got a good attribute
-     */
-
-    if (!ap) {
+    // Make sure we got a good attribute.
+    //
+    if (!ap)
+    {
         return;
     }
-    /*
-     * Use it if we can access it, otherwise return an error.
-     */
 
-    atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext) {
+    // Use it if we can access it, otherwise return an error.
+    //
+    dbref aowner;
+    int   aflags;
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
+    if (!atext)
+    {
         return;
-    } else if (!*atext || !See_attr(player, thing, ap, aowner, aflags)) {
+    }
+    else if (  !*atext
+            || !See_attr(player, thing, ap, aowner, aflags))
+    {
         free_lbuf(atext);
         return;
     }
-    /*
-     * now process the list one element at a time
-     */
 
+    // Now process the list one element at a time.
+    //
     cp = trim_space_sep(fargs[1], sep);
     atextbuf = alloc_lbuf("fun_map");
-    first = 1;
-    while (cp) {
+    BOOL first = TRUE;
+    while (  cp
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+    {
         if (!first)
         {
             print_sep(osep, buff, bufc);
         }
-        first = 0;
+        first = FALSE;
         objstring = split_token(&cp, sep);
-        StringCopy(atextbuf, atext);
+        strcpy(atextbuf, atext);
         str = atextbuf;
-        TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
+        TinyExec(buff, bufc, 0, player, cause,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
     }
     free_lbuf(atext);
     free_lbuf(atextbuf);
