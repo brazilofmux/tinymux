@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.12 2002-06-30 06:42:27 sdennis Exp $
+// $Id: eval.cpp,v 1.13 2002-07-09 08:22:48 jake Exp $
 //
 
 // MUX 2.1
@@ -847,15 +847,15 @@ void tcache_init(void)
     tcache_count = 0;
 }
 
-int tcache_empty(void)
+BOOL tcache_empty(void)
 {
     if (tcache_top)
     {
         tcache_top = 0;
         tcache_count = 0;
-        return 1;
+        return TRUE;
     }
-    return 0;
+    return FALSE;
 }
 
 static void tcache_add(dbref player, char *orig, char *result)

@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.7 2002-06-29 15:21:00 sdennis Exp $
+// $Id: create.cpp,v 1.8 2002-07-09 08:22:48 jake Exp $
 //
 
 #include "copyright.h"
@@ -799,7 +799,7 @@ void do_pcreate
 // ---------------------------------------------------------------------------
 // can_destroy_exit, can_destroy_player, do_destroy: Destroy things.
 //
-static int can_destroy_exit(dbref player, dbref exit)
+static BOOL can_destroy_exit(dbref player, dbref exit)
 {
     dbref loc = Exits(exit);
     if (  (loc != Location(player))
@@ -807,16 +807,16 @@ static int can_destroy_exit(dbref player, dbref exit)
        && !Wizard(player))
     {
         notify_quiet(player, "You can not destroy exits in another room.");
-        return 0;
+        return FALSE;
     }
-    return 1;
+    return TRUE;
 }
 
 // ---------------------------------------------------------------------------
 // destroyable: Indicates if target of a @destroy is a 'special' object in
 // the database.
 //
-static int destroyable(dbref victim)
+static BOOL destroyable(dbref victim)
 {
     if (  (victim == mudconf.default_home)
        || (victim == mudconf.start_home)
@@ -825,25 +825,24 @@ static int destroyable(dbref victim)
        || (victim == (dbref) 0)
        || (God(victim)))
     {
-        return 0;
+        return FALSE;
     }
-    return 1;
+    return TRUE;
 }
 
-
-static int can_destroy_player(dbref player, dbref victim)
+static BOOL can_destroy_player(dbref player, dbref victim)
 {
     if (!Wizard(player))
     {
         notify_quiet(player, "Sorry, no suicide allowed.");
-        return 0;
+        return FALSE;
     }
     if (Wizard(victim))
     {
         notify_quiet(player, "Even you can't do that!");
-        return 0;
+        return FALSE;
     }
-    return 1;
+    return TRUE;
 }
 
 void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what)

@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.11 2002-06-27 09:06:47 jake Exp $
+// $Id: speech.cpp,v 1.12 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -27,26 +27,32 @@ static int idle_timeout_val(dbref player)
     return idle_timeout;
 }
 
-int sp_ok(dbref player)
+BOOL sp_ok(dbref player)
 {
-    if (Gagged(player) && (!(Wizard(player)))) {
+    if (  Gagged(player)
+       && !Wizard(player))
+    {
         notify(player, "Sorry. Gagged players cannot speak.");
-        return 0;
+        return FALSE;
     }
 
-    if (!mudconf.robot_speak) {
-        if (Robot(player) && !controls(player, Location(player))) {
-            notify(player, "Sorry robots may not speak in public.");
-            return 0;
+    if (!mudconf.robot_speak)
+    {
+        if (Robot(player) && !controls(player, Location(player)))
+        {
+            notify(player, "Sorry, robots may not speak in public.");
+            return FALSE;
         }
     }
-    if (Auditorium(Location(player))) {
-        if (!could_doit(player, Location(player), A_LSPEECH)) {
+    if (Auditorium(Location(player)))
+    {
+        if (!could_doit(player, Location(player), A_LSPEECH))
+        {
             notify(player, "Sorry, you may not speak in this place.");
-            return 0;
+            return FALSE;
         }
     }
-    return 1;
+    return TRUE;
 }
 
 void wall_broadcast(int target, dbref player, char *message)
@@ -413,7 +419,7 @@ static void page_return(dbref player, dbref target, const char *tag, int anum, c
     free_lbuf(str);
 }
 
-static int page_check(dbref player, dbref target)
+static BOOL page_check(dbref player, dbref target)
 {
     if (!payfor(player, Guest(player) ? 0 : mudconf.pagecost))
     {
@@ -444,19 +450,19 @@ static int page_check(dbref player, dbref target)
         if (Wizard(player))
         {
             notify(player, tprintf("Warning: %s can't return your page.", Name(target)));
-            return 1;
+            return TRUE;
         }
         else
         {
             notify(player, tprintf("Sorry, %s can't return your page.", Name(target)));
-            return 0;
+            return FALSE;
         }
     }
     else
     {
-        return 1;
+        return TRUE;
     }
-    return 0;
+    return FALSE;
 }
 
 //

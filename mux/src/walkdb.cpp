@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.7 2002-07-09 02:48:49 jake Exp $
+// $Id: walkdb.cpp,v 1.8 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -110,14 +110,14 @@ void do_find(dbref executor, dbref caller, dbref enactor, int key, char *name)
 // ---------------------------------------------------------------------------
 // get_stats, do_stats: Get counts of items in the db.
 //
-int get_stats(dbref player, dbref who, STATS *info)
+BOOL get_stats(dbref player, dbref who, STATS *info)
 {
     // Do we have permission?
     //
     if (Good_obj(who) && !Controls(player, who) && !Stat_Any(player))
     {
         notify(player, NOPERM_MESSAGE);
-        return 0;
+        return FALSE;
     }
 
     // Can we afford it?
@@ -125,7 +125,7 @@ int get_stats(dbref player, dbref who, STATS *info)
     if (!payfor(player, mudconf.searchcost))
     {
         notify(player, tprintf("You don't have enough %s.", mudconf.many_coins));
-        return 0;
+        return FALSE;
     }
     info->s_total = 0;
     info->s_rooms = 0;
@@ -173,7 +173,7 @@ int get_stats(dbref player, dbref who, STATS *info)
             }
         }
     }
-    return 1;
+    return TRUE;
 }
 
 // Reworked by R'nice
@@ -367,7 +367,7 @@ void er_mark_disabled(dbref player)
 // do_search: Walk the db reporting various things (or setting/clearing mark
 // bits)
 //
-int search_setup(dbref player, char *searchfor, SEARCH *parm)
+BOOL search_setup(dbref player, char *searchfor, SEARCH *parm)
 {
     // Crack arg into <pname> <type>=<targ>,<low>,<high>
     //
@@ -452,7 +452,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
     if (parm->s_rst_owner == NOTHING)
     {
         notify(player, tprintf("%s: No such player", pname));
-        return 0;
+        return FALSE;
     }
 
     // Set limits on what we search for.
@@ -530,7 +530,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
             if ( !convert_flags( player, searchfor, &parm->s_fset,
                                 &parm->s_rst_type) )
             {
-                return 0;
+                return FALSE;
             }
         }
         else
@@ -580,7 +580,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
             parm->s_parent = match_controlled(player, searchfor);
             if (!Good_obj(parm->s_parent))
             {
-                return 0;
+                return FALSE;
             }
             if (!*pname)
             {
@@ -591,7 +591,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
         {
             if (!decode_power(player, searchfor, &parm->s_pset))
             {
-                return 0;
+                return FALSE;
             }
         }
         else
@@ -652,7 +652,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
             else
             {
                 notify(player, tprintf("%s: unknown type", searchfor));
-                return 0;
+                return FALSE;
             }
         }
         else if (string_prefix("things", searchtype))
@@ -673,7 +673,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
             parm->s_zone = match_controlled(player, searchfor);
             if (!Good_obj(parm->s_zone))
             {
-                return 0;
+                return FALSE;
             }
             if (!*pname)
             {
@@ -694,7 +694,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
     if (err)
     {
         notify(player, tprintf("%s: unknown class", searchtype));
-        return 0;
+        return FALSE;
     }
 
     // Make sure player is authorized to do the search.
@@ -705,7 +705,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
        && (parm->s_rst_owner != ANY_OWNER))
     {
         notify(player, "You need a search warrant to do that!");
-        return 0;
+        return FALSE;
     }
 
     // Make sure player has money to do the search.
@@ -715,9 +715,9 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
         notify(player,
         tprintf( "You don't have enough %s to search. (You need %d)",
                  mudconf.many_coins, mudconf.searchcost) );
-        return 0;
+        return FALSE;
     }
-    return 1;
+    return TRUE;
 }
 
 void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)

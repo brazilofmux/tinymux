@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.8 2002-07-09 00:04:47 jake Exp $
+// $Id: match.cpp,v 1.9 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -330,15 +330,15 @@ void match_neighbor(void)
     }
 }
 
-static int match_exit_internal(dbref loc, dbref baseloc, int local)
+static BOOL match_exit_internal(dbref loc, dbref baseloc, int local)
 {
     if (!Good_obj(loc) || !Has_exits(loc))
     {
-        return 1;
+        return TRUE;
     }
 
     dbref exit;
-    int result = 0;
+    BOOL result = FALSE;
     int key;
 
     DOLIST(exit, Exits(loc)) 
@@ -355,13 +355,13 @@ static int match_exit_internal(dbref loc, dbref baseloc, int local)
             if (exit_visible(exit, md.player, key)) 
             {
                 promote_match(exit, CON_DBREF | local);
-                return 1;
+                return TRUE;
             }
         }
         if (matches_exit_from_list(md.string, PureName(exit))) 
         {
             promote_match(exit, CON_COMPLETE | local);
-            result = 1;
+            result = TRUE;
         }
     }
     return result;
@@ -549,7 +549,7 @@ dbref dispatched_match_result(dbref player)
     return match_status(player, match_result());
 }
 
-int matched_locally(void)
+BOOL matched_locally(void)
 {
     return (md.confidence & CON_LOCAL);
 }

@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.3 2002-06-27 09:06:47 jake Exp $
+// $Id: powers.cpp,v 1.4 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -18,7 +18,7 @@
  * * ph_any: set or clear indicated bit, no security checking
  */
 
-int ph_any(dbref target, dbref player, POWER power, int fpowers, int reset)
+BOOL ph_any(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
 {
     if (fpowers & POWER_EXT)
     {
@@ -42,7 +42,7 @@ int ph_any(dbref target, dbref player, POWER power, int fpowers, int reset)
             s_Powers(target, Powers(target) | power);
         }
     }
-    return 1;
+    return TRUE;
 }
 
 /*
@@ -50,10 +50,12 @@ int ph_any(dbref target, dbref player, POWER power, int fpowers, int reset)
  * * ph_god: only GOD may set or clear the bit
  */
 
-int ph_god(dbref target, dbref player, POWER power, int fpowers, int reset)
+BOOL ph_god(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
 {
     if (!God(player))
-        return 0;
+    {
+        return FALSE;
+    }
     return (ph_any(target, player, power, fpowers, reset));
 }
 
@@ -62,10 +64,12 @@ int ph_god(dbref target, dbref player, POWER power, int fpowers, int reset)
  * * ph_wiz: only WIZARDS (or GOD) may set or clear the bit
  */
 
-int ph_wiz(dbref target, dbref player, POWER power, int fpowers, int reset)
+BOOL ph_wiz(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
 {
-    if (!Wizard(player) && !God(player))
-        return 0;
+    if (!Wizard(player))
+    {
+        return FALSE;
+    }
     return (ph_any(target, player, power, fpowers, reset));
 }
 
@@ -74,10 +78,12 @@ int ph_wiz(dbref target, dbref player, POWER power, int fpowers, int reset)
  * * ph_wizroy: only WIZARDS, ROYALTY, (or GOD) may set or clear the bit
  */
 
-int ph_wizroy(dbref target, dbref player, POWER power, int fpowers, int reset)
+BOOL ph_wizroy(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
 {
-    if (!WizRoy(player) && !God(player))
-        return 0;
+    if (!WizRoy(player))
+    {
+        return FALSE;
+    }
     return (ph_any(target, player, power, fpowers, reset));
 }
 
@@ -86,10 +92,12 @@ int ph_wizroy(dbref target, dbref player, POWER power, int fpowers, int reset)
  * * ph_inherit: only players may set or clear this bit.
  */
 
-int ph_inherit(dbref target, dbref player, POWER power, int fpowers, int reset)
+BOOL ph_inherit(dbref target, dbref player, POWER power, int fpowers, BOOL reset)
 {
     if (!Inherits(player))
-        return 0;
+    {
+        return FALSE;
+    }
     return (ph_any(target, player, power, fpowers, reset));
 }
 
@@ -192,7 +200,7 @@ POWERENT *find_power(dbref thing, char *powername)
     return p;
 }
 
-int decode_power(dbref player, char *powername, POWERSET *pset)
+BOOL decode_power(dbref player, char *powername, POWERSET *pset)
 {
     POWERENT *pent;
 
@@ -203,7 +211,7 @@ int decode_power(dbref player, char *powername, POWERSET *pset)
     if (!pent)
     {
         notify(player, tprintf("%s: Power not found.", powername));
-        return 0;
+        return FALSE;
     }
     if (pent->powerpower & POWER_EXT)
     {
@@ -213,7 +221,7 @@ int decode_power(dbref player, char *powername, POWERSET *pset)
     {
         pset->word1 = pent->powervalue;
     }
-    return 1;
+    return TRUE;
 }
 
 /*
@@ -224,17 +232,17 @@ int decode_power(dbref player, char *powername, POWERSET *pset)
 void power_set(dbref target, dbref player, char *power, int key)
 {
     POWERENT *fp;
-    int negate, result;
+    BOOL result;
 
     // Trim spaces, and handle the negation character.
     //
-    negate = 0;
+    BOOL negate = FALSE;
     while (Tiny_IsSpace[(unsigned char)*power])
         power++;
 
     if (*power == '!')
     {
-        negate = 1;
+        negate = TRUE;
         power++;
     }
     while (Tiny_IsSpace[(unsigned char)*power])
@@ -277,12 +285,12 @@ void power_set(dbref target, dbref player, char *power, int key)
  * * has_power: does object have power visible to player?
  */
 
-int has_power(dbref player, dbref it, char *powername)
+BOOL has_power(dbref player, dbref it, char *powername)
 {
     POWERENT *fp = find_power(it, powername);
     if (!fp)
     {
-        return 0;
+        return FALSE;
     }
 
     POWER fv;
@@ -299,15 +307,15 @@ int has_power(dbref player, dbref it, char *powername)
     {
         if ((fp->listperm & CA_WIZARD) && !Wizard(player))
         {
-            return 0;
+            return FALSE;
         }
         if ((fp->listperm & CA_GOD) && !God(player))
         {
-            return 0;
+            return FALSE;
         }
-        return 1;
+        return TRUE;
     }
-    return 0;
+    return FALSE;
 }
 
 /*

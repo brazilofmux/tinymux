@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.17 2002-07-09 05:57:33 jake Exp $
+// $Id: set.cpp,v 1.18 2002-07-09 08:22:49 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1339,45 +1339,44 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
  * * parse_attrib, parse_attrib_wild: parse <obj>/<attr> tokens.
  */
 
-int parse_attrib(dbref player, char *str, dbref *thing, int *atr)
+BOOL parse_attrib(dbref player, char *str, dbref *thing, int *atr)
 {
-    ATTR *attr;
-    char *buff;
-    dbref aowner;
-    int aflags;
-
     *thing = NOTHING;
     *atr = NOTHING;
 
     if (!str)
-        return 0;
+    {
+        return FALSE;
+    }
 
     // Break apart string into obj and attr.  Return on failure.
     //
-    buff = alloc_lbuf("parse_attrib");
+    char *buff = alloc_lbuf("parse_attrib");
     StringCopy(buff, str);
     if (!parse_thing_slash(player, buff, &str, thing))
     {
         free_lbuf(buff);
-        return 0;
+        return FALSE;
     }
 
     // Get the named attribute from the object if we can.
     //
-    attr = atr_str(str);
+    ATTR *attr = atr_str(str);
     free_lbuf(buff);
     if (attr)
     {
+        dbref aowner;
+        int aflags;
         atr_pget_info(*thing, attr->number, &aowner, &aflags);
         if (See_attr(player, *thing, attr))
         {
             *atr = attr->number;
         }
     }
-    return 1;
+    return TRUE;
 }
 
-static void find_wild_attrs(dbref player, dbref thing, char *str, int check_exclude, int hash_insert, int get_locks)
+static void find_wild_attrs(dbref player, dbref thing, char *str, BOOL check_exclude, BOOL hash_insert, BOOL get_locks)
 {
     ATTR *attr;
     char *as;
@@ -1437,18 +1436,17 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, int check_excl
     atr_pop();
 }
 
-int parse_attrib_wild(dbref player, char *str, dbref *thing, int check_parents, int get_locks, int df_star)
+BOOL parse_attrib_wild(dbref player, char *str, dbref *thing, BOOL check_parents, BOOL get_locks, BOOL df_star)
 {
-    char *buff;
-    dbref parent;
-    int check_exclude, hash_insert, lev;
-
     if (!str)
     {
         return 0;
     }
 
-    buff = alloc_lbuf("parse_attrib_wild");
+    dbref parent;
+    int lev;
+    BOOL check_exclude, hash_insert;
+    char *buff = alloc_lbuf("parse_attrib_wild");
     strcpy(buff, str);
 
     // Separate name and attr portions at the first /.
@@ -1460,7 +1458,7 @@ int parse_attrib_wild(dbref player, char *str, dbref *thing, int check_parents, 
         if (!df_star)
         {
             free_lbuf(buff);
-            return 0;
+            return FALSE;
         }
 
         // Look for the object, return failure if not found.
@@ -1472,7 +1470,7 @@ int parse_attrib_wild(dbref player, char *str, dbref *thing, int check_parents, 
         if (!Good_obj(*thing))
         {
             free_lbuf(buff);
-            return 0;
+            return FALSE;
         }
         str = (char *)"*";
     }
@@ -1481,23 +1479,25 @@ int parse_attrib_wild(dbref player, char *str, dbref *thing, int check_parents, 
     //
     if (check_parents)
     {
-        check_exclude = 0;
+        check_exclude = FALSE;
         hash_insert = check_parents;
         hashflush(&mudstate.parent_htab);
         ITER_PARENTS(*thing, parent, lev)
         {
             if (!Good_obj(Parent(parent)))
-                hash_insert = 0;
+            {
+                hash_insert = FALSE;
+            }
             find_wild_attrs(player, parent, str, check_exclude, hash_insert, get_locks);
-            check_exclude = 1;
+            check_exclude = TRUE;
         }
     }
     else
     {
-        find_wild_attrs(player, *thing, str, 0, 0, get_locks);
+        find_wild_attrs(player, *thing, str, FALSE, FALSE, get_locks);
     }
     free_lbuf(buff);
-    return 1;
+    return TRUE;
 }
 
 /*

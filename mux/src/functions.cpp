@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.50 2002-07-09 05:57:33 jake Exp $
+// $Id: functions.cpp,v 1.51 2002-07-09 08:22:48 jake Exp $
 //
 
 #include "copyright.h"
@@ -491,15 +491,15 @@ static int dbnum(char *dbr)
  * * nearby_or_control: Check if player is near or controls thing
  */
 
-int nearby_or_control(dbref player, dbref thing)
+BOOL nearby_or_control(dbref player, dbref thing)
 {
     if (!Good_obj(player) || !Good_obj(thing))
-        return 0;
+        return FALSE;
     if (Controls(player, thing))
-        return 1;
+        return TRUE;
     if (!nearby(player, thing))
-        return 0;
-    return 1;
+        return FALSE;
+    return TRUE;
 }
 
 #ifdef HAVE_IEEE_FP_FORMAT
@@ -682,14 +682,14 @@ static void fval_buf(char *buff, double result)
  * ---------------------------------------------------------------------------
  * * delim_check: obtain delimiter
  */
-int delim_check
+BOOL delim_check
 (
     char *fargs[], int nfargs, int sep_arg, char *sep, char *buff,
     char **bufc, int eval, dbref player, dbref caller, dbref enactor,
     char *cargs[], int ncargs, int allow_special
 )
 {
-    int bSuccess = 1;
+    BOOL bSuccess = TRUE;
     if (nfargs >= sep_arg)
     {
         // First, we decide whether to evalute fargs[sep_arg-1] or not.
@@ -737,12 +737,12 @@ int delim_check
                 }
                 else
                 {
-                    bSuccess = 0;
+                    bSuccess = FALSE;
                 }
             }
             else
             {
-                bSuccess = 0;
+                bSuccess = FALSE;
             }
         }
 
@@ -755,14 +755,14 @@ int delim_check
         if (!bSuccess)
         {
             safe_str("#-1 SEPARATOR MUST BE ONE CHARACTER", buff, bufc);
-            return 0;
+            return FALSE;
         }
     }
     else
     {
         *sep = ' ';
     }
-    return 1;
+    return TRUE;
 }
 
 /*
@@ -1370,7 +1370,7 @@ FUNCTION(fun_timefmt)
  * ---------------------------------------------------------------------------
  * * fun_get, fun_get_eval: Get attribute from object.
  */
-int check_read_perms
+BOOL check_read_perms
 (
     dbref player,
     dbref thing,
@@ -1385,19 +1385,19 @@ int check_read_perms
     //
     if (See_attr_explicit(player, thing, attr, aowner, aflags))
     {
-        return 1;
+        return TRUE;
     }
 
     // If we are nearby or have examine privs to the attr and it is
     // visible to us, return it.
     //
-    int see_it = See_attr(player, thing, attr);
+    BOOL see_it = See_attr(player, thing, attr);
     if (  (  Examinable(player, thing)
           || nearby(player, thing)
           || See_All(player))
        && see_it)
     {
-        return 1;
+        return TRUE;
     }
 
     // For any object, we can read its visible attributes, EXCEPT for
@@ -1409,15 +1409,15 @@ int check_read_perms
            && attr->number == A_DESC)
         {
             safe_str("#-1 TOO FAR AWAY TO SEE", buff, bufc);
-            return 0;
+            return FALSE;
         }
         else
         {
-            return 1;
+            return TRUE;
         }
     }
     safe_noperm(buff, bufc);
-    return 0;
+    return FALSE;
 }
 
 #define GET_GET     1
@@ -2305,7 +2305,7 @@ FUNCTION(fun_strmatch)
 {
     // Check if we match the whole string.  If so, return 1.
     //
-    int cc = quick_wild(fargs[1], fargs[0]);
+    BOOL cc = quick_wild(fargs[1], fargs[0]);
     safe_chr(cc ? '1' : '0', buff, bufc);
 }
 
@@ -4868,7 +4868,7 @@ ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
     { NULL,         0          }
 };
 
-static int atr_has_flag
+static BOOL atr_has_flag
 (
     dbref player,
     dbref thing,
@@ -4890,7 +4890,7 @@ static int atr_has_flag
             pEntry++;
         }
     }
-    return 0;
+    return FALSE;
 }
 
 FUNCTION(fun_hasflag)
@@ -4910,7 +4910,7 @@ FUNCTION(fun_hasflag)
             int aflags;
             dbref aowner;
             atr_pget_info(it, atr, &aowner, &aflags);
-            int cc = atr_has_flag(executor, it, ap, aowner, aflags, fargs[1]);
+            BOOL cc = atr_has_flag(executor, it, ap, aowner, aflags, fargs[1]);
             safe_chr(cc ? '1' : '0', buff, bufc);
         }
     }
@@ -4925,7 +4925,7 @@ FUNCTION(fun_hasflag)
                 || Examinable(executor, it)
                 || it == enactor)
         {
-            int cc = has_flag(executor, it, fargs[1]);
+            BOOL cc = has_flag(executor, it, fargs[1]);
             safe_chr(cc ? '1' : '0', buff, bufc);
         }
         else

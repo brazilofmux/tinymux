@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.5 2002-06-27 09:06:47 jake Exp $
+// $Id: functions.h,v 1.6 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -50,7 +50,7 @@ if (s) { \
 
 extern void init_functab(void);
 extern void list_functable(dbref);
-extern int delim_check
+extern BOOL delim_check
 (
     char *fargs[], int nfargs, int sep_arg, char *sep, char *buff,
     char **bufc, int eval, dbref executor, dbref caller, dbref enactor,

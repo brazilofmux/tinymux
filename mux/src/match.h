@@ -1,6 +1,6 @@
 // match.h
 //
-// $Id: match.h,v 1.6 2002-06-28 16:35:06 sdennis Exp $
+// $Id: match.h,v 1.7 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -50,7 +50,7 @@ extern dbref last_match_result(void);
 extern dbref match_status(dbref, dbref);
 extern dbref noisy_match_result(void);
 extern dbref dispatched_match_result(dbref);
-extern int matched_locally(void);
+extern BOOL matched_locally(void);
 extern void save_match_state(MSTATE *);
 extern void restore_match_state(MSTATE *);
 extern void match_zone_exit(void);

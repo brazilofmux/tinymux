@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.3 2002-06-12 04:01:06 raevnos Exp $
+// $Id: timeutil.cpp,v 1.4 2002-07-09 08:22:49 jake Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -963,12 +963,12 @@ void ParseDecimalSeconds(size_t n, const char *p, unsigned short *iMilli,
    *iMilli = ns / 1000;
 }
 
-int do_convtime(const char *str, FIELDEDTIME *ft)
+BOOL do_convtime(const char *str, FIELDEDTIME *ft)
 {
     memset(ft, 0, sizeof(FIELDEDTIME));
     if (!str || !ft)
     {
-        return 0;
+        return FALSE;
     }
 
     // Day-of-week OR month.
@@ -977,7 +977,7 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
     int i, iHash;
     if (!ParseThreeLetters(&p, &iHash))
     {
-        return 0;
+        return FALSE;
     }
     for (i = 0; (i < 12) && iHash != MonthTabHash[i]; i++) ;
     if (i == 12)
@@ -987,12 +987,12 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
         //
         if (!ParseThreeLetters(&p, &iHash))
         {
-            return 0;
+            return FALSE;
         }
         for (i = 0; (i < 12) && iHash != MonthTabHash[i]; i++) ;
         if (i == 12)
         {
-            return 0;
+            return FALSE;
         }
     }
     ft->iMonth = i + 1; // January = 1, February = 2, etc.
@@ -1002,7 +1002,7 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iDayOfMonth = (unsigned short)Tiny_atol(p);
     if (ft->iDayOfMonth < 1 || daystab[i] < ft->iDayOfMonth)
     {
-        return 0;
+        return FALSE;
     }
     while (*p && *p != ' ') p++;
     while (*p == ' ') p++;
@@ -1012,7 +1012,7 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iHour = (unsigned short)Tiny_atol(p);
     if (ft->iHour > 23 || (ft->iHour == 0 && *p != '0'))
     {
-        return 0;
+        return FALSE;
     }
     while (*p && *p != ':') p++;
     if (*p == ':') p++;
@@ -1023,7 +1023,7 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iMinute = (unsigned short)Tiny_atol(p);
     if (ft->iMinute > 59 || (ft->iMinute == 0 && *p != '0'))
     {
-        return 0;
+        return FALSE;
     }
     while (*p && *p != ':') p++;
     if (*p == ':') p++;
@@ -1034,7 +1034,7 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iSecond = (unsigned short)Tiny_atol(p);
     if (ft->iSecond > 59 || (ft->iSecond == 0 && *p != '0'))
     {
-        return 0;
+        return FALSE;
     }
     while (Tiny_IsDigit[*p])
     {
@@ -1068,7 +1068,7 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iYear = (short)Tiny_atol(p);
     if (ft->iYear == 0 && *p != '0')
     {
-        return 0;
+        return FALSE;
     }
 
     // DayOfYear and DayOfWeek

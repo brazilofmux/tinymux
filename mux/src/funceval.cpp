@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.25 2002-07-09 05:57:33 jake Exp $
+// $Id: funceval.cpp,v 1.26 2002-07-09 08:22:48 jake Exp $
 //
 
 #include "copyright.h"
@@ -30,7 +30,7 @@ extern NAMETAB indiv_attraccess_nametab[];
 extern char *next_token(char *, char);
 extern char *split_token(char **, char);
 extern int countwords(char *, char);
-extern int check_read_perms(dbref, dbref, ATTR *, int, int, char *, char **);
+extern BOOL check_read_perms(dbref, dbref, ATTR *, int, int, char *, char **);
 extern void arr2list(char *arr[], int alen, char *list, char **bufc, char sep);
 extern void make_portlist(dbref, dbref, char *, char **);
 
@@ -148,7 +148,7 @@ FUNCTION(fun_zone)
 
 #ifdef SIDE_EFFECT_FUNCTIONS
 
-static int check_command(dbref player, char *name, char *buff, char **bufc)
+static BOOL check_command(dbref player, char *name, char *buff, char **bufc)
 {
     CMDENT *cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
     if (cmdp)
@@ -164,10 +164,10 @@ static int check_command(dbref player, char *name, char *buff, char **bufc)
               && !(mudconf.control_flags & CF_BUILD)))
         {
             safe_noperm(buff, bufc);
-            return 1;
+            return TRUE;
         }
     }
-    return 0;
+    return FALSE;
 }
 
 FUNCTION(fun_link)
@@ -1122,36 +1122,39 @@ FUNCTION(fun_playmem)
 // Code for andflags() and orflags() borrowed from PennMUSH 1.50
 // 0 for orflags, 1 for andflags
 //
-static int handle_flaglists(dbref player, char *name, char *fstr, int type)
+static BOOL handle_flaglists(dbref player, char *name, char *fstr, int type)
 {
     char *s;
     char flagletter[2];
     FLAGSET fset;
     FLAG p_type;
-    int negate, temp;
+    BOOL negate = FALSE;
+    int temp = 0;
     int ret = type;
     dbref it = match_thing_quiet(player, name);
     if (!Good_obj(it))
     {
-        return 0;
+        return FALSE;
     }
-
-    negate = temp = 0;
 
     for (s = fstr; *s; s++)
     {
         // Check for a negation sign. If we find it, we note it and
         // increment the pointer to the next character.
         //
-        if (*s == '!') {
-            negate = 1;
+        if (*s == '!')
+        {
+            negate = TRUE;
             s++;
-        } else {
-            negate = 0;
+        }
+        else
+        {
+            negate = FALSE;
         }
 
-        if (!*s) {
-            return 0;
+        if (!*s)
+        {
+            return FALSE;
         }
         flagletter[0] = *s;
         flagletter[1] = '\0';
@@ -1163,7 +1166,7 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
             // we can return false. Otherwise we just go on.
             //
             if (type == 1)
-                return 0;
+                return FALSE;
             else
                 continue;
         }
@@ -1181,16 +1184,16 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
                    && Hidden(it)
                    && !See_Hidden(player))
                 {
-                    temp = 0;
+                    temp = FALSE;
                 }
                 else
                 {
-                    temp = 1;
+                    temp = TRUE;
                 }
             }
             else
             {
-                temp = 0;
+                temp = FALSE;
             }
 
             if (  type == 1
@@ -1201,7 +1204,7 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
                 // either got a flag and we don't want it, or we don't have a
                 // flag and we want it. Since it's AND, we return false.
                 //
-                return 0;
+                return FALSE;
 
             }
             else if (  type == 0

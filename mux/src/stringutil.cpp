@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.7 2002-06-28 15:40:31 sdennis Exp $
+// $Id: stringutil.cpp,v 1.8 2002-07-09 08:22:49 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1738,9 +1738,8 @@ char *replace_tokens
     return result;
 }
 
-/*
- * returns the number of identical characters in the two strings
- */
+// Returns the number of identical characters in the two strings.
+//
 int prefix_match(const char *s1, const char *s2)
 {
     int count = 0;
@@ -1760,7 +1759,7 @@ int prefix_match(const char *s1, const char *s2)
     return count;
 }
 
-int minmatch(char *str, char *target, int min)
+BOOL minmatch(char *str, char *target, int min)
 {
     while (*str && *target
           && (Tiny_ToLower[(unsigned char)*str] == Tiny_ToLower[(unsigned char)*target]))
@@ -1770,9 +1769,13 @@ int minmatch(char *str, char *target, int min)
         min--;
     }
     if (*str)
-        return 0;
+    {
+        return FALSE;
+    }
     if (!*target)
-        return 1;
+    {
+        return TRUE;
+    }
     return ((min <= 0) ? 1 : 0);
 }
 
@@ -1873,49 +1876,40 @@ int safe_fill(char *buff, char **bufc, char chFill, int nSpaces)
     return nSpaces;
 }
 
-int matches_exit_from_list(char *str, char *pattern)
+BOOL matches_exit_from_list(char *str, char *pattern)
 {
     char *s;
 
-    while (*pattern) {
-        for (s = str;   /*
-                 * check out this one
-                 */
+    while (*pattern)
+    {
+        for (s = str;   // check out this one
              ( *s
              && (Tiny_ToLower[(unsigned char)*s] == Tiny_ToLower[(unsigned char)*pattern])
              && *pattern
              && (*pattern != EXIT_DELIMITER));
              s++, pattern++) ;
 
-        /*
-         * Did we match it all?
-         */
-
-        if (*s == '\0') {
-
-            /*
-             * Make sure nothing afterwards
-             */
-
+        // Did we match it all?
+        //
+        if (*s == '\0')
+        {
+            // Make sure nothing afterwards
+            //
             while (Tiny_IsSpace[(unsigned char)*pattern])
                 pattern++;
 
-            /*
-             * Did we get it?
-             */
-
+            // Did we get it?
+            //
             if (!*pattern || (*pattern == EXIT_DELIMITER))
-                return 1;
+                return TRUE;
         }
-        /*
-         * We didn't get it, find next string to test
-         */
-
+        // We didn't get it, find next string to test
+        //
         while (*pattern && *pattern++ != EXIT_DELIMITER) ;
         while (Tiny_IsSpace[(unsigned char)*pattern])
             pattern++;
     }
-    return 0;
+    return FALSE;
 }
 
 const char Digits100[201] =

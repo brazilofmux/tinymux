@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.12 2002-07-09 05:57:33 jake Exp $
+// $Id: game.cpp,v 1.13 2002-07-09 08:22:49 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -95,7 +95,7 @@ void report(void)
  * registers.
  */
 
-int regexp_match(char *pattern, char *str, char *args[], int nargs)
+BOOL regexp_match(char *pattern, char *str, char *args[], int nargs)
 {
     pcre *re;
     int matches;
@@ -118,7 +118,7 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
          * regexp_errbuf that we can ignore, since we're doing
          * command-matching.
          */
-        return 0;
+        return FALSE;
     }
 
     /*
@@ -129,7 +129,7 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
     if (matches <= 0)
     {
         MEMFREE(re);
-        return 0;
+        return FALSE;
     }
 
     /*
@@ -160,7 +160,7 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
     }
 
     MEMFREE(re);
-    return 1;
+    return TRUE;
 }
 
 
@@ -410,15 +410,14 @@ static char *dflt_from_msg(dbref sender, dbref sendloc)
  *
  * Returns 0 if the copy succeeded, 1 if it failed.
  */
-int html_escape(const char *src, char *dest, char **destp)
+BOOL html_escape(const char *src, char *dest, char **destp)
 {
     const char *msg_orig;
-    char *temp;
-    int ret = 0;
+    BOOL ret = FALSE;
 
     if (destp == 0)
     {
-        temp = dest;
+        char *temp = dest;
         destp = &temp;
     }
 
@@ -453,7 +452,7 @@ int html_escape(const char *src, char *dest, char **destp)
         //
         if (p == *destp)
         {
-            ret = 1;
+            ret = TRUE;
         }
     }
     **destp = 0;
@@ -1638,12 +1637,11 @@ static int load_game(int ccPageFile)
  * match a list of things, using the no_command flag
  */
 
-BOOL list_check(dbref thing, dbref player, char type, char *str, int check_parent)
+BOOL list_check(dbref thing, dbref player, char type, char *str, BOOL check_parent)
 {
-    int limit;
     BOOL match = FALSE;
 
-    limit = mudstate.db_top;
+    int limit = mudstate.db_top;
     while (thing != NOTHING)
     {
         if ((thing != player) && (!(No_Command(thing))))

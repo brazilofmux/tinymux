@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.22 2002-07-09 05:57:33 jake Exp $
+// $Id: externs.h,v 1.23 2002-07-09 08:22:48 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -83,9 +83,9 @@ extern BOOL check_filter(dbref, dbref, int, const char *);
 extern void notify_check(dbref, dbref, const char *, int);
 extern BOOL Hearer(dbref);
 extern void report(void);
-extern int  atr_match(dbref, dbref, char, char *, int);
-extern BOOL list_check(dbref, dbref, char, char *, int);
-extern int  html_escape(const char *src, char *dest, char **destp);
+extern int  atr_match(dbref, dbref, char, char *, BOOL);
+extern BOOL list_check(dbref, dbref, char, char *, BOOL);
+extern BOOL html_escape(const char *src, char *dest, char **destp);
 
 #ifndef STANDALONE
 #define DUMP_I_NORMAL    0  // OUTPUT to the outdb through a temporary file.
@@ -112,7 +112,7 @@ extern int  cf_ntab_access(int *, char *, void *, UINT32, dbref, char *);
 #else
 #define ENDLINE "\n"
 #endif
-extern int start_log(const char *primary, const char *secondary);
+extern BOOL start_log(const char *primary, const char *secondary);
 extern void end_log(void);
 extern void log_perror(const char *, const char *,const char *,
             const char *);
@@ -138,7 +138,7 @@ extern void do_enter_internal(dbref, dbref, int);
 /* From object.cpp */
 extern dbref start_home(void);
 extern dbref default_home(void);
-extern int   can_set_home(dbref, dbref, dbref);
+extern BOOL  can_set_home(dbref, dbref, dbref);
 extern dbref new_home(dbref);
 extern dbref clone_home(dbref, dbref);
 extern void  divest_object(dbref);
@@ -179,8 +179,8 @@ extern BOOL ok_password(const char *szPassword, dbref player);
 extern void handle_ears(dbref, BOOL, BOOL);
 extern dbref match_possessed(dbref, dbref, char *, dbref, BOOL);
 extern void parse_range(char **, dbref *, dbref *);
-extern int  parse_thing_slash(dbref, char *, char **, dbref *);
-extern int  get_obj_and_lock(dbref, char *, dbref *, ATTR **, char *, char **);
+extern BOOL parse_thing_slash(dbref, char *, char **, dbref *);
+extern BOOL get_obj_and_lock(dbref, char *, dbref *, ATTR **, char *, char **);
 extern dbref where_is(dbref);
 extern dbref where_room(dbref);
 extern BOOL locatable(dbref, dbref, dbref);
@@ -194,8 +194,8 @@ extern BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bParent
 extern BOOL bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 
 /* From set.cpp */
-extern int  parse_attrib(dbref, char *, dbref *, int *);
-extern int  parse_attrib_wild(dbref, char *, dbref *, int, int, int);
+extern BOOL parse_attrib(dbref, char *, dbref *, int *);
+extern BOOL parse_attrib_wild(dbref, char *, dbref *, BOOL, BOOL, BOOL);
 extern void edit_string(char *, char **, char *, char *);
 extern dbref match_handler(dbref player, const char *name, int key, BOOL bQuiet);
 #define match_controlled(player,name)       match_handler(player, name, MATCH_CONTROL, FALSE)
@@ -240,9 +240,9 @@ extern dbref olist_first(void);
 extern dbref olist_next(void);
 
 /* From wild.cpp */
-extern int  wild(char *, char *, char *[], int);
-extern int  wild_match(char *, char *);
-extern int  quick_wild(char *, const char *);
+extern BOOL wild(char *, char *, char *[], int);
+extern BOOL wild_match(char *, char *);
+extern BOOL quick_wild(char *, const char *);
 
 /* From compress.cpp */
 extern const char *uncompress(const char *, int);
@@ -250,7 +250,7 @@ extern const char *compress(const char *, int);
 extern char *uncompress_str(char *, const char *, int);
 
 /* From command.cpp */
-extern int  check_access(dbref player, int mask);
+extern BOOL check_access(dbref player, int mask);
 extern void set_prefix_cmds(void);
 extern char *process_command(dbref executor, dbref caller, dbref enactor, int,
     char *, char *[], int);
@@ -263,7 +263,7 @@ extern char *process_command(dbref executor, dbref caller, dbref enactor, int,
  (Protect(CA_PLAYER) && !isPlayer(x)))
 
 /* from db.cpp */
-extern int  Commer(dbref);
+extern BOOL Commer(dbref);
 extern void s_Pass(dbref, const char *);
 extern void s_Name(dbref, char *);
 extern char *Name(dbref);
@@ -303,12 +303,12 @@ extern int  atr_pget_info(dbref, int, dbref *, int *);
 extern void atr_free(dbref);
 extern BOOL check_zone_handler(dbref player, dbref thing, BOOL bPlayerCheck);
 #ifdef STANDALONE
-extern int  check_zone(dbref player, dbref thing);
+#define check_zone(player, thing) FALSE
 #else
 #define check_zone(player, thing) check_zone_handler(player, thing, FALSE)
 #endif
 extern void ReleaseAllResources(dbref obj);
-extern int  fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
+extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 
 /* Command handler keys */
 

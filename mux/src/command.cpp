@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.19 2002-06-30 06:38:11 sdennis Exp $
+// $Id: command.cpp,v 1.20 2002-07-09 08:22:48 jake Exp $
 //
 
 #include "copyright.h"
@@ -782,17 +782,17 @@ void set_prefix_cmds()
 // ---------------------------------------------------------------------------
 // check_access: Check if player has access to function.
 //
-int check_access(dbref player, int mask)
+BOOL check_access(dbref player, int mask)
 {
     int succ, fail;
 
     if (mask & (CA_DISABLED|CA_STATIC))
     {
-        return 0;
+        return FALSE;
     }
     if (God(player) || mudstate.bReadingConfiguration)
     {
-        return 1;
+        return TRUE;
     }
 
     succ = fail = 0;
@@ -862,9 +862,13 @@ int check_access(dbref player, int mask)
             fail++;
     }
     if (succ > 0)
+    {
         fail = 0;
+    }
     if (fail > 0)
-        return 0;
+    {
+        return FALSE;
+    }
 
     // Check for forbidden flags.
     //
@@ -876,9 +880,9 @@ int check_access(dbref player, int mask)
           || ((mask & CA_NO_GUEST)   && Guest(player))
           || ((mask & CA_NO_UNINS)   && Uninspected(player))))
     {
-        return 0;
+        return FALSE;
     }
-    return 1;
+    return TRUE;
 }
 
 /* ---------------------------------------------------------------------------
@@ -3159,6 +3163,6 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
 
 void do_break(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
-    extern int break_called;
-    break_called = !!xlate(arg1);
+    extern BOOL break_called;
+    break_called = xlate(arg1);
 }

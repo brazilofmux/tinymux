@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.23 2002-07-09 05:57:33 jake Exp $
+// $Id: predicates.cpp,v 1.24 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -16,7 +16,7 @@
 #include "interface.h"
 #include "powers.h"
 
-extern int do_command(DESC *, char *, int);
+extern BOOL do_command(DESC *, char *, int);
 extern void dump_database(void);
 
 char * DCL_CDECL tprintf(const char *fmt,...)
@@ -1459,7 +1459,7 @@ void parse_range(char **name, dbref *low_bound, dbref *high_bound)
     }
 }
 
-int parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
+BOOL parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
 {
     char *str;
 
@@ -1469,32 +1469,29 @@ int parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
 
     // If no '/' in string, return failure.
     //
-    if (!*str) {
+    if (!*str)
+    {
         *after = NULL;
         *it = NOTHING;
-        return 0;
+        return FALSE;
     }
     *str++ = '\0';
     *after = str;
 
-    /*
-     * Look for the object.
-     */
-
+    // Look for the object.
+    //
     init_match(player, thing, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     *it = match_result();
 
-    /*
-     * Return status of search.
-     */
-
+    // Return status of search.
+    //
     return (Good_obj(*it));
 }
 
 extern NAMETAB lock_sw[];
 
-int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *errmsg, char **bufc)
+BOOL get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *errmsg, char **bufc)
 {
     char *str, *tbuf;
     int anum;
@@ -1510,7 +1507,7 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
         {
             free_lbuf(tbuf);
             safe_str("#-1 LOCK NOT FOUND", errmsg, bufc);
-            return 0;
+            return FALSE;
         }
     }
     else
@@ -1522,7 +1519,7 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
         {
             free_lbuf(tbuf);
             safe_match_result(*it, errmsg, bufc);
-            return 0;
+            return FALSE;
         }
         anum = A_LOCK;
     }
@@ -1534,9 +1531,9 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
     if (!(*attr))
     {
         safe_str("#-1 LOCK NOT FOUND", errmsg, bufc);
-        return 0;
+        return FALSE;
     }
-    return 1;
+    return TRUE;
 }
 
 #endif // STANDALONE

@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.8 2002-07-09 02:25:06 jake Exp $
+// $Id: mguests.cpp,v 1.9 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -259,7 +259,7 @@ void CGuests::CleanUp(void)
     SizeGuests(nGuests);
 }
 
-int CGuests::MakeGuestChar(void)
+dbref CGuests::MakeGuestChar(void)
 {
     // Search for the first available name.
     //

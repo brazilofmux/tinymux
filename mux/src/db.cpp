@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.13 2002-06-27 06:38:31 jake Exp $
+// $Id: db.cpp,v 1.14 2002-07-09 08:22:48 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -385,12 +385,11 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
 /* ---------------------------------------------------------------------------
  * fwdlist_ck:  Check a list of dbref numbers to forward to for AUDIBLE
  */
-// JXA: Examine for salvage value, then remove.
-int fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
+BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
 {
 #ifdef STANDALONE
 
-    return 1;
+    return TRUE;
 
 #else // STANDALONE
 
@@ -1129,7 +1128,7 @@ static char *al_code(char *ap, int atrnum)
  * Commer: check if an object has any $-commands in its attributes.
  */
 
-int Commer(dbref thing)
+BOOL Commer(dbref thing)
 {
     char *s, *as, c;
     int attr, aflags;
@@ -1149,11 +1148,11 @@ int Commer(dbref thing)
         if ((c == '$') && !(aflags & AF_NOPROG))
         {
             atr_pop();
-            return 1;
+            return TRUE;
         }
     }
     atr_pop();
-    return 0;
+    return FALSE;
 }
 
 // routines to handle object attribute lists
@@ -2743,7 +2742,7 @@ void putstring(FILE *f, const char *pRaw)
     fwrite(aBuffer, sizeof(char), pBuffer - aBuffer, f);
 }
 
-dbref getref(FILE *f)
+int getref(FILE *f)
 {
     static char buf[SBUF_SIZE];
     fgets(buf, sizeof(buf), f);
@@ -2843,14 +2842,7 @@ int init_dbfile(char *game_dir_file, char *game_pag_file)
 #endif // !MEMORY_BASED
 
 
-#ifdef STANDALONE
-
-int check_zone(dbref player, dbref thing)
-{
-    return 0;
-}
-
-#else // STANDALONE
+#ifndef STANDALONE
 
 // check_zone - checks back through a zone tree for control.
 //

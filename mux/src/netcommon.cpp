@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.14 2002-07-08 18:01:24 jake Exp $
+// $Id: netcommon.cpp,v 1.15 2002-07-09 08:22:49 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1672,7 +1672,7 @@ static void failconn(const char *logcode, const char *logtype, const char *logre
 static const char *connect_fail = "Either that player does not exist, or has a different password.\r\n";
 static const char *create_fail = "Either there is already a player with that name, or that name is illegal.\r\n";
 
-static int check_connect(DESC *d, char *msg)
+static BOOL check_connect(DESC *d, char *msg)
 {
     char *command, *user, *password, *buff, *cmdsave;
     dbref player, aowner;
@@ -1718,7 +1718,7 @@ static int check_connect(DESC *d, char *msg)
                 failconn("CONN", "Connect", "Guest Site Forbidden", d,
                     R_GAMEDOWN, NOTHING, FC_CONN_REG, mudconf.downmotd_msg,
                     command, user, password, cmdsave);
-                return 0;
+                return FALSE;
             }
             if (  mudconf.guest_char != NOTHING
                && (mudconf.control_flags & CF_LOGIN))
@@ -1729,7 +1729,7 @@ static int check_connect(DESC *d, char *msg)
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
-                    return 0;
+                    return FALSE;
                 }
 
                 if ((p = Guest.Create(d)) == NULL)
@@ -1738,7 +1738,7 @@ static int check_connect(DESC *d, char *msg)
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
-                    return 0;
+                    return FALSE;
                 }
                 strcpy(user, p);
                 strcpy(password, GUEST_PASSWORD);
@@ -1781,7 +1781,7 @@ static int check_connect(DESC *d, char *msg)
                 free_lbuf(password);
                 shutdownsock(d, R_BADLOGIN);
                 mudstate.debug_cmd = cmdsave;
-                return 0;
+                return FALSE;
             }
         }
         else if (  (  (mudconf.control_flags & CF_LOGIN)
@@ -1818,7 +1818,7 @@ static int check_connect(DESC *d, char *msg)
                     R_GAMEDOWN, player, FC_CONN_SITE,
                     mudconf.downmotd_msg, command, user, password,
                     cmdsave);
-                return 0;
+                return FALSE;
             }
 
             // Logins are enabled, or wiz or god.
@@ -1879,13 +1879,13 @@ static int check_connect(DESC *d, char *msg)
         {
             failconn("CON", "Connect", "Logins Disabled", d, R_GAMEDOWN, player, FC_CONN_DOWN,
                 mudconf.downmotd_msg, command, user, password, cmdsave);
-            return 0;
+            return FALSE;
         }
         else
         {
             failconn("CON", "Connect", "Game Full", d, R_GAMEFULL, player, FC_CONN_FULL,
                 mudconf.fullmotd_msg, command, user, password, cmdsave);
-            return 0;
+            return FALSE;
         }
     }
     else if (!strncmp(command, "cr", 2))
@@ -1896,7 +1896,7 @@ static int check_connect(DESC *d, char *msg)
         {
             failconn("CRE", "Create", "Logins Disabled", d, R_GAMEDOWN, NOTHING, FC_CONN_DOWN,
                 mudconf.downmotd_msg, command, user, password, cmdsave);
-            return 0;
+            return FALSE;
         }
 
         // Enforce max #players.
@@ -1921,7 +1921,7 @@ static int check_connect(DESC *d, char *msg)
                 R_GAMEFULL, NOTHING, FC_CONN_FULL,
                 mudconf.fullmotd_msg, command, user, password,
                 cmdsave);
-            return 0;
+            return FALSE;
         }
         if (d->host_info & H_REGISTRATION)
         {
@@ -1974,10 +1974,10 @@ static int check_connect(DESC *d, char *msg)
     free_lbuf(password);
 
     mudstate.debug_cmd = cmdsave;
-    return 1;
+    return TRUE;
 }
 
-int do_command(DESC *d, char *command, int first)
+BOOL do_command(DESC *d, char *command, int first)
 {
     char *arg, *cmdsave;
     NAMETAB *cp;
@@ -2061,7 +2061,7 @@ int do_command(DESC *d, char *command, int first)
                 queue_write(d, "\r\n", 2);
             }
             mudstate.debug_cmd = cmdsave;
-            return 1;
+            return TRUE;
         }
         else
         {
@@ -2098,7 +2098,7 @@ int do_command(DESC *d, char *command, int first)
 
             shutdownsock(d, R_QUIT);
             mudstate.debug_cmd = cmdsave;
-            return 0;
+            return FALSE;
 
         case CMD_LOGOUT:
 
@@ -2171,7 +2171,7 @@ int do_command(DESC *d, char *command, int first)
         }
     }
     mudstate.debug_cmd = cmdsave;
-    return 1;
+    return TRUE;
 }
 
 void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg)

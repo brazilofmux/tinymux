@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.7 2002-06-28 19:51:05 sdennis Exp $
+// $Id: cque.cpp,v 1.8 2002-07-09 08:22:48 jake Exp $
 //
 
 #include "copyright.h"
@@ -18,7 +18,7 @@
 extern int  a_Queue(dbref, int);
 extern void s_Queue(dbref, int);
 extern int  QueueMax(dbref);
-int break_called = 0;
+BOOL break_called = FALSE;
 
 CLinearTimeDelta GetProcessorUsage(void)
 {
@@ -140,7 +140,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
             }
 
             char *command = point->comm;
-            break_called = 0;
+            break_called = FALSE;
             while (command && !break_called)
             {
                 char *cp = parse_to(&command, ';', 0);

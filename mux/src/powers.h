@@ -1,6 +1,6 @@
 // powers.h -- Object powers.
 //
-// $Id: powers.h,v 1.3 2002-06-27 06:38:31 jake Exp $
+// $Id: powers.h,v 1.4 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -56,7 +56,7 @@ typedef struct power_entry {
     int powervalue; /* Which bit in the object is the flag */
     int powerpower; /* Ctrl flags for this power (recursive? :-) */
     int listperm;   /* Who sees this flag when set */
-    int (*handler)(dbref target, dbref player, POWER power, int fpowers, int reset);    /* Handler for setting/clearing this flag */
+    BOOL (*handler)(dbref target, dbref player, POWER power, int fpowers, BOOL reset);    /* Handler for setting/clearing this flag */
 } POWERENT;
 
 typedef struct powerset {
@@ -69,9 +69,9 @@ extern void display_powertab(dbref);
 extern void power_set(dbref, dbref, char *, int);
 extern char *power_description(dbref, dbref);
 extern POWERENT *find_power(dbref, char *);
-extern int has_power(dbref, dbref, char *);
+extern BOOL has_power(dbref, dbref, char *);
 extern void decompile_powers(dbref, dbref, char *);
-extern int decode_power(dbref player, char *powername, POWERSET *pset);
+extern BOOL decode_power(dbref player, char *powername, POWERSET *pset);
 
 
 #define s_Change_Quotas(c)  s_Powers((c), Powers(c) | POW_CHG_QUOTAS)

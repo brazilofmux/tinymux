@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.11 2002-07-09 00:03:42 jake Exp $
+// $Id: mail.cpp,v 1.12 2002-07-09 08:22:49 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -242,13 +242,13 @@ static int add_mail_message(dbref player, char *message)
 // This function is -only- used from reading from the disk, and so
 // it does -not- manage the reference counts.
 //
-static int MessageAddWithNumber(int i, char *pMessage)
+static BOOL MessageAddWithNumber(int i, char *pMessage)
 {
     mail_db_grow(i+1);
 
     MENT *pm = &mudstate.mail_list[i];
     pm->m_pMessage = StringClone(pMessage);
-    return i;
+    return TRUE;
 }
 
 // new_mail_message - used for reading messages in from disk which
@@ -2139,32 +2139,32 @@ static int parse_folder(dbref player, char *folder_string)
     return get_folder_number(player, folder_string);
 }
 
-static int mail_match(struct mail *mp, struct mail_selector ms, int num)
+static BOOL mail_match(struct mail *mp, struct mail_selector ms, int num)
 {
     // Does a piece of mail match the mail_selector?
     //
     if (ms.low && num < ms.low)
     {
-        return 0;
+        return FALSE;
     }
     if (ms.high && num > ms.high)
     {
-        return 0;
+        return FALSE;
     }
     if (ms.player && mp->from != ms.player)
     {
-        return 0;
+        return FALSE;
     }
 
     mail_flag mpflag = Read(mp) ? mp->read : (mp->read | M_MSUNREAD);
     if (!(ms.flags & M_ALL) && !(ms.flags & mpflag))
     {
-        return 0;
+        return FALSE;
     }
 
     if (ms.days == -1) 
     {
-        return 1;
+        return TRUE;
     }
 
     // Get the time now, subtract mp->time, and compare the results with
@@ -2182,13 +2182,13 @@ static int mail_match(struct mail *mp, struct mail_selector ms, int num)
         int iDiffDays = ltd.ReturnDays();
         if (sign(iDiffDays - ms.days) == ms.day_comp)
         {
-            return 1;
+            return TRUE;
         }
     }
-    return 0;
+    return FALSE;
 }
 
-static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
+static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
 {
     // Take a message list, and return the appropriate mail_selector setup.
     // For now, msglists are quite restricted. That'll change once all this
@@ -2210,7 +2210,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
     {
         // All messages
         //
-        return 1;
+        return TRUE;
     }
 
     char *p = msglist;
@@ -2221,7 +2221,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
 
     if (*p == '\0')
     {
-        return 1;
+        return TRUE;
     }
 
     if (Tiny_IsDigit[(unsigned char)*p])
@@ -2238,7 +2238,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             if (ms->low <= 0)
             {
                 notify(player, "MAIL: Invalid message range");
-                return 0;
+                return FALSE;
             }
             if (*q == '\0')
             {
@@ -2252,7 +2252,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 if (ms->low > ms->high)
                 {
                     notify(player, "MAIL: Invalid message range");
-                    return 0;
+                    return FALSE;
                 }
             }
         }
@@ -2264,7 +2264,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             if (ms->low <= 0)
             {
                 notify(player, "MAIL: Invalid message number");
-                return 0;
+                return FALSE;
             }
         }
     }
@@ -2280,13 +2280,13 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             if (*p == '\0')
             {
                 notify(player, "MAIL: Invalid message range");
-                return 0;
+                return FALSE;
             }
             ms->high = Tiny_atol(p);
             if (ms->high <= 0)
             {
                 notify(player, "MAIL: Invalid message range");
-                return 0;
+                return FALSE;
             }
             break;
 
@@ -2298,14 +2298,14 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             if (*p == '\0')
             {
                 notify(player, "MAIL: Invalid age");
-                return 0;
+                return FALSE;
             }
             ms->day_comp = 0;
             ms->days = Tiny_atol(p);
             if (ms->days < 0)
             {
                 notify(player, "MAIL: Invalid age");
-                return 0;
+                return FALSE;
             }
             break;
 
@@ -2317,14 +2317,14 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             if (*p == '\0')
             {
                 notify(player, "MAIL: Invalid age");
-                return 0;
+                return FALSE;
             }
             ms->day_comp = -1;
             ms->days = Tiny_atol(p);
             if (ms->days < 0)
             {
                 notify(player, "MAIL: Invalid age");
-                return 0;
+                return FALSE;
             }
             break;
 
@@ -2336,14 +2336,14 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             if (*p == '\0')
             {
                 notify(player, "MAIL: Invalid age");
-                return 0;
+                return FALSE;
             }
             ms->day_comp = 1;
             ms->days = Tiny_atol(p);
             if (ms->days < 0)
             {
                 notify(player, "MAIL: Invalid age");
-                return 0;
+                return FALSE;
             }
             break;
 
@@ -2355,13 +2355,13 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             if (*p == '\0')
             {
                 notify(player, "MAIL: Invalid dbref #");
-                return 0;
+                return FALSE;
             }
             ms->player = Tiny_atol(p);
             if (!Good_obj(ms->player) || !(ms->player))
             {
                 notify(player, "MAIL: Invalid dbref #");
-                return 0;
+                return FALSE;
             }
             break;
 
@@ -2373,13 +2373,13 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             if (*p == '\0')
             {
                 notify(player, "MAIL: Invalid player");
-                return 0;
+                return FALSE;
             }
             ms->player = lookup_player(player, p, 1);
             if (ms->player == NOTHING)
             {
                 notify(player, "MAIL: Invalid player");
-                return 0;
+                return FALSE;
             }
             break;
 
@@ -2400,7 +2400,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             if (*p == '\0')
             {
                 notify(player, "MAIL: U is ambiguous (urgent or unread?)");
-                return 0;
+                return FALSE;
             }
             switch (Tiny_ToUpper[(unsigned char)*p])
             {
@@ -2423,7 +2423,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 // Bad
                 //
                 notify(player, "MAIL: Invalid message specification");
-                return 0;
+                return FALSE;
                 break;
             }
             break;
@@ -2457,7 +2457,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             if (*p == '\0')
             {
                 notify(player, "MAIL: M is ambiguous (mass or me?)");
-                return 0;
+                return FALSE;
             }
             switch (Tiny_ToUpper[(unsigned char)*p])
             {
@@ -2474,7 +2474,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             default:
 
                 notify(player, "MAIL: Invalid message specification");
-                return 0;
+                return FALSE;
                 break;
             }
             break;
@@ -2484,11 +2484,11 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             // Bad news.
             //
             notify(player, "MAIL: Invalid message specification");
-            return 0;
+            return FALSE;
             break;
         }
     }
-    return 1;
+    return TRUE;
 }
 
 void check_mail_expiration(void)

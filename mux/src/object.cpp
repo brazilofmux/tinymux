@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.15 2002-07-08 17:58:11 jake Exp $
+// $Id: object.cpp,v 1.16 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -154,13 +154,13 @@ dbref default_home(void)
     return mudconf.start_room;
 }
 
-int can_set_home(dbref player, dbref thing, dbref home)
+BOOL can_set_home(dbref player, dbref thing, dbref home)
 {
     if (  !Good_obj(player)
        || !Good_obj(home)
        || thing == home)
     {
-        return 0;
+        return FALSE;
     }
 
     switch (Typeof(home))
@@ -170,15 +170,15 @@ int can_set_home(dbref player, dbref thing, dbref home)
     case TYPE_THING:
         if (Going(home))
         {
-            return 0;
+            return FALSE;
         }
         if (  Controls(player, home)
            || Abode(home))
         {
-            return 1;
+            return TRUE;
         }
     }
-    return 0;
+    return FALSE;
 }
 
 dbref new_home(dbref player)
@@ -472,7 +472,7 @@ void destroy_obj(dbref obj)
     // Validate the owner.
     //
     dbref owner = Owner(obj);
-    int good_owner = Good_owner(owner);
+    BOOL good_owner = Good_owner(owner);
 
     // Halt any pending commands (waiting or semaphore).
     //

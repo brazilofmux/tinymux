@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.9 2002-06-28 19:51:05 sdennis Exp $
+// $Id: comsys.cpp,v 1.10 2002-07-09 08:22:48 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2142,7 +2142,7 @@ void do_editchannel
     {
     case 0:
         {
-            int who = lookup_player(executor, arg2, 1);
+            dbref who = lookup_player(executor, arg2, 1);
             if (NOTHING == who)
             {
                 raw_notify(executor, "Invalid player.");
@@ -2254,13 +2254,13 @@ void do_editchannel
     }
 }
 
-int do_test_access(dbref player, long access, struct channel *chan)
+BOOL do_test_access(dbref player, long access, struct channel *chan)
 {
     long flag_value = access;
 
     if (Comm_All(player))
     {
-        return 1;
+        return TRUE;
     }
 
     // Channel objects allow custom locks for channels.  The normal
@@ -2277,17 +2277,17 @@ int do_test_access(dbref player, long access, struct channel *chan)
         if (flag_value & CHANNEL_JOIN)
         {
             if (could_doit(player, chan->chan_obj, A_LOCK))
-                return 1;
+                return TRUE;
         }
         if (flag_value & CHANNEL_TRANSMIT)
         {
             if (could_doit(player, chan->chan_obj, A_LUSE))
-                return 1;
+                return TRUE;
         }
         if (flag_value & CHANNEL_RECEIVE)
         {
             if (could_doit(player, chan->chan_obj, A_LENTER))
-                return 1;
+                return TRUE;
         }
     }
 
@@ -2309,7 +2309,7 @@ int do_test_access(dbref player, long access, struct channel *chan)
 
 // 1 means continue, 0 means stop
 //
-int do_comsystem(dbref who, char *cmd)
+BOOL do_comsystem(dbref who, char *cmd)
 {
     char *t;
     char *alias = alloc_lbuf("do_comsystem");
@@ -2331,13 +2331,13 @@ int do_comsystem(dbref who, char *cmd)
     {
         do_processcom(who, ch, t);
         free_lbuf(alias);
-        return 0;
+        return FALSE;
     }
     else
     {
         free_lbuf(alias);
     }
-    return 1;
+    return TRUE;
 }
 
 void do_cemit

@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.4 2002-06-13 15:08:13 sdennis Exp $
+// $Id: comsys.h,v 1.5 2002-07-09 08:22:48 jake Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -66,7 +66,7 @@ void load_comsys(char *filename);
 void del_comsys(dbref who);
 void add_comsys(comsys_t *c);
 void do_processcom(dbref player, char *arg1, char *arg2);
-int do_test_access(dbref player, long access, struct channel *chan);
+BOOL do_test_access(dbref player, long access, struct channel *chan);
 void do_joinchannel(dbref player, struct channel *ch);
 void do_comdisconnectraw_notify(dbref player, char *chan);
 void do_comconnectraw_notify(dbref player, char *chan);
@@ -133,7 +133,7 @@ char  *add_spaces();
 
 char  *send_csdebug();
 
-int   do_comsystem(dbref who, char *cmd);
+BOOL  do_comsystem(dbref who, char *cmd);
 char  *do_comdisconnectnotify();
 char  *do_comconnectnotify();
 void  do_chanlist(dbref executor, dbref caller, dbref enactor, int key);

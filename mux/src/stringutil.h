@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.5 2002-06-28 15:40:31 sdennis Exp $
+// $Id: stringutil.h,v 1.6 2002-07-09 08:22:49 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -126,7 +126,7 @@ extern char *replace_tokens
     const char *pSwitch
 );
 extern int prefix_match(const char *, const char *);
-extern int minmatch(char *, char *, int);
+extern BOOL minmatch(char *str, char *target, int min);
 extern char *StringCloneLen(const char *str, unsigned int nStr);
 extern char *StringClone(const char *str);
 extern char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
@@ -134,7 +134,7 @@ void safe_copy_str(const char *src, char *buff, char **bufp, int max);
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp);
 int safe_fill(char *buff, char **bufc, char chFile, int nSpaces);
-extern int matches_exit_from_list(char *, char *);
+extern BOOL matches_exit_from_list(char *, char *);
 extern char *translate_string(const char *, int);
 #ifndef WIN32
 extern int _stricmp(const char *a, const char *b);

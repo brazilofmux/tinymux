@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.2 2002-06-13 14:33:57 sdennis Exp $
+// $Id: wild.cpp,v 1.3 2002-07-09 08:22:49 jake Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -32,7 +32,7 @@ static int numargs;
 //
 // This routine will cause crashes if fed NULLs instead of strings.
 //
-int quick_wild(char *tstr, const char *dstr)
+BOOL quick_wild(char *tstr, const char *dstr)
 {
     while (*tstr != '*')
     {
@@ -44,7 +44,7 @@ int quick_wild(char *tstr, const char *dstr)
             //
             if (!*dstr)
             {
-                return 0;
+                return FALSE;
             }
             break;
 
@@ -64,11 +64,11 @@ int quick_wild(char *tstr, const char *dstr)
             //
             if (NOTEQUAL(*dstr, *tstr))
             {
-                return 0;
+                return FALSE;
             }
             if (!*dstr)
             {
-                return 1;
+                return TRUE;
             }
         }
         tstr++;
@@ -83,7 +83,7 @@ int quick_wild(char *tstr, const char *dstr)
     //
     if (!*tstr)
     {
-        return 1;
+        return TRUE;
     }
 
     // Skip over wildcards.
@@ -94,7 +94,7 @@ int quick_wild(char *tstr, const char *dstr)
         {
             if (!*dstr)
             {
-                return 0;
+                return FALSE;
             }
             dstr++;
         }
@@ -112,7 +112,7 @@ int quick_wild(char *tstr, const char *dstr)
     //
     if (!*tstr)
     {
-        return 1;
+        return TRUE;
     }
 
     // Scan for possible matches.
@@ -122,11 +122,11 @@ int quick_wild(char *tstr, const char *dstr)
         if (  EQUAL(*dstr, *tstr)
            && quick_wild(tstr + 1, dstr + 1))
         {
-            return 1;
+            return TRUE;
         }
         dstr++;
     }
-    return 0;
+    return FALSE;
 }
 
 // ---------------------------------------------------------------------------
@@ -137,7 +137,7 @@ int quick_wild(char *tstr, const char *dstr)
 //
 // Side Effect: this routine modifies the 'arglist' static global variable.
 //
-int wild1(char *tstr, char *dstr, int arg)
+BOOL wild1(char *tstr, char *dstr, int arg)
 {
     char *datapos;
     int argpos, numextra;
@@ -152,7 +152,7 @@ int wild1(char *tstr, char *dstr, int arg)
             //
             if (!*dstr)
             {
-                return 0;
+                return FALSE;
             }
             arglist[arg][0] = *dstr;
             arglist[arg][1] = '\0';
@@ -182,11 +182,11 @@ int wild1(char *tstr, char *dstr, int arg)
             //
             if (NOTEQUAL(*dstr, *tstr))
             {
-                return 0;
+                return FALSE;
             }
             if (!*dstr)
             {
-                return 1;
+                return TRUE;
             }
         }
         tstr++;
@@ -199,7 +199,7 @@ int wild1(char *tstr, char *dstr, int arg)
     {
         StringCopyTrunc(arglist[arg], dstr, LBUF_SIZE - 1);
         arglist[arg][LBUF_SIZE - 1] = '\0';
-        return 1;
+        return TRUE;
     }
 
     // Remember current position for filling in the '*' return.
@@ -256,7 +256,7 @@ int wild1(char *tstr, char *dstr, int arg)
         {
             if (!*dstr)
             {
-                return 0;
+                return FALSE;
             }
             tstr++;
             dstr++;
@@ -285,7 +285,7 @@ int wild1(char *tstr, char *dstr, int arg)
             {
                 if (!*dstr)
                 {
-                    return 0;
+                    return FALSE;
                 }
                 dstr++;
             }
@@ -320,7 +320,7 @@ int wild1(char *tstr, char *dstr, int arg)
             {
                 if (argpos >= numargs)
                 {
-                    return 1;
+                    return TRUE;
                 }
                 arglist[argpos][0] = *datapos;
                 arglist[argpos][1] = '\0';
@@ -331,7 +331,7 @@ int wild1(char *tstr, char *dstr, int arg)
 
             // It's done!
             //
-            return 1;
+            return TRUE;
         }
         else
         {
@@ -350,9 +350,9 @@ int wild1(char *tstr, char *dstr, int arg)
 // Side Effect: this routine modifies the 'arglist' and 'numargs' static
 // global variables.
 //
-int wild(char *tstr, char *dstr, char *args[], int nargs)
+BOOL wild(char *tstr, char *dstr, char *args[], int nargs)
 {
-    int i, value;
+    int i;
     char *scan;
 
     // Initialize the return array.
@@ -372,11 +372,11 @@ int wild(char *tstr, char *dstr, char *args[], int nargs)
         }
         if (NOTEQUAL(*dstr, *tstr))
         {
-            return 0;
+            return FALSE;
         }
         if (!*dstr)
         {
-            return 1;
+            return TRUE;
         }
         tstr++;
         dstr++;
@@ -411,7 +411,7 @@ int wild(char *tstr, char *dstr, char *args[], int nargs)
 
     // Do the match.
     //
-    value = nargs ? wild1(tstr, dstr, 0) : quick_wild(tstr, dstr);
+    BOOL value = nargs ? wild1(tstr, dstr, 0) : quick_wild(tstr, dstr);
 
     // Clean out any fake match data left by wild1.
     //
@@ -432,7 +432,7 @@ int wild(char *tstr, char *dstr, char *args[], int nargs)
 //
 // This routine will cause crashes if fed NULLs instead of strings.
 //
-int wild_match(char *tstr, char *dstr)
+BOOL wild_match(char *tstr, char *dstr)
 {
     switch (*tstr)
     {

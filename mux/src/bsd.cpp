@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.5 2002-07-08 21:11:49 jake Exp $
+// $Id: bsd.cpp,v 1.6 2002-07-09 08:22:48 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2247,7 +2247,7 @@ void process_output(void *dvoid, int bHandleShutdown)
 }
 #endif // WIN32
 
-int process_input_helper(DESC *d, char *buf, int got)
+BOOL process_input_helper(DESC *d, char *buf, int got)
 {
     char *p, *pend, *q, *qend;
     int lost, in = got;
@@ -2326,10 +2326,10 @@ int process_input_helper(DESC *d, char *buf, int got)
     d->input_tot += got;
     d->input_size += in;
     d->input_lost += lost;
-    return 1;
+    return TRUE;
 }
 
-int process_input(DESC *d)
+BOOL process_input(DESC *d)
 {
     char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = "< process_input >";
@@ -2347,11 +2347,11 @@ int process_input(DESC *d)
 #endif // SOCKET_EAGAIN
               || iSocketError == SOCKET_EINTR))
         {
-            return 1;
+            return TRUE;
         }
-        return 0;
+        return FALSE;
     }
-    int cc = process_input_helper(d, buf, got);
+    BOOL cc = process_input_helper(d, buf, got);
     mudstate.debug_cmd = cmdsave;
     return cc;
 }

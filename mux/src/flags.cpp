@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.5 2002-07-09 05:57:33 jake Exp $
+// $Id: flags.cpp,v 1.6 2002-07-09 08:22:48 jake Exp $
 //
 
 #include "copyright.h"
@@ -996,7 +996,7 @@ CF_HAND(cf_flag_access)
  * * Also set the type qualifier if specified and not already set.
  */
 
-int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
+BOOL convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
 {
     FLAG type = NOTYPE;
     FLAGSET flagmask;
@@ -1007,9 +1007,10 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
     }
 
     char *s;
+    BOOL handled;
     for (s = flaglist; *s; s++)
     {
-        int handled = 0;
+        handled = FALSE;
 
         // Check for object type.
         //
@@ -1031,10 +1032,10 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
                     char *p = tprintf("%c: Conflicting type specifications.",
                         *s);
                     notify(player, p);
-                    return 0;
+                    return FALSE;
                 }
                 type = i;
-                handled = 1;
+                handled = TRUE;
             }
         }
 
@@ -1064,7 +1065,7 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
                       && !God(player))))
             {
                 flagmask.word[fbe->flagflag] |= fbe->flagvalue;
-                handled = 1;
+                handled = TRUE;
             }
         }
 
@@ -1073,7 +1074,7 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
             notify(player,
                    tprintf("%c: Flag unknown or not valid for specified object type",
                        *s));
-            return 0;
+            return FALSE;
         }
     }
 
@@ -1081,7 +1082,7 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
     //
     *fset = flagmask;
     *p_type = type;
-    return 1;
+    return TRUE;
 }
 
 /*

@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.9 2002-07-09 02:25:06 jake Exp $
+// $Id: log.cpp,v 1.10 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -52,7 +52,7 @@ NAMETAB logoptions_nametab[] =
  * * log entry.
  */
 
-int start_log(const char *primary, const char *secondary)
+BOOL start_log(const char *primary, const char *secondary)
 {
     mudstate.logging++;
     if (  1 <= mudstate.logging
@@ -89,12 +89,12 @@ int start_log(const char *primary, const char *secondary)
         //
         if (mudstate.logging == 1)
         {
-            return 1;
+            return TRUE;
         }
         Log.WriteString("Recursive logging request." ENDLINE);
     }
     mudstate.logging--;
-    return 0;
+    return FALSE;
 }
 
 /*

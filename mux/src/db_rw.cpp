@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.4 2002-06-27 06:38:31 jake Exp $
+// $Id: db_rw.cpp,v 1.5 2002-07-09 08:22:48 jake Exp $
 //
 
 #include "copyright.h"
@@ -282,7 +282,7 @@ static BOOLEXP *getboolexp(FILE *f)
  * get_list: Read attribute list from flat file.
  */
 
-static int get_list(FILE *f, dbref i)
+static BOOL get_list(FILE *f, dbref i)
 {
     char *buff = alloc_lbuf("get_list");
     while (1)
@@ -319,9 +319,9 @@ static int get_list(FILE *f, dbref i)
             {
                 ungetc(c, f);
                 Log.tinyprintf("No line feed on object %d" ENDLINE, i);
-                return 1;
+                return TRUE;
             }
-            return 1;
+            return TRUE;
 
         default:
             Log.tinyprintf("Bad character '%c' when getting attributes on object %d" ENDLINE, c, i);
@@ -743,7 +743,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     }
 }
 
-static int db_write_object(FILE *f, dbref i, int db_format, int flags)
+static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
 {
 #ifndef STANDALONE
     ATTR *a;
@@ -838,7 +838,7 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
         }
         fwrite("<\n", sizeof(char), 2, f);
     }
-    return 0;
+    return FALSE;
 }
 
 extern int anum_alc_top;

@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.6 2002-07-08 17:59:21 jake Exp $
+// $Id: interface.h,v 1.7 2002-07-09 08:22:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -180,7 +180,6 @@ extern void freeqs(DESC *);
 extern void welcome_user(DESC *);
 extern void save_command(DESC *, CBLK *);
 extern void announce_disconnect(dbref, DESC *, const char *);
-extern int boot_off(dbref, const char *);
 extern int boot_by_port(SOCKET port, int no_god, const char *message);
 extern void find_oldest(dbref target, DESC *dOldest[2]);
 extern void check_idle(void);
