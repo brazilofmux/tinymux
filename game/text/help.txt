@@ -50,22 +50,23 @@
 & commands2
 
   Help available for MUX Commands (continued):
- 
+
   @aahear      @aclone      @aconnect    @adescribe   @adfail      @adisconnect
   @adrop       @aefail      @aenter      @afail       @agfail      @ahear
   @akill       @aleave      @alfail      @alias       @amail       @amhear
   @amove       @apay        @arfail      @asuccess    @atfail      @atofail
-  @atport      @aufail      @ause        @away        @charges     @cost
-  @daily       @describe    @dfail       @drop        @ealias      @efail
-  @enter       @fail        @filter      @forwardlist @gfail       @idesc
-  @idle        @idletimeout @infilter    @inprefix    @kill        @lalias
-  @leave       @lfail       @listen      @mailsucc    @move        @odescribe
-  @odfail      @odrop       @oefail      @oenter      @ofail       @ogfail
-  @okill       @oleave      @olfail      @omove       @opay        @orfail
-  @osuccess    @otfail      @otofail     @otport      @oufail      @ouse
-  @oxenter     @oxleave     @oxtport     @pay         @prefix      @reject
-  @rfail       @runout      @sex         @signature   @startup     @success
-  @tfail       @tofail      @tport       @ufail       @use
+  @atport      @aufail      @ause        @away        @charges     @conformat
+  @cost        @daily       @describe    @dfail       @drop        @ealias
+  @efail       @enter       @exitformat  @fail        @filter      @forwardlist
+  @gfail       @idesc       @idle        @idletimeout @infilter    @inprefix
+  @kill        @lalias      @leave       @lfail       @listen      @mailsucc
+  @move        @odescribe   @odfail      @odrop       @oefail      @oenter
+  @ofail       @ogfail      @okill       @oleave      @olfail      @omove
+  @opay        @orfail      @osuccess    @otfail      @otofail     @otport
+  @oufail      @ouse        @oxenter     @oxleave     @oxtport     @pay
+  @prefix      @reject      @rfail       @runout      @sex         @signature
+  @startup     @success     @tfail       @tofail      @tport       @ufail
+  @use
 
 & topics
 
