@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.20 2001-02-10 17:54:06 sdennis Exp $
+// * $Id: comsys.cpp,v 1.21 2001-02-11 05:22:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1456,6 +1456,8 @@ void do_createchannel(dbref player, dbref cause, int key, char *channel)
     strncpy(newchannel->name, channel, MAX_CHANNEL_LEN);
     newchannel->name[MAX_CHANNEL_LEN] = '\0';
     newchannel->type = 127;
+    sprintf(newchannel->header, "%s[%s]%s", ANSI_HILITE, newchannel->name,
+        ANSI_NORMAL);
     newchannel->temp1 = 0;
     newchannel->temp2 = 0;
     newchannel->charge = 0;
