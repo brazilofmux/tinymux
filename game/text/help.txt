@@ -439,9 +439,17 @@ DELCOM
 
   COMMAND: @ccreate <channel name>
 
-  Creates a channel with default settings. Only wizards can create a channel.
+  Only Wizards can create new channels.
 
-  Related Topics: @cdestroy, @clist, @cchown.
+  Creates a new channel with default settings. Once the channel is created,
+  it can be associated with a object with the @cset command. That object can
+  be used to set locks and descriptions on the channel.
+
+  Example:
+    > @ccreate Public
+    Channel Public created.
+
+  Related Topics: comsys, @cset, @cdestroy, @clist, @cchown.
 
 & @CDESTROY
 @CDESTROY
@@ -449,11 +457,18 @@ DELCOM
   COMMAND: @cdestroy <channel>
 
   Deletes <channel> permanently from the comsystem database. It does not
-  destroy all aliases that exist for <channel>, which is left to the owners of
-  those aliases. Players are notified at login when they own aliases for which
-  a channel no longer exists.
+  destroy all aliases that exist for <channel> -- those are left to the
+  owners of those aliases. Players are notified at login when they own
+  aliases for which a channel no longer exists and if they try to use them.
+  Even if a Channel is destroyed and then recreated, the alias will still be
+  incorrect. The alias must be removed with the 'delcom' command and added
+  with the 'addcom' command.
 
-  Related Topics: @clist, @ccreate, @cchown.
+  Example:
+    > @cdestroy Staff
+    Channel Staff destroyed.
+
+  Related Topics: @clist, @ccreate, @cchown, addcom, delcom.
 
 & @CLIST
 @CLIST
@@ -461,10 +476,9 @@ DELCOM
   COMMAND: @clist[/<option>]
 
   Without any switches, it will display the list of public channels with
-  their owner, and description. It will also display all channels you
-  own.
+  their owner and description. It will also display all channels you own.
 
-  <option> may also be any of the following:
+  <option>, if given, may be either of the following:
 
     full    - @clist will display more detailed information including
               the channel object's dbref.
@@ -472,7 +486,18 @@ DELCOM
     headers - Shows the @clist report with the description column
               replaced by the a column of the channel headers.
 
-  Related Topics: @ccreate, @cdestroy, @cchown, @cset.
+  Examples:
+    >@clist
+    *** Channel Owner Description
+    --- Public God No description.
+    --- Staff God No description.
+
+    >@clist/full
+    *** Channel      --Flags--  Obj   Own   Charge  Balance  Users   Messages
+    --- Public        JXR/jxr    -1    11        0        0     45        129
+    --- Staff         JXR/jxr    -1    11        0        0     10         65
+
+  Related Topics: @ccreate, @cdestroy, @cchown, @coflags, @cpflags.
 
 & @CWHO
 @CWHO
@@ -490,7 +515,12 @@ DELCOM
 
   COMMAND: @cchown <channel>=<player>
 
-  Changes ownership of <channel> to <player>.
+  Changes ownership of <channel> to <player>. If the player is not in the
+  same room, you will need to add a '*' before the name (e.g., '*player1').
+
+  Example:
+    >@cchown Public=Staff2
+    Set.
 
   Related Topics: @clist, @cwho.
 
@@ -502,6 +532,12 @@ DELCOM
   This command imposes a charge of <amount> coins on transmitting over a
   channel. The default fee when a channel is created is 0. All proceeds
   benefit the channel owner.
+
+  Example:
+    > @ccharge Public=1
+    Set.
+
+  Related Topics: comsys commands
 
 & @CPFLAGS
 @CPFLAGS
@@ -525,17 +561,23 @@ DELCOM
 
   COMMAND: @coflags <channel>=[!]flag
 
-  Sets object flags for that channel. The flag can be one of: join, transmit,
+  Sets object flags for that channel. The flag can be one of: join, transmit
   or receive.
 
-  Transmit: Whether an object can broadcast things over the channel.
-  Join: Whether an object can join the channel.
-  Receive: Whether a object can receive messages over the channel.
+    transmit   Whether an object can broadcast things over the channel.
+    join       Whether an object can join the channel.
+    receive    Whether a object can receive messages over the channel.
 
-  If it is !flag, then that flag is reset. Note that channel flags ALWAYS
-  override locks on channel objects.
+  NOTE: Flags must be entered in lower case.
 
-  Related Topics: @coflags, @clist, CHANNEL OBJECT.
+  If it is !flag, then that flag is reset. Channel flags ALWAYS override
+  locks on channel objects.
+
+  Example:
+    > @coflags Public=join
+    @coflags: Set.
+
+  Related Topics: @cpflags, @clist, CHANNEL OBJECT.
 
 & @CSET
 @CSET
@@ -1579,16 +1621,27 @@ WHO
   If <wild-attr> contains wildcard characters, then all attributes that
   match are edited.
 
-& @cemit
+& @CEMIT
+@CEMIT
 
   COMMAND: @cemit[/<switches>] <channel>=<message>
 
-  Sends <message> over <channel> prefixed by the channel's name. You must
-  own or control the channel to do this.
+  Sends <message> over <channel> prefixed by the channel's name. You must own
+  or control the channel to do this.
 
   The following switches are available:
-     /noheader - Sends the message to everyone on <channel>, without the
-                 channel's name prefixed.
+
+    /noheader - Sends the message to everyone on <channel> without the
+                channel's name prefixed.
+
+  Example:
+    > @cemit Public=This is a test!
+    [Public] This is a test!
+
+    > @cemit/noheader Public=This is a test!
+    This is a test.
+
+  Related Topics: comsys commands, alias, addcom.
 
 & @EMIT
 @EMIT
