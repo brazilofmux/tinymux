@@ -1,2 +1,2 @@
 @Echo Off
-..\bin\dbconvert %0 x < %1.db.new > %2.flat
+..\bin\dbconvert %1 x < %2 > %3
