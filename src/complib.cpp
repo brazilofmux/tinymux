@@ -49,14 +49,12 @@ void init_string_compress(void)
     decompresstab[0] = p;
     p++;
 
-    for (i = 1; i < 128; i++) {
+    for (i = 1; i < 128; i++)
+    {
         p[0] = (unsigned char)i;
         p[1] = '\0';
         code = r_insert(&root, p);
-        if (code <= 0 || code > 4095) {
-            printf("Invalid code 1\n");
-            abort();
-        }
+        Tiny_Assert(0 < code && code <= 4095);
         decompresstab[code] = p;
         p += 2;
     }
@@ -65,12 +63,10 @@ void init_string_compress(void)
      * Now insert all the strings in our compression table 
      */
 
-    for (i = 0; cmptab[i] != NULL; i++) {
+    for (i = 0; cmptab[i] != NULL; i++)
+    {
         code = r_insert(&root, (unsigned char *)(cmptab[i]));
-        if (code <= 0 || code > 4095) {
-            printf("Invalid code 2\n");
-            abort();
-        }
+        Tiny_Assert(0 < code && code <= 4095);
         p = (unsigned char *)(cmptab[i]);
         decompresstab[code] = p;
     }
