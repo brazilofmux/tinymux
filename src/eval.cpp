@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.12 2000-10-29 07:33:51 sdennis Exp $
+// $Id: eval.cpp,v 1.13 2000-10-30 01:44:29 sdennis Exp $
 //
 
 // MUX 2.1
@@ -940,24 +940,24 @@ char isSpecial_L1[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0  // 0xF0-0xFF
 };
 
-char isSpecial_L2[256] =
+unsigned char isSpecial_L2[256] =
 {
-    1, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x00-0x0F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x10-0x1F
-    0, 1, 0, 1, 0, 1, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x20-0x2F
-    1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 0, 0, 0, 0, 0, 0, // 0x30-0x3F
-    0, 2, 2, 2, 0, 0, 0, 0,  0, 0, 0, 0, 2, 0, 2, 2, // 0x40-0x4F
-    2, 2, 2, 2, 2, 0, 2, 0,  1, 0, 0, 0, 0, 0, 0, 0, // 0x50-0x5F
-    0, 1, 1, 1, 0, 0, 0, 0,  0, 0, 0, 0, 1, 0, 1, 1, // 0x60-0x6F
-    1, 1, 1, 1, 1, 0, 1, 0,  1, 0, 0, 0, 1, 0, 0, 0, // 0x70-0x7F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x80-0x8F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x90-0x9F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0xA0-0xAF
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0xB0-0xBF
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0xC0-0xCF
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0xD0-0xDF
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0xE0-0xEF
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0  // 0xF0-0xFF
+     18,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x00-0x0F
+      0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x10-0x1F
+      0,  4,  0,  3,  0, 11,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x20-0x2F
+      1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  0,  0,  0,  0,  0,  0, // 0x30-0x3F
+      0,145,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9,  0,140,144, // 0x40-0x4F
+    143,130,  5,142,  8,  0,138,  0,   6,  0,  0,  0,  0,  0,  0,  0, // 0x50-0x5F
+      0, 17,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9,  0, 12, 16, // 0x60-0x6F
+     15,  2,  5, 14,  8,  0, 10,  0,   6,  0,  0,  0, 13,  0,  0,  0, // 0x70-0x7F
+      0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x80-0x8F
+      0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x90-0x9F
+      0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0xA0-0xAF
+      0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0xB0-0xBF
+      0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0xC0-0xCF
+      0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0xD0-0xDF
+      0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0xE0-0xEF
+      0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0  // 0xF0-0xFF
 };
 
 void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
@@ -1331,388 +1331,365 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
             {
                 pdstr++;
                 ch = *pdstr;
-                char cType_L2 = isSpecial_L2[ch];
-                if (!cType_L2)
+                unsigned char cType_L2 = isSpecial_L2[(unsigned char)ch];
+                TempPtr = *bufc;
+                int iCode = cType_L2 & 0x7F;
+                if (iCode == 1)
                 {
-                    // Just copy
+                    // 30 31 32 33 34 35 36 37 38 39
+                    // 0  1  2  3  4  5  6  7  8  9
                     //
-                    if (nBufferAvailable)
+                    // Command argument number N.
+                    //
+                    i = ch - '0';
+                    if (i < ncargs && cargs[i])
                     {
-                        *(*bufc)++ = ch;
-                        nBufferAvailable--;
+                        safe_str(cargs[i], buff, bufc);
+                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                 }
-                else
+                else if (iCode == 2)
                 {
-                    TempPtr = *bufc;
-                    int iCode = Tiny_ToUpper[(unsigned char)ch];
-
-                    // At this point, iCode could be any of the following:
+                    // 51
+                    // Q
                     //
-                    // 00 21 23 25 30 31 32 33 34 35 36 37 38 39 41 42 43 4C 4E 4F 50 51 52 53 54 56 58 7C
-                    //    !  #  %  0  1  2  3  4  5  6  7  8  9  A  B  C  L  N  O  P  Q  R  S  T  V  X  |
-                    //
-                    if (iCode <= '9')
+                    i = pdstr[1] - '0';
+                    if (i >= 0 && i <= 9)
                     {
-                        // 00 21 23 25 30 31 32 33 34 35 36 37 38 39
-                        //    !  #  %  0  1  2  3  4  5  6  7  8  9
-                        //
-                        if (iCode <= '%')
+                        pdstr++;
+                        if (mudstate.global_regs[i])
                         {
-                            // 00 21 23 25
-                            //    !  #  %
-                            //
-                            if (iCode <= '!')
-                            {
-                                if (iCode == '\0')
-                                {
-                                    // Null - all done.
-                                    //
-                                    pdstr--;
-                                }
-                                else
-                                {
-                                    // iCode == '!'
-                                    // Executor DB number.
-                                    //
-                                    TinyExec_scratch[0] = '#';
-                                    Tiny_ltoa(player, TinyExec_scratch+1);
-                                    safe_str(TinyExec_scratch, buff, bufc);
-                                    nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                }
-                            }
-                            else
-                            {
-                                // 23 25
-                                // #  %
-                                //
-                                if (iCode == '#')
-                                {
-                                    // Invoker DB number.
-                                    //
-                                    TinyExec_scratch[0] = '#';
-                                    Tiny_ltoa(cause, TinyExec_scratch+1);
-                                    safe_str(TinyExec_scratch, buff, bufc);
-                                    nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                }
-                                else
-                                {
-                                    // iCode == '%'
-                                    // Percent - a literal %
-                                    //
-                                    if (nBufferAvailable)
-                                    {
-                                        *(*bufc)++ = '%';
-                                        nBufferAvailable--;
-                                    }
-                                }
-                            }
+                            safe_copy_buf(mudstate.global_regs[i],
+                                mudstate.glob_reg_len[i], buff, bufc, LBUF_SIZE-1);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
-                        else
+                    }
+                    else if (pdstr[1])
+                    {
+                        pdstr++;
+                    }
+                }
+                else if (iCode <= 4)
+                {
+                    if (iCode == 3)
+                    {
+                        // 23
+                        // #
+                        //
+                        // Invoker DB number.
+                        //
+                        TinyExec_scratch[0] = '#';
+                        Tiny_ltoa(cause, TinyExec_scratch+1);
+                        safe_str(TinyExec_scratch, buff, bufc);
+                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                    }
+                    else if (iCode == 4)
+                    {
+                        // 21
+                        // !
+                        //
+                        // iCode == '!'
+                        // Executor DB number.
+                        //
+                        TinyExec_scratch[0] = '#';
+                        Tiny_ltoa(player, TinyExec_scratch+1);
+                        safe_str(TinyExec_scratch, buff, bufc);
+                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                    }
+                    else
+                    {
+                        // iCode == 0
+                        //
+                        // Just copy
+                        //
+                        if (nBufferAvailable)
                         {
-                            // 30 31 32 33 34 35 36 37 38 39
-                            // 0  1  2  3  4  5  6  7  8  9
-                            //
-                            // Command argument number N.
-                            //
-                            i = (*pdstr - '0');
-                            if ((i < ncargs) && (cargs[i] != NULL))
-                            {
-                                safe_str(cargs[i], buff, bufc);
-                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                            }
+                            *(*bufc)++ = ch;
+                            nBufferAvailable--;
+                        }
+                    }
+                }
+                else if (iCode <= 6)
+                {
+                    if (iCode == 6)
+                    {
+                        // 43 58
+                        // C  X
+                        //
+                        // Color
+                        //
+                        char *pColor = ColorTable[(unsigned char)pdstr[1]];
+                        if (pColor)
+                        {
+                            pdstr++;
+                            ansi = 1;
+                            safe_str(pColor, buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                        }
+                        else if (pdstr[1] && nBufferAvailable)
+                        {
+                            *(*bufc)++ = *pdstr;
+                            nBufferAvailable--;
                         }
                     }
                     else
                     {
-                        // 41 42 43 4C 4E 4F 50 51 52 53 54 56 58 7C
-                        // A  B  C  L  N  O  P  Q  R  S  T  V  X  |
+                        // 52
+                        // R
                         //
-                        if (iCode <= 'O')
+                        // Carriage return.
+                        //
+                        safe_copy_buf("\r\n", 2, buff, bufc, LBUF_SIZE-1);
+                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                    }
+                }
+                else if (iCode <= 8)
+                {
+                    if (iCode == 7)
+                    {
+                        // 42
+                        // B
+                        //
+                        // Blank.
+                        //
+                        if (nBufferAvailable)
                         {
-                            // 41 42 43 4C 4E 4F
-                            // A  B  C  L  N  O
-                            //
-                            if (iCode <= 'C')
+                            *(*bufc)++ = ' ';
+                            nBufferAvailable--;
+                        }
+                    }
+                    else
+                    {
+                        // 54
+                        // T
+                        //
+                        // Tab.
+                        //
+                        if (nBufferAvailable)
+                        {
+                            *(*bufc)++ = '\t';
+                            nBufferAvailable--;
+                        }
+                    }
+                }
+                else if (iCode <= 10)
+                {
+                    if (iCode == 9)
+                    {
+                        // 4C
+                        // L
+                        //
+                        // Invoker location db#
+                        //
+                        if (!(eval & EV_NO_LOCATION))
+                        {
+                            TinyExec_scratch[0] = '#';
+                            Tiny_ltoa(where_is(cause), TinyExec_scratch+1);
+                            safe_str(TinyExec_scratch, buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                        }
+                    }
+                    else
+                    {
+                        // 56
+                        // V
+                        //
+                        // Variable attribute.
+                        //
+                        ch = pdstr[1];
+                        if (Tiny_IsAlpha[(unsigned char)ch])
+                        {
+                            pdstr++;
+                            ch = Tiny_ToUpper[(unsigned char)ch];
+                            i = 100 + ch - 'A';
+                            int nAttrGotten;
+                            char *pAttrGotten = atr_pget_LEN(player, i, &aowner, &aflags, &nAttrGotten);
+                            if (nAttrGotten > nBufferAvailable)
                             {
-                                // 41 42 43
-                                // A  B  C
-                                //
-                                if (iCode == 'A')
-                                {
-                                    // Absolute posessive.
-                                    // Idea from Empedocles.
-                                    //
-                                    if (gender < 0)
-                                    {
-                                        gender = get_gender(cause);
-                                    }
-
-                                    if (!gender)
-                                    {
-                                        safe_str(Name(cause), buff, bufc);
-                                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                        if (nBufferAvailable)
-                                        {
-                                            *(*bufc)++ = 's';
-                                            nBufferAvailable--;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        safe_str((char *)absp[gender], buff, bufc);
-                                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                    }
-                                }
-                                else if (iCode == 'B')
-                                {
-                                    // Blank.
-                                    //
-                                    if (nBufferAvailable)
-                                    {
-                                        *(*bufc)++ = ' ';
-                                        nBufferAvailable--;
-                                    }
-                                }
-                                else
-                                {
-                                    // iCode == 'C'
-                                    // ANSI Color (Original MUX)
-                                    //
-                                    goto EscapeX;
-                                }
+                                nAttrGotten = nBufferAvailable;
                             }
-                            else
+                            memcpy(*bufc, pAttrGotten, nAttrGotten);
+                            *bufc += nAttrGotten;
+                            nBufferAvailable -= nAttrGotten;
+                            free_lbuf(pAttrGotten);
+                        }
+                        else if (ch != '\0')
+                        {
+                            // Eat the following character.
+                            //
+                            pdstr++;
+                        }
+                    }
+                }
+                else if (iCode <= 14)
+                {
+                    if (iCode <= 12)
+                    {
+                        if (iCode == 11)
+                        {
+                            // 25
+                            // %
+                            //
+                            // Percent - a literal %
+                            //
+                            if (nBufferAvailable)
                             {
-                                // 4C 4E 4F
-                                // L  N  O
-                                //
-                                if (iCode == 'L')
-                                {
-                                    // Invoker location db#
-                                    //
-                                    if (!(eval & EV_NO_LOCATION))
-                                    {
-                                        TinyExec_scratch[0] = '#';
-                                        Tiny_ltoa(where_is(cause), TinyExec_scratch+1);
-                                        safe_str(TinyExec_scratch, buff, bufc);
-                                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                    }
-                                }
-                                else if (iCode == 'N')
-                                {
-                                    // Invoker name
-                                    //
-                                    safe_str(Name(cause), buff, bufc);
-                                    nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                }
-                                else
-                                {
-                                    // iCode == 'O'
-                                    // Objective pronoun.
-                                    //
-                                    if (gender < 0)
-                                    {
-                                        gender = get_gender(cause);
-                                    }
-                                    if (!gender)
-                                    {
-                                        tbuf = Name(cause);
-                                    }
-                                    else
-                                    {
-                                        tbuf = (char *)obj[gender];
-                                    }
-                                    safe_str(tbuf, buff, bufc);
-                                    nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                }
+                                *(*bufc)++ = '%';
+                                nBufferAvailable--;
                             }
                         }
                         else
                         {
-                            // 50 51 52 53 54 56 58 7C
-                            // P  Q  R  S  T  V  X  |
+                            // 4E
+                            // N
                             //
-                            if (iCode <= 'S')
+                            // Invoker name
+                            //
+                            safe_str(Name(cause), buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                        }
+                    }
+                    else
+                    {
+                        if (iCode == 13)
+                        {
+                            // 7C
+                            // |
+                            //
+                            // piped command output.
+                            //
+                            safe_str(mudstate.pout, buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                        }
+                        else
+                        {
+                            // 53
+                            // S
+                            //
+                            // Subjective pronoun.
+                            //
+                            if (gender < 0)
                             {
-                                // 50 51 52 53
-                                // P  Q  R  S
-                                //
-                                if (iCode <= 'Q')
-                                {
-                                    // 50 51
-                                    // P  Q
-                                    //
-                                    if (iCode == 'P')
-                                    {
-                                        // Personal pronoun.
-                                        //
-                                        if (gender < 0)
-                                        {
-                                            gender = get_gender(cause);
-                                        }
+                                gender = get_gender(cause);
+                            }
+                            if (!gender)
+                            {
+                                tbuf = Name(cause);
+                            }
+                            else
+                            {
+                                tbuf = (char *)subj[gender];
+                            }
+                            safe_str(tbuf, buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                        }
+                    }
+                }
+                else
+                {
+                    if (iCode <= 16)
+                    {
+                        if (iCode == 15)
+                        {
+                            // 50
+                            // P
+                            //
+                            // Personal pronoun.
+                            //
+                            if (gender < 0)
+                            {
+                                gender = get_gender(cause);
+                            }
 
-                                        if (!gender)
-                                        {
-                                            safe_str(Name(cause), buff, bufc);
-                                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                            if (nBufferAvailable)
-                                            {
-                                                *(*bufc)++ = 's';
-                                                nBufferAvailable--;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            safe_str((char *)poss[gender], buff, bufc);
-                                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // iCode == 'Q'
-                                        //
-                                        pdstr++;
-                                        i = (*pdstr - '0');
-                                        if ((i >= 0) && (i <= 9) && mudstate.global_regs[i])
-                                        {
-                                            safe_copy_buf(mudstate.global_regs[i],
-                                                mudstate.glob_reg_len[i], buff, bufc, LBUF_SIZE-1);
-                                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                        }
-                                        if (!*pdstr)
-                                        {
-                                            pdstr--;
-                                        }
-                                    }
-                                }
-                                else
+                            if (!gender)
+                            {
+                                safe_str(Name(cause), buff, bufc);
+                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                                if (nBufferAvailable)
                                 {
-                                    // 52 53
-                                    // R  S
-                                    //
-                                    if (iCode == 'R')
-                                    {
-                                        // Carriage return.
-                                        //
-                                        safe_copy_buf("\r\n", 2, buff, bufc, LBUF_SIZE-1);
-                                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                    }
-                                    else
-                                    {
-                                        // iCode == 'S'
-                                        // Subjective pronoun.
-                                        //
-                                        if (gender < 0)
-                                        {
-                                            gender = get_gender(cause);
-                                        }
-                                        if (!gender)
-                                        {
-                                            tbuf = Name(cause);
-                                        }
-                                        else
-                                        {
-                                            tbuf = (char *)subj[gender];
-                                        }
-                                        safe_str(tbuf, buff, bufc);
-                                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                    }
+                                    *(*bufc)++ = 's';
+                                    nBufferAvailable--;
                                 }
                             }
                             else
                             {
-                                // 54 56 58 7C
-                                // T  V  X  |
-                                //
-                                if (iCode == 'T')
-                                {
-                                    // Tab.
-                                    //
-                                    if (nBufferAvailable)
-                                    {
-                                        *(*bufc)++ = '\t';
-                                        nBufferAvailable--;
-                                    }
-                                }
-                                else if (iCode == 'V')
-                                {
-                                    // Variable attribute.
-                                    //
-                                    ch = pdstr[1];
-                                    if (Tiny_IsAlpha[(unsigned char)ch])
-                                    {
-                                        pdstr++;
-                                        ch = Tiny_ToUpper[(unsigned char)ch];
-                                        i = 100 + ch - 'A';
-                                        int nAttrGotten;
-                                        char *pAttrGotten = atr_pget_LEN(player, i, &aowner, &aflags, &nAttrGotten);
-                                        if (nAttrGotten > nBufferAvailable)
-                                        {
-                                            nAttrGotten = nBufferAvailable;
-                                        }
-                                        memcpy(*bufc, pAttrGotten, nAttrGotten);
-                                        *bufc += nAttrGotten;
-                                        nBufferAvailable -= nAttrGotten;
-                                        free_lbuf(pAttrGotten);
-                                    }
-                                    else if (ch != '\0')
-                                    {
-                                        // Eat the following character.
-                                        //
-                                        pdstr++;
-                                    }
-                                }
-                                else if (iCode == 'X')
-                                {
-                                    // iCode == 'X'
-EscapeX:
-                                    // iCode == 'C' or 'X'.
-                                    // Color
-                                    //
-                                    pdstr++;
-                                    if (!*pdstr)
-                                    {
-                                        pdstr--;
-                                    }
-                                    else
-                                    {
-                                        char *pColor = ColorTable[*pdstr];
-                                        if (pColor)
-                                        {
-                                            ansi = 1;
-                                            safe_str(pColor, buff, bufc);
-                                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                        }
-                                        else
-                                        {
-                                            if (nBufferAvailable)
-                                            {
-                                                *(*bufc)++ = *pdstr;
-                                                nBufferAvailable--;
-                                            }
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    // iCode == '|'
-                                    // piped command output.
-                                    //
-                                    safe_str(mudstate.pout, buff, bufc);
-                                    nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                }
+                                safe_str((char *)poss[gender], buff, bufc);
+                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                             }
                         }
+                        else
+                        {
+                            // 4F
+                            // O
+                            //
+                            // Objective pronoun.
+                            //
+                            if (gender < 0)
+                            {
+                                gender = get_gender(cause);
+                            }
+                            if (!gender)
+                            {
+                                tbuf = Name(cause);
+                            }
+                            else
+                            {
+                                tbuf = (char *)obj[gender];
+                            }
+                            safe_str(tbuf, buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                        }
                     }
-
-                    // If the letter was upper-case, then uppercase the
-                    // first letter of the value.
-                    //
-                    if (cType_L2 == 2)
+                    else
                     {
-                        *TempPtr = Tiny_ToUpper[(unsigned char)*TempPtr];
+                        if (iCode == 17)
+                        {
+                            // 41
+                            // A
+                            //
+                            // Absolute posessive.
+                            // Idea from Empedocles.
+                            //
+                            if (gender < 0)
+                            {
+                                gender = get_gender(cause);
+                            }
+
+                            if (!gender)
+                            {
+                                safe_str(Name(cause), buff, bufc);
+                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                                if (nBufferAvailable)
+                                {
+                                    *(*bufc)++ = 's';
+                                    nBufferAvailable--;
+                                }
+                            }
+                            else
+                            {
+                                safe_str((char *)absp[gender], buff, bufc);
+                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                            }
+                        }
+                        else
+                        {
+                            // 00
+                            // \0
+                            //
+                            // All done.
+                            //
+                            pdstr--;
+                        }
                     }
+                }
+
+                // For some escape letters, if the escape letter
+                // was upper-case, then upper-case the first
+                // letter of the value.
+                //
+                if (cType_L2 & 0x80)
+                {
+                    *TempPtr = Tiny_ToUpper[(unsigned char)*TempPtr];
                 }
             }
         }
