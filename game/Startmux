@@ -47,10 +47,10 @@ if [ -r restart.db ]; then
 fi
 
 #
-#	Refuse to start if CRASH databases are present.
+#	Refuse to start if CORRUPT or KILLED databases are present.
 #
-if [ -r $DATA/$INPUT_DB.CRASH ]; then
-	echo "There is a CRASH database present." 
+if [ -r $DATA/$INPUT_DB.KILLED -o -r $DATA/$INPUT_DB.CORRUPT -o -r $DATA/$INPUT_DB.CRASH ]; then
+	echo "There is a CORRUPT, KILLED or CRASH database present." 
 	echo "You should salvage what you can before continuing."
 	exit 1
 fi

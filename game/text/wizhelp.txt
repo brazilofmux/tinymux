@@ -1059,17 +1059,16 @@
   create_max_cost  create_min_cost  dark_sleepers  default_home  dig_cost
   down_file  down_motd_message  dump_interval  dump_message  dump_offset
   earn_limit  examine_flags  examine_public_attrs  exit_flags  exit_quota
-  eval_comtitle  events_daily_hour  fascist_teleport  find_money_chance
-  fixed_home_message  fixed_tel_message  flag_access flag_alias
-  forbid_site  fork_dump fork_vfork full_file  full_motd_message
-  function_access  function_invocation_limit  function_recursion_limit
-  game_dir_file  game_page_file  good_name  guest_char_num  guest_file
-  guest_nuker  guest_prefix  guests_channel  have_comsys  have_macros
-  have_mailer  have_zones  help_file  help_index  hostnames
-  idle_interval  idle_timeout  idle_wiz_dark  include  indent_desc
-  initial_size  input_database  kill_guarantee_cost  kill_max_cost
-  kill_min_cost  list_access  link_cost  lock_recursion_limit  log
-  log_options  logout_cmd_access  logout_cmd_alias
+  events_daily_hour  fascist_teleport  find_money_chance  fixed_home_message
+  fixed_tel_message  flag_access flag_alias  forbid_site  fork_dump
+  fork_vfork full_file  full_motd_message  function_access
+  function_invocation_limit  function_recursion_limit  game_dir_file
+  game_page_file  good_name  guest_char_num  guest_file  guest_nuker
+  guest_prefix  guests_channel  have_comsys  have_macros  have_mailer
+  have_zones  help_file  help_index  hostnames  idle_interval  idle_timeout
+  idle_wiz_dark  include  indent_desc  initial_size  input_database
+  kill_guarantee_cost  kill_max_cost  kill_min_cost  list_access  link_cost
+  lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
 { 'wizhelp config parameters2' for more }
 & CONFIG PARAMETERS2
   look_obey_terse  machine_command_cost  mail_database  mail_expiration
@@ -1624,11 +1623,6 @@
   Config parameter: have_comsys <yes/no>.  Default: yes
   Specifies whether or not the comsystem should be active.
   See also: comsys_database, have_macros.
- 
-& eval_comtitle
-  Config parameter: eval_comtitle <yes/no>.  Default: yes
-  Specifies whether or not comtitles are evaluated as code each time
-  a pose is made on channel.
  
 & have_macros
   Config parameter: have_macros <yes/no>.  Default: yes
