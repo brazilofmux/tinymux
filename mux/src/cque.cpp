@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.20 2004-05-26 02:31:24 sdennis Exp $
+// $Id: cque.cpp,v 1.21 2004-05-28 17:44:25 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -118,39 +118,56 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 
             char *command = point->comm;
             break_called = false;
-            while (command && !break_called)
+            while (  command
+                  && !break_called)
             {
                 char *cp = parse_to(&command, ';', 0);
-                if (cp && *cp)
+
+                mux_assert(mudstate.pipe_nest_lev == 0);
+                mux_assert(mudstate.poutobj == NOTHING);
+                mux_assert(!mudstate.pout);
+
+                // Perform Command Piping.
+                //
+                mudstate.poutobj = executor;
+                while (  cp
+                      && *cp
+                      && command
+                      && *command == '|'
+                      && mudstate.pipe_nest_lev < mudconf.ntfy_nest_lim)
                 {
-                    int numpipes = 0;
-                    while (  command
-                          && (*command == '|')
-                          && (numpipes < mudconf.ntfy_nest_lim))
+                    command++;
+                    mudstate.pipe_nest_lev++;
+
+                    mudstate.poutnew = alloc_lbuf("process_command.pipe");
+                    mudstate.poutbufc = mudstate.poutnew;
+
+                    // No lag check on piped commands.
+                    //
+                    process_command(executor, point->caller, point->enactor,
+                        false, cp, point->env, point->nargs);
+
+                    // Transfer result up piping to %| substitution.
+                    //
+                    if (mudstate.pout)
                     {
-                        command++;
-                        numpipes++;
-                        mudstate.inpipe = true;
-                        mudstate.poutnew = alloc_lbuf("process_command.pipe");
-                        mudstate.poutbufc = mudstate.poutnew;
-                        mudstate.poutobj = executor;
-
-                        // No lag check on piped commands.
-                        //
-                        process_command(executor, point->caller, point->enactor,
-                            false, cp, point->env, point->nargs);
-                        if (mudstate.pout)
-                        {
-                            free_lbuf(mudstate.pout);
-                            mudstate.pout = NULL;
-                        }
-
-                        *mudstate.poutbufc = '\0';
-                        mudstate.pout = mudstate.poutnew;
-                        cp = parse_to(&command, ';', 0);
+                        free_lbuf(mudstate.pout);
+                        mudstate.pout = NULL;
                     }
-                    mudstate.inpipe = false;
+                    *mudstate.poutbufc = '\0';
+                    mudstate.pout = mudstate.poutnew;
+                    mudstate.poutnew = NULL;
 
+                    cp = parse_to(&command, ';', 0);
+                }
+                mudstate.pipe_nest_lev = 0;
+                mudstate.poutobj = NOTHING;
+
+                // Perform non-piped command.
+                //
+                if (  cp
+                   && *cp)
+                {
                     CLinearTimeAbsolute ltaBegin;
                     ltaBegin.GetUTC();
                     MuxAlarm.Set(mudconf.max_cmdsecs);
@@ -173,12 +190,6 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     CLinearTimeDelta ltd = ltdUsageEnd - ltdUsageBegin;
                     db[executor].cpu_time_used += ltd;
 
-                    if (mudstate.pout)
-                    {
-                        free_lbuf(mudstate.pout);
-                        mudstate.pout = NULL;
-                    }
-
                     ltd = ltaEnd - ltaBegin;
                     if (ltd > mudconf.rpt_cmdsecs)
                     {
@@ -192,6 +203,14 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         log_text(log_cmdbuf);
                         ENDLOG;
                     }
+                }
+
+                // Clean up %| value.
+                //
+                if (mudstate.pout)
+                {
+                    free_lbuf(mudstate.pout);
+                    mudstate.pout = NULL;
                 }
             }
         }

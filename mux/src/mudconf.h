@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.19 2004-05-15 17:19:04 sdennis Exp $
+// $Id: mudconf.h,v 1.20 2004-05-28 17:44:25 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -282,7 +282,6 @@ struct statedata
     bool bReadingConfiguration; // are we reading the config file at startup?
     bool bStackLimitReached;    // Was stack slammed?
     bool bStandAlone;           // Are we running in dbconvert mode.
-    bool inpipe;                /* Boolean flag for command piping */
     bool panicking;             // are we in the middle of dying horribly?
     bool shutdown_flag;         /* Should interface be shut down? */
 #ifndef WIN32
@@ -316,6 +315,7 @@ struct statedata
     int     nObjEvalNest;       // The nesting level of objeval() invocations.
     int     nStackNest;         // Current stack depth.
     int     nHearNest;          // Current aahear depth.
+    int     pipe_nest_lev;      // Length of command pipe.
     int     ntfy_nest_lev;      /* Current nesting of notifys */
     int     record_players;     /* The maximum # of player logged on */
     int     wild_invk_ctr;      // Regular Expression function calls.

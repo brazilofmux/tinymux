@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.44 2004-05-20 04:31:19 sdennis Exp $
+// $Id: conf.cpp,v 1.45 2004-05-28 17:44:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -293,11 +293,11 @@ void cf_init(void)
     mudstate.ntfy_nest_lev = 0;
     mudstate.lock_nest_lev = 0;
     mudstate.zone_nest_num = 0;
-    mudstate.inpipe = false;
+    mudstate.pipe_nest_lev = 0;
     mudstate.pout = NULL;
     mudstate.poutnew = NULL;
     mudstate.poutbufc = NULL;
-    mudstate.poutobj = -1;
+    mudstate.poutobj = NOTHING;
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         mudstate.global_regs[i] = NULL;
