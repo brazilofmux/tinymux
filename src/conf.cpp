@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.46 2001-10-08 04:23:23 sdennis Exp $
+// $Id: conf.cpp,v 1.47 2001-10-17 17:30:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -71,7 +71,6 @@ void NDECL(cf_init)
     mudconf.status_file = StringClone("shutdown.status");
     mudconf.max_cache_size = 1*1024*1024;
     mudconf.port = 2860;
-    mudconf.conc_port = 2861;
     mudconf.init_size = 1000;
     mudconf.guest_char = -1;
     mudconf.guest_nuker = 1;
@@ -1379,7 +1378,6 @@ CONF conftable[] =
     {"command_quota_max",         cf_int,         CA_GOD,    &mudconf.cmd_quota_max,          NULL,               0},
     {"compress_program",          cf_string_dyn,  CA_STATIC, (int *)&mudconf.compress,        NULL, SIZEOF_PATHNAME},
     {"compression",               cf_bool,        CA_GOD,    &mudconf.compress_db,            NULL,               0},
-    {"concentrator_port",         cf_int,         CA_STATIC, &mudconf.conc_port,              NULL,               0},
     {"config_access",             cf_cf_access,   CA_GOD,    NULL,                            access_nametab,     0},
     {"conn_timeout",              cf_int,         CA_GOD,    &mudconf.conn_timeout,           NULL,               0},
     {"connect_file",              cf_string_dyn,  CA_STATIC, (int *)&mudconf.conn_file,       NULL, SIZEOF_PATHNAME},

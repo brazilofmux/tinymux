@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.29 2001-10-17 17:04:41 sdennis Exp $
+// $Id: db_rw.cpp,v 1.30 2001-10-17 17:30:08 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -287,18 +287,11 @@ static BOOLEXP *getboolexp(FILE *f)
 
 static int get_list(FILE *f, dbref i, int new_strings)
 {
-    dbref atr;
-    int c;
-    char *buff;
-#ifdef STANDALONE
-    dbref aowner;
-    int xflags, aflags, anum;
-    char *ownp, *flagp, *buf2, *buf2p;
-#endif
-
-    buff = alloc_lbuf("get_list");
+    char *buff = alloc_lbuf("get_list");
     while (1)
     {
+        dbref atr;
+        int c;
         switch (c = getc(f))
         {
         case '>':   // read # then string
@@ -308,7 +301,7 @@ static int get_list(FILE *f, dbref i, int new_strings)
                 // Store the attr
                 //
                 atr_add_raw(i, atr,
-                     (char *)getstring_noalloc(f, new_strings));
+                     getstring_noalloc(f, new_strings));
             }
             else
             {
@@ -317,87 +310,7 @@ static int get_list(FILE *f, dbref i, int new_strings)
                 getstring_noalloc(f, new_strings);
             }
             break;
-#ifdef STANDALONE
-        case ']':   // Pern 1.13 style text attribute
-            StringCopy(buff, (char *)getstring_noalloc(f, new_strings));
 
-            // Get owner number
-            //
-            ownp = (char *)strchr(buff, '^');
-            if (!ownp)
-            {
-                Log.tinyprintf("Bad format in attribute on object %d" ENDLINE, i);
-                free_lbuf(buff);
-                return 0;
-            }
-            *ownp++ = '\0';
-
-            // Get attribute flags
-            //
-            flagp = (char *)strchr(ownp, '^');
-            if (!flagp)
-            {
-                Log.tinyprintf("Bad format in attribute on object %d" ENDLINE, i);
-                free_lbuf(buff);
-                return 0;
-            }
-            *flagp++ = '\0';
-
-            // Convert Pern-style owner and flags to 2.0 format
-            //
-            aowner = Tiny_atol(ownp);
-            xflags = Tiny_atol(flagp);
-            aflags = 0;
-
-            if (!aowner)
-                aowner = NOTHING;
-            if (xflags & 0x10)
-                aflags |= AF_LOCK | AF_NOPROG;
-            if (xflags & 0x20)
-                aflags |= AF_NOPROG;
-
-            if (!strcmp(buff, "XYXXY"))
-            {
-                s_Pass(i, (char *)getstring_noalloc(f, new_strings));
-            }
-            else
-            {
-                // Look up the attribute name in the attribute table. If the
-                // name isn't found, create a new attribute. If the create
-                // fails, try prefixing the attr name with ATR_ (Pern allows
-                // attributes to start with a non-alphabetic character.)
-                //
-                anum = mkattr(buff);
-                if (anum < 0)
-                {
-                    buf2 = alloc_mbuf("get_list.new_attr_name");
-                    buf2p = buf2;
-                    safe_mb_str((char *)"ATR_", buf2, &buf2p);
-                    safe_mb_str(buff, buf2, &buf2p);
-                    *buf2p = '\0';
-                    anum = mkattr(buf2);
-                    free_mbuf(buf2);
-                }
-
-                // MAILFOLDERS under MUX must be owned by the
-                // player, not GOD
-                //
-                if (!strcmp(buff, "MAILFOLDERS"))
-                {
-                    aowner = Owner(i);
-                }
-                if (anum < 0)
-                {
-                    Log.tinyprintf("Bad attribute name '%s' on object %d, ignoring..." ENDLINE, buff, i);
-                    getstring_noalloc(f, new_strings);
-                }
-                else
-                {
-                    atr_add(i, anum, (char *)getstring_noalloc(f, new_strings), aowner, aflags);
-                }
-            }
-            break;
-#endif
         case '\n':  // ignore newlines. They're due to v(r).
 
             break;

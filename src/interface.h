@@ -1,5 +1,5 @@
 /* interface.h */
-/* $Id: interface.h,v 1.5 2001-06-11 13:12:52 sdennis Exp $ */
+/* $Id: interface.h,v 1.6 2001-10-17 17:30:08 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -107,13 +107,6 @@ struct descriptor_data
   BOOL bCallProcessOutputLater;   // Does the socket need priming for output.
 #endif // WIN32
 
-#ifdef CONCENTRATE
-#define C_CCONTROL 1
-#define C_REMOTE 2
-  int concid;
-  int cstatus;
-  struct descriptor_data *parent;
-#endif
   int flags;
   int retries_left;
   int command_count;

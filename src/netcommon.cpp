@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.39 2001-10-11 21:10:00 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.40 2001-10-17 17:30:08 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -35,13 +35,6 @@ extern HANDLE CompletionPort;    // IOs are queued up on this port
 extern OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
 extern OVERLAPPED lpo_aborted_final; // Actually free the descriptor.
 extern OVERLAPPED lpo_shutdown; // special to indicate a player should do a shutdown
-#endif
-
-#ifdef CONCENTRATE
-extern void FDECL(do_becomeconc, (DESC *, char *));
-extern void FDECL(do_makeid, (DESC *));
-extern void FDECL(do_connectid, (DESC *, long int, char *));
-extern void FDECL(do_killid, (DESC *, long int));
 #endif
 
 /*
@@ -1881,98 +1874,11 @@ int do_command(DESC *d, char *command, int first)
     // Look up the command.  If we don't find it, turn it over to the normal
     // logged-in command processor or to create/connect 
     //
+    cp = NULL;
     if (!(d->flags & DS_CONNECTED))
     {
         cp = (NAMETAB *)hashfindLEN(command, strlen(command), &mudstate.logout_cmd_htab);
     }
-    else
-    {
-        cp = NULL;
-    }
-    
-#ifdef CONCENTRATE
-    if (*arg)
-    {
-        *--arg = ' ';   // restore nullified space.
-    }
-    if (!strncmp(command, "New Conn Pass: ", sizeof("New Conn Pass ") - 1))
-    {
-        do_becomeconc(d, command + sizeof("New Conn Pass: ") - 1);
-        return 1;
-    }
-    else if (((d->cstatus & C_REMOTE) || (d->cstatus & C_CCONTROL)) && first)
-    {
-        if (!strncmp(command, "CONC ", sizeof("CONC ") - 1))
-        {
-            log_text(command);
-        }
-        else if (!strcmp(command, "New ID"))
-        {
-            do_makeid(d);
-        }
-        else if (!strncmp(command, "Conn ID: ", sizeof("Conn ID: ") - 1))
-        {
-            char *m, *n;
-            
-            m = command + sizeof("Conn ID: ") - 1;
-            n = strchr(m, ' ');
-            if (!n)
-            {
-                queue_string(d, "Usage: Conn ID: <id> <hostname>\n");
-            }
-            else
-            {
-                do_connectid(d, Tiny_atol(command + sizeof("Conn ID: ") - 1), n + 1);
-            }
-        }
-        else if (!strncmp(command, "Kill ID: ", sizeof("Kill ID: ") - 1))
-        {
-            do_killid(d, Tiny_atol(command + sizeof("Kill ID: ") - 1));
-        }
-        else
-        {
-            char *k;
-            
-            k = strchr(command, ' ');
-            if (!k)
-            {
-                return 1;
-            }
-            else
-            {
-                struct descriptor_data *l;
-                int j;
-                
-                *k = '\0';
-                j = Tiny_atol(command);
-                for (l = descriptor_list; l; l = l->next)
-                {
-                    if (l->concid == j)
-                        break;
-                }
-                
-                if (!l)
-                {
-                    queue_string(d, "I don't know that concid.\r\n");
-                }
-                else
-                {
-                    k++;
-                    if (!do_command(l, k, 0))
-                    {
-                        return 0;
-                    }
-                }
-            }
-        }
-        return 1;
-    }
-    if (*arg)
-    {
-        arg++;
-    }
-#endif // CONCENTRATE
-    
     if (cp == NULL)
     {
         if (*arg)
@@ -2032,7 +1938,7 @@ int do_command(DESC *d, char *command, int first)
         else
         {
             mudstate.debug_cmd = cmdsave;
-            return (check_connect(d, command));
+            return check_connect(d, command);
         }
     }
 

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.52 2001-10-17 17:04:24 sdennis Exp $
+// $Id: db.cpp,v 1.53 2001-10-17 17:30:08 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -45,20 +45,12 @@
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)
 #endif // O_ACCMODE
 
-// Restart definitions
-//
-#define RS_CONCENTRATE      0x00000002
-
 OBJ *db = NULL;
 NAME *names = NULL;
 NAME *purenames = NULL;
 
 #ifndef WIN32
 extern SOCKET MainGameSockPort;
-
-#ifdef CONCENTRATE
-extern int conc_pid;
-#endif // CONCENTRATE
 #endif // !WIN32
 
 extern void FDECL(desc_addhash, (DESC *));
@@ -3120,22 +3112,11 @@ void dump_restart_db(void)
     DESC *d;
     int version = 0;
 
-    /* We maintain a version number for the restart database,
-       so we can restart even if the format of the restart db
-       has been changed in the new executable. */
-
-#ifdef CONCENTRATE
-    version |= RS_CONCENTRATE;
-#endif // CONCENTRATE
-
     f = fopen("restart.db", "wb");
     fprintf(f, "+V%d\n", version);
     putref(f, MainGameSockPort);
     putref(f, mudstate.start_time.ReturnSeconds());
     putstring(f, mudstate.doing_hdr);
-#ifdef CONCENTRATE
-    putref(f, conc_pid);
-#endif // CONCENTRATE
     putref(f, mudstate.record_players);
     DESC_ITER_ALL(d) {
         putref(f, d->descriptor);
@@ -3151,10 +3132,6 @@ void dump_restart_db(void)
         putstring(f, d->addr);
         putstring(f, d->doing);
         putstring(f, d->username);
-#ifdef CONCENTRATE
-        putref(f, d->concid);
-        putref(f, d->cstatus);
-#endif // CONCENTRATE
     }
     putref(f, 0);
 
@@ -3166,9 +3143,6 @@ void load_restart_db(void)
     FILE *f;
     DESC *d;
     DESC *p;
-#ifdef CONCENTRATE
-     DESC *k;
-#endif // CONCENTRATE
 
     int val, version;
     char *temp, buf[8];
@@ -3189,16 +3163,6 @@ void load_restart_db(void)
     maxd = MainGameSockPort + 1;
     mudstate.start_time.SetSeconds(getref(f));
     strcpy(mudstate.doing_hdr, getstring_noalloc(f, TRUE));
-
-    if (version & RS_CONCENTRATE)
-    {
-#ifdef CONCENTRATE
-        conc_pid = getref(f);
-#else // CONCENTRATE
-        (void)getref(f);
-#endif // CONCENTRATE
-    }
-
     mudstate.record_players = getref(f);
 
     while ((val = getref(f)) != 0)
@@ -3213,7 +3177,7 @@ void load_restart_db(void)
         d->host_info = getref(f);
         d->player = getref(f);
         d->last_time.SetSeconds(getref(f));
-        temp = (char *)getstring_noalloc(f, TRUE);
+        temp = getstring_noalloc(f, TRUE);
         if (*temp)
         {
             d->output_prefix = alloc_lbuf("set_userstring");
@@ -3223,7 +3187,7 @@ void load_restart_db(void)
         {
             d->output_prefix = NULL;
         }
-        temp = (char *)getstring_noalloc(f, TRUE);
+        temp = getstring_noalloc(f, TRUE);
         if (*temp)
         {
             d->output_suffix = alloc_lbuf("set_userstring");
@@ -3238,16 +3202,6 @@ void load_restart_db(void)
         strcpy(d->doing, getstring_noalloc(f, TRUE));
         strcpy(d->username, getstring_noalloc(f, TRUE));
 
-        if (version & RS_CONCENTRATE)
-        {
-#ifdef CONCENTRATE
-            d->concid = getref(f);
-            d->cstatus = getref(f);
-#else // CONCENTRATE
-            (void)getref(f);
-            (void)getref(f);
-#endif // CONCENTRATE
-        }
         d->output_size = 0;
         d->output_tot = 0;
         d->output_lost = 0;
@@ -3283,9 +3237,6 @@ void load_restart_db(void)
             maxd = d->descriptor + 1;
         }
         desc_addhash(d);
-#ifdef CONCENTRATE
-        if (!(d->cstatus & C_CCONTROL))
-#endif // CONCENTRATE
         if (isPlayer(d->player))
         {
             s_Flags2(d->player, Flags2(d->player) | CONNECTED);
@@ -3298,18 +3249,6 @@ void load_restart_db(void)
         {
             shutdownsock(d, R_QUIT);
         }
-#ifdef CONCENTRATE
-        if (d->cstatus & C_REMOTE)
-        {
-            DESC_ITER_ALL(k)
-            {
-                if (k->descriptor = d->descriptor)
-                {
-                    d->parent = k;
-                }
-            }
-        }
-#endif // CONCENTRATE
     }
 
     fclose(f);

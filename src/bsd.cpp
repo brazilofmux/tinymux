@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.32 2001-10-13 06:53:43 sdennis Exp $
+// $Id: bsd.cpp,v 1.33 2001-10-17 17:30:08 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -49,12 +49,6 @@
 extern const int _sys_nsig;
 #define NSIG _sys_nsig
 #endif // SOLARIS
-
-#ifdef CONCENTRATE
-extern struct descriptor_data *ccontrol;
-extern void FDECL(send_killconcid, (DESC *));
-extern long NDECL(make_concid);
-#endif // CONCENTRATE
 
 SOCKET MainGameSockPort;
 unsigned int ndescriptors = 0;
@@ -1299,18 +1293,11 @@ void shovechars(int port)
 
                 // Process received data.
                 //
-#ifdef CONCENTRATE
-                if (!(d->cstatus & C_REMOTE))
+                if (!process_input(d))
                 {
-#endif // CONCENTRATE
-                    if (!process_input(d))
-                    {
-                        shutdownsock(d, R_SOCKDIED);
-                        continue;
-                    }
-#ifdef CONCENTRATE
+                    shutdownsock(d, R_SOCKDIED);
+                    continue;
                 }
-#endif // CONCENTRATE
             }
 
             // Process output for sockets with pending output.
@@ -1666,40 +1653,14 @@ void shutdownsock(DESC *d, int reason)
                 Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
             }
         }
-#endif // WIN32
-#ifdef CONCENTRATE
-        if (!(d->cstatus & C_REMOTE))
-        {
-            if (d->cstatus & C_CCONTROL)
-            {
-                struct descriptor_data *k;
+#endif
 
-                for (k = descriptor_list; k; k = k->next)
-                {
-                    if (k->parent == d)
-                    {
-                        shutdownsock(k, R_QUIT);
-                    }
-                }
-            }
-#endif // CONCENTRATE
-            shutdown(d->descriptor, SD_BOTH);
-            if (SOCKET_CLOSE(d->descriptor) == 0)
-            {
-                DebugTotalSockets--;
-            }
-            d->descriptor = INVALID_SOCKET;
-#ifdef CONCENTRATE
-        }
-        else
+        shutdown(d->descriptor, SD_BOTH);
+        if (SOCKET_CLOSE(d->descriptor) == 0)
         {
-            struct descriptor_data *k;
-
-            for (k = descriptor_list; k; k = k->next)
-                if (d->parent == k)
-                    send_killconcid(d);
+            DebugTotalSockets--;
         }
-#endif // CONCENTRATE
+        d->descriptor = INVALID_SOCKET;
 
         // Is this desc still in interactive mode?
         //
@@ -1752,10 +1713,7 @@ void shutdownsock(DESC *d, int reason)
             //
             freeqs(d);
             free_desc(d);
-#ifdef CONCENTRATE
-            if (!(d->cstatus & C_REMOTE))
-#endif // CONCENTRATE
-                ndescriptors--;
+            ndescriptors--;
         }
     }
 }
@@ -1871,11 +1829,6 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
 #endif // WIN32
 
     d->descriptor = s;
-#ifdef CONCENTRATE
-    d->concid = make_concid();
-    d->cstatus = 0;
-    d->parent = 0;
-#endif // CONCENTRATE
     d->flags = 0;
     d->connected_at.GetUTC();
     d->retries_left = mudconf.retry_limit;
@@ -2121,86 +2074,33 @@ void process_output(void *dvoid, int bHandleShutdown)
 
     tb = d->output_head;
 
-#ifdef CONCENTRATE
-    if (d->cstatus & C_REMOTE)
+    while (tb != NULL)
     {
-        static char buf[10];
-        static char obuf[2048];
-        int buflen, k, j;
-
-        sprintf(buf, "%d ", d->concid);
-        buflen = strlen(buf);
-
-        bcopy(buf, obuf, buflen);
-        j = buflen;
-
-        while (tb != NULL)
+        while (tb->hdr.nchars > 0)
         {
-            for (k = 0; k < tb->hdr.nchars; k++)
+            cnt = SOCKET_WRITE(d->descriptor, tb->hdr.start, tb->hdr.nchars, 0);
+            if (IS_SOCKET_ERROR(cnt))
             {
-                obuf[j++] = tb->hdr.start[k];
-                if (tb->hdr.start[k] == '\n')
+                mudstate.debug_cmd = cmdsave;
+                if (errno != EWOULDBLOCK && bHandleShutdown)
                 {
-                    if (d->parent)
-                    {
-                        queue_write(d->parent, obuf, j);
-                    }
-                    bcopy(buf, obuf, buflen);
-                    j = buflen;
+                    shutdownsock(d, R_SOCKDIED);
                 }
+                return;
             }
-            d->output_size -= tb->hdr.nchars;
-            save = tb;
-            tb = tb->hdr.nxt;
-            free(save);
-            d->output_head = tb;
-            if (tb == NULL)
-            {
-                d->output_tail = NULL;
-            }
+            d->output_size -= cnt;
+            tb->hdr.nchars -= cnt;
+            tb->hdr.start += cnt;
         }
-
-        if (j > buflen)
+        save = tb;
+        tb = tb->hdr.nxt;
+        free(save);
+        d->output_head = tb;
+        if (tb == NULL)
         {
-            queue_write(d, obuf + buflen, j - buflen);
+            d->output_tail = NULL;
         }
     }
-    else
-    {
-#endif // CONCENTRATE
-        while (tb != NULL)
-        {
-            while (tb->hdr.nchars > 0)
-            {
-                cnt = SOCKET_WRITE(d->descriptor, tb->hdr.start, tb->hdr.nchars, 0);
-                if (IS_SOCKET_ERROR(cnt))
-                {
-                    mudstate.debug_cmd = cmdsave;
-                    if (errno != EWOULDBLOCK && bHandleShutdown)
-                    {
-#ifdef CONCENTRATE
-                        if (!(d->cstatus & C_CCONTROL))
-#endif // CONCENTRATE
-                            shutdownsock(d, R_SOCKDIED);
-                    }
-                    return;
-                }
-                d->output_size -= cnt;
-                tb->hdr.nchars -= cnt;
-                tb->hdr.start += cnt;
-            }
-            save = tb;
-            tb = tb->hdr.nxt;
-            free(save);
-            d->output_head = tb;
-            if (tb == NULL)
-            {
-                d->output_tail = NULL;
-            }
-        }
-#ifdef CONCENTRATE
-    }
-#endif // CONCENTRATE
 
     mudstate.debug_cmd = cmdsave;
 }

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.39 2001-10-17 15:57:01 sdennis Exp $
+// $Id: game.cpp,v 1.40 2001-10-17 17:30:08 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -53,10 +53,6 @@ int reserved;
 
 #ifdef WIN32
 extern CRITICAL_SECTION csDescriptorList;      // for thread synchronisation
-#else // WIN32
-#ifdef CONCENTRATE
-int conc_pid = 0;
-#endif // CONCENTRATE
 #endif // WIN32
 #ifdef MEMORY_BASED
 int corrupt = 0;
@@ -2093,34 +2089,6 @@ int DCL_CDECL main(int argc, char *argv[])
     }
 
     boot_slave(0, 0, 0);
-
-#if defined(CONCENTRATE) && !defined(VMS) && !defined(WIN32)
-    if (!mudstate.restarting)
-    {
-        // Start up the port concentrator.
-        //
-        conc_pid = fork();
-        if (conc_pid < 0)
-        {
-            perror("fork");
-            exit(-1);
-        }
-        if (conc_pid == 0)
-        {
-            char mudp[32], inetp[32];
-
-            // Add port argument to concentrator.
-            //
-            Tiny_ltoa(mudconf.port, mudp);
-            Tiny_ltoa(mudconf.conc_port, inetp);
-            execl("./bin/conc", "concentrator", inetp, mudp, "1", 0);
-        }
-        STARTLOG(LOG_ALWAYS, "CNC", "STRT");
-        log_text("Concentrating ports... ");
-        log_text(tprintf("Main: %d Conc: %d", mudconf.port, mudconf.conc_port));
-        ENDLOG;
-    }
-#endif // CONCENTRATE !VMS !WIN32
 
     // go do it.
     //

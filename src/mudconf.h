@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.29 2001-10-10 07:05:42 sdennis Exp $
+// $Id: mudconf.h,v 1.30 2001-10-17 17:30:08 sdennis Exp $
 //
 #ifndef __CONF_H
 #define __CONF_H
@@ -39,7 +39,6 @@ struct confdata
     int     have_mailer;    /* Should @mail be active? */
     int     have_zones; /* Should zones be active? */
     int     port;       /* user port */
-    int     conc_port;  /* concentrator port */
     int     init_size;  /* initial db size */
     int     have_guest; /* Do we wish to allow a GUEST character? */
     dbref   guest_char;     // player num of prototype GUEST character.
