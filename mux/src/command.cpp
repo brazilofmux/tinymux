@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.84 2002-09-16 04:25:31 jake Exp $
+// $Id: command.cpp,v 1.85 2002-09-18 21:23:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4104,8 +4104,8 @@ void do_ansiname(dbref executor, dbref caller, dbref enactor, int key, int nfarg
     }
 }
 
-// do_hook: run softcode before or after running a hardcode command, or softcode access.
-// Original idea from TinyMUSH 3, code from RhostMUSH.
+// do_hook: run softcode before or after running a hardcode command, or
+// softcode access. Original idea from TinyMUSH 3, code from RhostMUSH.
 // Used with express permission of RhostMUSH developers.
 // Bludgeoned into MUX by Jake Nelson 7/2002.
 //
