@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.57 2002-01-15 05:18:06 sdennis Exp $
+// $Id: conf.cpp,v 1.58 2002-01-15 06:23:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -66,7 +66,7 @@ void NDECL(cf_init)
 
     mudconf.ports.n = 1;
     mudconf.ports.pi = (int *)MEMALLOC(sizeof(int));
-    ISOUTOFMEMORY(mudconf.ports.pi);
+    (void)ISOUTOFMEMORY(mudconf.ports.pi);
     mudconf.ports.pi[0] = 2860;
 
     mudconf.init_size = 1000;
@@ -441,7 +441,7 @@ int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
 CF_HAND(cf_int_array)
 {
     int *aPorts = (int *)MEMALLOC(nExtra*sizeof(int));
-    ISOUTOFMEMORY(aPorts);
+    (void)ISOUTOFMEMORY(aPorts);
     unsigned int nPorts = 0;
 
     char *p;
@@ -470,7 +470,7 @@ CF_HAND(cf_int_array)
             pia->pi = NULL;
         }
         pia->pi = (int *)MEMALLOC(nPorts * sizeof(int));
-        ISOUTOFMEMORY(pia->pi);
+        (void)ISOUTOFMEMORY(pia->pi);
         pia->n = nPorts;
         for (unsigned int i = 0; i < nPorts; i++)
         {
@@ -1230,7 +1230,7 @@ CF_HAND(cf_site)
     // Parse the access entry and allocate space for it.
     //
     SITE *site = (SITE *)MEMALLOC(sizeof(SITE));
-    ISOUTOFMEMORY(site);
+    (void)ISOUTOFMEMORY(site);
 
     // Initialize the site entry.
     //
@@ -1753,7 +1753,7 @@ int cf_read(void)
             char *pSuffix = DefaultSuffixes[i].pSuffix;
             int nSuffix = strlen(pSuffix);
             char *buff = (char *)MEMALLOC(nInDB + nSuffix + 1);
-            ISOUTOFMEMORY(buff);
+            (void)ISOUTOFMEMORY(buff);
             memcpy(buff, mudconf.indb, nInDB);
             memcpy(buff + nInDB, pSuffix, nSuffix+1);
             MEMFREE(*p);

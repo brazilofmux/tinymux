@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.65 2002-01-15 05:41:28 sdennis Exp $
+// $Id: db.cpp,v 1.66 2002-01-15 06:23:28 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -272,7 +272,7 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
     // Copy input forwardlist to a correctly-sized buffer.
     //
     fp = (FWDLIST *)MEMALLOC(sizeof(int) * ((ifp->count) + 1));
-    ISOUTOFMEMORY(fp);
+    (void)ISOUTOFMEMORY(fp);
 
     for (i = 0; i < ifp->count; i++)
     {
@@ -1036,7 +1036,7 @@ void anum_extend(int newtop)
     if (anum_table == NULL)
     {
         anum_table = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
-        ISOUTOFMEMORY(anum_table);
+        (void)ISOUTOFMEMORY(anum_table);
         for (i = 0; i <= newtop; i++)
         {
             anum_table[i] = NULL;
@@ -1045,7 +1045,7 @@ void anum_extend(int newtop)
     else
     {
         anum_table2 = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
-        ISOUTOFMEMORY(anum_table2);
+        (void)ISOUTOFMEMORY(anum_table2);
         for (i = 0; i <= anum_alc_top; i++)
         {
             anum_table2[i] = anum_table[i];
@@ -1234,7 +1234,7 @@ void al_extend(char **buffer, int *bufsiz, int len, int copy)
     {
         int newsize = len + ATR_BUF_CHUNK;
         tbuff = (char *)MEMALLOC(newsize);
-        ISOUTOFMEMORY(tbuff);
+        (void)ISOUTOFMEMORY(tbuff);
         if (*buffer)
         {
             if (copy)
@@ -1735,7 +1735,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     if (!db[thing].ahead)
     {
         list = (ATRLIST *)MEMALLOC(sizeof(ATRLIST));
-        ISOUTOFMEMORY(list);
+        (void)ISOUTOFMEMORY(list);
         db[thing].ahead = list;
         db[thing].at_count = 1;
         list[0].number = atr;
@@ -1787,7 +1787,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
             // and the attribute should be inserted between them.
             //
             list = (ATRLIST *)MEMALLOC((db[thing].at_count + 1) * sizeof(ATRLIST));
-            ISOUTOFMEMORY(list);
+            (void)ISOUTOFMEMORY(list);
 
             // Copy bottom part.
             //
@@ -2375,7 +2375,7 @@ int atr_head(dbref thing, char **attrp)
     if (db[thing].at_count)
     {
         atr = (ATRCOUNT *) MEMALLOC(sizeof(ATRCOUNT));
-        ISOUTOFMEMORY(atr);
+        (void)ISOUTOFMEMORY(atr);
         atr->thing = thing;
         atr->count = 1;
         *attrp = (char *)atr;
@@ -2516,7 +2516,7 @@ void db_grow(dbref newtop)
     // reclaim the memory.
     //
     NAME *newnames = (NAME *) MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME));
-    ISOUTOFMEMORY(newnames);
+    (void)ISOUTOFMEMORY(newnames);
     memset(newnames, 0, (newsize + SIZE_HACK) * sizeof(NAME));
 
     if (names)
@@ -2551,7 +2551,7 @@ void db_grow(dbref newtop)
         // safely) on the OS to reclaim the memory.
         //
         newpurenames = (NAME *)MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME));
-        ISOUTOFMEMORY(newpurenames);
+        (void)ISOUTOFMEMORY(newpurenames);
         memset(newpurenames, 0, (newsize + SIZE_HACK) * sizeof(NAME));
 
         if (purenames)
@@ -2586,7 +2586,7 @@ void db_grow(dbref newtop)
     // to reclaim the memory.
     //
     newdb = (OBJ *)MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ));
-    ISOUTOFMEMORY(newdb);
+    (void)ISOUTOFMEMORY(newdb);
     if (db)
     {
         // An old struct database exists. Copy it to the new buffer.
@@ -2643,7 +2643,7 @@ void db_grow(dbref newtop)
     //
     marksize = (newsize + 7) >> 3;
     newmarkbuf = (MARKBUF *)MEMALLOC(marksize);
-    ISOUTOFMEMORY(newmarkbuf);
+    (void)ISOUTOFMEMORY(newmarkbuf);
     memset(newmarkbuf, 0, marksize);
     if (mudstate.markbits)
     {

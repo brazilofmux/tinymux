@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.123 2001-12-30 05:21:07 sdennis Exp $
+// $Id: functions.cpp,v 1.124 2002-01-15 06:23:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6021,7 +6021,7 @@ static void do_asort(char *s[], int n, int sort_type)
     case NUMERIC_LIST:
 
         ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        ISOUTOFMEMORY(ip);
+        (void)ISOUTOFMEMORY(ip);
         for (i = 0; i < n; i++)
         {
             ip[i].str = s[i];
@@ -6038,7 +6038,7 @@ static void do_asort(char *s[], int n, int sort_type)
 
     case DBREF_LIST:
         ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        ISOUTOFMEMORY(ip);
+        (void)ISOUTOFMEMORY(ip);
         for (i = 0; i < n; i++)
         {
             ip[i].str = s[i];
@@ -6056,7 +6056,7 @@ static void do_asort(char *s[], int n, int sort_type)
     case FLOAT_LIST:
 
         fp = (f_rec *) MEMALLOC(n * sizeof(f_rec));
-        ISOUTOFMEMORY(fp);
+        (void)ISOUTOFMEMORY(fp);
         for (i = 0; i < n; i++)
         {
             fp[i].str = s[i];
@@ -7096,7 +7096,7 @@ void do_function
     if (!ufp)
     {
         ufp = (UFUN *) MEMALLOC(sizeof(UFUN));
-        ISOUTOFMEMORY(ufp);
+        (void)ISOUTOFMEMORY(ufp);
         ufp->name = StringClone(np);
         _strupr(ufp->name);
         ufp->obj = obj;

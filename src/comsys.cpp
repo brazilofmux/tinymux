@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.63 2002-01-15 05:41:00 sdennis Exp $
+// $Id: comsys.cpp,v 1.64 2002-01-15 06:23:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -238,9 +238,9 @@ void load_channels(FILE *fp)
         if (c->maxchannels > 0)
         {
             c->alias = (char *)MEMALLOC(c->maxchannels * 6);
-            ISOUTOFMEMORY(c->alias);
+            (void)ISOUTOFMEMORY(c->alias);
             c->channels = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
-            ISOUTOFMEMORY(c->channels);
+            (void)ISOUTOFMEMORY(c->channels);
 
             for (j = 0; j < c->numchannels; j++)
             {
@@ -357,7 +357,7 @@ comsys_t *create_new_comsys(void)
     comsys_t *c;
 
     c = (comsys_t *)MEMALLOC(sizeof(comsys_t));
-    ISOUTOFMEMORY(c);
+    (void)ISOUTOFMEMORY(c);
 
     c->who = -1;
     c->numchannels = 0;
@@ -550,7 +550,7 @@ void load_comsystem(FILE *fp)
     for (i = 0; i < nc; i++)
     {
         ch = (struct channel *)MEMALLOC(sizeof(struct channel));
-        ISOUTOFMEMORY(ch);
+        (void)ISOUTOFMEMORY(ch);
 
         int nChannel = GetLineTrunc(temp, sizeof(temp), fp);
         if (nChannel > MAX_CHANNEL_LEN)
@@ -635,7 +635,7 @@ void load_comsystem(FILE *fp)
         if (ch->num_users > 0)
         {
             ch->users = (struct comuser **)calloc(ch->max_users, sizeof(struct comuser *));
-            ISOUTOFMEMORY(ch->users);
+            (void)ISOUTOFMEMORY(ch->users);
 
             int jAdded = 0;
             for (j = 0; j < ch->num_users; j++)
@@ -698,7 +698,7 @@ void load_comsystem(FILE *fp)
                     }
 
                     struct comuser *user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
-                    ISOUTOFMEMORY(user);
+                    (void)ISOUTOFMEMORY(user);
                     memcpy(user, &t_user, sizeof(struct comuser));
 
                     user->title = StringCloneLen(pTitle, nTitle);
@@ -1013,7 +1013,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         {
             ch->max_users += 10;
             cu = (struct comuser **)MEMALLOC(sizeof(struct comuser *) * ch->max_users);
-            ISOUTOFMEMORY(cu);
+            (void)ISOUTOFMEMORY(cu);
 
             for (i = 0; i < (ch->num_users - 1); i++)
             {
@@ -1023,7 +1023,7 @@ void do_joinchannel(dbref player, struct channel *ch)
             ch->users = cu;
         }
         user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
-        ISOUTOFMEMORY(user);
+        (void)ISOUTOFMEMORY(user);
 
         for (i = ch->num_users - 1; i > 0 && ch->users[i - 1]->who > player; i--)
         {
@@ -1328,9 +1328,9 @@ void do_addcom
         c->maxchannels += 10;
 
         na = (char *)MEMALLOC(6 * c->maxchannels);
-        ISOUTOFMEMORY(na);
+        (void)ISOUTOFMEMORY(na);
         nc = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
-        ISOUTOFMEMORY(nc);
+        (void)ISOUTOFMEMORY(nc);
 
         for (i = 0; i < c->numchannels; i++)
         {
@@ -1486,7 +1486,7 @@ void do_createchannel(dbref player, dbref cause, int key, char *channel)
         return;
     }
     newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
-    ISOUTOFMEMORY(newchannel);
+    (void)ISOUTOFMEMORY(newchannel);
 
     int   vwChannel;
     unsigned int nNameNoANSI;

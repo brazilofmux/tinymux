@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.43 2001-12-04 09:27:02 sdennis Exp $
+// $Id: predicates.cpp,v 1.44 2002-01-15 06:23:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -632,7 +632,7 @@ void do_addcommand
         // Else tack it on to the existing entry...
         //
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
-        ISOUTOFMEMORY(add);
+        (void)ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = atr;
         add->name = StringClone(name);
@@ -649,7 +649,7 @@ void do_addcommand
         }
 
         cmd = (CMDENT *)MEMALLOC(sizeof(CMDENT));
-        ISOUTOFMEMORY(cmd);
+        (void)ISOUTOFMEMORY(cmd);
         cmd->cmdname = StringClone(name);
         cmd->switches = NULL;
         cmd->perms = 0;
@@ -663,7 +663,7 @@ void do_addcommand
             cmd->callseq = CS_ADDED|CS_ONE_ARG;
         }
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
-        ISOUTOFMEMORY(add);
+        (void)ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = atr;
         add->name = StringClone(name);
@@ -1077,7 +1077,7 @@ void do_prog
     }
 
     program = (PROG *)MEMALLOC(sizeof(PROG));
-    ISOUTOFMEMORY(program);
+    (void)ISOUTOFMEMORY(program);
     program->wait_cause = player;
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {

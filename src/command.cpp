@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.63 2001-12-06 03:42:07 sdennis Exp $
+// $Id: command.cpp,v 1.64 2002-01-15 06:23:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -700,7 +700,7 @@ void NDECL(init_cmdtab)
         }
 
         cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG));
-        ISOUTOFMEMORY(cp2a);
+        (void)ISOUTOFMEMORY(cp2a);
         cp2a->cmdname = (char *)StringClone(cbuff);
         cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
         cp2a->switches = NULL;
@@ -2341,7 +2341,7 @@ CF_HAND(cf_cmd_alias)
         // Got it, create the new command table entry.
         //
         cmd2 = (CMDENT *)MEMALLOC(sizeof(CMDENT));
-        ISOUTOFMEMORY(cmd2);
+        (void)ISOUTOFMEMORY(cmd2);
         cmd2->cmdname = StringClone(alias);
         cmd2->switches = cmdp->switches;
         cmd2->perms = cmdp->perms | nt->perm;
