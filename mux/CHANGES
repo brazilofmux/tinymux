@@ -55,6 +55,11 @@ Bug Fixes:
     with enter locks on zones.
  -- Fixed ancient filter() bug where only a prefix of '1' was counted as true.
     Fixed by Raevnos.
+ -- All possible return values from match() are not handled properly. Ancient
+    class of bugs which are still present in MUX 2.0, 2.1, MUSH 3.0, and
+    MUSH 3.1 Beta. It can cause memory just before the database structure to
+    be read from, but it doesn't appear to crash on either Win32 or Unix.
+    Apparently an ancient bug.
 
 
 Performance Enhancements:
