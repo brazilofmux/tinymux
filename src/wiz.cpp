@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.5 2000-08-28 06:22:49 sdennis Exp $
+// $Id: wiz.cpp,v 1.6 2000-08-28 07:35:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -266,7 +266,14 @@ void do_toad(dbref player, dbref cause, int key, char *toad, char *newowner)
     }
     else
     {
-	    recipient = (mudconf.toad_recipient == -1) ? player : mudconf.toad_recipient;
+        if (mudconf.toad_recipient == -1)
+        {
+            recipient = player;
+        }
+        else
+        {
+            recipient =  mudconf.toad_recipient;
+        }
     }
 
     STARTLOG(LOG_WIZARD, "WIZ", "TOAD");

@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.27 2000-08-28 06:22:49 sdennis Exp $
+// $Id: externs.h,v 1.28 2000-08-28 07:35:43 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -239,7 +239,7 @@ extern int  check_access(dbref player, int mask);
 extern void set_prefix_cmds(void);
 extern void process_command(dbref, dbref, int, char *, char *[], int);
 
-#define	Protect(f) (cmdp->perms & f)
+#define Protect(f) (cmdp->perms & f)
 
 #define Invalid_Objtype(x) \
 ((Protect(CA_LOCATION) && !Has_location(x)) || \
