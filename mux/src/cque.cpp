@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.16 2004-05-16 23:02:52 sdennis Exp $
+// $Id: cque.cpp,v 1.17 2004-05-25 00:51:29 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -531,8 +531,6 @@ void do_notify
     char *count
 )
 {
-    int loccount, attr = 0;
-    ATTR *ap;
     char *obj = parse_to(&what, '/', 0);
     init_match(executor, obj, NOTYPE);
     match_everything(0);
@@ -548,35 +546,31 @@ void do_notify
     }
     else
     {
-        if (!what || !*what)
+        int attr = A_SEMAPHORE;
+        if (  what
+           && what[0] != '\0')
         {
-            ap = NULL;
-        }
-        else
-        {
-            ap = atr_str(what);
-        }
-
-        if (!ap)
-        {
-            attr = A_SEMAPHORE;
-        }
-        else
-        {
-            // Do they have permission to set this attribute?
-            //
-            if (bCanSetAttr(executor, thing, ap))
+            int i = mkattr(executor, what);
+            if (0 < i)
             {
-                attr = ap->number;
-            }
-            else
-            {
-                notify_quiet(executor, NOPERM_MESSAGE);
-                return;
+                attr = i;
+                if (attr != A_SEMAPHORE)
+                {
+                    // Do they have permission to set this attribute?
+                    //
+                    ATTR *ap = (ATTR *)anum_get(attr);
+                    if (!bCanSetAttr(executor, thing, ap))
+                    {
+                        notify_quiet(executor, NOPERM_MESSAGE);
+                        return;
+                    }
+                }
             }
         }
 
-        if (count && *count)
+        int loccount;
+        if (  count
+           && count[0] != '\0')
         {
             loccount = mux_atol(count);
         }
