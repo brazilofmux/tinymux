@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.11 2002-02-02 05:15:20 sdennis Exp $
+// $Id: slave.cpp,v 1.12 2002-09-25 06:28:34 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -9,6 +9,7 @@
 // not the issue it once was.
 //
 #include "autoconf.h"
+#include "config.h"
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -31,7 +32,7 @@ pid_t parent_pid;
 char *arg_for_errors;
 
 #ifndef INADDR_NONE
-#define INADDR_NONE ((unsigned long)-1)
+#define INADDR_NONE ((in_addr_t)-1)
 #endif
 
 char *format_inet_addr(char *dest, long addr)
@@ -77,10 +78,10 @@ int query(char *ip, char *orig_arg)
     char arg[MAX_STRING];
     size_t len;
     char *p;
-    long addr;
+    in_addr_t addr;
 
     addr = inet_addr(ip);
-    if (addr == -1)
+    if (addr == INADDR_NONE)
     {
         return -1;
     }

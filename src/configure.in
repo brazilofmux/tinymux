@@ -19,6 +19,7 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS(unistd.h memory.h string.h errno.h malloc.h sys/select.h)
 AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/time.h sys/stat.h)
 AC_CHECK_HEADERS(fpu_control.h)
+AC_CHECK_HEADERS([netinet/in.h])
 AC_CHECKING(for sys_errlist decl)
 if test $ac_cv_header_errno_h = no; then
 	AC_DEFINE(NEED_SYS_ERRLIST_DCL)
@@ -202,6 +203,18 @@ AC_CHECKING(for /dev/urandom)
 if test -c /dev/urandom; then
   AC_DEFINE(HAVE_DEV_URANDOM)
 fi
+AC_MSG_CHECKING([for in_addr_t])
+AC_TRY_COMPILE([#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif], [in_addr_t foo;],
+  [AC_DEFINE([HAVE_IN_ADDR_T])
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)])
 AC_SUBST(LIBOBJS)
 AC_SUBST(def_force_c_compiler)
 AC_SUBST(def_brief_lib_list)

@@ -68,5 +68,5 @@ sa-timeutil.o: sa-timeutil.cpp timeutil.cpp autoconf.h copyright.h config.h time
 dbconvert.o: dbconvert.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h flags.h db.h attrcache.h mudconf.h htab.h alloc.h mail.h stringutil.h regexp.h vattr.h _build.h
 mkindx.o: mkindx.cpp copyright.h autoconf.h config.h help.h _build.h
 unsplit.o: unsplit.cpp copyright.h 
-slave.o: slave.cpp autoconf.h copyright.h slave.h 
+slave.o: slave.cpp autoconf.h copyright.h config.h slave.h 
 portconc.o: portconc.cpp
