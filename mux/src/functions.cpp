@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.68 2003-09-21 01:07:29 sdennis Exp $
+// $Id: functions.cpp,v 1.69 2004-01-08 02:42:52 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -7950,7 +7950,7 @@ FUNCTION(fun_wrap)
 
         ANSI_String_In_Init(&aic, tstr, ANSI_ENDGOAL_NORMAL);
         ANSI_String_Skip(&aic, i, &nDone);
-        if (nDone < i || nLength == 0)
+        if (nDone < i || nLength <= 0)
         {
             break;
         }
