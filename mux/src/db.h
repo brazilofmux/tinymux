@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.10 2002-09-19 01:40:01 sdennis Exp $
+// $Id: db.h,v 1.11 2002-09-19 03:00:25 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -156,7 +156,6 @@ struct object
     CLinearTimeDelta cpu_time_used; /* ALL: CPU time eaten */
 
     char    *purename;
-    char    *ansiname;
     char    *accentname;
 
 #ifdef MEMORY_BASED

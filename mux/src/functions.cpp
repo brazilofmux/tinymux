@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.103 2002-09-19 01:40:01 sdennis Exp $
+// $Id: functions.cpp,v 1.104 2002-09-19 03:00:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5408,7 +5408,7 @@ FUNCTION(fun_ansiname)
         safe_match_result(thing, buff, bufc);
         return;
     }
-    safe_str(AnsiName(thing), buff, bufc);
+    safe_str(AccentName(thing), buff, bufc);
 }
 
 void ANSI_TransformTextWithTable

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.86 2002-09-19 01:40:00 sdennis Exp $
+// $Id: command.cpp,v 1.87 2002-09-19 03:00:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -647,7 +647,6 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@addcommand",  NULL,       CA_GOD,                                           0,           CS_TWO_ARG,           0, do_addcommand},
     {"@admin",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_admin},
     {"@alias",       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_alias},
-    {"@ansiname",    NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_ansiname},
     {"@attribute",   attrib_sw,  CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_attribute},
     {"@cboot",       cboot_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_chboot},
     {"@ccharge",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          1,           CS_TWO_ARG,           0, do_editchannel},
@@ -4042,40 +4041,8 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
     }
 
     notify_all_from_inside(loc, executor, tprintf("%s types -=> %s",
-        AnsiName(executor), string));
+        AccentName(executor), string));
     process_command(executor, caller, enactor, TRUE, string, (char **)NULL, 0);
-}
-
-// do_ansiname: set ansified name for something.
-// From RhostMUSH, used with permission.
-//
-void do_ansiname(dbref executor, dbref caller, dbref enactor, int key,
-                 int nfargs, char *name, char *instr)
-{
-    dbref thing = match_thing(executor, name);
-    if ( !(  Good_obj(thing)
-          && Controls(executor, thing)))
-    {
-        notify(executor, "Permission denied.");
-        return;
-    }
-
-    if (  instr == NULL
-       || instr[0] == '\0')
-    {
-        notify_quiet(executor, "ANSI name cleared.");
-        s_AnsiName(thing, NULL);
-    }
-    else
-    {
-        s_AnsiName(thing, instr);
-        if (  !Quiet(executor)
-           && !Quiet(thing))
-        {
-            notify_quiet(executor, "ANSI name set.");
-        }
-    }
-    set_modified(thing);
 }
 
 void do_accentname(dbref executor, dbref caller, dbref enactor, int key,

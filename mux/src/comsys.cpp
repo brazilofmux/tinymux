@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.41 2002-09-19 01:40:01 sdennis Exp $
+// $Id: comsys.cpp,v 1.42 2002-09-19 03:00:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -825,16 +825,16 @@ void BuildChannelMessage
         if (!bSpoof)
         {
             safe_chr(' ', *messNormal, &mnptr);
-            safe_str(AnsiName(user->who), *messNormal, &mnptr);
-            safe_str(AnsiName(user->who), *messNoComtitle, &mncptr);
+            safe_str(AccentName(user->who), *messNormal, &mnptr);
+            safe_str(AccentName(user->who), *messNoComtitle, &mncptr);
         }
     }
     else
     {
-        safe_str(AnsiName(user->who), *messNormal, &mnptr);
+        safe_str(AccentName(user->who), *messNormal, &mnptr);
         if (!bSpoof)
         {
-            safe_str(AnsiName(user->who), *messNoComtitle, &mncptr);
+            safe_str(AccentName(user->who), *messNoComtitle, &mncptr);
         }
     }
 
@@ -2695,14 +2695,14 @@ void do_chboot
     if (!vu)
     {
         raw_notify(executor, tprintf("@cboot: %s is not on the channel.",
-            AnsiName(thing)));
+            AccentName(thing)));
         return;
     }
 
     raw_notify(executor, tprintf("You boot %s off channel %s.",
-                                 AnsiName(thing), ch->name));
+                                 AccentName(thing), ch->name));
     raw_notify(thing, tprintf("%s boots you off channel %s.",
-                              AnsiName(thing), ch->name));
+                              AccentName(thing), ch->name));
 
     if (!(key & CBOOT_QUIET))
     {
@@ -2825,7 +2825,7 @@ void do_chanlist(dbref executor, dbref caller, dbref enactor, int key)
 
                 pBuffer = buf;
             }
-            char *ownername_ansi = ANSI_TruncateAndPad_sbuf(AnsiName(ch->charge_who), 15);
+            char *ownername_ansi = ANSI_TruncateAndPad_sbuf(AccentName(ch->charge_who), 15);
             sprintf(temp, "%c%c%c %-13.13s %s %-45.45s",
                 (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
                 (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
