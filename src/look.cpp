@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.45 2003-01-02 18:49:18 sdennis Exp $
+// $Id: look.cpp,v 1.46 2003-01-31 06:44:25 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2296,7 +2296,7 @@ void do_decomp
     // Strip out ANSI in one place rather than have it done in
     // several places.
     //
-    unsigned int len = 0;
+    size_t len = 0;
     char *p = strip_ansi(thingname, &len);
     memcpy(thingname, p, len+1);
 

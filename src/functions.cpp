@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.185 2003-01-14 17:52:35 sdennis Exp $
+// $Id: functions.cpp,v 1.186 2003-01-31 06:44:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2498,7 +2498,7 @@ FUNCTION(fun_version)
 
 FUNCTION(fun_strlen)
 {
-    unsigned int n = 0;
+    size_t n = 0;
     if (nfargs >= 1)
     {
         strip_ansi(fargs[0], &n);
@@ -3878,7 +3878,7 @@ FUNCTION(fun_pos)
 
     // Strip ANSI from source.
     //
-    unsigned int nSrc;
+    size_t nSrc;
     char *pSrc = strip_ansi(fargs[1], &nSrc);
 
     // Search for pattern string inside source string.

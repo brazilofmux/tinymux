@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.83 2003-01-14 17:52:36 sdennis Exp $
+// $Id: stringutil.cpp,v 1.84 2003-01-31 06:44:25 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -504,7 +504,7 @@ int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthT
     }
 }
 
-char *strip_ansi(const char *szString, unsigned int *pnString)
+char *strip_ansi(const char *szString, size_t *pnString)
 {
     static char Buffer[LBUF_SIZE];
     char *pBuffer = Buffer;
@@ -1780,7 +1780,7 @@ int minmatch(char *str, char *target, int min)
 // --------------------------------------------------------------------------
 // StringCloneLen: allocate memory and copy string
 //
-char *StringCloneLen(const char *str, unsigned int nStr)
+char *StringCloneLen(const char *str, size_t nStr)
 {
     char *buff = (char *)MEMALLOC(nStr+1);
     if (ISOUTOFMEMORY(buff))
