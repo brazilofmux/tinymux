@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.15 2002-07-13 07:23:01 jake Exp $
+// $Id: eval.cpp,v 1.16 2002-08-02 04:21:48 sdennis Exp $
 //
 
 // MUX 2.1
@@ -983,7 +983,7 @@ typedef struct tag_ptrsframe
 
 static PtrsFrame *pPtrsFrame = NULL;
 
-static DCL_INLINE char **PushPointers(int nNeeded)
+char **PushPointers(int nNeeded)
 {
     if (  !pPtrsFrame
        || nNeeded > pPtrsFrame->nptrs)
@@ -997,7 +997,7 @@ static DCL_INLINE char **PushPointers(int nNeeded)
     return pPtrsFrame->ptrs + pPtrsFrame->nptrs;
 }
 
-static DCL_INLINE void PopPointers(char **p, int nNeeded)
+void PopPointers(char **p, int nNeeded)
 {
     if (pPtrsFrame->nptrs == PTRS_PER_FRAME)
     {
@@ -1019,7 +1019,7 @@ typedef struct tag_intsframe
 
 static IntsFrame *pIntsFrame = NULL;
 
-static DCL_INLINE int *PushIntegers(int nNeeded)
+int *PushIntegers(int nNeeded)
 {
     if (  !pIntsFrame
        || nNeeded > pIntsFrame->nints)
@@ -1033,7 +1033,7 @@ static DCL_INLINE int *PushIntegers(int nNeeded)
     return pIntsFrame->ints + pIntsFrame->nints;
 }
 
-static DCL_INLINE void PopIntegers(int *pi, int nNeeded)
+void PopIntegers(int *pi, int nNeeded)
 {
     if (pIntsFrame->nints == INTS_PER_FRAME)
     {

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.39 2002-07-29 23:53:43 jake Exp $
+// $Id: externs.h,v 1.40 2002-08-02 04:21:48 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -48,6 +48,10 @@ void TinyExec(char *buff, char **bufc, dbref executor, dbref caller,
 extern void save_global_regs(const char *, char *[], int []);
 extern void save_and_clear_global_regs(const char *, char *[], int[]);
 extern void restore_global_regs(const char *, char *[], int []);
+extern char **PushPointers(int nNeeded);
+extern void PopPointers(char **p, int nNeeded);
+extern int *PushIntegers(int nNeeded);
+extern void PopIntegers(int *pi, int nNeeded);
 extern const signed char Tiny_IsRegister[256];
 
 /* From game.cpp */
