@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.85 2002-01-29 07:00:47 sdennis Exp $
+// $Id: funceval.cpp,v 1.86 2002-01-29 10:31:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1735,7 +1735,7 @@ FUNCTION(fun_elements)
 {
     int nwords, cur;
     char *ptrs[LBUF_SIZE / 2];
-    char *wordlist, *s, *r, sep, *oldp;
+    char *wordlist, *s, *r, sep;
 
     varargs_preamble(3);
     BOOL bFirst = TRUE;
