@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.12 2002-02-13 20:17:28 sdennis Exp $
+// $Id: mguests.cpp,v 1.13 2002-02-13 20:23:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -22,7 +22,7 @@
 
 CGuests Guest;
 
-void CGuests::StartUp(void) 
+void CGuests::StartUp(void)
 {
     // Reset the Number of Guests.
     //
@@ -51,7 +51,7 @@ void CGuests::StartUp(void)
             nGuests++;
         }
     }
-    
+
     // Create the Minimum # of guests.
     //
     for (; nGuests < mudconf.min_guests; nGuests++)
@@ -83,7 +83,7 @@ void CGuests::GrowGuests(int amount)
     Guests = newGuests;
 }
 
-char *CGuests::Create(DESC *d) 
+char *CGuests::Create(DESC *d)
 {
     // We don't have a main guest character, break out.
     //
@@ -131,9 +131,9 @@ char *CGuests::Create(DESC *d)
             atr_cpy(GOD, player, mudconf.guest_char);
             return Name(Guests[i]);
         }
-    }    
+    }
 
-    if (nGuests >= mudconf.number_guests) 
+    if (nGuests >= mudconf.number_guests)
     {
         queue_string(d, "Sorry, All guests are currently busy. Try again later.\n");
         return NULL;
@@ -150,7 +150,7 @@ char *CGuests::Create(DESC *d)
     return Name(newGuest);
 }
 
-void CGuests::CleanUp(void) 
+void CGuests::CleanUp(void)
 {
     // Move all connected guests to the beginning of the list.
     // If the number is less than the minimum, don't worry.
@@ -178,7 +178,7 @@ void CGuests::CleanUp(void)
             currGuest++;
         }
     }
-        
+
     itmp = nGuests;
     for (i = mudconf.min_guests; i < itmp;i++)
     {
@@ -196,7 +196,7 @@ void CGuests::CleanUp(void)
     MEMFREE(Guests);
     Guests = newGuests;
     nGuests = mudconf.min_guests;
-}               
+}
 
 int CGuests::MakeGuestChar(void)
 {
@@ -213,7 +213,7 @@ int CGuests::MakeGuestChar(void)
             break;
         }
     }
-    
+
     // Make the player.
     //
     player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, 0, 1);

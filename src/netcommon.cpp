@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.58 2002-02-13 19:27:11 sdennis Exp $
+// $Id: netcommon.cpp,v 1.59 2002-02-13 20:23:43 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1685,7 +1685,7 @@ static int check_connect(DESC *d, char *msg)
                     free_lbuf(password);
                     return 0;
                 }
-                            
+
                 if ((p = Guest.Create(d)) == NULL)
                 {
                     queue_string(d, "All guests are tied up, please try again later.\n");
