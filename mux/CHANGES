@@ -404,7 +404,7 @@ Bug Fixes:
     length of the first list correctly.
  -- Protect the server against @maliases with more than 100 members when
     the mail.db comes from a previous versions of MUX.
- -- Guest creation did not properly strip attributions from previously
+ -- Guest creation did not properly strip attributions from previous
     connections.
 
 
