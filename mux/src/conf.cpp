@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.31 2003-09-08 06:43:14 sdennis Exp $
+// $Id: conf.cpp,v 1.32 2003-09-09 06:20:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2050,7 +2050,7 @@ void cf_display(dbref player, char *param_name, char *buff, char **bufc)
                 else if (tp->interpreter == cf_seconds)
                 {
                     CLinearTimeDelta *pltd = (CLinearTimeDelta *)(tp->loc);
-                    safe_str(pltd->ReturnSecondsString(), buff, bufc);
+                    safe_str(pltd->ReturnSecondsString(7), buff, bufc);
                     return;
                 }
             }
