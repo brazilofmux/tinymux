@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.81 2001-11-23 20:33:19 sdennis Exp $
+// $Id: functions.cpp,v 1.82 2002-01-29 11:01:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5931,6 +5931,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
                 first = 0;
                 oldp = *bufc;
                 safe_str(ptrs1[i1], buff, bufc);
+                **bufc = '\0';
                 i1++;
                 i2++;
                 while ((i1 < n1) && !strcmp(ptrs1[i1], oldp))
