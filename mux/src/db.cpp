@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.44 2002-09-19 01:40:01 sdennis Exp $
+// $Id: db.cpp,v 1.45 2002-09-19 01:50:09 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -539,7 +539,7 @@ const char *AnsiName(dbref thing)
     int nAnsiName;
     dbref aowner;
     int aflags;
-    const char *pAnsiName = atr_get_LEN(thing, A_ANSINAME, &aowner, &aflags,
+    char *pAnsiName = atr_get_LEN(thing, A_ANSINAME, &aowner, &aflags,
         &nAnsiName);
     char *pPureAnsiName = strip_ansi(pAnsiName);
 
@@ -626,7 +626,7 @@ const char *AccentName(dbref thing)
     int nAccentName;
     dbref aowner;
     int aflags;
-    const char *pAccentName = atr_get_LEN(thing, A_ACCENTNAME, &aowner, &aflags,
+    char *pAccentName = atr_get_LEN(thing, A_ACCENTNAME, &aowner, &aflags,
         &nAccentName);
     char *pPureAccentName = strip_accents(strip_ansi(pAccentName));
 
