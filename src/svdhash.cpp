@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.20 2001-02-10 04:08:03 sdennis Exp $
+// $Id: svdhash.cpp,v 1.21 2001-04-09 22:30:56 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -2532,6 +2532,7 @@ CLogFile::CLogFile(void)
 
 #if !defined(STANDALONE) && defined(WIN32)
     InitializeCriticalSection(&csLog);
+    m_hFile = INVALID_HANDLE_VALUE;
     m_szPrefix[0] = '\0';
     m_ltaStarted.GetLocal();
     MakeLogName(m_szPrefix, m_ltaStarted, m_szFilename);
