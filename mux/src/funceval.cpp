@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.27 2003-02-16 16:21:21 jake Exp $
+// $Id: funceval.cpp,v 1.28 2003-02-16 16:32:12 jake Exp $
 //
 
 #include "copyright.h"
@@ -2080,15 +2080,22 @@ FUNCTION(fun_sortby)
     dbref thing;
     ATTR *ap;
 
+    // Two possibilities for the first arg: <obj>/<attr> and <attr>.
+    //
     if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
     }
 
-    if (  !ap
-       || !See_attr(executor, thing, ap))
+    if (!ap)
     {
+        return;
+    }
+
+    if (!See_attr(executor, thing, ap))
+    {
+        safe_noperm(buff, bufc);
         return;
     }
 
@@ -2104,6 +2111,7 @@ FUNCTION(fun_sortby)
         free_lbuf(atext);
         return;
     }
+
     strcpy(ucomp_buff, atext);
     ucomp_executor = thing;
     ucomp_caller   = executor;
