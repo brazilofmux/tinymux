@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.13 2002-07-27 10:49:01 jake Exp $
+// $Id: cque.cpp,v 1.14 2002-07-28 17:12:50 jake Exp $
 //
 
 #include "copyright.h"
@@ -386,14 +386,7 @@ void do_halt(dbref executor, dbref caller, dbref enactor, int key, char *target)
     {
         return;
     }
-    if (numhalted == 1)
-    {
-        notify(Owner(executor), "1 queue entries removed.");
-    }
-    else
-    {
-        notify(Owner(executor), tprintf("%d queue entries removed.", numhalted));
-    }
+    notify(Owner(executor), tprintf("%d queue entr%s removed.", numhalted, numhalted == 1 ? "y" : "ies"));
 }
 
 int Notify_Key;
