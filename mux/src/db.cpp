@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.59 2003-03-17 01:10:15 sdennis Exp $
+// $Id: db.cpp,v 1.60 2004-04-13 18:47:47 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2696,7 +2696,7 @@ void putstring(FILE *f, const char *pRaw)
         for (;;)
         {
             char ch;
-            while ((ch = xlat_table[*pRaw]) == 0)
+            while ((ch = xlat_table[(unsigned char)*pRaw]) == 0)
             {
                 *pBuffer++ = *pRaw++;
             }
