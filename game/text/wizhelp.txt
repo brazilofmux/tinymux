@@ -774,10 +774,13 @@
 & @LIST USER_ATTRIBUTES
 @LIST USER_ATTRIBUTES
 
-  COMMAND: @list user_attributes
+  COMMAND: @list user_attributes [<pattern>]
 
   Lists the defined user-named attributes, along with their internal
   attribute numbers and access restrictions.
+
+  If <pattern> is given, only the user-named attributes which match
+  the <pattern> are reported.
 
 & @LISTCOMMANDS
 @LISTCOMMANDS
