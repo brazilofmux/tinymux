@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.34 2001-12-01 08:44:45 sdennis Exp $
+// $Id: mudconf.h,v 1.35 2002-01-15 06:43:26 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -262,8 +262,8 @@ struct objlist_stack
     OBLOCK  *head;              /* Head of object list */
     OBLOCK  *tail;              /* Tail of object list */
     OBLOCK  *cblock;            /* Current block for scan */
-    int count;                  /* Number of objs in last obj list block */
-    int citm;                   /* Current item for scan */
+    unsigned int count;         /* Number of objs in last obj list block */
+    unsigned int citm;          /* Current item for scan */
 };
 
 typedef struct markbuf MARKBUF;
