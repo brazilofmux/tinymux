@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.106 2001-11-24 23:14:23 sdennis Exp $
+// $Id: functions.cpp,v 1.107 2001-11-25 05:29:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6652,29 +6652,37 @@ FUN flist[] =
     {"CANSEE",   fun_cansee,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
 #endif
     {"CAPSTR",   fun_capstr,   1,       1,  1,       0, CA_PUBLIC},
+    {"CASE",     fun_case,     MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
     {"CAT",      fun_cat,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CEIL",     fun_ceil,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CENTER",   fun_center,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"CHANNELS", fun_channels, MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"CHILDREN", fun_children, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CMDS",     fun_cmds,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"COLUMNS",  fun_columns,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"COMALIAS", fun_comalias, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"COMP",     fun_comp,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"COMTITLE", fun_comtitle, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CON",      fun_con,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONN",     fun_conn,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNLAST", fun_connlast, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNLEFT", fun_connleft, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNMAX",  fun_connmax,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNNUM",  fun_connnum,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNTOTAL",fun_conntotal,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CONVSECS", fun_convsecs, MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"CONVTIME", fun_convtime, MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"COS",      fun_cos,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"CWHO",     fun_cwho,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"DEC",      fun_dec,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"DECRYPT",  fun_decrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"DEFAULT",  fun_default,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
     {"DELETE",   fun_delete,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
     {"DIE",      fun_die,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"DIGITTIME",fun_digittime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"DIST2D",   fun_dist2d,   MAX_ARG, 4,  4,       0, CA_PUBLIC},
     {"DIST3D",   fun_dist3d,   MAX_ARG, 6,  6,       0, CA_PUBLIC},
     {"DOING",    fun_doing,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
@@ -6807,7 +6815,6 @@ FUN flist[] =
     {"POSS",     fun_poss,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"POWER",    fun_power,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"PUSH",     fun_push,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"CASE",     fun_case,     MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
     {"R",        fun_r,        MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"RAND",     fun_rand,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"REGMATCH", fun_regmatch, MAX_ARG, 2,  3,       0, CA_PUBLIC},
@@ -6892,22 +6899,13 @@ FUN flist[] =
     {"ZONE",     fun_zone,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ZWHO",     fun_zwho,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
 
-    // Added by D.Piper (del@doofer.org) 1997 and 2000-APR
-    //
-    {"DIGITTIME",fun_digittime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SINGLETIME", fun_singletime, MAX_ARG, 1, 1,    0, CA_PUBLIC},
     {"EXPTIME",  fun_exptime,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"WRITETIME",fun_writetime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CMDS",     fun_cmds,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"STARTSECS",fun_startsecs,MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"LFLAGS",   fun_lflags,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LATTRCMDS",fun_lattrcmds,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LCMDS",    fun_lcmds,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNTOTAL",fun_conntotal,MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNMAX",  fun_connmax,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNLAST", fun_connlast, MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNNUM",  fun_connnum,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNLEFT", fun_connleft, MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {NULL,       NULL,         MAX_ARG, 0,  0,       0, 0}
 };
 
