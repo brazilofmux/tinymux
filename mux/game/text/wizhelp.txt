@@ -1,6 +1,6 @@
 & HELP
 
-  This is the AlloyMUX online help facility for wizard commands and topics.
+  This is the MUX online help facility for wizard commands and topics.
   The information provided by this command is generally not useful for
   anyone other than wizards and game maintainers, as the features described
   here are only accessible to characters whose WIZARD bit is set, or to those
@@ -65,7 +65,7 @@
 
   COMMAND: @admin <param>=<value>
 
-  Sets a AlloyMUX configuration parameter to the indicated value. Type
+  Sets a TinyMUX configuration parameter to the indicated value. Type
   'wizhelp config parameters' for a list of the config parameters that
   may be set.
 
@@ -669,7 +669,7 @@
   COMMAND: @list buffers
 
   For each buffer in a buffer pool that is currently allocated, lists where
-  within AlloyMUX the buffer was allocated.
+  within TinyMUX the buffer was allocated.
 
 & @LIST COMMANDS
 @LIST COMMANDS
@@ -2007,7 +2007,7 @@ FASCIST_TELEPORT
 & FILES
 FILES
 
-  AlloyMUX uses these files (normally kept in the same directory as the
+  TinyMUX uses these files (normally kept in the same directory as the
   database files and the netmux program) to display information under
   certain circumstances.  The names of the files used can be changed with
   configuration directives (or on the netmux command line, in the case of
