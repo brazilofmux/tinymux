@@ -9258,7 +9258,7 @@ VALID()
   See also: secs().
   
 & LATTRCMDS()
-  Function: lcmds(<object>)
+  Function: lattrcmds(<object>)
 
   Returns the names of the attributes that contain commands on a
   specific <object>.
@@ -9289,7 +9289,7 @@ VALID()
   See also: writetime(), singletime(), exptime(), secs(), time().
   
 & WRITETIME()
-  Function: exptime(<seconds>)
+  Function: writetime(<seconds>)
   
   This function converts seconds to a number of time elements (hours,
   minutes, seconds) that is equivalent to the given number of
@@ -9299,14 +9299,14 @@ VALID()
   are given their long names instead of short names.
   
   Example:
-    > say exptime(45)
+    > say writetime(45)
     You say "45 seconds"
-    > say exptime(12345)
+    > say writetime(12345)
     You say "3 hours 25 minutes 45 seconds"
-    > say exptime(123456)
+    > say writetime(123456)
     You say "1 day 10 hours 17 minutes 36 seconds"
   
-  See also: writetime(), singletime(), digittime(), secs(), time().
+  See also: exptime(), singletime(), digittime(), secs(), time().
   
 & EXPTIME()
   Function: exptime(<seconds>)
