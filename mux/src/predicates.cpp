@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.45 2003-01-18 23:59:15 sdennis Exp $
+// $Id: predicates.cpp,v 1.46 2003-01-20 01:55:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -294,10 +294,79 @@ void giveto(dbref who, int pennies)
 }
 
 // The following function validates that the object names (which will be
-// used for things, exits, and rooms, but not for players) and generates
+// used for things and rooms, but not for players or exits) and generates
 // a canonical form of that name (with optimized ANSI).
 //
 char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
+{
+    static char Buf[MBUF_SIZE];
+
+    *pnName = 0;
+    *pbValid = FALSE;
+
+    if (!pName)
+    {
+        return NULL;
+    }
+
+    // Build up what the real name would be. If we pass all the
+    // checks, this is what we will return as a result.
+    //
+    int nVisualWidth;
+    int nBuf = ANSI_TruncateToField(pName, sizeof(Buf), Buf, MBUF_SIZE,
+        &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+
+    // Disallow pure ANSI names. There must be at least -something-
+    // visible.
+    //
+    if (nVisualWidth <= 0)
+    {
+        return NULL;
+    }
+
+    // Get the stripped version (Visible parts without color info).
+    //
+    unsigned int nStripped;
+    char *pStripped = strip_ansi(Buf, &nStripped);
+
+    // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
+    // as the first character, or SPACE as the last character
+    //
+    if (  strchr("*!#", *pStripped)
+       || Tiny_IsSpace[(unsigned char)pStripped[0]]
+       || Tiny_IsSpace[(unsigned char)pStripped[nStripped-1]])
+    {
+        return NULL;
+    }
+
+    // Only printable characters besides ARG_DELIMITER, AND_TOKEN,
+    // and OR_TOKEN are allowed.
+    //
+    for (unsigned int i = 0; i < nStripped; i++)
+    {
+        if (!Tiny_IsObjectNameCharacter[(unsigned char)pStripped[i]])
+        {
+            return NULL;
+        }
+    }
+
+    // Special names are specifically dis-allowed.
+    //
+    if (  (nStripped == 2 && memcmp("me", pStripped, 2) == 0)
+       || (nStripped == 4 && (  memcmp("home", pStripped, 4) == 0
+                             || memcmp("here", pStripped, 4) == 0)))
+    {
+        return NULL;
+    }
+
+    *pnName = nBuf;
+    *pbValid = TRUE;
+    return Buf;
+}
+
+// The following function validates exit names.
+//
+char *MakeCanonicalExitName(const char *pName, int *pnName, BOOL *pbValid)
 {
     static char Buf[MBUF_SIZE];
 

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.64 2003-01-12 18:18:15 sdennis Exp $
+// $Id: externs.h,v 1.65 2003-01-20 01:55:25 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -167,6 +167,7 @@ extern BOOL canpayfees(dbref, dbref, int, int);
 extern void giveto(dbref,int);
 extern BOOL payfor(dbref,int);
 extern char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid);
+extern char *MakeCanonicalExitName(const char *pName, int *pnName, BOOL *pbValid);
 extern BOOL ValidatePlayerName(const char *pName);
 extern BOOL ok_password(const char *szPassword, dbref player);
 extern void handle_ears(dbref, BOOL, BOOL);
