@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.8 2000-05-05 19:40:34 sdennis Exp $
+// $Id: game.cpp,v 1.9 2000-05-11 15:50:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1937,7 +1937,7 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     corrupt = 0;
 #endif
-    mudstate.start_time.GetLocal();
+    mudstate.start_time.GetUTC();
     mudstate.cpu_count_from.GetUTC();
     pool_init(POOL_LBUF, LBUF_SIZE);
     pool_init(POOL_MBUF, MBUF_SIZE);
