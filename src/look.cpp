@@ -1,6 +1,6 @@
 // look.c -- commands which look at things
 //
-// $Id: look.cpp,v 1.4 2000-04-14 04:04:04 sdennis Exp $
+// $Id: look.cpp,v 1.5 2000-05-17 08:45:08 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2042,7 +2042,7 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
     //
     buff = alloc_mbuf("do_decomp.attr_name");
     for (ca = (wild_decomp ? olist_first() : atr_head(thing, &as));
-        (wild_decomp) ? (ca != NOTHING) : (ca != (int) NULL);
+        (wild_decomp) ? (ca != NOTHING) : (ca != 0);
         ca = (wild_decomp ? olist_next() : atr_next(&as)))
     {
         if ((ca == A_NAME) || (ca == A_LOCK))
