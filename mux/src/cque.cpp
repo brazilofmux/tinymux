@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.8 2003-11-30 23:04:44 sdennis Exp $
+// $Id: cque.cpp,v 1.9 2004-03-08 17:56:12 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -203,7 +203,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         log_name_and_loc(executor);
                         char *logbuf = alloc_lbuf("do_top.LOG.cpu");
                         sprintf(logbuf, " queued command taking %s secs (enactor #%d): ",
-                            ltd.ReturnSecondsString(), point->enactor);
+                            ltd.ReturnSecondsString(4), point->enactor);
                         log_text(logbuf);
                         free_lbuf(logbuf);
                         log_text(log_cmdbuf);
