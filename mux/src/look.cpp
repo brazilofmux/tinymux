@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.11 2003-02-20 07:16:23 sdennis Exp $
+// $Id: look.cpp,v 1.12 2003-07-23 19:37:07 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -932,6 +932,105 @@ static void look_atrs(dbref player, dbref thing, bool check_parents)
     }
 }
 
+static bool show_a_desc(dbref player, dbref loc)
+{
+    int iDescDefault = A_DESC;
+    int iADescDefault = A_ADESC;
+#ifdef WOD_REALMS
+    int iRealmDirective = DoThingToThingVisibility(player, loc, ACTION_IS_STATIONARY);
+    if (REALM_DO_HIDDEN_FROM_YOU == iRealmDirective)
+    {
+        return true;
+    }
+    LetDescriptionsDefault(loc, &iDescDefault, &iADescDefault, iRealmDirective);
+#endif
+
+    int ret = false;
+
+    dbref aowner;
+    int aflags;
+    bool indent = (isRoom(loc) && mudconf.indent_desc && atr_get_raw(loc, A_DESC));
+
+    char *DescFormatBuffer = atr_pget(loc, A_DESCFORMAT, &aowner, &aflags);
+    char *DescFormat = DescFormatBuffer;
+    if (*DescFormat)
+    {
+        char *FormatOutput = alloc_lbuf("look_description.FO");
+        char *tPtr = FormatOutput;
+
+        ATTR *cattr = atr_num(iDescDefault);
+
+        char *attrtext = atr_get(loc, iDescDefault, &aowner, &aflags);
+        char *attrname = alloc_lbuf("look_description.AN");
+        char *cp = attrname;
+
+        safe_str(cattr->name, attrname, &cp);
+        *cp = '\0';
+        char* ParameterList[] =
+            { attrname, attrtext };
+
+        mux_exec(FormatOutput, &tPtr, loc, player, player,
+                EV_FCHECK | EV_EVAL | EV_TOP,
+                &DescFormat, ParameterList, 2);
+        
+        notify(player, FormatOutput); 
+        did_it(player, loc, NULL, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);  
+
+        free_lbuf(attrtext); 
+        free_lbuf(attrname);
+        free_lbuf(FormatOutput);
+
+        ret = true;
+    }
+    else
+    {
+        char *got;
+        if (Html(player))
+        {
+            got = atr_pget(loc, A_HTDESC, &aowner, &aflags);
+            if (*got)
+            {
+                did_it(player, loc, A_HTDESC, NULL, A_ODESC, NULL, A_ADESC, (char **) NULL, 0);
+                ret = true;
+            }
+            else
+            {
+                free_lbuf(got);
+                got = atr_pget(loc, iDescDefault, &aowner, &aflags);
+                if (*got)
+                {
+                    if (indent)
+                    {
+                        raw_notify_newline(player);
+                    }
+                    did_it(player, loc, iDescDefault, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
+                    if (indent)
+                    {
+                        raw_notify_newline(player);
+                    }
+                    ret = true;
+                }
+            }
+        }
+        else if (*(got = atr_pget(loc, iDescDefault, &aowner, &aflags)))
+        {
+            if (indent)
+            {
+                raw_notify_newline(player);
+            }
+            did_it(player, loc, iDescDefault, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
+            if (indent)
+            {
+                raw_notify_newline(player);
+            }
+            ret = true;
+        }
+        free_lbuf(got);
+    }
+    free_lbuf(DescFormatBuffer);
+    return ret;
+}
+
 static void look_simple(dbref player, dbref thing, bool obey_terse)
 {
     // Only makes sense for things that can hear.
@@ -952,7 +1051,8 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
 
     // Get the name and db-number if we can examine it.
     //
-    if (Examinable(player, thing))
+    int can_see_thing = (!Dark(thing) || Examinable(player, thing));
+    if (can_see_thing)
     {
         char *buff = unparse_object(player, thing, true);
         notify(player, buff);
@@ -966,66 +1066,23 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
 #endif
 
     int pattr = (obey_terse && Terse(player)) ? 0 : iDescDefault;
-    did_it(player, thing, pattr, "You see nothing special.", A_ODESC, NULL, iADescDefault, (char **)NULL, 0);
-
-    if (  !mudconf.quiet_look 
-       && (  !Terse(player)
-          || mudconf.terse_look))
+    if (can_see_thing)
     {
-        look_atrs(player, thing, false);
-    }
-}
-
-static void show_a_desc(dbref player, dbref loc)
-{
-    int iDescDefault = A_DESC;
-    int iADescDefault = A_ADESC;
-
-#ifdef WOD_REALMS
-    int iRealmDirective = DoThingToThingVisibility(player, loc, ACTION_IS_STATIONARY);
-    if (REALM_DO_HIDDEN_FROM_YOU == iRealmDirective)
-    {
-        return;
-    }
-    LetDescriptionsDefault(loc, &iDescDefault, &iADescDefault, iRealmDirective);
-#endif
-
-    dbref aowner;
-    int aflags;
-    bool indent = (isRoom(loc) && mudconf.indent_desc && atr_get_raw(loc, A_DESC));
-
-    if (Html(player))
-    {
-        char *got2 = atr_pget(loc, A_HTDESC, &aowner, &aflags);
-        if (*got2)
+        if (!show_a_desc(player,thing))
         {
-            did_it(player, loc, A_HTDESC, NULL, A_ODESC, NULL, A_ADESC, (char **) NULL, 0);
+            notify(player, "You see nothing special.");
         }
-        else
+
+        if (  !mudconf.quiet_look
+           && (  !Terse(player)
+              || mudconf.terse_look))
         {
-            if (indent)
-            {
-                raw_notify_newline(player);
-            }
-            did_it(player, loc, iDescDefault, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
-            if (indent)
-            {
-                raw_notify_newline(player);
-            }
+            look_atrs(player, thing, false);
         }
-        free_lbuf(got2);
     }
     else
     {
-        if (indent)
-        {
-            raw_notify_newline(player);
-        }
-        did_it(player, loc, iDescDefault, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
-        if (indent)
-        {
-            raw_notify_newline(player);
-        }
+        notify(player, "I don't see that here.");
     }
 }
 

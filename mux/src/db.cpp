@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.31 2003-07-23 00:19:53 sdennis Exp $
+// $Id: db.cpp,v 1.32 2003-07-23 19:36:52 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -79,6 +79,7 @@ ATTR attr[] =
     {"Daily",       A_DAILY,    AF_ODARK | AF_NOPROG},
     {"Desc",        A_DESC,     AF_VISUAL | AF_NOPROG},
     {"DefaultLock", A_LOCK,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {"DescFormat",  A_DESCFORMAT, AF_ODARK | AF_NOPROG},
     {"Destroyer",   A_DESTROYER, AF_MDARK | AF_WIZARD | AF_NOPROG},
     {"Dfail",       A_DFAIL,    AF_ODARK | AF_NOPROG},
     {"Drop",        A_DROP,     AF_ODARK | AF_NOPROG},
