@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.41 2004-05-28 17:44:25 sdennis Exp $
+// $Id: game.cpp,v 1.42 2004-06-01 01:08:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -642,7 +642,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         // they're not a player. (players were already notified
         // above.
         //
-        if (  0 < mudstate.pipe_nest_lev
+        if (  mudstate.inpipe
            && !isPlayer(target))
         {
             raw_notify(target, msg_ns);
@@ -1739,7 +1739,7 @@ bool Hearer(dbref thing)
     int attr, aflags;
     ATTR *ap;
 
-    if (  0 < mudstate.pipe_nest_lev
+    if (  mudstate.inpipe
        && thing == mudstate.poutobj)
     {
         return true;

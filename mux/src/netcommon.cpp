@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.38 2004-05-28 17:44:25 sdennis Exp $
+// $Id: netcommon.cpp,v 1.39 2004-06-01 01:08:59 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -133,7 +133,7 @@ void raw_notify_html(dbref player, const char *msg)
         return;
     }
 
-    if (  0 < mudstate.pipe_nest_lev
+    if (  mudstate.inpipe
        && player == mudstate.poutobj)
     {
         safe_str(msg, mudstate.poutnew, &mudstate.poutbufc);
@@ -165,7 +165,7 @@ void raw_notify(dbref player, const char *msg)
         return;
     }
 
-    if (  0 < mudstate.pipe_nest_lev
+    if (  mudstate.inpipe
        && player == mudstate.poutobj)
     {
         safe_str(msg, mudstate.poutnew, &mudstate.poutbufc);
@@ -187,7 +187,7 @@ void raw_notify(dbref player, const char *msg)
 
 void raw_notify_newline(dbref player)
 {
-    if (  0 < mudstate.pipe_nest_lev
+    if (  mudstate.inpipe
        && player == mudstate.poutobj)
     {
         safe_str("\r\n", mudstate.poutnew, &mudstate.poutbufc);

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.21 2004-05-28 17:44:25 sdennis Exp $
+// $Id: cque.cpp,v 1.22 2004-06-01 01:08:59 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -90,7 +90,8 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
     BQUE *point = (BQUE *)pEntry;
     dbref executor = point->executor;
 
-    if (Good_obj(executor) && !Going(executor))
+    if (  Good_obj(executor)
+       && !Going(executor))
     {
         giveto(executor, mudconf.waitcost);
         mudstate.curr_enactor = point->enactor;
@@ -117,57 +118,44 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
             }
 
             char *command = point->comm;
+
+            mux_assert(!mudstate.inpipe);
+            mux_assert(mudstate.pipe_nest_lev == 0);
+            mux_assert(mudstate.poutobj == NOTHING);
+            mux_assert(!mudstate.pout);
+
             break_called = false;
             while (  command
                   && !break_called)
             {
+                mux_assert(!mudstate.poutnew);
+                mux_assert(!mudstate.poutbufc);
+
                 char *cp = parse_to(&command, ';', 0);
 
-                mux_assert(mudstate.pipe_nest_lev == 0);
-                mux_assert(mudstate.poutobj == NOTHING);
-                mux_assert(!mudstate.pout);
-
-                // Perform Command Piping.
-                //
-                mudstate.poutobj = executor;
-                while (  cp
-                      && *cp
-                      && command
-                      && *command == '|'
-                      && mudstate.pipe_nest_lev < mudconf.ntfy_nest_lim)
-                {
-                    command++;
-                    mudstate.pipe_nest_lev++;
-
-                    mudstate.poutnew = alloc_lbuf("process_command.pipe");
-                    mudstate.poutbufc = mudstate.poutnew;
-
-                    // No lag check on piped commands.
-                    //
-                    process_command(executor, point->caller, point->enactor,
-                        false, cp, point->env, point->nargs);
-
-                    // Transfer result up piping to %| substitution.
-                    //
-                    if (mudstate.pout)
-                    {
-                        free_lbuf(mudstate.pout);
-                        mudstate.pout = NULL;
-                    }
-                    *mudstate.poutbufc = '\0';
-                    mudstate.pout = mudstate.poutnew;
-                    mudstate.poutnew = NULL;
-
-                    cp = parse_to(&command, ';', 0);
-                }
-                mudstate.pipe_nest_lev = 0;
-                mudstate.poutobj = NOTHING;
-
-                // Perform non-piped command.
-                //
                 if (  cp
                    && *cp)
                 {
+                    // Will command be piped?
+                    //
+                    if (  command
+                       && *command == '|'
+                       && mudstate.pipe_nest_lev < mudconf.ntfy_nest_lim)
+                    {
+                        command++;
+                        mudstate.pipe_nest_lev++;
+                        mudstate.inpipe = true;
+
+                        mudstate.poutnew  = alloc_lbuf("process_command.pipe");
+                        mudstate.poutbufc = mudstate.poutnew;
+                        mudstate.poutobj  = executor;
+                    }
+                    else
+                    {
+                        mudstate.inpipe = false;
+                        mudstate.poutobj = NOTHING;
+                    }
+
                     CLinearTimeAbsolute ltaBegin;
                     ltaBegin.GetUTC();
                     MuxAlarm.Set(mudconf.max_cmdsecs);
@@ -205,14 +193,32 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     }
                 }
 
-                // Clean up %| value.
+                // Transition %| value.
                 //
                 if (mudstate.pout)
                 {
                     free_lbuf(mudstate.pout);
                     mudstate.pout = NULL;
                 }
+                if (mudstate.poutnew)
+                {
+                    *mudstate.poutbufc = '\0';
+                    mudstate.pout = mudstate.poutnew;
+                    mudstate.poutnew  = NULL;
+                    mudstate.poutbufc = NULL;
+                }
             }
+
+            // Clean up %| value.
+            //
+            if (mudstate.pout)
+            {
+                free_lbuf(mudstate.pout);
+                mudstate.pout = NULL;
+            }
+            mudstate.pipe_nest_lev = 0;
+            mudstate.inpipe = false;
+            mudstate.poutobj = NOTHING;
         }
         MEMFREE(point->text);
         point->text = NULL;
