@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.18 2003-01-20 07:25:06 sdennis Exp $
+// $Id: help.cpp,v 1.19 2003-01-23 07:25:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -60,7 +60,7 @@ void HelpIndex_Start(FILE *fp)
     lineno = 0;
     ntopics = 0;
     rfp = fp;
-    BOOL bHaveTopic = FALSE;
+    bHaveTopic = FALSE;
     nLine = 0;
 }
 
