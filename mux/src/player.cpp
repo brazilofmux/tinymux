@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.12 2003-07-23 03:16:36 sdennis Exp $
+// $Id: player.cpp,v 1.13 2003-07-23 19:37:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -259,6 +259,16 @@ size_t EncodeBase64(size_t nIn, const char *pIn, char *pOut)
     return nOut;
 }
 
+#define SHA1_PREFIX_LENGTH 6
+const char szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "$SHA1$";
+#define ENCODED_HASH_LENGTH ENCODED_LENGTH(5*sizeof(UINT32))
+
+#define MD5_PREFIX_LENGTH 3
+const char szMD5Prefix[MD5_PREFIX_LENGTH+1] = "$1$";
+
+#define BLOWFISH_PREFIX_LENGTH 4
+const char szBlowfishPrefix[BLOWFISH_PREFIX_LENGTH+1] = "$2a$";
+
 #define SALT_LENGTH 9
 #define ENCODED_SALT_LENGTH ENCODED_LENGTH(SALT_LENGTH)
 
@@ -272,42 +282,128 @@ const char *GenerateSalt(void)
     }
     szSaltRaw[SALT_LENGTH] = '\0';
 
-    static char szSaltEncoded[ENCODED_SALT_LENGTH+1];
-    EncodeBase64(SALT_LENGTH, szSaltRaw, szSaltEncoded);
+    static char szSaltEncoded[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH+1];
+    strcpy(szSaltEncoded, szSHA1Prefix);
+    EncodeBase64(SALT_LENGTH, szSaltRaw, szSaltEncoded + SHA1_PREFIX_LENGTH);
     return szSaltEncoded;
 }
 
 void ChangePassword(dbref player, const char *szPassword)
 {
-    s_Pass(player, mux_crypt(szPassword, GenerateSalt()));
+    int iType;
+    s_Pass(player, mux_crypt(szPassword, GenerateSalt(), &iType));
 }
 
-#define SHA1_PREFIX_LENGTH 6
-const char szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "$SHA1$";
-#define ENCODED_HASH_LENGTH ENCODED_LENGTH(5*sizeof(UINT32))
+#define CRYPT_FAIL        0
+#define CRYPT_SHA1        1
+#define CRYPT_MD5         2
+#define CRYPT_DES         3
+#define CRYPT_DES_EXT     4
+#define CRYPT_BLOWFISH    5
+#define CRYPT_CLEARTEXT   6
+#define CRYPT_OTHER       7
 
-#define MD5_PREFIX_LENGTH 3
-const char szMD5Prefix[MD5_PREFIX_LENGTH+1] = "$1$";
-#define MD5_SALT_LENGTH  11
+const char szFail[] = "$FAIL$$";
 
-
-char *mux_crypt(const char *szPassword, const char *szSalt)
+const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType)
 {
-    if (ENCODED_SALT_LENGTH < strlen(szSalt))
+    char   *pSaltField;
+    size_t nSaltField = 0;
+
+    *piType = CRYPT_FAIL;
+
+    if (szSetting[0] == '$')
     {
-        // We should never get here as check_pass() validates
-        // the length of the salt in the database, and
-        // GenerateSalt() generates exactly the above length.
-        //
-        return "$FAIL$$";
+        char *p = strchr(szSetting+1, '$');
+        if (p)
+        {
+            p++;
+            size_t nAlgo = p - szSetting;
+            if (  nAlgo == SHA1_PREFIX_LENGTH
+               && memcmp(szSetting, szSHA1Prefix, SHA1_PREFIX_LENGTH) == 0)
+            {
+                // SHA-1
+                //
+                pSaltField = p;
+                p = strchr(pSaltField, '$');
+                if (p)
+                {
+                    nSaltField = p - pSaltField;
+                }
+                else
+                {
+                    nSaltField = strlen(pSaltField);
+                }
+                *piType = CRYPT_SHA1;
+            }
+            else if (  nAlgo == MD5_PREFIX_LENGTH
+                    && memcmp(szSetting, szMD5Prefix, MD5_PREFIX_LENGTH) == 0)
+            {
+                *piType = CRYPT_MD5;
+            }
+            else if (  nAlgo == BLOWFISH_PREFIX_LENGTH
+                    && memcmp(szSetting, szBlowfishPrefix, BLOWFISH_PREFIX_LENGTH) == 0)
+            {
+                *piType = CRYPT_BLOWFISH;
+            }
+            else
+            {
+                *piType = CRYPT_OTHER;
+            }
+        }
+    }
+    else if (szSetting[0] == '_')
+    {
+        *piType = CRYPT_DES_EXT;
+    }
+    else
+    {
+        // Strickly speaking, we can say the algorithm is DES, however, in
+        // order to support clear-text passwords, we can look for a fixed
+        // salt of 'XX'.  If you have been using a different salt, or if you
+        // need to generate a DES-encrypted password, the following code
+        // won't work.
+        //        
+        size_t nSetting = strlen(szSetting);
+        if (  nSetting == 13
+           && memcmp(szSetting, "XX", 2) == 0)
+        {
+            *piType = CRYPT_DES;
+        }
+        else
+        {
+            *piType = CRYPT_CLEARTEXT;
+        }
     }
 
-    // Calculate Hash.
+    switch (*piType)
+    {
+    case CRYPT_FAIL:
+        return szFail;
+
+    case CRYPT_CLEARTEXT:
+        return szPassword;
+
+    case CRYPT_MD5:
+    case CRYPT_BLOWFISH:
+    case CRYPT_OTHER:
+    case CRYPT_DES_EXT:
+#ifdef WIN32
+        // The WIN32 release only supports SHA1, DES, and clear-text.
+        //
+        return szFail;
+#endif // WIN32
+
+    case CRYPT_DES:
+        return crypt(szPassword, szSetting);
+    }
+
+    // Calculate SHA-1 Hash.
     //
     SHA1_CONTEXT shac;
 
     SHA1_Init(&shac);
-    SHA1_Compute(&shac, strlen(szSalt), szSalt);
+    SHA1_Compute(&shac, nSaltField, pSaltField);
     SHA1_Compute(&shac, strlen(szPassword), szPassword);
     SHA1_Final(&shac);
 
@@ -331,9 +427,10 @@ char *mux_crypt(const char *szPassword, const char *szSalt)
     // $SHA1$ssssssssssss$hhhhhhhhhhhhhhhhhhhhhhhhhhhh
     //
     static char buf[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH + 1 + ENCODED_HASH_LENGTH + 1 + 16];
-    sprintf(buf, "%s%s$", szSHA1Prefix, szSalt);
-    int n = strlen(buf);
-    EncodeBase64(20, szHashRaw, buf + n);
+    strcpy(buf, szSHA1Prefix);
+    memcpy(buf + SHA1_PREFIX_LENGTH, pSaltField, nSaltField);
+    buf[SHA1_PREFIX_LENGTH + nSaltField] = '$';
+    EncodeBase64(20, szHashRaw, buf + SHA1_PREFIX_LENGTH + nSaltField + 1);
     return buf;
 }
 
@@ -343,95 +440,22 @@ char *mux_crypt(const char *szPassword, const char *szSalt)
 
 bool check_pass(dbref player, const char *pPassword)
 {
-    bool  bValidPass = false;
-    bool  bUpdatePass = false;
+    bool bValidPass  = false;
+    int  iType;
 
     int   aflags;
     dbref aowner;
     char *pTarget = atr_get(player, A_PASS, &aowner, &aflags);
     if (*pTarget)
     {
-        size_t nTarget = strlen(pTarget);
-        size_t nPassword = strlen(pPassword);
-        if (  SHA1_PREFIX_LENGTH <= nTarget
-           && memcmp(szSHA1Prefix, pTarget, SHA1_PREFIX_LENGTH) == 0)
+        if (strcmp(mux_crypt(pPassword, pTarget, &iType), pTarget) == 0)
         {
-            // SHA-1 password.
-            //
-            char *pSalt = pTarget + SHA1_PREFIX_LENGTH;
-            char *pHash;
-            if (  *pSalt
-               && (pHash = strchr(pSalt, '$')))
+            bValidPass = true;
+            if (iType != CRYPT_SHA1)
             {
-                size_t nSalt = pHash - pSalt;
-                pHash++;
-
-                if (nSalt <= ENCODED_SALT_LENGTH)
-                {
-                    char szSalt[ENCODED_SALT_LENGTH+1];
-                    memcpy(szSalt, pSalt, nSalt);
-                    szSalt[nSalt] = '\0';
-
-                    if (strcmp(mux_crypt(pPassword, szSalt), pTarget) == 0)
-                    {
-                        bValidPass = true;
-                    }
-                }
+                ChangePassword(player, pPassword);
             }
         }
-        else if (  MD5_PREFIX_LENGTH <= nTarget
-                && memcmp(szMD5Prefix, pTarget, MD5_PREFIX_LENGTH) == 0)
-        {
-            char *pSalt = pTarget + MD5_PREFIX_LENGTH;
-            char *pHash;
-            if (  *pSalt
-               && (pHash = strchr(pSalt, '$')))
-            {
-                size_t nSalt = pHash - pTarget;
-                pHash++;
-
-                if (nSalt <= MD5_SALT_LENGTH)
-                {
-                    char szSalt[MD5_SALT_LENGTH+1];
-                    memcpy(szSalt, pTarget, nSalt);
-                    szSalt[nSalt] = '\0';
-
-                    if (strcmp(crypt(pPassword, szSalt), pTarget) == 0)
-                    {
-                        bValidPass = true;
-                        bUpdatePass = true;
-                    }
-                }
-            }
-        }
-        else if (  nTarget == 13
-                && memcmp("XX", pTarget, 2) == 0)
-        {
-            // DES
-            //
-            if (strcmp(crypt(pPassword, "XX"), pTarget) == 0)
-            {
-                bValidPass = true;
-                bUpdatePass = true;
-            }
-        }
-        else
-        {
-            // Clear-text password.
-            //
-            if (strcmp(pTarget, pPassword) == 0)
-            {
-                bValidPass = true;
-                bUpdatePass = true;
-            }
-        }
-    }
-
-    if (bUpdatePass)
-    {
-        // Upgrade password to SHA-1.
-        //
-        ChangePassword(player, pPassword);
     }
     free_lbuf(pTarget);
     return bValidPass;
@@ -553,7 +577,7 @@ void do_password
     }
     else if (ok_password(newpass, executor))
     {
-        atr_add_raw(executor, A_PASS, crypt(newpass, "XX"));
+        ChangePassword(executor, newpass);
         notify(executor, "Password changed.");
     }
     free_lbuf(target);
