@@ -1,4 +1,5 @@
 game/data/netmux.db
+game/muxconfig.vbs
 game/netmux.conf
 game/text/badsite.txt
 game/text/connect.txt
