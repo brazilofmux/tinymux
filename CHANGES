@@ -197,8 +197,7 @@ Bug Fixes:
  -- Changed guest password back to 'Guest' to make the transition to the
     new guest system easier.
  -- The names reported in the @chown message were usually wrong.
- -- Fixed typo bug in 2.1.12.37 that disallowed guests from connecting and
-    prevented player creation at the welcome screen.
+ -- Fixed typo bug in 2.1.12.37 that disallowed guests from connecting.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
