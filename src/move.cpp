@@ -2,7 +2,7 @@
  * move.c -- Routines for moving about 
  */
 /*
- * $Id: move.cpp,v 1.4 2001-07-17 15:28:09 sdennis Exp $ 
+ * $Id: move.cpp,v 1.5 2001-07-17 15:40:53 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -867,24 +867,27 @@ void do_enter(dbref player, dbref cause, int key, char *what)
 void do_leave(dbref player, dbref cause, int key)
 {
     dbref loc = Location(player);
+    dbref newLoc = loc;
 
     if (  !Good_obj(loc)
-       || isRoom(loc)
        || Going(loc)
        || !Has_location(loc)
-       || isGarbage(Location(loc)))
+       || isGarbage(newLoc = Location(loc))
+       || !Good_obj(newLoc)
+       || Going(newLoc))
     {
         notify(player, "You can't leave.");
         return;
     }
     int quiet = 0;
-    if ((key & MOVE_QUIET) && Controls(player, loc))
+    if (  (key & MOVE_QUIET)
+       && Controls(player, loc))
     {
         quiet = HUSH_LEAVE;
     }
     if (could_doit(player, loc, A_LLEAVE))
     {
-        move_via_generic(player, Location(loc), NOTHING, quiet);
+        move_via_generic(player, newLoc, NOTHING, quiet);
     }
     else
     {
