@@ -2024,22 +2024,23 @@ FLAG_ACCESS
 & FORBID_SITE
 FORBID_SITE
 
-  CONFIG PARAMETER: forbid_site <addr> <mask>
-                    forbid_site <addr>/<mask>
+  CONFIG PARAMETER: forbid_site <site>
 
   Indicates that connections are to be rejected from sites whose address
-  matches the specified address when ANDed with the mask.  The contents of
-  the file specified by badsite_file is sent immediately before closing the
-  connection.  This directive may be used to restrict access to just the
-  local network, or to prevent access from troublemaking sites.  The default
-  is for all sites to be allowed to connect, none forbidden.
+  matches the specified sit.  The contents of the file specified by
+  badsite_file is sent immediately before closing the connection.  This
+  directive may be used to restrict access to just the local network, or to
+  prevent access from troublemaking sites.  The default is for all sites to
+  be allowed to connect, none forbidden.
 
-  Related Topics: badsite_file, permit_site, register_site, SITE LISTS.
+  Related Topics: badsite_file, permit_site, register_site, SITE LISTS,
+                  SITE NOTATION.
 
 & FORK_DUMP
 FORK_DUMP
 
-  Config parameter: fork_dump <yes/no>.  Default: yes
+  CONFIG PARAMETER: fork_dump <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not database dumps are to be done by fork()ing off a
   separate process to perform the dump.  While enabling this parameter reduces
@@ -2051,7 +2052,8 @@ FORK_DUMP
 & FULL_FILE
 FULL_FILE
 
-  Config parameter: full_file <pathname>.  Default: text/full.txt
+  CONFIG PARAMETER: full_file <pathname>
+  DEFAULT: text/full.txt
 
   Specifies the name of the file that is displayed when players attempt to
   connect to a non-wizard character when the number of connected players
@@ -2062,7 +2064,7 @@ FULL_FILE
 & FUNCTION_ACCESS
 FUNCTION_ACCESS
 
-  Config parameter: function_access <function> [!]<priv> [[!]<priv>]...
+  CONFIG PARAMETER: function_access <function> [!]<priv> [[!]<priv>]...
 
   Changes the privileges needed to call the MUX function <function>.
   If you do not have permission to call a function, the function
@@ -2074,7 +2076,8 @@ FUNCTION_ACCESS
 & FULL_MOTD_MESSAGE
 FULL_MOTD_MESSAGE
 
-  Config parameter: full_motd_message <message>.  Default: blank
+  CONFIG PARAMETER: full_motd_message <message>
+  DEfAULT: blank
 
   Sets the message that is displayed when a player attempts to connect to a
   non-wizard character when the number of connected players is not less than
@@ -2086,7 +2089,8 @@ FULL_MOTD_MESSAGE
 & FUNCTION_INVOCATION_LIMIT
 FUNCTION_INVOCATION_LIMIT
 
-  Config directive: function_invocation_limit <num>.  Default: 2500
+  CONFIG PARAMETER: function_invocation_limit <num>
+  DEFAULT: 2500
 
   This directive sets the maximum number of times that a command may make
   function calls.  If the invocation limit is exceeded, the string
@@ -2099,7 +2103,8 @@ FUNCTION_INVOCATION_LIMIT
 & FUNCTION_RECURSION_LIMIT
 FUNCTION_RECURSION_LIMIT
 
-  Config directive: function_recursion_limit <num>.  Default: 50
+  CONFIG PARAMETER: function_recursion_limit <num>
+  DEFAULT: 50
 
   This directive sets the maximum number of nested function calls that
   may be made before the function call is aborted and the string
@@ -2110,7 +2115,7 @@ FUNCTION_RECURSION_LIMIT
 & GAME_DIR_FILE
 GAME_DIR_FILE
 
-  Config parameter: game_dir_file <path>.
+  CONFIG PARAMETER: game_dir_file <path>
 
   This configuration option specifies the file name of the 'directory' portion
   of the CHashFile attribute database. If this file is deleted, CHashFile will
@@ -2124,7 +2129,7 @@ GAME_DIR_FILE
 & GAME_PAG_FILE
 GAME_PAG_FILE
 
-  Config parameter: game_pag_file <path>.
+  CONFIG PARAMETER: game_pag_file <path>
 
   This configuration option specifies the file name of the 'pages' portion of
   the CHashFile attribute database. Unlike the 'directory' portion, this
@@ -2136,7 +2141,7 @@ GAME_PAG_FILE
 & GDBM_DATABASE
 GDBM_DATABASE
 
-  Config parameter: gdbm_database <path>.
+  CONFIG PARAMETER: gdbm_database <path>
 
   MUX 2.0 maintains a database in a different way. This configuration
   option is obsolete.
@@ -2146,7 +2151,7 @@ GDBM_DATABASE
 & GOOD_NAME
 GOOD_NAME
 
-  Config parameter: good_name <name>.
+  CONFIG PARAMETER: good_name <name>
 
   Removes <name> from the list of names that may not be used as a player
   name, reversing the effect of a bad_name directive.  The name must match
@@ -2155,7 +2160,8 @@ GOOD_NAME
 & GUEST_CHAR_NUM
 GUEST_CHAR_NUM
 
-  Config parameter: guest_char_num <number>.  Default: (none)
+  CONFIG PARAMETER: guest_char_num <number>
+  DEFAULT: (none)
 
   Indicates the database number of the guest character.  If set, the specified
   guest character is subject to additional restrictions (such as not being
@@ -2167,7 +2173,8 @@ GUEST_CHAR_NUM
 & GUEST_FILE
 GUEST_FILE
 
-  Config parameter: guest_file <path>.  Default: text/guest.txt.
+  CONFIG PARAMETER: guest_file <path>
+  DEFAULT: text/guest.txt
 
   Specifies the file that is to be shown to people connecting to the
   guest character in place of the motd file.
@@ -2177,7 +2184,8 @@ GUEST_FILE
 & GUEST_NUKER
 GUEST_NUKER
 
-  Config parameter: guest_nuker <num>. Default: 1.
+  CONFIG PARAMETER: guest_nuker <num>
+  DEFAULT: 1
 
   Specifies who is to nuke guests when they log off. If it is not a good
   object or a wizard, it defaults to #1.
@@ -2187,7 +2195,8 @@ GUEST_NUKER
 & GUESTS_CHANNEL
 GUESTS_CHANNEL
 
-  Config parameter: guests_channel <name>. Default: Guests
+  CONFIG PARAMETER: guests_channel <name>
+  DEFAULT: Guests
 
   Specifies the name of the channel that guests join when they connect. You
   must have created the channel already. To disable this feature, simply set
@@ -2198,7 +2207,8 @@ GUESTS_CHANNEL
 & HAVE_COMSYS
 HAVE_COMSYS
 
-  Config parameter: have_comsys <yes/no>.  Default: yes
+  CONFIG PARAMETER: have_comsys <yes/no>
+  DEFAULT: yes
 
   Specifies whether or not the comsystem should be active.
 
@@ -2216,7 +2226,8 @@ EVAL_COMTITLE
 & HAVE_MAILER
 HAVE_MAILER
 
-  Config parameter: have_mailer <yes/no>.  Default: yes
+  CONFIG PARAMETER: have_mailer <yes/no>
+  DEfAULT: yes
 
   Specifies whether @mail and mail aliases should be active.
 
@@ -2225,7 +2236,8 @@ HAVE_MAILER
 & HAVE_ZONES
 HAVE_ZONES
 
-  Config parameter: have_zones <yes/no>.  Default: yes
+  CONFIG PARAMETER: have_zones <yes/no>
+  DEFAULT: yes
 
   Specifies whether zones should be active. If this is off, zone connects
   and disconnects, zone commands, and the control aspects will all be
@@ -2234,7 +2246,8 @@ HAVE_ZONES
 & HELP_FILE
 HELP_FILE
 
-  Config parameter: help_file <path>.  Default: text/help.txt
+  CONFIG PARAMETER: help_file <path>
+  DEFAULT: text/help.txt
 
   Specifies the name of the file containing the text used by the help command.
 
@@ -2243,7 +2256,8 @@ HELP_FILE
 & HELP_INDEX
 HELP_INDEX
 
-  Config parameter: help_index <path>.  Default: text/help.indx
+  CONFIG PARAMETER: help_index <path>
+  DEFAULT: text/help.indx
 
   Specifies the name of the index file used by the help command.  This file
   must be generated by mkindx from the help file.  The contents of
@@ -2255,7 +2269,8 @@ HELP_INDEX
 & PARENT_RECURSION_LIMIT
 PARENT_RECURSION_LIMIT
 
-  Config directive: parent_recursion_limit <num>.  Default: 10
+  CONFIG PARAMETER: parent_recursion_limit <num>
+  DEFAULT: 10
 
   This directive specifies how far back to check parents for commands
   and attributes.
@@ -2263,7 +2278,8 @@ PARENT_RECURSION_LIMIT
 & PLUSHELP_FILE
 PLUSHELP_FILE
 
-  Config parameter: plushelp_file <path>.  Default: text/plushelp.txt
+  CONFIG PARAMETER: plushelp_file <path>
+  DEFAULT: text/plushelp.txt
 
   Specifies the name of the file containing the text used by the +help command.
 
@@ -2272,7 +2288,8 @@ PLUSHELP_FILE
 & PLUSHELP_INDEX
 PLUSHELP_INDEX
 
-  Config parameter: plushelp_index <path>.  Default: text/plushelp.indx
+  CONFIG PARAMETER: plushelp_index <path>
+  DEFAULT: text/plushelp.indx
 
   Specifies the name of the index file used by the +help command.  This file
   must be generated by mkindx from the plushelp file.  The contents of this
@@ -2308,7 +2325,8 @@ WIZNEWS_INDEX
 & HOSTNAMES
 HOSTNAMES
 
-  Config parameter: hostnames <yes/no>.  Default: yes
+  CONFIG PARAMETER: hostnames <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not IP addresses should be replaced with host names
   where possible in the log file and wizard WHO report.
@@ -2326,7 +2344,8 @@ IDLE_INTERVAL
 & IDLE_TIMEOUT
 IDLE_TIMEOUT
 
-  Config parameter: idle_timeout <secs>.  Default: 3600 (one hour)
+  CONFIG PARAMETER: idle_timeout <secs>
+  DEFAULT: 3600 (one hour)
 
   Sets the amount of time that a player may remain idle before being
   automatically disconnected.  Players idle longer than this parameter are
@@ -2337,7 +2356,8 @@ IDLE_TIMEOUT
 & IDLE_WIZ_DARK
 IDLE_WIZ_DARK
 
-  Config parameter: idle_wiz_dark <yes/no>.  Default: no
+  CONFIG PARAMETER: idle_wiz_dark <yes/no>
+  DEFAULT: no
 
   Indicates whether or not wizards or players with the idle power who are
   idle for longer than the default timeout value are to automatically be
@@ -2349,7 +2369,8 @@ IDLE_WIZ_DARK
 & INCLUDE
 INCLUDE
 
-  Config parameter: include <path>.  Default: none
+  CONFIG PARAMETER: include <path>
+  DEFAULT: none
 
   Reads and processes configuration directives from the named file.
   This directive is only valid during startup.
@@ -2368,7 +2389,8 @@ INITIAL_SIZE
 & INDENT_DESC
 INDENT_DESC
 
-  Config parameter: indent_desc <yes/no>. Default: no
+  CONFIG PARAMETER: indent_desc <yes/no>
+  DEFAULT: no
 
   Places a blank row before and after every room, object, and exit
   description when looked at.
@@ -2376,18 +2398,20 @@ INDENT_DESC
 & INPUT_DATABASE
 INPUT_DATABASE
 
-  Config parameter: input_database.  Default: tinymux.db
+  CONFIG PARAMETER: input_database
+  DEFAULT: netmux.db
 
   Specifies the name of the database file that is read in at startup.
   This file is used only as an input file, the parameter output_database
   controls where updated copies of the database are written.
 
-  Related Topics: crash_database, gdbm_database, output_database.
+  Related Topics: crash_database, output_database
 
 & KILL_GUARANTEE_COST
 KILL_GUARANTEE_COST
 
-  Config parameter: kill_guarantee_cost <amount>.  Default: 100
+  CONFIG PARAMETER: kill_guarantee_cost <amount>
+  DEFAULT: 100
 
   Specifies the amount of money you have to spend (i.e., kill target =
   <amount>) to have a 100% chance of killing them (assuming there are no
@@ -2400,7 +2424,8 @@ KILL_GUARANTEE_COST
 & KILL_MAX_COST
 KILL_MAX_COST
 
-  Config parameter: kill_max_cost <amount>.  Default: 100
+  CONFIG PARAMETER: kill_max_cost <amount>
+  DEFAULT: 100
 
   Specifies the maximum amount of money that may be usefully spent on a kill
   attempt.  Spending more than this amount does not improve the chance of
@@ -2414,7 +2439,8 @@ KILL_MAX_COST
 & KILL_MIN_COST
 KILL_MIN_COST
 
-  Config parameter: kill_min_cost <amount>.  Default: 10
+  CONFIG PARAMETER: kill_min_cost <amount>
+  DEFAULT: 10
 
   Specifies the minimum (and default) cost for attempting to kill someone or
   something.
@@ -2425,7 +2451,7 @@ KILL_MIN_COST
 & LIST_ACCESS
 LIST_ACCESS
 
-  Config parameter: list_access <param> [!]<privilege> [[!]<privilege>]...
+  CONFIG PARAMETER: list_access <param> [!]<privilege> [[!]<privilege>]...
 
   Changes the access needed to the <param> option of the @list command.
 
@@ -2434,7 +2460,8 @@ LIST_ACCESS
 & LINK_COST
 LINK_COST
 
-  Config parameter: link_cost <amount>.  Default: 1.
+  CONFIG PARAMETER: link_cost <amount>
+  DEFAULT: 1
 
   Specifies the cost of using the @link command to establish or change the
   link of an exit to its destination, the home of a player or an object, or
@@ -2445,7 +2472,8 @@ LINK_COST
 & LOCK_RECURSION_LIMIT
 LOCK_RECURSION_LIMIT
 
-  Config directive: lock_recursion_limit <num>.  Default: 20
+  CONFIG PARAMETER: lock_recursion_limit <num>
+  DEFAULT: 20
 
   Sets the maximum number of levels of indirection that may be used when
   using indirect locks.  If more than this many levels are used, the lock
@@ -2454,7 +2482,8 @@ LOCK_RECURSION_LIMIT
 & LOG
 LOG
 
-  Config parameter: log [!]<logoption> [[!]<logoption>]...
+  CONFIG PARAMETER: log [!]<logoption> [[!]<logoption>]...
+
   Specifies what types of events are to be logged to the logfile.
 
     accounting     - Write an accounting record to the log for each player
@@ -2481,7 +2510,7 @@ LOG
 & LOG_OPTIONS
 LOG_OPTIONS
 
-  Config parameter: log_options [!]<option> [[!]<option>]...
+  CONFIG PARAMETER: log_options [!]<option> [[!]<option>]...
 
   Specifies the type of information to be included in each log entry.
   The possible values are:
@@ -2496,7 +2525,7 @@ LOG_OPTIONS
 & LOGOUT_CMD_ACCESS
 LOGOUT_CMD_ACCESS
 
-  Config parameter: logout_cmd_access <command> <permlist>
+  CONFIG PARAMETER: logout_cmd_access <command> <permlist>
 
   Specifies permission for logged-out commands, like WHO, DOING, SESSION,
   QUIT, OUTPUTPREFIX, and OUTPUTSUFFIX.
@@ -2506,7 +2535,7 @@ LOGOUT_CMD_ACCESS
 & LOGOUT_CMD_ALIAS
 LOGOUT_CMD_ALIAS
 
-  Config parameter: logout_cmd_alias <alias> <command>
+  CONFIG PARAMETER: logout_cmd_alias <alias> <command>
 
   Makes <alias> an alias for <command>, where <command> is one of WHO, DOING,
   SESSION, QUIT, OUTPUTPREFIX, and OUTPUTSUFFIX.
@@ -2514,7 +2543,8 @@ LOGOUT_CMD_ALIAS
 & LOOK_OBEY_TERSE
 LOOK_OBEY_TERSE
 
-  Config parameter: look_obey_terse <yes/no>.  Default: YES
+  CONFIG PARAMETER: look_obey_terse <yes/no>
+  DEFAULT: YES
 
   Indicates whether or not the 'look' command obeys the TERSE flag when
   deciding how much information to display.  If set to yes, the
@@ -2528,7 +2558,8 @@ LOOK_OBEY_TERSE
 & MACHINE_COMMAND_COST
 MACHINE_COMMAND_COST
 
-  Config parameter: machine_command_cost <number>.  Default: 64
+  CONFIG PARAMETER: machine_command_cost <number>
+  DEFAULT: 64
 
   Sets the cost for running a command from a machine, as opposed to running
   it interactively.  Each command run has a one in <number> chance of being
@@ -2537,7 +2568,8 @@ MACHINE_COMMAND_COST
 & MAIL_DATABASE
 MAIL_DATABASE
 
-  Config parameter: mail_database <path>.  Default: mail.db
+  CONFIG PARAMETER: mail_database <path>
+  DEFAULT: mail.db
 
   Sets the file that @mail information is to be stored in. The database
   is only loaded or saved if have_mailer is set to yes.
@@ -2547,7 +2579,8 @@ MAIL_DATABASE
 & MAIL_EXPIRATION
 MAIL_EXPIRATION
 
-  Config parameter: mail_expiration <number of days>. Default: 14
+  CONFIG PARAMETER: mail_expiration <number of days>
+  DEFAULT: 14
 
   Sets the number of days that a @mail message should last before it is
   automatically deleted by the system. If this parameter is set to a
@@ -2556,11 +2589,15 @@ MAIL_EXPIRATION
 & MASTER_ROOM
 MASTER_ROOM
 
-  Config parameter: master_room <roomnum>.  Default: (none)
+  CONFIG PARAMETER: master_room <roomnum>
+  DEFAULT: (none)
 
   Specifies the room that is searched for exits if a command does not match
   an exit in the current room, and for $-command if a command does not match
   any $-commands that are available to the player in his current location.
+
+  Note: Do not prefix <roomnum> with a '#' character. Even though it is a
+  dbref of the master room, it must be given here as a number.
 
 & MATCH_OWN_COMMANDS
 MATCH_OWN_COMMANDS
@@ -2577,7 +2614,8 @@ MATCH_OWN_COMMANDS
 & MAX_CACHE_SIZE
 MAX_CACHE_SIZE
 
-  Config parameter: max_cache_size <size>. Default: 1048576
+  CONFIG PARAMETER: max_cache_size <size>
+  DEFAULT: 1048576
 
   Expressed in bytes, this is the maximum size the server will use for caching
   attribute values from the database.
@@ -2585,7 +2623,8 @@ MAX_CACHE_SIZE
 & MAX_PLAYERS
 MAX_PLAYERS
 
-  Config directive: max_players <num>.  Default: -1 (unlimited)
+  CONFIG PARAMETER: max_players <num>
+  DEFAULT: -1 (unlimited)
 
   Sets the maximum number of players that may be connected at any one time
   Note that wizards are allowed to login even if they would exceed the limit,
@@ -2600,7 +2639,8 @@ MAX_PLAYERS
 & MONEY_NAME_PLURAL
 MONEY_NAME_PLURAL
 
-  Config parameter: money_name_plural <string>.  Default: pennies
+  CONFIG PARAMETER: money_name_plural <string>
+  DEFAULT: pennies
 
   Specifies the string to use to describe the coin of the realm when they
   are being referred to plurally (such as: 'You have <number> pennies.', where
@@ -2611,7 +2651,8 @@ MONEY_NAME_PLURAL
 & MONEY_NAME_SINGULAR
 MONEY_NAME_SINGULAR
 
-  Config parameter: money_name_singular <string>.  Default: penny
+  CONFIG PARAMETER: money_name_singular <string>
+  DEFAULT: penny
 
   Specifies the string to use to describe the coin of the realm when they
   are being referred to singularly (such as: 'You found a penny!').
@@ -2621,7 +2662,8 @@ MONEY_NAME_SINGULAR
 & MOTD_FILE
 MOTD_FILE
 
-  Config parameter: motd_file <pathname>.  Default: text/motd.txt
+  CONFIG PARAMETER: motd_file <pathname>
+  DEFAULT: text/motd.txt
 
   Specifies the name of the file to be shown to players immediately after they
   connect to their characters.
@@ -2631,7 +2673,8 @@ MOTD_FILE
 & MOTD_MESSAGE
 MOTD_MESSAGE
 
-  Config parameter: motd_message <message>.  Default: blank
+  CONFIG PARAMETER: motd_message <message>
+  DEFAULT: blank
 
   Sets the MOTD message that is displayed to all characters when they log in.
   This message is displayed in addition to the contents of the motd.txt
@@ -2643,12 +2686,14 @@ MOTD_MESSAGE
 & MUD_NAME
 MUD_NAME
 
-  Config parameter: mud_name <string>.  Default: MUX
+  CONFIG PARAMETER: mud_name <string>
+  DEFAULT: MUX
 
 & NEWS_FILE
 NEWS_FILE
 
-  Config parameter: news_file <path>.  Default: text/news.txt
+  CONFIG PARAMETER: news_file <path>
+  DEFAULT: text/news.txt
 
   Specifies the name of the file containing the text used by the news
   command. You may use ANSI color sequences in news.
@@ -2658,7 +2703,8 @@ NEWS_FILE
 & NEWS_INDEX
 NEWS_INDEX
 
-  Config parameter: news_index <path>.  Default: text/news.indx
+  CONFIG PARAMETER: news_index <path>
+  DEFAULT: text/news.indx
 
   Specifies the name of the index file used by the news command.  This file
   must be generated by mkindex from the news file.  The contents of this
@@ -2670,7 +2716,8 @@ NEWS_INDEX
 & NEWUSER_FILE
 NEWUSER_FILE
 
-  Config parameter: newuser_file <filename>.  Default: text/newuser.txt
+  CONFIG PARAMETER: newuser_file <filename>
+  DEFAULT: text/newuser.txt
 
   Specifies the file to be shown to new players immediately after they
   create their characters, in place of the MOTD file.  This file should
@@ -2681,7 +2728,8 @@ NEWUSER_FILE
 & NOTIFY_RECURSION_LIMIT
 NOTIFY_RECURSION_LIMIT
 
-  Config directive: notify_recursion_limit <num>.  Default: 20
+  CONFIG PARAMETER: notify_recursion_limit <num>
+  DEFAULT: 20
 
   Sets the maximum number of times that the notify() routine may be called
   recursively.  A recursive call is made whenever a message heard by an
@@ -2690,7 +2738,8 @@ NOTIFY_RECURSION_LIMIT
 & NUMBER_GUESTS
 NUMBER_GUESTS
 
-  Config directive: number_guests <num>. Default: 30
+  CONFIG PARAMETER: number_guests <num>
+  DEFAULT: 30
 
   How many guests should we allow at any one time?
 
@@ -2699,7 +2748,8 @@ NUMBER_GUESTS
 & OPEN_COST
 OPEN_COST
 
-  Config parameter: open_cost <amount>.  Default: 1
+  CONFIG PARAMETER: open_cost <amount>
+  DEFAULT: 1
 
   Indicates the cost of using the @open command to open a new exit.
   If a destination for the new exit is specified and the link is successful,
@@ -2710,7 +2760,8 @@ OPEN_COST
 & OUTPUT_DATABASE
 OUTPUT_DATABASE
 
-  Config parameter: output_database <pathname>.  Default: none
+  CONFIG PARAMETER: output_database <pathname>
+  DEFAULT: none
 
   Specifies the file to which the database is to be written when writing
   checkpoint dumps or writing the final dump after receiving a @shutdown
@@ -2721,7 +2772,8 @@ OUTPUT_DATABASE
 & OUTPUT_LIMIT
 OUTPUT_LIMIT
 
-  Config parameter: output_limit <amount>. Default: 16200
+  CONFIG PARAMETER: output_limit <amount>
+  DEFAULT: 16200
 
   Specifies how many bytes should be output before the output is flushed,
   and characters are lost.
@@ -2729,7 +2781,8 @@ OUTPUT_LIMIT
 & PAGE_COST
 PAGE_COST
 
-  Config parameter: page_cost <amount>.  Default: 10
+  CONFIG PARAMETER: page_cost <amount>
+  DEFAULT: 10
 
   Specifies the cost of using the page command.
 
@@ -2738,7 +2791,8 @@ PAGE_COST
 & PARANOID_ALLOCATE
 PARANOID_ALLOCATE
 
-  Config parameter: paranoid_allocate <yes/no>.  Default: no
+  CONFIG PARAMETER: paranoid_allocate <yes/no>
+  DEFAULT: no
 
   Controls whether or not the game performs a consistency check on the entire
   set of xbuf buffers each time one is allocated or freed.  This check
@@ -2749,7 +2803,8 @@ PARANOID_ALLOCATE
 & PAYCHECK
 PAYCHECK
 
-  Config parameter: paycheck <amount>.  Default: 0
+  CONFIG PARAMETEr: paycheck <amount>
+  DEFAULT: 0
 
   Specifies the default amount of money that players receive each day they
   connect.  This parameter may be overridden by setting the ALLOWANCE
@@ -2760,7 +2815,8 @@ PAYCHECK
 & PEMIT_ANY_OBJECT
 PEMIT_ANY_OBJECT
 
-  Config parameter: pemit_any_object <yes/no>.  Default: no
+  CONFIG PARAMETER: pemit_any_object <yes/no>
+  DEFAULT: no
 
   Indicates whether or not players may @pemit to faraway objects they do not
   control.  It does not affect @pemits to faraway players, the
@@ -2771,7 +2827,8 @@ PEMIT_ANY_OBJECT
 & PEMIT_FAR_PLAYERS
 PEMIT_FAR_PLAYERS
 
-  Config parameter: pemit_far_players <yes/no>.  Default: no
+  CONFIG PARAMETER: pemit_far_players <yes/no>
+  DEFAULT: no
 
   Controls whether or not players may use the @pemit command to send messages
   to other connected players that are not in the same room.  The rules and
@@ -2782,20 +2839,22 @@ PEMIT_FAR_PLAYERS
 & PERMIT_SITE
 PERMIT_SITE
 
-  Config parameter: permit_site <addr> <mask>.
+  CONFIG PARAMETER: permit_site <site>
 
   Indicates that connections are to be accepted and registration is not to be
-  enforced from sites whose address matches the specified address when ANDed
-  with the mask.  This directive is typically used to enable connections from
-  a few selected hosts or subnets that would otherwise be disallowed by a
-  forbid_site directive.  The default is all sites permitted, none forbidden.
+  enforced from sites whose address matches the specified <site>.  This
+  directive is typically used to enable connections from a few selected hosts
+  or subnets that would otherwise be disallowed by a forbid_site directive.
+  The default is all sites permitted, none forbidden.
 
-  Related Topics: badsite_file, forbid_site, register_site, SITE LISTS.
+  Related Topics: badsite_file, forbid_site, register_site, SITE LISTS,
+                  SITE NOTATION.
 
 & PLAYER_FLAGS
 PLAYER_FLAGS
 
-  Config parameter: player_flags <flags>.  Default: blank
+  CONFIG PARAMETER: player_flags <flags>
+  DEFAULT: blank
 
   Modifies the set of flags that a player receives when it is created via the
   @pcreate command or via the connection screen.  Flags prefixed by a ! remove
@@ -2806,7 +2865,8 @@ PLAYER_FLAGS
 & PLAYER_LISTEN
 PLAYER_LISTEN
 
-  Config parameter: player_listen.  Default: no
+  CONFIG PARAMETER: player_listen
+  DEFAULT: no
 
   Indicates whether the Listen, Aahear, Ahear, and Amhear attributes on
   player objects are to be obeyed.
@@ -2814,7 +2874,8 @@ PLAYER_LISTEN
 & PLAYER_MATCH_OWN_COMMANDS
 PLAYER_MATCH_OWN_COMMANDS
 
-  Config parameter: player_match_own_commands <yes/no>.  Default: no
+  CONFIG PARAMETER: player_match_own_commands <yes/no>
+  DEFAULT: no
 
   Specifies whether or not players should check themselves for $-commands.
   This parameter is only checked if the match_own_commands parameter is
@@ -2825,14 +2886,16 @@ PLAYER_MATCH_OWN_COMMANDS
 & PLAYER_NAME_SPACES
 PLAYER_NAME_SPACES
 
-  Config parameter: player_name_spaces.  Default: yes
+  CONFIG PARAMETER: player_name_spaces
+  DEFAULT: yes
 
   Specifies whether or not player names are permitted to contain spaces.
 
 & PLAYER_QUEUE_LIMIT
 PLAYER_QUEUE_LIMIT
 
-  Config parameter: player_queue_limit.  Default: 100
+  CONFIG PARAMETER: player_queue_limit
+  DEFAULT: 100
 
   Sets the maximum number of commands that non-wizard players may have on the
   queue at one time.  An attempt to queue more commands than allowed will
@@ -2841,7 +2904,8 @@ PLAYER_QUEUE_LIMIT
 & PLAYER_QUOTA
 PLAYER_QUOTA
 
-  Config parameter: player_quota <amount>.  Default: 1
+  CONFIG PARAMETER: player_quota <amount>
+  DEFAULT: 1
 
   Sets how much quota it costs to create a robot player (and also how much the
   remaining quota is increased when a robot is @destroyed.
@@ -2851,7 +2915,8 @@ PLAYER_QUOTA
 & PLAYER_STARTING_HOME
 PLAYER_STARTING_HOME
 
-  Config parameter: player_starting_home.  Default: <player_starting_room>
+  CONFIG PARAMETER: player_starting_home
+  DEFAULT: <player_starting_room>
 
   Specifies the room to which the home of new players is set.  If this
   parameter has not been set, then the value of the player_starting_room
@@ -2862,7 +2927,8 @@ PLAYER_STARTING_HOME
 & PLAYER_STARTING_ROOM
 PLAYER_STARTING_ROOM
 
-  Config parameter: player_starting_room.  Default: 0
+  CONFIG PARAMETER: player_starting_room
+  DEFAULT: 0
 
   Specifies the room that new players start out in.  If the
   player_starting_home parameter has not been set, then player_starting_room
@@ -2870,14 +2936,19 @@ PLAYER_STARTING_ROOM
 
   Related Topics: player_starting_home, @pcreate, player_flags.
 
-& port
-  Config parameter: port <port>.  Default: 6250
+& PORT
+PORT
+
+  CONFIG PARAMETER: port <port>
+  DEFAULT: 2860
+
   Specifies the IP port on which the game listens for new connections.
 
 & POSTDUMP_MESSAGE
 POSTDUMP_MESSAGE
 
-  Config parameter: postdump_message <message>.  Default: blank
+  CONFIG PARAMETER: postdump_message <message>
+  DEFAULT: blank
 
   Sets the message that is sent to everyone after a database dump
   whether automatically or via the @dump command.
@@ -2887,7 +2958,8 @@ POSTDUMP_MESSAGE
 & PUBLIC_FLAGS
 PUBLIC_FLAGS
 
-  Config parameter: public_flags <yes/no>.  Default: yes
+  CONFIG PARAMETER: public_flags <yes/no>
+  DEFAULT: yes
 
   If enabled, indicates that players may get the flags of any object with the
   flags() function call.  Otherwise, they may only get the flags for objects
@@ -2898,7 +2970,8 @@ PUBLIC_FLAGS
 & PUBLIC_CHANNEL
 PUBLIC_CHANNEL
 
-  Config parameter: public_channel <name>. Default: Public
+  CONFIG PARAMETER: public_channel <name>
+  DEFAULT: Public
 
   Specifies the name of the channel that new players join when they are
   created. You must have previously created the channel. To disable this
@@ -2909,7 +2982,8 @@ PUBLIC_CHANNEL
 & QUEUE_ACTIVE_CHUNK
 QUEUE_ACTIVE_CHUNK
 
-  Config parameter: queue_active_chunk <num>.  Default: 0
+  CONFIG PARAMETER: queue_active_chunk <num>
+  DEFAULT: 0
 
   Specifies the number of commands to be run from the player queue when the
   check for network traffic indicates that there is data needing to be
@@ -2920,7 +2994,8 @@ QUEUE_ACTIVE_CHUNK
 & QUEUE_IDLE_CHUNK
 QUEUE_IDLE_CHUNK
 
-  Config parameter: queue_idle_chunk <num>.  Default: 3
+  CONFIG PARAMETER: queue_idle_chunk <num>
+  DEFAULT: 3
 
   Specifies the number of commands to be run from the player queue when the
   check for network traffic indicates that there is no data needing to be
@@ -2931,7 +3006,8 @@ QUEUE_IDLE_CHUNK
 & QUIET_LOOK
 QUIET_LOOK
 
-  Config parameter: quiet_look <yes/no>.  Default: yes
+  CONFIG PARAMETER: quiet_look <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not players are shown the attributes set on an object
   when they look at it.  Not recommended.
@@ -2939,7 +3015,8 @@ QUIET_LOOK
 & QUIET_WHISPER
 QUIET_WHISPER
 
-  Config parameter: quiet_whisper <yes/no>.  Default: yes
+  CONFIG PARAMETER: quiet_whisper <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not whispers are completely invisible except to the
   whispered-to player, or if a '<whisperer> whispers something to
@@ -2950,7 +3027,8 @@ QUIET_WHISPER
 & QUIET_FILE
 QUIET_FILE
 
-  Config parameter: quit_file <filename>.  Default: text/quit.txt
+  CONFIG PARAMETER: quit_file <filename>
+  DEFAULT: text/quit.txt
 
   Specifies the name of the file that is displayed to users after they QUIT
   but before the network connection is closed.
@@ -2960,7 +3038,8 @@ QUIET_FILE
 & QUOTAS
 QUOTAS
 
-  Config parameter: quotas <yes/no>.  Default: no
+  CONFIG PARAMETER: quotas <yes/no>
+  DEFAULT: no
 
   Indicates whether or not building quotas are enforced and maintained.
   Quotas are stored as a relative number, ie. number of objects that the
@@ -2974,7 +3053,8 @@ QUOTAS
 & READ_REMOTE_DESC
 READ_REMOTE_DESC
 
-  Config parameter: read_remote_desc <yes/no>.  Default: no
+  CONFIG PARAMETER: read_remote_desc <yes/no>
+  DEFAULT: no
 
   Indicates whether or not the descriptions of faraway objects are available
   to players that don't control them via the examine command and get()
@@ -2985,7 +3065,8 @@ READ_REMOTE_DESC
 & READ_REMOTE_NAME
 READ_REMOTE_NAME
 
-  Config parameter: read_remote_name <yes/no>.  Default: no
+  CONFIG PARAMETER: read_remote_name <yes/no>
+  DEFAULT: no
 
   Indicates whether or not the names of faraway objects are available
   to players that don't control them via the examine command and get()
@@ -2996,8 +3077,8 @@ READ_REMOTE_NAME
 & REGISTER_CREATE_FILE
 REGISTER_CREATE_FILE
 
-  Config parameter: register_create_file <filename>.
-  Default: text/create_reg.txt
+  CONFIG PARAMETER: register_create_file <filename>
+  DEFAULT: text/create_reg.txt
 
   Specifies the name of the file that is shown to players who attempt to
   create a new character when registration is in force from their site.
@@ -3007,17 +3088,19 @@ REGISTER_CREATE_FILE
 & REGISTER_SITE
 REGISTER_SITE
 
-  Config parameter: register_site <addr> <mask>.
+  CONFIG PARAMETER: register_site <site>
 
   Indicates that registration is to be enforced for sites whose address
-  matches the specified address when ANDed with the mask.
+  matches the specified <site>.
 
-  Related Topics: forbid_site, permit_site, REGISTRATION, SITE LISTS.
+  Related Topics: forbid_site, permit_site, REGISTRATION, SITE LISTS,
+                  SITE NOTATION.
 
 & RETRY_LIMIT
 RETRY_LIMIT
 
-  Config paramater: retry_limit <count>.  Default: 3
+  CONFIG PARAMETER: retry_limit <count>
+  DEFAULT: 3
 
   Specifies the number of times that a user is allowed to try to connect to
   an existing player before being disconnected.
@@ -3027,7 +3110,8 @@ RETRY_LIMIT
 & ROBOT_COST
 ROBOT_COST
 
-  Config paramater: robot_cost <amount>.  Default: 1000
+  CONFIG PARAMETER: robot_cost <amount>
+  DEFAULT: 1000
 
   Specifies the cost of using the @robot command to create a robot.
 
@@ -3036,7 +3120,8 @@ ROBOT_COST
 & ROBOT_FLAGS
 ROBOT_FLAGS
 
-  Config parameter: robot_flags <flags>.  Default: ROBOT
+  CONFIG PARAMETER: robot_flags <flags>
+  DEFAULT: ROBOT
 
   Modifies the set of flags that a robot receives when it is created via
   the @robot command.  Flags prefixed by a ! remove the indicated flag from
@@ -3047,7 +3132,8 @@ ROBOT_FLAGS
 & ROBOT_SPEECH
 ROBOT_SPEECH
 
-  Config parameter: robot_speech: <yes/no>.  Default: yes
+  CONFIG PARAMETER: robot_speech: <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not robot characters are allowed to use the speech,
   pose, and emit commands in areas not controlled by their owner.
@@ -3057,7 +3143,8 @@ ROBOT_SPEECH
 & ROOM_FLAGS
 ROOM_FLAGS
 
-  Config parameter: room_flags <flags>.  Default: blank
+  CONFIG PARAMETER: room_flags <flags>
+  DEFAULT: blank
 
   Modifies the set of flags that a room receives when it is @dug.
   Flags prefixed by a ! remove the indicated flag from the set.
@@ -3067,7 +3154,8 @@ ROOM_FLAGS
 & ROOM_QUOTA
 ROOM_QUOTA
 
-  Config parameter: room_quota <amount>.  Default: 1
+  CONFIG PARAMETER: room_quota <amount>
+  DEFAULT: 1
 
   Sets how much quota it costs to dig a room (and also how much the
   remaining quota is increased when a room is @destroyed.
@@ -3077,7 +3165,8 @@ ROOM_QUOTA
 & RUN_STARTUP
 RUN_STARTUP
 
-  Config parameter: run_startup.  Default: Yes
+  CONFIG PARAMETER: run_startup
+  DEFAULT: Yes
 
   Controls whether the @startup attribute is automatically executed at
   database load time.
@@ -3085,7 +3174,8 @@ RUN_STARTUP
 & SACRIFICE_ADJUST
 SACRIFICE_ADJUST
 
-  Config parameter: sacrifice_adjust <amount>.  Default -1.
+  CONFIG PARAMETER: sacrifice_adjust <amount>
+  DEFAULT: -1
 
   This parameter is part of the formula that is used to determine an object's
   value given the amount spent on its creation.  The formula is:
@@ -3100,7 +3190,8 @@ SACRIFICE_ADJUST
 & SACRIFICE_FACTOR
 SACRIFICE_FACTOR
 
-  Config parameter: sacrifice_factor <amount>.  Default 5.
+  CONFIG PARAMETER: sacrifice_factor <amount>
+  DEFAULT: 5
 
   This parameter is part of the formula that is used to determine an object's
   value given the amount spent on its creation.  The formula is:
@@ -3115,14 +3206,16 @@ SACRIFICE_FACTOR
 & SAFE_WIPE
 SAFE_WIPE
 
-  Config parameter: safe_wipe [yes/no].  Default: No
+  CONFIG PARAMETER: safe_wipe [yes/no]
+  DEFAULT: No
 
   Is @wipe disallowed for SAFE-marked objects?
 
 & SAFER_PASSWORDS
 SAFER_PASSWORDS
 
-  Config parameter: safer_passwords [yes/no].  Default: No
+  CONFIG PARAMETER: safer_passwords [yes/no]
+  DEFAULT: No
 
   Normally, nearly any password is accepted, but if this
   configuration option is enabled, passwords must contain
@@ -3132,7 +3225,8 @@ SAFER_PASSWORDS
 & SEARCH_COST
 SEARCH_COST
 
-  Config parameter: search_cost <amount>.  Default: 100
+  CONFIG PARAMETER: search_cost <amount>
+  DEFAULT: 100
 
   Specifies how much commands that scan the entire database (such as @find,
   @search, and stats with a playername) cost.
@@ -3142,7 +3236,8 @@ SEARCH_COST
 & SEE_OWNED_DARK
 SEE_OWNED_DARK
 
-  Config parameters: see_owned_dark <yes/no>.  Default: yes
+  CONFIG PARAMETERS: see_owned_dark <yes/no>
+  DEFAULT: yes
 
   Specifies whether or not players see their own DARK objects when they
   look at a room.  It does not affect the inventory or examine commands,
@@ -3151,7 +3246,8 @@ SEE_OWNED_DARK
 & SIGNAL_ACTION
 SIGNAL_ACTION
 
-  Config parameter: signal_action <default|exit>.  Default: default
+  CONFIG PARAMETER: signal_action <default|exit>
+  DEFAULT: default
 
   Specifies what action to take when a fatal signal is received.  The
   possibilities are:
@@ -3164,7 +3260,8 @@ SIGNAL_ACTION
 & SITE_CHARS
 SITE_CHARS
 
-  Config parameter: site_chars <number>:  Default: 25.
+  CONFIG PARAMETER: site_chars <number>
+  DEFAULT: 25
 
   Specifies the length of the hostname that is shown in a wizard WHO
   listing. If <number> is 0, then the hostname will be shown in full.
@@ -3172,7 +3269,8 @@ SITE_CHARS
 & SPACE_COMPRESS
 SPACE_COMPRESS
 
-  Config parameter: space_compress <yes/no>.  Default: yes
+  CONFIG PARAMETER: space_compress <yes/no>
+  DEFAULT: yes
 
   Specifies whether or not extra spaces are to be removed from user input
   as it is processed.  If enabled, multiple spaces are compressed to a single
@@ -3181,7 +3279,8 @@ SPACE_COMPRESS
 & STACK_LIMIT
 STACK_LIMIT
 
-  Config parameter: stack_limit <number>.  Default: 50.
+  CONFIG PARAMETER: stack_limit <number>
+  DEFAULT: 50
 
   The number of items that are allowed on an object's stack. You should be
   sparse with this parameter, as stack items are retained until they are
@@ -3190,7 +3289,8 @@ STACK_LIMIT
 & STARTING_MONEY
 STARTING_MONEY
 
-  Config parameter: starting_money <amount>.  Default: 0
+  CONFIG PARAMETER: starting_money <amount>
+  DEFAULT: 0
 
   Sets the amount of money that new players start out with.
 
@@ -3199,7 +3299,8 @@ STARTING_MONEY
 & STARTING_QUOTA
 STARTING_QUOTA
 
-  Config parameter: starting_quota <amount>.  Default: 20
+  CONFIG PARAMETER: starting_quota <amount>
+  DEFAULT: 20
 
   Sets the building quota that players receive when they are created, whether
   by @pcreate or the connection screen.
@@ -3209,7 +3310,8 @@ STARTING_QUOTA
 & STATUS_FILE
 STATUS_FILE
 
-  Config parameter: status_file <filename>.  Default: shutdown.status
+  CONFIG PARAMETER: status_file <filename>
+  DEFAULT: shutdown.status
 
   If you give an argument to the @shutdown command, that argument is written
   out to the file named by this directive.  The file can be used by an
@@ -3219,18 +3321,19 @@ STATUS_FILE
 & SUSPECT_FILE
 SUSPECT_FILE
 
-  Config parameter: suspect_site <addr> <mask>.
+  CONFIG PARAMETER: suspect_site <site>
 
-  Indicates that sites whose address matches the specified address when ANDed
-  with the mask are to be considered suspect, and any player creates, connects
-  and disconnects are to be reported to all logged-in wizards.
+  Indicates that sites whose address matches the specified <site> are to be
+  considered suspect, and any player creates, connects and disconnects are to
+  be reported to all logged-in wizards.
 
-  Related Topics: trust_site, SITE LISTS.
+  Related Topics: trust_site, SITE LISTS, SITE NOTATION.
 
 & SWEEP_DARK
 SWEEP_DARK
 
-  Config parameter: sweep_dark <yes/no>.  Default: no
+  CONFIG PARAMETER: sweep_dark <yes/no>
+  DEFAULT: no
 
   Indicates whether or not players are allowed to @sweep dark places they do not
   control.
@@ -3240,7 +3343,8 @@ SWEEP_DARK
 & SWITCH_DEFAULT_ALL
 SWITCH_DEFAULT_ALL
 
-  Config parameter: switch_default_all <yes/no>.  Default: yes
+  CONFIG PARAMETER: switch_default_all <yes/no>
+  DEFAULT: yes
 
   Indicates whether the @switch command should perform the commands for all
   targets that match or just the first one that matches if you don't specify
@@ -3249,7 +3353,8 @@ SWITCH_DEFAULT_ALL
 & TERSE_SHOWS_CONTENTS
 TERSE_SHOWS_CONTENTS
 
-  Config parameter: terse_shows_contents <yes/no>.  Default yes
+  CONFIG PARAMETER: terse_shows_contents <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not to suppress the listing of a location's contents
   when producing TERSE output (whether from an automatic look or a 'real'
@@ -3261,7 +3366,8 @@ TERSE_SHOWS_CONTENTS
 & TERSE_SHOWS_CONTENTS
 TERSE_SHOWS_CONTENTS
 
-  Config parameter: terse_shows_contents <yes/no>.  Default yes
+  CONFIG PARAMETER: terse_shows_contents <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not to suppress the listing of a location's contents
   when producing TERSE output (whether from an automatic look or a 'real'
@@ -3273,7 +3379,8 @@ TERSE_SHOWS_CONTENTS
 & TERSE_SHOWS_EXITS
 TERSE_SHOWS_EXITS
 
-  Config parameter: terse_shows_exits <yes/no>.  Default yes
+  CONFIG PARAMETER: terse_shows_exits <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not to suppress the listing of a location's obvious
   exits when producing TERSE output (whether from an automatic look or a
@@ -3285,7 +3392,8 @@ TERSE_SHOWS_EXITS
 & TERSE_SHOWS_MOVE_MESSAGES
 TERSE_SHOWS_MOVE_MESSAGES
 
-  Config parameter: terse_shows_move_messages <yes/no>.  Default yes
+  CONFIG PARAMETER: terse_shows_move_messages <yes/no>
+  DEFAULT: yes
 
   Indicates whether or not to suppress messages related to moving about
   produced by locations and exits.  These messages are the ENTER and LEAVE
@@ -3298,7 +3406,8 @@ TERSE_SHOWS_MOVE_MESSAGES
 & THING_FLAGS
 THING_FLAGS
 
-  Config parameter: thing_flags <flags>.  Default: blank
+  CONFIG PARAMETER: thing_flags <flags>.
+  DEFAULT: blank
 
   Modifies the set of flags that a thing receives when it is @created.
   Flags prefixed by a ! remove the indicated flag from the set.
@@ -3308,7 +3417,8 @@ THING_FLAGS
 & THING_QUOTA
 THING_QUOTA
 
-  Config parameter: thing_quota <amount>.  Default: 1
+  CONFIG PARAMETER: thing_quota <amount>
+  DEFAULT: 1
 
   Sets how much quota it costs to create a thing (and also how much the
   remaining quota is increased when a thing is @destroyed.
@@ -3318,7 +3428,8 @@ THING_QUOTA
 & TIMESLICE
 TIMESLICE
 
-  Config parameter: timeslice <amount>.  Default: 1000
+  CONFIG PARAMETER: timeslice <amount>
+  DEFAULT: 1000
 
   Specifies the interval at which connected users' command quotas are
   increased.  Each command a user types in (commands executed by machines do
@@ -3366,7 +3477,8 @@ TOAD_RECIPIENT
 & TRACE_OUTPUT_LIMIT
 TRACE_OUTPUT_LIMIT
 
-  Config parameter: trace_output_limit <amount>.  Default: 200
+  CONFIG PARAMETER: trace_output_limit <amount>
+  DEFAULT: 200
 
   Specifies the maximum number of lines of trace output that will be displayed
   when using top-down format.  Bottom-up format output is not affected by this
@@ -3385,7 +3497,8 @@ TRACE_OUTPUT_LIMIT
 & TRACE_TOPDOWN
 TRACE_TOPDOWN
 
-  Config parameter: trace_topdown <yes/no>.  Default: yes
+  CONFIG PARAMETER: trace_topdown <yes/no>
+  DEFAULT: yes
 
   Specifies whether TRACE output is displayed top-down (complete evaluation
   shown first, followed by sub-evaluations), or bottom-up (sub-evaluations
@@ -3394,12 +3507,12 @@ TRACE_TOPDOWN
 & TRUST_SITE
 TRUST_SITE
 
-  Config parameter: trust_site <addr> <mask>.
+  CONFIG PARAMETER: trust_site <site>
 
-  Indicates that sites whose address matches the specified address when ANDed
-  with the mask are not to be considered suspect.
+  Indicates that sites whose address matches the specified <site> are not to
+  be considered suspect.
 
-  Related Topics: suspect_site, SITE LISTS.
+  Related Topics: suspect_site, SITE LISTS, SITE NOTATION.
 
 & UNCOMPRESS_PROGRAM
 UNCOMPRESS_PROGRAM
