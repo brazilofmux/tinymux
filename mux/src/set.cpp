@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.6 2002-06-12 16:43:57 jake Exp $
+// $Id: set.cpp,v 1.7 2002-06-12 18:04:44 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -405,8 +405,6 @@ void do_forwardlist
 
     if (!Controls(executor, thing))
     {
-        notify_quiet(executor, (char *)executor);
-        notify_quiet(executor, (char *)thing);
         notify_quiet(executor, NOPERM_MESSAGE);
         return;
     }
