@@ -2232,6 +2232,12 @@ ARTICLE_RULE
   remaining quota is increased when a room is @destroyed.
   See also: @quota, exit_quota, player_quota, thing_quota, QUOTAS.
 
+& run_startup
+  Config parameter: run_startup.  Default: Yes
+
+  Controls whether the @startup attribute is automatically executed at
+  database load time.
+
 & sacrifice_adjust
   Config parameter: sacrifice_adjust <amount>.  Default -1.
   This parameter is part of the formula that is used to determine an object's
