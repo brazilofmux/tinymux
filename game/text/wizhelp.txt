@@ -222,17 +222,23 @@
   are permanent and do not need to be performed each time the MUX is
   restarted.
  
-& @boot
-  Command: @boot[/<switches>] <player>
+& @BOOT
+@BOOT
+
+  COMMAND: @boot[/quiet] <player>
+           @boot/port <port#>
+
   Severs the named player's connection to the game.  The player is given a
   notice that they have been booted.  If the player is connected to the game
   more than once, then all connections to that player are severed.
- 
+
   The following switches are available:
+
     /quiet - Don't give the booted player any special notice.
-    /port  - Disconnects only a specific port (port numbers may be obtained
-             from the SESSION command).  In this case <player> must be a
-             number.
+
+    /port  - Disconnects only a specific port.  In this case, <port#> must
+             be the port number obtained from the SESSION command.
+
   See also: @destroy, @toad, SESSION.
 
 & @chown
