@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.28 2002-08-11 21:46:51 jake Exp $
+// $Id: netcommon.cpp,v 1.29 2002-09-06 20:47:24 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2019,7 +2019,6 @@ BOOL do_command(DESC *d, char *command)
 {
     char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< do_command >";
-    d->last_time = mudstate.now;
 
     // Split off the command from the arguments.
     //
@@ -2301,6 +2300,7 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                     d->input_tail = NULL;
                 }
                 d->input_size -= (strlen(t->cmd) + 1);
+                d->last_time = mudstate.now;
                 if (d->program_data != NULL)
                     handle_prog(d, t->cmd);
                 else
