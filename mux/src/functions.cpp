@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.54 2003-02-17 02:57:10 sdennis Exp $
+// $Id: functions.cpp,v 1.55 2003-02-17 03:05:55 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -406,7 +406,7 @@ static int get_list_type
 {
     if (nfargs >= type_pos)
     {
-        switch (mux_tolower[(unsigned char)*fargs[type_pos - 1]])
+        switch (mux_tolower(*fargs[type_pos - 1]))
         {
         case 'd':
             return DBREF_LIST;
@@ -3580,7 +3580,7 @@ FUNCTION(fun_e)
 
 static double ConvertRDG2R(double d, const char *szUnits)
 {
-    switch (mux_tolower[(unsigned char)szUnits[0]])
+    switch (mux_tolower(szUnits[0]))
     {
     case 'd':
         // Degrees to Radians.
@@ -3599,7 +3599,7 @@ static double ConvertRDG2R(double d, const char *szUnits)
 
 static double ConvertR2RDG(double d, const char *szUnits)
 {
-    switch (mux_tolower[(unsigned char)szUnits[0]])
+    switch (mux_tolower(szUnits[0]))
     {
     case 'd':
         // Radians to Degrees.
@@ -7575,7 +7575,7 @@ FUNCTION(fun_trim)
     varargs_preamble(3);
     if (nfargs >= 2)
     {
-        switch (mux_tolower[(unsigned char)*fargs[1]])
+        switch (mux_tolower(*fargs[1]))
         {
         case 'l':
             trim = 1;

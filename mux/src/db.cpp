@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.26 2003-02-17 02:57:10 sdennis Exp $
+// $Id: db.cpp,v 1.27 2003-02-17 03:05:55 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1002,7 +1002,7 @@ char *MakeCanonicalAttributeCommand(const char *pName, int *pnName, bool *pbVali
     *p++ = '@';
     while (*pName && nLeft)
     {
-        *p = mux_tolower[(unsigned char)*pName];
+        *p = mux_tolower(*pName);
         p++;
         pName++;
         nLeft--;

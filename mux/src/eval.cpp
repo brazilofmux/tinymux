@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.15 2003-02-17 02:57:10 sdennis Exp $
+// $Id: eval.cpp,v 1.16 2003-02-17 03:05:55 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -831,7 +831,7 @@ int get_gender(dbref player)
     char *atr_gotten = atr_pget(player, A_SEX, &aowner, &aflags);
     char first = atr_gotten[0];
     free_lbuf(atr_gotten);
-    switch (mux_tolower[(unsigned char)first])
+    switch (mux_tolower(first))
     {
     case 'p':
         return 4;
@@ -1220,7 +1220,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             char *p2 = mux_scratch;
             for (char *p = oldp; p <= pEnd; p++)
             {
-                *p2++ = mux_tolower[(unsigned char)*p];
+                *p2++ = mux_tolower(*p);
             }
             *p2 = '\0';
 

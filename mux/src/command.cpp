@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.19 2003-02-17 02:26:23 sdennis Exp $
+// $Id: command.cpp,v 1.20 2003-02-17 03:05:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1848,7 +1848,7 @@ char *process_command
          *p && !mux_isspace(*p);
          p++, q++)
     {
-        *q = mux_tolower[(unsigned char)*p];
+        *q = mux_tolower(*p);
     }
     *q = '\0';
     int nLowerCaseCommand = q - LowerCaseCommand;
@@ -3824,7 +3824,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
         pt2 = buff1;
         while (*pt1)
         {
-            *pt2++ = mux_tolower[(unsigned char)*pt1++];
+            *pt2++ = mux_tolower(*pt1++);
         }
         *pt2 = '\0';
         if (  buff1[0] == '!' 
@@ -4368,7 +4368,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                 *p++ = '@';
                 for (q = (char *) ap->name; *q; p++, q++)
                 {
-                    *p = mux_tolower[(unsigned char)*q];
+                    *p = mux_tolower(*q);
                 }
                 *p = '\0';
                 cmdp = (CMDENT *)hashfindLEN(cbuff, strlen(cbuff), &mudstate.command_htab);

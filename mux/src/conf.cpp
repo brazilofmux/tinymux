@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.20 2003-02-17 02:26:23 sdennis Exp $
+// $Id: conf.cpp,v 1.21 2003-02-17 03:05:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -931,7 +931,7 @@ static bool DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
     in_addr_t ul2;
     if (  len >= 3
        && p[0] == '0'
-       && mux_tolower[(unsigned char)p[1]] == 'x')
+       && mux_tolower(p[1]) == 'x')
     {
         // Hexadecimal Path
         //
@@ -950,7 +950,7 @@ static bool DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
         }
         while (len)
         {
-            unsigned char ch = mux_tolower[(unsigned char)*p];
+            unsigned char ch = mux_tolower(*p);
             ul2 = ul;
             ul  = (ul << 4) & 0xFFFFFFFFUL;
             if (ul < ul2)
