@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.117 2004-08-25 21:27:35 sdennis Exp $
+// $Id: functions.cpp,v 1.118 2004-09-10 21:58:39 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -7223,26 +7223,31 @@ FUNCTION(fun_locate)
 
 FUNCTION(fun_switch)
 {
-    int i;
-    char *mbuff, *tbuff, *bp;
-
     // Evaluate the target in fargs[0].
     //
-    mbuff = bp = alloc_lbuf("fun_switch");
+    char *mbuff = alloc_lbuf("fun_switch");
+    char *bp = mbuff;
     char *str = fargs[0];
     mux_exec(mbuff, &bp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
+    char *tbuff = alloc_lbuf("fun_switch.2");
+
     // Loop through the patterns looking for a match.
     //
-    for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1] && !MuxAlarm.bAlarmed; i += 2)
+    int i;
+    for (i = 1;  i < nfargs-1
+              && fargs[i]
+              && fargs[i+1]
+              && !MuxAlarm.bAlarmed; i += 2)
     {
-        tbuff = bp = alloc_lbuf("fun_switch.2");
+        bp = tbuff;
         str = fargs[i];
         mux_exec(tbuff, &bp, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
+
         if (wild_match(tbuff, mbuff))
         {
             free_lbuf(tbuff);
@@ -7254,8 +7259,9 @@ FUNCTION(fun_switch)
             free_lbuf(tbuff);
             return;
         }
-        free_lbuf(tbuff);
     }
+
+    free_lbuf(tbuff);
 
     // Nope, return the default if there is one.
     //
@@ -7273,40 +7279,57 @@ FUNCTION(fun_switch)
 
 FUNCTION(fun_case)
 {
-    int i;
-    char *mbuff, *bp, *str;
-
     // Evaluate the target in fargs[0]
     //
-    mbuff = bp = alloc_lbuf("fun_case");
-    str = fargs[0];
+    char *mbuff = alloc_lbuf("fun_case");
+    char *bp = mbuff;
+    char *str = fargs[0];
     mux_exec(mbuff, &bp, executor, caller, enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
+    char *tbuff = alloc_lbuf("fun_case.2");
+
     // Loop through the patterns looking for a match.
     //
-    for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1] && !MuxAlarm.bAlarmed; i += 2)
+    int i;
+    for (i = 1;  i < nfargs-1
+              && fargs[i]
+              && fargs[i+1]
+              && !MuxAlarm.bAlarmed; i += 2)
     {
-        if (!string_compare(fargs[i], mbuff))
+        bp = tbuff;
+        str = fargs[i];
+        mux_exec(tbuff, &bp, executor, caller, enactor,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        *bp = '\0';
+
+        if (!string_compare(tbuff, mbuff))
         {
-            str = fargs[i+1];
-            mux_exec(buff, bufc, executor, caller, enactor,
-                     EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            free_lbuf(tbuff);
+            tbuff = replace_tokens(fargs[i+1], NULL, NULL, mbuff);
             free_lbuf(mbuff);
+            str = tbuff;
+            mux_exec(buff, bufc, executor, caller, enactor,
+                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            free_lbuf(tbuff);
             return;
         }
     }
-    free_lbuf(mbuff);
+    free_lbuf(tbuff);
 
     // Nope, return the default if there is one.
     //
-    if ((i < nfargs) && fargs[i])
+    if (  i < nfargs
+       && fargs[i])
     {
-        str = fargs[i];
+        tbuff = replace_tokens(fargs[i], NULL, NULL, mbuff);
+        str = tbuff;
         mux_exec(buff, bufc, executor, caller, enactor,
-                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        free_lbuf(tbuff);
     }
+    free_lbuf(mbuff);
 }
 
 /*
