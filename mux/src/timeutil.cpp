@@ -1,22 +1,15 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.9 2002-12-16 00:21:27 sdennis Exp $
+// $Id: timeutil.cpp,v 1.10 2003-01-05 18:08:59 sdennis Exp $
+//
+// MUX 2.2
+// Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
+// rights not explicitly given are reserved.  
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
 //
-// do_convtime() is heavily modified from previous game server code.
-//
-// MUX 2.1
-// Copyright (C) 1998 through 2002 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved. Permission is given to
-// use this code for building and hosting text-based game servers.
-// Permission is given to use this code for other non-commercial
-// purposes. To use this code for commercial purposes other than
-// building/hosting text-based game servers, contact the author at
-// Stephen Dennis <sdennis@svdltd.com> for another license.
-//
-
+#include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 

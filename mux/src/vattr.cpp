@@ -1,12 +1,11 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.11 2003-01-05 17:49:34 sdennis Exp $
+// $Id: vattr.cpp,v 1.12 2003-01-05 18:08:59 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved.  
 //
-
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

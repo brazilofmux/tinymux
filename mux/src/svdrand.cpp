@@ -1,20 +1,14 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.4 2002-09-23 21:10:14 sdennis Exp $
+// $Id: svdrand.cpp,v 1.5 2003-01-05 18:08:59 sdennis Exp $
+//
+// MUX 2.2
+// Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
+// rights not explicitly given are reserved.  
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
-// RandomINT32() was derived from existing game server code.
-//
-// MUX 2.1
-// Copyright (C) 1998 through 2002 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved. Permission is given to
-// use this code for building and hosting text-based game servers.
-// Permission is given to use this code for other non-commercial
-// purposes. To use this code for commercial purposes other than
-// building/hosting text-based game servers, contact the author at
-// Stephen Dennis <sdennis@svdltd.com> for another license.
-//
+#include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 

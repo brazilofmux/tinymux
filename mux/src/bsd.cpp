@@ -1,18 +1,10 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.22 2002-12-16 09:01:01 sdennis Exp $
+// $Id: bsd.cpp,v 1.23 2003-01-05 18:08:22 sdennis Exp $
 //
-// MUX 2.1
-// Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
-// prototype. Portions are original work.
-//
-// Copyright (C) 1998 through 2002 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved. Permission is given to
-// use this code for building and hosting text-based game servers.
-// Permission is given to use this code for other non-commercial
-// purposes. To use this code for commercial purposes other than
-// building/hosting text-based game servers, contact the author at
-// Stephen Dennis <sdennis@svdltd.com> for another license.
+// MUX 2.2
+// Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
+// rights not explicitly given are reserved.  
 //
 #include "copyright.h"
 #include "autoconf.h"
