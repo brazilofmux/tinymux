@@ -1,6 +1,6 @@
 // flags.cpp - flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.11 2001-06-28 10:53:12 sdennis Exp $
+// $Id: flags.cpp,v 1.12 2002-02-07 07:49:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -611,7 +611,7 @@ char *decode_flags(dbref player, FLAG flagword, FLAG flag2word, FLAG flag3word)
 
             // Don't show CONNECT on dark wizards to mortals
             //
-            if (  isPlayer(player)
+            if (  flagtype == TYPE_PLAYER
                && (fp->flagvalue == CONNECTED)
                && (fp->flagflag & FLAG_WORD2)
                && ((flagword & (WIZARD | DARK)) == (WIZARD | DARK))
