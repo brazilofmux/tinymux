@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.72 2004-03-12 19:45:05 sdennis Exp $
+// $Id: functions.cpp,v 1.73 2004-03-18 19:09:32 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -69,6 +69,7 @@ XFUNCTION(fun_entrances);
 XFUNCTION(fun_findable);
 XFUNCTION(fun_foreach);
 XFUNCTION(fun_grab);
+XFUNCTION(fun_graball);
 XFUNCTION(fun_grep);
 XFUNCTION(fun_grepi);
 XFUNCTION(fun_hasattr);
@@ -9210,6 +9211,7 @@ FUN flist[] =
     {"GET",         fun_get,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"GET_EVAL",    fun_get_eval,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"GRAB",        fun_grab,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {"GRABALL",     fun_graball,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"GREP",        fun_grep,       MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {"GREPI",       fun_grepi,      MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {"GT",          fun_gt,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
