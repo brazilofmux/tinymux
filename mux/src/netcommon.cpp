@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.39 2004-06-01 01:08:59 sdennis Exp $
+// $Id: netcommon.cpp,v 1.40 2004-06-10 14:47:14 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1304,14 +1304,14 @@ static const char *trimmed_name(dbref player, int *pvw)
 {
     static char cbuff[MBUF_SIZE];
 
-    size_t nName = ANSI_TruncateToField(
-                     Moniker(player),
-                     sizeof(cbuff),
-                     cbuff,
-                     MAX_TRIMMED_NAME_LENGTH,
-                     pvw,
-                     ANSI_ENDGOAL_NORMAL
-                  );
+    ANSI_TruncateToField(
+        Moniker(player),
+        sizeof(cbuff),
+        cbuff,
+        MAX_TRIMMED_NAME_LENGTH,
+        pvw,
+        ANSI_ENDGOAL_NORMAL
+    );
     return cbuff;
 }
 
