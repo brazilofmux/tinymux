@@ -7,7 +7,8 @@ PATH=/usr/ucb:/bin:/usr/bin:.; export PATH
 . mux.config
 #
 #	Make sure there isn't already a MUX running.
-#
+#       (If you are running more than 1 game, comment the following 4 
+#        lines out)
 nmux=`ps ux | egrep netmux | wc -l`
 if [ $nmux -gt 1 ]; then
 	exit 0

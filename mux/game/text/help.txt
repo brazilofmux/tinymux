@@ -1,7 +1,7 @@
 & HELP
 HELP
 
-  This is the MUX online help facility.
+  This is the AlloyMUX online help facility.
 
      Notes on help descriptions:
         [text] - Text enclosed in []'s is optional.  The []'s are never typed
@@ -12,7 +12,7 @@ HELP
   -  Syntax of help command:
        help [<command>]
 
-  -  To get a list of MUX topics:
+  -  To get a list of AlloyMUX topics:
        help topics
 
   -  To get a list of Comsystem commands:
@@ -632,7 +632,7 @@ Related Topics: @name.
   displaying '3rd'.
 
   If you follow that, you have a very good understanding of the
-  TinyMUX queue. :)
+  AlloyMUX queue. :)
 
   Related Topics: BOOLEAN VALUES
 
@@ -4055,7 +4055,7 @@ ART()
   right, but it makes a good guess most of the time.
 
   Example:
-    > say art(TinyMUX)
+    > say art(AlloyMUX)
     You say "a"
     > say art(umbrella)
     You say "an"
@@ -5290,11 +5290,12 @@ CREATE()
 
   Topic: CREDITS
 
-TinyMUX 2.1 is based on TinyMUX 2.0. It is currently maintained by
-Stephen Dennis (AKA Brazil). There is a more complete list of credits
-in the README files for the server itself.
+AlloyMUX 2.2 is based on TinyMUX 2.x. It is currently maintained by
+William Hill (whill2@users.sourceforge.net). There is a more complete list 
+of credits in the README files for the server itself.
 
-See http://www.tinymux.com for an on-line version of these README files.
+See http://alloymux.sourceforge.net for an on-line version of these README 
+files.
  
 & CTIME()
 CTIME()

@@ -11,7 +11,11 @@ Index
   +where         +who           @register      BACKGROUNDS    CREDITS        
   mutter         OOC            PLACES         places-config  places-options 
   plook
+
+  Local additions:
   
+  bboard
+
   To get help on any of the listed topics, type '+help <topic>'
 -----------------------------------------------------------------------------
 
@@ -566,3 +570,296 @@ Setting views:
   by location and does not show DARK, UNFINDABLE, or those in UNFINDABLE 
   locations.
 -----------------------------------------------------------------------------
+
+& bboard
+==============================================================================
+                Commands for Myrddin's Bulletin Board 4.0.6
+------------------------------------------------------------------------------
+     Requiem's BBS is a global, multi-threaded board with a rich set of
+     features. To see help on a particular topic, type '+help <topic>'
+     (Example: +help bbread).
+  
+     TOPIC                 DESCRIPTION
+     ~~~~~                 ~~~~~~~~~~~
+     bbread                Reading bulletin board messages.
+     bbpost                Posting bulletin board messages.
+     bbmisc                Other commands (removing messages, unsubscribing
+                             groups, resubscribing to groups, etc)
+  
+     bbtimeout             Expanded help on the topic of message timeouts.
+==============================================================================
+
+& bbread
+==============================================================================
+                  Commands for Myrddin's Bulletin Board 4.0.6
+------------------------------------------------------------------------------
+     +bbread                         Scans joined bulletin board groups.
+     +bbread <#>                     Scans messages in group <#>.
+     +bbread <#>/<list>              Reads message(s). <list> can be a single
+                                        number, multiple numbers, or a range
+                                        of numbers (ie. 1-6), or any combo.
+     +bbread <#>/u                   Reads all unread messages in group <#>.
+     +bbcatchup <#>                  Marks all messages in group <#> as read.
+                                        You can use multiple group #'s/names
+                                        or may use the word 'all' to catchup
+                                        on all messages on all boards.
+  
+     +bbscan        Totals unread postings (if any) in each joined group. You
+                    can place this command in your @aconnect, and it's
+                    recommended you do so.
+  
+Note: You can use the boards name (or abbreviation) in place of it's number.
+------------------------------------------------------------------------------
+See also: +help bbpost, +help bbmisc
+==============================================================================
+
+& bbpost
+==============================================================================
+                  Commands for Myrddin's Bulletin Board 4.0.6
+------------------------------------------------------------------------------
+     +bbpost <#>/<title>             This starts a post to group <#>.
+     +bbwrite <text>                 This adds text to an already started post.
+     +bb <text>                      Same as +bbwrite.
+     +bbedit <area>=<old>/<new>      Edits your post in progress. Valid areas
+                                       are: text, title
+     +bbproof                        Displays your current post in progress.
+     +bbtoss                         Discards your current post in progress.
+     +bbpost                         This will post your current post in
+                                       progress.
+  
+     +bbpost <#>/<subject>=<body>    Posts a message to group <#>. This is a
+                                       quick way of posting a message with
+                                       one command.
+     +bbedit <#>/<#>=<old>/<new>     Edits one of your posted messages.
+  
+Note: You can use the boards name (or abbreviation) in place of it's number.
+------------------------------------------------------------------------------
+See also: +help bbread, +help bbmisc
+==============================================================================
+
+& bbmisc
+==============================================================================
+                  Commands for Myrddin's Bulletin Board 4.0.6
+------------------------------------------------------------------------------
+     +bbremove <#>/<list>            Removes a message by you. <list> can be a
+                                       single number, a group of numbers, or a
+                                       range (10-14).
+     +bbmove <#>/<#> to <#>          Moves one of your messages to a new group.
+     +bbleave <#>                    Unsubscribe from group <#>.
+     +bbjoin <#>                     Joins a group you've previously 'left'.
+     +bblist                         Listing of all groups available to you
+                                       along with their timeout values.
+     +bbsearch <#>/<name>            Shows you a list of <name>'s postings on
+                                       group <#>.
+     +bbtimeout <#>/<#>=<days>       Changes timeout for a message to <days>.
+     +bbnotify <#>=<on|off>          Turn post notification for group <#> on
+                                       or off.
+  
+  
+For a '.sig', set an attribute on you called BB_SIG, and place your
+signature in that.
+  
+Note: You can use the board's name (or abbreviation) in place of its number.
+------------------------------------------------------------------------------
+See also: +help bbread, +help bbpost, +help bbtimeout, +help bbchanges
+==============================================================================
+
+& bbtimeout
+==============================================================================
+   Expanded Help on Message Timeouts for Myrddin's Bulletin Board (1 of 2)
+------------------------------------------------------------------------------
+There's only a couple of things that need to be understood in order to take
+full advantage of message timeouts.
+  
+1: Once a day, the TR_TIMEOUT attribute on the bbpocket should be triggered.
+   Some games already have a way of accomplishing this. For games that do not,
+   simply have a wizard execute set the 'autotimeout' global parameter:
+      +bbconfig autotimeout=on
+   Turning that parameter on sets up the board to take care of its own daily
+   triggering.  Setting the paramenter to 'off' turns off the BBS's internal
+   triggering.
+  
+------------------------------------------------------------------------------
+Concluded in: +help bbtimeout2
+==============================================================================
+
+& bbtimeout2
+==============================================================================
+   Expanded Help on Message Timeouts for Myrddin's Bulletin Board (2 of 2)
+------------------------------------------------------------------------------
+  
+2: There are 3 different timeout values:
+  
+   The global parameter 'timeout' (set via the '+bbconfig timeout=<days>'
+   command) sets a default timeout that will be set on any new bb groups
+   created after the execution of this command.
+  
+   The group parameter 'timeout' (set via the '+bbconfig <#>/timeout=<days>'
+   command) sets a default timeout for the group <#>. Any new messages
+   posted to this group will inherit that timeout.
+  
+   The user command '+bbtimeout <group>/<message list>=<days>' will set the
+   specified timeout on individual messages. Players can only modify their
+   own messages, wizards can modify any messages. Players can only set
+   timeouts equal to or less than the default timeout for the board, wizards
+   can set any timeout.
+  
+   In all cases, a timeout of '0' indicates no timeout.
+==============================================================================
+
+& bbchanges
+==============================================================================
+                    Changes to Myrddin's Bulletin Board
+------------------------------------------------------------------------------
+The most recent version of this code, bug fixes, and patches can be found at:
+                    www.firstmagic.com/~merlin/mushcode
+  
+4.0.6:
+     BugFix: Patched a security hole (thanks to Alierak for pointing it out)
+     PennFix: Minor tweak to +bbremove that will keep Penn's cleaner and
+              prevent odd behavior
+     Feature: Message headers internal to the bbs now store dbref of the owner
+              of the poster.
+  
+4.0.5:
+     Improved +bbscan (Amberyl)
+     Improved number range error handling (Kareila@ChaoticMUX)
+     BugFix: +bbmove - better error handling, and replaced missing '}'
+     BugFix: FN_SETR behaves better for those that need it.
+ 
+4.0.4:
+     BugFix: +bbsearch now checks permissions properly
+     BugFix: base 36 to base 10 conversion tweaked to be friendlier to Penn
+             (added a base case of '0' to fold()).
+     BugFix: Posting to an anonymous board no longer appends your BB_SIG.
+     BugFix: BBS is now aware of the 8k MUX buffer limit. This affects the
+             'percentage' full meter.
+     PennFix: +bbmove tweaked to be friendlier to PennMUSH.
+     PennFix: Various other PennMUSH fixes, most involving flags. Should help
+              the BBS run correctly on PennMUSH's.
+     Feature: Post notification now includes [board]/[#]
+     Help: Help files have been expanded in the areas of message timeouts and
+           locking groups.
+   
+4.0.3:
+     BugFix: +bbcleargroup now checks permissions properly
+     BugFix: +bbcleargroup will no longer re-order remaining groups
+     BugFix: Automatic post notification for anonymous boards now uses
+             the anonymous 'title' instead of the poster's name.
+  
+4.0.2:
+     BugFix: +bbsearch will now work properly on all servers
+     Some attribute cleanup
+  
+4.0.1:
+     BugFix: Message ID's no longer improperly sorted by certain commands
+     BugFix: Update-Installer should no longer scramble message ID's
+  
+4.0.0:
+     Misc. security enhancements.
+     Up to 25% increase in storage capacity.
+     Support for message timeouts. Fully configurable.
+     Support for anonymous boards. Configurable 'From' field title. Obviously,
+       MUSH staff can determine original poster.
+     Post notification: online players are notified of new posts. Configurable
+     New Command: +bbsearch. Allows user to search a group for posts by a
+       specific author.
+     New Command: +bbnotify. Allows user to toggle post notification for
+       boards.
+     New Staff Command: +bbconfig. For setting global/group timeout values,
+       anonymous boards, built-in timeout monitor.
+==============================================================================
+
+
+& bbwiz
+==============================================================================
+               Wizard Commands for Myrddin's Bulletin Board 4.0.6
+------------------------------------------------------------------------------
+     +bbnewgroup <title>             Creates a new group.
+     +bbcleargroup <#>               Clears group <#> and all it's messages.
+     +bblock <#>=<lock>/<key>        Locks group <#>. Lock can be 'flag' or
+                                       an attribute name.
+                                       Examples: +bblock 4=flag/wizard
+                                                 +bblock 5=race/were
+     +bbwritelock <#>=<lock>/<key>   Same as above, but controls who may write
+                                       to the group.
+     +bbconfig                       Shows values of all config parameters.
+                                       See '+shelp bbconfig' for help on
+                                       config parameters and how to set them.
+------------------------------------------------------------------------------
+See also: +shelp bbconfig, +shelp bblock (contains expanded help for locks)
+==============================================================================
+
+& bblock
+==============================================================================
+           Expanded Help on Group Locks for Myrddin's Bulletin Board
+------------------------------------------------------------------------------
+A few notes about locking BB Groups.
+  
+The +bblock/+bbwritelock commands are only meant to take care of the simplest
+of locks.  There is simply no way to write one bblock'ing command that can
+deal with all the different ways people want to lock their BB Groups, and it
+certainly isn't practical to keep adding different locking commands for each
+locking method I come across.
+  
+Coders can set up locks on Groups that are as customized or exotic as you like
+quite easily, however.  Each Group has its own object.  If you look inside
+the global BBS object, you'll see them.  Each Group object has a pair of
+attributes that control who may read and who may write to that Group.  The
+attributes are named CANREAD and CANWRITE, respectively.  The dbref of the
+player attempting to read/write is passed to the appropriate attribute as %0.
+As long as the attribute returns a non-zero result, the player can read/write.
+  
+CANREAD Examples:
+   CANREAD: 1                               Anyone can read
+   CANREAD: hasflag(%0,wizard)              Only wizards can read
+   CANREAD: strmatch(name(%0),*z*)          Only characters with a 'z' in
+                                              their name can read
+==============================================================================
+
+& bbconfig
+==============================================================================
+          Configuration Parameters for Myrddin's Bulletin Board 4.0.6
+------------------------------------------------------------------------------
+There are two types of configuration parameters: global and group.  Global
+configuration parameters affect the BB system as a whole, while group 
+configuration parameters affect a single Group.
+To set a global parameter:
+  
+     +bbconfig <param>=<value>       Sets global config parameter.
+  
+Global Parameters:
+  
+     timeout            This sets the default timeout (in days) for any new
+                          groups created. A timeout of '0' means messages
+                          won't timeout. (ex. +bbconfig timeout=30)
+     autotimeout        If you don't have a way to trigger the TR_TIMEOUT
+                          attribute on the bbpocket (daily) to clean out
+                          expired messages, you can use the autotimeout param
+                          instead. Setting this param 'on' enables the BB's
+                          built in timer. Set this param to 'off' to disable.
+------------------------------------------------------------------------------
+See '+shelp bbconfig2' for info on Group parameters
+==============================================================================
+
+& bbconfig2
+==============================================================================
+          Configuration Parameters for Myrddin's Bulletin Board 4.0.6
+------------------------------------------------------------------------------
+To set a Group parameter:
+  
+     +bbconfig <#>/<param>=<value>   Sets config parameter for board <#>.
+  
+Group Parameters:
+  
+     anonymous          Setting this value turns the Group 'anonymous'.  This
+                          means that any future posting's 'Author' field will
+                          have the value of this param instead of the name of
+                          the author. Wizards will also see the actual name of
+                          author.  (examples:
+                          +bbconfig newspaper/anonymous=NewsPaper Staff,
+                          +bbconfig house rules/anonymous=The Staff)
+     timeout            Sets the default timeout value for the Group.  Any new
+                          messages will have this new value.  A value of '0'
+                          means messages won't timeout.
+==============================================================================
