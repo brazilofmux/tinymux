@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  September 2000
+Last Update:  October 2000
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,6 +104,22 @@ Feature Additions:
      name. And, there is currently no help for this option.
  --  Bug #401 - @dump/flatfile is now supported.
  --  Included all but two GAME_DOOFERMUX changes in the default build.
+ --  Bug #251 - pos() is now ANSI-aware for pattern and source. I also
+     optimized the single-character case.
+ --  Bug #524 - Wizards can no longer clear each other's @mail with
+     '@mail/debug clear=<dbref>'.
+ --  Bug #493 - @function/pres and @function/priv are not allowed together.
+ --  Bug #247 - ljust was ANSI-ignorant and now it supports a string for
+     padding.
+ --  Bug #248 - rjust was ANSI-ignorant and now it supports a string for
+     padding.
+ --  Bug #302 - center was ANSI-ignorant and now it supports a string for
+     padding.
+ --  Bug #531 - inc() should return 1.
+ --  Bug #532 - inc(WIBBLE) should return 1.
+ --  Bug #375 - Added table() function from PennMUSH.
+ --  Bug #522 - Enhanced '@mail/debug' to check for and repair mailbag item
+     reference counts.
 
 
 Bug Fixes:
@@ -286,7 +302,31 @@ Bug Fixes:
      limited to 12. @malias description visual width is limited to 40.
  --  columns on @malias reports are lined up even if descriptions include
      ANSI color.
+ --  Bug #502 - Don't allow filenames to be @admin'ed from inside the
+     game. The bug allowed anyone with #1 access to read files that the MU
+     server itself had access to.
+ --  Bug #507 - A recursive @function will overflow the stack.
+ --  Bug #509 - Wrong call to free_lbuf in comsys.cpp with pointer from
+     RestrictTitleValue.
+ --  Bug #510 - @teleport should not allow anyone to teleport anything into
+     a garbage object.
+ --  Bug #513 - SIGSEGV and jibberish from regmatch().
+ --  Bug #320 - There were some DarkZone 1000-character limits in mail.db and
+     comsys.db which would SIGSEGV at load time if the mail.db or comsys.db
+     file had a long line it in.
+ --  Bug #520 - q-registers are not cleared properly. The value of the global
+     registers leaks between interactive commands. Ancient bug made more
+     obvious by MUX2's different scheduler.
+ --  Bug #526 - table() didn't default for delimiter and separator.
+ --  Bug #270 - Boolexp grammer was ambiguous and could cause the flatfile to
+     be ambiguous.
+ --  Bug #456 - Add limit to number of comsys aliases.
+ --  Bug #414 - pmatch() behavior didn't match its helpfile topic.
+ --  Bug #519 - @mail ref counts could be thrown off.
+ --  Bug #389 - @mail subject was not ANSI-aware and could leak color.
+ --  Bug #523 - Memory leak when importing +V1 mail.db files.
 
+ 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -388,6 +428,7 @@ Cosmetic Changes:
  --  README and related server docs have been reviewed and updated. 
  --  buildnum.data added into distribution.
  --  Spelling error in 'wizhelp have_macros' topic.
+ --  Bug #521, #527, #529 - help topic typos.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
