@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  October 2000
+Last Update:  November 2000
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -348,6 +348,19 @@ Bug Fixes:
      @dump unless it really is.
  --  Bug #265 - _ATTRS for Chimera.
  --  Bug #378 - A perpetual @restart doesn't stop until the game is crashed.
+ --  Bug #449 - link() permissions need to be enhanced (and tel() and pemit()).
+ --  Bug #611 - children() is unintentionally wiz-only.
+ --  Bug #599 - @halt/all bug. Pennies are given to #0. Reference to dbref -1.
+ --  Bug #601 - @notify over-notifies.
+ --  Bug #570 - Objects should be able to send @mail.
+ --  Bug #584 - Server hangs if mail.db is zero-length.
+ --  Bug #581 - Important configuration dbrefs should be validated.
+ --  Bug #590 - A combination of Zones, EnterLocks using user-attributes cause
+     attribute name goofiness for examine.
+ --  Bug #587 - No help for the ':' help. Bug in the code.
+ --  Bug #500 - Change idle times and connect times to floored times instead
+     of rounded to nearest.
+ --  Bug #613 - #-1 RECURSION LIMIT EXCEEDED missing.
 
 
 Performance Enhancements:
@@ -441,6 +454,7 @@ Performance Enhancements:
  --  Removed three unused LBUF_SIZE buffers in !RADIX_COMPRESSION builds.
  --  Rewrote parse_msglist to avoid an extra buffer. The parse is no longer
      destructive.
+ --  Improved speed of Tiny_atol and Tiny_atoi64 by 68%.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
@@ -462,3 +476,4 @@ Miscellaneous:
  --  Miscellaneous server documentation moved to docs/
  --  Increased the size trigger for rotating logfiles on Win32.
  --  Syncronized version.cpp, _build.cpp, and _build.h between Unix and Win32.
+ --  No longer use vfork.
