@@ -5266,28 +5266,28 @@ FUNCTION LIST
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    LSTACK()    LT()        LTE()       LWHO()      MAIL()      MAILFROM()
-    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
-    MID()       MIN()       MIX()       MOD()       MONEY()     MOTD()
-    MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
-    NEXT()      NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()
-    OR()        ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()
-    PEEK()      PEMIT()     PI()        PLAYMEM()   PMATCH()    POLL()
-    POP()       PORTS()     POS()       POSS()      POWER()     PUSH()
-    R()         RAND()      REGMATCH()  REMAINDER() REMOVE()    REPEAT()
-    REPLACE()   REST()      REVERSE()   REVWORDS()  RJUST()     RLOC()
-    ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()
-    SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
-    SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
-    SINGLETIME()SORT()      SORTBY()    SPACE()     SPLICE()    SQRT()
-    SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIPANSI()
-    STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBJ()      SWITCH()
-    TABLE()     TAN()       TIME()      TRANSLATE() TRIM()      TRUNC()
-    TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()
-    V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
-    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
-    WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()
-    ZONE()      ZWHO()
+    LRAND()     LSTACK()    LT()        LTE()       LWHO()      MAIL()
+    MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()
+    MERGE()     MID()       MIN()       MIX()       MOD()       MONEY()
+    MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()
+    NEQ()       NEXT()      NOT()       NUM()       OBJ()       OBJEVAL()
+    OBJMEM()    OR()        ORFLAGS()   OWNER()     PACK()      PARENT()
+    PARSE()     PEEK()      PEMIT()     PI()        PICKRAND()  PLAYMEM()
+    PMATCH()    POLL()      POP()       PORTS()     POS()       POSS()
+    POWER()     PUSH()      R()         RAND()      REGMATCH()  REMAINDER()
+    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
+    RJUST()     RLOC()      ROOM()      ROUND()     S()         SCRAMBLE()
+    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
+    SETQ()      SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()
+    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
+    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
+    STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()
+    SUBJ()      SWITCH()    TABLE()     TAN()       TIME()      TRANSLATE()
+    TRIM()      TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()
+    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
+    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
+    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME()
+    XGET()      XOR()       ZONE()      ZWHO()
 
 & FUNCTION CLASSES
 FUNCTION CLASSES
@@ -5302,9 +5302,9 @@ FUNCTION CLASSES
   Game Information:          CWHO MOTD MUDNAME POLL VERSION
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
                              FOLD GRAB INDEX ITER LAST LNUM MAP MATCH MATCHALL
-                             MEMBER MIX MUNGE PARSE REMOVE REST REVWORDS
-                             SETDIFF SETINTER SETUNION SHUFFLE SORT SORTBY
-                             SPLICE TABLE WORDS
+                             MEMBER MIX MUNGE PARSE PICKRAND LRAND REMOVE REST
+                             REVWORDS SETDIFF SETINTER SETUNION SHUFFLE SORT
+                             SORTBY SPLICE TABLE WORDS
   Logarithms:                E EXP LOG LN
   Logical:                   AND NOT OR XOR
   Miscellaneous:             ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM ISWORD
@@ -8106,6 +8106,20 @@ LNUM()
 
   Related Topics:
 
+& LRAND()
+LRAND()
+
+  FUNCTION: lrand(<lower>,<upper>,<count>,[,<output delim>])
+
+  Returns a list with <count> elements separated by <output delim> (or
+  a space if not specified) of random numbers between <lower> and
+  <upper>.
+
+  For instance, 'lrand(3, 6, 5)' would generate five random numbers
+  in the range 3 - 6 (i.e., 3, 4, 5, or 6), such as '4 6 3 5 6'.
+
+  Related topics: rand(), die(), lnum()
+
 & LATTR()
 LATTR()
 
@@ -9387,6 +9401,21 @@ SHUFFLE()
 
   Related Topics:
    
+& PICKRAND()
+PICKRAND()
+
+  FUNCTION: pickrand(<word1> <word2> <...<wordN>[,<delimiter>])
+
+  This function picks a random element from a list.  It's faster than
+  first(shuffle(foo)) or extract(foo,rand(words(foo)),1).  <delimiter> is an
+  optional one-character output delimiter.
+
+  Example:
+    > say pickrand(foo bar baz)
+    You say "bar"
+
+  Related Topics: rand(), lrand(), die().
+
 & SCRAMBLE()
 SCRAMBLE()
 
