@@ -1,6 +1,6 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.5 2004-06-10 15:21:31 sdennis Exp $ */
+/* $Id: copyright.h,v 1.6 2004-09-24 17:25:07 sdennis Exp $ */
 
 /*
  * MUX Source Code (version 2.0 through 2.4).
@@ -156,7 +156,7 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * The author may be reached via email at sdennis@svdltd.com.
+ * The author may be reached via email at brazilofmux@gmail.com.
  *
  *
  *
