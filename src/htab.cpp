@@ -1,6 +1,6 @@
 // htab.cpp - table hashing routines 
 //
-// $Id: htab.cpp,v 1.1 2000-04-11 07:14:45 sdennis Exp $
+// $Id: htab.cpp,v 1.2 2001-02-01 23:51:16 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -185,27 +185,6 @@ void hashreplall(int *old, int *new0, CHashTable *htab)
             htab->Update(iDir, nRecord, &htab_rec);
         }
     }
-}
-
-
-/*
- * ---------------------------------------------------------------------------
- * * hashinfo: return an mbuf with hashing stats
- */
-
-char *hashinfo(const char *tab_name, CHashTable *htab)
-{
-    char *buff = alloc_mbuf("hashinfo");
-    unsigned int hashsize;
-    int entries;
-    int deletes;
-    int scans;
-    int hits;
-    int checks;
-    int max_scan;
-    htab->GetStats(&hashsize, &entries, &deletes, &scans, &hits, &checks, &max_scan);
-    sprintf(buff, "%-15s %5d %8d %8d %10d %10d %10d %4d", tab_name, hashsize, entries, deletes, scans, hits, checks, max_scan);
-    return buff;
 }
 
 /*

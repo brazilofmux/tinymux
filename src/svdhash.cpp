@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.14 2000-10-10 17:38:16 sdennis Exp $
+// $Id: svdhash.cpp,v 1.15 2001-02-01 23:51:16 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -526,14 +526,20 @@ CHashPage::~CHashPage(void)
 
 // GetStats
 //
-// This functions returns the number of records in this hash page and the 
+// This functions returns the number of records in this hash page and the
 // number of bytes that these records would take up in a fresh page.
 //
 // It also tries to leave room for a record of size nExtra.
 //
 // This function is useful for reallocating the page
 //
-void CHashPage::GetStats(HP_HEAPLENGTH nExtra, int *pnRecords, HP_HEAPLENGTH *pnAllocatedSize, int *pnGoodDirSize)
+void CHashPage::GetStats
+(
+    HP_HEAPLENGTH nExtra,
+    int *pnRecords,
+    HP_HEAPLENGTH *pnAllocatedSize,
+    int *pnGoodDirSize
+)
 {
     unsigned nSize = 0;
     unsigned nCount = 0;
@@ -2480,8 +2486,16 @@ HP_DIRINDEX CHashTable::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
     return HF_FIND_END;
 }
 
-void CHashTable::GetStats(unsigned int *hashsize, int *entries, int *deletes,
-                          int *scans, int *hits, int *checks, int *max_scan)
+void CHashTable::GetStats
+(
+    unsigned int *hashsize,
+    int *entries,
+    INT64 *deletes,
+    INT64 *scans,
+    INT64 *hits,
+    INT64 *checks,
+    int *max_scan
+)
 {
     *hashsize = m_nPages;
     *entries = m_nEntries;
