@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.103 2002-09-25 20:09:15 sdennis Exp $
+// $Id: funceval.cpp,v 1.104 2002-10-13 19:31:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -597,18 +597,22 @@ void scan_zone
     char **bufc
 )
 {
-    dbref it;
-
-    if (  !mudconf.have_zones
-       || (  !Controls(player, it = match_thing_quiet(player, szZone))
-          && !WizRoy(player)))
+    if (!mudconf.have_zones)
     {
-        safe_noperm(buff, bufc);
+        safe_str("#-1 ZONES DISABLED", buff, bufc);
         return;
     }
-    else if (!Good_obj(it))
+
+    dbref it = match_thing_quiet(player, szZone);
+    if (!Good_obj(it))
     {
         safe_nomatch(buff, bufc);
+        return;
+    }
+    else if (!(  WizRoy(player)
+              || Controls(player, it)))
+    {
+        safe_noperm(buff, bufc);
         return;
     }
 
@@ -642,7 +646,13 @@ FUNCTION(fun_inzone)
 FUNCTION(fun_children)
 {
     dbref it = match_thing(player, fargs[0]);
-    if (!(WizRoy(player) || Controls(player, it)))
+    if (!Good_obj(it))
+    {
+        safe_nomatch(buff, bufc);
+        return;
+    }
+    else if (!(  WizRoy(player)
+              || Controls(player, it)))
     {
         safe_noperm(buff, bufc);
         return;
