@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.46 2002-09-25 08:30:44 jake Exp $
+// $Id: comsys.cpp,v 1.47 2002-09-26 06:40:20 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1083,7 +1083,8 @@ void SendChannelMessage
     {
         free_lbuf(msgNormal);
     }
-    if (msgNoComtitle)
+    if (  msgNoComtitle
+       && msgNoComtitle != msgNormal)
     {
         free_lbuf(msgNoComtitle);
     }
