@@ -4380,20 +4380,19 @@ AUDITORIUM
 & BAND()
 BAND()
 
-  FUNCTION: band(<number>, <number>)
+  FUNCTION: band(<number>[, <number>[, ...]])
 
-  Both arguments are an integer that is treated as a bitfield. It
-  performs a bitwise logical AND between these two bitfields and
-  returns the resulting bitfield as an integer which can be further
-  treated as an integer, a bitfield, or a logical boolean depending
-  on your intentions.
+  Arguments must be an integer and are treated as a bitfield.  It performs a
+  bitwise logical AND between these two bitfields and returns the resulting
+  bitfield as an integer which can be further treated as an integer, a
+  bitfield, or a logical boolean depending on your intentions.
 
      > think band(922,785)
      784
 
-  In the above example, 922 in base 10 is equivalent to 39A in base
-  16 or 0011 1001 1010 in base 2. Likewise, 785 in base 10 is the same
-  as 311 in base 16 and or 0011 0001 0001 in base 2.
+  In the above example, 922 in base 10 is equivalent to 39A in base 16 or
+  0011 1001 1010 in base 2.  Likewise, 785 in base 10 is the same as 311 in
+  base 16 and or 0011 0001 0001 in base 2.
 
          0011 1001 1010 (922)
   (BAND) 0011 0001 0001 (785)
@@ -4402,10 +4401,10 @@ BAND()
 
   The result may be expressed as 310 in base 16 or 784 in base 10.
 
-  So, this function is useful for testing whether a particular bit in
-  the field is 'on' or 'off'. More than one bit can be tested at a
-  time. If all bits are 'off', the result is zero which can also be
-  interpreted as a boolean false in softcode.
+  So, this function is useful for testing whether a particular bit in the
+  field is 'on' or 'off'.  More than one bit can be tested at a time.  If all
+  bits are 'off', the result is zero which can also be interpreted as a
+  boolean false in softcode.
 
   Related Topics: shl(), shr(), bnand(), bor(), bxor().
 
@@ -4577,18 +4576,18 @@ BOOLEAN VALUES
 & BOR()
 BOR()
 
-  FUNCTION: bor(<number>, <number>)
+  FUNCTION: bor(<number>[, <number>[, ...]])
 
-  Both arguments are an integer that is treated as a bitfield. It
-  performs a bitwise logical OR which has the effect of forcing certain
-  bits on in the result.
+  Arguments must be an integer and are treated as a bitfield.  It performs a
+  bitwise logical OR which has the effect of forcing certain bits on in the
+  result.
 
      > think bor(922,785)
      923
 
-  In the above example, 922 in base 10 is equivalent to 39A in base
-  16 or 0011 1001 1010 in base 2. Likewise, 785 in base 10 is the same
-  as 311 in base 16 and or 0011 0001 0001 in base 2.
+  In the above example, 922 in base 10 is equivalent to 39A in base 16 or
+  0011 1001 1010 in base 2. Likewise, 785 in base 10 is the same as 311 in
+  base 16 and or 0011 0001 0001 in base 2.
 
          0011 1001 1010 (922)
   (BOR)  0011 0001 0001 (785)
@@ -4602,10 +4601,10 @@ BOR()
 & BXOR()
 BXOR()
 
-  FUNCTION: bxor(<number>, <number>)
+  FUNCTION: bxor(<number>[, <number> [, ...]])
 
-  Both arguments are an integer that is treated as a bitfield. It performs a
-  bitwise logical eXclusive-OR which has the effect of toggling certain bits
+  Arguments must be integers and they are treated as a bitfield.  It performs
+  a bitwise logical eXclusive-OR which has the effect of toggling certain bits
   on in the result.
 
      > think bxor(922,785)
