@@ -9131,7 +9131,7 @@ NEXT()
 & NOACCENTS
 NOACCENTS
 
-  FLAG: NOACCENTS
+  FLAG: NOACCENTS(~)
 
   When set on a player, it will disable a player from seeing the accent marks
   above certain letters. The default is for the accent marks to be shown.
