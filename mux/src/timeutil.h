@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.4 2003-09-07 22:05:47 sdennis Exp $
+// $Id: timeutil.h,v 1.5 2003-12-06 01:57:32 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -30,10 +30,10 @@ typedef struct
 class CLinearTimeAbsolute
 {
     friend class CLinearTimeDelta;
-    friend int operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend int operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend int operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend int operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
+    friend bool operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
+    friend bool operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
+    friend bool operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
+    friend bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
     friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd);
     friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd);
     friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
@@ -78,10 +78,11 @@ bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft);
 class CLinearTimeDelta
 {
     friend class CLinearTimeAbsolute;
-    friend int operator<(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend int operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend int operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
-    friend int operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
+    friend bool operator<(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
+    friend bool operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
+    friend bool operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
+    friend bool operator<=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
+    friend bool operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
     friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
     friend CLinearTimeDelta operator-(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
     friend int operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB);

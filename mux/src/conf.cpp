@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.33 2003-12-03 19:30:23 sdennis Exp $
+// $Id: conf.cpp,v 1.34 2003-12-06 01:57:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -207,6 +207,7 @@ void cf_init(void)
     mudconf.cmd_quota_max = 100;
     mudconf.cmd_quota_incr = 1;
     mudconf.max_cmdsecs.SetSeconds(120);
+    mudconf.cache_tick_period.SetSeconds(30);
     mudconf.control_flags = 0xffffffff; // Everything for now...
     mudconf.log_options = LOG_ALWAYS | LOG_BUGS | LOG_SECURITY |
         LOG_NET | LOG_LOGIN | LOG_DBSAVES | LOG_CONFIGMODS |
@@ -238,6 +239,7 @@ void cf_init(void)
     mudconf.nStackLimit = 10000;
     mudconf.hook_obj = NOTHING;
     mudconf.global_error_obj = NOTHING;
+    mudconf.cache_pages = 40;
 
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = false;
@@ -1633,6 +1635,8 @@ CONF conftable[] =
     {"bad_name",                  cf_badname,     CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {"badsite_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.site_file,       NULL, SIZEOF_PATHNAME},
     {"cache_names",               cf_bool,        CA_STATIC, CA_GOD,      (int *)&mudconf.cache_names,     NULL,               0},
+    {"cache_pages",               cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.cache_pages,            NULL,               0},
+    {"cache_tick_period",         cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.cache_tick_period, NULL,             0},
     {"check_interval",            cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_interval,         NULL,               0},
     {"check_offset",              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_offset,           NULL,               0},
     {"clone_copies_cost",         cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.clone_copy_cost, NULL,               0},

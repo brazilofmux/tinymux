@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.14 2003-12-03 19:30:23 sdennis Exp $
+// $Id: mudconf.h,v 1.15 2003-12-06 01:57:32 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -93,6 +93,7 @@ struct confdata
     dbref   start_room;         // initial location and home for players.
     dbref   toad_recipient;     /* Default @toad recipient. */
     int     active_q_chunk;     /* # cmds to run from queue when active */
+    int     cache_pages;        // Size of hash page cache (in pages).
     int     check_interval;     /* interval between db check/cleans in secs */
     int     check_offset;       /* when to perform first check and clean */
     int     cmd_quota_incr;     /* Bump #cmds allowed by this each timeslice */
@@ -197,6 +198,7 @@ struct confdata
     char    *wizmotd_file;      /* display this file on login to wizards */
     unsigned char    markdata[8];  /* Masks for marking/unmarking */
     CLinearTimeDelta max_cmdsecs;  /* Threshhold for real time taken by command */
+    CLinearTimeDelta cache_tick_period; // Minor cycle for cache maintenance.
 
     FLAGSET exit_flags;         /* Flags exits start with */
     FLAGSET player_flags;       /* Flags players start with */

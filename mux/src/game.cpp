@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.31 2003-12-03 19:30:23 sdennis Exp $
+// $Id: game.cpp,v 1.32 2003-12-06 01:57:32 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2396,7 +2396,7 @@ int DCL_CDECL main(int argc, char *argv[])
         RemoveFile(mudconf.game_dir);
         RemoveFile(mudconf.game_pag);
     }
-    int ccPageFile = init_dbfile(mudconf.game_dir, mudconf.game_pag, 40);
+    int ccPageFile = init_dbfile(mudconf.game_dir, mudconf.game_pag, mudconf.cache_pages);
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");

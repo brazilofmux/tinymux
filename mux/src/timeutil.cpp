@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.25 2003-10-09 01:57:35 sdennis Exp $
+// $Id: timeutil.cpp,v 1.26 2003-12-06 01:57:32 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -409,32 +409,37 @@ char CLinearTimeDelta::m_Buffer[204];
 void GetUTCLinearTime(INT64 *plt);
 void GetLocalFieldedTime(FIELDEDTIME *ft);
 
-int operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
+bool operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
 {
     return lta.m_tAbsolute < ltb.m_tAbsolute;
 }
 
-int operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
+bool operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
 {
     return lta.m_tAbsolute > ltb.m_tAbsolute;
 }
 
-int operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
+bool operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
 {
     return lta.m_tAbsolute == ltb.m_tAbsolute;
 }
 
-int operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb)
+bool operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb)
 {
     return lta.m_tDelta == ltb.m_tDelta;
 }
 
-int operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb)
+bool operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb)
 {
     return lta.m_tDelta != ltb.m_tDelta;
 }
 
-int operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
+bool operator<=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb)
+{
+    return lta.m_tDelta <= ltb.m_tDelta;
+}
+
+bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
 {
     return lta.m_tAbsolute <= ltb.m_tAbsolute;
 }
@@ -1186,12 +1191,12 @@ int operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB)
     return iResult;
 }
 
-int operator<(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB)
+bool operator<(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB)
 {
     return ltdA.m_tDelta < ltdB.m_tDelta;
 }
 
-int operator>(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB)
+bool operator>(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB)
 {
     return ltdA.m_tDelta > ltdB.m_tDelta;
 }

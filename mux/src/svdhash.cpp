@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.16 2003-09-04 15:08:54 sdennis Exp $
+// $Id: svdhash.cpp,v 1.17 2003-12-06 01:57:32 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2009,7 +2009,22 @@ again:
 
 void CHashFile::Tick(void)
 {
-    for (int i = 0; i < (m_nCache+119)/120; i++)
+    int nCycle = mudconf.check_interval;
+    if (mudconf.dump_interval < nCycle)
+    {
+        nCycle = mudconf.dump_interval;
+    }
+
+    CLinearTimeDelta ltdCycle;
+    ltdCycle.SetSeconds(nCycle);
+
+    int n = (mudconf.cache_tick_period*m_nCache)/ltdCycle;
+    if (n < 1)
+    {
+        n = 1;
+    }
+
+    for (int i = 0; i < n; i++)
     {
         // Go ahead and flush a cache entry...just to keep the sync load
         // down a bit. This gives the cache time to age, and yet, pushes

@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.5 2003-02-05 06:20:59 jake Exp $
+// $Id: timer.cpp,v 1.6 2003-12-06 01:57:32 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -135,15 +135,21 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
 {
     char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< cachetick >";
+
+    CLinearTimeDelta ltd;
+    ltd.SetSeconds(0);
+    if (mudconf.cache_tick_period <= ltd)
+    {
+        mudconf.cache_tick_period.SetSeconds(1);
+    }
+
     cache_tick();
 
     // Schedule ourselves again.
     //
     CLinearTimeAbsolute ltaNextTime;
     ltaNextTime.GetUTC();
-    CLinearTimeDelta ltd;
-    ltd.SetSeconds(30);
-    ltaNextTime += ltd;
+    ltaNextTime += mudconf.cache_tick_period;
     scheduler.DeferTask(ltaNextTime, PRIORITY_SYSTEM, dispatch_CacheTick, 0, 0);
     mudstate.debug_cmd = cmdsave;
 }
@@ -206,8 +212,12 @@ void init_timer(void)
 #ifndef MEMORY_BASED
     // Setup re-occuring cache_tick task.
     //
-    ltd.SetSeconds(30);
-    scheduler.DeferTask(ltaNow+ltd, PRIORITY_SYSTEM, dispatch_CacheTick, 0, 0);
+    ltd.SetSeconds(0);
+    if (mudconf.cache_tick_period <= ltd)
+    {
+        mudconf.cache_tick_period.SetSeconds(1);
+    }
+    scheduler.DeferTask(ltaNow+mudconf.cache_tick_period, PRIORITY_SYSTEM, dispatch_CacheTick, 0, 0);
 #endif // !MEMORY_BASED
 
 #if 0
