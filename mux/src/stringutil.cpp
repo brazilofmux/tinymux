@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.21 2003-02-03 21:48:15 sdennis Exp $
+// $Id: stringutil.cpp,v 1.22 2003-02-03 22:40:16 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -378,7 +378,7 @@ const unsigned char Tiny_ToUpper[256] =
     0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xF7, 0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xFF  // F
 };
 
-const unsigned char Tiny_ToLower[256] =
+const unsigned char mux_tolower[256] =
 {
 //   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
 //
@@ -1510,7 +1510,7 @@ int string_compare(const char *s1, const char *s2)
         }
 
         while (  *s1 && *s2
-              && (  (Tiny_ToLower[(unsigned char)*s1] == Tiny_ToLower[(unsigned char)*s2])
+              && (  (mux_tolower[(unsigned char)*s1] == mux_tolower[(unsigned char)*s2])
                  || (Tiny_IsSpace[(unsigned char)*s1] && Tiny_IsSpace[(unsigned char)*s2])))
         {
             if (Tiny_IsSpace[(unsigned char)*s1] && Tiny_IsSpace[(unsigned char)*s2])
@@ -1573,7 +1573,7 @@ int string_prefix(const char *string, const char *prefix)
     int count = 0;
 
     while (*string && *prefix
-          && (Tiny_ToLower[(unsigned char)*string] == Tiny_ToLower[(unsigned char)*prefix]))
+          && (mux_tolower[(unsigned char)*string] == mux_tolower[(unsigned char)*prefix]))
     {
         string++, prefix++, count++;
     }
@@ -1764,7 +1764,7 @@ int prefix_match(const char *s1, const char *s2)
     int count = 0;
 
     while (*s1 && *s2
-          && (Tiny_ToLower[(unsigned char)*s1] == Tiny_ToLower[(unsigned char)*s2]))
+          && (mux_tolower[(unsigned char)*s1] == mux_tolower[(unsigned char)*s2]))
     {
         s1++, s2++, count++;
     }
@@ -1782,7 +1782,7 @@ int prefix_match(const char *s1, const char *s2)
 BOOL minmatch(char *str, char *target, int min)
 {
     while (*str && *target
-          && (Tiny_ToLower[(unsigned char)*str] == Tiny_ToLower[(unsigned char)*target]))
+          && (mux_tolower[(unsigned char)*str] == mux_tolower[(unsigned char)*target]))
     {
         str++;
         target++;
@@ -1905,7 +1905,7 @@ BOOL matches_exit_from_list(char *str, const char *pattern)
     {
         for (s = str;   // check out this one
              ( *s
-             && (Tiny_ToLower[(unsigned char)*s] == Tiny_ToLower[(unsigned char)*pattern])
+             && (mux_tolower[(unsigned char)*s] == mux_tolower[(unsigned char)*pattern])
              && *pattern
              && (*pattern != EXIT_DELIMITER));
              s++, pattern++) ;
@@ -3128,13 +3128,13 @@ int mux_stricmp(const char *a, const char *b)
 {
     while (  *a
           && *b
-          && Tiny_ToLower[(unsigned char)*a] == Tiny_ToLower[(unsigned char)*b])
+          && mux_tolower[(unsigned char)*a] == mux_tolower[(unsigned char)*b])
     {
         a++;
         b++;
     }
-    int c1 = Tiny_ToLower[(unsigned char)*a];
-    int c2 = Tiny_ToLower[(unsigned char)*b];
+    int c1 = mux_tolower[(unsigned char)*a];
+    int c2 = mux_tolower[(unsigned char)*b];
     if (c1 < c2)
     {
         return -1;
@@ -3156,7 +3156,7 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
     unsigned char *p1 = (unsigned char *)p1_arg;
     unsigned char *p2 = (unsigned char *)p2_arg;
     while (  n
-          && Tiny_ToLower[(unsigned char)*p1] == Tiny_ToLower[(unsigned char)*p2])
+          && mux_tolower[(unsigned char)*p1] == mux_tolower[(unsigned char)*p2])
     {
         n--;
         p1++;
@@ -3164,8 +3164,8 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
     }
     if (n)
     {
-        int c1 = Tiny_ToLower[(unsigned char)*p1];
-        int c2 = Tiny_ToLower[(unsigned char)*p2];
+        int c1 = mux_tolower[(unsigned char)*p1];
+        int c2 = mux_tolower[(unsigned char)*p2];
         if (c1 < c2)
         {
             return -1;
@@ -3184,7 +3184,7 @@ void mux_strlwr(char *a)
 {
     while (*a)
     {
-        *a = Tiny_ToLower[(unsigned char)*a];
+        *a = mux_tolower[(unsigned char)*a];
         a++;
     }
 }
@@ -3389,14 +3389,14 @@ void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
     for (k = 0; k < nPat - 1; k++)
     {
         bmhs->m_d[Tiny_ToUpper[(unsigned char)pPat[k]]] = nPat - k - 1;
-        bmhs->m_d[Tiny_ToLower[(unsigned char)pPat[k]]] = nPat - k - 1;
+        bmhs->m_d[mux_tolower[(unsigned char)pPat[k]]] = nPat - k - 1;
         if (pPat[k] == chLastPat)
         {
             bmhs->m_skip2 = nPat - k - 1;
         }
     }
     bmhs->m_d[Tiny_ToUpper[(unsigned char)chLastPat]] = BMH_LARGE;
-    bmhs->m_d[Tiny_ToLower[(unsigned char)chLastPat]] = BMH_LARGE;
+    bmhs->m_d[mux_tolower[(unsigned char)chLastPat]] = BMH_LARGE;
 }
 
 int BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)

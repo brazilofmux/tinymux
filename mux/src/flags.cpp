@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.6 2003-02-03 20:46:38 sdennis Exp $
+// $Id: flags.cpp,v 1.7 2003-02-03 22:40:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -524,7 +524,7 @@ char *MakeCanonicalFlagName
 
     while (*pName && nName < SBUF_SIZE)
     {
-        *p = Tiny_ToLower[(unsigned char)*pName];
+        *p = mux_tolower[(unsigned char)*pName];
         p++;
         pName++;
         nName++;

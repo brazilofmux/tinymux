@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.9 2003-02-03 19:55:34 sdennis Exp $
+// $Id: funceval.cpp,v 1.10 2003-02-03 22:40:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3042,7 +3042,7 @@ FUNCTION(fun_hastype)
         return;
     }
     BOOL bResult = FALSE;
-    switch (Tiny_ToLower[(unsigned char)fargs[1][0]])
+    switch (mux_tolower[(unsigned char)fargs[1][0]])
     {
     case 'r':
 

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.8 2003-02-03 20:46:38 sdennis Exp $
+// $Id: conf.cpp,v 1.9 2003-02-03 22:40:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -928,7 +928,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
     in_addr_t ul2;
     if (  len >= 3
        && p[0] == '0'
-       && Tiny_ToLower[(unsigned char)p[1]] == 'x')
+       && mux_tolower[(unsigned char)p[1]] == 'x')
     {
         // Hexadecimal Path
         //
@@ -947,7 +947,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
         }
         while (len)
         {
-            unsigned char ch = Tiny_ToLower[(unsigned char)*p];
+            unsigned char ch = mux_tolower[(unsigned char)*p];
             ul2 = ul;
             ul  = (ul << 4) & 0xFFFFFFFFUL;
             if (ul < ul2)

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.15 2003-02-03 19:55:34 sdennis Exp $
+// $Id: functions.cpp,v 1.16 2003-02-03 22:40:16 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -405,7 +405,7 @@ static int get_list_type
 {
     if (nfargs >= type_pos)
     {
-        switch (Tiny_ToLower[(unsigned char)*fargs[type_pos - 1]])
+        switch (mux_tolower[(unsigned char)*fargs[type_pos - 1]])
         {
         case 'd':
             return DBREF_LIST;
@@ -3710,7 +3710,7 @@ FUNCTION(fun_e)
 
 static double ConvertRDG2R(double d, const char *szUnits)
 {
-    switch (Tiny_ToLower[(unsigned char)szUnits[0]])
+    switch (mux_tolower[(unsigned char)szUnits[0]])
     {
     case 'd':
         // Degrees to Radians.
@@ -3729,7 +3729,7 @@ static double ConvertRDG2R(double d, const char *szUnits)
 
 static double ConvertR2RDG(double d, const char *szUnits)
 {
-    switch (Tiny_ToLower[(unsigned char)szUnits[0]])
+    switch (mux_tolower[(unsigned char)szUnits[0]])
     {
     case 'd':
         // Radians to Degrees.
@@ -5482,7 +5482,7 @@ void ANSI_TransformTextWithTable
 
 FUNCTION(fun_lcstr)
 {
-    ANSI_TransformTextWithTable(buff, bufc, fargs[0], Tiny_ToLower);
+    ANSI_TransformTextWithTable(buff, bufc, fargs[0], mux_tolower);
 }
 
 FUNCTION(fun_ucstr)
@@ -7822,7 +7822,7 @@ FUNCTION(fun_trim)
     varargs_preamble(3);
     if (nfargs >= 2)
     {
-        switch (Tiny_ToLower[(unsigned char)*fargs[1]])
+        switch (mux_tolower[(unsigned char)*fargs[1]])
         {
         case 'l':
             trim = 1;

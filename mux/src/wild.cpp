@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.2 2003-02-03 06:01:49 sdennis Exp $
+// $Id: wild.cpp,v 1.3 2003-02-03 22:40:16 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -18,8 +18,8 @@
 #include "config.h"
 #include "externs.h"
 
-#define EQUAL(a,b) (Tiny_ToLower[(unsigned char)a] == Tiny_ToLower[(unsigned char)b])
-#define NOTEQUAL(a,b) (Tiny_ToLower[(unsigned char)a] != Tiny_ToLower[(unsigned char)b])
+#define EQUAL(a,b) (mux_tolower[(unsigned char)a] == mux_tolower[(unsigned char)b])
+#define NOTEQUAL(a,b) (mux_tolower[(unsigned char)a] != mux_tolower[(unsigned char)b])
 
 // Argument return space and size.
 //

@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.4 2003-02-03 15:00:33 sdennis Exp $
+// $Id: eval.cpp,v 1.5 2003-02-03 22:40:15 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -831,7 +831,7 @@ int get_gender(dbref player)
     char *atr_gotten = atr_pget(player, A_SEX, &aowner, &aflags);
     char first = atr_gotten[0];
     free_lbuf(atr_gotten);
-    switch (Tiny_ToLower[(unsigned char)first])
+    switch (mux_tolower[(unsigned char)first])
     {
     case 'p':
         return 4;
@@ -1220,7 +1220,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             char *p2 = TinyExec_scratch;
             for (char *p = oldp; p <= pEnd; p++)
             {
-                *p2++ = Tiny_ToLower[(unsigned char)*p];
+                *p2++ = mux_tolower[(unsigned char)*p];
             }
             *p2 = '\0';
 
