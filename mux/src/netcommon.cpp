@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.16 2003-03-08 05:25:50 sdennis Exp $
+// $Id: netcommon.cpp,v 1.17 2003-03-08 05:35:11 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -343,7 +343,10 @@ void queue_write_LEN(DESC *d, const char *b, int n)
             sprintf(buf, "[%d/%s] Output buffer overflow, %d chars discarded by ", d->descriptor, d->addr, tp->hdr.nchars);
             log_text(buf);
             free_lbuf(buf);
-            log_name(d->player);
+            if (d->flags & DS_CONNECTED)
+            {
+                log_name(d->player);
+            }
             ENDLOG;
             d->output_size -= tp->hdr.nchars;
             d->output_head = tp->hdr.nxt;
@@ -960,13 +963,13 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             //
             DESC *d1;
             int num = 0;
-            DESC_ITER_PLAYER(d->player, d1)
+            DESC_ITER_PLAYER(player, d1)
             {
                 num++;
             }
             if (num <= 1)
             {
-                db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
+                db[player].fs.word[FLAG_WORD1] &= ~DARK;
             }
         }
 
@@ -1173,7 +1176,8 @@ void check_idle(void)
 
     DESC_SAFEITER_ALL(d, dnext)
     {
-        if (KeepAlive(d->player))
+        if (  (d->flags & DS_CONNECTED)
+           && KeepAlive(d->player))
         {
             // Send a Telnet NOP code - creates traffic to keep NAT routers
             // happy.  Hopefully this only runs once a minute.
@@ -1405,8 +1409,8 @@ static void dump_users(DESC *e, char *match, int key)
                 continue;
             }
             if (  key == CMD_SESSION
-               && !(  Wizard_Who(e->player)
-                  && (e->flags & DS_CONNECTED))
+               && !(  (e->flags & DS_CONNECTED)
+                  && Wizard_Who(e->player))
                && d->player != e->player)
             {
                 continue;
@@ -2264,7 +2268,7 @@ bool do_command(DESC *d, char *command)
 
             // If we're already connected, set the player's flag.
             //
-            if (d->player)
+            if (d->flags & DS_CONNECTED)
             {
                 s_Html(d->player);
             }
@@ -2303,9 +2307,12 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg
         DESC_ITER_PLAYER(executor, d)
         {
             // Set the descriptor's flag.
+            //
             d->flags |= DS_PUEBLOCLIENT;
+
             // If we're already connected, set the player's flag.
-            if (d->player)
+            //
+            if (d->flags & DS_CONNECTED)
             {
                 s_Html(d->player);
             }
@@ -2545,7 +2552,8 @@ void make_ulist(dbref player, char *buff, char **bufc, bool bPorts)
         ItemToList_Init(&pContext, buff, bufc, '#');
         DESC_ITER_CONN(d)
         {
-            if (!See_Hidden(player) && Hidden(d->player))
+            if (  !See_Hidden(player)
+               && Hidden(d->player))
             {
                 continue;
             }
@@ -2580,8 +2588,8 @@ dbref find_connected_name(dbref player, char *name)
         {
             continue;
         }
-        if (  (found != NOTHING)
-           && (found != d->player))
+        if (  found != NOTHING
+           && found != d->player)
         {
             return NOTHING;
         }
