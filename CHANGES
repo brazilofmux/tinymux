@@ -148,6 +148,7 @@ Feature Additions:
  --  Bug #563 - Add emit() function. Thanks Raevnos.
  --  Added remit() function.
  --  Bug #677 - Add oemit() function. Thanks Raevnos.
+ --  Added if() from PennMUSH. Thanks Raevnos.
 
 
 Bug Fixes:
