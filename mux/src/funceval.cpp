@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.52 2002-09-15 00:44:46 jake Exp $
+// $Id: funceval.cpp,v 1.53 2002-09-15 18:29:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2954,7 +2954,7 @@ FUNCTION(fun_alphamax)
             amax = fargs[i];
         }
     }
-    safe_tprintf_str(buff, bufc, "%s", amax);
+    safe_str(amax, buff, bufc);
 }
 
 // Borrowed from PennMUSH 1.50
@@ -2969,7 +2969,7 @@ FUNCTION(fun_alphamin)
             amin = fargs[i];
         }
     }
-    safe_tprintf_str(buff, bufc, "%s", amin);
+    safe_str(amin, buff, bufc);
 }
 
 // Borrowed from PennMUSH 1.50
