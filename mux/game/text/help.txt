@@ -5624,7 +5624,7 @@ DIST2D()
 
   FUNCTION: dist2d(x1, y1, x2, y2)
 
-  Returns the integer distance between the Cartesian points in two dimensions
+  Returns the distance between the Cartesian points in two dimensions
   (x1,y1) and (x2,y2).
 
   Example:
@@ -5638,8 +5638,8 @@ DIST3D()
 
   FUNCTION: dist3d(x1, y1, z1, x2, y2, z2)
 
-  Returns the integer distance between the Cartesian points in three
-  dimensions (x1,y1,z1) and (x2,y2,z2).
+  Returns the distance between the Cartesian points in three dimensions
+  (x1,y1,z1) and (x2,y2,z2).
 
   Example:
     > say dist3d(0,0,0,10,15,20)
