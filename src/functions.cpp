@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.136 2002-01-28 17:32:25 sdennis Exp $
+// $Id: functions.cpp,v 1.137 2002-01-29 00:07:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6179,7 +6179,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
     int i1 = 0;
     int i2 = 0;
     char *oldp = *bufc;
-    char *bb_p = *bufc;
+    BOOLEAN bFirst = TRUE;
     **bufc = '\0';
 
     switch (oper)
@@ -6225,10 +6225,11 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             if (  i1 < n1
                && i2 < n2)
             {
-                if (*bufc != bb_p)
+                if (!bFirst)
                 {
                     safe_chr(sep, buff, bufc);
                 }
+                bFirst = FALSE;
                 oldp = *bufc;
                 if (strcmp(ptrs1[i1], ptrs2[i2]) < 0)
                 {
@@ -6250,10 +6251,11 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
         {
             if (strcmp(oldp, ptrs1[i1]))
             {
-                if (*bufc != bb_p)
+                if (!bFirst)
                 {
                     safe_chr(sep, buff, bufc);
                 }
+                bFirst = FALSE;
                 oldp = *bufc;
                 safe_str(ptrs1[i1], buff, bufc);
                 **bufc = '\0';
@@ -6263,10 +6265,11 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
         {
             if (strcmp(oldp, ptrs2[i2]))
             {
-                if (*bufc != bb_p)
+                if (!bFirst)
                 {
                     safe_chr(sep, buff, bufc);
                 }
+                bFirst = FALSE;
                 oldp = *bufc;
                 safe_str(ptrs2[i2], buff, bufc);
                 **bufc = '\0';
@@ -6286,10 +6289,11 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             {
                 // Got a match, copy it.
                 //
-                if (*bufc != bb_p)
+                if (!bFirst)
                 {
                     safe_chr(sep, buff, bufc);
                 }
+                bFirst = FALSE;
                 oldp = *bufc;
                 safe_str(ptrs1[i1], buff, bufc);
                 i1++;
@@ -6344,10 +6348,11 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
             {
                 // Item in list1 not in list2, copy.
                 //
-                if (*bufc != bb_p)
+                if (!bFirst)
                 {
                     safe_chr(sep, buff, bufc);
                 }
+                bFirst = FALSE;
                 safe_str(ptrs1[i1], buff, bufc);
                 oldp = ptrs1[i1];
                 i1++;
@@ -6375,10 +6380,11 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
         //
         while (i1 < n1)
         {
-            if (*bufc != bb_p)
+            if (!bFirst)
             {
                 safe_chr(sep, buff, bufc);
             }
+            bFirst = FALSE;
             safe_str(ptrs1[i1], buff, bufc);
             oldp = ptrs1[i1];
             i1++;
