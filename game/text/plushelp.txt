@@ -86,17 +86,20 @@ Credits
   and pithy comments are as follows:
 
     Audumla@Everywhere   --A little bit of everything, +staff and +staff/all, 
-                           +beginner, and installer files.
+                           +beginner, +version, and installer files.
     BEM@Granite          --Much of the base code including +who, joining 
                            and summon commands, debugging. 
     Miateila@Granite     --+finger and LOTS of pithy commentary
     Hilikiradi@Sandbox   --Debugging, Penn platform tests, +cnotes, 
                            +lwho, PLACES upgrades, and installer files. 
-    Brazil@Everywhere    --Cheerleading
-    Lilith@Sandbox       --Debugging
+    Brazil@Everywhere    --MUX 2.0 issues
+    Talek, Javelin, Raevnos, David,
+    Vexon@M*U*S*H        --Penn Issues
+    Ashen-Shugar         --RhostMUSH Issues
+    Lilith@Sandbox       --Debugging, @register 
     Hunger@Pacifica      --Debugging, Aesthetics
-    David@Sandbox        --+motd code, plus a few others 
------------------------------------------------------------------------------
+    Jeff@TSC             --+version, @crontab 
+------------------------------------------------------------------------------
 
 & +finger 
 ------------------------------------------------------------------------------
