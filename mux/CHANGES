@@ -255,6 +255,7 @@ Bug Fixes:
  -- Fix SIGSEGV in SCRAMBLE().
  -- Alierak fixes strcat() given that its assumptions about TinyExec are no
     longer true.
+ -- Alierak fix for home(bad_obj) logic.
 
 
 Performance Enhancements:
