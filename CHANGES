@@ -402,6 +402,9 @@ Performance Enhancements:
 
     A broader case of this one was originally reported by Lucifer
     against MUX 2.1 and fixed 2001-OCT-16.  The fix wasn't sufficient.
+ -- Bug #557, #558, #559, and #560 were all buffers smaller than the 
+    largest possible result.  All reported by Morgan 2000-OCT-15.  Fixed 
+    (finally) by Brazil.
 
 
 Cosmetic Changes:
