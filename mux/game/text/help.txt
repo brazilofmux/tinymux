@@ -6348,8 +6348,9 @@ FUNCTION CLASSES (continued)
                              POS REGMATCH REGMATCHI REGRAB REGRABALL
                              REGRABALLI REGRABI REPEAT REPLACE REVERSE RIGHT
                              RJUST ROMAN SCRAMBLE SECURE SPACE SPELLNUM SQUISH
-                             STRCAT STRIPACCENTS STRIPANSI STRLEN STRMATCH
-                             STRTRUNC SWITCH TRANSLATE TRIM UCSTR WORDPOS
+                             STRCAT STRIP STRIPACCENTS STRIPANSI STRLEN
+                             STRMATCH STRTRUNC SWITCH TRANSLATE TRIM UCSTR
+                             WORDPOS
 
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
@@ -6419,7 +6420,7 @@ FUNCTION LIST (continued)
     SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHL()
     SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
     SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()
-    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIPACCENTS()
+    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIP()     STRIPACCENTS()
     STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()
     SUBJ()      SWITCH()    T()         TABLE()     TAN()       TEL()
     TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()
@@ -11257,6 +11258,24 @@ STRCAT()
   "foobarbazblech".
 
   Related Topics:
+
+& STRIP()
+STRIP()
+
+  FUNCTION: strip(<string1>[,<string2>])
+  
+  This function strips out every occurrence of every character of <string2>
+  from <string1> and returns <string1>.  If <string2> is empty or not given,
+  <string1> is returned, stripped of ANSI codes. The strip function is case
+  sensitive.
+  
+  Examples:
+    > say strip(This is a test,is)
+    You say "Th  a tet"
+    > say strip(abcdefgABCDEFG,azGy!7$B)
+    You say "bcdefgACDEF"
+  
+  Related Topics: @edit, edit().
 
 & STRIPACCENTS()
 STRIPACCENTS()
