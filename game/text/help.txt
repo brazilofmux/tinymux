@@ -5205,6 +5205,7 @@ FUNCTION LIST
 ("help function list2" for more)
 
 & FUNCTION LIST2
+FUNCTION LIST (continued)
 
     LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAP()
     MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
@@ -5229,8 +5230,7 @@ FUNCTION LIST
     WORDS()     WRITETIME() XGET()      XOR()       ZONE()      ZWHO()
   
 & FUNCTION CLASSES
-
-  Topic: FUNCTION CLASSES
+FUNCTION CLASSES
  
   Arithmetic:                ABS ADD BAND BNAND BOR CRC32 DEC DIE DIV FDIV
                              IADD IDIV IMUL INC ISUB MOD MUL PACK POWER RAND
@@ -5253,6 +5253,7 @@ FUNCTION LIST
 { 'help function classes2' for more }
  
 & FUNCTION CLASSES2
+FUNCTION CLASSES (continued)
 
   Object Information:        ANDFLAGS APOSS CMDS CONTROLS DEFAULT EDEFAULT
                              ELOCK FLAGS GET GET_EVAL GREP GREPI HASATTR
@@ -5264,6 +5265,7 @@ FUNCTION LIST
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNTOTAL
                              DOING FINDABLE IDLE LWHO PLAYMEM PORTS 
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ SORT
+  Realms:                    CANSEE
   Side-Effect Functions:     LINK TEL
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CAT COMP
                              DELETE EDIT ESCAPE IFELSE LCSTR LPOS MERGE MID
@@ -5696,8 +5698,10 @@ FUNCTION LIST
   well.
 
 & V()
+V()
 
-  Function: v(<string>)
+  FUNCTION:  v(<string>)
+  
   The V function can be used as an alternative for percent (%) substitution
   and also as a replacement for get(me/<arg>).  If the argument is two
   characters long or longer and starts with a letter, then the object
@@ -5708,17 +5712,24 @@ FUNCTION LIST
   example) is preferred as it is faster, and there are no longer any security
   problems associated with it.  Note that attributes with single-character
   names cannot be retrieved with v().
-  See also: GENDER, SUBSTITUTION, PARENT OBJECTS.
+  
+  Related Topics: GENDER, SUBSTITUTION, PARENT OBJECTS.
 
-& beep()
+& BEEP()
+BEEP()
 
-  Function: beep()
+  FUNCTION: beep()
+  
   This function simply outputs the beep character, which on most terminals
   with sound, will emit a short beep. Only wizards may use this function.
  
-& create()
+  Related Topics:
+  
+& CREATE()
+CREATE()
 
-  Function: create(<object>, <cost>[, <type>])
+  FUNCTION: create(<object>, <cost>[, <type>])
+  
   Works the same as @create <object>, but returns the database number of
   the object created. <cost> is the cost of making the object. <type>
   is an optional parameter, 'r' for rooms, 't' for things, and 'e' for 
