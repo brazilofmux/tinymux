@@ -4298,7 +4298,18 @@ ptr = (const uschar *)(pattern - 1);
 while ((c = *(++ptr)) != 0)
   {
   int min, max;
+#if defined(WIN32) && (_MSC_VER == 1200) && defined(_M_IX86) && !defined(__INTEL_COMPILER)
+  // The addition of 'volatile' works around a bug in Version 12.0 of
+  // Microsoft's Visual C/C++ compiler (part of Visual Studio 6.0). Without
+  // volatile, class_optcount is calculated properly, but the compiler
+  // clobbers the EAX register before tests it as class_optcount.
+  //
+  // This is not a problem with the Intel Compiler.
+  //
+  volatile int class_optcount;
+#else
   int class_optcount;
+#endif
   int bracket_length;
   int duplength;
 
