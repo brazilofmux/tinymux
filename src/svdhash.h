@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.h,v 1.7 2000-12-04 05:57:20 sdennis Exp $
+// $Id: svdhash.h,v 1.8 2001-02-01 23:50:36 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -238,10 +238,10 @@ private:
 
     unsigned int    m_nPages;
     unsigned int    m_nEntries;
-    unsigned int    m_nDeletions;
-    unsigned int    m_nScans;
-    unsigned int    m_nHits;
-    unsigned int    m_nChecks;
+    INT64           m_nDeletions;
+    INT64           m_nScans;
+    INT64           m_nHits;
+    INT64           m_nChecks;
     unsigned int    m_nMaxScan;
 
     BOOL DoubleDirectory(void);
@@ -252,7 +252,8 @@ private:
 public:
     CHashTable(void);
     void ResetStats(void);
-    void GetStats(unsigned int *hashsize, int *entries, int *deletes, int *scans, int *hits, int *checks, int *max_scan);
+    void GetStats( unsigned int *hashsize, int *entries, INT64 *deletes,
+                   INT64 *scans, INT64 *hits, INT64 *checks, int *max_scan);
 
     void Reset(void);
     BOOL Insert(HP_HEAPLENGTH nRecord, unsigned long nHash, void *pRecord);

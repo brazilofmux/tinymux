@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.32 2000-11-07 22:08:04 sdennis Exp $
+// $Id: command.cpp,v 1.33 2001-02-01 23:50:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2699,21 +2699,62 @@ static void list_vattrs(dbref player)
     free_lbuf(buff);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_hashstats: List information from hash tables
- */
+int LeftJustifyString(char *field, int nWidth, const char *value)
+{
+    int n = strlen(value);
+    if (n > nWidth)
+    {
+        n = nWidth;
+    }
+    memcpy(field, value, n);
+    memset(field+n, ' ', nWidth-n);
+    return nWidth;
+}
 
+int RightJustifyNumber(char *field, int nWidth, INT64 value)
+{
+    char buffer[22];
+    int n = Tiny_i64toa(value, buffer);
+    int nReturn = n;
+    if (n < nWidth)
+    {
+        memset(field, ' ', nWidth-n);
+        field += nWidth-n;
+        nReturn = nWidth;
+    }
+    memcpy(field, buffer, n);
+    return nReturn;
+}
+
+// list_hashstats: List information from hash tables
+//
+//
 static void list_hashstat(dbref player, const char *tab_name, CHashTable *htab)
 {
-    char *buff = hashinfo(tab_name, htab);
+    unsigned int hashsize;
+    int          entries, max_scan;
+    INT64        deletes, scans, hits, checks;
+
+    htab->GetStats(&hashsize, &entries, &deletes, &scans, &hits, &checks,
+        &max_scan);
+
+    char buff[MBUF_SIZE];
+    char *p = buff;
+
+    p += LeftJustifyString(p,  15, tab_name); *p++ = ' ';
+    p += RightJustifyNumber(p,  4, hashsize); *p++ = ' ';
+    p += RightJustifyNumber(p,  6, entries);  *p++ = ' ';
+    p += RightJustifyNumber(p,  9, deletes);  *p++ = ' ';
+    p += RightJustifyNumber(p, 11, scans);    *p++ = ' ';
+    p += RightJustifyNumber(p, 11, hits);     *p++ = ' ';
+    p += RightJustifyNumber(p, 11, checks);   *p++ = ' ';
+    p += RightJustifyNumber(p,  4, max_scan); *p = '\0';
     raw_notify(player, buff);
-    free_mbuf(buff);
 }
 
 static void list_hashstats(dbref player)
 {
-    raw_notify(player, "Hash Stats       Size  Entries  Deleted    Lookups       Hits     Checks Longest");
+    raw_notify(player, "Hash Stats      Size Entries Deleted    Lookups      Hits       Checks   Longest");
     list_hashstat(player, "Commands", &mudstate.command_htab);
     list_hashstat(player, "Logged-out Cmds", &mudstate.logout_cmd_htab);
     list_hashstat(player, "Functions", &mudstate.func_htab);
