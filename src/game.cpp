@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.16 2000-08-03 03:52:08 sdennis Exp $
+// $Id: game.cpp,v 1.17 2000-08-03 03:55:33 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2075,9 +2075,9 @@ int DCL_CDECL main(int argc, char *argv[])
 
 #ifndef WIN32
     load_restart_db();
-#endif // WIN32
 
     if (!mudstate.restarting)
+#endif // WIN32
     {
         if (fclose(stdout) == 0)
         {
