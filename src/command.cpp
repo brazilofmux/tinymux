@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.43 2001-10-10 08:08:30 sdennis Exp $
+// $Id: command.cpp,v 1.44 2001-11-03 04:43:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1263,7 +1263,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
         mudstate.debug_cmd = cmdsave;
         return;
     }
-    if (Suspect(player))
+    if (Suspect(player) && (mudconf.log_options & LOG_SUSPECTCMDS))
     {
         STARTLOG(LOG_SUSPECTCMDS, "CMD", "SUSP");
         log_name_and_loc(player);

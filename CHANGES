@@ -459,6 +459,8 @@ Bug Fixes:
  --  Bug #585 - Parent isn't cleared during @destroy process. Patch from Jake.
  --  Bug #765 - whispering to objects with ears should still be allowed.
  --  Bug #602 - fun_ansi reaches backwards into the buffer.
+ --  Bug #786 - Interaction between SUSPECT and 'log all_commands'. If both
+     on, SUSPECT actions do not show up in the logs. Patch from Raevnos.
 
 
 Performance Enhancements:

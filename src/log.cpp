@@ -1,7 +1,7 @@
 //
 // log.cpp - logging routines
 //
-// $Id: log.cpp,v 1.8 2001-07-06 21:22:51 sdennis Exp $
+// $Id: log.cpp,v 1.9 2001-11-03 04:43:30 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -46,6 +46,7 @@ NAMETAB logoptions_nametab[] =
     {(char *)"security",        2,  0,  LOG_SECURITY},
     {(char *)"shouts",          2,  0,  LOG_SHOUTS},
     {(char *)"startup",         2,  0,  LOG_STARTUP},
+    {(char *)"suspect",         2,  0,  LOG_SUSPECTCMDS},
     {(char *)"time_usage",      1,  0,  LOG_TIMEUSE},
     {(char *)"wizard",          1,  0,  LOG_WIZARD},
     { NULL,                     0,  0,  0}
