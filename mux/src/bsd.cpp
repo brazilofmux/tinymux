@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.35 2004-06-05 22:51:28 sdennis Exp $
+// $Id: bsd.cpp,v 1.36 2004-06-08 17:33:50 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2886,6 +2886,14 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                     //
                     mudstate.dumper = child;
                     mudstate.dumping = false;
+                }
+                else
+                {
+                    log_signal(sig);
+                    STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
+                    Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d, sqlslave_pid=%d" ENDLINE,
+                        mudstate.dumper, child, slave_pid, sqlslave_pid);
+                    ENDLOG;
                 }
             }
         }
