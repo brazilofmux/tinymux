@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.156 2002-02-26 09:19:43 sdennis Exp $
+// $Id: functions.cpp,v 1.157 2002-02-26 11:05:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2789,20 +2789,63 @@ double AddWithError(double& err, double a, double b)
 
 // Double compensation method. Extended by Priest from Knuth and Kahan.
 //
-// Error of sum is less than 2*epsilon except for very large n.
+// Error of sum is less than 2*epsilon or 1 ulp except for very large n.
+// Return the result that yields the shortest number of base-10 digits.
 //
+extern char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
+                       char **rve);
+
 double AddDoubles(int n, double pd[])
 {
     qsort(pd, n, sizeof(double), f_comp_abs);
     double sum = pd[0];
     double sum_err = 0.0;
-    for (int i = 1; i < n; i++)
+    int i;
+    for (i = 1; i < n; i++)
     {
         double addend_err;
         double addend = AddWithError(addend_err, sum_err, pd[i]);
         double sum1_err;
         double sum1 = AddWithError(sum1_err, sum, addend);
         sum = AddWithError(sum_err, sum1, addend_err + sum1_err);
+    }
+    double frac = frexp(sum, &i);
+    if (frac != 0.0)
+    {
+        // Calculate ulp
+        //
+        double ulp = ldexp(1.0,i-53);
+
+        char *rve = NULL;
+        int decpt;
+        int bNegative;
+        const int mode = 0;
+
+        // How many base-10 digits for sum?
+        //
+        char *p = Tiny_dtoa(sum, mode, 50, &decpt, &bNegative, &rve);
+        int nDigits = rve - p;
+
+        // How many base-10 digits for sum+ulp?
+        //
+        double r = sum;
+        double s = sum + ulp;
+        p = Tiny_dtoa(s, mode, 50, &decpt, &bNegative, &rve);
+        if (rve - p < nDigits)
+        {
+            nDigits = rve - p;
+            sum  = s;
+        }
+
+        // How many base-10 digits for sum-ulp?
+        //
+        s = sum - ulp;
+        p = Tiny_dtoa(s, mode, 50, &decpt, &bNegative, &rve);
+        if (rve - p < nDigits)
+        {
+            nDigits = rve - p;
+            sum = s;
+        }
     }
     return sum;
 }
