@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  July 2000
+Last Update:  August 2000
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -351,7 +351,6 @@ Performance Enhancements:
      the invoker for an extra penny.
  --  The random number generators are now given a seed which is based upon
      the full resolution of the current time (milliseconds or better).
- --  Spelling error in 'wizhelp have_macros' topic.
  --  LAST() is faster.
  --  Removed duplicate code.
  --  Improved speed and consistancy of object name checking.
@@ -365,6 +364,7 @@ Cosmetic Changes:
      go together.
  --  README and related server docs have been reviewed and updated. 
  --  buildnum.data added into distribution.
+ --  Spelling error in 'wizhelp have_macros' topic.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
