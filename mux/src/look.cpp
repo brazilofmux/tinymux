@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.11 2002-06-27 09:06:47 jake Exp $
+// $Id: look.cpp,v 1.12 2002-07-09 05:57:33 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -605,14 +605,13 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
 static void look_contents(dbref player, dbref loc, const char *contents_name, int style)
 {
     dbref thing;
-    dbref can_see_loc;
     char *buff;
     char *html_buff, *html_cp;
     char remote_num[32];
 
     // Check to see if he can see the location.
     //
-    can_see_loc = (!Dark(loc) ||
+    BOOL can_see_loc = (!Dark(loc) ||
         (mudconf.see_own_dark && Examinable(player, loc)));
 
     dbref aowner;

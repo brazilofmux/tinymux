@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.21 2002-07-09 02:25:06 jake Exp $
+// $Id: externs.h,v 1.22 2002-07-09 05:57:33 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -79,12 +79,12 @@ extern const signed char Tiny_IsRegister[256];
 extern void notify_except(dbref, dbref, dbref, const char *, int key);
 extern void notify_except2(dbref, dbref, dbref, dbref, const char *);
 
-extern int  check_filter(dbref, dbref, int, const char *);
+extern BOOL check_filter(dbref, dbref, int, const char *);
 extern void notify_check(dbref, dbref, const char *, int);
-extern int  Hearer(dbref);
+extern BOOL Hearer(dbref);
 extern void report(void);
 extern int  atr_match(dbref, dbref, char, char *, int);
-extern int  list_check(dbref, dbref, char, char *, int);
+extern BOOL list_check(dbref, dbref, char, char *, int);
 extern int  html_escape(const char *src, char *dest, char **destp);
 
 #ifndef STANDALONE
@@ -148,16 +148,16 @@ extern void  empty_obj(dbref);
 
 /* From player.cpp */
 extern void record_login(dbref, int, char *, char *, char *, char *);
-extern int  check_pass(dbref, const char *);
+extern BOOL check_pass(dbref, const char *);
 extern dbref connect_player(char *, char *, char *, char *, char *);
 extern dbref create_player(char *, char *, dbref, int, int);
-extern int  add_player_name(dbref, char *);
-extern int  delete_player_name(dbref, char *);
+extern BOOL add_player_name(dbref, char *);
+extern BOOL delete_player_name(dbref, char *);
 extern dbref lookup_player(dbref, char *, int);
 extern void load_player_names(void);
 extern void badname_add(char *);
 extern void badname_remove(char *);
-extern int  badname_check(char *);
+extern BOOL badname_check(char *);
 extern void badname_list(dbref, const char *);
 
 /* From predicates.cpp */
@@ -166,27 +166,27 @@ extern void DCL_CDECL safe_tprintf_str(char *, char **, const char *, ...);
 extern dbref insert_first(dbref, dbref);
 extern dbref remove_first(dbref, dbref);
 extern dbref reverse_list(dbref);
-extern int  member(dbref, dbref);
-extern int  could_doit(dbref, dbref, int);
-extern int  can_see(dbref, dbref, int);
+extern BOOL member(dbref, dbref);
+extern BOOL could_doit(dbref, dbref, int);
+extern BOOL can_see(dbref, dbref, BOOL);
 extern void add_quota(dbref, int);
-extern int  canpayfees(dbref, dbref, int, int);
+extern BOOL canpayfees(dbref, dbref, int, int);
 extern void giveto(dbref,int);
-extern int  payfor(dbref,int);
+extern BOOL payfor(dbref,int);
 extern char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid);
 extern BOOL ValidatePlayerName(const char *pName);
-extern int  ok_password(const char *szPassword, dbref player);
-extern void handle_ears(dbref, int, int);
-extern dbref match_possessed(dbref, dbref, char *, dbref, int);
+extern BOOL ok_password(const char *szPassword, dbref player);
+extern void handle_ears(dbref, BOOL, BOOL);
+extern dbref match_possessed(dbref, dbref, char *, dbref, BOOL);
 extern void parse_range(char **, dbref *, dbref *);
 extern int  parse_thing_slash(dbref, char *, char **, dbref *);
 extern int  get_obj_and_lock(dbref, char *, dbref *, ATTR **, char *, char **);
 extern dbref where_is(dbref);
 extern dbref where_room(dbref);
-extern int  locatable(dbref, dbref, dbref);
-extern int  nearby(dbref, dbref);
-extern int  exit_visible(dbref, dbref, int);
-extern int  exit_displayable(dbref, dbref, int);
+extern BOOL locatable(dbref, dbref, dbref);
+extern BOOL nearby(dbref, dbref);
+extern BOOL exit_visible(dbref, dbref, int);
+extern BOOL exit_displayable(dbref, dbref, int);
 extern void did_it(dbref, dbref, int, const char *, int, const char *, int, char *[], int);
 extern void list_bufstats(dbref);
 extern void list_buftrace(dbref);
@@ -203,12 +203,12 @@ extern dbref match_handler(dbref player, const char *name, int key, BOOL bQuiet)
 #define match_examinable(player,name)       match_handler(player, name, MATCH_EXAM, FALSE)
 
 /* From boolexp.cpp */
-extern int  eval_boolexp(dbref, dbref, dbref, BOOLEXP *);
-extern BOOLEXP *parse_boolexp(dbref,const char *, int);
-extern int eval_boolexp_atr(dbref, dbref, dbref, char *);
+extern BOOL eval_boolexp(dbref, dbref, dbref, BOOLEXP *);
+extern BOOLEXP *parse_boolexp(dbref, const char *, BOOL);
+extern BOOL eval_boolexp_atr(dbref, dbref, dbref, char *);
 
 /* From functions.cpp */
-extern int  xlate(char *);
+extern BOOL xlate(char *);
 extern char *trim_space_sep(char *, char);
 extern char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim);
 extern char *next_token(char *str, char sep);

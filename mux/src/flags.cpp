@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.4 2002-06-27 09:06:47 jake Exp $
+// $Id: flags.cpp,v 1.5 2002-07-09 05:57:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -18,7 +18,7 @@
  * * fh_any: set or clear indicated bit, no security checking
  */
 
-int fh_any(dbref target, dbref player, FLAG flag, int fflags, int reset)
+BOOL fh_any(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
 {
     // Never let God drop his/her own wizbit.
     //
@@ -28,7 +28,7 @@ int fh_any(dbref target, dbref player, FLAG flag, int fflags, int reset)
        && fflags == FLAG_WORD1)
     {
         notify(player, "You cannot make God mortal.");
-        return 0;
+        return FALSE;
     }
 
     // Otherwise we can go do it.
@@ -41,7 +41,7 @@ int fh_any(dbref target, dbref player, FLAG flag, int fflags, int reset)
     {
         db[target].fs.word[fflags] |= flag;
     }
-    return 1;
+    return TRUE;
 }
 
 /*
@@ -49,10 +49,12 @@ int fh_any(dbref target, dbref player, FLAG flag, int fflags, int reset)
  * * fh_god: only GOD may set or clear the bit
  */
 
-int fh_god(dbref target, dbref player, FLAG flag, int fflags, int reset)
+BOOL fh_god(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
 {
     if (!God(player))
-        return 0;
+    {
+        return TRUE;
+    }
     return (fh_any(target, player, flag, fflags, reset));
 }
 
@@ -61,10 +63,12 @@ int fh_god(dbref target, dbref player, FLAG flag, int fflags, int reset)
  * * fh_wiz: only WIZARDS (or GOD) may set or clear the bit
  */
 
-int fh_wiz(dbref target, dbref player, FLAG flag, int fflags, int reset)
+BOOL fh_wiz(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
 {
-    if (!Wizard(player) && !God(player))
-        return 0;
+    if (!Wizard(player))
+    {
+        return FALSE;
+    }
     return (fh_any(target, player, flag, fflags, reset));
 }
 
@@ -73,10 +77,12 @@ int fh_wiz(dbref target, dbref player, FLAG flag, int fflags, int reset)
  * * fh_wizroy: only WIZARDS, ROYALTY, (or GOD) may set or clear the bit
  */
 
-int fh_wizroy(dbref target, dbref player, FLAG flag, int fflags, int reset)
+BOOL fh_wizroy(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
 {
-    if (!WizRoy(player) && !God(player))
-        return 0;
+    if (!WizRoy(player))
+    {
+        return FALSE;
+    }
     return (fh_any(target, player, flag, fflags, reset));
 }
 
@@ -86,20 +92,19 @@ int fh_wizroy(dbref target, dbref player, FLAG flag, int fflags, int reset)
  * * this on players, but ordinary players can set it on other types
  * * of objects.
  */
-int fh_restrict_player
+BOOL fh_restrict_player
 (
     dbref target,
     dbref player,
     FLAG flag,
     int fflags,
-    int reset
+    BOOL reset
 )
 {
     if (  isPlayer(target)
-       && !Wizard(player)
-       && !God(player))
+       && !Wizard(player))
     {
-        return 0;
+        return FALSE;
     }
     return fh_any(target, player, flag, fflags, reset);
 }
@@ -109,13 +114,13 @@ int fh_restrict_player
  * yourself have this flag and are a player who owns themselves (i.e.,
  * no robots). Only God can set this on a player.
  */
-int fh_privileged
+BOOL fh_privileged
 (
     dbref target,
     dbref player,
     FLAG flag,
     int fflags,
-    int reset
+    BOOL reset
 )
 {
     if (!God(player))
@@ -125,7 +130,7 @@ int fh_privileged
            || isPlayer(target)
            || (db[player].fs.word[fflags] & flag) == 0)
         {
-            return 0;
+            return FALSE;
         }
     }
     return fh_any(target, player, flag, fflags, reset);
@@ -136,10 +141,12 @@ int fh_privileged
  * * fh_inherit: only players may set or clear this bit.
  */
 
-int fh_inherit(dbref target, dbref player, FLAG flag, int fflags, int reset)
+BOOL fh_inherit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
 {
     if (!Inherits(player))
-        return 0;
+    {
+        return FALSE;
+    }
     return (fh_any(target, player, flag, fflags, reset));
 }
 
@@ -148,16 +155,15 @@ int fh_inherit(dbref target, dbref player, FLAG flag, int fflags, int reset)
  * * fh_dark_bit: manipulate the dark bit. Nonwizards may not set on players.
  */
 
-int fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
+BOOL fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
 {
     if (  !reset
        && isPlayer(target)
        && !(  (target == player)
            && Can_Hide(player))
-       && !Wizard(player)
-       && !God(player))
+       && !Wizard(player))
     {
-        return 0;
+        return FALSE;
     }
     return fh_any(target, player, flag, fflags, reset);
 }
@@ -167,7 +173,7 @@ int fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
  * * fh_going_bit: manipulate the going bit.  Non-gods may only clear on rooms.
  */
 
-int fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
+BOOL fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
 {
     if (  Going(target)
        && reset
@@ -178,7 +184,7 @@ int fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
     }
     if (!God(player))
     {
-        return 0;
+        return FALSE;
     }
 
     // Even God should not be allowed set protected dbrefs GOING.
@@ -191,7 +197,7 @@ int fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
           || target == mudconf.default_home
           || target == mudconf.master_room))
     {
-        return 0;
+        return FALSE;
     }
     return fh_any(target, player, flag, fflags, reset);
 }
@@ -201,39 +207,41 @@ int fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
  * * fh_hear_bit: set or clear bits that affect hearing.
  */
 
-int fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
+BOOL fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
 {
-    int could_hear;
-
     if (isPlayer(target) && (flag & MONITOR))
     {
         if (Can_Monitor(player))
+        {
             fh_any(target, player, flag, fflags, reset);
+        }
         else
-            return 0;
+        {
+            return FALSE;
+        }
     }
 
-    could_hear = Hearer(target);
+    BOOL could_hear = Hearer(target);
     fh_any(target, player, flag, fflags, reset);
     handle_ears(target, could_hear, Hearer(target));
-    return 1;
+    return TRUE;
 }
 
 /* ---------------------------------------------------------------------------
  * fh_player_bit: Can set and reset this on everything but players.
  */
-int fh_player_bit
+BOOL fh_player_bit
 (
     dbref target,
     dbref player,
     FLAG flag,
     int fflags,
-    int reset
+    BOOL reset
 )
 {
     if (isPlayer(target))
     {
-        return 0;
+        return FALSE;
     }
     return fh_any(target, player, flag, fflags, reset);
 }
@@ -242,17 +250,19 @@ int fh_player_bit
  * fh_staff: only STAFF, WIZARDS, ROYALTY, (or GOD) may set or clear
  * the bit.
  */
-int fh_staff
+BOOL fh_staff
 (
     dbref target,
     dbref player,
     FLAG flag,
     int fflags,
-    int reset
+    BOOL reset
 )
 {
     if (!Staff(player) && !God(player))
-        return 0;
+    {
+        return FALSE;
+    }
     return (fh_any(target, player, flag, fflags, reset));
 }
 
@@ -722,12 +732,12 @@ char *decode_flags(dbref player, FLAGSET *fs)
  * * has_flag: does object have flag visible to player?
  */
 
-int has_flag(dbref player, dbref it, char *flagname)
+BOOL has_flag(dbref player, dbref it, char *flagname)
 {
     FLAGNAMEENT *fp = find_flag(it, flagname);
     if (!fp)
     {
-        return 0;
+        return FALSE;
     }
     FLAGBITENT *fbe = fp->fbe;
 
@@ -745,7 +755,7 @@ int has_flag(dbref player, dbref it, char *flagname)
            || (  (fbe->listperm & CA_GOD)
               && !God(player)))
         {
-            return 0;
+            return FALSE;
         }
 
         // Don't show CONNECT on dark wizards to mortals
@@ -756,11 +766,11 @@ int has_flag(dbref player, dbref it, char *flagname)
            && Hidden(it)
            && !See_Hidden(player))
         {
-            return 0;
+            return FALSE;
         }
-        return 1;
+        return TRUE;
     }
-    return 0;
+    return FALSE;
 }
 
 /*

@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.1 2002-05-24 06:53:14 sdennis Exp $
+// $Id: attrcache.cpp,v 1.2 2002-07-09 05:57:33 jake Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -18,9 +18,9 @@
 
 CHashFile hfAttributeFile;
 
-static int cache_initted = FALSE;
+static BOOL cache_initted = FALSE;
 #ifdef STANDALONE
-static int cache_redirected = FALSE;
+static BOOL cache_redirected = FALSE;
 #define N_TEMP_FILES 4
 FILE *TempFiles[N_TEMP_FILES];
 #endif // STANDALONE

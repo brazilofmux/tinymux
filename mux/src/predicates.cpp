@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.22 2002-06-29 15:21:00 sdennis Exp $
+// $Id: predicates.cpp,v 1.23 2002-07-09 05:57:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -90,22 +90,25 @@ dbref reverse_list(dbref list)
  * * member - indicate if thing is in list
  */
 
-int member(dbref thing, dbref list)
+BOOL member(dbref thing, dbref list)
 {
-    DOLIST(list, list) {
+    DOLIST(list, list)
+    {
         if (list == thing)
-            return 1;
+        {
+            return TRUE;
+        }
     }
-    return 0;
+    return FALSE;
 }
 
 #ifndef STANDALONE
 
-int could_doit(dbref player, dbref thing, int locknum)
+BOOL could_doit(dbref player, dbref thing, int locknum)
 {
     if (thing == HOME)
     {
-        return 1;
+        return TRUE;
     }
 
     // If nonplayer tries to get key, then no.
@@ -113,22 +116,22 @@ int could_doit(dbref player, dbref thing, int locknum)
     if (  !isPlayer(player)
        && Key(thing))
     {
-        return 0;
+        return FALSE;
     }
     if (Pass_Locks(player))
     {
-        return 1;
+        return TRUE;
     }
 
     dbref aowner;
     int   aflags;
     char *key = atr_get(thing, locknum, &aowner, &aflags);
-    int doit = eval_boolexp_atr(player, thing, thing, key);
+    BOOL doit = eval_boolexp_atr(player, thing, thing, key);
     free_lbuf(key);
     return doit;
 }
 
-int can_see(dbref player, dbref thing, int can_see_loc)
+BOOL can_see(dbref player, dbref thing, BOOL can_see_loc)
 {
     // Don't show if all the following apply: Sleeping players should not be
     // seen.  The thing is a disconnected player.  The player is not a
@@ -137,15 +140,14 @@ int can_see(dbref player, dbref thing, int can_see_loc)
     if (mudconf.dark_sleepers && isPlayer(thing) &&
         !Connected(thing) && !Puppet(thing))
     {
-        return 0;
+        return FALSE;
     }
 
-    /*
-     * You don't see yourself or exits
-     */
+    // You don't see yourself or exits.
+    //
     if ((player == thing) || isExit(thing))
     {
-        return 0;
+        return FALSE;
     }
 
     // If loc is not dark, you see it if it's not dark or you control it.  If
@@ -165,102 +167,106 @@ int can_see(dbref player, dbref thing, int can_see_loc)
     }
 }
 
-static int pay_quota(dbref who, int cost)
+static BOOL pay_quota(dbref who, int cost)
 {
-    dbref aowner;
-    int quota, aflags;
-    char buf[20], *quota_str;
-
-    /*
-     * If no cost, succeed
-     */
-
+    // If no cost, succeed
     if (cost <= 0)
-        return 1;
+    {
+        return TRUE;
+    }
 
-    /*
-     * determine quota
-     */
-
-    quota = Tiny_atol(quota_str = atr_get(Owner(who), A_RQUOTA, &aowner, &aflags));
+    // determine quota
+    char buf[20], *quota_str;
+    dbref aowner;
+    int aflags;
+    int quota = Tiny_atol(quota_str = atr_get(Owner(who), A_RQUOTA, &aowner, &aflags));
     free_lbuf(quota_str);
 
-    /*
-     * enough to build?  Wizards always have enough.
-     */
-
+    // enough to build?  Wizards always have enough.
     quota -= cost;
     if ((quota < 0) && !Free_Quota(who) && !Free_Quota(Owner(who)))
+    {
         return 0;
+    }
 
     // Dock the quota.
     //
     Tiny_ltoa(quota, buf);
     atr_add_raw(Owner(who), A_RQUOTA, buf);
 
-    return 1;
+    return TRUE;
 }
 
-int canpayfees(dbref player, dbref who, int pennies, int quota)
+BOOL canpayfees(dbref player, dbref who, int pennies, int quota)
 {
-    if (!Wizard(who) && !Wizard(Owner(who)) &&
-        !Free_Money(who) && !Free_Money(Owner(who)) &&
-        (Pennies(Owner(who)) < pennies)) {
-        if (player == who) {
-            notify(player,
-                   tprintf("Sorry, you don't have enough %s.",
+    if (  !Wizard(who)
+       && !Wizard(Owner(who))
+       && !Free_Money(who)
+       && !Free_Money(Owner(who))
+       && (Pennies(Owner(who)) < pennies))
+    {
+        if (player == who)
+        {
+            notify(player, tprintf("Sorry, you don't have enough %s.",
                        mudconf.many_coins));
-        } else {
-            notify(player,
-            tprintf("Sorry, that player doesn't have enough %s.",
+        }
+        else
+        {
+            notify(player, tprintf("Sorry, that player doesn't have enough %s.",
                 mudconf.many_coins));
         }
-        return 0;
+        return FALSE;
     }
-    if (mudconf.quotas) {
-        if (!pay_quota(who, quota)) {
-            if (player == who) {
+    if (mudconf.quotas)
+    {
+        if (!pay_quota(who, quota))
+        {
+            if (player == who)
+            {
                 notify(player,
                        "Sorry, your building contract has run out.");
-            } else {
+            }
+            else
+            {
                 notify(player,
                        "Sorry, that player's building contract has run out.");
             }
-            return 0;
+            return FALSE;
         }
     }
     payfor(who, pennies);
-    return 1;
+    return TRUE;
 }
 
-int payfor(dbref who, int cost)
+BOOL payfor(dbref who, int cost)
 {
-    dbref tmp;
+    int tmp;
 
-    if (Wizard(who) || Wizard(Owner(who)) ||
-        Free_Money(who) || Free_Money(Owner(who)) ||
-        Immortal(who) || Immortal(Owner(who))) {
-        return 1;
+    if (  Wizard(who)
+       || Wizard(Owner(who))
+       || Free_Money(who) 
+       || Free_Money(Owner(who))) 
+    {
+        return TRUE;
     }
     who = Owner(who);
-    if ((tmp = Pennies(who)) >= cost) {
+    if ((tmp = Pennies(who)) >= cost)
+    {
         s_Pennies(who, tmp - cost);
-        return 1;
+        return TRUE;
     }
-    return 0;
+    return FALSE;
 }
 
-#endif /*
-        * STANDALONE
-        */
+#endif // STANDALONE
 
 void add_quota(dbref who, int payment)
 {
     dbref aowner;
     int aflags;
-    char buf[20], *quota;
+    char buf[20];
 
-    quota = atr_get(who, A_RQUOTA, &aowner, &aflags);
+    char *quota = atr_get(who, A_RQUOTA, &aowner, &aflags);
     Tiny_ltoa(Tiny_atol(quota) + payment, buf);
     free_lbuf(quota);
     atr_add_raw(who, A_RQUOTA, buf);
@@ -268,9 +274,11 @@ void add_quota(dbref who, int payment)
 
 void giveto(dbref who, int pennies)
 {
-    if (Wizard(who) || Wizard(Owner(who)) ||
-        Free_Money(who) || Free_Money(Owner(who)) ||
-        Immortal(who) || Immortal(Owner(who))) {
+    if (  Wizard(who)
+       || Wizard(Owner(who))
+       || Free_Money(who)
+       || Free_Money(Owner(who)))
+    {
         return;
     }
     who = Owner(who);
@@ -406,11 +414,10 @@ BOOL ValidatePlayerName(const char *pName)
     {
         return FALSE;
     }
-
     return TRUE;
 }
 
-int ok_password(const char *password, dbref player)
+BOOL ok_password(const char *password, dbref player)
 {
     const char *scan;
     int num_upper = 0;
@@ -422,7 +429,7 @@ int ok_password(const char *password, dbref player)
 #ifndef STANDALONE
         notify_quiet(player, "Null passwords are not allowed.");
 #endif
-        return 0;
+        return FALSE;
     }
 
     for (scan = password; *scan; scan++)
@@ -433,7 +440,7 @@ int ok_password(const char *password, dbref player)
 #ifndef STANDALONE
             notify_quiet(player, "Illegal character in password.");
 #endif
-            return 0;
+            return FALSE;
         }
         if (Tiny_IsUpper[(unsigned char)*scan])
             num_upper++;
@@ -452,7 +459,7 @@ int ok_password(const char *password, dbref player)
 #ifndef STANDALONE
         notify_quiet(player, "Please choose another password.");
 #endif
-        return 0;
+        return FALSE;
     }
 
 #ifndef STANDALONE
@@ -461,22 +468,22 @@ int ok_password(const char *password, dbref player)
         if (num_upper < 1)
         {
             notify_quiet(player, "The password must contain at least one capital letter.");
-            return 0;
+            return FALSE;
         }
         if (num_lower < 1)
         {
             notify_quiet(player, "The password must contain at least one lowercase letter.");
-            return 0;
+            return FALSE;
         }
         if (num_special < 1)
         {
             notify_quiet(player, "The password must contain at least one number or a symbol other than the apostrophe or dash.");
-            return 0;
+            return FALSE;
         }
     }
 #endif // STANDALONE
 
-    return 1;
+    return TRUE;
 }
 
 #ifndef STANDALONE
@@ -486,17 +493,19 @@ int ok_password(const char *password, dbref player)
  * * handle_ears: Generate the 'grows ears' and 'loses ears' messages.
  */
 
-void handle_ears(dbref thing, int could_hear, int can_hear)
+void handle_ears(dbref thing, BOOL could_hear, BOOL can_hear)
 {
     char *buff, *bp;
     int gender;
     static const char *poss[5] =
     {"", "its", "her", "his", "their"};
 
-    if (!could_hear && can_hear) {
+    if (!could_hear && can_hear)
+    {
         buff = alloc_lbuf("handle_ears.grow");
         StringCopy(buff, Name(thing));
-        if (isExit(thing)) {
+        if (isExit(thing))
+        {
             for (bp = buff; *bp && (*bp != ';'); bp++) ;
             *bp = '\0';
         }
@@ -506,10 +515,13 @@ void handle_ears(dbref thing, int could_hear, int can_hear)
                      buff, (gender == 4) ? "" : "s"),
                  (MSG_ME | MSG_NBR | MSG_LOC | MSG_INV));
         free_lbuf(buff);
-    } else if (could_hear && !can_hear) {
+    }
+    else if (could_hear && !can_hear)
+    {
         buff = alloc_lbuf("handle_ears.lose");
         StringCopy(buff, Name(thing));
-        if (isExit(thing)) {
+        if (isExit(thing))
+        {
             for (bp = buff; *bp && (*bp != ';'); bp++) ;
             *bp = '\0';
         }
@@ -1276,16 +1288,18 @@ static dbref promote_dflt(dbref old, dbref new0)
     return NOTHING;
 }
 
-dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int check_enter)
+dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL check_enter)
 {
     dbref result, result1;
-    int control;
+    BOOL control;
     char *buff, *start, *place, *s1, *d1, *temp;
 
     // First, check normally.
     //
     if (Good_obj(dflt))
+    {
         return dflt;
+    }
 
     // Didn't find it directly.  Recursively do a contents check.
     //
@@ -1297,25 +1311,27 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int c
         place = target;
         target = strchr(place, '\'');
         if ((target == NULL) || !*target)
+        {
             return dflt;
+        }
 
-        /*
-         * If string started with a ', skip past it
-         */
-
-        if (place == target) {
+        // If string started with a ', skip past it
+        if (place == target)
+        {
             target++;
             continue;
         }
-        /*
-         * If next character is not an s or a space, skip past
-         */
 
+        // If next character is not an s or a space, skip past
         temp = target++;
         if (!*target)
+        {
             return dflt;
+        }
         if ((*target != 's') && (*target != 'S') && (*target != ' '))
+        {
             continue;
+        }
 
         // If character was not a space make sure the following character is
         // a space.
@@ -1324,9 +1340,13 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int c
         {
             target++;
             if (!*target)
+            {
                 return dflt;
+            }
             if (*target != ' ')
+            {
                 continue;
+            }
         }
 
         // Copy the container name to a new buffer so we can terminate it.
@@ -1339,16 +1359,20 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int c
         // can't find it.
         //
         init_match(thing, buff, NOTYPE);
-        if (player == thing) {
+        if (player == thing)
+        {
             match_neighbor();
             match_possession();
-        } else {
+        }
+        else
+        {
             match_possession();
         }
         result1 = match_result();
 
         free_lbuf(buff);
-        if (!Good_obj(result1)) {
+        if (!Good_obj(result1))
+        {
             dflt = promote_dflt(dflt, result1);
             continue;
         }
@@ -1356,7 +1380,8 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int c
         // If we don't control it and it is either dark or opaque, skip past.
         //
         control = Controls(player, result1);
-        if ((Dark(result1) || Opaque(result1)) && !control) {
+        if ((Dark(result1) || Opaque(result1)) && !control)
+        {
             dflt = promote_dflt(dflt, NOTHING);
             continue;
         }
@@ -1377,7 +1402,9 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int c
         result = match_possessed(player, result1, target, result,
                      check_enter);
         if (Good_obj(result))
+        {
             return result;
+        }
         dflt = promote_dflt(dflt, result);
     }
     return dflt;
@@ -1661,49 +1688,58 @@ dbref where_room(dbref what)
     return NOTHING;
 }
 
-int locatable(dbref player, dbref it, dbref enactor)
+BOOL locatable(dbref player, dbref it, dbref enactor)
 {
-    dbref loc_it, room_it;
-    int findable_room;
-
-    /*
-     * No sense if trying to locate a bad object
-     */
-
+    // No sense if trying to locate a bad object
+    //
     if (!Good_obj(it))
-        return 0;
+    {
+        return FALSE;
+    }
 
-    loc_it = where_is(it);
+    dbref loc_it = where_is(it);
 
     // Succeed if we can examine the target, if we are the target, if we can
     // examine the location, if a wizard caused the lookup, or if the target
     // caused the lookup.
     //
-    if (Examinable(player, it) ||
-        Find_Unfindable(player) ||
-        (loc_it == player) ||
-        ((loc_it != NOTHING) &&
-         (Examinable(player, loc_it) || loc_it == where_is(player))) ||
-        Wizard(enactor) ||
-        (it == enactor))
-        return 1;
+    if (  Examinable(player, it)
+       || Find_Unfindable(player)
+       || (loc_it == player)
+       || (  (loc_it != NOTHING) 
+          && (Examinable(player, loc_it)
+          || loc_it == where_is(player)))
+       || Wizard(enactor)
+       || (it == enactor))
+    {
+        return TRUE;
+    }
 
-    room_it = where_room(it);
+    dbref room_it = where_room(it);
+    BOOL findable_room;
     if (Good_obj(room_it))
+    {
         findable_room = !Hideout(room_it);
+    }
     else
-        findable_room = 1;
+    {
+        findable_room = TRUE;
+    }
 
     // Succeed if we control the containing room or if the target is findable
     // and the containing room is not unfindable.
     //
-    if (((room_it != NOTHING) && Examinable(player, room_it)) ||
-        Find_Unfindable(player) || (Findable(it) && findable_room))
-        return 1;
+    if (  (  (room_it != NOTHING)
+          && Examinable(player, room_it))
+       || Find_Unfindable(player)
+       || (Findable(it) && findable_room))
+    {
+        return TRUE;
+    }
 
     // We can't do it.
     //
-    return 0;
+    return FALSE;
 }
 
 /*
@@ -1712,32 +1748,36 @@ int locatable(dbref player, dbref it, dbref enactor)
  * * IS the room.
  */
 
-int nearby(dbref player, dbref thing)
+BOOL nearby(dbref player, dbref thing)
 {
-    int thing_loc, player_loc;
-
     if (!Good_obj(player) || !Good_obj(thing))
-        return 0;
-    thing_loc = where_is(thing);
+    {
+        return FALSE;
+    }
+    dbref thing_loc = where_is(thing);
     if (thing_loc == player)
-        return 1;
-    player_loc = where_is(player);
+    {
+        return TRUE;
+    }
+    dbref player_loc = where_is(player);
     if ((thing_loc == player_loc) || (thing == player_loc))
-        return 1;
-    return 0;
+    {
+        return TRUE;
+    }
+    return FALSE;
 }
 
 /*
  * ---------------------------------------------------------------------------
  * * exit_visible, exit_displayable: Is exit visible?
  */
-int exit_visible(dbref exit, dbref player, int key)
+BOOL exit_visible(dbref exit, dbref player, int key)
 {
 #if defined(WOD_REALMS) && !defined(STANDALONE)
     int iRealmDirective = DoThingToThingVisibility(player, exit, ACTION_IS_STATIONARY);
     if (REALM_DO_HIDDEN_FROM_YOU == iRealmDirective)
     {
-        return 0;
+        return FALSE;
     }
 #endif
 
@@ -1747,7 +1787,7 @@ int exit_visible(dbref exit, dbref player, int key)
        || Examinable(player, exit)
        || Light(exit))
     {
-        return 1;
+        return TRUE;
     }
 
     // Dark location or base
@@ -1755,62 +1795,50 @@ int exit_visible(dbref exit, dbref player, int key)
     if (  (key & (VE_LOC_DARK | VE_BASE_DARK))
        || Dark(exit))
     {
-        return 0;
+        return FALSE;
     }
 
     // Default
     //
-    return 1;
+    return TRUE;
 }
 
 // Exit visible to look
 //
-int exit_displayable(dbref exit, dbref player, int key)
+BOOL exit_displayable(dbref exit, dbref player, int key)
 {
     // Dark exit
     //
     if (Dark(exit))
-        return 0;
+    {
+        return FALSE;
+    }
 
 #if defined(WOD_REALMS) && !defined(STANDALONE)
     int iRealmDirective = DoThingToThingVisibility(player, exit, ACTION_IS_STATIONARY);
     if (REALM_DO_HIDDEN_FROM_YOU == iRealmDirective)
     {
-        return 0;
+        return FALSE;
     }
 #endif
 
     // Light exit
     //
     if (Light(exit))
-        return 1;
+    {
+        return TRUE;
+    }
 
     // Dark location or base.
     //
     if (key & (VE_LOC_DARK | VE_BASE_DARK))
-        return 0;
+    {
+        return FALSE;
+    }
 
     // Default
     //
-    return 1;
-}
-/*
- * ---------------------------------------------------------------------------
- * * next_exit: return next exit that is ok to see.
- */
-
-dbref next_exit(dbref player, dbref this0, int exam_here)
-{
-    if (isRoom(this0))
-        return NOTHING;
-    if (isExit(this0) && exam_here)
-        return this0;
-
-    while ((this0 != NOTHING) && Dark(this0) && !Light(this0) &&
-           !Examinable(player, this0))
-        this0 = Next(this0);
-
-    return this0;
+    return TRUE;
 }
 
 #ifndef STANDALONE
@@ -1839,7 +1867,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
     // of the global register values).
     //
 
-    int need_pres = 0;
+    BOOL need_pres = FALSE;
 
     // message to player.
     //
@@ -1849,7 +1877,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
         d = atr_pget(thing, what, &aowner, &aflags);
         if (*d)
         {
-            need_pres = 1;
+            need_pres = TRUE;
             save_global_regs("did_it_save", preserve, preserve_len);
             buff = bp = alloc_lbuf("did_it.1");
             str = d;
@@ -1888,7 +1916,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
         {
             if (!need_pres)
             {
-                need_pres = 1;
+                need_pres = TRUE;
                 save_global_regs("did_it_save", preserve, preserve_len);
             }
             buff = bp = alloc_lbuf("did_it.2");

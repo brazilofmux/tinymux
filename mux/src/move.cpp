@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.8 2002-07-09 02:25:06 jake Exp $
+// $Id: move.cpp,v 1.9 2002-07-09 05:57:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -90,7 +90,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, int canhear,
  * * a place.
  */
 
-static void process_enter_loc(dbref thing, dbref src, dbref cause, int canhear, int hush)
+static void process_enter_loc(dbref thing, dbref src, dbref cause, BOOL canhear, int hush)
 {
     dbref loc = Location(thing);
     if (  loc == NOTHING
@@ -291,10 +291,12 @@ static void process_dropped_dropto(dbref thing, dbref player)
 void move_via_generic(dbref thing, dbref dest, dbref cause, int hush)
 {
     if (dest == HOME)
+    {
         dest = Home(thing);
+    }
 
     dbref src = Location(thing);
-    int canhear = Hearer(thing);
+    BOOL canhear = Hearer(thing);
     process_leave_loc(thing, dest, cause, canhear, hush);
     move_object(thing, dest);
     did_it(thing, thing, A_MOVE, NULL, A_OMOVE, NULL, A_AMOVE,
@@ -315,7 +317,7 @@ void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int hush)
     {
         dest = Home(thing);
     }
-    int canhear = Hearer(thing);
+    BOOL canhear = Hearer(thing);
     int darkwiz = (Wizard(thing) && Dark(thing)); // Dark wizards don't trigger OSUCC/ASUCC
     int quiet = darkwiz || (hush & HUSH_EXIT);
 

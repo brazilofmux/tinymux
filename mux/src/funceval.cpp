@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.24 2002-07-09 03:25:01 jake Exp $
+// $Id: funceval.cpp,v 1.25 2002-07-09 05:57:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -304,21 +304,20 @@ FUNCTION(fun_create)
 
 static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attrtext, int key, char *buff, char **bufc)
 {
-    dbref aowner;
-    int aflags, could_hear;
-    ATTR *attr;
-
     if (!Good_obj(thing))
     {
         safe_noperm(buff, bufc);
         notify_quiet(player, "You shouldn't be rummaging through the garbage.");
         return;
     }
-    attr = atr_num(attrnum);
+
+    dbref aowner;
+    int aflags;
+    ATTR *attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (attr && bCanSetAttr(player, thing, attr))
     {
-        could_hear = Hearer(thing);
+        BOOL could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));
         if (  !(key & SET_QUIET)
@@ -339,7 +338,7 @@ FUNCTION(fun_set)
     dbref thing, thing2, aowner;
     char *p, *buff2;
     BOOL clear;
-    int atr, atr2, aflags, flagvalue, could_hear;
+    int atr, atr2, aflags, flagvalue;
     ATTR *attr, *attr2;
 
     if (check_command(executor, "@set", buff, bufc))
@@ -401,7 +400,7 @@ FUNCTION(fun_set)
                 aflags &= ~flagvalue;
             else
                 aflags |= flagvalue;
-            could_hear = Hearer(thing);
+            BOOL could_hear = Hearer(thing);
             atr_set_flags(thing, atr, aflags);
 
             return;

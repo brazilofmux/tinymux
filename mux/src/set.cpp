@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.16 2002-06-28 19:41:37 sdennis Exp $
+// $Id: set.cpp,v 1.17 2002-07-09 05:57:33 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -911,14 +911,12 @@ void do_chown
 static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attrtext, int key)
 {
     dbref aowner;
-    int aflags, could_hear;
-    ATTR *attr;
-
-    attr = atr_num(attrnum);
+    int aflags;
+    ATTR *attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (attr && bCanSetAttr(player, thing, attr)) 
     {
-        could_hear = Hearer(thing);
+        BOOL could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));
         if (!(key & SET_QUIET) && !Quiet(player) && !Quiet(thing))
@@ -943,7 +941,7 @@ void do_set
 {
     dbref thing, thing2, aowner;
     char *p, *buff;
-    int atr, atr2, aflags, clear, flagvalue, could_hear;
+    int atr, atr2, aflags, clear, flagvalue;
     ATTR *attr, *attr2;
 
     // See if we have the <obj>/<attr> form, which is how you set
@@ -1006,7 +1004,7 @@ void do_set
             {
                 aflags |= flagvalue;
             }
-            could_hear = Hearer(thing);
+            BOOL could_hear = Hearer(thing);
             atr_set_flags(thing, atr, aflags);
 
             // Tell the player about it.
@@ -1648,7 +1646,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
     //
     bGotOne = 0;
     atext = alloc_lbuf("do_edit.atext");
-    int could_hear = Hearer(thing);
+    BOOL could_hear = Hearer(thing);
 
     for (attr = olist_first(); attr != NOTHING; attr = olist_next())
     {
@@ -1677,9 +1675,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
             {
                 // No rights to change the attr.
                 //
-                notify_quiet(executor,
-                       tprintf("%s: Permission denied.",
-                           ap->name));
+                notify_quiet(executor, tprintf("%s: Permission denied.", ap->name));
             }
 
         }

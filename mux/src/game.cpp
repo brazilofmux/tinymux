@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.11 2002-07-08 21:11:49 jake Exp $
+// $Id: game.cpp,v 1.12 2002-07-09 05:57:33 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -262,49 +262,48 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
     return (match);
 }
 
-int atr_match(dbref thing, dbref player, char type, char *str, int check_parents)
+int atr_match(dbref thing, dbref player, char type, char *str, BOOL check_parents)
 {
-    int match, lev, result, exclude, insert;
+    int lev, result;
+    BOOL exclude, insert;
     dbref parent;
 
-    /*
-     * If thing is halted, don't check anything
-     */
-
+    // If thing is halted, don't check anything
     if (Halted(thing))
-        return 0;
+    {
+        return FALSE;
+    }
 
-    /*
-     * If not checking parents, just check the thing
-     */
+    // If not checking parents, just check the thing
 
-    match = 0;
+    BOOL match = FALSE;
     if (!check_parents)
-        return atr_match1(thing, thing, player, type, str, 0, 0);
+    {
+        return atr_match1(thing, thing, player, type, str, FALSE, FALSE);
+    }
 
-    /*
-     * Check parents, ignoring halted objects
-     */
-
-    exclude = 0;
-    insert = 1;
+    // Check parents, ignoring halted objects
+    //
+    exclude = FALSE;
+    insert = TRUE;
     hashflush(&mudstate.parent_htab);
     ITER_PARENTS(thing, parent, lev)
     {
         if (!Good_obj(Parent(parent)))
-            insert = 0;
+        {
+            insert = FALSE;
+        }
         result = atr_match1(thing, parent, player, type, str, exclude, insert);
         if (result > 0)
         {
-            match = 1;
+            match = TRUE;
         }
         else if (result < 0)
         {
             return match;
         }
-        exclude = 1;
+        exclude = TRUE;
     }
-
     return match;
 }
 
@@ -314,7 +313,7 @@ int atr_match(dbref thing, dbref player, char type, char *str, int check_parents
  * * optionally notify the contents, neighbors, and location also.
  */
 
-int check_filter(dbref object, dbref player, int filter, const char *msg)
+BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
 {
     int aflags;
     dbref aowner;
@@ -323,9 +322,10 @@ int check_filter(dbref object, dbref player, int filter, const char *msg)
     int preserve_len[MAX_GLOBAL_REGS];
 
     buf = atr_pget(object, filter, &aowner, &aflags);
-    if (!*buf) {
+    if (!*buf)
+    {
         free_lbuf(buf);
-        return (1);
+        return TRUE;
     }
     save_global_regs("check_filter_save", preserve, preserve_len);
     nbuf = dp = alloc_lbuf("check_filter");
@@ -342,11 +342,11 @@ int check_filter(dbref object, dbref player, int filter, const char *msg)
         if (quick_wild(cp, msg))
         {
             free_lbuf(nbuf);
-            return (0);
+            return FALSE;
         }
     } while (dp != NULL);
     free_lbuf(nbuf);
-    return 1;
+    return TRUE;
 }
 
 static char *add_prefix(dbref object, dbref player, int prefix, const char *msg, const char *dflt)
@@ -1638,25 +1638,31 @@ static int load_game(int ccPageFile)
  * match a list of things, using the no_command flag
  */
 
-int list_check(dbref thing, dbref player, char type, char *str, int check_parent)
+BOOL list_check(dbref thing, dbref player, char type, char *str, int check_parent)
 {
-    int match, limit;
+    int limit;
+    BOOL match = FALSE;
 
-    match = 0;
     limit = mudstate.db_top;
-    while (thing != NOTHING) {
-        if ((thing != player) && (!(No_Command(thing)))) {
+    while (thing != NOTHING)
+    {
+        if ((thing != player) && (!(No_Command(thing))))
+        {
             if (atr_match(thing, player, type, str, check_parent) > 0)
-                match = 1;
+            {
+                match = TRUE;
+            }
         }
         thing = Next(thing);
         if (--limit < 0)
+        {
             return match;
+        }
     }
     return match;
 }
 
-int Hearer(dbref thing)
+BOOL Hearer(dbref thing)
 {
     char *as, *buff, *s;
     dbref aowner;
@@ -1665,12 +1671,12 @@ int Hearer(dbref thing)
 
     if (mudstate.inpipe && (thing == mudstate.poutobj))
     {
-        return 1;
+        return TRUE;
     }
 
     if (Connected(thing) || Puppet(thing))
     {
-        return 1;
+        return TRUE;
     }
 
     if (Monitor(thing))
@@ -1691,7 +1697,7 @@ int Hearer(dbref thing)
                 free_lbuf(buff);
             }
             atr_pop();
-            return 1;
+            return TRUE;
         }
         if (Monitor(thing))
         {
@@ -1720,7 +1726,7 @@ int Hearer(dbref thing)
             {
                 free_lbuf(buff);
                 atr_pop();
-                return 1;
+                return TRUE;
             }
         }
     }
@@ -1729,7 +1735,7 @@ int Hearer(dbref thing)
         free_lbuf(buff);
     }
     atr_pop();
-    return 0;
+    return FALSE;
 }
 
 void do_readcache(dbref executor, dbref caller, dbref enactor, int key)

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.49 2002-06-29 22:15:55 sdennis Exp $
+// $Id: functions.cpp,v 1.50 2002-07-09 05:57:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -2373,7 +2373,7 @@ FUNCTION(fun_extract)
 
 // xlate() controls the subtle definition of a softcode boolean.
 //
-int xlate(char *arg)
+BOOL xlate(char *arg)
 {
     const char *p = arg;
     if (p[0] == '#')

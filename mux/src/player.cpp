@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.6 2002-06-27 09:06:47 jake Exp $
+// $Id: player.cpp,v 1.7 2002-07-09 05:57:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -199,7 +199,7 @@ void record_login(dbref player, int isgood, char *ldate, char *lhost, char *luse
  * * check_pass: Test a password to see if it is correct.
  */
 
-int check_pass(dbref player, const char *password)
+BOOL check_pass(dbref player, const char *password)
 {
     int   aflags;
     dbref aowner;
@@ -209,7 +209,7 @@ int check_pass(dbref player, const char *password)
        && strcmp(crypt(password, "XX"), target))
     {
         free_lbuf(target);
-        return 0;
+        return FALSE;
     }
     free_lbuf(target);
 
@@ -221,9 +221,9 @@ int check_pass(dbref player, const char *password)
        && password[0] == 'X'
        && password[1] == 'X')
     {
-        return 0;
+        return FALSE;
     }
-    return 1;
+    return TRUE;
 }
 
 /*
@@ -420,7 +420,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int key, char *who)
  * * Manage playername->dbref mapping
  */
 
-int add_player_name(dbref player, char *name)
+BOOL add_player_name(dbref player, char *name)
 {
     int stat;
     dbref *p;
@@ -445,18 +445,18 @@ int add_player_name(dbref player, char *name)
         if (*p == AMBIGUOUS)
         {
             free_lbuf(temp);
-            return 0;
+            return FALSE;
         }
         if (Good_obj(*p) && (Typeof(*p) == TYPE_PLAYER))
         {
             free_lbuf(temp);
             if (*p == player)
             {
-                return 1;
+                return TRUE;
             }
             else
             {
-                return 0;
+                return FALSE;
             }
         }
 
@@ -483,7 +483,7 @@ int add_player_name(dbref player, char *name)
     return stat;
 }
 
-int delete_player_name(dbref player, char *name)
+BOOL delete_player_name(dbref player, char *name)
 {
     dbref *p;
     char *temp, *tp;
@@ -500,13 +500,13 @@ int delete_player_name(dbref player, char *name)
           && *p != player))
     {
         free_lbuf(temp);
-        return 0;
+        return FALSE;
     }
     MEMFREE(p);
     p = NULL;
     hashdeleteLEN(temp, strlen(temp), &mudstate.player_htab);
     free_lbuf(temp);
-    return 1;
+    return TRUE;
 }
 
 dbref lookup_player(dbref doer, char *name, int check_who)
@@ -640,7 +640,7 @@ void badname_remove(char *bad_name)
     }
 }
 
-int badname_check(char *bad_name)
+BOOL badname_check(char *bad_name)
 {
     BADNAME *bp;
 
@@ -651,10 +651,10 @@ int badname_check(char *bad_name)
     {
         if (quick_wild(bp->name, bad_name))
         {
-            return 0;
+            return FALSE;
         }
     }
-    return 1;
+    return TRUE;
 }
 
 void badname_list(dbref player, const char *prefix)
