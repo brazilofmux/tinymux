@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.62 2001-11-28 06:35:53 sdennis Exp $
+// $Id: command.cpp,v 1.63 2001-12-06 03:42:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -28,17 +28,17 @@ extern void NDECL(vattr_clean_db);
 //
 NAMETAB attrib_sw[] =
 {
-    {(char *)"access",  1,  CA_GOD,     ATTRIB_ACCESS},
-    {(char *)"delete",  1,  CA_GOD,     ATTRIB_DELETE},
-    {(char *)"rename",  1,  CA_GOD,     ATTRIB_RENAME},
-    { NULL,         0,  0,      0}
+    {"access",          1,  CA_GOD,     ATTRIB_ACCESS},
+    {"delete",          1,  CA_GOD,     ATTRIB_DELETE},
+    {"rename",          1,  CA_GOD,     ATTRIB_RENAME},
+    { NULL,             0,       0,     0}
 };
 
 NAMETAB boot_sw[] =
 {
-    {(char *)"port",    1,  CA_WIZARD,  BOOT_PORT|SW_MULTIPLE},
-    {(char *)"quiet",   1,  CA_WIZARD,  BOOT_QUIET|SW_MULTIPLE},
-    { NULL,         0,  0,      0}
+    {"port",            1,  CA_WIZARD,  BOOT_PORT|SW_MULTIPLE},
+    {"quiet",           1,  CA_WIZARD,  BOOT_QUIET|SW_MULTIPLE},
+    { NULL,             0,          0,  0}
 };
 
 NAMETAB comtitle_sw[] =
@@ -49,42 +49,42 @@ NAMETAB comtitle_sw[] =
 
 NAMETAB cemit_sw[] =
 {
-    {(char *)"noheader",    1,  CA_PUBLIC,  CEMIT_NOHEADER},
-    { NULL,         0,  0,      0}
+    {"noheader",        1,  CA_PUBLIC,  CEMIT_NOHEADER},
+    { NULL,             0,          0,  0}
 };
 
 NAMETAB clone_sw[] =
 {
-    {(char *)"cost",    1,  CA_PUBLIC,  CLONE_SET_COST},
-    {(char *)"inherit", 3,  CA_PUBLIC,  CLONE_INHERIT|SW_MULTIPLE},
-    {(char *)"inventory",   3,  CA_PUBLIC,  CLONE_INVENTORY},
-    {(char *)"location",    1,  CA_PUBLIC,  CLONE_LOCATION},
-    {(char *)"parent",  2,  CA_PUBLIC,  CLONE_PARENT|SW_MULTIPLE},
-    {(char *)"preserve",    2,  CA_WIZARD,  CLONE_PRESERVE|SW_MULTIPLE},
-    { NULL,         0,  0,      0}
+    {"cost",            1,  CA_PUBLIC,  CLONE_SET_COST},
+    {"inherit",         3,  CA_PUBLIC,  CLONE_INHERIT|SW_MULTIPLE},
+    {"inventory",       3,  CA_PUBLIC,  CLONE_INVENTORY},
+    {"location",        1,  CA_PUBLIC,  CLONE_LOCATION},
+    {"parent",          2,  CA_PUBLIC,  CLONE_PARENT|SW_MULTIPLE},
+    {"preserve",        2,  CA_WIZARD,  CLONE_PRESERVE|SW_MULTIPLE},
+    { NULL,             0,          0,  0}
 };
 
 NAMETAB clist_sw[] =
 {
-    {(char *)"full",        0,      CA_PUBLIC,      CLIST_FULL},
-    {(char *)"headers",     0,      CA_PUBLIC,      CLIST_HEADERS},
-    { NULL,                 0,      0,              0}
+    {"full",            0,  CA_PUBLIC,  CLIST_FULL},
+    {"headers",         0,  CA_PUBLIC,  CLIST_HEADERS},
+    { NULL,             0,          0,  0}
 };
 
 NAMETAB cset_sw[] =
 {
-    {(char *)"anon",        1,      CA_PUBLIC,      CSET_SPOOF},
-    {(char *)"list",        2,      CA_PUBLIC,      CSET_LIST},
-    {(char *)"loud",        2,      CA_PUBLIC,      CSET_LOUD},
-    {(char *)"mute",        1,      CA_PUBLIC,      CSET_QUIET},
-    {(char *)"nospoof",     1,      CA_PUBLIC,      CSET_NOSPOOF},
-    {(char *)"object",      1,      CA_PUBLIC,      CSET_OBJECT},
-    {(char *)"private",     2,      CA_PUBLIC,      CSET_PRIVATE},
-    {(char *)"public",      2,      CA_PUBLIC,      CSET_PUBLIC},
-    {(char *)"quiet",       1,      CA_PUBLIC,      CSET_QUIET},
-    {(char *)"spoof",       1,      CA_PUBLIC,      CSET_SPOOF},
-    {(char *)"header",      2,      CA_PUBLIC,      CSET_HEADER},
-    { NULL,                 0,      0,              0}
+    {"anon",            1,  CA_PUBLIC,  CSET_SPOOF},
+    {"list",            2,  CA_PUBLIC,  CSET_LIST},
+    {"loud",            2,  CA_PUBLIC,  CSET_LOUD},
+    {"mute",            1,  CA_PUBLIC,  CSET_QUIET},
+    {"nospoof",         1,  CA_PUBLIC,  CSET_NOSPOOF},
+    {"object",          1,  CA_PUBLIC,  CSET_OBJECT},
+    {"private",         2,  CA_PUBLIC,  CSET_PRIVATE},
+    {"public",          2,  CA_PUBLIC,  CSET_PUBLIC},
+    {"quiet",           1,  CA_PUBLIC,  CSET_QUIET},
+    {"spoof",           1,  CA_PUBLIC,  CSET_SPOOF},
+    {"header",          2,  CA_PUBLIC,  CSET_HEADER},
+    { NULL,             0,          0,  0}
 };
 
 NAMETAB decomp_sw[] =
@@ -168,7 +168,6 @@ NAMETAB femit_sw[] =
 
 NAMETAB fixdb_sw[] =
 {
-    // {(char *)"add_pname",1,  CA_GOD,     FIXDB_ADD_PN},
     {(char *)"contents",    1,  CA_GOD,     FIXDB_CON},
     {(char *)"exits",   1,  CA_GOD,     FIXDB_EXITS},
     {(char *)"location",    1,  CA_GOD,     FIXDB_LOC},
@@ -176,7 +175,6 @@ NAMETAB fixdb_sw[] =
     {(char *)"owner",   1,  CA_GOD,     FIXDB_OWNER},
     {(char *)"pennies", 1,  CA_GOD,     FIXDB_PENNIES},
     {(char *)"rename",  1,  CA_GOD,     FIXDB_NAME},
-    // {(char *)"rm_pname", 1,  CA_GOD,     FIXDB_DEL_PN},
     { NULL,         0,  0,      0}
 };
 

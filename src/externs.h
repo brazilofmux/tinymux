@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.71 2001-12-03 17:49:06 sdennis Exp $
+// $Id: externs.h,v 1.72 2001-12-06 03:42:07 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -395,10 +395,8 @@ extern void ReleaseAllResources(dbref obj);
 #define FIXDB_PENNIES   32  /* Fix PENNIES field */
 #define FIXDB_ZONE  64  /* Fix ZONE field */
 #define FIXDB_LINK  128 /* Fix LINK field */
-#define FIXDB_PARENT    256 /* Fix PARENT field */
-#define FIXDB_DEL_PN    512 /* Remove player name from player name index */
-#define FIXDB_ADD_PN    1024    /* Add player name to player name index */
-#define FIXDB_NAME  2048    /* Set NAME attribute */
+#define FIXDB_PARENT 256 /* Fix PARENT field */
+#define FIXDB_NAME  2048 /* Set NAME attribute */
 #define FRC_PREFIX  0   /* #num command */
 #define FRC_COMMAND 1   /* what=command */
 #define GET_QUIET   1   /* Don't do osucc/asucc if control */
