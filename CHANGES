@@ -86,6 +86,8 @@ Feature Additions:
     range of floating-point numbers is available. At the same time, however,
     the server still uses only the minimal number of decimal digits needed to
     represent the same double value internally.
+ -- Expanded ROUND() function to round in any position left or right of the
+    decimal point.
 
 Bug Fixes:
 ~~~~~~~~~
