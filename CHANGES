@@ -380,6 +380,7 @@ Cosmetic Changes:
  -- say command now emits 'You say, "..."' instead of 'You say "..."'.
  -- Help for pmatch changed to reflect that the #-2 result was removed long ago.
  -- @wall now adds comma after shouts. TM3 found first.
+ -- Alierak fix for typos in NOTES.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
