@@ -4846,13 +4846,13 @@ COMMANDS (continued)
   @efail       @enter       @exitformat  @fail        @filter      @forwardlist
   @gfail       @idesc       @idle        @idletimeout @infilter    @inprefix
   @kill        @lalias      @leave       @lfail       @listen      @mailsucc
-  @moniker     @move        @odescribe   @odfail      @odrop       @oefail
-  @oenter      @ofail       @ogfail      @okill       @oleave      @olfail
-  @omove       @opay        @orfail      @osuccess    @otfail      @otofail
-  @otport      @oufail      @ouse        @oxenter     @oxleave     @oxtport
-  @pay         @prefix      @reject      @rfail       @runout      @saystring
-  @sex         @signature   @speechmod   @startup     @success     @tfail
-  @tofail      @tport       @ufail       @use
+  @moniker     @move        @nameformat  @odescribe   @odfail      @odrop
+  @oefail      @oenter      @ofail       @ogfail      @okill       @oleave
+  @olfail      @omove       @opay        @orfail      @osuccess    @otfail
+  @otofail     @otport      @oufail      @ouse        @oxenter     @oxleave
+  @oxtport     @pay         @prefix      @reject      @rfail       @runout
+  @saystring   @sex         @signature   @speechmod   @startup     @success
+  @tfail       @tofail      @tport       @ufail       @use
 
 & COMP()
 COMP()
