@@ -70,7 +70,7 @@
 /*
  * #define IEEE_8087 for IEEE-arithmetic machines where the least
  *  significant byte has the lowest address.
- * #define IEEE_MC68K for IEEE-arithmetic machines where the most
+ * #define IEEE_MC68k for IEEE-arithmetic machines where the most
  *  significant byte has the lowest address.
  * #define Long int on machines with 32-bit ints and 64-bit longs.
  * #define Sudden_Underflow for IEEE-format machines without gradual
@@ -99,9 +99,8 @@
 #include "config.h"
 #include "stringutil.h"
 
-#define Unsigned_Shifts
 #ifdef WORDS_BIGENDIAN
-#define IEEE_MC68K
+#define IEEE_MC68k
 #else
 #define IEEE_8087
 #endif
@@ -112,7 +111,7 @@
  * byte and word endianness. The byte order is still little endian
  * but the word order is big endian.
  */
-#define IEEE_MC68K
+#define IEEE_MC68k
 #endif
 
 #ifdef __vax__
@@ -124,7 +123,7 @@
 
 #ifdef Bad_float_h
 #undef __STDC__
-#ifdef IEEE_MC68K
+#ifdef IEEE_MC68k
 #define IEEE_ARITHMETIC
 #endif
 #ifdef IEEE_8087
@@ -174,9 +173,9 @@
 #define Sign_Extend(a,b) /*no-op*/
 #endif
 
-#if defined(IEEE_8087) + defined(IEEE_MC68K) + defined(VAX) + \
+#if defined(IEEE_8087) + defined(IEEE_MC68k) + defined(VAX) + \
     defined(IBM) != 1
-Exactly one of IEEE_8087 IEEE_MC68K, VAX, or
+Exactly one of IEEE_8087 IEEE_MC68k, VAX, or
 IBM should be defined.
 #endif
 
@@ -214,7 +213,7 @@ typedef union
 /* Quick_max = floor((P-1)*log(FLT_RADIX)/log(10) - 1) */
 /* Int_max = floor(P*log(FLT_RADIX)/log(10) - 1) */
 
-#if defined(IEEE_8087) + defined(IEEE_MC68K)
+#if defined(IEEE_8087) + defined(IEEE_MC68k)
 #define Exp_shift  20
 #define Exp_shift1 20
 #define Exp_msk1    0x100000
