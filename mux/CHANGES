@@ -115,6 +115,7 @@ Feature Additions:
  -- Jake added WRAP(). Based on RhostMUSH's.
  -- Blank lines in configuration are now ignored as if they were comments.
  -- Jake added file/line information in ALLOC/BUG messages. From RhostMUSH.
+ -- Added /QUIET switch to @doing command.
 
 
 Bug Fixes:
