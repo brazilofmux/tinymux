@@ -429,6 +429,8 @@ Bug Fixes:
  --  Clean build on gcc 3.0. Thanks Morgan.
  --  SIGSEGV bug in revwords(). Bug from Treyvan.
  --  Code review and changes to object.cpp. Thanks Jake.
+ --  lparent() and lcon() now use the DbrefToBuffer() calls to ensure that
+     returned dbrefs aren't truncated in the middle of the number.
 
 
 Performance Enhancements:
