@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.11 2000-10-25 04:29:23 sdennis Exp $
+// $Id: look.cpp,v 1.12 2000-11-03 02:47:36 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -679,11 +679,10 @@ static void look_atrs1(dbref player, dbref thing, dbref othing, int check_exclud
 {
     dbref aowner;
     int ca, aflags;
-    ATTR *attr, *cattr;
+    ATTR *attr;
     char *as, *buf;
     
-    cattr = (ATTR *)MEMALLOC(sizeof(ATTR));
-    ISOUTOFMEMORY(cattr);
+    ATTR cattr;
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
         if ((ca == A_DESC) || (ca == A_LOCK))
@@ -696,7 +695,7 @@ static void look_atrs1(dbref player, dbref thing, dbref othing, int check_exclud
             continue;
         }
         
-        memcpy(cattr, attr, sizeof(ATTR));
+        memcpy(&cattr, attr, sizeof(ATTR));
         
         // Should we exclude this attr?
         //        
@@ -708,27 +707,19 @@ static void look_atrs1(dbref player, dbref thing, dbref othing, int check_exclud
         }
         
         buf = atr_get(thing, ca, &aowner, &aflags);
-        if (Read_attr(player, othing, attr, aowner, aflags))
+        if (Read_attr(player, othing, &cattr, aowner, aflags))
         {
-            /* check_zone/atr_num overwrites attr!! */
-            
-            if (attr->number != cattr->number)
-            {
-                memcpy(attr, cattr, sizeof(ATTR));
-            }
-            
             if (!(check_exclude && (aflags & AF_PRIVATE)))
             {
                 if (hash_insert)
                 {
                     hashaddLEN(&ca, sizeof(ca), (int *)attr, &mudstate.parent_htab);
                 }
-                view_atr(player, thing, attr, buf, aowner, aflags, 0);
+                view_atr(player, thing, &cattr, buf, aowner, aflags, 0);
             }
         }
         free_lbuf(buf);
     }
-    MEMFREE(cattr);
 }
 
 static void look_atrs(dbref player, dbref thing, int check_parents)

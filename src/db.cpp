@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.31 2000-10-25 04:29:23 sdennis Exp $
+// $Id: db.cpp,v 1.32 2000-11-03 02:47:36 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3098,11 +3098,11 @@ int check_zone(dbref player, dbref thing)
         mudstate.zone_nest_num = 0;
         return 1;
     }
-    else
+    else if (thing == Zone(thing))
     {
-        return check_zone(player, Zone(thing));
+        return 0;
     }
-
+    return check_zone(player, Zone(thing));
 }
 
 int check_zone_for_player(dbref player, dbref thing)
@@ -3124,11 +3124,11 @@ int check_zone_for_player(dbref player, dbref thing)
         mudstate.zone_nest_num = 0;
         return 1;
     }
-    else 
+    else if (thing == Zone(thing))
     {
-        return check_zone(player, Zone(thing));
+        return 0;
     }
-
+    return check_zone(player, Zone(thing));
 }
 
 // This function releases:
