@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.53 2002-02-13 18:57:29 sdennis Exp $
+// $Id: game.cpp,v 1.54 2002-03-01 22:44:23 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1834,6 +1834,7 @@ int DCL_CDECL main(int argc, char *argv[])
     BuildSignalNamesTable();
 #endif
 
+    FLOAT_Initialize();
     TIME_Initialize();
     SeedRandomNumberGenerator();
     game_pid = getpid();

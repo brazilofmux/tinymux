@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.71 2002-02-27 18:56:37 sdennis Exp $
+// $Id: stringutil.cpp,v 1.72 2002-03-01 22:44:23 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2354,8 +2354,6 @@ static const double powerstab[10] =
     100000000.0,
    1000000000.0
 };
-
-extern double Tiny_strtod(const char *s00, char **se);
 
 double Tiny_atof(char *szString)
 {

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.162 2002-03-01 20:53:20 sdennis Exp $
+// $Id: functions.cpp,v 1.163 2002-03-01 22:44:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2792,9 +2792,6 @@ double AddWithError(double& err, double a, double b)
 // Error of sum is less than 2*epsilon or 1 ulp except for very large n.
 // Return the result that yields the shortest number of base-10 digits.
 //
-extern char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
-                       char **rve);
-
 double AddDoubles(int n, double pd[])
 {
     qsort(pd, n, sizeof(double), f_comp_abs);

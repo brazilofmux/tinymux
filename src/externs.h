@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.72 2001-12-06 03:42:07 sdennis Exp $
+// $Id: externs.h,v 1.73 2002-03-01 22:44:23 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -907,5 +907,12 @@ void put_ConnectionInfoFields
 #define fetch_lastconnect(t)    (fetch_ConnectionInfoField((t), CIF_LASTCONNECT))
 #define fetch_numconnections(t) (fetch_ConnectionInfoField((t), CIF_NUMCONNECTS))
 CLinearTimeAbsolute fetch_logouttime(dbref target);
+
+// From strtod.cpp
+//
+double Tiny_strtod(const char *s00, char **se);
+char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
+             char **rve);
+extern void FLOAT_Initialize(void);
 
 #endif // EXTERNS_H

@@ -132,6 +132,10 @@
 #include "config.h"
 #include "stringutil.h"
 
+#ifdef HAVE_FPU_CONTROL_H
+#include <fpu_control.h>
+#endif
+
 #ifdef WORDS_BIGENDIAN
 #define IEEE_MC68k
 #else
@@ -387,9 +391,6 @@ extern double rnd_prod(double, double), rnd_quot(double, double);
 
 #define Kmax 15
 
-double Tiny_strtod(const char *s00, char **se);
-char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
-             char **rve);
 struct Bigint
 {
     struct Bigint *next;
@@ -3457,4 +3458,19 @@ ret1:
         *rve = s;
     }
     return s0;
+}
+
+void FLOAT_Initialize(void)
+{
+#if defined(HAVE_FPU_CONTROL_H) && defined(_FPU_GETCW)
+    fpu_control_t oldcw, newcw;  
+    _FPU_GETCW(oldcw);
+    newcw = (oldcw & ~_FPU_EXTENDED) | _FPU_DOUBLE;
+    _FPU_SETCW(newcw);
+#endif
+#ifdef WIN32
+    // Set Floating-Point precision.
+    //
+    _controlfp(_PC_53, _MCW_PC);
+#endif // WIN32
 }

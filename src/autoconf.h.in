@@ -150,6 +150,8 @@
 #undef SMALLEST_INT_GTE_NEG_QUOTIENT
 /* Define if the character special file /dev/urandom is present */
 #undef HAVE_DEV_URANDOM
+/* Define if fpu_config.h is available. */
+#undef HAVE_FPU_CONTROL_H
 
 /* ---------------------------------------------------------------------------
  * Setup section:

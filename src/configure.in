@@ -198,4 +198,5 @@ fi
 AC_SUBST(LIBOBJS)
 AC_SUBST(def_force_c_compiler)
 AC_SUBST(def_brief_lib_list)
+AC_CHECK_HEADERS(fpu_control.h)
 AC_OUTPUT(Makefile)
