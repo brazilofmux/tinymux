@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.56 2002-07-17 00:51:10 jake Exp $
+// $Id: functions.cpp,v 1.57 2002-07-17 01:10:33 jake Exp $
 //
 
 #include "copyright.h"
@@ -6233,12 +6233,9 @@ FUNCTION(fun_itemize)
  *  NOTE:  If you specify a separator, it is used to delimit the returned list.
  */
 
-FUNCTION(fun_filter)
+void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor, 
+                    char *fargs[], char sep, BOOL bBool)
 {
-    char sep;
-
-    varargs_preamble(3);
-
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
     dbref thing;
@@ -6301,8 +6298,11 @@ FUNCTION(fun_filter)
         TinyExec(result, &bp, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
         *bp = '\0';
-        if (  result[0] == '1'
-           && result[1] == '\0')
+        if (  (  bBool
+              && xlate(result))
+           || (  !bBool
+              && result[0] == '1'
+              && result[1] == '\0'))
         {
             if (!bFirst)
             {
@@ -6315,6 +6315,22 @@ FUNCTION(fun_filter)
     }
     free_lbuf(atext);
     free_lbuf(atextbuf);
+}
+
+FUNCTION(fun_filter)
+{
+    char sep;
+
+    varargs_preamble(3);
+    filter_handler(buff, bufc, executor, enactor, fargs, sep, FALSE);
+}
+
+FUNCTION(fun_filterbool)
+{
+    char sep;
+
+    varargs_preamble(3);
+    filter_handler(buff, bufc, executor, enactor, fargs, sep, TRUE);
 }
 
 /* ---------------------------------------------------------------------------
@@ -7645,6 +7661,7 @@ FUN flist[] =
     {"EXTRACT",  fun_extract,  MAX_ARG, 3,  4,       0, CA_PUBLIC},
     {"FDIV",     fun_fdiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"FILTER",   fun_filter,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"FILTERBOOL", fun_filterbool, MAX_ARG, 2,  3,   0, CA_PUBLIC},
     {"FINDABLE", fun_findable, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"FIRST",    fun_first,    MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"FLAGS",    fun_flags,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
