@@ -19,7 +19,7 @@ Feature Additions:
 
 Bug Fixes:
 ~~~~~~~~~
- -- AAA.
+ -- Alierak fix for buffer overflow exploit in slave process.
 
 
 Performance Enhancements:
