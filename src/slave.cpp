@@ -1,10 +1,12 @@
+// slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// This slave does iptoname conversions, and identquery lookups.
-// 
-// The philosophy is to keep this program as simple/small as possible.
-// It does normal fork()s, so the smaller it is, the faster it goes.
-// 
-// $Id: slave.cpp,v 1.8 2001-02-09 18:16:05 sdennis Exp $
+// $Id: slave.cpp,v 1.9 2001-11-20 04:20:20 sdennis Exp $
+//
+// The philosophy is to keep this program as simple/small as possible.  It
+// routinely performs non-vfork forks()s, so the conventional wisdom is that
+// the smaller it is, the faster it goes.  However, with modern memory
+// management support (including copy on reference paging), size is probably
+// not the issue it once was.
 //
 #include "autoconf.h"
 
@@ -39,7 +41,7 @@ char *format_inet_addr(char *dest, long addr)
 }
 
 //
-// copy a string, returning pointer to the null terminator of dest 
+// copy a string, returning pointer to the null terminator of dest
 //
 char *stpcpy(char *dest, const char *src)
 {
@@ -291,7 +293,7 @@ int main(int argc, char *argv[])
             exit(query(arg, p + 1) != 0);
         }
 
-        // collect any children 
+        // collect any children
         //
 #ifdef NEXT
         while (wait3(NULL, WNOHANG, NULL) > 0)
