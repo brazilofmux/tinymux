@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.63 2002-08-06 01:17:14 jake Exp $
+// $Id: command.cpp,v 1.64 2002-08-08 15:36:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -986,7 +986,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
     char *args[MAX_ARG];
     int nargs, i, interp, key, xkey, aflags;
     dbref aowner;
-    char *aargs[10];
+    char *aargs[NUM_ENV_VARS];
     ADDENT *add;
     ATTR *hk_ap2;
     BOOL hk_retval;
@@ -1238,12 +1238,12 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
                         *bp = '\0';
                     }
 
-                    if (wild(buff + 1, new0, aargs, 10))
+                    if (wild(buff + 1, new0, aargs, NUM_ENV_VARS))
                     {
                         CLinearTimeAbsolute lta;
                         wait_que(add->thing, caller, executor, FALSE, lta,
-                            NOTHING, 0, s, aargs, 10, mudstate.global_regs);
-                        for (i = 0; i < 10; i++)
+                            NOTHING, 0, s, aargs, NUM_ENV_VARS, mudstate.global_regs);
+                        for (i = 0; i < NUM_ENV_VARS; i++)
                         {
                             if (aargs[i])
                             {
