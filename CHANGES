@@ -154,6 +154,7 @@ Feature Additions:
  --  @break command from Raevnos and PennMUSH.
  --  LROOMS() function from Marlek and RhostMUSH.
  --  Locks no longer require surrounding square brackets.
+ --  switch() function now accepts < and > operators like @switch.
 
 
 Bug Fixes:
