@@ -6069,8 +6069,8 @@ FUNCTION CLASSES
                              SETDIFF SETINTER SETUNION SHUFFLE SORT SORTBY
                              SPLICE TABLE WORDS
   Logarithms:                E EXP LOG LN
-  Logical:                   AND ANDBOOL CAND CANDBOOL COR CORBOOL LAND NOT OR
-                             ORBOOL T XOR
+  Logical:                   AND ANDBOOL CAND CANDBOOL COR CORBOOL LAND LOR
+                             NOT OR ORBOOL T XOR
   Miscellaneous:             @@ ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM
                              ISWORD LIT NULL SETR SUBEVAL
  
@@ -6142,37 +6142,38 @@ FUNCTION LIST (continued)
     LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()
     LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()      LIT()
     LJUST()     LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()
-    LOCK()      LOG()       LPARENT()   LPORTS()    LPOS()      LRAND()
-    LROOMS()    LSTACK()    LT()        LTE()       LWHO()      NULL()
-    MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()
-    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
-    MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()
-    NEARBY()    NEQ()       NEXT()      NOT()       NUM()       OBJ()
-    OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()    ORFLAGS()
-    OWNER()     PACK()      PARENT()    PARSE()     PEEK()      PEMIT()
-    PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()
-    POP()       PORTS()     POS()       POSS()      POWER()     PUSH()
-    R()         RAND()      REGRAB()    REGMATCH()  REMAINDER() REMIT()
-    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
+    LOCK()      LOG()       LOR()       LPARENT()   LPORTS()    LPOS()
+    LRAND()     LROOMS()    LSTACK()    LT()        LTE()       LWHO()
+    NULL()      MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()
+    MAX()       MEMBER()    MERGE()     MID()       MIN()       MIX()
+    MOD()       MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()
+    NAME()      NEARBY()    NEQ()       NEXT()      NOT()       NUM()
+    OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()
+    ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()     PEEK()
+    PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()
+    POLL()      POP()       PORTS()     POS()       POSS()      POWER()
+    PUSH()      R()         RAND()      REGRAB()    REGMATCH()  REMAINDER()
+    REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()
-    S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
-    SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHL()
-    SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
-    SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()
-    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()
-    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
-    T()         TABLE()     TAN()       TEL()       TIME()      TIMEFMT()
-    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
-    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
-    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
-    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
-    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()
+    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
+    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
+    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
+    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()
+    SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIPANSI()
+    STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
+    SWITCH()    T()         TABLE()     TAN()       TEL()       TIME()
+    TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()      U()
+    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
+    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
+    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()
+    WORDS()     WRITETIME() XGET()      XOR()       ZFUN()      ZONE()
+    ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -7725,6 +7726,22 @@ LOOPING
   isn't @halt'ed will drain your money supply while you are away!
 
   Related Topics: @halt, @ps.
+
+& LOR()
+LOR()
+
+  FUNCTION: lor(<list of booleans>[,<delim>])
+
+  Takes a list of one or more BOOLEAN-Z values, and returns 1 (TRUE) if any
+  of its elements are TRUE.
+
+  Examples:
+    > say [lor(1 0)]
+    You say, "1"
+    > say [lor(1|1,|)]
+    You say, "1"
+
+  Related Topics: land(), not(), or(), t().
 
 & LPARENT()
 LPARENT()
