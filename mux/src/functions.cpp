@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.111 2002-09-23 01:03:15 sdennis Exp $
+// $Id: functions.cpp,v 1.112 2002-09-23 01:13:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7988,15 +7988,9 @@ void wrap_send_line (char *buff, char **bufc, char *pLineStart, char cJust, int 
 {
     if (!bFirstLine && nHanging > 0)
     {
-        for (int i = 0; i < nHanging; i++)
-        {
-            safe_chr(' ', buff, bufc);
-        }
+        safe_fill(buff, bufc, ' ', nHanging);
     }
-    if (pLeft)
-    {
-        safe_str(pLeft, buff, bufc);
-    }
+    safe_str(pLeft, buff, bufc);
     int key = 0;
     switch (cJust)
     {
