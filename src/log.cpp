@@ -1,7 +1,7 @@
 //
 // log.cpp - logging routines
 //
-// $Id: log.cpp,v 1.7 2001-07-06 20:47:31 sdennis Exp $
+// $Id: log.cpp,v 1.8 2001-07-06 21:22:51 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -305,14 +305,18 @@ void do_log(dbref player, dbref cause, int key, char *whichlog, char *logtext)
         return;
     }
 
-    FILE *hFile = fopen(pFullName, "w");
+    FILE *hFile = fopen(pFullName, "r");
+    if (hFile)
+    {
+        fclose(hFile);
+        hFile = fopen(pFullName, "a");
+    }
     if (hFile == NULL)
     {
         notify(player, "Not a valid log file.");
         if (pFullName) free_lbuf(pFullName);
         return;
     }
-    fseek(hFile, 0L, SEEK_END);
 
     // Okay, at this point, the file exists.
     //
