@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.20 2003-02-04 00:07:28 sdennis Exp $
+// $Id: functions.cpp,v 1.21 2003-02-04 05:38:04 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -8872,7 +8872,7 @@ FUNCTION(fun_chr)
     {
         safe_str("#-1 THIS ISN'T UNICODE", buff, bufc);
     }
-    else if (Tiny_IsPrint[(unsigned char)ch])
+    else if (mux_isprint[(unsigned char)ch])
     {
         safe_chr(ch, buff, bufc);
     }
@@ -9002,7 +9002,7 @@ FUNCTION(fun_accent)
                 ch  = AccentCombo3[ch0-1][ch1];
             }
         }
-        if (!Tiny_IsPrint[(unsigned char)ch])
+        if (!mux_isprint[(unsigned char)ch])
         {
             ch = *p;
         }

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.7 2003-02-03 15:00:33 sdennis Exp $
+// $Id: bsd.cpp,v 1.8 2003-02-04 05:38:04 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -294,7 +294,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                                         bAllDone = TRUE;
                                         break;
                                     }
-                                    if (Tiny_IsPrint[(unsigned char)*p])
+                                    if (mux_isprint[(unsigned char)*p])
                                     {
                                         szIdent[nIdent++] = *p;
                                         if (sizeof(szIdent) - 1 <= nIdent)
@@ -2346,7 +2346,7 @@ BOOL process_input_helper(DESC *d, char *buf, int got)
             }
         }
         else if (  p < pend
-                && Tiny_IsPrint[(unsigned char)*q])
+                && mux_isprint[(unsigned char)*q])
         {
             *p++ = *q;
         }

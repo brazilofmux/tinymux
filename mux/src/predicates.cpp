@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.11 2003-02-04 00:07:28 sdennis Exp $
+// $Id: predicates.cpp,v 1.12 2003-02-04 05:38:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -547,7 +547,7 @@ BOOL ok_password(const char *password, dbref player)
 
     for (scan = password; *scan; scan++)
     {
-        if (  !Tiny_IsPrint[(unsigned char)*scan]
+        if (  !mux_isprint[(unsigned char)*scan]
            || mux_isspace[(unsigned char)*scan])
         {
             notify_quiet(player, "Illegal character in password.");
