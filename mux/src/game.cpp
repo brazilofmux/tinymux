@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.19 2003-02-16 16:23:44 sdennis Exp $
+// $Id: game.cpp,v 1.20 2003-02-17 01:59:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2135,7 +2135,7 @@ int DCL_CDECL main(int argc, char *argv[])
     size_t nProg = strlen(argv[0]);
     const char *pProg = argv[0] + nProg - 1;
     while (  nProg
-          && (  mux_isalpha[(unsigned char)*pProg]
+          && (  mux_isalpha(*pProg)
              || *pProg == '.'))
     {
         nProg--;

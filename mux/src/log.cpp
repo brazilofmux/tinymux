@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.6 2003-02-05 06:20:59 jake Exp $
+// $Id: log.cpp,v 1.7 2003-02-17 01:59:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -290,7 +290,7 @@ void do_log
         unsigned int i;
         for (i = 0; i < n; i++)
         {
-            if (!mux_isalnum[(unsigned char)pFilename[i]])
+            if (!mux_isalnum(pFilename[i]))
             {
                 bValid = false;
                 break;

@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.16 2003-02-17 01:51:11 sdennis Exp $
+// $Id: mail.cpp,v 1.17 2003-02-17 01:59:21 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -879,7 +879,7 @@ void do_mail_change_folder(dbref player, char *fld, char *newname)
             return;
         }
         char *p;
-        for (p = newname; mux_isalnum[(unsigned char)*p]; p++) ;
+        for (p = newname; mux_isalnum(*p); p++) ;
         if (*p != '\0')
         {
             notify(player, "MAIL: Illegal folder name");
@@ -1108,7 +1108,7 @@ char *MakeCanonicalMailAlias
 )
 {
     if (  !pMailAlias
-       || !mux_isalpha[(unsigned char)pMailAlias[0]])
+       || !mux_isalpha(pMailAlias[0]))
     {
         return NULL;
     }
@@ -1122,7 +1122,7 @@ char *MakeCanonicalMailAlias
 
     while (*pMailAlias && nLeft)
     {
-        if (  !mux_isalpha[(unsigned char)*pMailAlias]
+        if (  !mux_isalpha(*pMailAlias)
            && !mux_isdigit(*pMailAlias))
         {
             return Buffer;

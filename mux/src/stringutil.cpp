@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.44 2003-02-17 01:51:11 sdennis Exp $
+// $Id: stringutil.cpp,v 1.45 2003-02-17 01:59:21 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1606,11 +1606,11 @@ const char *string_match(const char *src, const char *sub)
 
             // else scan to beginning of next word
             //
-            while (mux_isalnum[(unsigned char)*src])
+            while (mux_isalnum(*src))
             {
                 src++;
             }
-            while (*src && !mux_isalnum[(unsigned char)*src])
+            while (*src && !mux_isalnum(*src))
             {
                 src++;
             }
