@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.6 2000-06-03 00:50:21 sdennis Exp $
+// $Id: eval.cpp,v 1.7 2000-06-13 22:41:52 sdennis Exp $
 //
 
 // MUX 2.0
@@ -946,10 +946,10 @@ char isSpecial_L2[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x10-0x1F
     0, 1, 0, 1, 0, 1, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x20-0x2F
     1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 0, 0, 0, 0, 0, 0, // 0x30-0x3F
-    0, 1, 1, 1, 0, 0, 0, 0,  0, 0, 0, 0, 1, 0, 1, 1, // 0x40-0x4F
-    1, 1, 1, 1, 1, 0, 1, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x50-0x5F
-    0, 2, 2, 2, 0, 0, 0, 0,  0, 0, 0, 0, 2, 0, 2, 2, // 0x60-0x6F
-    2, 2, 2, 2, 2, 0, 2, 0,  0, 0, 0, 0, 1, 0, 0, 0, // 0x70-0x7F
+    0, 2, 2, 2, 0, 0, 0, 0,  0, 0, 0, 0, 2, 0, 2, 2, // 0x40-0x4F
+    2, 2, 2, 2, 2, 0, 2, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x50-0x5F
+    0, 1, 1, 1, 0, 0, 0, 0,  0, 0, 0, 0, 1, 0, 1, 1, // 0x60-0x6F
+    1, 1, 1, 1, 1, 0, 1, 0,  0, 0, 0, 0, 1, 0, 0, 0, // 0x70-0x7F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x80-0x8F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x90-0x9F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0xA0-0xAF
@@ -1336,15 +1336,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                 else
                 {
                     TempPtr = *bufc;
-                    int iCode;
-                    if (cType_L2 == 2)
-                    {
-                        iCode = Tiny_ToUpper[(unsigned char)ch];
-                    }
-                    else
-                    {
-                        iCode = ch;
-                    }
+                    int iCode = Tiny_ToUpper[(unsigned char)ch];
 
                     // At this point, iCode could be any of the following:
                     //
@@ -1659,17 +1651,23 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                                 {
                                     // Variable attribute.
                                     //
-                                    pdstr++;
-                                    ch = Tiny_ToUpper[(unsigned char)*pdstr];
-                                    if (!*pdstr)
-                                        pdstr--;
-                                    if ((ch < 'A') || (ch > 'Z'))
-                                        break;
-                                    i = 100 + ch - 'A';
-                                    atr_gotten = atr_pget(player, i, &aowner, &aflags);
-                                    safe_str(atr_gotten, buff, bufc);
-                                    nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                    free_lbuf(atr_gotten);
+                                    ch = pdstr[1];
+                                    if (Tiny_IsAlpha[(unsigned char)ch])
+                                    {
+                                        pdstr++;
+                                        ch = Tiny_ToUpper[(unsigned char)ch];
+                                        i = 100 + ch - 'A';
+                                        atr_gotten = atr_pget(player, i, &aowner, &aflags);
+                                        safe_str(atr_gotten, buff, bufc);
+                                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                                        free_lbuf(atr_gotten);
+                                    }
+                                    else if (ch != '\0')
+                                    {
+                                        // Eat the following character.
+                                        //
+                                        pdstr++;
+                                    }
                                 }
                                 else
                                 {
@@ -1682,7 +1680,11 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             }
                         }
                     }
-                    if (Tiny_IsUpper[(unsigned char)ch])
+
+                    // If the letter was upper-case, then uppercase the
+                    // first letter of the value.
+                    //
+                    if (cType_L2 == 2)
                     {
                         *TempPtr = Tiny_ToUpper[(unsigned char)*TempPtr];
                     }
