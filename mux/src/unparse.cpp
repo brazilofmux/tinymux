@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.3 2002-07-13 07:23:02 jake Exp $
+// $Id: unparse.cpp,v 1.4 2002-07-16 06:41:41 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,10 +8,8 @@
 #include "config.h"
 #include "externs.h"
 
-/*
- * Boolexp decompile formats
- */
-
+// Boolexp decompile formats
+//
 #define F_EXAMINE   1  // Normal
 #define F_QUIET     2  // Binary for db dumps
 #define F_DECOMPILE 3  // @decompile output
@@ -27,7 +25,8 @@ static char *unparse_object_quiet(dbref player, dbref loc)
 {
     static char buf[SBUF_SIZE];
 
-    switch (loc) {
+    switch (loc)
+    {
     case NOTHING:
         return (char *)"-1";
     case HOME:
@@ -51,32 +50,39 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
 #endif // !STANDALONE
 
-    if ((b == TRUE_BOOLEXP)) {
-        if (format == F_EXAMINE) {
+    if ((b == TRUE_BOOLEXP))
+    {
+        if (format == F_EXAMINE)
+        {
             safe_str("*UNLOCKED*", boolexp_buf, &buftop);
         }
         return;
     }
-    switch (b->type) {
+    switch (b->type)
+    {
     case BOOLEXP_AND:
-        if (outer_type == BOOLEXP_NOT) {
+        if (outer_type == BOOLEXP_NOT)
+        {
             safe_chr('(', boolexp_buf, &buftop);
         }
         unparse_boolexp1(player, b->sub1, b->type, format);
         safe_chr(AND_TOKEN, boolexp_buf, &buftop);
         unparse_boolexp1(player, b->sub2, b->type, format);
-        if (outer_type == BOOLEXP_NOT) {
+        if (outer_type == BOOLEXP_NOT)
+        {
             safe_chr(')', boolexp_buf, &buftop);
         }
         break;
     case BOOLEXP_OR:
-        if (outer_type == BOOLEXP_NOT || outer_type == BOOLEXP_AND) {
+        if (outer_type == BOOLEXP_NOT || outer_type == BOOLEXP_AND)
+        {
             safe_chr('(', boolexp_buf, &buftop);
         }
         unparse_boolexp1(player, b->sub1, b->type, format);
         safe_chr(OR_TOKEN, boolexp_buf, &buftop);
         unparse_boolexp1(player, b->sub2, b->type, format);
-        if (outer_type == BOOLEXP_NOT || outer_type == BOOLEXP_AND) {
+        if (outer_type == BOOLEXP_NOT || outer_type == BOOLEXP_AND)
+        {
             safe_chr(')', boolexp_buf, &buftop);
         }
         break;

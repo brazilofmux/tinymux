@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.12 2002-07-13 07:23:01 jake Exp $
+// $Id: comsys.cpp,v 1.13 2002-07-16 06:41:41 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -282,14 +282,13 @@ void load_channels(FILE *fp)
 
 void purge_comsystem(void)
 {
-    comsys_t *c;
-    comsys_t *d;
-    int i;
-
 #ifdef ABORT_PURGE_COMSYS
     return;
 #endif // ABORT_PURGE_COMSYS
 
+    comsys_t *c;
+    comsys_t *d;
+    int i;
     for (i = 0; i < NUM_COMSYS; i++)
     {
         c = comsys_table[i];
@@ -318,12 +317,11 @@ void purge_comsystem(void)
 
 void save_channels(FILE *fp)
 {
-    int np;
+    purge_comsystem();
+
     comsys_t *c;
     int i, j;
-
-    purge_comsystem();
-    np = 0;
+    int np = 0;
     for (i = 0; i < NUM_COMSYS; i++)
     {
         c = comsys_table[i];
@@ -355,7 +353,7 @@ comsys_t *create_new_comsys(void)
     comsys_t *c = (comsys_t *)MEMALLOC(sizeof(comsys_t));
     (void)ISOUTOFMEMORY(c);
 
-    c->who         = -1;
+    c->who         = NOTHING;
     c->numchannels = 0;
     c->maxchannels = 0;
     c->alias       = NULL;
@@ -2257,8 +2255,6 @@ void do_editchannel
 
 BOOL do_test_access(dbref player, long access, struct channel *chan)
 {
-    long flag_value = access;
-
     if (Comm_All(player))
     {
         return TRUE;
@@ -2273,6 +2269,7 @@ BOOL do_test_access(dbref player, long access, struct channel *chan)
     // channel, whether or not they pass the lock.  Same for all
     // channel object locks.
     //
+    long flag_value = access;
     if (chan->chan_obj != NOTHING && chan->chan_obj != 0)
     {
         if (flag_value & CHANNEL_JOIN)
@@ -2506,7 +2503,7 @@ void do_chboot
     }
     if (!(ch->charge_who == executor) && !Comm_All(executor))
     {
-        raw_notify(executor, "@cboot:  You can't do that!");
+        raw_notify(executor, "@cboot: You can't do that!");
         return;
     }
     dbref thing = match_thing(executor, victim);
@@ -2581,7 +2578,7 @@ void do_cheader(dbref player, char *channel, char *header)
     }
     if (!(ch->charge_who == player) && !Comm_All(player))
     {
-        raw_notify(player, "Permission denied.");
+        raw_notify(player, NOPERM_MESSAGE);
         return;
     }
     char *p = RemoveSetOfCharacters(header, "\r\n\t");

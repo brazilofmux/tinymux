@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.14 2002-07-13 07:23:02 jake Exp $
+// $Id: speech.cpp,v 1.15 2002-07-16 06:41:41 jake Exp $
 //
 
 #include "copyright.h"
@@ -116,23 +116,26 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
     char *buf2, *bp;
     int say_flags, depth;
 
-    /*
-     * Convert prefix-coded messages into the normal type
-     */
-
+    // Convert prefix-coded messages into the normal type
+    //
     say_flags = key & (SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
     key &= ~(SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
 
-    if (key == SAY_PREFIX) {
-        switch (*message++) {
+    if (key == SAY_PREFIX)
+    {
+        switch (*message++)
+        {
         case '"':
             key = SAY_SAY;
             break;
         case ':':
-            if (*message == ' ') {
+            if (*message == ' ')
+            {
                 message++;
                 key = SAY_POSE_NOSPC;
-            } else {
+            }
+            else
+            {
                 key = SAY_POSE;
             }
             break;
@@ -146,26 +149,24 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
             return;
         }
     }
-    /*
-     * Make sure speaker is somewhere if speaking in a place
-     */
 
+    // Make sure speaker is somewhere if speaking in a place
+    //
     dbref loc = where_is(executor);
-    switch (key) {
+    switch (key)
+    {
     case SAY_SAY:
     case SAY_POSE:
     case SAY_POSE_NOSPC:
     case SAY_EMIT:
-        if (loc == NOTHING)
+        if (!Good_obj(loc))
             return;
         if (!sp_ok(executor))
             return;
     }
 
-    /*
-     * Send the message on its way
-     */
-
+    // Send the message on its way
+    //
     switch (key)
     {
     case SAY_SAY:
@@ -203,7 +204,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
             while ((Typeof(loc) != TYPE_ROOM) && (depth++ < 20))
             {
                 loc = Location(loc);
-                if ((loc == NOTHING) || (loc == Location(loc)))
+                if (!Good_obj(loc) || (loc == Location(loc)))
                 {
                     return;
                 }
@@ -249,7 +250,8 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         break;
 
     case SAY_WIZSHOUT:
-        switch (*message) {
+        switch (*message)
+        {
         case ':':
             message[0] = ' ';
             say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, executor,
@@ -269,8 +271,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
-            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, executor,
-                  buf2);
+            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, executor, buf2);
             free_lbuf(buf2);
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
@@ -282,7 +283,8 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         break;
 
     case SAY_ADMINSHOUT:
-        switch (*message) {
+        switch (*message)
+        {
         case ':':
             message[0] = ' ';
             say_shout(SHOUT_ADMIN, admin_msg, say_flags, executor,
@@ -379,10 +381,9 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_page: Handle the page command.
- * * Page-pose code from shadow@prelude.cc.purdue.
+/* ---------------------------------------------------------------------------
+ * do_page: Handle the page command.
+ * Page-pose code from shadow@prelude.cc.purdue.
  */
 
 static void page_return(dbref player, dbref target, const char *tag, int anum, const char *dflt)
@@ -465,7 +466,6 @@ static BOOL page_check(dbref player, dbref target)
     return FALSE;
 }
 
-//
 // The combinations are:
 //
 //           nargs  arg1[0]  arg2[0]
@@ -769,16 +769,13 @@ void do_page
     free_lbuf(imessage);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_pemit: Messages to specific players, or to all but specific players.
+/* ---------------------------------------------------------------------------
+ * do_pemit: Messages to specific players, or to all but specific players.
  */
 
 void whisper_pose(dbref player, dbref target, char *message)
 {
-    char *buff;
-
-    buff = alloc_lbuf("do_pemit.whisper.pose");
+    char *buff = alloc_lbuf("do_pemit.whisper.pose");
     StringCopy(buff, Name(player));
     notify(player, tprintf("%s senses \"%s%s\"", Name(target), buff, message));
     notify_with_cause(target, player, tprintf("You sense %s%s", buff, message));
@@ -881,7 +878,7 @@ void do_pemit_single
            && !Controls(player, target)
            && !mudconf.pemit_any)
         {
-            notify(player, "Permission denied.");
+            notify(player, NOPERM_MESSAGE);
             return;
         }
         loc = where_is(target);

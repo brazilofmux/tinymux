@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.17 2002-07-14 08:06:07 jake Exp $
+// $Id: netcommon.cpp,v 1.18 2002-07-16 06:41:41 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -33,9 +33,8 @@ extern OVERLAPPED lpo_aborted_final; // Actually free the descriptor.
 extern OVERLAPPED lpo_shutdown; // special to indicate a player should do a shutdown
 #endif
 
-/*
- * ---------------------------------------------------------------------------
- * * make_portlist: Make a list of ports for PORTS().
+/* ---------------------------------------------------------------------------
+ * make_portlist: Make a list of ports for PORTS().
  */
 
 void make_portlist(dbref player, dbref target, char *buff, char **bufc)
@@ -75,14 +74,16 @@ void make_port_ulist(dbref player, char *buff, char **bufc)
     IntegerToBuffer_Final(&itb);
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * update_quotas: Update timeslice quotas
-*/
+/* ---------------------------------------------------------------------------
+ * update_quotas: Update timeslice quotas
+ */
 
 CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& ltaLast, const CLinearTimeAbsolute& ltaCurrent)
 {
-    if (ltaCurrent < ltaLast) return ltaCurrent;
+    if (ltaCurrent < ltaLast)
+    {
+        return ltaCurrent;
+    }
 
     CLinearTimeDelta ltdDiff = ltaCurrent - ltaLast;
     CLinearTimeDelta ltdTimeSlice;
@@ -106,10 +107,10 @@ CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& ltaLast, const CLin
 /* raw_notify_html() -- raw_notify() without the newline */
 void raw_notify_html(dbref player, const char *msg)
 {
-    DESC *d;
-
     if (!msg || !*msg)
+    {
         return;
+    }
 
     if (mudstate.inpipe && (player == mudstate.poutobj))
     {
@@ -117,18 +118,20 @@ void raw_notify_html(dbref player, const char *msg)
         return;
     }
     if (!Connected(player))
+    {
         return;
+    }
 
+    DESC *d;
     DESC_ITER_PLAYER(player, d)
     {
         queue_string(d, msg);
     }
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * raw_notify: write a message to a player
-*/
+/* ---------------------------------------------------------------------------
+ * raw_notify: write a message to a player
+ */
 
 void raw_notify(dbref player, const char *msg)
 {
@@ -156,26 +159,26 @@ void raw_notify(dbref player, const char *msg)
 
 void raw_notify_newline(dbref player)
 {
-    DESC *d;
-
     if (mudstate.inpipe && (player == mudstate.poutobj))
     {
         safe_str("\r\n", mudstate.poutnew, &mudstate.poutbufc);
         return;
     }
     if (!Connected(player))
+    {
         return;
+    }
 
+    DESC *d;
     DESC_ITER_PLAYER(player, d)
     {
         queue_write(d, "\r\n", 2);
     }
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * raw_broadcast: Send message to players who have indicated flags
-*/
+/* ---------------------------------------------------------------------------
+ * raw_broadcast: Send message to players who have indicated flags
+ */
 
 void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
 {
@@ -203,18 +206,19 @@ void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
     free_lbuf(buff);
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * clearstrings: clear out prefix and suffix strings
-*/
+/* ---------------------------------------------------------------------------
+ * clearstrings: clear out prefix and suffix strings
+ */
 
 void clearstrings(DESC *d)
 {
-    if (d->output_prefix) {
+    if (d->output_prefix)
+    {
         free_lbuf(d->output_prefix);
         d->output_prefix = NULL;
     }
-    if (d->output_suffix) {
+    if (d->output_suffix)
+    {
         free_lbuf(d->output_suffix);
         d->output_suffix = NULL;
     }
@@ -282,16 +286,12 @@ void add_to_output_queue(DESC *d, const char *b, int n)
     } while (n > 0);
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * queue_write: Add text to the output queue for the indicated descriptor.
-*/
+/* ---------------------------------------------------------------------------
+ * queue_write: Add text to the output queue for the indicated descriptor.
+ */
 
 void queue_write(DESC *d, const char *b, int n)
 {
-    TBLOCK *tp;
-    char *buf;
-    int left;
 
     if (n <= 0)
         return;
@@ -299,10 +299,11 @@ void queue_write(DESC *d, const char *b, int n)
     if (d->output_size + n > mudconf.output_limit)
         process_output(d, FALSE);
 
-    left = mudconf.output_limit - d->output_size - n;
+    
+    int left = mudconf.output_limit - d->output_size - n;
     if (left < 0)
     {
-        tp = d->output_head;
+        TBLOCK *tp = d->output_head;
         if (tp == NULL)
         {
             STARTLOG(LOG_PROBLEMS, "QUE", "WRITE");
@@ -312,7 +313,7 @@ void queue_write(DESC *d, const char *b, int n)
         else
         {
             STARTLOG(LOG_NET, "NET", "WRITE");
-            buf = alloc_lbuf("queue_write.LOG");
+            char *buf = alloc_lbuf("queue_write.LOG");
             sprintf(buf, "[%d/%s] Output buffer overflow, %d chars discarded by ", d->descriptor, d->addr, tp->hdr.nchars);
             log_text(buf);
             free_lbuf(buf);
@@ -347,11 +348,17 @@ void queue_string(DESC *d, const char *s)
     char *new0;
 
     if (!Ansi(d->player) && strchr(s, ESC_CHAR))
+    {
         new0 = strip_ansi(s);
+    }
     else if (NoBleed(d->player))
+    {
         new0 = normal_to_white(s);
+    }
     else
+    {
         new0 = (char *)s;
+    }
     queue_write(d, new0, strlen(new0));
 }
 
@@ -387,18 +394,14 @@ void freeqs(DESC *d)
     d->raw_input_at = NULL;
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * desc_addhash: Add a net descriptor to its player hash list.
-*/
+/* ---------------------------------------------------------------------------
+ * desc_addhash: Add a net descriptor to its player hash list.
+ */
 
 void desc_addhash(DESC *d)
 {
-    dbref player;
-    DESC *hdesc;
-
-    player = d->player;
-    hdesc = (DESC *)hashfindLEN(&player, sizeof(player), &mudstate.desc_htab);
+    dbref player = d->player;
+    DESC *hdesc = (DESC *)hashfindLEN(&player, sizeof(player), &mudstate.desc_htab);
     if (hdesc == NULL)
     {
         d->hashnext = NULL;
@@ -411,19 +414,15 @@ void desc_addhash(DESC *d)
     }
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * desc_delhash: Remove a net descriptor from its player hash list.
-*/
+/* ---------------------------------------------------------------------------
+ * desc_delhash: Remove a net descriptor from its player hash list.
+ */
 
 static void desc_delhash(DESC *d)
 {
-    DESC *hdesc, *last;
-    dbref player;
-
-    player = d->player;
-    last = NULL;
-    hdesc = (DESC *)hashfindLEN(&player, sizeof(player), &mudstate.desc_htab);
+    dbref player = d->player;
+    DESC *last = NULL;
+    DESC *hdesc = (DESC *)hashfindLEN(&player, sizeof(player), &mudstate.desc_htab);
     while (hdesc != NULL)
     {
         if (d == hdesc)
@@ -454,9 +453,13 @@ static void desc_delhash(DESC *d)
 void welcome_user(DESC *d)
 {
     if (d->host_info & H_REGISTRATION)
+    {
         fcache_dump(d, FC_CONN_REG);
+    }
     else
+    {
         fcache_dump(d, FC_CONN);
+    }
 }
 
 void save_command(DESC *d, CBLK *command)
@@ -937,9 +940,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
 int boot_off(dbref player, const char *message)
 {
     DESC *d, *dnext;
-    int count;
-
-    count = 0;
+    int count = 0;
     DESC_SAFEITER_PLAYER(player, d, dnext)
     {
         if (message && *message)
@@ -973,10 +974,9 @@ int boot_by_port(SOCKET port, BOOL no_god, const char *message)
     return count;
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * desc_reload: Reload parts of net descriptor that are based on db info.
-*/
+/* ---------------------------------------------------------------------------
+ * desc_reload: Reload parts of net descriptor that are based on db info.
+ */
 
 void desc_reload(dbref player)
 {
@@ -985,9 +985,11 @@ void desc_reload(dbref player)
     dbref aowner;
     FLAG aflags;
 
-    DESC_ITER_PLAYER(player, d) {
+    DESC_ITER_PLAYER(player, d)
+    {
         buf = atr_pget(player, A_TIMEOUT, &aowner, &aflags);
-        if (buf) {
+        if (buf)
+        {
             d->timeout = Tiny_atol(buf);
             if (d->timeout <= 0)
                 d->timeout = mudconf.idle_timeout;
@@ -2283,10 +2285,9 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
     }
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * site_check: Check for site flags in a site list.
-*/
+/* ---------------------------------------------------------------------------
+ * site_check: Check for site flags in a site list.
+ */
 
 int site_check(struct in_addr host, SITE *site_list)
 {
@@ -2300,10 +2301,9 @@ int site_check(struct in_addr host, SITE *site_list)
     return 0;
 }
 
-/*
-* --------------------------------------------------------------------------
-* * list_sites: Display information in a site list
-*/
+/* --------------------------------------------------------------------------
+ * list_sites: Display information in a site list
+ */
 
 #define S_SUSPECT   1
 #define S_ACCESS    2
@@ -2362,7 +2362,8 @@ static void list_sites(dbref player, SITE *site_list, const char *header_txt, in
     sprintf(buff, "----- %s -----", header_txt);
     notify(player, buff);
     notify(player, "Address              Mask                 Status");
-    for (this0 = site_list; this0; this0 = this0->next) {
+    for (this0 = site_list; this0; this0 = this0->next)
+    {
         str = (char *)stat_string(stat_type, this0->flag);
         StringCopy(buff1, inet_ntoa(this0->mask));
         sprintf(buff, "%-20s %-20s %s",
@@ -2373,10 +2374,9 @@ static void list_sites(dbref player, SITE *site_list, const char *header_txt, in
     free_sbuf(buff1);
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * list_siteinfo: List information about specially-marked sites.
-*/
+/* ---------------------------------------------------------------------------
+ * list_siteinfo: List information about specially-marked sites.
+ */
 
 void list_siteinfo(dbref player)
 {
@@ -2384,10 +2384,9 @@ void list_siteinfo(dbref player)
     list_sites(player, mudstate.suspect_list, "Suspected Sites", S_SUSPECT);
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * make_ulist: Make a list of connected user numbers for the LWHO function.
-*/
+/* ---------------------------------------------------------------------------
+ * make_ulist: Make a list of connected user numbers for the LWHO function.
+ */
 
 void make_ulist(dbref player, char *buff, char **bufc)
 {
@@ -2408,19 +2407,16 @@ void make_ulist(dbref player, char *buff, char **bufc)
     DbrefToBuffer_Final(&pContext);
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * find_connected_name: Resolve a playername from the list of connected
-* * players using prefix matching.  We only return a match if the prefix
-* * was unique.
-*/
+/* ---------------------------------------------------------------------------
+ * find_connected_name: Resolve a playername from the list of connected
+ * players using prefix matching.  We only return a match if the prefix
+ * was unique.
+ */
 
 dbref find_connected_name(dbref player, char *name)
 {
     DESC *d;
-    dbref found;
-
-    found = NOTHING;
+    dbref found = NOTHING;
     DESC_ITER_CONN(d)
     {
         if (  Good_obj(player)
@@ -2430,9 +2426,14 @@ dbref find_connected_name(dbref player, char *name)
             continue;
         }
         if (!string_prefix(Name(d->player), name))
+        {
             continue;
-        if ((found != NOTHING) && (found != d->player))
+        }
+        if (  (found != NOTHING)
+           && (found != d->player))
+        {
             return NOTHING;
+        }
         found = d->player;
     }
     return found;

@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.14 2002-07-14 00:42:19 sdennis Exp $
+// $Id: move.cpp,v 1.15 2002-07-16 06:41:41 jake Exp $
 //
 
 #include "copyright.h"
@@ -12,10 +12,9 @@
 #include "interface.h"
 #include "powers.h"
 
-/*
- * ---------------------------------------------------------------------------
- * * process_leave_loc: Generate messages and actions resulting from leaving
- * * a place.
+/* ---------------------------------------------------------------------------
+ * process_leave_loc: Generate messages and actions resulting from leaving a 
+ * place.
  */
 
 static void process_leave_loc(dbref thing, dbref dest, dbref cause, BOOL canhear, int hush)
@@ -26,11 +25,10 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, BOOL canhear
         return;
     }
 
-    int pattr, oattr, aattr;
-    BOOL quiet;
-
     if (dest == HOME)
+    {
         dest = Home(thing);
+    }
 
     if (Html(thing))
     {
@@ -47,16 +45,16 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, BOOL canhear
     // EXCEPT if we were called with the HUSH_LEAVE key.
     //
 
-    quiet = (  (hush & HUSH_LEAVE)
-            || (  (  !Wizard(loc)
-                  && (  Dark(thing)
-                     || Dark(loc))
-                  && (  !canhear
-                     || (Wizard(thing) && Dark(thing))))));
+    BOOL quiet = (  (hush & HUSH_LEAVE)
+                 || (  !Wizard(loc)
+                    && (  Dark(thing)
+                       || Dark(loc))
+                    && (  !canhear
+                       || (Wizard(thing) && Dark(thing)))));
 
-    oattr = quiet ? 0 : A_OLEAVE;
-    aattr = quiet ? 0 : A_ALEAVE;
-    pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_LEAVE;
+    int oattr = quiet ? 0 : A_OLEAVE;
+    int aattr = quiet ? 0 : A_ALEAVE;
+    int pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_LEAVE;
     did_it(thing, loc, pattr, NULL, oattr, NULL, aattr,
            (char **)NULL, 0);
 
@@ -88,10 +86,9 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, BOOL canhear
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * process_enter_loc: Generate messages and actions resulting from entering
- * * a place.
+/*---------------------------------------------------------------------------
+ * process_enter_loc: Generate messages and actions resulting from entering
+ * a place.
  */
 
 static void process_enter_loc(dbref thing, dbref src, dbref cause, BOOL canhear, int hush)
@@ -114,13 +111,13 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, BOOL canhear,
     //
     // EXCEPT if we were called with the HUSH_ENTER key.
     //
-    int quiet =    (hush & HUSH_ENTER)
-                || (  !Wizard(loc)
-                   && (  Dark(thing)
-                      || Dark(loc))
-                   && (  !canhear
-                      || (  Wizard(thing)
-                         && Dark(thing))));
+    BOOL quiet = (  (hush & HUSH_ENTER)
+                 || (  !Wizard(loc)
+                    && (  Dark(thing)
+                       || Dark(loc))
+                    && (  !canhear
+                       || (  Wizard(thing)
+                          && Dark(thing)))));
 
     int oattr = quiet ? 0 : A_OENTER;
     int aattr = quiet ? 0 : A_AENTER;
@@ -154,10 +151,9 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, BOOL canhear,
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * move_object: Physically move an object from one place to another.
- * * Does not generate any messages or actions.
+/* ---------------------------------------------------------------------------
+ * move_object: Physically move an object from one place to another.
+ * Does not generate any messages or actions.
  */
 
 void move_object(dbref thing, dbref dest)
@@ -214,10 +210,9 @@ void move_the_exit(dbref thing, dbref dest)
     s_Exits(thing, dest);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * send_dropto, process_sticky_dropto, process_dropped_dropto,
- * * process_sacrifice_dropto: Check for and process droptos.
+/* ---------------------------------------------------------------------------
+ * send_dropto, process_sticky_dropto, process_dropped_dropto,
+ * process_sacrifice_dropto: Check for and process droptos.
  */
 
 // send_dropto: Send an object through the dropto of a room 
@@ -290,10 +285,9 @@ static void process_dropped_dropto(dbref thing, dbref player)
         send_dropto(thing, player);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * move_via_generic: Generic move routine, generates standard messages and
- * * actions.
+/* ---------------------------------------------------------------------------
+ * move_via_generic: Generic move routine, generates standard messages and
+ * actions.
  */
 
 void move_via_generic(dbref thing, dbref dest, dbref cause, int hush)
@@ -312,9 +306,8 @@ void move_via_generic(dbref thing, dbref dest, dbref cause, int hush)
     process_enter_loc(thing, src, cause, canhear, hush);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * move_via_exit: Exit move routine, generic + exit messages + dropto check.
+/* ---------------------------------------------------------------------------
+ * move_via_exit: Exit move routine, generic + exit messages + dropto check.
  */
 
 void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int hush)
@@ -350,10 +343,9 @@ void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int hush)
     process_sticky_dropto(src, thing);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * move_via_teleport: Teleport move routine, generic + teleport messages +
- * * divestiture + dropto check.
+/* ---------------------------------------------------------------------------
+ * move_via_teleport: Teleport move routine, generic + teleport messages +
+ * divestiture + dropto check.
  */
 
 BOOL move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
@@ -424,9 +416,8 @@ BOOL move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
     return TRUE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * move_exit: Try to move a player through an exit.
+/* ---------------------------------------------------------------------------
+ * move_exit: Try to move a player through an exit.
  */
 
 void move_exit(dbref player, dbref exit, BOOL divest, const char *failmsg, int hush)
@@ -532,9 +523,8 @@ void move_exit(dbref player, dbref exit, BOOL divest, const char *failmsg, int h
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_move: Move from one place to another via exits or 'home'.
+/* ---------------------------------------------------------------------------
+ * do_move: Move from one place to another via exits or 'home'.
  */
 
 void do_move(dbref executor, dbref caller, dbref enactor, int key, char *direction)
@@ -546,15 +536,17 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
     {   
         // Go home w/o stuff.
         //
-        if ((Fixed(executor) || Fixed(Owner(executor))) &&
-            !(WizRoy(executor))) 
+        if (  (  Fixed(executor)
+              || Fixed(Owner(executor)))
+           && !(WizRoy(executor))) 
         {
             notify(executor, mudconf.fixed_home_msg);
             return;
         }
 
-        if ((loc = Location(executor)) != NOTHING &&
-            !Dark(executor) && !Dark(loc)) 
+        if (  (loc = Location(executor)) != NOTHING
+           && !Dark(executor)
+           && !Dark(loc)) 
         {
             // Tell all 
             //
@@ -569,12 +561,13 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
         process_sticky_dropto(loc, executor);
         return;
     }
-    // Hind the exit
+    // Find the exit.
     //
     init_match_check_keys(executor, direction, TYPE_EXIT);
     match_exit();
     exit = match_result();
-    switch (exit) {
+    switch (exit)
+    {
     case NOTHING:       // Try to force the object
         notify(executor, "You can't go that way.");
         break;
@@ -589,9 +582,8 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_get: Get an object.
+/* ---------------------------------------------------------------------------
+ * do_get: Get an object.
  */
 
 void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
@@ -745,9 +737,8 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_drop: Drop an object.
+/* ---------------------------------------------------------------------------
+ * do_drop: Drop an object.
  */
 
 void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
@@ -841,9 +832,8 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_enter, do_leave: The enter and leave commands.
+/* ---------------------------------------------------------------------------
+ * do_enter, do_leave: The enter and leave commands.
  */
 
 void do_enter_internal(dbref player, dbref thing, BOOL quiet)
