@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.84 2002-01-15 06:34:59 sdennis Exp $
+// $Id: funceval.cpp,v 1.85 2002-01-29 07:00:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1738,7 +1738,7 @@ FUNCTION(fun_elements)
     char *wordlist, *s, *r, sep, *oldp;
 
     varargs_preamble(3);
-    oldp = *bufc;
+    BOOL bFirst = TRUE;
 
     // Turn the first list into an array.
     //
@@ -1754,9 +1754,15 @@ FUNCTION(fun_elements)
     do {
         r = split_token(&s, ' ');
         cur = Tiny_atol(r) - 1;
-        if ((cur >= 0) && (cur < nwords) && ptrs[cur]) {
-            if (oldp != *bufc)
+        if (  cur >= 0
+           && cur < nwords
+           && ptrs[cur])
+        {
+            if (!bFirst)
+            {
                 safe_chr(sep, buff, bufc);
+            }
+            bFirst = FALSE;
             safe_str(ptrs[cur], buff, bufc);
         }
     } while (s);
