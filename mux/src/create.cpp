@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.8 2004-05-05 16:07:14 sdennis Exp $
+// $Id: create.cpp,v 1.9 2004-05-05 16:08:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -985,7 +985,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
         {
             notify_quiet(ThingOwner,
                 tprintf("You will be rewarded shortly for %s(#%d).",
-                Name(thing), thing));
+                Monikier(thing), thing));
         }
     }
     free_sbuf(NameOfType);
