@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.47 2002-09-19 05:09:40 sdennis Exp $
+// $Id: db.cpp,v 1.48 2002-09-23 20:33:12 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -543,7 +543,7 @@ const char *Moniker(dbref thing)
         &nMoniker);
     char *pPureMoniker = strip_accents(strip_ansi(pMoniker));
 
-    char *pReturn = NULL;
+    const char *pReturn = NULL;
     static char tbuff[LBUF_SIZE];
     if (strcmp(pPureNameCopy, pPureMoniker) == 0)
     {
@@ -1671,7 +1671,6 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
     if (nValue > LBUF_SIZE-1)
     {
         nValue = LBUF_SIZE-1;
-        szValue[nValue] = '\0';
     }
     ATRLIST *list;
     BOOL found = FALSE;
@@ -1864,7 +1863,7 @@ int get_atr(char *name)
 }
 
 #ifdef MEMORY_BASED
-char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
+const char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
 {
     if (!Good_obj(thing))
     {
