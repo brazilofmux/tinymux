@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.26 2002-07-09 08:22:48 jake Exp $
+// $Id: funceval.cpp,v 1.27 2002-07-09 19:00:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1129,7 +1129,7 @@ static BOOL handle_flaglists(dbref player, char *name, char *fstr, int type)
     FLAGSET fset;
     FLAG p_type;
     BOOL negate = FALSE;
-    int temp = 0;
+    BOOL temp = FALSE;
     int ret = type;
     dbref it = match_thing_quiet(player, name);
     if (!Good_obj(it))
