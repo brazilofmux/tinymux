@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.4 2002-06-05 06:14:39 sdennis Exp $
+// $Id: look.cpp,v 1.5 2002-06-11 19:16:19 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2173,11 +2173,10 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int key, char *where)
     notify(executor, "Sweep complete.");
 }
 
-/*
-* Output the sequence of commands needed to duplicate the specified
-* * object.  If you're moving things to another system, your milage
-* * will almost certainly vary.  (i.e. different flags, etc.)
-*/
+/* Output the sequence of commands needed to duplicate the specified
+ * object.  If you're moving things to another system, your mileage
+ * will almost certainly vary.  (i.e. different flags, etc.)
+ */
 
 extern NAMETAB indiv_attraccess_nametab[];
 

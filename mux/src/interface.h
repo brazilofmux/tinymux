@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.2 2002-06-04 00:47:27 sdennis Exp $
+// $Id: interface.h,v 1.3 2002-06-11 19:16:19 jake Exp $
 //
 
 #include "copyright.h"
@@ -39,7 +39,7 @@
 #define R_LOGOUT    8   /* Logged out w/o disconnecting */
 #define R_GAMEFULL  9   /* Too many players logged in */
 
-/* Logged out command tabel definitions */
+/* Logged out command table definitions */
 
 #define CMD_QUIT    1
 #define CMD_WHO     2
