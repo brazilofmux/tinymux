@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.16 2002-08-28 16:13:27 jake Exp $
+// $Id: flags.h,v 1.17 2002-09-06 15:47:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -125,9 +125,10 @@ typedef struct flag_bit_entry
 
 typedef struct flag_name_entry
 {
-    char *flagname;         // Name of the flag;
+    char *pOrigName;        // Original name of flag.
     BOOL bPositive;         // Flag sense.
     FLAGBITENT *fbe;        // Which bit is this associated with?
+    char *flagname;         // Name of the flag.
 } FLAGNAMEENT;
 
 /* ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.21 2002-09-03 20:03:11 sdennis Exp $
+// $Id: flags.cpp,v 1.22 2002-09-06 15:47:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -462,9 +462,10 @@ OBJENT object_types[8] =
 void init_flagtab(void)
 {
     char *nbuf = alloc_sbuf("init_flagtab");
-    for (FLAGNAMEENT *fp = gen_flag_names; fp->flagname; fp++)
+    for (FLAGNAMEENT *fp = gen_flag_names; fp->pOrigName; fp++)
     {
-        strncpy(nbuf, fp->flagname, SBUF_SIZE);
+        fp->flagname = fp->pOrigName;
+        strncpy(nbuf, fp->pOrigName, SBUF_SIZE);
         nbuf[SBUF_SIZE-1] = '\0';
         _strlwr(nbuf);
         hashaddLEN(nbuf, strlen(nbuf), (int *)fp, &mudstate.flags_htab);
@@ -1151,13 +1152,13 @@ BOOL flag_rename(char *alias, char *newname)
         {
             hashaddLEN(pNewName, nNewName, (int *)flag1, &mudstate.flags_htab);
 
-            // BUGBUG (Jake): flag1->flagname may not have enough room for
-            // pNewName. Also, flag1->flagname is usually going to be a
-            // literal string (const char *) so you're going to crash on some
-            // systems if you even try to use that memory.
-            //
-            _strupr(pNewName);
-            strcpy(flag1->flagname, pNewName);
+            if (flag1->flagname != flag1->pOrigName)
+            {
+                MEMFREE(flag1->flagname);
+            }
+            flag1->flagname = StringCloneLen(pNewName, nNewName);
+            _strupr(flag1->flagname);
+
             free_sbuf(pAlias);
             free_sbuf(pNewName);
             return TRUE;
