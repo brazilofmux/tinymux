@@ -6560,8 +6560,8 @@ FUNCTION CLASSES (continued)
   Logical:                   AND ANDBOOL CAND CANDBOOL COR CORBOOL LAND LOR
                              NOT OR ORBOOL T XOR
 
-  Miscellaneous:             @@ ANSI ART R BEEP ERROR ISDBREF ISINT ISNUM ISRAT
-                             ISWORD LIT NULL R SETQ SETR SUBEVAL
+  Miscellaneous:             @@ ANSI ART R BEEP ERROR HELPTEXT ISDBREF ISINT
+                             ISNUM ISRAT ISWORD LIT NULL R SETQ SETR SUBEVAL
  
 { 'help function classes3' for more }
 
@@ -6642,47 +6642,48 @@ FUNCTION LIST (continued)
 
     GET_EVAL()  GRAB()      GRABALL()   GREP()      GREPI()     GT()
     GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASQUOTA()
-    HASTYPE()   HOME()      HOST()      IABS()      IADD()      IDIV()
-    IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
-    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
-    ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()
-    ITER()      LADD()      LAND()      LAST()      LATTR()     LATTRCMDS()
-    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
-    LFLAGS()    LINK()      LIST()      LIT()       LJUST()     LN()
-    LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()
-    LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()
-    LSTACK()    LT()        LTE()       LWHO()      MAIL()      MAILFROM()
-    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
-    MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()
-    MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()
-    NEARBY()    NEQ()       NEXT()      NOT()       NULL()      NUM()
-    OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()
-    ORD()       ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()
-    PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()
+    HASTYPE()   HELPTEXT()  HOME()      HOST()      IABS()      IADD()
+    IDIV()      IDLE()      IF()        IFELSE()    ILEV()      IMUL()
+    INC()       INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()
+    ISINT()     ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()
+    ITEMS()     ITER()      LADD()      LAND()      LAST()      LATTR()
+    LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()
+    LEXITS()    LFLAGS()    LINK()      LIST()      LIT()       LJUST()
+    LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
+    LOG()       LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()
+    LROOMS()    LSTACK()    LT()        LTE()       LWHO()      MAIL()
+    MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()
+    MERGE()     MID()       MIN()       MIX()       MOD()       MONEY()
+    MONIKER()   MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()
+    NAME()      NEARBY()    NEQ()       NEXT()      NOT()       NULL()
+    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()
+    ORBOOL()    ORD()       ORFLAGS()   OWNER()     PACK()      PARENT()
+    PARSE()     PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    PMATCH()    POLL()      POP()       PORTS()     POS()       POSS()
-    POWER()     POWERS()    PUSH()      R()         RAND()      REGMATCH()
-    REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER()
-    REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
-    REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()
-    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
-    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
-    SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
-    SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()
-    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
-    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()    STRMATCH()
-    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
-    TABLE()     TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE()
-    TRIM()      TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()
-    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
-    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
-    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRAP()
-    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
+    POSS()      POWER()     POWERS()    PUSH()      R()         RAND()
+    REGMATCH()  REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()
+    REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
+    REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
+    ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()
+    SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
+    SETUNION()  SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()
+    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()
+    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
+    STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
+    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
+    T()         TABLE()     TAN()       TEL()       TIME()      TIMEFMT()
+    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
+    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
+    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
+    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
+    WRAP()      WRITETIME() XGET()      XOR()       ZFUN()      ZONE()
+    ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -7092,6 +7093,22 @@ HEAD
   with STAFF, no powers come with it, it is purely a marker.
 
   Related Topics:
+
+& HELPTEXT()
+HELPTEXT()
+
+  FUNCTION: helptext(<helpcmd>, <topic>)
+
+  Returns the body of <topic> associated with <helpcmd> that would have been
+  shown if <helpcmd> were used instead.
+
+  Examples:
+    > help say
+    ...
+    > think helptext(help,say)
+    ...
+
+  Related Topics: help, helpfile in wizhelp, raw_helpfile in wizhelp.
 
 & HERE
 HERE
