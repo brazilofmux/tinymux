@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.46 2001-07-26 16:45:20 sdennis Exp $
+// * $Id: comsys.cpp,v 1.47 2001-08-28 15:27:43 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -924,27 +924,22 @@ void do_processcom(dbref player, char *arg1, char *arg2)
             }
         }
 
-        do_comsend(ch, mess);
+        do_comsend(ch, mess, player);
         free_lbuf(mess);
     }
 }
 
-void do_comsend(struct channel *ch, char *msgNormal)
+void do_comsend(struct channel *ch, char *msgNormal, dbref player)
 {
     struct comuser *user;
 
     ch->num_messages++;
     for (user = ch->on_users; user; user = user->on_next)
     {
-        if (user->bUserIsOn)
+        if (  user->bUserIsOn
+           && do_test_access(user->who, CHANNEL_RECEIVE, ch))
         {
-            if (do_test_access(user->who, CHANNEL_RECEIVE, ch))
-            {
-                if ((Typeof(user->who) == TYPE_PLAYER) && Connected(user->who))
-                    raw_notify(user->who, msgNormal);
-                else
-                    notify(user->who, msgNormal);
-            }
+            notify_with_cause(user->who, player, msgNormal);
         }
     }
 }
@@ -1029,7 +1024,7 @@ void do_joinchannel(dbref player, struct channel *ch)
             p = tprintf( "%s %s has joined this channel.", ch->header,
                 Name(player));
         }
-        do_comsend(ch, p);
+        do_comsend(ch, p, player);
     }
 }
 
@@ -1060,7 +1055,7 @@ void do_leavechannel(dbref player, struct channel *ch)
             p = tprintf( "%s %s has left this channel.", ch->header,
                          Name(player));
         }
-        do_comsend(ch, p);
+        do_comsend(ch, p, player);
     }
     user->bUserIsOn = 0;
 }
@@ -1427,7 +1422,7 @@ void do_delcomchannel(dbref player, char *channel)
                     {
                         p = tprintf("%s %s has left this channel.", ch->header, Name(player));
                     }
-                    do_comsend(ch, p);
+                    do_comsend(ch, p, player);
                 }
                 raw_notify(player, tprintf("You have left channel %s.", channel));
 
@@ -1644,7 +1639,7 @@ void do_cleanupchannels(void)
                             {
                                 sprintf(buff, "[%s] The system boots %s off the channel.", ch->name, Name(cuVictim->who));
                             }
-                            do_comsend(ch, buff);
+                            do_comsend(ch, buff, player);
                         }
                         raw_notify(cuVictim->who, tprintf("The system has booted you off channel %s.", ch->name));
 
@@ -1953,7 +1948,7 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
         {
             sprintf(buff, "%s %s has disconnected.", ch->header, Name(player));
         }
-        do_comsend(ch, buff);
+        do_comsend(ch, buff, player);
         free_lbuf(buff);
     }
 }
@@ -1987,7 +1982,7 @@ void do_comconnectraw_notify(dbref player, char *chan)
         {
             sprintf(buff, "%s %s has connected.", ch->header, Name(player));
         }
-        do_comsend(ch, buff);
+        do_comsend(ch, buff, player);
         free_lbuf(buff);
     }
 }
@@ -2329,11 +2324,11 @@ void do_cemit(dbref player, dbref cause, int key, char *chan, char *text)
     }
     if (key == CEMIT_NOHEADER)
     {
-        do_comsend(ch, text);
+        do_comsend(ch, text, player);
     }
     else
     {
-        do_comsend(ch, tprintf("%s %s", ch->header, text));
+        do_comsend(ch, tprintf("%s %s", ch->header, text), player);
     }
 }
 
@@ -2503,7 +2498,7 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     {
         sprintf(buff, "%s %s boots %s off the channel.", ch->header, buf2, Name(thing));
     }
-    do_comsend(ch, buff);
+    do_comsend(ch, buff, player);
     do_delcomchannel(thing, channel);
 }
 
