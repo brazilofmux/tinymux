@@ -5927,11 +5927,11 @@ FUNCTION CLASSES (continued)
   Stack:                     EMPTY ITEMS LSTACK PEEK POP PUSH
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE CAT
                              CENTER COMP DECRYPT DELETE EDIT ENCRYPT ESCAPE
-                             IFELSE LCSTR LJUST LPOS MERGE MID POS REGMATCH
-                             REPEAT REPLACE REVERSE RIGHT RJUST ROMAN SCRAMBLE
-                             SECURE SPACE SPELLNUM SQUISH STRCAT STRIPANSI
-                             STRLEN STRMATCH STRTRUNC SWITCH TRANSLATE TRIM
-                             UCSTR WORDPOS
+                             IFELSE LCSTR LJUST LPOS MERGE MID POS REGRAB
+                             REGMATCH REPEAT REPLACE REVERSE RIGHT RJUST ROMAN
+                             SCRAMBLE SECURE SPACE SPELLNUM SQUISH STRCAT
+                             STRIPANSI STRLEN STRMATCH STRTRUNC SWITCH
+                             TRANSLATE TRIM UCSTR WORDPOS
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
                              WRITETIME
@@ -5981,22 +5981,22 @@ FUNCTION LIST (continued)
     OEMIT()     OR()        ORFLAGS()   OWNER()     PACK()      PARENT()
     PARSE()     PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()
     PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
-    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
-    REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
-    REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
-    ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()
-    SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
-    SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
-    SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()
-    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
-    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()
-    SUBJ()      SWITCH()    T()         TABLE()     TAN()       TEL()
-    TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()
-    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
-    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
-    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()       ZFUN()
-    ZONE()      ZWHO()
+    POSS()      POWER()     PUSH()      R()         RAND()      REGRAB()
+    REGMATCH()  REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()
+    REST()      REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()
+    ROMAN()     ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()
+    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()
+    SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()
+    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()
+    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
+    STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()
+    SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()     TAN()
+    TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()
+    TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()
+    V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
+    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
+    WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()
+    ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
