@@ -1,6 +1,6 @@
 // _build.cpp
 //
-// $Id: _build.cpp,v 1.5 2000-09-18 08:03:42 sdennis Exp $
+// $Id: _build.cpp,v 1.6 2000-10-07 07:21:42 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -11,5 +11,6 @@
 // building/hosting text-based game servers, contact the author at
 // Stephen Dennis <sdennis@svdltd.com> for another license.
 //
+#include "_build.h"
 char szBuildDate[] = __DATE__ " " __TIME__;
 char szBuildNum[] = "1";
