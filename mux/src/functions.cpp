@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.40 2003-02-16 16:21:21 jake Exp $
+// $Id: functions.cpp,v 1.41 2003-02-16 16:33:14 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1499,48 +1499,37 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
             char *cargs[], int ncargs,
             bool is_local)
 {
-    dbref aowner, thing;
-    int aflags, anum;
+    dbref thing;
     ATTR *ap;
-    char *atext, *str;
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
-    if (parse_attrib(executor, fargs[0], &thing, &anum))
-    {
-        if (anum == NOTHING)
-        {
-            ap = NULL;
-        }
-        else
-        {
-            ap = atr_num(anum);
-        }
-    }
-    else
+    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
     }
 
-    // Make sure we got a good attribute.
-    //
     if (!ap)
     {
         return;
     }
 
-    // Use it if we can access it, otherwise return an error.
-    //
-    atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (*atext == '\0')
-    {
-        free_lbuf(atext);
-        return;
-    }
     if (!See_attr(executor, thing, ap))
     {
         safe_noperm(buff, bufc);
+        return;
+    }
+
+    dbref aowner;
+    int aflags;
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
+    if (!atext) 
+    {
+        return;
+    } 
+    else if (!*atext)
+    {
         free_lbuf(atext);
         return;
     }
@@ -1558,7 +1547,7 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
 
     // Evaluate it using the rest of the passed function args.
     //
-    str = atext;
+    char *str = atext;
     mux_exec(buff, bufc, thing, executor, enactor, EV_FCHECK | EV_EVAL,
         &str, &(fargs[1]), nfargs - 1);
     free_lbuf(atext);
@@ -2071,12 +2060,14 @@ FUNCTION(fun_room)
 FUNCTION(fun_owner)
 {
     dbref it;
-    int atr;
-    if (parse_attrib(executor, fargs[0], &it, &atr))
+    ATTR *attr;
+    if (parse_attrib_temp(executor, fargs[0], &it, &attr))
     {
-        if (atr == NOTHING)
+        if (  !attr
+           || !See_attr(executor, it, attr))
         {
-            it = NOTHING;
+            safe_nothing(buff, bufc);
+            return;
         }
         else
         {
