@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.45 2001-11-17 07:21:12 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.46 2001-11-17 07:23:44 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -784,16 +784,15 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
     
     if (num < 2)
     {
-        char *mbuf = alloc_mbuf("announce_disconnect.only");
+        char *buf = alloc_lbuf("announce_disconnect.only");
         
-        sprintf(mbuf, "%s has disconnected.", Name(player));
+        sprintf(buf, "%s has disconnected.", Name(player));
         key = MSG_INV;
         if ((loc != NOTHING) && !(Dark(player) && Wizard(player)))
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
-        notify_check(player, player, mbuf, key);
-        free_mbuf(mbuf);
+        notify_check(player, player, buf, key);
         
         if (mudconf.have_mailer)
         {
@@ -812,7 +811,6 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         int nLen;
         argv[0] = (char *)reason;
         CLinearTimeAbsolute lta;
-        char *buf = alloc_lbuf("announce_disconnect");
         atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
         if (nLen)
         {
