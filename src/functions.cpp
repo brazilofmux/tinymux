@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.109 2001-11-25 06:47:21 sdennis Exp $
+// $Id: functions.cpp,v 1.110 2001-11-25 08:23:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6758,27 +6758,30 @@ FUN flist[] =
     {"ISNUM",    fun_isnum,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISUB",     fun_isub,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ISWORD",   fun_isword,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ITER",     fun_iter,     MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
     {"ITEMS",    fun_items,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"ITER",     fun_iter,     MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
     {"LADD",     fun_ladd,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"LAST",     fun_last,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"LATTR",    fun_lattr,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LATTRCMDS",fun_lattrcmds,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LCMDS",    fun_lcmds,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LCON",     fun_lcon,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LCSTR",    fun_lcstr,    1,       1,  1,       0, CA_PUBLIC},
     {"LDELETE",  fun_ldelete,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"LEXITS",   fun_lexits,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LROOMS",   fun_lrooms,   MAX_ARG, 1,  3,       0, CA_PUBLIC},
-    {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LFLAGS",   fun_lflags,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LIST",     fun_list,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
+    {"LINK",     fun_link,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"LIT",      fun_lit,      MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
     {"LJUST",    fun_ljust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"LINK",     fun_link,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"LN",       fun_ln,       MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LNUM",     fun_lnum,     MAX_ARG, 0,  3,       0, CA_PUBLIC},
     {"LOC",      fun_loc,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LOCATE",   fun_locate,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
     {"LOCK",     fun_lock,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LOG",      fun_log,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LROOMS",   fun_lrooms,   MAX_ARG, 1,  3,       0, CA_PUBLIC},
     {"LPOS",     fun_lpos,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"LRAND",    fun_lrand,    MAX_ARG, 3,  4,       0, CA_PUBLIC},
     {"LSTACK",   fun_lstack,   MAX_ARG, 0,  1,       0, CA_PUBLIC},
@@ -6921,9 +6924,6 @@ FUN flist[] =
     {"EXPTIME",  fun_exptime,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"WRITETIME",fun_writetime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"STARTSECS",fun_startsecs,MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"LFLAGS",   fun_lflags,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LATTRCMDS",fun_lattrcmds,MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LCMDS",    fun_lcmds,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {NULL,       NULL,         MAX_ARG, 0,  0,       0, 0}
 };
 
