@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.56 2002-08-02 03:03:30 sdennis Exp $
+// $Id: command.cpp,v 1.57 2002-08-02 04:23:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -900,10 +900,12 @@ BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
         char *atext = atr_get(thing, anum, &aowner, &aflags);
         if (atext[0] && !(aflags & AF_NOPROG))
         {
-            int preserve_len[MAX_GLOBAL_REGS];
-            char *preserve[MAX_GLOBAL_REGS];
+            char **preserve = NULL;
+            int *preserve_len = NULL;
             if (save_flg)
             {
+                preserve = PushPointers(MAX_GLOBAL_REGS);
+                preserve_len = PushIntegers(MAX_GLOBAL_REGS);
                 save_global_regs("process_hook.save", preserve, preserve_len);
             }
             char *buff, *bufc;
@@ -916,6 +918,8 @@ BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
             if (save_flg)
             {
                 restore_global_regs("proces_hook.save", preserve, preserve_len);
+                PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+                PopPointers(preserve, MAX_GLOBAL_REGS);
             }
             retval = (Tiny_atol(buff) > 0);
             free_lbuf(buff);

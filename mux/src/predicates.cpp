@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.36 2002-07-23 15:51:41 sdennis Exp $
+// $Id: predicates.cpp,v 1.37 2002-08-02 04:26:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1891,8 +1891,6 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
     char *d, *buff, *act, *charges, *bp, *str;
     dbref loc, aowner;
     int num, aflags;
-    char *preserve[MAX_GLOBAL_REGS];
-    int preserve_len[MAX_GLOBAL_REGS];
 
     // If we need to call exec() from within this function, we first save
     // the state of the global registers, in order to avoid munging them
@@ -1905,16 +1903,19 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
     //
 
     BOOL need_pres = FALSE;
+    char **preserve = NULL;
+    int *preserve_len = NULL;
 
     // message to player.
     //
-
     if (what > 0)
     {
         d = atr_pget(thing, what, &aowner, &aflags);
         if (*d)
         {
             need_pres = TRUE;
+            preserve = PushPointers(MAX_GLOBAL_REGS);
+            preserve_len = PushIntegers(MAX_GLOBAL_REGS);
             save_global_regs("did_it_save", preserve, preserve_len);
             buff = bp = alloc_lbuf("did_it.1");
             str = d;
@@ -1957,6 +1958,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             if (!need_pres)
             {
                 need_pres = TRUE;
+                preserve = PushPointers(MAX_GLOBAL_REGS);
+                preserve_len = PushIntegers(MAX_GLOBAL_REGS);
                 save_global_regs("did_it_save", preserve, preserve_len);
             }
             buff = bp = alloc_lbuf("did_it.2");
@@ -1989,6 +1992,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
     if (need_pres)
     {
         restore_global_regs("did_it_restore", preserve, preserve_len);
+        PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+        PopPointers(preserve, MAX_GLOBAL_REGS);
     }
 
     // do the action attribute.

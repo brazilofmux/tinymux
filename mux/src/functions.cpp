@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.72 2002-07-30 13:40:59 jake Exp $
+// $Id: functions.cpp,v 1.73 2002-08-02 04:24:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1587,8 +1587,6 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
     int aflags, anum;
     ATTR *ap;
     char *atext, *str;
-    char *preserve[MAX_GLOBAL_REGS];
-    int preserve_len[MAX_GLOBAL_REGS];
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
@@ -1633,8 +1631,12 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
 
     // If we're evaluating locally, preserve the global registers.
     //
+    char **preserve = NULL;
+    int *preserve_len = NULL;
     if (is_local)
     {
+        preserve = PushPointers(MAX_GLOBAL_REGS);
+        preserve_len = PushIntegers(MAX_GLOBAL_REGS);
         save_global_regs("fun_ulocal_save", preserve, preserve_len);
     }
 
@@ -1650,6 +1652,8 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
     if (is_local)
     {
         restore_global_regs("fun_ulocal_restore", preserve, preserve_len);
+        PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+        PopPointers(preserve, MAX_GLOBAL_REGS);
     }
 }
 

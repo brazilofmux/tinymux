@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.20 2002-07-23 15:51:11 jake Exp $
+// $Id: game.cpp,v 1.21 2002-08-02 04:25:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -306,8 +306,6 @@ BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
     int aflags;
     dbref aowner;
     char *buf, *nbuf, *cp, *dp, *str;
-    char *preserve[MAX_GLOBAL_REGS];
-    int preserve_len[MAX_GLOBAL_REGS];
 
     buf = atr_pget(object, filter, &aowner, &aflags);
     if (!*buf)
@@ -315,6 +313,10 @@ BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
         free_lbuf(buf);
         return TRUE;
     }
+    char **preserve = NULL;
+    int *preserve_len = NULL;
+    preserve = PushPointers(MAX_GLOBAL_REGS);
+    preserve_len = PushIntegers(MAX_GLOBAL_REGS);
     save_global_regs("check_filter_save", preserve, preserve_len);
     nbuf = dp = alloc_lbuf("check_filter");
     str = buf;
@@ -324,6 +326,8 @@ BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
     dp = nbuf;
     free_lbuf(buf);
     restore_global_regs("check_filter_restore", preserve, preserve_len);
+    PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+    PopPointers(preserve, MAX_GLOBAL_REGS);
 
     do {
         cp = parse_to(&dp, ',', EV_STRIP_CURLY);
@@ -337,13 +341,12 @@ BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
     return TRUE;
 }
 
-static char *add_prefix(dbref object, dbref player, int prefix, const char *msg, const char *dflt)
+static char *add_prefix(dbref object, dbref player, int prefix,
+                        const char *msg, const char *dflt)
 {
     int aflags;
     dbref aowner;
-    char *buf, *nbuf, *cp, *bp, *str;
-    char *preserve[MAX_GLOBAL_REGS];
-    int preserve_len[MAX_GLOBAL_REGS];
+    char *buf, *nbuf, *cp, *str;
 
     buf = atr_pget(object, prefix, &aowner, &aflags);
     if (!*buf)
@@ -353,16 +356,23 @@ static char *add_prefix(dbref object, dbref player, int prefix, const char *msg,
     }
     else
     {
+        char **preserve = NULL;
+        int *preserve_len = NULL;
+        preserve = PushPointers(MAX_GLOBAL_REGS);
+        preserve_len = PushIntegers(MAX_GLOBAL_REGS);
         save_global_regs("add_prefix_save", preserve, preserve_len);
-        nbuf = bp = alloc_lbuf("add_prefix");
+
+        nbuf = cp = alloc_lbuf("add_prefix");
         str = buf;
-        TinyExec(nbuf, &bp, object, player, player,
+        TinyExec(nbuf, &cp, object, player, player,
                  EV_FIGNORE | EV_EVAL | EV_TOP, &str, (char **)NULL, 0);
-        *bp = '\0';
         free_lbuf(buf);
+
         restore_global_regs("add_prefix_restore", preserve, preserve_len);
+        PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+        PopPointers(preserve, MAX_GLOBAL_REGS);
+
         buf = nbuf;
-        cp = &buf[strlen(buf)];
     }
     if (cp != buf)
     {
@@ -370,7 +380,7 @@ static char *add_prefix(dbref object, dbref player, int prefix, const char *msg,
     }
     safe_str(msg, buf, &cp);
     *cp = '\0';
-    return (buf);
+    return buf;
 }
 
 static char *dflt_from_msg(dbref sender, dbref sendloc)

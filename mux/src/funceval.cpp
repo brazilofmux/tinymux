@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.40 2002-08-02 03:09:54 sdennis Exp $
+// $Id: funceval.cpp,v 1.41 2002-08-02 04:24:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -716,8 +716,10 @@ FUNCTION(fun_objeval)
 
 FUNCTION(fun_localize)
 {
-    char *preserve[MAX_GLOBAL_REGS];
-    int preserve_len[MAX_GLOBAL_REGS];
+    char **preserve = NULL;
+    int *preserve_len = NULL;
+    preserve = PushPointers(MAX_GLOBAL_REGS);
+    preserve_len = PushIntegers(MAX_GLOBAL_REGS);
     save_global_regs("fun_localize", preserve, preserve_len);
 
     char *str = fargs[0];
@@ -725,6 +727,8 @@ FUNCTION(fun_localize)
         EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
 
     restore_global_regs("fun_localize", preserve, preserve_len);
+    PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+    PopPointers(preserve, MAX_GLOBAL_REGS);
 }
 
 FUNCTION(fun_null)
