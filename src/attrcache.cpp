@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.10 2001-06-27 17:27:19 sdennis Exp $
+// $Id: attrcache.cpp,v 1.11 2001-06-27 21:38:21 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -126,7 +126,7 @@ void cache_pass2(void)
         char TempFileName[20];
         sprintf(TempFileName, "$convtemp.%d", i);
         RemoveFile(TempFileName);
-        fprintf(stderr, "\n");
+        fprintf(stderr, ENDLINE);
     }
 }
 #endif
@@ -409,9 +409,7 @@ BOOL cache_sync(void)
     return TRUE;
 }
 
-/*
- * Delete this attribute from the database.
- */
+// Delete this attribute from the database.
 void cache_del(Aname *nam)
 {
     if (!nam || !cache_initted)
