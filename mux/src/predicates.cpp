@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.48 2004-04-26 21:08:25 sdennis Exp $
+// $Id: predicates.cpp,v 1.49 2004-04-30 18:13:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1699,15 +1699,18 @@ void parse_range(char **name, dbref *low_bound, dbref *high_bound)
 
 bool parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
 {
-    char *str;
-
     // Get name up to '/'.
     //
-    for (str = thing; *str && (*str != '/'); str++) ;
+    char *str = thing;
+    while (  *str != '\0'
+          && *str != '/')
+    {
+        str++;
+    }
 
     // If no '/' in string, return failure.
     //
-    if (!*str)
+    if (*str == '\0')
     {
         *after = NULL;
         *it = NOTHING;
@@ -1724,7 +1727,7 @@ bool parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
 
     // Return status of search.
     //
-    return (Good_obj(*it));
+    return Good_obj(*it);
 }
 
 extern NAMETAB lock_sw[];
