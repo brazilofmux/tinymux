@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.42 2001-12-03 19:42:54 sdennis Exp $
+// $Id: bsd.cpp,v 1.43 2001-12-03 19:45:16 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -886,7 +886,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
 
         // Listen for new connections.
         //
-        for (i = 0; i < nPorts; i++)
+        for (int i = 0; i < nPorts; i++)
         {
             FD_SET(aPorts[i].socket, &input_set);
         }
