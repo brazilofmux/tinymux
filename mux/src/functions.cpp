@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.115 2002-10-01 02:34:18 jake Exp $
+// $Id: functions.cpp,v 1.116 2002-10-01 07:36:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -4501,7 +4501,8 @@ FUNCTION(fun_pos)
     //
     unsigned int nPat = 0;
     char aPatBuf[LBUF_SIZE];
-    memcpy(aPatBuf, strip_ansi(fargs[0], &nPat), nPat);
+    char *pPatStrip = strip_ansi(fargs[0], &nPat);
+    memcpy(aPatBuf, pPatStrip, nPat);
 
     // Strip ANSI from source.
     //
