@@ -478,7 +478,7 @@ static Bigint *multadd(Bigint *b, int m, int a)
 #ifdef ULLong
         y = *x * (ULLong)m + carry;
         carry = y >> 32;
-        *x++ = y & FFFFFFFF;
+        *x++ = (unsigned int)(y & 0xFFFFFFFF);
 #else
 #ifdef Pack_32
         xi = *x;
@@ -502,7 +502,7 @@ static Bigint *multadd(Bigint *b, int m, int a)
             Bfree(b);
             b = b1;
         }
-        b->x[wds++] = carry;
+        b->x[wds++] = (unsigned int)carry;
         b->wds = wds;
     }
     return b;
@@ -699,9 +699,9 @@ static Bigint *mult(Bigint *a, Bigint *b)
             {
                 z = *x++ * (ULLong)y + *xc + carry;
                 carry = z >> 32;
-                *xc++ = z & FFFFFFFF;
+                *xc++ = (unsigned int)(z & 0xFFFFFFFF);
             } while (x < xae);
-            *xc = carry;
+            *xc = (unsigned int)carry;
         }
     }
 #else
@@ -957,13 +957,13 @@ static Bigint *diff(Bigint *a, Bigint *b)
     {
         y = (ULLong)*xa++ - *xb++ - borrow;
         borrow = y >> 32 & (ULong)1;
-        *xc++ = y & FFFFFFFF;
+        *xc++ = (unsigned int)(y & 0xFFFFFFFF);
     } while (xb < xbe);
     while (xa < xae)
     {
         y = *xa++ - borrow;
         borrow = y >> 32 & (ULong)1;
-        *xc++ = y & FFFFFFFF;
+        *xc++ = (unsigned int)(y & 0xFFFFFFFF);
     }
 #else
 #ifdef Pack_32
@@ -1066,17 +1066,17 @@ static double b2d(Bigint *a, int *e)
 #ifdef Pack_32
     if (k < Ebits)
     {
-        d0 = Exp_1 | y >> Ebits - k;
+        d0 = Exp_1 | y >> (Ebits - k);
         w = xa > xa0 ? *--xa : 0;
-        d1 = y << (32-Ebits) + k | w >> Ebits - k;
+        d1 = y << ((32-Ebits) + k) | w >> (Ebits - k);
         goto ret_d;
     }
     z = xa > xa0 ? *--xa : 0;
     if (k -= Ebits)
     {
-        d0 = Exp_1 | y << k | z >> 32 - k;
+        d0 = Exp_1 | y << k | z >> (32 - k);
         y = xa > xa0 ? *--xa : 0;
-        d1 = z << k | y >> 32 - k;
+        d1 = z << k | y >> (32 - k);
     }
     else
     {
@@ -1153,7 +1153,7 @@ static Bigint *d2b(double d, int *e, int *bits)
     {
         if ((k = lo0bits(&y)))
         {
-            x[0] = y | z << 32 - k;
+            x[0] = y | z << (32 - k);
             z >>= k;
         }
         else
@@ -1777,7 +1777,7 @@ ovfl:
                     }
                     else
                     {
-                        word0(rv) &= 0xffffffff << j-32;
+                        word0(rv) &= 0xffffffff << (j-32);
                     }
                 }
                 else
@@ -2454,7 +2454,7 @@ static int quorem(Bigint *b, Bigint *S)
             carry = ys >> 32;
             y = *bx - (ys & FFFFFFFF) - borrow;
             borrow = y >> 32 & (ULong)1;
-            *bx++ = y & FFFFFFFF;
+            *bx++ = (unsigned int)(y & 0xFFFFFFFF);
 #else
 #ifdef Pack_32
             si = *sx++;
@@ -2497,9 +2497,9 @@ static int quorem(Bigint *b, Bigint *S)
 #ifdef ULLong
             ys = *sx++ + carry;
             carry = ys >> 32;
-            y = *bx - (ys & FFFFFFFF) - borrow;
+            y = *bx - (ys & 0xFFFFFFFF) - borrow;
             borrow = y >> 32 & (ULong)1;
-            *bx++ = y & FFFFFFFF;
+            *bx++ = (unsigned int)(y & 0xFFFFFFFF);
 #else
 #ifdef Pack_32
             si = *sx++;
@@ -2788,8 +2788,8 @@ char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
         /* d is denormalized */
 
         i = bbits + be + (Bias + (P-1) - 1);
-        x = i > 32  ? word0(d) << 64 - i | word1(d) >> i - 32
-                : word1(d) << 32 - i;
+        x = i > 32  ? word0(d) << (64 - i) | word1(d) >> (i - 32)
+                : word1(d) << (32 - i);
         dval(d2) = x;
         word0(d2) -= 31*Exp_msk1; /* adjust exponent */
         i -= (Bias + (P-1) - 1) + 1;
