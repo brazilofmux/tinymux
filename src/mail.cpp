@@ -1,6 +1,6 @@
-// mail.cpp 
+// mail.cpp
 //
-// $Id: mail.cpp,v 1.27 2001-06-29 18:16:30 sdennis Exp $
+// $Id: mail.cpp,v 1.28 2001-06-29 18:29:58 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -166,8 +166,8 @@ char *MessageFetch(int number)
 {
 #ifdef RADIX_COMPRESSION
     static char buff[LBUF_SIZE];
-#endif
-    
+#endif // RADIX_COMPRESSION
+
     MessageReferenceCheck(number);
     if (mudstate.mail_list[number].m_pMessage)
     {
@@ -179,9 +179,9 @@ char *MessageFetch(int number)
         string_compress("MAIL: This mail message does not exist in the database. Please alert your admin.", msgbuff);
         strcpy(buff, msgbuff);
         return buff;
-#else       
+#else // RADIX_COMPRESSION
         return "MAIL: This mail message does not exist in the database. Please alert your admin.";
-#endif
+#endif // RADIX_COMPRESSION
     }
 }
 
@@ -217,7 +217,7 @@ static int MessageAdd(char *pMessage)
 #ifdef RADIX_COMPRESSION
     int len = string_compress(pMessage, msgbuff);
     pm->m_pMessage = BufferCloneLen(msgbuff, len);
-#else
+#else // RADIX_COMPRESSION
     pm->m_pMessage = StringClone(pMessage);
 #endif // RADIX_COMPRESSION
     MessageReferenceInc(i);
@@ -295,7 +295,7 @@ static int MessageAddWithNumber(int i, char *pMessage)
 #ifdef RADIX_COMPRESSION
     int len = string_compress(pMessage, msgbuff);
     pm->m_pMessage = BufferCloneLen(msgbuff, len);
-#else
+#else // RADIX_COMPRESSION
     pm->m_pMessage = StringClone(pMessage);
 #endif // RADIX_COMPRESSION
     return i;
@@ -327,7 +327,7 @@ static void new_mail_message(char *message, int number)
 /*-------------------------------------------------------------------------*
  *   User mail functions (these are called from game.c)
  *
- * do_mail - cases 
+ * do_mail - cases
  * do_mail_read - read messages
  * do_mail_list - list messages
  * do_mail_flags - tagging, untagging, clearing, unclearing of messages
@@ -340,7 +340,7 @@ static void new_mail_message(char *message, int number)
  *-------------------------------------------------------------------------*/
 
 /*
- * Change or rename a folder 
+ * Change or rename a folder
  */
 void do_mail_change_folder(dbref player, char *fld, char *newname)
 {
@@ -349,7 +349,7 @@ void do_mail_change_folder(dbref player, char *fld, char *newname)
 
     if (!fld || !*fld) {
         /*
-         * Check mail in all folders 
+         * Check mail in all folders
          */
         for (pfld = MAX_FOLDERS; pfld >= 0; pfld--)
             check_mail(player, pfld, 1);
@@ -368,7 +368,7 @@ void do_mail_change_folder(dbref player, char *fld, char *newname)
     if (newname && *newname)
     {
         /*
-         * We're changing a folder name here 
+         * We're changing a folder name here
          */
         if (strlen(newname) > FOLDER_NAME_LEN) {
             notify(player, "MAIL: Folder name too long");
@@ -387,7 +387,7 @@ void do_mail_change_folder(dbref player, char *fld, char *newname)
     else
     {
         /*
-         * Set a new folder 
+         * Set a new folder
          */
         set_player_folder(player, pfld);
         notify(player, tprintf("MAIL: Current folder set to %d [%s].",
@@ -421,7 +421,7 @@ void do_mail_unclear(dbref player, char *msglist)
 }
 
 /*
- * adjust the flags of a set of messages 
+ * adjust the flags of a set of messages
  */
 
 // if 1, clear the flag
@@ -487,7 +487,7 @@ static void do_mail_flags(dbref player, char *msglist, mail_flag flag, int negat
 }
 
 /*
- * Change a message's folder 
+ * Change a message's folder
  */
 
 void do_mail_file(dbref player, char *msglist, char *folder)
@@ -515,7 +515,7 @@ void do_mail_file(dbref player, char *msglist, char *folder)
             if (mail_match(mp, ms, i))
             {
                 j++;
-                
+
                 // Clear the folder.
                 //
                 mp->read &= M_FMASK;
@@ -534,7 +534,7 @@ void do_mail_file(dbref player, char *msglist, char *folder)
 }
 
 /*
- * print a mail message(s) 
+ * print a mail message(s)
  */
 
 void do_mail_read(dbref player, char *msglist)
@@ -697,7 +697,7 @@ void do_mail_retract(dbref player, char *name, char *msglist)
                 nextp = mp->next;
             }
         }
-        else 
+        else
         {
             nextp = mp->next;
         }
@@ -706,7 +706,7 @@ void do_mail_retract(dbref player, char *name, char *msglist)
     if (!j)
     {
         /*
-         * ran off the end of the list without finding anything 
+         * ran off the end of the list without finding anything
          */
         notify(player, "MAIL: No matching messages.");
     }
@@ -811,7 +811,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
                                    (!Hidden(mp->from) || Hasprivs(player))) ?
                                    " (Conn)" : "      ", 0,
                                    status, szSubjectBuffer));
-#endif // RADIX_COMPRESSION 
+#endif // RADIX_COMPRESSION
                     free_lbuf(status);
                     notify(player, DASH_LINE);
                     notify(player, msg);
@@ -823,10 +823,8 @@ void do_mail_review(dbref player, char *name, char *msglist)
 
         if (!j)
         {
-            /*
-             * ran off the end of the list without finding * * *
-             * anything 
-             */
+            // Ran off the end of the list without finding anything.
+            //
             notify(player, "MAIL: You don't have that many matching messages!");
         }
     }
@@ -915,10 +913,10 @@ static char *mail_list_time(const char *the_time)
         return new0;
     }
     /*
-     * Format of the_time is: day mon dd hh:mm:ss yyyy 
+     * Format of the_time is: day mon dd hh:mm:ss yyyy
      */
     /*
-     * Chop out :ss 
+     * Chop out :ss
      */
     for (i = 0; i < 16; i++) {
         if (*p)
@@ -944,17 +942,17 @@ void do_mail_purge(dbref player)
     struct mail *mp, *nextp;
 
     /*
-     * Go through player's mail, and remove anything marked cleared 
+     * Go through player's mail, and remove anything marked cleared
      */
     for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = nextp)
     {
-        if (Cleared(mp)) 
+        if (Cleared(mp))
         {
             /*
-             * Delete this one 
+             * Delete this one
              */
             /*
-             * head and tail of the list are special 
+             * head and tail of the list are special
              */
             if (mp->prev == NULL)
             {
@@ -973,7 +971,7 @@ void do_mail_purge(dbref player)
             }
 
             /*
-             * relink the list 
+             * relink the list
              */
             if (mp->prev != NULL)
                 mp->prev->next = mp->next;
@@ -1032,10 +1030,10 @@ void do_mail_fwd(dbref player, char *msg, char *tolist)
     string_decompress(MessageFetch(mp->number), msgbuff);
     do_expmail_start(player, tolist, tprintf("%s (fwd from %s)", subbuff, Name(mp->from)));
     atr_add_raw(player, A_MAILMSG, msgbuff);
-#else
+#else // RADIX_COMPRESSION
     do_expmail_start(player, tolist, tprintf("%s (fwd from %s)", mp->subject, Name(mp->from)));
     atr_add_raw(player, A_MAILMSG, MessageFetch(mp->number));
-#endif
+#endif // RADIX_COMPRESSION
     char *pValue = atr_get_raw(player, A_MAILFLAGS);
     int iFlag = M_FORWARD;
     if (pValue)
@@ -1110,7 +1108,7 @@ void do_mail_reply(dbref player, char *msg, int all, int key)
     {
         tolist = msg;
     }
-    
+
     const char *pSubject;
     char *pMessage;
     const char *pTime;
@@ -1121,11 +1119,11 @@ void do_mail_reply(dbref player, char *msg, int all, int key)
     pMessage = msgbuff;
     string_decompress(mp->time, timebuff);
     pTime = timebuff;
-#else
+#else // RADIX_COMPRESSION
     pSubject = mp->subject;
     pMessage = MessageFetch(mp->number);
     pTime = mp->time;
-#endif
+#endif // RADIX_COMPRESSION
     if (strncmp(pSubject, "Re:", 3))
     {
         do_expmail_start(player, tolist, tprintf("Re: %s", pSubject));
@@ -1185,14 +1183,14 @@ struct mail *mail_fetch(dbref player, int num)
 
 /*
  * returns count of read, unread, & cleared messages as rcount, ucount,
- * * ccount 
+ * * ccount
  */
 
 void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount)
 {
     struct mail *mp;
     int rc, uc, cc;
-    
+
     cc = rc = uc = 0;
     for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = mp->next)
     {
@@ -1202,7 +1200,7 @@ void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount)
                 rc++;
             else
                 uc++;
-            
+
             if (Cleared(mp))
                 cc++;
         }
@@ -1288,10 +1286,10 @@ static void send_mail
     newp->time = BufferCloneLen(timebuff, len);
     len = string_compress(subject, subbuff);
     newp->subject = BufferCloneLen(subbuff, len);
-#else
+#else // RADIX_COMPRESSION
     newp->time = StringClone(tbuf1);
     newp->subject = StringClone(subject);
-#endif // RADIX_COMPRESSION 
+#endif // RADIX_COMPRESSION
 
     // Send to folder 0
     //
@@ -1321,7 +1319,7 @@ static void send_mail
     if (!bFailed)
     {
         /*
-         * notify people 
+         * notify people
          */
         if (!silent)
         {
@@ -1578,7 +1576,7 @@ void do_mail_stats(dbref player, char *name, int full)
     struct mail *mp;
 #ifdef RADIX_COMPRESSION
     int len;
-#endif
+#endif // RADIX_COMPRESSION
 
     fc = fr = fu = tc = tr = tu = cchars = fchars = tchars = count = 0;
 
@@ -1629,7 +1627,7 @@ void do_mail_stats(dbref player, char *name, int full)
         return;
     }
     /*
-     * this comand is computationally expensive 
+     * this comand is computationally expensive
      */
 
     if (!payfor(player, mudconf.searchcost)) {
@@ -1639,7 +1637,7 @@ void do_mail_stats(dbref player, char *name, int full)
         return;
     }
     if (target == AMBIGUOUS) {  /*
-                     * stats for all 
+                     * stats for all
                      */
         if (full == 0) {
             MAIL_ITER_ALL(mp, thing) {
@@ -1688,9 +1686,7 @@ void do_mail_stats(dbref player, char *name, int full)
                     fu++;
                     tchars += strlen(MessageFetch(mp->number));
                 }
-#endif /*
-        * RADIX_COMPRESSION 
-        */
+#endif // RADIX_COMPRESSION
             }
             notify(player, tprintf("MAIL: There are %d old msgs in the mail spool, totalling %d characters.", fr, fchars));
             notify(player, tprintf("MAIL: There are %d new msgs in the mail spool, totalling %d characters.", fu, tchars));
@@ -1699,12 +1695,12 @@ void do_mail_stats(dbref player, char *name, int full)
         }
     }
     /*
-     * individual stats 
+     * individual stats
      */
 
     if (full == 0) {
         /*
-         * just count number of messages 
+         * just count number of messages
          */
         MAIL_ITER_ALL(mp, thing) {
             if (mp->from == target)
@@ -1718,7 +1714,7 @@ void do_mail_stats(dbref player, char *name, int full)
         return;
     }
     /*
-     * more detailed message count 
+     * more detailed message count
      */
     MAIL_ITER_ALL(mp, thing) {
         if (mp->from == target) {
@@ -1732,22 +1728,18 @@ void do_mail_stats(dbref player, char *name, int full)
 #ifdef RADIX_COMPRESSION
                 len = string_compress(MessageFetch(mp->number), msgbuff);
             fchars += len;
-#else
+#else // RADIX_COMPRESSION
                 fchars += strlen(MessageFetch(mp->number));
-#endif /*
-        * RADIX_COMPRESSION 
-        */
+#endif // RADIX_COMPRESSION
         }
         if (mp->to == target) {
             if (!tr && !tu) {
 #ifdef RADIX_COMPRESSION
                 string_decompress(mp->time, timebuff);
                 strcpy(last, timebuff);
-#else
+#else // RADIX_COMPRESSION
                 strcpy(last, mp->time);
-#endif /*
-        * RADIX_COMPRESSION 
-        */
+#endif // RADIX_COMPRESSION
             }
             if (Cleared(mp))
                 tc++;
@@ -1759,11 +1751,9 @@ void do_mail_stats(dbref player, char *name, int full)
 #ifdef RADIX_COMPRESSION
                 len = string_decompress(MessageFetch(mp->number), msgbuff);
                 tchars += len;
-#else
+#else // RADIX_COMPRESSION
                 tchars += strlen(MessageFetch(mp->number));
-#endif /*
-        * RADIX_COMPRESSION 
-        */
+#endif // RADIX_COMPRESSION
             }
         }
     }
@@ -1804,20 +1794,20 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
             return;
         }
         /*
-         * just the "@mail" command 
+         * just the "@mail" command
          */
         do_mail_list(player, arg1, 1);
         return;
     }
     /*
-     * purge a player's mailbox 
+     * purge a player's mailbox
      */
     if (!_stricmp(arg1, "purge")) {
         do_mail_purge(player);
         return;
     }
     /*
-     * clear message 
+     * clear message
      */
     if (!_stricmp(arg1, "clear")) {
         do_mail_clear(player, arg2);
@@ -1830,7 +1820,7 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
     if (arg2 && *arg2)
     {
         /*
-         * Sending mail 
+         * Sending mail
          */
         do_expmail_start(player, arg1, arg2);
         return;
@@ -1838,7 +1828,7 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
     else
     {
         /*
-         * Must be reading or listing mail - no arg2 
+         * Must be reading or listing mail - no arg2
          */
         if (Tiny_IsDigit[(unsigned char)*arg1] && !strchr(arg1, '-'))
             do_mail_read(player, arg1);
@@ -1965,7 +1955,7 @@ int dump_mail(FILE *fp)
     int count = 0, i;
 
     /*
-     * Write out version number 
+     * Write out version number
      */
     fprintf(fp, "+V5\n");
     putref(fp, mudstate.mail_db_top);
@@ -1987,12 +1977,10 @@ int dump_mail(FILE *fp)
                     string_decompress(mp->subject, subbuff);
                     putstring(fp, timebuff);
                     putstring(fp, subbuff);
-#else
+#else // RADIX_COMPRESSION
                     putstring(fp, mp->time);
                     putstring(fp, mp->subject);
-#endif /*
-        * RADIX_COMPRESSION 
-        */
+#endif // RADIX_COMPRESSION
                     putref(fp, mp->read);
                     count++;
                 }
@@ -2003,7 +1991,7 @@ int dump_mail(FILE *fp)
     fprintf(fp, "*** END OF DUMP ***\n");
 
     /*
-     * Add the db of mail messages 
+     * Add the db of mail messages
      */
     for (i = 0; i < mudstate.mail_db_top; i++)
     {
@@ -2013,9 +2001,9 @@ int dump_mail(FILE *fp)
 #ifdef RADIX_COMPRESSION
             string_decompress(MessageFetch(i),msgbuff);
             putstring(fp, msgbuff);
-#else
+#else // RADIX_COMPRESSION
             putstring(fp, MessageFetch(i));
-#endif
+#endif // RADIX_COMPRESSION
         }
     }
     fprintf(fp, "+++ END OF DUMP +++\n");
@@ -2073,7 +2061,7 @@ void load_mail_Penn(FILE *fp)
         mp->time = BufferCloneLen(timebuff, len);
         len = string_compress(getstring_noalloc(fp, FALSE), subbuff);
         mp->subject = BufferCloneLen(subbuff, len);
-#else
+#else // RADIX_COMPRESSION
         mp->time = StringClone(getstring_noalloc(fp, FALSE));
         mp->subject = StringClone(getstring_noalloc(fp, FALSE));
 #endif // RADIX_COMPRESSION
@@ -2103,7 +2091,7 @@ void load_mail_V1(FILE *fp)
         mp->time    = BufferCloneLen(timebuff, len);
         len = string_compress("No subject", subbuff);
         mp->subject = BufferCloneLen(subbuff, len);
-#else
+#else // RADIX_COMPRESSION
         mp->time = StringClone(getstring_noalloc(fp, FALSE));
         mp->subject = StringClone("No subject");
 #endif // RADIX_COMPRESSION
@@ -2135,7 +2123,7 @@ void load_mail_V2(FILE *fp)
         mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
         len = string_compress(getstring_noalloc(fp, FALSE), subbuff);
         mp->subject = BufferCloneLen(subbuff, len);
-#else
+#else // RADIX_COMPRESSION
         mp->time    = StringClone(getstring_noalloc(fp, FALSE));
         mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
         mp->subject = StringClone(getstring_noalloc(fp, FALSE));
@@ -2166,7 +2154,7 @@ void load_mail_V3(FILE *fp)
         mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
         len = string_compress(getstring_noalloc(fp, FALSE), subbuff);
         mp->subject = BufferCloneLen(subbuff, len);
-#else
+#else // RADIX_COMPRESSION
         mp->time    = StringClone(getstring_noalloc(fp, FALSE));
         mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
         mp->subject = StringClone(getstring_noalloc(fp, FALSE));
@@ -2201,7 +2189,7 @@ void load_mail_V4(FILE *fp)
         mp->time    = BufferCloneLen(timebuff, len);
         len         = string_compress(getstring_noalloc(fp, FALSE), subbuff);
         mp->subject = BufferCloneLen(subbuff, len);
-#else
+#else // RADIX_COMPRESSION
         mp->time    = StringClone(getstring_noalloc(fp, FALSE));
         mp->subject = StringClone(getstring_noalloc(fp, FALSE));
 #endif // RADIX_COMPRESSION
@@ -2244,7 +2232,7 @@ void load_mail_V5(FILE *fp)
         mp->time    = BufferCloneLen(timebuff, len);
         len         = string_compress(getstring_noalloc(fp, TRUE), subbuff);
         mp->subject = BufferCloneLen(subbuff, len);
-#else
+#else // RADIX_COMPRESSION
         mp->time    = StringClone(getstring_noalloc(fp, TRUE));
         mp->subject = StringClone(getstring_noalloc(fp, TRUE));
 #endif // RADIX_COMPRESSION
@@ -2308,7 +2296,7 @@ static int get_folder_number(dbref player, char *name)
     char *str, *pat, *res, *p, *bp;
 
     /* Look up a folder name and return the appopriate number */
-    
+
     atrstr = atr_get(player, A_MAILFOLDERS, &aowner, &aflags);
     if (!*atrstr)
     {
@@ -2350,7 +2338,7 @@ static char *get_folder_name(dbref player, int fld)
     int flags, len;
 
     /*
-     * Get the name of the folder, or "nameless" 
+     * Get the name of the folder, or "nameless"
      */
     pat = alloc_lbuf("get_folder_name");
     sprintf(pat, "%d:", fld);
@@ -2392,13 +2380,10 @@ void add_folder_name(dbref player, int fld, char *name)
     char *new0, *pat, *str, *tbuf;
     int aflags;
 
-    /*
-     * Muck with the player's MAILFOLDERS attrib to add a string of the * 
-     * 
-     * *  * * form: number:name:number to it, replacing any such string
-     * with a  *  * * * matching number. 
-     */
-
+    // Muck with the player's MAILFOLDERS attrib to add a string of the form:
+    // number:name:number to it, replacing any such string with a matching
+    // number.
+    //
     new0 = alloc_lbuf("add_folder_name.new");
     pat = alloc_lbuf("add_folder_name.pat");
     str = alloc_lbuf("add_folder_name.str");
@@ -2406,8 +2391,9 @@ void add_folder_name(dbref player, int fld, char *name)
 
     sprintf(new0, "%d:%s:%d ", fld, upcasestr(name), fld);
     sprintf(pat, "%d:", fld);
+
     /*
-     * get the attrib and the old string, if any 
+     * get the attrib and the old string, if any
      */
     old = NULL;
 
@@ -2439,7 +2425,7 @@ void add_folder_name(dbref player, int fld, char *name)
         *r = '\0';
     }
     /*
-     * put the attrib back 
+     * put the attrib back
      */
     atr_add(player, A_MAILFOLDERS, res, player, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_LOCK);
     free_lbuf(str);
@@ -2452,11 +2438,9 @@ void add_folder_name(dbref player, int fld, char *name)
 
 static int player_folder(dbref player)
 {
-    /*
-     * Return the player's current folder number. If they don't have one, 
-     * 
-     * *  * *  * * set * it to 0 
-     */
+    // Return the player's current folder number. If they don't have one, set
+    // it to 0.
+    //
     int flags, number;
     char *atrstr;
 
@@ -2475,11 +2459,11 @@ static int player_folder(dbref player)
 void set_player_folder(dbref player, int fnum)
 {
     /*
-     * Set a player's folder to fnum 
+     * Set a player's folder to fnum
      */
     ATTR *a;
     char *tbuf1;
-    
+
     tbuf1 = alloc_lbuf("set_player_folder");
     Tiny_ltoa(fnum, tbuf1);
     a = (ATTR *)atr_num(A_MAILCURF);
@@ -2489,7 +2473,7 @@ void set_player_folder(dbref player, int fnum)
     }
     else
     {
-        // Shouldn't happen, but... 
+        // Shouldn't happen, but...
         //
         atr_add(player, A_MAILCURF, tbuf1, GOD, AF_ODARK | AF_WIZARD | AF_NOPROG | AF_LOCK);
     }
@@ -2500,11 +2484,9 @@ static int parse_folder(dbref player, char *folder_string)
 {
     int fnum;
 
-    /*
-     * Given a string, return a folder #, or -1 The string is just a * *
-     * * number, * for now. Later, this will be where named folders are * 
-     * *  * handled 
-     */
+    // Given a string, return a folder #, or -1 The string is just a number,
+    // for now. Later, this will be where named folders are handled.
+    //
     if (!folder_string || !*folder_string)
         return -1;
     if (Tiny_IsDigit[(unsigned char)*folder_string])
@@ -2516,7 +2498,7 @@ static int parse_folder(dbref player, char *folder_string)
             return fnum;
     }
     /*
-     * Handle named folders here 
+     * Handle named folders here
      */
     return get_folder_number(player, folder_string);
 }
@@ -2548,9 +2530,9 @@ static int mail_match(struct mail *mp, struct mail_selector ms, int num)
 #ifdef RADIX_COMPRESSION
     string_decompress(mp->time, timebuff);
     const char *pMailTimeStr = timebuff;
-#else
+#else // RADIX_COMPRESSION
     const char *pMailTimeStr = mp->time;
-#endif
+#endif // RADIX_COMPRESSION
 
     CLinearTimeAbsolute ltaMail;
     if (ltaMail.SetString(pMailTimeStr))
@@ -2570,7 +2552,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
     // Take a message list, and return the appropriate mail_selector setup.
     // For now, msglists are quite restricted. That'll change once all this
     // is working. Returns 0 if couldn't parse, and also notifies the player
-    // why. 
+    // why.
 
     // Initialize the mail selector - this matches all messages.
     //
@@ -2585,7 +2567,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
     //
     if (!msglist || !*msglist)
     {
-        // All messages 
+        // All messages
         //
         return 1;
     }
@@ -2796,7 +2778,7 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 break;
 
             default:
-            
+
                 // Bad
                 //
                 notify(player, "MAIL: Invalid message specification");
@@ -2874,7 +2856,7 @@ void check_mail_expiration(void)
     dbref thing;
 
     /*
-     * negative values for expirations never expire 
+     * negative values for expirations never expire
      */
     if (0 > mudconf.mail_expiration)
         return;
@@ -2896,9 +2878,9 @@ void check_mail_expiration(void)
 #ifdef RADIX_COMPRESSION
         string_decompress(mp->time, timebuff);
         const char *pMailTimeStr = timebuff;
-#else
+#else // RADIX_COMPRESSION
         const char *pMailTimeStr = mp->time;
-#endif
+#endif // RADIX_COMPRESSION
         if (!ltaMail.SetString(pMailTimeStr))
         {
             nextp = mp->next;
@@ -2933,7 +2915,7 @@ void check_mail_expiration(void)
             mp->prev->next = NULL;
         }
         /*
-         * relink the list 
+         * relink the list
          */
         if (mp->prev != NULL)
             mp->prev->next = mp->next;
@@ -2952,7 +2934,7 @@ void check_mail_expiration(void)
 static char *status_chars(struct mail *mp)
 {
     /*
-     * Return a short description of message flags 
+     * Return a short description of message flags
      */
     static char res[10];
 
@@ -3033,7 +3015,7 @@ void check_mail(dbref player, int folder, int silent)
     notify(player,
            tprintf("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).\r\n",
                rc + uc, folder, get_folder_name(player, folder), uc, cc));
-#else
+#else // MAIL_ALL_FOLDERS
     if (rc + uc > 0)
     {
         notify(player, tprintf("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).", rc + uc, folder, get_folder_name(player, folder), uc, cc));
@@ -3046,7 +3028,7 @@ void check_mail(dbref player, int folder, int silent)
     {
         notify(player, tprintf("URGENT MAIL: You have %d urgent messages in folder %d [%s].", gc, folder, get_folder_name(player, folder)));
     }
-#endif
+#endif // MAIL_ALL_FOLDERS
 }
 
 static int sign(int x)
@@ -3112,7 +3094,7 @@ void do_malias(dbref player, dbref cause, int key, char *arg1, char *arg2)
         break;
     case 7:
         /*
-         * empty 
+         * empty
          */
         break;
     case 8:
@@ -3521,7 +3503,7 @@ void do_malias_list(dbref player, char *alias)
         safe_chr(' ', buff, &bp);
     }
     *bp = '\0';
-        
+
     notify(player, buff);
     free_lbuf(buff);
 }
@@ -4338,18 +4320,18 @@ void do_malias_add(dbref player, char *alias, char *person)
             return;
         }
     }
-    
+
     if (thing == NOTHING)
     {
         thing = lookup_player(player, person, 1);
     }
-    
+
     if (thing == NOTHING)
     {
         notify(player, "MAIL: I do not see that person here.");
         return;
     }
-    
+
     if ((m->owner == GOD) && !ExpMail(player))
     {
         notify(player, "MAIL: Permission denied.");
