@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.14 2001-11-28 06:35:53 sdennis Exp $
+// $Id: flags.cpp,v 1.15 2001-11-28 06:56:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -125,7 +125,7 @@ int fh_privileged
         if (  !isPlayer(player)
            || player != Owner(player)
            || isPlayer(target)
-           || (db[player].fs.word[fflags] & flag) != 0)
+           || (db[player].fs.word[fflags] & flag) == 0)
         {
             return 0;
         }
