@@ -141,6 +141,7 @@ Bug Fixes:
     and semaphore are now set AF_NOCLONE. They are not copied by @clone.
     Cloning alias would have created a duplicate. There is value is not
     cloning the other attributes as well. From TM3.
+ -- Fixed bug with hastype(#123,ROOM) that was introduced in Build 29.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
