@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.75 2001-07-03 17:15:56 sdennis Exp $
+// $Id: functions.cpp,v 1.76 2001-07-04 21:42:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3246,61 +3246,67 @@ FUNCTION(fun_lcon)
 
 FUNCTION(fun_lexits)
 {
-    dbref thing, it, parent;
-    char *tbuf;
-    int exam, lev, key;
-    int first = 1;
-
-    it = match_thing(player, fargs[0]);
+    dbref it = match_thing(player, fargs[0]);
 
     if (!Good_obj(it) || !Has_exits(it))
     {
         safe_nothing(buff, bufc);
         return;
     }
-    exam = Examinable(player, it);
-    if (!exam && (where_is(player) != it) && (it != cause)) {
+    BOOL bExam = Examinable(player, it);
+    if (  !bExam
+       && where_is(player) != it
+       && it != cause)
+    {
         safe_nothing(buff, bufc);
         return;
     }
-    tbuf = alloc_sbuf("fun_lexits");
 
-    /*
-     * Return info for all parent levels 
-     */
-
-    ITER_PARENTS(it, parent, lev) {
-
-        /*
-         * Look for exits at each level 
-         */
-
+    // Return info for all parent levels.
+    //
+    BOOL bDone = FALSE;
+    dbref parent;
+    int lev;
+    DTB pContext;
+    DbrefToBuffer_Init(&pContext, buff, bufc);
+    ITER_PARENTS(it, parent, lev)
+    {
+        // Look for exits at each level.
+        //
         if (!Has_exits(parent))
+        {
             continue;
-        key = 0;
+        }
+        int key = 0;
         if (Examinable(player, parent))
+        {
             key |= VE_LOC_XAM;
+        }
         if (Dark(parent))
+        {
             key |= VE_LOC_DARK;
+        }
         if (Dark(it))
+        {
             key |= VE_BASE_DARK;
+        }
+
+        dbref thing;
         DOLIST(thing, Exits(parent))
         {
-            if (exit_visible(thing, player, key))
+            if (  exit_visible(thing, player, key)
+               && !DbrefToBuffer_Add(&pContext, thing))
             {
-                if (!first)
-                    sprintf(tbuf, " #%d", thing);
-                else
-                {
-                    sprintf(tbuf, "#%d", thing);
-                    first = 0;
-                }
-                safe_str(tbuf, buff, bufc);
+                bDone = TRUE;
+                break;
             }
         }
+        if (bDone)
+        {
+            break;
+        }
     }
-    free_sbuf(tbuf);
-    return;
+    DbrefToBuffer_Final(&pContext);
 }
 
 /*
