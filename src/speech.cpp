@@ -1,9 +1,7 @@
-/*
- * speech.c -- Commands which involve speaking 
- */
-/*
- * $Id: speech.cpp,v 1.18 2001-11-09 05:26:25 sdennis Exp $ 
- */
+// speech.cpp -- Commands which involve speaking.
+//
+// $Id: speech.cpp,v 1.19 2001-11-20 01:18:38 sdennis Exp $
+//
 
 #include "copyright.h"
 #include "autoconf.h"
@@ -40,7 +38,7 @@ int sp_ok(dbref player)
         notify(player, "Sorry. Gagged players cannot speak.");
         return 0;
     }
-    
+
     if (!mudconf.robot_speak) {
         if (Robot(player) && !controls(player, Location(player))) {
             notify(player, "Sorry robots may not speak in public.");
@@ -118,7 +116,7 @@ void do_say(dbref player, dbref cause, int key, char *message)
     int say_flags, depth;
 
     /*
-     * Convert prefix-coded messages into the normal type 
+     * Convert prefix-coded messages into the normal type
      */
 
     say_flags = key & (SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
@@ -148,7 +146,7 @@ void do_say(dbref player, dbref cause, int key, char *message)
         }
     }
     /*
-     * Make sure speaker is somewhere if speaking in a place 
+     * Make sure speaker is somewhere if speaking in a place
      */
 
     loc = where_is(player);
@@ -164,7 +162,7 @@ void do_say(dbref player, dbref cause, int key, char *message)
     }
 
     /*
-     * Send the message on its way  
+     * Send the message on its way
      */
 
     switch (key)
@@ -457,7 +455,7 @@ static int page_check(dbref player, dbref target)
 }
 
 /*
- * Used in do_page 
+ * Used in do_page
  */
 static char *dbrefs_to_names(dbref player, char *list, char *namelist, int ismessage)
 {
@@ -652,7 +650,7 @@ void do_page
     //
     char *aFriendly = alloc_lbuf("do_page.friendly");
     char *pFriendly = aFriendly;
-    
+
     if (nValid > 1)
     {
         safe_chr('(', aFriendly, &pFriendly);
