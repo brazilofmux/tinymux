@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.63 2001-12-06 07:06:57 sdennis Exp $
+// $Id: db.cpp,v 1.64 2001-12-06 07:09:02 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2743,7 +2743,7 @@ void putref(FILE *f, dbref ref)
 // Code 2 - '"' (0x22)
 // Code 3 - '\\' (0x5C)
 //
-const char xlat_table[256] =
+static const char xlat_table[256] =
 {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2774,7 +2774,7 @@ const char xlat_table[256] =
 // Action 4 - Terminate parse.
 //
 
-int action_table[2][4] =
+static const int action_table[2][4] =
 {
 //   Any '\0' "   backslash
     { 0,  1,  3,  4 }, // STATE_START
