@@ -1,5 +1,5 @@
 TinyMUX 2.1:  REALMS
-Last Update:  January 2002
+Last Update:  February 2002
 
 What are Realms?:
 ~~~~~~~~~~~~~~~~
@@ -120,8 +120,12 @@ yet see and hear -only- things, people, rooms, etc. from another realm.
 @set the PEERING flag, and then set PEERING_REALM to one of the following: 
 NORMAL, MATRIX, UMBRA, SHROUD, FAE, CHIMERA, or BLIND.
 
-UMBRA_WARDED and SHROUD_WARDED are used on exits to keep UMBRA and SHROUD
-characters from passing locks as they normally do. It is also useful to set
-global exits (You can't go in that direction type stuff) in the master room.
-Without setting this UMBRA_WARDED and SHROUD_WARDED, your SHROUD and UMBRA
-players will find themselves somewhere you didn't intend.
+By default, UMBRA and SHROUD characters pass the locks on exits. To prevent
+this, an attribute (UMBRA_WARDED/SHROUD_WARDED) can be set on the exit.  If
+present, that particular exit will behave for UMBRA and SHROUD characters
+in the same way it does for NORMAL-realmed characters.
+
+This is also useful and necessary for any global exit with a lock that
+purposefully fails (You can't go in that direction type stuff) in the master
+room. Without setting this UMBRA_WARDED and SHROUD_WARDED, your SHROUD and
+UMBRA players will easily find themselves somewhere you did not intend.
