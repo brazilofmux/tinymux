@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.15 2003-02-04 06:03:12 sdennis Exp $
+// $Id: db.cpp,v 1.16 2003-02-04 06:40:40 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1575,7 +1575,7 @@ void atr_clr(dbref thing, int atr)
         return;
     }
 
-    Tiny_Assert(0 <= db[thing].at_count);
+    mux_assert(0 <= db[thing].at_count);
 
     // Binary search for the attribute.
     //
@@ -2920,7 +2920,7 @@ void load_restart_db(void)
     mudstate.restarting = TRUE;
 
     fgets(buf, 3, f);
-    Tiny_Assert(strncmp(buf, "+V", 2) == 0);
+    mux_assert(strncmp(buf, "+V", 2) == 0);
     int version = getref(f);
     if (version == 1)
     {
@@ -2930,7 +2930,7 @@ void load_restart_db(void)
         for (int i = 0; i < nMainGamePorts; i++)
         {
             aMainGamePorts[i].port   = getref(f);
-            Tiny_Assert(aMainGamePorts[i].port > 0);
+            mux_assert(aMainGamePorts[i].port > 0);
             aMainGamePorts[i].socket = getref(f);
             if (maxd <= aMainGamePorts[i].socket)
             {
@@ -2945,7 +2945,7 @@ void load_restart_db(void)
         // This execution path assumes the port config option in the .conf
         // file has changed the aMainGamePorts[0].port part.
         //
-        Tiny_Assert(aMainGamePorts[0].port > 0);
+        mux_assert(aMainGamePorts[0].port > 0);
         aMainGamePorts[0].socket = getref(f);
         nMainGamePorts = 1;
         maxd = aMainGamePorts[0].socket + 1;

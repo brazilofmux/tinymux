@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.2 2003-01-23 01:21:21 sdennis Exp $
+// $Id: config.h,v 1.3 2003-02-04 06:40:40 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -183,7 +183,7 @@ typedef UINT32 in_addr_t;
 #endif // !SMALLEST_INT_GTE_NEG_QUOTIENT
 
 extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
-#define Tiny_Assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
+#define mux_assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
 
 extern BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo);
 #define ISOUTOFMEMORY(exp) (!(exp) && OutOfMemory(__FILE__, __LINE__))

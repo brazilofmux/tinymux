@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.5 2003-02-04 06:03:12 sdennis Exp $
+// $Id: db_rw.cpp,v 1.6 2003-02-04 06:40:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -40,7 +40,7 @@ static BOOLEXP *getboolexp1(FILE *f)
 
         // Unexpected EOF in boolexp.
         //
-        Tiny_Assert(0);
+        mux_assert(0);
         break;
 
     case '(':
@@ -150,7 +150,7 @@ static BOOLEXP *getboolexp1(FILE *f)
         //
         while ((c = getc(f)) != '\n')
         {
-            Tiny_Assert(c != EOF);
+            mux_assert(c != EOF);
         }
         ungetc(c, f);
         return TRUE_BOOLEXP;
@@ -304,7 +304,7 @@ error:
 
     // Bomb Out.
     //
-    Tiny_Assert(0);
+    mux_assert(0);
     return TRUE_BOOLEXP;
 }
 
@@ -316,7 +316,7 @@ static BOOLEXP *getboolexp(FILE *f)
 {
     BOOLEXP *b = getboolexp1(f);
     char c = getc(f);
-    Tiny_Assert(c == '\n');
+    mux_assert(c == '\n');
 
     if (g_format == F_MUX)
     {
@@ -606,7 +606,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     header_gotten = TRUE;
                     g_format = F_MUX;
                     g_version = getref(f);
-                    Tiny_Assert((g_version & MANDFLAGS) == MANDFLAGS);
+                    mux_assert((g_version & MANDFLAGS) == MANDFLAGS);
 
                     // Otherwise extract feature flags
                     //

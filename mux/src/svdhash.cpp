@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.7 2003-02-03 19:38:42 sdennis Exp $
+// $Id: svdhash.cpp,v 1.8 2003-02-04 06:40:40 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2656,7 +2656,7 @@ UINT32 HashPointer(void *vp)
 {
     UINT32 nHash1 = HASH_ProcessBuffer(0, &vp, sizeof(void *));
     UINT32 nHash2 = CRC32_ProcessBuffer(0, &vp, sizeof(void *));
-    Tiny_Assert(nHash1 == nHash2);
+    mux_assert(nHash1 == nHash2);
     return nHash1;
 }
 
@@ -2666,7 +2666,7 @@ unsigned long HashFileLine(const char *fn, int line)
     nHash1 = HASH_ProcessBuffer(nHash1, fn, strlen(fn)+1);
     UINT32 nHash2 = CRC32_ProcessInteger(line);
     nHash2 = CRC32_ProcessBuffer(nHash2, fn, strlen(fn)+1);
-    Tiny_Assert(nHash1 == nHash2);
+    mux_assert(nHash1 == nHash2);
     return nHash1;
 }
 

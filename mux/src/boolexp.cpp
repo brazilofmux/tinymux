@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.5 2003-02-04 06:03:12 sdennis Exp $
+// $Id: boolexp.cpp,v 1.6 2003-02-04 06:40:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -258,7 +258,7 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
         // Bad type
         //
-        Tiny_Assert(0);
+        mux_assert(0);
         return FALSE;
     }
 }

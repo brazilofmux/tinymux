@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.10 2003-02-04 00:07:27 sdennis Exp $
+// $Id: command.cpp,v 1.11 2003-02-04 06:40:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1556,14 +1556,15 @@ char *process_command
     mudstate.bStackLimitReached = FALSE;
     *(check2 + 1) = '\0';
 
-    Tiny_Assert(pOriginalCommand);
+    mux_assert(pOriginalCommand);
 
     if (!Good_obj(executor))
     {
         // We are using SpaceCompressCommand temporarily.
         //
         STARTLOG(LOG_BUGS, "CMD", "PLYR");
-        sprintf(SpaceCompressCommand, "Bad player in process_command: %d", executor);
+        sprintf(SpaceCompressCommand, "Bad player in process_command: %d",
+            executor);
         log_text(SpaceCompressCommand);
         ENDLOG;
         mudstate.debug_cmd = cmdsave;
@@ -1573,13 +1574,17 @@ char *process_command
     // Make sure player isn't going or halted.
     //
     if (  Going(executor)
-       || (Halted(executor) && !(isPlayer(executor) && interactive)))
+       || (  Halted(executor)
+          && !(  isPlayer(executor)
+              && interactive)))
     {
-        notify(Owner(executor), tprintf("Attempt to execute command by halted object #%d", executor));
+        notify(Owner(executor),
+            tprintf("Attempt to execute command by halted object #%d", executor));
         mudstate.debug_cmd = cmdsave;
         return pOriginalCommand;
     }
-    if (Suspect(executor) && (mudconf.log_options & LOG_SUSPECTCMDS))
+    if (  Suspect(executor)
+       && (mudconf.log_options & LOG_SUSPECTCMDS))
     {
         STARTLOG(LOG_SUSPECTCMDS, "CMD", "SUSP");
         log_name_and_loc(executor);
