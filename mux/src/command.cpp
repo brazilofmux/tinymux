@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.106 2003-01-21 19:39:40 sdennis Exp $
+// $Id: command.cpp,v 1.107 2003-01-22 07:39:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -17,12 +17,21 @@
 #include "powers.h"
 #include "vattr.h"
 #include "help.h"
+#include "pcre.h"
 
 extern void list_cf_access(dbref);
 extern void list_siteinfo(dbref);
 extern void logged_out0(dbref executor, dbref caller, dbref enactor, int key);
 extern void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg);
 extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
+extern BOOL regexp_match
+(
+    char *pattern,
+    char *str,
+    int case_opt,
+    char *args[],
+    int nargs
+);
 
 // Switch tables for the various commands.
 //
@@ -1183,92 +1192,93 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
             (*(((CMDENT_ONE_ARG_CMDARG *)cmdp)->handler))(executor, caller,
                 enactor, key, buf1, cargs, ncargs);
         }
-        else
+        else if (cmdp->callseq & CS_ADDED)
         {
-            if (cmdp->callseq & CS_ADDED)
+            for (add = (ADDENT *)cmdp->handler; add != NULL; add = add->next)
             {
-                for (add = (ADDENT *)cmdp->handler; add != NULL; add = add->next)
+                buff = atr_get(add->thing, add->atr, &aowner, &aflags);
+
+                // Skip the '$' character, and the next character.
+                //
+                for (s = buff + 2; *s && *s != ':'; s++)
                 {
-                    buff = atr_get(add->thing, add->atr, &aowner, &aflags);
+                    ; // Nothing.
+                }
+                if (!*s)
+                {
+                    break;
+                }
+                *s++ = '\0';
 
-                    // Skip the '$' character, and the next character.
+                if (!(cmdp->callseq & CS_LEADIN))
+                {
+                    for (j = unp_command; *j && (*j != ' '); j++) ;
+                }
+                else
+                {
+                    for (j = unp_command; *j; j++) ;
+                }
+
+                new0 = alloc_lbuf("process_cmdent.soft");
+                bp = new0;
+                if (!*j)
+                {
+                    // No args.
                     //
-                    for (s = buff + 2; *s && (*s != ':'); s++)
-                    {
-                        ; // Nothing.
-                    }
-                    if (!*s)
-                    {
-                        break;
-                    }
-                    *s++ = '\0';
-
                     if (!(cmdp->callseq & CS_LEADIN))
                     {
-                        for (j = unp_command; *j && (*j != ' '); j++) ;
-                    }
-                    else
-                    {
-                        for (j = unp_command; *j; j++) ;
-                    }
-
-                    new0 = alloc_lbuf("process_cmdent.soft");
-                    bp = new0;
-                    if (!*j)
-                    {
-                        // No args.
-                        //
-                        if (!(cmdp->callseq & CS_LEADIN))
-                        {
-                            safe_str(cmdp->cmdname, new0, &bp);
-                        }
-                        else
-                        {
-                            safe_str(unp_command, new0, &bp);
-                        }
-                        if (switchp)
-                        {
-                            safe_chr('/', new0, &bp);
-                            safe_str(switchp, new0, &bp);
-                        }
-                        *bp = '\0';
-                    }
-                    else
-                    {
-                        j++;
                         safe_str(cmdp->cmdname, new0, &bp);
-                        if (switchp)
-                        {
-                            safe_chr('/', new0, &bp);
-                            safe_str(switchp, new0, &bp);
-                        }
-                        safe_chr(' ', new0, &bp);
-                        safe_str(j, new0, &bp);
-                        *bp = '\0';
                     }
-
-                    if (wild(buff + 1, new0, aargs, NUM_ENV_VARS))
+                    else
                     {
-                        CLinearTimeAbsolute lta;
-                        wait_que(add->thing, caller, executor, FALSE, lta,
-                            NOTHING, 0, s, aargs, NUM_ENV_VARS, mudstate.global_regs);
-                        for (i = 0; i < NUM_ENV_VARS; i++)
+                        safe_str(unp_command, new0, &bp);
+                    }
+                    if (switchp)
+                    {
+                        safe_chr('/', new0, &bp);
+                        safe_str(switchp, new0, &bp);
+                    }
+                    *bp = '\0';
+                }
+                else
+                {
+                    j++;
+                    safe_str(cmdp->cmdname, new0, &bp);
+                    if (switchp)
+                    {
+                        safe_chr('/', new0, &bp);
+                        safe_str(switchp, new0, &bp);
+                    }
+                    safe_chr(' ', new0, &bp);
+                    safe_str(j, new0, &bp);
+                    *bp = '\0';
+                }
+
+                if (  (  (aflags & AF_REGEXP)
+                      && regexp_match(buff + 1, new0,
+                             ((aflags & AF_CASE) ? 0 : PCRE_CASELESS), aargs,
+                             NUM_ENV_VARS))
+                   || wild(buff + 1, new0, aargs, NUM_ENV_VARS))
+                {
+                    CLinearTimeAbsolute lta;
+                    wait_que(add->thing, caller, executor, FALSE, lta,
+                        NOTHING, 0, s, aargs, NUM_ENV_VARS, mudstate.global_regs);
+                    for (i = 0; i < NUM_ENV_VARS; i++)
+                    {
+                        if (aargs[i])
                         {
-                            if (aargs[i])
-                            {
-                                free_lbuf(aargs[i]);
-                            }
+                            free_lbuf(aargs[i]);
                         }
                     }
-                    free_lbuf(new0);
-                    free_lbuf(buff);
                 }
+                free_lbuf(new0);
+                free_lbuf(buff);
             }
-            else
-            {
-                (*(((CMDENT_ONE_ARG *)cmdp)->handler))(executor, caller,
-                    enactor, key, buf1);
-            }
+        }
+        else
+        {
+            (*(((CMDENT_ONE_ARG *)cmdp)->handler))(executor, caller,
+                enactor, key, buf1);
         }
 
         // Free the buffer if one was allocated.
