@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.40 2001-05-05 01:34:34 zenty Exp $
+// * $Id: comsys.cpp,v 1.41 2001-05-14 21:23:12 zenty Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1815,14 +1815,14 @@ void do_comlist(dbref player, dbref cause, int key)
     }
     c = get_comsys(player);
     
-    raw_notify(player, "Alias     Channel            Status Title");
+    raw_notify(player, "Alias     Channel            Status   Title");
     
     for (i = 0; i < c->numchannels; i++)
     {
         struct comuser *user = select_user(select_channel(c->channels[i]), player);
         if (user)
         {
-            char *p = tprintf("%-9.9s %-18.18s %-6.6s %s", c->alias + i * 6, c->channels[i], (user->bUserIsOn ? "on" : "off"), user->title);
+            char *p = tprintf("%-9.9s %-18.18s %s %s %s", c->alias + i * 6, c->channels[i], (user->bUserIsOn ? "on " : "off"), (user->ComTitleStatus ? "con " : "coff"), user->title);
             raw_notify(player, p);
         }
         else
