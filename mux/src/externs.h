@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.27 2004-07-08 18:54:25 sdennis Exp $
+// $Id: externs.h,v 1.28 2004-07-12 14:38:20 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -204,14 +204,12 @@ extern bool eval_boolexp_atr(dbref, dbref, dbref, char *);
 /* From functions.cpp */
 extern bool xlate(char *);
 
-#ifdef HAVE_IEEE_FP_FORMAT
 #define IEEE_MAKE_NAN  1
 #define IEEE_MAKE_IND  2
 #define IEEE_MAKE_PINF 3
 #define IEEE_MAKE_NINF 4
 
 double MakeSpecialFloat(int iWhich);
-#endif // HAVE_IEEE_FP_FORMAT
 
 /* From unparse.cpp */
 extern char *unparse_boolexp(dbref, BOOLEXP *);

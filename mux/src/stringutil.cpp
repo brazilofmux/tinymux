@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.65 2004-07-12 03:11:43 sdennis Exp $
+// $Id: stringutil.cpp,v 1.66 2004-07-12 14:38:20 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2253,7 +2253,6 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
             str++;
         }
 
-#ifdef HAVE_IEEE_FP_FORMAT
         if (  !mux_isdigit(*str)
            && *str != '.')
         {
@@ -2313,7 +2312,6 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
             }
             return false;
         }
-#endif // HAVE_IEEE_FP_FORMAT
     }
 
     // At this point, we have processed the leading sign, handled all
@@ -2375,9 +2373,7 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
         }
     }
 
-#ifdef HAVE_IEEE_FP_FORMAT
 LastSpaces:
-#endif // HAVE_IEEE_FP_FORMAT
 
     pfr->nMeat = str - pfr->pMeat;
 
