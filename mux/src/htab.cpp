@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.4 2002-07-23 14:04:16 jake Exp $
+// $Id: htab.cpp,v 1.5 2002-07-23 14:16:24 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -298,6 +298,7 @@ void display_nametab(dbref player, NAMETAB *ntab, char *prefix, BOOL list_if_non
     char *buf, *bp, *cp;
     NAMETAB *nt;
     BOOL got_one = FALSE;
+    bp = buf = alloc_lbuf("display_nametab");
 
     for (cp = prefix; *cp; cp++)
         *bp++ = *cp;
