@@ -373,6 +373,8 @@ Bug Fixes:
     as well).  The -Qprec_div option prevents this optimization and fixes
     the behavior.  As insurance, some additional code also will fix the
     the problem.
+ -- A look at a DARK player could show their description without showing their
+    name.  Patch by Sean Hunter.
 
 
 Performance Enhancements:
