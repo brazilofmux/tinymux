@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.4 2003-02-04 00:07:28 sdennis Exp $
+// $Id: htab.cpp,v 1.5 2003-02-05 06:20:59 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -148,12 +148,12 @@ void hashflush(CHashTable *htab)
  * * hashreplLEN: replace the data part of a hash entry.
  */
 
-BOOL hashreplLEN(const void *str, int nStr, int *hashdata, CHashTable *htab)
+bool hashreplLEN(const void *str, int nStr, int *hashdata, CHashTable *htab)
 {
     if (  str == NULL
        || nStr <= 0)
     {
-        return FALSE;
+        return false;
     }
 
     UINT32 nHash = HASH_ProcessBuffer(0, str, nStr);
@@ -170,11 +170,11 @@ BOOL hashreplLEN(const void *str, int nStr, int *hashdata, CHashTable *htab)
         {
             htab_rec.hashdata = hashdata;
             htab->Update(iDir, nRecord, &htab_rec);
-            return TRUE;
+            return true;
         }
         iDir = htab->FindNextKey(iDir, nHash);
     }
-    return FALSE;
+    return false;
 }
 
 void hashreplall(int *old, int *new0, CHashTable *htab)
@@ -301,11 +301,11 @@ NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, char *flagname)
  * * display_nametab: Print out the names of the entries in a name table.
  */
 
-void display_nametab(dbref player, NAMETAB *ntab, char *prefix, BOOL list_if_none)
+void display_nametab(dbref player, NAMETAB *ntab, char *prefix, bool list_if_none)
 {
     char *buf, *bp, *cp;
     NAMETAB *nt;
-    BOOL got_one = FALSE;
+    bool got_one = false;
     bp = buf = alloc_lbuf("display_nametab");
 
     for (cp = prefix; *cp; cp++)
@@ -317,7 +317,7 @@ void display_nametab(dbref player, NAMETAB *ntab, char *prefix, BOOL list_if_non
             *bp++ = ' ';
             for (cp = nt->name; *cp; cp++)
                 *bp++ = *cp;
-            got_one = TRUE;
+            got_one = true;
         }
     }
     *bp = '\0';
@@ -371,7 +371,7 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword, const char *prefi
  * listset_nametab: Print values for flags defined in name table.
  */
 
-void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, BOOL list_if_none)
+void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, bool list_if_none)
 {
     char *buf, *bp, *cp;
     buf = bp = alloc_lbuf("listset_nametab");
@@ -379,7 +379,7 @@ void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, BO
         *bp++ = *cp;
 
     NAMETAB *nt = ntab;
-    BOOL got_one = FALSE;
+    bool got_one = false;
     while (nt->name)
     {
         if (  ((flagword & nt->flag) != 0)
@@ -389,7 +389,7 @@ void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, BO
             *bp++ = ' ';
             for (cp = nt->name; *cp; cp++)
                 *bp++ = *cp;
-            got_one = TRUE;
+            got_one = true;
         }
         nt++;
     }

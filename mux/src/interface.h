@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: interface.h,v 1.2 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -97,10 +97,10 @@ struct descriptor_data
   char output_buffer[SIZEOF_OVERLAPPED_BUFFERS];        // buffer for writing
   OVERLAPPED InboundOverlapped;   // for asynchronous reading
   OVERLAPPED OutboundOverlapped;  // for asynchronous writing
-  BOOL bWritePending;             // TRUE if in process of writing
-  BOOL bConnectionDropped;        // TRUE if we cannot send to player
-  BOOL bConnectionShutdown;       // TRUE if connection has been shutdown
-  BOOL bCallProcessOutputLater;   // Does the socket need priming for output.
+  bool bWritePending;             // true if in process of writing
+  bool bConnectionDropped;        // true if we cannot send to player
+  bool bConnectionShutdown;       // true if connection has been shutdown
+  bool bCallProcessOutputLater;   // Does the socket need priming for output.
 #endif // WIN32
 
   int flags;
@@ -167,7 +167,7 @@ extern void set_signals(void);
 
 // from netcommon.cpp
 
-extern void make_ulist(dbref, char *, char **, BOOL);
+extern void make_ulist(dbref, char *, char **, bool);
 extern void make_port_ulist(dbref, char *, char **);
 extern int fetch_session(dbref target);
 extern int fetch_idle(dbref target);
@@ -184,7 +184,7 @@ extern void freeqs(DESC *);
 extern void welcome_user(DESC *);
 extern void save_command(DESC *, CBLK *);
 extern void announce_disconnect(dbref, DESC *, const char *);
-extern int boot_by_port(SOCKET port, BOOL no_god, const char *message);
+extern int boot_by_port(SOCKET port, bool no_god, const char *message);
 extern void find_oldest(dbref target, DESC *dOldest[2]);
 extern void check_idle(void);
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
@@ -197,7 +197,7 @@ extern dbref  find_connected_name(dbref, char *);
 #define free_desc(b) pool_free(POOL_DESC,(char *)(b), __FILE__, __LINE__)
 
 // From player.cpp
-extern void record_login(dbref, BOOL, char *, char *, char *, char *);
+extern void record_login(dbref, bool, char *, char *, char *, char *);
 extern dbref connect_player(char *, char *, char *, char *, char *);
 
 #define DESC_ITER_PLAYER(p,d) \

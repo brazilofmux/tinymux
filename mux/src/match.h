@@ -1,6 +1,6 @@
 // match.h
 //
-// $Id: match.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: match.h,v 1.2 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -13,7 +13,7 @@ struct match_state {
     int     confidence;     /* How confident are we?  CON_xx */
     int     count;          /* # of matches at this confidence */
     int     pref_type;      /* The preferred object type */
-    BOOL    check_keys;     /* Should we test locks? */
+    bool    check_keys;     /* Should we test locks? */
     dbref   absolute_form;  /* If #num, then the number */
     dbref   match;          /* What I've found so far */
     dbref   player;         /* Who is performing match */

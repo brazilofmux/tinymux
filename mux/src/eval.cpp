@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.11 2003-02-05 01:13:20 sdennis Exp $
+// $Id: eval.cpp,v 1.12 2003-02-05 06:20:58 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -188,7 +188,7 @@ char *parse_to(char **dstr, char delim, int eval)
         return rstr;
     }
     sp = 0;
-    BOOL first = TRUE;
+    bool first = true;
     strFirewall = rstr = *dstr;
     if (  (  mudconf.space_compress
           || (eval & EV_STRIP_LS))
@@ -219,7 +219,7 @@ TryAgain:
         {
             // Mundane characters and not the delimiter we are looking for.
             //
-            first = FALSE;
+            first = false;
             do
             {
                 NEXTCHAR
@@ -262,7 +262,7 @@ TryAgain:
                 {
                     // '['
                     //
-                    first = FALSE;
+                    first = false;
                     if (sp < stacklim)
                     {
                         stack[sp++] = ']';
@@ -277,7 +277,7 @@ TryAgain:
                 //
                 if (iCode == 3)
                 {
-                    first = FALSE;
+                    first = false;
                     if (sp < stacklim)
                     {
                         stack[sp++] = ')';
@@ -288,7 +288,7 @@ TryAgain:
                 {
                     // %, \, and ESC escapes.
                     //
-                    first = FALSE;
+                    first = false;
                     NEXTCHAR
                     if (*cstr)
                     {
@@ -335,7 +335,7 @@ TryAgain:
                         isSpecial_L3[' '] = 0; // Spaces aren't special anymore
                         return rstr;
                     }
-                    first = FALSE;
+                    first = false;
                     NEXTCHAR
                 }
                 else
@@ -411,7 +411,7 @@ TryAgain:
                             NEXTCHAR
                         }
                     }
-                    first = FALSE;
+                    first = false;
                 }
             }
             else
@@ -858,25 +858,25 @@ struct tcache_ent
     struct tcache_ent *next;
 } *tcache_head;
 
-BOOL tcache_top;
+bool tcache_top;
 int  tcache_count;
 
 void tcache_init(void)
 {
     tcache_head = NULL;
-    tcache_top = TRUE;
+    tcache_top = true;
     tcache_count = 0;
 }
 
-BOOL tcache_empty(void)
+bool tcache_empty(void)
 {
     if (tcache_top)
     {
-        tcache_top = FALSE;
+        tcache_top = false;
         tcache_count = 0;
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 static void tcache_add(dbref player, char *orig, char *result)
@@ -918,7 +918,7 @@ static void tcache_finish(void)
         free_lbuf(xp->result);
         free_sbuf(xp);
     }
-    tcache_top = TRUE;
+    tcache_top = true;
     tcache_count = 0;
 }
 
@@ -1079,7 +1079,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
     //
     if (mudconf.nStackLimit < mudstate.nStackNest)
     {
-        mudstate.bStackLimitReached = TRUE;
+        mudstate.bStackLimitReached = true;
         return;
     }
 
@@ -1090,7 +1090,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
     char *realbuff = NULL, *realbp = NULL;
     dbref aowner;
     int nfargs, aflags, feval, i;
-    BOOL ansi = FALSE;
+    bool ansi = false;
     FUN *fp;
     UFUN *ufp;
 
@@ -1110,8 +1110,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
     int at_space = 1;
     int gender = -1;
 
-    BOOL is_trace = Trace(executor) && !(eval & EV_NOTRACE);
-    BOOL is_top = FALSE;
+    bool is_trace = Trace(executor) && !(eval & EV_NOTRACE);
+    bool is_top = false;
 
     // Extend the buffer if we need to.
     //
@@ -1525,7 +1525,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         if (pColor)
                         {
                             pdstr++;
-                            ansi = TRUE;
+                            ansi = true;
                             safe_str(pColor, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
@@ -1990,7 +1990,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
     }
 
     // If we're eating spaces, and the last thing was a space, eat it up.
-    // Complicated by the fact that at_space is initially TRUE. So check to
+    // Complicated by the fact that at_space is initially true. So check to
     // see if we actually put something in the buffer, too.
     //
     if (  bSpaceIsSpecial

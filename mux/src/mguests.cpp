@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: mguests.cpp,v 1.2 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -56,7 +56,7 @@ void CGuests::StartUp(void)
     for (i = 0; i < mudconf.number_guests; i++)
     {
         sprintf(name, "%s%d", mudconf.guest_prefix, i + 1);
-        dbref player = lookup_player(GOD, name, FALSE);
+        dbref player = lookup_player(GOD, name, false);
         if (  player != NOTHING
            && Guest(player))
         {
@@ -139,7 +139,7 @@ const char *CGuests::Create(DESC *d)
             // Lets try to grab our own name, if we don't have it.
             //
             sprintf(name, "%s%d", mudconf.guest_prefix, nGuests);
-            dbref player = lookup_player(GOD, name, FALSE);
+            dbref player = lookup_player(GOD, name, false);
             if (player == NOTHING)
             {
                 delete_player_name(Guests[i], Name(Guests[i]));
@@ -268,7 +268,7 @@ dbref CGuests::MakeGuestChar(void)
     for (i = 0; i < mudconf.number_guests;i++)
     {
         sprintf(name, "%s%d", mudconf.guest_prefix, i + 1);
-        player = lookup_player(GOD, name, FALSE);
+        player = lookup_player(GOD, name, false);
         if (player == NOTHING)
         {
             break;
@@ -277,7 +277,7 @@ dbref CGuests::MakeGuestChar(void)
 
     // Make the player.
     //
-    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, FALSE, TRUE);
+    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, false, true);
 
     // No Player Created?? Return error.
     //
@@ -353,17 +353,17 @@ void CGuests::WipeAttrs(dbref guest)
     olist_pop();
 }
 
-BOOL CGuests::CheckGuest(dbref player)
+bool CGuests::CheckGuest(dbref player)
 {
     int i;
     for (i = 0; i < nGuests; i++)
     {
         if (Guests[i] == player)
         {
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
 // @list guests, thanks Rhost for the idea!

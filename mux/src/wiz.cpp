@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.3 2003-02-04 00:07:28 sdennis Exp $
+// $Id: wiz.cpp,v 1.4 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -218,7 +218,7 @@ void do_teleport
         {
             if (Exits(destination) == Location(victim))
             {
-                move_exit(victim, destination, FALSE, "You can't go that way.", 0);
+                move_exit(victim, destination, false, "You can't go that way.", 0);
             }
             else
             {
@@ -261,7 +261,7 @@ void do_force( dbref executor, dbref caller, dbref enactor, int key,
         // Force victim to do command.
         //
         CLinearTimeAbsolute lta;
-        wait_que(victim, caller, executor, FALSE, lta, NOTHING, 0, command,
+        wait_que(victim, caller, executor, false, lta, NOTHING, 0, command,
             args, nargs, mudstate.global_regs);
     }
 }
@@ -398,7 +398,7 @@ void do_newpassword
     char *password
 )
 {
-    dbref victim = lookup_player(executor, name, FALSE);
+    dbref victim = lookup_player(executor, name, false);
     if (victim == NOTHING)
     {
         notify_quiet(executor, "No such player.");
@@ -413,7 +413,7 @@ void do_newpassword
     }
     if (God(victim))
     {
-        BOOL bCan = TRUE;
+        bool bCan = true;
         if (God(executor))
         {
             // God can change her own password if it's missing.
@@ -423,13 +423,13 @@ void do_newpassword
             char *target = atr_get(executor, A_PASS, &aowner, &aflags);
             if (target[0] != '\0')
             {
-                bCan = FALSE;
+                bCan = false;
             }
             free_lbuf(target);
         }
         else
         {
-            bCan = FALSE;
+            bCan = false;
         }
         if (!bCan)
         {
@@ -577,11 +577,11 @@ void do_cut(dbref executor, dbref caller, dbref enactor, int key, char *thing)
 //
 void do_motd(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
-    BOOL is_brief = FALSE;
+    bool is_brief = false;
 
     if (key & MOTD_BRIEF)
     {
-        is_brief = TRUE;
+        is_brief = true;
         key = key & ~MOTD_BRIEF;
         if (key == MOTD_ALL)
             key = MOTD_LIST;

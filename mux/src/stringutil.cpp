@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.38 2003-02-05 01:34:46 sdennis Exp $
+// $Id: stringutil.cpp,v 1.39 2003-02-05 06:20:59 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -582,13 +582,13 @@ char *strip_accents(const char *szString, size_t *pnString)
 
 const ANSI_ColorState acsRestingStates[3] =
 {
-    {TRUE,  FALSE, FALSE, FALSE, FALSE, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT},
-    {FALSE, FALSE, FALSE, FALSE, FALSE, ANSI_COLOR_INDEX_WHITE,   ANSI_COLOR_INDEX_DEFAULT},
-    {TRUE,  FALSE, FALSE, FALSE, FALSE, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT}
+    {true,  false, false, false, false, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT},
+    {false, false, false, false, false, ANSI_COLOR_INDEX_WHITE,   ANSI_COLOR_INDEX_DEFAULT},
+    {true,  false, false, false, false, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT}
 };
 
 void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
-                  BOOL *pbSawNormal)
+                  bool *pbSawNormal)
 {
     // If the last character isn't an 'm', then it's an ANSI sequence we
     // don't support, yet. TODO: There should be a ANSI_Parse() function
@@ -627,42 +627,42 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
                     // Normal.
                     //
                     *pacsCurrent = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-                    *pbSawNormal = TRUE;
+                    *pbSawNormal = true;
                     break;
 
                 case 1:
                     // High Intensity.
                     //
-                    pacsCurrent->bHighlite = TRUE;
-                    pacsCurrent->bNormal = FALSE;
+                    pacsCurrent->bHighlite = true;
+                    pacsCurrent->bNormal = false;
                     break;
 
                 case 2:
                     // Low Intensity.
                     //
-                    pacsCurrent->bHighlite = FALSE;
-                    pacsCurrent->bNormal = FALSE;
+                    pacsCurrent->bHighlite = false;
+                    pacsCurrent->bNormal = false;
                     break;
 
                 case 4:
                     // Underline.
                     //
-                    pacsCurrent->bUnder = TRUE;
-                    pacsCurrent->bNormal = FALSE;
+                    pacsCurrent->bUnder = true;
+                    pacsCurrent->bNormal = false;
                     break;
 
                 case 5:
                     // Blinking.
                     //
-                    pacsCurrent->bBlink = TRUE;
-                    pacsCurrent->bNormal = FALSE;
+                    pacsCurrent->bBlink = true;
+                    pacsCurrent->bNormal = false;
                     break;
 
                 case 7:
                     // Reverse Video
                     //
-                    pacsCurrent->bInverse = TRUE;
-                    pacsCurrent->bNormal = FALSE;
+                    pacsCurrent->bInverse = true;
+                    pacsCurrent->bNormal = false;
                     break;
                 }
             }
@@ -677,7 +677,7 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
                     if (iCode1 <= 7)
                     {
                         pacsCurrent->iForeground = iCode1;
-                        pacsCurrent->bNormal = FALSE;
+                        pacsCurrent->bNormal = false;
                     }
                 }
                 else if (iCode0 == 4)
@@ -687,7 +687,7 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
                     if (iCode1 <= 7)
                     {
                         pacsCurrent->iBackground = iCode1;
-                        pacsCurrent->bNormal = FALSE;
+                        pacsCurrent->bNormal = false;
                     }
                 }
             }
@@ -867,7 +867,7 @@ void ANSI_String_In_Init
     pacIn->m_acs = acsRestingStates[iEndGoal];
     pacIn->m_p   = szString;
     pacIn->m_n   = strlen(szString);
-    pacIn->m_bSawNormal = FALSE;
+    pacIn->m_bSawNormal = false;
 }
 
 void ANSI_String_Out_Init
@@ -880,7 +880,7 @@ void ANSI_String_Out_Init
 )
 {
     pacOut->m_acs      = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-    pacOut->m_bDone    = FALSE;
+    pacOut->m_bDone    = false;
     pacOut->m_iEndGoal = iEndGoal;
     pacOut->m_n        = 0;
     pacOut->m_nMax     = nField;
@@ -1096,14 +1096,14 @@ void ANSI_String_Copy
                     //
                     if (vwMax != maxVisualWidth0)
                     {
-                        pacOut->m_bDone = TRUE;
+                        pacOut->m_bDone = true;
                     }
                 }
                 else
                 {
                     // Was size limit related to the session or the call?
                     //
-                    pacOut->m_bDone = TRUE;
+                    pacOut->m_bDone = true;
                 }
                 pacOut->m_n += pField - pacOut->m_p;
                 pacOut->m_nMax -= pField - pacOut->m_p;
@@ -1306,7 +1306,7 @@ const char MU_EscapeNoConvert[256] =
 // Convert raw character sequences into MUX substitutions (type = 1)
 // or strips them (type = 0).
 //
-char *translate_string(const char *szString, BOOL bConvert)
+char *translate_string(const char *szString, bool bConvert)
 {
     static char szTranslatedString[LBUF_SIZE];
     char *pTranslatedString = szTranslatedString;
@@ -1323,7 +1323,7 @@ char *translate_string(const char *szString, BOOL bConvert)
     ANSI_ColorState acsPrevious;
     acsCurrent = acsRestingStates[ANSI_ENDGOAL_NOBLEED];
     acsPrevious = acsCurrent;
-    BOOL bSawNormal = FALSE;
+    bool bSawNormal = false;
     const char *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
     while (nString)
     {
@@ -1779,7 +1779,7 @@ int prefix_match(const char *s1, const char *s2)
 }
 #endif // 0
 
-BOOL minmatch(char *str, char *target, int min)
+bool minmatch(char *str, char *target, int min)
 {
     while (*str && *target
           && (mux_tolower[(unsigned char)*str] == mux_tolower[(unsigned char)*target]))
@@ -1790,11 +1790,11 @@ BOOL minmatch(char *str, char *target, int min)
     }
     if (*str)
     {
-        return FALSE;
+        return false;
     }
     if (!*target)
     {
-        return TRUE;
+        return true;
     }
     return (min <= 0);
 }
@@ -1897,7 +1897,7 @@ int safe_fill(char *buff, char **bufc, char chFill, int nSpaces)
     return nSpaces;
 }
 
-BOOL matches_exit_from_list(char *str, const char *pattern)
+bool matches_exit_from_list(char *str, const char *pattern)
 {
     char *s;
 
@@ -1922,7 +1922,7 @@ BOOL matches_exit_from_list(char *str, const char *pattern)
             // Did we get it?
             //
             if (!*pattern || (*pattern == EXIT_DELIMITER))
-                return TRUE;
+                return true;
         }
         // We didn't get it, find next string to test
         //
@@ -1930,7 +1930,7 @@ BOOL matches_exit_from_list(char *str, const char *pattern)
         while (mux_isspace[(unsigned char)*pattern])
             pattern++;
     }
-    return FALSE;
+    return false;
 }
 
 const char Digits100[201] =
@@ -2214,7 +2214,7 @@ const INT64 BCD_ONES     = 0x1111111111111110ULL;
 
 #define BCD_NEG(x) (BCD_FIVE <= (UINT64)(x))
 
-BOOL bcd_valid(INT64 a)
+bool bcd_valid(INT64 a)
 {
     return (((a + BCD_SIXES) ^ a) & BCD_ONES) != 0;
 }
@@ -2348,7 +2348,7 @@ INT64 mux_atobcd(const char *pString)
 // Ind
 // NaN
 //
-BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
+bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
 {
     memset(pfr, 0, sizeof(PARSE_FLOAT_RESULT));
 
@@ -2433,7 +2433,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
                     }
                 }
             }
-            return FALSE;
+            return false;
         }
     }
 
@@ -2463,7 +2463,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
     if (  pfr->nDigitsA == 0
        && pfr->nDigitsB == 0)
     {
-        return FALSE;
+        return false;
     }
 
     ch0 = mux_toupper[(unsigned char)*str];
@@ -2491,7 +2491,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
 
         if (pfr->nDigitsC < 1 || 4 < pfr->nDigitsC)
         {
-            return FALSE;
+            return false;
         }
     }
 
@@ -2512,7 +2512,7 @@ LastSpaces:
     }
     else
     {
-        return TRUE;
+        return true;
     }
 }
 
@@ -2531,7 +2531,7 @@ static const double powerstab[10] =
    1000000000.0
 };
 
-double mux_atof(char *szString, BOOL bStrict)
+double mux_atof(char *szString, bool bStrict)
 {
     PARSE_FLOAT_RESULT pfr;
     if (!ParseFloat(&pfr, szString, bStrict))
@@ -2618,7 +2618,7 @@ double mux_atof(char *szString, BOOL bStrict)
 extern char *mux_dtoa(double d, int mode, int nRequest, int *iDecimalPoint,
                        int *sign, char **rve);
 
-char *mux_ftoa(double r, BOOL bRounded, int frac)
+char *mux_ftoa(double r, bool bRounded, int frac)
 {
     static char buffer[100];
     char *q = buffer;
@@ -2745,7 +2745,7 @@ char *mux_ftoa(double r, BOOL bRounded, int frac)
     return buffer;
 }
 
-BOOL is_integer(char *str, int *pDigits)
+bool is_integer(char *str, int *pDigits)
 {
     int nDigits = 0;
     if (pDigits)
@@ -2770,7 +2770,7 @@ BOOL is_integer(char *str, int *pDigits)
         //
         if (!*str)
         {
-            return FALSE;
+            return false;
         }
     }
 
@@ -2778,7 +2778,7 @@ BOOL is_integer(char *str, int *pDigits)
     //
     if (!mux_isdigit[(unsigned char)*str])
     {
-        return FALSE;
+        return false;
     }
 
     // The number (int)
@@ -2804,7 +2804,7 @@ BOOL is_integer(char *str, int *pDigits)
     return (!*str);
 }
 
-BOOL is_rational(char *str)
+bool is_rational(char *str)
 {
     // Leading spaces.
     //
@@ -2823,16 +2823,16 @@ BOOL is_rational(char *str)
         //
         if (!*str)
         {
-            return FALSE;
+            return false;
         }
     }
 
     // Need at least one digit.
     //
-    BOOL got_one = FALSE;
+    bool got_one = false;
     if (mux_isdigit[(unsigned char)*str])
     {
-        got_one = TRUE;
+        got_one = true;
     }
 
     // The number (int)
@@ -2853,12 +2853,12 @@ BOOL is_rational(char *str)
     //
     if (mux_isdigit[(unsigned char)*str])
     {
-        got_one = TRUE;
+        got_one = true;
     }
 
     if (!got_one)
     {
-        return FALSE;
+        return false;
     }
 
     // The number (fract)
@@ -2880,7 +2880,7 @@ BOOL is_rational(char *str)
     return (!*str);
 }
 
-BOOL is_real(char *str)
+bool is_real(char *str)
 {
     PARSE_FLOAT_RESULT pfr;
     return ParseFloat(&pfr, str);
@@ -3035,7 +3035,7 @@ char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
 void ItemToList_Init(ITL *p, char *arg_buff, char **arg_bufc,
     char arg_chPrefix, char arg_chSep)
 {
-    p->bFirst = TRUE;
+    p->bFirst = true;
     p->chPrefix = arg_chPrefix;
     p->chSep = arg_chSep;
     p->buff = arg_buff;
@@ -3043,7 +3043,7 @@ void ItemToList_Init(ITL *p, char *arg_buff, char **arg_bufc,
     p->nBufferAvailable = LBUF_SIZE - (*arg_bufc - arg_buff) - 1;
 }
 
-BOOL ItemToList_AddInteger(ITL *pContext, int i)
+bool ItemToList_AddInteger(ITL *pContext, int i)
 {
     char smbuf[SBUF_SIZE];
     char *p = smbuf;
@@ -3062,19 +3062,19 @@ BOOL ItemToList_AddInteger(ITL *pContext, int i)
     {
         // Out of room.
         //
-        return FALSE;
+        return false;
     }
     if (pContext->bFirst)
     {
-        pContext->bFirst = FALSE;
+        pContext->bFirst = false;
     }
     memcpy(*(pContext->bufc), smbuf, nLen);
     *(pContext->bufc) += nLen;
     pContext->nBufferAvailable -= nLen;
-    return TRUE;
+    return true;
 }
 
-BOOL ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr)
+bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr)
 {
     size_t nLen = nStr;
     if (  !pContext->bFirst
@@ -3090,12 +3090,12 @@ BOOL ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr)
     {
         // Out of room.
         //
-        return FALSE;
+        return false;
     }
     char *p = *(pContext->bufc);
     if (pContext->bFirst)
     {
-        pContext->bFirst = FALSE;
+        pContext->bFirst = false;
     }
     else if (pContext->chSep)
     {
@@ -3108,10 +3108,10 @@ BOOL ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr)
     memcpy(p, pStr, nStr);
     *(pContext->bufc) += nLen;
     pContext->nBufferAvailable -= nLen;
-    return TRUE;
+    return true;
 }
 
-BOOL ItemToList_AddString(ITL *pContext, char *pStr)
+bool ItemToList_AddString(ITL *pContext, char *pStr)
 {
     size_t nStr = strlen(pStr);
     return ItemToList_AddStringLEN(pContext, nStr, pStr);
@@ -3465,8 +3465,8 @@ CF_HAND(cf_art_rule)
         return -1;
     }
 
-    BOOL bUseAn = FALSE;
-    BOOL bOkay = FALSE;
+    bool bUseAn = false;
+    bool bOkay = false;
 
     if (pCurrent - pArticle <= 2)
     {
@@ -3474,13 +3474,13 @@ CF_HAND(cf_art_rule)
         {
             if (*(pArticle + 1) == 'N' || *(pArticle + 1) == 'n')
             {
-                bUseAn = TRUE;
-                bOkay = TRUE;
+                bUseAn = true;
+                bOkay = true;
             }
 
             if (mux_isspace[(unsigned char) *(pArticle + 1)])
             {
-                bOkay = TRUE;
+                bOkay = true;
             }
         }
     }

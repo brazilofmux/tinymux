@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.2 2003-02-04 00:07:28 sdennis Exp $
+// $Id: match.cpp,v 1.3 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -154,7 +154,7 @@ void match_player(void)
     {
         char *p;
         for (p = md.string + 1; mux_isspace[(unsigned char)*p]; p++) ;
-        dbref match = lookup_player(NOTHING, p, TRUE);
+        dbref match = lookup_player(NOTHING, p, true);
         if (Good_obj(match))
         {
             promote_match(match, CON_TOKEN);
@@ -165,7 +165,7 @@ void match_player(void)
 /*
  * returns nnn if name = #nnn, else NOTHING 
  */
-static dbref absolute_name(BOOL bNeedPound)
+static dbref absolute_name(bool bNeedPound)
 {
     char *mname = md.string;
     if (bNeedPound)
@@ -205,7 +205,7 @@ void match_numeric(void)
     {
         return;
     }
-    dbref match = absolute_name(FALSE);
+    dbref match = absolute_name(false);
     if (Good_obj(match))
     {
         promote_match(match, CON_DBREF);
@@ -333,16 +333,16 @@ void match_neighbor(void)
     }
 }
 
-static BOOL match_exit_internal(dbref loc, dbref baseloc, int local)
+static bool match_exit_internal(dbref loc, dbref baseloc, int local)
 {
     if (  !Good_obj(loc)
        || !Has_exits(loc))
     {
-        return TRUE;
+        return true;
     }
 
     dbref exit;
-    BOOL result = FALSE;
+    bool result = false;
     int key;
 
     DOLIST(exit, Exits(loc)) 
@@ -365,13 +365,13 @@ static BOOL match_exit_internal(dbref loc, dbref baseloc, int local)
             if (exit_visible(exit, md.player, key)) 
             {
                 promote_match(exit, CON_DBREF | local);
-                return TRUE;
+                return true;
             }
         }
         if (matches_exit_from_list(md.string, PureName(exit))) 
         {
             promote_match(exit, CON_COMPLETE | local);
-            result = TRUE;
+            result = true;
         }
     }
     return result;
@@ -593,18 +593,18 @@ void init_match(dbref player, const char *name, int type)
 {
     md.confidence = -1;
     md.count = 0;
-    md.check_keys = FALSE;
+    md.check_keys = false;
     md.pref_type = type;
     md.match = NOTHING;
     md.player = player;
     md.string = munge_space_for_match((char *)name);
-    md.absolute_form = absolute_name(TRUE);
+    md.absolute_form = absolute_name(true);
 }
 
 void init_match_check_keys(dbref player, const char *name, int type)
 {
     init_match(player, name, type);
-    md.check_keys = TRUE;
+    md.check_keys = true;
 }
 
 dbref match_thing(dbref player, char *name)

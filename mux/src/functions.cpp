@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.31 2003-02-05 01:21:20 sdennis Exp $
+// $Id: functions.cpp,v 1.32 2003-02-05 06:20:58 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -468,21 +468,21 @@ static int dbnum(char *dbr)
  * nearby_or_control: Check if player is near or controls thing
  */
 
-BOOL nearby_or_control(dbref player, dbref thing)
+bool nearby_or_control(dbref player, dbref thing)
 {
     if (!Good_obj(player) || !Good_obj(thing))
     {
-        return FALSE;
+        return false;
     }
     if (Controls(player, thing))
     {
-        return TRUE;
+        return true;
     }
     if (!nearby(player, thing))
     {
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 #ifdef HAVE_IEEE_FP_FORMAT
@@ -613,7 +613,7 @@ static void fval(char *buff, char **bufc, double result)
         }
         else
         {
-            safe_str(mux_ftoa(result, FALSE, 0), buff, bufc);
+            safe_str(mux_ftoa(result, false, 0), buff, bufc);
         }
 #ifdef HAVE_IEEE_FP_FORMAT
     }
@@ -645,7 +645,7 @@ static void fval_buf(char *buff, double result)
         }
         else
         {
-            strcpy(buff, mux_ftoa(result, FALSE, 0));
+            strcpy(buff, mux_ftoa(result, false, 0));
         }
 #ifdef HAVE_IEEE_FP_FORMAT
     }
@@ -659,14 +659,14 @@ static void fval_buf(char *buff, double result)
 /* ---------------------------------------------------------------------------
  * delim_check: obtain delimiter
  */
-BOOL delim_check
+bool delim_check
 (
     char *fargs[], int nfargs, int sep_arg, char *sep, char *buff,
-    char **bufc, BOOL eval, dbref player, dbref caller, dbref enactor,
-    char *cargs[], int ncargs, BOOL allow_special
+    char **bufc, bool eval, dbref player, dbref caller, dbref enactor,
+    char *cargs[], int ncargs, bool allow_special
 )
 {
-    BOOL bSuccess = TRUE;
+    bool bSuccess = true;
     if (nfargs >= sep_arg)
     {
         // First, we decide whether to evalute fargs[sep_arg-1] or not.
@@ -675,7 +675,7 @@ BOOL delim_check
         int tlen = strlen(tstr);
         if (tlen <= 1)
         {
-            eval = FALSE;
+            eval = false;
         }
         if (eval)
         {
@@ -714,12 +714,12 @@ BOOL delim_check
                 }
                 else
                 {
-                    bSuccess = FALSE;
+                    bSuccess = false;
                 }
             }
             else
             {
-                bSuccess = FALSE;
+                bSuccess = false;
             }
         }
 
@@ -732,14 +732,14 @@ BOOL delim_check
         if (!bSuccess)
         {
             safe_str("#-1 SEPARATOR MUST BE ONE CHARACTER", buff, bufc);
-            return FALSE;
+            return false;
         }
     }
     else
     {
         *sep = ' ';
     }
-    return TRUE;
+    return true;
 }
 
 /* ---------------------------------------------------------------------------
@@ -989,7 +989,7 @@ FUNCTION(fun_convsecs)
 FUNCTION(fun_convtime)
 {
     CLinearTimeAbsolute lta;
-    BOOL bZoneSpecified = FALSE;
+    bool bZoneSpecified = false;
     if (  lta.SetString(fargs[0])
        || ParseDate(lta, fargs[0], &bZoneSpecified))
     {
@@ -1383,7 +1383,7 @@ FUNCTION(fun_timefmt)
  * ---------------------------------------------------------------------------
  * * fun_get, fun_get_eval: Get attribute from object.
  */
-BOOL check_read_perms
+bool check_read_perms
 (
     dbref player,
     dbref thing,
@@ -1398,19 +1398,19 @@ BOOL check_read_perms
     //
     if (See_attr_explicit(player, thing, attr, aowner, aflags))
     {
-        return TRUE;
+        return true;
     }
 
     // If we are nearby or have examine privs to the attr and it is
     // visible to us, return it.
     //
-    BOOL see_it = See_attr(player, thing, attr);
+    bool see_it = See_attr(player, thing, attr);
     if (  (  Examinable(player, thing)
           || nearby(player, thing)
           || See_All(player))
        && see_it)
     {
-        return TRUE;
+        return true;
     }
 
     // For any object, we can read its visible attributes, EXCEPT for
@@ -1422,15 +1422,15 @@ BOOL check_read_perms
            && attr->number == A_DESC)
         {
             safe_str("#-1 TOO FAR AWAY TO SEE", buff, bufc);
-            return FALSE;
+            return false;
         }
         else
         {
-            return TRUE;
+            return true;
         }
     }
     safe_noperm(buff, bufc);
-    return FALSE;
+    return false;
 }
 
 #define GET_GET     1
@@ -1440,7 +1440,7 @@ BOOL check_read_perms
 
 void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key)
 {
-    BOOL bFreeBuffer = FALSE;
+    bool bFreeBuffer = false;
     char *pRefAttrib = fargs[0];
 
     if (  key == GET_XGET
@@ -1449,15 +1449,15 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
         pRefAttrib = alloc_lbuf("get_handler");
         char *bufp = pRefAttrib;
         safe_tprintf_str(pRefAttrib, &bufp, "%s/%s", fargs[0], fargs[1]);
-        bFreeBuffer = TRUE;
+        bFreeBuffer = true;
     }
     dbref thing;
     int   attrib;
-    BOOL bNoMatch = !parse_attrib(executor, pRefAttrib, &thing, &attrib);
+    bool bNoMatch = !parse_attrib(executor, pRefAttrib, &thing, &attrib);
     if (bFreeBuffer)
     {
         free_lbuf(pRefAttrib);
-        bFreeBuffer = FALSE;
+        bFreeBuffer = false;
     }
     if (bNoMatch)
     {
@@ -1475,15 +1475,15 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     dbref aowner;
     int   aflags;
     size_t nLen = 0;
-    bFreeBuffer = FALSE;
-    BOOL bEval = TRUE;
+    bFreeBuffer = false;
+    bool bEval = true;
     char *atr_gotten = NULL;
     if (attr->flags & AF_IS_LOCK)
     {
         atr_gotten = atr_get_LEN(thing, attrib, &aowner, &aflags, &nLen);
-        if (bCanReadAttr(executor, thing, attr, FALSE))
+        if (bCanReadAttr(executor, thing, attr, false))
         {
-            struct boolexp *pBoolExp = parse_boolexp(executor, atr_gotten, TRUE);
+            struct boolexp *pBoolExp = parse_boolexp(executor, atr_gotten, true);
             free_lbuf(atr_gotten);
             atr_gotten = unparse_boolexp(executor, pBoolExp);
             free_boolexp(pBoolExp);
@@ -1494,12 +1494,12 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
             // TODO: This is bad practice.
             atr_gotten = (char *)FUNC_NOPERM_MESSAGE;
         }
-        bEval = FALSE;
+        bEval = false;
     }
     else
     {
         atr_gotten = atr_pget_LEN(thing, attrib, &aowner, &aflags, &nLen);
-        bFreeBuffer = TRUE;
+        bFreeBuffer = true;
     }
 
     // Perform access checks.  check_read_perms() fills buff with an error message
@@ -1591,7 +1591,7 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
             dbref enactor,
             char *fargs[], int nfargs,
             char *cargs[], int ncargs,
-            BOOL is_local)
+            bool is_local)
 {
     dbref aowner, thing;
     int aflags, anum;
@@ -1670,13 +1670,13 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
 FUNCTION(fun_u)
 {
     do_ufun(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
-            ncargs, FALSE);
+            ncargs, false);
 }
 
 FUNCTION(fun_ulocal)
 {
     do_ufun(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
-            ncargs, TRUE);
+            ncargs, true);
 }
 
 /*
@@ -1988,7 +1988,7 @@ FUNCTION(fun_next)
     else if (Has_siblings(it))
     {
         dbref loc = where_is(it);
-        BOOL ex_here = Good_obj(loc) ? Examinable(executor, loc) : FALSE;
+        bool ex_here = Good_obj(loc) ? Examinable(executor, loc) : false;
         if (  ex_here
            || loc == executor
            || loc == where_is(executor))
@@ -2056,7 +2056,7 @@ FUNCTION(fun_loc)
 
 /*
  * ---------------------------------------------------------------------------
- * * fun_where: Returns the "TRUE" location of something
+ * * fun_where: Returns the "true" location of something
  */
 
 FUNCTION(fun_where)
@@ -2317,7 +2317,7 @@ FUNCTION(fun_strmatch)
     // Check if we match the whole string.  If so, return 1.
     //
     mudstate.wild_invk_ctr = 0;
-    BOOL cc = quick_wild(fargs[1], fargs[0]);
+    bool cc = quick_wild(fargs[1], fargs[0]);
     safe_bool(cc, buff, bufc);
 }
 
@@ -2385,20 +2385,20 @@ FUNCTION(fun_extract)
 
 // xlate() controls the subtle definition of a softcode boolean.
 //
-BOOL xlate(char *arg)
+bool xlate(char *arg)
 {
     const char *p = arg;
     if (p[0] == '#')
     {
         if (p[1] == '-')
         {
-            // '#-...' is FALSE. This includes '#-0000' and '#-ABC'.
+            // '#-...' is false. This includes '#-0000' and '#-ABC'.
             // This cases are unlikely in practice. We can always come back
             // and cover these.
             //
-            return FALSE;
+            return false;
         }
-        return TRUE;
+        return true;
     }
 
     PARSE_FLOAT_RESULT pfr;
@@ -2410,7 +2410,7 @@ BOOL xlate(char *arg)
         {
             // This covers NaN, +Inf, -Inf, and Ind.
             //
-            return FALSE;
+            return false;
         }
 
         // We can ignore leading sign, exponent sign, and exponent as 0, -0,
@@ -2422,7 +2422,7 @@ BOOL xlate(char *arg)
         {
             if (*pfr.pDigitsA != '0')
             {
-                return TRUE;
+                return true;
             }
             pfr.pDigitsA++;
         }
@@ -2430,11 +2430,11 @@ BOOL xlate(char *arg)
         {
             if (*pfr.pDigitsB != '0')
             {
-                return TRUE;
+                return true;
             }
             pfr.pDigitsB++;
         }
-        return FALSE;
+        return false;
     }
     while (mux_isspace[(unsigned char)*p])
     {
@@ -2442,9 +2442,9 @@ BOOL xlate(char *arg)
     }
     if (p[0] == '\0')
     {
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2593,7 +2593,7 @@ void internalPlayerFind
             //
             nptr++;
         }
-        thing = lookup_player(player, nptr, TRUE);
+        thing = lookup_player(player, nptr, true);
         if (  (!Good_obj(thing))
            || (!isPlayer(thing) && bVerifyPlayer))
         {
@@ -2610,17 +2610,17 @@ void internalPlayerFind
 
 FUNCTION(fun_pmatch)
 {
-    internalPlayerFind(buff, bufc, executor, fargs[0], TRUE);
+    internalPlayerFind(buff, bufc, executor, fargs[0], true);
 }
 
 FUNCTION(fun_pfind)
 {
-    internalPlayerFind(buff, bufc, executor, fargs[0], FALSE);
+    internalPlayerFind(buff, bufc, executor, fargs[0], false);
 }
 
 FUNCTION(fun_gt)
 {
-    BOOL bResult = FALSE;
+    bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
@@ -2638,7 +2638,7 @@ FUNCTION(fun_gt)
 
 FUNCTION(fun_gte)
 {
-    BOOL bResult = FALSE;
+    bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
@@ -2656,7 +2656,7 @@ FUNCTION(fun_gte)
 
 FUNCTION(fun_lt)
 {
-    BOOL bResult = FALSE;
+    bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
@@ -2674,7 +2674,7 @@ FUNCTION(fun_lt)
 
 FUNCTION(fun_lte)
 {
-    BOOL bResult = FALSE;
+    bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
@@ -2692,7 +2692,7 @@ FUNCTION(fun_lte)
 
 FUNCTION(fun_eq)
 {
-    BOOL bResult = FALSE;
+    bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
@@ -2711,7 +2711,7 @@ FUNCTION(fun_eq)
 
 FUNCTION(fun_neq)
 {
-    BOOL bResult = FALSE;
+    bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
@@ -2730,7 +2730,7 @@ FUNCTION(fun_neq)
 
 FUNCTION(fun_and)
 {
-    BOOL val = TRUE;
+    bool val = true;
     for (int i = 0; i < nfargs && val; i++)
     {
         val = isTRUE(mux_atol(fargs[i]));
@@ -2740,7 +2740,7 @@ FUNCTION(fun_and)
 
 FUNCTION(fun_or)
 {
-    BOOL val = FALSE;
+    bool val = false;
     for (int i = 0; i < nfargs && !val; i++)
     {
         val = isTRUE(mux_atol(fargs[i]));
@@ -2750,7 +2750,7 @@ FUNCTION(fun_or)
 
 FUNCTION(fun_andbool)
 {
-    BOOL val = TRUE;
+    bool val = true;
     for (int i = 0; i < nfargs && val; i++)
     {
         val = xlate(fargs[i]);
@@ -2760,7 +2760,7 @@ FUNCTION(fun_andbool)
 
 FUNCTION(fun_orbool)
 {
-    BOOL val = FALSE;
+    bool val = false;
     for (int i = 0; i < nfargs && !val; i++)
     {
         val = xlate(fargs[i]);
@@ -2770,7 +2770,7 @@ FUNCTION(fun_orbool)
 
 FUNCTION(fun_cand)
 {
-    BOOL val = TRUE;
+    bool val = true;
     char *temp = alloc_lbuf("fun_cand");
     for (int i = 0; i < nfargs && val; i++)
     {
@@ -2787,7 +2787,7 @@ FUNCTION(fun_cand)
 
 FUNCTION(fun_cor)
 {
-    BOOL val = FALSE;
+    bool val = false;
     char *temp = alloc_lbuf("fun_cor");
     for (int i = 0; i < nfargs && !val; i++)
     {
@@ -2804,7 +2804,7 @@ FUNCTION(fun_cor)
 
 FUNCTION(fun_candbool)
 {
-    BOOL val = TRUE;
+    bool val = true;
     char *temp = alloc_lbuf("fun_candbool");
     for (int i = 0; i < nfargs && val; i++)
     {
@@ -2821,7 +2821,7 @@ FUNCTION(fun_candbool)
 
 FUNCTION(fun_corbool)
 {
-    BOOL val = FALSE;
+    bool val = false;
     char *temp = alloc_lbuf("fun_corbool");
     for (int i = 0; i < nfargs && !val; i++)
     {
@@ -2838,7 +2838,7 @@ FUNCTION(fun_corbool)
 
 FUNCTION(fun_xor)
 {
-    BOOL val = FALSE;
+    bool val = false;
     for (int i = 0; i < nfargs; i++)
     {
         int tval = mux_atol(fargs[i]);
@@ -2930,7 +2930,7 @@ public:
 private:
     void TwoDigits(const char *p);
     void ThreeDigits(const char *p, int iBigOne);
-    void ManyDigits(int n, const char *p, BOOL bHundreds);
+    void ManyDigits(int n, const char *p, bool bHundreds);
     void FractionalDigits(int n, const char *p);
 
     void StartWord(void);
@@ -2938,7 +2938,7 @@ private:
 
     char *buff;
     char **bufc;
-    BOOL bNeedSpace;
+    bool bNeedSpace;
 };
 
 void CSpellNum::StartWord(void)
@@ -2947,7 +2947,7 @@ void CSpellNum::StartWord(void)
     {
         safe_chr(' ', buff, bufc);
     }
-    bNeedSpace = TRUE;
+    bNeedSpace = true;
 }
 
 void CSpellNum::AddWord(const char *p)
@@ -3021,7 +3021,7 @@ void CSpellNum::ThreeDigits(const char *p, int iBigOne)
 
 // Handle a series of patterns of three.
 //
-void CSpellNum::ManyDigits(int n, const char *p, BOOL bHundreds)
+void CSpellNum::ManyDigits(int n, const char *p, bool bHundreds)
 {
     // Handle special Hundreds cases.
     //
@@ -3072,7 +3072,7 @@ void CSpellNum::ManyDigits(int n, const char *p, BOOL bHundreds)
 //
 void CSpellNum::FractionalDigits(int n, const char *p)
 {
-    ManyDigits(n, p, FALSE);
+    ManyDigits(n, p, false);
     if (  0 < n
        && n < 15)
     {
@@ -3101,7 +3101,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
 {
     buff = buff_arg;
     bufc = bufc_arg;
-    bNeedSpace = FALSE;
+    bNeedSpace = false;
 
     // Trim Spaces from beginning.
     //
@@ -3169,7 +3169,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
     }
     else
     {
-        ManyDigits(nA, pA, TRUE);
+        ManyDigits(nA, pA, true);
         if (nB)
         {
             StartWord();
@@ -3392,7 +3392,7 @@ FUNCTION(fun_ladd)
 
 FUNCTION(fun_land)
 {
-    BOOL bValue = TRUE;
+    bool bValue = true;
     if (0 < nfargs)
     {
         char sep;
@@ -3410,7 +3410,7 @@ FUNCTION(fun_land)
 
 FUNCTION(fun_lor)
 {
-    BOOL bValue = FALSE;
+    bool bValue = false;
     if (0 < nfargs)
     {
         char sep;
@@ -3576,7 +3576,7 @@ FUNCTION(fun_round)
         }
 #endif // HAVE_IEEE_FP_FORMAT
         int frac = mux_atol(fargs[1]);
-        safe_str(mux_ftoa(r, TRUE, frac), buff, bufc);
+        safe_str(mux_ftoa(r, true, frac), buff, bufc);
 #ifdef HAVE_IEEE_FP_FORMAT
     }
     else
@@ -4289,7 +4289,7 @@ FUNCTION(fun_cansee)
     // Do it.
     //
     int Realm_Do = DoThingToThingVisibility(looker, lookee, mode);
-    BOOL bResult = FALSE;
+    bool bResult = false;
     if ((Realm_Do & REALM_DO_MASK) != REALM_DO_HIDDEN_FROM_YOU)
     {
         bResult = !Dark(lookee);
@@ -4365,7 +4365,7 @@ FUNCTION(fun_lexits)
         safe_nothing(buff, bufc);
         return;
     }
-    BOOL bExam = Examinable(executor, it);
+    bool bExam = Examinable(executor, it);
     if (  !bExam
        && where_is(executor) != it
        && it != enactor)
@@ -4376,7 +4376,7 @@ FUNCTION(fun_lexits)
 
     // Return info for all parent levels.
     //
-    BOOL bDone = FALSE;
+    bool bDone = false;
     dbref parent;
     int lev;
     ITL pContext;
@@ -4409,7 +4409,7 @@ FUNCTION(fun_lexits)
             if (  exit_visible(thing, executor, key)
                && !ItemToList_AddInteger(&pContext, thing))
             {
-                bDone = TRUE;
+                bDone = true;
                 break;
             }
         }
@@ -4588,7 +4588,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
     int ct;
     char *sptr, *iptr, *eptr;
     int slen = 0, ilen = 0, elen = 0;
-    BOOL overrun;
+    bool overrun;
     char nullb;
 
     // If passed a null string return an empty string, except that we
@@ -4634,7 +4634,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
         // Break off 'before' portion.
         //
         sptr = eptr = trim_space_sep_LEN(str, nStr, sep, &elen);
-        overrun = TRUE;
+        overrun = true;
         for (  ct = el;
                ct > 2 && eptr;
                eptr = next_token_LEN(eptr, &elen, sep), ct--)
@@ -4647,7 +4647,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
             // doesn't represent the 'target' word, but the
             // the last token in the 'before' portion.
             //
-            overrun = FALSE;
+            overrun = false;
             iptr = split_token_LEN(&eptr, &elen, sep, &ilen);
             slen = (iptr - sptr) + ilen;
         }
@@ -4773,7 +4773,7 @@ FUNCTION(fun_remove)
 {
     char *s, *sp, *word;
     char sep;
-    BOOL first, found;
+    bool first, found;
 
     varargs_preamble(3);
     if (strchr(fargs[1], sep))
@@ -4788,8 +4788,8 @@ FUNCTION(fun_remove)
     // one that matches the target word.
     //
     sp = s;
-    found = FALSE;
-    first = TRUE;
+    found = false;
+    first = true;
     while (s)
     {
         sp = split_token(&s, sep);
@@ -4798,11 +4798,11 @@ FUNCTION(fun_remove)
             if (!first)
                 safe_chr(sep, buff, bufc);
             safe_str(sp, buff, bufc);
-            first = FALSE;
+            first = false;
         }
         else
         {
-            found = TRUE;
+            found = true;
         }
     }
 }
@@ -5004,7 +5004,7 @@ ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
     { NULL,         0          }
 };
 
-static BOOL atr_has_flag
+static bool atr_has_flag
 (
     dbref player,
     dbref thing,
@@ -5021,12 +5021,12 @@ static BOOL atr_has_flag
         {
             if (string_prefix(pEntry->pName, flagname))
             {
-                return ((aflags & (pEntry->iMask)) ? TRUE : FALSE);
+                return ((aflags & (pEntry->iMask)) ? true : false);
             }
             pEntry++;
         }
     }
-    return FALSE;
+    return false;
 }
 
 FUNCTION(fun_hasflag)
@@ -5046,7 +5046,7 @@ FUNCTION(fun_hasflag)
             int aflags;
             dbref aowner;
             atr_pget_info(it, atr, &aowner, &aflags);
-            BOOL cc = atr_has_flag(executor, it, ap, aowner, aflags, fargs[1]);
+            bool cc = atr_has_flag(executor, it, ap, aowner, aflags, fargs[1]);
             safe_bool(cc, buff, bufc);
         }
     }
@@ -5061,7 +5061,7 @@ FUNCTION(fun_hasflag)
                 || Examinable(executor, it)
                 || it == enactor)
         {
-            BOOL cc = has_flag(executor, it, fargs[1]);
+            bool cc = has_flag(executor, it, fargs[1]);
             safe_bool(cc, buff, bufc);
         }
         else
@@ -5144,9 +5144,9 @@ FUNCTION(fun_lock)
     // Get the attribute and decode it if we can read it
     //
     char *tbuf = atr_get(it, attr->number, &aowner, &aflags);
-    if (bCanReadAttr(executor, it, attr, FALSE))
+    if (bCanReadAttr(executor, it, attr, false))
     {
-        pBoolExp = parse_boolexp(executor, tbuf, TRUE);
+        pBoolExp = parse_boolexp(executor, tbuf, true);
         free_lbuf(tbuf);
         tbuf = unparse_boolexp_function(executor, pBoolExp);
         free_boolexp(pBoolExp);
@@ -5188,9 +5188,9 @@ FUNCTION(fun_elock)
     {
         char *tbuf = atr_get(it, attr->number, &aowner, &aflags);
         if (  attr->number == A_LOCK
-           || bCanReadAttr(executor, it, attr, FALSE))
+           || bCanReadAttr(executor, it, attr, false))
         {
-            pBoolExp = parse_boolexp(executor, tbuf, TRUE);
+            pBoolExp = parse_boolexp(executor, tbuf, true);
             safe_bool(eval_boolexp(victim, it, it, pBoolExp), buff, bufc);
             free_boolexp(pBoolExp);
         }
@@ -5208,7 +5208,7 @@ FUNCTION(fun_elock)
 
 FUNCTION(fun_lwho)
 {
-    BOOL bPorts = FALSE;
+    bool bPorts = false;
     if (nfargs == 1)
     {
         bPorts = xlate(fargs[0]);
@@ -5251,7 +5251,7 @@ FUNCTION(fun_nearby)
         safe_str(" (ARG2)", buff, bufc);
         return;
     }
-    BOOL bResult = (  (  nearby_or_control(executor, obj1)
+    bool bResult = (  (  nearby_or_control(executor, obj1)
                       || nearby_or_control(executor, obj2))
                       && nearby(obj1, obj2));
     safe_bool(bResult, buff, bufc);
@@ -5527,8 +5527,8 @@ FUNCTION(fun_lnum)
 {
     char sep;
     if (  nfargs == 0
-       || !delim_check(fargs, nfargs, 3, &sep, buff, bufc, FALSE, executor,
-               caller, enactor, cargs, ncargs, TRUE))
+       || !delim_check(fargs, nfargs, 3, &sep, buff, bufc, false, executor,
+               caller, enactor, cargs, ncargs, true))
     {
         return;
     }
@@ -5582,20 +5582,20 @@ FUNCTION(fun_lnum)
  */
 
 void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
-                   BOOL bCheckParent)
+                   bool bCheckParent)
 {
     dbref thing;
     int ca;
-    BOOL bFirst;
+    bool bFirst;
     ATTR *attr;
 
     // Check for wildcard matching.  parse_attrib_wild checks for read
     // permission, so we don't have to.  Have p_a_w assume the
     // slash-star if it is missing.
     //
-    bFirst = TRUE;
+    bFirst = true;
     olist_push();
-    if (parse_attrib_wild(executor, fargs[0], &thing, bCheckParent, FALSE, TRUE))
+    if (parse_attrib_wild(executor, fargs[0], &thing, bCheckParent, false, true))
     {
         for (ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
@@ -5606,7 +5606,7 @@ void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
                 {
                     safe_chr(' ', buff, bufc);
                 }
-                bFirst = FALSE;
+                bFirst = false;
                 safe_str(attr->name, buff, bufc);
             }
         }
@@ -5620,12 +5620,12 @@ void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
 
 FUNCTION(fun_lattr)
 {
-    lattr_handler(buff, bufc, executor, fargs, FALSE);
+    lattr_handler(buff, bufc, executor, fargs, false);
 }
 
 FUNCTION(fun_lattrp)
 {
-    lattr_handler(buff, bufc, executor, fargs, TRUE);
+    lattr_handler(buff, bufc, executor, fargs, true);
 }
 // ---------------------------------------------------------------------------
 // fun_attrcnt: Return number of attributes I can see on the object.
@@ -5640,7 +5640,7 @@ FUNCTION(fun_attrcnt)
     // Mechanism from lattr.
     //
     olist_push();
-    if (parse_attrib_wild(executor, fargs[0], &thing, FALSE, FALSE, TRUE))
+    if (parse_attrib_wild(executor, fargs[0], &thing, false, false, true))
     {
         for (ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
@@ -5973,7 +5973,7 @@ FUNCTION(fun_stats)
     }
     else
     {
-        who = lookup_player(executor, fargs[0], TRUE);
+        who = lookup_player(executor, fargs[0], true);
         if (who == NOTHING)
         {
             safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
@@ -6066,7 +6066,7 @@ FUNCTION(fun_splice)
     char *p1 = fargs[0];
     char *q1 = fargs[1];
     char *p2, *q2;
-    BOOL first = TRUE;
+    bool first = true;
     int i;
     for (i = 0; i < words; i++)
     {
@@ -6084,7 +6084,7 @@ FUNCTION(fun_splice)
         {
             safe_str(p2, buff, bufc); // copy
         }
-        first = FALSE;
+        first = false;
     }
 }
 
@@ -6171,7 +6171,7 @@ FUNCTION(fun_parse)
         free_lbuf(curr);
         return;
     }
-    BOOL first = TRUE;
+    bool first = true;
     int number = 0;
     mudstate.itext[mudstate.in_loop] = NULL;
     mudstate.inum[mudstate.in_loop] = number;
@@ -6183,7 +6183,7 @@ FUNCTION(fun_parse)
         {
             print_sep(osep, buff, bufc);
         }
-        first = FALSE;
+        first = false;
         number++;
         objstring = split_token(&cp, sep);
         mudstate.itext[mudstate.in_loop-1] = objstring;
@@ -6222,7 +6222,7 @@ FUNCTION(fun_iter)
         free_lbuf(curr);
         return;
     }
-    BOOL first = TRUE;
+    bool first = true;
     int number = 0;
     mudstate.itext[mudstate.in_loop] = NULL;
     mudstate.inum[mudstate.in_loop] = number;
@@ -6234,7 +6234,7 @@ FUNCTION(fun_iter)
         {
             print_sep(osep, buff, bufc);
         }
-        first = FALSE;
+        first = false;
         number++;
         char *objstring = split_token(&cp, sep);
         mudstate.itext[mudstate.in_loop-1] = objstring;
@@ -6252,7 +6252,7 @@ FUNCTION(fun_iter)
     free_lbuf(curr);
 }
 
-void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, BOOL bWhich)
+void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, bool bWhich)
 {
     int number = 0;
     if (nfargs > 0)
@@ -6282,12 +6282,12 @@ void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, BOOL bWhich)
 
 FUNCTION(fun_itext)
 {
-    iter_value(buff, bufc, fargs, nfargs, FALSE);
+    iter_value(buff, bufc, fargs, nfargs, false);
 }
 
 FUNCTION(fun_inum)
 {
-    iter_value(buff, bufc, fargs, nfargs, TRUE);
+    iter_value(buff, bufc, fargs, nfargs, true);
 }
 
 FUNCTION(fun_list)
@@ -6520,7 +6520,7 @@ FUNCTION(fun_itemize)
 
 /* ---------------------------------------------------------------------------
  * fun_filter: Iteratively perform a function with a list of arguments and
- *             return the arg, if the function evaluates to TRUE using the arg.
+ *             return the arg, if the function evaluates to true using the arg.
  *
  *      > &IS_ODD object=mod(%0,2)
  *      > say filter(object/is_odd,1 2 3 4 5)
@@ -6532,7 +6532,7 @@ FUNCTION(fun_itemize)
  */
 
 void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor, 
-                    char *fargs[], char sep, BOOL bBool)
+                    char *fargs[], char sep, bool bBool)
 {
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
@@ -6585,7 +6585,7 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
     char *result, *curr, *objstring, *bp, *str, *cp; 
     cp = curr = trim_space_sep(fargs[1], sep);
     char *atextbuf = alloc_lbuf("fun_filter");
-    BOOL bFirst = TRUE;
+    bool bFirst = true;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
@@ -6607,7 +6607,7 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
                 safe_chr(sep, buff, bufc);
             }
             safe_str(objstring, buff, bufc);
-            bFirst = FALSE;
+            bFirst = false;
         }
         free_lbuf(result);
     }
@@ -6620,7 +6620,7 @@ FUNCTION(fun_filter)
     char sep;
 
     varargs_preamble(3);
-    filter_handler(buff, bufc, executor, enactor, fargs, sep, FALSE);
+    filter_handler(buff, bufc, executor, enactor, fargs, sep, false);
 }
 
 FUNCTION(fun_filterbool)
@@ -6628,7 +6628,7 @@ FUNCTION(fun_filterbool)
     char sep;
 
     varargs_preamble(3);
-    filter_handler(buff, bufc, executor, enactor, fargs, sep, TRUE);
+    filter_handler(buff, bufc, executor, enactor, fargs, sep, true);
 }
 
 /* ---------------------------------------------------------------------------
@@ -6697,7 +6697,7 @@ FUNCTION(fun_map)
     //
     char *cp = trim_space_sep(fargs[1], sep);
     char *atextbuf = alloc_lbuf("fun_map");
-    BOOL first = TRUE;
+    bool first = true;
     char *objstring, *str;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
@@ -6706,7 +6706,7 @@ FUNCTION(fun_map)
         {
             print_sep(osep, buff, bufc);
         }
-        first = FALSE;
+        first = false;
         objstring = split_token(&cp, sep);
         strcpy(atextbuf, atext);
         str = atextbuf;
@@ -6737,12 +6737,12 @@ FUNCTION(fun_edit)
 
 FUNCTION(fun_locate)
 {
-    BOOL check_locks, verbose, multiple;
+    bool check_locks, verbose, multiple;
     dbref thing, what;
     char *cp;
 
     int pref_type = NOTYPE;
-    check_locks = verbose = multiple = FALSE;
+    check_locks = verbose = multiple = false;
 
     // Find the thing to do the looking, make sure we control it.
     //
@@ -6770,7 +6770,7 @@ FUNCTION(fun_locate)
             pref_type = TYPE_EXIT;
             break;
         case 'L':
-            check_locks = TRUE;
+            check_locks = true;
             break;
         case 'P':
             pref_type = TYPE_PLAYER;
@@ -6782,10 +6782,10 @@ FUNCTION(fun_locate)
             pref_type = TYPE_THING;
             break;
         case 'V':
-            verbose = TRUE;
+            verbose = true;
             break;
         case 'X':
-            multiple = TRUE;
+            multiple = true;
             break;
         }
     }
@@ -6996,7 +6996,7 @@ FUNCTION(fun_idle)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        BOOL bFound = FALSE;
+        bool bFound = false;
         DESC *d;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
@@ -7004,7 +7004,7 @@ FUNCTION(fun_idle)
         {
             if (d->descriptor == s)
             {
-                bFound = TRUE;
+                bFound = true;
                 break;
             }
         }
@@ -7023,7 +7023,7 @@ FUNCTION(fun_idle)
         {
             pTargetName++;
         }
-        dbref target = lookup_player(executor, pTargetName, TRUE);
+        dbref target = lookup_player(executor, pTargetName, true);
         if (  Good_obj(target)
            && (  !Hidden(target)
               || See_Hidden(executor)))
@@ -7040,7 +7040,7 @@ FUNCTION(fun_conn)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        int bFound = FALSE;
+        int bFound = false;
         DESC *d;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
@@ -7048,7 +7048,7 @@ FUNCTION(fun_conn)
         {
             if (d->descriptor == s)
             {
-                bFound = TRUE;
+                bFound = true;
                 break;
             }
         }
@@ -7067,7 +7067,7 @@ FUNCTION(fun_conn)
         {
             pTargetName++;
         }
-        dbref target = lookup_player(executor, pTargetName, TRUE);
+        dbref target = lookup_player(executor, pTargetName, true);
         if (  Good_obj(target)
            && (  !Hidden(target)
               || See_Hidden(executor)))
@@ -7182,7 +7182,7 @@ static void do_asort(char *s[], int n, int sort_type)
         for (i = 0; i < n; i++)
         {
             fp[i].str = s[i];
-            fp[i].data = mux_atof(s[i], FALSE);
+            fp[i].data = mux_atof(s[i], false);
         }
         qsort((void *)fp, n, sizeof(f_rec), f_comp);
         for (i = 0; i < n; i++)
@@ -7249,7 +7249,7 @@ static void handle_sets
     int i1 = 0;
     int i2 = 0;
     char *oldp = NULL;
-    BOOL bFirst = TRUE;
+    bool bFirst = true;
 
     switch (oper)
     {
@@ -7300,7 +7300,7 @@ static void handle_sets
                 {
                     print_sep(osep, buff, bufc);
                 }
-                bFirst = FALSE;
+                bFirst = false;
                 if (strcmp(ptrs1[i1], ptrs2[i2]) < 0)
                 {
                     oldp = ptrs1[i1];
@@ -7327,7 +7327,7 @@ static void handle_sets
                 {
                     print_sep(osep, buff, bufc);
                 }
-                bFirst = FALSE;
+                bFirst = false;
                 oldp = ptrs1[i1];
                 safe_str(ptrs1[i1], buff, bufc);
             }
@@ -7341,7 +7341,7 @@ static void handle_sets
                 {
                     print_sep(osep, buff, bufc);
                 }
-                bFirst = FALSE;
+                bFirst = false;
                 oldp = ptrs2[i2];
                 safe_str(ptrs2[i2], buff, bufc);
             }
@@ -7364,7 +7364,7 @@ static void handle_sets
                 {
                     print_sep(osep, buff, bufc);
                 }
-                bFirst = FALSE;
+                bFirst = false;
                 oldp = ptrs1[i1];
                 safe_str(ptrs1[i1], buff, bufc);
                 i1++;
@@ -7423,7 +7423,7 @@ static void handle_sets
                 {
                     print_sep(osep, buff, bufc);
                 }
-                bFirst = FALSE;
+                bFirst = false;
                 safe_str(ptrs1[i1], buff, bufc);
                 oldp = ptrs1[i1];
                 i1++;
@@ -7455,7 +7455,7 @@ static void handle_sets
             {
                 print_sep(osep, buff, bufc);
             }
-            bFirst = FALSE;
+            bFirst = false;
             safe_str(ptrs1[i1], buff, bufc);
             oldp = ptrs1[i1];
             i1++;
@@ -7799,7 +7799,7 @@ FUNCTION(fun_isint)
 FUNCTION(fun_isdbref)
 {
     dbref dbitem;
-    BOOL bResult = FALSE;
+    bool bResult = false;
 
     char *p = fargs[0];
     if (*p++ == NUMBER_TOKEN)
@@ -7975,7 +7975,7 @@ FUNCTION(fun_strip)
 
 #define DEFAULT_WIDTH 78
 void wrap_send_line (char *buff, char **bufc, char *pLineStart, char cJust, int nWidth, 
-                     char *pLeft, char *pRight, int nHanging, BOOL bFirstLine, BOOL bEnd)
+                     char *pLeft, char *pRight, int nHanging, bool bFirstLine, bool bEnd)
 {
     if (!bFirstLine && nHanging > 0)
     {
@@ -8064,10 +8064,10 @@ FUNCTION(fun_wrap)
     char *pNextWord = str;
     char cCharSave  = '\0';
     int  nLineLeft  = 0, nWordLen = 0;
-    BOOL bFirstLine = TRUE, 
-         bFirstWord = TRUE, 
-         bEnd       = FALSE, 
-         bEndOfLine = FALSE;
+    bool bFirstLine = true, 
+         bFirstWord = true, 
+         bEnd       = false, 
+         bEndOfLine = false;
 
     while (pThisWord)
     {
@@ -8081,7 +8081,7 @@ FUNCTION(fun_wrap)
         if (!*pNextWord)
         {
             // This is the last word in the list.
-            bEnd = TRUE;
+            bEnd = true;
         }
         else
         {
@@ -8098,30 +8098,30 @@ FUNCTION(fun_wrap)
             cCharSave = *(pThisWord + nLineLeft);
             *(pThisWord + nLineLeft) = '\0';
             wrap_send_line(buff, bufc, pLineStart, cJust, nWidth, pLeft, pRight, 
-                            nHanging, bFirstLine, FALSE);
+                            nHanging, bFirstLine, false);
             *(pThisWord + nLineLeft) = cCharSave;
             if (bFirstWord)
             {
                 pThisWord = pThisWord + nLineLeft;
-                bEndOfLine = TRUE;
+                bEndOfLine = true;
             }
-            bFirstLine = FALSE;
-            bFirstWord = TRUE;
+            bFirstLine = false;
+            bFirstWord = true;
             pLineStart = pThisWord;
         }
         else
         {
-            bFirstWord = FALSE;
+            bFirstWord = false;
             if (bEnd)
             {
                 wrap_send_line(buff, bufc, pLineStart, cJust, nWidth, pLeft, pRight, 
-                               nHanging, bFirstLine, TRUE);
+                               nHanging, bFirstLine, true);
                 pNextWord = NULL;
             }
         }
         if (bEndOfLine)
         {
-            bEndOfLine = FALSE;
+            bEndOfLine = false;
         }
         else
         {
@@ -8247,8 +8247,8 @@ void GeneralTimeConversion
     long Seconds,
     int iStartBase,
     int iEndBase,
-    BOOL bSingleTerm,
-    BOOL bNames
+    bool bSingleTerm,
+    bool bNames
 )
 {
     if (Seconds < 0)
@@ -8362,7 +8362,7 @@ const char *time_format_2(int Seconds)
     // 2^63/86400 is 1.07E14 which is at most 15 digits.
     // '(15)d\0' is at most 17 characters.
     //
-    GeneralTimeConversion(TimeBuffer64, Seconds, IDAYS, ISECONDS, TRUE, FALSE);
+    GeneralTimeConversion(TimeBuffer64, Seconds, IDAYS, ISECONDS, true, false);
     return TimeBuffer64;
 }
 
@@ -8377,7 +8377,7 @@ const char *expand_time(int Seconds)
     // 2^63/2592000 is 3558399705577 which is at most 13 digits.
     // '(13)M (1)w (1)d (2)h (2)m (2)s\0' is at most 33 characters.
     //
-    GeneralTimeConversion(TimeBuffer64, Seconds, IMONTHS, ISECONDS, FALSE, FALSE);
+    GeneralTimeConversion(TimeBuffer64, Seconds, IMONTHS, ISECONDS, false, false);
     return TimeBuffer64;
 }
 
@@ -8389,7 +8389,7 @@ const char *write_time(int Seconds)
     // '(13) months (1) weeks (1) days (2) hours (2) minutes (2) seconds\0' is
     // at most 69 characters.
     //
-    GeneralTimeConversion(TimeBuffer80, Seconds, IMONTHS, ISECONDS, FALSE, TRUE);
+    GeneralTimeConversion(TimeBuffer80, Seconds, IMONTHS, ISECONDS, false, true);
     return TimeBuffer80;
 }
 
@@ -8438,13 +8438,13 @@ FUNCTION(fun_cmds)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        BOOL bFound = FALSE;
+        bool bFound = false;
         DESC *d;
         DESC_ITER_CONN(d) 
         {
             if (d->descriptor == s)
             {
-                bFound = TRUE;
+                bFound = true;
                 break;
             }
         }
@@ -8457,7 +8457,7 @@ FUNCTION(fun_cmds)
     }
     else
     {
-        dbref target = lookup_player(executor, fargs[0], TRUE);
+        dbref target = lookup_player(executor, fargs[0], true);
         if (  Good_obj(target)
            && Connected(target)
            && (  Wizard_Who(executor)
@@ -8485,7 +8485,7 @@ FUNCTION(fun_startsecs)
 //
 FUNCTION(fun_conntotal)
 {
-    dbref target = lookup_player(executor, fargs[0], TRUE);
+    dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
         long TotalTime = fetch_totaltime(target);
@@ -8506,7 +8506,7 @@ FUNCTION(fun_conntotal)
 //
 FUNCTION(fun_connmax)
 {
-    dbref target = lookup_player(executor, fargs[0], TRUE);
+    dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
         long Longest = fetch_longestconnect(target);
@@ -8528,7 +8528,7 @@ FUNCTION(fun_connmax)
 //
 FUNCTION(fun_connlast)
 {
-    dbref target = lookup_player(executor, fargs[0], TRUE);
+    dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
         safe_ltoa(fetch_lastconnect(target), buff, bufc);
@@ -8544,7 +8544,7 @@ FUNCTION(fun_connlast)
 //
 FUNCTION(fun_connnum)
 {
-    dbref target = lookup_player(executor, fargs[0], TRUE);
+    dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
         long NumConnections = fetch_numconnections(target);
@@ -8565,7 +8565,7 @@ FUNCTION(fun_connnum)
 //
 FUNCTION(fun_connleft)
 {
-    dbref target = lookup_player(executor, fargs[0], TRUE);
+    dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
         CLinearTimeAbsolute cl = fetch_logouttime(target);
@@ -8588,9 +8588,9 @@ FUNCTION(fun_lattrcmds)
     //
     olist_push();
     dbref thing;
-    if (parse_attrib_wild(executor, fargs[0], &thing, FALSE, FALSE, TRUE))
+    if (parse_attrib_wild(executor, fargs[0], &thing, false, false, true))
     {
-        BOOL isFirst = TRUE;
+        bool isFirst = true;
         char *buf = alloc_lbuf("fun_lattrcmds");
         for (int ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
@@ -8606,7 +8606,7 @@ FUNCTION(fun_lattrcmds)
                     {
                         safe_chr(' ', buff, bufc);
                     }
-                    isFirst = FALSE;
+                    isFirst = false;
                     safe_str(attr->name, buff, bufc);
                 }
             }
@@ -8628,8 +8628,8 @@ FUNCTION(fun_lattrcmds)
 FUNCTION(fun_lcmds)
 {
     char sep;
-    if (!delim_check(fargs, nfargs, 2, &sep, buff, bufc, FALSE, executor,
-                     caller, enactor, cargs, ncargs, TRUE))
+    if (!delim_check(fargs, nfargs, 2, &sep, buff, bufc, false, executor,
+                     caller, enactor, cargs, ncargs, true))
     {
         return;
     }
@@ -8650,9 +8650,9 @@ FUNCTION(fun_lcmds)
     //
     olist_push();
     dbref thing;
-    if (parse_attrib_wild(executor, fargs[0], &thing, FALSE, FALSE, TRUE))
+    if (parse_attrib_wild(executor, fargs[0], &thing, false, false, true))
     {
-        BOOL isFirst = TRUE;
+        bool isFirst = true;
         char *buf = alloc_lbuf("fun_lattrcmds");
         dbref aowner;
         int   aflags;
@@ -8664,7 +8664,7 @@ FUNCTION(fun_lcmds)
                 atr_get_str(buf, thing, attr->number, &aowner, &aflags);
                 if (buf[0] == cmd_type)
                 {
-                    BOOL isFound = FALSE;
+                    bool isFound = false;
                     char *c_ptr = buf+1;
                     
                     // If there is no characters between the '$' or '^' and the
@@ -8672,7 +8672,7 @@ FUNCTION(fun_lcmds)
                     //
                     if (*c_ptr != ':') 
                     {
-                        int isEscaped = FALSE;
+                        int isEscaped = false;
                         while (*c_ptr && !isFound) 
                         {
                             // We need to check if the ':' in the command is
@@ -8684,12 +8684,12 @@ FUNCTION(fun_lcmds)
                             }
                             else if (*c_ptr == ':' && !isEscaped) 
                             {
-                                isFound = TRUE;
+                                isFound = true;
                                 *c_ptr = '\0';
                             }
                             else if (*c_ptr != '\\' && isEscaped)
                             {
-                                isEscaped = FALSE;
+                                isEscaped = false;
                             }
                             c_ptr++;
                         }
@@ -8709,7 +8709,7 @@ FUNCTION(fun_lcmds)
                         mux_strlwr(buf);
                         safe_str(buf+1, buff, bufc);
                         
-                        isFirst = FALSE;
+                        isFirst = false;
                     }
                 }
             }
@@ -8736,7 +8736,7 @@ FUNCTION(fun_lflags)
         safe_match_result(target, buff, bufc);
         return;
     }
-    BOOL bFirst = TRUE;
+    bool bFirst = true;
     if (  mudconf.pub_flags
        || Examinable(executor, target))
     {
@@ -8774,7 +8774,7 @@ FUNCTION(fun_lflags)
                 {
                     safe_chr(' ', buff, bufc);
                 }
-                bFirst = FALSE;
+                bFirst = false;
 
                 safe_str(fp->flagname, buff, bufc);
             }

@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.9 2003-02-04 08:45:49 sdennis Exp $
+// $Id: timeutil.cpp,v 1.10 2003-02-05 06:20:59 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -450,13 +450,13 @@ CLinearTimeAbsolute::CLinearTimeAbsolute(const CLinearTimeAbsolute& ltaOrigin, c
     m_tAbsolute = ltaOrigin.m_tAbsolute + ltdOffset.m_tDelta;
 }
 
-BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
+bool ParseFractionalSecondsString(INT64 &i64, char *str)
 {
-    BOOL bMinus = FALSE;
+    bool bMinus = false;
 
     i64 = 0;
 
-    BOOL bGotOne;
+    bool bGotOne;
 
     // Leading spaces.
     //
@@ -469,24 +469,24 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
     //
     if (*str == '-')
     {
-        bMinus = TRUE;
+        bMinus = true;
         str++;
 
         // But not if just a minus
         //
         if (!*str)
         {
-            return FALSE;
+            return false;
         }
     }
 
     // Need at least one digit.
     //
-    bGotOne = FALSE;
+    bGotOne = false;
     char *pIntegerStart = str;
     if (mux_isdigit[(unsigned char)*str])
     {
-        bGotOne = TRUE;
+        bGotOne = true;
         str++;
     }
 
@@ -510,7 +510,7 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
     char *pFractionalStart = str;
     if (mux_isdigit[(unsigned char)*str])
     {
-        bGotOne = TRUE;
+        bGotOne = true;
         str++;
     }
 
@@ -531,7 +531,7 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
 
     if (*str || !bGotOne)
     {
-        return FALSE;
+        return false;
     }
 
 #define PFSS_PRECISION 7
@@ -549,13 +549,13 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
 
     // Integer part.
     //
-    BOOL bOverUnderflow = FALSE;
+    bool bOverUnderflow = false;
     int n = pIntegerEnd - pIntegerStart;
     if (n > 0)
     {
         if (n > nBufferAvailable)
         {
-            bOverUnderflow = TRUE;
+            bOverUnderflow = true;
             n = nBufferAvailable;
         }
         memcpy(p, pIntegerStart, n);
@@ -602,7 +602,7 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
     {
         i64 = mux_atoi64(aBuffer);
     }
-    return TRUE;
+    return true;
 }
 
 char *CLinearTimeAbsolute::ReturnSecondsString(int nFracDigits)
@@ -749,43 +749,43 @@ INT64 CLinearTimeAbsolute::ReturnSeconds(void)
     return i64FloorDivision(m_tAbsolute - EPOCH_OFFSET, FACTOR_100NS_PER_SECOND);
 }
 
-BOOL isLeapYear(long iYear)
+bool isLeapYear(long iYear)
 {
     if (iMod(iYear, 4) != 0)
     {
         // Not a leap year.
         //
-        return FALSE;
+        return false;
     }
     unsigned long wMod = iMod(iYear, 400);
     if ((wMod == 100) || (wMod == 200) || (wMod == 300))
     {
         // Not a leap year.
         //
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
-BOOL isValidDate(int iYear, int iMonth, int iDay)
+bool isValidDate(int iYear, int iMonth, int iDay)
 {
     if (iYear < -27256 || 30826 < iYear)
     {
-        return FALSE;
+        return false;
     }
     if (iMonth < 1 || 12 < iMonth)
     {
-        return FALSE;
+        return false;
     }
     if (iDay < 1 || daystab[iMonth-1] < iDay)
     {
-        return FALSE;
+        return false;
     }
     if (iMonth == 2 && iDay == 29 && !isLeapYear(iYear))
     {
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 int FixedFromGregorian(int iYear, int iMonth, int iDay)
@@ -910,7 +910,7 @@ int MonthTabHash[12] =
     0x00534550, 0x004f4354, 0x004e4f56, 0x00444543
 };
 
-BOOL ParseThreeLetters(const char **pp, int *piHash)
+bool ParseThreeLetters(const char **pp, int *piHash)
 {
     *piHash = 0;
 
@@ -930,7 +930,7 @@ BOOL ParseThreeLetters(const char **pp, int *piHash)
     {
         if (!mux_isalpha[(unsigned char)*q])
         {
-            return FALSE;
+            return false;
         }
         iHash = (iHash << 8) | mux_toupper[(unsigned char)*q];
         q++;
@@ -940,7 +940,7 @@ BOOL ParseThreeLetters(const char **pp, int *piHash)
     //
     if (q - p != 3)
     {
-        return FALSE;
+        return false;
     }
     p = q;
 
@@ -953,7 +953,7 @@ BOOL ParseThreeLetters(const char **pp, int *piHash)
 
     *pp = p;
     *piHash = iHash;
-    return TRUE;
+    return true;
 }
 
 void ParseDecimalSeconds(size_t n, const char *p, unsigned short *iMilli,
@@ -974,12 +974,12 @@ void ParseDecimalSeconds(size_t n, const char *p, unsigned short *iMilli,
    *iMilli = ns / 1000;
 }
 
-BOOL do_convtime(const char *str, FIELDEDTIME *ft)
+bool do_convtime(const char *str, FIELDEDTIME *ft)
 {
     memset(ft, 0, sizeof(FIELDEDTIME));
     if (!str || !ft)
     {
-        return FALSE;
+        return false;
     }
 
     // Day-of-week OR month.
@@ -988,7 +988,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
     int i, iHash;
     if (!ParseThreeLetters(&p, &iHash))
     {
-        return FALSE;
+        return false;
     }
     for (i = 0; (i < 12) && iHash != MonthTabHash[i]; i++) ;
     if (i == 12)
@@ -998,12 +998,12 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
         //
         if (!ParseThreeLetters(&p, &iHash))
         {
-            return FALSE;
+            return false;
         }
         for (i = 0; (i < 12) && iHash != MonthTabHash[i]; i++) ;
         if (i == 12)
         {
-            return FALSE;
+            return false;
         }
     }
     ft->iMonth = i + 1; // January = 1, February = 2, etc.
@@ -1013,7 +1013,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iDayOfMonth = (unsigned short)mux_atol(p);
     if (ft->iDayOfMonth < 1 || daystab[i] < ft->iDayOfMonth)
     {
-        return FALSE;
+        return false;
     }
     while (*p && *p != ' ') p++;
     while (*p == ' ') p++;
@@ -1023,7 +1023,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iHour = (unsigned short)mux_atol(p);
     if (ft->iHour > 23 || (ft->iHour == 0 && *p != '0'))
     {
-        return FALSE;
+        return false;
     }
     while (*p && *p != ':') p++;
     if (*p == ':') p++;
@@ -1034,7 +1034,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iMinute = (unsigned short)mux_atol(p);
     if (ft->iMinute > 59 || (ft->iMinute == 0 && *p != '0'))
     {
-        return FALSE;
+        return false;
     }
     while (*p && *p != ':') p++;
     if (*p == ':') p++;
@@ -1045,7 +1045,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iSecond = (unsigned short)mux_atol(p);
     if (ft->iSecond > 59 || (ft->iSecond == 0 && *p != '0'))
     {
-        return FALSE;
+        return false;
     }
     while (mux_isdigit[*p])
     {
@@ -1079,7 +1079,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
     ft->iYear = (short)mux_atol(p);
     if (ft->iYear == 0 && *p != '0')
     {
-        return FALSE;
+        return false;
     }
 
     // DayOfYear and DayOfWeek
@@ -1105,23 +1105,23 @@ long CLinearTimeDelta::ReturnSeconds(void)
     return (long)(m_tDelta/FACTOR_100NS_PER_SECOND);
 }
 
-BOOL CLinearTimeAbsolute::ReturnFields(FIELDEDTIME *arg_tStruct)
+bool CLinearTimeAbsolute::ReturnFields(FIELDEDTIME *arg_tStruct)
 {
     return LinearTimeToFieldedTime(m_tAbsolute, arg_tStruct);
 }
 
-BOOL CLinearTimeAbsolute::SetString(const char *arg_tBuffer)
+bool CLinearTimeAbsolute::SetString(const char *arg_tBuffer)
 {
     FIELDEDTIME ft;
     if (do_convtime(arg_tBuffer, &ft))
     {
         if (FieldedTimeToLinearTime(&ft, &m_tAbsolute))
         {
-            return TRUE;
+            return true;
         }
     }
     m_tAbsolute = 0;
-    return FALSE;
+    return false;
 }
 
 void CLinearTimeDelta::operator+=(const CLinearTimeDelta& ltd)
@@ -1188,7 +1188,7 @@ void CLinearTimeAbsolute::operator+=(const CLinearTimeDelta& ltd)
     m_tAbsolute += ltd.m_tDelta;
 }
 
-BOOL CLinearTimeAbsolute::SetFields(FIELDEDTIME *arg_tStruct)
+bool CLinearTimeAbsolute::SetFields(FIELDEDTIME *arg_tStruct)
 {
     m_tAbsolute = 0;
     return FieldedTimeToLinearTime(arg_tStruct, &m_tAbsolute);
@@ -1281,12 +1281,12 @@ void CLinearTimeAbsolute::GetLocal(void)
     UTC2Local();
 }
 
-BOOL FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
+bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
 {
     if (!isValidDate(ft->iYear, ft->iMonth, ft->iDayOfMonth))
     {
         *plt = 0;
-        return FALSE;
+        return false;
     }
 
     int iFixedDay = FixedFromGregorian_Adjusted(ft->iYear, ft->iMonth, ft->iDayOfMonth);
@@ -1302,10 +1302,10 @@ BOOL FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
     lt += ft->iNanosecond / FACTOR_NANOSECONDS_PER_100NS;
 
     *plt = lt;
-    return TRUE;
+    return true;
 }
 
-BOOL LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
+bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
 {
     INT64 ns100;
     int iYear, iMonth, iDayOfYear, iDayOfMonth, iDayOfWeek;
@@ -1315,7 +1315,7 @@ BOOL LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
     GregorianFromFixed_Adjusted(d0, iYear, iMonth, iDayOfYear, iDayOfMonth, iDayOfWeek);
     if (!isValidDate(iYear, iMonth, iDayOfMonth))
     {
-        return FALSE;
+        return false;
     }
 
     ft->iYear = iYear;
@@ -1337,7 +1337,7 @@ BOOL LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
     ns100 = ns100 % FACTOR_100NS_PER_MICROSECOND;
     ft->iNanosecond = (int)(ns100 * FACTOR_NANOSECONDS_PER_100NS);
 
-    return TRUE;
+    return true;
 }
 
 void CLinearTimeAbsolute::SetSecondsString(char *arg_szSeconds)
@@ -1522,7 +1522,7 @@ typedef struct
     CLinearTimeAbsolute ltaStart;
     CLinearTimeAbsolute ltaEnd;
     CLinearTimeDelta    ltdOffset;
-    BOOL                isDST;
+    bool                isDST;
     int                 nTouched;
 } OffsetEntry;
 
@@ -1556,11 +1556,11 @@ static int FindOffsetEntry(const CLinearTimeAbsolute& lta)
     return lo-1;
 }
 
-static BOOL QueryOffsetTable
+static bool QueryOffsetTable
 (
     CLinearTimeAbsolute lta,
     CLinearTimeDelta *pltdOffset,
-    BOOL *pisDST,
+    bool *pisDST,
     int *piEntry
 )
 {
@@ -1577,16 +1577,16 @@ static BOOL QueryOffsetTable
         *pltdOffset = OffsetTable[i].ltdOffset;
         *pisDST = OffsetTable[i].isDST;
         OffsetTable[i].nTouched = nTouched0;
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 static void UpdateOffsetTable
 (
     CLinearTimeAbsolute &lta,
     CLinearTimeDelta ltdOffset,
-    BOOL isDST,
+    bool isDST,
     int i
 )
 {
@@ -1603,7 +1603,7 @@ Again:
         return;
     }
 
-    BOOL bTryMerge = FALSE;
+    bool bTryMerge = false;
 
     // Coalesce new data point into this interval if:
     //
@@ -1625,7 +1625,7 @@ Again:
         // Since we have changed this interval, we may be able to
         // coalesce it with the next interval.
         //
-        bTryMerge = TRUE;
+        bTryMerge = true;
     }
 
     // Coalesce new data point into next interval if:
@@ -1651,7 +1651,7 @@ Again:
         // Since we have changed the next interval, we may be able
         // to coalesce it with the previous interval.
         //
-        bTryMerge = TRUE;
+        bTryMerge = true;
     }
 
     if (bTryMerge)
@@ -1720,7 +1720,7 @@ Again:
 static CLinearTimeDelta QueryLocalOffsetAt_Internal
 (
     CLinearTimeAbsolute lta,
-    BOOL *pisDST,
+    bool *pisDST,
     int iEntry
 )
 {
@@ -1793,10 +1793,10 @@ static CLinearTimeDelta QueryLocalOffsetAt_Internal
 static CLinearTimeDelta QueryLocalOffsetAtUTC
 (
     const CLinearTimeAbsolute &lta,
-    BOOL *pisDST
+    bool *pisDST
 )
 {
-    *pisDST = FALSE;
+    *pisDST = false;
 
     // DST started in Britain in May 1916 and in the US in 1918.
     // Germany used it a little before May 1916, but I'm not sure
@@ -1844,7 +1844,7 @@ static CLinearTimeDelta QueryLocalOffsetAtUTC
     //
     CLinearTimeAbsolute ltaProbe;
     CLinearTimeDelta ltdDontCare;
-    BOOL bDontCare;
+    bool bDontCare;
 
     ltaProbe = lta - ltdIntervalMinimum;
     if (!QueryOffsetTable(ltaProbe, &ltdDontCare, &bDontCare, &iEntry))
@@ -1862,14 +1862,14 @@ static CLinearTimeDelta QueryLocalOffsetAtUTC
 
 void CLinearTimeAbsolute::UTC2Local(void)
 {
-    BOOL bDST;
+    bool bDST;
     CLinearTimeDelta ltd = QueryLocalOffsetAtUTC(*this, &bDST);
     m_tAbsolute += ltd.m_tDelta;
 }
 
 void CLinearTimeAbsolute::Local2UTC(void)
 {
-    BOOL bDST1, bDST2;
+    bool bDST1, bDST2;
     CLinearTimeDelta ltdOffset1 = QueryLocalOffsetAtUTC(*this, &bDST1);
     CLinearTimeAbsolute ltaUTC2 = *this - ltdOffset1;
     CLinearTimeDelta ltdOffset2 = QueryLocalOffsetAtUTC(ltaUTC2, &bDST2);
@@ -2012,7 +2012,7 @@ typedef struct tag_AllFields
 
 // isValidYear assumes numeric string.
 //
-BOOL isValidYear(int nStr, char *pStr, int iValue)
+bool isValidYear(int nStr, char *pStr, int iValue)
 {
     // Year may be Y, YY, YYY, YYYY, or YYYYY.
     // Negative and zero years are permitted in general, but we aren't
@@ -2020,24 +2020,24 @@ BOOL isValidYear(int nStr, char *pStr, int iValue)
     //
     if (1 <= nStr && nStr <= 5)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
-BOOL isValidMonth(int nStr, char *pStr, int iValue)
+bool isValidMonth(int nStr, char *pStr, int iValue)
 {
     // Month may be 1 through 9, 01 through 09, 10, 11, or 12.
     //
     if (  1 <= nStr && nStr <= 2
        && 1 <= iValue && iValue <= 12)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
-BOOL isValidDayOfMonth(int nStr, char *pStr, int iValue)
+bool isValidDayOfMonth(int nStr, char *pStr, int iValue)
 {
     // Day Of Month may be 1 through 9, 01 through 09, 10 through 19,
     // 20 through 29, 30, and 31.
@@ -2045,72 +2045,72 @@ BOOL isValidDayOfMonth(int nStr, char *pStr, int iValue)
     if (  1 <= nStr && nStr <= 2
        && 1 <= iValue && iValue <= 31)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
-BOOL isValidDayOfWeek(int nStr, char *pStr, int iValue)
+bool isValidDayOfWeek(int nStr, char *pStr, int iValue)
 {
     // Day Of Week may be 1 through 7.
     //
     if (  1 == nStr
        && 1 <= iValue && iValue <= 7)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
-BOOL isValidDayOfYear(int nStr, char *pStr, int iValue)
+bool isValidDayOfYear(int nStr, char *pStr, int iValue)
 {
     // Day Of Year 001 through 366
     //
     if (  3 == nStr
        && 1 <= iValue && iValue <= 366)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
-BOOL isValidWeekOfYear(int nStr, char *pStr, int iValue)
+bool isValidWeekOfYear(int nStr, char *pStr, int iValue)
 {
     // Week Of Year may be 01 through 53.
     //
     if (  2 == nStr
        && 1 <= iValue && iValue <= 53)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
-BOOL isValidHour(int nStr, char *pStr, int iValue)
+bool isValidHour(int nStr, char *pStr, int iValue)
 {
     // Hour may be 0 through 9, 00 through 09, 10 through 19, 20 through 24.
     //
     if (  1 <= nStr && nStr <= 2
        && 0 <= iValue && iValue <= 24)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
-BOOL isValidMinute(int nStr, char *pStr, int iValue)
+bool isValidMinute(int nStr, char *pStr, int iValue)
 {
     // Minute may be 00 through 59.
     //
     if (  2 == nStr
        && 0 <= iValue && iValue <= 59)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
-BOOL isValidSecond(int nStr, char *pStr, int iValue)
+bool isValidSecond(int nStr, char *pStr, int iValue)
 {
     // Second may be 00 through 59. Leap seconds represented
     // by '60' are not dealt with.
@@ -2118,26 +2118,26 @@ BOOL isValidSecond(int nStr, char *pStr, int iValue)
     if (  2 == nStr
        && 0 <= iValue && iValue <= 59)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
-BOOL isValidSubSecond(int nStr, char *pStr, int iValue)
+bool isValidSubSecond(int nStr, char *pStr, int iValue)
 {
     // Sub seconds can really be anything, but we limit
     // it's precision to 100 ns.
     //
     if (nStr <= 7)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 // This function handles H, HH, HMM, HHMM, HMMSS, HHMMSS
 //
-BOOL isValidHMS(int nStr, char *pStr, int iValue)
+bool isValidHMS(int nStr, char *pStr, int iValue)
 {
     int iHour, iMinutes, iSeconds;
     switch (nStr)
@@ -2154,7 +2154,7 @@ BOOL isValidHMS(int nStr, char *pStr, int iValue)
         if (  isValidHour(nStr-2, pStr, iHour)
            && isValidMinute(2, pStr+nStr-2, iMinutes))
         {
-            return TRUE;
+            return true;
         }
         break;
 
@@ -2167,11 +2167,11 @@ BOOL isValidHMS(int nStr, char *pStr, int iValue)
            && isValidMinute(2, pStr+nStr-4, iMinutes)
            && isValidSecond(2, pStr+nStr-2, iSeconds))
         {
-            return TRUE;
+            return true;
         }
         break;
     }
-    return FALSE;
+    return false;
 }
 
 void SplitLastTwoDigits(PD_Node *pNode, unsigned mask)
@@ -2233,7 +2233,7 @@ void BreakDownHMS(PD_Node *pNode)
 
 // This function handles YYMMDD, YYYMMDD, YYYYMMDD, YYYYYMMDD
 //
-BOOL isValidYMD(int nStr, char *pStr, int iValue)
+bool isValidYMD(int nStr, char *pStr, int iValue)
 {
     int iYear = iValue / 10000;
     iValue -= 10000 * iYear;
@@ -2245,9 +2245,9 @@ BOOL isValidYMD(int nStr, char *pStr, int iValue)
        && isValidDayOfMonth(2, pStr+nStr-2, iDay)
        && isValidYear(nStr-4, pStr, iYear))
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 // This function breaks down YYMMDD, YYYMMDD, YYYYMMDD, YYYYYMMDD
@@ -2261,7 +2261,7 @@ void BreakDownYMD(PD_Node *pNode)
 
 // This function handles MMDDYY
 //
-BOOL isValidMDY(int nStr, char *pStr, int iValue)
+bool isValidMDY(int nStr, char *pStr, int iValue)
 {
     int iMonth = iValue / 10000;
     iValue -= 10000 * iMonth;
@@ -2274,9 +2274,9 @@ BOOL isValidMDY(int nStr, char *pStr, int iValue)
        && isValidDayOfMonth(2, pStr+2, iDay)
        && isValidYear(2, pStr+4, iYear))
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 // This function breaks down MMDDYY
@@ -2290,7 +2290,7 @@ void BreakDownMDY(PD_Node *pNode)
 
 // This function handles DDMMYY
 //
-BOOL isValidDMY(int nStr, char *pStr, int iValue)
+bool isValidDMY(int nStr, char *pStr, int iValue)
 {
     int iDay = iValue / 10000;
     iValue -= 10000 * iDay;
@@ -2303,9 +2303,9 @@ BOOL isValidDMY(int nStr, char *pStr, int iValue)
        && isValidDayOfMonth(2, pStr, iDay)
        && isValidYear(2, pStr+4, iYear))
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 // This function breaks down DDMMYY
@@ -2319,7 +2319,7 @@ void BreakDownDMY(PD_Node *pNode)
 
 // This function handles YDDD, YYDDD, YYYDDD, YYYYDDD, YYYYYDDD
 //
-BOOL isValidYD(int nStr, char *pStr, int iValue)
+bool isValidYD(int nStr, char *pStr, int iValue)
 {
     int iYear = iValue / 1000;
     iValue -= 1000*iYear;
@@ -2329,9 +2329,9 @@ BOOL isValidYD(int nStr, char *pStr, int iValue)
        && isValidDayOfYear(3, pStr+nStr-3, iDay)
        && isValidYear(nStr-3, pStr, iYear))
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 // This function breaks down YDDD, YYDDD, YYYDDD, YYYYDDD, YYYYYDDD
@@ -2355,7 +2355,7 @@ const int InitialCouldBe[9] =
     PDCB_YMD  // 9
 };
 
-typedef BOOL PVALIDFUNC(int nStr, char *pStr, int iValue);
+typedef bool PVALIDFUNC(int nStr, char *pStr, int iValue);
 
 typedef struct tag_pd_numeric_valid
 {
@@ -2753,7 +2753,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
             // Match Text.
             //
             int j = 0;
-            int bFound = FALSE;
+            int bFound = false;
             while (PD_TextTable[j].szText)
             {
                 if (  strlen(PD_TextTable[j].szText) == nLen
@@ -2761,7 +2761,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
                 {
                     pNode->uCouldBe = PD_TextTable[j].uCouldBe;
                     pNode->iToken = PD_TextTable[j].iValue;
-                    bFound = TRUE;
+                    bFound = true;
                     break;
                 }
                 j++;
@@ -3009,8 +3009,8 @@ void PD_BreakItDown(void)
 
 void PD_Pass5(void)
 {
-    BOOL bHaveSeenTimeHour = FALSE;
-    BOOL bMightHaveSeenTimeHour = FALSE;
+    bool bHaveSeenTimeHour = false;
+    bool bMightHaveSeenTimeHour = false;
     PD_Node *pNode = PD_FirstNode();
     while (pNode)
     {
@@ -3113,9 +3113,9 @@ void PD_Pass5(void)
         {
             if ((pNode->uCouldBe & ~(PDCB_HOUR_TIME|PDCB_HMS_TIME)) == 0)
             {
-                bHaveSeenTimeHour = TRUE;
+                bHaveSeenTimeHour = true;
             }
-            bMightHaveSeenTimeHour = TRUE;
+            bMightHaveSeenTimeHour = true;
         }
 
         // Remove PDCB_REMOVEABLE.
@@ -3230,7 +3230,7 @@ void PD_Pass6(void)
     }
 }
 
-BOOL PD_GetFields(ALLFIELDS *paf)
+bool PD_GetFields(ALLFIELDS *paf)
 {
     paf->iYear            = NOT_PRESENT;
     paf->iDayOfYear       = NOT_PRESENT;
@@ -3365,14 +3365,14 @@ BOOL PD_GetFields(ALLFIELDS *paf)
         }
         else
         {
-            return FALSE;
+            return false;
         }
         pNode = PD_NextNode(pNode);
     }
-    return TRUE;
+    return true;
 }
 
-BOOL ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *paf)
+bool ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *paf)
 {
     FIELDEDTIME ft;
     memset(&ft, 0, sizeof(ft));
@@ -3380,7 +3380,7 @@ BOOL ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *paf)
     int iExtraDays = 0;
     if (paf->iYear == NOT_PRESENT)
     {
-        return FALSE;
+        return false;
     }
     ft.iYear = paf->iYear;
 
@@ -3407,7 +3407,7 @@ BOOL ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *paf)
         ftWD.iDayOfMonth = 27;
         if (!lta.SetFields(&ftWD))
         {
-            return FALSE;
+            return false;
         }
         INT64 i64 = lta.Return100ns();
         INT64 j64;
@@ -3433,14 +3433,14 @@ BOOL ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *paf)
             {
                 if (28 <= j)
                 {
-                    return FALSE;
+                    return false;
                 }
             }
             else // if (ft.iMonth == 1)
             {
                 if (-3 <= j)
                 {
-                    return FALSE;
+                    return false;
                 }
             }
         }
@@ -3449,7 +3449,7 @@ BOOL ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *paf)
     {
         // Under-specified.
         //
-        return FALSE;
+        return false;
     }
 
     if (paf->iHourTime != NOT_PRESENT)
@@ -3484,16 +3484,16 @@ BOOL ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *paf)
             ltd.Set100ns(FACTOR_100NS_PER_DAY);
             lta += ltd * iExtraDays;
         }
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
-BOOL ParseDate
+bool ParseDate
 (
     CLinearTimeAbsolute &lt,
     char *pDateString,
-    BOOL *pbZoneSpecified
+    bool *pbZoneSpecified
 )
 {
     PD_Reset();
@@ -3522,7 +3522,7 @@ BOOL ParseDate
        && ConvertAllFieldsToLinearTime(lt, &af))
     {
         *pbZoneSpecified = (af.iMinuteTimeZone != NOT_PRESENT);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }

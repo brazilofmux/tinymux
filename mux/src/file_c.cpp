@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.2 2003-02-03 15:00:33 sdennis Exp $
+// $Id: file_c.cpp,v 1.3 2003-02-05 06:20:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -72,7 +72,7 @@ void do_list_file(dbref executor, dbref caller, dbref enactor, int extra, char *
     int flagvalue = search_nametab(executor, list_files, arg);
     if (flagvalue < 0)
     {
-        display_nametab(executor, list_files, "Unknown file.  Use one of:", TRUE);
+        display_nametab(executor, list_files, "Unknown file.  Use one of:", true);
         return;
     }
     fcache_send(executor, flagvalue);

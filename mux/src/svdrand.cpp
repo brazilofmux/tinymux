@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.2 2003-01-28 15:48:00 sdennis Exp $
+// $Id: svdrand.cpp,v 1.3 2003-02-05 06:20:59 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -19,9 +19,9 @@
 
 #ifdef WIN32
 #include <wincrypt.h>
-typedef BOOL WINAPI FCRYPTACQUIRECONTEXT(HCRYPTPROV *, LPCTSTR, LPCTSTR, DWORD, DWORD);
-typedef BOOL WINAPI FCRYPTRELEASECONTEXT(HCRYPTPROV, DWORD);
-typedef BOOL WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
+typedef bool WINAPI FCRYPTACQUIRECONTEXT(HCRYPTPROV *, LPCTSTR, LPCTSTR, DWORD, DWORD);
+typedef bool WINAPI FCRYPTRELEASECONTEXT(HCRYPTPROV, DWORD);
+typedef bool WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
 #else // WIN32
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -40,12 +40,12 @@ static UINT32 genrand(void);
 
 #define NUM_RANDOM_UINT32 1024
 
-BOOL bCryptoAPI = FALSE;
-static BOOL bSeeded = FALSE;
+bool bCryptoAPI = false;
+static bool bSeeded = false;
 void SeedRandomNumberGenerator(void)
 {
     if (bSeeded) return;
-    bSeeded = TRUE;
+    bSeeded = true;
 
     UINT32 aRandomSystemBytes[NUM_RANDOM_UINT32];
     unsigned int nRandomSystemBytes = 0;
@@ -71,7 +71,7 @@ void SeedRandomNumberGenerator(void)
     // API as follows lets us to fallback gracefully when running on pre-OSR2
     // Win95.
     //
-    bCryptoAPI = FALSE;
+    bCryptoAPI = false;
     HINSTANCE hAdvAPI32 = LoadLibrary("advapi32");
     if (hAdvAPI32)
     {
@@ -102,7 +102,7 @@ void SeedRandomNumberGenerator(void)
                     (BYTE *)aRandomSystemBytes))
                 {
                     nRandomSystemBytes = NUM_RANDOM_UINT32;
-                    bCryptoAPI = TRUE;
+                    bCryptoAPI = true;
                 }
                 fpCryptReleaseContext(hProv, 0);
             }

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.15 2003-02-05 01:34:45 sdennis Exp $
+// $Id: command.cpp,v 1.16 2003-02-05 06:20:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -24,7 +24,7 @@ extern void list_siteinfo(dbref);
 extern void logged_out0(dbref executor, dbref caller, dbref enactor, int key);
 extern void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg);
 extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
-extern BOOL regexp_match
+extern bool regexp_match
 (
     char *pattern,
     char *str,
@@ -762,7 +762,7 @@ void init_cmdtab(void)
         }
 
         int nBuffer;
-        BOOL bValid;
+        bool bValid;
         char *cbuff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)
         {
@@ -836,16 +836,16 @@ void set_prefix_cmds()
 // ---------------------------------------------------------------------------
 // check_access: Check if player has access to function.
 //
-BOOL check_access(dbref player, int mask)
+bool check_access(dbref player, int mask)
 {
     if (mask & (CA_DISABLED|CA_STATIC))
     {
-        return FALSE;
+        return false;
     }
     if (  God(player)
        || mudstate.bReadingConfiguration)
     {
-        return TRUE;
+        return true;
     }
 
     if (mask & CA_MUSTBE_MASK)
@@ -857,10 +857,10 @@ BOOL check_access(dbref player, int mask)
         //
         if ((mask & CA_MUSTBE_MASK) == CA_GOD)
         {
-            return FALSE;
+            return false;
         }
 
-        // Since God(player) is always FALSE here, CA_GOD is still handled by
+        // Since God(player) is always false here, CA_GOD is still handled by
         // the following code even though it doesn't appear in any of the
         // cases explicitly.  CA_WIZARD by itself is also a common case, but
         // since we have have a bit (mask & CA_MUSTBE_MASK), and since that
@@ -878,7 +878,7 @@ BOOL check_access(dbref player, int mask)
              || ((mask & CA_UNINS)    && Uninspected(player))
              || ((mask & CA_ROBOT)    && Robot(player))))
         {
-            return FALSE;
+            return false;
         }
     }
 
@@ -894,10 +894,10 @@ BOOL check_access(dbref player, int mask)
            || ((mask & CA_NO_GUEST)   && Guest(player))
            || ((mask & CA_NO_UNINS)   && Uninspected(player)))
         {
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 
 /*****************************************************************************
@@ -905,10 +905,10 @@ BOOL check_access(dbref player, int mask)
  * Idea taken from TinyMUSH3, code from RhostMUSH, ported by Jake Nelson.
  * Hooks processed:  before, after, ignore, permit, fail
  *****************************************************************************/
-BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
-                  char *s_uselock, ATTR *hk_attr, BOOL save_flg)
+bool process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
+                  char *s_uselock, ATTR *hk_attr, bool save_flg)
 {
-    BOOL retval = TRUE;
+    bool retval = true;
     if (hk_attr)
     {
         dbref aowner;
@@ -996,7 +996,7 @@ char *hook_name(char *pCommand, int key)
  */
 
 void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
-            dbref enactor, BOOL interactive, char *arg, char *unp_command,
+            dbref enactor, bool interactive, char *arg, char *unp_command,
             char *cargs[], int ncargs)
 {
     char *buf1, *buf2, tchar, *bp, *str, *buff, *s, *j, *new0, *s_uselock;
@@ -1006,7 +1006,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
     char *aargs[NUM_ENV_VARS];
     ADDENT *add;
     ATTR *hk_ap2;
-    BOOL hk_retval;
+    bool hk_retval;
 
     // Perform object type checks.
     //
@@ -1109,7 +1109,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
     {
         s_uselock = hook_name(cmdp->cmdname, HOOK_BEFORE);
         hk_ap2 = atr_str(s_uselock);
-        process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, FALSE);
+        process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, false);
         free_sbuf(s_uselock);
     }
 
@@ -1261,7 +1261,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
                       && wild(buff + 1, new0, aargs, NUM_ENV_VARS)))
                 {
                     CLinearTimeAbsolute lta;
-                    wait_que(add->thing, caller, executor, FALSE, lta,
+                    wait_que(add->thing, caller, executor, false, lta,
                         NOTHING, 0, s, aargs, NUM_ENV_VARS, mudstate.global_regs);
                     for (i = 0; i < NUM_ENV_VARS; i++)
                     {
@@ -1406,7 +1406,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
     {
         s_uselock = hook_name(cmdp->cmdname, HOOK_AFTER);
         hk_ap2 = atr_str(s_uselock);
-        hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, FALSE);
+        hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, false);
         free_sbuf(s_uselock);
     }
     return;
@@ -1481,13 +1481,13 @@ int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
     {
         char *s_uselock;
         ATTR *checkattr;
-        BOOL bResult;
+        bool bResult;
         if (cmdp->hookmask & HOOK_IGNORE)
         {
             s_uselock = hook_name(cmdp->cmdname, HOOK_IGNORE);
             checkattr = atr_str(s_uselock);
             bResult = process_hook(executor, caller, enactor, mudconf.hook_obj,
-                s_uselock, checkattr, TRUE);
+                s_uselock, checkattr, true);
             free_sbuf(s_uselock);
             if (!bResult)
             {
@@ -1499,7 +1499,7 @@ int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
             s_uselock = hook_name(cmdp->cmdname, HOOK_PERMIT);
             checkattr = atr_str(s_uselock);
             bResult = process_hook(executor, caller, enactor, mudconf.hook_obj,
-                s_uselock, checkattr, TRUE);
+                s_uselock, checkattr, true);
             free_sbuf(s_uselock);
             if (!bResult)
             {
@@ -1519,7 +1519,7 @@ void hook_fail(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
         char *s_uselock = hook_name(cmdp->cmdname, HOOK_AFAIL);
         ATTR *hk_ap2 = atr_str(s_uselock);
         process_hook(executor, caller, enactor, mudconf.hook_obj, 
-            s_uselock, hk_ap2, FALSE);
+            s_uselock, hk_ap2, false);
         free_sbuf(s_uselock);
     }
 }
@@ -1532,7 +1532,7 @@ char *process_command
     dbref executor,
     dbref caller,
     dbref enactor,
-    BOOL  interactive,
+    bool  interactive,
     char *arg_command,
     char *args[],
     int   nargs
@@ -1553,7 +1553,7 @@ char *process_command
     cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< process_command >";
     mudstate.nStackNest = 0;
-    mudstate.bStackLimitReached = FALSE;
+    mudstate.bStackLimitReached = false;
     *(check2 + 1) = '\0';
 
     mux_assert(pOriginalCommand);
@@ -1710,7 +1710,7 @@ char *process_command
                 log_text(pOriginalCommand);
                 ENDLOG; 
             }
-            mudstate.bStackLimitReached = FALSE;
+            mudstate.bStackLimitReached = false;
 
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
@@ -1816,7 +1816,7 @@ char *process_command
                     }
                     return preserve_cmd;
                 }
-                move_exit(executor, exit, FALSE, "You can't go that way.", 0);
+                move_exit(executor, exit, false, "You can't go that way.", 0);
                 mudstate.debug_cmd = cmdsave;
                 return preserve_cmd;
             }
@@ -1828,7 +1828,7 @@ char *process_command
             exit = last_match_result();
             if (exit != NOTHING)
             {
-                move_exit(executor, exit, TRUE, NULL, 0);
+                move_exit(executor, exit, true, NULL, 0);
                 mudstate.debug_cmd = cmdsave;
                 return preserve_cmd;
             }
@@ -1961,7 +1961,7 @@ char *process_command
                 log_text(pOriginalCommand);
                 ENDLOG; 
             }
-            mudstate.bStackLimitReached = FALSE;
+            mudstate.bStackLimitReached = false;
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
@@ -1978,7 +1978,7 @@ char *process_command
     mux_exec(LowerCaseCommand, &bp, executor, caller, enactor,
         EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str, args, nargs);
     *bp = '\0';
-    BOOL succ = FALSE;
+    bool succ = false;
 
     // Idea for enter/leave aliases from R'nice@TinyTIM
     //
@@ -2087,7 +2087,7 @@ char *process_command
                             }
                             return preserve_cmd;
                         }  
-                        do_enter_internal(executor, exit, FALSE);
+                        do_enter_internal(executor, exit, false);
                         return preserve_cmd;
                     }
                     else if (cval == 1)
@@ -2106,9 +2106,9 @@ char *process_command
     if (mudconf.match_mine && !No_Command(executor))
     {
         if (  (!isPlayer(executor) || mudconf.match_mine_pl)
-           && atr_match(executor, executor, AMATCH_CMD, LowerCaseCommand, TRUE))
+           && atr_match(executor, executor, AMATCH_CMD, LowerCaseCommand, true))
         {
-            succ = TRUE;
+            succ = true;
         }
     }
 
@@ -2116,11 +2116,11 @@ char *process_command
     //
     if (Has_location(executor))
     {
-        succ |= list_check(Contents(Location(executor)), executor, AMATCH_CMD, LowerCaseCommand, TRUE);
+        succ |= list_check(Contents(Location(executor)), executor, AMATCH_CMD, LowerCaseCommand, true);
 
         if (!No_Command(Location(executor)))
         {
-            succ |= atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, TRUE);
+            succ |= atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, true);
         }
     }
 
@@ -2128,7 +2128,7 @@ char *process_command
     //
     if (Has_contents(executor))
     {
-        succ |= list_check(Contents(executor), executor, AMATCH_CMD, LowerCaseCommand, TRUE);
+        succ |= list_check(Contents(executor), executor, AMATCH_CMD, LowerCaseCommand, true);
     }
 
     if (  !succ
@@ -2155,12 +2155,12 @@ char *process_command
                     exit = last_match_result();
                     if (exit != NOTHING)
                     {
-                        move_exit(executor, exit, TRUE, NULL, 0);
+                        move_exit(executor, exit, true, NULL, 0);
                         mudstate.debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
                     succ |= list_check(Contents(zone_loc), executor,
-                               AMATCH_CMD, LowerCaseCommand, TRUE);
+                               AMATCH_CMD, LowerCaseCommand, true);
 
                     // end of parent room checks.
                     //
@@ -2173,7 +2173,7 @@ char *process_command
                 if (!No_Command(zone_loc))
                 {
                     succ |= atr_match(zone_loc, executor, AMATCH_CMD,
-                       LowerCaseCommand, TRUE);
+                       LowerCaseCommand, true);
                 }
             }
         }
@@ -2189,7 +2189,7 @@ char *process_command
            && !No_Command(zone)
            && zone_loc != zone)
         {
-            succ |= atr_match(zone, executor, AMATCH_CMD, LowerCaseCommand, TRUE);
+            succ |= atr_match(zone, executor, AMATCH_CMD, LowerCaseCommand, true);
         }
     }
 
@@ -2201,10 +2201,10 @@ char *process_command
            && Has_contents(mudconf.master_room))
         {
             succ |= list_check(Contents(mudconf.master_room),
-                       executor, AMATCH_CMD, LowerCaseCommand, FALSE);
+                       executor, AMATCH_CMD, LowerCaseCommand, false);
             if (!No_Command(mudconf.master_room))
             {
-                succ |= atr_match(mudconf.master_room, executor, AMATCH_CMD, LowerCaseCommand, FALSE);
+                succ |= atr_match(mudconf.master_room, executor, AMATCH_CMD, LowerCaseCommand, false);
             }
         }
     }
@@ -2338,7 +2338,7 @@ static void list_cmdtable(dbref player)
     //
     if (isPlayer(player))
     {
-        display_nametab(player, logout_cmdtable, buf, TRUE);
+        display_nametab(player, logout_cmdtable, buf, true);
     }
     else
     {
@@ -2415,7 +2415,7 @@ static void list_cmdaccess(dbref player)
                && !(cmdp->perms & CF_DARK))
             {
                 sprintf(buff, "%.60s:", cmdp->cmdname);
-                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
     }
@@ -2427,7 +2427,7 @@ static void list_cmdaccess(dbref player)
                && !(cmdp->perms & CF_DARK))
             {
                 sprintf(buff, "%.60s:", cmdp->cmdname);
-                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
     }
@@ -2439,7 +2439,7 @@ static void list_cmdaccess(dbref player)
                && !(cmdp->perms & CF_DARK))
             {
                 sprintf(buff, "%.60s:", cmdp->cmdname);
-                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
     }
@@ -2451,7 +2451,7 @@ static void list_cmdaccess(dbref player)
                && !(cmdp->perms & CF_DARK))
             {
                 sprintf(buff, "%.60s:", cmdp->cmdname);
-                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
     }
@@ -2463,7 +2463,7 @@ static void list_cmdaccess(dbref player)
                && !(cmdp->perms & CF_DARK))
             {
                 sprintf(buff, "%.60s:", cmdp->cmdname);
-                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
     }
@@ -2475,7 +2475,7 @@ static void list_cmdaccess(dbref player)
                && !(cmdp->perms & CF_DARK))
             {
                 sprintf(buff, "%.60s:", cmdp->cmdname);
-                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
     }
@@ -2487,7 +2487,7 @@ static void list_cmdaccess(dbref player)
                && !(cmdp->perms & CF_DARK))
             {
                 sprintf(buff, "%.60s:", cmdp->cmdname);
-                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
     }
@@ -2500,7 +2500,7 @@ static void list_cmdaccess(dbref player)
         }
 
         int nBuffer;
-        BOOL bValid;
+        bool bValid;
         buff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)
         {
@@ -2521,7 +2521,7 @@ static void list_cmdaccess(dbref player)
         if (!(cmdp->perms & CF_DARK))
         {
             sprintf(buff, "%.60s:", cmdp->cmdname);
-            listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+            listset_nametab(player, access_nametab, cmdp->perms, buff, true);
         }
     }
 }
@@ -2543,7 +2543,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, FALSE);
+                        display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
             }
@@ -2560,7 +2560,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, FALSE);
+                        display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
             }
@@ -2577,7 +2577,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, FALSE);
+                        display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
             }
@@ -2594,7 +2594,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, FALSE);
+                        display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
             }
@@ -2611,7 +2611,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, FALSE);
+                        display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
             }
@@ -2628,7 +2628,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, FALSE);
+                        display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
             }
@@ -2645,7 +2645,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, FALSE);
+                        display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
             }
@@ -2697,10 +2697,10 @@ static void list_attraccess(dbref player)
     char *buff = alloc_sbuf("list_attraccess");
     for (ap = attr; ap->name; ap++)
     {
-        if (bCanReadAttr(player, player, ap, FALSE))
+        if (bCanReadAttr(player, player, ap, false))
         {
             sprintf(buff, "%s:", ap->name);
-            listset_nametab(player, attraccess_nametab, ap->flags, buff, TRUE);
+            listset_nametab(player, attraccess_nametab, ap->flags, buff, true);
         }
     }
     free_sbuf(buff);
@@ -2713,17 +2713,17 @@ CF_HAND(cf_access)
 {
     CMDENT *cmdp;
     char *ap;
-    BOOL set_switch;
+    bool set_switch;
 
     for (ap = str; *ap && !mux_isspace[(unsigned char)*ap] && (*ap != '/'); ap++) ;
     if (*ap == '/')
     {
-        set_switch = TRUE;
+        set_switch = true;
         *ap++ = '\0';
     }
     else
     {
-        set_switch = FALSE;
+        set_switch = false;
         if (*ap)
             *ap++ = '\0';
         while (mux_isspace[(unsigned char)*ap])
@@ -2761,7 +2761,7 @@ CF_HAND(cf_acmd_access)
     for (ap = attr; ap->name; ap++)
     {
         int nBuffer;
-        BOOL bValid;
+        bool bValid;
         char *buff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)
         {
@@ -3229,7 +3229,7 @@ static void list_options(dbref player)
 // ---------------------------------------------------------------------------
 // list_vattrs: List user-defined attributes
 //
-static void list_vattrs(dbref player, char *s_mask, BOOL wild_mtch)
+static void list_vattrs(dbref player, char *s_mask, bool wild_mtch)
 {
     char *buff = alloc_lbuf("list_vattrs");
 
@@ -3260,7 +3260,7 @@ static void list_vattrs(dbref player, char *s_mask, BOOL wild_mtch)
                 wna++;
             }
             sprintf(buff, "%s(%d):", va->name, va->number);
-            listset_nametab(player, attraccess_nametab, va->flags, buff, TRUE);
+            listset_nametab(player, attraccess_nametab, va->flags, buff, true);
         }
     }
 
@@ -3594,7 +3594,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
         list_attraccess(executor);
         break;
     case LIST_VATTRS:
-        list_vattrs(executor, NULL, FALSE);
+        list_vattrs(executor, NULL, false);
         break;
     case LIST_LOGGING:
         interp_nametab(executor, logoptions_nametab, mudconf.log_options,
@@ -3630,18 +3630,18 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
         }
         if (flagvalue == LIST_VATTRS)
         {
-            list_vattrs(executor, s_sub_option, TRUE);
+            list_vattrs(executor, s_sub_option, true);
         }
         else
         {
-            display_nametab(executor, list_names, "Unknown option.  Use one of:", TRUE);
+            display_nametab(executor, list_names, "Unknown option.  Use one of:", true);
         }
     }
 }
 
 void do_break(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
-    extern BOOL break_called;
+    extern bool break_called;
     break_called = xlate(arg1);
 }
 
@@ -3657,7 +3657,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
     char *buff1, *pt1, *pt2, *pt3, *atrpt, pre[2], *pt4, *pt5;
     int x, aflags, y, home;
     dbref target = NOTHING, aowner, zone;
-    BOOL bFound, set;
+    bool bFound, set;
 
     int loc_set = -1;
     if (  key == ICMD_IROOM
@@ -3712,14 +3712,14 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                 return;
             }
             notify(player, "Scanning all locations and zones from your current location:");
-            bFound = FALSE;
+            bFound = false;
             atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
                 notify(player, tprintf("%c     --- At %s(#%d) :", 
                     (Zone(target) == target ? '*' : ' '), Name(target), target));
                 notify(player, atrpt);
-                bFound = TRUE;
+                bFound = true;
             }
             free_lbuf(atrpt);
             if (Zone(target) != target)
@@ -3735,7 +3735,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                         notify(player,tprintf("%c     z-- At %s(#%d) :", 
                             '*', Name(zone), zone));
                         notify(player, atrpt);
-                        bFound = TRUE;
+                        bFound = true;
                     }
                     free_lbuf(atrpt);
                 }
@@ -3759,7 +3759,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
 
     if (loc_set == -1 )
     {
-        target = lookup_player(player, name, FALSE);
+        target = lookup_player(player, name, false);
         if (!Good_obj(target) || God(target))
         {
             notify(player, "@icmd: Bad player.");
@@ -3828,13 +3828,13 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
         {
             pt4 = args[x] + 1;
             pt1 = buff1 + 1;
-            set = FALSE;
+            set = false;
         }
         else
         {
             pt4 = args[x];
             pt1 = buff1;
-            set = TRUE;
+            set = true;
         }
         if (*pt1)
         {
@@ -4058,7 +4058,7 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
 
     notify_all_from_inside(loc, executor, tprintf("%s types -=> %s",
         Moniker(executor), string));
-    process_command(executor, caller, enactor, TRUE, string, (char **)NULL, 0);
+    process_command(executor, caller, enactor, true, string, (char **)NULL, 0);
 }
 
 void do_moniker(dbref executor, dbref caller, dbref enactor, int key,
@@ -4161,7 +4161,7 @@ void hook_loop (dbref executor, CMDENT *cmdp, char *s_ptr, char *s_ptrbuff)
 
 void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name) 
 {
-    BOOL negate, found;
+    bool negate, found;
     char *s_ptr, *s_ptrbuff, *cbuff, *p, *q;
     CMDENT *cmdp = (CMDENT *)NULL;
 
@@ -4187,13 +4187,13 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
 
     if (key & HOOK_CLEAR)
     {
-        negate = TRUE;
+        negate = true;
         key = key & ~HOOK_CLEAR;
         key = key & ~SW_MULTIPLE;
     }
     else
     {
-        negate = FALSE;
+        negate = false;
     }
 
     if (key & (HOOK_BEFORE|HOOK_AFTER|HOOK_PERMIT|HOOK_IGNORE|HOOK_IGSWITCH|HOOK_AFAIL))
@@ -4244,7 +4244,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
             notify(executor, tprintf("%.32s-+-%s",
                 "--------------------------------",
                 "--------------------------------------------"));
-            found = FALSE;
+            found = false;
             s_ptr = s_ptrbuff = alloc_lbuf("@hook");
             {
                 CMDENT_NO_ARG *cmdp;
@@ -4254,7 +4254,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                     s_ptr = s_ptrbuff;
                     if (cmdp->hookmask)
                     {
-                        found = TRUE;
+                        found = true;
                         hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
                     }
                 }
@@ -4267,7 +4267,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                     s_ptr = s_ptrbuff;
                     if (cmdp->hookmask)
                     {
-                        found = TRUE;
+                        found = true;
                         hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
                     }
                 }
@@ -4280,7 +4280,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                     s_ptr = s_ptrbuff;
                     if (cmdp->hookmask)
                     {
-                        found = TRUE;
+                        found = true;
                         hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
                     }
                 }
@@ -4293,7 +4293,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                     s_ptr = s_ptrbuff;
                     if (cmdp->hookmask)
                     {
-                        found = TRUE;
+                        found = true;
                         hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
                     }
                 }
@@ -4306,7 +4306,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                     s_ptr = s_ptrbuff;
                     if (cmdp->hookmask)
                     {
-                        found = TRUE;
+                        found = true;
                         hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
                     }
                 }
@@ -4319,7 +4319,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                     s_ptr = s_ptrbuff;
                     if (cmdp->hookmask)
                     {
-                        found = TRUE;
+                        found = true;
                         hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
                     }
                 }
@@ -4332,7 +4332,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                     s_ptr = s_ptrbuff;
                     if (cmdp->hookmask)
                     {
-                        found = TRUE;
+                        found = true;
                         hook_loop(executor, (CMDENT *)cmdp, s_ptr, s_ptrbuff);
                     }
                 }
@@ -4341,7 +4341,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
             {
                 notify(executor, tprintf("%26s -- No @hooks defined --", " "));
             }
-            found = FALSE;
+            found = false;
             /* We need to search the attribute table as well */
             notify(executor, tprintf("%.32s-+-%s",
                 "--------------------------------",
@@ -4370,7 +4370,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                 cmdp = (CMDENT *)hashfindLEN(cbuff, strlen(cbuff), &mudstate.command_htab);
                 if (cmdp && cmdp->hookmask)
                 {
-                    found = TRUE;
+                    found = true;
                     show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
                     notify(executor, tprintf("%-32.32s | %s", cmdp->cmdname, s_ptrbuff));
                 }

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.15 2003-02-05 01:13:20 sdennis Exp $
+// $Id: funceval.cpp,v 1.16 2003-02-05 06:20:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -28,7 +28,7 @@
 
 extern NAMETAB indiv_attraccess_nametab[];
 extern int countwords(char *, char);
-extern BOOL check_read_perms(dbref, dbref, ATTR *, int, int, char *, char **);
+extern bool check_read_perms(dbref, dbref, ATTR *, int, int, char *, char **);
 extern void arr2list(char *arr[], int alen, char *list, char **bufc, char sep);
 extern void make_portlist(dbref, dbref, char *, char **);
 
@@ -212,7 +212,7 @@ FUNCTION(fun_zone)
 
 #ifdef SIDE_EFFECT_FUNCTIONS
 
-static BOOL check_command(dbref player, char *name, char *buff, char **bufc)
+static bool check_command(dbref player, char *name, char *buff, char **bufc)
 {
     CMDENT *cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
     if (cmdp)
@@ -228,10 +228,10 @@ static BOOL check_command(dbref player, char *name, char *buff, char **bufc)
               && !(mudconf.control_flags & CF_BUILD)))
         {
             safe_noperm(buff, bufc);
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
 FUNCTION(fun_link)
@@ -258,7 +258,7 @@ FUNCTION(fun_pemit)
     {
         return;
     }
-    do_pemit_list(executor, PEMIT_PEMIT, FALSE, 0, fargs[0], 0, fargs[1]);
+    do_pemit_list(executor, PEMIT_PEMIT, false, 0, fargs[0], 0, fargs[1]);
 }
 
 FUNCTION(fun_oemit)
@@ -267,7 +267,7 @@ FUNCTION(fun_oemit)
     {
         return;
     }
-    do_pemit_single(executor, PEMIT_OEMIT, FALSE, 0, fargs[0], 0, fargs[1]);
+    do_pemit_single(executor, PEMIT_OEMIT, false, 0, fargs[0], 0, fargs[1]);
 }
 
 FUNCTION(fun_emit)
@@ -285,7 +285,7 @@ FUNCTION(fun_remit)
     {
         return;
     }
-    do_pemit_single(executor, PEMIT_PEMIT, TRUE, 0, fargs[0], 0, fargs[1]);
+    do_pemit_single(executor, PEMIT_PEMIT, true, 0, fargs[0], 0, fargs[1]);
 }
 
 // ------------------------------------------------------------------------
@@ -390,7 +390,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (attr && bCanSetAttr(player, thing, attr))
     {
-        BOOL could_hear = Hearer(thing);
+        bool could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));
         if (  !(key & SET_QUIET)
@@ -415,7 +415,7 @@ FUNCTION(fun_set)
 
     dbref thing, thing2, aowner;
     char *p, *buff2;
-    BOOL clear;
+    bool clear;
     int atr, atr2, aflags, flagvalue;
     ATTR *attr, *attr2;
 
@@ -425,7 +425,7 @@ FUNCTION(fun_set)
     {
         if (atr != NOTHING)
         {
-            clear = FALSE;
+            clear = false;
 
             p = fargs[1];
             if (p[0] == '\0')
@@ -439,7 +439,7 @@ FUNCTION(fun_set)
                 // We are clearing a flag instead of setting it.
                 //
                 p++;
-                clear = TRUE;
+                clear = true;
             }
 
             // valid attribute flag?
@@ -582,7 +582,7 @@ static unsigned int GenCode(char *pCode, const char *pCodeASCII)
     return pOut - pCode;
 }
 
-static char *crypt_code(char *code, char *text, BOOL type)
+static char *crypt_code(char *code, char *text, bool type)
 {
     if (!text && !*text)
     {
@@ -648,12 +648,12 @@ static char *crypt_code(char *code, char *text, BOOL type)
 //
 FUNCTION(fun_encrypt)
 {
-    safe_str(crypt_code(fargs[1], fargs[0], TRUE), buff, bufc);
+    safe_str(crypt_code(fargs[1], fargs[0], true), buff, bufc);
 }
 
 FUNCTION(fun_decrypt)
 {
-    safe_str(crypt_code(fargs[1], fargs[0], FALSE), buff, bufc);
+    safe_str(crypt_code(fargs[1], fargs[0], false), buff, bufc);
 }
 
 // Borrowed from DarkZone
@@ -916,7 +916,7 @@ FUNCTION(fun_columns)
     int iColumn = 0;
 
     int nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
-    BOOL bNeedCRLF = FALSE;
+    bool bNeedCRLF = false;
     while (  cp
           && 0 < nBufferAvailable)
     {
@@ -936,14 +936,14 @@ FUNCTION(fun_columns)
         {
             iColumn = 0;
             nBufferAvailable -= safe_copy_buf("\r\n", 2, buff, bufc);
-            bNeedCRLF = FALSE;
+            bNeedCRLF = false;
         }
         else
         {
             iColumn++;
             nBufferAvailable -= safe_fill(buff, bufc, ' ',
                 nWidth - nVisualWidth);
-            bNeedCRLF = TRUE;
+            bNeedCRLF = true;
         }
     }
     if (bNeedCRLF)
@@ -1209,23 +1209,23 @@ FUNCTION(fun_playmem)
 }
 
 // Code for andflags() and orflags() borrowed from PennMUSH 1.50
-// FALSE for orflags, TRUE for andflags
+// false for orflags, true for andflags
 //
-static BOOL handle_flaglists(dbref player, char *name, char *fstr, BOOL type)
+static bool handle_flaglists(dbref player, char *name, char *fstr, bool type)
 {
     dbref it = match_thing_quiet(player, name);
     if (!Good_obj(it))
     {
-        return FALSE;
+        return false;
     }
 
     char *s;
     char flagletter[2];
     FLAGSET fset;
     FLAG p_type;
-    BOOL negate = FALSE;
-    BOOL temp = FALSE;
-    BOOL ret = type;
+    bool negate = false;
+    bool temp = false;
+    bool ret = type;
 
     for (s = fstr; *s; s++)
     {
@@ -1234,17 +1234,17 @@ static BOOL handle_flaglists(dbref player, char *name, char *fstr, BOOL type)
         //
         if (*s == '!')
         {
-            negate = TRUE;
+            negate = true;
             s++;
         }
         else
         {
-            negate = FALSE;
+            negate = false;
         }
 
         if (!*s)
         {
-            return FALSE;
+            return false;
         }
         flagletter[0] = *s;
         flagletter[1] = '\0';
@@ -1253,11 +1253,11 @@ static BOOL handle_flaglists(dbref player, char *name, char *fstr, BOOL type)
         {
             // Either we got a '!' that wasn't followed by a letter, or we
             // couldn't find that flag. For AND, since we've failed a check,
-            // we can return FALSE. Otherwise we just go on.
+            // we can return false. Otherwise we just go on.
             //
             if (type)
             {
-                return FALSE;
+                return false;
             }
             else
             {
@@ -1278,16 +1278,16 @@ static BOOL handle_flaglists(dbref player, char *name, char *fstr, BOOL type)
                    && Hidden(it)
                    && !See_Hidden(player))
                 {
-                    temp = FALSE;
+                    temp = false;
                 }
                 else
                 {
-                    temp = TRUE;
+                    temp = true;
                 }
             }
             else
             {
-                temp = FALSE;
+                temp = false;
             }
 
             if (  type
@@ -1296,19 +1296,19 @@ static BOOL handle_flaglists(dbref player, char *name, char *fstr, BOOL type)
             {
                 // Too bad there's no NXOR function. At this point we've
                 // either got a flag and we don't want it, or we don't have a
-                // flag and we want it. Since it's AND, we return FALSE.
+                // flag and we want it. Since it's AND, we return false.
                 //
-                return FALSE;
+                return false;
 
             }
             else if (  !type
                     && (  (!negate && temp)
                        || (negate && !temp)))
             {
-                // We've found something we want, in an OR. We OR a TRUE with
+                // We've found something we want, in an OR. We OR a true with
                 // the current value.
                 //
-                ret |= TRUE;
+                ret |= true;
             }
 
             // Otherwise, we don't need to do anything.
@@ -1320,12 +1320,12 @@ static BOOL handle_flaglists(dbref player, char *name, char *fstr, BOOL type)
 
 FUNCTION(fun_orflags)
 {
-    safe_bool(handle_flaglists(executor, fargs[0], fargs[1], FALSE), buff, bufc);
+    safe_bool(handle_flaglists(executor, fargs[0], fargs[1], false), buff, bufc);
 }
 
 FUNCTION(fun_andflags)
 {
-    safe_bool(handle_flaglists(executor, fargs[0], fargs[1], TRUE), buff, bufc);
+    safe_bool(handle_flaglists(executor, fargs[0], fargs[1], true), buff, bufc);
 }
 
 FUNCTION(fun_strtrunc)
@@ -1434,7 +1434,7 @@ FUNCTION(fun_mail)
             // Handle the case of wanting to count the number of
             // messages.
             //
-            playerask = lookup_player(executor, fargs[0], TRUE);
+            playerask = lookup_player(executor, fargs[0], true);
             if (playerask == NOTHING)
             {
                 playerask = match_thing_quiet(executor, fargs[0]);
@@ -1463,7 +1463,7 @@ FUNCTION(fun_mail)
     }
     else // if (nfargs == 2)
     {
-        playerask = lookup_player(executor, fargs[0], TRUE);
+        playerask = lookup_player(executor, fargs[0], true);
         if (playerask == NOTHING)
         {
             safe_str("#-1 NO SUCH PLAYER", buff, bufc);
@@ -1524,7 +1524,7 @@ FUNCTION(fun_mailfrom)
     }
     else // if (nfargs == 2)
     {
-        playerask = lookup_player(executor, fargs[0], TRUE);
+        playerask = lookup_player(executor, fargs[0], true);
         if (playerask == NOTHING)
         {
             safe_str("#-1 NO SUCH PLAYER", buff, bufc);
@@ -1564,7 +1564,7 @@ FUNCTION(fun_mailfrom)
 // TinyMUSH 2.2.
 
 void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
-                   BOOL bCheckParent)
+                   bool bCheckParent)
 {
     dbref thing = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(thing))
@@ -1574,7 +1574,7 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
     }
 
     ATTR *attr = atr_str(fargs[1]);
-    BOOL result = FALSE;
+    bool result = false;
     if (attr)
     {
         if (!bCanReadAttr(executor, thing, attr, bCheckParent))
@@ -1604,12 +1604,12 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
 
 FUNCTION(fun_hasattr)
 {
-    hasattr_handler(buff, bufc, executor, fargs, FALSE);
+    hasattr_handler(buff, bufc, executor, fargs, false);
 }
 
 FUNCTION(fun_hasattrp)
 {
-    hasattr_handler(buff, bufc, executor, fargs, TRUE);
+    hasattr_handler(buff, bufc, executor, fargs, true);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1751,13 +1751,13 @@ FUNCTION(fun_findable)
 FUNCTION(fun_isword)
 {
     char *p;
-    BOOL result = TRUE;
+    bool result = true;
 
     for (p = fargs[0]; *p; p++)
     {
         if (!mux_isalpha[(unsigned char)*p])
         {
-            result = FALSE;
+            result = false;
             break;
         }
     }
@@ -1782,7 +1782,7 @@ FUNCTION(fun_visible)
         return;
     }
 
-    BOOL  result = FALSE;
+    bool  result = false;
     dbref thing;
     int   atr = NOTHING;
     if (!parse_attrib(executor, fargs[1], &thing, &atr))
@@ -1824,7 +1824,7 @@ FUNCTION(fun_elements)
     char *wordlist, *s, *r, sep;
 
     varargs_preamble(3);
-    BOOL bFirst = TRUE;
+    bool bFirst = true;
 
     // Turn the first list into an array.
     //
@@ -1848,7 +1848,7 @@ FUNCTION(fun_elements)
             {
                 safe_chr(sep, buff, bufc);
             }
-            bFirst = FALSE;
+            bFirst = false;
             safe_str(ptrs[cur], buff, bufc);
         }
     } while (s);
@@ -2215,7 +2215,7 @@ FUNCTION(fun_matchall)
 //
 FUNCTION(fun_ports)
 {
-    dbref target = lookup_player(executor, fargs[0], TRUE);
+    dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
         if (target == executor || Wizard(executor))
@@ -2359,7 +2359,7 @@ FUNCTION(fun_foreach)
     ATTR *ap;
     char *atext, *atextbuf, *str, *cp, *bp;
     char cbuf[2], prev = '\0';
-    BOOL flag = FALSE;
+    bool flag = false;
 
     if (  nfargs != 2
        && nfargs != 4)
@@ -2422,7 +2422,7 @@ FUNCTION(fun_foreach)
                    && prev != '\\'
                    && prev != '%')
                 {
-                    flag = FALSE;
+                    flag = false;
                     continue;
                 }
             }
@@ -2432,7 +2432,7 @@ FUNCTION(fun_foreach)
                    && prev != '\\'
                    && prev != '%')
                 {
-                    flag = TRUE;
+                    flag = true;
                     continue;
                 }
                 else
@@ -2601,8 +2601,8 @@ FUNCTION(fun_die)
 FUNCTION(fun_lrand)
 {
     char sep;
-    if (!delim_check(fargs, nfargs, 4, &sep, buff, bufc, FALSE,
-        executor, caller, enactor, cargs, ncargs, TRUE))
+    if (!delim_check(fargs, nfargs, 4, &sep, buff, bufc, false,
+        executor, caller, enactor, cargs, ncargs, true))
     {
         return;
     }
@@ -2862,7 +2862,7 @@ FUNCTION(fun_strcat)
 
 // grep() and grepi() code borrowed from PennMUSH 1.50
 //
-char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len, BOOL insensitive)
+char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len, bool insensitive)
 {
     // Returns a list of attributes which match <pattern> on <thing>
     // whose contents have <lookfor>.
@@ -2877,7 +2877,7 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
     bp = tbuf1;
     safe_tprintf_str(buf, &bufc, "#%d/%s", thing, pattern);
     olist_push();
-    if (parse_attrib_wild(player, buf, &thing, FALSE, FALSE, TRUE))
+    if (parse_attrib_wild(player, buf, &thing, false, false, true))
     {
         BMH_State bmhs;
         if (insensitive)
@@ -2926,7 +2926,7 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
 }
 
 void grep_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
-                   BOOL bCaseInsens)
+                   bool bCaseInsens)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
@@ -2960,12 +2960,12 @@ void grep_handler(char *buff, char **bufc, dbref executor, char *fargs[],
 
 FUNCTION(fun_grep)
 {
-    grep_handler(buff, bufc, executor, fargs, FALSE);
+    grep_handler(buff, bufc, executor, fargs, false);
 }
 
 FUNCTION(fun_grepi)
 {
-    grep_handler(buff, bufc, executor, fargs, TRUE);
+    grep_handler(buff, bufc, executor, fargs, true);
 }
 
 // Borrowed from PennMUSH 1.50
@@ -3006,10 +3006,10 @@ FUNCTION(fun_valid)
     // a given type (such as an object name)
     //
     int nValidName;
-    BOOL bValid;
+    bool bValid;
     if (!*fargs[0] || !*fargs[1])
     {
-        bValid = FALSE;
+        bValid = false;
     }
     else if (!mux_stricmp(fargs[0], "name"))
     {
@@ -3041,7 +3041,7 @@ FUNCTION(fun_hastype)
         safe_match_result(it, buff, bufc);
         return;
     }
-    BOOL bResult = FALSE;
+    bool bResult = false;
     switch (mux_tolower[(unsigned char)fargs[1][0]])
     {
     case 'r':
@@ -3507,7 +3507,7 @@ FUNCTION(fun_regmatchi)
  */
 
 void real_regrab(char *search, const char *pattern, char sep, char *buff,
-                 char **bufc, BOOL cis, bool all)
+                 char **bufc, bool cis, bool all)
 {
     pcre *re;
     pcre_extra *study = NULL;
@@ -3604,7 +3604,7 @@ FUNCTION(fun_regraballi)
 FUNCTION(fun_translate)
 {
     int ch = fargs[1][0];
-    BOOL type = (ch == 'p' || ch == '1');
+    bool type = (ch == 'p' || ch == '1');
     safe_str(translate_string(fargs[0], type), buff, bufc);
 }
 
@@ -3625,7 +3625,7 @@ public:
     void ClearAll(void);
     void Set(unsigned int i);
     void Clear(unsigned int i);
-    BOOL IsSet(unsigned int i);
+    bool IsSet(unsigned int i);
 };
 
 // Construct a CBitField to hold (nMaximum_arg+1) bits numbered 0 through
@@ -3702,16 +3702,16 @@ void CBitField::Clear(unsigned int i)
     }
 }
 
-BOOL CBitField::IsSet(unsigned int i)
+bool CBitField::IsSet(unsigned int i)
 {
     if (i <= nMaximum)
     {
         if (pInts[i>>nShift] & pMasks[i&nMask])
         {
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
 
@@ -3736,7 +3736,7 @@ static void room_list
     CBitField &bfReport,
     int   level,
     int   maxlevels,
-    BOOL  showall
+    bool  showall
 )
 {
     // Make sure the player can really see this room from their location.
@@ -3832,7 +3832,7 @@ FUNCTION(fun_lrooms)
         }
     }
 
-    BOOL B = TRUE;
+    bool B = true;
     if (nfargs == 3)
     {
         B = xlate(fargs[2]);

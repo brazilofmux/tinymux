@@ -1,6 +1,6 @@
 // mguests.h
 //
-// $Id: mguests.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: mguests.h,v 1.2 2003-02-05 06:20:59 jake Exp $
 //
 
 #ifndef __MGUESTS_H
@@ -27,7 +27,7 @@ public:
     CGuests(void);
     ~CGuests(void);
 
-    BOOL  CheckGuest(dbref);
+    bool  CheckGuest(dbref);
     void  ListAll(dbref);          // @list guests
     void  StartUp();
     const char  *Create(DESC *d);

@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.5 2003-02-04 22:35:51 sdennis Exp $
+// $Id: log.cpp,v 1.6 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -47,7 +47,7 @@ NAMETAB logoptions_nametab[] =
  * log entry.
  */
 
-BOOL start_log(const char *primary, const char *secondary)
+bool start_log(const char *primary, const char *secondary)
 {
     mudstate.logging++;
     if (  1 <= mudstate.logging
@@ -89,12 +89,12 @@ BOOL start_log(const char *primary, const char *secondary)
         //
         if (mudstate.logging == 1)
         {
-            return TRUE;
+            return true;
         }
         Log.WriteString("Recursive logging request." ENDLINE);
     }
     mudstate.logging--;
-    return FALSE;
+    return false;
 }
 
 /* ---------------------------------------------------------------------------
@@ -166,7 +166,7 @@ void log_name(dbref target)
 
         if (mudconf.log_info & LOGOPT_FLAGS)
         {
-            tp = unparse_object(GOD, target, FALSE);
+            tp = unparse_object(GOD, target, false);
         }
         else
         {
@@ -179,7 +179,7 @@ void log_name(dbref target)
         {
             if (mudconf.log_info & LOGOPT_FLAGS)
             {
-                tp = unparse_object(GOD, Owner(target), FALSE);
+                tp = unparse_object(GOD, Owner(target), false);
             }
             else
             {
@@ -256,7 +256,7 @@ void do_log
     char *logtext
 )
 {
-    BOOL bValid = TRUE;
+    bool bValid = true;
 
     // Strip the filename of all ANSI.
     //
@@ -283,7 +283,7 @@ void do_log
     if (  n == 0
        || n > 30)
     {
-        bValid = FALSE;
+        bValid = false;
     }
     else
     {
@@ -292,7 +292,7 @@ void do_log
         {
             if (!mux_isalnum[(unsigned char)pFilename[i]])
             {
-                bValid = FALSE;
+                bValid = false;
                 break;
             }
         }
@@ -313,7 +313,7 @@ void do_log
         //
         if (pMessage[0] == '\0')
         {
-            bValid = FALSE;
+            bValid = false;
         }
     }
     if (!bValid)

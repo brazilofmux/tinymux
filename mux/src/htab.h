@@ -1,6 +1,6 @@
 // htab.h - Structures and declarations needed for table hashing.
 //
-// $Id: htab.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: htab.h,v 1.2 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -36,7 +36,7 @@ struct bque
     char    *comm;                  // command
     char    *env[NUM_ENV_VARS];     // environment vars
     char    *scr[MAX_GLOBAL_REGS];  // temp vars
-    BOOL    IsTimed;                // Is there a waittime time on this entry?
+    bool    IsTimed;                // Is there a waittime time on this entry?
 };
 
 extern void hashreset(CHashTable *);
@@ -44,7 +44,7 @@ extern int  *hashfindLEN(const void *, int, CHashTable *);
 extern int  hashaddLEN(const void *, int, int *, CHashTable *);
 extern void hashdeleteLEN(const void *, int, CHashTable *);
 extern void hashflush(CHashTable *);
-extern BOOL hashreplLEN(const void *, int, int *, CHashTable *);
+extern bool hashreplLEN(const void *, int, int *, CHashTable *);
 extern void hashreplall(int *, int *, CHashTable *);
 extern int  *hash_nextentry(CHashTable *htab);
 extern int  *hash_firstentry(CHashTable *htab);
@@ -55,8 +55,8 @@ extern NAMETAB powers_nametab[];
 
 extern int  search_nametab(dbref, NAMETAB *, char *);
 extern NAMETAB  *find_nametab_ent(dbref, NAMETAB *, char *);
-extern void display_nametab(dbref, NAMETAB *, char *, BOOL);
+extern void display_nametab(dbref, NAMETAB *, char *, bool);
 extern void interp_nametab(dbref, NAMETAB *, int, const char *, const char *, const char *);
-extern void listset_nametab(dbref, NAMETAB *, int, char *, BOOL);
+extern void listset_nametab(dbref, NAMETAB *, int, char *, bool);
 
 #endif // !__HTAB_H

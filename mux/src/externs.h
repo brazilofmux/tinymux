@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.9 2003-02-05 01:13:20 sdennis Exp $
+// $Id: externs.h,v 1.10 2003-02-05 06:20:58 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -26,7 +26,7 @@ extern void DCL_CDECL raw_broadcast(int, char *, ...);
 /* From cque.cpp */
 extern int  nfy_que(dbref, int, int, int);
 extern int  halt_que(dbref, dbref);
-extern void wait_que(dbref executor, dbref caller, dbref enactor, BOOL,
+extern void wait_que(dbref executor, dbref caller, dbref enactor, bool,
     CLinearTimeAbsolute&, dbref, int, char *, char *[],int, char *[]);
 
 #ifdef WIN32
@@ -75,11 +75,11 @@ extern void notify_except2(dbref, dbref, dbref, dbref, const char *);
 
 extern void notify_check(dbref, dbref, const char *, int);
 
-extern BOOL Hearer(dbref);
+extern bool Hearer(dbref);
 extern void report(void);
-extern BOOL atr_match(dbref, dbref, char, char *, BOOL);
-extern BOOL list_check(dbref, dbref, char, char *, BOOL);
-extern BOOL html_escape(const char *src, char *dest, char **destp);
+extern bool atr_match(dbref, dbref, char, char *, bool);
+extern bool list_check(dbref, dbref, char, char *, bool);
+extern bool html_escape(const char *src, char *dest, char **destp);
 
 #define DUMP_I_NORMAL    0  // OUTPUT to the outdb through a temporary file.
 #define DUMP_I_PANIC     1  // UNLOAD to a crashdb
@@ -103,7 +103,7 @@ extern int  cf_ntab_access(int *, char *, void *, UINT32, dbref, char *);
 #else // WIN32
 #define ENDLINE "\n"
 #endif // WIN32
-extern BOOL start_log(const char *primary, const char *secondary);
+extern bool start_log(const char *primary, const char *secondary);
 extern void end_log(void);
 extern void log_perror(const char *, const char *,const char *,
             const char *);
@@ -121,14 +121,14 @@ size_t decode_attr_flags(int aflags, char *buff);
 /* From move.cpp */
 extern void move_object(dbref, dbref);
 extern void move_via_generic(dbref, dbref, dbref, int);
-extern BOOL move_via_teleport(dbref, dbref, dbref, int);
-extern void move_exit(dbref, dbref, BOOL, const char *, int);
-extern void do_enter_internal(dbref, dbref, BOOL);
+extern bool move_via_teleport(dbref, dbref, dbref, int);
+extern void move_exit(dbref, dbref, bool, const char *, int);
+extern void do_enter_internal(dbref, dbref, bool);
 
 /* From object.cpp */
 extern dbref start_home(void);
 extern dbref default_home(void);
-extern BOOL  can_set_home(dbref, dbref, dbref);
+extern bool  can_set_home(dbref, dbref, dbref);
 extern dbref new_home(dbref);
 extern dbref clone_home(dbref, dbref);
 extern void  divest_object(dbref);
@@ -137,14 +137,14 @@ extern void  destroy_obj(dbref);
 extern void  empty_obj(dbref);
 
 /* From player.cpp */
-extern dbref create_player(char *, char *, dbref, BOOL, BOOL);
-extern BOOL add_player_name(dbref, const char *);
-extern BOOL delete_player_name(dbref, const char *);
-extern dbref lookup_player(dbref, char *, BOOL);
+extern dbref create_player(char *, char *, dbref, bool, bool);
+extern bool add_player_name(dbref, const char *);
+extern bool delete_player_name(dbref, const char *);
+extern dbref lookup_player(dbref, char *, bool);
 extern void load_player_names(void);
 extern void badname_add(char *);
 extern void badname_remove(char *);
-extern BOOL badname_check(char *);
+extern bool badname_check(char *);
 extern void badname_list(dbref, const char *);
 
 /* From predicates.cpp */
@@ -153,48 +153,48 @@ extern void DCL_CDECL safe_tprintf_str(char *, char **, const char *, ...);
 extern dbref insert_first(dbref, dbref);
 extern dbref remove_first(dbref, dbref);
 extern dbref reverse_list(dbref);
-extern BOOL member(dbref, dbref);
-extern BOOL could_doit(dbref, dbref, int);
-extern BOOL can_see(dbref, dbref, BOOL);
+extern bool member(dbref, dbref);
+extern bool could_doit(dbref, dbref, int);
+extern bool can_see(dbref, dbref, bool);
 extern void add_quota(dbref, int);
-extern BOOL canpayfees(dbref, dbref, int, int);
+extern bool canpayfees(dbref, dbref, int, int);
 extern void giveto(dbref,int);
-extern BOOL payfor(dbref,int);
-extern char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid);
-extern char *MakeCanonicalExitName(const char *pName, int *pnName, BOOL *pbValid);
-extern BOOL ValidatePlayerName(const char *pName);
-extern BOOL ok_password(const char *szPassword, dbref player);
-extern void handle_ears(dbref, BOOL, BOOL);
-extern dbref match_possessed(dbref, dbref, char *, dbref, BOOL);
+extern bool payfor(dbref,int);
+extern char *MakeCanonicalObjectName(const char *pName, int *pnName, bool *pbValid);
+extern char *MakeCanonicalExitName(const char *pName, int *pnName, bool *pbValid);
+extern bool ValidatePlayerName(const char *pName);
+extern bool ok_password(const char *szPassword, dbref player);
+extern void handle_ears(dbref, bool, bool);
+extern dbref match_possessed(dbref, dbref, char *, dbref, bool);
 extern void parse_range(char **, dbref *, dbref *);
-extern BOOL parse_thing_slash(dbref, char *, char **, dbref *);
-extern BOOL get_obj_and_lock(dbref, char *, dbref *, ATTR **, char *, char **);
+extern bool parse_thing_slash(dbref, char *, char **, dbref *);
+extern bool get_obj_and_lock(dbref, char *, dbref *, ATTR **, char *, char **);
 extern dbref where_is(dbref);
 extern dbref where_room(dbref);
-extern BOOL locatable(dbref, dbref, dbref);
-extern BOOL nearby(dbref, dbref);
-extern BOOL exit_visible(dbref, dbref, int);
-extern BOOL exit_displayable(dbref, dbref, int);
+extern bool locatable(dbref, dbref, dbref);
+extern bool nearby(dbref, dbref);
+extern bool exit_visible(dbref, dbref, int);
+extern bool exit_displayable(dbref, dbref, int);
 extern void did_it(dbref, dbref, int, const char *, int, const char *, int, char *[], int);
-extern BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bParentCheck);
-extern BOOL bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
+extern bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bParentCheck);
+extern bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 
 /* From set.cpp */
-extern BOOL parse_attrib(dbref, char *, dbref *, int *);
-extern BOOL parse_attrib_wild(dbref, char *, dbref *, BOOL, BOOL, BOOL);
+extern bool parse_attrib(dbref, char *, dbref *, int *);
+extern bool parse_attrib_wild(dbref, char *, dbref *, bool, bool, bool);
 extern void edit_string(char *, char **, char *, char *);
-extern dbref match_controlled_handler(dbref player, const char *name, BOOL bQuiet);
-#define match_controlled(player,name)       match_controlled_handler(player, name, FALSE)
-#define match_controlled_quiet(player,name) match_controlled_handler(player, name, TRUE)
+extern dbref match_controlled_handler(dbref player, const char *name, bool bQuiet);
+#define match_controlled(player,name)       match_controlled_handler(player, name, false)
+#define match_controlled_quiet(player,name) match_controlled_handler(player, name, true)
 extern void set_modified(dbref thing);
 
 /* From boolexp.cpp */
-extern BOOL eval_boolexp(dbref, dbref, dbref, BOOLEXP *);
-extern BOOLEXP *parse_boolexp(dbref, const char *, BOOL);
-extern BOOL eval_boolexp_atr(dbref, dbref, dbref, char *);
+extern bool eval_boolexp(dbref, dbref, dbref, BOOLEXP *);
+extern BOOLEXP *parse_boolexp(dbref, const char *, bool);
+extern bool eval_boolexp_atr(dbref, dbref, dbref, char *);
 
 /* From functions.cpp */
-extern BOOL xlate(char *);
+extern bool xlate(char *);
 extern char *trim_space_sep(char *, char);
 extern char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim);
 extern char *next_token(char *str, char sep);
@@ -224,14 +224,14 @@ extern dbref olist_first(void);
 extern dbref olist_next(void);
 
 /* From wild.cpp */
-extern BOOL wild(char *, char *, char *[], int);
-extern BOOL wild_match(char *, const char *);
-extern BOOL quick_wild(const char *, const char *);
+extern bool wild(char *, char *, char *[], int);
+extern bool wild_match(char *, const char *);
+extern bool quick_wild(const char *, const char *);
 
 /* From command.cpp */
-extern BOOL check_access(dbref player, int mask);
+extern bool check_access(dbref player, int mask);
 extern void set_prefix_cmds(void);
-extern char *process_command(dbref executor, dbref caller, dbref enactor, BOOL,
+extern char *process_command(dbref executor, dbref caller, dbref enactor, bool,
     char *, char *[], int);
 
 #define Protect(f) (cmdp->perms & f)
@@ -242,7 +242,7 @@ extern char *process_command(dbref executor, dbref caller, dbref enactor, BOOL,
  (Protect(CA_PLAYER) && !isPlayer(x)))
 
 /* from db.cpp */
-extern BOOL Commer(dbref);
+extern bool Commer(dbref);
 extern void s_Pass(dbref, const char *);
 extern void s_Name(dbref, const char *);
 extern void s_Moniker(dbref thing, const char *s);
@@ -278,13 +278,13 @@ extern char *atr_get_str_LEN(char *s, dbref, int, dbref *, int *, size_t *);
 extern char *atr_get_str(char *, dbref, int, dbref *, int *);
 extern char *atr_pget_str_LEN(char *, dbref, int, dbref *, int *, size_t *);
 extern char *atr_pget_str(char *, dbref, int, dbref *, int *);
-extern BOOL atr_get_info(dbref, int, dbref *, int *);
-extern BOOL atr_pget_info(dbref, int, dbref *, int *);
+extern bool atr_get_info(dbref, int, dbref *, int *);
+extern bool atr_pget_info(dbref, int, dbref *, int *);
 extern void atr_free(dbref);
-extern BOOL check_zone_handler(dbref player, dbref thing, BOOL bPlayerCheck);
-#define check_zone(player, thing) check_zone_handler(player, thing, FALSE)
+extern bool check_zone_handler(dbref player, dbref thing, bool bPlayerCheck);
+#define check_zone(player, thing) check_zone_handler(player, thing, false)
 extern void ReleaseAllResources(dbref obj);
-extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
+extern bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 
 /* Command handler keys */
 
@@ -649,7 +649,7 @@ extern void do_pemit_list
 (
     dbref player,
     int key,
-    BOOL bDoContents,
+    bool bDoContents,
     int pemit_flags,
     char *list,
     int chPoseType,
@@ -659,7 +659,7 @@ extern void do_pemit_single
 (
     dbref player,
     int key,
-    BOOL bDoContents,
+    bool bDoContents,
     int pemit_flags,
     char *recipient,
     int chPoseType,
@@ -723,13 +723,13 @@ extern int game_pid;
 extern long DebugTotalThreads;
 extern long DebugTotalSemaphores;
 extern HANDLE hGameProcess;
-typedef BOOL __stdcall FCANCELIO(HANDLE hFile);
-typedef BOOL __stdcall FGETPROCESSTIMES(HANDLE hProcess,
+typedef bool __stdcall FCANCELIO(HANDLE hFile);
+typedef bool __stdcall FGETPROCESSTIMES(HANDLE hProcess,
     LPFILETIME pftCreate, LPFILETIME pftExit, LPFILETIME pftKernel,
     LPFILETIME pftUser);
 extern FCANCELIO *fpCancelIo;
 extern FGETPROCESSTIMES *fpGetProcessTimes;
-extern BOOL bQueryPerformanceAvailable;
+extern bool bQueryPerformanceAvailable;
 extern INT64 QP_A;
 extern INT64 QP_B;
 extern INT64 QP_C;
@@ -786,7 +786,7 @@ private:
 
     int m_iVisitedMark;
 
-    BOOL Grow(void);
+    bool Grow(void);
     void SiftDown(int, SCHCMP *);
     void SiftUp(int, SCHCMP *);
     PTASK_RECORD Remove(int, SCHCMP *);
@@ -825,7 +825,7 @@ public:
     CScheduler(void) { m_Ticket = 0; m_minPriority = PRIORITY_CF_DEQUEUE_ENABLED; }
     void DeferTask(const CLinearTimeAbsolute& ltWhen, int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer);
     void DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer);
-    BOOL WhenNext(CLinearTimeAbsolute *);
+    bool WhenNext(CLinearTimeAbsolute *);
     int  RunTasks(int iCount);
     int  RunAllTasks(void);
     int  RunTasks(const CLinearTimeAbsolute& tNow);

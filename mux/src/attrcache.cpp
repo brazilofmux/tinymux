@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.5 2003-02-04 06:40:40 sdennis Exp $
+// $Id: attrcache.cpp,v 1.6 2003-02-05 06:20:58 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -12,9 +12,9 @@
 #include "externs.h"
 
 CHashFile hfAttributeFile;
-static BOOL cache_initted = FALSE;
+static bool cache_initted = false;
 
-static BOOL cache_redirected = FALSE;
+static bool cache_redirected = false;
 #define N_TEMP_FILES 4
 FILE *TempFiles[N_TEMP_FILES];
 
@@ -54,7 +54,7 @@ int cache_init(const char *game_dir_file, const char *game_pag_file)
     {
         // Mark caching system live
         //
-        cache_initted = TRUE;
+        cache_initted = true;
         cs_ltime.GetUTC();
     }
     return cc;
@@ -70,12 +70,12 @@ void cache_redirect(void)
         mux_assert(TempFiles[i]);
         setvbuf(TempFiles[i], NULL, _IOFBF, 16384);
     }
-    cache_redirected = TRUE;
+    cache_redirected = true;
 }
 
 void cache_pass2(void)
 {
-    cache_redirected = FALSE;
+    cache_redirected = false;
     fprintf(stderr, "2nd Pass:\n");
     for (int i = 0; i < N_TEMP_FILES; i++)
     {
@@ -112,7 +112,7 @@ void cache_pass2(void)
 void cache_close(void)
 {
     hfAttributeFile.CloseAll();
-    cache_initted = FALSE;
+    cache_initted = false;
 }
 
 void cache_tick(void)
@@ -284,13 +284,13 @@ const char *cache_get(Aname *nam, int *pLen)
 
 // cache_put no longer frees the pointer.
 //
-BOOL cache_put(Aname *nam, const char *value, int len)
+bool cache_put(Aname *nam, const char *value, int len)
 {
     if (  !value
        || !nam
        || !cache_initted)
     {
-        return FALSE;
+        return false;
     }
 
     if (len > (int)sizeof(TempRecord.attrText))
@@ -312,7 +312,7 @@ BOOL cache_put(Aname *nam, const char *value, int len)
         size_t nSize = len+sizeof(Aname);
         fwrite(&nSize, 1, sizeof(nSize), TempFiles[iFile]);
         fwrite(&TempRecord, 1, nSize, TempFiles[iFile]);
-        return TRUE;
+        return true;
     }
 
     HP_DIRINDEX iDir = hfAttributeFile.FindFirstKey(nHash);
@@ -389,13 +389,13 @@ BOOL cache_put(Aname *nam, const char *value, int len)
             }
         }
     }
-    return TRUE;
+    return true;
 }
 
-BOOL cache_sync(void)
+bool cache_sync(void)
 {
     hfAttributeFile.Sync();
-    return TRUE;
+    return true;
 }
 
 // Delete this attribute from the database.

@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.2 2003-01-28 15:48:00 sdennis Exp $
+// $Id: timeutil.h,v 1.3 2003-02-05 06:20:59 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -57,23 +57,23 @@ public:
 
     void  ReturnUniqueString(char *buffer);
     char *ReturnDateString(int nFracDigits = 0);
-    BOOL  ReturnFields(FIELDEDTIME *arg_tStruct);
+    bool  ReturnFields(FIELDEDTIME *arg_tStruct);
     INT64 ReturnSeconds(void);
     char *ReturnSecondsString(int nFracDigits = 0);
     INT64 Return100ns(void);
 
     void SetSeconds(INT64 arg_tSeconds);
     void SetSecondsString(char *arg_szSeconds);
-    BOOL SetFields(FIELDEDTIME *arg_tStruct);
-    BOOL SetString(const char *arg_tBuffer);
+    bool SetFields(FIELDEDTIME *arg_tStruct);
+    bool SetString(const char *arg_tBuffer);
     void Set100ns(INT64 arg_t100ns);
 
     void UTC2Local(void);
     void Local2UTC(void);
 };
 
-BOOL FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt);
-BOOL LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft);
+bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt);
+bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft);
 
 class CLinearTimeDelta
 {
@@ -145,7 +145,7 @@ int DCL_INLINE iFloorDivisionMod(int x, int y, int *piMod) \
 
 #endif // SMALLEST_INT_GTE_NEG_QUOTIENT
 
-extern BOOL ParseDate(CLinearTimeAbsolute &lta, char *pDateString, BOOL *pbZoneSpecified);
-extern BOOL isLeapYear(long iYear);
+extern bool ParseDate(CLinearTimeAbsolute &lta, char *pDateString, bool *pbZoneSpecified);
+extern bool isLeapYear(long iYear);
 
 #endif // TIMEUTIL_H

@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.7 2003-02-04 22:08:59 sdennis Exp $
+// $Id: db_rw.cpp,v 1.8 2003-02-05 06:20:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -332,7 +332,7 @@ static BOOLEXP *getboolexp(FILE *f)
  * get_list: Read attribute list from flat file.
  */
 
-static BOOL get_list(FILE *f, dbref i)
+static bool get_list(FILE *f, dbref i)
 {
     char *buff = alloc_lbuf("get_list");
     while (1)
@@ -347,13 +347,13 @@ static BOOL get_list(FILE *f, dbref i)
             {
                 // Store the attr
                 //
-                atr_add_raw(i, atr, getstring_noalloc(f, TRUE));
+                atr_add_raw(i, atr, getstring_noalloc(f, true));
             }
             else
             {
                 // Silently discard
                 //
-                getstring_noalloc(f, TRUE);
+                getstring_noalloc(f, true);
             }
             break;
 
@@ -369,16 +369,16 @@ static BOOL get_list(FILE *f, dbref i)
             {
                 ungetc(c, f);
                 Log.tinyprintf("No line feed on object %d" ENDLINE, i);
-                return TRUE;
+                return true;
             }
-            return TRUE;
+            return true;
 
         default:
             Log.tinyprintf("Bad character '%c' when getting attributes on object %d" ENDLINE, c, i);
 
             // We've found a bad spot.  I hope things aren't too bad.
             //
-            getstring_noalloc(f, TRUE);
+            getstring_noalloc(f, true);
         }
     }
 }
@@ -516,17 +516,17 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     g_version = 0;
     g_flags = 0;
 
-    BOOL header_gotten = FALSE;
-    BOOL size_gotten = FALSE;
-    BOOL nextattr_gotten = FALSE;
+    bool header_gotten = false;
+    bool size_gotten = false;
+    bool nextattr_gotten = false;
 
-    BOOL read_attribs = TRUE;
-    BOOL read_name = TRUE;
-    BOOL read_key = TRUE;
-    BOOL read_money = TRUE;
+    bool read_attribs = true;
+    bool read_name = true;
+    bool read_key = true;
+    bool read_money = true;
 
     int nName;
-    BOOL bValid;
+    bool bValid;
     char *pName;
 
     int iDotCounter = 0;
@@ -572,7 +572,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // USER-NAMED ATTRIBUTE
                 //
                 anum = getref(f);
-                tstr = getstring_noalloc(f, TRUE);
+                tstr = getstring_noalloc(f, true);
                 if (mux_isdigit[(unsigned char)*tstr])
                 {
                     aflags = 0;
@@ -603,7 +603,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 }
                 else
                 {
-                    header_gotten = TRUE;
+                    header_gotten = true;
                     g_format = F_MUX;
                     g_version = getref(f);
                     mux_assert((g_version & MANDFLAGS) == MANDFLAGS);
@@ -612,7 +612,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     //
                     if (g_version & V_DATABASE)
                     {
-                        read_attribs = FALSE;
+                        read_attribs = false;
                         read_name = !(g_version & V_ATRNAME);
                     }
                     read_key = !(g_version & V_ATRKEY);
@@ -634,7 +634,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 else
                 {
                     mudstate.min_size = getref(f);
-                    size_gotten = TRUE;
+                    size_gotten = true;
                 }
             }
             else if (ch == 'N')
@@ -649,7 +649,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 else
                 {
                     mudstate.attr_next = getref(f);
-                    nextattr_gotten = TRUE;
+                    nextattr_gotten = true;
                 }
             }
             else
@@ -665,7 +665,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             if (read_name)
             {
-                tstr = getstring_noalloc(f, TRUE);
+                tstr = getstring_noalloc(f, true);
                 buff = alloc_lbuf("dbread.s_Name");
                 len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE,
                     &nVisualWidth, ANSI_ENDGOAL_NORMAL);
@@ -799,7 +799,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     }
 }
 
-static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
+static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
 {
     ATTR *a;
     char *got, *as;
@@ -820,7 +820,7 @@ static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
     if (!(flags & V_ATRKEY))
     {
         got = atr_get(i, A_LOCK, &aowner, &aflags);
-        tempbool = parse_boolexp(GOD, got, TRUE);
+        tempbool = parse_boolexp(GOD, got, true);
         free_lbuf(got);
         putboolexp(f, tempbool);
         if (tempbool)
@@ -894,7 +894,7 @@ static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
         }
         fwrite("<\n", sizeof(char), 2, f);
     }
-    return FALSE;
+    return false;
 }
 
 extern int anum_alc_top;

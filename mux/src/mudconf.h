@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.7 2003-01-31 23:53:50 jake Exp $
+// $Id: mudconf.h,v 1.8 2003-02-05 06:20:59 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -31,57 +31,57 @@ typedef struct
     const char *CommandName;
     CHashTable *ht;
     char       *pBaseFilename;
-    BOOL       bEval;
+    bool       bEval;
 } HELP_DESC;
 
 typedef struct confdata CONFDATA;
 struct confdata
 {
-    BOOL    allow_guest_from_registered_site;   // Whether guests from registered sites are allowed.
-    BOOL    autozone;           // New objects are automatically zoned.
-    BOOL    cache_names;        /* Should object names be cached separately */
-    BOOL    clone_copy_cost;    /* Does @clone copy value? */
-    BOOL    compress_db;        // should we use compress.
-    BOOL    dark_sleepers;      /* Are sleeping players 'dark'? */
-    BOOL    destroy_going_now;  // Does GOING act like DESTROY_OK?
-    BOOL    eval_comtitle;      /* Should Comtitles Evaluate? */
-    BOOL    ex_flags;           /* TRUE = show flags on examine */
-    BOOL    exam_public;        /* Does EXAM show public attrs by default? */
-    BOOL    fascist_tport;      /* Src of teleport must be owned/JUMP_OK */
-    BOOL    have_comsys;        // Should the comsystem be active?
-    BOOL    have_mailer;        // Should @mail be active?
-    BOOL    have_zones;         // Should zones be active?
-    BOOL    idle_wiz_dark;      /* Do idling wizards get set dark? */
-    BOOL    indent_desc;        // Newlines before and after descs?
-    BOOL    match_mine;         /* Should you check yourself for $-commands? */
-    BOOL    match_mine_pl;      /* Should players check selves for $-cmds? */
-    BOOL    name_spaces;        // allow player names to have spaces.
-    BOOL    paranoid_alloc;     /* Rigorous buffer integrity checks */
-    BOOL    pemit_any;          /* Can you @pemit to ANY remote object? */
-    BOOL    pemit_players;      /* Can you @pemit to faraway players? */
-    BOOL    player_listen;      /* Are AxHEAR triggered on players? */
-    BOOL    pub_flags;          /* TRUE = flags() works on anything */
-    BOOL    quiet_look;         /* TRUE = don't see attribs when looking */
-    BOOL    quiet_whisper;      /* Can others tell when you whisper? */
-    BOOL    quotas;             /* TRUE = have building quotas */
-    BOOL    read_rem_desc;      /* Can the DESCs of nonlocal objs be read? */
-    BOOL    read_rem_name;      /* Can the NAMEs of nonlocal objs be read? */
-    BOOL    robot_speak;        /* TRUE = allow robots to speak */
-    BOOL    run_startup;        // If no, startup attributes aren't processed on load.
-    BOOL    safe_unowned;       /* Are objects not owned by you safe? */
-    BOOL    safe_wipe;          // If yes, SAFE flag must be removed to @wipe.
-    BOOL    safer_passwords;    /* enforce reasonably good password choices? */
-    BOOL    see_own_dark;       /* Do you see your own dark stuff? */
-    BOOL    space_compress;     /* Convert multiple spaces into one space */
-    BOOL    sweep_dark;         /* Can you sweep dark places? */
-    BOOL    switch_df_all;      /* Should @switch match all by default? */
-    BOOL    terse_contents;     /* Does TERSE look show exits */
-    BOOL    terse_exits;        /* Does TERSE look show obvious exits */
-    BOOL    terse_look;         /* Does manual look obey TERSE */
-    BOOL    terse_movemsg;      /* Show move msgs (SUCC/LEAVE/etc) if TERSE? */
-    BOOL    trace_topdown;      /* Is TRACE output top-down or bottom-up? */
-    BOOL    use_hostname;       /* TRUE = use machine NAME rather than quad */
-    BOOL    use_http;           /* Should we allow http access? */
+    bool    allow_guest_from_registered_site;   // Whether guests from registered sites are allowed.
+    bool    autozone;           // New objects are automatically zoned.
+    bool    cache_names;        /* Should object names be cached separately */
+    bool    clone_copy_cost;    /* Does @clone copy value? */
+    bool    compress_db;        // should we use compress.
+    bool    dark_sleepers;      /* Are sleeping players 'dark'? */
+    bool    destroy_going_now;  // Does GOING act like DESTROY_OK?
+    bool    eval_comtitle;      /* Should Comtitles Evaluate? */
+    bool    ex_flags;           /* true = show flags on examine */
+    bool    exam_public;        /* Does EXAM show public attrs by default? */
+    bool    fascist_tport;      /* Src of teleport must be owned/JUMP_OK */
+    bool    have_comsys;        // Should the comsystem be active?
+    bool    have_mailer;        // Should @mail be active?
+    bool    have_zones;         // Should zones be active?
+    bool    idle_wiz_dark;      /* Do idling wizards get set dark? */
+    bool    indent_desc;        // Newlines before and after descs?
+    bool    match_mine;         /* Should you check yourself for $-commands? */
+    bool    match_mine_pl;      /* Should players check selves for $-cmds? */
+    bool    name_spaces;        // allow player names to have spaces.
+    bool    paranoid_alloc;     /* Rigorous buffer integrity checks */
+    bool    pemit_any;          /* Can you @pemit to ANY remote object? */
+    bool    pemit_players;      /* Can you @pemit to faraway players? */
+    bool    player_listen;      /* Are AxHEAR triggered on players? */
+    bool    pub_flags;          /* true = flags() works on anything */
+    bool    quiet_look;         /* true = don't see attribs when looking */
+    bool    quiet_whisper;      /* Can others tell when you whisper? */
+    bool    quotas;             /* true = have building quotas */
+    bool    read_rem_desc;      /* Can the DESCs of nonlocal objs be read? */
+    bool    read_rem_name;      /* Can the NAMEs of nonlocal objs be read? */
+    bool    robot_speak;        /* true = allow robots to speak */
+    bool    run_startup;        // If no, startup attributes aren't processed on load.
+    bool    safe_unowned;       /* Are objects not owned by you safe? */
+    bool    safe_wipe;          // If yes, SAFE flag must be removed to @wipe.
+    bool    safer_passwords;    /* enforce reasonably good password choices? */
+    bool    see_own_dark;       /* Do you see your own dark stuff? */
+    bool    space_compress;     /* Convert multiple spaces into one space */
+    bool    sweep_dark;         /* Can you sweep dark places? */
+    bool    switch_df_all;      /* Should @switch match all by default? */
+    bool    terse_contents;     /* Does TERSE look show exits */
+    bool    terse_exits;        /* Does TERSE look show obvious exits */
+    bool    terse_look;         /* Does manual look obey TERSE */
+    bool    terse_movemsg;      /* Show move msgs (SUCC/LEAVE/etc) if TERSE? */
+    bool    trace_topdown;      /* Is TRACE output top-down or bottom-up? */
+    bool    use_hostname;       /* true = use machine NAME rather than quad */
+    bool    use_http;           /* Should we allow http access? */
     dbref   default_home;       // HOME when home is inaccessable.
     dbref   global_error_obj;   // Object that is used to generate error messages.
     dbref   guest_char;         // player num of prototype GUEST character.
@@ -271,16 +271,16 @@ struct forward_list
 typedef struct statedata STATEDATA;
 struct statedata
 {
-    BOOL bCanRestart;           // are we ready to even attempt a restart.
-    BOOL bReadingConfiguration; // are we reading the config file at startup?
-    BOOL bStackLimitReached;    // Was stack slammed?
-    BOOL bStandAlone;           // Are we running in dbconvert mode.
-    BOOL inpipe;                /* Boolean flag for command piping */
-    BOOL panicking;             // are we in the middle of dying horribly?
-    BOOL shutdown_flag;         /* Should interface be shut down? */
+    bool bCanRestart;           // are we ready to even attempt a restart.
+    bool bReadingConfiguration; // are we reading the config file at startup?
+    bool bStackLimitReached;    // Was stack slammed?
+    bool bStandAlone;           // Are we running in dbconvert mode.
+    bool inpipe;                /* Boolean flag for command piping */
+    bool panicking;             // are we in the middle of dying horribly?
+    bool shutdown_flag;         /* Should interface be shut down? */
 #ifndef WIN32
-    BOOL dumping;               /* Are we dumping? */
-    BOOL restarting;            /* Are we restarting? */
+    bool dumping;               /* Are we dumping? */
+    bool restarting;            /* Are we restarting? */
 #endif // !WIN32
 
     dbref   curr_enactor;       /* Who initiated the current command */

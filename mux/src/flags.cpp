@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.10 2003-02-05 01:34:45 sdennis Exp $
+// $Id: flags.cpp,v 1.11 2003-02-05 06:20:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -15,7 +15,7 @@
  * fh_any: set or clear indicated bit, no security checking
  */
 
-BOOL fh_any(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
+bool fh_any(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     // Never let God drop his/her own wizbit.
     //
@@ -25,7 +25,7 @@ BOOL fh_any(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
        && fflags == FLAG_WORD1)
     {
         notify(player, "You cannot make God mortal.");
-        return FALSE;
+        return false;
     }
 
     // Otherwise we can go do it.
@@ -38,18 +38,18 @@ BOOL fh_any(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
     {
         db[target].fs.word[fflags] |= flag;
     }
-    return TRUE;
+    return true;
 }
 
 /* ---------------------------------------------------------------------------
  * fh_god: only GOD may set or clear the bit
  */
 
-BOOL fh_god(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
+bool fh_god(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (!God(player))
     {
-        return FALSE;
+        return false;
     }
     return (fh_any(target, player, flag, fflags, reset));
 }
@@ -59,11 +59,11 @@ BOOL fh_god(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
  * * fh_wiz: only WIZARDS (or GOD) may set or clear the bit
  */
 
-BOOL fh_wiz(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
+bool fh_wiz(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (!Wizard(player))
     {
-        return FALSE;
+        return false;
     }
     return (fh_any(target, player, flag, fflags, reset));
 }
@@ -73,11 +73,11 @@ BOOL fh_wiz(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
  * * fh_wizroy: only WIZARDS, ROYALTY, (or GOD) may set or clear the bit
  */
 
-BOOL fh_wizroy(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
+bool fh_wizroy(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (!WizRoy(player))
     {
-        return FALSE;
+        return false;
     }
     return (fh_any(target, player, flag, fflags, reset));
 }
@@ -88,19 +88,19 @@ BOOL fh_wizroy(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
  * * this on players, but ordinary players can set it on other types
  * * of objects.
  */
-BOOL fh_restrict_player
+bool fh_restrict_player
 (
     dbref target,
     dbref player,
     FLAG flag,
     int fflags,
-    BOOL reset
+    bool reset
 )
 {
     if (  isPlayer(target)
        && !Wizard(player))
     {
-        return FALSE;
+        return false;
     }
     return fh_any(target, player, flag, fflags, reset);
 }
@@ -110,13 +110,13 @@ BOOL fh_restrict_player
  * yourself have this flag and are a player who owns themselves (i.e.,
  * no robots). Only God can set this on a player.
  */
-BOOL fh_privileged
+bool fh_privileged
 (
     dbref target,
     dbref player,
     FLAG flag,
     int fflags,
-    BOOL reset
+    bool reset
 )
 {
     if (!God(player))
@@ -126,7 +126,7 @@ BOOL fh_privileged
            || isPlayer(target)
            || (db[player].fs.word[fflags] & flag) == 0)
         {
-            return FALSE;
+            return false;
         }
     }
     return fh_any(target, player, flag, fflags, reset);
@@ -137,11 +137,11 @@ BOOL fh_privileged
  * * fh_inherit: only players may set or clear this bit.
  */
 
-BOOL fh_inherit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
+bool fh_inherit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (!Inherits(player))
     {
-        return FALSE;
+        return false;
     }
     return (fh_any(target, player, flag, fflags, reset));
 }
@@ -151,7 +151,7 @@ BOOL fh_inherit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
  * * fh_dark_bit: manipulate the dark bit. Nonwizards may not set on players.
  */
 
-BOOL fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
+bool fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (  !reset
        && isPlayer(target)
@@ -159,7 +159,7 @@ BOOL fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
            && Can_Hide(player))
        && !Wizard(player))
     {
-        return FALSE;
+        return false;
     }
     return fh_any(target, player, flag, fflags, reset);
 }
@@ -169,7 +169,7 @@ BOOL fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
  * * fh_going_bit: manipulate the going bit.  Non-gods may only clear.
  */
 
-BOOL fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
+bool fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (  Going(target)
        && reset
@@ -180,7 +180,7 @@ BOOL fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
     }
     if (!God(player))
     {
-        return FALSE;
+        return false;
     }
 
     // Even God should not be allowed set protected dbrefs GOING.
@@ -193,7 +193,7 @@ BOOL fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
           || target == mudconf.default_home
           || target == mudconf.master_room))
     {
-        return FALSE;
+        return false;
     }
     return fh_any(target, player, flag, fflags, reset);
 }
@@ -203,7 +203,7 @@ BOOL fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
  * * fh_hear_bit: set or clear bits that affect hearing.
  */
 
-BOOL fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
+bool fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (isPlayer(target) && (flag & MONITOR))
     {
@@ -213,31 +213,31 @@ BOOL fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
         }
         else
         {
-            return FALSE;
+            return false;
         }
     }
 
-    BOOL could_hear = Hearer(target);
+    bool could_hear = Hearer(target);
     fh_any(target, player, flag, fflags, reset);
     handle_ears(target, could_hear, Hearer(target));
-    return TRUE;
+    return true;
 }
 
 /* ---------------------------------------------------------------------------
  * fh_player_bit: Can set and reset this on everything but players.
  */
-BOOL fh_player_bit
+bool fh_player_bit
 (
     dbref target,
     dbref player,
     FLAG flag,
     int fflags,
-    BOOL reset
+    bool reset
 )
 {
     if (isPlayer(target))
     {
-        return FALSE;
+        return false;
     }
     return fh_any(target, player, flag, fflags, reset);
 }
@@ -246,18 +246,18 @@ BOOL fh_player_bit
  * fh_staff: only STAFF, WIZARDS, ROYALTY, (or GOD) may set or clear
  * the bit.
  */
-BOOL fh_staff
+bool fh_staff
 (
     dbref target,
     dbref player,
     FLAG flag,
     int fflags,
-    BOOL reset
+    bool reset
 )
 {
     if (!Staff(player) && !God(player))
     {
-        return FALSE;
+        return false;
     }
     return (fh_any(target, player, flag, fflags, reset));
 }
@@ -356,91 +356,91 @@ static FLAGBITENT fbeMarker9        = { MARK_9,       '9',    FLAG_WORD3, 0,    
 
 FLAGNAMEENT gen_flag_names[] =
 {
-    {"ABODE",           TRUE, &fbeAbode          },
-    {"ACCENTS",        FALSE, &fbeNoAccents      },
-    {"ANSI",            TRUE, &fbeAnsi           },
-    {"AUDIBLE",         TRUE, &fbeAudible        },
-    {"AUDITORIUM",      TRUE, &fbeAuditorium     },
-    {"BLEED",          FALSE, &fbeNoBleed        },
-    {"BLIND",           TRUE, &fbeBlind          },
-    {"COMMANDS",       FALSE, &fbeNoCommand      },
-    {"CHOWN_OK",        TRUE, &fbeChownOk        },
-    {"CONNECTED",       TRUE, &fbeConnected      },
-    {"DARK",            TRUE, &fbeDark           },
-    {"DESTROY_OK",      TRUE, &fbeDestroyOk      },
-    {"ENTER_OK",        TRUE, &fbeEnterOk        },
-    {"FIXED",           TRUE, &fbeFixed          },
-    {"FLOATING",        TRUE, &fbeFloating       },
-    {"GAGGED",          TRUE, &fbeGagged         },
-    {"GOING",           TRUE, &fbeGoing          },
-    {"HALTED",          TRUE, &fbeHalted         },
-    {"HAS_DAILY",       TRUE, &fbeHasDaily       },
-    {"HAS_FORWARDLIST", TRUE, &fbeHasForwardList },
-    {"HAS_LISTEN",      TRUE, &fbeHasListen      },
-    {"HAS_STARTUP",     TRUE, &fbeHasStartup     },
-    {"HAVEN",           TRUE, &fbeHaven          },
-    {"HEAD",            TRUE, &fbeHead           },
-    {"HTML",            TRUE, &fbeHtml           },
-    {"IMMORTAL",        TRUE, &fbeImmortal       },
-    {"INHERIT",         TRUE, &fbeInherit        },
-    {"JUMP_OK",         TRUE, &fbeJumpOk         },
-    {"KEEPALIVE",       TRUE, &fbeKeepAlive      },
-    {"KEY",             TRUE, &fbeKey            },
-    {"LIGHT",           TRUE, &fbeLight          },
-    {"LINK_OK",         TRUE, &fbeLinkOk         },
-    {"MARKER0",         TRUE, &fbeMarker0        },
-    {"MARKER1",         TRUE, &fbeMarker1        },
-    {"MARKER2",         TRUE, &fbeMarker2        },
-    {"MARKER3",         TRUE, &fbeMarker3        },
-    {"MARKER4",         TRUE, &fbeMarker4        },
-    {"MARKER5",         TRUE, &fbeMarker5        },
-    {"MARKER6",         TRUE, &fbeMarker6        },
-    {"MARKER7",         TRUE, &fbeMarker7        },
-    {"MARKER8",         TRUE, &fbeMarker8        },
-    {"MARKER9",         TRUE, &fbeMarker9        },
-    {"MONITOR",         TRUE, &fbeMonitor        },
-    {"MYOPIC",          TRUE, &fbeMyopic         },
-    {"NO_COMMAND",      TRUE, &fbeNoCommand      },
-    {"NOACCENTS",       TRUE, &fbeNoAccents      },
-    {"NOBLEED",         TRUE, &fbeNoBleed        },
-    {"NOSPOOF",         TRUE, &fbeNoSpoof        },
-    {"OPAQUE",          TRUE, &fbeOpaque         },
-    {"OPEN_OK",         TRUE, &fbeOpenOk         },
-    {"PARENT_OK",       TRUE, &fbeParentOk       },
-    {"PLAYER_MAILS",    TRUE, &fbePlayerMails    },
-    {"PUPPET",          TRUE, &fbePuppet         },
-    {"QUIET",           TRUE, &fbeQuiet          },
-    {"ROBOT",           TRUE, &fbeRobot          },
-    {"ROYALTY",         TRUE, &fbeRoyalty        },
-    {"SAFE",            TRUE, &fbeSafe           },
-    {"SITEMON",         TRUE, &fbeSitemon        },
-    {"SLAVE",           TRUE, &fbeSlave          },
-    {"SPOOF",          FALSE, &fbeNoSpoof        },
-    {"STAFF",           TRUE, &fbeStaff          },
-    {"STICKY",          TRUE, &fbeSticky         },
-    {"SUSPECT",         TRUE, &fbeSuspect        },
-    {"TERSE",           TRUE, &fbeTerse          },
-    {"TRACE",           TRUE, &fbeTrace          },
-    {"TRANSPARENT",     TRUE, &fbeTransparent    },
-    {"UNFINDABLE",      TRUE, &fbeUnfindable     },
-    {"UNINSPECTED",     TRUE, &fbeUninspected    },
-    {"VACATION",        TRUE, &fbeVacation       },
-    {"VERBOSE",         TRUE, &fbeVerbose        },
-    {"VISUAL",          TRUE, &fbeVisual         },
-    {"WIZARD",          TRUE, &fbeWizard         },
+    {"ABODE",           true, &fbeAbode          },
+    {"ACCENTS",        false, &fbeNoAccents      },
+    {"ANSI",            true, &fbeAnsi           },
+    {"AUDIBLE",         true, &fbeAudible        },
+    {"AUDITORIUM",      true, &fbeAuditorium     },
+    {"BLEED",          false, &fbeNoBleed        },
+    {"BLIND",           true, &fbeBlind          },
+    {"COMMANDS",       false, &fbeNoCommand      },
+    {"CHOWN_OK",        true, &fbeChownOk        },
+    {"CONNECTED",       true, &fbeConnected      },
+    {"DARK",            true, &fbeDark           },
+    {"DESTROY_OK",      true, &fbeDestroyOk      },
+    {"ENTER_OK",        true, &fbeEnterOk        },
+    {"FIXED",           true, &fbeFixed          },
+    {"FLOATING",        true, &fbeFloating       },
+    {"GAGGED",          true, &fbeGagged         },
+    {"GOING",           true, &fbeGoing          },
+    {"HALTED",          true, &fbeHalted         },
+    {"HAS_DAILY",       true, &fbeHasDaily       },
+    {"HAS_FORWARDLIST", true, &fbeHasForwardList },
+    {"HAS_LISTEN",      true, &fbeHasListen      },
+    {"HAS_STARTUP",     true, &fbeHasStartup     },
+    {"HAVEN",           true, &fbeHaven          },
+    {"HEAD",            true, &fbeHead           },
+    {"HTML",            true, &fbeHtml           },
+    {"IMMORTAL",        true, &fbeImmortal       },
+    {"INHERIT",         true, &fbeInherit        },
+    {"JUMP_OK",         true, &fbeJumpOk         },
+    {"KEEPALIVE",       true, &fbeKeepAlive      },
+    {"KEY",             true, &fbeKey            },
+    {"LIGHT",           true, &fbeLight          },
+    {"LINK_OK",         true, &fbeLinkOk         },
+    {"MARKER0",         true, &fbeMarker0        },
+    {"MARKER1",         true, &fbeMarker1        },
+    {"MARKER2",         true, &fbeMarker2        },
+    {"MARKER3",         true, &fbeMarker3        },
+    {"MARKER4",         true, &fbeMarker4        },
+    {"MARKER5",         true, &fbeMarker5        },
+    {"MARKER6",         true, &fbeMarker6        },
+    {"MARKER7",         true, &fbeMarker7        },
+    {"MARKER8",         true, &fbeMarker8        },
+    {"MARKER9",         true, &fbeMarker9        },
+    {"MONITOR",         true, &fbeMonitor        },
+    {"MYOPIC",          true, &fbeMyopic         },
+    {"NO_COMMAND",      true, &fbeNoCommand      },
+    {"NOACCENTS",       true, &fbeNoAccents      },
+    {"NOBLEED",         true, &fbeNoBleed        },
+    {"NOSPOOF",         true, &fbeNoSpoof        },
+    {"OPAQUE",          true, &fbeOpaque         },
+    {"OPEN_OK",         true, &fbeOpenOk         },
+    {"PARENT_OK",       true, &fbeParentOk       },
+    {"PLAYER_MAILS",    true, &fbePlayerMails    },
+    {"PUPPET",          true, &fbePuppet         },
+    {"QUIET",           true, &fbeQuiet          },
+    {"ROBOT",           true, &fbeRobot          },
+    {"ROYALTY",         true, &fbeRoyalty        },
+    {"SAFE",            true, &fbeSafe           },
+    {"SITEMON",         true, &fbeSitemon        },
+    {"SLAVE",           true, &fbeSlave          },
+    {"SPOOF",          false, &fbeNoSpoof        },
+    {"STAFF",           true, &fbeStaff          },
+    {"STICKY",          true, &fbeSticky         },
+    {"SUSPECT",         true, &fbeSuspect        },
+    {"TERSE",           true, &fbeTerse          },
+    {"TRACE",           true, &fbeTrace          },
+    {"TRANSPARENT",     true, &fbeTransparent    },
+    {"UNFINDABLE",      true, &fbeUnfindable     },
+    {"UNINSPECTED",     true, &fbeUninspected    },
+    {"VACATION",        true, &fbeVacation       },
+    {"VERBOSE",         true, &fbeVerbose        },
+    {"VISUAL",          true, &fbeVisual         },
+    {"WIZARD",          true, &fbeWizard         },
 #ifdef WOD_REALMS
-    {"FAE",             TRUE, &fbeFae            },
-    {"CHIMERA",         TRUE, &fbeChimera        },
-    {"PEERING",         TRUE, &fbePeering        },
-    {"UMBRA",           TRUE, &fbeUmbra          },
-    {"SHROUD",          TRUE, &fbeShroud         },
-    {"MATRIX",          TRUE, &fbeMatrix         },
-    {"OBF",             TRUE, &fbeObf            },
-    {"HSS",             TRUE, &fbeHss            },
-    {"MEDIUM",          TRUE, &fbeMedium         },
-    {"DEAD",            TRUE, &fbeDead           },
+    {"FAE",             true, &fbeFae            },
+    {"CHIMERA",         true, &fbeChimera        },
+    {"PEERING",         true, &fbePeering        },
+    {"UMBRA",           true, &fbeUmbra          },
+    {"SHROUD",          true, &fbeShroud         },
+    {"MATRIX",          true, &fbeMatrix         },
+    {"OBF",             true, &fbeObf            },
+    {"HSS",             true, &fbeHss            },
+    {"MEDIUM",          true, &fbeMedium         },
+    {"DEAD",            true, &fbeDead           },
 #endif // WOD_REALMS
-    {NULL,             FALSE, NULL}
+    {NULL,             false, NULL}
 };
 
 OBJENT object_types[8] =
@@ -515,7 +515,7 @@ char *MakeCanonicalFlagName
 (
     const char *pName,
     int *pnName,
-    BOOL *pbValid
+    bool *pbValid
 )
 {
     static char buff[SBUF_SIZE];
@@ -533,13 +533,13 @@ char *MakeCanonicalFlagName
     if (nName < SBUF_SIZE)
     {
         *pnName = nName;
-        *pbValid = TRUE;
+        *pbValid = true;
         return buff;
     }
     else
     {
         *pnName = 0;
-        *pbValid = FALSE;
+        *pbValid = false;
         return NULL;
     }
 }
@@ -549,7 +549,7 @@ FLAGNAMEENT *find_flag(char *flagname)
     // Convert flagname to canonical lowercase format.
     //
     int nName;
-    BOOL bValid;
+    bool bValid;
     char *pName = MakeCanonicalFlagName(flagname, &nName, &bValid);
     FLAGNAMEENT *fe = NULL;
     if (bValid)
@@ -564,7 +564,7 @@ FLAGNAMEENT *find_flag(char *flagname)
 //
 void flag_set(dbref target, dbref player, char *flag, int key)
 {
-    BOOL bDone = FALSE;
+    bool bDone = false;
 
     do
     {
@@ -575,10 +575,10 @@ void flag_set(dbref target, dbref player, char *flag, int key)
             flag++;
         }
 
-        BOOL bNegate = FALSE;
+        bool bNegate = false;
         if (*flag == '!')
         {
-            bNegate = TRUE;
+            bNegate = true;
             do
             {
                 flag++;
@@ -595,7 +595,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
         }
         if (*nflag == '\0')
         {
-            bDone = TRUE;
+            bDone = true;
         }
         else
         {
@@ -626,7 +626,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
             {
                 FLAGBITENT *fbe = fp->fbe;
 
-                BOOL bClearSet = bNegate;
+                bool bClearSet = bNegate;
                 if (!fp->bPositive)
                 {
                     bNegate = !bNegate;
@@ -666,11 +666,11 @@ char *decode_flags(dbref player, FLAGSET *fs)
         return buf;
     }
     int flagtype = fs->word[FLAG_WORD1] & TYPE_MASK;
-    BOOL bNeedColon = TRUE;
+    bool bNeedColon = true;
     if (object_types[flagtype].lett != ' ')
     {
         safe_sb_chr(object_types[flagtype].lett, buf, &bp);
-        bNeedColon = FALSE;
+        bNeedColon = false;
     }
 
     FLAGNAMEENT *fp;
@@ -718,7 +718,7 @@ char *decode_flags(dbref player, FLAGSET *fs)
                 safe_sb_chr(':', buf, &bp);
             }
             safe_sb_chr(fbe->flaglett, buf, &bp);
-            bNeedColon = FALSE;
+            bNeedColon = false;
         }
     }
     *bp = '\0';
@@ -730,12 +730,12 @@ char *decode_flags(dbref player, FLAGSET *fs)
  * * has_flag: does object have flag visible to player?
  */
 
-BOOL has_flag(dbref player, dbref it, char *flagname)
+bool has_flag(dbref player, dbref it, char *flagname)
 {
     FLAGNAMEENT *fp = find_flag(flagname);
     if (!fp)
     {
-        return FALSE;
+        return false;
     }
     FLAGBITENT *fbe = fp->fbe;
 
@@ -753,7 +753,7 @@ BOOL has_flag(dbref player, dbref it, char *flagname)
            || (  (fbe->listperm & CA_GOD)
               && !God(player)))
         {
-            return FALSE;
+            return false;
         }
 
         // Don't show CONNECT on dark wizards to mortals
@@ -764,11 +764,11 @@ BOOL has_flag(dbref player, dbref it, char *flagname)
            && Hidden(it)
            && !See_Hidden(player))
         {
-            return FALSE;
+            return false;
         }
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 /*
@@ -867,7 +867,7 @@ char *unparse_object_numonly(dbref target)
  * ---------------------------------------------------------------------------
  * * Return an lbuf pointing to the object name and possibly the db# and flags
  */
-char *unparse_object(dbref player, dbref target, BOOL obey_myopic)
+char *unparse_object(dbref player, dbref target, bool obey_myopic)
 {
     char *buf = alloc_lbuf("unparse_object");
     if (NOPERM <= target && target < 0)
@@ -880,7 +880,7 @@ char *unparse_object(dbref player, dbref target, BOOL obey_myopic)
     }
     else
     {
-        BOOL exam;
+        bool exam;
         if (obey_myopic)
         {
             exam = MyopicExam(player, target);
@@ -992,7 +992,7 @@ CF_HAND(cf_flag_access)
  * * Also set the type qualifier if specified and not already set.
  */
 
-BOOL convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
+bool convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
 {
     FLAG type = NOTYPE;
     FLAGSET flagmask;
@@ -1003,10 +1003,10 @@ BOOL convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
     }
 
     char *s;
-    BOOL handled;
+    bool handled;
     for (s = flaglist; *s; s++)
     {
-        handled = FALSE;
+        handled = false;
 
         // Check for object type.
         //
@@ -1028,10 +1028,10 @@ BOOL convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
                     char *p = tprintf("%c: Conflicting type specifications.",
                         *s);
                     notify(player, p);
-                    return FALSE;
+                    return false;
                 }
                 type = i;
-                handled = TRUE;
+                handled = true;
             }
         }
 
@@ -1061,7 +1061,7 @@ BOOL convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
                       && !God(player))))
             {
                 flagmask.word[fbe->flagflag] |= fbe->flagvalue;
-                handled = TRUE;
+                handled = true;
             }
         }
 
@@ -1070,7 +1070,7 @@ BOOL convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
             notify(player,
                    tprintf("%c: Flag unknown or not valid for specified object type",
                        *s));
-            return FALSE;
+            return false;
         }
     }
 
@@ -1078,7 +1078,7 @@ BOOL convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
     //
     *fset = flagmask;
     *p_type = type;
-    return TRUE;
+    return true;
 }
 
 /*
@@ -1118,22 +1118,22 @@ void decompile_flags(dbref player, dbref thing, char *thingname)
 // do_flag: Rename flags or remove flag aliases.
 // Based on RhostMUSH code.
 //
-BOOL flag_rename(char *alias, char *newname)
+bool flag_rename(char *alias, char *newname)
 {
     int nAlias;
-    BOOL bValidAlias;
+    bool bValidAlias;
     char *pCheckedAlias = MakeCanonicalFlagName(alias, &nAlias, &bValidAlias);
     if (!bValidAlias)
     {
-        return FALSE;
+        return false;
     }
 
     int nNewName;
-    BOOL bValidNewName;
+    bool bValidNewName;
     char *pCheckedNewName = MakeCanonicalFlagName(newname, &nNewName, &bValidNewName);
     if (!bValidNewName)
     {
-        return FALSE;
+        return false;
     }
 
     char *pAlias = alloc_sbuf("flag_rename.old");
@@ -1160,12 +1160,12 @@ BOOL flag_rename(char *alias, char *newname)
 
             free_sbuf(pAlias);
             free_sbuf(pNewName);
-            return TRUE;
+            return true;
         }
     }
     free_sbuf(pAlias);
     free_sbuf(pNewName);
-    return FALSE;
+    return false;
 }
 
 void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
@@ -1178,7 +1178,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
             notify(executor, "Extra argument ignored.");
         }
         int nAlias;
-        BOOL bValidAlias;
+        bool bValidAlias;
         char *pCheckedAlias = MakeCanonicalFlagName(flag1, &nAlias, &bValidAlias);
         if (bValidAlias)
         {

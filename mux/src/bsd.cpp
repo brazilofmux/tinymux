@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.10 2003-02-05 01:34:45 sdennis Exp $
+// $Id: bsd.cpp,v 1.11 2003-02-05 06:20:58 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -35,7 +35,7 @@ int      nMainGamePorts = 0;
 
 unsigned int ndescriptors = 0;
 DESC *descriptor_list = NULL;
-BOOL bDescriptorListInit = FALSE;
+bool bDescriptorListInit = false;
 
 #ifdef WIN32
 int game_pid;
@@ -48,7 +48,7 @@ pid_t game_pid;
 
 DESC *initializesock(SOCKET, struct sockaddr_in *);
 DESC *new_connection(PortInfo *Port, int *piError);
-BOOL process_input(DESC *);
+bool process_input(DESC *);
 void SiteMonSend(int, const char *, DESC *, const char *);
 
 #ifdef WIN32
@@ -60,7 +60,7 @@ void SiteMonSend(int, const char *, DESC *, const char *);
 HANDLE hGameProcess = INVALID_HANDLE_VALUE;
 FCANCELIO *fpCancelIo = NULL;
 FGETPROCESSTIMES *fpGetProcessTimes = NULL;
-BOOL bQueryPerformanceAvailable = FALSE;
+bool bQueryPerformanceAvailable = false;
 INT64 QP_A = 0;
 INT64 QP_B = 0;
 INT64 QP_C = 0;
@@ -269,7 +269,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                             char szIdentBuffer[MAX_STRING];
                             szIdentBuffer[0] = 0;
-                            BOOL bAllDone = FALSE;
+                            bool bAllDone = false;
 
                             ltaCurrent.GetUTC();
                             while (  !bAllDone
@@ -291,7 +291,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                                        || *p == '\r'
                                        || *p == '\n')
                                     {
-                                        bAllDone = TRUE;
+                                        bAllDone = true;
                                         break;
                                     }
                                     if (mux_isprint[(unsigned char)*p])
@@ -299,7 +299,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                                         szIdent[nIdent++] = *p;
                                         if (sizeof(szIdent) - 1 <= nIdent)
                                         {
-                                            bAllDone = TRUE;
+                                            bAllDone = true;
                                             break;
                                         }
                                     }
@@ -359,7 +359,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
     return 1;
 }
 
-static BOOL bSlaveBooted = FALSE;
+static bool bSlaveBooted = false;
 void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 {
     int iSlave;
@@ -378,7 +378,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
         CreateThread(NULL, 0, SlaveProc, (LPVOID)iSlave, 0, &SlaveThreadInfo[iSlave].hThreadId);
         DebugTotalThreads++;
     }
-    bSlaveBooted = TRUE;
+    bSlaveBooted = true;
 }
 
 
@@ -723,7 +723,7 @@ void make_socket(PortInfo *Port)
         if (!bDescriptorListInit)
         {
             InitializeCriticalSection(&csDescriptorList);
-            bDescriptorListInit = TRUE;
+            bDescriptorListInit = true;
         }
 
         // Create a TCP/IP stream socket
@@ -830,15 +830,15 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
     // should be closed.
     //
     int i, j, k;
-    BOOL bFound;
+    bool bFound;
     for (i = 0; i < *pnPorts; i++)
     {
-        bFound = FALSE;
+        bFound = false;
         for (j = 0; j < pia->n; j++)
         {
             if (aPorts[i].port == pia->pi[j])
             {
-                bFound = TRUE;
+                bFound = true;
                 break;
             }
         }
@@ -864,12 +864,12 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
     //
     for (j = 0; j < pia->n; j++)
     {
-        bFound = FALSE;
+        bFound = false;
         for (i = 0; i < *pnPorts; i++)
         {
             if (aPorts[i].port == pia->pi[j])
             {
-                bFound = TRUE;
+                bFound = true;
                 break;
             }
         }
@@ -902,17 +902,17 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
 // optimizations are requested (-Qipo). Including this function is a
 // workaround.
 //
-DCL_INLINE BOOL FD_ISSET_priv(SOCKET fd, fd_set *set)
+DCL_INLINE bool FD_ISSET_priv(SOCKET fd, fd_set *set)
 {
     unsigned int i;
     for (i = 0; i < set->fd_count; i++)
     {
         if (set->fd_array[i] == fd)
         {
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
 void shovechars9x(int nPorts, PortInfo aPorts[])
@@ -1059,7 +1059,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
             //
             if (CheckOutput(d->descriptor))
             {
-                process_output9x(d, TRUE);
+                process_output9x(d, true);
             }
         }
     }
@@ -1076,7 +1076,7 @@ LRESULT WINAPI mux_WindowProc
     switch (msg)
     {
     case WM_CLOSE:
-        mudstate.shutdown_flag = TRUE;
+        mudstate.shutdown_flag = true;
         PostQueuedCompletionStatus(CompletionPort, 0, 0, &lpo_wakeup);
         return 0;
 
@@ -1118,7 +1118,7 @@ DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
     {
         DispatchMessage(&msg);
     }
-    mudstate.shutdown_flag = TRUE;
+    mudstate.shutdown_flag = true;
     PostQueuedCompletionStatus(CompletionPort, 0, 0, &lpo_wakeup);
     return 1;
 }
@@ -1181,8 +1181,8 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
         {
             if (d->bCallProcessOutputLater)
             {
-                d->bCallProcessOutputLater = FALSE;
-                process_outputNT(d, FALSE);
+                d->bCallProcessOutputLater = false;
+                process_outputNT(d, false);
             }
         }
 
@@ -1197,14 +1197,14 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
 
 #else // WIN32
 
-BOOL ValidSocket(SOCKET s)
+bool ValidSocket(SOCKET s)
 {
     struct stat fstatbuf;
     if (fstat(s, &fstatbuf) < 0)
     {
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 void shovechars(int nPorts, PortInfo aPorts[])
@@ -1434,7 +1434,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             //
             if (CheckOutput(d->descriptor))
             {
-                process_output(d, TRUE);
+                process_output(d, true);
             }
         }
     }
@@ -1742,7 +1742,7 @@ void shutdownsock(DESC *d, int reason)
         SiteMonSend(d->descriptor, d->addr, d, "N/C Connection Closed");
     }
 
-    process_output(d, FALSE);
+    process_output(d, false);
     clearstrings(d);
 
     d->flags &= ~DS_CONNECTED;
@@ -1801,8 +1801,8 @@ void shutdownsock(DESC *d, int reason)
 
             // make sure we don't try to initiate or process any outstanding IOs
             //
-            d->bConnectionShutdown = TRUE;
-            d->bConnectionDropped = TRUE;
+            d->bConnectionShutdown = true;
+            d->bConnectionDropped = true;
 
             // cancel any pending reads or writes on this socket
             //
@@ -1874,8 +1874,8 @@ void shutdownsock_brief(DESC *d)
 
     // make sure we don't try to initiate or process any outstanding IOs
     //
-    d->bConnectionShutdown = TRUE;
-    d->bConnectionDropped = TRUE;
+    d->bConnectionShutdown = true;
+    d->bConnectionDropped = true;
 
 
     // cancel any pending reads or writes on this socket
@@ -2065,10 +2065,10 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
         d->InboundOverlapped.hEvent = NULL;
         d->InboundOverlapped.Offset = 0;
         d->InboundOverlapped.OffsetHigh = 0;
-        d->bWritePending = FALSE;   // no write pending yet
-        d->bConnectionShutdown = FALSE; // not shutdown yet
-        d->bConnectionDropped = FALSE; // not dropped yet
-        d->bCallProcessOutputLater = FALSE;
+        d->bWritePending = false;   // no write pending yet
+        d->bConnectionShutdown = false; // not shutdown yet
+        d->bConnectionDropped = false; // not dropped yet
+        d->bCallProcessOutputLater = false;
     }
 #endif // WIN32
     return d;
@@ -2148,14 +2148,14 @@ int AsyncSend(DESC *d, char *buf, int len)
 
     BOOL bResult = WriteFile((HANDLE) d->descriptor, d->output_buffer, nBytes, NULL, &d->OutboundOverlapped);
 
-    d->bWritePending = FALSE;
+    d->bWritePending = false;
 
     if (!bResult)
     {
         DWORD dwLastError = GetLastError();
         if (dwLastError == ERROR_IO_PENDING)
         {
-            d->bWritePending = TRUE;
+            d->bWritePending = true;
         }
         else
         {
@@ -2163,7 +2163,7 @@ int AsyncSend(DESC *d, char *buf, int len)
             {
                 // Do no more writes and post a notification that the descriptor should be shutdown.
                 //
-                d->bConnectionDropped = TRUE;
+                d->bConnectionDropped = true;
                 Log.tinyprintf("AsyncSend(%d) failed with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                 if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                 {
@@ -2286,7 +2286,7 @@ void process_output(void *dvoid, int bHandleShutdown)
 }
 #endif // WIN32
 
-BOOL process_input_helper(DESC *d, char *buf, int got)
+bool process_input_helper(DESC *d, char *buf, int got)
 {
     if (!d->raw_input)
     {
@@ -2370,10 +2370,10 @@ BOOL process_input_helper(DESC *d, char *buf, int got)
     d->input_tot += got;
     d->input_size += in;
     d->input_lost += lost;
-    return TRUE;
+    return true;
 }
 
-BOOL process_input(DESC *d)
+bool process_input(DESC *d)
 {
     char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = "< process_input >";
@@ -2391,16 +2391,16 @@ BOOL process_input(DESC *d)
 #endif // SOCKET_EAGAIN
               || iSocketError == SOCKET_EINTR))
         {
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
-    BOOL cc = process_input_helper(d, buf, got);
+    bool cc = process_input_helper(d, buf, got);
     mudstate.debug_cmd = cmdsave;
     return cc;
 }
 
-void close_sockets(BOOL emergency, char *message)
+void close_sockets(bool emergency, char *message)
 {
     DESC *d, *dnext;
 
@@ -2437,7 +2437,7 @@ void close_sockets(BOOL emergency, char *message)
 
 void emergency_shutdown(void)
 {
-    close_sockets(TRUE, "Going down - Bye");
+    close_sockets(true, "Going down - Bye");
 }
 
 
@@ -2460,7 +2460,7 @@ static void check_panicking(int sig)
         kill(getpid(), sig);
 #endif // WIN32
     }
-    mudstate.panicking = TRUE;
+    mudstate.panicking = true;
 }
 
 static void unset_signals(void)
@@ -2875,7 +2875,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         check_panicking(sig);
         log_signal(sig);
         raw_broadcast(0, "GAME: Caught signal %s, exiting.", SignalDesc(sig));
-        mudstate.shutdown_flag = TRUE;
+        mudstate.shutdown_flag = true;
         break;
 
     case SIGILL:
@@ -3108,7 +3108,7 @@ void __cdecl MUDListenThread(void * pVoid)
     //
     // Loop forever accepting connections
     //
-    while (TRUE)
+    while (true)
     {
         //
         // Block on accept()
@@ -3205,7 +3205,7 @@ void __cdecl MUDListenThread(void * pVoid)
         {
             // Post a notification that the descriptor should be shutdown, and do no more IO.
             //
-            d->bConnectionDropped = TRUE;
+            d->bConnectionDropped = true;
             Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, GetLastError());
             if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
             {
@@ -3283,7 +3283,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 {
                     // bad IO - shut down this client
                     //
-                    d->bConnectionDropped = TRUE;
+                    d->bConnectionDropped = true;
 
                     // Post a notification that the descriptor should be shutdown
                     //
@@ -3304,17 +3304,17 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             TBLOCK *tp;
             DWORD nBytes;
 
-            BOOL bNothingToWrite;
+            bool bNothingToWrite;
             do
             {
-                bNothingToWrite = TRUE;
+                bNothingToWrite = true;
                 tp = d->output_head;
                 if (tp == NULL)
                 {
-                    d->bWritePending = FALSE;
+                    d->bWritePending = false;
                     break;
                 }
-                bNothingToWrite = TRUE;
+                bNothingToWrite = true;
 
                 // Move data from one buffer to another.
                 //
@@ -3356,7 +3356,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
                 // We do allow more than one complete write request in the IO
                 // completion port queue. The reason is that if WriteFile
-                // returns TRUE, we -can- re-used the output_buffer -and-
+                // returns true, we -can- re-used the output_buffer -and-
                 // redundant queue entries just cause us to try to write more
                 // often. There is no possibility of corruption.
                 //
@@ -3371,14 +3371,14 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
             if (bNothingToWrite) continue;
 
-            d->bWritePending = TRUE;
+            d->bWritePending = true;
             DWORD dwLastError = GetLastError();
             if (dwLastError != ERROR_IO_PENDING)
             {
                 // Post a notification that the descriptor should be shutdown
                 //
-                d->bWritePending = FALSE;
-                d->bConnectionDropped = TRUE;
+                d->bWritePending = false;
+                d->bConnectionDropped = true;
                 Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue write request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                 if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                 {
@@ -3398,7 +3398,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
                 // Post a notification that the descriptor should be shutdown
                 //
-                d->bConnectionDropped = TRUE;
+                d->bConnectionDropped = true;
                 Log.tinyprintf("ProcessWindowsTCP(%d) zero-length read. Requesting port shutdown." ENDLINE, d->descriptor);
                 if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                 {
@@ -3431,7 +3431,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             //
             b = ReadFile((HANDLE) d->descriptor, d->input_buffer, sizeof(d->input_buffer), &nbytes, &d->InboundOverlapped);
 
-            // if ReadFile returns TRUE, then the read completed successfully already, but it was also added to the IO
+            // if ReadFile returns true, then the read completed successfully already, but it was also added to the IO
             // completion port queue, so in order to avoid having two requests in the queue for the same buffer
             // (corruption problems), we act as if the IO is still pending.
             //
@@ -3445,7 +3445,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 {
                     // Post a notification that the descriptor should be shutdown, and do no more IO.
                     //
-                    d->bConnectionDropped = TRUE;
+                    d->bConnectionDropped = true;
                     Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                     if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                     {
@@ -3463,7 +3463,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             // request, and the port was shutdown while this packet was in
             // the completion port queue.
             //
-            BOOL bInvalidSocket = IS_INVALID_SOCKET(d->descriptor);
+            bool bInvalidSocket = IS_INVALID_SOCKET(d->descriptor);
 
             // Log connection.
             //
@@ -3544,7 +3544,7 @@ void SiteMonSend(int port, const char *address, DESC *d, const char *msg)
     // Build the msg.
     //
     char *sendMsg;
-    BOOL bSuspect = (d != NULL) && (d->host_info & H_SUSPECT);
+    bool bSuspect = (d != NULL) && (d->host_info & H_SUSPECT);
     if (IS_INVALID_SOCKET(port))
     {
         sendMsg = tprintf("SITEMON: [UNKNOWN] %s from %s.%s", msg, address,
@@ -3563,7 +3563,7 @@ void SiteMonSend(int port, const char *address, DESC *d, const char *msg)
         {
             queue_string(nd, sendMsg);
             queue_write(nd, "\r\n", 2);
-            process_output(nd, FALSE);
+            process_output(nd, false);
         }
     }
 }

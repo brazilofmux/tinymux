@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.31 2003-02-05 05:52:09 sdennis Exp $
+// $Id: stringutil.h,v 1.32 2003-02-05 06:20:59 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -49,18 +49,18 @@ char *mux_i64toa_t(INT64 val);
 void safe_i64toa(INT64 val, char *buff, char **bufc);
 long mux_atol(const char *pString);
 INT64 mux_atoi64(const char *pString);
-double mux_atof(char *szString, BOOL bStrict = TRUE);
-char *mux_ftoa(double r, BOOL bRounded, int frac);
-BOOL bcd_valid(INT64 a);
+double mux_atof(char *szString, bool bStrict = true);
+char *mux_ftoa(double r, bool bRounded, int frac);
+bool bcd_valid(INT64 a);
 INT64 bcd_add(INT64 a, INT64 b);
 INT64 bcd_tencomp(INT64 a);
 int   mux_bcdtoa(INT64 val, char *buf);
 INT64 mux_atobcd(const char *pString);
 void safe_bcdtoa(INT64 val, char *buff, char **bufc);
 
-BOOL is_integer(char *, int *);
-BOOL is_rational(char *);
-BOOL is_real(char *);
+bool is_integer(char *, int *);
+bool is_rational(char *);
+bool is_real(char *);
 
 #pragma pack(1)
 typedef struct
@@ -81,14 +81,14 @@ struct ANSI_In_Context
     ANSI_ColorState m_acs;
     const char     *m_p;
     int             m_n;
-    BOOL            m_bSawNormal;
+    bool            m_bSawNormal;
 };
 
 struct ANSI_Out_Context
 {
     int             m_iEndGoal;
     ANSI_ColorState m_acs;
-    BOOL            m_bDone; // some constraint was met.
+    bool            m_bDone; // some constraint was met.
     char           *m_p;
     int             m_n;
     int             m_nMax;
@@ -128,15 +128,15 @@ extern char *replace_tokens
 extern int prefix_match(const char *, const char *);
 extern char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
 #endif // 0
-extern BOOL minmatch(char *str, char *target, int min);
+extern bool minmatch(char *str, char *target, int min);
 extern char *StringCloneLen(const char *str, size_t nStr);
 extern char *StringClone(const char *str);
 void safe_copy_str(const char *src, char *buff, char **bufp, int max);
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp);
 int safe_fill(char *buff, char **bufc, char chFile, int nSpaces);
-extern BOOL matches_exit_from_list(char *, const char *);
-extern char *translate_string(const char *, BOOL);
+extern bool matches_exit_from_list(char *, const char *);
+extern char *translate_string(const char *, bool);
 extern int mux_stricmp(const char *a, const char *b);
 extern int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
 extern void mux_strlwr(char *tp);
@@ -144,7 +144,7 @@ extern void mux_strupr(char *a);
 
 typedef struct tag_itl
 {
-    BOOL bFirst;
+    bool bFirst;
     char chPrefix;
     char chSep;
     char *buff;
@@ -154,9 +154,9 @@ typedef struct tag_itl
 
 void ItemToList_Init(ITL *pContext, char *arg_buff, char **arg_bufc,
     char arg_chPrefix = 0, char arg_chSep = ' ');
-BOOL ItemToList_AddInteger(ITL *pContext, int i);
-BOOL ItemToList_AddString(ITL *pContext, char *pStr);
-BOOL ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr);
+bool ItemToList_AddInteger(ITL *pContext, int i);
+bool ItemToList_AddString(ITL *pContext, char *pStr);
+bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr);
 void ItemToList_Final(ITL *pContext);
 
 int DCL_CDECL mux_vsnprintf(char *buff, int count, const char *fmt, va_list va);
@@ -199,6 +199,6 @@ typedef struct
 
 } PARSE_FLOAT_RESULT;
 
-extern BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict = TRUE);
+extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict = true);
 
 #endif // STRINGUTIL_H

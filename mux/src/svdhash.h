@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.3 2003-01-28 15:48:00 sdennis Exp $
+// $Id: svdhash.h,v 1.4 2003-02-05 06:20:59 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -111,23 +111,23 @@ private:
     UINT32          m_nDirEmptyTrigger;
 
 #ifdef HP_PROTECTION
-    BOOL ValidateAllocatedBlock(UINT32 iDir);
-    BOOL ValidateFreeBlock(HP_HEAPOFFSET oBlock);
-    BOOL ValidateFreeList(void);
+    bool ValidateAllocatedBlock(UINT32 iDir);
+    bool ValidateFreeBlock(HP_HEAPOFFSET oBlock);
+    bool ValidateFreeList(void);
 #endif // HP_PROTECTION
-    BOOL HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
+    bool HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
     void SetVariablePointers(void);
     void SetFixedPointers(void);
     void GetStats(HP_HEAPLENGTH nExtra, int *pnRecords, HP_HEAPLENGTH *pnAllocatedSize, int *pnGoodDirSize);
 
 public:
     CHashPage(void);
-    BOOL Allocate(unsigned int nPageSize);
+    bool Allocate(unsigned int nPageSize);
     ~CHashPage(void);
     void Empty(HP_DIRINDEX arg_nDepth, UINT32 arg_nHashGroup, HP_DIRINDEX arg_nDirSize);
 #ifdef HP_PROTECTION
     void Protection(void);
-    BOOL Validate(void);
+    bool Validate(void);
 #endif // HP_PROTECTION
 
 #define HP_INSERT_SUCCESS_DEFRAG 0
@@ -144,13 +144,13 @@ public:
     void HeapFree(HP_DIRINDEX iDir);
     void HeapUpdate(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, void *pRecord);
 
-    BOOL WritePage(HANDLE hFile, HF_FILEOFFSET oWhere);
-    BOOL ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere);
+    bool WritePage(HANDLE hFile, HF_FILEOFFSET oWhere);
+    bool ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere);
 
     HP_DIRINDEX GetDepth(void);
-    BOOL Split(CHashPage &hp0, CHashPage &hp1);
+    bool Split(CHashPage &hp0, CHashPage &hp1);
 
-    BOOL Defrag(HP_HEAPLENGTH nExtra);
+    bool Defrag(HP_HEAPLENGTH nExtra);
     void GetRange(UINT32 arg_nDirDepth, UINT32 &nStart, UINT32 &nEnd);
 };
 
@@ -187,19 +187,19 @@ private:
     unsigned int    m_nDirDepth;
     HF_CACHE        m_Cache[HF_PAGES];
     HF_PFILEOFFSET  m_pDir;
-    BOOL DoubleDirectory(void);
+    bool DoubleDirectory(void);
 
     int AllocateEmptyPage(int nSafe, int Safe[]);
     int ReadCache(HF_FILEOFFSET oPage, int *pHits);
-    BOOL FlushCache(int iCache);
+    bool FlushCache(int iCache);
     void WriteDirectory(void);
-    BOOL EmptyDirectory(void);
+    bool EmptyDirectory(void);
 
     void Init(void);
 
-    BOOL CreateFileSet(const char *szDirFile, const char *szPageFile);
-    BOOL RebuildDirectory(void);
-    BOOL ReadDirectory(void);
+    bool CreateFileSet(const char *szDirFile, const char *szPageFile);
+    bool RebuildDirectory(void);
+    bool ReadDirectory(void);
 
 public:
     CHashFile(void);
@@ -207,7 +207,7 @@ public:
 #define HF_OPEN_STATUS_NEW    0
 #define HF_OPEN_STATUS_OLD    1
     int Open(const char *szDirFile, const char *szPageFile);
-    BOOL Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
+    bool Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
     HP_DIRINDEX FindFirstKey(UINT32 nHash);
     HP_DIRINDEX FindNextKey(HP_DIRINDEX iDir, UINT32 nHash);
     void Copy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);
@@ -237,7 +237,7 @@ private:
     INT64           m_nChecks;
     unsigned int    m_nMaxScan;
 
-    BOOL DoubleDirectory(void);
+    bool DoubleDirectory(void);
 
     void Init(void);
     void Final(void);
@@ -249,7 +249,7 @@ public:
                    INT64 *scans, INT64 *hits, INT64 *checks, int *max_scan);
 
     void Reset(void);
-    BOOL Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
+    bool Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
     HP_DIRINDEX FindFirstKey(UINT32 nHash);
     HP_DIRINDEX FindNextKey(HP_DIRINDEX iDir, UINT32 nHash);
     HP_DIRINDEX FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord);
@@ -273,7 +273,7 @@ private:
     int  m_nSize;
     int  m_nBuffer;
     char m_aBuffer[SIZEOF_LOG_BUFFER];
-    BOOL bEnabled;
+    bool bEnabled;
     char m_szPrefix[32];
     char m_szFilename[SIZEOF_PATHNAME];
 

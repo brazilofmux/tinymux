@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: move.cpp,v 1.2 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -17,7 +17,7 @@
  * place.
  */
 
-static void process_leave_loc(dbref thing, dbref dest, dbref cause, BOOL canhear, int hush)
+static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear, int hush)
 {
     dbref loc = Location(thing);
     if ((loc == NOTHING) || (loc == dest))
@@ -45,7 +45,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, BOOL canhear
     // EXCEPT if we were called with the HUSH_LEAVE key.
     //
 
-    BOOL quiet = (  (hush & HUSH_LEAVE)
+    bool quiet = (  (hush & HUSH_LEAVE)
                  || (  !Wizard(loc)
                     && (  Dark(thing)
                        || Dark(loc))
@@ -92,7 +92,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, BOOL canhear
  * a place.
  */
 
-static void process_enter_loc(dbref thing, dbref src, dbref cause, BOOL canhear, int hush)
+static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear, int hush)
 {
     dbref loc = Location(thing);
     if (  loc == NOTHING
@@ -112,7 +112,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, BOOL canhear,
     //
     // EXCEPT if we were called with the HUSH_ENTER key.
     //
-    BOOL quiet = (  (hush & HUSH_ENTER)
+    bool quiet = (  (hush & HUSH_ENTER)
                  || (  !Wizard(loc)
                     && (  Dark(thing)
                        || Dark(loc))
@@ -299,7 +299,7 @@ void move_via_generic(dbref thing, dbref dest, dbref cause, int hush)
     }
 
     dbref src = Location(thing);
-    BOOL canhear = Hearer(thing);
+    bool canhear = Hearer(thing);
     process_leave_loc(thing, dest, cause, canhear, hush);
     move_object(thing, dest);
     did_it(thing, thing, A_MOVE, NULL, A_OMOVE, NULL, A_AMOVE,
@@ -318,8 +318,8 @@ void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int hush)
         dest = Home(thing);
     }
     dbref src = Location(thing);
-    BOOL canhear = Hearer(thing);
-    BOOL quiet = (  (Wizard(thing) && Dark(thing)) // Dark wizards don't trigger OSUCC/ASUCC
+    bool canhear = Hearer(thing);
+    bool quiet = (  (Wizard(thing) && Dark(thing)) // Dark wizards don't trigger OSUCC/ASUCC
                  || (hush & HUSH_EXIT));
 
     int oattr = quiet ? 0 : A_OSUCC;
@@ -349,7 +349,7 @@ void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int hush)
  * divestiture + dropto check.
  */
 
-BOOL move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
+bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
 {
     dbref curr;
     int count;
@@ -375,7 +375,7 @@ BOOL move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
                 did_it(thing, src,
                        A_TOFAIL, failmsg, A_OTOFAIL, NULL,
                        A_ATOFAIL, (char **)NULL, 0);
-                return FALSE;
+                return false;
             }
             if (isRoom(curr))
             {
@@ -388,13 +388,13 @@ BOOL move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
     if (isExit(thing))
     {
         move_the_exit(thing, dest);
-        return TRUE;
+        return true;
     }
     if (dest == HOME)
     {
         dest = Home(thing);
     }
-    BOOL canhear = Hearer(thing);
+    bool canhear = Hearer(thing);
     if (!(hush & HUSH_LEAVE))
     {
         did_it(thing, thing, 0, NULL, A_OXTPORT, NULL, 0,
@@ -414,17 +414,17 @@ BOOL move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
     process_enter_loc(thing, src, NOTHING, canhear, hush);
     divest_object(thing);
     process_sticky_dropto(src, thing);
-    return TRUE;
+    return true;
 }
 
 /* ---------------------------------------------------------------------------
  * move_exit: Try to move a player through an exit.
  */
 
-void move_exit(dbref player, dbref exit, BOOL divest, const char *failmsg, int hush)
+void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int hush)
 {
     int oattr, aattr;
-    BOOL bDoit = FALSE;
+    bool bDoit = false;
 
     dbref loc = Location(exit);
     if (loc == HOME)
@@ -437,7 +437,7 @@ void move_exit(dbref player, dbref exit, BOOL divest, const char *failmsg, int h
     {
         if (isShroud(player))
         {
-            bDoit = TRUE;
+            bDoit = true;
             int iShroudWarded = get_atr("SHROUD_WARDED");
             if (iShroudWarded > 0)
             {
@@ -447,7 +447,7 @@ void move_exit(dbref player, dbref exit, BOOL divest, const char *failmsg, int h
                 {
                     if (*buff)
                     {
-                        bDoit = FALSE;
+                        bDoit = false;
                     }
                     free_lbuf(buff);
                 }
@@ -456,7 +456,7 @@ void move_exit(dbref player, dbref exit, BOOL divest, const char *failmsg, int h
 
         if (!bDoit && isUmbra(player))
         {
-            bDoit = TRUE;
+            bDoit = true;
             int iUmbraWarded = get_atr("UMBRA_WARDED");
             if (iUmbraWarded > 0)
             {
@@ -466,7 +466,7 @@ void move_exit(dbref player, dbref exit, BOOL divest, const char *failmsg, int h
                 {
                     if (*buff)
                     {
-                        bDoit = FALSE;
+                        bDoit = false;
                     }
                     free_lbuf(buff);
                 }
@@ -475,13 +475,13 @@ void move_exit(dbref player, dbref exit, BOOL divest, const char *failmsg, int h
 
         if (!bDoit && could_doit(player, exit, A_LOCK))
         {
-            bDoit = TRUE;
+            bDoit = true;
         }
     }
 #else
     if (Good_obj(loc) && could_doit(player, exit, A_LOCK))
     {
-        bDoit = TRUE;
+        bDoit = true;
     }
 #endif
     if (bDoit)
@@ -579,7 +579,7 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
         quiet = 0;
         if ((key & MOVE_QUIET) && Controls(executor, exit))
             quiet = HUSH_EXIT;
-        move_exit(executor, exit, FALSE, "You can't go that way.", quiet);
+        move_exit(executor, exit, false, "You can't go that way.", quiet);
     }
 }
 
@@ -622,7 +622,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
     if (!Good_obj(thing))
     {
         thing = match_status(executor, match_possessed(executor, executor, what,
-            thing, TRUE));
+            thing, true));
 
         if (!Good_obj(thing))
         {
@@ -646,7 +646,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
     //
     const char *failmsg;
     int oattr, aattr;
-    BOOL quiet = FALSE;
+    bool quiet = false;
     switch (Typeof(thing))
     {
     case TYPE_PLAYER:
@@ -662,7 +662,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
         if (  (key & GET_QUIET)
            && Controls(executor, thing))
         {
-            quiet = TRUE;
+            quiet = true;
         }
 
         if (thing == executor)
@@ -751,7 +751,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
     dbref exitloc, thing;
     char *buf, *bp;
     int oattr, aattr;
-    BOOL quiet;
+    bool quiet;
 
     init_match(executor, name, TYPE_THING);
     match_possession();
@@ -787,9 +787,9 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
         //
         move_via_generic(thing, Location(executor), executor, 0);
         notify(thing, "Dropped.");
-        quiet = FALSE;
+        quiet = false;
         if ((key & DROP_QUIET) && Controls(executor, thing))
-            quiet = TRUE;
+            quiet = true;
         bp = buf = alloc_lbuf("do_drop.did_it");
         safe_tprintf_str(buf, &bp, "dropped %s.", Name(thing));
         oattr = quiet ? 0 : A_ODROP;
@@ -837,7 +837,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
  * do_enter, do_leave: The enter and leave commands.
  */
 
-void do_enter_internal(dbref player, dbref thing, BOOL quiet)
+void do_enter_internal(dbref player, dbref thing, bool quiet)
 {
     int oattr, aattr;
 
@@ -877,7 +877,7 @@ void do_enter(dbref executor, dbref caller, dbref enactor, int key, char *what)
         match_absolute();   // the wizard has long fingers
 
     dbref thing = noisy_match_result();
-    BOOL bQuiet = FALSE;
+    bool bQuiet = false;
 
     if (thing == NOTHING)
         return;
@@ -887,7 +887,7 @@ void do_enter(dbref executor, dbref caller, dbref enactor, int key, char *what)
     case TYPE_PLAYER:
     case TYPE_THING:
         if ((key & MOVE_QUIET) && Controls(executor, thing))
-            bQuiet = TRUE;
+            bQuiet = true;
         do_enter_internal(executor, thing, bQuiet);
         break;
     default:

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.4 2003-02-03 15:00:33 sdennis Exp $
+// $Id: cque.cpp,v 1.5 2003-02-05 06:20:58 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -20,7 +20,7 @@
 
 extern int  a_Queue(dbref, int);
 extern int  QueueMax(dbref);
-BOOL break_called = FALSE;
+bool break_called = false;
 
 CLinearTimeDelta GetProcessorUsage(void)
 {
@@ -59,7 +59,7 @@ CLinearTimeDelta GetProcessorUsage(void)
             ltd.Set100ns(li);
             return ltd;
         }
-        bQueryPerformanceAvailable = FALSE;
+        bQueryPerformanceAvailable = false;
     }
 #endif
 
@@ -142,7 +142,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
             }
 
             char *command = point->comm;
-            break_called = FALSE;
+            break_called = false;
             while (command && !break_called)
             {
                 char *cp = parse_to(&command, ';', 0);
@@ -155,7 +155,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     {
                         command++;
                         numpipes++;
-                        mudstate.inpipe = TRUE;
+                        mudstate.inpipe = true;
                         mudstate.poutnew = alloc_lbuf("process_command.pipe");
                         mudstate.poutbufc = mudstate.poutnew;
                         mudstate.poutobj = executor;
@@ -163,7 +163,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         // No lag check on piped commands.
                         //
                         process_command(executor, point->caller, point->enactor,
-                            FALSE, cp, point->env, point->nargs);
+                            false, cp, point->env, point->nargs);
                         if (mudstate.pout)
                         {
                             free_lbuf(mudstate.pout);
@@ -174,14 +174,14 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         mudstate.pout = mudstate.poutnew;
                         cp = parse_to(&command, ';', 0);
                     }
-                    mudstate.inpipe = FALSE;
+                    mudstate.inpipe = false;
 
                     CLinearTimeAbsolute ltaBegin;
                     ltaBegin.GetUTC();
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
                     char *log_cmdbuf = process_command(executor, point->caller,
-                        point->enactor, FALSE, cp, point->env, point->nargs);
+                        point->enactor, false, cp, point->env, point->nargs);
 
                     CLinearTimeAbsolute ltaEnd;
                     ltaEnd.GetUTC();
@@ -227,10 +227,10 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 // ---------------------------------------------------------------------------
 // que_want: Do we want this queue entry?
 //
-static BOOL que_want(BQUE *entry, dbref ptarg, dbref otarg)
+static bool que_want(BQUE *entry, dbref ptarg, dbref otarg)
 {
     if ((ptarg != NOTHING) && (ptarg != Owner(entry->executor)))
-        return FALSE;
+        return false;
     return ((otarg == NOTHING) || (otarg == entry->executor));
 }
 
@@ -753,7 +753,7 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
     // Load the rest of the queue block.
     //
     tmp->executor = executor;
-    tmp->IsTimed = FALSE;
+    tmp->IsTimed = false;
     tmp->sem = NOTHING;
     tmp->attr = 0;
     tmp->enactor = enactor;
@@ -770,7 +770,7 @@ void wait_que
     dbref executor,
     dbref caller,
     dbref enactor,
-    BOOL bTimed,
+    bool bTimed,
     CLinearTimeAbsolute &ltaWhen,
     dbref sem,
     int   attr,
@@ -866,7 +866,7 @@ void do_wait
             ltd.SetSecondsString(event);
             ltaWhen += ltd;
         }
-        wait_que(executor, caller, enactor, TRUE, ltaWhen, NOTHING, 0, cmd,
+        wait_que(executor, caller, enactor, true, ltaWhen, NOTHING, 0, cmd,
             cargs, ncargs, mudstate.global_regs);
         return;
     }
@@ -891,7 +891,7 @@ void do_wait
         // Get timeout, default 0.
         //
         int attr = A_SEMAPHORE;
-        BOOL bTimed = FALSE;
+        bool bTimed = false;
         if (event && *event)
         {
             if (is_rational(event))
@@ -906,7 +906,7 @@ void do_wait
                     ltd.SetSecondsString(event);
                     ltaWhen += ltd;
                 }
-                bTimed = TRUE;
+                bTimed = true;
             }
             else
             {
@@ -935,7 +935,7 @@ void do_wait
             // Thing over-notified, run the command immediately.
             //
             thing = NOTHING;
-            bTimed = FALSE;
+            bTimed = false;
         }
         wait_que(executor, caller, enactor, bTimed, ltaWhen, thing, attr,
             cmd, cargs, ncargs, mudstate.global_regs);
@@ -1010,7 +1010,7 @@ int CallBack_ShowDispatches(PTASK_RECORD p)
 
 void ShowPsLine(BQUE *tmp)
 {
-    char *bufp = unparse_object(Show_Player, tmp->executor, FALSE);
+    char *bufp = unparse_object(Show_Player, tmp->executor, false);
     if (tmp->IsTimed && (Good_obj(tmp->sem)))
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
@@ -1044,7 +1044,7 @@ void ShowPsLine(BQUE *tmp)
             }
         }
         *bp = '\0';
-        bp = unparse_object(Show_Player, tmp->enactor, FALSE);
+        bp = unparse_object(Show_Player, tmp->enactor, false);
         notify(Show_Player, tprintf("   Enactor: %s%s", bp, bufp));
         free_lbuf(bp);
     }
@@ -1070,7 +1070,7 @@ int CallBack_ShowWait(PTASK_RECORD p)
         if (Show_bFirstLine)
         {
             notify(Show_Player, "----- Wait Queue -----");
-            Show_bFirstLine = FALSE;
+            Show_bFirstLine = false;
         }
         ShowPsLine(tmp);
     }
@@ -1096,7 +1096,7 @@ int CallBack_ShowSemaphore(PTASK_RECORD p)
         if (Show_bFirstLine)
         {
             notify(Show_Player, "----- Semaphore Queue -----");
-            Show_bFirstLine = FALSE;
+            Show_bFirstLine = false;
         }
         ShowPsLine(tmp);
     }
@@ -1177,9 +1177,9 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
     Show_Object_Target = obj_targ;
     Show_Key = key;
     Show_Player = executor;
-    Show_bFirstLine = TRUE;
+    Show_bFirstLine = true;
     scheduler.TraverseOrdered(CallBack_ShowWait);
-    Show_bFirstLine = TRUE;
+    Show_bFirstLine = true;
     scheduler.TraverseOrdered(CallBack_ShowSemaphore);
     if (Wizard(executor))
     {

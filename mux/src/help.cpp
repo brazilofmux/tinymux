@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.4 2003-02-05 01:13:21 sdennis Exp $
+// $Id: help.cpp,v 1.5 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -44,7 +44,7 @@ void helpindex_clean(int iHelpfile)
     mudstate.aHelpDesc[iHelpfile].ht = NULL;
 }
 
-BOOL bHaveTopic;
+bool bHaveTopic;
 long pos;
 int lineno;
 int ntopics;
@@ -60,11 +60,11 @@ void HelpIndex_Start(FILE *fp)
     lineno = 0;
     ntopics = 0;
     rfp = fp;
-    bHaveTopic = FALSE;
+    bHaveTopic = false;
     nLine = 0;
 }
 
-BOOL HelpIndex_Read(help_indx *pEntry)
+bool HelpIndex_Read(help_indx *pEntry)
 {
     for (;;)
     {
@@ -75,10 +75,10 @@ BOOL HelpIndex_Read(help_indx *pEntry)
                 if (bHaveTopic)
                 {
                     pEntry->len = (int)(pos - pEntry->pos);
-                    bHaveTopic = FALSE;
-                    return TRUE;
+                    bHaveTopic = false;
+                    return true;
                 }
-                return FALSE;
+                return false;
             }
             ++lineno;
             
@@ -95,8 +95,8 @@ BOOL HelpIndex_Read(help_indx *pEntry)
             if (bHaveTopic)
             {
                 pEntry->len = (int)(pos - pEntry->pos);
-                bHaveTopic = FALSE;
-                return TRUE;
+                bHaveTopic = false;
+                return true;
             }
 
             ++ntopics;
@@ -123,7 +123,7 @@ BOOL HelpIndex_Read(help_indx *pEntry)
             }
             pEntry->topic[++i] = '\0';
             pEntry->pos = pos + (long)nLine;
-            bHaveTopic = TRUE;
+            bHaveTopic = true;
         }
         pos += nLine;
         nLine = 0;
@@ -171,7 +171,7 @@ int helpindex_read(int iHelpfile)
         // Substrings already added will be rejected by hashaddLEN.
         //
         mux_strlwr(entry.topic);
-        BOOL bOriginal = TRUE; // First is the longest.
+        bool bOriginal = true; // First is the longest.
         int nTopic = strlen(entry.topic);
 
         for (nTopic = strlen(entry.topic); nTopic > 0; nTopic--)
@@ -184,7 +184,7 @@ int helpindex_read(int iHelpfile)
             (void)ISOUTOFMEMORY(htab_entry);
             htab_entry->pos = entry.pos;
             htab_entry->original = bOriginal;
-            bOriginal = FALSE;
+            bOriginal = false;
             htab_entry->key = StringCloneLen(entry.topic, nTopic);
 
             if ((hashaddLEN(entry.topic, nTopic, (int *)htab_entry, htab)) == 0)
@@ -229,7 +229,7 @@ void helpindex_init(void)
 
 void help_write(dbref player, char *topic_arg, int iHelpfile)
 {
-    BOOL bEval = mudstate.aHelpDesc[iHelpfile].bEval;
+    bool bEval = mudstate.aHelpDesc[iHelpfile].bEval;
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
 
     char szTextFilename[SBUF_SIZE+8];
@@ -246,7 +246,7 @@ void help_write(dbref player, char *topic_arg, int iHelpfile)
         (struct help_entry *)hashfindLEN(topic, strlen(topic), htab);
     if (!htab_entry)
     {
-        BOOL matched = FALSE;
+        bool matched = false;
         char *topic_list = NULL;
         char *buffp = NULL;
         for (htab_entry = (struct help_entry *)hash_firstentry(htab);
@@ -259,7 +259,7 @@ void help_write(dbref player, char *topic_arg, int iHelpfile)
             {
                 if (!matched)
                 {
-                    matched = TRUE;
+                    matched = true;
                     topic_list = alloc_lbuf("help_write");
                     buffp = topic_list;
                 }

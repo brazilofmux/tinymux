@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.3 2003-02-03 15:00:34 sdennis Exp $
+// $Id: quota.cpp,v 1.4 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -171,7 +171,7 @@ void do_quota
 
     dbref who;
     int value = 0, i;
-    BOOL set = FALSE;
+    bool set = false;
 
     // Show or set all quotas if requested.
     //
@@ -180,12 +180,12 @@ void do_quota
         if (arg1 && *arg1)
         {
             value = mux_atol(arg1);
-            set = TRUE;
+            set = true;
         }
         else if (key & (QUOTA_SET | QUOTA_FIX))
         {
             value = 0;
-            set = TRUE;
+            set = true;
         }
         if (set)
         {
@@ -216,7 +216,7 @@ void do_quota
     }
     else
     {
-        who = lookup_player(executor, arg1, TRUE);
+        who = lookup_player(executor, arg1, true);
         if (!Good_obj(who))
         {
             notify_quiet(executor, "Not found.");
@@ -241,12 +241,12 @@ void do_quota
     }
     if (arg2 && *arg2)
     {
-        set = TRUE;
+        set = true;
         value = mux_atol(arg2);
     }
     else if (key & QUOTA_FIX)
     {
-        set = TRUE;
+        set = true;
         value = 0;
     }
     if (set)
@@ -271,7 +271,7 @@ FUNCTION(fun_hasquota)
 
     // Find out whose quota to show.
     //
-    dbref who = lookup_player(executor, fargs[0], TRUE);
+    dbref who = lookup_player(executor, fargs[0], true);
     if (!Good_obj(who))
     {
         safe_str("#-1 NOT FOUND", buff, bufc);
@@ -287,7 +287,7 @@ FUNCTION(fun_hasquota)
         return;
     }
 
-    BOOL bResult = TRUE;
+    bool bResult = true;
     if (!Free_Quota(who))
     {
         int aflags;

@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.3 2003-02-03 15:00:33 sdennis Exp $
+// $Id: create.cpp,v 1.4 2003-02-05 06:20:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -623,7 +623,7 @@ void do_clone
 
     // Go make the clone object.
     //
-    BOOL bValid;
+    bool bValid;
     int nValidName;
     char *pValidName = MakeCanonicalObjectName(arg2, &nValidName, &bValid);
     const char *clone_name;
@@ -753,8 +753,8 @@ void do_pcreate
     char *pass
 )
 {
-    BOOL isrobot = (key == PCRE_ROBOT);
-    dbref newplayer = create_player(name, pass, executor, isrobot, FALSE);
+    bool isrobot = (key == PCRE_ROBOT);
+    dbref newplayer = create_player(name, pass, executor, isrobot, false);
     if (newplayer == NOTHING)
     {
         notify_quiet(executor, tprintf("Failure creating '%s'", name));
@@ -796,7 +796,7 @@ void do_pcreate
 // destroyable: Indicates if target of a @destroy is a 'special' object in
 // the database.
 //
-static BOOL destroyable(dbref victim)
+static bool destroyable(dbref victim)
 {
     if (  (victim == mudconf.default_home)
        || (victim == mudconf.start_home)
@@ -805,27 +805,27 @@ static BOOL destroyable(dbref victim)
        || (victim == (dbref) 0)
        || (God(victim)))
     {
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 // ---------------------------------------------------------------------------
 // can_destroy_player, do_destroy: Destroy things.
 //
-static BOOL can_destroy_player(dbref player, dbref victim)
+static bool can_destroy_player(dbref player, dbref victim)
 {
     if (!Wizard(player))
     {
         notify_quiet(player, "Sorry, no suicide allowed.");
-        return FALSE;
+        return false;
     }
     if (Wizard(victim))
     {
         notify_quiet(player, "Even you can't do that!");
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what)
@@ -908,7 +908,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
     // Check whether we should perform instant destruction.
     //
     dbref ThingOwner = Owner(thing);
-    BOOL bInstant = (key & DEST_INSTANT) || Destroy_ok(thing) || Destroy_ok(ThingOwner);
+    bool bInstant = (key & DEST_INSTANT) || Destroy_ok(thing) || Destroy_ok(ThingOwner);
 
     if (!bInstant)
     {
@@ -928,7 +928,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
                 // attributes to remember it's destroyer, so we we need to
                 // take care of this more immediately.
                 //
-                bInstant = TRUE;
+                bInstant = true;
                 notify(executor, "Player has a lot of attributes. Performing destruction immediately.");
                 break;
             }

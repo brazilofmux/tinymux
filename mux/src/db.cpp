@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.19 2003-02-05 01:34:45 sdennis Exp $
+// $Id: db.cpp,v 1.20 2003-02-05 06:20:58 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -287,7 +287,7 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
 {
     dbref target;
     char *tp, *bp, *dp;
-    BOOL fail;
+    bool fail;
 
     int count = 0;
     int errors = 0;
@@ -383,11 +383,11 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
 /* ---------------------------------------------------------------------------
  * fwdlist_ck:  Check a list of dbref numbers to forward to for AUDIBLE
  */
-BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
+bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
 {
     if (mudstate.bStandAlone)
     {
-        return TRUE;
+        return true;
     }
 
     FWDLIST *fp;
@@ -690,12 +690,12 @@ void do_attribute
     int f;
     char *sp;
     ATTR *va2;
-    BOOL negate, success;
+    bool negate, success;
 
     // Look up the user-named attribute we want to play with.
     //
     int nName;
-    BOOL bValid;
+    bool bValid;
     ATTR *va;
     char *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
     if (!bValid || !(va = (ATTR *)vattr_find_LEN(pName, nName)))
@@ -714,15 +714,15 @@ void do_attribute
         mux_strtok_src(&tts, value);
         mux_strtok_ctl(&tts, " ");
         sp = mux_strtok_parse(&tts);
-        success = FALSE;
+        success = false;
         while (sp != NULL)
         {
             // Check for negation.
             //
-            negate = FALSE;
+            negate = false;
             if (*sp == '!')
             {
-                negate = TRUE;
+                negate = true;
                 sp++;
             }
 
@@ -731,7 +731,7 @@ void do_attribute
             f = search_nametab(executor, attraccess_nametab, sp);
             if (f > 0)
             {
-                success = TRUE;
+                success = true;
                 if (negate)
                     va->flags &= ~f;
                 else
@@ -881,7 +881,7 @@ void do_fixdb
                 return;
             }
             pValidName = arg2;
-            if (lookup_player(NOTHING, pValidName, FALSE) != NOTHING)
+            if (lookup_player(NOTHING, pValidName, false) != NOTHING)
             {
                 notify(executor, "That name is already in use.");
                 return;
@@ -903,7 +903,7 @@ void do_fixdb
         else
         {
             int nTmp;
-            BOOL bValid;
+            bool bValid;
             pValidName = MakeCanonicalObjectName(arg2, &nTmp, &bValid);
             if (!bValid)
             {
@@ -930,7 +930,7 @@ void do_fixdb
 // NOTE: Refer to init_attrtab() where it directly manipulates
 // mux_AttrNameSet to allow the attribute name: "*Password".
 //
-char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
+char *MakeCanonicalAttributeName(const char *pName, int *pnName, bool *pbValid)
 {
     static char Buffer[SBUF_SIZE];
 
@@ -938,7 +938,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
        || !mux_AttrNameInitialSet[(unsigned char)*pName])
     {
         *pnName = 0;
-        *pbValid = FALSE;
+        *pbValid = false;
         return NULL;
     }
     int nLeft = SBUF_SIZE-1;
@@ -948,7 +948,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
         if (!mux_AttrNameSet[(unsigned char)*pName])
         {
             *pnName = 0;
-            *pbValid = FALSE;
+            *pbValid = false;
             return Buffer;
         }
         *p = mux_toupper[(unsigned char)*pName];
@@ -968,7 +968,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
         if (!mux_AttrNameSet[(unsigned char)*pName])
         {
             *pnName = 0;
-            *pbValid = FALSE;
+            *pbValid = false;
             return Buffer;
         }
         pName++;
@@ -977,18 +977,18 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
     // Length of truncated result.
     //
     *pnName = p - Buffer;
-    *pbValid = TRUE;
+    *pbValid = true;
     return Buffer;
 }
 
 // MakeCanonicalAttributeCommand
 //
-char *MakeCanonicalAttributeCommand(const char *pName, int *pnName, BOOL *pbValid)
+char *MakeCanonicalAttributeCommand(const char *pName, int *pnName, bool *pbValid)
 {
     if (!pName)
     {
         *pnName = 0;
-        *pbValid = FALSE;
+        *pbValid = false;
         return NULL;
     }
 
@@ -1031,12 +1031,12 @@ void init_attrtab(void)
     // initialization because it's part of the A_PASS attribute
     // name.
     //
-    mux_AttrNameSet['*'] = TRUE;
-    mux_AttrNameInitialSet['*'] = TRUE;
+    mux_AttrNameSet['*'] = true;
+    mux_AttrNameInitialSet['*'] = true;
     for (a = attr; a->number; a++)
     {
         int nLen;
-        BOOL bValid;
+        bool bValid;
         char *buff = MakeCanonicalAttributeName(a->name, &nLen, &bValid);
         if (!bValid)
         {
@@ -1046,8 +1046,8 @@ void init_attrtab(void)
         anum_set(a->number, a);
         hashaddLEN(buff, nLen, (int *)a, &mudstate.attr_name_htab);
     }
-    mux_AttrNameInitialSet['*'] = FALSE;
-    mux_AttrNameSet['*'] = FALSE;
+    mux_AttrNameInitialSet['*'] = false;
+    mux_AttrNameSet['*'] = false;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1059,7 +1059,7 @@ ATTR *atr_str(char *s)
     // Make attribute name canonical.
     //
     int nBuffer;
-    BOOL bValid;
+    bool bValid;
     char *buff = MakeCanonicalAttributeName(s, &nBuffer, &bValid);
     if (!bValid)
     {
@@ -1159,7 +1159,7 @@ int mkattr(char *buff)
         // Unknown attribute name, create a new one.
         //
         int nName;
-        BOOL bValid;
+        bool bValid;
         char *pName = MakeCanonicalAttributeName(buff, &nName, &bValid);
         ATTR *va;
         if (bValid)
@@ -1243,7 +1243,7 @@ static char *al_code(char *ap, int atrnum)
  * Commer: check if an object has any $-commands in its attributes.
  */
 
-BOOL Commer(dbref thing)
+bool Commer(dbref thing)
 {
     char *s, *as, c;
     int attr, aflags;
@@ -1263,11 +1263,11 @@ BOOL Commer(dbref thing)
         if ((c == '$') && !(aflags & AF_NOPROG))
         {
             atr_pop();
-            return TRUE;
+            return true;
         }
     }
     atr_pop();
-    return FALSE;
+    return false;
 }
 
 // routines to handle object attribute lists
@@ -1280,7 +1280,7 @@ BOOL Commer(dbref thing)
 
 // al_extend: Get more space for attributes, if needed
 //
-void al_extend(char **buffer, size_t *bufsiz, size_t len, BOOL copy)
+void al_extend(char **buffer, size_t *bufsiz, size_t len, bool copy)
 {
     if (len > *bufsiz)
     {
@@ -1337,13 +1337,13 @@ char *al_fetch(dbref thing)
     const char *astr = atr_get_raw_LEN(thing, A_LIST, &len);
     if (astr)
     {
-        al_extend(&mudstate.mod_alist, &mudstate.mod_size, len+1, FALSE);
+        al_extend(&mudstate.mod_alist, &mudstate.mod_size, len+1, false);
         memcpy(mudstate.mod_alist, astr, len+1);
         mudstate.mod_alist_len = len;
     }
     else
     {
-        al_extend(&mudstate.mod_alist, &mudstate.mod_size, 1, FALSE);
+        al_extend(&mudstate.mod_alist, &mudstate.mod_size, 1, false);
         *mudstate.mod_alist = '\0';
         mudstate.mod_alist_len = 0;
     }
@@ -1353,7 +1353,7 @@ char *al_fetch(dbref thing)
 
 // al_add: Add an attribute to an attribute list
 //
-BOOL al_add(dbref thing, int attrnum)
+bool al_add(dbref thing, int attrnum)
 {
     char *abuf = al_fetch(thing);
     char *cp = abuf;
@@ -1366,7 +1366,7 @@ BOOL al_add(dbref thing, int attrnum)
         anum = al_decode(&cp);
         if (anum == attrnum)
         {
-            return TRUE;
+            return true;
         }
     }
 
@@ -1378,12 +1378,12 @@ BOOL al_add(dbref thing, int attrnum)
     //
     if (iPosition + ATR_BUF_INCR >= LBUF_SIZE)
     {
-        return FALSE;
+        return false;
     }
 
     // Extend it.
     //
-    al_extend(&mudstate.mod_alist, &mudstate.mod_size, (iPosition + ATR_BUF_INCR), TRUE);
+    al_extend(&mudstate.mod_alist, &mudstate.mod_size, (iPosition + ATR_BUF_INCR), true);
     if (mudstate.mod_alist != abuf)
     {
         // extend returned different buffer, re-position the end
@@ -1396,7 +1396,7 @@ BOOL al_add(dbref thing, int attrnum)
     cp = al_code(cp, attrnum);
     *cp = '\0';
     mudstate.mod_alist_len = cp - mudstate.mod_alist;
-    return TRUE;
+    return true;
 }
 
 // al_delete: Remove an attribute from an attribute list
@@ -1485,10 +1485,10 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
 
     // Get the attribute owner
     //
-    BOOL neg = FALSE;
+    bool neg = false;
     if (*cp == '-')
     {
-        neg = TRUE;
+        neg = true;
         cp++;
     }
     int tmp_owner = 0;
@@ -1672,7 +1672,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
         nValue = LBUF_SIZE-1;
     }
     ATRLIST *list;
-    BOOL found = FALSE;
+    bool found = false;
     int hi, lo, mid;
     char *text = StringCloneLen(szValue, nValue);
 
@@ -1685,7 +1685,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
         list[0].number = atr;
         list[0].data = text;
         list[0].size = nValue+1;
-        found = TRUE;
+        found = true;
     }
     else
     {
@@ -1703,7 +1703,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
                 MEMFREE(list[mid].data);
                 list[mid].data = text;
                 list[mid].size = nValue+1;
-                found = TRUE;
+                found = true;
                 break;
             }
             else if (list[mid].number > atr)
@@ -1957,7 +1957,7 @@ char *atr_get_real(dbref thing, int atr, dbref *owner, int *flags,
     return atr_get_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 
-BOOL atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
+bool atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
 {
     size_t nLen;
     const char *buff = atr_get_raw_LEN(thing, atr, &nLen);
@@ -1965,10 +1965,10 @@ BOOL atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
     {
         *owner = Owner(thing);
         *flags = 0;
-        return FALSE;
+        return false;
     }
     atr_decode_LEN(buff, nLen, NULL, thing, owner, flags, &nLen);
-    return TRUE;
+    return true;
 }
 
 char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
@@ -2027,7 +2027,7 @@ char *atr_pget_real(dbref thing, int atr, dbref *owner, int *flags,
     return atr_pget_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 
-BOOL atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
+bool atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
 {
     dbref parent;
     int lev;
@@ -2042,7 +2042,7 @@ BOOL atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
             atr_decode_LEN(buff, nLen, NULL, thing, owner, flags, &nLen);
             if ((lev == 0) || !(*flags & AF_PRIVATE))
             {
-                return TRUE;
+                return true;
             }
         }
         if ((lev == 0) && Good_obj(Parent(parent)))
@@ -2054,7 +2054,7 @@ BOOL atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
     }
     *owner = Owner(thing);
     *flags = 0;
-    return FALSE;
+    return false;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2278,7 +2278,7 @@ int atr_head(dbref thing, char **attrp)
 
     // Set up the list and return the first entry.
     //
-    al_extend(&mudstate.iter_alist.data, &mudstate.iter_alist.len, alen+1, FALSE);
+    al_extend(&mudstate.iter_alist.data, &mudstate.iter_alist.len, alen+1, false);
     memcpy(mudstate.iter_alist.data, astr, alen+1);
     *attrp = mudstate.iter_alist.data;
     return atr_next(attrp);
@@ -2460,7 +2460,7 @@ void db_make_minimal(void)
     // should be #1
     //
     load_player_names();
-    dbref obj = create_player("Wizard", "potrzebie", NOTHING, FALSE, FALSE);
+    dbref obj = create_player("Wizard", "potrzebie", NOTHING, false, false);
     s_Flags(obj, FLAG_WORD1, Flags(obj) | WIZARD);
     s_Powers(obj, 0);
     s_Powers2(obj, 0);
@@ -2810,7 +2810,7 @@ int init_dbfile(char *game_dir_file, char *game_pag_file)
 
 // check_zone - checks back through a zone tree for control.
 //
-BOOL check_zone_handler(dbref player, dbref thing, BOOL bPlayerCheck)
+bool check_zone_handler(dbref player, dbref thing, bool bPlayerCheck)
 {
     mudstate.zone_nest_num++;
 
@@ -2820,7 +2820,7 @@ BOOL check_zone_handler(dbref player, dbref thing, BOOL bPlayerCheck)
        || isPlayer(thing) != bPlayerCheck)
     {
         mudstate.zone_nest_num = 0;
-        return FALSE;
+        return false;
     }
 
     // If the zone doesn't have an enterlock, DON'T allow control.
@@ -2829,13 +2829,13 @@ BOOL check_zone_handler(dbref player, dbref thing, BOOL bPlayerCheck)
        && could_doit(player, Zone(thing), A_LENTER))
     {
         mudstate.zone_nest_num = 0;
-        return TRUE;
+        return true;
     }
     else if (thing == Zone(thing))
     {
-        return FALSE;
+        return false;
     }
-    return check_zone_handler(player, Zone(thing), FALSE);
+    return check_zone_handler(player, Zone(thing), false);
 }
 
 // This function releases:
@@ -2913,11 +2913,11 @@ void load_restart_db(void)
     FILE *f = fopen("restart.db", "r");
     if (!f)
     {
-        mudstate.restarting = FALSE;
+        mudstate.restarting = false;
         return;
     }
     DebugTotalFiles++;
-    mudstate.restarting = TRUE;
+    mudstate.restarting = true;
 
     fgets(buf, 3, f);
     mux_assert(strncmp(buf, "+V", 2) == 0);
@@ -2953,7 +2953,7 @@ void load_restart_db(void)
     DebugTotalSockets += nMainGamePorts;
 
     mudstate.start_time.SetSeconds(getref(f));
-    strcpy(mudstate.doing_hdr, getstring_noalloc(f, TRUE));
+    strcpy(mudstate.doing_hdr, getstring_noalloc(f, true));
     mudstate.record_players = getref(f);
 
     while ((val = getref(f)) != 0)
@@ -2969,7 +2969,7 @@ void load_restart_db(void)
         d->host_info = getref(f);
         d->player = getref(f);
         d->last_time.SetSeconds(getref(f));
-        temp = getstring_noalloc(f, TRUE);
+        temp = getstring_noalloc(f, true);
         if (*temp)
         {
             d->output_prefix = alloc_lbuf("set_userstring");
@@ -2979,7 +2979,7 @@ void load_restart_db(void)
         {
             d->output_prefix = NULL;
         }
-        temp = getstring_noalloc(f, TRUE);
+        temp = getstring_noalloc(f, true);
         if (*temp)
         {
             d->output_suffix = alloc_lbuf("set_userstring");
@@ -2990,9 +2990,9 @@ void load_restart_db(void)
             d->output_suffix = NULL;
         }
 
-        strcpy(d->addr, getstring_noalloc(f, TRUE));
-        strcpy(d->doing, getstring_noalloc(f, TRUE));
-        strcpy(d->username, getstring_noalloc(f, TRUE));
+        strcpy(d->addr, getstring_noalloc(f, true));
+        strcpy(d->doing, getstring_noalloc(f, true));
+        strcpy(d->username, getstring_noalloc(f, true));
 
         d->output_size = 0;
         d->output_tot = 0;

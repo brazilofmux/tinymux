@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.3 2003-02-04 11:43:10 jake Exp $
+// $Id: flags.h,v 1.4 2003-02-05 06:20:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -120,14 +120,14 @@ typedef struct flag_bit_entry
     char flaglett;          // Flag letter for listing.
     int  flagflag;          // Ctrl flags for this flag.
     int  listperm;          // Who sees this flag when set.
-    BOOL (*handler)(dbref target, dbref player, FLAG flag, int fflags, 
-        BOOL reset);         // Handler for setting/clearing this flag.
+    bool (*handler)(dbref target, dbref player, FLAG flag, int fflags, 
+        bool reset);         // Handler for setting/clearing this flag.
 } FLAGBITENT;
 
 typedef struct flag_name_entry
 {
     char *pOrigName;        // Original name of flag.
-    BOOL bPositive;         // Flag sense.
+    bool bPositive;         // Flag sense.
     FLAGBITENT *fbe;        // Which bit is this associated with?
     char *flagname;         // Name of the flag.
 } FLAGNAMEENT;
@@ -162,16 +162,16 @@ extern void display_flagtab(dbref);
 extern void flag_set(dbref, dbref, char *, int);
 extern char *flag_description(dbref, dbref);
 extern char *decode_flags(dbref, FLAGSET *);
-extern BOOL has_flag(dbref, dbref, char *);
-extern char *unparse_object(dbref, dbref, BOOL);
+extern bool has_flag(dbref, dbref, char *);
+extern char *unparse_object(dbref, dbref, bool);
 extern char *unparse_object_numonly(dbref);
-extern BOOL convert_flags(dbref, char *, FLAGSET *, FLAG *);
+extern bool convert_flags(dbref, char *, FLAGSET *, FLAG *);
 extern void decompile_flags(dbref, dbref, char *);
 extern char *MakeCanonicalFlagName
 (
     const char *pName,
     int *pnName,
-    BOOL *pbValid
+    bool *pbValid
 );
 
 #define GOD ((dbref) 1)
@@ -357,7 +357,7 @@ extern char *MakeCanonicalFlagName
 #define Unmark(x)           (mudstate.markbits->chunk[(x)>>3] &= \
                             ~mudconf.markdata[(x)&7])
 #define Marked(x)           ((mudstate.markbits->chunk[(x)>>3] & \
-                            mudconf.markdata[(x)&7]) ? TRUE : FALSE)
+                            mudconf.markdata[(x)&7]) ? true : false)
 #define Mark_all(i)         {for ((i)=0; (i)<((mudstate.db_top+7)>>3); (i)++) \
                             mudstate.markbits->chunk[i]=0xFFU;}
 #define Unmark_all(i)       {for ((i)=0; (i)<((mudstate.db_top+7)>>3); (i)++) \
@@ -366,7 +366,7 @@ extern char *MakeCanonicalFlagName
                             ((Location(x) == NOTHING) || Controls(p,x)))
 #define Linkable(p,x)       (Good_obj(x) && Has_contents(x) && \
                             (((Flags(x) & LINK_OK) != 0) || Controls(p,x)))
-#define See_attr(p,x,a)     (!((a)->flags & AF_IS_LOCK) && bCanReadAttr(p,x,a,FALSE))
+#define See_attr(p,x,a)     (!((a)->flags & AF_IS_LOCK) && bCanReadAttr(p,x,a,false))
 #define See_attr_explicit(p,x,a,o,f) (!((a)->flags & (AF_INTERNAL|AF_IS_LOCK)) && \
                             (((f) & AF_VISUAL) || (Owner(p) == (o)) && \
                             !((a)->flags & (AF_DARK|AF_MDARK))))

@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.9 2003-02-04 11:53:29 jake Exp $
+// $Id: svdhash.cpp,v 1.10 2003-02-05 06:20:59 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -374,17 +374,17 @@ static const UINT32 anGroupMask[33] =
     0xFFFFFFF8U, 0xFFFFFFFCU, 0xFFFFFFFEU, 0xFFFFFFFFU
 };
 
-BOOL CHashPage::Allocate(unsigned int nPageSize)
+bool CHashPage::Allocate(unsigned int nPageSize)
 {
-    if (m_nPageSize) return FALSE;
+    if (m_nPageSize) return false;
 
     m_nPageSize = nPageSize;
     m_pPage = new unsigned char[nPageSize];
     if (m_pPage)
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 CHashPage::CHashPage(void)
@@ -525,14 +525,14 @@ void CHashPage::Protection(void)
     m_pTrailer->m_checksum = ul;
 }
 
-BOOL CHashPage::Validate(void)
+bool CHashPage::Validate(void)
 {
     UINT32 ul = HASH_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
     if (ul != m_pTrailer->m_checksum)
     {
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 // ValidateBlock.
@@ -540,11 +540,11 @@ BOOL CHashPage::Validate(void)
 // This function validates a block associated with a particular
 // Dir entry and blows that entry away if it's suspect.
 //
-BOOL CHashPage::ValidateAllocatedBlock(UINT32 iDir)
+bool CHashPage::ValidateAllocatedBlock(UINT32 iDir)
 {
-    if (iDir >= m_pHeader->m_nDirSize) return FALSE;
+    if (iDir >= m_pHeader->m_nDirSize) return false;
     if (m_pDirectory[iDir] >= HP_DIR_DELETED)
-        return FALSE;
+        return false;
 
     // Use directory entry to go find heap node. The record itself follows.
     //
@@ -572,19 +572,19 @@ BOOL CHashPage::ValidateAllocatedBlock(UINT32 iDir)
         }
         else
         {
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
-BOOL CHashPage::ValidateFreeBlock(HP_HEAPOFFSET oBlock)
+bool CHashPage::ValidateFreeBlock(HP_HEAPOFFSET oBlock)
 {
     // If the free list is empty, then this can't be a valid free block.
     //
     if (m_pHeader->m_oFreeList == HP_NIL_OFFSET)
     {
-        return FALSE;
+        return false;
     }
 
     // Go find heap node. The record itself follows.
@@ -612,15 +612,15 @@ BOOL CHashPage::ValidateFreeBlock(HP_HEAPOFFSET oBlock)
         }
         else
         {
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
 // ValidateFreeList - Checks the validity of the free list
 //
-BOOL CHashPage::ValidateFreeList(void)
+bool CHashPage::ValidateFreeList(void)
 {
     HP_HEAPOFFSET oCurrent = m_pHeader->m_oFreeList;
     while (oCurrent != HP_NIL_OFFSET)
@@ -632,7 +632,7 @@ BOOL CHashPage::ValidateFreeList(void)
             {
                 Log.WriteString("CHashPage::ValidateFreeList - Free list is corrupt." ENDLINE);
                 m_pHeader->m_oFreeList = HP_NIL_OFFSET;
-                return FALSE;
+                return false;
             }
             oCurrent = pCurrent->u.oNext;
         }
@@ -640,10 +640,10 @@ BOOL CHashPage::ValidateFreeList(void)
         {
             Log.WriteString("CHashPage::ValidateFreeList - Free list is corrupt." ENDLINE);
             m_pHeader->m_oFreeList = HP_NIL_OFFSET;
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 #endif // HP_PROTECTION
 
@@ -803,15 +803,15 @@ HP_DIRINDEX CHashPage::FindNextKey(HP_DIRINDEX iDir, UINT32 nHash, unsigned int 
     return HP_DIR_EMPTY;
 }
 
-// HeapAlloc - Return TRUE if there was enough room to copy the record into the heap, otherwise,
-//             it returns FALSE.
+// HeapAlloc - Return true if there was enough room to copy the record into the heap, otherwise,
+//             it returns false.
 //
-BOOL CHashPage::HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
+bool CHashPage::HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 {
     //ValidateFreeList();
     if (m_pDirectory[iDir] < HP_DIR_DELETED)
     {
-        return FALSE;
+        return false;
     }
 
     // How much space do we need?
@@ -832,7 +832,7 @@ BOOL CHashPage::HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash,
         if (!ValidateFreeBlock(oPrevious))
         {
             ValidateFreeList();
-            return FALSE;
+            return false;
         }
 #endif // 0
         unsigned char *pBlockStart = m_pHeapStart + oNext;
@@ -876,12 +876,12 @@ BOOL CHashPage::HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash,
                 m_pHeader->m_nDirEmptyLeft--;
             }
             m_pDirectory[iDir] = (HP_HEAPOFFSET)(pBlockStart - m_pHeapStart);
-            return TRUE;
+            return true;
         }
         poPrev = &(pNode->u.oNext);
         oNext = pNode->u.oNext;
     }
-    return FALSE;
+    return false;
 }
 
 // HeapFree - Returns to the heap the space for the record associated with iDir. It
@@ -939,7 +939,7 @@ void CHashPage::HeapUpdate(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, void *pRecor
     }
 }
 
-BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
+bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
 {
     // Figure out what a good directory size is given the actual records in this page.
     //
@@ -950,7 +950,7 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
     if (nRecords == 0)
     {
         Log.WriteString("Why are we splitting a page with no records in it?" ENDLINE);
-        return FALSE;
+        return false;
     }
 
     // Initialize that type of HashPage and copy records over.
@@ -972,7 +972,7 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
                 if (!IS_HP_SUCCESS(hp0.Insert(pNode->u.s.nRecordSize, nHash, pNode+1)))
                 {
                     Log.WriteString("CHashPage::Split - Ran out of room." ENDLINE);
-                    return FALSE;
+                    return false;
                 }
             }
             else if ((nHash & anGroupMask[nNewDepth]) == (nHashGroup1 & anGroupMask[nNewDepth]))
@@ -980,13 +980,13 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
                 if (!IS_HP_SUCCESS(hp1.Insert(pNode->u.s.nRecordSize, nHash, pNode+1)))
                 {
                     Log.WriteString("CHashPage::Split - Ran out of room." ENDLINE);
-                    return FALSE;
+                    return false;
                 }
             }
             else
             {
                 Log.WriteString("CHashPage::Split - This record fits in neither page...lost." ENDLINE);
-                return FALSE;
+                return false;
             }
         }
     }
@@ -1002,10 +1002,10 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
     if (nRecords0 + nRecords1 != nRecords)
     {
         Log.WriteString("Lost something" ENDLINE);
-        return FALSE;
+        return false;
     }
 #endif // 0
-    return TRUE;
+    return true;
 }
 
 void CHashPage::GetRange
@@ -1027,7 +1027,7 @@ void CHashPage::GetRange
 }
 
 #ifdef WIN32
-BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
+bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbwrites++;
     for ( ; ; Sleep(250))
@@ -1047,11 +1047,11 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
             }
             continue;
         }
-        return TRUE;
+        return true;
     }
 }
 
-BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
+bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbreads++;
     SetFixedPointers();
@@ -1073,12 +1073,12 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
             continue;
         }
         SetVariablePointers();
-        return TRUE;
+        return true;
     }
 }
 
 #else // WIN32
-BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
+bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbwrites++;
     int cnt = 60;
@@ -1104,16 +1104,16 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
                 Log.tinyprintf("CHashPage::Write - partial write." ENDLINE);
             }
         }
-        return TRUE;
+        return true;
     }
 
     // Don't struggle further.  You'll just make it worse.
     //
-    mudstate.shutdown_flag = TRUE;
-    return FALSE;
+    mudstate.shutdown_flag = true;
+    return false;
 }
 
-BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
+bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbreads++;
     SetFixedPointers();
@@ -1141,13 +1141,13 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
             continue;
         }
         SetVariablePointers();
-        return TRUE;
+        return true;
     }
 
     // Don't struggle further.  You'll just make it worse.
     //
-    mudstate.shutdown_flag = TRUE;
-    return FALSE;
+    mudstate.shutdown_flag = true;
+    return false;
 }
 #endif // WIN32
 
@@ -1160,14 +1160,14 @@ HP_DIRINDEX CHashPage::GetDepth(void)
 //
 // Moves all the records together, and re-establishes a single-element free list at the end.
 //
-BOOL CHashPage::Defrag(HP_HEAPLENGTH nExtra)
+bool CHashPage::Defrag(HP_HEAPLENGTH nExtra)
 {
     CHashPage *hpNew = new CHashPage;
-    if (!hpNew) return FALSE;
+    if (!hpNew) return false;
     if (!hpNew->Allocate(m_nPageSize))
     {
         delete hpNew;
-        return FALSE;
+        return false;
     }
 
     // Figure out what a good directory size is given the actual records in this page.
@@ -1201,10 +1201,10 @@ BOOL CHashPage::Defrag(HP_HEAPLENGTH nExtra)
         SetFixedPointers();
         SetVariablePointers();
         delete hpNew;
-        return TRUE;
+        return true;
     }
     delete hpNew;
-    return FALSE;
+    return false;
 }
 
 void CHashPage::SetVariablePointers(void)
@@ -1304,7 +1304,7 @@ void CHashFile::WriteDirectory(void)
 }
 #endif // WIN32
 
-BOOL CHashFile::EmptyDirectory(void)
+bool CHashFile::EmptyDirectory(void)
 {
     if (m_pDir)
     {
@@ -1318,13 +1318,13 @@ BOOL CHashFile::EmptyDirectory(void)
     m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
     if (ISOUTOFMEMORY(m_pDir))
     {
-        return FALSE;
+        return false;
     }
     m_pDir[0] = m_pDir[1] = 0xFFFFFFFFUL;
-    return TRUE;
+    return true;
 }
 
-BOOL CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
+bool CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
 {
     CloseAll();
 #ifdef WIN32
@@ -1337,7 +1337,7 @@ BOOL CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
 
     if (m_hPageFile == INVALID_HANDLE_VALUE)
     {
-        return FALSE;
+        return false;
     }
 
 #ifdef WIN32
@@ -1350,20 +1350,20 @@ BOOL CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
 
     if (m_hPageFile == INVALID_HANDLE_VALUE)
     {
-        return FALSE;
+        return false;
     }
 
     // Create empty structures in memory and write them out.
     //
     if (!EmptyDirectory())
     {
-        return FALSE;
+        return false;
     }
 
     iCache = AllocateEmptyPage(0, 0);
     if (iCache < 0)
     {
-        return FALSE;
+        return false;
     }
     m_Cache[iCache].m_hp.Empty(0, 0UL, 100);
     m_pDir[0] = m_pDir[1] = m_Cache[iCache].m_o = 0UL;
@@ -1375,16 +1375,16 @@ BOOL CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
     FlushCache(iCache);
 #endif // DO_COMMIT
     WriteDirectory();
-    return TRUE;
+    return true;
 }
 
-BOOL CHashFile::RebuildDirectory(void)
+bool CHashFile::RebuildDirectory(void)
 {
     // Initialize in-memory page directory
     //
     if (!EmptyDirectory())
     {
-        return FALSE;
+        return false;
     }
 
     // Re-build the directory from CHashPages.
@@ -1398,7 +1398,7 @@ BOOL CHashFile::RebuildDirectory(void)
         {
             if (!DoubleDirectory())
             {
-                return FALSE;
+                return false;
             }
         }
         UINT32 nStart, nEnd;
@@ -1408,7 +1408,7 @@ BOOL CHashFile::RebuildDirectory(void)
             if (m_pDir[nStart] != 0xFFFFFFFFUL)
             {
                 Log.WriteString("CHashFile::Open - The keyspace of pages in Page File overlap." ENDLINE);
-                return FALSE;
+                return false;
             }
             m_pDir[nStart] = oPage;
         }
@@ -1421,14 +1421,14 @@ BOOL CHashFile::RebuildDirectory(void)
         if (m_pDir[iFileDir] == 0xFFFFFFFFUL)
         {
             Log.WriteString("CHashFile::Open - Page File is incomplete." ENDLINE);
-            return FALSE;
+            return false;
         }
     }
     WriteDirectory();
-    return TRUE;
+    return true;
 }
 
-BOOL CHashFile::ReadDirectory(void)
+bool CHashFile::ReadDirectory(void)
 {
 #ifdef WIN32
     UINT32 cc = SetFilePointer(m_hDirFile, 0, 0, FILE_END);
@@ -1437,14 +1437,14 @@ BOOL CHashFile::ReadDirectory(void)
 #endif // WIN32
     if (cc == 0xFFFFFFFFUL)
     {
-        return FALSE;
+        return false;
     }
     m_nDir = (int)(cc / HF_SIZEOF_FILEOFFSET);
     m_nDirDepth = 0;
     m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
     if (ISOUTOFMEMORY(m_pDir))
     {
-        return FALSE;
+        return false;
     }
     int n = m_nDir;
     n >>= 1;
@@ -1461,7 +1461,7 @@ BOOL CHashFile::ReadDirectory(void)
     lseek(m_hDirFile, 0, SEEK_SET);
     read(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
 #endif // WIN32
-    return TRUE;
+    return true;
 }
 
 int CHashFile::Open(const char *szDirFile, const char *szPageFile)
@@ -1576,7 +1576,7 @@ void CHashFile::Sync(void)
     if (m_hPageFile != INVALID_HANDLE_VALUE)
     {
         cs_syncs++;
-        BOOL bAllFlushed = TRUE;
+        bool bAllFlushed = true;
         for (int i = 0; i < HF_PAGES; i++)
         {
             bAllFlushed &= FlushCache(i);
@@ -1638,7 +1638,7 @@ CHashFile::~CHashFile(void)
     CloseAll();
 }
 
-BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
+bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 {
     cs_writes++;
     for (;;)
@@ -1647,14 +1647,14 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         if (iFileDir >= m_nDir)
         {
             Log.WriteString("CHashFile::Insert - iFileDir out of range." ENDLINE);
-            return FALSE;
+            return false;
         }
         HF_FILEOFFSET oPage = m_pDir[iFileDir];
         iCache = ReadCache(oPage, &cs_whits);
         if (iCache < 0)
         {
             Log.WriteString("CHashFile::Insert - Page wasn't valid." ENDLINE);
-            return FALSE;
+            return false;
         }
 
         UINT32 nStart, nEnd;
@@ -1662,13 +1662,13 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         if (iFileDir < nStart || nEnd < iFileDir)
         {
             Log.WriteString("CHashFile::Insert - Directory points to the wrong page." ENDLINE);
-            return FALSE;
+            return false;
         }
         int errInserted = m_Cache[iCache].m_hp.Insert(nRecord, nHash, pRecord);
         if (IS_HP_SUCCESS(errInserted)) break;
         if (errInserted == HP_INSERT_ERROR_ILLEGAL)
         {
-            return FALSE;
+            return false;
         }
 
 #ifndef WIN32
@@ -1699,7 +1699,7 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         {
             if (!DoubleDirectory())
             {
-                return FALSE;
+                return false;
             }
         }
 
@@ -1712,33 +1712,33 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 
         Safe[nSafe++] = iCache;
         iEmpty0 = AllocateEmptyPage(nSafe, Safe);
-        if (iEmpty0 < 0) return FALSE;
+        if (iEmpty0 < 0) return false;
 
         if (iCache == iEmpty0)
         {
             Log.WriteString("CHashFile::Split - iCache == iEmpty0" ENDLINE);
-            return FALSE;
+            return false;
         }
 
         Safe[nSafe++] = iEmpty0;
         iEmpty1 = AllocateEmptyPage(nSafe, Safe);
-        if (iEmpty1 < 0) return FALSE;
+        if (iEmpty1 < 0) return false;
 
         if (iCache == iEmpty1)
         {
             Log.WriteString("CHashFile::Split - iCache == iEmpty1" ENDLINE);
-            return FALSE;
+            return false;
         }
 
         if (iEmpty0 == iEmpty1)
         {
             Log.WriteString("CHashFile::Split - iEmpty0 == iEmpty1" ENDLINE);
-            return FALSE;
+            return false;
         }
 
         if (!m_Cache[iCache].m_hp.Split(m_Cache[iEmpty0].m_hp, m_Cache[iEmpty1].m_hp))
         {
-            return FALSE;
+            return false;
         }
 
         // Tack another page onto the end of the .pag file.
@@ -1794,10 +1794,10 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 #endif // DO_COMMIT
     }
     m_Cache[iCache].m_iState = HF_CACHE_UNPROTECTED;
-    return TRUE;
+    return true;
 }
 
-BOOL CHashFile::DoubleDirectory(void)
+bool CHashFile::DoubleDirectory(void)
 {
     unsigned int nNewDir      = 2 * m_nDir;
     HP_DIRINDEX nNewDirDepth = m_nDirDepth + 1;
@@ -1805,7 +1805,7 @@ BOOL CHashFile::DoubleDirectory(void)
     HF_PFILEOFFSET pNewDir = (HF_PFILEOFFSET)MEMALLOC(sizeof(HF_FILEOFFSET)*nNewDir);
     if (ISOUTOFMEMORY(pNewDir))
     {
-        return FALSE;
+        return false;
     }
 
     unsigned int iNewDir = 0;
@@ -1824,7 +1824,7 @@ BOOL CHashFile::DoubleDirectory(void)
     m_pDir = pNewDir;
     m_nDirDepth = nNewDirDepth;
     m_nDir = nNewDir;
-    return TRUE;
+    return true;
 }
 
 HP_DIRINDEX CHashFile::FindFirstKey(UINT32 nHash)
@@ -1892,7 +1892,7 @@ void CHashFile::Remove(HP_DIRINDEX iDir)
     m_Cache[iCache].m_iState = HF_CACHE_UNPROTECTED;
 }
 
-BOOL CHashFile::FlushCache(int iCache)
+bool CHashFile::FlushCache(int iCache)
 {
     switch (m_Cache[iCache].m_iState)
     {
@@ -1908,16 +1908,16 @@ BOOL CHashFile::FlushCache(int iCache)
         }
         else
         {
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 
 int CHashFile::AllocateEmptyPage(int nSafe, int Safe[])
 {
 again:
-    BOOL bFoundOldest = FALSE;
+    bool bFoundOldest = false;
     int iOldest = 0;
     int iOldestAge = 0;
     for (int cnt = HF_PAGES, i = m_iLastEmpty+1; cnt--; i++)
@@ -1929,12 +1929,12 @@ again:
             i -= HF_PAGES;
         }
 
-        BOOL bExclude = FALSE;
+        bool bExclude = false;
         for (int j = 0; j < nSafe; j++)
         {
             if (Safe[j] == i)
             {
-                bExclude = TRUE;
+                bExclude = true;
                 break;
             }
         }
@@ -1959,7 +1959,7 @@ again:
             {
                 iOldestAge = m_Cache[i].m_Age;
                 iOldest = i;
-                bFoundOldest = TRUE;
+                bFoundOldest = true;
             }
         }
     }
@@ -2092,7 +2092,7 @@ void CHashTable::ResetStats(void)
     m_nChecks = 0;
 }
 
-BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
+bool CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
 {
     for (;;)
     {
@@ -2101,14 +2101,14 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
         if (iTableDir >= m_nDir)
         {
             Log.WriteString("CHashTable::Insert - iTableDir out of range." ENDLINE);
-            return FALSE;
+            return false;
         }
 #endif // HP_PROTECTION
         m_hpLast = m_pDir[iTableDir];
         if (!m_hpLast)
         {
             Log.WriteString("CHashTable::Insert - Page wasn't valid." ENDLINE);
-            return FALSE;
+            return false;
         }
         UINT32  nStart, nEnd;
 #ifdef HP_PROTECTION
@@ -2116,7 +2116,7 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
         if (iTableDir < nStart || nEnd < iTableDir)
         {
             Log.WriteString("CHashTable::Insert - Directory points to the wrong page." ENDLINE);
-            return FALSE;
+            return false;
         }
 #endif // HP_PROTECTION
         int errInserted = m_hpLast->Insert(nRecord, nHash, pRecord);
@@ -2132,7 +2132,7 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
         }
         if (errInserted == HP_INSERT_ERROR_ILLEGAL)
         {
-            return FALSE;
+            return false;
         }
 
         // If the depth of this page is already as deep as the directory
@@ -2142,7 +2142,7 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
         {
             if (!DoubleDirectory())
             {
-                return FALSE;
+                return false;
             }
         }
 
@@ -2150,25 +2150,25 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
         // are given a pointer to the other one.
         //
         CHashPage *hpEmpty0 = new CHashPage;
-        if (!hpEmpty0) return FALSE;
+        if (!hpEmpty0) return false;
         if (!hpEmpty0->Allocate(HT_SIZEOF_PAGE))
         {
             delete hpEmpty0;
-            return FALSE;
+            return false;
         }
 
         CHashPage *hpEmpty1 = new CHashPage;
-        if (!hpEmpty1) return FALSE;
+        if (!hpEmpty1) return false;
         if (!hpEmpty1->Allocate(HT_SIZEOF_PAGE))
         {
             delete hpEmpty0;
             delete hpEmpty1;
-            return FALSE;
+            return false;
         }
 
         if (!m_hpLast->Split(*hpEmpty0, *hpEmpty1))
         {
-            return FALSE;
+            return false;
         }
 
         // Otherwise, this value will be over inflated.
@@ -2194,10 +2194,10 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
         m_hpLast = 0;
     }
     m_nEntries++;
-    return TRUE;
+    return true;
 }
 
-BOOL CHashTable::DoubleDirectory(void)
+bool CHashTable::DoubleDirectory(void)
 {
     unsigned int nNewDir      = 2 * m_nDir;
     unsigned int nNewDirDepth = m_nDirDepth + 1;
@@ -2217,9 +2217,9 @@ BOOL CHashTable::DoubleDirectory(void)
         m_pDir = pNewDir;
         m_nDirDepth = nNewDirDepth;
         m_nDir = nNewDir;
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 HP_DIRINDEX CHashTable::FindFirstKey(UINT32  nHash)
@@ -2572,7 +2572,7 @@ CLogFile::CLogFile(void)
 #ifdef WIN32
         InitializeCriticalSection(&csLog);
 #endif // WIN32
-        bEnabled = FALSE;
+        bEnabled = false;
         m_hFile = INVALID_HANDLE_VALUE;
         m_ltaStarted.GetLocal();
         m_szPrefix[0] = '\0';
@@ -2618,7 +2618,7 @@ void CLogFile::Flush(void)
 
 void CLogFile::EnableLogging(void)
 {
-    bEnabled = TRUE;
+    bEnabled = true;
     if (!mudstate.bStandAlone)
     {
         m_ltaStarted.GetLocal();
@@ -2645,7 +2645,7 @@ typedef struct
 } IdentDataRec;
 #pragma pack()
 
-BOOL bMemAccountingInitialized = FALSE;
+bool bMemAccountingInitialized = false;
 CHashFile hfAllocData;
 CHashFile hfIdentData;
 extern long DebugTotalMemory;
@@ -2668,7 +2668,7 @@ unsigned long HashFileLine(const char *fn, int line)
     return nHash1;
 }
 
-BOOL SubtractSpaceFromFileLine
+bool SubtractSpaceFromFileLine
 (
     UINT32  nHash,
     int     size,
@@ -2695,7 +2695,7 @@ BOOL SubtractSpaceFromFileLine
 
         hfIdentData.Insert(nIdent, nHash, Buffer);
     }
-    return TRUE;
+    return true;
 }
 
 unsigned long AddSpaceToFileLine
@@ -2712,7 +2712,7 @@ unsigned long AddSpaceToFileLine
     char Buffer[1024];
     IdentDataRec *idr = (IdentDataRec *)Buffer;
     UINT32 nHash = HashFileLine(file, line);
-    BOOL bFound = FALSE;
+    bool bFound = false;
 again:
     HP_DIRINDEX iDir = hfIdentData.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -2723,7 +2723,7 @@ again:
         {
             hfIdentData.Remove(iDir);
             nSpace += idr->nSize;
-            bFound = TRUE;
+            bFound = true;
             goto again;
         }
         iDir = hfIdentData.FindNextKey(iDir, nHash);
@@ -2781,7 +2781,7 @@ void AccountForFree(void *pointer, const char *file, int line)
 {
     unsigned long nHash = HashPointer(pointer);
 
-    BOOL bFound = FALSE;
+    bool bFound = false;
 again:
     HP_DIRINDEX iDir = hfAllocData.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -2793,7 +2793,7 @@ again:
         hfAllocData.Copy(iDir, &nRecord, &adr);
         if (adr.address == pointer)
         {
-            bFound = TRUE;
+            bFound = true;
             hfAllocData.Remove(iDir);
 
             DebugTotalMemory -= adr.size;

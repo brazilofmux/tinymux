@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: comsys.h,v 1.2 2003-02-05 06:20:58 jake Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -24,9 +24,9 @@ struct chanentry
 struct comuser
 {
     dbref who;
-    BOOL bUserIsOn;
+    bool bUserIsOn;
     char *title;
-    BOOL ComTitleStatus;
+    bool ComTitleStatus;
     struct comuser *on_next;
 };
 
@@ -64,7 +64,7 @@ void save_comsys(char *filename);
 void load_comsys(char *filename);
 void del_comsys(dbref who);
 void add_comsys(comsys_t *c);
-BOOL do_test_access(dbref player, long access, struct channel *chan);
+bool do_test_access(dbref player, long access, struct channel *chan);
 void do_joinchannel(dbref player, struct channel *ch);
 void do_comdisconnectchannel(dbref player, char *channel);
 void load_channels(FILE *fp);
@@ -84,7 +84,7 @@ void SendChannelMessage
 void do_comwho(dbref player, struct channel *ch);
 void do_comlast(dbref player, struct channel *ch, int arg);
 void do_leavechannel(dbref player, struct channel *ch);
-void do_delcomchannel(dbref player, char *channel, BOOL bQuiet);
+void do_delcomchannel(dbref player, char *channel, bool bQuiet);
 #if 0
 void do_cleanupchannels(void);
 #endif // 0
@@ -112,9 +112,9 @@ struct comuser *select_user(struct channel *ch, dbref player);
 
 char  *get_channel_from_alias();
 
-BOOL  do_comsystem(dbref who, char *cmd);
+bool  do_comsystem(dbref who, char *cmd);
 void  do_chanlist(dbref executor, dbref caller, dbref enactor, int key);
-extern char *modSpeech(dbref player, char *message, BOOL bWhich, char *command);
+extern char *modSpeech(dbref player, char *message, bool bWhich, char *command);
 
 #define CHANNEL_JOIN      0x1
 #define CHANNEL_TRANSMIT  0x2

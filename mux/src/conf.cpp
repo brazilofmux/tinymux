@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.12 2003-02-05 01:34:45 sdennis Exp $
+// $Id: conf.cpp,v 1.13 2003-02-05 06:20:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -55,7 +55,7 @@ void cf_init(void)
     mudconf.game_pag = StringClone("");
     mudconf.mail_db   = StringClone("mail.db");
     mudconf.comsys_db = StringClone("comsys.db");
-    mudconf.compress_db = FALSE;
+    mudconf.compress_db = false;
     mudconf.compress = StringClone("gzip");
     mudconf.uncompress = StringClone("gzip -d");
     mudconf.status_file = StringClone("shutdown.status");
@@ -95,16 +95,16 @@ void cf_init(void)
     strcpy(mudconf.guests_channel, "Guests");
     strcpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>");
     mudconf.art_rules = NULL;
-    mudconf.indent_desc = FALSE;
-    mudconf.name_spaces = TRUE;
+    mudconf.indent_desc = false;
+    mudconf.name_spaces = true;
 #ifndef WIN32
-    mudconf.fork_dump = TRUE;
-    mudstate.dumping  = FALSE;
+    mudconf.fork_dump = true;
+    mudstate.dumping  = false;
 #endif
-    mudconf.have_comsys = TRUE;
-    mudconf.have_mailer = TRUE;
-    mudconf.have_zones = TRUE;
-    mudconf.paranoid_alloc = FALSE;
+    mudconf.have_comsys = true;
+    mudconf.have_mailer = true;
+    mudconf.have_zones = true;
+    mudconf.paranoid_alloc = false;
     mudconf.sig_action = SA_DFLT;
     mudconf.max_players = -1;
     mudconf.dump_interval = 3600;
@@ -141,48 +141,48 @@ void cf_init(void)
     mudconf.room_quota = 1;
     mudconf.thing_quota = 1;
     mudconf.mail_expiration = 14;
-    mudconf.use_http = FALSE;
+    mudconf.use_http = false;
     mudconf.queuemax = 100;
     mudconf.queue_chunk = 10;
     mudconf.active_q_chunk = 10;
     mudconf.sacfactor = 5;
     mudconf.sacadjust = -1;
-    mudconf.use_hostname    = TRUE;
-    mudconf.quotas          = FALSE;
-    mudconf.ex_flags        = TRUE;
-    mudconf.robot_speak     = TRUE;
-    mudconf.clone_copy_cost = FALSE;
-    mudconf.pub_flags       = TRUE;
-    mudconf.quiet_look      = TRUE;
-    mudconf.exam_public     = TRUE;
-    mudconf.read_rem_desc   = FALSE;
-    mudconf.read_rem_name   = FALSE;
-    mudconf.sweep_dark      = FALSE;
-    mudconf.player_listen   = FALSE;
-    mudconf.quiet_whisper   = TRUE;
-    mudconf.dark_sleepers   = TRUE;
-    mudconf.see_own_dark    = TRUE;
-    mudconf.idle_wiz_dark   = FALSE;
-    mudconf.pemit_players   = FALSE;
-    mudconf.pemit_any       = FALSE;
-    mudconf.match_mine      = TRUE;
-    mudconf.match_mine_pl   = TRUE;
-    mudconf.switch_df_all   = TRUE;
-    mudconf.fascist_tport   = FALSE;
-    mudconf.terse_look      = TRUE;
-    mudconf.terse_contents  = TRUE;
-    mudconf.terse_exits     = TRUE;
-    mudconf.terse_movemsg   = TRUE;
-    mudconf.trace_topdown   = TRUE;
+    mudconf.use_hostname    = true;
+    mudconf.quotas          = false;
+    mudconf.ex_flags        = true;
+    mudconf.robot_speak     = true;
+    mudconf.clone_copy_cost = false;
+    mudconf.pub_flags       = true;
+    mudconf.quiet_look      = true;
+    mudconf.exam_public     = true;
+    mudconf.read_rem_desc   = false;
+    mudconf.read_rem_name   = false;
+    mudconf.sweep_dark      = false;
+    mudconf.player_listen   = false;
+    mudconf.quiet_whisper   = true;
+    mudconf.dark_sleepers   = true;
+    mudconf.see_own_dark    = true;
+    mudconf.idle_wiz_dark   = false;
+    mudconf.pemit_players   = false;
+    mudconf.pemit_any       = false;
+    mudconf.match_mine      = true;
+    mudconf.match_mine_pl   = true;
+    mudconf.switch_df_all   = true;
+    mudconf.fascist_tport   = false;
+    mudconf.terse_look      = true;
+    mudconf.terse_contents  = true;
+    mudconf.terse_exits     = true;
+    mudconf.terse_movemsg   = true;
+    mudconf.trace_topdown   = true;
     mudconf.trace_limit     = 200;
-    mudconf.safe_unowned    = FALSE;
-    mudconf.safer_passwords = FALSE;
-    mudconf.autozone        = TRUE;
+    mudconf.safe_unowned    = false;
+    mudconf.safer_passwords = false;
+    mudconf.autozone        = true;
 
     // -- ??? Running SC on a non-SC DB may cause problems.
     //
-    mudconf.space_compress = TRUE;
-    mudconf.allow_guest_from_registered_site = TRUE;
+    mudconf.space_compress = true;
+    mudconf.allow_guest_from_registered_site = true;
     mudconf.start_room = 0;
     mudconf.start_home = NOTHING;
     mudconf.default_home = NOTHING;
@@ -228,26 +228,26 @@ void cf_init(void)
     mudconf.parent_nest_lim = 10;
     mudconf.zone_nest_lim = 20;
     mudconf.stack_limit = 50;
-    mudconf.cache_names = TRUE;
+    mudconf.cache_names = true;
     mudconf.toad_recipient = -1;
-    mudconf.eval_comtitle = TRUE;
-    mudconf.run_startup = TRUE;
-    mudconf.safe_wipe = FALSE;
-    mudconf.destroy_going_now = FALSE;
+    mudconf.eval_comtitle = true;
+    mudconf.run_startup = true;
+    mudconf.safe_wipe = false;
+    mudconf.destroy_going_now = false;
     mudconf.nStackLimit = 10000;
     mudconf.hook_obj = NOTHING;
     mudconf.global_error_obj = NOTHING;
 
     mudstate.events_flag = 0;
-    mudstate.bReadingConfiguration = FALSE;
-    mudstate.bCanRestart = FALSE;
-    mudstate.panicking = FALSE;
+    mudstate.bReadingConfiguration = false;
+    mudstate.bCanRestart = false;
+    mudstate.panicking = false;
     mudstate.logging = 0;
     mudstate.epoch = 0;
     mudstate.generation = 0;
     mudstate.curr_executor = NOTHING;
     mudstate.curr_enactor = NOTHING;
-    mudstate.shutdown_flag  = FALSE;
+    mudstate.shutdown_flag  = false;
     mudstate.attr_next = A_USER_START;
     mudstate.debug_cmd = "< init >";
     mudstate.curr_cmd  = "< none >";
@@ -285,7 +285,7 @@ void cf_init(void)
     mudstate.ntfy_nest_lev = 0;
     mudstate.lock_nest_lev = 0;
     mudstate.zone_nest_num = 0;
-    mudstate.inpipe = FALSE;
+    mudstate.inpipe = false;
     mudstate.pout = NULL;
     mudstate.poutnew = NULL;
     mudstate.poutbufc = NULL;
@@ -297,7 +297,7 @@ void cf_init(void)
     }
     mudstate.nObjEvalNest = 0;
     mudstate.in_loop = 0;
-    mudstate.bStackLimitReached = FALSE;
+    mudstate.bStackLimitReached = false;
     mudstate.nStackNest = 0;
     mudstate.aHelpDesc = NULL;
     mudstate.mHelpDesc = 0;
@@ -448,12 +448,12 @@ CF_HAND(cf_int)
 //
 NAMETAB bool_names[] =
 {
-    {"true",    1,  0,  TRUE},
-    {"false",   1,  0,  FALSE},
-    {"yes",     1,  0,  TRUE},
-    {"no",      1,  0,  FALSE},
-    {"1",       1,  0,  TRUE},
-    {"0",       1,  0,  FALSE},
+    {"true",    1,  0,  true},
+    {"false",   1,  0,  false},
+    {"yes",     1,  0,  true},
+    {"no",      1,  0,  false},
+    {"1",       1,  0,  true},
+    {"0",       1,  0,  false},
     {NULL,      0,  0,  0}
 };
 
@@ -632,9 +632,9 @@ CF_HAND(cf_flagalias)
     char *alias = mux_strtok_parse(&tts);
     char *orig = mux_strtok_parse(&tts);
 
-    BOOL success = FALSE;
+    bool success = false;
     int  nName;
-    BOOL bValid;
+    bool bValid;
     int *cp;
     char *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
     if (  bValid
@@ -644,7 +644,7 @@ CF_HAND(cf_flagalias)
         if (bValid)
         {
             hashaddLEN(pName, nName, cp, &mudstate.flags_htab);
-            success = TRUE;
+            success = true;
         }
     }
     if (!success)
@@ -665,9 +665,9 @@ CF_HAND(cf_poweralias)
     char *alias = mux_strtok_parse(&tts);
     char *orig = mux_strtok_parse(&tts);
 
-    BOOL success = FALSE;
+    bool success = false;
     int  nName;
-    BOOL bValid;
+    bool bValid;
     int *cp;
     char *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
     if (  bValid
@@ -677,7 +677,7 @@ CF_HAND(cf_poweralias)
         if (bValid)
         {
             hashaddLEN(pName, nName, cp, &mudstate.powers_htab);
-            success = TRUE;
+            success = true;
         }
     }
     if (!success)
@@ -730,7 +730,7 @@ CF_HAND(cf_or_in_bits)
 CF_HAND(cf_modify_bits)
 {
     int f, success, failure;
-    BOOL negate;
+    bool negate;
 
     // Walk through the tokens.
     //
@@ -743,10 +743,10 @@ CF_HAND(cf_modify_bits)
     {
         // Check for negation.
         //
-        negate = FALSE;
+        negate = false;
         if (*sp == '!')
         {
-            negate = TRUE;
+            negate = true;
             sp++;
         }
 
@@ -834,7 +834,7 @@ CF_HAND(cf_set_flags)
         // Canonical Flag Name.
         //
         int  nName;
-        BOOL bValid;
+        bool bValid;
         char *pName = MakeCanonicalFlagName(sp, &nName, &bValid);
         FLAGNAMEENT *fp = NULL;
         if (bValid)
@@ -909,7 +909,7 @@ typedef struct
     size_t maxHexLen;
 } DECODEIPV4;
 
-static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
+static bool DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
 {
     static DECODEIPV4 DecodeIPv4Table[4] =
     {
@@ -922,7 +922,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
     *pu32  = (*pu32 << DecodeIPv4Table[nType].nShift) & 0xFFFFFFFFUL;
     if (len == 0)
     {
-        return FALSE;
+        return false;
     }
     in_addr_t ul = 0;
     in_addr_t ul2;
@@ -943,7 +943,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
         }
         if (len > DecodeIPv4Table[nType].maxHexLen)
         {
-            return FALSE;
+            return false;
         }
         while (len)
         {
@@ -954,7 +954,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
             {
                 // Overflow
                 //
-                return FALSE;
+                return false;
             }
             if ('0' <= ch && ch <= '9')
             {
@@ -966,7 +966,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
             }
             else
             {
-                return FALSE;
+                return false;
             }
             p++;
             len--;
@@ -987,7 +987,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
         }
         if (len > DecodeIPv4Table[nType].maxOctLen)
         {
-            return FALSE;
+            return false;
         }
         while (len)
         {
@@ -998,7 +998,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
             {
                 // Overflow
                 //
-                return FALSE;
+                return false;
             }
             if ('0' <= ch && ch <= '7')
             {
@@ -1006,7 +1006,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
             }
             else
             {
-                return FALSE;
+                return false;
             }
             p++;
             len--;
@@ -1018,7 +1018,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
         //
         if (len > DecodeIPv4Table[nType].maxDecLen)
         {
-            return FALSE;
+            return false;
         }
         while (len)
         {
@@ -1029,7 +1029,7 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
             {
                 // Overflow
                 //
-                return FALSE;
+                return false;
             }
             ul2 = ul;
             if ('0' <= ch && ch <= '9')
@@ -1038,13 +1038,13 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
             }
             else
             {
-                return FALSE;
+                return false;
             }
             if (ul < ul2)
             {
                 // Overflow
                 //
-                return FALSE;
+                return false;
             }
             p++;
             len--;
@@ -1052,10 +1052,10 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
     }
     if (ul > DecodeIPv4Table[nType].maxValue)
     {
-        return FALSE;
+        return false;
     }
     *pu32 |= ul;
-    return TRUE;
+    return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -1084,12 +1084,12 @@ static BOOL DecodeN(int nType, size_t len, const char *p, in_addr_t *pu32)
 //    0X8 Hexadecimal
 //    8   Decimal
 //
-static BOOL MakeCanonicalIPv4(const char *str, in_addr_t *pnIP)
+static bool MakeCanonicalIPv4(const char *str, in_addr_t *pnIP)
 {
     *pnIP = 0;
     if (!str)
     {
-        return FALSE;
+        return false;
     }
 
     // Skip leading spaces.
@@ -1109,11 +1109,11 @@ static BOOL MakeCanonicalIPv4(const char *str, in_addr_t *pnIP)
         n++;
         if (n > 3)
         {
-            return FALSE;
+            return false;
         }
         if (!DecodeN(0, p-q, q, pnIP))
         {
-            return FALSE;
+            return false;
         }
         q = p + 1;
         p = strchr(q, '.');
@@ -1124,28 +1124,28 @@ static BOOL MakeCanonicalIPv4(const char *str, in_addr_t *pnIP)
     size_t len = strlen(q);
     if (!DecodeN(3-n, len, q, pnIP))
     {
-        return FALSE;
+        return false;
     }
     *pnIP = htonl(*pnIP);
-    return TRUE;
+    return true;
 }
 
 // Given a host-ordered mask, this function will determine whether it is a
 // valid one. Valid masks consist of a N-bit sequence of '1' bits followed by
 // a (32-N)-bit sequence of '0' bits, where N is 0 to 32.
 //
-BOOL isValidSubnetMask(in_addr_t ulMask)
+bool isValidSubnetMask(in_addr_t ulMask)
 {
     in_addr_t ulTest = 0xFFFFFFFFUL;
     for (int i = 0; i <= 32; i++)
     {
         if (ulMask == ulTest)
         {
-            return TRUE;
+            return true;
         }
         ulTest = (ulTest << 1) & 0xFFFFFFFFUL;
     }
-    return FALSE;
+    return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -1322,7 +1322,7 @@ CF_HAND(cf_cf_access)
 // cf_helpfile, cf_raw_helpfile: Add help files and their corresponding
 // command.
 //
-int add_helpfile(dbref player, char *cmd, char *str, BOOL bRaw)
+int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
 {
     // Parse the two arguments.
     //
@@ -1413,12 +1413,12 @@ int add_helpfile(dbref player, char *cmd, char *str, BOOL bRaw)
 
 CF_HAND(cf_helpfile)
 {
-    return add_helpfile(player, cmd, str, FALSE);
+    return add_helpfile(player, cmd, str, false);
 }
 
 CF_HAND(cf_raw_helpfile)
 {
-    return add_helpfile(player, cmd, str, TRUE);
+    return add_helpfile(player, cmd, str, true);
 }
 
 // @hook: run softcode before or after running a hardcode command, or softcode access.
@@ -1935,9 +1935,9 @@ int cf_read(void)
 {
     int retval;
 
-    mudstate.bReadingConfiguration = TRUE;
+    mudstate.bReadingConfiguration = true;
     retval = cf_include(NULL, mudconf.config_file, (void *)0, 0, 0, "init");
-    mudstate.bReadingConfiguration = FALSE;
+    mudstate.bReadingConfiguration = false;
 
     // Fill in missing DB file names.
     //
@@ -1977,7 +1977,7 @@ void list_cf_access(dbref player)
         if (God(player) || check_access(player, tp->flags))
         {
             sprintf(buff, "%s:", tp->pname);
-            listset_nametab(player, access_nametab, tp->flags, buff, TRUE);
+            listset_nametab(player, access_nametab, tp->flags, buff, true);
         }
     }
     free_mbuf(buff);

@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.8 2003-02-05 01:13:20 sdennis Exp $
+// $Id: boolexp.cpp,v 1.9 2003-02-05 06:20:58 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -9,18 +9,18 @@
 
 #include "attrs.h"
 
-static BOOL parsing_internal = FALSE;
+static bool parsing_internal = false;
 
 /* ---------------------------------------------------------------------------
  * check_attr: indicate if attribute ATTR on player passes key when checked by
  * the object lockobj
  */
 
-static BOOL check_attr(dbref player, dbref lockobj, ATTR *attr, char *key)
+static bool check_attr(dbref player, dbref lockobj, ATTR *attr, char *key)
 {
     dbref aowner;
     int aflags;
-    BOOL bCheck = FALSE;
+    bool bCheck = false;
 
     char *buff = atr_pget(player, attr->number, &aowner, &aflags);
 
@@ -28,38 +28,38 @@ static BOOL check_attr(dbref player, dbref lockobj, ATTR *attr, char *key)
     {
         // We can see enterlocks... else we'd break zones.
         //
-        bCheck = TRUE;
+        bCheck = true;
     }
     else if (See_attr(lockobj, player, attr))
     {
-        bCheck = TRUE;
+        bCheck = true;
     }
     else if (attr->number == A_NAME)
     {
-        bCheck = TRUE;
+        bCheck = true;
     }
 
     if (  bCheck
        && !wild_match(key, buff))
     {
-        bCheck = FALSE;
+        bCheck = false;
     }
     free_lbuf(buff);
     return bCheck;
 }
 
-BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
+bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 {
     if (b == TRUE_BOOLEXP)
     {
-        return TRUE;
+        return true;
     }
 
     dbref aowner, obj, source;
     int aflags;
     char *key, *buff, *buff2, *bp, *str;
     ATTR *a;
-    BOOL bCheck, c;
+    bool bCheck, c;
 
     switch (b->type)
     {
@@ -96,7 +96,7 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
                 notify(player, "Sorry, broken lock!");
             }
             mudstate.lock_nest_lev--;
-            return FALSE;
+            return false;
         }
         if (  b->sub1->type != BOOLEXP_CONST
            || b->sub1->thing < 0)
@@ -118,7 +118,7 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
                 notify(player, "Sorry, broken lock!");
             }
             mudstate.lock_nest_lev--;
-            return FALSE;
+            return false;
         }
         key = atr_get(b->sub1->thing, A_LOCK, &aowner, &aflags);
         c = eval_boolexp_atr(player, b->sub1->thing, from, key);
@@ -136,23 +136,23 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             // No such attribute.
             //
-            return FALSE;
+            return false;
         }
 
         // First check the object itself, then its contents.
         //
         if (check_attr(player, from, a, (char *)b->sub1))
         {
-            return TRUE;
+            return true;
         }
         DOLIST(obj, Contents(player))
         {
             if (check_attr(obj, from, a, (char *)b->sub1))
             {
-                return TRUE;
+                return true;
             }
         }
-        return FALSE;
+        return false;
 
     case BOOLEXP_EVAL:
 
@@ -161,7 +161,7 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             // No such attribute.
             //
-            return FALSE;
+            return false;
         }
         source = from;
         buff = atr_pget(from, a->number, &aowner, &aflags);
@@ -171,16 +171,16 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             buff = atr_pget(thing, a->number, &aowner, &aflags);
             source = thing;
         }
-        bCheck = FALSE;
+        bCheck = false;
 
         if (  a->number == A_NAME
            || a->number == A_LENTER)
         {
-            bCheck = TRUE;
+            bCheck = true;
         }
-        else if (bCanReadAttr(source, source, a, FALSE))
+        else if (bCanReadAttr(source, source, a, false))
         {
-            bCheck = TRUE;
+            bCheck = true;
         }
         if (bCheck)
         {
@@ -221,7 +221,7 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         a = atr_num(b->sub1->thing);
         if (!a)
         {
-            return FALSE;
+            return false;
         }
         return check_attr(player, from, a, (char *)(b->sub1)->sub1);
 
@@ -239,16 +239,16 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         a = atr_num(b->sub1->thing);
         if (!a)
         {
-            return FALSE;
+            return false;
         }
         DOLIST(obj, Contents(player))
         {
             if (check_attr(obj, from, a, (char *)(b->sub1)->sub1))
             {
-                return TRUE;
+                return true;
             }
         }
-        return FALSE;
+        return false;
 
     case BOOLEXP_OWNER:
 
@@ -259,18 +259,18 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         // Bad type
         //
         mux_assert(0);
-        return FALSE;
+        return false;
     }
 }
 
-BOOL eval_boolexp_atr(dbref player, dbref thing, dbref from, char *key)
+bool eval_boolexp_atr(dbref player, dbref thing, dbref from, char *key)
 {
-    BOOL ret_value;
+    bool ret_value;
 
-    BOOLEXP *b = parse_boolexp(player, key, TRUE);
+    BOOLEXP *b = parse_boolexp(player, key, true);
     if (b == NULL)
     {
-        ret_value = TRUE;
+        ret_value = true;
     }
     else
     {
@@ -690,7 +690,7 @@ static BOOLEXP *parse_boolexp_E(void)
     return b;
 }
 
-BOOLEXP *parse_boolexp(dbref player, const char *buf, BOOL internal)
+BOOLEXP *parse_boolexp(dbref player, const char *buf, bool internal)
 {
     strcpy(parsestore, buf);
     parsebuf = parsestore;

@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.8 2003-02-05 01:34:46 sdennis Exp $
+// $Id: speech.cpp,v 1.9 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -12,7 +12,7 @@
 #include "interface.h"
 #include "powers.h"
 
-char *modSpeech(dbref player, char *message, BOOL bWhich, char *command)
+char *modSpeech(dbref player, char *message, bool bWhich, char *command)
 {
     dbref aowner;
     int aflags;
@@ -49,13 +49,13 @@ static int idle_timeout_val(dbref player)
     return idle_timeout;
 }
 
-BOOL sp_ok(dbref player)
+bool sp_ok(dbref player)
 {
     if (  Gagged(player)
        && !Wizard(player))
     {
         notify(player, "Sorry. Gagged players cannot speak.");
-        return FALSE;
+        return false;
     }
 
     if (!mudconf.robot_speak)
@@ -63,7 +63,7 @@ BOOL sp_ok(dbref player)
         if (Robot(player) && !Controls(player, Location(player)))
         {
             notify(player, "Sorry, robots may not speak in public.");
-            return FALSE;
+            return false;
         }
     }
     if (Auditorium(Location(player)))
@@ -71,10 +71,10 @@ BOOL sp_ok(dbref player)
         if (!could_doit(player, Location(player), A_LSPEECH))
         {
             notify(player, "Sorry, you may not speak in this place.");
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 
 void wall_broadcast(int target, dbref player, char *message)
@@ -205,7 +205,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
     char *messageNew = NULL;
     if (!(say_flags & SAY_NOEVAL))
     {
-        messageNew = modSpeech(executor, message, TRUE, command);
+        messageNew = modSpeech(executor, message, true, command);
         if (messageNew)
         {
             message = messageNew;
@@ -238,7 +238,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
     switch (key)
     {
     case SAY_SAY:
-        saystring = modSpeech(executor, messageOrig, FALSE, command);
+        saystring = modSpeech(executor, messageOrig, false, command);
         if (saystring)
         {
             notify_saypose(executor, tprintf("%s %s \"%s\"",
@@ -325,7 +325,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
 
     // Parse speechmod if present.
     //
-    char *messageNew = modSpeech(executor, message, TRUE, "@wall");
+    char *messageNew = modSpeech(executor, message, true, "@wall");
     if (messageNew)
     {
         message = messageNew;
@@ -547,7 +547,7 @@ static void page_return(dbref player, dbref target, const char *tag, int anum, c
     free_lbuf(str);
 }
 
-static BOOL page_check(dbref player, dbref target)
+static bool page_check(dbref player, dbref target)
 {
     if (!payfor(player, Guest(player) ? 0 : mudconf.pagecost))
     {
@@ -578,19 +578,19 @@ static BOOL page_check(dbref player, dbref target)
         if (Wizard(player))
         {
             notify(player, tprintf("Warning: %s can't return your page.", Moniker(target)));
-            return TRUE;
+            return true;
         }
         else
         {
             notify(player, tprintf("Sorry, %s can't return your page.", Moniker(target)));
-            return FALSE;
+            return false;
         }
     }
     else
     {
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 // The combinations are:
@@ -620,7 +620,7 @@ void do_page
     // Either we have been given a recipient list, or we are relying on an
     // existing A_LASTPAGE.
     //
-    BOOL bModified = FALSE;
+    bool bModified = false;
     if (  nargs == 2
        && arg1[0] != '\0')
     {
@@ -632,7 +632,7 @@ void do_page
         char *p;
         for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
         {
-            dbref target = lookup_player(executor,p, TRUE);
+            dbref target = lookup_player(executor,p, true);
             if (target != NOTHING)
             {
                 aPlayers[nPlayers++] = target;
@@ -642,7 +642,7 @@ void do_page
                 notify(executor, tprintf("I don't recognize \"%s\".", p));
             }
         }
-        bModified = TRUE;
+        bModified = true;
     }
     else
     {
@@ -667,7 +667,7 @@ void do_page
             else
             {
                 notify(executor, tprintf("I don't recognize #%d.", target));
-                bModified = TRUE;
+                bModified = true;
             }
         }
         free_lbuf(pLastPage);
@@ -688,7 +688,7 @@ void do_page
                 if (aPlayers[j] == aPlayers[i])
                 {
                     aPlayers[j] = NOTHING;
-                    bModified = TRUE;
+                    bModified = true;
                     nValid--;
                 }
             }
@@ -707,7 +707,7 @@ void do_page
                && !page_check(executor, aPlayers[i]))
             {
                 aPlayers[i] = NOTHING;
-                bModified = TRUE;
+                bModified = true;
                 nValid--;
             }
         }
@@ -761,14 +761,14 @@ void do_page
     {
         safe_chr('(', aFriendly, &pFriendly);
     }
-    BOOL bFirst = TRUE;
+    bool bFirst = true;
     for (i = 0; i < nPlayers; i++)
     {
         if (aPlayers[i] != NOTHING)
         {
             if (bFirst)
             {
-                bFirst = FALSE;
+                bFirst = false;
             }
             else
             {
@@ -840,7 +840,7 @@ void do_page
         pageMode = 0;
     }
 
-    char *newMessage = modSpeech(executor, pMessage, TRUE, "page");
+    char *newMessage = modSpeech(executor, pMessage, true, "page");
     if (newMessage)
     {
         pMessage = newMessage;
@@ -929,9 +929,9 @@ void do_page
  * do_pemit: Messages to specific players, or to all but specific players.
  */
 
-void whisper_pose(dbref player, dbref target, char *message, BOOL bSpace)
+void whisper_pose(dbref player, dbref target, char *message, bool bSpace)
 {
-    char *newMessage = modSpeech(player, message, TRUE, "whisper");
+    char *newMessage = modSpeech(player, message, true, "whisper");
     if (newMessage)
     {
         message = newMessage;
@@ -953,7 +953,7 @@ void do_pemit_single
 (
     dbref player,
     int key,
-    BOOL bDoContents,
+    bool bDoContents,
     int pemit_flags,
     char *recipient,
     int chPoseType,
@@ -963,7 +963,7 @@ void do_pemit_single
     dbref target, loc;
     char *buf2, *bp;
     int depth;
-    BOOL ok_to_do = FALSE;
+    bool ok_to_do = false;
 
     switch (key)
     {
@@ -976,7 +976,7 @@ void do_pemit_single
         {
             return;
         }
-        ok_to_do = TRUE;
+        ok_to_do = true;
         break;
 
     default:
@@ -1024,7 +1024,7 @@ void do_pemit_single
               || Long_Fingers(player)
               || Controls(player, target)))
         {
-            ok_to_do = TRUE;
+            ok_to_do = true;
         }
         if (  !ok_to_do
            && key == PEMIT_PEMIT
@@ -1035,7 +1035,7 @@ void do_pemit_single
             {
                 return;
             }
-            ok_to_do = TRUE;
+            ok_to_do = true;
         }
         if (  !ok_to_do
            && (  !mudconf.pemit_any
@@ -1092,19 +1092,19 @@ void do_pemit_single
             {
             case ':':
                 message++;
-                whisper_pose(player, target, message, TRUE);
+                whisper_pose(player, target, message, true);
                 break;
 
             case ';':
                 message++;
-                whisper_pose(player, target, message, FALSE);
+                whisper_pose(player, target, message, false);
                 break;
 
             case '"':
                 message++;
 
             default:
-                newMessage = modSpeech(player, message, TRUE, "whisper");
+                newMessage = modSpeech(player, message, true, "whisper");
                 if (newMessage)
                 {
                     message = newMessage;
@@ -1137,7 +1137,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FSAY:
-            newMessage = modSpeech(target, message, TRUE, "@fsay");
+            newMessage = modSpeech(target, message, true, "@fsay");
             if (newMessage)
             {
                 message = newMessage;
@@ -1145,7 +1145,7 @@ void do_pemit_single
             notify(target, tprintf("You say, \"%s\"", message));
             if (loc != NOTHING)
             {
-                saystring = modSpeech(target, message, FALSE, "@fsay");
+                saystring = modSpeech(target, message, false, "@fsay");
                 if (saystring)
                 {
                     notify_except(loc, player, target,
@@ -1168,7 +1168,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FPOSE:
-            newMessage = modSpeech(target, message, TRUE, "@fpose");
+            newMessage = modSpeech(target, message, true, "@fpose");
             if (newMessage)
             {
                 message = newMessage;
@@ -1182,7 +1182,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FPOSE_NS:
-            newMessage = modSpeech(target, message, TRUE, "@fpose");
+            newMessage = modSpeech(target, message, true, "@fpose");
             if (newMessage)
             {
                 message = newMessage;
@@ -1233,7 +1233,7 @@ void do_pemit_list
 (
     dbref player,
     int key,
-    BOOL bDoContents,
+    bool bDoContents,
     int pemit_flags,
     char *list,
     int chPoseType,
@@ -1278,15 +1278,15 @@ void do_pemit
 
     // Decode PEMIT_CONENTS and PEMIT_LIST and remove from key.
     //
-    BOOL bDoContents = FALSE;
+    bool bDoContents = false;
     if (key & PEMIT_CONTENTS)
     {
-        bDoContents = TRUE;
+        bDoContents = true;
     }
-    BOOL bDoList = FALSE;
+    bool bDoList = false;
     if (key & PEMIT_LIST)
     {
-        bDoList = TRUE;
+        bDoList = true;
     }
     key &= ~(PEMIT_CONTENTS | PEMIT_LIST);
 

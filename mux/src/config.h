@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.5 2003-02-04 18:29:38 sdennis Exp $
+// $Id: config.h,v 1.6 2003-02-05 06:20:58 jake Exp $
 //
 
 #ifndef CONFIG_H
@@ -100,9 +100,6 @@ typedef unsigned __int64 UINT64;
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif // O_BINARY
-typedef int BOOL;
-#define TRUE    1
-#define FALSE   0
 typedef int HANDLE;
 
 typedef long long          INT64;
@@ -134,7 +131,7 @@ typedef int SOCKET;
 
 #endif // WIN32
 
-#define isTRUE(b) ((b) ? TRUE : FALSE)
+#define isTRUE(b) ((b) ? true : false)
 
 // Find the minimum-sized integer type that will hold 32-bits.
 // Promote to 64-bits if necessary.
@@ -184,10 +181,10 @@ typedef UINT32 in_addr_t;
 #define LARGEST_INT_LTE_NEG_QUOTIENT
 #endif // !SMALLEST_INT_GTE_NEG_QUOTIENT
 
-extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
+extern bool AssertionFailed(const char *SourceFile, unsigned int LineNo);
 #define mux_assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
 
-extern BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo);
+extern bool OutOfMemory(const char *SourceFile, unsigned int LineNo);
 #define ISOUTOFMEMORY(exp) (!(exp) && OutOfMemory(__FILE__, __LINE__))
 
 //#define MEMORY_ACCOUNTING

@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.4 2003-02-03 06:01:48 sdennis Exp $
+// $Id: timer.cpp,v 1.5 2003-02-05 06:20:59 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -170,7 +170,7 @@ void dispatch_CleanChannels(void *pUnused, int iUnused)
 
 void dispatch_CanRestart(void *pUnused, int iUnused)
 {
-    mudstate.bCanRestart = TRUE;
+    mudstate.bCanRestart = true;
 }
 
 void init_timer(void)
@@ -309,20 +309,20 @@ void CTaskHeap::Insert(PTASK_RECORD pTask, SCHCMP *pfCompare)
     SiftUp(m_nCurrent-1, pfCompare);
 }
 
-BOOL CTaskHeap::Grow(void)
+bool CTaskHeap::Grow(void)
 {
     // Grow the heap.
     //
     int n = m_nAllocated + EXTRA_TASKS;
     PTASK_RECORD *p = new PTASK_RECORD[n];
-    if (!p) return FALSE;
+    if (!p) return false;
 
     memcpy(p, m_pHeap, sizeof(PTASK_RECORD)*m_nAllocated);
     m_nAllocated = n;
     delete m_pHeap;
     m_pHeap = p;
 
-    return TRUE;
+    return true;
 }
 
 PTASK_RECORD CTaskHeap::PeekAtTopmost(void)
@@ -496,7 +496,7 @@ int CScheduler::RunAllTasks(void)
     return nTotalTasks;
 }
 
-BOOL CScheduler::WhenNext(CLinearTimeAbsolute  *ltaWhen)
+bool CScheduler::WhenNext(CLinearTimeAbsolute  *ltaWhen)
 {
     // Check the Priority Queue first.
     //
@@ -506,7 +506,7 @@ BOOL CScheduler::WhenNext(CLinearTimeAbsolute  *ltaWhen)
         if (pTask->iPriority <= m_minPriority)
         {
             ltaWhen->SetSeconds(0);
-            return TRUE;
+            return true;
         }
     }
 
@@ -516,9 +516,9 @@ BOOL CScheduler::WhenNext(CLinearTimeAbsolute  *ltaWhen)
     if (pTask)
     {
         *ltaWhen = pTask->ltaWhen;
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 #define HEAP_LEFT_CHILD(x) (2*(x)+1)
@@ -633,7 +633,7 @@ int CTaskHeap::TraverseUnordered(SCHLOOK *pfLook, SCHCMP *pfCompare)
     int bUnvisitedRecords;
     do
     {
-        bUnvisitedRecords = FALSE;
+        bUnvisitedRecords = false;
         for (int i = 0; i < m_nCurrent; i++)
         {
             PTASK_RECORD p = m_pHeap[i];
@@ -644,7 +644,7 @@ int CTaskHeap::TraverseUnordered(SCHLOOK *pfLook, SCHCMP *pfCompare)
                 //
                 continue;
             }
-            bUnvisitedRecords = TRUE;
+            bUnvisitedRecords = true;
             p->m_iVisitedMark = m_iVisitedMark;
 
             int cmd = pfLook(p);
@@ -655,7 +655,7 @@ int CTaskHeap::TraverseUnordered(SCHLOOK *pfLook, SCHCMP *pfCompare)
                 break;
 
             case IU_DONE:
-                return FALSE;
+                return false;
 
             case IU_UPDATE_TASK:
                 Update(i, pfCompare);
@@ -663,7 +663,7 @@ int CTaskHeap::TraverseUnordered(SCHLOOK *pfLook, SCHCMP *pfCompare)
             }
         }
     } while (bUnvisitedRecords);
-    return TRUE;
+    return true;
 }
 
 // The following does not allow for changes during the traversal, but
@@ -685,7 +685,7 @@ int CTaskHeap::TraverseOrdered(SCHLOOK *pfLook, SCHCMP *pfCompare)
     }
 
     Remake(pfCompare);
-    return TRUE;
+    return true;
 }
 
 void CTaskHeap::Sort(SCHCMP *pfCompare)

@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.3 2003-02-04 00:07:28 sdennis Exp $
+// $Id: set.cpp,v 1.4 2003-02-05 06:20:59 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -20,7 +20,7 @@ void set_modified(dbref thing)
     atr_add_raw(thing, A_MODIFIED, ltaNow.ReturnDateString(7));
 }
 
-dbref match_controlled_handler(dbref executor, const char *name, BOOL bQuiet)
+dbref match_controlled_handler(dbref executor, const char *name, bool bQuiet)
 {
     dbref mat;
     init_match(executor, name, NOTYPE);
@@ -98,7 +98,7 @@ void do_chzone
 
     if (  !Wizard(executor)
        && !Controls(executor, thing)
-       && !check_zone_handler(executor, thing, TRUE)
+       && !check_zone_handler(executor, thing, true)
        && db[executor].owner != db[thing].owner)
     {
         notify(executor, "You don't have the power to shift reality.");
@@ -183,7 +183,7 @@ void do_name
             return;
         }
         else if (  string_compare(buff, Name(thing))
-                && lookup_player(NOTHING, buff, FALSE) != NOTHING)
+                && lookup_player(NOTHING, buff, false) != NOTHING)
         {
             // string_compare allows changing foo to Foo, etc.
             //
@@ -217,7 +217,7 @@ void do_name
     else
     {
         int nValidName;
-        BOOL bValid;
+        bool bValid;
         char *pValidName = MakeCanonicalObjectName(newname, &nValidName, &bValid);
         if (!bValid)
         {
@@ -290,7 +290,7 @@ void do_alias
                 notify_quiet(executor, "Alias removed.");
             }
         }
-        else if (lookup_player(NOTHING, trimalias, FALSE) != NOTHING)
+        else if (lookup_player(NOTHING, trimalias, false) != NOTHING)
         {
             // Make sure new alias isn't already in use.
             //
@@ -479,7 +479,7 @@ void do_lock
     }
 
     char *pRestrictedKeyText = RemoveSetOfCharacters(keytext, "\r\n\t");
-    okey = parse_boolexp(executor, pRestrictedKeyText, FALSE);
+    okey = parse_boolexp(executor, pRestrictedKeyText, false);
     if (okey == TRUE_BOOLEXP)
     {
         notify_quiet(executor, "I don't understand that key.");
@@ -652,7 +652,7 @@ void do_chown
 {
     dbref nOwnerOrig, nOwnerNew, thing;
     int atr;
-    BOOL bDoit;
+    bool bDoit;
     ATTR *ap;
 
     if (  parse_attrib(executor, name, &thing, &atr)
@@ -677,7 +677,7 @@ void do_chown
         }
         else
         {
-            nOwnerNew = lookup_player(executor, newown, TRUE);
+            nOwnerNew = lookup_player(executor, newown, true);
         }
 
         // You may chown an attr to yourself if you own the object and the attr
@@ -692,7 +692,7 @@ void do_chown
             notify_quiet(executor, "Attribute not present on object.");
             return;
         }
-        bDoit = FALSE;
+        bDoit = false;
         if (nOwnerNew == NOTHING)
         {
             notify_quiet(executor, "I couldn't find that player.");
@@ -704,7 +704,7 @@ void do_chown
         }
         else if (Wizard(executor))
         {
-            bDoit = TRUE;
+            bDoit = true;
         }
         else if (nOwnerNew == Owner(executor))
         {
@@ -717,7 +717,7 @@ void do_chown
             }
             else
             {
-                bDoit = TRUE;
+                bDoit = true;
             }
         }
         else if (nOwnerNew == nOwnerOrig)
@@ -731,7 +731,7 @@ void do_chown
             }
             else
             {
-                bDoit = TRUE;
+                bDoit = true;
             }
         }
         else
@@ -739,7 +739,7 @@ void do_chown
             notify_quiet(executor, NOPERM_MESSAGE);
         }
 
-        if (bDoit == FALSE)
+        if (bDoit == false)
         {
             return;
         }
@@ -794,7 +794,7 @@ void do_chown
     }
     else
     {
-        nOwnerNew = lookup_player(executor, newown, TRUE);
+        nOwnerNew = lookup_player(executor, newown, true);
     }
 
     int cost = 1, quota = 1;
@@ -826,7 +826,7 @@ void do_chown
         break;
     }
 
-    BOOL bPlayerControlsThing = Controls(executor, thing);
+    bool bPlayerControlsThing = Controls(executor, thing);
     if (  isGarbage(thing)
        && bPlayerControlsThing)
     {
@@ -903,7 +903,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     if (  attr
        && bCanSetAttr(player, thing, attr)) 
     {
-        BOOL could_hear = Hearer(thing);
+        bool could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));
         if (  !(key & SET_QUIET)
@@ -952,11 +952,11 @@ void do_set
 
             // Check for clearing.
             //
-            BOOL clear = FALSE;
+            bool clear = false;
             if (*flag == NOT_TOKEN)
             {
                 flag++;
-                clear = TRUE;
+                clear = true;
             }
 
             // Make sure player specified a valid attribute flag.
@@ -996,7 +996,7 @@ void do_set
             {
                 aflags |= flagvalue;
             }
-            BOOL could_hear = Hearer(thing);
+            bool could_hear = Hearer(thing);
             atr_set_flags(thing, atr, aflags);
 
             // Tell the player about it.
@@ -1242,7 +1242,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
 
     // Copy the attribute to each target in turn.
     //
-    BOOL bCanDelete = TRUE;
+    bool bCanDelete = true;
     int  nCopied = 0;
     for (int i = 1; i < nargs; i++)
     {
@@ -1262,7 +1262,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
             // It doesn't make sense to delete a source attribute if it's also
             // included as a destination.
             //
-            bCanDelete = FALSE;
+            bCanDelete = false;
         }
         else
         {
@@ -1330,14 +1330,14 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
  * * parse_attrib, parse_attrib_wild: parse <obj>/<attr> tokens.
  */
 
-BOOL parse_attrib(dbref player, char *str, dbref *thing, int *atr)
+bool parse_attrib(dbref player, char *str, dbref *thing, int *atr)
 {
     *thing = NOTHING;
     *atr = NOTHING;
 
     if (!str)
     {
-        return FALSE;
+        return false;
     }
 
     // Break apart string into obj and attr.  Return on failure.
@@ -1347,7 +1347,7 @@ BOOL parse_attrib(dbref player, char *str, dbref *thing, int *atr)
     if (!parse_thing_slash(player, buff, &str, thing))
     {
         free_lbuf(buff);
-        return FALSE;
+        return false;
     }
 
     // Get the named attribute from the object if we can.
@@ -1364,10 +1364,10 @@ BOOL parse_attrib(dbref player, char *str, dbref *thing, int *atr)
             *atr = attr->number;
         }
     }
-    return TRUE;
+    return true;
 }
 
-static void find_wild_attrs(dbref player, dbref thing, char *str, BOOL check_exclude, BOOL hash_insert, BOOL get_locks)
+static void find_wild_attrs(dbref player, dbref thing, char *str, bool check_exclude, bool hash_insert, bool get_locks)
 {
     ATTR *attr;
     char *as;
@@ -1407,7 +1407,7 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, BOOL check_exc
 
         if (get_locks)
         {
-            ok = bCanReadAttr(player, thing, attr, FALSE);
+            ok = bCanReadAttr(player, thing, attr, false);
         }
         else
         {
@@ -1428,16 +1428,16 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, BOOL check_exc
     atr_pop();
 }
 
-BOOL parse_attrib_wild(dbref player, char *str, dbref *thing, BOOL check_parents, BOOL get_locks, BOOL df_star)
+bool parse_attrib_wild(dbref player, char *str, dbref *thing, bool check_parents, bool get_locks, bool df_star)
 {
     if (!str)
     {
-        return FALSE;
+        return false;
     }
 
     dbref parent;
     int lev;
-    BOOL check_exclude, hash_insert;
+    bool check_exclude, hash_insert;
     char *buff = alloc_lbuf("parse_attrib_wild");
     strcpy(buff, str);
 
@@ -1450,7 +1450,7 @@ BOOL parse_attrib_wild(dbref player, char *str, dbref *thing, BOOL check_parents
         if (!df_star)
         {
             free_lbuf(buff);
-            return FALSE;
+            return false;
         }
 
         // Look for the object, return failure if not found.
@@ -1462,7 +1462,7 @@ BOOL parse_attrib_wild(dbref player, char *str, dbref *thing, BOOL check_parents
         if (!Good_obj(*thing))
         {
             free_lbuf(buff);
-            return FALSE;
+            return false;
         }
         str = (char *)"*";
     }
@@ -1471,25 +1471,25 @@ BOOL parse_attrib_wild(dbref player, char *str, dbref *thing, BOOL check_parents
     //
     if (check_parents)
     {
-        check_exclude = FALSE;
+        check_exclude = false;
         hash_insert = check_parents;
         hashflush(&mudstate.parent_htab);
         ITER_PARENTS(*thing, parent, lev)
         {
             if (!Good_obj(Parent(parent)))
             {
-                hash_insert = FALSE;
+                hash_insert = false;
             }
             find_wild_attrs(player, parent, str, check_exclude, hash_insert, get_locks);
-            check_exclude = TRUE;
+            check_exclude = true;
         }
     }
     else
     {
-        find_wild_attrs(player, *thing, str, FALSE, FALSE, get_locks);
+        find_wild_attrs(player, *thing, str, false, false, get_locks);
     }
     free_lbuf(buff);
-    return TRUE;
+    return true;
 }
 
 /*
@@ -1611,7 +1611,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
 {
     dbref thing, aowner;
     int attr, aflags;
-    BOOL bGotOne;
+    bool bGotOne;
     char *from, *to, *result, *returnstr, *atext;
     ATTR *ap;
 
@@ -1631,7 +1631,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
     olist_push();
     if (  !it
        || !*it
-       || !parse_attrib_wild(executor, it, &thing, FALSE, FALSE, FALSE))
+       || !parse_attrib_wild(executor, it, &thing, false, false, false))
     {
         notify_quiet(executor, "No match.");
         return;
@@ -1641,7 +1641,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
     //
     bGotOne = 0;
     atext = alloc_lbuf("do_edit.atext");
-    BOOL could_hear = Hearer(thing);
+    bool could_hear = Hearer(thing);
 
     for (attr = olist_first(); attr != NOTHING; attr = olist_next())
     {
@@ -1655,7 +1655,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
             {
                 // Do the edit and save the result
                 //
-                bGotOne = TRUE;
+                bGotOne = true;
                 edit_string_ansi(atext, &result, &returnstr, from, to);
                 atr_add(thing, ap->number, result, Owner(executor), aflags);
                 if (!Quiet(executor))
@@ -1698,7 +1698,7 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
     olist_push();
     if (  !it
        || !*it
-       || !parse_attrib_wild(executor, it, &thing, FALSE, FALSE, TRUE))
+       || !parse_attrib_wild(executor, it, &thing, false, false, true))
     {
         notify_quiet(executor, "No match.");
         return;
@@ -1714,7 +1714,7 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
     //
     int attr;
     ATTR *ap;
-    BOOL bGotOne = FALSE, could_hear = Hearer(thing);
+    bool bGotOne = false, could_hear = Hearer(thing);
 
     for (attr = olist_first(); attr != NOTHING; attr = olist_next())
     {
@@ -1726,7 +1726,7 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
             if (bCanSetAttr(executor, thing, ap))
             {
                 atr_clr(thing, ap->number);
-                bGotOne = TRUE;
+                bGotOne = true;
             }
         }
     }
@@ -1808,18 +1808,18 @@ void do_use(dbref executor, dbref caller, dbref enactor, int key, char *object)
         return;
     }
     temp = alloc_lbuf("do_use");
-    BOOL doit = FALSE;
+    bool doit = false;
     if (*atr_pget_str(temp, thing, A_USE, &aowner, &aflags))
     {
-        doit = TRUE;
+        doit = true;
     }
     else if (*atr_pget_str(temp, thing, A_OUSE, &aowner, &aflags))
     {
-        doit = TRUE;
+        doit = true;
     }
     else if (*atr_pget_str(temp, thing, A_AUSE, &aowner, &aflags))
     {
-        doit = TRUE;
+        doit = true;
     }
     free_lbuf(temp);
 

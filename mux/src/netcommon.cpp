@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.11 2003-02-05 01:34:45 sdennis Exp $
+// $Id: netcommon.cpp,v 1.12 2003-02-05 06:20:59 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -224,7 +224,7 @@ void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
         {
             queue_string(d, buff);
             queue_write(d, "\r\n", 2);
-            process_output(d, FALSE);
+            process_output(d, false);
         }
     }
 }
@@ -323,7 +323,7 @@ void queue_write(DESC *d, const char *b, int n)
 
     if (d->output_size + n > mudconf.output_limit)
     {
-        process_output(d, FALSE);
+        process_output(d, false);
     }
 
     int left = mudconf.output_limit - d->output_size - n;
@@ -366,7 +366,7 @@ void queue_write(DESC *d, const char *b, int n)
        && !d->bWritePending
        && !d->bConnectionDropped)
     {
-        d->bCallProcessOutputLater = TRUE;
+        d->bCallProcessOutputLater = true;
     }
 #endif
 }
@@ -743,7 +743,7 @@ static void announce_connect(dbref player, DESC *d)
     dbref zone, obj;
     if (nLen)
     {
-        wait_que(player, player, player, FALSE, lta, NOTHING, 0, buf,
+        wait_que(player, player, player, false, lta, NOTHING, 0, buf,
             (char **)NULL, 0, NULL);
     }
     if (mudconf.master_room != NOTHING)
@@ -752,7 +752,7 @@ static void announce_connect(dbref player, DESC *d)
             &aflags, &nLen);
         if (nLen)
         {
-            wait_que(mudconf.master_room, player, player, FALSE, lta,
+            wait_que(mudconf.master_room, player, player, false, lta,
                 NOTHING, 0, buf, (char **)NULL, 0, NULL);
         }
         DOLIST(obj, Contents(mudconf.master_room))
@@ -760,7 +760,7 @@ static void announce_connect(dbref player, DESC *d)
             atr_pget_str_LEN(buf, obj, A_ACONNECT, &aowner, &aflags, &nLen);
             if (nLen)
             {
-                wait_que(obj, player, player, FALSE, lta, NOTHING, 0, buf,
+                wait_que(obj, player, player, false, lta, NOTHING, 0, buf,
                     (char **)NULL, 0, NULL);
             }
         }
@@ -778,7 +778,7 @@ static void announce_connect(dbref player, DESC *d)
             atr_pget_str_LEN(buf, zone, A_ACONNECT, &aowner, &aflags, &nLen);
             if (nLen)
             {
-                wait_que(zone, player, player, FALSE, lta, NOTHING, 0, buf,
+                wait_que(zone, player, player, false, lta, NOTHING, 0, buf,
                     (char **)NULL, 0, NULL);
             }
             break;
@@ -793,7 +793,7 @@ static void announce_connect(dbref player, DESC *d)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(obj, player, player, FALSE, lta, NOTHING, 0,
+                    wait_que(obj, player, player, false, lta, NOTHING, 0,
                         buf, (char **)NULL, 0, NULL);
                 }
             }
@@ -810,7 +810,7 @@ static void announce_connect(dbref player, DESC *d)
     ltaNow.GetLocal();
     char *time_str = ltaNow.ReturnDateString(7);
 
-    record_login(player, TRUE, time_str, d->addr, d->username,
+    record_login(player, true, time_str, d->addr, d->username,
         inet_ntoa((d->address).sin_addr));
     look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
     mudstate.curr_enactor = temp;
@@ -875,7 +875,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
         if (nLen)
         {
-            wait_que(player, player, player, FALSE, lta, NOTHING, 0, buf,
+            wait_que(player, player, player, false, lta, NOTHING, 0, buf,
                 argv, 1, NULL);
         }
         if (mudconf.master_room != NOTHING)
@@ -884,7 +884,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                 &aflags, &nLen);
             if (nLen)
             {
-                wait_que(mudconf.master_room, player, player, FALSE, lta,
+                wait_que(mudconf.master_room, player, player, false, lta,
                     NOTHING, 0, buf, (char **)NULL, 0, NULL);
             }
             DOLIST(obj, Contents(mudconf.master_room))
@@ -893,7 +893,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(obj, player, player, FALSE, lta, NOTHING, 0,
+                    wait_que(obj, player, player, false, lta, NOTHING, 0,
                         buf, (char **)NULL, 0, NULL);
                 }
             }
@@ -911,7 +911,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(zone, player, player, FALSE, lta, NOTHING, 0,
+                    wait_que(zone, player, player, false, lta, NOTHING, 0,
                         buf, (char **)NULL, 0, NULL);
                 }
                 break;
@@ -926,7 +926,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                         &nLen);
                     if (nLen)
                     {
-                        wait_que(obj, player, player, FALSE, lta, NOTHING,
+                        wait_que(obj, player, player, false, lta, NOTHING,
                             0, buf, (char **)NULL, 0, NULL);
                     }
                 }
@@ -1006,7 +1006,7 @@ int boot_off(dbref player, const char *message)
     return count;
 }
 
-int boot_by_port(SOCKET port, BOOL no_god, const char *message)
+int boot_by_port(SOCKET port, bool no_god, const char *message)
 {
     DESC *d, *dnext;
     int count = 0;
@@ -1075,13 +1075,13 @@ int fetch_idle(dbref target)
     ltaNow.GetUTC();
 
     DESC *d;
-    BOOL bFound = FALSE;
+    bool bFound = false;
     DESC_ITER_PLAYER(target, d)
     {
         if (  !bFound
            || ltaNewestLastTime < d->last_time)
         {
-            bFound = TRUE;
+            bFound = true;
             ltaNewestLastTime = d->last_time;
         }
     }
@@ -1107,13 +1107,13 @@ void find_oldest(dbref target, DESC *dOldest[2])
     dOldest[1] = NULL;
 
     DESC *d;
-    BOOL bFound = FALSE;
+    bool bFound = false;
     DESC_ITER_PLAYER(target, d)
     {
         if (  !bFound
            || d->connected_at < dOldest[0]->connected_at)
         {
-            bFound = TRUE;
+            bFound = true;
             dOldest[1] = dOldest[0];
             dOldest[0] = d;
         }
@@ -1184,7 +1184,7 @@ void check_idle(void)
                     // active session.
                     //
                     DESC *d1;
-                    BOOL bFound = FALSE;
+                    bool bFound = false;
                     DESC_ITER_PLAYER(d->player, d1)
                     {
                         if (d1 != d)
@@ -1192,7 +1192,7 @@ void check_idle(void)
                             CLinearTimeDelta ltd = ltaNow - d1->last_time;
                             if (ltd.ReturnSeconds() <= mudconf.idle_timeout)
                             {
-                                 bFound = TRUE;
+                                 bFound = true;
                                  break;
                             }
                         }
@@ -1583,10 +1583,10 @@ static void dump_info(DESC *arg_desc)
     queue_string(arg_desc, "### End INFO\r\n");
 }
 
-char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, BOOL *pbValidDoing)
+char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, bool *pbValidDoing)
 {
     *pnValidDoing = 0;
-    *pbValidDoing = FALSE;
+    *pbValidDoing = false;
 
     if (!pDoing)
     {
@@ -1609,7 +1609,7 @@ char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, BOOL *pbValidDoing)
                       &nVisualWidth,
                       ANSI_ENDGOAL_NORMAL
                     );
-    *pbValidDoing = TRUE;
+    *pbValidDoing = true;
     return szFittedDoing;
 }
 
@@ -1623,7 +1623,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     //
     static char *Empty = "";
     char *szValidDoing = Empty;
-    BOOL bValidDoing;
+    bool bValidDoing;
     int nValidDoing = 0;
     if (arg)
     {
@@ -1635,16 +1635,16 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
         }
     }
 
-    BOOL bQuiet = ((key & DOING_QUIET) == DOING_QUIET);
+    bool bQuiet = ((key & DOING_QUIET) == DOING_QUIET);
     key &= DOING_MASK;
     if (key == DOING_MESSAGE)
     {
         DESC *d;
-        BOOL bFound = FALSE;
+        bool bFound = false;
         DESC_ITER_PLAYER(executor, d)
         {
             memcpy(d->doing, szValidDoing, nValidDoing+1);
-            bFound = TRUE;
+            bFound = true;
         }
         if (bFound)
         {
@@ -1780,14 +1780,14 @@ static void failconn(const char *logcode, const char *logtype, const char *logre
 static const char *connect_fail = "Either that player does not exist, or has a different password.\r\n";
 static const char *create_fail = "Either there is already a player with that name, or that name is illegal.\r\n";
 
-static BOOL check_connect(DESC *d, char *msg)
+static bool check_connect(DESC *d, char *msg)
 {
     char *buff;
     dbref player, aowner;
     int aflags, nplayers;
     DESC *d2;
     const char *p;
-    BOOL isGuest = FALSE;
+    bool isGuest = false;
 
     char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< check_connect >";
@@ -1827,7 +1827,7 @@ static BOOL check_connect(DESC *d, char *msg)
                 failconn("CONN", "Connect", "Guest Site Forbidden", d,
                     R_GAMEDOWN, NOTHING, FC_CONN_REG, mudconf.downmotd_msg,
                     command, user, password, cmdsave);
-                return FALSE;
+                return false;
             }
             if (  mudconf.guest_char != NOTHING
                && (mudconf.control_flags & CF_LOGIN))
@@ -1838,7 +1838,7 @@ static BOOL check_connect(DESC *d, char *msg)
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
-                    return FALSE;
+                    return false;
                 }
 
                 if ((p = Guest.Create(d)) == NULL)
@@ -1847,11 +1847,11 @@ static BOOL check_connect(DESC *d, char *msg)
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
-                    return FALSE;
+                    return false;
                 }
                 strcpy(user, p);
                 strcpy(password, GUEST_PASSWORD);
-                isGuest = TRUE;
+                isGuest = true;
             }
         }
 
@@ -1890,7 +1890,7 @@ static BOOL check_connect(DESC *d, char *msg)
                 free_lbuf(password);
                 shutdownsock(d, R_BADLOGIN);
                 mudstate.debug_cmd = cmdsave;
-                return FALSE;
+                return false;
             }
         }
         else if (  (  (mudconf.control_flags & CF_LOGIN)
@@ -1928,7 +1928,7 @@ static BOOL check_connect(DESC *d, char *msg)
                     R_GAMEDOWN, player, FC_CONN_SITE,
                     mudconf.downmotd_msg, command, user, password,
                     cmdsave);
-                return FALSE;
+                return false;
             }
 
             // Logins are enabled, or wiz or god.
@@ -1989,13 +1989,13 @@ static BOOL check_connect(DESC *d, char *msg)
         {
             failconn("CON", "Connect", "Logins Disabled", d, R_GAMEDOWN, player, FC_CONN_DOWN,
                 mudconf.downmotd_msg, command, user, password, cmdsave);
-            return FALSE;
+            return false;
         }
         else
         {
             failconn("CON", "Connect", "Game Full", d, R_GAMEFULL, player, FC_CONN_FULL,
                 mudconf.fullmotd_msg, command, user, password, cmdsave);
-            return FALSE;
+            return false;
         }
     }
     else if (strncmp(command, "cr", 2) == 0)
@@ -2006,7 +2006,7 @@ static BOOL check_connect(DESC *d, char *msg)
         {
             failconn("CRE", "Create", "Logins Disabled", d, R_GAMEDOWN, NOTHING, FC_CONN_DOWN,
                 mudconf.downmotd_msg, command, user, password, cmdsave);
-            return FALSE;
+            return false;
         }
 
         // Enforce max #players.
@@ -2031,7 +2031,7 @@ static BOOL check_connect(DESC *d, char *msg)
                 R_GAMEFULL, NOTHING, FC_CONN_FULL,
                 mudconf.fullmotd_msg, command, user, password,
                 cmdsave);
-            return FALSE;
+            return false;
         }
         if (d->host_info & H_REGISTRATION)
         {
@@ -2039,7 +2039,7 @@ static BOOL check_connect(DESC *d, char *msg)
         }
         else
         {
-            player = create_player(user, password, NOTHING, FALSE, FALSE);
+            player = create_player(user, password, NOTHING, false, false);
             if (player == NOTHING)
             {
                 queue_string(d, create_fail);
@@ -2084,10 +2084,10 @@ static BOOL check_connect(DESC *d, char *msg)
     free_lbuf(password);
 
     mudstate.debug_cmd = cmdsave;
-    return TRUE;
+    return true;
 }
 
-BOOL do_command(DESC *d, char *command)
+bool do_command(DESC *d, char *command)
 {
     char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< do_command >";
@@ -2141,7 +2141,7 @@ BOOL do_command(DESC *d, char *command)
             ltaBegin.GetUTC();
 
             char *log_cmdbuf = process_command(d->player, d->player, d->player,
-                TRUE, command, (char **)NULL, 0);
+                true, command, (char **)NULL, 0);
 
             CLinearTimeAbsolute ltaEnd;
             ltaEnd.GetUTC();
@@ -2167,7 +2167,7 @@ BOOL do_command(DESC *d, char *command)
                 queue_write(d, "\r\n", 2);
             }
             mudstate.debug_cmd = cmdsave;
-            return TRUE;
+            return true;
         }
         else
         {
@@ -2204,7 +2204,7 @@ BOOL do_command(DESC *d, char *command)
 
             shutdownsock(d, R_QUIT);
             mudstate.debug_cmd = cmdsave;
-            return FALSE;
+            return false;
 
         case CMD_LOGOUT:
 
@@ -2277,7 +2277,7 @@ BOOL do_command(DESC *d, char *command)
         }
     }
     mudstate.debug_cmd = cmdsave;
-    return TRUE;
+    return true;
 }
 
 void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg)
@@ -2517,7 +2517,7 @@ void list_siteinfo(dbref player)
  * make_ulist: Make a list of connected user numbers for the LWHO function.
  */
 
-void make_ulist(dbref player, char *buff, char **bufc, BOOL bPorts)
+void make_ulist(dbref player, char *buff, char **bufc, bool bPorts)
 {
     DESC *d;
     if (bPorts)
@@ -2580,13 +2580,13 @@ FUNCTION(fun_doing)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        BOOL bFound = FALSE;
+        bool bFound = false;
         DESC *d;
         DESC_ITER_CONN(d)
         {
             if (d->descriptor == s) 
             {
-                bFound = TRUE;
+                bFound = true;
                 break;
             }
         }
@@ -2603,7 +2603,7 @@ FUNCTION(fun_doing)
     }
     else
     {
-        dbref victim = lookup_player(executor, fargs[0], TRUE);
+        dbref victim = lookup_player(executor, fargs[0], true);
         if (victim == NOTHING)
         {
             safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
@@ -2637,8 +2637,8 @@ FUNCTION(fun_host)
         return;
     }
      
-    BOOL isPort = is_rational(fargs[0]);
-    BOOL bFound = FALSE;
+    bool isPort = is_rational(fargs[0]);
+    bool bFound = false;
     DESC *d;
     if (isPort)
     {
@@ -2647,14 +2647,14 @@ FUNCTION(fun_host)
         {
             if (d->descriptor == s) 
             {
-                bFound = TRUE;
+                bFound = true;
                 break;
             }
         }
     } 
     else
     {
-        dbref victim = lookup_player(executor, fargs[0], TRUE);
+        dbref victim = lookup_player(executor, fargs[0], true);
         if (victim == NOTHING)
         {
             safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
@@ -2664,7 +2664,7 @@ FUNCTION(fun_host)
         {
             if (d->player == victim)
             {
-                bFound = TRUE;
+                bFound = true;
                 break;
             }
         }
@@ -2701,13 +2701,13 @@ FUNCTION(fun_motd)
 int fetch_cmds(dbref target)
 {
     int sum = 0;
-    BOOL bFound = FALSE;
+    bool bFound = false;
 
     DESC *d;
     DESC_ITER_PLAYER(target, d)
     {
         sum += d->command_count;
-        bFound = TRUE;
+        bFound = true;
     }
 
     if (bFound)

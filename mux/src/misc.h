@@ -1,6 +1,6 @@
 // misc.h -- miscellaneous structures that are needed in more than one file.
 //
-// $Id: misc.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: misc.h,v 1.2 2003-02-05 06:20:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -40,8 +40,8 @@ struct stats_type {
     int s_garbage;
 };
 
-extern BOOL search_setup(dbref, char *, SEARCH *);
+extern bool search_setup(dbref, char *, SEARCH *);
 extern void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *);
-extern BOOL get_stats(dbref, dbref, STATS *);
+extern bool get_stats(dbref, dbref, STATS *);
 
 #endif // !_MISC_H

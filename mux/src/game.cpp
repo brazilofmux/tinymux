@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.16 2003-02-05 01:21:51 sdennis Exp $
+// $Id: game.cpp,v 1.17 2003-02-05 06:20:59 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -26,7 +26,7 @@ extern void pcache_init(void);
 extern int  cf_read(void);
 extern void ValidateConfigurationDbrefs(void);
 extern void init_functab(void);
-extern void close_sockets(BOOL emergency, char *message);
+extern void close_sockets(bool emergency, char *message);
 extern void build_version(void);
 extern void init_version(void);
 extern void init_logout_cmdtab(void);
@@ -86,7 +86,7 @@ void report(void)
  * registers.
  */
 
-BOOL regexp_match
+bool regexp_match
 (
     char *pattern,
     char *str,
@@ -116,7 +116,7 @@ BOOL regexp_match
          * regexp_errbuf that we can ignore, since we're doing
          * command-matching.
          */
-        return FALSE;
+        return false;
     }
 
     /*
@@ -127,7 +127,7 @@ BOOL regexp_match
     if (matches <= 0)
     {
         MEMFREE(re);
-        return FALSE;
+        return false;
     }
 
     /*
@@ -160,7 +160,7 @@ BOOL regexp_match
     }
 
     MEMFREE(re);
-    return TRUE;
+    return true;
 }
 
 
@@ -251,7 +251,7 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
         {
             match = 1;
             CLinearTimeAbsolute lta;
-            wait_que(thing, player, player, FALSE, lta, NOTHING, 0, s,
+            wait_que(thing, player, player, false, lta, NOTHING, 0, s,
                 args, NUM_ENV_VARS, mudstate.global_regs);
             for (int i = 0; i < NUM_ENV_VARS; i++)
             {
@@ -266,48 +266,48 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
     return match;
 }
 
-BOOL atr_match(dbref thing, dbref player, char type, char *str, BOOL check_parents)
+bool atr_match(dbref thing, dbref player, char type, char *str, bool check_parents)
 {
     int lev, result;
-    BOOL exclude, insert;
+    bool exclude, insert;
     dbref parent;
 
     // If thing is halted, don't check anything
     //
     if (Halted(thing))
     {
-        return FALSE;
+        return false;
     }
 
     // If not checking parents, just check the thing
     //
-    BOOL match = FALSE;
+    bool match = false;
     if (!check_parents)
     {
-        return (atr_match1(thing, thing, player, type, str, FALSE, FALSE) > 0);
+        return (atr_match1(thing, thing, player, type, str, false, false) > 0);
     }
 
     // Check parents, ignoring halted objects
     //
-    exclude = FALSE;
-    insert = TRUE;
+    exclude = false;
+    insert = true;
     hashflush(&mudstate.parent_htab);
     ITER_PARENTS(thing, parent, lev)
     {
         if (!Good_obj(Parent(parent)))
         {
-            insert = FALSE;
+            insert = false;
         }
         result = atr_match1(thing, parent, player, type, str, exclude, insert);
         if (result > 0)
         {
-            match = TRUE;
+            match = true;
         }
         else if (result < 0)
         {
             return match;
         }
-        exclude = TRUE;
+        exclude = true;
     }
     return match;
 }
@@ -317,7 +317,7 @@ BOOL atr_match(dbref thing, dbref player, char type, char *str, BOOL check_paren
  * optionally notify the contents, neighbors, and location also.
  */
 
-BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
+bool check_filter(dbref object, dbref player, int filter, const char *msg)
 {
     int aflags;
     dbref aowner;
@@ -327,7 +327,7 @@ BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
     if (!*buf)
     {
         free_lbuf(buf);
-        return TRUE;
+        return true;
     }
     char **preserve = NULL;
     int *preserve_len = NULL;
@@ -354,7 +354,7 @@ BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
             if (quick_wild(cp, msg))
             {
                 free_lbuf(nbuf);
-                return FALSE;
+                return false;
             }
         } while (dp != NULL);
     }
@@ -377,14 +377,14 @@ BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
                 {
                     MEMFREE(re);
                     free_lbuf(nbuf);
-                    return FALSE;
+                    return false;
                 }
                 MEMFREE(re);
             }
         } while (dp != NULL);
     }
     free_lbuf(nbuf);
-    return TRUE;
+    return true;
 }
 
 static char *add_prefix(dbref object, dbref player, int prefix,
@@ -458,10 +458,10 @@ static char *dflt_from_msg(dbref sender, dbref sendloc)
  *
  * Returns 0 if the copy succeeded, 1 if it failed.
  */
-BOOL html_escape(const char *src, char *dest, char **destp)
+bool html_escape(const char *src, char *dest, char **destp)
 {
     const char *msg_orig;
-    BOOL ret = FALSE;
+    bool ret = false;
 
     if (destp == 0)
     {
@@ -500,7 +500,7 @@ BOOL html_escape(const char *src, char *dest, char **destp)
         //
         if (p == *destp)
         {
-            ret = TRUE;
+            ret = true;
         }
     }
     **destp = 0;
@@ -598,7 +598,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
 
     // msg contains the raw message, msg_ns contains the NOSPOOFed msg.
     //
-    BOOL check_listens = !Halted(target);
+    bool check_listens = !Halted(target);
     switch (Typeof(target))
     {
     case TYPE_PLAYER:
@@ -627,7 +627,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         }
         if (!mudconf.player_listen)
         {
-            check_listens = FALSE;
+            check_listens = false;
         }
 
         // FALLTHROUGH
@@ -647,9 +647,9 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
 
         // Forward puppet message if it is for me.
         //
-        BOOL has_neighbors = Has_location(target);
+        bool has_neighbors = Has_location(target);
         dbref targetloc = where_is(target);
-        BOOL is_audible = Audible(target);
+        bool is_audible = Audible(target);
 
         if ( (key & MSG_ME)
            && Puppet(target)
@@ -669,7 +669,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
 
         // Check for @Listen match if it will be useful.
         //
-        BOOL pass_listen = FALSE;
+        bool pass_listen = false;
         nargs = 0;
         if (  check_listens
            && (key & (MSG_ME | MSG_INV_L))
@@ -682,7 +682,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                 {
                     ; // Nothing
                 }
-                pass_listen = TRUE;
+                pass_listen = true;
             }
             free_lbuf(tp);
         }
@@ -690,7 +690,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         // If we matched the @listen or are monitoring, check the
         // USE lock.
         //
-        BOOL pass_uselock = FALSE;
+        bool pass_uselock = false;
         if (  (key & MSG_ME)
            && check_listens
            && (  pass_listen
@@ -737,7 +737,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
            && sender != target
            && Monitor(target))
         {
-            atr_match(target, sender, AMATCH_LISTEN, (char *)msg, FALSE);
+            atr_match(target, sender, AMATCH_LISTEN, (char *)msg, false);
         }
 
         // Deliver message to forwardlist members.
@@ -971,9 +971,9 @@ void notify_except2(dbref loc, dbref player, dbref exc1, dbref exc2, const char 
 static void report_timecheck
 (
     dbref player,
-    BOOL yes_screen,
-    BOOL yes_log,
-    BOOL yes_clear
+    bool yes_screen,
+    bool yes_log,
+    bool yes_clear
 )
 {
     int thing, obj_counted;
@@ -993,7 +993,7 @@ static void report_timecheck
     }
     else
     {
-        yes_log = FALSE;
+        yes_log = false;
         STARTLOG(LOG_ALWAYS, "WIZ", "TIMECHECK");
         log_name(player);
         log_text(" checks object time use over ");
@@ -1052,30 +1052,30 @@ static void report_timecheck
 
 void do_timecheck(dbref executor, dbref caller, dbref enactor, int key)
 {
-    BOOL yes_screen, yes_log, yes_clear;
+    bool yes_screen, yes_log, yes_clear;
 
-    yes_screen = yes_log = yes_clear = FALSE;
+    yes_screen = yes_log = yes_clear = false;
 
     if (key == 0)
     {
         // No switches, default to printing to screen and clearing counters.
         //
-        yes_screen = TRUE;
-        yes_clear = TRUE;
+        yes_screen = true;
+        yes_clear = true;
     }
     else
     {
         if (key & TIMECHK_RESET)
         {
-            yes_clear = TRUE;
+            yes_clear = true;
         }
         if (key & TIMECHK_SCREEN)
         {
-            yes_screen = TRUE;
+            yes_screen = true;
         }
         if (key & TIMECHK_LOG)
         {
-            yes_log = TRUE;
+            yes_log = true;
         }
     }
     report_timecheck(executor, yes_screen, yes_log, yes_clear);
@@ -1140,7 +1140,7 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
 
     // Set up for normal shutdown.
     //
-    mudstate.shutdown_flag = TRUE;
+    mudstate.shutdown_flag = true;
 }
 
 // There are several types of dumps:
@@ -1163,18 +1163,18 @@ typedef struct
 {
     char **ppszOutputBase;
     char szOutputSuffix[14];
-    BOOL bUseTemporary;
+    bool bUseTemporary;
     int  fType;
     char *pszErrorMessage;
 } DUMP_PROCEDURE;
 
 DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 {
-    { 0,                ""       , FALSE, 0,                             "" }, // 0 -- Handled specially.
-    { &mudconf.crashdb, ""       , FALSE, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening crash file" }, // 1
-    { &mudconf.indb,    ""       , TRUE,  OUTPUT_VERSION | OUTPUT_FLAGS, "Opening input file" }, // 2
-    { &mudconf.indb,   ".FLAT"   , FALSE, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening flatfile"   }, // 3
-    { &mudconf.indb,   ".SIG"    , FALSE, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening signalled flatfile"}  // 4
+    { 0,                ""       , false, 0,                             "" }, // 0 -- Handled specially.
+    { &mudconf.crashdb, ""       , false, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening crash file" }, // 1
+    { &mudconf.indb,    ""       , true,  OUTPUT_VERSION | OUTPUT_FLAGS, "Opening input file" }, // 2
+    { &mudconf.indb,   ".FLAT"   , false, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening flatfile"   }, // 3
+    { &mudconf.indb,   ".SIG"    , false, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening signalled flatfile"}  // 4
 };
 
 #ifdef WIN32
@@ -1198,7 +1198,7 @@ void dump_database_internal(int dump_type)
         return;
     }
 
-    BOOL bPotentialConflicts = FALSE;
+    bool bPotentialConflicts = false;
 #ifndef WIN32
     // If we are already dumping for some reason, and suddenly get a type 1 or
     // type 4 dump, basically don't touch mail and comsys files. The other
@@ -1209,7 +1209,7 @@ void dump_database_internal(int dump_type)
        && (  dump_type == DUMP_I_PANIC
           || dump_type == DUMP_I_SIGNAL))
     {
-        bPotentialConflicts = TRUE;
+        bPotentialConflicts = true;
     }
 #endif
 
@@ -1374,7 +1374,7 @@ void dump_database(void)
             sleep(1);
         }
     }
-    mudstate.dumping = TRUE;
+    mudstate.dumping = true;
 #endif
     buff = alloc_mbuf("dump_database");
     sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
@@ -1398,21 +1398,21 @@ void dump_database(void)
     // This doesn't matter. We are about the stop the game. However,
     // leave it in.
     //
-    mudstate.dumping = FALSE;
+    mudstate.dumping = false;
 #endif
 }
 
 void fork_and_dump(int key)
 {
 #ifndef WIN32
-    // fork_and_dump is never called with mudstate.dumping TRUE, but we'll
+    // fork_and_dump is never called with mudstate.dumping true, but we'll
     // ensure assertion now.
     //
     if (mudstate.dumping)
     {
         return;
     }
-    mudstate.dumping = TRUE;
+    mudstate.dumping = true;
 #endif
 
     // If no options were given, then it means DUMP_TEXT+DUMP_STRUCT.
@@ -1470,7 +1470,7 @@ void fork_and_dump(int key)
     SYNC;
 
     int child = 0;
-    BOOL bChildExists = FALSE;
+    bool bChildExists = false;
     if (key & (DUMP_STRUCT|DUMP_FLATFILE))
     {
 #ifndef WIN32
@@ -1502,7 +1502,7 @@ void fork_and_dump(int key)
         }
         else
         {
-            bChildExists = TRUE;
+            bChildExists = true;
         }
     }
 
@@ -1513,7 +1513,7 @@ void fork_and_dump(int key)
         // use it; or, we tried to fork a child and failed; or, we didn't
         // need to dump the structure or a flatfile.
         //
-        mudstate.dumping = FALSE;
+        mudstate.dumping = false;
     }
 #endif
 
@@ -1539,7 +1539,7 @@ static int load_game(int ccPageFile)
     struct stat statbuf;
     int db_format, db_version, db_flags;
 
-    BOOL compressed = FALSE;
+    bool compressed = false;
 
     if (mudconf.compress_db)
     {
@@ -1551,7 +1551,7 @@ static int load_game(int ccPageFile)
             if (f != NULL)
             {
                 DebugTotalFiles++;
-                compressed = TRUE;
+                compressed = true;
             }
         }
     }
@@ -1684,9 +1684,9 @@ static int load_game(int ccPageFile)
  * match a list of things, using the no_command flag
  */
 
-BOOL list_check(dbref thing, dbref player, char type, char *str, BOOL check_parent)
+bool list_check(dbref thing, dbref player, char type, char *str, bool check_parent)
 {
-    BOOL bMatch = FALSE;
+    bool bMatch = false;
 
     int limit = mudstate.db_top;
     while (thing != NOTHING)
@@ -1705,7 +1705,7 @@ BOOL list_check(dbref thing, dbref player, char type, char *str, BOOL check_pare
     return bMatch;
 }
 
-BOOL Hearer(dbref thing)
+bool Hearer(dbref thing)
 {
     char *as, *buff, *s;
     dbref aowner;
@@ -1715,13 +1715,13 @@ BOOL Hearer(dbref thing)
     if (  mudstate.inpipe
        && thing == mudstate.poutobj)
     {
-        return TRUE;
+        return true;
     }
 
     if (  Connected(thing)
        || Puppet(thing))
     {
-        return TRUE;
+        return true;
     }
 
     if (Monitor(thing))
@@ -1742,7 +1742,7 @@ BOOL Hearer(dbref thing)
                 free_lbuf(buff);
             }
             atr_pop();
-            return TRUE;
+            return true;
         }
         if (Monitor(thing))
         {
@@ -1773,7 +1773,7 @@ BOOL Hearer(dbref thing)
             {
                 free_lbuf(buff);
                 atr_pop();
-                return TRUE;
+                return true;
             }
         }
     }
@@ -1782,7 +1782,7 @@ BOOL Hearer(dbref thing)
         free_lbuf(buff);
     }
     atr_pop();
-    return FALSE;
+    return false;
 }
 
 void do_readcache(dbref executor, dbref caller, dbref enactor, int key)
@@ -1886,9 +1886,9 @@ void info(int fmt, int flags, int ver)
 char *standalone_infile = NULL;
 char *standalone_outfile = NULL;
 char *standalone_basename = NULL;
-BOOL standalone_check = FALSE;
-BOOL standalone_load = FALSE;
-BOOL standalone_unload = FALSE;
+bool standalone_check = false;
+bool standalone_load = false;
+bool standalone_unload = false;
 
 void dbconvert(void)
 {
@@ -1909,19 +1909,19 @@ void dbconvert(void)
     // Decide what conversions to do and how to format the output file.
     //
     setflags = clrflags = ver = 0;
-    BOOL do_redirect = FALSE;
+    bool do_redirect = false;
 
-    BOOL do_write = TRUE;
+    bool do_write = true;
     if (standalone_check)
     {
-        do_write = FALSE;
+        do_write = false;
     }
     if (standalone_load)
     {
         clrflags = 0xffffffff;
         setflags = OUTPUT_FLAGS;
         ver = OUTPUT_VERSION;
-        do_redirect = TRUE;
+        do_redirect = true;
     }
     else if (standalone_unload)
     {
@@ -2044,10 +2044,10 @@ long DebugTotalMemory = 0;
 #define CLI_DO_UNLOAD      CLI_USER+8
 #define CLI_DO_BASENAME    CLI_USER+9
 
-BOOL bMinDB = FALSE;
-BOOL bSyntaxError = FALSE;
+bool bMinDB = false;
+bool bSyntaxError = false;
 char *conffile = NULL;
-BOOL bVersion = FALSE;
+bool bVersion = false;
 
 CLI_OptionEntry OptionTable[10] =
 {
@@ -2074,52 +2074,52 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
             break;
 
         case CLI_DO_MINIMAL:
-            bMinDB = TRUE;
+            bMinDB = true;
             break;
 
         case CLI_DO_VERSION:
-            bVersion = TRUE;
+            bVersion = true;
             break;
 
         case CLI_DO_INFILE:
-            mudstate.bStandAlone = TRUE;
+            mudstate.bStandAlone = true;
             standalone_infile = pValue;
             break;
 
         case CLI_DO_OUTFILE:
-            mudstate.bStandAlone = TRUE;
+            mudstate.bStandAlone = true;
             standalone_outfile = pValue;
             break;
 
         case CLI_DO_CHECK:
-            mudstate.bStandAlone = TRUE;
-            standalone_check = TRUE;
+            mudstate.bStandAlone = true;
+            standalone_check = true;
             break;
 
         case CLI_DO_LOAD:
-            mudstate.bStandAlone = TRUE;
-            standalone_load = TRUE;
+            mudstate.bStandAlone = true;
+            standalone_load = true;
             break;
 
         case CLI_DO_UNLOAD:
-            mudstate.bStandAlone = TRUE;
-            standalone_unload = TRUE;
+            mudstate.bStandAlone = true;
+            standalone_unload = true;
             break;
 
         case CLI_DO_BASENAME:
-            mudstate.bStandAlone = TRUE;
+            mudstate.bStandAlone = true;
             standalone_basename = pValue;
             break;
 
         case CLI_DO_USAGE:
         default:
-            bSyntaxError = TRUE;
+            bSyntaxError = true;
             break;
         }
     }
     else
     {
-        bSyntaxError = TRUE;
+        bSyntaxError = true;
     }
 }
 
@@ -2142,11 +2142,11 @@ int DCL_CDECL main(int argc, char *argv[])
         pProg--;
     }
     pProg++;
-    mudstate.bStandAlone = FALSE;
+    mudstate.bStandAlone = false;
     if (  mux_stricmp(pProg, DBCONVERT_NAME1) == 0
        || mux_stricmp(pProg, DBCONVERT_NAME2) == 0)
     {
-        mudstate.bStandAlone = TRUE;
+        mudstate.bStandAlone = true;
     }
 
     // Parse the command line
@@ -2173,7 +2173,7 @@ int DCL_CDECL main(int argc, char *argv[])
            || !standalone_outfile
            || n != 1)
         {
-            bSyntaxError = TRUE;
+            bSyntaxError = true;
         }
         else
         {
@@ -2215,7 +2215,7 @@ int DCL_CDECL main(int argc, char *argv[])
         return 1;
     }
 
-    mudstate.bStandAlone = FALSE;
+    mudstate.bStandAlone = false;
 
     Log.EnableLogging();
 
@@ -2229,10 +2229,10 @@ int DCL_CDECL main(int argc, char *argv[])
 #ifdef MEMORY_ACCOUNTING
     extern CHashFile hfAllocData;
     extern CHashFile hfIdentData;
-    extern BOOL bMemAccountingInitialized;
+    extern bool bMemAccountingInitialized;
     hfAllocData.Open("svdptrs.dir", "svdptrs.pag");
     hfIdentData.Open("svdlines.dir", "svdlines.pag");
-    bMemAccountingInitialized = TRUE;
+    bMemAccountingInitialized = true;
 #endif
 
 #ifdef WIN32
@@ -2283,7 +2283,7 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     if (QueryPerformanceFrequency((LARGE_INTEGER *)&QP_D))
     {
-        bQueryPerformanceAvailable = TRUE;
+        bQueryPerformanceAvailable = true;
         QP_A = FACTOR_100NS_PER_SECOND/QP_D;
         QP_B = FACTOR_100NS_PER_SECOND%QP_D;
         QP_C = QP_D/2;
@@ -2466,7 +2466,7 @@ int DCL_CDECL main(int argc, char *argv[])
     shovechars(nMainGamePorts, aMainGamePorts);
 #endif // WIN32
 
-    close_sockets(FALSE, "Going down - Bye");
+    close_sockets(false, "Going down - Bye");
     dump_database();
     CLOSE;
 
