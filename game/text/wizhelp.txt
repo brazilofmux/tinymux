@@ -3087,8 +3087,8 @@ QUIET_WHISPER
 
   Related Topics: whisper.
 
-& QUIET_FILE
-QUIET_FILE
+& QUIT_FILE
+QUIT_FILE
 
   CONFIG PARAMETER: quit_file <filename>
   DEFAULT: text/quit.txt
