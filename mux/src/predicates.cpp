@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.55 2003-02-14 07:25:20 sdennis Exp $
+// $Id: predicates.cpp,v 1.56 2003-02-15 07:14:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1816,10 +1816,6 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
         {
             return TRUE;
         }
-        else
-        {
-            return FALSE;
-        }
 #endif
     }
     int mDeny = 0;
@@ -1834,8 +1830,8 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
             mDeny = AF_INTERNAL|AF_DARK;
         }
     }
-    else if (  Examinable(executor, target)
-            || Owner(executor) == aowner)
+    else if (  Owner(executor) == aowner
+            || Examinable(executor, target))
     {
         mDeny = AF_INTERNAL|AF_DARK|AF_MDARK;
     }
