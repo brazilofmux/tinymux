@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.48 2001-10-17 18:00:56 sdennis Exp $
+// $Id: conf.cpp,v 1.49 2001-11-02 17:25:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -229,7 +229,7 @@ void NDECL(cf_init)
     mudconf.control_flags = 0xffffffff; // Everything for now...
     mudconf.log_options = LOG_ALWAYS | LOG_BUGS | LOG_SECURITY |
         LOG_NET | LOG_LOGIN | LOG_DBSAVES | LOG_CONFIGMODS |
-        LOG_SHOUTS | LOG_STARTUP | LOG_WIZARD |
+        LOG_SHOUTS | LOG_STARTUP | LOG_WIZARD | LOG_SUSPECTCMDS |
         LOG_PROBLEMS | LOG_PCREATES | LOG_TIMEUSE;
     mudconf.log_info = LOGOPT_TIMESTAMP | LOGOPT_LOC;
     mudconf.markdata[0] = 0x01;

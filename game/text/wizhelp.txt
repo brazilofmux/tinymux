@@ -1845,6 +1845,7 @@ ARTICLE_RULE
     security       - Record security-related events.
     shouts         - Record uses of the @wall command.
     startup        - Record information about game startup.
+    suspect        - Record commands entered by players flagged SUSPECT.
     wizard         - Record uses of dangerous commands like @toad.
   See also: log_options.
 
