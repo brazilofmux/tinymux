@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.26 2004-08-16 05:14:07 sdennis Exp $
+// $Id: eval.cpp,v 1.27 2004-08-18 22:20:13 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1026,9 +1026,9 @@ void PopPointers(char **p, int nNeeded)
 {
     if (pPtrsFrame->nptrs == PTRS_PER_FRAME)
     {
-        PtrsFrame *p = pPtrsFrame->next;
+        PtrsFrame *q = pPtrsFrame->next;
         free_lbuf((char *)pPtrsFrame);
-        pPtrsFrame = p;
+        pPtrsFrame = q;
     }
     //mux_assert(p == pPtrsFrame->ptrs + pPtrsFrame->nptrs);
     pPtrsFrame->nptrs += nNeeded;
