@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.41 2002-08-02 04:24:05 sdennis Exp $
+// $Id: funceval.cpp,v 1.42 2002-08-02 16:34:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1710,6 +1710,11 @@ FUNCTION(fun_visible)
     {
         safe_match_result(it, buff, bufc);
         safe_str(" (ARG1)", buff, bufc);
+        return;
+    }
+    else if (!Controls(executor, it))
+    {
+        safe_noperm(buff, bufc);
         return;
     }
 
