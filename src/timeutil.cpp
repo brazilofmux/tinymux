@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.8 2000-06-20 16:37:47 sdennis Exp $
+// $Id: timeutil.cpp,v 1.9 2000-10-12 06:37:17 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -973,7 +973,7 @@ void test_time_t(void)
             }
         } while (ulLower != ulUpper);
     }
-    ltaUpperBound.SetSeconds(ulLower);
+    ltaUpperBound.SetSeconds(ulUpper);
 
     // Determine the lower bound.
     //
@@ -996,7 +996,7 @@ void test_time_t(void)
             }
         } while (ulLower != ulUpper);
     }
-    ltaLowerBound.SetSeconds(ulUpper);
+    ltaLowerBound.SetSeconds(ulLower);
 
     // Find a time near ulLower for which DST is not in affect.
     //
