@@ -1,7 +1,7 @@
 //
 // version.cpp - version information 
 //
-// $Id: version.cpp,v 1.10 2000-09-17 21:03:49 sdennis Exp $ 
+// $Id: version.cpp,v 1.11 2000-09-18 04:25:26 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -11,9 +11,8 @@
 #include "db.h"
 #include "mudconf.h"
 #include "alloc.h"
-#include "patchlevel.h"
-#ifdef WIN32
 #include "_build.h"
+#ifdef WIN32
 #define MUX_BUILD_DATE szBuildDate
 #endif // WIN32
 
