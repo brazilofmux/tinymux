@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.57 2003-01-04 18:55:55 sdennis Exp $
+// $Id: externs.h,v 1.58 2003-01-05 16:42:46 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -396,12 +396,17 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define GLOB_DISABLE    2   /* key to disable */
 //#define GLOB_LIST       3   /* key to list */
 #define HALT_ALL        1   /* halt everything */
-#define HELP_HELP       1   /* get data from help file */
-#define HELP_NEWS       2   /* get data from news file */
-#define HELP_WIZHELP    3   /* get data from wizard help file */
-#define HELP_PLUSHELP   4   /* get data from plushelp file */
-#define HELP_WIZNEWS    5   /* wiznews file */
-#define HELP_STAFFHELP  6   /* get data from staffhelp file */
+
+#define HELP_NOEVAL     0x8000000UL
+#define HELP_FIRST      0
+#define HELP_HELP       0   /* get data from help file */
+#define HELP_NEWS       1   /* get data from news file */
+#define HELP_WIZHELP    2   /* get data from wizard help file */
+#define HELP_PLUSHELP   3   /* get data from plushelp file */
+#define HELP_WIZNEWS    4   /* wiznews file */
+#define HELP_STAFFHELP  5   /* get data from staffhelp file */
+#define HELP_LAST       5
+
 #define HOOK_BEFORE     1   /* BEFORE hook */
 #define HOOK_AFTER      2   /* AFTER hook */
 #define HOOK_PERMIT     4   /* PERMIT hook */

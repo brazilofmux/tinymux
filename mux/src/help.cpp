@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.9 2002-12-16 00:21:27 sdennis Exp $
+// $Id: help.cpp,v 1.10 2003-01-05 16:42:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -269,34 +269,46 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, BOO
 
 void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
-    char *buf;
+    int nHelpfile = key & ~HELP_NOEVAL;
+    BOOL bEval = (key & HELP_NOEVAL) ? FALSE : TRUE;
 
-    switch (key)
+    if (  nHelpfile < HELP_FIRST
+       || HELP_LAST < nHelpfile)
+    {
+        char *buf = alloc_mbuf("do_help.LOG");
+        STARTLOG(LOG_BUGS, "BUG", "HELP");
+        sprintf(buf, "Unknown help file number: %d", nHelpfile);
+        log_text(buf);
+        ENDLOG;
+        free_mbuf(buf);
+        notify(executor, "No such indexed file found.");
+        return;
+    }
+
+    switch (nHelpfile)
     {
     case HELP_HELP:
-        help_write(executor, message, &mudstate.help_htab, mudconf.help_file, FALSE);
+        help_write(executor, message, &mudstate.help_htab, mudconf.help_file, bEval);
         break;
+
     case HELP_NEWS:
-        help_write(executor, message, &mudstate.news_htab, mudconf.news_file, TRUE);
+        help_write(executor, message, &mudstate.news_htab, mudconf.news_file, bEval);
         break;
+
     case HELP_WIZHELP:
-        help_write(executor, message, &mudstate.wizhelp_htab, mudconf.whelp_file, FALSE);
+        help_write(executor, message, &mudstate.wizhelp_htab, mudconf.whelp_file, bEval);
         break;
+
     case HELP_PLUSHELP:
-        help_write(executor, message, &mudstate.plushelp_htab, mudconf.plushelp_file, TRUE);
+        help_write(executor, message, &mudstate.plushelp_htab, mudconf.plushelp_file, bEval);
         break;
+
     case HELP_STAFFHELP:
-        help_write(executor, message, &mudstate.staffhelp_htab, mudconf.staffhelp_file, TRUE);
+        help_write(executor, message, &mudstate.staffhelp_htab, mudconf.staffhelp_file, bEval);
         break;
+
     case HELP_WIZNEWS:
-        help_write(executor, message, &mudstate.wiznews_htab, mudconf.wiznews_file, FALSE);
+        help_write(executor, message, &mudstate.wiznews_htab, mudconf.wiznews_file, bEval);
         break;
-    default:
-        STARTLOG(LOG_BUGS, "BUG", "HELP")
-        buf = alloc_mbuf("do_help.LOG");
-        sprintf(buf, "Unknown help file number: %d", key);
-        log_text(buf);
-        free_mbuf(buf);
-        ENDLOG
     }
 }
