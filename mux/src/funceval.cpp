@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.68 2003-01-31 07:08:54 sdennis Exp $
+// $Id: funceval.cpp,v 1.69 2003-01-31 22:43:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1890,14 +1890,8 @@ FUNCTION(fun_grab)
  */
 FUNCTION(fun_scramble)
 {
-    if (fargs[0][0] == '\0')
-    {
-        return;
-    }
-    char *old = *bufc;
-
     size_t n;
-    safe_str(strip_ansi(fargs[0], &n), buff, bufc);
+    char *old = strip_ansi(fargs[0], &n);
 
     if (2 <= n)
     {
@@ -1910,6 +1904,7 @@ FUNCTION(fun_scramble)
             old[j] = c;
         }
     }
+    safe_str(old, buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
