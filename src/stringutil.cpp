@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.31 2000-10-27 06:54:13 sdennis Exp $
+// $Id: stringutil.cpp,v 1.32 2000-10-29 07:33:40 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -746,7 +746,7 @@ char *ANSI_TransitionColorBinary
     return Buffer;
 }
 
-// The following is really 21 (%cn%ch%cu%ci%cf%cR%cr) but we are being conservative
+// The following is really 21 (%xn%xh%xu%xi%xf%xR%xr) but we are being conservative
 //
 #define ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH 42
 
@@ -778,33 +778,33 @@ char *ANSI_TransitionColorEscape(ANSI_ColorState *acsCurrent, ANSI_ColorState *a
        || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
           && acsNext->iForeground == ANSI_COLOR_INDEX_DEFAULT))
     {
-        memcpy(p, "%cn", 3); p += 3;
+        memcpy(p, "%xn", 3); p += 3;
         tmp = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
     if (tmp.bHighlite != acsNext->bHighlite)
     {
-        memcpy(p, "%ch", 3); p += 3;
+        memcpy(p, "%xh", 3); p += 3;
     }
     if (tmp.bUnder != acsNext->bUnder)
     {
-        memcpy(p, "%cu", 3); p += 3;
+        memcpy(p, "%xu", 3); p += 3;
     }
     if (tmp.bBlink != acsNext->bBlink)
     {
-        memcpy(p, "%cf", 3); p += 3;
+        memcpy(p, "%xf", 3); p += 3;
     }
     if (tmp.bInverse != acsNext->bInverse)
     {
-        memcpy(p, "%ci", 3); p += 3;
+        memcpy(p, "%xi", 3); p += 3;
     }
     if (tmp.iForeground != acsNext->iForeground)
     {
-        memcpy(p, "%c", 2); p += 2;
+        memcpy(p, "%x", 2); p += 2;
         *p++ = cForegroundColors[acsNext->iForeground];
     }
     if (tmp.iBackground != acsNext->iBackground)
     {
-        memcpy(p, "%c", 2); p += 2;
+        memcpy(p, "%x", 2); p += 2;
         *p++ = cBackgroundColors[acsNext->iBackground];
     }
     *p = '\0';

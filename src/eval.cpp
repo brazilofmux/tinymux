@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.11 2000-10-25 04:29:23 sdennis Exp $
+// $Id: eval.cpp,v 1.12 2000-10-29 07:33:51 sdennis Exp $
 //
 
 // MUX 2.1
@@ -947,9 +947,9 @@ char isSpecial_L2[256] =
     0, 1, 0, 1, 0, 1, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x20-0x2F
     1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 0, 0, 0, 0, 0, 0, // 0x30-0x3F
     0, 2, 2, 2, 0, 0, 0, 0,  0, 0, 0, 0, 2, 0, 2, 2, // 0x40-0x4F
-    2, 2, 2, 2, 2, 0, 2, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x50-0x5F
+    2, 2, 2, 2, 2, 0, 2, 0,  1, 0, 0, 0, 0, 0, 0, 0, // 0x50-0x5F
     0, 1, 1, 1, 0, 0, 0, 0,  0, 0, 0, 0, 1, 0, 1, 1, // 0x60-0x6F
-    1, 1, 1, 1, 1, 0, 1, 0,  0, 0, 0, 0, 1, 0, 0, 0, // 0x70-0x7F
+    1, 1, 1, 1, 1, 0, 1, 0,  1, 0, 0, 0, 1, 0, 0, 0, // 0x70-0x7F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x80-0x8F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x90-0x9F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0xA0-0xAF
@@ -1349,8 +1349,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
 
                     // At this point, iCode could be any of the following:
                     //
-                    // 00 21 23 25 30 31 32 33 34 35 36 37 38 39 41 42 43 4C 4E 4F 50 51 52 53 54 56 7C
-                    //    !  #  %  0  1  2  3  4  5  6  7  8  9  A  B  C  L  N  O  P  Q  R  S  T  V  |
+                    // 00 21 23 25 30 31 32 33 34 35 36 37 38 39 41 42 43 4C 4E 4F 50 51 52 53 54 56 58 7C
+                    //    !  #  %  0  1  2  3  4  5  6  7  8  9  A  B  C  L  N  O  P  Q  R  S  T  V  X  |
                     //
                     if (iCode <= '9')
                     {
@@ -1425,8 +1425,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                     }
                     else
                     {
-                        // 41 42 43 4C 4E 4F 50 51 52 53 54 56 7C
-                        // A  B  C  L  N  O  P  Q  R  S  T  V  |
+                        // 41 42 43 4C 4E 4F 50 51 52 53 54 56 58 7C
+                        // A  B  C  L  N  O  P  Q  R  S  T  V  X  |
                         //
                         if (iCode <= 'O')
                         {
@@ -1477,30 +1477,9 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                                 else
                                 {
                                     // iCode == 'C'
-                                    // ANSI Color.
+                                    // ANSI Color (Original MUX)
                                     //
-                                    pdstr++;
-                                    if (!*pdstr)
-                                    {
-                                        pdstr--;
-                                    }
-                                    {
-                                        char *pColor = ColorTable[*pdstr];
-                                        if (pColor)
-                                        {
-                                            ansi = 1;
-                                            safe_str(pColor, buff, bufc);
-                                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                        }
-                                        else
-                                        {
-                                            if (nBufferAvailable)
-                                            {
-                                                *(*bufc)++ = *pdstr;
-                                                nBufferAvailable--;
-                                            }
-                                        }
-                                    }
+                                    goto EscapeX;
                                 }
                             }
                             else
@@ -1551,8 +1530,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         }
                         else
                         {
-                            // 50 51 52 53 54 56 7C
-                            // P  Q  R  S  T  V  |
+                            // 50 51 52 53 54 56 58 7C
+                            // P  Q  R  S  T  V  X  |
                             //
                             if (iCode <= 'S')
                             {
@@ -1643,8 +1622,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             }
                             else
                             {
-                                // 54 56 7C
-                                // T  V  |
+                                // 54 56 58 7C
+                                // T  V  X  |
                                 //
                                 if (iCode == 'T')
                                 {
@@ -1682,6 +1661,37 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                                         // Eat the following character.
                                         //
                                         pdstr++;
+                                    }
+                                }
+                                else if (iCode == 'X')
+                                {
+                                    // iCode == 'X'
+EscapeX:
+                                    // iCode == 'C' or 'X'.
+                                    // Color
+                                    //
+                                    pdstr++;
+                                    if (!*pdstr)
+                                    {
+                                        pdstr--;
+                                    }
+                                    else
+                                    {
+                                        char *pColor = ColorTable[*pdstr];
+                                        if (pColor)
+                                        {
+                                            ansi = 1;
+                                            safe_str(pColor, buff, bufc);
+                                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                                        }
+                                        else
+                                        {
+                                            if (nBufferAvailable)
+                                            {
+                                                *(*bufc)++ = *pdstr;
+                                                nBufferAvailable--;
+                                            }
+                                        }
                                     }
                                 }
                                 else
@@ -1884,8 +1894,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
 
     **bufc = '\0';
 
-    // If the player used a %c sub in the string, and hasn't yet terminated
-    // the color with a %cn yet, we'll have to do it for them. Certain
+    // If the player used a %x sub in the string, and hasn't yet terminated
+    // the color with a %xn yet, we'll have to do it for them. Certain
     // overflows can trim ANSI off as well.
     //
     if (ansi || (eval & EV_TOP))
