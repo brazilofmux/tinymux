@@ -127,7 +127,7 @@ Feature Additions:
     floating-point prefix.
  -- Enhance validation of exit names. Each segment of an exit name must be
     a valid object name on its own. Also, ANSI is only allowed in the first
-    segement. ANSI color in other parts of the name is stripped.
+    segment. ANSI color in other parts of the name is stripped.
 
 Bug Fixes:
 ~~~~~~~~~
