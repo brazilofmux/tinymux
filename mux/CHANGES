@@ -159,10 +159,11 @@ Bug Fixes:
     Reported by Alierak.
  -- Fix seeding random numbers on Win32. The call to CryptAcquireContext
     was likely to fail.
- -- On sizeof(int) == 8 systems, IPv4 mask validation gave false negatives.
-    Reported by Alierak.
- -- On sizeof(int) == 8 systems, slave process was non-functional because
-    gethostbyname choked on an eight-byte IPv4 argument. Reported by Alierak.
+ -- On a NetBSD/Alpha system in which sizeof(unsigned long) == 8, IPv4 mask
+    validation gave false negatives.  Reported by Alierak.
+ -- On same NetBSD/Alpha system, reverse-DNS slave was non-functional because
+    gethostbyname() choked on the eight-byte IPv4 argument. Reported by 
+    Alierak.
  -- IP ranges of the form 'a.b.c.d/m' would allow 'm' to be text and take it
     as a zero value. For example, 'forbid_site 1.2.3.4/foobar' would effectly
     block every IP address -- too easy to shoot yourself in the foot. Reported
