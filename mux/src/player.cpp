@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.11 2003-07-23 02:37:59 sdennis Exp $
+// $Id: player.cpp,v 1.12 2003-07-23 03:16:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -284,11 +284,12 @@ void ChangePassword(dbref player, const char *szPassword)
 
 #define SHA1_PREFIX_LENGTH 6
 const char szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "$SHA1$";
+#define ENCODED_HASH_LENGTH ENCODED_LENGTH(5*sizeof(UINT32))
 
 #define MD5_PREFIX_LENGTH 3
 const char szMD5Prefix[MD5_PREFIX_LENGTH+1] = "$1$";
+#define MD5_SALT_LENGTH  11
 
-#define ENCODED_HASH_LENGTH ENCODED_LENGTH(5*sizeof(UINT32))
 
 char *mux_crypt(const char *szPassword, const char *szSalt)
 {
@@ -360,7 +361,7 @@ bool check_pass(dbref player, const char *pPassword)
             char *pSalt = pTarget + SHA1_PREFIX_LENGTH;
             char *pHash;
             if (  *pSalt
-               && (pHash = strchr(pSalt + 1, '$')))
+               && (pHash = strchr(pSalt, '$')))
             {
                 size_t nSalt = pHash - pSalt;
                 pHash++;
@@ -378,12 +379,35 @@ bool check_pass(dbref player, const char *pPassword)
                 }
             }
         }
-        else if (  (  nTarget == 13
-                   && memcmp("XX", pTarget, 2) == 0)
-                || (  MD5_PREFIX_LENGTH <= nTarget
-                   && memcmp(szMD5Prefix, pTarget, MD5_PREFIX_LENGTH) == 0))
+        else if (  MD5_PREFIX_LENGTH <= nTarget
+                && memcmp(szMD5Prefix, pTarget, MD5_PREFIX_LENGTH) == 0)
         {
-            // Crypt-based password (which might be DES or MD5).
+            char *pSalt = pTarget + MD5_PREFIX_LENGTH;
+            char *pHash;
+            if (  *pSalt
+               && (pHash = strchr(pSalt, '$')))
+            {
+                size_t nSalt = pHash - pTarget;
+                pHash++;
+
+                if (nSalt <= MD5_SALT_LENGTH)
+                {
+                    char szSalt[MD5_SALT_LENGTH+1];
+                    memcpy(szSalt, pTarget, nSalt);
+                    szSalt[nSalt] = '\0';
+
+                    if (strcmp(crypt(pPassword, szSalt), pTarget) == 0)
+                    {
+                        bValidPass = true;
+                        bUpdatePass = true;
+                    }
+                }
+            }
+        }
+        else if (  nTarget == 13
+                && memcmp("XX", pTarget, 2) == 0)
+        {
+            // DES
             //
             if (strcmp(crypt(pPassword, "XX"), pTarget) == 0)
             {
