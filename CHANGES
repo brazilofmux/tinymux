@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  November 2001
+Last Update:  December 2001
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,6 +62,9 @@ Feature Additions:
     to the 'port' config to take affect across a @restart.
  -- Will now accept '@set FooBar=COMMANDS' and '@set FooBar=!COMMANDS'. BLEED
     and SPOOF also added. 'hasflag(FooBar,COMMANDS)' also supported.
+ -- Added LOcALIZE().
+ -- Added function invocation limit checking for various loop functions:
+    ITER, PARSE, MIX, FILTER, FOLD, MAP, etc.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -113,6 +116,7 @@ Bug Fixes:
  -- Include resident memory again in @list process report.
  -- Use mudstate.logging again.
  -- Remove vestigates of macros.
+ -- Handle prematurely-chopped comsys.db files.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -138,6 +142,9 @@ Performance Enhancements:
     'const'.
  -- Reduce stack frame per-invocation overhead of TinyExec() by 688 bytes to
     138 bytes.
+ -- Improve putstring() performance and therefore @dumps.
+ -- Improved parser speed by a few instructions.
+ -- Improve speed of TRANSLATE() and emit %t for hardtabs..
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
