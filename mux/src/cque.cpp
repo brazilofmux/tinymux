@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.11 2004-04-28 14:20:19 sdennis Exp $
+// $Id: cque.cpp,v 1.12 2004-05-13 13:30:58 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -436,7 +436,7 @@ int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
                 {
                     p->iPriority = PRIORITY_OBJECT;
                 }
-                p->ltaWhen = mudstate.now;
+                p->ltaWhen.GetUTC();
                 p->fpTask = Task_RunQueueEntry;
                 return IU_UPDATE_TASK;
             }
@@ -479,7 +479,7 @@ int CallBack_NotifySemaphoreFirstOrQuiet(PTASK_RECORD p)
             {
                 p->iPriority = PRIORITY_OBJECT;
             }
-            p->ltaWhen = mudstate.now;
+            p->ltaWhen.GetUTC();
             p->fpTask = Task_RunQueueEntry;
             return IU_UPDATE_TASK;
         }
