@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.31 2001-02-09 06:43:08 sdennis Exp $
+// $Id: conf.cpp,v 1.32 2001-03-23 07:54:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -262,6 +262,7 @@ void NDECL(cf_init)
     mudconf.stack_limit = 50;
     mudconf.cache_names = 1;
     mudconf.toad_recipient = -1;
+    mudconf.eval_comtitle = 1; // Should Comtitles Evaluate?
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = FALSE;
     mudstate.bCanRestart = FALSE;
@@ -1255,6 +1256,7 @@ CONF conftable[] =
     {"examine_public_attrs",      cf_bool,        CA_GOD,    &mudconf.exam_public,            NULL,               0},
     {"exit_flags",                cf_set_flags,   CA_GOD,    (int *)&mudconf.exit_flags,      NULL,               0},
     {"exit_quota",                cf_int,         CA_GOD,    &mudconf.exit_quota,             NULL,               0},
+    {"eval_comtitle",             cf_int,         CA_GOD,    &mudconf.eval_comtitle,          NULL,               0},
     {"events_daily_hour",         cf_int,         CA_GOD,    &mudconf.events_daily_hour,      NULL,               0},
     {"fascist_teleport",          cf_bool,        CA_GOD,    &mudconf.fascist_tport,          NULL,               0},
     {"fixed_home_message",        cf_string,      CA_STATIC, (int *)mudconf.fixed_home_msg,   NULL,             128},
