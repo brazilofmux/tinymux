@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.22 2004-04-28 14:20:19 sdennis Exp $
+// $Id: comsys.cpp,v 1.23 2004-04-29 04:57:56 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1077,7 +1077,10 @@ void SendChannelMessage
             }
             char *p = tprintf("HISTORY_%d", iMod(ch->num_messages, logmax));
             int atr = mkattr(GOD, p);
-            atr_add(ch->chan_obj, atr, msgNormal, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
+            if (0 < attr)
+            {
+                atr_add(ch->chan_obj, atr, msgNormal, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
+            }
         }
     }
     else if (ch->chan_obj != NOTHING)
@@ -1345,10 +1348,14 @@ bool do_chanlog(dbref player, char *channel, char *arg)
         return false;
     }
     int atr = mkattr(GOD, "MAX_LOG");
-    char *oldvalue;
+    if (atr <= 0)
+    {
+        return false;
+    }
     dbref aowner;
     int aflags;
-    if ((oldvalue = atr_get(ch->chan_obj, atr, &aowner, &aflags)))
+    char *oldvalue = atr_get(ch->chan_obj, atr, &aowner, &aflags);
+    if (oldvalue)
     {
         int oldnum = mux_atol(oldvalue);
         if (oldnum > value)
