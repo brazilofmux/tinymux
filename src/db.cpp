@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.6 2000-04-16 07:58:57 sdennis Exp $
+// $Id: db.cpp,v 1.7 2000-04-16 08:05:22 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3212,7 +3212,7 @@ void load_restart_db(void)
     fgets(buf, 3, f);
     if (strncmp(buf, "+V", 2))
     {
-        Log.WriteBuffer("ABORT! db.cpp, load_restart_db sees no version magic (+V..) in restart.db.\n");
+        Log.WriteString("ABORT! db.cpp, load_restart_db sees no version magic (+V..) in restart.db.\n");
         Log.Flush();
         abort();
     }
