@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.37 2002-06-27 09:06:47 jake Exp $
+// $Id: functions.cpp,v 1.38 2002-06-27 17:12:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6145,8 +6145,8 @@ FUNCTION(fun_filter)
     //
     cp = curr = trim_space_sep(fargs[1], sep);
     atextbuf = alloc_lbuf("fun_filter");
-    BOOL first = TRUE;
-    while (cp
+    BOOL bFirst = TRUE;
+    while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
         objstring = split_token(&cp, sep);
@@ -6156,14 +6156,15 @@ FUNCTION(fun_filter)
         TinyExec(result, &bp, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
         *bp = '\0';
-        if (!first && result[0] == '1' && result[1] == '\0')
+        if (  result[0] == '1'
+           && result[1] == '\0')
         {
-            safe_chr(sep, buff, bufc);
-        }
-        if (result[0] == '1' && result[1] == '\0')
-        {
+            if (!bFirst)
+            {
+                safe_chr(sep, buff, bufc);
+            }
             safe_str(objstring, buff, bufc);
-            first = FALSE;
+            bFirst = FALSE;
         }
         free_lbuf(result);
     }
