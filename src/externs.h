@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.37 2001-03-15 13:10:39 sdennis Exp $
+// $Id: externs.h,v 1.38 2001-03-30 16:43:41 zenty Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -142,9 +142,9 @@ extern void FDECL(destroy_obj, (dbref, dbref));
 extern void FDECL(empty_obj, (dbref));
 
 /* From player.cpp */
-extern void FDECL(record_login, (dbref, int, char *, char *, char *));
+extern void FDECL(record_login, (dbref, int, char *, char *, char *, char *));
 extern int  FDECL(check_pass, (dbref, const char *));
-extern dbref    FDECL(connect_player, (char *, char *, char *, char *));
+extern dbref    FDECL(connect_player, (char *, char *, char *, char *, char *));
 extern dbref    FDECL(create_player, (char *, char *, dbref, int, int));
 extern int  FDECL(add_player_name, (dbref, char *));
 extern int  FDECL(delete_player_name, (dbref, char *));

@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.21 2001-03-23 09:55:06 sdennis Exp $
+// $Id: bsd.cpp,v 1.22 2001-03-30 16:43:41 zenty Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -438,6 +438,7 @@ static int get_slave_result(void)
                 atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s", d->username, d->addr));
             else
                 atr_add_raw(d->player, A_LASTSITE, d->addr);
+	    atr_add_raw(d->player, A_LASTIP, inet_ntoa((d->address).sin_addr));
         }
     }
 
