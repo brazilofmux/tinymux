@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.13 2000-11-01 20:24:39 sdennis Exp $
+// $Id: timeutil.cpp,v 1.14 2000-11-01 21:28:43 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -326,7 +326,7 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
     n = PFSS_PRECISION - n;
     if (n > 0)
     {
-        memset(p, 0, n);
+        memset(p, '0', n);
         p += n;
     }
     *p++ = '\0';
