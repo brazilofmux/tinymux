@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.44 2001-06-15 20:39:59 hellspawn Exp $
+// * $Id: comsys.cpp,v 1.45 2001-06-16 01:52:53 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2489,7 +2489,7 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     char *mess2, *mess2nct;
     BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
         ":boots", &mess1, &mess1nct);
-    BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, 0, vu
+    BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, 0, vu,
         ":off the channel.", &mess2, &mess2nct);
     char *messNormal = alloc_lbuf("do_chboot.messnormal");
     char *messNoComtitle = alloc_lbuf("do_chboot.messnocomtitle");
