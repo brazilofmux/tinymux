@@ -1,10 +1,7 @@
-/*
- * funceval.c - MUX function handlers 
- */
-/*
- * $Id: funceval.cpp,v 1.19 2000-07-31 16:38:03 sdennis Exp $ 
- */
-
+// funceval.cpp - MUX function handlers.
+//
+// $Id: funceval.cpp,v 1.20 2000-07-31 16:43:35 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
