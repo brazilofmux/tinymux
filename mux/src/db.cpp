@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.48 2002-09-23 20:33:12 sdennis Exp $
+// $Id: db.cpp,v 1.49 2002-10-01 02:43:45 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1952,10 +1952,14 @@ char *atr_get_LEN(dbref thing, int atr, dbref *owner, int *flags, int *pLen)
     return atr_get_str_LEN(buff, thing, atr, owner, flags, pLen);
 }
 
-char *atr_get(dbref thing, int atr, dbref *owner, int *flags)
+char *atr_get_real(dbref thing, int atr, dbref *owner, int *flags, const char *file, const int line)
 {
     int nLen;
-    char *buff = alloc_lbuf("atr_get");
+#ifdef STANDALONE
+    char *buff = (char *)malloc(LBUF_SIZE);
+#else
+    char *buff = pool_alloc_lbuf("atr_get", file, line);
+#endif
     return atr_get_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 
@@ -2023,10 +2027,10 @@ char *atr_pget_LEN(dbref thing, int atr, dbref *owner, int *flags, int *pLen)
     return atr_pget_str_LEN(buff, thing, atr, owner, flags, pLen);
 }
 
-char *atr_pget(dbref thing, int atr, dbref *owner, int *flags)
+char *atr_pget_real(dbref thing, int atr, dbref *owner, int *flags, const char *file, const int line)
 {
     int nLen;
-    char *buff = alloc_lbuf("atr_pget");
+    char *buff = pool_alloc_lbuf("atr_pget", file, line);
     return atr_pget_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 

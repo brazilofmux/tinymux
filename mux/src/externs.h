@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.54 2002-09-27 18:51:52 sdennis Exp $
+// $Id: externs.h,v 1.55 2002-10-01 02:43:45 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -279,9 +279,11 @@ extern void atr_set_flags(dbref, int, int);
 extern const char *atr_get_raw_LEN(dbref, int, int*);
 extern const char *atr_get_raw(dbref, int);
 extern char *atr_get_LEN(dbref, int, dbref *, int *, int *);
-extern char *atr_get(dbref, int, dbref *, int *);
+extern char *atr_get_real(dbref, int, dbref *, int *, const char *, const int);
+#define atr_get(t,a,o,f) atr_get_real(t,a,o,f, __FILE__, __LINE__)
 extern char *atr_pget_LEN(dbref, int, dbref *, int *, int *);
-extern char *atr_pget(dbref, int, dbref *, int *);
+extern char *atr_pget_real(dbref, int, dbref *, int *, const char *, const int);
+#define atr_pget(t,a,o,f) atr_pget_real(t,a,o,f, __FILE__, __LINE__)
 extern char *atr_get_str_LEN(char *s, dbref, int, dbref *, int *, int *);
 extern char *atr_get_str(char *, dbref, int, dbref *, int *);
 extern char *atr_pget_str_LEN(char *, dbref, int, dbref *, int *, int *);
