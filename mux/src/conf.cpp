@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.25 2002-11-12 08:33:29 jake Exp $
+// $Id: conf.cpp,v 1.26 2002-11-12 08:40:10 jake Exp $
 //
 
 #include "copyright.h"
@@ -1581,6 +1581,7 @@ CONF conftable[] =
     {"attr_access",               cf_attr_access, CA_GOD,    CA_DISABLED, NULL,                            attraccess_nametab, 0},
     {"attr_alias",                cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.attr_name_htab, 0,                  0},
     {"attr_cmd_access",           cf_acmd_access, CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
+    {"autozone",                  cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.autozone,        NULL,               0},
     {"bad_name",                  cf_badname,     CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {"badsite_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.site_file,       NULL, SIZEOF_PATHNAME},
     {"cache_names",               cf_bool,        CA_STATIC, CA_GOD,      (int *)&mudconf.cache_names,     NULL,               0},
