@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.35 2003-01-01 09:18:22 sdennis Exp $
+// $Id: set.cpp,v 1.36 2003-03-17 00:24:44 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -217,7 +217,17 @@ void do_name
     {
         int nValidName;
         BOOL bValid;
-        char *pValidName = MakeCanonicalObjectName(newname, &nValidName, &bValid);
+        char *pValidName;
+
+        if (isExit(thing))
+        {
+            pValidName = MakeCanonicalExitName(newname, &nValidName, &bValid);
+        }
+        else
+        {
+            pValidName = MakeCanonicalObjectName(newname, &nValidName, &bValid);
+        }
+
         if (!bValid)
         {
             notify_quiet(executor, "That is not a reasonable name.");
