@@ -3,7 +3,7 @@
  * powers.c - power manipulation routines 
  */
 /*
- * $Id: powers.cpp,v 1.2 2000-04-17 17:49:35 sdennis Exp $ 
+ * $Id: powers.cpp,v 1.3 2001-01-22 02:28:13 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -26,16 +26,27 @@
 
 int ph_any(dbref target, dbref player, POWER power, int fpowers, int reset)
 {
-    if (fpowers & POWER_EXT) {
+    if (fpowers & POWER_EXT)
+    {
         if (reset)
+        {
             s_Powers2(target, Powers2(target) & ~power);
+        }
         else
+        {
             s_Powers2(target, Powers2(target) | power);
-    } else {
+        }
+    }
+    else
+    {
         if (reset)
+        {
             s_Powers(target, Powers(target) & ~power);
+        }
         else
+        {
             s_Powers(target, Powers(target) | power);
+        }
     }
     return 1;
 }
@@ -59,7 +70,7 @@ int ph_god(dbref target, dbref player, POWER power, int fpowers, int reset)
 
 int ph_wiz(dbref target, dbref player, POWER power, int fpowers, int reset)
 {
-    if (!Wizard(player) & !God(player))
+    if (!Wizard(player) && !God(player))
         return 0;
     return (ph_any(target, player, power, fpowers, reset));
 }
@@ -71,7 +82,7 @@ int ph_wiz(dbref target, dbref player, POWER power, int fpowers, int reset)
 
 int ph_wizroy(dbref target, dbref player, POWER power, int fpowers, int reset)
 {
-    if (!WizRoy(player) & !God(player))
+    if (!WizRoy(player) && !God(player))
         return 0;
     return (ph_any(target, player, power, fpowers, reset));
 }
@@ -156,11 +167,16 @@ void display_powertab(dbref player)
 
     bp = buf = alloc_lbuf("display_powertab");
     safe_str((char *)"Powers:", buf, &bp);
-    for (fp = gen_powers; fp->powername; fp++) {
+    for (fp = gen_powers; fp->powername; fp++)
+    {
         if ((fp->listperm & CA_WIZARD) && !Wizard(player))
+        {
             continue;
+        }
         if ((fp->listperm & CA_GOD) && !God(player))
+        {
             continue;
+        }
         safe_chr(' ', buf, &bp);
         safe_str((char *)fp->powername, buf, &bp);
     }
@@ -196,10 +212,13 @@ int decode_power(dbref player, char *powername, POWERSET *pset)
         return 0;
     }
     if (pent->powerpower & POWER_EXT)
+    {
         pset->word2 = pent->powervalue;
+    }
     else
+    {
         pset->word1 = pent->powervalue;
-    
+    }
     return 1;
 }
 
@@ -273,16 +292,24 @@ int has_power(dbref player, dbref it, char *powername)
 
     POWER fv;
     if (fp->powerpower & POWER_EXT)
+    {
         fv = Powers2(it);
+    }
     else
+    {
         fv = Powers(it);
+    }
 
     if (fv & fp->powervalue)
     {
         if ((fp->listperm & CA_WIZARD) && !Wizard(player))
+        {
             return 0;
+        }
         if ((fp->listperm & CA_GOD) && !God(player))
+        {
             return 0;
+        }
         return 1;
     }
     return 0;
@@ -300,38 +327,43 @@ char *power_description(dbref player, dbref target)
     int otype;
     POWER fv;
 
-    /*
-     * Allocate the return buffer 
-     */
-
+    // Allocate the return buffer.
+    //
     otype = Typeof(target);
     bp = buff = alloc_mbuf("power_description");
 
-    /*
-     * Store the header strings and object type 
-     */
-
+    // Store the header strings and object type.
+    //
     safe_mb_str((char *)"Powers:", buff, &bp);
 
-    for (fp = gen_powers; fp->powername; fp++) {
+    for (fp = gen_powers; fp->powername; fp++)
+    {
         if (fp->powerpower & POWER_EXT)
+        {
             fv = Powers2(target);
+        }
         else
+        {
             fv = Powers(target);
-        if (fv & fp->powervalue) {
+        }
+
+        if (fv & fp->powervalue)
+        {
             if ((fp->listperm & CA_WIZARD) && !Wizard(player))
+            {
                 continue;
+            }
             if ((fp->listperm & CA_GOD) && !God(player))
+            {
                 continue;
+            }
             safe_mb_chr(' ', buff, &bp);
-            safe_mb_str((char *)fp->powername, buff, &bp);
+            safe_mb_str(fp->powername, buff, &bp);
         }
     }
 
-    /*
-     * Terminate the string, and return the buffer to the caller 
-     */
-
+    // Terminate the string, and return the buffer to the caller.
+    //
     *bp = '\0';
     return buff;
 }
@@ -354,38 +386,41 @@ void decompile_powers(dbref player, dbref thing, char *thingname)
     f1 = Powers(thing);
     f2 = Powers2(thing);
 
-    for (fp = gen_powers; fp->powername; fp++) {
-
-        /*
-         * Skip if we shouldn't decompile this power 
-         */
-
+    for (fp = gen_powers; fp->powername; fp++)
+    {
+        // Skip if we shouldn't decompile this power 
+        //
         if (fp->listperm & CA_NO_DECOMP)
+        {
             continue;
-
-        /*
-         * Skip if this power is not set 
-         */
-
-        if (fp->powerpower & POWER_EXT) {
-            if (!(f2 & fp->powervalue))
-                continue;
-        } else {
-            if (!(f1 & fp->powervalue))
-                continue;
         }
 
-        /*
-         * Skip if we can't see this power 
-         */
+        // Skip if this power is not set.
+        //
+        if (fp->powerpower & POWER_EXT)
+        {
+            if (!(f2 & fp->powervalue))
+            {
+                continue;
+            }
+        }
+        else
+        {
+            if (!(f1 & fp->powervalue))
+            {
+                continue;
+            }
+        }
 
+        // Skip if we can't see this power.
+        //
         if (!check_access(player, fp->listperm))
+        {
             continue;
+        }
 
-        /*
-         * We made it this far, report this power 
-         */
-
+        // We made it this far, report this power.
+        //
         notify(player, tprintf("@power %s=%s", strip_ansi(thingname), fp->powername));
     }
 }
