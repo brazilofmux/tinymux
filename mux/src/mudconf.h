@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.9 2003-03-03 05:06:04 sdennis Exp $
+// $Id: mudconf.h,v 1.10 2003-03-04 09:03:47 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -48,6 +48,7 @@ struct confdata
     bool    ex_flags;           /* true = show flags on examine */
     bool    exam_public;        /* Does EXAM show public attrs by default? */
     bool    fascist_tport;      /* Src of teleport must be owned/JUMP_OK */
+    bool    fork_dump;          // perform dump in a forked process.
     bool    have_comsys;        // Should the comsystem be active?
     bool    have_mailer;        // Should @mail be active?
     bool    have_zones;         // Should zones be active?
@@ -105,7 +106,6 @@ struct confdata
     int     dump_offset;        /* when to take first checkpoint dump */
     int     events_daily_hour;  /* At what hour should @daily be executed? */
     int     exit_quota;         /* quota needed to make an exit */
-    int     fork_dump;          // perform dump in a forked process.
     int     func_invk_lim;      /* Max funcs invoked by a command */
     int     func_nest_lim;      /* Max nesting of functions */
     int     hook_cmd;           // @hooks to be initialized.
