@@ -398,6 +398,14 @@ Bug Fixes:
     flatfiles.  This is an important fix.  Backups of your database are
     not affected, however, without this fix, your server will probably
     not parse your backups correctly if they contain accent characters.
+ -- Added missing @fsay help topic.
+ -- Fixed bug in MIX() where '&mixit me=(%0|%1);think mix(mixit,0 1,1)'
+    gives '(0|1)' instead of '(0|1) (1|)'.  It wasn't determining the
+    length of the first list correctly.
+ -- Protect the server against @maliases with more than 100 members when
+    the mail.db comes from a previous versions of MUX.
+ -- Guest creation did not properly strip attributions from previously
+    connections.
 
 
 Performance Enhancements:
