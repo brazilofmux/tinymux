@@ -2,7 +2,7 @@
  * conf.cpp: set up configuration information and static data 
  */
 /*
- * $Id: conf.cpp,v 1.10 2000-05-20 21:21:08 sdennis Exp $ 
+ * $Id: conf.cpp,v 1.11 2000-05-24 08:36:45 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -428,18 +428,21 @@ void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
 
+    char *buf = alloc_lbuf("cf_log_syntax");
+    Tiny_vsnprintf(buf, LBUF_SIZE, fmt, ap);
     if (mudstate.initializing)
     {
         STARTLOG(LOG_STARTUP, "CNF", "SYNTX")
         log_text(cmd);
         log_text((char *)": ");
-        log_text(tprintf(fmt, ap));
+        log_text(buf);
         ENDLOG;
     }
     else
     {
-        notify(player, tprintf(fmt, ap));
+        notify(player, buf);
     }
+    free_lbuf(buf);
     va_end(ap);
 }
 
@@ -973,7 +976,7 @@ BOOL isValidSubnetMask(unsigned long ulMask)
         {
             return TRUE;
         }
-        ulTest >>= 1;
+        ulTest <<= 1;
     }
     return FALSE;
 }
