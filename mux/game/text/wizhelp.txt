@@ -2231,6 +2231,38 @@ GIVE
   (such as the xDROP and XSUCC attributes on the object being given, or
   error messages) are not suppressed.
 
+& GLOBAL_ERROR_OBJ
+GLOBAL_ERROR_OBJ
+
+  CONFIG DIRECTIVE: global_error_obj <dbref>
+  DEFAULT: -1
+
+  Specifies the object that it looks for, to evaluate an attribute
+  whenever a 'Huh? (Type 'help' for help)' would have shown up.
+  The attribute is the VA attribute (settable by @va or &va), and
+  will evaluate like you would in a @pemit, think, or other command.
+  The enactor is %#, though it is evaluated by the object itself.
+  This _CAN_ be a security risk if not done properly, but is done
+  that way on purpose.  The string they typed will be passed as %0.
+  It will be unevaluated and 'as-is'.
+
+  Why the VA attribute?  Why not?  I felt it was being all alone
+  and left out of the fun ;)
+
+  Original code and helpfile from RhostMUSH. Used with permission.
+
+  Example:
+    > @admin global_error_obj=10
+    Set.
+    > @va #10=[pemit(%#,You typed '%0')]
+    Set.
+    > @pemit me=Test
+    Test
+    > @pmit me=Test
+    You typed '@pmit me=Test'
+
+  Related Topics:
+
 & GOOD_NAME
 GOOD_NAME
 
@@ -2409,7 +2441,7 @@ HOOK SETUP
   Hooks are set up by following the shown methods.
   1)  You must first create and setup a hook object to store the data.
       Once you have @created the object, the object needs to be defined
-      with the 'HOOK_CMD' admin parameter.  This may be placed in the 
+      with the 'HOOK_OBJ' admin parameter.  This may be placed in the 
       .conf file or done via @admin.
 
   2)  You must set up hooks for the commands/attributes you wish to use.
