@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.36 2002-04-10 23:06:07 sdennis Exp $
+// $Id: svdhash.cpp,v 1.37 2002-04-11 01:25:01 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -659,6 +659,7 @@ BOOL CHashPage::ValidateFreeList(void)
 //
 int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 {
+    int ret = HP_INSERT_SUCCESS;
     m_pHeader->m_nTotalInsert++;
     for (int nTries = 0; nTries < 2; nTries++)
     {
@@ -690,21 +691,23 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         {
             if (m_pHeader->m_nDirEmptyLeft < m_nDirEmptyTrigger)
             {
-                if (Defrag(nRecord))
+                if (!Defrag(nRecord))
                 {
-                    continue;
+                    return HP_INSERT_ERROR_FULL;
                 }
-                return HP_INSERT_ERROR_FULL;
+                ret = HP_INSERT_SUCCESS_DEFRAG;
+                continue;
             }
             if (HeapAlloc(iDir, nRecord, nHash, pRecord))
             {
-                return HP_INSERT_SUCCESS;
+                return ret;
             }
         }
         if (!Defrag(nRecord))
         {
             return HP_INSERT_ERROR_FULL;
         }
+        ret = HP_INSERT_SUCCESS_DEFRAG;
     }
     return HP_INSERT_ERROR_FULL;
 }
@@ -974,7 +977,7 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
             UINT32 nHash = pNode->u.s.nHash;
             if ((nHash & anGroupMask[nNewDepth]) == (nHashGroup0 & anGroupMask[nNewDepth]))
             {
-                if (HP_INSERT_SUCCESS != hp0.Insert(pNode->u.s.nRecordSize, nHash, pNode+1))
+                if (!IS_HP_SUCCESS(hp0.Insert(pNode->u.s.nRecordSize, nHash, pNode+1)))
                 {
                     Log.WriteString("CHashPage::Split - Ran out of room." ENDLINE);
                     return FALSE;
@@ -982,7 +985,7 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
             }
             else if ((nHash & anGroupMask[nNewDepth]) == (nHashGroup1 & anGroupMask[nNewDepth]))
             {
-                if (HP_INSERT_SUCCESS != hp1.Insert(pNode->u.s.nRecordSize, nHash, pNode+1))
+                if (!IS_HP_SUCCESS(hp1.Insert(pNode->u.s.nRecordSize, nHash, pNode+1)))
                 {
                     Log.WriteString("CHashPage::Split - Ran out of room." ENDLINE);
                     return FALSE;
@@ -1208,7 +1211,7 @@ BOOL CHashPage::Defrag(HP_HEAPLENGTH nExtra)
     //
     hpNew->Empty(m_pHeader->m_nDepth, m_pHeader->m_nHashGroup, nGoodDirSize);
     BOOL errInserted = HP_INSERT_SUCCESS;
-    for (int iDir = 0; iDir < m_pHeader->m_nDirSize && errInserted == HP_INSERT_SUCCESS; iDir++)
+    for (int iDir = 0; iDir < m_pHeader->m_nDirSize && IS_HP_SUCCESS(errInserted); iDir++)
     {
         if (m_pDirectory[iDir] < HP_DIR_DELETED) // ValidateAllocatedBlock(iDir))
         {
@@ -1216,7 +1219,7 @@ BOOL CHashPage::Defrag(HP_HEAPLENGTH nExtra)
             errInserted = hpNew->Insert(pNode->u.s.nRecordSize, pNode->u.s.nHash, pNode+1);
         }
     }
-    if (errInserted == HP_INSERT_SUCCESS)
+    if (IS_HP_SUCCESS(errInserted))
     {
         // Swap buffers.
         //
@@ -1692,7 +1695,7 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
             return FALSE;
         }
         int errInserted = m_Cache[iCache].m_hp.Insert(nRecord, nHash, pRecord);
-        if (errInserted == HP_INSERT_SUCCESS) break;
+        if (IS_HP_SUCCESS(errInserted)) break;
         if (errInserted == HP_INSERT_ERROR_ILLEGAL)
         {
             return FALSE;
@@ -2146,7 +2149,16 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
         }
 #endif
         int errInserted = m_hpLast->Insert(nRecord, nHash, pRecord);
-        if (errInserted == HP_INSERT_SUCCESS) break;
+        if (IS_HP_SUCCESS(errInserted))
+        {
+            if (errInserted == HP_INSERT_SUCCESS_DEFRAG)
+            {
+                // Otherwise, this value will be over inflated.
+                //
+                m_nMaxScan = 0;
+            }
+            break;
+        }
         if (errInserted == HP_INSERT_ERROR_ILLEGAL)
         {
             return FALSE;

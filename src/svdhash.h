@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.13 2001-11-18 21:44:59 sdennis Exp $
+// $Id: svdhash.h,v 1.14 2002-04-11 01:25:01 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -140,9 +140,11 @@ public:
     BOOL Validate(void);
 #endif
 
-#define HP_INSERT_SUCCESS       0
-#define HP_INSERT_ERROR_FULL    1
-#define HP_INSERT_ERROR_ILLEGAL 2
+#define HP_INSERT_SUCCESS_DEFRAG 0
+#define HP_INSERT_SUCCESS        1
+#define HP_INSERT_ERROR_FULL     2
+#define HP_INSERT_ERROR_ILLEGAL  3
+#define IS_HP_SUCCESS(x) ((x) <= HP_INSERT_SUCCESS)
     int Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
     HP_DIRINDEX FindFirstKey(UINT32 nHash, unsigned int *numchecks);
     HP_DIRINDEX FindNextKey(HP_DIRINDEX i, UINT32 nHash, unsigned int *numchecks);
