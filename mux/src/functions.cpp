@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.118 2004-09-10 21:58:39 sdennis Exp $
+// $Id: functions.cpp,v 1.119 2004-09-10 22:54:09 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -6785,7 +6785,7 @@ FUNCTION(fun_fold)
     }
 
     char *rstore = result;
-    result = NULL;
+    result = alloc_lbuf("fun_fold");
 
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim
@@ -6794,14 +6794,14 @@ FUNCTION(fun_fold)
         clist[0] = rstore;
         clist[1] = split_token(&cp, &sep);
         strcpy(atextbuf, atext);
-        result = bp = alloc_lbuf("fun_fold");
+        bp = result;
         str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
         strcpy(rstore, result);
-        free_lbuf(result);
     }
+    free_lbuf(result);
     safe_str(rstore, buff, bufc);
     free_lbuf(rstore);
     free_lbuf(atext);
@@ -6956,22 +6956,23 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
 
     // Now iteratively eval the attrib with the argument list.
     //
-    char *result, *curr, *objstring, *bp, *str, *cp;
-
-    cp = curr = trim_space_sep(fargs[1], psep);
+    char *curr = trim_space_sep(fargs[1], psep);
+    char *cp = curr;
     char *atextbuf = alloc_lbuf("fun_filter");
+    char *result = alloc_lbuf("fun_filter");
     bool bFirst = true;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim
           && !MuxAlarm.bAlarmed)
     {
-        objstring = split_token(&cp, psep);
+        char *objstring = split_token(&cp, psep);
         strcpy(atextbuf, atext);
-        result = bp = alloc_lbuf("fun_filter");
-        str = atextbuf;
+        char *bp = result;
+        char *str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
         *bp = '\0';
+
         if (  (  bBool
               && xlate(result))
            || (  !bBool
@@ -6985,8 +6986,8 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
             safe_str(objstring, buff, bufc);
             bFirst = false;
         }
-        free_lbuf(result);
     }
+    free_lbuf(result);
     free_lbuf(atext);
     free_lbuf(atextbuf);
 }
