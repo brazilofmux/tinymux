@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.5 2003-01-31 16:08:11 sdennis Exp $
+// $Id: functions.cpp,v 1.6 2003-01-31 22:56:52 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -8098,10 +8098,6 @@ FUNCTION(fun_wrap)
         else
         {
             pNextWord++;
-        }
-        if (bEnd)
-        {
-            *pNextWord = '\0';
         }
         if (nLineLeft < nWordLen)
         {
