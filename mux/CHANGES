@@ -56,7 +56,7 @@ Feature Additions:
     Re-implemented from TM3.1 help topic.  Originally from PennMUSH.
  -- Added guests_channel_alias and public_channel_alias configuration
     options.
- -- Extended behavior of MID() to more easily cover the the LEFT() and
+ -- Extended behavior of MID() to more easily cover the LEFT() and
     RIGHT() behaviors.
  -- Added optional second argument to RAND().
  -- Added patch surface for BTMUX.
