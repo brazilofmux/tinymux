@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.56 2002-02-12 21:30:12 sdennis Exp $
+// $Id: bsd.cpp,v 1.57 2002-02-12 21:39:33 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1291,7 +1291,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
 
         if (IS_SOCKET_ERROR(found))
         {
-            iSocketError = SOCKET_LAST_ERROR;
+            int iSocketError = SOCKET_LAST_ERROR;
             if (iSocketError == SOCKET_EBADF)
             {
                 // This one is bad, as it results in a spiral of
