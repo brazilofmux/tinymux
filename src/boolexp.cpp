@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.8 2001-11-28 06:35:53 sdennis Exp $
+// $Id: boolexp.cpp,v 1.9 2001-12-04 23:48:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -88,7 +88,7 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 #ifndef STANDALONE
             STARTLOG(LOG_BUGS, "BUG", "LOCK")
             log_name_and_loc(player);
-            log_text((char *)": Lock exceeded recursion limit.");
+            log_text(": Lock exceeded recursion limit.");
             ENDLOG
             notify(player, "Sorry, broken lock!");
 #else

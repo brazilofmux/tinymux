@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.49 2001-12-04 17:59:39 sdennis Exp $
+// $Id: bsd.cpp,v 1.50 2001-12-04 23:46:58 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2014,7 +2014,7 @@ void process_output9x(void *dvoid, int bHandleShutdown)
     char *cmdsave;
 
     cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (char *)"< process_output >";
+    mudstate.debug_cmd = "< process_output >";
 
     tb = d->output_head;
 
@@ -2119,7 +2119,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
     char *cmdsave;
 
     cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (char *)"< process_output >";
+    mudstate.debug_cmd = "< process_output >";
 
     tb = d->output_head;
 
@@ -2174,7 +2174,7 @@ void process_output(void *dvoid, int bHandleShutdown)
     DESC *d = (DESC *)dvoid;
 
     char *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (char *)"< process_output >";
+    mudstate.debug_cmd = "< process_output >";
 
     TBLOCK *tb = d->output_head;
     while (tb != NULL)
@@ -2299,7 +2299,7 @@ int process_input(DESC *d)
     char *cmdsave;
 
     cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (char *)"< process_input >";
+    mudstate.debug_cmd = "< process_input >";
 
     got = SOCKET_READ(d->descriptor, buf, sizeof(buf), 0);
     if (IS_SOCKET_ERROR(got) || got == 0)
@@ -2349,7 +2349,7 @@ void close_sockets(int emergency, char *message)
 
 void NDECL(emergency_shutdown)
 {
-    close_sockets(1, (char *)"Going down - Bye");
+    close_sockets(1, "Going down - Bye");
 }
 
 
@@ -2845,8 +2845,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
 NAMETAB sigactions_nametab[] =
 {
-    {(char *)"exit",    3,  0,  SA_EXIT},
-    {(char *)"default", 1,  0,  SA_DFLT},
+    {"exit",    3,  0,  SA_EXIT},
+    {"default", 1,  0,  SA_DFLT},
     { NULL,         0,  0,  0}
 };
 
