@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.38 2004-04-06 21:54:45 sdennis Exp $
+// $Id: conf.cpp,v 1.39 2004-04-07 04:37:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1526,101 +1526,92 @@ CF_HAND(cf_hook)
 //
 CF_HAND(cf_include)
 {
-    FILE *fp;
-    char *cp, *ap, *zp, *buf;
-
     extern int cf_set(char *, char *, dbref);
 
     if (!mudstate.bReadingConfiguration)
+    {
         return -1;
+    }
 
-    fp = fopen(str, "rb");
+    FILE *fp = fopen(str, "rb");
     if (fp == NULL)
     {
         cf_log_notfound(player, cmd, "Config file", str);
         return -1;
     }
     DebugTotalFiles++;
-    buf = alloc_lbuf("cf_include");
+
+    char *buf = alloc_lbuf("cf_include");
     fgets(buf, LBUF_SIZE, fp);
     while (!feof(fp))
     {
-        cp = buf;
-        if (*cp == '#')
+        char *zp = buf;
+
+        // Remove comments.  Anything after the '#' is a comment except if it
+        // matches:  whitespace + '#' + digit.
+        //
+        while (*zp != '\0')
         {
-            fgets(buf, LBUF_SIZE, fp);
-            continue;
+            if (  *zp == '#'
+               && (  zp <= buf
+                  || !mux_isspace(zp[-1])
+                  || !mux_isdigit(zp[1])))
+            {
+                // Found a comment.
+                //
+                *zp = '\0';
+            }
+            else
+            {
+                zp++;
+            }
         }
 
-        // Not a comment line. Strip off the NL and any characters
-        // following it.  Then, split the line into the command and argument
-        // portions (separated by a space).  Also, trim off the trailing
-        // comment, if any (delimited by #).
+        // Trim trailing spaces.
         //
-        for (cp = buf; *cp && *cp != '\n'; cp++)
+        while (  buf < zp
+              && mux_isspace(zp[-1]))
         {
-            ; // Nothing.
+            *(--zp) = '\0';
         }
 
-        // Strip '\n'
+        // Process line.
         //
-        *cp = '\0';
-
-        // Strip spaces.
+        char *cp = buf;
+        
+        // Trim leading spaces.
         //
-        for (cp = buf; mux_isspace(*cp); cp++)
+        while (mux_isspace(*cp))
         {
-            ; // Nothing.
+            cp++;
         }
 
         // Skip over command.
         //
+        char *ap;
         for (ap = cp; *ap && !mux_isspace(*ap); ap++)
         {
             ; // Nothing.
         }
 
-        // Trim command.
+        // Terminate command.
         //
         if (*ap)
         {
             *ap++ = '\0';
         }
-        else
-        {
-            fgets(buf, LBUF_SIZE, fp);
-            continue;
-        }
 
-        // Skip Spaces.
+        // Skip spaces between command and argument.
         //
-        for (; mux_isspace(*ap); ap++)
+        while (mux_isspace(*ap))
         {
-            ; // Nothing.
+            ap++;
         }
 
-        // Find comment.
-        //
-        for (zp = ap; *zp && (*zp != '#'); zp++)
+        if (*cp)
         {
-            ; // Nothing.
+            cf_set(cp, ap, player);
         }
-
-        // Zap comment.
-        //
-        if (*zp)
-        {
-            *zp = '\0';
-        }
-
-        // Zap trailing spaces.
-        //
-        for (zp = zp - 1; zp >= ap && mux_isspace(*zp); zp--)
-        {
-            *zp = '\0';
-        }
-
-        cf_set(cp, ap, player);
         fgets(buf, LBUF_SIZE, fp);
     }
     free_lbuf(buf);
