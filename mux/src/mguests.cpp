@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.9 2003-07-23 00:19:53 sdennis Exp $
+// $Id: mguests.cpp,v 1.10 2004-03-08 04:37:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -291,7 +291,8 @@ dbref CGuests::MakeGuestChar(void)
 
     // Make the player.
     //
-    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, false, true);
+    const char *pmsg;
+    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, false, true, &pmsg);
 
     // No Player Created?? Return error.
     //

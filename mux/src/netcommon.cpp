@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.28 2004-02-03 21:14:14 sdennis Exp $
+// $Id: netcommon.cpp,v 1.29 2004-03-08 04:37:40 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1828,7 +1828,6 @@ static void failconn(const char *logcode, const char *logtype, const char *logre
 }
 
 static const char *connect_fail = "Either that player does not exist, or has a different password.\r\n";
-static const char *create_fail = "Either there is already a player with that name, or that name is illegal.\r\n";
 
 static bool check_connect(DESC *d, char *msg)
 {
@@ -2089,10 +2088,12 @@ static bool check_connect(DESC *d, char *msg)
         }
         else
         {
-            player = create_player(user, password, NOTHING, false, false);
+            const char *pmsg;
+            player = create_player(user, password, NOTHING, false, false, &pmsg);
             if (player == NOTHING)
             {
-                queue_write(d, create_fail);
+                queue_write(d, pmsg);
+                queue_write(d, "\r\n");
                 STARTLOG(LOG_SECURITY | LOG_PCREATES, "CON", "BAD");
                 buff = alloc_lbuf("check_conn.LOG.badcrea");
                 sprintf(buff, "[%d/%s] Create of '%s' failed", d->descriptor, d->addr, user);

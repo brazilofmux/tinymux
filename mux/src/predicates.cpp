@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.43 2004-02-17 15:34:37 sdennis Exp $
+// $Id: predicates.cpp,v 1.44 2004-03-08 04:37:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -532,11 +532,13 @@ bool ValidatePlayerName(const char *pName)
     return true;
 }
 
-bool ok_password(const char *password, dbref player)
+bool ok_password(const char *password, const char **pmsg)
 {
+    *pmsg = NULL;
+
     if (*password == '\0')
     {
-        notify_quiet(player, "Null passwords are not allowed.");
+        *pmsg = "Null passwords are not allowed.";
         return false;
     }
 
@@ -550,7 +552,7 @@ bool ok_password(const char *password, dbref player)
         if (  !mux_isprint(*scan)
            || mux_isspace(*scan))
         {
-            notify_quiet(player, "Illegal character in password.");
+            *pmsg = "Illegal character in password.";
             return false;
         }
         if (mux_isupper(*scan))
@@ -573,18 +575,17 @@ bool ok_password(const char *password, dbref player)
     {
         if (num_upper < 1)
         {
-            notify_quiet(player, "The password must contain at least one capital letter.");
+            *pmsg = "The password must contain at least one capital letter.";
             return false;
         }
         if (num_lower < 1)
         {
-            notify_quiet(player, "The password must contain at least one lowercase letter.");
+            *pmsg = "The password must contain at least one lowercase letter.";
             return false;
         }
         if (num_special < 1)
         {
-            notify_quiet(player,
-                "The password must contain at least one number or a symbol other than the apostrophe or dash.");
+            *pmsg = "The password must contain at least one number or a symbol other than the apostrophe or dash.";
             return false;
         }
     }

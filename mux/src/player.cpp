@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.19 2003-09-25 04:45:58 sdennis Exp $
+// $Id: player.cpp,v 1.20 2004-03-08 04:37:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -529,12 +529,22 @@ dbref connect_player(char *name, char *password, char *host, char *username, cha
  * create_player: Create a new player.
  */
 
-dbref create_player(char *name, char *password, dbref creator, bool isrobot, bool isguest)
+dbref create_player
+(
+    char *name,
+    char *password,
+    dbref creator,
+    bool isrobot,
+    bool isguest,
+    const char **pmsg
+)
 {
+    *pmsg = NULL;
+
     // Make sure the password is OK.  Name is checked in create_obj.
     //
     char *pbuf = trim_spaces(password);
-    if (!ok_password(pbuf, creator))
+    if (!ok_password(pbuf, pmsg))
     {
         free_lbuf(pbuf);
         return NOTHING;
@@ -545,6 +555,7 @@ dbref create_player(char *name, char *password, dbref creator, bool isrobot, boo
     dbref player = create_obj(creator, TYPE_PLAYER, name, isrobot);
     if (player == NOTHING)
     {
+        *pmsg = "Either there is already a player with that name, or that name is illegal.";
         free_lbuf(pbuf);
         return NOTHING;
     }
@@ -590,15 +601,20 @@ void do_password
     dbref aowner;
     int   aflags;
     char *target = atr_get(executor, A_PASS, &aowner, &aflags);
+    const char *pmsg;
     if (  !*target
        || !check_pass(executor, oldpass))
     {
         notify(executor, "Sorry.");
     }
-    else if (ok_password(newpass, executor))
+    else if (ok_password(newpass, &pmsg))
     {
         ChangePassword(executor, newpass);
         notify(executor, "Password changed.");
+    }
+    else
+    {
+        notify(executor, pmsg);
     }
     free_lbuf(target);
 }

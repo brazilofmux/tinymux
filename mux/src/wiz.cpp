@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.9 2003-07-23 19:36:06 sdennis Exp $
+// $Id: wiz.cpp,v 1.10 2004-03-08 04:37:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -402,11 +402,13 @@ void do_newpassword
         notify_quiet(executor, "No such player.");
         return;
     }
-    if (*password != '\0' && !ok_password(password, executor))
+    const char *pmsg;
+    if (  *password != '\0'
+       && !ok_password(password, &pmsg))
     {
         // Can set null passwords, but not bad passwords.
-        // Notification of reason done by ok_password().
         //
+        notify_quiet(executor, pmsg);
         return;
     }
     if (God(victim))

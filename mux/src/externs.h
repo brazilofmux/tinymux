@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.21 2003-08-14 19:05:20 sdennis Exp $
+// $Id: externs.h,v 1.22 2004-03-08 04:37:40 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -141,7 +141,7 @@ extern void  destroy_obj(dbref);
 extern void  empty_obj(dbref);
 
 /* From player.cpp */
-extern dbref create_player(char *, char *, dbref, bool, bool);
+extern dbref create_player(char *, char *, dbref, bool, bool, const char **pmsg);
 extern bool add_player_name(dbref, const char *);
 extern bool delete_player_name(dbref, const char *);
 extern dbref lookup_player(dbref, char *, bool);
@@ -169,7 +169,7 @@ extern bool payfor(dbref,int);
 extern char *MakeCanonicalObjectName(const char *pName, int *pnName, bool *pbValid);
 extern char *MakeCanonicalExitName(const char *pName, int *pnName, bool *pbValid);
 extern bool ValidatePlayerName(const char *pName);
-extern bool ok_password(const char *szPassword, dbref player);
+extern bool ok_password(const char *szPassword, const char **pmsg);
 extern void handle_ears(dbref, bool, bool);
 extern dbref match_possessed(dbref, dbref, char *, dbref, bool);
 extern void parse_range(char **, dbref *, dbref *);
