@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.37 2002-09-23 07:06:00 sdennis Exp $
+// $Id: eval.cpp,v 1.38 2002-09-23 07:06:57 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1561,7 +1561,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         pdstr++;
                         if (Tiny_IsAlpha[(unsigned char)(*pdstr)])
                         {
-                            i = V_VA + Tiny_ToUpper[(unsigned char)(*pdstr)] - 'A';
+                            i = A_VA + Tiny_ToUpper[(unsigned char)(*pdstr)] - 'A';
                             int nAttrGotten;
                             atr_pget_str_LEN(TinyExec_scratch, player, i,
                                 &aowner, &aflags, &nAttrGotten);
