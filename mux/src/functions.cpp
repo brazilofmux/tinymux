@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.35 2003-02-07 16:07:55 sdennis Exp $
+// $Id: functions.cpp,v 1.36 2003-02-12 18:33:47 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1602,8 +1602,7 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
     //
     if (parse_attrib(executor, fargs[0], &thing, &anum))
     {
-        if (  anum == NOTHING
-           || !Good_obj(thing))
+        if (anum == NOTHING)
         {
             ap = NULL;
         }
@@ -6368,8 +6367,7 @@ FUNCTION(fun_fold)
     ATTR *ap;
     if (parse_attrib(executor, fargs[0], &thing, &anum))
     {
-        if (  anum == NOTHING
-           || !Good_obj(thing))
+        if (anum == NOTHING)
         {
             ap = NULL;
         }
@@ -6541,8 +6539,7 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
     ATTR *ap;
     if (parse_attrib(executor, fargs[0], &thing, &anum))
     {
-        if (  anum == NOTHING
-           || !Good_obj(thing))
+        if (anum == NOTHING)
         {
             ap = NULL;
         }
@@ -6654,8 +6651,7 @@ FUNCTION(fun_map)
     ATTR *ap;
     if (parse_attrib(executor, fargs[0], &thing, &anum))
     {
-        if (  anum == NOTHING
-           || !Good_obj(thing))
+        if (anum == NOTHING)
         {
             ap = NULL;
         }

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.16 2003-02-05 06:20:58 jake Exp $
+// $Id: funceval.cpp,v 1.17 2003-02-12 18:33:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -2083,7 +2083,7 @@ FUNCTION(fun_sortby)
 
     if (parse_attrib(executor, fargs[0], &thing, &anum)) 
     {
-        if ((anum == NOTHING) || !Good_obj(thing))
+        if (anum == NOTHING)
             ap = NULL;
         else
             ap = atr_num(anum);
@@ -2269,8 +2269,7 @@ FUNCTION(fun_mix)
 
     if (parse_attrib(executor, fargs[0], &thing, &anum)) 
     {
-        if (  (anum == NOTHING) 
-           || !Good_obj(thing))
+        if (anum == NOTHING)
         {
             ap = NULL;
         }
@@ -2370,8 +2369,7 @@ FUNCTION(fun_foreach)
 
     if (parse_attrib(executor, fargs[0], &thing, &anum))
     {
-        if (  anum == NOTHING
-           || !Good_obj(thing))
+        if (anum == NOTHING)
         {
             ap = NULL;
         }
@@ -2488,7 +2486,7 @@ FUNCTION(fun_munge)
     //
     if (parse_attrib(executor, fargs[0], &thing, &anum))
     {
-        if ((anum == NOTHING) || !Good_obj(thing))
+        if (anum == NOTHING)
         {
             ap = NULL;
         }

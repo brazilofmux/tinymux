@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.6 2003-02-12 13:09:37 jake Exp $
+// $Id: set.cpp,v 1.7 2003-02-12 18:33:47 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -661,11 +661,6 @@ void do_chown
         // An attribute was given, so we worry about changing the owner of the
         // attribute.
         //
-        if (!Good_obj(thing))
-        {
-            notify_quiet(executor, "You shouldn't be rummaging through the garbage.");
-            return;
-        }
         nOwnerOrig = Owner(thing);
         if (!*newown)
         {
