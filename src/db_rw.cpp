@@ -2,7 +2,7 @@
  * db_rw.c 
  */
 /*
- * $Id: db_rw.cpp,v 1.5 2000-04-24 18:09:07 sdennis Exp $ 
+ * $Id: db_rw.cpp,v 1.6 2000-06-03 05:47:20 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -40,20 +40,17 @@ static BOOLEXP *getboolexp1(FILE *f)
     int c, d, anum;
 
     c = getc(f);
-    switch (c) {
+    switch (c)
+    {
     case '\n':
         ungetc(c, f);
         return TRUE_BOOLEXP;
-        /*
-         * break; 
-         */
+
     case EOF:
 
         // Unexpected EOF in boolexp.
         //
-        Log.WriteString("ABORT! db_rw.cpp, unexpected end of file (EOF) in getboolexp1().\n");
-        Log.Flush();
-        abort();
+        Tiny_Assert(0);
         break;
 
     case '(':
@@ -128,14 +125,7 @@ static BOOLEXP *getboolexp1(FILE *f)
         //
         while ((c = getc(f)) != '\n')
         {
-            if (c == EOF)
-            {
-                // Unexpected EOF
-                //
-                Log.WriteString("ABORT! db_rw.cpp, unexpected end of file (EOF) in getboolexp1().\n");
-                Log.Flush();
-                abort();
-            }
+            Tiny_Assert(c != EOF);
         }
         ungetc(c, f);
         return TRUE_BOOLEXP;
@@ -161,25 +151,24 @@ static BOOLEXP *getboolexp1(FILE *f)
         free_lbuf(buff);
         b->thing = anum;
 
-        /*
-         * if last character is : then this is an attribute lock. A 
-         * last character of / means an eval lock 
-         */
-
-        if ((c == ':') || (c == '/')) {
+        // if last character is : then this is an attribute lock. A
+        // last character of / means an eval lock.
+        //
+        if ((c == ':') || (c == '/'))
+        {
             if (c == '/')
                 b->type = BOOLEXP_EVAL;
             else
                 b->type = BOOLEXP_ATR;
             buff = alloc_lbuf("getboolexp1.attr_lock");
             StringCopy(buff, getstring_noalloc(f, 1));
-            b->sub1 = (BOOLEXP *) strsave(buff);
+            b->sub1 = (BOOLEXP *)StringClone(buff);
             free_lbuf(buff);
         }
         return b;
-    default:        /*
-                 * dbref or attribute 
-                 */
+
+    default: // dbref or attribute.
+
         ungetc(c, f);
         b = alloc_bool("getboolexp1.default");
         b->type = BOOLEXP_CONST;
@@ -247,14 +236,22 @@ static BOOLEXP *getboolexp1(FILE *f)
             else
                 b->type = BOOLEXP_ATR;
             buff = alloc_lbuf("getboolexp1.attr_lock");
-            for (s = buff;
-                 ((c = getc(f)) != EOF) && (c != '\n') && (c != ')') &&
-                 (c != OR_TOKEN) && (c != AND_TOKEN);
-                 *s++ = c) ;
+            for (  s = buff;
+            
+                   ((c = getc(f)) != EOF)
+                && (c != '\n')
+                && (c != ')')
+                && (c != OR_TOKEN)
+                && (c != AND_TOKEN);
+
+                   *s++ = c)
+            {
+                // Nothing
+            }
             if (c == EOF)
                 goto error;
             *s++ = 0;
-            b->sub1 = (BOOLEXP *) strsave(buff);
+            b->sub1 = (BOOLEXP *)StringClone(buff);
             free_lbuf(buff);
         }
         ungetc(c, f);
@@ -265,9 +262,7 @@ error:
 
     // Bomb Out.
     //
-    Log.WriteString("ABORT! db_rw.cpp, unexpected error in in getboolexp1().\n");
-    Log.Flush();
-    abort();
+    Tiny_Assert(0);
     return TRUE_BOOLEXP;
 }
 
@@ -282,14 +277,8 @@ static BOOLEXP *getboolexp(FILE *f)
     char c;
 
     b = getboolexp1(f);
-    if (getc(f) != '\n')
-    {
-        // Parse Error. We lose.
-        //
-        Log.WriteString("ABORT! db_rw.cpp, parse error in getboolexp().\n");
-        Log.Flush();
-        abort();
-    }
+    c = getc(f);
+    Tiny_Assert(c == '\n');
 
     // MUSH (except for PernMUSH) and MUSE can have an extra CR, MUD
     // does not.
