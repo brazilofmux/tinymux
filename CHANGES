@@ -417,6 +417,8 @@ Bug Fixes:
  --  Can give objects to themselves. Fixed by Marlek.
  --  search() now uses the DbrefToBuffer() calls to ensure that returned
      dbrefs aren't truncated in the middle of the number.
+ --  Workaround nonstandard continuation-line behavior of gcc 2.96 on
+     Mandrake 8.0.
 
 
 Performance Enhancements:
