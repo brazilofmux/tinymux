@@ -7322,6 +7322,20 @@ LPARENT()
 
   Related Topics:
 
+& LPORTS()
+LPORTS()
+
+  FUNCTION: lports()
+
+  This function returns the list of descriptors ("ports") of all active
+  connections.  This is a Wizard-only function.
+
+  The list of ports is returned in order of most recent connection to least
+  recent connection. These ports correspond to those given by the SESSION
+  command.
+
+  Related Topics: ports()
+
 & LPOS()
 LPOS()
 
@@ -8875,7 +8889,7 @@ PORTS()
   recent connection. These ports correspond to those given by the SESSION
   command.
 
-  Related Topics:
+  Related Topics: lports()
 
 & POS()
 POS()
