@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  May 2002
+Last Update:  June 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7,10 +7,27 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
-
+ -- Bug #323 - Implement %@ (caller) substitution.
+ -- Turned on fractional seconds for time(), secs(), convtime(), and convsecs().
+ -- Bug #743 - @doing should allow /unique switch to specify only current port.
+    Patch from Jake.
+ -- Bug #556 - Add PennMUSH's right() function. Patch from Jake.
+ -- Bugs #567 and #806 - Add connrecord() that gives the most simultaneous
+    connections to the game. Patch from Jake.
+ -- Bugs #553 and #795 - Add host() function. Patch from Jake.
+ -- Bugs #554, #636, #741, and #742 - doing(), cmds(), idle(), conn(), and 
+    host() take port# as an argument. Patch from Jake.
+ -- Added @cboot/quiet. Patch from Zenty.
 
 Bug Fixes:
 ~~~~~~~~~
+ -- @mvattr would erase source attribute even if it wasn't allowed to write to
+    any of its destinations.
+ -- Fixed isnum() with exponents. Uninitialized structure.
+ -- Added @dbck/full. Allows in-game access to an option previously only 
+    available via dbconvert -c. Patch from Jake.
+ -- Rework of dbck routines. More thorough checking and removed some God-only
+    crash issues. Patch from Jake.
 
 
 Performance Enhancements:
@@ -19,7 +36,7 @@ Performance Enhancements:
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
-
+ -- Added grammatically correct comma after 'shouts'.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
