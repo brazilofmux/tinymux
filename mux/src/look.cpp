@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.10 2003-02-17 02:57:10 sdennis Exp $
+// $Id: look.cpp,v 1.11 2003-02-20 07:16:23 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2354,7 +2354,7 @@ void do_decomp
             case TYPE_EXIT:
                 strcpy(thingname, Name(thing));
                 notify(executor,
-                    tprintf("@open %s", translate_string(Name(thing), true)));
+                    tprintf("@open %s", translate_string(thingname, true)));
                 for (got = thingname; *got; got++)
                 {
                     if (*got == EXIT_DELIMITER)
