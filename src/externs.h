@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.1 2000-04-11 07:14:44 sdennis Exp $
+// $Id: externs.h,v 1.2 2000-04-11 20:48:02 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -59,6 +59,8 @@ char *parse_to(char **, char, int);
 char *parse_arglist(dbref, dbref, char *, char, int, char *[], int, char*[], int, int *);
 int get_gender(dbref);
 void TinyExec(char *buff, char **bufc, int tflags, dbref player, dbref cause, int eval, char **dstr, char *cargs[], int ncargs);
+extern void save_global_regs(const char *, char *[], int []);
+extern void restore_global_regs(const char *, char *[], int []);
 
 /* From game.c */
 #define notify(p,m)                         notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)
