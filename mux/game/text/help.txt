@@ -1423,6 +1423,33 @@ Related Topics: @name.
 
   Related Topics: @conformat, @nameformat
 
+& @EXITTO
+@EXITTO
+
+  COMMAND:   @exitto <object> = <dbref function>
+  ATTRIBUTE: Exitto
+
+  This attribute is used to create variable exits.  If an @exitto is present
+  on an exit, and the <dbref function> returns a number or a dbref, the exit
+  behaves as if the returned dbref is the exit's destination.
+
+  Because this can be used to go anywhere, @exitto is a wizard-only
+  attribute.
+
+  Even though @exitto take precendence over the static destination of an exit,
+  don't forget to @link all exits anyway.  Anyone can @link an unlinked exit
+  and therefore 'own' and @destroy it.
+
+  Example:
+    > @open FooExit
+    Opened.
+    > @exitto FooExit=#123
+    Set.
+    > FooExit
+    Room123(#123)
+
+  Related Topics: EXITS.
+
 & @FAIL
 @FAIL
 
@@ -4907,16 +4934,17 @@ COMMANDS (continued)
   @amove       @apay        @arfail      @asuccess    @atfail      @atofail
   @atport      @aufail      @ause        @away        @charges     @conformat
   @cost        @daily       @descformat  @describe    @dfail       @drop
-  @ealias      @efail       @enter       @exitformat  @fail        @filter
-  @forwardlist @gfail       @idesc       @idle        @idletimeout @infilter
-  @inprefix    @kill        @lalias      @leave       @lfail       @listen
-  @mailsucc    @moniker     @move        @nameformat  @odescribe   @odfail
-  @odrop       @oefail      @oenter      @ofail       @ogfail      @okill
-  @oleave      @olfail      @omove       @opay        @orfail      @osuccess
-  @otfail      @otofail     @otport      @oufail      @ouse        @oxenter
-  @oxleave     @oxtport     @pay         @prefix      @reject      @rfail
-  @runout      @saystring   @sex         @signature   @speechmod   @startup
-  @success     @tfail       @tofail      @tport       @ufail       @use
+  @ealias      @efail       @enter       @exitformat  @exitto      @fail
+  @filter      @forwardlist @gfail       @idesc       @idle        @idletimeout
+  @infilter    @inprefix    @kill        @lalias      @leave       @lfail
+  @listen      @mailsucc    @moniker     @move        @nameformat  @odescribe
+  @odfail      @odrop       @oefail      @oenter      @ofail       @ogfail
+  @okill       @oleave      @olfail      @omove       @opay        @orfail
+  @osuccess    @otfail      @otofail     @otport      @oufail      @ouse
+  @oxenter     @oxleave     @oxtport     @pay         @prefix      @reject
+  @rfail       @runout      @saystring   @sex         @signature   @speechmod
+  @startup     @success     @tfail       @tofail      @tport       @ufail
+  @use
 
 & COMP()
 COMP()
@@ -6024,12 +6052,17 @@ EXITS
 
   You may pick up exits that you own, and drop exits into locations that
   you own.  When you pick up or drop an exit, anyone in the exit's new
-  location may use the exit and travel to its destination.
+  location may use the exit and travel to its destination.  Exits may also
+  be @teleported from one room to another.
 
   If an exit is set DARK it will not show up in the list of obvious exits in
   a room.
 
-  Related Topics: @link, @open.
+  If multiple exits match in name, MUX chooses between them randomly.
+
+  Another way of creating 'variable' exits is to use the @exitto attribute.
+
+  Related Topics: @exitto, @link, @open.
 
 & EXP()
 EXP()
