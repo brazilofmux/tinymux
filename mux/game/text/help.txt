@@ -3798,6 +3798,7 @@ ANSI CODES
 
         f - flash                       i - inverse
         h - hilite                      n - normal
+        u - underline
 
         x - black foreground            X - black background
         r - red foreground              R - red background
