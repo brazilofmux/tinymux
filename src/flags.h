@@ -1,5 +1,5 @@
 /* flags.h - object flags */
-/* $Id: flags.h,v 1.6 2001-06-16 08:16:35 sdennis Exp $ */
+/* $Id: flags.h,v 1.7 2001-10-17 00:49:58 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -228,28 +228,6 @@
 #define V6PLYR_UNFIND   0x00002000
 #define V6ROOM_UNFIND   0x08000000
 #define V6_SLAVE    0x10000000
-
-/* Flags from MUSE */
-#define MUSE_BUILD  0x00000010
-#define MUSE_SLAVE  0x00000080
-#define MUSE_KEY    0x00000010
-#define MUSE_DEST_OK    0x00000200
-#define MUSE_ABODE  0x00000200
-#define MUSE_SEETHRU    0x00000200
-#define MUSE_UNFIND 0x00001000
-
-#define MUSE_CHOWN_OK   0x00000020
-#define MUSE_DARK   0x00000040
-#define MUSE_STICKY 0x00000100
-#define MUSE_HAVEN  0x00000400
-#define MUSE_INHERIT    0x00002000
-#define MUSE_GOING  0x00004000
-#define MUSE_PUPPET 0x00020000
-#define MUSE_LINK_OK    0x00040000
-#define MUSE_ENTER_OK   0x00080000
-#define MUSE_VISUAL 0x00100000
-#define MUSE_OPAQUE 0x00800000
-#define MUSE_QUIET  0x01000000
 
 /* Flags from TinyMUD */
 #define MUD_ABODE   0x00000800

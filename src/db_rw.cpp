@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.19 2001-06-30 17:44:17 morgan Exp $
+// $Id: db_rw.cpp,v 1.20 2001-10-17 00:49:58 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -271,11 +271,10 @@ static BOOLEXP *getboolexp(FILE *f)
     c = getc(f);
     Tiny_Assert(c == '\n');
 
-    // MUSH (except for PernMUSH) and MUSE can have an extra CR, MUD
+    // MUSH (except for PernMUSH) can have an extra CR, MUD
     // does not.
     //
     if (  ((g_format == F_MUSH) && (g_version != 2))
-       || (g_format == F_MUSE)
        || (g_format == F_MUX))
     {
         if ((c = getc(f)) != '\n')
@@ -295,54 +294,8 @@ static int unscramble_attrnum(int attrnum)
 {
     char anam[4];
 
-    switch (g_format) {
-    case F_MUSE:
-        switch (attrnum) {
-        case 39:
-            return A_IDLE;
-        case 40:
-            return A_AWAY;
-        case 41:
-            return 0;   // mailk
-        case 42:
-            return A_ALIAS;
-        case 43:
-            return A_EFAIL;
-        case 44:
-            return A_OEFAIL;
-        case 45:
-            return A_AEFAIL;
-        case 46:
-            return 0;   // it
-        case 47:
-            return A_LEAVE;
-        case 48:
-            return A_OLEAVE;
-        case 49:
-            return A_ALEAVE;
-        case 50:
-            return 0;   // channel
-        case 51:
-            return A_QUOTA;
-        case 52:
-            return A_TEMP;  // temp for pennies
-        case 53:
-            return 0;   // huhto
-        case 54:
-            return 0;   // haven
-        case 57:
-            return mkattr((char *)"TZ");
-        case 58:
-            return 0;   // doomsday
-        case 59:
-            return mkattr((char *)"Email");
-        case 98:
-            return mkattr((char *)"Status");
-        case 99:
-            return mkattr((char *)"Race");
-        default:
-            return attrnum;
-        }
+    switch (g_format)
+    {
     case F_MUSH:
 
         // Only need to muck with Pern variants
@@ -673,115 +626,6 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
             newf1 |= CHOWN_OK;
 
     }
-    else if (db_format == F_MUSE)
-    {
-        if (db_version == 1)
-            return;
-
-        // Convert level-based players to normal
-        //
-        switch (f1 & 0xf)
-        {
-        case 0: // room
-        case 1: // thing
-        case 2: // exit
-            newf1 = f1 & 0x3;
-            break;
-
-        case 8: // guest
-        case 9: // trial player
-        case 10: // member
-        case 11: // junior official
-        case 12: // official
-            newf1 = TYPE_PLAYER;
-            break;
-
-        case 13: // honorary wizard
-        case 14: // administrator
-        case 15: // director
-            newf1 = TYPE_PLAYER | WIZARD;
-            break;
-
-        default: // A bad type, mark going
-            Log.tinyprintf("Funny object type for #%d" ENDLINE, thing);
-            *flags1 = GOING;
-            return;
-        }
-
-        // Player #1 is always a wizard
-        //
-        if (thing == (dbref) 1)
-            newf1 |= WIZARD;
-
-        // Set type-specific flags
-        //
-        switch (newf1 & TYPE_MASK)
-        {
-        case TYPE_PLAYER:
-
-            // Lose CONNECT TERSE QUITE NOWALLS WARPTEXT
-            //
-            if (f1 & MUSE_BUILD)
-                s_Powers(thing, Powers(thing) | POW_BUILDER);
-            if (f1 & MUSE_SLAVE)
-                newf2 |= SLAVE;
-            if (f1 & MUSE_UNFIND)
-                newf2 |= UNFINDABLE;
-            break;
-
-        case TYPE_THING:
-
-            // Lose LIGHT SACR_OK
-            //
-            if (f1 & MUSE_KEY)
-                newf2 |= KEY;
-            if (f1 & MUSE_DEST_OK)
-                newf1 |= DESTROY_OK;
-            break;
-
-        case TYPE_ROOM:
-
-            if (f1 & MUSE_ABODE)
-                newf2 |= ABODE;
-            break;
-
-        case TYPE_EXIT:
-
-            if (f1 & MUSE_SEETHRU)
-                newf1 |= SEETHRU;
-
-        default:
-            break;
-        }
-
-        // Convert common flags
-        // Lose: MORTAL ACCESSED MARKED SEE_OK UNIVERSAL
-
-        if (f1 & MUSE_CHOWN_OK)
-            newf1 |= CHOWN_OK;
-        if (f1 & MUSE_DARK)
-            newf1 |= DARK;
-        if (f1 & MUSE_STICKY)
-            newf1 |= STICKY;
-        if (f1 & MUSE_HAVEN)
-            newf1 |= HAVEN;
-        if (f1 & MUSE_INHERIT)
-            newf1 |= INHERIT;
-        if (f1 & MUSE_GOING)
-            newf1 |= GOING;
-        if (f1 & MUSE_PUPPET)
-            newf1 |= PUPPET;
-        if (f1 & MUSE_LINK_OK)
-            newf1 |= LINK_OK;
-        if (f1 & MUSE_ENTER_OK)
-            newf1 |= ENTER_OK;
-        if (f1 & MUSE_VISUAL)
-            newf1 |= VISUAL;
-        if (f1 & MUSE_OPAQUE)
-            newf1 |= TM_OPAQUE;
-        if (f1 & MUSE_QUIET)
-            newf1 |= QUIET;
-    }
     else if ((db_format == F_MUSH) && (db_version == 2))
     {
         // Pern variants
@@ -1022,34 +866,6 @@ void unscraw_foreign(int db_format, int db_version, int db_flags)
 
     switch (db_format)
     {
-    case F_MUSE:
-        DO_WHOLE_DB(i)
-        {
-            if (Typeof(i) == TYPE_EXIT)
-            {
-                // MUSE exits are bass-ackwards
-                //
-                tmp = Exits(i);
-                s_Exits(i, Location(i));
-                s_Location(i, tmp);
-            }
-            if (db_version > 3)
-            {
-                // MUSEs with pennies in an attribute have it stored in attr
-                // 255 (see unscramble_attrnum)
-                //
-                p_str = atr_get(i, A_TEMP, &aowner, &aflags);
-                s_Pennies(i, Tiny_atol(p_str));
-                free_lbuf(p_str);
-                atr_clr(i, A_TEMP);
-            }
-        }
-        if (!(db_flags & V_LINK))
-        {
-            efo_convert();
-        }
-        break;
-
     case F_MUSH:
 
         if ((db_version <= 5) && (db_flags & V_GDBM))
@@ -1110,8 +926,7 @@ void unscraw_foreign(int db_format, int db_version, int db_flags)
 }
 
 /* ---------------------------------------------------------------------------
- * getlist_discard, get_atrdefs_discard: Throw away data from MUSE that we
- * don't use.
+ * getlist_discard
  */
 
 static void getlist_discard(FILE *f, dbref i, int set)
@@ -1124,19 +939,6 @@ static void getlist_discard(FILE *f, dbref i, int set)
             s_Parent(i, getref(f));
         else
             (void)getref(f);
-    }
-}
-
-static void get_atrdefs_discard(FILE *f)
-{
-    const char *sp;
-
-    for (;;) {
-        sp = getstring_noalloc(f, 0);   // flags or endmarker
-        if (*sp == '\\')
-            return;
-        sp = getstring_noalloc(f, 0);   // object
-        sp = getstring_noalloc(f, 0);   // name
     }
 }
 
@@ -1247,11 +1049,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     int read_dark_class, read_dark_rank, read_dark_droplock;
     int read_dark_givelock, read_dark_getlock;
     int read_dark_threepow, penn_version;
-    int read_muse_parents, read_muse_atrdefs;
     int peek;
     char *p;
 #endif
-    int read_powers, read_powers_player, read_powers_any;
+    int read_powers;
     int deduce_version, deduce_name, deduce_zone, deduce_timestamps;
     int aflags, f1, f2, f3;
     BOOLEXP *tempbool;
@@ -1277,8 +1078,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     read_timestamps = 0;
     read_new_strings = 0;
     read_powers = 0;
-    read_powers_player = 0;
-    read_powers_any = 0;
     deduce_version = 1;
     deduce_zone = 1;
     deduce_name = 1;
@@ -1304,8 +1103,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     read_dark_getlock = 0;
     read_dark_threepow = 0;
     penn_version = 0;
-    read_muse_parents = 0;
-    read_muse_atrdefs = 0;
 
     Log.WriteString("Reading ");
     Log.Flush();
@@ -1572,27 +1369,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             break;
 
 #ifdef STANDALONE
-        case '@':   // MUSE header
-            if (header_gotten)
-            {
-                Log.tinyprintf(ENDLINE "Duplicate MUSE header entry at object #%d." ENDLINE, i);
-                return -1;
-            }
-            header_gotten = 1;
-            deduce_version = 0;
-            g_format = F_MUSE;
-            g_version = getref(f);
-            deduce_name = 0;
-            deduce_zone = 1;
-            read_money = (g_version <= 3);
-            read_link = (g_version >= 5);
-            read_powers_player = (g_version >= 6);
-            read_powers_any = (g_version == 6);
-            read_muse_parents = (g_version >= 8);
-            read_muse_atrdefs = (g_version >= 8);
-            if (read_link)
-                g_flags |= V_LINK;
-            break;
         case '#':
             if (deduce_version)
             {
@@ -1658,7 +1434,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 aflags = getref(f); // usecount
             }
             break;
-        case '&':   // MUSH 2.0a stub entry/MUSE zoned entry
+        case '&':   // MUSH 2.0a stub entry
             if (deduce_version) {
                 deduce_version = 0;
                 g_format = F_MUSH;
@@ -1673,7 +1449,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 g_flags |= V_ZONE;
             }
 #endif
-        case '!':   // MUX entry/MUSH entry/MUSE non-zoned entry
+        case '!':   // MUX entry/MUSH entry
             if (deduce_version) {
                 g_format = F_MUX;
                 g_version = 1;
@@ -1856,7 +1632,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     s_Location(i, getref(f));
                 }
 
-                // ZONE on MUSE databases and some others.
+                // ZONE
                 //
                 if (read_zone)
                 {
@@ -1941,16 +1717,8 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 s_Flags2(i, f2);
                 s_Flags3(i, f3);
 
-
-#ifdef STANDALONE
-                // POWERS from MUSE.  Discard.
-                //
-                if (read_powers_any ||
-                    ((Typeof(i) == TYPE_PLAYER) && read_powers_player))
-                    (void)getstring_noalloc(f, 0);
-#endif
-
-                if (read_powers) {
+                if (read_powers)
+                {
                     f1 = getref(f);
                     f2 = getref(f);
                     s_Powers(i, f1);
@@ -1969,19 +1737,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 }
 
 #ifdef STANDALONE
-                // PARENTS from MUSE.  Ewwww.
-                //
-                if (read_muse_parents) {
-                    getlist_discard(f, i, 1);
-                    getlist_discard(f, i, 0);
-                }
-
-                // ATTRIBUTE DEFINITIONS from MUSE.  Ewwww.
-                //
-                if (read_muse_atrdefs) {
-                    get_atrdefs_discard(f);
-                }
-
                 // Fix up MUSH 2.2's weird quota system
                 //
                 if ((g_format == F_MUSH) && (g_version == 8))

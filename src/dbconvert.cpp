@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.8 2001-09-18 07:18:36 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.9 2001-10-17 00:49:58 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -38,9 +38,6 @@ void info(int fmt, int flags, int ver)
         break;
     case F_MUSH:
         cp = "TinyMUSH";
-        break;
-    case F_MUSE:
-        cp = "TinyMUSE";
         break;
     case F_MUD:
         cp = "TinyMUD";
