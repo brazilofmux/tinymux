@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.4 2003-02-04 17:35:07 sdennis Exp $
+// $Id: config.h,v 1.5 2003-02-04 18:29:38 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -134,7 +134,7 @@ typedef int SOCKET;
 
 #endif // WIN32
 
-#define isTRUE(b) ((b) != 0)
+#define isTRUE(b) ((b) ? TRUE : FALSE)
 
 // Find the minimum-sized integer type that will hold 32-bits.
 // Promote to 64-bits if necessary.
