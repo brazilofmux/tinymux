@@ -70,6 +70,7 @@ GIVE
   error messages) are not suppressed.
 
 & SESSION
+SESSION
 
   COMMAND: SESSION <prefix>
 
@@ -126,6 +127,7 @@ WHO
   Related Topics: SESSION, DOING.
 
 & DOING
+DOING
 
   COMMAND: DOING <prefix>
 
@@ -391,6 +393,7 @@ WIZHELP
   If no header is specified, the header is reset to "Doing".
 
 & @DUMP
+@DUMP
 
   COMMAND: @dump[/<switches>]
 
@@ -1093,6 +1096,7 @@ WIZHELP
   this command.
 
 & @RESTART
+@RESTART
 
   COMMAND: @restart
 
@@ -1337,6 +1341,8 @@ WIZHELP
   See also: @link, @lock, @open, master_room.
 
 & CONFIG PARAMETERS
+CONFIG PARAMETERS
+
   Topic: CONFIG PARAMETERS
 
   The following configuration parameters may be specified in the configuration
@@ -1363,7 +1369,10 @@ WIZHELP
   lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
 
 { 'wizhelp config parameters2' for more }
+
 & CONFIG PARAMETERS2
+CONFIG PARAMETERS (continued)
+
   look_obey_terse  machine_command_cost  mail_database  mail_expiration
   master_room  match_own_commands  max_cache_size  max_players
   money_name_plural  money_name_singular  motd_file  motd_message  mud_name
@@ -1385,7 +1394,7 @@ WIZHELP
   trust_site  uncompress_program  unowned_safe  use_http  user_attr_flags
   wait_cost  wizard_help_file  wizard_help_index  wizard_motd_file
   wizard_motd_message  wiznews_file  wiznews_index  zone_recursion_limit
- 
+
 & ACCESS
 ACCESS
 
@@ -1537,41 +1546,49 @@ CACHE_DEPTH
 
   Related Topics: max_cache_size
 
-& cache_trim
+& CACHE_TRIM
+CACHE_TRIM
+
   Config parameter: cache_trim <yes/no>.  Default: none.
- 
-  The cache in MUX 2.0 is handled differently and this option does not
-  apply.
 
-  See also: max_cache_size
- 
-& cache_width
+  This option is obsolete. The cache in MUX 2.0 is controlled differently.
+
+  Related Topics: max_cache_size
+
+& CACHE_WIDTH
+CACHE_WIDTH
+
   Config parameter: cache_width <depth>.  Default: none.
- 
-  The cache in MUX 2.0 is handled differently and this option does not
-  apply.
 
-  See also: max_cache_size
+  This option is obsolete. The cache in MUX 2.0 is controlled differently.
 
-& check_interval
+  Related Topics: max_cache_size
+
+& CHECK_INTERVAL
+CHECK_INTERVAL
+
   Config parameter: check_interval <secs>.  Default: 600.
 
   Specifies how often (in seconds) the database is to be automatically
   scanned for inconsistencies and purged of references to destroyed objects.
   Any inconsistencies found are either fixed or recorded in the log file.
 
-  See also: check_offset, @dbck.
+  Related Topics: check_offset, @dbck.
 
-& check_offset
+& CHECK_OFFSET
+CHECK_OFFSET
+
   Config parameter: check_offset <secs>.  Default: 300.
 
   Specifies how long after startup the first automatic database check is
   to be performed.  Subsequent checks are performed every check_interval
   seconds.
 
-  See also: check_interval, @dbck.
+  Related Topics: check_interval, @dbck.
 
-& clone_copies_cost
+& CLONE_COPIES_COST
+CLONE_COPIES_COST
+
   Config parameter: clone_copies_cost <yes/no>.  Default: NO
 
   Indicates whether or not @cloned objects inherit the cost of the original.
@@ -1579,18 +1596,22 @@ CACHE_DEPTH
   the object cost.  The new owner is charged the correct amount in either
   case.
 
-  See also: @clone.
+  Related Topics: @clone.
 
-& comsys_database
+& COMSYS_DATABASE
+COMSYS_DATABASE
+
   Config parameter: comsys_database <path>.  Default: comsys.db
 
   Specifies the file that comsystem and macro information is stored in.
   This database is loaded at startup if either have_comsys or have_macros
   are on.
 
-  See also: have_comsys, have_macros.
+  Related Topics: have_comsys, have_macros.
 
-& command_quota_increment
+& COMMAND_QUOTA_INCREMENT
+COMMAND_QUOTA_INCREMENT
+
   Config parameter: command_quota_increment <amount>. Default: 1
 
   Specifies the number of commands by which the command quota for connected
@@ -1598,9 +1619,11 @@ CACHE_DEPTH
   machines do not count) decreases the quota by 1, and the user's commands are
   only executed if the quota is greater than zero.
 
-  See also: command_quota_max, timeslice.
+  Related Topics: command_quota_max, timeslice.
 
-& command_quota_max
+& COMMAND_QUOTA_MAX
+COMMAND_QUOTA_MAX
+
   Config parameter: command_quota_max <amount>. Default: 100
 
   Specifies the maximum value for the command quota for connected users.
@@ -1609,27 +1632,33 @@ CACHE_DEPTH
   decreases the quota by 1, and the user's commands are only executed if the
   quota is greater than zero.
 
-  See also: command_quota_increment, timeslice.
+  Related Topics: command_quota_increment, timeslice.
 
-& compress_program
+& COMPRESS_PROGRAM
+COMPRESS_PROGRAM
+
   Config parameter: compress_program <path>.  Default: gzip
 
   Specifies the program to be run to compress the database file when it is
   written.  If database file compression is enabled, database dumps are piped
   through this program on their way out to disk.
 
-  See also: compresion, uncompress_program.
+  Related Topics: compresion, uncompress_program.
 
-& compression
+& COMPRESSION
+COMPRESSION
+
   Config parameter: compress <yes/no>.  Default: no
 
   Indicates whether or not the database is to be compressed using the
   compress_program when it is written, and whether or not to check for a
   compressed database to uncompress at startup.  
 
-  See also: compress_program, uncompress_program.
+  Related Topics: compress_program, uncompress_program.
 
-& config_access
+& CONFIG_ACCESS
+CONFIG_ACCESS
+
   Config parameter: config_access <param> [!]<privilege> [[!]<privilege>]...
 
   Changes the privileges needed to change the specified configuration
@@ -1638,15 +1667,19 @@ CACHE_DEPTH
   to anything other than disabled or god is meaningless unless the 
   restriction on the @admin command is weakened.
 
-  See also: @admin, @list config_permissions, PERMISSIONS.
+  Related Topics: @admin, @list config_permissions, PERMISSIONS.
 
-& conn_timeout
+& CONN_TIMEOUT
+CONN_TIMEOUT
+
   Config parameter: conn_timeout <num>.  Default: 60
 
   Specifies how many seconds a new network connection may remain open before
   connecting to a character before being automatically disconnected.
 
-& connect_file
+& CONNECT_FILE
+CONNECT_FILE
+
   Config parameter: connect_file <path>.  Default: text/connect.txt
 
   Specifies the name of the file that a user sees immediately after connecting
@@ -1654,9 +1687,11 @@ CACHE_DEPTH
   help on how to connect to or create a character, as well as the WHO and QUIT
   commands.
 
-  See also: connect_reg_file
+  Related Topics: connect_reg_file
 
-& connect_reg_file
+& CONNECT_REG_FILE
+CONNECT_REG_FILE
+
   Config parameter: connect_reg_file <path>.  Default: text/register.txt
 
   Specifies the name of the file that a user sees immediately after connecting
@@ -1665,32 +1700,40 @@ CACHE_DEPTH
   wizards), how to connect to an existing character, as well as the WHO and
   QUIT commands.
 
-  See also: connect_file
+  Related Topics: connect_file
 
-& crash_database
+& CRASH_DATABASE
+CRASH_DATABASE
+
   Config parameter: crash_database <path>.  Default: <input db>.CRASH
 
   Specifies the name of the database file that should be written when MUX
   detects an internal error and is about to crash. The file is generated
   in flatfile format with attribute values included.
 
-& create_max_cost
+& CREATE_MAX_COST
+CREATE_MAX_COST
+
   Config directive: create_max_cost <amount>.  Default: 505
 
   Specifies the maximum amount of money that is used in calculating the value
   of a created object.  Specifying more than this amount of money in a @create
   command will cause the excess to be wasted.
 
-  See also: create_min_cost, sacrifice_adjust, sacrifice_factor.
+  Related Topics: create_min_cost, sacrifice_adjust, sacrifice_factor.
 
-& create_min_cost
+& CREATE_MIN_COST
+CREATE_MIN_COST
+
   Config directive: create_min_cost <amount>.  Default: 10
 
   Specifies the minimum (and default) cost for creating an object.
 
-  See also: create_max_cost, sacrifice_adjust, sacrifice_factor.
+  Related Topics: create_max_cost, sacrifice_adjust, sacrifice_factor.
 
-& dark_sleepers
+& DARK_SLEEPERS
+DARK_SLEEPERS
+
   Config directive: dark_sleepers <yes/no>.  Default: yes
 
   Indicates whether or not disconnected players are to be considered 'dark',
@@ -1698,7 +1741,9 @@ CACHE_DEPTH
   in.  Disconnected players can still be found by examining the room or by
   using [next()] to follow the contents chain for the room.
 
-& default_home
+& DEFAULT_HOME
+DEFAULT_HOME
+
   Config directive: default_home <location>.  Default (player_starting_home)
 
   Sets the home location for objects which have an invalid home (whether
@@ -1706,141 +1751,198 @@ CACHE_DEPTH
   is not set ABODE) and the home of their owner is also invalid.  If this
   parameter is not set, the value of player_starting_home is used instead.
 
-  See also: player_starting_home.
+  Related Topics: player_starting_home.
 
-& destroy_going_now
+& DESTROY_GOING_NOW
+DESTROY_GOING_NOW
+
   Config parameter: destroy_going_now [yes/no].  Default: No
 
-  By default, @destroy only queues an object for destruction
-  on the news auto-@dbck cycle. However, if this configuration
-  option is enabled, a second @destroy on a previously queued
-  request causes the destruction to occur immediately.
+  By default, @destroy only queues an object for destruction on the news
+  auto-@dbck cycle. However, if this configuration option is enabled, a
+  second @destroy on a previously queued request causes the destruction to
+  occur immediately.
 
   This behavior is for compatbility with PennMUSH.
 
-& dig_cost
+& DIG_COST
+DIG_COST
+
   Config parameter: dig_cost <amount>.  Default: 1
 
   Specifies how much the @dig command costs.
 
-& down_file
+& DOWN_FILE
+DOWN_FILE
+
   Config parameter: down_file <pathname>.  Default: text/down.txt
 
   Specifies the name of the file that is displayed when players attempt to
   connect to a non-wizard character when logins are disabled.
 
-  See also: @disable, down_motd_message.
+  Related Topics: @disable, down_motd_message.
 
-& down_motd_message
+& DOWN_MOTD_MESSAGE
+DOWN_MOTD_MESSAGE
+
   Config parameter: down_motd_message <message>.  Default: text/down.txt
 
   Sets the message that is displayed when a player attempts to connect to a
   non-wizard character when logins are disabled.  This message is displayed
   in addition to the contents of the down.txt file.
 
-  See also: @disable, down_motd_file.
+  Related Topics: @disable, down_motd_file.
 
-& dump_interval
+& DUMP_INTERVAL
+DUMP_INTERVAL
+
   Config parameter: dump_interval <amount>.  Default: 3600
 
   Specifies the time in seconds between automatic database dumps.
 
-  See also: dump_offset, output_database.
+  Related Topics: dump_offset, output_database.
 
-& dump_message
+& DUMP_MESSAGE
+DUMP_MESSAGE
+
   Config parameter: dump_message <message>.  Default: blank
 
   Sets the message that is sent to everyone before the database is being
   dumped to disk, whether automatically or via the @dump command.
 
-  See also: @dump, postdump_message.
+  Related Topics: @dump, postdump_message.
 
-& dump_offset
+& DUMP_OFFSET
+DUMP_OFFSET
+
   Config parameter: dump_offset <amount>.  Default: 0
 
   Specifies the time in seconds between startup and the first database dump.
   If zero, the value of the dump_interval parameter is used.
 
-  See also: dump_interval.
+  Related Topics: dump_interval.
 
-& earn_limit
+& EARN_LIMIT
+EARN_LIMIT
+
   Config parameter: earn_limit <amount>.  Default: 10000
-  Specifies the threshold at which earning additional money becomes difficult.
-  Specifically, players with more than this much money no longer receive a
-  paycheck for each day they connect, don't receive insurance payments for
-  being killed, and don't find money lying in the streets.
-  See also: find_money_chance, paycheck.
 
-& examine_flags
+  Specifies the threshold at which earning additional money becomes
+  difficult.  Specifically, players with more than this much money no longer
+  receive a paycheck for each day they connect, don't receive insurance
+  payments for being killed, and don't find money lying in the streets.
+
+  Related Topics: find_money_chance, paycheck.
+
+& EXAMINE_FLAGS
+EXAMINE_FLAGS
+
   Config parameter: examine_flags <yes/no>.  Default: yes
+
   Indicates whether or not the examine command should include an expanded
   flags list in the description of the object.
-  See also: examine.
 
-& examine_public_attrs
+  Related Topics: examine.
+
+& EXAMINE_PUBLIC_ATTRS
+EXAMINE_PUBLIC_ATTRS
+
   Config parameter: examine_public_attrs <yes/no>.  Default: yes
+
   Indicate whether or not the examine command should display the public
   attributes of the object by default when used by a player who does not
   control the object.  Regardless of the setting of this parameter, the
   short form is available with examine/brief and the long form with
   examine/long.
-  See also: examine.
 
-& exit_flags
+  Related Topics: examine.
+
+& EXIT_FLAGS
+EXIT_FLAGS
+
   Config parameter: exit_flags <flags>.  Default: blank
+
   Modifies the set of flags that an exit receives when it is created via the
   @open command or via the optional exit creation parameters of the @dig or
   @link commands.  Flags prefixed by a ! remove the indicated flag from the
   set.
-  See also: @list, player_flags, robot_flags, room_flags, thing_flags.
 
-& exit_quota
+  Related Topics: @list, player_flags, robot_flags, room_flags, thing_flags.
+
+& EXIT_QUOTA
+EXIT_QUOTA
+
   Config parameter: exit_quota <amount>.  Default: 1
+
   Sets how much quota it costs to create an exit (and also how much the
   remaining quota is increased when an exit is @destroyed.
-  See also: @quota, player_quota, room_quota, thing_quota, QUOTAS.
 
-& events_daily_hour
+  Related Topics: @quota, player_quota, room_quota, thing_quota, QUOTAS.
+
+& EVENTS_DAILY_HOUR
+EVENTS_DAILY_HOUR
+
   Config parameter: events_daily_hour <hour>.  Default: 7.
-  Specifies the hour that @daily is executed. No guarantee is made as to
-  what time during this hour it is executed. This should be a number between
-  0 and 23.
- 
-& fascist_teleport
+
+  Specifies the hour that @daily is executed. No guarantee is made as to what
+  time during this hour it is executed. This should be a integer between 0 and
+  23.
+
+& FASCIST_TELEPORT
+FASCIST_TELEPORT
+
   Config parameter: fascist_teleport <yes/no>.  Default: no
+
   If this parameter is set to yes, then players (and objects) may not
   teleport out of locations that they do not control or which are not set
   JUMP_OK.  If the teleporting player is inside an object, the room that
   ultimately contains the object is checked.  Going home is unaffected.
 
-& find_money_chance
+& FIND_MONEY_CHANCE
+FIND_MONEY_CHANCE
+
   Config parameter: find_money_chance <amount>.  Default: 0
+
   Indicates the chance that players have of finding money when entering a
   new room.  The chance is 1 / find_money_chance, except that finding money
   is disabled if this parameter is set to zero.
-  See also: earn_limit, paycheck.
 
-& fixed_home_message
+  Related Topics: earn_limit, paycheck.
+
+& FIXED_HOME_MESSAGE
+FIXED_HOME_MESSAGE
+
   Config parameter: fixed_home_message <string>.  Default: none
+
   Specifies the string that is sent to a player when they try to go home
   while they are set with the FIXED flag.
-  See also: fixed_tel_message.
 
-& fixed_tel_message
+  Related Topics: fixed_tel_message.
+
+& FIXED_TEL_MESSAGE
+FIXED_TEL_MESSAGE
+
   Config parameter: fixed_tel_message <string>.  Default: none
+
   Specifies the string that is sent to a player when they try to teleport
   while they are set with the FIXED flag.
-  See also: fixed_home_message.
 
-& flag_alias
+  Related Topics: fixed_home_message.
+
+& FLAG_ALIAS
+FLAG_ALIAS
+
   Config parameter: flag_alias <alias> <flagname>.
+
   Defines <alias> as a synonym for the flag <flagname>.
 
-& flag_access
+& FLAG_ACCESS
+FLAG_ACCESS
+
   Config parameter: flag_access <flag name> <access>
-  
+
   Changes who can set a flag. <access> can be:
- 
+
   any             - Anyone can set this flag.
   god             - Only God can set this flag.
   privileged      - Only God can set this flag on players, but non-robot
@@ -1851,58 +1953,77 @@ CACHE_DEPTH
   royalty         - Only Royalty, Wizards, and God can set this flag.
   staff           - Only Staff, Royalty, Wizards, and God can set this flag.
   wizard          - Only Wizards and God can set this flag.
- 
+
   There are some flags whose access permissions cannot be changed,
   since they are handled in a special way. This includes the DARK,
   and AUDIBLE flags.
- 
-& forbid_site
+
+& FORBID_SITE
+FORBID_SITE
+
   Config parameter: forbid_site <addr> <mask>.
+
   Indicates that connections are to be rejected from sites whose address
   matches the specified address when ANDed with the mask.  The contents of
-  the file specified by badsite_file is sent immediately before closing
-  the connection.  This directive may be used to restrict access to just the
-  local network, or to prevent access from troublemaking sites.
-  The default is for all sites to be allowed to connect, none forbidden.
-  See also: badsite_file, permit_site, register_site, SITE LISTS.
+  the file specified by badsite_file is sent immediately before closing the
+  connection.  This directive may be used to restrict access to just the
+  local network, or to prevent access from troublemaking sites.  The default
+  is for all sites to be allowed to connect, none forbidden.
 
-& fork_dump
+  Related Topics: badsite_file, permit_site, register_site, SITE LISTS.
+
+& FORK_DUMP
+FORK_DUMP
+
   Config parameter: fork_dump <yes/no>.  Default: yes
+
   Indicates whether or not database dumps are to be done by fork()ing off a
   separate process to perform the dump.  While enabling this parameter reduces
   the amount of time needed to perform the dump, it requires that the system
   have enough free swap space to hold a second copy of the running game.
-  See also: fork_vfork.
 
-& full_file
+  Related Topics: fork_vfork.
+
+& FULL_FILE
+FULL_FILE
+
   Config parameter: full_file <pathname>.  Default: text/full.txt
 
   Specifies the name of the file that is displayed when players attempt to
   connect to a non-wizard character when the number of connected players
   is not less than the number of players allowed by the max_players directive.
-  See also: full_motd_message, max_players.
 
-& function_access
+  Related Topics: full_motd_message, max_players.
+
+& FUNCTION_ACCESS
+FUNCTION_ACCESS
+
   Config parameter: function_access <function> [!]<priv> [[!]<priv>]...
  
   Changes the privileges needed to call the MUX function <function>.
   If you do not have permission to call a function, the function
   returns the value "#-1 PERMISSION DENIED" instead of the value it
   would normally return.
-  See also: @list functions, FUNCTION LIST, PERMISSIONS.
 
-& full_motd_message
+  Related Topics: @list functions, FUNCTION LIST, PERMISSIONS.
+
+& FULL_MOTD_MESSAGE
+FULL_MOTD_MESSAGE
+
   Config parameter: full_motd_message <message>.  Default: blank
- 
+
   Sets the message that is displayed when a player attempts to connect to a
   non-wizard character when the number of connected players is not less than
   the number of players allowed by the max_players directive.  This message is
   displayed in addition to the contents of the full.txt file.
-  See also: down_motd_file, max_players.
 
-& function_invocation_limit
+  Related Topics: down_motd_file, max_players.
+
+& FUNCTION_INVOCATION_LIMIT
+FUNCTION_INVOCATION_LIMIT
+
   Config directive: function_invocation_limit <num>.  Default: 2500
- 
+
   This directive sets the maximum number of times that a command may make
   function calls.  If the invocation limit is exceeded, the string 
   '#-1 FUNCTION INVOCATION LIMIT EXCEEDED' is returned.  This limit is
@@ -1911,16 +2032,20 @@ CACHE_DEPTH
   eval=<arg> parameter is treated as a separate command for the purposes
   of the function invocation limit.
 
-& function_recursion_limit
+& FUNCTION_RECURSION_LIMIT
+FUNCTION_RECURSION_LIMIT
+
   Config directive: function_recursion_limit <num>.  Default: 50
- 
+
   This directive sets the maximum number of nested function calls that
   may be made before the function call is aborted and the string
   '#-1 FUNCTION RECURSION LIMIT EXCEEDED' is returned.  Normally this is not
   a problem, but the u() function can be used to cause infinite recursion
   (unless blocked by a recursion limit)
 
-& game_dir_file
+& GAME_DIR_FILE
+GAME_DIR_FILE
+
   Config parameter: game_dir_file <path>.
 
   This configuration option specifies the file name of the 'directory' portion
@@ -1930,9 +2055,11 @@ CACHE_DEPTH
   It is read into memory at startup and re-written during page splits in the
   'pages' portion of the database.
 
-  See also: game_pag_file
+  Related Topics: game_pag_file
 
-& game_pag_file
+& GAME_PAG_FILE
+GAME_PAG_FILE
+
   Config parameter: game_pag_file <path>.
 
   This configuration option specifies the file name of the 'pages' portion of
@@ -1940,82 +2067,125 @@ CACHE_DEPTH
   portion cannot be replaced. Attribute values themselves are stored in this
   file.
 
-  See also: game_dir_file
+  Related Topics: game_dir_file
 
-& gdbm_database
+& GDBM_DATABASE
+GDBM_DATABASE
+
   Config parameter: gdbm_database <path>.
 
   MUX 2.0 maintains a database in a different way. This configuration
   option is obsolete.
 
-  See also: game_dir_file and game_pag_file
+  Related Topics: game_dir_file, game_pag_file
 
-& good_name
+& GOOD_NAME
+GOOD_NAME
+
   Config parameter: good_name <name>.
+
   Removes <name> from the list of names that may not be used as a player
   name, reversing the effect of a bad_name directive.  The name must match
   exactly (wildcard matching is not performed).
 
-& guest_char_num
+& GUEST_CHAR_NUM
+GUEST_CHAR_NUM
+
   Config parameter: guest_char_num <number>.  Default: (none)
+
   Indicates the database number of the guest character.  If set, the specified
   guest character is subject to additional restrictions (such as not being
   allowed to create or destroy objects).  The actual restrictions can be
   changed with the access config parameter using the no_guest permission.
-  See also: guest_prefix, guest_nuker, number_guests, access.
 
-& guest_file
+  Related Topics: guest_prefix, guest_nuker, number_guests, access.
+
+& GUEST_FILE
+GUEST_FILE
+
   Config parameter: guest_file <path>.  Default: text/guest.txt.
+
   Specifies the file that is to be shown to people connecting to the
   guest character in place of the motd file.
-  See also: guest_char_num.
 
-& guest_nuker
+  Related Topics: guest_char_num.
+
+& GUEST_NUKER
+GUEST_NUKER
+
   Config parameter: guest_nuker <num>. Default: 1.
+
   Specifies who is to nuke guests when they log off. If it is not a good
   object or a wizard, it defaults to #1.
-  See also: guest_char_num, guest_prefix, number_guests.
- 
-& guests_channel
+
+  Related Topics: guest_char_num, guest_prefix, number_guests.
+
+& GUESTS_CHANNEL
+GUESTS_CHANNEL
+
   Config parameter: guests_channel <name>. Default: Guests
+
   Specifies the name of the channel that guests join when they connect. You
   must have created the channel already. To disable this feature, simply set
   this parameter to nothing.
-  See also: public_channel.
- 
-& have_comsys
+
+  Related Topics: public_channel.
+
+& HAVE_COMSYS
+HAVE_COMSYS
+
   Config parameter: have_comsys <yes/no>.  Default: yes
+
   Specifies whether or not the comsystem should be active.
-  See also: comsys_database, have_macros.
- 
-& eval_comtitle
+
+  Related Topics: comsys_database, have_macros.
+
+& EVAL_COMTITLE
+EVAL_COMTITLE
+
   Config parameter: eval_comtitle <yes/no>.  Default: yes
+
   Specifies whether or not comtitles are evaluated as code each time
   a pose is made on channel.
- 
-& have_mailer
+
+& HAVE_MAILER
+HAVE_MAILER
+
   Config parameter: have_mailer <yes/no>.  Default: yes
+
   Specifies whether @mail and mail aliases should be active.
-  See also: mail_database
- 
-& have_zones
+
+  Related Topics: mail_database
+
+& HAVE_ZONES
+HAVE_ZONES
+
   Config parameter: have_zones <yes/no>.  Default: yes
+
   Specifies whether zones should be active. If this is off, zone connects
   and disconnects, zone commands, and the control aspects will all be
   disabled.
- 
-& help_file
-  Config parameter: help_file <path>.  Default: text/help.txt
-  Specifies the name of the file containing the text used by the help command.
-  See also: help, help_index
 
-& help_index
+& HELP_FILE
+HELP_FILE
+
+  Config parameter: help_file <path>.  Default: text/help.txt
+
+  Specifies the name of the file containing the text used by the help command.
+
+  Related Topics: help, help_index
+
+& HELP_INDEX
+HELP_INDEX
+
   Config parameter: help_index <path>.  Default: text/help.indx
+
   Specifies the name of the index file used by the help command.  This file
   must be generated by mkindx from the help file.  The contents of
   this file are read in to a hash table when the game is started and whenever
   a @readcache command is executed.
-  See also: help, @readcache, help_file
+
+  Related Topics: help, @readcache, help_file
 
 & parent_recursion_limit
   Config directive: parent_recursion_limit <num>.  Default: 10
@@ -2050,25 +2220,39 @@ CACHE_DEPTH
   a @readcache command is executed.
   See also: @readcache, wiznews_file
 
-& hostnames
+& HOSTNAMES
+HOSTNAMES
+
   Config parameter: hostnames <yes/no>.  Default: yes
+
   Indicates whether or not IP addresses should be replaced with host names
   where possible in the log file and wizard WHO report.
 
-& idle_interval
-  Config parameter: idle_interval <secs>.  Default: 60
-  Sets the interval between checks for idle users. 
-  See also: conn_timeout, idle_timeout.
+& IDLE_INTERVAL
+IDLE_INTERVAL
 
-& idle_timeout
+  Config parameter: idle_interval <secs>.  Default: 60
+
+  Sets the interval between checks for idle users. 
+
+  Related Topics: conn_timeout, idle_timeout.
+
+& IDLE_TIMEOUT
+IDLE_TIMEOUT
+
   Config parameter: idle_timeout <secs>.  Default: 3600 (one hour)
+
   Sets the amount of time that a player may remain idle before being
   automatically disconnected.  Players idle longer than this parameter are
   disconnected when the next check for idle players is done.
-  See also: conn_timeout, idle_interval.
 
-& idle_wiz_dark
+  Related Topics: conn_timeout, idle_interval.
+
+& IDLE_WIZ_DARK
+IDLE_WIZ_DARK
+
   Config parameter: idle_wiz_dark <yes/no>.  Default: no
+
   Indicates whether or not wizards or players with the idle power who are
   idle for longer than the default timeout value are to automatically be
   set DARK, and then unDARKed when they type in their next command. Wizards
@@ -2076,78 +2260,116 @@ CACHE_DEPTH
   dark by this action will have a 'd' instead of a 'D' by their idle time
   in the privileged WHO listing.
 
-& include
+& INCLUDE
+INCLUDE
+
   Config parameter: include <path>.  Default: none
+
   Reads and processes configuration directives from the named file.
   This directive is only valid during startup.
 
-& initial_size
+& INITIAL_SIZE
+INITIAL_SIZE
+
   Config parameter: initial_size <number>.  Default: 1000
+
   This is the number of objects that can be created before the database
   structure has to be reallocated again. This is needed since MUX allocates
   space for the database in large chunks, the size of which depends on
   this parameter. 
 
-& indent_desc
+& INDENT_DESC
+INDENT_DESC
+
   Config parameter: indent_desc <yes/no>. Default: no
+
   Places a blank row before and after every room, object, and exit
   description when looked at.
 
-& input_database
+& INPUT_DATABASE
+INPUT_DATABASE
+
   Config parameter: input_database.  Default: tinymux.db
+
   Specifies the name of the database file that is read in at startup.
   This file is used only as an input file, the parameter output_database
   controls where updated copies of the database are written.
-  See also: crash_database, gdbm_database, output_database.
 
-& kill_guarantee_cost
+  Related Topics: crash_database, gdbm_database, output_database.
+
+& KILL_GUARANTEE_COST
+KILL_GUARANTEE_COST
+
   Config parameter: kill_guarantee_cost <amount>.  Default: 100
-  Specifies the amount of money you have to spend (ie. kill target = <amount>)
-  to have a 100% chance of killing them (assuming there are no other factors,
-  such as the victim being immortal or in a HAVEN room, etc).  The chance of
-  a successful kill is <amount spent> / <kill_guarantee_cost>.
-  See also: kill, kill_max_cost, kill_min_cost, HAVEN, IMMORTAL, KILLING.
 
-& kill_max_cost
+  Specifies the amount of money you have to spend (i.e., kill target =
+  <amount>) to have a 100% chance of killing them (assuming there are no
+  other factors, such as the victim being immortal or in a HAVEN room, etc).
+  The chance of a successful kill is <amount spent> / <kill_guarantee_cost>.
+
+  Related Topics: kill, kill_max_cost, kill_min_cost, HAVEN, IMMORTAL,
+                  KILLING.
+
+& KILL_MAX_COST
+KILL_MAX_COST
+
   Config parameter: kill_max_cost <amount>.  Default: 100
+
   Specifies the maximum amount of money that may be usefully spent on a kill
   attempt.  Spending more than this amount does not improve the chance of
   success.  Setting this parameter to less than the kill_guarantee_cost
   parameter prevents 'automatic kills', as the kill will always have a chance
   of failing.
-  See also: kill, kill_guarantee_cost, kill_min_cost, HAVEN, IMMORTAL,
-            KILLING.
 
-& kill_min_cost
+  Related Topics: kill, kill_guarantee_cost, kill_min_cost, HAVEN, IMMORTAL,
+                  KILLING.
+
+& KILL_MIN_COST
+KILL_MIN_COST
+
   Config parameter: kill_min_cost <amount>.  Default: 10
+
   Specifies the minimum (and default) cost for attempting to kill someone or
   something.
-  See also: kill, kill_guarantee_cost, kill_max_cost, HAVEN, IMMORTAL,
-            KILLING.
 
-& list_access
+  Related Topics: kill, kill_guarantee_cost, kill_max_cost, HAVEN, IMMORTAL,
+                  KILLING.
+
+& LIST_ACCESS
+LIST_ACCESS
+
   Config parameter: list_access <param> [!]<privilege> [[!]<privilege>]...
-  Changes the access needed to the <param> option of the @list command.
-  See also: @list, PERMISSIONS.
 
-& link_cost
+  Changes the access needed to the <param> option of the @list command.
+
+  Related Topics: @list, PERMISSIONS.
+
+& LINK_COST
+LINK_COST
+
   Config parameter: link_cost <amount>.  Default: 1.
+
   Specifies the cost of using the @link command to establish or change the
   link of an exit to its destination, the home of a player or an object, or
   the drop-to of a room.
-  See also: @link.
 
-& lock_recursion_limit
+  Related Topics: @link.
+
+& LOCK_RECURSION_LIMIT
+LOCK_RECURSION_LIMIT
+
   Config directive: lock_recursion_limit <num>.  Default: 20
- 
+
   Sets the maximum number of levels of indirection that may be used when
   using indirect locks.  If more than this many levels are used, the lock
   fails and the user gets an error message.
 
-& log
+& LOG
+LOG
+
   Config parameter: log [!]<logoption> [[!]<logoption>]...
   Specifies what types of events are to be logged to the logfile.
-  
+
     accounting     - Write an accounting record to the log for each player
                      who disconnects.
     all_commands   - Record all commands executed.
@@ -2166,66 +2388,96 @@ CACHE_DEPTH
     startup        - Record information about game startup.
     suspect        - Record commands entered by players flagged SUSPECT.
     wizard         - Record uses of dangerous commands like @toad.
-  See also: log_options.
 
-& log_options
+  Related Topics: log_options.
+
+& LOG_OPTIONS
+LOG_OPTIONS
+
   Config parameter: log_options [!]<option> [[!]<option>]...
+
   Specifies the type of information to be included in each log entry.
   The possible values are:
+
     flags       - Include the flags set on a player or object.
     location    - Include the location of referenced players and objects.
     owner       - Include the owner of referenced players and objects.
     timestamp   - Include a timestamp in each log entry.
-  See also: log.
 
-& logout_cmd_access
+  Related Topics: log.
+
+& LOGOUT_CMD_ACCESS
+LOGOUT_CMD_ACCESS
+
   Config parameter: logout_cmd_access <command> <permlist>
+
   Specifies permission for logged-out commands, like WHO, DOING, SESSION,
   QUIT, OUTPUTPREFIX, and OUTPUTSUFFIX.
- 
-  See also: access.
 
-& logout_cmd_alias
+  Related Topics: access.
+
+& LOGOUT_CMD_ALIAS
+LOGOUT_CMD_ALIAS
+
   Config parameter: logout_cmd_alias <alias> <command>
+
   Makes <alias> an alias for <command>, where <command> is one of WHO, DOING,
   SESSION, QUIT, OUTPUTPREFIX, and OUTPUTSUFFIX.
 
-& look_obey_terse
+& LOOK_OBEY_TERSE
+LOOK_OBEY_TERSE
+
   Config parameter: look_obey_terse <yes/no>.  Default: YES
+
   Indicates whether or not the 'look' command obeys the TERSE flag when
   deciding how much information to display.  If set to yes, the
   terse_shows_contents, terse_shows_exits, and terse_shows_move_messages
   config options control the amount of information displayed for TERSE
   players.
- 
-  See also: terse_shows_contents, terse_shows_exits, terse_shows_move_messages.
 
-& machine_command_cost
+  Related Topics: terse_shows_contents, terse_shows_exits,
+                  terse_shows_move_messages.
+
+& MACHINE_COMMAND_COST
+MACHINE_COMMAND_COST
+
   Config parameter: machine_command_cost <number>.  Default: 64
+
   Sets the cost for running a command from a machine, as opposed to running
   it interactively.  Each command run has a one in <number> chance of being
   charged one coin for machine overhead.
 
-& mail_database
+& MAIL_DATABASE
+MAIL_DATABASE
+
   Config parameter: mail_database <path>.  Default: mail.db
+
   Sets the file that @mail information is to be stored in. The database
   is only loaded or saved if have_mailer is set to yes.
-  See also: have_mailer.
- 
-& mail_expiration
+
+  Related Topics: have_mailer.
+
+& MAIL_EXPIRATION
+MAIL_EXPIRATION
+
   Config parameter: mail_expiration <number of days>. Default: 14
+
   Sets the number of days that a @mail message should last before it is
   automatically deleted by the system. If this parameter is set to a
   negative number, this feature will be disabled.
- 
-& master_room
+
+& MASTER_ROOM
+MASTER_ROOM
+
   Config parameter: master_room <roomnum>.  Default: (none)
 
   Specifies the room that is searched for exits if a command does not match
   an exit in the current room, and for $-command if a command does not match
   any $-commands that are available to the player in his current location.
 
-& match_own_commands
+& MATCH_OWN_COMMANDS
+MATCH_OWN_COMMANDS
+
   Config parameter: match_own_commands <yes/no>.  Default: NO
 
   Specifies whether or not objects search themselves for $-commands when a
@@ -2233,17 +2485,21 @@ CACHE_DEPTH
   players to search themselves for commands, both match_own_commands and
   player_match_own_commands must be set to yes.
 
-  See also: player_match_own_commands.
+  Related Topics: player_match_own_commands.
 
-& max_cache_size
+& MAX_CACHE_SIZE
+MAX_CACHE_SIZE
+
   Config parameter: max_cache_size <size>. Default: 1048576
 
   Expressed in bytes, this is the maximum size the server will use for caching
   attribute values from the database.
-    
-& max_players
+
+& MAX_PLAYERS
+MAX_PLAYERS
+
   Config directive: max_players <num>.  Default: -1 (unlimited)
- 
+
   Sets the maximum number of players that may be connected at any one time
   Note that wizards are allowed to login even if they would exceed the limit,
   and that this limit does not override any limits imposed by the system
@@ -2252,37 +2508,55 @@ CACHE_DEPTH
   receive the contents of the file named by the full_file directive, and the
   full_motd_message (also settable via @motd/full), and are disconnected.
 
-  See also: @motd, full_file, full_motd_message.
+  Related Topics: @motd, full_file, full_motd_message.
 
-& money_name_plural
+& MONEY_NAME_PLURAL
+MONEY_NAME_PLURAL
+
   Config parameter: money_name_plural <string>.  Default: pennies
+
   Specifies the string to use to describe the coin of the realm when they
   are being referred to plurally (such as: 'You have <number> pennies.', where
   <number>  is not 1).
-  See also: money_name_singular.
- 
-& money_name_singular
+
+  Related Topics: money_name_singular.
+
+& MONEY_NAME_SINGULAR
+MONEY_NAME_SINGULAR
+
   Config parameter: money_name_singular <string>.  Default: penny
+
   Specifies the string to use to describe the coin of the realm when they
   are being referred to singularly (such as: 'You found a penny!').
-  See also: money_name_plural.
 
-& motd_file
+  Related Topics: money_name_plural.
+
+& MOTD_FILE
+MOTD_FILE
+
   Config parameter: motd_file <pathname>.  Default: text/motd.txt
+
   Specifies the name of the file to be shown to players immediately after they
   connect to their characters.
-  See also: @readcache, newuser_file, motd_message.
 
-& motd_message
+  Related Topics: @readcache, newuser_file, motd_message.
+
+& MOTD_MESSAGE
+MOTD_MESSAGE
+
   Config parameter: motd_message <message>.  Default: blank
+
   Sets the MOTD message that is displayed to all characters when they log in.
   This message is displayed in addition to the contents of the motd.txt
   file.  It can be changed with the @motd command and examined by the
   @listmotd command.
-  See also: @listmotd, @motd, motd_file.
 
-& mud_name
-  Config parameter: mud_name <string>.  Default: TinyMUX
+  Related Topics: @listmotd, @motd, motd_file.
+
+& MUD_NAME
+MUD_NAME
+
+  Config parameter: mud_name <string>.  Default: MUX
 
 & news_file
   Config parameter: news_file <path>.  Default: text/news.txt
