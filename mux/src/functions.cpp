@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.97 2002-09-17 23:25:38 sdennis Exp $
+// $Id: functions.cpp,v 1.98 2002-09-18 03:26:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -162,6 +162,7 @@ XFUNCTION(fun_lrooms);
 XFUNCTION(fun_hasquota);
 XFUNCTION(fun_chr);
 XFUNCTION(fun_ord);
+XFUNCTION(fun_stripaccents);
 
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
@@ -8225,6 +8226,7 @@ FUN flist[] =
     {"SIGN",     fun_sign,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SIN",      fun_sin,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"SINGLETIME", fun_singletime, MAX_ARG, 1, 1,    0, CA_PUBLIC},
+    {"STRIPACCENTS", fun_stripaccents, MAX_ARG, 1, 1, 0, CA_PUBLIC},
     {"SORT",     fun_sort,     MAX_ARG, 1,  4,       0, CA_PUBLIC},
     {"SORTBY",   fun_sortby,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"SPACE",    fun_space,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
@@ -9266,5 +9268,18 @@ FUNCTION(fun_chr)
     else
     {
         safe_str("#-1 UNPRINTABLE CHARACTER", buff, bufc);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_stripaccents:
+//
+FUNCTION(fun_stripaccents)
+{
+    char *p = fargs[0];
+    while (*p)
+    {
+        safe_chr(Tiny_StripAccents[(unsigned char)*p], buff, bufc);
+        p++;
     }
 }

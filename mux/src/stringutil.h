@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.17 2002-09-17 06:38:35 sdennis Exp $
+// $Id: stringutil.h,v 1.18 2002-09-18 03:26:59 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -32,6 +32,7 @@ extern const char Tiny_IsSecureCharacter[256];
 extern const char Tiny_IsEscapeCharacter[256];
 extern const unsigned char Tiny_ToUpper[256];
 extern const unsigned char Tiny_ToLower[256];
+extern const unsigned char Tiny_StripAccents[256];
 int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1);
 #define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
 #define TOKEN_ANSI      1 // ANSI sequence.
