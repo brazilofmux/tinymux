@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.66 2002-07-21 02:01:14 jake Exp $
+// $Id: functions.cpp,v 1.67 2002-07-21 02:35:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2741,84 +2741,84 @@ FUNCTION(fun_or)
 FUNCTION(fun_cand)
 {
     BOOL val = TRUE;
-    char *bp, *temp, *str;
+    char *temp = alloc_lbuf("fun_cand");
     for (int i = 0; i < nfargs; i++)
     {
-        bp = temp = alloc_lbuf("fun_cand");
-        str = fargs[i];
+        char *bp = temp;
+        char *str = fargs[i];
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
         val = val && Tiny_atol(temp);
-        free_lbuf(temp);
         if (!val)
         {
             break;
         }
     }
+    free_lbuf(temp);
     safe_bool(val, buff, bufc);
 }
 
 FUNCTION(fun_cor)
 {
     BOOL val = FALSE;
-    char *bp, *temp, *str;
+    char *temp = alloc_lbuf("fun_cor");
     for (int i = 0; i < nfargs; i++)
     {
-        bp = temp = alloc_lbuf("fun_cor");
-        str = fargs[i];
+        char *bp = temp;
+        char *str = fargs[i];
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
         val = val || Tiny_atol(temp);
-        free_lbuf(temp);
         if (val)
         {
             break;
         }
     }
+    free_lbuf(temp);
     safe_bool(val, buff, bufc);
 }
 
 FUNCTION(fun_candbool)
 {
     BOOL val = TRUE;
-    char *bp, *temp, *str;
+    char *temp = alloc_lbuf("fun_candbool");
     for (int i = 0; i < nfargs; i++)
     {
-        bp = temp = alloc_lbuf("fun_candbool");
-        str = fargs[i];
+        char *bp = temp;
+        char *str = fargs[i];
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
         val = val && xlate(temp);
-        free_lbuf(temp);
         if (!val)
         {
             break;
         }
     }
+    free_lbuf(temp);
     safe_bool(val, buff, bufc);
 }
 
 FUNCTION(fun_corbool)
 {
     BOOL val = FALSE;
-    char *bp, *temp, *str;
+    char *temp = alloc_lbuf("fun_corbool");
     for (int i = 0; i < nfargs; i++)
     {
-        bp = temp = alloc_lbuf("fun_corbool");
-        str = fargs[i];
+        char *bp = temp;
+        char *str = fargs[i];
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
         val = val || xlate(temp);
-        free_lbuf(temp);
         if (val)
         {
             break;
         }
     }
+    free_lbuf(temp);
     safe_bool(val, buff, bufc);
 }
 
