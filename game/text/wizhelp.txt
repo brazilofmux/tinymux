@@ -420,9 +420,9 @@
     allocations         attr_permissions    attributes          bad_names
     buffers             commands            costs               db_stats
     default_flags       flags               functions           globals
-    hashstats           logging             options             permissions
-    powers              process             site_info           switches
-    user_attributes     guests
+    guests              hashstats           logging             options
+    permissions         powers              process             site_info
+    switches            user_attributes
 
   Type wizhelp @list <option> for help with a particular option.
 
