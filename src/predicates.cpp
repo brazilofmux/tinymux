@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.28 2001-07-05 21:38:23 sdennis Exp $
+// $Id: predicates.cpp,v 1.29 2001-07-05 22:59:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1185,7 +1185,7 @@ void do_restart(dbref player, dbref cause, int key)
         notify(player, "Dumping. Please try again later.");
         bDenied = TRUE;
     }
-#endif // WIN32
+#endif // !WIN32
     if (!mudstate.bCanRestart)
     {
         notify(player, "Server just started. Please try again in a few seconds.");
@@ -1245,10 +1245,12 @@ extern SOCKET slave_socket;
 
 void do_backup(dbref player, int cause, int key)
 {
+#ifndef WIN32
     if (mudstate.dumping)
     {
         notify(player, "Dumping. Please try again later.");
     }
+#endif // !WIN32
    
     raw_broadcast(0, "GAME: Backing up database. Please wait.");
     STARTLOG(LOG_ALWAYS, "WIZ", "BACK");
