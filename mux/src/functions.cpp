@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.92 2002-09-06 16:50:27 sdennis Exp $
+// $Id: functions.cpp,v 1.93 2002-09-08 06:12:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6206,8 +6206,7 @@ FUNCTION(fun_parse)
 
 FUNCTION(fun_iter)
 {
-    char *curr, *objstring, *cp, *dp, sep, osep, *str;
-    int number = 0;
+    char *curr, *cp, *dp, sep, osep, *str;
 
     sevarargs_preamble(4);
     dp = cp = curr = alloc_lbuf("fun_iter");
@@ -6222,10 +6221,11 @@ FUNCTION(fun_iter)
         return;
     }
     BOOL first = TRUE;
-    mudstate.itext[mudstate.in_loop] = alloc_lbuf("itext_save");
+    int number = 0;
+    mudstate.itext[mudstate.in_loop] = NULL;
+    mudstate.inum[mudstate.in_loop] = number;
     mudstate.in_loop++;
-    char *itptr, *itptr2;
-    while (cp
+    while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
         if (!first)
@@ -6234,11 +6234,9 @@ FUNCTION(fun_iter)
         }
         first = FALSE;
         number++;
-        objstring = split_token(&cp, sep);
-        itptr2 = itptr = mudstate.itext[mudstate.in_loop-1];
-        safe_str(objstring, itptr, &itptr2);
-        *itptr2 = '\0';
-        mudstate.inum[mudstate.in_loop-1] = number;
+        char *objstring = split_token(&cp, sep);
+        mudstate.itext[mudstate.in_loop-1] = objstring;
+        mudstate.inum[mudstate.in_loop-1]  = number;
         char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number),
             NULL);
         str = buff2;
@@ -6247,7 +6245,6 @@ FUNCTION(fun_iter)
         free_lbuf(buff2);
     }
     mudstate.in_loop--;
-    free_lbuf(mudstate.itext[mudstate.in_loop]);
     mudstate.itext[mudstate.in_loop] = NULL;
     mudstate.inum[mudstate.in_loop] = 0;
     free_lbuf(curr);
@@ -6267,8 +6264,8 @@ void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, BOOL bWhich)
 
     number++;
     int val = mudstate.in_loop - number;
-    if (  val >= 0
-       && val <= MAX_ITEXT)
+    if (  0 <= val
+       && val < MAX_ITEXT)
     {
         if (bWhich)
         {
