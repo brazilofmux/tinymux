@@ -30,6 +30,9 @@ Bug Fixes:
  -- Alierak fixes off-by-one error in wrap().
  -- Only allow printable characters in identd.  The slave process on Unix
     does this.  The threaded implementation for Win32 didn't.
+ -- Alierak reported that SCRAMBLE still scrambles characters off the end of 
+    the buffer.  He provided a patch that fixed that while not giving a flat 
+    distribution.  This final check-in fixed both issues.
 
 
 Performance Enhancements:
