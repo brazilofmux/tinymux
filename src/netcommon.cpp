@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.42 2001-10-25 17:06:14 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.43 2001-11-17 06:59:14 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -572,7 +572,7 @@ static void announce_connect(dbref player, DESC *d)
     dbref zone, obj;
     
     int aflags, num, key, count;
-    char *buf, *time_str;
+    char *time_str;
     DESC *dtemp;
     
     desc_addhash(d);
@@ -587,9 +587,11 @@ static void announce_connect(dbref player, DESC *d)
     {
         mudstate.record_players = count;
     }
-    
-    buf = atr_pget(player, A_TIMEOUT, &aowner, &aflags);
-    if (buf)
+
+    char *buf = alloc_lbuf("announce_connect");
+    int nLen;
+    atr_pget_str_LEN(buf, player, A_TIMEOUT, &aowner, &aflags, &nLen);
+    if (nLen)
     {
         d->timeout = Tiny_atol(buf);
         if (d->timeout <= 0)
@@ -597,7 +599,6 @@ static void announce_connect(dbref player, DESC *d)
             d->timeout = mudconf.idle_timeout;
         }
     }
-    free_lbuf(buf);
     
     loc = Location(player);
     s_Connected(player);
@@ -620,8 +621,8 @@ static void announce_connect(dbref player, DESC *d)
             raw_notify(player, "*** Logins are disabled.");
         }
     }
-    buf = atr_get(player, A_LPAGE, &aowner, &aflags);
-    if (*buf)
+    atr_get_str_LEN(buf, player, A_LPAGE, &aowner, &aflags, &nLen);
+    if (nLen)
     {
         raw_notify(player, "Your PAGE LOCK is set.  You may be unable to receive some pages.");
     }
@@ -672,7 +673,6 @@ static void announce_connect(dbref player, DESC *d)
     temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
     notify_check(player, player, buf, key);
-    free_lbuf(buf);
     if (Suspect(player))
     {
         raw_broadcast(WIZARD, "[Suspect] %s has connected.", Name(player));
@@ -682,32 +682,30 @@ static void announce_connect(dbref player, DESC *d)
         raw_broadcast(WIZARD, "[Suspect site: %s] %s has connected.", d->addr,
             Name(player));
     }
-    buf = atr_pget(player, A_ACONNECT, &aowner, &aflags);
+    atr_pget_str_LEN(buf, player, A_ACONNECT, &aowner, &aflags, &nLen);
     CLinearTimeAbsolute lta;
-    if (buf)
+    if (nLen)
     {
         wait_que(player, player, FALSE, lta, NOTHING, 0, buf,
             (char **)NULL, 0, NULL);
     }
-    free_lbuf(buf);
     if (mudconf.master_room != NOTHING)
     {
-        buf = atr_pget(mudconf.master_room, A_ACONNECT, &aowner, &aflags);
-        if (buf)
+        atr_pget_str_LEN(buf, mudconf.master_room, A_ACONNECT, &aowner,
+            &aflags, &nLen);
+        if (nLen)
         {
             wait_que(mudconf.master_room, player, FALSE, lta,
                 NOTHING, 0, buf, (char **)NULL, 0, NULL);
         }
-        free_lbuf(buf);
         DOLIST(obj, Contents(mudconf.master_room))
         {
-            buf = atr_pget(obj, A_ACONNECT, &aowner, &aflags);
-            if (buf)
+            atr_pget_str_LEN(buf, obj, A_ACONNECT, &aowner, &aflags, &nLen);
+            if (nLen)
             {
                 wait_que(obj, player, FALSE, lta, NOTHING, 0, buf,
                     (char **)NULL, 0, NULL);
             }
-            free_lbuf(buf);
         }
     }
 
@@ -720,13 +718,12 @@ static void announce_connect(dbref player, DESC *d)
         {
         case TYPE_THING:
 
-            buf = atr_pget(zone, A_ACONNECT, &aowner, &aflags);
-            if (buf)
+            atr_pget_str_LEN(buf, zone, A_ACONNECT, &aowner, &aflags, &nLen);
+            if (nLen)
             {
                 wait_que(zone, player, FALSE, lta, NOTHING, 0, buf,
                     (char **)NULL, 0, NULL);
             }
-            free_lbuf(buf);
             break;
 
         case TYPE_ROOM:
@@ -735,13 +732,13 @@ static void announce_connect(dbref player, DESC *d)
             //
             DOLIST(obj, Contents(zone))
             {
-                buf = atr_pget(obj, A_ACONNECT, &aowner, &aflags);
-                if (buf)
+                atr_pget_str_LEN(buf, obj, A_ACONNECT, &aowner, &aflags,
+                    &nLen);
+                if (nLen)
                 {
                     wait_que(obj, player, FALSE, lta, NOTHING, 0,
                         buf, (char **)NULL, 0, NULL);
                 }
-                free_lbuf(buf);
             }
             break;
 
@@ -751,6 +748,7 @@ static void announce_connect(dbref player, DESC *d)
                 zone, Name(player), player, Typeof(zone)));
         }
     }
+    free_lbuf(buf);
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
     time_str = ltaNow.ReturnDateString();
