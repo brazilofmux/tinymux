@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.6 2000-09-29 21:40:47 sdennis Exp $ 
+// $Id: set.cpp,v 1.7 2001-06-29 13:10:26 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -532,152 +532,211 @@ void do_unlink(dbref player, dbref cause, int key, char *name)
 
 void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
 {
-    dbref thing, owner, aowner;
-    int atr, aflags, do_it, cost, quota;
+    dbref owner;
+    int do_it, cost, quota;
     ATTR *ap;
 
-    if (parse_attrib(player, name, &thing, &atr)) {
-        if (atr != NOTHING) {
-            if (!*newown) {
-                owner = Owner(thing);
-            } else if (!(string_compare(newown, "me"))) {
-                owner = Owner(player);
-            } else {
-                owner = lookup_player(player, newown, 1);
-            }
+    dbref thing;
+    int   atr;
+    if (  parse_attrib(player, name, &thing, &atr)
+       && atr != NOTHING)
+    {
+        // An attribute was given, so we worry about changing the owner of the
+        // attribute.
+        //
+        if (!*newown)
+        {
+            owner = Owner(thing);
+        }
+        else if (!(string_compare(newown, "me")))
+        {
+            owner = Owner(player);
+        }
+        else
+        {
+            owner = lookup_player(player, newown, 1);
+        }
 
-            /*
-             * You may chown an attr to yourself if you own the * 
-             * 
-             * *  * *  * * object and the attr is not locked. *
-             * You * may * chown  * an attr to the owner of the
-             * object * if * * you own * the attribute. * To do
-             * anything * else you  * must be a  * wizard. * Only 
-             * #1 can * chown * attributes on #1. 
-             */
-
-            if (!atr_get_info(thing, atr, &aowner, &aflags)) {
-                notify_quiet(player,
-                    "Attribute not present on object.");
-                return;
-            }
-            do_it = 0;
-            if (owner == NOTHING) {
-                notify_quiet(player,
-                         "I couldn't find that player.");
-            } else if (God(thing) && !God(player)) {
-                notify_quiet(player, "Permission denied.");
-            } else if (Wizard(player)) {
-                do_it = 1;
-            } else if (owner == Owner(player)) {
-
-                /*
-                 * chown to me: only if I own the obj and * * 
-                 * 
-                 * *  * * !locked 
-                 */
-
-                if (!Controls(player, thing) ||
-                    (aflags & AF_LOCK)) {
-                    notify_quiet(player,
-                             "Permission denied.");
-                } else {
-                    do_it = 1;
-                }
-            } else if (owner == Owner(thing)) {
-
-                /*
-                 * chown to obj owner: only if I own attr * * 
-                 * 
-                 * *  * * and !locked 
-                 */
-
-                if ((Owner(player) != aowner) ||
-                    (aflags & AF_LOCK)) {
-                    notify_quiet(player,
-                             "Permission denied.");
-                } else {
-                    do_it = 1;
-                }
-            } else {
-                notify_quiet(player, "Permission denied.");
-            }
-
-            if (!do_it)
-                return;
-
-            ap = atr_num(atr);
-            if (!ap || !Set_attr(player, player, ap, aflags)) {
-                notify_quiet(player, "Permission denied.");
-                return;
-            }
-            atr_set_owner(thing, atr, owner);
-            if (!Quiet(player))
-                notify_quiet(player,
-                         "Attribute owner changed.");
+        // You may chown an attr to yourself if you own the object and the attr
+        // is not locked. You may chown an attr to the owner of the object if
+        // you own the attribute. To do anything else you must be a wizard.
+        // Only #1 can chown attributes on #1.
+        //
+        dbref aowner;
+        int   aflags;
+        if (!atr_get_info(thing, atr, &aowner, &aflags))
+        {
+            notify_quiet(player, "Attribute not present on object.");
             return;
         }
+        do_it = 0;
+        if (owner == NOTHING)
+        {
+            notify_quiet(player, "I couldn't find that player.");
+        }
+        else if (God(thing) && !God(player))
+        {
+            notify_quiet(player, NOPERM_MESSAGE);
+        }
+        else if (Wizard(player))
+        {
+            do_it = 1;
+        }
+        else if (owner == Owner(player))
+        {
+            // Chown to me: only if I own the obj and !locked
+            //
+            if (  !Controls(player, thing)
+               || (aflags & AF_LOCK))
+            {
+                notify_quiet(player, NOPERM_MESSAGE);
+            }
+            else
+            {
+                do_it = 1;
+            }
+        }
+        else if (owner == Owner(thing))
+        {
+            // chown to obj owner: only if I own attr and !locked
+            //
+            if (  Owner(player) != aowner
+               || (aflags & AF_LOCK))
+            {
+                notify_quiet(player, NOPERM_MESSAGE);
+            }
+            else
+            {
+                do_it = 1;
+            }
+        }
+        else
+        {
+            notify_quiet(player, NOPERM_MESSAGE);
+        }
+
+        if (!do_it)
+        {
+            return;
+        }
+
+        ap = atr_num(atr);
+        if (  !ap
+           || !Set_attr(player, player, ap, aflags))
+        {
+            notify_quiet(player, NOPERM_MESSAGE);
+            return;
+        }
+        atr_set_owner(thing, atr, owner);
+        if (!Quiet(player))
+        {
+            notify_quiet(player, "Attribute owner changed.");
+        }
+        return;
     }
+
+    // An attribute was not specified, so we are being asked to change the
+    // owner of the object.
+    //
     init_match(player, name, TYPE_THING);
     match_possession();
     match_here();
     match_exit();
     match_me();
-    if (Chown_Any(player)) {
+    if (Chown_Any(player))
+    {
         match_player();
         match_absolute();
     }
-    switch (thing = match_result()) {
+    switch (thing = match_result())
+    {
     case NOTHING:
+
         notify_quiet(player, "You don't have that!");
         return;
+
     case AMBIGUOUS:
+
         notify_quiet(player, "I don't know which you mean!");
         return;
     }
 
-    if (!*newown || !(string_compare(newown, "me"))) {
+    if (!*newown || !(string_compare(newown, "me")))
+    {
         owner = Owner(player);
-    } else {
+    }
+    else
+    {
         owner = lookup_player(player, newown, 1);
     }
 
     cost = 1;
     quota = 1;
-    switch (Typeof(thing)) {
+    switch (Typeof(thing))
+    {
     case TYPE_ROOM:
+
         cost = mudconf.digcost;
         quota = mudconf.room_quota;
         break;
+
     case TYPE_THING:
+
         cost = OBJECT_DEPOSIT(Pennies(thing));
         quota = mudconf.thing_quota;
         break;
+
     case TYPE_EXIT:
+
         cost = mudconf.opencost;
         quota = mudconf.exit_quota;
         break;
+
     case TYPE_PLAYER:
+
         cost = mudconf.robotcost;
         quota = mudconf.player_quota;
+        break;
     }
 
-    if (owner == NOTHING) {
+    BOOL bPlayerControlsThing = controls(player, thing);
+    if (  isGarbage(thing)
+       && bPlayerControlsThing)
+    {
+        notify_quiet(player, "You shouldn't be rummaging through the garbage.");
+    }
+    else if (owner == NOTHING)
+    {
         notify_quiet(player, "I couldn't find that player.");
-    } else if (isPlayer(thing) && !God(player)) {
+    }
+    else if (  isPlayer(thing)
+            && !God(player))
+    {
         notify_quiet(player, "Players always own themselves.");
-    } else if (((!controls(player, thing) && !Chown_Any(player) &&
-             !Chown_ok(thing)) || (isThing(thing) &&
-                       (Location(thing) != player) &&
-               !Chown_Any(player))) || (!controls(player, owner))) {
-        notify_quiet(player, "Permission denied.");
-    } else if (canpayfees(player, owner, cost, quota)) {
+    }
+    else if (  (  !bPlayerControlsThing
+               && !Chown_Any(player)
+               && !Chown_ok(thing))
+            || (  isThing(thing)
+               && Location(thing) != player
+               && !Chown_Any(player))
+            || !controls(player, owner))
+    {
+        notify_quiet(player, NOPERM_MESSAGE);
+    }
+    else if (canpayfees(player, owner, cost, quota))
+    {
         giveto(Owner(thing), cost);
         if (mudconf.quotas)
+        {
             add_quota(Owner(thing), quota);
-        if (God(player)) {
+        }
+        if (God(player))
+        {
             s_Owner(thing, owner);
-        } else {
+        }
+        else
+        {
             s_Owner(thing, Owner(owner));
         }
         atr_chown(thing);
@@ -686,7 +745,9 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
         s_Powers2(thing, 0);
         halt_que(NOTHING, thing);
         if (!Quiet(player))
+        {
             notify_quiet(player, "Owner changed.");
+        }
     }
 }
 

@@ -410,6 +410,7 @@ Bug Fixes:
  --  conntotal() and friends now account for multiple sessions properly.
  --  Fixed color leaks in long comsys headers.
  --  Work-around in sane_inet_addr() to handle 255.255.255.255.
+ --  Bug #707 - Wizard can @chown garbage objects. Marlek fix.
 
 
 Performance Enhancements:
