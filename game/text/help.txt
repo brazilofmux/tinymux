@@ -8456,7 +8456,9 @@ LROOMS()
   FUNCTION: lrooms(<loc>, <depth> [,<all>])
 
   Returns a space-separated list of the rooms connected to <loc>
-  taking into account parentage and permissions.
+  taking into account parentage and permissions. If the <all>
+  boolean is true, then all connected rooms are reported, but
+  by default, only the perimeter rooms are reported.
 
   Example:
     > look here
