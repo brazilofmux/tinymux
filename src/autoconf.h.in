@@ -26,10 +26,6 @@
 #undef pid_t
 /* signal() return type */
 #define RETSIGTYPE void
-/* Define if we have vfork.h */
-#undef HAVE_VFORK_H
-/* Define if vfork is broken */
-#undef vfork
 /* Define if wait3 exists and works */
 #undef HAVE_WAIT3
 /* Define if struct tm is not in time.h */
@@ -316,10 +312,6 @@ extern time_t FDECL(timelocal, (struct tm *));
 #endif /* HAVE_MKTIME */
 
 #endif /* HAVE_TIMELOCAL */
-
-#ifdef HAVE_VFORK_H
-#include <vfork.h>
-#endif
 
 #ifndef HAVE_SRANDOM
 #define random rand

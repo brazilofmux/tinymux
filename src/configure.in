@@ -26,7 +26,6 @@ else
 fi
 AC_CHECK_LIB(crypt, main)
 AC_FUNC_STRFTIME
-AC_FUNC_VFORK
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(setrlimit getrusage timelocal mktime srandom)
 AC_CHECK_FUNCS(getdtablesize socket gethostbyaddr)
