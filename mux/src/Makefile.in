@@ -22,7 +22,6 @@ LIBS = -lm
 else
 LIBS = @LIBS@
 endif
-LIBOBJS = @LIBOBJS@
 .SUFFIXES: .cpp
 
 # After we finish beta testing, we'll take away the debugging -g flag.
@@ -176,10 +175,10 @@ slave: slave.o
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
 
-netmux: $(OBJ) $(LIBOBJS) $(VER_SRC)
+netmux: $(OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(LIBOBJS) $(VER_OBJ) $(LIBS) $(MORELIBS)
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS)
 
 depend: $(ALLSRC) unsplit
 	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
