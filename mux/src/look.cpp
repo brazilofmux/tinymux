@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.19 2002-07-23 05:36:13 jake Exp $
+// $Id: look.cpp,v 1.20 2002-07-23 07:07:29 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -590,14 +590,15 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         if (Html(player))
         {
             safe_str("\r\n", buff, &e);
+            *e = 0;
             notify_html(player, buff);
         }
         else
         {
+            *e = 0;
             notify(player, buff);
         }
-        *e = 0;
-   }
+    }
     free_lbuf(buff);
     free_lbuf(buff1);
 }
