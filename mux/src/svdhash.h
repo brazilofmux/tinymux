@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.12 2004-06-10 15:23:32 sdennis Exp $
+// $Id: svdhash.h,v 1.13 2004-07-07 20:28:47 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -294,7 +294,7 @@ private:
 public:
     CLogFile(void);
     ~CLogFile(void);
-    void WriteBuffer(int nString, const char *pString);
+    void WriteBuffer(size_t nString, const char *pString);
     void WriteString(const char *pString);
     void WriteInteger(int iNumber);
     void DCL_CDECL tinyprintf(char *pFormatSpec, ...);

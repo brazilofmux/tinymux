@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.22 2004-06-10 15:27:14 sdennis Exp $
+// $Id: svdhash.cpp,v 1.23 2004-07-07 20:28:47 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -439,9 +439,11 @@ void CHashPage::GetStats
     // If we have records to talk about, or even if we are trying to reserve
     // space, then do the math.
     //
-    if (nExtra != 0 || nCount != 0)
+    if (  nExtra != 0
+       || nCount != 0)
     {
-        UINT32 nSpace = ((unsigned char *)m_pTrailer) - ((unsigned char *)m_pDirectory);
+        UINT32 nSpace = (UINT32)( ((unsigned char *)m_pTrailer)
+                                - ((unsigned char *)m_pDirectory));
         UINT32 nMinDirSize = nCount;
         UINT32 nMaxDirSize = (nSpace - nSize)/sizeof(HP_HEAPOFFSET);
 
@@ -505,7 +507,7 @@ void CHashPage::Empty(HP_DIRINDEX arg_nDepth, UINT32 arg_nHashGroup, HP_DIRINDEX
     // Setup initial free list.
     //
     HP_PHEAPNODE pNode = (HP_PHEAPNODE)m_pHeapStart;
-    pNode->nBlockSize = m_pHeapEnd - m_pHeapStart;
+    pNode->nBlockSize = (HP_HEAPLENGTH)(m_pHeapEnd - m_pHeapStart);
     pNode->u.oNext = HP_NIL_OFFSET;
     m_pHeader->m_oFreeList = 0; // This is intentionally zero (i.e., m_pHeapStart - m_pHeapStart).
 }
@@ -2454,7 +2456,7 @@ void CLogFile::WriteInteger(int iNumber)
     WriteBuffer(nTempBuffer, aTempBuffer);
 }
 
-void CLogFile::WriteBuffer(int nString, const char *pString)
+void CLogFile::WriteBuffer(size_t nString, const char *pString)
 {
     if (!bEnabled)
     {
@@ -2467,14 +2469,14 @@ void CLogFile::WriteBuffer(int nString, const char *pString)
 
     while (nString > 0)
     {
-        int nAvailable = SIZEOF_LOG_BUFFER - m_nBuffer;
+        size_t nAvailable = SIZEOF_LOG_BUFFER - m_nBuffer;
         if (nAvailable == 0)
         {
             Flush();
             continue;
         }
 
-        int nToMove = nAvailable;
+        size_t nToMove = nAvailable;
         if (nString < nToMove)
         {
             nToMove = nString;
@@ -2496,7 +2498,7 @@ void CLogFile::WriteBuffer(int nString, const char *pString)
 
 void CLogFile::WriteString(const char *pString)
 {
-    int nString = strlen(pString);
+    size_t nString = strlen(pString);
     WriteBuffer(nString, pString);
 }
 
@@ -2603,7 +2605,7 @@ void CLogFile::Flush(void)
         m_nSize += m_nBuffer;
 #ifdef WIN32
         unsigned long nWritten;
-        WriteFile(m_hFile, m_aBuffer, m_nBuffer, &nWritten, NULL);
+        WriteFile(m_hFile, m_aBuffer, (DWORD)m_nBuffer, &nWritten, NULL);
 #else // WIN32
         write(m_hFile, m_aBuffer, m_nBuffer);
 #endif // WIN32
