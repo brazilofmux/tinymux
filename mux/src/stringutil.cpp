@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.15 2003-02-03 19:55:34 sdennis Exp $
+// $Id: stringutil.cpp,v 1.16 2003-02-03 20:01:59 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2061,12 +2061,14 @@ int Tiny_i64toa(INT64 val, char *buf)
     return nLength;
 }
 
-char *Tiny_i64toa_t(INT64 val)
+#if 0
+char *mux_i64toa_t(INT64 val)
 {
     static char buff[22];
     Tiny_i64toa(val, buff);
     return buff;
 }
+#endif
 
 void safe_i64toa(INT64 val, char *buff, char **bufc)
 {
