@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.75 2004-08-25 19:42:04 sdennis Exp $
+// $Id: funceval.cpp,v 1.76 2004-09-15 05:14:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -328,6 +328,15 @@ FUNCTION(fun_remit)
         return;
     }
     do_pemit_single(executor, PEMIT_PEMIT, true, 0, fargs[0], 0, fargs[1]);
+}
+
+FUNCTION(fun_cemit)
+{
+    if (check_command(executor, "@cemit", buff, bufc))
+    {
+        return;
+    }
+    do_cemit(executor, caller, enactor, 0, nfargs, fargs[0], fargs[1]);
 }
 
 // ------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.121 2004-09-14 05:34:13 sdennis Exp $
+// $Id: functions.cpp,v 1.122 2004-09-15 05:14:14 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -143,6 +143,7 @@ XFUNCTION(fun_link);
 XFUNCTION(fun_oemit);
 XFUNCTION(fun_pemit);
 XFUNCTION(fun_remit);
+XFUNCTION(fun_cemit);
 XFUNCTION(fun_set);
 XFUNCTION(fun_tel);
 XFUNCTION(fun_textfile);
@@ -9688,6 +9689,7 @@ FUN flist[] =
     {"CASE",        fun_case,       MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {"CAT",         fun_cat,        MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
     {"CEIL",        fun_ceil,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {"CEMIT",       fun_cemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"CENTER",      fun_center,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"CHANNELS",    fun_channels,   MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"CHILDREN",    fun_children,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
