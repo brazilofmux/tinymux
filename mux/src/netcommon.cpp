@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.35 2004-05-15 17:19:04 sdennis Exp $
+// $Id: netcommon.cpp,v 1.36 2004-05-15 22:59:41 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2201,6 +2201,10 @@ bool do_command(DESC *d, char *command)
 
             CLinearTimeAbsolute ltaEnd;
             ltaEnd.GetUTC();
+            if (MuxAlarm.bAlarmed)
+            {
+                notify(d->player, "GAME: Expensive activity abbreviated.");
+            }
             MuxAlarm.Clear();
 
             CLinearTimeDelta ltd = ltaEnd - ltaBegin;

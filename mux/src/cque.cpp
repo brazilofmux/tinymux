@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.14 2004-05-15 17:19:04 sdennis Exp $
+// $Id: cque.cpp,v 1.15 2004-05-15 22:59:41 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -161,6 +161,10 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 
                     CLinearTimeAbsolute ltaEnd;
                     ltaEnd.GetUTC();
+                    if (MuxAlarm.bAlarmed)
+                    {
+                        notify(executor, "GAME: Expensive activity abbreviated.");
+                    }
                     MuxAlarm.Clear();
 
                     CLinearTimeDelta ltdUsageEnd = GetProcessorUsage();
