@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.15 2000-08-02 23:41:35 sdennis Exp $
+// $Id: game.cpp,v 1.16 2000-08-03 03:52:08 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1456,7 +1456,8 @@ static int load_game(int ccPageFile)
         strcat(infile, ".gz");
         if (stat(infile, &statbuf) == 0)
         {
-            if ((f = popen(tprintf(" %s < %s", mudconf.uncompress, infile), "rb")) != NULL)
+            f = popen(tprintf(" %s < %s", mudconf.uncompress, infile), "rb");
+            if (f != NULL)
             {
                 DebugTotalFiles++;
                 compressed = 1;
@@ -1920,15 +1921,6 @@ int DCL_CDECL main(int argc, char *argv[])
     }
 #endif // WIN32
 
-    if (fclose(stdout) == 0)
-    {
-        DebugTotalFiles--;
-    }
-    if (fclose(stdin) == 0)
-    {
-        DebugTotalFiles--;
-    }
-
 #ifdef RADIX_COMPRESSION
     init_string_compress();
 #endif // RADIX_COMPRESSION
@@ -2035,16 +2027,12 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     set_signals();
 
-    /*
-     * Do a consistency check and set up the freelist 
-     */
-
+    // Do a consistency check and set up the freelist 
+    //
     do_dbck(NOTHING, NOTHING, 0);
 
-    /*
-     * Reset all the hash stats 
-     */
-
+    // Reset all the hash stats 
+    //
     hashreset(&mudstate.command_htab);
     hashreset(&mudstate.macro_htab);
     hashreset(&mudstate.channel_htab);
@@ -2089,15 +2077,25 @@ int DCL_CDECL main(int argc, char *argv[])
     load_restart_db();
 #endif // WIN32
 
+    if (!mudstate.restarting)
+    {
+        if (fclose(stdout) == 0)
+        {
+            DebugTotalFiles--;
+        }
+        if (fclose(stdin) == 0)
+        {
+            DebugTotalFiles--;
+        }
+    }
+
     boot_slave(0, 0, 0);
 
 #if defined(CONCENTRATE) && !defined(VMS) && !defined(WIN32)
     if (!mudstate.restarting)
     {
-        /*
-         * Start up the port concentrator. 
-         */
-
+        // Start up the port concentrator. 
+        //
         conc_pid = fork();
         if (conc_pid < 0)
         {
