@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.20 2002-09-19 05:09:40 sdennis Exp $
+// $Id: create.cpp,v 1.21 2002-09-20 01:27:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -795,14 +795,16 @@ void do_pcreate
 // ---------------------------------------------------------------------------
 // can_destroy_exit, can_destroy_player, do_destroy: Destroy things.
 //
-static BOOL can_destroy_exit(dbref player, dbref exit)
+static BOOL can_destroy_exit(dbref executor, dbref exit)
 {
-    dbref loc = Exits(exit);
-    if (  (loc != Location(player))
-       && (loc != player)
-       && !Wizard(player))
+    dbref source;
+    if (  executor != exit
+       && executor != (source = Exits(exit))
+       && !Wizard(executor)
+       && (  !Has_location(executor)
+          || source != Location(executor)))
     {
-        notify_quiet(player, "You can not destroy exits in another room.");
+        notify_quiet(executor, "You can not destroy exits in another room.");
         return FALSE;
     }
     return TRUE;
