@@ -7105,6 +7105,30 @@ INDEX()
 
   Related Topics: extract().
 
+& INFO
+INFO
+
+  COMMAND: info
+
+  Displays detailed version information about the server including
+  the operating system and whether WOD_REALMS is included or not.
+
+  This commands can be used before logging from the welcome screen.
+
+  Example:
+
+    > INFO
+    ### Begin INFO 1.1
+    Name: AnonymousMUX
+    Uptime: Sat Aug 03 13:08:56 2002
+    Connected: 18
+    Size: 231
+    Version: MUX 2.2.1.50 Beta
+    Patches: WOD_REALMS
+    ### End INFO
+
+  Related Topics: QUIT, WHO, @version.
+
 & INHERIT
 INHERIT
 
