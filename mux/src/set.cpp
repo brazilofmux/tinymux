@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.12 2003-02-16 00:13:13 sdennis Exp $
+// $Id: set.cpp,v 1.13 2003-02-16 17:24:31 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -414,21 +414,21 @@ void do_lock
     char *keytext
 )
 {
-    dbref thing, aowner;
-    int atr, aflags;
+    dbref thing;
     ATTR *ap;
-    struct boolexp *okey;
 
-    if (parse_attrib(executor, name, &thing, &atr))
+    if (parse_attrib_temp(executor, name, &thing, &ap))
     {
-        if (atr != NOTHING)
+        if (  ap
+           && See_attr(executor, thing, ap))
         {
-            if (!atr_get_info(thing, atr, &aowner, &aflags))
+            dbref aowner;
+            int aflags;
+            if (!atr_get_info(thing, ap->number, &aowner, &aflags))
             {
                 notify_quiet(executor, "Attribute not present on object.");
                 return;
             }
-            ap = atr_num(atr);
 
             // You may lock an attribute if: you could write the
             // attribute if it were stored on yourself --and-- you
@@ -443,7 +443,7 @@ void do_lock
                         || (aowner == Owner(executor))))))
             {
                 aflags |= AF_LOCK;
-                atr_set_flags(thing, atr, aflags);
+                atr_set_flags(thing, ap->number, aflags);
                 if (!Quiet(executor) && !Quiet(thing))
                 {
                     notify_quiet(executor, "Attribute locked.");
@@ -479,7 +479,7 @@ void do_lock
     }
 
     char *pRestrictedKeyText = RemoveSetOfCharacters(keytext, "\r\n\t");
-    okey = parse_boolexp(executor, pRestrictedKeyText, false);
+    struct boolexp *okey = parse_boolexp(executor, pRestrictedKeyText, false);
     if (okey == TRUE_BOOLEXP)
     {
         notify_quiet(executor, "I don't understand that key.");
@@ -509,21 +509,21 @@ void do_lock
 
 void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
-    dbref thing, aowner;
-    int atr, aflags;
+    dbref thing;
     ATTR *ap;
 
-    if (  parse_attrib(executor, name, &thing, &atr)
-       && atr != NOTHING)
+    if (  parse_attrib_temp(executor, name, &thing, &ap)
+       && See_attr(executor, thing, ap))
     {
         // We have been asked to change the ownership of an attribute.
         //
-        if (!atr_get_info(thing, atr, &aowner, &aflags))
+        dbref aowner;
+        int aflags;
+        if (!atr_get_info(thing, ap->number, &aowner, &aflags))
         {
             notify_quiet(executor, "Attribute not present on object.");
             return;
         }
-        ap = atr_num(atr);
 
         // You may unlock an attribute if: you could write the attribute
         // if it were stored on yourself --and-- you own the attribute or
@@ -538,7 +538,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
                     || aowner == Owner(executor)))))
         {
             aflags &= ~AF_LOCK;
-            atr_set_flags(thing, atr, aflags);
+            atr_set_flags(thing, ap->number, aflags);
             if (  Owner(executor) != Owner(thing)
                && !Quiet(executor)
                && !Quiet(thing))
@@ -651,12 +651,12 @@ void do_chown
 )
 {
     dbref nOwnerOrig, nOwnerNew, thing;
-    int atr;
     bool bDoit;
     ATTR *ap;
 
-    if (  parse_attrib(executor, name, &thing, &atr)
-       && atr != NOTHING)
+    if (  parse_attrib_temp(executor, name, &thing, &ap)
+       && ap
+       && See_attr(executor, thing, ap))
     {
         // An attribute was given, so we worry about changing the owner of the
         // attribute.
@@ -666,7 +666,7 @@ void do_chown
         {
             nOwnerNew = nOwnerOrig;
         }
-        else if (!(string_compare(newown, "me")))
+        else if (!string_compare(newown, "me"))
         {
             nOwnerNew = Owner(executor);
         }
@@ -682,7 +682,7 @@ void do_chown
         //
         dbref aowner;
         int   aflags;
-        if (!atr_get_info(thing, atr, &aowner, &aflags))
+        if (!atr_get_info(thing, ap->number, &aowner, &aflags))
         {
             notify_quiet(executor, "Attribute not present on object.");
             return;
@@ -739,15 +739,13 @@ void do_chown
             return;
         }
 
-        ap = atr_num(atr);
-        if (  !ap
-           || !bCanSetAttr(executor, executor, ap))
+        if (!bCanSetAttr(executor, executor, ap))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        char *buff = atr_get(thing, atr, &aowner, &aflags);
-        atr_add(thing, atr, buff, nOwnerNew, aflags);
+        char *buff = atr_get(thing, ap->number, &aowner, &aflags);
+        atr_add(thing, ap->number, buff, nOwnerNew, aflags);
         free_lbuf(buff);
         if (!Quiet(executor))
         {
