@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.43 2001-11-17 06:59:14 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.44 2001-11-17 07:11:21 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -763,7 +763,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
 {
     dbref loc, aowner, temp, zone, obj;
     int num, aflags, key;
-    char *buf, *atr_temp;
+    char *atr_temp;
     DESC *dtemp;
     char *argv[1];
     
@@ -785,16 +785,16 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
     
     if (num < 2)
     {
-        buf = alloc_mbuf("announce_disconnect.only");
+        char *mbuf = alloc_mbuf("announce_disconnect.only");
         
-        sprintf(buf, "%s has disconnected.", Name(player));
+        sprintf(mbuf, "%s has disconnected.", Name(player));
         key = MSG_INV;
         if ((loc != NOTHING) && !(Dark(player) && Wizard(player)))
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
-        notify_check(player, player, buf, key);
-        free_mbuf(buf);
+        notify_check(player, player, mbuf, key);
+        free_mbuf(mbuf);
         
         if (mudconf.have_mailer)
         {
@@ -889,17 +889,17 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
     }
     else
     {
-        buf = alloc_mbuf("announce_disconnect.partial");
-        sprintf(buf, "%s has partially disconnected.", Name(player));
+        char *mbuf = alloc_mbuf("announce_disconnect.partial");
+        sprintf(mbuf, "%s has partially disconnected.", Name(player));
         key = MSG_INV;
         if ((loc != NOTHING) && !(Dark(player) && Wizard(player)))
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
-        notify_check(player, player, buf, key);
+        notify_check(player, player, mbuf, key);
         raw_broadcast(MONITOR, "GAME: %s has partially disconnected.",
             Name(player));
-        free_mbuf(buf);
+        free_mbuf(mbuf);
     }
     
     mudstate.curr_enactor = temp;
