@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.23 2004-07-07 20:28:47 sdennis Exp $
+// $Id: svdhash.cpp,v 1.24 2004-07-09 07:33:17 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2452,7 +2452,7 @@ CLogFile Log;
 void CLogFile::WriteInteger(int iNumber)
 {
     char aTempBuffer[20];
-    int nTempBuffer = mux_ltoa(iNumber, aTempBuffer);
+    size_t nTempBuffer = mux_ltoa(iNumber, aTempBuffer);
     WriteBuffer(nTempBuffer, aTempBuffer);
 }
 

@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.36 2004-07-07 18:01:44 sdennis Exp $
+// $Id: timeutil.cpp,v 1.37 2004-07-09 07:30:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -618,7 +618,7 @@ void ConvertToSecondsString(char *buffer, INT64 n64, int nFracDigits)
     INT64 Leftover;
     INT64 lt = i64FloorDivisionMod(n64, FACTOR_100NS_PER_SECOND, &Leftover);
 
-    int n = mux_i64toa(lt, buffer);
+    size_t n = mux_i64toa(lt, buffer);
     if (Leftover == 0)
     {
         return;
@@ -643,7 +643,7 @@ void ConvertToSecondsString(char *buffer, INT64 n64, int nFracDigits)
         char *q = p;
 
         char buf[maxFracDigits+1];
-        int m = mux_i64toa(Leftover, buf);
+        size_t m = mux_i64toa(Leftover, buf);
         memset(p, '0', maxFracDigits - m);
         p += maxFracDigits - m;
         memcpy(p, buf, m);
