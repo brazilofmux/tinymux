@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.17 2001-11-09 04:02:57 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.18 2001-11-09 05:26:25 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -786,7 +786,7 @@ void do_page
     }
     free_lbuf(omessage);
 
-    // Send message to send.
+    // Send message to sender.
     //
     notify(player, imessage);
     free_lbuf(imessage);
