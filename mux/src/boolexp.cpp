@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.11 2002-07-23 05:36:12 jake Exp $
+// $Id: boolexp.cpp,v 1.12 2002-07-25 13:17:48 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -8,7 +8,6 @@
 #include "externs.h"
 
 #include "attrs.h"
-#include "powers.h"
 
 #ifndef STANDALONE
 
@@ -292,18 +291,19 @@ static BOOLEXP *parse_boolexp_E(void);
 
 static BOOLEXP *test_atr(char *s)
 {
-    ATTR *attrib;
-    BOOLEXP *b;
     char *s1;
     int anum, locktype;
 
     char *buff = alloc_lbuf("test_atr");
     strcpy(buff, s);
-    for (s = buff; *s && (*s != ':') && (*s != '/'); s++) ;
+    for (s = buff; *s && (*s != ':') && (*s != '/'); s++)
+    {
+        ; // Nothing.
+    }
     if (!*s)
     {
         free_lbuf(buff);
-        return ((BOOLEXP *) NULL);
+        return TRUE_BOOLEXP;
     }
     if (*s == '/')
     {
@@ -320,7 +320,7 @@ static BOOLEXP *test_atr(char *s)
     // Also allow numeric references to attributes. It can't hurt us, and lets
     // us import stuff that stores attr locks by number instead of by name.
     //
-    attrib = atr_str(buff);
+    ATTR *attrib = atr_str(buff);
     if (!attrib)
     {
         // Only #1 can lock on numbers
@@ -328,14 +328,16 @@ static BOOLEXP *test_atr(char *s)
         if (!God(parse_player))
         {
             free_lbuf(buff);
-            return ((BOOLEXP *) NULL);
+            return TRUE_BOOLEXP;
         }
-        s1 = buff;
-        for (s1 = buff; Tiny_IsDigit[(unsigned char)*s1]; s1++) ;
+        for (s1 = buff; Tiny_IsDigit[(unsigned char)*s1]; s1++)
+        {
+            ; // Nothing.
+        }
         if (*s1)
         {
             free_lbuf(buff);
-            return ((BOOLEXP *) NULL);
+            return TRUE_BOOLEXP;
         }
         anum = Tiny_atol(buff);
     }
@@ -346,7 +348,7 @@ static BOOLEXP *test_atr(char *s)
 
     // made it now make the parse tree node
     //
-    b = alloc_bool("test_str");
+    BOOLEXP *b = alloc_bool("test_str");
     b->type = locktype;
     b->thing = (dbref) anum;
     b->sub1 = (BOOLEXP *) StringClone(s);

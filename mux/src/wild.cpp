@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.3 2002-07-09 08:22:49 jake Exp $
+// $Id: wild.cpp,v 1.4 2002-07-25 13:17:48 jake Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -197,7 +197,7 @@ BOOL wild1(char *tstr, char *dstr, int arg)
     //
     if (!tstr[1])
     {
-        StringCopyTrunc(arglist[arg], dstr, LBUF_SIZE - 1);
+        strncpy(arglist[arg], dstr, LBUF_SIZE - 1);
         arglist[arg][LBUF_SIZE - 1] = '\0';
         return TRUE;
     }
@@ -308,7 +308,7 @@ BOOL wild1(char *tstr, char *dstr, int arg)
             // Found a match!  Fill in all remaining arguments. First do the
             // '*'...
             //
-            StringCopyTrunc(arglist[argpos], datapos,
+            strncpy(arglist[argpos], datapos,
                             (dstr - datapos) - numextra);
             arglist[argpos][(dstr - datapos) - numextra] = '\0';
             datapos = dstr - numextra;

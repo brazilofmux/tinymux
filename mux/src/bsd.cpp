@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.13 2002-07-23 07:25:46 sdennis Exp $
+// $Id: bsd.cpp,v 1.14 2002-07-25 13:17:48 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -451,7 +451,7 @@ static int get_slave_result(void)
             continue;
         }
 
-        StringCopyTrunc(d->username, userid, 10);
+        strncpy(d->username, userid, 10);
         d->username[10] = '\0';
         if (d->player != 0)
         {

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.21 2002-07-23 14:04:16 jake Exp $
+// $Id: db.cpp,v 1.22 2002-07-25 13:17:48 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1328,18 +1328,6 @@ DCL_INLINE static void makekey(dbref thing, int atr, Aname *abuff)
     abuff->attrnum = atr;
     return;
 }
-
-/* ---------------------------------------------------------------------------
- * al_destroy: wipe out an object's attribute list.
- */
-
-void al_destroy(dbref thing)
-{
-    if (mudstate.mod_al_id == thing)
-        al_store(); // remove from cache
-    atr_clr(thing, A_LIST);
-}
-
 #endif // !MEMORY_BASED
 
 /* ---------------------------------------------------------------------------
@@ -1977,7 +1965,9 @@ void atr_free(dbref thing)
         atr_clr(thing, attr);
     }
     atr_pop();
-    al_destroy(thing); // Just to be on the safe side.
+    if (mudstate.mod_al_id == thing)
+        al_store(); // remove from cache
+    atr_clr(thing, A_LIST);
 #endif // MEMORY_BASED
 }
 

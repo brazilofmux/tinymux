@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.23 2002-07-23 16:01:03 sdennis Exp $
+// $Id: mail.cpp,v 1.24 2002-07-25 13:17:48 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -24,7 +24,6 @@ static BOOL mail_match(struct mail *, struct mail_selector, int);
 static int  parse_folder(dbref, char *);
 static char *status_chars(struct mail *);
 static char *status_string(struct mail *);
-void add_folder_name(dbref, int, char *);
 static char *get_folder_name(dbref, int);
 static char *mail_list_time(const char *);
 static char *make_numlist(dbref, char *);
@@ -302,6 +301,67 @@ void set_player_folder(dbref player, int fnum)
     free_lbuf(tbuf1);
 }
 
+
+void add_folder_name(dbref player, int fld, char *name)
+{
+
+    // Muck with the player's MAILFOLDERS attrib to add a string of the form:
+    // number:name:number to it, replacing any such string with a matching
+    // number.
+    //
+    char *new0 = alloc_lbuf("add_folder_name.new");
+    char *pat  = alloc_lbuf("add_folder_name.pat");
+    char *str  = alloc_lbuf("add_folder_name.str");
+    char *tbuf = alloc_lbuf("add_folder_name.tbuf");
+
+    _strupr(name);
+    sprintf(new0, "%d:%s:%d ", fld, name, fld);
+    sprintf(pat, "%d:", fld);
+
+    // get the attrib and the old string, if any
+    char *old = NULL;
+    int aflags;
+
+    char *atrstr = atr_get(player, A_MAILFOLDERS, &player, &aflags);
+    if (*atrstr)
+    {
+        strcpy(str, atrstr);
+        old = (char *)string_match(str, pat);
+    }
+
+    char *res, *r;
+    if (old && *old)
+    {
+        strcpy(tbuf, str);
+        r = old;
+        while (!Tiny_IsSpace[(unsigned char)*r])
+        {
+            r++;
+        }
+        *r = '\0';
+        res = replace_string(old, new0, tbuf);
+    }
+    else
+    {
+        r = res = alloc_lbuf("mail_folders");
+        if (*atrstr)
+        {
+            safe_str(str, res, &r);
+        }
+        safe_str(new0, res, &r);
+        *r = '\0';
+    }
+
+    // put the attrib back
+    //
+    atr_add(player, A_MAILFOLDERS, res, player, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_LOCK);
+    free_lbuf(str);
+    free_lbuf(pat);
+    free_lbuf(new0);
+    free_lbuf(tbuf);
+    free_lbuf(atrstr);
+    free_lbuf(res);
+}
 
 
 // Change or rename a folder
@@ -2183,67 +2243,6 @@ static char *get_folder_name(dbref player, int fld)
         free_lbuf(pat);
         return str;
     }
-}
-
-void add_folder_name(dbref player, int fld, char *name)
-{
-
-    // Muck with the player's MAILFOLDERS attrib to add a string of the form:
-    // number:name:number to it, replacing any such string with a matching
-    // number.
-    //
-    char *new0 = alloc_lbuf("add_folder_name.new");
-    char *pat  = alloc_lbuf("add_folder_name.pat");
-    char *str  = alloc_lbuf("add_folder_name.str");
-    char *tbuf = alloc_lbuf("add_folder_name.tbuf");
-
-    _strupr(name);
-    sprintf(new0, "%d:%s:%d ", fld, name, fld);
-    sprintf(pat, "%d:", fld);
-
-    // get the attrib and the old string, if any
-    char *old = NULL;
-    int aflags;
-
-    char *atrstr = atr_get(player, A_MAILFOLDERS, &player, &aflags);
-    if (*atrstr)
-    {
-        strcpy(str, atrstr);
-        old = (char *)string_match(str, pat);
-    }
-
-    char *res, *r;
-    if (old && *old)
-    {
-        strcpy(tbuf, str);
-        r = old;
-        while (!Tiny_IsSpace[(unsigned char)*r])
-        {
-            r++;
-        }
-        *r = '\0';
-        res = replace_string(old, new0, tbuf);
-    }
-    else
-    {
-        r = res = alloc_lbuf("mail_folders");
-        if (*atrstr)
-        {
-            safe_str(str, res, &r);
-        }
-        safe_str(new0, res, &r);
-        *r = '\0';
-    }
-
-    // put the attrib back
-    //
-    atr_add(player, A_MAILFOLDERS, res, player, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_LOCK);
-    free_lbuf(str);
-    free_lbuf(pat);
-    free_lbuf(new0);
-    free_lbuf(tbuf);
-    free_lbuf(atrstr);
-    free_lbuf(res);
 }
 
 static int player_folder(dbref player)

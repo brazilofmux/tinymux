@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.2 2002-07-23 05:36:12 jake Exp $
+// $Id: config.h,v 1.3 2002-07-25 13:17:48 jake Exp $
 //
 
 #ifndef CONFIG_H
@@ -19,7 +19,6 @@
 
 #define OUTPUT_BLOCK_SIZE   16384
 #define StringCopy          strcpy
-#define StringCopyTrunc     strncpy
 
 /* ---------------------------------------------------------------------------
  * Database R/W flags.

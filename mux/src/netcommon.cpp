@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.25 2002-07-23 05:36:13 jake Exp $
+// $Id: netcommon.cpp,v 1.26 2002-07-25 13:17:48 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -309,7 +309,6 @@ void add_to_output_queue(DESC *d, const char *b, int n)
 
 void queue_write(DESC *d, const char *b, int n)
 {
-
     if (n <= 0)
     {
         return;
@@ -320,7 +319,6 @@ void queue_write(DESC *d, const char *b, int n)
         process_output(d, FALSE);
     }
 
-    
     int left = mudconf.output_limit - d->output_size - n;
     if (left < 0)
     {
@@ -528,8 +526,6 @@ static void set_userstring(char **userstring, const char *command)
 
 static void parse_connect(const char *msg, char *command, char *user, char *pass)
 {
-    char *p;
-
     if (strlen(msg) > MBUF_SIZE)
     {
         *command = '\0';
@@ -541,7 +537,7 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
     {
         msg++;
     }
-    p = command;
+    char *p = command;
     while (  *msg
           && Tiny_IsASCII[(unsigned char)*msg]
           && !Tiny_IsSpace[(unsigned char)*msg])
@@ -558,7 +554,7 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
     {
         for (; *msg && (*msg == '\"' || Tiny_IsSpace[(unsigned char)*msg]); msg++)
         {
-            // Nothing
+            // Nothing.
         }
         while (*msg && *msg != '\"')
         {
@@ -582,7 +578,10 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
                 *p++ = ' ';
             }
         }
-        for (; *msg && *msg == '\"'; msg++) ;
+        while (*msg && *msg == '\"')
+        {
+             msg++;
+        }
     }
     else
     {
@@ -610,16 +609,10 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
 
 static void announce_connect(dbref player, DESC *d)
 {
-    dbref loc, aowner, temp;
-    dbref zone, obj;
-
-    int aflags, num, key, count;
-    char *time_str;
-    DESC *dtemp;
-
     desc_addhash(d);
 
-    count = 0;
+    DESC *dtemp;
+    int count = 0;
     DESC_ITER_CONN(dtemp)
     {
         count++;
@@ -631,7 +624,8 @@ static void announce_connect(dbref player, DESC *d)
     }
 
     char *buf = alloc_lbuf("announce_connect");
-    int nLen;
+    dbref aowner;
+    int aflags, nLen;
     atr_pget_str_LEN(buf, player, A_TIMEOUT, &aowner, &aflags, &nLen);
     if (nLen)
     {
@@ -642,7 +636,7 @@ static void announce_connect(dbref player, DESC *d)
         }
     }
 
-    loc = Location(player);
+    dbref loc = Location(player);
     s_Connected(player);
 
     if (d->flags & DS_PUEBLOCLIENT)
@@ -668,7 +662,7 @@ static void announce_connect(dbref player, DESC *d)
     {
         raw_notify(player, "Your PAGE LOCK is set.  You may be unable to receive some pages.");
     }
-    num = 0;
+    int num = 0;
     DESC_ITER_PLAYER(player, dtemp)
     {
         num++;
@@ -715,7 +709,7 @@ static void announce_connect(dbref player, DESC *d)
     sprintf(buf, pRoomAnnounceFmt, Name(player));
     raw_broadcast(MONITOR, pMonitorAnnounceFmt, Name(player));
 
-    key = MSG_INV;
+    int key = MSG_INV;
     if (  loc != NOTHING
        && !(  Hidden(player)
            && Can_Hide(player)))
@@ -723,11 +717,12 @@ static void announce_connect(dbref player, DESC *d)
         key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
     }
 
-    temp = mudstate.curr_enactor;
+    dbref temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
     notify_check(player, player, buf, key);
     atr_pget_str_LEN(buf, player, A_ACONNECT, &aowner, &aflags, &nLen);
     CLinearTimeAbsolute lta;
+    dbref zone, obj;
     if (nLen)
     {
         wait_que(player, player, player, FALSE, lta, NOTHING, 0, buf,
@@ -795,7 +790,7 @@ static void announce_connect(dbref player, DESC *d)
     free_lbuf(buf);
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
-    time_str = ltaNow.ReturnDateString(7);
+    char *time_str = ltaNow.ReturnDateString(7);
 
     record_login(player, TRUE, time_str, d->addr, d->username,
         inet_ntoa((d->address).sin_addr));
@@ -809,17 +804,16 @@ static void announce_connect(dbref player, DESC *d)
 
 void announce_disconnect(dbref player, DESC *d, const char *reason)
 {
-    dbref loc, aowner, temp, zone, obj;
-    int num, aflags, key;
+    int num = 0, key;
     DESC *dtemp;
-    char *argv[1];
+    DESC_ITER_PLAYER(player, dtemp)
+    {
+        num++;
+    }
 
-    loc = Location(player);
-    num = 0;
-    DESC_ITER_PLAYER(player, dtemp) num++;
-
-    temp = mudstate.curr_enactor;
+    dbref temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
+    dbref loc = Location(player);
 
     if (num < 2)
     {
@@ -852,7 +846,10 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             do_comdisconnect(player);
         }
 
+        dbref aowner, zone, obj;
+        int aflags;
         int nLen;
+        char *argv[1];
         argv[0] = (char *)reason;
         CLinearTimeAbsolute lta;
         atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
@@ -993,7 +990,8 @@ int boot_by_port(SOCKET port, BOOL no_god, const char *message)
     int count = 0;
     DESC_SAFEITER_ALL(d, dnext)
     {
-        if ((d->descriptor == port) && (!no_god || !God(d->player)))
+        if (  (d->descriptor == port)
+           && !(no_god && God(d->player)))
         {
             if (message && *message)
             {
@@ -1622,7 +1620,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     }
     else if (key == DOING_HEADER)
     {
-        if (!(Can_Poll(executor)))
+        if (!Can_Poll(executor))
         {
             notify(executor, NOPERM_MESSAGE);
             return;
@@ -1678,17 +1676,19 @@ static void failconn(const char *logcode, const char *logtype, const char *logre
                      dbref player, int filecache, char *motd_msg, char *command,
                      char *user, char *password, char *cmdsave)
 {
-    char *buff;
-
     STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, "RJCT");
-    buff = alloc_mbuf("failconn.LOG");
+    char *buff = alloc_mbuf("failconn.LOG");
     sprintf(buff, "[%d/%s] %s rejected to ", d->descriptor, d->addr, logtype);
     log_text(buff);
     free_mbuf(buff);
     if (player != NOTHING)
+    {
         log_name(player);
+    }
     else
+    {
         log_text(user);
+    }
     log_text(" (");
     log_text(logreason);
     log_text(")");
@@ -1712,14 +1712,14 @@ static const char *create_fail = "Either there is already a player with that nam
 
 static BOOL check_connect(DESC *d, char *msg)
 {
-    char *command, *user, *password, *buff, *cmdsave;
+    char *buff;
     dbref player, aowner;
     int aflags, nplayers;
     DESC *d2;
     char *p;
     BOOL isGuest = FALSE;
 
-    cmdsave = mudstate.debug_cmd;
+    char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< check_connect >";
 
     // Hide the password length from SESSION.
@@ -1728,9 +1728,9 @@ static BOOL check_connect(DESC *d, char *msg)
 
     // Crack the command apart.
     //
-    command = alloc_lbuf("check_conn.cmd");
-    user = alloc_lbuf("check_conn.user");
-    password = alloc_lbuf("check_conn.pass");
+    char *command = alloc_lbuf("check_conn.cmd");
+    char *user = alloc_lbuf("check_conn.user");
+    char *password = alloc_lbuf("check_conn.pass");
     parse_connect(msg, command, user, password);
 
     // At this point, command, user, and password are all less than
@@ -2017,16 +2017,13 @@ static BOOL check_connect(DESC *d, char *msg)
 
 BOOL do_command(DESC *d, char *command)
 {
-    char *arg, *cmdsave;
-    NAMETAB *cp;
-
-    cmdsave = mudstate.debug_cmd;
+    char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< do_command >";
     d->last_time = mudstate.now;
 
     // Split off the command from the arguments.
     //
-    arg = command;
+    char *arg = command;
     while (*arg && !Tiny_IsSpace[(unsigned char)*arg])
     {
         arg++;
@@ -2040,7 +2037,7 @@ BOOL do_command(DESC *d, char *command)
     // Look up the command.  If we don't find it, turn it over to the normal
     // logged-in command processor or to create/connect.
     //
-    cp = NULL;
+    NAMETAB *cp = NULL;
     if (!(d->flags & DS_CONNECTED))
     {
         cp = (NAMETAB *)hashfindLEN(command, strlen(command), &mudstate.logout_cmd_htab);

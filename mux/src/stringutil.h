@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.11 2002-07-23 12:26:49 jake Exp $
+// $Id: stringutil.h,v 1.12 2002-07-25 13:17:48 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -102,12 +102,12 @@ struct ANSI_Out_Context
 #define ANSI_ENDGOAL_NOBLEED 1
 #define ANSI_ENDGOAL_LEAK    2
 
-void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, int iEndGoal);
-void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, char *pField, int nField, int vwMax, int iEndGoal);
-void ANSI_String_Skip(struct ANSI_In_Context *pacIn, int maxVisualWidth, int *pnVisualWidth);
-void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, int vwMax);
-int ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, int *pnVisualWidth);
-int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, int iEndGoal);
+extern void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, int iEndGoal);
+extern void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, char *pField, int nField, int vwMax, int iEndGoal);
+extern void ANSI_String_Skip(struct ANSI_In_Context *pacIn, int maxVisualWidth, int *pnVisualWidth);
+extern void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, int vwMax);
+extern int ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, int *pnVisualWidth);
+extern int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, int iEndGoal);
 extern char *strip_ansi(const char *szString, unsigned int *pnString = 0);
 extern char *normal_to_white(const char *);
 extern char *munge_space(char *);
