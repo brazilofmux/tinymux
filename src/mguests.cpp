@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.13 2002-02-13 20:23:43 sdennis Exp $
+// $Id: mguests.cpp,v 1.14 2002-02-13 20:48:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -116,8 +116,6 @@ char *CGuests::Create(DESC *d)
             db[Guests[i]].fs = mudconf.player_flags;
 
             // Add the type and remove wizard.
-            // QQQ: lookup_player will only find objects of TYPE_PLAYER, no?
-            //      -- sdennis
             //
             db[Guests[i]].fs.word[FLAG_WORD1] |= TYPE_PLAYER;
             db[Guests[i]].fs.word[FLAG_WORD1] &= ~WIZARD;
