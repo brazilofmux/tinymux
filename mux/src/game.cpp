@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.41 2003-12-03 20:15:06 sdennis Exp $
+// $Id: game.cpp,v 1.42 2004-06-07 16:40:53 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1969,15 +1969,15 @@ int DCL_CDECL main(int argc, char *argv[])
         return 1;
     }
 
+    FLOAT_Initialize();
+    TIME_Initialize();
+    SeedRandomNumberGenerator();
+
     Log.EnableLogging();
     game_pid = getpid();
     write_pidfile(pidfile);
 
     BuildSignalNamesTable();
-
-    FLOAT_Initialize();
-    TIME_Initialize();
-    SeedRandomNumberGenerator();
 
 #ifdef MEMORY_ACCOUNTING
     extern CHashFile hfAllocData;
