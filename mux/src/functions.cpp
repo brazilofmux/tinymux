@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.11 2002-06-11 17:32:35 jake Exp $
+// $Id: functions.cpp,v 1.12 2002-06-11 22:03:23 jake Exp $
 //
 
 #include "copyright.h"
@@ -7214,7 +7214,7 @@ FUN flist[] =
     {"CONNLEFT", fun_connleft, MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONNMAX",  fun_connmax,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONNNUM",  fun_connnum,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNREC",  fun_connrec,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"CONNRECORD",fun_connrec, MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"CONNTOTAL",fun_conntotal,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CONVSECS", fun_convsecs, MAX_ARG, 1,  2,       0, CA_PUBLIC},
