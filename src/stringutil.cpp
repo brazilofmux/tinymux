@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.37 2001-04-09 23:20:43 morgan Exp $
+// $Id: stringutil.cpp,v 1.38 2001-04-09 23:44:49 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2584,95 +2584,79 @@ extern void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ..
 CF_HAND(cf_art_rule)
 {
 #ifndef STANDALONE
-	char* pCurrent = str;
-	
-	for (;;)
-	{
-		if ( *pCurrent == '\0' )
-		{
-			cf_log_syntax(player, cmd, "No article or regexp specified.");
-			return -1;
-		}
+    char* pCurrent = str;
+    
+    while (Tiny_IsSpace[(unsigned char)*pCurrent])
+    {
+        pCurrent++;
+    }
+    char* pArticle = pCurrent;
+    while (!Tiny_IsSpace[(unsigned char)*pCurrent] && *pCurrent != '\0')
+    {
+        pCurrent++;
+    }
+    if (*pCurrent == '\0')
+    {
+        cf_log_syntax(player, cmd, "No article or regexp specified.");
+        return -1;
+    }
 
-		if ( !Tiny_IsSpace[(unsigned char) *pCurrent] )
-			break;
+    BOOL bUseAn = FALSE;
+    BOOL bOkay = FALSE;
 
-		pCurrent++;
-	}
+    if (pCurrent - pArticle <= 2)
+    {
+        if (*pArticle == 'A' || *pArticle == 'a')
+        {
+            if (*(pArticle + 1) == 'N' || *(pArticle + 1) == 'n')
+            {            
+                bUseAn = TRUE;
+                bOkay = TRUE;
+            }
 
-	char* pArticle = pCurrent;
+            if (Tiny_IsSpace[(unsigned char) *(pArticle + 1)])
+            {
+                bOkay = TRUE;
+            }
+        }
+    }
 
-	for (;;)
-	{
-		if ( *pCurrent == '\0' )
-		{
-			cf_log_syntax(player, cmd, "No article or regexp specified.");
-			return -1;
-		}
+    if (!bOkay)
+    {
+        *pCurrent = '\0';
+        cf_log_syntax(player, cmd, "Invalid article '%s'.", pArticle);
+        return -1;
+    }
+    
 
-		if ( Tiny_IsSpace[(unsigned char) *pCurrent] )
-			break;
+    while (!Tiny_IsSpace[(unsigned char)*pCurrent] && *pCurrent != '\0')
+    {
+        pCurrent++;
+    }
 
-		pCurrent++;
-	}
+    if (*pCurrent == '\0')
+    {
+        cf_log_syntax(player, cmd, "No regexp specified.");
+        return -1;
+    }
 
-	int bUseAn = 0;
-	int bOkay = 0;
+    regexp* reNewRegexp = regcomp(pCurrent);
+    if (!reNewRegexp)
+    {
+        cf_log_syntax(player, cmd, "Error processing regexp '%s'.", pCurrent);
+        return -1;
+    }
 
-	if ( pCurrent - pArticle <= 2 )
-	{
-		if ( *pArticle == 'A' || *pArticle == 'a' )
-		{
-			if ( *(pArticle + 1) == 'N' || *(pArticle + 1) == 'n' )
-			{			
-				bUseAn = 1;
-				bOkay = 1;
-			}
+    // Push new rule at head of list.
+    ArtRuleset** arRules = (ArtRuleset **) vp;
+    ArtRuleset* arNewRule = (ArtRuleset *) MEMALLOC(sizeof(ArtRuleset));
 
-			if ( Tiny_IsSpace[(unsigned char) *(pArticle + 1)] )
-				bOkay = 1;
-		}
-	}
+    arNewRule->m_pNextRule = *arRules;
+    arNewRule->m_bUseAn = bUseAn;
+    arNewRule->m_pRegexp = reNewRegexp;
+    
+    *arRules = arNewRule;
 
-	if ( !bOkay )
-	{
-		*pCurrent = '\0';
-		cf_log_syntax(player, cmd, "Invalid article '%s'.", pArticle);
-		return -1;
-	}
-	
-
-	for (;;)
-	{
-		if ( *pCurrent == '\0' )
-		{
-			cf_log_syntax(player, cmd, "No regexp specified.");
-			return -1;
-		}
-
-		if ( !Tiny_IsSpace[(unsigned char) *pCurrent] )
-			break;
-
-		pCurrent++;
-	}
-
-	regexp* reNewRegexp = regcomp(pCurrent);
-	if ( !reNewRegexp )
-	{
-		cf_log_syntax(player, cmd, "Error processing regexp '%s'.", pCurrent);
-		return -1;
-	}
-
-	// Push new rule at head of list.
-	ArtRuleset** arRules = (ArtRuleset **) vp;
-	ArtRuleset* arNewRule = (ArtRuleset *) MEMALLOC(sizeof(ArtRuleset));
-
-	arNewRule->m_pNextRule = *arRules;
-	arNewRule->m_bUseAn = bUseAn;
-	arNewRule->m_pRegexp = reNewRegexp;
-	
-	*arRules = arNewRule;
-
-	return 0;
+    return 0;
 #endif //STANDALONE
 }
