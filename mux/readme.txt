@@ -46,7 +46,7 @@ To use a binary distribution:
 
    Unpack the mux-2.2.0.32.win32.bin.zip using WinZip.
 
-2. cd mux22/game
+2. cd mux2.2/game
 
 3. Possibly edit netmux.conf and mux.config to tweak the configuration.
 
@@ -75,11 +75,11 @@ To use a source distribution:
 
    Unpack the mux-2.2.0.32.win32.src.zip using WinZip.
 
-2. Start Visual C++ and open the workspace file (mux22/src/netmux.dsw).
+2. Start Visual C++ and open the workspace file (mux2.2/src/netmux.dsw).
 
-3. Within Visual C++, Do a batch build in order to get mkindx.exe,
-   dbconvert.exe, and tinymux.exe. The non-debug versions of these files will
-   be place in mux22/src/bin_release and must be copied over to mux2/game/bin.
+3. Within Visual C++, Do a batch build in order to get dbconvert.exe and
+   netmux.exe.  The non-debug versions of these files will be place in
+   mux2.2/src/bin_release and must be copied over to mux2.2/game/bin.
 
 4. Start the server with the following:
 
