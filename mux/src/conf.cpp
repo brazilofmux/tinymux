@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.22 2002-09-15 00:42:43 jake Exp $
+// $Id: conf.cpp,v 1.23 2002-09-21 03:16:27 jake Exp $
 //
 
 #include "copyright.h"
@@ -1514,7 +1514,14 @@ CF_HAND(cf_include)
         // Trim command.
         //
         if (*ap)
+        {
             *ap++ = '\0';
+        }
+        else
+        {
+            fgets(buf, LBUF_SIZE, fp);
+            continue;
+        }
 
         // Skip Spaces.
         //
