@@ -11206,7 +11206,7 @@ SHROUD
 & SHUFFLE()
 SHUFFLE()
 
-  FUNCTION: shuffle(<word1> <word2> <...<wordN>[,<delimiter>])
+  FUNCTION: shuffle(<word1> <word2> <...<wordN>[,<idelim> [,<odelim>]])
 
   This function shuffles the order of words in a list, returning a random
   permutation of its elements.
@@ -11330,7 +11330,7 @@ SORT()
 & SORTBY()
 SORTBY()
 
-  FUNCTION: sortby([<obj>/]<attrib>,<list>[,<delimiter>])
+  FUNCTION: sortby([<obj>/]<attrib>,<list>[,<idelim> [,<odelim>]])
 
   This sorts an arbitrary list according to the u-function <obj>/<attrib>.
   This u-function should compare two arbitrary elements, %0 and %1, and
