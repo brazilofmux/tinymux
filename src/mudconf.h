@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.20 2001-06-29 06:59:24 sdennis Exp $
+// $Id: mudconf.h,v 1.21 2001-10-10 07:07:34 sdennis Exp $
 //
 #ifndef __CONF_H
 #define __CONF_H
@@ -35,7 +35,6 @@ struct confdata
 #ifndef STANDALONE
     int     compress_db;    /* should we use compress */
     int     have_comsys;    /* Should the comsystem be active? */
-    int     have_macros;    /* Should the macro system be active? */
     int     have_mailer;    /* Should @mail be active? */
     int     have_zones; /* Should zones be active? */
     int     port;       /* user port */

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.29 2001-06-30 17:16:48 morgan Exp $
+// $Id: game.cpp,v 1.30 2001-10-10 07:07:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1183,7 +1183,7 @@ void dump_database_internal(int dump_type)
                     }
                 }
             }
-            if (mudconf.have_comsys || mudconf.have_macros)
+            if (mudconf.have_comsys)
             {
                 save_comsys(mudconf.comsys_db);
             }
@@ -1265,7 +1265,7 @@ void dump_database_internal(int dump_type)
             }
         }
     }
-    if (mudconf.have_comsys || mudconf.have_macros)
+    if (mudconf.have_comsys)
     {
         save_comsys(mudconf.comsys_db);
     }
@@ -1578,7 +1578,7 @@ static int load_game(int ccPageFile)
     }
 #endif // !MEMORY_BASED
 
-    if (mudconf.have_comsys || mudconf.have_macros)
+    if (mudconf.have_comsys)
     {
         load_comsys(mudconf.comsys_db);
     }
