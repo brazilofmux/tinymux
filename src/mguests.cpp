@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.10 2002-02-13 19:42:52 sdennis Exp $
+// $Id: mguests.cpp,v 1.11 2002-02-13 19:54:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -36,16 +36,13 @@ void CGuests::StartUp(void)
         return;
     }
 
-    dbref player;
-
     // Search the Database for Guest chars and snag em.
     //
     int i;
-    static char name[50];
     for (i = 0; i < mudconf.number_guests; i++)
     {
         sprintf(name, "%s%d", mudconf.guest_prefix, i + 1);
-        player = lookup_player(GOD, name, 0);
+        dbref player = lookup_player(GOD, name, 0);
         if (  player != NOTHING
            && Guest(player))
         {
@@ -88,16 +85,19 @@ void CGuests::GrowGuests(int amount)
 
 char *CGuests::Create(DESC *d) 
 {
-    int i;
     dbref player;
-    static char name[50];
-
 
     // We don't have a main guest character, break out.
-    if(!Good_obj(mudconf.guest_char)) return NULL;
+    //
+    if (!Good_obj(mudconf.guest_char))
+    {
+        return NULL;
+    }
 
     // If We Have a Guest char, let's use it
-    for(i=0;i<nGuests;i++) {
+    //
+    int i;
+    for (i=0;i<nGuests;i++) {
         if(!Connected(Guests[i]) && Good_obj(Guests[i])) {
             // Lets try to grab our own name, if we don't have it.
             sprintf(name, "%s%d", mudconf.guest_prefix, nGuests);
@@ -180,7 +180,6 @@ int CGuests::MakeGuestChar(void)
 {
     int i;
     dbref player;
-    static char name[50];
 
     // Search for the first available Name
     for (i = 0; i < mudconf.number_guests;i++) {
@@ -287,3 +286,5 @@ void CGuests::ListAll(dbref player)
     notify(player, tprintf("-----------------------------  Total Guests: %-3d -----------------------------", nGuests));
     free_lbuf(buff);
 }
+
+char CGuests::name[50];
