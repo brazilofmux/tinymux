@@ -5203,6 +5203,7 @@ FUNCTION LIST
 ("help function list2" for more)
 
 & FUNCTION LIST2
+FUNCTION LIST (continued)
 
     LTE()       LWHO()      MAIL()      MAILFROM()  MAP()       MATCH()
     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
@@ -5225,10 +5226,9 @@ FUNCTION LIST
     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
     VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
     WRITETIME() XGET()      XOR()       ZONE()      ZWHO()
-  
+ 
 & FUNCTION CLASSES
-
-  Topic: FUNCTION CLASSES
+FUNCTION CLASSES
  
   Arithmetic:                ABS ADD BAND BNAND BOR CRC32 DEC DIE FDIV
                              IADD IDIV IMUL INC ISUB MOD MUL PACK POWER RAND
@@ -5247,10 +5247,11 @@ FUNCTION LIST
   Logical:                   AND NOT OR XOR
   Miscellaneous:             ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM ISWORD
                              LIT SETR SUBEVAL
-
-{ 'help function classes2' for more }
  
+{ 'help function classes2' for more }
+
 & FUNCTION CLASSES2
+FUNCTION CLASSES (continued)
 
   Object Information:        ANDFLAGS APOSS CMDS CONTROLS DEFAULT EDEFAULT
                              ELOCK FLAGS GET GET_EVAL GREP GREPI HASATTR
@@ -5262,6 +5263,7 @@ FUNCTION LIST
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNTOTAL
                              DOING FINDABLE IDLE LWHO PLAYMEM PORTS 
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ SORT
+  Realms:                    CANSEE
   Side-Effect Functions:     LINK TEL
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CAT COMP
                              DELETE EDIT ESCAPE IFELSE LCSTR LPOS MERGE MID
@@ -5694,8 +5696,10 @@ FUNCTION LIST
   well.
 
 & V()
+V()
 
-  Function: v(<string>)
+  FUNCTION:  v(<string>)
+  
   The V function can be used as an alternative for percent (%) substitution
   and also as a replacement for get(me/<arg>).  If the argument is two
   characters long or longer and starts with a letter, then the object
@@ -5706,17 +5710,24 @@ FUNCTION LIST
   example) is preferred as it is faster, and there are no longer any security
   problems associated with it.  Note that attributes with single-character
   names cannot be retrieved with v().
-  See also: GENDER, SUBSTITUTION, PARENT OBJECTS.
+  
+  Related Topics: GENDER, SUBSTITUTION, PARENT OBJECTS.
 
-& beep()
+& BEEP()
+BEEP()
 
-  Function: beep()
+  FUNCTION: beep()
+  
   This function simply outputs the beep character, which on most terminals
   with sound, will emit a short beep. Only wizards may use this function.
  
-& create()
+  Related Topics:
+  
+& CREATE()
+CREATE()
 
-  Function: create(<object>, <cost>[, <type>])
+  FUNCTION: create(<object>, <cost>[, <type>])
+  
   Works the same as @create <object>, but returns the database number of
   the object created. <cost> is the cost of making the object. <type>
   is an optional parameter, 'r' for rooms, 't' for things, and 'e' for 
@@ -5724,24 +5735,23 @@ FUNCTION LIST
   default. This is a side effect function, and should only be 
   used when necessary.
  
-& set()
+  Related Topics:
 
-  Function: set(<name>, <string>)
+& SET()
+SET()
+
+  FUNCTION: set(<name>, <string>)
+  
   Works the same as @set, <name> and <string> are equivalent to what comes
   before and after the '=' sign. Returns nothing. This is a side effect
   function, and should only be used when necessary.
- 
-& cwho()
+  
+  Related Topics:
 
-  Function: cwho(<channel>)
- 
-  This returns a list of connected players who are on <channel>. Note
-  that this function returns the _names_ of the players, not the dbrefs.
-  When used by mortals, hidden ("dark") players do not appear on the list.
- 
-& wordpos()
+& WORDPOS()
+WORDPOS()
 
-  Function: wordpos(<string>, <charpos>[, <delim>)
+  FUNCTION: wordpos(<string>, <charpos>[, <delim>)
  
   Returns the number of the word within <string> where the character position
   <charpos> falls.  Spaces between words are treated as belonging to the word
@@ -5759,10 +5769,14 @@ FUNCTION LIST
     You say "2"
     > say wordpos(This is a test, 20)
     You say "#-1"
+  
+  Related Topics:
 
-& type()
+& TYPE()
+TYPE()
 
-  Function: type(<object>)
+  FUNCTION: type(<object>)
+  
   Returns a string indicating the object type of <object>, either EXIT,
   PLAYER, ROOM, or THING.
  
@@ -5772,9 +5786,13 @@ FUNCTION LIST
     > say type(here)
     You say "ROOM"
 
-& hasflag()
+  Related Topics:
+  
+& HASFLAG()
+HASFLAG()
 
-  Function: hasflag(<object>,<flag>)
+  FUNCTION: hasflag(<object>,<flag>)
+  
   Returns true if object <object> has the flag named <flag> set on it.
   You may not be able to retrieve information for objects that you do not
   own.
@@ -5784,10 +5802,14 @@ FUNCTION LIST
     You say "0"
     > say hasflag(me, connect) 
     You say "1"
- 
-& haspower()
 
-  Function: haspower(<object>,<power>)
+  Related Topics:
+   
+& HASPOWER()
+HASPOWER()
+
+  FUNCTION: haspower(<object>,<power>)
+  
   Returns true if object <object> has the power named <power> set on it.
   You may not be able to retrieve information for objects that you do not
   own.
@@ -5797,10 +5819,14 @@ FUNCTION LIST
     You say "0"
     > say hasflag(me, extended_who) 
     You say "1"
- 
-& delete()
 
-  Function: delete(<string>,<first>,<len>)
+  Related Topics:
+   
+& DELETE()
+DELETE()
+
+  FUNCTION: delete(<string>,<first>,<len>)
+  
   Returns <string>, but with <len> characters starting after the character
   at position <first> removed.  In other words, this function copies <first>
   characters, skips <len> characters, and then copies the remainder of the 
@@ -5812,22 +5838,33 @@ FUNCTION LIST
     > say delete(Would you like coffee or perhaps tea?, 15, 18)
     You say "Would you like tea?"
 
-& lock()
+  Related Topics:
+  
+& LOCK()
+LOCK()
 
-  Function: lock(<object>[/<whichlock>])
+  FUNCTION: lock(<object>[/<whichlock>])
  
   Returns the named lock on <object>.  If you don't specify the lock to get,
   the default lock is returned.  You must control <object>.
 
-& elock()
+  Related Topics:
+  
+& ELOCK()
+ELOCK()
 
-  Function: elock(<object>[/<whichlock>],<victim>)
+  FUNCTION: elock(<object>[/<whichlock>],<victim>)
+  
   Checks if <victim> would pass the named lock on <object>.  Only the object's
   owner may test locks other than the default lock.
+  
+  Related Topics:
 
-& lwho()
+& LWHO()
+LWHO()
 
-  Function: lwho()
+  FUNCTION: lwho()
+  
   Returns a list of the db numbers of connected players.
  
   Example:
@@ -5839,42 +5876,57 @@ FUNCTION LIST
     3 Players logged in.
     > say lwho()
     You say "#226 #271 #1"
-  See also: WHO, conn(), idle().
+  
+  Related Topics: WHO, conn(), idle().
 
 & OBJ()
+OBJ()
 
-  Function: obj(<object>)
+  FUNCTION: obj(<object>)
  
   Returns the proper objective pronoun (him, her, it, them) for referring to
   <object>, based on the object's Sex attribute.  You must either control
   or be near <object>.
-
+  
+  Related Topics:
+  
 & POSS()
+POSS()
 
-  Function: poss(<object>)
+  FUNCTION: poss(<object>)
  
   Returns the proper possessive pronoun (his, her, its, their) for referring
   to <object>, based on the object's Sex attribute.  You must either control
   or be near <object>.
+  
+  Related Topics:
 
 & APOSS()
+APOSS()
 
-  Function: aposs(<object>)
+  FUNCTION: aposs(<object>)
  
   Returns the proper absolute possessive pronoun (his, hers, its, theirs) for
-  referring to <object>, based on the object's Sex attribute.  You must either
+  referring to <object>, based on the object's sex attribute.  You must either
   control or be near <object>.
 
+  Related Topics:
+  
 & SUBJ()
+SUBJ()
 
-  Function: subj(<object>)
+  FUNCTION: subj(<object>)
  
   Returns the proper subjective pronoun (he, she, it, they) for referring to
   <object>, based on the object's Sex attribute.  You must either control
   or be near <object>.
+  
+  Related Topics:
 
 & LIT()
-  lit(<string>)
+LIT()
+
+  FUNCTION: lit(<string>)
 
   This function returns the string literally - without even squishing
   spaces, and without evaluating *anything*. This can be useful for
@@ -5884,6 +5936,7 @@ FUNCTION LIST
   attrib, however, since spaces are usually squished in setting an
   attribute. This example illustrates how to make it work:
 
+  Example:
     > @va me=$test: think {[lit(near       far)]}
     Set.
     > ex me/va
@@ -5892,14 +5945,22 @@ FUNCTION LIST
     near       far
 
   Leaving out the {}'s will not work in the above.
+  
+  Related Topics:
 
 & GREPI()
-  grepi(<object>,<attrs>,<pattern>)
+GREPI()
+
+  FUNCTION: grepi(<object>,<attrs>,<pattern>)
  
   This function works exactly like grep, but is case-insensitive.
-  See "help grep()" for details. 
+  
+  Related Topics: grep() 
+
 & GREP()
-  grep(<object>,<attrs>,<pattern>)
+GREP()
+
+  FUNCTION: grep(<object>,<attrs>,<pattern>)
   
   This function returns a list of attributes on <object> containing
   <pattern>.  <attrs> is a wildcard pattern for attribute names to
