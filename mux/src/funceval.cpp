@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.61 2004-05-01 00:24:34 sdennis Exp $
+// $Id: funceval.cpp,v 1.62 2004-05-01 03:50:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2283,7 +2283,7 @@ FUNCTION(fun_last)
     }
 
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
     {
         return;
     }
@@ -2294,26 +2294,11 @@ FUNCTION(fun_last)
     char *pStart = trim_space_sep_LEN(fargs[0], nLen, &sep, &nLen);
     char *pEnd = pStart + nLen - 1;
 
-    if (  sep.n == 1
-       && sep.str[0] == ' ')
-    {
-        // We're dealing with spaces, so trim off the trailing spaces.
-        //
-        while (  pStart <= pEnd
-              && *pEnd == ' ')
-        {
-            pEnd--;
-        }
-        pEnd[1] = '\0';
-    }
-
-    // QQQ Need to fix this.
-    //
-
     // Find the separator nearest the end.
     //
     char *p = pEnd;
-    while (pStart <= p && *p != sep.str[0])
+    while (  pStart <= p
+          && *p != sep.str[0])
     {
         p--;
     }
