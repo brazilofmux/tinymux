@@ -1,6 +1,6 @@
 // alloc.cpp - Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.8 2001-06-27 20:45:31 sdennis Exp $
+// $Id: alloc.cpp,v 1.9 2001-10-25 09:12:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -406,6 +406,7 @@ void pool_reset(void)
             if (*ibuf == POOL_MAGICNUM)
             {
                 MEMFREE(ph);
+                ph = NULL;
             }
             else
             {

@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.14 2001-09-08 19:25:46 sdennis Exp $
+// $Id: attrcache.cpp,v 1.15 2001-10-25 09:16:01 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -281,7 +281,8 @@ char *cache_get(Aname *nam, int *pLen)
                     REMOVE_ENTRY(pCacheEntry);
                     CacheSize -= pCacheEntry->nSize;
                     hashdeleteLEN((char *)&(pCacheEntry->attrKey), sizeof(Aname), &mudstate.acache_htab);
-                    MEMFREE(pCacheEntry, __FILE__, __LINE__);
+                    MEMFREE(pCacheEntry);
+                    pCacheEntry = NULL;
                 }
             }
 #endif // DO_CACHEING
@@ -364,7 +365,8 @@ BOOL cache_put(Aname *nam, char *value, int len)
         REMOVE_ENTRY(pCacheEntry);
         CacheSize -= pCacheEntry->nSize;
         hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
-        MEMFREE(pCacheEntry, __FILE__, __LINE__);
+        MEMFREE(pCacheEntry);
+        pCacheEntry = NULL;
     }
 
     // Add information about the new entry back into the cache.
@@ -395,7 +397,8 @@ BOOL cache_put(Aname *nam, char *value, int len)
             REMOVE_ENTRY(pCacheEntry);
             CacheSize -= pCacheEntry->nSize;
             hashdeleteLEN((char *)&(pCacheEntry->attrKey), sizeof(Aname), &mudstate.acache_htab);
-            MEMFREE(pCacheEntry, __FILE__, __LINE__);
+            MEMFREE(pCacheEntry);
+            pCacheEntry = NULL;
         }
     }
 #endif // DO_CACHEING
@@ -443,7 +446,8 @@ void cache_del(Aname *nam)
         REMOVE_ENTRY(pCacheEntry);
         CacheSize -= pCacheEntry->nSize;;
         hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
-        MEMFREE(pCacheEntry, __FILE__, __LINE__);
+        MEMFREE(pCacheEntry);
+        pCacheEntry = NULL;
     }
 #endif // DO_CACHEING
 }
