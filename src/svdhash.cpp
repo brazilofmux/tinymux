@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.7 2000-06-02 16:18:01 sdennis Exp $
+// $Id: svdhash.cpp,v 1.8 2000-06-05 23:43:48 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -1436,8 +1436,10 @@ BOOL CHashFile::EmptyDirectory(void)
     m_nDirDepth = 1;
 
     m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
-    if (m_pDir == NULL) return FALSE;
-
+    if (ISOUTOFMEMORY(m_pDir))
+    {
+        return FALSE;
+    }
     m_pDir[0] = m_pDir[1] = 0xFFFFFFFFUL;
     return TRUE;
 }
@@ -1554,18 +1556,18 @@ BOOL CHashFile::ReadDirectory(void)
         return FALSE;
     }
     m_nDir = (int)(cc / HF_SIZEOF_FILEOFFSET);
-    m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
     m_nDirDepth = 0;
+    m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
+    if (ISOUTOFMEMORY(m_pDir))
+    {
+        return FALSE;
+    }
     int n = m_nDir;
     n >>= 1;
     while (n)
     {
         m_nDirDepth++;
         n >>= 1;
-    }
-    if (m_pDir == NULL)
-    {
-        return FALSE;
     }
 #ifdef WIN32
     cc = SetFilePointer(m_hDirFile, 0, 0, FILE_BEGIN);
@@ -1890,27 +1892,28 @@ BOOL CHashFile::DoubleDirectory(void)
     HP_DIRINDEX nNewDirDepth = m_nDirDepth + 1;
 
     HF_PFILEOFFSET pNewDir = (HF_PFILEOFFSET)MEMALLOC(sizeof(HF_FILEOFFSET)*nNewDir);
-    if (pNewDir)
+    if (ISOUTOFMEMORY(pNewDir))
     {
-        unsigned int iNewDir = 0;
-        for (unsigned int iDir = 0; iDir < m_nDir; iDir++)
-        {
-            pNewDir[iNewDir++] = m_pDir[iDir];
-            pNewDir[iNewDir++] = m_pDir[iDir];
-        }
-
-        // Write out the new directory. It's always larger than
-        // the previous one.
-        //
-        WriteDirectory();
-
-        MEMFREE(m_pDir);
-        m_pDir = pNewDir;
-        m_nDirDepth = nNewDirDepth;
-        m_nDir = nNewDir;
-        return TRUE;
+        return FALSE;
     }
-    return FALSE;
+
+    unsigned int iNewDir = 0;
+    for (unsigned int iDir = 0; iDir < m_nDir; iDir++)
+    {
+        pNewDir[iNewDir++] = m_pDir[iDir];
+        pNewDir[iNewDir++] = m_pDir[iDir];
+    }
+
+    // Write out the new directory. It's always larger than
+    // the previous one.
+    //
+    WriteDirectory();
+
+    MEMFREE(m_pDir);
+    m_pDir = pNewDir;
+    m_nDirDepth = nNewDirDepth;
+    m_nDir = nNewDir;
+    return TRUE;
 }
 
 HP_DIRINDEX CHashFile::FindFirstKey(unsigned long nHash)
