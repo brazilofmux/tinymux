@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.22 2003-02-03 22:40:16 sdennis Exp $
+// $Id: stringutil.cpp,v 1.23 2003-02-03 22:48:35 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -355,7 +355,7 @@ const char ANSI_TokenTerminatorTable[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const unsigned char Tiny_ToUpper[256] =
+const unsigned char mux_toupper[256] =
 {
 //   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
 //
@@ -2381,15 +2381,15 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
         {
             // Look for three magic strings.
             //
-            unsigned char ch0 = Tiny_ToUpper[(unsigned char)str[0]];
+            unsigned char ch0 = mux_toupper[(unsigned char)str[0]];
             if (ch0 == 'I')
             {
                 // Could be 'Inf' or 'Ind'
                 //
-                ch0 = Tiny_ToUpper[(unsigned char)str[1]];
+                ch0 = mux_toupper[(unsigned char)str[1]];
                 if (ch0 == 'N')
                 {
-                    ch0 = Tiny_ToUpper[(unsigned char)str[2]];
+                    ch0 = mux_toupper[(unsigned char)str[2]];
                     if (ch0 == 'F')
                     {
                         // Inf
@@ -2419,10 +2419,10 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
             {
                 // Could be 'Nan'
                 //
-                ch0 = Tiny_ToUpper[(unsigned char)str[1]];
+                ch0 = mux_toupper[(unsigned char)str[1]];
                 if (ch0 == 'A')
                 {
-                    ch0 = Tiny_ToUpper[(unsigned char)str[2]];
+                    ch0 = mux_toupper[(unsigned char)str[2]];
                     if (ch0 == 'N')
                     {
                         // Nan
@@ -2466,7 +2466,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
         return FALSE;
     }
 
-    ch0 = Tiny_ToUpper[(unsigned char)*str];
+    ch0 = mux_toupper[(unsigned char)*str];
     if (ch0 == 'E')
     {
         // There is an exponent portion.
@@ -3195,7 +3195,7 @@ void mux_strupr(char *a)
 {
     while (*a)
     {
-        *a = Tiny_ToUpper[(unsigned char)*a];
+        *a = mux_toupper[(unsigned char)*a];
         a++;
     }
 }
@@ -3388,14 +3388,14 @@ void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
     bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
     {
-        bmhs->m_d[Tiny_ToUpper[(unsigned char)pPat[k]]] = nPat - k - 1;
+        bmhs->m_d[mux_toupper[(unsigned char)pPat[k]]] = nPat - k - 1;
         bmhs->m_d[mux_tolower[(unsigned char)pPat[k]]] = nPat - k - 1;
         if (pPat[k] == chLastPat)
         {
             bmhs->m_skip2 = nPat - k - 1;
         }
     }
-    bmhs->m_d[Tiny_ToUpper[(unsigned char)chLastPat]] = BMH_LARGE;
+    bmhs->m_d[mux_toupper[(unsigned char)chLastPat]] = BMH_LARGE;
     bmhs->m_d[mux_tolower[(unsigned char)chLastPat]] = BMH_LARGE;
 }
 
@@ -3419,7 +3419,7 @@ int BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
         int j = nPat - 1;
         char *s = pSrc + (i - j);
         while (  --j >= 0
-              && Tiny_ToUpper[(unsigned char)s[j]] == Tiny_ToUpper[(unsigned char)pPat[j]])
+              && mux_toupper[(unsigned char)s[j]] == mux_toupper[(unsigned char)pPat[j]])
         {
             ; // Nothing.
         }

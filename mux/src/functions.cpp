@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.16 2003-02-03 22:40:16 sdennis Exp $
+// $Id: functions.cpp,v 1.17 2003-02-03 22:48:34 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -5487,7 +5487,7 @@ FUNCTION(fun_lcstr)
 
 FUNCTION(fun_ucstr)
 {
-    ANSI_TransformTextWithTable(buff, bufc, fargs[0], Tiny_ToUpper);
+    ANSI_TransformTextWithTable(buff, bufc, fargs[0], mux_toupper);
 }
 
 FUNCTION(fun_capstr)
@@ -5506,7 +5506,7 @@ FUNCTION(fun_capstr)
         int iType = ANSI_lex(nString, pBuffer, &nTokenLength0, &nTokenLength1);
         if (iType == TOKEN_TEXT_ANSI)
         {
-            *pBuffer = Tiny_ToUpper[(unsigned char)*pBuffer];
+            *pBuffer = mux_toupper[(unsigned char)*pBuffer];
             return;
         }
         else
@@ -8028,7 +8028,7 @@ FUNCTION(fun_wrap)
 
     if (nfargs >= 3)
     {
-        cJust = Tiny_ToUpper[*fargs[2]];
+        cJust = mux_toupper[*fargs[2]];
         switch (cJust)
         {
         case 'L':

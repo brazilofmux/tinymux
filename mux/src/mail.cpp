@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.7 2003-02-03 20:46:38 sdennis Exp $
+// $Id: mail.cpp,v 1.8 2003-02-03 22:48:35 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -317,7 +317,7 @@ void add_folder_name(dbref player, int fld, char *name)
     char *p = name;
     while (*p)
     {
-        *q++ = Tiny_ToUpper[(unsigned char)*p];
+        *q++ = mux_toupper[(unsigned char)*p];
         p++;
     }
     *q++ = ':';
@@ -467,7 +467,7 @@ static int get_folder_number(dbref player, char *name)
         char *p = name;
         while (*p)
         {
-            *q++ = Tiny_ToUpper[(unsigned char)*p];
+            *q++ = mux_toupper[(unsigned char)*p];
             p++;
         }
         *q++ = ':';
@@ -605,7 +605,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
     }
     else
     {
-        switch (Tiny_ToUpper[(unsigned char)*p])
+        switch (mux_toupper[(unsigned char)*p])
         {
         case '-':
 
@@ -737,7 +737,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 notify(player, "MAIL: U is ambiguous (urgent or unread?)");
                 return FALSE;
             }
-            switch (Tiny_ToUpper[(unsigned char)*p])
+            switch (mux_toupper[(unsigned char)*p])
             {
             case 'R':
 
@@ -794,7 +794,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 notify(player, "MAIL: M is ambiguous (mass or me?)");
                 return FALSE;
             }
-            switch (Tiny_ToUpper[(unsigned char)*p])
+            switch (mux_toupper[(unsigned char)*p])
             {
             case 'A':
 

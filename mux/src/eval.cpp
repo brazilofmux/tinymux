@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.5 2003-02-03 22:40:15 sdennis Exp $
+// $Id: eval.cpp,v 1.6 2003-02-03 22:48:34 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1602,7 +1602,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         pdstr++;
                         if (Tiny_IsAlpha[(unsigned char)(*pdstr)])
                         {
-                            i = A_VA + Tiny_ToUpper[(unsigned char)(*pdstr)] - 'A';
+                            i = A_VA + mux_toupper[(unsigned char)(*pdstr)] - 'A';
                             size_t nAttrGotten;
                             atr_pget_str_LEN(TinyExec_scratch, executor, i,
                                 &aowner, &aflags, &nAttrGotten);
@@ -1814,7 +1814,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                 //
                 if (cType_L2 & 0x80)
                 {
-                    *TempPtr = Tiny_ToUpper[(unsigned char)*TempPtr];
+                    *TempPtr = mux_toupper[(unsigned char)*TempPtr];
                 }
             }
         }
