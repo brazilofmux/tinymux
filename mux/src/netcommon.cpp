@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.12 2003-02-05 06:20:59 jake Exp $
+// $Id: netcommon.cpp,v 1.13 2003-02-11 07:01:26 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2171,6 +2171,8 @@ bool do_command(DESC *d, char *command)
         }
         else
         {
+            mudstate.curr_executor = NOTHING;
+            mudstate.curr_enactor = NOTHING;
             mudstate.debug_cmd = cmdsave;
             return check_connect(d, command);
         }
