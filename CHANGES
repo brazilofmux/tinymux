@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  July 2002
+Last Update:  Septebmer 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -265,6 +265,8 @@ Bug Fixes:
  -- Fix SIGSEGV bug in ANSI_String_Copy that becomes an issue with the use
     of center/ljust/rjust. Discovered by Elmeria@Crystal Bridges.
  -- Fix uninitialized variable in utility function used by LROOMS().
+ -- Fixed @listcommand when @addcommand'ed commands have previous aliases.
+    It only affected the report.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
