@@ -2,7 +2,7 @@
  * create.c -- Commands that create new objects 
  */
 /*
- * $Id: create.cpp,v 1.5 2000-05-25 04:33:20 sdennis Exp $ 
+ * $Id: create.cpp,v 1.6 2000-06-01 19:50:29 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -681,11 +681,6 @@ void do_pcreate(dbref player, dbref cause, int key, char *name, char *pass)
         log_text((char *)" created by ");
         log_name(player);
         ENDLOG;
-#ifdef GAME_DOOFERMUX
-        // Added by D.Piper (del@delphinian.com) 2000-APR
-        //
-        atr_add_raw(newplayer, A_REGINFO, "*Requires Registration*");
-#endif // GAME_DOOFERMUX
     }
     else
     {
@@ -698,6 +693,11 @@ void do_pcreate(dbref player, dbref cause, int key, char *name, char *pass)
         log_text((char *)" created by ");
         log_name(player);
         ENDLOG;
+#ifdef GAME_DOOFERMUX
+        // Added by D.Piper (del@delphinian.com) 2000-APR
+        //
+        atr_add_raw(newplayer, A_REGINFO, "*Requires Registration*");
+#endif // GAME_DOOFERMUX
     }
 }
 
