@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.10 2001-06-14 09:22:15 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.11 2001-09-28 09:56:11 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -846,9 +846,11 @@ void do_pemit_single
             break;
 
         case PEMIT_WHISPER:
-            if (!Connected(target))
+            if (  isPlayer(target)
+               && !Connected(target))
             {
-                page_return(player, target, "Away", A_AWAY, tprintf("Sorry, %s is not connected.", Name(target)));
+                page_return(player, target, "Away", A_AWAY,
+                    tprintf("Sorry, %s is not connected.", Name(target)));
                 return;
             }
             switch (chPoseType)
@@ -866,10 +868,13 @@ void do_pemit_single
                 message++;
 
             default:
-                notify(player, tprintf("You whisper \"%s\" to %s.", message, Name(target)));
-                notify_with_cause(target, player, tprintf("%s whispers \"%s\"", Name(player), message));
+                notify(player, tprintf("You whisper \"%s\" to %s.", message,
+                    Name(target)));
+                notify_with_cause(target, player,
+                    tprintf("%s whispers \"%s\"", Name(player), message));
             }
-            if ((!mudconf.quiet_whisper) && !Wizard(player))
+            if (  !mudconf.quiet_whisper
+               && !Wizard(player))
             {
                 loc = where_is(player);
                 if (loc != NOTHING)
@@ -890,37 +895,46 @@ void do_pemit_single
             notify(target, tprintf("You say \"%s\"", message));
             if (loc != NOTHING)
             {
-                notify_except(loc, player, target, tprintf("%s says \"%s\"", Name(target), message), 0);
+                notify_except(loc, player, target,
+                    tprintf("%s says \"%s\"", Name(target), message), 0);
             }
             break;
 
         case PEMIT_FPOSE:
-            notify_all_from_inside(loc, player, tprintf("%s %s", Name(target), message));
+            notify_all_from_inside(loc, player, tprintf("%s %s", Name(target),
+                message));
             break;
 
         case PEMIT_FPOSE_NS:
-            notify_all_from_inside(loc, player, tprintf("%s%s", Name(target), message));
+            notify_all_from_inside(loc, player, tprintf("%s%s", Name(target),
+                message));
             break;
 
         case PEMIT_FEMIT:
-            if ((pemit_flags & PEMIT_HERE) || !pemit_flags)
+            if (  (pemit_flags & PEMIT_HERE)
+               || !pemit_flags)
+            {
                 notify_all_from_inside(loc, player, message);
+            }
             if (pemit_flags & PEMIT_ROOM)
             {
-                if ((Typeof(loc) == TYPE_ROOM) && (pemit_flags & PEMIT_HERE))
+                if (  isRoom(loc)
+                   && (pemit_flags & PEMIT_HERE))
                 {
                     return;
                 }
                 depth = 0;
-                while ((Typeof(loc) != TYPE_ROOM) && (depth++ < 20))
+                while (  !isRoom(loc)
+                      && depth++ < 20)
                 {
                     loc = Location(loc);
-                    if ((loc == NOTHING) || (loc == Location(loc)))
+                    if (  loc == NOTHING
+                       || loc == Location(loc))
                     {
                         return;
                     }
                 }
-                if (Typeof(loc) == TYPE_ROOM)
+                if (isRoom(loc))
                 {
                     notify_all_from_inside(loc, player, message);
                 }
