@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.74 2001-08-24 20:55:18 sdennis Exp $
+// $Id: functions.cpp,v 1.75 2001-08-25 07:01:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -638,17 +638,32 @@ static void fval(char *buff, char **bufc, double result)
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
-        safe_tprintf_str(buff, bufc, "%.6f", result);
+        double rIntegerPart;
+        double rFractionalPart;
 
-        char *pEnd = (*bufc) - 1;
+        rFractionalPart = modf(result, &rIntegerPart);
+        if (  -0.0000005 < rFractionalPart
+           &&  rFractionalPart < 0.0000005
+           &&  LONG_MIN <= rIntegerPart
+           &&  rIntegerPart <= LONG_MAX)
+        {
+            long i = (long)rIntegerPart;
+            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+        }
+        else
+        {
+            safe_tprintf_str(buff, bufc, "%.6f", result);
 
-        // Remove useless trailing 0's between pBegin and pEnd.
-        //
-        pEnd = strip_useless_zeroes(pBegin, pEnd);
+            char *pEnd = (*bufc) - 1;
 
-        // Update bufc pointer.
-        //
-        *bufc = pEnd;
+            // Remove useless trailing 0's between pBegin and pEnd.
+            //
+            pEnd = strip_useless_zeroes(pBegin, pEnd);
+
+            // Update bufc pointer.
+            //
+            *bufc = pEnd;
+        }
 #ifdef HAVE_IEEE_FP_FORMAT
     }
     else
@@ -669,13 +684,28 @@ static void fval_buf(char *buff, double result)
     if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
-        sprintf(buff, "%.6f", result);
+        double rIntegerPart;
+        double rFractionalPart;
 
-        char *pEnd = buff + strlen(buff) - 1;
+        rFractionalPart = modf(result, &rIntegerPart);
+        if (  -0.0000005 < rFractionalPart
+           &&  rFractionalPart < 0.0000005
+           &&  LONG_MIN <= rIntegerPart
+           &&  rIntegerPart <= LONG_MAX)
+        {
+            long i = (long)rIntegerPart;
+            Tiny_ltoa(i, buff);
+        }
+        else
+        {
+            sprintf(buff, "%.6f", result);
 
-        // Remove useless trailing 0's between pBegin and pEnd.
-        //
-        strip_useless_zeroes(pBegin, pEnd);
+            char *pEnd = buff + strlen(buff) - 1;
+
+            // Remove useless trailing 0's between pBegin and pEnd.
+            //
+            strip_useless_zeroes(pBegin, pEnd);
+        }
 #ifdef HAVE_IEEE_FP_FORMAT
     }
     else
