@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  June 2002
+Last Update:  July 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -255,10 +255,15 @@ Bug Fixes:
  -- Fixed server hang possibility in BMH_Execute(), Boyer-Moore-Horspool
     string searching. Encountered by nails and Anomaly at mushpark.com.
  -- Fix hasquota() so that it returns '1' and '0' instead of '49' and '48'.
- -- Fix ancient filter() bug where a prefix of '1' was enough to test true.
+ -- Fix filter() behavior where a prefix of '1' was enough to test true.
     Fixed by Raevnos.
  -- @chzone should have cleared powers. Fix by Jake.
  -- Fix MAT_HOME bug. Found by Alierak.
+ -- Fix channels() against the potential of having more than an LBUF in
+    channel names. Channels can only be created by Wizards, so this
+    isn't an urgent issue.
+ -- Fix SIGSEGV bug in ANSI_String_Copy that becomes an issue with the use
+    of center/ljust/rjust. Discovered by Elmeria@Crystal Bridges.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
