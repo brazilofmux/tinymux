@@ -242,6 +242,12 @@ Bug Fixes:
     non-visual objects.
  -- Guests were not halted on disconnect. Patch from Zenty.
  -- God was able to @chown itself to other players. Patch from Jake.
+ -- Fixed udefault() with %9. Found by Jake. Fixed by Brazil.
+ -- Fixed search() with no arguments causing SIGSEGV on Solaris.
+ -- Allow space() to have no arguments.
+ -- Fix isnum() parsing when exponents are involved.
+ -- Fix the way nanoseconds are broken into milliseconds, microseconds,
+    and nanoseconds. Probably not observable in MUX 2.1.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -287,6 +293,7 @@ Cosmetic Changes:
  -- @pcreate and @robot now report the created dbref.
  -- say command now emits 'You say, "..."' instead of 'You say "..."'.
  -- Help for pmatch changed to reflect that the #-2 result was removed long ago.
+ -- @wall now adds comma after shouts. From TM3.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
