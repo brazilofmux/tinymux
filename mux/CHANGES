@@ -32,6 +32,7 @@ Feature Additions:
  -- Jake added support for variable exits.
  -- Support for larger CHashpage sizes (based on value of LBUF_SIZE).
  -- Added ENTRANCES().
+ -- Added GRABALL().
  -- Added -e command-line option which can be used to redirect the log
     back to the standard error stream (i.e., stderr) or to specify a
     basename to locate the logfiles in a directory other than the game
