@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.10 2003-01-05 18:08:59 sdennis Exp $
+// $Id: timeutil.cpp,v 1.11 2003-02-16 20:43:35 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1047,7 +1047,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
     {
         return FALSE;
     }
-    while (Tiny_IsDigit[*p])
+    while (Tiny_IsDigit[(unsigned char)*p])
     {
         p++;
     }

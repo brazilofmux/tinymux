@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.57 2003-01-23 06:38:10 sdennis Exp $
+// $Id: db.cpp,v 1.58 2003-02-16 20:43:34 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1491,7 +1491,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
     }
     int tmp_owner = 0;
     unsigned int ch = *cp;
-    while (Tiny_IsDigit[ch])
+    while (Tiny_IsDigit[(unsigned char)ch])
     {
         cp++;
         tmp_owner = 10*tmp_owner + (ch-'0');
@@ -1513,7 +1513,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
     //
     int tmp_flags = 0;
     ch = *cp;
-    while (Tiny_IsDigit[ch])
+    while (Tiny_IsDigit[(unsigned char)ch])
     {
         cp++;
         tmp_flags = 10*tmp_flags + (ch-'0');

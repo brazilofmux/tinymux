@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.37 2003-02-01 22:19:21 sdennis Exp $
+// $Id: stringutil.cpp,v 1.38 2003-02-16 20:43:35 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2089,7 +2089,7 @@ long Tiny_atol(const char *pString)
     //
     unsigned c1;
     unsigned c0 = pString[0];
-    if (!Tiny_IsDigit[c0])
+    if (!Tiny_IsDigit[(unsigned char)c0])
     {
         while (Tiny_IsSpace[(unsigned char)pString[0]])
         {
@@ -2102,7 +2102,7 @@ long Tiny_atol(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!Tiny_IsDigit[c0])
+        if (!Tiny_IsDigit[(unsigned char)c0])
         {
             return 0;
         }
@@ -2111,7 +2111,7 @@ long Tiny_atol(const char *pString)
     do
     {
         c1 = pString[1];
-        if (Tiny_IsDigit[c1])
+        if (Tiny_IsDigit[(unsigned char)c1])
         {
             sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
             pString += 2;
@@ -2121,7 +2121,7 @@ long Tiny_atol(const char *pString)
             sum = 10 * sum + (c0-'0');
             break;
         }
-    } while (Tiny_IsDigit[c0 = pString[0]]);
+    } while (Tiny_IsDigit[(unsigned char)(c0 = pString[0])]);
 
     // Interpret sign
     //
@@ -2141,7 +2141,7 @@ INT64 Tiny_atoi64(const char *pString)
     //
     unsigned c1;
     unsigned c0 = pString[0];
-    if (!Tiny_IsDigit[c0])
+    if (!Tiny_IsDigit[(unsigned char)c0])
     {
         while (Tiny_IsSpace[(unsigned char)pString[0]])
         {
@@ -2154,7 +2154,7 @@ INT64 Tiny_atoi64(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!Tiny_IsDigit[c0])
+        if (!Tiny_IsDigit[(unsigned char)c0])
         {
             return 0;
         }
@@ -2163,7 +2163,7 @@ INT64 Tiny_atoi64(const char *pString)
     do
     {
         c1 = pString[1];
-        if (Tiny_IsDigit[c1])
+        if (Tiny_IsDigit[(unsigned char)c1])
         {
             sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
             pString += 2;
@@ -2173,7 +2173,7 @@ INT64 Tiny_atoi64(const char *pString)
             sum = 10 * sum + (c0-'0');
             break;
         }
-    } while (Tiny_IsDigit[c0 = pString[0]]);
+    } while (Tiny_IsDigit[(unsigned char)(c0 = pString[0])]);
 
     // Interpret sign
     //

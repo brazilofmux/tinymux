@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.131 2003-01-31 16:08:42 sdennis Exp $
+// $Id: functions.cpp,v 1.132 2003-02-16 20:43:35 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3168,7 +3168,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
     
     // Skip trailing spaces.
     //
-    while (Tiny_IsSpace[*number])
+    while (Tiny_IsSpace[(unsigned char)*number])
     {
         number++;
     }
@@ -3237,7 +3237,7 @@ FUNCTION(fun_roman)
 
     // Skip trailing spaces.
     //
-    while (Tiny_IsSpace[*number])
+    while (Tiny_IsSpace[(unsigned char)*number])
     {
         number++;
     }
@@ -8085,7 +8085,7 @@ FUNCTION(fun_wrap)
     {
         nLineLeft = nWidth - (pThisWord - pLineStart);
         pNextWord = pThisWord;
-        while(*pNextWord && !Tiny_IsSpace[*pNextWord])
+        while(*pNextWord && !Tiny_IsSpace[(unsigned char)*pNextWord])
         {
             pNextWord++;
         }
