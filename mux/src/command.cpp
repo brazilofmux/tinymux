@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.38 2002-07-19 10:22:13 jake Exp $
+// $Id: command.cpp,v 1.39 2002-07-19 11:18:28 jake Exp $
 //
 
 #include "copyright.h"
@@ -701,7 +701,7 @@ CMDENT_TWO_ARG_CMDARG command_table_two_arg_cmdarg[] =
 
 CMDENT_TWO_ARG_ARGV_CMDARG command_table_two_arg_argv_cmdarg[] =
 {
-    {"@ifelse", NULL,  CA_GBL_INTERP,  0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_ifelse},
+    {"@if",     NULL,       CA_GBL_INTERP,  0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_if},
     {"@switch", switch_sw,  CA_GBL_INTERP,  0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_switch},
     {NULL,      NULL,       0,              0,  0,                                                        NULL}
 };

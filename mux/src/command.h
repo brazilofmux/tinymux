@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.9 2002-07-19 10:22:13 jake Exp $
+// $Id: command.h,v 1.10 2002-07-19 11:18:28 jake Exp $
 //
 
 #ifndef __COMMAND_H
@@ -78,7 +78,7 @@ CMD_TWO_ARG(do_give);           /* Give something away */
 CMD_ONE_ARG(do_global);         /* Enable/disable global flags */
 CMD_ONE_ARG(do_halt);           /* Remove commands from the queue */
 CMD_ONE_ARG(do_help);           /* Print info from help files */
-CMD_TWO_ARG_ARGV_CMDARG(do_ifelse); // Execute cmd based on truth of expression
+CMD_TWO_ARG_ARGV_CMDARG(do_if); // Execute cmd based on truth of expression
 CMD_NO_ARG(do_inventory);       /* Print what I am carrying */
 CMD_TWO_ARG(do_prog);           /* Interactive input */
 CMD_ONE_ARG(do_quitprog);       /* Quits @prog */

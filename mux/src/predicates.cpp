@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.31 2002-07-19 10:22:13 jake Exp $
+// $Id: predicates.cpp,v 1.32 2002-07-19 11:18:28 jake Exp $
 //
 
 #include "copyright.h"
@@ -611,7 +611,10 @@ void do_switch
     }
 }
 
-void do_ifelse
+// Also for lack of better place the @ifelse code is here.
+// Idea for @ifelse from ChaoticMUX.
+//
+void do_if
 (
     dbref player,
     dbref caller,
@@ -631,7 +634,7 @@ void do_ifelse
 
     char *buff, *bp;
     CLinearTimeAbsolute lta;
-    buff = bp = alloc_lbuf("do_ifelse");
+    buff = bp = alloc_lbuf("do_if");
 
     TinyExec(buff, &bp, player, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
             &expr, cargs, ncargs);
