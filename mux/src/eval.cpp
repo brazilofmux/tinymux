@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.19 2002-09-23 07:11:32 sdennis Exp $
+// $Id: eval.cpp,v 1.20 2002-09-23 18:26:29 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1179,8 +1179,8 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             //
             at_space = 0;
 
-            // Load an sbuf with an uppercase version of the func name, and see
-            // if the func exists. Trim trailing spaces from the name if
+            // Load an sbuf with an lowercase version of the func name, and
+            // see if the func exists. Trim trailing spaces from the name if
             // configured.
             //
             char *pEnd = *bufc - 1;
