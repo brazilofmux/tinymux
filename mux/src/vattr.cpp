@@ -1,17 +1,10 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.10 2002-12-16 00:21:27 sdennis Exp $
+// $Id: vattr.cpp,v 1.11 2003-01-05 17:49:34 sdennis Exp $
 //
-// MUX 2.1
-// Portions are derived from MUX 1.6. Portions are original work.
-//
-// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved. Permission is given to
-// use this code for building and hosting text-based game servers.
-// Permission is given to use this code for other non-commercial
-// purposes. To use this code for commercial purposes other than
-// building/hosting text-based game servers, contact the author at
-// Stephen Dennis <sdennis@svdltd.com> for another license.
+// MUX 2.2
+// Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
+// rights not explicitly given are reserved.  
 //
 
 #include "copyright.h"
