@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.17 2003-02-17 02:57:10 sdennis Exp $
+// $Id: timeutil.cpp,v 1.18 2003-02-24 08:04:23 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1399,10 +1399,10 @@ static CLinearTimeDelta    ltdTimeZoneStandard;
 // Because of signed-ness and -LONG_MAX overflowing, we need to be
 // particularly careful with finding the mid-point.
 //
-time_t time_t_midpoint(time_t ulLower, time_t ulUpper)
+time_t time_t_midpoint(time_t tLower, time_t tUpper)
 {
-    time_t ulDiff = (ulUpper-2) - ulLower;
-    return ulLower+ulDiff/2+1;
+    time_t tDiff = (tUpper-2) - tLower;
+    return tLower+tDiff/2+1;
 }
 
 // This determines the valid range of time_t and finds a 'standard'
@@ -1410,48 +1410,55 @@ time_t time_t_midpoint(time_t ulLower, time_t ulUpper)
 //
 void test_time_t(void)
 {
+    // Determine the range of the time_t datatype.  This code assumes a
+    // 2's-complement format.
+    //
+    time_t tZero = 0;
+    time_t max_time_t = (~tZero) >> 1;
+    time_t min_time_t = max_time_t + 1;
+
     // Search for the highest supported value of time_t.
     //
-    time_t ulUpper = LONG_MAX;
-    time_t ulLower = 0;
-    time_t ulMid;
-    while (ulLower < ulUpper)
+    time_t tUpper = max_time_t;
+    time_t tLower = 0;
+    time_t tMid;
+    while (tLower < tUpper)
     {
-        ulMid = time_t_midpoint(ulLower+1, ulUpper);
-        if (localtime(&ulMid))
+        tMid = time_t_midpoint(tLower+1, tUpper);
+        if (localtime(&tMid))
         {
-            ulLower = ulMid;
+            tLower = tMid;
         }
         else
         {
-            ulUpper = ulMid-1;
+            tUpper = tMid-1;
         }
     }
-    ltaUpperBound.SetSeconds(ulLower);
+    ltaUpperBound.SetSeconds(tLower);
 
     // Search for the lowest supported value of time_t.
     //
-    ulUpper = 0;
-    ulLower = LONG_MIN;
-    while (ulLower < ulUpper)
+    tUpper = 0;
+    tLower = min_time_t;
+    while (tLower < tUpper)
     {
-        ulMid = time_t_midpoint(ulLower, ulUpper-1);
-        if (localtime(&ulMid))
+        tMid = time_t_midpoint(tLower, tUpper-1);
+        if (localtime(&tMid))
         {
-            ulUpper = ulMid;
+            tUpper = tMid;
         }
         else
         {
-            ulLower = ulMid+1;
+            tLower = tMid+1;
         }
     }
-    ltaLowerBound.SetSeconds(ulUpper);
+    ltaLowerBound.SetSeconds(tUpper);
 
-    // Find a time near ulLower for which DST is not in affect.
+    // Find a time near tLower for which DST is not in affect.
     //
     for (;;)
     {
-        struct tm *ptm = localtime(&ulLower);
+        struct tm *ptm = localtime(&tLower);
 
         if (ptm->tm_isdst <= 0)
         {
@@ -1468,14 +1475,14 @@ void test_time_t(void)
             CLinearTimeAbsolute ltaLocal;
             CLinearTimeAbsolute ltaUTC;
             ltaLocal.SetFields(&ft);
-            ltaUTC.SetSeconds(ulLower);
+            ltaUTC.SetSeconds(tLower);
             ltdTimeZoneStandard = ltaLocal - ltaUTC;
             break;
         }
 
         // Advance the time by 1 month (expressed as seconds).
         //
-        ulLower += 30*24*60*60;
+        tLower += 30*24*60*60;
     }
 }
 
