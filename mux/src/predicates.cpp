@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.34 2002-07-23 05:36:13 jake Exp $
+// $Id: predicates.cpp,v 1.35 2002-07-23 15:47:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1931,16 +1931,20 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             }
             free_lbuf(buff);
         }
+        else if (def)
+        {
+            notify(player, def);
+        }
         free_lbuf(d);
     }
-    if ((what != 0) && def)
+    if (what < 0 && def)
     {
         notify(player, def);
     }
 
     // message to neighbors.
     //
-    if (  (owhat > 0)
+    if (  owhat > 0
        && Has_location(player)
        && Good_obj(loc = Location(player)))
     {
@@ -1963,9 +1967,13 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             }
             free_lbuf(buff);
         }
+        else if (odef)
+        {
+            notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
+        }
         free_lbuf(d);
     }
-    if (  (owhat != 0)
+    if (  owhat < 0
        && odef
        && Has_location(player)
        && Good_obj(loc = Location(player)))
