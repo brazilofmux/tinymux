@@ -1,9 +1,10 @@
 // svdrand.cpp -- Random Numbers
 //
-// $Id: svdrand.cpp,v 1.9 2000-04-28 06:09:25 sdennis Exp $
+// $Id: svdrand.cpp,v 1.10 2000-05-17 07:48:58 sdennis Exp $
 //
-// Random Numbers based on algorithms presented in "Numerical Recipes in C",
-// Cambridge Press, 1992.
+// The first version of Random Numbers based on algorithms presented in
+// "Numerical Recipes in C", Cambridge Press, 1992. The second one is
+// from Makoto Matsumoto and Takuji Nishimura.
 // 
 // RandomLong() was derived from existing game server code.
 //
@@ -22,12 +23,109 @@
 #include "svdrand.h"
 #include "svdhash.h"
 
+#define USE_RAN2
+//#define USE_MERSENNE_TWISTER
+
+void sgenrand(unsigned long);    // seed the generator
+unsigned long genrand(void);     // returns a random 32-bit integer */
+
+static BOOL bSeeded = FALSE;
+void SeedRandomNumberGenerator(void)
+{
+    if (bSeeded) return;
+    bSeeded = TRUE;
+
+    // Determine the initial seed.
+    //
+    CLinearTimeAbsolute lsaNow;
+    lsaNow.GetUTC();
+    INT64 i64Seed = lsaNow.Return100ns();
+
+    unsigned long nSeed = CRC32_ProcessBuffer(0, &i64Seed, sizeof(INT64));
+    if (nSeed <= 1000)
+    {
+        nSeed += 22261048;
+    }
+
+    // ASSERT: 1000 < nSeed
+
+    sgenrand(nSeed);
+}
+
+// RandomLong -- return a long on the interval [lLow, lHigh]
+//
+long RandomLong(long lLow, long lHigh)
+{
+    // Validate parameters
+    //
+    if (lHigh < lLow)
+    {
+        return -1;
+    }
+    else if (lHigh == lLow)
+    {
+        return lLow;
+    }
+
+    unsigned long x = lHigh-lLow;
+    if (LONG_MAX < x)
+    {
+        return -1;
+    }
+    x++;
+
+    // We can now look for an random number on the interval [0,x-1].
+    //
+    static unsigned long maxLeftover = 0;
+    static unsigned long n = 0;
+
+    if (maxLeftover < x)
+    {
+        maxLeftover = ULONG_MAX;
+        n = genrand();
+    }
+
+    // In order to be perfectly conservative about not introducing any
+    // further sources of statistical bias, we're going to call getrand()
+    // until we get a number less than the greatest representable
+    // multiple of x. We'll then return n mod x.
+    //
+    // N.B. This loop happens in randomized constant time, and pretty
+    // damn fast randomized constant time too, since
+    //
+    //      P(ULONG_MAX - n < ULONG_MAX % x) < 0.5, for any x.
+    //
+    // So even for the least desireable x, the average number of times
+    // we will call getrand() is less than 2.
+    //
+    unsigned long nLimit = maxLeftover - (maxLeftover%x);
+    while (n >= nLimit)
+    {
+        n = genrand();
+        if (maxLeftover != ULONG_MAX)
+        {
+            maxLeftover = ULONG_MAX;
+            nLimit = ULONG_MAX - (ULONG_MAX%x);
+        }
+    }
+
+    // Save useful, leftover bits. x -always- divides evenly into
+    // (nLimit-1). And, the probability of the final n on the
+    // interval [0,maxLeftover-1] is evenly distributed.
+    //
+    maxLeftover = (nLimit-1) / x;
+    long nAnswer = lLow + (n%x);
+    n /= x;
+    return nAnswer;
+}
+
+#ifdef USE_RAN2
+
 #define NTAB 32
 static unsigned long iv[NTAB];
 static unsigned long iy = 0;
-static unsigned long idum = 123456789;
+static unsigned long idum  = 123456789;
 static unsigned long idum2 = 123456789;
-static BOOL bSeeded = FALSE;
 
 // m1 4294967291, a prime <= ULONG_MAX
 // m2 4294967279, a prime <= ULONG_MAX != m1
@@ -83,27 +181,12 @@ unsigned long ModulusMultiply
     return z;
 }
 
-void SeedRandomNumberGenerator(void)
+void sgenrand(unsigned long nSeed)
 {
-    if (bSeeded) return;
-    bSeeded = TRUE;
-
-    // Determine the initial seed, idum.
-    //
-    CLinearTimeAbsolute lsaNow;
-    lsaNow.GetUTC();
-    idum = (unsigned long)(lsaNow.ReturnSeconds() & 0xFFFFFFFFUL);
-    if (idum <= 1000)
-    {
-        idum += 22261048;
-    }
-
-    // ASSERT: 1000 < idum
-
     // Fill in the shuffle array.
     //
+    idum2 = idum = nSeed;
     int j;
-    idum2 = idum;
     for (j = 0; j < 8; j++)
     {
         idum = ModulusMultiply(idum, IA1, IM1, IQ1, IR1);
@@ -116,7 +199,7 @@ void SeedRandomNumberGenerator(void)
     iy = iv[0];
 }
 
-long ran2(void)
+unsigned long genrand(void)
 {
     idum  = ModulusMultiply(idum,  IA1, IM1, IQ1, IR1);
     idum2 = ModulusMultiply(idum2, IA2, IM2, IQ2, IR2);
@@ -130,70 +213,95 @@ long ran2(void)
     iv[j] = idum;
     return CRC32_ProcessInteger(iy);
 }
+#endif
 
-// RandomLong -- return a long on the interval [lLow, lHigh]
-//
-long RandomLong(long lLow, long lHigh)
+#ifdef USE_MERSENNE_TWISTER
+
+/* Coded by Takuji Nishimura, considering the suggestions by      */
+/* Topher Cooper and Marc Rieffel in July-Aug. 1997.              */
+
+/* This library is free software; you can redistribute it and/or   */
+/* modify it under the terms of the GNU Library General Public     */
+/* License as published by the Free Software Foundation; either    */
+/* version 2 of the License, or (at your option) any later         */
+/* version.                                                        */
+/* This library is distributed in the hope that it will be useful, */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of  */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.            */
+/* See the GNU Library General Public License for more details.    */
+/* You should have received a copy of the GNU Library General      */
+/* Public License along with this library; if not, write to the    */
+/* Free Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   */ 
+/* 02111-1307  USA                                                 */
+
+/* Copyright (C) 1997, 1999 Makoto Matsumoto and Takuji Nishimura. */
+/* When you use this, send an email to: matumoto@math.keio.ac.jp   */
+/* with an appropriate reference to your work.                     */
+
+#define N 624
+#define M 397
+#define MATRIX_A 0x9908b0df  
+#define UPPER_MASK 0x80000000
+#define LOWER_MASK 0x7fffffff
+#define TEMPERING_MASK_B 0x9d2c5680
+#define TEMPERING_MASK_C 0xefc60000
+#define TEMPERING_SHIFT_U(y)  (y >> 11)
+#define TEMPERING_SHIFT_S(y)  (y << 7)
+#define TEMPERING_SHIFT_T(y)  (y << 15)
+#define TEMPERING_SHIFT_L(y)  (y >> 18)
+
+static unsigned long mt[N];
+static int mti = N + 1;
+
+void sgenrand(unsigned long nSeed)
 {
-    // Validate parameters
-    //
-    if (lHigh < lLow)
+    nSeed |= 1; // Force the seed to be odd.
+    for (int i = 0; i < N; i++)
     {
-        return -1;
+        mt[i] = nSeed & 0xffff0000;
+        nSeed = 69069 * nSeed + 1;
+        mt[i] |= (nSeed & 0xffff0000) >> 16;
+        nSeed = 69069 * nSeed + 1;
     }
-    else if (lHigh == lLow)
-    {
-        return lLow;
-    }
-
-    unsigned long x = lHigh-lLow;
-    if (LONG_MAX < x)
-    {
-        return -1;
-    }
-    x++;
-
-    // We can now look for an random number on the interval [0,x-1].
-    //
-    static unsigned long maxLeftover = 0;
-    static unsigned long n = 0;
-
-    if (maxLeftover < x)
-    {
-        maxLeftover = ULONG_MAX;
-        n = ran2();
-    }
-
-    // In order to be perfectly conservative about not introducing any
-    // further sources of statistical bias, we're going to call rand2()
-    // until we get a number less than the greatest representable
-    // multiple of x. We'll then return n mod x.
-    //
-    // N.B. This loop happens in randomized constant time, and pretty
-    // damn fast randomized constant time too, since
-    //
-    //      P(ULONG_MAX - n < ULONG_MAX % x) < 0.5, for any x.
-    //
-    // So even for the least desireable x, the average number of times
-    // we will call ran2() is less than 2.
-    //
-    unsigned long nLimit = maxLeftover - (maxLeftover%x);
-    while (n >= nLimit)
-    {
-        n = ran2();
-        if (maxLeftover != ULONG_MAX)
-        {
-            maxLeftover = ULONG_MAX;
-            nLimit = ULONG_MAX - (ULONG_MAX%x);
-        }
-    }
-
-    // Save useful, leftover bits. x -always- divides evenly into
-    // (nLimit-1). And, the probability of the final n on the
-    // interval [0,maxLeftover-1] is evenly distributed.
-    //
-    maxLeftover = (nLimit-1) / x;
-    long nAnswer = lLow + (n%x);
-    n /= x;
-    return nAnswer;
+    mti = N;
 }
+
+unsigned long genrand(void)
+{
+    unsigned long y;
+    static unsigned long mag01[2] = {0x0, MATRIX_A};
+    int kk;
+    
+    if (mti >= N)
+    {
+        if (!bSeeded)
+        {
+            SeedRandomNumberGenerator();
+        }
+        
+        for (kk=0; kk < N-M; kk++)
+        {
+            y = (mt[kk] & UPPER_MASK) | (mt[kk+1] & LOWER_MASK);
+            mt[kk] = mt[kk+M] ^ (y >> 1) ^ mag01[ y & 0x1 ];
+        }
+        for (; kk < N-1; kk++)
+        {
+            y = (mt[kk] & UPPER_MASK) | (mt[kk+1] & LOWER_MASK);
+            mt[kk] = mt[ kk+(M-N) ] ^ (y >> 1) ^ mag01[ y & 0x1 ];
+        }
+        y = (mt[N-1] & UPPER_MASK) | (mt[0] & LOWER_MASK);
+        mt[N-1] = mt[M-1] ^ (y >> 1) ^ mag01[ y & 0x1 ];
+        
+        mti = 0;
+    }
+    
+    y = mt[mti++];
+    y ^= TEMPERING_SHIFT_U(y);
+    y ^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
+    y ^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
+    y ^= TEMPERING_SHIFT_L(y);
+    return y;
+}
+
+#endif
+
