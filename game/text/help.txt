@@ -1166,7 +1166,7 @@ Related Topics: @name.
   If you specify the /teleport switch, then you are @teleported to the
   room after it is created and any exits are opened.
 
-  Related Topics: @destroy, @link, @open, LINKING, TYPES OF OBJECTS.
+  Related Topics: @destroy, @link, @open, LINKING, OBJECT TYPES.
 
 & @DOING
 @DOING
@@ -1816,7 +1816,7 @@ Related Topics: @name.
   specific players from linking to your LINK_OK locations, as simply locking
   against '*<playername>' does not lock out their puppets.
 
-  Related Topics: @dig, @open, @unlink, DROP-TOS, HOMES, LINKING.
+  Related Topics: @dig, @open, @unlink, DROP-TOS, HOMES, LINKING, OBJECT TYPES.
 
 & @LIST
 @LIST
@@ -2606,7 +2606,7 @@ Related Topics: @name.
      /location  - Create the exit in your location (default).
      /inventory - Create the exit on yourself.
 
-  Related Topics: @dig, @link, LINKING.
+  Related Topics: @dig, @link, LINKING, OBJECT TYPES.
 
 & @ORFAIL
 @ORFAIL
@@ -3045,7 +3045,7 @@ Related Topics: @name.
   Note that some sites do not restrict outputprefix and outputsuffix to
   robots.
 
-  Related Topics: outputprefix, outputsuffix, ROBOT, TYPES OF OBJECTS.
+  Related Topics: outputprefix, outputsuffix, ROBOT, OBJECT TYPES.
 
 & @RUNOUT
 @RUNOUT
@@ -3383,7 +3383,7 @@ Related Topics: @name.
   This command removes drop-tos on rooms and clears the destination on exits.
   Once unlinked, an exit may be taken over by anyone with the @link command.
 
-  Related Topics: @link, LINKING.
+  Related Topics: @link, LINKING, OBJECT TYPES.
 
 & @UNLOCK
 @UNLOCK
@@ -8659,12 +8659,14 @@ OBJECT STACK (continued)
 & OBJECT TYPES
 OBJECT TYPES
 
-  There are 4 types of objects: things, players, exits, and rooms. The first
-  letter following an object's ID number indicates the type: P(layer),
-  E(xit), R(oom), otherwise, thing.  Things are inanimate objects that can
-  be carried.  Players are animate objects that can move and carry. Exits
-  are the means by which objects move from room to room. Rooms are locations
-  that contain objects and linked exits.
+  There are 4 types of objects: things, players, exits, and rooms.  The first
+  letter following an object's ID number indicates the type: P(layer), E(xit),
+  R(oom), otherwise, thing.  Things are inanimate objects that can be carried.
+  Players are animate objects that can move and carry.  Exits are the means by
+  which objects move from room to room.  Rooms are locations that contain
+  objects and linked exits.
+
+  Related Topics: @create, @dig, @link, @open, @robot, @unlink
 
 & OBJEVAL()
 OBJEVAL()
@@ -9082,13 +9084,11 @@ PLAYER
 
   FLAG: PLAYER(P)  ()
 
-  The PLAYER flag identifies you as a player. This flag cannot
-  be reset by any player, not even a Wizard (not, yet, anyway
-  *grin*).  It is used mainly by the MUX code to identify your
-  commands, check for validity of commands or locks etc. Generally,
-  just pretend it isn't even there.
+  The PLAYER flag identifies you as a player.  Except for the @toad command,
+  this flag cannot be reset.  Regular players, robots, and guests are all
+  player objects.
 
-  Related Topics: TYPES
+  Related Topics: @toad (in wizhelp), OBJECT TYPES
 
 & PLAYMEM()
 PLAYMEM()
@@ -9818,14 +9818,10 @@ ROOM
 
   FLAG: ROOM(R)  ()
 
-  This flag is automatically set on rooms when you @dig a new
-  room. It cannot be changed. Rooms have the added advantage that
-  they can be saved from destruction by setting the room to !GOING
-  (SEE GOING).
-  However, this can only be done if no other room/object was created
-  that overwrote your room when it was set for destruction.
+  This flag is automatically set on rooms when you @dig a new room.  It cannot
+  be changed.
 
-  Related Topics:
+  Related Topics: OBJECT TYPES
 
 & ROOM()
 ROOM()
