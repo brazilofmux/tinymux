@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.44 2003-01-03 04:46:26 sdennis Exp $
+// $Id: predicates.cpp,v 1.45 2003-01-18 23:59:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1650,7 +1650,16 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
     if (  (tattr->flags & mAllow)
        || (aflags & mAllow))
     {
-        return TRUE;
+        if (  tattr->number != A_DESC
+           || mudconf.read_rem_desc
+           || nearby(executor, target))
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
     }
     int mDeny = 0;
     if (WizRoy(executor))

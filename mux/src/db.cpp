@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.55 2003-01-05 18:08:22 sdennis Exp $
+// $Id: db.cpp,v 1.56 2003-01-18 23:59:15 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -80,7 +80,7 @@ ATTR attr[] =
     {"Cost",        A_COST,     AF_ODARK | AF_NOPROG},
     {"Created",     A_CREATED,  AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD},
     {"Daily",       A_DAILY,    AF_ODARK | AF_NOPROG},
-    {"Desc",        A_DESC,     AF_NOPROG},
+    {"Desc",        A_DESC,     AF_VISUAL | AF_NOPROG},
     {"DefaultLock", A_LOCK,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"Destroyer",   A_DESTROYER, AF_MDARK | AF_WIZARD | AF_NOPROG},
     {"Dfail",       A_DFAIL,    AF_ODARK | AF_NOPROG},
@@ -164,7 +164,7 @@ ATTR attr[] =
     {"Runout",      A_RUNOUT,   AF_ODARK | AF_NOPROG},
     {"SayString",   A_SAYSTRING, AF_ODARK | AF_NOPROG},
     {"Semaphore",   A_SEMAPHORE, AF_ODARK | AF_NOPROG | AF_WIZARD | AF_NOCMD | AF_NOCLONE},
-    {"Sex",         A_SEX,      AF_NOPROG},
+    {"Sex",         A_SEX,      AF_VISUAL | AF_NOPROG},
     {"Signature",   A_SIGNATURE, AF_ODARK | AF_NOPROG},
     {"SpeechMod",   A_SPEECHMOD, AF_ODARK | AF_NOPROG},
     {"SpeechLock",  A_LSPEECH,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
