@@ -55,7 +55,7 @@ which corresponds to -922283539200 through 910638979199.  The precision is
 100 nanoseconds, and 0 (the epoch) corresponds to
 'Sat Jan 01 00:00:00 1970 UTC'.
 
-MUX does not account for leap seconds.  It does however, take into account
+MUX does not account for leap seconds.  However, it does take into account
 what is called 'Summer Time' or 'Daylight Savings Time'.  Given that the
 operating system information about Daylight Savings Time is limited, MUX
 does not apply DST for times that occur earlier the earliest information
