@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.37 2003-04-23 04:53:57 sdennis Exp $
+// $Id: predicates.cpp,v 1.38 2003-04-23 05:06:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1892,9 +1892,9 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
 
     dbref aowner;
     int aflags;
-    if (  !atr_get_info(target, tattr->number, &aowner, &aflags)
-       || (tattr->flags & mDeny)
-       || (aflags & mDeny))
+    if (  (tattr->flags & mDeny)
+       || (  atr_get_info(target, tattr->number, &aowner, &aflags)
+          && (aflags & mDeny)))
     {
         return false;
     }
@@ -1930,8 +1930,8 @@ bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr)
 
     dbref aowner;
     int aflags;
-    if (  !atr_get_info(target, tattr->number, &aowner, &aflags)
-       || (tattr->flags & mDeny)
+    if (  (tattr->flags & mDeny)
+       || !atr_get_info(target, tattr->number, &aowner, &aflags)
        || (aflags & mDeny))
     {
         return false;
