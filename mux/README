@@ -1,5 +1,5 @@
 TinyMUX 2.2:  README (Unix-based)
-Last Update:  November 2002
+Last Update:  September 2004
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Congratulations and welcome to the README file for TinyMUX 2.2.  That 
 you have chosen to actually read the file is a sign of bravery equal to 
@@ -145,7 +145,7 @@ how beneficial it would be to fix it relative to other bugs on the list.
    sooner.  The 'log' configuration parameter may be very helpful in this
    process.
 
--- Send mail about it to: sdennis@svdltd.com
+-- Send mail about it to: brazilofmux@gmail.com
    If the bug crashes the mux, try to include the following information 
    from running dbx (or gdb) on the resulting core file:
      - Output of the 'where' command.

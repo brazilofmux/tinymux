@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.30 2003-03-08 21:29:36 sdennis Exp $
+// $Id: bsd.cpp,v 1.31 2004-09-24 17:14:38 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -55,7 +55,7 @@ void SiteMonSend(int, const char *, DESC *, const char *);
 
 // First version of Windows NT TCP/IP routines written by Nick Gammon
 // <nick@gammon.com.au>, and were throughly reviewed, re-written and debugged
-// by Stephen Dennis <sdennis@svdltd.com>.
+// by Stephen Dennis <brazilofmux@gmail.com>.
 //
 HANDLE hGameProcess = INVALID_HANDLE_VALUE;
 FCANCELIO *fpCancelIo = NULL;

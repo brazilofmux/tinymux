@@ -1,6 +1,6 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.3 2003-01-28 15:54:29 sdennis Exp $ */
+/* $Id: copyright.h,v 1.4 2004-09-24 17:14:20 sdennis Exp $ */
 
 /*
  * TinyMUX 2.2 Source Code.
@@ -156,7 +156,7 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * The author may be reached via email at sdennis@svdltd.com.
+ * The author may be reached via email at brazilofmux@gmail.com.
  *
  *
  *
