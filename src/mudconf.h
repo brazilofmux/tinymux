@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.30 2001-10-17 17:30:08 sdennis Exp $
+// $Id: mudconf.h,v 1.31 2001-10-17 18:13:31 sdennis Exp $
 //
 #ifndef __CONF_H
 #define __CONF_H
@@ -14,12 +14,7 @@
 #include "stringutil.h"
 
 #ifndef WIN32
-#ifdef VMS
-#include "multinet_root:[multinet.include.sys]types.h"
-#include "multinet_root:[multinet.include.netinet]in.h"
-#else
 #include <netinet/in.h>
-#endif
 #endif
 
 #define WIDTHOF_DOING_STRING 45
@@ -308,7 +303,7 @@ struct statedata
     int bReadingConfiguration;  // are we reading the config file at startup?
     int bCanRestart;            // are we ready to even attempt a restart.
     int panicking;              // are we in the middle of dying horribly?
-#if !defined(VMS) && !defined(WIN32)
+#ifndef WIN32
     int restarting; /* Are we restarting? */
     int dumping;    /* Are we dumping? */
 #endif
