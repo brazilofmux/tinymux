@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.28 2001-10-17 18:08:06 sdennis Exp $
+// $Id: svdhash.cpp,v 1.29 2001-10-18 03:41:11 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -182,11 +182,36 @@ UINT32 HASH_ProcessBuffer
         case 11: ulHash  = CRC32_Table[pBuffer[5] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 10: ulHash  = CRC32_Table[pBuffer[6] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 9:  ulHash  = CRC32_Table[pBuffer[7] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
+#ifdef WIN32
+        case 8:  ulHash ^= *(UINT32 *)(pBuffer + 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash ^= *(UINT32 *)(pBuffer + 12);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 return ~ulHash;
+#else
         case 8:  ulHash  = CRC32_Table[pBuffer[8] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
+#endif
+
         case 7:  ulHash  = CRC32_Table[pBuffer[9] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 5:  ulHash  = CRC32_Table[pBuffer[11] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
+#ifdef WIN32
+        case 4:  ulHash ^= *(UINT32 *)(pBuffer + 12);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 return ~ulHash;
+#else
         case 4:  ulHash  = CRC32_Table[pBuffer[12] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
+#endif
+
         case 3:  ulHash  = CRC32_Table[pBuffer[13] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 2:  ulHash  = CRC32_Table[pBuffer[14] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 1:  ulHash  = CRC32_Table[pBuffer[15] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
