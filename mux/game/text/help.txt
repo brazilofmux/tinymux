@@ -10992,7 +10992,7 @@ SHA1()
 
   FUNCTION: sha1(<string>)
 
-  Returns 40 hexidecimal characters which represent a 160-bit
+  Returns 40 hexadecimal characters which represent a 160-bit
   cryptographically secure hash of <string>.
 
   This hash can also be described as a signature, fingerprint, or
