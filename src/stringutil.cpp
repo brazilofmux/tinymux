@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.23 2000-09-28 18:11:51 sdennis Exp $
+// $Id: stringutil.cpp,v 1.24 2000-09-28 18:14:50 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
