@@ -162,7 +162,7 @@ compiler that groks function prototypes. It is 64-bit 'clean' code.  It
 has been compiled and run successfully 'out of the box' on the following 
 platforms:
 
-RedHat 5.1, 6.0
+RedHat 5.1, 5.2, 6.0
 Slackware 3.6, 4.0, 7.0
 Solaris 2.4, 2.5, 2.6
 Mandrake 6.0
@@ -171,6 +171,7 @@ IRIX (Some versions)
 Debian 2.1, 2.2
 FreeBSD
 OpenBSD
+SuSE 6.2
 
 TinyMUX 2.0 has been compiled and successfully run on the following with 
 minor changes(see NOTES):
