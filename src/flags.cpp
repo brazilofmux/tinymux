@@ -2,7 +2,7 @@
  * flags.c - flag manipulation routines 
  */
 /*
- * $Id: flags.cpp,v 1.4 2000-05-20 02:06:01 sdennis Exp $ 
+ * $Id: flags.cpp,v 1.5 2000-06-07 19:47:00 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -220,6 +220,19 @@ int fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
         return fh_any(target, player, flag, fflags, reset);
     }
     if (!God(player))
+    {
+        return 0;
+    }
+
+    // Even God should not be allowed set protected dbrefs GOING.
+    //
+    if (  !reset
+       && (  target == 0
+          || target == God(target)
+          || target == mudconf.start_home
+          || target == mudconf.start_room
+          || target == mudconf.default_home
+          || target == mudconf.master_room))
     {
         return 0;
     }
