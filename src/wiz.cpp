@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.3 2000-05-25 04:11:02 sdennis Exp $
+// $Id: wiz.cpp,v 1.4 2000-08-18 09:08:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -239,7 +239,9 @@ void do_toad(dbref player, dbref cause, int key, char *toad, char *newowner)
     match_absolute();
     match_player();
     if ((victim = noisy_match_result()) == NOTHING)
+    {
         return;
+    }
 
     if (!isPlayer(victim))
     {
@@ -296,16 +298,16 @@ void do_toad(dbref player, dbref cause, int key, char *toad, char *newowner)
     //
     loc = Location(victim);
     buf = alloc_mbuf("do_toad");
-    sprintf(buf, "%s has been turned into a slimy toad!", Name(victim));
+    char *pVictimName = Name(victim);
+    sprintf(buf, "%s has been turned into a slimy toad!", pVictimName);
     notify_except2(loc, player, victim, player, buf);
-    sprintf( buf, "You toaded %s! (%d objects @chowned)",
-             Name(victim), count+1);
+    sprintf(buf, "You toaded %s! (%d objects @chowned)", pVictimName, count+1);
     notify_quiet(player, buf);
 
     // Zap the name from the name hash table.
     //
-    delete_player_name(victim, Name(victim));
-    sprintf(buf, "a slimy toad named %s", Name(victim));
+    sprintf(buf, "a slimy toad named %s", pVictimName);
+    delete_player_name(victim, pVictimName);
     s_Name(victim, buf);
     free_mbuf(buf);
 
