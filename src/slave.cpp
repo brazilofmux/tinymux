@@ -4,11 +4,12 @@
  * The philosophy is to keep this program as simple/small as possible.
  * It does normal fork()s, so the smaller it is, the faster it goes.
  * 
- * $Id: slave.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $
+ * $Id: slave.cpp,v 1.2 2000-04-15 17:28:26 sdennis Exp $
  */
 
 #include "autoconf.h"
 
+#include <ctype.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/wait.h>
