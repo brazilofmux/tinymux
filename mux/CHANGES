@@ -352,6 +352,11 @@ Bug Fixes:
  -- MakeCanonicalMailAlias() could return a result which was not
     null-terminated.  Reported by Ita'istar@Tandoria. Introduced and fixed
     by Brazil.  Related to the @malias command.
+ -- MUX previously wouldn't handle convtime(Sat Apr 26 22:32:24 2003 utc)
+    properly because the first-level date parser accepted it as a local
+    date (ignoring anything that occured after the year field).  The
+    first-level date parser is now more restrictive, and the
+    second-level date parser handles it properly.
 
 
 Performance Enhancements:
