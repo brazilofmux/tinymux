@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.51 2003-02-17 02:34:21 sdennis Exp $
+// $Id: functions.cpp,v 1.52 2003-02-17 02:49:34 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -4724,7 +4724,7 @@ FUNCTION(fun_secure)
             nString -= nTokenLength0;
             while (nTokenLength0--)
             {
-                if (mux_issecure[(unsigned char)*pString])
+                if (mux_issecure(*pString))
                 {
                     safe_chr(' ', buff, bufc);
                 }
