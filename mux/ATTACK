@@ -1,0 +1,94 @@
+TinyMUX 2.4: ATTACK
+Last Update: April 2004
+
+You should familiarize yourself with defensive procedures that serve to
+thwart the effects of attacks.  Don't wait until an attack is mounted
+against your game to begin learning how to defend it against an
+attacker.  Practice for this eventuality now.
+
+Player Creation:
+----------------
+
+If you are running an open game, it is possible for an automated script
+to create players faster than you can can destroy them.  Even if a group
+of people are doing it manually, the odds are they can create player
+objects faster than you can destroy them.
+
+As a WIZARD, there are a few remedies available to you:
+
+    @disable logins
+
+As #1, there are some additional remedies available to you:
+
+    @admin register_site=0/0
+
+@aahear attack:
+---------------
+
+With MUX 2.2 and later, the @aahear exploit is no longer as useful to
+attackers as it once was.  This attack was usually mixed with other
+forms of attack to obscure it.
+
+@pemit/page attack:
+-------------------
+
+The combination of lwho() and @pemit can be used for spamming.
+
+As a player, WIZARD, or #1, you can prevent being spammed by:
+
+    &CANPAGEME me=0
+    @lock/page me=CANPAGEME/1
+
+Attack on the queue:
+--------------------
+
+Usually, putting lots of commands on the queue will drain an attackers
+store of coins.  However, if they happen to obtain the free_money power
+(or WIZARD permissions...by which time you're toast anyway), then they
+can attack the queue.
+
+As a WIZARD or #1, there are a few remedies available to you:
+
+    @disable dequeueing
+
+
+Attribute attack:
+-----------------
+
+The server will not allow more than a few thousand attributes per
+object.  This attack doesn't work anymore.
+
+
+General server hygiene:
+-----------------------
+
+There are a few things you should do on a regular basis:
+
+  - Backups.  Off-line backups.  Don't expect much sympathy if you
+    can't put your hands on a good backup.
+
+  - Good backups.  Manually verify that you backups are valid and
+    complete.   Don't expect much sympathy if you can't put your hands
+    on a good backup.  Did you put your backup on a ZIP disk?  Can
+    you still read it?  Do you smoke?
+
+  - Backup often.  How much work are you willing to lose?
+
+  - Keep an eye on how much CPU and memory your server process is
+    consuming.  Your memory usage will gradual increase and slowly
+    approach some number.  If your memory usage suddenly goes above
+    this, something is wrong.  If your CPU usage is not usually 0% or
+    on a busy game, less than 5% for awhile, Look for an attack in
+    progress.  Get a 'feel' for what is normal for you game and be
+    sensitive to what might be abnormal.
+
+        ps ux -A
+
+  - Keep an eye on attribute names (Vattr names) with the following
+    command:
+
+        @list hashstats
+
+    The column you care about is the 'entries' column.  This number will
+    always increase, however, stale names can be removed by #1 using the
+    @dbclean command.  Run @dbclean approximately every 3 months.
