@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.112 2003-07-22 19:35:26 sdennis Exp $
+// $Id: command.cpp,v 1.113 2003-10-09 01:58:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3152,7 +3152,7 @@ static void list_options(dbref player)
     if (mudconf.paranoid_alloc)
         raw_notify(player, "The buffer pools are checked for consistency on each allocate or free.");
     if (mudconf.cache_names)
-        raw_notify(player, "A seperate name cache is used.");
+        raw_notify(player, "A separate name cache is used.");
 #ifndef WIN32
     if (mudconf.fork_dump)
     {

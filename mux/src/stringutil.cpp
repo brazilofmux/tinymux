@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.41 2003-03-10 01:29:21 sdennis Exp $
+// $Id: stringutil.cpp,v 1.42 2003-10-09 01:58:29 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2748,7 +2748,7 @@ BOOL is_real(char *str)
 // You may call Tiny_StrTokControl() to change the set of control characters
 // between Tiny_StrTokParse() calls, however keep in mind that the parsing
 // may not occur how you intend it to as Tiny_StrTokParse() does not
-// consume -all- of the controlling delimiters that seperate two tokens.
+// consume -all- of the controlling delimiters that separate two tokens.
 // It consumes only the first one.
 //
 void Tiny_StrTokString(TINY_STRTOK_STATE *tts, char *arg_pString)
