@@ -53,6 +53,7 @@ Bug Fixes:
  -- Bug #585 - Parent isn't cleared during @destroy process. Patch from Jake.
  -- Bug #765 - whispering to objects with ears should still be allowed.
  -- Document safer_passwords configuration option.
+ -- Bug #602 - fun_ansi reaches backwards into the buffer.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~

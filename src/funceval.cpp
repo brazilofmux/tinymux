@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.65 2001-09-25 19:47:28 sdennis Exp $
+// $Id: funceval.cpp,v 1.66 2001-10-08 04:49:50 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -81,6 +81,7 @@ FUNCTION(fun_ansi)
     extern char *ColorTable[256];
 
     char *s = fargs[0];
+    char *bufc_save = *bufc;
 
     while (*s)
     {
@@ -98,9 +99,11 @@ FUNCTION(fun_ansi)
     //
     char Temp[LBUF_SIZE];
     int nVisualWidth;
-    int nLen = ANSI_TruncateToField(buff, LBUF_SIZE, Temp, sizeof(Temp), &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-    memcpy(buff, Temp, nLen+1);
-    *bufc = buff + nLen;
+    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    int nLen = ANSI_TruncateToField(bufc_save, nBufferAvailable, Temp, sizeof(Temp),
+        &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+    memcpy(bufc_save, Temp, nLen);
+    *bufc = bufc_save + nLen;
 }
 
 FUNCTION(fun_zone)
