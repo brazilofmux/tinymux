@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.11 2000-11-04 11:06:22 sdennis Exp $
+// $Id: wiz.cpp,v 1.12 2000-11-04 18:34:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -47,7 +47,7 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
     else
     {
         init_match(player, arg1, NOTYPE);
-        match_everything(MAT_NO_EXITS);
+        match_everything(0);
         victim = noisy_match_result();
 
         if (victim == NOTHING)
@@ -59,8 +59,8 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
 
     // Validate type of victim.
     //
-    if (  !Has_location(victim)
-       && !isExit(victim))
+    if (  isGarbage(victim)
+       || isRoom(victim))
     {
         notify_quiet(player, "You can't teleport that.");
         return;
@@ -80,7 +80,14 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
     //
     if (!string_compare(to, "home"))
     {
-        (void)move_via_teleport(victim, HOME, cause, 0);
+        if (isExit(victim))
+        {
+            notify_quiet(player, "Bad destination.");
+        }
+        else
+        {
+            move_via_teleport(victim, HOME, cause, 0);
+        }
         return;
     }
 
@@ -178,7 +185,7 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
             }
         }
     }
-    else if (isExit(destination))
+    else if (isExit(destination) && !isExit(victim))
     {
         if (Exits(destination) == Location(victim))
         {
