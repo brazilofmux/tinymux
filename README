@@ -1,6 +1,6 @@
 
 TinyMUX 2.0:  README (Unix based)
-Last Update:  May 2000
+Last Update:  June 2000
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Congratulations and welcome to the README file for TinyMUX 2.0.  That 
 you have chosen to actually read the file is a sign of bravery equal to 
@@ -171,6 +171,7 @@ Debian 2.1, 2.2
 FreeBSD
 OpenBSD
 SuSE 6.2
+AIX 4.3
 
 TinyMUX 2.0 has been compiled and successfully run on the following with 
 minor changes(see NOTES):
