@@ -142,6 +142,10 @@
 #undef HAVE_IEEE_FP_FORMAT
 /* Define if your IEEE floating-point library can generate NaN */
 #undef HAVE_IEEE_FP_SNAN
+/* Define if your platform computes the integer quotient as the smallest */
+/* integer greater than or or equal to the algebraic quotient. For       */
+/* example, -9/5 gives -1                                                */
+#undef SMALLEST_INT_GTE_NEG_QUOTIENT
 
 /* ---------------------------------------------------------------------------
  * Setup section:
