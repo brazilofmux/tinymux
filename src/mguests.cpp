@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.17 2002-02-13 23:47:41 sdennis Exp $
+// $Id: mguests.cpp,v 1.18 2002-02-14 18:39:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -20,21 +20,39 @@
 #include "attrs.h"
 #include "powers.h"
 
+#define GUEST_HYSTERESIS 20
+
 CGuests Guest;
+
+CGuests::CGuests(void)
+{
+    Guests = NULL;
+    nGuests = 0;
+    nMaxGuests = 0;
+}
+
+CGuests::~CGuests(void)
+{
+    if (Guests)
+    {
+        MEMFREE(Guests);
+        Guests = NULL;
+        nGuests = 0;
+        nMaxGuests = 0;
+    }
+}
 
 void CGuests::StartUp(void)
 {
-    // Reset the Number of Guests.
-    //
-    nGuests = 0;
-
-    // No Main Guest Char, or number_guests 0
-    //
     if (  !Good_obj(mudconf.guest_char)
        || mudconf.number_guests <= 0)
     {
+        // The guest system is effectively disabled.
+        //
         return;
     }
+
+    SizeGuests(mudconf.min_guests);
 
     // Search the Database for Guest chars and snag em.
     //
@@ -46,7 +64,7 @@ void CGuests::StartUp(void)
         if (  player != NOTHING
            && Guest(player))
         {
-            GrowGuests(1);
+            SizeGuests(nGuests+1);
             Guests[nGuests] = player;
             nGuests++;
         }
@@ -56,7 +74,7 @@ void CGuests::StartUp(void)
     //
     for (; nGuests < mudconf.min_guests; nGuests++)
     {
-        GrowGuests(1);
+        SizeGuests(nGuests+1);
         Guests[nGuests] = MakeGuestChar();
 
         // If we couldn't create guest character, break out and let later
@@ -69,18 +87,30 @@ void CGuests::StartUp(void)
     }
 }
 
-void CGuests::GrowGuests(int amount)
+void CGuests::SizeGuests(int nMin)
 {
-    int tGrow = nGuests + amount;
-    dbref *newGuests = (dbref *)MEMALLOC((tGrow) * sizeof(dbref));
-    memset(newGuests, 0, (tGrow * sizeof(dbref)));
+    // We must have at least nMin, but if nMin is sufficiently below
+    // nMaxGuests, we can also shrink.
+    //
+    if (nMin < nGuests)
+    {
+        nMin = nGuests;
+    }
+    if (  nMaxGuests <= nMin + GUEST_HYSTERESIS 
+       && nMin <= nMaxGuests)
+    {
+        return;
+    }
+
+    dbref *newGuests = (dbref *)MEMALLOC(nMin * sizeof(dbref));
     if (Guests)
     {
-        memcpy(newGuests, Guests, (tGrow * sizeof(dbref)));
+        memcpy(newGuests, Guests, nGuests * sizeof(dbref));
         MEMFREE(Guests);
         Guests = NULL;
     }
     Guests = newGuests;
+    nMaxGuests = nMin;
 }
 
 char *CGuests::Create(DESC *d)
@@ -163,7 +193,7 @@ char *CGuests::Create(DESC *d)
         queue_string(d, "GAME: Error creating guest, please try again later.\n");
         return NULL;
     }
-    GrowGuests(1);
+    SizeGuests(nGuests+1);
     Guests[nGuests] = newGuest;
     nGuests++;
     return Name(newGuest);
@@ -171,11 +201,16 @@ char *CGuests::Create(DESC *d)
 
 void CGuests::CleanUp(void)
 {
-    // Paranoia Checking. If it's after min_guests, we'll chop it anyways, so
-    // why care?
+    // Verify that our existing pool of guests are reasonable. Replace any
+    // unreasonable dbrefs.
     //
+    int nPool = nGuests;
+    if (mudconf.min_guests < nGuests)
+    {
+        nPool = mudconf.min_guests;
+    }
     int i;
-    for (i = 0; i < mudconf.min_guests; i++)
+    for (i = 0; i < nPool; i++)
     {
         if (  !Good_obj(Guests[i])
            || isGarbage(Guests[i])
@@ -191,15 +226,15 @@ void CGuests::CleanUp(void)
         return;
     }
 
-    // Don't screw with the min_guests
+    // We have more than the minimum number of guests in the pool. Let's
+    // see if there are any guests beyond that minimum number that we can
+    // trim out of the pool.
+
+    // PASS 1: Move connected guests to the beginning of the list.
     //
     int itmp;
-    int currGuest;
-
-    // Move all connected guests to the beginning of the list.
-    // If the number is less than the minimum, don't worry.
-    //    
-    for (i = currGuest = mudconf.min_guests; i < nGuests; i++)
+    int currGuest = mudconf.min_guests;
+    for (i = mudconf.min_guests; i < nGuests; i++)
     {
         if (Connected(Guests[i]))
         {
@@ -213,25 +248,22 @@ void CGuests::CleanUp(void)
         }
     }
 
+    // PASS 2: Destroy unconnected guests.
+    //
     itmp = nGuests;
     for (i = mudconf.min_guests; i < itmp;i++)
     {
-        if (  !Connected(Guests[i])
-           && Good_obj(Guests[i])
-           && !isGarbage(Guests[i]))
+        if (!Connected(Guests[i]))
         {
-            DestroyGuestChar(Guests[i]);
+            if (  Good_obj(Guests[i])
+               && !isGarbage(Guests[i]))
+            {
+                DestroyGuestChar(Guests[i]);
+            }
             nGuests--;
         }
     }
-
-    // Let's chop down to a better size.
-    //
-    dbref *newGuests = (dbref *)MEMALLOC(nGuests * sizeof(dbref));
-    memcpy(newGuests, Guests, (nGuests * sizeof(dbref)));
-    MEMFREE(Guests);
-    Guests = newGuests;
-    nGuests = mudconf.min_guests;
+    SizeGuests(nGuests);
 }
 
 int CGuests::MakeGuestChar(void)

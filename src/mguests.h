@@ -1,6 +1,6 @@
 // mguests.h
 //
-// $Id: mguests.h,v 1.7 2002-02-13 23:47:41 sdennis Exp $
+// $Id: mguests.h,v 1.8 2002-02-14 18:39:36 sdennis Exp $
 //
 
 #ifndef  __MGUESTS_H
@@ -16,19 +16,23 @@ class CGuests
 {
 private:
     static char name[50];
-    dbref *Guests;                 // Main housing of guest dbrefs
-    int   nGuests;                 // Number of them
-    void  GrowGuests(int);         // They keep growing and growing
+    dbref *Guests;
+    int   nMaxGuests;              // Size of Guests[].
+    int   nGuests;                 // Number of guests stored in Guests[].
+    void  SizeGuests(int);
     int   MakeGuestChar(void);     // Make the guest character
     void  DestroyGuestChar(dbref); // Destroy the guest character
     void  WipeAttrs(dbref guest);  // Wipe all the attrbutes
 
 public:
+    CGuests(void);
+    ~CGuests(void);
+
     BOOL  CheckGuest(dbref);
     void  ListAll(dbref);          // @list guests
-    void  StartUp();               // Public handler for Startup
-    char  *Create(DESC *d);        // Public handler for creation
-    void  CleanUp(void);           // Public handler for cleaning guests.
+    void  StartUp();
+    char  *Create(DESC *d);
+    void  CleanUp(void);
 };
 
 extern CGuests Guest;
