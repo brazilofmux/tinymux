@@ -4478,6 +4478,7 @@ COMMAND EVALUATION
     matches, it is performed.  If more than one matches, one is picked randomly
     from the exits for which the player passes the lock (If the player does not
     pass any locks, then the exit to be tried is picked randomly.
+
 { 'help command evaluation2' for more }
 
 & command evaluation2
