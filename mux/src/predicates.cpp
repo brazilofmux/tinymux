@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.13 2003-02-04 08:55:28 sdennis Exp $
+// $Id: predicates.cpp,v 1.14 2003-02-04 16:47:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -340,7 +340,7 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
     //
     for (unsigned int i = 0; i < nStripped; i++)
     {
-        if (!Tiny_IsObjectNameCharacter[(unsigned char)pStripped[i]])
+        if (!mux_ObjectNameSet[(unsigned char)pStripped[i]])
         {
             return NULL;
         }
@@ -515,7 +515,7 @@ BOOL ValidatePlayerName(const char *pName)
     //
     for (unsigned int i = 0; i < nName; i++)
     {
-        if (!Tiny_IsObjectNameCharacter[(unsigned char)pName[i]])
+        if (!mux_ObjectNameSet[(unsigned char)pName[i]])
         {
             return FALSE;
         }
