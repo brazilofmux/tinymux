@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.42 2001-07-31 05:20:28 sdennis Exp $
+// $Id: command.cpp,v 1.43 2001-10-10 08:08:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -542,7 +542,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {(char *)"@unlink",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD,    0,      CS_ONE_ARG|CS_INTERP,       do_unlink},
     {(char *)"@unlock",       lock_sw,    CA_NO_SLAVE,    0,      CS_ONE_ARG|CS_INTERP,       do_unlock},
     {(char *)"@wall",         wall_sw,    CA_ANNOUNCE,    SAY_SHOUT,  CS_ONE_ARG|CS_INTERP,       do_say},
-    {(char *)"@wipe",         wall_sw,    CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,    0,      CS_ONE_ARG|CS_INTERP,       do_wipe},
+    {(char *)"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,    0,      CS_ONE_ARG|CS_INTERP,       do_wipe},
     {(char *)"allcom",        NULL,       CA_NO_SLAVE,        0,              CS_ONE_ARG,                     do_allcom},
     {(char *)"delcom",        NULL,       CA_NO_SLAVE,        0,              CS_ONE_ARG,                     do_delcom},
     {(char *)"drop",          drop_sw,    CA_NO_SLAVE|CA_CONTENTS|CA_LOCATION|CA_NO_GUEST,    0,      CS_ONE_ARG|CS_INTERP,       do_drop},
