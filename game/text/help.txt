@@ -5222,7 +5222,7 @@ FUNCTION LIST
     SORTBY()    SPACE()     SPLICE()    SQRT()      SQUISH()    STARTSECS()
     STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()
     STRTRUNC()  SUB()       SUBJ()      SWITCH()    TABLE()     TAN()
-    TIME()      TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         
+    TIME()      TRANSLATE() TRIM()      TRUNC()     TYPE()      U()
     UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
     VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
     VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()
