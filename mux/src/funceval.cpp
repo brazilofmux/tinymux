@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.17 2002-06-15 01:18:07 jake Exp $
+// $Id: funceval.cpp,v 1.18 2002-06-23 23:51:13 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -271,7 +271,7 @@ FUNCTION(fun_create)
             cost = Tiny_atol(fargs[1]);
             if (cost < mudconf.createmin || cost > mudconf.createmax)
             {
-                safe_str("#-1 COST OUT OF RANGE", buff, bufc);
+                safe_range(buff, bufc);
                 return;
             }
         }
@@ -793,7 +793,7 @@ FUNCTION(fun_columns)
        || nRight < 1
        || 78 < nRight)
     {
-        safe_str("#-1 OUT OF RANGE", buff, bufc);
+        safe_range(buff, bufc);
         return;
     }
     char *curr = alloc_lbuf("fun_columns");
@@ -928,7 +928,7 @@ FUNCTION(fun_table)
        || nFieldWidth < 1
        || nLineLength < nFieldWidth)
     {
-        safe_str("#-1 OUT OF RANGE", buff, bufc);
+        safe_range(buff, bufc);
         return;
     }
 
@@ -1207,7 +1207,7 @@ FUNCTION(fun_strtrunc)
     int maxVisualWidth = Tiny_atol(fargs[1]);
     if (maxVisualWidth < 0)
     {
-        safe_str("#-1 OUT OF RANGE", buff, bufc);
+        safe_range(buff, bufc);
         return;
     }
     if (maxVisualWidth == 0)
@@ -2411,7 +2411,7 @@ FUNCTION(fun_die)
 
     if ((n < 1) || (n > 100))
     {
-        safe_str("#-1 NUMBER OUT OF RANGE", buff, bufc);
+        safe_range(buff, bufc);
         return;
     }
     int total = 0;
