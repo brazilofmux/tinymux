@@ -1,21 +1,45 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  January 2001
+Last Update:  March 2001
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ -- Signals SIGINT and SIGUSR2 have been swapped. SIGINT now performs a
+    @shutdown, and SIGUSR2 drops a .SIG flatfile.
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
+ -- Support and favor %x ANSI substitutions over %c ANSI substitutions,
+    but both are recognized.
+ -- Changed PORTS() function to allow a player to get their own port number.
+ -- Evaluating comtitles.
+ -- comtitle/on and comtitle/off.
+ -- LASTIP saves the numerical IP address from the players connection.
+ -- @wait/until allows one to give an absolute time stamp.
+ -- @wait and @wait/until support fractional seconds (eg. @wait 1.5=<cmd>).
+ -- Added command access for UNINSPECTED and NO_UNINSPECTED.
+ -- Added %m for 'lastcommand'. Equivalent to %c in MUSH.
+ -- Exits can be teleported from room to room instead of taken and dropped.
 
 Bug Fixes:
 ~~~~~~~~~
 
-
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
+ -- Parser is faster in recognizing %-escapes.
+ -- Parser function handling is improved with minimum and maximum range
+    checking handled in the parser and not in each individual function.
+ -- Database and hashtables use a different hash function which is easier
+    for gcc to optimize and therefore, Unix distro should benefit.
+    Actually, new hash function is faster than anything else I've found
+    for all block sizes from 1-byte up.
+ -- Changed random number generate to use Mersenne Twister exclusively.
+    It's the fastest one and also the one with the longest period.
+ -- For string search with GREP and GREPI, added a Boyer-Moore-Horssted
+    string search algorithm for speed.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
 
 Miscellaneous:
 ~~~~~~~~~~~~~
+ -- Added Manual in LaTeX format.
