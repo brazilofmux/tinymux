@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.128 2003-01-21 01:33:51 sdennis Exp $
+// $Id: functions.cpp,v 1.129 2003-01-31 06:34:19 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2566,7 +2566,7 @@ FUNCTION(fun_version)
 
 FUNCTION(fun_strlen)
 {
-    unsigned int n = 0;
+    size_t n = 0;
     if (nfargs >= 1)
     {
         strip_ansi(fargs[0], &n);
@@ -4504,14 +4504,14 @@ FUNCTION(fun_pos)
     // instead of the source because the the pattern will tend to be
     // smaller (i.e., on average, fewer bytes to move).
     //
-    unsigned int nPat = 0;
+    size_t nPat = 0;
     char aPatBuf[LBUF_SIZE];
     char *pPatStrip = strip_ansi(fargs[0], &nPat);
     memcpy(aPatBuf, pPatStrip, nPat);
 
     // Strip ANSI from source.
     //
-    unsigned int nSrc;
+    size_t nSrc;
     char *pSrc = strip_ansi(fargs[1], &nSrc);
 
     // Search for pattern string inside source string.

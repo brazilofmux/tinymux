@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.65 2003-01-04 17:19:12 sdennis Exp $
+// $Id: funceval.cpp,v 1.66 2003-01-31 06:34:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -565,7 +565,7 @@ static unsigned int GenCode(char *pCode, const char *pCodeASCII)
 {
     // Strip out the ANSI.
     //
-    unsigned int nIn;
+    size_t nIn;
     char *pIn = strip_ansi(pCodeASCII, &nIn);
 
     // Process the printable characters.
@@ -602,8 +602,7 @@ static char *crypt_code(char *code, char *text, BOOL type)
     }
 
     static char textbuff[LBUF_SIZE];
-    unsigned int nText;
-    char *p = strip_ansi(text, &nText);
+    char *p = strip_ansi(text);
     char *q = codebuff;
     char *r = textbuff;
 
@@ -1897,7 +1896,7 @@ FUNCTION(fun_scramble)
     }
     char *old = *bufc;
 
-    unsigned int n;
+    size_t n;
     safe_str(strip_ansi(fargs[0], &n), buff, bufc);
 
     unsigned int i;
