@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.6 2000-04-12 03:13:30 sdennis Exp $
+// $Id: externs.h,v 1.7 2000-04-12 05:55:57 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -299,7 +299,7 @@ typedef struct tag_dtb
 void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc);
 int DbrefToBuffer_Add(DTB *pContext, int i);
 void DbrefToBuffer_Final(DTB *pContext);
-int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, ...);
+int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va);
 
 /* From boolexp.c */
 extern int  FDECL(eval_boolexp, (dbref, dbref, dbref, BOOLEXP *));

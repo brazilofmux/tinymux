@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.4 2000-04-12 04:00:24 sdennis Exp $
+// $Id: stringutil.cpp,v 1.5 2000-04-12 05:55:56 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2057,7 +2057,7 @@ extern char *vsprintf(char *, char *, va_list);
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
 //
-int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, ...)
+int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va)
 {
     // From the manuals:
     //
@@ -2086,10 +2086,7 @@ int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, ...)
     // touches the buffer writes garbage, and then returns -1, we may
     // pass garbage, but this possibility seems very unlikely.
     //
-    va_list ap;
-    va_start(ap, fmt);
-    int len = VSNPRINTF(buff, count, fmt, ap);
-    va_end(ap);
+    int len = VSNPRINTF(buff, count, fmt, va);
     if (len < 0 || len > count-1)
     {
         if (buff[0] == '\0')
