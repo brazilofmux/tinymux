@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.27 2002-02-25 02:00:42 sdennis Exp $
+// $Id: object.cpp,v 1.28 2002-02-25 02:43:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1655,8 +1655,8 @@ static NDECL(void check_floating)
 void do_dbck(dbref player, dbref cause, int key)
 {
     check_type = key;
-    make_freelist();
     check_dead_refs();
+    make_freelist();
     check_exit_chains();
     check_contents_chains();
     check_floating();
@@ -1668,12 +1668,10 @@ void do_dbck(dbref player, dbref cause, int key)
 #endif
     purge_going();
 #ifndef STANDALONE
-    if (player != NOTHING)
+    if (  player != NOTHING
+       && !Quiet(player))
     {
-        if (!Quiet(player))
-        {
-            notify(player, "Done.");
-        }
+        notify(player, "Done.");
     }
 #endif
 }
