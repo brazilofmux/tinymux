@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.44 2002-10-01 07:28:11 sdennis Exp $
+// $Id: look.cpp,v 1.45 2003-01-02 18:49:18 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2023,7 +2023,7 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
             isconnected = 1;
         }
     }
-    if (key & SWEEP_PLAYER || isconnected)
+    if ((key & SWEEP_PLAYER) || isconnected)
     {
         if (isPlayer(what))
         {
