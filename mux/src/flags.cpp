@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.17 2002-09-01 18:15:47 jake Exp $
+// $Id: flags.cpp,v 1.18 2002-09-01 19:36:02 jake Exp $
 //
 
 #include "copyright.h"
@@ -544,7 +544,7 @@ char *MakeCanonicalFlagName
     }
 }
 
-FLAGNAMEENT *find_flag(dbref thing, char *flagname)
+FLAGNAMEENT *find_flag(char *flagname)
 {
     // Convert flagname to canonical lowercase format.
     //
@@ -617,7 +617,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
         }
         else
         {
-            FLAGNAMEENT *fp = find_flag(target, flag);
+            FLAGNAMEENT *fp = find_flag(flag);
             if (!fp)
             {
                 notify(player, "I do not understand that flag.");
@@ -732,7 +732,7 @@ char *decode_flags(dbref player, FLAGSET *fs)
 
 BOOL has_flag(dbref player, dbref it, char *flagname)
 {
-    FLAGNAMEENT *fp = find_flag(it, flagname);
+    FLAGNAMEENT *fp = find_flag(flagname);
     if (!fp)
     {
         return FALSE;
@@ -927,7 +927,7 @@ CF_HAND(cf_flag_access)
     }
 
     FLAGNAMEENT *fp;
-    if ((fp = find_flag(GOD, fstr)) == NULL)
+    if ((fp = find_flag(fstr)) == NULL)
     {
         cf_log_notfound(player, cmd, "No such flag", fstr);
         return -1;
