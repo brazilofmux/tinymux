@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.33 2001-08-24 18:27:34 sdennis Exp $
+// $Id: stringutil.cpp,v 1.34 2001-08-24 20:55:18 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2118,6 +2118,28 @@ INT64 Tiny_atoi64(const char *pString)
         sum = -sum;
     }
     return sum;
+}
+
+// Some libraries go nuts...just because you force feed them lots of ASCII.
+//
+#define ATOF_LIMIT 100
+double Tiny_atof(char *szString)
+{
+    double ret;
+
+    int n = strlen(szString);
+    if (n > ATOF_LIMIT)
+    {
+        int ch = szString[ATOF_LIMIT-1];
+        szString[ATOF_LIMIT-1] = '\0';
+        ret = atof(szString);
+        szString[ATOF_LIMIT-1] = ch;
+    }
+    else
+    {
+        ret = atof(szString);
+    }
+    return ret;
 }
 
 BOOL is_integer(char *str, int *pDigits)
