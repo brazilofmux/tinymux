@@ -1,7 +1,7 @@
 //
 // walkdb.c -- Support for commands that walk the entire db 
 //
-// $Id: walkdb.cpp,v 1.5 2000-06-02 16:18:00 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.6 2000-06-03 09:28:21 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -1170,6 +1170,7 @@ void olist_push(void)
     OLSTK *ol;
     
     ol = (OLSTK *)MEMALLOC(sizeof(OLSTK));
+    ISOUTOFMEMORY(ol);
     ol->next = mudstate.olist;
     mudstate.olist = ol;
     
@@ -1185,11 +1186,8 @@ void olist_push(void)
  */
 void olist_pop(void)
 {
-    OLSTK *ol;
+    OLSTK *ol = mudstate.olist->next;
     OBLOCK *op, *onext;
-    
-    ol = mudstate.olist->next;
-    
     for (op = mudstate.olist->head; op != NULL; op = onext)
     {
         onext = op->next;
