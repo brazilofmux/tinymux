@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.37 2001-03-31 01:54:10 sdennis Exp $
+// $Id: command.cpp,v 1.38 2001-03-31 04:15:52 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -45,6 +45,12 @@ NAMETAB boot_sw[] =
     {(char *)"quiet",   1,  CA_WIZARD,  BOOT_QUIET|SW_MULTIPLE},
     { NULL,         0,  0,      0}
 };
+
+NAMETAB comtitle_sw[] =
+  {
+    {(char *)"off",      2,  CA_PUBLIC,  1},
+    {(char *)"on",       2,  CA_PUBLIC,  2},
+  };
 
 NAMETAB cemit_sw[] =
 {
@@ -625,7 +631,7 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {(char *)"@teleport",     teleport_sw,CA_NO_GUEST,    TELEPORT_DEFAULT, CS_TWO_ARG|CS_INTERP,     do_teleport},
     {(char *)"@toad",         toad_sw,    CA_WIZARD,    0,      CS_TWO_ARG|CS_INTERP,       do_toad},
     {(char *)"addcom",        NULL,       CA_NO_SLAVE,        0,              CS_TWO_ARG,                     do_addcom},
-    {(char *)"comtitle",      NULL,       CA_NO_SLAVE,        0,              CS_TWO_ARG,                    do_comtitle},
+    {(char *)"comtitle",      comtitle_sw, CA_NO_SLAVE,       0,              CS_TWO_ARG,                    do_comtitle},
     {(char *)"give",          give_sw,    CA_LOCATION|CA_NO_GUEST,    0,      CS_TWO_ARG|CS_INTERP,       do_give},
     {(char *)"kill",          NULL,       CA_NO_GUEST|CA_NO_SLAVE,    KILL_KILL,  CS_TWO_ARG|CS_INTERP,       do_kill},
     {(char *)"page",          NULL,       CA_NO_SLAVE,    0,      CS_TWO_ARG|CS_INTERP,       do_page},
