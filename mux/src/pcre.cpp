@@ -270,40 +270,40 @@ enum {
                            class - the difference is relevant only when a UTF-8
                            character > 255 is encountered. */
 
-  OP_XCLASS,         /* 56 Extended class for handling UTF-8 chars within the
+  OP_XCLASS,         /* 57 Extended class for handling UTF-8 chars within the
                            class. This does both positive and negative. */
 
-  OP_REF,            /* 57 Match a back reference */
-  OP_RECURSE,        /* 58 Match a numbered subpattern (possibly recursive) */
-  OP_CALLOUT,        /* 59 Call out to external function if provided */
+  OP_REF,            /* 58 Match a back reference */
+  OP_RECURSE,        /* 59 Match a numbered subpattern (possibly recursive) */
+  OP_CALLOUT,        /* 60 Call out to external function if provided */
 
-  OP_ALT,            /* 60 Start of alternation */
-  OP_KET,            /* 61 End of group that doesn't have an unbounded repeat */
-  OP_KETRMAX,        /* 62 These two must remain together and in this */
-  OP_KETRMIN,        /* 63 order. They are for groups the repeat for ever. */
+  OP_ALT,            /* 61 Start of alternation */
+  OP_KET,            /* 62 End of group that doesn't have an unbounded repeat */
+  OP_KETRMAX,        /* 63 These two must remain together and in this */
+  OP_KETRMIN,        /* 64 order. They are for groups the repeat for ever. */
 
   /* The assertions must come before ONCE and COND */
 
-  OP_ASSERT,         /* 64 Positive lookahead */
-  OP_ASSERT_NOT,     /* 65 Negative lookahead */
-  OP_ASSERTBACK,     /* 66 Positive lookbehind */
-  OP_ASSERTBACK_NOT, /* 67 Negative lookbehind */
-  OP_REVERSE,        /* 68 Move pointer back - used in lookbehind assertions */
+  OP_ASSERT,         /* 65 Positive lookahead */
+  OP_ASSERT_NOT,     /* 66 Negative lookahead */
+  OP_ASSERTBACK,     /* 67 Positive lookbehind */
+  OP_ASSERTBACK_NOT, /* 68 Negative lookbehind */
+  OP_REVERSE,        /* 69 Move pointer back - used in lookbehind assertions */
 
   /* ONCE and COND must come after the assertions, with ONCE first, as there's
   a test for >= ONCE for a subpattern that isn't an assertion. */
 
-  OP_ONCE,           /* 69 Once matched, don't back up into the subpattern */
-  OP_COND,           /* 70 Conditional group */
-  OP_CREF,           /* 71 Used to hold an extraction string number (cond ref) */
+  OP_ONCE,           /* 70 Once matched, don't back up into the subpattern */
+  OP_COND,           /* 71 Conditional group */
+  OP_CREF,           /* 72 Used to hold an extraction string number (cond ref) */
 
-  OP_BRAZERO,        /* 72 These two must remain together and in this */
-  OP_BRAMINZERO,     /* 73 order. */
+  OP_BRAZERO,        /* 73 These two must remain together and in this */
+  OP_BRAMINZERO,     /* 74 order. */
 
-  OP_BRANUMBER,      /* 74 Used for extracting brackets whose number is greater
+  OP_BRANUMBER,      /* 75 Used for extracting brackets whose number is greater
                            than can fit into an opcode. */
 
-  OP_BRA             /* 75 This and greater values are used for brackets that
+  OP_BRA             /* 76 This and greater values are used for brackets that
                            extract substrings up to a basic limit. After that,
                            use is made of OP_BRANUMBER. */
 };
@@ -346,10 +346,10 @@ in UTF-8 mode. The code that uses this table must know about such things. */
   1, 1, 1, 1, 2, 1, 1,           /* Any, Anybyte, \Z, \z, Opt, ^, $        */ \
   2,                             /* Chars - the minimum length             */ \
   2,                             /* not                                    */ \
-  /* Positive single-char repeats                                          */ \
-  2, 2, 2, 2, 2, 2,              /* *, *?, +, +?, ?, ??      ** These are  */ \
-  4, 4, 4,                       /* upto, minupto, exact     ** minima     */ \
-  /* Negative single-char repeats                                          */ \
+  /* Positive single-char repeats                            ** These are  */ \
+  2, 2, 2, 2, 2, 2,              /* *, *?, +, +?, ?, ??      ** minima in  */ \
+  4, 4, 4,                       /* upto, minupto, exact     ** UTF-8 mode */ \
+  /* Negative single-char repeats - only for chars < 256                   */ \
   2, 2, 2, 2, 2, 2,              /* NOT *, *?, +, +?, ?, ??                */ \
   4, 4, 4,                       /* NOT upto, minupto, exact               */ \
   /* Positive type repeats                                                 */ \
@@ -505,13 +505,21 @@ typedef struct branch_chain {
 call within the pattern. */
 
 typedef struct recursion_info {
-  struct recursion_info *prev;  /* Previous recursion record (or NULL) */
+  struct recursion_info *prevrec; /* Previous recursion record (or NULL) */
   int group_num;                /* Number of group that was called */
   const uschar *after_call;     /* "Return value": points after the call in the expr */
   const uschar *save_start;     /* Old value of md->start_match */
   int *offset_save;             /* Pointer to start of saved offsets */
   int saved_max;                /* Number of saved offsets */
 } recursion_info;
+
+/* When compiling in a mode that doesn't use recursive calls to match(),
+a structure is used to remember local variables on the heap. It is defined in
+pcre.c, close to the match() function, so that it is easy to keep it in step
+with any changes of local variable. However, the pointer to the current frame
+must be saved in some "static" place over a longjmp(). We declare the
+structure here so that we can put a pointer in the match_data structure.
+NOTE: This isn't used for a "normal" compilation of pcre. */
 
 /* Structure for passing "static" information around between the functions
 doing the matching, so that they are thread-safe. */
@@ -1319,7 +1327,7 @@ req_byte match. */
 /* Table of sizes for the fixed-length opcodes. It's defined in a macro so that
 the definition is next to the definition of the opcodes in internal.h. */
 
-static uschar OP_lengths[] = { OP_LENGTHS };
+static const uschar OP_lengths[] = { OP_LENGTHS };
 
 /* Min and max values for the common repeats; for the maxima, 0 => infinity */
 
@@ -1348,7 +1356,7 @@ static const short int escapes[] = {
 terminated by a zero length entry. The first three must be alpha, upper, lower,
 as this is assumed for handling case independence. */
 
-static const char *posix_names[] = {
+static const char *const posix_names[] = {
   "alpha", "lower", "upper",
   "alnum", "ascii", "blank", "cntrl", "digit", "graph",
   "print", "punct", "space", "word",  "xdigit" };
@@ -1377,7 +1385,7 @@ static const int posix_class_maps[] = {
   cbit_xdigit,-1,         -1              /* xdigit */
 };
 
-/* Table to identify ASCII digits and hex digits. This is used when compiling
+/* Table to identify digits and hex digits. This is used when compiling
 patterns. Note that the tables in chartables are dependent on the locale, and
 may mark arbitrary characters as digits - but the PCRE compiling code expects
 to handle only 0-9, a-z, and A-Z as digits when compiling. That is why we have
@@ -1440,8 +1448,8 @@ subpattern, so as to detect when an empty string has been matched by a
 subpattern - to break infinite loops. */
 
 typedef struct eptrblock {
-  struct eptrblock *prev;
-  const uschar *saved_eptr;
+  struct eptrblock *epb_prev;
+  const uschar *epb_saved_eptr;
 } eptrblock;
 
 /* Flag bits for the match() function */
@@ -1462,7 +1470,7 @@ defined PCRE_ERROR_xxx codes, which are all negative. */
 *************************************************/
 
 /* PCRE is thread-clean and doesn't use any global variables in the normal
-sense. However, it calls memory allocation and free functions via the two
+sense. However, it calls memory allocation and free functions via the four
 indirections below, and it can optionally do callouts. These values can be
 changed by the caller, but are shared between all threads. However, when
 compiling for Virtual Pascal, things are done differently (see pcre.in). */
@@ -1514,13 +1522,11 @@ int c, i;
 c = *(++ptr);
 if (c == 0) *errorptr = ERR1;
 
-/* Digits or letters may have special meaning; all others are literals. */
+/* Non-alphamerics are literals. For digits or letters, do an initial lookup in
+a table. A non-zero result is something that can be returned immediately.
+Otherwise further processing may be required. */
 
-else if (c < '0' || c > 'z') {}
-
-/* Do an initial lookup in a table. A non-zero result is something that can be
-returned immediately. Otherwise further processing may be required. */
-
+else if (c < '0' || c > 'z') {}                           /* Not alphameric */
 else if ((i = escapes[c - '0']) != 0) c = i;
 
 /* Escapes that need further processing, or are illegal. */
@@ -1667,14 +1673,14 @@ Returns:    true or false
 static bool
 is_counted_repeat(const uschar *p)
 {
-if ((digitab[*p++] && ctype_digit) == 0) return false;
+if ((digitab[*p++] & ctype_digit) == 0) return false;
 while ((digitab[*p] & ctype_digit) != 0) p++;
 if (*p == '}') return true;
 
 if (*p++ != ',') return false;
 if (*p == '}') return true;
 
-if ((digitab[*p++] && ctype_digit) == 0) return false;
+if ((digitab[*p++] & ctype_digit) == 0) return false;
 while ((digitab[*p] & ctype_digit) != 0) p++;
 
 return (*p == '}');
@@ -1995,10 +2001,44 @@ for (;;)
     {
     code += OP_lengths[c];
 
-    /* In UTF-8 mode, opcodes that are followed by a character may be followed
-    by a multi-byte character. The length in the table is a minimum, so we have
-    to scan along to skip the extra characters. All opcodes are less than 128,
-    so we can use relatively efficient code. */
+    }
+  }
+}
+
+
+
+/*************************************************
+*   Scan compiled regex for recursion reference  *
+*************************************************/
+
+/* This little function scans through a compiled pattern until it finds an
+instance of OP_RECURSE.
+
+Arguments:
+  code        points to start of expression
+  utf8        true in UTF-8 mode
+
+Returns:      pointer to the opcode for OP_RECURSE, or NULL if not found
+*/
+
+static const uschar *
+find_recurse(const uschar *code, bool utf8)
+{
+utf8 = utf8;               /* Stop pedantic compilers complaining */
+
+for (;;)
+  {
+  register int c = *code;
+  if (c == OP_END) return NULL;
+  else if (c == OP_RECURSE) return code;
+  else if (c == OP_CHARS) code += code[1] + OP_lengths[c];
+  else if (c > OP_BRA)
+    {
+    code += OP_lengths[OP_BRA];
+    }
+  else
+    {
+    code += OP_lengths[c];
 
     }
   }
@@ -2219,6 +2259,41 @@ while (posix_name_lengths[yield] != 0)
 return -1;
 }
 
+
+/*************************************************
+*    Adjust OP_RECURSE items in repeated group   *
+*************************************************/
+
+/* OP_RECURSE items contain an offset from the start of the regex to the group
+that is referenced. This means that groups can be replicated for fixed
+repetition simply by copying (because the recursion is allowed to refer to
+earlier groups that are outside the current group). However, when a group is
+optional (i.e. the minimum quantifier is zero), OP_BRAZERO is inserted before
+it, after it has been compiled. This means that any OP_RECURSE items within it
+that refer to the group itself or any contained groups have to have their
+offsets adjusted. That is the job of this function. Before it is called, the
+partially compiled regex must be temporarily terminated with OP_END.
+
+Arguments:
+  group      points to the start of the group
+  adjust     the amount by which the group is to be moved
+  utf8       true in UTF-8 mode
+  cd         contains pointers to tables etc.
+
+Returns:     nothing
+*/
+
+static void
+adjust_recurse(uschar *group, int adjust, bool utf8, compile_data *cd)
+{
+uschar *ptr = group;
+while ((ptr = (uschar *)find_recurse(ptr, utf8)) != NULL)
+  {
+  int offset = GET(ptr, 1);
+  if (cd->start_code + offset >= group) PUT(ptr, 1, offset + adjust);
+  ptr += 1 + LINK_SIZE;
+  }
+}
 
 
 
@@ -2489,18 +2564,18 @@ for (;; ptr++)
         posix_class *= 3;
         for (i = 0; i < 3; i++)
           {
-          bool isblank = strncmp((char *)ptr, "blank", 5) == 0;
+          bool blankclass = strncmp((char *)ptr, "blank", 5) == 0;
           int taboffset = posix_class_maps[posix_class + i];
           if (taboffset < 0) break;
           if (local_negate)
             {
             for (c = 0; c < 32; c++) classa[c] |= ~cbits[c+taboffset];
-            if (isblank) classa[1] |= 0x3c;
+            if (blankclass) classa[1] |= 0x3c;
             }
           else
             {
             for (c = 0; c < 32; c++) classa[c] |= cbits[c+taboffset];
-            if (isblank) classa[1] &= ~0x3c;
+            if (blankclass) classa[1] &= ~0x3c;
             }
           }
 
@@ -3040,10 +3115,15 @@ for (;; ptr++)
           }
 
         /* If the maximum is 1 or unlimited, we just have to stick in the
-        BRAZERO and do no more at this point. */
+        BRAZERO and do no more at this point. However, we do need to adjust
+        any OP_RECURSE calls inside the group that refer to the group itself or
+        any internal group, because the offset is from the start of the whole
+        regex. Temporarily terminate the pattern while doing this. */
 
         if (repeat_max <= 1)
           {
+          *code = OP_END;
+          adjust_recurse(previous, 1, utf8, cd);
           memmove(previous+1, previous, len);
           code++;
           *previous++ = OP_BRAZERO + repeat_type;
@@ -3053,12 +3133,15 @@ for (;; ptr++)
         in a nested fashion, sticking OP_BRAZERO before each set of brackets.
         The first one has to be handled carefully because it's the original
         copy, which has to be moved up. The remainder can be handled by code
-        that is common with the non-zero minimum case below. We just have to
-        adjust the value or repeat_max, since one less copy is required. */
+        that is common with the non-zero minimum case below. We have to
+        adjust the value or repeat_max, since one less copy is required. Once
+        again, we may have to adjust any OP_RECURSE calls inside the group. */
 
         else
           {
           int offset;
+          *code = OP_END;
+          adjust_recurse(previous, 2 + LINK_SIZE, utf8, cd);
           memmove(previous + 2 + LINK_SIZE, previous, len);
           code += 2 + LINK_SIZE;
           *previous++ = OP_BRAZERO + repeat_type;
@@ -3747,7 +3830,7 @@ for (;; ptr++)
         if (c < 0) { ptr = tempptr; break; }
 
         /* If a character is > 127 in UTF-8 mode, we have to turn it into
-        two or more characters in the UTF-8 encoding. */
+        two or more bytes in the UTF-8 encoding. */
 
         }
 
@@ -4595,7 +4678,8 @@ while ((c = *(++ptr)) != 0)
       {
       length += 33;
 
-      /* A repeat needs either 1 or 5 bytes. */
+      /* A repeat needs either 1 or 5 bytes. If it is a possessive quantifier,
+      we also need extra for wrapping the whole thing in a sub-pattern. */
 
       if (*ptr != 0 && ptr[1] == '{' && is_counted_repeat(ptr+2))
         {
@@ -4605,7 +4689,12 @@ while ((c = *(++ptr)) != 0)
           (min == 1 && max == -1))
             length++;
         else length += 5;
-        if (ptr[1] == '?') ptr++;
+        if (ptr[1] == '+')
+          {
+          ptr++;
+          length += 2 + 2*LINK_SIZE;
+          }
+        else if (ptr[1] == '?') ptr++;
         }
       }
     continue;
@@ -5241,6 +5330,39 @@ else
 return true;
 }
 
+/***************************************************************************
+****************************************************************************
+                   RECURSION IN THE match() FUNCTION
+
+The match() function is highly recursive. Some regular expressions can cause
+it to recurse thousands of times. I was writing for Unix, so I just let it
+call itself recursively. This uses the stack for saving everything that has
+to be saved for a recursive call. On Unix, the stack can be large, and this
+works fine.
+
+It turns out that on non-Unix systems there are problems with programs that
+use a lot of stack. (This despite the fact that every last chip has oodles
+of memory these days, and techniques for extending the stack have been known
+for decades.) So....
+
+There is a fudge, triggered by defining NO_RECURSE, which avoids recursive
+calls by keeping local variables that need to be preserved in blocks of memory
+obtained from malloc instead instead of on the stack. Macros are used to
+achieve this so that the actual code doesn't look very different to what it
+always used to.
+****************************************************************************
+***************************************************************************/
+
+
+/* These versions of the macros use the stack, as normal */
+
+#define REGISTER register
+#define RMATCH(rx,ra,rb,rc,rd,re,rf,rg) rx = match(ra,rb,rc,rd,re,rf,rg)
+#define RRETURN(ra) return ra
+
+/***************************************************************************
+***************************************************************************/
+
 
 /*************************************************
 *         Match from current position            *
@@ -5277,25 +5399,77 @@ Returns:       MATCH_MATCH if matched            )  these values are >= 0
 */
 
 static int
-match(register const uschar *eptr, register const uschar *ecode,
+match(REGISTER const uschar *eptr, REGISTER const uschar *ecode,
   int offset_top, match_data *md, unsigned long int ims, eptrblock *eptrb,
   int flags)
 {
-unsigned long int original_ims = ims;   /* Save for resetting on ')' */
-register int rrc;
+/* These variables do not need to be preserved over recursion in this function,
+so they can be ordinary variables in all cases. Mark them with "register"
+because they are used a lot in loops. */
+
+register int rrc;    /* Returns from recursive calls */
+register int i;      /* Used for loops not involving calls to RMATCH() */
+register int c;      /* Character values not kept over RMATCH() calls */
+
+/* When recursion is not being used, all "local" variables that have to be
+preserved over calls to RMATCH() are part of a "frame" which is obtained from
+heap storage. Set up the top-level frame here; others are obtained from the
+heap whenever RMATCH() does a "recursion". See the macro definitions above. */
+
+#define fi i
+#define fc c
+
+const uschar *callpat;             /* Many of these variables are used ony */
+const uschar *charptr;             /* small blocks of the code. My normal  */
+const uschar *data;                /* style of coding would have declared  */
+const uschar *lastptr;             /* them within each of those blocks.    */
+const uschar *next;                /* However, in order to accommodate the */
+const uschar *pp;                  /* version of this code that uses an    */
+const uschar *prev;                /* external "stack" implemented on the  */
+const uschar *saved_eptr;          /* heap, it is easier to declare them   */
+                                   /* all here, so the declarations can    */
+recursion_info new_recursive;      /* be cut out in a block. The only      */
+                                   /* declarations within blocks below are */
+bool cur_is_word;                  /* for variables that do not have to    */
+bool condition;                    /* be preserved over a recursive call   */
+bool minimize;                     /* to RMATCH().                         */
+bool prev_is_word;
+
+unsigned long int original_ims;
+
+int ctype;
+int length;
+int max;
+int min;
+int number;
+int offset;
+int op;
+int save_capture_last;
+int save_offset1, save_offset2, save_offset3;
+int stacksave[REC_STACK_SAVE_MAX];
+
 eptrblock newptrb;
 
-if (md->match_call_count++ >= md->match_limit) return PCRE_ERROR_MATCHLIMIT;
+/* OK, now we can get on with the real code of the function. Recursion is
+specified by the macros RMATCH and RRETURN. When NO_RECURSE is *not* defined,
+these just turn into a recursive call to match() and a "return", respectively.
+However, RMATCH isn't like a function call because it's quite a complicated
+macro. It has to be used in one particular way. This shouldn't, however, impact
+performance when true recursion is being used. */
+
+if (md->match_call_count++ >= md->match_limit) RRETURN(PCRE_ERROR_MATCHLIMIT);
+
+original_ims = ims;    /* Save for resetting on ')' */
 
 /* At the start of a bracketed group, add the current subject pointer to the
 stack of such pointers, to be re-instated at the end of the group when we hit
 the closing ket. When match() is called in other circumstances, we don't add to
-the stack. */
+this stack. */
 
 if ((flags & match_isgroup) != 0)
   {
-  newptrb.prev = eptrb;
-  newptrb.saved_eptr = eptr;
+  newptrb.epb_prev = eptrb;
+  newptrb.epb_saved_eptr = eptr;
   eptrb = &newptrb;
   }
 
@@ -5303,11 +5477,8 @@ if ((flags & match_isgroup) != 0)
 
 for (;;)
   {
-  int op = (int)*ecode;
-  int min, max, ctype;
-  register int i;
-  register int c;
-  bool minimize = false;
+  op = *ecode;
+  minimize = false;
 
   /* Opening capturing bracket. If there is space in the offset vector, save
   the current subject position in the working slot at the top of the vector. We
@@ -5325,8 +5496,7 @@ for (;;)
 
   if (op > OP_BRA)
     {
-    int offset;
-    int number = op - OP_BRA;
+    number = op - OP_BRA;
 
     /* For extended extraction brackets (large number), we have to fish out the
     number from a dummy opcode at the start. */
@@ -5337,18 +5507,19 @@ for (;;)
 
     if (offset < md->offset_max)
       {
-      int save_offset1 = md->offset_vector[offset];
-      int save_offset2 = md->offset_vector[offset+1];
-      int save_offset3 = md->offset_vector[md->offset_end - number];
-      int save_capture_last = md->capture_last;
+      save_offset1 = md->offset_vector[offset];
+      save_offset2 = md->offset_vector[offset+1];
+      save_offset3 = md->offset_vector[md->offset_end - number];
+      save_capture_last = md->capture_last;
 
       DPRINTF(("saving %d %d %d\n", save_offset1, save_offset2, save_offset3));
       md->offset_vector[md->offset_end - number] = eptr - md->start_subject;
 
       do
         {
-        if ((rrc = match(eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims,
-              eptrb, match_isgroup)) != MATCH_NOMATCH) return rrc;
+        RMATCH(rrc, eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, eptrb,
+          match_isgroup);
+        if (rrc != MATCH_NOMATCH) RRETURN(rrc);
         md->capture_last = save_capture_last;
         ecode += GET(ecode, 1);
         }
@@ -5360,7 +5531,7 @@ for (;;)
       md->offset_vector[offset+1] = save_offset2;
       md->offset_vector[md->offset_end - number] = save_offset3;
 
-      return MATCH_NOMATCH;
+      RRETURN(MATCH_NOMATCH);
       }
 
     /* Insufficient room for saving captured contents */
@@ -5376,13 +5547,14 @@ for (;;)
     DPRINTF(("start bracket 0\n"));
     do
       {
-      if ((rrc = match(eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, eptrb,
-        match_isgroup)) != MATCH_NOMATCH) return rrc;
+      RMATCH(rrc, eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, eptrb,
+        match_isgroup);
+      if (rrc != MATCH_NOMATCH) RRETURN(rrc);
       ecode += GET(ecode, 1);
       }
     while (*ecode == OP_ALT);
     DPRINTF(("bracket 0 failed\n"));
-    return MATCH_NOMATCH;
+    RRETURN(MATCH_NOMATCH);
 
     /* Conditional group: compilation checked that there are no more than
     two branches. If the condition is false, skipping the first branch takes us
@@ -5392,13 +5564,14 @@ for (;;)
     case OP_COND:
     if (ecode[LINK_SIZE+1] == OP_CREF) /* Condition extract or recurse test */
       {
-      int offset = GET2(ecode, LINK_SIZE+2) << 1;  /* Doubled ref number */
-      bool condition = (offset == CREF_RECURSE * 2)?
+      offset = GET2(ecode, LINK_SIZE+2) << 1;  /* Doubled ref number */
+      condition = (offset == CREF_RECURSE * 2)?
         (md->recursive != NULL) :
         (offset < offset_top && md->offset_vector[offset] >= 0);
-      return match(eptr, ecode + (condition?
+      RMATCH(rrc, eptr, ecode + (condition?
         (LINK_SIZE + 4) : (LINK_SIZE + 1 + GET(ecode, 1))),
         offset_top, md, ims, eptrb, match_isgroup);
+      RRETURN(rrc);
       }
 
     /* The condition is an assertion. Call match() to evaluate it - setting
@@ -5406,16 +5579,21 @@ for (;;)
 
     else
       {
-      if ((rrc = match(eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, NULL,
-          match_condassert | match_isgroup)) == MATCH_MATCH)
+      RMATCH(rrc, eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, NULL,
+          match_condassert | match_isgroup);
+      if (rrc == MATCH_MATCH)
         {
         ecode += 1 + LINK_SIZE + GET(ecode, LINK_SIZE+2);
         while (*ecode == OP_ALT) ecode += GET(ecode, 1);
         }
-      else if (rrc != MATCH_NOMATCH) return rrc;
+      else if (rrc != MATCH_NOMATCH)
+        {
+        RRETURN(rrc);         /* Need braces because of following else */
+        }
       else ecode += GET(ecode, 1);
-      return match(eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, eptrb,
+      RMATCH(rrc, eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, eptrb,
         match_isgroup);
+      RRETURN(rrc);
       }
     /* Control never reaches here */
 
@@ -5435,7 +5613,7 @@ for (;;)
       {
       recursion_info *rec = md->recursive;
       DPRINTF(("Hit the end in a (?0) recursion\n"));
-      md->recursive = rec->prev;
+      md->recursive = rec->prevrec;
       memmove(md->offset_vector, rec->offset_save,
         rec->saved_max * sizeof(int));
       md->start_match = rec->save_start;
@@ -5447,10 +5625,10 @@ for (;;)
     /* Otherwise, if PCRE_NOTEMPTY is set, fail if we have matched an empty
     string - backtracking will then try other alternatives, if any. */
 
-    if (md->notempty && eptr == md->start_match) return MATCH_NOMATCH;
+    if (md->notempty && eptr == md->start_match) RRETURN(MATCH_NOMATCH);
     md->end_match_ptr = eptr;          /* Record where we ended */
     md->end_offset_top = offset_top;   /* and how many extracts were taken */
-    return MATCH_MATCH;
+    RRETURN(MATCH_MATCH);
 
     /* Change option settings */
 
@@ -5470,17 +5648,18 @@ for (;;)
     case OP_ASSERTBACK:
     do
       {
-      if ((rrc = match(eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, NULL,
-        match_isgroup)) == MATCH_MATCH) break;
-      if (rrc != MATCH_NOMATCH) return rrc;
+      RMATCH(rrc, eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, NULL,
+        match_isgroup);
+      if (rrc == MATCH_MATCH) break;
+      if (rrc != MATCH_NOMATCH) RRETURN(rrc);
       ecode += GET(ecode, 1);
       }
     while (*ecode == OP_ALT);
-    if (*ecode == OP_KET) return MATCH_NOMATCH;
+    if (*ecode == OP_KET) RRETURN(MATCH_NOMATCH);
 
     /* If checking an assertion for a condition, return MATCH_MATCH. */
 
-    if ((flags & match_condassert) != 0) return MATCH_MATCH;
+    if ((flags & match_condassert) != 0) RRETURN(MATCH_MATCH);
 
     /* Continue from after the assertion, updating the offsets high water
     mark, since extracts may have been taken during the assertion. */
@@ -5496,14 +5675,15 @@ for (;;)
     case OP_ASSERTBACK_NOT:
     do
       {
-      if ((rrc = match(eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, NULL,
-        match_isgroup)) == MATCH_MATCH) return MATCH_NOMATCH;
-      if (rrc != MATCH_NOMATCH) return rrc;
+      RMATCH(rrc, eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, NULL,
+        match_isgroup);
+      if (rrc == MATCH_MATCH) RRETURN(MATCH_NOMATCH);
+      if (rrc != MATCH_NOMATCH) RRETURN(rrc);
       ecode += GET(ecode,1);
       }
     while (*ecode == OP_ALT);
 
-    if ((flags & match_condassert) != 0) return MATCH_MATCH;
+    if ((flags & match_condassert) != 0) RRETURN(MATCH_MATCH);
 
     ecode += 1 + LINK_SIZE;
     continue;
@@ -5519,7 +5699,7 @@ for (;;)
 
       {
       eptr -= GET(ecode,1);
-      if (eptr < md->start_subject) return MATCH_NOMATCH;
+      if (eptr < md->start_subject) RRETURN(MATCH_NOMATCH);
       }
 
     /* Skip to next op code */
@@ -5545,16 +5725,15 @@ for (;;)
       cb.capture_top      = offset_top/2;
       cb.capture_last     = md->capture_last;
       cb.callout_data     = md->callout_data;
-      if ((rrc = (*pcre_callout)(&cb)) > 0) return MATCH_NOMATCH;
-      if (rrc < 0) return rrc;
+      if ((rrc = (*pcre_callout)(&cb)) > 0) RRETURN(MATCH_NOMATCH);
+      if (rrc < 0) RRETURN(rrc);
       }
     ecode += 2;
     break;
 
     /* Recursion either matches the current regex, or some subexpression. The
     offset data is the offset to the starting bracket from the start of the
-    whole pattern. However, it is possible that a BRAZERO was inserted before
-    this bracket after we took the offset - we just skip it if encountered.
+    whole pattern. (This is so that it works from duplicated subpatterns.)
 
     If there are any capturing brackets started but not finished, we have to
     save their starting points and reinstate them after the recursion. However,
@@ -5573,12 +5752,7 @@ for (;;)
 
     case OP_RECURSE:
       {
-      int stacksave[REC_STACK_SAVE_MAX];
-      recursion_info new_recursive;
-      const uschar *callpat = md->start_code + GET(ecode, 1);
-
-      if (*callpat == OP_BRAZERO) callpat++;
-
+      callpat = md->start_code + GET(ecode, 1);
       new_recursive.group_num = *callpat - OP_BRA;
 
       /* For extended extraction brackets (large number), we have to fish out
@@ -5589,7 +5763,7 @@ for (;;)
 
       /* Add to "recursing stack" */
 
-      new_recursive.prev = md->recursive;
+      new_recursive.prevrec = md->recursive;
       md->recursive = &new_recursive;
 
       /* Find where to continue from afterwards */
@@ -5606,7 +5780,7 @@ for (;;)
         {
         new_recursive.offset_save =
           static_cast<int *>(malloc(new_recursive.saved_max * sizeof(int)));
-        if (new_recursive.offset_save == NULL) return PCRE_ERROR_NOMEMORY;
+        if (new_recursive.offset_save == NULL) RRETURN(PCRE_ERROR_NOMEMORY);
         }
 
       memcpy(new_recursive.offset_save, md->offset_vector,
@@ -5620,15 +5794,16 @@ for (;;)
       DPRINTF(("Recursing into group %d\n", new_recursive.group_num));
       do
         {
-        if ((rrc = match(eptr, callpat + 1 + LINK_SIZE, offset_top, md, ims,
-            eptrb, match_isgroup)) == MATCH_MATCH)
+        RMATCH(rrc, eptr, callpat + 1 + LINK_SIZE, offset_top, md, ims,
+            eptrb, match_isgroup);
+        if (rrc == MATCH_MATCH)
           {
-          md->recursive = new_recursive.prev;
+          md->recursive = new_recursive.prevrec;
           if (new_recursive.offset_save != stacksave)
             free(new_recursive.offset_save);
-          return MATCH_MATCH;
+          RRETURN(MATCH_MATCH);
           }
-        else if (rrc != MATCH_NOMATCH) return rrc;
+        else if (rrc != MATCH_NOMATCH) RRETURN(rrc);
 
         md->recursive = &new_recursive;
         memcpy(md->offset_vector, new_recursive.offset_save,
@@ -5638,10 +5813,10 @@ for (;;)
       while (*callpat == OP_ALT);
 
       DPRINTF(("Recursion didn't match\n"));
-      md->recursive = new_recursive.prev;
+      md->recursive = new_recursive.prevrec;
       if (new_recursive.offset_save != stacksave)
         free(new_recursive.offset_save);
-      return MATCH_NOMATCH;
+      RRETURN(MATCH_NOMATCH);
       }
     /* Control never reaches here */
 
@@ -5654,21 +5829,22 @@ for (;;)
 
     case OP_ONCE:
       {
-      const uschar *prev = ecode;
-      const uschar *saved_eptr = eptr;
+      prev = ecode;
+      saved_eptr = eptr;
 
       do
         {
-        if ((rrc = match(eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims,
-          eptrb, match_isgroup)) == MATCH_MATCH) break;
-        if (rrc != MATCH_NOMATCH) return rrc;
+        RMATCH(rrc, eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims,
+          eptrb, match_isgroup);
+        if (rrc == MATCH_MATCH) break;
+        if (rrc != MATCH_NOMATCH) RRETURN(rrc);
         ecode += GET(ecode,1);
         }
       while (*ecode == OP_ALT);
 
       /* If hit the end of the group (which could be repeated), fail */
 
-      if (*ecode != OP_ONCE && *ecode != OP_ALT) return MATCH_NOMATCH;
+      if (*ecode != OP_ONCE && *ecode != OP_ALT) RRETURN(MATCH_NOMATCH);
 
       /* Continue as from after the assertion, updating the offsets high water
       mark, since extracts may have been taken. */
@@ -5703,20 +5879,20 @@ for (;;)
 
       if (*ecode == OP_KETRMIN)
         {
-        if ((rrc = match(eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims,
-             eptrb, 0)) != MATCH_NOMATCH) return rrc;
-        if ((rrc = match(eptr, prev, offset_top, md, ims, eptrb,
-             match_isgroup)) != MATCH_NOMATCH) return rrc;
+        RMATCH(rrc, eptr, ecode + 1 + LINK_SIZE, offset_top, md, ims, eptrb, 0);
+        if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+        RMATCH(rrc, eptr, prev, offset_top, md, ims, eptrb, match_isgroup);
+        if (rrc != MATCH_NOMATCH) RRETURN(rrc);
         }
       else  /* OP_KETRMAX */
         {
-        if ((rrc = match(eptr, prev, offset_top, md, ims, eptrb,
-             match_isgroup)) != MATCH_NOMATCH) return rrc;
-        if ((rrc = match(eptr, ecode + 1+LINK_SIZE, offset_top, md, ims, eptrb,
-             0)) != MATCH_NOMATCH) return rrc;
+        RMATCH(rrc, eptr, prev, offset_top, md, ims, eptrb, match_isgroup);
+        if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+        RMATCH(rrc, eptr, ecode + 1+LINK_SIZE, offset_top, md, ims, eptrb, 0);
+        if (rrc != MATCH_NOMATCH) RRETURN(rrc);
         }
       }
-    return MATCH_NOMATCH;
+    RRETURN(MATCH_NOMATCH);
 
     /* An alternation is the end of a branch; scan along to find the end of the
     bracketed group and go to there. */
@@ -5733,9 +5909,9 @@ for (;;)
 
     case OP_BRAZERO:
       {
-      const uschar *next = ecode+1;
-      if ((rrc = match(eptr, next, offset_top, md, ims, eptrb, match_isgroup))
-           != MATCH_NOMATCH) return rrc;
+      next = ecode+1;
+      RMATCH(rrc, eptr, next, offset_top, md, ims, eptrb, match_isgroup);
+      if (rrc != MATCH_NOMATCH) RRETURN(rrc);
       do next += GET(next,1); while (*next == OP_ALT);
       ecode = next + 1+LINK_SIZE;
       }
@@ -5743,10 +5919,11 @@ for (;;)
 
     case OP_BRAMINZERO:
       {
-      const uschar *next = ecode+1;
+      next = ecode+1;
       do next += GET(next,1); while (*next == OP_ALT);
-      if ((rrc = match(eptr, next + 1+LINK_SIZE, offset_top, md, ims, eptrb,
-        match_isgroup)) != MATCH_NOMATCH) return rrc;
+      RMATCH(rrc, eptr, next + 1+LINK_SIZE, offset_top, md, ims, eptrb,
+        match_isgroup);
+      if (rrc != MATCH_NOMATCH) RRETURN(rrc);
       ecode++;
       }
     break;
@@ -5760,10 +5937,12 @@ for (;;)
     case OP_KETRMIN:
     case OP_KETRMAX:
       {
-      const uschar *prev = ecode - GET(ecode, 1);
-      const uschar *saved_eptr = eptrb->saved_eptr;
+      prev = ecode - GET(ecode, 1);
+      saved_eptr = eptrb->epb_saved_eptr;
 
-      eptrb = eptrb->prev;    /* Back up the stack of bracket start pointers */
+      /* Back up the stack of bracket start pointers. */
+
+      eptrb = eptrb->epb_prev;
 
       if (*prev == OP_ASSERT || *prev == OP_ASSERT_NOT ||
           *prev == OP_ASSERTBACK || *prev == OP_ASSERTBACK_NOT ||
@@ -5771,7 +5950,7 @@ for (;;)
         {
         md->end_match_ptr = eptr;      /* For ONCE */
         md->end_offset_top = offset_top;
-        return MATCH_MATCH;
+        RRETURN(MATCH_MATCH);
         }
 
       /* In all other cases except a conditional group we have to check the
@@ -5780,8 +5959,7 @@ for (;;)
 
       if (*prev != OP_COND)
         {
-        int offset;
-        int number = *prev - OP_BRA;
+        number = *prev - OP_BRA;
 
         /* For extended extraction brackets (large number), we have to fish out
         the number from a dummy opcode at the start. */
@@ -5812,7 +5990,7 @@ for (;;)
             {
             recursion_info *rec = md->recursive;
             DPRINTF(("Recursion (%d) succeeded - continuing\n", number));
-            md->recursive = rec->prev;
+            md->recursive = rec->prevrec;
             md->start_match = rec->save_start;
             memcpy(md->offset_vector, rec->offset_save,
               rec->saved_max * sizeof(int));
@@ -5846,29 +6024,30 @@ for (;;)
 
       if (*ecode == OP_KETRMIN)
         {
-        if ((rrc = match(eptr, ecode + 1+LINK_SIZE, offset_top, md, ims, eptrb,
-             0)) != MATCH_NOMATCH) return rrc;
-        if ((rrc = match(eptr, prev, offset_top, md, ims, eptrb,
-             match_isgroup)) != MATCH_NOMATCH) return rrc;
+        RMATCH(rrc, eptr, ecode + 1+LINK_SIZE, offset_top, md, ims, eptrb, 0);
+        if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+        RMATCH(rrc, eptr, prev, offset_top, md, ims, eptrb, match_isgroup);
+        if (rrc != MATCH_NOMATCH) RRETURN(rrc);
         }
       else  /* OP_KETRMAX */
         {
-        if ((rrc = match(eptr, prev, offset_top, md, ims, eptrb,
-             match_isgroup)) != MATCH_NOMATCH) return rrc;
-        if ((rrc = match(eptr, ecode + 1+LINK_SIZE, offset_top, md, ims, eptrb,
-             0)) != MATCH_NOMATCH) return rrc;
+        RMATCH(rrc, eptr, prev, offset_top, md, ims, eptrb, match_isgroup);
+        if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+        RMATCH(rrc, eptr, ecode + 1+LINK_SIZE, offset_top, md, ims, eptrb, 0);
+        if (rrc != MATCH_NOMATCH) RRETURN(rrc);
         }
       }
-    return MATCH_NOMATCH;
+
+    RRETURN(MATCH_NOMATCH);
 
     /* Start of subject unless notbol, or after internal newline if multiline */
 
     case OP_CIRC:
-    if (md->notbol && eptr == md->start_subject) return MATCH_NOMATCH;
+    if (md->notbol && eptr == md->start_subject) RRETURN(MATCH_NOMATCH);
     if ((ims & PCRE_MULTILINE) != 0)
       {
       if (eptr != md->start_subject && eptr[-1] != NEWLINE)
-        return MATCH_NOMATCH;
+        RRETURN(MATCH_NOMATCH);
       ecode++;
       break;
       }
@@ -5877,14 +6056,14 @@ for (;;)
     /* Start of subject assertion */
 
     case OP_SOD:
-    if (eptr != md->start_subject) return MATCH_NOMATCH;
+    if (eptr != md->start_subject) RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
     /* Start of match assertion */
 
     case OP_SOM:
-    if (eptr != md->start_subject + md->start_offset) return MATCH_NOMATCH;
+    if (eptr != md->start_subject + md->start_offset) RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
@@ -5895,20 +6074,20 @@ for (;;)
     if ((ims & PCRE_MULTILINE) != 0)
       {
       if (eptr < md->end_subject)
-        { if (*eptr != NEWLINE) return MATCH_NOMATCH; }
+        { if (*eptr != NEWLINE) RRETURN(MATCH_NOMATCH); }
       else
-        { if (md->noteol) return MATCH_NOMATCH; }
+        { if (md->noteol) RRETURN(MATCH_NOMATCH); }
       ecode++;
       break;
       }
     else
       {
-      if (md->noteol) return MATCH_NOMATCH;
+      if (md->noteol) RRETURN(MATCH_NOMATCH);
       if (!md->endonly)
         {
         if (eptr < md->end_subject - 1 ||
            (eptr == md->end_subject - 1 && *eptr != NEWLINE))
-          return MATCH_NOMATCH;
+          RRETURN(MATCH_NOMATCH);
         ecode++;
         break;
         }
@@ -5918,7 +6097,7 @@ for (;;)
     /* End of subject assertion (\z) */
 
     case OP_EOD:
-    if (eptr < md->end_subject) return MATCH_NOMATCH;
+    if (eptr < md->end_subject) RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
@@ -5926,7 +6105,7 @@ for (;;)
 
     case OP_EODN:
     if (eptr < md->end_subject - 1 ||
-       (eptr == md->end_subject - 1 && *eptr != NEWLINE)) return MATCH_NOMATCH;
+       (eptr == md->end_subject - 1 && *eptr != NEWLINE)) RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
@@ -5935,7 +6114,6 @@ for (;;)
     case OP_NOT_WORD_BOUNDARY:
     case OP_WORD_BOUNDARY:
       {
-      bool prev_is_word, cur_is_word;
 
       /* Find out if the previous and current characters are "word" characters.
       It takes a bit more work in UTF-8 mode. Characters > 255 are assumed to
@@ -5955,7 +6133,7 @@ for (;;)
 
       if ((*ecode++ == OP_WORD_BOUNDARY)?
            cur_is_word == prev_is_word : cur_is_word != prev_is_word)
-        return MATCH_NOMATCH;
+        RRETURN(MATCH_NOMATCH);
       }
     break;
 
@@ -5963,8 +6141,8 @@ for (;;)
 
     case OP_ANY:
     if ((ims & PCRE_DOTALL) == 0 && eptr < md->end_subject && *eptr == NEWLINE)
-      return MATCH_NOMATCH;
-    if (eptr++ >= md->end_subject) return MATCH_NOMATCH;
+      RRETURN(MATCH_NOMATCH);
+    if (eptr++ >= md->end_subject) RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
@@ -5972,67 +6150,67 @@ for (;;)
     any byte, even newline, independent of the setting of PCRE_DOTALL. */
 
     case OP_ANYBYTE:
-    if (eptr++ >= md->end_subject) return MATCH_NOMATCH;
+    if (eptr++ >= md->end_subject) RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
     case OP_NOT_DIGIT:
-    if (eptr >= md->end_subject) return MATCH_NOMATCH;
+    if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
        (md->ctypes[c] & ctype_digit) != 0
        )
-      return MATCH_NOMATCH;
+      RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
     case OP_DIGIT:
-    if (eptr >= md->end_subject) return MATCH_NOMATCH;
+    if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
        (md->ctypes[c] & ctype_digit) == 0
        )
-      return MATCH_NOMATCH;
+      RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
     case OP_NOT_WHITESPACE:
-    if (eptr >= md->end_subject) return MATCH_NOMATCH;
+    if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
        (md->ctypes[c] & ctype_space) != 0
        )
-      return MATCH_NOMATCH;
+      RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
     case OP_WHITESPACE:
-    if (eptr >= md->end_subject) return MATCH_NOMATCH;
+    if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
        (md->ctypes[c] & ctype_space) == 0
        )
-      return MATCH_NOMATCH;
+      RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
     case OP_NOT_WORDCHAR:
-    if (eptr >= md->end_subject) return MATCH_NOMATCH;
+    if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
        (md->ctypes[c] & ctype_word) != 0
        )
-      return MATCH_NOMATCH;
+      RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
     case OP_WORDCHAR:
-    if (eptr >= md->end_subject) return MATCH_NOMATCH;
+    if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
        (md->ctypes[c] & ctype_word) == 0
        )
-      return MATCH_NOMATCH;
+      RRETURN(MATCH_NOMATCH);
     ecode++;
     break;
 
@@ -6046,8 +6224,7 @@ for (;;)
 
     case OP_REF:
       {
-      int length;
-      int offset = GET2(ecode, 1) << 1;               /* Doubled ref number */
+      offset = GET2(ecode, 1) << 1;               /* Doubled ref number */
       ecode += 3;                                     /* Advance past item */
 
       /* If the reference is unset, set the length to be longer than the amount
@@ -6086,7 +6263,7 @@ for (;;)
         break;
 
         default:               /* No repeat follows */
-        if (!match_ref(offset, eptr, length, md, ims)) return MATCH_NOMATCH;
+        if (!match_ref(offset, eptr, length, md, ims)) RRETURN(MATCH_NOMATCH);
         eptr += length;
         continue;              /* With the main loop */
         }
@@ -6102,7 +6279,7 @@ for (;;)
 
       for (i = 1; i <= min; i++)
         {
-        if (!match_ref(offset, eptr, length, md, ims)) return MATCH_NOMATCH;
+        if (!match_ref(offset, eptr, length, md, ims)) RRETURN(MATCH_NOMATCH);
         eptr += length;
         }
 
@@ -6115,12 +6292,12 @@ for (;;)
 
       if (minimize)
         {
-        for (i = min;; i++)
+        for (fi = min;; fi++)
           {
-          if ((rrc = match(eptr, ecode, offset_top, md, ims, eptrb, 0)) !=
-               MATCH_NOMATCH) return rrc;
-          if (i >= max || !match_ref(offset, eptr, length, md, ims))
-            return MATCH_NOMATCH;
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+          if (fi >= max || !match_ref(offset, eptr, length, md, ims))
+            RRETURN(MATCH_NOMATCH);
           eptr += length;
           }
         /* Control never gets here */
@@ -6130,7 +6307,7 @@ for (;;)
 
       else
         {
-        const uschar *pp = eptr;
+        pp = eptr;
         for (i = min; i < max; i++)
           {
           if (!match_ref(offset, eptr, length, md, ims)) break;
@@ -6138,11 +6315,11 @@ for (;;)
           }
         while (eptr >= pp)
           {
-          if ((rrc = match(eptr, ecode, offset_top, md, ims, eptrb, 0)) !=
-               MATCH_NOMATCH) return rrc;
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
           eptr -= length;
           }
-        return MATCH_NOMATCH;
+        RRETURN(MATCH_NOMATCH);
         }
       }
     /* Control never gets here */
@@ -6161,7 +6338,7 @@ for (;;)
     case OP_NCLASS:
     case OP_CLASS:
       {
-      const uschar *data = ecode + 1;  /* Save for matching */
+      data = ecode + 1;                /* Save for matching */
       ecode += 33;                     /* Advance past the item */
 
       switch (*ecode)
@@ -6199,9 +6376,9 @@ for (;;)
         {
         for (i = 1; i <= min; i++)
           {
-          if (eptr >= md->end_subject) return MATCH_NOMATCH;
+          if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
           c = *eptr++;
-          if ((data[c/8] & (1 << (c&7))) == 0) return MATCH_NOMATCH;
+          if ((data[c/8] & (1 << (c&7))) == 0) RRETURN(MATCH_NOMATCH);
           }
         }
 
@@ -6217,13 +6394,13 @@ for (;;)
         {
         /* Not UTF-8 mode */
           {
-          for (i = min;; i++)
+          for (fi = min;; fi++)
             {
-            if ((rrc = match(eptr, ecode, offset_top, md, ims, eptrb, 0)) !=
-                 MATCH_NOMATCH) return rrc;
-            if (i >= max || eptr >= md->end_subject) return MATCH_NOMATCH;
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
             c = *eptr++;
-            if ((data[c/8] & (1 << (c&7))) == 0) return MATCH_NOMATCH;
+            if ((data[c/8] & (1 << (c&7))) == 0) RRETURN(MATCH_NOMATCH);
             }
           }
         /* Control never gets here */
@@ -6233,7 +6410,7 @@ for (;;)
 
       else
         {
-        const uschar *pp = eptr;
+        pp = eptr;
 
           /* Not UTF-8 mode */
           {
@@ -6246,36 +6423,39 @@ for (;;)
             }
           while (eptr >= pp)
             {
-            if ((rrc = match(eptr--, ecode, offset_top, md, ims, eptrb, 0)) !=
-                 MATCH_NOMATCH) return rrc;
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            eptr--;
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
             }
           }
 
-        return MATCH_NOMATCH;
+        RRETURN(MATCH_NOMATCH);
         }
       }
     /* Control never gets here */
 
+
+    /* Match an extended character class. This opcode is encountered only
+    in UTF-8 mode, because that's the only time it is compiled. */
 
 
     /* Match a run of characters */
 
     case OP_CHARS:
       {
-      register int length = ecode[1];
+      register int slen = ecode[1];
       ecode += 2;
 
-
-      if (length > md->end_subject - eptr) return MATCH_NOMATCH;
+      if (slen > md->end_subject - eptr) RRETURN(MATCH_NOMATCH);
       if ((ims & PCRE_CASELESS) != 0)
         {
-        while (length-- > 0)
+        while (slen-- > 0)
           if (md->lcc[*ecode++] != md->lcc[*eptr++])
-            return MATCH_NOMATCH;
+            RRETURN(MATCH_NOMATCH);
         }
       else
         {
-        while (length-- > 0) if (*ecode++ != *eptr++) return MATCH_NOMATCH;
+        while (slen-- > 0) if (*ecode++ != *eptr++) RRETURN(MATCH_NOMATCH);
         }
       }
     break;
@@ -6315,11 +6495,11 @@ for (;;)
 
     /* When not in UTF-8 mode, load a single-byte character. */
       {
-      if (min > md->end_subject - eptr) return MATCH_NOMATCH;
-      c = *ecode++;
+      if (min > md->end_subject - eptr) RRETURN(MATCH_NOMATCH);
+      fc = *ecode++;
       }
 
-    /* The value of c at this point is always less than 256, though we may or
+    /* The value of fc at this point is always less than 256, though we may or
     may not be in UTF-8 mode. The code is duplicated for the caseless and
     caseful cases, for speed, since matching characters is likely to be quite
     common. First, ensure the minimum number of matches are present. If min =
@@ -6328,39 +6508,42 @@ for (;;)
     matching character if failing, up to the maximum. Alternatively, if
     maximizing, find the maximum number of characters and work backwards. */
 
-    DPRINTF(("matching %c{%d,%d} against subject %.*s\n", c, min, max,
+    DPRINTF(("matching %c{%d,%d} against subject %.*s\n", fc, min, max,
       max, eptr));
 
     if ((ims & PCRE_CASELESS) != 0)
       {
-      c = md->lcc[c];
+      fc = md->lcc[fc];
       for (i = 1; i <= min; i++)
-        if (c != md->lcc[*eptr++]) return MATCH_NOMATCH;
+        if (fc != md->lcc[*eptr++]) RRETURN(MATCH_NOMATCH);
       if (min == max) continue;
       if (minimize)
         {
-        for (i = min;; i++)
+        for (fi = min;; fi++)
           {
-          if ((rrc = match(eptr, ecode, offset_top, md, ims, eptrb, 0)) !=
-               MATCH_NOMATCH) return rrc;
-          if (i >= max || eptr >= md->end_subject ||
-              c != md->lcc[*eptr++])
-            return MATCH_NOMATCH;
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+          if (fi >= max || eptr >= md->end_subject ||
+              fc != md->lcc[*eptr++])
+            RRETURN(MATCH_NOMATCH);
           }
         /* Control never gets here */
         }
       else
         {
-        const uschar *pp = eptr;
+        pp = eptr;
         for (i = min; i < max; i++)
           {
-          if (eptr >= md->end_subject || c != md->lcc[*eptr]) break;
+          if (eptr >= md->end_subject || fc != md->lcc[*eptr]) break;
           eptr++;
           }
         while (eptr >= pp)
-          if ((rrc = match(eptr--, ecode, offset_top, md, ims, eptrb, 0)) !=
-               MATCH_NOMATCH) return rrc;
-        return MATCH_NOMATCH;
+          {
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          eptr--;
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+          }
+        RRETURN(MATCH_NOMATCH);
         }
       /* Control never gets here */
       }
@@ -6369,31 +6552,34 @@ for (;;)
 
     else
       {
-      for (i = 1; i <= min; i++) if (c != *eptr++) return MATCH_NOMATCH;
+      for (i = 1; i <= min; i++) if (fc != *eptr++) RRETURN(MATCH_NOMATCH);
       if (min == max) continue;
       if (minimize)
         {
-        for (i = min;; i++)
+        for (fi = min;; fi++)
           {
-          if ((rrc = match(eptr, ecode, offset_top, md, ims, eptrb, 0)) !=
-               MATCH_NOMATCH) return rrc;
-          if (i >= max || eptr >= md->end_subject || c != *eptr++)
-            return MATCH_NOMATCH;
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+          if (fi >= max || eptr >= md->end_subject || fc != *eptr++)
+            RRETURN(MATCH_NOMATCH);
           }
         /* Control never gets here */
         }
       else
         {
-        const uschar *pp = eptr;
+        pp = eptr;
         for (i = min; i < max; i++)
           {
-          if (eptr >= md->end_subject || c != *eptr) break;
+          if (eptr >= md->end_subject || fc != *eptr) break;
           eptr++;
           }
         while (eptr >= pp)
-         if ((rrc = match(eptr--, ecode, offset_top, md, ims, eptrb, 0)) !=
-              MATCH_NOMATCH) return rrc;
-        return MATCH_NOMATCH;
+          {
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          eptr--;
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+          }
+        RRETURN(MATCH_NOMATCH);
         }
       }
     /* Control never gets here */
@@ -6402,17 +6588,17 @@ for (;;)
     checking can be multibyte. */
 
     case OP_NOT:
-    if (eptr >= md->end_subject) return MATCH_NOMATCH;
+    if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     ecode++;
     GETCHARINCTEST(c, eptr);
     if ((ims & PCRE_CASELESS) != 0)
       {
       c = md->lcc[c];
-      if (md->lcc[*ecode++] == c) return MATCH_NOMATCH;
+      if (md->lcc[*ecode++] == c) RRETURN(MATCH_NOMATCH);
       }
     else
       {
-      if (*ecode++ == c) return MATCH_NOMATCH;
+      if (*ecode++ == c) RRETURN(MATCH_NOMATCH);
       }
     break;
 
@@ -6453,8 +6639,8 @@ for (;;)
     characters left in the subject. */
 
     REPEATNOTCHAR:
-    if (min > md->end_subject - eptr) return MATCH_NOMATCH;
-    c = *ecode++;
+    if (min > md->end_subject - eptr) RRETURN(MATCH_NOMATCH);
+    fc = *ecode++;
 
     /* The code is duplicated for the caseless and caseful cases, for speed,
     since matching characters is likely to be quite common. First, ensure the
@@ -6464,17 +6650,18 @@ for (;;)
     maximum. Alternatively, if maximizing, find the maximum number of
     characters and work backwards. */
 
-    DPRINTF(("negative matching %c{%d,%d} against subject %.*s\n", c, min, max,
+    DPRINTF(("negative matching %c{%d,%d} against subject %.*s\n", fc, min, max,
       max, eptr));
 
     if ((ims & PCRE_CASELESS) != 0)
       {
-      c = md->lcc[c];
+      fc = md->lcc[fc];
+
 
       /* Not UTF-8 mode */
         {
         for (i = 1; i <= min; i++)
-          if (c == md->lcc[*eptr++]) return MATCH_NOMATCH;
+          if (fc == md->lcc[*eptr++]) RRETURN(MATCH_NOMATCH);
         }
 
       if (min == max) continue;
@@ -6483,12 +6670,12 @@ for (;;)
         {
         /* Not UTF-8 mode */
           {
-          for (i = min;; i++)
+          for (fi = min;; fi++)
             {
-            if ((rrc = match(eptr, ecode, offset_top, md, ims, eptrb, 0)) !=
-                 MATCH_NOMATCH) return rrc;
-            if (i >= max || eptr >= md->end_subject || c == md->lcc[*eptr++])
-              return MATCH_NOMATCH;
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (fi >= max || eptr >= md->end_subject || fc == md->lcc[*eptr++])
+              RRETURN(MATCH_NOMATCH);
             }
           }
         /* Control never gets here */
@@ -6498,24 +6685,24 @@ for (;;)
 
       else
         {
-        const uschar *pp = eptr;
+        pp = eptr;
 
         /* Not UTF-8 mode */
           {
           for (i = min; i < max; i++)
             {
-            if (eptr >= md->end_subject || c == md->lcc[*eptr]) break;
+            if (eptr >= md->end_subject || fc == md->lcc[*eptr]) break;
             eptr++;
             }
           while (eptr >= pp)
             {
-            if ((rrc = match(eptr, ecode, offset_top, md, ims, eptrb, 0)) !=
-                 MATCH_NOMATCH) return rrc;
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
             eptr--;
             }
           }
 
-        return MATCH_NOMATCH;
+        RRETURN(MATCH_NOMATCH);
         }
       /* Control never gets here */
       }
@@ -6527,7 +6714,7 @@ for (;;)
       /* Not UTF-8 mode */
         {
         for (i = 1; i <= min; i++)
-          if (c == *eptr++) return MATCH_NOMATCH;
+          if (fc == *eptr++) RRETURN(MATCH_NOMATCH);
         }
 
       if (min == max) continue;
@@ -6536,12 +6723,12 @@ for (;;)
         {
         /* Not UTF-8 mode */
           {
-          for (i = min;; i++)
+          for (fi = min;; fi++)
             {
-            if ((rrc = match(eptr, ecode, offset_top, md, ims, eptrb, 0)) !=
-                 MATCH_NOMATCH) return rrc;
-            if (i >= max || eptr >= md->end_subject || c == *eptr++)
-              return MATCH_NOMATCH;
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (fi >= max || eptr >= md->end_subject || fc == *eptr++)
+              RRETURN(MATCH_NOMATCH);
             }
           }
         /* Control never gets here */
@@ -6551,24 +6738,24 @@ for (;;)
 
       else
         {
-        const uschar *pp = eptr;
+        pp = eptr;
 
         /* Not UTF-8 mode */
           {
           for (i = min; i < max; i++)
             {
-            if (eptr >= md->end_subject || c == *eptr) break;
+            if (eptr >= md->end_subject || fc == *eptr) break;
             eptr++;
             }
           while (eptr >= pp)
             {
-            if ((rrc = match(eptr, ecode, offset_top, md, ims, eptrb, 0)) !=
-                MATCH_NOMATCH) return rrc;
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
             eptr--;
             }
           }
 
-        return MATCH_NOMATCH;
+        RRETURN(MATCH_NOMATCH);
         }
       }
     /* Control never gets here */
@@ -6617,7 +6804,7 @@ for (;;)
     UTF-8 mode, but it does no harm. Separate the UTF-8 code completely as that
     is tidier. */
 
-    if (min > md->end_subject - eptr) return MATCH_NOMATCH;
+    if (min > md->end_subject - eptr) RRETURN(MATCH_NOMATCH);
     if (min > 0)
       {
 
@@ -6629,7 +6816,7 @@ for (;;)
         if ((ims & PCRE_DOTALL) == 0)
           {
           for (i = 1; i <= min; i++)
-            if (*eptr++ == NEWLINE) return MATCH_NOMATCH;
+            if (*eptr++ == NEWLINE) RRETURN(MATCH_NOMATCH);
           }
         else eptr += min;
         break;
@@ -6640,34 +6827,34 @@ for (;;)
 
         case OP_NOT_DIGIT:
         for (i = 1; i <= min; i++)
-          if ((md->ctypes[*eptr++] & ctype_digit) != 0) return MATCH_NOMATCH;
+          if ((md->ctypes[*eptr++] & ctype_digit) != 0) RRETURN(MATCH_NOMATCH);
         break;
 
         case OP_DIGIT:
         for (i = 1; i <= min; i++)
-          if ((md->ctypes[*eptr++] & ctype_digit) == 0) return MATCH_NOMATCH;
+          if ((md->ctypes[*eptr++] & ctype_digit) == 0) RRETURN(MATCH_NOMATCH);
         break;
 
         case OP_NOT_WHITESPACE:
         for (i = 1; i <= min; i++)
-          if ((md->ctypes[*eptr++] & ctype_space) != 0) return MATCH_NOMATCH;
+          if ((md->ctypes[*eptr++] & ctype_space) != 0) RRETURN(MATCH_NOMATCH);
         break;
 
         case OP_WHITESPACE:
         for (i = 1; i <= min; i++)
-          if ((md->ctypes[*eptr++] & ctype_space) == 0) return MATCH_NOMATCH;
+          if ((md->ctypes[*eptr++] & ctype_space) == 0) RRETURN(MATCH_NOMATCH);
         break;
 
         case OP_NOT_WORDCHAR:
         for (i = 1; i <= min; i++)
           if ((md->ctypes[*eptr++] & ctype_word) != 0)
-            return MATCH_NOMATCH;
+            RRETURN(MATCH_NOMATCH);
         break;
 
         case OP_WORDCHAR:
         for (i = 1; i <= min; i++)
           if ((md->ctypes[*eptr++] & ctype_word) == 0)
-            return MATCH_NOMATCH;
+            RRETURN(MATCH_NOMATCH);
         break;
         }
       }
@@ -6683,43 +6870,43 @@ for (;;)
       {
       /* Not UTF-8 mode */
         {
-        for (i = min;; i++)
+        for (fi = min;; fi++)
           {
-          if ((rrc = match(eptr, ecode, offset_top, md, ims, eptrb, 0)) !=
-               MATCH_NOMATCH) return rrc;
-          if (i >= max || eptr >= md->end_subject) return MATCH_NOMATCH;
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+          if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
           c = *eptr++;
           switch(ctype)
             {
             case OP_ANY:
-            if ((ims & PCRE_DOTALL) == 0 && c == NEWLINE) return MATCH_NOMATCH;
+            if ((ims & PCRE_DOTALL) == 0 && c == NEWLINE) RRETURN(MATCH_NOMATCH);
             break;
 
             case OP_ANYBYTE:
             break;
 
             case OP_NOT_DIGIT:
-            if ((md->ctypes[c] & ctype_digit) != 0) return MATCH_NOMATCH;
+            if ((md->ctypes[c] & ctype_digit) != 0) RRETURN(MATCH_NOMATCH);
             break;
 
             case OP_DIGIT:
-            if ((md->ctypes[c] & ctype_digit) == 0) return MATCH_NOMATCH;
+            if ((md->ctypes[c] & ctype_digit) == 0) RRETURN(MATCH_NOMATCH);
             break;
 
             case OP_NOT_WHITESPACE:
-            if ((md->ctypes[c] & ctype_space) != 0) return MATCH_NOMATCH;
+            if ((md->ctypes[c] & ctype_space) != 0) RRETURN(MATCH_NOMATCH);
             break;
 
             case OP_WHITESPACE:
-            if  ((md->ctypes[c] & ctype_space) == 0) return MATCH_NOMATCH;
+            if  ((md->ctypes[c] & ctype_space) == 0) RRETURN(MATCH_NOMATCH);
             break;
 
             case OP_NOT_WORDCHAR:
-            if ((md->ctypes[c] & ctype_word) != 0) return MATCH_NOMATCH;
+            if ((md->ctypes[c] & ctype_word) != 0) RRETURN(MATCH_NOMATCH);
             break;
 
             case OP_WORDCHAR:
-            if ((md->ctypes[c] & ctype_word) == 0) return MATCH_NOMATCH;
+            if ((md->ctypes[c] & ctype_word) == 0) RRETURN(MATCH_NOMATCH);
             break;
             }
           }
@@ -6733,8 +6920,7 @@ for (;;)
 
     else
       {
-      const uschar *pp = eptr;
-
+      pp = eptr;
 
       /* Not UTF-8 mode */
         {
@@ -6817,14 +7003,15 @@ for (;;)
 
         while (eptr >= pp)
           {
-          if ((rrc = match(eptr--, ecode, offset_top, md, ims, eptrb, 0)) !=
-               MATCH_NOMATCH) return rrc;
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          eptr--;
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
           }
         }
 
       /* Get here if we can't make it match with any permitted repetitions */
 
-      return MATCH_NOMATCH;
+      RRETURN(MATCH_NOMATCH);
       }
     /* Control never gets here */
 
@@ -6835,7 +7022,7 @@ for (;;)
 
     default:
     DPRINTF(("Unknown opcode %d\n", *ecode));
-    return PCRE_ERROR_UNKNOWN_NODE;
+    RRETURN(PCRE_ERROR_UNKNOWN_NODE);
     }
 
   /* Do not stick any code in here without much thought; it is assumed
@@ -6846,6 +7033,20 @@ for (;;)
 /* Control never reaches here */
 }
 
+
+/***************************************************************************
+****************************************************************************
+                   RECURSION IN THE match() FUNCTION
+
+Undefine all the macros that were defined above to handle this. */
+
+/* These two are defined as macros in both cases */
+
+#undef fc
+#undef fi
+
+/***************************************************************************
+***************************************************************************/
 
 
 
@@ -6945,6 +7146,9 @@ match_block.recursive = NULL;                   /* No recursion at top level */
 
 match_block.lcc = re->tables + lcc_offset;
 match_block.ctypes = re->tables + ctypes_offset;
+
+/* Check a UTF-8 string if required. Unfortunately there's no way of passing
+back the character offset. */
 
 /* The ims options can vary during the matching as a result of the presence
 of (?ims) items in the pattern. They are kept in a local variable so that
