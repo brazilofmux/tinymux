@@ -1,6 +1,6 @@
 //comsys.c
 //
-// * $Id: comsys.cpp,v 1.7 2000-06-10 03:07:04 sdennis Exp $
+// * $Id: comsys.cpp,v 1.8 2000-06-10 10:07:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -148,7 +148,7 @@ char *MakeCanonicalComAlias(const char *pAlias, int *nValidAlias, BOOL *bValidAl
     int n = 0;
     while (*p)
     {
-        if (!Tiny_IsAlphaNumeric[(unsigned char)*p])
+        if (!Tiny_IsPrint[(unsigned char)*p] || *p == ' ')
         {
             return NULL;
         }
