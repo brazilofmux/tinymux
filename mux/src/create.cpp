@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.23 2002-12-16 00:21:26 sdennis Exp $
+// $Id: create.cpp,v 1.24 2002-12-16 00:57:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -460,7 +460,7 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int key, char *name,
         return;
     }
 
-    notify(executor, tprintf("%s created with room number %d.", name, room));
+    notify(executor, tprintf("%s created as room #%d.", name, room));
 
     char *buff = alloc_sbuf("do_dig");
     if (  nargs >= 1
