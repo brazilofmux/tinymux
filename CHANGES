@@ -155,6 +155,8 @@ Feature Additions:
  --  LROOMS() function from Marlek and RhostMUSH.
  --  Locks no longer require surrounding square brackets.
  --  switch() function now accepts < and > operators like @switch.
+ --  Roy Anger updated comsys help.
+ --  Reformatted wizhelp.txt.
 
 
 Bug Fixes:
