@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.9 2002-07-13 07:23:02 jake Exp $
+// $Id: stringutil.cpp,v 1.10 2002-07-16 20:37:05 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -207,7 +207,7 @@ const char Tiny_IsSpace[256] =
 };
 
 // The first character of an attribute name must be either alphabetic,
-// '_', or '~'. It's handled by the following table.
+// '_', '#', '.', or '~'. It's handled by the following table.
 //
 // Characters thereafter may be letters, numbers, and characters from the set
 // {'?!`/-_.@#$^&~=+<>()%}. Lower-case letters are turned into uppercase
@@ -219,7 +219,7 @@ char Tiny_IsFirstAttributeNameCharacter[256] =
 //
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,  // 2
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,  // 5
