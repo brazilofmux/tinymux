@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.13 2001-10-08 05:31:32 sdennis Exp $
+// $Id: set.cpp,v 1.14 2001-11-02 18:57:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -590,7 +590,8 @@ void do_unlink(dbref player, dbref cause, int key, char *name)
 
 void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
 {
-    dbref owner;
+    dbref nOwnerOrig;
+    dbref nOwnerNew;
     int do_it, cost, quota;
     ATTR *ap;
 
@@ -607,17 +608,18 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
             notify_quiet(player, "You shouldn't be rummaging through the garbage.");
             return;
         }
+        nOwnerOrig = Owner(thing);
         if (!*newown)
         {
-            owner = Owner(thing);
+            nOwnerNew = nOwnerOrig;
         }
         else if (!(string_compare(newown, "me")))
         {
-            owner = Owner(player);
+            nOwnerNew = Owner(player);
         }
         else
         {
-            owner = lookup_player(player, newown, 1);
+            nOwnerNew = lookup_player(player, newown, 1);
         }
 
         // You may chown an attr to yourself if you own the object and the attr
@@ -633,7 +635,7 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
             return;
         }
         do_it = 0;
-        if (owner == NOTHING)
+        if (nOwnerNew == NOTHING)
         {
             notify_quiet(player, "I couldn't find that player.");
         }
@@ -645,7 +647,7 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
         {
             do_it = 1;
         }
-        else if (owner == Owner(player))
+        else if (nOwnerNew == Owner(player))
         {
             // Chown to me: only if I own the obj and !locked
             //
@@ -659,7 +661,7 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
                 do_it = 1;
             }
         }
-        else if (owner == Owner(thing))
+        else if (nOwnerNew == nOwnerOrig)
         {
             // chown to obj owner: only if I own attr and !locked
             //
@@ -690,7 +692,7 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
             notify_quiet(player, NOPERM_MESSAGE);
             return;
         }
-        atr_set_owner(thing, atr, owner);
+        atr_set_owner(thing, atr, nOwnerNew);
         if (!Quiet(player))
         {
             notify_quiet(player, "Attribute owner changed.");
@@ -723,14 +725,15 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
         notify_quiet(player, "I don't know which you mean!");
         return;
     }
+    nOwnerOrig = Owner(thing);
 
     if (!*newown || !(string_compare(newown, "me")))
     {
-        owner = Owner(player);
+        nOwnerNew = Owner(player);
     }
     else
     {
-        owner = lookup_player(player, newown, 1);
+        nOwnerNew = lookup_player(player, newown, 1);
     }
 
     cost = 1;
@@ -768,7 +771,7 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
     {
         notify_quiet(player, "You shouldn't be rummaging through the garbage.");
     }
-    else if (owner == NOTHING)
+    else if (nOwnerNew == NOTHING)
     {
         notify_quiet(player, "I couldn't find that player.");
     }
@@ -783,25 +786,22 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
             || (  isThing(thing)
                && Location(thing) != player
                && !Chown_Any(player))
-            || !controls(player, owner))
+            || !controls(player, nOwnerNew))
     {
         notify_quiet(player, NOPERM_MESSAGE);
     }
-    else if (canpayfees(player, owner, cost, quota))
+    else if (canpayfees(player, nOwnerNew, cost, quota))
     {
-        giveto(Owner(thing), cost);
+        giveto(nOwnerOrig, cost);
         if (mudconf.quotas)
         {
-            add_quota(Owner(thing), quota);
+            add_quota(nOwnerOrig, quota);
         }
-        if (God(player))
+        if (!God(player))
         {
-            s_Owner(thing, owner);
+            nOwnerNew = Owner(nOwnerNew);
         }
-        else
-        {
-            s_Owner(thing, Owner(owner));
-        }
+        s_Owner(thing, nOwnerNew);
         atr_chown(thing);
         s_Flags(thing, (Flags(thing) & ~(CHOWN_OK | INHERIT)) | HALT);
         s_Powers(thing, 0);
@@ -809,7 +809,11 @@ void do_chown(dbref player, dbref cause, int key, char *name, char *newown)
         halt_que(NOTHING, thing);
         if (!Quiet(player))
         {
-            notify_quiet(player, "Owner changed.");
+            char *p;
+            p = tprintf("Owner of %s(#%d) changed from %s(#%d) to %s(#%d).",
+                Name(thing), thing, Name(nOwnerOrig), nOwnerOrig,
+                Name(nOwnerNew), nOwnerNew);
+            notify_quiet(player, p);
         }
     }
 }
