@@ -1,6 +1,6 @@
 // mguests.h
 //
-// $Id: mguests.h,v 1.8 2002-02-14 18:39:36 sdennis Exp $
+// $Id: mguests.h,v 1.9 2002-02-25 19:26:46 sdennis Exp $
 //
 
 #ifndef  __MGUESTS_H
@@ -37,8 +37,6 @@ public:
 
 extern CGuests Guest;
 
-// Zenty's Not-So-Secret Guest Password.
-//
-#define GUEST_PASSWORD "ZentyRULEZ" // Zenty: You know it baby!
+#define GUEST_PASSWORD "Guest"
 
 #endif
