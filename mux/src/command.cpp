@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.20 2003-02-17 03:05:54 sdennis Exp $
+// $Id: command.cpp,v 1.21 2003-03-09 14:38:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -928,7 +928,7 @@ bool process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
             char *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
             char *str = atext;
-            mux_exec(buff, &bufc, executor, caller, enactor, EV_FCHECK | EV_EVAL, &str,
+            mux_exec(buff, &bufc, thing, executor, executor, EV_FCHECK | EV_EVAL, &str,
                 (char **)NULL, 0);
             free_lbuf(atext);
             *bufc = '\0';
