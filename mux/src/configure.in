@@ -11,8 +11,8 @@ case "$host" in
 *irix*) def_brief_lib_list="BRIEF_LIB_LIST=1" ;;
 esac
 AC_ISC_POSIX
-AC_MINIX
 AC_AIX
+AC_MINIX
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_TIME
@@ -211,7 +211,6 @@ AC_TRY_COMPILE([#include <sys/types.h>
   [AC_DEFINE([HAVE_IN_ADDR_T])
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
-AC_SUBST(LIBOBJS)
 AC_SUBST(def_force_c_compiler)
 AC_SUBST(def_brief_lib_list)
 AC_OUTPUT(Makefile)
