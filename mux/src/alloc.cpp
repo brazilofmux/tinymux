@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.7 2002-09-26 13:52:26 jake Exp $
+// $Id: alloc.cpp,v 1.8 2002-10-01 02:47:07 jake Exp $
 //
 
 #include "copyright.h"
@@ -94,7 +94,7 @@ static void pool_err
     }
     else if (logflag != LOG_ALLOCATE)
     {
-        Log.tinyprintf(ENDLINE "***< %s[%d] (tag %s) %s in %s line %dat %lx. >***",
+        Log.tinyprintf(ENDLINE "***< %s[%d] (tag %s) %s in %s line %d at %lx. >***",
             action, pools[poolnum].pool_size, tag, reason, file, line, (long)ph);
     }
 }
@@ -230,8 +230,8 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
        && mudstate.logging == 0
        && start_log("DBG", "ALLOC"))
     {
-        Log.tinyprintf("Alloc[%d] (tag %s) buffer at %lx. (%s)",
-            pools[poolnum].pool_size, tag, (long)ph, mudstate.debug_cmd);
+        Log.tinyprintf("Alloc[%d] (tag %s) in %s line %d buffer at %lx. (%s)",
+            pools[poolnum].pool_size, tag, file, line, (long)ph, mudstate.debug_cmd);
         end_log();
     }
 
@@ -316,8 +316,8 @@ char *pool_alloc_lbuf(const char *tag, const char *file, const int line)
        && mudstate.logging == 0
        && start_log("DBG", "ALLOC"))
     {
-        Log.tinyprintf("Alloc[%d] (tag %s) buffer at %lx. (%s)",
-            LBUF_SIZE, tag, (long)ph, mudstate.debug_cmd);
+        Log.tinyprintf("Alloc[%d] (tag %s) in %s line %d buffer at %lx. (%s)",
+            LBUF_SIZE, tag, file, line, (long)ph, mudstate.debug_cmd);
         end_log();
     }
 
@@ -386,8 +386,8 @@ void pool_free(int poolnum, char *buf, const char *file, const int line)
        && mudstate.logging == 0
        && start_log("DBG", "ALLOC"))
     {
-        Log.tinyprintf("Free[%d] (tag %s) buffer at %lx. (%s)",
-            pools[poolnum].pool_size, ph->buf_tag, (long)ph,
+        Log.tinyprintf("Free[%d] (tag %s) in %s line %d buffer at %lx. (%s)",
+            pools[poolnum].pool_size, ph->buf_tag, file, line, (long)ph,
             mudstate.debug_cmd);
         end_log();
     }
@@ -475,8 +475,8 @@ void pool_free_lbuf(char *buf, const char *file, const int line)
        && mudstate.logging == 0
        && start_log("DBG", "ALLOC"))
     {
-        Log.tinyprintf("Free[%d] (tag %s) buffer at %lx. (%s)",
-            LBUF_SIZE, ph->buf_tag, (long)ph, mudstate.debug_cmd);
+        Log.tinyprintf("Free[%d] (tag %s) in %s line %d buffer at %lx. (%s)",
+            LBUF_SIZE, ph->buf_tag, file, line, (long)ph, mudstate.debug_cmd);
         end_log();
     }
 
