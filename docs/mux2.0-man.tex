@@ -6,7 +6,7 @@
 \setlength{\textwidth}{6in}
 \title{TinyMUX 2.0 Manual}
 \author{Stephen Dennis (AKA Brazil)}
-\date{2001-FEB-28}
+\date{2001-MAR-01}
 \begin{document}
 \frontmatter
 \maketitle
@@ -266,5 +266,100 @@ Everything in a configuration file is handled as if \#1 (Wizard) did it.
 \subsection{Overview}
 The following configuration options are used to restrict a player's access
 based on their IP address:
+\begin{itemize}
+\item
+\texttt{register\_site} allows existing players to connect to their
+characters, but does not allow players from the specified subnet to create
+new characters.
+\item
+\texttt{forbid\_site} disallows any connection and doesn't even show the
+welcome screen.
+\item
+\texttt{allow\_guest\_from\_registered\_site $<$yes$|$no$>$.}  Default is
+\texttt{yes}. This configuration option allows the \texttt{register\_site}
+subnet list to control the ability of guests to connect from those sites as
+well.
+\item A future version of MUX will also include the \texttt{guest\_site}
+configuration option. That option allows and requires the administrator to
+manage the guest restrictions separately.
+\end{itemize}
+For register-only games, the administrator typically uses
+\texttt{register\_site} to encompass the entire Internet (0.0.0.0 0.0.0.0).
+In this case, it is more convenient to leave
+\texttt{allow\_guest\_from\_registered\_site} at its default value of
+\texttt{yes}, and then use \texttt{guest\_site} or \texttt{forbid\_site} to
+control problem guests.
+
+For open games that allow characters to be created at the initial welcome
+screen, it is more convenient to turn\\
+\texttt{allow\_guest\_from\_registered\_site} off, and then use
+\texttt{register\_site} exclusively to control problem players and problem
+guests. This allows players from that subnet to connect to existing
+characters, but disallow them from creating new ones or from connecting as
+guest.
+
+So, the usefulness of the \texttt{forbid\_site} configuration option is
+already narrow, and it continues to narrow further.
+
+Also, remember that none of these configuration options are saved between
+\texttt{@shutdown} or \texttt{@restart} and they need to be added to the
+configuration file or appear on \#1's \texttt{STARTUP} attribute. However,
+I would recommend against putting these commands on the \#1's \texttt{STARTUP}
+attribute.
+\subsection{Guessing the SubNet}
+In order for the above restrictions to be useful, you need to guess the
+player's subnet, and realize that a single player may be connecting from
+different subnets and therefore each subnet that they connect from must be
+dealt with separately.
+
+Each shell account that a player uses to connect to the game will be on it's
+own subnet. In some ways these are easy to deal with because these servers
+can be expected to have a single static IP addresses, but it's not
+guaranteed.
+
+And large Internet Service Providers (ISPs) like AOL have subnets for each
+service access number. So, if someone calls a particular local phone number
+and logs into AOL, they are assigned an IP dynamically from a large static
+pool. If they are willing to make a long-distance phone call to another
+service access number, they may get an IP from a different large static
+pool.
+
+You must deal with the entire static pool for a particular service access
+number. If they call a different service access number, then that will
+represent a yet another subnet that needs to be handled separately as it will
+probably not be adjacent numerically to their primary one.
+\subsection{Example of Guessing}
+Not that I want anyone to restrict my subnet, but let's take it as an example.
+If I connect to a game, you will usually see 207.153.135.132 as the host name
+if the server is running on Unix, and SDENNIS5 if the server is running on
+Win32\footnote{Unix and NT both do reverse-DNS lookups. However, if no DNS
+PTR entry exists, Windows does at extra step. It will query the client
+machine for a NETBIOS name (which is also known as your computer name, and
+can be found under your network settings). This NETBIOS name is unique
+across an NT domain and across a NETBEUI subnet, but in a TCP/IP context,
+it is not necessarily unique, and it's not possible to map from that NETBIOS
+name back to a numerical IP.}.
+
+You might also see me connect from svdltd.com or mirror.svdltd.com, and so,
+for the sake of this example, you have three IP addresses that are close and
+therefore they are probably within the same subnet. It's a fair guess.
+
+\footnotesize{\texttt{
+\begin{verse}
+$>$ \emph{ping -a svdltd.com}\\
+Pinging svdltd.com [207.153.135.130] with 32 bytes of data.\\
+\ldots\\
+$>$ \emph{ping -a 207.135.135.132}\\
+Pinging SDENNIS5 [207.153.135.132] with 32 bytes of data.\\
+\ldots\\
+$>$ \emph{ping -a 207.135.135.134}\\
+Pinging 207.153.135.134 with 32 bytes of data.\\
+\ldots
+\end{verse}
+}}
+
+And now, we need to convert from decimal, to hexadecimal, to binary as
+follows:
+\subsection{What is the Base IP and Mask?}
 \backmatter
 \end{document}
