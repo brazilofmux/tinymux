@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.26 2002-07-25 17:33:20 jake Exp $
+// $Id: mail.cpp,v 1.27 2002-07-25 18:19:42 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -622,93 +622,6 @@ void do_mail_read(dbref player, char *msglist)
         notify(player, "MAIL: You don't have that many matching messages!");
     }
 }
-
-void do_mail_retract(dbref player, char *name, char *msglist)
-{
-    dbref target = lookup_player(player, name, TRUE);
-    if (target == NOTHING)
-    {
-        notify(player, "MAIL: No such player.");
-        return;
-    }
-    struct mail_selector ms;
-    if (!parse_msglist(msglist, &ms, target))
-    {
-        return;
-    }
-
-    struct mail *mp, *nextp;
-    int i = 0, j = 0;
-    for (mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab); mp; mp = nextp)
-    {
-        if (mp->from == player)
-        {
-            i++;
-            if (mail_match(mp, ms, i))
-            {
-                j++;
-                if (Unread(mp))
-                {
-                    if (mp->prev == NULL)
-                    {
-                        if (mp->next == NULL)
-                        {
-                            hashdeleteLEN(&target, sizeof(target), &mudstate.mail_htab);
-                        }
-                        else
-                        {
-                            hashreplLEN(&target, sizeof(target), (int *)(mp->next), &mudstate.mail_htab);
-                        }
-                    }
-                    else if (mp->next == NULL)
-                        mp->prev->next = NULL;
-
-                    if (mp->prev != NULL)
-                    {
-                        mp->prev->next = mp->next;
-                    }
-                    if (mp->next != NULL)
-                    {
-                        mp->next->prev = mp->prev;
-                    }
-
-                    nextp = mp->next;
-                    MessageReferenceDec(mp->number);
-                    MEMFREE(mp->subject);
-                    mp->subject = NULL;
-                    MEMFREE(mp->time);
-                    mp->time = NULL;
-                    MEMFREE(mp->tolist);
-                    mp->tolist = NULL;
-                    MEMFREE(mp);
-                    mp = NULL;
-                    notify(player, "MAIL: Mail retracted.");
-                }
-                else
-                {
-                    notify(player, "MAIL: That message has been read.");
-                    nextp = mp->next;
-                }
-            }
-            else
-            {
-                nextp = mp->next;
-            }
-        }
-        else
-        {
-            nextp = mp->next;
-        }
-    }
-
-    if (!j)
-    {
-        // Ran off the end of the list without finding anything.
-        //
-        notify(player, "MAIL: No matching messages.");
-    }
-}
-
 
 void do_mail_review(dbref player, char *name, char *msglist)
 {
@@ -4044,6 +3957,117 @@ void malias_cleanup (dbref player)
         }
         notify(player, tprintf("%d invalid reference%s found in %d mail aliases.", 
             count, (count == 1) ? "" : "s", ma_top));
+    }
+}
+
+void do_mail_retract1(dbref player, char *name, char *msglist)
+{
+    dbref target = lookup_player(player, name, TRUE);
+    if (target == NOTHING)
+    {
+        notify(player, "MAIL: No such player.");
+        return;
+    }
+    struct mail_selector ms;
+    if (!parse_msglist(msglist, &ms, target))
+    {
+        return;
+    }
+
+    struct mail *mp, *nextp;
+    int i = 0, j = 0;
+    for (mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab); mp; mp = nextp)
+    {
+        if (mp->from == player)
+        {
+            i++;
+            if (mail_match(mp, ms, i))
+            {
+                j++;
+                if (Unread(mp))
+                {
+                    if (mp->prev == NULL)
+                    {
+                        if (mp->next == NULL)
+                        {
+                            hashdeleteLEN(&target, sizeof(target), &mudstate.mail_htab);
+                        }
+                        else
+                        {
+                            hashreplLEN(&target, sizeof(target), (int *)(mp->next), &mudstate.mail_htab);
+                        }
+                    }
+                    else if (mp->next == NULL)
+                        mp->prev->next = NULL;
+
+                    if (mp->prev != NULL)
+                    {
+                        mp->prev->next = mp->next;
+                    }
+                    if (mp->next != NULL)
+                    {
+                        mp->next->prev = mp->prev;
+                    }
+
+                    nextp = mp->next;
+                    MessageReferenceDec(mp->number);
+                    MEMFREE(mp->subject);
+                    mp->subject = NULL;
+                    MEMFREE(mp->time);
+                    mp->time = NULL;
+                    MEMFREE(mp->tolist);
+                    mp->tolist = NULL;
+                    MEMFREE(mp);
+                    mp = NULL;
+                    notify(player, "MAIL: Mail retracted.");
+                }
+                else
+                {
+                    notify(player, "MAIL: That message has been read.");
+                    nextp = mp->next;
+                }
+            }
+            else
+            {
+                nextp = mp->next;
+            }
+        }
+        else
+        {
+            nextp = mp->next;
+        }
+    }
+
+    if (!j)
+    {
+        // Ran off the end of the list without finding anything.
+        //
+        notify(player, "MAIL: No matching messages.");
+    }
+}
+
+void do_mail_retract(dbref player, char *name, char *msglist)
+{
+    if (*name == '*')
+    {
+        int pnResult;
+        struct malias *m = get_malias(player, name, &pnResult);
+        if (pnResult == GMA_NOTFOUND)
+        {
+            notify(player, tprintf("MAIL: Mail alias %s not found.", name));
+            return;
+        }
+        if (pnResult == GMA_FOUND)
+        {
+            for (int i = 0; i < m->numrecep; i++)
+            {
+                do_mail_retract1(player, tprintf("#%d", m->list[i]), msglist);
+            }
+        }
+    }
+    else
+    {
+        do_mail_retract1(player, name, msglist);
     }
 }
 
