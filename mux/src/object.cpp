@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.18 2002-07-13 07:23:02 jake Exp $
+// $Id: object.cpp,v 1.19 2002-07-14 00:44:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -295,7 +295,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
         }
         if (okname)
         {
-            okname = lookup_player(NOTHING, buff, FALSE) == NOTHING;
+            okname = (lookup_player(NOTHING, buff, FALSE) == NOTHING);
             if (!okname)
             {
                 notify(player, tprintf("The name %s is already taken.", name));
