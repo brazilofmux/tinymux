@@ -146,6 +146,20 @@ int main(int argc, char *argv[])
    return 1;
 }
 ],AC_DEFINE(HAVE_IEEE_FP_SNAN),AC_DEFINE(NO_IEEE_FP_SNAN),AC_DEFINE(NO_IEEE_FP_SNAN))
+AC_CHECKING(for how division/moduli of negative quotients are handled)
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+   int top = -9;
+   int bot = 5;
+   int quotient = top/bot;
+   if (quotient == -1)
+   {
+       return 0;
+   }
+   return 1;
+}
+],AC_DEFINE(SMALLEST_INT_GTE_NEG_QUOTIENT),AC_DEFINE(LARGEST_INT_LTE_NEG_QUOTIENT),AC_DEFINE(LARGEST_INT_LTE_NEG_QUOTIENT))
 AC_CHECKING(for perror dcl)
 AC_EGREP_HEADER(perror,errno.h, ,AC_DEFINE(NEED_PERROR_DCL))
 AC_CHECKING(for getrusage dcl)
