@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.25 2003-02-04 17:21:26 sdennis Exp $
+// $Id: functions.cpp,v 1.26 2003-02-04 17:37:27 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2733,7 +2733,7 @@ FUNCTION(fun_and)
     BOOL val = TRUE;
     for (int i = 0; i < nfargs && val; i++)
     {
-        val = (mux_atol(fargs[i]) != 0);
+        val = isTRUE(mux_atol(fargs[i]));
     }
     safe_bool(val, buff, bufc);
 }
@@ -2743,7 +2743,7 @@ FUNCTION(fun_or)
     BOOL val = FALSE;
     for (int i = 0; i < nfargs && !val; i++)
     {
-        val = (mux_atol(fargs[i]) != 0);
+        val = isTRUE(mux_atol(fargs[i]));
     }
     safe_bool(val, buff, bufc);
 }
@@ -2779,7 +2779,7 @@ FUNCTION(fun_cand)
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = (mux_atol(temp) != 0);
+        val = isTRUE(mux_atol(temp));
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -2796,7 +2796,7 @@ FUNCTION(fun_cor)
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = (mux_atol(temp) != 0);
+        val = isTRUE(mux_atol(temp));
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -3402,7 +3402,7 @@ FUNCTION(fun_land)
         while (cp && bValue)
         {
             char *curr = split_token(&cp, sep);
-            bValue = (mux_atol(curr) != 0);
+            bValue = isTRUE(mux_atol(curr));
         }
     }
     safe_bool(bValue, buff, bufc);
@@ -3420,7 +3420,7 @@ FUNCTION(fun_lor)
         while (cp && !bValue)
         {
             char *curr = split_token(&cp, sep);
-            bValue = (mux_atol(curr) != 0);
+            bValue = isTRUE(mux_atol(curr));
         }
     }
     safe_bool(bValue, buff, bufc);
