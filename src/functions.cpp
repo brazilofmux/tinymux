@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.76 2001-07-04 21:42:55 sdennis Exp $
+// $Id: functions.cpp,v 1.77 2001-07-04 22:36:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2189,17 +2189,21 @@ FUNCTION(fun_pfind)
     internalPlayerFind(buff, bufc, player, fargs[0], FALSE);
 }    
 
-
 FUNCTION(fun_gt)
 {
     int ch = '0';
     int nDigits;
-    if (  (  is_integer(fargs[0], &nDigits)
-          && nDigits <= 9
-          && is_integer(fargs[1], &nDigits)
-          && nDigits <= 9
-          && Tiny_atol(fargs[0]) > Tiny_atol(fargs[1]))
-       || safe_atof(fargs[0]) > safe_atof(fargs[1]))
+    if (  is_integer(fargs[0], &nDigits)
+       && nDigits <= 9
+       && is_integer(fargs[1], &nDigits)
+       && nDigits <= 9)
+    {
+        if (Tiny_atol(fargs[0]) > Tiny_atol(fargs[1]))
+        {
+            ch = '1';
+        }
+    }
+    else if (safe_atof(fargs[0]) > safe_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2210,12 +2214,17 @@ FUNCTION(fun_gte)
 {
     int ch = '0';
     int nDigits;
-    if (  (  is_integer(fargs[0], &nDigits)
-          && nDigits <= 9
-          && is_integer(fargs[1], &nDigits)
-          && nDigits <= 9
-          && Tiny_atol(fargs[0]) >= Tiny_atol(fargs[1]))
-       || safe_atof(fargs[0]) >= safe_atof(fargs[1]))
+    if (  is_integer(fargs[0], &nDigits)
+       && nDigits <= 9
+       && is_integer(fargs[1], &nDigits)
+       && nDigits <= 9)
+    {
+        if (Tiny_atol(fargs[0]) >= Tiny_atol(fargs[1]))
+        {
+            ch = '1';
+        }
+    }
+    else if (safe_atof(fargs[0]) >= safe_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2226,12 +2235,17 @@ FUNCTION(fun_lt)
 {
     int ch = '0';
     int nDigits;
-    if (  (  is_integer(fargs[0], &nDigits)
-          && nDigits <= 9
-          && is_integer(fargs[1], &nDigits)
-          && nDigits <= 9
-          && Tiny_atol(fargs[0]) < Tiny_atol(fargs[1]))
-       || safe_atof(fargs[0]) < safe_atof(fargs[1]))
+    if (  is_integer(fargs[0], &nDigits)
+       && nDigits <= 9
+       && is_integer(fargs[1], &nDigits)
+       && nDigits <= 9)
+    {
+        if (Tiny_atol(fargs[0]) < Tiny_atol(fargs[1]))
+        {
+            ch = '1';
+        }
+    }
+    else if (safe_atof(fargs[0]) < safe_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2242,12 +2256,17 @@ FUNCTION(fun_lte)
 {
     int ch = '0';
     int nDigits;
-    if (  (  is_integer(fargs[0], &nDigits)
-          && nDigits <= 9
-          && is_integer(fargs[1], &nDigits)
-          && nDigits <= 9
-          && Tiny_atol(fargs[0]) <= Tiny_atol(fargs[1]))
-       || safe_atof(fargs[0]) <= safe_atof(fargs[1]))
+    if (  is_integer(fargs[0], &nDigits)
+       && nDigits <= 9
+       && is_integer(fargs[1], &nDigits)
+       && nDigits <= 9)
+    {
+        if (Tiny_atol(fargs[0]) <= Tiny_atol(fargs[1]))
+        {
+            ch = '1';
+        }
+    }
+    else if (safe_atof(fargs[0]) <= safe_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2258,13 +2277,18 @@ FUNCTION(fun_eq)
 {
     int ch = '0';
     int nDigits;
-    if (  (  is_integer(fargs[0], &nDigits)
-          && nDigits <= 9
-          && is_integer(fargs[1], &nDigits)
-          && nDigits <= 9
-          && Tiny_atol(fargs[0]) == Tiny_atol(fargs[1]))
-       || strcmp(fargs[0], fargs[1]) == 0
-       || safe_atof(fargs[0]) == safe_atof(fargs[1]))
+    if (  is_integer(fargs[0], &nDigits)
+       && nDigits <= 9
+       && is_integer(fargs[1], &nDigits)
+       && nDigits <= 9)
+    {
+        if (Tiny_atol(fargs[0]) == Tiny_atol(fargs[1]))
+        {
+            ch = '1';
+        }
+    }
+    else if (  strcmp(fargs[0], fargs[1]) == 0
+            || safe_atof(fargs[0]) == safe_atof(fargs[1]))
     {
         ch = '1';
     }
@@ -2275,13 +2299,18 @@ FUNCTION(fun_neq)
 {
     int ch = '0';
     int nDigits;
-    if (  (  is_integer(fargs[0], &nDigits)
-          && nDigits <= 9
-          && is_integer(fargs[1], &nDigits)
-          && nDigits <= 9
-          && Tiny_atol(fargs[0]) != Tiny_atol(fargs[1]))
-       || (  strcmp(fargs[0], fargs[1]) != 0
-          && safe_atof(fargs[0]) != safe_atof(fargs[1])))
+    if (  is_integer(fargs[0], &nDigits)
+       && nDigits <= 9
+       && is_integer(fargs[1], &nDigits)
+       && nDigits <= 9)
+    {
+        if (Tiny_atol(fargs[0]) != Tiny_atol(fargs[1]))
+        {
+            ch = '1';
+        }
+    }
+    else if (  strcmp(fargs[0], fargs[1]) != 0
+            && safe_atof(fargs[0]) != safe_atof(fargs[1]))
     {
         ch = '1';
     }
