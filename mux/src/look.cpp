@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.23 2002-08-03 19:34:21 sdennis Exp $
+// $Id: look.cpp,v 1.24 2002-08-08 04:28:47 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -757,6 +757,39 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
     free_lbuf(html_buff);
 }
 
+typedef struct
+{
+    int mask;
+    int letter;
+} ATTR_DECODE_ENTRY, *PATTR_DECODE_ENTRY;
+
+static ATTR_DECODE_ENTRY attr_decode_table[] =
+{
+    { AF_LOCK,    '+' },
+    { AF_NOPROG,  '$' },
+    { AF_HTML,    'H' },
+    { AF_PRIVATE, 'I' },
+    { AF_REGEXP,  'R' },
+    { AF_VISUAL,  'V' },
+    { AF_MDARK,   'M' },
+    { AF_WIZARD,  'W' },
+    { 0, 0 }
+};
+
+size_t decode_attr_flags(int aflags, char *buff)
+{
+    char *p = buff;
+    PATTR_DECODE_ENTRY pEntry;
+    for (pEntry = attr_decode_table; pEntry->mask; pEntry++)
+    {
+        if (aflags & pEntry->mask)
+        {
+            *p++ = pEntry->letter;
+        }
+    }
+    *p = '\0';
+    return p - buff;
+}
 
 static void view_atr
 (
@@ -770,13 +803,10 @@ static void view_atr
 )
 {
     char *buf;
-    char xbuf[9];
-    char *xbufp;
-    BOOLEXP *pBoolExp;
 
     if (ap->flags & AF_IS_LOCK)
     {
-        pBoolExp = parse_boolexp(player, text, TRUE);
+        BOOLEXP *pBoolExp = parse_boolexp(player, text, TRUE);
         text = unparse_boolexp(player, pBoolExp);
         free_boolexp(pBoolExp);
     }
@@ -801,27 +831,11 @@ static void view_atr
 
     // Generate flags.
     //
-    xbufp = xbuf;
-    if (aflags & AF_LOCK)
-        *xbufp++ = '+';
-    if (aflags & AF_NOPROG)
-        *xbufp++ = '$';
-    if (aflags & AF_HTML)
-        *xbufp++ = 'H';
-    if (aflags & AF_PRIVATE)
-        *xbufp++ = 'I';
-    if (aflags & AF_REGEXP)
-        *xbufp++ = 'R';
-    if (aflags & AF_VISUAL)
-        *xbufp++ = 'V';
-    if (aflags & AF_MDARK)
-        *xbufp++ = 'M';
-    if (aflags & AF_WIZARD)
-        *xbufp++ = 'W';
+    char xbuf[9];
+    decode_attr_flags(aflags, xbuf);
 
-    *xbufp = '\0';
-
-    if ((aowner != Owner(thing)) && (aowner != NOTHING))
+    if (  aowner != Owner(thing)
+       && aowner != NOTHING)
     {
         buf = tprintf("%s%s [#%d%s]:%s %s", ANSI_HILITE,
             ap->name, aowner, xbuf, ANSI_NORMAL, text);
@@ -831,7 +845,8 @@ static void view_atr
         buf = tprintf("%s%s [%s]:%s %s", ANSI_HILITE, ap->name,
             xbuf, ANSI_NORMAL, text);
     }
-    else if (!skip_tag || (ap->number != A_DESC))
+    else if (  !skip_tag
+            || ap->number != A_DESC)
     {
         buf = tprintf("%s%s:%s %s", ANSI_HILITE, ap->name, ANSI_NORMAL, text);
     }

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.75 2002-08-06 01:29:41 jake Exp $
+// $Id: functions.cpp,v 1.76 2002-08-08 04:28:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -786,29 +786,50 @@ FUNCTION(fun_words)
 }
 
 /* ---------------------------------------------------------------------------
- * fun_flags: Returns the flags on an object.
+ * fun_flags: Returns the flags on an object or an object's attribute.
  * Because @switch is case-insensitive, not quite as useful as it could be.
  */
 
 FUNCTION(fun_flags)
 {
-    dbref it = match_thing_quiet(executor, fargs[0]);
-    if (!Good_obj(it))
+    dbref it;
+    int   atr;
+    if (parse_attrib(executor, fargs[0], &it, &atr))
     {
-        safe_match_result(it, buff, bufc);
-        return;
-    }
-    if (  mudconf.pub_flags
-       || Examinable(executor, it)
-       || it == enactor)
-    {
-        char *buff2 = decode_flags(executor, &(db[it].fs));
-        safe_str(buff2, buff, bufc);
-        free_sbuf(buff2);
+        if (!Good_obj(it))
+        {
+            safe_match_result(it, buff, bufc);
+        }
+        else
+        {
+            dbref aowner;
+            int   aflags;
+            atr_pget_info(it, atr, &aowner, &aflags);
+            char xbuf[9];
+            decode_attr_flags(aflags, xbuf);
+            safe_str(xbuf, buff, bufc);
+        }
     }
     else
     {
-        safe_noperm(buff, bufc);
+        it = match_thing_quiet(executor, fargs[0]);
+        if (!Good_obj(it))
+        {
+            safe_match_result(it, buff, bufc);
+            return;
+        }
+        if (  mudconf.pub_flags
+           || Examinable(executor, it)
+           || it == enactor)
+        {
+            char *buff2 = decode_flags(executor, &(db[it].fs));
+            safe_str(buff2, buff, bufc);
+            free_sbuf(buff2);
+        }
+        else
+        {
+            safe_noperm(buff, bufc);
+        }
     }
 }
 

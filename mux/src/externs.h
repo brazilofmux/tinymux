@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.43 2002-08-03 19:49:20 sdennis Exp $
+// $Id: externs.h,v 1.44 2002-08-08 04:28:47 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -123,6 +123,7 @@ extern void log_type_and_name(dbref);
 /* From look.cpp */
 extern void look_in(dbref,dbref, int);
 extern void show_vrml_url(dbref, dbref);
+size_t decode_attr_flags(int aflags, char *buff);
 
 /* From move.cpp */
 extern void move_object(dbref, dbref);
