@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.15 2001-03-23 09:11:06 sdennis Exp $
+// $Id: look.cpp,v 1.16 2001-03-23 09:57:53 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -450,7 +450,8 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     //
     dbref aowner;
     int aflags;
-    char *ExitFormat = atr_pget(loc, A_EXITFORMAT, &aowner, &aflags);
+    char *ExitFormatBuffer = atr_pget(loc, A_EXITFORMAT, &aowner, &aflags);
+    char *ExitFormat = ExitFormatBuffer;
 
     BOOL bDisplayExits = 1;
     if (*ExitFormat)
@@ -498,7 +499,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
 
         bDisplayExits = 0;
     }
-    free_lbuf(ExitFormat);
+    free_lbuf(ExitFormatBuffer);
 
     if (!bDisplayExits)
     {
@@ -603,7 +604,8 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
     dbref aowner;
     int aflags;
-    char *ContentsFormat = atr_pget(loc, A_CONFORMAT, &aowner, &aflags);
+    char *ContentsFormatBuffer = atr_pget(loc, A_CONFORMAT, &aowner, &aflags);
+    char *ContentsFormat = ContentsFormatBuffer;
 
     int bDisplayContents = 1;
     if (*ContentsFormat)
@@ -632,8 +634,6 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         }
         DbrefToBuffer_Final(&pContext);
 
-        notify(player, contents_name);
-
         char *ContentsNameScratch = alloc_lbuf("look_contents.CNS");
         tPtr = ContentsNameScratch;
 
@@ -657,7 +657,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
         bDisplayContents = 0;
     }
-    free_lbuf(ContentsFormat);
+    free_lbuf(ContentsFormatBuffer);
 
     if (!bDisplayContents)
     {
