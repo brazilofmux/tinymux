@@ -134,6 +134,9 @@ Feature Additions:
     auto-detected as floating-point number, and this is by design.  However,
     if floating-point is selected explicitly, it will sort by the 
     floating-point prefix.
+ -- Enhance validation of exit names. Each segment of an exit name must be
+    a valid object name on its own. Also, ANSI is only allowed in the first
+    segement. ANSI color in other parts of the name is stripped.
 
 
 Bug Fixes:
@@ -231,6 +234,10 @@ Bug Fixes:
  -- Accept a single '\' as well as the previously accepted '\\' for an @emit.
     Reported by Vadiv while he was comparing to PennMUSH.  The Tiny* servers
     escape the single '\' away early in the command processing.
+ -- Fix ANSI bleeding in exit names. Reported by Jeremy weatherford. Fix by
+    Brazil.
+ -- Exit names like ';foo' were effectively DARK exits. If set AUDIBLE, they
+    were effectively listening devices that didn't show up on a @sweep.
 
 
 
