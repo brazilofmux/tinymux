@@ -6796,13 +6796,13 @@ GRAB()
 & GRABALL()
 GRABALL()
 
-  FUNCTION: graball(<list>, <pattern>[, <delim>])
+  FUNCTION: graball(<list>, <pattern>[, <idelim>[, <odelim>]])
 
-  This function matches <pattern> against each word in <list>, returning the
-  all words that match.  If no words match, then an empty string is returned.
-  The match is not case-sensitive, and wildcard characters are permitted in
-  <pattern>.  <delim> may be used to specify a list delimiter other than a
-  space.
+  This function matches <pattern> against each word in <list>, returning
+  the all words that match.  If no words match, then an empty string is
+  returned.  The match is not case-sensitive, and wildcard characters
+  are permitted in <pattern>.  <idelim> may be used to specify the <list>
+  delimiter other than a space.  <odelim> is the output delimiter.
 
   Examples:
     > say graball(This is a test of a test,test)
