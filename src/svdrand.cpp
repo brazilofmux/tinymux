@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.21 2002-02-01 00:35:13 sdennis Exp $
+// $Id: svdrand.cpp,v 1.22 2002-02-04 09:07:27 sdennis Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -67,11 +67,7 @@ void SeedRandomNumberGenerator(void)
     // Win95.
     //
     HINSTANCE hAdvAPI32 = LoadLibrary("advapi32");
-    if (!hAdvAPI32)
-    {
-        Log.WriteString("Crypto API unavailable.\r\n");
-    }
-    else
+    if (hAdvAPI32)
     {
         FCRYPTACQUIRECONTEXT *fpCryptAcquireContext;
         FCRYPTRELEASECONTEXT *fpCryptReleaseContext;
@@ -106,6 +102,7 @@ void SeedRandomNumberGenerator(void)
         }
         FreeLibrary(hAdvAPI32);
     }
+    Log.WriteString("Crypto API unavailable.\r\n");
 #endif
 
     // Determine the initial seed.
