@@ -10425,6 +10425,35 @@ PEMIT()
 
   Related Topics: @pemit.
 
+& REMIT()
+REMIT()
+
+  FUNCTION: remit(<room>, <message>)
+
+  A side effect function that has the same effect as @remit <room> =
+  <message>.
+
+  Related Topics: @remit.
+
+& OEMIT()
+OEMIT()
+
+  FUNCTION: oemit(<object>, <message>)
+
+  A side effect function that has the same effect as @oemit <object> =
+  <message>.
+
+  Related Topics: @oemit
+
+& EMIT()
+EMIT()
+
+  FUNCTION: emit(<message>)
+
+  A side effect function that has the same effect as @emit <message>.
+
+  Related Topics: @emit
+
 & EMPTY()
 EMPTY()
 
