@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  October 2003
+Last Update:  December 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -377,9 +377,21 @@ Bug Fixes:
  -- Fix @hook/igswitch in case where built-in command does not take any
     switches.
  -- Fix typo in gradian-to-radian conversion factor.
- -- Fix cand(), cor(), candbool(), and corbool() so that %0-%9 are evaluated
-    properly.  Reported by Sean Hunter.
+ -- Fix cand(), cor(), candbool(), and corbool() so that %0-%9 are
+    evaluated properly.  Reported by Sean Hunter.
  -- Document lag_maximum.
+ -- Fix @aahear denial-of-service exploit by preventing @aahear actions
+    from nesting beyond 3 levels.  Demonstrated on Shangrila.  Fixed by
+    Brazil.
+ -- Fixed '@wait obj/attr=...' form of semaphores.  It would work
+    exactly once if 'attr' wasn't previously defined in the game.
+    Caused by and fixed by Brazil.  Reported by Ian.
+ -- regmatch() wasn't handling the full range of return codes from PCRE
+    properly.  PCRE contributed by Raevnos.  Fixed by Brazil.
+ -- Fix hang in @dbck when orphaned objects lose both their home and
+    their current location.  This crashing bug was probably introduced
+    inadvertantly by Jake when he changed the defintion of a good object.
+    Fixed by Brazil.
 
 
 Performance Enhancements:
@@ -395,6 +407,7 @@ Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
  -- Added grammatically correct comma after 'shouts'.
  -- Alierak fix for typos in NOTES.
+ -- Spell 'separate' correctly in the help files and the source code.
 
 
 Miscellaneous:
@@ -405,3 +418,5 @@ Miscellaneous:
  -- Freshened docs/CONVERSION because support for older database formats
     was removed in MUX 2.1.
  -- Switched to using autoconf 2.53.
+ -- Documented flag attributes.
+ -- Updated CONVERSION.
