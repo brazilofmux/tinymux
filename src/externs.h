@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.57 2001-07-06 16:24:21 sdennis Exp $
+// $Id: externs.h,v 1.58 2001-07-26 19:09:37 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -176,14 +176,8 @@ extern int  is_integer(char *, int *);
 extern int  FDECL(is_number, (char *));
 extern int  FDECL(could_doit, (dbref, dbref, int));
 extern int  FDECL(can_see, (dbref, dbref, int));
-#ifdef QQQ1
-extern void add_quota(dbref, int, int);
-extern int  canpayfees(dbref, dbref, int, int, int);
-extern int  payfees(dbref, int, int, int);
-#else
 extern void FDECL(add_quota, (dbref, int));
 extern int  FDECL(canpayfees, (dbref, dbref, int, int));
-#endif
 extern void FDECL(giveto, (dbref,int));
 extern int  FDECL(payfor, (dbref,int));
 extern char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid);
@@ -276,15 +270,7 @@ extern int  FDECL(fwdlist_load, (FWDLIST *, dbref, char *));
 extern void FDECL(fwdlist_set, (dbref, FWDLIST *));
 extern void FDECL(fwdlist_clr, (dbref));
 extern int  FDECL(fwdlist_rewrite, (FWDLIST *, char *));
-#ifdef QQQ2
-#ifdef STANDALONE
 extern FWDLIST *FDECL(fwdlist_get, (dbref));
-#else
-#define fwdlist_get(x) ((FWDLIST *)hashfindLEN(&x, sizeof(x), &mudstate.fwdlist_htab))
-#endif
-#else // QQQ2
-extern FWDLIST *FDECL(fwdlist_get, (dbref));
-#endif // QQQ2
 extern void FDECL(clone_object, (dbref, dbref));
 extern void NDECL(init_min_db);
 extern void NDECL(atr_push);
@@ -337,14 +323,9 @@ extern void ReleaseAllResources(dbref obj);
 #define CLONE_PRESERVE  2   /* Preserve the owner of the object */
 #define CLONE_INVENTORY 4   /* Create cloned object in my inventory */
 #define CLONE_SET_COST  8   /* ARG2 is cost of cloned object */
-#ifdef QQQ3
-#define CLONE_PARENT    16  /* Set parent on obj instd of cloning attrs */
-#define CLONE_NOSTRIP   32  /* Don't strip (most) flags from clone */
-#else // QQQ3
 #define CLONE_SET_LOC   16  /* ARG2 is location of cloned object */
 #define CLONE_SET_NAME  32  /* ARG2 is alternate name of cloned object */
 #define CLONE_PARENT    64  /* Set parent on obj instd of cloning attrs */
-#endif // QQQ3
 #define COMTITLE_ON     1   // Turn Comtitles on.
 #define COMTITLE_OFF    2   // Turn Comtitles off.
 #define CRE_INVENTORY   0   /* Create object in my inventory */
