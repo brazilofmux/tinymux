@@ -1,10 +1,10 @@
-// svdrand.h -- Random Numbers
+// svdrand.h -- Random Numbers.
 //
-// $Id: svdrand.h,v 1.6 2001-09-08 19:25:47 sdennis Exp $
+// $Id: svdrand.h,v 1.7 2001-11-18 21:43:36 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
-// 
+//
 // RandomINT32() was derived from existing game server code.
 //
 // MUX 2.1
@@ -16,6 +16,7 @@
 // building/hosting text-based game servers, contact the author at
 // Stephen Dennis <sdennis@svdltd.com> for another license.
 //
+
 #ifndef SVDRAND_H
 #define SVDRAND_H
 
