@@ -3275,6 +3275,7 @@ Related Topics: @name.
               that matches <string>.
 
   Related Topics: switch(), ifelse().
+
 & @TELEPORT
 @TELEPORT
 
@@ -6844,6 +6845,7 @@ INVENTORY
   Lists what you are carrying and how much money you have.
 
   Related Topics: score.
+
 & INZONE()
 INZONE()
 
@@ -10115,7 +10117,9 @@ SAY
     > say Where is the movie theater?
     Player says "Where is the movie theater?"
 
-  Related Topics: page, pose, whisper, :, ;, ".& SCORE
+  Related Topics: page, pose, whisper, :, ;, ".
+
+& SCORE
 SCORE
 
   COMMAND: score
