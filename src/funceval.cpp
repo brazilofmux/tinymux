@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.95 2002-05-03 03:10:47 sdennis Exp $
+// $Id: funceval.cpp,v 1.96 2002-05-06 01:06:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2919,22 +2919,31 @@ FUNCTION(fun_valid)
     // Checks to see if a given <something> is valid as a parameter of
     // a given type (such as an object name)
     //
+    int nValidName;
+    BOOL bValid;
     if (!*fargs[0] || !*fargs[1])
     {
-        safe_chr('0', buff, bufc);
+        bValid = FALSE;
     }
     else if (!_stricmp(fargs[0], "name"))
     {
-        int nValidName;
-        BOOL bValid;
         MakeCanonicalObjectName(fargs[1], &nValidName, &bValid);
-        char ch = (bValid) ? '1' : '0';
-        safe_chr(ch, buff, bufc);
+    }
+    else if (!_stricmp(fargs[0], "attrname"))
+    {
+        MakeCanonicalAttributeName(fargs[1], &nValidName, &bValid);
+    }
+    else if (!_stricmp(fargs[0], "playername"))
+    {
+        bValid = ValidatePlayerName(fargs[1]);
     }
     else
     {
         safe_nothing(buff, bufc);
+        return;
     }
+    char ch = bValid ? '1' : '0';
+    safe_chr(ch, buff, bufc);
 }
 
 // Borrowed from PennMUSH 1.50

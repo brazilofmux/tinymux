@@ -11305,17 +11305,21 @@ VADD()
 & VALID()
 VALID()
 
-  FUNCTION: valid(<name>,<argument>)
+  FUNCTION: valid(<category>,<argument>)
 
   This returns true or false depending on whether the characters and
-  arrangement of characters in <argument> satisfy the restrictions
-  implied by <name>
+  arrangement of characters in <argument> satisfy the restrictions implied by
+  <category>
 
-  For example, A <name> of 'name' causes <argument> to be validated as
-  an object name. Valid() does not check the database for existance and
-  it does not guarantee that if you try to create such an object that
-  the attempt will succeed. It only looks at <argument> as a string
-  of characters.
+  Possible values for <category>:
+
+     name       Test for object name.
+     player     Test for player name.
+     attrname   Test for attribute name.
+
+  Valid() does not check the database for existance and it does not guarantee
+  that an attempt to use such an object will succeed. It only looks at
+  <argument> as a string of characters.
 
 & VCROSS()
 VCROSS()

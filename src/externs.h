@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.74 2002-03-02 21:20:48 sdennis Exp $
+// $Id: externs.h,v 1.75 2002-05-06 01:06:24 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -574,7 +574,6 @@ extern void ReleaseAllResources(dbref obj);
 
 /* Evaluation directives */
 
-//#define EV_FMASK        0x00000300  /* Mask for function type check */
 #define EV_FIGNORE      0x00000000  /* Don't look for func if () found */
 #define EV_FMAND        0x00000100  /* Text before () must be func name */
 #define EV_FCHECK       0x00000200  /* Check text before () for function */
