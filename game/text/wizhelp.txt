@@ -1052,8 +1052,8 @@
   particular parameter.
 
   access  alias  allow_guest_from_registered_site  attr_access  attr_alias
-  attr_cmd_access  bad_name  badsite_file  check_interval  check_offset
-  clone_copies_cost  comsys_database  command_quota_increment
+  attr_cmd_access  autozone  bad_name  badsite_file  check_interval
+  check_offset  clone_copies_cost  comsys_database  command_quota_increment
   command_quota_max  compress_program  compression  concentrator_port
   config_access  conn_timeout  connect_file  connect_reg_file  crash_database
   create_max_cost  create_min_cost  dark_sleepers  default_home  dig_cost
