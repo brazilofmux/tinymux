@@ -21,7 +21,7 @@ Feature Additions:
  -- Limit the number of oustanding slave processes at any one time to
     20.  Introduced by Brazil.  Jointly refined with Alierak.
  -- Expand @list alloc report to 14 digits for total allocations column.
- -- Added @descformat. Patch provided by Sean Hunter.
+ -- Added @descformat.  Patch provided by Sean Hunter.
  -- Added SHA1() to calculate SHA-1 cryptographically secure hashes.
  -- Existing encrypt passwords are converted to SHA-1 format.
  -- The WHO/SESSION/DOING report manages the width and format of
