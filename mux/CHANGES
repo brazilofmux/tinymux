@@ -129,6 +129,7 @@ Feature Additions:
  -- Added KEEPALIVE flag which, if set, periodically causes a TELNET NOP to
     be sent to the client.  Idea and patch from Soruk.  This is not the same
     as the TCP/IP by the same name.
+ -- Added helpfile and raw_helpfile configuration options.
 
 
 Bug Fixes:
