@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.6 2002-06-11 17:12:06 jake Exp $
+// $Id: command.cpp,v 1.7 2002-06-12 15:48:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2853,13 +2853,6 @@ extern int cs_whits;        // total writes to dirty cache
 #endif // !MEMORY_BASED
 
 
-#ifdef RADIX_COMPRESSION
-extern unsigned int strings_compressed;     // Total number of compressed strings
-extern unsigned int strings_decompressed;   // Total number of decompressed strings
-extern unsigned int chars_in;               // Total characters compressed
-extern unsigned int symbols_out;            // Total symbols emitted
-#endif // RADIX_COMPRESSION
-
 // ---------------------------------------------------------------------------
 // list_db_stats: Get useful info from the DB layer about hash stats, etc.
 //
@@ -2878,13 +2871,6 @@ static void list_db_stats(dbref player)
     raw_notify(player, tprintf("I/O        %12d%12d", cs_dbwrites, cs_dbreads));
     raw_notify(player, tprintf("Cache Hits %12d%12d", cs_whits, cs_rhits));
 #endif // MEMORY_BASED
-
-#ifdef RADIX_COMPRESSION
-    raw_notify(player, "Compression statistics:");
-    raw_notify(player, tprintf("Strings compressed %d", strings_compressed));
-    raw_notify(player, tprintf("Strings decompressed %d", strings_decompressed));
-    raw_notify(player, tprintf("Compression ratio %d:%d", chars_in, symbols_out + (symbols_out >> 1)));
-#endif // RADIX_COMPRESSION
 }
 
 // ---------------------------------------------------------------------------

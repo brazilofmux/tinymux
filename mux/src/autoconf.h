@@ -9,9 +9,6 @@
 #include <windows.h>
 #include <winsock2.h>
 
-#ifndef RADIX_COMPRESSION
-//#define RADIX_COMPRESSION
-#endif
 #include <malloc.h>
 #include <crtdbg.h>
 
