@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.108 2002-09-20 23:43:39 jake Exp $
+// $Id: functions.cpp,v 1.109 2002-09-21 02:50:12 jake Exp $
 //
 
 #include "copyright.h"
@@ -7963,15 +7963,14 @@ FUNCTION(fun_error)
 
 FUNCTION(fun_strip)
 {
-    if (  !fargs[0]
-       || !*fargs[0])
+    if (fargs[0][0] == '\0')
     {
         return;
     }
     char *pInput = alloc_lbuf("fun_strip.1");
     strcpy(pInput, strip_ansi(fargs[0]));
-    if (  !fargs[1]
-       || !*fargs[1])
+    if (  nfargs < 2
+       || fargs[1][0] == '\0')
     {
         safe_str(pInput, buff, bufc);
         free_lbuf(pInput);
@@ -8263,7 +8262,7 @@ FUN flist[] =
     {"STARTTIME",fun_starttime,MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"STATS",    fun_stats,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"STRCAT",   fun_strcat,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"STRIP",    fun_strip,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"STRIP",    fun_strip,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"STRIPACCENTS", fun_stripaccents, MAX_ARG, 1, 1, 0, CA_PUBLIC},
     {"STRIPANSI",fun_stripansi,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"STRLEN",   fun_strlen,   1,       0,  1,       0, CA_PUBLIC},
