@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.58 2002-10-01 02:34:18 jake Exp $
+// $Id: funceval.cpp,v 1.59 2002-10-01 07:30:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2299,7 +2299,8 @@ FUNCTION(fun_mix)
     }
 
     char *cp[10];
-    for (int i = 0; i < lastn; i++)
+    int i;
+    for (i = 0; i < lastn; i++)
     {
         cp[i] = NULL;
     }
