@@ -1084,7 +1084,7 @@ Related Topics: @name.
   enabled, DESCRIBE can be substituted in favor of other attributes.
 
   However, in all cases, @descformat provides one final pass over the
-  appearance of an object.  The evaluted description text is passed as %0,
+  appearance of an object.  The evaluated description text is passed as %0,
   and the attribute name where this text can be found is passed as %1.  The
   unevaluated description can be acquired using v(%1).
 
