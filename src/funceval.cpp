@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.38 2001-06-28 12:17:58 sdennis Exp $
+// $Id: funceval.cpp,v 1.39 2001-06-29 06:48:35 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -253,11 +253,6 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     int aflags, could_hear;
     ATTR *attr;
 
-    if (isGarbage(thing))
-    {
-        notify_quiet(player, "Cannot set attributes on garbage objects.");
-        return;
-    }
     attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (attr && Set_attr(player, thing, attr, aflags))
@@ -1004,19 +999,11 @@ FUNCTION(fun_objmem)
 
 FUNCTION(fun_playmem)
 {
-    dbref thing;
-    if (nfargs)
+    dbref thing = match_thing(player, fargs[0]);
+    if (thing == NOTHING || !Examinable(player, thing))
     {
-        thing = match_thing(player, fargs[0]);
-        if (thing == NOTHING || !Examinable(player, thing))
-        {
-            safe_str("#-1 PERMISSION DENIED", buff, bufc);
-            return;
-        }
-    }
-    else
-    {
-        thing = player;
+        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+        return;
     }
     int tot = 0;
     dbref j;
@@ -1176,26 +1163,6 @@ FUNCTION(fun_ifelse)
     {
         str = fargs[1];
         TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-    }
-    free_lbuf(mbuff);
-}
-
-FUNCTION(fun_t)
-{
-    char *str, *mbuff, *bp;
-
-    mbuff = bp = alloc_lbuf("fun_t");
-    str = fargs[0];
-    TinyExec(mbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-    *bp = '\0';
-
-    if (!mbuff || !*mbuff || !xlate(mbuff))
-    {
-        safe_chr('0', buff, bufc);
-    }
-    else
-    {
-        safe_chr('1', buff, bufc);
     }
     free_lbuf(mbuff);
 }
