@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.20 2004-04-06 19:21:01 sdennis Exp $
+// $Id: comsys.cpp,v 1.21 2004-04-06 19:56:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1239,8 +1239,8 @@ void do_comwho(dbref player, struct channel *ch)
         {
             if (  Connected(user->who)
                && (  !Hidden(user->who)
-                  || Wizard_Who(player))
-                  || See_Hidden(player))
+                  || Wizard_Who(player)
+                  || See_Hidden(player)))
             {
                 if (user->bUserIsOn)
                 {
