@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.58 2002-02-14 01:42:41 sdennis Exp $
+// $Id: bsd.cpp,v 1.59 2002-02-25 16:19:10 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1464,7 +1464,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         free_mbuf(pBuffM1);
         ENDLOG;
 
-        // Site Monitor information.
+        // Report site monitor information.
         //
         SiteMonSend(newsock, pBuffM2, NULL, "Connection refused");
 
@@ -1544,8 +1544,8 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
         d = initializesock(newsock, &addr);
 
-        // Initalize everything before sending sitemon info, so we can pass
-        // the descriptor, d.
+        // Initalize everything before sending the sitemon info, so that we
+        // can pass the descriptor, d.
         //
         SiteMonSend(newsock, pBuffM2, d, "Connection");
 
@@ -3025,10 +3025,17 @@ void __cdecl MUDListenThread(void * pVoid)
         if (site_check(SockAddr.sin_addr, mudstate.access_list) == H_FORBIDDEN)
         {
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-            Log.tinyprintf("[%d/%s] Connection refused.  (Remote port %d)", socketClient, inet_ntoa(SockAddr.sin_addr), ntohs(SockAddr.sin_port));
+            Log.tinyprintf("[%d/%s] Connection refused.  (Remote port %d)",
+                socketClient, inet_ntoa(SockAddr.sin_addr), ntohs(SockAddr.sin_port));
             ENDLOG;
 
+            // The following are commented out for thread-safety, but
+            // ordinarily, they would occur at this time.
+            //
+            //SiteMonSend(socketClient, inet_ntoa(SockAddr.sin_addr), NULL,
+            //            "Connection refused");
             //fcache_rawdump(socketClient, FC_CONN_SITE);
+
             shutdown(socketClient, SD_BOTH);
             if (closesocket(socketClient) == 0)
             {
@@ -3342,35 +3349,43 @@ void ProcessWindowsTCP(DWORD dwTimeout)
         }
         else if (lpo == &lpo_welcome)
         {
-            //Log.tinyprintf("Welcome." ENDLINE);
+            char *buff = alloc_mbuf("ProcessWindowsTCP.Premature");
+            strcpy(buff, inet_ntoa(d->address.sin_addr));
+
+            // If the socket is invalid, the we were unable to queue a read
+            // request, and the port was shutdown while this packet was in
+            // the completion port queue.
             //
-            if (d->descriptor != INVALID_SOCKET)
+            BOOL bInvalidSocket = IS_INVALID_SOCKET(d->descriptor);
+
+            // Log connection.
+            //
+            STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN");
+            Log.tinyprintf("[%s/%s] Connection opened (remote port %d)",
+                bInvalidSocket ? "UNKNOWN" : Tiny_ltoa_t(d->descriptor), buff,
+                ntohs(d->address.sin_port));
+            ENDLOG;
+
+            SiteMonSend(d->descriptor, buff, d, "Connection");
+
+            if (bInvalidSocket)
             {
-                // Welcome the user.
+                // Log premature disconnection.
                 //
-                char *buff = alloc_mbuf("ProcessWindowsTCP.Welcome");
-                StringCopy(buff, inet_ntoa(d->address.sin_addr));
-                STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN")
-                Log.tinyprintf("[%d/%s] Connection opened (remote port %d)", d->descriptor, buff, ntohs(d->address.sin_port));
-                ENDLOG
-                free_mbuf(buff);
-                welcome_user(d);
+                STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC");
+                Log.tinyprintf("[UNKNOWN/%s] Connection closed prematurely (remote port %d)",
+                    buff, ntohs(d->address.sin_port));
+                ENDLOG;
+
+                SiteMonSend(d->descriptor, buff, d, "Connection closed prematurely");
             }
             else
             {
-                // We were unable to queue a read request, and the port was shutdown while
-                // this packet was in the completion port queue.
+                // Welcome the user.
                 //
-                char *buff = alloc_mbuf("ProcessWindowsTCP.Premature");
-                StringCopy(buff, inet_ntoa(d->address.sin_addr));
-                STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN")
-                Log.tinyprintf("[UNKNOWN/%s] Connection opened (remote port %d)", buff, ntohs(d->address.sin_port));
-                ENDLOG
-                STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC")
-                Log.tinyprintf("[UNKNOWN/%s] Connection closed prematurely (remote port %d)", buff, ntohs(d->address.sin_port));
-                ENDLOG
-                free_mbuf(buff);
+                welcome_user(d);
             }
+            free_mbuf(buff);
         }
         else if (lpo == &lpo_shutdown)
         {
@@ -3422,14 +3437,16 @@ void SiteMonSend(int port, const char *address, DESC *d, const char *msg)
     // Build The msg.
     //
     char *sendMsg;
-    if (  d != NULL
-       && (d->host_info & H_SUSPECT))
+    BOOL bSuspect = (d != NULL) && (d->host_info & H_SUSPECT);
+    if (IS_INVALID_SOCKET(port))
     {
-        sendMsg = tprintf("SITEMON: [%d] %s from %s. (SUSPECT)", port, msg, address);
+        sendMsg = tprintf("SITEMON: [UNKNOWN] %s from %s.%s", msg, address,
+            bSuspect ? " (SUSPECT)": "");
     }
     else
     {
-        sendMsg = tprintf("SITEMON: [%d] %s from %s.", port, msg, address);
+        sendMsg = tprintf("SITEMON: [%d] %s from %s.%s", port, msg,
+            address, bSuspect ? " (SUSPECT)": "");
     }
     
     DESC *nd;
