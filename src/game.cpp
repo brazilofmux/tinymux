@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.20 2000-09-20 19:22:31 sdennis Exp $
+// $Id: game.cpp,v 1.21 2000-10-12 21:07:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1108,6 +1108,14 @@ DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
     { &mudconf.indb,    ".KILLED", FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening killed file"}  // 4
 };
 
+#ifdef WIN32
+#define POPEN_READ_OP "rb"
+#define POPEN_WRITE_OP "wb"
+#else
+#define POPEN_READ_OP "r"
+#define POPEN_WRITE_OP "w"
+#endif // WIN32
+
 void dump_database_internal(int dump_type)
 {
     char tmpfile[SIZEOF_PATHNAME+32];
@@ -1201,20 +1209,16 @@ void dump_database_internal(int dump_type)
     
     // Nuke our predecessor
     //
-    sprintf(prevfile, "%s.prev", mudconf.outdb);
-    sprintf(tmpfile, "%s.#%d#", mudconf.outdb, mudstate.epoch - 1);
-    RemoveFile(tmpfile);
-
-    sprintf(tmpfile, "%s.#%d#", mudconf.outdb, mudstate.epoch);
-
     if (mudconf.compress_db)
     {
+        sprintf(prevfile, "%s.prev.gz", mudconf.outdb);
         sprintf(tmpfile, "%s.#%d#.gz", mudconf.outdb, mudstate.epoch - 1);
         RemoveFile(tmpfile);
         sprintf(tmpfile, "%s.#%d#.gz", mudconf.outdb, mudstate.epoch);
-        StringCopy(outfn, mudconf.outdb);
+        strcpy(outfn, mudconf.outdb);
         strcat(outfn, ".gz");
-        f = popen(tprintf("%s > %s", mudconf.compress, tmpfile), "wb");
+
+        f = popen(tprintf("%s > %s", mudconf.compress, tmpfile), POPEN_WRITE_OP);
         if (f)
         {
             DebugTotalFiles++;
@@ -1224,7 +1228,7 @@ void dump_database_internal(int dump_type)
             {
                 DebugTotalFiles--;
             }
-            ReplaceFile(mudconf.outdb, prevfile);
+            ReplaceFile(outfn, prevfile);
             if (ReplaceFile(tmpfile, outfn) < 0)
             {
                 log_perror("SAV", "FAIL", "Renaming output file to DB file", tmpfile);
@@ -1237,6 +1241,11 @@ void dump_database_internal(int dump_type)
     }
     else
     {
+        sprintf(prevfile, "%s.prev", mudconf.outdb);
+        sprintf(tmpfile, "%s.#%d#", mudconf.outdb, mudstate.epoch - 1);
+        RemoveFile(tmpfile);
+        sprintf(tmpfile, "%s.#%d#", mudconf.outdb, mudstate.epoch);
+
         f = fopen(tmpfile, "wb");
         if (f)
         {
@@ -1488,7 +1497,7 @@ static int load_game(int ccPageFile)
         strcat(infile, ".gz");
         if (stat(infile, &statbuf) == 0)
         {
-            f = popen(tprintf(" %s < %s", mudconf.uncompress, infile), "rb");
+            f = popen(tprintf(" %s < %s", mudconf.uncompress, infile), POPEN_READ_OP);
             if (f != NULL)
             {
                 DebugTotalFiles++;
