@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.18 2002-07-09 08:22:49 jake Exp $
+// $Id: set.cpp,v 1.19 2002-07-09 15:12:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1440,7 +1440,7 @@ BOOL parse_attrib_wild(dbref player, char *str, dbref *thing, BOOL check_parents
 {
     if (!str)
     {
-        return 0;
+        return FALSE;
     }
 
     dbref parent;
