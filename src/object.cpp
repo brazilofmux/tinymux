@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.24 2002-02-13 18:57:29 sdennis Exp $
+// $Id: object.cpp,v 1.25 2002-02-13 19:32:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1659,8 +1659,10 @@ void do_dbck(dbref player, dbref cause, int key)
     check_contents_chains();
     check_floating();
 #ifndef STANDALONE    
-    if(player != NOTHING)
+    if (player != NOTHING)
+    {
         Guest.CleanUp();
+    }
 #endif
     purge_going();
 #ifndef STANDALONE
