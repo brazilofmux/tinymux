@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.6 2003-02-04 06:40:40 sdennis Exp $
+// $Id: boolexp.cpp,v 1.7 2003-02-04 07:02:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -350,6 +350,11 @@ static BOOLEXP *test_atr(char *s)
             return TRUE_BOOLEXP;
         }
         anum = mux_atol(buff);
+        if (anum <= 0)
+        {
+            free_lbuf(buff);
+            return TRUE_BOOLEXP;
+        }
     }
     else
     {
