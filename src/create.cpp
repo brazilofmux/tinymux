@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects 
 //
-// $Id: create.cpp,v 1.8 2000-09-18 18:56:28 sdennis Exp $ 
+// $Id: create.cpp,v 1.9 2000-11-06 15:45:56 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -695,7 +695,7 @@ void do_pcreate(dbref player, dbref cause, int key, char *name, char *pass)
         log_name(player);
         ENDLOG;
 #ifdef GAME_DOOFERMUX
-        // Added by D.Piper (del@delphinian.com) 2000-APR
+        // Added by D.Piper (del@doofer.org) 2000-APR
         //
         atr_add_raw(newplayer, A_REGINFO, "*Requires Registration*");
 #endif // GAME_DOOFERMUX
