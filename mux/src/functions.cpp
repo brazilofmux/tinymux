@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.69 2002-07-23 21:24:41 sdennis Exp $
+// $Id: functions.cpp,v 1.70 2002-07-23 21:34:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2720,13 +2720,9 @@ FUNCTION(fun_neq)
 FUNCTION(fun_and)
 {
     BOOL val = TRUE;
-    for (int i = 0; i < nfargs; i++)
+    for (int i = 0; i < nfargs && val; i++)
     {
-        val = val && Tiny_atol(fargs[i]);
-        if (!val)
-        {
-            break;
-        }
+        val = Tiny_atol(fargs[i]);
     }
     safe_bool(val, buff, bufc);
 }
@@ -2734,13 +2730,9 @@ FUNCTION(fun_and)
 FUNCTION(fun_or)
 {
     BOOL val = FALSE;
-    for (int i = 0; i < nfargs; i++)
+    for (int i = 0; i < nfargs && !val; i++)
     {
-        val = val || Tiny_atol(fargs[i]);
-        if (val)
-        {
-            break;
-        }
+        val = Tiny_atol(fargs[i]);
     }
     safe_bool(val, buff, bufc);
 }
@@ -2748,13 +2740,9 @@ FUNCTION(fun_or)
 FUNCTION(fun_andbool)
 {
     BOOL val = TRUE;
-    for (int i = 0; i < nfargs; i++)
+    for (int i = 0; i < nfargs && val; i++)
     {
-        val = val && xlate(fargs[i]);
-        if (!val)
-        {
-            break;
-        }
+        val = xlate(fargs[i]);
     }
     safe_bool(val, buff, bufc);
 }
@@ -2762,13 +2750,9 @@ FUNCTION(fun_andbool)
 FUNCTION(fun_orbool)
 {
     BOOL val = FALSE;
-    for (int i = 0; i < nfargs; i++)
+    for (int i = 0; i < nfargs && !val; i++)
     {
-        val = val || xlate(fargs[i]);
-        if (val)
-        {
-            break;
-        }
+        val = xlate(fargs[i]);
     }
     safe_bool(val, buff, bufc);
 }
@@ -2777,18 +2761,14 @@ FUNCTION(fun_cand)
 {
     BOOL val = TRUE;
     char *temp = alloc_lbuf("fun_cand");
-    for (int i = 0; i < nfargs; i++)
+    for (int i = 0; i < nfargs && val; i++)
     {
         char *bp = temp;
         char *str = fargs[i];
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = val && Tiny_atol(temp);
-        if (!val)
-        {
-            break;
-        }
+        val = Tiny_atol(temp);
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -2798,18 +2778,14 @@ FUNCTION(fun_cor)
 {
     BOOL val = FALSE;
     char *temp = alloc_lbuf("fun_cor");
-    for (int i = 0; i < nfargs; i++)
+    for (int i = 0; i < nfargs && !val; i++)
     {
         char *bp = temp;
         char *str = fargs[i];
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = val || Tiny_atol(temp);
-        if (val)
-        {
-            break;
-        }
+        val = Tiny_atol(temp);
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -2819,18 +2795,14 @@ FUNCTION(fun_candbool)
 {
     BOOL val = TRUE;
     char *temp = alloc_lbuf("fun_candbool");
-    for (int i = 0; i < nfargs; i++)
+    for (int i = 0; i < nfargs && val; i++)
     {
         char *bp = temp;
         char *str = fargs[i];
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = val && xlate(temp);
-        if (!val)
-        {
-            break;
-        }
+        val = xlate(temp);
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -2840,18 +2812,14 @@ FUNCTION(fun_corbool)
 {
     BOOL val = FALSE;
     char *temp = alloc_lbuf("fun_corbool");
-    for (int i = 0; i < nfargs; i++)
+    for (int i = 0; i < nfargs && !val; i++)
     {
         char *bp = temp;
         char *str = fargs[i];
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = val || xlate(temp);
-        if (val)
-        {
-            break;
-        }
+        val = xlate(temp);
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -7787,8 +7755,8 @@ FUN flist[] =
     {"AFTER",    fun_after,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"ALPHAMAX", fun_alphamax, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"ALPHAMIN", fun_alphamin, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"AND",      fun_and,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"ANDBOOL",  fun_andbool,  MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"AND",      fun_and,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"ANDBOOL",  fun_andbool,  MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"ANDFLAGS", fun_andflags, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ANSI",     fun_ansi,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"APOSS",    fun_aposs,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
@@ -7801,8 +7769,8 @@ FUN flist[] =
     {"BEFORE",   fun_before,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"BNAND",    fun_bnand,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"BOR",      fun_bor,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"CAND",     fun_cand,     MAX_ARG, 1,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
-    {"CANDBOOL", fun_candbool, MAX_ARG, 1,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"CAND",     fun_cand,     MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"CANDBOOL", fun_candbool, MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
 #ifdef WOD_REALMS
     {"CANSEE",   fun_cansee,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
 #endif
@@ -7830,8 +7798,8 @@ FUN flist[] =
     {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CONVSECS", fun_convsecs, MAX_ARG, 1,  3,       0, CA_PUBLIC},
     {"CONVTIME", fun_convtime, MAX_ARG, 1,  3,       0, CA_PUBLIC},
-    {"COR",      fun_cor,      MAX_ARG, 1,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
-    {"CORBOOL",  fun_corbool,  MAX_ARG, 1,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"COR",      fun_cor,      MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"CORBOOL",  fun_corbool,  MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
     {"COS",      fun_cos,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
@@ -7972,8 +7940,8 @@ FUN flist[] =
     {"OBJEVAL",  fun_objeval,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
     {"OBJMEM",   fun_objmem,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"OEMIT",    fun_oemit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"OR",       fun_or,       MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"ORBOOL",   fun_orbool,   MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"OR",       fun_or,       MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"ORBOOL",   fun_orbool,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"ORFLAGS",  fun_orflags,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"OWNER",    fun_owner,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"PACK",     fun_pack,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
@@ -8083,7 +8051,7 @@ FUN flist[] =
     {"WORDS",    fun_words,    MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"WRITETIME",fun_writetime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"XGET",     fun_xget,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"XOR",      fun_xor,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"XOR",      fun_xor,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"ZFUN",     fun_zfun,     MAX_ARG, 2,  11,      0, CA_PUBLIC},
     {"ZONE",     fun_zone,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ZWHO",     fun_zwho,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
