@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.67 2001-07-04 22:36:40 sdennis Exp $
+// $Id: functions.cpp,v 1.68 2001-07-05 12:05:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6488,6 +6488,7 @@ FUN flist[] =
     {"IADD",     fun_iadd,     0,  FN_VARARGS, CA_PUBLIC},
     {"IDIV",     fun_div,      2,  0,          CA_PUBLIC},
     {"IDLE",     fun_idle,     1,  0,          CA_PUBLIC},
+    {"IF",       fun_ifelse,   2,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
     {"IFELSE",   fun_ifelse,   3,  FN_NO_EVAL, CA_PUBLIC},
     {"IMUL",     fun_imul,     0,  FN_VARARGS, CA_PUBLIC},
     {"INC",      fun_inc,      0,  FN_VARARGS, CA_PUBLIC},
