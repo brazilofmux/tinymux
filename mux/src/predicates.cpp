@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.30 2003-02-17 02:26:23 sdennis Exp $
+// $Id: predicates.cpp,v 1.31 2003-02-17 02:45:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -340,7 +340,7 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, bool *pbValid)
     //
     for (unsigned int i = 0; i < nStripped; i++)
     {
-        if (!mux_ObjectNameSet[(unsigned char)pStripped[i]])
+        if (!mux_ObjectNameSet(pStripped[i]))
         {
             return NULL;
         }
@@ -503,11 +503,11 @@ bool ValidatePlayerName(const char *pName)
     if (  mudstate.bStandAlone
        || mudconf.name_spaces)
     {
-        mux_PlayerNameSet[(unsigned char)' '] = 1;
+        mux_PlayerNameSet[' '] = 1;
     }
     else
     {
-        mux_PlayerNameSet[(unsigned char)' '] = 0;
+        mux_PlayerNameSet[' '] = 0;
     }
 
     // Only printable characters besides ARG_DELIMITER, AND_TOKEN,
@@ -515,7 +515,7 @@ bool ValidatePlayerName(const char *pName)
     //
     for (unsigned int i = 0; i < nName; i++)
     {
-        if (!mux_PlayerNameSet[(unsigned char)pName[i]])
+        if (!mux_PlayerNameSet(pName[i]))
         {
             return false;
         }
