@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.20 2001-06-08 23:27:16 sdennis Exp $
+// $Id: cque.cpp,v 1.21 2001-06-28 08:16:32 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -63,7 +63,7 @@ CLinearTimeDelta GetProcessorUsage(void)
         }
         bQueryPerformanceAvailable = FALSE;
     }
-#endif // WIN32
+#endif
 
 #if !defined(WIN32) && defined(HAVE_GETRUSAGE)
 
@@ -72,7 +72,7 @@ CLinearTimeDelta GetProcessorUsage(void)
     ltd.SetTimeValueStruct(&usage.ru_utime);
     return ltd;
 
-#else // !WIN32 && HAVE_GETRUSAGE
+#else
 
     // Either this Unix doesn't have getrusage or this is a
     // fall-through case for Win32.
@@ -82,14 +82,12 @@ CLinearTimeDelta GetProcessorUsage(void)
     ltd = ltaNow - mudstate.start_time;
     return ltd;
 
-#endif // !WIN32 && HAVE_GETRUSAGE
+#endif
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * add_to: Adjust an object's queue or semaphore count.
- */
-
+// ---------------------------------------------------------------------------
+// add_to: Adjust an object's queue or semaphore count.
+//
 static int add_to(dbref player, int am, int attrnum)
 {
     int aflags;
@@ -111,7 +109,8 @@ static int add_to(dbref player, int am, int attrnum)
     return num;
 }
 
-// This Task assumes that pEntry is already unlinked from any lists it may have been related to.
+// This Task assumes that pEntry is already unlinked from any lists it may
+// have been related to.
 //
 void Task_RunQueueEntry(void *pEntry, int iUnused)
 {
@@ -137,7 +136,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     memcpy(mudstate.global_regs[i], point->scr[i], n+1);
                     mudstate.glob_reg_len[i] = n;
                 }
-                else 
+                else
                 {
                     mudstate.global_regs[i][0] = '\0';
                     mudstate.glob_reg_len[i] = 0;
@@ -170,11 +169,11 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                             free_lbuf(mudstate.pout);
                             mudstate.pout = NULL;
                         }
-                    
+
                         *mudstate.poutbufc = '\0';
                         mudstate.pout = mudstate.poutnew;
                         cp = parse_to(&command, ';', 0);
-                    } 
+                    }
                     mudstate.inpipe = 0;
 
                     CLinearTimeAbsolute ltaBegin;
@@ -223,11 +222,9 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * que_want: Do we want this queue entry?
- */
-
+// ---------------------------------------------------------------------------
+// que_want: Do we want this queue entry?
+//
 static int que_want(BQUE *entry, dbref ptarg, dbref otarg)
 {
     if ((ptarg != NOTHING) && (ptarg != Owner(entry->player)))
@@ -320,11 +317,9 @@ int halt_que(dbref player, dbref object)
     return Halt_Entries;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_halt: Command interface to halt_que.
- */
-
+// ---------------------------------------------------------------------------
+// do_halt: Command interface to halt_que.
+//
 void do_halt(dbref player, dbref cause, int key, char *target)
 {
     dbref player_targ, obj_targ;
@@ -456,10 +451,8 @@ int CallBack_NotifySemaphore(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * nfy_que: Notify commands from the queue and perform or discard them.
- */
+// ---------------------------------------------------------------------------
+// nfy_que: Notify commands from the queue and perform or discard them.
 
 int nfy_que(dbref sem, int attr, int key, int count)
 {
@@ -472,7 +465,7 @@ int nfy_que(dbref sem, int attr, int key, int count)
         cSemaphore = Tiny_atol(str);
         free_lbuf(str);
     }
-    
+
     Notify_Num_Done = 0;
     if (cSemaphore > 0)
     {
@@ -482,7 +475,7 @@ int nfy_que(dbref sem, int attr, int key, int count)
         Notify_Num_Max = count;
         scheduler.TraverseUnordered(CallBack_NotifySemaphore);
     }
-    
+
     // Update the sem waiters count.
     //
     if (key == NFY_NFY)
@@ -497,11 +490,8 @@ int nfy_que(dbref sem, int attr, int key, int count)
     return Notify_Num_Done;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_notify: Command interface to nfy_que
- */
-
+// ---------------------------------------------------------------------------
+// do_notify: Command interface to nfy_que
 
 void do_notify(dbref player, dbref cause, int key, char *what, char *count)
 {
@@ -509,11 +499,11 @@ void do_notify(dbref player, dbref cause, int key, char *what, char *count)
     int loccount, attr = 0, aflags;
     ATTR *ap;
     char *obj;
-    
+
     obj = parse_to(&what, '/', 0);
     init_match(player, obj, NOTYPE);
     match_everything(0);
-    
+
     if ((thing = noisy_match_result()) < 0)
     {
         notify(player, "No match.");
@@ -532,16 +522,17 @@ void do_notify(dbref player, dbref cause, int key, char *what, char *count)
         {
             ap = atr_str(what);
         }
-        
+
         if (!ap)
         {
             attr = A_SEMAPHORE;
         }
         else
         {
-            /* Do they have permission to set this attribute? */
+            // Do they have permission to set this attribute?
+            //
             atr_pget_info(thing, ap->number, &aowner, &aflags);
-            
+
             if (Set_attr(player, thing, ap, aflags))
             {
                 attr = ap->number;
@@ -552,7 +543,7 @@ void do_notify(dbref player, dbref cause, int key, char *what, char *count)
                 return;
             }
         }
-        
+
         if (count && *count)
         {
             loccount = Tiny_atol(count);
@@ -564,8 +555,8 @@ void do_notify(dbref player, dbref cause, int key, char *what, char *count)
         if (loccount > 0)
         {
             nfy_que(thing, attr, key, loccount);
-            if ( (!(Quiet(player) || Quiet(thing)))
-			   && key != NFY_QUIET)
+            if (  (!(Quiet(player) || Quiet(thing)))
+               && key != NFY_QUIET)
             {
                 if (key == NFY_DRAIN)
                 {
@@ -580,11 +571,9 @@ void do_notify(dbref player, dbref cause, int key, char *what, char *count)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * setup_que: Set up a queue entry.
- */
-
+// ---------------------------------------------------------------------------
+// setup_que: Set up a queue entry.
+//
 static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], int nargs, char *sargs[])
 {
     int a;
@@ -723,12 +712,21 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
     return tmp;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * wait_que: Add commands to the wait or semaphore queues.
- */
-
-void wait_que(dbref player, dbref cause, int wait, dbref sem, int attr, char *command, char *args[], int nargs, char *sargs[])
+// ---------------------------------------------------------------------------
+// wait_que: Add commands to the wait or semaphore queues.
+//
+void wait_que
+(
+    dbref player,
+    dbref cause,
+    int wait,
+    dbref sem,
+    int attr,
+    char *command,
+    char *args[],
+    int nargs,
+    char *sargs[]
+)
 {
     if (!(mudconf.control_flags & CF_INTERP)) return;
 
@@ -791,33 +789,36 @@ void wait_que(dbref player, dbref cause, int wait, dbref sem, int attr, char *co
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_wait: Command interface to wait_que
- */
-
-void do_wait(dbref player, dbref cause, int key, char *event, char *cmd, char *cargs[], int ncargs)
+// ---------------------------------------------------------------------------
+// do_wait: Command interface to wait_que
+//
+void do_wait
+(
+    dbref player,
+    dbref cause,
+    int key,
+    char *event,
+    char *cmd,
+    char *cargs[],
+    int ncargs
+)
 {
     dbref thing, aowner;
     int howlong, num, attr, aflags;
     char *what;
     ATTR *ap;
-    
 
-    /*
-     * If arg1 is all numeric, do simple (non-sem) timed wait. 
-     */
-
+    // If arg1 is all numeric, do simple (non-sem) timed wait.
+    //
     if (is_number(event))
     {
         howlong = Tiny_atol(event);
         wait_que(player, cause, howlong, NOTHING, 0, cmd, cargs, ncargs, mudstate.global_regs);
         return;
     }
-    /*
-     * Semaphore wait with optional timeout 
-     */
 
+    // Semaphore wait with optional timeout.
+    //
     what = parse_to(&event, '/', 0);
     init_match(player, what, NOTYPE);
     match_everything(0);
@@ -831,13 +832,10 @@ void do_wait(dbref player, dbref cause, int key, char *event, char *cmd, char *c
     {
         notify(player, NOPERM_MESSAGE);
     }
-    else 
+    else
     {
-
-        /*
-         * Get timeout, default 0 
-         */
-
+        // Get timeout, default 0.
+        //
         if (event && *event && is_number(event))
         {
             attr = A_SEMAPHORE;
@@ -873,15 +871,12 @@ void do_wait(dbref player, dbref cause, int key, char *event, char *cmd, char *c
                 return;
             }
         }
-        
+
         num = add_to(thing, 1, attr);
         if (num <= 0)
         {
-
-            /*
-             * thing over-notified, run the command immediately 
-             */
-
+            // Thing over-notified, run the command immediately.
+            //
             thing = NOTHING;
             howlong = 0;
         }
@@ -937,7 +932,7 @@ int CallBack_ShowDispatches(PTASK_RECORD p)
     {
         notify(Show_Player, tprintf("[%d]Database cache tick", ltd.ReturnSeconds()));
     }
-#endif // MEMORY_BASED
+#endif
     else if (p->fpTask == Task_ProcessCommand)
     {
         notify(Show_Player, tprintf("[%d]Further command quota", ltd.ReturnSeconds()));
@@ -947,7 +942,7 @@ int CallBack_ShowDispatches(PTASK_RECORD p)
     {
         notify(Show_Player, tprintf("[%d]Delayed descriptor deallocation", ltd.ReturnSeconds()));
     }
-#endif // WIN32
+#endif
     else
     {
         Total_SystemTasks--;
@@ -1050,10 +1045,9 @@ int CallBack_ShowSemaphore(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_ps: tell player what commands they have pending in the queue
- */
+// ---------------------------------------------------------------------------
+// do_ps: tell player what commands they have pending in the queue
+//
 void do_ps(dbref player, dbref cause, int key, char *target)
 {
     char *bufp;
@@ -1061,7 +1055,7 @@ void do_ps(dbref player, dbref cause, int key, char *target)
 
     // Figure out what to list the queue for.
     //
-    if ((key & PS_ALL) && !(See_Queue(player))) 
+    if ((key & PS_ALL) && !(See_Queue(player)))
     {
         notify(player, NOPERM_MESSAGE);
         return;
@@ -1163,11 +1157,9 @@ int CallBack_Warp(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_queue: Queue management
- */
-
+// ---------------------------------------------------------------------------
+// do_queue: Queue management
+//
 void do_queue(dbref player, dbref cause, int key, char *arg)
 {
     int was_disabled;
