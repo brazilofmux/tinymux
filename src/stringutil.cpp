@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.19 2000-08-01 20:05:04 sdennis Exp $
+// $Id: stringutil.cpp,v 1.20 2000-08-07 06:58:12 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1362,20 +1362,6 @@ char *upcasestr(char *s)
         _strupr(s);
     }
     return s;
-}
-
-/*
- * returns a pointer to the next character in s matching c, or a pointer to
- * the \0 at the end of s.  Yes, this is a lot like index, but not exactly.
- */
-char *seek_char(const char *s, char c)
-{
-    char *cp;
-
-    cp = (char *)s;
-    while (cp && *cp && (*cp != c))
-        cp++;
-    return (cp);
 }
 
 /*

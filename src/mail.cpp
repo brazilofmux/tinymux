@@ -1,13 +1,11 @@
-/*
- * mail.c 
- * This code was taken from Kalkin's DarkZone code, which was
- * originally taken from PennMUSH 1.50 p10, and has been heavily modified
- * since being included in MUX.
- * 
- * $Id: mail.cpp,v 1.7 2000-06-05 23:09:31 sdennis Exp $
- * -------------------------------------------------------------------
- */
-
+// mail.cpp 
+//
+// $Id: mail.cpp,v 1.8 2000-08-07 06:58:12 sdennis Exp $
+//
+// This code was taken from Kalkin's DarkZone code, which was
+// originally taken from PennMUSH 1.50 p10, and has been heavily modified
+// since being included in MUX.
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -24,15 +22,13 @@
 #include "functions.h"
 #ifdef RADIX_COMPRESSION
 #include "radix.h"
-#endif
 
-/*
- * Buffers used for RADIX_COMPRESSION 
- */
-
+// Buffers used for RADIX_COMPRESSION.
+//
 char msgbuff[LBUF_SIZE + (LBUF_SIZE >> 1) + 1];
 char subbuff[LBUF_SIZE + (LBUF_SIZE >> 1) + 1];
 char timebuff[LBUF_SIZE + (LBUF_SIZE >> 1) + 1];
+#endif // RADIX_COMPRESSION
 
 static int FDECL(sign, (int));
 static void FDECL(do_mail_flags, (dbref, char *, mail_flag, int));
@@ -535,7 +531,10 @@ void do_mail_read(dbref player, char *msglist)
     }
     buff = alloc_lbuf("do_mail_read.1");
     folder = player_folder(player);
-    for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = mp->next)
+    mp = (struct mail *)hashfindLEN( &player,
+                                     sizeof(player),
+                                     &mudstate.mail_htab);
+    for ( ; mp; mp = mp->next)
     {
         if (Folder(mp) == folder)
         {
@@ -775,9 +774,8 @@ void do_mail_review(dbref player, char *name, char *msglist)
                             " (Conn)" : "      ", 0,
                               status, subbuff));
 #else
-                    strcpy(msgbuff, get_mail_message(mp->number));
                     msg = bp = alloc_lbuf("do_mail_review");
-                    str = msgbuff;
+                    str = get_mail_message(mp->number);
                     TinyExec(msg, &bp, 0, player, player, EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
                     *bp = '\0';
                     notify(player, DASH_LINE);
@@ -788,9 +786,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
                               (!Hidden(mp->from) || Hasprivs(player))) ?
                             " (Conn)" : "      ", 0,
                               status, mp->subject));
-#endif /*
-        * RADIX_COMPRESSION 
-        */
+#endif // RADIX_COMPRESSION 
                     free_lbuf(status);
                     notify(player, DASH_LINE);
                     strcpy(tbuf1, msg);
@@ -2309,175 +2305,200 @@ static int mail_match(struct mail *mp, struct mail_selector ms, int num)
 
 static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
 {
-    char *p, *q;
-    char tbuf1[LBUF_SIZE];
+    // Take a message list, and return the appropriate mail_selector setup.
+    // For now, msglists are quite restricted. That'll change once all this
+    // is working. Returns 0 if couldn't parse, and also notifies the player
+    // why. 
 
-    /*
-     * Take a message list, and return the appropriate mail_selector * *
-     * * setup. For * now, msglists are quite restricted. That'll change
-     * * * * once all this is * working. Returns 0 if couldn't parse, and
-     * * also * * notifys player of why. 
-     */
-    /*
-     * Initialize the mail selector - this matches all messages 
-     */
+    // Initialize the mail selector - this matches all messages.
+    //
     ms->low = 0;
     ms->high = 0;
     ms->flags = 0x0FFF | M_MSUNREAD;
     ms->player = 0;
     ms->days = -1;
     ms->day_comp = 0;
-    /*
-     * Now, parse the message list 
-     */
+
+    // Now, parse the message list.
+    //
     if (!msglist || !*msglist)
     {
-        /*
-         * All messages 
-         */
+        // All messages 
+        //
         return 1;
     }
-    /*
-     * Don't mess with msglist itself 
-     */
-    strncpy(tbuf1, msglist, LBUF_SIZE - 1);
-    tbuf1[LBUF_SIZE-1] = '\0';
-    p = tbuf1;
-    if (!p) return 1;
 
+    char *p = msglist;
     while (Tiny_IsSpace[(unsigned char)*p])
+    {
         p++;
+    }
 
-    if (!*p) return 1;
+    if (*p == '\0')
+    {
+        return 1;
+    }
 
     if (Tiny_IsDigit[(unsigned char)*p])
     {
-        /*
-         * Message or range 
-         */
-        q = seek_char(p, '-');
-        if (*q) {
-            /*
-             * We have a subrange, split it up and test to see if 
-             * 
-             * *  * *  * * it is valid 
-             */
-            *q++ = '\0';
+        // Message or range.
+        //
+        char *q = strchr(p, '-');
+        if (q)
+        {
+            // We have a subrange, split it up and test to see if it is valid.
+            //
+            q++;
             ms->low = Tiny_atol(p);
-            if (ms->low <= 0) {
+            if (ms->low <= 0)
+            {
                 notify(player, "MAIL: Invalid message range");
                 return 0;
             }
-            if (!q || !*q) {
-                /*
-                 * Unbounded range 
-                 */
+            if (*q == '\0')
+            {
+                // Unbounded range.
+                //
                 ms->high = 0;
-            } else {
+            }
+            else
+            {
                 ms->high = Tiny_atol(q);
-                if ((ms->low > ms->high) || (ms->high <= 0)) {
+                if (ms->low > ms->high)
+                {
                     notify(player, "MAIL: Invalid message range");
                     return 0;
                 }
             }
-        } else {
-            /*
-             * A single message 
-             */
-            ms->low = ms->high = Tiny_atol(p);
         }
-    } else {
-        switch (*p) {
-        case '-':   /*
-                 * Range with no start 
-                 */
+        else
+        {
+            // A single message.
+            //
+            ms->low = ms->high = Tiny_atol(p);
+            if (ms->low <= 0)
+            {
+                notify(player, "MAIL: Invalid message number");
+                return 0;
+            }
+        }
+    }
+    else
+    {
+        switch (Tiny_ToUpper[(unsigned char)*p])
+        {
+        case '-':
+
+            // Range with no start.
+            //
             p++;
-            if (!p || !*p) {
+            if (*p == '\0')
+            {
                 notify(player, "MAIL: Invalid message range");
                 return 0;
             }
             ms->high = Tiny_atol(p);
-            if (ms->high <= 0) {
+            if (ms->high <= 0)
+            {
                 notify(player, "MAIL: Invalid message range");
                 return 0;
             }
             break;
-        case '~':   /*
-                 * exact # of days old 
-                 */
+
+        case '~':
+
+            // Exact # of days old.
+            //
             p++;
-            if (!p || !*p) {
+            if (*p == '\0')
+            {
                 notify(player, "MAIL: Invalid age");
                 return 0;
             }
             ms->day_comp = 0;
             ms->days = Tiny_atol(p);
-            if (ms->days < 0) {
+            if (ms->days < 0)
+            {
                 notify(player, "MAIL: Invalid age");
                 return 0;
             }
             break;
-        case '<':   /*
-                 * less than # of days old 
-                 */
+
+        case '<':
+
+            // Less than # of days old.
+            //
             p++;
-            if (!p || !*p) {
+            if (*p == '\0')
+            {
                 notify(player, "MAIL: Invalid age");
                 return 0;
             }
             ms->day_comp = -1;
             ms->days = Tiny_atol(p);
-            if (ms->days < 0) {
+            if (ms->days < 0)
+            {
                 notify(player, "MAIL: Invalid age");
                 return 0;
             }
             break;
-        case '>':   /*
-                 * greater than # of days old 
-                 */
+
+        case '>':
+
+            // Greater than # of days old.
+            //
             p++;
-            if (!p || !*p) {
+            if (*p == '\0')
+            {
                 notify(player, "MAIL: Invalid age");
                 return 0;
             }
             ms->day_comp = 1;
             ms->days = Tiny_atol(p);
-            if (ms->days < 0) {
+            if (ms->days < 0)
+            {
                 notify(player, "MAIL: Invalid age");
                 return 0;
             }
             break;
-        case '#':   /*
-                 * From db# 
-                 */
+
+        case '#':
+
+            // From db#.
+            //
             p++;
-            if (!p || !*p) {
+            if (*p == '\0')
+            {
                 notify(player, "MAIL: Invalid dbref #");
                 return 0;
             }
             ms->player = Tiny_atol(p);
-            if (!Good_obj(ms->player) || !(ms->player)) {
+            if (!Good_obj(ms->player) || !(ms->player))
+            {
                 notify(player, "MAIL: Invalid dbref #");
                 return 0;
             }
             break;
-        case '*':   /*
-                 * From player name 
-                 */
+
+        case '*':
+
+            // From player name.
+            //
             p++;
-            if (!p || !*p) {
+            if (*p == '\0')
+            {
                 notify(player, "MAIL: Invalid player");
                 return 0;
             }
             ms->player = lookup_player(player, p, 1);
-            if (ms->player == NOTHING) {
+            if (ms->player == NOTHING)
+            {
                 notify(player, "MAIL: Invalid player");
                 return 0;
             }
             break;
 
 #if 0
-        case 'a':
         case 'A':
 
             // All messages, all folders
@@ -2486,20 +2507,18 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             break;
 #endif
 
-        case 'u':
         case 'U':
 
             // Urgent, Unread
             //
             p++;
-            if (!p || !*p)
+            if (*p == '\0')
             {
                 notify(player, "MAIL: U is ambiguous (urgent or unread?)");
                 return 0;
             }
-            switch (*p)
+            switch (Tiny_ToUpper[(unsigned char)*p])
             {
-            case 'r':
             case 'R':
 
                 // Urgent
@@ -2507,7 +2526,6 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 ms->flags = M_URGENT;
                 break;
 
-            case 'n':
             case 'N':
 
                 // Unread
@@ -2525,51 +2543,61 @@ static int parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             }
             break;
 
-        case 'r':   /*
-                 * read 
-                 */
         case 'R':
+
+            // Read
+            //
             ms->flags = M_ISREAD;
             break;
-        case 'c':   /*
-                 * cleared 
-                 */
+
         case 'C':
+
+            // Cleared.
+            //
             ms->flags = M_CLEARED;
             break;
-        case 't':   /*
-                 * tagged 
-                 */
+
         case 'T':
+
+            // Tagged.
+            //
             ms->flags = M_TAG;
             break;
-        case 'm':
-        case 'M':   /*
-                 * Mass, me 
-                 */
+
+        case 'M':
+
+            // Mass, me.
+            //
             p++;
-            if (!p || !*p) {
+            if (*p == '\0')
+            {
                 notify(player, "MAIL: M is ambiguous (mass or me?)");
                 return 0;
             }
-            switch (*p) {
-            case 'a':
+            switch (Tiny_ToUpper[(unsigned char)*p])
+            {
             case 'A':
+
                 ms->flags = M_MASS;
                 break;
-            case 'e':
+
             case 'E':
+
                 ms->player = player;
                 break;
+
             default:
+
                 notify(player, "MAIL: Invalid message specification");
                 return 0;
                 break;
             }
             break;
-        default:    /*
-                 * Bad news 
-                 */
+
+        default:
+
+            // Bad news.
+            //
             notify(player, "MAIL: Invalid message specification");
             return 0;
             break;
