@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.18 2001-02-07 05:28:50 sdennis Exp $
+// $Id: cque.cpp,v 1.19 2001-02-13 07:04:33 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -447,6 +447,7 @@ int CallBack_NotifySemaphore(PTASK_RECORD p)
                 {
                     p->iPriority = PRIORITY_OBJECT;
                 }
+                p->ltaWhen = mudstate.now;
                 p->fpTask = Task_RunQueueEntry;
                 return IU_UPDATE_TASK;
             }
@@ -739,6 +740,7 @@ void wait_que(dbref player, dbref cause, int wait, dbref sem, int attr, char *co
         iPriority = PRIORITY_OBJECT;
     }
 
+    tmp->waittime.GetUTC();
     if (wait == 0)
     {
         // This means that waitime is not used.
@@ -748,7 +750,6 @@ void wait_que(dbref player, dbref cause, int wait, dbref sem, int attr, char *co
     else
     {
         tmp->IsTimed = TRUE;
-        tmp->waittime.GetUTC();
         CLinearTimeDelta ltdWait;
         ltdWait.SetSeconds(wait);
         tmp->waittime += ltdWait;
