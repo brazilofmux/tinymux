@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.49 2002-10-01 02:43:45 jake Exp $
+// $Id: db.cpp,v 1.50 2002-10-01 15:45:21 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1952,7 +1952,8 @@ char *atr_get_LEN(dbref thing, int atr, dbref *owner, int *flags, int *pLen)
     return atr_get_str_LEN(buff, thing, atr, owner, flags, pLen);
 }
 
-char *atr_get_real(dbref thing, int atr, dbref *owner, int *flags, const char *file, const int line)
+char *atr_get_real(dbref thing, int atr, dbref *owner, int *flags,
+    const char *file, const int line)
 {
     int nLen;
 #ifdef STANDALONE
@@ -2027,7 +2028,8 @@ char *atr_pget_LEN(dbref thing, int atr, dbref *owner, int *flags, int *pLen)
     return atr_pget_str_LEN(buff, thing, atr, owner, flags, pLen);
 }
 
-char *atr_pget_real(dbref thing, int atr, dbref *owner, int *flags, const char *file, const int line)
+char *atr_pget_real(dbref thing, int atr, dbref *owner, int *flags,
+    const char *file, const int line)
 {
     int nLen;
     char *buff = pool_alloc_lbuf("atr_pget", file, line);
