@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.11 2004-06-10 15:39:34 sdennis Exp $
+// $Id: htab.cpp,v 1.12 2004-07-07 17:00:47 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -34,7 +34,7 @@ static struct
  * * hash data.
  */
 
-void *hashfindLEN(const void *str, int nStr, CHashTable *htab)
+void *hashfindLEN(const void *str, size_t nStr, CHashTable *htab)
 {
     if (  str == NULL
        || nStr <= 0)

@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.6 2004-06-10 15:24:24 sdennis Exp $
+// $Id: vattr.cpp,v 1.7 2004-07-07 17:00:47 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -28,9 +28,9 @@ static char *stringblock = (char *)NULL;
 
 // High water mark.
 //
-static int stringblock_hwm = 0;
+static size_t stringblock_hwm = 0;
 
-ATTR *vattr_find_LEN(const char *pAttrName, int nAttrName)
+ATTR *vattr_find_LEN(const char *pAttrName, size_t nAttrName)
 {
     UINT32 nHash = HASH_ProcessBuffer(0, pAttrName, nAttrName);
 
@@ -51,14 +51,14 @@ ATTR *vattr_find_LEN(const char *pAttrName, int nAttrName)
     return NULL;
 }
 
-ATTR *vattr_alloc_LEN(char *pName, int nName, int flags)
+ATTR *vattr_alloc_LEN(char *pName, size_t nName, int flags)
 {
     int number = mudstate.attr_next++;
     anum_extend(number);
     return vattr_define_LEN(pName, nName, number, flags);
 }
 
-ATTR *vattr_define_LEN(char *pName, int nName, int number, int flags)
+ATTR *vattr_define_LEN(char *pName, size_t nName, int number, int flags)
 {
     ATTR *vp = vattr_find_LEN(pName, nName);
     if (vp)
@@ -711,12 +711,13 @@ ATTR *vattr_next(ATTR *vp)
 //
 static char *store_string(char *str)
 {
-    int nSize = strlen(str) + 1;
+    size_t nSize = strlen(str) + 1;
 
     // If we have no block, or there's not enough room left in the
     // current one, get a new one.
     //
-    if (!stringblock || (STRINGBLOCK - stringblock_hwm) < nSize)
+    if (  !stringblock
+       || (STRINGBLOCK - stringblock_hwm) < nSize)
     {
         // NOTE: These allocations are -never- freed, and this is
         // intentional.
