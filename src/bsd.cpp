@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.1 2000-04-11 07:14:42 sdennis Exp $
+// $Id: bsd.cpp,v 1.2 2000-04-15 16:29:22 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2028,7 +2028,9 @@ int process_input_helper(DESC *d, char *buf, int got)
             if (p < d->raw_input_at)
                 (d->raw_input_at)--;
         }
-        else if (p < pend && isascii(*q) && isprint(*q))
+        else if (  p < pend
+                && Tiny_IsASCII[(unsigned char)*q]
+                && Tiny_IsPrint[(unsigned char)*q])
         {
             *p++ = *q;
         }
