@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.38 2001-10-13 07:49:59 sdennis Exp $
+// $Id: game.cpp,v 1.39 2001-10-17 15:57:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1131,11 +1131,11 @@ typedef struct
 
 DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 {
-    { 0,                ""       , FALSE, 0,                                "" }, // 0 -- Handled specially.
-    { &mudconf.crashdb, ""       , FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening crash file" }, // 1
-    { &mudconf.indb,    ""       , TRUE,  OUTPUT_VERSION | OUTPUT_FLAGS,    "Opening input file" }, // 2
-    { &mudconf.indb,   ".FLAT"   , FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening flatfile"   }, // 3
-    { &mudconf.indb,   ".SIG"    , FALSE, UNLOAD_VERSION | UNLOAD_OUTFLAGS, "Opening signalled flatfile"}  // 4
+    { 0,                ""       , FALSE, 0,                             "" }, // 0 -- Handled specially.
+    { &mudconf.crashdb, ""       , FALSE, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening crash file" }, // 1
+    { &mudconf.indb,    ""       , TRUE,  OUTPUT_VERSION | OUTPUT_FLAGS, "Opening input file" }, // 2
+    { &mudconf.indb,   ".FLAT"   , FALSE, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening flatfile"   }, // 3
+    { &mudconf.indb,   ".SIG"    , FALSE, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening signalled flatfile"}  // 4
 };
 
 #ifdef WIN32

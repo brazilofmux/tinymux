@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.11 2001-10-17 05:51:34 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.12 2001-10-17 15:58:59 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -185,7 +185,7 @@ int DCL_CDECL main(int argc, char *argv[])
                 break;
             case 'x':
                 clrflags = 0xffffffff;
-                setflags = UNLOAD_OUTFLAGS;
+                setflags = UNLOAD_FLAGS;
                 ver = UNLOAD_VERSION;
                 break;
             case '0':
@@ -240,7 +240,7 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     else if (cc == HF_OPEN_STATUS_NEW)
     {
-        if (setflags == UNLOAD_OUTFLAGS)
+        if (setflags == UNLOAD_FLAGS)
         {
             Log.tinyprintf("Database (%s, %s) is empty.\n", dirfile, pagfile);
             CLOSE;
