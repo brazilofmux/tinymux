@@ -26,8 +26,6 @@
 #undef pid_t
 /* signal() return type */
 #define RETSIGTYPE void
-/* Define if wait3 exists and works */
-#undef HAVE_WAIT3
 /* Define if struct tm is not in time.h */
 #undef TM_IN_SYS_TIME
 /* Define if struct tm has a timezone member */
@@ -114,8 +112,6 @@
 #undef EXTENDED_SOCKET_DCLS
 /* Define if socklen_t is defined */
 #undef SOCKLEN_T_DCL
-/* Define if sys/wait.h defines union wait. */
-#undef HAVE_UNION_WAIT
 /* Define if we have system-supplied ndbm routines */
 #undef HAVE_NDBM
 /* Define if we have system-supplied (old) dbm routines */
@@ -126,8 +122,6 @@
 #undef HAVE_SYS_TIME_H
 /* Define if you need to declare gettimeofday yourself */
 #undef NEED_GETTIMEOFDAY_DCL
-/* Define if you need to declare wait3 yourself */
-#undef NEED_WAIT3_DCL
 /* Define if you need to declare getpagesize yourself */
 #undef NEED_GETPAGESIZE_DCL
 /* Define if you have IEEE floating-point formatted numbers */
@@ -236,17 +230,8 @@ extern int getdtablesize(void);
 #include <fcntl.h>
 #endif
 
-#ifdef HAVE_WAIT3
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
-#endif
-#ifdef NEED_WAIT3_DCL
-#ifdef HAVE_UNION_WAIT
-extern int wait3(union wait *, int, struct rusage *);
-#else
-extern int wait3(int *, int, struct rusage *);
-#endif
-#endif
 #endif
 
 #include <sys/param.h>
