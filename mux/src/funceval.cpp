@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.5 2002-06-05 07:40:20 sdennis Exp $
+// $Id: funceval.cpp,v 1.6 2002-06-05 07:50:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -779,7 +779,7 @@ FUNCTION(fun_zfun)
         return;
     }
     char *str = tbuf1;
-    TinyExec(buff, bufc, zone, caller, executor,
+    TinyExec(buff, bufc, zone, executor, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, &(fargs[1]), nfargs - 1);
     free_lbuf(tbuf1);
 }
