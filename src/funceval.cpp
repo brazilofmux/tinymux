@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.26 2000-10-07 02:28:45 sdennis Exp $
+// $Id: funceval.cpp,v 1.27 2000-10-09 06:51:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -762,9 +762,9 @@ FUNCTION(fun_table)
     // Get single-character separator.
     //
     char cSeparator = ' ';
-    if (nfargs >= 5)
+    if (nfargs >= 5 && fargs[4][0] != '\0')
     {
-        if (*fargs[4] && !*(fargs[4] + 1))
+        if (fargs[4][1] == '\0')
         {
             cSeparator = *fargs[4];
         }
@@ -778,9 +778,9 @@ FUNCTION(fun_table)
     // Get single-character delimiter.
     //
     char cDelimiter = ' ';
-    if (nfargs >= 4)
+    if (nfargs >= 4 && fargs[3][0] != '\0')
     {
-        if (*fargs[3] && !*(fargs[3] + 1))
+        if (fargs[3][1] == '\0')
         {
             cDelimiter = *fargs[3];
         }
