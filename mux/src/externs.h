@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.29 2002-07-16 23:23:25 jake Exp $
+// $Id: externs.h,v 1.30 2002-07-16 23:51:21 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -520,7 +520,6 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define SHOUT_ADMINSHOUT 7  /* Emit to all wizards or royalty */
 //#define SAY_GRIPE       16  /* Complain to management */
 //#define SAY_NOTE        17  /* Comment to log for wizards */
-#define SAY_NOEVAL      16  // Don't evaluate message
 #define SAY_NOTAG       32  /* Don't put Broadcast: in front (additive) */
 #define SAY_HERE        64  /* Output to current location */
 #define SAY_ROOM        128 /* Output to containing room */

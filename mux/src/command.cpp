@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.31 2002-07-16 23:35:26 jake Exp $
+// $Id: command.cpp,v 1.32 2002-07-16 23:51:21 jake Exp $
 //
 
 #include "copyright.h"
@@ -153,7 +153,6 @@ NAMETAB emit_sw[] =
 {
     {"here",            2,  CA_PUBLIC,  SAY_HERE|SW_MULTIPLE},
     {"html",            2,  CA_PUBLIC,  SAY_HTML|SW_MULTIPLE},
-    {"noeval",          1,  CA_PUBLIC,  SAY_NOEVAL|SW_MULTIPLE},
     {"room",            1,  CA_PUBLIC,  SAY_ROOM|SW_MULTIPLE},
     { NULL,             0,          0,  0}
 };
@@ -372,7 +371,6 @@ NAMETAB pemit_sw[] =
 NAMETAB pose_sw[] =
 {
     {"default",         1,  CA_PUBLIC,  0},
-    {"noeval",          3,  CA_PUBLIC,  SAY_NOEVAL},
     {"nospace",         3,  CA_PUBLIC,  SAY_NOSPACE},
     { NULL,             0,          0,  0}
 };
@@ -393,12 +391,6 @@ NAMETAB quota_sw[] =
     {"remaining",       1,  CA_WIZARD,  QUOTA_REM|SW_MULTIPLE},
     {"set",             1,  CA_WIZARD,  QUOTA_SET},
     {"total",           1,  CA_WIZARD,  QUOTA_TOT|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
-};
-
-NAMETAB say_sw[] =
-{
-    {"noeval",          1,  CA_PUBLIC,  SAY_NOEVAL},
     { NULL,             0,          0,  0}
 };
 
@@ -575,10 +567,12 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"help",          NULL,       0,                  HELP_HELP,  CS_ONE_ARG,           do_help},
     {"look",          look_sw,    CA_LOCATION,        LOOK_LOOK,  CS_ONE_ARG|CS_INTERP, do_look},
     {"news",          NULL,       0,                  HELP_NEWS,  CS_ONE_ARG,           do_help},
+    {"npose",         pose_sw,    CA_LOCATION|CA_NO_SLAVE,  SAY_POSE,   CS_ONE_ARG|CS_UNPARSE|CS_NOSQUISH,   do_say},
+    {"nsay",          NULL,       CA_LOCATION|CA_NO_SLAVE,  SAY_SAY,    CS_ONE_ARG|CS_UNPARSE|CS_NOSQUISH,   do_say},
     {"outputprefix",  NULL,       CA_PUBLIC,         CMD_PREFIX,  CS_ONE_ARG,           logged_out1},
     {"outputsuffix",  NULL,       CA_PUBLIC,         CMD_SUFFIX,  CS_ONE_ARG,           logged_out1},
     {"pose",          pose_sw,    CA_LOCATION|CA_NO_SLAVE,  SAY_POSE,   CS_ONE_ARG|CS_INTERP,   do_say},
-    {"say",           say_sw,     CA_LOCATION|CA_NO_SLAVE,  SAY_SAY,    CS_ONE_ARG|CS_INTERP,   do_say},
+    {"say",           NULL,       CA_LOCATION|CA_NO_SLAVE,  SAY_SAY,    CS_ONE_ARG|CS_INTERP,   do_say},
     {"session",       NULL,       CA_PUBLIC,        CMD_SESSION,  CS_ONE_ARG,           logged_out1},
     {"think",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_think},
     {"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,  0,  CS_ONE_ARG|CS_INTERP, do_use},
