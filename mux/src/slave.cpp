@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.2 2002-09-25 06:50:30 sdennis Exp $
+// $Id: slave.cpp,v 1.3 2002-09-28 23:22:00 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -87,7 +87,8 @@ int query(char *ip, char *orig_arg)
     }
     const char *pHName = ip;
     hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
-    if (hp)
+    if (  hp
+       && strlen(hp->h_name) < MAX_STRING / 2)
     {
         pHName = hp->h_name;
     }
