@@ -1,6 +1,6 @@
 // dbconvert.cpp -- Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.2 2003-01-22 21:01:37 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.3 2003-01-22 21:16:01 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -93,7 +93,10 @@ int DCL_CDECL main(int argc, char *argv[])
     int db_ver, db_format, db_flags;
     char *fp;
 
-    if ((argc < 2) || (argc > 3))
+    Log.EnableLogging();
+
+    if (  argc < 2
+       || 3 < argc)
     {
         usage(argv[0]);
         exit(1);
