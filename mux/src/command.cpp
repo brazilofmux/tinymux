@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.17 2002-06-27 07:46:29 jake Exp $
+// $Id: command.cpp,v 1.18 2002-06-30 06:24:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1301,6 +1301,8 @@ char *process_command
     //
     cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< process_command >";
+    mudstate.nStackNest = 0;
+    mudstate.bStackLimitReached = FALSE;
 
     Tiny_Assert(pOriginalCommand);
 
@@ -1407,6 +1409,16 @@ char *process_command
     {
         process_cmdent(prefix_cmds[i], NULL, executor, caller, enactor,
             interactive, pCommand, pCommand, args, nargs);
+        if (mudstate.bStackLimitReached)
+        {
+            STARTLOG(LOG_ALWAYS, "CMD", "SPAM");
+            log_name_and_loc(executor);
+            log_text(" entered: ");
+            log_text(pOriginalCommand);
+            ENDLOG; 
+        }
+        mudstate.bStackLimitReached = 0;
+
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
     }
@@ -1526,6 +1538,15 @@ char *process_command
         }
         process_cmdent(cmdp, pSlash, executor, caller, enactor, interactive,
             arg, pCommand, args, nargs);
+        if (mudstate.bStackLimitReached)
+        {
+            STARTLOG(LOG_ALWAYS, "CMD", "SPAM");
+            log_name_and_loc(executor);
+            log_text(" entered: ");
+            log_text(pOriginalCommand);
+            ENDLOG; 
+        }
+        mudstate.bStackLimitReached = 0;
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
     }

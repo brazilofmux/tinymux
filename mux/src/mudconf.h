@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.4 2002-06-19 21:52:38 jake Exp $
+// $Id: mudconf.h,v 1.5 2002-06-30 06:24:28 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -121,6 +121,7 @@ struct confdata
     int     allow_guest_from_registered_site; // Whether guests from registered sites are allowed.
     int     eval_comtitle;  /* Should Comtitles Evaluate? */
     int     autozone;       // New objects are automatically zoned.
+    int     nStackLimit;    // Current stack limit.
 
     unsigned int max_cache_size; /* Max size of attribute cache */
 
@@ -352,6 +353,8 @@ struct statedata
     char    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
     int     nObjEvalNest;      // The nesting level of objeval()
                                // invocations.
+    BOOL    bStackLimitReached; // Was stack slammed?
+    int     nStackNest;        // Current stack depth.
 #endif
     int     logging;    /* Are we in the middle of logging? */
     int     attr_next;  /* Next attr to alloc when freelist is empty */

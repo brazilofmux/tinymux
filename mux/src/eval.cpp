@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.10 2002-06-27 06:38:31 jake Exp $
+// $Id: eval.cpp,v 1.11 2002-06-30 06:24:28 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1079,6 +1079,11 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     {
         return;
     }
+    if (mudstate.nStackNest > mudconf.nStackLimit)
+    {
+        mudstate.bStackLimitReached = TRUE;
+        return;
+    }
 
     char *pdstr = *dstr;
 
@@ -1789,6 +1794,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             // continue.
             //
             tstr = pdstr++;
+            mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, ']', '\0', &at_space, &at_space);
             at_space = 0;
             if (pdstr == NULL)
@@ -1802,6 +1808,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             }
             else
             {
+                mudstate.nStackNest--;
                 TempPtr = tbuf;
                 TinyExec( buff, bufc, executor, caller, enactor,
                           (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, &TempPtr,
@@ -1841,6 +1848,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             // continue.
             //
             tstr = pdstr++;
+            mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, '}', '\0', &at_space, &at_space);
             at_space = 0;
             if (pdstr == NULL)
@@ -1854,6 +1862,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             }
             else
             {
+                mudstate.nStackNest--;
                 if (!(eval & EV_STRIP_CURLY))
                 {
                     if (nBufferAvailable)

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.5 2002-06-27 06:38:31 jake Exp $
+// $Id: conf.cpp,v 1.6 2002-06-30 06:24:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -249,6 +249,8 @@ void cf_init(void)
     mudconf.run_startup = TRUE;
     mudconf.safe_wipe = FALSE;
     mudconf.destroy_going_now = FALSE;
+    mudconf.nStackLimit = 10000;
+
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = FALSE;
     mudstate.bCanRestart = FALSE;
@@ -307,6 +309,9 @@ void cf_init(void)
     }
     mudstate.nObjEvalNest = 0;
     mudstate.in_loop = 0;
+    mudstate.bStackLimitReached = FALSE;
+    mudstate.nStackNest = 0;
+
 #else // STANDALONE
     mudconf.paylimit = 10000;
     mudconf.digcost = 10;
