@@ -6759,9 +6759,9 @@ FDIV()
 MOD()
 
   FUNCTION: mod(<integer1>,<integer2>)
- 
+
   Returns the integer remainder from dividing <integer1> by <integer2>.
- 
+
   Example:
     > say mod(15,3)
     You say "0"
@@ -6771,7 +6771,7 @@ MOD()
     You say "2"
     > say mod(18,3)
     You say "0"
-  
+
   Related Topics: add(), fdiv(), div(), mul(), round(), sub(), trunc().
 
 & DIST2D()
@@ -7383,9 +7383,9 @@ NEXT()
 & AND()
 AND()
 
-  FUNCTION: and(<boolean1>,<boolean2>[,<booleanN>]...)
+  FUNCTION: and(<boolean1>[,<booleanN>]...)
  
-  Takes two or more booleans, and returns 1 if they are all each 
+  Takes one or more booleans, and returns 1 if they are all each 
   equivalent to true(1).
  
   Related Topics: BOOLEAN VALUES, or(), not(), xor().
@@ -7393,33 +7393,33 @@ AND()
 & OR()
 OR()
 
-  FUNCTION: or(<boolean1>,<boolean2>[,<booleanN>]...)
- 
-  Takes two or more booleans, and returns 1 if at least one is equivalent
+  FUNCTION: or(<boolean1>[,<booleanN>]...)
+
+  Takes one or more booleans, and returns 1 if at least one is equivalent
   to true(1).
- 
+
   Related Topics: BOOLEAN VALUES, and(), not(), xor().
 
 & NOT()
 NOT()
 
   FUNCTION: not(<boolean>)
- 
+
   Takes a boolean value, and returns its inverse.  So, if the input is
   equivalent to true(1) it returns a 0, and if the input is equivalent to
   false(0), it returns a 1.
- 
+
   Related Topics: BOOLEAN VALUES, and(), or(), xor().
 
 & XOR()
 XOR()
 
-  FUNCTION: xor(<boolean1>,<boolean2>[,<booleanN>]...)
- 
-  Takes two or more booleans, and returns 1 if an odd number of them are
+  FUNCTION: xor(<boolean1>[,<booleanN>]...)
+
+  Takes one or more booleans, and returns 1 if an odd number of them are
   equivalent to true(1).
- 
-  Related Topics: BOOLEAN VALUES, and(), nor(), or().
+
+  Related Topics: BOOLEAN VALUES, and(), not(), or().
 
 & GT()
 GT()
@@ -9636,16 +9636,19 @@ MATCHALL()
 PORTS()
 
   FUNCTION: ports(<player name>)
- 
+
   This function returns the list of descriptors ("ports") that a player,
-  specified by full player name, or by dbref, is connected to. Only Wizards
-  may use this function; if a user lacks the privileges, or the player is
-  not connected, an empty list is returned. Otherwise, a list of ports is
-  returned in order of most recent connection to least recent connection.
-  These ports correspond to those given by the SESSION command.
-  
+  specified by full player name, or by dbref, is connected to. Wizards
+  can use this function on anyone, but mortals can only use it on
+  themselves.
+
+  If the <player> is not connected, an empty list is returned. Otherwise,
+  a list of ports is returned in order of most recent connection to least
+  recent connection. These ports correspond to those given by the SESSION
+  command.
+
   Related Topics:
-  
+
 & ELEMENTS()
 ELEMENTS()
 
