@@ -7243,7 +7243,7 @@ EXTRACT()
     You say "really neat"
     > say extract(Another@funky@test@for@extract, 3, 3)
     You say "test@for@extract" 
-  
+
   Related Topics: index(), insert(), ldelete(), replace().
 
 & INDEX()
@@ -7643,16 +7643,17 @@ STARTTIME()
   Example:
     > say starttime()
     You say "Sat Dec  7 00:09:13 1991
-
-  See also: convtime().
+  
+  Related Topics: convtime().
 
 & SECS()
+SECS()
 
-  Function: secs([<zonename>])
+  FUNCTION: secs([<zonename>])
 
   The optional <zonename> parameter may be "utc" or "local". If no
   <zonename> is given, "utc" is assumed.
-  
+
     local - Returns an integer which corresponds to the current local
             time on the machine running the MUX. This integer is
             affected by timezones and daylight savings time and is
@@ -7674,11 +7675,12 @@ STARTTIME()
      > say secs(local)
      You say "957532580"
 
-  See also: convsecs(), convtime(), time().
+  Related Topics: convsecs(), convtime(), time().
 
 & WORDS()
+WORDS()
 
-  words(<string>[, <delim>])
+  FUNCTION: words(<string>[, <delim>])
  
   Returns the number of words in <string>.  <delim> may be used to specify
   a delimiter other than a space.
@@ -7690,10 +7692,13 @@ STARTTIME()
     > You say "7"
     say words(This:is:a:colon:separated:list,:)
     > You say "6"
+    
+  Related Topics:
 
 & VERSION()
+VERSION()
 
-  Function: version()
+  FUNCTION: version()
  
   Returns a string which contains various version information for the MUX
   you're on.
@@ -7704,10 +7709,14 @@ STARTTIME()
      Build date: Thu Dec  5 10:10:07 EST 1991
      > say version()
      You say "TinyMUX Beta version 2.0 patchlevel 0 #3"
+   
+  
+  Related Topics:
 
 & HOME()
+HOME()
 
-  home(<object>)
+  FUNCTION: home(<object>)
  
   Returns the object's home.
  
@@ -7722,13 +7731,17 @@ STARTTIME()
     Location: The Town Square
     > say home(me)
     You say "#367"
-
+ 
+  Related Topics:
+  
 & MONEY()
+MONEY()
 
-  Function: money(<object>)
+  FUNCTION: money(<object>)
  
   Returns an integer equal to the amount of money <object> has (if it is a
   player) or is worth (otherwise).
+  
   Example:
     > score
     You have 1052 clams.
@@ -7742,10 +7755,13 @@ STARTTIME()
     Location: The Town Square
     > say money(sac test)
     You say "20"
-
+  
+  Related Topics:
+  
 & LCON()
+LCON()
 
-  Function: lcon(<object>)
+  FUNCTION: lcon(<object>)
  
   Returns a space-separated list of the contents of <object> which are
   visible to the person running the function.
@@ -7758,11 +7774,13 @@ STARTTIME()
     You have 42463 clams.
     > say lcon(me)
     You say "#366 #223 #188"
-  See also: lexits(), @dolist.
+  
+  Related Topics: lexits(), @dolist.
 
 & LEXITS()
+LEXITS()
 
-  Function: lexits(<loc>)
+  FUNCTION: lexits(<loc>)
  
   Returns a space-separated list of the exits in <loc> and its parents.
   Dark exits are not returned unless you own the location.
@@ -7775,11 +7793,13 @@ STARTTIME()
     foo  up  southeast  sw  north  
     > say lexits(here)
     You say "#302 #10 #9 #8 #6"
-  See also: lcon(), @dolist, PARENT OBJECTS.
+  
+  Related Topics: lcon(), @dolist, PARENT OBJECTS.
 
 & SECURE()
+SECURE()
 
-  Function: secure(<string>)
+  FUNCTION: secure(<string>)
  
   Returns <string> after replacing the characters [](){};%\$ with spaces.
   This prevents strings entered by players from causing undesired side
@@ -7799,11 +7819,13 @@ STARTTIME()
   produce the expected result because the argument is evaluated BEFORE being
   processed by secure(), therefore the [get()] call has already been
   performed.
-  See also: escape().
+  
+  Related Topics: escape().
 
 & ESCAPE()
+ESCAPE()
 
-  Function: escape(<string>)
+  FUNCTION: escape(<string>)
  
   Returns <string> after adding an escape character (\) at the start of the
   string and also before each of the characters %;[]{}\ that appear in the
@@ -7823,10 +7845,13 @@ STARTTIME()
   produce the expected result because the argument is evaluated BEFORE being
   processed by escape(), therefore the [get()] call has already been
   performed.
-  See also: secure().
+  
+  Related Topics: secure().
 
 & MUDNAME()
-  Function: mudname()
+MUDNAME()
+
+  FUNCTION: mudname()
  
   Returns the name of the MUD.  This is usually (but not necessarily) the name
   that appears in the various mud lists, and is the name that the mud is
@@ -7836,10 +7861,13 @@ STARTTIME()
   Example:
     > say mudname()
     You say "TestMUX"
-
+  
+  Related Topics:
+  
 & CAPSTR()
+CAPSTR()
 
-  Function: capstr(<string>)
+  FUNCTION: capstr(<string>)
  
   Returns <string> with the first character capitalized.  If the first
   character is not a letter, this function returns the string unmodified.
