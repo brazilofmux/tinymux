@@ -418,7 +418,7 @@ Bug Fixes:
  --  search() now uses the DbrefToBuffer() calls to ensure that returned
      dbrefs aren't truncated in the middle of the number.
  --  Workaround nonstandard continuation-line behavior of gcc 2.96 on
-     Mandrake 8.0.
+     Mandrake 8.0. Thanks Marlek.
 
 
 Performance Enhancements:
