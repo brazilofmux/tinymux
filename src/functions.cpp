@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.8 2000-04-15 15:42:15 sdennis Exp $
+// $Id: functions.cpp,v 1.9 2000-04-16 07:43:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5578,53 +5578,48 @@ FUNCTION(fun_setinter)
 
 FUNCTION(fun_ljust)
 {
-    int spaces, i;
     char sep;
 
     varargs_preamble("LJUST", 3);
-    spaces = Tiny_atol(fargs[1]) - strlen((char *)strip_ansi(fargs[0]));
+    int nPad = Tiny_atol(fargs[1]) - strlen(strip_ansi(fargs[0]));
 
-    /*
-     * Sanitize number of spaces 
-     */
-
-    if (spaces <= 0) {
-        /*
-         * no padding needed, just return string 
-         */
-        safe_str(fargs[0], buff, bufc);
-        return;
-    } else if (spaces > LBUF_SIZE) {
-        spaces = LBUF_SIZE;
-    }
     safe_str(fargs[0], buff, bufc);
-    for (i = 0; i < spaces; i++)
-        safe_chr(sep, buff, bufc);
+
+    if (nPad > 0)
+    {
+        int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+        if (nPad > nBufferAvailable)
+        {
+            nPad = nBufferAvailable;
+        }
+
+        // Fill with padding character.
+        //
+        memset(*bufc, sep, nPad);
+        *bufc += nPad;
+    }
 }
 
 FUNCTION(fun_rjust)
 {
-    int spaces, i;
     char sep;
 
     varargs_preamble("RJUST", 3);
-    spaces = Tiny_atol(fargs[1]) - strlen((char *)strip_ansi(fargs[0]));
+    int nPad = Tiny_atol(fargs[1]) - strlen(strip_ansi(fargs[0]));
 
-    /*
-     * Sanitize number of spaces 
-     */
+    if (nPad > 0)
+    {
+        int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+        if (nPad > nBufferAvailable)
+        {
+            nPad = nBufferAvailable;
+        }
 
-    if (spaces <= 0) {
-        /*
-         * no padding needed, just return string 
-         */
-        safe_str(fargs[0], buff, bufc);
-        return;
-    } else if (spaces > LBUF_SIZE) {
-        spaces = LBUF_SIZE;
+        // Fill with padding character.
+        //
+        memset(*bufc, sep, nPad);
+        *bufc += nPad;
     }
-    for (i = 0; i < spaces; i++)
-        safe_chr(sep, buff, bufc);
     safe_str(fargs[0], buff, bufc);
 }
 
