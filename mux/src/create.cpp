@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.14 2002-08-03 19:34:21 sdennis Exp $
+// $Id: create.cpp,v 1.15 2002-08-14 00:06:57 jake Exp $
 //
 
 #include "copyright.h"
@@ -382,14 +382,14 @@ void do_parent
     init_match(executor, tname, NOTYPE);
     match_everything(0);
     thing = noisy_match_result();
-    if (thing == NOTHING)
+    if (!Good_obj(thing))
     {
         return;
     }
 
     // Make sure we can do it.
     //
-    if (isGarbage(thing) || Going(thing) || !Controls(executor, thing))
+    if (Going(thing) || !Controls(executor, thing))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
         return;
@@ -402,8 +402,10 @@ void do_parent
         init_match(executor, pname, Typeof(thing));
         match_everything(0);
         parent = noisy_match_result();
-        if (parent == NOTHING)
+        if (!Good_obj(parent))
+        {
             return;
+        }
 
         // Make sure we have rights to set parent.
         //
@@ -659,7 +661,7 @@ void do_clone
     // Clear out problem flags from the original
     //
     rmv_flags = WIZARD;
-    if (!(key & CLONE_INHERIT) || (!Inherits(executor)))
+    if (!(key & CLONE_INHERIT) || !Inherits(executor))
     {
         rmv_flags |= INHERIT | IMMORTAL;
     }

@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.34 2002-07-27 10:49:01 jake Exp $
+// $Id: comsys.cpp,v 1.35 2002-08-14 00:06:57 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1732,7 +1732,7 @@ void do_cleanupchannels(void)
         {
             if (isPlayer(user->who))
             {
-                if (!(do_test_access(user->who, CHANNEL_JOIN, ch)))
+                if (!do_test_access(user->who, CHANNEL_JOIN, ch))
                 //if (!Connected(user->who))
                 {
                     // Go looking for user in the array.

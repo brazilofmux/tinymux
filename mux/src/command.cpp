@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.65 2002-08-09 03:05:35 jake Exp $
+// $Id: command.cpp,v 1.66 2002-08-14 00:06:57 jake Exp $
 //
 
 #include "copyright.h"
@@ -1555,7 +1555,7 @@ char *process_command
     // Make sure player isn't going or halted.
     //
     if (  Going(executor)
-       || (Halted(executor) && !((Typeof(executor) == TYPE_PLAYER) && interactive)))
+       || (Halted(executor) && !(isPlayer(executor) && interactive)))
     {
         notify(Owner(executor), tprintf("Attempt to execute command by halted object #%d", executor));
         mudstate.debug_cmd = cmdsave;
@@ -2313,7 +2313,7 @@ static void list_cmdtable(dbref player)
 
     // Players get the list of logged-out cmds too
     //
-    if (Typeof(player) == TYPE_PLAYER)
+    if (isPlayer(player))
     {
         display_nametab(player, logout_cmdtable, buf, TRUE);
     }

@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.21 2002-07-23 15:51:11 jake Exp $
+// $Id: speech.cpp,v 1.22 2002-08-14 00:06:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -193,12 +193,11 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         }
         if (say_flags & SAY_ROOM)
         {
-            if ((Typeof(loc) == TYPE_ROOM) && (say_flags & SAY_HERE))
+            if (isRoom(loc) && (say_flags & SAY_HERE))
             {
                 return;
             }
-            depth = 0;
-            while ((Typeof(loc) != TYPE_ROOM) && (depth++ < 20))
+            for (depth = 0; !isRoom(loc) && (depth < 20); depth++)
             {
                 loc = Location(loc);
                 if (!Good_obj(loc) || (loc == Location(loc)))
@@ -206,7 +205,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
                     return;
                 }
             }
-            if (Typeof(loc) == TYPE_ROOM)
+            if (isRoom(loc))
             {
                 notify_all_from_inside(loc, executor, message);
             }

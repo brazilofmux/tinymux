@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.11 2002-08-03 19:34:21 sdennis Exp $
+// $Id: player.cpp,v 1.12 2002-08-14 00:06:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -556,7 +556,7 @@ void load_player_names(void)
     dbref i;
     DO_WHOLE_DB(i)
     {
-        if (Typeof(i) == TYPE_PLAYER)
+        if (isPlayer(i))
         {
             add_player_name(i, Name(i));
         }
@@ -564,7 +564,7 @@ void load_player_names(void)
     char *alias = alloc_lbuf("load_player_names");
     DO_WHOLE_DB(i)
     {
-        if (Typeof(i) == TYPE_PLAYER)
+        if (isPlayer(i))
         {
             dbref aowner;
             int aflags;

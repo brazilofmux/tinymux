@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.24 2002-08-08 04:28:47 sdennis Exp $
+// $Id: look.cpp,v 1.25 2002-08-14 00:06:57 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -930,31 +930,24 @@ static void look_atrs(dbref player, dbref thing, BOOL check_parents)
         ITER_PARENTS(thing, parent, lev)
         {
             if (!Good_obj(Parent(parent)))
+            {
                 hash_insert = FALSE;
-            look_atrs1(player, parent, thing,
-                check_exclude, hash_insert);
+            }
+            look_atrs1(player, parent, thing, check_exclude, hash_insert);
             check_exclude = TRUE;
         }
     }
 }
 
-
 static void look_simple(dbref player, dbref thing, BOOL obey_terse)
 {
-    int pattr;
-    char *buff;
-    int iDescDefault, iADescDefault;
-#ifdef WOD_REALMS
-    int iRealmDirective;
-#endif
-
     // Only makes sense for things that can hear.
     //
     if (!Hearer(player))
         return;
 
 #ifdef WOD_REALMS
-    iRealmDirective = DoThingToThingVisibility(player, thing, ACTION_IS_STATIONARY);
+    int iRealmDirective = DoThingToThingVisibility(player, thing, ACTION_IS_STATIONARY);
     if (REALM_DO_HIDDEN_FROM_YOU == iRealmDirective)
     {
         notify(player, NOMATCH_MESSAGE);
@@ -966,21 +959,22 @@ static void look_simple(dbref player, dbref thing, BOOL obey_terse)
     //
     if (Examinable(player, thing))
     {
-        buff = unparse_object(player, thing, TRUE);
+        char *buff = unparse_object(player, thing, TRUE);
         notify(player, buff);
         free_lbuf(buff);
     }
-    iDescDefault = A_DESC;
-    iADescDefault = A_ADESC;
+    int iDescDefault = A_DESC;
+    int iADescDefault = A_ADESC;
 
 #ifdef WOD_REALMS
     LetDescriptionsDefault(thing, &iDescDefault, &iADescDefault, iRealmDirective);
 #endif
 
-    pattr = (obey_terse && Terse(player)) ? 0 : iDescDefault;
+    int pattr = (obey_terse && Terse(player)) ? 0 : iDescDefault;
     did_it(player, thing, pattr, "You see nothing special.", A_ODESC, NULL, iADescDefault, (char **)NULL, 0);
 
-    if (!mudconf.quiet_look && (!Terse(player) || mudconf.terse_look))
+    if (  !mudconf.quiet_look 
+       && (!Terse(player) || mudconf.terse_look))
     {
         look_atrs(player, thing, FALSE);
     }
@@ -988,19 +982,11 @@ static void look_simple(dbref player, dbref thing, BOOL obey_terse)
 
 static void show_a_desc(dbref player, dbref loc)
 {
-    char *got2;
-    dbref aowner;
-    int aflags;
     int iDescDefault = A_DESC;
     int iADescDefault = A_ADESC;
-#ifdef WOD_REALMS
-    int iRealmDirective;
-#endif
-
-    BOOL indent = (isRoom(loc) && mudconf.indent_desc && atr_get_raw(loc, A_DESC));
 
 #ifdef WOD_REALMS
-    iRealmDirective = DoThingToThingVisibility(player, loc, ACTION_IS_STATIONARY);
+    int iRealmDirective = DoThingToThingVisibility(player, loc, ACTION_IS_STATIONARY);
     if (REALM_DO_HIDDEN_FROM_YOU == iRealmDirective)
     {
         return;
@@ -1008,9 +994,13 @@ static void show_a_desc(dbref player, dbref loc)
     LetDescriptionsDefault(loc, &iDescDefault, &iADescDefault, iRealmDirective);
 #endif
 
+    dbref aowner;
+    int aflags;
+    BOOL indent = (isRoom(loc) && mudconf.indent_desc && atr_get_raw(loc, A_DESC));
+
     if (Html(player))
     {
-        got2 = atr_pget(loc, A_HTDESC, &aowner, &aflags);
+        char *got2 = atr_pget(loc, A_HTDESC, &aowner, &aflags);
         if (*got2)
         {
             did_it(player, loc, A_HTDESC, NULL, A_ODESC, NULL, A_ADESC, (char **) NULL, 0);
@@ -1053,7 +1043,7 @@ static void show_desc(dbref player, dbref loc, int key)
     {
         did_it(player, loc, 0, NULL, A_ODESC, NULL, A_ADESC, (char **)NULL, 0);
     }
-    else if ((Typeof(loc) != TYPE_ROOM) && (key & LK_IDESC))
+    else if (!isRoom(loc) && (key & LK_IDESC))
     {
         if (*(got = atr_pget(loc, A_IDESC, &aowner, &aflags)))
             did_it(player, loc, A_IDESC, NULL, A_ODESC, NULL, A_ADESC, (char **)NULL, 0);
@@ -1130,7 +1120,7 @@ void look_in(dbref player, dbref loc, int key)
 
     if (!Good_obj(loc))
     {
-        // If we went to NOTHING et all, then skip the rest.
+        // If we went to NOTHING et al, then skip the rest.
         //
         return;
     }
@@ -1152,7 +1142,7 @@ void look_in(dbref player, dbref loc, int key)
 
     // Tell him the appropriate messages if he has the key.
     //
-    if (Typeof(loc) == TYPE_ROOM)
+    if (isRoom(loc))
     {
         int pattr, oattr, aattr;
         if (could_doit(player, loc, A_LOCK))
@@ -1217,7 +1207,7 @@ void do_look(dbref executor, dbref caller, dbref enactor, int key, char *name)
         {
             if (key & LOOK_OUTSIDE)
             {
-                if (  Typeof(thing) == TYPE_ROOM
+                if (  isRoom(thing)
                    || Opaque(thing))
                 {
                     notify_quiet(executor, "You can't look outside.");
@@ -1422,7 +1412,7 @@ static void exam_wildattrs
             got_any = TRUE;
             view_atr(player, thing, ap, buf, aowner, aflags, 0);
         }
-        else if (  (Typeof(thing) == TYPE_PLAYER)
+        else if (  isPlayer(thing)
                 && bCanReadAttr(player, thing, ap, do_parent))
         {
             got_any = TRUE;

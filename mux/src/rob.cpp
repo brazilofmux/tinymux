@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.8 2002-07-09 22:31:08 jake Exp $
+// $Id: rob.cpp,v 1.9 2002-08-14 00:06:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -185,7 +185,6 @@ void do_kill
 
 static void give_thing(dbref giver, dbref recipient, int key, char *what)
 {
-
     init_match(giver, what, TYPE_THING);
     match_possession();
     match_me();
@@ -279,7 +278,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     }
     if (!Wizard(giver))
     {
-        if (  (Typeof(recipient) == TYPE_PLAYER)
+        if (  isPlayer(recipient)
            && (Pennies(recipient) + amount > mudconf.paylimit))
         {
             notify(giver, tprintf("That player doesn't need that many %s!",
@@ -303,7 +302,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     // Find out cost if an object.
     //
     int cost;
-    if (Typeof(recipient) == TYPE_THING)
+    if (isThing(recipient))
     {
         dbref aowner;
         int aflags;

@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.8 2002-08-03 18:50:17 sdennis Exp $
+// $Id: db_rw.cpp,v 1.9 2002-08-14 00:06:57 jake Exp $
 //
 
 #include "copyright.h"
@@ -917,7 +917,7 @@ dbref db_write(FILE *f, int format, int version)
         iDotCounter--;
 #endif
 
-        if (!(isGarbage(i)))
+        if (!isGarbage(i))
         {
             // Format is: "!%d\n", i
             //

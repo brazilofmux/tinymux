@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.14 2002-08-09 03:05:35 jake Exp $
+// $Id: wiz.cpp,v 1.15 2002-08-14 00:06:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -288,7 +288,7 @@ void do_toad
     match_neighbor();
     match_absolute();
     match_player();
-    if ((victim = noisy_match_result()) == NOTHING)
+    if (!Good_obj(victim = noisy_match_result()))
     {
         return;
     }

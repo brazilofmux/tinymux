@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.28 2002-07-28 19:18:43 jake Exp $
+// $Id: set.cpp,v 1.29 2002-08-14 00:06:58 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1013,24 +1013,17 @@ void do_set
 
     // Find thing.
     //
-    if ((thing = match_controlled(executor, name)) == NOTHING)
+    thing = match_controlled(executor, name);
+    if (!Good_obj(thing))
     {
         return;
     }
-
-    if (isGarbage(thing))
-    {
-        notify_quiet(executor, "You shouldn't be rummaging through the garbage.");
-        return;
-    }
-
 
     // Check for attribute set first.
     //
     for (p = flag; *p && (*p != ':'); p++)
     {
-        // Nothing
-        ;
+        ; // Nothing.
     }
 
     if (*p)
@@ -1134,13 +1127,8 @@ void do_setattr
     match_everything(MAT_EXIT_PARENTS);
     dbref thing = noisy_match_result();
 
-    if (thing == NOTHING)
+    if (!Good_obj(thing))
     {
-        return;
-    }
-    if (isGarbage(thing))
-    {
-        notify_quiet(executor, "You shouldn't be rummaging through the garbage.");
         return;
     }
     set_attr_internal(executor, thing, attrnum, attrtext, 0);

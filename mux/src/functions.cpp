@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.80 2002-08-11 21:46:51 jake Exp $
+// $Id: functions.cpp,v 1.81 2002-08-14 00:06:57 jake Exp $
 //
 
 #include "copyright.h"
@@ -2608,7 +2608,7 @@ void internalPlayerFind
             nptr++;
         }
         thing = lookup_player(player, nptr, TRUE);
-        if (  (thing == NOTHING)
+        if (  (!Good_obj(thing))
            || (!isPlayer(thing) && bVerifyPlayer))
         {
             safe_nomatch(buff, bufc);
@@ -9037,8 +9037,7 @@ FUNCTION(fun_lflags)
     }
     BOOL bFirst = TRUE;
     if (  mudconf.pub_flags
-       || Examinable(executor, target)
-       || target == enactor)
+       || Examinable(executor, target))
     {
         FLAGNAMEENT *fp;
         for (fp = gen_flag_names; fp->flagname; fp++)

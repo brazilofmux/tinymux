@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.38 2002-08-11 21:46:51 jake Exp $
+// $Id: db.cpp,v 1.39 2002-08-14 00:06:57 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3022,7 +3022,7 @@ void load_restart_db(void)
         desc_addhash(d);
         if (isPlayer(d->player))
         {
-            s_Flags(d->player, FLAG_WORD2, Flags2(d->player) | CONNECTED);
+            s_Connected(d->player);
         }
     }
 

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.14 2002-07-28 17:12:50 jake Exp $
+// $Id: cque.cpp,v 1.15 2002-08-14 00:06:57 jake Exp $
 //
 
 #include "copyright.h"
@@ -425,7 +425,7 @@ int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
                 // Allow the command to run. The priority may have been
                 // PRIORITY_SUSPEND, so we need to change it.
                 //
-                if (Typeof(point->enactor) == TYPE_PLAYER)
+                if (isPlayer(point->enactor))
                 {
                     p->iPriority = PRIORITY_PLAYER;
                 }
@@ -468,7 +468,7 @@ int CallBack_NotifySemaphoreFirstOrQuiet(PTASK_RECORD p)
             // Allow the command to run. The priority may have been
             // PRIORITY_SUSPEND, so we need to change it.
             //
-            if (Typeof(point->enactor) == TYPE_PLAYER)
+            if (isPlayer(point->enactor))
             {
                 p->iPriority = PRIORITY_PLAYER;
             }
@@ -788,7 +788,7 @@ void wait_que
     }
 
     int iPriority;
-    if (Typeof(tmp->enactor) == TYPE_PLAYER)
+    if (isPlayer(tmp->enactor))
     {
         iPriority = PRIORITY_PLAYER;
     }
@@ -1124,8 +1124,10 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
         else
         {
             executor_targ = Owner(executor);
-            if (Typeof(executor) != TYPE_PLAYER)
+            if (!isPlayer(executor))
+            {
                 obj_targ = executor;
+            }
         }
     }
     else
@@ -1141,7 +1143,7 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
             notify(executor, "Can't specify a target and /all");
             return;
         }
-        if (Typeof(obj_targ) == TYPE_PLAYER)
+        if (isPlayer(obj_targ))
         {
             executor_targ = obj_targ;
             obj_targ = NOTHING;

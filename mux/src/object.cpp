@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.27 2002-08-03 19:34:21 sdennis Exp $
+// $Id: object.cpp,v 1.28 2002-08-14 00:06:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -1530,23 +1530,6 @@ static void check_loc_contents(dbref loc)
                 s_Contents(loc, NOTHING);
             }
             obj = NOTHING;
-        }
-        else if (Going(obj) && (Typeof(obj) == TYPE_GARBAGE))
-        {
-            // Going - silently filter out.
-            //
-            dbref temp = Next(obj);
-            if (back != NOTHING)
-            {
-                s_Next(back, temp);
-            }
-            else
-            {
-                s_Contents(loc, temp);
-            }
-            destroy_obj(obj);
-            obj = temp;
-            continue;
         }
         else if (Marked(obj))
         {
