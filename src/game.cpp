@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.14 2000-06-07 19:17:58 sdennis Exp $
+// $Id: game.cpp,v 1.15 2000-08-02 23:41:35 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -55,8 +55,6 @@ extern CRITICAL_SECTION csDescriptorList;      // for thread synchronisation
 #ifdef CONCENTRATE
 int conc_pid = 0;
 #endif
-extern pid_t slave_pid;
-extern SOCKET slave_socket;
 #endif // WIN32
 #ifdef MEMORY_BASED
 int corrupt = 0;
