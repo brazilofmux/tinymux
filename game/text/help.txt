@@ -6473,6 +6473,17 @@ IFELSE()
 
   Related Topics: switch().
 
+& ILEV()
+ILEV()
+
+  FUNCTION: ilev()
+
+  Returns the nesting level of iter() and list() functions. Outside of any
+  iter() or list(), ilev() returns -1. The first level is indicated by 0, the
+  second by 1, etc.
+
+  Related Topics: iter(), list().
+
 & IMMORTAL
 IMMORTAL
 
