@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.51 2004-04-18 04:06:36 sdennis Exp $
+// $Id: funceval.cpp,v 1.52 2004-04-18 06:16:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -28,8 +28,8 @@
  */
 
 extern NAMETAB indiv_attraccess_nametab[];
-extern int countwords(char *, char);
-extern void arr2list(char *arr[], int alen, char *list, char **bufc, char sep);
+extern int countwords(char *str, SEP *psep);
+extern void arr2list(char *arr[], int alen, char *list, char **bufc, SEP *psep);
 extern void make_portlist(dbref, dbref, char *, char **);
 
 bool parse_and_get_attrib(dbref executor, char *fargs[], char **atext, dbref *thing, char *buff, char **bufc)
@@ -1915,12 +1915,12 @@ FUNCTION(fun_elements)
     //
     wordlist = alloc_lbuf("fun_elements.wordlist");
     strcpy(wordlist, fargs[0]);
-    nwords = list2arr(ptrs, LBUF_SIZE / 2, wordlist, sep.str[0]);
+    nwords = list2arr(ptrs, LBUF_SIZE / 2, wordlist, &sep);
 
-    SEP sep2;
-    sep2.n = 1;
-    sep2.str[0] = ' ';
-    s = trim_space_sep(fargs[1], &sep2);
+    SEP sep_space;
+    sep_space.n = 1;
+    memcpy(sep_space.str, " ", 2);
+    s = trim_space_sep(fargs[1], &sep_space);
 
     // Go through the second list, grabbing the numbers and finding the
     // corresponding elements.
@@ -2042,7 +2042,7 @@ FUNCTION(fun_shuffle)
     char *words[LBUF_SIZE];
     int n, i, j;
 
-    n = list2arr(words, LBUF_SIZE, fargs[0], sep.str[0]);
+    n = list2arr(words, LBUF_SIZE, fargs[0], &sep);
 
     for (i = 0; i < n-1; i++)
     {
@@ -2054,7 +2054,7 @@ FUNCTION(fun_shuffle)
         words[i] = words[j];
         words[j] = temp;
     }
-    arr2list(words, n, buff, bufc, sep.str[0]);
+    arr2list(words, n, buff, bufc, &sep);
 }
 
 // pickrand -- choose a random item from a list.
@@ -2233,14 +2233,14 @@ FUNCTION(fun_sortby)
     char *list = alloc_lbuf("fun_sortby");
     strcpy(list, fargs[1]);
     char *ptrs[LBUF_SIZE / 2];
-    int nptrs = list2arr(ptrs, LBUF_SIZE / 2, list, sep.str[0]);
+    int nptrs = list2arr(ptrs, LBUF_SIZE / 2, list, &sep);
 
     if (nptrs > 1)
     {
         sane_qsort((void **)ptrs, 0, nptrs - 1, u_comp);
     }
 
-    arr2list(ptrs, nptrs, buff, bufc, sep.str[0]);
+    arr2list(ptrs, nptrs, buff, bufc, &sep);
     free_lbuf(list);
     free_lbuf(atext);
 }
@@ -2412,10 +2412,10 @@ FUNCTION(fun_mix)
         cp[i-1] = trim_space_sep(fargs[i], &sep);
     }
     int twords;
-    int nwords = countwords(cp[1], sep.str[0]);
+    int nwords = countwords(cp[1], &sep);
     for (i = 2; i<= lastn; i++) 
     {
-        twords = countwords(cp[i-1], sep.str[0]);
+        twords = countwords(cp[i-1], &sep);
         if (twords > nwords)
            nwords = twords;
     }
@@ -2559,7 +2559,7 @@ FUNCTION(fun_munge)
     int nptrs1, nptrs2, nresults, i, j;
     char *list1, *list2, *rlist, *bp, *str, *oldp;
     char *ptrs1[LBUF_SIZE / 2], *ptrs2[LBUF_SIZE / 2], *results[LBUF_SIZE / 2];
-    char *uargs[2], isep[2] = { '\0', '\0' };
+    char *uargs[2];
 
     oldp = *bufc;
 
@@ -2569,8 +2569,8 @@ FUNCTION(fun_munge)
     list2 = alloc_lbuf("fun_munge.list2");
     strcpy(list1, fargs[1]);
     strcpy(list2, fargs[2]);
-    nptrs1 = list2arr(ptrs1, LBUF_SIZE / 2, list1, sep.str[0]);
-    nptrs2 = list2arr(ptrs2, LBUF_SIZE / 2, list2, sep.str[0]);
+    nptrs1 = list2arr(ptrs1, LBUF_SIZE / 2, list1, &sep);
+    nptrs2 = list2arr(ptrs2, LBUF_SIZE / 2, list2, &sep);
 
     if (nptrs1 != nptrs2)
     {
@@ -2585,9 +2585,8 @@ FUNCTION(fun_munge)
     //
     bp = rlist = alloc_lbuf("fun_munge");
     str = atext;
-    isep[0] = sep.str[0];
     uargs[0] = fargs[1];
-    uargs[1] = isep;
+    uargs[1] = &sep;
     mux_exec(rlist, &bp, executor, caller, enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, uargs, 2);
     *bp = '\0';
@@ -2596,7 +2595,7 @@ FUNCTION(fun_munge)
     // Search through list1 until we find the element position, then
     // copy the corresponding element from list2.
     //
-    nresults = list2arr(results, LBUF_SIZE / 2, rlist, sep.str[0]);
+    nresults = list2arr(results, LBUF_SIZE / 2, rlist, &sep);
 
     for (i = 0; i < nresults; i++)
     {
@@ -2674,7 +2673,7 @@ FUNCTION(fun_lrand)
         {
             INT32 val = RandomINT32(iLower, iUpper);
             safe_ltoa(val, buff, bufc);
-            print_sep(sep.str[0], buff, bufc);
+            print_sep(&sep, buff, bufc);
         }
         INT32 val = RandomINT32(iLower, iUpper);
         safe_ltoa(val, buff, bufc);
@@ -3563,7 +3562,10 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
     //
     const int NSUBEXP = 36;
     char *qregs[NSUBEXP];
-    int nqregs = list2arr(qregs, NSUBEXP, registers, ' ');
+    SEP sep;
+    sep.n = 1;
+    memcpy(sep.str, " ", 2);
+    int nqregs = list2arr(qregs, NSUBEXP, registers, &sep);
     int iStart;
     int i;
     for (i = 0, iStart = 0; i < nqregs; i++, iStart += 2)
@@ -3620,7 +3622,7 @@ FUNCTION(fun_regmatchi)
  * instead of a wildcard pattern. The versions ending in i are case-insensitive.
  */
 
-void real_regrab(char *search, const char *pattern, char sep, char *buff,
+void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
                  char **bufc, bool cis, bool all)
 {
     pcre *re;
@@ -3647,13 +3649,10 @@ void real_regrab(char *search, const char *pattern, char sep, char *buff,
     }
 
     bool first = true;
-    SEP sep2;
-    sep2.n = 1;
-    sep2.str[0] = sep;
-    char *s = trim_space_sep(search, &sep2);
+    char *s = trim_space_sep(search, psep);
     do
     {
-        char *r = split_token(&s, sep);
+        char *r = split_token(&s, psep->str[0]);
         if (pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 1)
         {
             if (first) 
@@ -3662,7 +3661,7 @@ void real_regrab(char *search, const char *pattern, char sep, char *buff,
             }
             else
             {
-                safe_chr(sep, buff, bufc);
+                print_sep(psep, buff, bufc);
             }
             safe_str(r, buff, bufc);
             if (!all)
@@ -3686,7 +3685,7 @@ FUNCTION(fun_regrab)
     {
         return;
     }
-    real_regrab(fargs[0], fargs[1], sep.str[0], buff, bufc, false, false);
+    real_regrab(fargs[0], fargs[1], &sep, buff, bufc, false, false);
 }
 
 FUNCTION(fun_regrabi) 
@@ -3696,7 +3695,7 @@ FUNCTION(fun_regrabi)
     {
         return;
     }
-    real_regrab(fargs[0], fargs[1], sep.str[0], buff, bufc, true, false);
+    real_regrab(fargs[0], fargs[1], &sep, buff, bufc, true, false);
 }
 
 FUNCTION(fun_regraball) 
@@ -3706,7 +3705,7 @@ FUNCTION(fun_regraball)
     {
         return;
     }
-    real_regrab(fargs[0], fargs[1], sep.str[0], buff, bufc, false, true);
+    real_regrab(fargs[0], fargs[1], &sep, buff, bufc, false, true);
 }
 
 FUNCTION(fun_regraballi) 
@@ -3716,7 +3715,7 @@ FUNCTION(fun_regraballi)
     {
         return;
     }
-    real_regrab(fargs[0], fargs[1], sep.str[0], buff, bufc, true, true);
+    real_regrab(fargs[0], fargs[1], &sep, buff, bufc, true, true);
 }
 
 

@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.7 2004-04-18 04:06:36 sdennis Exp $
+// $Id: functions.h,v 1.8 2004-04-18 06:16:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -42,14 +42,7 @@ extern void list_functable(dbref);
 
 /* Special handling of separators. */
 
-#define print_sep(s,b,p) \
-if (s) { \
-    if (s != '\r') { \
-        safe_chr(s,b,p); \
-    } else { \
-        safe_str("\r\n",b,p); \
-    } \
-}
+#define print_sep(ps,b,p) safe_copy_buf((ps)->str,(ps)->n,(b),(p))
 
 #define MAX_SEP_LEN 15
 typedef struct
@@ -76,9 +69,9 @@ extern bool delim_check
     int sep_arg, SEP *sep, int dflags
 );
 
-extern int list2arr(char *arr[], int maxlen, char *list, char sep);
-extern char *trim_space_sep(char *str, SEP *sep);
-extern char *trim_space_sep_LEN(char *str, int nStr, SEP *sep, int *nTrim);
+extern int list2arr(char *arr[], int maxlen, char *list, SEP *psep);
+extern char *trim_space_sep(char *str, SEP *psep);
+extern char *trim_space_sep_LEN(char *str, int nStr, SEP *psep, int *nTrim);
 
 // This is the prototype for functions
 //
