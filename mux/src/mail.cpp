@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.25 2002-07-25 14:34:25 jake Exp $
+// $Id: mail.cpp,v 1.26 2002-07-25 17:33:20 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -27,7 +27,7 @@ static char *status_string(struct mail *);
 static char *get_folder_name(dbref, int);
 static char *mail_list_time(const char *);
 static char *make_numlist(dbref, char *);
-static char *make_namelist(dbref, char *);
+static char *make_namelist(char *);
 static void mail_to_list(dbref, char *, char *, char *, int, BOOL);
 
 #define SIZEOF_MALIAS 13
@@ -585,7 +585,7 @@ void do_mail_read(dbref player, char *msglist)
                 }
                 notify(player, DASH_LINE);
                 status = status_string(mp);
-                names = make_namelist(player, mp->tolist);
+                names = make_namelist(mp->tolist);
                 char szSubjectBuffer[MBUF_SIZE];
                 int iRealVisibleWidth;
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
@@ -972,7 +972,7 @@ void do_expmail_start(dbref player, char *arg, char *subject)
     atr_add_raw(player, A_MAILFLAGS, "0");
     atr_clr(player, A_MAILMSG);
     Flags2(player) |= PLAYER_MAILS;
-    char *names = make_namelist(player, tolist);
+    char *names = make_namelist(tolist);
     notify(player, tprintf("MAIL: You are sending mail to '%s'.", names));
     free_lbuf(names);
     free_lbuf(tolist);
@@ -1042,12 +1042,13 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
         notify(player, "MAIL: You can't reply to non-existent messages.");
         return;
     }
-    char *tolist;
+    char *tolist = alloc_lbuf("do_mail_reply.tolist");
+    char *bp = tolist;
     if (all)
     {
         char *names = alloc_lbuf("do_mail_reply.names");
         char *oldlist = alloc_lbuf("do_mail_reply.oldlist");
-        char *bp = names;
+        bp = names;
         *bp = '\0';
 
         strcpy(oldlist, mp->tolist);
@@ -1058,30 +1059,25 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
         char *p;
         for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
         {
-            if (*p == '*')
+            if (Tiny_atol(p) != mp->from)
             {
+                safe_chr('#', names, &bp);
                 safe_str(p, names, &bp);
-                safe_chr(' ', names, &bp);
-            }
-            else if (Tiny_atol(p) != mp->from)
-            {
-                safe_chr('"', names, &bp);
-                safe_str(Name(Tiny_atol(p)), names, &bp);
-                safe_chr('"', names, &bp);
                 safe_chr(' ', names, &bp);
             }
         }
         free_lbuf(oldlist);
-        safe_chr(' ', names, &bp);
-        safe_chr('"', names, &bp);
-        safe_str(Name(mp->from), names, &bp);
-        safe_chr('"', names, &bp);
+        safe_chr('#', names, &bp);
+        safe_ltoa(mp->from, names, &bp);
         *bp = '\0';
-        tolist = names;
+        strcpy(tolist, names);
+        free_lbuf(names);
     }
     else
     {
-        tolist = msg;
+        safe_chr('#', tolist, &bp);
+        safe_ltoa(mp->from, tolist, &bp);
+        *bp = '\0';
     }
 
     const char *pSubject = mp->subject;
@@ -1103,17 +1099,18 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
         atr_add_raw(player, A_MAILMSG, pMessageBody);
     }
 
-    char *pValue = atr_get_raw(player, A_MAILFLAGS);
+    int aflags;
+    dbref aowner;
+
+    char *pValue = atr_get(player, A_MAILFLAGS, &aowner, &aflags);
     int iFlag = M_REPLY;
     if (pValue)
     {
         iFlag |= Tiny_atol(pValue);
+        free_lbuf(pValue);
     }
-    atr_add_raw(player, A_MAILFLAGS, Tiny_ltoa_t(iFlag));
-    if (all)
-    {
-        free_lbuf(names);
-    }
+    atr_add(player, A_MAILFLAGS, Tiny_ltoa_t(iFlag), aowner, aflags);
+    free_lbuf(tolist);
 }
 
 /*-------------------------------------------------------------------------*
@@ -3250,14 +3247,14 @@ void do_mail_cc(dbref player, char *arg)
     *bp = '\0';
 
     atr_add_raw(player, A_MAILTO, fulllist);
-    char *names = make_namelist(player, fulllist);
+    char *names = make_namelist(fulllist);
     notify(player, tprintf("MAIL: You are sending mail to '%s'.", names));
     free_lbuf(names);
     free_lbuf(tolist);
     free_lbuf(fulllist);
 }
 
-static char *make_namelist(dbref player, char *arg)
+static char *make_namelist(char *arg)
 {
     char *p;
     char *oldarg = alloc_lbuf("make_namelist.oldarg");
@@ -3271,19 +3268,11 @@ static char *make_namelist(dbref player, char *arg)
     Tiny_StrTokControl(&tts, " ");
     for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
     {
-        if (*p == '*')
+        dbref target = Tiny_atol(p);
+        if (Good_obj(target) && isPlayer(target))
         {
-            safe_str(p, names, &bp);
+            safe_str(Name(target), names, &bp);
             safe_str(", ", names, &bp);
-        }
-        else
-        {
-            dbref target = Tiny_atol(p);
-            if (Good_obj(target) && isPlayer(target))
-            {
-                safe_str(Name(target), names, &bp);
-                safe_str(", ", names, &bp);
-            }
         }
     }
     *(bp - 2) = '\0';
@@ -3300,10 +3289,11 @@ static char *make_numlist(dbref player, char *arg)
     dbref target;
     int num;
 
+    ITL itl;
     char *numbuf = alloc_lbuf("make_numlist");
     char *numbp = numbuf;
-    *numbp = '\0';
     char *head = arg;
+    ItemToList_Init(&itl, numbuf, &numbp);
 
     while (head && *head)
     {
@@ -3337,52 +3327,40 @@ static char *make_numlist(dbref player, char *arg)
         spot = *tail;
         *tail = 0;
 
-        num = Tiny_atol(head);
-        if (num)
-        {
-            temp = mail_fetch(player, num);
-            if (!temp)
-            {
-                notify(player, "MAIL: You can't reply to nonexistent mail.");
-                free_lbuf(numbuf);
-                return NULL;
-            }
-            if (Good_obj(temp->from) && isPlayer(temp->from))
-            {
-                sprintf(buf, "%d ", temp->from);
-                safe_str(buf, numbuf, &numbp);
-            }
-        }
-        else if (*head == '*')
+        if (*head == '*')
         {
             int nResult;
             m = get_malias(player, head, &nResult);
             if (nResult == GMA_NOTFOUND)
             {
                 notify(player, tprintf("MAIL: Alias '%s' does not exist.", head));
+                ItemToList_Final(&itl);
                 free_lbuf(numbuf);
                 return NULL;
             }
             else if (nResult == GMA_INVALIDFORM)
             {
                 notify(player, tprintf("MAIL: '%s' is a badly-formed alias.", head));
+                ItemToList_Final(&itl);
                 free_lbuf(numbuf);
                 return NULL;
             }
-            safe_str(head, numbuf, &numbp);
-            safe_chr(' ', numbuf, &numbp);
+            for (int i = 0; i < m->numrecep; i++)
+            {
+                ItemToList_AddInteger(&itl, m->list[i]);
+            }
         }
         else
         {
             target = lookup_player(player, head, TRUE);
-            if (target != NOTHING)
+            if (Good_obj(target))
             {
-                sprintf(buf, "%d ", target);
-                safe_str(buf, numbuf, &numbp);
+                ItemToList_AddInteger(&itl, target);
             }
             else
             {
                 notify(player, tprintf("MAIL: '%s' does not exist.", head));
+                ItemToList_Final(&itl);
                 free_lbuf(numbuf);
                 return NULL;
             }
@@ -3401,12 +3379,13 @@ static char *make_numlist(dbref player, char *arg)
     if (!*numbuf)
     {
         notify(player, "MAIL: No players specified.");
+        ItemToList_Final(&itl);
         free_lbuf(numbuf);
         return NULL;
     }
     else
     {
-        *(numbp - 1) = '\0';
+        ItemToList_Final(&itl);
         return numbuf;
     }
 }
@@ -3690,7 +3669,7 @@ static void do_mail_proof(dbref player)
     *bp = '\0';
     free_lbuf(mailmsg);
 
-    char *names = make_namelist(player, mailto);
+    char *names = make_namelist(mailto);
     ANSI_TruncateToField(atr_get_raw(player, A_MAILSUB),
         sizeof(szSubjectBuffer), szSubjectBuffer, 35,
         &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
