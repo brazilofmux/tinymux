@@ -102,8 +102,8 @@ Feature Additions:
  -- Jake added train from RhostMUSH.
  -- Jake added itext() and inum() functions. Equivalent to ## and #@, for multiple
     levels of iter(). Idea from PennMUSH.
- -- Added CHR() from PennMUSH.
- -- Added ORD() from PennMUSH.
+ -- Added CHR() from RhostMUSH.
+ -- Added ORD() from RhostMUSH.
  -- Added STRIPACCENTS() from PennMUSH.
  -- Added NOACCENTS flag from PennMUSH.
  -- Added ACCENT() from PennMUSH.
