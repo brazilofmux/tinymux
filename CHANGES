@@ -177,6 +177,7 @@ Bug Fixes:
     from Zenty.
  -- Bug #783 - Could get a DARK guest by logging into a previous guest player
     with it's dbref. Patch from Zenty.
+ -- Fix SIGSEGV bug in new guest system from Build 35.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
