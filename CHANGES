@@ -73,6 +73,8 @@ Feature Additions:
     can now check for their owners.
  -- Added #$ substitution for switch() and @switch.
  -- Added ilev() for nesting level of iter() and list().
+ -- Added ISO8601 year and week ($g, $G, and $V codes) to timefmt.
+ -- conn() and idle() accept '*' before the playername.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -126,6 +128,11 @@ Bug Fixes:
  -- Remove vestigates of macros.
  -- Handle prematurely-chopped comsys.db files.
  -- Bug #548 - DS_AUTODARK was broken for multiple connections.
+ -- Re-work setunion, setinter, elements, and setdiff to handle lists more
+    consistently.
+ -- Fix potential unterminated buffer operation in setinter().
+ -- In an unlikely senario, the timezone offset info can be off by less
+    than 1 second.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
