@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.4 2002-06-03 20:01:09 sdennis Exp $
+// $Id: functions.cpp,v 1.5 2002-06-03 21:06:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -30,7 +30,7 @@ extern void cf_display(dbref, char *, char *, char **);
 // Function definitions from funceval.cpp
 //
 
-#define XFUNCTION(x) extern void x(char *buff, char **bufc, dbref player, dbref cause, char *fargs[], int nfargs, char *cargs[], int ncargs)
+#define XFUNCTION(x) extern void x(char *buff, char **bufc, dbref player, dbref caller, dbref cause, char *fargs[], int nfargs, char *cargs[], int ncargs)
 
 XFUNCTION(fun_cwho);
 XFUNCTION(fun_beep);

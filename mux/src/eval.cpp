@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.5 2002-06-03 20:36:54 sdennis Exp $
+// $Id: eval.cpp,v 1.6 2002-06-03 21:06:21 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1336,7 +1336,8 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         if (  fp->minArgs <= nfargs
                            && nfargs <= fp->maxArgs)
                         {
-                            fp->fun(buff, &oldp, executor, enactor, fargs, nfargs, cargs, ncargs);
+                            fp->fun(buff, &oldp, executor, caller, enactor,
+                                    fargs, nfargs, cargs, ncargs);
                         }
                         else
                         {

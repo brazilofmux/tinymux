@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: functions.h,v 1.2 2002-06-03 21:06:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -11,8 +11,9 @@
 typedef struct tagFun
 {
     char *name;     // function name
-    void (*fun)(char *buff, char **bufc, dbref player, dbref cause,
-        char *fargs[], int nfargs, char *cargs[], int ncargs);  // handler
+    void (*fun)(char *buff, char **bufc, dbref executor, dbref caller,
+        dbref enactor, char *fargs[], int nfargs, char *cargs[],
+        int ncargs);  // handler
     int maxArgsParsed;// Maximum number of arguments parsed.
     int minArgs;      // Minimum number of args needed or expected
     int maxArgs;      // Maximum number of arguments permitted
@@ -22,7 +23,7 @@ typedef struct tagFun
 
 typedef struct ufun {
     char *name;     /* function name */
-    dbref   obj;    /* Object ID */
+    dbref obj;      /* Object ID */
     int atr;        /* Attribute ID */
     int flags;      /* Function flags */
     int perms;      /* Access to function */
@@ -60,8 +61,9 @@ extern int list2arr(char *arr[], int maxlen, char *list, char sep);
 // This is the prototype for functions
 //
 #define FUNCTION(x) \
-    void x(char *buff, char **bufc, dbref player, dbref cause,        \
-        char *fargs[], int nfargs, char *cargs[], int ncargs)
+    void x(char *buff, char **bufc, dbref player, dbref caller,       \
+        dbref cause, char *fargs[], int nfargs, char *cargs[],        \
+        int ncargs)
 
 // This is for functions that take an optional delimiter character.
 //
