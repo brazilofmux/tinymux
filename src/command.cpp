@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.12 2000-06-03 04:38:22 sdennis Exp $
+// $Id: command.cpp,v 1.13 2000-06-07 09:46:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -767,9 +767,13 @@ int check_access(dbref player, int mask)
     int succ, fail;
 
     if (mask & CA_DISABLED)
+    {
         return 0;
+    }
     if (God(player) || mudstate.initializing)
+    {
         return 1;
+    }
 
     succ = fail = 0;
     if (mask & CA_GOD)
@@ -865,13 +869,9 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
     char *aargs[10];
     ADDENT *add;
     
-#define Protect(x) (cmdp->perms & x)
-
     // Perform object type checks.
     //
-    if (  (Protect(CA_LOCATION) && !Has_location(player))
-       || (Protect(CA_CONTENTS) && !Has_contents(player))
-       || (Protect(CA_PLAYER) && !isPlayer(player)))
+    if (Invalid_Objtype(player))
     {
         notify(player, "Command incompatible with invoker type.");
         return;

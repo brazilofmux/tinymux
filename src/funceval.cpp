@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.11 2000-06-05 18:10:16 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.12 2000-06-07 09:46:28 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -142,24 +142,31 @@ FUNCTION(fun_pemit)
     do_pemit_list(player, fargs[0], fargs[1]);
 }
 
-/*------------------------------------------------------------------------
- * fun_create: Creates a room, thing or exit
- */
-
 static int check_command(dbref player, char *name, char *buff, char **bufc)
 {
-    CMDENT *cmd = (CMDENT *) hashfindLEN(name, strlen(name), &mudstate.command_htab);
-    if (cmd)
+    CMDENT *cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
+    if (cmdp)
     {
-        if (!check_access(player, cmd->perms))
+        // Perform checks similiar to (but not exactly like) the
+        // ones in process_cmdent(): object type checks, permission
+        // checks, ands global flags.
+        //
+        if (  Invalid_Objtype(player)
+           || !check_access(player, cmdp->perms)
+           || (  !Builder(player)
+              && Protect(CA_GBL_BUILD)
+              && !(mudconf.control_flags & CF_BUILD)))
         {
-            safe_str("#-1 PERMISSION DENIED", buff, bufc);
+            safe_str(NOPERM_MESSAGE, buff, bufc);
             return 1;
         }
     }
     return 0;
 }
 
+// ------------------------------------------------------------------------
+// fun_create: Creates a room, thing or exit.
+//
 FUNCTION(fun_create)
 {
     dbref thing;
