@@ -3501,7 +3501,7 @@ Related Topics: @name.
 
   Sets the message that someone sees when they try to use object but fail
   the object's use lock.  Note that the other functions controlled by the use
-  lock (paying, listening, and $-commands) do not trigger Oufail.
+  lock (paying, listening, and $-commands) do not trigger ufail.
 
   Example: @ufail robot = The robot pointedly ignores you.
 
