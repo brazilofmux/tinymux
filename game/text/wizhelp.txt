@@ -1181,6 +1181,12 @@ ARTICLE_RULE
   to properly set access to restricted attributes.
   See also: access, PERMISSIONS.
 
+& autozone
+  Config parameter: autozone.  Default: Yes
+
+  Whether newly-created objects are automatically of the same
+  zone as their creator, or they are left zone-less.
+
 & bad_name
   Config parameter: bad_name <wildcarded-name>.
 
