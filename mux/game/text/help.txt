@@ -7008,11 +7008,11 @@ ILEV()
 
   FUNCTION: ilev()
 
-  Returns the nesting level of iter() and list() functions. Outside of any
-  iter() or list(), ilev() returns -1. The first level is indicated by 0, the
+  Returns the nesting level of iter(), list(), and parse() functions. Outside
+  of any iterator, ilev() returns -1. The first level is indicated by 0, the
   second by 1, etc.
 
-  Related Topics: iter(), list().
+  Related Topics: iter(), list(), parse().
 
 & IMMORTAL
 IMMORTAL
@@ -7115,10 +7115,15 @@ INUM()
             inum(<n>)
             ilev()
 
-  These functions, when called within an iter(), return the equivalent
-  of ## (itext) or #@ (inum), with reference to the nth more outermost
-  iter(), where n=0 refers to the current iter(), n=1 to an iter()
+  These functions, when called within an iter() or parse(), return the
+  equivalent of ## (itext) or #@ (inum), with reference to the nth more
+  outermost iter(), where n=0 refers to the current iter(), n=1 to an iter()
   in which the current iter() is nested, etc.
+
+  Unlike the ## and #@ substitutions which are substituted in the evaluation
+  string before it is evaluted, itext(), inum(), and ilev() substitute their
+  values as part of evaluation. In this way, the use of these functions is
+  safer than the ## and #@ substitutions and is therefore prefered.
    
   > say [iter(red blue green,iter(fish shoe, #@:##))]
   You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
@@ -7132,7 +7137,7 @@ INUM()
   > say [iter(red blue green,iter(fish shoe, [itext(1)]:[itext(0)]))]
   You say, "red:fish red:shoe blue:fish blue:shoe green:fish green:shoe"
 
-  Related Topics: iter(), itext(), ilev().
+  Related Topics: iter(), ilev(), itext(), parse().
 
 & INVENTORY
 INVENTORY
@@ -7336,8 +7341,10 @@ ITER()
 
   <list> is a <input delim>-separated list of strings (e.g., A B C).  <eval>
   is a string that is to be evaluated once for each item in <list> replacing
-  the special symbol ## with the corresponding item from <list> and the
-  symbol #@ with the position within the list being iterated.
+  the special symbol ## with the corresponding item from <list> and the symbol
+  #@ with the position within the list being iterated. Remember that <eval> is
+  evaluated after ## and #@ are substituted.  For this reason, itext() is
+  preferred over ##, and inum() is prefered over #@.
 
   An <output delim>-separated list of the results of these evaluations is
   returned to the caller.  The effect is very similar to @dolist except that
@@ -7357,7 +7364,7 @@ ITER()
     > say iter(Was it a cat I saw,[words(##)] #@,s)
     You say "1 1 4 2 1 3"
 
-  Related Topics: @dolist, list(), parse(), ilev().
+  Related Topics: @dolist, ilev(), inum(), itext(), list(), parse().
 
 & ITEXT()
 ITEXT()
@@ -7366,10 +7373,15 @@ ITEXT()
             inum(<n>)
             ilev()
 
-  These functions, when called within an iter(), return the equivalent
-  of ## (itext) or #@ (inum), with reference to the nth more outermost
-  iter(), where n=0 refers to the current iter(), n=1 to an iter()
+  These functions, when called within an iter() or parse(), return the
+  equivalent of ## (itext) or #@ (inum), with reference to the nth more
+  outermost iter(), where n=0 refers to the current iter(), n=1 to an iter()
   in which the current iter() is nested, etc.
+
+  Unlike the ## and #@ substitutions which are substituted in the evaluation
+  string before it is evaluted, itext(), inum(), and ilev() substitute their
+  values as part of evaluation. In this way, the use of these functions is
+  safer than the ## and #@ substitutions and is therefore prefered.
    
   > say [iter(red blue green,iter(fish shoe, #@:##))]
   You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
@@ -7383,7 +7395,7 @@ ITEXT()
   > say [iter(red blue green,iter(fish shoe, [itext(1)]:[itext(0)]))]
   You say, "red:fish red:shoe blue:fish blue:shoe green:fish green:shoe"
 
-  Related Topics: iter(), inum(), ilev().
+  Related Topics: iter(), inum(), ilev(), parse().
 
 & JUMP_OK
 JUMP_OK
@@ -8493,14 +8505,17 @@ MAP()
   Each member of <list> is passed to the result of fetching <attr> as %0, and
   the results are used to form a new list.
 
-  Input and output delimiters are both space by default.
+  In addition to any single character, <output delim> can also be the null-
+  delimiter, @@, or a newline, %r.  By default, input and output delimiters
+  are both space.
 
   Examples:
     > &ADD_ONE object=add(%0,1)
     > say map(object/add_one,1 2 3 4 5)
     You say "2 3 4 5 6"
 
-  Related Topics: filter(), fold(), iter(), parse(), u().
+  Related Topics: filter(), fold(), ilev(), iter(), itext(), inum(), parse(),
+                  u().
 
 & MATCH()
 MATCH()
