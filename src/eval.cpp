@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.34 2002-01-25 00:00:56 sdennis Exp $
+// $Id: eval.cpp,v 1.35 2002-01-25 00:15:12 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1958,8 +1958,11 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
         int nLen = ANSI_TruncateToField(buff, sizeof(TinyExec_scratch),
             TinyExec_scratch, sizeof(TinyExec_scratch), &nVisualWidth,
             ANSI_ENDGOAL_NORMAL);
-        memcpy(buff, TinyExec_scratch, nLen+1);
-        *bufc = buff + nLen;
+        if (nLen != nVisualWidth)
+        {
+            memcpy(buff, TinyExec_scratch, nLen+1);
+            *bufc = buff + nLen;
+        }
     }
 
     // Report trace information.
