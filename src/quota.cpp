@@ -1,6 +1,6 @@
-// quota.cpp -- Quota Management Commands
+// quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.3 2001-11-08 03:48:57 sdennis Exp $
+// $Id: quota.cpp,v 1.4 2001-11-20 04:51:53 sdennis Exp $
 //
 
 #include "copyright.h"

@@ -1,9 +1,7 @@
-/*
- * Standalone object.cpp
- */
-/*
- * $Id: sa-object.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
- */
+// sa-object.cpp -- Standalone object.cpp
+//
+// $Id: sa-object.cpp,v 1.2 2001-11-20 04:47:29 sdennis Exp $
+//
 
 #undef MEMORY_BASED
 #define STANDALONE

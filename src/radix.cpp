@@ -1,6 +1,7 @@
-/*
- * Radix tree library for storing text strings
- */
+// radix.cpp -- Radix tree library for storing text strings.
+//
+// $Id: radix.cpp,v 1.3 2001-11-20 04:51:27 sdennis Exp $
+//
 
 #include "copyright.h"
 #include "autoconf.h"
@@ -25,17 +26,17 @@ static int next_code = 1;
 #endif
 
 /*
- * Returns -1 on failure, and 0 on success (as an analyser) or the code 
+ * Returns -1 on failure, and 0 on success (as an analyser) or the code
  */
 /*
- * assigned (as a compressor) 
+ * assigned (as a compressor)
  */
 
 int r_insert(struct r_node **root, unsigned char *key)
 {
     if (!key || !*key) {
         return -1;  /*
-                 * Failure 
+                 * Failure
                  */
     }
     return do_insert(root, key);
@@ -58,18 +59,18 @@ static int do_insert(struct r_node **curr, unsigned char *key)
 
     if (!*key) {
         return 0;   /*
-                 * end of string, we're done 
+                 * end of string, we're done
                  */
     }
     /*
-     * Find the character 'key' points at in the current node 
+     * Find the character 'key' points at in the current node
      */
     /*
-     * adding it in if necessary 
+     * adding it in if necessary
      */
 
     /*
-     * Empty nodes are always allocated with room for one letter 
+     * Empty nodes are always allocated with room for one letter
      */
     if ((*curr)->count == 0) {
         (**curr).letter[0].c = *key;
@@ -96,7 +97,7 @@ static int do_insert(struct r_node **curr, unsigned char *key)
         }
         if (hi < lo)
         {   /*
-             * We failed to find it, insert 
+             * We failed to find it, insert
              */
             struct r_node *tmp;
 
@@ -104,7 +105,7 @@ static int do_insert(struct r_node **curr, unsigned char *key)
 
             if (!tmp) {
                 return -1;  /*
-                         * Failure 
+                         * Failure
                          */
             }
             *curr = tmp;
@@ -129,10 +130,10 @@ static int do_insert(struct r_node **curr, unsigned char *key)
     }
 
     /*
-     * If we get here, mid is the index of the right character, so 
+     * If we get here, mid is the index of the right character, so
      */
     /*
-     * update it and recurse as needed 
+     * update it and recurse as needed
      */
 
 #ifndef COMPRESSOR
@@ -143,14 +144,14 @@ static int do_insert(struct r_node **curr, unsigned char *key)
 #ifdef COMPRESSOR
         (*curr)->letter[mid].code = next_code;
         return next_code++; /*
-                     * success 
+                     * success
                      */
 #else
         return 0;
 #endif
     }
     /*
-     * We have more string to go, so carry on 
+     * We have more string to go, so carry on
      */
     if ((*curr)->letter[mid].child == NULL) {
         struct r_node *tmp;
@@ -174,19 +175,19 @@ int do_compress(struct r_node *curr, const unsigned char **str)
 
     if (!*str) {
         return 0;   /*
-                 * end of string, we're done 
+                 * end of string, we're done
                  */
     }
     /*
-     * Find the character 'key' points at in the current node 
+     * Find the character 'key' points at in the current node
      */
     /*
-     * adding it in if necessary 
+     * adding it in if necessary
      */
 
     if (curr == NULL || curr->count == 0) {
         /*
-         * Can't code the next letter, return 0 
+         * Can't code the next letter, return 0
          */
         return 0;
     }
@@ -196,7 +197,7 @@ int do_compress(struct r_node *curr, const unsigned char **str)
         mid = ((hi - lo) >> 1) + lo;
         if (curr->letter[mid].c == **str) {
             /*
-             * See if we can go further 
+             * See if we can go further
              */
 
             (*str)++;
@@ -219,7 +220,7 @@ int do_compress(struct r_node *curr, const unsigned char **str)
     }
 
     /*
-     * Failed to code this letter, return 0 
+     * Failed to code this letter, return 0
      */
 
     return 0;
@@ -236,7 +237,7 @@ static void do_dump(struct r_node *curr, unsigned char *buff, int depth)
 
     for (i = 0; i < curr->count; i++) {
         /*
-         * Emit the current string 
+         * Emit the current string
          */
         buff[depth] = curr->letter[i].c;
         buff[depth + 1] = '\0';
@@ -247,7 +248,7 @@ static void do_dump(struct r_node *curr, unsigned char *buff, int depth)
 #endif
 
         /*
-         * Recurse to handle all extensions of this string too 
+         * Recurse to handle all extensions of this string too
          */
 
         do_dump(curr->letter[i].child, buff, depth + 1);

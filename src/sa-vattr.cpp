@@ -1,9 +1,7 @@
-/*
- * Standalone vattr.cpp
- */
-/*
- * $Id: sa-vattr.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
- */
+// sa-vattr.cpp -- Standalone vattr.cpp
+//
+// $Id: sa-vattr.cpp,v 1.2 2001-11-20 04:40:30 sdennis Exp $
+//
 
 #undef MEMORY_BASED
 #define STANDALONE
