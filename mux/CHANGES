@@ -211,6 +211,8 @@ Bug Fixes:
  -- OutOfMemory() and AssertionFailed() reversed sense of bCanRestart.
     Reported by Alierak.  Brazil's bug.
  -- Fixed convtime() SIGSEGV.  Reported by Alierak.  Brazil's bug.
+ -- Fixed recently-added zone bug introduce when check_zone() and
+    check_zone_for_player() functions were merged.
 
 
 Performance Enhancements:
