@@ -127,6 +127,7 @@ Feature Additions:
  --  Included changes from port to Tru64 Unix.
  --  Can now use @set and set() to set multiple flags at a time.
  --  Added ChaoticMUX's colored channel names including the same file format.
+ --  Added floordiv(), remainder(), and changed mod().
 
 
 Bug Fixes:
