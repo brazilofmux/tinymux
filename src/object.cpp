@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.9 2000-11-15 02:52:31 sdennis Exp $
+// $Id: object.cpp,v 1.10 2001-07-04 08:09:50 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -437,9 +437,6 @@ extern void stack_clr(dbref obj);
 
 void destroy_obj(dbref player, dbref obj)
 {
-    dbref owner;
-    int good_owner, val, quota;
-
     if (!Good_obj(obj))
     {
         return;
@@ -447,8 +444,8 @@ void destroy_obj(dbref player, dbref obj)
 
     // Validate the owner.
     //
-    owner = Owner(obj);
-    good_owner = Good_owner(owner);
+    dbref owner = Owner(obj);
+    int good_owner = Good_owner(owner);
 
     // Halt any pending commands (waiting or semaphore).
     //
@@ -470,8 +467,8 @@ void destroy_obj(dbref player, dbref obj)
 
     // Compensate the owner for the object.
     //
-    val = 1;
-    quota = 1;
+    int val = 1;
+    int quota = 1;
     if (good_owner && (owner != obj))
     {
         switch (Typeof(obj))
@@ -497,6 +494,12 @@ void destroy_obj(dbref player, dbref obj)
             else
                 val = 0;
             quota = mudconf.player_quota;
+            break;
+
+        default:
+            val = 0;
+            quota = 0;
+            break;
         }
         giveto(owner, val);
         if (mudconf.quotas)
