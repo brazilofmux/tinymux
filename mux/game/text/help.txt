@@ -3077,6 +3077,49 @@ Related Topics: @name.
 
   Related Topics: @charges.
 
+& @SAYSTRING
+@SAYSTRING
+
+  Command: @saystring <object> = <string>
+
+  Sets the substitute string that is used instead of the default 'says,'
+  when you talk in a location or on the comsys. The message is passed
+  as %0 and the command (say, @fsay, or channel) as %1.
+
+  Example:
+    > @saystring me=barks
+    > "Hello.
+    Player barks "Hello."
+    > @saystring me=case(right(%0,1),!,exclaims\,,?,asks\,,says\,)
+    > "Hello!
+    Player exclaims, "Hello!"
+
+  Related Topics: say, ", @speechmod.
+
+& @SPEECHMOD
+@SPEECHMOD
+
+  Command: @speechmod <object> = <string>
+  Attribute: SpeechMod
+
+  Sets a filter to be applied to all of <object>'s speech. <string> is
+  evaluated with the original speech as %0 and the command as %1. It is
+  then displayed in place of the original speech. You can use this to
+  colorize each word of what you say, say things backwards, etc. 
+
+  @speechmod affects: "  \\  ;  :  page  pose  say  whisper  @fpose  
+     @fsay  @wall  on-channel speech
+
+  %1 may be one of: channel  channel/pose  page  pose  say  whisper
+    @emit (for \\)  @fpose  @fpemit  @fsay  @wall
+
+  Example:
+    > @speechmod me=ucstr(%0)
+    > "Hello.
+    Player says "HELLO."
+
+  Related Topics: say, ", @saystring.
+
 & @SEARCH
 @SEARCH
 
@@ -5614,6 +5657,25 @@ EQ()
 
   Related Topics: lt(), lte(), gte(), gt(), neq().
 
+& ERROR()
+ERROR()
+
+  FUNCTION: error(<string>)
+
+  This function is useful in softcoded commands, especially @addcommand'ed ones.
+  If the global_error_obj config parameter is not set, this will return the
+  default error message. If it is, it passes <string> as if the player had typed
+  it and gotten a bad command.
+
+  Example:
+    > say error()
+    You say "Huh?  (Type 'help' for help.)"
+
+    > say error(@pmit)
+    You typed '@pmit'.
+
+  Related Topics: 
+
 & ESCAPE()
 ESCAPE()
 
@@ -6110,16 +6172,16 @@ FUNCTION CLASSES
   Floating Point Conversion: FLOOR ROUND TRUNC
   Game Information:          CONFIG DUMPING MOTD MUDNAME POLL VERSION
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FILTERBOOL
-                             FIRST FOLD GRAB ILEV INDEX INSERT ITER LADD LAST
-                             LDELETE LIST LNUM LRAND MAP MATCH MATCHALL MEMBER
-                             MIX MUNGE PARSE PICKRAND REMOVE REST REVWORDS
-                             SETDIFF SETINTER SETUNION SHUFFLE SORT SORTBY
-                             SPLICE TABLE WORDS
+                             FIRST FOLD GRAB ILEV INDEX INSERT ITEMIZE ITER
+                             LADD LAST LDELETE LIST LNUM LRAND MAP MATCH
+                             MATCHALL MEMBER MIX MUNGE PARSE PICKRAND REMOVE
+                             REST REVWORDS SETDIFF SETINTER SETUNION SHUFFLE
+                             SORT SORTBY SPLICE TABLE WORDS
   Logarithms:                E EXP LOG LN
   Logical:                   AND ANDBOOL CAND CANDBOOL COR CORBOOL LAND LOR
                              NOT OR ORBOOL T XOR
-  Miscellaneous:             @@ ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM
-                             ISWORD LIT NULL SETR SUBEVAL
+  Miscellaneous:             @@ ANSI ART R BEEP ERROR ISDBREF ISINT ISNUM ISRAT
+                             ISWORD LIT NULL R SETQ SETR SUBEVAL
  
 { 'help function classes2' for more }
 
@@ -6127,31 +6189,32 @@ FUNCTION CLASSES
 FUNCTION CLASSES (continued)
 
   Object Information:        ANDFLAGS APOSS ATTRCNT BITTYPE CHILDREN CMDS CON
-                             CONTROLS DEFAULT EDEFAULT ELOCK EVAL FLAGS
+                             CONTROLS CTIME DEFAULT EDEFAULT ELOCK EVAL FLAGS
                              FULLNAME GET GET_EVAL GREP GREPI HASATTR HASATTRP
                              HASFLAG HASPOWER HASTYPE HOME LATTR LATTRCMDS
                              LATTRP LCMDS LCON LEXITS LFLAGS LPARENT LOCALIZE
-                             LOCK MONEY NAME OBJ OBJEVAL OBJMEM ORFLAGS OWNER
-                             PARENT PMATCH POSS S SUBJ TYPE U UDEFAULT ULOCAL
-                             V VISIBLE XGET
+                             LOCK MONEY MTIME NAME OBJ OBJEVAL OBJMEM ORFLAGS
+                             OWNER PARENT PFIND PMATCH POSS S SUBJ TYPE U
+                             UDEFAULT ULOCAL V VISIBLE XGET
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNRECORD
-                             CONNTOTAL CTIME DOING FINDABLE HOST IDLE LWHO
+                             CONNTOTAL DOING FINDABLE HASQUOTA HOST IDLE LWHO
                              LPORTS PLAYMEM PORTS
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ
   Realms:                    CANSEE
-  Side-Effect Functions:     EMIT LINK OEMIT PEMIT REMIT TEL
+  Side-Effect Functions:     CREATE EMIT LINK OEMIT PEMIT REMIT SET TEL
   Stack:                     EMPTY ITEMS LSTACK PEEK POP PUSH
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE CAT
                              CENTER COMP DECRYPT DELETE EDIT ENCRYPT ESCAPE
-                             IFELSE LCSTR LJUST LPOS MERGE MID POS REGRAB
-                             REGMATCH REPEAT REPLACE REVERSE RIGHT RJUST ROMAN
-                             SCRAMBLE SECURE SPACE SPELLNUM SQUISH STRCAT
-                             STRIPANSI STRLEN STRMATCH STRTRUNC SWITCH
-                             TRANSLATE TRIM UCSTR WORDPOS
+                             IF IFELSE LCSTR LJUST LPOS MERGE MID POS REGMATCH
+                             REGMATCHI REGRAB REGRABALL REGRABALLI REGRABI
+                             REPEAT REPLACE REVERSE RIGHT RJUST ROMAN SCRAMBLE
+                             SECURE SPACE SPELLNUM SQUISH STRCAT STRIPANSI
+                             STRLEN STRMATCH STRTRUNC SWITCH TRANSLATE TRIM
+                             UCSTR WORDPOS
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
                              WRITETIME
-  Trigonometric:             ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
+  Trigonometric:             ACOS ASIN ATAN COS CTU DIST2D DIST3D PI SIN TAN
                              VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
 
 & FUNCTION LIST
@@ -6166,47 +6229,49 @@ FUNCTION LIST
     CANSEE()    CAPSTR()    CASE()      CAT()       CEIL()      CENTER()
     CHANNELS()  CHILDREN()  CMDS()      COLUMNS()   COMALIAS()  COMP()
     COMTITLE()  CON()       CONFIG()    CONN()      CONNLAST()  CONNLEFT()
-    CONNMAX()   CONNNUM()   CONNRECORD  CONNTOTAL() CONTROLS()  CONVSECS()
-    CONVTIME()  COR()       CORBOOL()   COS()       CREATE()    CRC32()
-    CTIME()     CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()
-    DIE()       DIGITTIME() DIST2D()    DIST3D()    DOING()     DUMPING()
-    E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMIT()
-    EMPTY()     ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()
-    EXPTIME()   EXTRACT()   EVAL()      FDIV()      FILTER()    FILTERBOOL()
-    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FOLD()
-    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()
-    GREPI()     GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()
+    CONNMAX()   CONNNUM()   CONNRECORD()CONNTOTAL() CONTROLS()  CONVSECS()
+    CONVTIME()  COR()       CORBOOL()   COS()       CRC32()     CREATE()
+    CTIME()     CTU()       CWHO()      DEC()       DECRYPT()   DEFAULT()
+    DELETE()    DIE()       DIGITTIME() DIST2D()    DIST3D()    DOING()
+    DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()
+    EMIT()      EMPTY()     ENCRYPT()   EQ()        ERROR()     ESCAPE()
+    EVAL()      EXIT()      EXP()       EXPTIME()   EXTRACT()   FDIV()
+    FILTER()    FILTERBOOL()FINDABLE()  FIRST()     FLAGS()     FLOOR()
+    FLOORDIV()  FOLD()      FOREACH()   FULLNAME()  GET()       GET_EVAL()
+    GRAB()      GREP()      GREPI()     GT()        GTE()       HASATTR()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    HASPOWER()  HASTYPE()   HOME()      HOST()      IABS()      IADD()
-    IDIV()      IDLE()      IFELSE()    ILEV()      IMUL()      INC()
-    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISNUM()
-    ISUB()      ISWORD()    ITER()      ITEMS()     LADD()      LAND()
-    LAST()      LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()
-    LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()
-    LIT()       LJUST()     LN()        LNUM()      LOC()       LOCALIZE()
-    LOCATE()    LOCK()      LOG()       LOR()       LPARENT()   LPORTS()
-    LPOS()      LRAND()     LROOMS()    LSTACK()    LT()        LTE()
-    LWHO()      NULL()      MAIL()      MAILFROM()  MAP()       MATCH()
+    HASATTRP()  HASFLAG()   HASPOWER()  HASQUOTA()  HASTYPE()   HOME()
+    HOST()      IABS()      IADD()      IDIV()      IDLE()      IF()
+    IFELSE()    ILEV()      IMUL()      INC()       INDEX()     INSERT()
+    INZONE()    ISDBREF()   ISIGN()     ISINT()     ISNUM()     ISRAT()
+    ISUB()      ISWORD()    ITEMIZE()   ITEMS()     ITER()      LADD()
+    LAND()      LAST()      LATTR()     LATTRCMDS() LATTRP()    LCMDS()
+    LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LINK()
+    LIST()      LIT()       LJUST()     LN()        LNUM()      LOC()
+    LOCALIZE()  LOCATE()    LOCK()      LOG()       LOR()       LPARENT()
+    LPORTS()    LPOS()      LRAND()     LROOMS()    LSTACK()    LT()
+    LTE()       LWHO()      MAIL()      MAILFROM()  MAP()       MATCH()
     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
-    MIX()       MOD()       MONEY()     MOTD()      MUDNAME()   MUL()
-    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
-    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()
-    ORBOOL()    ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()
-    PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()
-    PMATCH()    POLL()      POP()       PORTS()     POS()       POSS()
-    POWER()     PUSH()      R()         RAND()      REGRAB()    REGMATCH()
-    REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
+    MIX()       MOD()       MONEY()     MOTD()      MTIME()     MUDNAME()
+    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
+    NOT()       NULL()      NUM()       OBJ()       OBJEVAL()   OBJMEM()
+    OEMIT()     OR()        ORBOOL()    ORFLAGS()   OWNER()     PACK()
+    PARENT()    PARSE()     PEEK()      PEMIT()     PFIND()     PI()
+    PICKRAND()  PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()
+    POS()       POSS()      POWER()     PUSH()      R()         RAND()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
+    REGMATCH()  REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()
+    REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
     REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
     ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()
     SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
@@ -6302,7 +6367,7 @@ GET()
     > read me
     > say get(me/desc)
 
-  Related Topics: get_eval(), eval(), xget().
+  Related Topics: get_eval(), eval(), u(), v(), xget().
 
 & GET2
 GET (continued)
@@ -6341,7 +6406,7 @@ GET_EVAL()
     > say get_eval(test/va)
     You say "This is a get_eval test on Foobar. The vb is VB from test"
 
-  Related Topics: get(), get_eval(), xget().
+  Related Topics: get(), eval(), u(), v(), xget().
 
 & GIVE
 GIVE
@@ -6413,7 +6478,7 @@ GRAB()
     > say grab(Holodeck:#10~Airlock:#58~Dorm:#12~Brig:#83,Airlock:*,~)
     You say "Airlock:#58"
 
-  Related Topics: LISTS, match().
+  Related Topics: LISTS, member(), match(), regrab().
 
 & GREP()
 GREP()
@@ -6916,7 +6981,7 @@ INZONE()
   Returns a list of rooms in the zone defined by <object>. Currently a
   wizard/royalty only function.
 
-  Related Topics:
+  Related Topics: zwho(), ZONES.
 
 & ISDBREF()
 ISDBREF()
@@ -11797,7 +11862,7 @@ VDOT()
   FUNCTION: vdot(<vector>,<vector>[,<delim>][,<output delim>])
 
   Returns the dot product of two vectors. The dot product of two
-  vectors is a scalar. (a,b,c) * (x,y,z) = aw + bx + cz
+  vectors is a scalar. (a,b,c) * (x,y,z) = ax + by + cz
 
   Example:
     > @pemit me=vdot(1 2 3,2 3 4)
@@ -12197,7 +12262,7 @@ ZWHO()
   Returns a list of players who are a member of the zone defined by
   <object>. Currently a wizard/royalty only function.
 
-  Related Topics:
+  Related Topics: inzone(), ZONES.
 
 & \\
 \\
