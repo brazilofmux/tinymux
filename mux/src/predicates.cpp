@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.50 2003-01-23 07:50:26 sdennis Exp $
+// $Id: predicates.cpp,v 1.51 2003-01-27 15:11:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1387,9 +1387,9 @@ extern SOCKET slave_socket;
     slave_pid = 0;
     dump_restart_db();
 #ifdef GAME_DOOFERMUX
-    execl("bin/netmux", mudconf.mud_name, mudconf.config_file, NULL);
+    execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, NULL);
 #else
-    execl("bin/netmux", "netmux", mudconf.config_file, NULL);
+    execl("bin/netmux", "netmux", "-c", mudconf.config_file, NULL);
 #endif // GAME_DOOFERMUX
 #endif // !WIN32
 }
