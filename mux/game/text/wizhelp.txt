@@ -1747,7 +1747,7 @@ CONFIG PARAMETERS (continued)
   guests_channel  have_comsys  have_mailer  have_zones  helpfile hook_cmd
   hook_obj  hostnames  idle_interval  idle_timeout  idle_wiz_dark  include
   indent_desc  initial_size  input_database  kill_guarantee_cost
-  kill_max_cost  kill_min_cost  lag_maximum  link_cost  list_access
+  kill_max_cost  kill_min_cost  lag_limit  lag_maximum  link_cost  list_access
   lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
   look_obey_terse  machine_command_cost  mail_database  mail_expiration
   mail_per_hour  master_room   match_own_commands  max_cache_size  max_players
@@ -2827,11 +2827,28 @@ KILL_MIN_COST
   Related Topics: kill, kill_guarantee_cost, kill_max_cost, HAVEN, IMMORTAL,
                   KILLING.
 
+& LAG_LIMIT
+LAG_LIMIT
+
+  CONFIG DIRECTIVE: lag_limit <seconds>
+  DEFAULT: 60.000
+
+  Controls when to discontinue servicing expensive commands.  Any command
+  taking longer than <seconds> is abandoned.  Note that the resolution of
+  <seconds> is 100ns which is the 7th decimal place to the right of the
+  decimal point.
+
+  Examples:
+     lag_limit 15
+     @admin lag_limit=15.5
+
+  Related Topics: lag_maximum
+
 & LAG_MAXIMUM
 LAG_MAXIMUM
 
   CONFIG DIRECTIVE: lag_maximum <seconds>
-  DEFAULT: 120
+  DEFAULT: 120.000
 
   Controls when to log expensive commands.  Any command taking longer than
   <seconds> is logged.  Note that the resolution of <seconds> is 100ns
@@ -2841,7 +2858,7 @@ LAG_MAXIMUM
      lag_maximum 1.2
      @admin lag_maximum=0.750
 
-  Related Topics:
+  Related Topics: lag_limit
 
 & LINK_COST
 LINK_COST
