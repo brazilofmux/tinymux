@@ -1,7 +1,7 @@
 //
 // mkindx.cpp -- make help/news file indexes 
 //
-// $Id: mkindx.cpp,v 1.5 2001-06-29 20:00:01 sdennis Exp $ 
+// $Id: mkindx.cpp,v 1.6 2001-07-07 17:54:54 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -60,7 +60,11 @@ int DCL_CDECL main(int argc, char *argv[])
         ++lineno;
 
         n = strlen(line);
-        if (line[n - 1] != '\n')
+        if (n == 0)
+        {
+            continue;
+        }
+        else if (line[n - 1] != '\n')
         {
             fprintf(stderr, "line %d: line too long\n", lineno);
         }

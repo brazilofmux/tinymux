@@ -2,7 +2,7 @@
  * help.c -- commands for giving help 
  */
 /*
- * $Id: help.cpp,v 1.7 2001-07-07 01:43:54 sdennis Exp $ 
+ * $Id: help.cpp,v 1.8 2001-07-07 17:54:54 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -211,7 +211,8 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
     for (;;)
     {
         if (  fgets(line, LBUF_SIZE - 1, fp) == NULL
-           || line[0] == '&')
+           || line[0] == '&'
+           || line[0] == '\0')
         {
             break;
         }
