@@ -1,11 +1,7 @@
-
-/*
- * mguests.c - multiguest code originally ported from DarkZone 
- */
-/*
- * $Id: mguests.cpp,v 1.1 2000-04-11 07:14:46 sdennis Exp $ 
- */
-
+// mguests.cpp - multiguest code originally ported from DarkZone 
+//
+// $Id: mguests.cpp,v 1.2 2000-05-25 02:53:42 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -70,16 +66,24 @@ dbref create_guest(char *name, char *password)
 
 void destroy_guest(dbref guest)
 {
-    if (!Wizard(mudconf.guest_nuker) || !Good_obj(mudconf.guest_nuker))
-        mudconf.guest_nuker = 1;
-
     if (!Guest(guest))
+    {
         return;
+    }
 
-    toast_player(guest);
+    if (  !Wizard(mudconf.guest_nuker)
+       || !Good_obj(mudconf.guest_nuker))
+    {
+        mudconf.guest_nuker = 1;
+    }
+
     atr_add_raw(guest, A_DESTROYER, Tiny_ltoa_t(mudconf.guest_nuker));
+#if 0 // QQQ
+    destroy_player(mudconf.guest_nuker, guest);
+#else
     destroy_player(guest);
     destroy_obj(mudconf.guest_nuker, guest);
+#endif
 }
 
 char *make_guest(DESC *d)
