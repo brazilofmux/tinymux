@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  February 2003
+Last Update:  March 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -144,6 +144,9 @@ Feature Additions:
     string.
  -- Added CASE attribute flag to be used in combination with REGEXP flag.
  -- Added -v and -h command line options to netmux.
+ -- Added support -p option, netmux.pid, and you can run more than one
+    MUX server per Unix account without modifying the Startmux script.
+    This feature first appeared in TinyMUSH 3.0.
 
 
 Bug Fixes:
@@ -306,6 +309,17 @@ Bug Fixes:
  -- Bug #557, #558, #559, and #560 were all buffers smaller than the
     largest possible result.  All reported by Morgan 2000-OCT-15.  Fixed
     (finally) by Brazil.
+ -- Initialize idle time for the sake of SITEMON-related WHO reports.
+ -- Protect d->player access with DS_CONNECTED test to avoid depending
+    on the existance of #0. Flags on #0 were controlling the behavior
+    of logged-out connections. Now, you can load an empty flatfile,
+    create a player (which will be dbref #0), and proceed from there.
+    This isn't recommended, but the server doesn't crash if you try it.
+ -- Kill the slave process on @shutdown.  Reported by nails.  Fixed by
+    Brazil.  This was introduced in MUX 2.0 when the Win32 and Unix
+    sources were merged. The required block of code was accidently left
+    out.
+ -- Clean up zombie slave processes on @restart.
 
 
 Performance Enhancements:
