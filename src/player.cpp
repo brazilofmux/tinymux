@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.7 2000-11-12 11:06:13 sdennis Exp $ 
+// $Id: player.cpp,v 1.8 2001-03-31 02:22:26 sdennis Exp $ 
 ///
 
 #include "copyright.h"
@@ -136,7 +136,7 @@ static void encrypt_logindata(char *atrbuf, LDATA *info)
  * * last successful login.
  */
 
-void record_login(dbref player, int isgood, char *ldate, char *lhost, char *lusername)
+void record_login(dbref player, int isgood, char *ldate, char *lhost, char *lusername, char *lipaddr)
 {
     LDATA login_info;
     char *atrbuf;
@@ -175,6 +175,10 @@ void record_login(dbref player, int isgood, char *ldate, char *lhost, char *luse
             atr_add_raw(player, A_LASTSITE, tprintf("%s@%s", lusername, lhost));
         else
             atr_add_raw(player, A_LASTSITE, lhost);
+
+        // Add the players last IP too.
+        //
+        atr_add_raw(player, A_LASTIP, lipaddr);
     }
     else
     {
@@ -229,7 +233,7 @@ int check_pass(dbref player, const char *password)
  * * connect_player: Try to connect to an existing player.
  */
 
-dbref connect_player(char *name, char *password, char *host, char *username)
+dbref connect_player(char *name, char *password, char *host, char *username, char *ipaddr)
 {
     dbref player, aowner;
     int aflags;
@@ -244,7 +248,7 @@ dbref connect_player(char *name, char *password, char *host, char *username)
     }
     if (!check_pass(player, password))
     {
-        record_login(player, 0, time_str, host, username);
+        record_login(player, 0, time_str, host, username, ipaddr);
         return NOTHING;
     }
 
