@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  December 2001
+Last Update:  January 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -66,6 +66,7 @@ Feature Additions:
  -- Added function invocation limit checking for various loop functions:
     ITER, PARSE, MIX, FILTER, FOLD, MAP, etc.
  -- Clean cygwin builds on Win32 with support for @restart.
+ -- Remove support for the COMPRESS flag.
 
 Bug Fixes:
 ~~~~~~~~~
