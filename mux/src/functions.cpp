@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.134 2005-04-04 12:37:04 sdennis Exp $
+// $Id: functions.cpp,v 1.135 2005-04-04 12:50:16 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -8271,8 +8271,7 @@ FUNCTION(fun_isdbref)
     bool bResult = false;
 
     char *p = fargs[0];
-    if (  NUMBER_TOKEN == p[0]
-       && '\0' != p[1])
+    if (NUMBER_TOKEN == p[0])
     {
         p++;
         dbref dbitem = parse_dbref(p);

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.52 2004-09-21 04:18:40 sdennis Exp $
+// $Id: db.cpp,v 1.53 2005-04-04 12:50:16 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2578,16 +2578,23 @@ void db_make_minimal(void)
 
 dbref parse_dbref(const char *s)
 {
-    const char *p;
-
     // Enforce completely numeric dbrefs
     //
-    for (p = s; *p; p++)
+    const char *p = s;
+    if (p[0])
     {
-        if (!mux_isdigit(*p))
+        do
         {
-            return NOTHING;
-        }
+            if (!mux_isdigit(*p))
+            {
+                return NOTHING;
+            }
+            p++;
+        } while (*p);
+    }
+    else
+    {
+        return NOTHING;
     }
     int x = mux_atol(s);
     return ((x >= 0) ? x : NOTHING);
