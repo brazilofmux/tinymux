@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.30 2002-12-30 16:55:34 sdennis Exp $
+// $Id: flags.cpp,v 1.31 2003-01-05 16:55:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -51,7 +51,7 @@ BOOL fh_god(dbref target, dbref player, FLAG flag, int fflags, BOOL reset)
 {
     if (!God(player))
     {
-        return TRUE;
+        return FALSE;
     }
     return (fh_any(target, player, flag, fflags, reset));
 }
