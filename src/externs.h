@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.3 2000-04-11 21:38:02 sdennis Exp $
+// $Id: externs.h,v 1.4 2000-04-12 01:47:32 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -287,6 +287,7 @@ extern int _strnicmp(const char *a, const char *b, int n);
 extern void _strlwr(char *tp);
 extern void _strupr(char *a);
 #endif // WIN32
+int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, ...);
 
 /* From boolexp.c */
 extern int  FDECL(eval_boolexp, (dbref, dbref, dbref, BOOLEXP *));
