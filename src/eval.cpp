@@ -1,12 +1,12 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.16 2001-08-01 04:57:44 sdennis Exp $
+// $Id: eval.cpp,v 1.17 2001-09-08 19:27:54 sdennis Exp $
 //
 
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
 //
-// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial

@@ -1,9 +1,9 @@
 // svdreport.cpp -- Aggregate User Statistics module.
 //
-// $Id: svdreport.cpp,v 1.2 2000-04-24 22:26:59 sdennis Exp $
+// $Id: svdreport.cpp,v 1.3 2001-09-08 19:27:54 sdennis Exp $
 //
 // MUX 2.0
-// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial
