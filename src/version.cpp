@@ -1,7 +1,7 @@
 //
 // version.cpp - version information 
 //
-// $Id: version.cpp,v 1.19 2001-09-18 07:18:36 sdennis Exp $ 
+// $Id: version.cpp,v 1.20 2001-09-18 18:09:27 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -28,7 +28,7 @@ void NDECL(init_version)
 #ifdef BETA
         sprintf( mudstate.version, "MUX %s for Win32 #%s [BETA]",
             MUX_VERSION, MUX_BUILD_NUM);
-        sprintf( mudstate.short_ver, "MUX %s Alpha Win32", MUX_VERSION);
+        sprintf( mudstate.short_ver, "MUX %s Beta Win32", MUX_VERSION);
 #else // BETA
         sprintf( mudstate.version, "MUX %s for Win32 #%s [%s]",
             MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
@@ -38,7 +38,7 @@ void NDECL(init_version)
 #ifdef BETA
         sprintf( mudstate.version, "MUX %s #%s [BETA]", MUX_VERSION,
             MUX_BUILD_NUM);
-        sprintf( mudstate.short_ver, "MUX %s Alpha", MUX_VERSION);
+        sprintf( mudstate.short_ver, "MUX %s Beta", MUX_VERSION);
 #else // BETA
         sprintf( mudstate.version, "MUX %s #%s [%s]", MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
