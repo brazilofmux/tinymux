@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.25 2001-02-10 17:54:06 sdennis Exp $
+// $Id: mail.cpp,v 1.26 2001-02-25 16:25:27 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -4056,6 +4056,7 @@ void do_expmail_stop(dbref player, int flags)
     if (*tolist == '\0')
     {
         notify(player, "MAIL: No recipients.");
+        free_lbuf(tolist);
     }
     else
     {
@@ -4076,7 +4077,6 @@ void do_expmail_stop(dbref player, int flags)
         }
         free_lbuf(mailmsg);
     }
-    free_lbuf(tolist);
 }
 
 void do_expmail_abort(dbref player)
