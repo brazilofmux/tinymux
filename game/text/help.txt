@@ -6468,12 +6468,14 @@ GET_EVAL()
     You say "This is a get_eval test on %n. The vb is [get(me/vb)]"
     > say get_eval(test/va)
     You say "This is a get_eval test on Foobar. The vb is VB from test"
-  See also: get(), get_eval(), xget().
+  
+  Related Topics: get(), get_eval(), xget().
 
 & TIME()
+TIME()
 
-  Function: time([<zonename>])
- 
+  FUNCTION: time([<zonename>])
+
   The optional <zonename> parameter may be "utc" or "local". If no
   <zonename> is given, "local" is assumed.
 
@@ -6483,19 +6485,19 @@ GET_EVAL()
             location.
 
     utc   - Gives you the time string for the UTC time zone.
- 
-  Example:
 
+  Example:
     > say time()
     You say "Fri May 05 13:05:39 2000"
     > say time(utc)
     You say "Fri May 05 20:05:39 2000"
 
-  See also: convsecs(), convtime(), secs().
+  Related Topics: convsecs(), convtime(), secs().
 
 & RAND()
+RAND()
 
-  Function: rand(<num>)
+  FUNCTION: rand(<num>)
  
   Rand returns an integer between 0 and num-1.
  
@@ -6511,23 +6513,28 @@ GET_EVAL()
     > say rand(10)
     You say "1"
 
+  Related Topics:
+   
 & EXIT()
+EXIT()
 
-  Function: exit(<object>)
+  FUNCTION: exit(<object>)
  
   Exit returns the first exit on the list of exits in the object.  Dark exits
   are not listed, unless you own the object.  Unlike LEXITS(), this function
   does not provide information about exits in parent objects.
  
-  See also: con(), lcon(), lexits(), next().
+  Related Topics: con(), lcon(), lexits(), next().
 
 & ABS()
+ABS()
 
-  Function: abs(<number>)
+  FUNCTION: abs(<number>)
  
   Returns the absolute value of its argument.
-  <number> may be a floating point number, and a floating point result
-  is returned.
+  
+  The number may be a floating point number, in which case a 
+  floating point result is returned.
  
   Examples:
     > say abs(4)
@@ -6536,10 +6543,13 @@ GET_EVAL()
     You say "4"
     > say abs(0)
     You say "0"
-
+  
+  Related Topics:
+  
 & MAX()
+MAX()
 
-  Function: max(<number1>,<number2>[,<numberN]...)
+  FUNCTION: max(<number1>,<number2>[,<numberN]...)
  
   Returns the largest integer from among its arguments.
   Up to 30 arguments may be specified.
@@ -6552,11 +6562,12 @@ GET_EVAL()
     > say max(-100,50,0,25)
     You say "50"
  
-  See also: min()
+  Related Topics: min()
 
 & MIN()
+MIN()
 
-  Function: min(<number1>,<number2>[,<numberN]...)
+  FUNCTION: min(<number1>,<number2>[,<numberN]...)
  
   Returns the smallest integer from among its arguments.
   Up to 30 arguments may be specified.
@@ -6569,33 +6580,34 @@ GET_EVAL()
     > say min(-100,50,0,25)
     You say "-10"
  
-  See also: max()
+  Related Topics: max()
 
 & ADD()
+ADD()
 
-  Function: add(<number1>[,<numberN>]...)
- 
+  FUNCTION: add(<number1>[,<numberN>]...)
+
   Returns the result of adding its arguments together. You may add up
   to 100 numbers in one add() call. <numberN> may be a floating point
   number, and a floating-point result is returned.
 
- 
   Example:
     > say add(2,4)
     You say "6"
     > say add(5,3,7,-4)
     You say "11"
 
-  See also: dec(), div(), iadd(), idiv(), imul(), inc(), isub(), mod(),
-            mul(), sub().
+  Related Topics: dec(), div(), iadd(), idiv(), imul(), inc(), isub(),
+            mod(), mul(), sub().
 
 & IADD()
+IADD()
 
-  Function: iadd(<number1>,<number2>[,<numberN>]...)
+  FUNCTION: iadd(<number1>[,<numberN>]...)
  
-  Returns the result of adding its integer arguments together.
-  You may add up to 30 numbers in one add() call. Similiar to add()
-  except that the addition is done with faster integer math.
+  Returns the result of adding its integer arguments together. You may
+  add up to 100 numbers in one iadd() call. Similiar to add() except
+  that the addition is done with integer math.
  
   Example:
     > say iadd(2,4)
@@ -6603,45 +6615,47 @@ GET_EVAL()
     > say iadd(5,3,7,-4)
     You say "11"
 
-  See also: add(), dec(), div(), idiv(), imul(), inc(), isub(), mod(),
-            mul(), sub().
-
+  Related Topics: add(), dec(), div(), idiv(), imul(), inc(), isub(),
+            mod(), mul(), sub().
 & INC()
+INC()
 
-  Function: inc(<number>)
- 
-  Returns <number> plus 1. Much faster and more efficient than
-  add(<number>,1). Decimal places will be truncated.
- 
-  See also: add(), dec(), iadd(), isub(), sub().
- 
+  FUNCTION: inc(<number>)
+
+  Returns <number> plus 1. Faster and more efficient than
+  add(<number>,1). Decimal places are truncated.
+
+  Related Topics: add(), dec(), iadd(), isub(), sub().
+
 & DEC()
+DEC()
 
-  Function: dec(<number>)
+  FUNCTION: dec(<number>)
  
   Returns <number> minus 1. Much faster and more efficient than
   sub(<number>,1). Decimal places will be truncated.
  
-  See also: add(), iadd(), inc(), isub(), sub().
-
-& SUB()
-
-  Function: sub(<number1>,<number2>)
+  Related Topics: sub(), add(), inc().
  
+& SUB()
+SUB()
+
+  FUNCTION: sub(<number1>,<number2>)
+
   Returns the result of subtracting <number2> from <number1>.
   The numbers may be floating point numbers, and a floating point result
   is returned.
- 
+
   Example:
     > say sub(5,2)
     You say "3"
 
-  See also: add(), dec(), div(), iadd(), idiv(), imul(), inc(), isub(),
-            mod(), mul().
+  Related Topics: add(), dec(), div(), iadd(), idiv(), imul(), inc(),
+            isub(), mod(), mul().
 
 & ISUB()
 
-  Function: isub(<number1>,<number2>)
+  FUNCTION: isub(<number1>,<number2>)
  
   Returns the result of subtracting integer <number2> from integer
   <number1>. Similiar to sub() except that the addition is done with
