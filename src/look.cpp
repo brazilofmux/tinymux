@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.30 2001-09-08 19:25:46 sdennis Exp $
+// $Id: look.cpp,v 1.31 2001-09-28 09:49:02 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -1934,27 +1934,34 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
     isconnected = 0;
     is_parent = 0;
 
-    if ((key & SWEEP_LISTEN) &&
-        (((Typeof(what) == TYPE_EXIT) || is_loc) && Audible(what))) {
+    if (  (key & SWEEP_LISTEN)
+       && (  (isExit(what) || is_loc)
+          && Audible(what)))
+    {
         canhear = 1;
-    } else if (key & SWEEP_LISTEN) {
+    }
+    else if (key & SWEEP_LISTEN)
+    {
+        buff = NULL;
         if (Monitor(what))
+        {
             buff = alloc_lbuf("Hearer");
-        else
-            buff = NULL;
+        }
 
-        for (attr = atr_head(what, &as); attr; attr = atr_next(&as)) {
-            if (attr == A_LISTEN) {
+        for (attr = atr_head(what, &as); attr; attr = atr_next(&as))
+        {
+            if (attr == A_LISTEN)
+            {
                 canhear = 1;
                 break;
             }
-            if (Monitor(what)) {
+            if (Monitor(what))
+            {
                 ap = atr_num(attr);
                 if (!ap || (ap->flags & AF_NOPROG))
                     continue;
 
-                atr_get_str(buff, what, attr, &aowner,
-                    &aflags);
+                atr_get_str(buff, what, attr, &aowner, &aflags);
 
                 // Make sure we can execute it.
                 //
@@ -1979,7 +1986,9 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
             }
         }
         if (buff)
+        {
             free_lbuf(buff);
+        }
     }
     if ((key & SWEEP_COMMANDS) && !isExit(what))
     {
@@ -2022,32 +2031,49 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
             ispuppet = 1;
         }
     }
-    if (canhear || cancom || isplayer || ispuppet || isconnected)
+    if (  canhear
+       || cancom
+       || isplayer
+       || ispuppet
+       || isconnected)
     {
         buf = alloc_lbuf("sweep_check.types");
         bp = buf;
 
         if (cancom)
+        {
             safe_str((char *)"commands ", buf, &bp);
+        }
         if (canhear)
+        {
             safe_str((char *)"messages ", buf, &bp);
+        }
         if (isplayer)
+        {
             safe_str((char *)"player ", buf, &bp);
-        if (ispuppet) {
+        }
+        if (ispuppet)
+        {
             safe_str((char *)"puppet(", buf, &bp);
             safe_str(Name(Owner(what)), buf, &bp);
             safe_str((char *)") ", buf, &bp);
         }
         if (isconnected)
+        {
             safe_str((char *)"connected ", buf, &bp);
+        }
         if (is_parent)
+        {
             safe_str((char *)"parent ", buf, &bp);
+        }
         bp[-1] = '\0';
-        if (Typeof(what) != TYPE_EXIT) {
-            notify(player,
-                tprintf("  %s is listening. [%s]",
+        if (!isExit(what))
+        {
+            notify(player, tprintf("  %s is listening. [%s]",
                 Name(what), buf));
-        } else {
+        }
+        else
+        {
             buf2 = alloc_lbuf("sweep_check.name");
             StringCopy(buf2, Name(what));
             for (bp = buf2; *bp && (*bp != ';'); bp++) ;
