@@ -286,6 +286,12 @@ Bug Fixes:
     consideration of the database's last dbref. Reported by Alierak.
  -- For exits, loc(foo) did not return the same answer as rloc(foo,1).
     Reported by Alierak.
+ -- Fixed 'round(100,0)' --> '100.00' instead of '100'.
+ -- Bug #157 - @prog + |LOGOUT would crash MUX 1.6, and that was fixed in
+    MUX 2 a long time ago, but this recent fix cleans up the connection
+    further so that the connection can continued to be used for logging into
+    another account. Prompted by Alierak.
+
 
 
 Performance Enhancements:
