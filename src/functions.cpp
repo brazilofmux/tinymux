@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.119 2001-12-29 19:13:39 sdennis Exp $
+// $Id: functions.cpp,v 1.120 2001-12-29 19:17:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5519,65 +5519,79 @@ FUNCTION(fun_fold)
 
 FUNCTION(fun_filter)
 {
-    dbref aowner, thing;
-    int aflags, anum, first;
-    ATTR *ap;
-    char *atext, *result, *curr, *objstring, *bp, *str, *cp, *atextbuf,
-     sep;
+    char *result, *curr, *objstring, *bp, *str, *cp, *atextbuf, sep;
 
     varargs_preamble(3);
 
-    /*
-     * Two possibilities for the first arg: <obj>/<attr> and <attr>.
-     */
-
-    if (parse_attrib(player, fargs[0], &thing, &anum)) {
-        if ((anum == NOTHING) || (!Good_obj(thing)))
+    // Two possibilities for the first arg: <obj>/<attr> and <attr>.
+    //
+    dbref thing;
+    int   anum;
+    ATTR *ap;
+    if (parse_attrib(player, fargs[0], &thing, &anum))
+    {
+        if (  anum == NOTHING
+           || !Good_obj(thing))
+        {
             ap = NULL;
+        }
         else
+        {
             ap = atr_num(anum);
-    } else {
+        }
+    }
+    else
+    {
         thing = player;
         ap = atr_str(fargs[0]);
     }
 
-    /*
-     * Make sure we got a good attribute
-     */
-
-    if (!ap) {
+    // Make sure we got a good attribute.
+    //
+    if (!ap)
+    {
         return;
     }
-    /*
-     * Use it if we can access it, otherwise return an error.
-     */
 
-    atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext) {
+    // Use it if we can access it, otherwise return an error.
+    //
+    dbref aowner;
+    int   aflags;
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
+    if (!atext)
+    {
         return;
-    } else if (!*atext || !See_attr(player, thing, ap, aowner, aflags)) {
+    }
+    else if (  !*atext
+            || !See_attr(player, thing, ap, aowner, aflags))
+    {
         free_lbuf(atext);
         return;
     }
-    /*
-     * Now iteratively eval the attrib with the argument list
-     */
 
+    // Now iteratively eval the attrib with the argument list.
+    //
     cp = curr = trim_space_sep(fargs[1], sep);
     atextbuf = alloc_lbuf("fun_filter");
-    first = 1;
-    while (cp) {
+    BOOL first = TRUE;
+    while (cp
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+    {
         objstring = split_token(&cp, sep);
         StringCopy(atextbuf, atext);
         result = bp = alloc_lbuf("fun_filter");
         str = atextbuf;
-        TinyExec(result, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
+        TinyExec(result, &bp, 0, player, cause,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
         *bp = '\0';
         if (!first && *result == '1')
+        {
             safe_chr(sep, buff, bufc);
-        if (*result == '1') {
+        }
+        if (*result == '1')
+        {
             safe_str(objstring, buff, bufc);
-            first = 0;
+            first = FALSE;
         }
         free_lbuf(result);
     }
