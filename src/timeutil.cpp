@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.3 2000-05-05 19:40:33 sdennis Exp $
+// $Id: timeutil.cpp,v 1.4 2000-05-05 19:48:48 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -959,7 +959,8 @@ void TIME_Initialize(void)
     ltaUpperBound.SetSeconds(LONG_MAX);
     ltdTimeZone.SetSeconds(-timezone);
     ltdIntervalMinimum.Set100ns(FACTOR_100NS_PER_WEEK);
-    for (int i = 0; i < 15; i++)
+    int i;
+    for (i = 0; i < 15; i++)
     {
         NearestYearOfType[i] = -1;
     }
