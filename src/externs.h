@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.33 2000-11-01 09:12:30 sdennis Exp $
+// $Id: externs.h,v 1.34 2000-11-04 05:29:31 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -523,6 +523,7 @@ extern void ReleaseAllResources(dbref obj);
 #define TWARP_IDLE  8   /* Warp the idle check interval */
 /* emprty       16 */
 #define TWARP_EVENTS    32  /* Warp the events checking interval */
+#define WAIT_UNTIL  1   // Absolute UTC seconds instead of delta.
 
 /* Hush codes for movement messages */
 

@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.26 2000-11-01 09:12:31 sdennis Exp $
+// $Id: command.cpp,v 1.27 2000-11-04 05:29:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -443,14 +443,20 @@ NAMETAB trig_sw[] =
     { NULL,         0,  0,      0}
 };
 
+NAMETAB wait_sw[] =
+{
+    {"until",           1,  CA_PUBLIC, WAIT_UNTIL},
+    { NULL,             0,  0,         0}
+};
+
 NAMETAB wall_sw[] =
 {
-    {(char *)"emit",    1,  CA_ANNOUNCE,    SAY_WALLEMIT},
-    {(char *)"no_prefix",   1,  CA_ANNOUNCE,    SAY_NOTAG|SW_MULTIPLE},
-    {(char *)"pose",    1,  CA_ANNOUNCE,    SAY_WALLPOSE},
-    {(char *)"wizard",  1,  CA_ANNOUNCE,    SAY_WIZSHOUT|SW_MULTIPLE},
-    {(char *)"admin",   1,  CA_ADMIN,   SAY_ADMINSHOUT},
-    { NULL,         0,  0,      0}
+    {"emit",        1,  CA_ANNOUNCE,    SAY_WALLEMIT},
+    {"no_prefix",   1,  CA_ANNOUNCE,    SAY_NOTAG|SW_MULTIPLE},
+    {"pose",        1,  CA_ANNOUNCE,    SAY_WALLPOSE},
+    {"wizard",      1,  CA_ANNOUNCE,    SAY_WIZSHOUT|SW_MULTIPLE},
+    {"admin",       1,  CA_ADMIN,       SAY_ADMINSHOUT},
+    { NULL,         0,  0,              0}
 };
 
 NAMETAB warp_sw[] =
@@ -648,7 +654,7 @@ CMDENT_TWO_ARG_CMDARG command_table_two_arg_cmdarg[] =
 {
     {(char *)"@dolist",       dolist_sw,  CA_GBL_INTERP,    0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_dolist},
     {(char *)"@force",        NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,    FRC_COMMAND,    CS_TWO_ARG|CS_INTERP|CS_CMDARG, do_force},
-    {(char *)"@wait",         NULL,       CA_GBL_INTERP,    0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_wait},
+    {(char *)"@wait",         wait_sw,    CA_GBL_INTERP,    0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, do_wait},
     {(char *)NULL,            NULL,       0,     0,      0,              NULL}
 };
 
@@ -2599,8 +2605,6 @@ static void list_options(dbref player)
     if (mudconf.fork_dump)
     {
         raw_notify(player, "Database dumps are performed by a fork()ed process.");
-        if (mudconf.fork_vfork)
-            raw_notify(player, "The 'vfork()' call is used to perform the fork.");
     }
 #endif // WIN32
     if (mudconf.max_players >= 0)

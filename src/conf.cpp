@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.26 2000-10-24 22:39:58 sdennis Exp $
+// $Id: conf.cpp,v 1.27 2000-11-04 05:29:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -127,7 +127,6 @@ void NDECL(cf_init)
     mudconf.name_spaces = 1;
 #if !defined(VMS) && !defined(WIN32)
     mudconf.fork_dump = 1;
-    mudconf.fork_vfork = 0;
     mudstate.dumping = 0;
 #endif // WIN32
     mudconf.have_comsys = 1;
@@ -1259,7 +1258,6 @@ CONF conftable[] =
     {(char *)"forbid_site",    cf_site,    CA_GOD,     (int *)&mudstate.access_list,    H_FORBIDDEN},
 #if !defined(VMS) && !defined(WIN32)
     {(char *)"fork_dump",    cf_bool,    CA_GOD,     &mudconf.fork_dump,     0},
-    {(char *)"fork_vfork",    cf_bool,    CA_GOD,     &mudconf.fork_vfork,        0},
 #endif // WIN32
     {(char *)"full_file",               cf_string_dyn,  CA_STATIC,  (int *)&mudconf.full_file,   SIZEOF_PATHNAME},
     {(char *)"full_motd_message",    cf_string,  CA_GOD,     (int *)mudconf.fullmotd_msg,    GBUF_SIZE},

@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.12 2000-10-24 21:17:52 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.13 2000-11-04 05:29:31 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -48,7 +48,6 @@ struct confdata
     int     name_spaces;    /* allow player names to have spaces */
     unsigned int site_chars;/* where to truncate site name */
     int     fork_dump;  /* perform dump in a forked process */
-    int     fork_vfork; /* use vfork to fork */
     int     sig_action; /* What to do with fatal signals */
     int     paranoid_alloc; /* Rigorous buffer integrity checks */
     int     max_players;    /* Max # of connected players */

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.23 2000-11-01 09:12:30 sdennis Exp $
+// $Id: game.cpp,v 1.24 2000-11-04 05:29:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1424,14 +1424,7 @@ void fork_and_dump(int key)
 #if !defined(VMS) && !defined(WIN32)
         if (mudconf.fork_dump)
         {
-            if (mudconf.fork_vfork)
-            {
-                child = vfork();
-            }
-            else
-            {
-                child = fork();
-            }
+            child = fork();
         }
 #endif // VMS
         if (child == 0)
