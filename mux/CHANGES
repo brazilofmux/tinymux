@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  December 2003
+Last Update:  April 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -394,6 +394,10 @@ Bug Fixes:
     Fixed by Brazil.
  -- Fixed use of LIBOBJS in Makefile.in so that clean (or initial)
     builds succeed.
+ -- Fixes the way encoded and parsed in mail.db and flatfiles.  This is
+    an important fix.  Backups of your database are not affected,
+    however, without this fix, your server will probably not parser you
+    backups correctly if they contain accent characters.
 
 
 Performance Enhancements:
