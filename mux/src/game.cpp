@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.50 2004-08-16 05:14:07 sdennis Exp $
+// $Id: game.cpp,v 1.51 2004-08-25 21:29:08 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -180,12 +180,12 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
     }
 
     int match = 0;
-    int attr;
+    int atr;
     char *as;
     atr_push();
-    for (attr = atr_head(parent, &as); attr; attr = atr_next(&as))
+    for (atr = atr_head(parent, &as); atr; atr = atr_next(&as))
     {
-        ATTR *ap = atr_num(attr);
+        ATTR *ap = atr_num(atr);
 
         // Never check NOPROG attributes.
         //
@@ -207,7 +207,7 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
         dbref aowner;
         int   aflags;
         char buff[LBUF_SIZE];
-        atr_get_str(buff, parent, attr, &aowner, &aflags);
+        atr_get_str(buff, parent, atr, &aowner, &aflags);
 
         // Skip if private and on a parent.
         //
@@ -222,7 +222,7 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
         //
         if (hash_insert)
         {
-            hashaddLEN(&(ap->number), sizeof(ap->number), &attr, &mudstate.parent_htab);
+            hashaddLEN(&(ap->number), sizeof(ap->number), &atr, &mudstate.parent_htab);
         }
 
         // Check for the leadin character after excluding the attrib.

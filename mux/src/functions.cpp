@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.116 2004-08-16 05:14:07 sdennis Exp $
+// $Id: functions.cpp,v 1.117 2004-08-25 21:27:35 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -876,15 +876,15 @@ FUNCTION(fun_words)
 FUNCTION(fun_flags)
 {
     dbref it;
-    ATTR  *attr;
-    if (parse_attrib(executor, fargs[0], &it, &attr))
+    ATTR  *pattr;
+    if (parse_attrib(executor, fargs[0], &it, &pattr))
     {
-        if (  attr
-           && See_attr(executor, it, attr))
+        if (  pattr
+           && See_attr(executor, it, pattr))
         {
             dbref aowner;
             int   aflags;
-            atr_pget_info(it, attr->number, &aowner, &aflags);
+            atr_pget_info(it, pattr->number, &aowner, &aflags);
             char xbuf[10];
             decode_attr_flags(aflags, xbuf);
             safe_str(xbuf, buff, bufc);
@@ -1531,8 +1531,8 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
         bFreeBuffer = true;
     }
     dbref thing;
-    ATTR *attr;
-    bool bNoMatch = !parse_attrib(executor, pRefAttrib, &thing, &attr);
+    ATTR *pattr;
+    bool bNoMatch = !parse_attrib(executor, pRefAttrib, &thing, &pattr);
     if (bFreeBuffer)
     {
         free_lbuf(pRefAttrib);
@@ -1542,11 +1542,11 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
         safe_nomatch(buff, bufc);
         return;
     }
-    if (!attr)
+    if (!pattr)
     {
         return;
     }
-    if (!See_attr(executor, thing, attr))
+    if (!See_attr(executor, thing, pattr))
     {
         safe_noperm(buff, bufc);
         return;
@@ -1555,7 +1555,7 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     dbref aowner;
     int   aflags;
     size_t nLen = 0;
-    char *atr_gotten = atr_pget_LEN(thing, attr->number, &aowner, &aflags, &nLen);
+    char *atr_gotten = atr_pget_LEN(thing, pattr->number, &aowner, &aflags, &nLen);
 
     if (  key == GET_EVAL
        || key == GET_GEVAL)
@@ -2192,11 +2192,11 @@ FUNCTION(fun_room)
 FUNCTION(fun_owner)
 {
     dbref it;
-    ATTR *attr;
-    if (parse_attrib(executor, fargs[0], &it, &attr))
+    ATTR *pattr;
+    if (parse_attrib(executor, fargs[0], &it, &pattr))
     {
-        if (  !attr
-           || !See_attr(executor, it, attr))
+        if (  !pattr
+           || !See_attr(executor, it, pattr))
         {
             safe_nothing(buff, bufc);
             return;
@@ -2205,7 +2205,7 @@ FUNCTION(fun_owner)
         {
             dbref aowner;
             int   aflags;
-            atr_pget_info(it, attr->number, &aowner, &aflags);
+            atr_pget_info(it, pattr->number, &aowner, &aflags);
             it = aowner;
         }
     }
@@ -5296,13 +5296,13 @@ static bool atr_has_flag
 (
     dbref player,
     dbref thing,
-    ATTR* attr,
+    ATTR* pattr,
     dbref aowner,
     int   aflags,
     const char *flagname
 )
 {
-    if (See_attr(player, thing, attr))
+    if (See_attr(player, thing, pattr))
     {
         ATR_HAS_FLAG_ENTRY *pEntry = atr_has_flag_table;
         while (pEntry->pName)
@@ -5320,12 +5320,12 @@ static bool atr_has_flag
 FUNCTION(fun_hasflag)
 {
     dbref it;
-    ATTR *attr;
+    ATTR *pattr;
 
-    if (parse_attrib(executor, fargs[0], &it, &attr))
+    if (parse_attrib(executor, fargs[0], &it, &pattr))
     {
-        if (  !attr
-           || !See_attr(executor, it, attr))
+        if (  !pattr
+           || !See_attr(executor, it, pattr))
         {
             safe_notfound(buff, bufc);
         }
@@ -5333,8 +5333,8 @@ FUNCTION(fun_hasflag)
         {
             int aflags;
             dbref aowner;
-            atr_pget_info(it, attr->number, &aowner, &aflags);
-            bool cc = atr_has_flag(executor, it, attr, aowner, aflags, fargs[1]);
+            atr_pget_info(it, pattr->number, &aowner, &aflags);
+            bool cc = atr_has_flag(executor, it, pattr, aowner, aflags, fargs[1]);
             safe_bool(cc, buff, bufc);
         }
     }
@@ -5441,20 +5441,20 @@ FUNCTION(fun_lock)
 {
     dbref it, aowner;
     int aflags;
-    ATTR *attr;
+    ATTR *pattr;
     struct boolexp *pBoolExp;
 
     // Parse the argument into obj + lock
     //
-    if (!get_obj_and_lock(executor, fargs[0], &it, &attr, buff, bufc))
+    if (!get_obj_and_lock(executor, fargs[0], &it, &pattr, buff, bufc))
     {
         return;
     }
 
     // Get the attribute and decode it if we can read it
     //
-    char *tbuf = atr_get(it, attr->number, &aowner, &aflags);
-    if (bCanReadAttr(executor, it, attr, false))
+    char *tbuf = atr_get(it, pattr->number, &aowner, &aflags);
+    if (bCanReadAttr(executor, it, pattr, false))
     {
         pBoolExp = parse_boolexp(executor, tbuf, true);
         free_lbuf(tbuf);
@@ -5472,12 +5472,12 @@ FUNCTION(fun_elock)
 {
     dbref it, aowner;
     int aflags;
-    ATTR *attr;
+    ATTR *pattr;
     struct boolexp *pBoolExp;
 
     // Parse lock supplier into obj + lock.
     //
-    if (!get_obj_and_lock(executor, fargs[0], &it, &attr, buff, bufc))
+    if (!get_obj_and_lock(executor, fargs[0], &it, &pattr, buff, bufc))
     {
         return;
     }
@@ -5496,9 +5496,9 @@ FUNCTION(fun_elock)
     }
     else
     {
-        char *tbuf = atr_get(it, attr->number, &aowner, &aflags);
-        if (  attr->number == A_LOCK
-           || bCanReadAttr(executor, it, attr, false))
+        char *tbuf = atr_get(it, pattr->number, &aowner, &aflags);
+        if (  pattr->number == A_LOCK
+           || bCanReadAttr(executor, it, pattr, false))
         {
             pBoolExp = parse_boolexp(executor, tbuf, true);
             safe_bool(eval_boolexp(victim, it, it, pBoolExp), buff, bufc);
@@ -5918,7 +5918,6 @@ void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
     dbref thing;
     int ca;
     bool bFirst;
-    ATTR *attr;
 
     // Check for wildcard matching.  parse_attrib_wild checks for read
     // permission, so we don't have to.  Have p_a_w assume the
@@ -5930,15 +5929,15 @@ void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
     {
         for (ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
-            attr = atr_num(ca);
-            if (attr)
+            ATTR *pattr = atr_num(ca);
+            if (pattr)
             {
                 if (!bFirst)
                 {
                     safe_chr(' ', buff, bufc);
                 }
                 bFirst = false;
-                safe_str(attr->name, buff, bufc);
+                safe_str(pattr->name, buff, bufc);
             }
         }
     }
@@ -5966,7 +5965,6 @@ FUNCTION(fun_attrcnt)
 {
     dbref thing;
     int ca, count = 0;
-    ATTR *attr;
 
     // Mechanism from lattr.
     //
@@ -5975,8 +5973,8 @@ FUNCTION(fun_attrcnt)
     {
         for (ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
-            attr = atr_num(ca);
-            if (attr)
+            ATTR *pattr = atr_num(ca);
+            if (pattr)
             {
                 count++;
             }
@@ -9204,12 +9202,12 @@ FUNCTION(fun_lattrcmds)
         char *buf = alloc_lbuf("fun_lattrcmds");
         for (int ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
-            ATTR *attr = atr_num(ca);
-            if (attr)
+            ATTR *pattr = atr_num(ca);
+            if (pattr)
             {
                 dbref aowner;
                 int   aflags;
-                atr_get_str(buf, thing, attr->number, &aowner, &aflags);
+                atr_get_str(buf, thing, pattr->number, &aowner, &aflags);
                 if (buf[0] == '$')
                 {
                     if (!isFirst)
@@ -9217,7 +9215,7 @@ FUNCTION(fun_lattrcmds)
                         safe_chr(' ', buff, bufc);
                     }
                     isFirst = false;
-                    safe_str(attr->name, buff, bufc);
+                    safe_str(pattr->name, buff, bufc);
                 }
             }
         }
@@ -9269,10 +9267,10 @@ FUNCTION(fun_lcmds)
         int   aflags;
         for (int ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
-            ATTR *attr = atr_num(ca);
-            if (attr)
+            ATTR *pattr = atr_num(ca);
+            if (pattr)
             {
-                atr_get_str(buf, thing, attr->number, &aowner, &aflags);
+                atr_get_str(buf, thing, pattr->number, &aowner, &aflags);
                 if (buf[0] == cmd_type)
                 {
                     bool isFound = false;
@@ -10026,7 +10024,7 @@ void do_function
     }
 
     char *np, *bp;
-    ATTR *attr;
+    ATTR *pattr;
     dbref obj;
 
     // Make a local uppercase copy of the function name.
@@ -10047,7 +10045,7 @@ void do_function
 
     // Make sure the target object exists.
     //
-    if (!parse_attrib(executor, target, &obj, &attr))
+    if (!parse_attrib(executor, target, &obj, &pattr))
     {
         notify_quiet(executor, NOMATCH_MESSAGE);
         free_sbuf(np);
@@ -10057,7 +10055,7 @@ void do_function
 
     // Make sure the attribute exists.
     //
-    if (!attr)
+    if (!pattr)
     {
         notify_quiet(executor, "No such attribute.");
         free_sbuf(np);
@@ -10066,7 +10064,7 @@ void do_function
 
     // Make sure attribute is readably by me.
     //
-    if (!See_attr(executor, obj, attr))
+    if (!See_attr(executor, obj, pattr))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
         free_sbuf(np);
@@ -10093,7 +10091,7 @@ void do_function
         ufp->name = StringClone(np);
         mux_strupr(ufp->name);
         ufp->obj = obj;
-        ufp->atr = attr->number;
+        ufp->atr = pattr->number;
         ufp->perms = CA_PUBLIC;
         ufp->next = NULL;
         if (!ufun_head)
@@ -10112,7 +10110,7 @@ void do_function
         hashaddLEN(np, strlen(np), ufp, &mudstate.ufunc_htab);
     }
     ufp->obj = obj;
-    ufp->atr = attr->number;
+    ufp->atr = pattr->number;
     ufp->flags = key;
     free_sbuf(np);
     if (!Quiet(executor))
