@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  September 2002
+Last Update:  October 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,6 +118,10 @@ Feature Additions:
  -- Added /QUIET switch to @doing command.
  -- Improved signal names from 'SIGTERM' to 'SIGTERM (Terminated)' and from
     'SIGUSR1' to 'SIGUSR1 (Restart Server)'.
+ -- Jake extended MIX() from 2 lists to 10 based on code from RhostMUSH.
+ -- Let alloc file/line number of atr_get() series of calls point to the file
+    and line number where atr_get() was originally called from. Code from
+    RhostMUSH. Jake.
 
 
 Bug Fixes:
@@ -194,6 +198,10 @@ Bug Fixes:
     would have been too small for the long signal names.  Reported by Alierak.
  -- Use God() macro in chown_all() in case someone tries the multiple-GOD
     hack. Reported by Alierak.
+ -- comtitle switch table needed to be terminated. Jake fixed.
+ -- Fixed interaction of @hook/ignore and @hook/permit. Jake.
+ -- Fixed two memcpy/strip-ansi idioms (one in pos() and one in @decomp).
+    Found by Jake.  Bug introduced by Brazil.
 
 
 Performance Enhancements:
