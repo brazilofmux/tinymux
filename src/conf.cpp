@@ -1,9 +1,7 @@
-/*
- * conf.cpp: set up configuration information and static data 
- */
-/*
- * $Id: conf.cpp,v 1.15 2000-06-07 23:51:57 sdennis Exp $ 
- */
+// conf.cpp: set up configuration information and static data.
+//
+// $Id: conf.cpp,v 1.16 2000-06-30 21:07:49 sdennis Exp $
+//
 
 #include "copyright.h"
 #include "autoconf.h"
