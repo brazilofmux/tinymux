@@ -5907,8 +5907,9 @@ FUNCTION CLASSES (continued)
                              CENTER COMP DECRYPT DELETE EDIT ENCRYPT ESCAPE
                              IFELSE LCSTR LJUST LPOS MERGE MID POS REGMATCH
                              REPEAT REPLACE REVERSE RJUST SCRAMBLE SECURE
-                             SPACE SQUISH STRCAT STRIPANSI STRLEN STRMATCH
-                             STRTRUNC SWITCH TRANSLATE TRIM UCSTR WORDPOS
+                             SPACE SPELLNUM SQUISH STRCAT STRIPANSI STRLEN
+                             STRMATCH STRTRUNC SWITCH TRANSLATE TRIM UCSTR
+                             WORDPOS
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
                              WRITETIME
@@ -5963,16 +5964,16 @@ FUNCTION LIST (continued)
     RLOC()      ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()
     SECS()      SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()
     SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()
-    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPLICE()
-    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
-    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()
-    SUBJ()      SWITCH()    T()         TABLE()     TAN()       TEL()
-    TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()
-    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
-    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
-    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()       ZFUN()
-    ZONE()      ZWHO()
+    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()
+    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
+    STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()
+    SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()     TAN()
+    TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()
+    TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()
+    V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
+    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
+    WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()
+    ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -10346,6 +10347,13 @@ SPACE()
     You say "FooXbarXbletch"
 
   Related Topics:
+
+& SPELLNUM()
+SPELLNUM()
+
+  FUNCTION: spellnum(<number1>)
+
+  Given a number, it returns its written-out representation in words.
 
 & SPLICE()
 SPLICE()
