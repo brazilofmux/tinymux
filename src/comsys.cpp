@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.14 2000-09-29 06:13:52 sdennis Exp $
+// * $Id: comsys.cpp,v 1.15 2000-09-29 21:56:49 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1107,6 +1107,8 @@ struct comuser *select_user(struct channel *ch, dbref player)
         return NULL;
 }
 
+#define MAX_ALIASES_PER_PLAYER 50
+
 void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
 {
     char channel[MAX_CHANNEL_LEN+1];
@@ -1179,6 +1181,11 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
         raw_notify(player, tprintf("Warning: You are already on that channel."));
     }
     c = get_comsys(player);
+    if (c->numchannels >= MAX_ALIASES_PER_PLAYER)
+    {
+        raw_notify(player, tprintf("Sorry, but you have reached the maximum number of aliases allowed."));
+        return;
+    }
     for (j = 0; j < c->numchannels && (strcmp(pValidAlias, c->alias + j * 6) > 0); j++)
     {
         // Nothing
