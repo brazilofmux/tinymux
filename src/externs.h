@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.8 2000-04-12 19:31:43 sdennis Exp $
+// $Id: externs.h,v 1.9 2000-04-13 09:49:01 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -15,8 +15,6 @@
 #define TRUE    1
 #define FALSE   0
 #endif
-
-#define safe_atoi(s)    ((s == NULL) ? 0 : Tiny_atol(s))
 
 /* From regexp.c (extract from Henry Spencer's package) */
 
@@ -361,16 +359,21 @@ extern int init_dbfile(char *game_dir_file, char *game_pag_file);
 extern void FDECL(atr_cpy, (dbref, dbref, dbref));
 extern void FDECL(atr_chown, (dbref));
 extern void FDECL(atr_clr, (dbref, int));
-extern void FDECL(atr_add_raw, (dbref, int, char *));
+extern void atr_add_raw_LEN(dbref, int, char *, int);
+extern void atr_add_raw(dbref, int, char *);
 extern void FDECL(atr_add, (dbref, int, char *, dbref, int));
 extern void FDECL(atr_set_owner, (dbref, int, dbref));
 extern void FDECL(atr_set_flags, (dbref, int, int));
 extern char *atr_get_raw_LEN(dbref, int, int*);
 extern char *atr_get_raw(dbref, int);
-extern char *   FDECL(atr_get, (dbref, int, dbref *, int *));
-extern char *   FDECL(atr_pget, (dbref, int, dbref *, int *));
-extern char *   FDECL(atr_get_str, (char *, dbref, int, dbref *, int *));
-extern char *   FDECL(atr_pget_str, (char *, dbref, int, dbref *, int *));
+extern char *atr_get_LEN(dbref, int, dbref *, int *, int *);
+extern char *atr_get(dbref, int, dbref *, int *);
+extern char *atr_pget_LEN(dbref, int, dbref *, int *, int *);
+extern char *atr_pget(dbref, int, dbref *, int *);
+extern char *atr_get_str_LEN(char *s, dbref, int, dbref *, int *, int *);
+extern char *atr_get_str(char *, dbref, int, dbref *, int *);
+extern char *atr_pget_str_LEN(char *, dbref, int, dbref *, int *, int *);
+extern char *atr_pget_str(char *, dbref, int, dbref *, int *);
 extern int  FDECL(atr_get_info, (dbref, int, dbref *, int *));
 extern int  FDECL(atr_pget_info, (dbref, int, dbref *, int *));
 extern void FDECL(atr_free, (dbref));

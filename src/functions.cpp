@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.3 2000-04-11 21:38:01 sdennis Exp $
+// $Id: functions.cpp,v 1.4 2000-04-13 09:48:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -127,6 +127,39 @@ XFUNCTION(fun_iadd);
 XFUNCTION(fun_isub);
 XFUNCTION(fun_imul);
  
+// Trim off leading and trailing spaces if the separator char is a
+// space -- known length version.
+//
+char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim)
+{
+    if (sep != ' ')
+    {
+        *nTrim = nStr;
+        return str;
+    }
+
+    // Advance over leading spaces.
+    //
+    char *pBegin = str;
+    char *pEnd = str + nStr - 1;
+    while (*pBegin == ' ')
+    {
+        pBegin++;
+    }
+
+    // Advance over trailing spaces.
+    //
+    for (; *pEnd == ' ' && pEnd > pBegin; pEnd--)
+    {
+        // Nothing
+    }
+    pEnd++;
+
+    *pEnd = '\0';
+    *nTrim = pEnd - pBegin;
+    return pBegin;
+}
+
 
 /*
  * Trim off leading and trailing spaces if the separator char is a space 
@@ -137,14 +170,51 @@ char *trim_space_sep(char *str, char sep)
     char *p;
 
     if (sep != ' ')
+    {
         return str;
-    while (*str && (*str == ' '))
+    }
+    while (*str == ' ')
+    {
         str++;
-    for (p = str; *p; p++) ;
-    for (p--; *p == ' ' && p > str; p--) ;
+    }
+    for (p = str; *p; p++)
+    {
+        // Nothing
+    }
+    for (p--; *p == ' ' && p > str; p--)
+    {
+        // Nothing
+    }
     p++;
     *p = '\0';
     return str;
+}
+
+// next_token: Point at start of next token in string -- known length
+// version.
+//
+char *next_token_LEN(char *str, int *nStr, char sep)
+{
+    char *pBegin = str;
+    while (*pBegin && (*pBegin != sep))
+    {
+        pBegin++;
+    }
+    if (!*pBegin)
+    {
+        *nStr = 0;
+        return NULL;
+    }
+    pBegin++;
+    if (sep == ' ')
+    {
+        while (*pBegin == ' ')
+        {
+            pBegin++;
+        }
+    }
+    *nStr -= pBegin - str;
+    return pBegin;
 }
 
 /*
@@ -154,15 +224,67 @@ char *trim_space_sep(char *str, char sep)
 char *next_token(char *str, char sep)
 {
     while (*str && (*str != sep))
+    {
         str++;
+    }
     if (!*str)
+    {
         return NULL;
+    }
     str++;
-    if (sep == ' ') {
-        while (*str == sep)
+    if (sep == ' ')
+    {
+        while (*str == ' ')
+        {
             str++;
+        }
     }
     return str;
+}
+
+// split_token: Get next token from string as null-term string. String is
+// destructively modified -- known length version.
+//
+char *split_token_LEN(char **sp, int *nStr, char sep, int *nToken)
+{
+    char *str, *save;
+
+    save = str = *sp;
+    if (!str)
+    {
+        *nStr = 0;
+        *sp = NULL;
+        *nToken = 0;
+        return NULL;
+    }
+
+    // Advance over token
+    //
+    while (*str && (*str != sep))
+    {
+        str++;
+    }
+    *nToken = str - save;
+
+    if (*str)
+    {
+        *str++ = '\0';
+        if (sep == ' ')
+        {
+            while (*str == ' ')
+            {
+                str++;
+            }
+        }
+        *nStr -= str - save;
+    }
+    else
+    {
+        *nStr = 0;
+        str = NULL;
+    }
+    *sp = str;
+    return save;
 }
 
 /*
@@ -175,19 +297,28 @@ char *split_token(char **sp, char sep)
     char *str, *save;
 
     save = str = *sp;
-    if (!str) {
+    if (!str)
+    {
         *sp = NULL;
         return NULL;
     }
     while (*str && (*str != sep))
+    {
         str++;
-    if (*str) {
+    }
+    if (*str)
+    {
         *str++ = '\0';
-        if (sep == ' ') {
-            while (*str == sep)
+        if (sep == ' ')
+        {
+            while (*str == ' ')
+            {
                 str++;
+            }
         }
-    } else {
+    }
+    else
+    {
         str = NULL;
     }
     *sp = str;
@@ -626,11 +757,11 @@ FUNCTION(fun_words)
 
     if (nfargs == 0)
     {
-        safe_str("0", buff, bufc);
+        safe_chr('0', buff, bufc);
         return;
     }
     varargs_preamble("WORDS", 2);
-    safe_tprintf_str(buff, bufc, "%d", countwords(fargs[0], sep));
+    safe_ltoa(countwords(fargs[0], sep), buff, bufc, LBUF_SIZE-1);
 }
 
 /*
@@ -665,9 +796,13 @@ FUNCTION(fun_rand)
 
     num = Tiny_atol(fargs[0]);
     if (num < 1)
-        safe_str("0", buff, bufc);
+    {
+        safe_chr('0', buff, bufc);
+    }
     else
-        safe_tprintf_str(buff, bufc, "%ld", RandomLong(0,num-1));
+    {
+        safe_ltoa(RandomLong(0,num-1), buff, bufc, LBUF_SIZE-1);
+    }
 }
 
 /*
@@ -680,11 +815,16 @@ FUNCTION(fun_abs)
     double num;
 
     num = safe_atof(fargs[0]);
-    if (num == 0.0) {
-        safe_str("0", buff, bufc);
-    } else if (num < 0.0) {
+    if (num == 0.0)
+    {
+        safe_chr('0', buff, bufc);
+    }
+    else if (num < 0.0)
+    {
         fval(buff, bufc, -num);
-    } else {
+    }
+    else
+    {
         fval(buff, bufc, num);
     }
 }
@@ -700,11 +840,13 @@ FUNCTION(fun_sign)
 
     num = safe_atof(fargs[0]);
     if (num < 0)
+    {
         safe_str("-1", buff, bufc);
-    else if (num > 0)
-        safe_str("1", buff, bufc);
+    }
     else
-        safe_str("0", buff, bufc);
+    {
+        safe_chr((num > 0) ? '1' : '0', buff, bufc);
+    }
 }
 
 /*
@@ -825,47 +967,68 @@ FUNCTION(fun_get)
     char *atr_gotten;
     struct boolexp *pBoolExp;
 
-    if (!parse_attrib(player, fargs[0], &thing, &attrib)) {
+    if (!parse_attrib(player, fargs[0], &thing, &attrib))
+    {
         safe_str("#-1 NO MATCH", buff, bufc);
         return;
     }
-    if (attrib == NOTHING) {
+    if (attrib == NOTHING)
+    {
         return;
     }
     free_buffer = 1;
-    attr = atr_num(attrib); /*
-                 * We need the attr's flags for this: 
-                 */
-    if (!attr) {
+
+    // We need the attr's flags for this:
+    //
+    attr = atr_num(attrib);
+    if (!attr)
+    {
         return;
     }
-    if (attr->flags & AF_IS_LOCK) {
-        atr_gotten = atr_get(thing, attrib, &aowner, &aflags);
-        if (Read_attr(player, thing, attr, aowner, aflags)) {
+    int nLen = 0;
+    if (attr->flags & AF_IS_LOCK)
+    {
+        atr_gotten = atr_get_LEN(thing, attrib, &aowner, &aflags, &nLen);
+        if (Read_attr(player, thing, attr, aowner, aflags))
+        {
             pBoolExp = parse_boolexp(player, atr_gotten, 1);
             free_lbuf(atr_gotten);
             atr_gotten = unparse_boolexp(player, pBoolExp);
             free_boolexp(pBoolExp);
-        } else {
+        }
+        else
+        {
             free_lbuf(atr_gotten);
             atr_gotten = (char *)"#-1 PERMISSION DENIED";
         }
         free_buffer = 0;
-    } else {
-        atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
+    }
+    else
+    {
+        atr_gotten = atr_pget_LEN(thing, attrib, &aowner, &aflags, &nLen);
     }
 
-    /*
-     * Perform access checks.  c_r_p fills buff with an error message * * 
-     * 
-     * *  * * if needed. 
-     */
-
+    // Perform access checks.  c_r_p fills buff with an error message
+    // if needed.
+    //
     if (check_read_perms(player, thing, attr, aowner, aflags, buff, bufc))
-        safe_str(atr_gotten, buff, bufc);
+    {
+        if (free_buffer)
+        {
+            if (nLen)
+            {
+                safe_copy_buf(atr_gotten, nLen, buff, bufc, LBUF_SIZE-1);
+            }
+        }
+        else
+        {
+            safe_str(atr_gotten, buff, bufc);
+        }
+    }
     if (free_buffer)
+    {
         free_lbuf(atr_gotten);
-    return;
+    }
 }
 
 FUNCTION(fun_xget)
@@ -1598,7 +1761,7 @@ FUNCTION(fun_controls)
         safe_tprintf_str(buff, bufc, "%s", "#-1 ARG2 NOT FOUND");
         return;
     }
-    safe_tprintf_str(buff, bufc, "%d", Controls(x, y));
+    safe_ltoa(Controls(x, y), buff, bufc, LBUF_SIZE-1);
 }
 
 /*
@@ -1682,26 +1845,22 @@ FUNCTION(fun_match)
     s = trim_space_sep(fargs[0], sep);
     do {
         r = split_token(&s, sep);
-        if (quick_wild(fargs[1], r)) {
-            safe_tprintf_str(buff, bufc, "%d", wcount);
+        if (quick_wild(fargs[1], r))
+        {
+            safe_ltoa(wcount, buff, bufc, LBUF_SIZE-1);
             return;
         }
         wcount++;
     } while (s);
-    safe_str("0", buff, bufc);
+    safe_chr('0', buff, bufc);
 }
 
 FUNCTION(fun_strmatch)
 {
-    /*
-     * Check if we match the whole string.  If so, return 1 
-     */
-
-    if (quick_wild(fargs[1], fargs[0]))
-        safe_str("1", buff, bufc);
-    else
-        safe_str("0", buff, bufc);
-    return;
+    // Check if we match the whole string.  If so, return 1.
+    //
+    int cc = quick_wild(fargs[1], fargs[0]);
+    safe_chr(cc ? '1' : '0', buff, bufc);
 }
 
 /*
@@ -1876,7 +2035,7 @@ FUNCTION(fun_version)
 }
 FUNCTION(fun_strlen)
 {
-    safe_tprintf_str(buff, bufc, "%d", (int)strlen((char *)strip_ansi(fargs[0])));
+    safe_ltoa(strlen(strip_ansi(fargs[0])), buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_num)
@@ -1901,27 +2060,80 @@ FUNCTION(fun_pmatch)
 
 FUNCTION(fun_gt)
 {
-    safe_tprintf_str(buff, bufc, "%d", (safe_atof(fargs[0]) > safe_atof(fargs[1])));
+    int ch = '0';
+    if (  (  is_integer(fargs[0])
+          && is_integer(fargs[1])
+          && Tiny_atoi64(fargs[0]) > Tiny_atoi64(fargs[1]))
+       || safe_atof(fargs[0]) > safe_atof(fargs[1]))
+    {
+        ch = '1';
+    }
+    safe_chr(ch, buff, bufc);
 }
+
 FUNCTION(fun_gte)
 {
-    safe_tprintf_str(buff, bufc, "%d", (safe_atof(fargs[0]) >= safe_atof(fargs[1])));
+    int ch = '0';
+    if (  (  is_integer(fargs[0])
+          && is_integer(fargs[1])
+          && Tiny_atoi64(fargs[0]) >= Tiny_atoi64(fargs[1]))
+       || safe_atof(fargs[0]) >= safe_atof(fargs[1]))
+    {
+        ch = '1';
+    }
+    safe_chr(ch, buff, bufc);
 }
+
 FUNCTION(fun_lt)
 {
-    safe_tprintf_str(buff, bufc, "%d", (safe_atof(fargs[0]) < safe_atof(fargs[1])));
+    int ch = '0';
+    if (  (  is_integer(fargs[0])
+          && is_integer(fargs[1])
+          && Tiny_atoi64(fargs[0]) < Tiny_atoi64(fargs[1]))
+       || safe_atof(fargs[0]) < safe_atof(fargs[1]))
+    {
+        ch = '1';
+    }
+    safe_chr(ch, buff, bufc);
 }
+
 FUNCTION(fun_lte)
 {
-    safe_tprintf_str(buff, bufc, "%d", (safe_atof(fargs[0]) <= safe_atof(fargs[1])));
+    int ch = '0';
+    if (  (  is_integer(fargs[0])
+          && is_integer(fargs[1])
+          && Tiny_atoi64(fargs[0]) <= Tiny_atoi64(fargs[1]))
+       || safe_atof(fargs[0]) <= safe_atof(fargs[1]))
+    {
+        ch = '1';
+    }
+    safe_chr(ch, buff, bufc);
 }
+
 FUNCTION(fun_eq)
 {
-    safe_tprintf_str(buff, bufc, "%d", (safe_atof(fargs[0]) == safe_atof(fargs[1])));
+    int ch = '0';
+    if (  (  is_integer(fargs[0])
+          && is_integer(fargs[1])
+          && Tiny_atoi64(fargs[0]) == Tiny_atoi64(fargs[1]))
+       || safe_atof(fargs[0]) == safe_atof(fargs[1]))
+    {
+        ch = '1';
+    }
+    safe_chr(ch, buff, bufc);
 }
+
 FUNCTION(fun_neq)
 {
-    safe_tprintf_str(buff, bufc, "%d", (safe_atof(fargs[0]) != safe_atof(fargs[1])));
+    int ch = '0';
+    if (  (  is_integer(fargs[0])
+          && is_integer(fargs[1])
+          && Tiny_atoi64(fargs[0]) != Tiny_atoi64(fargs[1]))
+       || safe_atof(fargs[0]) != safe_atof(fargs[1]))
+    {
+        ch = '1';
+    }
+    safe_chr(ch, buff, bufc);
 }
 
 FUNCTION(fun_and)
@@ -1936,7 +2148,7 @@ FUNCTION(fun_and)
     {
         val = val && Tiny_atol(fargs[i]);
     }
-    safe_tprintf_str(buff, bufc, "%d", val);
+    safe_chr(val ? '1' : '0', buff, bufc);
 }
 
 FUNCTION(fun_or)
@@ -1952,7 +2164,7 @@ FUNCTION(fun_or)
     {
         val = val || Tiny_atol(fargs[i]);
     }
-    safe_tprintf_str(buff, bufc, "%d", val);
+    safe_chr(val ? '1' : '0', buff, bufc);
 }
 
 FUNCTION(fun_xor)
@@ -1969,12 +2181,12 @@ FUNCTION(fun_xor)
         int tval = Tiny_atol(fargs[i]);
         val = (val && !tval) || (!val && tval);
     }
-    safe_tprintf_str(buff, bufc, "%d", val);
+    safe_chr(val ? '1' : '0', buff, bufc);
 }
 
 FUNCTION(fun_not)
 {
-    safe_tprintf_str(buff, bufc, "%d", !xlate(fargs[0]));
+    safe_ltoa(!xlate(fargs[0]), buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_sqrt)
@@ -1989,7 +2201,7 @@ FUNCTION(fun_sqrt)
     }
     else if (val == 0.0)
     {
-        safe_str("0", buff, bufc);
+        safe_chr('0', buff, bufc);
     }
     else
     {
@@ -2344,7 +2556,7 @@ FUNCTION(fun_dist2d)
     d = Tiny_atol(fargs[1]) - Tiny_atol(fargs[3]);
     r += (double)(d * d);
     d = (int)(sqrt(r) + 0.5);
-    safe_tprintf_str(buff, bufc, "%d", d);
+    safe_ltoa(d, buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_dist3d)
@@ -2359,7 +2571,7 @@ FUNCTION(fun_dist3d)
     d = Tiny_atol(fargs[2]) - Tiny_atol(fargs[5]);
     r += (double)(d * d);
     d = (int)(sqrt(r) + 0.5);
-    safe_tprintf_str(buff, bufc, "%d", d);
+    safe_ltoa(d, buff, bufc, LBUF_SIZE-1);
 }
 
 
@@ -2673,7 +2885,7 @@ FUNCTION(fun_vdim)
     else
     {
         varargs_preamble("VDIM", 2);
-        safe_str(Tiny_ltoa_t(countwords(fargs[0],sep)), buff, bufc);
+        safe_ltoa(countwords(fargs[0],sep), buff, bufc, LBUF_SIZE-1);
     }
 }
 
@@ -2687,12 +2899,14 @@ FUNCTION(fun_comp)
     int x;
 
     x = strcmp(fargs[0], fargs[1]);
-    if (x > 0)
-        safe_str("1", buff, bufc);
-    else if (x < 0)
+    if (x < 0)
+    {
         safe_str("-1", buff, bufc);
+    }
     else
-        safe_str("0", buff, bufc);
+    {
+        safe_chr((x == 0) ? '0' : '1', buff, bufc);
+    }
 }
 
 #ifdef WOD_REALMS
@@ -2735,21 +2949,15 @@ FUNCTION(fun_cansee)
             // Do it.
             //
             int Realm_Do = DoThingToThingVisibility(looker, lookee, mode);
-            if ((Realm_Do & REALM_DO_MASK) == REALM_DO_HIDDEN_FROM_YOU)
+            int ch = '0';
+            if ((Realm_Do & REALM_DO_MASK) != REALM_DO_HIDDEN_FROM_YOU)
             {
-                safe_str("0", buff, bufc);
-            }
-            else
-            {
-                if (Dark(lookee))
+                if (!Dark(lookee))
                 {
-                    safe_str("0", buff, bufc);
-                }
-                else
-                {
-                    safe_str("1", buff, bufc);
+                    ch = '1';
                 }
             }
+            safe_chr(ch, buff, bufc);
             return;
         }
     }
@@ -2907,7 +3115,7 @@ FUNCTION(fun_money)
     if ((it == NOTHING) || !Examinable(player, it))
         safe_str("#-1", buff, bufc);
     else
-        safe_tprintf_str(buff, bufc, "%d", Pennies(it));
+        safe_ltoa(Pennies(it), buff, bufc, LBUF_SIZE-1);
 }
 
 /*
@@ -2927,8 +3135,9 @@ FUNCTION(fun_pos)
         t = fargs[0];
         while (*t && *t == *u)
             ++t, ++u;
-        if (*t == '\0') {
-            safe_tprintf_str(buff, bufc, "%d", i);
+        if (*t == '\0')
+        {
+            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
             return;
         }
         ++i, ++s;
@@ -2957,118 +3166,150 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
 {
     int ct, overrun;
     char *sptr, *iptr, *eptr;
+    int slen = 0, ilen = 0, elen = 0;
+
     char nullb;
 
-    /*
-     * If passed a null string return an empty string, except that we * * 
-     * 
-     * *  * * are allowed to append to a null string. 
-     */
-
-    if ((!str || !*str) && ((flag != IF_INSERT) || (el != 1))) {
+    // If passed a null string return an empty string, except that we
+    // are allowed to append to a null string.
+    //
+    if ((!str || !*str) && ((flag != IF_INSERT) || (el != 1)))
+    {
         return;
     }
-    /*
-     * we can't fiddle with anything before the first position 
-     */
+    int nStr = strlen(str);
 
-    if (el < 1) {
-        safe_str(str, buff, bufc);
+    // We can't fiddle with anything before the first position.
+    //
+    if (el < 1)
+    {
+        safe_copy_buf(str, nStr, buff, bufc, LBUF_SIZE-1);
         return;
     }
-    /*
-     * Split the list up into 'before', 'target', and 'after' chunks * *
-     * * * pointed to by sptr, iptr, and eptr respectively. 
-     */
 
+    // Split the list up into 'before', 'target', and 'after' chunks
+    // pointed to by sptr, iptr, and eptr respectively.
+    //
     nullb = '\0';
-    if (el == 1) {
-        /*
-         * No 'before' portion, just split off element 1 
-         */
-
+    if (el == 1)
+    {
+        // No 'before' portion, just split off element 1
+        //
         sptr = NULL;
-        if (!str || !*str) {
+        slen = 0;
+        if (!str || !*str)
+        {
             eptr = NULL;
             iptr = NULL;
-        } else {
-            eptr = trim_space_sep(str, sep);
-            iptr = split_token(&eptr, sep);
         }
-    } else {
-        /*
-         * Break off 'before' portion 
-         */
-
-        sptr = eptr = trim_space_sep(str, sep);
+        else
+        {
+            eptr = trim_space_sep_LEN(str, nStr, sep, &elen);
+            iptr = split_token_LEN(&eptr, &elen, sep, &ilen);
+        }
+    }
+    else
+    {
+        // Break off 'before' portion.
+        //
+        sptr = eptr = trim_space_sep_LEN(str, nStr, sep, &elen);
         overrun = 1;
-        for (ct = el; ct > 2 && eptr; eptr = next_token(eptr, sep), ct--) ;
-        if (eptr) {
-            overrun = 0;
-            iptr = split_token(&eptr, sep);
+        for (  ct = el;
+               ct > 2 && eptr;
+               eptr = next_token_LEN(eptr, &elen, sep), ct--)
+        {
+            // Nothing
         }
-        /*
-         * If we didn't make it to the target element, just return *
-         * * * * the string.  Insert is allowed to continue if we are 
-         * *  * *  * exactly at the end of the string, but replace
-         * and * delete *  *  * * are not. 
-         */
+        if (eptr)
+        {
+            // Note: We are using (iptr,ilen) temporarily. It
+            // doesn't represent the 'target' word, but the
+            // the last token in the 'before' portion.
+            //
+            overrun = 0;
+            iptr = split_token_LEN(&eptr, &elen, sep, &ilen);
+            slen = (iptr - sptr) + ilen;
+        }
 
-        if (!(eptr || ((flag == IF_INSERT) && !overrun))) {
-            safe_str(str, buff, bufc);
+        // If we didn't make it to the target element, just return
+        // the string. Insert is allowed to continue if we are exactly
+        // at the end of the string, but replace and delete are not.
+        //
+        if (!(eptr || ((flag == IF_INSERT) && !overrun)))
+        {
+            safe_copy_buf(str, nStr, buff, bufc, LBUF_SIZE-1);
             return;
         }
-        /*
-         * Split the 'target' word from the 'after' portion. 
-         */
 
+        // Split the 'target' word from the 'after' portion.
+        //
         if (eptr)
-            iptr = split_token(&eptr, sep);
+        {
+            iptr = split_token_LEN(&eptr, &elen, sep, &ilen);
+        }
         else
+        {
             iptr = NULL;
+            ilen = 0;
+        }
     }
 
-    switch (flag) {
-    case IF_DELETE: /*
-                 * deletion 
-                 */
-        if (sptr) {
-            safe_str(sptr, buff, bufc);
+    switch (flag)
+    {
+    case IF_DELETE:
+    
+        // deletion
+        //
+        if (sptr)
+        {
+            safe_copy_buf(sptr, slen, buff, bufc, LBUF_SIZE-1);
             if (eptr)
+            {
                 safe_chr(sep, buff, bufc);
+            }
         }
-        if (eptr) {
-            safe_str(eptr, buff, bufc);
+        if (eptr)
+        {
+            safe_copy_buf(eptr, elen, buff, bufc, LBUF_SIZE-1);
         }
         break;
-    case IF_REPLACE:    /*
-                 * replacing 
-                 */
-        if (sptr) {
-            safe_str(sptr, buff, bufc);
+
+    case IF_REPLACE:
+
+        // replacing.
+        //
+        if (sptr)
+        {
+            safe_copy_buf(sptr, slen, buff, bufc, LBUF_SIZE-1);
             safe_chr(sep, buff, bufc);
         }
         safe_str(word, buff, bufc);
-        if (eptr) {
+        if (eptr)
+        {
             safe_chr(sep, buff, bufc);
-            safe_str(eptr, buff, bufc);
+            safe_copy_buf(eptr, elen, buff, bufc, LBUF_SIZE-1);
         }
         break;
-    case IF_INSERT: /*
-                 * insertion 
-                 */
-        if (sptr) {
-            safe_str(sptr, buff, bufc);
+
+    case IF_INSERT:
+    
+        // Insertion.
+        //
+        if (sptr)
+        {
+            safe_copy_buf(sptr, slen, buff, bufc, LBUF_SIZE-1);
             safe_chr(sep, buff, bufc);
         }
         safe_str(word, buff, bufc);
-        if (iptr) {
+        if (iptr)
+        {
             safe_chr(sep, buff, bufc);
-            safe_str(iptr, buff, bufc);
+            safe_copy_buf(iptr, ilen, buff, bufc, LBUF_SIZE-1);
         }
-        if (eptr) {
+        if (eptr)
+        {
             safe_chr(sep, buff, bufc);
-            safe_str(eptr, buff, bufc);
+            safe_copy_buf(eptr, elen, buff, bufc, LBUF_SIZE-1);
         }
         break;
     }
@@ -3160,13 +3401,14 @@ FUNCTION(fun_member)
     s = trim_space_sep(fargs[0], sep);
     do {
         r = split_token(&s, sep);
-        if (!strcmp(fargs[1], r)) {
-            safe_tprintf_str(buff, bufc, "%d", wcount);
+        if (!strcmp(fargs[1], r))
+        {
+            safe_ltoa(wcount, buff, bufc, LBUF_SIZE-1);
             return;
         }
         wcount++;
     } while (s);
-    safe_str("0", buff, bufc);
+    safe_chr('0', buff, bufc);
 }
 
 /*
@@ -3251,7 +3493,7 @@ FUNCTION(fun_wordpos)
                 break;
             xp = split_token(&cp, sep);
         }
-        safe_tprintf_str(buff, bufc, "%d", i);
+        safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
         return;
     }
     safe_str("#-1", buff, bufc);
@@ -3295,12 +3537,13 @@ FUNCTION(fun_hasflag)
         safe_str("#-1 NOT FOUND", buff, bufc);
         return;
     }
-    if (mudconf.pub_flags || Examinable(player, it) || (it == cause)) {
-        if (has_flag(player, it, fargs[1]))
-            safe_str("1", buff, bufc);
-        else
-            safe_str("0", buff, bufc);
-    } else {
+    if (mudconf.pub_flags || Examinable(player, it) || (it == cause))
+    {
+        int cc = has_flag(player, it, fargs[1]);
+        safe_chr(cc ? '1' : '0', buff, bufc);
+    }
+    else
+    {
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
     }
 }
@@ -3420,10 +3663,10 @@ FUNCTION(fun_elock)
         if ((attr->number == A_LOCK) ||
             Read_attr(player, it, attr, aowner, aflags)) {
             pBoolExp = parse_boolexp(player, tbuf, 1);
-            safe_tprintf_str(buff, bufc, "%d", eval_boolexp(victim, it, it, pBoolExp));
+            safe_ltoa(eval_boolexp(victim, it, it, pBoolExp), buff, bufc, LBUF_SIZE-1);
             free_boolexp(pBoolExp);
         } else {
-            safe_str("0", buff, bufc);
+            safe_chr('0', buff, bufc);
         }
         free_lbuf(tbuf);
     }
@@ -3447,16 +3690,17 @@ FUNCTION(fun_lwho)
 FUNCTION(fun_nearby)
 {
     dbref obj1, obj2;
+    int ch = '0';
 
     obj1 = match_thing(player, fargs[0]);
     obj2 = match_thing(player, fargs[1]);
-    if (!(nearby_or_control(player, obj1) ||
-          nearby_or_control(player, obj2)))
-        safe_str("0", buff, bufc);
-    else if (nearby(obj1, obj2))
-        safe_str("1", buff, bufc);
-    else
-        safe_str("0", buff, bufc);
+    if (  (  nearby_or_control(player, obj1)
+          || nearby_or_control(player, obj2))
+       && nearby(obj1, obj2))
+    {
+        ch = '1';
+    }
+    safe_chr(ch, buff, bufc);
 }
 
 /*
@@ -4741,41 +4985,34 @@ FUNCTION(fun_locate)
 
 FUNCTION(fun_switch)
 {
-    int i;
-    char *mbuff, *tbuff, *buf, *bp, *str;
+    char *mbuff, *tbuff, *bp, *str;
 
-    /*
-     * If we don't have at least 2 args, return nothing 
-     */
-
-    if (nfargs < 2) {
+    // If we don't have at least 2 args, return nothing.
+    //
+    if (nfargs < 2)
+    {
         return;
     }
-    /*
-     * Evaluate the target in fargs[0] 
-     */
 
+    // Evaluate the target in fargs[0].
+    //
     mbuff = bp = alloc_lbuf("fun_switch");
     str = fargs[0];
     TinyExec(mbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
-    /*
-     * Loop through the patterns looking for a match 
-     */
-
-    for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1]; i += 2) {
+    // Loop through the patterns looking for a match.
+    //
+    for (int i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1]; i += 2)
+    {
         tbuff = bp = alloc_lbuf("fun_switch.2");
         str = fargs[i];
         TinyExec(tbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         if (quick_wild(tbuff, mbuff)) {
             free_lbuf(tbuff);
-            buf = alloc_lbuf("fun_switch");
-            StringCopy(buf, fargs[i + 1]);
-            str = buf;
+			str = fargs[i+1];
             TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-            free_lbuf(buf);
             free_lbuf(mbuff);
             return;
         }
@@ -4783,16 +5020,13 @@ FUNCTION(fun_switch)
     }
     free_lbuf(mbuff);
 
-    /*
-     * Nope, return the default if there is one 
-     */
-
-    if ((i < nfargs) && fargs[i]) {
-        buf = alloc_lbuf("fun_switch");
-        StringCopy(buf, fargs[i]);
-        str = buf;
+    // Nope, return the default if there is one.
+    //
+    if ((i < nfargs) && fargs[i])
+    {
+        str = fargs[i];
         TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-        free_lbuf(buf);
+
     }
     return;
 }
@@ -4909,7 +5143,7 @@ FUNCTION(fun_idle)
     target = lookup_player(player, fargs[0], 1);
     if (Good_obj(target) && Dark(target) && !Wizard(player))
         target = NOTHING;
-    safe_tprintf_str(buff, bufc, "%d", fetch_idle(target));
+    safe_ltoa(fetch_idle(target), buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_conn)
@@ -4919,7 +5153,7 @@ FUNCTION(fun_conn)
     target = lookup_player(player, fargs[0], 1);
     if (Good_obj(target) && Dark(target) && !Wizard(player))
         target = NOTHING;
-    safe_tprintf_str(buff, bufc, "%d", fetch_connect(target));
+    safe_ltoa(fetch_connect(target), buff, bufc, LBUF_SIZE-1);
 }
 
 /*
@@ -5452,16 +5686,18 @@ FUNCTION(fun_isdbref)
 {
     char *p;
     dbref dbitem;
+    int ch = '0';
 
     p = fargs[0];
-    if (*p++ == NUMBER_TOKEN) {
+    if (*p++ == NUMBER_TOKEN)
+    {
         dbitem = parse_dbref(p);
-        if (Good_obj(dbitem)) {
-            safe_str("1", buff, bufc);
-            return;
+        if (Good_obj(dbitem))
+        {
+            ch = '1';
         }
     }
-    safe_str("0", buff, bufc);
+    safe_chr(ch, buff, bufc);
 }
 
 /*

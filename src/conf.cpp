@@ -2,7 +2,7 @@
  * conf.c:      set up configuration information and static data 
  */
 /*
- * $Id: conf.cpp,v 1.4 2000-04-11 21:38:04 sdennis Exp $ 
+ * $Id: conf.cpp,v 1.5 2000-04-13 09:49:02 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -307,6 +307,7 @@ void NDECL(cf_init)
     mudstate.iter_alist.len = 0;
     mudstate.iter_alist.next = NULL;
     mudstate.mod_alist = NULL;
+    mudstate.mod_alist_len = 0;
     mudstate.mod_size = 0;
     mudstate.mod_al_id = NOTHING;
     mudstate.olist = NULL;
@@ -369,6 +370,7 @@ void NDECL(cf_init)
     mudstate.iter_alist.len = 0;
     mudstate.iter_alist.next = NULL;
     mudstate.mod_alist = NULL;
+    mudstate.mod_alist_len = 0;
     mudstate.mod_size = 0;
     mudstate.mod_al_id = NOTHING;
     mudstate.min_size = 0;

@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.2 2000-04-12 03:13:31 sdennis Exp $
+// $Id: db.cpp,v 1.3 2000-04-13 09:49:02 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -595,12 +595,22 @@ char *PureName(dbref thing)
 
 void s_Name(dbref thing, char *s)
 {
-    /* Truncate the name if we have to */
-    
-    if (s && (strlen(s) > MBUF_SIZE))
-        s[MBUF_SIZE] = '\0';
+    // Truncate the name if we have to.
+    //
+    // Truncate the name if we have to.
+    //
+    int len = 0;
+    if (s)
+    {
+        len = strlen(s);
+        if (len >= MBUF_SIZE)
+        {
+            len = MBUF_SIZE-1;
+            s[len] = '\0';
+        }
+    }
         
-    atr_add_raw(thing, A_NAME, (char *)s);
+    atr_add_raw_LEN(thing, A_NAME, s, len);
 #ifndef MEMORY_BASED
     set_string(&names[thing], (char *)s);
 #endif
@@ -1107,7 +1117,7 @@ int Commer(dbref thing)
 #ifndef MEMORY_BASED
 /*
  * ---------------------------------------------------------------------------
- * * al_size, al_fetch, al_store, al_add, al_delete: Manipulate attribute lists
+ * * al_fetch, al_store, al_add, al_delete: Manipulate attribute lists
  */
 
 /*
@@ -1137,17 +1147,6 @@ void al_extend(char **buffer, int *bufsiz, int len, int copy)
 }
 
 /*
- * al_size: Return length of attribute list in chars 
- */
-
-int al_size(char *astr)
-{
-    if (!astr)
-        return 0;
-    return (strlen(astr) + 1);
-}
-
-/*
  * al_store: Write modified attribute list 
  */
 
@@ -1155,9 +1154,9 @@ void NDECL(al_store)
 {
     if (mudstate.mod_al_id != NOTHING)
     {
-        if (mudstate.mod_alist && *mudstate.mod_alist)
+        if (mudstate.mod_alist_len)
         {
-            atr_add_raw(mudstate.mod_al_id, A_LIST, mudstate.mod_alist);
+            atr_add_raw_LEN(mudstate.mod_al_id, A_LIST, mudstate.mod_alist, mudstate.mod_alist_len);
         }
         else
         {
@@ -1173,30 +1172,29 @@ void NDECL(al_store)
 
 char *al_fetch(dbref thing)
 {
-    char *astr;
-    int len;
-
-    /*
-     * We only need fetch if we change things 
-     */
+    // We only need fetch if we change things.
+    //
     if (mudstate.mod_al_id == thing)
+    {
         return mudstate.mod_alist;
+    }
 
-    /*
-     * Save old list, then fetch and set up the attribute list 
-     */
+    // Save old list, then fetch and set up the attribute list.
+    //
     al_store();
-    astr = atr_get_raw(thing, A_LIST);
+    int len;
+    char *astr = atr_get_raw_LEN(thing, A_LIST, &len);
     if (astr)
     {
-        len = al_size(astr);
-        al_extend(&mudstate.mod_alist, &mudstate.mod_size, len, 0);
-        memcpy(mudstate.mod_alist, astr, len);
+        al_extend(&mudstate.mod_alist, &mudstate.mod_size, len+1, 0);
+        memcpy(mudstate.mod_alist, astr, len+1);
+        mudstate.mod_alist_len = len;
     }
     else
     {
         al_extend(&mudstate.mod_alist, &mudstate.mod_size, 1, 0);
         *mudstate.mod_alist = '\0';
+        mudstate.mod_alist_len = 0;
     }
     mudstate.mod_al_id = thing;
     return mudstate.mod_alist;
@@ -1248,7 +1246,7 @@ BOOL al_add(dbref thing, int attrnum)
     //
     cp = al_code(cp, attrnum);
     *cp = '\0';
-
+    mudstate.mod_alist_len = cp - mudstate.mod_alist;
     return TRUE;
 }
 
@@ -1264,10 +1262,14 @@ void al_delete(dbref thing, int attrnum)
     // If trying to modify List attrib, return.  Otherwise, get the attribute list.
     //
     if (attrnum == A_LIST)
+    {
         return;
+    }
     abuf = al_fetch(thing);
     if (!abuf)
+    {
         return;
+    }
 
     cp = abuf;
     while (*cp)
@@ -1282,6 +1284,7 @@ void al_delete(dbref thing, int attrnum)
                 dp = al_code(dp, anum);
             }
             *dp = '\0';
+            mudstate.mod_alist_len = dp - mudstate.mod_alist;
             return;
         }
     }
@@ -1436,10 +1439,13 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
     {
         // This is not supposed to be compressed!
         //
+        Log.WriteString("ABORT! db.cpp, list is compressed in atr_get_raw_decode().\n");
+        Log.Flush();
         abort();
     }
     makekey(thing, atr, &okey);
     a = FETCH(&okey, &nLen);
+    nLen = a ? (nLen-1) : 0;
 #endif // MEMORY_BASED
 
     *owner = Owner(thing);
@@ -1465,8 +1471,9 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
         // If there was an owner/flag data at the beginning, a != a1.
         // a1 always points at the beginning of the attribute value.
         //
-        *pLen = nLen - (a1 - a);
-        memcpy(oattr, a1, *pLen);
+        nLen -= (a1 - a);
+        *pLen = nLen;
+        memcpy(oattr, a1, nLen + 1);
     }
 
 #else
@@ -1491,7 +1498,7 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
             // need to move the string down.
             //
             *pLen = nLen - (cp1 - oattr);
-            memmove(oattr, cp1, *pLen);
+            memmove(oattr, cp1, (*pLen)+1);
         }
         else
         {
@@ -1506,7 +1513,7 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
 // ---------------------------------------------------------------------------
 // atr_decode: Decode an attribute string.
 //
-static void atr_decode(char *iattr, int nLen, char *oattr, dbref thing, dbref *owner, int *flags)
+static void atr_decode_LEN(char *iattr, int nLen, char *oattr, dbref thing, dbref *owner, int *flags, int *pLen)
 {
     // Default the owner
     //
@@ -1518,9 +1525,10 @@ static void atr_decode(char *iattr, int nLen, char *oattr, dbref thing, dbref *o
 
     // Get the attribute text.
     //
+    *pLen = nLen - (cp - iattr);
     if (oattr)
     {
-        memcpy(oattr, cp, nLen - (cp - iattr));
+        memcpy(oattr, cp, (*pLen) + 1);
     }
 }
 
@@ -1607,7 +1615,7 @@ void atr_clr(dbref thing, int atr)
  * * atr_add_raw, atr_add: add attribute of type atr to list
  */
 
-void atr_add_raw(dbref thing, int atr, char *szValue)
+void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
 {
 #ifdef MEMORY_BASED
     ATRLIST *list;
@@ -1621,11 +1629,10 @@ void atr_add_raw(dbref thing, int atr, char *szValue)
         return;
     }
 
-    int nValue = strlen(szValue) + 1;
-    if (nValue > LBUF_SIZE)
+    if (nValue > LBUF_SIZE-1)
     {
-        nValue = LBUF_SIZE;
-        szValue[nValue-1] = '\0';
+        nValue = LBUF_SIZE-1;
+        szValue[nValue] = '\0';
     }
 #ifdef RADIX_COMPRESSION
     int nCompressedValue = string_compress(szValue, compress_buff);
@@ -1635,7 +1642,7 @@ void atr_add_raw(dbref thing, int atr, char *szValue)
 #else
     text = (char *)MEMALLOC(nValue, __FILE__, __LINE__);
     if (!text) return;
-    memcpy(text, szValue, nValue);
+    memcpy(text, szValue, nValue+1);
 #endif
 
     if (!db[thing].ahead)
@@ -1653,7 +1660,7 @@ void atr_add_raw(dbref thing, int atr, char *szValue)
 #ifdef RADIX_COMPRESSION
         list[0].size = nCompressedValue;
 #else
-        list[0].size = nValue;
+        list[0].size = nValue+1;
 #endif // RADIX_COMPRESSION
         found = 1;
     }
@@ -1675,7 +1682,7 @@ void atr_add_raw(dbref thing, int atr, char *szValue)
 #ifdef  RADIX_COMPRESSION
                 list[mid].size = nCompressedValue;
 #else
-                list[mid].size = nValue;
+                list[mid].size = nValue+1;
 #endif // RADIX_COMPRESSION
                 found = 1;
                 break;
@@ -1724,7 +1731,7 @@ void atr_add_raw(dbref thing, int atr, char *szValue)
 #ifdef RADIX_COMPRESSION
             list[lo].size = nCompressedValue;
 #else
-            list[lo].size = nValue;
+            list[lo].size = nValue+1;
 #endif // RADIX_COMPRESSION
             db[thing].at_count++;
             db[thing].ahead = list;
@@ -1741,18 +1748,17 @@ void atr_add_raw(dbref thing, int atr, char *szValue)
         return;
     }
 
-    int nValue = strlen(szValue) + 1;
-    if (nValue > LBUF_SIZE)
+    if (nValue > LBUF_SIZE-1)
     {
-        nValue = LBUF_SIZE;
-        szValue[nValue-1] = '\0';
+        nValue = LBUF_SIZE-1;
+        szValue[nValue] = '\0';
     }
 
     if (atr == A_LIST)
     {
         // A_LIST is never compressed and it's never listed within itself.
         //
-        STORE(&okey, szValue, nValue);
+        STORE(&okey, szValue, nValue+1);
     }
     else
     {
@@ -1770,7 +1776,7 @@ void atr_add_raw(dbref thing, int atr, char *szValue)
         memcpy(a, compress_buff, nCompressedValue);
         STORE(&okey, a, nCompressedValue);
 #else
-        STORE(&okey, szValue, nValue);
+        STORE(&okey, szValue, nValue+1);
 #endif // RADIX_COMPRESSION
     }
 #endif // MEMORY_BASED
@@ -1800,14 +1806,20 @@ void atr_add_raw(dbref thing, int atr, char *szValue)
     }
 }
 
+void atr_add_raw(dbref thing, int atr, char *szValue)
+{
+    atr_add_raw_LEN(thing, atr, szValue, szValue ? strlen(szValue) : 0);
+}
+
 void atr_add(dbref thing, int atr, char *buff, dbref owner, int flags)
 {
-    char *tbuff;
-
-    if (!buff || !*buff) {
+    if (!buff || !*buff)
+    {
         atr_clr(thing, atr);
-    } else {
-        tbuff = atr_encode(buff, thing, owner, flags, atr);
+    }
+    else
+    {
+        char *tbuff = atr_encode(buff, thing, owner, flags, atr);
         atr_add_raw(thing, atr, tbuff);
     }
 }
@@ -1857,16 +1869,19 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
     ATRLIST *list;
 
     if (thing < 0)
+    {
         return NULL;
+    }
 
-    /*
-     * Binary search for the attribute 
-     */
+    // Binary search for the attribute.
+    //
     lo = 0;
     hi = db[thing].at_count - 1;
     list = db[thing].ahead;
     if (!list)
+    {
         return NULL;
+    }
 
     while (lo <= hi)
     {
@@ -1877,7 +1892,7 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
             *pLen = string_decompress(list[mid].data, decomp_buff);
             return decomp_buff;
 #else
-            *pLen = list[mid].size;
+            *pLen = list[mid].size - 1;
             return list[mid].data;
 #endif // RADIX_COMPRESSION
         }
@@ -1902,12 +1917,14 @@ char *atr_get_raw_LEN(dbref thing, int atr, int *pLen)
     makekey(thing, atr, &okey);
     int nLen;
     a = FETCH(&okey, &nLen);
+    nLen = a ? (nLen-1) : 0;
 #ifdef RADIX_COMPRESSION
     if (!a || atr == A_LIST)
     {
+        *pLen = nLen;
         return a;
     }
-    *pLen = string_decompress(a, decomp_buff);
+    *pLen = string_decompress(a, decomp_buff) - 1;
     return decomp_buff;
 #else
     *pLen = nLen;
@@ -1922,35 +1939,46 @@ char *atr_get_raw(dbref thing, int atr)
     return atr_get_raw_LEN(thing, atr, &Len);
 }
 
-char *atr_get_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
+char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, int *pLen)
 {
-    int nLen;
 #ifdef RADIX_COMPRESSION
-    (void)atr_get_raw_decode_LEN(thing, s, owner, flags, atr, &nLen);
+    (void)atr_get_raw_decode_LEN(thing, s, owner, flags, atr, pLen);
 #else
     char *buff;
 
-    buff = atr_get_raw_LEN(thing, atr, &nLen);
+    buff = atr_get_raw_LEN(thing, atr, pLen);
     if (!buff)
     {
         *owner = Owner(thing);
         *flags = 0;
+        *pLen = 0;
         *s = '\0';
     }
     else
     {
-        atr_decode(buff, nLen, s, thing, owner, flags);
+        atr_decode_LEN(buff, *pLen, s, thing, owner, flags, pLen);
     }
 #endif // RADIX_COMPRESSION  
     return s;
 }
 
+char *atr_get_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
+{
+    int nLen;
+    return atr_get_str_LEN(s, thing, atr, owner, flags, &nLen);
+}
+
+char *atr_get_LEN(dbref thing, int atr, dbref *owner, int *flags, int *pLen)
+{
+    char *buff = alloc_lbuf("atr_get");
+    return atr_get_str_LEN(buff, thing, atr, owner, flags, pLen);
+}
+
 char *atr_get(dbref thing, int atr, dbref *owner, int *flags)
 {
-    char *buff;
-
-    buff = alloc_lbuf("atr_get");
-    return atr_get_str(buff, thing, atr, owner, flags);
+    int nLen;
+    char *buff = alloc_lbuf("atr_get");
+    return atr_get_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 
 int atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
@@ -1965,19 +1993,20 @@ int atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
     char *buff;
 
     buff = atr_get_raw_LEN(thing, atr, &nLen);
-    if (!buff) {
+    if (!buff)
+    {
         *owner = Owner(thing);
         *flags = 0;
         return 0;
     }
-    atr_decode(buff, nLen, NULL, thing, owner, flags);
+    atr_decode_LEN(buff, nLen, NULL, thing, owner, flags, &nLen);
     return 1;
 #endif // RADIX_COMPRESSION
 }
 
 #ifndef STANDALONE
 
-char *atr_pget_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
+char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, int *pLen)
 {
     dbref parent;
     int lev;
@@ -1991,20 +2020,21 @@ char *atr_pget_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
 
     ITER_PARENTS(thing, parent, lev)
     {
-        int nLen;
 #ifdef RADIX_COMPRESSION
-        retval = atr_get_raw_decode_LEN(parent, s, owner, flags, atr, &nLen);
+        retval = atr_get_raw_decode_LEN(parent, s, owner, flags, atr, pLen);
         if (retval && ((lev = 0) || !(*flags & AF_PRIVATE)))
         {
             return s;
         }
 #else
-        buff = atr_get_raw_LEN(parent, atr, &nLen);
+        buff = atr_get_raw_LEN(parent, atr, pLen);
         if (buff && *buff)
         {
-            atr_decode(buff, nLen, s, thing, owner, flags);
+            atr_decode_LEN(buff, *pLen, s, thing, owner, flags, pLen);
             if ((lev == 0) || !(*flags & AF_PRIVATE))
+            {
                 return s;
+            }
         }
 #endif // RADIX_COMPRESSION  
         if ((lev == 0) && Good_obj(Parent(parent)))
@@ -2017,15 +2047,27 @@ char *atr_pget_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
     *owner = Owner(thing);
     *flags = 0;
     *s = '\0';
+    *pLen = 0;
     return s;
+}
+
+char *atr_pget_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
+{
+    int nLen;
+    return atr_pget_str_LEN(s, thing, atr, owner, flags, &nLen);
+}
+
+char *atr_pget_LEN(dbref thing, int atr, dbref *owner, int *flags, int *pLen)
+{
+    char *buff = alloc_lbuf("atr_pget");
+    return atr_pget_str_LEN(buff, thing, atr, owner, flags, pLen);
 }
 
 char *atr_pget(dbref thing, int atr, dbref *owner, int *flags)
 {
-    char *buff;
-
-    buff = alloc_lbuf("atr_pget");
-    return atr_pget_str(buff, thing, atr, owner, flags);
+    int nLen;
+    char *buff = alloc_lbuf("atr_pget");
+    return atr_pget_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 
 int atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
@@ -2041,11 +2083,14 @@ int atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
         buff = atr_get_raw_LEN(parent, atr, &nLen);
         if (buff && *buff)
         {
-            atr_decode(buff, nLen, NULL, thing, owner, flags);
+            atr_decode_LEN(buff, nLen, NULL, thing, owner, flags, &nLen);
             if ((lev == 0) || !(*flags & AF_PRIVATE))
+            {
                 return 1;
+            }
         }
-        if ((lev == 0) && Good_obj(Parent(parent))) {
+        if ((lev == 0) && Good_obj(Parent(parent)))
+        {
             ap = atr_num(atr);
             if (!ap || ap->flags & AF_PRIVATE)
                 break;
@@ -2056,9 +2101,7 @@ int atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
     return 0;
 }
 
-#endif /*
-        * * STANDALONE  
-        */
+#endif // STANDALONE
 
 /*
  * ---------------------------------------------------------------------------
@@ -2273,31 +2316,30 @@ int atr_head(dbref thing, char **attrp)
      * Get attribute list.  Save a read if it is in the modify atr list 
      */
 
-    if (thing == mudstate.mod_al_id) {
+    if (thing == mudstate.mod_al_id)
+    {
         astr = mudstate.mod_alist;
-    } else {
-        astr = atr_get_raw(thing, A_LIST);
+        alen = mudstate.mod_alist_len;
     }
-    alen = al_size(astr);
+    else
+    {
+        astr = atr_get_raw_LEN(thing, A_LIST, &alen);
+    }
 
-    /*
-     * If no list, return nothing 
-     */
-
+    // If no list, return nothing.
+    //
     if (!alen)
+    {
         return 0;
+    }
 
-    /*
-     * Set up the list and return the first entry 
-     */
-
-    al_extend(&mudstate.iter_alist.data, &mudstate.iter_alist.len, alen, 0);
-    memcpy(mudstate.iter_alist.data, astr, alen);
+    // Set up the list and return the first entry.
+    //
+    al_extend(&mudstate.iter_alist.data, &mudstate.iter_alist.len, alen+1, 0);
+    memcpy(mudstate.iter_alist.data, astr, alen+1);
     *attrp = mudstate.iter_alist.data;
     return atr_next(attrp);
-#endif /*
-        * * MEMORY_BASED  
-        */
+#endif // MEMORY_BASED
 }
 
 

@@ -39,16 +39,14 @@ static int add_to(dbref player, int am, int attrnum)
     num += am;
 
     char buff[20];
+    int nlen = 0;
+    *buff = '\0';
     if (num)
     {
-        Tiny_ltoa(num, buff);
+        nlen = Tiny_ltoa(num, buff);
     }
-    else
-    {
-        *buff = '\0';
-    }
-    atr_add_raw(player, attrnum, buff);
-    return (num);
+    atr_add_raw_LEN(player, attrnum, buff, nlen);
+    return num;
 }
 
 // This Task assumes that pEntry is already unlinked from any lists it may have been related to.

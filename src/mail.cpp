@@ -4,7 +4,7 @@
  * originally taken from PennMUSH 1.50 p10, and has been heavily modified
  * since being included in MUX.
  * 
- * $Id: mail.cpp,v 1.2 2000-04-12 21:13:29 sdennis Exp $
+ * $Id: mail.cpp,v 1.3 2000-04-13 09:48:58 sdennis Exp $
  * -------------------------------------------------------------------
  */
 
@@ -3514,13 +3514,14 @@ void do_prepend(dbref player, dbref cause, int key, char *text)
         }
 
         free_lbuf(oldmsg);
-        attr = atr_get_raw(player, A_MAILMSG);
-        notify(player, tprintf("%d/%d characters prepended.", 
-            attr ? strlen(attr) : 0, LBUF_SIZE-1));
-    } else {
+        int nLen;
+        attr = atr_get_raw_LEN(player, A_MAILMSG, &nLen);
+        notify(player, tprintf("%d/%d characters prepended.", nLen, LBUF_SIZE-1));
+    }
+    else
+    {
         notify(player, "MAIL: No message in progress.");
     }
-
 }
 
 void do_postpend(dbref player, dbref cause, int key, char *text)
@@ -3558,10 +3559,12 @@ void do_postpend(dbref player, dbref cause, int key, char *text)
         }
 
         free_lbuf(oldmsg);
-        attr = atr_get_raw(player, A_MAILMSG);
-        notify(player, tprintf("%d/%d characters added.", 
-            attr ? strlen(attr) : 0, LBUF_SIZE-1));
-    } else {
+        int nLen;
+        attr = atr_get_raw_LEN(player, A_MAILMSG, &nLen);
+        notify(player, tprintf("%d/%d characters added.", nLen, LBUF_SIZE-1));
+    }
+    else
+    {
         notify(player, "MAIL: No message in progress.");
     }
 }
