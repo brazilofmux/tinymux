@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.13 2000-06-07 10:17:00 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.14 2000-06-07 23:22:07 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -568,25 +568,30 @@ FUNCTION(fun_decrypt)
 
 FUNCTION(fun_objeval)
 {
-    dbref obj;
-    char *name, *bp, *str;
-
     if (!*fargs[0])
     {
         return;
     }
-    name = bp = alloc_lbuf("fun_objeval");
-    str = fargs[0];
+    char *name = alloc_lbuf("fun_objeval");
+    char *bp = name;
+    char *str = fargs[0];
     TinyExec(name, &bp, 0, player, cause, EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
-    obj = match_thing(player, name);
+    dbref obj = match_thing(player, name);
 
-    if ((obj == NOTHING) ||
-        ((Owner(obj) != player) && (!(Wizard(player)))) || (obj == GOD))
+    if (  obj == NOTHING
+       || obj == GOD
+       || (Owner(obj) != Owner(player) && !Wizard(player)))
+    {
+        // The right circumstance were not met, so we are evaluating
+        // as the player who gave the command instead of the requested
+        // object.
+        //
         obj = player;
+    }
 
     str = fargs[1];
-    TinyExec(buff, bufc, 0, obj, obj, EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
+    TinyExec(buff, bufc, 0, obj, cause, EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     free_lbuf(name);
 }
 
@@ -965,24 +970,17 @@ FUNCTION(fun_dec)
     safe_ltoa(Tiny_atol(fargs[0]) - 1, buff, bufc, LBUF_SIZE-1);
 }
 
-/*
- * Mail functions borrowed from DarkZone 
- */
+// Mail functions borrowed from DarkZone.
+//
+// This function can take one of three formats:
+//
+// 1. mail(num)         --> returns message <num> for privs.
+// 2. mail(player)      --> returns number of messages for <player>.
+// 3. mail(player, num) --> returns message <num> for <player>.
+// 4. mail()            --> returns number of messages for executor.
+//
 FUNCTION(fun_mail)
 {
-    /*
-     * This function can take one of three formats: 1.  mail(num)  --> *
-     * * * returns * message <num> for privs. 2.  mail(player)  -->
-     * returns  * *  * number of * messages for <player>. 3.
-     * mail(player, num)  -->  * * * returns message <num> * for
-     * <player>. 
-     */
-    /*
-     * It can now take one more format: 4.  mail() --> returns number of
-     * * * * * messages for executor 
-     */
-
-    struct mail *mp;
     dbref playerask;
     int num, rc, uc, cc;
 #ifdef RADIX_COMPRESSION
@@ -991,57 +989,73 @@ FUNCTION(fun_mail)
 
     // Make sure we have the right number of arguments.
     //
-    if (nfargs < 0 || 2 < nfargs)
-    {
-        safe_str("#-1 FUNCTION (MAIL) EXPECTS 0 OR 1 OR 2 ARGUMENTS", buff, bufc);
-        return;
-    }
-    if ((nfargs == 0) || !fargs[0] || !fargs[0][0])
+    if (nfargs == 0 || !fargs[0] || !fargs[0][0])
     {
         count_mail(player, 0, &rc, &uc, &cc);
         safe_ltoa(rc + uc, buff, bufc, LBUF_SIZE-1);
         return;
     }
-    if (nfargs == 1)
+    else if (nfargs == 1)
     {
         if (!is_number(fargs[0]))
         {
-            /*
-             * handle the case of wanting to count the number of
-             * * * * messages 
-             */
-            if ((playerask = lookup_player(player, fargs[0], 1)) == NOTHING) {
+            // Handle the case of wanting to count the number of
+            // messages.
+            //
+            playerask = lookup_player(player, fargs[0], 1);
+            if (playerask == NOTHING)
+            {
                 safe_str("#-1 NO SUCH PLAYER", buff, bufc);
-                return;
-            } else if ((player != playerask) && !Wizard(player)) {
-                safe_str("#-1 PERMISSION DENIED", buff, bufc);
-                return;
-            } else {
+            }
+            else if (playerask == player || Wizard(player))
+            {
                 count_mail(playerask, 0, &rc, &uc, &cc);
                 safe_tprintf_str(buff, bufc, "%d %d %d", rc, uc, cc);
-                return;
             }
-        } else {
+            else
+            {
+                safe_str("#-1 PERMISSION DENIED", buff, bufc);
+            }
+            return;
+        }
+        else
+        {
             playerask = player;
             num = Tiny_atol(fargs[0]);
         }
-    } else {
-        if ((playerask = lookup_player(player, fargs[0], 1)) == NOTHING) {
+    }
+    else if (nfargs == 2)
+    {
+        playerask = lookup_player(player, fargs[0], 1);
+        if (playerask == NOTHING)
+        {
             safe_str("#-1 NO SUCH PLAYER", buff, bufc);
             return;
-        } else if ((player != playerask) && !God(player)) {
+        }
+        else if (playerask == player || God(player))
+        {
+            num = Tiny_atol(fargs[1]);
+        }
+        else
+        {
             safe_str("#-1 PERMISSION DENIED", buff, bufc);
             return;
         }
-        num = Tiny_atol(fargs[1]);
+    }
+    else
+    {
+        safe_str("#-1 FUNCTION (MAIL) EXPECTS 0 OR 1 OR 2 ARGUMENTS", buff, bufc);
+        return;
     }
 
-    if ((num < 1) || (Typeof(playerask) != TYPE_PLAYER)) {
+    if (num < 1 || !isPlayer(playerask))
+    {
         safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
         return;
     }
-    mp = mail_fetch(playerask, num);
-    if (mp != NULL) {
+    struct mail *mp = mail_fetch(playerask, num);
+    if (mp)
+    {
 #ifdef RADIX_COMPRESSION
         msgbuff = alloc_lbuf("fun_mail");
         string_decompress(get_mail_message(mp->number), msgbuff);
@@ -1052,65 +1066,68 @@ FUNCTION(fun_mail)
 #endif
         return;
     }
-    /*
-     * ran off the end of the list without finding anything 
-     */
+
+    // Ran off the end of the list without finding anything.
+    //
     safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
 }
 
+// This function can take these formats:
+//
+//  1) mailfrom(<num>)
+//  2) mailfrom(<player>,<num>)
+//
+// It returns the dbref of the player the mail is from.
+//
 FUNCTION(fun_mailfrom)
 {
-    /*
-     * This function can take these formats: 1) mailfrom(<num>) 2) * * *
-     * * mailfrom(<player>,<num>) It returns the dbref of the player the
-     * * * * mail is * from 
-     */
-    struct mail *mp;
-    dbref playerask;
+    // Make sure we have the right number of arguments.
+    //
     int num;
-
-    /*
-     * make sure we have the right number of arguments 
-     */
-    if ((nfargs != 1) && (nfargs != 2))
-    {
-        safe_str("#-1 FUNCTION (MAILFROM) EXPECTS 1 OR 2 ARGUMENTS", buff, bufc);
-        return;
-    }
+    dbref playerask;
     if (nfargs == 1)
     {
         playerask = player;
         num = Tiny_atol(fargs[0]);
     }
-    else
+    else if (nfargs == 2)
     {
-        if ((playerask = lookup_player(player, fargs[0], 1)) == NOTHING)
+        playerask = lookup_player(player, fargs[0], 1);
+        if (playerask == NOTHING)
         {
             safe_str("#-1 NO SUCH PLAYER", buff, bufc);
             return;
         }
-        else if ((player != playerask) && !Wizard(player))
+        if (playerask == player || Wizard(player))
+        {
+            num = Tiny_atol(fargs[1]);
+        }
+        else
         {
             safe_str("#-1 PERMISSION DENIED", buff, bufc);
             return;
         }
-        num = Tiny_atol(fargs[1]);
+    }
+    else
+    {
+        safe_str("#-1 FUNCTION (MAILFROM) EXPECTS 1 OR 2 ARGUMENTS", buff, bufc);
+        return;
     }
 
-    if ((num < 1) || (Typeof(playerask) != TYPE_PLAYER))
+    if (num < 1 || !isPlayer(playerask))
     {
         safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
         return;
     }
-    mp = mail_fetch(playerask, num);
+    struct mail *mp = mail_fetch(playerask, num);
     if (mp != NULL)
     {
         safe_tprintf_str(buff, bufc, "#%d", mp->from);
         return;
     }
-    /*
-     * ran off the end of the list without finding anything 
-     */
+
+    // Ran off the end of the list without finding anything.
+    //
     safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
 }
 
