@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.23 2002-07-13 07:23:02 jake Exp $
+// $Id: set.cpp,v 1.24 2002-07-14 07:07:16 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -29,17 +29,6 @@ dbref match_handler(dbref executor, const char *name, int key, BOOL bQuiet)
 
     if (!Good_obj(mat))
     {
-        if (!bQuiet)
-        {
-            if (mat == AMBIGUOUS)
-            {
-                notify_quiet(executor, AMBIGUOUS_MESSAGE);
-            }
-            else
-            {
-                notify_quiet(executor, NOMATCH_MESSAGE);
-            }
-        }
         return mat;
     }
 
