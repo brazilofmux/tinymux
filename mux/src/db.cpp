@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.28 2003-03-17 01:12:46 sdennis Exp $
+// $Id: db.cpp,v 1.29 2003-07-10 14:53:04 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2941,17 +2941,13 @@ void load_restart_db(void)
             }
         }
     }
-    else if (version == 0)
+    else
     {
-        // REMOVE: After 2002-DEC-03, remove support for version 0.
+        // The restart file, restart.db, has a version other than 1.  You
+        // cannot @restart from the previous version to the new version.  Use
+        // @shutdown instead.
         //
-        // This execution path assumes the port config option in the .conf
-        // file has changed the aMainGamePorts[0].port part.
-        //
-        mux_assert(aMainGamePorts[0].port > 0);
-        aMainGamePorts[0].socket = getref(f);
-        nMainGamePorts = 1;
-        maxd = aMainGamePorts[0].socket + 1;
+        mux_assert(0);
     }
     DebugTotalSockets += nMainGamePorts;
 
