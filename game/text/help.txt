@@ -231,7 +231,7 @@ COMSYS EXAMPLES
 
   Examples:
     > addcom public=Public
-    Channel Public added with alias garou.
+    Channel Public added with alias public.
 
     > pub off
     [Public] Foobar has left this channel.
@@ -250,22 +250,22 @@ COMSYS EXAMPLES
     > pub Hello world!
     [Public] Foobar says, "Hello world!"
 
-  Related Topcs: comsys commands
+  Related Topics: comsys commands
 
 & COMSYS COMMANDS
 COMSYS COMMANDS AND FUNCTIONS
 
   These are the topics for the MUX comsystem:
 
-  User Commands:            @clist addcom alias allcom comlist comtitle
-                            clearcom delcom
+  User Commands:            @clist, addcom, alias, allcom, comlist, comtitle,
+                            clearcom, delcom
 
-  Administrative Commands:  @cboot @ccharge @cchown @ccreate @cdestroy @cemit
-                            @clist @coflags @cpflags @cset @cwho
+  Administrative Commands:  @cboot, @ccharge, @cchown, @ccreate, @cdestroy,
+                            @cemit, @clist, @coflags, @cpflags, @cset, @cwho
 
-  Functions:                channels() comalias() comtitle() cwho()
+  Functions:                channels(), comalias(), comtitle(), cwho()
 
-  General Information:      channel object comsys examples
+  General Information:      channel object, comsys examples
 
 & @CBOOT
 @CBOOT
@@ -300,8 +300,8 @@ ADDCOM
   instead of 'pub Hello'.
 
   One other thing to be careful of: adding a channel multiple times with
-  different aliases. While this is allowed, it is also discouraged. You will
-  receive a warning when it happens.
+  different aliases. While this is possible, it is also discouraged. You
+  will receive a warning when it happens.
 
   Example:
     >addcom pub=Public
@@ -314,12 +314,12 @@ ALIAS
 
   COMMAND: <channel alias> <on|off|who|message|:pose|;pose>
 
-  The channel alias allows you to both use the channel, and to turn it on
-  and off and check who is online. To determine what your aliases are, if
-  you have forgotten, see the help for 'comlist'.
+  The channel alias allows you to use the channel, to turn it on and off and
+  check who is online. If you have forgotten what your alises are, see the
+  help for 'comlist'.
 
-    'on'   allows you to turn an alias on.
-    'off'  lets you temporarily leave that channel.
+    'on'   allows you to turn an alias/channel on.
+    'off'  lets you turn off that alias/channel.
     'who'  shows you who is on that channel, which the channel name appended
            to the bottom.
 
@@ -450,11 +450,11 @@ DELCOM
 
   Deletes <channel> permanently from the comsystem database. It does not
   destroy all aliases that exist for <channel> -- those are left to the
-  owners of those aliases. Players are notified at login when they own
-  aliases for which a channel no longer exists and if they try to use them.
-  Even if a Channel is destroyed and then recreated, the alias will still be
-  incorrect. The alias must be removed with the 'delcom' command and added
-  with the 'addcom' command.
+  owners of those aliases. Players are notified both at login when they   
+  own aliases for which a channel no longer exists and when they try to 
+  use them. Even if a Channel is destroyed and then recreated, the alias 
+  will still be non functioning. The alias must be removed with the 
+  'delcom' command and added with the 'addcom' command.
 
   Example:
     > @cdestroy Staff
@@ -517,7 +517,7 @@ DELCOM
   same room, you will need to add a '*' before the name (e.g., '*player1').
 
   Example:
-    >@cchown Public=Staff2
+    >@cchown Public=Staff1
     Set.
 
   Related Topics: @clist, @cwho.
@@ -545,7 +545,7 @@ DELCOM
   Sets player flags for that channel. The flag can be one of: join, transmit
   or receive.
 
-    transmit   Whether a player can broadcast things over the channel.
+    transmit   Whether a player can broadcast (speak) over the channel.
     join       Whether a player can join the channel.
     receive    Whether a player can receive messages over the channel.
 
@@ -568,7 +568,7 @@ DELCOM
   Sets object flags for that channel. The flag can be one of: join, transmit
   or receive.
 
-    transmit   Whether an object can broadcast things over the channel.
+    transmit   Whether an object can broadcast (speak) over the channel.
     join       Whether an object can join the channel.
     receive    Whether an object can receive messages over the channel.
 
@@ -630,10 +630,10 @@ CHANNEL OBJECT
   override the equivalent lock. The flags are set by default, so you will
   have to clear them before your locks work.
 
-  The join lock for a channel is a normal @lock on the channel object. The
-  transmit lock for a channel is a use @lock on the channel object. The
-  receive lock for a channel is an enter @lock on the channel object. The
-  description of a channel is the @desc of the channel object.
+  The join lock for a channel is a normal @lock on the channel object. 
+  The transmit lock for a channel is a use @lock on the channel object.  
+  The receive lock for a channel is an enter @lock on the channel object. 
+  The description of a channel is the @desc of the channel object.
 
   Related Topics: @ccreate, @create, @cset.
 
@@ -743,7 +743,7 @@ ENTER
                 only works if you control the object being entered.
 
   Related Topics: leave, @aefail, @aenter, @efail, @enter, @idesc, @lock,
-	@oefail, @oenter, @oxleave, ENTER_OK.
+                  @oefail, @oenter, @oxleave, ENTER_OK.
 
 & EXAMINE
 EXAMINE
@@ -5758,7 +5758,7 @@ MOVING (continued)
   Related Topics: @adesc, @adrop, @aenter, @afail, @aleave, @asucc, @atport,
       @desc, @drop, @enter, @fail, @leave, @listen, @odesc, @odrop, @oenter,
       @ofail, @oleave, @osucc, @oxenter, @oxleave, @oxtport, @succ, @tport,
-	  move, @teleport, home, KEY, STICKY, DROP-TOS, FAILURE, SUCCESS.
+      move, @teleport, home, KEY, STICKY, DROP-TOS, FAILURE, SUCCESS.
 
 & EXITS
 EXITS
