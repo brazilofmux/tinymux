@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.27 2001-06-29 18:00:44 sdennis Exp $
+// $Id: game.cpp,v 1.28 2001-06-29 23:40:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -895,23 +895,24 @@ static void report_timecheck
     ltaNow.GetUTC();
     ltdPeriod = ltaNow - mudstate.cpu_count_from;
 
-    if (! (yes_log && (LOG_TIMEUSE & mudconf.log_options) != 0))
-    {
-        yes_log = 0;
-        STARTLOG(LOG_ALWAYS, "WIZ", "TIMECHECK");
-        log_name(player);
-        log_text((char *) " checks object time use over ");
-        log_number(ltdPeriod.ReturnSeconds());
-        log_text((char *) " seconds" ENDLINE);
-        ENDLOG;
-    }
-    else
+    if (  yes_log
+       && (LOG_TIMEUSE & mudconf.log_options))
     {
         start_log("OBJ", "CPU");
         log_name(player);
         log_text((char *) " checks object time use over ");
         log_number(ltdPeriod.ReturnSeconds());
         log_text((char *) " seconds" ENDLINE);
+    }
+    else
+    {
+        yes_log = 0;
+        STARTLOG(LOG_ALWAYS, "WIZ", "TIMECHECK");
+        log_name(player);
+        log_text((char *) " checks object time use over ");
+        log_number(ltdPeriod.ReturnSeconds());
+        log_text((char *) " seconds");
+        ENDLOG;
     }
 
     obj_counted = 0;
