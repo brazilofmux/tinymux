@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.8 2002-07-20 06:02:08 sdennis Exp $
+// $Id: bsd.cpp,v 1.9 2002-07-21 03:33:33 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1224,8 +1224,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
         mudstate.now= ltaCurrent;
         ltaLastSlice = update_quotas(ltaLastSlice, ltaCurrent);
 
-        // Check the scheduler. Run a little ahead into the future so that
-        // we tend to sleep longer.
+        // Check the scheduler.
         //
         scheduler.RunTasks(ltaCurrent);
         CLinearTimeAbsolute ltaWakeUp;
@@ -1244,7 +1243,9 @@ void shovechars(int nPorts, PortInfo aPorts[])
         }
 
         if (mudstate.shutdown_flag)
+        {
             break;
+        }
 
         FD_ZERO(&input_set);
         FD_ZERO(&output_set);
