@@ -1,9 +1,6 @@
-
-/*
- * Compression library. Uses a radix tree to compress substrings
- * down to 12 bit codes.
- */
-
+// Compression library. Uses a radix tree to compress substrings
+// down to 12 bit codes.
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -29,21 +26,17 @@ unsigned int strings_decompressed = 0;
 unsigned int chars_in = 0;
 unsigned int symbols_out = 0;
 
-
 void init_string_compress(void)
 {
     int code, i;
     unsigned char *p;
 
-
     root = (struct r_node *)MEMALLOC(sizeof(struct r_node));
 
     root->count = 0;
 
-    /*
-     * Get all the printables 
-     */
-
+    // Get all the printables
+    //
     p = singletons;
     *p = '\0';
     decompresstab[0] = p;
@@ -59,10 +52,8 @@ void init_string_compress(void)
         p += 2;
     }
 
-    /*
-     * Now insert all the strings in our compression table 
-     */
-
+    // Now insert all the strings in our compression table
+    //
     for (i = 0; cmptab[i] != NULL; i++)
     {
         code = r_insert(&root, (unsigned char *)(cmptab[i]));
@@ -76,12 +67,9 @@ void init_string_compress(void)
 
 }
 
-
-/*
- * Compress the input string to the output array as 12 bit codes.
- * Return the number of bytes to worry about in the output.
- */
-
+// Compress the input string to the output array as 12 bit codes.
+// Return the number of bytes to worry about in the output.
+//
 int string_compress(const char *arg_src, char *arg_dst)
 {
     const unsigned char *src = (const unsigned char *)arg_src;
@@ -92,7 +80,6 @@ int string_compress(const char *arg_src, char *arg_dst)
 
 #ifdef DEBUG
     int i;
-
 #endif
 
     strings_compressed++;
@@ -126,11 +113,9 @@ int string_compress(const char *arg_src, char *arg_dst)
     return ((bitnum & 7) ? (bitnum >> 3) + 1 : (bitnum >> 3));
 }
 
-/*
- * Decompress an array of 12 bit codes as produced by string_compress().
- * Return the number of bytes in the string, including zero terminator.
- */
-
+// Decompress an array of 12 bit codes as produced by string_compress().
+// Return the number of bytes in the string, including zero terminator.
+//
 int string_decompress(const char *arg_src, char *arg_dst)
 {
     const unsigned char *src = (const unsigned char *)arg_src;
@@ -168,10 +153,6 @@ int string_decompress(const char *arg_src, char *arg_dst)
         bitnum += 12;
     }
     *dst = '\0';
-    return count + 1;   /*
-                 * Include zero terminator 
-                 */
+    return count + 1;   // Include zero terminator
 }
-
 #endif
-
