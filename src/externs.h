@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.34 2001-02-07 05:28:50 sdennis Exp $
+// $Id: externs.h,v 1.35 2001-02-10 09:57:05 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -301,6 +301,7 @@ extern void ReleaseAllResources(dbref obj);
 #define CHOWN_ALL   2   /* old_owner = new_owner */
 #define CHOWN_NOZONE    8   /* Strip zones from objects */
 #define CLIST_FULL  1   /* Full listing of channels */
+#define CLIST_HEADERS   2       /* Lists channel headers, like "[Public]" */
 #define CLONE_LOCATION  0   /* Create cloned object in my location */
 #define CLONE_INHERIT   1   /* Keep INHERIT bit if set */
 #define CLONE_PRESERVE  2   /* Preserve the owner of the object */
@@ -320,6 +321,7 @@ extern void ReleaseAllResources(dbref obj);
 #define CSET_OBJECT  5   /* Sets the channel object for the channel */
 #define CSET_SPOOF   6   /* Sets the channel spoofable */
 #define CSET_NOSPOOF 7   /* Sets the channel non-spoofable */
+#define CSET_HEADER	 8	/* Sets the channel header, like "[Public]" */
 #define DBCK_DEFAULT    1   /* Get default tests too */
 #define DBCK_REPORT 2   /* Report info to invoker */
 #define DBCK_FULL   4   /* Do all tests */

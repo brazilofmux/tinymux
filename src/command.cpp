@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.30 2001-02-07 05:28:50 sdennis Exp $
+// $Id: command.cpp,v 1.31 2001-02-10 09:57:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -72,6 +72,7 @@ NAMETAB clone_sw[] =
 NAMETAB clist_sw[] =
 {
     {(char *)"full",        0,      CA_PUBLIC,      CLIST_FULL},
+    {(char *)"headers",     0,      CA_PUBLIC,      CLIST_HEADERS},
     { NULL,                 0,      0,              0}
 };
 
@@ -87,6 +88,7 @@ NAMETAB cset_sw[] =
     {(char *)"public",      2,      CA_PUBLIC,      CSET_PUBLIC},
     {(char *)"quiet",       1,      CA_PUBLIC,      CSET_QUIET},
     {(char *)"spoof",       1,      CA_PUBLIC,      CSET_SPOOF},
+    {(char *)"header",      2,      CA_PUBLIC,      CSET_HEADER},
     { NULL,                 0,      0,              0}
 }; 
 

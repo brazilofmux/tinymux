@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.17 2000-10-04 06:42:01 sdennis Exp $
+// * $Id: comsys.cpp,v 1.18 2001-02-10 09:57:06 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -38,7 +38,7 @@ char *RestrictTitleValue(char *pTitleRequest)
     //
     char NewTitle_ANSI[MAX_TITLE_LEN+1];
     int nVisualWidth;
-    int nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI), NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+    int nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI), NewTitle_ANSI, sizeof(NewTitle_ANSI)*4, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
     memcpy(pNewTitle, NewTitle_ANSI, nLen+1);
     return pNewTitle;
 }
@@ -296,7 +296,6 @@ void load_old_channels(FILE *fp)
                     *t++ = in;
                 }
                 *t = 0;
-                
                 int n = GetLineTrunc(buffer, sizeof(buffer), fp);
                 if (buffer[n-1] == '\n')
                 {
@@ -566,24 +565,28 @@ char *get_channel_from_alias(dbref player, char *alias)
 void load_comsystem(FILE *fp)
 {
     int i, j, dummy;
-    int nc, new0 = 0;
+    int nc, ver = 0;
     struct channel *ch;
     struct comuser *user;
     char temp[LBUF_SIZE];
-    char buf[8];
     
     num_channels = 0;
-    
-    
-    fgets(buf, sizeof(buf), fp);
-    if (!strncmp(buf, "+V1", 3))
+        
+    fgets(temp, sizeof(temp), fp);
+   	if (!strncmp(temp, "+V", 2))
     {
-        new0 = 1;
+        // +V2 has colored headers
+        //
+		ver = Tiny_atol(temp + 2);
+        if (ver < 1 || 2 < ver)
+        {
+            return;
+        }
         fscanf(fp, "%d\n", &nc);
     }
     else
     {
-        nc = Tiny_atol(buf);
+        nc = Tiny_atol(temp);
     }
     
     num_channels = nc;
@@ -606,11 +609,27 @@ void load_comsystem(FILE *fp)
         }
         memcpy(ch->name, temp, n);
         ch->name[n] = '\0';
+
+		if (ver == 2)
+        {
+            int nHeader = GetLineTrunc(temp, sizeof(temp), fp);
+            if (nHeader > MAX_HEADER_LEN)
+            {
+                nHeader = MAX_HEADER_LEN;
+            }
+            if (temp[nHeader-1] == '\n')
+            {
+                nHeader--;
+            }
+            memcpy(ch->header, temp, nHeader);
+            ch->header[nHeader] = '\0';
+		} 
+
         ch->on_users = NULL;
         
         hashaddLEN(ch->name, n, (int *)ch, &mudstate.channel_htab);
         
-        if (new0)
+        if (ver)
         {
             fscanf(fp, "%d %d %d %d %d %d %d %d\n",
                 &(ch->type), &(ch->temp1), &(ch->temp2),
@@ -625,6 +644,26 @@ void load_comsystem(FILE *fp)
                 &(ch->amount_col), &(ch->num_messages), &(ch->chan_obj));
         }
         
+		if (ver != 2)
+        {
+            // Build colored header if not +V2 db.
+            //
+            if (ch->type & CHANNEL_PUBLIC)
+            {
+                sprintf(temp, "%s[%s%s%s%s%s]%s", ANSI_CYAN, ANSI_HILITE,
+                    ANSI_BLUE, ch->name, ANSI_NORMAL, ANSI_CYAN, ANSI_NORMAL);
+            }
+            else
+            {
+                sprintf(temp, "%s[%s%s%s%s%s]%s", ANSI_MAGENTA, ANSI_HILITE,
+                    ANSI_RED, ch->name, ANSI_NORMAL, ANSI_MAGENTA,
+                    ANSI_NORMAL);
+            }
+            int vwVisual;
+            n = ANSI_TruncateToField(temp, MAX_HEADER_LEN+1, ch->header,
+                (MAX_HEADER_LEN+1)*4, &vwVisual, ANSI_ENDGOAL_NORMAL);
+        }
+
         fscanf(fp, "%d\n", &(ch->num_users));
         ch->max_users = ch->num_users;
         if (ch->num_users > 0)
@@ -638,7 +677,7 @@ void load_comsystem(FILE *fp)
                 
                 ch->users[j] = user;
                 
-                if (new0)
+                if (ver)
                 {
                     fscanf(fp, "%d %d\n", &(user->who), &(user->bUserIsOn));
                 }
@@ -647,7 +686,6 @@ void load_comsystem(FILE *fp)
                     fscanf(fp, "%d %d %d", &(user->who), &(dummy), &(dummy));
                     fscanf(fp, "%d\n", &(user->bUserIsOn));
                 }
-                
                 int n = GetLineTrunc(temp, sizeof(temp), fp);
                 if (n > MAX_TITLE_LEN)
                 {
@@ -702,11 +740,12 @@ void save_comsystem(FILE *fp)
     struct comuser *user;
     int j;
     
-    fprintf(fp, "+V1\n");
+    fprintf(fp, "+V2\n");
     fprintf(fp, "%d\n", num_channels);
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab); ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
         fprintf(fp, "%s\n", ch->name);
+		fprintf(fp, "%s\n", ch->header);
         
         fprintf(fp, "%d %d %d %d %d %d %d %d\n", ch->type, ch->temp1, ch->temp2, ch->charge, ch->charge_who, ch->amount_col, ch->num_messages, ch->chan_obj);
         
@@ -809,16 +848,16 @@ void do_processcom(dbref player, char *arg1, char *arg2)
                 //
                 if (ch->type & CHANNEL_SPOOF)
                 {
-                    safe_tprintf_str(mess, &bp, "[%s] %s %s", arg1, user->title, arg2 + 1);
+                    safe_tprintf_str(mess, &bp, "%s %s %s", ch->header, user->title, arg2 + 1);
                 }
                 else
                 {
-                    safe_tprintf_str(mess, &bp, "[%s] %s %s %s", arg1, user->title, Name(player), arg2 + 1);
+                    safe_tprintf_str(mess, &bp, "%s %s %s %s", ch->header, user->title, Name(player), arg2 + 1);
                 }
             }
             else
             {
-                safe_tprintf_str(mess, &bp, "[%s] %s %s", arg1, Name(player), arg2 + 1);
+                safe_tprintf_str(mess, &bp, "%s %s %s", ch->header, Name(player), arg2 + 1);
             }
         }
         else if ((*arg2) == ';')
@@ -829,16 +868,16 @@ void do_processcom(dbref player, char *arg1, char *arg2)
                 //
                 if (ch->type & CHANNEL_SPOOF)
                 {
-                    safe_tprintf_str(mess, &bp, "[%s] %s%s", arg1, user->title, arg2 + 1);
+                    safe_tprintf_str(mess, &bp, "%s %s%s", ch->header, user->title, arg2 + 1);
                 }
                 else
                 {
-                    safe_tprintf_str(mess, &bp, "[%s] %s %s%s", arg1, user->title, Name(player), arg2 + 1);
+                    safe_tprintf_str(mess, &bp, "%s %s %s%s", ch->header, user->title, Name(player), arg2 + 1);
                 }
             }
             else
             {
-                safe_tprintf_str(mess, &bp, "[%s] %s%s", arg1, Name(player), arg2 + 1);
+                safe_tprintf_str(mess, &bp, "%s %s%s", ch->header, Name(player), arg2 + 1);
             }
         }
         else
@@ -849,16 +888,16 @@ void do_processcom(dbref player, char *arg1, char *arg2)
                 //
                 if (ch->type & CHANNEL_SPOOF)
                 {
-                    safe_tprintf_str(mess, &bp, "[%s] %s says, \"%s\"", arg1, user->title, arg2);
+                    safe_tprintf_str(mess, &bp, "%s %s says, \"%s\"", ch->header, user->title, arg2);
                 }
                 else
                 {
-                    safe_tprintf_str(mess, &bp, "[%s] %s %s says, \"%s\"", arg1, user->title, Name(player), arg2);
+                    safe_tprintf_str(mess, &bp, "%s %s %s says, \"%s\"", ch->header, user->title, Name(player), arg2);
                 }
             }
             else
             {
-                safe_tprintf_str(mess, &bp, "[%s] %s says, \"%s\"", arg1, Name(player), arg2);
+                safe_tprintf_str(mess, &bp, "%s %s says, \"%s\"", ch->header, Name(player), arg2);
             }
         }
         
@@ -940,7 +979,8 @@ void do_joinchannel(dbref player, struct channel *ch)
     }
     else
     {
-        raw_notify(player, tprintf("You are already on channel %s.", ch->name));
+        raw_notify(player, tprintf("You are already on channel %s.",
+            ch->name));
         return;
     }
     
@@ -952,19 +992,19 @@ void do_joinchannel(dbref player, struct channel *ch)
             //
             if (ch->type & CHANNEL_SPOOF)
             {
-                p = tprintf( "[%s] %s has joined this channel.",
-                             ch->name, user->title);
+                p = tprintf( "%s %s has joined this channel.", ch->header,
+                    user->title);
             }
             else
             {
-                p = tprintf( "[%s] %s %s has joined this channel.",
-                             ch->name, user->title, Name(player));
+                p = tprintf( "%s %s %s has joined this channel.", ch->header,
+                    user->title, Name(player));
             }
         }
         else
         {
-            p = tprintf( "[%s] %s has joined this channel.",
-                         ch->name, Name(player));
+            p = tprintf( "%s %s has joined this channel.", ch->header,
+                Name(player));
         }
         do_comsend(ch, p);
     }
@@ -983,18 +1023,18 @@ void do_leavechannel(dbref player, struct channel *ch)
             //
             if (ch->type & CHANNEL_SPOOF)
             {
-                p = tprintf( "[%s] %s has left this channel.",
-                             ch->name, user->title);
+                p = tprintf( "%s %s has left this channel.",
+                             ch->header, user->title);
             }
             else
             {
-                p = tprintf( "[%s] %s %s has left this channel.",
-                             ch->name, user->title, Name(player));
+                p = tprintf( "%s %s %s has left this channel.",
+                             ch->header, user->title, Name(player));
             }
         }
         else
         {
-            p = tprintf( "[%s] %s has left this channel.", ch->name,
+            p = tprintf( "%s %s has left this channel.", ch->header,
                          Name(player));
         }
         do_comsend(ch, p);
@@ -1353,16 +1393,16 @@ void do_delcomchannel(dbref player, char *channel)
                         //
                         if (ch->type & CHANNEL_SPOOF)
                         {
-                            p = tprintf("[%s] %s has left this channel.", channel, user->title);
+                            p = tprintf("%s %s has left this channel.", ch->header, user->title);
                         }
                         else
                         {
-                            p = tprintf("[%s] %s %s has left this channel.", channel, user->title, Name(player));
+                            p = tprintf("%s %s %s has left this channel.", ch->header, user->title, Name(player));
                         }
                     }
                     else
                     {
-                        p = tprintf("[%s] %s has left this channel.", channel, Name(player));
+                        p = tprintf("%s %s has left this channel.", ch->header, Name(player));
                     }
                     do_comsend(ch, p);
                 }
@@ -1837,16 +1877,16 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
             //
             if (ch->type & CHANNEL_SPOOF)
             {
-                sprintf(buff, "[%s] %s has disconnected.", ch->name, cu->title);
+                sprintf(buff, "%s %s has disconnected.", ch->header, cu->title);
             }
             else
             {
-                sprintf(buff, "[%s] %s %s has disconnected.", ch->name, cu->title, Name(player));
+                sprintf(buff, "%s %s %s has disconnected.", ch->header, cu->title, Name(player));
             }
         }
         else
         {
-            sprintf(buff, "[%s] %s has disconnected.", ch->name, Name(player));
+            sprintf(buff, "%s %s has disconnected.", ch->header, Name(player));
         }
         do_comsend(ch, buff);
         free_lbuf(buff);
@@ -1871,16 +1911,16 @@ void do_comconnectraw_notify(dbref player, char *chan)
             //
             if (ch->type & CHANNEL_SPOOF)
             {
-                sprintf(buff, "[%s] %s has connected.", ch->name, cu->title);
+                sprintf(buff, "%s %s has connected.", ch->header, cu->title);
             }
             else
             {
-                sprintf(buff, "[%s] %s %s has connected.", ch->name, cu->title, Name(player));
+                sprintf(buff, "%s %s %s has connected.", ch->header, cu->title, Name(player));
             }
         }
         else
         {
-            sprintf(buff, "[%s] %s has connected.", ch->name, Name(player));
+            sprintf(buff, "%s %s has connected.", ch->header, Name(player));
         }
         do_comsend(ch, buff);
         free_lbuf(buff);
@@ -2228,11 +2268,11 @@ void do_cemit(dbref player, dbref cause, int key, char *chan, char *text)
     }
     else
     {
-        do_comsend(ch, tprintf("[%s] %s", chan, text));
+        do_comsend(ch, tprintf("%s %s", ch->header, text));
     }
 }
 
-void do_chopen(dbref player, dbref cause, int key, char *chan, char *object)
+void do_chopen(dbref player, dbref cause, int key, char *chan, char *value)
 {
     if (!mudconf.have_comsys)
     {
@@ -2294,7 +2334,7 @@ void do_chopen(dbref player, dbref cause, int key, char *chan, char *object)
         break;
 
     case CSET_OBJECT:
-        init_match(player, object, NOTYPE);
+        init_match(player, value, NOTYPE);
         match_everything(0);
         thing = match_result();
 
@@ -2310,6 +2350,11 @@ void do_chopen(dbref player, dbref cause, int key, char *chan, char *object)
             free_lbuf(buff);
         }
         break;
+
+	case CSET_HEADER:
+        do_cheader(player, chan, value);
+        msg = "Set.";
+		break;
     }
     raw_notify(player, msg);
 }
@@ -2382,20 +2427,44 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
         //
         if (ch->type & CHANNEL_SPOOF)
         {
-            sprintf(buff, "[%s] %s boots %s off the channel.", ch->name, buf2, vu->title);
+            sprintf(buff, "%s %s boots %s off the channel.", ch->header, buf2, vu->title);
         }
         else
         {
-            sprintf(buff, "[%s] %s boots %s %s off the channel.", ch->name, buf2, vu->title, Name(thing));
+            sprintf(buff, "%s %s boots %s %s off the channel.", ch->header, buf2, vu->title, Name(thing));
         }
     }
     else
     {
-        sprintf(buff, "[%s] %s boots %s off the channel.", ch->name, buf2, Name(thing));
+        sprintf(buff, "%s %s boots %s off the channel.", ch->header, buf2, Name(thing));
     }
     do_comsend(ch, buff);
     do_delcomchannel(thing, channel);
 }
+
+void do_cheader(dbref player, char *channel, char *header)
+{
+	struct channel *ch = select_channel(channel);
+	if (!ch)
+    {
+		raw_notify(player, "That channel does not exist.");
+		return;
+	}
+	if (!(ch->charge_who == player) && !Comm_All(player))
+    {
+		raw_notify(player, "Permission denied.");
+		return;
+	}
+    char *p = RemoveSetOfCharacters(header, "\r\n\t");
+    int n = strlen(p);
+    if (n > MAX_HEADER_LEN)
+    {
+        n = MAX_HEADER_LEN;
+    }
+    p[n] = '\0';
+    memcpy(ch->header, p, n+1);
+}
+
 
 void do_chanlist(dbref player, dbref cause, int key)
 {
@@ -2420,8 +2489,15 @@ void do_chanlist(dbref player, dbref cause, int key)
     }
     temp = alloc_mbuf("do_chanlist_temp");
     buf = alloc_mbuf("do_chanlist_buf");
-    
-    raw_notify(player, "*** Channel       Owner           Description");
+
+	if (key & CLIST_HEADERS)
+    {
+        raw_notify(player, "*** Channel       Owner           Header");
+    }
+	else
+    {
+        raw_notify(player, "*** Channel       Owner           Description");
+    }
     
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
@@ -2429,18 +2505,27 @@ void do_chanlist(dbref player, dbref cause, int key)
         if (Comm_All(player) || (ch->type & CHANNEL_PUBLIC) ||
             ch->charge_who == player)
         {
-            atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
-            if ((ch->chan_obj == NOTHING) || !*atrstr)
-                strcpy(buf, "No description.");
+            char *pBuffer;
+		    if (key & CLIST_HEADERS)
+            {
+                pBuffer = ch->header;
+            }
             else
-                sprintf(buf, "%-54.54s", atrstr);
-            
-            free_lbuf(atrstr);
+            {
+                atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
+                if ((ch->chan_obj == NOTHING) || !*atrstr)
+                    strcpy(buf, "No description.");
+                else
+                    sprintf(buf, "%-54.54s", atrstr);
+                free_lbuf(atrstr);
+
+                pBuffer = buf;
+            }
             sprintf(temp, "%c%c%c %-13.13s %-15.15s %-45.45s",
                 (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
                 (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
                 (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-',
-                ch->name, Name(ch->charge_who), buf);
+                ch->name, Name(ch->charge_who), pBuffer);
             
             raw_notify(player, temp);
         }

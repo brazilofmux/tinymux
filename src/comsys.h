@@ -1,6 +1,6 @@
 // Comsys.h
 //
-// $Id: comsys.h,v 1.1 2000-04-11 07:14:43 sdennis Exp $
+// $Id: comsys.h,v 1.2 2001-02-10 09:57:06 sdennis Exp $
 
 #ifndef __COMSYS_H__
 #define __COMSYS_H__
@@ -15,6 +15,7 @@ struct chanentry
 #define NUM_COMSYS 500
 
 #define MAX_CHANNEL_LEN 50
+#define MAX_HEADER_LEN  100
 #define MAX_TITLE_LEN   50
 #define MAX_ALIAS_LEN    6
 
@@ -29,6 +30,7 @@ struct comuser
 struct channel
 {
     char name[MAX_CHANNEL_LEN+1];
+    char header[MAX_HEADER_LEN+1];
     int type;
     int temp1;
     int temp2;
@@ -88,6 +90,7 @@ void do_comdisconnect(dbref player);
 void do_comconnect(dbref player);
 void do_clearcom(dbref player, dbref unused1, int unused2);
 void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2);
+void do_cheader(dbref player, char *channel, char *header);
 
 comsys_t *get_comsys ();
 comsys_t *create_new_comsys ();
