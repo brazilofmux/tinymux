@@ -6276,8 +6276,8 @@ FUNCTION CLASSES (continued)
                              POS REGMATCH REGMATCHI REGRAB REGRABALL
                              REGRABALLI REGRABI REPEAT REPLACE REVERSE RIGHT
                              RJUST ROMAN SCRAMBLE SECURE SPACE SPELLNUM SQUISH
-                             STRCAT STRIPANSI STRLEN STRMATCH STRTRUNC SWITCH
-                             TRANSLATE TRIM UCSTR WORDPOS
+                             STRCAT STRIPACCENTS STRIPANSI STRLEN STRMATCH
+                             STRTRUNC SWITCH TRANSLATE TRIM UCSTR WORDPOS
 
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
@@ -6347,14 +6347,14 @@ FUNCTION LIST (continued)
     SETQ()      SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()
     SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
     SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
-    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
-    SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()
-    TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()
-    TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()
-    UNPACK()    V()         VADD()      VALID()     VCROSS()    VDIM()
-    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
-    VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()
-    XOR()       ZFUN()      ZONE()      ZWHO()
+    STATS()     STRCAT()    STRIPACCENTS()          STRIPANSI() STRLEN()
+    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
+    T()         TABLE()     TAN()       TEL()       TIME()      TIMEFMT()
+    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
+    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
+    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
+    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
+    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -11160,6 +11160,16 @@ STRCAT()
   "foobarbazblech".
 
   Related Topics:
+
+& STRIPACCENTS()
+STRIPACCENTS()
+
+  FUNCTION: stripaccents(<string>)
+
+  Returns the string with accented characters converted to non-accented.
+  This function assumes the ISO 8859-1 character set.
+
+  Related Topics: chr(), ord().
 
 & STRIPANSI()
 STRIPANSI()
