@@ -72,6 +72,11 @@ Bug Fixes:
  -- Fixed bug in MIX() where '&mixit me=(%0|%1);think mix(mixit,0 1,1)'
     gives '(0|1)' instead of '(0|1) (1|)'.  It wasn't determining the
     length of the first list correctly.
+ -- Allow code on rooms to use @oemit.
+ -- Move initialization of time code further up so that the logging
+    code creates the right timestamp.
+ -- @dbck started fixing quotas in MUX 2.3, but this is too expensive
+    to do routinely.
 
 
 Performance Enhancements:
