@@ -1128,7 +1128,10 @@ USE
   things when used, for instance, using a camera should result in a
   picture being taken.
 
-  Related Topics: @ause, @ouse, @use.
+  Objects that you wish to limit who or under what circumstances they may
+  used by others should be @lock'ed with the appropriate uselock.
+
+  Related Topics: @ause, @ouse, @use, @lock, @lock locks.
 
 & VERSION
 VERSION
@@ -1185,16 +1188,30 @@ WHO
   Related Topics: @set.
 
 & @@
+@@
 
   COMMAND: @@ <args>
 
-  This command does nothing, therefore it is useful for putting comments into
-  a MUX program.  Be careful that ()'s and {}'s in the (otherwise ignored)
-  arguments are nested correctly, lest your command-ending ; be trapped
-  inside.
+  This command and everything after it (excluding the command-separator
+  ';') is not evaluated by the parser. This is useful for adding comments
+  in softcode or, more commonly, writing comment headers for softcode
+  installers (such as /quotable text files).  Note that @@ must be
+  followed by a space or it will return an error message.
+
+  Always be doubly sure  that ()'s and {}'s in the (otherwise ignored)
+  arguments are nested correctly, so that any semicolons used to separate it
+  from subsequent code in the line are recognized by the parser.
 
   Example:
-     @va me=$foobar *:@fo #1234=%0;@@ This controls my foobar puppet.
+     > @va me=$foobar *:@fo #1234=%0;@@ This controls my foobar puppet.
+     > foobar say Hello World!
+     foobar says "Hello World!"
+     > @@ --- Begin Code ---
+     > @emit Hello World!
+     > @@ --- End Code ---
+     Hello World!
+
+  Related Topics: @comment
 
 & @CHOWN
 @CHOWN
@@ -1285,51 +1302,6 @@ WHO
                    don't copy the attributes.
 
   Related Topics: @create, @decompile, @destroy, VISUAL.
-
-& @CONFORMAT
-@CONFORMAT
-
-  COMMAND: @conformat <object> [=<format>]
-
-  Replaces the usual "Contents:" or "Carrying:" format when an object
-  is looked at, by a player-specified contents format. This is evaluated
-  as if it were a description or other similar message on the room.
-  The objects that the looker would normally be able to see is passed
-  as a dbref list in %0; all contents can be acquired through 'lcon(me)'.
-  The contents name is passed in %1.
-
-  One could change the format to 'Contents: Object1 Object2 Object3'
-  through '@conformat here = %1 [iter(%0,name(##))]',
-  for example. More complex things are possible.
-
-  Related Topics: @exitformat, @nameformat
-
-& @EXITFORMAT
-@EXITFORMAT
-
-  COMMAND: @exitformat <object> [=<format>]
-
-  Replaces the usual "Obvious Exits:" format when an object is looked
-  at, by a player-specified exits format. This is evaluated as if it
-  were a description or similar message on the room.  The objects that
-  the looker would normally be able to see is passed as a dbref list
-  in %0; all exits can be acquired through 'lexits(me)'.
-
-  One could change the format to 'Exits: Exit1 Exit2 Exit3' through
-  '@exitformat here = Exits: [iter(%0,name(##))]', for example.
-
-  Related Topics: @conformat, @nameformat
-
-& @NAMEFORMAT
-@NAMEFORMAT
-
-  COMMAND: @nameformat <object> [=<format>]
-
-  By default, when an object is looked at, the object's real name is shown.
-  And, if you can link to the object, it's flag letters and dbref are also
-  shown. However, with @nameformat, you can control exactly what is shown.
-
-  Related Topics: @conformat, @exitformat
 
 & @CPATTR
 @CPATTR
@@ -1441,11 +1413,13 @@ WHO
 
   COMMAND: @doing[/<switches>] [<message>]
 
-  Sets your doing message, which appears after your name in the WHO report.
+  Sets your DOING message, which appears after your name in the WHO
+  report.
+
   The following switches are available:
 
-     /message - Sets your Doing string in the WHO report. (default)
-     /poll    - Displays the current Doing poll from the WHO report.
+    /poll - Displays the current poll message from the WHO report.
+    /poll <message> - Sets a new poll message in the WHO report.
 
   Related Topics: WHO, @poll.
 
@@ -10946,4 +10920,49 @@ CONNLEFT()
 
   Related Topics: conntotal(), connmax(), connlast(), connnum(), secs(),
       conn().
+
+& @CONFORMAT
+@CONFORMAT
+
+  COMMAND: @conformat <object> [=<format>]
+
+  Replaces the usual "Contents:" or "Carrying:" format when an object
+  is looked at, by a player-specified contents format. This is evaluated
+  as if it were a description or other similar message on the room.
+  The objects that the looker would normally be able to see is passed
+  as a dbref list in %0; all contents can be acquired through 'lcon(me)'.
+  The contents name is passed in %1.
+
+  One could change the format to 'Contents: Object1 Object2 Object3'
+  through '@conformat here = %1 [iter(%0,name(##))]',
+  for example. More complex things are possible.
+
+  Related Topics: @exitformat, @nameformat
+
+& @EXITFORMAT
+@EXITFORMAT
+
+  COMMAND: @exitformat <object> [=<format>]
+
+  Replaces the usual "Obvious Exits:" format when an object is looked
+  at, by a player-specified exits format. This is evaluated as if it
+  were a description or similar message on the room.  The objects that
+  the looker would normally be able to see is passed as a dbref list
+  in %0; all exits can be acquired through 'lexits(me)'.
+
+  One could change the format to 'Exits: Exit1 Exit2 Exit3' through
+  '@exitformat here = Exits: [iter(%0,name(##))]', for example.
+
+  Related Topics: @conformat, @nameformat
+
+& @NAMEFORMAT
+@NAMEFORMAT
+
+  COMMAND: @nameformat <object> [=<format>]
+
+  By default, when an object is looked at, the object's real name is shown.
+  And, if you can link to the object, it's flag letters and dbref are also
+  shown. However, with @nameformat, you can control exactly what is shown.
+
+  Related Topics: @conformat, @exitformat
 
