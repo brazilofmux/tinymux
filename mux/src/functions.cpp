@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.40 2002-06-28 07:01:38 sdennis Exp $
+// $Id: functions.cpp,v 1.41 2002-06-28 07:10:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -802,21 +802,24 @@ FUNCTION(fun_words)
 
 FUNCTION(fun_flags)
 {
+    dbref result = NOTHING;
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (  Good_obj(it)
-       && (  mudconf.pub_flags
-          || Examinable(executor, it)
-          || it == enactor))
+    if (Good_obj(it))
     {
-        char *buff2 = decode_flags(executor, &(db[it].fs));
-        safe_str(buff2, buff, bufc);
-        free_sbuf(buff2);
+        if (  mudconf.pub_flags
+           || Examinable(executor, it)
+           || it == enactor)
+        {
+            char *buff2 = decode_flags(executor, &(db[it].fs));
+            safe_str(buff2, buff, bufc);
+            free_sbuf(buff2);
+        }
     }
     else
     {
-        safe_nothing(buff, bufc);
+        result = it;
     }
-    return;
+    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
