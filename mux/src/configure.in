@@ -41,7 +41,6 @@ AC_TRY_COMPILE([#include <signal.h>],[struct sigcontext scp;],AC_DEFINE(HAVE_STR
 AC_HEADER_SYS_WAIT
 AC_STRUCT_TM
 AC_STRUCT_TIMEZONE
-AC_TRY_COMPILE([#include <sys/wait.h>],[union wait stat;],AC_DEFINE(HAVE_UNION_WAIT))
 AC_CHECKING(for extended string dcls)
 AC_EGREP_HEADER(rindex,string.h, ,AC_DEFINE(NEED_INDEX_DCL))
 AC_CHECKING(for malloc dcl)
@@ -71,11 +70,6 @@ elif test $ac_cv_header_sys_time_h = yes ; then
 AC_EGREP_HEADER(gettimeofday,sys/time.h, ,AC_DEFINE(NEED_GETTIMEOFDAY_DCL))
 else
 AC_EGREP_HEADER(gettimeofday,time.h, ,AC_DEFINE(NEED_GETTIMEOFDAY_DCL))
-fi
-
-if test $ac_cv_header_sys_wait_h = yes ; then
-AC_CHECKING(for wait3 dcl)
-AC_EGREP_HEADER(wait3,sys/wait.h, ,AC_DEFINE(NEED_WAIT3_DCL))
 fi
 
 AC_CHECKING(for signal SIGCHLD braindamage)
