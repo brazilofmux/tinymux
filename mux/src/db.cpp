@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.44 2004-04-29 05:03:58 sdennis Exp $
+// $Id: db.cpp,v 1.45 2004-05-13 06:01:28 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1164,13 +1164,16 @@ void SetupThrottle(dbref executor)
 
 bool ThrottleAttributeNames(dbref executor)
 {
-    if (db[executor].tThrottleExpired <= mudstate.now)
-    {
-        SetupThrottle(executor);
-    }
     if (0 < ThAttrib(executor))
     {
         s_ThAttrib(executor, ThAttrib(executor)-1);
+        return false;
+    }
+    CLinearTimeAbsolute tNow;
+    tNow.GetUTC();
+    if (db[executor].tThrottleExpired <= tNow)
+    {
+        SetupThrottle(executor);
         return false;
     }
     return true;
@@ -1178,13 +1181,16 @@ bool ThrottleAttributeNames(dbref executor)
 
 bool ThrottleMail(dbref executor)
 {
-    if (db[executor].tThrottleExpired <= mudstate.now)
-    {
-        SetupThrottle(executor);
-    }
     if (0 < ThMail(executor))
     {
         s_ThMail(executor, ThMail(executor)-1);
+        return false;
+    }
+    CLinearTimeAbsolute tNow;
+    tNow.GetUTC();
+    if (db[executor].tThrottleExpired <= tNow)
+    {
+        SetupThrottle(executor);
         return false;
     }
     return true;
