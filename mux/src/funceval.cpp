@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.36 2002-07-23 15:51:11 jake Exp $
+// $Id: funceval.cpp,v 1.37 2002-07-24 18:13:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3525,7 +3525,7 @@ CBitField::CBitField(unsigned int nMaximum_arg)
     nInts  = 0;
     pInts  = NULL;
     pMasks = NULL;
-    if (0 < nMaximum)
+    if (0 < nMaximum_arg)
     {
         nMaximum = nMaximum_arg;
         nBitsPer = sizeof(UINT32)*8;
