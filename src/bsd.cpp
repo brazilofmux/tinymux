@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.39 2001-12-01 08:44:45 sdennis Exp $
+// $Id: bsd.cpp,v 1.40 2001-12-03 17:49:06 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -38,7 +38,9 @@ extern const int _sys_nsig;
 #define NSIG _sys_nsig
 #endif // SOLARIS
 
-SOCKET MainGameSockPort;
+PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
+int      nMainGamePorts;
+
 unsigned int ndescriptors = 0;
 DESC *descriptor_list = NULL;
 
@@ -52,15 +54,14 @@ pid_t game_pid;
 #endif // WIN32
 
 DESC *initializesock(SOCKET, struct sockaddr_in *);
-DESC *new_connection(SOCKET sock);
+DESC *new_connection(PortInfo *Port);
 int FDECL(process_input, (DESC *));
 
 #ifdef WIN32
 
-// for Windows NT IO-completion-port method of TCP/IP - NJG
-
-// Windows NT TCP/IP routines written by Nick Gammon <nick@gammon.com.au>
-// Throughly reviewed, editted, debugged, and re-written by Stephen Dennis <sdennis@svdltd.com>
+// First version of Windows NT TCP/IP routines written by Nick Gammon
+// <nick@gammon.com.au>, and were throughly reviewed, re-written and debugged
+// by Stephen Dennis <sdennis@svdltd.com>.
 //
 HANDLE hGameProcess = INVALID_HANDLE_VALUE;
 FCANCELIO *fpCancelIo = NULL;
@@ -743,7 +744,7 @@ SOCKET make_socket(int port)
         if (nRet)
         {
             Log.tinyprintf("Error %ld on Win32: listen" ENDLINE, WSAGetLastError ());
-            WSACleanup();     // clean up
+            WSACleanup();
             exit(1);
         }
 
@@ -752,7 +753,7 @@ SOCKET make_socket(int port)
         if (_beginthread(MUDListenThread, 0, (void *) s) == (unsigned)(-1))
         {
             log_perror("NET", "FAIL", "_beginthread", "setsockopt");
-            WSACleanup();     // clean up
+            WSACleanup();
             exit(1);
         }
 
@@ -798,11 +799,12 @@ SOCKET make_socket(int port)
         }
     }
     listen(s, SOMAXCONN);
+    Log.tinyprintf("Listening on port %d" ENDLINE, port);
     return s;
 }
 
 #ifdef WIN32
-void shovechars9x(int port)
+void shovechars9x(int nPorts, PortInfo aPorts[])
 {
     fd_set input_set, output_set;
     int found;
@@ -812,7 +814,7 @@ void shovechars9x(int port)
 #define CheckOutput(x)  FD_ISSET(x, &output_set)
 
     mudstate.debug_cmd = (char *)"< shovechars >";
-    MainGameSockPort = make_socket(port);
+    MainGameSocket = make_socket(port);
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -857,7 +859,7 @@ void shovechars9x(int port)
 
         // Listen for new connections if there are free descriptors
         //
-        FD_SET(MainGameSockPort, &input_set);
+        FD_SET(MainGameSocket, &input_set);
 
         // Mark sockets that we want to test for change in status.
         //
@@ -892,9 +894,9 @@ void shovechars9x(int port)
 
         // Check for new connection requests.
         //
-        if (CheckInput(MainGameSockPort))
+        if (CheckInput(MainGameSocket))
         {
-            newd = new_connection(MainGameSockPort);
+            newd = new_connection(port, MainGameSocket);
             if (!newd)
             {
                 if (  errno
@@ -1003,7 +1005,7 @@ DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 void shovecharsNT(int port)
 {
     mudstate.debug_cmd = (char *)"< shovechars >";
-    MainGameSockPort = make_socket(port);
+    MainGameSocket = make_socket(port);
 
     CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
 
@@ -1085,22 +1087,31 @@ BOOL ValidSocket(SOCKET s)
     return TRUE;
 }
 
-void shovechars(int port)
+void shovechars(int nPorts, PortInfo aPorts[])
 {
     fd_set input_set, output_set;
     int found;
     DESC *d, *dnext, *newd;
     unsigned int avail_descriptors;
     int maxfds;
+    int i;
 
-#define CheckInput(x)    FD_ISSET(x, &input_set)
+#define CheckInput(x)     FD_ISSET(x, &input_set)
 #define CheckOutput(x)    FD_ISSET(x, &output_set)
 
     mudstate.debug_cmd = (char *)"< shovechars >";
+
     if (!mudstate.restarting)
     {
-        MainGameSockPort = make_socket(port);
-        maxd = MainGameSockPort + 1;
+        maxd = 1;
+        for (i = 0; i < nPorts; i++)
+        {
+            aPorts[i].socket = make_socket(aPorts[i].port);
+            if (maxd <= aPorts[i].socket)
+            {
+                maxd = aPorts[i].socket + 1;
+            }
+        }
     }
 
     CLinearTimeAbsolute ltaLastSlice;
@@ -1154,7 +1165,10 @@ void shovechars(int port)
         //
         if (ndescriptors < avail_descriptors)
         {
-            FD_SET(MainGameSockPort, &input_set);
+            for (i = 0; i < nPorts; i++)
+            {
+                FD_SET(aPorts[i].socket, &input_set);
+            }
         }
 
         // Listen for replies from the slave socket.
@@ -1217,15 +1231,18 @@ void shovechars(int port)
                     ENDLOG;
                     boot_slave(0, 0, 0);
                 }
-                if (!ValidSocket(MainGameSockPort))
+                for (i = 0; i < nPorts; i++)
                 {
-                    // That's it. Game over.
-                    //
-                    STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                    log_text((char *) "Bad game port descriptor ");
-                    log_number(MainGameSockPort);
-                    ENDLOG;
-                    break;
+                    if (!ValidSocket(aPorts[i].socket))
+                    {
+                        // That's it. Game over.
+                        //
+                        STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
+                        log_text((char *) "Bad game port descriptor ");
+                        log_number(aPorts[i].socket);
+                        ENDLOG;
+                        return;
+                    }
                 }
             }
             else if (errno != EINTR)
@@ -1248,24 +1265,27 @@ void shovechars(int port)
 
         // Check for new connection requests.
         //
-        if (CheckInput(MainGameSockPort))
+        for (i = 0; i < nPorts; i++)
         {
-            newd = new_connection(MainGameSockPort);
-            if (!newd)
+            if (CheckInput(aPorts[i].socket))
             {
-                if (  errno
-                   && errno != EINTR
-                   && errno != EMFILE
-                   && errno != ENFILE)
+                newd = new_connection(aPorts+i);
+                if (!newd)
                 {
-                    log_perror("NET", "FAIL", NULL, "new_connection");
+                    if (  errno
+                       && errno != EINTR
+                       && errno != EMFILE
+                       && errno != ENFILE)
+                    {
+                        log_perror("NET", "FAIL", NULL, "new_connection");
+                    }
                 }
-            }
-            else
-            {
-                if (newd->descriptor >= maxd)
+                else
                 {
-                    maxd = newd->descriptor + 1;
+                    if (newd->descriptor >= maxd)
+                    {
+                        maxd = newd->descriptor + 1;
+                    }
                 }
             }
         }
@@ -1307,7 +1327,7 @@ void shovechars(int port)
 
 #endif // WIN32
 
-DESC *new_connection(SOCKET sock)
+DESC *new_connection(PortInfo *Port)
 {
     DESC *d;
     struct sockaddr_in addr;
@@ -1325,7 +1345,7 @@ DESC *new_connection(SOCKET sock)
     mudstate.debug_cmd = (char *)"< new_connection >";
     addr_len = sizeof(struct sockaddr);
 
-    SOCKET newsock = accept(sock, (struct sockaddr *)&addr, &addr_len);
+    SOCKET newsock = accept(Port->socket, (struct sockaddr *)&addr, &addr_len);
 
     if (IS_INVALID_SOCKET(newsock))
     {
@@ -1375,7 +1395,7 @@ DESC *new_connection(SOCKET sock)
                 // There is room on the stack, so make the request.
                 //
                 SlaveRequests[iSlaveRequest].sa_in = addr;
-                SlaveRequests[iSlaveRequest].port_in = mudconf.ports.pi[0]; // QQQ
+                SlaveRequests[iSlaveRequest].port_in = Port->port;
                 iSlaveRequest++;
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
 
@@ -1397,8 +1417,8 @@ DESC *new_connection(SOCKET sock)
            && mudconf.use_hostname)
         {
             char *pBuffL1 = alloc_lbuf("new_connection.write");
-            sprintf(pBuffL1, "%s\n%s,%d,%d\n", pBuffM2,
-                pBuffM2, usPort, mudconf.ports.pi[0]);
+            sprintf(pBuffL1, "%s\n%s,%d,%d\n", pBuffM2, pBuffM2, usPort,
+                Port->port);
             len = strlen(pBuffL1);
             if (write(slave_socket, pBuffL1, len) < 0)
             {
@@ -2234,9 +2254,13 @@ void close_sockets(int emergency, char *message)
             shutdownsock(d, R_GOING_DOWN);
         }
     }
-    if (SOCKET_CLOSE(MainGameSockPort) == 0)
+    for (int i = 0; i < nMainGamePorts; i++)
     {
-        DebugTotalSockets--;
+        if (SOCKET_CLOSE(aMainGamePorts[i].socket) == 0)
+        {
+            DebugTotalSockets--;
+        }
+        aMainGamePorts[i].socket = INVALID_SOCKET;
     }
 }
 
@@ -2831,8 +2855,6 @@ void list_system_resources(dbref player)
 // ---------------------------------------------------------------------------
 // Thread to listen on MUD port - for Windows NT
 // ---------------------------------------------------------------------------
-//
-// TODO: Add some stuff back in as long as they are thread safe.
 //
 void __cdecl MUDListenThread(void * pVoid)
 {

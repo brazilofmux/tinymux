@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.58 2001-11-28 06:42:59 sdennis Exp $
+// $Id: db.cpp,v 1.59 2001-12-03 17:49:06 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -43,10 +43,6 @@
 OBJ *db = NULL;
 NAME *names = NULL;
 NAME *purenames = NULL;
-
-#ifndef WIN32
-extern SOCKET MainGameSockPort;
-#endif // !WIN32
 
 extern void FDECL(desc_addhash, (DESC *));
 
@@ -3152,15 +3148,21 @@ void dump_restart_db(void)
 {
     FILE *f;
     DESC *d;
-    int version = 0;
+    int version = 1;
 
     f = fopen("restart.db", "wb");
     fprintf(f, "+V%d\n", version);
-    putref(f, MainGameSockPort);
+    putref(f, nMainGamePorts);
+    for (int i = 0; i < nMainGamePorts; ++i)
+    {
+        putref(f, aMainGamePorts[i].port);
+        putref(f, aMainGamePorts[i].socket);
+    }
     putref(f, mudstate.start_time.ReturnSeconds());
     putstring(f, mudstate.doing_hdr);
     putref(f, mudstate.record_players);
-    DESC_ITER_ALL(d) {
+    DESC_ITER_ALL(d)
+    {
         putref(f, d->descriptor);
         putref(f, d->flags);
         putref(f, d->connected_at.ReturnSeconds());
@@ -3186,7 +3188,7 @@ void load_restart_db(void)
     DESC *d;
     DESC *p;
 
-    int val, version;
+    int val;
     char *temp, buf[8];
 
     f = fopen("restart.db", "r");
@@ -3199,10 +3201,37 @@ void load_restart_db(void)
 
     fgets(buf, 3, f);
     Tiny_Assert(strncmp(buf, "+V", 2) == 0);
-    version = getref(f);
-    MainGameSockPort = getref(f);
+    int version = getref(f);
+    if (version == 1)
+    {
+        // Started on 2001-DEC-03
+        //
+        nMainGamePorts = getref(f);
+        maxd = 1;
+        for (int i = 0; i < nMainGamePorts; i++)
+        {
+            aMainGamePorts[i].port   = getref(f);
+            Tiny_Assert(aMainGamePorts[i].port > 0);
+            aMainGamePorts[i].socket = getref(f);
+            if (maxd <= aMainGamePorts[i].socket)
+            {
+                maxd = aMainGamePorts[i].socket + 1;
+            }
+        }
+    }
+    else if (version == 0)
+    {
+        // REMOVE: After 2002-DEC-03, remove support for version 0.
+        //
+        // This execution path assumes the port config option in the .conf
+        // file has changed the aMainGamePorts[0].port part.
+        //
+        Tiny_Assert(aMainGamePorts[0].port > 0);
+        aMainGamePorts[0].socket = getref(f);
+        nMainGamePorts = 1;
+        maxd = aMainGamePorts[0].socket + 1;
+    }
 
-    maxd = MainGameSockPort + 1;
     mudstate.start_time.SetSeconds(getref(f));
     strcpy(mudstate.doing_hdr, getstring_noalloc(f, TRUE));
     mudstate.record_players = getref(f);

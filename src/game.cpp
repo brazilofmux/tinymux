@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.46 2001-12-01 08:44:45 sdennis Exp $
+// $Id: game.cpp,v 1.47 2001-12-03 17:49:06 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2088,6 +2088,15 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     init_timer();
 
+    // TODO: Support ability to add and remove ports across a @restart. For
+    // now, we assume the 'port' config option does not change across a
+    // @restart.
+    //
+    nMainGamePorts = mudconf.ports.n;
+    for (int i = 0; i < nMainGamePorts; i++)
+    {
+        aMainGamePorts[i].port = mudconf.ports.pi[i];
+    }
 #ifdef WIN32
     if (platform == VER_PLATFORM_WIN32_NT)
     {
@@ -2100,7 +2109,7 @@ int DCL_CDECL main(int argc, char *argv[])
         shovechars9x(mudconf.ports.pi[0]);
     }
 #else // WIN32
-    shovechars(mudconf.ports.pi[0]);
+    shovechars(nMainGamePorts, aMainGamePorts);
 #endif // WIN32
 
     close_sockets(0, (char *)"Going down - Bye");

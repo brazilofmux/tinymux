@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.8 2001-11-24 19:19:13 sdennis Exp $
+// $Id: interface.h,v 1.9 2001-12-03 17:49:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -162,7 +162,7 @@ void process_output9x(void *, int);
 void process_outputNT(void *, int);
 extern FTASK *process_output;
 #else //WIN32
-extern void shovechars(int);
+extern void shovechars(int nPorts, PortInfo aPorts[]);
 extern void process_output(void *, int);
 extern void dump_restart_db(void);
 #endif // WIN32

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.54 2001-12-01 08:44:45 sdennis Exp $
+// $Id: conf.cpp,v 1.55 2001-12-03 17:49:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -435,7 +435,6 @@ int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
     return -1;
 }
 
-#define MAX_LISTEN_PORTS 10
 // ---------------------------------------------------------------------------
 // cf_int_array: Setup array of integers.
 //
@@ -449,8 +448,8 @@ CF_HAND(cf_int_array)
     int nLen;
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, str);
-    Tiny_StrTokControl(&tts, " \t");
-    while ((p = Tiny_StrTokParseLEN(&tts, &nLen)) != NULL)
+    Tiny_StrTokControl(&tts, " \t\n\r");
+    while ((p = Tiny_StrTokParse(&tts)) != NULL)
     {
         int unused;
         if (is_integer(p, &unused))

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.70 2001-12-03 06:19:39 sdennis Exp $
+// $Id: externs.h,v 1.71 2001-12-03 17:49:06 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -735,8 +735,17 @@ extern void list_system_resources(dbref player);
 extern int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state);
 #endif
 
+typedef struct
+{
+    int    port;
+    SOCKET socket;
+} PortInfo;
+
+#define MAX_LISTEN_PORTS 10
+extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
+extern int      nMainGamePorts;
+
 #ifdef WIN32
-extern SOCKET MainGameSockPort;
 extern DWORD platform;
 #else // WIN32
 extern int maxd;
