@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.29 2003-03-08 09:03:19 sdennis Exp $
+// $Id: bsd.cpp,v 1.30 2003-03-08 21:29:36 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2003,6 +2003,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->descriptor = s;
     d->flags = 0;
     d->connected_at.GetUTC();
+    d->last_time = d->connected_at;
     d->retries_left = mudconf.retry_limit;
     d->command_count = 0;
     d->timeout = mudconf.idle_timeout;
