@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.64 2001-07-03 12:04:29 sdennis Exp $
+// $Id: functions.cpp,v 1.65 2001-07-03 17:15:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -45,6 +45,9 @@ XFUNCTION(fun_zone);
 XFUNCTION(fun_link);
 XFUNCTION(fun_tel);
 XFUNCTION(fun_pemit);
+XFUNCTION(fun_remit);
+XFUNCTION(fun_oemit);
+XFUNCTION(fun_emit);
 XFUNCTION(fun_create);
 XFUNCTION(fun_set);
 #endif
@@ -6411,6 +6414,7 @@ FUN flist[] =
     {"EDIT",     fun_edit,     3,  0,          CA_PUBLIC},
     {"ELEMENTS", fun_elements, 0,  FN_VARARGS, CA_PUBLIC},
     {"ELOCK",    fun_elock,    2,  0,          CA_PUBLIC},
+    {"EMIT",     fun_emit,     1,  0,          CA_PUBLIC},
     {"EMPTY",    fun_empty,    0,  FN_VARARGS, CA_PUBLIC},
     {"ENCRYPT",  fun_encrypt,  2,  0,          CA_PUBLIC},
     {"EQ",       fun_eq,       2,  0,          CA_PUBLIC},
@@ -6508,6 +6512,7 @@ FUN flist[] =
     {"OBJ",      fun_obj,      1,  0,          CA_PUBLIC},
     {"OBJEVAL",  fun_objeval,  2,  FN_NO_EVAL, CA_PUBLIC},
     {"OBJMEM",   fun_objmem,   1,  0,          CA_PUBLIC},
+    {"OEMIT",    fun_oemit,    2,  0,          CA_PUBLIC},
     {"OR",       fun_or,       0,  FN_VARARGS, CA_PUBLIC},
     {"ORFLAGS",  fun_orflags,  2,  0,          CA_PUBLIC},
     {"OWNER",    fun_owner,    1,  0,          CA_PUBLIC},
@@ -6533,6 +6538,7 @@ FUN flist[] =
     {"RAND",     fun_rand,     1,  0,          CA_PUBLIC},
     {"REGMATCH", fun_regmatch, 0,  FN_VARARGS, CA_PUBLIC},
     {"REMAINDER",fun_remainder,2,  0,          CA_PUBLIC},
+    {"REMIT",    fun_remit,    2,  0,          CA_PUBLIC},
     {"REMOVE",   fun_remove,   0,  FN_VARARGS, CA_PUBLIC},
     {"REPEAT",   fun_repeat,   2,  0,          CA_PUBLIC},
     {"REPLACE",  fun_replace,  0,  FN_VARARGS, CA_PUBLIC},

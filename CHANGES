@@ -145,6 +145,9 @@ Feature Additions:
  --  The WOD_REALMS option now shows up in INFO.
  --  Added LADD() from TinyMUSH 3.0.
  --  Bug #704 - Added T() from PennMUSH. Thanks Raevnos.
+ --  Bug #563 - Add emit() function. Thanks Raevnos.
+ --  Added remit() function.
+ --  Bug #677 - Add oemit() function. Thanks Raevnos.
 
 
 Bug Fixes:
