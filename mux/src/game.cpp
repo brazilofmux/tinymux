@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.38 2003-03-04 18:50:35 sdennis Exp $
+// $Id: game.cpp,v 1.39 2003-03-06 05:03:23 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1859,6 +1859,22 @@ static void process_preload(void)
     free_lbuf(tstr);
 }
 
+void write_pidfile(const char *pFilename)
+{   
+    FILE *fp = fopen(pFilename, "wb");
+    if (fp)
+    {
+        fprintf(fp, "%d" ENDLINE, game_pid);
+        fclose(fp);
+    }
+    else
+    {
+        STARTLOG(LOG_ALWAYS, "PID", "FAIL");
+        Log.tinyprintf("Failed to write pidfile %s\n", pFilename);
+        ENDLOG;
+    }
+}
+
 long DebugTotalFiles = 3;
 long DebugTotalSockets = 0;
 #ifdef WIN32
@@ -1873,18 +1889,21 @@ long DebugTotalMemory = 0;
 #define CLI_DO_MINIMAL     CLI_USER+1
 #define CLI_DO_VERSION     CLI_USER+2
 #define CLI_DO_USAGE       CLI_USER+3
+#define CLI_DO_PID_FILE    CLI_USER+4
 
 BOOL bMinDB = FALSE;
 BOOL bSyntaxError = FALSE;
 char *conffile = NULL;
 BOOL bVersion = FALSE;
+char *pidfile = "netmux.pid";
 
-CLI_OptionEntry OptionTable[4] =
+CLI_OptionEntry OptionTable[5] =
 {
     { "c", CLI_REQUIRED, CLI_DO_CONFIG_FILE },
     { "s", CLI_NONE,     CLI_DO_MINIMAL     },
     { "v", CLI_NONE,     CLI_DO_VERSION     },
-    { "h", CLI_NONE,     CLI_DO_USAGE       }
+    { "h", CLI_NONE,     CLI_DO_USAGE       },
+    { "p", CLI_REQUIRED, CLI_DO_PID_FILE    }
 };
 
 void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
@@ -1893,6 +1912,10 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
     {
         switch (p->m_Unique)
         {
+        case CLI_DO_PID_FILE:
+            pidfile = pValue;
+            break;
+
         case CLI_DO_CONFIG_FILE:
             conffile = pValue;
             break;
@@ -1934,22 +1957,24 @@ int DCL_CDECL main(int argc, char *argv[])
        || conffile == NULL)
     {
         printf("Version: %s" ENDLINE, mudstate.version);
-        printf("Usage: %s [-h] [-v] [-s] [-c filename]" ENDLINE, argv[0]);
+        printf("Usage: %s [-h] [-v] [-s] [-c filename] [-c pidfile]" ENDLINE, argv[0]);
         printf("  -v  Display version string." ENDLINE);
         printf("  -s  Start with a minimal database." ENDLINE);
         printf("  -c  Specify configuration file." ENDLINE);
+        printf("  -p  Specify process ID file." ENDLINE);
         printf("  -h  Display this help." ENDLINE);
         return 1;
     }
 
     Log.EnableLogging();
+    game_pid = getpid();
+    write_pidfile(pidfile);
 
     BuildSignalNamesTable();
 
     FLOAT_Initialize();
     TIME_Initialize();
     SeedRandomNumberGenerator();
-    game_pid = getpid();
 
 #ifdef MEMORY_ACCOUNTING
     extern CHashFile hfAllocData;

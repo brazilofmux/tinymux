@@ -20,6 +20,4 @@ input_db  = gamename & ".db" & compression
 gdbm_db   = gamename
 crash_db  = gamename & ".db.CRASH"
 save_db   = gamename & ".db.old" & compression
-backup_db = gamename & ".db.bk"
-logname   = gamename & ".log"
-savename  = gamename & ".tar.Z"
+pidfile   = gamename & ".pid"
