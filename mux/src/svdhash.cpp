@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.5 2002-07-21 23:46:50 sdennis Exp $
+// $Id: svdhash.cpp,v 1.6 2002-07-21 23:55:01 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -2514,9 +2514,13 @@ void CLogFile::CreateLogFile(void)
     CloseLogFile();
 
     m_nSize = 0;
+#ifdef WIN32
     m_hFile = CreateFile(m_szFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+#else
+    m_hFile = open(m_szFilename, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
+#endif
 }
 
 void CLogFile::AppendLogFile(void)
@@ -2528,7 +2532,7 @@ void CLogFile::AppendLogFile(void)
         FILE_SHARE_READ, 0, OPEN_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 #else // WIN32
-    m_hFile = open(m_szFilename, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
+    m_hFile = open(m_szFilename, O_RDWR|O_BINARY, 0600);
 #endif // WIN32
     if (m_hFile != INVALID_HANDLE_VALUE)
     {
@@ -2603,7 +2607,7 @@ void CLogFile::Flush(void)
 #ifdef WIN32
     WriteFile(m_hFile, m_aBuffer, m_nBuffer, &nWritten, NULL);
 #else
-    fwrite(m_aBuffer, m_nBuffer, 1, m_hFile);
+    write(m_hFile, m_aBuffer, m_nBuffer);
 #endif
 
     if (m_nSize > FILE_SIZE_TRIGGER)

@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: svdhash.h,v 1.2 2002-07-21 23:55:01 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -275,16 +275,17 @@ public:
 class CLogFile
 {
 private:
-#if !defined(STANDALONE) && defined(WIN32)
+#ifndef STANDALONE
     CLinearTimeAbsolute m_ltaStarted;
+#ifdef WIN32
     CRITICAL_SECTION csLog;
-
+#endif
     HANDLE m_hFile;
     int  m_nSize;
 #endif
     int  m_nBuffer;
     char m_aBuffer[SIZEOF_LOG_BUFFER];
-#if !defined(STANDALONE) && defined(WIN32)
+#ifndef STANDALONE
     char m_szPrefix[32];
     char m_szFilename[SIZEOF_PATHNAME];
 
