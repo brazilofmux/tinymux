@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.60 2002-01-24 07:57:33 sdennis Exp $
+// $Id: conf.cpp,v 1.61 2002-01-24 08:07:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1813,6 +1813,21 @@ void cf_display(dbref player, char *param_name, char *buff, char **bufc)
                 else if (tp->interpreter == cf_string_dyn)
                 {
                     safe_str(*(char **)tp->loc, buff, bufc);
+                    return;
+                }
+                else if (tp->interpreter == cf_int_array)
+                {
+                    IntArray *pia = (IntArray *)(tp->loc);
+                    ITB itb;
+                    IntegerToBuffer_Init(&itb, buff, bufc);
+                    for (int i = 0; i < pia->n; i++)
+                    {
+                        if (!IntegerToBuffer_Add(&itb, pia->pi[i]))
+                        {
+                            break;
+                        }
+                    }
+                    IntegerToBuffer_Final(&itb);
                     return;
                 }
             }
