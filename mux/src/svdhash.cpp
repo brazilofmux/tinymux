@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.11 2003-02-06 14:10:25 sdennis Exp $
+// $Id: svdhash.cpp,v 1.12 2003-05-01 04:54:06 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2632,8 +2632,8 @@ void CLogFile::Flush(void)
     else
     {
         m_nSize += m_nBuffer;
-        unsigned long nWritten;
 #ifdef WIN32
+        unsigned long nWritten;
         WriteFile(m_hFile, m_aBuffer, m_nBuffer, &nWritten, NULL);
 #else // WIN32
         write(m_hFile, m_aBuffer, m_nBuffer);

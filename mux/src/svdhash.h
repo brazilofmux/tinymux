@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.5 2003-02-06 14:10:25 sdennis Exp $
+// $Id: svdhash.h,v 1.6 2003-05-01 04:54:06 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -272,8 +272,8 @@ private:
     CRITICAL_SECTION csLog;
 #endif // WIN32
     HANDLE m_hFile;
-    int  m_nSize;
-    int  m_nBuffer;
+    size_t m_nSize;
+    size_t m_nBuffer;
     char m_aBuffer[SIZEOF_LOG_BUFFER];
     bool bEnabled;
     char m_szPrefix[32];
