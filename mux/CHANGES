@@ -147,6 +147,7 @@ Feature Additions:
  -- Added support -p option, netmux.pid, and you can run more than one
     MUX server per Unix account without modifying the Startmux script.
     This feature first appeared in TinyMUSH 3.0.
+ -- The lag_maximum configuration option now accepts fractional seconds.
 
 
 Bug Fixes:
@@ -378,6 +379,7 @@ Bug Fixes:
  -- Fix typo in gradian-to-radian conversion factor.
  -- Fix cand(), cor(), candbool(), and corbool() so that %0-%9 are evaluated
     properly.  Reported by Sean Hunter.
+ -- Document lag_maximum.
 
 
 Performance Enhancements:
