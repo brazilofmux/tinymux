@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.21 2002-02-27 20:54:44 zenty Exp $
+// $Id: mguests.cpp,v 1.22 2003-03-14 15:23:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -127,58 +127,67 @@ char *CGuests::Create(DESC *d)
     int i;
     for (i = 0; i < nGuests; i++)
     {
-        // If we have something that isn't a guest in the list, lets
+        dbref guest_player = Guests[i];
+
+        // If we have something in the list that isn't a guest, lets
         // just drop it and make a new one.
         //
-        if (  !Good_obj(Guests[i])
-           || isGarbage(Guests[i])
-           || !isPlayer(Guests[i])
-           || !Guest(Guests[i]))
+        if (  !Good_obj(guest_player)
+           || isGarbage(guest_player)
+           || !isPlayer(guest_player)
+           || !Guest(guest_player))
         {
-            Guests[i] = MakeGuestChar();
-            return Name(Guests[i]);
+            guest_player = Guests[i] = MakeGuestChar();
+            if (guest_player == NOTHING)
+            {
+                return NULL;
+            }
+            else
+            {
+                return Name(guest_player);
+            }
         }
 
-        if (!Connected(Guests[i]))
+        if (!Connected(guest_player))
         {
             // Lets try to grab our own name, if we don't have it.
             //
-            sprintf(name, "%s%d", mudconf.guest_prefix, nGuests);
-            dbref player = lookup_player(GOD, name, 0);
-            if (player == NOTHING)
+            sprintf(name, "%s%d", mudconf.guest_prefix, i+1);
+            dbref j = lookup_player(GOD, name, FALSE);
+            if (j == NOTHING)
             {
-                delete_player_name(Guests[i], Name(Guests[i]));
-                s_Name(Guests[i], name);
-                add_player_name(Guests[i], Name(Guests[i]));
+                delete_player_name(guest_player, Name(guest_player));
+                s_Name(guest_player, name);
+                add_player_name(guest_player, Name(guest_player));
             }
 
             // Reset the flags back to the default.
             //
-            db[Guests[i]].fs = mudconf.player_flags;
+            db[guest_player].fs = mudconf.player_flags;
 
             // Add the type and remove wizard.
             //
-            db[Guests[i]].fs.word[FLAG_WORD1] |= TYPE_PLAYER;
-            db[Guests[i]].fs.word[FLAG_WORD1] &= ~WIZARD;
+            db[guest_player].fs.word[FLAG_WORD1] |= TYPE_PLAYER;
+            db[guest_player].fs.word[FLAG_WORD1] &= ~WIZARD;
 
             // Make sure they're a guest.
             //
-            s_Guest(player);
+            s_Guest(guest_player);
 
-            move_object(player, mudconf.start_room);
-            s_Pennies(player, Pennies(mudconf.guest_char));
-            s_Zone(player, Zone(mudconf.guest_char));
-            s_Parent(player, Parent(mudconf.guest_char));
+            move_object(guest_player, mudconf.start_room);
+            s_Pennies(guest_player, Pennies(mudconf.guest_char));
+            s_Zone(guest_player, Zone(mudconf.guest_char));
+            s_Parent(guest_player, Parent(mudconf.guest_char));
 
             // Wipe the attributes.
             //
-            WipeAttrs(Guests[i]);
-            s_Pass(player, crypt(GUEST_PASSWORD, "XX"));
+            WipeAttrs(guest_player);
+            s_Pass(guest_player, crypt(GUEST_PASSWORD, "XX"));
 
             // Copy them back.
             //
-            atr_cpy(GOD, player, mudconf.guest_char);
-            return Name(Guests[i]);
+            atr_cpy(GOD, guest_player, mudconf.guest_char);
+            return Name(guest_player);
         }
     }
 
@@ -272,14 +281,20 @@ int CGuests::MakeGuestChar(void)
     //
     int i;
     dbref player;
+    BOOL bFound = FALSE;
     for (i = 0; i < mudconf.number_guests;i++)
     {
         sprintf(name, "%s%d", mudconf.guest_prefix, i + 1);
         player = lookup_player(GOD, name, 0);
         if (player == NOTHING)
         {
+            bFound = TRUE;
             break;
         }
+    }
+    if (!bFound)
+    {
+        return NOTHING;
     }
 
     // Make the player.
