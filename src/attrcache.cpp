@@ -1,8 +1,16 @@
 // svdocache.cpp -- Attribute caching module
 //
+<<<<<<< HEAD:src/attrcache.cpp
 // $Id: attrcache.cpp,v 1.8 2000-10-25 21:56:32 sdennis Exp $
+=======
+// $Id: attrcache.cpp,v 1.2 2000-04-25 00:03:04 sdennis Exp $
+>>>>>>> no message:src/attrcache.cpp
 //
+<<<<<<< HEAD:src/attrcache.cpp
 // MUX 2.1
+=======
+// MUX 2.0
+>>>>>>> no message:src/attrcache.cpp
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
@@ -83,7 +91,16 @@ void cache_redirect(void)
         char TempFileName[20];
         sprintf(TempFileName, "$convtemp.%d", i);
         TempFiles[i] = fopen(TempFileName, "wb+");
+<<<<<<< HEAD:src/attrcache.cpp
         Tiny_Assert(TempFiles[i]);
+=======
+        if (TempFiles[i] == NULL)
+        {
+            Log.printf("Cannot create %s.\n", TempFileName);
+            Log.Flush();
+            abort();
+        }
+>>>>>>> no message:src/attrcache.cpp
         setvbuf(TempFiles[i], NULL, _IOFBF, 16384);
     }
     cache_redirected = TRUE;
@@ -98,17 +115,29 @@ void cache_pass2(void)
         fprintf(stderr, "File %d: ", i);
         fseek(TempFiles[i], 0, SEEK_SET);
         int cnt = 1000;
+<<<<<<< HEAD:src/attrcache.cpp
         size_t nSize;
+=======
+        int nSize;
+>>>>>>> no message:src/attrcache.cpp
         for (;;)
         {
+<<<<<<< HEAD:src/attrcache.cpp
             size_t cc = fread(&nSize, 1, sizeof(nSize), TempFiles[i]);
+=======
+            int cc = fread(&nSize, 1, sizeof(nSize), TempFiles[i]);
+>>>>>>> no message:src/attrcache.cpp
             if (cc != sizeof(nSize))
             {
                 break;
             }
             ATTR_RECORD Record;
+<<<<<<< HEAD:src/attrcache.cpp
             cc = fread(&Record, 1, nSize, TempFiles[i]);
             Tiny_Assert(cc == nSize);
+=======
+            fread(&Record, 1, nSize, TempFiles[i]);
+>>>>>>> no message:src/attrcache.cpp
             cache_put(&Record.attrKey, Record.attrText, nSize - sizeof(Aname));
             if (cnt-- == 0)
             {
@@ -249,7 +278,11 @@ char *cache_get(Aname *nam, int *pLen)
 #ifdef DO_CACHEING
             // Add this information to the cache.
             //
+<<<<<<< HEAD:src/attrcache.cpp
             pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+nLength);
+=======
+            pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+nLength, __FILE__, __LINE__);
+>>>>>>> no message:src/attrcache.cpp
             if (pCacheEntry)
             {
                 pCacheEntry->attrKey = *nam;
@@ -275,7 +308,11 @@ char *cache_get(Aname *nam, int *pLen)
                     REMOVE_ENTRY(pCacheEntry);
                     CacheSize -= pCacheEntry->nSize;
                     hashdeleteLEN((char *)&(pCacheEntry->attrKey), sizeof(Aname), &mudstate.acache_htab);
+<<<<<<< HEAD:src/attrcache.cpp
                     MEMFREE(pCacheEntry);
+=======
+                    MEMFREE(pCacheEntry, __FILE__, __LINE__);
+>>>>>>> no message:src/attrcache.cpp
                 }
             }
 #endif // DO_CACHEING
@@ -357,12 +394,20 @@ BOOL cache_put(Aname *nam, char *value, int len)
         REMOVE_ENTRY(pCacheEntry);
         CacheSize -= pCacheEntry->nSize;
         hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
+<<<<<<< HEAD:src/attrcache.cpp
         MEMFREE(pCacheEntry);
+=======
+        MEMFREE(pCacheEntry, __FILE__, __LINE__);
+>>>>>>> no message:src/attrcache.cpp
     }
 
     // Add information about the new entry back into the cache.
     //
+<<<<<<< HEAD:src/attrcache.cpp
     pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+len);
+=======
+    pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+len, __FILE__, __LINE__);
+>>>>>>> no message:src/attrcache.cpp
     if (pCacheEntry)
     {
         pCacheEntry->attrKey = *nam;
@@ -388,7 +433,11 @@ BOOL cache_put(Aname *nam, char *value, int len)
             REMOVE_ENTRY(pCacheEntry);
             CacheSize -= pCacheEntry->nSize;
             hashdeleteLEN((char *)&(pCacheEntry->attrKey), sizeof(Aname), &mudstate.acache_htab);
+<<<<<<< HEAD:src/attrcache.cpp
             MEMFREE(pCacheEntry);
+=======
+            MEMFREE(pCacheEntry, __FILE__, __LINE__);
+>>>>>>> no message:src/attrcache.cpp
         }
     }
 #endif // DO_CACHEING
@@ -438,7 +487,11 @@ void cache_del(Aname *nam)
         REMOVE_ENTRY(pCacheEntry);
         CacheSize -= pCacheEntry->nSize;;
         hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
+<<<<<<< HEAD:src/attrcache.cpp
         MEMFREE(pCacheEntry);
+=======
+        MEMFREE(pCacheEntry, __FILE__, __LINE__);
+>>>>>>> no message:src/attrcache.cpp
     }
 #endif // DO_CACHEING
 }
