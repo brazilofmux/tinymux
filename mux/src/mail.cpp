@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.52 2002-09-13 06:24:39 jake Exp $
+// $Id: mail.cpp,v 1.53 2002-09-25 07:48:16 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -182,7 +182,7 @@ static int MessageAdd(char *pMessage)
 // IF return value is !NOTHING, you have a reference to the message,
 // and the reference count reflects that.
 //
-static int add_mail_message(dbref player, char *message)
+static int add_mail_message(dbref player, char *message, BOOL bEval)
 {
     if (!_stricmp(message, "clear"))
     {
@@ -201,11 +201,19 @@ static int add_mail_message(dbref player, char *message)
     TinyExec(execstr, &bp, player, player, player,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
     *bp = '\0';
-    char *msg = bp = alloc_lbuf("add_mail_message.2");
-    str = message;
-    TinyExec(msg, &bp, player, player, player,
+    char *msg;
+    if (bEval)
+    {
+        msg = bp = alloc_lbuf("add_mail_message.2");
+        str = message;
+        TinyExec(msg, &bp, player, player, player,
              EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
-    *bp = '\0';
+        *bp = '\0';
+    }
+    else
+    {
+        msg = message;
+    }
 
     // Save message body and return a reference to it.
     //
@@ -3079,7 +3087,7 @@ void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int
             // Complain about it.
             //
             char *pMail = tprintf("Alias Error: Bad Player %d for %s", vic, tolist);
-            int iMail = add_mail_message(player, pMail);
+            int iMail = add_mail_message(player, pMail, !(flags & M_FORWARD));
             if (iMail != NOTHING)
             {
                 send_mail(GOD, GOD, listto, subject, iMail, 0, silent, bBlind);
@@ -3405,7 +3413,7 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
     char *tolist = alloc_lbuf("mail_to_list");
     strcpy(tolist, list);
 
-    int number = add_mail_message(player, message);
+    int number = add_mail_message(player, message, !(flags & M_FORWARD));
     if (number != NOTHING)
     {
         char *tail, spot;
