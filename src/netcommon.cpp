@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.13 2000-06-03 09:37:52 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.14 2000-06-11 21:37:48 sdennis Exp $ 
 */
 
 /*
@@ -1289,18 +1289,26 @@ static void dump_users(DESC *e, char *match, int key)
 */
 void do_doing(dbref player, dbref cause, int key, char *arg)
 {
-    DESC *d;
+    // Make sure there can be no embedded newlines from %r
+    //
+    static char *Empty = "";
+    char *szDoing = Empty;
+    if (arg)
+    {
+        szDoing = replace_string("\r\n", "", arg);
+    }
 
-    char FittedDoing[SIZEOF_DOING_STRING];
+    char szFittedDoing[SIZEOF_DOING_STRING];
     int nVisualWidth;
-    int nFittedDoing = ANSI_TruncateToField(arg, SIZEOF_DOING_STRING, FittedDoing, WIDTHOF_DOING_STRING, &nVisualWidth, FALSE);
+    int nFittedDoing = ANSI_TruncateToField(szDoing, SIZEOF_DOING_STRING, szFittedDoing, WIDTHOF_DOING_STRING, &nVisualWidth, FALSE);
     
     if (key == DOING_MESSAGE)
     {
         int foundany = 0;
+        DESC *d;
         DESC_ITER_PLAYER(player, d)
         {
-            memcpy(d->doing, FittedDoing, nFittedDoing+1);
+            memcpy(d->doing, szFittedDoing, nFittedDoing+1);
             foundany = 1;
         }
         if (foundany)
@@ -1322,13 +1330,13 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
             notify(player, "Permission denied.");
             return;
         }
-        if (!arg || !*arg)
+        if (szFittedDoing[0] == '\0')
         {
-            StringCopy(mudstate.doing_hdr, "Doing");
+            strcpy(mudstate.doing_hdr, "Doing");
         }
         else 
         {
-            memcpy(mudstate.doing_hdr, FittedDoing, nFittedDoing+1);
+            memcpy(mudstate.doing_hdr, szFittedDoing, nFittedDoing+1);
         }
         if (!Quiet(player))
         {
