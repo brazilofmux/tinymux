@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.174 2002-05-31 06:12:25 sdennis Exp $
+// $Id: functions.cpp,v 1.175 2002-06-04 23:08:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5192,12 +5192,8 @@ FUNCTION(fun_min)
 
 FUNCTION(fun_search)
 {
-    char *pArg;
-    if (nfargs == 0)
-    {
-        pArg = "me";
-    }
-    else
+    char *pArg = NULL;
+    if (nfargs != 0)
     {
         pArg = fargs[0];
     }
