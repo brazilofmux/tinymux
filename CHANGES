@@ -161,6 +161,7 @@ Feature Additions:
  --  Support second argument for squish().
  --  Compiles under Cygwin.
  --  Changes for DEC Alpha Linux and IA64.
+ --  Bug #799 - Update lcmds() to handle spaced commands and ^-listens.
 
 
 Bug Fixes:
@@ -476,6 +477,7 @@ Bug Fixes:
  --  @exitformat passed all exits into %0 if at least one of the exits was
      visible to the user.
  --  Objects could use flags() to see CONNECTED flag of DARK WIZARDs.
+ --  Bug #799 - SIGSEGV possible in lcmds().
 
 
 Performance Enhancements:
