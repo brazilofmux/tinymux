@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.16 2001-06-29 19:16:51 sdennis Exp $
+// $Id: wiz.cpp,v 1.17 2001-06-30 17:29:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -146,7 +146,8 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
         }
     }
     if (  isGarbage(destination)
-       || isGarbage(Location(destination)))
+       || (  Has_location(destination)
+          && isGarbage(Location(destination))))
     {
         // @Teleporting into garbage is never permitted.
         //
