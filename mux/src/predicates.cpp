@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.35 2002-07-23 15:47:34 sdennis Exp $
+// $Id: predicates.cpp,v 1.36 2002-07-23 15:51:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1360,9 +1360,9 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
         {
             return dflt;
         }
-        if (  (*target != 's')
-           && (*target != 'S')
-           && (*target != ' '))
+        if (  *target != 's'
+           && *target != 'S'
+           && *target != ' ')
         {
             continue;
         }
@@ -1386,7 +1386,10 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
         // Copy the container name to a new buffer so we can terminate it.
         //
         buff = alloc_lbuf("is_posess");
-        for (s1 = start, d1 = buff; *s1 && (s1 < temp); *d1++ = (*s1++)) ;
+        for (s1 = start, d1 = buff; *s1 && (s1 < temp); *d1++ = (*s1++))
+        {
+            ; // Nothing.
+        }
         *d1 = '\0';
 
         // Look for the container here and in our inventory.  Skip past if we
@@ -1794,8 +1797,8 @@ BOOL nearby(dbref player, dbref thing)
         return TRUE;
     }
     dbref player_loc = where_is(player);
-    if (  (thing_loc == player_loc)
-       || (thing == player_loc))
+    if (  thing_loc == player_loc
+       || thing == player_loc)
     {
         return TRUE;
     }
