@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.4 2000-04-29 08:04:23 sdennis Exp $
+// $Id: bsd.cpp,v 1.5 2000-05-15 04:59:06 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1299,15 +1299,15 @@ static const char *disc_reasons[] =
 
 static const char *disc_messages[] =
 {
-    "unknown",
-    "quit",
-    "timeout",
-    "boot",
-    "netdeath",
-    "shutdown",
-    "badlogin",
-    "nologins",
-    "logout"
+    "Unknown",
+    "Quit",
+    "Timeout",
+    "Boot",
+    "Netfailure",
+    "Shutdown",
+    "BadLogin",
+    "NoLogins",
+    "Logout"
 };
 
 void shutdownsock(DESC *d, int reason)
