@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.138 2004-04-18 02:48:51 sdennis Exp $
+// $Id: functions.cpp,v 1.139 2004-11-08 21:34:13 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3374,16 +3374,20 @@ static double NearestPretty(double R)
 static double AddDoubles(int n, double pd[])
 {
     qsort(pd, n, sizeof(double), f_comp_abs);
-    double sum = pd[0];
-    double sum_err = 0.0;
-    int i;
-    for (i = 1; i < n; i++)
+    double sum = 0.0;
+    if (0 < n)
     {
-        double addend_err;
-        double addend = AddWithError(addend_err, sum_err, pd[i]);
-        double sum1_err;
-        double sum1 = AddWithError(sum1_err, sum, addend);
-        sum = AddWithError(sum_err, sum1, addend_err + sum1_err);
+        sum = pd[0];
+        double sum_err = 0.0;
+        int i;
+        for (i = 1; i < n; i++)
+        {
+            double addend_err;
+            double addend = AddWithError(addend_err, sum_err, pd[i]);
+            double sum1_err;
+            double sum1 = AddWithError(sum1_err, sum, addend);
+            sum = AddWithError(sum_err, sum1, addend_err + sum1_err);
+        }
     }
     return NearestPretty(sum);
 }
