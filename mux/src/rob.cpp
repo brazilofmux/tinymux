@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.11 2003-01-02 14:42:17 sdennis Exp $
+// $Id: rob.cpp,v 1.12 2003-01-02 14:52:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -64,9 +64,10 @@ void do_kill
 
         // Go for it.
         //
-        int cost = Tiny_atol(costchar);
+        int cost = 0;
         if (key == KILL_KILL)
         {
+            cost = Tiny_atol(costchar);
             if (cost < mudconf.killmin)
             {
                 cost = mudconf.killmin;
@@ -84,17 +85,12 @@ void do_kill
                 return;
             }
         }
-        else
-        {
-            cost = 0;
-        }
 
         if (  Wizard(victim)
            || (  0 < mudconf.killguarantee
               && !(  RandomINT32(0, mudconf.killguarantee-1) < cost
                   || key == KILL_SLAY)))
         {
-
             // Failure: notify player and victim only.
             //
             notify(executor, "Your murder attempt failed.");
