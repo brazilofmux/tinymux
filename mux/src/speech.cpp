@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.31 2002-09-19 05:09:40 sdennis Exp $
+// $Id: speech.cpp,v 1.32 2002-10-03 17:49:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -231,7 +231,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         }
         else
         {
-            notify_saypose(executor, tprintf("You say \"%s\"", message));
+            notify_saypose(executor, tprintf("You say, \"%s\"", message));
             notify_except(loc, executor, executor, tprintf("%s says, \"%s\"",
                 Moniker(executor), message), MSG_SAYPOSE);
         }
