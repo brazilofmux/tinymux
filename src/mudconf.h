@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.3 2000-04-11 21:38:01 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.4 2000-04-13 08:36:08 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -320,9 +320,6 @@ struct statedata
     int mstat_secs[2];  /* Time of samples */
     int mstat_curr; /* Which sample is latest */
     ALIST   iter_alist; /* Attribute list for iterations */
-    char    *mod_alist; /* Attribute list for modifying */
-    int mod_size;   /* Length of modified buffer */
-    dbref   mod_al_id;  /* Where did mod_alist come from? */
     OLSTK   *olist;     /* Stack of object lists for nested searches */
     dbref   freelist;   /* Head of object freelist */
     int min_size;   /* Minimum db size (from file header) */
@@ -376,9 +373,6 @@ struct statedata
 #else
     int     logging;    /* Are we in the middle of logging? */
     int     attr_next;  /* Next attr to alloc when freelist is empty */
-    char    *mod_alist; /* Attribute list for modifying */
-    int     mod_size;   /* Length of modified buffer */
-    dbref   mod_al_id;  /* Where did mod_alist come from? */
     int     min_size;   /* Minimum db size (from file header) */
     int     db_top;     /* Number of items in the db */
     int     db_size;    /* Allocated size of db structure */
@@ -387,6 +381,10 @@ struct statedata
 
     ALIST      iter_alist;     /* Attribute list for iterations */
 #endif  // STANDALONE
+    char    *mod_alist; /* Attribute list for modifying */
+    int     mod_alist_len; /* Length of mod_alist */
+    int     mod_size;   /* Length of modified buffer */
+    dbref   mod_al_id;  /* Where did mod_alist come from? */
     CHashTable attr_name_htab; /* Attribute names hashtable */
     CHashTable vattr_name_htab;/* User attribute names hashtable */
 };
