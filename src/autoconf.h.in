@@ -306,13 +306,17 @@ extern int NDECL(getpagesize);
 #include <errno.h>
 #endif
 
+// Assure that malloc, realloc, and free are defined.
+//
+#if !defined(STDC_HEADERS) || !defined(MALLOC_IN_STDLIB_H)
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #else
 #ifdef NEED_MALLOC_DCL
-extern char *   FDECL(malloc, (int));
-extern char *   FDECL(realloc, (char *, int));
-extern int      FDECL(free, (char *));
+extern char *malloc(int);
+extern char *realloc(char *, int);
+extern int   free(char *);
+#endif
 #endif
 #endif
 
