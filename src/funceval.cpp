@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.100 2002-07-24 18:15:45 sdennis Exp $
+// $Id: funceval.cpp,v 1.101 2002-08-22 01:12:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1827,6 +1827,7 @@ FUNCTION(fun_grab)
     do
     {
         char *r = split_token(&s, sep);
+        mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
             safe_str(r, buff, bufc);
@@ -2130,6 +2131,7 @@ FUNCTION(fun_matchall)
     do
     {
         r = split_token(&s, sep);
+        mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
             Tiny_ltoa(wcount, tbuf);

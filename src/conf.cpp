@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.67 2002-02-14 01:42:41 sdennis Exp $
+// $Id: conf.cpp,v 1.68 2002-08-22 01:12:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -238,6 +238,7 @@ void NDECL(cf_init)
     mudconf.markdata[7] = 0x80;
     mudconf.func_nest_lim = 50;
     mudconf.func_invk_lim = 2500;
+    mudconf.wild_invk_lim = 100000;
     mudconf.ntfy_nest_lim = 20;
     mudconf.lock_nest_lim = 20;
     mudconf.parent_nest_lim = 10;
@@ -292,6 +293,7 @@ void NDECL(cf_init)
     mudstate.markbits = NULL;
     mudstate.func_nest_lev = 0;
     mudstate.func_invk_ctr = 0;
+    mudstate.wild_invk_ctr = 0;
     mudstate.ntfy_nest_lev = 0;
     mudstate.lock_nest_lev = 0;
     mudstate.zone_nest_num = 0;
