@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.45 2000-11-16 07:46:49 sdennis Exp $
+// $Id: functions.cpp,v 1.46 2000-11-16 07:48:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -678,24 +678,6 @@ static void fval_buf(char *buff, double result)
         strcpy(buff, TinyFPStrings[TINY_FPCLASS(fpc)]);
     }
 #endif // HAVE_IEEE_FP_FORMAT
-}
-
-/*
- * ---------------------------------------------------------------------------
- * * fn_range_check: Check # of args to a function with an optional argument
- * * for validity.
- */
-
-int fn_range_check(const char *fname, int nfargs, int minargs, int maxargs, char *result, char **bufc)
-{
-    if ((nfargs >= minargs) && (nfargs <= maxargs))
-        return 1;
-    
-    if (maxargs == (minargs + 1))
-        safe_tprintf_str(result, bufc, "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS", fname, minargs, maxargs);
-    else
-        safe_tprintf_str(result, bufc, "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS", fname, minargs, maxargs);
-    return 0;
 }
 
 /*
