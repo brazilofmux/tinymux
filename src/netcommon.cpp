@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.16 2000-07-08 13:35:47 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.17 2000-08-09 06:51:50 sdennis Exp $ 
 */
 
 /*
@@ -1307,7 +1307,14 @@ char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, BOOL *pbValidDoing)
     //
     int nVisualWidth;
     static char szFittedDoing[SIZEOF_DOING_STRING];
-    *pnValidDoing = ANSI_TruncateToField(Buffer, SIZEOF_DOING_STRING, szFittedDoing, WIDTHOF_DOING_STRING, &nVisualWidth, FALSE);
+    *pnValidDoing = ANSI_TruncateToField
+                    ( Buffer,
+                      SIZEOF_DOING_STRING,
+                      szFittedDoing,
+                      WIDTHOF_DOING_STRING,
+                      &nVisualWidth,
+                      FALSE
+                    );
     *pbValidDoing = TRUE;
     return szFittedDoing;
 }
