@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.14 2002-12-16 00:21:27 sdennis Exp $
+// $Id: player.cpp,v 1.15 2003-01-02 01:14:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -31,13 +31,15 @@ char *crypt(const char *inptr, const char *inkey)
 #define NUM_BAD     3   // # of failed logins to save data for.
 
 typedef struct hostdtm HOSTDTM;
-struct hostdtm {
+struct hostdtm
+{
     char *host;
     char *dtm;
 };
 
 typedef struct logindata LDATA;
-struct logindata {
+struct logindata
+{
     HOSTDTM good[NUM_GOOD];
     HOSTDTM bad[NUM_BAD];
     int tot_good;
@@ -119,7 +121,7 @@ static void encrypt_logindata(char *atrbuf, LDATA *info)
         info->bad[0].host, info->bad[0].dtm,
         info->bad[1].host, info->bad[1].dtm,
         info->bad[2].host, info->bad[2].dtm);
-    StringCopy(atrbuf, bp);
+    strcpy(atrbuf, bp);
     free_lbuf(bp);
 }
 
@@ -129,7 +131,15 @@ static void encrypt_logindata(char *atrbuf, LDATA *info)
  * last successful login.
  */
 
-void record_login(dbref player, BOOL isgood, char *ldate, char *lhost, char *lusername, char *lipaddr)
+void record_login
+(
+    dbref player,
+    BOOL  isgood,
+    char  *ldate,
+    char  *lhost,
+    char  *lusername,
+    char  *lipaddr
+)
 {
     LDATA login_info;
     dbref aowner;
@@ -142,18 +152,25 @@ void record_login(dbref player, BOOL isgood, char *ldate, char *lhost, char *lus
         if (login_info.new_bad > 0)
         {
             notify(player, "");
-            notify(player, tprintf("**** %d failed connect%s since your last successful connect. ****", login_info.new_bad, (login_info.new_bad == 1 ? "" : "s")));
-            notify(player, tprintf("Most recent attempt was from %s on %s.", login_info.bad[0].host, login_info.bad[0].dtm));
+            notify(player, tprintf("**** %d failed connect%s since your last successful connect. ****",
+                login_info.new_bad, (login_info.new_bad == 1 ? "" : "s")));
+            notify(player, tprintf("Most recent attempt was from %s on %s.",
+                login_info.bad[0].host, login_info.bad[0].dtm));
             notify(player, "");
             login_info.new_bad = 0;
         }
-        if (login_info.good[0].host && *login_info.good[0].host &&
-            login_info.good[0].dtm && *login_info.good[0].dtm)
+        if (  login_info.good[0].host
+           && *login_info.good[0].host
+           && login_info.good[0].dtm
+           && *login_info.good[0].dtm)
         {
-            notify(player, tprintf("Last connect was from %s on %s.", login_info.good[0].host, login_info.good[0].dtm));
+            notify(player, tprintf("Last connect was from %s on %s.",
+                login_info.good[0].host, login_info.good[0].dtm));
         }
         if (mudconf.have_mailer)
+        {
             check_mail(player, 0, FALSE);
+        }
 
         for (i = NUM_GOOD - 1; i > 0; i--)
         {
@@ -164,9 +181,13 @@ void record_login(dbref player, BOOL isgood, char *ldate, char *lhost, char *lus
         login_info.good[0].host = lhost;
         login_info.tot_good++;
         if (*lusername)
+        {
             atr_add_raw(player, A_LASTSITE, tprintf("%s@%s", lusername, lhost));
+        }
         else
+        {
             atr_add_raw(player, A_LASTSITE, lhost);
+        }
 
         // Add the players last IP too.
         //
@@ -329,7 +350,8 @@ void do_password
     dbref aowner;
     int   aflags;
     char *target = atr_get(executor, A_PASS, &aowner, &aflags);
-    if (!*target || !check_pass(executor, oldpass))
+    if (  !*target
+       || !check_pass(executor, oldpass))
     {
         notify(executor, "Sorry.");
     }
@@ -359,11 +381,12 @@ void do_last(dbref executor, dbref caller, dbref enactor, int key, char *who)
     dbref target, aowner;
     int i, aflags;
 
-    if (!who || !*who)
+    if (  !who
+       || !*who)
     {
         target = Owner(executor);
     }
-    else if (!string_compare(who, "me"))
+    else if (string_compare(who, "me") == 0)
     {
         target = Owner(executor);
     }
@@ -493,7 +516,7 @@ BOOL delete_player_name(dbref player, const char *name)
 
 dbref lookup_player(dbref doer, char *name, BOOL check_who)
 {
-    if (!string_compare(name, "me"))
+    if (string_compare(name, "me") == 0)
     {
         return doer;
     }
@@ -511,7 +534,8 @@ dbref lookup_player(dbref doer, char *name, BOOL check_who)
         {
             return NOTHING;
         }
-        if (!(isPlayer(thing) || God(doer)))
+        if ( !(  isPlayer(thing)
+              || God(doer)))
         {
             thing = NOTHING;
         }
