@@ -1,7 +1,8 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.8 2001-11-08 03:48:57 sdennis Exp $
+// $Id: rob.cpp,v 1.9 2001-11-20 04:49:38 sdennis Exp $
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -61,7 +62,7 @@ void do_kill
             break;
         }
         /*
-         * go for it 
+         * go for it
          */
 
         cost = Tiny_atol(costchar);
@@ -72,7 +73,7 @@ void do_kill
                 cost = mudconf.killmax;
 
             /*
-             * see if it works 
+             * see if it works
              */
 
             if (!payfor(player, cost))
@@ -93,7 +94,7 @@ void do_kill
         {
 
             /*
-             * Failure: notify player and victim only 
+             * Failure: notify player and victim only
              */
 
             notify(player, "Your murder attempt failed.");
@@ -119,7 +120,7 @@ void do_kill
             break;
         }
         /*
-         * Success!  You killed him 
+         * Success!  You killed him
          */
 
         buf1 = alloc_lbuf("do_kill.succ.1");
@@ -148,19 +149,19 @@ void do_kill
         did_it(player, victim, A_KILL, buf1, A_OKILL, buf2, A_AKILL, (char **)NULL, 0);
 
         /*
-         * notify victim 
+         * notify victim
          */
 
         sprintf(buf1, "%s killed you!", Name(player));
         notify_with_cause_ooc(victim, player, buf1);
 
         /*
-         * Pay off the bonus 
+         * Pay off the bonus
          */
 
         if (key == KILL_KILL) {
             cost /= 2;  /*
-                     * victim gets half 
+                     * victim gets half
                      */
             if (Pennies(Owner(victim)) < mudconf.paylimit) {
                 sprintf(buf1,
@@ -177,7 +178,7 @@ void do_kill
         free_lbuf(buf2);
 
         /*
-         * send him home 
+         * send him home
          */
 
         move_via_generic(victim, HOME, NOTHING, 0);
@@ -274,7 +275,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     char *str;
 
     /*
-     * do amount consistency check 
+     * do amount consistency check
      */
 
     if (amount < 0 && !Steal(giver)) {
@@ -305,7 +306,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         }
     }
     /*
-     * try to do the give 
+     * try to do the give
      */
 
     if (!payfor(giver, amount)) {
@@ -315,7 +316,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         return;
     }
     /*
-     * Find out cost if an object 
+     * Find out cost if an object
      */
 
     if (Typeof(recipient) == TYPE_THING) {
@@ -324,7 +325,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         free_lbuf(str);
 
         /*
-         * Can't afford it? 
+         * Can't afford it?
          */
 
         if (amount < cost) {
@@ -333,7 +334,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
             return;
         }
         /*
-         * Negative cost 
+         * Negative cost
          */
 
         if (cost < 0) {
@@ -358,7 +359,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     }
 
     /*
-     * Report change given 
+     * Report change given
      */
     if ((amount - cost) == 1)
     {
@@ -372,7 +373,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     }
 
     /*
-     * Transfer the money and run PAY attributes 
+     * Transfer the money and run PAY attributes
      */
     giveto(recipient, cost);
     did_it(giver, recipient, A_PAY, NULL, A_OPAY, NULL, A_APAY, (char **)NULL, 0);
