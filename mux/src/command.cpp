@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.79 2002-09-14 07:55:38 jake Exp $
+// $Id: command.cpp,v 1.80 2002-09-14 08:30:48 jake Exp $
 //
 
 #include "copyright.h"
@@ -706,19 +706,11 @@ CMDENT_BASIC *goto_cmdp;
 
 void init_cmdtab(void)
 {
-    CMDENT_BASIC                *cp0a;
-    CMDENT_BASIC                *cp1a;
-    CMDENT_BASIC                *cp1ac;
-    CMDENT_BASIC                *cp2a;
-    CMDENT_BASIC                *cp2aa;
-    CMDENT_BASIC                *cp2ac;
-    CMDENT_BASIC                *cp2aac;
-
-    ATTR *ap;
+    CMDENT_BASIC    *cp, *cp2a;
 
     // Load attribute-setting commands.
     //
-    for (ap = attr; ap->name; ap++)
+    for (ATTR *ap = attr; ap->name; ap++)
     {
         if (ap->flags & AF_NOCMD)
         {
@@ -733,26 +725,28 @@ void init_cmdtab(void)
             continue;
         }
 
-        cp2a = (CMDENT_BASIC *)MEMALLOC(sizeof(CMDENT_TWO_ARG));
+        cp2a = (CMDENT_BASIC *)MEMALLOC(sizeof(CMDENT_BASIC));
         (void)ISOUTOFMEMORY(cp2a);
-        cp2a->cmdname = StringClone(cbuff);
-        cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
-        cp2a->switches = NULL;
+        cp2a->cmdname   = StringClone(cbuff);
+        cp2a->perms     = CA_NO_GUEST | CA_NO_SLAVE;
+        cp2a->switches  = NULL;
         if (ap->flags & (AF_WIZARD | AF_MDARK))
         {
             cp2a->perms |= CA_WIZARD;
         }
-        cp2a->extra = ap->number;
-        cp2a->callseq = CS_TWO_ARG;
-        cp2a->hookmask = 0;
-        cp2a->handler = do_setattr;
+        cp2a->extra     = ap->number;
+        cp2a->callseq   = CS_TWO_ARG;
+        cp2a->hookmask  = 0;
+        cp2a->handler   = do_setattr;
         hashaddLEN(cp2a->cmdname, nBuffer, (int *)cp2a, &mudstate.command_htab);
     }
 
     // Load the builtin commands
     //
-    for (cp0a = command_table; cp0a->cmdname; cp0a++)
-        hashaddLEN(cp0a->cmdname, strlen(cp0a->cmdname), (int *)cp0a, &mudstate.command_htab);
+    for (cp = command_table; cp->cmdname; cp++)
+    {
+        hashaddLEN(cp->cmdname, strlen(cp->cmdname), (int *)cp, &mudstate.command_htab);
+    }
 
     set_prefix_cmds();
 
