@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.59 2001-05-22 04:51:38 sdennis Exp $
+// $Id: functions.cpp,v 1.60 2001-06-05 06:16:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2111,6 +2111,7 @@ FUNCTION(fun_version)
 {
     safe_str(mudstate.version, buff, bufc);
 }
+
 FUNCTION(fun_strlen)
 {
     unsigned int n = 0;
