@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.64 2001-09-17 11:03:31 sdennis Exp $
+// $Id: funceval.cpp,v 1.65 2001-09-25 19:47:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -658,6 +658,11 @@ FUNCTION(fun_objeval)
     TinyExec(buff, bufc, 0, obj, cause, EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     free_lbuf(name);
     mudstate.nObjEvalNest--;
+}
+
+FUNCTION(fun_null)
+{
+    return;
 }
 
 FUNCTION(fun_squish)

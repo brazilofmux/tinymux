@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.94 2001-09-18 05:22:26 sdennis Exp $
+// $Id: functions.cpp,v 1.95 2001-09-25 19:47:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -77,6 +77,7 @@ XFUNCTION(fun_children);
 XFUNCTION(fun_encrypt);
 XFUNCTION(fun_decrypt);
 XFUNCTION(fun_objeval);
+XFUNCTION(fun_null);
 XFUNCTION(fun_squish);
 XFUNCTION(fun_stripansi);
 XFUNCTION(fun_zfun);
@@ -6639,6 +6640,7 @@ FUNCTION(fun_trim)
 
 FUN flist[] =
 {
+    {"@@",       fun_null,           1, 1,  1, FN_NO_EVAL, CA_PUBLIC},
     {"ABS",      fun_abs,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ACOS",     fun_acos,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ADD",      fun_add,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
@@ -6790,6 +6792,7 @@ FUN flist[] =
     {"NEQ",      fun_neq,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"NEXT",     fun_next,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"NOT",      fun_not,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"NULL",     fun_null,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"NUM",      fun_num,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"OBJ",      fun_obj,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"OBJEVAL",  fun_objeval,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
