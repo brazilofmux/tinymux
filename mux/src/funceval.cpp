@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.13 2002-06-13 07:50:01 jake Exp $
+// $Id: funceval.cpp,v 1.14 2002-06-13 08:32:23 jake Exp $
 //
 
 #include "copyright.h"
@@ -128,12 +128,10 @@ FUNCTION(fun_ansi)
 
 FUNCTION(fun_zone)
 {
-    dbref it;
-
     if (!mudconf.have_zones) {
         return;
     }
-    it = match_thing(executor, fargs[0]);
+    dbref it = match_thing(executor, fargs[0]);
     if (it == NOTHING || !Examinable(executor, it)) {
         safe_nothing(buff, bufc);
         return;
@@ -158,7 +156,7 @@ static int check_command(dbref player, char *name, char *buff, char **bufc)
               && Protect(CA_GBL_BUILD)
               && !(mudconf.control_flags & CF_BUILD)))
         {
-            safe_str(NOPERM_MESSAGE, buff, bufc);
+            safe_noperm(buff, bufc);
             return 1;
         }
     }
@@ -303,7 +301,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     int aflags, could_hear;
     ATTR *attr;
 
-    if (isGarbage(thing))
+    if (!Good_obj(thing))
     {
         safe_noperm(buff, bufc);
         notify_quiet(player, "You shouldn't be rummaging through the garbage.");
@@ -730,7 +728,7 @@ FUNCTION(fun_squish)
 
 FUNCTION(fun_stripansi)
 {
-    safe_str((char *)strip_ansi(fargs[0]), buff, bufc);
+    safe_str(strip_ansi(fargs[0]), buff, bufc);
 }
 
 // Borrowed from PennMUSH 1.50
@@ -762,7 +760,7 @@ FUNCTION(fun_zfun)
     int aflags;
     ATTR *attr = atr_num(attrib);
     char *tbuf1 = atr_pget(zone, attrib, &aowner, &aflags);
-    if (!attr || !See_attr(executor, zone, atr_num(attrib)))
+    if (!attr || !See_attr(executor, zone, attr))
     {
         safe_noperm(buff, bufc);
         free_lbuf(tbuf1);
@@ -1038,14 +1036,13 @@ FUNCTION(fun_table)
 //
 static int mem_usage(dbref thing)
 {
-    int k;
     int ca;
     char *as, *str;
     ATTR *attr;
 
-    k = sizeof(struct object);
-
+    int k = sizeof(struct object);
     k += strlen(Name(thing)) + 1;
+
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
         int nLen;
@@ -1066,9 +1063,7 @@ static int mem_usage(dbref thing)
 
 FUNCTION(fun_objmem)
 {
-    dbref thing;
-
-    thing = match_thing(executor, fargs[0]);
+    dbref thing = match_thing(executor, fargs[0]);
     if (thing == NOTHING || !Examinable(executor, thing))
     {
         safe_noperm(buff, bufc);
@@ -1292,6 +1287,12 @@ FUNCTION(fun_dec)
 //
 FUNCTION(fun_mail)
 {
+    if (!mudconf.have_mailer)
+    {
+        safe_str("#-1 MAILER DISABLED.", buff, bufc);
+        return;
+    }
+
     dbref playerask;
     int num, rc, uc, cc;
 
@@ -1378,6 +1379,12 @@ FUNCTION(fun_mail)
 //
 FUNCTION(fun_mailfrom)
 {
+    if (!mudconf.have_mailer)
+    {
+        safe_str("#-1 MAILER DISABLED.", buff, bufc);
+        return;
+    }
+
     // Make sure we have the right number of arguments.
     //
     int num;
@@ -1439,9 +1446,6 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
     }
 
     ATTR *attr = atr_str(fargs[1]);
-    char *tbuf;
-    int ch = '0';
-
     if (attr)
     {
         if (!bCanReadAttr(executor, thing, attr, bCheckParent))
@@ -1451,6 +1455,9 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
         }
         else
         {
+            char *tbuf;
+            int ch = '0';
+
             if (bCheckParent)
             {
                 dbref aowner;
@@ -1459,7 +1466,7 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
             }
             else
             {
-                tbuf = atr_get_raw(thing, attr->number);
+                char *tbuf = atr_get_raw(thing, attr->number);
             }
             if (*tbuf)
             {
@@ -1997,23 +2004,30 @@ FUNCTION(fun_sortby)
 
     varargs_preamble(3);
 
-    if (parse_attrib(executor, fargs[0], &thing, &anum)) {
+    if (parse_attrib(executor, fargs[0], &thing, &anum)) 
+    {
         if ((anum == NOTHING) || !Good_obj(thing))
             ap = NULL;
         else
             ap = atr_num(anum);
-    } else {
+    } 
+    else 
+    {
         thing = executor;
         ap = atr_str(fargs[0]);
     }
 
-    if (!ap) {
+    if (!ap) 
+    {
         return;
     }
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext) {
+    if (!atext) 
+    {
         return;
-    } else if (!*atext || !See_attr(executor, thing, ap)) {
+    } 
+    else if (!*atext || !See_attr(executor, thing, ap)) 
+    {
         free_lbuf(atext);
         return;
     }
@@ -2040,14 +2054,14 @@ FUNCTION(fun_sortby)
 //
 FUNCTION(fun_last)
 {
-    char sep;
-
     // If we are passed an empty arglist return a null string.
     //
     if (nfargs <= 0)
     {
         return;
     }
+
+    char sep;
     varargs_preamble(2);
 
     // Trim leading spaces.
@@ -3285,8 +3299,7 @@ FUNCTION(fun_regmatch)
         return;
     }
 
-    int matched = pcre_exec(re, NULL, fargs[0], strlen(fargs[0]), 0, 0, ovec,
-			    ovecsize);
+    int matched = pcre_exec(re, NULL, fargs[0], strlen(fargs[0]), 0, 0, ovec, ovecsize);
     safe_ltoa(matched > 0, buff, bufc);
 
     // If we don't have a third argument, we're done.
