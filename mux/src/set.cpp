@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.26 2002-07-23 14:04:16 jake Exp $
+// $Id: set.cpp,v 1.27 2002-07-28 15:42:39 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -12,6 +12,13 @@
 #include "powers.h"
 
 extern NAMETAB indiv_attraccess_nametab[];
+
+void set_modified(dbref thing)
+{
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetLocal();
+    atr_add_raw(thing, A_MODIFIED, ltaNow.ReturnDateString(7));
+}
 
 dbref match_controlled_handler(dbref executor, const char *name, BOOL bQuiet)
 {
@@ -370,6 +377,7 @@ void do_forwardlist
             // New forwardlist is null, just clear it.
             //
             atr_clr(thing, A_FORWARDLIST);
+            set_modified(thing);
             if (!Quiet(executor))
             {
                 notify_quiet(executor, "Forwardlist removed.");
@@ -554,6 +562,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
     if (thing != NOTHING)
     {
         atr_clr(thing, key);
+        set_modified(thing);
         if (!Quiet(executor) && !Quiet(thing))
         {
             notify_quiet(executor, "Unlocked.");
@@ -1719,6 +1728,7 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
     }
     else
     {
+        set_modified(thing);
         handle_ears(thing, could_hear, Hearer(thing));
         if (!Quiet(executor))
         {

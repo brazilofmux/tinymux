@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.8 2002-07-23 05:36:13 jake Exp $
+// $Id: flags.cpp,v 1.9 2002-07-28 15:42:39 jake Exp $
 //
 
 #include "copyright.h"
@@ -638,6 +638,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
                 }
                 else if (!(key & SET_QUIET) && !Quiet(player))
                 {
+                    set_modified(target);
                     notify(player, (bClearSet ? "Cleared." : "Set."));
                 }
             }

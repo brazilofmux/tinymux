@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.37 2002-07-27 10:49:01 jake Exp $
+// $Id: externs.h,v 1.38 2002-07-28 15:42:39 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -187,6 +187,11 @@ extern void edit_string(char *, char **, char *, char *);
 extern dbref match_controlled_handler(dbref player, const char *name, BOOL bQuiet);
 #define match_controlled(player,name)       match_controlled_handler(player, name, FALSE)
 #define match_controlled_quiet(player,name) match_controlled_handler(player, name, TRUE)
+#ifdef STANDALONE
+#define set_modified(thing) 
+#else
+extern void set_modified(dbref thing);
+#endif
 
 /* From boolexp.cpp */
 extern BOOL eval_boolexp(dbref, dbref, dbref, BOOLEXP *);

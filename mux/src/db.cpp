@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.25 2002-07-27 10:49:01 jake Exp $
+// $Id: db.cpp,v 1.26 2002-07-28 15:42:39 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -131,6 +131,7 @@ ATTR attr[] =
     {"Mailsub",     A_MAILSUB,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"Mailsucc",    A_MAIL,     AF_ODARK | AF_NOPROG},
     {"Mailto",      A_MAILTO,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {"Modified",    A_MODIFIED, AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD},
     {"Move",        A_MOVE,     AF_ODARK},
     {"Name",        A_NAME,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"NameFormat",  A_NAMEFORMAT, AF_ODARK | AF_NOPROG | AF_WIZARD},
@@ -1709,6 +1710,8 @@ void atr_add_raw(dbref thing, int atr, char *szValue)
 
 void atr_add(dbref thing, int atr, char *buff, dbref owner, int flags)
 {
+    set_modified(thing);
+
     if (!buff || !*buff)
     {
         atr_clr(thing, atr);
@@ -1724,9 +1727,7 @@ void atr_set_flags(dbref thing, int atr, dbref flags)
 {
     dbref aowner;
     int aflags;
-    char *buff;
-
-    buff = atr_get(thing, atr, &aowner, &aflags);
+    char *buff = atr_get(thing, atr, &aowner, &aflags);
     atr_add(thing, atr, buff, aowner, flags);
     free_lbuf(buff);
 }

@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.2 2002-07-19 08:23:25 jake Exp $
+// $Id: attrs.h,v 1.3 2002-07-28 15:42:39 jake Exp $
 //
 
 #ifndef _ATTRS_H
@@ -175,6 +175,7 @@
 #define A_EXITVARDEST   216     /* Variable exit destination */
 #define A_LCHOWN        217     /* ChownLock */
 #define A_CREATED       218     // Date/time created
+#define A_MODIFIED      219     // Date/time last modified
 
 #define A_VRML_URL  220 /* URL of the VRML scene for this object */
 #define A_HTDESC    221 /* HTML @desc */
