@@ -1,5 +1,5 @@
 /* flags.h - object flags */
-/* $Id: flags.h,v 1.2 2000-04-13 08:16:43 sdennis Exp $ */
+/* $Id: flags.h,v 1.3 2000-04-29 08:06:16 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -388,6 +388,7 @@ extern void FDECL(decompile_flags, (dbref, dbref, char *));
 #define Staff(x)    (Wizard(x) || Royalty(x) || ((Flags2(x) & STAFF) != 0))
 #define Royalty(x)      ((Flags(x) & ROYALTY) != 0)
 #define WizRoy(x)       (Royalty(x) || Wizard(x))
+#define Head(x)         ((Flags2(x) & HEAD_FLAG) != 0)
 #define Dynamic(x)      ((Flags2(x) & DYNAMIC) !=0)
 #define Fixed(x)        ((Flags2(x) & FIXED) != 0)
 #define Uninspected(x)  ((Flags2(x) & UNINSPECTED) != 0)
