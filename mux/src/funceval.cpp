@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.63 2004-05-15 20:44:55 sdennis Exp $
+// $Id: funceval.cpp,v 1.64 2004-05-19 16:21:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2782,6 +2782,19 @@ FUNCTION(fun_bnand)
        && is_integer(fargs[1], NULL))
     {
         safe_i64toa(mux_atoi64(fargs[0]) & ~(mux_atoi64(fargs[1])), buff, bufc);
+    }
+    else
+    {
+        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+    }
+}
+
+FUNCTION(fun_bxor)
+{
+    if (  is_integer(fargs[0], NULL)
+       && is_integer(fargs[1], NULL))
+    {
+        safe_i64toa(mux_atoi64(fargs[0]) ^ mux_atoi64(fargs[1]), buff, bufc);
     }
     else
     {

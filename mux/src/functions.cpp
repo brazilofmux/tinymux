@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.102 2004-05-15 20:44:55 sdennis Exp $
+// $Id: functions.cpp,v 1.103 2004-05-19 16:21:56 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -51,6 +51,7 @@ XFUNCTION(fun_band);
 XFUNCTION(fun_beep);
 XFUNCTION(fun_bnand);
 XFUNCTION(fun_bor);
+XFUNCTION(fun_bxor);
 XFUNCTION(fun_children);
 XFUNCTION(fun_columns);
 XFUNCTION(fun_crc32);
@@ -9497,6 +9498,7 @@ FUN flist[] =
     {"BITTYPE",     fun_bittype,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"BNAND",       fun_bnand,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"BOR",         fun_bor,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"BXOR",        fun_bxor,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"CAND",        fun_cand,       MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {"CANDBOOL",    fun_candbool,   MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
 #ifdef WOD_REALMS
