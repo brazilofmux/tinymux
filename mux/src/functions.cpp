@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.73 2002-08-02 04:24:45 sdennis Exp $
+// $Id: functions.cpp,v 1.74 2002-08-06 01:17:37 jake Exp $
 //
 
 #include "copyright.h"
@@ -7822,6 +7822,40 @@ FUNCTION(fun_bittype)
     safe_ltoa(return_bit(target), buff, bufc);
 }
 
+FUNCTION(fun_error)
+{
+    if (  Good_obj(mudconf.global_error_obj) 
+        && !Going(mudconf.global_error_obj) ) 
+    {
+        dbref aowner;
+        int aflags;
+        char *errtext = atr_get(mudconf.global_error_obj, A_VA, &aowner, &aflags);
+        char *errbuff = alloc_lbuf("process_command.error_msg");
+        char *errbufc = errbuff;
+        char *str = errtext;
+        if (nfargs == 1)
+        {
+            char *arg = fargs[0];
+            TinyExec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor, 
+                EV_EVAL | EV_FCHECK | EV_STRIP_CURLY, &str, &arg, 1);
+        }
+        else
+        {
+            TinyExec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor, 
+                EV_EVAL | EV_FCHECK | EV_STRIP_CURLY, &str, (char **)NULL, 0);
+        }
+        safe_str(errbuff, buff, bufc);
+        free_lbuf(errtext);
+        free_lbuf(errbuff);
+    }
+    else
+    {
+        // We use LowerCaseCommand for another purpose.
+        //
+        safe_str("Huh?  (Type \"help\" for help.)", buff, bufc);
+    }
+}
+
 /* ---------------------------------------------------------------------------
  * flist: List of existing functions in alphabetical order.
  */
@@ -7906,6 +7940,7 @@ FUN flist[] =
     {"EMPTY",    fun_empty,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"ENCRYPT",  fun_encrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"EQ",       fun_eq,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ERROR",    fun_error,    1,       0,  1,       0, CA_PUBLIC},
     {"ESCAPE",   fun_escape,   1,       1,  1,       0, CA_PUBLIC},
     {"EVAL",     fun_eval,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"EXIT",     fun_exit,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
