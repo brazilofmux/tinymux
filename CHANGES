@@ -252,6 +252,8 @@ Bug Fixes:
  -- Fix @mvattr. There was still one case of where @mvattr would remove
     the source attribute while prevented from creating it on the
     destination object.
+ -- Fixed server hang possibility in BMH_Execute(), Boyer-Moore-Horspool
+    string searching.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
