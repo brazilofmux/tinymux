@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.39 2001-03-31 02:09:02 sdennis Exp $
+// $Id: db.cpp,v 1.40 2001-06-05 02:09:18 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -175,6 +175,7 @@ ATTR attr[] =
     {"Mailto", A_MAILTO, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
     {"Move", A_MOVE, AF_ODARK, NULL},
     {"Name", A_NAME, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
+    {"NameFormat", A_NAMEFORMAT, AF_ODARK | AF_NOPROG | AF_WIZARD, NULL},
     {"Odesc", A_ODESC, AF_ODARK | AF_NOPROG, NULL},
     {"Odfail", A_ODFAIL, AF_ODARK | AF_NOPROG, NULL},
     {"Odrop", A_ODROP, AF_ODARK | AF_NOPROG, NULL},

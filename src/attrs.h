@@ -1,5 +1,5 @@
 /* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.8 2001-03-30 23:46:47 sdennis Exp $ */
+/* $Id: attrs.h,v 1.9 2001-06-05 02:09:18 sdennis Exp $ */
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -188,6 +188,7 @@
 
 #define A_EXITFORMAT 241
 #define A_CONFORMAT 242
+#define A_NAMEFORMAT 243
 
 #define A_VLIST     252
 #define A_LIST      253
