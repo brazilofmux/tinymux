@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.49 2002-09-01 18:15:47 jake Exp $
+// $Id: externs.h,v 1.50 2002-09-12 03:27:53 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -449,6 +449,7 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define MAIL_SAFE       27  /* Defines a piece of mail as safe. */
 #define MAIL_REPLY      28  /* Replies to a message. */
 #define MAIL_REPLYALL   29  /* Replies to all recipients of msg */
+#define MAIL_BCC        30  // Blind Carbon Copy. Don't show the recipient list to these.
 #define MAIL_QUOTE      0x100   /* Quote back original in the reply? */
 
 #define MALIAS_DESC     1   /* Describes a mail alias */

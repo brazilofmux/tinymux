@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.45 2002-09-11 19:45:34 sdennis Exp $
+// $Id: mail.cpp,v 1.46 2002-09-12 03:27:53 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -395,7 +395,7 @@ void add_folder_name(dbref player, int fld, char *name)
 
 static char *get_folder_name(dbref player, int fld)
 {
-    // Get the name of the folder, or return "unamed".
+    // Get the name of the folder, or return "unnamed".
     //
     int aflags;
     int nFolders;
@@ -1208,6 +1208,11 @@ static char *make_namelist(dbref player, char *arg)
     Tiny_StrTokControl(&tts, " ");
     for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
     {
+        if (*p == '!')
+        {
+            safe_chr('!', names, &bp);
+            p++;
+        }
         dbref target = Tiny_atol(p);
         if (Good_obj(target) && isPlayer(target))
         {
@@ -1216,15 +1221,22 @@ static char *make_namelist(dbref player, char *arg)
         }
         else
         {
-            int nResult;
-            struct malias *m = get_malias(player, tprintf("*%s",p), &nResult);
-            if (  nResult != GMA_NOTFOUND
-               && nResult != GMA_INVALIDFORM)
+            if (!strcmp(p, "-1"))
             {
-                for (int i = 0; i < m->numrecep; i++)
+                safe_str("*HIDDEN*  ", names, &bp);
+            }
+            else
+            {
+                int nResult;
+                struct malias *m = get_malias(player, tprintf("*%s",p), &nResult);
+                if (  nResult != GMA_NOTFOUND
+                && nResult != GMA_INVALIDFORM)
                 {
-                    safe_str(Name(m->list[i]), names, &bp);
-                    safe_str(", ", names, &bp);
+                    for (int i = 0; i < m->numrecep; i++)
+                    {
+                        safe_str(Name(m->list[i]), names, &bp);
+                        safe_str(", ", names, &bp);
+                    }
                 }
             }
         }
@@ -1604,7 +1616,7 @@ void do_mail_purge(dbref player)
     notify(player, "MAIL: Mailbox purged.");
 }
 
-static char *make_numlist(dbref player, char *arg)
+static char *make_numlist(dbref player, char *arg, BOOL bBlind)
 {
     char *tail, spot;
     char buf[MBUF_SIZE];
@@ -1701,7 +1713,7 @@ static char *make_numlist(dbref player, char *arg)
         ITL itl;
         char *numbuf, *numbp;
         numbp = numbuf = alloc_lbuf("mail.make_numlist");
-        ItemToList_Init(&itl, numbuf, &numbp);
+        ItemToList_Init(&itl, numbuf, &numbp, bBlind ? '!' : '\0');
         int i;
         for (i = 0; i < nRecip; i++)
         {
@@ -1742,7 +1754,7 @@ void do_expmail_start(dbref player, char *arg, char *subject)
         notify(player, "MAIL: Mail message already in progress.");
         return;
     }
-    char *tolist = make_numlist(player, arg);
+    char *tolist = make_numlist(player, arg, FALSE);
     if (!tolist) 
     {
         return;
@@ -1983,7 +1995,8 @@ static void send_mail
     const char *subject,
     int number,
     mail_flag flags,
-    BOOL silent
+    BOOL silent,
+    BOOL bBlind
 )
 {
     if (!isPlayer(target))
@@ -2022,7 +2035,15 @@ static void send_mail
             newp->from = mailbag;
         }
     }
-    newp->tolist = StringClone(tolist);
+    if (bBlind)
+    {
+        newp->tolist = StringClone("-1");
+    }
+    else
+    {
+        newp->tolist = StringClone(tolist);
+    }
+
     newp->number = number;
     MessageReferenceInc(number);
     newp->time = StringClone(pTimeStr);
@@ -3020,7 +3041,7 @@ void check_mail(dbref player, int folder, BOOL silent)
 #endif // MAIL_ALL_FOLDERS
 }
 
-void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int number, mail_flag flags, BOOL silent)
+void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int number, mail_flag flags, BOOL silent, BOOL bBlind)
 {
     int nResult;
     struct malias *m = get_malias(player, tolist, &nResult);
@@ -3045,7 +3066,7 @@ void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int
 
         if (isPlayer(vic))
         {
-            send_mail(player, m->list[k], listto, subject, number, flags, silent);
+            send_mail(player, m->list[k], listto, subject, number, flags, silent, bBlind);
         }
         else
         {
@@ -3055,7 +3076,7 @@ void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int
             int iMail = add_mail_message(player, pMail);
             if (iMail != NOTHING)
             {
-                send_mail(GOD, GOD, listto, subject, iMail, 0, silent);
+                send_mail(GOD, GOD, listto, subject, iMail, 0, silent, bBlind);
                 MessageReferenceDec(iMail);
             }
         }
@@ -3324,7 +3345,7 @@ void do_malias_switch(dbref player, char *a1, char *a2)
     }
 }
 
-void do_mail_cc(dbref player, char *arg)
+void do_mail_cc(dbref player, char *arg, BOOL bBlind)
 {
     if (!(Flags2(player) & PLAYER_MAILS))
     {
@@ -3337,7 +3358,7 @@ void do_mail_cc(dbref player, char *arg)
         return;
     }
 
-    char *tolist = make_numlist(player, arg);
+    char *tolist = make_numlist(player, arg, bBlind);
     if (!tolist) 
     {
         return;
@@ -3411,16 +3432,22 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
             spot = *tail;
             *tail = 0;
 
+            BOOL bBlind = FALSE;
+            if (*head == '!')
+            {
+                head++;
+                bBlind = TRUE;
+            }
             if (*head == '*')
             {
-                do_malias_send(player, head, tolist, subject, number, flags, silent);
+                do_malias_send(player, head, tolist, subject, number, flags, silent, bBlind);
             }
             else
             {
                 target = Tiny_atol(head);
                 if (Good_obj(target) && isPlayer(target))
                 {
-                    send_mail(player, target, tolist, subject, number, flags, silent);
+                    send_mail(player, target, tolist, subject, number, flags, silent, bBlind);
                 }
             }
 
@@ -3468,7 +3495,7 @@ void do_mail_quick(dbref player, char *arg1, char *arg2)
         free_lbuf(buf);
         return;
     }
-    mail_to_list(player, make_numlist(player, buf), bp, arg2, 0, FALSE);
+    mail_to_list(player, make_numlist(player, buf, FALSE), bp, arg2, 0, FALSE);
     free_lbuf(buf);
 }
 
@@ -4282,10 +4309,13 @@ void do_mail
         do_mail_retract(executor, arg1, arg2);
         break;
     case MAIL_CC:
-        do_mail_cc(executor, arg1);
+        do_mail_cc(executor, arg1, FALSE);
         break;
     case MAIL_SAFE:
         do_mail_safe(executor, arg1);
+        break;
+    case MAIL_BCC:
+        do_mail_cc(executor, arg1, TRUE);
         break;
     }
 }
