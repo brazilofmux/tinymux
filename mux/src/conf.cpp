@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.17 2003-02-07 16:07:55 sdennis Exp $
+// $Id: conf.cpp,v 1.18 2003-02-15 06:35:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2001,10 +2001,15 @@ void cf_display(dbref player, char *param_name, char *buff, char **bufc)
         {
             if (check_access(player, tp->rperms))
             {
-                if (  tp->interpreter == cf_int
-                   || tp->interpreter == cf_bool)
+                if (tp->interpreter == cf_int)
                 {
                     safe_ltoa(*(tp->loc), buff, bufc);
+                    return;
+                }
+                else if (tp->interpreter == cf_bool)
+                {
+                    bool *pb = (bool *)tp->loc;
+                    safe_bool(*pb, buff, bufc);
                     return;
                 }
                 else if (tp->interpreter == cf_string)
