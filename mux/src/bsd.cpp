@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.32 2004-05-15 17:29:53 sdennis Exp $
+// $Id: bsd.cpp,v 1.33 2004-05-16 08:09:21 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -111,7 +111,6 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
     unsigned long addr;
     struct hostent *hp;
     DWORD iSlave = (DWORD)lpParameter;
-    DWORD dwReason;
 
     if (NUM_SLAVE_THREADS <= iSlave) return 1;
 
@@ -121,7 +120,8 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
         // Go to sleep until there's something useful to do.
         //
         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-        dwReason = WaitForSingleObject(hSlaveThreadsSemaphore, 30000UL*NUM_SLAVE_THREADS);
+        DWORD dwReason = WaitForSingleObject(hSlaveThreadsSemaphore,
+            30000UL*NUM_SLAVE_THREADS);
         switch (dwReason)
         {
         case WAIT_TIMEOUT:

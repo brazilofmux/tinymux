@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.33 2004-05-15 20:44:55 sdennis Exp $
+// $Id: timeutil.cpp,v 1.34 2004-05-16 08:09:21 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1390,12 +1390,6 @@ void CLinearTimeAbsolute::SetSecondsString(char *arg_szSeconds)
     m_tAbsolute += EPOCH_OFFSET;
 }
 
-CMuxAlarm::CMuxAlarm(void)
-{
-    bAlarmed = false;
-    bAlarmSet = false;
-}
-
 // OS Dependent Routines:
 //
 #ifdef WIN32
@@ -1529,6 +1523,47 @@ void GetUTCLinearTime(INT64 *plt)
     GetSystemTimeAsFileTime((struct _FILETIME *)plt);
 }
 
+DWORD WINAPI AlarmProc(LPVOID lpParameter)
+{
+    CMuxAlarm *pthis = (CMuxAlarm *)lpParameter;
+    DWORD dwWait = pthis->dwWait;
+    for (;;)
+    {
+        HANDLE hSemAlarm = pthis->hSemAlarm;
+        if (hSemAlarm == INVALID_HANDLE_VALUE)
+        {
+            break;
+        }
+        DWORD dwReason = WaitForSingleObject(hSemAlarm, dwWait);
+        if (dwReason == WAIT_TIMEOUT)
+        {
+            pthis->bAlarmed = true;
+            dwWait = INFINITE;
+        }
+        else
+        {
+            dwWait = pthis->dwWait;
+        }
+    }
+    return 1;
+}
+
+CMuxAlarm::CMuxAlarm(void)
+{
+    hSemAlarm = CreateSemaphore(NULL, 0, 1, NULL);
+    Clear();
+    hThread = CreateThread(NULL, 0, AlarmProc, (LPVOID)this, 0, NULL);
+}
+
+CMuxAlarm::~CMuxAlarm()
+{
+    HANDLE hSave = hSemAlarm;
+    hSemAlarm = INVALID_HANDLE_VALUE;
+    ReleaseSemaphore(hSave, 1, NULL);
+    WaitForSingleObject(hThread, 15*FACTOR_100NS_PER_SECOND);
+    CloseHandle(hSave);
+}
+
 void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
 {
     ::Sleep(ltd.ReturnMilliseconds());
@@ -1541,10 +1576,18 @@ void CMuxAlarm::SurrenderSlice(void)
 
 void CMuxAlarm::Set(CLinearTimeDelta ltd)
 {
+    dwWait = ltd.ReturnMilliseconds();
+    ReleaseSemaphore(hSemAlarm, 1, NULL);
+    bAlarmed  = false;
+    bAlarmSet = true;
 }
 
 void CMuxAlarm::Clear(void)
 {
+    dwWait = INFINITE;
+    ReleaseSemaphore(hSemAlarm, 1, NULL);
+    bAlarmed  = false;
+    bAlarmSet = false;
 }
 
 #else // !WIN32
@@ -1569,6 +1612,12 @@ void GetUTCLinearTime(INT64 *plt)
 
     *plt = t*FACTOR_100NS_PER_SECOND;
 #endif
+}
+
+CMuxAlarm::CMuxAlarm(void)
+{
+    bAlarmed = false;
+    bAlarmSet = false;
 }
 
 void CMuxAlarm::Sleep(CLinearTimeDelta ltd)

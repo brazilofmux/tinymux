@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.11 2004-05-15 17:19:04 sdennis Exp $
+// $Id: timeutil.h,v 1.12 2004-05-16 08:09:21 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -123,11 +123,20 @@ class CMuxAlarm
 {
 private:
     bool bAlarmSet;
+#ifdef WIN32
+    HANDLE hThread;
+#endif
 
 public:
     bool bAlarmed;
 
+#ifdef WIN32
+    volatile HANDLE hSemAlarm;
+    volatile DWORD  dwWait;
+#endif
+
     CMuxAlarm(void);
+    ~CMuxAlarm();
     void Sleep(CLinearTimeDelta ltd);
     void SurrenderSlice(void);
 
