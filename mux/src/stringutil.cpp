@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.8 2003-02-03 06:01:48 sdennis Exp $
+// $Id: stringutil.cpp,v 1.9 2003-02-03 06:44:23 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2350,7 +2350,7 @@ INT64 mux_atobcd(const char *pString)
 //
 BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
 {
-    memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
+    memset(pfr, 0, sizeof(PARSE_FLOAT_RESULT));
 
     // Parse Input
     //
