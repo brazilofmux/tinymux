@@ -1086,14 +1086,14 @@
   quiet_whisper  quit_file  quotas  read_remote_desc  read_remote_name
   register_create_file  register_site  retry_limit  robot_cost  robot_flags
   robot_speech  room_flags  room_quota  run_startup sacrifice_adjust
-  sacrifice_factor  search_cost  see_owned_dark  signal_action  site_chars
-  space_compress  stack_limit  starting_money  starting_quota  suspect_site
-  sweep_dark  switch_default_all  terse_shows_contents  terse_shows_exits
-  terse_shows_move_messages  thing_flags  thing_quota  timeslice
-  trace_output_limit  trace_topdown  trust_site  uncompress_program
-  unowned_safe  use_http  user_attr_flags  wait_cost  wizard_help_file
-  wizard_help_index  wizard_motd_file  wizard_motd_message
-  wiznews_file  wiznews_index  zone_recursion_limit
+  sacrifice_factor  safe_wipe  safer_passwords  search_cost  see_owned_dark
+  signal_action  site_chars  space_compress  stack_limit  starting_money
+  starting_quota  suspect_site  sweep_dark  switch_default_all
+  terse_shows_contents  terse_shows_exits  terse_shows_move_messages
+  thing_flags  thing_quota  timeslice  trace_output_limit  trace_topdown
+  trust_site  uncompress_program  unowned_safe  use_http  user_attr_flags
+  wait_cost  wizard_help_file  wizard_help_index  wizard_motd_file
+  wizard_motd_message  wiznews_file  wiznews_index  zone_recursion_limit
  
 & access
   Config parameter: access <command> <permlist>
@@ -2260,6 +2260,19 @@ ARTICLE_RULE
   The inverse formula is used to determine how much the owner receives when
   @destroying an object.
   See also: @create, @destroy, SACRIFICING, sacrifice_adjust.
+
+& safe_wipe
+  Config parameter: safe_wipe [yes/no].  Default: No
+
+  Is @wipe disallowed for SAFE-marked objects?
+
+& safer_passwords
+  Config parameter: safer_passwords [yes/no].  Default: No
+
+  Normally, nearly any password is accepted, but if this
+  configuration option is enabled, passwords must contain
+  at least one capital letter, one lowercase letter, and
+  one numeric digit or symbol.
 
 & search_cost
   Config parameter: search_cost <amount>.  Default: 100
