@@ -2537,7 +2537,15 @@ TOAD_RECIPIENT
             wizard_help_file, wizard_help_index, wizard_motd_file.
 
 & INHERITANCE
+INHERITANCE
+
+  This topic intentionally left blank.
+
 & LOGGING
+LOGGING
+
+  This topic intentionally left blank.
+
 & PERMISSIONS
   Topic: PERMISSIONS
  
