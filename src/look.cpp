@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.21 2001-06-05 02:09:18 sdennis Exp $
+// $Id: look.cpp,v 1.22 2001-06-05 06:45:57 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -1053,10 +1053,15 @@ void look_in(dbref player, dbref loc, int key)
         char *FormatOutput = alloc_lbuf("look_name.FO");
         char *tPtr = FormatOutput;
 
+        char *preserve[MAX_GLOBAL_REGS];
+        int preserve_len[MAX_GLOBAL_REGS];
+        save_and_clear_global_regs("look_in_save", preserve, preserve_len);
+
         TinyExec(FormatOutput, &tPtr, 0, loc, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &NameFormat, 0, 0);
 
+        restore_global_regs("look_in_restore", preserve, preserve_len);
         notify(player, FormatOutput);
 
         free_lbuf(FormatOutput);
