@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.116 2001-12-29 19:05:25 sdennis Exp $
+// $Id: functions.cpp,v 1.117 2001-12-29 19:08:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5301,14 +5301,14 @@ FUNCTION(fun_parse)
 
 FUNCTION(fun_iter)
 {
-    char *curr, *objstring, *buff2, *buff3, *cp, *dp, sep, osep,
-    *str;
-    int first, number = 0;
+    char *curr, *objstring, *cp, *dp, sep, osep, *str;
+    int number = 0;
 
     sevarargs_preamble(4);
     dp = cp = curr = alloc_lbuf("fun_iter");
     str = fargs[0];
-    TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    TinyExec(curr, &dp, 0, player, cause,
+        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
     cp = trim_space_sep(cp, sep);
     if (!*cp)
@@ -5316,20 +5316,24 @@ FUNCTION(fun_iter)
         free_lbuf(curr);
         return;
     }
-    first = 1;
-    while (cp)
+    BOOL first = TRUE;
+    while (cp
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
+        char *buff2, *buff3;
+
         if (!first)
         {
             print_sep(osep, buff, bufc);
         }
-        first = 0;
+        first = FALSE;
         number++;
         objstring = split_token(&cp, sep);
         buff2 = replace_string(BOUND_VAR, objstring, fargs[1]);
         buff3 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), buff2);
         str = buff3;
-        TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        TinyExec(buff, bufc, 0, player, cause,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
         free_lbuf(buff3);
     }
