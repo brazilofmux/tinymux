@@ -8231,7 +8231,7 @@ LTE()
     > say lwho(1)
     You say "#226:20 #271:5 #1:6"
 
-  Related Topics: WHO, DOING, conn(), idle().
+  Related Topics: cwho(), conn(), DOING, idle(), WHO, zwho().
 
 & MAIL()
 MAIL()
