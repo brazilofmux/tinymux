@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.44 2001-11-17 07:11:21 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.45 2001-11-17 07:21:12 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -763,7 +763,6 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
 {
     dbref loc, aowner, temp, zone, obj;
     int num, aflags, key;
-    char *atr_temp;
     DESC *dtemp;
     char *argv[1];
     
@@ -809,33 +808,35 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         {
             do_comdisconnect(player);
         }
-        
+       
+        int nLen;
         argv[0] = (char *)reason;
-        atr_temp = atr_pget(player, A_ADISCONNECT, &aowner, &aflags);
         CLinearTimeAbsolute lta;
-        if (*atr_temp)
+        char *buf = alloc_lbuf("announce_disconnect");
+        atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
+        if (nLen)
         {
-            wait_que(player, player, FALSE, lta, NOTHING, 0, atr_temp, argv, 1, NULL);
+            wait_que(player, player, FALSE, lta, NOTHING, 0, buf, argv, 1,
+                NULL);
         }
-        free_lbuf(atr_temp);
         if (mudconf.master_room != NOTHING)
         {
-            atr_temp = atr_pget(mudconf.master_room, A_ADISCONNECT, &aowner, &aflags);
-            if (*atr_temp)
+            atr_pget_str_LEN(buf, mudconf.master_room, A_ADISCONNECT, &aowner,
+                &aflags, &nLen);
+            if (nLen)
             {
-                wait_que(mudconf.master_room, player, FALSE, lta,
-                    NOTHING, 0, atr_temp, (char **)NULL, 0, NULL);
+                wait_que(mudconf.master_room, player, FALSE, lta, NOTHING, 0,
+                    buf, (char **)NULL, 0, NULL);
             }
-            free_lbuf(atr_temp);
             DOLIST(obj, Contents(mudconf.master_room))
             {
-                atr_temp = atr_pget(obj, A_ADISCONNECT, &aowner, &aflags);
-                if (*atr_temp)
+                atr_pget_str_LEN(buf, obj, A_ADISCONNECT, &aowner, &aflags,
+                    &nLen);
+                if (nLen)
                 {
-                    wait_que(obj, player, FALSE, lta, NOTHING, 0,
-                        atr_temp, (char **)NULL, 0, NULL);
+                    wait_que(obj, player, FALSE, lta, NOTHING, 0, buf,
+                        (char **)NULL, 0, NULL);
                 }
-                free_lbuf(atr_temp);
             }
         }
 
@@ -847,13 +848,13 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             {
             case TYPE_THING:
 
-                atr_temp = atr_pget(zone, A_ADISCONNECT, &aowner, &aflags);
-                if (*atr_temp)
+                atr_pget_str_LEN(buf, zone, A_ADISCONNECT, &aowner, &aflags,
+                    &nLen);
+                if (nLen)
                 {
-                    wait_que(zone, player, FALSE, lta, NOTHING, 0,
-                        atr_temp, (char **)NULL, 0, NULL);
+                    wait_que(zone, player, FALSE, lta, NOTHING, 0, buf,
+                        (char **)NULL, 0, NULL);
                 }
-                free_lbuf(atr_temp);
                 break;
                 
             case TYPE_ROOM:
@@ -862,20 +863,22 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                 //
                 DOLIST(obj, Contents(zone))
                 {
-                    atr_temp = atr_pget(obj, A_ADISCONNECT, &aowner, &aflags);
-                    if (*atr_temp)
+                    atr_pget_str_LEN(buf, obj, A_ADISCONNECT, &aowner, &aflags,
+                        &nLen);
+                    if (nLen)
                     {
-                        wait_que(obj, player, FALSE, lta, NOTHING, 0,
-                            atr_temp, (char **)NULL, 0, NULL);
+                        wait_que(obj, player, FALSE, lta, NOTHING, 0, buf,
+                            (char **)NULL, 0, NULL);
                     }
-                    free_lbuf(atr_temp);
                 }
                 break;
 
             default:
-                log_text(tprintf("Invalid zone #%d for %s(#%d) has bad type %d", zone, Name(player), player, Typeof(zone)));
+                log_text(tprintf("Invalid zone #%d for %s(#%d) has bad type %d",
+                    zone, Name(player), player, Typeof(zone)));
             }
         }
+        free_lbuf(buf);
         if (d->flags & DS_AUTODARK)
         {
             s_Flags(d->player, Flags(d->player) & ~DARK);
