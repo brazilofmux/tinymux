@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.h,v 1.6 2000-12-03 20:22:57 sdennis Exp $
+// $Id: svdhash.h,v 1.7 2000-12-04 05:57:20 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -80,7 +80,7 @@ typedef struct tagHPHeader
 
 typedef struct tagHPTrailer
 {
-    unsigned long m_crc32;
+    unsigned long m_checksum;
 } HP_TRAILER, *HP_PTRAILER;
 
 typedef struct tagHPHeapNode

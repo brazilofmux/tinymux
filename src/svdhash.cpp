@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.16 2000-12-03 20:22:57 sdennis Exp $
+// $Id: svdhash.cpp,v 1.17 2000-12-04 05:57:20 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -516,13 +516,13 @@ void CHashPage::Empty(HP_DIRINDEX arg_nDepth, unsigned long arg_nHashGroup, HP_D
 void CHashPage::Protect(void)
 {
     unsigned long ul = HASH_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
-    m_pTrailer->m_crc32 = ul;
+    m_pTrailer->m_checksum = ul;
 }
 
 BOOL CHashPage::Validate(void)
 {
     unsigned long ul = HASH_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
-    if (ul != m_pTrailer->m_crc32)
+    if (ul != m_pTrailer->m_checksum)
     {
         return FALSE;
     }
