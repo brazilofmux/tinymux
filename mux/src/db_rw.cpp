@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.8 2003-02-05 06:20:58 jake Exp $
+// $Id: db_rw.cpp,v 1.9 2003-02-16 20:55:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -211,9 +211,9 @@ static BOOLEXP *getboolexp1(FILE *f)
         // form <anam-or-anum>:<string> or <aname-or-anum>/<string>
         // respectively. The characters <nl>, |, and & terminate the string.
         //
-        if (mux_isdigit[(unsigned int)c])
+        if (mux_isdigit[(unsigned char)c])
         {
-            while (mux_isdigit[(unsigned int)(c = getc(f))])
+            while (mux_isdigit[(unsigned char)(c = getc(f))])
             {
                 b->thing = b->thing * 10 + c - '0';
             }
