@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  Septebmer 2002
+Last Update:  September 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -267,6 +267,13 @@ Bug Fixes:
  -- Fix uninitialized variable in utility function used by LROOMS().
  -- Fixed @listcommand when @addcommand'ed commands have previous aliases.
     It only affected the report.
+ -- pool_check() needed to verify PCACHE pool as well. Reported by Alierak.
+ -- Use A_VA name instead of equivalent literal 100. Reported by Alierak.
+ -- Fix Prefix-without-suffix bug. Reported by Alierak.
+ -- Fix '-0' display for 'think imul(1024,1024,1024,1024,1024,1024,8)'
+    Reported by Alierak.
+ -- Fix seeding random numbers on Win32. The call to CryptAcquireContext
+    was likely to fail.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
