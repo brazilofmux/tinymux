@@ -1,9 +1,9 @@
 // _build.h
 //
-// $Id: _build.h,v 1.47 2001-07-07 02:05:07 sdennis Exp $
+// $Id: _build.h,v 1.48 2001-09-08 18:57:27 sdennis Exp $
 //
 // MUX 2.0
-// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial
