@@ -29,7 +29,7 @@ Feature Additions:
  -- Added @cboot/quiet. Patch from Zenty.
  -- Implemented SPELLNUM() with PennMUSH behavior except that the
     two-digit-hundred-pattern is sometimes used (e.g, 'spellnum(1100)' -->
-    'eleven hundred' on MUX 2.2 whereas on PennMUSH, 'spelnum(1100)' -->
+    'eleven hundred' on MUX 2.2 whereas on PennMUSH, 'spellnum(1100)' -->
     'one thousand one hundred'.
  -- Added ROMAN() function which converts numbers between 1-3999 to their
     Roman numeric equivalents.
