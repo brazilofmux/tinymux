@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.13 2003-01-05 21:49:33 sdennis Exp $
+// $Id: help.cpp,v 1.14 2003-01-05 22:18:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -27,8 +27,8 @@ typedef struct
 {
     const char *CommandName;
     CHashTable *ht;
-    char       **ppTextFile;
-    char       **ppIndexFile;
+    char       *pTextFile;
+    char       *pIndexFile;
     BOOL       bEval;
     int        permissions;
 } HELP_FILE_DESC;
@@ -36,13 +36,36 @@ typedef struct
 #define HFTABLE_SIZE 6
 HELP_FILE_DESC hftable[HFTABLE_SIZE] =
 {
-    { "help",    &mudstate.help_htab,      &mudconf.help_file,      &mudconf.help_indx,      FALSE, CA_PUBLIC },
-    { "news",    &mudstate.news_htab,      &mudconf.news_file,      &mudconf.news_indx,      TRUE,  CA_PUBLIC },
-    { "wizhelp", &mudstate.wizhelp_htab,   &mudconf.whelp_file,     &mudconf.whelp_indx,     FALSE, CA_WIZARD },
-    { "+help",   &mudstate.plushelp_htab,  &mudconf.plushelp_file,  &mudconf.plushelp_indx,  TRUE,  CA_PUBLIC },
-    { "wiznews", &mudstate.wiznews_htab,   &mudconf.wiznews_file,   &mudconf.wiznews_indx,   FALSE, CA_WIZARD },
-    { "+shelp",  &mudstate.staffhelp_htab, &mudconf.staffhelp_file, &mudconf.staffhelp_indx, TRUE,  CA_STAFF  }
+    { "help",    &mudstate.help_htab,      "text/help.txt",      "text/help.indx",      FALSE, CA_PUBLIC },
+    { "news",    &mudstate.news_htab,      "text/news.txt",      "text/news.indx",       TRUE, CA_PUBLIC },
+    { "wizhelp", &mudstate.wizhelp_htab,   "text/wizhelp.txt",   "text/wizhelp.indx",   FALSE, CA_WIZARD },
+    { "+help",   &mudstate.plushelp_htab,  "text/plushelp.txt",  "text/plushelp.indx",   TRUE, CA_PUBLIC },
+    { "wiznews", &mudstate.wiznews_htab,   "text/wiznews.txt",   "text/wiznews.indx",   FALSE, CA_WIZARD },
+    { "+shelp",  &mudstate.staffhelp_htab, "text/staffhelp.txt", "text/staffhelp.indx",  TRUE, CA_STAFF  }
 };
+
+#if 0
+    mudconf.whelp_file     = StringClone("text/wizhelp.txt");
+    mudconf.whelp_indx     = StringClone("text/wizhelp.indx");
+    mudconf.plushelp_file  = StringClone("text/plushelp.txt");
+    mudconf.plushelp_indx  = StringClone("text/plushelp.indx");
+    mudconf.staffhelp_file = StringClone("text/staffhelp.txt");
+    mudconf.staffhelp_indx = StringClone("text/staffhelp.indx");
+    mudconf.wiznews_file   = StringClone("text/wiznews.txt");
+    mudconf.wiznews_indx   = StringClone("text/wiznews.indx");
+    {"help_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.help_file,       NULL, SIZEOF_PATHNAME},
+    {"help_index",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.help_indx,       NULL, SIZEOF_PATHNAME},
+    {"news_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.news_file,       NULL, SIZEOF_PATHNAME},
+    {"news_index",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.news_indx,       NULL, SIZEOF_PATHNAME},
+    {"wizard_help_file",          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.whelp_file,      NULL, SIZEOF_PATHNAME},
+    {"wizard_help_index",         cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.whelp_indx,      NULL, SIZEOF_PATHNAME},
+    {"plushelp_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.plushelp_file,   NULL, SIZEOF_PATHNAME},
+    {"plushelp_index",            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.plushelp_indx,   NULL, SIZEOF_PATHNAME},
+    {"staffhelp_file",            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.staffhelp_file,  NULL, SIZEOF_PATHNAME},
+    {"staffhelp_index",           cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.staffhelp_indx,  NULL, SIZEOF_PATHNAME},
+    {"wiznews_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wiznews_file,    NULL, SIZEOF_PATHNAME},
+    {"wiznews_index",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wiznews_indx,    NULL, SIZEOF_PATHNAME},
+#endif
 
 void helpindex_clean(CHashTable *htab)
 {
@@ -63,7 +86,7 @@ void helpindex_clean(CHashTable *htab)
 int helpindex_read(int iHelpfile)
 {
     CHashTable *htab = hftable[iHelpfile].ht;
-    char *filename = *hftable[iHelpfile].ppIndexFile;
+    char *filename = hftable[iHelpfile].pIndexFile;
 
     help_indx entry;
     char *p;
@@ -165,7 +188,7 @@ void help_write(dbref player, char *topic_arg, int iHelpfile)
 {
     BOOL bEval = hftable[iHelpfile].bEval;
     CHashTable *htab = hftable[iHelpfile].ht;
-    char *filename = *hftable[iHelpfile].ppTextFile;
+    char *filename = hftable[iHelpfile].pTextFile;
 
     mux_strlwr(topic_arg);
     const char *topic = topic_arg;

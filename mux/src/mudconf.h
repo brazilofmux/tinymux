@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.13 2003-01-04 05:03:29 sdennis Exp $
+// $Id: mudconf.h,v 1.14 2003-01-05 22:18:02 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -153,18 +153,6 @@ struct confdata
     char    *full_file;      /* display when max users exceeded */
     char    *site_file;      /* display if conn from bad site */
     char    *crea_file;      /* display this on login for new users */
-    char    *help_file;      /* HELP text file */
-    char    *help_indx;      /* HELP index file */
-    char    *news_file;      /* NEWS text file */
-    char    *news_indx;      /* NEWS index file */
-    char    *whelp_file;     /* Wizard help text file */
-    char    *whelp_indx;     /* Wizard help index file */
-    char    *plushelp_file;  /* +help text file */
-    char    *plushelp_indx;  /* +help index file */
-    char    *staffhelp_file; /* +shelp text file */
-    char    *staffhelp_indx; /* +shelp index file */
-    char    *wiznews_file;   /*  wiznews text file */
-    char    *wiznews_indx;   /*  wiznews index file */
     char    motd_msg[GBUF_SIZE]; /* Wizard-settable login message */
     char    wizmotd_msg[GBUF_SIZE];  /* Login message for wizards only */
     char    downmotd_msg[GBUF_SIZE];  /* Settable 'logins disabled' message */

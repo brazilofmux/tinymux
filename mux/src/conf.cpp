@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.28 2002-12-16 00:21:26 sdennis Exp $
+// $Id: conf.cpp,v 1.29 2003-01-05 22:18:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -87,18 +87,6 @@ void cf_init(void)
     mudconf.full_file      = StringClone("text/full.txt");
     mudconf.site_file      = StringClone("text/badsite.txt");
     mudconf.crea_file      = StringClone("text/newuser.txt");
-    mudconf.help_file      = StringClone("text/help.txt");
-    mudconf.help_indx      = StringClone("text/help.indx");
-    mudconf.news_file      = StringClone("text/news.txt");
-    mudconf.news_indx      = StringClone("text/news.indx");
-    mudconf.whelp_file     = StringClone("text/wizhelp.txt");
-    mudconf.whelp_indx     = StringClone("text/wizhelp.indx");
-    mudconf.plushelp_file  = StringClone("text/plushelp.txt");
-    mudconf.plushelp_indx  = StringClone("text/plushelp.indx");
-    mudconf.staffhelp_file = StringClone("text/staffhelp.txt");
-    mudconf.staffhelp_indx = StringClone("text/staffhelp.indx");
-    mudconf.wiznews_file   = StringClone("text/wiznews.txt");
-    mudconf.wiznews_indx   = StringClone("text/wiznews.indx");
     mudconf.motd_msg[0] = '\0';
     mudconf.wizmotd_msg[0] = '\0';
     mudconf.downmotd_msg[0] = '\0';
@@ -1646,8 +1634,6 @@ CONF conftable[] =
     {"have_comsys",               cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_comsys,     NULL,               0},
     {"have_mailer",               cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_mailer,     NULL,               0},
     {"have_zones",                cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_zones,      NULL,               0},
-    {"help_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.help_file,       NULL, SIZEOF_PATHNAME},
-    {"help_index",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.help_indx,       NULL, SIZEOF_PATHNAME},
     {"helpfile",                  cf_helpfile,    CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
     {"hook_cmd",                  cf_hook,        CA_GOD,    CA_GOD,      &mudconf.hook_cmd,               NULL,               0},
     {"hook_obj",                  cf_int,         CA_GOD,    CA_GOD,      &mudconf.hook_obj,               NULL,               0},
@@ -1684,8 +1670,6 @@ CONF conftable[] =
     {"motd_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.motd_file,       NULL, SIZEOF_PATHNAME},
     {"motd_message",              cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.motd_msg,         NULL,       GBUF_SIZE},
     {"mud_name",                  cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.mud_name,         NULL,              32},
-    {"news_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.news_file,       NULL, SIZEOF_PATHNAME},
-    {"news_index",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.news_indx,       NULL, SIZEOF_PATHNAME},
     {"newuser_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crea_file,       NULL, SIZEOF_PATHNAME},
     {"nositemon_site",            cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,     H_NOSITEMON},
     {"notify_recursion_limit",    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.ntfy_nest_lim,          NULL,               0},
@@ -1708,8 +1692,6 @@ CONF conftable[] =
     {"player_quota",              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.player_quota,           NULL,               0},
     {"player_starting_home",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_home,             NULL,               0},
     {"player_starting_room",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_room,             NULL,               0},
-    {"plushelp_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.plushelp_file,   NULL, SIZEOF_PATHNAME},
-    {"plushelp_index",            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.plushelp_indx,   NULL, SIZEOF_PATHNAME},
     {"port",                      cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.ports,           NULL, MAX_LISTEN_PORTS},
     {"postdump_message",          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     NULL,             128},
     {"power_alias",               cf_poweralias,  CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
@@ -1744,8 +1726,6 @@ CONF conftable[] =
     {"site_chars",                cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.site_chars,      NULL,               0},
     {"space_compress",            cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.space_compress,  NULL,               0},
     {"stack_limit",               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.stack_limit,            NULL,               0},
-    {"staffhelp_file",            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.staffhelp_file,  NULL, SIZEOF_PATHNAME},
-    {"staffhelp_index",           cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.staffhelp_indx,  NULL, SIZEOF_PATHNAME},
     {"starting_money",            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paystart,               NULL,               0},
     {"starting_quota",            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_quota,            NULL,               0},
     {"status_file",               cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.status_file,     NULL, SIZEOF_PATHNAME},
@@ -1767,12 +1747,8 @@ CONF conftable[] =
     {"use_http",                  cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.use_http,        NULL,               0},
     {"user_attr_access",          cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.vattr_flags,            attraccess_nametab, 0},
     {"wait_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.waitcost,               NULL,               0},
-    {"wizard_help_file",          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.whelp_file,      NULL, SIZEOF_PATHNAME},
-    {"wizard_help_index",         cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.whelp_indx,      NULL, SIZEOF_PATHNAME},
     {"wizard_motd_file",          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wizmotd_file,    NULL, SIZEOF_PATHNAME},
     {"wizard_motd_message",       cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.wizmotd_msg,      NULL,       GBUF_SIZE},
-    {"wiznews_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wiznews_file,    NULL, SIZEOF_PATHNAME},
-    {"wiznews_index",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wiznews_indx,    NULL, SIZEOF_PATHNAME},
     {"zone_recursion_limit",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.zone_nest_lim,          NULL,               0},
     { NULL,                       NULL,           0,         0,           NULL,                            NULL,               0}
 };
