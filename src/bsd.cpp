@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.34 2001-10-17 17:57:09 sdennis Exp $
+// $Id: bsd.cpp,v 1.35 2001-10-25 16:46:29 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1903,7 +1903,7 @@ FTASK *process_output = 0;
 void process_output9x(void *dvoid, int bHandleShutdown)
 {
     DESC *d = (DESC *)dvoid;
-    TBLOCK *tb, *save;
+    TBLOCK *tb;
     int cnt;
     char *cmdsave;
 
@@ -1930,12 +1930,15 @@ void process_output9x(void *dvoid, int bHandleShutdown)
             tb->hdr.nchars -= cnt;
             tb->hdr.start += cnt;
         }
-        save = tb;
+        TBLOCK *save = tb;
         tb = tb->hdr.nxt;
         MEMFREE(save);
+        save = NULL;
         d->output_head = tb;
         if (tb == NULL)
+        {
             d->output_tail = NULL;
+        }
     }
     mudstate.debug_cmd = cmdsave;
 }
@@ -2021,6 +2024,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
             save = tb;
             tb = tb->hdr.nxt;
             MEMFREE(save);
+            save = NULL;
             d->output_head = tb;
             if (tb == NULL)
             {
@@ -2046,9 +2050,12 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
             save = tb;
             tb = tb->hdr.nxt;
             MEMFREE(save);
+            save = NULL;
             d->output_head = tb;
             if (tb == NULL)
+            {
                 d->output_tail = NULL;
+            }
         }
     }
     mudstate.debug_cmd = cmdsave;
@@ -2059,20 +2066,16 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
 void process_output(void *dvoid, int bHandleShutdown)
 {
     DESC *d = (DESC *)dvoid;
-    TBLOCK *tb, *save;
-    int cnt;
-    char *cmdsave;
 
-    cmdsave = mudstate.debug_cmd;
+    char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< process_output >";
 
-    tb = d->output_head;
-
+    TBLOCK *tb = d->output_head;
     while (tb != NULL)
     {
         while (tb->hdr.nchars > 0)
         {
-            cnt = SOCKET_WRITE(d->descriptor, tb->hdr.start, tb->hdr.nchars, 0);
+            int cnt = SOCKET_WRITE(d->descriptor, tb->hdr.start, tb->hdr.nchars, 0);
             if (IS_SOCKET_ERROR(cnt))
             {
                 mudstate.debug_cmd = cmdsave;
@@ -2086,9 +2089,10 @@ void process_output(void *dvoid, int bHandleShutdown)
             tb->hdr.nchars -= cnt;
             tb->hdr.start += cnt;
         }
-        save = tb;
+        TBLOCK *save = tb;
         tb = tb->hdr.nxt;
-        free(save);
+        MEMFREE(save);
+        save = NULL;
         d->output_head = tb;
         if (tb == NULL)
         {
@@ -3051,6 +3055,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     TBLOCK *save = tp;
                     tp = tp->hdr.nxt;
                     MEMFREE(save);
+                    save = NULL;
                     d->output_head = tp;
                     if (tp == NULL)
                     {

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.54 2001-10-17 18:03:51 sdennis Exp $
+// $Id: db.cpp,v 1.55 2001-10-25 16:52:27 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1631,6 +1631,7 @@ void atr_clr(dbref thing, int atr)
         if (list[mid].number == atr)
         {
             MEMFREE(list[mid].data);
+            list[mid].data = NULL;
             db[thing].at_count -= 1;
             if (mid != db[thing].at_count)
             {
@@ -1782,6 +1783,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
                 memcpy(list+lo+1, db[thing].ahead+lo, (db[thing].at_count - lo) * sizeof(ATRLIST));
             }
             MEMFREE(db[thing].ahead);
+            db[thing].ahead = NULL;
 
             list[lo].data = text;
             list[lo].number = atr;
@@ -2265,6 +2267,7 @@ int atr_next(char **attrp)
         if (atr->count >= db[atr->thing].at_count)
         {
             MEMFREE(atr);
+            atr = NULL;
             return 0;
         }
         atr->count++;
@@ -2309,6 +2312,7 @@ void NDECL(atr_pop)
     if (mudstate.iter_alist.data)
     {
         MEMFREE(mudstate.iter_alist.data);
+        mudstate.iter_alist.data = NULL;
     }
     if (old_alist)
     {
@@ -2624,7 +2628,8 @@ void NDECL(db_free)
 {
     char *cp;
 
-    if (db != NULL) {
+    if (db != NULL)
+    {
         db -= SIZE_HACK;
         cp = (char *)db;
         MEMFREE(cp);
@@ -2947,7 +2952,8 @@ void free_boolexp(BOOLEXP *b)
         break;
     case BOOLEXP_ATR:
     case BOOLEXP_EVAL:
-        MEMFREE((char *)b->sub1);
+        MEMFREE(b->sub1);
+        b->sub1 = NULL;
         free_bool(b);
         break;
     }

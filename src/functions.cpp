@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.99 2001-10-11 21:10:00 sdennis Exp $
+// $Id: functions.cpp,v 1.100 2001-10-25 16:54:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5948,6 +5948,7 @@ static void do_asort(char *s[], int n, int sort_type)
             s[i] = ip[i].str;
         }
         MEMFREE(ip);
+        ip = NULL;
         break;
 
     case DBREF_LIST:
@@ -5964,6 +5965,7 @@ static void do_asort(char *s[], int n, int sort_type)
             s[i] = ip[i].str;
         }
         MEMFREE(ip);
+        ip = NULL;
         break;
 
     case FLOAT_LIST:
@@ -5981,6 +5983,7 @@ static void do_asort(char *s[], int n, int sort_type)
             s[i] = fp[i].str;
         }
         MEMFREE(fp);
+        fp = NULL;
         break;
     }
 }

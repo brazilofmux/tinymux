@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.54 2001-10-17 17:58:32 sdennis Exp $
+// $Id: command.cpp,v 1.55 2001-10-25 16:48:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2348,7 +2348,9 @@ CF_HAND(cf_cmd_alias)
         if (hashaddLEN(cmd2->cmdname, strlen(cmd2->cmdname), (int *)cmd2, (CHashTable *) vp))
         {
             MEMFREE(cmd2->cmdname);
+            cmd2->cmdname = NULL;
             MEMFREE(cmd2);
+            cmd2 = NULL;
         }
     }
     else

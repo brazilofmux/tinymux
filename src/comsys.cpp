@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.58 2001-10-17 19:02:39 sdennis Exp $
+// * $Id: comsys.cpp,v 1.59 2001-10-25 16:49:20 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -63,6 +63,7 @@ void do_setnewtitle(dbref player, struct channel *ch, char *pValidatedTitle)
         if (user->title)
         {
             MEMFREE(user->title);
+            user->title = NULL;
         }
         user->title = StringClone(pValidatedTitle);
     }
@@ -443,16 +444,20 @@ void destroy_comsys(comsys_t *c)
     if (c->alias)
     {
         MEMFREE(c->alias);
+        c->alias = NULL;
     }
     for (i = 0; i < c->numchannels; i++)
     {
         MEMFREE(c->channels[i]);
+        c->channels[i] = NULL;
     }
     if (c->channels)
     {
         MEMFREE(c->channels);
+        c->channels = NULL;
     }
     MEMFREE(c);
+    c = NULL;
 }
 
 void sort_com_aliases(comsys_t *c)
@@ -1307,10 +1312,12 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
         if (c->alias)
         {
             MEMFREE(c->alias);
+            c->alias = NULL;
         }
         if (c->channels)
         {
             MEMFREE(c->channels);
+            c->channels = NULL;
         }
         c->alias = na;
         c->channels = nc;
@@ -1365,6 +1372,7 @@ void do_delcom(dbref player, dbref cause, int key, char *arg1)
             do_delcomchannel(player, c->channels[i]);
             raw_notify(player, tprintf("Channel %s deleted.", c->channels[i]));
             MEMFREE(c->channels[i]);
+            c->channels[i] = NULL;
 
             c->numchannels--;
             for (; i < c->numchannels; i++)
@@ -1411,8 +1419,10 @@ void do_delcomchannel(dbref player, char *channel)
                 if (user->title)
                 {
                     MEMFREE(user->title);
+                    user->title = NULL;
                 }
                 MEMFREE(user);
+                user = NULL;
                 j = 1;
             }
         }
@@ -1540,9 +1550,12 @@ void do_destroychannel(dbref player, dbref cause, int key, char *channel)
     for (j = 0; j < ch->num_users; j++)
     {
         MEMFREE(ch->users[j]);
+        ch->users[j] = NULL;
     }
     MEMFREE(ch->users);
+    ch->users = NULL;
     MEMFREE(ch);
+    ch = NULL;
     raw_notify(player, tprintf("Channel %s destroyed.", channel));
 }
 
@@ -1616,8 +1629,10 @@ void do_cleanupchannels(void)
                         if (cuVictim->title)
                         {
                             MEMFREE(cuVictim->title);
+                            cuVictim->title = NULL;
                         }
                         MEMFREE(cuVictim);
+                        cuVictim = NULL;
 
                         continue;
                     }
@@ -1772,9 +1787,12 @@ void do_channelnuke(dbref player)
             for (j = 0; j < ch->num_users; j++)
             {
                 MEMFREE(ch->users[j]);
+                ch->users[j] = NULL;
             }
             MEMFREE(ch->users);
+            ch->users = NULL;
             MEMFREE(ch);
+            ch = NULL;
         }
     }
 }

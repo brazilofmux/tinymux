@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.28 2001-09-25 04:00:25 sdennis Exp $
+// $Id: cque.cpp,v 1.29 2001-10-25 16:49:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -214,6 +214,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
             }
         }
         MEMFREE(point->text);
+        point->text = NULL;
         free_qentry(point);
     }
 
@@ -286,6 +287,7 @@ int CallBack_HaltQueue(PTASK_RECORD p)
                 add_to(point->sem, -1, point->attr);
             }
             MEMFREE(point->text);
+            point->text = NULL;
             free_qentry(point);
             return IU_REMOVE_TASK;
         }
@@ -427,6 +429,7 @@ int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
                 giveto(point->player, mudconf.waitcost);
                 a_Queue(Owner(point->player), -1);
                 MEMFREE(point->text);
+                point->text = NULL;
                 free_qentry(point);
                 return IU_REMOVE_TASK;
             }

@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.69 2001-10-11 21:10:00 sdennis Exp $
+// $Id: funceval.cpp,v 1.70 2001-10-25 16:54:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2994,6 +2994,7 @@ void stack_clr(dbref obj)
         next = sp->next;
         free_lbuf(sp->data);
         MEMFREE(sp);
+        sp = NULL;
     }
     s_Stack(obj, NULL);
 }
@@ -3150,12 +3151,14 @@ FUNCTION(fun_pop)
         s_Stack(doer, sp->next);
         free_lbuf(sp->data);
         MEMFREE(sp);
+        sp = NULL;
     }
     else
     {
         prev->next = sp->next;
         free_lbuf(sp->data);
         MEMFREE(sp);
+        sp = NULL;
     }
 }
 
@@ -3227,6 +3230,7 @@ FUNCTION(fun_regmatch)
     if (nfargs != 3)
     {
         MEMFREE(re);
+        re = NULL;
         return;
     }
 
@@ -3270,6 +3274,7 @@ FUNCTION(fun_regmatch)
         }
     }
     MEMFREE(re);
+    re = NULL;
 }
 
 
