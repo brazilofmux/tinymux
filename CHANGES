@@ -34,7 +34,7 @@ Performance Enhancements:
     for all block sizes from 1-byte up.
  -- Changed random number generate to use Mersenne Twister exclusively.
     It's the fastest one and also the one with the longest period.
- -- For string search with GREP and GREPI, added a Boyer-Moore-Horssted
+ -- For string search with GREP and GREPI, added a Boyer-Moore-Horspool
     string search algorithm for speed.
 
 Cosmetic Changes:
