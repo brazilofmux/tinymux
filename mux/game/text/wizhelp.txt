@@ -197,7 +197,7 @@
 & @DBCK
 @DBCK
 
-  COMMAND: @dbck
+  COMMAND: @dbck[/full]
 
   Performs a scan of the database looking for inconsistencies in the object
   chains, disconnected rooms, rooms waiting to be destroyed, and problems in
@@ -205,6 +205,12 @@
   file, disconnected rooms are reported to their owners, and players are
   credited for rooms destroyed.  Database checks are automatically run
   periodically, so there is usually no need to use this command.
+
+  With the /full switch, @dbck performs more thorough checking, but the
+  additional log messages will need more carefully consideration and
+  interpreation.  Some of these messages can provide very useful insight
+  into the state of the database, but it doesn't make sense to run these
+  checks automatically.
 
   Related Topics: @admin, @disable, @enable, @list.
 
