@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.4 2002-07-13 07:23:02 jake Exp $
+// $Id: svdhash.cpp,v 1.5 2002-07-21 23:46:50 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -2492,13 +2492,15 @@ void DCL_CDECL CLogFile::tinyprintf(char *fmt, ...)
 CLogFile::~CLogFile(void)
 {
     Flush();
-#if !defined(STANDALONE) && defined(WIN32)
+#ifndef STANDALONE
     CloseLogFile();
+#ifdef WIN32
     DeleteCriticalSection(&csLog);
+#endif
 #endif
 }
 
-#if !defined(STANDALONE) && defined(WIN32)
+#ifndef STANDALONE
 void MakeLogName(char *szPrefix, CLinearTimeAbsolute lta, char *szLogName)
 {
     strcpy(szLogName, szPrefix);
@@ -2542,7 +2544,11 @@ void CLogFile::CloseLogFile(void)
 {
     if (m_hFile != INVALID_HANDLE_VALUE)
     {
+#ifdef WIN32
         CloseHandle(m_hFile);
+#else
+        close(m_hFile);
+#endif
         m_hFile = INVALID_HANDLE_VALUE;
     }
 }
@@ -2569,8 +2575,10 @@ CLogFile::CLogFile(void)
 {
     m_nBuffer = 0;
 
-#if !defined(STANDALONE) && defined(WIN32)
+#ifndef STANDALONE
+#ifdef WIN32
     InitializeCriticalSection(&csLog);
+#endif
     m_hFile = INVALID_HANDLE_VALUE;
     m_szPrefix[0] = '\0';
     m_ltaStarted.GetLocal();
@@ -2583,13 +2591,20 @@ CLogFile::CLogFile(void)
 
 void CLogFile::Flush(void)
 {
-    if (m_nBuffer <= 0) return;
-#if defined(STANDALONE) || !defined(WIN32)
+    if (m_nBuffer <= 0)
+    {
+        return;
+    }
+#ifdef STANDALONE
     fwrite(m_aBuffer, m_nBuffer, 1, stderr);
 #else
     m_nSize += m_nBuffer;
     unsigned long nWritten;
+#ifdef WIN32
     WriteFile(m_hFile, m_aBuffer, m_nBuffer, &nWritten, NULL);
+#else
+    fwrite(m_aBuffer, m_nBuffer, 1, m_hFile);
+#endif
 
     if (m_nSize > FILE_SIZE_TRIGGER)
     {
