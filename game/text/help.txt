@@ -818,21 +818,6 @@ HELP
 
   Related Topics: @ccreate, @cdestroy, @cchown, @coflags, @cpflags.
 
-& @CLONE2
-@CLONE (continued)
-
-  The following switches are available:
-     /cost       - Treat the argument after the = as the cost of the new
-                   object, not the name.
-     /inherit    - Don't reset the INHERIT bit on the new object.
-     /inventory  - Create the new object in your inventory (or your exitlist,
-                   in the case of cloning exits).
-     /location   - Create the new object in your location (default).
-     /parent     - Set the new object's parent to be the template object and
-                   don't copy the attributes.
-
-  Related Topics: @create, @decompile, @destroy, VISUAL.
-
 & @CLONE
 @CLONE
 
@@ -861,6 +846,21 @@ HELP
   copied.
 
 { 'help @clone2' for more }
+
+& @CLONE2
+@CLONE (continued)
+
+  The following switches are available:
+     /cost       - Treat the argument after the = as the cost of the new
+                   object, not the name.
+     /inherit    - Don't reset the INHERIT bit on the new object.
+     /inventory  - Create the new object in your inventory (or your exitlist,
+                   in the case of cloning exits).
+     /location   - Create the new object in your location (default).
+     /parent     - Set the new object's parent to be the template object and
+                   don't copy the attributes.
+
+  Related Topics: @create, @decompile, @destroy, VISUAL.
 
 & @COFLAGS
 @COFLAGS
@@ -1765,17 +1765,6 @@ HELP
 
   Related Topics: @aleave, @alfail, @lalias, @leave, @oleave, @olfail, leave.
 
-& @LINK2
-@LINK (continued)
-
-  Note that in all the above cases that it is the player performing the @link
-  command that must pass the LinkLock, not the object being linked.
-  Therefore, you should use the '$' lock qualifier if you want to prevent
-  specific players from linking to your LINK_OK locations, as simply locking
-  against '*<playername>' does not lock out their puppets.
-
-  Related Topics: @dig, @open, @unlink, DROP-TOS, HOMES, LINKING.
-
 & @LINK
 @LINK
 
@@ -1798,6 +1787,17 @@ HELP
   (making the total cost to you 2 coins).
 
 { 'help @link2' for more }
+
+& @LINK2
+@LINK (continued)
+
+  Note that in all the above cases that it is the player performing the @link
+  command that must pass the LinkLock, not the object being linked.
+  Therefore, you should use the '$' lock qualifier if you want to prevent
+  specific players from linking to your LINK_OK locations, as simply locking
+  against '*<playername>' does not lock out their puppets.
+
+  Related Topics: @dig, @open, @unlink, DROP-TOS, HOMES, LINKING.
 
 & @LISTEN
 @LISTEN
@@ -1861,20 +1861,6 @@ HELP
   the internal tables to produce the information it displays.  Specifying
   @list with no argument lists the options you may use.
 
-& @LOCK ATTRIBUTE2
-@LOCK ATTRIBUTE (continued)
-
-  Note: you may lock against any attribute, but the locked object must be
-  able to read the attribute from the player attempting to pass the lock or
-  the lock will fail.
-
-  Examples:
-    > @lock men's room=sex:m*
-    > @lock a-f=name:<g
-    > @lock post office=email:*@*
-
-  Related Topics: ATTRIBUTE OWNERSHIP, @lock evaluation.
-
 & @LOCK ATTRIBUTE
 @LOCK ATTRIBUTE
 
@@ -1897,6 +1883,20 @@ HELP
   the player's inventory are tested.
 
 { 'help @lock attribute2' for more }
+
+& @LOCK ATTRIBUTE2
+@LOCK ATTRIBUTE (continued)
+
+  Note: you may lock against any attribute, but the locked object must be
+  able to read the attribute from the player attempting to pass the lock or
+  the lock will fail.
+
+  Examples:
+    > @lock men's room=sex:m*
+    > @lock a-f=name:<g
+    > @lock post office=email:*@*
+
+  Related Topics: ATTRIBUTE OWNERSHIP, @lock evaluation.
 
 & @LOCK CARRY
 @LOCK CARRY
@@ -1936,22 +1936,6 @@ HELP
     > @lock message = me | *recipient
     Both you and the player recipient may get the msssage.
 
-& @LOCK EVALUATION2
-@LOCK EVALUATION (continued)
-
-  Examples:
-    > @lock bank=checkmoney/1
-    > &checkmoney bank=[gt(money(%#),5000)]
-    Only people and objects with more than 5000 pennies may pass.
-    Note: this lock requires wizard privileges to read the worth of other
-    players.
-
-    > @lock divisible_by_five_club = checkdiv/0
-    > &checkdiv divisible_by_five_club = [mod(mid(%#,2,20),5)]
-    Only objects whose db-number is divisible by 5 may pass.
-
-  Related Topics: @lock attributes.
-
 & @LOCK EVALUATION
 @LOCK EVALUATION
 
@@ -1973,6 +1957,22 @@ HELP
   the intermediate locks are not checked.
 
 { 'help @lock evaluation2' for more }
+
+& @LOCK EVALUATION2
+@LOCK EVALUATION (continued)
+
+  Examples:
+    > @lock bank=checkmoney/1
+    > &checkmoney bank=[gt(money(%#),5000)]
+    Only people and objects with more than 5000 pennies may pass.
+    Note: this lock requires wizard privileges to read the worth of other
+    players.
+
+    > @lock divisible_by_five_club = checkdiv/0
+    > &checkdiv divisible_by_five_club = [mod(mid(%#,2,20),5)]
+    Only objects whose db-number is divisible by 5 may pass.
+
+  Related Topics: @lock attributes.
 
 & @LOCK INDIRECT
 @LOCK INDIRECT
@@ -2040,30 +2040,6 @@ HELP
               !<key>
               ( <key> )
 
-& @LOCK LOCKS2
-@LOCK LOCKS (continued)
-
-     SpeechLock:   All but Exits:  controls who may speak in that location
-                                   (only checked if AUDITORIUM flag is set
-                                   on that location)
-     TeloutLock:   All but Exits:  controls who may teleport out of the
-                                   location.
-     TportLock:    Rooms/Things:   controls who may teleport there if the
-                                   location is JUMP_OK.
-     UseLock:      All but Exits:  controls who may USE the object, GIVE the
-                                   object money and have the PAY attributes
-                                   run, have their messages heard and possibly
-                                   acted on by LISTEN and AxHEAR, and invoke
-                                   $-commands stored on the object.
-     DropLock:     All but rooms:  controls who may drop that object.
-     UserLock:     All:            Not used by MUX, is intended to be used
-                                   in MUX programming where a user-defined
-                                   lock is needed.
-
- Note: If a player fails the UseLock on a parent of an object being searched
- for $-commands, then the search for attributes stops and the parent chain is
- not searched further for matches.
-
 & @LOCK LOCKS
 @LOCK LOCKS
 
@@ -2093,6 +2069,30 @@ HELP
      ReceiveLock:  Players/Things: controls who may give things to the object.
 
 { 'help @lock locks2' for more }
+
+& @LOCK LOCKS2
+@LOCK LOCKS (continued)
+
+     SpeechLock:   All but Exits:  controls who may speak in that location
+                                   (only checked if AUDITORIUM flag is set
+                                   on that location)
+     TeloutLock:   All but Exits:  controls who may teleport out of the
+                                   location.
+     TportLock:    Rooms/Things:   controls who may teleport there if the
+                                   location is JUMP_OK.
+     UseLock:      All but Exits:  controls who may USE the object, GIVE the
+                                   object money and have the PAY attributes
+                                   run, have their messages heard and possibly
+                                   acted on by LISTEN and AxHEAR, and invoke
+                                   $-commands stored on the object.
+     DropLock:     All but rooms:  controls who may drop that object.
+     UserLock:     All:            Not used by MUX, is intended to be used
+                                   in MUX programming where a user-defined
+                                   lock is needed.
+
+ Note: If a player fails the UseLock on a parent of an object being searched
+ for $-commands, then the search for attributes stops and the parent chain is
+ not searched further for matches.
 
 & @LOCK NORMAL
 @LOCK NORMAL
@@ -2195,31 +2195,6 @@ HELP
     mail-sending    mail-reading     mail-folders      mail-other
     mail-admin      @malias          mail-reviewing    mail-examples
 
-& @MALIAS2
-@MALIAS (continued)
-
-  You can add, remove, rename, chown, redescribe, and delete mailing lists
-  with a switch.
-
-  @malias/remove *<alias>=<player>     Removes <player> from *<alias>.
-  @malias/desc *<alias>=<description>  Changes the description for *<alias>.
-  @malias/add *<alias>=<player>        Adds <player> to *<alias>.
-  @malias/rename *<alias>=<name>       Renames that alias. Names must always
-                                       begin with '*'.
-  @malias/delete *<alias>              Deletes <alias>.
-  @malias/chown *<alias>=<player>      Changes the owner of <alias> to
-                                       <player>.
-
-  Wizards can use all of the malias commands on any mail alias. Instead of
-  trying to figure out different mailing lists with the same name, wizards
-  may use #<MALIAS NUMBER> instead of *alias in regards to the command.
-  Remember that the alias commands will only recognize aliases owned by #1,
-  owned by you, or by number.
-
-  @malias/list                         When invoked by a wizard, it will
-                                       list all mailing aliases currently
-                                       defined by their number.
-
 & @MALIAS
 @MALIAS
 
@@ -2244,6 +2219,31 @@ HELP
   @malias *<alias>=<list>   Creates that mailing list, using <list>.
 
 { 'help @malias2' for more }
+
+& @MALIAS2
+@MALIAS (continued)
+
+  You can add, remove, rename, chown, redescribe, and delete mailing lists
+  with a switch.
+
+  @malias/remove *<alias>=<player>     Removes <player> from *<alias>.
+  @malias/desc *<alias>=<description>  Changes the description for *<alias>.
+  @malias/add *<alias>=<player>        Adds <player> to *<alias>.
+  @malias/rename *<alias>=<name>       Renames that alias. Names must always
+                                       begin with '*'.
+  @malias/delete *<alias>              Deletes <alias>.
+  @malias/chown *<alias>=<player>      Changes the owner of <alias> to
+                                       <player>.
+
+  Wizards can use all of the malias commands on any mail alias. Instead of
+  trying to figure out different mailing lists with the same name, wizards
+  may use #<MALIAS NUMBER> instead of *alias in regards to the command.
+  Remember that the alias commands will only recognize aliases owned by #1,
+  owned by you, or by number.
+
+  @malias/list                         When invoked by a wizard, it will
+                                       list all mailing aliases currently
+                                       defined by their number.
 
 & @MOVE
 @MOVE
@@ -2875,25 +2875,6 @@ HELP
 
   Related Topics: AUDIBLE, @filter, @forwardlist, @infilter, @inprefix.
 
-& @PROGRAM2
-@PROGRAM (continued)
-
-  As you can see, this command basically takes what a user types at the
-  prompt, stuffs it into %0 in the code in <obj/attr>, and then triggers
-  that attribute. Note that when @program triggers an attribute, the enactor
-  of that triggered attribute is <player>, and is inserted into %#.
-  r-registers are preserved when @program triggers an attribute.
-
-  An optional message, <prefix>, may be specified and will be output before
-  the @program prompt. This is useful for telling the user what information
-  they need to supply.
-
-  A player caught in @program may send a command through to the normal
-  command processor at the @program prompt by prefixing it with the '|'
-  character, for example, '|WHO'.
-
-  Related Topics: @quitprogram.
-
 & @PROGRAM
 @PROGRAM
 
@@ -2919,6 +2900,25 @@ HELP
   This time you entered hoopla. You're done!
 
 { 'help @program2' for more }
+
+& @PROGRAM2
+@PROGRAM (continued)
+
+  As you can see, this command basically takes what a user types at the
+  prompt, stuffs it into %0 in the code in <obj/attr>, and then triggers
+  that attribute. Note that when @program triggers an attribute, the enactor
+  of that triggered attribute is <player>, and is inserted into %#.
+  r-registers are preserved when @program triggers an attribute.
+
+  An optional message, <prefix>, may be specified and will be output before
+  the @program prompt. This is useful for telling the user what information
+  they need to supply.
+
+  A player caught in @program may send a command through to the normal
+  command processor at the @program prompt by prefixing it with the '|'
+  character, for example, '|WHO'.
+
+  Related Topics: @quitprogram.
 
 & @PS
 @PS
@@ -3070,27 +3070,6 @@ HELP
                                        #5000 to the end of the database.
   Related Topics: @find, search().
 
-& @SET2
-@SET (continued)
-
-  The following flags may be set using the fourth form of the @set command:
-     no_command - Prevent $-commands and ^-patterns defined in the attribute
-                  from being performed.
-     no_inherit - Prevents children of the object from obtaining the
-                  attribute.  From their perspective the attribute does not
-                  exist.
-     visual     - Anyone may see the attribute when they examine you, and
-                  may get the attribute with get().
-     hidden     - The attribute is only visable to wizards.
-     regexp     - When $-commands are matched, treat the pattern as a
-                  regular expression rather than a wildcard glob pattern.
-     wizard     - The attribute may only be changed by wizards.
-
-  The @set command takes the following switch:
-     quiet      - Inhibit 'Set.' acknowledgement messages.
-
-  Related Topics: @lock, @lock, examine, FLAGS, &.
-
 & @SET
 @SET
 
@@ -3113,6 +3092,27 @@ HELP
   these is equivalent to the second form of the @set command.
 
 { 'help @set2' for more }
+
+& @SET2
+@SET (continued)
+
+  The following flags may be set using the fourth form of the @set command:
+     no_command - Prevent $-commands and ^-patterns defined in the attribute
+                  from being performed.
+     no_inherit - Prevents children of the object from obtaining the
+                  attribute.  From their perspective the attribute does not
+                  exist.
+     visual     - Anyone may see the attribute when they examine you, and
+                  may get the attribute with get().
+     hidden     - The attribute is only visable to wizards.
+     regexp     - When $-commands are matched, treat the pattern as a
+                  regular expression rather than a wildcard glob pattern.
+     wizard     - The attribute may only be changed by wizards.
+
+  The @set command takes the following switch:
+     quiet      - Inhibit 'Set.' acknowledgement messages.
+
+  Related Topics: @lock, @lock, examine, FLAGS, &.
 
 & @SEX
 @SEX
@@ -3393,6 +3393,33 @@ HELP
 
   Related Topics: use, @ause, @ouse.
 
+& @VERB
+@VERB
+
+  COMMAND: @verb <victim>=<actor>,<what>,<def>,<owhat>,<odef>,<awhat>,<args>
+
+  This command provides a way to do user-defined verbs with associated
+  @attr/@oattr/@aattr groups. Invoking it does the following:
+
+  <actor> sees the contents of <victim>'s <what> attribute, or
+    the <def> string if you can't read <victim>'s <what> attribute.
+  Everyone in the same room as <actor> sees the contents of
+    <victim>'s <owhat> attribute, with <actor>'s name prepended,
+    or <odef>, also with <actor>'s name prepended, if you can't read
+    <victim>'s <owhat> attribute.
+  If you control <victim>, then he executes the contents of his <awhat>
+    attribute.
+
+  By supplying up to nine <args>, you may pass those values on
+  the stack (i.e. %0, %1, %2, etc. up through %9).
+
+  You must control the actor, but need not control the victim.  Note that
+  if you don't have the ability to read the appropriate attributes (whether
+  because you control the victim, he is VISUAL, or the attributes are set
+  VISUAL), the default messages will be used.
+
+{ 'help @verb2' for more }
+
 & @VERB2
 @VERB (continued)
 
@@ -3438,33 +3465,6 @@ HELP
     test1 says "I was xtested. Yikes. Arg1=a, Arg2=b, Arg3=de."
 
   Related Topics: locate().
-
-& @VERB
-@VERB
-
-  COMMAND: @verb <victim>=<actor>,<what>,<def>,<owhat>,<odef>,<awhat>,<args>
-
-  This command provides a way to do user-defined verbs with associated
-  @attr/@oattr/@aattr groups. Invoking it does the following:
-
-  <actor> sees the contents of <victim>'s <what> attribute, or
-    the <def> string if you can't read <victim>'s <what> attribute.
-  Everyone in the same room as <actor> sees the contents of
-    <victim>'s <owhat> attribute, with <actor>'s name prepended,
-    or <odef>, also with <actor>'s name prepended, if you can't read
-    <victim>'s <owhat> attribute.
-  If you control <victim>, then he executes the contents of his <awhat>
-    attribute.
-
-  By supplying up to nine <args>, you may pass those values on
-  the stack (i.e. %0, %1, %2, etc. up through %9).
-
-  You must control the actor, but need not control the victim.  Note that
-  if you don't have the ability to read the appropriate attributes (whether
-  because you control the victim, he is VISUAL, or the attributes are set
-  VISUAL), the default messages will be used.
-
-{ 'help @verb2' for more }
 
 & @WAIT
 @WAIT
@@ -3916,6 +3916,26 @@ ATTRCNT()
 
   Related Topics: lattr()
 
+& ATTRIBUTE OWNERSHIP
+ATTRIBUTE OWNERSHIP
+
+  The attributes on an object may be owned independently from the object.
+  Normally, the owner of the object owns all of its attributes.
+  In addition to an owner, each attribute also has a locked flag,
+  set or cleared with @lock <obj>/<attr> and @unlock <obj>/<attr>.
+  This flag controls whether or not the owner of the object may
+  @chown the attribute to himself with @chown <object>/<attrib>,
+  as well as whether or not the attribute is automatically @chowned to
+  the new owner when the object is @chowned.
+
+  You may lock and unlock attributes that you own on any object (whether
+  you own the object or not), and you may @chown an attribute that you own
+  to the owner of the object if it is unlocked.  The examine command
+  will show you all attributes that you own on an object, even if you
+  don't own the object.
+
+{ 'help attrib2' for more }
+
 & attrib2
 ATTRIBUTE OWNERSHIP (continued)
 
@@ -3950,26 +3970,6 @@ ATTRIBUTE OWNERSHIP (continued)
   being checked.
 
   Related Topics: @chown, @lock, @set, @unlock, examine.
-
-& ATTRIBUTE OWNERSHIP
-ATTRIBUTE OWNERSHIP
-
-  The attributes on an object may be owned independently from the object.
-  Normally, the owner of the object owns all of its attributes.
-  In addition to an owner, each attribute also has a locked flag,
-  set or cleared with @lock <obj>/<attr> and @unlock <obj>/<attr>.
-  This flag controls whether or not the owner of the object may
-  @chown the attribute to himself with @chown <object>/<attrib>,
-  as well as whether or not the attribute is automatically @chowned to
-  the new owner when the object is @chowned.
-
-  You may lock and unlock attributes that you own on any object (whether
-  you own the object or not), and you may @chown an attribute that you own
-  to the owner of the object if it is unlocked.  The examine command
-  will show you all attributes that you own on an object, even if you
-  don't own the object.
-
-{ 'help attrib2' for more }
 
 & AUDIBLE
 AUDIBLE
@@ -4414,6 +4414,27 @@ COMLIST
 
   Related Topics: comtitle, addcom, alias, delcom.
 
+& COMMAND EVALUATION
+COMMAND EVALUATION
+
+  When you submit a command to be executed by MUX (whether by typing it in or
+  by having a machine run it, the following steps are performed, in sequence.
+  If the command matches something in a step, the matching actions are
+  performed and the walk down the list stops.
+
+  - The first letter of the command is checked to see if it is a single-
+    character command (", :, etc).  If so, %-substitution and function
+    evaluation may be performed (depending on the command), and the command
+    is executed.
+  - The comsystem checks for a channel alias.
+  - The command is checked to see if it is the 'home' command.  If so, the
+    player or object performing the command goes home.
+  - The command is checked against the exits in its current room.  If one
+    matches, it is performed.  If more than one matches, one is picked randomly
+    from the exits for which the player passes the lock (If the player does not
+    pass any locks, then the exit to be tried is picked randomly.
+{ 'help command evaluation2' for more }
+
 & command evaluation2
 COMMAND EVALUATION (continued)
 
@@ -4440,47 +4461,6 @@ COMMAND EVALUATION (continued)
   Also, the construct '$xx *:%0' does not work (and is very dangerous
   programming), use '$xx *:@force me=%0' if you need this functionality.
 
-& COMMAND EVALUATION
-COMMAND EVALUATION
-
-  When you submit a command to be executed by MUX (whether by typing it in or
-  by having a machine run it, the following steps are performed, in sequence.
-  If the command matches something in a step, the matching actions are
-  performed and the walk down the list stops.
-
-  - The first letter of the command is checked to see if it is a single-
-    character command (", :, etc).  If so, %-substitution and function
-    evaluation may be performed (depending on the command), and the command
-    is executed.
-  - The comsystem checks for a channel alias.
-  - The command is checked to see if it is the 'home' command.  If so, the
-    player or object performing the command goes home.
-  - The command is checked against the exits in its current room.  If one
-    matches, it is performed.  If more than one matches, one is picked randomly
-    from the exits for which the player passes the lock (If the player does not
-    pass any locks, then the exit to be tried is picked randomly.
-{ 'help command evaluation2' for more }
-
-& COMMANDS2
-COMMANDS (continued)
-
-  @aahear      @aclone      @aconnect    @adescribe   @adfail      @adisconnect
-  @adrop       @aefail      @aenter      @afail       @agfail      @ahear
-  @akill       @aleave      @alfail      @alias       @amail       @amhear
-  @amove       @apay        @arfail      @asuccess    @atfail      @atofail
-  @atport      @aufail      @ause        @away        @charges     @conformat
-  @cost        @daily       @describe    @dfail       @drop        @ealias
-  @efail       @enter       @exitformat  @fail        @filter      @forwardlist
-  @gfail       @idesc       @idle        @idletimeout @infilter    @inprefix
-  @kill        @lalias      @leave       @lfail       @listen      @mailsucc
-  @move        @odescribe   @odfail      @odrop       @oefail      @oenter
-  @ofail       @ogfail      @okill       @oleave      @olfail      @omove
-  @opay        @orfail      @osuccess    @otfail      @otofail     @otport
-  @oufail      @ouse        @oxenter     @oxleave     @oxtport     @pay
-  @prefix      @reject      @rfail       @runout      @sex         @signature
-  @startup     @success     @tfail       @tofail      @tport       @ufail
-  @use
-
 & COMMANDS
 COMMANDS
 
@@ -4506,6 +4486,26 @@ COMMANDS
   @wait        @wipe
 
 { 'help commands2' for more }
+
+& COMMANDS2
+COMMANDS (continued)
+
+  @aahear      @aclone      @aconnect    @adescribe   @adfail      @adisconnect
+  @adrop       @aefail      @aenter      @afail       @agfail      @ahear
+  @akill       @aleave      @alfail      @alias       @amail       @amhear
+  @amove       @apay        @arfail      @asuccess    @atfail      @atofail
+  @atport      @aufail      @ause        @away        @charges     @conformat
+  @cost        @daily       @describe    @dfail       @drop        @ealias
+  @efail       @enter       @exitformat  @fail        @filter      @forwardlist
+  @gfail       @idesc       @idle        @idletimeout @infilter    @inprefix
+  @kill        @lalias      @leave       @lfail       @listen      @mailsucc
+  @move        @odescribe   @odfail      @odrop       @oefail      @oenter
+  @ofail       @ogfail      @okill       @oleave      @olfail      @omove
+  @opay        @orfail      @osuccess    @otfail      @otofail     @otport
+  @oufail      @ouse        @oxenter     @oxleave     @oxtport     @pay
+  @prefix      @reject      @rfail       @runout      @sex         @signature
+  @startup     @success     @tfail       @tofail      @tport       @ufail
+  @use
 
 & COMP()
 COMP()
@@ -5392,22 +5392,6 @@ EVAL()
 
   Related Topics: get_eval(), get(), xget().
 
-& EXAMINE2
-EXAMINE2
-
-  If you specify a wildcarded attribute name, then only those attributes
-  that match are shown.  So, 'exam me/v?' will show all your attributes that
-  start with v and are two characters long.
-
-  The following switches are available:
-     /brief  - Shows everything except attributes.
-     /full   - When examining an object you don't control, show any public
-               attributes set on the object in addition to the owner's name.
-     /parent - Includes attributes that are not present on the object itself
-               but which are inherited from the object's parent.
-
-  Related Topics: look, @decompile, VISUAL, ATTRIBUTE OWNERSHIP.
-
 & EXAMINE
 EXAMINE
 
@@ -5433,6 +5417,22 @@ EXAMINE
         the predefined attributes DESC, SEX, and LAST are always VISUAL.
 
 { 'help examine2' for more }
+
+& EXAMINE2
+EXAMINE2
+
+  If you specify a wildcarded attribute name, then only those attributes
+  that match are shown.  So, 'exam me/v?' will show all your attributes that
+  start with v and are two characters long.
+
+  The following switches are available:
+     /brief  - Shows everything except attributes.
+     /full   - When examining an object you don't control, show any public
+               attributes set on the object in addition to the owner's name.
+     /parent - Includes attributes that are not present on the object itself
+               but which are inherited from the object's parent.
+
+  Related Topics: look, @decompile, VISUAL, ATTRIBUTE OWNERSHIP.
 
 & EXIT()
 EXIT()
@@ -5808,6 +5808,30 @@ FULLNAME()
 
   Related Topics: name().
 
+& FUNCTION CLASSES
+FUNCTION CLASSES
+ 
+  Arithmetic:                ABS ADD BAND BNAND BOR CEIL CRC32 DEC DIE FDIV
+                             FLOORDIV IABS IADD IDIV IMUL INC ISUB MOD MUL
+                             PACK POWER RAND REMAINDER SHL SHR SIGN SUB SQRT
+                             UNPACK
+  Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
+  Database Information:      EXIT INZONE LOC LOCATE MAIL NEARBY NEXT NUM RLOC
+                             ROOM SEARCH STATS VALID WHERE ZONE ZWHO
+  Floating Point Conversion: FLOOR ROUND TRUNC
+  Game Information:          DUMPING MOTD MUDNAME POLL VERSION
+  Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
+                             FOLD GRAB INDEX ITER LAST LNUM MAP MATCH MATCHALL
+                             MEMBER MIX MUNGE PARSE PICKRAND LRAND REMOVE REST
+                             REVWORDS SETDIFF SETINTER SETUNION SHUFFLE SORT
+                             SORTBY SPLICE TABLE WORDS
+  Logarithms:                E EXP LOG LN
+  Logical:                   AND NOT OR XOR
+  Miscellaneous:             @@ ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM
+                             ISWORD LIT NULL SETR SUBEVAL
+ 
+{ 'help function classes2' for more }
+
 & FUNCTION CLASSES2
 FUNCTION CLASSES (continued)
 
@@ -5834,57 +5858,6 @@ FUNCTION CLASSES (continued)
                              SINGLETIME STARTSECS STARTTIME TIME WRITETIME
   Trigometric:               ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
                              VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
-
-& FUNCTION CLASSES
-FUNCTION CLASSES
- 
-  Arithmetic:                ABS ADD BAND BNAND BOR CEIL CRC32 DEC DIE FDIV
-                             FLOORDIV IABS IADD IDIV IMUL INC ISUB MOD MUL
-                             PACK POWER RAND REMAINDER SHL SHR SIGN SUB SQRT
-                             UNPACK
-  Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
-  Database Information:      EXIT INZONE LOC LOCATE MAIL NEARBY NEXT NUM RLOC
-                             ROOM SEARCH STATS VALID WHERE ZONE ZWHO
-  Floating Point Conversion: FLOOR ROUND TRUNC
-  Game Information:          DUMPING MOTD MUDNAME POLL VERSION
-  Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
-                             FOLD GRAB INDEX ITER LAST LNUM MAP MATCH MATCHALL
-                             MEMBER MIX MUNGE PARSE PICKRAND LRAND REMOVE REST
-                             REVWORDS SETDIFF SETINTER SETUNION SHUFFLE SORT
-                             SORTBY SPLICE TABLE WORDS
-  Logarithms:                E EXP LOG LN
-  Logical:                   AND NOT OR XOR
-  Miscellaneous:             @@ ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM
-                             ISWORD LIT NULL SETR SUBEVAL
- 
-{ 'help function classes2' for more }
-
-& FUNCTION LIST2
-FUNCTION LIST (continued)
-
-    LOC()       LOCATE()    LOCK()      LOG()       LPARENT()   LPOS()
-    LRAND()     LSTACK()    LT()        LTE()       LWHO()      NULL()
-    MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()
-    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
-    MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()
-    NEARBY()    NEQ()       NEXT()      NOT()       NUM()       OBJ()
-    OBJEVAL()   OBJMEM()    OR()        ORFLAGS()   OWNER()     PACK()
-    PARENT()    PARSE()     PEEK()      PEMIT()     PI()        PICKRAND()
-    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
-    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
-    REMAINDER() REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
-    REVWORDS()  RJUST()     RLOC()      ROOM()      ROUND()     S()
-    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
-    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
-    SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()
-    SPACE()     SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
-    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
-    SUB()       SUBJ()      SWITCH()    TABLE()     TAN()       TIME()
-    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
-    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
-    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
-    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
-    WRITETIME() XGET()      XOR()       ZONE()      ZWHO()
 
 & FUNCTION LIST
 FUNCTION LIST
@@ -5913,6 +5886,33 @@ FUNCTION LIST
     LFLAGS()    LIST()      LIT()       LJUST()     LN()        LNUM()
 
 ("help function list2" for more)
+
+& FUNCTION LIST2
+FUNCTION LIST (continued)
+
+    LOC()       LOCATE()    LOCK()      LOG()       LPARENT()   LPOS()
+    LRAND()     LSTACK()    LT()        LTE()       LWHO()      NULL()
+    MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()
+    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
+    MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()
+    NEARBY()    NEQ()       NEXT()      NOT()       NUM()       OBJ()
+    OBJEVAL()   OBJMEM()    OR()        ORFLAGS()   OWNER()     PACK()
+    PARENT()    PARSE()     PEEK()      PEMIT()     PI()        PICKRAND()
+    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
+    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
+    REMAINDER() REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
+    REVWORDS()  RJUST()     RLOC()      ROOM()      ROUND()     S()
+    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
+    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
+    SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()
+    SPACE()     SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
+    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
+    SUB()       SUBJ()      SWITCH()    TABLE()     TAN()       TIME()
+    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
+    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
+    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
+    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
+    WRITETIME() XGET()      XOR()       ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -5956,6 +5956,44 @@ GENDER
 
   Related Topics: SUBSTITUTIONS.
 
+& GET
+GET
+
+  COMMAND: get[/<switch>] <object>
+           get[/<switch>] <exit>
+           get[/<switch>] <object>'s <sub-object>
+
+  The first form picks up <object> from your location and adds it to your
+  inventory.  It will fail if the object is locked against you, or if you
+  are inside a player or object that you don't control and which isn't
+  set ENTER_OK.
+
+  The second form takes an exit from your location and adds it to you.
+  Anyone inside you may then use the exit to travel to the exit's destination.
+  You may take exits that you own, and exits owned by others in locations that
+  you own.
+
+  The third form takes <sub-object> from <object> and adds it to your
+  inventory.  <object> must be ENTER_OK and <sub-object> must not be locked
+  against you for this to work.  The lock on <object> is not checked.
+
+{ 'help get2' for more }
+
+& GET2
+GET (continued)
+
+  The following switch is recognized:
+
+     /quiet   - Don't perform the @osucc/@asucc or @ofail/@afail attributes
+                on the target object.  This switch only works if you control
+                the object.
+
+  <object> and <sub-object> may be either players or things.
+  'take' is the same as 'get'.
+
+  Related Topics: drop, @afail, @asucc, @fail, @ofail, @osucc, @succ,
+      ENTER_OK, FAILURE, SUCCESS.
+
 & GET()
 GET()
 
@@ -5972,21 +6010,6 @@ GET()
     > say get(me/desc)
 
   Related Topics: get_eval(), eval(), xget().
-
-& GET2
-GET (continued)
-
-  The following switch is recognized:
-
-     /quiet   - Don't perform the @osucc/@asucc or @ofail/@afail attributes
-                on the target object.  This switch only works if you control
-                the object.
-
-  <object> and <sub-object> may be either players or things.
-  'take' is the same as 'get'.
-
-  Related Topics: drop, @afail, @asucc, @fail, @ofail, @osucc, @succ,
-      ENTER_OK, FAILURE, SUCCESS.
 
 & GET_EVAL()
 GET_EVAL()
@@ -6011,29 +6034,6 @@ GET_EVAL()
     You say "This is a get_eval test on Foobar. The vb is VB from test"
 
   Related Topics: get(), get_eval(), xget().
-
-& GET
-GET
-
-  COMMAND: get[/<switch>] <object>
-           get[/<switch>] <exit>
-           get[/<switch>] <object>'s <sub-object>
-
-  The first form picks up <object> from your location and adds it to your
-  inventory.  It will fail if the object is locked against you, or if you
-  are inside a player or object that you don't control and which isn't
-  set ENTER_OK.
-
-  The second form takes an exit from your location and adds it to you.
-  Anyone inside you may then use the exit to travel to the exit's destination.
-  You may take exits that you own, and exits owned by others in locations that
-  you own.
-
-  The third form takes <sub-object> from <object> and adds it to your
-  inventory.  <object> must be ENTER_OK and <sub-object> must not be locked
-  against you for this to work.  The lock on <object> is not checked.
-
-{ 'help get2' for more }
 
 & GIVE
 GIVE
@@ -7496,13 +7496,6 @@ MAIL-FOLDERS
         This command moves all messages in msg-list from the current
         folder to a new folder, <folder#>.
 
-& MAIL-OTHER2
-MAIL-OTHER (continued)
-
-  @mail/safe [<msg-list> | all>]
-        This command marks a message as being safe from mail expiration. It
-        should be used sparingly and only for very imporatant messages.
-
 & MAIL-OTHER
 MAIL-OTHER
 
@@ -7532,6 +7525,13 @@ MAIL-OTHER
         @mail/untag all).
 
 { 'help mail-other2' for more }
+
+& MAIL-OTHER2
+MAIL-OTHER (continued)
+
+  @mail/safe [<msg-list> | all>]
+        This command marks a message as being safe from mail expiration. It
+        should be used sparingly and only for very imporatant messages.
 
 & MAIL-READING
 MAIL-READING
@@ -7568,6 +7568,27 @@ MAIL-REVIEWING
 
   @mail/retract <player>=<msglist>
         Retracts (deletes) unread messages you have sent to <player>.
+
+& MAIL-SENDING
+MAIL-SENDING
+
+  @mail[/switch] <player-list> = <subject>
+        This begins a message to all players in <player-list>.
+        -<text> adds text to the message in progress, for example
+            -This is a test
+        would add the text 'This is a test' to the end of your @mail
+        message, likewise, ~<text> prepends the text.
+
+  @mail/send
+        This sends the message that is currently in progress.
+        -- is the equivalent of @mail/send. @mail/urgent sends
+        the message as urgent, and should not be used often.
+
+  @mail/cc <player-list>
+        This replaces the currect player list with a new one for carbon
+        copying. It does _not_ add onto the existing list.
+
+{ 'help mail-sending2' for more }
 
 & MAIL-SENDING2
 MAIL-SENDING (continued)
@@ -7625,27 +7646,6 @@ MAIL-SENDING (continued)
   the postpend ('-') and prepend ('~') @mail commands. Like, normal
   outgoing @mail, the reply is finished and sent with '--' on a line
   by itself
-
-& MAIL-SENDING
-MAIL-SENDING
-
-  @mail[/switch] <player-list> = <subject>
-        This begins a message to all players in <player-list>.
-        -<text> adds text to the message in progress, for example
-            -This is a test
-        would add the text 'This is a test' to the end of your @mail
-        message, likewise, ~<text> prepends the text.
-
-  @mail/send
-        This sends the message that is currently in progress.
-        -- is the equivalent of @mail/send. @mail/urgent sends
-        the message as urgent, and should not be used often.
-
-  @mail/cc <player-list>
-        This replaces the currect player list with a new one for carbon
-        copying. It does _not_ add onto the existing list.
-
-{ 'help mail-sending2' for more }
 
 & MAILFROM()
 MAILFROM()
@@ -7989,6 +7989,32 @@ MOVE
 
   Related Topics: enter, home, leave.
 
+& MOVING
+MOVING
+
+  A number of things happen when you leave one location and enter another
+  (assuming you pass the lock on the exit or have permission to enter the
+  object or to teleport to the location).  The following list describes the
+  actions that MUX takes when an object moves from one place to another.
+  Note that if an indicated attribute is not set, no message is displayed
+  (or no action is performed).
+
+  - If you are using an exit (as opposed to teleporting, entering an object,
+    or going home), You receive the SUCC message for the exit, others in the
+    old location receive the exit's OSUCC message, and the exit runs its
+    ASUCC action list.
+  - If you are teleporting or being teleported, others in the old location
+    receive your OXTPORT attribute.
+  - If you are a player or have your LISTEN attribute set to something,
+    and if the old location is not dark and you are not dark, you receive the
+    LEAVE message for the old location, others in the old location receive
+    the OLEAVE message, and the old location runs its ALEAVE action list.
+    Others in the new location receive the OXENTER message from the old
+    location, and others in the old location receive the message '<yourname>
+    has left.'
+
+{ 'help moving2' for more }
+
 & moving2
 MOVING (continued)
 
@@ -8032,32 +8058,6 @@ MOVING (continued)
       @desc, @drop, @enter, @fail, @leave, @listen, @odesc, @odrop, @oenter,
       @ofail, @oleave, @osucc, @oxenter, @oxleave, @oxtport, @succ, @tport,
       move, @teleport, home, KEY, STICKY, DROP-TOS, FAILURE, SUCCESS.
-
-& MOVING
-MOVING
-
-  A number of things happen when you leave one location and enter another
-  (assuming you pass the lock on the exit or have permission to enter the
-  object or to teleport to the location).  The following list describes the
-  actions that MUX takes when an object moves from one place to another.
-  Note that if an indicated attribute is not set, no message is displayed
-  (or no action is performed).
-
-  - If you are using an exit (as opposed to teleporting, entering an object,
-    or going home), You receive the SUCC message for the exit, others in the
-    old location receive the exit's OSUCC message, and the exit runs its
-    ASUCC action list.
-  - If you are teleporting or being teleported, others in the old location
-    receive your OXTPORT attribute.
-  - If you are a player or have your LISTEN attribute set to something,
-    and if the old location is not dark and you are not dark, you receive the
-    LEAVE message for the old location, others in the old location receive
-    the OLEAVE message, and the old location runs its ALEAVE action list.
-    Others in the new location receive the OXENTER message from the old
-    location, and others in the old location receive the message '<yourname>
-    has left.'
-
-{ 'help moving2' for more }
 
 & MUDNAME()
 MUDNAME()
@@ -8291,21 +8291,6 @@ OBJ()
 
   Related Topics:
 
-& OBJECT STACK2
-OBJECT STACK (continued)
-
-  Example:
-
-  > say [push(world!)][push(Hello)]We'll print these...
-  We'll print these...
-  > say [pop()] [pop()]
-  Hello world!
-
-  empty() is used to clear the stack, items() shows the number of entries in
-  the stack.
-
-  Related Topics: lstack(), empty(), items(), push(), peek(), pop().
-
 & OBJECT STACK
 OBJECT STACK
 
@@ -8325,6 +8310,21 @@ OBJECT STACK
   preserved until you pop them off or empty the stack.
 
 { 'help OBJECT STACK2' for more }
+
+& OBJECT STACK2
+OBJECT STACK (continued)
+
+  Example:
+
+  > say [push(world!)][push(Hello)]We'll print these...
+  We'll print these...
+  > say [pop()] [pop()]
+  Hello world!
+
+  empty() is used to clear the stack, items() shows the number of entries in
+  the stack.
+
+  Related Topics: lstack(), empty(), items(), push(), peek(), pop().
 
 & OBJECT TYPES
 OBJECT TYPES
@@ -8478,6 +8478,31 @@ PACK()
 
   Related Topics: unpack
 
+& PAGE
+PAGE
+
+  COMMAND: page <players>=[<prefix>]<message>
+           page =[<prefix>]<message>
+           page [<prefix>]<message>
+           page <players>=
+           page
+
+  This command sends <message> to <players>.  The second and third form sends
+  the given message to the same <players> given on the previous page command.
+  The second form is useful when the message itself contains an equal sign.
+
+  The fourth form indicates that you are paging sans-message. The format is
+  somewhat more appealing than an empty message.
+
+  The last form reports to you the list of players you paged last time.
+
+  <Players> is one or more player names or aliases delimited by any
+  combination of spaces or commas. A player's name may also be any unique
+  prefix of players who are currently on the WHO list. Any duplicate players
+  from your list are removed.
+
+{ 'help page2' for more }
+
 & PAGE2
 PAGE (continued)
 
@@ -8529,31 +8554,6 @@ PAGE (continued)
 
   Related Topics: pose, say, whisper, :, ;, ", @pemit, @away, @idle,
       @idletimeout, @reject.
-
-& PAGE
-PAGE
-
-  COMMAND: page <players>=[<prefix>]<message>
-           page =[<prefix>]<message>
-           page [<prefix>]<message>
-           page <players>=
-           page
-
-  This command sends <message> to <players>.  The second and third form sends
-  the given message to the same <players> given on the previous page command.
-  The second form is useful when the message itself contains an equal sign.
-
-  The fourth form indicates that you are paging sans-message. The format is
-  somewhat more appealing than an empty message.
-
-  The last form reports to you the list of players you paged last time.
-
-  <Players> is one or more player names or aliases delimited by any
-  combination of spaces or commas. A player's name may also be any unique
-  prefix of players who are currently on the WHO list. Any duplicate players
-  from your list are removed.
-
-{ 'help page2' for more }
 
 & PARENT OBJECTS
 PARENT OBJECTS
@@ -8902,23 +8902,6 @@ POWER()
 
   Related Topics: exp(), ln(), log(), sqrt()
 
-& POWERS LIST2
-POWERS LIST (continued)
-
-  monitor           Can set or reset monitor flag.
-  poll              Can set the @poll.
-  prog              Can use @program on players other than themself.
-  search            Can @search anyone.
-  see_all           Can examine and see attributes like a wizard.
-  see_queue         Can @ps/all or @ps any player.
-  stat_any          Can @stat any player.
-  steal_money       Can give negative money.
-  tel_anywhere      Can teleport anywhere.
-  tel_anything      Can teleport anything (includes tel_anywhere)
-  unkillable        Cannot be killed with the 'kill' command.
-
-  Related Topics: @power
-
 & POWERS LIST
 POWERS LIST
 
@@ -8939,6 +8922,23 @@ POWERS LIST
   long_fingers      Can get, look, whisper, etc from a distance.
 
 { 'help powers list2' for more }
+
+& POWERS LIST2
+POWERS LIST (continued)
+
+  monitor           Can set or reset monitor flag.
+  poll              Can set the @poll.
+  prog              Can use @program on players other than themself.
+  search            Can @search anyone.
+  see_all           Can examine and see attributes like a wizard.
+  see_queue         Can @ps/all or @ps any player.
+  stat_any          Can @stat any player.
+  steal_money       Can give negative money.
+  tel_anywhere      Can teleport anywhere.
+  tel_anything      Can teleport anything (includes tel_anywhere)
+  unkillable        Cannot be killed with the 'kill' command.
+
+  Related Topics: @power
 
 & PUEBLO
 PUEBLO
@@ -9064,26 +9064,6 @@ READ
 
   'look' is the same as 'read'.
 
-& REGEXP AMBIGUITY2
-REGEXP AMBIGUITY (continued)
-
-          For example, `(ab|a)b*c' could match `abc' in one of two
-          ways.  The first choice is between `ab' and `a'; since `ab'
-          is earlier, and does lead to a successful overall match, it
-          is chosen.  Since the `b' is already spoken for, the `b*'
-          must match its last possibility-the empty string-since it
-          must respect the earlier choice.
-
-          In the particular case where no `|'s are present and there
-          is only one `*', `+', or `?', the net effect is that the
-          longest possible match will be chosen.  So `ab*', presented
-          with `xabbbby', will match `abbbb'.  Note that if `ab*' is
-          tried against `xabyabbbz', it will match `ab' just after
-          `x', due to the begins-earliest rule.  (In effect, the
-          decision on where to start the match is the first choice to
-          be made, hence subsequent choices must respect it even if
-          this leads them to less-preferred alternatives.)
-
 & REGEXP AMBIGUITY
 REGEXP AMBIGUITY
 
@@ -9108,6 +9088,26 @@ REGEXP AMBIGUITY
 
 { 'help regexp ambiguity2' for more }
 
+& REGEXP AMBIGUITY2
+REGEXP AMBIGUITY (continued)
+
+          For example, `(ab|a)b*c' could match `abc' in one of two
+          ways.  The first choice is between `ab' and `a'; since `ab'
+          is earlier, and does lead to a successful overall match, it
+          is chosen.  Since the `b' is already spoken for, the `b*'
+          must match its last possibility-the empty string-since it
+          must respect the earlier choice.
+
+          In the particular case where no `|'s are present and there
+          is only one `*', `+', or `?', the net effect is that the
+          longest possible match will be chosen.  So `ab*', presented
+          with `xabbbby', will match `abbbb'.  Note that if `ab*' is
+          tried against `xabyabbbz', it will match `ab' just after
+          `x', due to the begins-earliest rule.  (In effect, the
+          decision on where to start the match is the first choice to
+          be made, hence subsequent choices must respect it even if
+          this leads them to less-preferred alternatives.)
+
 & REGEXP EXAMPLES
 REGEXP EXAMPLES
 
@@ -9124,6 +9124,29 @@ REGEXP EXAMPLES
   To match a string of letters only, use:  [A-Za-z]+
 
   Related Topics: regexp syntax
+
+& REGEXP SYNTAX
+REGEXP SYNTAX
+
+  TOPIC: Regular Expression Syntax
+
+  The following explanation is taken from Henry Spencer's regexp(3)
+  package, the regular expression library used in TinyMUX.
+
+          A regular expression is zero or more branches, separated by
+          `|'.  It matches anything that matches one of the branches.
+
+          A branch is zero or more pieces, concatenated.  It matches a
+          match for the first, followed by a match for the second,
+          etc.
+
+          A piece is an atom possibly followed by `*', `+', or `?'.
+          An atom followed by `*' matches a sequence of 0 or more
+          matches of the atom.  An atom followed by `+' matches a
+          sequence of 1 or more matches of the atom.  An atom followed
+          by `?' matches a match of the atom, or the null string.
+
+{ 'help regexp syntax2' for more }
 
 & REGEXP SYNTAX2
 REGEXP SYNTAX (continued)
@@ -9150,28 +9173,24 @@ REGEXP SYNTAX (continued)
 
   Related Topics: regexp ambiguity, regexp examples.
 
-& REGEXP SYNTAX
-REGEXP SYNTAX
+& REGEXPS
+REGEXPS
 
-  TOPIC: Regular Expression Syntax
+  TOPIC: Regular Expressions
 
-  The following explanation is taken from Henry Spencer's regexp(3)
-  package, the regular expression library used in TinyMUX.
+  The majority of matching in MUX is done with wildcard ("globbing")
+  patterns. There is a second type of matching, using regular expressions,
+  that is available in certain circumstances.
 
-          A regular expression is zero or more branches, separated by
-          `|'.  It matches anything that matches one of the branches.
+  For attributes that are $-commands or ^-listen-patterns, setting that
+  attribute "regexp" (with '@set <object>/<attribute>=regexp') causes
+  patterns to be matched using regular expressions rather than globbing.
 
-          A branch is zero or more pieces, concatenated.  It matches a
-          match for the first, followed by a match for the second,
-          etc.
+  In a regular expression match, the substring of the string which matched
+  the regexp pattern is %0; %1 through %9 are the substrings of the string
+  which matched parenthesized expressions within the regexp pattern.
 
-          A piece is an atom possibly followed by `*', `+', or `?'.
-          An atom followed by `*' matches a sequence of 0 or more
-          matches of the atom.  An atom followed by `+' matches a
-          sequence of 1 or more matches of the atom.  An atom followed
-          by `?' matches a match of the atom, or the null string.
-
-{ 'help regexp syntax2' for more }
+{ 'help regexps2' for more }
 
 & REGEXPS2
 REGEXPS (continued)
@@ -9195,25 +9214,6 @@ REGEXPS (continued)
   is not.
 
   Related Topics: regexp syntax
-
-& REGEXPS
-REGEXPS
-
-  TOPIC: Regular Expressions
-
-  The majority of matching in MUX is done with wildcard ("globbing")
-  patterns. There is a second type of matching, using regular expressions,
-  that is available in certain circumstances.
-
-  For attributes that are $-commands or ^-listen-patterns, setting that
-  attribute "regexp" (with '@set <object>/<attribute>=regexp') causes
-  patterns to be matched using regular expressions rather than globbing.
-
-  In a regular expression match, the substring of the string which matched
-  the regexp pattern is %0; %1 through %9 are the substrings of the string
-  which matched parenthesized expressions within the regexp pattern.
-
-{ 'help regexps2' for more }
 
 & REGMATCH()
 REGMATCH()
@@ -9621,17 +9621,6 @@ SCRAMBLE()
 
   Related Topics: shuffle()
 
-& search classes2
-SEARCH CLASSES (continued)
-
-  EOBJECT   - A combination of TYPE=OBJECT and EVAL=<restriction>.
-  ETHING    - An alias for OBJECTS.
-  EROOM     - A combination of TYPE=ROOM and EVAL=<restriction>.
-  EEXIT     - A combination of TYPE=EXIT and EVAL=<restriction>.
-  EPLAYER   - A combination of TYPE=PLAYER and EVAL=<restriction>.
-  PARENT    - Restricts to the parent designated by <restriction>.
-  ZONE      - Restricts to the zone designated by <restriction>.
-
 & SEARCH CLASSES
 SEARCH CLASSES
 
@@ -9656,6 +9645,17 @@ SEARCH CLASSES
   ZONE      - Restricts to objects that are in the indicated zone.
 
 { 'help search classes2' for more }
+
+& search classes2
+SEARCH CLASSES (continued)
+
+  EOBJECT   - A combination of TYPE=OBJECT and EVAL=<restriction>.
+  ETHING    - An alias for OBJECTS.
+  EROOM     - A combination of TYPE=ROOM and EVAL=<restriction>.
+  EEXIT     - A combination of TYPE=EXIT and EVAL=<restriction>.
+  EPLAYER   - A combination of TYPE=PLAYER and EVAL=<restriction>.
+  PARENT    - Restricts to the parent designated by <restriction>.
+  ZONE      - Restricts to the zone designated by <restriction>.
 
 & SEARCH()
 SEARCH()
@@ -9738,6 +9738,28 @@ SECURE()
 
   Related Topics: escape().
 
+& SEMAPHORES
+SEMAPHORES
+
+  Semaphores may be used for synchronizing complex objects or for enforcing
+  mutual exclusion.  You may use any object you own or any LINK_OK object as
+  a semaphore, and any type of object (thing, room, player, or exit) may be
+  used.
+
+  The semaphore state of an object is shown by the Semaphore attribute (which
+  is read-only); a positive number indicates the number of commands awaiting
+  notifies, and a negative number indicates the number of waits on that
+  semaphore that will not block.
+
+  Use the '@wait <object>' form of the @wait command to request a command be
+  delayed until <object> is notified with the @notify command.  The @drain
+  and @notify/all commands clear the semaphore on <object>, either
+  discarding or executing all pending commands.  Remember that the
+  object performing the @wait executes the command, not the object used
+  as a semaphore.
+
+{ 'help semaphores2' for more }
+
 & semaphores2
 SEMAPHORES (continued)
 
@@ -9761,28 +9783,6 @@ SEMAPHORES (continued)
   timer is notified or after sixty seconds pass.
 
   Related Topics: @drain, @notify, @wait.
-
-& SEMAPHORES
-SEMAPHORES
-
-  Semaphores may be used for synchronizing complex objects or for enforcing
-  mutual exclusion.  You may use any object you own or any LINK_OK object as
-  a semaphore, and any type of object (thing, room, player, or exit) may be
-  used.
-
-  The semaphore state of an object is shown by the Semaphore attribute (which
-  is read-only); a positive number indicates the number of commands awaiting
-  notifies, and a negative number indicates the number of waits on that
-  semaphore that will not block.
-
-  Use the '@wait <object>' form of the @wait command to request a command be
-  delayed until <object> is notified with the @notify command.  The @drain
-  and @notify/all commands clear the semaphore on <object>, either
-  discarding or executing all pending commands.  Remember that the
-  object performing the @wait executes the command, not the object used
-  as a semaphore.
-
-{ 'help semaphores2' for more }
 
 & SESSION
 SESSION
@@ -10394,23 +10394,6 @@ SUBJ()
 
   Related Topics:
 
-& substitutions2
-
-    %#      = Database number of the object that caused the message to be
-              displayed or the action list to be run.
-    %l      = Database number of the location of the object that caused the
-              message to be displayed or the action list to be run.
-    %!      = Database number of the object holding the message or running
-              the action list.
-    %x %c   = ANSI color codes. See 'help ansi()' for more information.
-    %|      = A string piped from the previous command in a pipe.
- 
-  If the letter following the % is capitalized, the first letter of the
-  result of the substitution is also capitalized.
- 
-  Note: %<whatever> is equivalent to [v(<whatever>)], but is more efficient.
-  See also: GENDER, V().
-
 & SUBSTITUTIONS
 SUBSTITUTIONS
 
@@ -10435,6 +10418,23 @@ SUBSTITUTIONS
     %va-%vz = Contents of attribute va through vz
 
 { 'help substitutions2' for more }
+
+& substitutions2
+
+    %#      = Database number of the object that caused the message to be
+              displayed or the action list to be run.
+    %l      = Database number of the location of the object that caused the
+              message to be displayed or the action list to be run.
+    %!      = Database number of the object holding the message or running
+              the action list.
+    %x %c   = ANSI color codes. See 'help ansi()' for more information.
+    %|      = A string piped from the previous command in a pipe.
+ 
+  If the letter following the % is capitalized, the first letter of the
+  result of the substitution is also capitalized.
+ 
+  Note: %<whatever> is equivalent to [v(<whatever>)], but is more efficient.
+  See also: GENDER, V().
 
 & SUCCESS
 SUCCESS
@@ -10522,20 +10522,6 @@ TABLE ()
 
   Related Topics: columns()
 
-& take2
-TAKE (continued)
-
-  The following switch is recognized:
-     /quiet   - Don't perform the @osucc/@asucc or @ofail/@afail attributes
-                on the target object.  This switch only works if you control
-                the object.
-
-  <object> and <sub-object> may be either players or things.
-  'get' is the same as 'take'.
-
-  Related Toipcs: drop, @afail, @asucc, @fail, @ofail, @osucc, @succ,
-      ENTER_OK, FAILURE, SUCCESS.
-
 & TAKE
 TAKE
 
@@ -10558,6 +10544,20 @@ TAKE
   against you for this to work.  The lock on <object> is not checked.
 
 { 'help take2' for more }
+
+& take2
+TAKE (continued)
+
+  The following switch is recognized:
+     /quiet   - Don't perform the @osucc/@asucc or @ofail/@afail attributes
+                on the target object.  This switch only works if you control
+                the object.
+
+  <object> and <sub-object> may be either players or things.
+  'get' is the same as 'take'.
+
+  Related Toipcs: drop, @afail, @asucc, @fail, @ofail, @osucc, @succ,
+      ENTER_OK, FAILURE, SUCCESS.
 
 & TAN()
 TAN()
@@ -10710,16 +10710,6 @@ TOPICS
   SUCCESS             SWITCHES            VERBS               WIZARDS
   ZONE OBJECTS
 
-& TRACE2
-TRACE (continued)
-
-  When trace output is displayed in top-down order (final evaluation first,
-  followed by the 'smaller' evaluations needed to perform it), then the total
-  number of trace ouput lines that may be produced by an evaluation is limited
-  to 200.  Bottom-up trace output is not limited.
-
-  Related Topics: VERBOSE.
-
 & TRACE
 TRACE
 
@@ -10741,6 +10731,16 @@ TRACE
       object says "The result is 25."
 
 { 'help trace2' for more }
+
+& TRACE2
+TRACE (continued)
+
+  When trace output is displayed in top-down order (final evaluation first,
+  followed by the 'smaller' evaluations needed to perform it), then the total
+  number of trace ouput lines that may be produced by an evaluation is limited
+  to 200.  Bottom-up trace output is not limited.
+
+  Related Topics: VERBOSE.
 
 & TRANSLATE()
 TRANSLATE()
