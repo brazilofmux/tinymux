@@ -6279,18 +6279,25 @@ CRC32()
   See also: pack()
 
 & VADD()
-  vadd(<vector>,<vector>[,<delim>][,<output delim>])
- 
+VADD()
+
+  FUNCTION:  vadd(<vector>,<vector>[,<delim>][,<output delim>])
+
   Returns the sum of two vectors. A vector is a list of numbers
   separated by spaces or a delimiter, and may have up to 20 dimensions.
- 
-  > @pemit me=vadd(1 2 3,4 5 6)
-  5 7 9
-  > @pemit me=vadd(0|0|0,1|2|3,|,-)
-  1-2-3
+
+  Example:
+    > think vadd(1 2 3,4 5 6)
+    5 7 9
+    > think vadd(0|0|0,1|2|3,|,^)
+    1^2^3
+
+  Related Topics:
 
 & VCROSS()
-  vcross(<vector>,<vector>[,<delim>][,<output delim>])
+VCROSS()
+
+  FUCNTION:  vcross(<vector>,<vector>[,<delim>][,<output delim>])
  
   Returns the cross product of two vectors. The cross product of two
   vectors is a vector.
