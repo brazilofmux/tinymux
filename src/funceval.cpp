@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.81 2001-12-30 05:21:07 sdennis Exp $
+// $Id: funceval.cpp,v 1.82 2002-01-15 05:19:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2894,7 +2894,7 @@ FUNCTION(fun_valid)
     {
         int nValidName;
         BOOL bValid;
-        char *pValidName = MakeCanonicalObjectName(fargs[1], &nValidName, &bValid);
+        MakeCanonicalObjectName(fargs[1], &nValidName, &bValid);
         char ch = (bValid) ? '1' : '0';
         safe_chr(ch, buff, bufc);
     }
