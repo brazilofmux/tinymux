@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.13 2001-02-23 17:31:33 sdennis Exp $
+// $Id: timeutil.cpp,v 1.14 2001-02-24 02:40:07 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -2256,6 +2256,13 @@ PD_TEXT_ENTRY PD_TextTable[] =
     {"october",   PDCB_MONTH,        10 },
     {"november",  PDCB_MONTH,        11 },
     {"december",  PDCB_MONTH,        12 },
+    {"sunday",    PDCB_DAY_OF_WEEK,   7 },
+    {"monday",    PDCB_DAY_OF_WEEK,   1 },
+    {"tuesday",   PDCB_DAY_OF_WEEK,   2 },
+    {"wednesday", PDCB_DAY_OF_WEEK,   3 },
+    {"thursday",  PDCB_DAY_OF_WEEK,   4 },
+    {"friday",    PDCB_DAY_OF_WEEK,   5 },
+    {"saturday",  PDCB_DAY_OF_WEEK,   6 },
     {"a",         PDCB_TIMEZONE,    100 },
     {"b",         PDCB_TIMEZONE,    200 },
     {"c",         PDCB_TIMEZONE,    300 },
@@ -2312,7 +2319,6 @@ PD_TEXT_ENTRY PD_TextTable[] =
     {"pm",        PDCB_MERIDIAN,     12 },
     { 0, 0, 0}
 };
-
 
 #define PD_LEX_INVALID 0
 #define PD_LEX_SYMBOL  1
