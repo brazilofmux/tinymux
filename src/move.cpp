@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about 
 //
-// $Id: move.cpp,v 1.9 2001-09-28 10:12:55 sdennis Exp $
+// $Id: move.cpp,v 1.10 2001-09-28 22:32:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -426,9 +426,9 @@ int move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
             (char **)NULL, 0);
     }
     process_leave_loc(thing, dest, NOTHING, canhear, hush);
-	
+
     move_object(thing, dest);
-	
+
     if (!(hush & HUSH_ENTER))
     {
         did_it(thing, thing, A_TPORT, NULL, A_OTPORT, NULL, A_ATPORT,
@@ -620,73 +620,91 @@ void do_move(dbref player, dbref cause, int key, char *direction)
 
 void do_get(dbref player, dbref cause, int key, char *what)
 {
-    dbref thing, playerloc, thingloc;
-    char *failmsg;
-    int oattr, aattr, quiet;
-
-    playerloc = Location(player);
-    if (!Good_obj(playerloc))
+    dbref playerloc;
+    if (  !Has_location(player)
+       || !Good_obj(playerloc = Location(player)))
+    {
         return;
-
-    /*
-     * You can only pick up things in rooms and ENTER_OK objects/players 
-     */
-
-    if (!isRoom(playerloc) && !Enter_ok(playerloc) &&
-        !controls(player, playerloc)) {
+    }
+   
+    // You can only pick up things in rooms and ENTER_OK objects/players.
+    //
+    if (  !isRoom(playerloc)
+       && !Enter_ok(playerloc)
+       && !controls(player, playerloc))
+    {
         notify(player, NOPERM_MESSAGE);
         return;
     }
-    /*
-     * Look for the thing locally 
-     */
 
+    // Look for the thing locally.
+    //
     init_match_check_keys(player, what, TYPE_THING);
     match_neighbor();
     match_exit();
     if (Long_Fingers(player))
-        match_absolute();   /*
-                     * long fingers 
-                     */
-    thing = match_result();
+    {
+        match_absolute();
+    }
+    dbref thing = match_result();
 
-    /*
-     * Look for the thing in other people's inventories 
-     */
-
+    // Look for the thing in other people's inventories.
+    //
     if (!Good_obj(thing))
-        thing = match_status(player,
-               match_possessed(player, player, what, thing, 1));
-    if (!Good_obj(thing))
-        return;
+    {
+        thing = match_status(player, match_possessed(player, player, what,
+            thing, 1));
 
-    /*
-     * If we found it, get it 
-     */
+        if (!Good_obj(thing))
+        {
+            return;
+        }
+    }
 
-    quiet = 0;
-    switch (Typeof(thing)) {
+    // If we found it, check to see if we can get it.
+    //
+    dbref thingloc = Location(thing);
+    if (Good_obj(thingloc))
+    {
+        if (!could_doit(player, thingloc, A_LGET))
+        {
+            notify(player, NOPERM_MESSAGE);
+            return;
+        }
+    }
+
+    // If we can get it, get it.
+    //
+    char *failmsg;
+    int oattr, aattr;
+    int quiet = 0;
+    switch (Typeof(thing))
+    {
     case TYPE_PLAYER:
     case TYPE_THING:
-        /*
-         * You can't take what you already have 
-         */
-
-        thingloc = Location(thing);
-        if (thingloc == player) {
+        // You can't take what you already have.
+        //
+        if (thingloc == player)
+        {
             notify(player, "You already have that!");
             break;
         }
-        if ((key & GET_QUIET) && Controls(player, thing))
+        if (  (key & GET_QUIET)
+           && Controls(player, thing))
+        {
             quiet = 1;
+        }
 
-        if (thing == player) {
+        if (thing == player)
+        {
             notify(player, "You cannot get yourself!");
-        } else if (could_doit(player, thing, A_LOCK)) {
-            if (thingloc != Location(player)) {
-                notify(thingloc,
-                       tprintf("%s was taken from you.",
-                           Name(thing)));
+        }
+        else if (could_doit(player, thing, A_LOCK))
+        {
+            if (thingloc != playerloc)
+            {
+                notify(thingloc, tprintf("%s was taken from you.",
+                    Name(thing)));
             }
             move_via_generic(thing, player, player, 0);
             notify(thing, "Taken.");
@@ -694,48 +712,57 @@ void do_get(dbref player, dbref cause, int key, char *what)
             aattr = quiet ? 0 : A_ASUCC;
             did_it(player, thing, A_SUCC, "Taken.", oattr, NULL,
                    aattr, (char **)NULL, 0);
-        } else {
+        }
+        else
+        {
             oattr = quiet ? 0 : A_OFAIL;
             aattr = quiet ? 0 : A_AFAIL;
-            if (thingloc != Location(player))
+            if (thingloc != playerloc)
+            {
                 failmsg = (char *)"You can't take that from there.";
+            }
             else
+            {
                 failmsg = (char *)"You can't pick that up.";
-            did_it(player, thing,
-                   A_FAIL, failmsg,
-                   oattr, NULL, aattr, (char **)NULL, 0);
+            }
+            did_it(player, thing, A_FAIL, failmsg, oattr, NULL, aattr,
+                (char **)NULL, 0);
         }
         break;
-    case TYPE_EXIT:
-        /*
-         * You can't take what you already have 
-         */
 
+    case TYPE_EXIT:
+
+        // You can't take what you already have.
+        //
         thingloc = Exits(thing);
-        if (thingloc == player) {
+        if (thingloc == player)
+        {
             notify(player, "You already have that!");
             break;
         }
-        /*
-         * You must control either the exit or the location 
-         */
 
-        playerloc = Location(player);
-        if (!Controls(player, thing) && !Controls(player, playerloc)) {
+        // You must control either the exit or the location.
+        //
+        if (  !Controls(player, thing)
+           && !Controls(player, playerloc))
+        {
             notify(player, NOPERM_MESSAGE);
             break;
         }
-        /*
-         * Do it 
-         */
 
+        // Do it.
+        //
         s_Exits(thingloc, remove_first(Exits(thingloc), thing));
         s_Exits(player, insert_first(Exits(player), thing));
         s_Exits(thing, player);
         if (!Quiet(player))
+        {
             notify(player, "Exit taken.");
+        }
         break;
+
     default:
+
         notify(player, "You can't take that!");
         break;
     }

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.49 2001-09-23 08:34:16 sdennis Exp $
+// $Id: db.cpp,v 1.50 2001-09-28 22:32:23 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -143,6 +143,7 @@ ATTR attr[] =
     {"Fail", A_FAIL, AF_ODARK | AF_NOPROG, NULL},
     {"Filter", A_FILTER, AF_ODARK | AF_NOPROG, NULL},
     {"Forwardlist", A_FORWARDLIST, AF_ODARK | AF_NOPROG, fwdlist_ck},
+    {"GetFromLock", A_LGET, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
     {"Gfail", A_GFAIL, AF_ODARK | AF_NOPROG, NULL},
     {"GiveLock", A_LGIVE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
     {"Idesc", A_IDESC, AF_ODARK | AF_NOPROG, NULL},

@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.47 2001-07-31 05:22:00 sdennis Exp $
+// $Id: command.cpp,v 1.48 2001-09-28 22:32:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -240,6 +240,7 @@ NAMETAB lock_sw[] =
     {(char *)"defaultlock", 1,  CA_PUBLIC,  A_LOCK},
     {(char *)"droplock",    1,  CA_PUBLIC,  A_LDROP},
     {(char *)"enterlock",   1,  CA_PUBLIC,  A_LENTER},
+    {(char *)"getfromlock", 1,  CA_PUBLIC,  A_LGET},
     {(char *)"givelock",    1,  CA_PUBLIC,  A_LGIVE},
     {(char *)"leavelock",   2,  CA_PUBLIC,  A_LLEAVE},
     {(char *)"linklock",    2,  CA_PUBLIC,  A_LLINK},

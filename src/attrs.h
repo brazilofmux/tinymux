@@ -1,6 +1,6 @@
 // attrs.h - Attribute definitions
 //
-// $Id: attrs.h,v 1.13 2001-06-29 15:47:38 sdennis Exp $
+// $Id: attrs.h,v 1.14 2001-09-28 22:32:23 sdennis Exp $
 //
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -125,6 +125,7 @@
 #define A_LPARENT   98  /* Who may @parent to me if PARENT_OK set */
 #define A_LCONTROL  99  /* Who controls me if CONTROL_OK set */
 #define A_VA        100 /* VA attribute (VB-VZ follow) */
+#define A_LGET      127 /* Get lock (who may get stuff from me?) */
 
 #define A_GFAIL     129 /* Give fail message */
 #define A_OGFAIL    130 /* Others give fail message */
