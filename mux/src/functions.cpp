@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.94 2004-04-30 16:54:20 sdennis Exp $
+// $Id: functions.cpp,v 1.95 2004-04-30 19:59:40 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -9526,7 +9526,7 @@ FUN flist[] =
     {"E",           fun_e,          MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {"EDEFAULT",    fun_edefault,   MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
     {"EDIT",        fun_edit,       MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {"ELEMENTS",    fun_elements,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {"ELEMENTS",    fun_elements,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"ELOCK",       fun_elock,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"EMIT",        fun_emit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"EMPTY",       fun_empty,      MAX_ARG, 0,       1,         0, CA_PUBLIC},

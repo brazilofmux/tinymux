@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.22 2004-04-30 18:13:11 sdennis Exp $
+// $Id: set.cpp,v 1.23 2004-04-30 19:59:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1326,7 +1326,7 @@ bool parse_attrib(dbref player, char *str, dbref *thing, ATTR **attr)
     //
     char *buff = alloc_lbuf("parse_attrib");
     strcpy(buff, str);
-    char AttrName;
+    char *AttrName;
     bool retval = parse_thing_slash(player, buff, &AttrName, thing);
 
     // Get the named attribute from the object if we can.

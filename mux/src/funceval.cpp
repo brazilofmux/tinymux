@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.58 2004-04-30 16:54:20 sdennis Exp $
+// $Id: funceval.cpp,v 1.59 2004-04-30 19:59:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1907,6 +1907,12 @@ FUNCTION(fun_elements)
         return;
     }
 
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
     int nwords, cur;
     char *ptrs[LBUF_SIZE / 2];
     char *wordlist, *s, *r;
@@ -1935,9 +1941,12 @@ FUNCTION(fun_elements)
         {
             if (!bFirst)
             {
-                safe_chr(sep.str[0], buff, bufc);
+                print_sep(&osep, buff, bufc);
             }
-            bFirst = false;
+            else
+            {
+                bFirst = false;
+            }
             safe_str(ptrs[cur], buff, bufc);
         }
     } while (s);
