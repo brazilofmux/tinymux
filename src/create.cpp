@@ -2,7 +2,7 @@
  * create.c -- Commands that create new objects 
  */
 /*
- * $Id: create.cpp,v 1.6 2000-06-01 19:50:29 sdennis Exp $ 
+ * $Id: create.cpp,v 1.7 2000-06-09 19:10:41 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -447,7 +447,7 @@ void do_create(dbref player, dbref cause, int key, char *name, char *coststr)
     int cost;
 
     cost = Tiny_atol(coststr);
-    if (!name || !*name || (strlen(strip_ansi(name)) == 0))
+    if (!name || !*name)
     {
         notify_quiet(player, "Create what?");
         return;
@@ -495,25 +495,26 @@ void do_clone(dbref player, dbref cause, int key, char *name, char *arg2)
     match_everything(0);
     thing = noisy_match_result();
     if ((thing == NOTHING) || (thing == AMBIGUOUS))
+    {
         return;
+    }
 
-    /*
-     * Let players clone things set VISUAL.  It's easier than retyping in
-     * all that data 
-     */
-
-    if (!Examinable(player, thing)) {
+    // Let players clone things set VISUAL. It's easier than retyping
+    // in all that data 
+    //
+    if (!Examinable(player, thing))
+    {
         notify_quiet(player, "Permission denied.");
         return;
     }
-    if (isPlayer(thing)) {
+    if (isPlayer(thing))
+    {
         notify_quiet(player, "You cannot clone players!");
         return;
     }
-    /*
-     * You can only make a parent link to what you control 
-     */
 
+    // You can only make a parent link to what you control.
+    //
     if (!Controls(player, thing) && !Parent_ok(thing) &&
         (key & CLONE_PARENT)) {
         notify_quiet(player,
@@ -553,35 +554,38 @@ void do_clone(dbref player, dbref cause, int key, char *name, char *arg2)
         }
     }
 
-    /*
-     * Go make the clone object 
-     */
-
-    if ((arg2 && *arg2) && ok_name(arg2))
-        clone = create_obj(new_owner, Typeof(thing), arg2, cost);
+    // Go make the clone object.
+    //
+    BOOL bValid;
+    int nValidName;
+    char *pValidName = MakeCanonicalObjectName(arg2, &nValidName, &bValid);
+    char *clone_name;
+    if (bValid)
+    {
+        clone_name = pValidName;
+    }
     else
-        clone = create_obj(new_owner, Typeof(thing), Name(thing), cost);
+    {
+        clone_name = Name(thing);
+    }
+    clone = create_obj(new_owner, Typeof(thing), clone_name, cost);
+
     if (clone == NOTHING)
+    {
         return;
+    }
 
-    /*
-     * Wipe out any old attributes and copy in the new data 
-     */
-
+    // Wipe out any old attributes and copy in the new data.
+    //
     atr_free(clone);
     if (key & CLONE_PARENT)
         s_Parent(clone, thing);
     else
         atr_cpy(player, clone, thing);
 
-    /*
-     * Reset the name, since we cleared the attributes 
-     */
-
-    if ((arg2 && *arg2) && ok_name(arg2))
-        s_Name(clone, arg2);
-    else
-        s_Name(clone, Name(thing));
+    // Reset the name, since we cleared the attributes.
+    //
+    s_Name(clone, clone_name);
 
     /*
      * Reset the pennies, since it looks like we stamped on that, too.

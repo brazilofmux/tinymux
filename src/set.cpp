@@ -2,7 +2,7 @@
  * set.c -- commands which set parameters 
  */
 /*
- * $Id: set.cpp,v 1.3 2000-06-06 21:34:29 sdennis Exp $ 
+ * $Id: set.cpp,v 1.4 2000-06-09 19:10:38 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -168,62 +168,73 @@ void do_name(dbref player, dbref cause, int key, char *name, char *newname)
     /*
      * check for bad name 
      */
-    if ((*newname == '\0') || (strlen(strip_ansi(newname)) == 0)) {
+    if (!newname || !*newname)
+    {
         notify_quiet(player, "Give it what new name?");
         return;
     }
-    /*
-     * check for renaming a player 
-     */
-    if (isPlayer(thing)) {
 
+    // Check for renaming a player.
+    //
+    if (isPlayer(thing))
+    {
         buff = trim_spaces((char *)newname);
-        if (!ok_player_name(buff) ||
-            !badname_check(buff)) {
+        if (  !ValidatePlayerName(buff)
+           || !badname_check(buff))
+        {
             notify_quiet(player, "You can't use that name.");
             free_lbuf(buff);
             return;
-        } else if (string_compare(buff, Name(thing)) &&
-               (lookup_player(NOTHING, buff, 0) != NOTHING)) {
-
-            /*
-             * string_compare allows changing foo to Foo, etc. 
-             */
-
+        }
+        else if (  string_compare(buff, Name(thing))
+                && lookup_player(NOTHING, buff, 0) != NOTHING)
+        {
+            // string_compare allows changing foo to Foo, etc.
+            //
             notify_quiet(player, "That name is already in use.");
             free_lbuf(buff);
             return;
         }
-        /*
-         * everything ok, notify 
-         */
-        STARTLOG(LOG_SECURITY, "SEC", "CNAME")
-            log_name(thing),
-            log_text((char *)" renamed to ");
+
+        // Everything ok, notify.
+        //
+        STARTLOG(LOG_SECURITY, "SEC", "CNAME");
+        log_name(thing),
+        log_text((char *)" renamed to ");
         log_text(buff);
-        ENDLOG
-            if (Suspect(thing)) {
-            raw_broadcast(WIZARD,
-               "[Suspect] %s renamed to %s", Name(thing), buff);
+        ENDLOG;
+        if (Suspect(thing))
+        {
+            raw_broadcast(WIZARD, "[Suspect] %s renamed to %s", Name(thing), buff);
         }
         delete_player_name(thing, Name(thing));
         s_Name(thing, buff);
         add_player_name(thing, Name(thing));
         if (!Quiet(player) && !Quiet(thing))
+        {
             notify_quiet(player, "Name set.");
+        }
         free_lbuf(buff);
         return;
-    } else {
-        if (!ok_name(newname)) {
+    }
+    else
+    {
+        int nValidName;
+        BOOL bValid;
+        char *pValidName = MakeCanonicalObjectName(newname, &nValidName, &bValid);
+        if (!bValid)
+        {
             notify_quiet(player, "That is not a reasonable name.");
             return;
         }
-        /*
-         * everything ok, change the name 
-         */
-        s_Name(thing, newname);
+
+        // Everything ok, change the name.
+        //
+        s_Name(thing, pValidName);
         if (!Quiet(player) && !Quiet(thing))
+        {
             notify_quiet(player, "Name set.");
+        }
     }
 }
 
@@ -277,29 +288,31 @@ void do_alias(dbref player, dbref cause, int key, char *name, char *alias)
             atr_clr(thing, A_ALIAS);
             if (!Quiet(player))
                 notify_quiet(player, "Alias removed.");
-        } else if (lookup_player(NOTHING, trimalias, 0) != NOTHING) {
-
-            /*
-             * Make sure new alias isn't already in use 
-             */
-
+        }
+        else if (lookup_player(NOTHING, trimalias, 0) != NOTHING)
+        {
+            // Make sure new alias isn't already in use.
+            //
             notify_quiet(player, "That name is already in use.");
-        } else if (!(badname_check(trimalias) &&
-                 ok_player_name(trimalias))) {
+        }
+        else if (  !(badname_check(trimalias)
+                && ValidatePlayerName(trimalias)))
+        {
             notify_quiet(player, "That's a silly name for a player!");
-        } else {
-
-            /*
-             * Remove the old name and add the new name 
-             */
-
+        }
+        else
+        {
+            // Remove the old name and add the new name.
+            //
             delete_player_name(thing, oldalias);
-            atr_add(thing, A_ALIAS, trimalias, Owner(player),
-                aflags);
-            if (add_player_name(thing, trimalias)) {
+            atr_add(thing, A_ALIAS, trimalias, Owner(player), aflags);
+            if (add_player_name(thing, trimalias))
+            {
                 if (!Quiet(player))
                     notify_quiet(player, "Alias set.");
-            } else {
+            }
+            else
+            {
                 notify_quiet(player,
                          "That name is already in use or is illegal, alias cleared.");
                 atr_clr(thing, A_ALIAS);

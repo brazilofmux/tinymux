@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.6 2000-06-05 18:10:16 sdennis Exp $
+// $Id: object.cpp,v 1.7 2000-06-09 19:10:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -202,7 +202,7 @@ dbref clone_home(dbref player, dbref thing)
 dbref create_obj(dbref player, int objtype, char *name, int cost)
 {
     dbref obj, owner;
-    int quota, okname = 0, value, self_owned, require_inherit;
+    int quota, value, self_owned, require_inherit;
     FLAG f1, f2, f3;
     char *buff;
     const char *tname;
@@ -211,6 +211,10 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
     quota = 0;
     self_owned = 0;
     require_inherit = 0;
+
+    int nValidName;
+    BOOL okname = FALSE;
+    char *pValidName;
 
     switch (objtype)
     {
@@ -221,7 +225,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
         f1 = mudconf.room_flags.word1;
         f2 = mudconf.room_flags.word2;
         f3 = mudconf.room_flags.word3;
-        okname = ok_name(name);
+        pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
         tname = "a room";
         break;
 
@@ -236,7 +240,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
         f2 = mudconf.thing_flags.word2;
         f3 = mudconf.thing_flags.word3;
         value = OBJECT_ENDOWMENT(cost);
-        okname = ok_name(name);
+        pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
         tname = "a thing";
         break;
 
@@ -247,7 +251,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
         f1 = mudconf.exit_flags.word1;
         f2 = mudconf.exit_flags.word2;
         f3 = mudconf.exit_flags.word3;
-        okname = ok_name(name);
+        pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
         tname = "an exit";
         break;
 
@@ -277,6 +281,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
             tname = "a player";
         }
         buff = munge_space(name);
+        pValidName = name;
         if (!badname_check(buff))
         {
             notify(player, "That name is not allowed.");
@@ -285,7 +290,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
         }
         if (*buff)
         {
-            okname = ok_player_name(buff);
+            okname = ValidatePlayerName(buff);
             if (!okname)
             {
                 notify(player, "That's a silly name for a player.");
@@ -295,7 +300,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
         }
         if (okname)
         {
-            okname = (lookup_player(NOTHING, buff, 0) == NOTHING);
+            okname = lookup_player(NOTHING, buff, 0) == NOTHING;
             if (!okname)
             {
                 notify(player, tprintf("The name %s is already taken.", name));
@@ -308,6 +313,12 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
 
     default:
         LOG_SIMPLE(LOG_BUGS, "BUG", "OTYPE", tprintf("Bad object type in create_obj: %d.", objtype));
+        return NOTHING;
+    }
+
+    if (!okname)
+    {
+        notify(player, tprintf("That's a silly name for %s!", tname));
         return NOTHING;
     }
 
@@ -389,9 +400,9 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
     s_Owner(obj, (self_owned ? obj : owner));
     s_Pennies(obj, value);
     Unmark(obj);
-    buff = munge_space((char *)name);
-    s_Name(obj, buff);
-    free_lbuf(buff);
+    pValidName = munge_space((char *)pValidName);
+    s_Name(obj, pValidName);
+    free_lbuf(pValidName);
     db[obj].cpu_time_used.Set100ns(0);
 
     if (objtype == TYPE_PLAYER)

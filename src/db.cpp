@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.18 2000-06-03 04:54:11 sdennis Exp $
+// $Id: db.cpp,v 1.19 2000-06-09 19:10:41 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -587,20 +587,14 @@ char *PureName(dbref thing)
 
 void s_Name(dbref thing, char *s)
 {
-    // Truncate the name if we have to.
-    //
-    char *buff = alloc_mbuf("s_Name");
-    int nVisualWidth;
-    int len = ANSI_TruncateToField(s, MBUF_SIZE, buff, LBUF_SIZE, &nVisualWidth, 0);
-    atr_add_raw_LEN(thing, A_NAME, buff, len);
+    atr_add_raw(thing, A_NAME, s);
 #ifndef MEMORY_BASED
-    set_string(&names[thing], (char *)buff);
+    set_string(&names[thing], s);
 #endif
     if (mudconf.cache_names)
     {
-        set_string(&purenames[thing], strip_ansi((char *)buff));
+        set_string(&purenames[thing], strip_ansi(s));
     }
-    free_mbuf(buff);
 }
 
 void s_Pass(dbref thing, const char *s)
@@ -724,16 +718,17 @@ void do_attribute(dbref player, dbref cause, int key, char *aname, char *value)
 
 void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
 {
-    dbref thing, res;
-
     init_match(player, arg1, NOTYPE);
     match_everything(0);
-    thing = noisy_match_result();
+    dbref thing = noisy_match_result();
     if (thing == NOTHING)
+    {
         return;
+    }
 
-    res = NOTHING;
-    switch (key) {
+    dbref res = NOTHING;
+    switch (key)
+    {
     case FIXDB_OWNER:
     case FIXDB_LOC:
     case FIXDB_CON:
@@ -748,71 +743,94 @@ void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
         break;
     }
 
-    switch (key) {
+    char *pValidName;
+    switch (key)
+    {
     case FIXDB_OWNER:
+
         s_Owner(thing, res);
         if (!Quiet(player))
             notify(player, tprintf("Owner set to #%d", res));
         break;
+
     case FIXDB_LOC:
+
         s_Location(thing, res);
         if (!Quiet(player))
             notify(player, tprintf("Location set to #%d", res));
         break;
+
     case FIXDB_CON:
+
         s_Contents(thing, res);
         if (!Quiet(player))
             notify(player, tprintf("Contents set to #%d", res));
         break;
+
     case FIXDB_EXITS:
+
         s_Exits(thing, res);
         if (!Quiet(player))
             notify(player, tprintf("Exits set to #%d", res));
         break;
+
     case FIXDB_NEXT:
+
         s_Next(thing, res);
         if (!Quiet(player))
             notify(player, tprintf("Next set to #%d", res));
         break;
+
     case FIXDB_PENNIES:
+
         s_Pennies(thing, res);
         if (!Quiet(player))
             notify(player, tprintf("Pennies set to %d", res));
         break;
+
     case FIXDB_NAME:
-        if (Typeof(thing) == TYPE_PLAYER) {
-            if (!ok_player_name(arg2)) {
-                notify(player,
-                    "That's not a good name for a player.");
+
+        if (isPlayer(thing))
+        {
+            if (!ValidatePlayerName(arg2))
+            {
+                notify(player, "That's not a good name for a player.");
                 return;
             }
-            if (lookup_player(NOTHING, arg2, 0) != NOTHING) {
-                notify(player,
-                       "That name is already in use.");
+            if (lookup_player(NOTHING, arg2, 0) != NOTHING)
+            {
+                notify(player, "That name is already in use.");
                 return;
             }
-            STARTLOG(LOG_SECURITY, "SEC", "CNAME")
-                log_name(thing),
-                log_text((char *)" renamed to ");
+            STARTLOG(LOG_SECURITY, "SEC", "CNAME");
+            log_name(thing),
+            log_text((char *)" renamed to ");
             log_text(arg2);
-            ENDLOG
-                if (Suspect(player)) {
-                raw_broadcast(WIZARD,
-                          "[Suspect] %s renamed to %s",
-                          Name(thing), arg2);
+            ENDLOG;
+            if (Suspect(player))
+            {
+                raw_broadcast(WIZARD, "[Suspect] %s renamed to %s", Name(thing), arg2);
             }
             delete_player_name(thing, Name(thing));
             s_Name(thing, arg2);
             add_player_name(thing, arg2);
-        } else {
-            if (!ok_name(arg2)) {
-                notify(player,
-                 "Warning: That is not a reasonable name.");
+        }
+        else
+        {
+            int nTmp;
+            BOOL bValid;
+            pValidName = MakeCanonicalObjectName(arg2, &nTmp, &bValid);
+            if (!bValid)
+            {
+                notify(player, "That is not a reasonable name.");
+                return;
             }
-            s_Name(thing, arg2);
+            s_Name(thing, pValidName);
         }
         if (!Quiet(player))
-            notify(player, tprintf("Name set to %s", arg2));
+        {
+            notify(player, tprintf("Name set to %s", pValidName));
+        }
         break;
     }
 }

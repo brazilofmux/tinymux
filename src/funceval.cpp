@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.16 2000-06-08 02:47:47 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.17 2000-06-09 19:10:39 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -2457,7 +2457,11 @@ FUNCTION(fun_valid)
     }
     else if (!_stricmp(fargs[0], "name"))
     {
-        safe_ltoa(ok_name(fargs[1]), buff, bufc, LBUF_SIZE-1);
+        int nValidName;
+        BOOL bValid;
+        char *pValidName = MakeCanonicalObjectName(fargs[1], &nValidName, &bValid);
+        char ch = (bValid) ? '1' : '0';
+        safe_chr(ch, buff, bufc);
     }
     else
     {

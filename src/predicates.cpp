@@ -1,5 +1,5 @@
 // predicates.cpp
-// $Id: predicates.cpp,v 1.15 2000-06-04 20:41:49 sdennis Exp $
+// $Id: predicates.cpp,v 1.16 2000-06-09 19:10:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -400,84 +400,137 @@ void giveto(dbref who, int pennies)
     s_Pennies(who, Pennies(who) + pennies);
 }
 
-int ok_name(const char *name)
+// The following function validates that the object names (which will be
+// used for things, exits, and rooms, but not for players) and generates
+// a canonical form of that name (with optimized ANSI).
+//
+char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
 {
-    const char *cp;
+    static char Buf[MBUF_SIZE];
 
-    // Disallow pure ANSI names
-    //    
-    if (strlen(strip_ansi(name)) == 0)
-        return 0;
-    
-    // Disallow leading spaces
-    //
-    if (Tiny_IsSpace[(unsigned char)*name])
-        return 0;
+    *pnName = 0;
+    *pbValid = FALSE;
 
-    // Only printable characters.
-    //
-    for (cp = name; cp && *cp; cp++)
+    if (!pName)
     {
-        if (!Tiny_IsPrint[(unsigned char)*cp] && *cp != ESC_CHAR)
+        return NULL;
+    }
+
+    // Build up what the real name would be. If we pass all the
+    // checks, this is what we will return as a result.
+    //
+    int nVisualWidth;
+    int nBuf = ANSI_TruncateToField(pName, sizeof(Buf), Buf, MBUF_SIZE, &nVisualWidth, 0);
+
+    // Disallow pure ANSI names. There must be at least -something-
+    // visible.
+    //
+    if (nVisualWidth <= 0)
+    {
+        return NULL;
+    }
+
+    // Get the stripped version (Visible parts without color info).
+    //
+    unsigned int nStripped;
+    char *pStripped = strip_ansi(Buf, &nStripped);
+
+    // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
+    // as the first character, or SPACE as the last character
+    //
+    if (  strchr("*!#", *pStripped)
+       || Tiny_IsSpace[(unsigned char)pStripped[0]]
+       || Tiny_IsSpace[(unsigned char)pStripped[nStripped-1]])
+    {
+        return NULL;
+    }
+
+    // Only printable characters besides ARG_DELIMITER, AND_TOKEN,
+    // and OR_TOKEN are allowed.
+    //
+    for (unsigned int i = 0; i < nStripped; i++)
+    {
+        if (!Tiny_IsObjectNameCharacter[(unsigned char)pStripped[i]])
         {
-            return 0;
+            return NULL;
         }
     }
 
-    // Disallow trailing spaces.
+    // Special names are specifically dis-allowed.
     //
-    cp--;
-    if (Tiny_IsSpace[(unsigned char)*cp])
-        return 0;
+    if (  (nStripped == 2 && memcmp("me", pStripped, 2) == 0)
+       || (nStripped == 4 && (  memcmp("home", pStripped, 4) == 0
+                             || memcmp("here", pStripped, 4) == 0)))
+    {
+        return NULL;
+    }
 
-    // Exclude names that start with or contain certain magic cookies.
-    //
-    return (name &&
-        *name &&
-        *name != LOOKUP_TOKEN &&
-        *name != NUMBER_TOKEN &&
-        *name != NOT_TOKEN &&
-        !strchr(name, ARG_DELIMITER) &&
-        !strchr(name, AND_TOKEN) &&
-        !strchr(name, OR_TOKEN) &&
-        string_compare(name, "me") &&
-        string_compare(name, "home") &&
-        string_compare(name, "here"));
+    *pnName = nBuf;
+    *pbValid = TRUE;
+    return Buf;
 }
 
-int ok_player_name(const char *name)
+// The following function validates the player name. ANSI is not
+// allowed in player names. However, a player name must satisfy
+// the requirements of a regular name as well.
+//
+BOOL ValidatePlayerName(const char *pName)
 {
-    const char *cp, *good_chars;
+    if (!pName)
+    {
+        return FALSE;
+    }
+    unsigned int nName = strlen(pName);
 
-    // No leading spaces.
+    // Verify that name is not empty, but not too long, either.
     //
-    if (Tiny_IsSpace[(unsigned char)*name])
-        return 0;
+    if (nName <= 0 || PLAYER_NAME_LIMIT <= nName)
+    {
+        return FALSE;
+    }
 
-    // Not too long and a good name for a thing.
+    // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
+    // as the first character, or SPACE as the last character
     //
-    if (!ok_name(name) || (strlen(name) >= PLAYER_NAME_LIMIT))
-        return 0;
+    if (  strchr("*!#", *pName)
+       || Tiny_IsSpace[(unsigned char)pName[0]]
+       || Tiny_IsSpace[(unsigned char)pName[nName-1]])
+    {
+        return FALSE;
+    }
 
 #ifndef STANDALONE
     if (mudconf.name_spaces)
-        good_chars = " `$_-.,'";
+    {
+        Tiny_IsPlayerNameCharacter[(unsigned char)' '] = 1;
+    }
     else
-        good_chars = "`$_-.,'";
-#else
-    good_chars = " `$_-.,'";
+    {
+        Tiny_IsPlayerNameCharacter[(unsigned char)' '] = 0;
+    }
 #endif
 
-    // Make sure name only contains legal characters.
+    // Only printable characters besides ARG_DELIMITER, AND_TOKEN,
+    // and OR_TOKEN are allowed.
     //
-    for (cp = name; cp && *cp; cp++)
+    for (unsigned int i = 0; i < nName; i++)
     {
-        if (Tiny_IsAlphaNumeric[(unsigned char)*cp])
-            continue;
-        if ((!strchr(good_chars, *cp)) || (*cp == ESC_CHAR))
-            return 0;
+        if (!Tiny_IsObjectNameCharacter[(unsigned char)pName[i]])
+        {
+            return FALSE;
+        }
     }
-    return 1;
+
+    // Special names are specifically dis-allowed.
+    //
+    if (  (nName == 2 && memcmp("me", pName, 2) == 0)
+       || (nName == 4 && (  memcmp("home", pName, 4) == 0
+                         || memcmp("here", pName, 4) == 0)))
+    {
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 int ok_password(const char *password, dbref player)

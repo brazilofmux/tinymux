@@ -2,7 +2,7 @@
  * db_rw.c 
  */
 /*
- * $Id: db_rw.cpp,v 1.6 2000-06-03 05:47:20 sdennis Exp $ 
+ * $Id: db_rw.cpp,v 1.7 2000-06-09 19:10:40 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -1351,11 +1351,15 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     int read_dark_threepow, penn_version;
     int read_muse_parents, read_muse_atrdefs;
     int peek;
+    char *p;
 #endif
     int read_powers, read_powers_player, read_powers_any;
     int deduce_version, deduce_name, deduce_zone, deduce_timestamps;
     int aflags, f1, f2, f3;
     BOOLEXP *tempbool;
+    char *buff;
+    int len;
+    int nVisualWidth;
 
     header_gotten = 0;
     size_gotten = 0;
@@ -1728,7 +1732,13 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 return -1;
             }
             db_grow(i + 1);
-            s_Name(i, (char *)getstring_noalloc(f, 0));
+
+            p = getstring_noalloc(f, 0);
+            buff = alloc_lbuf("dbread.s_Name");
+            len = ANSI_TruncateToField(p, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, 0);
+            s_Name(i, buff);
+            free_lbuf(buff);
+
             atr_add_raw(i, A_DESC, (char *)getstring_noalloc(f, 0));
             s_Location(i, getref(f));
             s_Contents(i, getref(f));
@@ -1811,9 +1821,14 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             db_grow(i + 1);
 
 #ifdef STANDALONE
-            if (is_penn) {
+            if (is_penn)
+            {
                 tstr = getstring_noalloc(f, read_new_strings);
-                s_Name(i, (char *)tstr);
+                buff = alloc_lbuf("dbread.s_Name");
+                len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, 0);
+                s_Name(i, buff);
+                free_lbuf(buff);
+
                 s_Location(i, getref(f));
                 s_Contents(i, getref(f));
                 s_Exits(i, getref(f));
@@ -1932,9 +1947,11 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 }
             } else {
 #endif
-                if (read_name) {
+                if (read_name)
+                {
                     tstr = getstring_noalloc(f, read_new_strings);
-                    if (deduce_name) {
+                    if (deduce_name)
+                    {
                         if (Tiny_IsDigit[(unsigned char)*tstr])
                         {
                             read_name = 0;
@@ -1942,15 +1959,27 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                         }
                         else
                         {
-                            s_Name(i, (char *)tstr);
+                            buff = alloc_lbuf("dbread.s_Name");
+                            len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, 0);
+                            s_Name(i, buff);
+                            free_lbuf(buff);
+
                             s_Location(i, getref(f));
                         }
                         deduce_name = 0;
-                    } else {
-                        s_Name(i, (char *)tstr);
+                    }
+                    else
+                    {
+                        buff = alloc_lbuf("dbread.s_Name");
+                        len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, 0);
+                        s_Name(i, buff);
+                        free_lbuf(buff);
+
                         s_Location(i, getref(f));
                     }
-                } else {
+                }
+                else
+                {
                     s_Location(i, getref(f));
                 }
 
