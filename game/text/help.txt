@@ -5923,14 +5923,15 @@ FUNCTION LIST (continued)
 & FUNCTION CLASSES
 FUNCTION CLASSES
 
-  Arithmetic:                ABS ADD BAND BNAND BOR CRC32 DEC DIE DIV FDIV
-                             FLOORDIV IADD IDIV IMUL INC ISUB MOD MUL PACK
-                             POWER RAND REMAINDER SHL SHR SIGN SUB SQRT UNPACK
+  Arithmetic:                ABS ADD BAND BNAND BOR CEIL CRC32 DEC DIE DIV
+                             FDIV FLOORDIV IADD IDIV IMUL INC ISUB MOD MUL
+                             PACK POWER RAND REMAINDER SHL SHR SIGN SUB SQRT
+                             UNPACK
   Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
   Database Information:      EXIT INZONE LOC LOCATE MAIL NEARBY NEXT NUM RLOC
                              ROOM SEARCH STATS VALID WHERE ZONE ZWHO
   Floating Point Conversion: FLOOR ROUND TRUNC
-  Game Information:          CWHO MOTD MUDNAME POLL VERSION
+  Game Information:          MOTD MUDNAME POLL VERSION
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
                              FOLD GRAB INDEX ITER LAST LNUM MAP MATCH MATCHALL
                              MEMBER MIX MUNGE PARSE PICKRAND LRAND REMOVE REST
@@ -5946,23 +5947,24 @@ FUNCTION CLASSES
 & FUNCTION CLASSES2
 FUNCTION CLASSES (continued)
 
-  Object Information:        ANDFLAGS APOSS CMDS CONTROLS DEFAULT EDEFAULT
-                             ELOCK FLAGS GET GET_EVAL GREP GREPI HASATTR
-                             HASATTRP HASFLAG HASPOWER HASTYPE HOME LATTR
-                             LATTRCMDS LCMDS LCON LEXITS LFLAGS LPARENT
-                             LOCK MONEY NAME OBJ OBJEVAL OBJMEM ORFLAGS
-                             OWNER PARENT PMATCH POSS S SUBJ TYPE U
-                             UDEFAULT ULOCAL V VISIBLE
+  Object Information:        ANDFLAGS APOSS CHILDREN CMDS CON CONTROLS DEFAULT
+                             EDEFAULT ELOCK FLAGS GET GET_EVAL GREP GREPI
+                             HASATTR HASATTRP HASFLAG HASPOWER HASTYPE HOME
+                             LATTR LATTRCMDS LCMDS LCON LEXITS LFLAGS LPARENT
+                             LOCK MONEY NAME OBJ OBJEVAL OBJMEM ORFLAGS OWNER
+                             PARENT PMATCH POSS S SUBJ TYPE U UDEFAULT ULOCAL
+                             V VISIBLE
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNTOTAL
                              DOING FINDABLE IDLE LWHO PLAYMEM PORTS
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ SORT
   Realms:                    CANSEE
   Side-Effect Functions:     LINK TEL
-  Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CAT COMP
-                             DELETE EDIT ESCAPE IFELSE LCSTR LPOS MERGE MID
-                             POS REPEAT REPLACE REVERSE SCRAMBLE SECURE
-                             SPACE SQUISH STRCAT STRLEN STRMATCH TRANSLATE
-                             STRTRUNC SWITCH UCSTR ENCRYPT DECRYPT VALID
+  Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE CAT
+                             CENTER COMP DELETE EDIT ESCAPE IFELSE LCSTR
+                             LJUST LPOS MERGE MID POS REPEAT REPLACE REVERSE
+                             RJUST SCRAMBLE SECURE SPACE SQUISH STRCAT STRLEN
+                             STRMATCH TRANSLATE STRTRUNC SWITCH UCSTR ENCRYPT
+                             DECRYPT VALID
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME WRITETIME
   Trigonometry:              ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
