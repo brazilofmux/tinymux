@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.2 2000-04-15 17:25:46 sdennis Exp $
+// $Id: vattr.cpp,v 1.3 2000-04-24 22:09:28 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -44,11 +44,6 @@ static char *stringblock = (char *)0;
  */
 
 static int stringblock_hwm = 0;
-
-void vattr_init(void)
-{
-    return;
-}
 
 VATTR *vattr_find_LEN(char *pAttrName, int nAttrName)
 {
