@@ -28,25 +28,40 @@ LIBOBJS = @LIBOBJS@
 # After we finish beta testing, we'll take away the debugging -g flag.
 # If you don't use GCC, don't use -g. Add -pg for profiling (gprof netmux
 # gmon.out)
+#
 #OPTIM = -O
 #OPTIM = -g -pg -O
 OPTIM = -g -O
 
-# The first set of definitions is for disk-based caching. If you wish to be
-# memory based, comment the first set and uncomment the second set. Being
-# disk-based usually uses less memory, but more disk-space. Being memory
-# entails using more memory, less disk-space, and some gain in performance.
+# By default, WOD_REALMS is not enabled. If you wish to use WOD_REALMS,
+# uncomment the first 'switch' definition. Please read the docs/REALMS.
+#
+# NOTE: To ensure a clean build, please 'make clean' first.
+#
+#SWITCH_WOD_REALMS=Uncomment me.
+ifdef SWITCH_WOD_REALMS
+REALMS = -DWOD_REALMS
+endif
+
+# Disk-based caching is the default. If you wish to use memory-based,
+# uncomment the first 'switch' definition. Disk-based usually uses less memory,
+# but more disk space. Memory-based usually uses more memory, less disk-space,
+# and some gain in performance.
+#
+# NOTE: To ensure a clean build, please 'make clean' first.
 #
 #SWITCH_MEMORY_BASED=Uncomment me.
 ifdef SWITCH_MEMORY_BASED
 BASED = -DMEMORY_BASED
 endif
 
-# Uncomment these definitions to use radix tree string compression. This
-# will result in less memory usage in both memory and disk based schemes, 
-# and reduced disk space as well when disk based. You MUST carefully read 
-# README.COMPRESSION and follow the instructions exactly before you define 
-# these, or you may cause damage to your database.
+# Uncomment the first 'switch' definition to use radix tree string
+# compression. This will result in less memory usage in both memory and disk
+# based schemes, and reduced disk space as well when disk based. You SHOULD
+# carefully read docs/COMPRESSION and follow the instructions exactly before
+# you define these, or you may cause damage to your database.
+#
+# NOTE: To ensure a clean build, please 'make clean' first.
 #
 # NOTE: You should have a fairly large database before you begin to use
 #       radix compression. 
@@ -71,6 +86,8 @@ endif
 # uncomment the second set of definitions. There is no need to use the
 # concentrator unless you run into problems with too many players being
 # online at once.
+#
+# NOTE: To ensure a clean build, please 'make clean' first.
 #
 #SWITCH_CONC=Uncomment me.
 ifdef SWITCH_CONC
@@ -167,8 +184,7 @@ NET_O	= bsd.o
 AUX_SRC	= dbconvert.cpp mkindx.cpp unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
-DEBUG	= $(OPTIM)
-ALLCXXFLAGS = $(CXXFLAGS) $(DEBUG) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(CONC_DEFS) $(MOREDEFS) $(RLIM_F)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(CONC_DEFS) $(MOREDEFS) $(RLIM_F) $(REALMS)
 
 #Auxiliary files
 A_INST	= README NOTES HIGHLIGHTS CREDITS CHANGES
