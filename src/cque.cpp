@@ -1,6 +1,7 @@
-/*
- * cque.c -- commands and functions for manipulating the command queue 
- */
+// cque.cpp -- commands and functions for manipulating the command queue.
+//
+// $Id: cque.cpp,v 1.10 2000-06-30 22:00:46 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -23,9 +24,9 @@ extern int FDECL(a_Queue, (dbref, int));
 extern void FDECL(s_Queue, (dbref, int));
 extern int FDECL(QueueMax, (dbref));
 
-#ifdef WIN32
 CLinearTimeDelta GetProcessorUsage(void)
 {
+#ifdef WIN32
     CLinearTimeDelta ltd;
     if (platform == VER_PLATFORM_WIN32_NT)
     {
@@ -62,27 +63,28 @@ CLinearTimeDelta GetProcessorUsage(void)
         }
         bQueryPerformanceAvailable = FALSE;
     }
+#endif // WIN32
 
-    // Nothing left to do but to use the time.
-    //
-    CLinearTimeAbsolute ltaNow;
-    ltaNow.GetLocal();
-    ltd = ltaNow - mudstate.start_time;
-    return ltd;
-}
+#if !defined(WIN32) && defined(HAVE_GETRUSAGE)
 
-#else // WIN32
-
-CLinearTimeDelta GetProcessorUsage(void)
-{
     struct rusage usage;
     getrusage(RUSAGE_SELF, &usage);
     CLinearTimeDelta ltd;
     ltd.SetTimeValueStruct(&usage.ru_utime);
     return ltd;
-}
 
-#endif // WIN32
+#else // !WIN32 && HAVE_GETRUSAGE
+
+    // Either this Unix doesn't have getrusage or this is a
+    // fall-through case for Win32.
+    //
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetLocal();
+    ltd = ltaNow - mudstate.start_time;
+    return ltd;
+
+#endif // !WIN32 && HAVE_GETRUSAGE
+}
 
 /*
  * ---------------------------------------------------------------------------
@@ -189,7 +191,6 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 
                     CLinearTimeAbsolute ltaEnd;
                     ltaEnd.GetUTC();
-                    CLinearTimeDelta ltdUsageEnd = GetProcessorUsage();
 
                     CLinearTimeDelta ltd;
                     ltd = ltaEnd - ltaBegin;
@@ -206,6 +207,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         ENDLOG;
                     }
 
+                    CLinearTimeDelta ltdUsageEnd = GetProcessorUsage();
                     ltd = ltdUsageEnd - ltdUsageBegin;
                     db[player].cpu_time_used += ltd;
                 }
