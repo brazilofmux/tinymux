@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.5 2000-04-29 08:03:55 sdennis Exp $
+// $Id: db.h,v 1.6 2001-06-29 07:36:23 sdennis Exp $
 //
 #ifndef __DB_H
 #define __DB_H
@@ -11,13 +11,13 @@
 #define FETCH(key, pLen)        cache_get(key, pLen)
 #define SYNC                    cache_sync()
 #define CLOSE                   cache_close()
-#else
+#else // MEMORY_BASED
 #define STORE(key, attr, len)
 #define TM_DELETE(key)
 #define FETCH(key, pLen)
 #define SYNC
 #define CLOSE
-#endif MEMORY_BASED
+#endif // MEMORY_BASED
 
 #include "attrcache.h"
 
@@ -46,7 +46,7 @@ struct atrlist
     int size;       /* Length of attribute */
     int number;     /* Attribute number. */
 };
-#endif
+#endif // MEMORY_BASED
 
 extern char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid);
 extern char *MakeCanonicalAttributeCommand(const char *pName, int *pnName, BOOL *pbValid);
@@ -128,7 +128,7 @@ struct boolexp
 #define DB_GIVELOCK    0x100  /*  Give/TelIn Lock */
 #define DB_GETLOCK     0x200  /*  Get Lock */
 #define DB_THREEPOW    0x400  /*  Powers have Three Long Words */
- 
+
 /* special dbref's */
 #define NOTHING     (-1)    /* null dbref */
 #define AMBIGUOUS   (-2)    /* multiple possibilities, for matchers */
@@ -160,10 +160,10 @@ struct object
     FLAG    flags;      /* ALL: Flags set on the object */
     FLAG    flags2;     /* ALL: even more flags */
     FLAG    flags3;     /* ALL: yet _more_ flags */
-    
+
     POWER   powers;     /* ALL: Powers on object */
     POWER   powers2;    /* ALL: even more powers */
-    
+
     STACK   *stackhead; /* Every object has a stack. */
 
     CLinearTimeDelta cpu_time_used; /* ALL: CPU time eaten */
@@ -171,7 +171,7 @@ struct object
 #ifdef MEMORY_BASED
     ATRLIST *ahead;     /* The head of the attribute list. */
     int at_count;       /* How many attributes do we have? */
-#endif  
+#endif // MEMORY_BASED
 };
 
 typedef char *NAME;
@@ -201,10 +201,10 @@ extern NAME *names;
 #ifndef MEMORY_BASED
 #define i_Name(t)       names[t] = NULL;    \
                 if (mudconf.cache_names) purenames[t] = NULL;
-#else
+#else // MEMORY_BASED
 #define i_Name(t)       if (mudconf.cache_names) purenames[t] = NULL;
-#endif
-                
+#endif // MEMORY_BASED
+
 #define s_Location(t,n)     db[t].location = (n)
 
 #define s_Zone(t,n)         db[t].zone = (n)
