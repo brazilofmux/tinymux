@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.10 2000-09-07 08:22:38 sdennis Exp $
+// $Id: svdhash.cpp,v 1.11 2000-09-07 14:15:27 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -2507,6 +2507,7 @@ void CLogFile::WriteBuffer(int nString, const char *pString)
         nString -= nToMove;
         m_nBuffer += nToMove;
     }
+    Flush();
 #if !defined(STANDALONE) && defined(WIN32)
     LeaveCriticalSection(&csLog);
 #endif
