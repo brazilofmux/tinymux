@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.3 2003-02-17 14:29:16 zenty Exp $
+// $Id: mguests.cpp,v 1.4 2003-02-17 16:26:06 jake Exp $
 //
 
 #include "copyright.h"
@@ -53,15 +53,17 @@ void CGuests::StartUp(void)
 
     // Search the Database for Guest chars and snag em.
     //
-
-	dbref thing;
-	DO_WHOLE_DB(thing) {
-		if(Guest(thing) && isPlayer(thing)) {
-			SizeGuests(nGuests+1);
-			Guests[nGuests] = thing;
-			nGuests++;
-		}
-	}
+    dbref thing;
+    DO_WHOLE_DB(thing)
+    {
+        if(  Guest(thing)
+          && isPlayer(thing))
+        {
+            SizeGuests(nGuests+1);
+            Guests[nGuests] = thing;
+            nGuests++;
+        }
+    }
 
     // Create the Minimum # of guests.
     //
