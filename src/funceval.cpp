@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.46 2001-07-06 16:23:24 sdennis Exp $
+// $Id: funceval.cpp,v 1.47 2001-08-01 04:50:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2245,7 +2245,7 @@ FUNCTION(fun_foreach)
 
             strcpy(atextbuf, atext);
             str = atextbuf;
-            TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
+            TinyExec(buff, bufc, 0, thing, player, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
             prev = cbuf[0];
         }
     } else {
@@ -2254,7 +2254,7 @@ FUNCTION(fun_foreach)
 
             strcpy(atextbuf, atext);
             str = atextbuf;
-            TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
+            TinyExec(buff, bufc, 0, thing, player, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
         }
     }
 
