@@ -1,8 +1,8 @@
 /*
- * conf.c:      set up configuration information and static data 
+ * conf.cpp: set up configuration information and static data 
  */
 /*
- * $Id: conf.cpp,v 1.7 2000-04-29 08:08:11 sdennis Exp $ 
+ * $Id: conf.cpp,v 1.8 2000-05-20 02:06:01 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -20,6 +20,14 @@
 #include "flags.h"
 #include "powers.h"
 #include "match.h"
+
+/* Some systems are lame, and inet_addr() claims to return -1 on failure,
+ * despite the fact that it returns an unsigned long. (It's not really a -1,
+ * obviously.) Better-behaved systems use INADDR_NONE.
+ */
+#ifndef INADDR_NONE
+#define INADDR_NONE -1
+#endif
 
 /*
  * ---------------------------------------------------------------------------
@@ -415,29 +423,24 @@ void cf_log_notfound(dbref player, char *cmd, const char *thingname, char *thing
  * ---------------------------------------------------------------------------
  * * cf_log_syntax: Log a syntax error.
  */
-
-void cf_log_syntax(dbref player, char *cmd, const char *template0, char *arg)
+void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...)
 {
-    char *buff;
+    va_list ap;
+    va_start(ap, fmt);
 
     if (mudstate.initializing)
     {
         STARTLOG(LOG_STARTUP, "CNF", "SYNTX")
-        buff = alloc_lbuf("cf_log_syntax.LOG");
-        sprintf(buff, template0, arg);
         log_text(cmd);
         log_text((char *)": ");
-        log_text(buff);
-        free_lbuf(buff);
-        ENDLOG
+        log_text(tprintf(fmt, ap));
+        ENDLOG;
     }
     else
     {
-        buff = alloc_lbuf("cf_log_syntax");
-        sprintf(buff, template0, arg);
-        notify(player, buff);
-        free_lbuf(buff);
+        notify(player, tprintf(fmt, ap));
     }
+    va_end(ap);
 }
 
 /*
@@ -923,6 +926,31 @@ CF_HAND(cf_badname)
     return 0;
 }
 
+/* ---------------------------------------------------------------------------
+ * sane_inet_addr: inet_addr() does not necessarily do reasonable checking
+ * for sane syntax. On certain operating systems, if passed less than four
+ * octets, it will cause a segmentation violation. This is unfriendly.
+ * We take steps here to deal with it.
+ */
+static unsigned long sane_inet_addr(char *str)
+{
+    int i;
+    
+    char *p = str;
+    for (i = 1; (p = (char *) strchr(p, '.')) != NULL; i++, p++)
+    {
+        // Nothing
+    }
+    if (i < 4)
+    {
+        return INADDR_NONE;
+    }
+    else
+    {
+        return inet_addr(str);
+    }
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * cf_site: Update site information
@@ -931,43 +959,90 @@ CF_HAND(cf_badname)
 CF_HAND(cf_site)
 {
     SITE *site, *last, *head;
+    char *addr_txt;
     struct in_addr addr_num, mask_num;
-
-    TINY_STRTOK_STATE tts;
-    Tiny_StrTokString(&tts, str);
-    Tiny_StrTokControl(&tts, " \t=,");
-    char *addr_txt = Tiny_StrTokParse(&tts);
-    char *mask_txt = NULL;
-    if (addr_txt)
+    
+    char *mask_txt = strchr(str, '/');
+    if (!mask_txt)
     {
-        mask_txt = Tiny_StrTokParse(&tts);
+        // Standard IP range and netmask notation.
+        //
+        TINY_STRTOK_STATE tts;
+        Tiny_StrTokString(&tts, str);
+        Tiny_StrTokControl(&tts, " \t=,");
+        addr_txt = Tiny_StrTokParse(&tts);
+        mask_txt = NULL;
+        if (addr_txt)
+        {
+            mask_txt = Tiny_StrTokParse(&tts);
+        }
+        if (!addr_txt || !*addr_txt || !mask_txt || !*mask_txt)
+        {
+            cf_log_syntax(player, cmd, "Missing host address or mask.", (char *)"");
+            return -1;
+        }
+        addr_num.s_addr = sane_inet_addr(addr_txt);
+        if (addr_num.s_addr == INADDR_NONE)
+        {
+            cf_log_syntax(player, cmd, "Malformed host address: %s", addr_txt);
+            return -1;
+        }
+        mask_num.s_addr = sane_inet_addr(mask_txt);
+        if (mask_num.s_addr == INADDR_NONE)
+        {
+            cf_log_syntax(player, cmd, "Malformed mask address: %s", mask_txt);
+            return -1;
+        }
     }
-    if (!addr_txt || !*addr_txt || !mask_txt || !*mask_txt)
+    else
     {
-        cf_log_syntax(player, cmd, "Missing host address or mask.", (char *)"");
-        return -1;
+        // RFC 1517, 1518, 1519, 1520: CIDR IP prefix notation
+        //
+        addr_txt = str;
+        *mask_txt++ = '\0';
+        int mask_bits = Tiny_atol(mask_txt);
+        if ((mask_bits > 32) || (mask_bits < 0))
+        {
+            cf_log_syntax(player, cmd, "Mask bits (%d) in CIDR IP prefix out of range.", mask_bits);
+            return -1;
+        }
+        else
+        {
+            // << [0,31] works. << 32 is problematic on some systems.
+            //
+            unsigned int mask = 0;
+            if (mask_bits > 0)
+            {
+                mask = 0xFFFFFFFFUL << (32 - mask_bits);
+            }
+            mask_num.s_addr = htonl(mask);
+        }
+        
+        addr_num.s_addr = sane_inet_addr(addr_txt);
+        if (addr_num.s_addr == INADDR_NONE)
+        {
+            cf_log_syntax(player, cmd, "Malformed host address: %s", addr_txt);
+            return -1;
+        }
     }
-    addr_num.s_addr = inet_addr(addr_txt);
-    mask_num.s_addr = inet_addr(mask_txt);
-
-    if (addr_num.s_addr == (unsigned)(-1))
-    {
-        cf_log_syntax(player, cmd, "Bad host address: %s", addr_txt);
-        return -1;
-    }
+    
     head = (SITE *) * vp;
 
     // Parse the access entry and allocate space for it.
     //
-    site = (SITE *) MEMALLOC(sizeof(SITE), __FILE__, __LINE__);
-
+    site = (SITE *)MEMALLOC(sizeof(SITE), __FILE__, __LINE__);
+    if (!site)
+    {
+        return -1;
+    }
+    
     // Initialize the site entry.
     //
     site->address.s_addr = addr_num.s_addr;
     site->mask.s_addr = mask_num.s_addr;
     site->flag = extra;
     site->next = NULL;
-
+    
     // Link in the entry. Link it at the start if not initializing, at the
     // end if initializing. This is so that entries in the config file are
     // processed as you would think they would be, while entries made while
@@ -977,20 +1052,21 @@ CF_HAND(cf_site)
     {
         if (head == NULL)
         {
-            long *pl = (long *)site;
-            *vp = (int)pl;
+            *vp = (int) site;
         }
         else
         {
-            for (last = head; last->next; last = last->next) ;
+            for (last = head; last->next; last = last->next)
+            {
+                // Nothing
+            }
             last->next = site;
         }
     }
     else
     {
         site->next = head;
-        long *pl = (long *)site;
-        *vp = (int)pl;
+        *vp = (int) site;
     }
     return 0;
 }

@@ -2,7 +2,7 @@
  * flags.c - flag manipulation routines 
  */
 /*
- * $Id: flags.cpp,v 1.3 2000-05-19 17:18:42 sdennis Exp $ 
+ * $Id: flags.cpp,v 1.4 2000-05-20 02:06:01 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -17,7 +17,6 @@
 #include "alloc.h"
 #include "powers.h"
 
-extern void FDECL(cf_log_syntax, (dbref, char *, const char *, char *));
 extern void FDECL(cf_log_notfound, (dbref, char *, const char *, char *));
 
 #ifndef STANDALONE
