@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX CXXCPP CPP EGREP def_force_c_compiler def_brief_lib_list def_wodrealms def_memorybased def_exile LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS WOD_REALMS MEMORY_BASED BTBASED BTLIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX CXXCPP CPP EGREP def_force_c_compiler LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1310,63 +1310,79 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+          ac_config_headers="$ac_config_headers autoconf.h"
 
-# Check whether --enable-wodrealms or --disable-wodrealms was given.
-if test "${enable_wodrealms+set}" = set; then
-  enableval="$enable_wodrealms"
-  ac_cv_enable_wodrealms=yes
-else
-  ac_cv_enable_wodrealms=no
-fi;
 
 echo "$as_me:$LINENO: checking whether to enable WOD Realms" >&5
 echo $ECHO_N "checking whether to enable WOD Realms... $ECHO_C" >&6
-if test $ac_cv_enable_wodrealms = yes; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-  def_wodrealms="SWITCH_WOD_REALMS=1"
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
+# Check whether --enable-wodrealms or --disable-wodrealms was given.
+if test "${enable_wodrealms+set}" = set; then
+  enableval="$enable_wodrealms"
 
+    if test "x$enableval" = "xno"; then
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    else
+      WOD_REALMS="-DWOD_REALMS"
+      echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+    fi
+
+else
+
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi;
+
+
+echo "$as_me:$LINENO: checking whether to enable Memory-Based Database" >&5
+echo $ECHO_N "checking whether to enable Memory-Based Database... $ECHO_C" >&6
 # Check whether --enable-memorybased or --disable-memorybased was given.
 if test "${enable_memorybased+set}" = set; then
   enableval="$enable_memorybased"
-  ac_cv_enable_memorybased=yes
-else
-  ac_cv_enable_memorybased=no
-fi;
-echo "$as_me:$LINENO: checking whether to enable Memory-Based Database" >&5
-echo $ECHO_N "checking whether to enable Memory-Based Database... $ECHO_C" >&6
-if test $ac_cv_enable_memorybased = yes; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-  def_memorybased="SWITCH_MEMORY_BASED=1"
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
 
+    if test "x$enableval" = "xno"; then
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    else
+      MEMORY_BASED="-DMEMORY_BASED"
+      echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+    fi
+
+else
+
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi;
+
+
+echo "$as_me:$LINENO: checking whether to enable Exile BTMUX" >&5
+echo $ECHO_N "checking whether to enable Exile BTMUX... $ECHO_C" >&6
 # Check whether --enable-exile or --disable-exile was given.
 if test "${enable_exile+set}" = set; then
   enableval="$enable_exile"
-  ac_cv_enable_exile=yes
-else
-  ac_cv_enable_exile=no
-fi;
-echo "$as_me:$LINENO: checking whether to enable Exile BTMUX" >&5
-echo $ECHO_N "checking whether to enable Exile BTMUX... $ECHO_C" >&6
-if test $ac_cv_enable_exile = yes; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-  def_exile="SWITCH_EXILE=1"
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
 
-          ac_config_headers="$ac_config_headers autoconf.h"
+    if test "x$enableval" = "xno"; then
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    else
+      BTBASED="-DBT_ENABLED"
+      BTLIBS="-Ihcode -Lhcode -Ihcode/btech -Lhcode/btech -lhcode -lbtech"
+      echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+    fi
+
+else
+
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi;
+
+
 
 ac_aux_dir=
 for ac_dir in $srcdir $srcdir/.. $srcdir/../..; do
@@ -3197,8 +3213,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 case "$host" in
-*solaris*) def_force_c_compiler="FORCE_C_COMPILER=1" ;;
-*irix*) def_brief_lib_list="BRIEF_LIB_LIST=1" ;;
+*irix*) LIBS="-lm" ;;
 esac
 
 echo "$as_me:$LINENO: checking for library containing strerror" >&5
@@ -10841,10 +10856,6 @@ echo "${ECHO_T}no" >&6
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 
-
-
-
-
           ac_config_files="$ac_config_files Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -11456,6 +11467,10 @@ s,@ECHO_C@,$ECHO_C,;t t
 s,@ECHO_N@,$ECHO_N,;t t
 s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
+s,@WOD_REALMS@,$WOD_REALMS,;t t
+s,@MEMORY_BASED@,$MEMORY_BASED,;t t
+s,@BTBASED@,$BTBASED,;t t
+s,@BTLIBS@,$BTLIBS,;t t
 s,@build@,$build,;t t
 s,@build_cpu@,$build_cpu,;t t
 s,@build_vendor@,$build_vendor,;t t
@@ -11478,10 +11493,6 @@ s,@CXXCPP@,$CXXCPP,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@def_force_c_compiler@,$def_force_c_compiler,;t t
-s,@def_brief_lib_list@,$def_brief_lib_list,;t t
-s,@def_wodrealms@,$def_wodrealms,;t t
-s,@def_memorybased@,$def_memorybased,;t t
-s,@def_exile@,$def_exile,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF

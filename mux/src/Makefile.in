@@ -8,20 +8,11 @@ srcdir = @srcdir@
 VPATH = @srcdir@
 BIN = ../game/bin
 CC = @CC@
-@def_force_c_compiler@
-ifdef FORCE_C_COMPILER
-CXX = @CC@
-else
 CXX = @CXX@
-endif
 #CXXCPP = @CXXCPP@	# This is broken in autoconf.  Sigh.
 CXXCPP = $(CXX) -E
-@def_brief_lib_list@
-ifdef BRIEF_LIB_LIST
-LIBS = -lm
-else
 LIBS = @LIBS@
-endif
+
 .SUFFIXES: .cpp
 
 # After we finish beta testing, we'll take away the debugging -g flag.
@@ -37,10 +28,7 @@ OPTIM = -g -O
 #
 # NOTE: To ensure a clean build, please 'make clean' first.
 #
-@def_wodrealms@
-ifdef SWITCH_WOD_REALMS
-REALMS = -DWOD_REALMS
-endif
+WOD_REALMS = @WOD_REALMS@
 
 # Disk-based caching is the default.  If you wish to use memory-based, run
 # configure with --enable-memorybased.  Disk-based usually uses less memory,
@@ -50,23 +38,14 @@ endif
 #
 # NOTE: To ensure a clean build, please 'make clean' first.
 #
-@def_memorybased@
-ifdef SWITCH_MEMORY_BASED
-BASED = -DMEMORY_BASED
-endif
+MEMORY_BASED = @MEMORY_BASED@
 
 # BattleTech hooks are off by default.  At this point, the hooks are
-# experimental.
+# experimental.  If you wish to enable these hooks, run configure with
+# --enable-exile.
 #
-@def_exile@
-ifdef SWITCH_EXILE
-BTBASED = -DBT_ENABLED
-BTLIBS = -Ihcode -Lhcode -Ihcode/btech -Lhcode/btech -lhcode -lbtech
-endif
-
-# Source common to netmux and standalone code
-COM_SRC	=
-COM_OBJ	=
+BTBASED = @BTBASED@
+BTLIBS = @BTLIBS@
 
 # Distribution source files
 D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
@@ -146,7 +125,7 @@ NET_O	= bsd.o
 AUX_SRC	= unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(BTBASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(REALMS)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(BTBASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(WOD_REALMS)
 
 #Auxiliary files
 A_INST	= README NOTES HIGHLIGHTS CREDITS CHANGES
@@ -164,9 +143,9 @@ AUXIL	= $(A_INST) $(A_TXT) $(A_SH) $(A_CONF) $(A_MISC) $(A_RT) $(A_VMS) \
 
 # Compiliation source files.
 #
-ALLSRC	= $(D_SRC) $(VER_SRC) $(COM_SRC) $(AUX_SRC) $(LIB_SRC)
-SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S)
-OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O)
+ALLSRC	= $(D_SRC) $(VER_SRC) $(AUX_SRC) $(LIB_SRC)
+SRC	= $(D_SRC) $(MALLOC_S)
+OBJ	= $(D_OBJ) $(MALLOC_O)
 
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
@@ -194,7 +173,7 @@ netmux: $(OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(BTLIBS) $(LIBS) $(MORELIBS)
 
 depend: $(ALLSRC) unsplit
-	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp sqlslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	for i in $(D_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp sqlslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 realclean:

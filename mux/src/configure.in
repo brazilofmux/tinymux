@@ -1,52 +1,67 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(mudconf.h)
+AC_CONFIG_HEADER(autoconf.h)
 
+AC_MSG_CHECKING(whether to enable WOD Realms)
 AC_ARG_ENABLE(
   [wodrealms],
   AC_HELP_STRING([--enable-wodrealms], [enable WOD Realms (default is NO)]),
-  [ac_cv_enable_wodrealms=yes], [ac_cv_enable_wodrealms=no])
+  [
+    if test "x$enableval" = "xno"; then
+      AC_MSG_RESULT(no)
+    else
+      WOD_REALMS="-DWOD_REALMS"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+AC_SUBST(WOD_REALMS)
 
-AC_MSG_CHECKING(whether to enable WOD Realms)
-if test $ac_cv_enable_wodrealms = yes; then
-  AC_MSG_RESULT(yes)
-  def_wodrealms="SWITCH_WOD_REALMS=1"
-else
-  AC_MSG_RESULT(no)
-fi
-
+AC_MSG_CHECKING(whether to enable Memory-Based Database)
 AC_ARG_ENABLE(
   [memorybased],
   AC_HELP_STRING([--enable-memorybased], [enable Memory-Based Database (default is NO)]),
-  [ac_cv_enable_memorybased=yes], [ac_cv_enable_memorybased=no])
-AC_MSG_CHECKING(whether to enable Memory-Based Database)
-if test $ac_cv_enable_memorybased = yes; then
-  AC_MSG_RESULT(yes)
-  def_memorybased="SWITCH_MEMORY_BASED=1"
-else
-  AC_MSG_RESULT(no)
-fi
+  [
+    if test "x$enableval" = "xno"; then
+      AC_MSG_RESULT(no)
+    else
+      MEMORY_BASED="-DMEMORY_BASED"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+AC_SUBST(MEMORY_BASED)
 
+AC_MSG_CHECKING(whether to enable Exile BTMUX)
 AC_ARG_ENABLE(
   [exile],
   AC_HELP_STRING([--enable-exile], [enable Exile BTMUX (default is NO)]),
-  [ac_cv_enable_exile=yes], [ac_cv_enable_exile=no])
-AC_MSG_CHECKING(whether to enable Exile BTMUX)
-if test $ac_cv_enable_exile = yes; then
-  AC_MSG_RESULT(yes)
-  def_exile="SWITCH_EXILE=1"
-else
-  AC_MSG_RESULT(no)
-fi
+  [
+    if test "x$enableval" = "xno"; then
+      AC_MSG_RESULT(no)
+    else
+      BTBASED="-DBT_ENABLED"
+      BTLIBS="-Ihcode -Lhcode -Ihcode/btech -Lhcode/btech -lhcode -lbtech"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+AC_SUBST(BTBASED)
+AC_SUBST(BTLIBS)
 
-AC_CONFIG_HEADER(autoconf.h)
 AC_CANONICAL_HOST
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CXXCPP
 AC_PROG_CPP
 case "$host" in
-*solaris*) def_force_c_compiler="FORCE_C_COMPILER=1" ;;
-*irix*) def_brief_lib_list="BRIEF_LIB_LIST=1" ;;
+*irix*) LIBS="-lm" ;;
 esac
 AC_ISC_POSIX
 AC_AIX
@@ -282,8 +297,4 @@ AC_TRY_COMPILE([#include <sys/types.h>
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
 AC_SUBST(def_force_c_compiler)
-AC_SUBST(def_brief_lib_list)
-AC_SUBST(def_wodrealms)
-AC_SUBST(def_memorybased)
-AC_SUBST(def_exile)
 AC_OUTPUT(Makefile)
