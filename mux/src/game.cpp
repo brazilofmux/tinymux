@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.27 2003-04-01 21:03:24 sdennis Exp $
+// $Id: game.cpp,v 1.28 2003-04-12 06:15:00 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1472,8 +1472,10 @@ void fork_and_dump(int key)
     }
     SYNC;
 
+#ifndef WIN32
     int child = 0;
     bool bChildExists = false;
+#endif
     if (key & (DUMP_STRUCT|DUMP_FLATFILE))
     {
 #ifndef WIN32
@@ -1481,9 +1483,9 @@ void fork_and_dump(int key)
         {
             child = fork();
         }
-#endif
         if (child == 0)
         {
+#endif
             if (key & DUMP_STRUCT)
             {
                 dump_database_internal(DUMP_I_NORMAL);
@@ -1497,19 +1499,33 @@ void fork_and_dump(int key)
             {
                 _exit(0);
             }
-#endif
         }
         else if (child < 0)
         {
             log_perror("DMP", "FORK", NULL, "fork()");
         }
-        else
+        else if (child != mudstate.dumper)
         {
-            bChildExists = true;
-#ifndef WIN32
             mudstate.dumper = child;
-#endif
+            bChildExists = true;
         }
+        else if (child == mudstate.dumper)
+        {
+            // The child process executed and exited before fork() returned to
+            // the parent.  Without a process id, the parent's SIGCHLD hander
+            // cannot be certain that the pid of the exiting process matches
+            // the pid of this child.
+            //
+            // However, at the this point in the code, we can be sure.  But,
+            // there's nothing much left to do:
+            //
+            // There is no child (bChildExists == false), we aren't dumping
+            // (mudstate.dumping == false) and there is no outstanding dumper
+            // process (mudstate.dumper == 0).
+            //
+            // See SIGCHLD handler in bsd.cpp.
+        }
+#endif
     }
 
 #ifndef WIN32
@@ -1517,7 +1533,8 @@ void fork_and_dump(int key)
     {
         // We have the ability to fork children, but we are not configured to
         // use it; or, we tried to fork a child and failed; or, we didn't
-        // need to dump the structure or a flatfile.
+        // need to dump the structure or a flatfile; or, the child has finished
+        // dumping already.
         //
         mudstate.dumping = false;
         mudstate.dumper = 0;
