@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.31 2000-09-30 06:10:57 sdennis Exp $
+// $Id: functions.cpp,v 1.32 2000-10-01 20:41:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1537,16 +1537,18 @@ FUNCTION(fun_mid)
     // At this point, iPosition0, nLength, and iPosition1 are reasonable
     // numbers which may -still- not refer to valid data in the string.
     //
-    struct ANSI_Context ac;
-    ANSI_String_Init(&ac, fargs[0], 0);
+    struct ANSI_In_Context aic;
+    struct ANSI_Out_Context aoc;
+    ANSI_String_In_Init(&aic, fargs[0], FALSE);
+    ANSI_String_Out_Init(&aoc, FALSE);
     int nDone;
-    ANSI_String_Skip(&ac, iPosition0, &nDone);
+    ANSI_String_Skip(&aic, iPosition0, &nDone);
     if (nDone < iPosition0)
     {
         return;
     }
     int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    int nSize = ANSI_String_Copy(&ac, nBufferAvailable, *bufc, nLength, &nDone);
+    int nSize = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, nLength, &nDone);
     *bufc += nSize;
 }
 
@@ -5879,44 +5881,174 @@ FUNCTION(fun_rjust)
     safe_str(fargs[0], buff, bufc);
 }
 
+// TODO:
+//
+//  1) bNoBleed needs to be turned into an ANSI ending goal so that
+//     the normal or nobleed ending is not placed on the end of the
+//     pad string,
+//
+//  2) The speed needs to be revisited so that perhaps if ANSI is not
+//     involved, an ANSI_String_Copy can be turned into a straight
+//     memcpy.
+//
 FUNCTION(fun_center)
 {
-    char sep;
-    int i, len, lead_chrs, trail_chrs, width;
+    if (!fn_range_check("CENTER", nfargs, 2, 3, buff, bufc))
+    {
+        return;
+    }
 
-    varargs_preamble("CENTER", 3);
-
-    width = Tiny_atol(fargs[1]);
-    len = strlen((char *)strip_ansi(fargs[0]));
-
-    if (width > LBUF_SIZE)
+    // Width must be a number.
+    //
+    int nDigits;
+    if (!is_integer(fargs[1], &nDigits))
+    {
+        return;
+    }
+    int width = Tiny_atol(fargs[1]);
+    if (width <= 0 || LBUF_SIZE <= width)
     {
         safe_str("#-1 OUT OF RANGE", buff, bufc);
         return;
     }
-    
-    if (len >= width)
+
+    // Determine string to pad with.
+    //
+    int  vwPad;
+    int  nPad = -1;
+    char aPad[SBUF_SIZE];
+    struct ANSI_In_Context  aic;
+    struct ANSI_Out_Context aoc;
+    if (nfargs == 3 && *fargs[2])
     {
-        safe_str(fargs[0], buff, bufc);
+        char *p = RemoveSetOfCharacters(fargs[2], "\r\n\t");
+        ANSI_String_In_Init(&aic, p, FALSE);
+        ANSI_String_Out_Init(&aoc, FALSE);
+        nPad = ANSI_String_Copy(&aoc, &aic, sizeof(aPad), aPad, SBUF_SIZE, &vwPad);
+    }
+    if (nPad <= 0)
+    {
+        aPad[0] = ' ';
+        aPad[1] = '\0';
+        nPad    = 1;
+        vwPad   = 1;
+    }
+
+    int  vwStr;
+    char aStr[LBUF_SIZE];
+    int nStr = ANSI_TruncateToField(fargs[0], sizeof(aStr), aStr,
+        width, &vwStr, FALSE);
+
+    // If the visual width of the text fits exactly into the field,
+    // then we are done. ANSI_TruncateToField insures that it's
+    // never larger.
+    //
+    if (vwStr == width)
+    {
+        safe_copy_buf(aStr, nStr, buff, bufc, LBUF_SIZE-1);
         return;
     }
     
-    // The text is padded with the specified fill character before and
-    // after. The length of the suffix padding is always equal to or one
-    // greater than the length of the prefix padding.
+    // Calculate the necessary info about the leading padding.
+    // The origin on the padding is at byte 0 at beginning of the
+    // field (this may cause mis-syncronization on the screen if
+    // the same background padding string is used on several lines
+    // with each idented from column 0 by a different amount.
+    // There is nothing center() can do about this issue. You are
+    // on your own.
     //
-    lead_chrs = (width - len)/2;
-    for (i = 0; i < lead_chrs; i++)
+    // Padding is repeated nLeadFull times and then a partial string
+    // of vwLeadPartial visual width is tacked onto the end.
+    //
+    // vwLeading == nLeadFull * vwPad + vwLeadPartial
+    //
+    int vwLeading     = (width - vwStr)/2;
+    int nLeadFull     = vwLeading / vwPad;
+    int vwLeadPartial = vwLeading - nLeadFull * vwPad;
+
+    // Calculate the necessary info about the trailing padding.
+    // Note: vwTrailing is always equal to or one greater than
+    // vwLeading.
+    //
+    // vwTrailing == vwTrailPartial0 + nTrailFull * vwPad
+    //             + vwTrailPartial1
+    //
+    int vwTrailing      = width - vwLeading - vwStr;
+    int vwTrailSkip0    = (vwLeading + vwStr) % vwPad;
+    int vwTrailPartial0 = 0;
+    if (vwTrailSkip0)
     {
-        safe_chr(sep, buff, bufc);
+        vwTrailPartial0 = vwPad - vwTrailSkip0;
+        vwTrailing -= vwTrailPartial0;
+    }
+    int nTrailFull      = vwTrailing / vwPad;
+    int vwTrailPartial1 = vwTrailing - nTrailFull * vwPad;
+
+    ANSI_String_Out_Init(&aoc, FALSE);
+    int    vwDone;
+
+    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+
+    // Output the runs of full leading padding.
+    //
+    int i, n;
+    for (i = 0; i < nLeadFull; i++)
+    {
+        ANSI_String_In_Init(&aic, aPad, FALSE);
+        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, vwPad, &vwDone);
+        *bufc += n;
+        nBufferAvailable -= n;
     }
 
-    safe_str(fargs[0], buff, bufc);
-
-    trail_chrs = width - lead_chrs - len;
-    for (i = 0; i < trail_chrs; i++)
+    // Output the partial leading padding segment.
+    //
+    if (vwLeadPartial)
     {
-        safe_chr(sep, buff, bufc);
+        ANSI_String_In_Init(&aic, aPad, FALSE);
+        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, vwLeadPartial, &vwDone);
+        *bufc += n;
+        nBufferAvailable -= n;
+    }
+
+    // Output the main string to be centered.
+    //
+    if (nStr)
+    {
+        ANSI_String_In_Init(&aic, aStr, FALSE);
+        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, LBUF_SIZE-1, &vwDone);
+        *bufc += n;
+        nBufferAvailable -= n;
+    }
+
+    // Output the first partial trailing padding segment.
+    //
+    if (vwTrailPartial0)
+    {
+        ANSI_String_In_Init(&aic, aPad, FALSE);
+        ANSI_String_Skip(&aic, vwTrailSkip0, &vwDone);
+        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, LBUF_SIZE-1, &vwDone);
+        *bufc += n;
+        nBufferAvailable -= n;
+    }
+
+    // Output the runs of full trailing padding.
+    //
+    for (i = 0; i < nTrailFull; i++)
+    {
+        ANSI_String_In_Init(&aic, aPad, FALSE);
+        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, vwPad, &vwDone);
+        *bufc += n;
+        nBufferAvailable -= n;
+    }
+
+    // Output the second partial trailing padding segment.
+    //
+    if (vwTrailPartial1)
+    {
+        ANSI_String_In_Init(&aic, aPad, FALSE);
+        n = ANSI_String_Copy(&aoc, &aic, nBufferAvailable, *bufc, vwTrailPartial1, &vwDone);
+        *bufc += n;
+        nBufferAvailable -= n;
     }
 }
 

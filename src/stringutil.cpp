@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.25 2000-09-29 23:41:36 sdennis Exp $
+// $Id: stringutil.cpp,v 1.26 2000-10-01 20:41:26 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -670,7 +670,13 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
 // Generate the minimal ANSI sequence that will transition from one color state
 // to another.
 //
-char *ANSI_TransitionColorBinary(ANSI_ColorState *acsCurrent, ANSI_ColorState *acsNext, int *nTransition, BOOL bNoBleed)
+char *ANSI_TransitionColorBinary
+(
+    ANSI_ColorState *acsCurrent,
+    ANSI_ColorState *acsNext,
+    int *nTransition,
+    BOOL bNoBleed
+)
 {
     static char Buffer[ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
 
@@ -811,25 +817,34 @@ char *ANSI_TransitionColorEscape(ANSI_ColorState *acsCurrent, ANSI_ColorState *a
     return Buffer;
 }
 
-void ANSI_String_Init(struct ANSI_Context *pContext, const char *szString, BOOL bNoBleed)
+void ANSI_String_In_Init
+(
+    struct ANSI_In_Context *pacIn,
+    const char *szString,
+    BOOL bNoBleed
+)
 {
-    ANSI_InitColorState(&(pContext->acsCurrent), bNoBleed);
-    pContext->acsPrevious = pContext->acsCurrent;
-    pContext->acsFinal = pContext->acsCurrent;
-    pContext->pString = szString;
-    pContext->nString = strlen(szString);
-    pContext->bNoBleed = bNoBleed;
-    pContext->bSawNormal = FALSE;
+    ANSI_InitColorState(&(pacIn->acsCurrent), bNoBleed);
+    pacIn->pString = szString;
+    pacIn->nString = strlen(szString);
+    pacIn->bSawNormal = FALSE;
 }
 
-void ANSI_String_Skip(struct ANSI_Context *pContext, int maxVisualWidth, int *pnVisualWidth)
+void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, BOOL bNoBleed)
+{
+    ANSI_InitColorState(&(pacOut->acsPrevious), bNoBleed);
+    pacOut->acsFinal = pacOut->acsPrevious;
+    pacOut->bNoBleed = bNoBleed;
+}
+
+void ANSI_String_Skip(struct ANSI_In_Context *pacIn, int maxVisualWidth, int *pnVisualWidth)
 {
     *pnVisualWidth = 0;
-    while (pContext->nString)
+    while (pacIn->nString)
     {
         int nTokenLength0;
         int nTokenLength1;
-        int iType = ANSI_lex(pContext->nString, pContext->pString, &nTokenLength0, &nTokenLength1);
+        int iType = ANSI_lex(pacIn->nString, pacIn->pString, &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)
         {
@@ -841,32 +856,31 @@ void ANSI_String_Skip(struct ANSI_Context *pContext, int maxVisualWidth, int *pn
                 // We have reached the limits of the field
                 //
                 *pnVisualWidth += nTextToSkip;
-                pContext->pString += nTextToSkip;
-                pContext->nString -= nTextToSkip;
+                pacIn->pString += nTextToSkip;
+                pacIn->nString -= nTextToSkip;
                 return;
             }
 
-            pContext->pString += nTokenLength0;
-            pContext->nString -= nTokenLength0;
+            pacIn->pString += nTokenLength0;
+            pacIn->nString -= nTokenLength0;
             *pnVisualWidth += nTokenLength0;
-            pContext->acsPrevious = pContext->acsCurrent;
 
             if (nTokenLength1)
             {
                 // Process ANSI
                 //
-                ANSI_Parse_m(&(pContext->acsCurrent), nTokenLength1, pContext->pString, &(pContext->bSawNormal));
-                pContext->pString += nTokenLength1;
-                pContext->nString -= nTokenLength1;
+                ANSI_Parse_m(&(pacIn->acsCurrent), nTokenLength1, pacIn->pString, &(pacIn->bSawNormal));
+                pacIn->pString += nTokenLength1;
+                pacIn->nString -= nTokenLength1;
             }
         }
         else
         {
             // Process ANSI
             //
-            ANSI_Parse_m(&(pContext->acsCurrent), nTokenLength0, pContext->pString, &(pContext->bSawNormal));
-            pContext->nString -= nTokenLength0;
-            pContext->pString += nTokenLength0;
+            ANSI_Parse_m(&(pacIn->acsCurrent), nTokenLength0, pacIn->pString, &(pacIn->bSawNormal));
+            pacIn->nString -= nTokenLength0;
+            pacIn->pString += nTokenLength0;
         }
     }
 }
@@ -894,7 +908,8 @@ void ANSI_String_Skip(struct ANSI_Context *pContext, int maxVisualWidth, int *pn
 // 
 int ANSI_String_Copy
 (
-    struct ANSI_Context *pC,
+    struct ANSI_Out_Context *pacOut,
+    struct ANSI_In_Context *pacIn,
     int nField,
     char *pField0,
     int maxVisualWidth,
@@ -903,11 +918,11 @@ int ANSI_String_Copy
 {
     *pnVisualWidth = 0;
     char *pField = pField0;
-    while (pC->nString)
+    while (pacIn->nString)
     {
         int nTokenLength0;
         int nTokenLength1;
-        int iType = ANSI_lex(pC->nString, pC->pString,
+        int iType = ANSI_lex(pacIn->nString, pacIn->pString,
                              &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)
@@ -933,13 +948,13 @@ int ANSI_String_Copy
             // required final ANSI color state.
             //
             int nTransitionFinal = 0;
-            if (memcmp(&(pC->acsCurrent), &(pC->acsFinal), sizeof(ANSI_ColorState)) != 0)
+            if (memcmp(&(pacIn->acsCurrent), &(pacOut->acsFinal), sizeof(ANSI_ColorState)) != 0)
             {
                 // The color state of the TEXT isn't the final state,
                 // so how much room will the transition back to the
                 // final state take?
                 //
-                ANSI_TransitionColorBinary(&(pC->acsCurrent), &(pC->acsFinal), &nTransitionFinal, pC->bNoBleed);
+                ANSI_TransitionColorBinary(&(pacIn->acsCurrent), &(pacOut->acsFinal), &nTransitionFinal, pacOut->bNoBleed);
                 nFieldEffective -= nTransitionFinal;
             }
 
@@ -947,7 +962,7 @@ int ANSI_String_Copy
             // the right color.
             //
             int nTransition = 0;
-            char *pTransition = ANSI_TransitionColorBinary(&(pC->acsPrevious), &(pC->acsCurrent), &nTransition, pC->bNoBleed);
+            char *pTransition = ANSI_TransitionColorBinary(&(pacOut->acsPrevious), &(pacIn->acsCurrent), &nTransition, pacOut->bNoBleed);
             nFieldEffective -= nTransition;
 
             // If we find that there is no room for any of the TEXT,
@@ -980,17 +995,17 @@ int ANSI_String_Copy
                     {
                         nFieldEffective = nTextToAdd;
                     }
-                    memcpy(pField, pC->pString, nFieldEffective);
+                    memcpy(pField, pacIn->pString, nFieldEffective);
                     pField += nFieldEffective;
-                    pC->pString += nFieldEffective;
-                    pC->nString -= nFieldEffective;
+                    pacIn->pString += nFieldEffective;
+                    pacIn->nString -= nFieldEffective;
                     *pnVisualWidth += nFieldEffective;
-                    pC->acsPrevious = pC->acsCurrent;
+                    pacOut->acsPrevious = pacIn->acsCurrent;
                 }
                 if (nTransitionFinal)
                 {
-                    char *pTransitionFinal = ANSI_TransitionColorBinary(&(pC->acsPrevious),
-                        &(pC->acsFinal), &nTransitionFinal, pC->bNoBleed);
+                    char *pTransitionFinal = ANSI_TransitionColorBinary(&(pacOut->acsPrevious),
+                        &(pacOut->acsFinal), &nTransitionFinal, pacOut->bNoBleed);
 
                     memcpy(pField, pTransitionFinal, nTransitionFinal);
                     pField += nTransitionFinal;
@@ -1005,35 +1020,35 @@ int ANSI_String_Copy
                 pField += nTransition;
                 nField -= nTransition;
             }
-            memcpy(pField, pC->pString, nTokenLength0);
+            memcpy(pField, pacIn->pString, nTokenLength0);
             pField  += nTokenLength0;
             nField  -= nTokenLength0;
-            pC->pString += nTokenLength0;
-            pC->nString -= nTokenLength0;
+            pacIn->pString += nTokenLength0;
+            pacIn->nString -= nTokenLength0;
             *pnVisualWidth += nTokenLength0;
-            pC->acsPrevious = pC->acsCurrent;
+            pacOut->acsPrevious = pacIn->acsCurrent;
 
             if (nTokenLength1)
             {
                 // Process ANSI
                 //
-                ANSI_Parse_m(&(pC->acsCurrent), nTokenLength1, pC->pString, &(pC->bSawNormal));
-                pC->pString += nTokenLength1;
-                pC->nString -= nTokenLength1;
+                ANSI_Parse_m(&(pacIn->acsCurrent), nTokenLength1, pacIn->pString, &(pacIn->bSawNormal));
+                pacIn->pString += nTokenLength1;
+                pacIn->nString -= nTokenLength1;
             }
         }
         else
         {
             // Process ANSI
             //
-            ANSI_Parse_m(&(pC->acsCurrent), nTokenLength0, pC->pString, &(pC->bSawNormal));
-            pC->nString -= nTokenLength0;
-            pC->pString += nTokenLength0;
+            ANSI_Parse_m(&(pacIn->acsCurrent), nTokenLength0, pacIn->pString, &(pacIn->bSawNormal));
+            pacIn->nString -= nTokenLength0;
+            pacIn->pString += nTokenLength0;
         }
     }
 
     int nTransition = 0;
-    char *pTransition = ANSI_TransitionColorBinary(&(pC->acsPrevious), &(pC->acsFinal), &nTransition, pC->bNoBleed);
+    char *pTransition = ANSI_TransitionColorBinary(&(pacOut->acsPrevious), &(pacOut->acsFinal), &nTransition, pacOut->bNoBleed);
     if (nTransition)
     {
         memcpy(pField, pTransition, nTransition);
@@ -1054,9 +1069,11 @@ int ANSI_TruncateToField(const char *szString, int nField, char *pField0, int ma
         pField0[0] = '\0';
         return 0;
     }
-    struct ANSI_Context state;
-    ANSI_String_Init(&state, szString, bNoBleed);
-    return ANSI_String_Copy(&state, nField, pField0, maxVisualWidth, pnVisualWidth);
+    struct ANSI_In_Context aic;
+    struct ANSI_Out_Context aoc;
+    ANSI_String_In_Init(&aic, szString, bNoBleed);
+    ANSI_String_Out_Init(&aoc, bNoBleed);
+    return ANSI_String_Copy(&aoc, &aic, nField, pField0, maxVisualWidth, pnVisualWidth);
 }
 
 char *normal_to_white(const char *szString)

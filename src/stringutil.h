@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.12 2000-09-29 23:41:36 sdennis Exp $
+// $Id: stringutil.h,v 1.13 2000-10-01 20:41:26 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -69,19 +69,25 @@ typedef struct
 } ANSI_ColorState;
 #pragma pack()
 
-struct ANSI_Context
+struct ANSI_In_Context
 {
     ANSI_ColorState acsCurrent;
-    ANSI_ColorState acsPrevious;
-    ANSI_ColorState acsFinal;
     const char *pString;
     int   nString;
-    BOOL  bNoBleed;
     BOOL  bSawNormal;
 };
-void ANSI_String_Init(struct ANSI_Context *pContext, const char *szString, BOOL bNoBleed);
-void ANSI_String_Skip(struct ANSI_Context *pContext, int maxVisualWidth, int *pnVisualWidth);
-int ANSI_String_Copy(struct ANSI_Context *pContext, int nField, char *pField0, int maxVisualWidth, int *pnVisualWidth);
+
+struct ANSI_Out_Context
+{
+    ANSI_ColorState acsPrevious;
+    ANSI_ColorState acsFinal;
+    BOOL  bNoBleed;
+};
+
+void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, BOOL bNoBleed);
+void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, BOOL bNoBleed);
+void ANSI_String_Skip(struct ANSI_In_Context *pacIn, int maxVisualWidth, int *pnVisualWidth);
+int ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, int nField, char *pField0, int maxVisualWidth, int *pnVisualWidth);
 int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, BOOL bNoBleed);
 extern char *strip_ansi(const char *szString, unsigned int *pnString = 0);
 extern char *normal_to_white(const char *);
