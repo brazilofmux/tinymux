@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.5 2000-04-24 21:31:06 sdennis Exp $
+// $Id: game.cpp,v 1.6 2000-04-29 08:05:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -882,6 +882,117 @@ void notify_except2(dbref loc, dbref player, dbref exc1, dbref exc2, const char 
     }
 }
 
+/* ----------------------------------------------------------------------
+ * Reporting of CPU information.
+ */
+
+static void report_timecheck
+(
+    dbref player,
+    int yes_screen,
+    int yes_log,
+    int yes_clear
+)
+{
+    int thing, obj_counted;
+    CLinearTimeDelta ltdPeriod, ltdTotal;
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    ltdPeriod = ltaNow - mudstate.cpu_count_from;
+    
+    if (! (yes_log && (LOG_TIMEUSE & mudconf.log_options) != 0))
+    {
+        yes_log = 0;
+        STARTLOG(LOG_ALWAYS, "WIZ", "TIMECHECK");
+        log_name(player);
+        log_text((char *) " checks object time use over ");
+        log_number(ltdPeriod.ReturnSeconds());
+        log_text((char *) " seconds\n");
+        ENDLOG;
+    }
+    else
+    {
+        start_log("OBJ", "CPU");
+        log_name(player);
+        log_text((char *) " checks object time use over ");
+        log_number(ltdPeriod.ReturnSeconds());
+        log_text((char *) " seconds\n");
+    }
+        
+    obj_counted = 0;
+    ltdTotal.Set100ns(0);
+    
+    // Step through the db. Care only about the ones that are nonzero.
+    //
+    DO_WHOLE_DB(thing)
+    {
+        CLinearTimeDelta &ltd = db[thing].cpu_time_used;
+        if (ltd.Return100ns())
+        {
+            ltdTotal += ltd;
+            long used_msecs = ltd.ReturnMilliseconds();
+            obj_counted++;
+            if (yes_log)
+            {
+                Log.printf("#%d\t%ld\n", thing, used_msecs);
+            }
+            if (yes_screen)
+            {
+                raw_notify(player, tprintf("#%d\t%ld", thing, used_msecs));
+            }
+            if (yes_clear)
+            {
+                ltd.Set100ns(0);
+            }
+        }
+    }
+    
+    if (yes_screen)
+    {
+        raw_notify(player,
+            tprintf("Counted %d objects using %ld msecs over %d seconds.",
+                obj_counted, ltdTotal.ReturnMilliseconds(), ltdPeriod.ReturnSeconds()));
+    }
+    
+    if (yes_log)
+    {
+        Log.printf("Counted %d objects using %ld msecs over %d seconds.",
+            obj_counted, ltdTotal.ReturnMilliseconds(), ltdPeriod.ReturnSeconds());
+        end_log();
+    }
+    
+    if (yes_clear)
+    {
+        mudstate.cpu_count_from = ltaNow;
+    }
+}
+
+void do_timecheck(dbref player, dbref cause, int key)
+{
+    int yes_screen, yes_log, yes_clear;
+    
+    yes_screen = yes_log = yes_clear = 0;
+    
+    if (key == 0)
+    {
+        // No switches, default to printing to screen and clearing counters.
+        //
+        yes_screen = 1;
+        yes_clear = 1;
+    }
+    else
+    {
+        if (key & TIMECHK_RESET)
+            yes_clear = 1;
+        if (key & TIMECHK_SCREEN)
+            yes_screen = 1;
+        if (key & TIMECHK_LOG)
+            yes_log = 1;
+    }
+    
+    report_timecheck(player, yes_screen, yes_log, yes_clear);
+}
+
 void do_shutdown(dbref player, dbref cause, int key, char *message)
 {
     int fd;
@@ -1733,6 +1844,8 @@ int DCL_CDECL main(int argc, char *argv[])
     hfIdentData.Open("svdlines.dir", "svdlines.pag");
 #endif
 
+    game_pid = getpid();
+
 #ifdef WIN32
     // Find which version of Windows we are using - Completion ports do
     // not work with Windows 95/98
@@ -1742,6 +1855,7 @@ int DCL_CDECL main(int argc, char *argv[])
     VersionInformation.dwOSVersionInfoSize = sizeof (VersionInformation);
     GetVersionEx(&VersionInformation);
     platform = VersionInformation.dwPlatformId;
+    hGameProcess = GetCurrentProcess();
     if (platform == VER_PLATFORM_WIN32_NT)
     {
         Log.WriteString("Running under Windows NT\n");
@@ -1765,11 +1879,23 @@ int DCL_CDECL main(int argc, char *argv[])
             Log.WriteString("GetProcAddress of _CancelIo failed. Cannot continue.\n");
             return 1;
         }
-
+        fpGetProcessTimes = (FGETPROCESSTIMES *)GetProcAddress(hInstKernel32, "GetProcessTimes");
+        if (fpGetProcessTimes == NULL)
+        {
+            Log.WriteString("GetProcAddress of GetProcessTimes failed. Cannot continue.\n");
+            return 1;
+        }
     }
     else
     {
         Log.WriteString("Running under Windows 95/98\n");
+    }
+    if (QueryPerformanceFrequency((LARGE_INTEGER *)&QP_D))
+    {
+        bQueryPerformanceAvailable = TRUE;
+        QP_A = FACTOR_100NS_PER_SECOND/QP_D;
+        QP_B = FACTOR_100NS_PER_SECOND%QP_D;
+        QP_C = QP_D/2;
     }
 
     // Initialize WinSock.
@@ -1811,6 +1937,7 @@ int DCL_CDECL main(int argc, char *argv[])
     corrupt = 0;
 #endif
     mudstate.start_time.GetLocal();
+    mudstate.cpu_count_from = mudstate.start_time;
     pool_init(POOL_LBUF, LBUF_SIZE);
     pool_init(POOL_MBUF, MBUF_SIZE);
     pool_init(POOL_SBUF, SBUF_SIZE);
