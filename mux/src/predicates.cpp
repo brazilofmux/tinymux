@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.8 2002-06-13 15:39:02 sdennis Exp $
+// $Id: predicates.cpp,v 1.9 2002-06-13 15:55:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1062,8 +1062,17 @@ void do_prog
     parse_attrib(player, attrib, &thing, &atr);
     if (atr != NOTHING)
     {
-        // JAKE: you can't use atr_get_raw() and atr_add_raw() together.
-        // They step on each other.
+        // BUGBUG (Jake):
+        //
+        //  #1  You can't use atr_get_raw() and atr_add_raw() together.
+        //      They step on each other.
+        //
+        //  #2  Also, atr_get_raw() can return NULL, and if the attribute
+        //      doesn't exist, it does return NULL, so the 'if (*pBuffer)'
+        //      test below is broken.
+        //
+        //  #3  Also, atr_get_raw doesn't alloc_lbuf(), so you cannot and
+        //      should not call free_lbuf() on it's return value.
         //
         char *pBuffer = atr_get_raw(thing, atr);
         if (*pBuffer)
