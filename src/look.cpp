@@ -1,6 +1,6 @@
-// look.c -- commands which look at things
+// look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.5 2000-05-17 08:45:08 sdennis Exp $
+// $Id: look.cpp,v 1.6 2000-05-25 01:41:55 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -31,7 +31,6 @@
 #include "ansi.h"
 
 extern void FDECL(ufun, (char *, char *, int, int, int, dbref, dbref));
-
 
 #ifdef WOD_REALMS
 
@@ -533,85 +532,76 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
     
     html_buff = html_cp = alloc_lbuf("look_contents");
     
-    /*
-    * check to see if he can see the location 
-    */
-    
+    // Check to see if he can see the location.
+    //
     can_see_loc = (!Dark(loc) ||
         (mudconf.see_own_dark && Examinable(player, loc)));
-    
-        /*
-        * check to see if there is anything there QQQ
-    */
-    
+
+    // Check to see if there is anything there.
+    //    
     DOLIST(thing, Contents(loc))
     {
 #ifdef WOD_REALMS
         if (  can_see(player, thing, can_see_loc)
             && (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(player, thing, ACTION_IS_STATIONARY)))
 #else
-            if (can_see(player, thing, can_see_loc))
+        if (can_see(player, thing, can_see_loc))
 #endif
+        {
+            // Something exists! Show him everything.
+            //
+            notify(player, contents_name);
+            DOLIST(thing, Contents(loc))
             {
-                
-            /*
-            * something exists!  show him everything 
-                */
-                
-                notify(player, contents_name);
-                DOLIST(thing, Contents(loc))
-                {
 #ifdef WOD_REALMS
-                    if (  can_see(player, thing, can_see_loc)
-                        && (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(player, thing, ACTION_IS_STATIONARY)))
+                if (  can_see(player, thing, can_see_loc)
+                    && (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(player, thing, ACTION_IS_STATIONARY)))
 #else
-                        if (can_see(player, thing, can_see_loc))
+                if (can_see(player, thing, can_see_loc))
 #endif
+                {
+                    buff = unparse_object(player, thing, 1);
+                    html_cp = html_buff;
+                    if (Html(player))
+                    {
+                        safe_str("<a xch_cmd=\"look ", html_buff, &html_cp);
+                        switch (style)
                         {
-                            buff = unparse_object(player, thing, 1);
-                            html_cp = html_buff;
-                            if (Html(player))
-                            {
-                                safe_str("<a xch_cmd=\"look ", html_buff, &html_cp);
-                                switch (style)
-                                {
-                                case CONTENTS_LOCAL:
-                                    safe_str(Name(thing), html_buff, &html_cp);
-                                    break;
-                                case CONTENTS_NESTED:
-                                    safe_str(Name(Location(thing)), html_buff, &html_cp);
-                                    safe_str("'s ", html_buff, &html_cp);
-                                    safe_str(Name(thing), html_buff, &html_cp);
-                                    break;
+                        case CONTENTS_LOCAL:
+                            safe_str(Name(thing), html_buff, &html_cp);
+                            break;
+                        case CONTENTS_NESTED:
+                            safe_str(Name(Location(thing)), html_buff, &html_cp);
+                            safe_str("'s ", html_buff, &html_cp);
+                            safe_str(Name(thing), html_buff, &html_cp);
+                            break;
 
-                                case CONTENTS_REMOTE:
+                        case CONTENTS_REMOTE:
 
-                                    remote_num[0] = '#';
-                                    Tiny_ltoa(thing, remote_num+1);
-                                    safe_str(remote_num, html_buff, &html_cp);
-                                    break;
+                            remote_num[0] = '#';
+                            Tiny_ltoa(thing, remote_num+1);
+                            safe_str(remote_num, html_buff, &html_cp);
+                            break;
 
-                                default:
+                        default:
 
-                                    break;
-                                }
-                                safe_str("\">", html_buff, &html_cp);
-                                html_escape(buff, html_buff, &html_cp);
-                                safe_str("</a>\r\n", html_buff, &html_cp);
-                                *html_cp = 0;
-                                notify_html(player, html_buff);
-                            }
-                            else
-                            {
-                                notify(player, buff);
-                            }
-                            free_lbuf(buff);
+                            break;
                         }
+                        safe_str("\">", html_buff, &html_cp);
+                        html_escape(buff, html_buff, &html_cp);
+                        safe_str("</a>\r\n", html_buff, &html_cp);
+                        *html_cp = 0;
+                        notify_html(player, html_buff);
+                    }
+                    else
+                    {
+                        notify(player, buff);
+                    }
+                    free_lbuf(buff);
                 }
-                break;  /*
-                        * we're done 
-                */
             }
+            break;  // we're done.
+        }
     }
     free_lbuf(html_buff);
 }
