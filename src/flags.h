@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.12 2002-01-15 05:25:38 sdennis Exp $
+// $Id: flags.h,v 1.13 2002-01-31 12:29:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -378,14 +378,14 @@ extern char *MakeCanonicalFlagName
               (Owner(p) == (o)) && \
                !((a)->flags & (AF_DARK|AF_MDARK))))
 #define Set_attr(p,x,a,f) \
-            (!((a)->flags & (AF_INTERNAL|AF_IS_LOCK)) && \
+            (!((a)->flags & (AF_INTERNAL|AF_IS_LOCK|AF_CONST)) && \
              (God(p) || \
-              (!God(x) && !(f & AF_LOCK) && \
+              (!God(x) && !((f) & AF_LOCK) && \
                ((Controls(p,x) && \
                  !((a)->flags & (AF_WIZARD|AF_GOD)) && \
                  !((f) & (AF_WIZARD|AF_GOD))) || \
                 (Wizard(p) && \
-                 !((a)->flags & AF_GOD))))))
+                 !((a)->flags & AF_GOD) && !((f) & AF_GOD))))))
 #define Read_attr(p,x,a,o,f) \
             (!((a)->flags & AF_INTERNAL) && \
              (God(p) || \

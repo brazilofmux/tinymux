@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.64 2002-01-15 06:23:27 sdennis Exp $
+// $Id: command.cpp,v 1.65 2002-01-31 12:29:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2133,21 +2133,22 @@ static void list_cmdswitches(dbref player)
 //
 NAMETAB attraccess_nametab[] =
 {
-    {(char *)"dark",        2,  CA_WIZARD,  AF_DARK},
-    {(char *)"deleted",     2,  CA_WIZARD,  AF_DELETED},
-    {(char *)"god",         1,  CA_PUBLIC,  AF_GOD},
-    {(char *)"hidden",      1,  CA_WIZARD,  AF_MDARK},
-    {(char *)"ignore",      2,  CA_WIZARD,  AF_NOCMD},
-    {(char *)"internal",    2,  CA_WIZARD,  AF_INTERNAL},
-    {(char *)"is_lock",     4,  CA_PUBLIC,  AF_IS_LOCK},
-    {(char *)"locked",      1,  CA_PUBLIC,  AF_LOCK},
-    {(char *)"no_command",  4,  CA_PUBLIC,  AF_NOPROG},
-    {(char *)"no_inherit",  4,  CA_PUBLIC,  AF_PRIVATE},
-    {(char *)"private",     1,  CA_PUBLIC,  AF_ODARK},
-    {(char *)"regexp",      1,  CA_PUBLIC,  AF_REGEXP},
-    {(char *)"visual",      1,  CA_PUBLIC,  AF_VISUAL},
-    {(char *)"wizard",      1,  CA_PUBLIC,  AF_WIZARD},
-    { NULL,                 0,          0,          0}
+    {"const",       1,  CA_PUBLIC,  AF_CONST},
+    {"dark",        2,  CA_WIZARD,  AF_DARK},
+    {"deleted",     2,  CA_WIZARD,  AF_DELETED},
+    {"god",         1,  CA_PUBLIC,  AF_GOD},
+    {"hidden",      1,  CA_WIZARD,  AF_MDARK},
+    {"ignore",      2,  CA_WIZARD,  AF_NOCMD},
+    {"internal",    2,  CA_WIZARD,  AF_INTERNAL},
+    {"is_lock",     4,  CA_PUBLIC,  AF_IS_LOCK},
+    {"locked",      1,  CA_PUBLIC,  AF_LOCK},
+    {"no_command",  4,  CA_PUBLIC,  AF_NOPROG},
+    {"no_inherit",  4,  CA_PUBLIC,  AF_PRIVATE},
+    {"private",     1,  CA_PUBLIC,  AF_ODARK},
+    {"regexp",      1,  CA_PUBLIC,  AF_REGEXP},
+    {"visual",      1,  CA_PUBLIC,  AF_VISUAL},
+    {"wizard",      1,  CA_PUBLIC,  AF_WIZARD},
+    { NULL,         0,          0,          0}
 };
 
 NAMETAB indiv_attraccess_nametab[] =

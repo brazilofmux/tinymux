@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.16 2001-11-19 19:40:30 sdennis Exp $
+// $Id: attrs.h,v 1.17 2002-01-31 12:29:29 sdennis Exp $
 //
 
 #ifndef _ATTRS_H
@@ -24,6 +24,7 @@
 #define AF_NOPARSE  0x04000 /* Don't evaluate when checking for $-cmds */
 #define AF_REGEXP   0x08000 /* Do a regexp rather than wildcard match */
 #define AF_NOCLONE  0x10000 /* Don't copy this attr when cloning. */
+#define AF_CONST    0x20000 // No one can change it (set by server).
 #define AF_ISUSED   0x80000 /* Used to make efficient sweeps of stale attributes */
 
 #define A_OSUCC     1   /* Others success message */
