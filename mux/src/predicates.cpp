@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.54 2003-02-06 04:12:29 sdennis Exp $
+// $Id: predicates.cpp,v 1.55 2003-02-14 07:25:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -520,7 +520,7 @@ BOOL ValidatePlayerName(const char *pName)
     //
     for (unsigned int i = 0; i < nName; i++)
     {
-        if (!Tiny_IsObjectNameCharacter[(unsigned char)pName[i]])
+        if (!Tiny_IsPlayerNameCharacter[(unsigned char)pName[i]])
         {
             return FALSE;
         }
