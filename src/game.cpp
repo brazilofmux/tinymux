@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.25 2000-11-04 08:54:01 sdennis Exp $
+// $Id: game.cpp,v 1.26 2000-11-11 05:17:51 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -179,93 +179,84 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
 static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *str, int check_exclude,
               int hash_insert)
 {
-    dbref aowner;
-    int match, attr, aflags, i;
-    char buff[LBUF_SIZE], *s, *as;
-    char *args[10];
-    ATTR *ap;
-
-    /*
-     * See if we can do it.  Silently fail if we can't. 
-     */
-
+    // See if we can do it.  Silently fail if we can't.
+    //
     if (!could_doit(player, parent, A_LUSE))
+    {
         return -1;
+    }
 
-    match = 0;
+    int match = 0;
+    int attr;
+    char *as;
     atr_push();
     for (attr = atr_head(parent, &as); attr; attr = atr_next(&as))
     {
-        ap = atr_num(attr);
+        ATTR *ap = atr_num(attr);
 
-        /*
-         * Never check NOPROG attributes. 
-         */
-
+        // Never check NOPROG attributes.
+        //
         if (!ap || (ap->flags & AF_NOPROG))
-            continue;
-
-        /*
-         * If we aren't the bottom level check if we saw this attr *
-         * * * * before.  Also exclude it if the attribute type is *
-         * * PRIVATE. 
-         */
-
-        if (check_exclude &&
-            ((ap->flags & AF_PRIVATE) ||
-             hashfindLEN(&(ap->number), sizeof(ap->number), &mudstate.parent_htab)))
         {
             continue;
         }
-        atr_get_str(buff, parent, attr, &aowner, &aflags);
 
-        /*
-         * Skip if private and on a parent 
-         */
-
-        if (check_exclude && (aflags & AF_PRIVATE)) {
+        // If we aren't the bottom level check if we saw this attr
+        // before. Also exclude it if the attribute type is PRIVATE.
+        //
+        if (  check_exclude
+           && (  (ap->flags & AF_PRIVATE)
+              || hashfindLEN(&(ap->number), sizeof(ap->number), &mudstate.parent_htab)))
+        {
             continue;
         }
-        /*
-         * If we aren't the top level remember this attr so we * * *
-         * exclude * it from now on. 
-         */
+        dbref aowner;
+        int   aflags;
+        char buff[LBUF_SIZE];
+        atr_get_str(buff, parent, attr, &aowner, &aflags);
 
+        // Skip if private and on a parent.
+        //
+        if (check_exclude && (aflags & AF_PRIVATE))
+        {
+            continue;
+        }
+
+        // If we aren't the top level remember this attr so we
+        // exclude it from now on.
+        //
         if (hash_insert)
         {
             hashaddLEN(&(ap->number), sizeof(ap->number), (int *)&attr, &mudstate.parent_htab);
         }
 
-        /*
-         * Check for the leadin character after excluding the attrib
-         * * * * * This lets non-command attribs on the child block * 
-         * *  * commands * on the parent. 
-         */
-
+        // Check for the leadin character after excluding the attrib.
+        // This lets non-command attribs on the child block commands
+        // on the parent.
+        //
         if ((buff[0] != type) || (aflags & AF_NOPROG))
+        {
             continue;
+        }
 
-        /*
-         * decode it: search for first un escaped : 
-         */
-
-        for (s = buff + 1; *s && (*s != ':'); s++) ;
-        if (!*s)
+        // Decode it: search for first unescaped :
+        //
+        char *s = strchr(buff+1, ':');
+        if (!s)
+        {
             continue;
-        *s++ = 0;
-        if (((aflags & AF_REGEXP) &&
-             regexp_match(buff + 1, 
-                    str, 
-                    args, 10)) ||
-             wild(buff + 1, 
-                    str, 
-                    args, 10))
+        }
+        *s++ = '\0';
+        char *args[10];
+        if (  (  (aflags & AF_REGEXP)
+              && regexp_match(buff + 1, str, args, 10))
+           || wild(buff + 1, str, args, 10))
         {
             match = 1;
             CLinearTimeAbsolute lta;
             wait_que(thing, player, FALSE, lta, NOTHING, 0, s, args,
                 10, mudstate.global_regs);
-            for (i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 if (args[i])
                 {
