@@ -3744,7 +3744,7 @@ ANDBOOL()
   Takes one or more BOOLEAN values, and returns 1 (TRUE) if all arguments
   are TRUE.
 
-  Related Topics: and(), BOOLEAN VALUES, or(), not(), t(), xor().
+  Related Topics: and(), BOOLEAN VALUES, or(), not(), t().
 
 & ANDFLAGS()
 ANDFLAGS()
@@ -8817,10 +8817,20 @@ OR()
 
   FUNCTION: or(<boolean1>[,<booleanN>]...)
 
-  Takes one or more booleans, and returns 1 if at least one is equivalent
-  to true(1).
+  Takes one or more BOOLEAN-Z values, and returns 1 (TRUE) if at least one
+  argument is TRUE.
 
-  Related Topics: BOOLEAN VALUES, and(), not(), t(), xor().
+  Related Topics: and(), BOOLEAN VALUES, cor(), not(), orbool(), t(), xor().
+
+& ORBOOL()
+ORBOOL()
+
+  FUNCTION: orbool(<boolean1>[,<booleanN>]...)
+
+  Takes one or more BOOLEAN values, and returns 1 (TRUE) if at least one
+  argument is TRUE.
+
+  Related Topics: andbool(), BOOLEAN VALUES, not(), or(), t().
 
 & ORFLAGS()
 ORFLAGS()
