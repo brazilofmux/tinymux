@@ -1,3 +1,4 @@
+_build.o: _build.cpp
 alloc.o: alloc.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h
 attrcache.o: attrcache.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h
 boolexp.o: boolexp.cpp copyright.h autoconf.h config.h externs.h svdrand.h timeutil.h svdhash.h db.h attrcache.h mudconf.h htab.h alloc.h flags.h mail.h regexp.h stringutil.h match.h interface.h attrs.h powers.h
