@@ -1155,6 +1155,39 @@
                    don't copy the attributes.
   See also: @create, @decompile, @destroy, VISUAL.
  
+& @CONFORMAT
+@CONFORMAT
+
+  COMMAND: @conformat <object> [=<format>]
+
+  Replaces the usual "Contents:" or "Carrying:" format when an object
+  is looked at, by a player-specified contents format. This is evaluated
+  as if it were a description or other similar message on the room.
+  The objects that the looker would normally be able to see is passed
+  as a dbref list in %0; all contents can be acquired through 'lcon(me)'.
+  The contents name is passed in %1.
+
+  One could change the format to 'Contents: Object1 Object2 Object3'
+  through '@conformat here = %1 [iter(%0,name(##))]',
+  for example. More complex things are, obviously, possible.
+
+  Related Topics: @exitformat
+
+& @EXITFORMAT
+@EXITFORMAT
+
+  COMMAND: @exitformat <object> [=<format>]
+
+  Replaces the usual "Obvious Exits:" format when an object is looked
+  at, by a player-specified exits format. This is evaluated as if it
+  were a description or similar message on the room.  The objects that
+  the looker would normally be able to see is passed as a dbref list
+  in %0; all exits can be acquired through 'lexits(me)'.
+
+  One could change the format to 'Exits: Exit1 Exit2 Exit3' through
+  '@exitformat here = Exits: [iter(%0,name(##))]', for example.
+
+  Related Topics: @conformat
 & @cpattr
 
   @cpattr <obj>/<attr> = <obj1>/<attr1> [,<obj2>/<attr2>,<obj3>/<attr3>,...]
