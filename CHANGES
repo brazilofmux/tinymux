@@ -3,7 +3,7 @@ Last Update:  June 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- Signals SIGINT and SIGUSR2 have been swapped. SIGINT now performs a
+ -- Signals SIGTERM and SIGUSR2 have been swapped. SIGTERM now performs a
     @shutdown, and SIGUSR2 drops a .SIG flatfile.
  -- Removed support for VMS, for the port concentrator.
  -- Removed support for many older mail, comsys, and flatfile formats
