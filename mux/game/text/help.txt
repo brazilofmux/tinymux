@@ -998,9 +998,10 @@ HELP
     nospoof - channel will append the player's name to the comtitle.
     header  - Changes the prefix text used to announce a channel emit to
               <value>. <value> may contain color.
-
     object  - Sets the channel object to <value>. You must create an object
               before associating a channel with it.
+    log     - Sets the maximum number of channel messages to log. 
+              The channel must have an object.
 
   You can set a description for the channel by changing the description
   of the channel object. Also, the channel object's lock will be used
@@ -1621,6 +1622,23 @@ HELP
            @idletimeout me = 60
 
   Related Topics: @away, @idle, @reject, page.
+
+& @IFELSE
+@IF
+
+  COMMAND: @if <string>=<true>[,<false>]
+
+  Checks if <string> evaluates to a true value. If so, the command <true>
+  is performed. If not, <false> is (if present).
+  This command can also be called as @ifelse.
+
+  Examples:
+    > think money(me)
+    150
+    > @if [gte(money(me),1)]=say I have money., say I'm broke!
+    You say, "I have money."
+
+  Related topics: @switch, ifelse(), switch().
 
 & @INFILTER
 @INFILTER
@@ -4610,6 +4628,14 @@ COMSYS EXAMPLES
     > pub Hello world!
     [Public] Foobar says, "Hello world!"
 
+    > pub last 10
+    -- Begin Comsys Recall --
+    [Public] Foobar has joined this channel.
+    [Public] Foobar has left this channel.
+    [Public] Foobar has joined this channel.
+    [Public] Foobar says, "Hello world!"
+    -- End Comsys Recall --
+
   Related Topics: comsys commands
 
 & COMTITLE
@@ -4663,19 +4689,18 @@ CON()
 & CONFIG()
 CONFIG()
 
-  FUNCTION: config(<parameter name>)
+  FUNCTION: config([<parameter name>])
 
   Most server configuration options are exposed programatically via this
   function. Given a <parameter name>, this function returns the value
-  currently in force. Configuration options are determined in order by:
+  currently in force. If no args are given, the function returns a list
+  of all options the player has permission to view.
+
+  Configuration options are determined in order by:
 
     - Server defaults,
     - Configuration file, and
     - @admin changes.
-
-  A complete list of configuration options is given in the wizhelp.txt
-  file, but unfortunately, only WIZARD players are allowed to use the
-  wizhelp command from within the game.
 
   Related Topics: wizhelp
 
@@ -4997,6 +5022,26 @@ CTIME()
     Mon Oct 08 18:33:03 2001
 
   Related Topics: @create, @dig, @open, @pcreate, time().
+
+& CTU()
+CTU()
+
+  Function: ctu(<number>, <units-from>, <units-to>)
+
+  The ctu() function will convert <number> that was originally in
+  the units of <units-from> into the units of <units-to>.
+
+  The units available are (r)adians, (g)radians, and (d)egrees.
+
+  180 degrees = PI (3.141593) radians = 200 gradians.
+
+  Examples:
+    > say ctu(180,d,g)
+    You say "200"
+    > say ctu(180,d,r)
+    You say "3.141593"
+
+  Related Topics: sin(), cos(), tan(), asin(), acos(), atan(), pi()
 
 & CWHO()
 CWHO()
