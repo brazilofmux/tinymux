@@ -2,7 +2,7 @@
  * move.c -- Routines for moving about 
  */
 /*
- * $Id: move.cpp,v 1.3 2000-10-26 08:19:56 sdennis Exp $ 
+ * $Id: move.cpp,v 1.4 2000-11-04 11:06:10 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -196,6 +196,17 @@ void move_object(dbref thing, dbref dest)
     }
 }
 
+/*   
+ * move_the_exit: Move an exit silently from it's location to it's destination
+ */
+void move_the_exit(dbref thing, dbref dest)
+{
+    dbref exitloc = Exits(thing);
+    s_Exits(exitloc, remove_first(Exits(exitloc), thing));
+    s_Exits(dest, insert_first(Exits(dest), thing));
+    s_Exits(thing, dest);
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * send_dropto, process_sticky_dropto, process_dropped_dropto,
@@ -361,23 +372,26 @@ void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int hush)
 
 int move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
 {
-    dbref src, curr;
+    dbref curr;
     int canhear, count;
     char *failmsg;
 
-    src = Location(thing);
-    if ((dest != HOME) && Good_obj(src)) {
+    dbref src = Location(thing);
+    if ((dest != HOME) && Good_obj(src))
+    {
         curr = src;
-        for (count = mudconf.ntfy_nest_lim; count > 0; count--) {
-            if (!could_doit(thing, curr, A_LTELOUT)) {
+        for (count = mudconf.ntfy_nest_lim; count > 0; count--)
+        {
+            if (!could_doit(thing, curr, A_LTELOUT))
+            {
                 if ((thing == cause) || (cause == NOTHING))
-                    failmsg = (char *)
-                        "You can't teleport out!";
-                else {
-                    failmsg = (char *)
-                        "You can't be teleported out!";
-                    notify_quiet(cause,
-                        "You can't teleport that out!");
+                {
+                    failmsg = "You can't teleport out!";
+                }
+                else
+                {
+                    failmsg = "You can't be teleported out!";
+                    notify_quiet(cause, "You can't teleport that out!");
                 }
                 did_it(thing, src,
                        A_TOFAIL, failmsg, A_OTOFAIL, NULL,
@@ -385,22 +399,39 @@ int move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
                 return 0;
             }
             if (isRoom(curr))
+            {
                 break;
+            }
             curr = Location(curr);
         }
     }
+    
+    if (isExit(thing))
+    {
+        move_the_exit(thing, dest);
+        return 1;
+    }
     if (dest == HOME)
+    {
         dest = Home(thing);
+    }
     canhear = Hearer(thing);
     if (!(hush & HUSH_LEAVE))
-        did_it(thing, thing, 0, NULL, A_OXTPORT, NULL, 0, (char **)NULL, 0);
+    {
+        did_it(thing, thing, 0, NULL, A_OXTPORT, NULL, 0,
+            (char **)NULL, 0);
+    }
     process_leave_loc(thing, dest, NOTHING, canhear, hush);
+	
     move_object(thing, dest);
+	
     if (!(hush & HUSH_ENTER))
     {
-        did_it(thing, thing, A_TPORT, NULL, A_OTPORT, NULL, A_ATPORT, (char **)NULL, 0);
+        did_it(thing, thing, A_TPORT, NULL, A_OTPORT, NULL, A_ATPORT,
+            (char **)NULL, 0);
     }
-    did_it(thing, thing, A_MOVE, NULL, A_OMOVE, NULL, A_AMOVE, (char **)NULL, 0);
+    did_it(thing, thing, A_MOVE, NULL, A_OMOVE, NULL, A_AMOVE,
+        (char **)NULL, 0);
     process_enter_loc(thing, src, NOTHING, canhear, hush);
     divest_object(thing);
     process_sticky_dropto(src, thing);

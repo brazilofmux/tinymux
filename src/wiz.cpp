@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.10 2000-11-04 08:54:01 sdennis Exp $
+// $Id: wiz.cpp,v 1.11 2000-11-04 11:06:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -59,7 +59,8 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
 
     // Validate type of victim.
     //
-    if (!Has_location(victim))
+    if (  !Has_location(victim)
+       && !isExit(victim))
     {
         notify_quiet(player, "You can't teleport that.");
         return;
