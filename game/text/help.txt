@@ -7149,6 +7149,23 @@ LOC()
 
   Related Topics: rloc(), room(), where().
 
+& LOCALIZE()
+LOCALIZE()
+
+  FUNCTION: localize(<expression>)
+
+  This function evalutes <expression> using it's own private copy of the
+  global r-registers.  That is, the global registers are saved before
+  <expression> is evaluated and restored afterwards.
+
+  This allows the <expression> to alter the r-registers without affecting the
+  softcode outside the localize() invocation.
+
+  In many ways, localize() is the same as ulocal() except that <expression>
+  is given as an argument instead of stored on an attribute.
+
+  Related Topics: ulocal(), objeval(), s().
+
 & LOCATE()
 LOCATE()
 
