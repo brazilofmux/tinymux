@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.57 2001-04-09 23:31:20 sdennis Exp $
+// $Id: functions.cpp,v 1.58 2001-04-10 17:35:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -46,8 +46,6 @@ XFUNCTION(fun_link);
 XFUNCTION(fun_tel);
 XFUNCTION(fun_pemit);
 XFUNCTION(fun_remit);
-XFUNCTION(fun_wait);
-XFUNCTION(fun_waituntil);
 XFUNCTION(fun_create);
 XFUNCTION(fun_set);
 #endif
@@ -6561,8 +6559,6 @@ FUN flist[] =
     {"VMUL",     fun_vmul,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"VSUB",     fun_vsub,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"VUNIT",    fun_vunit,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"WAIT",     fun_wait,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"WAITUNTIL",fun_waituntil,MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"WHERE",    fun_where,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"WORDPOS",  fun_wordpos,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"WORDS",    fun_words,    MAX_ARG, 0,  2,       0, CA_PUBLIC},

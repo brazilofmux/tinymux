@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.45 2001-04-10 02:14:12 sdennis Exp $
+// $Id: funceval.cpp,v 1.46 2001-04-10 17:35:45 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -171,20 +171,6 @@ FUNCTION(fun_remit)
     if (check_command(player, "@pemit", buff, bufc))
         return;
     do_pemit_list(player, fargs[0], fargs[1], 1);
-}
-
-FUNCTION(fun_wait)
-{
-    if (check_command(player, "@wait", buff, bufc))
-        return;
-    do_wait(player, cause, 0, fargs[0], fargs[1], cargs, ncargs);
-}
-
-FUNCTION(fun_waituntil)
-{
-    if (check_command(player, "@wait", buff, bufc))
-        return;
-    do_wait(player, cause, WAIT_UNTIL, fargs[0], fargs[1], cargs, ncargs);
 }
 
 // ------------------------------------------------------------------------
