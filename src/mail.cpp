@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.9 2000-09-07 22:19:23 sdennis Exp $
+// $Id: mail.cpp,v 1.10 2000-09-07 23:10:14 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3214,7 +3214,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     }
 #else
     char *pValidMailAliasDesc = pValidMailAlias;
-    int nValidMailAliasDesc = nValidMailAliasDesc;
+    int nValidMailAliasDesc = nValidMailAlias;
 #endif
 
     malias[ma_top]->list[i] = NOTHING;
