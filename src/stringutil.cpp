@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.45 2001-08-25 05:34:40 sdennis Exp $
+// $Id: stringutil.cpp,v 1.46 2001-08-25 17:39:22 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2286,7 +2286,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
             str++;
         }
 
-        if (pfr->nDigitsC < 1 || 4 > pfr->nDigitsC)
+        if (pfr->nDigitsC < 1 || 4 < pfr->nDigitsC)
         {
             return FALSE;
         }
