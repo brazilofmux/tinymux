@@ -157,34 +157,24 @@
  * Load system-dependent header files.
  */
 
-#ifdef STDC_HEADERS
-# ifdef __STDC__
-#  include <stdarg.h>
-# else /* __STDC__ */
-#  include <varargs.h>
-# endif /* __STDC__ */
+#if !defined(STDC_HEADERS) || !defined(__STDC__) || __STDC__ != 1
+#error MUX requires standard headers.
+#endif
+
+#include <stdarg.h>
 #include <stdlib.h>
 #include <limits.h>
-#else
-#include <varargs.h>
-extern int    qsort(char *, int, int, int (*)());
-#endif
 
 #ifdef NEED_MEMORY_H
 #include <memory.h>
 #endif
 
-#ifdef STDC_HEADERS
 #include <string.h>
+
 #ifdef NEED_INDEX_DCL
 #define index           strchr
 #define rindex          strrchr
 #define bcopy(s,d,n)    memmove(d,s,n)
-#endif
-#else
-#include <strings.h>
-extern char *   strchr(char *, char);
-extern void     bcopy(char *, char *, int);
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -283,15 +273,13 @@ extern int getpagesize(void);
 
 // Assure that malloc, realloc, and free are defined.
 //
-#if !defined(STDC_HEADERS) || !defined(MALLOC_IN_STDLIB_H)
-#ifdef HAVE_MALLOC_H
+#if !defined(MALLOC_IN_STDLIB_H)
+#if   defined(HAVE_MALLOC_H)
 #include <malloc.h>
-#else
-#ifdef NEED_MALLOC_DCL
+#elif defined(NEED_MALLOC_DCL)
 extern char *malloc(int);
 extern char *realloc(char *, int);
 extern int   free(char *);
-#endif
 #endif
 #endif
 
