@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.38 2000-11-06 16:16:53 sdennis Exp $
+// $Id: externs.h,v 1.39 2000-11-06 19:23:09 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -167,8 +167,14 @@ extern int  is_integer(char *, int *);
 extern int  FDECL(is_number, (char *));
 extern int  FDECL(could_doit, (dbref, dbref, int));
 extern int  FDECL(can_see, (dbref, dbref, int));
+#ifdef QQQ1
+extern void add_quota(dbref, int, int);
+extern int  canpayfees(dbref, dbref, int, int, int);
+extern int  payfees(dbref, int, int, int);
+#else
 extern void FDECL(add_quota, (dbref, int));
 extern int  FDECL(canpayfees, (dbref, dbref, int, int));
+#endif
 extern void FDECL(giveto, (dbref,int));
 extern int  FDECL(payfor, (dbref,int));
 extern char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid);
@@ -249,7 +255,7 @@ extern char *process_command(dbref, dbref, int, char *, char *[], int);
 
 /* from db.cpp */
 extern int  FDECL(Commer, (dbref));
-extern void FDECL(s_Pass, (dbref, const char *));
+extern void s_Pass(dbref, const char *);
 extern void FDECL(s_Name, (dbref, char *));
 extern char *   FDECL(Name, (dbref));
 extern char *   FDECL(PureName, (dbref));
@@ -257,7 +263,15 @@ extern int  FDECL(fwdlist_load, (FWDLIST *, dbref, char *));
 extern void FDECL(fwdlist_set, (dbref, FWDLIST *));
 extern void FDECL(fwdlist_clr, (dbref));
 extern int  FDECL(fwdlist_rewrite, (FWDLIST *, char *));
+#ifdef QQQ2
+#ifdef STANDALONE
 extern FWDLIST *FDECL(fwdlist_get, (dbref));
+#else
+#define fwdlist_get(x) ((FWDLIST *)hashfindLEN(&x, sizeof(x), &mudstate.fwdlist_htab))
+#endif
+#else // QQQ2
+extern FWDLIST *FDECL(fwdlist_get, (dbref));
+#endif // QQQ2
 extern void FDECL(clone_object, (dbref, dbref));
 extern void NDECL(init_min_db);
 extern void NDECL(atr_push);
@@ -295,11 +309,13 @@ extern void ReleaseAllResources(dbref obj);
 #define ATTRIB_ACCESS   1   /* Change access to attribute */
 #define ATTRIB_RENAME   2   /* Rename attribute */
 #define ATTRIB_DELETE   4   /* Delete attribute */
+#define ATTRIB_INFO     8   /* Info (number, flags) about attribute */
 #define BOOT_QUIET  1   /* Inhibit boot message to victim */
 #define BOOT_PORT   2   /* Boot by port number */
 #define CEMIT_NOHEADER  1   /* Channel emit without header */
 #define CHOWN_ONE   1   /* item = new_owner */
 #define CHOWN_ALL   2   /* old_owner = new_owner */
+#define CHOWN_NOSTRIP   4   /* Don't strip (most) flags from object */
 #define CHOWN_NOZONE    8   /* Strip zones from objects */
 #define CLIST_FULL  1   /* Full listing of channels */
 #define CLONE_LOCATION  0   /* Create cloned object in my location */
@@ -307,9 +323,14 @@ extern void ReleaseAllResources(dbref obj);
 #define CLONE_PRESERVE  2   /* Preserve the owner of the object */
 #define CLONE_INVENTORY 4   /* Create cloned object in my inventory */
 #define CLONE_SET_COST  8   /* ARG2 is cost of cloned object */
+#ifdef QQQ3
+#define CLONE_PARENT    16  /* Set parent on obj instd of cloning attrs */
+#define CLONE_NOSTRIP   32  /* Don't strip (most) flags from clone */
+#else // QQQ3
 #define CLONE_SET_LOC   16  /* ARG2 is location of cloned object */
 #define CLONE_SET_NAME  32  /* ARG2 is alternate name of cloned object */
 #define CLONE_PARENT    64  /* Set parent on obj instd of cloning attrs */
+#endif // QQQ3
 #define CRE_INVENTORY   0   /* Create object in my inventory */
 #define CRE_LOCATION    1   /* Create object in my location */
 #define CRE_SET_LOC 2   /* ARG2 is location of new object */
@@ -335,9 +356,11 @@ extern void ReleaseAllResources(dbref obj);
 #define DBCK_SPARE  2048    /* Make sure spare header fields are NOTHING */
 #define DBCK_HOMES  4096    /* Make sure homes and droptos are valid */
 #define DECOMP_DBREF    1   /* decompile by dbref */
+#define DECOMP_PRETTY   2   /* pretty-format output */
 #define DEST_ONE    1   /* object */
 #define DEST_ALL    2   /* owner */
 #define DEST_OVERRIDE   4   /* override Safe() */
+#define DEST_INSTANT    8   /* instantly destroy */
 #define DIG_TELEPORT    1   /* teleport to room after @digging */
 #define DOLIST_SPACE    0   /* expect spaces as delimiter */
 #define DOLIST_DELIMIT  1   /* expect custom delimiter */
@@ -353,6 +376,9 @@ extern void ReleaseAllResources(dbref obj);
 #define EXAM_LONG   2   /* Nonowner sees public attrs too */
 #define EXAM_DEBUG  4   /* Display more info for finding db problems */
 #define EXAM_PARENT 8   /* Get attr from parent when exam obj/attr */
+#define EXAM_PRETTY 16  /* Pretty-format output */
+#define EXAM_PAIRS  32  /* Print paren matches in color */
+#define EXAM_OWNER  64  /* Nonowner sees just owner */
 #define FIXDB_OWNER 1   /* Fix OWNER field */
 #define FIXDB_LOC   2   /* Fix LOCATION field */
 #define FIXDB_CON   4   /* Fix CONTENTS field */
@@ -469,6 +495,10 @@ extern void ReleaseAllResources(dbref obj);
 #define QUOTA_TOT   4   /* Operate on total quota */
 #define QUOTA_REM   8   /* Operate on remaining quota */
 #define QUOTA_ALL   16  /* Operate on all players */
+#define QUOTA_ROOM      32      /* Room quota set */
+#define QUOTA_EXIT      64      /* Exit quota set */
+#define QUOTA_THING     128     /* Thing quota set */
+#define QUOTA_PLAYER    256     /* Player quota set */
 #define SAY_SAY     1   /* say in current room */
 #define SAY_NOSPACE 1   /* OR with xx_EMIT to get nospace form */
 #define SAY_POSE    2   /* pose in current room */
@@ -594,6 +624,13 @@ extern void ReleaseAllResources(dbref obj);
 #define LK_SHOWEXIT 0x0008
 #define LK_SHOWVRML 0x0010
 
+/* Quota types */
+#define QTYPE_ALL 0
+#define QTYPE_ROOM 1
+#define QTYPE_EXIT 2
+#define QTYPE_THING 3
+#define QTYPE_PLAYER 4
+
 /* Exit visibility precalculation codes */
 
 #define VE_LOC_XAM  0x01    /* Location is examinable */
@@ -619,6 +656,10 @@ extern void ReleaseAllResources(dbref obj);
 
 #define test_top()      ((mudstate.qfirst != NULL) ? 1 : 0)
 #define controls(p,x)       Controls(p,x)
+
+#define safe_nothing(b,p)   safe_copy_buf("#-1",3,(b),(p),(LBUF_SIZE-1))
+#define safe_noperm(b,p)    safe_copy_buf("#-1 PERMISSION DENIED",21,(b),(p),(LBUF_SIZE-1))
+#define safe_nomatch(b,p)   safe_copy_buf("#-1 NO MATCH",12,(b),(p),(LBUF_SIZE-1))
 
 extern int ReplaceFile(char *old_name, char *new_name);
 extern void RemoveFile(char *name);
