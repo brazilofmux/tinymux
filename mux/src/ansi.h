@@ -1,6 +1,6 @@
 // ansi.h
 //
-// $Id: ansi.h,v 1.1 2002-05-24 06:53:14 sdennis Exp $ */
+// $Id: ansi.h,v 1.2 2002-06-15 03:21:22 jake Exp $ */
 //
 // ANSI control codes for various neat-o terminal effects
 //
@@ -9,6 +9,9 @@
 // and/or the output of the ANSI flag is screwed up, you have the Ultrix
 // problem.
 //
+
+#ifndef _ANSI_H
+#define _ANSI_H
 
 #define BEEP_CHAR     '\07'
 #define ESC_CHAR      '\033'
@@ -44,3 +47,5 @@
 #define ANSI_BMAGENTA   "\033[45m"
 #define ANSI_BCYAN      "\033[46m"
 #define ANSI_BWHITE     "\033[47m"
+
+#endif
