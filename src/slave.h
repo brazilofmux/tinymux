@@ -1,5 +1,5 @@
-/* slave.h */
-/* $Id: slave.h,v 1.1 2000-04-11 07:14:47 sdennis Exp $ */
+// slave.h
+// $Id: slave.h,v 1.2 2000-12-03 04:47:22 sdennis Exp $
 
 enum {
     SLAVE_IDENTQ = 'i',
