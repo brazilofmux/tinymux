@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.8 2003-01-24 17:06:07 sdennis Exp $
+// $Id: game.cpp,v 1.9 2003-01-24 20:03:15 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1868,7 +1868,6 @@ void dbconvert(void)
 {
     int setflags, clrflags, ver;
     int db_ver, db_format, db_flags;
-    char *fp;
 
     Log.EnableLogging();
 
@@ -1891,7 +1890,7 @@ void dbconvert(void)
         clrflags = 0xffffffff;
         setflags = OUTPUT_FLAGS;
         ver = OUTPUT_VERSION;
-        do_redirect = 1;
+        do_redirect = TRUE;
     }
     else if (standalone_unload)
     {
