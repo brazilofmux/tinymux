@@ -141,6 +141,7 @@ Feature Additions:
  --  Added output separator to ITER, PARSE, and MAP. Patch from Ashen-Shugar.
  --  Added PICKRAND() from ChaoticMUX.
  --  Added LRAND() from TinyMUSH 3.0.
+ --  GAGGED players no longer allowed to speak on channels.
 
 
 Bug Fixes:
