@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.12 2001-11-20 05:17:55 sdennis Exp $
+// $Id: log.cpp,v 1.13 2001-11-24 05:21:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -62,34 +62,47 @@ NAMETAB logoptions_nametab[] =
 
 int start_log(const char *primary, const char *secondary)
 {
-    /*
-     * Format the timestamp
-     */
-
-    char buffer[256];
-    buffer[0] = '\0';
-    if ((mudconf.log_info & LOGOPT_TIMESTAMP) != 0)
+    mudstate.logging++;
+    if (  1 <= mudstate.logging
+       && mudstate.logging <= 2)
     {
-        CLinearTimeAbsolute ltaNow;
-        ltaNow.GetLocal();
-        FIELDEDTIME ft;
-        ltaNow.ReturnFields(&ft);
-        sprintf(buffer, "%d.%02d%02d:%02d%02d%02d ",ft.iYear, ft.iMonth,
-                ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond);
-    }
-
 #ifndef STANDALONE
-    /*
-     * Write the header to the log
-     */
+        // Format the timestamp.
+        //
+        char buffer[256];
+        buffer[0] = '\0';
+        if ((mudconf.log_info & LOGOPT_TIMESTAMP) != 0)
+        {
+            CLinearTimeAbsolute ltaNow;
+            ltaNow.GetLocal();
+            FIELDEDTIME ft;
+            ltaNow.ReturnFields(&ft);
+            sprintf(buffer, "%d.%02d%02d:%02d%02d%02d ",ft.iYear, ft.iMonth,
+                    ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond);
+        }
 
-    if (secondary && *secondary)
-        Log.tinyprintf("%s%s %3s/%-5s: ", buffer, mudconf.mud_name, primary, secondary);
-    else
-        Log.tinyprintf("%s%s %-9s: ", buffer, mudconf.mud_name, primary);
-#endif // !STANDALONE
-
-    return 1;
+        // Write the header to the log.
+        //
+        if (secondary && *secondary)
+        {
+            Log.tinyprintf("%s%s %3s/%-5s: ", buffer, mudconf.mud_name, primary,
+                secondary);
+        }
+        else
+        {
+            Log.tinyprintf("%s%s %-9s: ", buffer, mudconf.mud_name, primary);
+        }
+#endif
+        // If a recursive call, log it and return indicating no log.
+        //
+        if (mudstate.logging == 1)
+        {
+            return 1;
+        }
+        Log.WriteString("Recursive logging request." ENDLINE);
+    }
+    mudstate.logging--;
+    return 0;
 }
 
 /*
@@ -101,6 +114,7 @@ void NDECL(end_log)
 {
     Log.WriteString(ENDLINE);
     Log.Flush();
+    mudstate.logging--;
 }
 
 /*
@@ -127,6 +141,7 @@ void log_perror(const char *primary, const char *secondary, const char *extra, c
     Log.WriteString(ENDLINE);
 #endif // !WIN32
     Log.Flush();
+    mudstate.logging--;
 }
 
 /*

@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.10 2001-11-20 05:17:53 sdennis Exp $
+// $Id: alloc.cpp,v 1.11 2001-11-24 05:21:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -86,21 +86,18 @@ static void pool_err
     const char *reason
 )
 {
-    char buffer[2*LBUF_SIZE];
-    if (!mudstate.logging)
+    if (mudstate.logging == 0)
     {
         STARTLOG(logflag, logsys, "ALLOC");
-        sprintf(buffer, "%s[%d] (tag %s) %s at %lx. (%s)", action,
+        Log.tinyprintf("%s[%d] (tag %s) %s at %lx. (%s)", action,
             pools[poolnum].pool_size, tag, reason, (long)ph,
             mudstate.debug_cmd);
-        log_text(buffer);
         ENDLOG;
     }
     else if (logflag != LOG_ALLOCATE)
     {
-        sprintf(buffer, ENDLINE "***< %s[%d] (tag %s) %s at %lx. >***",
+        Log.tinyprintf(ENDLINE "***< %s[%d] (tag %s) %s at %lx. >***",
             action, pools[poolnum].pool_size, tag, reason, (long)ph);
-        log_text(buffer);
     }
 }
 
@@ -235,7 +232,13 @@ char *pool_alloc(int poolnum, const char *tag)
     pools[poolnum].tot_alloc++;
     pools[poolnum].num_alloc++;
 
-    pool_err("DBG", LOG_ALLOCATE, poolnum, tag, ph, "Alloc", "buffer");
+    if (mudstate.logging == 0)
+    {
+        STARTLOG(LOG_ALLOCATE, "DBG", "ALLOC");
+        Log.tinyprintf("Alloc[%d] (tag %s) buffer at %lx. (%s)",
+            pools[poolnum].pool_size, tag, (long)ph, mudstate.debug_cmd);
+        ENDLOG;
+    }
 
     // If the buffer was modified after it was last freed, log it.
     //
@@ -296,7 +299,15 @@ void pool_free(int poolnum, char **buf)
                  "Attempt to free into a different pool.");
         return;
     }
-    pool_err("DBG", LOG_ALLOCATE, poolnum, ph->buf_tag, ph, "Free", "buffer");
+
+    if (mudstate.logging == 0)
+    {
+        STARTLOG(LOG_ALLOCATE, "DBG", "ALLOC");
+        Log.tinyprintf("Free[%d] (tag %s) buffer at %lx. (%s)",
+            pools[poolnum].pool_size, ph->buf_tag, (long)ph,
+            mudstate.debug_cmd);
+        ENDLOG;
+    }
 
     // Make sure we aren't freeing an already free buffer.  If we are, log an
     // error, otherwise update the pool header and stats.
