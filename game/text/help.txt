@@ -11305,7 +11305,7 @@ UNPACK()
     >think unpack(1111,2)
     15
 
-  Related Topics: pack()
+  Related Topics: pack().
 
 & USE
 USE
@@ -11417,7 +11417,7 @@ VDIM()
     > think vdim(1 2 3 4)
     4
 
-  Related Topics:
+  Related Topics: vmag(), vunit().
 
 & VDOT()
 VDOT()
@@ -11485,7 +11485,6 @@ VERSION()
      > say version()
      You say "TinyMUX Beta version 2.0 patchlevel 0 #3"
 
-
   Related Topics:
 
 & VISIBLE()
@@ -11526,7 +11525,7 @@ VMAG()
     > think vmag(3 4)
     5
 
-  Related Topics:
+  Related Topics: vdim(), vunit().
 
 & VMUL()
 VMUL()
@@ -11573,7 +11572,7 @@ VUNIT()
     > think vmul(vunit(5 6 7),vmag(5 6 7))
     5 6 7
 
-  Related Topics:
+  Related Topics: vdim(), vmag().
 
 & WHERE()
 WHERE()
@@ -11661,7 +11660,7 @@ WORDPOS()
     > say wordpos(This is a test, 20)
     You say "#-1"
 
-  Related Topics:
+  Related Topics: member(), pos().
 
 & WORDS()
 WORDS()
@@ -11730,7 +11729,7 @@ ZFUN()
 
   Evaluates <attrib> on the enactor's zone object with parameters.
 
-  Related Topics:
+  Related Topics: ZONES, zone().
 
 & ZONE OBJECTS
 ZONE OBJECTS
@@ -11748,7 +11747,7 @@ ZONE()
   Returns the object's 'zone'. This is the dbref of the master object
   which defines the zone.
 
-  Related Topics:
+  Related Topics: ZONES.
 
 & ZONES
 ZONES
