@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.6 2002-06-13 22:12:46 jake Exp $
+// $Id: mguests.cpp,v 1.7 2002-06-18 18:22:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -173,7 +173,7 @@ char *CGuests::Create(DESC *d)
 
             // Copy them back.
             //
-            atr_cpy(GOD, player, mudconf.guest_char);
+            atr_cpy(player, mudconf.guest_char);
             return Name(Guests[i]);
         }
     }
@@ -302,7 +302,7 @@ int CGuests::MakeGuestChar(void)
 
     // Copy the attributes.
     //
-    atr_cpy(GOD, player, mudconf.guest_char);
+    atr_cpy(player, mudconf.guest_char);
 
     // Lock em!
     //

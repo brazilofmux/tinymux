@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
+// $Id: create.cpp,v 1.5 2002-06-18 18:22:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -631,7 +631,7 @@ void do_clone
     if (key & CLONE_PARENT)
         s_Parent(clone, thing);
     else
-        atr_cpy(executor, clone, thing);
+        atr_cpy(clone, thing);
 
     // Reset the name, since we cleared the attributes.
     //

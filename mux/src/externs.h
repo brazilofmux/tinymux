@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.14 2002-06-17 22:18:35 jake Exp $
+// $Id: externs.h,v 1.15 2002-06-18 18:22:58 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -283,7 +283,7 @@ extern void NDECL(atr_pop);
 extern int  FDECL(atr_head, (dbref, char **));
 extern int  FDECL(atr_next, (char **));
 extern int init_dbfile(char *game_dir_file, char *game_pag_file);
-extern void FDECL(atr_cpy, (dbref, dbref, dbref));
+extern void atr_cpy(dbref dest, dbref source);
 extern void FDECL(atr_chown, (dbref));
 extern void FDECL(atr_clr, (dbref, int));
 extern void atr_add_raw_LEN(dbref, int, char *, int);

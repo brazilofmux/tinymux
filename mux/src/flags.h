@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.5 2002-06-17 22:18:35 jake Exp $
+// $Id: flags.h,v 1.6 2002-06-18 18:22:58 jake Exp $
 //
 
 #include "copyright.h"
@@ -194,7 +194,7 @@ extern char *MakeCanonicalFlagName
 /* Suspect(X)           - Is X someone the wizzes should keep an eye on */
 /* Slave(X)             - Should X be prevented from db-changing commands */
 /* Safe(X,P)            - Does P need the /OVERRIDE switch to @destroy X? */
-/* Monnitor(X)          - Should we check for ^xxx:xxx listens on player? */
+/* Monitor(X)           - Should we check for ^xxx:xxx listens on player? */
 /* Terse(X)             - Should we only show the room name on a look? */
 /* Myopic(X)            - Should things as if we were nonowner/nonwiz */
 /* Audible(X)           - Should X forward messages? */
@@ -373,12 +373,7 @@ extern char *MakeCanonicalFlagName
                             (((f) & AF_VISUAL) || (Owner(p) == (o)) && \
                             !((a)->flags & (AF_DARK|AF_MDARK))))
 #define Read_attr(p,x,a,o,f) bCanReadAttr(p,x,a,FALSE)
-#define Write_attr(p,x,a,f) (!((a)->flags & (AF_INTERNAL|AF_NOCLONE)) && \
-                            (God(p) || (!God(x) && !((f) & AF_LOCK) && \
-                            ((Controls(p,x) && \
-                            !((a)->flags & (AF_WIZARD|AF_GOD)) && \
-                            !((f) & (AF_WIZARD|AF_GOD))) || \
-                            (Wizard(p) && !((a)->flags & AF_GOD))))))
+
 #define Has_power(p,x)      (check_access((p),powers_nametab[x].flag))
 #define Html(x)             ((Flags2(x) & HTML) != 0)
 #define s_Html(x)           s_Flags((x), FLAG_WORD2, Flags2(x) | HTML)

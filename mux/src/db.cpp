@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.9 2002-06-13 22:12:46 jake Exp $
+// $Id: db.cpp,v 1.10 2002-06-18 18:22:58 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2010,12 +2010,10 @@ void atr_free(dbref thing)
 }
 
 /* ---------------------------------------------------------------------------
- * atr_cpy: Copy all attributes from one object to another.  Takes the
- * player argument to ensure that only attributes that COULD be set by
- * the player are copied.
+ * atr_cpy: Copy all attributes from one object to another.  
  */
 
-void atr_cpy(dbref player, dbref dest, dbref source)
+void atr_cpy(dbref dest, dbref source)
 {
     int attr, aflags;
     dbref owner, aowner;
@@ -2036,7 +2034,14 @@ void atr_cpy(dbref player, dbref dest, dbref source)
         at = atr_num(attr);
         if (attr && at)
         {
-            if (Write_attr(owner, dest, at, aflags))
+            if (!((at)->flags & (AF_INTERNAL|AF_NOCLONE))
+                && (God(owner) 
+                   || (!God(dest) 
+                      && !((aflags) & AF_LOCK) 
+                      && ((Controls(owner, dest) 
+                         && !((at)->flags & (AF_WIZARD|AF_GOD)) 
+                         && !((aflags) & (AF_WIZARD|AF_GOD))) || 
+                         (Wizard(owner) && !((at)->flags & AF_GOD))))))
             {
                 // Only set attrs that owner has perm to set.
                 //
@@ -2875,7 +2880,7 @@ BOOL check_zone_handler (dbref player, dbref thing, BOOL bPlayerCheck)
     {
         return FALSE;
     }
-    return check_zone(player, Zone(thing));
+    return check_zone_handler(player, Zone(thing), FALSE);
 }
 
 // This function releases:
