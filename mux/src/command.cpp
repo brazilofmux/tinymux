@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.93 2002-09-29 16:41:54 sdennis Exp $
+// $Id: command.cpp,v 1.94 2002-09-29 23:03:05 jake Exp $
 //
 
 #include "copyright.h"
@@ -81,8 +81,8 @@ NAMETAB cset_sw[] =
     {"anon",            1,  CA_PUBLIC,  CSET_SPOOF},
     {"header",          1,  CA_PUBLIC,  CSET_HEADER},
     {"list",            2,  CA_PUBLIC,  CSET_LIST},
-    {"loud",            3,  CA_PUBLIC,  CSET_LOUD},
     {"log" ,            3,  CA_PUBLIC,  CSET_LOG},
+    {"loud",            3,  CA_PUBLIC,  CSET_LOUD},
     {"mute",            1,  CA_PUBLIC,  CSET_QUIET},
     {"nospoof",         1,  CA_PUBLIC,  CSET_NOSPOOF},
     {"object",          1,  CA_PUBLIC,  CSET_OBJECT},
@@ -123,16 +123,16 @@ NAMETAB doing_sw[] =
     {"header",          1,  CA_PUBLIC,  DOING_HEADER},
     {"message",         1,  CA_PUBLIC,  DOING_MESSAGE},
     {"poll",            1,  CA_PUBLIC,  DOING_POLL},
-    {"unique",          1,  CA_PUBLIC,  DOING_UNIQUE},
     {"quiet",           1,  CA_PUBLIC,  DOING_QUIET|SW_MULTIPLE},
+    {"unique",          1,  CA_PUBLIC,  DOING_UNIQUE},
     { NULL,             0,          0,  0}
 };
 
 NAMETAB dolist_sw[] =
 {
     {"delimit",         1,  CA_PUBLIC,  DOLIST_DELIMIT},
-    {"space",           1,  CA_PUBLIC,  DOLIST_SPACE},
     {"notify",          1,  CA_PUBLIC,  DOLIST_NOTIFY},
+    {"space",           1,  CA_PUBLIC,  DOLIST_SPACE},
     { NULL,             0,          0,  0}
 };
 
@@ -144,9 +144,9 @@ NAMETAB drop_sw[] =
 
 NAMETAB dump_sw[] =
 {
+    {"flatfile",        1,  CA_WIZARD,  DUMP_FLATFILE|SW_MULTIPLE},
     {"structure",       1,  CA_WIZARD,  DUMP_STRUCT|SW_MULTIPLE},
     {"text",            1,  CA_WIZARD,  DUMP_TEXT|SW_MULTIPLE},
-    {"flatfile",        1,  CA_WIZARD,  DUMP_FLATFILE|SW_MULTIPLE},
     { NULL,             0,          0,  0}
 };
 
@@ -344,28 +344,28 @@ NAMETAB mail_sw[] =
 
 NAMETAB malias_sw[] =
 {
-    {"desc",            1,  CA_PUBLIC,  MALIAS_DESC},
-    {"chown",           1,  CA_PUBLIC,  MALIAS_CHOWN},
     {"add",             1,  CA_PUBLIC,  MALIAS_ADD},
-    {"remove",          1,  CA_PUBLIC,  MALIAS_REMOVE},
+    {"chown",           1,  CA_PUBLIC,  MALIAS_CHOWN},
+    {"desc",            1,  CA_PUBLIC,  MALIAS_DESC},
     {"delete",          1,  CA_PUBLIC,  MALIAS_DELETE},
-    {"rename",          1,  CA_PUBLIC,  MALIAS_RENAME},
     {"list",            1,  CA_PUBLIC,  MALIAS_LIST},
+    {"remove",          1,  CA_PUBLIC,  MALIAS_REMOVE},
+    {"rename",          1,  CA_PUBLIC,  MALIAS_RENAME},
     {"status",          1,  CA_PUBLIC,  MALIAS_STATUS},
     { NULL,             0,          0,  0}
 };
 
 NAMETAB mark_sw[] =
 {
-    {"set",             1,  CA_PUBLIC,  MARK_SET},
     {"clear",           1,  CA_PUBLIC,  MARK_CLEAR},
+    {"set",             1,  CA_PUBLIC,  MARK_SET},
     { NULL,             0,          0,  0}
 };
 
 NAMETAB markall_sw[] =
 {
-    {"set",             1,  CA_PUBLIC,  MARK_SET},
     {"clear",           1,  CA_PUBLIC,  MARK_CLEAR},
+    {"set",             1,  CA_PUBLIC,  MARK_SET},
     { NULL,             0,          0,  0}
 };
 
@@ -1468,42 +1468,36 @@ int zonecmdtest(dbref player, char *cmd)
 
 int higcheck (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *pCommand)
 {
-    int hval = 0;
     if (  Good_obj(mudconf.hook_obj)
        && !Going(mudconf.hook_obj))
     {
         char *s_uselock;
+        ATTR *checkattr;
+        BOOL bResult;
         if (cmdp->hookmask & HOOK_IGNORE)
         {
             s_uselock = hook_name(cmdp->cmdname, HOOK_IGNORE);
+            checkattr = atr_str(s_uselock);
+            bResult = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, checkattr, TRUE);
+            free_sbuf(s_uselock);
+            if (!bResult)
+            {
+                return 2;
+            }
         }
-        else
+        if (cmdp->hookmask & HOOK_PERMIT)
         {
             s_uselock = hook_name(cmdp->cmdname, HOOK_PERMIT);
-        }
-        ATTR *hk_ap2 = atr_str(s_uselock);
-        BOOL hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, TRUE);
-        free_sbuf(s_uselock);
-        if (  !hk_retval
-           && (cmdp->hookmask & HOOK_IGNORE))
-        {
-            if (cmdp->hookmask & HOOK_PERMIT)
+            checkattr = atr_str(s_uselock);
+            bResult = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, checkattr, TRUE);
+            free_sbuf(s_uselock);
+            if (!bResult)
             {
-                cmdp->hookmask = cmdp->hookmask & ~HOOK_IGNORE;
-                hval = higcheck(executor, caller, enactor, cmdp, pCommand);
-                cmdp->hookmask = cmdp->hookmask | HOOK_IGNORE;
+                return 1;
             }
-            else
-            {
-                hval = 2;
-            }
-        }
-        else
-        {
-            hval = !hk_retval;
         }
     }
-    return hval;
+    return 0;
 }
 
 void hook_fail (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char *pCommand)
