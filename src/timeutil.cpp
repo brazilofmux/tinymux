@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.19 2001-11-18 20:57:56 sdennis Exp $
+// $Id: timeutil.cpp,v 1.20 2001-12-06 03:40:12 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1959,7 +1959,7 @@ typedef struct tag_pd_breakdown
     unsigned int mask;
     BREAK_DOWN_FUNC *fpBreakDown;
 } PD_BREAKDOWN;
-extern PD_BREAKDOWN BreakDownTable[];
+extern const PD_BREAKDOWN BreakDownTable[];
 
 #define NOT_PRESENT -9999999
 typedef struct tag_AllFields
@@ -2309,7 +2309,7 @@ void BreakDownYD(PD_Node *pNode)
     SplitLastThreeDigits(pNode, PDCB_DAY_OF_YEAR);
 }
 
-int InitialCouldBe[9] =
+const int InitialCouldBe[9] =
 {
     PDCB_YEAR|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_DAY_OF_WEEK|PDCB_HMS_TIME|PDCB_HMS_TIMEZONE|PDCB_HOUR_TIME|PDCB_HOUR_TIMEZONE|PDCB_SUBSECOND,  // 1
     PDCB_YEAR|PDCB_MONTH|PDCB_DAY_OF_MONTH|PDCB_WEEK_OF_YEAR|PDCB_HMS_TIME|PDCB_HMS_TIMEZONE|PDCB_HOUR_TIME|PDCB_HOUR_TIMEZONE|PDCB_MINUTE|PDCB_SECOND|PDCB_SUBSECOND, // 2
@@ -2330,7 +2330,7 @@ typedef struct tag_pd_numeric_valid
     PVALIDFUNC *fnValid;
 } NUMERIC_VALID_RECORD;
 
-NUMERIC_VALID_RECORD NumericSet[] =
+const NUMERIC_VALID_RECORD NumericSet[] =
 {
     { PDCB_YEAR,         isValidYear       },
     { PDCB_MONTH,        isValidMonth      },
@@ -2382,7 +2382,7 @@ typedef struct
     int          iValue;
 } PD_TEXT_ENTRY;
 
-PD_TEXT_ENTRY PD_TextTable[] =
+const PD_TEXT_ENTRY PD_TextTable[] =
 {
     {"sun",       PDCB_DAY_OF_WEEK,   7 },
     {"mon",       PDCB_DAY_OF_WEEK,   1 },
@@ -2486,7 +2486,7 @@ PD_TEXT_ENTRY PD_TextTable[] =
 #define PD_LEX_ALPHA   4
 #define PD_LEX_EOS     5
 
-char LexTable[256] =
+const char LexTable[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -2761,7 +2761,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
     return pNode;
 }
 
-PD_BREAKDOWN BreakDownTable[] =
+const PD_BREAKDOWN BreakDownTable[] =
 {
     { PDCB_HMS_TIME, BreakDownHMS },
     { PDCB_HMS_TIMEZONE, BreakDownHMS },
@@ -2924,7 +2924,7 @@ typedef struct tag_pd_cantbe
     unsigned int cantbe;
 } PD_CANTBE;
 
-PD_CANTBE CantBeTable[] =
+const PD_CANTBE CantBeTable[] =
 {
     { PDCB_YEAR,         PDCB_YEAR|PDCB_YD|PDCB_YMD|PDCB_MDY|PDCB_DMY },
     { PDCB_MONTH,        PDCB_MONTH|PDCB_WEEK_OF_YEAR|PDCB_DAY_OF_YEAR|PDCB_YD|PDCB_YMD|PDCB_MDY|PDCB_DMY|PDCB_WEEK_OF_YEAR_PREFIX },

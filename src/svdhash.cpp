@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.34 2001-11-20 01:04:57 sdennis Exp $
+// $Id: svdhash.cpp,v 1.35 2001-12-06 03:39:58 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -34,7 +34,7 @@ int cs_dbwrites = 0;    // total write-throughs
 int cs_whits    = 0;    // writes into cached pages
 int cs_rhits    = 0;    // read from cached pages
 
-static UINT32 CRC32_Table[256] =
+static const UINT32 CRC32_Table[256] =
 {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba,
     0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
@@ -292,7 +292,7 @@ UINT32 HASH_ProcessBuffer
 }
 
 #define NUMBER_OF_PRIMES 177
-int Primes[NUMBER_OF_PRIMES] =
+const int Primes[NUMBER_OF_PRIMES] =
 {
 
     1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
@@ -369,7 +369,7 @@ void ChoosePrimes(int TableSize, HP_HEAPOFFSET HashPrimes[16])
     }
 }
 
-static UINT32 anGroupMask[33] =
+static const UINT32 anGroupMask[33] =
 {
     0x00000000U,
     0x80000000U, 0xC0000000U, 0xE0000000U, 0xF0000000U,

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.113 2001-11-28 10:23:10 sdennis Exp $
+// $Id: functions.cpp,v 1.114 2001-12-06 03:41:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -544,7 +544,7 @@ static char *strip_useless_zeroes(char *pBegin, char *pEnd)
 
 #ifdef HAVE_IEEE_FP_FORMAT
 
-char *TinyFPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "0", "0" };
+const char *TinyFPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "0", "0" };
 
 #define TINY_FPGROUP_PASS  0x00 // Pass-through to printf
 #define TINY_FPGROUP_ZERO  0x10 // Force to be zero.
@@ -1078,7 +1078,7 @@ FUNCTION(fun_starttime)
 // All escape sequences start with a $. Any unrecognized codes or other
 // text will be returned unchanged.
 //
-char *DayOfWeekStringLong[7] =
+const char *DayOfWeekStringLong[7] =
 {
     "Sunday",
     "Monday",
@@ -1090,7 +1090,7 @@ char *DayOfWeekStringLong[7] =
 };
 extern char *DayOfWeekString[];
 extern const char *monthtab[];
-char *MonthTableLong[] =
+const char *MonthTableLong[] =
 {
     "January",
     "February",
@@ -1106,7 +1106,7 @@ char *MonthTableLong[] =
     "December"
 };
 
-int Map24to12[24] =
+const int Map24to12[24] =
 {
     12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
     12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
@@ -2809,7 +2809,7 @@ FUNCTION(fun_sqrt)
 #endif
 }
 
-static long nMaximums[10] =
+static const long nMaximums[10] =
 {
     0, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999
 };
@@ -7237,7 +7237,7 @@ typedef struct
 } RADIX_ENTRY;
 
 #define N_RADIX_ENTRIES 4
-RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
+const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
 {
     { 86400, 'd', 3, "day"    },
     {  3600, 'h', 4, "hour"   },
