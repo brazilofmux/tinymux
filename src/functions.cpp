@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.141 2002-01-29 10:10:15 sdennis Exp $
+// $Id: functions.cpp,v 1.142 2002-01-31 11:52:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4298,23 +4298,93 @@ FUNCTION(fun_type)
     return;
 }
 
+typedef struct
+{
+    char *pName;
+    int  iMask;
+} ATR_HAS_FLAG_ENTRY;
+
+ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
+{
+    { "dark",       AF_DARK    },
+    { "wizard",     AF_WIZARD  },
+    { "hidden",     AF_MDARK   },
+    { "html",       AF_HTML    },
+    { "locked",     AF_LOCK    },
+    { "no_command", AF_NOPROG  },
+    { "no_parse",   AF_NOPARSE },
+    { "regexp",     AF_REGEXP  },
+    { "god",        AF_GOD     },
+    { "visual",     AF_VISUAL  },
+    { "no_inherit", AF_PRIVATE },
+//  { "const",      AF_CONST   },
+    { NULL,         0          }
+};
+
+static int atr_has_flag
+(
+    dbref player,
+    dbref thing,
+    ATTR* attr,
+    dbref aowner,
+    int   aflags,
+    const char *flagname
+)
+{
+    if (See_attr(player, thing, attr, aowner, aflags))
+    {
+        ATR_HAS_FLAG_ENTRY *pEntry = atr_has_flag_table;
+        while (pEntry->pName)
+        {
+            if (string_prefix(pEntry->pName, flagname))
+            {
+                return aflags & (pEntry->iMask);
+            }
+            pEntry++;
+        }
+    }
+    return 0;
+}
+
 FUNCTION(fun_hasflag)
 {
     dbref it;
+    int atr;
 
-    it = match_thing(player, fargs[0]);
-    if (!Good_obj(it)) {
-        safe_str("#-1 NOT FOUND", buff, bufc);
-        return;
-    }
-    if (mudconf.pub_flags || Examinable(player, it) || (it == cause))
+    if (parse_attrib(player, fargs[0], &it, &atr))
     {
-        int cc = has_flag(player, it, fargs[1]);
-        safe_chr(cc ? '1' : '0', buff, bufc);
+        if (atr == NOTHING)
+        {
+            safe_str("#-1 NOT FOUND", buff, bufc);
+        }
+        else
+        {
+            ATTR *ap = atr_num(atr);
+            int aflags;
+            dbref aowner;
+            atr_pget_info(it, atr, &aowner, &aflags);
+            int cc = atr_has_flag(player, it, ap, aowner, aflags, fargs[1]);
+            safe_chr(cc ? '1' : '0', buff, bufc);
+        }
     }
     else
     {
-        safe_noperm(buff, bufc);
+        it = match_thing(player, fargs[0]);
+        if (!Good_obj(it))
+        {
+            safe_str("#-1 NOT FOUND", buff, bufc);
+        }
+        else if (  mudconf.pub_flags
+                || Examinable(player, it)
+                || it == cause)
+        {
+            int cc = has_flag(player, it, fargs[1]);
+            safe_chr(cc ? '1' : '0', buff, bufc);
+        }
+        else
+        {
+            safe_noperm(buff, bufc);
+        }
     }
 }
 
