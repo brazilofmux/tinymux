@@ -190,6 +190,10 @@ if test $ac_cv_func_socket = no; then
 	AC_CHECK_LIB(socket, main)
 fi
 AC_CHECK_LIB(m, main)
+AC_CHECKING(for /dev/urandom)
+if test -c /dev/urandom; then
+  AC_DEFINE(HAVE_DEV_URANDOM)
+fi
 AC_SUBST(LIBOBJS)
 AC_SUBST(def_force_c_compiler)
 AC_SUBST(def_brief_lib_list)

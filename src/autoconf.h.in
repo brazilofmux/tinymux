@@ -146,6 +146,8 @@
 /* integer greater than or or equal to the algebraic quotient. For       */
 /* example, -9/5 gives -1                                                */
 #undef SMALLEST_INT_GTE_NEG_QUOTIENT
+/* Define if the character special file /dev/urandom is present */
+#undef HAVE_DEV_URANDOM
 
 /* ---------------------------------------------------------------------------
  * Setup section:

@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.17 2001-11-19 19:39:17 sdennis Exp $
+// $Id: svdrand.cpp,v 1.18 2002-01-16 02:10:56 sdennis Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -21,14 +21,41 @@
 #include "svdrand.h"
 #include "svdhash.h"
 
+#ifndef WIN32
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 void sgenrand(UINT32);    // seed the generator
 UINT32 genrand(void);     // returns a random 32-bit integer */
+
+#define N 624
+static UINT32 mt[N];
 
 static BOOL bSeeded = FALSE;
 void SeedRandomNumberGenerator(void)
 {
     if (bSeeded) return;
     bSeeded = TRUE;
+
+#ifdef HAVE_DEV_URANDOM
+    // Try to seed the PRNG from /dev/urandom 
+    // If it doesn't work, just seed the normal way 
+    //
+    int fd = open("/dev/urandom", O_RDONLY);
+
+    if (fd >= 0)
+    {
+        int len = read(fd, mt, sizeof mt);
+        close(fd);
+        if (len == sizeof mt)
+        {
+            return;
+        }
+    }
+#endif
 
     // Determine the initial seed.
     //
@@ -120,7 +147,6 @@ INT32 RandomINT32(INT32 lLow, INT32 lHigh)
 /* When you use this, send an email to: matumoto@math.keio.ac.jp   */
 /* with an appropriate reference to your work.                     */
 
-#define N 624
 #define M 397
 #define MATRIX_A 0x9908b0df
 #define UPPER_MASK 0x80000000
@@ -132,7 +158,6 @@ INT32 RandomINT32(INT32 lLow, INT32 lHigh)
 #define TEMPERING_SHIFT_T(y)  (y << 15)
 #define TEMPERING_SHIFT_L(y)  (y >> 18)
 
-static UINT32 mt[N];
 static int mti = N + 1;
 
 void sgenrand(UINT32 nSeed)
