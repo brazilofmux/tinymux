@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.23 2004-03-01 06:38:48 sdennis Exp $
+// $Id: mail.cpp,v 1.24 2004-03-07 06:40:36 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1642,7 +1642,8 @@ static char *make_numlist(dbref player, char *arg, bool bBlind)
 
     char *head = arg;
 
-    while (head && *head)
+    while (  head
+          && *head)
     {
         while (*head == ' ')
         {
@@ -1650,13 +1651,15 @@ static char *make_numlist(dbref player, char *arg, bool bBlind)
         }
 
         tail = head;
-        while (*tail && (*tail != ' '))
+        while (  *tail
+              && *tail != ' ')
         {
             if (*tail == '"')
             {
                 head++;
                 tail++;
-                while (*tail && (*tail != '"'))
+                while (  *tail
+                      && *tail != '"')
                 {
                     tail++;
                 }
@@ -1672,7 +1675,7 @@ static char *make_numlist(dbref player, char *arg, bool bBlind)
             tail++;
         }
         spot = *tail;
-        *tail = 0;
+        *tail = '\0';
 
         if (*head == '*')
         {
@@ -2071,8 +2074,7 @@ static void send_mail
     const char *subject,
     int number,
     mail_flag flags,
-    bool silent,
-    bool bBlind
+    bool silent
 )
 {
     if (!isPlayer(target))
@@ -2115,7 +2117,8 @@ static void send_mail
             newp->from = mailbag;
         }
     }
-    if (bBlind)
+    if (  !tolist
+       || tolist[0] == '\0')
     {
         newp->tolist = StringClone("*HIDDEN*");
     }
@@ -3124,7 +3127,16 @@ void check_mail(dbref player, int folder, bool silent)
 #endif // MAIL_ALL_FOLDERS
 }
 
-void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int number, mail_flag flags, bool silent, bool bBlind)
+void do_malias_send
+(
+    dbref player,
+    char *tolist,
+    char *listto,
+    char *subject,
+    int   number,
+    mail_flag flags,
+    bool  silent
+)
 {
     int nResult;
     struct malias *m = get_malias(player, tolist, &nResult);
@@ -3149,7 +3161,7 @@ void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int
 
         if (isPlayer(vic))
         {
-            send_mail(player, m->list[k], listto, subject, number, flags, silent, bBlind);
+            send_mail(player, m->list[k], listto, subject, number, flags, silent);
         }
         else
         {
@@ -3159,7 +3171,7 @@ void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int
             int iMail = add_mail_message(player, pMail, !(flags & M_FORWARD));
             if (iMail != NOTHING)
             {
-                send_mail(GOD, GOD, listto, subject, iMail, 0, silent, bBlind);
+                send_mail(GOD, GOD, listto, subject, iMail, 0, silent);
                 MessageReferenceDec(iMail);
             }
         }
@@ -3214,19 +3226,24 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     char *buff;
     dbref target;
     i = 0;
-    while (head && *head && (i < (MAX_MALIAS_MEMBERSHIP - 1)))
+    while (  head
+          && *head
+          && i < (MAX_MALIAS_MEMBERSHIP - 1))
     {
         while (*head == ' ')
+        {
             head++;
+        }
         tail = head;
-        while (*tail && (*tail != ' '))
+        while (  *tail
+              && *tail != ' ')
         {
             if (*tail == '"')
             {
                 head++;
                 tail++;
                 while (  *tail 
-                      && (*tail != '"'))
+                      && *tail != '"')
                 {
                     tail++;
                 }
@@ -3258,15 +3275,16 @@ void do_malias_create(dbref player, char *alias, char *tolist)
         {
             target = lookup_player(player, head, true);
         }
-        if (!Good_obj(target) || !isPlayer(target))
+
+        if (  !Good_obj(target)
+           || !isPlayer(target))
         {
             notify(player, "MAIL: No such player.");
         }
         else
         {
             buff = unparse_object(player, target, false);
-            notify(player,
-            tprintf("MAIL: %s added to alias %s", buff, alias));
+            notify(player, tprintf("MAIL: %s added to alias %s", buff, alias));
             malias[ma_top]->list[i] = target;
             i++;
             free_lbuf(buff);
@@ -3277,7 +3295,9 @@ void do_malias_create(dbref player, char *alias, char *tolist)
         *tail = spot;
         head = tail;
         if (*head == '"')
+        {
             head++;
+        }
     }
     int  nValidMailAlias;
     bool bValidMailAlias;
@@ -3479,17 +3499,71 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
         return;
     }
 
+    // Construct a tolist which excludes all the Blind Carbon Copy (BCC)
+    // recipients.
+    //
     char *tolist = alloc_lbuf("mail_to_list");
-    strcpy(tolist, list);
+    char *p = tolist;
+    char *tail;
+    char *head = list;
+    while (*head)
+    {
+        while (*head == ' ')
+        {
+            head++;
+        }
+
+        tail = head;
+        while (  *tail
+              && *tail != ' ')
+        {
+            if (*tail == '"')
+            {
+                head++;
+                tail++;
+                while (  *tail
+                      && *tail != '"')
+                {
+                    tail++;
+                }
+            }
+            if (*tail)
+            {
+                tail++;
+            }
+        }
+        tail--;
+        if (*tail != '"')
+        {
+            tail++;
+        }
+
+        if (*head != '!')
+        {
+            if (p != tolist)
+            {
+                *p++ = ' ';
+            }
+            memcpy(p, head, tail-head);
+            p += tail-head;
+        }
+
+        // Get the next recipient.
+        //
+        head = tail;
+        if (*head == '"')
+        {
+            head++;
+        }
+    }
+    *p = '\0';
 
     int number = add_mail_message(player, message, !(flags & M_FORWARD));
     if (number != NOTHING)
     {
-        char *tail, spot;
-        dbref target;
-        char *head = list;
-        while (  head
-              && *head)
+        char spot;
+        head = list;
+        while (*head)
         {
             while (*head == ' ')
             {
@@ -3521,24 +3595,24 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
                 tail++;
             }
             spot = *tail;
-            *tail = 0;
+            *tail = '\0';
 
-            bool bBlind = false;
             if (*head == '!')
             {
                 head++;
-                bBlind = true;
             }
+
             if (*head == '*')
             {
-                do_malias_send(player, head, tolist, subject, number, flags, silent, bBlind);
+                do_malias_send(player, head, tolist, subject, number, flags, silent);
             }
             else
             {
-                target = mux_atol(head);
-                if (Good_obj(target) && isPlayer(target))
+                dbref target = mux_atol(head);
+                if (  Good_obj(target)
+                   && isPlayer(target))
                 {
-                    send_mail(player, target, tolist, subject, number, flags, silent, bBlind);
+                    send_mail(player, target, tolist, subject, number, flags, silent);
                 }
             }
 
