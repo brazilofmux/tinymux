@@ -394,10 +394,10 @@ Bug Fixes:
     Fixed by Brazil.
  -- Fixed use of LIBOBJS in Makefile.in so that clean (or initial)
     builds succeed.
- -- Fixes the way encoded and parsed in mail.db and flatfiles.  This is
-    an important fix.  Backups of your database are not affected,
-    however, without this fix, your server will probably not parser you
-    backups correctly if they contain accent characters.
+ -- Fixes the way accents are encoded and parsed in mail.db and
+    flatfiles.  This is an important fix.  Backups of your database are
+    not affected, however, without this fix, your server will probably
+    not parse your backups correctly if they contain accent characters.
 
 
 Performance Enhancements:
