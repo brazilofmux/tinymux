@@ -9809,29 +9809,32 @@ CHANNELS()
   Non-wizards can only use it to return their own comtitles.
  
   See also: comalias()
- 
+
 & DOING()
- 
-  Function: doing(<player>)
- 
+DOING()
+
+  FUNCTION: doing(<player>)
+
   doing() returns the connected player's @doing entry.
- 
-  See also: poll()
- 
+
+  Related Topics: poll()
+
 & MOTD()
+MOTD()
  
-  Function: motd()
+  FUNCTION: motd()
  
   motd() returns the current MOTD as set using @motd.
  
 & POLL()
+POLL()
  
-  Function: poll()
+  FUNCTION: poll()
  
   poll() returns the current poll (the top of the @doing column in WHO) as
   set with the @poll command.
  
-  See also: doing()
+  Related Topics: doing()
 
 & OBJECT STACK
  
@@ -9960,7 +9963,8 @@ LINK()
 & SUBEVAL()
 SUBEVAL()
 
-  Function: subeval(<string>)
+  FUNCTION: subeval(<string>)
+  
   This function's usefulness is primarily useful in conjunction with
   v() as a way to control when evalution occurs. Escapes are
   evaluated, but and functions are not. The location escape is also
@@ -9973,7 +9977,8 @@ SUBEVAL()
 & TEL()
 TEL()
 
-  Function: tel(<name>,<destination>)
+  FUNCTION: tel(<name>,<destination>)
+  
   Works the same as @tel, <name> and <destination> are equivalent to what
   comes before and after the '=' sign. Returns nothing. This is a side
   effect function, and should only be used when necessary.
@@ -9984,7 +9989,8 @@ TEL()
 & VALID()
 VALID()
 
-  Function: valid(<name>,<argument>)
+  FUNCTION:  valid(<name>,<argument>)
+  
   This returns true or false depending on whether the characters and
   arrangement of characters in <argument> satisfy the restrictions
   implied by <name>
@@ -10022,9 +10028,11 @@ VALID()
     You say "command1 command2"
   
   See also: lattrcmds().
-
+  
 & STARTSECS()
-  Function: startsecs()
+STARTSECS()
+
+  FUNCTION: startsecs()
   
   Returns the number of seconds that represents the time the MUX last
   rebooted. The time is measured in the same way as the secs()
@@ -10054,7 +10062,9 @@ VALID()
   See also: lcmds().
   
 & DIGITTIME()
-  Function: digittime(<seconds>)
+DIGITTIME()
+
+  FUNCTION: digittime(<seconds>)
   
   This function converts a number of <seconds> to a digital time
   string and prepends the number of days if the time is greater than
