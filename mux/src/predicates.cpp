@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.7 2002-06-13 07:51:23 jake Exp $
+// $Id: predicates.cpp,v 1.8 2002-06-13 15:39:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1062,6 +1062,9 @@ void do_prog
     parse_attrib(player, attrib, &thing, &atr);
     if (atr != NOTHING)
     {
+        // JAKE: you can't use atr_get_raw() and atr_add_raw() together.
+        // They step on each other.
+        //
         char *pBuffer = atr_get_raw(thing, atr);
         if (*pBuffer)
         {
