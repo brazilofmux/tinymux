@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.61 2001-06-30 20:27:02 sdennis Exp $
+// $Id: functions.cpp,v 1.62 2001-07-02 09:10:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4452,6 +4452,8 @@ FUNCTION(fun_reverse)
 char ReverseWordsInText_Seperator;
 static void ReverseWordsInText(char *dest, char *src, unsigned int n)
 {
+    char chSave = src[n];
+    src[n] = '\0';
     dest += n;
     while (n)
     {
@@ -4477,6 +4479,7 @@ static void ReverseWordsInText(char *dest, char *src, unsigned int n)
             n--;
         }
     }
+    src[n] = chSave;
 }
 
 FUNCTION(fun_revwords)
