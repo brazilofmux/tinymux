@@ -1,5 +1,7 @@
-/* alloc.h - External definitions for memory allocation subsystem */
-/* $Id: alloc.h,v 1.2 2001-06-29 16:37:40 sdennis Exp $ */
+// alloc.h -- External definitions for memory allocation subsystem.
+//
+// $Id: alloc.h,v 1.3 2001-11-19 19:39:33 sdennis Exp $
+//
 
 #ifndef M_ALLOC_H
 #define M_ALLOC_H

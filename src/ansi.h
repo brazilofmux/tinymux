@@ -1,14 +1,14 @@
-/* ansi.h */
-/* $Id: ansi.h,v 1.1 2000-04-11 07:14:42 sdennis Exp $ */
-
-/* ANSI control codes for various neat-o terminal effects
- *
- * Some older versions of Ultrix don't appear to be able to
- * handle these escape sequences. If lowercase 'a's are being
- * stripped from @doings, and/or the output of the ANSI flag
- * is screwed up, you have the Ultrix problem.
- *
- */
+// ansi.h
+//
+// $Id: ansi.h,v 1.2 2001-11-19 19:39:50 sdennis Exp $ */
+//
+// ANSI control codes for various neat-o terminal effects
+//
+// Some older versions of Ultrix don't appear to be able to handle these
+// escape sequences. If lowercase 'a's are being stripped from @doings,
+// and/or the output of the ANSI flag is screwed up, you have the Ultrix
+// problem.
+//
 
 #define BEEP_CHAR     '\07'
 #define ESC_CHAR      '\033'

@@ -1,4 +1,7 @@
-// htab.h - Structures and declarations needed for table hashing */
+// htab.h - Structures and declarations needed for table hashing.
+//
+// $Id: htab.h,v 1.3 2001-11-19 19:37:28 sdennis Exp $
+//
 
 #include "copyright.h"
 

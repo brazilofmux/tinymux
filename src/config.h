@@ -1,7 +1,8 @@
 // config.h
 //
-// $Id: config.h,v 1.21 2001-10-25 17:09:25 sdennis Exp $
+// $Id: config.h,v 1.22 2001-11-19 19:41:24 sdennis Exp $
 //
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
