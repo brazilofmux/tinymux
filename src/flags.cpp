@@ -1,6 +1,6 @@
 // flags.cpp - flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.10 2001-02-09 09:25:24 sdennis Exp $ 
+// $Id: flags.cpp,v 1.11 2001-06-28 10:51:41 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -36,7 +36,7 @@ int fh_any(dbref target, dbref player, FLAG flag, int fflags, int reset)
         notify(player, "You cannot make God mortal.");
         return 0;
     }
-    
+
     // Otherwise we can go do it.
     //
     if (fflags & FLAG_WORD3)
@@ -138,7 +138,7 @@ int fh_privileged
 )
 {
     int has_it;
-    
+
     if (!God(player))
     {
         if (!isPlayer(player) || (player != Owner(player)))
@@ -149,7 +149,7 @@ int fh_privileged
         {
             return 0;
         }
-        
+
         if (fflags & FLAG_WORD3)
         {
             has_it = (Flags3(player) & flag) ? 1 : 0;
@@ -162,7 +162,7 @@ int fh_privileged
         {
             has_it = (Flags(player) & flag) ? 1 : 0;
         }
-        
+
         if (!has_it)
         {
             return 0;
@@ -297,7 +297,7 @@ int fh_staff
 }
 
 FLAGENT gen_flags[] =
-{ 
+{
     {"ABODE",           ABODE,        'A',    FLAG_WORD2, 0,                    fh_any},
     {"ANSI",            ANSI,         'X',    FLAG_WORD2, 0,                    fh_any},
     {"AUDITORIUM",      AUDITORIUM,   'b',    FLAG_WORD2, 0,                    fh_any},
@@ -328,7 +328,7 @@ FLAGENT gen_flags[] =
     {"WIZARD",          WIZARD,       'W',    0,          0,                    fh_god},
     {"PARENT_OK",       PARENT_OK,    'Y',    FLAG_WORD2, 0,                    fh_any},
     {"ROYALTY",         ROYALTY,      'Z',    0,          0,                    fh_wiz},
-    {"FIXED",           FIXED,        'f',    FLAG_WORD2, 0,                    fh_restrict_player}, 
+    {"FIXED",           FIXED,        'f',    FLAG_WORD2, 0,                    fh_restrict_player},
     {"UNINSPECTED",     UNINSPECTED,  'g',    FLAG_WORD2, 0,                    fh_wizroy},
     {"NO_COMMAND",      NO_COMMAND,   'n',    FLAG_WORD2, 0,                    fh_any},
     {"NOBLEED",         NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any},
@@ -367,7 +367,7 @@ FLAGENT gen_flags[] =
     { NULL,             0,            ' ',    0,          0,                    NULL}
 };
 
-#endif  /* STANDALONE */
+#endif
 
 OBJENT object_types[8] =
 {
@@ -476,11 +476,9 @@ FLAGENT *find_flag(dbref thing, char *flagname)
     return fe;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * flag_set: Set or clear a specified flag on an object. 
- */
-
+// ---------------------------------------------------------------------------
+// flag_set: Set or clear a specified flag on an object.
+//
 void flag_set(dbref target, dbref player, char *flag, int key)
 {
     BOOL bDone = FALSE;
@@ -520,7 +518,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
         {
             *nflag = '\0';
         }
-        
+
         // Make sure a flag name was specified.
         //
         if (*flag == '\0')
@@ -544,7 +542,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
             else
             {
                 // Invoke the flag handler, and print feedback.
-                //        
+                //
                 if (!fp->handler(target, player, fp->flagvalue, fp->flagflag, negate))
                 {
                     notify(player, NOPERM_MESSAGE);
@@ -611,7 +609,7 @@ char *decode_flags(dbref player, FLAG flagword, FLAG flag2word, FLAG flag3word)
                 continue;
             }
 
-            // Don't show CONNECT on dark wizards to mortals 
+            // Don't show CONNECT on dark wizards to mortals
             //
             if (  isPlayer(player)
                && (fp->flagvalue == CONNECTED)
@@ -667,7 +665,7 @@ int has_flag(dbref player, dbref it, char *flagname)
             return 0;
         }
 
-        // Don't show CONNECT on dark wizards to mortals 
+        // Don't show CONNECT on dark wizards to mortals
         //
         if (  isPlayer(it)
            && (fp->flagvalue == CONNECTED)
@@ -721,14 +719,14 @@ char *flag_description(dbref player, dbref target)
         else
             fv = Flags(target);
 
-        if (fv & fp->flagvalue) 
+        if (fv & fp->flagvalue)
         {
             if ((fp->listperm & CA_WIZARD) && !Wizard(player))
                 continue;
             if ((fp->listperm & CA_GOD) && !God(player))
                 continue;
             /*
-             * don't show CONNECT on dark wizards to mortals 
+             * don't show CONNECT on dark wizards to mortals
              */
             if (  isPlayer(target)
                && (fp->flagvalue == CONNECTED)
@@ -833,19 +831,19 @@ CF_HAND(cf_flag_access)
     Tiny_StrTokControl(&tts, " \t=,");
     char *fstr = Tiny_StrTokParse(&tts);
     char *permstr = Tiny_StrTokParse(&tts);
-    
+
     if (!fstr || !*fstr)
     {
         return -1;
     }
-    
+
     FLAGENT *fp;
     if ((fp = find_flag(GOD, fstr)) == NULL)
     {
         cf_log_notfound(player, cmd, "No such flag", fstr);
         return -1;
     }
-    
+
     // Don't change the handlers on special things.
     //
     if (  (fp->handler != fh_any)
@@ -861,7 +859,7 @@ CF_HAND(cf_flag_access)
         ENDLOG;
         return -1;
     }
-    
+
     if (!strcmp(permstr, (char *) "any"))
     {
         fp->handler = fh_any;
@@ -918,7 +916,7 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
         handled = 0;
 
         /*
-         * Check for object type 
+         * Check for object type
          */
 
         for (i = 0; (i <= 7) && !handled; i++) {
@@ -939,7 +937,7 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
         }
 
         /*
-         * Check generic flags 
+         * Check generic flags
          */
 
         if (handled)
@@ -969,7 +967,7 @@ int convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
     }
 
     /*
-     * return flags to search for and type 
+     * return flags to search for and type
      */
 
     (*fset).word1 = flag1mask;
@@ -990,24 +988,24 @@ void decompile_flags(dbref player, dbref thing, char *thingname)
     FLAGENT *fp;
 
     /*
-     * Report generic flags 
+     * Report generic flags
      */
 
     f1 = Flags(thing);
     f2 = Flags2(thing);
     f3 = Flags3(thing);
-    
+
     for (fp = gen_flags; fp->flagname; fp++) {
 
         /*
-         * Skip if we shouldn't decompile this flag 
+         * Skip if we shouldn't decompile this flag
          */
 
         if (fp->listperm & CA_NO_DECOMP)
             continue;
 
         /*
-         * Skip if this flag is not set 
+         * Skip if this flag is not set
          */
 
         if (fp->flagflag & FLAG_WORD3) {
@@ -1022,20 +1020,18 @@ void decompile_flags(dbref player, dbref thing, char *thingname)
         }
 
         /*
-         * Skip if we can't see this flag 
+         * Skip if we can't see this flag
          */
 
         if (!check_access(player, fp->listperm))
             continue;
 
         /*
-         * We made it this far, report this flag 
+         * We made it this far, report this flag
          */
 
         notify(player, tprintf("@set %s=%s", strip_ansi(thingname), fp->flagname));
     }
 }
 
-#endif /*
-    * STANDALONE 
-    */
+#endif
