@@ -1,6 +1,6 @@
 //comsys.c
 //
-// * $Id: comsys.cpp,v 1.6 2000-06-10 02:22:51 sdennis Exp $
+// * $Id: comsys.cpp,v 1.7 2000-06-10 03:07:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -131,21 +131,60 @@ void save_comsys(char *filename)
     ReplaceFile(buffer, filename);
 }
 
-BOOL ParseChannelLine(const char *pBuffer, char *pAlias5, char **ppChannelName)
+// Aliases must be between 1 and 5 characters. No spaces. No ANSI.
+//
+char *MakeCanonicalComAlias(const char *pAlias, int *nValidAlias, BOOL *bValidAlias)
 {
-    // Fetch alias portion. Must be between 1 and 5 characters long.
-    // We need to find the first space.
-    //
-    char *p = strchr(pBuffer, ' ');
-    if (!p) return FALSE;
+    static char Buffer[6];
+    *nValidAlias = 0;
+    *bValidAlias = FALSE;
 
-    int n = p - pBuffer;
+    if (!pAlias)
+    {
+        return NULL;
+    }
+    const char *p = pAlias;
+    char *q = Buffer;
+    int n = 0;
+    while (*p)
+    {
+        if (!Tiny_IsAlphaNumeric[(unsigned char)*p])
+        {
+            return NULL;
+        }
+        if (n <= 5)
+        {
+            n++;
+            *q++ = *p;
+        }
+        p++;
+    }
+    *q = '\0';
     if (n < 1 || 5 < n)
     {
         return FALSE;
     }
-    memcpy(pAlias5, pBuffer, n);
-    pAlias5[n] = '\0';
+    *nValidAlias = n;
+    *bValidAlias = TRUE;
+    return Buffer;
+}
+
+BOOL ParseChannelLine(char *pBuffer, char *pAlias5, char **ppChannelName)
+{
+    // Fetch alias portion. We need to find the first space.
+    //
+    char *p = strchr(pBuffer, ' ');
+    if (!p) return FALSE;
+
+    *p = '\0';
+    BOOL bValidAlias;
+    int  nValidAlias;
+    char *pValidAlias = MakeCanonicalComAlias(pBuffer, &nValidAlias, &bValidAlias);
+    if (!bValidAlias)
+    {
+        return FALSE;
+    }
+    strcpy(pAlias5, pValidAlias);
 
     // Skip any leading space before the channel name.
     //
@@ -1081,9 +1120,12 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
         raw_notify(player, "Comsys disabled.");
         return;
     }
-    if (!*arg1)
+    BOOL bValidAlias;
+    int  nValidAlias;
+    char *pValidAlias = MakeCanonicalComAlias(arg1, &nValidAlias, &bValidAlias);
+    if (!bValidAlias)
     {
-        raw_notify(player, "You need to specify an alias.");
+        raw_notify(player, "You need to specify a valid alias.");
         return;
     }
     s = arg2;
@@ -1133,12 +1175,12 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
         raw_notify(player, tprintf("Warning: You are already on that channel."));
     }
     c = get_comsys(player);
-    for (j = 0; j < c->numchannels && (strcmp(arg1, c->alias + j * 6) > 0); j++)
+    for (j = 0; j < c->numchannels && (strcmp(pValidAlias, c->alias + j * 6) > 0); j++)
     {
         // Nothing
         ;
     }
-    if (j < c->numchannels && !strcmp(arg1, c->alias + j * 6))
+    if (j < c->numchannels && !strcmp(pValidAlias, c->alias + j * 6))
     {
         char *p = tprintf("That alias is already in use for channel %s.", c->channels[j]);
         raw_notify(player, p);
@@ -1177,8 +1219,8 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
     }
     
     where = j;
-    strncpy(c->alias + where * 6, arg1, 5);
-    *(c->alias + where * 6 + 5) = '\0';
+    memcpy(c->alias + where * 6, pValidAlias, nValidAlias);
+    *(c->alias + where * 6 + nValidAlias) = '\0';
     c->channels[where] = StringClone(channel);
     
     do_joinchannel(player, ch);
@@ -1187,11 +1229,11 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
     
     if (pValidatedTitleValue[0] == '\0')
     {
-        raw_notify(player, tprintf("Channel %s added with alias %s.", channel, arg1));
+        raw_notify(player, tprintf("Channel %s added with alias %s.", channel, pValidAlias));
     }
     else
     {
-        raw_notify(player, tprintf("Channel %s added with alias %s and title %s.", channel, arg1, pValidatedTitleValue));
+        raw_notify(player, tprintf("Channel %s added with alias %s and title %s.", channel, pValidAlias, pValidatedTitleValue));
     }
     free_lbuf(pValidatedTitleValue);
 }
