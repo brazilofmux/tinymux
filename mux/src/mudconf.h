@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.9 2002-07-29 23:53:43 jake Exp $
+// $Id: mudconf.h,v 1.10 2002-08-06 01:17:14 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -184,6 +184,7 @@ struct confdata
     BOOL    safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
     dbref   hook_obj;       // Object with @hook data.
     int     hook_cmd;       // @hooks to be initialized.
+    dbref   global_error_obj;    // Object that is used to generate error messages.
 #endif // !STANDALONE
     BOOL    cache_names;    /* Should object names be cached separately */
 

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.62 2002-08-05 22:20:30 jake Exp $
+// $Id: command.cpp,v 1.63 2002-08-06 01:17:14 jake Exp $
 //
 
 #include "copyright.h"
@@ -959,7 +959,7 @@ char *hook_name(char *pCommand, int key)
         switch (pCommand[0])
         {
         case '"' : cmdName = "say";    break;
-        case ':' :  
+        case ':' :
         case ';' : cmdName = "pose";   break;
         case '\\': cmdName = "@emit";  break;
         case '#' : cmdName = "@force"; break;
@@ -2190,14 +2190,31 @@ char *process_command
     //
     if (!succ)
     {
-        // We use LowerCaseCommand for another purpose.
-        //
-        notify(executor, "Huh?  (Type \"help\" for help.)");
-        STARTLOG(LOG_BADCOMMANDS, "CMD", "BAD");
-        log_name_and_loc(executor);
-        log_text(" entered: ");
-        log_text(pCommand);
-        ENDLOG;
+        if (  Good_obj(mudconf.global_error_obj) 
+           && !Going(mudconf.global_error_obj) ) 
+        {
+            char *errtext = atr_get(mudconf.global_error_obj, A_VA, &aowner, &aflags);
+            char *errbuff = alloc_lbuf("process_command.error_msg");
+            char *errbufc = errbuff;
+            str = errtext;
+            TinyExec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor, 
+                EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str,
+                &pCommand, 1);
+            notify(executor, errbuff);
+            free_lbuf(errtext);
+            free_lbuf(errbuff);
+        }
+        else
+        {
+            // We use LowerCaseCommand for another purpose.
+            //
+            notify(executor, "Huh?  (Type \"help\" for help.)");
+            STARTLOG(LOG_BADCOMMANDS, "CMD", "BAD");
+            log_name_and_loc(executor);
+            log_text(" entered: ");
+            log_text(pCommand);
+            ENDLOG;
+        }
     }
     mudstate.debug_cmd = cmdsave;
     return preserve_cmd;

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.16 2002-08-01 15:05:53 jake Exp $
+// $Id: conf.cpp,v 1.17 2002-08-06 01:17:14 jake Exp $
 //
 
 #include "copyright.h"
@@ -251,6 +251,7 @@ void cf_init(void)
     mudconf.destroy_going_now = FALSE;
     mudconf.nStackLimit = 10000;
     mudconf.hook_obj = NOTHING;
+    mudconf.global_error_obj = NOTHING;
 
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = FALSE;
@@ -1606,6 +1607,7 @@ CONF conftable[] =
     {"function_recursion_limit",  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_nest_lim,          NULL,               0},
     {"game_dir_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_dir,        NULL, SIZEOF_PATHNAME},
     {"game_pag_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_pag,        NULL, SIZEOF_PATHNAME},
+    {"global_error_obj" ,         cf_int,         CA_GOD,    CA_GOD,      &mudconf.global_error_obj,       NULL,               0},
     {"good_name",                 cf_badname,     CA_GOD,    CA_DISABLED, NULL,                            NULL,               1},
     {"guest_char_num",            cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.guest_char,             NULL,               0},
     {"guest_nuker",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.guest_nuker,            NULL,               0},
