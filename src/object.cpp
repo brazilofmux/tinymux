@@ -2,7 +2,7 @@
  * object.c - low-level object manipulation routines 
  */
 /*
- * $Id: object.cpp,v 1.2 2000-04-29 08:05:14 sdennis Exp $ 
+ * $Id: object.cpp,v 1.3 2000-05-25 04:09:06 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -429,55 +429,52 @@ void destroy_obj(dbref player, dbref obj)
     int good_owner, val, quota;
     STACK *sp, *next;
 
-#ifndef STANDALONE
-    char *tname;
-
-#endif
-
     if (!Good_obj(obj))
+    {
         return;
+    }
 
-
-    /*
-     * Validate the owner 
-     */
-
+    // Validate the owner.
+    //
     owner = Owner(obj);
     good_owner = Good_owner(owner);
 
-    /*
-     * Halt any pending commands (waiting or semaphore) 
-     */
-
+    // Halt any pending commands (waiting or semaphore).
+    //
 #ifndef STANDALONE
-    if (halt_que(NOTHING, obj) > 0) {
-        if (good_owner && !Quiet(obj) && !Quiet(owner)) {
+    if (halt_que(NOTHING, obj) > 0)
+    {
+        if (good_owner && !Quiet(obj) && !Quiet(owner))
+        {
             notify(owner, "Halted.");
         }
     }
     nfy_que(obj, 0, NFY_DRAIN, 0);
 #endif
 
-    /*
-     * Compensate the owner for the object 
-     */
-
+    // Compensate the owner for the object.
+    //
     val = 1;
     quota = 1;
-    if (good_owner && (owner != obj)) {
-        switch (Typeof(obj)) {
+    if (good_owner && (owner != obj))
+    {
+        switch (Typeof(obj))
+        {
         case TYPE_ROOM:
             val = mudconf.digcost;
             quota = mudconf.room_quota;
             break;
+
         case TYPE_THING:
             val = OBJECT_DEPOSIT(Pennies(obj));
             quota = mudconf.thing_quota;
             break;
+
         case TYPE_EXIT:
             val = mudconf.opencost;
             quota = mudconf.exit_quota;
             break;
+
         case TYPE_PLAYER:
             if (Robot(obj))
                 val = mudconf.robotcost;
@@ -487,31 +484,39 @@ void destroy_obj(dbref player, dbref obj)
         }
         giveto(owner, val);
         if (mudconf.quotas)
+        {
             add_quota(owner, quota);
+        }
 
 #ifndef STANDALONE
         if (!Quiet(owner) && !Quiet(obj))
+        {
             notify(owner,
                    tprintf("You get back your %d %s deposit for %s(#%d).",
                     val, mudconf.one_coin, Name(obj), obj));
+        }
 #endif
     }
 #ifndef STANDALONE
-    if ((player != NOTHING) && !Quiet(player)) {
-        if (good_owner && Owner(player) != owner) {
-            if (owner == obj) {
-                notify(player,
-                       tprintf("Destroyed. %s(#%d)",
-                           Name(obj), obj));
-            } else {
-                tname = alloc_sbuf("destroy_obj");
+    ReleaseAllResources(obj);
+    if ((player != NOTHING) && !Quiet(player))
+    {
+        if (good_owner && Owner(player) != owner)
+        {
+            if (owner == obj)
+            {
+                notify(player, tprintf("Destroyed. %s(#%d)", Name(obj), obj));
+            }
+            else
+            {
+                char *tname = alloc_sbuf("destroy_obj");
                 StringCopy(tname, Name(owner));
-                notify(player,
-                       tprintf("Destroyed. %s's %s(#%d)",
-                           tname, Name(obj), obj));
+                notify(player, tprintf("Destroyed. %s's %s(#%d)", tname, Name(obj), obj));
                 free_sbuf(tname);
             }
-        } else if (!Quiet(obj)) {
+        }
+        else if (!Quiet(obj))
+        {
             notify(player, "Destroyed.");
         }
     }
@@ -532,22 +537,15 @@ void destroy_obj(dbref player, dbref obj)
     s_Pennies(obj, 0);
     s_Zone(obj, NOTHING);
 
-    /*
-     * Clear the stack 
-     */
-    for (sp = Stack(obj); sp != NULL; sp = next) {
+    // Clear the stack.
+    //
+    for (sp = Stack(obj); sp != NULL; sp = next)
+    {
         next = sp->next;
         free_lbuf(sp->data);
         MEMFREE(sp, __FILE__, __LINE__);
     }
-
     s_Stack(obj, NULL);
-
-#ifndef STANDALONE
-    if (mudconf.have_comsys)
-        toast_player(obj);
-#endif
-    return;
 }
 
 /*
@@ -667,35 +665,35 @@ void destroy_thing(dbref thing)
     destroy_obj(NOTHING, thing);
 }
 
+#if 0 //QQQ
+void destroy_player(dbref agent, dbref victim)
+#else
 void destroy_player(dbref victim)
+#endif
 {
 #ifndef STANDALONE
-    dbref aowner, player;
-    int count, aflags;
-    char *buf;
-
-    /*
-     * Bye bye... 
-     */
-    player = (dbref) Tiny_atol(atr_get_raw(victim, A_DESTROYER));
-    toast_player(victim);
+    // Bye bye...
+    //
+    dbref player = (dbref) Tiny_atol(atr_get_raw(victim, A_DESTROYER));
     boot_off(victim, (char *)"You have been destroyed!");
     halt_que(victim, NOTHING);
-    count = chown_all(victim, player, player, 0);
+    int count = chown_all(victim, player, player, 0);
 
-    /*
-     * Remove the name from the name hash table 
-     */
-
+    // Remove the name from the name hash table.
+    //
     delete_player_name(victim, Name(victim));
-    buf = atr_pget(victim, A_ALIAS, &aowner, &aflags);
+    dbref aowner;
+    int aflags;
+    char *buf = atr_pget(victim, A_ALIAS, &aowner, &aflags);
     delete_player_name(victim, buf);
     free_lbuf(buf);
 
     move_via_generic(victim, NOTHING, player, 0);
-    do_mail_clear(victim, NULL);
-    do_mail_purge(victim);
+#if 0 // QQQ
+    destroy_obj(agent, victim);
+#else
     destroy_obj(NOTHING, victim);
+#endif
     notify_quiet(player, tprintf("(%d objects @chowned to you)", count));
 #endif
 }
@@ -703,38 +701,46 @@ void destroy_player(dbref victim)
 static void NDECL(purge_going)
 {
     dbref i;
-
-    DO_WHOLE_DB(i) {
+    DO_WHOLE_DB(i)
+    {
         if (!Going(i))
+        {
             continue;
+        }
 
-        switch (Typeof(i)) {
+        switch (Typeof(i))
+        {
         case TYPE_PLAYER:
+#if 0 // QQQ
+            destroy_player(NOTHING, i);
+#else
             destroy_player(i);
+#endif
             break;
+
         case TYPE_ROOM:
 
-            /*
-             * Room scheduled for destruction... do it 
-             */
-
+            // Room scheduled for destruction... do it.
+            //
             empty_obj(i);
             destroy_obj(NOTHING, i);
             break;
+
         case TYPE_THING:
             destroy_thing(i);
             break;
+
         case TYPE_EXIT:
             destroy_exit(i);
             break;
+
         case TYPE_GARBAGE:
             break;
+
         default:
 
-            /*
-             * Something else... How did this happen? 
-             */
-
+            // Something else... How did this happen?
+            //
             Log_simple_err(i, NOTHING,
               "GOING object with unexpected type.  Destroyed.");
             destroy_obj(NOTHING, i);
