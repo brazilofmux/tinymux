@@ -82,6 +82,10 @@ Feature Additions:
  -- Added optional second parameter to indicate the angle units (Radians,
     Degrees, and Gradians) to trigometric functions: sin(), cos(), tan(),
     asin(), acos(), and atan(). Idea from Raevnos.
+ -- Floating-point numbers are no longer limited to 6 decimal digits. The full
+    range of floating-point numbers is available. At the same time, however,
+    the server still uses only the minimal number of decimal digits needed to
+    represent the same double value internally.
 
 Bug Fixes:
 ~~~~~~~~~
