@@ -113,14 +113,15 @@ D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
 	comsys.cpp conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp eval.cpp \
 	file_c.cpp flags.cpp funceval.cpp functions.cpp game.cpp help.cpp \
 	htab.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp move.cpp \
-	netcommon.cpp object.cpp predicates.cpp player.cpp player_c.cpp \
-	powers.cpp quota.cpp rob.cpp regexp.cpp set.cpp speech.cpp \
-	stringutil.cpp svdrand.cpp svdhash.cpp svdreport.cpp timer.cpp \
-	timeutil.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp
+	muxcli.cpp netcommon.cpp object.cpp predicates.cpp player.cpp \
+	player_c.cpp powers.cpp quota.cpp rob.cpp regexp.cpp set.cpp \
+	speech.cpp stringutil.cpp svdrand.cpp svdhash.cpp svdreport.cpp \
+	timer.cpp timeutil.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp \
+	wiz.cpp
 D_OBJ	= _build.o alloc.o attrcache.o boolexp.o bsd.o command.o comsys.o \
 	conf.o cque.o create.o db.o db_rw.o eval.o file_c.o flags.o funceval.o \
 	functions.o game.o help.o htab.o log.o look.o mail.o match.o \
-	mguests.o move.o netcommon.o object.o predicates.o \
+	mguests.o move.o muxcli.o netcommon.o object.o predicates.o \
 	player.o player_c.o powers.o quota.o rob.o regexp.o set.o speech.o \
 	stringutil.o svdrand.o svdhash.o svdreport.o timer.o timeutil.o \
 	unparse.o vattr.o walkdb.o wild.o wiz.o
