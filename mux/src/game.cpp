@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.7 2003-01-24 15:42:22 sdennis Exp $
+// $Id: game.cpp,v 1.8 2003-01-24 17:06:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1857,30 +1857,20 @@ void info(int fmt, int flags, int ver)
     Log.WriteString("\n");
 }
 
-void usage(char *prog)
-{
-    Log.tinyprintf("%s from %s\n", mudstate.version);
-    Log.tinyprintf("Usage: %s gamedb-basename [flags] [<in-file] [>out-file]\n", prog);
-    Log.WriteString("   Available flags are:\n");
-    Log.WriteString("      C - Perform consistency check\n");
-    Log.WriteString("      X - Load into attribute database.\n");
-    Log.WriteString("      x - Unload to a flat file db\n");
-}
+char *standalone_infile = NULL;
+char *standalone_outfile = NULL;
+char *standalone_basename = NULL;
+BOOL standalone_check = FALSE;
+BOOL standalone_load = FALSE;
+BOOL standalone_unload = FALSE;
 
-void dbconvert(int argc, char *argv[])
+void dbconvert(void)
 {
     int setflags, clrflags, ver;
     int db_ver, db_format, db_flags;
     char *fp;
 
     Log.EnableLogging();
-
-    if (  argc < 2
-       || 3 < argc)
-    {
-        usage(argv[0]);
-        exit(1);
-    }
 
     SeedRandomNumberGenerator();
 
@@ -1889,45 +1879,26 @@ void dbconvert(int argc, char *argv[])
     // Decide what conversions to do and how to format the output file.
     //
     setflags = clrflags = ver = 0;
-    BOOL do_check = FALSE;
-    BOOL do_write = TRUE;
     BOOL do_redirect = FALSE;
 
-    if (argc >= 3)
+    BOOL do_write = TRUE;
+    if (standalone_check)
     {
-        for (fp = argv[2]; *fp; fp++)
-        {
-            switch (*fp)
-            {
-            case 'C':
-                do_check = TRUE;
-                do_write = FALSE;
-                break;
-
-            case 'X':
-                clrflags = 0xffffffff;
-                setflags = OUTPUT_FLAGS;
-                ver = OUTPUT_VERSION;
-                do_redirect = 1;
-                break;
-
-            case 'x':
-                clrflags = 0xffffffff;
-                setflags = UNLOAD_FLAGS;
-                ver = UNLOAD_VERSION;
-                break;
-
-            default:
-                Log.tinyprintf("Unknown flag: '%c'\n", *fp);
-                usage(argv[0]);
-                exit(1);
-            }
-        }
+        do_write = FALSE;
     }
-#ifdef WIN32
-    _setmode(fileno(stdin),O_BINARY);
-    _setmode(fileno(stdout),O_BINARY);
-#endif // WIN32
+    if (standalone_load)
+    {
+        clrflags = 0xffffffff;
+        setflags = OUTPUT_FLAGS;
+        ver = OUTPUT_VERSION;
+        do_redirect = 1;
+    }
+    else if (standalone_unload)
+    {
+        clrflags = 0xffffffff;
+        setflags = UNLOAD_FLAGS;
+        ver = UNLOAD_VERSION;
+    }
 
     // Open the database
     //
@@ -1935,9 +1906,9 @@ void dbconvert(int argc, char *argv[])
 
     char dirfile[SIZEOF_PATHNAME];
     char pagfile[SIZEOF_PATHNAME];
-    strcpy(dirfile, argv[1]);
+    strcpy(dirfile, standalone_basename);
     strcat(dirfile, ".dir");
-    strcpy(pagfile, argv[1]);
+    strcpy(pagfile, standalone_basename);
     strcat(pagfile, ".pag");
 
     int cc = init_dbfile(dirfile, pagfile);
@@ -1965,6 +1936,12 @@ void dbconvert(int argc, char *argv[])
         }
     }
 
+    FILE *fpIn = fopen(standalone_infile, "rb");
+    if (!fpIn)
+    {
+        exit(1);
+    }
+
     // Go do it.
     //
     if (do_redirect)
@@ -1972,8 +1949,8 @@ void dbconvert(int argc, char *argv[])
         extern void cache_redirect(void);
         cache_redirect();
     }
-    setvbuf(stdin, NULL, _IOFBF, 16384);
-    db_read(stdin, &db_format, &db_ver, &db_flags);
+    setvbuf(fpIn, NULL, _IOFBF, 16384);
+    db_read(fpIn, &db_format, &db_ver, &db_flags);
     if (do_redirect)
     {
         extern void cache_pass2(void);
@@ -1982,22 +1959,34 @@ void dbconvert(int argc, char *argv[])
     Log.WriteString("Input: ");
     info(db_format, db_flags, db_ver);
 
-    if (do_check)
+    if (standalone_check)
     {
         do_dbck(NOTHING, NOTHING, NOTHING, DBCK_FULL);
     }
+    fclose(fpIn);
 
     if (do_write)
     {
+        FILE *fpOut = fopen(standalone_outfile, "wb");
+        if (!fpOut)
+        {
+            exit(1);
+        }
+
         db_flags = (db_flags & ~clrflags) | setflags;
         if (db_format != F_MUX)
+        {
             db_ver = 3;
+        }
         if (ver != 0)
+        {
             db_ver = ver;
+        }
         Log.WriteString("Output: ");
         info(F_MUX, db_flags, db_ver);
-        setvbuf(stdout, NULL, _IOFBF, 16384);
-        db_write(stdout, F_MUX, db_ver | db_flags);
+        setvbuf(fpOut, NULL, _IOFBF, 16384);
+        db_write(fpOut, F_MUX, db_ver | db_flags);
+        fclose(fpOut);
     }
     CLOSE;
     db_free();
@@ -2018,20 +2007,30 @@ long DebugTotalMemory = 0;
 #define CLI_DO_MINIMAL     CLI_USER+1
 #define CLI_DO_VERSION     CLI_USER+2
 #define CLI_DO_USAGE       CLI_USER+3
-#define CLI_DO_STANDALONE  CLI_USER+4
+#define CLI_DO_INFILE      CLI_USER+4
+#define CLI_DO_OUTFILE     CLI_USER+5
+#define CLI_DO_CHECK       CLI_USER+6
+#define CLI_DO_LOAD        CLI_USER+7
+#define CLI_DO_UNLOAD      CLI_USER+8
+#define CLI_DO_BASENAME    CLI_USER+9
 
 BOOL bMinDB = FALSE;
 BOOL bSyntaxError = FALSE;
 char *conffile = NULL;
 BOOL bVersion = FALSE;
 
-CLI_OptionEntry OptionTable[5] =
+CLI_OptionEntry OptionTable[10] =
 {
     { "c", CLI_REQUIRED, CLI_DO_CONFIG_FILE },
     { "s", CLI_NONE,     CLI_DO_MINIMAL     },
     { "v", CLI_NONE,     CLI_DO_VERSION     },
     { "h", CLI_NONE,     CLI_DO_USAGE       },
-    { "d", CLI_NONE,     CLI_DO_STANDALONE  }
+    { "i", CLI_REQUIRED, CLI_DO_INFILE      },
+    { "o", CLI_REQUIRED, CLI_DO_OUTFILE     },
+    { "k", CLI_NONE,     CLI_DO_CHECK       },
+    { "l", CLI_NONE,     CLI_DO_LOAD        },
+    { "u", CLI_NONE,     CLI_DO_UNLOAD      },
+    { "d", CLI_REQUIRED, CLI_DO_BASENAME    }
 };
 
 void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
@@ -2052,8 +2051,34 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
             bVersion = TRUE;
             break;
 
-        case CLI_DO_STANDALONE:
+        case CLI_DO_INFILE:
             mudstate.bStandAlone = TRUE;
+            standalone_infile = pValue;
+            break;
+
+        case CLI_DO_OUTFILE:
+            mudstate.bStandAlone = TRUE;
+            standalone_outfile = pValue;
+            break;
+
+        case CLI_DO_CHECK:
+            mudstate.bStandAlone = TRUE;
+            standalone_check = TRUE;
+            break;
+
+        case CLI_DO_LOAD:
+            mudstate.bStandAlone = TRUE;
+            standalone_load = TRUE;
+            break;
+
+        case CLI_DO_UNLOAD:
+            mudstate.bStandAlone = TRUE;
+            standalone_unload = TRUE;
+            break;
+
+        case CLI_DO_BASENAME:
+            mudstate.bStandAlone = TRUE;
+            standalone_basename = pValue;
             break;
 
         case CLI_DO_USAGE:
@@ -2097,7 +2122,30 @@ int DCL_CDECL main(int argc, char *argv[])
         sizeof(OptionTable)/sizeof(CLI_OptionEntry), CLI_CallBack);
     if (mudstate.bStandAlone)
     {
-        dbconvert(argc, argv);
+        int n = 0;
+        if (standalone_check)
+        {
+            n++;
+        }
+        if (standalone_load)
+        {
+            n++;
+        }
+        if (standalone_unload)
+        {
+            n++;
+        }
+        if (  !standalone_basename
+           || !standalone_infile
+           || !standalone_outfile
+           || n != 1)
+        {
+            bSyntaxError = TRUE;
+        }
+        else
+        {
+            dbconvert();
+        }
     }
     else if (bVersion)
     {
@@ -2108,12 +2156,29 @@ int DCL_CDECL main(int argc, char *argv[])
        || conffile == NULL)
     {
         fprintf(stderr, "Version: %s" ENDLINE, mudstate.version);
-        fprintf(stderr, "Usage: %s [-c filename] [-d] [-h] [-s] [-v]" ENDLINE, argv[0]);
-        fprintf(stderr, "  -c  Specify configuration file." ENDLINE);
-        fprintf(stderr, "  -d  Run in standalone db-convertor mode." ENDLINE);
-        fprintf(stderr, "  -h  Display this help." ENDLINE);
-        fprintf(stderr, "  -s  Start with a minimal database." ENDLINE);
-        fprintf(stderr, "  -v  Display version string." ENDLINE);
+        if (mudstate.bStandAlone)
+        {
+            fprintf(stderr, "Usage: %s -d <dbname> -i <infile> [-o <outfile>] [-l|-u|-k]" ENDLINE, pProg);
+            fprintf(stderr, "  -d  Basename." ENDLINE);
+            fprintf(stderr, "  -i  Input file." ENDLINE);
+            fprintf(stderr, "  -k  Check." ENDLINE);
+            fprintf(stderr, "  -l  Load." ENDLINE);
+            fprintf(stderr, "  -o  Output file." ENDLINE);
+            fprintf(stderr, "  -u  Unload." ENDLINE);
+#if 1
+            fprintf(stderr, " %s | %s | %s | %d | %d | %d " ENDLINE,
+                standalone_basename, standalone_infile, standalone_outfile,
+                standalone_check, standalone_load, standalone_unload);
+#endif
+        }
+        else
+        {
+            fprintf(stderr, "Usage: %s [-c <filename>] [-d] [-h] [-s] [-v]" ENDLINE, pProg);
+            fprintf(stderr, "  -c  Specify configuration file." ENDLINE);
+            fprintf(stderr, "  -h  Display this help." ENDLINE);
+            fprintf(stderr, "  -s  Start with a minimal database." ENDLINE);
+            fprintf(stderr, "  -v  Display version string." ENDLINE ENDLINE);
+        }
         return 1;
     }
 
