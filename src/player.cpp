@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.15 2002-05-03 03:10:48 sdennis Exp $
+// $Id: player.cpp,v 1.16 2002-05-08 15:55:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -30,12 +30,8 @@ char *crypt(const char *inptr, const char *inkey)
 #endif
 
 
-#define NUM_GOOD    4   /*
-                 * # of successful logins to save data for
-                 */
-#define NUM_BAD     3   /*
-                 * # of failed logins to save data for
-                 */
+#define NUM_GOOD    4   // # of successful logins to save data for.
+#define NUM_BAD     3   // # of failed logins to save data for.
 
 typedef struct hostdtm HOSTDTM;
 struct hostdtm {
@@ -65,25 +61,30 @@ static void decrypt_logindata(char *atrbuf, LDATA *info)
     info->tot_good = 0;
     info->tot_bad = 0;
     info->new_bad = 0;
-    for (i = 0; i < NUM_GOOD; i++) {
+    for (i = 0; i < NUM_GOOD; i++)
+    {
         info->good[i].host = NULL;
         info->good[i].dtm = NULL;
     }
-    for (i = 0; i < NUM_BAD; i++) {
+    for (i = 0; i < NUM_BAD; i++)
+    {
         info->bad[i].host = NULL;
         info->bad[i].dtm = NULL;
     }
 
-    if (*atrbuf == '#') {
+    if (*atrbuf == '#')
+    {
         atrbuf++;
         info->tot_good = Tiny_atol(grabto(&atrbuf, ';'));
-        for (i = 0; i < NUM_GOOD; i++) {
+        for (i = 0; i < NUM_GOOD; i++)
+        {
             info->good[i].host = grabto(&atrbuf, ';');
             info->good[i].dtm = grabto(&atrbuf, ';');
         }
         info->new_bad = Tiny_atol(grabto(&atrbuf, ';'));
         info->tot_bad = Tiny_atol(grabto(&atrbuf, ';'));
-        for (i = 0; i < NUM_BAD; i++) {
+        for (i = 0; i < NUM_BAD; i++)
+        {
             info->bad[i].host = grabto(&atrbuf, ';');
             info->bad[i].dtm = grabto(&atrbuf, ';');
         }
