@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.2 2003-01-23 01:52:13 sdennis Exp $
+// $Id: attrcache.cpp,v 1.3 2003-01-24 14:56:08 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -200,7 +200,6 @@ const char *cache_get(Aname *nam, int *pLen)
         return 0;
     }
 
-#ifndef STANDALONE
     PCENT_HDR pCacheEntry = NULL;
     if (!mudstate.bStandAlone)
     {
@@ -219,7 +218,6 @@ const char *cache_get(Aname *nam, int *pLen)
             return (char *)(pCacheEntry+1);
         }
     }
-#endif
 
     UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 
@@ -235,7 +233,6 @@ const char *cache_get(Aname *nam, int *pLen)
         {
             int nLength = nRecord - sizeof(Aname);
             *pLen = nLength;
-#ifndef STANDALONE
             if (!mudstate.bStandAlone)
             {
                 // Add this information to the cache.
@@ -273,7 +270,6 @@ const char *cache_get(Aname *nam, int *pLen)
                     }
                 }
             }
-#endif
             return TempRecord.attrText;
         }
         iDir = hfAttributeFile.FindNextKey(iDir, nHash);
@@ -341,7 +337,6 @@ BOOL cache_put(Aname *nam, const char *value, int len)
     //
     hfAttributeFile.Insert(len+sizeof(Aname), nHash, &TempRecord);
 
-#ifndef STANDALONE
     if (!mudstate.bStandAlone)
     {
         // Update cache.
@@ -394,7 +389,6 @@ BOOL cache_put(Aname *nam, const char *value, int len)
             }
         }
     }
-#endif
     return TRUE;
 }
 
@@ -430,7 +424,6 @@ void cache_del(Aname *nam)
         iDir = hfAttributeFile.FindNextKey(iDir, nHash);
     }
 
-#ifndef STANDALONE
     if (!mudstate.bStandAlone)
     {
         // Update cache.
@@ -448,5 +441,4 @@ void cache_del(Aname *nam)
             pCacheEntry = NULL;
         }
     }
-#endif
 }
