@@ -2437,8 +2437,7 @@ HELPFILE
   DEFAULT: None
 
   This configuration directive associates the in-game command, <command>,
-  with a set of help topics contained in the file <pathname>.txt and indexed
-  by the file <pathname>.indx.
+  with a set of help topics contained in the file <pathname>.txt.
 
   By default, this help command has 'public' permissions, but this can be
   restricted with the 'access' configuration directive.
