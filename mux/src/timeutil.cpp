@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.37 2004-07-09 07:30:07 sdennis Exp $
+// $Id: timeutil.cpp,v 1.38 2004-07-10 08:25:16 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1632,6 +1632,10 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
            && errno == EINTR)
         {
             req = rem;
+        }
+        else
+        {
+            break;
         }
     }
 #else
