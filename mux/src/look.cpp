@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.14 2003-07-24 01:13:03 sdennis Exp $
+// $Id: look.cpp,v 1.15 2003-07-24 03:18:00 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -945,7 +945,7 @@ static bool show_a_desc(dbref player, dbref loc)
     LetDescriptionsDefault(loc, &iDescDefault, &iADescDefault, iRealmDirective);
 #endif
 
-    int ret = false;
+    bool ret = false;
 
     dbref aowner;
     int aflags;
