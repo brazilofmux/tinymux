@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.20 2002-01-25 17:42:07 sdennis Exp $
+// $Id: walkdb.cpp,v 1.21 2002-04-10 23:08:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -388,7 +388,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
     pname = parse_to(&searchfor, '=', EV_STRIP_TS);
     if (!pname || !*pname)
     {
-        pname = (char *)"me";
+        pname = "me";
     }
     else
     {
@@ -397,7 +397,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
 
     if (searchfor && *searchfor)
     {
-        searchtype = (char *)strrchr(pname, ' ');
+        searchtype = strrchr(pname, ' ');
         if (searchtype)
         {
             *searchtype++ = '\0';
@@ -405,12 +405,12 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
         else
         {
             searchtype = pname;
-            pname = (char *)"";
+            pname = "";
         }
     }
     else
     {
-        searchtype = (char *)"";
+        searchtype = "";
     }
 
     // If the player name is quoted, strip the quotes.
