@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.6 2003-07-22 04:10:36 sdennis Exp $
+// $Id: player.cpp,v 1.7 2003-07-22 04:46:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -199,16 +199,6 @@ void record_login
     free_lbuf(atrbuf);
 }
 
-const char *GenerateSalt(void)
-{
-    static char szSalt[12];
-    INT64 iSalt = (((INT64)RandomINT32(0, INT32_MAX_VALUE)) << 32)
-                | (((INT64)RandomINT32(0, INT32_MAX_VALUE)) <<  1)
-                | (((INT64)RandomINT32(0, 1))                    );
-    mux_Pack(iSalt, 64, szSalt);
-    return szSalt;
-}
-
 const char *szSHA1Prefix = "|SHA1|";
 size_t     nSHA1Prefix = strlen(szSHA1Prefix);
 
@@ -302,7 +292,7 @@ bool check_pass(dbref player, const char *pPassword)
     {
         // Upgrade password to SHA-1.
         //
-        atr_add_raw(player, A_PASS, mux_crypt(pPassword, GenerateSalt()));
+        s_Pass(player, pPassword);
     }
     free_lbuf(pTarget);
     return bValidPass;
@@ -393,7 +383,7 @@ dbref create_player(char *name, char *password, dbref creator, bool isrobot, boo
         }
     }
 
-    s_Pass(player, crypt(pbuf, "XX"));
+    s_Pass(player, pbuf);
     s_Home(player, start_home());
     free_lbuf(pbuf);
     return player;

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.17 2003-07-22 04:10:06 sdennis Exp $
+// $Id: externs.h,v 1.18 2003-07-22 04:46:33 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -146,6 +146,7 @@ extern void badname_add(char *);
 extern void badname_remove(char *);
 extern bool badname_check(char *);
 extern void badname_list(dbref, const char *);
+extern char *mux_crypt(const char *szPassword, const char *szSalt);
 
 /* From predicates.cpp */
 extern char * DCL_CDECL tprintf(const char *, ...);
