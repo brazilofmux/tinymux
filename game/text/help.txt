@@ -9221,7 +9221,7 @@ POWER()
     > say power(9, 0.5)
     You say "3"
     > say power(100,pi())
-    You say "1919487.587204"
+    You say "1919487.5835776979"
     > say power(5, 0)
     You say "1"
     > say power(0, 0)
