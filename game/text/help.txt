@@ -323,16 +323,24 @@ COMLIST
 COMTITLE
 
   COMMAND: comtitle <alias>=<title>
+           comtitle[/<option>] <alias>
 
   This command allows you to prefix your name on a channel with a title.
+  If present, <option> can be on of the following:
+
+    on      - comtitles are shown to you.
+    off     - poses are shown to you without their comtitles.
+
+  Anonymous channels (@cset/anon) do not allow their comtitles to be
+  turned off.
 
   For example:
-  > comtitle pub=The Great and Powerful
-  Title set to 'The Great and Powerful' on channel Public.
-  > pub :waves to everyone.
-  [Public] The Great and Powerful Foobar waves to everyone.
+    > comtitle pub=The Great and Powerful
+    Title set to 'The Great and Powerful' on channel Public.
+    > pub :waves to everyone.
+    [Public] The Great and Powerful Foobar waves to everyone.
 
-  Related Topics: comlist, addcom, alias, delcom.
+  Related Topics: comlist, addcom, alias, delcom, @cset
 
 & CLEARCOM
 CLEARCOM
