@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.21 2001-06-28 05:10:45 sdennis Exp $
+// $Id: mudconf.h,v 1.22 2001-06-28 07:14:39 sdennis Exp $
 //
 #ifndef __CONF_H
 #define __CONF_H
@@ -106,7 +106,7 @@ struct confdata
     int     player_listen;  /* Are AxHEAR triggered on players? */
     int     quiet_whisper;  /* Can others tell when you whisper? */
     int     dark_sleepers;  /* Are sleeping players 'dark'? */
-	int     destroy_going_now;  // Does GOING act like DESTROY_OK?
+    int     destroy_going_now;  // Does GOING act like DESTROY_OK?
     int     see_own_dark;   /* Do you see your own dark stuff? */
     int     idle_wiz_dark;  /* Do idling wizards get set dark? */
     int     pemit_players;  /* Can you @pemit to faraway players? */
@@ -204,9 +204,9 @@ struct confdata
     char    *art_regexp;    /* Basic regexp for determining which article to use. */
     ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
     int     toad_recipient; /* Default @toad recipient. */
-	char    log_prefix[32]; /* Prefix of logfile name */
-	int     safe_wipe; // If yes, SAFE flag must be removed to @wipe.
-	int     no_startup; // If yes, startup attributes aren't processed on load.
+    char    log_prefix[32]; /* Prefix of logfile name */
+    int     safe_wipe;      // If yes, SAFE flag must be removed to @wipe.
+    int     no_startup;     // If yes, startup attributes aren't processed on load.
 #else
     int     paylimit;   /* getting money gets hard over this much */
     int     digcost;    /* cost of @dig command */

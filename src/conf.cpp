@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.38 2001-06-28 05:10:45 sdennis Exp $
+// $Id: conf.cpp,v 1.39 2001-06-28 07:14:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -250,7 +250,7 @@ void NDECL(cf_init)
     mudconf.cache_names = 1;
     mudconf.toad_recipient = -1;
     mudconf.eval_comtitle = 1;
-	strcpy(mudconf.log_prefix, "MUX");
+    strcpy(mudconf.log_prefix, "MUX");
     mudconf.no_startup = FALSE;
     mudconf.safe_wipe = FALSE;
     mudconf.destroy_going_now = FALSE;
@@ -415,13 +415,13 @@ int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
     char *buff;
 
     // If any successes, return SUCCESS(0) if no failures or
-	// PARTIAL_SUCCESS(1) if any failures.
+    // PARTIAL_SUCCESS(1) if any failures.
     //
     if (success > 0)
         return ((failure == 0) ? 0 : 1);
 
     // No successes.  If no failures indicate nothing done. Always return
-	// FAILURE(-1)
+    // FAILURE(-1)
     //
     if (failure == 0)
     {
@@ -530,10 +530,10 @@ CF_HAND(cf_string)
     pc[nStr] = '\0';
 
 #ifdef WIN32
-	if (pc == mudconf.log_prefix)
-	{
-		Log.ChangePrefix(pc);
-	}
+    if (pc == mudconf.log_prefix)
+    {
+        Log.ChangePrefix(pc);
+    }
 #endif
 
     return retval;
@@ -1452,7 +1452,7 @@ CONF conftable[] =
     {"lock_recursion_limit",      cf_int,         CA_WIZARD, &mudconf.lock_nest_lim,          NULL,               0},
     {"log",                       cf_modify_bits, CA_GOD,    &mudconf.log_options,            logoptions_nametab, 0},
     {"log_options",               cf_modify_bits, CA_GOD,    &mudconf.log_info,               logdata_nametab,    0},
-	{"log_prefix",                cf_string,      CA_STATIC, (int *)mudconf.log_prefix,       NULL,              32},
+    {"log_prefix",                cf_string,      CA_STATIC, (int *)mudconf.log_prefix,       NULL,              32},
     {"logout_cmd_access",         cf_ntab_access, CA_GOD,    (int *)logout_cmdtable,          access_nametab,     0},
     {"logout_cmd_alias",          cf_alias,       CA_GOD,    (int *)&mudstate.logout_cmd_htab,NULL,               0},
     {"look_obey_terse",           cf_bool,        CA_GOD,    &mudconf.terse_look,             NULL,               0},
