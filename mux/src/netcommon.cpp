@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.16 2002-07-13 07:23:02 jake Exp $
+// $Id: netcommon.cpp,v 1.17 2002-07-14 08:06:07 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -953,12 +953,10 @@ int boot_off(dbref player, const char *message)
     return count;
 }
 
-int boot_by_port(SOCKET port, int no_god, const char *message)
+int boot_by_port(SOCKET port, BOOL no_god, const char *message)
 {
     DESC *d, *dnext;
-    int count;
-
-    count = 0;
+    int count = 0;
     DESC_SAFEITER_ALL(d, dnext)
     {
         if ((d->descriptor == port) && (!no_god || !God(d->player)))
