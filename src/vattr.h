@@ -1,6 +1,6 @@
 // Definitions for user-defined attributes.
 //
-// $Id: vattr.h,v 1.2 2000-04-15 17:25:46 sdennis Exp $
+// $Id: vattr.h,v 1.3 2000-04-24 22:42:27 sdennis Exp $
 //
 typedef struct user_attribute VATTR;
 struct user_attribute
@@ -10,7 +10,6 @@ struct user_attribute
     int  flags;    // Attribute flags
 };
 
-extern void  vattr_init(void);
 extern VATTR *vattr_rename_LEN(char *, int, char *, int);
 extern VATTR *vattr_find_LEN(char *, int);
 extern VATTR *vattr_alloc_LEN(char *, int, int);
