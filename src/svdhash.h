@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.h,v 1.1 2000-04-11 07:14:47 sdennis Exp $
+// $Id: svdhash.h,v 1.2 2000-04-24 22:41:39 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -212,7 +212,6 @@ public:
     void Remove(HP_DIRINDEX iDir);
     void CloseAll(void);
     void Sync(void);
-    void Reset(void);
     void Tick(void);
     ~CHashFile(void);
 };
