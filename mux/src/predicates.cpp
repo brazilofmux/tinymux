@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.42 2003-08-14 19:05:20 sdennis Exp $
+// $Id: predicates.cpp,v 1.43 2004-02-17 15:34:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1424,6 +1424,8 @@ void do_restart(dbref player, dbref caller, dbref enactor, int key)
 
     CleanUpSlaveSocket();
     CleanUpSlaveProcess();
+
+    Log.Stop();
 
 #ifdef GAME_DOOFERMUX
     execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, NULL);

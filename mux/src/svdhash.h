@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.8 2003-09-04 15:08:54 sdennis Exp $
+// $Id: svdhash.h,v 1.9 2004-02-17 15:34:37 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -299,6 +299,7 @@ public:
     void Flush(void);
     void ChangePrefix(char *p);
     void EnableLogging(void);
+    void Stop(void);
 };
 
 extern CLogFile Log;

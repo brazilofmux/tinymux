@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.17 2003-12-06 01:57:32 sdennis Exp $
+// $Id: svdhash.cpp,v 1.18 2004-02-17 15:34:37 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2511,6 +2511,19 @@ void DCL_CDECL CLogFile::tinyprintf(char *fmt, ...)
     int nString = mux_vsnprintf(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
     va_end(ap);
     WriteBuffer(nString, aTempBuffer);
+}
+
+void CLogFile::Stop(void)
+{
+    Flush();
+
+    if (!mudstate.bStandAlone)
+    {
+        CloseLogFile();
+        bEnabled = false;
+        m_szPrefix[0] = '\0';
+        m_szFilename[0] = '\0';
+    }
 }
 
 CLogFile::~CLogFile(void)
