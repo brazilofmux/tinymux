@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.10 2000-09-07 08:19:46 sdennis Exp $ */
+/* $Id: config.h,v 1.11 2000-11-01 20:24:39 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -82,8 +82,13 @@
 #ifdef WIN32
 #define DCL_CDECL __cdecl
 #define DCL_INLINE __inline
+
 typedef __int64 INT64;
 typedef unsigned __int64 UINT64;
+#define INT64_MAX_VALUE  9223372036854775807i64
+#define INT64_MIN_VALUE  (-9223372036854775807i64 - 1)
+#define UINT64_MAX_VALUE 0xffffffffffffffffui64
+
 #define SIZEOF_PATHNAME (_MAX_PATH + 1)
 #define SOCKET_WRITE(s,b,n,f) send(s,b,n,f)
 #define SOCKET_READ(s,b,n,f) recv(s,b,n,f)
@@ -103,8 +108,13 @@ typedef int BOOL;
 #define TRUE    1
 #define FALSE   0
 typedef int HANDLE;
+
 typedef long long INT64;
 typedef unsigned long long UINT64;
+#define INT64_MAX_VALUE  9223372036854775807LL
+#define INT64_MIN_VALUE  (-9223372036854775807LL - 1)
+#define UINT64_MAX_VALUE 0xffffffffffffffffULL
+
 typedef int SOCKET;
 #ifdef PATH_MAX
 #define SIZEOF_PATHNAME (PATH_MAX + 1)

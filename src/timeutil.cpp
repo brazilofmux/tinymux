@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.12 2000-11-01 09:12:29 sdennis Exp $
+// $Id: timeutil.cpp,v 1.13 2000-11-01 20:24:39 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -240,6 +240,7 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
     {
         str++;
     }
+    char *pIntegerEnd = str;
 
     // Decimal point.
     //
@@ -277,32 +278,74 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
         return FALSE;
     }
 
-    // Convert the fractional part to an INT64.
-    //
-    INT64 t_i64 = 0;
-    int n = pFractionalEnd - pFractionalStart;
-    if (n)
-    {
-        static char aZeroes[8] = "0000000";
-        char aBuffer[8];
-        memcpy(aBuffer, aZeroes, sizeof(aZeroes));
-        if (n > sizeof(aZeroes)-1)
-        {
-            n = sizeof(aZeroes)-1;
-        }
-        memcpy(aBuffer, pFractionalStart, n);
-        t_i64 = Tiny_atoi64(aBuffer);
-    }
+#define PFSS_PRECISION 7
+    char aBuffer[64];
+    int  nBufferAvailable = sizeof(aBuffer) - PFSS_PRECISION - 1;
+    char *p = aBuffer;
 
-    // Convert the integer part.
+    // Sign.
     //
-    t_i64 += Tiny_atoi64(pIntegerStart) * FACTOR_100NS_PER_SECOND;
-
     if (bMinus)
     {
-        t_i64 = -t_i64;
+        *p++ = '-';
+        nBufferAvailable--;
     }
-    i64 = t_i64;
+
+    // Integer part.
+    //
+    BOOL bOverUnderflow = FALSE;
+    int n = pIntegerEnd - pIntegerStart;
+    if (n > 0)
+    {
+        if (n > nBufferAvailable)
+        {
+            bOverUnderflow = TRUE;
+            n = nBufferAvailable;
+        }
+        memcpy(p, pIntegerStart, n);
+        p += n;
+        nBufferAvailable -= n;
+    }
+
+    // Fractional part.
+    //
+    n = pFractionalEnd - pFractionalStart;
+    if (n > 0)
+    {
+        if (n > PFSS_PRECISION)
+        {
+            n = PFSS_PRECISION;
+        }
+        memcpy(p, pFractionalStart, n);
+        p += n;
+        nBufferAvailable -= n;
+    }
+
+    // Handle trailing zeroes.
+    //
+    n = PFSS_PRECISION - n;
+    if (n > 0)
+    {
+        memset(p, 0, n);
+        p += n;
+    }
+    *p++ = '\0';
+
+    if (bOverUnderflow)
+    {
+        if (bMinus)
+        {
+            i64 = INT64_MIN_VALUE;
+        }
+        else
+        {
+            i64 = INT64_MAX_VALUE;
+        }
+    }
+    else
+    {
+        i64 = Tiny_atoi64(aBuffer);
+    }
     return TRUE;
 }
 
