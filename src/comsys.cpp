@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.42 2001-06-28 02:44:10 sdennis Exp $
+// * $Id: comsys.cpp,v 1.43 2001-06-29 16:27:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -338,7 +338,7 @@ void purge_comsystem(void)
 
 #ifdef ABORT_PURGE_COMSYS
     return;
-#endif
+#endif // ABORT_PURGE_COMSYS
 
     for (i = 0; i < NUM_COMSYS; i++)
     {
@@ -2027,7 +2027,7 @@ void do_comdisconnect(dbref player)
         do_comdisconnectchannel(player, c->channels[i]);
 #ifdef CHANNEL_LOUD
         do_comdisconnectraw_notify(player, c->channels[i]);
-#endif
+#endif // CHANNEL_LOUD
     }
 }
 

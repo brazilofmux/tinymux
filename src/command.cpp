@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.39 2001-06-28 19:25:24 sdennis Exp $
+// $Id: command.cpp,v 1.40 2001-06-29 16:23:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -487,7 +487,7 @@ CMDENT_NO_ARG command_table_no_arg[] =
     {(char *)"@restart",      NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         do_restart},
 #ifndef WIN32
     {(char *)"@startslave",   NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         boot_slave},
-#endif
+#endif // !WIN32
     {(char *)"@timecheck",    timecheck_sw, CA_WIZARD,  0,        CS_NO_ARGS,       do_timecheck},
     {(char *)"comlist",       NULL,       CA_NO_SLAVE,        0,              CS_NO_ARGS,                     do_comlist},
     {(char *)"clearcom",      NULL,       CA_NO_SLAVE,        0,              CS_NO_ARGS,                     do_clearcom},
@@ -2577,7 +2577,7 @@ static void list_options(dbref player)
     {
         raw_notify(player, "Database dumps are performed by a fork()ed process.");
     }
-#endif
+#endif // !VMS !WIN32
     if (mudconf.max_players >= 0)
         raw_notify(player,
         tprintf("There may be at most %d players logged in at once.",
@@ -2756,7 +2756,7 @@ extern int cs_dbreads;      // total read-throughs
 extern int cs_dbwrites;     // total write-throughs
 extern int cs_rhits;        // total reads filled from cache
 extern int cs_whits;        // total writes to dirty cache
-#endif
+#endif // !MEMORY_BASED
 
 
 #ifdef RADIX_COMPRESSION
@@ -2764,7 +2764,7 @@ extern unsigned int strings_compressed;     // Total number of compressed string
 extern unsigned int strings_decompressed;   // Total number of decompressed strings
 extern unsigned int chars_in;               // Total characters compressed
 extern unsigned int symbols_out;            // Total symbols emitted
-#endif
+#endif // RADIX_COMPRESSION
 
 // ---------------------------------------------------------------------------
 // list_db_stats: Get useful info from the DB layer about hash stats, etc.
@@ -2773,7 +2773,7 @@ static void list_db_stats(dbref player)
 {
 #ifdef MEMORY_BASED
     raw_notify(player, "Database is memory based.");
-#else
+#else // MEMORY_BASED
     CLinearTimeAbsolute lsaNow;
     lsaNow.GetUTC();
     CLinearTimeDelta ltd = lsaNow - cs_ltime;
@@ -2783,14 +2783,14 @@ static void list_db_stats(dbref player)
     raw_notify(player, tprintf("Syncs      %12d", cs_syncs));
     raw_notify(player, tprintf("I/O        %12d%12d", cs_dbwrites, cs_dbreads));
     raw_notify(player, tprintf("Cache Hits %12d%12d", cs_whits, cs_rhits));
-#endif
+#endif // MEMORY_BASED
 
 #ifdef RADIX_COMPRESSION
     raw_notify(player, "Compression statistics:");
     raw_notify(player, tprintf("Strings compressed %d", strings_compressed));
     raw_notify(player, tprintf("Strings decompressed %d", strings_decompressed));
     raw_notify(player, tprintf("Compression ratio %d:%d", chars_in, symbols_out + (symbols_out >> 1)));
-#endif
+#endif // RADIX_COMPRESSION
 }
 
 // ---------------------------------------------------------------------------
@@ -2828,26 +2828,26 @@ static void list_process(dbref player)
         idrss = 0;
         isrss = 0;
     }
-#endif
+#endif // HAVE_GETRUSAGE
 
 #ifdef WIN32
     maxfds = FD_SETSIZE;
-#else
+#else // WIN32
 #ifdef HAVE_GETDTABLESIZE
     maxfds = getdtablesize();
-#else
+#else // HAVE_GETDTABLESIZE
     maxfds = sysconf(_SC_OPEN_MAX);
-#endif
+#endif // HAVE_GETDTABLESIZE
     int psize = getpagesize();
-#endif
+#endif // WIN32
 
     // Go display everything
     //
 #ifdef WIN32
     raw_notify(player, tprintf("Process ID:  %10d", game_pid));
-#else
+#else // WIN32
     raw_notify(player, tprintf("Process ID:  %10d        %10d bytes per page", game_pid, psize));
-#endif
+#endif // WIN32
 
 #ifdef HAVE_GETRUSAGE
     raw_notify(player, tprintf("Time used:   %10d user   %10d sys",
@@ -2876,7 +2876,7 @@ static void list_process(dbref player)
                usage.ru_nvcsw, usage.ru_nivcsw, usage.ru_nsignals));
     raw_notify(player,
            tprintf("Descs avail: %10d", maxfds));
-#endif
+#endif // HAVE_GETRUSAGE
 }
 
 // ---------------------------------------------------------------------------
