@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.76 2004-04-06 15:06:54 sdennis Exp $
+// $Id: functions.cpp,v 1.77 2004-04-06 18:28:57 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3102,7 +3102,7 @@ FUNCTION(fun_roman)
     //
     if (*number || nA < 1)
     {
-        safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
+        safe_str("#-1 ARGUMENT MUST BE A POSITIVE NUMBER", buff, bufc);
         return;
     }
     else if (  nA > 4
