@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.21 2000-09-25 07:51:03 sdennis Exp $
+// $Id: command.cpp,v 1.22 2000-09-26 06:27:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -767,7 +767,7 @@ int check_access(dbref player, int mask)
 {
     int succ, fail;
 
-    if (mask & CA_DISABLED)
+    if (mask & (CA_DISABLED|CA_STATIC))
     {
         return 0;
     }
@@ -1814,8 +1814,8 @@ NAMETAB access_nametab[] =
     {(char *)"god",           2, CA_GOD,    CA_GOD},
     {(char *)"head",          2, CA_WIZARD, CA_HEAD},
     {(char *)"immortal",      3, CA_WIZARD, CA_IMMORTAL},
-    {(char *)"need_contents", 6, CA_PUBLIC, CA_CONTENTS},
     {(char *)"need_location", 6, CA_PUBLIC, CA_LOCATION},
+    {(char *)"need_contents", 6, CA_PUBLIC, CA_CONTENTS},
     {(char *)"need_player",   6, CA_PUBLIC, CA_PLAYER},
     {(char *)"no_haven",      4, CA_PUBLIC, CA_NO_HAVEN},
     {(char *)"no_robot",      4, CA_WIZARD, CA_NO_ROBOT},
@@ -1823,6 +1823,8 @@ NAMETAB access_nametab[] =
     {(char *)"no_suspect",    5, CA_WIZARD, CA_NO_SUSPECT},
     {(char *)"no_guest",      5, CA_WIZARD, CA_NO_GUEST},
     {(char *)"robot",         2, CA_WIZARD, CA_ROBOT},
+    {(char *)"staff",         4, CA_WIZARD, CA_STAFF},
+    {(char *)"static",        4, CA_GOD,    CA_STATIC},
     {(char *)"wizard",        3, CA_WIZARD, CA_WIZARD},
     {NULL,                    0, 0,         0}
 };
