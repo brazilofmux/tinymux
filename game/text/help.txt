@@ -284,10 +284,23 @@ ADDCOM
 
   COMMAND: addcom <alias>=<channel>
 
-  This command joins you to an existing channel with <alias>. You should
-  avoid having multiple aliases for a channel, although it is allowed.
+  The alias and the channel name are case sensitive.
 
-  Related Topics: delcom, comlist, alias, comtitle.
+  Using this command, you can join a pre-existing channel by specifying the
+  alias you wish to use. If the channel is named 'Public', then you must type
+  it with the same case. Likewise the alias is case sensitive. If you use
+  'addcom Pub=Public', then to use the channel you must type 'Pub Hello'
+  instead of 'pub Hello'.
+
+  One other thing to be careful of: adding a channel multiple times with
+  different aliases. While this is allowed, it is also discouraged. You will
+  receive a warning when it happens.
+
+  Example:
+    >addcom pub=Public
+    Channel Public added with alias pub.
+
+  Related Topics: delcom, @clist, comlist, alias, comtitle.
 
 & ALIAS
 ALIAS
