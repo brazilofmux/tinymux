@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.35 2001-10-18 04:53:00 sdennis Exp $
+// $Id: db_rw.cpp,v 1.36 2001-10-18 05:22:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -285,7 +285,7 @@ static BOOLEXP *getboolexp(FILE *f)
  * get_list: Read attribute list from flat file.
  */
 
-static int get_list(FILE *f, dbref i, int new_strings)
+static int get_list(FILE *f, dbref i)
 {
     char *buff = alloc_lbuf("get_list");
     while (1)
@@ -300,14 +300,13 @@ static int get_list(FILE *f, dbref i, int new_strings)
             {
                 // Store the attr
                 //
-                atr_add_raw(i, atr,
-                     getstring_noalloc(f, new_strings));
+                atr_add_raw(i, atr, getstring_noalloc(f, TRUE));
             }
             else
             {
                 // Silently discard
                 //
-                getstring_noalloc(f, new_strings);
+                getstring_noalloc(f, TRUE);
             }
             break;
 
@@ -332,7 +331,7 @@ static int get_list(FILE *f, dbref i, int new_strings)
 
             // We've found a bad spot.  I hope things aren't too bad.
             //
-            getstring_noalloc(f, new_strings);
+            getstring_noalloc(f, TRUE);
         }
     }
 }
@@ -693,7 +692,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             //
             if (read_attribs)
             {
-                if (!get_list(f, i, TRUE))
+                if (!get_list(f, i))
                 {
                     Log.tinyprintf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
                     return -1;
