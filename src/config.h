@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.6 2000-06-02 16:18:11 sdennis Exp $ */
+/* $Id: config.h,v 1.7 2000-06-02 19:13:46 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -120,7 +120,9 @@ typedef int SOCKET;
 extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
 #define Tiny_Assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
 
-extern void OutOfMemory(const char *SourceFile, unsigned int LineNo);
+extern BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo);
+#define ISOUTOFMEMORY(exp) (!(exp) && OutOfMemory(__FILE__, __LINE__))
+
 #if 0
 extern DCL_INLINE void *MemAllocate(size_t size, const char *filename, int linenum);
 extern DCL_INLINE void MemFree(void *ptr, const char *filename, int linenum);
