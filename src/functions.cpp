@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.126 2002-01-15 15:40:22 sdennis Exp $
+// $Id: functions.cpp,v 1.127 2002-01-24 07:07:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -23,11 +23,12 @@ UFUN *ufun_head;
 
 extern NAMETAB indiv_attraccess_nametab[];
 
-extern void FDECL(cf_log_notfound, (dbref player, char *cmd, const char *thingname, char *thing));
+extern void cf_log_notfound(dbref player, char *cmd, const char *thingname,
+                            char *thing);
+extern void cf_display(dbref, char *, char *, char **);
 
-/*
- * Function definitions from funceval.c
- */
+// Function definitions from funceval.cpp
+//
 
 #define XFUNCTION(x) extern void x(char *buff, char **bufc, dbref player, dbref cause, char *fargs[], int nfargs, char *cargs[], int ncargs)
 
@@ -6692,6 +6693,11 @@ FUNCTION(fun_trim)
     safe_str(q, buff, bufc);
 }
 
+FUNCTION(fun_config)
+{
+    cf_display(player, fargs[0], buff, bufc);
+}
+
 /* ---------------------------------------------------------------------------
  * flist: List of existing functions in alphabetical order.
  */
@@ -6734,6 +6740,7 @@ FUN flist[] =
     {"COMP",     fun_comp,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"COMTITLE", fun_comtitle, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CON",      fun_con,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONFIG",   fun_config,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONN",     fun_conn,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONNLAST", fun_connlast, MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONNLEFT", fun_connleft, MAX_ARG, 1,  1,       0, CA_PUBLIC},
