@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.12 2004-03-15 18:02:26 sdennis Exp $
+// $Id: speech.cpp,v 1.13 2004-04-08 04:36:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -629,25 +629,72 @@ void do_page
     if (  nargs == 2
        && arg1[0] != '\0')
     {
-        // Need to decode requested recipients.
-        //
-        MUX_STRTOK_STATE tts;
-        mux_strtok_src(&tts, arg1);
-        mux_strtok_ctl(&tts, ", ");
-        char *p;
-        for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
+        bModified = true;
+
+        char *p = arg1;
+        while (*p != '\0')
         {
-            dbref target = lookup_player(executor,p, true);
-            if (target != NOTHING)
+            char *q = strchr(p, '"');
+            if (q)
             {
-                aPlayers[nPlayers++] = target;
+                *q = '\0';
+            }
+    
+            // Decode space-delimited or comma-delimited recipients.
+            //
+            MUX_STRTOK_STATE tts;
+            mux_strtok_src(&tts, p);
+            mux_strtok_ctl(&tts, ", ");
+            char *r;
+            for (r = mux_strtok_parse(&tts); r; r = mux_strtok_parse(&tts))
+            {
+                dbref target = lookup_player(executor, r, true);
+                if (target != NOTHING)
+                {
+                    aPlayers[nPlayers++] = target;
+                }
+                else
+                {
+                    notify(executor, tprintf("I don't recognize \"%s\".", r));
+                }
+            }
+
+            if (q)
+            {
+                p = q + 1;
+
+                // Handle quoted named.
+                //
+                q = strchr(p, '"');
+                if (q)
+                {
+                    *q = '\0';
+                }
+
+                dbref target = lookup_player(executor, p, true);
+                if (target != NOTHING)
+                {
+                    aPlayers[nPlayers++] = target;
+                }
+                else
+                {
+                    notify(executor, tprintf("I don't recognize \"%s\".", p));
+                }
+
+                if (q)
+                {
+                    p = q + 1;
+                }
+                else
+                {
+                    break;
+                }
             }
             else
             {
-                notify(executor, tprintf("I don't recognize \"%s\".", p));
+                break;
             }
         }
-        bModified = true;
     }
     else
     {
