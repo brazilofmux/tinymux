@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.16 2004-07-24 05:43:18 sdennis Exp $
+// $Id: speech.cpp,v 1.17 2004-08-16 05:56:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -804,7 +804,6 @@ void do_page
         char *pBuff = alloc_lbuf("do_page.lastpage");
         char *pBufc = pBuff;
         ItemToList_Init(&itl, pBuff, &pBufc);
-        int i;
         for (i = 0; i < nPlayers; i++)
         {
             if (  Good_obj(aPlayers[i])
