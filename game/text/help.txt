@@ -536,15 +536,21 @@ DELCOM
 
   COMMAND: @cpflags <channel>=[!]flag
 
-  Sets player flags for that channel. The flag can be one of: join, transmit,
+  Sets player flags for that channel. The flag can be one of: join, transmit
   or receive.
 
-  Transmit: Whether a player can broadcast things over the channel.
-  Join: Whether a player can join the channel.
-  Receive: Whether a player can receive messages over the channel.
+    transmit   Whether a player can broadcast things over the channel.
+    join       Whether a player can join the channel.
+    receive    Whether a player can receive messages over the channel.
 
-  If it is !flag, then that flag is reset. Note that channel flags ALWAYS
-  override locks on channel objects.
+  NOTE: Flags must be lower case.
+
+  If it is !flag, then that flag is reset. Channel flags ALWAYS override
+  locks on channel objects.
+
+  Example:
+    > @cpflags Public=join
+    @coflags: Set.
 
   Related Topics: @coflags, @clist, CHANNEL OBJECT.
 
@@ -558,9 +564,9 @@ DELCOM
 
     transmit   Whether an object can broadcast things over the channel.
     join       Whether an object can join the channel.
-    receive    Whether a object can receive messages over the channel.
+    receive    Whether an object can receive messages over the channel.
 
-  NOTE: Flags must be entered in lower case.
+  NOTE: Flags must be lower case.
 
   If it is !flag, then that flag is reset. Channel flags ALWAYS override
   locks on channel objects.
@@ -576,7 +582,7 @@ DELCOM
 
   COMMAND: @cset/<option> <channel>[=<value>]
 
-  Changes the way a channel behaves.  <option> can be one of the
+  Changes the way a channel behaves. <option> can be one of the
   following:
 
     publc   - channel is listed in everyone's @clist.
@@ -590,13 +596,20 @@ DELCOM
     header  - Changes the prefix text used to announce a channel emit to
               <value>. <value> may contain color.
 
-    object  - Sets the channel object to <value>.
+    object  - Sets the channel object to <value>. You must create an object
+              before associating a channel with it.
 
   You can set a description for the channel by changing the description
   of the channel object. Also, the channel object's lock will be used
   to check to see if people should be able to join the channel or not.
 
-  Related Topics: CHANNEL OBJECT
+  Examples:
+    > @cset/public Public
+    @cset: Channel Public placed on the public listings.
+    > @cset/object Public=#5
+    Channel Public is now using Garou Channel Object(#5) as channel object.
+
+  Related Topics: CHANNEL OBJECT, @ccreate, @create
 
 & CHANNEL OBJECT
 CHANNEL OBJECT
