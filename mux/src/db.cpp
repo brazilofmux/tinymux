@@ -1,8 +1,8 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.5 2003-01-24 15:08:04 sdennis Exp $
+// $Id: db.cpp,v 1.6 2003-01-28 15:47:59 sdennis Exp $
 //
-// MUX 2.2
+// MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved.  
 //

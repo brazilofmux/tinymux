@@ -1,13 +1,13 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $ */
+/* $Id: copyright.h,v 1.2 2003-01-28 15:48:00 sdennis Exp $ */
 
 /*
- * TinyMUX 2.2 Source Code.
+ * TinyMUX Source Code (version 2.0 through 2.3).
  * Copyright (C) 1999-2003 by Solid Vertical Domains, Ltd.
  * Contact: Stephen Dennis
  *
- * TinyMUX Source Code (verions 1.0 through 1.6)
+ * TinyMUX Source Code (versions 1.0 through 1.6)
  * Copyright (c) 1995, 1996, 1997, 1998, 1999, David Passmore.
  *
  * TinyMUSH 2.2 Source Code
