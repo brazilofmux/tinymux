@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.26 2000-09-05 20:28:53 sdennis Exp $
+// $Id: functions.cpp,v 1.27 2000-09-20 17:26:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3626,28 +3626,48 @@ FUNCTION(fun_secure)
     }
 }
 
+// fun_escape: This function prepends a '\' to the beginning of a
+// string and before any character which occurs in the set "%\[]{};".
+// It handles ANSI by not treating the '[' character within an ANSI
+// sequence as a special character.
+//
 FUNCTION(fun_escape)
 {
-    char *s, *d;
+    char *pString = fargs[0];
+    int nString = strlen(pString);
 
-    d = *bufc;
-    s = fargs[0];
-    while (*s) {
-        switch (*s) {
-        case '%':
-        case '\\':
-        case '[':
-        case ']':
-        case '{':
-        case '}':
-        case ';':
-            safe_chr('\\', buff, bufc);
-        default:
-            if (*bufc == d)
-                safe_chr('\\', buff, bufc);
-            safe_chr(*s, buff, bufc);
+    while (nString)
+    {
+        int nTokenLength0;
+        int nTokenLength1;
+        int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
+
+        if (iType == TOKEN_TEXT_ANSI)
+        {
+            // Process TEXT portion (pString, nTokenLength0).
+            //
+            nString -= nTokenLength0;
+            while (nTokenLength0--)
+            {
+                if (  Tiny_IsEscapeCharacter[(unsigned char)*pString]
+                   || pString == fargs[0])
+                {
+                    safe_chr('\\', buff, bufc);
+                }
+                safe_chr(*pString, buff, bufc);
+                pString++;
+            }
+            nTokenLength0 = nTokenLength1;
         }
-        s++;
+
+        if (nTokenLength0)
+        {
+            // Process ANSI portion (pString, nTokenLength0).
+            //
+            safe_copy_buf(pString, nTokenLength0, buff, bufc, LBUF_SIZE-1);
+            pString += nTokenLength0;
+            nString -= nTokenLength0;
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.8 2000-08-07 06:58:12 sdennis Exp $
+// $Id: stringutil.h,v 1.9 2000-09-20 17:26:16 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -27,6 +27,7 @@ extern char Tiny_IsSpace[256];
 extern char Tiny_IsAttributeNameCharacter[256];
 extern char Tiny_IsObjectNameCharacter[256];
 extern char Tiny_IsPlayerNameCharacter[256];
+extern char Tiny_IsEscapeCharacter[256];
 extern unsigned char Tiny_ToUpper[256];
 extern unsigned char Tiny_ToLower[256];
 int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1);
