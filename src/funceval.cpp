@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.21 2000-09-28 18:11:51 sdennis Exp $
+// $Id: funceval.cpp,v 1.22 2000-09-29 06:04:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2878,65 +2878,72 @@ FUNCTION(fun_push)
 
 FUNCTION(fun_regmatch)
 {
-    int i, nqregs, curq, len;
-    char *qregs[10];
-    int qnums[10];
-    regexp *re;
-
     if (!fn_range_check("REGMATCH", nfargs, 2, 3, buff, bufc))
+    {
         return;
+    }
 
-    if ((re = regcomp(fargs[1])) == NULL) {
-        /* Matching error. */
+    regexp *re = regcomp(fargs[1]);
+    if (!re)
+    {
+        // Matching error.
+        //
         notify_quiet(player, (const char *) regexp_errbuf);
         safe_chr('0', buff, bufc);
         return;
     }
 
+    int matched = regexec(re, fargs[0]);
     safe_ltoa(regexec(re, fargs[0]), buff, bufc, LBUF_SIZE-1);
 
-    /* If we don't have a third argument, we're done. */
+    // If we don't have a third argument, we're done.
+    //
     if (nfargs != 3)
     {
         MEMFREE(re);
         return;
     }
 
-    /* We need to parse the list of registers. Anything that we don't get is
-     * assumed to be -1.
-     */
-    nqregs = list2arr(qregs, 10, fargs[2], ' ');
-    for (i = 0; i < 10; i++) {
-        if ((i < nqregs) && qregs[i] && *qregs[i])
-            qnums[i] = Tiny_atol(qregs[i]);
-        else
-            qnums[i] = -1;
-    }
-
-    // Now we run a copy.
+    // We need to parse the list of registers. If a register is
+    // mentioned in the list, then either fill the register with the
+    // subexpression, or if there wasn't a match, clear it.
     //
-    for (i = 0; (i < NSUBEXP) && (re->startp[i]) && (re->endp[i]); i++)
+    char *qregs[NSUBEXP];
+    int nqregs = list2arr(qregs, NSUBEXP, fargs[2], ' ');
+    for (int i = 0; i < nqregs; i++)
     {
-        curq = qnums[i];
-        if ((curq >= 0) && (curq < MAX_GLOBAL_REGS))
+        int curq;
+        int nIntLen;
+        if (  qregs[i]
+           && *qregs[i]
+           && is_integer(qregs[i], &nIntLen)
+           && (curq = Tiny_atol(qregs[i])) >= 0
+           && curq <= 9)
         {
             if (!mudstate.global_regs[curq])
             {
                 mudstate.global_regs[curq] = alloc_lbuf("fun_regmatch");
             }
-
-            len = re->endp[i] - re->startp[i];
-            if (len > LBUF_SIZE - 1)
-                len = LBUF_SIZE - 1;
-            else if (len < 0)
-                len = 0;
-
-            memcpy(mudstate.global_regs[curq], re->startp[i], len);
-            mudstate.global_regs[curq][len] = '\0'; /* must null-terminate */
+            int len = 0;
+            if (matched && re->startp[i] && re->endp[i])
+            {
+                // We have a subexpression.
+                //
+                len = re->endp[i] - re->startp[i];
+                if (len > LBUF_SIZE - 1)
+                {
+                    len = LBUF_SIZE - 1;
+                }
+                else if (len < 0)
+                {
+                    len = 0;
+                }
+                memcpy(mudstate.global_regs[curq], re->startp[i], len);
+            }
+            mudstate.global_regs[curq][len] = '\0';
             mudstate.glob_reg_len[curq] = len;
         }
     }
-
     MEMFREE(re);
 }
 
