@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.134 2003-07-24 00:24:02 sdennis Exp $
+// $Id: functions.cpp,v 1.135 2003-08-07 05:29:05 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2799,7 +2799,7 @@ FUNCTION(fun_cand)
         char *bp = temp;
         char *str = fargs[i];
         TinyExec(temp, &bp, executor, caller, enactor, 
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         val = Tiny_atol(temp);
     }
@@ -2816,7 +2816,7 @@ FUNCTION(fun_cor)
         char *bp = temp;
         char *str = fargs[i];
         TinyExec(temp, &bp, executor, caller, enactor, 
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         val = Tiny_atol(temp);
     }
