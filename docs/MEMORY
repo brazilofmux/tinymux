@@ -1,0 +1,175 @@
+TinyMUX 2.0: MEMORY
+Last Update: April 2000
+
+This file will explain to configure the two memory options of MUX, so 
+that your game may run under one or the other.
+
+By default, MUX will build a disk-based server. If you prefer to run 
+a memory-based server, this is a compile time option.  There is a 
+section in the Makefile that needs to be changed -- the most important 
+of which is to define MEMORY_BASED.
+
+It's equally easy to pick either one if you are starting your MUX from 
+scratch, however, converting from one to the other can be a bit more 
+difficult.
+
+NOTE: Anytime you switch from one to the other, you should be do a
+      'make clean'. This removes intermediate files and helps to guarantee
+      a clean build.
+
+WIN32 NOTE: db_load, db_check, and db_unload are not currently available on
+      Win32. You need to use dbconvert directly, and all the examples show
+      how that's done.
+
+REMINDER:  GAMENAME is the same as the variable set in /game/mux.config 
+(default is 'netmux').
+
+Converting from memory-based to disk-based:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This is the simple conversion:
+
+1.  Undefine MEMORY_BASED in the makefile.
+2.  'make clean' to force all source files to be re-built.
+3.  'make' the game.
+4.  './Startmux' the game from the game sub-directory.
+5.  'connect' as a wizard,
+6.  '@shutdown' to shut it down.
+
+This will create the GAMENAME.dir and GAMENAME.pag files in your data
+sub-directory.
+
+Alternatively, you can convert from memory-based to disk-based without
+starting the game using db_load as follows:
+
+1.  Undefine MEMORY_BASED in the makefile.
+2.  'make clean' to force all source files to be re-built.
+3.  'make' the game.
+4.  Change to the data sub-directory.
+5.  db_load GAMENAME GAMENAME.db.new GAMENAME.db
+
+This last step is the same as if you had done the following:
+
+    ../bin/dbconvert GAMENAME X < GAMENAME.db.new > GAMENAME.db
+
+
+Converting from disk-based to memory-based:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+You need to use db_unload to convert your database to a flatfile, as
+follows:
+
+1.  Define MEMORY_BASED in the makefile.
+2.  'make clean' to force all source files to be re-built.
+3.  'make' the game.
+4.  Change to the data sub-directory.
+5.  db_unload GAMENAME GAMENAME.db.new GAMENAME.db.FLAT
+
+This last step is the same as if you had done the following:
+
+    ../bin/dbconvert GAMENAME x < GAMENAME.db.new > GAMENAME.db.FLAT
+
+You then need to remove GAMENAME.db.new, GAMENAME.db,
+GAMENAME.pag, GAMENAME.dir. When that is done, rename
+GAMENAME.db.FLAT to GAMENAME.db.new. Start up the game.
+
+
+A comparison of disk-based and memory-based database storage methods.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Frankly any must-be-true conclusions are elusive as the results you get
+depend a lot on how much memory you have in your system relative to the 
+size of the game you are trying to host, but assuming that your memory 
+isn't a limiting factor, we can generally say the following:
+
+1. Memory based:
+
+    a. Advantages:
+
+ 	- Does not spend time reading from the disk or asking for data to be
+      written to the disk. Also, there is some organizational overhead
+      to a cache that a memory-based system doesn't pay.
+
+	- A memory-based setup dumps and loads using a flatfile, which is
+	  easier to manage in some ways than trying to share an on-line
+      database file with the game while it's running.
+
+        - Less chance of an incoherent database. That is, flatfile dumps 
+          have a higher chance of being internally coherent in the face of      
+          system crashes, faults, power glitch and other nasty things.
+
+    b. Disadvantages:
+
+	- Memory usage grows as the size of the database grows.
+
+        - Loading and dumping a complete flatfile is more disk and 
+          processor intensive than incrementally managing an on-line disk 
+          database, however there are ways to hiding this activity so that 
+          it doesn't affect your players much.
+
+        - Greater chance of loss of data. That is, if your game crashes, 
+          only what successfully made it to disk survives.
+          
+2. Disk based:
+
+    a. Advantages:
+
+	  - Uses a relatively fixed amount of memory independent of database
+      size.
+      
+      - Faster database saves.
+        
+        - Less risk of loss of data.
+
+    b. Disadvantages:
+
+	- If the game is waiting on data from the disk, nothing else happens.
+      However, the cache hit rates are greater than 95% for the games I've
+      run, but that depends on the size of the cache. You only pay the IO
+      penalty for reads if you the cache doesn't have what you are looking
+      for. Disk writes are performed in a lazy fashion by the OS and don't
+      affect the comparison much.
+
+        - Greater risk of an incoherent database.
+
+
+Memory-based usage is preferred _if_ you have enough memory to support a
+growing database, however, when memory is at a premium and memory usage is
+the key point of whether you remain on your site or not, disk-based usage 
+is the way to go.
+
+
+Saving disk space:
+~~~~~~~~~~~~~~~~~
+
+- If you are using a disk-based setup, consider converting to a 
+  memory-based setup, which can use less disk space.
+
+- Enabling the config parameter 'compression', and specifying a
+  'compress_program' and 'uncompress_program' will save disk space under
+  memory based usage and disk-based usage, but it makes much more of a
+  difference with memory-based because it compresses the entire database.
+
+- Enabling radix compression (see README.COMPRESSION) will reduce the size
+  of a disk-based database AND its memory usage. On a memory-based setup, 
+  it will only reduce memory usage.
+
+
+Saving memory:
+~~~~~~~~~~~~~
+
+- If you are using a memory-based setup, consider converting to disk-based.
+
+- On a disk based setup, reduce the size of the cache. (see README for tips
+  on the cache)
+
+- On both disk and memory based setups, enable radix compression (see
+  README.COMPRESSION)
+
+- Adjust OUTPUT_BLOCK_SIZE in config.h: this should be a power of 2,
+  preferably in the range of 4096 to 16384. Any value over the config
+  parameter 'output_limit' is wasted.
+
+
+You should juggle these options until you find a setup that works, and gives
+you the best performance. There is no 'right' way to set up a MUX, it always
+depends on the capabilities of the system you are running on, and how much
+of those capabilities you can use.
+

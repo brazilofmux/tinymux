@@ -1,0 +1,200 @@
+TinyMUX 2.0: CONFIGURATION
+Last Update: April 2000
+
+TinyMUX 2.0 gets the information it needs to operate the game (aside from
+the database itself) from a configuration file that is read in at startup.
+The configuration file contains various parameters, such as where to find
+the database, what port to listen for connects, and many other things.
+
+Modifying mux.config:
+~~~~~~~~~~~~~~~~~~~~
+
+- This file can be left as is.  However, the prime benefit of customization 
+  is in the output of Backup will generate a flatfile that you can easily 
+  recognize as belonging to your game(handy, if you run more than one 
+  game).
+  
+  - Open 'mux.config' in your editor and look for the line "GAMENAME".
+  
+  - Change 'netmux' to something short that you will recognize easily.
+  
+  - Save your changes and leave the editor. 
+
+Making a New Configuration File:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- In your game directory, the file that you will need to modify is the one 
+  called either 'netmux.conf' or 'GAMENAME.conf'.  'netmux' is the default
+  GAMENAME and can be changed by editting mux.config(see above).  
+
+- If you choose to change GAMENAME in mux.config, then you will begin by 
+  editting the top portion of the file.
+  - In the lines marked 'input_database', 'output_database', 
+    'crash_database', 'game_dir_file', and 'game_pag_file', change 'netmux'
+    to the same thing you entered in GAMENAME.
+
+- If your mail and comsystem databases are named differently from the 
+  default, then edit those lines accordingly.
+
+- Change 'port' to the port number your game will be using.
+
+- Change 'mud_name' to what you like.  This can be the formal name of your 
+  game.
+
+- Make any other configuration changes you want to make at this time.  They 
+  are added individually, one per line to the file.  Common additions to 
+  this file would be:
+
+                money_name_singular <text>     The name of one coin (penny)
+                money_name_plural <text>       The name of several coins (pennies)
+                fork_dump no                   Do this if you have little swap 
+                                               space.
+                paycheck <amount>              Players get this much money each 
+                                               day they connect.
+                paystart <amount>              Players start out with this much 
+                                               money.
+                payfind <chance>               Each time a player moves, he has a
+                                       1 in <chance> chance of finding a 
+                                       penny.
+                player_starting_room <roomno>  The room that new players are
+                                       created in.
+                mail_expiration <number>           Sets the timeout for @mail.(14 days)
+                master_room <dbref>                        The number of the room you keep yout 
+                                       globals in.
+                quotas <yes/no>                            Enables quotas. (no)
+                starting_quota <number>        How much quota players get. (20)             
+                                       Meaningless without quotas enabled.
+                guests_channel <channel name>  Channel for guests.  See 
+                                               GUESTS for information on the guest 
+                                               system.            
+                public_channel <channel name>  Name for the public channel 
+                                               on your game.
+                dump_message                   Message shown at the beginning of a 
+                                               DB save to disk                          
+                postdump_message               Message shown at the end of a 
+                                               DB save to disk  
+                idle_wiz_dark yes              Sets wizards dark after they have 
+                                               been idle more than the specified 
+                                               timeout                         
+
+- WIZHELP is a wealth of information regarding the more esotric aspects of 
+  configuration parameters.  There are many more configuration directives 
+  available. Information on individual directives can be obtained with the 
+  WIZHELP <directive> command within the mush.
+
+
+The following is an example configuration file provided by Soruk @AuroraMUSH 
+to give you an idea of how yours should look.  Many thanks him for his 
+generosity and help with this.  
+
+Note that not all of these configurations are appropriate for all games at 
+all times.  please read wizhelp for more information.  It has some comments 
+and explanations within it.  Lines preceeded with '#' are ones 'commented 
+out' and are not read by the server when it is running.
+
+===========================================================================
+
+
+# Default filenames for the database
+# These are adapted from TinyMUX 1.x.
+input_database  data/aurora.db
+output_database data/aurora.db.new
+crash_database  data/aurora.db.CRASH
+game_pag_file   data/aurora.pag
+game_dir_file   data/aurora.dir
+#
+# Mail, comsystem, and macro databases.
+mail_database   data/mail.db
+# Older MUXes used commac.db. I never got round to changing it on AMUSH.
+comsys_database data/commac.db
+#
+#
+port 4190
+mud_name AuroraMUSH
+#
+include alias.conf
+include compat.conf
+#
+# Define local aliases/parameters/whatnot here.
+# log all_commands
+alias ? help
+clone_copies_cost YES
+money_name_singular cosmic ray
+money_name_plural cosmic rays
+mail_expiration 60
+paycheck 25
+page_cost 0
+master_room 5
+quotas yes
+starting_quota 10
+idle_timeout 3600
+access @attribute/access wizard
+access @attribute/delete wizard
+guest_char_num 3
+number_guests 5
+guest_prefix Guest
+guests_channel Guests
+public_channel Public
+dump_interval 3600
+dump_message Formatting drive C: - Please stand by.
+postdump_message Format completed OK. A few bad sectors were found, however.
+fork_dump no
+player_starting_room 83
+player_starting_home 83
+player_listen yes
+idle_wiz_dark yes
+access wiznews immortal
+access @robot god
+access @decompile no_guest
+access examine no_guest
+access @desc !no_guest
+access kill disabled
+access @emit no_suspect
+access comtitle no_suspect
+access @doing no_guest
+access @set !no_guest
+access @sex !no_guest
+access @admin god
+access @dig no_guest no_slave global_build
+access @dig/teleport no_guest no_slave global_build
+access @malias wizard
+access @mail no_guest
+access @qmail no_guest
+access @mail/send no_guest
+access @mail/cc no_guest
+access @mail/proof no_guest
+access @mail/edit no_guest
+access @mail/abort no_guest
+access @mail/fwd no_guest
+access @mail/quick no_guest
+access @wait no_guest
+access @wai no_guest
+function_access set no_slave no_guest
+function_access create no_slave no_guest
+function_access lwho immortal wizard builder
+access @oemit !need_location
+player_flags ansi uninspected
+#
+# Sitebans
+#capethorn.co.uk, dial-up.co.uk (part of Capethorn)
+forbid_site 194.205.0.0 255.255.0.0
+#
+# Existing users may connect, newbies cannot.
+# Guests can (though AMUSH has been patched to forbid guests from register_site)
+# Public TF accounts
+register_site 137.120.19.0 255.255.255.0
+#
+# AOL
+register_site 152.0.0.0 255.0.0.0
+#
+# Freeserve
+register_site 62.136.0.0 255.255.0.0
+register_site 195.92.0.0 255.255.0.0
+#
+# Force9
+register_site 195.166.0.0 255.255.0.0
+#
+#
+# Enable this line to prevent newbie access from anywhere.
+#register_site 0.0.0.0 0.0.0.0
+
