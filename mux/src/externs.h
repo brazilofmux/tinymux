@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.10 2003-02-05 06:20:58 jake Exp $
+// $Id: externs.h,v 1.11 2003-02-05 08:08:33 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -723,8 +723,8 @@ extern int game_pid;
 extern long DebugTotalThreads;
 extern long DebugTotalSemaphores;
 extern HANDLE hGameProcess;
-typedef bool __stdcall FCANCELIO(HANDLE hFile);
-typedef bool __stdcall FGETPROCESSTIMES(HANDLE hProcess,
+typedef BOOL __stdcall FCANCELIO(HANDLE hFile);
+typedef BOOL __stdcall FGETPROCESSTIMES(HANDLE hProcess,
     LPFILETIME pftCreate, LPFILETIME pftExit, LPFILETIME pftKernel,
     LPFILETIME pftUser);
 extern FCANCELIO *fpCancelIo;
