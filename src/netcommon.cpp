@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.59 2002-02-13 20:23:43 sdennis Exp $
+// $Id: netcommon.cpp,v 1.60 2002-02-13 21:32:26 zenty Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1631,7 +1631,7 @@ static int check_connect(DESC *d, char *msg)
 {
     char *command, *user, *password, *buff, *cmdsave;
     dbref player, aowner;
-    int aflags, nplayers;
+    int aflags, nplayers, isGuest=0;
     DESC *d2;
     char *p;
 
@@ -1696,6 +1696,7 @@ static int check_connect(DESC *d, char *msg)
                 }
                 strcpy(user, p);
                 strcpy(password, GUEST_PASSWORD);
+                isGuest++;
             }
         }
 
@@ -1715,7 +1716,7 @@ static int check_connect(DESC *d, char *msg)
         }
 
         player = connect_player(user, password, d->addr, d->username, inet_ntoa((d->address).sin_addr));
-        if (player == NOTHING)
+        if ((!isGuest && Guest.CheckGuest(player)) || (player == NOTHING))
         {
             // Not a player, or wrong password.
             //

@@ -1,6 +1,6 @@
 // mguests.h
 //
-// $Id: mguests.h,v 1.5 2002-02-13 20:17:28 sdennis Exp $
+// $Id: mguests.h,v 1.6 2002-02-13 21:32:26 zenty Exp $
 //
 
 #ifndef  __MGUESTS_H
@@ -24,6 +24,7 @@ private:
     void  WipeAttrs(dbref guest);  // Wipe all the attrbutes
 
 public:
+    int CheckGuest(dbref);
     void  ListAll(dbref);          // @list guests
     void  StartUp();               // Public handler for Startup
     char  *Create(DESC *d);        // Public handler for creation

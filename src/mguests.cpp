@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.14 2002-02-13 20:48:16 sdennis Exp $
+// $Id: mguests.cpp,v 1.15 2002-02-13 21:32:26 zenty Exp $
 //
 
 #include "copyright.h"
@@ -295,6 +295,15 @@ void CGuests::WipeAttrs(dbref guest)
     free_lbuf(atext);
 }
 
+int CGuests::CheckGuest(dbref player)
+{
+    int i;
+    for(i=0;i<nGuests;i++)
+        if(Guests[i] == player)
+            return 1;
+    return 0;
+}
+
 // @list guests, thanks Rhost for the idea!
 //
 void CGuests::ListAll(dbref player)
@@ -304,11 +313,12 @@ void CGuests::ListAll(dbref player)
     notify(player, "------------------------------------------------------------------------------");\
     char *buff = alloc_lbuf("CGuests-ListAll");
     int i;
+    char *LastSite=alloc_lbuf("CGuests-LastSite");
     for (i = 0; i < nGuests; i++)
     {
         dbref aowner;
         int aflags;
-        char *LastSite = atr_get(Guests[i], A_LASTSITE, &aowner, &aflags);
+        atr_get_str(LastSite, Guests[i], A_LASTSITE, &aowner, &aflags);
         sprintf(buff, "%sGuest %-3d: %-15s #%-5d %-10s %s",
                 (i<mudconf.min_guests ? "*" : " "),
                 i, Name(Guests[i]), Guests[i],
@@ -320,8 +330,8 @@ void CGuests::ListAll(dbref player)
             notify(player, tprintf("*** Guest %d (#%d) is an invalid object!",
                                    i, Guests[i]));
         }
-        free_lbuf(LastSite);
     }
+    free_lbuf(LastSite);
     notify(player, tprintf("-----------------------------  Total Guests: %-3d -----------------------------", nGuests));
     free_lbuf(buff);
 }
