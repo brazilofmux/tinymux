@@ -242,4 +242,5 @@ Miscellaneous:
 ~~~~~~~~~~~~~
  -- Added nattr (so named by TM3) as an alias for attrcnt (pre-existing MUX2
     feature).
+ -- Added docs/LIMITS to describe server limits.
 
