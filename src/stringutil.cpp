@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.15 2000-06-09 17:15:09 sdennis Exp $
+// $Id: stringutil.cpp,v 1.16 2000-06-12 18:17:47 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2105,10 +2105,18 @@ void Tiny_StrTokControl(TINY_STRTOK_STATE *tts, char *pControl)
     }
 }
 
-char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts)
+char *Tiny_StrTokParseLEN(TINY_STRTOK_STATE *tts, int *pnLen)
 {
+    *pnLen = 0;
+    if (!tts)
+    {
+        return NULL;
+    }
     char *p = tts->pString;
-    if (!tts || !p) return NULL;
+    if (!p)
+    {
+        return NULL;
+    }
 
     // Skip over leading control characters except for the NUL character.
     //
@@ -2119,13 +2127,16 @@ char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts)
 
     char *pReturn = p;
 
-
     // Skip over non-control characters.
     //
     while (tts->aControl[(unsigned char)*p] == 0)
     {
         p++;
     }
+
+    // What is the length of this token?
+    //
+    *pnLen = p - pReturn;
 
     // Terminate the token with a NUL.
     //
@@ -2134,7 +2145,6 @@ char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts)
         // We found a non-NUL delimiter, so the next call will begin parsing
         // on the character after this one.
         //
-        p[0] = '\0';
         tts->pString = p+1;
     }
     else
@@ -2147,7 +2157,7 @@ char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts)
 
     // Did we find a token?
     //
-    if (pReturn != p)
+    if (*pnLen > 0)
     {
         return pReturn;
     }
@@ -2155,6 +2165,47 @@ char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts)
     {
         return NULL;
     }
+}
+
+char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts)
+{
+    int nLen;
+    char *p = Tiny_StrTokParseLEN(tts, &nLen);
+    if (p)
+    {
+        p[nLen] = '\0';
+    }
+    return p;
+}
+
+// This function will filter out any characters in the the set from
+// the string.
+//
+char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
+{
+    static char Buffer[LBUF_SIZE];
+    char *pBuffer = Buffer;
+
+    int nLen;
+    int nLeft = sizeof(Buffer) - 1;
+    char *p;
+    TINY_STRTOK_STATE tts;
+    Tiny_StrTokString(&tts, pString);
+    Tiny_StrTokControl(&tts, pSetToRemove);
+    for ( p = Tiny_StrTokParseLEN(&tts, &nLen);
+          p && nLeft;
+          p = Tiny_StrTokParseLEN(&tts, &nLen))
+    {
+        if (nLeft < nLen)
+        {
+            nLen = nLeft;
+        }
+        memcpy(pBuffer, p, nLen);
+        pBuffer += nLen;
+        nLeft -= nLen;
+    }
+    *pBuffer = '\0';
+    return Buffer;
 }
 
 void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc)

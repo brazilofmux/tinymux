@@ -1,6 +1,6 @@
 //comsys.c
 //
-// * $Id: comsys.cpp,v 1.8 2000-06-10 10:07:12 sdennis Exp $
+// * $Id: comsys.cpp,v 1.9 2000-06-12 18:17:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -30,10 +30,12 @@ comsys_t *comsys_table[NUM_COMSYS];
 //
 char *RestrictTitleValue(char *pTitleRequest)
 {
-    // Make sure there can be no embedded newlines from %r
+    // First, remove all '\r\n\t' from the string.
     //
-    char *pNewTitle = replace_string("\r\n", "", pTitleRequest);
+    char *pNewTitle = RemoveSetOfCharacters(pTitleRequest, "\r\n\t");
 
+    // Optimize/terminate any ANSI in the string.
+    //
     char NewTitle_ANSI[MAX_TITLE_LEN+1];
     int nVisualWidth;
     int nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI), NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth, FALSE);

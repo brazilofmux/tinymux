@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.14 2000-06-11 21:37:48 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.15 2000-06-12 18:17:48 sdennis Exp $ 
 */
 
 /*
@@ -1282,25 +1282,50 @@ static void dump_users(DESC *e, char *match, int key)
     free_mbuf(buf);
 }
 
-/*
-* ---------------------------------------------------------------------------
-* * do_doing: Set the doing string that appears in the WHO report.
-* * Idea from R'nice@TinyTIM.
-*/
+char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, BOOL *pbValidDoing)
+{
+    *pnValidDoing = 0;
+    *pbValidDoing = FALSE;
+
+    if (!pDoing)
+    {
+        return NULL;
+    }
+    
+    // First, remove all '\r\n\t' from the string.
+    //
+    char *Buffer = RemoveSetOfCharacters(pDoing, "\r\n\t");
+
+    // Optimize/terminate any ANSI in the string.
+    //
+    int nVisualWidth;
+    static char szFittedDoing[SIZEOF_DOING_STRING];
+    *pnValidDoing = ANSI_TruncateToField(Buffer, SIZEOF_DOING_STRING, szFittedDoing, WIDTHOF_DOING_STRING, &nVisualWidth, FALSE);
+    *pbValidDoing = TRUE;
+    return szFittedDoing;
+}
+
+// ---------------------------------------------------------------------------
+// do_doing: Set the doing string that appears in the WHO report.
+// Idea from R'nice@TinyTIM.
+//
 void do_doing(dbref player, dbref cause, int key, char *arg)
 {
     // Make sure there can be no embedded newlines from %r
     //
     static char *Empty = "";
-    char *szDoing = Empty;
+    char *szValidDoing = Empty;
+    BOOL bValidDoing;
+    int nValidDoing;
     if (arg)
     {
-        szDoing = replace_string("\r\n", "", arg);
+        szValidDoing = MakeCanonicalDoing(arg, &nValidDoing, &bValidDoing);
+        if (!bValidDoing)
+        {
+            szValidDoing = Empty;
+            nValidDoing = 0;
+        }
     }
-
-    char szFittedDoing[SIZEOF_DOING_STRING];
-    int nVisualWidth;
-    int nFittedDoing = ANSI_TruncateToField(szDoing, SIZEOF_DOING_STRING, szFittedDoing, WIDTHOF_DOING_STRING, &nVisualWidth, FALSE);
     
     if (key == DOING_MESSAGE)
     {
@@ -1308,7 +1333,7 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
         DESC *d;
         DESC_ITER_PLAYER(player, d)
         {
-            memcpy(d->doing, szFittedDoing, nFittedDoing+1);
+            memcpy(d->doing, szValidDoing, nValidDoing+1);
             foundany = 1;
         }
         if (foundany)
@@ -1330,13 +1355,13 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
             notify(player, "Permission denied.");
             return;
         }
-        if (szFittedDoing[0] == '\0')
+        if (nValidDoing == 0)
         {
             strcpy(mudstate.doing_hdr, "Doing");
         }
         else 
         {
-            memcpy(mudstate.doing_hdr, szFittedDoing, nFittedDoing+1);
+            memcpy(mudstate.doing_hdr, szValidDoing, nValidDoing+1);
         }
         if (!Quiet(player))
         {
