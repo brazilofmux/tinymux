@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.26 2002-07-09 16:05:40 sdennis Exp $
+// $Id: predicates.cpp,v 1.27 2002-07-09 18:58:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -250,9 +250,7 @@ BOOL payfor(dbref who, int cost)
     if (  Wizard(who)
        || Wizard(Owner(who))
        || Free_Money(who) 
-       || Free_Money(Owner(who)) 
-       || Immortal(who)
-       || Immortal(Owner(who)))
+       || Free_Money(Owner(who)))
     {
         return TRUE;
     }
@@ -284,9 +282,7 @@ void giveto(dbref who, int pennies)
     if (  Wizard(who)
        || Wizard(Owner(who))
        || Free_Money(who)
-       || Free_Money(Owner(who))
-       || Immortal(who)
-       || Immortal(Owner(who)))
+       || Free_Money(Owner(who)))
     {
         return;
     }
