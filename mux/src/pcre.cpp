@@ -931,11 +931,11 @@ returned immediately. Otherwise further processing may be required. */
 
     default:
       if ((options & PCRE_EXTRA) != 0)
-	switch (c) {
-	default:
+//	switch (c) {
+//	default:
 	  *errorptr = ERR3;
-	  break;
-	}
+//	  break;
+//	}
       break;
     }
   }
