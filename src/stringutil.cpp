@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.8 2000-04-15 16:14:12 sdennis Exp $
+// $Id: stringutil.cpp,v 1.9 2000-04-16 07:37:09 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1141,7 +1141,7 @@ char *translate_string(const char *szString, int bConvert)
                 int ch = *pString++;
                 if (MU_EscapeChar[ch] == 0)
                 {
-                    // Common case: mudane character.
+                    // Common case: mundane character.
                     //
                     safe_chr(ch, szTranslatedString, &pTranslatedString);
                     continue;
