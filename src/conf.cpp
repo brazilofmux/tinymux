@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.39 2001-06-28 07:14:39 sdennis Exp $
+// $Id: conf.cpp,v 1.40 2001-06-28 21:00:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -250,10 +250,6 @@ void NDECL(cf_init)
     mudconf.cache_names = 1;
     mudconf.toad_recipient = -1;
     mudconf.eval_comtitle = 1;
-    strcpy(mudconf.log_prefix, "MUX");
-    mudconf.no_startup = FALSE;
-    mudconf.safe_wipe = FALSE;
-    mudconf.destroy_going_now = FALSE;
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = FALSE;
     mudstate.bCanRestart = FALSE;
@@ -530,9 +526,11 @@ CF_HAND(cf_string)
     pc[nStr] = '\0';
 
 #ifdef WIN32
-    if (pc == mudconf.log_prefix)
+    if (pc == mudconf.mud_name)
     {
-        Log.ChangePrefix(pc);
+        // We are changing the name of the MUD. Let the logger know.
+        //
+        Log.ChangePrefix(mudconf.mud_name);
     }
 #endif
 
@@ -1387,7 +1385,6 @@ CONF conftable[] =
     {"create_min_cost",           cf_int,         CA_GOD,    &mudconf.createmin,              NULL,               0},
     {"dark_sleepers",             cf_bool,        CA_GOD,    &mudconf.dark_sleepers,          NULL,               0},
     {"default_home",              cf_int,         CA_GOD,    &mudconf.default_home,           NULL,               0},
-    {"destroy_going_now",         cf_bool,        CA_GOD,    &mudconf.destroy_going_now,      NULL,               0},
     {"dig_cost",                  cf_int,         CA_GOD,    &mudconf.digcost,                NULL,               0},
     {"down_file",                 cf_string_dyn,  CA_STATIC, (int *)&mudconf.down_file,       NULL, SIZEOF_PATHNAME},
     {"down_motd_message",         cf_string,      CA_GOD,    (int *)mudconf.downmotd_msg,     NULL,       GBUF_SIZE},
@@ -1452,7 +1449,6 @@ CONF conftable[] =
     {"lock_recursion_limit",      cf_int,         CA_WIZARD, &mudconf.lock_nest_lim,          NULL,               0},
     {"log",                       cf_modify_bits, CA_GOD,    &mudconf.log_options,            logoptions_nametab, 0},
     {"log_options",               cf_modify_bits, CA_GOD,    &mudconf.log_info,               logdata_nametab,    0},
-    {"log_prefix",                cf_string,      CA_STATIC, (int *)mudconf.log_prefix,       NULL,              32},
     {"logout_cmd_access",         cf_ntab_access, CA_GOD,    (int *)logout_cmdtable,          access_nametab,     0},
     {"logout_cmd_alias",          cf_alias,       CA_GOD,    (int *)&mudstate.logout_cmd_htab,NULL,               0},
     {"look_obey_terse",           cf_bool,        CA_GOD,    &mudconf.terse_look,             NULL,               0},
@@ -1471,7 +1467,6 @@ CONF conftable[] =
     {"news_file",                 cf_string_dyn,  CA_STATIC, (int *)&mudconf.news_file,       NULL, SIZEOF_PATHNAME},
     {"news_index",                cf_string_dyn,  CA_STATIC, (int *)&mudconf.news_indx,       NULL, SIZEOF_PATHNAME},
     {"newuser_file",              cf_string_dyn,  CA_STATIC, (int *)&mudconf.crea_file,       NULL, SIZEOF_PATHNAME},
-    {"no_startup",                cf_bool,        CA_STATIC, &mudconf.no_startup,             NULL,               0},
     {"notify_recursion_limit",    cf_int,         CA_GOD,    &mudconf.ntfy_nest_lim,          NULL,               0},
     {"open_cost",                 cf_int,         CA_GOD,    &mudconf.opencost,               NULL,               0},
     {"output_database",           cf_string_dyn,  CA_STATIC, (int *)&mudconf.outdb,           NULL, SIZEOF_PATHNAME},
@@ -1519,7 +1514,6 @@ CONF conftable[] =
     {"room_quota",                cf_int,         CA_GOD,    &mudconf.room_quota,             NULL,               0},
     {"sacrifice_adjust",          cf_int,         CA_GOD,    &mudconf.sacadjust,              NULL,               0},
     {"sacrifice_factor",          cf_int,         CA_GOD,    &mudconf.sacfactor,              NULL,               0},
-    {"safe_wipe",                 cf_bool,        CA_GOD,    &mudconf.safe_wipe,              NULL,               0},
     {"safer_passwords",           cf_bool,        CA_GOD,    &mudconf.safer_passwords,        NULL,               0},
     {"search_cost",               cf_int,         CA_GOD,    &mudconf.searchcost,             NULL,               0},
     {"see_owned_dark",            cf_bool,        CA_GOD,    &mudconf.see_own_dark,           NULL,               0},
