@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.18 2000-08-28 06:22:49 sdennis Exp $
+// $Id: conf.cpp,v 1.19 2000-09-07 05:34:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -373,23 +373,19 @@ void NDECL(cf_init)
 
 void cf_log_notfound(dbref player, char *cmd, const char *thingname, char *thing)
 {
-    char *buff;
+    char buff[LBUF_SIZE * 2];
 
     if (mudstate.initializing) 
     {
-        STARTLOG(LOG_STARTUP, "CNF", "NFND")
-        buff = alloc_lbuf("cf_log_notfound.LOG");
+        STARTLOG(LOG_STARTUP, "CNF", "NFND");
         sprintf(buff, "%s: %s %s not found", cmd, thingname, thing);
         log_text(buff);
-        free_lbuf(buff);
-        ENDLOG
+        ENDLOG;
     }
     else
     {
-        buff = alloc_lbuf("cf_log_notfound");
         sprintf(buff, "%s %s not found", thingname, thing);
         notify(player, buff);
-        free_lbuf(buff);
     }
 }
 
