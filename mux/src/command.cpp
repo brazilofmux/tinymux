@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.21 2002-07-13 07:23:01 jake Exp $
+// $Id: command.cpp,v 1.22 2002-07-14 00:04:56 jake Exp $
 //
 
 #include "copyright.h"
@@ -784,8 +784,6 @@ void set_prefix_cmds()
 //
 BOOL check_access(dbref player, int mask)
 {
-    int succ, fail;
-
     if (mask & (CA_DISABLED|CA_STATIC))
     {
         return FALSE;
@@ -795,77 +793,15 @@ BOOL check_access(dbref player, int mask)
         return TRUE;
     }
 
-    succ = fail = 0;
-    if (mask & CA_GOD)
-        fail++;
-    if (mask & CA_WIZARD)
-    {
-        if (Wizard(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_ADMIN))
-    {
-        if (WizRoy(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_BUILDER))
-    {
-        if (Builder(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_STAFF))
-    {
-        if (Staff(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_HEAD))
-    {
-        if (Head(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_ANNOUNCE))
-    {
-        if (Announce(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_IMMORTAL))
-    {
-        if (Immortal(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_UNINS))
-    {
-        if (Uninspected(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_ROBOT))
-    {
-        if (Robot(player))
-            succ++;
-        else
-            fail++;
-    }
-    if (succ > 0)
-    {
-        fail = 0;
-    }
-    if (fail > 0)
+    if (!(  ((mask & CA_WIZARD)     && Wizard(player))
+         || ((mask & CA_ADMIN)      && WizRoy(player))
+         || ((mask & CA_BUILDER)    && Builder(player))
+         || ((mask & CA_STAFF)      && Staff(player))
+         || ((mask & CA_HEAD)       && Head(player))
+         || ((mask & CA_ANNOUNCE)   && Announce(player))
+         || ((mask & CA_IMMORTAL)   && Immortal(player))
+         || ((mask & CA_UNINS)      && Uninspected(player))
+         || ((mask & CA_ROBOT)      && Robot(player))))
     {
         return FALSE;
     }
@@ -1295,7 +1231,7 @@ char *process_command
     static char LowerCaseCommand[LBUF_SIZE];
     char *pCommand;
     char *p, *q, *arg, *pSlash, *cmdsave, *bp, *str;
-    int succ, aflags, i;
+    int aflags, i;
     dbref exit, aowner;
     CMDENT *cmdp;
 
@@ -1565,7 +1501,7 @@ char *process_command
     TinyExec(LowerCaseCommand, &bp, executor, caller, enactor,
         EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str, args, nargs);
     *bp = '\0';
-    succ = 0;
+    BOOL succ = FALSE;
 
     // Idea for enter/leave aliases from R'nice@TinyTIM
     //
@@ -1610,7 +1546,7 @@ char *process_command
         if (  (!isPlayer(executor) || mudconf.match_mine_pl)
            && (atr_match(executor, executor, AMATCH_CMD, LowerCaseCommand, TRUE) > 0))
         {
-            succ++;
+            succ = TRUE;
         }
     }
 
@@ -1618,14 +1554,11 @@ char *process_command
     //
     if (Has_location(executor))
     {
-        succ += list_check(Contents(Location(executor)), executor, AMATCH_CMD, LowerCaseCommand, TRUE);
+        succ |= list_check(Contents(Location(executor)), executor, AMATCH_CMD, LowerCaseCommand, TRUE);
 
         if (!No_Command(Location(executor)))
         {
-            if (atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, TRUE) > 0)
-            {
-                succ++;
-            }
+            succ |= (atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, TRUE) > 0);
         }
     }
 
@@ -1633,7 +1566,7 @@ char *process_command
     //
     if (Has_contents(executor))
     {
-        succ += list_check(Contents(executor), executor, AMATCH_CMD, LowerCaseCommand, TRUE);
+        succ |= list_check(Contents(executor), executor, AMATCH_CMD, LowerCaseCommand, TRUE);
     }
 
     if (  !succ
@@ -1664,7 +1597,7 @@ char *process_command
                         mudstate.debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
-                    succ += list_check(Contents(zone_loc), executor,
+                    succ |= list_check(Contents(zone_loc), executor,
                                AMATCH_CMD, LowerCaseCommand, TRUE);
 
                     // end of parent room checks.
@@ -1677,7 +1610,7 @@ char *process_command
                 //
                 if (!No_Command(zone_loc))
                 {
-                   succ += atr_match(zone_loc, executor, AMATCH_CMD,
+                   succ |= atr_match(zone_loc, executor, AMATCH_CMD,
                        LowerCaseCommand, TRUE);
                 }
             }
@@ -1694,7 +1627,7 @@ char *process_command
            && !No_Command(zone)
            && zone_loc != zone)
         {
-            succ += atr_match(zone, executor, AMATCH_CMD, LowerCaseCommand, TRUE);
+            succ |= atr_match(zone, executor, AMATCH_CMD, LowerCaseCommand, TRUE);
         }
     }
 
@@ -1705,14 +1638,11 @@ char *process_command
         if (  Good_obj(mudconf.master_room)
            && Has_contents(mudconf.master_room))
         {
-            succ += list_check(Contents(mudconf.master_room),
+            succ |= list_check(Contents(mudconf.master_room),
                        executor, AMATCH_CMD, LowerCaseCommand, FALSE);
             if (!No_Command(mudconf.master_room))
             {
-                if (atr_match(mudconf.master_room, executor, AMATCH_CMD, LowerCaseCommand, FALSE) > 0)
-                {
-                    succ++;
-                }
+                succ |= (atr_match(mudconf.master_room, executor, AMATCH_CMD, LowerCaseCommand, FALSE) > 0);
             }
         }
     }
