@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.11 2003-02-05 06:46:39 sdennis Exp $
+// $Id: timeutil.cpp,v 1.12 2003-02-05 06:50:12 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2753,7 +2753,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
             // Match Text.
             //
             int j = 0;
-            int bFound = false;
+            bool bFound = false;
             while (PD_TextTable[j].szText)
             {
                 if (  strlen(PD_TextTable[j].szText) == nLen
