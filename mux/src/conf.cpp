@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.3 2002-06-13 22:12:46 jake Exp $
+// $Id: conf.cpp,v 1.4 2002-06-22 23:28:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1312,6 +1312,16 @@ CF_HAND(cf_cf_access)
     return -1;
 }
 
+CF_HAND(cf_helpfile)
+{
+    return -1;
+}
+
+CF_HAND(cf_raw_helpfile)
+{
+    return -1;
+}
+
 // ---------------------------------------------------------------------------
 // cf_include: Read another config file.  Only valid during startup.
 //
@@ -1481,6 +1491,7 @@ CONF conftable[] =
     {"have_comsys",               cf_bool,        CA_STATIC, CA_PUBLIC,   &mudconf.have_comsys,            NULL,               0},
     {"have_mailer",               cf_bool,        CA_STATIC, CA_PUBLIC,   &mudconf.have_mailer,            NULL,               0},
     {"have_zones",                cf_bool,        CA_STATIC, CA_PUBLIC,   &mudconf.have_zones,             NULL,               0},
+    {"helpfile",                  cf_helpfile,    CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
     {"help_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.help_file,       NULL, SIZEOF_PATHNAME},
     {"help_index",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.help_indx,       NULL, SIZEOF_PATHNAME},
     {"hostnames",                 cf_bool,        CA_GOD,    CA_WIZARD,   &mudconf.use_hostname,           NULL,               0},
@@ -1555,6 +1566,7 @@ CONF conftable[] =
     {"quiet_whisper",             cf_bool,        CA_GOD,    CA_PUBLIC,   &mudconf.quiet_whisper,          NULL,               0},
     {"quit_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.quit_file,       NULL, SIZEOF_PATHNAME},
     {"quotas",                    cf_bool,        CA_GOD,    CA_PUBLIC,   &mudconf.quotas,                 NULL,               0},
+    {"raw_helpfile",              cf_raw_helpfile,CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
     {"read_remote_desc",          cf_bool,        CA_GOD,    CA_PUBLIC,   &mudconf.read_rem_desc,          NULL,               0},
     {"read_remote_name",          cf_bool,        CA_GOD,    CA_PUBLIC,   &mudconf.read_rem_name,          NULL,               0},
     {"register_create_file",      cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.regf_file,       NULL, SIZEOF_PATHNAME},
