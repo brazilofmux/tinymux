@@ -2,7 +2,7 @@
  * log.c - logging routines 
  */
 /*
- * $Id: log.cpp,v 1.1 2000-04-11 07:14:45 sdennis Exp $ 
+ * $Id: log.cpp,v 1.2 2000-04-29 08:05:38 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -37,19 +37,20 @@ NAMETAB logoptions_nametab[] =
     {(char *)"all_commands",    2,  0,  LOG_ALLCOMMANDS},
     {(char *)"bad_commands",    2,  0,  LOG_BADCOMMANDS},
     {(char *)"buffer_alloc",    3,  0,  LOG_ALLOCATE},
-    {(char *)"bugs",        3,  0,  LOG_BUGS},
+    {(char *)"bugs",            3,  0,  LOG_BUGS},
     {(char *)"checkpoints",     2,  0,  LOG_DBSAVES},
     {(char *)"config_changes",  2,  0,  LOG_CONFIGMODS},
-    {(char *)"create",      2,  0,  LOG_PCREATES},
-    {(char *)"killing",     1,  0,  LOG_KILLS},
-    {(char *)"logins",      1,  0,  LOG_LOGIN},
-    {(char *)"network",     1,  0,  LOG_NET},
+    {(char *)"create",          2,  0,  LOG_PCREATES},
+    {(char *)"killing",         1,  0,  LOG_KILLS},
+    {(char *)"logins",          1,  0,  LOG_LOGIN},
+    {(char *)"network",         1,  0,  LOG_NET},
     {(char *)"problems",        1,  0,  LOG_PROBLEMS},
     {(char *)"security",        2,  0,  LOG_SECURITY},
-    {(char *)"shouts",      2,  0,  LOG_SHOUTS},
-    {(char *)"startup",     2,  0,  LOG_STARTUP},
-    {(char *)"wizard",      1,  0,  LOG_WIZARD},
-    { NULL,             0,  0,  0}
+    {(char *)"shouts",          2,  0,  LOG_SHOUTS},
+    {(char *)"startup",         2,  0,  LOG_STARTUP},
+    {(char *)"time_usage",      1,  0,  LOG_TIMEUSE},
+    {(char *)"wizard",          1,  0,  LOG_WIZARD},
+    { NULL,                     0,  0,  0}
 };
 
 #endif
