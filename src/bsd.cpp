@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.9 2000-08-03 04:57:49 sdennis Exp $
+// $Id: bsd.cpp,v 1.10 2000-08-03 06:29:13 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -441,7 +441,14 @@ static int get_slave_result(void)
         }
     }
 
-    if (sscanf(ident, "%d , %d : %s : %s : %s", &remote_port, &local_port, token, os, userid) != 6)
+    if (sscanf( ident,
+                "%d , %d : %s : %s : %s",
+                &remote_port,
+                &local_port,
+                token,
+                os,
+                userid
+              ) != 5)
     {
         return 1;
     }
