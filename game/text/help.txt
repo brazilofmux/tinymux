@@ -9326,59 +9326,60 @@ CENTER()
 & INSERT()
 INSERT()
 
-  FUNCTION: insert(<list>, <pos>, <word>[, <sep>])
- 
+  FUNCTION: insert(<list>, <pos>, <word>[, <delim>])
+
   This function inserts a word into <list> so that the word becomes the
   <pos>'th element of the list, and all subsequent list elements are moved
   down.  This means that it appears between the <pos-1>'th and <pos>'th
   elements of the original list.  This function may also be used to append
   a word to a list.
- 
+
   <delim> may be used to specify a delimiter other than a space.
- 
+
   Examples:
     > say insert(This is a test, 4, new)
     You say "This is a new test"
     > say insert(Yet@Another@List, 3, Funky, @)
     You say "Yet@Another@Funky@List"
-  
+
   Related Topics: extract(), ldelete(), replace().
 
 & REPLACE()
 REPLACE()
 
-  FUNCTION: replace(<list>, <pos>, <word>[, <sep>])
- 
+  FUNCTION: replace(<list>, <pos>, <word>[, <delim>])
+
   This function inserts a word into <list> so that the word becomes the
   <pos>'th element of the list, and the word previously in that position
   is removed.  This means that it appears between the <pos-1>'th and
   <pos+1>'th elements of the original list, replacing the word at that
   position.  This function may not be used to append a word to a list.
- 
+
   <delim> may be used to specify a delimiter other than a space.
- 
+
   Examples:
     > say replace(This is a test, 4, quiz)
     You say "This is a quiz"
     > say replace(Yet@Another@Mundane@List, 3, Funky, @)
     You say "Yet@Another@Funky@List"
-  
+
   Related Topics: extract(), insert(), ldelete().
 
 & LDELETE()
 LDELETE()
 
-  FUNCTION: ldelete(<list>, <pos>[, <sep>])
- 
+  FUNCTION: ldelete(<list>, <pos>[, <delim>])
+
   This function removes a word from <list> by position.
+
   <delim> may be used to specify a delimiter other than a space.
- 
+
   Examples:
     > say ldelete(This is not a test, 3)
     You say "This is a test"
     > say ldelete(Yet@Another@Mundane@List, 3, @)
     You say "Yet@Another@List"
-  
+
   Related Topics: extract(), insert(), replace().
 
 & ISDBREF()
