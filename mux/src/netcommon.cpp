@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.21 2002-07-17 06:58:14 sdennis Exp $
+// $Id: netcommon.cpp,v 1.22 2002-07-20 13:11:18 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -688,11 +688,21 @@ static void announce_connect(dbref player, DESC *d)
         {
             pMonitorAnnounceFmt = "GAME: %s has connected.";
         }
+        if (  Suspect(player)
+        || (d->host_info & H_SUSPECT))
+        {
+            raw_broadcast(WIZARD, "[Suspect] %s has connected.", Name(player));
+        }
     }
     else
     {
         pRoomAnnounceFmt = "%s has reconnected.";
         pMonitorAnnounceFmt = "GAME: %s has reconnected.";
+        if (  Suspect(player)
+        || (d->host_info & H_SUSPECT))
+        {
+            raw_broadcast(WIZARD, "[Suspect] %s has reconnected.", Name(player));
+        }
     }
     sprintf(buf, pRoomAnnounceFmt, Name(player));
     raw_broadcast(MONITOR, pMonitorAnnounceFmt, Name(player));
@@ -708,11 +718,6 @@ static void announce_connect(dbref player, DESC *d)
     temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
     notify_check(player, player, buf, key);
-    if (  Suspect(player)
-       || (d->host_info & H_SUSPECT))
-    {
-        raw_broadcast(WIZARD, "[Suspect] %s has connected.", Name(player));
-    }
     atr_pget_str_LEN(buf, player, A_ACONNECT, &aowner, &aflags, &nLen);
     CLinearTimeAbsolute lta;
     if (nLen)
@@ -801,11 +806,6 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
     DESC *dtemp;
     char *argv[1];
 
-    if (  Suspect(player)
-       || (d->host_info & H_SUSPECT))
-    {
-        raw_broadcast(WIZARD, "[Suspect] %s has disconnected.", Name(player));
-    }
     loc = Location(player);
     num = 0;
     DESC_ITER_PLAYER(player, dtemp) num++;
@@ -815,6 +815,11 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
 
     if (num < 2)
     {
+        if (  Suspect(player)
+        || (d->host_info & H_SUSPECT))
+        {
+            raw_broadcast(WIZARD, "[Suspect] %s has disconnected.", Name(player));
+        }
         char *buf = alloc_lbuf("announce_disconnect.only");
 
         sprintf(buf, "%s has disconnected.", Name(player));
@@ -935,6 +940,11 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
     }
     else
     {
+        if (  Suspect(player)
+        || (d->host_info & H_SUSPECT))
+        {
+            raw_broadcast(WIZARD, "[Suspect] %s has partially disconnected.", Name(player));
+        }
         char *mbuf = alloc_mbuf("announce_disconnect.partial");
         sprintf(mbuf, "%s has partially disconnected.", Name(player));
         key = MSG_INV;
