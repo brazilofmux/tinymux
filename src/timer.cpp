@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.7 2001-10-17 18:08:32 sdennis Exp $
+// $Id: timer.cpp,v 1.8 2001-11-18 20:59:54 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -11,6 +11,7 @@
 // building/hosting text-based game servers, contact the author at
 // Stephen Dennis <sdennis@svdltd.com> for another license.
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -618,7 +619,7 @@ void CScheduler::TraverseOrdered(SCHLOOK *pfLook)
 // The following guarantees that in spite of any changes to the heap
 // we will visit every record exactly once. It does not attempt to
 // visit these records in any particular order.
-// 
+//
 int CTaskHeap::TraverseUnordered(SCHLOOK *pfLook, SCHCMP *pfCompare)
 {
     // Indicate that everything has not been visited.
@@ -676,7 +677,7 @@ int CTaskHeap::TraverseUnordered(SCHLOOK *pfLook, SCHCMP *pfCompare)
 // The following does not allow for changes during the traversal, but
 // but it does visit each record in sorted order (When-order or
 // Priority-order depending on the heap).
-// 
+//
 int CTaskHeap::TraverseOrdered(SCHLOOK *pfLook, SCHCMP *pfCompare)
 {
     Sort(pfCompare);

@@ -1,6 +1,6 @@
-// timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules
+// timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.8 2001-09-18 05:22:26 sdennis Exp $
+// $Id: timeutil.h,v 1.9 2001-11-18 20:56:37 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -42,8 +42,8 @@ class CLinearTimeAbsolute
     friend int operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
     friend int operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
     friend int operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
-    friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd); 
-    friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd); 
+    friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd);
+    friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd);
     friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
 
 private:
@@ -95,7 +95,7 @@ class CLinearTimeDelta
     friend int operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB);
     friend CLinearTimeDelta operator*(const CLinearTimeDelta& ltdA, int nScaler);
     friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& ltdA, const CLinearTimeDelta& ltdB);
-    friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd); 
+    friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd);
 
 private:
     INT64 m_tDelta;
