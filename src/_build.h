@@ -1,13 +1,13 @@
 //
 // _build.h
-// $Id: _build.h,v 1.3 2000-09-18 04:25:26 sdennis Exp $
+// $Id: _build.h,v 1.4 2000-09-18 04:32:48 sdennis Exp $
 //
 #include "copyright.h"
 
 #ifdef WIN32
 extern char szBuildDate[];
 extern char szBuildNum[];
-extern char szBetaNum;
+extern char szBetaNum[];
 #endif // WIN32
 
 #define MUX_VERSION       "2.0"         // Base version number
