@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.2 2003-01-22 23:54:32 sdennis Exp $
+// $Id: db.cpp,v 1.3 2003-01-23 06:27:01 jake Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -478,8 +478,7 @@ const char *PureName(dbref thing)
     {
         if (!db[thing].purename)
         {
-            size_t nName;
-            size_t nPureName;
+            size_t nName = 0, nPureName = 0;
 #ifdef MEMORY_BASED
             pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &nName);
             pPureName = strip_ansi(pName, &nPureName);
