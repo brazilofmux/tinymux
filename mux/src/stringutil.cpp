@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.52 2003-05-01 05:00:58 sdennis Exp $
+// $Id: stringutil.cpp,v 1.53 2003-07-31 06:07:42 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2358,8 +2358,8 @@ INT64 mux_atobcd(const char *pString)
 
 // Floating-point strings match one of the following patterns:
 //
-// [+\-]?[0-9]?.[0-9]+([eE][+\-]?[0-9]{1,3})?
-// [+\-]?[0-9]+(.[0-9]?)?([eE][+\-]?[0-9]{1,3})?
+// [+-]?[0-9]?(.[0-9]+)([eE][+-]?[0-9]{1,3})?
+// [+-]?[0-9]+(.[0-9]?)([eE][+-]?[0-9]{1,3})?
 // +Inf
 // -Inf
 // Ind
