@@ -1,0 +1,53 @@
+TinyMUX 2.2:  LIMITS
+Last Update:  January 2003
+
+While some limits of the server depend on the host environment (CPU
+architecture, compiler, and operating system), there are certain univeral
+limits, and we can also describe typical limits on typical platforms.
+
+The 8000 character limit:
+
+Attribute values, global registers, function arguments, internal
+intermediate buffers, and @mail bodies are typical limited to approximately
+8000 characters.  However, you aren't always able to use the full 8000
+characters because a null ('\0') character is needed at the end, ANSI
+color codes require their own space, and for attributes, the owner and
+attribute flags are encoded at the beginning of the buffer.  This effectively
+reduces its usable size.
+
+Object Limit:
+
+The number of objects is limited to the maximum value on a 'signed integer'.
+
+Attribute Name Limit:
+
+The number of unique attribute names is limited to the maximum value of a
+'signed integer'.
+
+Attributes per Object:
+
+In MUX 2.0, 2.1, and 2.2, the number of attributes that can be associated
+with an object is limited to somewhere between 2000 and 4000 depending
+on the number of unique attribute names game-wide and in particular which
+ones are used.
+
+Range and precision of Dates:
+
+MUX supports a proleptic Gregorian calendard with dates in the range of
+'Sat Jan 01 00:00:00 -27256 UTC' through 'Thu Dec 31 23:59:59 30826 UTC'
+which corresponds to -922283539200 through 910638979199.  The precision is
+100 nanoseconds, and 0 (the epoch) corresponds to
+'Sat Jan 01 00:00:00 -27256 UTC'.
+
+MUX does not account for leap seconds.  It does however, take into account
+what is called 'Summer Time' or 'Daylight Savings Time'.
+
+
+Typical Platform Limits:
+
+A 'signed integer' is typically 32-bits and can represent values from
+-2147483648 through 2147483647.
+
+Many platforms employ the IEEE floating-point formats. The range of
+floating-point numbers which may be represented is approximately 1e-323
+through 1e+308.
