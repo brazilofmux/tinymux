@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.17 2002-08-24 02:33:19 jake Exp $
+// $Id: comsys.h,v 1.18 2002-09-25 08:30:44 jake Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -79,8 +79,7 @@ void SendChannelMessage
     dbref  player,
     struct channel *ch,
     char  *msgNormal,
-    char  *msgNoComtitle,
-    BOOL   bRaw
+    char  *msgNoComtitle
 );
 void do_comwho(dbref player, struct channel *ch);
 void do_comlast(dbref player, struct channel *ch, int arg);
