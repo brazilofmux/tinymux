@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.20 2002-09-23 18:26:29 sdennis Exp $
+// $Id: eval.cpp,v 1.21 2002-09-26 19:57:23 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1315,7 +1315,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                             save_global_regs("eval_save", preserve, preserve_len);
                         }
 
-                        TinyExec(buff, &oldp, i, caller, enactor, feval,
+                        TinyExec(buff, &oldp, i, player, enactor, feval,
                                  &TempPtr, fargs, nfargs);
 
                         if (ufp->flags & FN_PRES)
