@@ -3180,13 +3180,13 @@ Related Topics: @name.
 & @SET
 @SET
 
-  COMMAND: @set[/<switch>] <object>=[!]<flag>
+  COMMAND: @set[/<switch>] <object>=[!]<flag1> [!][<flag2>
            @set[/<switch>] <object>=<attribute>:<value>
            @set[/<switch>] <object>=<attribute>:_<fromobj>/<fromattr>
            @set[/<switch>] <object>/<attr>=[!]<attrflag>
 
-  The first form sets (or clears) the indicated flag on <object>, the
-  second form sets the <attribute> attribute on <object> to <value>,
+  The first form sets (or clears) the indicated flag or flags on <object>, 
+  the second form sets the <attribute> attribute on <object> to <value>,
   creating a new user-named attribute if there is no attribute named
   <attribute>.  The third form copies an attribute from another object, and
   the fourth form sets (or clears) an attribute flag on the <attr> attribute
@@ -5843,7 +5843,9 @@ ESCAPE()
   after evaluating it is the same as the original string.
 
   Example:
-    You say "\Sneak a peek at Wiz's desc... \[get(#1/desc)\]"
+    > @va me=Sneak a peek at Wiz's desc... [get(#1/desc)]
+    > say escape(%va)
+    You say, "\Sneak a peek at Wiz's desc... \[get(#1/desc)\]
 
   Note: 'say escape(Sneak a peek at Wiz's desc... [get(#1/desc)])' does not
   produce the expected result because the argument is evaluated BEFORE being
@@ -7235,7 +7237,7 @@ ISDBREF()
      > say isdbref(This is not a dbref)
      You say "0"
 
-  Related Topics:
+  Related Topics: BOOLEAN VALUES, isint, isnum(), israt(), isword().
 
 & ISIGN()
 ISIGN()
@@ -7274,7 +7276,7 @@ ISINT()
      > say isint(22 L)
      You say "0"
 
-  Related Topics: BOOLEAN VALUES, isnum(), israt(), isword().
+  Related Topics: BOOLEAN VALUES, isdbref, isnum(), israt(), isword().
 
 & ISNUM()
 ISNUM()
@@ -7302,7 +7304,7 @@ ISNUM()
      >say isnum(Bad Numbers!)
      You say "0"
 
-  Related Topics: BOOLEAN VALUES, isint(), israt(), isword().
+  Related Topics: BOOLEAN VALUES, isdbref(), isint(), israt(), isword().
 
 & ISRAT()
 ISRAT()
@@ -7325,7 +7327,7 @@ ISRAT()
      > say israt(1E20)
      You say "0"
 
-  Related Topics: BOOLEAN VALUES, isint(), isnum(), isword().
+  Related Topics: BOOLEAN VALUES, isdbref(), isint(), isnum(), isword().
 
 & ISUB()
 ISUB()
@@ -7357,7 +7359,7 @@ ISWORD()
     > say isword(Foo8)
     You say, "0"
 
-  Related Topics: BOOLEAN VALUES, isint(), isnum(), israt().
+  Related Topics: BOOLEAN VALUES, isdbref(), isint(), isnum(), israt().
 
 & ITEMIZE()
 ITEMIZE()
@@ -8995,6 +8997,24 @@ MOVING (continued)
       @ofail, @oleave, @osucc, @oxenter, @oxleave, @oxtport, @succ, @tport,
       move, @teleport, home, KEY, STICKY, DROP-TOS, FAILURE, SUCCESS.
 
+& MTIME()
+MTIME()
+
+  FUNCTION: mtime(<object>)
+
+  Returns <object>'s last modification time as a time() string. Invoking
+  the function without an argument is equal to mtime(me)
+
+  An object's mtime will be affected by any changes to the attributes,
+  such as @desc, @va, or & attributes. Is is also affected by renaming
+  the object.
+
+  Example:
+    > think mtime(me)
+    Mon Oct 08 18:33:03 2001
+
+  Related Topics: time(), ctime().
+
 & MUDNAME()
 MUDNAME()
 
@@ -9997,7 +10017,7 @@ R()
 
   The r() function is used to access "local registers", and returns
   the contents of the specified register. There are thirty-six such
-  registers, numbered 0 through 9 and Z through Z.  The local
+  registers, numbered 0 through 9 and A through Z.  The local
   registers are normally cleared at the start of each command, but are
   preserved across the commands that compose an actionlist, as well as
   commands that directly trigger actionlists, such as @switch,
@@ -12525,7 +12545,7 @@ WRAP()
   expanded to 8 spaces, and %r's are treated as a force to the next line,
   overriding the logic of the word wrapping. 
 
-  The <just> argument may be Left, Right, Center, or Justified. Only the first
+  The <just> argument may be Left, Right, or Center. Only the first
   character of the argument is significant. <just> defaults to Left.
 
   The <lefttxt> and <righttxt> specify text to insert as borders on either
