@@ -39,6 +39,7 @@ Bug Fixes:
     out of order.
  -- Channel messages are considered OOC.
  -- Bug #618 - Logic in new_home enables being inside a garbage object.
+ -- Bug #424 - Linking deposit refund.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
