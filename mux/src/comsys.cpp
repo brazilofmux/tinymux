@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.37 2002-08-20 08:54:34 jake Exp $
+// $Id: comsys.cpp,v 1.38 2002-08-22 05:52:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -838,13 +838,15 @@ void BuildChannelMessage
         }
     }
 
-    char *saystring, *newPose;
+    char *saystring = NULL;
+    char *newPose = NULL;
 
     switch(pPose[0])
     {
     case ':':
         pPose++;
-        if (newPose = modSpeech(user->who, pPose, TRUE))
+        newPose = modSpeech(user->who, pPose, TRUE);
+        if (newPose)
         {
             pPose = newPose;
         }
@@ -859,7 +861,8 @@ void BuildChannelMessage
 
     case ';':
         pPose++;
-        if (newPose = modSpeech(user->who, pPose, TRUE))
+        newPose = modSpeech(user->who, pPose, TRUE);
+        if (newPose)
         {
             pPose = newPose;
         }
@@ -871,11 +874,13 @@ void BuildChannelMessage
         break;
 
     default:
-        if (newPose = modSpeech(user->who, pPose, TRUE))
+        newPose = modSpeech(user->who, pPose, TRUE);
+        if (newPose)
         {
             pPose = newPose;
         }
-        if (saystring = modSpeech(user->who, pPose, FALSE))
+        saystring = modSpeech(user->who, pPose, FALSE);
+        if (saystring)
         {
             safe_chr(' ', *messNormal, &mnptr);
             safe_str(saystring, *messNormal, &mnptr);
@@ -1743,7 +1748,8 @@ void do_destroychannel(dbref executor, dbref caller, dbref enactor, int key, cha
         raw_notify(executor, tprintf("Could not find channel %s.", channel));
         return;
     }
-    else if (!Comm_All(executor) && (executor != ch->charge_who))
+    else if (  !Comm_All(executor)
+            && executor != ch->charge_who)
     {
         raw_notify(executor, "You do not have permission to do that. ");
         return;
@@ -2102,7 +2108,8 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *a
         raw_notify(executor, tprintf("Unknown channel %s.", channel));
         return;
     }
-    if (!(Comm_All(executor) || (executor == ch->charge_who)))
+    if ( !(  Comm_All(executor)
+          || executor == ch->charge_who))
     {
         raw_notify(executor, "You do not have permission to do that. (Not owner or admin.)");
         return;
@@ -2276,7 +2283,8 @@ void do_editchannel
         raw_notify(executor, tprintf("Unknown channel %s.", arg1));
         return;
     }
-    if (!(Comm_All(executor) || (executor == ch->charge_who)))
+    if ( !(  Comm_All(executor)
+          || executor == ch->charge_who))
     {
         raw_notify(executor, "You do not have permission to do that. (Not owner or Admin.)");
         return;
@@ -2512,7 +2520,8 @@ void do_cemit
         raw_notify(executor, tprintf("Channel %s does not exist.", chan));
         return;
     }
-    if ((executor != ch->charge_who) && !Comm_All(executor))
+    if (  executor != ch->charge_who
+       && !Comm_All(executor))
     {
         raw_notify(executor, NOPERM_MESSAGE);
         return;
@@ -2557,7 +2566,8 @@ void do_chopen
         raw_notify(executor, msg);
         return;
     }
-    if ((executor != ch->charge_who) && !Comm_All(executor))
+    if (  executor != ch->charge_who
+       && !Comm_All(executor))
     {
         raw_notify(executor, NOPERM_MESSAGE);
         return;
@@ -2669,7 +2679,8 @@ void do_chboot
         raw_notify(executor, "@cboot: You are not on that channel.");
         return;
     }
-    if ((ch->charge_who != executor) && !Comm_All(executor))
+    if (  ch->charge_who != executor
+       && !Comm_All(executor))
     {
         raw_notify(executor, "@cboot: You can't do that!");
         return;
@@ -2733,7 +2744,6 @@ void do_chboot
     {    
         do_delcomchannel(thing, channel, TRUE);
     }
-    
 }
 
 void do_cheader(dbref player, char *channel, char *header)
@@ -2744,7 +2754,8 @@ void do_cheader(dbref player, char *channel, char *header)
         raw_notify(player, "That channel does not exist.");
         return;
     }
-    if ((ch->charge_who != player) && !Comm_All(player))
+    if (  ch->charge_who != player
+       && !Comm_All(player))
     {
         raw_notify(player, NOPERM_MESSAGE);
         return;
