@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.31 2003-01-21 01:33:51 sdennis Exp $
+// $Id: game.cpp,v 1.32 2003-01-21 22:35:05 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -27,6 +27,7 @@ extern int  cf_read(void);
 extern void ValidateConfigurationDbrefs(void);
 extern void init_functab(void);
 extern void close_sockets(BOOL emergency, char *message);
+extern void build_version(void);
 extern void init_version(void);
 extern void init_logout_cmdtab(void);
 extern void raw_notify(dbref, const char *);
@@ -1837,15 +1838,18 @@ long DebugTotalMemory = 0;
 
 #define CLI_DO_CONFIG_FILE CLI_USER+0
 #define CLI_DO_MINIMAL     CLI_USER+1
+#define CLI_DO_VERSION     CLI_USER+2
 
 BOOL bMinDB = FALSE;
 BOOL bSyntaxError = FALSE;
 char *conffile = NULL;
+BOOL bVersion = FALSE;
 
-CLI_OptionEntry OptionTable[2] =
+CLI_OptionEntry OptionTable[3] =
 {
     { "c", CLI_REQUIRED, CLI_DO_CONFIG_FILE },
-    { "s", CLI_NONE,     CLI_DO_MINIMAL  }
+    { "s", CLI_NONE,     CLI_DO_MINIMAL     },
+    { "v", CLI_NONE,     CLI_DO_VERSION     }
 };
 
 void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
@@ -1866,6 +1870,10 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
 
         case CLI_DO_MINIMAL:
             bMinDB = TRUE;
+            break;
+
+        case CLI_DO_VERSION:
+            bVersion = TRUE;
             break;
 
         default:
@@ -1895,10 +1903,16 @@ int DCL_CDECL main(int argc, char *argv[])
 
     // Parse the command line
     //
-    CLI_Process(argc, argv, OptionTable, 2, CLI_CallBack);
+    CLI_Process(argc, argv, OptionTable, sizeof(OptionTable)/sizeof(CLI_OptionEntry), CLI_CallBack);
     if (bSyntaxError)
     {
         printf("Usage: %s [-s] [[-c] config-file]\n", argv[0]);
+        return 1;
+    }
+    build_version();
+    if (bVersion)
+    {
+        printf("Version: %s\n", mudstate.version);
         return 1;
     }
 

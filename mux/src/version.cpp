@@ -1,6 +1,6 @@
 // version.cpp -- Version information.
 //
-// $Id: version.cpp,v 1.4 2002-06-27 06:38:31 jake Exp $
+// $Id: version.cpp,v 1.5 2003-01-21 22:35:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -19,7 +19,7 @@ void do_version(dbref executor, dbref caller, dbref enactor, int extra)
     free_mbuf(buff);
 }
 
-void init_version(void)
+void build_version(void)
 {
 #ifdef WIN32
 #if defined(ALPHA)
@@ -50,7 +50,10 @@ void init_version(void)
         sprintf( mudstate.short_ver, "MUX %s", MUX_VERSION);
 #endif // ALPHA, BETA, RELEASED
 #endif // WIN32
+}
 
+void init_version(void)
+{
     STARTLOG(LOG_ALWAYS, "INI", "START");
     log_text("Starting: ");
     log_text(mudstate.version);
