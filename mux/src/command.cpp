@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.22 2003-03-13 15:57:57 jake Exp $
+// $Id: command.cpp,v 1.23 2003-03-17 15:40:50 jake Exp $
 //
 
 #include "copyright.h"
@@ -999,15 +999,6 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
             dbref enactor, bool interactive, char *arg, char *unp_command,
             char *cargs[], int ncargs)
 {
-    char *buf1, *buf2, tchar, *bp, *str, *buff, *s, *j, *new0, *s_uselock;
-    char *args[MAX_ARG];
-    int nargs, i, interp, key, xkey, aflags;
-    dbref aowner;
-    char *aargs[NUM_ENV_VARS];
-    ADDENT *add;
-    ATTR *hk_ap2;
-    bool hk_retval;
-
     // Perform object type checks.
     //
     if (Invalid_Objtype(executor))
@@ -1038,6 +1029,16 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         notify(executor, "Sorry, queueing and triggering are not allowed now.");
         return;
     }
+
+    char *buf1, *buf2, tchar, *bp, *str, *buff, *s, *j, *new0, *s_uselock;
+    char *args[MAX_ARG];
+    int nargs, i, interp, key, xkey, aflags;
+    dbref aowner;
+    char *aargs[NUM_ENV_VARS];
+    ADDENT *add;
+    ATTR *hk_ap2;
+    bool hk_retval;
+
     key = cmdp->extra & ~SW_MULTIPLE;
     if (key & SW_GOT_UNIQUE)
     {
