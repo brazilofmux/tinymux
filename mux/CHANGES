@@ -48,6 +48,8 @@ Feature Additions:
  -- Added some plumbing for SQL.  There is no way to make SQL queries,
     but @ps would show them if there were.  @halt and @kick would also
     interact with them.
+ -- Added CHOOSE().  CHOOSE() is like PICKRAND() except that the
+    distribution is weighted.
 
 
 Bug Fixes:
