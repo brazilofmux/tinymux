@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.19 2004-04-01 22:00:41 sdennis Exp $
+// $Id: comsys.cpp,v 1.20 2004-04-06 19:21:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1152,7 +1152,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         return;
     }
 
-    if (!Dark(player))
+    if (!Hidden(player))
     {
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
@@ -1165,7 +1165,8 @@ void do_leavechannel(dbref player, struct channel *ch)
 {
     struct comuser *user = select_user(ch, player);
     raw_notify(player, tprintf("You have left channel %s.", ch->name));
-    if (user->bUserIsOn && !Dark(player))
+    if (  user->bUserIsOn
+       && !Hidden(player))
     {
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
@@ -1236,14 +1237,17 @@ void do_comwho(dbref player, struct channel *ch)
     {
         if (isPlayer(user->who))
         {
-            if (Connected(user->who) && (!Dark(user->who) || Wizard_Who(player)))
+            if (  Connected(user->who)
+               && (  !Hidden(user->who)
+                  || Wizard_Who(player))
+                  || See_Hidden(player))
             {
                 if (user->bUserIsOn)
                 {
                     do_comwho_line(player, ch, user);
                 }
             }
-            else if (!Dark(user->who))
+            else if (!Hidden(user->who))
             {
                 do_comdisconnectchannel(user->who, ch->name);
             }
@@ -1254,7 +1258,8 @@ void do_comwho(dbref player, struct channel *ch)
     {
         if (!isPlayer(user->who))
         {
-            if (Going(user->who) && God(Owner(user->who)))
+            if (  Going(user->who)
+               && God(Owner(user->who)))
             {
                 do_comdisconnectchannel(user->who, ch->name);
             }
@@ -1624,7 +1629,8 @@ void do_delcomchannel(dbref player, char *channel, bool bQuiet)
                 do_comdisconnectchannel(player, channel);
                 if (!bQuiet)
                 {
-                    if (user->bUserIsOn && (!Dark(player)))
+                    if (  user->bUserIsOn
+                       && !Hidden(player))
                     {
                         char *messNormal, *messNoComtitle;
                         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
@@ -1832,7 +1838,7 @@ void do_cleanupchannels(void)
 
                         // Reporting
                         //
-                        if (!Dark(cuVictim->who))
+                        if (!Hidden(cuVictim->who))
                         {
                             char *mess = StartBuildChannelMessage(cuVictim->who,
                                 (ch->type & CHANNEL_SPOOF) != 0, ch->header, cuVictim->title,
@@ -2131,7 +2137,11 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *a
     for (i = 0; i < ch->num_users; i++)
     {
         user = ch->users[i];
-        if ((flag || UNDEAD(user->who)) && (!Dark(user->who) || Wizard_Who(executor)))
+        if (  (  flag
+              || UNDEAD(user->who))
+           && (  !Hidden(user->who)
+              || Wizard_Who(executor)
+              || See_Hidden(executor)))
         {
             buff = unparse_object(executor, user->who, false);
             sprintf(temp, "%-29.29s %-6.6s %-6.6s", strip_ansi(buff),
@@ -2154,7 +2164,7 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
 
     if (  (ch->type & CHANNEL_LOUD) 
        && cu->bUserIsOn
-       && !Dark(player))
+       && !Hidden(player))
     {
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
@@ -2172,7 +2182,7 @@ void do_comconnectraw_notify(dbref player, char *chan)
 
     if (  (ch->type & CHANNEL_LOUD)
        && cu->bUserIsOn
-       && !Dark(player))
+       && !Hidden(player))
     {
         char *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
