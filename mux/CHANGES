@@ -237,7 +237,7 @@ Bug Fixes:
  -- Accept a single '\' as well as the previously accepted '\\' for an @emit.
     Reported by Vadiv while he was comparing to PennMUSH.  The Tiny* servers
     escape the single '\' away early in the command processing.
- -- Fix ANSI bleeding in exit names. Reported by Jeremy weatherford. Fix by
+ -- Fix ANSI bleeding in exit names. Reported by Jeremy Weatherford. Fix by
     Brazil.
  -- Exit names like ';foo' were effectively DARK exits. If set AUDIBLE, they
     were effectively listening devices that didn't show up on a @sweep.
