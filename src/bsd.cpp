@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.61 2002-09-28 06:25:54 sdennis Exp $
+// $Id: bsd.cpp,v 1.62 2002-10-24 05:43:38 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -898,14 +898,35 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
 }
 
 #ifdef WIN32
+// Private version of FD_ISSET:
+//
+// The following routine is only used on Win9x. Ordinarily, FD_ISSET
+// maps to a __WSAFDIsSet call, however, the Intel compiler encounters
+// an internal error at link time when some of the higher-order
+// optimizations are requested (-Qipo). Including this function is a
+// workaround.
+//
+DCL_INLINE BOOL FD_ISSET_priv(SOCKET fd, fd_set *set)
+{
+    unsigned int i;
+    for (i = 0; i < set->fd_count; i++)
+    {
+        if (set->fd_array[i] == fd)
+        {
+            return TRUE;
+        } 
+    }
+    return FALSE;
+}
+
 void shovechars9x(int nPorts, PortInfo aPorts[])
 {
     fd_set input_set, output_set;
     int found;
     DESC *d, *dnext, *newd;
 
-#define CheckInput(x)   FD_ISSET(x, &input_set)
-#define CheckOutput(x)  FD_ISSET(x, &output_set)
+#define CheckInput(x)   FD_ISSET_priv(x, &input_set)
+#define CheckOutput(x)  FD_ISSET_priv(x, &output_set)
 
     mudstate.debug_cmd = "< shovechars >";
 
