@@ -6688,25 +6688,74 @@ ISIGN()
 
   Related Topics: abs(), iabs(), sign().
 
+& ISINT()
+ISINT()
+
+  FUNCTION: isint(<string>)
+
+  This function will return return 1 if the argument is a valid integer and 0
+  if it is not. Integers have an optional leading + or - sign followed by
+  digits only.
+
+  Example:
+     > say isint(22223.0000)
+     You say "0"
+     > say isint(+77)
+     You say "1"
+     > say isint(22 L)
+     You say "0"
+
+  Related Topics: isnum(), israt().
+
 & ISNUM()
 ISNUM()
 
   FUNCTION: isnum(<string>)
 
   This function will return return 1 if the argument is a valid number and 0
-  if it is not.
+  if it is not. This definition of a number includes scientific notation as
+  well as a certain case-insensitive 'special words': NaN, -Inf, +Inf, and
+  Ind.
+
+  You can test more restrictively with israt() or isint().
 
   Example:
      > say isnum(22223.0000)
      You say "1"
-     > say isnum(77)
+     > say isnum(10E-20)
+     You say "1"
+     > say isnum(+77)
+     You say "1"
+     >say isnum(+Inf)
      You say "1"
      > say isnum(22 L)
      You say "0"
      >say isnum(Bad Numbers!)
      You say "0"
 
-  Related Topics:
+  Related Topics: isint(), israt().
+
+& ISRAT()
+ISRAT()
+
+  FUNCTION: israt(<string>)
+
+  This function will return return 1 if the argument is a rational and 0
+  if it is not. Rational by this definition includes many real numbers, but
+  excludes scientific notation and 'special words': NaN, -Inf, +Inf, and Ind.
+
+  You can test more restrictively with isint() and more inclusively with
+  isnum().
+
+  Example:
+     > say israt(22223.0000)
+     You say "1"
+     > say israt(+77)
+     You say "1"
+     > say israt(1E20)
+     You say "0"
+
+  Related Topics: isint(), isnum().
 
 & ISUB()
 ISUB()
