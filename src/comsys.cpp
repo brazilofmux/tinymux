@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.30 2001-03-31 00:32:45 sdennis Exp $
+// * $Id: comsys.cpp,v 1.31 2001-03-31 00:54:06 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -803,11 +803,9 @@ typedef struct
 char *StartBuildChannelPose
 (
     PBCP pC,
-    dbref player,
     BOOL bSpoof,
     const char *pHeader,
-    const char *pUserTitle,
-    const char *pPlayerName,
+    struct comuser *user,
     const char *pPose
 )
 {
@@ -815,7 +813,7 @@ char *StartBuildChannelPose
 
     // Comtitle Check
     //
-    BOOL hasComTitle = (pUserTitle[0] != '\0');
+    BOOL hasComTitle = (user->title[0] != '\0');
 
     char *bp = pC->mess;
     
@@ -832,24 +830,24 @@ char *StartBuildChannelPose
             // Evaluate the comtitle as code.
             //
             char TempToEval[LBUF_SIZE];
-            strcpy(TempToEval, pUserTitle);
+            strcpy(TempToEval, user->title);
             char *q = TempToEval;
-            TinyExec(pC->mess, &bp, 0, player, player, EV_FCHECK | EV_EVAL
-                | EV_TOP, &q, (char **)NULL, 0);
+            TinyExec(pC->mess, &bp, 0, user->who, user->who, EV_FCHECK 
+                | EV_EVAL | EV_TOP, &q, (char **)NULL, 0);
         }
         else
         {
-            safe_str(pUserTitle, pC->mess, &bp);
+            safe_str(user->title, pC->mess, &bp);
         }
         if (!bSpoof)
         {
             safe_chr(' ', pC->mess, &bp);
-            safe_str(pPlayerName, pC->mess, &bp);
+            safe_str(Name(user->who), pC->mess, &bp);
         }
     }
     else
     {
-        safe_str(pPlayerName, pC->mess, &bp);
+        safe_str(Name(user->who), pC->mess, &bp);
     }
 
     if (':' == pPose[0])
@@ -970,9 +968,8 @@ void do_processcom(dbref player, char *arg1, char *arg2)
 
 #ifdef QQQ
         BCP Context;
-        char *mess = StartBuildChannelPose(&Context, player,
-            (ch->type & CHANNEL_SPOOF) != 0, ch->header, user->title,
-            Name(player), arg2);
+        char *mess = StartBuildChannelPose(&Context,
+            (ch->type & CHANNEL_SPOOF) != 0, ch->header, user, arg2);
 
         do_comsend(ch, mess);
         EndBuildChannelPose(&Context);
@@ -1131,9 +1128,9 @@ void do_joinchannel(dbref player, struct channel *ch)
     {
 #ifdef QQQ
         BCP Context;
-        char *mess = StartBuildChannelPose(&Context, player,
-            (ch->type & CHANNEL_SPOOF) != 0, ch->header, user->title,
-            Name(player), ":has joined this channel.");
+        char *mess = StartBuildChannelPose(&Context,
+            (ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
+            ":has joined this channel.");
         do_comsend(ch, mess);
         EndBuildChannelPose(&Context);
 #else // QQQ
@@ -1172,12 +1169,12 @@ void do_leavechannel(dbref player, struct channel *ch)
     if ((user->bUserIsOn) && (!Dark(player)))
     { 
 #ifdef QQQ
-        BCP pContext;
-        char *mess = StartBuildChannelPose(&pContext, player,
-            (ch->type & CHANNEL_SPOOF) != 0, ch->header, user->title,
-            Name(player), ":has left this channel.");
+        BCP Context;
+        char *mess = StartBuildChannelPose(&Context,
+            (ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
+            ":has left this channel.");
         do_comsend(ch, mess);
-        EndBuildChannelPose(&pContext);
+        EndBuildChannelPose(&Context);
 #else // QQQ
         char *p;
         if (user->title[0] != '\0')
@@ -1612,12 +1609,12 @@ void do_delcomchannel(dbref player, char *channel)
                 if (user->bUserIsOn && (!Dark(player)))
                 {
 #ifdef QQQ
-                    BCP pContext;
-                    char *mess = StartBuildChannelPose(&pContext, player,
-                        (ch->type & CHANNEL_SPOOF) != 0, ch->header,
-                        user->title, Name(player), ":has left this channel.");
+                    BCP Context;
+                    char *mess = StartBuildChannelPose(&Context,
+                        (ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
+                        ":has left this channel.");
                     do_comsend(ch, mess);
-                    EndBuildChannelPose(&pContext);
+                    EndBuildChannelPose(&Context);
 #else // QQQ
                     char *p;
                     if (user->title[0] != '\0')
@@ -2138,9 +2135,9 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
     {
 #ifdef QQQ
         BCP Context;
-        char *mess = StartBuildChannelPose(&Context, player,
-            (ch->type & CHANNEL_SPOOF) != 0, ch->header, cu->title,
-            Name(player), ":has disconnected.");
+        char *mess = StartBuildChannelPose(&Context,
+            (ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
+            ":has disconnected.");
         do_comsend(ch, mess);
         EndBuildChannelPose(&Context);
 #else // QQQ
@@ -2184,9 +2181,9 @@ void do_comconnectraw_notify(dbref player, char *chan)
     {
 #ifdef QQQ
         BCP Context;
-        char *mess = StartBuildChannelPose(&Context, player,
-            (ch->type & CHANNEL_SPOOF) != 0, ch->header, cu->title,
-            Name(player), ":has connected.");
+        char *mess = StartBuildChannelPose(&Context,
+            (ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
+            ":has connected.");
         do_comsend(ch, mess);
         EndBuildChannelPose(&Context);
 #else // QQQ
@@ -2691,13 +2688,13 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
 #ifdef QQQ
     BCP Context1;
     BCP Context2;
-    char *mess1 = StartBuildChannelPose(&Context1, player,
-        (ch->type & CHANNEL_SPOOF) != 0, ch->header, user->title,
-        Name(player), ":boots");
+    char *mess1 = StartBuildChannelPose(&Context1,
+        (ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
+        ":boots");
 
-    char *mess2 = StartBuildChannelPose(&Context2, thing,
-        (ch->type & CHANNEL_SPOOF) != 0, "", vu->title,
-        Name(thing), ":off the channel.");
+    char *mess2 = StartBuildChannelPose(&Context1,
+        (ch->type & CHANNEL_SPOOF) != 0, "", user,
+        ":off the channel.");
 
     char buff[LBUF_SIZE];
     char *bp = buff;
