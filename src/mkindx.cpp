@@ -1,7 +1,7 @@
 //
 // mkindx.cpp -- make help/news file indexes 
 //
-// $Id: mkindx.cpp,v 1.5 2001-06-14 03:10:28 sdennis Exp $ 
+// $Id: mkindx.cpp,v 1.6 2001-06-29 20:00:12 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -24,39 +24,19 @@ int DCL_CDECL main(int argc, char *argv[])
     {
 #ifdef WIN32
 #ifdef ALPHA
-#if PATCHLEVEL > 0
-        printf("%s from MUX %sp%d for Win32 #%s [ALPHA]\n", argv[0],
-            MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
-#else // PATCHLEVEL
         printf("%s from MUX %s for Win32 #%s [ALPHA]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM);
-#endif // PATCHLEVEL
 #else // ALPHA
-#if PATCHLEVEL > 0 
-        printf("%s from MUX %sp%d for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
-            PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#else // PATCHLEVEL
         printf("%s from MUX %s for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#endif // PATCHLEVEL
 #endif // ALPHA
 #else // WIN32
 #ifdef ALPHA
-#if PATCHLEVEL > 0
-        printf("%s from MUX %sp%d #%s [ALPHA]\n", argv[0], MUX_VERSION,
-            PATCHLEVEL, MUX_BUILD_NUM);
-#else // PATCHLEVEL
         printf("%s from MUX %s #%s [ALPHA]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM);
-#endif // PATCHLEVEL
 #else // ALPHA
-#if PATCHLEVEL > 0 
-        printf("%s from MUX %sp%d #%s [%s]\n", argv[0], MUX_VERSION,
-            PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#else // PATCHLEVEL
         printf("%s from MUX %s #%s [%s]\n", argv[0], MUX_VERSION, MUX_BUILD_NUM,
             MUX_RELEASE_DATE);
-#endif // PATCHLEVEL
 #endif // ALPHA
 #endif // WIN32
         printf("Usage:\tmkindx <file_to_be_indexed> <output_index_filename>\n");

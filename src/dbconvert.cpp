@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.5 2000-10-25 04:35:54 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.6 2001-06-29 20:00:12 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -82,39 +82,19 @@ void usage(char *prog)
 {
 #ifdef WIN32
 #ifdef ALPHA
-#if PATCHLEVEL > 0
-    Log.printf("%s from MUX %sp%d for Win32 #%s [ALPHA]\n", prog, MUX_VERSION,
-        PATCHLEVEL, MUX_BUILD_NUM);
-#else // PATCHLEVEL
     Log.printf("%s from MUX %s for Win32 #%s [ALPHA]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM);
-#endif // PATCHLEVEL
 #else // ALPHA
-#if PATCHLEVEL > 0 
-    Log.printf("%s from MUX %sp%d for Win32 #%s [%s]\n", prog, MUX_VERSION,
-        PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#else // PATCHLEVEL
     Log.printf("%s from MUX %s for Win32 #%s [%s]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#endif // PATCHLEVEL
 #endif // ALPHA
 #else // WIN32
 #ifdef ALPHA
-#if PATCHLEVEL > 0
-    Log.printf("%s from MUX %sp%d #%s [ALPHA]\n", prog, MUX_VERSION,
-        PATCHLEVEL, MUX_BUILD_NUM);
-#else // PATCHLEVEL
     Log.printf("%s from MUX %s #%s [ALPHA]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM);
-#endif // PATCHLEVEL
 #else // ALPHA
-#if PATCHLEVEL > 0 
-    Log.printf("%s from MUX %sp%d #%s [%s]\n", prog, MUX_VERSION, PATCHLEVEL,
-        MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#else // PATCHLEVEL
     Log.printf("%s from MUX %s #%s [%s]\n", prog, MUX_VERSION, MUX_BUILD_NUM,
         MUX_RELEASE_DATE);
-#endif // PATCHLEVEL
 #endif // ALPHA
 #endif // WIN32
     Log.printf("Usage: %s gamedb-basename [flags] [<in-file] [>out-file]\n", prog);

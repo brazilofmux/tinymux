@@ -1,6 +1,6 @@
 // a.cpp
 //
-// $Id: a.cpp,v 1.5 2000-10-25 04:35:15 sdennis Exp $
+// $Id: a.cpp,v 1.6 2001-06-29 20:00:12 sdennis Exp $
 //
 // Analyse a MUX database, we chew it in on stdin, extract
 // attributes, and stuff them into a radix tree. We accept a single
@@ -38,39 +38,19 @@ int DCL_CDECL main(int ac, char *av[])
     {
 #ifdef WIN32
 #ifdef ALPHA
-#if PATCHLEVEL > 0
-        fprintf(stderr, "%s from MUX %sp%d for Win32 #%s [ALPHA]\n", av[0],
-            MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
-#else // PATCHLEVEL
         fprintf(stderr, "%s from MUX %s for Win32 #%s [ALPHA]\n", av[0],
             MUX_VERSION, MUX_BUILD_NUM);
-#endif // PATCHLEVEL
 #else // ALPHA
-#if PATCHLEVEL > 0 
-        fprintf(stderr, "%s from MUX %sp%d for Win32 #%s [%s]\n", av[0],
-            MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#else // PATCHLEVEL
         fprintf(stderr, "%s from MUX %s for Win32 #%s [%s]\n", av[0],
             MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#endif // PATCHLEVEL
 #endif // ALPHA
 #else // WIN32
 #ifdef ALPHA
-#if PATCHLEVEL > 0
-        fprintf(stderr, "%s from MUX %sp%d #%s [ALPHA]\n", av[0], MUX_VERSION,
-            PATCHLEVEL, MUX_BUILD_NUM);
-#else // PATCHLEVEL
         fprintf(stderr, "%s from MUX %s #%s [ALPHA]\n", av[0], MUX_VERSION,
             MUX_BUILD_NUM);
-#endif // PATCHLEVEL
 #else // ALPHA
-#if PATCHLEVEL > 0 
-        fprintf(stderr, "%s from MUX %sp%d #%s [%s]\n", av[0], MUX_VERSION,
-            PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#else // PATCHLEVEL
         fprintf(stderr, "%s from MUX %s #%s [%s]\n", av[0], MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#endif // PATCHLEVEL
 #endif // ALPHA
 #endif // WIN32
         fprintf(stderr, "usage: %s <max string length>\n", av[0]);
