@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.75 2004-04-02 14:11:21 sdennis Exp $
+// $Id: functions.cpp,v 1.76 2004-04-06 15:06:54 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -7071,7 +7071,7 @@ static void do_asort(char *s[], int n, int sort_type)
             i64p[i].str = s[i];
             i64p[i].data = mux_atoi64(s[i]);
         }
-        qsort(i64p, n, sizeof(i_rec), i64_comp);
+        qsort(i64p, n, sizeof(i64_rec), i64_comp);
         for (i = 0; i < n; i++)
         {
             s[i] = i64p[i].str;
