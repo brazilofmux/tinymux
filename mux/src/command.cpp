@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.48 2002-07-27 04:55:06 sdennis Exp $
+// $Id: command.cpp,v 1.49 2002-07-28 14:46:37 jake Exp $
 //
 
 #include "copyright.h"
@@ -44,7 +44,6 @@ NAMETAB cboot_sw[] =
     {"quiet",           1,  CA_PUBLIC,  CBOOT_QUIET},
     { NULL,             0,          0,  0}
 };
-    
 
 NAMETAB comtitle_sw[] =
 {
@@ -852,21 +851,21 @@ BOOL check_access(dbref player, int mask)
             return FALSE;
         }
     }
-    
+
     // Check for forbidden flags.
     //
     if (  (mask & CA_CANTBE_MASK)
        && !Wizard(player))
     {
-       if (  ((mask & CA_NO_HAVEN)   && Player_haven(player))
-          || ((mask & CA_NO_ROBOT)   && Robot(player))
-          || ((mask & CA_NO_SLAVE)   && Slave(player))
-          || ((mask & CA_NO_SUSPECT) && Suspect(player))
-          || ((mask & CA_NO_GUEST)   && Guest(player))
-          || ((mask & CA_NO_UNINS)   && Uninspected(player)))
-       {
-           return FALSE;
-       }
+        if (  ((mask & CA_NO_HAVEN)   && Player_haven(player))
+           || ((mask & CA_NO_ROBOT)   && Robot(player))
+           || ((mask & CA_NO_SLAVE)   && Slave(player))
+           || ((mask & CA_NO_SUSPECT) && Suspect(player))
+           || ((mask & CA_NO_GUEST)   && Guest(player))
+           || ((mask & CA_NO_UNINS)   && Uninspected(player)))
+        {
+            return FALSE;
+        }
     }
     return TRUE;
 }
@@ -1736,87 +1735,95 @@ char *process_command
     //
     if (Has_location(executor) && Good_obj(Location(executor)))
     {
-        // CmdCheck: Test for @icmd. From RhostMUSH.
-        // cval values: 0 normal, 1 disable, 2 ignore
-        if (CmdCheck(executor))
+        // Check for a leave alias.
+        //
+        p = atr_pget(Location(executor), A_LALIAS, &aowner, &aflags);
+        if (p && *p)
         {
-            cval = cmdtest(executor, "leave");
+            if (matches_exit_from_list(LowerCaseCommand, p))
+            {
+                free_lbuf(p);
+
+                // CmdCheck: Test for @icmd. From RhostMUSH.
+                // cval values: 0 normal, 1 disable, 2 ignore
+                if (CmdCheck(executor))
+                {
+                    cval = cmdtest(executor, "leave");
+                }
+                else if (CmdCheck(Owner(executor)))
+                {
+                    cval = cmdtest(Owner(executor), "leave");
+                }
+                else
+                {
+                    cval = 0;
+                }
+                if (cval == 0)
+                {
+                    cval = zonecmdtest(executor, "leave");
+                }
+                if ( cval == 0 )
+                {
+                    do_leave(executor, caller, executor, 0);
+                    return preserve_cmd;
+                }
+                else if (cval == 1)
+                {
+                    notify_quiet(executor, NOPERM_MESSAGE);
+                    return preserve_cmd;
+                }
+            }
+            else
+            {
+                free_lbuf(p);
+            }
         }
-        else if (CmdCheck(Owner(executor)))
+
+        DOLIST(exit, Contents(Location(executor)))
         {
-            cval = cmdtest(Owner(executor), "leave");
-        }
-        else
-        {
-            cval = 0;
-        }
-        if (cval == 0)
-        {
-            cval = zonecmdtest(executor, "leave");
-        }
-        if ( cval == 0 )
-        {
-            // Check for a leave alias.
-            //
-            p = atr_pget(Location(executor), A_LALIAS, &aowner, &aflags);
+            p = atr_pget(exit, A_EALIAS, &aowner, &aflags);
             if (p && *p)
             {
                 if (matches_exit_from_list(LowerCaseCommand, p))
                 {
                     free_lbuf(p);
-                    do_leave(executor, caller, executor, 0);
-                    return preserve_cmd;
-                }
-            }
-            free_lbuf(p);
-        }
-        else if (cval == 1)
-        {
-            notify_quiet(executor, NOPERM_MESSAGE);
-            return preserve_cmd;
-        }
 
-        // Check for enter aliases.
-        //
-        // CmdCheck: Test for @icmd. From RhostMUSH.
-        // cval values: 0 normal, 1 disable, 2 ignore
-        if (CmdCheck(executor))
-        {
-            cval = cmdtest(executor, "enter");
-        }
-        else if (CmdCheck(Owner(executor)))
-        {
-            cval = cmdtest(Owner(executor), "enter");
-        }
-        else
-        {
-            cval = 0;
-        }
-        if (cval == 0)
-        {
-            cval = zonecmdtest(executor, "enter");
-        }
-        if ( cval == 0 )
-        {
-            DOLIST(exit, Contents(Location(executor)))
-            {
-                p = atr_pget(exit, A_EALIAS, &aowner, &aflags);
-                if (p && *p)
-                {
-                    if (matches_exit_from_list(LowerCaseCommand, p))
+                    // Check for enter aliases.
+                    //
+                    // CmdCheck: Test for @icmd. From RhostMUSH.
+                    // cval values: 0 normal, 1 disable, 2 ignore
+                    if (CmdCheck(executor))
                     {
-                        free_lbuf(p);
+                        cval = cmdtest(executor, "enter");
+                    }
+                    else if (CmdCheck(Owner(executor)))
+                    {
+                        cval = cmdtest(Owner(executor), "enter");
+                    }
+                    else
+                    {
+                        cval = 0;
+                    }
+                    if (cval == 0)
+                    {
+                        cval = zonecmdtest(executor, "enter");
+                    }
+                    if ( cval == 0 )
+                    {
                         do_enter_internal(executor, exit, FALSE);
                         return preserve_cmd;
                     }
+                    else if (cval == 1)
+                    {
+                        notify_quiet(executor, NOPERM_MESSAGE);
+                        return preserve_cmd;
+                    }
                 }
-                free_lbuf(p);
+                else
+                {
+                    free_lbuf(p);
+                }
             }
-        }
-        else if (cval == 1)
-        {
-            notify_quiet(executor, NOPERM_MESSAGE);
-            return preserve_cmd;
         }
     }
 
@@ -1891,7 +1898,7 @@ char *process_command
                 //
                 if (!No_Command(zone_loc))
                 {
-                   succ |= atr_match(zone_loc, executor, AMATCH_CMD,
+                    succ |= atr_match(zone_loc, executor, AMATCH_CMD,
                        LowerCaseCommand, TRUE);
                 }
             }
@@ -2116,8 +2123,8 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                    sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                sprintf(buff, "%.60s:", cmdp->cmdname);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
             }
         }
     }
@@ -2128,8 +2135,8 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                    sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                sprintf(buff, "%.60s:", cmdp->cmdname);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
             }
         }
     }
@@ -2140,8 +2147,8 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                    sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                sprintf(buff, "%.60s:", cmdp->cmdname);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
             }
         }
     }
@@ -2152,8 +2159,8 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                    sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                sprintf(buff, "%.60s:", cmdp->cmdname);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
             }
         }
     }
@@ -2164,8 +2171,8 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                    sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                sprintf(buff, "%.60s:", cmdp->cmdname);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
             }
         }
     }
@@ -2176,8 +2183,8 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                    sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                sprintf(buff, "%.60s:", cmdp->cmdname);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
             }
         }
     }
@@ -2188,8 +2195,8 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                    sprintf(buff, "%.60s:", cmdp->cmdname);
-                    listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
+                sprintf(buff, "%.60s:", cmdp->cmdname);
+                listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
             }
         }
     }
@@ -2689,8 +2696,7 @@ static void list_costs(dbref player)
         sprintf(buff, " and %d quota", mudconf.player_quota);
     notify(player,
            tprintf("Creating a robot costs %d %s%s.",
-               mudconf.robotcost, coin_name(mudconf.robotcost),
-               buff));
+               mudconf.robotcost, coin_name(mudconf.robotcost), buff));
     if (mudconf.killmin == mudconf.killmax)
     {
         raw_notify(player,
@@ -2947,7 +2953,7 @@ static void list_vattrs(dbref player, char *s_mask, BOOL wild_mtch)
             {
                 if (s_mask && *s_mask && !quick_wild(s_mask, va->name))
                 {
-                   continue;
+                    continue;
                 }
                 wna++;
             }
@@ -2955,7 +2961,7 @@ static void list_vattrs(dbref player, char *s_mask, BOOL wild_mtch)
             listset_nametab(player, attraccess_nametab, va->flags, buff, TRUE);
         }
     }
- 
+
     if (wild_mtch)
     {
         p = tprintf("%d attributes matched, %d attributes total, next=%d", wna,
@@ -3269,8 +3275,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
         break;
     case LIST_GLOBALS:
         interp_nametab(executor, enable_names, mudconf.control_flags,
-                "Global parameters:", "enabled",
-                   "disabled");
+                "Global parameters:", "enabled", "disabled");
         break;
     case LIST_DF_FLAGS:
         list_df_flags(executor);
@@ -3292,11 +3297,9 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
         break;
     case LIST_LOGGING:
         interp_nametab(executor, logoptions_nametab, mudconf.log_options,
-                   "Events Logged:", "enabled",
-                   "disabled");
+                   "Events Logged:", "enabled", "disabled");
         interp_nametab(executor, logdata_nametab, mudconf.log_info,
-                   "Information Logged:", "yes",
-                   "no");
+                   "Information Logged:", "yes", "no");
         break;
     case LIST_DB_STATS:
         list_db_stats(executor);
@@ -3346,7 +3349,7 @@ void do_break(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 // Bludgeoned into MUX by Jake Nelson 7/2002.
 //
 void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
-        char *args[], int nargs)
+             char *args[], int nargs)
 {
     CMDENT *cmdp;
     NAMETAB *logcmdp;
