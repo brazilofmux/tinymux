@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.28 2004-04-01 22:00:41 sdennis Exp $
+// $Id: command.cpp,v 1.29 2004-04-07 20:19:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -142,7 +142,7 @@ NAMETAB doing_sw[] =
 NAMETAB dolist_sw[] =
 {
     {"delimit",         1,  CA_PUBLIC,  DOLIST_DELIMIT},
-    {"notify",          1,  CA_PUBLIC,  DOLIST_NOTIFY},
+    {"notify",          1,  CA_PUBLIC,  DOLIST_NOTIFY|SW_MULTIPLE},
     {"space",           1,  CA_PUBLIC,  DOLIST_SPACE},
     { NULL,             0,          0,  0}
 };

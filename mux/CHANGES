@@ -229,6 +229,7 @@ Bug Fixes:
     non-bcc'ed recipients.
  -- Removed '%' as a valid attribute name character.
  -- Fixed MEMORY_BASED build.
+ -- Allow @dolist to accept the /notify and /delimit flags together.
 
 
 Performance Enhancements:
