@@ -9635,15 +9635,16 @@ PAGE
   the given message to the same <players> given on the previous page command.
   The second form is useful when the message itself contains an equal sign.
 
-  The fourth form indicates that you are paging sans-message. The format is
+  The fourth form indicates that you are paging sans-message.  The format is
   somewhat more appealing than an empty message.
 
   The last form reports to you the list of players you paged last time.
 
   <Players> is one or more player names or aliases delimited by any
-  combination of spaces or commas. A player's name may also be any unique
-  prefix of players who are currently on the WHO list. Any duplicate players
-  from your list are removed.
+  combination of spaces or commas.  Double-quotes can be used around any name
+  containing spaces.  A player's name may also be any unique prefix of players
+  who are currently on the WHO list.  Any duplicate players from your list are
+  removed.
 
 { 'help page2' for more }
 
@@ -9684,8 +9685,8 @@ PAGE (continued)
   will see the message.
 
   Example:
-    > p Foo, Bar = Hi
-    You paged (Foo, Bar) with 'Hi'.
+    > p Foo, Bar, "Long John Silver"= Hi
+    You paged (Foo, Bar, Long John Silver) with 'Hi'.
     To (Foo, Bar), Widget pages: Hi
 
   You only need to type the player-list once, then the next time you page that

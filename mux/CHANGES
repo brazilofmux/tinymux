@@ -54,6 +54,9 @@ Feature Additions:
  -- inc, dec, shl, shr, sort(,n), band, bnand, bor are all extended to
     64-bit integers.
  -- Added /noeval switch to page.
+ -- Added support to page for quoting names.  Add double quotes around
+    any player name that contains spaces to avoid the space in their
+    name from acting as a delimiter.
 
 
 Bug Fixes:
