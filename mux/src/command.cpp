@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.44 2004-09-14 13:19:29 sdennis Exp $
+// $Id: command.cpp,v 1.45 2004-09-29 04:40:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -636,7 +636,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
 #else
     {"allcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_allcom},
     {"delcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_delcom},
-#endif 
+#endif
     {"doing",         NULL,       CA_PUBLIC,          CMD_DOING,  CS_ONE_ARG,           0, logged_out1},
     {"drop",          drop_sw,    CA_NO_SLAVE|CA_CONTENTS|CA_LOCATION|CA_NO_GUEST,  0,  CS_ONE_ARG|CS_INTERP,   0, do_drop},
     {"enter",         enter_sw,   CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, 0, do_enter},
@@ -1977,11 +1977,43 @@ char *process_command
         //
         int flagvalue;
         if (  (cmdp->hookmask & HOOK_IGSWITCH)
-           && pSlash
-           && ( !(cmdp->switches)
-              || !search_nametab(executor, cmdp->switches, pSlash, &flagvalue)))
+           && pSlash)
         {
-            cval = 2;
+            if (cmdp->switches)
+            {
+                search_nametab(executor, cmdp->switches, pSlash, &flagvalue);
+                if (flagvalue & SW_MULTIPLE)
+                {
+                    MUX_STRTOK_STATE ttswitch;
+                    // All the switches given a command shouldn't exceed 200 chars together
+                    char switch_buff[200];
+                    char *switch_ptr;
+                    sprintf(switch_buff, "%.199s", pSlash); 
+                    mux_strtok_src(&ttswitch, switch_buff);
+                    mux_strtok_ctl(&ttswitch, "/");
+                    switch_ptr = mux_strtok_parse(&ttswitch);
+                    while (  switch_ptr
+                          && *switch_ptr)
+                    {
+                        search_nametab(executor, cmdp->switches, pSlash, &flagvalue);
+                        if (flagvalue == -1)
+                        {
+                            break;
+                        }
+                        switch_ptr = mux_strtok_parse(&ttswitch);
+                    }
+                }
+                if (flagvalue == -1)
+                {
+                    cval = 2;
+                }
+            }
+            else
+            { 
+                // Switch exists but no switches allowed for command.
+                //
+                cval = 2;
+            }
         }
 
         if (  cval != 2
