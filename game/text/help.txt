@@ -5737,24 +5737,30 @@ CREATE()
   default. This is a side effect function, and should only be 
   used when necessary.
  
-& set()
+  Related Topics:
 
-  Function: set(<name>, <string>)
+& SET()
+SET()
+
+  FUNCTION: set(<name>, <string>)
+  
   Works the same as @set, <name> and <string> are equivalent to what comes
   before and after the '=' sign. Returns nothing. This is a side effect
   function, and should only be used when necessary.
+  
+  Related Topics:
  
-& cwho()
+& CWHO()
 
   Function: cwho(<channel>)
  
-  This returns a list of connected players who are on <channel>. Note
-  that this function returns the _names_ of the players, not the dbrefs.
-  When used by mortals, hidden ("dark") players do not appear on the list.
+  Returns a list of dbrefs who are connected, and on that channel. 
+  This is limited to wizards and channel owners.
  
-& wordpos()
+& WORDPOS()
+WORDPOS()
 
-  Function: wordpos(<string>, <charpos>[, <delim>)
+  FUNCTION: wordpos(<string>, <charpos>[, <delim>)
  
   Returns the number of the word within <string> where the character position
   <charpos> falls.  Spaces between words are treated as belonging to the word
