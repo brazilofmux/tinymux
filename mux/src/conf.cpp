@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: conf.cpp,v 1.2 2003-01-22 22:12:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -581,11 +581,11 @@ CF_HAND(cf_string)
         //
         char *buff = alloc_sbuf("cf_string.prefix");
         char *p = buff;
-        char *q = mudconf.mud_name;
+        char *q = strip_ansi(mudconf.mud_name);
         size_t nLen = 0;
         while (*q && nLen < SBUF_SIZE)
         {
-            if (!Tiny_IsSpace[(unsigned char)*q])
+            if (Tiny_IsAlphaNumeric[(unsigned char)*q])
             {
                 *p++ = *q;
                 nLen++;
