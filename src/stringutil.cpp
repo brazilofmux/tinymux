@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.72 2002-03-01 22:44:23 sdennis Exp $
+// $Id: stringutil.cpp,v 1.73 2002-03-02 04:04:17 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2375,7 +2375,7 @@ double Tiny_atof(char *szString)
 #ifdef HAVE_IEEE_FP_FORMAT
         return MakeSpecialFloat(pfr.iString);
 #else
-        reurn 0.0;
+        return 0.0;
 #endif
     }
 
