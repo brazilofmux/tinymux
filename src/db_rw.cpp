@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.20 2001-10-17 00:49:58 sdennis Exp $
+// $Id: db_rw.cpp,v 1.21 2001-10-17 04:03:17 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1832,7 +1832,7 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
         putboolexp(f, tempbool);
         if (tempbool)
         {
-            free_bool(tempbool);
+            free_boolexp(tempbool);
         }
     }
     putref(f, Owner(i));
