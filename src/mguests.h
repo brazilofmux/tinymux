@@ -1,5 +1,7 @@
-/* mguests.h */
-/* $Id: mguests.h,v 1.1 2000-04-11 07:14:46 sdennis Exp $ */
+// mguests.h
+//
+// $Id: mguests.h,v 1.2 2001-11-19 19:28:57 sdennis Exp $
+//
 
 #ifndef  __MGUESTS_H
 #define __MGUESTS_H

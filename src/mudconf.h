@@ -1,7 +1,8 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.31 2001-10-17 18:13:31 sdennis Exp $
+// $Id: mudconf.h,v 1.32 2001-11-19 19:23:22 sdennis Exp $
 //
+
 #ifndef __CONF_H
 #define __CONF_H
 

@@ -1,6 +1,6 @@
 // _build.h
 //
-// $Id: _build.h,v 1.53 2001-11-16 17:55:26 sdennis Exp $
+// $Id: _build.h,v 1.54 2001-11-19 19:24:10 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -11,6 +11,7 @@
 // building/hosting text-based game servers, contact the author at
 // Stephen Dennis <sdennis@svdltd.com> for another license.
 //
+
 #ifndef MUX_BUILD_NUM
 extern char szBuildNum[];
 #define MUX_BUILD_NUM szBuildNum
