@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.13 2002-07-23 21:24:59 sdennis Exp $
+// $Id: conf.cpp,v 1.14 2002-07-24 03:02:32 jake Exp $
 //
 
 #include "copyright.h"
@@ -592,9 +592,10 @@ CF_HAND(cf_string)
         {
             if (!Tiny_IsSpace[(unsigned char)*q])
             {
-                *p++ = *q++;
+                *p++ = *q;
                 nLen++;
             }
+            *q++;
         }
         *p = '\0';
         Log.ChangePrefix(buff);
