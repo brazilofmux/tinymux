@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.6 2003-02-28 14:39:20 sdennis Exp $
+// $Id: walkdb.cpp,v 1.7 2003-03-17 15:35:40 jake Exp $
 //
 
 #include "copyright.h"
@@ -755,7 +755,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
 
         // Toss out destroyed things.
         //
-        if (isThing(thing) && (Flags(thing) & GOING))
+        if (Going(thing))
         {
             continue;
         }
