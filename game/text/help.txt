@@ -5751,7 +5751,7 @@ SET()
 & WORDPOS()
 WORDPOS()
 
-  FUNCTION: wordpos(<string>, <charpos>[, <delim>)
+  FUNCTION: wordpos(<string>, <charpos>[, <delim>])
  
   Returns the number of the word within <string> where the character position
   <charpos> falls.  Spaces between words are treated as belonging to the word
@@ -6051,12 +6051,12 @@ ALPHAMIN()
   FUNCTION: alphamin(<word1>, <word2>, <word3>, ...)
 
   Returns the word whose order is lexicographically first.
-  
+ 
   Related Topics: alphamax().
-  
+
 & ALPHAMAX()
 ALPHAMAX()
-  
+
   FUNCTION: alphamax(<word1>, <word2>, <word3>, ...)
 
   Returns the word whose order is lexicographically last.
@@ -6084,45 +6084,65 @@ HASATTR()
  
   Hasattr() doesn't check for attributes inherited from parent
   objects. Use hasattrp() for that.
+  
+  Related Topics:
+
 & HASATTRP()
-  hasattrp(<object>, <attribute name>)
+HASATTRP()
+
+  FUNCTION: hasattrp(<object>, <attribute name>)
  
   Returns 1 if the object or its parent has the named attribute,
   and 0 if it does not. If the object does not exist or the player
   does not have the ability to examine the object, #-1 will be returned.
  
   Use hasattr() to check for attributes without checking parents.
+
+  Related Topics:
+  
 & HASTYPE()
-  hastype(<object>, <type>)
+HASTYPE()
+
+  FUNCTION: hastype(<object>, <type>)
 
   Returns 1 if the object is of the named type, otherwise 0.
   Valid types are: ROOM, EXIT, PLAYER, THING.
   If an invalid type is given, #-1 is returned.
 
+  Related Topics:
+  
 & SHL()
-  shl(<number>,<count>)
+SHL()
+
+  FUNCTION: shl(<number>,<count>)
 
   Performs a leftwards bit-shift on <number>, shifting it <count> times.
   This is equivalent to imul(<number>,pow(2,<count>), but much faster.
-
+ 
+  Example:
     > think shl(2,10)
     2048
 
-  See also: shr(), band(), bnand(), bor().
+  Related Topics: shr(), band(), bnand(), bor().
 
 & SHR()
-  shr(<number>,<count>)
+SHR()
+
+  FUNCTION: shr(<number>,<count>)
 
   Performs a rightwards bit-shift on <number>, shifting it <count> times.
-  This is equivalent to div(<number>,pow(2,<count>), but much faster.
+  This is equivalent to idiv(<number>,pow(2,<count>), but much faster.
 
+  Example:
     > think shr(1309,5)
     40
 
-  See also: shl(), band(), bnand(), bor().
+  Related Topics: shl(), band(), bnand(), bor().
 
 & BAND()
-  band(<number>, <number>)
+BAND()
+
+  FUNCTION:  band(<number>, <number>)
  
   Both arguments are an integer that is treated as a bitfield. It
   performs a bitwise logical AND between these two bitfields and
@@ -6152,7 +6172,9 @@ HASATTR()
   See also: shl(), shr(), bnand(), bor().
  
 & BNAND()
-  bnand(<number1>, <number2>)
+BNAND()
+
+  FUNCTION:  bnand(<number1>, <number2>)
 
   Both arguments are an integer that is treated as a bitfield. It
   performs a bitwise logical AND between <number1> and the complement
@@ -6178,7 +6200,9 @@ HASATTR()
   See also: shl(), shr(), band(), bor().
  
 & BOR()
-  bor(<number>, <number>)
+BOR()
+
+  FUNCTION:  bor(<number>, <number>)
  
   Both arguments are an integer that is treated as a bitfield. It
   performs a bitwise logical OR which has the effect of forcing certain
@@ -6199,20 +6223,22 @@ HASATTR()
   The result may be expressed as 39B in base 16 or 923 in base 10.
  
   See also: shl(), shr(), band(), bnand().
-
+ 
 & CRC32()
-  crc32(<string1>, ..., <stringN>)
+CRC32()
+
+  FUNCTION: crc32(<string1>, ..., <stringN>)
 
   Returns the Cyclic Redundancy Check of the strings or sequences of
   strings as a positive number. The answer for the same sequence of
   strings is always the same.
   
-  The usefulness of this number is broad, but include as a unique
-  fingerprint or checksum pattern, or as a high-quality hash
-  function.
+  The usefulness of this number is broad, but could provide a unique
+  fingerprint, checksum pattern, or high-quality hash function.
 
-  > think crc32(MUX)
-  629126998
+  Example:
+    > think crc32(MUX)
+    629126998
 
 & PACK()
   pack(<number>[,<radix>])
