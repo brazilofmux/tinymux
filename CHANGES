@@ -52,6 +52,8 @@ Feature Additions:
     check their work. It's something of an audit trail.
  -- Added optional output delimeter to SORT(). Patch from Ashen-Shugar.
  -- Enhanced Page command.
+ -- Roy Anger's comsys help update.
+ -- Reformated wizhelp.txt
 
 Bug Fixes:
 ~~~~~~~~~
