@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.21 2001-04-09 22:30:56 sdennis Exp $
+// $Id: svdhash.cpp,v 1.22 2001-06-29 18:37:40 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -286,7 +286,7 @@ UINT32 HASH_ProcessBuffer
 #define NUMBER_OF_PRIMES 177
 int Primes[NUMBER_OF_PRIMES] =
 {
-    
+
     1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
     71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151,
     157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239,
@@ -297,7 +297,7 @@ int Primes[NUMBER_OF_PRIMES] =
     643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743,
     751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857,
     859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971,
-    977, 983, 991, 997, 1009, 1013, 1019, 1021, 1031, 1033, 1039, 0 
+    977, 983, 991, 997, 1009, 1013, 1019, 1021, 1031, 1033, 1039, 0
 };
 
 void ChoosePrimes(int TableSize, HP_HEAPOFFSET HashPrimes[16])
@@ -452,7 +452,7 @@ void CHashPage::GetStats
         UINT32 nSpace = ((unsigned char *)m_pTrailer) - ((unsigned char *)m_pDirectory);
         UINT32 nMinDirSize = nCount;
         UINT32 nMaxDirSize = (nSpace - nSize)/sizeof(HP_HEAPOFFSET);
-        
+
         if (nExtra)
         {
             nExtra += HP_SIZEOF_HEAPNODE;
@@ -464,7 +464,7 @@ void CHashPage::GetStats
             nCount++;
             nSize += nExtra;
         }
-        
+
 #define FILL_FACTOR 1
         UINT32 nAverageSize = (nSize + nCount/2)/nCount;
         UINT32 nHeapGoal = (nSpace * nAverageSize)/(nAverageSize + sizeof(HP_HEAPOFFSET) + FILL_FACTOR);
@@ -630,7 +630,7 @@ BOOL CHashPage::ValidateFreeList(void)
             HP_PHEAPNODE pCurrent = (HP_PHEAPNODE)(m_pHeapStart + oCurrent);
             if (oCurrent >= pCurrent->u.oNext)
             {
-                Log.WriteString("CHashPage::ValidateFreeList - Free list is corrupt.\n");
+                Log.WriteString("CHashPage::ValidateFreeList - Free list is corrupt." ENDLINE);
                 m_pHeader->m_oFreeList = HP_NIL_OFFSET;
                 return FALSE;
             }
@@ -638,7 +638,7 @@ BOOL CHashPage::ValidateFreeList(void)
         }
         else
         {
-            Log.WriteString("CHashPage::ValidateFreeList - Free list is corrupt.\n");
+            Log.WriteString("CHashPage::ValidateFreeList - Free list is corrupt." ENDLINE);
             m_pHeader->m_oFreeList = HP_NIL_OFFSET;
             return FALSE;
         }
@@ -660,7 +660,7 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         HP_DIRINDEX nDepth = m_pHeader->m_nDepth;
         if ((nHash & anGroupMask[nDepth]) != m_pHeader->m_nHashGroup)
         {
-            Log.WriteString("CHashPage::Insert - Inserting into the wrong page.\n");
+            Log.WriteString("CHashPage::Insert - Inserting into the wrong page." ENDLINE);
             return HP_INSERT_ERROR_ILLEGAL;
         }
 #endif
@@ -937,7 +937,7 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
     GetStats(0, &nRecords, &nAllocatedSize, &nGoodDirSize);
     if (nRecords == 0)
     {
-        Log.WriteString("Why are we splitting a page with no records in it?\n");
+        Log.WriteString("Why are we splitting a page with no records in it?" ENDLINE);
         return FALSE;
     }
 
@@ -959,7 +959,7 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
             {
                 if (HP_INSERT_SUCCESS != hp0.Insert(pNode->u.s.nRecordSize, nHash, pNode+1))
                 {
-                    Log.WriteString("CHashPage::Split - Ran out of room.\n");
+                    Log.WriteString("CHashPage::Split - Ran out of room." ENDLINE);
                     return FALSE;
                 }
             }
@@ -967,13 +967,13 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
             {
                 if (HP_INSERT_SUCCESS != hp1.Insert(pNode->u.s.nRecordSize, nHash, pNode+1))
                 {
-                    Log.WriteString("CHashPage::Split - Ran out of room.\n");
+                    Log.WriteString("CHashPage::Split - Ran out of room." ENDLINE);
                     return FALSE;
                 }
             }
             else
             {
-                Log.WriteString("CHashPage::Split - This record fits in neither page...lost.\n");
+                Log.WriteString("CHashPage::Split - This record fits in neither page...lost." ENDLINE);
                 return FALSE;
             }
         }
@@ -984,10 +984,12 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
     UINT32 temp;
     hp0.GetStats(0, &nRecords0, &nAllocatedSize0, &temp);
     hp1.GetStats(0, &nRecords1, &nAllocatedSize1, &temp);
-    Log.printf("Split (%d %d) page into (%d %d) and (%d %d)\n", nRecords, nAllocatedSize, nRecords0, nAllocatedSize0, nRecords1, nAllocatedSize1);
+    Log.printf("Split (%d %d) page into (%d %d) and (%d %d)" ENDLINE,
+        nRecords, nAllocatedSize, nRecords0, nAllocatedSize0, nRecords1,
+        nAllocatedSize1);
     if (nRecords0 + nRecords1 != nRecords)
     {
-        Log.WriteString("Lost something\n");
+        Log.WriteString("Lost something" ENDLINE);
         return FALSE;
     }
 #endif
@@ -1020,7 +1022,7 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
     {
         if (SetFilePointer(hFile, oWhere, 0, FILE_BEGIN) == 0xFFFFFFFFUL)
         {
-            Log.printf("CHashPage::Write - SetFilePointer error %u.\n", GetLastError());
+            Log.printf("CHashPage::Write - SetFilePointer error %u." ENDLINE, GetLastError());
             continue;
         }
         DWORD nWritten;
@@ -1029,7 +1031,7 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
             UINT32 cc = GetLastError();
             if (cc != ERROR_LOCK_VIOLATION)
             {
-                Log.printf("CHashPage::Write - WriteFile error %u.\n", cc);
+                Log.printf("CHashPage::Write - WriteFile error %u." ENDLINE, cc);
             }
             continue;
         }
@@ -1053,7 +1055,7 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     {
         if (SetFilePointer(hFile, oWhere, 0, FILE_BEGIN) == 0xFFFFFFFFUL)
         {
-            Log.printf("CHashPage::Read - SetFilePointer error %u.\n", GetLastError());
+            Log.printf("CHashPage::Read - SetFilePointer error %u." ENDLINE, GetLastError());
             continue;
         }
         DWORD nRead;
@@ -1062,7 +1064,7 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
             UINT32 cc = GetLastError();
             if (cc != ERROR_LOCK_VIOLATION)
             {
-                Log.printf("CHashPage::Read - ReadFile error %u.\n", cc);
+                Log.printf("CHashPage::Read - ReadFile error %u." ENDLINE, cc);
             }
             continue;
         }
@@ -1088,7 +1090,7 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
     {
         if (lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
-            Log.printf("CHashPage::Write - lseek error %u.\n", errno);
+            Log.printf("CHashPage::Write - lseek error %u." ENDLINE, errno);
             continue;
         }
         int cc = write(hFile, m_pPage, m_nPageSize);
@@ -1096,14 +1098,14 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
         {
             if (cc == -1)
             {
-                Log.printf("CHashPage::Write - write error %u.\n", errno);
+                Log.printf("CHashPage::Write - write error %u." ENDLINE, errno);
             }
             else
             {
                 // Our write request was only partially filled. The disk is
                 // probably full.
                 //
-                Log.printf("CHashPage::Write - partial write.\n");
+                Log.printf("CHashPage::Write - partial write." ENDLINE);
             }
         }
         return TRUE;
@@ -1127,7 +1129,7 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     {
         if (lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
-            Log.printf("CHashPage::Read - lseek error %u.\n", errno);
+            Log.printf("CHashPage::Read - lseek error %u." ENDLINE, errno);
             continue;
         }
         int cc = read(hFile, m_pPage, m_nPageSize);
@@ -1135,13 +1137,13 @@ BOOL CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
         {
             if (cc == -1)
             {
-                Log.printf("CHashPage::Read - read error %u.\n", errno);
+                Log.printf("CHashPage::Read - read error %u." ENDLINE, errno);
             }
             else
             {
                 // Our read request was only partially filled. Surrender.
                 //
-                Log.printf("CHashPage::Read - partial read.\n");
+                Log.printf("CHashPage::Read - partial read." ENDLINE);
             }
             continue;
         }
@@ -1407,7 +1409,7 @@ BOOL CHashFile::RebuildDirectory(void)
         {
             if (m_pDir[nStart] != 0xFFFFFFFFUL)
             {
-                Log.WriteString("CHashFile::Open - The keyspace of pages in Page File overlap.\n");
+                Log.WriteString("CHashFile::Open - The keyspace of pages in Page File overlap." ENDLINE);
                 return FALSE;
             }
             m_pDir[nStart] = oPage;
@@ -1420,7 +1422,7 @@ BOOL CHashFile::RebuildDirectory(void)
     {
         if (m_pDir[iFileDir] == 0xFFFFFFFFUL)
         {
-            Log.WriteString("CHashFile::Open - Page File is incomplete.\n");
+            Log.WriteString("CHashFile::Open - Page File is incomplete." ENDLINE);
             return FALSE;
         }
     }
@@ -1577,7 +1579,7 @@ void CHashFile::Sync(void)
         }
         if (!bAllFlushed)
         {
-            Log.WriteString("CHashFile::Sync. Could not flush all the pages. DB DAMAGE.\n");
+            Log.WriteString("CHashFile::Sync. Could not flush all the pages. DB DAMAGE." ENDLINE);
         }
 #ifdef DO_COMMIT
 #ifdef WIN32
@@ -1640,14 +1642,14 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         UINT32 iFileDir = nHash >> (32-m_nDirDepth);
         if (iFileDir >= m_nDir)
         {
-            Log.WriteString("CHashFile::Insert - iFileDir out of range..\n");
+            Log.WriteString("CHashFile::Insert - iFileDir out of range.." ENDLINE);
             return FALSE;
         }
         HF_FILEOFFSET oPage = m_pDir[iFileDir];
         iCache = ReadCache(oPage, &cs_whits);
         if (iCache < 0)
         {
-            Log.WriteString("CHashFile::Insert - Page wasn't valid.\n");
+            Log.WriteString("CHashFile::Insert - Page wasn't valid." ENDLINE);
             return FALSE;
         }
 
@@ -1655,7 +1657,7 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
         if (iFileDir < nStart || nEnd < iFileDir)
         {
-            Log.WriteString("CHashFile::Insert - Directory points to the wrong page.\n");
+            Log.WriteString("CHashFile::Insert - Directory points to the wrong page." ENDLINE);
             return FALSE;
         }
         int errInserted = m_Cache[iCache].m_hp.Insert(nRecord, nHash, pRecord);
@@ -1709,7 +1711,7 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 
         if (iCache == iEmpty0)
         {
-            Log.WriteString("CHashFile::Split - iCache == iEmpty0\n");
+            Log.WriteString("CHashFile::Split - iCache == iEmpty0" ENDLINE);
             return FALSE;
         }
 
@@ -1719,13 +1721,13 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 
         if (iCache == iEmpty1)
         {
-            Log.WriteString("CHashFile::Split - iCache == iEmpty1\n");
+            Log.WriteString("CHashFile::Split - iCache == iEmpty1" ENDLINE);
             return FALSE;
         }
 
         if (iEmpty0 == iEmpty1)
         {
-            Log.WriteString("CHashFile::Split - iEmpty0 == iEmpty1\n");
+            Log.WriteString("CHashFile::Split - iEmpty0 == iEmpty1" ENDLINE);
             return FALSE;
         }
 
@@ -1827,7 +1829,7 @@ HP_DIRINDEX CHashFile::FindFirstKey(UINT32 nHash)
     UINT32 iFileDir = nHash >> (32-m_nDirDepth);
     if (iFileDir >= m_nDir)
     {
-        Log.WriteString("CHashFile::Insert - iFileDir out of range.\n");
+        Log.WriteString("CHashFile::Insert - iFileDir out of range." ENDLINE);
         cs_fails++;
         return HF_FIND_END;
     }
@@ -1842,7 +1844,7 @@ HP_DIRINDEX CHashFile::FindFirstKey(UINT32 nHash)
     m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
     if (iFileDir < nStart || nEnd < iFileDir)
     {
-        Log.WriteString("CHashFile::Find - Directory points to the wrong page.\n");
+        Log.WriteString("CHashFile::Find - Directory points to the wrong page." ENDLINE);
         return HF_FIND_END;
     }
     unsigned int numchecks;
@@ -2035,7 +2037,7 @@ int CHashFile::ReadCache(HF_FILEOFFSET oPage, int *phits)
         }
         else
         {
-            Log.WriteString("CHashFile::ReadCache.  ReadPage failed to get the page. DB DAMAGE.\n");
+            Log.WriteString("CHashFile::ReadCache.  ReadPage failed to get the page. DB DAMAGE." ENDLINE);
         }
     }
     return -1;
@@ -2093,14 +2095,14 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
 #ifdef HP_PROTECTION
         if (iTableDir >= m_nDir)
         {
-            Log.WriteString("CHashTable::Insert - iTableDir out of range..\n");
+            Log.WriteString("CHashTable::Insert - iTableDir out of range." ENDLINE);
             return FALSE;
         }
 #endif
         m_hpLast = m_pDir[iTableDir];
         if (!m_hpLast)
         {
-            Log.WriteString("CHashTable::Insert - Page wasn't valid.\n");
+            Log.WriteString("CHashTable::Insert - Page wasn't valid." ENDLINE);
             return FALSE;
         }
         UINT32  nStart, nEnd;
@@ -2108,7 +2110,7 @@ BOOL CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
         m_hpLast->GetRange(m_nDirDepth, nStart, nEnd);
         if (iTableDir < nStart || nEnd < iTableDir)
         {
-            Log.WriteString("CHashTable::Insert - Directory points to the wrong page.\n");
+            Log.WriteString("CHashTable::Insert - Directory points to the wrong page." ENDLINE);
             return FALSE;
         }
 #endif
@@ -2213,14 +2215,14 @@ HP_DIRINDEX CHashTable::FindFirstKey(UINT32  nHash)
 #ifdef HP_PROTECTION
     if (iTableDir >= m_nDir)
     {
-        Log.WriteString("CHashTable::Insert - iTableDir out of range.\n");
+        Log.WriteString("CHashTable::Insert - iTableDir out of range." ENDLINE);
         return HF_FIND_END;
     }
 #endif
     m_hpLast = m_pDir[iTableDir];
     if (!m_hpLast)
     {
-        Log.WriteString("CHashTable::Insert - Page wasn't valid.\n");
+        Log.WriteString("CHashTable::Insert - Page wasn't valid." ENDLINE);
         return HF_FIND_END;
     }
 #ifdef HP_PROTECTION
@@ -2228,7 +2230,7 @@ HP_DIRINDEX CHashTable::FindFirstKey(UINT32  nHash)
     m_hpLast->GetRange(m_nDirDepth, nStart, nEnd);
     if (iTableDir < nStart || nEnd < iTableDir)
     {
-        Log.WriteString("CHashTable::Find - Directory points to the wrong page.\n");
+        Log.WriteString("CHashTable::Find - Directory points to the wrong page." ENDLINE);
         return HF_FIND_END;
     }
 #endif
@@ -2467,10 +2469,6 @@ void CLogFile::CreateLogFile(void)
 
     m_nSize = 0;
     m_hFile = CreateFile(m_szFilename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-    if (m_hFile == INVALID_HANDLE_VALUE)
-    {
-        printf("CLogFile: Cannot create tinymux.log\n");
-    }
 }
 
 void CLogFile::AppendLogFile(void)
@@ -2482,20 +2480,13 @@ void CLogFile::AppendLogFile(void)
 #else // WIN32
     m_hFile = open(m_szFilename, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
 #endif // WIN32
-    if (m_hFile == INVALID_HANDLE_VALUE)
-    {
-        printf("CLogFile: Cannot create tinymux.log\n");
-    }
-    else
+    if (m_hFile != INVALID_HANDLE_VALUE)
     {
 #ifdef WIN32
-        if (SetFilePointer(m_hFile, 0, 0, FILE_END) == 0xFFFFFFFFUL)
+        SetFilePointer(m_hFile, 0, 0, FILE_END);
 #else // WIN32
-        if (lseek(m_hFile, 0, SEEK_SET) == 0xFFFFFFFFUL)
+        lseek(m_hFile, 0, SEEK_SET);
 #endif // WIN32
-        {
-            printf("CLogFile: seek error %u.\n", GetLastError());
-        }
     }
 }
 
