@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.26 2002-06-21 01:07:00 sdennis Exp $
+// $Id: functions.cpp,v 1.27 2002-06-21 06:34:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2706,7 +2706,7 @@ private:
     void SpellNumber_Sub0(int n, const char *p, BOOL bHundreds);
     void SpellNumber_Sub1(int n, const char *p);
     void SpellNumber_Sub2(const char *p);
-    BOOL SpellNumber_Sub3(const char *p);
+    void SpellNumber_Sub3(const char *p, int iBigOne);
     void StartWord(void);
     void AddWord(const char *p);
 
@@ -2728,7 +2728,6 @@ void CSpellNum::AddWord(const char *p)
 {
     safe_str(p, buff, bufc);
 }
-
 
 // Handle two-character sequences.
 //
@@ -2768,13 +2767,13 @@ void CSpellNum::SpellNumber_Sub2(const char *p)
 
 // Handle three-character sequences.
 //
-BOOL CSpellNum::SpellNumber_Sub3(const char *p)
+void CSpellNum::SpellNumber_Sub3(const char *p, int iBigOne)
 {
     if (  p[0] == '0'
        && p[1] == '0'
        && p[2] == '0')
     {
-        return FALSE;
+        return;
     }
 
     // Handle hundreds.
@@ -2787,7 +2786,11 @@ BOOL CSpellNum::SpellNumber_Sub3(const char *p)
         AddWord("hundred");
     }
     SpellNumber_Sub2(p+1);
-    return TRUE;
+    if (iBigOne > 0)
+    {
+        StartWord();
+        AddWord(bigones[iBigOne]);
+    }
 }
 
 // Handle a series of patterns of three.
@@ -2809,9 +2812,8 @@ void CSpellNum::SpellNumber_Sub0(int n, const char *p, BOOL bHundreds)
 
     // Handle normal cases.
     //
-    int ndiv = (n + 2) / 3;
+    int ndiv = ((n + 2) / 3) - 1;
     int nrem = n % 3;
-    BOOL bEmit;
     char buf[3];
     if (nrem == 0)
     {
@@ -2831,16 +2833,11 @@ void CSpellNum::SpellNumber_Sub0(int n, const char *p, BOOL bHundreds)
             buf[i] = '0';
         }
     }
-    bEmit = SpellNumber_Sub3(buf);
+    SpellNumber_Sub3(buf, ndiv);
     p += nrem;
-    while (--ndiv)
+    while (ndiv-- > 0)
     {
-        if (bEmit)
-        {
-            StartWord();
-            AddWord(bigones[ndiv]);
-        }
-        bEmit = SpellNumber_Sub3(p);
+        SpellNumber_Sub3(p, ndiv);
         p += 3;
     }
 }
