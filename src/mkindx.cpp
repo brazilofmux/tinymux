@@ -1,7 +1,7 @@
 //
 // mkindx.cpp -- make help/news file indexes 
 //
-// $Id: mkindx.cpp,v 1.3 2000-09-25 04:04:07 sdennis Exp $ 
+// $Id: mkindx.cpp,v 1.4 2000-10-25 04:36:21 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -24,15 +24,15 @@ int DCL_CDECL main(int argc, char *argv[])
     if (argc < 2 || argc > 3)
     {
 #ifdef WIN32
-#ifdef BETA
+#ifdef ALPHA
 #if PATCHLEVEL > 0
-        printf("%s from MUX %sp%d for Win32 #%s [BETA]\n", argv[0],
+        printf("%s from MUX %sp%d for Win32 #%s [ALPHA]\n", argv[0],
             MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
-        printf("%s from MUX %s for Win32 #%s [BETA]\n", argv[0], MUX_VERSION,
+        printf("%s from MUX %s for Win32 #%s [ALPHA]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM);
 #endif // PATCHLEVEL
-#else // BETA
+#else // ALPHA
 #if PATCHLEVEL > 0 
         printf("%s from MUX %sp%d for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
@@ -40,17 +40,17 @@ int DCL_CDECL main(int argc, char *argv[])
         printf("%s from MUX %s for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #endif // PATCHLEVEL
-#endif // BETA
+#endif // ALPHA
 #else // WIN32
-#ifdef BETA
+#ifdef ALPHA
 #if PATCHLEVEL > 0
-        printf("%s from MUX %sp%d #%s [BETA]\n", argv[0], MUX_VERSION,
+        printf("%s from MUX %sp%d #%s [ALPHA]\n", argv[0], MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
-        printf("%s from MUX %s #%s [BETA]\n", argv[0], MUX_VERSION,
+        printf("%s from MUX %s #%s [ALPHA]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM);
 #endif // PATCHLEVEL
-#else // BETA
+#else // ALPHA
 #if PATCHLEVEL > 0 
         printf("%s from MUX %sp%d #%s [%s]\n", argv[0], MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
@@ -58,7 +58,7 @@ int DCL_CDECL main(int argc, char *argv[])
         printf("%s from MUX %s #%s [%s]\n", argv[0], MUX_VERSION, MUX_BUILD_NUM,
             MUX_RELEASE_DATE);
 #endif // PATCHLEVEL
-#endif // BETA
+#endif // ALPHA
 #endif // WIN32
         printf("Usage:\tmkindx <file_to_be_indexed> <output_index_filename>\n");
         exit(-1);

@@ -1,7 +1,7 @@
 //
 // version.cpp - version information 
 //
-// $Id: version.cpp,v 1.14 2000-09-25 04:04:07 sdennis Exp $ 
+// $Id: version.cpp,v 1.15 2000-10-25 04:36:21 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -25,15 +25,15 @@ void do_version(dbref player, dbref cause, int extra)
 void NDECL(init_version)
 {
 #ifdef WIN32
-#ifdef BETA
+#ifdef ALPHA
 #if PATCHLEVEL > 0
-        sprintf( mudstate.version, "MUX %sp%d for Win32 #%s [BETA]",
+        sprintf( mudstate.version, "MUX %sp%d for Win32 #%s [ALPHA]",
             MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
-        sprintf( mudstate.version, "MUX %s for Win32 #%s [BETA]",
+        sprintf( mudstate.version, "MUX %s for Win32 #%s [ALPHA]",
             MUX_VERSION, MUX_BUILD_NUM);
 #endif // PATCHLEVEL
-#else // BETA
+#else // ALPHA
 #if PATCHLEVEL > 0 
         sprintf( mudstate.version, "MUX %sp%d for Win32 #%s [%s]",
             MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
@@ -41,17 +41,17 @@ void NDECL(init_version)
         sprintf( mudstate.version, "MUX %s for Win32 #%s [%s]",
             MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #endif // PATCHLEVEL
-#endif // BETA
+#endif // ALPHA
 #else // WIN32
-#ifdef BETA
+#ifdef ALPHA
 #if PATCHLEVEL > 0
-        sprintf( mudstate.version, "MUX %sp%d #%s [BETA]", MUX_VERSION,
+        sprintf( mudstate.version, "MUX %sp%d #%s [ALPHA]", MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM);
 #else // PATCHLEVEL
-        sprintf( mudstate.version, "MUX %s #%s [BETA]", MUX_VERSION,
+        sprintf( mudstate.version, "MUX %s #%s [ALPHA]", MUX_VERSION,
             MUX_BUILD_NUM);
 #endif // PATCHLEVEL
-#else // BETA
+#else // ALPHA
 #if PATCHLEVEL > 0 
         sprintf( mudstate.version, "MUX %sp%d #%s [%s]", MUX_VERSION,
             PATCHLEVEL, MUX_BUILD_NUM, MUX_RELEASE_DATE);
@@ -59,7 +59,7 @@ void NDECL(init_version)
         sprintf( mudstate.version, "MUX %s #%s [%s]", MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
 #endif // PATCHLEVEL
-#endif // BETA
+#endif // ALPHA
 #endif // WIN32
 
     STARTLOG(LOG_ALWAYS, "INI", "START");
