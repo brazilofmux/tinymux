@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.10 2004-04-18 21:54:40 sdennis Exp $
+// $Id: functions.h,v 1.11 2004-06-23 01:23:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -50,6 +50,8 @@ typedef struct
     size_t n;
     char   str[MAX_SEP_LEN+1];
 } SEP;
+
+extern SEP sepSpace;
 
 // dlfags in delim_check() accepts the following options.
 //

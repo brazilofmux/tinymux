@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.106 2004-06-10 15:39:34 sdennis Exp $
+// $Id: functions.cpp,v 1.107 2004-06-23 01:23:24 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -153,6 +153,8 @@ XFUNCTION(fun_motd);
 XFUNCTION(fun_poll);
 // In quota.cpp
 XFUNCTION(fun_hasquota);
+
+SEP sepSpace = { 1, " " };
 
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
@@ -6103,10 +6105,7 @@ FUNCTION(fun_after)
     if (  mlen == 1
        && *mp == ' ')
     {
-        SEP sep_space;
-        sep_space.n = 1;
-        memcpy(sep_space.str, " ", 2);
-        bp = trim_space_sep(bp, &sep_space);
+        bp = trim_space_sep(bp, &sepSpace);
     }
 
     // Look for the target string.
@@ -6146,10 +6145,7 @@ FUNCTION(fun_before)
     if (  mlen == 1
        && *mp == ' ')
     {
-        SEP sep_space;
-        sep_space.n = 1;
-        memcpy(sep_space.str, " ", 2);
-        bp = trim_space_sep(bp, &sep_space);
+        bp = trim_space_sep(bp, &sepSpace);
     }
 
     ip = bp;
@@ -6815,6 +6811,64 @@ FUNCTION(fun_itemize)
         word = nextword;
     }
     safe_str(word, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_choose: Weighted random choice from a list.
+//             choose(<list of items>,<list of weights>,<input delim>)
+//
+FUNCTION(fun_choose)
+{
+    SEP isep;
+    if (!OPTIONAL_DELIM(3, isep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    char *elems[LBUF_SIZE/2], *weights[LBUF_SIZE/2];
+    int n_elems = list2arr(elems, LBUF_SIZE/2, fargs[0], &isep);
+    int n_weights = list2arr(weights, LBUF_SIZE/2, fargs[1], &sepSpace);
+
+    if (n_elems != n_weights)
+    {
+        safe_str("#-1 LISTS MUST BE OF EQUAL SIZE", buff, bufc);
+        return;
+    }
+
+    // Calculate the the breakpoints, not the weights themselves.
+    //
+    int i;
+    int sum = 0;
+    int ip[LBUF_SIZE/2];
+    for (i = 0; i < n_weights; i++)
+    {
+        int num = mux_atol(weights[i]);
+        if (num < 0)
+        {
+            num = 0;
+        }
+        if (num == 0)
+        {
+            ip[i] = 0;
+        }
+        else
+        {
+            sum += num;
+            ip[i] = sum;
+        }
+    }
+
+    INT32 num = RandomINT32(0, sum-1);
+
+    for (i = 0; i < n_weights; i++)
+    {
+        if (  ip[i] != 0
+           && num < ip[i])
+        {
+            safe_str(elems[i], buff, bufc);
+            break;
+        }
+    }
 }
 
 /* ---------------------------------------------------------------------------
@@ -9553,6 +9607,7 @@ FUN flist[] =
     {"CENTER",      fun_center,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"CHANNELS",    fun_channels,   MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"CHILDREN",    fun_children,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {"CHOOSE",      fun_choose,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"CHR",         fun_chr,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"CMDS",        fun_cmds,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"COLUMNS",     fun_columns,    MAX_ARG, 2,       4,         0, CA_PUBLIC},

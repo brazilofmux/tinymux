@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.68 2004-06-10 15:39:34 sdennis Exp $
+// $Id: funceval.cpp,v 1.69 2004-06-23 01:23:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -395,7 +395,8 @@ FUNCTION(fun_create)
         if (*fargs[1])
         {
             cost = mux_atol(fargs[1]);
-            if (cost < mudconf.createmin || cost > mudconf.createmax)
+            if (  cost < mudconf.createmin
+               || mudconf.createmax < cost)
             {
                 safe_range(buff, bufc);
                 return;
@@ -1924,16 +1925,13 @@ FUNCTION(fun_elements)
     strcpy(wordlist, fargs[0]);
     nwords = list2arr(ptrs, LBUF_SIZE / 2, wordlist, &sep);
 
-    SEP sep_space;
-    sep_space.n = 1;
-    memcpy(sep_space.str, " ", 2);
-    s = trim_space_sep(fargs[1], &sep_space);
+    s = trim_space_sep(fargs[1], &sepSpace);
 
     // Go through the second list, grabbing the numbers and finding the
     // corresponding elements.
     //
     do {
-        r = split_token(&s, &sep_space);
+        r = split_token(&s, &sepSpace);
         cur = mux_atol(r) - 1;
         if (  cur >= 0
            && cur < nwords
