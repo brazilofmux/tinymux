@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.13 2003-02-05 06:20:58 jake Exp $
+// $Id: conf.cpp,v 1.14 2003-02-06 14:39:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -459,9 +459,9 @@ NAMETAB bool_names[] =
 
 CF_HAND(cf_bool)
 {
-    *vp = search_nametab(GOD, bool_names, str);
-    if (*vp < 0)
-        *vp = (long) 0;
+    bool *pb = (bool *)vp;
+    bool b = search_nametab(GOD, bool_names, str);
+    *pb = b;
     return 0;
 }
 
