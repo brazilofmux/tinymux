@@ -1,4 +1,6 @@
-// wild.c - wildcard routines
+// wild.cpp -- Wildcard routines.
+//
+// $Id: wild.cpp,v 1.2 2001-11-18 17:53:48 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -10,8 +12,7 @@
 // This code is hereby placed under GNU copyleft,
 // see copyright.h for details.
 //
-// $Id: wild.cpp,v 1.1 2000-04-11 07:14:48 sdennis Exp $
-//
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
