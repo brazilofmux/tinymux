@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.87 2004-04-18 15:25:45 sdennis Exp $
+// $Id: functions.cpp,v 1.88 2004-04-18 15:37:19 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -715,7 +715,12 @@ bool delim_check
         // Regardless of evaulation or no, tstr contains what we need to
         // look at, and tlen is the length of this string.
         //
-        if (tlen == 0)
+        if (tlen == 1)
+        {
+            sep->n      = 1;
+            memcpy(sep->str, tstr, tlen+1);
+        }
+        else if (tlen == 0)
         {
             sep->n      = 1;
             memcpy(sep->str, " ", 2);
@@ -736,7 +741,7 @@ bool delim_check
         }
         else if (dflags & DELIM_STRING)
         {
-            if (MAX_SEP_LEN <= tlen)
+            if (tlen <= MAX_SEP_LEN)
             {
                 sep->n = tlen;
                 memcpy(sep->str, tstr, tlen);
@@ -745,6 +750,7 @@ bool delim_check
             else
             {
                 safe_str("#-1 SEPARATOR MUST BE ONE CHARACTER", buff, bufc);
+                bSuccess = false;
             }
         }
         else
