@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.28 2000-11-04 08:54:02 sdennis Exp $
+// $Id: command.cpp,v 1.29 2000-11-05 18:54:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1294,7 +1294,6 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
     mudstate.func_invk_ctr = 0;
     mudstate.ntfy_nest_lev = 0;
     mudstate.lock_nest_lev = 0;
-    mudstate.ufunc_nest_lev = 0;
 
     if (Verbose(player))
     {
