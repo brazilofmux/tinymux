@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.2 2003-01-24 06:24:00 sdennis Exp $
+// $Id: object.cpp,v 1.3 2003-01-28 00:48:26 jake Exp $
 //
 
 #include "copyright.h"
@@ -111,9 +111,13 @@ dbref start_home(void)
 dbref default_home(void)
 {
     if (mudconf.default_home != NOTHING)
+    {
         return mudconf.default_home;
+    }
     if (mudconf.start_home != NOTHING)
+    {
         return mudconf.start_home;
+    }
     return mudconf.start_room;
 }
 
@@ -163,7 +167,9 @@ dbref clone_home(dbref player, dbref thing)
 {
     dbref loc = Home(thing);
     if (can_set_home(Owner(player), player, loc))
+    {
         return loc;
+    }
     return new_home(player);
 }
 
@@ -447,7 +453,7 @@ void destroy_obj(dbref obj)
            && !Quiet(obj)
            && !Quiet(owner))
         {
-                notify(owner, "Halted.");
+            notify(owner, "Halted.");
         }
         nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
 
@@ -987,7 +993,7 @@ static void check_dead_refs(void)
                     "is invalid.  Moved to home.");
                 move_object(i, Home(i));
             }
-                        
+
             // Check for self-referential Next()
             if (Next(i) == i) 
             {
@@ -1006,7 +1012,7 @@ static void check_dead_refs(void)
             break;
 
         case TYPE_THING:
-            
+
             // Check home.
             //
             targ = Home(i);
