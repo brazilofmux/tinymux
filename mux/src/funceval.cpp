@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.6 2002-06-05 07:50:56 sdennis Exp $
+// $Id: funceval.cpp,v 1.7 2002-06-11 17:01:37 jake Exp $
 //
 
 #include "copyright.h"
@@ -1456,11 +1456,9 @@ FUNCTION(fun_hasattr)
     char *tbuf;
 
     thing = match_thing(executor, fargs[0]);
-    if (thing == NOTHING) {
+    if (thing == NOTHING) 
+    {
         safe_nomatch(buff, bufc);
-        return;
-    } else if (!Examinable(executor, thing)) {
-        safe_noperm(buff, bufc);
         return;
     }
     attr = atr_str(fargs[1]);
@@ -1468,7 +1466,13 @@ FUNCTION(fun_hasattr)
     if (attr)
     {
         atr_get_info(thing, attr->number, &aowner, &aflags);
-        if (See_attr(executor, thing, attr, aowner, aflags))
+        if (   !Examinable(executor, thing) 
+            && !Read_attr(executor, thing, attr, aowner, aflags))
+        {
+        safe_noperm(buff, bufc);
+        return;
+        }
+        else if (See_attr(executor, thing, attr, aowner, aflags))
         {
             tbuf = atr_get(thing, attr->number, &aowner, &aflags);
             if (*tbuf)

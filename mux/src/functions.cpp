@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.9 2002-06-05 07:40:20 sdennis Exp $
+// $Id: functions.cpp,v 1.10 2002-06-11 16:59:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -1860,6 +1860,51 @@ FUNCTION(fun_mid)
     // At this point, iPosition0, nLength, and iPosition1 are reasonable
     // numbers which may -still- not refer to valid data in the string.
     //
+    struct ANSI_In_Context aic;
+    ANSI_String_In_Init(&aic, fargs[0], ANSI_ENDGOAL_NORMAL);
+    int nDone;
+    ANSI_String_Skip(&aic, iPosition0, &nDone);
+    if (nDone < iPosition0)
+    {
+        return;
+    }
+
+    struct ANSI_Out_Context aoc;
+    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable, nLength, ANSI_ENDGOAL_NORMAL);
+    ANSI_String_Copy(&aoc, &aic, nBufferAvailable, nLength);
+    int nSize = ANSI_String_Finalize(&aoc, &nDone);
+    *bufc += nSize;
+}
+
+// ---------------------------------------------------------------------------
+// fun_right: right(foobar,2) returns ar
+// ---------------------------------------------------------------------------
+
+FUNCTION(fun_right)
+{
+    // Basically just mid(%0,sub(strlen(%0),%1),7998)
+    // Initial checks for iPosition0 [0,LBUF_SIZE), nLength [0,LBUF_SIZE),
+    // and iPosition1 [0,LBUF_SIZE).
+
+    int iPosition1 = strlen(fargs[0]);
+    int nLength = Tiny_atol(fargs[1]);
+    int iPosition0 = iPosition1 - nLength;   
+
+    if (nLength > LBUF_SIZE-1)
+        nLength = LBUF_SIZE-1;
+
+    if (iPosition0 < 0)
+        iPosition0 = 0;
+    
+    if (nLength < 0)
+    {
+        safe_str("#-1 OUT OF RANGE", buff, bufc);
+        return;
+    }
+
+    // At this point, iPosition0, nLength, and iPosition1 are reasonable
+    // numbers which may -still- not refer to valid data in the string.
     struct ANSI_In_Context aic;
     ANSI_String_In_Init(&aic, fargs[0], ANSI_ENDGOAL_NORMAL);
     int nDone;
@@ -4682,6 +4727,15 @@ FUNCTION(fun_mudname)
 }
 
 // ---------------------------------------------------------------------------
+// fun_connrec: Return the record number of connected players.
+// ---------------------------------------------------------------------------
+
+FUNCTION(fun_connrec)
+{
+    safe_ltoa(mudstate.record_players, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
 // fun_ctime: Return the value of an object's CREATED attribute.
 // ---------------------------------------------------------------------------
 
@@ -7084,6 +7138,7 @@ FUN flist[] =
     {"CONNLEFT", fun_connleft, MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONNMAX",  fun_connmax,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONNNUM",  fun_connnum,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNREC",  fun_connrec,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"CONNTOTAL",fun_conntotal,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CONVSECS", fun_convsecs, MAX_ARG, 1,  2,       0, CA_PUBLIC},
@@ -7253,6 +7308,7 @@ FUN flist[] =
     {"REST",     fun_rest,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"REVERSE",  fun_reverse,  1,       1,  1,       0, CA_PUBLIC},
     {"REVWORDS", fun_revwords, MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"RIGHT",    fun_right,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"RJUST",    fun_rjust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"RLOC",     fun_rloc,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ROOM",     fun_room,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
