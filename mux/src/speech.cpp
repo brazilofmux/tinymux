@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.17 2002-07-16 23:23:25 jake Exp $
+// $Id: speech.cpp,v 1.18 2002-07-16 23:27:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -117,8 +117,8 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 
     // Convert prefix-coded messages into the normal type
     //
-    say_flags = key & (SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
-    key &= ~(SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
+    say_flags = key & (SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML | SAY_NOEVAL);
+    key &= ~(SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML | SAY_NOEVAL);
 
     if (key == SAY_PREFIX)
     {
