@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.13 2000-09-25 04:04:06 sdennis Exp $
+// * $Id: comsys.cpp,v 1.14 2000-09-29 06:13:52 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -850,7 +850,7 @@ void do_comsend(struct channel *ch, char *msgNormal)
 
 void do_joinchannel(dbref player, struct channel *ch)
 {
-    char temp[1000];
+    char *p;
     struct comuser *user;
     struct comuser **cu;
     int i;
@@ -913,30 +913,29 @@ void do_joinchannel(dbref player, struct channel *ch)
             //
             if (ch->type & CHANNEL_SPOOF)
             {
-                sprintf(temp, "[%s] %s has joined this channel.", ch->name, user->title);
+                p = tprintf( "[%s] %s has joined this channel.",
+                             ch->name, user->title);
             }
             else
             {
-                sprintf(temp, "[%s] %s %s has joined this channel.", ch->name, user->title, Name(player));
+                p = tprintf( "[%s] %s %s has joined this channel.",
+                             ch->name, user->title, Name(player));
             }
         }
         else
         {
-            sprintf(temp, "[%s] %s has joined this channel.", ch->name, Name(player));
+            p = tprintf( "[%s] %s has joined this channel.",
+                         ch->name, Name(player));
         }
-        do_comsend(ch, temp);
+        do_comsend(ch, p);
     }
 }
 
 void do_leavechannel(dbref player, struct channel *ch)
 {
-    struct comuser *user;
-    char temp[1000];
-    
-    user = select_user(ch, player);
-    
+    char *p;
+    struct comuser *user = select_user(ch, player);
     raw_notify(player, tprintf("You have left channel %s.", ch->name));
-    
     if ((user->bUserIsOn) && (!Dark(player)))
     { 
         if (user->title[0] != '\0')
@@ -945,18 +944,21 @@ void do_leavechannel(dbref player, struct channel *ch)
             //
             if (ch->type & CHANNEL_SPOOF)
             {
-                sprintf(temp, "[%s] %s has left this channel.", ch->name, user->title);
+                p = tprintf( "[%s] %s has left this channel.",
+                             ch->name, user->title);
             }
             else
             {
-                sprintf(temp, "[%s] %s %s has left this channel.", ch->name, user->title, Name(player));
+                p = tprintf( "[%s] %s %s has left this channel.",
+                             ch->name, user->title, Name(player));
             }
         }
         else
         {
-            sprintf(temp, "[%s] %s has left this channel.", ch->name, Name(player));
+            p = tprintf( "[%s] %s has left this channel.", ch->name,
+                         Name(player));
         }
-        do_comsend(ch, temp);
+        do_comsend(ch, p);
     }
     user->bUserIsOn = 0;
 }
