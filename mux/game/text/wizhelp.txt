@@ -2890,8 +2890,32 @@ LOG
 
 & LOGGING
 LOGGING
+ 
+  There are two separate forms of logging.  Firstly, server-related logging is
+  controlled with the two configuration parameters: 'log_options' and 'log'.
+  Secondly, softcode may use the @log command to send arbitrary text to
+  arbitrary log files.  The former style of logging automatically breaks into
+  500KB chunks.  The latter style does not.
 
-  This topic intentionally left blank.
+  In the first style, the log_options parameter controls the information that
+  is written along with the message in the logfile.  By default, log_options
+  is configured to write the timestamp of the log message and the location of
+  referenced players and objects.
+
+  The log_options parameter controls what type of information is written to 
+  the logfile.  Many different types of log information can be stored.  By
+  default, log_options is configured to record the following events:  bugs, 
+  security, network, logins, checkpoints, config_changes, shouts, startup,
+  wizard, suspect_commands, problems, and create.  See 'wizhelp log' for 
+  specifics on the information stored by these event types. 
+
+  Of note, the log configuration option of 'all_commands' can be used to 
+  monitor every command issued by every player on the game when strange
+  activity is occuring.   Doing so, however, may raise privacy concerns.  
+  Use with caution.  If a single individual is in question, use of the
+  SUSPECT flag and suspect_commands event logging is suggested.
+
+  Related Topics: log, log_options, @log, @list logging.
 
 & LOGOUT_CMD_ACCESS
 LOGOUT_CMD_ACCESS
