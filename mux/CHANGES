@@ -1,5 +1,5 @@
 TinyMUX 2.3:  CHANGES
-Last Update:  December 2003
+Last Update:  March 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -31,6 +31,12 @@ Feature Additions:
  -- The lag_maximum configuration option now accepts fractional seconds.
  -- Jake added support for variable exits.
  -- Support for larger CHashpage sizes (based on value of LBUF_SIZE).
+ -- Added ENTRANCES().
+ -- Added -e command-line option which can be used to redirect the log
+    back to the standard error stream (i.e., stderr) or to specify a
+    basename to locate the logfiles in a directory other than the game
+    sub-directory.
+ -- Allow WHO report to be affected by @moniker.
 
 
 Bug Fixes:
@@ -196,6 +202,16 @@ Bug Fixes:
     their current location.  This crashing bug was probably introduced
     inadvertantly by Jake when he changed the defintion of a good object.
     Fixed by Brazil.
+ -- Give detailed message at the welcome screen about why a password
+    doesn't meet with the requirements of the safer_password
+    configuration option.
+ -- Fixed obscure buffer overflow in wRAP().
+ -- Fixed buffer overflow in @list functions.
+ -- Fixed permission issue with visual attributes on objects which are
+    not nearby.
+ -- Fixed @mail/bcc behavior so that bcc'ed recipients are hidden from
+    non-bcc'ed recipients.
+ -- Removed '%' as a valid attribute name character.
 
 
 Performance Enhancements:
@@ -210,6 +226,7 @@ Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
  -- Alierak fix for typos in NOTES.
  -- Spell 'separate' correctly in the help files and the source code.
+ -- Improved grammer of the emit the sender sees from the page command.
 
 
 Miscellaneous:
