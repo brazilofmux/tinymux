@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.13 2003-02-04 11:43:10 jake Exp $
+// $Id: game.cpp,v 1.14 2003-02-04 17:05:24 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -178,7 +178,7 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
         return -1;
     }
 
-    BOOL match = FALSE;
+    int match = 0;
     int attr;
     char *as;
     atr_push();
@@ -263,7 +263,7 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
         }
     }
     atr_pop();
-    return (match);
+    return match;
 }
 
 BOOL atr_match(dbref thing, dbref player, char type, char *str, BOOL check_parents)
@@ -1686,7 +1686,7 @@ static int load_game(int ccPageFile)
 
 BOOL list_check(dbref thing, dbref player, char type, char *str, BOOL check_parent)
 {
-    BOOL match = FALSE;
+    BOOL bMatch = FALSE;
 
     int limit = mudstate.db_top;
     while (thing != NOTHING)
@@ -1694,18 +1694,15 @@ BOOL list_check(dbref thing, dbref player, char type, char *str, BOOL check_pare
         if (  thing != player
            && !No_Command(thing))
         {
-            if (atr_match(thing, player, type, str, check_parent))
-            {
-                match = TRUE;
-            }
+            bMatch |= atr_match(thing, player, type, str, check_parent);
         }
         thing = Next(thing);
         if (--limit < 0)
         {
-            return match;
+            return bMatch;
         }
     }
-    return match;
+    return bMatch;
 }
 
 BOOL Hearer(dbref thing)
