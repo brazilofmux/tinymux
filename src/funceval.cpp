@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.23 2000-09-30 06:10:57 sdennis Exp $
+// $Id: funceval.cpp,v 1.24 2000-10-01 20:30:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -740,9 +740,8 @@ FUNCTION(fun_columns)
 //
 FUNCTION(fun_table)
 {
-    if (nfargs > 6 || nfargs < 1)
+    if (!fn_range_check("TABLE", nfargs, 1, 6, buff, bufc))
     {
-        safe_str("#-1 FUNCTION (TABLE) EXPECTS BETWEEN 1 AND 5 ARGUMENTS", buff, bufc);
         return;
     }
 
