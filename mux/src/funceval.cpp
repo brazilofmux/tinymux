@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.45 2002-08-09 04:08:20 sdennis Exp $
+// $Id: funceval.cpp,v 1.46 2002-08-09 05:00:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -164,6 +164,8 @@ FUNCTION(fun_ansi)
     {
         char   pOut[8];
         SimplifyColorLetters(pOut, fargs[iArg0]);
+        char tmp[2*LBUF_SIZE];
+        char *bp = tmp;
 
         char *s = pOut;
         while (*s)
@@ -172,11 +174,17 @@ FUNCTION(fun_ansi)
             const char *pColor = ColorTable[(unsigned char)*s];
             if (pColor)
             {
-                safe_str(pColor, buff, bufc);
+                safe_str(pColor, tmp, &bp);
             }
             s++;
         }
-        safe_str(fargs[iArg0+1], buff, bufc);
+        safe_str(fargs[iArg0+1], tmp, &bp);
+        *bp = '\0';
+        int nVisualWidth;
+        size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+        size_t nLen = ANSI_TruncateToField(tmp, nBufferAvailable, *bufc,
+            LBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+        *bufc += nLen;
     }
 }
 
