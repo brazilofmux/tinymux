@@ -133,62 +133,20 @@
  * Load system-dependent header files.
  */
 
-/* Prototype templates for ANSI C and traditional C */
+#if !defined(STDC_HEADERS)
+#error MUX requires standard headers.
+#endif
 
-#ifdef STDC_HEADERS
 #include <io.h>
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <process.h>
-#else
-#include <varargs.h>
-extern int  atoi(const char *);
-extern double   atof(const char *);
-extern long atol(const char *);
-#endif
-
-#ifdef NEED_MEMORY_H
-#include <memory.h>
-#endif
-
-#if defined(USG) || defined(STDC_HEADERS)
 #include <string.h>
-#ifdef NEED_INDEX_DCL
-#define index       strchr
-#define rindex      strrchr
-#define bcopy(s,d,n)    memmove(d,s,n)
-#define bcmp(s1,s2,n)   memcmp(s1,s2,n)
-#define bzero(s,n)  memset(s,0,n)
-#endif
-#else
-#include <strings.h>
-extern char *strchr(char *, char);
-extern void bcopy(char *, char *, int);
-extern void bzero(char *, int);
-#endif
-#define bcopy(d1, d2, n) memmove(d2, d1, n)
-#define bcmp(d1, d2, n) memcmp(d1, d2, n)
-#define bzero(s,n)  memset(s,0,n)
-
-#ifdef HAVE_ERRNO_H
 #include <errno.h>
-#ifdef NEED_PERROR_DCL
-extern void perror(const char *);
-#endif
-#else
-extern int errno;
-extern void perror(const char *);
-#endif
-
-#ifdef NEED_SYS_ERRLIST_DCL
-extern char *sys_errlist[];
-#endif
-
 #include <sys/types.h>
 #include <stdio.h>
-
 #include <fcntl.h>
 
 typedef int     dbref;
