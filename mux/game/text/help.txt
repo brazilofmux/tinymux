@@ -6189,10 +6189,10 @@ FLAG LIST
   Flag  Title        Flag  Title        Flag  Title        Flag  Title
   -------------------------------------------------------------------------
     A - ABODE      |   B - BLIND      |   C - CHOWN_OK   |   D - DARK
-    E - EXIT       |   F - FLOATING   |   G - GOING      |   H - HAVEN
+    E - EXIT(*)    |   F - FLOATING   |   G - GOING      |   H - HAVEN
     I - INHERIT    |   J - JUMP_OK    |   K - KEY        |   L - LINK_OK
-    M - MONITOR    |   N - NOSPOOF    |   O - OPAQUE     |   P - PLAYER
-    Q - QUIET      |   R - ROOM       |   S - STICKY     |   T - TRACE
+    M - MONITOR    |   N - NOSPOOF    |   O - OPAQUE     |   P - PLAYER(*)
+    Q - QUIET      |   R - ROOM(*)    |   S - STICKY     |   T - TRACE
     U - UNFINDABLE |   V - VISUAL     |   W - WIZARD     |   X - ANSI
     Y - PARENT_OK  |   Z - ROYALTY    |   a - AUDIBLE    |   b - AUDITORIUM
     c - CONNECTED  |   d - DESTROY_OK |   e - ENTER_OK   |   f - FIXED
@@ -6202,6 +6202,18 @@ FLAG LIST
     t - TRANSPARENT|   u - SUSPECT    |   v - VERBOSE    |   w - STAFF
     x - SLAVE      |   $ - SITEMON    |   z - CONTROL_OK |   ? - HEAD
     - - NOBLEED    |   | - VACATION   |   ~ - NOACCENTS  |
+  ------------------------------------------------------------------------
+
+  (*) Note that these 'flags' are really types.  Also notice that THING
+      is not in the list.  That is, andflag(me,P) and hastype(me,PLAYER)
+      work, but hasflag(me,PLAYER) does not.
+
+{ 'help flag list2' for more }
+
+& FLAG LIST2
+FLAG LIST2
+
+  Flag  Title        Flag  Title        Flag  Title        Flag  Title
   ------------------------------------------------------------------------
   Without Realms Patch Flags:
     0 - MARKER0    |   1 - MARKER1    |   2 - MARKER2    |   3 - MARKER3
@@ -6215,7 +6227,9 @@ FLAG LIST
   ------------------------------------------------------------------------
 
   For information on a particular flag, type 'help <flagname>'.
-  Some flags may be disabled at the MUX you are located.
+  Some flags may be disabled at your particular MUX.
+
+  Related Topics: andflags(), hasflag(), hastype(), orflags().
 
 & FLAGS
 FLAGS
