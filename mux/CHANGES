@@ -11,13 +11,15 @@ Feature Additions:
  -- Added support for multi-character delimiters across nearly all
     functions which accept input or output delimiters.  For example,
     'iter(1%r2%r3,itext(),%r,|)' produces '1|2|3'.
- -- Added output delimiter to filter() and filterbool().
  -- Added 'reset_players' configuration option which resets the player
     connection record.
  -- Added 'user_attrib_per_hour' which limits the rate at which
     user-defined attributes are created.
  -- Added 'mail_per_hour' which limits the rate at which @mail can be
     created.
+ -- Add output delimiter to elements(), extract(), filter(),
+    filterbool(), graball(), remove(), shuffle(), sortby(), and
+    splice().
 
 
 Bug Fixes:
