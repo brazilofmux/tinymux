@@ -140,6 +140,8 @@ Feature Additions:
  -- Removed mkindx in favor of having netmux read and index the help files
     itself. The .indx files in the text sub-directory are no longer updated
     or needed.
+ -- Added command line options to nextmux for obtainly usage and version
+    string.
 
 
 Bug Fixes:
