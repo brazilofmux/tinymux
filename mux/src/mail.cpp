@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.19 2003-02-17 02:57:10 sdennis Exp $
+// $Id: mail.cpp,v 1.20 2003-04-26 07:24:35 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1104,37 +1104,39 @@ char *MakeCanonicalMailAlias
 (
     char *pMailAlias,
     int *pnValidMailAlias,
-    bool *pbValidMailAlias
+    BOOL *pbValidMailAlias
 )
 {
-    if (  !pMailAlias
-       || !mux_isalpha(pMailAlias[0]))
+    static char Buffer[SIZEOF_MALIAS];
+    size_t nLeft = sizeof(Buffer)-1;
+    char *q = Buffer;
+    char *p = pMailAlias;
+
+    if (  !p
+       || !mux_isalpha(*p))
     {
+        *pnValidMailAlias = 0;
+        *pbValidMailAlias = false;
         return NULL;
     }
+    *q++ = *p++;
+    nLeft--;
 
-    static char Buffer[SIZEOF_MALIAS];
-    char *p = Buffer;
-
-    *p++ = pMailAlias[0];
-    pMailAlias += 1;
-    int nLeft = (sizeof(Buffer)-1) - 1;
-
-    while (*pMailAlias && nLeft)
+    while (  *p
+          && nLeft)
     {
-        if (  !mux_isalpha(*pMailAlias)
-           && !mux_isdigit(*pMailAlias))
+        if (  !mux_isalpha(*p)
+           && !mux_isdigit(*p)
+           && *p != '_')
         {
-            return Buffer;
+            break;
         }
-        *p = *pMailAlias;
-        p++;
-        pMailAlias++;
+        *q++ = *p++;
         nLeft--;
     }
-    *p = '\0';
+    *q = '\0';
 
-    *pnValidMailAlias = p - Buffer;
+    *pnValidMailAlias = q - Buffer;
     *pbValidMailAlias = true;
     return Buffer;
 }
