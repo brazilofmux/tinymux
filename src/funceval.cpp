@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.78 2001-12-09 08:47:56 sdennis Exp $
+// $Id: funceval.cpp,v 1.79 2001-12-29 18:31:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2128,33 +2128,49 @@ FUNCTION(fun_ports)
  */
 FUNCTION(fun_mix)
 {
-    dbref aowner, thing;
-    int aflags, anum;
-    ATTR *ap;
-    char *atext, *os[2], *oldp, *str, *cp1, *cp2, *atextbuf, sep;
+    char *atext, *os[2], *str, *cp1, *cp2, *atextbuf, sep;
 
     varargs_preamble(4);
-    oldp = *bufc;
+    char *oldp = *bufc;
 
     // Get the attribute, check the permissions.
     //
-    if (parse_attrib(player, fargs[0], &thing, &anum)) {
-        if ((anum == NOTHING) || !Good_obj(thing))
+    dbref thing;
+    ATTR  *ap;
+    int   anum;
+    if (parse_attrib(player, fargs[0], &thing, &anum))
+    {
+        if (  anum == NOTHING
+           || !Good_obj(thing))
+        {
             ap = NULL;
+        }
         else
+        {
             ap = atr_num(anum);
-    } else {
+        }
+    }
+    else
+    {
         thing = player;
         ap = atr_str(fargs[0]);
     }
 
-    if (!ap) {
+    if (!ap)
+    {
         return;
     }
+
+    dbref aowner;
+    int aflags;
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext) {
+    if (!atext)
+    {
         return;
-    } else if (!*atext || !See_attr(player, thing, ap, aowner, aflags)) {
+    }
+    else if (  !*atext
+            || !See_attr(player, thing, ap, aowner, aflags))
+    {
         free_lbuf(atext);
         return;
     }
@@ -2164,21 +2180,28 @@ FUNCTION(fun_mix)
     cp1 = trim_space_sep(fargs[1], sep);
     cp2 = trim_space_sep(fargs[2], sep);
 
-    if (countwords(cp1, sep) != countwords(cp2, sep)) {
+    if (countwords(cp1, sep) != countwords(cp2, sep))
+    {
         free_lbuf(atext);
         safe_str("#-1 LISTS MUST BE OF EQUAL SIZE", buff, bufc);
         return;
     }
     atextbuf = alloc_lbuf("fun_mix");
 
-    while (cp1 && cp2) {
+    while (  cp1
+          && cp2
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+    {
         if (*bufc != oldp)
+        {
             safe_chr(sep, buff, bufc);
+        }
         os[0] = split_token(&cp1, sep);
         os[1] = split_token(&cp2, sep);
         strcpy(atextbuf, atext);
         str = atextbuf;
-        TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(os[0]), 2);
+        TinyExec(buff, bufc, 0, player, cause,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(os[0]), 2);
     }
     free_lbuf(atext);
     free_lbuf(atextbuf);
