@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.19 2001-03-31 17:36:14 sdennis Exp $
+// $Id: look.cpp,v 1.20 2001-06-05 02:08:56 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -1020,36 +1020,61 @@ void look_in(dbref player, dbref loc, int key)
     
     is_terse = (key & LK_OBEYTERSE) ? Terse(player) : 0;
     
-    /*
-    * Only makes sense for things that can hear 
-    */
-    
+    // Only makes sense for things that can hear.
+    //
     if (!Hearer(player))
+    {
         return;
+    }
     
-    /* If he needs the VMRL URL, send it: */
+    // If he needs the VMRL URL, send it:
+    //
     if (key & LK_SHOWVRML)
+    {
         show_vrml_url(player, loc);
+    }
     
-        /*
-        * tell him the name, and the number if he can link to it 
-    */
-    
-    buff = unparse_object(player, loc, 1);
-    notify(player, buff);
-    free_lbuf(buff);
+    // If the @nameformat (by Marlek) if it's present, otherwise, use the the
+    // name and if the player can link to it, the dbref as well.
+    //
+    dbref aowner;
+    int aflags;
+    char *NameFormatBuffer = atr_pget(loc, A_NAMEFORMAT, &aowner, &aflags);
+    char *NameFormat = NameFormatBuffer;
+
+    if (*NameFormat)
+    {
+        char *FormatOutput = alloc_lbuf("look_name.FO");
+        char *tPtr = FormatOutput;
+
+        TinyExec(FormatOutput, &tPtr, 0, loc, player,
+                EV_FCHECK | EV_EVAL | EV_TOP,
+                &NameFormat, 0, 0);
+
+        notify(player, FormatOutput);
+
+        free_lbuf(FormatOutput);
+    }
+    else
+    {
+        // Okay, no @NameFormat.  Show the normal name.
+        //
+        buff = unparse_object(player, loc, 1);
+        notify(player, buff);
+        free_lbuf(buff);
+    }
+    free_lbuf(NameFormatBuffer);
     
     
     if (!Good_obj(loc))
-    return; /*
-            * If we went to NOTHING et al,  skip the * * 
-            * 
-            * * rest 
-    */
-    
-    /*
-    * tell him the description 
-    */
+    {
+        // If we went to NOTHING et all, then skip the rest.
+        //
+        return;
+    }
+
+    // Tell him the description.
+    //
     
     showkey = 0;
     if (loc == Location(player))
@@ -1058,16 +1083,18 @@ void look_in(dbref player, dbref loc, int key)
         showkey |= LK_OBEYTERSE;
     show_desc(player, loc, showkey);
     
-    /*
-    * tell him the appropriate messages if he has the key 
-    */
-    
-    if (Typeof(loc) == TYPE_ROOM) {
-        if (could_doit(player, loc, A_LOCK)) {
+    // Tell him the appropriate messages if he has the key.
+    //
+    if (Typeof(loc) == TYPE_ROOM)
+    {
+        if (could_doit(player, loc, A_LOCK))
+        {
             pattr = A_SUCC;
             oattr = A_OSUCC;
             aattr = A_ASUCC;
-        } else {
+        }
+        else
+        {
             pattr = A_FAIL;
             oattr = A_OFAIL;
             aattr = A_AFAIL;
@@ -1077,12 +1104,13 @@ void look_in(dbref player, dbref loc, int key)
         did_it(player, loc, pattr, NULL, oattr, NULL,
             aattr, (char **)NULL, 0);
     }
-    /*
-    * tell him the attributes, contents and exits 
-    */
-    
+
+    // Tell him the attributes, contents and exits.
+    //
     if ((key & LK_SHOWATTR) && !mudconf.quiet_look && !is_terse)
+    {
         look_atrs(player, loc, 0);
+    }
     if (!is_terse || mudconf.terse_contents)
     {
 #ifdef WOD_REALMS
@@ -1099,7 +1127,9 @@ void look_in(dbref player, dbref loc, int key)
 #endif
     }
     if ((key & LK_SHOWEXIT) && (!is_terse || mudconf.terse_exits))
+    {
         look_exits(player, loc, "Obvious exits:");
+    }
 }
 
 void do_look(dbref player, dbref cause, int key, char *name)
