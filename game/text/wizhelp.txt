@@ -558,7 +558,7 @@
   @disable commands.  The following parameters are displayed.
 
     building      - Indicates whether or not commands that alter the
-                    stricture of the database are allowed.
+                    structure of the database are allowed.
     checkpointing - Indicates whether or not the database is to be
                     periodically written to disk.
     cleaning      - Indicates whether or not the database is to be
