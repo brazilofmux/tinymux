@@ -6627,17 +6627,20 @@ We would like to thank the following people:
  
 & TABLE()
 
-  table(<list>,<field width>,<line length>,<delimiter>,<output separator>) 
+  table(<list>,<field width>,<line length>,<delimiter>,
+        <output separator>,<padding>)
 
   This function returns the elements of <list> in a tabular format.
   All other parameters are optional.
-  <field width> specifies how wide each table entry is allowed to be.
-  It defaults to 10 characters
-  <line length> is how wide a table row can be. Default is 78 chars.
-  <delimiter> is the delimiter used in <list>. Default is white space.
-  <output separator> is a single character to be used between entries
-  in the table. Default is a single space.
- 
+  - <field width> specifies how wide each table entry is allowed to be.
+    Default: 10 characters.
+  - <line length> is how wide a table row can be. Default: 78 characters.
+  - <delimiter> is the delimiter used in <list>. Default: White space.
+  - <output separator> is a single character to be used between entries
+    in the table. Default: White space.
+  - <padding> is a string which will be repeated to fill in space between
+    the end of a table entry and the next column. Default: White space.
+
   Examples:
   > think table(a b areallylongone d)
   a          b          areallylon d
@@ -6645,7 +6648,13 @@ We would like to thank the following people:
   > think table(the quick brown fox,10,25, ,|)
   the       |quick
   brown     |fox
-    
+
+  > think table(foo bar baz,101,25,0,|,.\,)
+  foo.,.,.,.|bar.,.,.,.
+  baz.,.,.,.
+
+  See also: columns()
+
 & FOREACH()
 
   foreach([<object>/]<attribute>,<string>[,<begin>, <end>])
@@ -8594,7 +8603,7 @@ We would like to thank the following people:
   Note: anything else specified for <trim style> will trim both sides.
  
   Example:
-    > say trim(;;;Wacka;;;,;)
+    > say trim(;;;Wacka;;;,,;)
     You say "Wacka"
     > say trim(%b%b%b Polly Parrot %b%b%b%b,,r)
     You say "    Polly Parrot"
