@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.76 2002-05-04 03:03:19 sdennis Exp $
+// $Id: stringutil.cpp,v 1.77 2002-05-24 05:30:01 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -90,7 +90,7 @@ const char Tiny_IsDigit[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-char Tiny_IsAlpha[256] =
+const char Tiny_IsAlpha[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //

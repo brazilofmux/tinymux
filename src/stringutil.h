@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.38 2002-04-13 21:27:39 sdennis Exp $
+// $Id: stringutil.h,v 1.39 2002-05-24 05:30:01 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -20,7 +20,7 @@
 extern const char Tiny_IsASCII[256];
 extern const char Tiny_IsPrint[256];
 extern const char Tiny_IsDigit[256];
-extern char Tiny_IsAlpha[256];
+extern const char Tiny_IsAlpha[256];
 extern const char Tiny_IsAlphaNumeric[256];
 extern const char Tiny_IsUpper[256];
 extern const char Tiny_IsLower[256];
