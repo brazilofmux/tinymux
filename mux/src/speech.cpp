@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.11 2003-03-17 15:35:15 jake Exp $
+// $Id: speech.cpp,v 1.12 2004-03-15 18:02:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -898,7 +898,7 @@ void do_page
         }
         safe_tprintf_str(omessage, &omp, "%s pages: %s", Moniker(executor),
             pMessage);
-        safe_tprintf_str(imessage, &imp, "You paged %s with '%s'.",
+        safe_tprintf_str(imessage, &imp, "You paged %s with '%s'",
             aFriendly, pMessage);
         break;
     }
