@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.22 2004-06-01 01:08:59 sdennis Exp $
+// $Id: cque.cpp,v 1.23 2004-06-05 05:32:10 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1027,103 +1027,6 @@ void do_sql
 )
 {
     return;
-#if 0
-    CLinearTimeAbsolute ltaWhen;
-    CLinearTimeDelta    ltd;
-
-    // If arg1 is all numeric, do simple (non-sem) timed wait.
-    //
-    if (is_rational(event))
-    {
-        if (key & WAIT_UNTIL)
-        {
-            ltaWhen.SetSecondsString(event);
-        }
-        else
-        {
-            ltaWhen.GetUTC();
-            ltd.SetSecondsString(event);
-            ltaWhen += ltd;
-        }
-        wait_que(executor, caller, enactor, true, ltaWhen, NOTHING, 0, cmd,
-            cargs, ncargs, mudstate.global_regs);
-        return;
-    }
-
-    // Semaphore wait with optional timeout.
-    //
-    char *what = parse_to(&event, '/', 0);
-    init_match(executor, what, NOTYPE);
-    match_everything(0);
-
-    dbref thing = noisy_match_result();
-    if (!Good_obj(thing))
-    {
-        return;
-    }
-    else if (!Controls(executor, thing) && !Link_ok(thing))
-    {
-        notify(executor, NOPERM_MESSAGE);
-    }
-    else
-    {
-        // Get timeout, default 0.
-        //
-        int attr = A_SEMAPHORE;
-        bool bTimed = false;
-        if (event && *event)
-        {
-            if (is_rational(event))
-            {
-                if (key & WAIT_UNTIL)
-                {
-                    ltaWhen.SetSecondsString(event);
-                }
-                else
-                {
-                    ltaWhen.GetUTC();
-                    ltd.SetSecondsString(event);
-                    ltaWhen += ltd;
-                }
-                bTimed = true;
-            }
-            else
-            {
-                ATTR *ap = atr_str(event);
-                if (!ap)
-                {
-                    attr = mkattr(executor, event);
-                    if (attr <= 0)
-                    {
-                        notify_quiet(executor, "Invalid attribute.");
-                        return;
-                    }
-                    ap = atr_num(attr);
-                }
-                else
-                {
-                    attr = ap->number;
-                }
-                if (!bCanSetAttr(executor, thing, ap))
-                {
-                    notify_quiet(executor, NOPERM_MESSAGE);
-                    return;
-                }
-            }
-        }
-
-        int num = add_to(thing, 1, attr);
-        if (num <= 0)
-        {
-            // Thing over-notified, run the command immediately.
-            //
-            thing = NOTHING;
-            bTimed = false;
-        }
-        wait_que(executor, caller, enactor, bTimed, ltaWhen, thing, attr,
-            cmd, cargs, ncargs, mudstate.global_regs);
-    }
-#endif
 }
 
 CLinearTimeAbsolute Show_lsaNow;
