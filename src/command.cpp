@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.67 2002-02-13 19:16:34 sdennis Exp $
+// $Id: command.cpp,v 1.68 2002-02-25 19:53:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -461,12 +461,12 @@ NAMETAB wall_sw[] =
 
 NAMETAB warp_sw[] =
 {
-    {(char *)"check",   1,  CA_WIZARD,  TWARP_CLEAN|SW_MULTIPLE},
-    {(char *)"dump",    1,  CA_WIZARD,  TWARP_DUMP|SW_MULTIPLE},
-    {(char *)"idle",    1,  CA_WIZARD,  TWARP_IDLE|SW_MULTIPLE},
-    {(char *)"queue",   1,  CA_WIZARD,  TWARP_QUEUE|SW_MULTIPLE},
-    {(char *)"events",  1,  CA_WIZARD,  TWARP_EVENTS|SW_MULTIPLE},
-    { NULL,         0,  0,      0}
+    {"check",   1,  CA_WIZARD,  TWARP_CLEAN|SW_MULTIPLE},
+    {"dump",    1,  CA_WIZARD,  TWARP_DUMP|SW_MULTIPLE},
+    {"idle",    1,  CA_WIZARD,  TWARP_IDLE|SW_MULTIPLE},
+    {"queue",   1,  CA_WIZARD,  TWARP_QUEUE|SW_MULTIPLE},
+    {"events",  1,  CA_WIZARD,  TWARP_EVENTS|SW_MULTIPLE},
+    { NULL,     0,  0,          0}
 };
 
 
