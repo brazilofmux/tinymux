@@ -434,7 +434,7 @@
                       will clear the hook from being applied.
          /list      - This lists the current commands/attributes with hooks.
 
-{ help @hook2 for examples}
+{ 'wizhelp @hook2' for examples}
 
 & @HOOK2
 @HOOK (continued)
