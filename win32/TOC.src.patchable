@@ -31,7 +31,6 @@ readme.txt
 SGP
 src/alloc.cpp
 src/alloc.h
-src/analyse.pre
 src/ansi.h
 src/attrcache.cpp
 src/attrcache.h
@@ -41,8 +40,6 @@ src/boolexp.cpp
 src/bsd.cpp
 src/command.cpp
 src/command.h
-src/complib.cpp
-src/compresstab.h.dumb
 src/comsys.cpp
 src/comsys.h
 src/conf.cpp
@@ -107,16 +104,12 @@ src/netmux.dsw
 src/object.cpp
 src/pcre.cpp
 src/pcre.h
-src/phase1.awk
-src/phase2.awk
 src/player.cpp
 src/player_c.cpp
 src/powers.cpp
 src/powers.h
 src/predicates.cpp
 src/quota.cpp
-src/radix.cpp
-src/radix.h
 src/rob.cpp
 src/set.cpp
 src/slave.cpp

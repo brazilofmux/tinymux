@@ -18,3 +18,10 @@ game/startmuxold.bat
 game/data/tinymux.db
 src/regexp.cpp
 src/regexp.h
+src/radix.h
+src/radix.cpp
+src/complib.cpp
+src/compresstab.h
+src/macro.h
+src/phase1.awk
+src/phase2.awk

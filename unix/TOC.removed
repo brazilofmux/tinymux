@@ -6,3 +6,5 @@ src/complib.cpp
 src/c-radix.cpp
 src/radix.cpp
 src/radix.h
+src/phase1.awk
+src/phase2.awk

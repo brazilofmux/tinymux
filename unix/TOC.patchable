@@ -96,8 +96,6 @@ src/netcommon.cpp
 src/object.cpp
 src/pcre.cpp
 src/pcre.h
-src/phase1.awk
-src/phase2.awk
 src/player.cpp
 src/player_c.cpp
 src/portconc.cpp
