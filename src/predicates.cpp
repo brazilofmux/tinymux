@@ -1,5 +1,6 @@
 // predicates.cpp
-// $Id: predicates.cpp,v 1.19 2000-09-05 20:28:54 sdennis Exp $
+//
+// $Id: predicates.cpp,v 1.20 2000-09-17 21:31:20 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -17,7 +18,6 @@
 #include "attrs.h"
 #include "powers.h"
 #include "ansi.h"
-#include "patchlevel.h"
 #include "htab.h"
 
 extern int FDECL(do_command, (DESC *, char *, int));
