@@ -12428,8 +12428,8 @@ XOR()
 
   FUNCTION: xor(<boolean1>[,<booleanN>]...)
 
-  Takes one or more booleans, and returns 1 if an odd number of them are
-  equivalent to true(1).
+  Takes one or more BOOLEAN-Z arguments, and returns TRUE(1) if an odd number
+  of them are equivalent to TRUE.
 
   Related Topics: BOOLEAN VALUES, and(), not(), or(), t().
 
