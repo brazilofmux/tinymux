@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.8 2001-06-09 14:46:25 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.9 2001-06-14 08:34:13 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -716,86 +716,21 @@ void whisper_pose(dbref player, dbref target, char *message)
     free_lbuf(buff);
 }
 
-void do_pemit_list(dbref player, char *list, const char *message)
-{
-    /*
-     * Send a message to a list of dbrefs. To avoid repeated generation * 
-     * of the NOSPOOF string, we set it up the first time we
-     * encounter something Nospoof, and then check for it
-     * thereafter. The list is destructively modified. 
-     */
-
-    char *p;
-    dbref who;
-    int ok_to_do;
-
-    if (!message || !*message || !list || !*list)
-        return;
-
-    TINY_STRTOK_STATE tts;
-    Tiny_StrTokString(&tts, list);
-    Tiny_StrTokControl(&tts, " ");
-    for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
-    {
-        ok_to_do = 0;
-        init_match(player, p, TYPE_PLAYER);
-        match_everything(0);
-        who = match_result();
-
-        if (!ok_to_do &&
-            (Long_Fingers(player) || nearby(player, who) || 
-             Controls(player, who))) {
-            ok_to_do = 1;
-        }
-        if (!ok_to_do && (isPlayer(who))
-            && mudconf.pemit_players) {
-            if (!page_check(player, who))
-                return;
-            ok_to_do = 1;
-        }
-        switch (who) {
-        case NOTHING:
-            notify(player, "Emit to whom?");
-            break;
-        case AMBIGUOUS:
-            notify(player, "I don't know who you mean!");
-            break;
-        default:
-            if (!ok_to_do) {
-                notify(player, "You cannot do that.");
-                break;
-            }
-            if (Good_obj(who))
-                notify_with_cause(who, player, message);
-        }
-    }
-}
-
-
-void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message)
+void do_pemit_single
+(
+    dbref player,
+    int key,
+    BOOL bDoContents,
+    int pemit_flags,
+    char *recipient,
+    int chPoseType,
+    char *message
+)
 {
     dbref target, loc;
     char *buf2, *bp;
-    int do_contents, ok_to_do, depth, pemit_flags;
-
-    if (key & PEMIT_CONTENTS)
-    {
-        do_contents = 1;
-        key &= ~PEMIT_CONTENTS;
-    }
-    else
-    {
-        do_contents = 0;
-    }
-    if (key & PEMIT_LIST)
-    {
-        do_pemit_list(player, recipient, message);
-        return;
-    }
-    pemit_flags = key & (PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML);
-    key &= ~(PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML);
-    ok_to_do = 0;
-
+    int depth;
+    BOOL ok_to_do = FALSE;
 
     switch (key)
     {
@@ -805,8 +740,10 @@ void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message
     case PEMIT_FEMIT:
         target = match_controlled(player, recipient);
         if (target == NOTHING)
+        {
             return;
-        ok_to_do = 1;
+        }
+        ok_to_do = TRUE;
         break;
 
     default:
@@ -834,6 +771,7 @@ void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message
 
         default:
             notify(player, "Sorry.");
+            break;
         }
         break;
 
@@ -842,29 +780,38 @@ void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message
         break;
 
     default:
-        /*
-         * Enforce locality constraints 
-         */
 
-        if (!ok_to_do &&
-            (nearby(player, target) || Long_Fingers(player)
-             || Controls(player, target)))
+        // Enforce locality constraints.
+        //
+        if (  !ok_to_do
+           && (  nearby(player, target)
+              || Long_Fingers(player)
+              || Controls(player, target)))
         {
-            ok_to_do = 1;
+            ok_to_do = TRUE;
         }
-        if (!ok_to_do && (key == PEMIT_PEMIT) &&
-         (Typeof(target) == TYPE_PLAYER) && mudconf.pemit_players) {
+        if (  !ok_to_do
+           && key == PEMIT_PEMIT
+           && isPlayer(target)
+           && mudconf.pemit_players)
+        {
             if (!page_check(player, target))
+            {
                 return;
-            ok_to_do = 1;
+            }
+            ok_to_do = TRUE;
         }
-        if (!ok_to_do &&
-            (!mudconf.pemit_any || (key != PEMIT_PEMIT))) {
+        if (  !ok_to_do
+           && (  !mudconf.pemit_any
+              || key != PEMIT_PEMIT))
+        {
             notify(player, "You are too far away to do that.");
             return;
         }
-        if (do_contents && !Controls(player, target) &&
-            !mudconf.pemit_any) {
+        if (  bDoContents
+           && !Controls(player, target)
+           && !mudconf.pemit_any)
+        {
             notify(player, "Permission denied.");
             return;
         }
@@ -873,7 +820,7 @@ void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message
         switch (key)
         {
         case PEMIT_PEMIT:
-            if (do_contents)
+            if (bDoContents)
             {
                 if (Has_contents(target))
                 {
@@ -903,10 +850,9 @@ void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message
                 page_return(player, target, "Away", A_AWAY, tprintf("Sorry, %s is not connected.", Name(target)));
                 return;
             }
-            switch (*message)
+            switch (chPoseType)
             {
             case ':':
-                message[0] = ' ';
                 whisper_pose(player, target, message);
                 break;
 
@@ -969,7 +915,9 @@ void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message
                 {
                     loc = Location(loc);
                     if ((loc == NOTHING) || (loc == Location(loc)))
+                    {
                         return;
+                    }
                 }
                 if (Typeof(loc) == TYPE_ROOM)
                 {
@@ -978,5 +926,78 @@ void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message
             }
             break;
         }
+    }
+}
+
+void do_pemit_list
+(
+    dbref player,
+    int key,
+    BOOL bDoContents,
+    int pemit_flags,
+    char *list,
+    int chPoseType,
+    char *message
+)
+{
+    // Send a message to a list of dbrefs. The list is destructively
+    // modified.
+    //
+    if (  message[0] == '\0'
+       || list[0] == '\0')
+    {
+        return;
+    }
+
+    char *p;
+    TINY_STRTOK_STATE tts;
+    Tiny_StrTokString(&tts, list);
+    Tiny_StrTokControl(&tts, " ");
+    for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
+    {
+        do_pemit_single(player, key, bDoContents, pemit_flags, p, chPoseType,
+            message);
+    }
+}
+
+
+void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message)
+{
+    // Decode PEMIT_CONENTS and PEMIT_LIST and remove from key.
+    //
+    BOOL bDoContents = FALSE;
+    if (key & PEMIT_CONTENTS)
+    {
+        bDoContents = TRUE;
+    }
+    BOOL bDoList = FALSE;
+    if (key & PEMIT_LIST)
+    {
+        bDoList = TRUE;
+    }
+    key &= ~(PEMIT_CONTENTS |  PEMIT_LIST);
+
+
+    // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML and remove from key.
+    //
+    int mask = PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML;
+    int pemit_flags = key & mask;
+    key &= ~mask;
+
+    int chPoseType = *message;
+    if (key == PEMIT_WHISPER && chPoseType == ':')
+    {
+        message[0] = ' ';
+    }
+
+    if (bDoList)
+    {
+        do_pemit_list(player, key, bDoContents, pemit_flags, recipient,
+            chPoseType, message);
+    }
+    else
+    {
+        do_pemit_single(player, key, bDoContents, pemit_flags, recipient,
+            chPoseType, message);
     }
 }
