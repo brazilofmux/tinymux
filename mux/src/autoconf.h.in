@@ -68,6 +68,10 @@
 #undef HAVE_SYS_RUSAGE_H
 /* Define if Big Endian */
 #undef WORDS_BIGENDIAN
+/* Define if Little Endian */
+#undef WORDS_LITTLEENDIAN
+/* Define if Unknown Endian */
+#undef WORDS_UNKNOWN
 /* Define if const is broken */
 #undef const
 /* sizeof(short) */

@@ -136,10 +136,12 @@
 #include <fpu_control.h>
 #endif
 
-#ifdef WORDS_BIGENDIAN
+#if defined(WORDS_BIGENDIAN)
 #define IEEE_MC68k
-#else
+#elif defined(WORDS_LITTLEENDIAN)
 #define IEEE_8087
+#else
+#error Must be either Big or Little Endian.
 #endif
 
 #define Long INT32

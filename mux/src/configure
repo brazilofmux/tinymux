@@ -6113,19 +6113,20 @@ echo "$as_me:$LINENO: result: $ac_cv_c_bigendian" >&5
 echo "${ECHO_T}$ac_cv_c_bigendian" >&6
 case $ac_cv_c_bigendian in
   yes)
-
-cat >>confdefs.h <<\_ACEOF
+    cat >>confdefs.h <<\_ACEOF
 #define WORDS_BIGENDIAN 1
 _ACEOF
  ;;
   no)
-     ;;
+    cat >>confdefs.h <<\_ACEOF
+#define WORDS_LITTLEENDIAN 1
+_ACEOF
+ ;;
   *)
-    { { echo "$as_me:$LINENO: error: unknown endianess
-presetting ac_cv_c_bigendian=no (or yes) will help" >&5
-echo "$as_me: error: unknown endianess
-presetting ac_cv_c_bigendian=no (or yes) will help" >&2;}
-   { (exit 1); exit 1; }; } ;;
+    cat >>confdefs.h <<\_ACEOF
+#define WORDS_UNKNOWN 1
+_ACEOF
+ ;;
 esac
 
 echo "$as_me:$LINENO: checking for $CC option to accept ANSI C" >&5
