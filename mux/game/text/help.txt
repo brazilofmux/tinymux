@@ -3722,7 +3722,7 @@ ACCENT() (continued)
              letter
   circumflex carat above         ^          A,E,I,O,U,a,e,i,o,u
              letter
-  umlaut     Two dots above      :          A,E,I,O,U,,a,e,i,o,u,y
+  umlaut     Two dots above      :          A,E,I,O,U,,a,e,i,o,u
   diaeresis  letter
   ring       Small circle above  o          A,a
              letter
