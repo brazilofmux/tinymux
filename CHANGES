@@ -416,7 +416,7 @@ Performance Enhancements:
  -- If a Guest<n> player was renamed, the contents of room #0 would be
     cleared leaving @dbck to clean it up.
  -- Tweak the article_rule configuration options.  Reported by Alierak.
- -- A look at a player could show their description without showing their
+ -- A look at a DARK player could show their description without showing their
     name.  Patch by Sean Hunter.
 
 
