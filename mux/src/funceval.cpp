@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.57 2002-09-26 01:54:10 sdennis Exp $
+// $Id: funceval.cpp,v 1.58 2002-10-01 02:34:18 jake Exp $
 //
 
 #include "copyright.h"
@@ -2232,25 +2232,39 @@ FUNCTION(fun_ports)
 }
 
 /* ---------------------------------------------------------------------------
- * fun_mix: Like map, but operates on two lists simultaneously, passing
- * the elements as %0 as %1.
- * Borrowed from PennMUSH 1.50
+ * fun_mix: Like map, but operates on up to ten lists simultaneously, passing
+ * the elements as %0 - %10.
+ * Borrowed from PennMUSH 1.50, upgraded by RhostMUSH.
  */
 FUNCTION(fun_mix)
 {
-    char *atext, *os[2], *str, *cp1, *cp2, *atextbuf, sep;
-
-    varargs_preamble(4);
-    char *oldp = *bufc;
-
-    // Get the attribute, check the permissions.
+    // Check to see if we have an appropriate number of arguments.
+    // If there are more than three arguments, the last argument is
+    // ALWAYS assumed to be a delimiter.
     //
-    dbref thing;
-    ATTR  *ap;
-    int   anum;
-    if (parse_attrib(executor, fargs[0], &thing, &anum))
+    char sep;
+    int lastn;
+
+    if (nfargs < 4)
     {
-        if (  anum == NOTHING
+        sep = ' ';
+        lastn = nfargs - 1;
+    }
+    else 
+    {
+        varargs_preamble(nfargs);
+        lastn = nfargs - 2;
+    }
+
+    // Get the attribute, check the permissions. 
+    // 
+    dbref thing;
+    int anum;
+    ATTR *ap;
+
+    if (parse_attrib(executor, fargs[0], &thing, &anum)) 
+    {
+        if (  (anum == NOTHING) 
            || !Good_obj(thing))
         {
             ap = NULL;
@@ -2270,48 +2284,57 @@ FUNCTION(fun_mix)
     {
         return;
     }
-
     dbref aowner;
     int aflags;
-    atext = atr_pget(thing, ap->number, &aowner, &aflags);
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
     if (!atext)
     {
         return;
     }
-    else if (  !*atext
-            || !See_attr(executor, thing, ap))
+    else if (  !*atext 
+            || !See_attr(executor, thing, ap)) 
     {
         free_lbuf(atext);
         return;
     }
 
-    // process the two lists, one element at a time.
+    char *cp[10];
+    for (int i = 0; i < lastn; i++)
+    {
+        cp[i] = NULL;
+    }
+
+    // Process the lists, one element at a time.
     //
-    cp1 = trim_space_sep(fargs[1], sep);
-    cp2 = trim_space_sep(fargs[2], sep);
-
-    if (countwords(cp1, sep) != countwords(cp2, sep))
+    for (i = 1; i <= lastn; i++) 
     {
-        free_lbuf(atext);
-        safe_str("#-1 LISTS MUST BE OF EQUAL SIZE", buff, bufc);
-        return;
+        cp[i-1] = trim_space_sep(fargs[i], sep);
     }
-    atextbuf = alloc_lbuf("fun_mix");
-
-    while (  cp1
-          && cp2
-          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+    int twords;
+    int nwords = countwords(cp[1], sep);
+    for (i = 2; i<= lastn; i++) 
+    {
+        twords = countwords(cp[i-1], sep);
+        if (twords > nwords)
+           nwords = twords;
+    }
+    char *oldp = *bufc;
+    char *atextbuf = alloc_lbuf("fun_mix");
+    char *str, *os[10];
+    for (int wc = 0; wc < nwords; wc++) 
     {
         if (*bufc != oldp)
         {
             safe_chr(sep, buff, bufc);
         }
-        os[0] = split_token(&cp1, sep);
-        os[1] = split_token(&cp2, sep);
+        for (i = 1; i <= lastn; i++) 
+        {
+            os[i - 1] = split_token(&cp[i - 1], sep);
+        }
         strcpy(atextbuf, atext);
         str = atextbuf;
         TinyExec(buff, bufc, thing, executor, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(os[0]), 2);
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(os[0]), lastn);
     }
     free_lbuf(atext);
     free_lbuf(atextbuf);
