@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.8 2001-03-31 02:22:26 sdennis Exp $ 
+// $Id: player.cpp,v 1.9 2001-08-27 06:29:52 sdennis Exp $ 
 ///
 
 #include "copyright.h"
@@ -204,12 +204,12 @@ void record_login(dbref player, int isgood, char *ldate, char *lhost, char *luse
 
 int check_pass(dbref player, const char *password)
 {
-    dbref aowner;
     int aflags;
-    char *target;
-
-    target = atr_get(player, A_PASS, &aowner, &aflags);
-    if (*target && strcmp(target, password) && strcmp(crypt(password, "XX"), target))
+    dbref aowner;
+    char *target = atr_get(player, A_PASS, &aowner, &aflags);
+    if (  *target
+       && strcmp(target, password)
+       && strcmp(crypt(password, "XX"), target))
     {
         free_lbuf(target);
         return 0;
@@ -217,14 +217,15 @@ int check_pass(dbref player, const char *password)
     free_lbuf(target);
 
 
-    /*
-     * This is needed to prevent entering the raw encrypted password from
-     * * * working.  Do it better if you like, but it's needed. 
-     */
-
-    if ((strlen(password) == 13) && (password[0] == 'X') && (password[1] == 'X'))
+    // This is needed to prevent entering the raw encrypted password from
+    // working.  Do it better if you like, but it's needed.
+    //
+    if (  strlen(password) == 13
+       && password[0] == 'X'
+       && password[1] == 'X')
+    {
         return 0;
-
+    }
     return 1;
 }
 
@@ -235,14 +236,12 @@ int check_pass(dbref player, const char *password)
 
 dbref connect_player(char *name, char *password, char *host, char *username, char *ipaddr)
 {
-    dbref player, aowner;
-    int aflags;
-
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
     char *time_str = ltaNow.ReturnDateString();
 
-    if ((player = lookup_player(NOTHING, name, 0)) == NOTHING)
+    dbref player = lookup_player(NOTHING, name, 0);
+    if (player == NOTHING)
     {
         return NOTHING;
     }
@@ -254,6 +253,8 @@ dbref connect_player(char *name, char *password, char *host, char *username, cha
 
     // Compare to last connect see if player gets salary.
     //
+    int aflags;
+    dbref aowner;
     char *player_last = atr_get(player, A_LAST, &aowner, &aflags);
     if (strncmp(player_last, time_str, 10) != 0)
     {
@@ -280,37 +281,39 @@ dbref connect_player(char *name, char *password, char *host, char *username, cha
 
 dbref create_player(char *name, char *password, dbref creator, int isrobot, int isguest)
 {
-    dbref player;
-    char *pbuf;
-
-    /*
-     * Make sure the password is OK.  Name is checked in create_obj 
-     */
-
-    pbuf = trim_spaces(password);
+    // Make sure the password is OK.  Name is checked in create_obj.
+    //
+    char *pbuf = trim_spaces(password);
     if (!ok_password(pbuf, creator))
     {
         free_lbuf(pbuf);
         return NOTHING;
     }
-    /*
-     * If so, go create him 
-     */
 
-    player = create_obj(creator, TYPE_PLAYER, name, isrobot);
-    if (player == NOTHING) {
+    // If so, go create him.
+    //
+    dbref player = create_obj(creator, TYPE_PLAYER, name, isrobot);
+    if (player == NOTHING)
+    {
         free_lbuf(pbuf);
         return NOTHING;
     }
-    /*
-     * initialize everything 
-     */
-    if (isguest) {
+
+    // Initialize everything.
+    //
+    if (isguest)
+    {
         if (*mudconf.guests_channel)
+        {
             do_addcom(player, player, 0, "g", mudconf.guests_channel);
-    } else {
+        }
+    }
+    else
+    {
         if (*mudconf.public_channel)
+        {
             do_addcom(player, player, 0, "pub", mudconf.public_channel);
+        }
     }
 
     s_Pass(player, crypt(pbuf, "XX"));
