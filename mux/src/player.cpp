@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.5 2002-06-27 06:38:31 jake Exp $
+// $Id: player.cpp,v 1.6 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -665,7 +665,7 @@ void badname_list(dbref player, const char *prefix)
     // Construct an lbuf with all the names separated by spaces.
     //
     buff = bufp = alloc_lbuf("badname_list");
-    safe_str((char *)prefix, buff, &bufp);
+    safe_str(prefix, buff, &bufp);
     for (bp = mudstate.badname_head; bp; bp = bp->next) {
         safe_chr(' ', buff, &bufp);
         safe_str(bp->name, buff, &bufp);

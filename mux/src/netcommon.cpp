@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.12 2002-06-27 06:38:31 jake Exp $
+// $Id: netcommon.cpp,v 1.13 2002-06-27 09:06:47 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -306,7 +306,7 @@ void queue_write(DESC *d, const char *b, int n)
         if (tp == NULL)
         {
             STARTLOG(LOG_PROBLEMS, "QUE", "WRITE");
-            log_text((char *)"Flushing when output_head is null!");
+            log_text("Flushing when output_head is null!");
             ENDLOG;
         }
         else
@@ -1651,9 +1651,9 @@ static void failconn(const char *logcode, const char *logtype, const char *logre
         log_name(player);
     else
         log_text(user);
-    log_text((char *)" (");
-    log_text((char *)logreason);
-    log_text((char *)")");
+    log_text(" (");
+    log_text(logreason);
+    log_text(")");
     ENDLOG;
     fcache_dump(d, filecache);
     if (*motd_msg)

@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.3 2002-06-13 22:12:46 jake Exp $
+// $Id: rob.cpp,v 1.4 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -229,9 +229,9 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
     if (!could_doit(giver, thing, A_LGIVE))
     {
         sp = str = alloc_lbuf("do_give.gfail");
-        safe_str((char *)"You can't give ", str, &sp);
+        safe_str("You can't give ", str, &sp);
         safe_str(Name(thing), str, &sp);
-        safe_str((char *)" away.", str, &sp);
+        safe_str(" away.", str, &sp);
         *sp = '\0';
 
         did_it(giver, thing, A_GFAIL, str, A_OGFAIL, NULL, A_AGFAIL, (char **)NULL, 0);
@@ -242,7 +242,7 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
     {
         sp = str = alloc_lbuf("do_give.rfail");
         safe_str(Name(recipient), str, &sp);
-        safe_str((char *)" doesn't want ", str, &sp);
+        safe_str(" doesn't want ", str, &sp);
         safe_str(Name(thing), str, &sp);
         safe_chr('.', str, &sp);
         *sp = '\0';

@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.10 2002-06-27 07:46:29 jake Exp $
+// $Id: speech.cpp,v 1.11 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -259,7 +259,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         default:
             buf2 = alloc_lbuf("do_say.wizshout");
             bp = buf2;
-            safe_str((char *)" says, \"", buf2, &bp);
+            safe_str(" says, \"", buf2, &bp);
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
@@ -269,9 +269,9 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
         log_name(executor);
-        log_text((char *)" broadcasts: '");
+        log_text(" broadcasts: '");
         log_text(message);
-        log_text((char *)"'");
+        log_text("'");
         ENDLOG;
         break;
 
@@ -292,7 +292,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         default:
             buf2 = alloc_lbuf("do_say.adminshout");
             bp = buf2;
-            safe_str((char *)" says, \"", buf2, &bp);
+            safe_str(" says, \"", buf2, &bp);
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
@@ -944,7 +944,7 @@ void do_pemit_single
                     buf2 = alloc_lbuf("do_pemit.whisper.buzz");
                     bp = buf2;
                     safe_str(Name(player), buf2, &bp);
-                    safe_str((char *)" whispers something to ", buf2, &bp);
+                    safe_str(" whispers something to ", buf2, &bp);
                     safe_str(Name(target), buf2, &bp);
                     *bp = '\0';
                     notify_except2(loc, player, player, target, buf2);

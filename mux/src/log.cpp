@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.4 2002-06-27 06:38:31 jake Exp $
+// $Id: log.cpp,v 1.5 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -119,9 +119,9 @@ void log_perror(const char *primary, const char *secondary, const char *extra, c
     start_log(primary, secondary);
     if (extra && *extra)
     {
-        log_text((char *)"(");
-        log_text((char *)extra);
-        log_text((char *)") ");
+        log_text("(");
+        log_text(extra);
+        log_text(") ");
     }
 
     // <Failing_object text>: <strerror() text>
@@ -202,7 +202,7 @@ void log_name_and_loc(dbref player)
 {
     log_name(player);
     if ((mudconf.log_info & LOGOPT_LOC) && Has_location(player)) {
-        log_text((char *)" in ");
+        log_text(" in ");
         log_name(Location(player));
     }
     return;
@@ -238,7 +238,7 @@ void log_type_and_name(dbref thing)
     log_text(nbuf);
     if (Good_obj(thing))
         log_text(Name(thing));
-    log_text((char *)")");
+    log_text(")");
     return;
 }
 

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.36 2002-06-27 07:46:29 jake Exp $
+// $Id: functions.cpp,v 1.37 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -4843,7 +4843,7 @@ FUNCTION(fun_lock)
     if (bCanReadAttr(executor, it, attr, FALSE)) {
         pBoolExp = parse_boolexp(executor, tbuf, 1);
         free_lbuf(tbuf);
-        tbuf = (char *)unparse_boolexp_function(executor, pBoolExp);
+        tbuf = unparse_boolexp_function(executor, pBoolExp);
         free_boolexp(pBoolExp);
         safe_str(tbuf, buff, bufc);
     } else

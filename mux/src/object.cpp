@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.13 2002-06-27 07:46:29 jake Exp $
+// $Id: object.cpp,v 1.14 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -73,19 +73,19 @@ static void Log_pointer_err(dbref prior, dbref obj, dbref loc, dbref ref, const 
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG")
         log_type_and_name(obj);
     if (loc != NOTHING) {
-        log_text((char *)" in ");
+        log_text(" in ");
         log_type_and_name(loc);
     }
-    log_text((char *)": ");
+    log_text(": ");
     if (prior == NOTHING) {
-        log_text((char *)reftype);
+        log_text(reftype);
     } else {
-        log_text((char *)"Next pointer");
+        log_text("Next pointer");
     }
-    log_text((char *)" ");
+    log_text(" ");
     log_type_and_name(ref);
-    log_text((char *)" ");
-    log_text((char *)errtype);
+    log_text(" ");
+    log_text(errtype);
     ENDLOG
 }
 
@@ -94,18 +94,18 @@ static void Log_header_err(dbref obj, dbref loc, dbref val, int is_object, const
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG")
         log_type_and_name(obj);
     if (loc != NOTHING) {
-        log_text((char *)" in ");
+        log_text(" in ");
         log_type_and_name(loc);
     }
-    log_text((char *)": ");
-    log_text((char *)valtype);
-    log_text((char *)" ");
+    log_text(": ");
+    log_text(valtype);
+    log_text(" ");
     if (is_object)
         log_type_and_name(val);
     else
         log_number(val);
-    log_text((char *)" ");
-    log_text((char *)errtype);
+    log_text(" ");
+    log_text(errtype);
     ENDLOG
 }
 
@@ -114,11 +114,11 @@ static void Log_simple_err(dbref obj, dbref loc, const char *errtype)
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG")
         log_type_and_name(obj);
     if (loc != NOTHING) {
-        log_text((char *)" in ");
+        log_text(" in ");
         log_type_and_name(loc);
     }
-    log_text((char *)": ");
-    log_text((char *)errtype);
+    log_text(": ");
+    log_text(errtype);
     ENDLOG
 }
 
@@ -387,7 +387,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
     s_Owner(obj, (self_owned ? obj : owner));
     s_Pennies(obj, value);
     Unmark(obj);
-    pValidName = munge_space((char *)pValidName);
+    pValidName = munge_space(pValidName);
     s_Name(obj, pValidName);
     free_lbuf(pValidName);
     db[obj].cpu_time_used.Set100ns(0);

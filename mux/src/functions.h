@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.4 2002-06-27 06:38:31 jake Exp $
+// $Id: functions.h,v 1.5 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -44,7 +44,7 @@ if (s) { \
     if (s != '\r') { \
         safe_chr(s,b,p); \
     } else { \
-        safe_str((char *) "\r\n",b,p); \
+        safe_str("\r\n",b,p); \
     } \
 }
 

@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.10 2002-06-27 06:38:31 jake Exp $
+// $Id: look.cpp,v 1.11 2002-06-27 09:06:47 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -559,7 +559,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
 
                     if (buff != e)
                     {
-                        safe_str((char *)"  ", buff, &e);
+                        safe_str("  ", buff, &e);
                     }
 
                     for (s = Name(thing); *s && (*s != ';'); s++)
@@ -572,11 +572,11 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
                     if (Html(player))
                     {
                         /* XXX The exit name needs to be HTML escaped. */
-                        safe_str((char *) "<a xch_cmd=\"", buff, &e);
+                        safe_str("<a xch_cmd=\"", buff, &e);
                         safe_str(buff1, buff, &e);
-                        safe_str((char *) "\"> ", buff, &e);
+                        safe_str("\"> ", buff, &e);
                         html_escape(buff1, buff, &e);
-                        safe_str((char *) " </a>", buff, &e);
+                        safe_str(" </a>", buff, &e);
                     }
                     else
                     {
@@ -590,7 +590,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
 
     if (!(Transparent(loc)))
     {
-        safe_str((char *)"\r\n", buff, &e);
+        safe_str("\r\n", buff, &e);
         *e = 0;
         notify_html(player, buff);
     }
@@ -1291,7 +1291,7 @@ static void debug_examine(dbref player, dbref thing)
 
     buf = alloc_lbuf("debug_dexamine");
     cp = buf;
-    safe_str((char *)"Attr list: ", buf, &cp);
+    safe_str("Attr list: ", buf, &cp);
 
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
@@ -1308,7 +1308,7 @@ static void debug_examine(dbref player, dbref thing)
             {
                 // Valid attr.
                 //
-                safe_str((char *)attr->name, buf, &cp);
+                safe_str(attr->name, buf, &cp);
                 safe_chr(' ', buf, &cp);
             }
             else
@@ -1812,7 +1812,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
             {
                 safe_chr(*s, buff, &e);
             }
-            safe_str((char *)"  ", buff, &e);
+            safe_str("  ", buff, &e);
         }
         *e = 0;
         notify(executor, buff);
@@ -2049,29 +2049,29 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
 
         if (cancom)
         {
-            safe_str((char *)"commands ", buf, &bp);
+            safe_str("commands ", buf, &bp);
         }
         if (canhear)
         {
-            safe_str((char *)"messages ", buf, &bp);
+            safe_str("messages ", buf, &bp);
         }
         if (isplayer)
         {
-            safe_str((char *)"player ", buf, &bp);
+            safe_str("player ", buf, &bp);
         }
         if (ispuppet)
         {
-            safe_str((char *)"puppet(", buf, &bp);
+            safe_str("puppet(", buf, &bp);
             safe_str(Name(Owner(what)), buf, &bp);
-            safe_str((char *)") ", buf, &bp);
+            safe_str(") ", buf, &bp);
         }
         if (isconnected)
         {
-            safe_str((char *)"connected ", buf, &bp);
+            safe_str("connected ", buf, &bp);
         }
         if (is_parent)
         {
-            safe_str((char *)"parent ", buf, &bp);
+            safe_str("parent ", buf, &bp);
         }
         bp[-1] = '\0';
         if (!isExit(what))

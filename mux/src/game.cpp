@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.9 2002-06-27 06:38:31 jake Exp $
+// $Id: game.cpp,v 1.10 2002-06-27 09:06:47 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -72,18 +72,18 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int key)
 void report(void)
 {
     STARTLOG(LOG_BUGS, "BUG", "INFO");
-    log_text((char *)"Command: '");
+    log_text("Command: '");
     log_text(mudstate.debug_cmd);
-    log_text((char *)"'");
+    log_text("'");
     ENDLOG
     if (Good_obj(mudstate.curr_executor))
     {
         STARTLOG(LOG_BUGS, "BUG", "INFO")
-        log_text((char *)"Player: ");
+        log_text("Player: ");
         log_name_and_loc(mudstate.curr_executor);
         if ((mudstate.curr_enactor != mudstate.curr_executor) && Good_obj(mudstate.curr_enactor))
         {
-            log_text((char *)" Enactor: ");
+            log_text(" Enactor: ");
             log_name_and_loc(mudstate.curr_enactor);
         }
         ENDLOG
@@ -361,7 +361,7 @@ static char *add_prefix(dbref object, dbref player, int prefix, const char *msg,
     if (!*buf)
     {
         cp = buf;
-        safe_str((char *)dflt, buf, &cp);
+        safe_str(dflt, buf, &cp);
     }
     else
     {
@@ -378,9 +378,9 @@ static char *add_prefix(dbref object, dbref player, int prefix, const char *msg,
     }
     if (cp != buf)
     {
-        safe_str((char *)" ", buf, &cp);
+        safe_chr(' ', buf, &cp);
     }
-    safe_str((char *)msg, buf, &cp);
+    safe_str(msg, buf, &cp);
     *cp = '\0';
     return (buf);
 }
@@ -390,7 +390,7 @@ static char *dflt_from_msg(dbref sender, dbref sendloc)
     char *tp, *tbuff;
 
     tp = tbuff = alloc_lbuf("notify_check.fwdlist");
-    safe_str((char *)"From ", tbuff, &tp);
+    safe_str("From ", tbuff, &tp);
     if (Good_obj(sendloc))
         safe_str(Name(sendloc), tbuff, &tp);
     else
@@ -538,10 +538,10 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                     mudstate.curr_enactor);
                 safe_str(tbuff, msg_ns, &mp);
             }
-            safe_str((char *)"] ", msg_ns, &mp);
+            safe_str("] ", msg_ns, &mp);
             free_sbuf(tbuff);
         }
-        safe_str((char *)msg, msg_ns, &mp);
+        safe_str(msg, msg_ns, &mp);
         *mp = '\0';
     }
     else
@@ -941,18 +941,18 @@ static void report_timecheck
     {
         start_log("OBJ", "CPU");
         log_name(player);
-        log_text((char *) " checks object time use over ");
+        log_text(" checks object time use over ");
         log_number(ltdPeriod.ReturnSeconds());
-        log_text((char *) " seconds" ENDLINE);
+        log_text(" seconds" ENDLINE);
     }
     else
     {
         yes_log = 0;
         STARTLOG(LOG_ALWAYS, "WIZ", "TIMECHECK");
         log_name(player);
-        log_text((char *) " checks object time use over ");
+        log_text(" checks object time use over ");
         log_number(ltdPeriod.ReturnSeconds());
-        log_text((char *) " seconds");
+        log_text(" seconds");
         ENDLOG;
     }
 
@@ -1038,7 +1038,7 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
     {
         raw_broadcast(0, "GAME: Shutdown by %s", Name(Owner(executor)));
         STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN")
-        log_text((char *)"Shutdown by ");
+        log_text("Shutdown by ");
         log_name(executor);
         ENDLOG
     }
@@ -1046,12 +1046,12 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
     {
         raw_broadcast(0, "GAME: Fatal Error: %s", message);
         STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN")
-        log_text((char *)"Fatal error: ");
+        log_text("Fatal error: ");
         log_text(message);
         ENDLOG
     }
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN")
-    log_text((char *)"Shutdown status: ");
+    log_text("Shutdown status: ");
     log_text(message);
     ENDLOG
     fd = open(mudconf.status_file, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
@@ -1082,12 +1082,12 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
         SYNC;
         CLOSE;
         STARTLOG(LOG_ALWAYS, "DMP", "PANIC");
-        log_text((char *)"Panic dump: ");
+        log_text("Panic dump: ");
         log_text(mudconf.crashdb);
         ENDLOG;
         dump_database_internal(DUMP_I_PANIC);
         STARTLOG(LOG_ALWAYS, "DMP", "DONE");
-        log_text((char *)"Panic dump complete: ");
+        log_text("Panic dump complete: ");
         log_text(mudconf.crashdb);
         ENDLOG;
     }
@@ -1336,7 +1336,7 @@ void dump_database(void)
     sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
 
     STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
-    log_text((char *)"Dumping: ");
+    log_text("Dumping: ");
     log_text(buff);
     ENDLOG;
     pcache_sync();
@@ -1345,7 +1345,7 @@ void dump_database(void)
     SYNC;
 
     STARTLOG(LOG_DBSAVES, "DMP", "DONE")
-    log_text((char *)"Dump complete: ");
+    log_text("Dump complete: ");
     log_text(buff);
     ENDLOG;
     free_mbuf(buff);
@@ -1535,7 +1535,7 @@ static int load_game(int ccPageFile)
     // Ok, read it in.
     //
     STARTLOG(LOG_STARTUP, "INI", "LOAD")
-    log_text((char *)"Loading: ");
+    log_text("Loading: ");
     log_text(infile);
     ENDLOG
     if (db_read(f, &db_format, &db_version, &db_flags) < 0)
@@ -1559,7 +1559,7 @@ static int load_game(int ccPageFile)
         f = 0;
 
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
-        log_text((char *)"Error loading ");
+        log_text("Error loading ");
         log_text(infile);
         ENDLOG
         return LOAD_GAME_LOADING_PROBLEM;
@@ -1591,7 +1591,7 @@ static int load_game(int ccPageFile)
         if (ccPageFile == HF_OPEN_STATUS_NEW)
         {
             STARTLOG(LOG_STARTUP, "INI", "LOAD");
-            log_text((char *)"Attributes are not present in either the input file or the attribute database.");
+            log_text("Attributes are not present in either the input file or the attribute database.");
             ENDLOG;
         }
     }
@@ -1602,7 +1602,7 @@ static int load_game(int ccPageFile)
         if (ccPageFile == HF_OPEN_STATUS_OLD)
         {
             STARTLOG(LOG_STARTUP, "INI", "LOAD");
-            log_text((char *)"Attributes present in both the input file and the attribute database.");
+            log_text("Attributes present in both the input file and the attribute database.");
             ENDLOG;
         }
     }
@@ -1631,7 +1631,7 @@ static int load_game(int ccPageFile)
         }
     }
     STARTLOG(LOG_STARTUP, "INI", "LOAD");
-    log_text((char *)"Load complete.");
+    log_text("Load complete.");
     ENDLOG;
 
     return LOAD_GAME_SUCCESS;
@@ -2010,7 +2010,7 @@ int DCL_CDECL main(int argc, char *argv[])
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_text((char *)"Couldn't load text database: ");
+        log_text("Couldn't load text database: ");
         log_text(mudconf.game_dir);
         log_text(mudconf.game_pag);
         ENDLOG;
@@ -2051,7 +2051,7 @@ int DCL_CDECL main(int argc, char *argv[])
         if (ccInFile != LOAD_GAME_SUCCESS)
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD")
-            log_text((char *)"Couldn't load: ");
+            log_text("Couldn't load: ");
             log_text(mudconf.indb);
             ENDLOG
             return 2;

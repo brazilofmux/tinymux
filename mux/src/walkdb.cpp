@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.5 2002-06-13 22:12:46 jake Exp $
+// $Id: walkdb.cpp,v 1.6 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -819,7 +819,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
         //
         if (parm->s_rst_name != NULL)
         {
-            if (!string_prefix((char *)PureName(thing), parm->s_rst_name))
+            if (!string_prefix(PureName(thing), parm->s_rst_name))
                 continue;
         }
 
@@ -976,12 +976,12 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
-            safe_str((char *)" [from ", outbuf, &bp);
+            safe_str(" [from ", outbuf, &bp);
             buff = unparse_object(executor, from, 0);
             safe_str(((from == NOTHING) ? "NOWHERE" : buff), outbuf, &bp);
             free_lbuf(buff);
 
-            safe_str((char *)" to ", outbuf, &bp);
+            safe_str(" to ", outbuf, &bp);
             buff = unparse_object(executor, to, 0);
             safe_str(((to == NOTHING) ? "NOWHERE" : buff), outbuf, &bp);
             free_lbuf(buff);
@@ -1016,7 +1016,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
-            safe_str((char *)" [owner: ", outbuf, &bp);
+            safe_str(" [owner: ", outbuf, &bp);
             buff = unparse_object(executor, Owner(thing), 0);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
@@ -1051,7 +1051,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
-            safe_str((char *)" [owner: ", outbuf, &bp);
+            safe_str(" [owner: ", outbuf, &bp);
             buff = unparse_object(executor, Owner(thing), 0);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
@@ -1087,7 +1087,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
             free_lbuf(buff);
             if (searchparm.s_wizard)
             {
-                safe_str((char *)" [location: ", outbuf, &bp);
+                safe_str(" [location: ", outbuf, &bp);
                 buff = unparse_object(executor, Location(thing), 0);
                 safe_str(buff, outbuf, &bp);
                 free_lbuf(buff);

@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: unparse.cpp,v 1.2 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -53,7 +53,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
     if ((b == TRUE_BOOLEXP)) {
         if (format == F_EXAMINE) {
-            safe_str((char *)"*UNLOCKED*", boolexp_buf, &buftop);
+            safe_str("*UNLOCKED*", boolexp_buf, &buftop);
         }
         return;
     }
@@ -103,7 +103,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
     case BOOLEXP_CONST:
 
 #ifdef STANDALONE
-        safe_str((char *)unparse_object_quiet(player, b->thing),
+        safe_str(unparse_object_quiet(player, b->thing),
              boolexp_buf, &buftop);
 #else // STANDALONE
         switch (format)
@@ -112,7 +112,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
             // Quiet output - for dumps and internal use. Always #Num.
             //
-            safe_str((char *)unparse_object_quiet(player, b->thing),
+            safe_str(unparse_object_quiet(player, b->thing),
                  boolexp_buf, &buftop);
             break;
 
@@ -189,7 +189,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
         ap = atr_num(b->thing);
         if (ap && ap->number)
         {
-            safe_str((char *)ap->name, boolexp_buf, &buftop);
+            safe_str(ap->name, boolexp_buf, &buftop);
             safe_chr(sep_ch, boolexp_buf, &buftop);
             safe_str((char *)b->sub1, boolexp_buf, &buftop);
         }

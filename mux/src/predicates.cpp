@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.18 2002-06-27 06:38:31 jake Exp $
+// $Id: predicates.cpp,v 1.19 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -1215,7 +1215,7 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
 
     raw_broadcast(0, "GAME: Backing up database. Please wait.");
     STARTLOG(LOG_ALWAYS, "WIZ", "BACK");
-    log_text((char *)"Backup by ");
+    log_text("Backup by ");
     log_name(player);
     ENDLOG;
 
@@ -1282,7 +1282,7 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, int c
         // Fail if no ' characters.
         //
         place = target;
-        target = (char *)strchr(place, '\'');
+        target = strchr(place, '\'');
         if ((target == NULL) || !*target)
             return dflt;
 

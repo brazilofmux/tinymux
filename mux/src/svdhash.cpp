@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.2 2002-05-29 23:51:02 sdennis Exp $
+// $Id: svdhash.cpp,v 1.3 2002-06-27 09:06:47 jake Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -2626,7 +2626,6 @@ BOOL bMemAccountingInitialized = FALSE;
 CHashFile hfAllocData;
 CHashFile hfIdentData;
 extern long DebugTotalMemory;
-extern void	log_text(char *);
 
 UINT32 HashPointer(void *vp)
 {

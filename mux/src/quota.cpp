@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.4 2002-06-24 15:53:40 sdennis Exp $
+// $Id: quota.cpp,v 1.5 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -190,7 +190,7 @@ void do_quota
         {
             STARTLOG(LOG_WIZARD, "WIZ", "QUOTA");
             log_name(executor);
-            log_text((char *)" changed everyone's quota");
+            log_text(" changed everyone's quota");
             ENDLOG;
         }
         DO_WHOLE_DB(i)
@@ -252,7 +252,7 @@ void do_quota
     {
         STARTLOG(LOG_WIZARD, "WIZ", "QUOTA");
         log_name(executor);
-        log_text((char *)" changed the quota of ");
+        log_text(" changed the quota of ");
         log_name(who);
         ENDLOG;
         mung_quotas(who, key, value);

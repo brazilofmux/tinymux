@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.7 2002-06-27 06:38:31 jake Exp $
+// $Id: mail.cpp,v 1.8 2002-06-27 09:06:47 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -523,7 +523,7 @@ void do_mail_read(dbref player, char *msglist)
                 }
                 notify(player, DASH_LINE);
                 status = status_string(mp);
-                names = make_namelist(player, (char *)mp->tolist);
+                names = make_namelist(player, mp->tolist);
                 char szSubjectBuffer[MBUF_SIZE];
                 int iRealVisibleWidth;
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
@@ -951,7 +951,7 @@ void do_mail_reply(dbref player, char *msg, int all, int key)
         bp = names;
         *bp = '\0';
 
-        strcpy(oldlist, (char *)mp->tolist);
+        strcpy(oldlist, mp->tolist);
 
         TINY_STRTOK_STATE tts;
         Tiny_StrTokString(&tts, oldlist);
@@ -1947,7 +1947,7 @@ static int get_folder_number(dbref player, char *name)
 
     strcpy(str, atrstr);
     safe_tprintf_str(pat, &bp, ":%s:", upcasestr(name));
-    res = (char *)strstr(str, pat);
+    res = strstr(str, pat);
     if (!res)
     {
         free_lbuf(str);
@@ -2051,7 +2051,7 @@ void add_folder_name(dbref player, int fld, char *name)
             r++;
         }
         *r = '\0';
-        res = (char *)replace_string(old, new0, tbuf);
+        res = replace_string(old, new0, tbuf);
     }
     else
     {
@@ -3001,7 +3001,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
 
     // Parse the player list.
     //
-    head = (char *)tolist;
+    head = tolist;
     while (head && *head && (i < (MAX_MALIAS_MEMBERSHIP - 1)))
     {
         while (*head == ' ')
@@ -3449,7 +3449,7 @@ static char *make_numlist(dbref player, char *arg)
     numbp = numbuf;
     *numbp = '\0';
 
-    head = (char *)arg;
+    head = arg;
     while (head && *head)
     {
         while (*head == ' ')

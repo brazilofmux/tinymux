@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.2 2002-06-27 06:38:31 jake Exp $
+// $Id: powers.cpp,v 1.3 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -95,37 +95,37 @@ int ph_inherit(dbref target, dbref player, POWER power, int fpowers, int reset)
 
 POWERENT gen_powers[] =
 {
-    {(char *)"quota",       POW_CHG_QUOTAS, 0, 0,   ph_wiz},
-    {(char *)"chown_anything",  POW_CHOWN_ANY,  0, 0,   ph_wiz},
-    {(char *)"announce",        POW_ANNOUNCE,   0, 0,   ph_wiz},
-    {(char *)"boot",        POW_BOOT,   0, 0,   ph_wiz},
-    {(char *)"halt",        POW_HALT,   0, 0,   ph_wiz},
-    {(char *)"control_all",     POW_CONTROL_ALL,0, 0,   ph_god},
-    {(char *)"expanded_who",    POW_WIZARD_WHO, 0, 0,   ph_wiz},
-    {(char *)"see_all",     POW_EXAM_ALL,   0, 0,   ph_wiz},
-    {(char *)"prog",        POW_PROG,   0, 0,   ph_wiz},
-    {(char *)"find_unfindable", POW_FIND_UNFIND,0, 0,   ph_wiz},
-    {(char *)"free_money",      POW_FREE_MONEY, 0, 0,   ph_wiz},
-    {(char *)"free_quota",      POW_FREE_QUOTA, 0, 0,   ph_wiz},
-    {(char *)"hide",        POW_HIDE,   0, 0,   ph_wiz},
-    {(char *)"idle",        POW_IDLE,   0, 0,   ph_wiz},
-    {(char *)"search",      POW_SEARCH, 0, 0,   ph_wiz},
-    {(char *)"long_fingers",    POW_LONGFINGERS,0, 0,   ph_wiz},
-    {(char *)"comm_all",        POW_COMM_ALL,   0, 0,   ph_wiz},
-    {(char *)"see_queue",       POW_SEE_QUEUE,  0, 0,   ph_wiz},
-    {(char *)"see_hidden",      POW_SEE_HIDDEN, 0, 0,   ph_wiz},
-    {(char *)"monitor",     POW_MONITOR,    0, 0,   ph_wiz},
-    {(char *)"poll",        POW_POLL,   0, 0,   ph_wiz},
-    {(char *)"no_destroy",      POW_NO_DESTROY, 0, 0,   ph_wiz},
-    {(char *)"guest",       POW_GUEST,  0, 0,   ph_god},
-    {(char *)"stat_any",        POW_STAT_ANY,   0, 0,   ph_wiz},
-    {(char *)"steal_money",     POW_STEAL,  0, 0,   ph_wiz},
-    {(char *)"tel_anywhere",    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
-    {(char *)"tel_anything",    POW_TEL_UNRST,  0, 0,   ph_wiz},
-    {(char *)"unkillable",      POW_UNKILLABLE, 0, 0,   ph_wiz},
-    {(char *)"pass_locks",      POW_PASS_LOCKS, 0, 0,   ph_wiz},
-    {(char *)"builder",     POW_BUILDER,    POWER_EXT,  0,  ph_wiz},
-    {NULL,              0,      0, 0,   0}
+    {"quota",           POW_CHG_QUOTAS, 0, 0,   ph_wiz},
+    {"chown_anything",  POW_CHOWN_ANY,  0, 0,   ph_wiz},
+    {"announce",        POW_ANNOUNCE,   0, 0,   ph_wiz},
+    {"boot",            POW_BOOT,       0, 0,   ph_wiz},
+    {"halt",            POW_HALT,       0, 0,   ph_wiz},
+    {"control_all",     POW_CONTROL_ALL,0, 0,   ph_god},
+    {"expanded_who",    POW_WIZARD_WHO, 0, 0,   ph_wiz},
+    {"see_all",         POW_EXAM_ALL,   0, 0,   ph_wiz},
+    {"prog",            POW_PROG,       0, 0,   ph_wiz},
+    {"find_unfindable", POW_FIND_UNFIND,0, 0,   ph_wiz},
+    {"free_money",      POW_FREE_MONEY, 0, 0,   ph_wiz},
+    {"free_quota",      POW_FREE_QUOTA, 0, 0,   ph_wiz},
+    {"hide",            POW_HIDE,       0, 0,   ph_wiz},
+    {"idle",            POW_IDLE,       0, 0,   ph_wiz},
+    {"search",          POW_SEARCH,     0, 0,   ph_wiz},
+    {"long_fingers",    POW_LONGFINGERS,0, 0,   ph_wiz},
+    {"comm_all",        POW_COMM_ALL,   0, 0,   ph_wiz},
+    {"see_queue",       POW_SEE_QUEUE,  0, 0,   ph_wiz},
+    {"see_hidden",      POW_SEE_HIDDEN, 0, 0,   ph_wiz},
+    {"monitor",         POW_MONITOR,    0, 0,   ph_wiz},
+    {"poll",            POW_POLL,       0, 0,   ph_wiz},
+    {"no_destroy",      POW_NO_DESTROY, 0, 0,   ph_wiz},
+    {"guest",           POW_GUEST,      0, 0,   ph_god},
+    {"stat_any",        POW_STAT_ANY,   0, 0,   ph_wiz},
+    {"steal_money",     POW_STEAL,      0, 0,   ph_wiz},
+    {"tel_anywhere",    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
+    {"tel_anything",    POW_TEL_UNRST,  0, 0,   ph_wiz},
+    {"unkillable",      POW_UNKILLABLE, 0, 0,   ph_wiz},
+    {"pass_locks",      POW_PASS_LOCKS, 0, 0,   ph_wiz},
+    {"builder",         POW_BUILDER,    POWER_EXT,  0,  ph_wiz},
+    {NULL,              0,              0, 0,   0}
 };
 
 /*
@@ -160,7 +160,7 @@ void display_powertab(dbref player)
     POWERENT *fp;
 
     bp = buf = alloc_lbuf("display_powertab");
-    safe_str((char *)"Powers:", buf, &bp);
+    safe_str("Powers:", buf, &bp);
     for (fp = gen_powers; fp->powername; fp++)
     {
         if ((fp->listperm & CA_WIZARD) && !Wizard(player))
@@ -172,7 +172,7 @@ void display_powertab(dbref player)
             continue;
         }
         safe_chr(' ', buf, &bp);
-        safe_str((char *)fp->powername, buf, &bp);
+        safe_str(fp->powername, buf, &bp);
     }
     *bp = '\0';
     notify(player, buf);
@@ -329,7 +329,7 @@ char *power_description(dbref player, dbref target)
 
     // Store the header strings and object type.
     //
-    safe_mb_str((char *)"Powers:", buff, &bp);
+    safe_mb_str("Powers:", buff, &bp);
 
     for (fp = gen_powers; fp->powername; fp++)
     {

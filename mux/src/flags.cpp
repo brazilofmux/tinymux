@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.3 2002-06-27 06:38:31 jake Exp $
+// $Id: flags.cpp,v 1.4 2002-06-27 09:06:47 jake Exp $
 //
 
 #include "copyright.h"
@@ -778,9 +778,9 @@ char *flag_description(dbref player, dbref target)
 
     // Store the header strings and object type.
     //
-    safe_mb_str((char *)"Type: ", buff, &bp);
-    safe_mb_str((char *)object_types[otype].name, buff, &bp);
-    safe_mb_str((char *)" Flags:", buff, &bp);
+    safe_mb_str("Type: ", buff, &bp);
+    safe_mb_str(object_types[otype].name, buff, &bp);
+    safe_mb_str(" Flags:", buff, &bp);
     if (object_types[otype].perm != CA_PUBLIC)
     {
         *bp = '\0';
