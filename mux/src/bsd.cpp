@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.18 2002-09-28 06:59:19 sdennis Exp $
+// $Id: bsd.cpp,v 1.19 2002-09-28 07:22:17 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2695,8 +2695,6 @@ void BuildSignalNamesTable(void)
 
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
-    char buff[100];
-
 #ifndef WIN32
 #if defined(HAVE_UNION_WAIT) && defined(NEED_WAIT3_DCL)
     union wait stat_buf;
