@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.132 2005-01-06 18:04:28 sdennis Exp $
+// $Id: functions.cpp,v 1.133 2005-04-02 01:39:50 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -7519,7 +7519,7 @@ static int DCL_CDECL a_comp(const void *s1, const void *s2)
 
 static int DCL_CDECL a_casecomp(const void *s1, const void *s2)
 {
-    return strcasecmp(*(char **)s1, *(char **)s2);
+    return mux_stricmp(*(char **)s1, *(char **)s2);
 }
 
 static int DCL_CDECL f_comp(const void *s1, const void *s2)
