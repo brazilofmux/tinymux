@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: db.h,v 1.2 2003-02-05 01:23:41 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -91,7 +91,7 @@ struct boolexp
 /* Database format information */
 
 #define F_UNKNOWN   0   /* Unknown database format */
-#define F_MUX       5   /* TinyMUX format */
+#define F_MUX       5   /* MUX format */
 
 #define V_MASK      0x000000ff  /* Database version */
 #define V_ZONE      0x00000100  /* ZONE/DOMAIN field */

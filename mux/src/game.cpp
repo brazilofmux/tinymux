@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.15 2003-02-05 01:13:21 sdennis Exp $
+// $Id: game.cpp,v 1.16 2003-02-05 01:21:51 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1861,7 +1861,7 @@ void info(int fmt, int flags, int ver)
 
     if (fmt == F_MUX)
     {
-        cp = "TinyMUX";
+        cp = "MUX";
     }
     else
     {
