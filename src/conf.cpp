@@ -2,7 +2,7 @@
  * conf.cpp: set up configuration information and static data 
  */
 /*
- * $Id: conf.cpp,v 1.8 2000-05-20 02:06:01 sdennis Exp $ 
+ * $Id: conf.cpp,v 1.9 2000-05-20 06:22:37 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -1261,6 +1261,7 @@ CONF conftable[] =
     {(char *)"number_guests",        cf_int,         CA_DISABLED,    &mudconf.number_guests,         0},
     {(char *)"guest_file",    cf_string_dyn,  CA_DISABLED,    (int *)&mudconf.guest_file,  0},
     {(char *)"guests_channel",    cf_string,  CA_DISABLED,    (int *)mudconf.guests_channel,  32},
+    {(char *)"guest_site",              cf_site,        CA_GOD,     (int *)&mudstate.access_list,   H_GUEST},
     {(char *)"have_comsys",    cf_bool,    CA_DISABLED,    &mudconf.have_comsys,       0},
     {(char *)"have_mailer",    cf_bool,    CA_DISABLED,    &mudconf.have_mailer,       0},
     {(char *)"have_zones",    cf_bool,    CA_DISABLED,    &mudconf.have_zones,        0},

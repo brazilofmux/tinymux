@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.5 2000-04-29 08:03:21 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.6 2000-05-20 06:22:37 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -420,9 +420,7 @@ extern STATEDATA mudstate;
 #define H_REGISTRATION  0x0001  /* Registration ALWAYS on */
 #define H_FORBIDDEN     0x0002  /* Reject all connects */
 #define H_SUSPECT       0x0004  /* Notify wizards of connects/disconnects */
-#ifdef MUSH3
 #define H_GUEST         0x0008  // Don't permit guests from here
-#endif
 
 // Event flags, for noting when an event has taken place.
 //

@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.9 2000-05-19 18:08:47 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.10 2000-05-20 06:22:37 sdennis Exp $ 
 */
 
 /*
@@ -1200,6 +1200,8 @@ static void dump_users(DESC *e, char *match, int key)
                     *sp++ = 'R';
                 if (d->host_info & H_SUSPECT)
                     *sp++ = '+';
+		        if (d->host_info & H_GUEST)
+		            *sp++ = 'G';
             }
             *fp = '\0';
             *sp = '\0';
@@ -1419,13 +1421,24 @@ static int check_connect(DESC *d, char *msg)
     {
         if (string_prefix(user, mudconf.guest_prefix))
         {
-            if (  !mudconf.allow_guest_from_registered_site
-               && (d->host_info & H_REGISTRATION))
+            if (  (d->host_info & H_GUEST)
+               || (   !mudconf.allow_guest_from_registered_site
+                  && (d->host_info & H_REGISTRATION)))
             {
-                fcache_dump(d, FC_CONN_REG);
+                // Someone from an IP with guest restrictions is
+                // trying to use a guest account. Give them the blurb
+                // most likely to have instructions about requesting a
+                // character by other means and then fail this
+                // connection.
+                //
+                // The guest 'power' is handled seperately further
+                // down.
+                //
+                failconn("CONN", "Connect", "Guest Site Forbidden", d,
+                    R_GAMEDOWN, NOTHING, FC_CONN_REG, mudconf.downmotd_msg,
+                    command, user, password, cmdsave);
                 return 0;
             }
-            
             if ((mudconf.guest_char != NOTHING) &&
                 (mudconf.control_flags & CF_LOGIN))
             {
@@ -1479,13 +1492,43 @@ static int check_connect(DESC *d, char *msg)
                 return 0;
             }
         }
-        else if (((mudconf.control_flags & CF_LOGIN) && (nplayers < mudconf.max_players)) || WizRoy(player) || God(player))
+        else if (  (  (mudconf.control_flags & CF_LOGIN)
+                   && (nplayers < mudconf.max_players))
+                || WizRoy(player)
+                || God(player))
         {
-            if (!strncmp(command, "cd", 2) && (Wizard(player) || God(player)))
+            if (  !strncmp(command, "cd", 2)
+               && (Wizard(player) || God(player)))
             {
                 s_Flags(player, Flags(player) | DARK);
             }
             
+            // Make sure we don't have a guest from an unwanted host.
+            // The majority of these are handled above.
+            //
+            // The following code handles the case where a staffer
+            // (#1-only by default) has specifically given the guest 'power'
+            // to an existing player.
+            //
+            // In this case, the player -already- has an account complete
+            // with password. We still fail the connection to -this- player
+            // but if the site isn't register_sited, this player can simply
+            // auto-create another player. So, the procedure is not much
+            // different from @newpassword'ing them. Oh well. We are just
+            // following orders. ;)
+            //
+            if (  Guest(player)
+               && (  (d->host_info & H_GUEST)
+                  || (   !mudconf.allow_guest_from_registered_site
+                     && (d->host_info & H_REGISTRATION))))
+            {
+                failconn("CON", "Connect", "Guest Site Forbidden", d,
+                    R_GAMEDOWN, player, FC_CONN_SITE,
+                    mudconf.downmotd_msg, command, user, password,
+                    cmdsave);
+                return 0;
+            }
+
             // Logins are enabled, or wiz or god.
             //
             STARTLOG(LOG_LOGIN, "CON", "LOGIN");
@@ -2020,30 +2063,39 @@ static const char *stat_string(int strtype, int flag)
 {
     const char *str;
     
-    switch (strtype) {
+    switch (strtype)
+    {
     case S_SUSPECT:
         if (flag)
             str = "Suspected";
         else
             str = "Trusted";
         break;
+
     case S_ACCESS:
-        switch (flag) {
+        switch (flag)
+        {
         case H_FORBIDDEN:
             str = "Forbidden";
             break;
         case H_REGISTRATION:
             str = "Registration";
             break;
+		case H_GUEST:
+			str = "NoGuest";
+			break;
         case 0:
             str = "Unrestricted";
             break;
         default:
             str = "Strange";
+            break;
         }
         break;
-        default:
-            str = "Strange";
+
+    default:
+        str = "Strange";
+        break;
     }
     return str;
 }
