@@ -82,18 +82,6 @@ COMPRESS_O =
 COMPRESS_H =
 endif
 
-# If we want to use the port concentrator, comment out the first set and
-# uncomment the second set of definitions. There is no need to use the
-# concentrator unless you run into problems with too many players being
-# online at once.
-#
-# NOTE: To ensure a clean build, please 'make clean' first.
-#
-#SWITCH_CONC=Uncomment me.
-ifdef SWITCH_CONC
-CONC_DEFS = -DCONCENTRATE
-endif
-
 # Source common to netmux and standalone code
 COM_SRC	=
 COM_OBJ	=
@@ -185,7 +173,7 @@ NET_O	= bsd.o
 AUX_SRC	= dbconvert.cpp mkindx.cpp unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(CONC_DEFS) $(MOREDEFS) $(RLIM_F) $(REALMS)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(REALMS)
 
 #Auxiliary files
 A_INST	= README NOTES HIGHLIGHTS CREDITS CHANGES
@@ -208,8 +196,8 @@ REINSTALL_TARG	= $(INSTALL_PROG) help.txt wizhelp.txt alias.conf compat.conf
 
 #compiliation source files
 ALLSRC	= $(D_SRC) $(VER_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC)
-SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S) $(CONC_S) $(C_COMPRESS_S)
-OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O) $(CONC_O) $(C_COMPRESS_O)
+SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S) $(C_COMPRESS_S)
+OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O) $(C_COMPRESS_O)
 
 ifdef SWITCH_RADIX_COMPRESSION
 OUT	= netmux mkindx dbconvert a
@@ -227,15 +215,11 @@ TAGS: *.cpp *.h
 	etags *.cpp *.h
 
 links: dbconvert mkindx netmux slave
-	cd ../game/bin ; rm -f conc ; ln -s ../../src/conc conc
 	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/dbconvert dbconvert
 	cd ../game/bin ; rm -f mkindx ; ln -s ../../src/mkindx mkindx
 	cd ../game/bin ; rm -f netmux ; ln -s ../../src/netmux netmux
 	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
 	cd ../game/text; rm -f mkindx; ln -s ../../src/mkindx mkindx
-
-conc: portconc.o
-	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o conc portconc.o
 
 slave: slave.o
 	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o slave slave.o
@@ -271,7 +255,7 @@ cvs:
 	echo "0" > buildnum.data
 
 depend: $(ALLSRC) unsplit
-	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) $(CONC_S) slave.cpp portconc.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 index: help.indx news.indx wizhelp.indx
@@ -292,6 +276,6 @@ realclean:
 	-rm -f *.o a.out core gmon.out mux.*log mux.*sum $(OUT) netmux~
 
 clean:
-	-rm -f *.o a.out core gmon.out mux.*log mux.*sum slave conc $(OUT)
+	-rm -f *.o a.out core gmon.out mux.*log mux.*sum slave $(OUT)
 
 include .depend
