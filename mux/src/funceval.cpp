@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.56 2004-04-28 14:20:19 sdennis Exp $
+// $Id: funceval.cpp,v 1.57 2004-04-28 19:38:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1692,77 +1692,78 @@ FUNCTION(fun_hasattrp)
 void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbref enactor,
                      char *fargs[], int nfargs, char *cargs[], int ncargs, int key)
 {
-    dbref thing, aowner;
-    int aflags;
-    ATTR *attr;
-    char *objname, *bp, *str;
-
-    objname = bp = alloc_lbuf("default_handler");
-    str = fargs[0];
-    mux_exec(objname, &bp, executor, caller, enactor,
+    // Evaluating the first argument.
+    //
+    char *objattr = alloc_lbuf("default_handler");
+    char *bp = objattr;
+    char *str = fargs[0];
+    mux_exec(objattr, &bp, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
-    // First we check to see that the attribute exists on the object.
-    // If so, we grab it and use it.
+    // Parse the first argument as either <dbref>/<attrname> or <attrname>.
     //
-    if (objname != NULL)
+    dbref thing;
+    ATTR *attr;
+
+    if (!parse_attrib(executor, objattr, &thing, &attr))
     {
-        if (parse_attrib(executor, objname, &thing, &attr))
+        thing = executor;
+        attr = atr_str(objattr);
+    }
+    free_lbuf(objattr);
+
+    if (  attr
+       && See_attr(executor, thing, attr))
+    {
+        dbref aowner;
+        int   aflags;
+        char *atr_gotten = atr_pget(thing, attr->number, &aowner, &aflags);
+        if (atr_gotten[0] != '\0')
         {
-            if (  attr
-               && See_attr(executor, thing, attr))
+            switch (key)
             {
-                char *atr_gotten = atr_pget(thing, attr->number, &aowner, &aflags);
-                if (atr_gotten[0] != '\0')
+            case DEFAULT_DEFAULT:
+                safe_str(atr_gotten, buff, bufc);
+                break;
+            case DEFAULT_EDEFAULT:
+                str = atr_gotten;
+                mux_exec(buff, bufc, thing, executor, executor,
+                     EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
+                break;
+            case DEFAULT_UDEFAULT:
                 {
-                    switch (key)
+                    char *xargs[NUM_ENV_VARS];
+                    int  nxargs = nfargs-2;
+                    int  i;
+                    for (i = 0; i < nxargs; i++)
                     {
-                    case DEFAULT_DEFAULT:
-                        safe_str(atr_gotten, buff, bufc);
-                        break;
-                    case DEFAULT_EDEFAULT:
-                        str = atr_gotten;
-                        mux_exec(buff, bufc, thing, executor, executor,
-                             EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
-                        break;
-                    case DEFAULT_UDEFAULT:
-                        {
-                            char *xargs[NUM_ENV_VARS];
-                            int  nxargs = nfargs-2;
-                            int  i;
-                            for (i = 0; i < nxargs; i++)
-                            {
-                                xargs[i] = alloc_lbuf("fun_udefault_args");
-                                char *bp = xargs[i];
-                                str = fargs[i+2];
+                        xargs[i] = alloc_lbuf("fun_udefault_args");
+                        char *bp = xargs[i];
+                        str = fargs[i+2];
 
-                                mux_exec(xargs[i], &bp,
-                                    thing, caller, enactor,
-                                    EV_STRIP_CURLY | EV_FCHECK | EV_EVAL,
-                                    &str, cargs, ncargs);
-                            }
-
-                            str = atr_gotten;
-                            mux_exec(buff, bufc, thing, caller, enactor,
-                                EV_FCHECK | EV_EVAL, &str, xargs, nxargs);
-
-                            for (i = 0; i < nxargs; i++)
-                            {
-                                free_lbuf(xargs[i]);
-                            }
-                        }
-                        break;
-
+                        mux_exec(xargs[i], &bp,
+                            thing, caller, enactor,
+                            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL,
+                            &str, cargs, ncargs);
                     }
-                    free_lbuf(atr_gotten);
-                    free_lbuf(objname);
-                    return;
+
+                    str = atr_gotten;
+                    mux_exec(buff, bufc, thing, caller, enactor,
+                        EV_FCHECK | EV_EVAL, &str, xargs, nxargs);
+
+                    for (i = 0; i < nxargs; i++)
+                    {
+                        free_lbuf(xargs[i]);
+                    }
                 }
-                free_lbuf(atr_gotten);
+                break;
+
             }
+            free_lbuf(atr_gotten);
+            return;
         }
-        free_lbuf(objname);
+        free_lbuf(atr_gotten);
     }
 
     // If we've hit this point, we've not gotten anything useful, so
