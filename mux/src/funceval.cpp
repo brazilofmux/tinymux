@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.73 2004-08-16 05:14:07 sdennis Exp $
+// $Id: funceval.cpp,v 1.74 2004-08-18 22:25:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -657,11 +657,13 @@ static unsigned int GenCode(char *pCode, const char *pCodeASCII)
 
 static char *crypt_code(char *code, char *text, bool type)
 {
-    if (!text && !*text)
+    if (  !text
+       || text[0] == '\0')
     {
         return "";
     }
-    if (!code || !*code)
+    if (  !code
+       || code[0] == '\0')
     {
         return text;
     }
