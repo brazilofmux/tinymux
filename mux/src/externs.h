@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: externs.h,v 1.2 2003-01-23 17:26:23 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -73,11 +73,7 @@ extern const signed char Tiny_IsRegister[256];
 extern void notify_except(dbref, dbref, dbref, const char *, int key);
 extern void notify_except2(dbref, dbref, dbref, dbref, const char *);
 
-#ifdef STANDALONE
-#define notify_check(p,c,m,k) 
-#else
 extern void notify_check(dbref, dbref, const char *, int);
-#endif
 
 extern BOOL Hearer(dbref);
 extern void report(void);
@@ -85,7 +81,6 @@ extern int  atr_match(dbref, dbref, char, char *, BOOL);
 extern BOOL list_check(dbref, dbref, char, char *, BOOL);
 extern BOOL html_escape(const char *src, char *dest, char **destp);
 
-#ifndef STANDALONE
 #define DUMP_I_NORMAL    0  // OUTPUT to the outdb through a temporary file.
 #define DUMP_I_PANIC     1  // UNLOAD to a crashdb
 #define DUMP_I_RESTART   2  // OUTPUT to the inputdb
@@ -93,7 +88,6 @@ extern BOOL html_escape(const char *src, char *dest, char **destp);
 #define DUMP_I_SIGNAL    4  // UNLOAD to a .FLAT file from signal.
 #define NUM_DUMP_TYPES   5
 extern void dump_database_internal(int);
-#endif // !STANDALONE
 
 /* From help.cpp */
 extern void helpindex_clean(int);
@@ -192,11 +186,7 @@ extern void edit_string(char *, char **, char *, char *);
 extern dbref match_controlled_handler(dbref player, const char *name, BOOL bQuiet);
 #define match_controlled(player,name)       match_controlled_handler(player, name, FALSE)
 #define match_controlled_quiet(player,name) match_controlled_handler(player, name, TRUE)
-#ifdef STANDALONE
-#define set_modified(thing) 
-#else
 extern void set_modified(dbref thing);
-#endif
 
 /* From boolexp.cpp */
 extern BOOL eval_boolexp(dbref, dbref, dbref, BOOLEXP *);
@@ -292,11 +282,7 @@ extern BOOL atr_get_info(dbref, int, dbref *, int *);
 extern BOOL atr_pget_info(dbref, int, dbref *, int *);
 extern void atr_free(dbref);
 extern BOOL check_zone_handler(dbref player, dbref thing, BOOL bPlayerCheck);
-#ifdef STANDALONE
-#define check_zone(player, thing) FALSE
-#else // STANDALONE
 #define check_zone(player, thing) check_zone_handler(player, thing, FALSE)
-#endif // STANDALONE
 extern void ReleaseAllResources(dbref obj);
 extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 
