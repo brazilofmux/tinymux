@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  June 2001
+Last Update:  July 2001
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -423,6 +423,7 @@ Bug Fixes:
      Mandrake 8.0. Thanks Marlek.
  --  On Win32, the logs now use CRLF instead of NL.
  --  Clean build on gcc 3.0. Thanks Morgan.
+ --  SIGSEGV bug in revwords().
 
 
 Performance Enhancements:
