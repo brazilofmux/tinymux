@@ -1,5 +1,7 @@
-/* mail.h */
-/* $Id: mail.h,v 1.3 2001-10-25 17:10:02 sdennis Exp $ */
+// mail.h
+//
+// $Id: mail.h,v 1.4 2001-11-19 19:36:17 sdennis Exp $
+//
 
 #ifndef _MAIL_H
 #define _MAIL_H
@@ -24,7 +26,7 @@
 #define M_MSUNREAD  0x2000  /* Mail selectors */
         /* 0x4000 - 0x8000 available */
 #define M_REPLY     0x4000
- 
+
 #define MAX_FOLDERS 15
 #define FOLDER_NAME_LEN MBUF_SIZE
 #define FolderBit(f) (256 * (f))
@@ -47,18 +49,18 @@
 
 #define DASH_LINE  \
   "---------------------------------------------------------------------------"
-  
+
 #define MAIL_ITER_ALL(mp, thing)    for((thing)=0; (thing)<mudstate.db_top; (thing)++) \
                         for (mp = (struct mail *)hashfindLEN(&thing, sizeof(thing), &mudstate.mail_htab); mp != NULL; mp = mp->next)
 
 /* This macro requires you to put nextp = mp->next at
  * the beginning of the loop.
  */
-  
+
 #define MAIL_ITER_SAFE(mp, thing, nextp)    for((thing)=0; (thing)<mudstate.db_top; (thing)++) \
                             for (mp = (struct mail *)hashfindLEN(&thing, sizeof(thing), &mudstate.mail_htab); mp != NULL; mp = nextp)
 
-                        
+
 typedef unsigned int mail_flag;
 
 struct mail {
@@ -85,7 +87,7 @@ struct muser {
     char *fwd;
     char *vacation;
     dbref *afilter;
-    int status; 
+    int status;
 };
 
 typedef struct mail_entry MENT;

@@ -1,5 +1,7 @@
-/* interface.h */
-/* $Id: interface.h,v 1.6 2001-10-17 17:30:08 sdennis Exp $ */
+// interface.h
+//
+// $Id: interface.h,v 1.7 2001-11-19 19:37:11 sdennis Exp $
+//
 
 #include "copyright.h"
 
@@ -136,9 +138,9 @@ struct descriptor_data
   struct descriptor_data **prev;
 
   struct sockaddr_in address;   /* added 3/6/90 SCG */
-  
+
   char addr[51];
-  char username[11]; 
+  char username[11];
   char doing[SIZEOF_DOING_STRING];
 };
 

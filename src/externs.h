@@ -1,7 +1,8 @@
-// externs.h - Prototypes for externs not defined elsewhere.
+// externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.67 2001-11-08 03:48:56 sdennis Exp $
+// $Id: externs.h,v 1.68 2001-11-19 19:42:56 sdennis Exp $
 //
+
 #ifndef EXTERNS_H
 #define EXTERNS_H
 
@@ -77,7 +78,7 @@ extern signed char Tiny_IsRegister[256];
 #define notify_all(p,c,m)                   notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS|MSG_F_UP|MSG_F_CONTENTS)
 #define notify_all_from_inside(p,c,m)       notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS_A|MSG_F_UP|MSG_F_CONTENTS|MSG_S_INSIDE)
 #define notify_all_from_inside_saypose(p,c,m) notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS_A|MSG_F_UP|MSG_F_CONTENTS|MSG_S_INSIDE|MSG_SAYPOSE)
-#define notify_all_from_inside_html(p,c,m)  notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS_A|MSG_F_UP|MSG_F_CONTENTS|MSG_S_INSIDE|MSG_HTML) 
+#define notify_all_from_inside_html(p,c,m)  notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS_A|MSG_F_UP|MSG_F_CONTENTS|MSG_S_INSIDE|MSG_HTML)
 #define notify_all_from_outside(p,c,m)      notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS|MSG_F_UP|MSG_F_CONTENTS|MSG_S_OUTSIDE)
 
 extern void notify_except(dbref, dbref, dbref, const char *, int key);
@@ -90,7 +91,7 @@ extern void NDECL(report);
 extern int  FDECL(atr_match, (dbref, dbref, char, char *, int));
 extern int  FDECL(list_check, (dbref, dbref, char, char *, int));
 extern int  FDECL(html_escape, (const char *src, char *dest, char **destp));
-    
+
 #ifndef STANDALONE
 #define DUMP_I_NORMAL    0  // OUTPUT to the outdb through a temporary file.
 #define DUMP_I_PANIC     1  // UNLOAD to a crashdb
@@ -518,7 +519,7 @@ extern void ReleaseAllResources(dbref obj);
 #define SAY_WIZSHOUT    12  /* shout to all logged-in wizards */
 #define SAY_WIZPOSE 13  /* Pose to all logged-in wizards */
 #define SAY_WIZEMIT 14  /* Emit to all logged-in wizards */
-#define SAY_ADMINSHOUT  15  /* Emit to all wizards or royalty */ 
+#define SAY_ADMINSHOUT  15  /* Emit to all wizards or royalty */
 #define SAY_GRIPE   16  /* Complain to management */
 #define SAY_NOTE    17  /* Comment to log for wizards */
 #define SAY_NOTAG   32  /* Don't put Broadcast: in front (additive) */
@@ -757,7 +758,7 @@ extern HANDLE hGameProcess;
 typedef BOOL __stdcall FCANCELIO(HANDLE hFile);
 typedef BOOL __stdcall FGETPROCESSTIMES(HANDLE hProcess,
     LPFILETIME pftCreate, LPFILETIME pftExit, LPFILETIME pftKernel,
-    LPFILETIME pftUser); 
+    LPFILETIME pftUser);
 extern FCANCELIO *fpCancelIo;
 extern FGETPROCESSTIMES *fpGetProcessTimes;
 extern BOOL bQueryPerformanceAvailable;

@@ -1,5 +1,7 @@
-/* flags.h - object flags */
-/* $Id: flags.h,v 1.8 2001-10-17 06:40:08 sdennis Exp $ */
+// flags.h -- Object flags.
+//
+// $Id: flags.h,v 1.9 2001-11-19 19:38:19 sdennis Exp $
+//
 
 #include "copyright.h"
 
@@ -65,7 +67,7 @@
 #define HAS_LISTEN  0x00000040  /* Internal: LISTEN attr set */
 #define HAS_FWDLIST 0x00000080  /* Internal: FORWARDLIST attr set */
 #define AUDITORIUM  0x00000100  /* Should we check the SpeechLock? */
-#define ANSI            0x00000200 
+#define ANSI            0x00000200
 #define HEAD_FLAG       0x00000400
 #define FIXED           0x00000800
 #define UNINSPECTED     0x00001000

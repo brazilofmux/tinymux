@@ -1,5 +1,7 @@
-/* command.h - declarations used by the command processor */
-/* $Id: command.h,v 1.9 2001-11-08 03:48:56 sdennis Exp $ */
+// command.h -- declarations used by the command processor.
+//
+// $Id: command.h,v 1.10 2001-11-19 19:40:50 sdennis Exp $
+//
 
 #ifndef __COMMAND_H
 #define __COMMAND_H
@@ -243,7 +245,7 @@ typedef struct
 #define CS_NOINTERP   0x0020    /* Never interp ARG2 if 2 or ARG1 if 1 */
 #define CS_CAUSE      0x0040    /* Pass cause to old command handler */
 #define CS_UNPARSE    0x0080    /* Pass unparsed cmd to old-style handler */
-#define CS_CMDARG     0x0100    /* Pass in given command args */    
+#define CS_CMDARG     0x0100    /* Pass in given command args */
 #define CS_STRIP      0x0200    /* Strip braces even when not interpreting */
 #define CS_STRIP_AROUND 0x0400  /* Strip braces around entire string only */
 #define CS_ADDED      0x0800    /* Command has been added by @addcommand */

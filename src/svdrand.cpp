@@ -1,9 +1,9 @@
-// svdrand.cpp -- Random Numbers
+// svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.16 2001-09-08 19:42:29 sdennis Exp $
+// $Id: svdrand.cpp,v 1.17 2001-11-19 19:39:17 sdennis Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
-// 
+//
 // RandomINT32() was derived from existing game server code.
 //
 // MUX 2.1
@@ -113,7 +113,7 @@ INT32 RandomINT32(INT32 lLow, INT32 lHigh)
 /* See the GNU Library General Public License for more details.    */
 /* You should have received a copy of the GNU Library General      */
 /* Public License along with this library; if not, write to the    */
-/* Free Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   */ 
+/* Free Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   */
 /* 02111-1307  USA                                                 */
 
 /* Copyright (C) 1997, 1999 Makoto Matsumoto and Takuji Nishimura. */
@@ -122,7 +122,7 @@ INT32 RandomINT32(INT32 lLow, INT32 lHigh)
 
 #define N 624
 #define M 397
-#define MATRIX_A 0x9908b0df  
+#define MATRIX_A 0x9908b0df
 #define UPPER_MASK 0x80000000
 #define LOWER_MASK 0x7fffffff
 #define TEMPERING_MASK_B 0x9d2c5680
@@ -153,14 +153,14 @@ UINT32 genrand(void)
     UINT32 y;
     static UINT32 mag01[2] = {0x0, MATRIX_A};
     int kk;
-    
+
     if (mti >= N)
     {
         if (!bSeeded)
         {
             SeedRandomNumberGenerator();
         }
-        
+
         for (kk=0; kk < N-M; kk++)
         {
             y = (mt[kk] & UPPER_MASK) | (mt[kk+1] & LOWER_MASK);
@@ -173,10 +173,10 @@ UINT32 genrand(void)
         }
         y = (mt[N-1] & UPPER_MASK) | (mt[0] & LOWER_MASK);
         mt[N-1] = mt[M-1] ^ (y >> 1) ^ mag01[ y & 0x1 ];
-        
+
         mti = 0;
     }
-    
+
     y = mt[mti++];
     y ^= TEMPERING_SHIFT_U(y);
     y ^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
