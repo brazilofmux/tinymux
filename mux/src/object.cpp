@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.12 2002-06-27 06:38:31 jake Exp $
+// $Id: object.cpp,v 1.13 2002-06-27 07:46:29 jake Exp $
 //
 
 #include "copyright.h"
@@ -188,9 +188,7 @@ dbref new_home(dbref player)
 
 dbref clone_home(dbref player, dbref thing)
 {
-    dbref loc;
-
-    loc = Home(thing);
+    dbref loc = Home(thing);
     if (can_set_home(Owner(player), player, loc))
         return loc;
     return new_home(player);
@@ -678,9 +676,7 @@ void empty_obj(dbref obj)
 
 void destroy_exit(dbref exit)
 {
-    dbref loc;
-
-    loc = Exits(exit);
+    dbref loc = Exits(exit);
     s_Exits(loc, remove_first(Exits(loc), exit));
     destroy_obj(exit);
 }

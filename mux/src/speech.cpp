@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.9 2002-06-27 06:38:31 jake Exp $
+// $Id: speech.cpp,v 1.10 2002-06-27 07:46:29 jake Exp $
 //
 
 #include "copyright.h"
@@ -107,7 +107,6 @@ void do_think(dbref executor, dbref caller, dbref enactor, int key, char *messag
 
 void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
-    dbref loc;
     char *buf2, *bp;
     int say_flags, depth;
 
@@ -145,7 +144,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
      * Make sure speaker is somewhere if speaking in a place
      */
 
-    loc = where_is(executor);
+    dbref loc = where_is(executor);
     switch (key) {
     case SAY_SAY:
     case SAY_POSE:

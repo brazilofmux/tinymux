@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.5 2002-06-27 06:54:43 jake Exp $
+// $Id: move.cpp,v 1.6 2002-06-27 07:46:29 jake Exp $
 //
 
 #include "copyright.h"
@@ -837,7 +837,6 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
 
 void do_enter_internal(dbref player, dbref thing, int quiet)
 {
-    dbref loc;
     int oattr, aattr;
 
     if (!Enter_ok(thing) && !controls(player, thing))
@@ -853,7 +852,7 @@ void do_enter_internal(dbref player, dbref thing, int quiet)
     }
     else if (could_doit(player, thing, A_LENTER))
     {
-        loc = Location(player);
+        dbref loc = Location(player);
         oattr = quiet ? HUSH_ENTER : 0;
         move_via_generic(player, thing, NOTHING, oattr);
         divest_object(player);
@@ -870,24 +869,24 @@ void do_enter_internal(dbref player, dbref thing, int quiet)
 
 void do_enter(dbref executor, dbref caller, dbref enactor, int key, char *what)
 {
-    dbref thing;
-    int quiet;
-
     init_match(executor, what, TYPE_THING);
     match_neighbor();
     if (Long_Fingers(executor))
         match_absolute();   // the wizard has long fingers
 
-    if ((thing = noisy_match_result()) == NOTHING)
+    dbref thing = noisy_match_result();
+    BOOL bQuiet = FALSE;
+
+    if (thing == NOTHING)
         return;
 
-    switch (Typeof(thing)) {
+    switch (Typeof(thing)) 
+    {
     case TYPE_PLAYER:
     case TYPE_THING:
-        quiet = 0;
         if ((key & MOVE_QUIET) && Controls(executor, thing))
-            quiet = 1;
-        do_enter_internal(executor, thing, quiet);
+            bQuiet = TRUE;
+        do_enter_internal(executor, thing, bQuiet);
         break;
     default:
         notify(executor, NOPERM_MESSAGE);
@@ -898,12 +897,12 @@ void do_enter(dbref executor, dbref caller, dbref enactor, int key, char *what)
 void do_leave(dbref executor, dbref caller, dbref enactor, int key)
 {
     dbref loc = Location(executor);
-    dbref newLoc = loc;
+    dbref newLoc = Location(loc);
 
     if (  !Good_obj(loc)
        || Going(loc)
        || !Has_location(loc)
-       || isGarbage(newLoc = Location(loc))
+       || isGarbage(newLoc)
        || !Good_obj(newLoc)
        || Going(newLoc))
     {

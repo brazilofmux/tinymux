@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.35 2002-06-27 06:38:31 jake Exp $
+// $Id: functions.cpp,v 1.36 2002-06-27 07:46:29 jake Exp $
 //
 
 #include "copyright.h"
@@ -2353,7 +2353,7 @@ FUNCTION(fun_index)
     p = s;
     while (end && p && *p)
     {
-        if ((p = (char *)strchr(p, c)) != NULL)
+        if ((p = strchr(p, c)) != NULL)
         {
             if (--end == 0)
             {

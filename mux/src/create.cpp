@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.5 2002-06-18 18:22:58 jake Exp $
+// $Id: create.cpp,v 1.6 2002-06-27 07:46:29 jake Exp $
 //
 
 #include "copyright.h"
@@ -779,9 +779,7 @@ void do_pcreate
 //
 static int can_destroy_exit(dbref player, dbref exit)
 {
-    dbref loc;
-
-    loc = Exits(exit);
+    dbref loc = Exits(exit);
     if (  (loc != Location(player))
        && (loc != player)
        && !Wizard(player))

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.16 2002-06-27 06:38:31 jake Exp $
+// $Id: command.cpp,v 1.17 2002-06-27 07:46:29 jake Exp $
 //
 
 #include "copyright.h"
@@ -715,7 +715,7 @@ void init_cmdtab(void)
 
         cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG));
         (void)ISOUTOFMEMORY(cp2a);
-        cp2a->cmdname = (char *)StringClone(cbuff);
+        cp2a->cmdname = StringClone(cbuff);
         cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
         cp2a->switches = NULL;
         if (ap->flags & (AF_WIZARD | AF_MDARK))
@@ -947,7 +947,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
     {
         do
         {
-            buf1 = (char *)strchr(switchp, '/');
+            buf1 = strchr(switchp, '/');
             if (buf1)
                 *buf1++ = '\0';
             xkey = search_nametab(executor, cmdp->switches, switchp);
@@ -1493,7 +1493,7 @@ char *process_command
 
     // Strip off any command switches and save them.
     //
-    pSlash = (char *)strchr(LowerCaseCommand, '/');
+    pSlash = strchr(LowerCaseCommand, '/');
     if (pSlash)
     {
         nLowerCaseCommand = pSlash - LowerCaseCommand;

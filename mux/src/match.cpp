@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.4 2002-06-27 06:38:31 jake Exp $
+// $Id: match.cpp,v 1.5 2002-06-27 07:46:29 jake Exp $
 //
 
 #include "copyright.h"
@@ -222,19 +222,23 @@ void match_home(void)
 
 void match_here(void)
 {
-    dbref loc;
-
     if (md.confidence >= CON_DBREF)
         return;
-    if (Good_obj(md.player) && Has_location(md.player)) {
-        loc = Location(md.player);
-        if (Good_obj(loc)) {
-            if (loc == md.absolute_form) {
+    if (Good_obj(md.player) && Has_location(md.player)) 
+    {
+        dbref loc = Location(md.player);
+        if (Good_obj(loc)) 
+        {
+            if (loc == md.absolute_form) 
+            {
                 promote_match(loc, CON_DBREF | CON_LOCAL);
-            } else if (!string_compare(md.string, "here")) {
+            } 
+            else if (!string_compare(md.string, "here")) 
+            {
                 promote_match(loc, CON_TOKEN | CON_LOCAL);
-            } else if (!string_compare(md.string,
-                       (char *)PureName(loc))) {
+            } 
+            else if (!string_compare(md.string, PureName(loc))) 
+            {
                 promote_match(loc, CON_COMPLETE | CON_LOCAL);
             }
         }
@@ -278,13 +282,13 @@ void match_possession(void)
 
 void match_neighbor(void)
 {
-    dbref loc;
-
     if (md.confidence >= CON_DBREF)
         return;
-    if (Good_obj(md.player) && Has_location(md.player)) {
-        loc = Location(md.player);
-        if (Good_obj(loc)) {
+    if (Good_obj(md.player) && Has_location(md.player)) 
+    {
+        dbref loc = Location(md.player);
+        if (Good_obj(loc)) 
+        {
             match_list(Contents(loc), CON_LOCAL);
         }
     }
@@ -292,15 +296,16 @@ void match_neighbor(void)
 
 static int match_exit_internal(dbref loc, dbref baseloc, int local)
 {
-    dbref exit;
-    int result, key;
-
     if (!Good_obj(loc) || !Has_exits(loc))
         return 1;
 
-    result = 0;
+    dbref exit;
+    int result = 0;
+    int key;
+
     DOLIST(exit, Exits(loc)) {
-        if (exit == md.absolute_form) {
+        if (exit == md.absolute_form) 
+        {
             key = 0;
             if (Examinable(md.player, loc))
                 key |= VE_LOC_XAM;
@@ -308,13 +313,14 @@ static int match_exit_internal(dbref loc, dbref baseloc, int local)
                 key |= VE_LOC_DARK;
             if (Dark(baseloc))
                 key |= VE_BASE_DARK;
-            if (exit_visible(exit, md.player, key)) {
+            if (exit_visible(exit, md.player, key)) 
+            {
                 promote_match(exit, CON_DBREF | local);
                 return 1;
             }
         }
-        if (matches_exit_from_list(md.string,
-                       (char *)PureName(exit))) {
+        if (matches_exit_from_list(md.string, PureName(exit))) 
+        {
             promote_match(exit, CON_COMPLETE | local);
             result = 1;
         }
@@ -324,11 +330,10 @@ static int match_exit_internal(dbref loc, dbref baseloc, int local)
 
 void match_exit(void)
 {
-    dbref loc;
-
     if (md.confidence >= CON_DBREF)
         return;
-    loc = Location(md.player);
+
+    dbref loc = Location(md.player);
     if (Good_obj(md.player) && Has_location(md.player))
         (void)match_exit_internal(loc, loc, CON_LOCAL);
 }
