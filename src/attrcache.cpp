@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.11 2001-06-28 18:21:37 sdennis Exp $
+// $Id: attrcache.cpp,v 1.12 2001-06-29 15:43:31 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -25,7 +25,7 @@ static int cache_initted = FALSE;
 static int cache_redirected = FALSE;
 #define N_TEMP_FILES 4
 FILE *TempFiles[N_TEMP_FILES];
-#endif
+#endif // STANDALONE
 
 CLinearTimeAbsolute cs_ltime;
 
@@ -41,7 +41,7 @@ static ATTR_RECORD TempRecord;
 
 #ifndef STANDALONE
 #define DO_CACHEING
-#endif
+#endif // !STANDALONE
 
 #ifdef DO_CACHEING
 typedef struct tagCacheEntryHeader
@@ -55,7 +55,7 @@ typedef struct tagCacheEntryHeader
 PCENT_HDR pCacheHead = 0;
 PCENT_HDR pCacheTail = 0;
 unsigned int CacheSize = 0;
-#endif
+#endif // DO_CACHEING
 
 int cache_init(const char *game_dir_file, const char *game_pag_file)
 {
@@ -124,7 +124,8 @@ void cache_pass2(void)
         fprintf(stderr, ENDLINE);
     }
 }
-#endif
+#endif // STANDALONE
+
 void cache_close(void)
 {
     hfAttributeFile.CloseAll();
@@ -207,7 +208,7 @@ void ADD_ENTRY(PCENT_HDR pEntry)
         pCacheTail = pCacheHead;
     }
 }
-#endif
+#endif // DO_CACHEING
 
 char *cache_get(Aname *nam, int *pLen)
 {
@@ -231,7 +232,7 @@ char *cache_get(Aname *nam, int *pLen)
         *pLen = pCacheEntry->nSize - sizeof(CENT_HDR);
         return (char *)(pCacheEntry+1);
     }
-#endif
+#endif // DO_CACHEING
 
     UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 
@@ -278,7 +279,7 @@ char *cache_get(Aname *nam, int *pLen)
                     MEMFREE(pCacheEntry);
                 }
             }
-#endif
+#endif // DO_CACHEING
             return TempRecord.attrText;
         }
         iDir = hfAttributeFile.FindNextKey(iDir, nHash);
@@ -322,7 +323,7 @@ BOOL cache_put(Aname *nam, char *value, int len)
         fwrite(&TempRecord, 1, nSize, TempFiles[iFile]);
         return TRUE;
     }
-#endif
+#endif // STANDALONE
 
     HP_DIRINDEX iDir = hfAttributeFile.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -392,11 +393,10 @@ BOOL cache_put(Aname *nam, char *value, int len)
             MEMFREE(pCacheEntry);
         }
     }
-#endif
+#endif // DO_CACHEING
 
     return TRUE;
 }
-
 
 BOOL cache_sync(void)
 {
@@ -440,5 +440,5 @@ void cache_del(Aname *nam)
         hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
         MEMFREE(pCacheEntry);
     }
-#endif
+#endif // DO_CACHEING
 }
