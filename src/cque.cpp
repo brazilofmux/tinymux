@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.25 2001-06-28 07:58:23 sdennis Exp $
+// $Id: cque.cpp,v 1.26 2001-06-28 08:20:29 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -560,8 +560,8 @@ void do_notify(dbref player, dbref cause, int key, char *what, char *count)
         if (loccount > 0)
         {
             nfy_que(thing, attr, key, loccount);
-            if ( (!(Quiet(player) || Quiet(thing)))
-			   && key != NFY_QUIET)
+            if (  (!(Quiet(player) || Quiet(thing)))
+               && key != NFY_QUIET)
             {
                 if (key == NFY_DRAIN)
                 {
