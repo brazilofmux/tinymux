@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.33 2000-11-04 11:19:03 sdennis Exp $
+// $Id: funceval.cpp,v 1.34 2000-11-12 04:39:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -541,21 +541,36 @@ FUNCTION(fun_decrypt)
 /*
  * Borrowed from DarkZone 
  */
-FUNCTION(fun_zwho)
+void scan_zone
+(
+    dbref player,
+    char *szZone,
+    int   ObjectType,
+    char *buff,
+    char **bufc
+)
 {
-    dbref it = match_thing(player, fargs[0]);
+    dbref it;
 
-    if (!mudconf.have_zones || (!Controls(player, it) && !WizRoy(player)))
+    if (  !mudconf.have_zones
+       || (  !Controls(player, it = match_thing_quiet(player, szZone))
+          && !WizRoy(player)))
     {
         safe_str("#-1 NO PERMISSION TO USE", buff, bufc);
         return;
     }
+    else if (!Good_obj(it))
+    {
+        safe_str("#-1 NO MATCH", buff, bufc);
+        return;
+    }
+
     dbref i;
     DTB pContext;
     DbrefToBuffer_Init(&pContext, buff, bufc);
     for (i = 0; i < mudstate.db_top; i++)
     {
-        if (  Typeof(i) == TYPE_PLAYER
+        if (  Typeof(i) == ObjectType
            && Zone(i) == it
            && !DbrefToBuffer_Add(&pContext, i))
         {
@@ -565,31 +580,14 @@ FUNCTION(fun_zwho)
     DbrefToBuffer_Final(&pContext);
 }
 
-/*
- * Borrowed from DarkZone 
- */
+FUNCTION(fun_zwho)
+{
+    scan_zone(player, fargs[0], TYPE_PLAYER, buff, bufc);
+}
+
 FUNCTION(fun_inzone)
 {
-    dbref it = match_thing(player, fargs[0]);
-
-    if (!mudconf.have_zones || (!Controls(player, it) && !WizRoy(player)))
-    {
-        safe_str("#-1 NO PERMISSION TO USE", buff, bufc);
-        return;
-    }
-    dbref i;
-    DTB pContext;
-    DbrefToBuffer_Init(&pContext, buff, bufc);
-    for (i = 0; i < mudstate.db_top; i++)
-    {
-        if (  Typeof(i) == TYPE_ROOM
-           && db[i].zone == it
-           && !DbrefToBuffer_Add(&pContext, i))
-        {
-            break;
-        }
-    }
-    DbrefToBuffer_Final(&pContext);
+    scan_zone(player, fargs[0], TYPE_ROOM, buff, bufc);
 }
 
 /*

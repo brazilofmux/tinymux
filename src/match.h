@@ -1,5 +1,5 @@
 /* match.h */
-/* $Id: match.h,v 1.1 2000-04-11 07:14:45 sdennis Exp $ */
+/* $Id: match.h,v 1.2 2000-11-12 04:39:07 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -55,6 +55,7 @@ extern void FDECL(save_match_state, (MSTATE *));
 extern void FDECL(restore_match_state, (MSTATE *));
 extern void match_zone_exit(void);
 extern dbref match_thing(dbref player, char *name);
+extern dbref match_thing_quiet(dbref player, char *name);
 
 
 #define NOMATCH_MESSAGE "I don't see that here."

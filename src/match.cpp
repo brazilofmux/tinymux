@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.3 2000-06-16 00:33:06 sdennis Exp $
+// $Id: match.cpp,v 1.4 2000-11-12 04:39:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -517,4 +517,11 @@ dbref match_thing(dbref player, char *name)
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     return noisy_match_result();
+}
+
+dbref match_thing_quiet(dbref player, char *name)
+{
+    init_match(player, name, NOTYPE);
+    match_everything(MAT_EXIT_PARENTS);
+    return match_result();
 }

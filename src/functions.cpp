@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.41 2000-11-06 16:16:53 sdennis Exp $
+// $Id: functions.cpp,v 1.42 2000-11-12 04:39:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6612,7 +6612,7 @@ void do_function(dbref player, dbref cause, int key, char *fname, char *target)
     //
     if (!parse_attrib(player, target, &obj, &atr))
     {
-        notify_quiet(player, "I don't see that here.");
+        notify_quiet(player, NOMATCH_MESSAGE);
         free_sbuf(np);
         return;
     }
