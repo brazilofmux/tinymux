@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: set.cpp,v 1.2 2002-05-31 16:01:16 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1171,11 +1171,6 @@ void do_cpattr(dbref player, dbref cause, int key, char *oldpair, char *newpair[
 
 void do_mvattr(dbref player, dbref cause, int key, char *what, char *args[], int nargs)
 {
-    dbref thing, aowner, axowner;
-    ATTR *in_attr, *out_attr;
-    int i, anum, in_anum, aflags = 0, axflags, no_delete;
-    char *astr;
-
     // Make sure we have something to do.
     //
     if (nargs < 2)
@@ -1186,7 +1181,7 @@ void do_mvattr(dbref player, dbref cause, int key, char *what, char *args[], int
 
     // Find and make sure we control the target object.
     //
-    thing = match_controlled(player, what);
+    dbref thing = match_controlled(player, what);
     if (thing == NOTHING)
     {
         return;
@@ -1195,59 +1190,64 @@ void do_mvattr(dbref player, dbref cause, int key, char *what, char *args[], int
     // Look up the source attribute.  If it either doesn't exist or isn't
     // readable, use an empty string.
     //
-    in_anum = -1;
-    astr = alloc_lbuf("do_mvattr");
-    in_attr = atr_str(args[0]);
+    int in_anum = -1;
+    char *astr = alloc_lbuf("do_mvattr");
+    ATTR *in_attr = atr_str(args[0]);
+    int aflags = 0;
     if (in_attr == NULL)
     {
         *astr = '\0';
     }
     else
     {
+        dbref aowner;
         atr_get_str(astr, thing, in_attr->number, &aowner, &aflags);
-        if (!See_attr(player, thing, in_attr, aowner, aflags))
+        if (See_attr(player, thing, in_attr, aowner, aflags))
         {
-            *astr = '\0';
+            in_anum = in_attr->number;
         }
         else
         {
-            in_anum = in_attr->number;
+            *astr = '\0';
         }
     }
 
     // Copy the attribute to each target in turn.
     //
-    no_delete = 0;
-    for (i = 1; i < nargs; i++)
+    BOOL bCanDelete = TRUE;
+    int  nCopied = 0;
+    for (int i = 1; i < nargs; i++)
     {
-        anum = mkattr(args[i]);
+        int anum = mkattr(args[i]);
         if (anum <= 0)
         {
             notify_quiet(player, tprintf("%s: That's not a good name for an attribute.", args[i]));
             continue;
         }
-        out_attr = atr_num(anum);
+        ATTR *out_attr = atr_num(anum);
         if (!out_attr)
         {
             notify_quiet(player, tprintf("%s: Permission denied.", args[i]));
-            no_delete++;
         }
         else if (out_attr->number == in_anum)
         {
-            // The following causes the attribute to -not- be deleted on the source.
+            // It doesn't make sense to delete a source attribute if it's also
+            // included as a destination.
             //
-            no_delete = nargs-1;
+            bCanDelete = FALSE;
         }
         else
         {
+            dbref axowner;
+            int   axflags;
             atr_get_info(thing, out_attr->number, &axowner, &axflags);
             if (!Set_attr(player, thing, out_attr, axflags))
             {
                 notify_quiet(player, tprintf("%s: Permission denied.", args[i]));
-                no_delete++;
             }
             else
             {
+                nCopied++;
                 atr_add(thing, out_attr->number, astr, Owner(player), aflags);
                 if (!Quiet(player))
                 {
@@ -1257,26 +1257,44 @@ void do_mvattr(dbref player, dbref cause, int key, char *what, char *args[], int
         }
     }
 
-    // Remove the source attribute if we were able to copy is successfully to
+    // Remove the source attribute if we were able to copy it successfully to
     // even one destination object.
     //
-    if ((in_anum > 0) && no_delete < nargs-1)
+    if (nCopied <= 0)
+    {
+        if (in_attr)
+        {
+            notify_quiet(player, tprintf("%s: Not copied anywhere. Not cleared.", in_attr->name));
+        }
+        else
+        {
+            notify_quiet(player, "Not copied anywhere. Non-existent attribute.");
+        }
+    }
+    else if (  in_anum > 0
+            && bCanDelete)
     {
         in_attr = atr_num(in_anum);
-        if (in_attr && Set_attr(player, thing, in_attr, aflags))
+        if (in_attr)
         {
-            atr_clr(thing, in_attr->number);
-            if (!Quiet(player))
+            if (Set_attr(player, thing, in_attr, aflags))
             {
-                notify_quiet(player, tprintf("%s: Cleared.", in_attr->name));
+                atr_clr(thing, in_attr->number);
+                if (!Quiet(player))
+                {
+                    notify_quiet(player, tprintf("%s: Cleared.", in_attr->name));
+                }
+            }
+            else
+            {
+                notify_quiet(player,
+                    tprintf("%s: Could not remove old attribute.  Permission denied.",
+                    in_attr->name));
             }
         }
         else
         {
-            if (in_attr)
-            {
-                notify_quiet(player, tprintf("%s: Could not remove old attribute.  Permission denied.", in_attr->name));
-            }
+            notify_quiet(player, "Could not remove old attribute. Non-existent attribute.");
         }
     }
     free_lbuf(astr);
