@@ -3634,6 +3634,7 @@ SITE LISTS (continued)
  
   Related Topics: @admin, forbid_site, @list site_information, permit_site,
                   register_site, SITE NOTATION, suspect_site, trust_site.
+
 & SITE NOTATION
 SITE NOTATION
 
@@ -3659,7 +3660,7 @@ SITE NOTATION
 & SITE NOTATION2
 SITE NOTATION (continued)
 
- Dotted IPv4 addresses are of the form: a.b.c.d, where a, b, c, and d
+ Dotted IPv4 addresses are of the form: a.b.c.d, where a, b, c and d
  are integers from 0 to 255.
 
  Examples:
