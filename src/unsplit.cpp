@@ -1,9 +1,7 @@
-/*
- * unsplit.c -- filter for re-combining continuation lines 
- */
-/*
- * $Id: unsplit.cpp,v 1.2 2000-11-07 05:39:51 sdennis Exp $ 
- */
+// unsplit.cpp -- Filter for re-combining continuation lines.
+//
+// $Id: unsplit.cpp,v 1.3 2001-11-18 20:48:08 sdennis Exp $
+//
 
 #include "copyright.h"
 
