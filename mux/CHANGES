@@ -88,6 +88,7 @@ Bug Fixes:
  -- Locks failed to evaluate properly after a dbref within the lock was
     @destroy.
  -- Add ',()^$' to the set of characters escaped by ESCAPE().
+ -- Fix unlikely but reproducible case of hanging @dump/@backup.
 
 
 Performance Enhancements:
