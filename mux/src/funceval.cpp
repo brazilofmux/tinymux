@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.7 2002-06-11 17:01:37 jake Exp $
+// $Id: funceval.cpp,v 1.8 2002-06-11 20:07:06 jake Exp $
 //
 
 #include "copyright.h"
@@ -1450,27 +1450,27 @@ FUNCTION(fun_mailfrom)
 
 FUNCTION(fun_hasattr)
 {
-    dbref thing, aowner;
-    int aflags;
-    ATTR *attr;
-    char *tbuf;
-
-    thing = match_thing(executor, fargs[0]);
+    dbref thing = match_thing(executor, fargs[0]);
     if (thing == NOTHING) 
     {
         safe_nomatch(buff, bufc);
         return;
     }
-    attr = atr_str(fargs[1]);
+
+    dbref aowner;
+    int aflags;
+    ATTR *attr = atr_str(fargs[1]);
+    char *tbuf;
     int ch = '0';
+
     if (attr)
     {
         atr_get_info(thing, attr->number, &aowner, &aflags);
         if (   !Examinable(executor, thing) 
             && !Read_attr(executor, thing, attr, aowner, aflags))
         {
-        safe_noperm(buff, bufc);
-        return;
+            safe_noperm(buff, bufc);
+            return;
         }
         else if (See_attr(executor, thing, attr, aowner, aflags))
         {
@@ -1487,27 +1487,31 @@ FUNCTION(fun_hasattr)
 
 FUNCTION(fun_hasattrp)
 {
-    dbref thing, aowner;
-    int aflags;
-    ATTR *attr;
-    char *tbuf;
-
-    thing = match_thing(executor, fargs[0]);
-    if (thing == NOTHING) {
+    dbref thing = match_thing(executor, fargs[0]);
+    if (thing == NOTHING) 
+    {
         safe_nomatch(buff, bufc);
         return;
-    } else if (!Examinable(executor, thing)) {
-        safe_noperm(buff, bufc);
-        return;
     }
-    attr = atr_str(fargs[1]);
+
+    dbref aowner;
+    int aflags;
+    ATTR *attr = atr_str(fargs[1]);
+    char *tbuf;
     int ch = '0';
+
     if (attr)
     {
         atr_pget_info(thing, attr->number, &aowner, &aflags);
-        if (See_attr(executor, thing, attr, aowner, aflags))
+        if (   !Examinable(executor, thing) 
+            && !Read_attr(executor, thing, attr, aowner, aflags))
         {
-            tbuf = atr_pget(thing, attr->number, &aowner, &aflags);
+            safe_noperm(buff, bufc);
+            return;
+        }
+        else if (See_attr(executor, thing, attr, aowner, aflags))
+        {
+            tbuf = atr_get(thing, attr->number, &aowner, &aflags);
             if (*tbuf)
             {
                 ch = '1';
