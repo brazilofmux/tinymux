@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.31 2001-09-08 19:25:46 sdennis Exp $
+// $Id: bsd.cpp,v 1.32 2001-10-13 06:53:43 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -95,6 +95,7 @@ OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
 OVERLAPPED lpo_aborted_final; // Finally free the descriptor.
 OVERLAPPED lpo_shutdown; // special to indicate a player should do a shutdown
 OVERLAPPED lpo_welcome; // special to indicate a player has -just- connected.
+OVERLAPPED lpo_wakeup;  // special to indicate that the loop should wakeup and return.
 void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
 CRITICAL_SECTION csDescriptorList;      // for thread synchronization
 
@@ -952,10 +953,70 @@ void shovechars9x(int port)
     }
 }
 
+LRESULT WINAPI TinyWindowProc
+(
+    HWND   hWin,
+    UINT   msg,
+    WPARAM wParam,
+    LPARAM lParam
+)
+{
+    switch (msg)
+    {
+    case WM_CLOSE:
+        mudstate.shutdown_flag = 1;
+        PostQueuedCompletionStatus(CompletionPort, 0, 0, &lpo_wakeup);
+        return 0;
+
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    }
+
+    return DefWindowProc(hWin, msg, wParam, lParam);
+}
+
+const char szApp[] = "TinyMUX";
+
+DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
+{
+    WNDCLASS wc;
+
+    wc.style         = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc   = TinyWindowProc;
+    wc.cbClsExtra    = 0;
+    wc.cbWndExtra    = 0;
+    wc.hInstance     = 0;
+    wc.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
+    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+    wc.lpszMenuName  = NULL;
+    wc.lpszClassName = szApp;
+
+    RegisterClass(&wc);
+
+    HWND hWnd = CreateWindow(szApp, szApp, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, 0, NULL);
+
+    ShowWindow(hWnd, SW_HIDE);
+    UpdateWindow(hWnd);
+
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0))
+    {
+        DispatchMessage(&msg);
+    }
+    mudstate.shutdown_flag = 1;
+    PostQueuedCompletionStatus(CompletionPort, 0, 0, &lpo_wakeup);
+    return 1;
+}
+
 void shovecharsNT(int port)
 {
     mudstate.debug_cmd = (char *)"< shovechars >";
     MainGameSockPort = make_socket(port);
+
+    CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -3276,6 +3337,11 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             // descriptor.
             //
             scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_FreeDescriptor, d, 0);
+        }
+        else if (lpo == &lpo_wakeup)
+        {
+            // Just waking up is good enough.
+            //
         }
     }
 }
