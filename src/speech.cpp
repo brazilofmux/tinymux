@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.4 2000-06-08 20:30:36 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.5 2000-11-04 11:19:02 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -692,21 +692,21 @@ void whisper_pose(dbref player, dbref target, char *message)
     free_lbuf(buff);
 }
 
-void do_pemit_list(dbref player, char *list, const char *message)
+void do_pemit_list(dbref player, char *list, const char *message, int do_contents)
 {
-    /*
-     * Send a message to a list of dbrefs. To avoid repeated generation * 
-     * of the NOSPOOF string, we set it up the first time we
-     * encounter something Nospoof, and then check for it
-     * thereafter. The list is destructively modified. 
-     */
-
+    // Send a message to a list of dbrefs. To avoid repeated
+    // generation of the NOSPOOF string, we set it up the first time
+    // we encounter something Nospoof, and then check for it
+    // thereafter. The list is destructively modified.
+    //
     char *p;
     dbref who;
     int ok_to_do;
 
     if (!message || !*message || !list || !*list)
+    {
         return;
+    }
 
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, list);
@@ -718,18 +718,25 @@ void do_pemit_list(dbref player, char *list, const char *message)
         match_everything(0);
         who = match_result();
 
-        if (!ok_to_do &&
-            (Long_Fingers(player) || nearby(player, who) || 
-             Controls(player, who))) {
+        if (  !ok_to_do
+           && (  Long_Fingers(player)
+              || nearby(player, who)
+              || Controls(player, who)))
+        {
             ok_to_do = 1;
         }
-        if (!ok_to_do && (isPlayer(who))
-            && mudconf.pemit_players) {
+        if (  !ok_to_do
+           && (isPlayer(who))
+           && mudconf.pemit_players)
+        {
             if (!page_check(player, who))
-                return;
+            {
+                continue;
+            }
             ok_to_do = 1;
         }
-        switch (who) {
+        switch (who)
+        {
         case NOTHING:
             notify(player, "Emit to whom?");
             break;
@@ -737,12 +744,18 @@ void do_pemit_list(dbref player, char *list, const char *message)
             notify(player, "I don't know who you mean!");
             break;
         default:
-            if (!ok_to_do) {
+            if (!ok_to_do)
+            {
                 notify(player, "You cannot do that.");
                 break;
             }
             if (Good_obj(who))
-                notify_with_cause(who, player, message);
+            {
+                if (do_contents && Has_contents(who))
+                    notify_all_from_inside(who, player, message);
+                else 
+                    notify_with_cause(who, player, message);
+            }
         }
     }
 }
@@ -765,7 +778,7 @@ void do_pemit(dbref player, dbref cause, int key, char *recipient, char *message
     }
     if (key & PEMIT_LIST)
     {
-        do_pemit_list(player, recipient, message);
+        do_pemit_list(player, recipient, message, 0);
         return;
     }
     pemit_flags = key & (PEMIT_HERE | PEMIT_ROOM | PEMIT_HTML);

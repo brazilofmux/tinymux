@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.32 2000-10-24 22:06:06 sdennis Exp $
+// $Id: funceval.cpp,v 1.33 2000-11-04 11:19:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -123,21 +123,6 @@ FUNCTION(fun_zone)
 
 #ifdef SIDE_EFFECT_FUNCTIONS
 
-FUNCTION(fun_link)
-{
-    do_link(player, cause, 0, fargs[0], fargs[1]);
-}
-
-FUNCTION(fun_tel)
-{
-    do_teleport(player, cause, 0, fargs[0], fargs[1]);
-}
-
-FUNCTION(fun_pemit)
-{
-    do_pemit_list(player, fargs[0], fargs[1]);
-}
-
 static int check_command(dbref player, char *name, char *buff, char **bufc)
 {
     CMDENT *cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
@@ -158,6 +143,44 @@ static int check_command(dbref player, char *name, char *buff, char **bufc)
         }
     }
     return 0;
+}
+
+FUNCTION(fun_link)
+{
+    if (check_command(player, "@link", buff, bufc))
+        return;
+    do_link(player, cause, 0, fargs[0], fargs[1]);
+}
+
+FUNCTION(fun_tel)
+{
+    if (check_command(player, "@teleport", buff, bufc))
+    	return;
+    do_teleport(player, cause, 0, fargs[0], fargs[1]);
+}
+
+FUNCTION(fun_pemit)
+{
+    if (check_command(player, "@pemit", buff, bufc))
+        return;
+    do_pemit_list(player, fargs[0], fargs[1], 0);
+}
+
+FUNCTION(fun_remit)
+{
+    if (check_command(player, "@pemit", buff, bufc))
+        return;
+    do_pemit_list(player, fargs[0], fargs[1], 1);
+}
+
+FUNCTION(fun_wait)
+{
+    do_wait(player, cause, 0, fargs[0], fargs[1], cargs, ncargs);
+}
+
+FUNCTION(fun_waituntil)
+{
+    do_wait(player, cause, WAIT_UNTIL, fargs[0], fargs[1], cargs, ncargs);
 }
 
 // ------------------------------------------------------------------------

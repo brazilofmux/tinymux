@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.39 2000-10-16 07:28:44 sdennis Exp $
+// $Id: functions.cpp,v 1.40 2000-11-04 11:19:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -45,6 +45,9 @@ XFUNCTION(fun_zone);
 XFUNCTION(fun_link);
 XFUNCTION(fun_tel);
 XFUNCTION(fun_pemit);
+XFUNCTION(fun_remit);
+XFUNCTION(fun_wait);
+XFUNCTION(fun_waituntil);
 XFUNCTION(fun_create);
 XFUNCTION(fun_set);
 #endif
@@ -6443,6 +6446,7 @@ FUN flist[] =
     {"R",        fun_r,        1,  0,          CA_PUBLIC},
     {"RAND",     fun_rand,     1,  0,          CA_PUBLIC},
     {"REGMATCH", fun_regmatch, 0,  FN_VARARGS, CA_PUBLIC},
+    {"REMIT",    fun_remit,    2,  0,          CA_PUBLIC},
     {"REMOVE",   fun_remove,   0,  FN_VARARGS, CA_PUBLIC},
     {"REPEAT",   fun_repeat,   2,  0,          CA_PUBLIC},
     {"REPLACE",  fun_replace,  0,  FN_VARARGS, CA_PUBLIC},
@@ -6510,6 +6514,8 @@ FUN flist[] =
     {"VMUL",     fun_vmul,     0,  FN_VARARGS, CA_PUBLIC},
     {"VSUB",     fun_vsub,     0,  FN_VARARGS, CA_PUBLIC},
     {"VUNIT",    fun_vunit,    0,  FN_VARARGS, CA_PUBLIC},
+    {"WAIT",     fun_wait,     2,  0,          CA_PUBLIC},
+    {"WAITUNTIL",fun_waituntil,2,  0,          CA_PUBLIC},
     {"WHERE",    fun_where,    1,  0,          CA_PUBLIC},
     {"WORDPOS",  fun_wordpos,  0,  FN_VARARGS, CA_PUBLIC},
     {"WORDS",    fun_words,    0,  FN_VARARGS, CA_PUBLIC},
