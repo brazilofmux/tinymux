@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.2 2003-01-31 02:39:41 sdennis Exp $
+// $Id: slave.cpp,v 1.3 2003-03-01 22:32:27 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -239,7 +239,8 @@ RETSIGTYPE alarm_signal(int iSig)
     setitimer(ITIMER_REAL, &itime, 0);
 }
 
-
+#define MAX_CHILDREN 20
+int children = 0;
 int main(int argc, char *argv[])
 {
     char arg[MAX_STRING];
@@ -277,6 +278,7 @@ int main(int argc, char *argv[])
         {
             *p = '\0';
         }
+        children++;
         switch (fork())
         {
         case -1:
@@ -299,19 +301,16 @@ int main(int argc, char *argv[])
             exit(query(arg, p + 1) != 0);
         }
 
-        // collect any children
+        // Collect any children.
         //
 #ifdef NEXT
-        while (wait3(NULL, WNOHANG, NULL) > 0)
-        {
-            ; // Nothing.
-        }
+        while (wait3(NULL, (children < MAX_CHILDREN)? WNOHANG : 0, NULL) > 0)
 #else
-        while (waitpid(0, NULL, WNOHANG) > 0)
-        {
-            ; // Nothing.
-        }
+        while (waitpid(0, NULL, (children < MAX_CHILDREN) ? WNOHANG: 0) > 0)
 #endif
+        {
+            children--;
+        }
     }
     exit(0);
 }
