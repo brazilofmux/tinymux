@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.32 2002-12-16 00:21:27 sdennis Exp $
+// $Id: stringutil.cpp,v 1.33 2002-12-16 00:45:44 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3031,7 +3031,6 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
 //
 void mux_strlwr(char *a)
 {
-    char *p = a;
     while (*a)
     {
         *a = Tiny_ToLower[(unsigned char)*a];
@@ -3043,7 +3042,6 @@ void mux_strlwr(char *a)
 //
 void mux_strupr(char *a)
 {
-    char *p = a;
     while (*a)
     {
         *a = Tiny_ToUpper[(unsigned char)*a];
