@@ -25,6 +25,7 @@ Feature Additions:
  -- Added null() and @@(). The former evaluates. The latter doesn't.
  -- Added GetFromLock. Patch from Draken-Korin.
  -- Added autozone configuration option (Bug #194 and Bug #635).
+ -- Add CREATED attribute (Bug #555 and #608). Patch from Jake.
 
 Bug Fixes:
 ~~~~~~~~~

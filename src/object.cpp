@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.20 2001-10-06 17:25:57 sdennis Exp $
+// $Id: object.cpp,v 1.21 2001-10-06 20:34:58 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -416,11 +416,13 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
     free_lbuf(pValidName);
     db[obj].cpu_time_used.Set100ns(0);
 
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetLocal();
+    buff = ltaNow.ReturnDateString();
+    atr_add_raw(obj, A_CREATED, buff);
+
     if (objtype == TYPE_PLAYER)
     {
-        CLinearTimeAbsolute ltaNow;
-        ltaNow.GetLocal();
-        buff = ltaNow.ReturnDateString();
         atr_add_raw(obj, A_LAST, buff);
 
         buff = alloc_sbuf("create_obj.quota");
