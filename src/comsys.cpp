@@ -1,6 +1,6 @@
 //comsys.c
 //
-// * $Id: comsys.cpp,v 1.9 2000-06-12 18:17:48 sdennis Exp $
+// * $Id: comsys.cpp,v 1.10 2000-08-01 23:55:13 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1237,7 +1237,6 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
     {
         raw_notify(player, tprintf("Channel %s added with alias %s and title %s.", channel, pValidAlias, pValidatedTitleValue));
     }
-    free_lbuf(pValidatedTitleValue);
 }
 
 void do_delcom(dbref player, dbref cause, int key, char *arg1)
