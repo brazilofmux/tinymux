@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.101 2002-08-22 01:12:09 sdennis Exp $
+// $Id: funceval.cpp,v 1.102 2002-09-25 18:52:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3432,6 +3432,9 @@ public:
     BOOL IsSet(unsigned int i);
 };
 
+// Construct a CBitField to hold (nMaximum_arg+1) bits numbered 0 through
+// nMaximum_arg.
+//
 CBitField::CBitField(unsigned int nMaximum_arg)
 {
     nInts  = 0;
@@ -3489,7 +3492,7 @@ void CBitField::ClearAll(void)
 
 void CBitField::Set(unsigned int i)
 {
-    if (i < nMaximum)
+    if (i <= nMaximum)
     {
         pInts[i>>nShift] |= pMasks[i&nMask];
     }
@@ -3497,7 +3500,7 @@ void CBitField::Set(unsigned int i)
 
 void CBitField::Clear(unsigned int i)
 {
-    if (i < nMaximum)
+    if (i <= nMaximum)
     {
         pInts[i>>nShift] &= ~pMasks[i&nMask];
     }
@@ -3505,7 +3508,7 @@ void CBitField::Clear(unsigned int i)
 
 BOOL CBitField::IsSet(unsigned int i)
 {
-    if (i < nMaximum)
+    if (i <= nMaximum)
     {
         if (pInts[i>>nShift] & pMasks[i&nMask])
         {
