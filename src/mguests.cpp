@@ -1,6 +1,6 @@
 // mguests.cpp - multiguest code originally ported from DarkZone 
 //
-// $Id: mguests.cpp,v 1.4 2001-06-29 18:37:40 sdennis Exp $
+// $Id: mguests.cpp,v 1.5 2001-10-08 02:18:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -118,7 +118,7 @@ char *make_guest(DESC *d)
 
     if (player == NOTHING) {
         queue_string(d, "GAME: Error creating guest ID, please try again later.\n");
-        log_text(tprintf("GUEST: Error creating guest ID. '%s' already exists.\n",
+        log_text(tprintf("GUEST: Error creating guest ID. '%s' already exists." ENDLINE,
                  name));
         return NULL;
     }
