@@ -17,12 +17,14 @@
   If there are any errors in the help text, please notify a Wizard.
   See also: help.
 
-& commands
+& COMMANDS
+COMMANDS
+
   Help is available for the following MUX commands:
- 
+
   DOING          examine        give           SESSION        slay
   WHO            wizhelp
- 
+
   @addcommand    @admin         @apply_marked  @attribute     @boot
   @chown         @chownall      @clone         @cut           @dbck
   @dbclean       @delcommand    @destroy       @disable       @doing
@@ -32,7 +34,7 @@
   @newpassword   @pcreate       @poor          @ps            @quota
   @readcache     @restart       @shutdown      @startslave    @timecheck
   @timewarp      @toad          @wall
- 
+
   @allowance     @comment       @timeout
 
 & topics
@@ -48,27 +50,34 @@
   INHERIT(i)         MARKED(m)          STARTUP(z)         SUSPECT(u)
   WIZARD(W)
 
-& examine
-  Command: examine[/<switches>] [<object>]
- 
+& EXAMINE
+EXAMINE
+
+  COMMAND: examine[/<switches>] [<object>]
+
   Wizards may use the /debug switch to see additional information about the
   object.  The Owner, Exits, Next, and Contents fields of the object are
   shown in numeric form only, and an attribute list is included.
 
-& give
-  Command: give[/<switches>] <who> = <what>
- 
+& GIVE
+GIVE
+
+  COMMAND: give[/<switches>] <who> = <what>
+
   Wizards may use the /quiet switch to suppress the 'You give X to P' and
   'P gave you X' messages.  Other messages related to giving objects
   (such as the xDROP and XSUCC attributes on the object being given, or
   error messages) are not suppressed.
 
 & SESSION
-  Command: SESSION <prefix>
+
+  COMMAND: SESSION <prefix>
+
   The SESSION command displays character input and output information for
   all connected players, or just those who match <prefix>.
- 
+
   This command can be used to help identify network problems as follows:
+
     - A nonzero Input Pending count can indicate indicate typeahead or a
       client program dumping commands faster than the command scheduling
       parameters let them be executed.  Telnet sessions in character mode also
@@ -85,21 +94,27 @@
       a command that produced more output than the output buffer could hold.
       It may also indicate network problems or that the player is generating
       output faster than the network or his client can process it.
-     
-& slay
-  Command: slay <player/object>
+
+& SLAY
+SLAY
+
+  COMMAND: slay <player/object>
+
   Kills the indicated player or object without paying any insurance to the
   victim.  It should be used in places where suicide should not be rewarded.
-  See also: kill, IMMORTAL.
+
+  Related Topics: kill, IMMORTAL.
 
 & WHO
-  Command: WHO <prefix>
- 
+WHO
+
+  COMMAND: WHO <prefix>
+
   The WHO command returns miscellaneous information about connected players.
   It returns the player name, connect time, idle time, and player flags just
   like the player WHO command (which is available as the DOING command), but
   returns the following information in place of the player's Doing string:
- 
+
      Room         - The room that the player is in.
      Commands     - The number of commands that the player has entered during
                     this session (not counting machine commands).
@@ -108,17 +123,18 @@
      Host         - The Internet host name or address from where the player has
                     connected.
 
-  See also: SESSION, DOING.
+  Related Topics: SESSION, DOING.
 
 & DOING
-  Command: DOING <prefix>
+
+  COMMAND: DOING <prefix>
 
   This command is very similar to the mortal WHO command (the wizard WHO
   command returns different information).  When run by a wizard, the DOING
   command reports additional information about the player in the form of flag
   letters between the idle time and the players' Doing string.  The following
   letters may be present:
- 
+
   D - Player is set DARK.
   d - Player is not shown on the WHO list because they have been idle for
       longer than the default inactivity timeout and the idle_dark_wiz
@@ -126,14 +142,18 @@
   U - Player is set UNFINDABLE.
   u - Player is in an UNFINDABLE location (only if not U).
   + - Player is set SUSPECT.
- 
-  See also: SESSION, WHO, DARK, UNFINDABLE, SUSPECT, idle_dark_wiz.
 
-& wizhelp
-  Command: wizhelp <topic>
+  Related Topics: SESSION, WHO, DARK, UNFINDABLE, SUSPECT, idle_dark_wiz.
+
+& WIZHELP
+WIZHELP
+
+  COMMAND: wizhelp <topic>
+
   Displays information from the wizard help file.  The information is
   typically of use only to wizards and/or the game maintainer.
-  See also: the source code.
+
+  Related Topics: the source code.
 
 & @ADDCOMMAND
 @ADDCOMMAND
@@ -189,14 +209,17 @@
 
   Related Topics: @addcommand, @listcommands.
 
-& @listcommands
-  Command: @listcommands [<name>]
+& @LISTCOMMANDS
+@LISTCOMMANDS
+
+  COMMAND: @listcommands [<name>]
+
   Lists commands added by @addcommand. With <name> specified, lists all
   commands added under that particular command name. Without it, lists all
   added commands.
- 
-  See also: @addcommand, @listcommands.
- 
+
+  Related Topics: @addcommand, @listcommands.
+
 & @ADMIN
 @ADMIN
 
@@ -326,15 +349,22 @@
   minutes to execute, depending upon database size and machine speed.  Only
   God may execute this command.
 
-& @destroy
-  Command: @destroy[/<switches>] <object>
+& @DESTROY
+@DESTROY
+
+  COMMAND: @destroy[/<switches>] <object>
+
   Players are always considered SAFE.  Objects owned by other players are
   not otherwise treated specially.
 
-& @disable
-  Command: @disable <option>
+& @DISABLE
+@DISABLE
+
+  COMMAND: @disable <option>
+
   Turns off the indicated MUX runtime parameter.  The following parameters
   may be turned off:
+
     building      - Allows players to use the building commands.
     checkpointing - Enables periodic database checkpoint dumping.
     cleaning      - Enables periodic scanning of the database for rooms
@@ -349,15 +379,20 @@
     eventchecking - Enables certain attribute events (@daily, etc) to occur.
  
   These parameters are all enabled by default.
-  See also: @enable, @list.
 
-& @doing
-  Command: @doing[/<switch>] <text>
+  Related Topics: @enable, @list.
+
+& @DOING
+@DOING
+
+  COMMAND: @doing[/<switch>] <text>
+
   Wizards may use the /header switch to set the Doing header in the WHO report.
   If no header is specified, the header is reset to "Doing".
 
-& @dump
-  Command: @dump[/<switches>]
+& @DUMP
+
+  COMMAND: @dump[/<switches>]
 
   Writes a checkpoint dump of the database to disk.  Checkpoint dumps are
   automatically performed periodically, so there is usually no need to use
@@ -381,12 +416,16 @@
   certain caches to be out of sync. They should NOT be used in the course
   of normal operation.
  
-  See also: @admin, @disable, @enable, @list, @shutdown.
+  Related Topics: @admin, @disable, @enable, @list, @shutdown.
 
-& @enable
-  Command: @enable <option>
+& @ENABLE
+@ENABLE
+
+  COMMAND: @enable <option>
+
   Turns on the indicated MUX runtime parameter.  The following parameters
   may be turned on:
+
     building      - Allows players to use the building commands.
     checkpointing - Enables periodic database checkpoint dumping.
     cleaning      - Enables periodic scanning of the database for rooms
@@ -399,18 +438,23 @@
                     on the queue.
     logins        - Allows nonwizard players to connect to their characters.
     eventchecking - Enables certain attribute events (@daily, etc) to occur.
- 
-  These parameters are all enabled by default.
-  See also: @disable, @list.
 
-& @fixdb
-  Command: @fixdb[/<switch>] <object>=<value>
+  These parameters are all enabled by default.
+
+  Related Topics: @disable, @list.
+
+& @FIXDB
+@FIXDB
+
+  COMMAND: @fixdb[/<switch>] <object>=<value>
+
   This command directly edits the database structure according to the
   switch specified.  As such, it is possible to produce database
   inconsistencies that can hang or crash the server.  This command should
   be used with extreme caution.
- 
+
   The following switches are available:
+
      contents     - Sets the contents pointer of <object> to <value>
      exits        - Sets the exits pointer of <object> to <value>
      location     - Sets the location pointer of <object> to <value>
@@ -419,8 +463,10 @@
      pennies      - Sets the value or wealth of <object> to <value>
      rename       - Renames <object> to <value>
 
-& @function
-  Command: @function[/<switches>] <function>=<object>/<attr>
+& @FUNCTION
+@FUNCTION
+
+  COMMAND: @function[/<switches>] <function>=<object>/<attr>
 
   This command displays a list of currently-defined global functions or
   adds a new global function named <function>.  When invoked, the
@@ -439,23 +485,26 @@
   which it is stored, instead of as if it were being performed by the
   invoker of the function.  This may be used to allow access to
   information normally available only to wizards.
- 
+
   The /preserve switch causes r-registers to be preserved across the
   defined function, so you can feel free to use registers in the code
   without worrying about them overwriting previous definitions.
- 
+
   The function definitions created by @function are not stored in the
   database so they need to be re-created each time the MUX is started.
   It is recommended that the Startup attribute for player #1 include
   code to set up all global functions.
- 
+
   Function definitions may not be removed (aside from shutting down and
   restarting the MUX, but they may be redefined so that they point to
   an unused attribute.  This command may normally only be invoked by
   player #1.
- 
-& @halt
-  Command: @halt[/<switches>] [<object>]
+
+& @HALT
+@HALT
+
+  COMMAND: @halt[/<switches>] [<object>]
+
   This command can be used to halt commands being run by a specific object,
   all commands being run by objects owned by a specific player, or all
   commands in the game.  If <object> is not specified, the object running
@@ -463,17 +512,25 @@
   all commands being run by objects owned by that player are halted.
   Halting an object does not affect commands waiting on it as a semaphore,
   use the @drain command to reset a semaphore.
- 
+
   The /all switch may be used to halt all commands globally.
-  See also: @drain, @notify, kill, HALTED, SEMAPHORES.
 
-& @kick
-  Command: @kick <count>
+  Related Topics: @drain, @notify, kill, HALTED, SEMAPHORES.
+
+& @KICK
+@KICK
+
+  COMMAND: @kick <count>
+
   Immediately executes the first <count> commands from the top of the queue.
-  See also: @disable, @enable, @timewarp.
 
-& @list
-  Command: @list [<option>]
+  Related Topics: @disable, @enable, @timewarp.
+
+& @LIST
+@LIST
+
+  COMMAND: @list [<option>]
+
   Lists information from internal databases.  Information is available
   about the following options:
  
@@ -486,17 +543,22 @@
  
   Type wizhelp @list <option> for help with a particular option.
 
-& @list allocations
-  Command: @list allocations
+& @LIST ALLOCATIONS
+@LIST ALLOCATIONS
+
+  COMMAND: @list allocations
+
   This command lists the usage statistics for the internal buffer pools.
   For each buffer pool, the following information is listed:
+
     Size   - The size of a buffer, in characters.
     InUse  - The number of buffers presently allocated from the pool.
     Total  - The total number of buffers currently in the pool.
     Allocs - The total number of buffers ever allocated from the pool.
     Lost   - The number of buffers lost due to buffer header corruption.
- 
+
   Information is reported for the following pools:
+
     Lbufs    - Large buffers, used when handling data input by the user,
                object attributes, the results of interpreting commands, and
                many other places.
@@ -507,70 +569,108 @@
     Descs    - Network descriptors, one is used for each connected player.
     Qentries - Queue entries, one is used for each command placed on the
                queue. (@wait, @trigger, @switch, @dolist, etc).
- 
-  See also: @list buffers.
 
-& @list attr_permissions
-  Command: @list attr_permissions
+  Related Topics: @list buffers.
+
+& @LIST ATTR_PERMISSIONS
+@LIST ATTR_PERMISSIONS
+
+  COMMAND: @list attr_permissions
+
   Lists the attributes and the access restrictions that have been placed on
   them. The attributes are listed one per line.  Refer to the attr_access
   config parameter for the meanings of the restrictions.
- 
+
   Note that being allowed to write to an attribute does not imply the right
   to use the @<attr-name> shorthand command to set it, just the @set command.
-  See also: @list permissions, attr_access.
 
-& @list attributes
-  Command: @list attributes
+  Related Topics: @list permissions, attr_access.
+
+& @LIST ATTRIBUTES
+@LIST ATTRIBUTES
+
+  COMMAND: @list attributes
+
   Lists the attributes that are visible or settable by you.
-  See also: @list attr_access, @list permissions.
 
-& @list bad_names
-  Command: @list bad_names
+  Related Topics: @list attr_access, @list permissions.
+
+& @LIST BAD_NAMES
+@LIST BAD_NAMES
+
+  COMMAND: @list bad_names
+
   This command lists the player names that are not allowed to be created.
   Any create request (whether via the login screen or @pcreate) that matches
   (after wildcard expansion) one of the names in the list will be rejected.
 
-& @list buffers
-  Command: @list buffers
+& @LIST BUFFERS
+@LIST BUFFERS
+
+  COMMAND: @list buffers
+
   For each buffer in a buffer pool that is currently allocated, lists where
   within TinyMUX the buffer was allocated.
 
-& @list commands
-  Command: @list commands
+& @LIST COMMANDS
+@LIST COMMANDS
+
+  COMMAND: @list commands
+
   Lists the internal commands that you may execute.  This command does not
   list the attribute-setting commands that you may use (like @va or @ahear),
   and does not list exits in your current room or $-commands on objects.
-  See also: @list attr_access, @list attributes, @list permissions.
 
-& @list costs
-  Command: @list costs
+  Related Topics: @list attr_access, @list attributes, @list permissions.
+
+& @LIST COSTS
+@LIST COSTS
+
+  COMMAND: @list costs
+
   Lists the costs that are associated with some commands, particularly those
   that expand the database.
 
-& @list db_stats
-  Command: @list db_stats
+& @LIST DB_STATS
+@LIST DB_STATS
+
+  COMMAND: @list db_stats
+
   Lists statistics for the database cache. If compression is enabled,
   displays compression statistics as well.
 
-& @list default_flags
-  Command: @list default_flags
+& @LIST DEFAULT_FLAGS
+@LIST DEFAULT_FLAGS
+
+  COMMAND: @list default_flags
+
   Lists the flags that are automatically given to players, things, rooms,
   exits, and robots when they are created.
-  See also: player_flags, thing_flags, room_flags, exit_flags, robot_flags.
 
-& @list flags
-  Command: @list flags
+  Related Topics: player_flags, thing_flags, room_flags, exit_flags,
+                  robot_flags.
+
+& @LIST FLAGS
+@LIST FLAGS
+
+  COMMAND: @list flags
+
   For each object type, lists the name and key letter for all flags that may
   be set on that object type that are visible to you.
 
-& @list functions
-  Command: @list functions
+& @LIST FUNCTIONS
+@LIST FUNCTIONS
+
+  COMMAND: @list functions
+
   Lists the functions that may be used to obtain information when evaluating
   command lines.
 
-& @list globals
-  Command: @list globals
+& @LIST GLOBALS
+@LIST GLOBALS
+
+  COMMAND: @list globals
+
   Lists the global parameters that may be set or cleared by the @enable and
   @disable commands.  The following parameters are displayed.
  
@@ -587,18 +687,27 @@
                     enforced.
     interpret     - Indicates whether or not new commands may be added to
                     the queue.
+
 { 'wizhelp @list globals2' for more }
-& @list globals2
+
+& @LIST GLOBALS2
+@LIST GLOBALS (continued)
+
     logins        - Indicates whether or not nonwizard players are allowed
                     to connect.
-  See also: @dbck, @disable, @enable, @kick, @list permissions,
-            @timewarp, checkpoint, conn_timeout, dump_interval, dump_offset,
-            idle_interval, idle_timeout.
 
-& @list hashstats
-  Command: @list hashstats
+  Related Topics: @dbck, @disable, @enable, @kick, @list permissions,
+                  @timewarp, checkpoint, conn_timeout, dump_interval,
+                  dump_offset, idle_interval, idle_timeout.
+
+& @LIST HASHSTATS
+@LIST HASHSTATS
+
+  COMMAND: @list hashstats
+
   Lists the hashing statistics for each of the internal hash tables.
   For each hash table, the following information is displayed:
+
     Size    - The number of hash buckets in the hash table.
     Entries - The number of entries currently in the hash table.
     Deleted - The number of entries that have been deleted from the hash
@@ -610,10 +719,14 @@
     Checks  - The total number of comparisons made against hash table entries
               to see if they were the desired entry.
     Longest - The maximum number of entries in one hash bucket.
- 
+
 { 'wizhelp @list hashstats2' for more }
-& @list hashstats2
+
+& @LIST HASHSTATS2
+@LIST HASHSTATS (continued)
+
   Information is displayed for the following hash tables:
+
     Commands            - Internal MUX commands
     Logged-out commands - Commands valid whether or not you are connected
                           (such as WHO and QUIT).
@@ -627,13 +740,17 @@
     News topics         - Topics for the news command.
     Help topics         - Topics for the help command.
     Wizhelp topics      - Topics for the wizhelp command.
- 
-  See also: alias, attr_alias, flag_alias.
 
-& @list logging
-  Command: @list logging
+  Related Topics: alias, attr_alias, flag_alias.
+
+& @LIST LOGGING
+@LIST LOGGING
+
+  COMMAND: @list logging
+
   Lists the type of information that is written to the log file and how it is
   displayed.  The following types of information may be logged:
+
     accounting     - Usage information on player disconnect.
     all_commands   - All commands executed by anyone or anything.
     bad_commands   - Commands that resulted in a 'Huh?' message.
@@ -650,36 +767,55 @@
     shouts         - Messages sent to all players or all wizards.
     startup        - Events while starting up.
     wizard         - Use of powerful wizard commands, like @toad.
+
 { 'wizhelp @list logging2' for more }
-& @list logging2
+
+& @LIST LOGGING2
+@LIST LOGGING (continued)
+
   The following formatting information is listed:
+
     flags          - Include flags for players/objects/rooms listed.
     location       - Include location if player/object when requested.
     owner          - Include owner of objects/rooms listed.
     timestamp      - Prefix log entries by a timestamp.
- 
-  See also: log, log_options.
 
-& @list options
-  Command: @list options
+  Related Topics: log, log_options.
+
+& @LIST OPTIONS
+@LIST OPTIONS
+
+  COMMAND: @list options
+
   Lists the value of many of the configuration parameters.
-  See also: @admin.
 
-& @list permissions
-  Command: @list permissions
+  Related Topics: @admin.
+
+& @LIST PERMISSIONS
+@LIST PERMISSIONS
+
+  COMMAND: @list permissions
+
   For each command that you are allowed to use, lists the permissions that are
   needed to execute it.
-  See also: access, attr_cmd_access.
 
-& @list powers
-  Command: @list powers
+  Related Topics: access, attr_cmd_access.
+
+& @LIST POWERS
+@LIST POWERS
+
+  COMMAND: @list powers
+
   Lists the various powers.
- 
-& @list process
-  Command: @list process
- 
+
+& @LIST PROCESS
+@LIST PROCESS
+
+  COMMAND: @list process
+
   Lists information about the running MUX process and its resource usage.
   The following information is returned:
+
      Process number.
      Pagesize of the system running the MUX, in bytes.
      CPU time used, both user and system.
@@ -698,16 +834,19 @@
      Signals received.
      How many file descriptors are available to the MUX.
 
-& @list site_information
-  Command: @list site_information
+& @LIST SITE_INFORMATION
+@LIST SITE_INFORMATION
+
+  Command: @LIST SITE_INFORMATION
+
   Lists the contents of the site access and suspect lists.
- 
+
     Address - The address to which this entry applies.
     Mask    - The mask that is ANDed to both the input address and the address
               in the entry when checking to see if this entry is to be used.
     Status  - Indicates what type of access or restriction is to be applied.
               The following statuses may occur in the site access list:
- 
+
                 Forbidden    - Connections from this site are rejected.
                 Registration - Connections from this site are accepted,
                                new characters may not be created with the
@@ -716,32 +855,47 @@
                 Unrestricted - Connections from this site are accepted,
                                new characters may be created with the 'create'
                                command.
+
 { 'wizhelp @list site_information2' for more }
-& @list site_information2
+
+& @LIST SITE_INFORMATION2
+@LIST SITE_INFORMATION (continued)
+
               The following statuses may occur in the site suspect list:
- 
+
                 Suspected    - Notify logged-in wizards of any connects or
                                disconnects from this site.
                 Trusted      - Don't notify wizards of connects or disconnects
                                from this site.
- 
-  See also: forbid_site, permit_site, register_site, suspect_site, trust_site.
 
-& @list switches
-  Command: @list switches
+  Related Topics: forbid_site, permit_site, register_site, suspect_site,
+                  trust_site.
+
+& @LIST SWITCHES
+@LIST SWITCHES
+
+  COMMAND: @list switches
+
   Lists the commands that support switches as well as the switches that may
   be used.
 
-& @list user_attributes
-  Command: @list user_attributes
+& @LIST USER_ATTRIBUTES
+@LIST USER_ATTRIBUTES
+
+  COMMAND: @list user_attributes
+
   Lists the defined user-named attributes, along with their internal
   attribute numbers and access restrictions.
 
-& @list_file
-  Command: @list_file <file>
+& @LIST_FILE
+@LIST_FILE
+
+  COMMAND: @list_file <file>
+
   Lists the contents of one of the message files that are shown during the
   connect/create/disconnect process as conditions warrant.  The following
   files may be listed:
+
      badsite_connect - shown when a connection is opened from a forbidden
                        site.
      connect          - shown when a connection is opened from a site for
@@ -759,8 +913,12 @@
                         or is rejected).
      guest_motd       - shown to guest characters immediately after they
                         connect.
+
 { 'wizhelp @list_file2' for more }
-& @list_file2
+
+& @LIST_FILE2
+@LIST_FILE (continued)
+
      motd             - shown to all players immediately after they connect.
                         (except guests and players connecting for the first
                         time)
@@ -771,68 +929,90 @@
                         which registration is enforced.
      wizard_motd      - shown to wizards when they connect in addition to
                         the motd file.
-  See also: @readcache, badsite_file, connect_file, connect_reg_file,
-            down_file, guest_file, motd_file, newuser_file, quit_file,
-            register_create_file, wizard_motd_file.
 
-& @listmotd
-  Command: @listmotd
+  Related Topics: @readcache, badsite_file, connect_file, connect_reg_file,
+                  down_file, guest_file, motd_file, newuser_file, quit_file,
+                  register_create_file, wizard_motd_file.
+
+& @LISTMOTD
+@LISTMOTD
+
+  COMMAND: @listmotd
+
   Lists the current MOTD messages as set by the @motd command.
-  See also: @motd.
 
-& @lock
-  Command: @lock <object>=<key>
+  Related Topics: @motd.
+
+& @LOCK
+@LOCK
+
+  COMMAND: @lock <object>=<key>
+
   Note that with attribute locking, a WIZARD object can read any attribute of
   any object, including attributes invisible to players.
- 
+
   Player #1 may also make attribute locks of the form <attr-num>:<value>
   Note that if <attr-num> is not a valid attribute number, the lock will
   never succeed.
 
-& @log
-  Command: @log <file>=<message>
+& @LOG
+@LOG
+
+  COMMAND: @log <file>=<message>
+
   This logs the message (without timestamp) to the named file. Pathnames
   are stripped, and the file resides in mux2.0/game/logs/
- 
+
   The file must already exist for the @log request to succeed, and can only
   be created at the MUX account shell.
 
-& @mark
-  Command: @mark[/<switches>] [<player>] [<class>=<restriction>]
+& @MARK
+@MARK
+
+  COMMAND: @mark[/<switches>] [<player>] [<class>=<restriction>]
+
   Sets or clears the MARKED flags for objects that match the search criteria.
   This command may only be used when database cleaning is disabled (via
   @disable cleaning), as cleaning uses the MARKED flag to check
   connectivity.
- 
+
   The following switches are available:
+
      /set    - (default) Set the MARKED flag on the selected objects.
      /clear  - Clear the MARKED flag on the selected objects.
- 
-  See also: @apply_marked, @mark_all, MARKED, SEARCH CRITERIA.
 
-& @mark_all
-  Command: @mark_all[/<switches>]
- 
-  Sets or clears the MARKED flag for all objects in the database.  This command
-  may only be used when database cleaning is disabled (via @disable cleaning),
-  as cleaning uses the MARKED flag to check connectivity.
- 
+  Related Topics: @apply_marked, @mark_all, MARKED, SEARCH CRITERIA.
+
+& @MARK_ALL
+@MARK_ALL
+
+  COMMAND: @mark_all[/<switches>]
+
+  Sets or clears the MARKED flag for all objects in the database.  This
+  command may only be used when database cleaning is disabled (via @disable
+  cleaning), as cleaning uses the MARKED flag to check connectivity.
+
   The following switches are available:
+
      /set    - (default) Set the MARKED flag on all objects.
      /clear  - Clear the MARKED flag on all objects.
- 
-  See also: @apply_marked, @mark_all, MARKED.
 
-& @motd
-  Command: @motd[/<switches>] <message>
- 
+  Related Topics: @apply_marked, @mark_all, MARKED.
+
+& @MOTD
+@MOTD
+
+  COMMAND: @motd[/<switches>] <message>
+
   This command sets or lists short messages that are displayed to players
   after they successfully log in to the game (or after they fail because
   logins are not allowed).  These messages are displayed in addition to
   the contents of the motd.txt and wizmotd.txt files.
- 
+
   The following switches are available:
-     (No switches)   - Sets the message that all players see when they connect.
+
+     (No switches)   - Sets the message that all players see when they
+                       connect.
      /wizard         - Sets the message that wizards see when they connect.
      /down           - Sets the message the players see when they try to
                        connect, but fail because logins are disabled.
@@ -840,93 +1020,132 @@
                        connect, but fail because there are too many players
                        already connected.
      /list           - Lists the current messages.
-  See also: @listmotd.
 
-& @newpassword
-  Command: @newpassword <player>[=<newpassword>]
+  Related Topics: @listmotd.
+
+& @NEWPASSWORD
+@NEWPASSWORD
+
+  COMMAND: @newpassword <player>[=<newpassword>]
+
   Gives <player> the new password <newpassword>.  If <newpassword> is not
   specified, the player is given a null password.  If logged in, the player
   is notified that his password has been changed.
-  See also: @password.
 
-& @pcreate
-  Command: @pcreate <player>=<password>
+  Related Topics: @password.
+
+& @PCREATE
+@PCREATE
+
+  COMMAND: @pcreate <player>=<password>
+
   Creates a new player with the indicated password.  This command is
   equivalent to typing 'create <player> <password>' from the connection
   screen, and is normally only used when registration is enabled.
-  See also: REGISTRATION.
 
-& @poor
-  Command: @poor <amount>
+  Related Topics: REGISTRATION.
+
+& @POOR
+@POOR
+
+  COMMAND: @poor <amount>
+
   Sets the wealth of all players to <amount>.
 
-& @ps
-  Command: @ps[/<switches>] [<object>]
-  Wizards may also use the /all switch to view the entire queue.
-  See also: @ps (player version).
+& @PS
+@PS
 
-& @quota
+  COMMAND: @ps[/<switches>] [<object>]
+
+  Wizards may also use the /all switch to view the entire queue.
+
+  Related Topics: @ps (player version).
+
+& @QUOTA
+@QUOTA
+
   Command: @quota[/<switches>] [<player>[=<quota>]]
            @quota/all[/<switches>] [<quota>]]
+
   Lists or sets the player's (or everyone's) remaining or total quota
   according to the switches used.
+
   The following switches are available:
+
      /all       - Display or set the quota for all players.
      /fix       - Repair the remaining or total quota, assuming that the other
                   is correct.
      /remaining - Set or repair the remaining quota.
      /set       - Set the remaining or total quota to the specified value.
      /total     - Set or repair the total quota.
-  See also: QUOTAS.
 
-& @readcache
-  Command: @readcache
+  Related Topics: QUOTAS.
+
+& @READCACHE
+@READCACHE
+
+  COMMAND: @readcache
+
   Reads the commonly-used text files and help indexes on the game directory
-  into an internal cache, destroying the prior contents of the cache.
-  Use this command whenever you change one of the text of index files in
-  the game directory. Be sure and run mkindx to produce new index files
-  before you run this command.
+  into an internal cache, destroying the prior contents of the cache.  Use
+  this command whenever you change one of the text of index files in the game
+  directory. Be sure and run mkindx to produce new index files before you run
+  this command.
 
-& @restart
-  Command: @restart
+& @RESTART
+
+  COMMAND: @restart
+
   This command literally restarts the game. To the players, it appears as
   merely a short pause in the action. There are many reasons to @restart,
   including updating the source code, freeing built-up memory, etc.
   @restart dumps and reloads the database, so you cannot use it to change the
   database. You may recompile and use @restart to implement the changes
   without having to @shutdown.
- 
+
   @restart maintains all connections, any relevant information about them
   across restarts. Nothing should be adversely affected by an @restart.
   However, it should be used sparingly due to the tedious nature of dumping
   and loading the database.
- 
+
   NOTE: If you update the MUX binary with an outside binary, you should
   never overwrite the old one. Instead, you should delete or move it, and
   place the new binary in its place, for reasons beyond the scope of this
   document. This warning does not apply if you remake the binary in your
   game's source directory.
- 
-  Sending the MUX process a SIGUSR1 will duplicate an @restart.
- 
-& @shutdown
-  Command: @shutdown <text>
+
+  Sending the MUX process a SIGUSR1 from the shell account wil also cause a
+  @restart.
+
+& @SHUTDOWN
+@SHUTDOWN
+
+  COMMAND: @shutdown <text>
+
   Disconnects all connected players, saves the database to disk, and shuts
   down the game.  The game is unavailable until it is restarted.  If an
   argument is specified, it is written to the file named by the status_file
   config directive.
-  See also: status_file
 
-& @startslave
-  Command: @startslave
+  Related Topics: status_file
+
+& @STARTSLAVE
+@STARTSLAVE
+
+  COMMAND: @startslave
+
   This command restarts the slave process that does user and hostname
   lookups. It should only be used it the slave process has locked up or died
   for some reason.
- 
-& @timewarp
-  Command: @timewarp[/<switches>] <secs>
+
+& @TIMEWARP
+@TIMEWARP
+
+  COMMAND: @timewarp[/<switches>] <secs>
+
   Subtracts (or adds if negative) <secs> to one or more internal timers,
   depending on the switches specified from the following list:
+
      /check    - The time left until the next consistency check and database
                  cleaning.
      /dump     - The time left until the next automatic checkpoint dump.
@@ -936,16 +1155,19 @@
                  becomes less than the current time are then ready for
                  execution. The contents of the object queue are also
                  appended to the player queue.
- 
-  Note: these flags may be specified together if desired.
-  See also: @list options.
 
-& @timecheck
-  Command: @timecheck[/<switches>]
- 
+  Note: these flags may be specified together if desired.
+
+  Related Topics: @list options.
+
+& @TIMECHECK
+@TIMECHECK
+
+  COMMAND: @timecheck[/<switches>]
+
   An accounting of how much total CPU time has been used to execute commands
   on each object.
-  
+
   Win9x caveat:  Win9x does not provide a number of how much CPU time the
   MUX game server has consumed and so instead of CPU time, we use a
   high-resolution elapsed time instead. For some CPUs, the resolution of
@@ -958,33 +1180,43 @@
     /screen     Print information to the screen.
     /log        Print information to the logfile.
     /reset      Clear the counters.
- 
+
   If no switches are provided, printing to the screen and clearing the
   counters are assumed. The counters are otherwise not cleared unless
   /reset is specified.
- 
-& @toad
-  Command: @toad[/<switches>] <victim>[=<recipient>]
+
+& @TOAD
+@TOAD
+
+  COMMAND: @toad[/<switches>] <victim>[=<recipient>]
+
   Turns the victim into an object (a slimy toad) and disconnects them from
   the game.  The named recipient (or the @toading wizard) get ownership of
   all the victim's things, rooms, and exits, as well as of the toad object
   itself.
- 
-  The following switches are available:
-    /no_chown - Don't change the ownership of the victim or his objects.
-  See also: @boot, @chownall, @destroy.
 
-& @wall
-  Command: @wall[/<switches>] <message>
+  The following switches are available:
+
+    /no_chown - Don't change the ownership of the victim or his objects.
+
+  Related Topics: @boot, @chownall, @destroy.
+
+& @WALL
+@WALL
+
+  COMMAND: @wall[/<switches>] <message>
+
   With no switches, shouts <message> to every connected player or to every
   connected wizard, prefixed by either 'Announcement:' (if for everyone) or
   'Broadcast:' (if for wizards).  The following switches can be used to get the
   described effects:
+
      /emit      - Format the message as an emit (ie send just <message>).
      /pose      - Format the message as a pose (ie <youname> <message>).
      /wizard    - Only send the message to connected wizards.
      /admin     - Send the message to connected wizards and royalty.
      /no_prefix - Don't prepend 'Announcement:' or 'Broadcast:' to the message.
+
   If neither /emit or /pose are used, you can format the message one of several
   ways by specifying ':', ';', or '"' as the first character of the message.
   ':' and ';' format the message as if /pose were specified, except that ';'
@@ -1065,15 +1297,21 @@
   Sets a wizard-visible comment on the indicated object. This attribute is
   only visible and settable by wizards.
 
-& @timeout
-  Attribute: Timeout
-  Command: @timeout <object>[=<seconds>]
+& @TIMEOUT
+@TIMEOUT
+
+  ATTRIBUTE: Timeout
+
+  COMMAND: @timeout <object>[=<seconds>]
+
   Sets an idle timeout value on <object> that is different from the default
   value.  If the value is non-numeric or less than or equal to zero, then
   the default value is used.
+
   This attribute is only visible and settable by wizards.  It is only
   meaningful for players, and has no effect on other object types.
-  See also: idle_timeout.
+
+  Related Topics: idle_timeout.
 
 & MASTER ROOM
   The master room contains the default exits and $-commands for the MUX.
