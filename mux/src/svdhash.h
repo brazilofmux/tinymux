@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.6 2003-05-01 04:54:06 sdennis Exp $
+// $Id: svdhash.h,v 1.7 2003-07-30 05:13:43 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -18,18 +18,18 @@ extern UINT32 CRC32_ProcessBuffer
     unsigned int   nBuffer
 );
 
-extern UINT32 CRC32_ProcessInteger(unsigned int nInteger);
+extern UINT32 CRC32_ProcessInteger(UINT32 nInteger);
 extern UINT32 CRC32_ProcessInteger2
 (
-    unsigned int nInteger1,
-    unsigned int nInteger2
+    UINT32 nInteger1,
+    UINT32 nInteger2
 );
 
 extern UINT32 HASH_ProcessBuffer
 (
     UINT32       ulHash,
     const void  *arg_pBuffer,
-    unsigned int nBuffer
+    size_t       nBuffer
 );
 
 #ifdef _SGI_SOURCE

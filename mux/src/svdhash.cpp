@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.14 2003-07-28 05:00:36 sdennis Exp $
+// $Id: svdhash.cpp,v 1.15 2003-07-30 05:13:43 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -96,9 +96,6 @@ static const UINT32 CRC32_Table[256] =
     0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
 
-#define CRC32_INITIAL        0xFFFFFFFFU
-#define CRC32_VALID_RESULT   0x2144DF1CU
-
 // Portable CRC-32 routine. These slower routines are less compiler and
 // platform dependent and still get the job done.
 //
@@ -109,41 +106,40 @@ UINT32 CRC32_ProcessBuffer
     unsigned int   nBuffer
 )
 {
-    unsigned char *pBuffer = (unsigned char *)arg_pBuffer;
+    UINT8 *pBuffer = (UINT8 *)arg_pBuffer;
 
     ulCrc = ~ulCrc;
-    while (nBuffer)
+    while (nBuffer--)
     {
-        nBuffer--;
-        ulCrc  = CRC32_Table[((unsigned char)*pBuffer++) ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
+        ulCrc  = CRC32_Table[((UINT8)*pBuffer++) ^ (UINT8)ulCrc] ^ (ulCrc >> 8);
     }
     return ~ulCrc;
 }
 
-UINT32 CRC32_ProcessInteger(unsigned int nInteger)
+UINT32 CRC32_ProcessInteger(UINT32 nInteger)
 {
-    UINT32 ulCrc = CRC32_INITIAL;
-    ulCrc ^= nInteger;
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    UINT32 ulCrc;
+    ulCrc  = ~nInteger;
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
     return ~ulCrc;
 }
 
-UINT32 CRC32_ProcessInteger2(unsigned int nInteger1, unsigned int nInteger2)
+UINT32 CRC32_ProcessInteger2(UINT32 nInteger1, UINT32 nInteger2)
 {
-    UINT32 ulCrc = CRC32_INITIAL;
-    ulCrc ^= nInteger1;
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    UINT32 ulCrc;
+    ulCrc  = ~nInteger1;
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
     ulCrc ^= nInteger2;
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(UINT8)ulCrc] ^ (ulCrc >> 8);
     return ~ulCrc;
 }
 
@@ -157,10 +153,10 @@ UINT32 HASH_ProcessBuffer
 (
     UINT32       ulHash,
     const void  *arg_pBuffer,
-    unsigned int nBuffer
+    size_t       nBuffer
 )
 {
-    unsigned char *pBuffer = (unsigned char *)arg_pBuffer;
+    UINT8 *pBuffer = (UINT8 *)arg_pBuffer;
     ulHash = ~ulHash;
 
     if (nBuffer <= 16)
@@ -168,59 +164,59 @@ UINT32 HASH_ProcessBuffer
         pBuffer -= 16 - nBuffer;
         switch (nBuffer)
         {
-        case 16: ulHash  = CRC32_Table[pBuffer[0] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 15: ulHash  = CRC32_Table[pBuffer[1] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 14: ulHash  = CRC32_Table[pBuffer[2] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 13: ulHash  = CRC32_Table[pBuffer[3] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 12: ulHash  = CRC32_Table[pBuffer[4] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 11: ulHash  = CRC32_Table[pBuffer[5] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 10: ulHash  = CRC32_Table[pBuffer[6] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 9:  ulHash  = CRC32_Table[pBuffer[7] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
+        case 16: ulHash  = CRC32_Table[pBuffer[0] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 15: ulHash  = CRC32_Table[pBuffer[1] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 14: ulHash  = CRC32_Table[pBuffer[2] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 13: ulHash  = CRC32_Table[pBuffer[3] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 12: ulHash  = CRC32_Table[pBuffer[4] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 11: ulHash  = CRC32_Table[pBuffer[5] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 10: ulHash  = CRC32_Table[pBuffer[6] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 9:  ulHash  = CRC32_Table[pBuffer[7] ^ (UINT8)ulHash] ^ (ulHash >> 8);
 #if defined(UNALIGNED32) && defined(WORDS_LITTLEENDIAN)
         case 8:  ulHash ^= *(UINT32 *)(pBuffer + 8);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
                  ulHash ^= *(UINT32 *)(pBuffer + 12);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
                  return ~ulHash;
 #else
-        case 8:  ulHash  = CRC32_Table[pBuffer[8] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
+        case 8:  ulHash  = CRC32_Table[pBuffer[8] ^ (UINT8)ulHash] ^ (ulHash >> 8);
 #endif
 
-        case 7:  ulHash  = CRC32_Table[pBuffer[9] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 5:  ulHash  = CRC32_Table[pBuffer[11] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
+        case 7:  ulHash  = CRC32_Table[pBuffer[9] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 5:  ulHash  = CRC32_Table[pBuffer[11] ^ (UINT8)ulHash] ^ (ulHash >> 8);
 #if defined(UNALIGNED32) && defined(WORDS_LITTLEENDIAN)
         case 4:  ulHash ^= *(UINT32 *)(pBuffer + 12);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
                  return ~ulHash;
 #else
-        case 4:  ulHash  = CRC32_Table[pBuffer[12] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
+        case 4:  ulHash  = CRC32_Table[pBuffer[12] ^ (UINT8)ulHash] ^ (ulHash >> 8);
 #endif
 
-        case 3:  ulHash  = CRC32_Table[pBuffer[13] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 2:  ulHash  = CRC32_Table[pBuffer[14] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-        case 1:  ulHash  = CRC32_Table[pBuffer[15] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
+        case 3:  ulHash  = CRC32_Table[pBuffer[13] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 2:  ulHash  = CRC32_Table[pBuffer[14] ^ (UINT8)ulHash] ^ (ulHash >> 8);
+        case 1:  ulHash  = CRC32_Table[pBuffer[15] ^ (UINT8)ulHash] ^ (ulHash >> 8);
         case 0:  return ~ulHash;
         }
     }
 
-    int nSmall  = nBuffer & 15;
-    int nMedium = (nBuffer >> 4) & 255;
-    int nLarge  = nBuffer >> 12;
+    size_t nSmall  = nBuffer & 15;
+    size_t nMedium = (nBuffer >> 4) & 255;
+    size_t nLarge  = nBuffer >> 12;
 
     UINT32 s1 = ulHash & 0xFFFF;
     UINT32 s2 = (ulHash >> 16) & 0xFFFF;
 
-    while (nLarge)
+    while (nLarge--)
     {
         int k = 256;
         while (k)
@@ -229,27 +225,25 @@ UINT32 HASH_ProcessBuffer
             pBuffer += 16;
             k--;
         }
-        nLarge--;
         ulHash  = ~s1;
-        ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
         ulHash ^= s2;
-        ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-        ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+        ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
         ulHash = ~ulHash;
         s1 = ulHash & 0xFFFF;
         s2 = (ulHash >> 16) & 0xFFFF;
     }
 
-    while (nMedium)
+    while (nMedium--)
     {
         DO16(pBuffer);
         pBuffer += 16;
-        nMedium--;
     }
 
     pBuffer -= 15 - nSmall;
@@ -270,18 +264,19 @@ UINT32 HASH_ProcessBuffer
     case 3:  s1 += pBuffer[12]; s2 += s1;
     case 2:  s1 += pBuffer[13]; s2 += s1;
     case 1:  s1 += pBuffer[14]; s2 += s1;
+    case 0:  break;
     }
 
     ulHash  = ~s1;
-    ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
     ulHash ^= s2;
-    ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-    ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
+    ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
     return ~ulHash;
 }
 
