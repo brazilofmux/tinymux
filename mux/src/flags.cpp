@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: flags.cpp,v 1.2 2002-06-12 04:01:06 raevnos Exp $
 //
 
 #include "copyright.h"
@@ -429,7 +429,7 @@ FLAGNAMEENT gen_flag_names[] =
     {"MEDIUM",          TRUE, &fbeMedium         },
     {"DEAD",            TRUE, &fbeDead           },
 #endif // WOD_REALMS
-    {NULL, FALSE}
+    {NULL, FALSE, NULL}
 };
 
 #endif

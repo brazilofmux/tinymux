@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.2 2002-05-28 17:52:25 sdennis Exp $
+// $Id: timeutil.cpp,v 1.3 2002-06-12 04:01:06 raevnos Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -105,14 +105,14 @@ INT64 i64Mod(INT64 x, INT64 y)
 
 // Provide SGEQ modulus on a SGEQ platform.
 //
-int DCL_INLINE iRemainder(int x, int y)
+DCL_INLINE int iRemainder(int x, int y)
 {
     return x % y;
 }
 
 // Provide SGEQ division on a SGEQ platform.
 //
-int DCL_INLINE iDivision(int x, int y)
+DCL_INLINE int iDivision(int x, int y)
 {
     return x / y;
 }

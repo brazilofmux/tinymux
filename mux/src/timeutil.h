@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: timeutil.h,v 1.2 2002-06-12 04:01:06 raevnos Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -137,12 +137,12 @@ void TIME_Initialize(void);
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
 INT64 i64Mod(INT64 x, INT64 y);
 INT64 i64FloorDivision(INT64 x, INT64 y);
-INT64 DCL_INLINE i64Division(INT64 x, INT64 y) { return x / y; }
-INT64 DCL_INLINE i64Remainder(INT64 x, INT64 y) { return x % y; }
+DCL_INLINE INT64 i64Division(INT64 x, INT64 y) { return x / y; }
+DCL_INLINE INT64 i64Remainder(INT64 x, INT64 y) { return x % y; }
 int iFloorDivisionMod(int x, int y, int *piMod);
 #else
-INT64 DCL_INLINE i64Mod(INT64 x, INT64 y) { return x % y; }
-INT64 DCL_INLINE i64FloorDivision(INT64 x, INT64 y) { return x / y; }
+DCL_INLINE INT64 i64Mod(INT64 x, INT64 y) { return x % y; }
+DCL_INLINE INT64 i64FloorDivision(INT64 x, INT64 y) { return x / y; }
 INT64 i64Division(INT64 x, INT64 y);
 INT64 i64Remainder(INT64 x, INT64 y);
 int DCL_INLINE iFloorDivisionMod(int x, int y, int *piMod) \
