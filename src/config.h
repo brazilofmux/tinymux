@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.11 2000-11-01 20:24:39 sdennis Exp $ */
+/* $Id: config.h,v 1.12 2000-11-06 18:38:57 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -71,6 +71,10 @@
 /* This token is used to denote a null output delimiter. */
 
 #define NULL_DELIM_VAR  "@@"
+
+/* This is used to indent output from pretty-printing. */
+
+#define INDENT_STR  "  "
 
 /* amount of object endowment, based on cost */
 #define OBJECT_ENDOWMENT(cost) (((cost)/mudconf.sacfactor) +mudconf.sacadjust)
