@@ -161,13 +161,16 @@ OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O)
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
 
-# paths is likely to remain broken
-all: slave netmux links 
+all: netmux slave sqlslave links 
 
-links: netmux slave
+links: netmux slave sqlslave
 	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/netmux dbconvert
 	cd ../game/bin ; rm -f netmux ; ln -s ../../src/netmux netmux
 	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
+	cd ../game/bin ; rm -f sqlslave ; ln -s ../../src/sqlslave sqlslave
+
+sqlslave: sqlslave.o
+	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o sqlslave sqlslave.o
 
 slave: slave.o
 	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o slave slave.o
@@ -181,13 +184,13 @@ netmux: $(OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS)
 
 depend: $(ALLSRC) unsplit
-	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp sqlslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 realclean:
 	-rm -f *.o a.out core gmon.out mux.*log mux.*sum netmux netmux~
 
 clean:
-	-rm -f *.o a.out core gmon.out mux.*log mux.*sum slave netmux
+	-rm -f *.o a.out core gmon.out mux.*log mux.*sum slave sqlslave netmux
 
 include .depend
