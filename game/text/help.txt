@@ -9768,10 +9768,12 @@ VALID()
     > say exptime(123456)
     You say "1d 10h 17m 36s"
   
-  See also: writetime(), singletime(), digittime(), secs(), time().
+  Related Topics: writetime(), singletime(), digittime(), secs(), time().
   
 & SINGLETIME()
-  Function: singletime(<seconds>)
+SINGLETIME()
+
+  FUNCTION: singletime(<seconds>)
   
   This function converts seconds to a single time element which is
   the lowest approximation to the given number of <seconds>.
@@ -9784,10 +9786,12 @@ VALID()
     > say singletime(123456)
     You say "1d"
   
-  See also: writetime(), exptime(), digittime(), secs(), time().
-
+  Related Topics: writetime(), exptime(), digittime(), secs(), time().
+  
 & LFLAGS()
-  Function lflags(<object>)
+LFLAGS()
+
+  FUNCTION: lflags(<object>)
   
   Returns the flags of <object> written out with their actual names.
   
@@ -9800,47 +9804,58 @@ VALID()
   See also: flags(), type().
   
 & CONNTOTAL()
-  Function conntotal(<player>)
+CONNTOTAL()
+
+  FUNCTION:  conntotal(<player>)
   
   Returns the number of seconds that <player> has been connected to
   the MUX. This also includes the current connection time.
   
-  See also: connmax(), connlast(), connnum(), connleft(), secs(),
+  Related Topics: connmax(), connlast(), connnum(), connleft(), secs(),
             conn().
-
+  
 & CONNMAX()
-  Function connmax(<player>)
+CONNMAX()
+
+  FUNCTION:  connmax(<player>)
   
   Returns the longest connection time that <player> has been
   connected to the MUX -- perhaps even the current session.
   
-  See also: conntotal(), connlast(), connnum(), connleft(), secs(),
+  Related Topics: conntotal(), connlast(), connnum(), connleft(), secs(),
             conn().
-
+  
 & CONNLAST()
-  Function connlast(<player>)
+CONNLAST()
+
+  FUNCTION:  connlast(<player>)
   
   Returns the number of seconds that <player>'s last connection to
   the MUX was.
   
-  See also: conntotal(), connmax(), connnum(), connleft(), secs(),
+  Related Topics: conntotal(), connmax(), connnum(), connleft(), secs(),
             conn().
   
 & CONNNUM()
-  Function connnum(<player>)
+CONNNUM()
+
+  FUNCTION:  connnum(<player>)
   
   Returns the number connections that <player> has had to the MUX
   including the current connection.
   
-  See also: conntotal(), connmax(), connlast(), connleft(), secs(),
+  Related Topics: conntotal(), connmax(), connlast(), connleft(), secs(),
             conn().
   
 & CONNLEFT()
-  Function connleft(<player>)
+CONNLEFT()
+
+  FUNCTION:  connleft(<player>)
   
   Returns the time stamp (number of seconds elapsed since midnight,
   January 1, 1970) that represents when the <player> last
   disconnected from the MUX.
   
-  See also: conntotal(), connmax(), connlast(), connnum(), secs(),
+  Related Topics: conntotal(), connmax(), connlast(), connnum(), secs(),
             conn().
+ 
