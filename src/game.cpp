@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.3 2000-04-11 21:27:35 sdennis Exp $
+// $Id: game.cpp,v 1.4 2000-04-15 15:45:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1006,7 +1006,7 @@ void dump_database_internal(int dump_type)
     // dump will take care of them as well as can be expected for now, and if
     // we try to, we'll just step on them.
     //
-    if (mudstate.dumping && (dump_type == 1 || dump_type == 4))
+    if (mudstate.dumping && (dump_type == DUMP_PANIC || dump_type == DUMP_SIGNAL))
     {
         bPotentialConflicts = TRUE;
     }
