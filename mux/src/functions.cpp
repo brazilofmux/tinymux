@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.130 2005-01-05 17:59:43 sdennis Exp $
+// $Id: functions.cpp,v 1.131 2005-01-05 18:50:20 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -425,6 +425,7 @@ char *split_token(char **sp, SEP *psep)
 #define NUMERIC_LIST    2
 #define DBREF_LIST      4
 #define FLOAT_LIST      8
+#define CI_ASCII_LIST   16
 #define ALL_LIST        (ASCII_LIST|NUMERIC_LIST|DBREF_LIST|FLOAT_LIST)
 
 static int autodetect_list(char *ptrs[], int nitems)
@@ -492,6 +493,8 @@ static int get_list_type
             return NUMERIC_LIST;
         case 'f':
             return FLOAT_LIST;
+        case 'i':
+            return CI_ASCII_LIST;
         case '\0':
             return autodetect_list(ptrs, nitems);
         default:
@@ -7480,6 +7483,11 @@ static int DCL_CDECL a_comp(const void *s1, const void *s2)
     return strcmp(*(char **)s1, *(char **)s2);
 }
 
+static int DCL_CDECL a_casecomp(const void *s1, const void *s2)
+{
+    return strcasecmp(*(char **)s1, *(char **)s2);
+}
+
 static int DCL_CDECL f_comp(const void *s1, const void *s2)
 {
     if (((f_rec *) s1)->data > ((f_rec *) s2)->data)
@@ -7529,12 +7537,10 @@ static void do_asort(char *s[], int n, int sort_type)
     switch (sort_type)
     {
     case ASCII_LIST:
-
         qsort(s, n, sizeof(char *), a_comp);
         break;
 
     case NUMERIC_LIST:
-
         i64p = (i64_rec *) MEMALLOC(n * sizeof(i64_rec));
         ISOUTOFMEMORY(i64p);
         for (i = 0; i < n; i++)
@@ -7569,7 +7575,6 @@ static void do_asort(char *s[], int n, int sort_type)
         break;
 
     case FLOAT_LIST:
-
         fp = (f_rec *) MEMALLOC(n * sizeof(f_rec));
         ISOUTOFMEMORY(fp);
         for (i = 0; i < n; i++)
@@ -7584,6 +7589,10 @@ static void do_asort(char *s[], int n, int sort_type)
         }
         MEMFREE(fp);
         fp = NULL;
+        break;
+
+    case CI_ASCII_LIST:
+        qsort(s, n, sizeof(char *), a_casecomp);
         break;
     }
 }
