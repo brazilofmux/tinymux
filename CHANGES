@@ -160,7 +160,7 @@ Feature Additions:
  --  Freshened help for @aconnect and @adisconnect.
  --  Support second argument for squish().
  --  Compiles under Cygwin.
- -- Changes for DEC Alpha Linux and IA64.
+ --  Changes for DEC Alpha Linux and IA64.
 
 
 Bug Fixes:
