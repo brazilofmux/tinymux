@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.5 2002-07-13 07:23:02 jake Exp $
+// $Id: timeutil.cpp,v 1.6 2002-07-17 06:58:15 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -613,21 +613,40 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
     return TRUE;
 }
 
-char *CLinearTimeAbsolute::ReturnSecondsString(void)
+char *CLinearTimeAbsolute::ReturnSecondsString(int nFracDigits)
 {
     INT64 Leftover;
     INT64 lt = i64FloorDivisionMod(m_tAbsolute - EPOCH_OFFSET, FACTOR_100NS_PER_SECOND, &Leftover);
     int n = Tiny_i64toa(lt, m_Buffer);
-    if (Leftover != 0)
+    if (Leftover == 0)
+    {
+        return m_Buffer;
+    }
+
+    // Sanitize Precision Request.
+    //
+    const int maxFracDigits = 7;
+    const int minFracDigits = 0;
+    if (nFracDigits < minFracDigits)
+    {
+        nFracDigits = minFracDigits;
+    }
+    else if (maxFracDigits < nFracDigits)
+    {
+        nFracDigits = maxFracDigits;
+    }
+    if (0 < nFracDigits)
     {
         char *p = m_Buffer + n;
         *p++ = '.';
-        char buf[8];
+        char *q = p;
+
+        char buf[maxFracDigits+1];
         int m = Tiny_i64toa(Leftover, buf);
-        memset(p, '0', 7 - m);
-        p += 7 - m;
+        memset(p, '0', maxFracDigits - m);
+        p += maxFracDigits - m;
         memcpy(p, buf, m);
-        p += m - 1;
+        p = q + nFracDigits - 1;
         while (*p == '0')
         {
             p--;
@@ -1209,39 +1228,52 @@ void CLinearTimeAbsolute::ReturnUniqueString(char *buffer)
     }
 }
 
-char *CLinearTimeAbsolute::ReturnDateString(void)
+char *CLinearTimeAbsolute::ReturnDateString(int nFracDigits)
 {
     FIELDEDTIME ft;
     if (LinearTimeToFieldedTime(m_tAbsolute, &ft))
     {
-        if (  ft.iMillisecond != 0
-           || ft.iMicrosecond != 0
-           || ft.iNanosecond != 0)
+        // Sanitize Precision Request.
+        //
+        const int maxFracDigits = 7;
+        const int minFracDigits = 0;
+        if (nFracDigits < minFracDigits)
         {
-            char buffer[10];
-            sprintf(buffer, "%03d%03d%03d", ft.iMillisecond, ft.iMicrosecond, ft.iNanosecond);
-            char *p = buffer + 8;
+            nFracDigits = minFracDigits;
+        }
+        else if (maxFracDigits < nFracDigits)
+        {
+            nFracDigits = maxFracDigits;
+        }
+
+        char buffer[11];
+        buffer[0] = '\0';
+        if (  0 < nFracDigits
+           && (  ft.iMillisecond != 0
+              || ft.iMicrosecond != 0
+              || ft.iNanosecond != 0))
+        {
+            sprintf(buffer, ".%03d%03d%03d", ft.iMillisecond, ft.iMicrosecond,
+                ft.iNanosecond);
+
+            // Remove trailing zeros.
+            //
+            char *p = (buffer + 1) + (nFracDigits - 1);
             while (*p == '0')
             {
                 p--;
             }
             p++;
             *p = '\0';
-            sprintf(m_Buffer, "%s %s %02d %02d:%02d:%02d.%s %04d",
-                DayOfWeekString[ft.iDayOfWeek], monthtab[ft.iMonth-1],
-                ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond, buffer,
-                ft.iYear);
         }
-        else
-        {
-            sprintf(m_Buffer, "%s %s %02d %02d:%02d:%02d %04d",
-                DayOfWeekString[ft.iDayOfWeek], monthtab[ft.iMonth-1],
-                ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond, ft.iYear);
-        }
+        sprintf(m_Buffer, "%s %s %02d %02d:%02d:%02d%s %04d",
+            DayOfWeekString[ft.iDayOfWeek], monthtab[ft.iMonth-1],
+            ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond, buffer,
+            ft.iYear);
     }
     else
     {
-        m_Buffer[0] = 0;
+        m_Buffer[0] = '\0';
     }
     return m_Buffer;
 }

@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.20 2002-07-17 03:46:30 sdennis Exp $
+// $Id: netcommon.cpp,v 1.21 2002-07-17 06:58:14 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -782,7 +782,7 @@ static void announce_connect(dbref player, DESC *d)
     free_lbuf(buf);
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
-    time_str = ltaNow.ReturnDateString();
+    time_str = ltaNow.ReturnDateString(7);
 
     record_login(player, TRUE, time_str, d->addr, d->username,
         inet_ntoa((d->address).sin_addr));

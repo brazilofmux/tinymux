@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.18 2002-07-14 00:17:50 sdennis Exp $
+// $Id: mail.cpp,v 1.19 2002-07-17 06:58:14 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1098,8 +1098,6 @@ static void send_mail
     BOOL silent
 )
 {
-    char tbuf1[30];
-
     if (!isPlayer(target))
     {
         notify(player, "MAIL: You cannot send mail to non-existent people.");
@@ -1108,34 +1106,14 @@ static void send_mail
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
 
-    // TODO: Stephen Dennis to fix this with a parameter to ReturnDateString.
-    //
-    BOOL bOmitting = FALSE;
-    int count = 0;
-    for(char *temp = ltaNow.ReturnDateString();*temp;*temp++)
-    {
-        if (*temp == '.')
-        {
-            bOmitting = TRUE;
-            continue;
-        }
-        else if (*temp == ' ')
-        {
-            bOmitting = FALSE;
-        }
-        if(!bOmitting)
-        {
-            tbuf1[count] = *temp;
-            count++;
-        }
-    }
-    tbuf1[count] = '\0';
+    char *pTimeStr = ltaNow.ReturnDateString(0);
 
     // Initialize the appropriate fields.
     //
     struct mail *newp = (struct mail *)MEMALLOC(sizeof(struct mail));
     (void)ISOUTOFMEMORY(newp);
     newp->to = target;
+
     // HACK: Allow @mail/quick, if player is an object, then the
     // object's owner is the sender, if the owner is a wizard, then
     // we allow the object to be the sender.
@@ -1159,7 +1137,7 @@ static void send_mail
     newp->tolist = StringClone(tolist);
     newp->number = number;
     MessageReferenceInc(number);
-    newp->time = StringClone(tbuf1);
+    newp->time = StringClone(pTimeStr);
     newp->subject = StringClone(subject);
 
     // Send to folder 0

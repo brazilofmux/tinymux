@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.8 2002-07-13 07:23:02 jake Exp $
+// $Id: player.cpp,v 1.9 2002-07-17 06:58:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -235,7 +235,7 @@ dbref connect_player(char *name, char *password, char *host, char *username, cha
 {
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
-    char *time_str = ltaNow.ReturnDateString();
+    char *time_str = ltaNow.ReturnDateString(7);
 
     dbref player = lookup_player(NOTHING, name, FALSE);
     if (player == NOTHING)

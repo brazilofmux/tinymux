@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.59 2002-07-17 03:46:30 sdennis Exp $
+// $Id: functions.cpp,v 1.60 2002-07-17 06:58:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -886,7 +886,12 @@ FUNCTION(fun_time)
     {
         ltaNow.GetUTC();
     }
-    char *temp = ltaNow.ReturnDateString();
+    int nPrecision = 0;
+    if (nfargs == 2)
+    {
+        nPrecision = Tiny_atol(fargs[1]);
+    }
+    char *temp = ltaNow.ReturnDateString(nPrecision);
     safe_str(temp, buff, bufc);
 }
 
@@ -912,7 +917,12 @@ FUNCTION(fun_secs)
     {
         ltaNow.GetLocal();
     }
-    safe_str(ltaNow.ReturnSecondsString(), buff, bufc);
+    int nPrecision = 0;
+    if (nfargs == 2)
+    {
+        nPrecision = Tiny_atol(fargs[1]);
+    }
+    safe_str(ltaNow.ReturnSecondsString(nPrecision), buff, bufc);
 }
 
 // ---------------------------------------------------------------------------
@@ -938,7 +948,12 @@ FUNCTION(fun_convsecs)
     {
         lta.UTC2Local();
     }
-    char *temp = lta.ReturnDateString();
+    int nPrecision = 0;
+    if (nfargs == 3)
+    {
+        nPrecision = Tiny_atol(fargs[2]);
+    }
+    char *temp = lta.ReturnDateString(nPrecision);
     safe_str(temp, buff, bufc);
 }
 
@@ -973,11 +988,16 @@ FUNCTION(fun_convtime)
         {
             lta.Local2UTC();
         }
-        safe_str(lta.ReturnSecondsString(), buff, bufc);
+        int nPrecision = 0;
+        if (nfargs == 3)
+        {
+            nPrecision = Tiny_atol(fargs[2]);
+        }
+        safe_str(lta.ReturnSecondsString(nPrecision), buff, bufc);
     }
     else
     {
-        safe_str("-1", buff, bufc);
+        safe_str("#-1 INVALID DATE", buff, bufc);
     }
 }
 
@@ -1171,7 +1191,7 @@ FUNCTION(fun_timefmt)
             }
             else
             {
-                safe_str(lta.ReturnDateString(), buff, bufc);
+                safe_str(lta.ReturnDateString(7), buff, bufc);
             }
             break;
 
@@ -1275,7 +1295,7 @@ FUNCTION(fun_timefmt)
             break;
 
         case 's': // $s - Number of seconds since the epoch.
-            safe_str(ltaUTC.ReturnSecondsString(), buff, bufc);
+            safe_str(ltaUTC.ReturnSecondsString(7), buff, bufc);
             break;
 
         case 'S': // $S - Seconds after the minute
@@ -7633,8 +7653,8 @@ FUN flist[] =
     {"CONNRECORD", fun_connrecord, MAX_ARG, 0,  0,   0, CA_PUBLIC},
     {"CONNTOTAL",fun_conntotal,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"CONVSECS", fun_convsecs, MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"CONVTIME", fun_convtime, MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"CONVSECS", fun_convsecs, MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"CONVTIME", fun_convtime, MAX_ARG, 1,  3,       0, CA_PUBLIC},
     {"COS",      fun_cos,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
@@ -7817,7 +7837,7 @@ FUN flist[] =
     {"S",        fun_s,        1,       1,  1,       0, CA_PUBLIC},
     {"SCRAMBLE", fun_scramble, MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SEARCH",   fun_search,   1,       0,  1,       0, CA_PUBLIC},
-    {"SECS",     fun_secs,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"SECS",     fun_secs,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"SECURE",   fun_secure,   1,       1,  1,       0, CA_PUBLIC},
     {"SET",      fun_set,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"SETDIFF",  fun_setdiff,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
@@ -7854,7 +7874,7 @@ FUN flist[] =
     {"TABLE",    fun_table,    MAX_ARG, 1,  6,       0, CA_PUBLIC},
     {"TAN",      fun_tan,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"TEL",      fun_tel,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"TIME",     fun_time,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"TIME",     fun_time,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"TIMEFMT",  fun_timefmt,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"TRANSLATE",fun_translate,MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"TRIM",     fun_trim,     MAX_ARG, 1,  3,       0, CA_PUBLIC},
@@ -8563,7 +8583,7 @@ FUNCTION(fun_connleft)
     if (Good_obj(target))
     {
         CLinearTimeAbsolute cl = fetch_logouttime(target);
-        safe_str(cl.ReturnSecondsString(), buff, bufc);
+        safe_str(cl.ReturnSecondsString(7), buff, bufc);
     }
     else
     {
