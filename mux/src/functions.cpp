@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.17 2002-06-18 20:19:35 jake Exp $
+// $Id: functions.cpp,v 1.18 2002-06-18 23:04:55 jake Exp $
 //
 
 #include "copyright.h"
@@ -1414,15 +1414,34 @@ int check_read_perms
     return 0;
 }
 
-FUNCTION(fun_get)
+#define GET_GET     1
+#define GET_XGET    2
+#define GET_EVAL    4
+#define GET_GEVAL   8
+
+void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key)
 {
     dbref thing, aowner;
-    int attrib, free_buffer, aflags;
+    int attrib, aflags;
     ATTR *attr;
     char *atr_gotten;
     struct boolexp *pBoolExp;
+    BOOL bNoMatch, bFreeBuffer = TRUE, bEval = TRUE;
 
-    if (!parse_attrib(executor, fargs[0], &thing, &attrib))
+    switch(key)
+    {
+    case GET_GET:
+    case GET_GEVAL:
+        bNoMatch = !parse_attrib(executor, fargs[0], &thing, &attrib);
+        break;
+    case GET_XGET:
+    case GET_EVAL:
+        bNoMatch = !parse_attrib(executor, tprintf("%s/%s", fargs[0], fargs[1]), &thing, &attrib);
+        break;
+    default:
+        bNoMatch = TRUE;
+    }
+    if (bNoMatch)
     {
         safe_nomatch(buff, bufc);
         return;
@@ -1431,7 +1450,6 @@ FUNCTION(fun_get)
     {
         return;
     }
-    free_buffer = 1;
 
     // We need the attr's flags for this:
     //
@@ -1457,7 +1475,8 @@ FUNCTION(fun_get)
             // TODO: This is bad practice.
             atr_gotten = (char *)FUNC_NOPERM_MESSAGE;
         }
-        free_buffer = 0;
+        bFreeBuffer = FALSE;
+        bEval = FALSE;
     }
     else
     {
@@ -1469,7 +1488,7 @@ FUNCTION(fun_get)
     //
     if (check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
     {
-        if (free_buffer)
+        if (bFreeBuffer)
         {
             if (nLen)
             {
@@ -1481,143 +1500,9 @@ FUNCTION(fun_get)
             safe_str(atr_gotten, buff, bufc);
         }
     }
-    if (free_buffer)
+    if (bEval && ((key == GET_EVAL) || (key == GET_GEVAL)))
     {
-        free_lbuf(atr_gotten);
-    }
-}
-
-FUNCTION(fun_xget)
-{
-    dbref thing, aowner;
-    int attrib, aflags;
-    ATTR *attr;
-    char *atr_gotten;
-    struct boolexp *pBoolExp;
-
-    if (!*fargs[0] || !*fargs[1])
-    {
-        return;
-    }
-
-    if (!parse_attrib(executor, tprintf("%s/%s", fargs[0], fargs[1]), &thing, &attrib))
-    {
-        safe_nomatch(buff, bufc);
-        return;
-    }
-    if (attrib == NOTHING)
-    {
-        return;
-    }
-    // We need the attr's flags for this:
-    attr = atr_num(attrib);
-    if (!attr)
-    {
-        return;
-    }
-    int free_buffer = 1;
-    int nLen = 0;
-    if (attr->flags & AF_IS_LOCK)
-    {
-        atr_gotten = atr_get_LEN(thing, attrib, &aowner, &aflags, &nLen);
-        if (bCanReadAttr(executor, thing, attr, FALSE))
-        {
-            pBoolExp = parse_boolexp(executor, atr_gotten, 1);
-            free_lbuf(atr_gotten);
-            atr_gotten = unparse_boolexp(executor, pBoolExp);
-            free_boolexp(pBoolExp);
-        }
-        else
-        {
-            free_lbuf(atr_gotten);
-            // TODO: This is bad practice.
-            atr_gotten = (char *)FUNC_NOPERM_MESSAGE;
-        }
-        free_buffer = 0;
-    }
-    else
-    {
-        atr_gotten = atr_pget_LEN(thing, attrib, &aowner, &aflags, &nLen);
-    }
-
-    // Perform access checks.  c_r_p fills buff with an error message
-    // if needed.
-    //
-    if (check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
-    {
-        if (free_buffer)
-        {
-            safe_copy_buf(atr_gotten, nLen, buff, bufc);
-        }
-        else
-        {
-            safe_str(atr_gotten, buff, bufc);
-        }
-    }
-    if (free_buffer)
-    {
-        free_lbuf(atr_gotten);
-    }
-}
-
-FUNCTION(fun_get_eval)
-{
-    dbref thing, aowner;
-    int attrib, free_buffer, aflags, eval_it;
-    ATTR *attr;
-    char *atr_gotten, *str;
-    struct boolexp *pBoolExp;
-
-    if (!parse_attrib(executor, fargs[0], &thing, &attrib))
-    {
-        safe_nomatch(buff, bufc);
-        return;
-    }
-    if (attrib == NOTHING)
-    {
-        return;
-    }
-    free_buffer = 1;
-    eval_it = 1;
-    attr = atr_num(attrib); // We need the attr's flags for this:
-    if (!attr)
-    {
-        return;
-    }
-    if (attr->flags & AF_IS_LOCK)
-    {
-        atr_gotten = atr_get(thing, attrib, &aowner, &aflags);
-        if (bCanReadAttr(executor, thing, attr, FALSE))
-        {
-            pBoolExp = parse_boolexp(executor, atr_gotten, 1);
-            free_lbuf(atr_gotten);
-            atr_gotten = unparse_boolexp(executor, pBoolExp);
-            free_boolexp(pBoolExp);
-        }
-        else
-        {
-            free_lbuf(atr_gotten);
-            // TODO: This is bad practice.
-            atr_gotten = (char *)FUNC_NOPERM_MESSAGE;
-        }
-        free_buffer = 0;
-        eval_it = 0;
-    }
-    else
-    {
-        atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
-    }
-    if (!check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
-    {
-        if (free_buffer)
-        {
-            free_lbuf(atr_gotten);
-        }
-        return;
-    }
-    if (eval_it)
-    {
-        str = atr_gotten;
+        char *str = atr_gotten;
         TinyExec(buff, bufc, thing, executor, executor, EV_FIGNORE | EV_EVAL,
                  &str, (char **)NULL, 0);
     }
@@ -1625,9 +1510,32 @@ FUNCTION(fun_get_eval)
     {
         safe_str(atr_gotten, buff, bufc);
     }
-    if (free_buffer)
+
+    if (bFreeBuffer)
+    {
         free_lbuf(atr_gotten);
-    return;
+    }
+}
+
+FUNCTION(fun_get)
+{
+    get_handler(buff, bufc, executor, fargs, GET_GET);
+}
+
+FUNCTION(fun_xget)
+{
+    if (!*fargs[0] || !*fargs[1])
+    {
+        return;
+    }
+
+    get_handler(buff, bufc, executor, fargs, GET_XGET);
+}
+
+
+FUNCTION(fun_get_eval)
+{
+    get_handler(buff, bufc, executor, fargs, GET_GEVAL);
 }
 
 FUNCTION(fun_subeval)
@@ -1640,11 +1548,7 @@ FUNCTION(fun_subeval)
 
 FUNCTION(fun_eval)
 {
-    dbref thing, aowner;
-    int attrib, free_buffer, aflags, eval_it;
-    ATTR *attr;
-    char *atr_gotten, *str;
-    struct boolexp *pBoolExp;
+    char *str;
 
     if (nfargs == 1)
     {
@@ -1658,69 +1562,7 @@ FUNCTION(fun_eval)
         return;
     }
 
-    if (!parse_attrib(executor, tprintf("%s/%s", fargs[0], fargs[1]),
-              &thing, &attrib))
-    {
-        safe_nomatch(buff, bufc);
-        return;
-    }
-    if (attrib == NOTHING)
-    {
-        return;
-    }
-    free_buffer = 1;
-    eval_it = 1;
-    attr = atr_num(attrib);
-    if (!attr)
-    {
-        return;
-    }
-    if (attr->flags & AF_IS_LOCK)
-    {
-        atr_gotten = atr_get(thing, attrib, &aowner, &aflags);
-        if (bCanReadAttr(executor, thing, attr, FALSE))
-        {
-            pBoolExp = parse_boolexp(executor, atr_gotten, 1);
-            free_lbuf(atr_gotten);
-            atr_gotten = unparse_boolexp(executor, pBoolExp);
-            free_boolexp(pBoolExp);
-        }
-        else
-        {
-            free_lbuf(atr_gotten);
-            // TODO: This is bad practice.
-            atr_gotten = (char *)FUNC_NOPERM_MESSAGE;
-        }
-        free_buffer = 0;
-        eval_it = 0;
-    }
-    else
-    {
-        atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
-    }
-    if (!check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
-    {
-        if (free_buffer)
-        {
-            free_lbuf(atr_gotten);
-        }
-        return;
-    }
-    if (eval_it)
-    {
-        str = atr_gotten;
-        TinyExec(buff, bufc, thing, executor, enactor, EV_FIGNORE | EV_EVAL,
-                 &str, (char **)NULL, 0);
-    }
-    else
-    {
-        safe_str(atr_gotten, buff, bufc);
-    }
-    if (free_buffer)
-    {
-        free_lbuf(atr_gotten);
-    }
-    return;
+    get_handler(buff, bufc, executor, fargs, GET_EVAL);
 }
 
 /*
