@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.22 2003-02-15 07:09:09 sdennis Exp $
+// $Id: predicates.cpp,v 1.23 2003-02-15 18:04:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -1776,6 +1776,11 @@ bool get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *er
 
 bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bCheckParent)
 {
+    if (!tattr)
+    {
+        return false;
+    }
+
     dbref aowner;
     int aflags;
 
@@ -1835,6 +1840,11 @@ bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bCheckParent)
 
 bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
 {
+    if (!tattr)
+    {
+        return false;
+    }
+
     dbref aowner;
     int aflags;
     atr_get_info(target, tattr->number, &aowner, &aflags);
