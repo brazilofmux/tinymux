@@ -5600,7 +5600,7 @@ DIE()
   For example, DIE(2, 6) would roll "2d6" - two six-sided dice,
   generating a result in the range 2-12.
 
-  Related Topics:
+  Related Topics: lrand(), pickrand(), rand(), shuffle()
 
 & DIGITTIME()
 DIGITTIME()
@@ -8357,7 +8357,7 @@ LRAND()
   For instance, 'lrand(3, 6, 5)' would generate five random numbers
   in the range 3 - 6 (i.e., 3, 4, 5, or 6), such as '4 6 3 5 6'.
 
-  Related topics: rand(), die(), lnum()
+  Related Topics: die(), lnum(), pickrand(), rand(), shuffle()
 
 & LROOMS()
 LROOMS()
@@ -9867,7 +9867,7 @@ PICKRAND()
     > say pickrand(foo bar baz)
     You say "bar"
 
-  Related Topics: rand(), lrand(), die().
+  Related Topics: die(), lrand(), rand(), rand(), shuffle()
 
 & PIPING
 PIPING
@@ -10191,7 +10191,7 @@ RAND()
     > say rand(10)
     You say "1"
 
-  Related Topics:
+  Related Topics: die(), lrand(), pickrand(), shuffle()
 
 & READ
 READ
@@ -11212,7 +11212,7 @@ SHUFFLE()
     > say shuffle(foo bar baz gleep)
     You say "baz foo gleep bar"
 
-  Related Topics:
+  Related Topics: die(), lrand(), pickrand(), rand()
 
 & SIGN()
 SIGN()
