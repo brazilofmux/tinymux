@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  July 2003
+Last Update:  August 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -375,6 +375,11 @@ Bug Fixes:
     the problem.
  -- A look at a player could show their description without showing their
     name.  Patch by Sean Hunter.
+ -- Fix @hook/igswitch in case where built-in command does not take any
+    switches.
+ -- Fix typo in gradian-to-radian conversion factor.
+ -- Fix cand(), cor(), candbool(), and corbool() so that %0-%9 are evaluated
+    properly.  Reported by Sean Hunter.
 
 
 Performance Enhancements:
