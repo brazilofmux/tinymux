@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: log.cpp,v 1.2 2003-01-23 07:32:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -296,8 +296,8 @@ void do_log
         }
     }
 
-    char *pFullName = 0;
-    char *pMessage;
+    char *pFullName = NULL;
+    char *pMessage = "";
     if (bValid)
     {
         pFullName = alloc_lbuf("do_log_filename");
