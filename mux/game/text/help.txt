@@ -11458,9 +11458,10 @@ SORT()
   order is used for numbers and dbrefs.
 
   <sort type> may be used to specify the type of sort to perform (use 'd' for
-  dbref, 'n' for integer numeric, 'f' for floating numeric, and 'a' for
-  alphanumeric).  If omitted or left blank, the sort() function will
-  try to determine the type of sort to perform automatically.
+  dbref, 'n' for integer numeric, 'f' for floating numeric, 'a' for
+  case-sensitive alphanumeric, and 'i' for case-insensitive alphanumeric).  If
+  omitted or left blank, the sort() function will try to determine the type of
+  sort to perform automatically.
 
   By default, the output delimiter, <odelim>, defaults to the input delimiter,
   <idelim>, which itself defaults to a space. Delimiters here, like most other
