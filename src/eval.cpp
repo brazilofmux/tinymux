@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.33 2002-01-15 06:23:28 sdennis Exp $
+// $Id: eval.cpp,v 1.34 2002-01-25 00:00:56 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1414,20 +1414,21 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                     // 51
                     // Q
                     //
-                    i = Tiny_IsRegister[(unsigned char)pdstr[1]];
-                    if (i >= 0 && i < MAX_GLOBAL_REGS)
+                    pdstr++;
+                    i = Tiny_IsRegister[(unsigned char)*pdstr];
+                    if (0 <= i && i < MAX_GLOBAL_REGS)
                     {
-                        pdstr++;
-                        if (mudstate.global_regs[i])
+                        if (  mudstate.glob_reg_len[i] > 0
+                           && mudstate.global_regs[i])
                         {
                             safe_copy_buf(mudstate.global_regs[i],
                                 mudstate.glob_reg_len[i], buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
-                    else if (pdstr[1])
+                    else if (*pdstr == '\0')
                     {
-                        pdstr++;
+                        pdstr--;
                     }
                 }
                 else if (iCode <= 4)
@@ -1557,29 +1558,27 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         //
                         // Variable attribute.
                         //
-                        ch = pdstr[1];
-                        if (Tiny_IsAlpha[(unsigned char)ch])
+                        pdstr++;
+                        if (Tiny_IsAlpha[(unsigned char)(*pdstr)])
                         {
-                            pdstr++;
-                            ch = Tiny_ToUpper[(unsigned char)ch];
-                            i = 100 + ch - 'A';
+                            i = 100 + Tiny_ToUpper[(unsigned char)(*pdstr)] - 'A';
                             int nAttrGotten;
-                            char *pAttrGotten = atr_pget_LEN(player, i,
+                            atr_pget_str_LEN(TinyExec_scratch, player, i,
                                 &aowner, &aflags, &nAttrGotten);
-                            if (nAttrGotten > nBufferAvailable)
+                            if (nAttrGotten > 0)
                             {
-                                nAttrGotten = nBufferAvailable;
+                                if (nAttrGotten > nBufferAvailable)
+                                {
+                                    nAttrGotten = nBufferAvailable;
+                                }
+                                memcpy(*bufc, TinyExec_scratch, nAttrGotten);
+                                *bufc += nAttrGotten;
+                                nBufferAvailable -= nAttrGotten;
                             }
-                            memcpy(*bufc, pAttrGotten, nAttrGotten);
-                            *bufc += nAttrGotten;
-                            nBufferAvailable -= nAttrGotten;
-                            free_lbuf(pAttrGotten);
                         }
-                        else if (ch != '\0')
+                        else if (ch == '\0')
                         {
-                            // Eat the following character.
-                            //
-                            pdstr++;
+                            pdstr--;
                         }
                     }
                 }
