@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.16 2003-02-17 03:05:55 sdennis Exp $
+// $Id: eval.cpp,v 1.17 2003-03-02 00:12:56 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -954,7 +954,7 @@ const char *ColorTable[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0       // 0xF0-0xFF
 };
 
-static char isSpecial_L1[256] =
+static bool isSpecial_L1[256] =
 {
     1, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x00-0x0F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 1, 0, 0, 0, 0, // 0x10-0x1F
@@ -1138,13 +1138,13 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
 
     // Save Parser Mode.
     //
-    char bSpaceIsSpecialSave = isSpecial_L1[' '];
-    char bParenthesisIsSpecialSave = isSpecial_L1['('];
-    char bBracketIsSpecialSave = isSpecial_L1['['];
+    bool bSpaceIsSpecialSave = isSpecial_L1[' '];
+    bool bParenthesisIsSpecialSave = isSpecial_L1['('];
+    bool bBracketIsSpecialSave = isSpecial_L1['['];
 
     // Setup New Parser Mode.
     //
-    char bSpaceIsSpecial = mudconf.space_compress && !(eval & EV_NO_COMPRESS);
+    bool bSpaceIsSpecial = mudconf.space_compress && !(eval & EV_NO_COMPRESS);
     isSpecial_L1[' '] = bSpaceIsSpecial;
     isSpecial_L1['('] = (eval & EV_FCHECK) != 0;
     isSpecial_L1['['] = (eval & EV_NOFCHECK) == 0;
