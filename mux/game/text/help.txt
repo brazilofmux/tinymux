@@ -3731,20 +3731,30 @@ AND()
 
   FUNCTION: and(<boolean1>[,<booleanN>]...)
 
-  Takes one or more booleans, and returns 1 if they are all each
-  equivalent to true(1).
+  Takes one or more BOOLEAN-Z values, and returns 1 (TRUE) if all arguments
+  are TRUE.
 
-  Related Topics: BOOLEAN VALUES, or(), not(), t(), xor().
+  Related Topics: andbool(), BOOLEAN VALUES, or(), not(), t(), xor().
+
+& ANDBOOL()
+ANDBOOL()
+
+  FUNCTION: andbool(<boolean1>[,<booleanN>]...)
+
+  Takes one or more BOOLEAN values, and returns 1 (TRUE) if all arguments
+  are TRUE.
+
+  Related Topics: and(), BOOLEAN VALUES, or(), not(), t(), xor().
 
 & ANDFLAGS()
 ANDFLAGS()
 
   FUNCTION: andflags(<object>,<list of flags>)
 
-  This function returns 1 if <object> has all the flags in a specified
-  list, and 0 if it does not. The list is specified with a single letter
-  standing for each flag, like the output of the FLAGS() function. A '!'
-  preceding a flag letter means "not flag".
+  This function returns 1 (TRUE) if <object> has all the flags in a specified
+  list, and 0 (FALSE) if it does not. The list is specified with a single
+  letter standing for each flag, like the output of the FLAGS() function. A
+  '!' preceding a flag letter means "not flag".
 
   Thus, ANDFLAGS(me,WD) would return 1 if I was set WIZARD and DARK.
   ANDFLAGS(me,W!Dc) would return 1 if I was set WIZARD, not DARK,
@@ -3759,17 +3769,13 @@ ANDFLAGS()
 & ANSI
 ANSI
 
-  FLAG: ANSI(X)  ()
+  FLAG: ANSI(X)
 
   When set on a player, it will enable the player to see ANSI color.
-  If you have TinyFugue and you do not wish to see ANSI color, please
-  leave this flag set and /set catch_ctrls=ansi. The reason for this is when
-  the ANSI flag is unset, the server must go through every line of text you
-  see and strip the ANSI codes from it. With the ANSI flag set and /set
-  catch_ctrls=ansi, TinyFugue will strip the ANSI and save the MUX from
-  having to do it, resulting in less lag for everyone.
+  Otherwise, MUX will strip the ANSI color codes from text before it's sent to
+  the client.
 
-  Related Topics: ansi(), NOBLEED.
+  Related Topics: ansi(), ANSI CODES, ANSI SUBSTITUTION, NOBLEED.
 
 & ANSI CODES
 ANSI CODES
@@ -3911,15 +3917,15 @@ ASIN()
 
   Examples:
     > say asin(0)
-    You say "0"
+    You say, "0"
     > say asin(1)
-    You say "1.570796"
-    > say asin(0.707101)
-    You say "0.78539"
-    > say asin(0.5)
-    You say "0.523599"
+    You say, "1.5707963267948966"
+    > say asin(fdiv(sqrt(2),2),d)
+    You say, "45"
+    > say asin(0.5,d)
+    You say, "30"
 
-  Related Topics: acos(), atan(), cos(), pi(), sin(), tan().
+  Related Topics: acos(), atan(), ctu(), cos(), pi(), sin(), tan().
 
 & ATAN()
 ATAN()
@@ -3934,11 +3940,11 @@ ATAN()
 
   Examples:
     > say atan(0)
-    You say "0"
+    You say, "0"
     > say atan(1)
-    You say "0.785398"
-    > say atan(1.557408)
-    You say "1"
+    You say, "1.5574077246549023"
+    > say atan(1.5574077246549023)
+    You say, "1"
 
   Related Topics: acos(), asin(), cos(), pi(), sin(), tan().
 
@@ -4155,21 +4161,39 @@ BOGUS COMMANDS
 & BOOLEAN VALUES
 BOOLEAN VALUES
 
-  A Boolean value is either TRUE or FALSE, and all strings are mapped onto one
-  of those two.
+  There are three types of Boolean Values in MUX: BITS, BOOLEAN, and
+  BOOLEAN-Z. In each case, a Boolean Value is either TRUE or FALSE, and all
+  possible strings are mapped onto one those two.
 
-  It is easier to describe first which strings MUX understands as FALSE:
+   1. The most comprehensive definition of Boolean Value is denoted simply as
+      BOOLEAN. Newer functions and features use the BOOLEAN definition of a
+      Boolean Value.  MUX maps the following to FALSE:
 
-   - Numbers (of any type) with a value of zero.
-   - The Special floating-point values of NaN, Ind, +Inf, and -Inf.
-   - Strings with zero-length.
-   - Any error message of the form "#-N <msg>".
+       -  Numbers (integer and floating-point) with a value of zero.
+       -  The Special floating-point values of NaN, Ind, +Inf, and -Inf.
+       -  Strings with zero-length.
+       -  Any error message of the form "#-N <msg>".
 
-  All other strings are understood as TRUE including numbers with a negative
-  value and dbrefs.
+      All other strings are understood as TRUE including negative numbers and
+      dbrefs.
+
+   2. BITS is another form of a Boolean value.  An integer can be broken down
+      into BITS. Taken together, the server shows them as an integer, but
+      there are functions which indirectly manipulate individual BITS.
+
+   3. BOOLEAN-Z defines FALSE as an integer zero.  This definition still
+      appears in MUX for softcode compatibility.
+
+      Alphabetic strings are FALSE.  Everything after the decimal point in a
+      floating-point number is ignored.  Dbrefs are not recognized but mapped
+      to FALSE.  TRUE is then any non-zero number.
+
+  NOTE: T() allows a a BOOLEAN value to be used with a BOOLEAN-Z function, and
+  Boolean Values from functions can be interpreted correctly by either BOOLEAN
+  or BOOLEAN-Z definitions.
 
   Examples:
- 
+
     not(foo) --> 0      not()    --> 1     not(-66) --> 0
     not(0)   --> 1      not(#-1) --> 1     not(#12) --> 0
     t(1)     --> 1      t(#-1)   --> 0     t(-66)   --> 1
@@ -5028,18 +5052,18 @@ CTU()
 
   Function: ctu(<number>, <units-from>, <units-to>)
 
-  The ctu() function will convert <number> that was originally in
-  the units of <units-from> into the units of <units-to>.
+  The ctu() function will convert <number> that was originally in the units
+  of <units-from> into the units of <units-to>.
 
   The units available are (r)adians, (g)radians, and (d)egrees.
 
-  180 degrees = PI (3.141593) radians = 200 gradians.
+  180 degrees = PI (3.141592653589793) radians = 200 gradians.
 
   Examples:
     > say ctu(180,d,g)
-    You say "200"
+    You say, "200"
     > say ctu(180,d,r)
-    You say "3.141593"
+    You say, "3.141592653589793"
 
   Related Topics: sin(), cos(), tan(), asin(), acos(), atan(), pi()
 
@@ -5980,7 +6004,7 @@ FUNCTION CLASSES
                              SETDIFF SETINTER SETUNION SHUFFLE SORT SORTBY
                              SPLICE TABLE WORDS
   Logarithms:                E EXP LOG LN
-  Logical:                   AND NOT OR T XOR
+  Logical:                   AND ANDBOOL CAND CANDBOOL NOT OR T XOR
   Miscellaneous:             @@ ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM
                              ISWORD LIT NULL SETR SUBEVAL
  
@@ -6023,59 +6047,66 @@ FUNCTION LIST
   Help is available for the following functions:
 
     @@()        ABS()       ACOS()      ADD()       AFTER()     ALPHAMAX()
-    ALPHAMIN()  AND()       ANDFLAGS()  ANSI()      APOSS()     ART()
-    ASIN()      ATAN()      ATTRCNT()   BAND()      BEEP()      BEFORE()
-    BNAND()     BOR()       CANSEE()    CAPSTR()    CASE()      CAT()
-    CEIL()      CENTER()    CHANNELS()  CHILDREN()  CMDS()      COLUMNS()
-    COMALIAS()  COMP()      COMTITLE()  CON()       CONFIG()    CONN()
-    CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()   CONNRECORD  CONNTOTAL()
-    CONTROLS()  CONVSECS()  CONVTIME()  COS()       CREATE()    CRC32()
-    CTIME()     CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()
-    DIE()       DIGITTIME() DIST2D()    DIST3D()    DOING()     DUMPING()
-    E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMIT()
-    EMPTY()     ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()
-    EXPTIME()   EXTRACT()   EVAL()      FDIV()      FILTER()    FILTERBOOL()
-    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FOLD()
-    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()
-    GREPI()     GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()
-    HASPOWER()  HASTYPE()   HOME()      HOST()      IABS()      IADD()
-    IDIV()      IDLE()      IFELSE()    ILEV()      IMUL()      INC()
-    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISNUM()
-    ISUB()      ISWORD()    ITER()      ITEMS()     LADD()      LAST()
-    LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()
-    LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()      LIT()
+    ALPHAMIN()  AND()       ANDBOOL()   ANDFLAGS()  ANSI()      APOSS()
+    ART()       ASIN()      ATAN()      ATTRCNT()   BAND()      BEEP()
+    BEFORE()    BNAND()     BOR()       CAND()      CANDBOOL()  CANSEE()
+    CAPSTR()    CASE()      CAT()       CEIL()      CENTER()    CHANNELS()
+    CHILDREN()  CMDS()      COLUMNS()   COMALIAS()  COMP()      COMTITLE()
+    CON()       CONFIG()    CONN()      CONNLAST()  CONNLEFT()  CONNMAX()
+    CONNNUM()   CONNRECORD  CONNTOTAL() CONTROLS()  CONVSECS()  CONVTIME()
+    COS()       CREATE()    CRC32()     CTIME()     CWHO()      DEC()
+    DECRYPT()   DEFAULT()   DELETE()    DIE()       DIGITTIME() DIST2D()
+    DIST3D()    DOING()     DUMPING()   E()         EDEFAULT()  EDIT()
+    ELEMENTS()  ELOCK()     EMIT()      EMPTY()     ENCRYPT()   EQ()
+    ESCAPE()    EXIT()      EXP()       EXPTIME()   EXTRACT()   EVAL()
+    FDIV()      FILTER()    FILTERBOOL()FINDABLE()  FIRST()     FLAGS()
+    FLOOR()     FLOORDIV()  FOLD()      FOREACH()   FULLNAME()  GET()
+    GET_EVAL()  GRAB()      GREP()      GREPI()     GT()        GTE()
+    HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()   HOME()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    LJUST()     LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()
-    LOCK()      LOG()       LPARENT()   LPORTS()    LPOS()      LRAND()
-    LROOMS()    LSTACK()    LT()        LTE()       LWHO()      NULL()
-    MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()
-    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
-    MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()
-    NEARBY()    NEQ()       NEXT()      NOT()       NUM()       OBJ()
-    OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORFLAGS()   OWNER()
-    PACK()      PARENT()    PARSE()     PEEK()      PEMIT()     PFIND()
-    PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()      POP()
-    PORTS()     POS()       POSS()      POWER()     PUSH()      R()
-    RAND()      REGRAB()    REGMATCH()  REMAINDER() REMIT()     REMOVE()
-    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()
-    RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()     S()
-    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
-    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
-    SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()
-    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS()
-    STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()
-    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
-    TABLE()     TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE()
-    TRIM()      TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()
-    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
-    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
-    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME()
-    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    HOST()      IABS()      IADD()      IDIV()      IDLE()      IFELSE()
+    ILEV()      IMUL()      INC()       INDEX()     INSERT()    INZONE()
+    ISDBREF()   ISIGN()     ISNUM()     ISUB()      ISWORD()    ITER()
+    ITEMS()     LADD()      LAST()      LATTR()     LATTRCMDS() LATTRP()
+    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()
+    LINK()      LIST()      LIT()       LJUST()     LN()        LNUM()
+    LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()       LPARENT()
+    LPORTS()    LPOS()      LRAND()     LROOMS()    LSTACK()    LT()
+    LTE()       LWHO()      NULL()      MAIL()      MAILFROM()  MAP()
+    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
+    MIN()       MIX()       MOD()       MONEY()     MOTD()      MUDNAME()
+    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
+    NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()
+    OR()        ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()
+    PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()
+    PMATCH()    POLL()      POP()       PORTS()     POS()       POSS()
+    POWER()     PUSH()      R()         RAND()      REGRAB()    REGMATCH()
+    REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
+    REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
+
+("help function list3" for more)
+
+& FUNCTION LIST3
+FUNCTION LIST (continued)
+
+    ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()
+    SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
+    SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
+    SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()
+    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
+    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()
+    SUBJ()      SWITCH()    T()         TABLE()     TAN()       TEL()
+    TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()
+    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
+    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
+    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
+    WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()       ZFUN()
+    ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
