@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.20 2002-07-23 12:25:15 jake Exp $
+// $Id: mail.cpp,v 1.21 2002-07-23 12:38:18 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -17,9 +17,7 @@
 #include "attrs.h"
 #include "powers.h"
 
-static int  sign(int);
 static void do_mail_flags(dbref, char *, mail_flag, BOOL);
-static void send_mail(dbref, dbref, const char *, const char *, int, mail_flag, BOOL);
 static int  player_folder(dbref);
 static BOOL parse_msglist(char *, struct mail_selector *, dbref);
 static BOOL mail_match(struct mail *, struct mail_selector, int);
@@ -27,16 +25,11 @@ static int  parse_folder(dbref, char *);
 static char *status_chars(struct mail *);
 static char *status_string(struct mail *);
 void add_folder_name(dbref, int, char *);
-static int  get_folder_number(dbref, char *);
 static char *get_folder_name(dbref, int);
 static char *mail_list_time(const char *);
 static char *make_numlist(dbref, char *);
 static char *make_namelist(dbref, char *);
 static void mail_to_list(dbref, char *, char *, char *, int, BOOL);
-static void do_edit_msg(dbref, char *, char *);
-static void do_mail_proof(dbref);
-void do_mail_cc(dbref, char *);
-void do_expmail_abort(dbref);
 
 #define SIZEOF_MALIAS 13
 #define WIDTHOF_MALIASDESC 40
@@ -2296,6 +2289,22 @@ static int parse_folder(dbref player, char *folder_string)
     return get_folder_number(player, folder_string);
 }
 
+static int sign(int x)
+{
+    if (x == 0)
+    {
+        return 0;
+    }
+    else if (x < 0)
+    {
+        return -1;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
 static BOOL mail_match(struct mail *mp, struct mail_selector ms, int num)
 {
     // Does a piece of mail match the mail_selector?
@@ -2829,22 +2838,6 @@ void check_mail(dbref player, int folder, BOOL silent)
         notify(player, tprintf("URGENT MAIL: You have %d urgent messages in folder %d [%s].", gc, folder, get_folder_name(player, folder)));
     }
 #endif // MAIL_ALL_FOLDERS
-}
-
-static int sign(int x)
-{
-    if (x == 0)
-    {
-        return 0;
-    }
-    else if (x < 0)
-    {
-        return -1;
-    }
-    else
-    {
-        return 1;
-    }
 }
 
 #define GMA_NOTFOUND    1
