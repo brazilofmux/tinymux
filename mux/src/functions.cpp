@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.103 2004-05-19 16:21:56 sdennis Exp $
+// $Id: functions.cpp,v 1.104 2004-05-25 00:52:24 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -67,6 +67,8 @@ XFUNCTION(fun_elements);
 XFUNCTION(fun_empty);
 XFUNCTION(fun_encrypt);
 XFUNCTION(fun_entrances);
+XFUNCTION(fun_fcount);
+XFUNCTION(fun_fdepth);
 XFUNCTION(fun_findable);
 XFUNCTION(fun_foreach);
 XFUNCTION(fun_grab);
@@ -5550,6 +5552,24 @@ FUNCTION(fun_connrecord)
 }
 
 // ---------------------------------------------------------------------------
+// fun_fcount: Return the current function invocation counter.
+// ---------------------------------------------------------------------------
+
+FUNCTION(fun_fcount)
+{
+    safe_ltoa(mudstate.func_invk_ctr, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_fdepth: Return the current function nesting depth.
+// ---------------------------------------------------------------------------
+
+FUNCTION(fun_fdepth)
+{
+    safe_ltoa(mudstate.func_nest_lev, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
 // fun_ctime: Return the value of an object's CREATED attribute.
 // ---------------------------------------------------------------------------
 
@@ -9564,6 +9584,8 @@ FUN flist[] =
     {"EXP",         fun_exp,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"EXPTIME",     fun_exptime,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"EXTRACT",     fun_extract,    MAX_ARG, 3,       5,         0, CA_PUBLIC},
+    {"FCOUNT",      fun_fcount,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {"FDEPTH",      fun_fdepth,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {"FDIV",        fun_fdiv,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"FILTER",      fun_filter,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"FILTERBOOL",  fun_filterbool, MAX_ARG, 2,       4,         0, CA_PUBLIC},
