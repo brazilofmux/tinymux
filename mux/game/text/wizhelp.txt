@@ -3,7 +3,7 @@
   This is the MUX online help facility for wizard commands and topics.
   The information provided by this command is generally not useful for
   anyone other than wizards and game maintainers, as the features described
-  here are only accessable to characters whose WIZARD bit is set, or to those
+  here are only accessible to characters whose WIZARD bit is set, or to those
   who have access to the directory where the MUX data files reside.
 
   Syntax of help command:
@@ -191,7 +191,7 @@
   Cuts off the object or exit list for the current location at the indicated
   object or exit by setting [next(thing)] to NOTHING.  Objects or exits that
   follow in the chain are not moved or otherwise changed, and are only
-  accessable by object number.  This command is intended for performing
+  accessible by object number.  This command is intended for performing
   database repair, and should be used only with extreme caution.
 
 & @DBCK
@@ -406,14 +406,66 @@
 
   Related Topics: @drain, @notify, kill, HALTED, SEMAPHORES.
 
-& @ICMD
+&@HOOK
+@HOOK
+
+  Command: @hook[/<switch(s)>] [<command/attribute>]
+  
+  This command will set up 'hooks' to be applied to various commands or
+  attributes.  You may specify multiple hooks on items.  The HOOK_OBJ is
+  an @admin param that specifies the hook object.  The following hooks exist:
+         /before    - Set up a BEFORE hook on a command.  This will execute
+                      functionality BEFORE the command/attribute is done.
+                      The attribute is 'b_<command>' on the HOOK_OBJ.
+         /after     - Set up an AFTER hook on a command.  This will execute
+                      functionality AFTER the command/attribute is done.
+                      The attribute is 'a_<command> on the HOOK_OBJ.
+         /permit    - Set up a permission for a command.  Anything but '1'
+                      will return a 'Permission denied.' for the enactor.
+                      The attribute is 'p_<command> on the HOOK_OBJ.
+         /ignore    - Set up a fall-through on the command.  Anything but '1'
+                      causes the command to fall through to be handled by any
+                      matching softcode by the same name.
+                      The attribute is 'i_<command> on the HOOK_OBJ.
+         /igswitch  - Specifies that any non-matching /switch to the command
+                      falls through and is handled by softcode.  This allows
+                      you to softcode switches to existing commands.
+         /clear     - When used in junction with any of the above switches, 
+                      will clear the hook from being applied.
+         /list      - This lists the current commands/attributes with hooks.
+  
+{ help @hook2 for examples}&@HOOK2
+@HOOK (continued)
+
+  Command: @hook[/<switch(s)>] [<command/attribute>]  (continued)
+  Exmaples of @hook are as follows:
+    > @hook/before look 
+    @hook: new mask for 'look' -> before
+    > @hook/after look
+    @hook: new mask for 'look' -> before after
+    > @hook/igswitch look
+    @hook: new mask for 'look' -> before after igswitch
+    > @hook/igswitch/clear look
+    @hook: new mask for 'look' -> before after
+    > @hook/list (or just @hook will work)
+    ---------------------------------+---------------------------------------
+    Built-in Command                 | Hook Mask Values
+    ---------------------------------+---------------------------------------
+    look                             | before after
+    ---------------------------------+---------------------------------------
+    Built-in Attribute               | Hook Mask Values
+    ---------------------------------+---------------------------------------
+                               -- No @hooks defined --
+    ---------------------------------+---------------------------------------
+  
+  Related Topics: hook_obj, hook_cmd, HOOK SETUP.& @ICMD
 @ICMD
 
   Command: @icmd</switch> <player [= arguments]>
 
   This command sets personal command permissions on a player.
   It only is useful for removing commands and not granting them.
-  This command is available only to immortals.
+  This command is available only to #1.
   Possible switches are:
     /ON       - Turn on personal command parsing so that it checks
                 against invalid commands for the player. (Default)
@@ -421,7 +473,7 @@
                 by player parses normally.
     /DISABLE  - Disables the given command so it returns a
                 Permission Denied. (Default)
-    /IGNORE   - This command actually removes from existance the
+    /IGNORE   - This command actually removes from existence the
                 specified commands from the user's standpoint so
                 that it is skipped upon command execution checks.
     /CHECK    - Displays a list of the specified players current
@@ -447,8 +499,7 @@
                 This is a NON-PLAYER.
     /LALLROOM - List all disabled/ignored commands at location
                 and zones from location.  Listings that start with
-                'z' are zonemasters.  Anything with a '*' shows
-                that the location has the IGNOREZONE @toggle.
+                'z' are zonemasters.
 
 { Type 'wizhelp @icmd3' for examples and syntax }
 
@@ -669,7 +720,7 @@
 
   COMMAND: @list guests
 
-  Lists all the guests currently on the mux, the name and dbref, if they are
+  Lists all the guests currently on the MUX, the name and dbref, if they are
   connected or not, and the lastsite of the guest. A * before the entry
   denotes that the guest will NOT be destroyed on an @dbck.
 
@@ -1103,7 +1154,7 @@
   document. This warning does not apply if you remake the binary in your
   game's source directory.
 
-  Sending the MUX process a SIGUSR1 from the shell account wil also cause a
+  Sending the MUX process a SIGUSR1 from the shell account will also cause a
   @restart.
 
 & @SHUTDOWN
@@ -1217,7 +1268,7 @@
   described effects:
 
      /emit      - Format the message as an emit (ie send just <message>).
-     /pose      - Format the message as a pose (ie <youname> <message>).
+     /pose      - Format the message as a pose (ie <yourname> <message>).
      /wizard    - Only send the message to connected wizards.
      /admin     - Send the message to connected wizards and royalty.
      /no_prefix - Don't prepend 'Announcement:' or 'Broadcast:' to the message.
@@ -1247,7 +1298,7 @@ ALIAS
 
   Defines the command <new> to be an alias of the command <old>.
 
-  Releated Topics:
+  Related Topics: function_alias, flag_alias.
 
 & ALLOW_GUEST_FROM_REGISTERED_SITE
 ALLOW_GUEST_FROM_REGISTERED_SITE
@@ -1470,11 +1521,11 @@ COMMANDS
   @chown         @chownall      @clone         @cut           @dbck
   @dbclean       @delcommand    @destroy       @disable       @doing
   @dump          @enable        @fixdb         @function      @halt
-  @kick          @list          @listcommands  @list_file     @listmotd
-  @lock          @log           @mark          @mark_all      @motd
-  @newpassword   @pcreate       @poor          @ps            @quota
-  @readcache     @restart       @shutdown      @startslave    @timecheck
-  @timewarp      @toad          @wall
+  @icmd          @kick          @list          @listcommands  @list_file
+  @listmotd      @lock          @log           @mark          @mark_all
+  @motd          @newpassword   @pcreate       @poor          @ps
+  @quota         @readcache     @restart       @shutdown      @startslave
+  @timecheck     @timewarp      @toad          @wall
 
   @allowance     @comment       @timeout
 
@@ -1527,7 +1578,7 @@ COMPRESS_PROGRAM
   written.  If database file compression is enabled, database dumps are piped
   through this program on their way out to disk.
 
-  Related Topics: compresion, uncompress_program.
+  Related Topics: compression, uncompress_program.
 
 & COMSYS_DATABASE
 COMSYS_DATABASE
@@ -1722,7 +1773,7 @@ DESTROY_GOING_NOW
   second @destroy on a previously queued request causes the destruction to
   occur immediately.
 
-  This behavior is for compatbility with PennMUSH.
+  This behavior is for compatibility with PennMUSH.
 
 & DIG_COST
 DIG_COST
@@ -1935,7 +1986,7 @@ FILES
 FILES (continued)
 
   guest.txt:      Displayed to whoever connects to the guest character
-                  specifiedby the guest_character config parameter.
+                  specified by the guest_character config parameter.
   motd.txt:       Displayed after someone connects to an existing character.
   netmux.conf:    Configuration directives read at startup.
   news.indx:      Index for the news.txt file, produced by the mkindx program.
@@ -2028,6 +2079,8 @@ FLAG_ALIAS
 
   Defines <alias> as a synonym for the flag <flagname>.
 
+  Related Topics: alias, function_alias.
+
 & FORBID_SITE
 FORBID_SITE
 
@@ -2072,7 +2125,7 @@ FULL_FILE
 FULL_MOTD_MESSAGE
 
   CONFIG PARAMETER: full_motd_message <message>
-  DEfAULT: blank
+  DEFAULT: blank
 
   Sets the message that is displayed when a player attempts to connect to a
   non-wizard character when the number of connected players is not less than
@@ -2092,6 +2145,15 @@ FUNCTION_ACCESS
   would normally return.
 
   Related Topics: @list functions, FUNCTION LIST, PERMISSIONS.
+
+& FUNCTION_ALIAS
+FUNCTION_ALIAS
+
+  CONFIG PARAMETER: function_alias <alias> <funcname>
+
+  Defines <alias> as a synonym for the function <funcname>.
+
+  Related Topics: alias, flag_alias.
 
 & FUNCTION_INVOCATION_LIMIT
 FUNCTION_INVOCATION_LIMIT
@@ -2227,7 +2289,7 @@ GUEST_NUKER
 &GUEST_PREFIX
 GUEST_PREFIX
 
-  CONFIG PARAMETER: guest_preifx <name>
+  CONFIG PARAMETER: guest_prefix <name>
   DEFAULT: Guest
 
   Specifies the prefix for all guests. This will be what is put before the #
@@ -2262,7 +2324,7 @@ HAVE_COMSYS
 HAVE_MAILER
 
   CONFIG PARAMETER: have_mailer <yes/no>
-  DEfAULT: yes
+  DEFAULT: yes
 
   Specifies whether @mail and mail aliases should be active.
 
@@ -2301,7 +2363,90 @@ HELP_INDEX
 
   Related Topics: help, @readcache, help_file
 
-& HOSTNAMES
+&HOOK_CMD
+HOOK_CMD
+
+  Config parameter: hook_cmd <command> <hooks/!hooks>
+  This admin parameter allows you to specify multiple hooks for commands
+  or attributes in the .conf file or online via @admin.  This is an 
+  alternative way to applying hooks besides the @hook command.
+  The following hooks exist:
+         - before      set up functionality BEFORE a command executes.
+         - after       set up functionality AFTER a command executes.
+         - permit      establish functionary lock of attribute/command.
+         - ignore      establish ignore inheritance of attribute/command.
+         - igswitch    specifies if command bypasses failed /switch notices.
+  
+  For detailed information on how to set up hooks, please see wizhelp on:
+                                HOOK SETUP
+  
+  Related Topics: @hook, hook_obj, HOOK SETUP.&HOOK_OBJ
+HOOK_OBJ
+
+  Config parameter: hook_obj <dbref>.  Default: -1
+  Specifies the valid dbref# that the hook information is stored.  All
+  hooks are in the form <prefix>_<command/attribute>.  
+  Attributes are stored in the form:
+          I_<command> - ignore configuration
+          P_<command> - permit configuration
+          A_<command> - after configuration
+          B_<command> - before configuration
+  
+  For detailed information on how to set up hooks, please see wizhelp on:
+                                HOOK SETUP
+  
+  Related Topics: @hook, hook_cmd, HOOK SETUP.&HOOK SETUP
+HOOK SETUP
+
+  Hooks are set up by following the shown methods.
+  1)  You must first create and setup a hook object to store the data.
+      Once you have @created the object, the object needs to be defined
+      with the 'HOOK_CMD' admin parameter.  This may be placed in the 
+      .conf file or done via @admin.
+  
+  2)  You must set up hooks for the commands/attributes you wish to use.
+      The hooks are 'permit', 'ignore', 'before', 'after', and 'igswitch'.
+      See wizhelp on 'hook_cmd' on more info of these switchtypes.
+      You may use the @hook command, or use the hook_cmd admin parameter
+      to place in a .conf file.
+  
+  3)  The PERMIT and IGNORE config params are 'enabled' if they return 
+      anything but a 'NULL' or a '1'.
+  
+  4)  The IGSWITCH config parameter is a toggle only.
+  
+  5)  The BEFORE and AFTER switches are automatically processed if existing.
+  
+  6)  The following attributes on the global hook object (hook_obj) exist:
+         I_<command> - ignore            P_<command> - permit
+         A_<command> - after             B_<command> - before
+      
+{ see 'wizhelp hook setup2' for examples }&HOOK SETUP2
+HOOK SETUP (continued)
+
+  > @create HookObject
+  HookObject created as object #1234
+  > &a_look #1234=[pemit(%#,-- After The Look --)]
+  > &b_look #1234=[pemit(%#,-- Before The Look --)]
+  > &i_look #1234=[gt(match(v(is-ignored),%#),0)]
+  > &p_look #1234=[gt(match(v(is-forbidden),%#),0)]
+  > &is-ignored #1234=#5 #8 #9 #12   (this gets 'Huh? (type 'help' for help)')
+  > &is-forbidden #1234=#6 #10 #15   (this gets 'Permission denied.')
+  > @set #1234=sidefx                (needed to use side-effects like pemit())
+  
+  Now you can do one of two things:
+  > @hook/before look
+  > @hook/after look
+  > @hook/ignore look
+  > @hook/permit look
+  OR...
+  > @admin hook_cmd look before after ignore permit
+  
+  There, your hook object is all set up.  If you want it to last through
+  reboots, you need to either put the @hook's in a @startup, or add the 
+  hook_cmd to the .conf file.  You probably want the hook_cmd :)
+ 
+  Related Topics: @hook, hook_cmd, hook_obj.& HOSTNAMES
 HOSTNAMES
 
   CONFIG PARAMETER: hostnames <yes/no>
@@ -2876,7 +3021,7 @@ PARENT_RECURSION_LIMIT
 & PAYCHECK
 PAYCHECK
 
-  CONFIG PARAMETEr: paycheck <amount>
+  CONFIG PARAMETER: paycheck <amount>
   DEFAULT: 0
 
   Specifies the default amount of money that players receive each day they
@@ -2921,7 +3066,7 @@ PERMISSIONS
     2) 'Wizard' means Wizard-level authority which can be achieved either by
        being set WIZARD or by inheriting that authority from a WIZARD-owned
        object with the INHERIT flag, and
-    3) Wizard(#1) who is always set WIZARD and has other special priviledges.
+    3) Wizard(#1) who is always set WIZARD and has other special privileges.
 
   The follow uses two of those senses: 'Wizard' and Wizard(#1).
 
@@ -3098,6 +3243,15 @@ POSTDUMP_MESSAGE
   whether automatically or via the @dump command.
 
   Related Topics: @dump, dump_message.
+
+& POWER_ALIAS
+POWER_ALIAS
+
+  CONFIG PARAMETER: power_alias <alias> <powername>
+
+  Defines <alias> as a synonym for the power <powername>.
+
+  Related Topics: alias, flag_alias, function_alias.
 
 & PUBLIC_CHANNEL
 PUBLIC_CHANNEL
@@ -3433,12 +3587,12 @@ SESSION
 
   This command can be used to help identify network problems as follows:
 
-    - A nonzero Input Pending count can indicate indicate typeahead or a
+    - A nonzero Input Pending count can indicate typeahead or a
       client program dumping commands faster than the command scheduling
       parameters let them be executed.  Telnet sessions in character mode also
       show up with positive Input Pending counts when the player is in the
       middle of typing a command.
-    - A nozero Input Lost count means that the player has typed a line longer
+    - A nonzero Input Lost count means that the player has typed a line longer
       than what the MUX can handle.  This usually indicates a problem with
       the player's client or terminal (a stuck key).
     - A persistently large Output Pending count can indicate netlag between
@@ -3501,7 +3655,7 @@ SITE LISTS (continued)
   forbid_site    135.246.4.0  255.255.255.0    <- Disallow a class C subnet
   permit_site    135.246.0.0  255.255.0.0      <- Permit a class B network
   register_site  195.3.17.1   255.255.255.255  <- Permit this site w/reg.
-  forbid_site    0.0.0.0      0.0.0.0          <- DIsallow everyone else
+  forbid_site    0.0.0.0      0.0.0.0          <- Disallow everyone else
  
   These directives only allow access from 135.346.*.* and 195.3.17.1, except
   that all hosts in the 135.246.4 subnet except for 135.246.4.40 are also
@@ -3547,8 +3701,8 @@ SITE NOTATION (continued)
  from 65536, etc. The 8.8.8.8 form is the most common. The latter three
  originated on BSD.
 
- Furthermore, the integer can be expressed in decimal, octal, or hexidecimal
- notation. Hexidecimal numbers have a '0x' prefix. Octal numbers have a '0'
+ Furthermore, the integer can be expressed in decimal, octal, or hexadecimal
+ notation. Hexadecimal numbers have a '0x' prefix. Octal numbers have a '0'
  prefix.
 
  Examples:
@@ -3870,7 +4024,7 @@ UNCOMPRESS_PROGRAM
   Specifies the program to be run to uncompress compressed database files when
   reading them in at startup.
 
-  Related Topics: compress_program, compresion.
+  Related Topics: compress_program, compression.
 
 & UNOWNED_SAFE
 UNOWNED_SAFE
@@ -3925,7 +4079,7 @@ WHO
      Room         - The room that the player is in.
      Commands     - The number of commands that the player has entered during
                     this session (not counting machine commands).
-     Host flags   - located bwtween the Commands and Host fields:
+     Host flags   - located between the Commands and Host fields:
                     F(forbidden), R(registration), +(suspect).
      Host         - The Internet host name or address from where the player has
                     connected.
