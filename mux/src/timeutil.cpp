@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.21 2003-02-26 06:15:15 sdennis Exp $
+// $Id: timeutil.cpp,v 1.22 2003-04-01 21:55:19 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1077,7 +1077,11 @@ bool do_convtime(const char *str, FIELDEDTIME *ft)
     // Year
     //
     ft->iYear = (short)mux_atol(p);
-    if (ft->iYear == 0 && *p != '0')
+    while (mux_isdigit(*p))
+    {
+        p++;
+    }
+    if (*p != '\0')
     {
         return false;
     }
