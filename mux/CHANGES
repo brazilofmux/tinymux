@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  August 2004
+Last Update:  September 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7,6 +7,12 @@ Major changes that may affect performance and require softcode tweaks:
     milliseconds to seconds.  But, seconds can be expressed as a
     fraction whereas milliseconds could only be expressed as an
     integer, so this change doesn't take any capability away.
+ -- Control over WOD Realms, Memory-Based, and other build options
+    have been pulled back into the ./configure script.  The README
+    files refer to the new methods, and ./configure --help gives a list.
+    Also, gmake is no longer necessary for *BSD flavors.
+ -- The behavior of case() is closer to switch().  The patterns are now
+    evaluated.  The #$ substitution is also made.
 
 
 Feature Additions:
@@ -60,6 +66,12 @@ Feature Additions:
     RIGHT() behaviors.
  -- Added optional second argument to RAND().
  -- Added patch surface for BTMUX.
+ -- @teleport/list accepts a space-delimited list of objects to
+    teleport.
+ -- Added cemit().  Also, changed the permission control so that any
+    object that controls the channel owner can use cemit()/@cemit.
+ -- vadd() now allows addition of a vector by a scalar similiar to
+    vmul().
 
 
 Bug Fixes:
@@ -96,12 +108,18 @@ Bug Fixes:
  -- Fixed suggestions/bugs from static analysis tool.
  -- Fixed some 64-bit warnings.
  -- Release comsys and @mail properly for guests.
+ -- Document the see_hidden @power.
+ -- Attribute permissions are documented more completely in the
+    'attribute permission' topic.
+ -- Clarified help topics 'helpfile' and 'raw_helpfile'.
 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
  -- Re-worked update_quotas() so that mudstate.now could be removed.
  -- Use nanosleep() or usleep() on Unix if available.
+ -- Pulled alloc/free pairs outside an inner loop in switch() and
+    fold().
 
 
 Cosmetic Changes:
