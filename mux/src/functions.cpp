@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.32 2002-06-25 02:37:41 raevnos Exp $
+// $Id: functions.cpp,v 1.33 2002-06-27 05:28:30 raevnos Exp $
 //
 
 #include "copyright.h"
@@ -6162,7 +6162,7 @@ FUNCTION(fun_filter)
         {
             safe_chr(sep, buff, bufc);
         }
-        if (*result == '1')
+        if (result[0] == '1' && result[1] == '\0')
         {
             safe_str(objstring, buff, bufc);
             first = FALSE;
