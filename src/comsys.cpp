@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.26 2001-02-26 09:13:58 sdennis Exp $
+// * $Id: comsys.cpp,v 1.27 2001-03-22 04:14:47 zenty Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -853,22 +853,53 @@ void do_processcom(dbref player, char *arg1, char *arg2)
             ch->amount_col += ch->charge;
             giveto(ch->charge_who, ch->charge);
         }
-        
+
+	char *nComTitle=alloc_lbuf("do_processcom.ct"); // New Comtitle	
+
+	// Comtitle Check
+	int hasComTitle=(user->title[0] != '\0');
+
+	// If they have no title, why parse nothing?
+
+        if (hasComTitle) {
+	   if(mudconf.eval_comtitle) {
+	      /*
+	       * I wonder if the next 4 lines are all really necessary. I couldn't
+	       * find any other way to do this... not without a leak, or loosing
+	       * parts of user->title.
+	       */
+	      char *pnComTitle=nComTitle; // Pointer to new ComTitle
+	      char *ComTitle=strdup(user->title); // Pointer to Comtitle copy
+	      char *pComTitle=ComTitle; // Pointer to Pointer of Copy
+	      
+	      // Parse The comtitle, saving into New ComTitle
+	      TinyExec(nComTitle, &pnComTitle, 0, player, player, EV_FCHECK |
+		       EV_EVAL | EV_TOP, &pComTitle, (char **)NULL, 0);
+	      
+	      // Free up the copy.
+	      free(ComTitle);
+	   } else {
+	      // Just copy thier title into our space.
+	      strcpy(nComTitle, user->title);
+	   }
+	}
+   
+   
         bp = mess = alloc_lbuf("do_processcom");
         
         if ((*arg2) == ':')
         {
-            if (user->title[0] != '\0')
+            if (hasComTitle)
             {
                 // There is a comtitle.
                 //
                 if (ch->type & CHANNEL_SPOOF)
                 {
-                    safe_tprintf_str(mess, &bp, "%s %s %s", ch->header, user->title, arg2 + 1);
+                    safe_tprintf_str(mess, &bp, "%s %s %s", ch->header, nComTitle, arg2 + 1);
                 }
                 else
                 {
-                    safe_tprintf_str(mess, &bp, "%s %s %s %s", ch->header, user->title, Name(player), arg2 + 1);
+                    safe_tprintf_str(mess, &bp, "%s %s %s %s", ch->header, nComTitle, Name(player), arg2 + 1);
                 }
             }
             else
@@ -878,17 +909,17 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         }
         else if ((*arg2) == ';')
         {
-            if (user->title[0] != '\0')
+            if (hasComTitle)
             {
                 // There is a comtitle
                 //
                 if (ch->type & CHANNEL_SPOOF)
                 {
-                    safe_tprintf_str(mess, &bp, "%s %s%s", ch->header, user->title, arg2 + 1);
+                    safe_tprintf_str(mess, &bp, "%s %s%s", ch->header, nComTitle, arg2 + 1);
                 }
                 else
                 {
-                    safe_tprintf_str(mess, &bp, "%s %s %s%s", ch->header, user->title, Name(player), arg2 + 1);
+                    safe_tprintf_str(mess, &bp, "%s %s %s%s", ch->header, nComTitle, Name(player), arg2 + 1);
                 }
             }
             else
@@ -898,17 +929,17 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         }
         else
         {
-            if (user->title[0] != '\0')
+            if (hasComTitle)
             {
                 // There is a comtitle
                 //
                 if (ch->type & CHANNEL_SPOOF)
                 {
-                    safe_tprintf_str(mess, &bp, "%s %s says, \"%s\"", ch->header, user->title, arg2);
+                    safe_tprintf_str(mess, &bp, "%s %s says, \"%s\"", ch->header, nComTitle, arg2);
                 }
                 else
                 {
-                    safe_tprintf_str(mess, &bp, "%s %s %s says, \"%s\"", ch->header, user->title, Name(player), arg2);
+                    safe_tprintf_str(mess, &bp, "%s %s %s says, \"%s\"", ch->header, nComTitle, Name(player), arg2);
                 }
             }
             else
@@ -919,6 +950,8 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         
         do_comsend(ch, mess);
         free_lbuf(mess);
+	// Free the new comtitle... **always exists**
+       free_lbuf(nComTitle);
     }
 }
 
