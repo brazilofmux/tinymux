@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.34 2002-01-15 06:23:28 sdennis Exp $
+// $Id: mail.cpp,v 1.35 2002-01-15 06:58:58 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3341,9 +3341,9 @@ void do_malias_list(dbref player, char *alias)
 char *Spaces(unsigned int n)
 {
     static char buffer[42] = "                                         ";
-    static int nLast = 0;
+    static unsigned int nLast = 0;
     buffer[nLast] = ' ';
-    if (0 <= n && n < sizeof(buffer)-1)
+    if (n < sizeof(buffer)-1)
     {
         buffer[n] = '\0';
         nLast = n;
