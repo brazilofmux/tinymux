@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.12 2003-02-04 05:38:04 sdennis Exp $
+// $Id: predicates.cpp,v 1.13 2003-02-04 08:55:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -503,11 +503,11 @@ BOOL ValidatePlayerName(const char *pName)
     if (  mudstate.bStandAlone
        || mudconf.name_spaces)
     {
-        Tiny_IsPlayerNameCharacter[(unsigned char)' '] = 1;
+        mux_PlayerNameSet[(unsigned char)' '] = 1;
     }
     else
     {
-        Tiny_IsPlayerNameCharacter[(unsigned char)' '] = 0;
+        mux_PlayerNameSet[(unsigned char)' '] = 0;
     }
 
     // Only printable characters besides ARG_DELIMITER, AND_TOKEN,
