@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.18 2001-10-16 15:45:58 sdennis Exp $
+// $Id: timeutil.cpp,v 1.19 2001-11-18 20:57:56 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -789,7 +789,7 @@ int FixedFromGregorian_Adjusted(int iYear, int iMonth, int iDay)
 
     // At this point, iFixedDay has an epoch of 1 R.D.
     // We need an Epoch of (00:00:00 UTC, January 1, 1601)
-    // 
+    //
     return iFixedDay - 584389;
 }
 
@@ -828,7 +828,7 @@ void GregorianFromFixed(int iFixedDay, int &iYear, int &iMonth,  int &iDayOfYear
         cache_iJan1st = iFixedDayOfJanuary1st = FixedFromGregorian(iYear, 1, 1);
         cache_iMar1st = iFixedDayOfMarch1st = FixedFromGregorian(iYear, 3, 1);
     }
-        
+
 
     int iPriorDays = iFixedDay - iFixedDayOfJanuary1st;
     int iCorrection;
@@ -844,7 +844,7 @@ void GregorianFromFixed(int iFixedDay, int &iYear, int &iMonth,  int &iDayOfYear
     {
         iCorrection = 2;
     }
-    
+
     iMonth = (12*(iPriorDays+iCorrection)+373)/367;
     iDayOfMonth = iFixedDay - FixedFromGregorian(iYear, iMonth, 1) + 1;
     iDayOfYear = iPriorDays + 1;
@@ -956,7 +956,7 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
         }
     }
     ft->iMonth = i + 1; // January = 1, February = 2, etc.
-    
+
     // Day of month.
     //
     ft->iDayOfMonth = (unsigned short)Tiny_atol(p);
@@ -1197,7 +1197,7 @@ BOOL FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
     lt += ft->iMicrosecond * FACTOR_100NS_PER_MICROSECOND;
     lt += ft->iMillisecond * FACTOR_100NS_PER_MILLISECOND;
     lt += ft->iNanosecond / FACTOR_NANOSECONDS_PER_100NS;
-    
+
     *plt = lt;
     return TRUE;
 }
@@ -3046,7 +3046,7 @@ void PD_Pass5(void)
         {
             pNode->uCouldBe &= ~PDCB_DAY_OF_MONTH;
         }
-        
+
         // Timezone cannot occur before the time.
         //
         if (  (pNode->uCouldBe & PDCB_TIMEZONE)
