@@ -9543,7 +9543,7 @@ REGRABALLI()
   These functions act like grab() and graball(), respectively, except
   instead of matching with a wildcard pattern, they use a regular
   expression. regrab() returns the first element of the list that matches
-  the regexp, and regraball() returns all the elements that match. 
+  the regexp, and regraball() returns all the elements that match.
   They are case-sensitive. The versions ending in 'i' are case-insensitive.
 
   See 'help regexp syntax' for an explanation of regular expressions.
