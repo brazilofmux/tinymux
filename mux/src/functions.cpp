@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.33 2003-02-05 06:40:11 sdennis Exp $
+// $Id: functions.cpp,v 1.34 2003-02-05 08:01:44 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -7040,7 +7040,7 @@ FUNCTION(fun_conn)
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        int bFound = false;
+        bool bFound = false;
         DESC *d;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
