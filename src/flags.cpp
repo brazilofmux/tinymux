@@ -1,6 +1,6 @@
 // flags.cpp - flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.8 2001-02-09 08:21:21 zenty Exp $ 
+// $Id: flags.cpp,v 1.9 2001-02-09 09:18:30 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -483,62 +483,81 @@ FLAGENT *find_flag(dbref thing, char *flagname)
 
 void flag_set(dbref target, dbref player, char *flag, int key)
 {
-    FLAGENT *fp;
-    int negate, result;
-    char *nflag=NULL;
+	BOOL bDone = FALSE;
 
-    /*
-     * Trim spaces, and handle the negation character 
-     */
+    do
+	{
+		// Trim spaces, and handle the negation character.
+		//
+		while (Tiny_IsSpace[(unsigned char)*flag])
+		{
+			flag++;
+		}
 
-    do {
-      negate = 0;
-      while (Tiny_IsSpace[(unsigned char)*flag])
-        flag++;
-      
-      if (*flag == '!')
-	{
-	  negate = 1;
-	  flag++;
-	}
-      while (Tiny_IsSpace[(unsigned char)*flag])
-        flag++;      
-      nflag=flag; // this should be the exact flag name
-      while(Tiny_IsAlphaNumeric[(unsigned char)*nflag]) nflag++;
-      if(!*nflag)
-	nflag--; // backup so the next char is still Null... EVIL
-      else
-	*nflag = 0; // Set null so the flag's are broken
+		int negate = 0;
+		if (*flag == '!')
+		{
+			negate = 1;
+			do
+			{
+				flag++;
+			} while (Tiny_IsSpace[(unsigned char)*flag]);
+		}
 
-      // Make sure a flag name was specified.
-      //
-      if (*flag == '\0')
-	{
-	  if (negate)
-            notify(player, "You must specify a flag to clear.");
-	  else
-            notify(player, "You must specify a flag to set.");
-	  return;
-	}
-      fp = find_flag(target, flag);
-      if (fp == NULL)
-	{
-	  notify(player, "I don't understand that flag.");
-	  return;
-	}
-      /*
-       * Invoke the flag handler, and print feedback 
-       */
-      
-      result = fp->handler(target, player, fp->flagvalue, fp->flagflag, negate);
-      if (!result)
-        notify(player, "Permission denied.");
-      else if (!(key & SET_QUIET) && !Quiet(player))
-        notify(player, (negate ? "Cleared." : "Set."));
-      // return;
-      flag=nflag + 1;
-    } while(*flag);
-    return;
+		// Beginning of flag name is now 'flag'.
+		//
+		char *nflag = flag;
+		while (  *nflag != '\0'
+			  && !Tiny_IsSpace[(unsigned char)*nflag])
+		{
+			nflag++;
+		}
+		if (*nflag == '\0')
+		{
+			bDone = TRUE;
+		}
+		else
+		{
+			*nflag = '\0';
+		}
+		
+		// Make sure a flag name was specified.
+		//
+		if (*flag == '\0')
+		{
+			if (negate)
+			{
+				notify(player, "You must specify a flag to clear.");
+			}
+			else
+			{
+				notify(player, "You must specify a flag to set.");
+			}
+		}
+		else
+		{
+			FLAGENT *fp = find_flag(target, flag);
+			if (!fp)
+			{
+				notify(player, "I do not understand that flag.");
+			}
+			else
+			{
+				// Invoke the flag handler, and print feedback.
+				//		
+				if (!fp->handler(target, player, fp->flagvalue, fp->flagflag, negate))
+				{
+					notify(player, "Permission denied.");
+				}
+				else if (!(key & SET_QUIET) && !Quiet(player))
+				{
+					notify(player, (negate ? "Cleared." : "Set."));
+				}
+			}
+		}
+		flag = nflag + 1;
+
+    } while (bDone);
 }
 
 /*
