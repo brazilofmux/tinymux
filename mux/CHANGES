@@ -216,6 +216,8 @@ Bug Fixes:
  -- Fixed convtime() SIGSEGV.  Reported by Alierak.  Brazil's bug.
  -- Fixed recently-added zone bug introduce when check_zone() and
     check_zone_for_player() functions were merged.
+ -- Fixed crashbug in @speechmod. Some code paths left argument 2
+    uninitialized. Bug introduced by Jake. Found and fixed by Brazil.
 
 
 Performance Enhancements:
