@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.3 2003-01-31 06:32:14 sdennis Exp $
+// $Id: funceval.cpp,v 1.4 2003-01-31 06:41:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1898,13 +1898,16 @@ FUNCTION(fun_scramble)
     size_t n;
     safe_str(strip_ansi(fargs[0], &n), buff, bufc);
 
-    unsigned int i;
-    for (i = 0; i < n-1; i++)
+    if (2 <= n)
     {
-        int j = RandomINT32(i, n-1);
-        char c = old[i];
-        old[i] = old[j];
-        old[j] = c;
+        unsigned int i;
+        for (i = 0; i < n-1; i++)
+        {
+            int j = RandomINT32(i, n-1);
+            char c = old[i];
+            old[i] = old[j];
+            old[j] = c;
+        }
     }
 }
 
