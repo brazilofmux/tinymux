@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.6 2003-01-31 09:36:46 jake Exp $
+// $Id: mudconf.h,v 1.7 2003-01-31 23:53:50 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -271,106 +271,103 @@ struct forward_list
 typedef struct statedata STATEDATA;
 struct statedata
 {
-    CLinearTimeAbsolute now;            /* What time is it now? */
-    CLinearTimeAbsolute dump_counter;   /* Countdown to next db dump */
-    CLinearTimeAbsolute check_counter;  /* Countdown to next db check */
-    CLinearTimeAbsolute idle_counter;   /* Countdown to next idle check */
-    CLinearTimeAbsolute events_counter; /* Countdown to next events check */
-    CLinearTimeAbsolute start_time;     /* When was MUX started */
-    CLinearTimeAbsolute cpu_count_from; /* When did we last reset CPU counters? */
-
-    BOOL bStandAlone;       // Are we running in dbconvert mode.
-    int record_players; /* The maximum # of player logged on */
-
-    BOOL bReadingConfiguration;  // are we reading the config file at startup?
-    BOOL bCanRestart;            // are we ready to even attempt a restart.
-    BOOL panicking;              // are we in the middle of dying horribly?
+    BOOL bCanRestart;           // are we ready to even attempt a restart.
+    BOOL bReadingConfiguration; // are we reading the config file at startup?
+    BOOL bStackLimitReached;    // Was stack slammed?
+    BOOL bStandAlone;           // Are we running in dbconvert mode.
+    BOOL inpipe;                /* Boolean flag for command piping */
+    BOOL panicking;             // are we in the middle of dying horribly?
+    BOOL shutdown_flag;         /* Should interface be shut down? */
 #ifndef WIN32
-    BOOL restarting; /* Are we restarting? */
-    BOOL dumping;    /* Are we dumping? */
+    BOOL dumping;               /* Are we dumping? */
+    BOOL restarting;            /* Are we restarting? */
 #endif // !WIN32
-    int epoch;      /* Generation number for dumps */
-    int generation; /* DB global generation number */
-    dbref   curr_enactor;   /* Who initiated the current command */
-    dbref   curr_executor;  /* Who is running the current command */
-    int events_flag;    /* Flags for check_events */
-    BOOL    shutdown_flag;  /* Should interface be shut down? */
-    char    *debug_cmd;     // The command we are executing (if any).
-    char    *curr_cmd;      /* The current command */
-    SITE    *access_list;   /* Access states for sites */
-    SITE    *suspect_list;  /* Sites that are suspect */
-    BADNAME *badname_head;  /* List of disallowed names */
-    int mstat_ixrss[2]; /* Summed shared size */
-    int mstat_idrss[2]; /* Summed private data size */
-    int mstat_isrss[2]; /* Summed private stack size */
-    int mstat_secs[2];  /* Time of samples */
-    int mstat_curr; /* Which sample is latest */
-    OLSTK   *olist;     /* Stack of object lists for nested searches */
-    int     mail_db_top;    /* Like db_top */
-    int     mail_db_size;   /* Like db_size */
-    MENT    *mail_list;     /* The mail database */
-    int     *guest_free;    /* Table to keep track of free guests */
-    int     func_nest_lev;  /* Current nesting of functions */
-    int     func_invk_ctr;  /* Functions invoked so far by this command */
-    int     wild_invk_ctr;  // Regular Expression function calls.
-    int     ntfy_nest_lev;  /* Current nesting of notifys */
-    int     lock_nest_lev;  /* Current nesting of lock evals */
-    char    *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
+
+    dbref   curr_enactor;       /* Who initiated the current command */
+    dbref   curr_executor;      /* Who is running the current command */
+    dbref   freelist;           /* Head of object freelist */
+    dbref   mod_al_id;          /* Where did mod_alist come from? */
+    dbref   poutobj;            /* Object doing the piping */
+    int     attr_next;          /* Next attr to alloc when freelist is empty */
+    int     db_size;            /* Allocated size of db structure */
+    int     db_top;             /* Number of items in the db */
+    int     epoch;              /* Generation number for dumps */
+    int     events_flag;        /* Flags for check_events */
+    int     func_invk_ctr;      /* Functions invoked so far by this command */
+    int     func_nest_lev;      /* Current nesting of functions */
+    int     generation;         /* DB global generation number */
+    int     in_loop;            // Loop nesting level.
+    int     lock_nest_lev;      /* Current nesting of lock evals */
+    int     logging;            /* Are we in the middle of logging? */
+    int     mail_db_size;       /* Like db_size */
+    int     mail_db_top;        /* Like db_top */
+    int     mHelpDesc;          // Number of entries allocated.
+    int     min_size;           /* Minimum db size (from file header) */
+    int     mstat_curr;         /* Which sample is latest */
+    int     nHelpDesc;          // Number of entries used.
+    int     nObjEvalNest;       // The nesting level of objeval() invocations.
+    int     nStackNest;         // Current stack depth.
+    int     ntfy_nest_lev;      /* Current nesting of notifys */
+    int     record_players;     /* The maximum # of player logged on */
+    int     wild_invk_ctr;      // Regular Expression function calls.
+    int     zone_nest_num;      /* Global current zone nest position */
+    int     mstat_idrss[2];     /* Summed private data size */
+    int     mstat_isrss[2];     /* Summed private stack size */
+    int     mstat_ixrss[2];     /* Summed shared size */
+    int     mstat_secs[2];      /* Time of samples */
     int     glob_reg_len[MAX_GLOBAL_REGS];  /* Length of strs */
-    int     zone_nest_num;  /* Global current zone nest position */
-    BOOL    inpipe;         /* Boolean flag for command piping */
-    char    *pout;          /* The output of the pipe used in %| */
-    char    *poutnew;       /* The output being build by the current command */
-    char    *poutbufc;      /* Buffer position for poutnew */
-    dbref   poutobj;        /* Object doing the piping */
-    int     in_loop;        // Loop nesting level.
-    char    *itext[MAX_ITEXT];       // Text of iter(). Equivalent to ##.
-    int     inum[MAX_ITEXT];        // Number of iter(). Equivalent to #@.
+    int     inum[MAX_ITEXT];    // Number of iter(). Equivalent to #@.
+    int     *guest_free;        /* Table to keep track of free guests */
+    size_t  mod_alist_len;      /* Length of mod_alist */
+    size_t  mod_size;           /* Length of modified buffer */
 
-    CHashTable command_htab;   /* Commands hashtable */
-    CHashTable channel_htab;   /* Channels hashtable */
-    CHashTable mail_htab;      /* Mail players hashtable */
-    CHashTable logout_cmd_htab;/* Logged-out commands hashtable (WHO, etc) */
-    CHashTable func_htab;      /* Functions hashtable */
-    CHashTable ufunc_htab;     /* Local functions hashtable */
-    CHashTable powers_htab;    /* Powers hashtable */
-    CHashTable flags_htab;     /* Flags hashtable */
-    CHashTable player_htab;    /* Player name->number hashtable */
-    CHashTable desc_htab;      /* Socket descriptor hashtable */
-    CHashTable fwdlist_htab;   /* Room forwardlists */
-    CHashTable parent_htab;    /* Parent $-command exclusion */
-#ifdef PARSE_TREES
-    CHashTable tree_htab;      /* Parse trees for evaluation */
-#endif // PARSE_TREES
-    CHashTable acache_htab;    // Attribute Cache
-
-    HELP_DESC *aHelpDesc;      // Table of help files hashes.
-    int     mHelpDesc;         // Number of entries allocated.
-    int     nHelpDesc;         // Number of entries used.
-
-    char    version[128];      /* MUX version string */
-    char    short_ver[64];     /* Short version number (for INFO) */
+    char    short_ver[64];      /* Short version number (for INFO) */
     char    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
-    int     nObjEvalNest;      // The nesting level of objeval()
-                               // invocations.
-    BOOL    bStackLimitReached;// Was stack slammed?
-    int     nStackNest;        // Current stack depth.
+    char    version[128];       /* MUX version string */
+    char    *curr_cmd;          /* The current command */
+    char    *debug_cmd;         // The command we are executing (if any).
+    char    *mod_alist;         /* Attribute list for modifying */
+    char    *pout;              /* The output of the pipe used in %| */
+    char    *poutbufc;          /* Buffer position for poutnew */
+    char    *poutnew;           /* The output being build by the current command */
+    char    *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
+    char    *itext[MAX_ITEXT];  // Text of iter(). Equivalent to ##.
 
-    int     logging;    /* Are we in the middle of logging? */
-    int     attr_next;  /* Next attr to alloc when freelist is empty */
-    int     min_size;   /* Minimum db size (from file header) */
-    int     db_top;     /* Number of items in the db */
-    int     db_size;    /* Allocated size of db structure */
-    dbref   freelist;   /* Head of object freelist */
-    MARKBUF *markbits;  /* temp storage for marking/unmarking */
+    ALIST   iter_alist;         /* Attribute list for iterations */
+    BADNAME *badname_head;      /* List of disallowed names */
+    HELP_DESC *aHelpDesc;       // Table of help files hashes.
+    MARKBUF *markbits;          /* temp storage for marking/unmarking */
+    MENT    *mail_list;         /* The mail database */
+    OLSTK   *olist;             /* Stack of object lists for nested searches */
+    SITE    *suspect_list;      /* Sites that are suspect */
+    SITE    *access_list;       /* Access states for sites */
 
-    ALIST   iter_alist;     /* Attribute list for iterations */
-    char    *mod_alist; /* Attribute list for modifying */
-    size_t  mod_alist_len; /* Length of mod_alist */
-    size_t  mod_size;   /* Length of modified buffer */
-    dbref   mod_al_id;  /* Where did mod_alist come from? */
-    CHashTable attr_name_htab; /* Attribute names hashtable */
-    CHashTable vattr_name_htab;/* User attribute names hashtable */
+    CLinearTimeAbsolute check_counter;  /* Countdown to next db check */
+    CLinearTimeAbsolute cpu_count_from; /* When did we last reset CPU counters? */
+    CLinearTimeAbsolute dump_counter;   /* Countdown to next db dump */
+    CLinearTimeAbsolute events_counter; /* Countdown to next events check */
+    CLinearTimeAbsolute idle_counter;   /* Countdown to next idle check */
+    CLinearTimeAbsolute now;            /* What time is it now? */
+    CLinearTimeAbsolute start_time;     /* When was MUX started */
+
+    CHashTable acache_htab;     // Attribute Cache
+    CHashTable attr_name_htab;  /* Attribute names hashtable */
+    CHashTable channel_htab;    /* Channels hashtable */
+    CHashTable command_htab;    /* Commands hashtable */
+    CHashTable desc_htab;       /* Socket descriptor hashtable */
+    CHashTable flags_htab;      /* Flags hashtable */
+    CHashTable func_htab;       /* Functions hashtable */
+    CHashTable fwdlist_htab;    /* Room forwardlists */
+    CHashTable logout_cmd_htab; /* Logged-out commands hashtable (WHO, etc) */
+    CHashTable mail_htab;       /* Mail players hashtable */
+    CHashTable parent_htab;     /* Parent $-command exclusion */
+    CHashTable player_htab;     /* Player name->number hashtable */
+    CHashTable powers_htab;     /* Powers hashtable */
+#ifdef PARSE_TREES
+    CHashTable tree_htab;       /* Parse trees for evaluation */
+#endif // PARSE_TREES
+    CHashTable ufunc_htab;      /* Local functions hashtable */
+    CHashTable vattr_name_htab; /* User attribute names hashtable */
 };
 
 extern STATEDATA mudstate;
