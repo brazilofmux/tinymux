@@ -25,13 +25,17 @@ HELP
   the configuration of this MUX. If you notice any errors, contact an Admin.
 
 & "
+"
 
   COMMAND: "<message>
 
-  Says <message> out loud to everyone in your current room.  Example:
-  the command '"Where is the movie theater?' produces
-  '<yourname> says "Where is the movie theater>"'.  Note that the closing
-  double quote is automatically added.
+  Says <message> out loud to everyone in your current room.
+
+  Example:
+    > "Where is the movie theater?
+    You say, "Where is the movie theater?"
+
+  Note that the closing double quote is automatically added.
 
   Related Topics: page, pose, say, :, ".
 
@@ -64,22 +68,30 @@ HELP
   Related Topics: @set.
 
 & :
+:
 
   COMMAND: :<message>
 
   Displays <message> to everyone in your current room, preceded by your name
-  and a space.  Example: the command ':jumps for joy' produces
-  '<yourname> jumps for joy'.
+  and a space.
+
+  Example:
+    >:jumps for joy.
+    Player jumps for joy.
 
   Related Topics: page, pose, say, whisper, ;, ".
 
 & ;
+;
 
   COMMAND: ;<message>
 
   This command is much like the ':' command, except that no space is inserted
-  between your name and the action.  Example: the command ';'s watch beeps.'
-  produces '<yourname>'s watch beeps.'.
+  between your name and the action. 
+ 
+  Example:
+    > ;'s watch beeps.
+    Player's watch beeps.
 
   Warning: This command does not work in command lists run from an attribute
   because the ';' is treated as the command separator.  Use pose/nospace
@@ -111,7 +123,7 @@ HELP
      > @@ --- End Code ---
      Hello World!
 
-  Related Topics: @comment
+  Related Topics: think, @@(), null().
 
 & @@()
 @@()
@@ -124,7 +136,7 @@ HELP
     > think @@(pemit(me,Hello))
     > think @@(abc)
 
-  Related Topics: null() @@
+  Related Topics: @@, null().
 
 & @AAHEAR
 @AAHEAR
@@ -407,6 +419,8 @@ HELP
   player name and not already in use.  Only if both checks succeed is the
   alias set.
 
+Related Topics: @name.
+
 & @AMAIL
 @AMAIL
 
@@ -432,7 +446,7 @@ HELP
   itself. Messages that are produced by anything other than the object itself
   are ignored.
 
-  Example: @amhear listener = "Wait a minute.  I said the trigger word!
+  Example: @amhear listener = "Wait a minute. I said the trigger word!
 
   Related Topics: @aahear, @ahear, @listen.
 
@@ -482,7 +496,7 @@ HELP
   Sets the action to be taken by an object when someone tries to give it
   something that fails its give lock.
 
-  Example: @arfail merchant = "I don't buy such junk.  Begone!;
+  Example: @arfail merchant = "I don't buy such junk. Begone!;
                               @tel %#=cheater_exit
 
   Related Topics: give, @agfail, @gfail, @ogfail, @orfail, @rfail, @lock.
@@ -2837,15 +2851,14 @@ HELP
   Sets a new poll message in the WHO report. The command is an
   alias for @doing/header.
 
-  Related Topics: WHO, @doing
+  Related Topics: who, @doing
 
 & @POWER
 @POWER
 
   COMMAND: @power <object>=[!]<power>
 
-  This is a command that allows the granting of special powers to objects of
-  any type.
+  This command allows the granting of special powers to objects of any type.
 
   Related Topics: powers list
 
@@ -3022,12 +3035,12 @@ HELP
   COMMAND: @robot <name>=<password>
 
   Creates a robot player owned by you.  The robot has its ROBOT flag set, so
-  it may use the OUTPUTPREFIX and OUTPUTSUFFIX commands that most publicly
+  it may use the outputprefix and outputsuffix commands that some publicly
   available robot programs require.  This command costs 1000 coins.
-  Note that some sites do not restrict OUTPUTSUFFIX and OUTPUTPREFIX to
+  Note that some sites do not restrict outputprefix and outputsuffix to
   robots.
 
-  Related Topics: OUTPUTPREFIX, OUTPUTSUFFIX, ROBOT, TYPES OF OBJECTS.
+  Related Topics: outputprefix, outputsuffix, ROBOT, TYPES OF OBJECTS.
 
 & @RUNOUT
 @RUNOUT
@@ -3170,7 +3183,7 @@ HELP
   breakdown by object types.  If <player> is specified, the breakdown
   for the named player is given.  You may only list individual counts
   for yourself.  If invoked with no arguments or switches this command is
-  free, but if you specify either /all or <player>, then this  command costs
+  free, but if you specify either /all or <player>, then this command costs
   100 coins to run, because it is computationally expensive.
 
   Related Topics: stats().
@@ -3225,10 +3238,10 @@ HELP
   COMMAND: @switch[/<switches>] <string>=<t1>,<c1> [,<tN>,<cN>]... [,<cD>]
 
   Compares <string> against the targets <t1>, <t2>, etc, until a match is
-  found at which time the corresponding list of commands is performed.
+  found, at which time the corresponding list of commands is performed.
 
   #$ is substituted with the value of <string>. In this way, the commands in
-  <c1>..<cN>..<cD> has a short-hand way of getting at the matched value.
+  <c1>..<cN>..<cD> have a short-hand way of getting at the matched value.
 
   Wildcards match strings, and the < and > operators allowing matching by
   numeric value.  By default, any list whose target matches the string is
@@ -3241,6 +3254,8 @@ HELP
               that match <string>.
      /first - Perform only the actionlist associated with the first target
               that matches <string>.
+
+  Related Topics: switch(), ifelse().
 
 & @TELEPORT
 @TELEPORT
@@ -3740,17 +3755,13 @@ ANDFLAGS()
 & ANSI
 ANSI
 
-  FLAG: ANSI(X)  ()
+  FLAG: ANSI(X)
 
   When set on a player, it will enable the player to see ANSI color.
-  If you have TinyFugue and you do not wish to see ANSI color, please
-  leave this flag set and /set catch_ctrls=ansi. The reason for this is when
-  the ANSI flag is unset, the server must go through every line of text you
-  see and strip the ANSI codes from it. With the ANSI flag set and /set
-  catch_ctrls=ansi, TinyFugue will strip the ANSI and save the MUX from
-  having to do it, resulting in less lag for everyone.
+  Otherwise, MUX will strip the ANSI color codes from text before it's sent to
+  the client.
 
-  Related Topics: ansi(), NOBLEED.
+  Related Topics: ansi(), ANSI CODES, ANSI SUBSTITUTION, NOBLEED.
 
 & ANSI CODES
 ANSI CODES
@@ -5169,6 +5180,7 @@ DOING()
   Related Topics: poll()
 
 & DROP
+DROP
 
   COMMAND: drop[/<switch>] <object>
            drop[/<switch>] <exit>
@@ -6642,6 +6654,8 @@ INVENTORY
 
   Lists what you are carrying and how much money you have.
 
+  Related Topics: score.
+
 & INZONE()
 INZONE()
 
@@ -6861,6 +6875,7 @@ KEY
   Related Topics:
 
 & KILL
+KILL
 
   COMMAND: kill <player> [=<cost>]
 
@@ -7439,13 +7454,12 @@ LOG()
 & LOGOUT
 LOGOUT
 
-  COMMAND: LOGOUT
+  COMMAND: logout
 
   Disconnects you from your character without breaking the network connection
-  to the game.  You may then log in to another character.  The LOGOUT command
-  must be entered in all capitals.
+  to the game.  You may then log in to another character.
 
-  Related Topics: QUIT.
+  Related Topics: quit.
 
 & LOOK
 LOOK
@@ -8487,7 +8501,7 @@ NULL()
     Hello
     > think null(abc)
 
-  Related Topics: @@() @@
+  Related Topics: @@, @@().
 
 & NUM()
 NUM()
@@ -8650,26 +8664,24 @@ ORFLAGS()
 & OUTPUTPREFIX
 OUTPUTPREFIX
 
-  COMMAND: OUTPUTPREFIX <string>
+  COMMAND: outputprefix <string>
 
   Causes <string> to be output on a line by itself before printing the
   results of each command.  This command is intended for use by external
   robot programs, and may be restricted to players whose ROBOT flag is set.
-  The OUTPUTPREFIX command must be entered in all capitals.
 
-  Related Topics: @robot, OUTPUTSUFFIX, ROBOT.
+  Related Topics: @robot, outputsuffix, ROBOT.
 
 & OUTPUTSUFFIX
 OUTPUTSUFFIX
 
-  COMMAND: OUTPUTSUFFIX <string>
+  COMMAND: outputsuffix <string>
 
   Causes <string> to be output on a line by itself after printing the results
   of each command.  This command is intended for use by external robot
   programs, and may be restricted to players whose ROBOT flag is set.
-  The OUTPUTSUFFIX command must be entered in all capitals.
 
-  Related Topics: @robot, OUTPUTPREFIX, ROBOT.
+  Related Topics: @robot, outputprefix, ROBOT.
 
 & OWNER()
 OWNER()
@@ -9086,8 +9098,11 @@ POSE
   COMMAND: pose[/<switches>] <message>
 
   Displays <message> to everyone in your current room, preceded by your name
-  and optionally a space.  Example: the command 'pose jumps for joy' produces
-  '<yourname> jumps for joy'.
+  and optionally a space.
+
+  Example: 
+    >pose jumps for joy.
+      Player jumps for joy.
 
   The following switches are available:
 
@@ -9238,11 +9253,11 @@ QUIET
 & QUIT
 QUIT
 
-  COMMAND: QUIT
+  COMMAND: quit
 
-  Logs you out and disconnects you from the game. Must be in all capitals.
+  Logs you out and disconnects you from the game.
 
-  Related Topics: LOGOUT.
+  Related Topics: logout.
 
 & R()
 R()
@@ -9825,8 +9840,12 @@ SAY
 
   COMMAND: say <message>
 
-  Says <message> out loud to everyone in your current room. You can also
-  use '"<message>'.
+  Says <message> out loud to everyone in your current room.
+  You can also use "<message>.
+
+  Example:
+    > say Where is the movie theater?
+    Player says "Where is the movie theater?"
 
   Related Topics: page, pose, whisper, :, ;, ".
 
@@ -9838,7 +9857,7 @@ SCORE
   Displays how much money you have.  Helpful to see if any machines are
   looping.
 
-  Related Topics: @ps, LOOPING.
+  Related Topics: @ps, LOOPING, inventory.
 
 & SCRAMBLE()
 SCRAMBLE()
@@ -10022,14 +10041,14 @@ SEMAPHORES (continued)
 & SESSION
 SESSION
 
-  COMMAND: SESSION
+  COMMAND: session
 
   Displays information on how many characters you have sent and received
   during this session, and which (Internal) port you are connected to on the
-  MUX.  It must be typed in all uppercase.
+  MUX.
 
   Example:
-    > SESSION
+    > session
                                      Characters Input----  Characters Output---
     Player Name     On For Idle Port Pend  Lost     Total  Pend  Lost     Total
     Mortal           00:06   0s   16    0     0        44   156     0      2679
@@ -10812,7 +10831,7 @@ TAKE (continued)
   <object> and <sub-object> may be either players or things.
   'get' is the same as 'take'.
 
-  Related Toipcs: drop, @afail, @asucc, @fail, @ofail, @osucc, @succ,
+  Related Topics: drop, @afail, @asucc, @fail, @ofail, @osucc, @succ,
       ENTER_OK, FAILURE, SUCCESS.
 
 & TAN()
@@ -11541,13 +11560,13 @@ WHISPER
 & WHO
 WHO
 
-  COMMAND: WHO <prefix>
+  COMMAND: who [<prefix>]
 
   Displays a list of players currently connected to the MUX.
   The WHO report tells you how long a player has been on, how long they
   have been inactive, and what they are doing (if they have used the @doing
   command).  If <prefix> is specified, only players whose names start with
-  <prefix> are listed.  The WHO command must be entered in all capitals.
+  <prefix> are listed.
 
   Related Topics: @doing.
 
@@ -11763,12 +11782,15 @@ ZWHO()
   Related Topics:
 
 & \\
+\\
 
   COMMAND: \\<message>
 
   Outputs <message> to everyone in your current room without embellishment.
-  Example: the command '\\A chill falls over the room.' produces
-  'A chill falls over the room.'
+
+  Example:
+    >\\A chill falls over the room.
+    A chill falls over the room.
 
   Related Topics: @emit, @oemit, NOSPOOF.
 
