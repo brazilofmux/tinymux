@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.22 2003-07-16 01:24:27 sdennis Exp $
+// $Id: netcommon.cpp,v 1.23 2003-07-17 00:23:32 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1506,14 +1506,40 @@ static void dump_users(DESC *e, char *match, int key)
 
             CLinearTimeDelta ltdConnected = ltaNow - d->connected_at;
             CLinearTimeDelta ltdLastTime  = ltaNow - d->last_time;
+
+            const char *pNameField = "<Unconnected>";
+            if (d->flags & DS_CONNECTED)
+            {
+                pNameField = trimmed_name(d->player);
+            }
+            size_t nNameField = strlen(pNameField);
+
+            // How many spaces between the name field and the 'On For' field.
+            //
+            size_t nFill;
+            if (13 <= nNameField)
+            {
+                nFill = 1;
+            }
+            else
+            {
+                nFill = 14-nNameField;
+            }
+            char aFill[15];
+            memset(aFill, ' ', nFill);
+            aFill[nFill] = '\0';
+
+            // The width size allocated to the 'On For' field.
+            //
+            size_t nOnFor = 25 - nFill - nNameField;
+
             if (  (e->flags & DS_CONNECTED)
                && Wizard_Who(e->player)
                && key == CMD_WHO)
             {
-                sprintf(buf, "%-16s%9s %4s%-3s#%-6d%5d%3s%s\r\n",
-                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
-                    "<Not Connected>"),
-                    time_format_1(ltdConnected.ReturnSeconds()),
+                sprintf(buf, "%s%s%s %4s%-3s#%-6d%5d%3s%s\r\n",
+                    pNameField, aFill,
+                    time_format_1(ltdConnected.ReturnSeconds(), nOnFor),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     flist,
                     ((d->flags & DS_CONNECTED) ? Location(d->player) : -1),
@@ -1523,10 +1549,9 @@ static void dump_users(DESC *e, char *match, int key)
             }
             else if (key == CMD_SESSION)
             {
-                sprintf(buf, "%-16s%9s %4s%5d%5d%6d%10d%6d%6d%10d\r\n",
-                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
-                    "<Not Connected>"),
-                    time_format_1(ltdConnected.ReturnSeconds()),
+                sprintf(buf, "%s%s%s %4s%5d%5d%6d%10d%6d%6d%10d\r\n",
+                    pNameField, aFill,
+                    time_format_1(ltdConnected.ReturnSeconds(), nOnFor),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     d->descriptor,
                     d->input_size, d->input_lost,
@@ -1537,20 +1562,18 @@ static void dump_users(DESC *e, char *match, int key)
             else if (  Wizard_Who(e->player)
                     || See_Hidden(e->player))
             {
-                sprintf(buf, "%-16s%9s %4s%-3s%s\r\n",
-                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
-                    "<Not Connected>"),
-                    time_format_1(ltdConnected.ReturnSeconds()),
+                sprintf(buf, "%s%s%s %4s%-3s%s\r\n",
+                    pNameField, aFill,
+                    time_format_1(ltdConnected.ReturnSeconds(), nOnFor),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     flist,
                     d->doing);
             }
             else
             {
-                sprintf(buf, "%-16s%9s %4s   %s\r\n",
-                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
-                    "<Not Connected>"),
-                    time_format_1(ltdConnected.ReturnSeconds()),
+                sprintf(buf, "%s%s%s %4s  %s\r\n",
+                    pNameField, aFill,
+                    time_format_1(ltdConnected.ReturnSeconds(), nOnFor),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     d->doing);
             }

@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.5 2003-03-11 07:01:28 sdennis Exp $
+// $Id: interface.h,v 1.6 2003-07-17 00:23:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -172,7 +172,7 @@ extern void make_port_ulist(dbref, char *, char **);
 extern int fetch_session(dbref target);
 extern int fetch_idle(dbref target);
 extern int fetch_connect(dbref target);
-extern const char *time_format_1(int Seconds);
+extern const char *time_format_1(int Seconds, size_t maxWidth);
 extern const char *time_format_2(int Seconds);
 extern CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
 extern void raw_notify(dbref, const char *);

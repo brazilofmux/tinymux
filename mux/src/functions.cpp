@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.59 2003-07-16 01:24:16 sdennis Exp $
+// $Id: functions.cpp,v 1.60 2003-07-17 00:23:32 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -7981,8 +7981,8 @@ typedef struct
 #define N_RADIX_ENTRIES 7
 const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
 {
-    { 31104000, 'y', 4, "year"   },  // 12 'months'
-    {  2592000, 'M', 5, "month"  },  // 30 days.
+    { 31556926, 'y', 4, "year"   },  // Average solar year.
+    {  2629743, 'M', 5, "month"  },  // Average month.
     {   604800, 'w', 4, "week"   },  // 7 days.
     {    86400, 'd', 3, "day"    },
     {     3600, 'h', 4, "hour"   },
@@ -8067,7 +8067,7 @@ void GeneralTimeConversion
 // These buffers are used by:
 //
 //     digit_format  (23 bytes) uses TimeBuffer80,
-//     time_format_1 (10 bytes) uses TimeBuffer80,
+//     time_format_1 (12 bytes) uses TimeBuffer80,
 //     time_format_2 (17 bytes) uses TimeBuffer64,
 //     expand_time   (33 bytes) uses TimeBuffer64,
 //     write_time    (69 bytes) uses TimeBuffer80.
@@ -8116,63 +8116,92 @@ const char *digit_format(int Seconds)
     return TimeBuffer80;
 }
 
-// Show time in one of the following formats limited by a width of 9 places.
-// Pick one of the following formats:
+// Show time in one of the following formats limited by a width of 8, 9, 10,
+// or 11 places and depending on the value to display:
 //
-//         Z9:99            0 to 86399
-//     Z9d Z9:99        86400 to 8639999
-//     ZZZ9d Z9h      8640000 to 863999999
-//     ZZZ9M Z9d    864000000 and up.
+// Width:8
+//         Z9:99            0 to         86,399
+//      9d 99:99       86,400 to        863,999
+//      ZZ9d 99h      864,000 to     86,396,459
+//      ZZZ9w 9d   86,396,460 to  6,047,913,659
 //
-const char *time_format_1(int Seconds)
+// Width:9
+//         Z9:99            0 to         86,399
+//     Z9d 99:99       86,400 to      8,639,999
+//     ZZZ9d 99h    8,640,000 to    863,996,459
+//      ZZZ9w 9d  863,996,460 to  6,047,913,659
+//
+// Width:10
+//         Z9:99            0 to         86,399
+//    ZZ9d 99:99       86,400 to     86,399,999
+//    ZZZZ9d 99h   86,400,000 to  8,639,996,459
+//
+// Width:11
+//         Z9:99            0 to         86,399
+//   ZZZ9d 99:99       86,400 to    863,999,999
+//   ZZZZZ9d 99h  864,000,000 to 86,399,996,459
+//
+int tf1_width_table[4][3] =
+{
+    { 86399,    863999,  86396459, },
+    { 86399,   8639999, 863996459, },
+    { 86399,  86399999,   INT_MAX, },
+    { 86399, 863999999,   INT_MAX, }
+};
+
+struct
+{
+    char *specs[4];
+    int  div[3];
+} tf1_case_table[4] =
+{
+    {
+        { "   %2d:%02d", "    %2d:%02d", "     %2d:%02d", "      %2d:%02d" },
+        { 3600, 60, 1 }
+    },
+    {
+        { "%dd %02d:%02d", "%2dd %02d:%02d", "%3dd %02d:%02d", "%4dd %02d:%02d" },
+        { 86400, 3600, 60 }
+    },
+    {
+        { "%3dd %02dh", "%4dd %02dh", "%5dd %02dh", "%6dd %02dh" },
+        { 86400, 3600, 1 }
+    },
+    {
+        { "%4dw %d", "%4dw %d", "", "" },
+        { 604800, 86400, 1 }
+    }
+};
+
+const char *time_format_1(int Seconds, size_t maxWidth)
 {
     if (Seconds < 0)
     {
         Seconds = 0;
     }
 
-    int n1, n2, n3;
-    if (Seconds < 8640000)
+    if (  maxWidth < 8
+       || 12 < maxWidth)
     {
-        if (Seconds < 86400)
-        {
-            // Z9:99 Format.
-            //
-            n2 = Seconds / 3600;
-            Seconds -= n2 * 3600;
-            n3 = Seconds / 60;
-            sprintf(TimeBuffer80, "    %2d:%02d", n2, n3);
-        }
-        else
-        {
-            // Z9d Z9:99 Format.
-            //
-            n1 = Seconds / 86400;
-            Seconds -= n1 * 86400;
-            n2 = Seconds / 3600;
-            Seconds -= n2 * 3600;
-            n3 = Seconds / 60;
-            sprintf(TimeBuffer80, "%2dd %2d:%02d", n1, n2, n3);
-        }
+        strcpy(TimeBuffer80, "???");
+        return TimeBuffer80;
     }
-    else if (Seconds < 864000000)
+    int iWidth = maxWidth - 8;
+
+    int iCase = 0;
+    while (  iCase < 3
+          && tf1_width_table[iWidth][iCase] < Seconds)
     {
-        // ZZZ9d Z9h Format.
-        //
-        n1 = Seconds / 86400;
-        Seconds -= n1 * 86400;
-        n2 = Seconds / 3600;
-        sprintf(TimeBuffer80, "%4dd %2dh", n1, n2);
+        iCase++;
     }
-    else
+
+    int i, n[3];
+    for (i = 0; i < 3; i++)
     {
-        // ZZZ9M Z9d Format.
-        //
-        n1 = Seconds / 2592000;
-        Seconds -= n1 * 2592000;
-        n2 = Seconds / 86400;
-        sprintf(TimeBuffer80, "%4dM %2d", n1, n2);
+        n[i] = Seconds / tf1_case_table[iCase].div[i];
+        Seconds -= n[i] *tf1_case_table[iCase].div[i];
     }
+    sprintf(TimeBuffer80, tf1_case_table[iCase].specs[iWidth], n[0], n[1], n[2]);
     return TimeBuffer80;
 }
 
