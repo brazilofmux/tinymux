@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.89 2002-09-19 05:22:37 sdennis Exp $
+// $Id: command.cpp,v 1.90 2002-09-19 12:25:28 jake Exp $
 //
 
 #include "copyright.h"
@@ -928,7 +928,7 @@ BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
             *bufc = '\0';
             if (save_flg)
             {
-                restore_global_regs("proces_hook.save", preserve, preserve_len);
+                restore_global_regs("process_hook.save", preserve, preserve_len);
                 PopIntegers(preserve_len, MAX_GLOBAL_REGS);
                 PopPointers(preserve, MAX_GLOBAL_REGS);
             }
