@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.6 2002-06-28 15:15:26 sdennis Exp $
+// $Id: stringutil.cpp,v 1.7 2002-06-28 15:40:31 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2425,20 +2425,27 @@ double Tiny_atof(char *szString)
         }
     }
 
-    char *p = pfr.pMeat;
-    int   n = pfr.nMeat;
-    if (n > ATOF_LIMIT)
-    {
-        n = ATOF_LIMIT;
-    }
+    const char *p = pfr.pMeat;
+    int n = pfr.nMeat;
 
     // We need to protect certain libraries from going nuts from being
     // force fed lots of ASCII.
     //
-    int ch = p[n];
-    p[n] = '\0';
+    char *pTmp = NULL;
+    if (n > ATOF_LIMIT)
+    {
+        pTmp = alloc_lbuf("Tiny_atof");
+        memcpy(pTmp, p, ATOF_LIMIT);
+        pTmp[ATOF_LIMIT] = '\0';
+        p = pTmp;
+    }
+
     ret = Tiny_strtod(p, NULL);
-    p[n] = ch;
+
+    if (pTmp)
+    {
+        free_lbuf(pTmp);
+    }
 
     return ret;
 }
