@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.60 2004-07-06 06:45:26 sdennis Exp $
+// $Id: stringutil.cpp,v 1.61 2004-07-08 22:00:52 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1956,7 +1956,7 @@ const char Digits100[201] =
 061626364656667686960717273747576777879708182838485868788898\
 09192939495969798999";
 
-int mux_ltoa(long val, char *buf)
+size_t mux_ltoa(long val, char *buf)
 {
     char *p = buf;
 
@@ -1965,7 +1965,7 @@ int mux_ltoa(long val, char *buf)
         *p++ = '-';
         val = -val;
     }
-    unsigned int uval = (unsigned int)val;
+    unsigned long uval = (unsigned long)val;
 
     char *q = p;
 
@@ -1984,7 +1984,7 @@ int mux_ltoa(long val, char *buf)
         *p++ = *(z+1);
     }
 
-    int nLength = p - buf;
+    size_t nLength = p - buf;
     *p-- = '\0';
 
     // The digits are in reverse order with a possible leading '-'
