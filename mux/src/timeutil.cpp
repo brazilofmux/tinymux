@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: timeutil.cpp,v 1.2 2002-05-28 17:52:25 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -615,10 +615,26 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
 
 char *CLinearTimeAbsolute::ReturnSecondsString(void)
 {
-    // TODO: Handle fractional seconds.
-    //
-    INT64 lt = i64FloorDivision(m_tAbsolute - EPOCH_OFFSET, FACTOR_100NS_PER_SECOND);
-    Tiny_i64toa(lt, m_Buffer);
+    INT64 Leftover;
+    INT64 lt = i64FloorDivisionMod(m_tAbsolute - EPOCH_OFFSET, FACTOR_100NS_PER_SECOND, &Leftover);
+    int n = Tiny_i64toa(lt, m_Buffer);
+    if (Leftover != 0)
+    {
+        char *p = m_Buffer + n;
+        *p++ = '.';
+        char buf[8];
+        int m = Tiny_i64toa(Leftover, buf);
+        memset(p, '0', 7 - m);
+        p += 7 - m;
+        memcpy(p, buf, m);
+        p += m - 1;
+        while (*p == '0')
+        {
+            p--;
+        }
+        p++;
+        *p = '\0';
+    }
     return m_Buffer;
 }
 
@@ -929,8 +945,27 @@ BOOL ParseThreeLetters(const char **pp, int *piHash)
     return TRUE;
 }
 
+void ParseDecimalSeconds(size_t n, const char *p, unsigned short *iMilli,
+                         unsigned short *iMicro, unsigned short *iNano)
+{
+   char aBuffer[10];
+   if (n > sizeof(aBuffer) - 1)
+   {
+       n = sizeof(aBuffer) - 1;
+   }
+   memcpy(aBuffer, p, n);
+   memset(aBuffer + n, '0', sizeof(aBuffer) - n - 1);
+   aBuffer[sizeof(aBuffer) - 1] = '\0';
+   int ns = Tiny_atol(aBuffer);
+   *iNano = ns % 1000;
+   ns /= 1000;
+   *iMicro = ns % 1000;
+   *iMilli = ns / 1000;
+}
+
 int do_convtime(const char *str, FIELDEDTIME *ft)
 {
+    memset(ft, 0, sizeof(FIELDEDTIME));
     if (!str || !ft)
     {
         return 0;
@@ -1001,6 +1036,30 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
     {
         return 0;
     }
+    while (Tiny_IsDigit[*p])
+    {
+        p++;
+    }
+
+    // Milliseconds, Microseconds, and Nanoseconds
+    //
+    if (*p == '.')
+    {
+        p++;
+        size_t n;
+        char *q = strchr(p, ' ');
+        if (q)
+        {
+            n = q - p;
+        }
+        else
+        {
+            n = strlen(p);
+        }
+
+        ParseDecimalSeconds(n, p, &ft->iMillisecond, &ft->iMicrosecond,
+            &ft->iNanosecond);
+    }
     while (*p && *p != ' ') p++;
     while (*p == ' ') p++;
 
@@ -1011,12 +1070,6 @@ int do_convtime(const char *str, FIELDEDTIME *ft)
     {
         return 0;
     }
-
-    // Milliseconds, Microseconds and Nanoseconds
-    //
-    ft->iMillisecond = 0;
-    ft->iMicrosecond = 0;
-    ft->iNanosecond = 0;
 
     // DayOfYear and DayOfWeek
     //
@@ -1161,8 +1214,30 @@ char *CLinearTimeAbsolute::ReturnDateString(void)
     FIELDEDTIME ft;
     if (LinearTimeToFieldedTime(m_tAbsolute, &ft))
     {
-        sprintf(m_Buffer, "%s %s %02d %02d:%02d:%02d %04d", DayOfWeekString[ft.iDayOfWeek],
-            monthtab[ft.iMonth-1], ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond, ft.iYear);
+        if (  ft.iMillisecond != 0
+           || ft.iMicrosecond != 0
+           || ft.iNanosecond != 0)
+        {
+            char buffer[10];
+            sprintf(buffer, "%03d%03d%03d", ft.iMillisecond, ft.iMicrosecond, ft.iNanosecond);
+            char *p = buffer + 8;
+            while (*p == '0')
+            {
+                p--;
+            }
+            p++;
+            *p = '\0';
+            sprintf(m_Buffer, "%s %s %02d %02d:%02d:%02d.%s %04d",
+                DayOfWeekString[ft.iDayOfWeek], monthtab[ft.iMonth-1],
+                ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond, buffer,
+                ft.iYear);
+        }
+        else
+        {
+            sprintf(m_Buffer, "%s %s %02d %02d:%02d:%02d %04d",
+                DayOfWeekString[ft.iDayOfWeek], monthtab[ft.iMonth-1],
+                ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond, ft.iYear);
+        }
     }
     else
     {
@@ -1178,9 +1253,8 @@ void CLinearTimeAbsolute::GetUTC(void)
 
 void CLinearTimeAbsolute::GetLocal(void)
 {
-    FIELDEDTIME ft;
-    GetLocalFieldedTime(&ft);
-    FieldedTimeToLinearTime(&ft, &m_tAbsolute);
+    GetUTCLinearTime(&m_tAbsolute);
+    UTC2Local();
 }
 
 BOOL FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
@@ -1233,9 +1307,9 @@ BOOL LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
     ft->iSecond = (int)(ns100 / FACTOR_100NS_PER_SECOND);
     ns100 = ns100 % FACTOR_100NS_PER_SECOND;
 
-    ft->iMillisecond = (int)(ns100 % FACTOR_100NS_PER_MILLISECOND);
+    ft->iMillisecond = (int)(ns100 / FACTOR_100NS_PER_MILLISECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MILLISECOND;
-    ft->iMicrosecond = (int)(ns100 % FACTOR_100NS_PER_MICROSECOND);
+    ft->iMicrosecond = (int)(ns100 / FACTOR_100NS_PER_MICROSECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MICROSECOND;
     ft->iNanosecond = (int)(ns100 * FACTOR_NANOSECONDS_PER_100NS);
 
@@ -1257,24 +1331,6 @@ void GetUTCLinearTime(INT64 *plt)
     GetSystemTimeAsFileTime((struct _FILETIME *)plt);
 }
 
-void GetLocalFieldedTime(FIELDEDTIME *ft)
-{
-    SYSTEMTIME st;
-    GetLocalTime(&st);
-
-    ft->iYear = st.wYear;
-    ft->iMonth = st.wMonth;
-    ft->iDayOfMonth = st.wDay;
-    ft->iDayOfWeek = st.wDayOfWeek;
-    ft->iDayOfYear = 0;
-    ft->iHour = st.wHour;
-    ft->iMinute = st.wMinute;
-    ft->iSecond = st.wSecond;
-    ft->iMillisecond = st.wMilliseconds;
-    ft->iMicrosecond = 0;
-    ft->iNanosecond = 0;
-}
-
 #else // !WIN32
 
 void GetUTCLinearTime(INT64 *plt)
@@ -1290,62 +1346,7 @@ void GetUTCLinearTime(INT64 *plt)
          + EPOCH_OFFSET;
 }
 
-void GetLocalFieldedTime(FIELDEDTIME *ft)
-{
-    struct timeval tv;
-    struct timezone tz;
-    tz.tz_minuteswest = 0;
-    tz.tz_dsttime = 0;
-    gettimeofday(&tv, &tz);
-    time_t seconds = tv.tv_sec;
-    struct tm *ptm = localtime(&seconds);
-
-    SetStructTm(ft, ptm);
-    ft->iMillisecond = (tv.tv_usec/1000);
-    ft->iMicrosecond = (tv.tv_usec%1000);
-    ft->iNanosecond = 0;
-}
-
 #endif // !WIN32
-
-#if 0
-CLinearTimeAbsolute FirstInMonth(int iYear, int iMonth, int iDayOfWeek)
-{
-    FIELDEDTIME ft;
-    memset(&ft, 0, sizeof(FIELDEDTIME));
-    ft.iYear = iYear;
-    ft.iMonth = iMonth;
-    ft.iDayOfMonth = 1;
-    CLinearTimeAbsolute lta;
-    lta.SetFields(&ft);
-    ft.iDayOfMonth = iModAdjusted(ft.iDayOfMonth - ft.iDayOfWeek + iDayOfWeek, 7);
-    lta.SetFields(&ft);
-    return lta;
-}
-
-CLinearTimeAbsolute LastInMonth(int iYear, int iMonth, int iDayOfWeek)
-{
-    FIELDEDTIME ft;
-    memset(&ft, 0, sizeof(FIELDEDTIME));
-    if (iMonth == 12)
-    {
-        ft.iYear = iYear+1;
-        ft.iMonth = 1;
-    }
-    else
-    {
-        ft.iYear = iYear;
-        ft.iMonth = iMonth+1;
-    }
-    ft.iDayOfMonth = 1;
-    CLinearTimeAbsolute lta;
-    lta.SetFields(&ft);
-    ft.iDayOfMonth = iModAdjusted(ft.iDayOfMonth - ft.iDayOfWeek + iDayOfWeek, 7);
-    lta.SetFields(&ft);
-    lta.Set100ns(lta.Return100ns()-FACTOR_100NS_PER_WEEK);
-    return lta;
-}
-#endif
 
 static int YearType(int iYear)
 {
@@ -1979,7 +1980,9 @@ typedef struct tag_AllFields
     int iHourTime;
     int iMinuteTime;
     int iSecondTime;
-    int iSubSecondTime;
+    int iMillisecondTime;
+    int iMicrosecondTime;
+    int iNanosecondTime;
     int iMinuteTimeZone;
 } ALLFIELDS;
 
@@ -3223,17 +3226,19 @@ void PD_Pass6(void)
 
 BOOL PD_GetFields(ALLFIELDS *paf)
 {
-    paf->iYear           = NOT_PRESENT;
-    paf->iDayOfYear      = NOT_PRESENT;
-    paf->iMonthOfYear    = NOT_PRESENT;
-    paf->iDayOfMonth     = NOT_PRESENT;
-    paf->iWeekOfYear     = NOT_PRESENT;
-    paf->iDayOfWeek      = NOT_PRESENT;
-    paf->iHourTime       = NOT_PRESENT;
-    paf->iMinuteTime     = NOT_PRESENT;
-    paf->iSecondTime     = NOT_PRESENT;
-    paf->iSubSecondTime  = NOT_PRESENT;
-    paf->iMinuteTimeZone = NOT_PRESENT;
+    paf->iYear            = NOT_PRESENT;
+    paf->iDayOfYear       = NOT_PRESENT;
+    paf->iMonthOfYear     = NOT_PRESENT;
+    paf->iDayOfMonth      = NOT_PRESENT;
+    paf->iWeekOfYear      = NOT_PRESENT;
+    paf->iDayOfWeek       = NOT_PRESENT;
+    paf->iHourTime        = NOT_PRESENT;
+    paf->iMinuteTime      = NOT_PRESENT;
+    paf->iSecondTime      = NOT_PRESENT;
+    paf->iMillisecondTime = NOT_PRESENT;
+    paf->iMicrosecondTime = NOT_PRESENT;
+    paf->iNanosecondTime  = NOT_PRESENT;
+    paf->iMinuteTimeZone  = NOT_PRESENT;
 
     PD_Node *pNode = PD_FirstNode();
     while (pNode)
@@ -3286,8 +3291,14 @@ BOOL PD_GetFields(ALLFIELDS *paf)
                     if (  pNode
                        && pNode->uCouldBe == PDCB_SUBSECOND)
                     {
-                       paf->iSubSecondTime = pNode->iToken;
-                       pNode = PD_NextNode(pNode);
+                        unsigned short ms, us, ns;
+                        ParseDecimalSeconds(pNode->nToken, pNode->pToken, &ms,
+                            &us, &ns);
+
+                        paf->iMillisecondTime = ms;
+                        paf->iMicrosecondTime = us;
+                        paf->iNanosecondTime  = ns;
+                        pNode = PD_NextNode(pNode);
                     }
                 }
             }
@@ -3444,14 +3455,11 @@ BOOL ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *paf)
             if (paf->iSecondTime != NOT_PRESENT)
             {
                 ft.iSecond = paf->iSecondTime;
-                if (paf->iSubSecondTime != NOT_PRESENT)
+                if (paf->iMillisecondTime != NOT_PRESENT)
                 {
-                    // TODO:
-#if 0
-                    ft.iMillisecond
-                    ft.iMicrosecond
-                    ft.iNanosecond
-#endif
+                    ft.iMillisecond = paf->iMillisecondTime;
+                    ft.iMicrosecond = paf->iMicrosecondTime;
+                    ft.iNanosecond = paf->iNanosecondTime;
                 }
             }
         }

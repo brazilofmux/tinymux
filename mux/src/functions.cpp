@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: functions.cpp,v 1.2 2002-05-28 17:52:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -980,7 +980,7 @@ FUNCTION(fun_convtime)
         {
             lta.Local2UTC();
         }
-        safe_i64toa(lta.ReturnSeconds(), buff, bufc);
+        safe_str(lta.ReturnSecondsString(), buff, bufc);
     }
     else
     {
