@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.53 2001-07-03 17:15:55 sdennis Exp $
+// $Id: funceval.cpp,v 1.54 2001-07-05 11:55:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1159,27 +1159,33 @@ FUNCTION(fun_strtrunc)
 
 FUNCTION(fun_ifelse)
 {
-    // This function now assumes that its arguments have not been
-    // evaluated
+    // This function assumes that its arguments have not been evaluated.
     //
-    char *str, *mbuff, *bp;
-
-    mbuff = bp = alloc_lbuf("fun_ifelse");
-    str = fargs[0];
-    TinyExec(mbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    char *lbuff = alloc_lbuf("fun_ifelse");
+    char *bp = lbuff;
+    char *str = fargs[0];
+    TinyExec(lbuff, &bp, 0, player, cause,
+        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
-    if (!mbuff || !*mbuff || ((Tiny_atol(mbuff) == 0) && is_number(mbuff)))
+    if (  lbuff[0] == '\0'
+       || (  is_number(lbuff)
+          && Tiny_atol(lbuff) == 0))
     {
-        str = fargs[2];
-        TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        if (nfargs == 3)
+        {
+            str = fargs[2];
+            TinyExec(buff, bufc, 0, player, cause,
+                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        }
     }
     else
     {
         str = fargs[1];
-        TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        TinyExec(buff, bufc, 0, player, cause,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     }
-    free_lbuf(mbuff);
+    free_lbuf(lbuff);
 }
 
 FUNCTION(fun_inc)

@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.77 2001-07-04 22:36:30 sdennis Exp $
+// $Id: functions.cpp,v 1.78 2001-07-05 11:55:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6324,7 +6324,6 @@ FUN flist[] =
     {"GET",      fun_get,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"GET_EVAL", fun_get_eval, MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"GRAB",     fun_grab,     MAX_ARG, 2,  3,       0, CA_PUBLIC},
-
     {"GREP",     fun_grep,     MAX_ARG, 3,  3,       0, CA_PUBLIC},
     {"GREPI",    fun_grepi,    MAX_ARG, 3,  3,       0, CA_PUBLIC},
     {"GT",       fun_gt,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
@@ -6339,6 +6338,7 @@ FUN flist[] =
     {"IADD",     fun_iadd,     MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"IDIV",     fun_idiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"IDLE",     fun_idle,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"IF",       fun_ifelse,   MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
     {"IFELSE",   fun_ifelse,   MAX_ARG, 3,  3, FN_NO_EVAL, CA_PUBLIC},
     {"IMUL",     fun_imul,     MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"INC",      fun_inc,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
