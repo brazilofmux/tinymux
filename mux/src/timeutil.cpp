@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.18 2003-02-24 08:04:23 sdennis Exp $
+// $Id: timeutil.cpp,v 1.19 2003-02-24 08:14:10 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1413,9 +1413,10 @@ void test_time_t(void)
     // Determine the range of the time_t datatype.  This code assumes a
     // 2's-complement format.
     //
-    time_t tZero = 0;
-    time_t max_time_t = (~tZero) >> 1;
-    time_t min_time_t = max_time_t + 1;
+    const int nbits = sizeof(time_t)*8;
+    const time_t tOne = 1;
+    const time_t min_time_t = tOne << (nbits-1);
+    const time_t max_time_t = min_time_t - 1;
 
     // Search for the highest supported value of time_t.
     //
