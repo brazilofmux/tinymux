@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.41 2000-11-16 15:43:39 sdennis Exp $
+// $Id: functions.cpp,v 1.42 2000-12-10 22:59:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4587,7 +4587,7 @@ FUNCTION(fun_max)
         return;
     }
 
-    double maximum = DBL_MIN;
+    double maximum = -DBL_MAX;
     for (int i = 0; i < nfargs; i++)
     {
         double tval = safe_atof(fargs[i]);
