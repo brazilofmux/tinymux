@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.39 2003-04-27 16:14:08 sdennis Exp $
+// $Id: predicates.cpp,v 1.40 2003-05-12 07:38:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -869,6 +869,7 @@ void do_addcommand
         {
             cmd->callseq = CS_ADDED|CS_ONE_ARG;
         }
+        cmd->hookmask = 0;
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
         (void)ISOUTOFMEMORY(add);
         add->thing = thing;
