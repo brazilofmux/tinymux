@@ -1090,7 +1090,7 @@ Related Topics: @name.
 
   This is useful to achieve a consistent 'look' using room parents.
 
-  Related Topics: @conformat, @exitformat, @nameformat, @conformat.
+  Related Topics: @conformat, @exitformat, @nameformat.
 
 & @DESCRIBE
 @DESCRIBE
