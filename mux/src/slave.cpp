@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.3 2003-03-01 22:32:27 sdennis Exp $
+// $Id: slave.cpp,v 1.4 2003-03-03 06:10:40 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -203,22 +203,38 @@ int query(char *ip, char *orig_arg)
     return 0;
 }
 
+#define MAX_CHILDREN 20
+#define NUM_PERIODS   3
+volatile int nChildren = 0;
+int iPeriod = 0;
+volatile int nSpawned[NUM_PERIODS] = { 0, 0, 0 };
+
+void ChildSpawned(void)
+{
+    nChildren++;
+    nSpawned[iPeriod]++;
+}
+
+void ChildEnded(void)
+{
+    if (nChildren > 0)
+    {
+        nChildren--;
+    }
+}
+
 RETSIGTYPE child_signal(int iSig)
 {
     // Collect any children.
     //
-
 #ifdef NEXT
     while (wait3(NULL, WNOHANG, NULL) > 0)
-    {
-        ; // Nothing.
-    }
 #else
     while (waitpid(0, NULL, WNOHANG) > 0)
-    {
-        ; // Nothing.
-    }
 #endif
+    {
+        ChildEnded();
+    }
     signal(SIGCHLD, CAST_SIGNAL_FUNC child_signal);
 }
 
@@ -237,10 +253,29 @@ RETSIGTYPE alarm_signal(int iSig)
     itime.it_interval = interval;
     itime.it_value = interval;
     setitimer(ITIMER_REAL, &itime, 0);
+
+    int sum;
+    int i;
+    for (i = 0; i < NUM_PERIODS; i++)
+    {
+        sum += nSpawned[i];
+    }
+    if (sum < nChildren)
+    {
+        nChildren = sum;
+    }
+
+    if (iPeriod >= NUM_PERIODS)
+    {
+        iPeriod = 0;
+    }
+    else
+    {
+        iPeriod++;
+    }
+    nSpawned[iPeriod] = 0;
 }
 
-#define MAX_CHILDREN 20
-int children = 0;
 int main(int argc, char *argv[])
 {
     char arg[MAX_STRING];
@@ -278,7 +313,7 @@ int main(int argc, char *argv[])
         {
             *p = '\0';
         }
-        children++;
+        ChildSpawned();
         switch (fork())
         {
         case -1:
@@ -304,12 +339,12 @@ int main(int argc, char *argv[])
         // Collect any children.
         //
 #ifdef NEXT
-        while (wait3(NULL, (children < MAX_CHILDREN)? WNOHANG : 0, NULL) > 0)
+        while (wait3(NULL, (nChildren < MAX_CHILDREN)? WNOHANG : 0, NULL) > 0)
 #else
-        while (waitpid(0, NULL, (children < MAX_CHILDREN) ? WNOHANG: 0) > 0)
+        while (waitpid(0, NULL, (nChildren < MAX_CHILDREN) ? WNOHANG: 0) > 0)
 #endif
         {
-            children--;
+            ChildEnded();
         }
     }
     exit(0);
