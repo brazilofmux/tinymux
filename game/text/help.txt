@@ -4110,9 +4110,9 @@ BLIND
   FLAG: BLIND(B)
 
   This flag supresses the '<who> has arrived.' and '<who> has left.' messages.
-  When set on a player, the messages caused by their movement are surpressed.
+  When set on a player, the messages caused by their movement are suppressed.
   When set on a location, the messages for everyone entering or leaving that
-  location are surpressed.
+  location are suppressed.
 
   This flag can only be set by Wizards.
 
@@ -5028,7 +5028,7 @@ DARK
 DEAD
 
   This flag does not alter any behavior of the server itself. However, it may
-  be useful for softcode. This flag is only available in if realms is enabled.
+  be useful for softcode. This flag is only available if realms is enabled.
 
   Related Topics:
 
@@ -6735,9 +6735,9 @@ ISINT()
 
   FUNCTION: isint(<string>)
 
-  This function will return 1 if the argument is a valid integer and 0
-  if it is not. Integers have an optional leading + or - sign followed by
-  digits only.
+  This function will return 1 (TRUE) if the argument is a valid integer and 0
+  (FALSE) if it is not. Integers have an optional leading + or - sign followed
+  by digits only.
 
   Example:
      > say isint(22223.0000)
@@ -6747,17 +6747,17 @@ ISINT()
      > say isint(22 L)
      You say "0"
 
-  Related Topics: isnum(), israt().
+  Related Topics: BOOLEAN VALUES, isnum(), israt(), isword().
 
 & ISNUM()
 ISNUM()
 
   FUNCTION: isnum(<string>)
 
-  This function will return return 1 if the argument is a valid number and 0
-  if it is not. This definition of a number includes scientific notation as
-  well as a certain case-insensitive 'special words': NaN, -Inf, +Inf, and
-  Ind.
+  This function will return return 1 (TRUE) if the argument is a valid number
+  and 0 (FALSE) otherwise. This definition of a number includes scientific
+  notation as well as a certain case-insensitive 'special words': NaN, -Inf,
+  +Inf, and Ind.
 
   You can test more restrictively with israt() or isint().
 
@@ -6775,16 +6775,17 @@ ISNUM()
      >say isnum(Bad Numbers!)
      You say "0"
 
-  Related Topics: isint(), israt().
+  Related Topics: BOOLEAN VALUES, isint(), israt(), isword().
 
 & ISRAT()
 ISRAT()
 
   FUNCTION: israt(<string>)
 
-  This function will return 1 if the argument is a rational and 0
-  if it is not. Rational by this definition includes many real numbers, but
-  excludes scientific notation and 'special words': NaN, -Inf, +Inf, and Ind.
+  This function will return 1 (TRUE) if the argument is a rational and 0
+  (FALSE) otherwise.  Rational by this definition includes many real numbers,
+  but excludes scientific notation and 'special words': NaN, -Inf, +Inf, and
+  Ind.
 
   You can test more restrictively with isint() and more inclusively with
   isnum().
@@ -6797,7 +6798,7 @@ ISRAT()
      > say israt(1E20)
      You say "0"
 
-  Related Topics: isint(), isnum().
+  Related Topics: BOOLEAN VALUES, isint(), isnum(), isword().
 
 & ISUB()
 ISUB()
@@ -6814,6 +6815,22 @@ ISUB()
 
   Related Topics: add(), dec(), iadd(), idiv(), imul(), inc(), mod(),
             sub().
+
+& ISWORD()
+ISWORD()
+
+  FUNCTION: isword(<string>)
+
+  This function will return 1 (TRUE) if every character in <string> is a
+  letter and 0 (FALSE) otherwise.
+
+  Example:
+    > say isword(Foo)
+    You say, "1"
+    > say isword(Foo8)
+    You say, "0"
+
+  Related Topics: BOOLEAN VALUES, isint(), isnum(), israt().
 
 & ITEMIZE()
 ITEMIZE()
