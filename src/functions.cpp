@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.108 2001-11-25 05:32:11 sdennis Exp $
+// $Id: functions.cpp,v 1.109 2001-11-25 06:47:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6715,10 +6715,10 @@ FUN flist[] =
     {"ENCRYPT",  fun_encrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"EQ",       fun_eq,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ESCAPE",   fun_escape,   1,       1,  1,       0, CA_PUBLIC},
+    {"EVAL",     fun_eval,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"EXIT",     fun_exit,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"EXP",      fun_exp,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"EXTRACT",  fun_extract,  MAX_ARG, 3,  4,       0, CA_PUBLIC},
-    {"EVAL",     fun_eval,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"FDIV",     fun_fdiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"FILTER",   fun_filter,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"FINDABLE", fun_findable, MAX_ARG, 2,  2,       0, CA_PUBLIC},
