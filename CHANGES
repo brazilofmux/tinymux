@@ -470,6 +470,8 @@ Bug Fixes:
      value of the slave) can prevent communication with it.
  --  Try to avoid crashing with MUSH 2.2.x and U1 flatfiles that were garbled
      in the transfer between Unix and Win32.
+ --  Unterminated buffer operation in setinter().
+ --  Fractional part of time request can get into the timezone info.
 
 
 Performance Enhancements:
@@ -600,3 +602,4 @@ Miscellaneous:
  --  Increased the size trigger for rotating logfiles on Win32.
  --  Syncronized version.cpp, _build.cpp, and _build.h between Unix and Win32.
  --  No longer use vfork.
+ --  Update config.guess and config.sub to support MAC OX X more conveniently.
