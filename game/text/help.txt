@@ -183,7 +183,7 @@ HELP
   ATTRIBUTE: Aconnect
 
   Sets the actions to be taken by a player upon connecting to the MUX. The
-  following steps occur in the following order whenver a player connects to
+  following steps occur in the following order whenever a player connects to
   the MUX. Parentage is observed.
 
    - Execute the connecting player's @aconnect.
@@ -233,7 +233,7 @@ HELP
   ATTRIBUTE: Adisconnect
 
   Sets the actions to be taken by a player upon disconnecting from the MUX.
-  The following steps occur in the following order whenver a player connects
+  The following steps occur in the following order whenever a player connects
   to the MUX. Parentage is observed.
 
    - Execute the connecting player's @adisconnect.
@@ -1101,12 +1101,12 @@ Related Topics: @name.
   This command destroys <object> and refunds its cost of creation to its
   owner.  You must own <object> in order to @destroy it, unless its
   DESTROY_OK flag is set, in which case anyone holding it may @destroy it.
-  Rooms, exits, and objects may be destroyed, although the the actual
+  Rooms, exits, and objects may be destroyed, although the actual
   destruction of rooms is delayed for up to ten minutes and the GOING flag
   is set on the victim room.  Clearing the GOING flag on the room spares it
   from destruction.
 
-  If a thing OR it's owner is set DESTROY_OK, the thing will be destroyed
+  If a thing OR its owner is set DESTROY_OK, the thing will be destroyed
   with no delay. This can also be performed with the /instant switch.
 
   The @destroy command will not destroy objects with the SAFE flag set unless
@@ -1256,7 +1256,7 @@ Related Topics: @name.
   COMMAND:   @ealias <object> = <entrance-list>
   ATTRIBUTE: Ealias
 
-  Sets up a set of alternate commands that may be used as synonynms for the
+  Sets up a set of alternate commands that may be used as synonyms for the
   command 'enter <object>' when you are in the same location as the object.
   The alternate commands are separated by semicolons just like in exit names.
 
@@ -1272,7 +1272,8 @@ Related Topics: @name.
 
   Related Topics: @lalias, enter, leave.
 
-& @edit
+& @EDIT
+@EDIT
 
   COMMAND: @edit <object>/<wild-attr> = <search>,<replace>
            @edit <object>/<wild-attr> = ^,<text>
@@ -1303,7 +1304,7 @@ Related Topics: @name.
   are evaluated when someone fails to enter the object.  In function
   references, 'me' refers to the object that the enactor tried to enter, while
   %-substitutions that refer to the enactor (such as %n, %#, %p, etc) refer to
-  the the player who tried (and failed) to enter.
+  the player who tried (and failed) to enter.
 
   The enter lock only affects the 'enter' command and its aliases (set via
   the @ealias command), it does not affect exits that lead to the object or
@@ -1713,7 +1714,7 @@ Related Topics: @name.
   COMMAND:   @lalias <object> = <entrance-list>
   ATTRIBUTE: Lalias
 
-  Sets up a set of alternate commands that may be used as synonynms for the
+  Sets up a set of alternate commands that may be used as synonyms for the
   command 'leave' when you are inside a player or a thing.  The alternate
   commands are separated by semicolons just like in exit names.
 
@@ -1797,7 +1798,7 @@ Related Topics: @name.
   destination's LinkLock.  You can @link an unlinked exit regardless of who
   owns it or the lock set on it, you are made the owner if you successfully
   link to the destination.  Linking an exit costs 1 coin, and if the exit was
-  owned by someone else, you also reimburse the the former owner 1 coin
+  owned by someone else, you also reimburse the former owner 1 coin
   (making the total cost to you 2 coins).
 
 { 'help @link2' for more }
@@ -1970,7 +1971,7 @@ Related Topics: @name.
     An impossible lock, nothing can be both you and not you.
 
     > @lock message = me | *recipient
-    Both you and the player recipient may get the msssage.
+    Both you and the player recipient may get the message.
 
 & @LOCK EVALUATION
 @LOCK EVALUATION
@@ -2216,11 +2217,11 @@ Related Topics: @name.
 
   This allows you to generate and maintain mailing lists with the mail
   system. All mail aliases start with '*', and are case-sensitive. (*dir is
-  different than *Dir).  There are two kinds of mail aliases, Personnal
+  different than *Dir).  There are two kinds of mail aliases, Personal
   and Global. Global mailing lists are owned and maintained by the god (#1)
   char and are available for anyone to use.  Generally there will be
   *Wizards, *Admin, *Roleplay, and things of that nature.  Personal mailing
-  aliases are mailing lists that you have defined with the @malias commad.
+  aliases are mailing lists that you have defined with the @malias command.
   Currently there is no limit to the number of people you can have on a
   mailing alias.
 
@@ -2325,7 +2326,7 @@ Related Topics: @name.
   reaches zero again. @notify may also take an argument of the form
   <object>/<attribute>, which notifies commands that are being blocked on
   an attribute other than the default 'Semaphore'. This allows blocking of
-  muliple sets of commands on a single object, using different attributes.
+  multiple sets of commands on a single object, using different attributes.
 
   The following switches are available:
      /first - (default) Notify the first command waiting on the indicated
@@ -3117,7 +3118,7 @@ Related Topics: @name.
                   exist.
      visual     - Anyone may see the attribute when they examine you, and
                   may get the attribute with get().
-     hidden     - The attribute is only visable to wizards.
+     hidden     - The attribute is only visible to wizards.
      regexp     - When $-commands are matched, treat the pattern as a
                   regular expression rather than a wildcard glob pattern.
      wizard     - The attribute may only be changed by wizards.
@@ -3501,7 +3502,7 @@ Related Topics: @name.
   The second form executes <command> when the object's semaphore is
   notified. If <seconds> is specified in this second form, <command> is
   executed at some future time even if the object's semaphore isn't
-  notified. This is sometimes refered to as a 'timeout'.
+  notified. This is sometimes referred to as a 'timeout'.
 
   The third form allows the use of an attribute other than 'semaphore'. It
   allows multiple sets of semaphore-blocked commands to use the same object.
@@ -3662,7 +3663,7 @@ ALIAS
   COMMAND: <channel alias> <on|off|who|message|:pose|;pose>
 
   The channel alias allows you to use the channel, to turn it on and off and
-  check who is online. If you have forgotten what your alises are, see the
+  check who is online. If you have forgotten what your aliases are, see the
   help for 'comlist'.
 
     'on'   allows you to turn an alias/channel on.
@@ -3742,8 +3743,8 @@ ANDFLAGS()
   standing for each flag, like the output of the FLAGS() function. A '!'
   preceding a flag letter means "not flag".
 
-  Thus, ANDFLAGS(me,WD) would return 1 if I was set WIZARD and DARK.
-  ANDFLAGS(me,W!Dc) would return 1 if I was set WIZARD, not DARK,
+  Thus, ANDFLAGS(me,WD) would return 1 if I were set WIZARD and DARK.
+  ANDFLAGS(me,W!Dc) would return 1 if I were set WIZARD, not DARK,
   and CONNECTED.
 
   If a letter does not correspond to any flag, <object> doesn't have
@@ -3818,7 +3819,7 @@ APOSS()
   referring to <object>, based on the object's sex attribute.  You must either
   control or be near <object>.
 
-  Related Topics:
+  Related Topics: obj(), poss(), subj(), SUBSTITUTIONS.
 
 & ARBITRARY COMMANDS
 ARBITRARY COMMANDS
@@ -3960,11 +3961,11 @@ ATTRIBUTE OWNERSHIP (continued)
   after the attribute name.  If there are any flags set on the attribute,
   those flags are indicated in the parentheses too.
 
-  The + flag means means that the attribute is locked (so that it will not
+  The + flag means that the attribute is locked (so that it will not
   change ownership of the object is @chowned), the $ flag means that
   $-commands are not checked for that attribute.  The I flag indicates that
   the attribute is not inherited by children of the object, and the V flag
-  shows that the attribute is publically visible.
+  shows that the attribute is publicly visible.
 
 { 'help attrib3' for more }
 
@@ -4192,9 +4193,9 @@ BOR()
 & CANSEE()
 CANSEE()
 
-  FUNCTION: cansee(looker, lookee[,lookee_action])
+  FUNCTION: cansee(<looker>, <lookee>[,<lookee_action>])
 
-  Only usable is Realms package is enabled.
+  Only usable if the Realms package is enabled.
 
   CANSEE returns 1 or 0 depending on whether it's possible for the looker
   to see the lookee or not. This is useful for wizard code in the master
@@ -4295,7 +4296,7 @@ CENTER()
     > say center(%xh%xrR%xgG%xbB,31,%xy--%xm+)
     --+--+--+--+--RGB+--+--+--+--+-
 
-  Related Topics: ljust, rjust
+  Related Topics: ljust(), rjust().
 
 & CHANNEL OBJECT
 CHANNEL OBJECT
@@ -4661,7 +4662,7 @@ CONFIG()
 
   FUNCTION: config(<parameter name>)
 
-  Most server configuration options are exposed programatically via this
+  Most server configuration options are exposed programmatically via this
   function. Given a <parameter name>, this function returns the value
   currently in force. Configuration options are determined in order by:
 
@@ -5027,7 +5028,7 @@ DECRYPT()
   Decrypts <text> using <key>. <key> should be the same one used to encrypt
   the text, and is case sensitive.
 
-  Related Topics:
+  Related Topics: encrypt().
 
 & DEFAULT()
 DEFAULT()
@@ -5354,7 +5355,7 @@ ENCRYPT()
   Encrypts <text> using <key>. The text can only be unlocked with <key>, and
   <key> is case-sensitive.
 
-  Related Topics:
+  Related Topics: decrypt().
 
 & ENTER
 ENTER
@@ -5442,7 +5443,7 @@ EVAL()
             eval(<string>)
 
   The first form of the eval function works exactly like the get_eval
-  function, but takes the object and attribute in two seperate arguments
+  function, but takes the object and attribute in two separate arguments
   instead of an obj/attr pair. It is mainly used for compatibility with
   PennMUSH 1.50. The second form simply evaluates <string>. This is normally
   done when a function is called, however, it is useful in evaluating %q and
@@ -5583,7 +5584,7 @@ EXTRACT()
 FAE
 
   The FAE flag is used to denote an object which is visible to others with
-  a regular description but see's FAEDESC's and those set CHIMERA. Most
+  a regular description but sees FAEDESC's and those set CHIMERA. Most
   commonly used for Changelings and those who have been Enchanted by one.
 
 & FAILURE
@@ -5924,7 +5925,7 @@ FUNCTION CLASSES (continued)
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
                              WRITETIME
-  Trigometric:               ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
+  Trigonometric:             ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
                              VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
 
 & FUNCTION LIST
@@ -6452,7 +6453,7 @@ IADD()
   FUNCTION: iadd(<number1>[,<numberN>]...)
 
   Returns the result of adding its integer arguments together. You may
-  add up to 100 numbers in one iadd() call. Similiar to add() except
+  add up to 100 numbers in one iadd() call. Similar to add() except
   that the addition is done with integer math.
 
   Example:
@@ -6571,7 +6572,7 @@ IMUL()
   FUNCTION: imul(<number1>[,<numberN>]...)
 
   Returns the result of multiplying its integer arguments together.
-  Similiar to mul() except that the mulitplication is done with
+  Similar to mul() except that the multiplication is done with
   faster integer math.
 
   Examples:
@@ -6673,7 +6674,7 @@ ISDBREF()
 
   This function will return 1 if the string passed to it is a valid dbref.
   To be a valid dbref the string must begin with '#' and be followed by an
-  interger.  Also, the dbref must exist in the current database as a valid
+  integer.  Also, the dbref must exist in the current database as a valid
   object.  If the object fails either of these criteria, then a 0 is
   returned.
 
@@ -6712,7 +6713,7 @@ ISINT()
 
   FUNCTION: isint(<string>)
 
-  This function will return return 1 if the argument is a valid integer and 0
+  This function will return 1 if the argument is a valid integer and 0
   if it is not. Integers have an optional leading + or - sign followed by
   digits only.
 
@@ -6759,7 +6760,7 @@ ISRAT()
 
   FUNCTION: israt(<string>)
 
-  This function will return return 1 if the argument is a rational and 0
+  This function will return 1 if the argument is a rational and 0
   if it is not. Rational by this definition includes many real numbers, but
   excludes scientific notation and 'special words': NaN, -Inf, +Inf, and Ind.
 
@@ -6782,7 +6783,7 @@ ISUB()
   FUNCTION: isub(<number1>,<number2>)
 
   Returns the result of subtracting integer <number2> from integer
-  <number1>. Similiar to sub() except that the addition is done with
+  <number1>. Similar to sub() except that the subtraction is done with
   faster integer math.
 
   Example:
@@ -7152,7 +7153,7 @@ LIST()
   is finished. The normal way to handle this is to use a @dolist/@pemit
   combination, but that takes many queue cycles. list() takes <list>,
   <eval>, and an optional delimiter, and evaluates them exactly like
-  iter(). The difference is the output: iter() produces a space seperated
+  iter(). The difference is the output: iter() produces a space-separated
   list, while list() outputs each list item on a new row of the screen.
 
   NOTE: This is a side effect function. It does not return anything,
@@ -7342,7 +7343,7 @@ LOCALIZE()
 
   FUNCTION: localize(<expression>)
 
-  This function evalutes <expression> using it's own private copy of the
+  This function evaluates <expression> using its own private copy of the
   global r-registers.  That is, the global registers are saved before
   <expression> is evaluated and restored afterwards.
 
@@ -7502,7 +7503,7 @@ LPARENT()
   FUNCTION: lparent(<object>)
 
   This function returns a list consisting of the object's db# (as per
-  num()), the db# of its parent, grandparent, greatgrandparent, etc.
+  num()), the db# of its parent, grandparent, great-grandparent, etc.
   The list will not, however, show parents of objects which the player
   is not privileged to examine.
 
@@ -7775,7 +7776,7 @@ MAIL-OTHER (continued)
 
   @mail/safe [<msg-list> | all>]
         This command marks a message as being safe from mail expiration. It
-        should be used sparingly and only for very imporatant messages.
+        should be used sparingly and only for very important messages.
 
 & MAIL-READING
 MAIL-READING
@@ -7829,7 +7830,7 @@ MAIL-SENDING
         the message as urgent, and should not be used often.
 
   @mail/cc <player-list>
-        This replaces the currect player list with a new one for carbon
+        This replaces the current player list with a new one for carbon
         copying. It does _not_ add onto the existing list.
 
 { 'help mail-sending2' for more }
@@ -8350,7 +8351,7 @@ MUNGE()
   <list 1> to the user-defined function as %0. Then, this resulting list
   is matched with elements in <list 2>, and the rearranged <list 2> is
   returned. This is useful for doing things like sorting a list, and then
-  returning the correspoding elements in the other list. If a resulting
+  returning the corresponding elements in the other list. If a resulting
   element from the user-defined function doesn't match an element in the
   original <list 1>, a corresponding element from <list 2> does not appear
   in the final result.
@@ -8537,7 +8538,7 @@ OBJ()
   <object>, based on the object's Sex attribute.  You must either control
   or be near <object>.
 
-  Related Topics:
+  Related Topics: aposs(), poss(), subj(), SUBSTITUTIONS.
 
 & OBJECT STACK
 OBJECT STACK
@@ -8652,8 +8653,8 @@ ORFLAGS()
   single letter standing for each flag, like the output of the FLAGS()
   function. A '!' preceding a flag letter means "not flag".
 
-  Thus, ORFLAGS(me,Wr) would return 1 if I am set WIZARD or ROYALTY.
-  ORFLAGS(me,D!c) would return 1 if I am DARK or not CONNECTED.
+  Thus, ORFLAGS(me,Wr) would return 1 if I were set WIZARD or ROYALTY.
+  ORFLAGS(me,D!c) would return 1 if I were DARK or not CONNECTED.
 
   If a letter does not correspond to any flag, <object> doesn't have
   it, so it is simply ignored. There can be an arbitrary number of
@@ -8829,7 +8830,7 @@ PARENT OBJECTS
 & PARENT ROOMS
 PARENT ROOMS
 
-  Parent rooms are a subset of zones. If a room is used as as zone object,
+  Parent rooms are a subset of zones. If a room is used as a zone object,
   it is a parent room (PR). PRs are like local "master" rooms. Exits in
   the PR are global to that zone, and $commands on objects in the PR are
   global to that zone. Parent rooms are only defined if globals are used.
@@ -8975,7 +8976,7 @@ PIPING
 
   Command piping in MUX is similar to piping in a UNIX shell. You string two
   or more commands together using the ;| symbol, much as you would using a
-  semicolon. The output from the previous command in a pipe is accessable
+  semicolon. The output from the previous command in a pipe is accessible
   using the %| substitution. This output contains the raw ASCII codes that
   would normally be directly output to your terminal. You may use the
   translate() function to either convert the raw characters in the output to
@@ -9122,7 +9123,7 @@ POSS()
   to <object>, based on the object's Sex attribute.  You must either control
   or be near <object>.
 
-  Related Topics:
+  Related Topics: aposs(), obj(), subj(), SUBSTITUTIONS.
 
 & POWER()
 POWER()
@@ -10311,8 +10312,8 @@ SORT()
   alphanumeric).  If omitted or left blank, the sort() function will
   try to determine the type of sort to perform automatically.
 
-  By default, the output delimeter, <odelim>, defaults to the input delimeter,
-  <idelim>, which itself defaults to a space. Delimeters here, like most other
+  By default, the output delimeter, <odelim>, defaults to the input delimiter,
+  <idelim>, which itself defaults to a space. Delimiters here, like most other
   functions, are used to separate items in a list.
 
   Examples:
@@ -10441,8 +10442,8 @@ SQUISH()
 
   FUNCTION: squish(<text>[,<character>])
 
-  This function replaces multiple occurance <character> in <text> with a
-  single occurance.  If <character> is not specified, it defaults to a space.
+  This function replaces multiple occurrences of <character> in <text> with a
+  single occurrence.  If <character> is not specified, it defaults to a space.
 
   Examples:
     > @wait 0=@va me=Foo[space(5)]Bar
@@ -10558,7 +10559,7 @@ STRCAT()
 
   FUNCTION: strcat(<string1>, <stringN>, ...)
 
-  Concatanates two or more strings together, with no space between them.
+  Concatenates two or more strings together, with no space between them.
   For example, strcat(foo,bar,baz,blech) will return the string
   "foobarbazblech".
 
@@ -10645,8 +10646,8 @@ SUBEVAL()
   FUNCTION: subeval(<string>)
 
   This function's usefulness is primarily useful in conjunction with
-  v() as a way to control when evalution occurs. Escapes are
-  evaluated, but and functions are not. The location escape is also
+  v() as a way to control when evaluation occurs. Escapes are
+  evaluated, but {} and functions are not. The location escape is also
   not evaluated.
 
   When used from the command line, it's use is limited to nil because
@@ -10662,7 +10663,7 @@ SUBJ()
   <object>, based on the object's Sex attribute.  You must either control
   or be near <object>.
 
-  Related Topics:
+  Related Topics: aposs(), obj(), poss(), SUBSTITUTIONS.
 
 & SUBSTITUTIONS
 SUBSTITUTIONS
@@ -10671,7 +10672,7 @@ SUBSTITUTIONS
   pronouns if the player's gender is set or to other useful information.
   Information returned is based on the player that caused the message to be
   displayed, not the object that stored the message or which is running the
-  action list.  The substutitions available are:
+  action list.  The substitutions available are:
 
     %s, %S  = Name, he, she, it, they.        (subjective)
     %o, %O  = Name, him, her, it, them.       (objective)
@@ -10733,7 +10734,7 @@ SWITCH()
 
   Patterns may include * and ?. * matches any number of characters, and ?
   matches any 1 character. Instead of pattern matching, it is also possible
-  to compare the alphabetic or numberic value of <str> with <pat> by using
+  to compare the alphabetic or numeric value of <str> with <pat> by using
   the < and > operators.
 
   Example:
@@ -11018,7 +11019,7 @@ TRACE (continued)
 
   When trace output is displayed in top-down order (final evaluation first,
   followed by the 'smaller' evaluations needed to perform it), then the total
-  number of trace ouput lines that may be produced by an evaluation is limited
+  number of trace output lines that may be produced by an evaluation is limited
   to 200.  Bottom-up trace output is not limited.
 
   Related Topics: VERBOSE.
@@ -11134,7 +11135,7 @@ U()
     > say u(me/va,6,Foobar)
     You say "Word is u, arg2 is Foobar."
 
-  Related Topics: s(), v(), get(), get_eval(), map().
+  Related Topics: s(), v(), get(), get_eval(), map(), ulocal().
 
 & UCSTR()
 UCSTR()
@@ -11297,7 +11298,7 @@ V()
   problems associated with it.  Note that attributes with single-character
   names cannot be retrieved with v().
 
-  Related Topics: GENDER, SUBSTITUTION, PARENT OBJECTS.
+  Related Topics: GENDER, SUBSTITUTION, PARENT OBJECTS, get().
 
 & VACATION
 VACATION
@@ -11324,7 +11325,7 @@ VADD()
     > think vadd(0|0|0,1|2|3,|,^)
     1^2^3
 
-  Related Topics:
+  Related Topics: vsub().
 
 & VALID()
 VALID()
@@ -11333,7 +11334,7 @@ VALID()
 
   This returns true or false depending on whether the characters and
   arrangement of characters in <argument> satisfy the restrictions implied by
-  <category>
+  <category>.
 
   Possible values for <category>:
 
@@ -11341,9 +11342,11 @@ VALID()
      playername  Test for player name.
      attrname    Test for attribute name.
 
-  Valid() does not check the database for existance and it does not guarantee
+  Valid() does not check the database for existence and it does not guarantee
   that an attempt to use such an object will succeed. It only looks at
   <argument> as a string of characters.
+
+  Related Topics: isdbref().
 
 & VCROSS()
 VCROSS()
@@ -11356,11 +11359,13 @@ VCROSS()
   (a,b,c) X (d,e,f) = det | d e f | = i(bf-ce) + j(cd-af) + k(ae-bd)
                           | i j k |
 
-  where i, j, and k are taken as unit vectors in cartisian space.
+  where i, j, and k are taken as unit vectors in Cartesian space.
 
   Example:
     > @pemit me=vcross(1 2 3,2 3 4)
     -1 2 -1
+
+  Related Topics: vdot(), vmul().
 
 & VDIM()
 VDIM()
@@ -11386,6 +11391,8 @@ VDOT()
   Example:
     > @pemit me=vdot(1 2 3,2 3 4)
     20
+
+  Related Topics: vmul(), vcross().
 
 & VERBOSE
 VERBOSE
@@ -11454,7 +11461,7 @@ VISIBLE()
   can see <attr> on <victim>. If <attr> is not present on <victim>,
   1 is returned if <object> can examine <victim>.
 
-  Related Topics:
+  Related Topics: cansee().
 
 & VISUAL
 VISUAL
@@ -11496,7 +11503,7 @@ VMUL()
     > think vmul(1 2 3,2 3 4)
     2 6 12
 
-  Related Topics: vdot(), vcross()
+  Related Topics: vdot(), vcross().
 
 & VSUB()
 VSUB()
@@ -11511,7 +11518,7 @@ VSUB()
     > think vsub(3 4 5,3 2 1,,|)
     0|2|4
 
-  Related Topics:
+  Related Topics: vadd().
 
 & VUNIT()
 VUNIT()
@@ -11663,7 +11670,7 @@ XGET()
   FUNCTION: xget(<object>,<attribute>)
 
   This function works exactly like get(), but uses the object and attribute
-  seperated into two arguments.
+  separated into two arguments.
 
   Related Topics: get(), eval(), get_eval().
 
