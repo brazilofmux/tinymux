@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.7 2000-04-15 15:33:24 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.8 2000-04-17 18:35:28 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -2239,10 +2239,9 @@ FUNCTION(fun_strcat)
  */
 char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len, int insensitive)
 {
-    /*
-     * returns a list of attributes which match <pattern> on <thing> * *
-     * * * whose contents have <lookfor> 
-     */
+    // Returns a list of attributes which match <pattern> on <thing>
+    // whose contents have <lookfor>.
+    //
     dbref aowner;
     char *tbuf1, *buf, *text, *attrib;
     char *bp, *bufc;
@@ -2253,23 +2252,33 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
     bufc = buf = alloc_lbuf("grep_util.parse_attrib");
     bp = tbuf1;
     safe_tprintf_str(buf, &bufc, "#%d/%s", thing, pattern);
-    if (parse_attrib_wild(player, buf, &thing, 0, 0, 1)) {
-        for (ca = olist_first(); ca != NOTHING; ca = olist_next()) {
+    olist_push();
+    if (parse_attrib_wild(player, buf, &thing, 0, 0, 1))
+    {
+        for (ca = olist_first(); ca != NOTHING; ca = olist_next())
+        {
             attrib = atr_get(thing, ca, &aowner, &aflags);
             text = attrib;
             found = 0;
-            while (*text && !found) {
-                if ((!insensitive && !strncmp(lookfor, text, len)) ||
-                    (insensitive && !_strnicmp(lookfor, text, len)))
+            while (*text && !found)
+            {
+                if (  (!insensitive && !strncmp(lookfor, text, len))
+                   || (insensitive && !_strnicmp(lookfor, text, len)))
+                {
                     found = 1;
+                }
                 else
+                {
                     text++;
+                }
             }
 
-            if (found) {
+            if (found)
+            {
                 if (bp != tbuf1)
+                {
                     safe_chr(' ', tbuf1, &bp);
-
+                }
                 safe_str((char *)(atr_num(ca))->name, tbuf1, &bp);
             }
             free_lbuf(attrib);
@@ -2277,6 +2286,7 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
     }
     free_lbuf(buf);
     *bp = '\0';
+    olist_pop();
     return tbuf1;
 }
 
@@ -2286,21 +2296,26 @@ FUNCTION(fun_grep)
 
     dbref it = match_thing(player, fargs[0]);
 
-    if (it == NOTHING) {
+    if (it == NOTHING)
+    {
         safe_str("#-1 NO MATCH", buff, bufc);
         return;
-    } else if (!(Examinable(player, it))) {
+    }
+    else if (!(Examinable(player, it)))
+    {
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
         return;
     }
-    /*
-     * make sure there's an attribute and a pattern 
-     */
-    if (!fargs[1] || !*fargs[1]) {
+
+    // Make sure there's an attribute and a pattern.
+    //
+    if (!*fargs[1])
+    {
         safe_str("#-1 NO SUCH ATTRIBUTE", buff, bufc);
         return;
     }
-    if (!fargs[2] || !*fargs[2]) {
+    if (!*fargs[2])
+    {
         safe_str("#-1 INVALID GREP PATTERN", buff, bufc);
         return;
     }
