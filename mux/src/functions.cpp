@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.112 2002-09-23 01:13:28 sdennis Exp $
+// $Id: functions.cpp,v 1.113 2002-09-25 20:31:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1927,9 +1927,8 @@ FUNCTION(fun_con)
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
-        return;
     }
-    if (Has_contents(it))
+    else if (Has_contents(it))
     {
         if (  Examinable(executor, it)
            || where_is(executor) == it
@@ -1959,10 +1958,9 @@ FUNCTION(fun_exit)
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
-        return;
     }
-    if (  Has_exits(it)
-       && Good_obj(Exits(it)))
+    else if (  Has_exits(it)
+            && Good_obj(Exits(it)))
     {
         int key = 0;
         if (Examinable(executor, it))
@@ -2001,9 +1999,8 @@ FUNCTION(fun_next)
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
-        return;
     }
-    if (Has_siblings(it))
+    else if (Has_siblings(it))
     {
         dbref loc = where_is(it);
         BOOL ex_here = Good_obj(loc) ? Examinable(executor, loc) : FALSE;
@@ -2061,9 +2058,8 @@ FUNCTION(fun_loc)
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
-        return;
     }
-    if (locatable(executor, it, enactor))
+    else if (locatable(executor, it, enactor))
     {
         safe_tprintf_str(buff, bufc, "#%d", Location(it));
     }
@@ -2084,9 +2080,8 @@ FUNCTION(fun_where)
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
-        return;
     }
-    if (locatable(executor, it, enactor))
+    else if (locatable(executor, it, enactor))
     {
         safe_tprintf_str(buff, bufc, "#%d", where_is(it));
     }
@@ -2113,19 +2108,21 @@ FUNCTION(fun_rloc)
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
-        return;
     }
-    if (locatable(executor, it, enactor))
+    else if (locatable(executor, it, enactor))
     {
-        int i;
-        for (i = 0; i < levels; i++)
+        for (int i = 0; i < levels; i++)
         {
-            if (  !Good_obj(it)
-               || !Has_location(it))
+            if (  Good_obj(it)
+               && (  isExit(it)
+                  || Has_location(it)))
+            {
+                it = Location(it);
+            }
+            else
             {
                 break;
             }
-            it = Location(it);
         }
         safe_tprintf_str(buff, bufc, "#%d", it);
     }
@@ -2146,9 +2143,8 @@ FUNCTION(fun_room)
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
-        return;
     }
-    if (locatable(executor, it, enactor))
+    else if (locatable(executor, it, enactor))
     {
         int count;
         for (count = mudconf.ntfy_nest_lim; count > 0; count--)
