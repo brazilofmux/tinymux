@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.45 2004-06-10 15:39:34 sdennis Exp $
+// $Id: game.cpp,v 1.46 2004-07-10 19:52:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1411,14 +1411,17 @@ void dump_database(void)
 void fork_and_dump(int key)
 {
 #ifndef WIN32
+    static volatile bool bRequestAccepted = false;
+
     // fork_and_dump is never called with mudstate.dumping true, but we'll
-    // ensure assertion now.
+    // ensure that assertion now.
     //
-    if (mudstate.dumping)
+    if (  bRequestAccepted
+       || mudstate.dumping)
     {
         return;
     }
-    mudstate.dumping = true;
+    bRequestAccepted = true;
 #endif
 
     // If no options were given, then it means DUMP_TEXT+DUMP_STRUCT.
@@ -1478,6 +1481,7 @@ void fork_and_dump(int key)
 #ifndef WIN32
     int child = 0;
     bool bChildExists = false;
+    mudstate.dumping = true;
 #endif
     if (key & (DUMP_STRUCT|DUMP_FLATFILE))
     {
@@ -1515,20 +1519,20 @@ void fork_and_dump(int key)
         else if (child == mudstate.dumper)
         {
             // The child process executed and exited before fork() returned to
-            // the parent.  Without a process id, the parent's SIGCHLD handler
-            // cannot be certain that the pid of the exiting process matches
-            // the pid of this child.
+            // the parent process.  Without a process id, the parent's SIGCHLD
+            // handler could not be certain that the pid of the exiting
+            // process would match the pid of this child.
             //
-            // However, at the this point in the code, we can be sure.  But,
-            // there's nothing much left to do:
-            //
-            // There is no child (bChildExists == false), we aren't dumping
-            // (mudstate.dumping == false) and there is no outstanding dumper
-            // process (mudstate.dumper == 0).
+            // However, at the this point, we can be sure.  But, there's
+            // nothing much left to do.
             //
             // See SIGCHLD handler in bsd.cpp.
             //
             mudstate.dumper = 0;
+
+            // There is no child (bChildExists == false), we aren't dumping
+            // (mudstate.dumping == false) and there is no outstanding dumper
+            // process (mudstate.dumper == 0).
         }
 #endif
     }
@@ -1550,6 +1554,7 @@ void fork_and_dump(int key)
     {
         raw_broadcast(0, "%s", mudconf.postdump_msg);
     }
+    bRequestAccepted = false;
 }
 
 #define LOAD_GAME_SUCCESS           0
