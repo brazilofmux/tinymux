@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.19 2001-04-09 23:20:42 morgan Exp $ */
+/* $Id: mudconf.h,v 1.20 2001-04-09 23:47:46 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -199,8 +199,8 @@ struct confdata
     char    mud_name[32];   /* Name of the mud */
     char    one_coin[32];   /* name of one coin (ie. "penny") */
     char    many_coins[32]; /* name of many coins (ie. "pennies") */
-	char	*art_regexp;	/* Basic regexp for determining which article to use. */
-	ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
+    char    *art_regexp;    /* Basic regexp for determining which article to use. */
+    ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
     int     toad_recipient; /* Default @toad recipient. */
 #else
     int     paylimit;   /* getting money gets hard over this much */
@@ -317,7 +317,7 @@ struct statedata
     int events_flag;    /* Flags for check_events */
     int shutdown_flag;  /* Should interface be shut down? */
     char    *debug_cmd;     // The command we are executing (if any).
-	char	*curr_cmd;	/* The current command */
+    char    *curr_cmd;      /* The current command */
     SITE    *access_list;   /* Access states for sites */
     SITE    *suspect_list;  /* Sites that are suspect */
     int     attr_next;  /* Next attr to alloc when freelist is empty */

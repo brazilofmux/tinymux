@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.43 2001-04-09 23:20:41 morgan Exp $
+// $Id: funceval.cpp,v 1.44 2001-04-09 23:46:16 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -155,7 +155,7 @@ FUNCTION(fun_link)
 FUNCTION(fun_tel)
 {
     if (check_command(player, "@teleport", buff, bufc))
-    	return;
+        return;
     do_teleport(player, cause, 0, fargs[0], fargs[1]);
 }
 
@@ -899,7 +899,7 @@ FUNCTION(fun_table)
                        nPaddingLength > 0;
                        nPaddingLength--)
                 {
-                    **bufc = *pPaddingCurrent;		   
+                    **bufc = *pPaddingCurrent;
                     (*bufc)++;
                     pPaddingCurrent++;
 
@@ -907,7 +907,7 @@ FUNCTION(fun_table)
                     {
                         pPaddingCurrent = pPaddingStart;
                     }
-                }	
+                }
             }
             else
             {

@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.19 2001-04-09 23:20:43 morgan Exp $
+// $Id: stringutil.h,v 1.20 2001-04-09 23:47:46 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -155,10 +155,10 @@ extern int  BMH_StringSearchI(int nPat, char *pPat, int nSrc, char *pSrc);
 
 struct ArtRuleset
 {
-	ArtRuleset* m_pNextRule;
-	
-	void* m_pRegexp;
-	int m_bUseAn;
+    ArtRuleset* m_pNextRule;
+
+    void* m_pRegexp;
+    int m_bUseAn;
 };
 
 #endif // STRINGUTIL_H
