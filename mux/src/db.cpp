@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.6 2002-06-12 17:35:20 jake Exp $
+// $Id: db.cpp,v 1.7 2002-06-12 23:19:35 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -968,22 +968,8 @@ ATTR *atr_str(char *s)
 
     // Nope, look for a user attribute.
     //
-    ATTR *va = (ATTR *)vattr_find_LEN(buff, nBuffer);
-
-    // If we got one, load tattr and return a pointer to it.
-    //
-    static ATTR tattr;
-    if (va != NULL)
-    {
-        tattr.name = va->name;
-        tattr.number = va->number;
-        tattr.flags = va->flags;
-        return &tattr;
-    }
-
-    // All failed, return NULL
-    //
-    return NULL;
+    a = (ATTR *)vattr_find_LEN(buff, nBuffer);
+    return a;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1043,31 +1029,11 @@ void anum_extend(int newtop)
 //
 ATTR *atr_num(int anum)
 {
-    ATTR *va;
-    static ATTR tattr;
-
-    // Look for a predefined attribute.
-    //
-    if (anum < A_USER_START)
-        return anum_get(anum);
-
     if (anum > anum_alc_top)
-        return NULL;
-
-    // It's a user-defined attribute, we need to copy data.
-    //
-    va = (ATTR *)anum_get(anum);
-    if (va != NULL)
     {
-        tattr.name = va->name;
-        tattr.number = va->number;
-        tattr.flags = va->flags;
-        return &tattr;
+        return NULL;
     }
-
-    // All failed, return NULL.
-    //
-    return NULL;
+    return  anum_get(anum);
 }
 
 /* ---------------------------------------------------------------------------
