@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.41 2003-10-23 05:39:50 sdennis Exp $
+// $Id: funceval.cpp,v 1.42 2003-11-18 04:38:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3400,7 +3400,7 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
         ovec, ovecsize);
     if (novec == 0)
     {
-        novec == (ovecsize-1)/2;
+        novec = (ovecsize-1)/2;
     }
     safe_bool(novec > 0, buff, bufc);
     if (novec < 0)
