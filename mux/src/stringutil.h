@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.15 2002-09-01 18:15:47 jake Exp $
+// $Id: stringutil.h,v 1.16 2002-09-17 06:20:55 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -166,7 +166,7 @@ int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);
 
 typedef struct
 {
-    int m_d[128];
+    int m_d[256];
     int m_skip2;
 } BMH_State;
 extern void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat);
