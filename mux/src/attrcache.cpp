@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.2 2002-07-09 05:57:33 jake Exp $
+// $Id: attrcache.cpp,v 1.3 2002-07-18 19:17:34 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -210,7 +210,8 @@ void ADD_ENTRY(PCENT_HDR pEntry)
 
 char *cache_get(Aname *nam, int *pLen)
 {
-    if (nam == (Aname *) 0 || !cache_initted)
+    if (  nam == (Aname *) 0
+       || !cache_initted)
     {
         *pLen = 0;
         return 0;
@@ -219,7 +220,8 @@ char *cache_get(Aname *nam, int *pLen)
 #ifdef DO_CACHEING
     // Check the cache, first.
     //
-    PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
+    PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN(nam, sizeof(Aname),
+        &mudstate.acache_htab);
     if (pCacheEntry)
     {
         // It was in the cache, so move this entry to the head of the queue.
@@ -241,7 +243,8 @@ char *cache_get(Aname *nam, int *pLen)
         HP_HEAPLENGTH nRecord;
         hfAttributeFile.Copy(iDir, &nRecord, &TempRecord);
 
-        if ((TempRecord.attrKey.attrnum == nam->attrnum) && (TempRecord.attrKey.object == nam->object))
+        if (  TempRecord.attrKey.attrnum == nam->attrnum
+           && TempRecord.attrKey.object == nam->object)
         {
             int nLength = nRecord - sizeof(Aname);
             *pLen = nLength;
@@ -256,7 +259,8 @@ char *cache_get(Aname *nam, int *pLen)
                 CacheSize += pCacheEntry->nSize;
                 memcpy((char *)(pCacheEntry+1), TempRecord.attrText, nLength);
                 ADD_ENTRY(pCacheEntry);
-                hashaddLEN((char *)nam, sizeof(Aname), (int *)pCacheEntry, &mudstate.acache_htab);
+                hashaddLEN(nam, sizeof(Aname), (int *)pCacheEntry,
+                    &mudstate.acache_htab);
 
                 // Check to see if the cache needs to be trimmed.
                 //
@@ -273,7 +277,8 @@ char *cache_get(Aname *nam, int *pLen)
 
                     REMOVE_ENTRY(pCacheEntry);
                     CacheSize -= pCacheEntry->nSize;
-                    hashdeleteLEN((char *)&(pCacheEntry->attrKey), sizeof(Aname), &mudstate.acache_htab);
+                    hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
+                        &mudstate.acache_htab);
                     MEMFREE(pCacheEntry);
                     pCacheEntry = NULL;
                 }
@@ -295,7 +300,9 @@ char *cache_get(Aname *nam, int *pLen)
 //
 BOOL cache_put(Aname *nam, char *value, int len)
 {
-    if (!value || !nam || !cache_initted)
+    if (  !value
+       || !nam
+       || !cache_initted)
     {
         return FALSE;
     }
@@ -350,7 +357,8 @@ BOOL cache_put(Aname *nam, char *value, int len)
 
     // Update cache.
     //
-    PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
+    PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN(nam, sizeof(Aname),
+        &mudstate.acache_htab);
     if (pCacheEntry)
     {
         // It was in the cache, so delete it.
@@ -372,7 +380,8 @@ BOOL cache_put(Aname *nam, char *value, int len)
         CacheSize += pCacheEntry->nSize;
         memcpy((char *)(pCacheEntry+1), TempRecord.attrText, len);
         ADD_ENTRY(pCacheEntry);
-        hashaddLEN((char *)nam, sizeof(Aname), (int *)pCacheEntry, &mudstate.acache_htab);
+        hashaddLEN(nam, sizeof(Aname), (int *)pCacheEntry,
+            &mudstate.acache_htab);
 
         // Check to see if the cache needs to be trimmed.
         //
@@ -389,7 +398,8 @@ BOOL cache_put(Aname *nam, char *value, int len)
 
             REMOVE_ENTRY(pCacheEntry);
             CacheSize -= pCacheEntry->nSize;
-            hashdeleteLEN((char *)&(pCacheEntry->attrKey), sizeof(Aname), &mudstate.acache_htab);
+            hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
+                &mudstate.acache_htab);
             MEMFREE(pCacheEntry);
             pCacheEntry = NULL;
         }
@@ -409,8 +419,11 @@ BOOL cache_sync(void)
 //
 void cache_del(Aname *nam)
 {
-    if (!nam || !cache_initted)
+    if (  !nam
+       || !cache_initted)
+    {
         return;
+    }
 
     UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 
@@ -420,7 +433,8 @@ void cache_del(Aname *nam)
         HP_HEAPLENGTH nRecord;
         hfAttributeFile.Copy(iDir, &nRecord, &TempRecord);
 
-        if ((TempRecord.attrKey.attrnum == nam->attrnum) && (TempRecord.attrKey.object == nam->object))
+        if (  TempRecord.attrKey.attrnum == nam->attrnum
+           && TempRecord.attrKey.object == nam->object)
         {
             hfAttributeFile.Remove(iDir);
         }
@@ -431,7 +445,8 @@ void cache_del(Aname *nam)
 
     // Update cache.
     //
-    PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
+    PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN(nam, sizeof(Aname),
+        &mudstate.acache_htab);
     if (pCacheEntry)
     {
         // It was in the cache, so delete it.

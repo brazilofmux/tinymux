@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.2 2002-07-13 07:23:01 jake Exp $
+// $Id: alloc.cpp,v 1.3 2002-07-18 19:17:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -131,7 +131,10 @@ static void pool_vfy(int poolnum, const char *tag)
             {
                 pools[poolnum].chain_head = NULL;
             }
-            return; // not safe to continue
+
+            // It's not safe to continue.
+            //
+            return;
         }
         if (pf->magicnum != POOL_MAGICNUM)
         {
@@ -139,7 +142,8 @@ static void pool_vfy(int poolnum, const char *tag)
                  "Verify", "footer corrupted");
             pf->magicnum = POOL_MAGICNUM;
         }
-        if (ph->pool_size != psize) {
+        if (ph->pool_size != psize)
+        {
             pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph,
                  "Verify", "header has incorrect size");
         }
@@ -221,7 +225,7 @@ char *pool_alloc(int poolnum, const char *tag)
     pools[poolnum].tot_alloc++;
     pools[poolnum].num_alloc++;
 
-    if (  (LOG_ALLOCATE & mudconf.log_options) != 0
+    if (  (LOG_ALLOCATE & mudconf.log_options)
        && mudstate.logging == 0
        && start_log("DBG", "ALLOC"))
     {
@@ -307,7 +311,7 @@ char *pool_alloc_lbuf(const char *tag)
     pools[POOL_LBUF].tot_alloc++;
     pools[POOL_LBUF].num_alloc++;
 
-    if (  (LOG_ALLOCATE & mudconf.log_options) != 0
+    if (  (LOG_ALLOCATE & mudconf.log_options)
        && mudstate.logging == 0
        && start_log("DBG", "ALLOC"))
     {
@@ -370,7 +374,7 @@ void pool_free(int poolnum, char *buf)
         return;
     }
 
-    if (  (LOG_ALLOCATE & mudconf.log_options) != 0
+    if (  (LOG_ALLOCATE & mudconf.log_options)
        && mudstate.logging == 0
        && start_log("DBG", "ALLOC"))
     {
@@ -452,7 +456,7 @@ void pool_free_lbuf(char *buf)
         }
     }
 
-    if (  (LOG_ALLOCATE & mudconf.log_options) != 0
+    if (  (LOG_ALLOCATE & mudconf.log_options)
        && mudstate.logging == 0
        && start_log("DBG", "ALLOC"))
     {
@@ -481,9 +485,6 @@ static char *pool_stats(int poolnum, const char *text)
 static void pool_trace(dbref player, int poolnum, const char *text)
 {
     POOLHDR *ph;
-    unsigned int *ibuf;
-    char *h;
-
     int numfree = 0;
     notify(player, tprintf("----- %s -----", text));
     for (ph = pools[poolnum].chain_head; ph != NULL; ph = ph->next)
@@ -495,9 +496,9 @@ static void pool_trace(dbref player, int poolnum, const char *text)
                        numfree, text));
             return;
         }
-        h = (char *)ph;
+        char *h = (char *)ph;
         h += sizeof(POOLHDR);
-        ibuf = (unsigned int *)h;
+        unsigned int *ibuf = (unsigned int *)h;
         if (*ibuf != POOL_MAGICNUM)
         {
             notify(player, ph->buf_tag);
@@ -519,9 +520,9 @@ static void list_bufstat(dbref player, int poolnum)
 
 void list_bufstats(dbref player)
 {
-    int i;
-
     notify(player, "Buffer Stats     Size    InUse    Total   Allocs     Lost");
+
+    int i;
     for (i = 0; i < NUM_POOLS; i++)
     {
         list_bufstat(player, i);
@@ -531,7 +532,6 @@ void list_bufstats(dbref player)
 void list_buftrace(dbref player)
 {
     int i;
-
     for (i = 0; i < NUM_POOLS; i++)
     {
         pool_trace(player, i, poolnames[i]);
@@ -540,20 +540,18 @@ void list_buftrace(dbref player)
 
 void pool_reset(void)
 {
-    POOLHDR *ph, *phnext, *newchain;
     int i;
-    unsigned int *ibuf;
-    char *h;
-
     for (i = 0; i < NUM_POOLS; i++)
     {
-        newchain = NULL;
+        POOLHDR *newchain = NULL;
+        POOLHDR *phnext;
+        POOLHDR *ph;
         for (ph = pools[i].chain_head; ph != NULL; ph = phnext)
         {
-            h = (char *)ph;
+            char *h = (char *)ph;
             phnext = ph->next;
             h += sizeof(POOLHDR);
-            ibuf = (unsigned int *)h;
+            unsigned int *ibuf = (unsigned int *)h;
             if (*ibuf == POOL_MAGICNUM)
             {
                 MEMFREE(ph);
