@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.46 2002-01-25 17:42:07 sdennis Exp $
+// $Id: predicates.cpp,v 1.47 2002-04-14 20:29:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -717,7 +717,13 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
             //
             for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
             {
-                notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, ((ATTR *)atr_num(nextp->atr))->name));
+                ATTR *ap = (ATTR *)atr_num(nextp->atr);
+                const char *pName = "(WARNING: Bad Attribute Number)";
+                if (ap)
+                {
+                    pName = ap->name;
+                }
+                notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, pName));
             }
         }
         else
@@ -735,19 +741,30 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
 
             old = (CMDENT *)hashfindLEN(keyname, nKeyLength, &mudstate.command_htab);
 
-            if (old && (old->callseq & CS_ADDED)) {
-
-                for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next) {
+            if (old && (old->callseq & CS_ADDED))
+            {
+                for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
+                {
                     if (strncmp(keyname, nextp->name, nKeyLength))
+                    {
                         continue;
-                    notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, ((ATTR *)atr_num(nextp->atr))->name));
+                    }
+                    ATTR *ap = (ATTR *)atr_num(nextp->atr);
+                    const char *pName = "(WARNING: Bad Attribute Number)";
+                    if (ap)
+                    {
+                        pName = ap->name;
+                    }
+                    notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, pName));
                     didit = 1;
                 }
             }
         }
     }
     if (!didit)
+    {
         notify(player, "No added commands found in command table.");
+    }
 }
 
 void do_delcommand
