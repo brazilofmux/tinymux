@@ -287,6 +287,9 @@ Bug Fixes:
  -- Fixed test_time_t() for 64-bit platforms. Reported by Alierak.
     Fixed with Alierak.  Daylight Savings Time information would have
     been missing on at least some and possibly all 64-bit platforms.
+ -- Fixed @flag so that it functions.  Reported by Marlek.  Brazil's bug.  
+    Fixed by Brazil.
+ -- Fixed flag_name documentation.
  -- Fixed SIGSEGV bug in UpdateOffsetTable(). This function maintains
     a table of DST/zone differences and the interval of time over which
     the DST/zone difference is valid. There are typically two intervals
