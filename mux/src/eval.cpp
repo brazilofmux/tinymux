@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.6 2002-06-03 21:06:21 sdennis Exp $
+// $Id: eval.cpp,v 1.7 2002-06-03 23:20:57 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1289,7 +1289,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                     }
                     else if (Going(executor))
                     {
-                        safe_str("#-1 BAD INVOKER", buff, &oldp);
+                        safe_str("#-1 BAD EXECUTOR", buff, &oldp);
                     }
                     else if (!check_access(executor, ufp ? ufp->perms : fp->perms))
                     {
