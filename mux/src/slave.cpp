@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.6 2003-03-03 07:53:50 sdennis Exp $
+// $Id: slave.cpp,v 1.7 2003-03-03 07:56:15 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -206,7 +206,7 @@ int query(char *ip, char *orig_arg)
 #define MAX_CHILDREN 20
 #define NUM_PERIODS   3
 volatile int nChildren = 0;
-int iPeriod = 0;
+volatile int iPeriod = 0;
 volatile int nSpawned[NUM_PERIODS] = { 0, 0, 0 };
 
 void ChildSpawned(void)
