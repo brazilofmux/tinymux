@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.18 2003-09-08 06:20:43 sdennis Exp $
+// $Id: look.cpp,v 1.19 2004-03-04 21:12:31 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1482,8 +1482,7 @@ static void exam_wildattrs
             got_any = true;
             view_atr(player, thing, ap, buf, aowner, aflags, 0);
         }
-        else if (  isPlayer(thing)
-                && bCanReadAttr(player, thing, ap, do_parent))
+        else if (bCanReadAttr(player, thing, ap, isPlayer(thing) ? do_parent : false))
         {
             got_any = true;
             if (aowner == Owner(player))
@@ -1497,28 +1496,6 @@ static void exam_wildattrs
                 show_desc(player, thing, 0);
             }
             else if (atr != A_DESC)
-            {
-                view_atr(player, thing, ap, buf, aowner, aflags, 0);
-            }
-            else
-            {
-                notify(player, "<Too far away to get a good look>");
-            }
-        }
-        else if (bCanReadAttr(player, thing, ap, false))
-        {
-            got_any = true;
-            if (aowner == Owner(player))
-            {
-                view_atr(player, thing, ap, buf, aowner, aflags, 0);
-            }
-            else if (  atr == A_DESC
-                    && (  mudconf.read_rem_desc
-                       || nearby(player, thing)))
-            {
-                show_desc(player, thing, 0);
-            }
-            else if (nearby(player, thing))
             {
                 view_atr(player, thing, ap, buf, aowner, aflags, 0);
             }
