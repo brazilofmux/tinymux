@@ -3,7 +3,7 @@
   This is the MUX online help facility for wizard commands and topics.
   The information provided by this command is generally not useful for
   anyone other than wizards and game maintainers, as the features described
-  here are only accessable to characters whose WIZARD bit is set, or to those
+  here are only accessible to characters whose WIZARD bit is set, or to those
   who have access to the directory where the MUX data files reside.
 
   Syntax of help command:
@@ -191,7 +191,7 @@
   Cuts off the object or exit list for the current location at the indicated
   object or exit by setting [next(thing)] to NOTHING.  Objects or exits that
   follow in the chain are not moved or otherwise changed, and are only
-  accessable by object number.  This command is intended for performing
+  accessible by object number.  This command is intended for performing
   database repair, and should be used only with extreme caution.
 
 & @DBCK
@@ -588,7 +588,7 @@
 
   COMMAND: @list guests
 
-  Lists all the guests currently on the mux, the name and dbref, if they are
+  Lists all the guests currently on the MUX, the name and dbref, if they are
   connected or not, and the lastsite of the guest. A * before the entry
   denotes that the guest will NOT be destroyed on an @dbck.
 
@@ -1022,7 +1022,7 @@
   document. This warning does not apply if you remake the binary in your
   game's source directory.
 
-  Sending the MUX process a SIGUSR1 from the shell account wil also cause a
+  Sending the MUX process a SIGUSR1 from the shell account will also cause a
   @restart.
 
 & @SHUTDOWN
@@ -1136,7 +1136,7 @@
   described effects:
 
      /emit      - Format the message as an emit (ie send just <message>).
-     /pose      - Format the message as a pose (ie <youname> <message>).
+     /pose      - Format the message as a pose (ie <yourname> <message>).
      /wizard    - Only send the message to connected wizards.
      /admin     - Send the message to connected wizards and royalty.
      /no_prefix - Don't prepend 'Announcement:' or 'Broadcast:' to the message.
@@ -1166,7 +1166,7 @@ ALIAS
 
   Defines the command <new> to be an alias of the command <old>.
 
-  Releated Topics:
+  Related Topics: function_alias, flag_alias.
 
 & ALLOW_GUEST_FROM_REGISTERED_SITE
 ALLOW_GUEST_FROM_REGISTERED_SITE
@@ -1446,7 +1446,7 @@ COMPRESS_PROGRAM
   written.  If database file compression is enabled, database dumps are piped
   through this program on their way out to disk.
 
-  Related Topics: compresion, uncompress_program.
+  Related Topics: compression, uncompress_program.
 
 & COMSYS_DATABASE
 COMSYS_DATABASE
@@ -1641,7 +1641,7 @@ DESTROY_GOING_NOW
   second @destroy on a previously queued request causes the destruction to
   occur immediately.
 
-  This behavior is for compatbility with PennMUSH.
+  This behavior is for compatibility with PennMUSH.
 
 & DIG_COST
 DIG_COST
@@ -1854,7 +1854,7 @@ FILES
 FILES (continued)
 
   guest.txt:      Displayed to whoever connects to the guest character
-                  specifiedby the guest_character config parameter.
+                  specified by the guest_character config parameter.
   motd.txt:       Displayed after someone connects to an existing character.
   netmux.conf:    Configuration directives read at startup.
   news.indx:      Index for the news.txt file, produced by the mkindx program.
@@ -1947,6 +1947,8 @@ FLAG_ALIAS
 
   Defines <alias> as a synonym for the flag <flagname>.
 
+  Related Topics: alias, function_alias.
+
 & FORBID_SITE
 FORBID_SITE
 
@@ -1991,7 +1993,7 @@ FULL_FILE
 FULL_MOTD_MESSAGE
 
   CONFIG PARAMETER: full_motd_message <message>
-  DEfAULT: blank
+  DEFAULT: blank
 
   Sets the message that is displayed when a player attempts to connect to a
   non-wizard character when the number of connected players is not less than
@@ -2011,6 +2013,15 @@ FUNCTION_ACCESS
   would normally return.
 
   Related Topics: @list functions, FUNCTION LIST, PERMISSIONS.
+
+& FUNCTION_ALIAS
+FUNCTION_ALIAS
+
+  CONFIG PARAMETER: function_alias <alias> <funcname>
+
+  Defines <alias> as a synonym for the function <funcname>.
+
+  Related Topics: alias, flag_alias.
 
 & FUNCTION_INVOCATION_LIMIT
 FUNCTION_INVOCATION_LIMIT
@@ -2146,7 +2157,7 @@ GUEST_NUKER
 &GUEST_PREFIX
 GUEST_PREFIX
 
-  CONFIG PARAMETER: guest_preifx <name>
+  CONFIG PARAMETER: guest_prefix <name>
   DEFAULT: Guest
 
   Specifies the prefix for all guests. This will be what is put before the #
@@ -2181,7 +2192,7 @@ HAVE_COMSYS
 HAVE_MAILER
 
   CONFIG PARAMETER: have_mailer <yes/no>
-  DEfAULT: yes
+  DEFAULT: yes
 
   Specifies whether @mail and mail aliases should be active.
 
@@ -2795,7 +2806,7 @@ PARENT_RECURSION_LIMIT
 & PAYCHECK
 PAYCHECK
 
-  CONFIG PARAMETEr: paycheck <amount>
+  CONFIG PARAMETER: paycheck <amount>
   DEFAULT: 0
 
   Specifies the default amount of money that players receive each day they
@@ -2840,7 +2851,7 @@ PERMISSIONS
     2) 'Wizard' means Wizard-level authority which can be achieved either by
        being set WIZARD or by inheriting that authority from a WIZARD-owned
        object with the INHERIT flag, and
-    3) Wizard(#1) who is always set WIZARD and has other special priviledges.
+    3) Wizard(#1) who is always set WIZARD and has other special privileges.
 
   The follow uses two of those senses: 'Wizard' and Wizard(#1).
 
@@ -3352,12 +3363,12 @@ SESSION
 
   This command can be used to help identify network problems as follows:
 
-    - A nonzero Input Pending count can indicate indicate typeahead or a
+    - A nonzero Input Pending count can indicate typeahead or a
       client program dumping commands faster than the command scheduling
       parameters let them be executed.  Telnet sessions in character mode also
       show up with positive Input Pending counts when the player is in the
       middle of typing a command.
-    - A nozero Input Lost count means that the player has typed a line longer
+    - A nonzero Input Lost count means that the player has typed a line longer
       than what the MUX can handle.  This usually indicates a problem with
       the player's client or terminal (a stuck key).
     - A persistently large Output Pending count can indicate netlag between
@@ -3420,7 +3431,7 @@ SITE LISTS (continued)
   forbid_site    135.246.4.0  255.255.255.0    <- Disallow a class C subnet
   permit_site    135.246.0.0  255.255.0.0      <- Permit a class B network
   register_site  195.3.17.1   255.255.255.255  <- Permit this site w/reg.
-  forbid_site    0.0.0.0      0.0.0.0          <- DIsallow everyone else
+  forbid_site    0.0.0.0      0.0.0.0          <- Disallow everyone else
  
   These directives only allow access from 135.346.*.* and 195.3.17.1, except
   that all hosts in the 135.246.4 subnet except for 135.246.4.40 are also
@@ -3466,8 +3477,8 @@ SITE NOTATION (continued)
  from 65536, etc. The 8.8.8.8 form is the most common. The latter three
  originated on BSD.
 
- Furthermore, the integer can be expressed in decimal, octal, or hexidecimal
- notation. Hexidecimal numbers have a '0x' prefix. Octal numbers have a '0'
+ Furthermore, the integer can be expressed in decimal, octal, or hexadecimal
+ notation. Hexadecimal numbers have a '0x' prefix. Octal numbers have a '0'
  prefix.
 
  Examples:
@@ -3789,7 +3800,7 @@ UNCOMPRESS_PROGRAM
   Specifies the program to be run to uncompress compressed database files when
   reading them in at startup.
 
-  Related Topics: compress_program, compresion.
+  Related Topics: compress_program, compression.
 
 & UNOWNED_SAFE
 UNOWNED_SAFE
@@ -3844,7 +3855,7 @@ WHO
      Room         - The room that the player is in.
      Commands     - The number of commands that the player has entered during
                     this session (not counting machine commands).
-     Host flags   - located bwtween the Commands and Host fields:
+     Host flags   - located between the Commands and Host fields:
                     F(forbidden), R(registration), +(suspect).
      Host         - The Internet host name or address from where the player has
                     connected.
