@@ -9914,7 +9914,7 @@ SET()
 & SETDIFF()
 SETDIFF()
 
-  FUNCTION: setdiff(<list1>, <list2>[, <delim>])
+  FUNCTION: setdiff(<list1>, <list2>[[, <delim>], <output delim>])
 
   This function returns the difference of two sets -- i.e., the elements in
   <list1> that aren't in <list2>. The list that is returned is sorted.
@@ -9931,7 +9931,7 @@ SETDIFF()
 & SETINTER()
 SETINTER()
 
-  FUNCTION: setinter(<list1>, <list2>[, <delim>])
+  FUNCTION: setinter(<list1>, <list2>[[, <delim>], <output delim>])
 
   This function returns the intersection of two sets -- i.e., the elements
   that are in both <list1> and <list2>. The list that is returned is sorted.
@@ -9984,7 +9984,7 @@ SETR()
 & SETUNION()
 SETUNION()
 
-  FUNCTION: setunion(<list1>, <list2>[, <delim>])
+  FUNCTION: setunion(<list1>, <list2>[[, <delim>], <output delim>])
 
   This function returns the union of two sets -- i.e., all the elements of
   both <list1> and <list2>, minus any duplicate elements. Think of it as
@@ -9996,6 +9996,8 @@ SETUNION()
   Example:
     > say setunion(foo baz gleep bar, bar moof gleep)
     You say, "bar baz foo gleep moof"
+    > say setunion(foo|bar|foo,,|,.)
+    You say, "bar.foo"
 
   Related Topics: setdiff(), setinter(), sort().
 
