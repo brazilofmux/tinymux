@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.46 2004-05-13 06:06:33 sdennis Exp $
+// $Id: db.cpp,v 1.47 2004-05-20 04:31:19 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -733,8 +733,7 @@ void do_attribute
 
             // Set or clear the appropriate bit.
             //
-            f = search_nametab(executor, attraccess_nametab, sp);
-            if (f > 0)
+            if (search_nametab(executor, attraccess_nametab, sp, &f))
             {
                 success = true;
                 if (negate)

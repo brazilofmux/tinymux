@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.4 2003-03-08 03:24:41 sdennis Exp $
+// $Id: file_c.cpp,v 1.5 2004-05-20 04:31:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -69,8 +69,8 @@ NAMETAB list_files[] =
 
 void do_list_file(dbref executor, dbref caller, dbref enactor, int extra, char *arg)
 {
-    int flagvalue = search_nametab(executor, list_files, arg);
-    if (flagvalue < 0)
+    int flagvalue;
+    if (!search_nametab(executor, list_files, arg, &flagvalue))
     {
         display_nametab(executor, list_files, "Unknown file.  Use one of:", true);
         return;

@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.51 2004-05-20 03:21:21 sdennis Exp $
+// $Id: predicates.cpp,v 1.52 2004-05-20 04:31:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1749,8 +1749,7 @@ bool get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *er
     {
         // <obj>/<lock> syntax, use the named lock.
         //
-        anum = search_nametab(player, lock_sw, str);
-        if (anum < 0)
+        if (!search_nametab(player, lock_sw, str, &anum))
         {
             free_lbuf(tbuf);
             safe_str("#-1 LOCK NOT FOUND", errmsg, bufc);

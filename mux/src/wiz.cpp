@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.10 2004-03-08 04:37:40 sdennis Exp $
+// $Id: wiz.cpp,v 1.11 2004-05-20 04:31:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -692,12 +692,10 @@ NAMETAB enable_names[] =
 
 void do_global(dbref executor, dbref caller, dbref enactor, int key, char *flag)
 {
-    int flagvalue;
-
     // Set or clear the indicated flag.
     //
-    flagvalue = search_nametab(executor, enable_names, flag);
-    if (flagvalue < 0)
+    int flagvalue;
+    if (!search_nametab(executor, enable_names, flag, &flagvalue))
     {
         notify_quiet(executor, "I don't know about that flag.");
     }

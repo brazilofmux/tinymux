@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.33 2004-05-20 03:21:21 sdennis Exp $
+// $Id: command.cpp,v 1.34 2004-05-20 04:31:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1070,18 +1070,20 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
             {
                 *buf1++ = '\0';
             }
-            xkey = search_nametab(executor, cmdp->switches, switchp);
-            if (xkey == -1)
+            if (!search_nametab(executor, cmdp->switches, switchp, &xkey))
             {
-                notify(executor,
+                if (xkey == -1)
+                {
+                    notify(executor,
                        tprintf("Unrecognized switch '%s' for command '%s'.",
-                           switchp, cmdp->cmdname));
-                return;
-            }
-            else if (xkey == -2)
-            {
-                notify(executor, NOPERM_MESSAGE);
-                return;
+                       switchp, cmdp->cmdname));
+                    return;
+                }
+                else if (xkey == -2)
+                {
+                    notify(executor, NOPERM_MESSAGE);
+                    return;
+                }
             }
             else if (!(xkey & SW_MULTIPLE))
             {
@@ -1915,10 +1917,11 @@ char *process_command
         // HOOK_IGSWITCH will allow us to treat the entire command as if it
         // weren't a built-in command.
         //
+        int flagvalue;
         if (  (cmdp->hookmask & HOOK_IGSWITCH)
            && pSlash
            && ( !(cmdp->switches)
-              || search_nametab(executor, cmdp->switches, pSlash) < 0))
+              || !search_nametab(executor, cmdp->switches, pSlash, &flagvalue)))
         {
             cval = 2;
         }
@@ -3241,8 +3244,11 @@ static void list_options(dbref player)
 // ---------------------------------------------------------------------------
 // list_vattrs: List user-defined attributes
 //
-static void list_vattrs(dbref player, char *s_mask, bool wild_mtch)
+static void list_vattrs(dbref player, char *s_mask)
 {
+    bool wild_mtch =  s_mask
+                   && s_mask[0] != '\0';
+   
     char *buff = alloc_lbuf("list_vattrs");
 
     // If wild_match, then only list attributes that match wildcard(s)
@@ -3254,6 +3260,7 @@ static void list_vattrs(dbref player, char *s_mask, bool wild_mtch)
     ATTR *va;
     int na;
     int wna = 0;
+
     for (va = vattr_first(), na = 0; va; va = vattr_next(va), na++)
     {
         if (!(va->flags & AF_DELETED))
@@ -3263,9 +3270,7 @@ static void list_vattrs(dbref player, char *s_mask, bool wild_mtch)
             if (wild_mtch)
             {
                 mudstate.wild_invk_ctr = 0;
-                if (  s_mask
-                   && *s_mask
-                   && !quick_wild(s_mask, va->name))
+                if (!quick_wild(s_mask, va->name))
                 {
                     continue;
                 }
@@ -3550,7 +3555,25 @@ extern NAMETAB logdata_nametab[];
 void do_list(dbref executor, dbref caller, dbref enactor, int extra,
              char *arg)
 {
-    int flagvalue = search_nametab(executor, list_names, arg);
+    MUX_STRTOK_STATE tts;
+    mux_strtok_src(&tts, arg);
+    mux_strtok_ctl(&tts, " \t=,");
+    char *s_option = mux_strtok_parse(&tts);
+
+    int flagvalue;
+    if (!search_nametab(executor, list_names, s_option, &flagvalue))
+    {
+        if (flagvalue == -1)
+        {
+            display_nametab(executor, list_names, "Unknown option.  Use one of:", true);
+        }
+        else
+        {
+            notify(executor, "Permission denied");
+        }
+        return;
+    }
+
     switch (flagvalue)
     {
     case LIST_ALLOCATOR:
@@ -3606,7 +3629,8 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
         list_attraccess(executor);
         break;
     case LIST_VATTRS:
-        list_vattrs(executor, NULL, false);
+        s_option = mux_strtok_parse(&tts);
+        list_vattrs(executor, s_option);
         break;
     case LIST_LOGGING:
         interp_nametab(executor, logoptions_nametab, mudconf.log_options,
@@ -3629,25 +3653,6 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
     case LIST_GUESTS:
         Guest.ListAll(executor);
         break;
-
-    default:
-        MUX_STRTOK_STATE tts;
-        mux_strtok_src(&tts, arg);
-        mux_strtok_ctl(&tts, " \t=,");
-        char *s_option = mux_strtok_parse(&tts);
-        char *s_sub_option = mux_strtok_parse(&tts);
-        if (s_option)
-        {
-            flagvalue = search_nametab(executor, list_names, s_option);
-        }
-        if (flagvalue == LIST_VATTRS)
-        {
-            list_vattrs(executor, s_sub_option, true);
-        }
-        else
-        {
-            display_nametab(executor, list_names, "Unknown option.  Use one of:", true);
-        }
     }
 }
 

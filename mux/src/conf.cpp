@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.43 2004-05-15 17:19:04 sdennis Exp $
+// $Id: conf.cpp,v 1.44 2004-05-20 04:31:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -495,8 +495,8 @@ NAMETAB bool_names[] =
 
 CF_HAND(cf_bool)
 {
-    int i = search_nametab(GOD, bool_names, str);
-    if (i < 0)
+    int i;
+    if (!search_nametab(GOD, bool_names, str, &i))
     {
         cf_log_notfound(player, cmd, "Value", str);
         return -1;
@@ -511,8 +511,8 @@ CF_HAND(cf_bool)
 //
 CF_HAND(cf_option)
 {
-    int i = search_nametab(GOD, (NAMETAB *) pExtra, str);
-    if (i < 0)
+    int i;
+    if (!search_nametab(GOD, (NAMETAB *)pExtra, str, &i))
     {
         cf_log_notfound(player, cmd, "Value", str);
         return -1;
@@ -738,8 +738,7 @@ CF_HAND(cf_or_in_bits)
     {
         // Set the appropriate bit.
         //
-        f = search_nametab(GOD, (NAMETAB *) pExtra, sp);
-        if (f > 0)
+        if (search_nametab(GOD, (NAMETAB *)pExtra, sp, &f))
         {
             *vp |= f;
             success++;
@@ -785,8 +784,7 @@ CF_HAND(cf_modify_bits)
 
         // Set or clear the appropriate bit.
         //
-        f = search_nametab(GOD, (NAMETAB *)pExtra, sp);
-        if (f > 0)
+        if (search_nametab(GOD, (NAMETAB *)pExtra, sp, &f))
         {
             if (negate)
                 *vp &= ~f;
@@ -827,8 +825,7 @@ CF_HAND(cf_set_bits)
     {
         // Set the appropriate bit.
         //
-        f = search_nametab(GOD, (NAMETAB *)pExtra, sp);
-        if (f > 0)
+        if (search_nametab(GOD, (NAMETAB *)pExtra, sp, &f))
         {
             *vp |= f;
             success++;
@@ -1501,11 +1498,10 @@ CF_HAND(cf_hook)
     hookptr = mux_strtok_parse(&tts);
     while (hookptr != NULL)
     {
-       if (  *hookptr == '!'
-          && *(hookptr + 1))
+       if (  hookptr[0] == '!'
+          && hookptr[1] != '\0')
        {
-          hookflg = search_nametab(GOD, hook_names, hookptr + 1);
-          if (0 < hookflg)
+          if (search_nametab(GOD, hook_names, hookptr+1, &hookflg))
           {
              retval = 0;
              *vp = *vp & ~hookflg;
@@ -1513,8 +1509,7 @@ CF_HAND(cf_hook)
        }
        else
        {
-          hookflg = search_nametab(GOD, hook_names, hookptr);
-          if (0 < hookflg)
+          if (search_nametab(GOD, hook_names, hookptr, &hookflg))
           {
              retval = 0;
              *vp = *vp | hookflg;

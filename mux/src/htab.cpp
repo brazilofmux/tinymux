@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.9 2004-05-07 22:29:53 sdennis Exp $
+// $Id: htab.cpp,v 1.10 2004-05-20 04:31:19 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -255,25 +255,27 @@ void *hash_nextkey(CHashTable *htab, int *nKeyLength, char **pKey)
  * * search_nametab: Search a name table for a match and return the flag value.
  */
 
-int search_nametab(dbref player, NAMETAB *ntab, char *flagname)
+bool search_nametab(dbref player, NAMETAB *ntab, char *flagname, int *pflag)
 {
     NAMETAB *nt;
-
     for (nt = ntab; nt->name; nt++)
     {
         if (minmatch(flagname, nt->name, nt->minlen))
         {
             if (check_access(player, nt->perm))
             {
-                return nt->flag;
+                *pflag = nt->flag;
+                return true;
             }
             else
             {
-                return -2;
+                *pflag = -2;
+                return false;
             }
         }
     }
-    return -1;
+    *pflag = -1;
+    return false;
 }
 
 /*

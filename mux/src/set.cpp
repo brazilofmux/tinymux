@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.23 2004-04-30 19:59:40 sdennis Exp $
+// $Id: set.cpp,v 1.24 2004-05-20 04:31:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -942,8 +942,8 @@ void do_set
 
             // Make sure player specified a valid attribute flag.
             //
-            int flagvalue = search_nametab(executor, indiv_attraccess_nametab, flagname);
-            if (flagvalue < 0)
+            int flagvalue;
+            if (!search_nametab(executor, indiv_attraccess_nametab, flagname, &flagvalue))
             {
                 notify_quiet(executor, "You can't set that!");
                 return;
