@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.6 2003-01-31 22:56:52 jake Exp $
+// $Id: functions.cpp,v 1.7 2003-01-31 23:23:19 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -37,136 +37,140 @@ extern void cf_list(dbref, char *, char **);
  dbref caller, dbref enactor, char *fargs[], int nfargs, char *cargs[],        \
  int ncargs)
 
-XFUNCTION(fun_cwho);
-XFUNCTION(fun_beep);
-XFUNCTION(fun_ansi);
-XFUNCTION(fun_zone);
-#ifdef SIDE_EFFECT_FUNCTIONS
-XFUNCTION(fun_link);
-XFUNCTION(fun_tel);
-XFUNCTION(fun_pemit);
-XFUNCTION(fun_oemit);
-XFUNCTION(fun_emit);
-XFUNCTION(fun_remit);
-XFUNCTION(fun_create);
-XFUNCTION(fun_set);
-#endif
-XFUNCTION(fun_last);
-XFUNCTION(fun_matchall);
-XFUNCTION(fun_ports);
-XFUNCTION(fun_mix);
-XFUNCTION(fun_foreach);
-XFUNCTION(fun_munge);
-XFUNCTION(fun_visible);
-XFUNCTION(fun_elements);
-XFUNCTION(fun_grab);
-XFUNCTION(fun_scramble);
-XFUNCTION(fun_shuffle);
-XFUNCTION(fun_pickrand);
-XFUNCTION(fun_sortby);
-XFUNCTION(fun_default);
-XFUNCTION(fun_edefault);
-XFUNCTION(fun_udefault);
-XFUNCTION(fun_findable);
-XFUNCTION(fun_isword);
-XFUNCTION(fun_hasattr);
-XFUNCTION(fun_hasattrp);
-XFUNCTION(fun_zwho);
-XFUNCTION(fun_inzone);
-XFUNCTION(fun_children);
-XFUNCTION(fun_encrypt);
-XFUNCTION(fun_decrypt);
-XFUNCTION(fun_objeval);
-XFUNCTION(fun_localize);
-XFUNCTION(fun_null);
-XFUNCTION(fun_squish);
-XFUNCTION(fun_stripansi);
-XFUNCTION(fun_zfun);
-XFUNCTION(fun_columns);
-XFUNCTION(fun_table);
-XFUNCTION(fun_playmem);
-XFUNCTION(fun_objmem);
-XFUNCTION(fun_orflags);
-XFUNCTION(fun_andflags);
-XFUNCTION(fun_strtrunc);
-XFUNCTION(fun_ifelse);
-XFUNCTION(fun_inc);
-XFUNCTION(fun_dec);
-XFUNCTION(fun_mail);
-XFUNCTION(fun_mailfrom);
-XFUNCTION(fun_die);
-XFUNCTION(fun_lrand);
-XFUNCTION(fun_lit);
-XFUNCTION(fun_shl);
-XFUNCTION(fun_shr);
-XFUNCTION(fun_band);
-XFUNCTION(fun_bor);
-XFUNCTION(fun_bnand);
-XFUNCTION(fun_crc32);
-XFUNCTION(fun_pack);
-XFUNCTION(fun_unpack);
-XFUNCTION(fun_vadd);
-XFUNCTION(fun_vsub);
-XFUNCTION(fun_vmul);
-XFUNCTION(fun_vmag);
-XFUNCTION(fun_vunit);
-XFUNCTION(fun_vdim);
-XFUNCTION(fun_strcat);
-XFUNCTION(fun_grep);
-XFUNCTION(fun_grepi);
+// In comsys.cpp
+XFUNCTION(fun_channels);
+XFUNCTION(fun_comalias);
+XFUNCTION(fun_comtitle);
+// In funceval.cpp
 XFUNCTION(fun_alphamax);
 XFUNCTION(fun_alphamin);
-XFUNCTION(fun_valid);
-XFUNCTION(fun_hastype);
-XFUNCTION(fun_lparent);
+XFUNCTION(fun_andflags);
+XFUNCTION(fun_ansi);
+XFUNCTION(fun_band);
+XFUNCTION(fun_beep);
+XFUNCTION(fun_bnand);
+XFUNCTION(fun_bor);
+XFUNCTION(fun_children);
+XFUNCTION(fun_columns);
+XFUNCTION(fun_crc32);
+XFUNCTION(fun_cwho);
+XFUNCTION(fun_dec);
+XFUNCTION(fun_decrypt);
+XFUNCTION(fun_default);
+XFUNCTION(fun_die);
+XFUNCTION(fun_edefault);
+XFUNCTION(fun_elements);
 XFUNCTION(fun_empty);
-XFUNCTION(fun_push);
-XFUNCTION(fun_peek);
-XFUNCTION(fun_pop);
+XFUNCTION(fun_encrypt);
+XFUNCTION(fun_findable);
+XFUNCTION(fun_foreach);
+XFUNCTION(fun_grab);
+XFUNCTION(fun_grep);
+XFUNCTION(fun_grepi);
+XFUNCTION(fun_hasattr);
+XFUNCTION(fun_hasattrp);
+XFUNCTION(fun_hastype);
+XFUNCTION(fun_ifelse);
+XFUNCTION(fun_inc);
+XFUNCTION(fun_inzone);
+XFUNCTION(fun_isword);
 XFUNCTION(fun_items);
+XFUNCTION(fun_last);
+XFUNCTION(fun_lit);
+XFUNCTION(fun_localize);
+XFUNCTION(fun_lparent);
+XFUNCTION(fun_lrand);
+XFUNCTION(fun_lrooms);
 XFUNCTION(fun_lstack);
+XFUNCTION(fun_mail);
+XFUNCTION(fun_mailfrom);
+XFUNCTION(fun_matchall);
+XFUNCTION(fun_mix);
+XFUNCTION(fun_munge);
+XFUNCTION(fun_null);
+XFUNCTION(fun_objeval);
+XFUNCTION(fun_objmem);
+XFUNCTION(fun_orflags);
+XFUNCTION(fun_pack);
+XFUNCTION(fun_peek);
+XFUNCTION(fun_pickrand);
+XFUNCTION(fun_playmem);
+XFUNCTION(fun_pop);
+XFUNCTION(fun_ports);
+XFUNCTION(fun_push);
 XFUNCTION(fun_regmatch);
 XFUNCTION(fun_regmatchi);
 XFUNCTION(fun_regrab);
-XFUNCTION(fun_regrabi);
 XFUNCTION(fun_regraball);
 XFUNCTION(fun_regraballi);
+XFUNCTION(fun_regrabi);
+XFUNCTION(fun_scramble);
+XFUNCTION(fun_shl);
+XFUNCTION(fun_shr);
+XFUNCTION(fun_shuffle);
+XFUNCTION(fun_sortby);
+XFUNCTION(fun_squish);
+XFUNCTION(fun_strcat);
+XFUNCTION(fun_stripansi);
+XFUNCTION(fun_strtrunc);
+XFUNCTION(fun_table);
 XFUNCTION(fun_translate);
-XFUNCTION(fun_doing);      // in netcommon.cpp
-XFUNCTION(fun_host);       // in netcommon.cpp
-XFUNCTION(fun_poll);       // in netcommon.cpp
-XFUNCTION(fun_motd);       // in netcommon.cpp
-XFUNCTION(fun_channels);   // in comsys.cpp
-XFUNCTION(fun_comtitle);   // in comsys.cpp
-XFUNCTION(fun_comalias);   // in comsys.cpp
-XFUNCTION(fun_iadd);
-XFUNCTION(fun_isub);
-XFUNCTION(fun_imul);
-XFUNCTION(fun_iabs);
-XFUNCTION(fun_isign);
-XFUNCTION(fun_digittime);
-XFUNCTION(fun_singletime);
-XFUNCTION(fun_exptime);
-XFUNCTION(fun_writetime);
+XFUNCTION(fun_udefault);
+XFUNCTION(fun_unpack);
+XFUNCTION(fun_vadd);
+XFUNCTION(fun_valid);
+XFUNCTION(fun_vdim);
+XFUNCTION(fun_visible);
+XFUNCTION(fun_vmag);
+XFUNCTION(fun_vmul);
+XFUNCTION(fun_vsub);
+XFUNCTION(fun_vunit);
+XFUNCTION(fun_zfun);
+XFUNCTION(fun_zone);
+XFUNCTION(fun_zwho);
+#ifdef SIDE_EFFECT_FUNCTIONS
+XFUNCTION(fun_create);
+XFUNCTION(fun_emit);
+XFUNCTION(fun_link);
+XFUNCTION(fun_oemit);
+XFUNCTION(fun_pemit);
+XFUNCTION(fun_remit);
+XFUNCTION(fun_set);
+XFUNCTION(fun_tel);
+#endif
+// In functions.cpp
+XFUNCTION(fun_accent);
+XFUNCTION(fun_art);
+XFUNCTION(fun_chr);
 XFUNCTION(fun_cmds);
-XFUNCTION(fun_startsecs);
-XFUNCTION(fun_lflags);
+XFUNCTION(fun_connlast);
+XFUNCTION(fun_connleft);
+XFUNCTION(fun_connmax);
+XFUNCTION(fun_connnum);
+XFUNCTION(fun_conntotal);
+XFUNCTION(fun_digittime);
+XFUNCTION(fun_dumping);
+XFUNCTION(fun_exptime);
+XFUNCTION(fun_iabs);
+XFUNCTION(fun_iadd);
+XFUNCTION(fun_imul);
+XFUNCTION(fun_isign);
+XFUNCTION(fun_isub);
 XFUNCTION(fun_lattrcmds);
 XFUNCTION(fun_lcmds);
-XFUNCTION(fun_conntotal);
-XFUNCTION(fun_connmax);
-XFUNCTION(fun_connlast);
-XFUNCTION(fun_connnum);
-XFUNCTION(fun_connleft);
-XFUNCTION(fun_art);
-XFUNCTION(fun_t);
-XFUNCTION(fun_dumping);
-XFUNCTION(fun_lrooms);
-XFUNCTION(fun_hasquota);
-XFUNCTION(fun_chr);
+XFUNCTION(fun_lflags);
 XFUNCTION(fun_ord);
+XFUNCTION(fun_singletime);
+XFUNCTION(fun_startsecs);
 XFUNCTION(fun_stripaccents);
-XFUNCTION(fun_accent);
+XFUNCTION(fun_writetime);
+// In netcommon.cpp
+XFUNCTION(fun_doing);
+XFUNCTION(fun_host);
+XFUNCTION(fun_motd);
+XFUNCTION(fun_poll);
+// In quota.cpp
+XFUNCTION(fun_hasquota);
 
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
