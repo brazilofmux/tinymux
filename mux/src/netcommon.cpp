@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.5 2002-06-11 19:30:28 zenty Exp $
+// $Id: netcommon.cpp,v 1.6 2002-06-11 19:51:53 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1547,6 +1547,33 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
         {
             memcpy(d->doing, szValidDoing, nValidDoing+1);
             foundany = 1;
+        }
+        if (foundany)
+        {
+            if (!Quiet(executor))
+            {
+                notify(executor, "Set.");
+            }
+        }
+        else
+        {
+            notify(executor, "Not connected.");
+        }
+    }
+    else if (key == DOING_UNIQUE)
+    {
+        int foundany = 0;
+        DESC *d;
+        CLinearTimeAbsolute ltaNow;
+        ltaNow.GetUTC();
+        DESC_ITER_PLAYER(executor, d)
+        {
+            if (d->last_time == ltaNow)
+            {
+                memcpy(d->doing, szValidDoing, nValidDoing+1);
+                foundany = 1;
+                break;
+            }
         }
         if (foundany)
         {
