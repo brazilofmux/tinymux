@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.40 2002-10-13 17:09:47 sdennis Exp $
+// $Id: predicates.cpp,v 1.41 2002-11-14 12:08:25 jake Exp $
 //
 
 #include "copyright.h"
@@ -2040,30 +2040,22 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
  * do_verb: Command interface to did_it.
  */
 
-void do_verb(dbref player, dbref caller, dbref enactor, int key,
+void do_verb(dbref executor, dbref caller, dbref enactor, int key,
              char *victim_str, char *args[], int nargs)
 {
-    dbref actor, victim;
-    dbref aowner = NOTHING;
-    int what, owhat, awhat, nxargs;
-    int aflags = NOTHING;
-    ATTR *ap;
-    const char *whatd, *owhatd;
-    char *xargs[10];
-
     // Look for the victim.
     //
     if (!victim_str || !*victim_str)
     {
-        notify(player, "Nothing to do.");
+        notify(executor, "Nothing to do.");
         return;
     }
 
     // Get the victim.
     //
-    init_match(player, victim_str, NOTYPE);
+    init_match(executor, victim_str, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
-    victim = noisy_match_result();
+    dbref victim = noisy_match_result();
     if (!Good_obj(victim))
     {
         return;
@@ -2071,9 +2063,10 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
 
     // Get the actor.  Default is my cause.
     //
+    dbref actor;
     if ((nargs >= 1) && args[0] && *args[0])
     {
-        init_match(player, args[0], NOTYPE);
+        init_match(executor, args[0], NOTYPE);
         match_everything(MAT_EXIT_PARENTS);
         actor = noisy_match_result();
         if (!Good_obj(actor))
@@ -2088,31 +2081,75 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
 
     // Check permissions.  There are two possibilities:
     //
-    //    1. Player controls both victim and actor. In this case,
+    //    1. Executor controls both victim and actor. In this case,
     //       victim runs his action list.
     //
-    //    2. Player controls actor. In this case victim does not run
-    //       his action list and any attributes that player cannot read
+    //    2. Executor controls actor. In this case victim does not run
+    //       his action list and any attributes that executor cannot read
     //       from victim are defaulted.
     //
-    if (!Controls(player, actor))
+    if (!Controls(executor, actor))
     {
-        notify_quiet(player, "Permission denied,");
+        notify_quiet(executor, "Permission denied,");
         return;
     }
-    BOOL restriction = !Controls(player, victim);
 
-    what = -1;
-    owhat = -1;
-    awhat = -1;
-    whatd = NULL;
-    owhatd = NULL;
-    nxargs = 0;
+    ATTR *ap;
+    int what = -1;
+    int owhat = -1;
+    int awhat = -1;
+    const char *whatd = NULL;
+    const char *owhatd = NULL;
+    int nxargs = 0;
+    dbref aowner = NOTHING;
+    int aflags = NOTHING;
+    char *xargs[10];
 
-    // Get enactor message attribute.
-    //
-    if (nargs >= 2)
+    switch (nargs) // Yes, this IS supposed to fall through.
     {
+    case 7:
+        // Get arguments.
+        //
+        parse_arglist(victim, actor, actor, args[6], '\0',
+            EV_STRIP_LS | EV_STRIP_TS, xargs, 10, (char **)NULL, 0, &nxargs);
+
+    case 6:
+        // Get action attribute.
+        //
+        ap = atr_str(args[5]);
+        if (ap)
+        {
+            awhat = ap->number;
+        }
+
+    case 5:
+        // Get others message default.
+        //
+        if (args[4] && *args[4])
+        {
+            owhatd = args[4];
+        }
+
+    case 4:
+        // Get others message attribute.
+        //
+        ap = atr_str(args[3]);
+        if (ap && (ap->number > 0))
+        {
+            owhat = ap->number;
+        }
+
+    case 3:
+        // Get enactor message default.
+        //
+        if (args[2] && *args[2])
+        {
+            whatd = args[2];
+        }
+
+    case 2:
+        // Get enactor message attribute.
+        //
         ap = atr_str(args[1]);
         if (ap && (ap->number > 0))
         {
@@ -2120,53 +2157,9 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
         }
     }
 
-    // Get enactor message default.
+    // If executor doesn't control both, enforce visibility restrictions.
     //
-    if ((nargs >= 3) && args[2] && *args[2])
-    {
-        whatd = args[2];
-    }
-
-    // Get others message attribute.
-    //
-    if (nargs >= 4)
-    {
-        ap = atr_str(args[3]);
-        if (ap && (ap->number > 0))
-        {
-            owhat = ap->number;
-        }
-    }
-
-    // Get others message default.
-    //
-    if ((nargs >= 5) && args[4] && *args[4])
-    {
-        owhatd = args[4];
-    }
-
-    // Get action attribute.
-    //
-    if (nargs >= 6)
-    {
-        ap = atr_str(args[5]);
-        if (ap)
-        {
-            awhat = ap->number;
-        }
-    }
-
-    // Get arguments.
-    //
-    if (nargs >= 7)
-    {
-        parse_arglist(victim, actor, actor, args[6], '\0',
-            EV_STRIP_LS | EV_STRIP_TS, xargs, 10, (char **)NULL, 0, &nxargs);
-    }
-
-    // If player doesn't control both, enforce visibility restrictions.
-    //
-    if (restriction)
+    if (!Controls(executor, victim))
     {
         ap = NULL;
         if (what != -1)
@@ -2175,11 +2168,11 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
             ap = atr_num(what);
         }
         if (  !ap
-           || !bCanReadAttr(player, victim, ap, FALSE)
+           || !bCanReadAttr(executor, victim, ap, FALSE)
            || (  ap->number == A_DESC 
               && !mudconf.read_rem_desc
-              && !Examinable(player, victim)
-              && !nearby(player, victim)))
+              && !Examinable(executor, victim)
+              && !nearby(executor, victim)))
         {
             what = -1;
         }
@@ -2191,11 +2184,11 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
             ap = atr_num(owhat);
         }
         if (  !ap
-           || !bCanReadAttr(player, victim, ap, FALSE)
+           || !bCanReadAttr(executor, victim, ap, FALSE)
            || (  ap->number == A_DESC
               && !mudconf.read_rem_desc
-              && !Examinable(player, victim)
-              && !nearby(player, victim)))
+              && !Examinable(executor, victim)
+              && !nearby(executor, victim)))
         {
             owhat = -1;
         }
@@ -2205,8 +2198,7 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
 
     // Go do it.
     //
-    did_it(actor, victim, what, whatd, owhat, owhatd, awhat,
-           xargs, nxargs);
+    did_it(actor, victim, what, whatd, owhat, owhatd, awhat, xargs, nxargs);
 
     // Free user args.
     //
