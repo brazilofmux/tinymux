@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.30 2002-07-16 23:23:25 jake Exp $
+// $Id: command.cpp,v 1.31 2002-07-16 23:35:26 jake Exp $
 //
 
 #include "copyright.h"
@@ -539,7 +539,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     //{"@destroyall",   NULL,       CA_WIZARD|CA_GBL_BUILD,     DEST_ALL,   CS_ONE_ARG,   do_destroy},
     {"@disable",      NULL,       CA_WIZARD,       GLOB_DISABLE,  CS_ONE_ARG,           do_global},
     {"@doing",        doing_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG,           do_doing},
-    {"@emit",         emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,  SAY_EMIT,   CS_ONE_ARG|CS_INTERP,   do_shout},
+    {"@emit",         emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,  SAY_EMIT,   CS_ONE_ARG|CS_INTERP,   do_say},
     {"@enable",       NULL,       CA_WIZARD,       GLOB_ENABLE,   CS_ONE_ARG,           do_global},
     {"@entrances",    NULL,       CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, do_entrances},
     {"@find",         NULL,       0,                          0,  CS_ONE_ARG|CS_INTERP, do_find},
@@ -552,7 +552,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"@listmotd",     listmotd_sw,0,                  MOTD_LIST,  CS_ONE_ARG,           do_motd},
     {"@mark",         mark_sw,    CA_WIZARD,          SRCH_MARK,  CS_ONE_ARG|CS_NOINTERP,   do_search},
     {"@motd",         motd_sw,    CA_WIZARD,                  0,  CS_ONE_ARG,           do_motd},
-    {"@nemit",        emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE, SAY_EMIT, CS_ONE_ARG|CS_UNPARSE|CS_NOSQUISH, do_shout},
+    {"@nemit",        emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE, SAY_EMIT, CS_ONE_ARG|CS_UNPARSE|CS_NOSQUISH, do_say},
     {"@poor",         NULL,       CA_GOD,                     0,  CS_ONE_ARG|CS_INTERP, do_poor},
     {"@ps",           ps_sw,      0,                          0,  CS_ONE_ARG|CS_INTERP, do_ps},
     {"@quitprogram",  NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, do_quitprog},
