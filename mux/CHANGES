@@ -1,5 +1,5 @@
 TinyMUX 2.3:  CHANGES
-Last Update:  April 2003
+Last Update:  May 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -144,6 +144,8 @@ Bug Fixes:
  -- Fix v(), get(), u(), and probably other functions related to
     attributes on parents.  Broken by Brazil in 2.3.0.11.
  -- Fix to new PCRE code to avoid error in gcc 2.95.
+ -- Support obj(name(<dbref>)) where name(<dbref>) contains ANSI color.
+    Reported by Bellemore.
 
 
 Performance Enhancements:
