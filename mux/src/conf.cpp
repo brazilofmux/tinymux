@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.39 2003-09-09 06:20:45 sdennis Exp $
+// $Id: conf.cpp,v 1.40 2003-12-03 20:11:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -303,6 +303,7 @@ void cf_init(void)
     mudstate.in_loop = 0;
     mudstate.bStackLimitReached = FALSE;
     mudstate.nStackNest = 0;
+    mudstate.nHearNest  = 0;
     mudstate.aHelpDesc = NULL;
     mudstate.mHelpDesc = 0;
     mudstate.nHelpDesc = 0;

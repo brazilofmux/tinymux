@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.17 2003-09-07 22:25:57 sdennis Exp $
+// $Id: mudconf.h,v 1.18 2003-12-03 20:11:47 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -357,6 +357,7 @@ struct statedata
                                // invocations.
     BOOL    bStackLimitReached;// Was stack slammed?
     int     nStackNest;        // Current stack depth.
+    int     nHearNest;         // Current stack depth.
 #endif // !STANDALONE
     int     logging;    /* Are we in the middle of logging? */
     int     attr_next;  /* Next attr to alloc when freelist is empty */
