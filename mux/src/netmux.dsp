@@ -23,7 +23,7 @@ CFG=netmux - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""$/TinyMUX22/mux/src", HDGAAAAA"
+# PROP Scc_ProjName ""$/TinyMUX23/mux/src", PPGAAAAA"
 # PROP Scc_LocalPath "."
 CPP=cl.exe
 RSC=rc.exe
