@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.38 2002-07-27 10:49:01 jake Exp $
+// $Id: funceval.cpp,v 1.39 2002-08-02 03:03:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3319,26 +3319,26 @@ FUNCTION(fun_push)
  */
 
 void real_regmatch(const char *search, const char *pattern, char *registers,
-		   int nfargs, char *buff, char **bufc, bool cis)
+                   int nfargs, char *buff, char **bufc, bool cis)
 {
-  const char *errptr;
-  int erroffset;
-  const int ovecsize = 111;
-  int ovec[ovecsize];
+    const char *errptr;
+    int erroffset;
+    const int ovecsize = 111;
+    int ovec[ovecsize];
 
-  pcre *re = pcre_compile(pattern, cis ? PCRE_CASELESS : 0,
-			  &errptr, &erroffset, NULL);
-  if (!re)
+    pcre *re = pcre_compile(pattern, cis ? PCRE_CASELESS : 0,
+                            &errptr, &erroffset, NULL);
+    if (!re)
     {
         // Matching error.
         //
-      safe_str("#-1 REGEXP ERROR ", buff, bufc);
-      safe_str(errptr, buff, bufc);
-      return;
+        safe_str("#-1 REGEXP ERROR ", buff, bufc);
+        safe_str(errptr, buff, bufc);
+        return;
     }
 
     int matched = pcre_exec(re, NULL, search, strlen(search), 0, 0,
-			    ovec, ovecsize);
+                            ovec, ovecsize);
     safe_bool(matched > 0, buff, bufc);
 
     // If we don't have a third argument, we're done.
@@ -3409,43 +3409,49 @@ FUNCTION(fun_regmatchi)
  */
 
 void real_regrab(char *search, const char *pattern, char sep, char *buff,
-		 char **bufc, BOOL cis, bool all)
+                 char **bufc, BOOL cis, bool all)
 {
-  pcre *re;
-  pcre_extra *study = NULL;
-  const char *errptr;
-  int erroffset;
-  const int ovecsize = 111;
-  int ovec[ovecsize];
+    pcre *re;
+    pcre_extra *study = NULL;
+    const char *errptr;
+    int erroffset;
+    const int ovecsize = 111;
+    int ovec[ovecsize];
 
-  re = pcre_compile(pattern, cis ? PCRE_CASELESS : 0,
-			  &errptr, &erroffset, NULL);
-  if (!re)
+    re = pcre_compile(pattern, cis ? PCRE_CASELESS : 0,
+                      &errptr, &erroffset, NULL);
+    if (!re)
     {
         // Matching error.
         //
-      safe_str("#-1 REGEXP ERROR ", buff, bufc);
-      safe_str(errptr, buff, bufc);
-      return;
+        safe_str("#-1 REGEXP ERROR ", buff, bufc);
+        safe_str(errptr, buff, bufc);
+        return;
     }
   
-  if (all)
-    study = pcre_study(re, 0, &errptr);
+    if (all)
+    {
+        study = pcre_study(re, 0, &errptr);
+    }
 
-  bool first = true;
-  char *s = trim_space_sep(search, sep);
-  do
+    bool first = true;
+    char *s = trim_space_sep(search, sep);
+    do
     {
       char *r = split_token(&s, sep);
       if (pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 1)
-        {
-	  if (first) 
-	    first = false;
-	  else
-	    safe_chr(sep, buff, bufc);
-	  safe_str(r, buff, bufc);
-	  if (!all)
-	    break;
+      {
+          if (first) 
+          {
+              first = false;
+          }
+          else
+          {
+              safe_chr(sep, buff, bufc);
+          }
+          safe_str(r, buff, bufc);
+          if (!all)
+            break;
         }
     } while (s);
 
