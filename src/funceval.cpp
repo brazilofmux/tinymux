@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.49 2001-08-24 19:17:42 sdennis Exp $
+// $Id: funceval.cpp,v 1.50 2001-08-25 21:07:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3351,11 +3351,12 @@ FUNCTION(fun_translate)
 // -------------------------------------------------------------------------
 // fun_lrooms:  Takes a dbref (room), an int (N), and an optional bool (B).
 //
-// MUX Syntax:  lrooms(<room>, <N>[, <B>])
+// MUX Syntax:  lrooms(<room> [,<N>[,<B>]])
 //
-// Returns a list of rooms N levels deep from "room".  If B == 1, it
-//   will return all room dbrefs between 0 and N levels, while B == 0 will
-//   return only the room dbrefs on the Nth level (default).
+// Returns a list of rooms <N>-levels deep from <room>. If <B> == 1, it will
+//   return all room dbrefs between 0 and <N> levels, while <B> == 0 will
+//   return only the room dbrefs on the Nth level. The default is to show all
+//   rooms dbrefs between 0 and <N> levels.
 //
 // Written by Marlek.  Idea from RhostMUSH.
 //
@@ -3436,9 +3437,8 @@ static void room_list
 
 FUNCTION(fun_lrooms) 
 {
-    if (nfargs < 2 || 3 < nfargs)
+    if (!fn_range_check("LROOMS", nfargs, 1, 3, buff, bufc))
     {
-        safe_str("#-1 FUNCTION (LROOMS) EXPECTS 2 OR 3 ARGUMENTS", buff, bufc);
         return;
     }
 
@@ -3449,22 +3449,27 @@ FUNCTION(fun_lrooms)
         return;
     }
 
-    int N = Tiny_atol(fargs[1]);
-    if (N < 0)
+    int N = 1;
+    if (nfargs >= 2)
     {
-        safe_str("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER", buff, bufc);
-        return;
-    }
-    else if (N > 50)
-    {
-        // Maybe this can be turned into a config parameter to prevent misuse
-        // by putting in really large values
-        //
-        safe_str("#-1 SECOND ARGUMENT IS TOO LARGE", buff, bufc);
-        return;
+        N = Tiny_atol(fargs[1]);
+        if (N < 0)
+        {
+            safe_str("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER",
+                buff, bufc);
+            return;
+        }
+        else if (N > 50)
+        {
+            // Maybe this can be turned into a config parameter to prevent
+            // misuse by putting in really large values.
+            //
+            safe_str("#-1 SECOND ARGUMENT IS TOO LARGE", buff, bufc);
+            return;
+        }
     }
 
-    int B = 0;
+    int B = 1;
     if (nfargs == 3)
     {
         B = Tiny_atol(fargs[2]);

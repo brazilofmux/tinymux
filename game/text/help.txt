@@ -8453,12 +8453,17 @@ LEXITS()
 & LROOMS()
 LROOMS()
 
-  FUNCTION: lrooms(<loc>, <depth> [,<all>])
+  FUNCTION: lrooms(<loc> [,<depth> [,<all>]])
 
-  Returns a space-separated list of the rooms connected to <loc>
-  taking into account parentage and permissions. If the <all>
-  boolean is true, then all connected rooms are reported, but
-  by default, only the perimeter rooms are reported.
+  Returns a space-separated list of the rooms connected to <loc> taking
+  into account parentage and permissions.
+
+  <depth> defaults to adjacent rooms (value of 1), but a larger value
+  would include rooms that are correspondingly further away.
+
+  <all> is a flag that controls whether all traversed rooms or whether
+  only the rooms at the perimeter are reported. By default, all rooms
+  are returned.
 
   Example:
     > look here
