@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.4 2000-04-24 22:34:17 sdennis Exp $
+// $Id: svdhash.cpp,v 1.5 2000-04-27 23:29:28 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -1374,6 +1374,7 @@ HP_DIRINDEX CHashPage::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
 
 CHashFile::CHashFile(void)
 {
+    SeedRandomNumberGenerator();
     for (int i = 0; i < HF_PAGES; i++)
     {
         m_Cache[i].m_hp.Allocate(HF_SIZEOF_PAGE);
@@ -2134,6 +2135,7 @@ int CHashFile::ReadCache(HF_FILEOFFSET oPage, int *phits)
 
 CHashTable::CHashTable(void)
 {
+    SeedRandomNumberGenerator();
     Init();
 }
 
