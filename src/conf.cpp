@@ -2,7 +2,7 @@
  * conf.cpp: set up configuration information and static data 
  */
 /*
- * $Id: conf.cpp,v 1.9 2000-05-20 06:22:37 sdennis Exp $ 
+ * $Id: conf.cpp,v 1.10 2000-05-20 21:21:08 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -931,6 +931,15 @@ CF_HAND(cf_badname)
  * for sane syntax. On certain operating systems, if passed less than four
  * octets, it will cause a segmentation violation. This is unfriendly.
  * We take steps here to deal with it.
+ *
+ * This approach specifically disallows the Berkeley-only IP formats:
+ *
+ *    a.b.c (e.g., Class B 128.net.host)
+ *    a.b   (e.g., class A: net.host)
+ *    a     (single 32-bit number)
+ *
+ * Avoiding a SIGSEGV on certain operating systems is better than supporting
+ * niche formats that are only available on Berkeley Unix.
  */
 static unsigned long sane_inet_addr(char *str)
 {
@@ -951,6 +960,24 @@ static unsigned long sane_inet_addr(char *str)
     }
 }
 
+// Given a host-ordered mask, this function will determine whether it is a
+// valid one. Valid masks consist of a N-bit sequence of '1' bits followed by
+// a (32-N)-bit sequence of '0' bits, where N is 0 to 32.
+//
+BOOL isValidSubnetMask(unsigned long ulMask)
+{
+    unsigned long ulTest = 0xFFFFFFFFUL;
+    for (int i = 0; i <= 32; i++)
+    {
+        if (ulMask == ulTest)
+        {
+            return TRUE;
+        }
+        ulTest >>= 1;
+    }
+    return FALSE;
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * cf_site: Update site information
@@ -958,10 +985,10 @@ static unsigned long sane_inet_addr(char *str)
 
 CF_HAND(cf_site)
 {
-    SITE *site, *last, *head;
-    char *addr_txt;
     struct in_addr addr_num, mask_num;
+    unsigned long ulMask;
     
+    char *addr_txt;
     char *mask_txt = strchr(str, '/');
     if (!mask_txt)
     {
@@ -981,14 +1008,9 @@ CF_HAND(cf_site)
             cf_log_syntax(player, cmd, "Missing host address or mask.", (char *)"");
             return -1;
         }
-        addr_num.s_addr = sane_inet_addr(addr_txt);
-        if (addr_num.s_addr == INADDR_NONE)
-        {
-            cf_log_syntax(player, cmd, "Malformed host address: %s", addr_txt);
-            return -1;
-        }
         mask_num.s_addr = sane_inet_addr(mask_txt);
-        if (mask_num.s_addr == INADDR_NONE)
+        if (  mask_num.s_addr == INADDR_NONE
+           || !isValidSubnetMask(ulMask = ntohl(mask_num.s_addr)))
         {
             cf_log_syntax(player, cmd, "Malformed mask address: %s", mask_txt);
             return -1;
@@ -1010,27 +1032,39 @@ CF_HAND(cf_site)
         {
             // << [0,31] works. << 32 is problematic on some systems.
             //
-            unsigned int mask = 0;
+            ulMask = 0;
             if (mask_bits > 0)
             {
-                mask = 0xFFFFFFFFUL << (32 - mask_bits);
+                ulMask = 0xFFFFFFFFUL << (32 - mask_bits);
             }
-            mask_num.s_addr = htonl(mask);
-        }
-        
-        addr_num.s_addr = sane_inet_addr(addr_txt);
-        if (addr_num.s_addr == INADDR_NONE)
-        {
-            cf_log_syntax(player, cmd, "Malformed host address: %s", addr_txt);
-            return -1;
+            mask_num.s_addr = htonl(ulMask);
         }
     }
+    addr_num.s_addr = sane_inet_addr(addr_txt);
+    if (addr_num.s_addr == INADDR_NONE)
+    {
+        cf_log_syntax(player, cmd, "Malformed host address: %s", addr_txt);
+        return -1;
+    }
+    unsigned long ulAddr = ntohl(addr_num.s_addr);
+
+    if (ulAddr & ~ulMask)
+    {
+        // The given subnet address contains 'one' bits which are outside
+        // the given subnet mask. If we don't clear these bits, they will
+        // interfere with the subnet tests in site_check. The subnet spec
+        // would be defunct and useless.
+        //
+        cf_log_syntax(player, cmd, "Non-zero host address bits outside the subnet mask (fixed): %s %s", addr_txt, mask_txt);
+        ulAddr &= ulMask;
+        addr_num.s_addr = htonl(ulAddr);
+    }
     
-    head = (SITE *) * vp;
+    SITE *head = (SITE *) * vp;
 
     // Parse the access entry and allocate space for it.
     //
-    site = (SITE *)MEMALLOC(sizeof(SITE), __FILE__, __LINE__);
+    SITE *site = (SITE *)MEMALLOC(sizeof(SITE), __FILE__, __LINE__);
     if (!site)
     {
         return -1;
@@ -1056,6 +1090,7 @@ CF_HAND(cf_site)
         }
         else
         {
+            SITE *last;
             for (last = head; last->next; last = last->next)
             {
                 // Nothing
