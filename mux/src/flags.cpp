@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.20 2002-09-03 19:54:24 sdennis Exp $
+// $Id: flags.cpp,v 1.21 2002-09-03 20:03:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1236,7 +1236,7 @@ CF_HAND(cf_flag_name)
         return -1;
     }
 
-    if(flag_rename(flagstr, namestr))
+    if (flag_rename(flagstr, namestr))
     {
         return 0;
     }
