@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.154 2002-02-25 19:56:21 sdennis Exp $
+// $Id: functions.cpp,v 1.155 2002-02-26 09:15:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2762,6 +2762,53 @@ FUNCTION(fun_t)
     }
 }
 
+// Compare for decreasing order by absolute value.
+//
+static int DCL_CDECL f_comp_abs(const void *s1, const void *s2)
+{
+    double a = fabs(*(double *)s1);
+    double b = fabs(*(double *)s2);
+
+    if (a > b)
+    {
+        return -1;
+    }
+    else if (a < b)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+double AddWithError(double& err, double a, double b)
+{
+    double sum = a+b;
+    err = b-(sum-a);
+    return sum;
+}
+
+// Double compensation method. Extended by Priest from Knuth and Kahan.
+//
+// Error of sum is less than 2*epsilon except for very large n.
+//
+double AddDoubles(int n, double pd[])
+{
+    qsort(pd, n, sizeof(double), f_comp_abs);
+    double sum = pd[0];
+    double sum_err = 0.0;
+    for (int i = 1; i < n; i++)
+    {
+        double addend_err;
+        double addend = AddWithError(addend_err, sum_err, pd[i]);
+        double sum1_err;
+        double sum1 = AddWithError(sum1_err, sum, addend);
+        sum = AddWithError(sum_err, sum1, addend_err + sum1_err);
+    }
+    return sum;
+}
+
+static double g_aDoubles[(LBUF_SIZE+1)/2];
+
 /*-------------------------------------------------------------------------
  * List-based numeric functions.
  */
@@ -2771,14 +2818,14 @@ FUNCTION(fun_ladd)
     char sep;
     varargs_preamble(2);
 
-    double sum = 0.0;
+    int n = 0;
     char *cp = trim_space_sep(fargs[0], sep);
     while (cp)
     {
         char *curr = split_token(&cp, sep);
-        sum += Tiny_atof(curr);
+        g_aDoubles[n++] = Tiny_atof(curr);
     }
-    fval(buff, bufc, sum);
+    fval(buff, bufc, AddDoubles(n, g_aDoubles));
 }
 
 FUNCTION(fun_sqrt)
@@ -2822,12 +2869,11 @@ FUNCTION(fun_add)
         {
             // Do it the slow way.
             //
-            double sum = 0.0;
             for (int j = 0; j < nfargs; j++)
             {
-                sum += Tiny_atof(fargs[j]);
+                g_aDoubles[j] = Tiny_atof(fargs[j]);
             }
-            fval(buff, bufc, sum);
+            fval(buff, bufc, AddDoubles(nfargs, g_aDoubles));
             return;
         }
     }
@@ -6164,18 +6210,26 @@ static int DCL_CDECL a_comp(const void *s1, const void *s2)
 static int DCL_CDECL f_comp(const void *s1, const void *s2)
 {
     if (((f_rec *) s1)->data > ((f_rec *) s2)->data)
-    return 1;
-    if (((f_rec *) s1)->data < ((f_rec *) s2)->data)
-    return -1;
+    {
+        return 1;
+    }
+    else if (((f_rec *) s1)->data < ((f_rec *) s2)->data)
+    {
+        return -1;
+    }
     return 0;
 }
 
 static int DCL_CDECL i_comp(const void *s1, const void *s2)
 {
     if (((i_rec *) s1)->data > ((i_rec *) s2)->data)
-    return 1;
-    if (((i_rec *) s1)->data < ((i_rec *) s2)->data)
-    return -1;
+    {
+        return 1;
+    }
+    else if (((i_rec *) s1)->data < ((i_rec *) s2)->data)
+    {
+        return -1;
+    }
     return 0;
 }
 
