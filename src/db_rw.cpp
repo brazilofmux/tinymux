@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.22 2001-10-17 05:14:27 sdennis Exp $
+// $Id: db_rw.cpp,v 1.23 2001-10-17 05:51:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -274,8 +274,7 @@ static BOOLEXP *getboolexp(FILE *f)
     // MUSH (except for PernMUSH) can have an extra CR, MUD
     // does not.
     //
-    if (  ((g_format == F_MUSH) && (g_version != 2))
-       || (g_format == F_MUX))
+    if (g_format == F_MUX)
     {
         if ((c = getc(f)) != '\n')
         {
@@ -284,57 +283,6 @@ static BOOLEXP *getboolexp(FILE *f)
     }
     return b;
 }
-
-#ifdef STANDALONE
-/* ---------------------------------------------------------------------------
- * unscramble_attrnum: Fix up attribute numbers from foreign muds
- */
-
-static int unscramble_attrnum(int attrnum)
-{
-    char anam[4];
-
-    switch (g_format)
-    {
-    case F_MUSH:
-
-        // Only need to muck with Pern variants
-        //
-        if (g_version != 2)
-            return attrnum;
-        switch (attrnum) {
-        case 34:
-            return A_OENTER;
-        case 41:
-            return A_LEAVE;
-        case 42:
-            return A_ALEAVE;
-        case 43:
-            return A_OLEAVE;
-        case 44:
-            return A_OXENTER;
-        case 45:
-            return A_OXLEAVE;
-        default:
-            if ((attrnum >= 126) && (attrnum < 152)) {
-                anam[0] = 'W';
-                anam[1] = attrnum - 126 + 'A';
-                anam[2] = '\0';
-                return mkattr(anam);
-            }
-            if ((attrnum >= 152) && (attrnum < 178)) {
-                anam[0] = 'X';
-                anam[1] = attrnum - 152 + 'A';
-                anam[2] = '\0';
-                return mkattr(anam);
-            }
-            return attrnum;
-        }
-    default:
-        return attrnum;
-    }
-}
-#endif
 
 /* ---------------------------------------------------------------------------
  * get_list: Read attribute list from flat file.
@@ -352,14 +300,12 @@ static int get_list(FILE *f, dbref i, int new_strings)
 #endif
 
     buff = alloc_lbuf("get_list");
-    while (1) {
-        switch (c = getc(f)) {
+    while (1)
+    {
+        switch (c = getc(f))
+        {
         case '>':   // read # then string
-#ifdef STANDALONE
-            atr = unscramble_attrnum(getref(f));
-#else
             atr = getref(f);
-#endif
             if (atr > 0)
             {
                 // Store the attr
@@ -599,289 +545,6 @@ static void putboolexp(FILE *f, BOOLEXP *b)
 }
 
 #ifdef STANDALONE
-/* ---------------------------------------------------------------------------
- * upgrade_flags: Convert foreign flags to MUSH format.
- */
-
-static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing, int db_format, int db_version)
-{
-    FLAG f1, f2, f3, newf1, newf2, newf3;
-
-    f1 = *flags1;
-    f2 = *flags2;
-    f3 = *flags3;
-    newf1 = 0;
-    newf2 = 0;
-    newf3 = 0;
-    if ((db_format == F_MUSH) && (db_version == 2))
-    {
-        // Pern variants
-        //
-        newf1 = (f1 & TYPE_MASK);
-        newf2 = 0;
-
-        newf1 &= ~PENN_COMBAT;
-        newf1 &= ~PENN_ACCESSED;
-        newf1 &= ~PENN_MARKED;
-        newf1 &= ~ROYALTY;
-
-        if (f1 & PENN_INHERIT)
-            newf1 |= INHERIT;
-        if (f1 & PENN_AUDIBLE)
-            newf1 |= HEARTHRU;
-        if (f1 & PENN_ROYALTY)
-            newf1 |= ROYALTY;
-        if (f1 & PENN_WIZARD)
-            newf1 |= WIZARD;
-        if (f1 & PENN_LINK_OK)
-            newf1 |= LINK_OK;
-        if (f1 & PENN_DARK)
-            newf1 |= DARK;
-        if (f1 & PENN_VERBOSE)
-            newf1 |= VERBOSE;
-        if (f1 & PENN_STICKY)
-            newf1 |= STICKY;
-        if (f1 & PENN_TRANSPARENT)
-            newf1 |= SEETHRU;
-        if (f1 & PENN_HAVEN)
-            newf1 |= HAVEN;
-        if (f1 & PENN_QUIET)
-            newf1 |= QUIET;
-        if (f1 & PENN_HALT)
-            newf1 |= HALT;
-        if (f1 & PENN_UNFIND)
-            newf2 |= UNFINDABLE;
-        if (f1 & PENN_GOING)
-            newf1 |= GOING;
-        if (f1 & PENN_CHOWN_OK)
-            newf1 |= CHOWN_OK;
-        if (f1 & PENN_ENTER_OK)
-            newf1 |= ENTER_OK;
-        if (f1 & PENN_VISUAL)
-            newf1 |= VISUAL;
-        if (f1 & PENN_OPAQUE)
-            newf1 |= TM_OPAQUE;
-        if (f1 & PENN_DEBUGGING)
-            newf1 |= TRACE;
-        if (f1 & PENN_SAFE)
-            newf1 |= SAFE;
-        if (f1 & PENN_STARTUP)
-            newf1 |= HAS_STARTUP;
-        if (f1 & PENN_NO_COMMAND)
-            newf2 |= NO_COMMAND;
-
-        switch (newf1 & TYPE_MASK)
-        {
-        case TYPE_PLAYER:
-            if (f2 & PENN_PLAYER_TERSE)
-                newf1 |= TERSE;
-            if (f2 & PENN_PLAYER_MYOPIC)
-                newf1 |= MYOPIC;
-            if (f2 & PENN_PLAYER_NOSPOOF)
-                newf1 |= NOSPOOF;
-            if (f2 & PENN_PLAYER_SUSPECT)
-                newf2 |= SUSPECT;
-            if (f2 & PENN_PLAYER_GAGGED)
-                newf2 |= SLAVE;
-            if (f2 & PENN_PLAYER_MONITOR)
-                newf1 |= MONITOR;
-            if (f2 & PENN_PLAYER_CONNECT)
-                newf2 &= ~CONNECTED;
-            if (f2 & PENN_PLAYER_ANSI)
-                newf2 |= ANSI;
-            if (f2 & PENN_PLAYER_HEAD)
-                newf2 |= HEAD_FLAG;
-            if (f2 & PENN_PLAYER_FIXED)
-                newf2 |= FIXED;
-            if (f2 & PENN_PLAYER_ADMIN)
-                newf2 |= STAFF;
-            if (f2 & PENN_PLAYER_SLAVE)
-                newf2 |= SLAVE;
-            if (f2 & PENN_PLAYER_COLOR)
-                newf2 |= ANSI;
-            if (f2 & PENN_PLAYER_WEIRDANSI)
-                newf2 |= NOBLEED;
-            break;
-        case TYPE_EXIT:
-            if (f2 & PENN_EXIT_LIGHT)
-                newf2 |= LIGHT;
-            break;
-        case TYPE_THING:
-            if (f2 & PENN_THING_DEST_OK)
-                newf1 |= DESTROY_OK;
-            if (f2 & PENN_THING_PUPPET)
-                newf1 |= PUPPET;
-            if (f2 & PENN_THING_LISTEN)
-                newf1 |= MONITOR;
-            break;
-        case TYPE_ROOM:
-            if (f2 & PENN_ROOM_FLOATING)
-                newf2 |= FLOATING;
-            if (f2 & PENN_ROOM_ABODE)
-                newf2 |= ABODE;
-            if (f2 & PENN_ROOM_JUMP_OK)
-                newf1 |= JUMP_OK;
-            if (f2 & PENN_ROOM_LISTEN)
-                newf1 |= MONITOR;
-            if (f2 & PENN_ROOM_UNINSPECT)
-                newf2 |= UNINSPECTED;
-        }
-    }
-    else if ((db_format == F_MUSH) && (db_version >= 3))
-    {
-        newf1 = f1;
-        newf2 = f2;
-        switch (db_version) {
-        case 3:
-            (newf1 &= ~V2_ACCESSED);  // Clear ACCESSED
-        case 4:
-            (newf1 &= ~V3_MARKED);  // Clear MARKED
-        case 5:
-            // Merge GAGGED into SLAVE, move SUSPECT
-
-            if ((newf1 & TYPE_MASK) == TYPE_PLAYER) {
-                if (newf1 & V4_GAGGED) {
-                    newf2 |= SLAVE;
-                    newf1 &= ~V4_GAGGED;
-                }
-                if (newf1 & V4_SUSPECT) {
-                    newf2 |= SUSPECT;
-                    newf1 &= ~V4_SUSPECT;
-                }
-            }
-        case 6:
-            switch (newf1 & TYPE_MASK) {
-            case TYPE_PLAYER:
-                if (newf1 & V6_BUILDER) {
-                    s_Powers(thing, Powers(thing) | POW_BUILDER);
-                    newf1 &= ~V6_BUILDER;
-                }
-                if (newf1 & V6_SUSPECT) {
-                    newf2 |= SUSPECT;
-                    newf1 &= ~V6_SUSPECT;
-                }
-                if (newf1 & V6PLYR_UNFIND) {
-                    newf2 |= UNFINDABLE;
-                    newf1 &= ~V6PLYR_UNFIND;
-                }
-                if (newf1 & V6_SLAVE) {
-                    newf2 |= SLAVE;
-                    newf1 &= ~V6_SLAVE;
-                }
-                break;
-            case TYPE_ROOM:
-                if (newf1 & V6_FLOATING) {
-                    newf2 |= FLOATING;
-                    newf1 &= ~V6_FLOATING;
-                }
-                if (newf1 & V6_ABODE) {
-                    newf2 |= ABODE;
-                    newf1 &= ~V6_ABODE;
-                }
-                if (newf1 & V6ROOM_JUMPOK) {
-                    newf1 |= JUMP_OK;
-                    newf1 &= ~V6ROOM_JUMPOK;
-                }
-                if (newf1 & V6ROOM_UNFIND) {
-                    newf2 |= UNFINDABLE;
-                    newf1 &= ~V6ROOM_UNFIND;
-                }
-                break;
-            case TYPE_THING:
-                if (newf1 & V6OBJ_KEY) {
-                    newf2 |= KEY;
-                    newf1 &= ~V6OBJ_KEY;
-                }
-                break;
-            case TYPE_EXIT:
-                if (newf1 & V6EXIT_KEY) {
-                    newf2 |= KEY;
-                    newf1 &= ~V6EXIT_KEY;
-                }
-                break;
-            }
-        case 7:
-            if (newf1 & ROYALTY) {
-                newf1 &= ~ROYALTY;  // CONTROL_OK
-            }
-            break;
-        }
-    } else if (db_format == F_MUX) {
-        newf1 = f1;
-        newf2 = f2;
-        newf3 = f3;
-    }
-    *flags1 = newf1;
-    *flags2 = newf2;
-    *flags3 = newf3;
-    return;
-}
-
-
-/* ---------------------------------------------------------------------------
- * unscraw_foreign: Fix up strange object linking conventions for other formats
- */
-
-void unscraw_foreign(int db_format, int db_version, int db_flags)
-{
-    dbref tmp, i, aowner;
-    int aflags;
-    char *p_str;
-
-    if (db_format == F_MUSH)
-    {
-        if ((db_version <= 5) && (db_flags & V_GDBM))
-        {
-            // Check for FORWARDLIST attribute
-            //
-            DO_WHOLE_DB(i)
-            {
-                if (atr_get_raw(i, A_FORWARDLIST))
-                {
-                    s_Flags2(i, Flags2(i) | HAS_FWDLIST);
-                }
-            }
-        }
-        if (db_version <= 6)
-        {
-            DO_WHOLE_DB(i)
-            {
-                // Make sure A_QUEUEMAX is empty
-                //
-                atr_clr(i, A_QUEUEMAX);
-
-                if (db_flags & V_GDBM)
-                {
-
-                    // HAS_LISTEN now tracks LISTEN attr
-                    //
-                    if (atr_get_raw(i, A_LISTEN))
-                        s_Flags2(i, Flags2(i) | HAS_LISTEN);
-
-                    // Undo V6 overloading of HAS_STARTUP
-                    // with HAS_FWDLIST
-                    //
-                    if (  (db_version == 6)
-                       && (Flags2(i) & HAS_STARTUP)
-                       && atr_get_raw(i, A_FORWARDLIST))
-                    {
-
-                        // We have FORWARDLIST
-                        //
-                        s_Flags2(i, Flags2(i) | HAS_FWDLIST);
-
-                        // Maybe no STARTUP
-                        //
-                        if (!atr_get_raw(i, A_STARTUP))
-                        {
-                            s_Flags2(i, Flags2(i) & ~HAS_STARTUP);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 /* ---------------------------------------------------------------------------
  * getlist_discard
@@ -898,40 +561,6 @@ static void getlist_discard(FILE *f, dbref i, int set)
         else
             (void)getref(f);
     }
-}
-
-static void fix_typed_quotas(dbref i)
-{
-    char *buff, *bp;
-    dbref aowner;
-    int aflags, total = 0;
-
-    // For 2.2's 'typed quotas'...
-    // I guess we have to add them up...
-
-    if (!(isPlayer(i)))
-        return;
-
-    buff = atr_get(i, A_QUOTA, &aowner, &aflags);
-    TINY_STRTOK_STATE tts;
-    Tiny_StrTokString(&tts, buff);
-    Tiny_StrTokControl(&tts, " ");
-    for (bp = Tiny_StrTokParse(&tts); bp; bp = Tiny_StrTokParse(&tts))
-    {
-        total += Tiny_atol(bp);
-    }
-
-    atr_add_raw(i, A_QUOTA, Tiny_ltoa_t(total));
-    free_lbuf(buff);
-
-    buff = atr_get(i, A_RQUOTA, &aowner, &aflags);
-    Tiny_StrTokString(&tts, buff);
-    for (bp = Tiny_StrTokParse(&tts); bp; bp = Tiny_StrTokParse(&tts))
-    {
-        total += Tiny_atol(bp);
-    }
-    free_lbuf(buff);
-    atr_add_raw(i, A_RQUOTA, Tiny_ltoa_t(total));
 }
 
 static void getpenn_new_locks(FILE *f, int i)
@@ -1000,7 +629,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     int read_attribs, read_name, read_zone, read_link, read_key, read_parent;
     int read_extflags, read_3flags, read_money, read_timestamps, read_new_strings;
 #ifdef STANDALONE
-    int is_penn, read_pern_key, read_pern_comm, read_pern_parent;
+    int read_pern_comm, read_pern_parent;
     int read_pern_warnings, read_pern_creation, read_pern_powers;
     int read_pern_new_locks, is_dark;
     int read_dark_comm, read_dark_slock, read_dark_mc, read_dark_mpar;
@@ -1041,9 +670,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     deduce_name = 1;
     deduce_timestamps = 1;
 #ifdef STANDALONE
-    is_penn = 0;
     is_dark = 0;
-    read_pern_key = 0;
     read_pern_comm = 0;
     read_pern_parent = 0;
     read_pern_warnings = 0;
@@ -1094,95 +721,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
             break;
 
-#ifdef STANDALONE
-        case '~':   // Database size tag
-            is_penn = 1;
-            if (!is_dark && penn_version) {
-                g_format = F_MUSH;
-                g_version = (((penn_version - 2) / 256) - 5);
-                /* Okay, let's try and unscraw version
-                 * encoding method they use in later Penn
-                 * 1.50.
-                 */
-
-                // Handle Pern variants specially.
-                //
-                if (g_version & 0x20)
-                    read_new_strings = 1;
-
-                if (g_version & 0x10)
-                    read_pern_new_locks = 1;
-
-                if (!(g_version & 0x08))
-                    read_pern_powers = 1;
-
-                if (g_version & 0x04)
-                    read_pern_creation = 1;
-
-                if (g_version & 0x02)
-                    read_pern_warnings = 1;
-
-                if (!(g_version & 0x01))
-                    read_pern_comm = 1;
-
-                g_version = 2;
-            }
-            if (size_gotten)
-            {
-                Log.tinyprintf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
-                tstr = getstring_noalloc(f, 0); // junk
-                break;
-            }
-            mudstate.min_size = getref(f);
-            size_gotten = 1;
-            break;
-#endif
         case '+':
 
-            // MUX and MUSH header
+            // MUX header
             //
             switch (ch = getc(f))
             {
-                // 2nd char selects type
-                //
-#ifdef STANDALONE
-            case 'V':
-
-                // MUSH VERSION
-                //
-                if (header_gotten)
-                {
-                    Log.tinyprintf(ENDLINE "Duplicate MUSH version header entry at object %d, ignored." ENDLINE, i);
-                    tstr = getstring_noalloc(f, 0);
-                    break;
-                }
-                header_gotten = 1;
-                deduce_version = 0;
-                g_format = F_MUSH;
-                g_version = getref(f);
-                penn_version = g_version;
-
-                // Otherwise extract feature flags
-                //
-                if (g_version & V_GDBM)
-                {
-                    read_attribs = 0;
-                    read_name = !(g_version & V_ATRNAME);
-                }
-                read_zone = (g_version & V_ZONE);
-                read_link = (g_version & V_LINK);
-                read_key = !(g_version & V_ATRKEY);
-                read_parent = (g_version & V_PARENT);
-                read_money = !(g_version & V_ATRMONEY);
-                read_extflags = (g_version & V_XFLAGS);
-                g_flags = g_version & ~V_MASK;
-
-                g_version &= V_MASK;
-                deduce_name = 0;
-                deduce_version = 0;
-                deduce_zone = 0;
-                break;
-#endif
             case 'X':
 
                 // MUX VERSION
@@ -1221,48 +765,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 deduce_version = 0;
                 deduce_zone = 0;
                 break;
-#ifdef STANDALONE
-            case 'K':
 
-                // Kalkin's DarkZone dist. Him and his #defines...
-                //
-                if (header_gotten)
-                {
-                    Log.tinyprintf(ENDLINE "Duplicate MUSH version header entry at object %d, ignored." ENDLINE, i);
-                    tstr = getstring_noalloc(f, 0);
-                    break;
-                }
-                header_gotten = 1;
-                deduce_version = 0;
-                g_format = F_MUSH;
-                g_version = getref(f);
-                is_dark = 1;
-                is_penn = 1;
-
-                read_pern_powers = 1;
-                if (g_version & DB_CHANNELS)
-                    read_dark_comm = 1;
-                if (g_version & DB_SLOCK)
-                    read_dark_slock = 1;
-                if (g_version & DB_MC)
-                    read_dark_mc = 1;
-                if (g_version & DB_MPAR)
-                    read_dark_mpar = 1;
-                if (g_version & DB_CLASS)
-                    read_dark_class = 1;
-                if (g_version & DB_RANK)
-                    read_dark_rank = 1;
-                if (g_version & DB_DROPLOCK)
-                    read_dark_droplock = 1;
-                if (g_version & DB_GIVELOCK)
-                    read_dark_givelock = 1;
-                if (g_version & DB_GETLOCK)
-                    read_dark_getlock = 1;
-                if (g_version & DB_THREEPOW)
-                    read_dark_threepow = 1;
-                g_version = 2;
-                break;
-#endif
             case 'S':   // SIZE
                 if (size_gotten)
                 {
@@ -1326,189 +829,32 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
             break;
 
-#ifdef STANDALONE
-        case '&':   // MUSH 2.0a stub entry
-            if (deduce_version) {
-                deduce_version = 0;
-                g_format = F_MUSH;
-                g_version = 1;
-                deduce_name = 1;
-                deduce_zone = 0;
-                read_key = 0;
-                read_attribs = 0;
-            } else if (deduce_zone) {
-                deduce_zone = 0;
-                read_zone = 1;
-                g_flags |= V_ZONE;
-            }
-#endif
-        case '!':   // MUX entry/MUSH entry
-            if (deduce_version) {
+        case '!':   // MUX entry
+            if (deduce_version)
+            {
                 g_format = F_MUX;
                 g_version = 1;
                 deduce_name = 0;
                 deduce_zone = 0;
                 deduce_version = 0;
-            } else if (deduce_zone) {
+            }
+            else if (deduce_zone)
+            {
                 deduce_zone = 0;
                 read_zone = 0;
             }
             i = getref(f);
             db_grow(i + 1);
 
-#ifdef STANDALONE
-            if (is_penn)
+            if (read_name)
             {
                 tstr = getstring_noalloc(f, read_new_strings);
-                buff = alloc_lbuf("dbread.s_Name");
-                len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-                s_Name(i, buff);
-                free_lbuf(buff);
-
-                s_Location(i, getref(f));
-                s_Contents(i, getref(f));
-                s_Exits(i, getref(f));
-                s_Next(i, getref(f));
-
-                // have no equivalent to multi-parents yet,
-                // so we have to throw them away...
-                //
-                if (read_dark_mpar)
+                if (deduce_name)
                 {
-                    // Parents
-                    //
-                    getlist_discard(f, i, 1);
-
-                    // Children
-                    //
-                    getlist_discard(f, i, 0);
-                }
-                else
-                {
-                    s_Parent(i, getref(f));
-                }
-
-                if (read_pern_new_locks) {
-                    while ((ch = getc(f)) == '_')
-                        getpenn_new_locks(f, i);
-                    ungetc(ch, f);
-                } else {
-                    tempbool = getboolexp(f);
-                    atr_add_raw(i, A_LOCK,
-                    unparse_boolexp_quiet(1, tempbool));
-                    free_boolexp(tempbool);
-                    tempbool = getboolexp(f);
-                    atr_add_raw(i, A_LUSE,
-                    unparse_boolexp_quiet(1, tempbool));
-                    free_boolexp(tempbool);
-                    tempbool = getboolexp(f);
-                    atr_add_raw(i, A_LENTER,
-                    unparse_boolexp_quiet(1, tempbool));
-                    free_boolexp(tempbool);
-                }
-
-                if (read_dark_slock)
-                    (void)getref(f);
-
-                if (read_dark_droplock)
-                    (void)getref(f);
-
-                if (read_dark_givelock)
-                    (void)getref(f);
-
-                if (read_dark_getlock)
-                    (void)getref(f);
-
-                s_Owner(i, getref(f));
-                int zone = getref(f);
-                if (zone < NOTHING)
-                {
-                    zone = NOTHING;
-                }
-                s_Zone(i, zone);
-                s_Pennies(i, getref(f));
-                f1 = getref(f);
-                f2 = getref(f);
-                f3 = 0;
-                upgrade_flags(&f1, &f2, &f3, i, F_MUSH, 2);
-
-                s_Flags(i, f1);
-                s_Flags2(i, f2);
-                s_Flags3(i, f3);
-
-                if (read_pern_powers)
-                    (void)getref(f);
-
-                // Kalkin's extra two powers words...
-                //
-                if (read_dark_threepow)
-                {
-                    (void)getref(f);
-                    (void)getref(f);
-                }
-
-                // Kalkin's @class
-                //
-                if (read_dark_class)
-                    (void)getref(f);
-
-                // Kalkin put his creation times BEFORE channels
-                // unlike standard Penn...
-                //
-                if (read_dark_mc)
-                {
-                    (void)getref(f);
-                    (void)getref(f);
-                }
-                if (read_pern_comm || read_dark_comm)
-                {
-                    (void)getref(f);
-                }
-
-                if (read_pern_warnings)
-                    (void)getref(f);
-
-                if (read_pern_creation)
-                {
-                    (void)getref(f);
-                    (void)getref(f);
-                }
-
-                // In Penn, clear the player's parent.
-                //
-                if (isPlayer(i))
-                {
-                    s_Parent(i, NOTHING);
-                }
-                if (!get_list(f, i, read_new_strings))
-                {
-                    Log.tinyprintf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
-                    return -1;
-                }
-            }
-            else
-            {
-#endif
-                if (read_name)
-                {
-                    tstr = getstring_noalloc(f, read_new_strings);
-                    if (deduce_name)
+                    if (Tiny_IsDigit[(unsigned char)*tstr])
                     {
-                        if (Tiny_IsDigit[(unsigned char)*tstr])
-                        {
-                            read_name = 0;
-                            s_Location(i, Tiny_atol(tstr));
-                        }
-                        else
-                        {
-                            buff = alloc_lbuf("dbread.s_Name");
-                            len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-                            s_Name(i, buff);
-                            free_lbuf(buff);
-
-                            s_Location(i, getref(f));
-                        }
-                        deduce_name = 0;
+                        read_name = 0;
+                        s_Location(i, Tiny_atol(tstr));
                     }
                     else
                     {
@@ -1519,132 +865,134 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
                         s_Location(i, getref(f));
                     }
+                    deduce_name = 0;
                 }
                 else
                 {
+                    buff = alloc_lbuf("dbread.s_Name");
+                    len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+                    s_Name(i, buff);
+                    free_lbuf(buff);
+
                     s_Location(i, getref(f));
                 }
+            }
+            else
+            {
+                s_Location(i, getref(f));
+            }
 
-                // ZONE
-                //
-                if (read_zone)
+            // ZONE
+            //
+            if (read_zone)
+            {
+                int zone = getref(f);
+                if (zone < NOTHING)
                 {
-                    int zone = getref(f);
-                    if (zone < NOTHING)
-                    {
-                        zone = NOTHING;
-                    }
-                    s_Zone(i, zone);
+                    zone = NOTHING;
                 }
+                s_Zone(i, zone);
+            }
 #if 0
-                else
-                {
-                    s_Zone(i, NOTHING);
-                }
-#endif
-
-                // CONTENTS and EXITS
-                //
-                s_Contents(i, getref(f));
-                s_Exits(i, getref(f));
-
-                // LINK
-                //
-                if (read_link)
-                    s_Link(i, getref(f));
-                else
-                    s_Link(i, NOTHING);
-
-                // NEXT
-                //
-                s_Next(i, getref(f));
-
-                // LOCK
-                //
-                if (read_key)
-                {
-                    tempbool = getboolexp(f);
-                    atr_add_raw(i, A_LOCK,
-                    unparse_boolexp_quiet(1, tempbool));
-                    free_boolexp(tempbool);
-                }
-
-                // OWNER
-                //
-                s_Owner(i, getref(f));
-
-                // PARENT: PennMUSH uses this field for ZONE (which we use as
-                // PARENT if we didn't already read in a non-NOTHING parent.)
-                //
-                if (read_parent)
-                {
-                    s_Parent(i, getref(f));
-                }
-                else
-                {
-                    s_Parent(i, NOTHING);
-                }
-
-                // PENNIES
-                //
-                if (read_money)     // if not fix in unscraw_foreign
-                    s_Pennies(i, getref(f));
-
-                // FLAGS
-                //
-                f1 = getref(f);
-                if (read_extflags)
-                    f2 = getref(f);
-                else
-                    f2 = 0;
-
-                if (read_3flags)
-                    f3 = getref(f);
-                else
-                    f3 = 0;
-
-#ifdef STANDALONE
-                upgrade_flags(&f1, &f2, &f3, i, g_format, g_version);
-#endif
-                s_Flags(i, f1);
-                s_Flags2(i, f2);
-                s_Flags3(i, f3);
-
-                if (read_powers)
-                {
-                    f1 = getref(f);
-                    f2 = getref(f);
-                    s_Powers(i, f1);
-                    s_Powers2(i, f2);
-                }
-
-                // ATTRIBUTES
-                //
-                if (read_attribs)
-                {
-                    if (!get_list(f, i, read_new_strings))
-                    {
-                        Log.tinyprintf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
-                        return -1;
-                    }
-                }
-
-#ifdef STANDALONE
-                // Fix up MUSH 2.2's weird quota system
-                //
-                if ((g_format == F_MUSH) && (g_version == 8))
-                    fix_typed_quotas(i);
-
-#endif
-                // check to see if it's a player
-                //
-                if (Typeof(i) == TYPE_PLAYER) {
-                    c_Connected(i);
-                }
-#ifdef STANDALONE
+            else
+            {
+                s_Zone(i, NOTHING);
             }
 #endif
+
+            // CONTENTS and EXITS
+            //
+            s_Contents(i, getref(f));
+            s_Exits(i, getref(f));
+
+            // LINK
+            //
+            if (read_link)
+                s_Link(i, getref(f));
+            else
+                s_Link(i, NOTHING);
+
+            // NEXT
+            //
+            s_Next(i, getref(f));
+
+            // LOCK
+            //
+            if (read_key)
+            {
+                tempbool = getboolexp(f);
+                atr_add_raw(i, A_LOCK,
+                unparse_boolexp_quiet(1, tempbool));
+                free_boolexp(tempbool);
+            }
+
+            // OWNER
+            //
+            s_Owner(i, getref(f));
+
+            // PARENT: PennMUSH uses this field for ZONE (which we use as
+            // PARENT if we didn't already read in a non-NOTHING parent.)
+            //
+            if (read_parent)
+            {
+                s_Parent(i, getref(f));
+            }
+            else
+            {
+                s_Parent(i, NOTHING);
+            }
+
+            // PENNIES
+            //
+            if (read_money)
+            {
+                s_Pennies(i, getref(f));
+            }
+
+            // FLAGS
+            //
+            f1 = getref(f);
+            if (read_extflags)
+                f2 = getref(f);
+            else
+                f2 = 0;
+
+            if (read_3flags)
+                f3 = getref(f);
+            else
+                f3 = 0;
+
+            s_Flags(i, f1);
+            s_Flags2(i, f2);
+            s_Flags3(i, f3);
+
+            if (read_powers)
+            {
+                f1 = getref(f);
+                f2 = getref(f);
+                s_Powers(i, f1);
+                s_Powers2(i, f2);
+            }
+
+            // ATTRIBUTES
+            //
+            if (read_attribs)
+            {
+                if (!get_list(f, i, read_new_strings))
+                {
+                    Log.tinyprintf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
+                    return -1;
+                }
+            }
+
+            // check to see if it's a player
+            //
+            if (isPlayer(i))
+            {
+                c_Connected(i);
+            }
             break;
+
         case '*':   // EOF marker
             tstr = getstring_noalloc(f, 0);
             if (strncmp(tstr, "**END OF DUMP***", 16))
@@ -1657,11 +1005,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 #ifdef STANDALONE
                 Log.WriteString(ENDLINE);
                 Log.Flush();
-#endif
-                // Fix up bizarro foreign DBs
-                //
-#ifdef STANDALONE
-                unscraw_foreign(g_format, g_version, g_flags);
 #endif
                 *db_version = g_version;
                 *db_format = g_format;

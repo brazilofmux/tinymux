@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.10 2001-10-17 05:24:20 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.11 2001-10-17 05:51:34 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -36,9 +36,6 @@ void info(int fmt, int flags, int ver)
     case F_MUX:
         cp = "TinyMUX";
         break;
-    case F_MUSH:
-        cp = "TinyMUSH";
-        break;
     default:
         cp = "*unknown*";
         break;
@@ -52,12 +49,8 @@ void info(int fmt, int flags, int ver)
         Log.WriteString(" GDBM");
     if (flags & V_ATRNAME)
         Log.WriteString(" AtrName");
-    if (flags & V_ATRKEY) {
-        if ((fmt == F_MUSH) && (ver == 2))
-            Log.WriteString(" ExtLocks");
-        else
-            Log.WriteString(" AtrKey");
-    }
+    if (flags & V_ATRKEY)
+        Log.WriteString(" AtrKey");
     if (flags & V_PARENT)
         Log.WriteString(" Parent");
     if (flags & V_COMM)
