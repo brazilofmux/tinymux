@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.25 2001-06-11 12:57:02 sdennis Exp $
+// $Id: bsd.cpp,v 1.26 2001-06-28 01:26:47 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -23,13 +23,13 @@
 #include "multinet_root:[multinet.include.sys]file.h"
 #include "multinet_root:[multinet.include.sys]ioctl.h"
 #include "multinet_root:[multinet.include]errno.h"
-#else // VMS
+#else
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#endif // VMS
+#endif
 #include <sys/stat.h>
-#endif // WIN32
+#endif
 
 #include <signal.h>
 
@@ -48,13 +48,13 @@
 #ifdef SOLARIS
 extern const int _sys_nsig;
 #define NSIG _sys_nsig
-#endif // SOLARIS
+#endif
 
 #ifdef CONCENTRATE
 extern struct descriptor_data *ccontrol;
 extern void FDECL(send_killconcid, (DESC *));
 extern long NDECL(make_concid);
-#endif // CONCENTRATE
+#endif
 
 SOCKET MainGameSockPort;
 unsigned int ndescriptors = 0;
@@ -62,12 +62,12 @@ DESC *descriptor_list = NULL;
 
 #ifdef WIN32
 int game_pid;
-#else // WIN32
+#else
 int maxd = 0;
 pid_t slave_pid = 0;
 int slave_socket = INVALID_SOCKET;
 pid_t game_pid;
-#endif // WIN32
+#endif
 
 DESC *initializesock(SOCKET, struct sockaddr_in *);
 DESC *new_connection(SOCKET sock);
@@ -133,10 +133,9 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
     struct hostent *hp;
     DWORD iSlave = (DWORD)lpParameter;
     DWORD dwReason;
-    
-    
+
     if (NUM_SLAVE_THREADS <= iSlave) return 1;
-    
+
     SlaveThreadInfo[iSlave].iDoing = __LINE__;
     for (;;)
     {
@@ -148,14 +147,14 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
         {
         case WAIT_TIMEOUT:
         case WAIT_OBJECT_0:
-            
+
             // Either the main game thread rang, or 60 seconds has past,
             // and it's probably a good idea to check the stack anyway.
             //
             break;
-            
+
         default:
-            
+
             // Either the main game thread has terminated, in which case
             // we want to, too, or the function itself has failed, in which
             // case: calling it again won't do much good.
@@ -163,7 +162,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
             SlaveThreadInfo[iSlave].iError = __LINE__;
             return 1;
         }
-        
+
         SlaveThreadInfo[iSlave].iDoing = __LINE__;
         for (;;)
         {
@@ -178,9 +177,9 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                 SlaveThreadInfo[iSlave].iError = __LINE__;
                 break;
             }
-            
+
             SlaveThreadInfo[iSlave].iDoing = __LINE__;
-            
+
             // We have control of the stack.
             //
             if (iSlaveRequest <= 0)
@@ -192,16 +191,16 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
                 break;
             }
-            
+
             // Remove the request from the stack.
             //
             iSlaveRequest--;
             req = SlaveRequests[iSlaveRequest];
-            
+
             SlaveThreadInfo[iSlave].iDoing = __LINE__;
             ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
             SlaveThreadInfo[iSlave].iDoing = __LINE__;
-            
+
             // Ok, we have complete control of this address, now, so let's
             // do the host/ident thing.
             //
@@ -219,7 +218,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
             addr = req.sin_addr.S_un.S_addr;
             hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
-            
+
             if (hp)
             {
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
@@ -230,18 +229,18 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                 struct sockaddr_in sin;
                 memset(&sin, 0, sizeof(sin));
                 SOCKET s;
-                
+
                 // We have a host name.
                 //
                 strcpy(host, inet_ntoa(req.sin_addr));
                 strcpy(token, hp->h_name);
-                
+
                 // Setup ident port.
                 //
                 sin.sin_family = hp->h_addrtype;
                 memcpy(&sin.sin_addr, hp->h_addr, hp->h_length);
                 sin.sin_port = htons(113);
-                
+
                 szIdent[0] = 0;
                 s = socket(hp->h_addrtype, SOCK_STREAM, 0);
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
@@ -281,7 +280,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                             SlaveThreadInfo[iSlave].iDoing = __LINE__;
                             int nIdent = 0;
                             int cc;
-                            
+
                             char szIdentBuffer[128];
                             szIdentBuffer[0] = 0;
                             BOOL bAllDone = FALSE;
@@ -330,7 +329,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                         s = INVALID_SOCKET;
                     }
                 }
-                
+
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
                 if (WAIT_OBJECT_0 == WaitForSingleObject(hSlaveResultStackSemaphore, INFINITE))
                 {
@@ -351,7 +350,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                         SlaveThreadInfo[iSlave].iError = __LINE__;
                     }
                     SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                    ReleaseSemaphore(hSlaveResultStackSemaphore, 1, NULL);          
+                    ReleaseSemaphore(hSlaveResultStackSemaphore, 1, NULL);
                     SlaveThreadInfo[iSlave].iDoing = __LINE__;
                 }
                 else
@@ -363,7 +362,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                     return 1;
                 }
             }
-        }           
+        }
     }
     SlaveThreadInfo[iSlave].iDoing = __LINE__;
     return 1;
@@ -373,9 +372,9 @@ static BOOL bSlaveBooted = FALSE;
 void boot_slave(dbref, dbref, int)
 {
     int iSlave;
-    
+
     if (bSlaveBooted) return;
-    
+
     hSlaveThreadsSemaphore = CreateSemaphore(NULL, 0, NUM_SLAVE_THREADS, NULL);
     hSlaveRequestStackSemaphore = CreateSemaphore(NULL, 1, 1, NULL);
     hSlaveResultStackSemaphore = CreateSemaphore(NULL, 1, 1, NULL);
@@ -401,13 +400,13 @@ static int get_slave_result(void)
     char userid[128];
     DESC *d;
     int local_port, remote_port;
-    
+
     // Go take the result off the stack, but not if it takes more
     // than 5 seconds to do it. Skip it if we time out.
     //
     if (WAIT_OBJECT_0 != WaitForSingleObject(hSlaveResultStackSemaphore, 5000))
         return 1;
-    
+
     // We have control of the stack. Go back to sleep if the stack is empty.
     //
     if (iSlaveResult <= 0)
@@ -420,8 +419,7 @@ static int get_slave_result(void)
     strcpy(token, SlaveResults[iSlaveResult].token);
     strcpy(ident, SlaveResults[iSlaveResult].ident);
     ReleaseSemaphore(hSlaveResultStackSemaphore, 1, NULL);
-    
-    
+
     // At this point, we have a host name on our own stack.
     //
     if (!mudconf.use_hostname) return 1;
@@ -429,7 +427,7 @@ static int get_slave_result(void)
     {
         if (strcmp(d->addr, host))
             continue;
-        
+
         StringCopyTrunc(d->addr, token, 50);
         d->addr[50] = '\0';
         if (d->player != 0)
@@ -459,14 +457,14 @@ static int get_slave_result(void)
 
         StringCopyTrunc(d->username, userid, 10);
         d->username[10] = '\0';
-        if (d->player != 0) 
+        if (d->player != 0)
         {
             atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s", d->username, d->addr));
         }
     }
     return 1;
 }
-#else // WIN32
+#else
 
 void boot_slave(dbref ref1, dbref ref2, int int3)
 {
@@ -665,7 +663,7 @@ Done:
     free_lbuf(host);
     return 0;
 }
-#endif // WIN32
+#endif
 
 SOCKET make_socket(int port)
 {
@@ -674,30 +672,29 @@ SOCKET make_socket(int port)
     int opt = 1;
 
 #ifdef WIN32
-    
+
     // If we are running Windows NT we must create a completion port,
     // and start up a listening thread for new connections
-    
+    //
     if (platform == VER_PLATFORM_WIN32_NT)
     {
         int nRet;
-        
+
         // create initial IO completion port, so threads have something to wait on
-        
+        //
         CompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
-        
+
         if (!CompletionPort)
         {
-            Log.printf("Error %ld on CreateIoCompletionPort\n",  GetLastError());
-            WSACleanup();     /* clean up */
+            Log.printf("Error %ld on CreateIoCompletionPort" ENDLINE,  GetLastError());
+            WSACleanup();     // clean up
             exit(1);
         }
-        
+
         // initialise the critical section
-        
-        InitializeCriticalSection(&csDescriptorList);
-        
         //
+        InitializeCriticalSection(&csDescriptorList);
+
         // Create a TCP/IP stream socket
         //
         s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -711,58 +708,53 @@ SOCKET make_socket(int port)
         {
             log_perror("NET", "FAIL", NULL, "setsockopt");
         }
-        
-        //
+
         // Fill in the the address structure
         //
         server.sin_port = htons((unsigned short)port);
         server.sin_family = AF_INET;
         server.sin_addr.s_addr = INADDR_ANY;
-        
-        //
+
         // bind our name to the socket
         //
         nRet = bind(s, (LPSOCKADDR) &server, sizeof server);
-        
+
         if (nRet == SOCKET_ERROR)
         {
-            Log.printf("Error %ld on Win32: bind\n", WSAGetLastError ());
+            Log.printf("Error %ld on Win32: bind" ENDLINE, WSAGetLastError ());
             if (closesocket(s) == 0)
             {
                 DebugTotalSockets--;
             }
             s = INVALID_SOCKET;
-            WSACleanup();     /* clean up */
+            WSACleanup();     // clean up
             exit(1);
         }
-        
-        
-        //
+
         // Set the socket to listen
         //
         nRet = listen(s, SOMAXCONN);
-        
+
         if (nRet)
         {
-            Log.printf("Error %ld on Win32: listen\n", WSAGetLastError ());
-            WSACleanup();     /* clean up */
+            Log.printf("Error %ld on Win32: listen" ENDLINE, WSAGetLastError ());
+            WSACleanup();     // clean up
             exit(1);
         }
-        
-        //
+
         // Create the MUD listening thread
         //
         if (_beginthread(MUDListenThread, 0, (void *) s) == (unsigned)(-1))
         {
             log_perror("NET", "FAIL", "_beginthread", "setsockopt");
-            WSACleanup();     /* clean up */
+            WSACleanup();     // clean up
             exit(1);
         }
-        
-        Log.printf("Listening (NT-style) on port %d\n", port);
+
+        Log.printf("Listening (NT-style) on port %d" ENDLINE, port);
         return s;
     }
-#endif // WIN32
+#endif
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (IS_INVALID_SOCKET(s))
@@ -770,7 +762,7 @@ SOCKET make_socket(int port)
         log_perror("NET", "FAIL", NULL, "creating master socket");
 #ifdef WIN32
         WSACleanup();
-#endif // WIN32
+#endif
         exit(3);
     }
     DebugTotalSockets++;
@@ -783,7 +775,7 @@ SOCKET make_socket(int port)
     server.sin_port = htons((unsigned short)port);
 #ifndef WIN32
     if (!mudstate.restarting)
-#endif // WIN32
+#endif
     {
         int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
         if (IS_SOCKET_ERROR(cc))
@@ -796,7 +788,7 @@ SOCKET make_socket(int port)
             s = INVALID_SOCKET;
 #ifdef WIN32
             WSACleanup();
-#endif // WIN32
+#endif
             exit(4);
         }
     }
@@ -860,7 +852,7 @@ void shovechars9x(int port)
         FD_ZERO(&input_set);
         FD_ZERO(&output_set);
 
-        // Listen for new connections if there are free descriptors 
+        // Listen for new connections if there are free descriptors
         //
         FD_SET(MainGameSockPort, &input_set);
 
@@ -874,9 +866,8 @@ void shovechars9x(int port)
                 FD_SET(d->descriptor, &output_set);
         }
 
-        /*
-         * Wait for something to happen 
-         */
+        // Wait for something to happen
+        //
         struct timeval timeout;
         CLinearTimeDelta ltdTimeout = ltaWakeUp - ltaCurrent;
         ltdTimeout.ReturnTimeValueStruct(&timeout);
@@ -913,28 +904,24 @@ void shovechars9x(int port)
             }
         }
 
-        /*
-         * Check for activity on user sockets 
-         */
+        // Check for activity on user sockets
+        //
         DESC_SAFEITER_ALL(d, dnext)
         {
-            /*
-             * Process input from sockets with pending input 
-             */
+            // Process input from sockets with pending input
+            //
             if (CheckInput(d->descriptor))
             {
-                /*
-                 * Undo autodark 
-                 */
+                // Undo autodark
+                //
                 if (d->flags & DS_AUTODARK)
                 {
                     d->flags &= ~DS_AUTODARK;
                     s_Flags(d->player, Flags(d->player) & ~DARK);
                 }
 
-                /*
-                 * Process received data 
-                 */
+                // Process received data
+                //
                 if (!process_input(d))
                 {
                     shutdownsock(d, R_SOCKDIED);
@@ -942,9 +929,8 @@ void shovechars9x(int port)
                 }
             }
 
-            /*
-             * Process output for sockets with pending output 
-             */
+            // Process output for sockets with pending output
+            //
             if (CheckOutput(d->descriptor))
             {
                 process_output9x(d, TRUE);
@@ -1026,7 +1012,7 @@ void shovecharsNT(int port)
     }
 }
 
-#else // WIN32
+#else
 
 BOOL ValidSocket(SOCKET s)
 {
@@ -1233,7 +1219,7 @@ void shovechars(int port)
             //
             if (CheckInput(d->descriptor))
             {
-                // Undo autodark 
+                // Undo autodark
                 //
                 if (d->flags & DS_AUTODARK)
                 {
@@ -1267,7 +1253,7 @@ void shovechars(int port)
     }
 }
 
-#endif // WIN32
+#endif
 
 DESC *new_connection(SOCKET sock)
 {
@@ -1294,7 +1280,7 @@ DESC *new_connection(SOCKET sock)
     {
         return 0;
     }
- 
+
     DebugTotalSockets++;
     if (site_check(addr.sin_addr, mudstate.access_list) == H_FORBIDDEN)
     {
@@ -1338,7 +1324,7 @@ DESC *new_connection(SOCKET sock)
                 //
                 SlaveRequests[iSlaveRequest++] = addr;
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
-                
+
                 // Wake up a single slave thread. Event automatically resets itself.
                 //
                 ReleaseSemaphore(hSlaveThreadsSemaphore, 1, NULL);
@@ -1350,7 +1336,7 @@ DESC *new_connection(SOCKET sock)
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
             }
         }
-#else // WIN32
+#else
         // Make slave request
         //
         if ((slave_socket != INVALID_SOCKET) && mudconf.use_hostname)
@@ -1367,7 +1353,7 @@ DESC *new_connection(SOCKET sock)
             }
         }
         free_lbuf(buf);
-#endif // WIN32
+#endif
 
         STARTLOG(LOG_NET, "NET", "CONN");
         buff1 = alloc_mbuf("new_connection.LOG.open");
@@ -1384,10 +1370,8 @@ DESC *new_connection(SOCKET sock)
     return d;
 }
 
-/*
- * Disconnect reasons that get written to the logfile 
- */
-
+// Disconnect reasons that get written to the logfile
+//
 static const char *disc_reasons[] =
 {
     "Unspecified",
@@ -1402,10 +1386,8 @@ static const char *disc_reasons[] =
     "Too Many Connected Players"
 };
 
-/*
- * Disconnect reasons that get fed to A_ADISCONNECT via announce_disconnect 
- */
-
+// Disconnect reasons that get fed to A_ADISCONNECT via announce_disconnect
+//
 static const char *disc_messages[] =
 {
     "Unknown",
@@ -1522,7 +1504,7 @@ void shutdownsock(DESC *d, int reason)
         }
 
         // If requested, write an accounting record of the form:
-        // Plyr# Flags Cmds ConnTime Loc Money [Site] <DiscRsn> Name 
+        // Plyr# Flags Cmds ConnTime Loc Money [Site] <DiscRsn> Name
         //
         STARTLOG(LOG_ACCOUNTING, "DIS", "ACCT");
         CLinearTimeDelta ltd = ltaNow - d->connected_at;
@@ -1596,9 +1578,9 @@ void shutdownsock(DESC *d, int reason)
             //
             if (!fpCancelIo((HANDLE) d->descriptor))
             {
-                Log.printf("Error %ld on CancelIo\n", GetLastError());
+                Log.printf("Error %ld on CancelIo" ENDLINE, GetLastError());
             }
-            
+
             // post a notification that it is safe to free the descriptor
             // we can't free the descriptor here (below) as there may be some
             // queued completed IOs that will crash when they refer to a descriptor
@@ -1606,10 +1588,10 @@ void shutdownsock(DESC *d, int reason)
             //
             if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted))
             {
-                Log.printf("Error %ld on PostQueuedCompletionStatus in shutdownsock\n", GetLastError());
+                Log.printf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
             }
         }
-#endif // WIN32
+#endif
 #ifdef CONCENTRATE
         if (!(d->cstatus & C_REMOTE))
         {
@@ -1650,7 +1632,7 @@ void shutdownsock(DESC *d, int reason)
         {
             num = 0;
             DESC_ITER_PLAYER(d->player, dtemp) num++;
-            
+
             if (num == 0)
             {
                 for (i = 0; i < MAX_GLOBAL_REGS; i++)
@@ -1682,9 +1664,10 @@ void shutdownsock(DESC *d, int reason)
         //
         d->next = 0;
         d->prev = 0;
-            
+
 #ifdef WIN32
         // safe to allow the listening thread to continue now
+        //
         if (platform == VER_PLATFORM_WIN32_NT)
             LeaveCriticalSection(&csDescriptorList);
         else
@@ -1717,12 +1700,12 @@ void shutdownsock_brief(DESC *d)
 
 
     // cancel any pending reads or writes on this socket
-    //        
+    //
     if (!fpCancelIo((HANDLE) d->descriptor))
     {
-        Log.printf("Error %ld on CancelIo\n", GetLastError());
+        Log.printf("Error %ld on CancelIo" ENDLINE, GetLastError());
     }
-    
+
     shutdown(d->descriptor, SD_BOTH);
     if (closesocket(d->descriptor) == 0)
     {
@@ -1752,7 +1735,7 @@ void shutdownsock_brief(DESC *d)
     //
     if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted))
     {
-        Log.printf("Error %ld on PostQueuedCompletionStatus in shutdownsock\n", GetLastError());
+        Log.printf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
     }
 
 }
@@ -1766,7 +1749,7 @@ void make_nonblocking(SOCKET s)
     {
         log_perror("NET", "FAIL", "make_nonblocking", "ioctlsocket");
     }
-#else // WIN32
+#else
 #ifdef FNDELAY
     if (fcntl(s, F_SETFL, FNDELAY) == -1)
     {
@@ -1778,7 +1761,7 @@ void make_nonblocking(SOCKET s)
         log_perror("NET", "FAIL", "make_nonblocking", "fcntl");
     }
 #endif
-#endif // WIN32
+#endif
 
 #if defined(HAVE_LINGER) || defined(WIN32)
     struct linger ling;
@@ -1977,10 +1960,10 @@ int AsyncSend(DESC *d, char *buf, int len)
                 // Do no more writes and post a notification that the descriptor should be shutdown.
                 //
                 d->bConnectionDropped = TRUE;
-                Log.printf("AsyncSend(%d) failed with error %ld. Requesting port shutdown.\n", d->descriptor, dwLastError);
+                Log.printf("AsyncSend(%d) failed with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                 if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                 {
-                    Log.printf("Error %ld on PostQueuedCompletionStatus in AsyncSend\n", GetLastError());
+                    Log.printf("Error %ld on PostQueuedCompletionStatus in AsyncSend" ENDLINE, GetLastError());
                 }
             }
             return 0;
@@ -2049,7 +2032,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
     mudstate.debug_cmd = cmdsave;
 }
 
-#else // WIN32
+#else
 
 void process_output(void *dvoid, int bHandleShutdown)
 {
@@ -2078,7 +2061,7 @@ void process_output(void *dvoid, int bHandleShutdown)
 
         while (tb != NULL)
         {
-            for (k = 0; k < tb->hdr.nchars; k++) 
+            for (k = 0; k < tb->hdr.nchars; k++)
             {
                 obuf[j++] = tb->hdr.start[k];
                 if (tb->hdr.start[k] == '\n')
@@ -2146,7 +2129,7 @@ void process_output(void *dvoid, int bHandleShutdown)
 
     mudstate.debug_cmd = cmdsave;
 }
-#endif // WIN32
+#endif
 
 int process_input_helper(DESC *d, char *buf, int got)
 {
@@ -2287,11 +2270,9 @@ void NDECL(emergency_shutdown)
 }
 
 
-/*
- * ---------------------------------------------------------------------------
- * * Signal handling routines.
- */
-
+// ---------------------------------------------------------------------------
+// Signal handling routines.
+//
 void log_signal(const char *signame)
 {
     STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
@@ -2312,9 +2293,9 @@ static void check_panicking(int sig)
         }
 #ifdef WIN32
         abort();
-#else // WIN32
+#else
         kill(getpid(), sig);
-#endif // WIN32
+#endif
     }
     mudstate.panicking = 1;
 }
@@ -2365,7 +2346,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 #else
     int stat_buf;
 #endif
-#endif // WIN32
+#endif
 
     switch (sig)
     {
@@ -2391,7 +2372,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         break;
 
     case SIGCHLD:
-    
+
         // Change in child status.
         //
 #ifndef SIGNAL_SIGCHLD_BRAINDAMAGE
@@ -2403,7 +2384,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         wait((int *)&stat_buf);
 #endif
         // Did the child exit?
-        //        
+        //
         if (WEXITSTATUS(stat_buf) == 8)
         {
             exit(0);
@@ -2412,7 +2393,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         break;
 
     case SIGHUP:
-    
+
         // Perform a database dump.
         //
         log_signal(signames[sig]);
@@ -2422,10 +2403,10 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         scheduler.DeferTask(mudstate.dump_counter, PRIORITY_SYSTEM, dispatch_DatabaseDump, 0, 0);
         break;
 
-#endif // WIN32
+#endif
 
     case SIGINT:
-    
+
         // Log + ignore
         //
         log_signal(signames[sig]);
@@ -2433,7 +2414,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
 #ifndef WIN32
     case SIGQUIT:
-#endif // WIN32
+#endif
     case SIGTERM:
 #ifdef SIGXCPU
     case SIGXCPU:
@@ -2447,7 +2428,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         dump_database_internal(DUMP_I_SIGNAL);
 #ifdef WIN32
         WSACleanup();
-#endif // WIN32
+#endif
         exit(0);
         break;
 
@@ -2468,7 +2449,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 #ifdef SIGSYS
     case SIGSYS:
 #endif
-#endif // WIN32
+#endif
 
         // Panic save + restart.
         //
@@ -2497,14 +2478,14 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             signal(sig, SIG_DFL);
             WSACleanup();
             exit(12345678);
-#else // !WIN32
+#else
             shutdown(slave_socket, SD_BOTH);
             if (slave_pid > 0)
             {
                 kill(slave_pid, SIGKILL);
             }
 
-            // Try our best to dump a core first 
+            // Try our best to dump a core first
             //
             if (!fork())
             {
@@ -2523,7 +2504,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             execl("bin/netmux", "netmux", mudconf.config_file, NULL);
 #endif
             break;
-#endif // WIN32
+#endif
         }
         else
         {
@@ -2534,7 +2515,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         break;
 
     case SIGABRT:
-    
+
         // Coredump.
         //
         check_panicking(sig);
@@ -2543,7 +2524,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
 #ifdef WIN32
         WSACleanup();
-#endif // WIN32
+#endif
 
         unset_signals();
         signal(sig, SIG_DFL);
@@ -2580,7 +2561,7 @@ void set_signals(void)
 #undef sigprocmask
     sigfillset(&sigs);
     sigprocmask(SIG_UNBLOCK, &sigs, NULL);
-#endif // WIN32
+#endif
 
     signal(SIGINT,  CAST_SIGNAL_FUNC sighandler);
     signal(SIGTERM, CAST_SIGNAL_FUNC sighandler);
@@ -2614,7 +2595,7 @@ void set_signals(void)
 #ifdef SIGSYS
     signal(SIGSYS, CAST_SIGNAL_FUNC sighandler);
 #endif
-#endif // WIN32
+#endif
 }
 
 void list_system_resources(dbref player)
@@ -2640,7 +2621,7 @@ void list_system_resources(dbref player)
     sprintf(buffer, "Total Semaphores: %ld", DebugTotalSemaphores);
     notify(player, buffer);
     nTotal += DebugTotalSemaphores;
-#endif // WIN32
+#endif
 
     sprintf(buffer, "Total Handles (sum of above): %d", nTotal);
     notify(player, buffer);
@@ -2651,7 +2632,7 @@ void list_system_resources(dbref player)
         sprintf(buffer, "Thread %d at line %d", i+1, SlaveThreadInfo[i].iDoing);
         notify(player, buffer);
     }
-#endif // WIN32
+#endif
 }
 
 #ifdef WIN32
@@ -2665,15 +2646,15 @@ void list_system_resources(dbref player)
 void __cdecl MUDListenThread(void * pVoid)
 {
     SOCKET MUDListenSocket = (SOCKET) pVoid;
-    
+
     SOCKADDR_IN SockAddr;
     int         nLen;
     BOOL    b;
-    
+
     struct descriptor_data * d;
-    
-    Log.WriteString("Starting MUD listening thread ...\n");
-    
+
+    Log.WriteString("Starting MUD listening thread ..." ENDLINE);
+
     //
     // Loop forever accepting connections
     //
@@ -2684,7 +2665,7 @@ void __cdecl MUDListenThread(void * pVoid)
         //
         nLen = sizeof(SOCKADDR_IN);
         SOCKET socketClient = accept(MUDListenSocket, (LPSOCKADDR) &SockAddr, &nLen);
-        
+
         if (socketClient == INVALID_SOCKET)
         {
             // parent thread closes the listening socket
@@ -2724,7 +2705,7 @@ void __cdecl MUDListenThread(void * pVoid)
                 //
                 SlaveRequests[iSlaveRequest++] = SockAddr;
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
-        
+
                 // Wake up a single slave thread. Event automatically resets itself.
                 //
                 ReleaseSemaphore(hSlaveThreadsSemaphore, 1, NULL);
@@ -2737,42 +2718,42 @@ void __cdecl MUDListenThread(void * pVoid)
             }
         }
         d = initializesock(socketClient, &SockAddr);
-        
+
         // add this socket to the IO completion port
-        
+        //
         CompletionPort = CreateIoCompletionPort((HANDLE)socketClient, CompletionPort, (DWORD) d, 1);
-        
+
         if (!CompletionPort)
         {
-            Log.printf("Error %ld on CreateIoCompletionPort for socket %ld\n", GetLastError(), socketClient);
+            Log.printf("Error %ld on CreateIoCompletionPort for socket %ld" ENDLINE, GetLastError(), socketClient);
             shutdownsock_brief(d);
             continue;
         }
-        
+
         if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_welcome))
         {
-            Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)\n", GetLastError());
+            Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
             shutdownsock_brief(d);
             continue;
         }
-        
+
         // Do the first read
         //
         b = ReadFile((HANDLE) socketClient, d->input_buffer, sizeof(d->input_buffer), NULL, &d->InboundOverlapped);
-        
+
         if (!b && GetLastError() != ERROR_IO_PENDING)
         {
             // Post a notification that the descriptor should be shutdown, and do no more IO.
             //
             d->bConnectionDropped = TRUE;
-            Log.printf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown.\n", d->descriptor, GetLastError());
+            Log.printf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, GetLastError());
             if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
             {
-                Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (initial read)\n", GetLastError());
+                Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (initial read)" ENDLINE, GetLastError());
             }
         }
     }
-    Log.WriteString("End of MUD listening thread ...\n");
+    Log.WriteString("End of MUD listening thread ..." ENDLINE);
 }
 
 
@@ -2792,7 +2773,7 @@ void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer)
 /*
 This is called from within shovechars when it needs to see if any IOs have
 completed for the Windows NT version.
-  
+
 The 4 sorts of IO completions are:
 
 1. Outstanding read completing (there should always be an outstanding read)
@@ -2808,7 +2789,7 @@ The reason for posting the special messages is to shut down sockets in an
 orderly way.
 
 */
-            
+
 void ProcessWindowsTCP(DWORD dwTimeout)
 {
     LPOVERLAPPED lpo;
@@ -2820,7 +2801,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
         // pull out the next completed IO
         //
         BOOL b = GetQueuedCompletionStatus(CompletionPort, &nbytes, (LPDWORD) &d, &lpo, dwTimeout);
-    
+
         if (!b)
         {
             DWORD dwLastError = GetLastError();
@@ -2830,32 +2811,32 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             switch (dwLastError)
             {
             case WAIT_TIMEOUT:
-                //Log.WriteString("Timeout.\n");
+                //Log.WriteString("Timeout." ENDLINE);
                 return;
 
             case ERROR_OPERATION_ABORTED:
-                //Log.WriteString("Operation Aborted.\n");
+                //Log.WriteString("Operation Aborted." ENDLINE);
                 continue;
 
             default:
                 if (!(d->bConnectionDropped))
                 {
                     // bad IO - shut down this client
-                    //    
+                    //
                     d->bConnectionDropped = TRUE;
 
                     // Post a notification that the descriptor should be shutdown
                     //
-                    Log.printf("ProcessWindowsTCP(%d) failed IO with error %ld. Requesting port shutdown.\n", d->descriptor, dwLastError);
+                    Log.printf("ProcessWindowsTCP(%d) failed IO with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                     if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                     {
-                        Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)\n", GetLastError());
+                        Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE, GetLastError());
                     }
                 }
             }
         }
         else if (lpo == &d->OutboundOverlapped && !d->bConnectionDropped)
-        {   
+        {
             //Log.printf("Write(%d bytes).\n", nbytes);
 
             // Write completed
@@ -2882,19 +2863,19 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     // We can consume this buffer.
                     //
                     nBytes = tp->hdr.nchars;
-                    memcpy(d->output_buffer, tp->hdr.start, nBytes); 
+                    memcpy(d->output_buffer, tp->hdr.start, nBytes);
                     TBLOCK *save = tp;
                     tp = tp->hdr.nxt;
                     MEMFREE(save);
                     d->output_head = tp;
                     if (tp == NULL)
                     {
-                        //Log.printf("Write...%d bytes taken from a queue of %d bytes...Empty Queue, now.\n", nBytes, d->output_size);
+                        //Log.printf("Write...%d bytes taken from a queue of %d bytes...Empty Queue, now." ENDLINE, nBytes, d->output_size);
                         d->output_tail = NULL;
                     }
                     else
                     {
-                        //Log.printf("Write...%d bytes taken from a queue of %d bytes...more buffers in Queue\n", nBytes, d->output_size);
+                        //Log.printf("Write...%d bytes taken from a queue of %d bytes...more buffers in Queue" ENDLINE, nBytes, d->output_size);
                     }
                 }
                 else
@@ -2902,13 +2883,13 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     // Use the entire bufer and leave the remaining data in the queue.
                     //
                     nBytes = SIZEOF_OVERLAPPED_BUFFERS;
-                    memcpy(d->output_buffer, tp->hdr.start, nBytes); 
+                    memcpy(d->output_buffer, tp->hdr.start, nBytes);
                     tp->hdr.nchars -= nBytes;
                     tp->hdr.start += nBytes;
-                    //Log.printf("Write...%d bytes taken from a queue of %d bytes...buffer still has bytes\n", nBytes, d->output_size);
+                    //Log.printf("Write...%d bytes taken from a queue of %d bytes...buffer still has bytes" ENDLINE, nBytes, d->output_size);
                 }
                 d->output_size -= nBytes;
-        
+
                 d->OutboundOverlapped.Offset = 0;
                 d->OutboundOverlapped.OffsetHigh = 0;
 
@@ -2921,7 +2902,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 //
                 DWORD nWritten;
                 b = WriteFile((HANDLE) d->descriptor, d->output_buffer, nBytes, &nWritten, &d->OutboundOverlapped);
-        
+
             } while (b);
 
             if (bNothingToWrite) continue;
@@ -2934,16 +2915,16 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 //
                 d->bWritePending = FALSE;
                 d->bConnectionDropped = TRUE;
-                Log.printf("ProcessWindowsTCP(%d) cannot queue write request with error %ld. Requesting port shutdown.\n", d->descriptor, dwLastError);
+                Log.printf("ProcessWindowsTCP(%d) cannot queue write request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                 if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                 {
-                    Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)\n", GetLastError());
+                    Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE, GetLastError());
                 }
             }
         }
         else if (lpo == &d->InboundOverlapped && !d->bConnectionDropped)
         {
-            //Log.printf("Read(%d bytes).\n", nbytes);
+            //Log.printf("Read(%d bytes)." ENDLINE, nbytes);
             // The read operation completed
             //
             if (nbytes == 0)
@@ -2954,17 +2935,17 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 // Post a notification that the descriptor should be shutdown
                 //
                 d->bConnectionDropped = TRUE;
-                Log.printf("ProcessWindowsTCP(%d) zero-length read. Requesting port shutdown.\n", d->descriptor);
+                Log.printf("ProcessWindowsTCP(%d) zero-length read. Requesting port shutdown." ENDLINE, d->descriptor);
                 if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                 {
-                    Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)\n", GetLastError());
+                    Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
                 }
                 continue;
             }
-    
+
             d->last_time.GetUTC();
-    
-            // Undo autodark 
+
+            // Undo autodark
             //
             if (d->flags & DS_AUTODARK)
             {
@@ -2973,9 +2954,9 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             }
 
             // process the player's input
-            //        
+            //
             process_input_helper(d, d->input_buffer, nbytes);
-    
+
             // now fire off another read
             //
             b = ReadFile((HANDLE) d->descriptor, d->input_buffer, sizeof(d->input_buffer), &nbytes, &d->InboundOverlapped);
@@ -2995,17 +2976,17 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     // Post a notification that the descriptor should be shutdown, and do no more IO.
                     //
                     d->bConnectionDropped = TRUE;
-                    Log.printf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown.\n", d->descriptor, dwLastError);
+                    Log.printf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
                     if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
                     {
-                        Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)\n", GetLastError());
+                        Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
                     }
                 }
             }
         }
         else if (lpo == &lpo_welcome)
         {
-            //Log.printf("Welcome.\n");
+            //Log.printf("Welcome." ENDLINE);
             //
             if (d->descriptor != INVALID_SOCKET)
             {
@@ -3037,7 +3018,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
         }
         else if (lpo == &lpo_shutdown)
         {
-            //Log.WriteString("Shutdown.\n");
+            //Log.WriteString("Shutdown." ENDLINE);
             // Shut this descriptor down.
             //
             shutdownsock(d, R_SOCKDIED);   // shut him down
@@ -3050,7 +3031,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             //
             if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted_final))
             {
-                Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (aborted)\n", GetLastError());
+                Log.printf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (aborted)" ENDLINE, GetLastError());
             }
         }
         else if (lpo == &lpo_aborted_final)
@@ -3065,4 +3046,4 @@ void ProcessWindowsTCP(DWORD dwTimeout)
     }
 }
 
-#endif // WIN32
+#endif
