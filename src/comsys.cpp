@@ -1,13 +1,12 @@
 //comsys.c
 //
-// * $Id: comsys.cpp,v 1.1 2000-04-11 07:14:43 sdennis Exp $
+// * $Id: comsys.cpp,v 1.2 2000-04-15 15:28:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
 
-#include <ctype.h>
 #include <sys/types.h>
 
 #include "ansi.h"
