@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.16 2003-07-26 14:40:11 sdennis Exp $
+// $Id: player.cpp,v 1.17 2003-08-19 01:54:49 jake Exp $
 //
 
 #include "copyright.h"
@@ -364,7 +364,7 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
     else
     {
 #if 0
-        // Strickly speaking, we can say the algorithm is DES.
+        // Strictly speaking, we can say the algorithm is DES.
         //
         *piType = CRYPT_DES;
 #else
