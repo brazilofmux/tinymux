@@ -1,5 +1,5 @@
 /* flags.h - object flags */
-/* $Id: flags.h,v 1.5 2001-06-16 06:22:28 hellspawn Exp $ */
+/* $Id: flags.h,v 1.6 2001-06-16 08:16:35 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -393,7 +393,7 @@ extern char *MakeCanonicalFlagName
 
 #define Staff(x)    (Wizard(x) || Royalty(x) || ((Flags2(x) & STAFF) != 0))
 #define Royalty(x)      ((Flags(x) & ROYALTY) || \
-			    ((Flags(owner(x)) & ROYALTY) && Inherits(x)))
+			    ((Flags(Owner(x)) & ROYALTY) && Inherits(x)))
 #define WizRoy(x)       (Royalty(x) || Wizard(x))
 #define Head(x)         ((Flags2(x) & HEAD_FLAG) != 0)
 #define Dynamic(x)      ((Flags2(x) & DYNAMIC) !=0)
