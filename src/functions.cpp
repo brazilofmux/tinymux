@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.95 2001-09-25 19:47:28 sdennis Exp $
+// $Id: functions.cpp,v 1.96 2001-09-29 07:55:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1151,6 +1151,13 @@ FUNCTION(fun_timefmt)
     int iTZMinute = iTZSecond/60;
     int iHour12 = Map24to12[ft.iHour];
 
+    // Calculate Monday and Sunday-oriented week numbers.
+    //
+    int iWeekOfYearSunday = (ft.iDayOfYear-ft.iDayOfWeek+6)/7;
+    int iDayOfWeekMonday  = (ft.iDayOfWeek == 0)?7:ft.iDayOfWeek;
+    int iWeekOfYearMonday = (ft.iDayOfYear-iDayOfWeekMonday+6)/7;
+
+
     char *q;
     char *p = fargs[0];
     while ((q = strchr(p, '$')) != NULL)
@@ -1331,12 +1338,12 @@ FUNCTION(fun_timefmt)
             break;
 
         case 'u': // $u - Day of the Week, range 1 to 7. Monday = 1.
-            safe_ltoa((ft.iDayOfWeek == 0)?7:ft.iDayOfWeek, buff, bufc,
-                LBUF_SIZE-1);
+            safe_ltoa(iDayOfWeekMonday, buff, bufc, LBUF_SIZE-1);
             break;
 
         case 'U': // $U - Week of the year from 1st Sunday
-            // TODO
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+                iWeekOfYearSunday);
             break;
 
         case 'V': // $V - ISO 8601:1988 week number.
@@ -1348,7 +1355,8 @@ FUNCTION(fun_timefmt)
             break;
 
         case 'W': // $W - Week of the year from 1st Monday
-            // TODO
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+                iWeekOfYearMonday);
             break;
 
         case 'y': // $y - Two-digit year
