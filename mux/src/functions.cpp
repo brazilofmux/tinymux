@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.122 2004-09-15 05:14:14 sdennis Exp $
+// $Id: functions.cpp,v 1.123 2004-09-22 06:05:21 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -3998,12 +3998,14 @@ static void handle_vectors
     n = list2arr(v1, (LBUF_SIZE+1)/2, vecarg1, psep);
     m = list2arr(v2, (LBUF_SIZE+1)/2, vecarg2, psep);
 
-    // It's okay to have vmul() be passed a scalar first or second arg,
+    // vmul() and vadd() accepts a scalar in the first or second arg,
     // but everything else has to be same-dimensional.
     //
     if (  n != m
-       && !(  flag == VMUL_F
-           && (n == 1 || m == 1)))
+       && !(  (  flag == VMUL_F
+              || flag == VADD_F)
+           && (  n == 1
+              || m == 1)))
     {
         safe_str("#-1 VECTORS MUST BE SAME DIMENSIONS", buff, bufc);
         return;
