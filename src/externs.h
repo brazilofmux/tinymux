@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.15 2000-04-29 08:06:57 sdennis Exp $
+// $Id: externs.h,v 1.16 2000-05-19 17:20:02 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -35,6 +35,8 @@ extern void FDECL(make_ulist, (dbref, char *, char **));
 extern int  FDECL(fetch_idle, (dbref));
 extern int  FDECL(fetch_connect, (dbref));
 extern void DCL_CDECL raw_broadcast(int, char *, ...);
+extern const char *time_format_1(int Seconds);
+extern const char *time_format_2(int Seconds);
 
 /* From cque.c */
 extern int  FDECL(nfy_que, (dbref, int, int, int));
@@ -777,4 +779,35 @@ public:
 
 extern CScheduler scheduler;
 
+#ifdef GAME_DOOFERMUX
+
+extern int fetch_cmds(dbref target);
+void fetch_ConnectionInfoFields(dbref target, long anFields[4]);
+long fetch_ConnectionInfoField(dbref target, int iField);
+void put_ConnectionInfoFields
+(
+    dbref target,
+    long anFields[4],
+    CLinearTimeAbsolute &ltaLogout
+);
+
+// In order:
+//
+//     Total online time
+//     Longest connection duration
+//     Duration of last connection
+//     Total number of connections.
+//     time (time_t) of last logout.
+//
+#define CIF_TOTALTIME      0
+#define CIF_LONGESTCONNECT 1
+#define CIF_LASTCONNECT    2
+#define CIF_NUMCONNECTS    3
+#define fetch_totaltime(t)      (fetch_ConnectionInfoField((t), CIF_TOTALTIME))
+#define fetch_longestconnect(t) (fetch_ConnectionInfoField((t), CIF_LONGESTCONNECT))
+#define fetch_lastconnect(t)    (fetch_ConnectionInfoField((t), CIF_LASTCONNECT))
+#define fetch_numconnections(t) (fetch_ConnectionInfoField((t), CIF_NUMCONNECTS))
+CLinearTimeAbsolute fetch_logouttime(dbref target);
+
+#endif // GAME_DOOFERMUX
 #endif // EXTERNS_H

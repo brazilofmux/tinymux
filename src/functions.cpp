@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.17 2000-05-14 01:30:31 sdennis Exp $
+// $Id: functions.cpp,v 1.18 2000-05-19 17:20:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -126,6 +126,22 @@ XFUNCTION(fun_comalias);   // in comsys.cpp
 XFUNCTION(fun_iadd);
 XFUNCTION(fun_isub);
 XFUNCTION(fun_imul);
+#ifdef GAME_DOOFERMUX
+XFUNCTION(fun_digittime);
+XFUNCTION(fun_singletime);
+XFUNCTION(fun_exptime);
+XFUNCTION(fun_writetime);
+XFUNCTION(fun_cmds);
+XFUNCTION(fun_startsecs);
+XFUNCTION(fun_lflags);
+XFUNCTION(fun_lattrcmds);
+XFUNCTION(fun_lcmds);
+XFUNCTION(fun_conntotal);
+XFUNCTION(fun_connmax);
+XFUNCTION(fun_connlast);
+XFUNCTION(fun_connnum);
+XFUNCTION(fun_connleft);
+#endif // GAME_DOOFERMUX
  
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
@@ -6166,6 +6182,24 @@ FUN flist[] =
     {"ZFUN",     fun_zfun,     0,  FN_VARARGS, CA_PUBLIC},
     {"ZONE",     fun_zone,     1,  0,          CA_PUBLIC},
     {"ZWHO",     fun_zwho,     1,  0,          CA_PUBLIC},
+#ifdef GAME_DOOFERMUX
+    // Added by D.Piper (del@delphinian.com) 1997 and 2000-APR
+    //
+    {"DIGITTIME",fun_digittime,1,  0,          CA_PUBLIC},
+    {"SINGLETIME", fun_singletime, 1,  0,      CA_PUBLIC},
+    {"EXPTIME",  fun_exptime,  1,  0,          CA_PUBLIC},
+    {"WRITETIME",fun_writetime,1,  0,          CA_PUBLIC},
+    {"CMDS",     fun_cmds,     1,  0,          CA_PUBLIC},
+    {"STARTSECS",fun_startsecs,0,  0,          CA_PUBLIC},
+    {"LFLAGS",   fun_lflags,   1,  0,          CA_PUBLIC},
+    {"LATTRCMDS",fun_lattrcmds,1,  0,          CA_PUBLIC},
+    {"LCMDS",    fun_lcmds,    1,  0,          CA_PUBLIC},
+    {"CONNTOTAL",fun_conntotal,1,  0,          CA_PUBLIC},
+    {"CONNMAX",  fun_connmax,  1,  0,          CA_PUBLIC},
+    {"CONNLAST", fun_connlast, 1,  0,          CA_PUBLIC},
+    {"CONNNUM",  fun_connnum,  1,  0,          CA_PUBLIC},
+    {"CONNLEFT", fun_connleft, 1,  0,          CA_PUBLIC},
+#endif // GAME_DOOFERMUX
     {NULL,       NULL,         0,  0,          0}
 };
 
@@ -6456,3 +6490,506 @@ FUNCTION(fun_imul)
     }
     safe_str(Tiny_i64toa_t(prod), buff, bufc);
 }
+
+typedef struct
+{
+    int  iBase;
+    char chLetter;
+    int  nName;
+    char *pName;
+
+} RADIX_ENTRY;
+
+#define N_RADIX_ENTRIES 4
+RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
+{
+    { 86400, 'd', 3, "day"    },
+    {  3600, 'h', 4, "hour"   },
+    {    60, 'm', 6, "minute" },
+    {     1, 's', 6, "second" }
+};
+
+#define IDAYS    0
+#define IHOURS   1
+#define IMINUTES 2
+#define ISECONDS 3
+
+// This routine supports most of the time formats using the above
+// table.
+//
+void GeneralTimeConversion
+(
+    char *Buffer,
+    long Seconds,
+    int iStartBase,
+    int iEndBase,
+    BOOL bSingleTerm, 
+    BOOL bNames
+)
+{
+    char *p = Buffer;
+
+    if (Seconds < 0)
+    {
+        Seconds = 0;
+    }
+
+    for (int i = iStartBase; i <= iEndBase; i++)
+    {
+        if (reTable[i].iBase <= Seconds || i == iEndBase)
+        {
+            int iValue;
+            if (bSingleTerm)
+            {
+                // Round to the nearest.
+                //
+                iValue = (Seconds + (reTable[i].iBase >> 1))/reTable[i].iBase;
+            }
+            else
+            {
+                // Division and remainder.
+                //
+                iValue = Seconds/reTable[i].iBase;
+                Seconds -= iValue * reTable[i].iBase;
+            }
+
+            if (iValue != 0 || i == iEndBase)
+            {
+                if (p != Buffer)
+                {
+                    *p++ = ' ';
+                }
+                p += Tiny_ltoa(iValue, p);
+                if (bNames)
+                {
+                    // Use the names with the correct pluralization.
+                    //
+                    *p++ = ' ';
+                    memcpy(p, reTable[i].pName, reTable[i].nName);
+                    p += reTable[i].nName;
+                    if (iValue > 1)
+                    {
+                        // More than one
+                        //
+                        *p++ = 's';
+                    }
+                }
+                else
+                {
+                    *p++ = reTable[i].chLetter;
+                }
+            }
+            if (bSingleTerm)
+            {
+                break;
+            }
+        }
+    }
+    *p++ = '\0';
+}
+
+// This buffer is used by:
+//
+//     time_format_1 (23 bytes) uses TimeBuffer64,
+//     time_format_2 (17 bytes) uses TimeBuffer32,
+//     expand_time   (29 bytes) uses TimeBuffer32,
+//     write_time    (52 bytes) uses TimeBuffer64.
+//
+// time_format_1 and time_format_2 are called from within the same
+// printf, so they must use different buffers.
+//
+// We pick 32 and 64 as a round numbers.
+//
+static char TimeBuffer32[32];
+static char TimeBuffer64[64];
+
+// Show time in days, hours, and minutes
+//
+// 2^63/86400 is 1.07E14 which is at most 15 digits.
+// '(15)d (2):(2)\0' is at most 23 characters.
+//
+const char *time_format_1(int Seconds)
+{
+    if (Seconds < 0)
+    {
+        Seconds = 0;
+    }
+    
+    // We are showing the time in minutes, so round to the nearest
+    // minute.
+    //
+    Seconds += 30;
+
+    // Divide the time down into days, hours, and minutes.
+    //
+    int Days = Seconds / 86400;
+    Seconds -= Days * 86400;
+    
+    int Hours = Seconds / 3600;
+    Seconds -= Hours * 3600;
+    
+    int Minutes = Seconds / 60;
+    
+    if (Days > 0)
+    {
+        sprintf(TimeBuffer64, "%dd %02d:%02d", Days, Hours, Minutes);
+    }
+    else
+    {
+        sprintf(TimeBuffer64, "%02d:%02d", Hours, Minutes);
+    }
+    return TimeBuffer64;
+}
+
+// Show time in days, hours, minutes, or seconds.
+//
+const char *time_format_2(int Seconds)
+{
+    // 2^63/86400 is 1.07E14 which is at most 15 digits.
+    // '(15)d\0' is at most 17 characters.
+    //
+    GeneralTimeConversion(TimeBuffer32, Seconds, IDAYS, ISECONDS, TRUE, FALSE);
+    return TimeBuffer32;
+}
+
+#ifdef GAME_DOOFERMUX
+
+// Del's added functions for dooferMUX ! :)
+// D.Piper (del@delphinian.com) 1997 & 2000
+//
+
+// expand_time - Written (short) time format.
+//
+const char *expand_time(int Seconds)
+{
+    // 2^63/86400 is 1.07E14 which is at most 15 digits.
+    // '(15)d (2)h (2)m (2)s\0' is at most 29 characters.
+    //
+    GeneralTimeConversion(TimeBuffer32, Seconds, IDAYS, ISECONDS, FALSE, FALSE);
+    return TimeBuffer32;
+}
+
+// write_time - Written (long) time format.
+//
+const char *write_time(int Seconds)
+{
+    // 2^63/86400 is 1.07E14 which is at most 15 digits.
+    // '(15) days (2) hours (2) minutes (2) seconds\0' is at most
+    // 52 characters.
+    //
+    GeneralTimeConversion(TimeBuffer64, Seconds, IDAYS, ISECONDS, FALSE, TRUE);
+    return TimeBuffer64;
+}
+
+// digittime - Digital format time ([(days)d]HH:MM) from given
+// seconds. D.Piper - May 1997 & April 2000
+//
+FUNCTION(fun_digittime)
+{
+	int tt = Tiny_atol(fargs[0]);
+	safe_str(time_format_1(tt), buff, bufc);
+}
+
+// singletime - Single element time from given seconds.
+// D.Piper - May 1997 & April 2000
+//
+FUNCTION(fun_singletime)
+{
+	int tt = Tiny_atol(fargs[0]);
+	safe_str(time_format_2(tt), buff, bufc);
+}
+
+// exptime - Written (short) time from given seconds
+// D.Piper - May 1997 & April 2000
+//
+FUNCTION(fun_exptime)
+{
+	int tt = Tiny_atol(fargs[0]);
+	safe_str(expand_time(tt), buff, bufc);
+}
+
+// writetime - Written (long) time from given seconds
+// D.Piper - May 1997 & April 2000
+//
+FUNCTION(fun_writetime)
+{
+	int tt = Tiny_atol(fargs[0]);
+	safe_str(write_time(tt), buff, bufc);
+}
+
+// cmds - Return player command count (Wizard_Who OR Self ONLY)
+// D.Piper - May 1997
+//
+FUNCTION(fun_cmds)
+{
+    dbref target = lookup_player(player, fargs[0], 1);
+	if (Good_obj(target) && Connected(target))
+	{
+		if (!(Wizard_Who(player) || Controls(player, target)))
+        {
+			target = NOTHING;
+        }
+        safe_ltoa(fetch_cmds(target), buff, bufc, LBUF_SIZE-1);
+	}
+	else
+	{
+		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+	}
+}
+
+// startsecs - Time the MUX was started, in seconds
+// D.Piper - May 1997 & April 2000
+//
+FUNCTION(fun_startsecs)
+{
+	CLinearTimeAbsolute lta;
+	lta = mudstate.start_time;
+	lta.Local2UTC();
+	safe_str(lta.ReturnSecondsString(), buff, bufc);
+}
+
+// conntotal - Return player's total online time to the MUX
+// (including their current connection). D.Piper - May 1997
+//
+FUNCTION(fun_conntotal)
+{
+    dbref target = lookup_player(player, fargs[0], 1);
+	if (Good_obj(target))
+	{
+        long TotalTime = fetch_totaltime(target) + fetch_connect(target);
+        safe_ltoa(TotalTime, buff, bufc, LBUF_SIZE-1);
+	}
+	else
+	{
+		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+	}
+}
+
+// connmax - Return player's longest session to the MUX
+// (including the current one). D.Piper - May 1997
+//
+FUNCTION(fun_connmax)
+{
+    dbref target = lookup_player(player, fargs[0], 1);
+	if (Good_obj(target))
+	{
+        long Longest = fetch_longestconnect(target);
+        long Current = fetch_connect(target);
+        if (Longest < Current)
+        {
+            Longest = Current;
+        }
+        safe_ltoa(Longest, buff, bufc, LBUF_SIZE-1);
+	}
+	else
+	{
+		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+	}
+}
+
+// connlast - Return player's last connection time to the MUX
+// D.Piper - May 1997
+//
+FUNCTION(fun_connlast)
+{
+    dbref target = lookup_player(player, fargs[0], 1);
+	if (Good_obj(target))
+	{
+        safe_ltoa(fetch_lastconnect(target), buff, bufc, LBUF_SIZE-1);
+	}
+	else
+	{
+		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+	}
+}
+
+// connnum - Return the total number of sessions this player has had
+// to the MUX (including the current one). D.Piper - May 1997
+//
+FUNCTION(fun_connnum)
+{
+    dbref target = lookup_player(player, fargs[0], 1);
+	if (Good_obj(target))
+	{
+        long NumConnections = fetch_numconnections(target) + 1;
+        safe_ltoa(NumConnections, buff, bufc, LBUF_SIZE-1);
+	}
+	else
+	{
+		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+	}
+}
+
+// connleft - Return when a player last logged off the MUX as
+// UTC seconds. D.Piper - May 1997
+//
+FUNCTION(fun_connleft)
+{
+    dbref target = lookup_player(player, fargs[0], 1);
+	if (Good_obj(target))
+	{
+    	CLinearTimeAbsolute cl = fetch_logouttime(target);
+		safe_str(cl.ReturnSecondsString(), buff, bufc);
+	}
+	else
+	{
+		safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+	}
+}
+
+// lattrcmds - Output a list of all attributes containing $ commands.
+// Altered from lattr(). D.Piper - May 1997 & April 2000
+//
+FUNCTION(fun_lattrcmds)
+{
+    dbref thing;
+    int ca, first;
+    ATTR *attr;
+
+    // Check for wildcard matching.  parse_attrib_wild checks for read
+    // permission, so we don't have to.  Have p_a_w assume the
+    // slash-star if it is missing.
+    //
+    first = 1;
+    olist_push();
+    if (parse_attrib_wild(player, fargs[0], &thing, 0, 0, 1))
+    {
+        char *buf = alloc_lbuf("fun_lattrcmds");
+        for (ca = olist_first(); ca != NOTHING; ca = olist_next())
+        {
+            attr = atr_num(ca);
+            if (attr)
+            {
+                dbref aowner;
+                int   aflags;
+                atr_get_str(buf, thing, attr->number, &aowner, &aflags);
+                if (buf[0] == '$')
+                {
+                    if (!first)
+                    {
+                        safe_chr(' ', buff, bufc);
+                    }
+                    first = 0;
+                    safe_str((char *)attr->name, buff, bufc);
+                }
+            }
+        }
+        free_lbuf(buf);
+    }
+    else
+    {
+        safe_str("#-1 NO MATCH", buff, bufc);
+    }
+    olist_pop();
+}
+
+// lcmds - Output a list of all $ commands on an object.
+// Altered from MUX lattr(). D.Piper - May 1997 & April 2000
+//
+FUNCTION(fun_lcmds)
+{
+    dbref thing;
+    int ca, first;
+    ATTR *attr;
+
+    // Check for wildcard matching.  parse_attrib_wild checks for read
+    // permission, so we don't have to.  Have p_a_w assume the
+    // slash-star if it is missing.
+    //
+    first = 1;
+    olist_push();
+    if (parse_attrib_wild(player, fargs[0], &thing, 0, 0, 1))
+    {
+        TINY_STRTOK_STATE tts;
+        Tiny_StrTokControl(&tts, " *:");
+        char *buf = alloc_lbuf("fun_lattrcmds");
+        for (ca = olist_first(); ca != NOTHING; ca = olist_next())
+        {
+            attr = atr_num(ca);
+            if (attr)
+            {
+                dbref aowner;
+                int   aflags;
+                atr_get_str(buf, thing, attr->number, &aowner, &aflags);
+				if (buf[0] == '$')
+				{
+					if (!first)
+					{
+						safe_chr(' ', buff, bufc);
+					}
+
+                    Tiny_StrTokString(&tts, buf+1);
+                    char *p = Tiny_StrTokParse(&tts);
+                    _strlwr(p);
+					safe_str(p, buff, bufc);
+
+					first = 0;
+				}
+            }
+        }
+        free_lbuf(buf);
+    }
+    else
+    {
+        safe_str("#-1 NO MATCH", buff, bufc);
+    }
+    olist_pop();
+}
+
+extern FLAGENT gen_flags[];
+
+// lflags - List flags as names - (modified from 'flag_description()' and
+// MUX flags(). D.Piper - May 1997 & May 2000
+//
+FUNCTION(fun_lflags)
+{
+	dbref target;
+	FLAGENT *fp;
+	FLAG fv;
+
+    BOOL bFirst = TRUE;
+	target = match_thing(player, fargs[0]);
+	if (  (target != NOTHING)
+       && (mudconf.pub_flags || Examinable(player, target) || (target == cause)))
+	{
+		for (fp = gen_flags; fp->flagname; fp++)
+        {
+			if (fp->flagflag & FLAG_WORD3)
+				fv = Flags3(target);
+			else if (fp->flagflag & FLAG_WORD2)
+				fv = Flags2(target);
+			else
+				fv = Flags(target);
+
+			if (fv & fp->flagvalue)
+            {
+				if ((fp->listperm & CA_WIZARD) && !Wizard(player))
+					continue;
+				if ((fp->listperm & CA_GOD) && !God(player))
+					continue;
+				if (  isPlayer(target)
+                   && (fp->flagvalue == CONNECTED)
+                   && (fp->flagflag & FLAG_WORD2)
+                   && ((Flags(target) & (WIZARD | DARK)) == (WIZARD | DARK))
+                   && !Wizard(player))
+                {
+					continue;
+                }
+
+                if (!bFirst)
+                {
+                    safe_chr(' ', buff, bufc);
+                }
+                bFirst = FALSE;
+
+                safe_str(fp->flagname, buff, bufc);
+			}
+		}
+	}
+	else
+    {
+		safe_str("#-1", buff, bufc);
+    }
+}
+
+#endif // GAME_DOOFERMUX

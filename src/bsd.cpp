@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.5 2000-05-15 04:59:06 sdennis Exp $
+// $Id: bsd.cpp,v 1.6 2000-05-19 17:20:04 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1324,6 +1324,35 @@ void shutdownsock(DESC *d, int reason)
 
     if (d->flags & DS_CONNECTED)
     {
+
+        CLinearTimeAbsolute ltaNow;
+        ltaNow.GetUTC();
+
+#ifdef GAME_DOOFERMUX
+        // Added by D.Piper (del@delphinian.com) 1997 & 2000-APR
+        //
+	
+		// Reason: attribute (disconnect reason)
+        //
+		atr_add_raw(d->player, A_REASON, (char *)disc_messages[reason]);
+		
+        // Update the A_CONNINFO attribute.
+        //
+        long anFields[4];
+        fetch_ConnectionInfoFields(d->player, anFields);
+        int nConnected = fetch_connect(d->player);
+
+        anFields[CIF_TOTALTIME] += nConnected;
+        if (anFields[CIF_LONGESTCONNECT] < nConnected)
+        {
+            anFields[CIF_LONGESTCONNECT] = nConnected;
+        }
+        anFields[CIF_LASTCONNECT] = nConnected;
+        anFields[CIF_NUMCONNECTS]++;
+
+        put_ConnectionInfoFields(d->player, anFields, ltaNow);
+#endif // GAME_DOOFERMUX
+
         // If we are doing a LOGOUT, keep the connection open so that the
         // player can connect to a different character. Otherwise, we
         // do the normal disconnect stuff.
@@ -1353,9 +1382,6 @@ void shutdownsock(DESC *d, int reason)
             free_mbuf(buff);
             ENDLOG;
         }
-
-        CLinearTimeAbsolute ltaNow;
-        ltaNow.GetUTC();
 
         // If requested, write an accounting record of the form:
         // Plyr# Flags Cmds ConnTime Loc Money [Site] <DiscRsn> Name 
@@ -2348,7 +2374,11 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             }
 #endif
             dump_restart_db();
+#ifdef GAME_DOOFERMUX
+            execl("bin/netmux", mudconf.mud_name, mudconf.config_file, NULL);
+#else
             execl("bin/netmux", "netmux", mudconf.config_file, NULL);
+#endif
             break;
         }
         else

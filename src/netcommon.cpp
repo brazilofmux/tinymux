@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.7 2000-04-24 22:01:14 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.8 2000-05-19 17:20:00 sdennis Exp $ 
 */
 
 /*
@@ -571,78 +571,6 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
         }
         *p = '\0';
     }
-}
-
-// Show time in days, hours, and minutes
-//
-static const char *time_format_1(int Seconds)
-{
-    static char buf[64];
-    
-    if (Seconds < 0)
-        Seconds = 0;
-    
-    // We are showing the time in minutes, so round to the nearest
-    // minute.
-    //
-    Seconds += 30;
-
-    // Divide the time down into days, hours, and minutes.
-    //
-    int Days = Seconds / 86400;
-    Seconds -= Days * 86400;
-    
-    int Hours = Seconds / 3600;
-    Seconds -= Hours * 3600;
-    
-    int Minutes = Seconds / 60;
-    
-    if (Days > 0)
-    {
-        sprintf(buf, "%dd %02d:%02d", Days, Hours, Minutes);
-    }
-    else
-    {
-        sprintf(buf, "%02d:%02d", Hours, Minutes);
-    }
-    return buf;
-}
-
-// Show time in days, hours, minutes, or seconds.
-//
-static const char *time_format_2(int Seconds)
-{
-    static char buf[64];
-    char *p = buf;
-    
-    if (Seconds < 0)
-        Seconds = 0;
-
-    if (86400 <= Seconds)
-    {
-        int Days = (Seconds + 43200)/86400;
-        p += Tiny_ltoa(Days, p);
-        *p++ = 'd';
-    }
-    else if (3600 <= Seconds)
-    {
-        int Hours = (Seconds + 1800)/3600;
-        p += Tiny_ltoa(Hours, p);
-        *p++ = 'h';
-    }
-    else if (60 <= Seconds)
-    {
-        int Minutes = (Seconds + 30)/60;
-        p += Tiny_ltoa(Minutes, p);
-        *p++ = 'm';
-    }
-    else
-    {
-        p += Tiny_ltoa(Seconds, p);
-        *p++ = 's';
-    }
-    *p++ = '\0';
-    return buf;
 }
 
 static void announce_connect(dbref player, DESC *d)
@@ -1748,64 +1676,85 @@ int do_command(DESC *d, char *command, int first)
     
 #ifdef CONCENTRATE
     if (*arg)
-    *--arg = ' ';   /*
-                    * restore nullified space 
-    */
-    if (!strncmp(command, "New Conn Pass: ",
-        sizeof("New Conn Pass ") - 1)) {
+    {
+        *--arg = ' ';   // restore nullified space.
+    }
+    if (!strncmp(command, "New Conn Pass: ", sizeof("New Conn Pass ") - 1))
+    {
         do_becomeconc(d, command + sizeof("New Conn Pass: ") - 1);
         return 1;
-    } else if (((d->cstatus & C_REMOTE) || (d->cstatus & C_CCONTROL)) && first) {
+    }
+    else if (((d->cstatus & C_REMOTE) || (d->cstatus & C_CCONTROL)) && first)
+    {
         if (!strncmp(command, "CONC ", sizeof("CONC ") - 1))
+        {
             log_text(command);
-        else if (!strcmp(command, "New ID")) {
+        }
+        else if (!strcmp(command, "New ID"))
+        {
             do_makeid(d);
-        } else if (!strncmp(command, "Conn ID: ",
-            sizeof("Conn ID: ") - 1)) {
+        }
+        else if (!strncmp(command, "Conn ID: ", sizeof("Conn ID: ") - 1))
+        {
             char *m, *n;
             
             m = command + sizeof("Conn ID: ") - 1;
             n = strchr(m, ' ');
             if (!n)
+            {
                 queue_string(d, "Usage: Conn ID: <id> <hostname>\n");
+            }
             else
+            {
                 do_connectid(d, Tiny_atol(command + sizeof("Conn ID: ") - 1), n + 1);
-        } else if (!strncmp(command, "Kill ID: ",
-            sizeof("Kill ID: ") - 1))
+            }
+        }
+        else if (!strncmp(command, "Kill ID: ", sizeof("Kill ID: ") - 1))
+        {
             do_killid(d, Tiny_atol(command + sizeof("Kill ID: ") - 1));
-        else {
+        }
+        else
+        {
             char *k;
             
             k = strchr(command, ' ');
             if (!k)
+            {
                 return 1;
-            else {
+            }
+            else
+            {
                 struct descriptor_data *l;
                 int j;
                 
                 *k = '\0';
                 j = Tiny_atol(command);
-                for (l = descriptor_list; l; l = l->next) {
+                for (l = descriptor_list; l; l = l->next)
+                {
                     if (l->concid == j)
                         break;
                 }
                 
                 if (!l)
+                {
                     queue_string(d, "I don't know that concid.\r\n");
-                else {
+                }
+                else
+                {
                     k++;
-                    if (!do_command(l, k, 0)) {
+                    if (!do_command(l, k, 0))
+                    {
                         return 0;
                     }
                 }
             }
         }
-        
         return 1;
     }
     if (*arg)
+    {
         arg++;
-    
+    }
 #endif // CONCENTRATE
     
     if (cp == NULL)
@@ -1834,17 +1783,19 @@ int do_command(DESC *d, char *command, int first)
             }
             mudstate.debug_cmd = cmdsave;
             return 1;
-        } else {
+        }
+        else
+        {
             mudstate.debug_cmd = cmdsave;
             return (check_connect(d, command));
         }
     }
-    /*
-    * The command was in the logged-out command table.  Perform prefix * 
-    * 
-    * *  * *  * * and suffix processing, and invoke the command handler. 
-    */
-    
+
+
+    // The command was in the logged-out command table. Perform
+    // prefix and suffix processing, and invoke the command
+    // handler.
+    //    
     d->command_count++;
     if (!(cp->flag & CMD_NOxFIX))
     {
@@ -2214,3 +2165,136 @@ FUNCTION(fun_motd)
 {
     safe_str(mudconf.motd_msg, buff, bufc);
 }
+
+#ifdef GAME_DOOFERMUX
+
+// fetch_cmds - Retrieve Player's number of commands entered.
+//
+int fetch_cmds(dbref target)
+{
+    int sum = 0;
+    BOOL bFound = FALSE;
+
+    DESC *d;
+	DESC_ITER_PLAYER(target, d)
+    {
+        sum += d->command_count;
+        bFound = TRUE;
+	}
+
+    if (bFound)
+    {
+        return sum;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+void ParseConnectionInfoString(char *pConnInfo, char *pFields[5])
+{
+    TINY_STRTOK_STATE tts;
+    Tiny_StrTokString(&tts, pConnInfo);
+
+    // NOTE: Temporarily, the minus and space are both allowed,
+    // however, eventually only space will be permitted because
+    // of the confusion for parsers between a '-' as a minus sign
+    // and a '-' as a separator. The connection info is always
+    // written back with spaces, so normal usage will convert
+    // from 'n-n-n-n-n' to 'n n n n n'.
+    //
+#if 1
+    Tiny_StrTokControl(&tts, "- ");
+#else
+    Tiny_StrTokControl(&tts, " ");
+#endif
+
+    for (int i = 0; i < 5; i++)
+    {
+        pFields[i] = Tiny_StrTokParse(&tts);
+    }
+}
+
+void fetch_ConnectionInfoFields(dbref target, long anFields[4])
+{
+    dbref aowner;
+    int   aflags;
+    char *pConnInfo = atr_get(target, A_CONNINFO, &aowner, &aflags);
+    char *aFields[5];
+    ParseConnectionInfoString(pConnInfo, aFields);
+
+    for (int i = 0; i < 4; i++)
+    {
+        long result;
+        if (!aFields[i] || (result = Tiny_atol(aFields[i])) < 0)
+        {
+            result = 0;
+        }
+        anFields[i] = result;
+    }
+    free_lbuf(pConnInfo);
+}
+
+void put_ConnectionInfoFields
+(
+    dbref target,
+    long anFields[4],
+    CLinearTimeAbsolute &ltaLogout
+)
+{
+    char *pConnInfo = alloc_lbuf("put_CIF");
+    char *p = pConnInfo;
+    for (int i = 0; i < 4; i++)
+    {
+        p += Tiny_ltoa(anFields[i], p);
+        *p++ = ' ';
+    }
+    p += Tiny_i64toa(ltaLogout.ReturnSeconds(), p);
+    *p++ = 0;
+
+    atr_add_raw_LEN(target, A_CONNINFO, pConnInfo, p - pConnInfo);
+    free_lbuf(pConnInfo);
+}
+
+long fetch_ConnectionInfoField(dbref target, int iField)
+{
+    dbref aowner;
+    int   aflags;
+    char *pConnInfo = atr_get(target, A_CONNINFO, &aowner, &aflags);
+    char *aFields[5];
+    ParseConnectionInfoString(pConnInfo, aFields);
+
+    long result;
+    if (!aFields[iField] || (result = Tiny_atol(aFields[iField])) < 0)
+    {
+        result = 0;
+    }
+    free_lbuf(pConnInfo);
+    return result;
+}
+
+#define CIF_LOGOUTTIME     4
+
+CLinearTimeAbsolute fetch_logouttime(dbref target)
+{
+    dbref aowner;
+    int   aflags;
+    char *pConnInfo = atr_get(target, A_CONNINFO, &aowner, &aflags);
+    char *aFields[5];
+    ParseConnectionInfoString(pConnInfo, aFields);
+
+    CLinearTimeAbsolute lta;
+    if (aFields[CIF_LOGOUTTIME])
+    {
+        lta.SetSecondsString(aFields[CIF_LOGOUTTIME]);
+    }
+    else
+    {
+        lta.SetSeconds(0);
+    }
+    free_lbuf(pConnInfo);
+    return lta;
+}
+
+#endif // GAME_DOOFERMUX

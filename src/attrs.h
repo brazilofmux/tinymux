@@ -1,5 +1,5 @@
 /* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.1 2000-04-11 07:14:42 sdennis Exp $ */
+/* $Id: attrs.h,v 1.2 2000-05-19 17:20:05 sdennis Exp $ */
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -162,6 +162,16 @@
 #define A_DESTROYER 212 /* Who is destroying this object? */
 #define A_VRML_URL  220 /* URL of the VRML scene for this object */
 #define A_HTDESC    221 /* HTML @desc */
+
+#ifdef GAME_DOOFERMUX
+// Added by D.Piper (del@delphinian.com) 2000-APR
+//
+#define A_REASON    222 // Disconnect reason
+#define A_REGINFO   223 // Registration Information
+#define A_CONNINFO  224 // Connection info: (total connected time,
+                        // longest connection last connection, total
+                        // connections, time of logout.
+#endif // GAME_DOOFERMUX
 
 #define A_IDLETMOUT 240 /* Idle message timeout */
 

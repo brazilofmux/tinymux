@@ -2,7 +2,7 @@
  * create.c -- Commands that create new objects 
  */
 /*
- * $Id: create.cpp,v 1.1 2000-04-11 07:14:43 sdennis Exp $ 
+ * $Id: create.cpp,v 1.2 2000-05-19 17:20:03 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -676,11 +676,16 @@ void do_pcreate(dbref player, dbref cause, int key, char *name, char *pass)
             tprintf("New robot '%s' created with password '%s'",
                 name, pass));
         notify_quiet(player, "Your robot has arrived.");
-        STARTLOG(LOG_PCREATES, "CRE", "ROBOT")
-            log_name(newplayer);
+        STARTLOG(LOG_PCREATES, "CRE", "ROBOT");
+        log_name(newplayer);
         log_text((char *)" created by ");
         log_name(player);
-        ENDLOG
+        ENDLOG;
+#ifdef GAME_DOOFERMUX
+        // Added by D.Piper (del@delphinian.com) 2000-APR
+        //
+		atr_add_raw(newplayer, A_REGINFO, "*Requires Registration*");
+#endif // GAME_DOOFERMUX
     }
     else
     {
@@ -688,11 +693,11 @@ void do_pcreate(dbref player, dbref cause, int key, char *name, char *pass)
         notify_quiet(player,
                tprintf("New player '%s' created with password '%s'",
                    name, pass));
-        STARTLOG(LOG_PCREATES | LOG_WIZARD, "WIZ", "PCREA")
-            log_name(newplayer);
+        STARTLOG(LOG_PCREATES | LOG_WIZARD, "WIZ", "PCREA");
+        log_name(newplayer);
         log_text((char *)" created by ");
         log_name(player);
-        ENDLOG
+        ENDLOG;
     }
 }
 
