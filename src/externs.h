@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.40 2001-06-05 06:07:00 sdennis Exp $
+// $Id: externs.h,v 1.41 2001-06-08 23:27:16 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -343,6 +343,7 @@ extern void ReleaseAllResources(dbref obj);
 #define DIG_TELEPORT    1   /* teleport to room after @digging */
 #define DOLIST_SPACE    0   /* expect spaces as delimiter */
 #define DOLIST_DELIMIT  1   /* expect custom delimiter */
+#define DOLIST_NOTIFY   2   /* Send an @notify after the @dolist is completed */
 #define DOING_MESSAGE   0   /* Set my DOING message */
 #define DOING_HEADER    1   /* Set the DOING header */
 #define DOING_POLL      2   /* List DOING header */
@@ -442,6 +443,7 @@ extern void ReleaseAllResources(dbref obj);
 #define NFY_NFY     0   /* Notify first waiting command */
 #define NFY_NFYALL  1   /* Notify all waiting commands */
 #define NFY_DRAIN   2   /* Delete waiting commands */
+#define NFY_QUIET   3   /* Suppress "Notified." message */
 #define OPEN_LOCATION   0   /* Open exit in my location */
 #define OPEN_INVENTORY  1   /* Open exit in me */
 #define PASS_ANY    1   /* name=newpass */

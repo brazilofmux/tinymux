@@ -1,7 +1,7 @@
 //
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.8 2000-08-28 07:52:08 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.9 2001-06-08 23:27:15 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -83,6 +83,15 @@ void do_dolist(dbref player, dbref cause, int key, char *list, char *command,
             bind_and_queue(player, cause, command, objstring, cargs, ncargs,
                            number);
         }
+    }
+    if (key == DOLIST_NOTIFY)
+    {
+        char *tbuf;
+        tbuf = alloc_lbuf("dolist.notify_cmd");
+        strcpy(tbuf, (char *) "@notify/quiet me");
+        wait_que(player, cause, 0, NOTHING, A_SEMAPHORE, tbuf, cargs, ncargs,
+            mudstate.global_regs);
+        free_lbuf(tbuf);
     }
 }
 
@@ -260,54 +269,61 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
     count = 0;
     quota_out = 0;
     quota_in = 0;
-    DO_WHOLE_DB(i)
+    if ((from_player == GOD) && (acting_player != GOD))
     {
-        if ((Owner(i) == from_player) && (Owner(i) != i))
-        {
-            switch (Typeof(i))
-            {
-            case TYPE_PLAYER:
-
-                s_Owner(i, i);
-                quota_out += mudconf.player_quota;
-                break;
-
-            case TYPE_THING:
-
-                s_Owner(i, to_player);
-                quota_out += mudconf.thing_quota;
-                quota_in -= mudconf.thing_quota;
-                break;
-
-            case TYPE_ROOM:
-
-                s_Owner(i, to_player);
-                quota_out += mudconf.room_quota;
-                quota_in -= mudconf.room_quota;
-                break;
-
-            case TYPE_EXIT:
-
-                s_Owner(i, to_player);
-                quota_out += mudconf.exit_quota;
-                quota_in -= mudconf.exit_quota;
-                break;
-
-            default:
-
-                s_Owner(i, to_player);
-            }
-            s_Flags(i, (Flags(i) & ~(CHOWN_OK | INHERIT)) | HALT);
-            
-            if (key & CHOWN_NOZONE)
-            {
-                s_Zone(i, NOTHING);
-            }
-            count++;
-        }
+        notify(acting_player, "Permission denied.");
     }
-    add_quota(from_player, quota_out);
-    add_quota(to_player, quota_in);
+    else
+    {
+        DO_WHOLE_DB(i)
+        {
+            if ((Owner(i) == from_player) && (Owner(i) != i))
+            {
+                switch (Typeof(i))
+                {
+                case TYPE_PLAYER:
+                    
+                    s_Owner(i, i);
+                    quota_out += mudconf.player_quota;
+                    break;
+                    
+                case TYPE_THING:
+                    
+                    s_Owner(i, to_player);
+                    quota_out += mudconf.thing_quota;
+                    quota_in -= mudconf.thing_quota;
+                    break;
+                    
+                case TYPE_ROOM:
+                    
+                    s_Owner(i, to_player);
+                    quota_out += mudconf.room_quota;
+                    quota_in -= mudconf.room_quota;
+                    break;
+                    
+                case TYPE_EXIT:
+                    
+                    s_Owner(i, to_player);
+                    quota_out += mudconf.exit_quota;
+                    quota_in -= mudconf.exit_quota;
+                    break;
+                    
+                default:
+                    
+                    s_Owner(i, to_player);
+                }
+                s_Flags(i, (Flags(i) & ~(CHOWN_OK | INHERIT)) | HALT);
+                
+                if (key & CHOWN_NOZONE)
+                {
+                    s_Zone(i, NOTHING);
+                }
+                count++;
+            }
+        }
+        add_quota(from_player, quota_out);
+        add_quota(to_player, quota_in);
+    }
     return count;
 }
 
