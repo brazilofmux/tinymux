@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.158 2002-02-26 18:43:31 sdennis Exp $
+// $Id: functions.cpp,v 1.159 2002-02-27 01:07:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3455,12 +3455,6 @@ static void handle_vectors
         else
         {
             // Vector elementwise product.
-            //
-            // Note this is a departure from TinyMUX 1.6, but an
-            // imitation of the PennMUSH and MUSH 3.0 behavior:
-            // the documentation in Penn claims it's a dot product,
-            // but the actual behavior isn't. We implement dot
-            // product separately!
             //
             for (i = 0; i < n; i++)
             {
