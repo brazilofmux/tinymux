@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.67 2003-09-06 16:23:13 jake Exp $
+// $Id: functions.cpp,v 1.68 2003-09-21 01:07:29 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -7751,7 +7751,7 @@ char *expand_tabs(const char *str)
             {
             case '\t':
                 safe_fill(tbuf1, &bp, ' ', 8 - n % 8);
-                // FALL THROUGH
+                continue;
             case '\r':  
                 // FALL THROUGH
             case '\n':
