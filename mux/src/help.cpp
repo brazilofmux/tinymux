@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.10 2003-01-05 16:42:46 sdennis Exp $
+// $Id: help.cpp,v 1.11 2003-01-05 19:14:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -12,9 +12,8 @@
 
 #include "help.h"
 
-/*
- * Pointers to this struct is what gets stored in the help_htab's
- */
+// Pointers to this struct is what gets stored in the help_htab's.
+//
 struct help_entry
 {
     int pos;        // Position, copied from help_indx
@@ -118,10 +117,14 @@ void helpindex_load(dbref player)
     news = helpindex_read(&mudstate.news_htab, mudconf.news_indx);
     help = helpindex_read(&mudstate.help_htab, mudconf.help_indx);
     whelp = helpindex_read(&mudstate.wizhelp_htab, mudconf.whelp_indx);
-    if ((player != NOTHING) && !Quiet(player))
-        notify(player,
-               tprintf("Index entries: News...%d  Help...%d  Wizhelp...%d  +Help...%d  Wiznews...%d",
-                   news, help, whelp, phelp, wnhelp));
+    if (  player != NOTHING
+       && !Quiet(player))
+    {
+        char *p;
+        p = tprintf("Index entries: News...%d  Help...%d  Wizhelp...%d  +Help...%d  Wiznews...%d",
+            news, help, whelp, phelp, wnhelp);
+        notify(player, p);
+    }
 }
 
 void helpindex_init(void)
@@ -129,31 +132,22 @@ void helpindex_init(void)
     helpindex_load(NOTHING);
 }
 
-void help_write(dbref player, char *topic, CHashTable *htab, char *filename, BOOL eval)
+void help_write(dbref player, char *topic_arg, CHashTable *htab, char *filename, BOOL bEval)
 {
-    FILE *fp;
-    char *p, *line, *bp, *str, *result;
-    int offset;
-    struct help_entry *htab_entry;
-    BOOL matched;
-    char *topic_list = 0, *buffp = 0;
+    mux_strlwr(topic_arg);
+    const char *topic = topic_arg;
 
-    if (*topic == '\0')
+    if (topic[0] == '\0')
     {
-        topic = (char *)"help";
+        topic = "help";
     }
-    else
+    struct help_entry *htab_entry =
+        (struct help_entry *)hashfindLEN(topic, strlen(topic), htab);
+    if (!htab_entry)
     {
-        mux_strlwr(topic);
-    }
-    htab_entry = (struct help_entry *)hashfindLEN(topic, strlen(topic), htab);
-    if (htab_entry)
-    {
-        offset = htab_entry->pos;
-    }
-    else
-    {
-        matched = FALSE;
+        BOOL matched = FALSE;
+        char *topic_list = NULL;
+        char *buffp = NULL;
         for (htab_entry = (struct help_entry *)hash_firstentry(htab);
              htab_entry != NULL;
              htab_entry = (struct help_entry *)hash_nextentry(htab))
@@ -186,35 +180,38 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, BOO
         }
         return;
     }
-    if ((fp = fopen(filename, "rb")) == NULL)
+
+    int offset = htab_entry->pos;
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL)
     {
         notify(player, "Sorry, that function is temporarily unavailable.");
-        STARTLOG(LOG_PROBLEMS, "HLP", "OPEN")
-        line = alloc_lbuf("help_write.LOG.open");
+        STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
+        char *line = alloc_lbuf("help_write.LOG.open");
         sprintf(line, "Can't open %s for reading.", filename);
         log_text(line);
         free_lbuf(line);
-        ENDLOG
+        ENDLOG;
         return;
     }
     DebugTotalFiles++;
     if (fseek(fp, offset, 0) < 0L)
     {
         notify(player, "Sorry, that function is temporarily unavailable.");
-        STARTLOG(LOG_PROBLEMS, "HLP", "SEEK")
-        line = alloc_lbuf("help_write.LOG.seek");
+        STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");
+        char *line = alloc_lbuf("help_write.LOG.seek");
         sprintf(line, "Seek error in file %s.", filename);
         log_text(line);
         free_lbuf(line);
-        ENDLOG
+        ENDLOG;
         if (fclose(fp) == 0)
         {
             DebugTotalFiles--;
         }
         return;
     }
-    line = alloc_lbuf("help_write");
-    result = alloc_lbuf("help_write.2");
+    char *line = alloc_lbuf("help_write");
+    char *result = alloc_lbuf("help_write.2");
     for (;;)
     {
         if (  fgets(line, LBUF_SIZE - 1, fp) == NULL
@@ -231,7 +228,7 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, BOO
         }
         else
         {
-            for (p = line + 1; *p; p++)
+            for (char *p = line + 1; *p; p++)
             {
                 if (*p == '\n' || *p == '\r')
                 {
@@ -240,10 +237,10 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, BOO
                 }
             }
         }
-        if (eval)
+        if (bEval)
         {
-            str = line;
-            bp = result;
+            char *str = line;
+            char *bp = result;
             TinyExec(result, &bp, player, player, player,
                      EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
             *bp = '\0';
