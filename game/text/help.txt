@@ -6553,11 +6553,11 @@ IFELSE()
   FUNCTION: ifelse(<expression>,<true string>,<false string>)
                 if(<expression>,<true string>[,<false string>])
 
-  This function returns <true string> if <expression> is true (greater than
-  0), <false string> otherwise. Much more efficient than an equivalent
-  switch(). It can also return different messages based on whether
-  <expression> is nothing or contains text. if() does the same thing,
-  but the third, <false string> argument is optional.
+  This function returns <true string> if boolean <expression> is TRUE,
+  <false string> otherwise. Much more efficient than an equivalent switch().
+  It can also return different messages based on whether <expression> is
+  nothing or contains text. if() does the same thing, but the third,
+  <false string> argument is optional.
 
   Example:
     > think ifelse(v(test),Test exists!,Test doesn't exist.)
