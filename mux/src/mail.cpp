@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.10 2002-07-08 23:45:37 jake Exp $
+// $Id: mail.cpp,v 1.11 2002-07-09 00:03:42 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3557,7 +3557,6 @@ static char *make_numlist(dbref player, char *arg)
 
 void do_mail_quick(dbref player, char *arg1, char *arg2)
 {
-
     if (!arg1 || !*arg1)
     {
         notify(player, "MAIL: I don't know who you want to mail.");
@@ -3718,14 +3717,14 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
 
     if (Flags2(executor) & PLAYER_MAILS)
     {
-        char *newmsg, *bp, *attr;
         dbref aowner;
         int aflags;
 
         char *oldmsg = atr_get(executor, A_MAILMSG, &aowner, &aflags);
         if (*oldmsg)
         {
-            bp = newmsg = alloc_lbuf("do_prepend");
+            char *newmsg = alloc_lbuf("do_prepend");
+            char *bp = newmsg;
             safe_str(text + 1, newmsg, &bp);
             safe_chr(' ', newmsg, &bp);
             safe_str(oldmsg, newmsg, &bp);
@@ -3740,7 +3739,7 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
 
         free_lbuf(oldmsg);
         int nLen;
-        attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
+        char *attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
         notify(executor, tprintf("%d/%d characters prepended.", nLen, LBUF_SIZE-1));
     }
     else
@@ -3751,27 +3750,26 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
 
 void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *text)
 {
-
     if (!mudconf.have_mailer)
     {
         return;
     }
-
     if ((*(text + 1) == '-') && !(*(text + 2)))
     {
         do_expmail_stop(executor, 0);
         return;
     }
+
     if (Flags2(executor) & PLAYER_MAILS)
     {
-        char *newmsg, *bp, *attr;
         dbref aowner;
         int aflags;
 
         char *oldmsg = atr_get(executor, A_MAILMSG, &aowner, &aflags);
         if (*oldmsg)
         {
-            bp = newmsg = alloc_lbuf("do_postpend");
+            char *newmsg = alloc_lbuf("do_postpend");
+            char *bp = newmsg;
             safe_str(oldmsg, newmsg, &bp);
             safe_chr(' ', newmsg, &bp);
             safe_str(text + 1, newmsg, &bp);
@@ -3786,7 +3784,7 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
 
         free_lbuf(oldmsg);
         int nLen;
-        attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
+        char *attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
         notify(executor, tprintf("%d/%d characters added.", nLen, LBUF_SIZE-1));
     }
     else
@@ -3816,14 +3814,14 @@ static void do_edit_msg(dbref player, char *from, char *to)
 
 static void do_mail_proof(dbref player)
 {
-    char *mailto, *names;
+    char *names;
     char *mailmsg, *msg, *bp, *str;
     dbref aowner;
     int aflags;
     int iRealVisibleWidth;
     char szSubjectBuffer[MBUF_SIZE];
 
-    mailto = atr_get(player, A_MAILTO, &aowner, &aflags);
+    char *mailto = atr_get(player, A_MAILTO, &aowner, &aflags);
 
     if (!atr_get_raw(player, A_MAILMSG))
     {
@@ -3909,7 +3907,11 @@ void do_malias_desc(dbref player, char *alias, char *desc)
 
 void do_malias_chown(dbref player, char *alias, char *owner)
 {
-    dbref no = NOTHING;
+    if (!ExpMail(player))
+    {
+        notify(player, "MAIL: You cannot do that!");
+        return;
+    }
 
     int nResult;
     struct malias *m = get_malias(player, alias, &nResult);
@@ -3922,21 +3924,14 @@ void do_malias_chown(dbref player, char *alias, char *owner)
     {
         return;
     }
-    if (!ExpMail(player))
+    dbref no = NOTHING;
+    if ((no = lookup_player(player, owner, 1)) == NOTHING)
     {
-        notify(player, "MAIL: You cannot do that!");
+        notify(player, "MAIL: I do not see that here.");
         return;
     }
-    else
-    {
-        if ((no = lookup_player(player, owner, 1)) == NOTHING)
-        {
-            notify(player, "MAIL: I do not see that here.");
-            return;
-        }
-        m->owner = no;
-        notify(player, "MAIL: Owner changed for alias.");
-    }
+    m->owner = no;
+    notify(player, "MAIL: Owner changed for alias.");
 }
 
 void do_malias_add(dbref player, char *alias, char *person)
@@ -4149,15 +4144,16 @@ void do_malias_delete(dbref player, char *alias)
 
 void do_malias_adminlist(dbref player)
 {
-    struct malias *m;
-    int i;
-
-    if (!ExpMail(player)) {
+    if (!ExpMail(player))
+    {
         do_malias_list_all(player);
         return;
     }
     notify(player,
       "Num  Name         Description                              Owner");
+
+    struct malias *m;
+    int i;
 
     for (i = 0; i < ma_top; i++)
     {
@@ -4173,8 +4169,11 @@ void do_malias_adminlist(dbref player)
 void do_malias_status(dbref player)
 {
     if (!ExpMail(player))
+    {
         notify(player, "MAIL: Permission denied.");
-    else {
+    }
+    else
+    {
         notify(player, tprintf("MAIL: Number of mail aliases defined: %d", ma_top));
         notify(player, tprintf("MAIL: Allocated slots %d", ma_size));
     }
