@@ -1305,20 +1305,28 @@
   with spaces. If you specify the /delimit switch, then each item is
   considered to be separated by <delimiter>. <delimiter> must be a single
   character.
- 
+
   If present, <switch> can be any of:
     /space   - (Default) List elements are separated by spaces.
     /delimit - List elements are separated by <delimiter>.
- 
+    /notify  - Queues an '@notify' after all commands in the list.
+
   This command is particularly handy with lcon() and lexits(). A few examples:
- 
+
     @dolist [lcon(here)] = "[name(##)](##)
     @dolist [lcon(here)] = @switch [get(##/last)]=*1990*,"[name(##)]
     @va me = va vb vc
     @dolist [get(me/va)] = @emit [get(me/##)]
     @dolist Frodo Bilbo Gandalf = page ## = HELP!!!!  I've fallen into a pit.
     @dolist/delimit , {Frodo, Bilbo Baggins, Gandalf} = page ## = HELP!!!!
-  See also: iter(), parse().
+    @wait me="This is a semaphore.
+    @dolist/notify lnum(3)=say ##
+    > You say, "This is a semaphore."
+    > You say, "0"
+    > You say, "1"
+    > You say, "2"
+
+  See also: iter(), parse(), @notify, SEMAPHORES.
 
 & @drain
 
@@ -2063,7 +2071,7 @@
 & @notify
 
   Command: @notify[/<switches>] <object>[/<attribute>][=<count>]
- 
+
   Notifies the semaphore <object>, running the first command that waited on
   <object> using the '@wait <object>=<command>' or '
   @wait <object>/<time>=<command>' forms of the @wait command.  If <count> is
@@ -2074,13 +2082,14 @@
   <object>/<attribute>, which notifies commands that are being blocked on
   an attribute other than the default 'Semaphore'. This allows blocking of
   muliple sets of commands on a single object, using different attributes.
- 
+
   The following switches are available:
      /first - (default) Notify the first command waiting on the indicated
               semaphore (or the first <count> commands).
      /all   - Notify all commands waiting on the semaphore and reset the
               semaphore count to zero.  <count> is ignored.
- 
+     /quiet - Suppress the 'Notified.' message associated with the command.
+
   See also: @drain, @ps, @wait, SEMAPHORES
 
 & @oemit
