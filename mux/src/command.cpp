@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.36 2004-05-26 02:31:24 sdennis Exp $
+// $Id: command.cpp,v 1.37 2004-06-01 01:02:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4130,7 +4130,7 @@ void show_hook(char *bf, char *bfptr, int key)
     *bfptr = '\0';
 }
 
-void hook_loop (dbref executor, CMDENT *cmdp, char *s_ptr, char *s_ptrbuff)
+void hook_loop(dbref executor, CMDENT *cmdp, char *s_ptr, char *s_ptrbuff)
 {
     show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
     const char *pFmt = "%-32.32s | %s";
