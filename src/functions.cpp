@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.169 2002-04-13 21:27:39 sdennis Exp $
+// $Id: functions.cpp,v 1.170 2002-04-14 21:21:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4399,13 +4399,13 @@ FUNCTION(fun_hasflag)
 
     if (parse_attrib(player, fargs[0], &it, &atr))
     {
-        if (atr == NOTHING)
+        ATTR *ap;
+        if (atr == NOTHING || !(ap = atr_num(atr)))
         {
             safe_str("#-1 NOT FOUND", buff, bufc);
         }
         else
         {
-            ATTR *ap = atr_num(atr);
             int aflags;
             dbref aowner;
             atr_pget_info(it, atr, &aowner, &aflags);
@@ -7350,9 +7350,14 @@ void do_function
         int count = 0;
         for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
         {
+            const char *pName = "(WARNING: Bad Attribute Number)";
             ap = atr_num(ufp2->atr);
+            if (ap)
+            {
+                pName = ap->name;
+            }
             notify(player, tprintf("%-28.28s   #%-7d  %-30.30s  %c%c",
-                ufp2->name, ufp2->obj, ap->name, ((ufp2->flags & FN_PRIV) ? 'W' : '-'),
+                ufp2->name, ufp2->obj, pName, ((ufp2->flags & FN_PRIV) ? 'W' : '-'),
                 ((ufp2->flags & FN_PRES) ? 'p' : '-')));
             count++;
         }
