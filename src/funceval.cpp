@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.83 2002-01-15 06:23:28 sdennis Exp $
+// $Id: funceval.cpp,v 1.84 2002-01-15 06:34:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -845,16 +845,12 @@ FUNCTION(fun_table)
 {
     // Check argument numbers, assign values and defaults if necessary.
     //
-    char *pPaddingStart;
-    char *pPaddingEnd;
+    char *pPaddingStart = NULL;
+    char *pPaddingEnd = NULL;
     if (nfargs == 6 && *fargs[5])
     {
         pPaddingStart = strip_ansi(fargs[5]);
         pPaddingEnd = strchr(pPaddingStart, '\0');
-    }
-    else
-    {
-        pPaddingStart = NULL;
     }
 
     // Get single-character separator.
