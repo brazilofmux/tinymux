@@ -1413,9 +1413,24 @@ ATTRIBUTE PERMISSIONS
 
   The following attribute flags are available:
 
-    const dark deleted god hidden ignore is_lock locked no_command no_inherit
-    private visual wizard.
-
+    const      - No one can change the attribute after the server starts.
+    dark       - Attribute is not shown or readable to anyone but #1, but
+                 anyone can potentially change it.
+    deleted    - Attribute should be ignored.  It is not included in the
+                 @dump.  Not recommended.  This appears to be a manual way to
+                 accomplish @dbclean.
+    god        - Only #1 can change the attribute.
+    hidden     - Only WIZARDS can see it.  Dark to mortals.
+    ignore     - Don't create a @ command for it.  Not recommended.
+    internal   - Don't show even to #1.  Internal server bookkeeping.
+    is_lock    - Attribute is a lock.  Not recommended.
+    locked     - Attribute is locked.
+    no_command - Don't process $-commands from this attribute.
+    no_inherit - Not inherited by child objects.
+    private    - Players other than owner can't see it.
+    regexp     - Do a regexp rather than wildcard match.
+    visual     - Anyone can see.
+    wizard     - Only WIZARDS can change it.
 
   NOTE: There is a simple way to create attributes that are both 'wizard'
   and 'hidden'. Prefix the attribute name with an underscore (_) and the
