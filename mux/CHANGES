@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  January 2003
+Last Update:  February 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -261,7 +261,11 @@ Bug Fixes:
     does this.  The threaded implementation for Win32 didn't.
  -- Alierak reported that SCRAMBLE still scrambles characters off the end of 
     the buffer.  He provided a patch that fixed that while not giving a flat 
-    distribution.  This final check-in fixed both issues.
+    distribution.  This final check-in fixed both issues.  This bug is from
+    MUX 1.6.
+ -- Bug fix in mux_memicmp().  mux_memicmp("June ", "june", 4) != 0 when it
+    should. Brazil's bug.  mux_memicmp() was added to fix a build problem on
+    QNX, so the bug would have been introduce at the same time.
 
 
 Performance Enhancements:
