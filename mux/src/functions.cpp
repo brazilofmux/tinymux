@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.30 2003-02-05 01:13:20 sdennis Exp $
+// $Id: functions.cpp,v 1.31 2003-02-05 01:21:20 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -487,29 +487,29 @@ BOOL nearby_or_control(dbref player, dbref thing)
 
 #ifdef HAVE_IEEE_FP_FORMAT
 
-const char *TinyFPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "0", "0" };
+const char *mux_FPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "0", "0" };
 
-#define TINY_FPGROUP_PASS  0x00 // Pass-through to printf
-#define TINY_FPGROUP_ZERO  0x10 // Force to be zero.
-#define TINY_FPGROUP_PINF  0x20 // "+Inf"
-#define TINY_FPGROUP_NINF  0x30 // "-Inf"
-#define TINY_FPGROUP_IND   0x40 // "Ind"
-#define TINY_FPGROUP_NAN   0x50 // "NaN"
-#define TINY_FPGROUP(x) ((x) & 0xF0)
+#define MUX_FPGROUP_PASS  0x00 // Pass-through to printf
+#define MUX_FPGROUP_ZERO  0x10 // Force to be zero.
+#define MUX_FPGROUP_PINF  0x20 // "+Inf"
+#define MUX_FPGROUP_NINF  0x30 // "-Inf"
+#define MUX_FPGROUP_IND   0x40 // "Ind"
+#define MUX_FPGROUP_NAN   0x50 // "NaN"
+#define MUX_FPGROUP(x) ((x) & 0xF0)
 
 // mux_fpclass returns an integer that is one of the following:
 //
-#define TINY_FPCLASS_PINF  (TINY_FPGROUP_PINF|0) // Positive infinity (+INF)
-#define TINY_FPCLASS_NINF  (TINY_FPGROUP_NINF|1) // Negative infinity (-INF)
-#define TINY_FPCLASS_QNAN  (TINY_FPGROUP_IND |2) // Quiet NAN (Indefinite)
-#define TINY_FPCLASS_SNAN  (TINY_FPGROUP_NAN |3) // Signaling NAN
-#define TINY_FPCLASS_ND    (TINY_FPGROUP_ZERO|4) // Negative denormalized
-#define TINY_FPCLASS_NZ    (TINY_FPGROUP_ZERO|5) // Negative zero (-0)
-#define TINY_FPCLASS_PZ    (TINY_FPGROUP_ZERO|6) // Positive zero (+0)
-#define TINY_FPCLASS_PD    (TINY_FPGROUP_ZERO|7) // Positive denormalized
-#define TINY_FPCLASS_PN    (TINY_FPGROUP_PASS|8) // Positive normalized non-zero
-#define TINY_FPCLASS_NN    (TINY_FPGROUP_PASS|9) // Negative normalized non-zero
-#define TINY_FPCLASS(x)    ((x) & 0x0F)
+#define MUX_FPCLASS_PINF  (MUX_FPGROUP_PINF|0) // Positive infinity (+INF)
+#define MUX_FPCLASS_NINF  (MUX_FPGROUP_NINF|1) // Negative infinity (-INF)
+#define MUX_FPCLASS_QNAN  (MUX_FPGROUP_IND |2) // Quiet NAN (Indefinite)
+#define MUX_FPCLASS_SNAN  (MUX_FPGROUP_NAN |3) // Signaling NAN
+#define MUX_FPCLASS_ND    (MUX_FPGROUP_ZERO|4) // Negative denormalized
+#define MUX_FPCLASS_NZ    (MUX_FPGROUP_ZERO|5) // Negative zero (-0)
+#define MUX_FPCLASS_PZ    (MUX_FPGROUP_ZERO|6) // Positive zero (+0)
+#define MUX_FPCLASS_PD    (MUX_FPGROUP_ZERO|7) // Positive denormalized
+#define MUX_FPCLASS_PN    (MUX_FPGROUP_PASS|8) // Positive normalized non-zero
+#define MUX_FPCLASS_NN    (MUX_FPGROUP_PASS|9) // Negative normalized non-zero
+#define MUX_FPCLASS(x)    ((x) & 0x0F)
 
 #ifdef WIN32
 #define IEEE_MASK_SIGN     0x8000000000000000ui64
@@ -560,32 +560,32 @@ static int mux_fpclass(double result)
     {
         if (i64 & IEEE_MASK_MANTISSA)
         {
-            if (i64 & IEEE_MASK_SIGN) return TINY_FPCLASS_ND;
-            else                      return TINY_FPCLASS_PD;
+            if (i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_ND;
+            else                      return MUX_FPCLASS_PD;
         }
         else
         {
-            if (i64 & IEEE_MASK_SIGN) return TINY_FPCLASS_NZ;
-            else                      return TINY_FPCLASS_PZ;
+            if (i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_NZ;
+            else                      return MUX_FPCLASS_PZ;
         }
     }
     else if ((i64 & IEEE_MASK_EXPONENT) == IEEE_MASK_EXPONENT)
     {
         if (i64 & IEEE_MASK_MANTISSA)
         {
-            if (i64 & IEEE_MASK_QNAN) return TINY_FPCLASS_QNAN;
-            else                      return TINY_FPCLASS_SNAN;
+            if (i64 & IEEE_MASK_QNAN) return MUX_FPCLASS_QNAN;
+            else                      return MUX_FPCLASS_SNAN;
         }
         else
         {
-            if (i64 & IEEE_MASK_SIGN) return TINY_FPCLASS_NINF;
-            else                      return TINY_FPCLASS_PINF;
+            if (i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_NINF;
+            else                      return MUX_FPCLASS_PINF;
         }
     }
     else
     {
-        if (i64 & IEEE_MASK_SIGN)     return TINY_FPCLASS_NN;
-        else                          return TINY_FPCLASS_PN;
+        if (i64 & IEEE_MASK_SIGN)     return MUX_FPCLASS_NN;
+        else                          return MUX_FPCLASS_PN;
     }
 }
 #endif // HAVE_IEEE_FP_FORMAT
@@ -599,7 +599,7 @@ static void fval(char *buff, char **bufc, double result)
     //
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = mux_fpclass(result);
-    if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
+    if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
         double rIntegerPart;
@@ -619,7 +619,7 @@ static void fval(char *buff, char **bufc, double result)
     }
     else
     {
-        safe_str(TinyFPStrings[TINY_FPCLASS(fpc)], buff, bufc);
+        safe_str(mux_FPStrings[MUX_FPCLASS(fpc)], buff, bufc);
     }
 #endif // HAVE_IEEE_FP_FORMAT
 }
@@ -630,7 +630,7 @@ static void fval_buf(char *buff, double result)
     //
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = mux_fpclass(result);
-    if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
+    if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
         double rIntegerPart;
@@ -651,7 +651,7 @@ static void fval_buf(char *buff, double result)
     }
     else
     {
-        strcpy(buff, TinyFPStrings[TINY_FPCLASS(fpc)]);
+        strcpy(buff, mux_FPStrings[MUX_FPCLASS(fpc)]);
     }
 #endif // HAVE_IEEE_FP_FORMAT
 }
@@ -3531,7 +3531,7 @@ FUNCTION(fun_floor)
     double r = floor(mux_atof(fargs[0]));
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = mux_fpclass(r);
-    if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
+    if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
         safe_tprintf_str(buff, bufc, "%.0f", r);
@@ -3539,7 +3539,7 @@ FUNCTION(fun_floor)
     }
     else
     {
-        safe_str(TinyFPStrings[TINY_FPCLASS(fpc)], buff, bufc);
+        safe_str(mux_FPStrings[MUX_FPCLASS(fpc)], buff, bufc);
     }
 #endif // HAVE_IEEE_FP_FORMAT
 }
@@ -3549,7 +3549,7 @@ FUNCTION(fun_ceil)
     double r = ceil(mux_atof(fargs[0]));
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = mux_fpclass(r);
-    if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
+    if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
         safe_tprintf_str(buff, bufc, "%.0f", r);
@@ -3557,7 +3557,7 @@ FUNCTION(fun_ceil)
     }
     else
     {
-        safe_str(TinyFPStrings[TINY_FPCLASS(fpc)], buff, bufc);
+        safe_str(mux_FPStrings[MUX_FPCLASS(fpc)], buff, bufc);
     }
 #endif // HAVE_IEEE_FP_FORMAT
 }
@@ -3567,10 +3567,10 @@ FUNCTION(fun_round)
     double r = mux_atof(fargs[0]);
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = mux_fpclass(r);
-    if (  TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS
-       || TINY_FPGROUP(fpc) == TINY_FPGROUP_ZERO)
+    if (  MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS
+       || MUX_FPGROUP(fpc) == MUX_FPGROUP_ZERO)
     {
-        if (TINY_FPGROUP(fpc) == TINY_FPGROUP_ZERO)
+        if (MUX_FPGROUP(fpc) == MUX_FPGROUP_ZERO)
         {
             r = 0.0;
         }
@@ -3581,7 +3581,7 @@ FUNCTION(fun_round)
     }
     else
     {
-        safe_str(TinyFPStrings[TINY_FPCLASS(fpc)], buff, bufc);
+        safe_str(mux_FPStrings[MUX_FPCLASS(fpc)], buff, bufc);
     }
 #endif // HAVE_IEEE_FP_FORMAT
 }
@@ -3595,7 +3595,7 @@ FUNCTION(fun_trunc)
     rFractionalPart = modf(rArg, &rIntegerPart);
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = mux_fpclass(rIntegerPart);
-    if (TINY_FPGROUP(fpc) == TINY_FPGROUP_PASS)
+    if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
     {
 #endif // HAVE_IEEE_FP_FORMAT
         safe_tprintf_str(buff, bufc, "%.0f", rIntegerPart);
@@ -3603,7 +3603,7 @@ FUNCTION(fun_trunc)
     }
     else
     {
-        safe_str(TinyFPStrings[TINY_FPCLASS(fpc)], buff, bufc);
+        safe_str(mux_FPStrings[MUX_FPCLASS(fpc)], buff, bufc);
     }
 #endif // HAVE_IEEE_FP_FORMAT
 }
