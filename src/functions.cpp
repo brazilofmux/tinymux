@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.143 2002-01-31 22:44:49 sdennis Exp $
+// $Id: functions.cpp,v 1.144 2002-02-01 07:59:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5616,6 +5616,61 @@ FUNCTION(fun_fold)
     free_lbuf(atextbuf);
 }
 
+// Taken from PennMUSH with permission.
+//
+// itemize(<list>[,<delim>[,<conjunction>[,<punctuation>]]])
+// It takes the elements of list and:
+//  If there's just one, returns it.
+//  If there's two, returns <e1> <conjunction> <e2>
+//  If there's >2, returns <e1><punc> <e2><punc> ... <conjunction> <en>
+// Default <conjunction> is "and", default punctuation is ","
+//
+FUNCTION(fun_itemize)
+{ 
+    char sep;
+    varargs_preamble(2);
+    const char *lconj = "and";
+    if (nfargs > 2)
+    {
+        lconj = fargs[2];
+    }
+    const char *punc = ",";
+    if (nfargs > 3)
+    {
+        punc = fargs[3];
+    }
+
+    int pos = 1;
+    char *cp = trim_space_sep(fargs[0], sep);
+    char *word = split_token(&cp, sep);
+    while (cp && *cp)
+    {
+        pos++;
+        safe_str(word, buff, bufc);
+        char *nextword = split_token(&cp, sep);
+
+        if (!cp || !*cp)
+        {
+            // We're at the end.
+            //
+            if (pos >= 3)
+            {
+                safe_str(punc, buff, bufc);
+            }
+            safe_chr(' ', buff, bufc);
+            safe_str(lconj, buff, bufc);
+        }
+        else
+        {
+            safe_str(punc, buff, bufc);
+        }
+        safe_chr(' ', buff, bufc);
+
+        word = nextword;
+    }
+    safe_str(word, buff, bufc);
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_filter: iteratively perform a function with a list of arguments
@@ -6991,6 +7046,7 @@ FUN flist[] =
     {"ISNUM",    fun_isnum,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISUB",     fun_isub,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ISWORD",   fun_isword,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ITEMIZE",  fun_itemize,  MAX_ARG, 1,  4,       0, CA_PUBLIC},
     {"ITEMS",    fun_items,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"ITER",     fun_iter,     MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
     {"LADD",     fun_ladd,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
