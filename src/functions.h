@@ -1,6 +1,6 @@
 // functions.h - declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.4 2001-06-16 01:33:44 sdennis Exp $
+// $Id: functions.h,v 1.5 2001-10-11 19:26:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -65,22 +65,17 @@ extern int list2arr(char *arr[], int maxlen, char *list, char sep);
 
 // This is for functions that take an optional delimiter character.
 //
-#define varargs_preamble(xname,xnargs)                                \
+#define varargs_preamble(xnargs)                                      \
     if (!delim_check(fargs, nfargs, xnargs, &sep, buff, bufc, 0,      \
         player, cause, cargs, ncargs, 0))                             \
         return;
 
-#define evarargs_preamble(xname,xnargs)                               \
+#define evarargs_preamble(xnargs)                                     \
     if (!delim_check(fargs, nfargs, xnargs, &sep, buff, bufc, 1,      \
         player, cause, cargs, ncargs, 0))                             \
         return;
 
-#define mvarargs_preamble(xname,xminargs,xnargs)                      \
-    if (!delim_check(fargs, nfargs, xnargs, &sep, buff, bufc, 0,      \
-        player, cause, cargs, ncargs, 0))                             \
-        return;
-
-#define svarargs_preamble(xname,xnargs)                               \
+#define svarargs_preamble(xnargs)                                     \
     if (!delim_check(fargs, nfargs, xnargs-1, &sep, buff, bufc, 0,    \
         player, cause, cargs, ncargs, 0))                             \
         return;                                                       \
@@ -90,7 +85,7 @@ extern int list2arr(char *arr[], int maxlen, char *list, char sep);
         0, player, cause, cargs, ncargs, 1))                          \
         return;
 
-#define sevarargs_preamble(xname,xnargs)                              \
+#define sevarargs_preamble(xnargs)                                    \
     if (!delim_check(fargs, nfargs, xnargs-1, &sep, buff, bufc, 1,    \
         player, cause, cargs, ncargs, 0))                             \
         return;                                                       \

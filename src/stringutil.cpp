@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.49 2001-09-23 08:36:26 sdennis Exp $
+// $Id: stringutil.cpp,v 1.50 2001-10-11 19:26:47 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1819,6 +1819,23 @@ int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp, int nSizeO
     memcpy(*bufp, src, nLen);
     *bufp += nLen;
     return nLen;
+}
+
+int safe_fill(char *buff, char **bufc, char chFill, int nSpaces)
+{
+    // Check for buffer limits.
+    //
+    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    if (nSpaces > nBufferAvailable)
+    {
+        nSpaces = nBufferAvailable;
+    }
+
+    // Fill with spaces.
+    //
+    memset(*bufc, chFill, nSpaces);
+    *bufc += nSpaces;
+    return nSpaces;
 }
 
 int matches_exit_from_list(char *str, char *pattern)

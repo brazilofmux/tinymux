@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.97 2001-09-29 08:36:21 sdennis Exp $
+// $Id: functions.cpp,v 1.98 2001-10-11 19:26:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -857,7 +857,7 @@ FUNCTION(fun_words)
         safe_chr('0', buff, bufc);
         return;
     }
-    varargs_preamble("WORDS", 2);
+    varargs_preamble(2);
     safe_ltoa(countwords(fargs[0], sep), buff, bufc, LBUF_SIZE-1);
 }
 
@@ -1904,7 +1904,7 @@ FUNCTION(fun_first)
     {
         return;
     }
-    varargs_preamble("FIRST", 2);
+    varargs_preamble(2);
     s = trim_space_sep(fargs[0], sep);
     first = split_token(&s, sep);
     if (first)
@@ -1929,7 +1929,7 @@ FUNCTION(fun_rest)
     {
         return;
     }
-    varargs_preamble("REST", 2);
+    varargs_preamble(2);
     s = trim_space_sep(fargs[0], sep);  /*
                          * leading spaces ... 
                          */
@@ -2296,7 +2296,7 @@ FUNCTION(fun_name)
 FUNCTION(fun_match)
 {
     char sep;
-    varargs_preamble("MATCH", 3);
+    varargs_preamble(3);
 
     // Check each word individually, returning the word number of the first
     // one that matches.  If none match, return 0.
@@ -2338,7 +2338,7 @@ FUNCTION(fun_extract)
     int start, len;
     char *r, *s, *t, sep;
 
-    varargs_preamble("EXTRACT", 4);
+    varargs_preamble(4);
 
     s = fargs[0];
     start = Tiny_atol(fargs[1]);
@@ -2767,7 +2767,7 @@ FUNCTION(fun_t)
 FUNCTION(fun_ladd)
 {
     char sep;
-    varargs_preamble("LADD", 2);
+    varargs_preamble(2);
 
     double sum = 0.0;
     char *cp = trim_space_sep(fargs[0], sep);
@@ -3413,21 +3413,21 @@ static void handle_vectors
 FUNCTION(fun_vadd)
 {
     char sep, osep;
-    svarargs_preamble("VADD", 4);
+    svarargs_preamble(4);
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VADD_F);
 }
 
 FUNCTION(fun_vsub)
 {
     char sep, osep;
-    svarargs_preamble("VSUB", 4);
+    svarargs_preamble(4);
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VSUB_F);
 }
 
 FUNCTION(fun_vmul)
 {
     char sep, osep;
-    svarargs_preamble("VMUL", 4);
+    svarargs_preamble(4);
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VMUL_F);
 }
 
@@ -3436,7 +3436,7 @@ FUNCTION(fun_vdot)
     // dot product: (a,b,c) . (d,e,f) = ad + be + cf
     //
     char sep, osep;
-    svarargs_preamble("VDOT", 4);
+    svarargs_preamble(4);
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VDOT_F);
 }
 
@@ -3445,7 +3445,7 @@ FUNCTION(fun_vcross)
     // cross product: (a,b,c) x (d,e,f) = (bf - ce, cd - af, ae - bd)
     //
     char sep, osep;
-    svarargs_preamble("VCROSS", 4);
+    svarargs_preamble(4);
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VCROSS_F);
 }
 
@@ -3456,7 +3456,7 @@ FUNCTION(fun_vmag)
     double tmp, res = 0.0;
     char sep;
     
-    varargs_preamble("VMAG", 2);
+    varargs_preamble(2);
     
     // Split the list up, or return if the list is empty.
     //
@@ -3498,7 +3498,7 @@ FUNCTION(fun_vunit)
     double tmp, res = 0.0;
     char sep;
     
-    varargs_preamble("VUNIT", 2);
+    varargs_preamble(2);
     
     // Split the list up, or return if the list is empty.
     //
@@ -3546,7 +3546,7 @@ FUNCTION(fun_vdim)
     }
     else
     {
-        varargs_preamble("VDIM", 2);
+        varargs_preamble(2);
         safe_ltoa(countwords(fargs[0],sep), buff, bufc, LBUF_SIZE-1);
     }
 }
@@ -4034,7 +4034,7 @@ FUNCTION(fun_ldelete)
     // Delete a word at position X of a list.
     //
     char sep;
-    varargs_preamble("LDELETE", 3);
+    varargs_preamble(3);
     do_itemfuns(buff, bufc, fargs[0], Tiny_atol(fargs[1]), NULL, sep, IF_DELETE);
 }
 
@@ -4043,7 +4043,7 @@ FUNCTION(fun_replace)
     // Replace a word at position X of a list.
     //
     char sep;
-    varargs_preamble("REPLACE", 4);
+    varargs_preamble(4);
     do_itemfuns(buff, bufc, fargs[0], Tiny_atol(fargs[1]), fargs[2], sep, IF_REPLACE);
 }
 
@@ -4052,7 +4052,7 @@ FUNCTION(fun_insert)
     // Insert a word at position X of a list.
     //
     char sep;
-    varargs_preamble("INSERT", 4);
+    varargs_preamble(4);
     do_itemfuns(buff, bufc, fargs[0], Tiny_atol(fargs[1]), fargs[2], sep, IF_INSERT);
 }
 
@@ -4067,7 +4067,7 @@ FUNCTION(fun_remove)
     char sep;
     int first, found;
 
-    varargs_preamble("REMOVE", 3);
+    varargs_preamble(3);
     if (strchr(fargs[1], sep))
     {
         safe_str("#-1 CAN ONLY DELETE ONE ELEMENT", buff, bufc);
@@ -4105,7 +4105,7 @@ FUNCTION(fun_member)
     int wcount;
     char *r, *s, sep;
 
-    varargs_preamble("MEMBER", 3);
+    varargs_preamble(3);
     wcount = 1;
     s = trim_space_sep(fargs[0], sep);
     do {
@@ -4221,7 +4221,7 @@ FUNCTION(fun_wordpos)
     int i;
     char *cp, *tp, *xp, sep;
     
-    varargs_preamble("WORDPOS", 3);
+    varargs_preamble(3);
     
     charpos = Tiny_atol(fargs[1]);
     cp = fargs[0];
@@ -4861,7 +4861,7 @@ FUNCTION(fun_revwords)
         return;
     }
     char sep;
-    varargs_preamble("REVWORDS", 2);
+    varargs_preamble(2);
     ReverseWordsInText_Seperator = sep;
     ANSI_TransformTextReverseWithFunction(buff, bufc, fargs[0], ReverseWordsInText);
 }
@@ -5104,7 +5104,7 @@ FUNCTION(fun_splice)
     char *p1, *p2, *q1, *q2, sep;
     int words, i, first;
 
-    varargs_preamble("SPLICE", 4);
+    varargs_preamble(4);
 
     /*
      * length checks 
@@ -5172,16 +5172,7 @@ FUNCTION(fun_repeat)
         {
             // It turns into a memset.
             //
-            int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-            if (times > nBufferAvailable)
-            {
-                times = nBufferAvailable;
-            }
-
-            // Fill with repeat character.
-            //
-            memset(*bufc, *fargs[0], times);
-            *bufc += times;
+            safe_fill(buff, bufc, *fargs[0], times);
         }
         else
         {
@@ -5228,7 +5219,7 @@ FUNCTION(fun_parse)
     char *str;
     int first, number = 0;
 
-    sevarargs_preamble("PARSE", 4);
+    sevarargs_preamble(4);
     cp = curr = dp = alloc_lbuf("fun_parse");
     str = fargs[0];
     TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -5270,7 +5261,7 @@ FUNCTION(fun_iter)
     *str;
     int first, number = 0;
 
-    sevarargs_preamble("ITER", 4);
+    sevarargs_preamble(4);
     dp = cp = curr = alloc_lbuf("fun_iter");
     str = fargs[0];
     TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -5307,7 +5298,7 @@ FUNCTION(fun_list)
      sep;
     int number = 0;
 
-    evarargs_preamble("LIST", 3);
+    evarargs_preamble(3);
     cp = curr = dp = alloc_lbuf("fun_list");
     str = fargs[0];
     TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -5361,7 +5352,7 @@ FUNCTION(fun_fold)
 
     // We need two to four arguements only.
     //
-    mvarargs_preamble("FOLD", 2, 4);
+    varargs_preamble(4);
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
@@ -5473,7 +5464,7 @@ FUNCTION(fun_filter)
     char *atext, *result, *curr, *objstring, *bp, *str, *cp, *atextbuf,
      sep;
 
-    varargs_preamble("FILTER", 3);
+    varargs_preamble(3);
 
     /*
      * Two possibilities for the first arg: <obj>/<attr> and <attr>. 
@@ -5552,7 +5543,7 @@ FUNCTION(fun_map)
     ATTR *ap;
     char *atext, *objstring, *str, *cp, *atextbuf, sep, osep;
 
-    svarargs_preamble("MAP", 4);
+    svarargs_preamble(4);
 
     /*
      * Two possibilities for the second arg: <obj>/<attr> and <attr>. 
@@ -5860,19 +5851,7 @@ FUNCTION(fun_space)
         }
 
     }
-
-    // Check for buffer limits.
-    //
-    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    if (num > nBufferAvailable)
-    {
-        num = nBufferAvailable;
-    }
-
-    // Fill with spaces.
-    //
-    memset(*bufc, ' ', num);
-    *bufc += num;
+    safe_fill(buff, bufc, ' ', num);
 }
 
 /*
@@ -6014,7 +5993,7 @@ FUNCTION(fun_sort)
 
     // If we are passed an empty arglist return a null string.
     //
-    mvarargs_preamble("SORT", 1, 3);
+    varargs_preamble(3);
 
     // Convert the list to an array.
     //
@@ -6231,7 +6210,7 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
 FUNCTION(fun_setunion)
 {
     char sep;
-    varargs_preamble("SETUNION", 3);
+    varargs_preamble(3);
     handle_sets(fargs, buff, bufc, SET_UNION, sep);
     return;
 }
@@ -6239,7 +6218,7 @@ FUNCTION(fun_setunion)
 FUNCTION(fun_setdiff)
 {
     char sep;
-    varargs_preamble("SETDIFF", 3);
+    varargs_preamble(3);
     handle_sets(fargs, buff, bufc, SET_DIFF, sep);
     return;
 }
@@ -6247,7 +6226,7 @@ FUNCTION(fun_setdiff)
 FUNCTION(fun_setinter)
 {
     char sep;
-    varargs_preamble("SETINTER", 3);
+    varargs_preamble(3);
     handle_sets(fargs, buff, bufc, SET_INTERSECT, sep);
     return;
 }
@@ -6337,34 +6316,9 @@ void centerjustcombo
     //
     if (nPad == 1 && vwPad == 1)
     {
-        // Put out leading characters.
-        //
-        int nBufferAvailable;
-        if (vwLeading)
-        {
-            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-            if (vwLeading > nBufferAvailable)
-            {
-                vwLeading = nBufferAvailable;
-            }
-            memset(*bufc, aPad[0], vwLeading);
-            *bufc += vwLeading;
-        }
-
+        safe_fill(buff, bufc, aPad[0], vwLeading);
         safe_copy_buf(aStr, nStr, buff, bufc, LBUF_SIZE-1);
-
-        // Put out trailing characters.
-        //
-        if (vwTrailing)
-        {
-            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-            if (vwTrailing > nBufferAvailable)
-            {
-                vwTrailing = nBufferAvailable;
-            }
-            memset(*bufc, aPad[0], vwTrailing );
-            *bufc += vwTrailing;
-        }
+        safe_fill(buff, bufc, aPad[0], vwTrailing);
         return;
     }
 
@@ -6597,7 +6551,7 @@ FUNCTION(fun_trim)
     char *p, *lastchar, *q, sep;
     int trim;
 
-    mvarargs_preamble("TRIM", 1, 3);
+    varargs_preamble(3);
     if (nfargs >= 2)
     {
         switch (Tiny_ToLower[(unsigned char)*fargs[1]])
@@ -6675,7 +6629,7 @@ FUN flist[] =
     {"CENTER",   fun_center,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"CHANNELS", fun_channels, MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"CHILDREN", fun_children, MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"COLUMNS",  fun_columns,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"COLUMNS",  fun_columns,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"COMALIAS", fun_comalias, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"COMP",     fun_comp,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"COMTITLE", fun_comtitle, MAX_ARG, 2,  2,       0, CA_PUBLIC},

@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.67 2001-10-08 05:24:18 sdennis Exp $
+// $Id: funceval.cpp,v 1.68 2001-10-11 19:26:47 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -204,7 +204,7 @@ FUNCTION(fun_create)
     int cost;
     char sep, *name;
 
-    varargs_preamble("CREATE", 3);
+    varargs_preamble(3);
     name = fargs[0];
 
     if (!name || !*name)
@@ -744,20 +744,35 @@ FUNCTION(fun_zfun)
 
 FUNCTION(fun_columns)
 {
-    int rturn = 1;
-    char *curr, *objstring, *bp, *cp, sep, *str;
-
-    evarargs_preamble("COLUMNS", 3);
+    char sep;
+    evarargs_preamble(3);
 
     int nWidth = Tiny_atol(fargs[1]);
-    if ((nWidth < 1) || (nWidth > 78))
+    int nIndent = 0;
+    if (nfargs == 4)
+    {
+        nIndent = Tiny_atol(fargs[3]);
+        if (nIndent < 0 || 77 < nIndent)
+        {
+            nIndent = 1;
+        }
+    }
+
+    int nRight = nIndent + nWidth;
+    if (  nWidth < 1
+       || 78 < nWidth
+       || nRight < 1
+       || 78 < nRight)
     {
         safe_str("#-1 OUT OF RANGE", buff, bufc);
         return;
     }
-    cp = curr = bp = alloc_lbuf("fun_columns");
-    str = fargs[0];
-    TinyExec(curr, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    char *curr = alloc_lbuf("fun_columns");
+    char *cp = curr;
+    char *bp = curr;
+    char *str = fargs[0];
+    TinyExec(curr, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL,
+        &str, cargs, ncargs);
     *bp = '\0';
     cp = trim_space_sep(cp, sep);
     if (!*cp)
@@ -765,36 +780,45 @@ FUNCTION(fun_columns)
         free_lbuf(curr);
         return;
     }
-    safe_chr(' ', buff, bufc);
+
+    int nColumns = (78-nIndent)/nWidth;
+    int iColumn = 0;
 
     int nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
-    while (cp && nBufferAvailable > 0)
+    BOOL bNeedCRLF = FALSE;
+    while (  cp
+          && 0 < nBufferAvailable)
     {
-        objstring = split_token(&cp, sep);
+        if (iColumn == 0)
+        {
+            nBufferAvailable -= safe_fill(buff, bufc, ' ', nIndent);
+        }
+
+        char *objstring = split_token(&cp, sep);
         int nVisualWidth;
-        int nLen = ANSI_TruncateToField(objstring, nBufferAvailable, *bufc, nWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+        int nLen = ANSI_TruncateToField(objstring, nBufferAvailable, *bufc,
+            nWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
         *bufc += nLen;
         nBufferAvailable -= nLen;
 
-        int spaces = nWidth - nVisualWidth;
-        if (spaces > nBufferAvailable)
+        if (nColumns-1 <= iColumn)
         {
-            spaces = nBufferAvailable;
+            iColumn = 0;
+            nBufferAvailable -= safe_copy_buf("\r\n", 2, buff, bufc,
+                LBUF_SIZE-1);
+            bNeedCRLF = FALSE;
         }
-        if (spaces)
+        else
         {
-            memset(*bufc, ' ', spaces);
-            *bufc += spaces;
-            nBufferAvailable -= spaces;
+            iColumn++;
+            nBufferAvailable -= safe_fill(buff, bufc, ' ',
+                nWidth - nVisualWidth);
+            bNeedCRLF = TRUE;
         }
-
-        if (!(rturn % (int)(78 / nWidth)))
-        {
-            safe_str((char *)"\r\n ", buff, bufc);
-            nBufferAvailable -= 3;
-        }
-
-        rturn++;
+    }
+    if (bNeedCRLF)
+    {
+        safe_copy_buf("\r\n", 2, buff, bufc, LBUF_SIZE-1);
     }
     free_lbuf(curr);
 }
@@ -1701,7 +1725,7 @@ FUNCTION(fun_elements)
     char *ptrs[LBUF_SIZE / 2];
     char *wordlist, *s, *r, sep, *oldp;
 
-    varargs_preamble("ELEMENTS", 3);
+    varargs_preamble(3);
     oldp = *bufc;
 
     // Turn the first list into an array.
@@ -1738,7 +1762,7 @@ FUNCTION(fun_elements)
 FUNCTION(fun_grab)
 {
     char sep;
-    varargs_preamble("GRAB", 3);
+    varargs_preamble(3);
 
     // Walk the wordstring, until we find the word we want.
     //
@@ -1793,7 +1817,7 @@ FUNCTION(fun_shuffle)
     int n, i, j;
     char sep;
 
-    varargs_preamble("SHUFFLE", 2);
+    varargs_preamble(2);
 
     n = list2arr(words, LBUF_SIZE, fargs[0], sep);
 
@@ -1819,7 +1843,7 @@ FUNCTION(fun_pickrand)
         return;
     }
     char sep;
-    varargs_preamble("PICKRAND", 2);
+    varargs_preamble(2);
 
     char *s = trim_space_sep(fargs[0], sep);
     char *t = s;
@@ -1950,7 +1974,7 @@ FUNCTION(fun_sortby)
     dbref thing, aowner;
     ATTR *ap;
 
-    varargs_preamble("SORTBY", 3);
+    varargs_preamble(3);
 
     if (parse_attrib(player, fargs[0], &thing, &anum)) {
         if ((anum == NOTHING) || !Good_obj(thing))
@@ -2002,7 +2026,7 @@ FUNCTION(fun_last)
     {
         return;
     }
-    varargs_preamble("LAST", 2);
+    varargs_preamble(2);
 
     // Trim leading spaces.
     //
@@ -2042,7 +2066,7 @@ FUNCTION(fun_matchall)
     int wcount;
     char *r, *s, *old, sep, tbuf[8];
 
-    varargs_preamble("MATCHALL", 3);
+    varargs_preamble(3);
     old = *bufc;
 
     // Check each word individually, returning the word number of all that
@@ -2106,7 +2130,7 @@ FUNCTION(fun_mix)
     ATTR *ap;
     char *atext, *os[2], *oldp, *str, *cp1, *cp2, *atextbuf, sep;
 
-    varargs_preamble("MIX", 4);
+    varargs_preamble(4);
     oldp = *bufc;
 
     // Get the attribute, check the permissions.
@@ -2278,7 +2302,7 @@ FUNCTION(fun_munge)
     char *atext, *bp, *str, sep, *oldp;
 
     oldp = *bufc;
-    varargs_preamble("MUNGE", 4);
+    varargs_preamble(4);
 
     // Find our object and attribute.
     //
