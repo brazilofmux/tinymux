@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.64 2003-01-04 05:06:27 sdennis Exp $
+// $Id: funceval.cpp,v 1.65 2003-01-04 17:19:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -425,25 +425,26 @@ FUNCTION(fun_set)
     {
         if (atr != NOTHING)
         {
-            // Must specify flag name
-            //
-            if (!*fargs[1])
+            clear = FALSE;
+
+            p = fargs[1];
+            if (p[0] == '\0')
             {
+                // Must specify flag name
+                //
                 safe_str("#-1 UNSPECIFIED PARAMETER", buff, bufc);
             }
-
-            // Are we clearing?
-            //
-            clear = 0;
-            if (*fargs[0] == NOT_TOKEN)
+            else if (p[0] == NOT_TOKEN)
             {
-                fargs[0]++;
+                // We are clearing a flag instead of setting it.
+                //
+                p++;
                 clear = TRUE;
             }
 
             // valid attribute flag?
             //
-            flagvalue = search_nametab(executor, indiv_attraccess_nametab, fargs[1]);
+            flagvalue = search_nametab(executor, indiv_attraccess_nametab, p);
             if (flagvalue < 0)
             {
                 safe_str("#-1 CAN NOT SET", buff, bufc);
@@ -461,7 +462,8 @@ FUNCTION(fun_set)
             // Can we write to attribute?
             //
             attr = atr_num(atr);
-            if (!attr || !bCanSetAttr(executor, thing, attr))
+            if (  !attr
+               || !bCanSetAttr(executor, thing, attr))
             {
                 safe_noperm(buff, bufc);
                 return;
@@ -493,10 +495,9 @@ FUNCTION(fun_set)
 
     // Check for attr set first.
     //
-    for (p = fargs[1]; *p && (*p != ':'); p++)
+    for (p = fargs[1]; *p && *p != ':'; p++)
     {
-        // Nothing
-        ;
+        ; // Nothing
     }
 
     if (*p)
@@ -527,7 +528,7 @@ FUNCTION(fun_set)
         {
             strcpy(buff2, p + 1);
             if (  !parse_attrib(executor, p + 1, &thing2, &atr2)
-               || (atr2 == NOTHING))
+               || atr2 == NOTHING)
             {
                 free_lbuf(buff2);
                 safe_nomatch(buff, bufc);
