@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  April 2002
+Last Update:  May 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -112,6 +112,11 @@ Feature Additions:
  -- @list user_attributes now supports a wildcard pattern to control
     which user-defined attributes are reported.
  -- Allow '~' as the first character of an attribute name.
+ -- VALID() now supports attrname and playername tests.
+ -- Allow some aspects of the DARK flag to be delegated to players as
+    controlled by the hide and can_see powers. auto-DARK is still only
+    performed for Wizards.
+ -- Allow #1 to @newpassword herself if it's missing.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -227,6 +232,11 @@ Bug Fixes:
  -- Fix the '@list hashstats' report so that the 'longest' column is reset
     whenever a hash page is defragmented.  This will tend to give a smaller
     and more accurate number.
+ -- Fix bug with validating attribute names introduced in Build 42.
+ -- @exitformat is executed now even if all the exits in the room are DARK.
+ -- Fix edit(test,,a) --> 'testa'.
+ -- Work around what appears to be a compiler bug in GCC 3.0 and 3.1 that
+    caused timefmt($z) to return a bogus number.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -260,6 +270,9 @@ Performance Enhancements:
     time/pid scheme.
  -- Substitutions for ##, #!, and #$ are performed at one time and therefore
     faster.
+ -- @backup now allows the backup script to unload a flatfile instead of
+    having the server do it. Previously, the game server unloaded a flatfile,
+    and then the backup script unloaded the flatfile again.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
