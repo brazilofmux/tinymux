@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.24 2002-02-17 01:41:48 sdennis Exp $
+// $Id: svdrand.cpp,v 1.25 2002-02-17 01:51:58 sdennis Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -35,12 +35,12 @@ typedef BOOL WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
 
 // Seed the generator.
 //
-void sgenrand(UINT32);
-void sgenrand_from_array(UINT32 *, UINT32);
+static void sgenrand(UINT32);
+static void sgenrand_from_array(UINT32 *, int);
 
 // Returns a random 32-bit integer.
 //
-UINT32 genrand(void);
+static UINT32 genrand(void);
 
 #define NUM_RANDOM_UINT32 1024
 
@@ -52,7 +52,7 @@ void SeedRandomNumberGenerator(void)
     bSeeded = TRUE;
 
     UINT32 aRandomSystemBytes[NUM_RANDOM_UINT32];
-    int    nRandomSystemBytes = 0;
+    unsigned int nRandomSystemBytes = 0;
 
 #ifdef HAVE_DEV_URANDOM
     // Try to seed the PRNG from /dev/urandom 
@@ -66,7 +66,7 @@ void SeedRandomNumberGenerator(void)
         close(fd);
         if (len > 0)
         {
-            nRandomSystemBytes = len/(sizeof UINT32);
+            nRandomSystemBytes = len/sizeof(UINT32);
         }
     }
 #endif
@@ -114,9 +114,9 @@ void SeedRandomNumberGenerator(void)
     }
 #endif
 
-    if (nRandomSystemBytes >= sizeof UINT32)
+    if (nRandomSystemBytes >= sizeof(UINT32))
     {
-        int i;
+        unsigned int i;
         for (i = 0; i < nRandomSystemBytes; i++)
         {
             aRandomSystemBytes[i] &= 0xFFFFFFFFUL;
@@ -247,7 +247,7 @@ static void sgenrand(UINT32 nSeed)
 // init_key is the array for initializing keys
 // key_length is its length
 //
-static void sgenrand_from_array(UINT32 *init_key, UINT32 key_length)
+static void sgenrand_from_array(UINT32 *init_key, int key_length)
 {
     sgenrand(19650218UL);
     int i = 1;
