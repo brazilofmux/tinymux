@@ -5774,11 +5774,12 @@ EDIT()
 & ELEMENTS()
 ELEMENTS()
 
-  FUNCTION: elements(<list of words>,<list of numbers>[,<delim>])
+  FUNCTION: elements(<list of words>,<list of numbers>[,<idelim>[,<odelim>]])
 
   This function returns the words in <list of words> that are in the
-  positions specified by <list of numbers>. Optionally, a list delimiter
-  other than a space can be separated.
+  positions specified by <list of numbers>.  <list of numbers> is always
+  delimited by spaces.  <idelim> is the delimiter for <list of words>,
+  and the output is delimited by <odelim>
 
   Examples:
     > say elements(Foo Ack Beep Moo Zot,2 4)
