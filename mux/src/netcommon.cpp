@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.37 2003-01-01 09:08:03 sdennis Exp $
+// $Id: netcommon.cpp,v 1.38 2003-01-03 15:58:20 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1804,8 +1804,8 @@ static BOOL check_connect(DESC *d, char *msg)
     // At this point, command, user, and password are all less than
     // MBUF_SIZE.
     //
-    if (  !strncmp(command, "co", 2)
-       || !strncmp(command, "cd", 2))
+    if (  strncmp(command, "co", 2) == 0
+       || strncmp(command, "cd", 2) == 0)
     {
         if (string_prefix(user, mudconf.guest_prefix))
         {
@@ -1896,8 +1896,9 @@ static BOOL check_connect(DESC *d, char *msg)
                 || WizRoy(player)
                 || God(player))
         {
-            if (  !strncmp(command, "cd", 2)
-               && (Wizard(player) || God(player)))
+            if (  strncmp(command, "cd", 2) == 0
+               && (  Wizard(player)
+                  || God(player)))
             {
                 db[player].fs.word[FLAG_WORD1] |= DARK;
             }
@@ -1995,7 +1996,7 @@ static BOOL check_connect(DESC *d, char *msg)
             return FALSE;
         }
     }
-    else if (!strncmp(command, "cr", 2))
+    else if (strncmp(command, "cr", 2) == 0)
     {
         // Enforce game down.
         //
