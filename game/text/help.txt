@@ -7659,7 +7659,7 @@ MAIL()
   Only wizards can use the second and third forms of the function
   on other players.
 
-  Related Topics:
+  Related Topics: @mail, mail-reading.
 
 & MAIL-ADMIN
 MAIL-ADMIN
