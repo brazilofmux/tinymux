@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.34 2001-08-24 20:55:18 sdennis Exp $
+// $Id: stringutil.cpp,v 1.35 2001-08-25 05:29:57 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2120,25 +2120,276 @@ INT64 Tiny_atoi64(const char *pString)
     return sum;
 }
 
-// Some libraries go nuts...just because you force feed them lots of ASCII.
+// Floating-point strings match one of the following patterns:
 //
+// [+\-]?[0-9]?.[0-9]+([eE][+\-]?[0-9]{1,3})?
+// [+\-]?[0-9]+(.[0-9]?)?([eE][+\-]?[0-9]{1,3})?
+// +Inf
+// -Inf
+// Ind
+// NaN
+//
+typedef struct
+{
+    int    iLeadingSign;
+    int    iString;
+    char  *pDigitsA;
+    size_t nDigitsA;
+    char  *pDigitsB;
+    size_t nDigitsB;
+    int    iExponentSign;
+    char  *pDigitsC;
+    size_t nDigitsC;
+    char  *pMeat;
+    size_t nMeat;
+
+} PARSE_FLOAT_RESULT;
+
+#define PFR_INF 1
+#define PFR_IND 2
+#define PFR_NAN 3
+
+BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
+{
+    // Parse Input
+    //
+    unsigned char ch0;
+    pfr->pMeat = str;
+    if (  !Tiny_IsDigit[(unsigned char)*str]
+       && *str != '.')
+    {
+        while (Tiny_IsSpace[(unsigned char)*str])
+        {
+            str++;
+        }
+
+        pfr->pMeat = str;
+        if (*str == '-')
+        {
+            pfr->iLeadingSign = '-';
+            str++;
+        }
+        else if (*str == '+');
+        {
+            pfr->iLeadingSign = '+';
+            str++;
+        }
+        
+        if (  !Tiny_IsDigit[(unsigned char)*str]
+           && *str != '.')
+        {
+            // Look for three magic strings.
+            //
+            unsigned char ch0 = Tiny_ToUpper[(unsigned char)str[0]];
+            if (ch0 == 'I')
+            {
+                // Could be 'Inf' or 'Ind'
+                //
+                ch0 = Tiny_ToUpper[(unsigned char)str[1]];
+                if (ch0 == 'N')
+                {
+                    ch0 = Tiny_ToUpper[(unsigned char)str[2]];
+                    if (ch0 == 'F')
+                    {
+                        // Inf
+                        //
+                        pfr->iString = PFR_INF;
+                        str += 3;
+                        goto LastSpaces;
+                    }
+                    else if (ch0 == 'D')
+                    {
+                        // Ind
+                        //
+                        pfr->iString = PFR_IND;
+                        str += 3;
+                        goto LastSpaces;
+                    }
+                }
+            }
+            else if (ch0 == 'N')
+            {
+                // Could be 'Nan'
+                //
+                ch0 = Tiny_ToUpper[(unsigned char)str[1]];
+                if (ch0 == 'A')
+                {
+                    ch0 = Tiny_ToUpper[(unsigned char)str[2]];
+                    if (ch0 == 'N')
+                    {
+                        // Nan
+                        //
+                        pfr->iString = PFR_NAN;
+                        str += 3;
+                        goto LastSpaces;
+                    }
+                }
+            }
+            return FALSE;
+        }
+    }
+
+    // At this point, we have processed the leading sign, handled all
+    // the magic strings, skipped the leading spaces, and best of all
+    // we either have a digit or a decimal point.
+    //
+    pfr->pDigitsA = str;
+    while (Tiny_IsDigit[(unsigned char)*str])
+    {
+        pfr->nDigitsA++;
+        str++;
+    }
+
+    if (*str == '.')
+    {
+        str++;
+    }
+
+    pfr->pDigitsB = str;
+    while (Tiny_IsDigit[(unsigned char)*str])
+    {
+        pfr->nDigitsB++;
+        str++;
+    }
+
+    if (  pfr->nDigitsA == 0
+       && pfr->nDigitsB == 0)
+    {
+        return FALSE;
+    }
+
+    ch0 = Tiny_ToUpper[(unsigned char)*str];
+    if (ch0 == 'E')
+    {
+        // There is an exponent portion.
+        //
+        str++;
+        if (*str == '-')
+        {
+            pfr->iExponentSign = '-';
+            str++;
+        }
+        else if (*str == '+')
+        {
+            pfr->iExponentSign = '+';
+            str++;
+        }
+        pfr->pDigitsC = str;
+        while (Tiny_IsDigit[(unsigned char)*str])
+        {
+            pfr->nDigitsC++;
+            str++;
+        }
+
+        if (pfr->nDigitsC < 1 || 4 > pfr->nDigitsC)
+        {
+            return FALSE;
+        }
+    }
+
+LastSpaces:
+
+    pfr->nMeat = str - pfr->pMeat;
+
+    // Trailing spaces.
+    //
+    while (Tiny_IsSpace[(unsigned char)*str])
+    {
+        str++;
+    }
+
+    return (*str ? FALSE : TRUE);
+}
+
 #define ATOF_LIMIT 100
+static double powerstab[10] =
+{
+            1.0,
+           10.0,
+          100.0,
+         1000.0,
+        10000.0,
+       100000.0,
+      1000000.0,
+     10000000.0,
+    100000000.0,
+   1000000000.0
+};
+
 double Tiny_atof(char *szString)
 {
-    double ret;
+    // Initialize structure.
+    //
+    PARSE_FLOAT_RESULT pfr;
+    memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
 
-    int n = strlen(szString);
+    if (!ParseFloat(&pfr, szString))
+    {
+        return 0.0;
+    }
+
+    if (pfr.iString)
+    {
+        // TODO: Return the double value which corresponds to the
+        // string when HAVE_IEEE_FORMAT.
+        //
+        return 0.0;
+    }
+
+    // See if we can shortcut the decoding process.
+    //
+    double ret;
+    if (  pfr.nDigitsA <= 9
+       && pfr.nDigitsC == 0)
+    {
+        if (pfr.nDigitsB <= 9)
+        {
+            if (pfr.nDigitsB == 0)
+            {
+                // This 'floating-point' number is just an integer.
+                //
+                ret = (double)Tiny_atol(pfr.pDigitsA);
+            }
+            else
+            {
+                // This 'floating-point' number is fixed-point.
+                //
+                double rA = (double)Tiny_atol(pfr.pDigitsA);
+                double rB = (double)Tiny_atol(pfr.pDigitsB);
+                double rScale = powerstab[pfr.nDigitsB];
+                ret = rA + rB/rScale;
+
+                // As it is, ret is within a single bit of what a
+                // a call to atof would return. However, we can
+                // achieve that last lowest bit of precision by
+                // computing a residual.
+                //
+                double residual = (ret - rA)*rScale;
+                ret += (rB - residual)/rScale;
+            }
+            if (pfr.iLeadingSign == '-')
+            {
+                ret = -ret;
+            }
+            return ret;
+        }
+    }
+
+    char *p = pfr.pMeat;
+    int   n = pfr.nMeat;
     if (n > ATOF_LIMIT)
     {
-        int ch = szString[ATOF_LIMIT-1];
-        szString[ATOF_LIMIT-1] = '\0';
-        ret = atof(szString);
-        szString[ATOF_LIMIT-1] = ch;
+        n = ATOF_LIMIT;
     }
-    else
-    {
-        ret = atof(szString);
-    }
+
+    // We need to protect certain libraries from going nuts from being
+    // force fed lots of ASCII.
+    //
+    int ch = p[n];
+    p[n] = '\0';
+    ret = atof(p);
+    p[n] = ch;
+
     return ret;
 }
 
@@ -2202,8 +2453,6 @@ BOOL is_integer(char *str, int *pDigits)
 
 BOOL is_number(char *str)
 {
-    int got_one;
-
     // Leading spaces.
     //
     while (Tiny_IsSpace[(unsigned char)*str])
@@ -2227,10 +2476,10 @@ BOOL is_number(char *str)
 
     // Need at least one digit.
     //
-    got_one = 0;
+    BOOL got_one = FALSE;
     if (Tiny_IsDigit[(unsigned char)*str])
     {
-        got_one = 1;
+        got_one = TRUE;
     }
 
     // The number (int)
@@ -2251,7 +2500,12 @@ BOOL is_number(char *str)
     //
     if (Tiny_IsDigit[(unsigned char)*str])
     {
-        got_one = 1;
+        got_one = TRUE;
+    }
+
+    if (!got_one)
+    {
+        return FALSE;
     }
 
     // The number (fract)
@@ -2268,7 +2522,9 @@ BOOL is_number(char *str)
         str++;
     }
 
-    return ((*str || !got_one) ? FALSE : TRUE);
+    // The must be nothing else after the trailing spaces.
+    //
+    return (*str ? FALSE : TRUE);
 }
 
 // Tiny_StrTokString, Tiny_StrTokControl, Tiny_StrTokParse.
