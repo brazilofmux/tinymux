@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.89 2002-09-02 18:36:41 jake Exp $
+// $Id: functions.cpp,v 1.90 2002-09-02 18:42:21 jake Exp $
 //
 
 #include "copyright.h"
@@ -6265,16 +6265,17 @@ void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, BOOL bWhich)
     }
 
     number++;
-    if (  mudstate.in_loop - number >= 0
-       && mudstate.in_loop - number <= MAX_ITEXT)
+    int val = mudstate.in_loop - number;
+    if (  val >= 0
+       && val <= MAX_ITEXT)
     {
         if (bWhich)
         {
-            safe_ltoa(mudstate.inum[mudstate.in_loop-number], buff, bufc);
+            safe_ltoa(mudstate.inum[val], buff, bufc);
         }
         else
         {
-            safe_str(mudstate.itext[mudstate.in_loop-number], buff, bufc);
+            safe_str(mudstate.itext[val], buff, bufc);
         } 
     }
 }
