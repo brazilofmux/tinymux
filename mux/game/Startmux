@@ -22,13 +22,10 @@ $BIN/mkindx $TEXT/plushelp.txt $TEXT/plushelp.indx
 $BIN/mkindx $TEXT/wiznews.txt $TEXT/wiznews.indx
 $BIN/mkindx $TEXT/staffhelp.txt $TEXT/staffhelp.indx
 #
-#	Save a copy of the previous input database and log.
+#	Save a copy of the previous input database.
 #
 if [ -r $DATA/$INPUT_DB ]; then
 	mv -f $DATA/$INPUT_DB $DATA/$SAVE_DB
-fi
-if [ -f $LOGNAME ]; then
-	mv -f $LOGNAME $LOGNAME.old
 fi
 #
 #	If we have a good checkpoint database, make it the input database.
@@ -58,5 +55,5 @@ fi
 #
 #	Kick off MUX
 #
-(nohup $BIN/netmux $GAMENAME.conf >$LOGNAME 2>&1 &)
+(nohup $BIN/netmux $GAMENAME.conf >/dev/null 2>&1 &)
 
