@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.31 2003-01-05 16:55:45 sdennis Exp $
+// $Id: flags.cpp,v 1.32 2003-02-02 21:06:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -296,7 +296,7 @@ static FLAGBITENT fbeLinkOk         = { LINK_OK,      'L',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeMonitor        = { MONITOR,      'M',    FLAG_WORD1, 0,                    fh_hear_bit};
 static FLAGBITENT fbeMyopic         = { MYOPIC,       'm',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeNoCommand      = { NO_COMMAND,   'n',    FLAG_WORD2, 0,                    fh_any};
-static FLAGBITENT fbeNoAccents      = { NOACCENTS,    ' ',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeNoAccents      = { NOACCENTS,    '~',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeNoBleed        = { NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeNoSpoof        = { NOSPOOF,      'N',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeOpaque         = { TM_OPAQUE,    'O',    FLAG_WORD1, 0,                    fh_any};
