@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.3 2003-02-05 06:20:59 jake Exp $
+// $Id: svdrand.cpp,v 1.4 2003-02-05 06:56:41 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -19,9 +19,9 @@
 
 #ifdef WIN32
 #include <wincrypt.h>
-typedef bool WINAPI FCRYPTACQUIRECONTEXT(HCRYPTPROV *, LPCTSTR, LPCTSTR, DWORD, DWORD);
-typedef bool WINAPI FCRYPTRELEASECONTEXT(HCRYPTPROV, DWORD);
-typedef bool WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
+typedef BOOL WINAPI FCRYPTACQUIRECONTEXT(HCRYPTPROV *, LPCTSTR, LPCTSTR, DWORD, DWORD);
+typedef BOOL WINAPI FCRYPTRELEASECONTEXT(HCRYPTPROV, DWORD);
+typedef BOOL WINAPI FCRYPTGENRANDOM(HCRYPTPROV, DWORD, BYTE *);
 #else // WIN32
 #include <sys/stat.h>
 #include <sys/types.h>
