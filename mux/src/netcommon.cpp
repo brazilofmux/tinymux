@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.23 2002-07-21 03:38:35 sdennis Exp $
+// $Id: netcommon.cpp,v 1.24 2002-07-21 14:47:23 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -311,10 +311,14 @@ void queue_write(DESC *d, const char *b, int n)
 {
 
     if (n <= 0)
+    {
         return;
+    }
 
     if (d->output_size + n > mudconf.output_limit)
+    {
         process_output(d, FALSE);
+    }
 
     
     int left = mudconf.output_limit - d->output_size - n;
@@ -353,7 +357,9 @@ void queue_write(DESC *d, const char *b, int n)
     d->output_tot += n;
 
 #ifdef WIN32
-    if (platform == VER_PLATFORM_WIN32_NT && !(d->bWritePending) && !(d->bConnectionDropped))
+    if (  platform == VER_PLATFORM_WIN32_NT
+       && !d->bWritePending
+       && !d->bConnectionDropped)
     {
         d->bCallProcessOutputLater = TRUE;
     }
