@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.2 2003-07-23 19:36:37 sdennis Exp $
+// $Id: attrs.h,v 1.3 2004-07-24 05:25:08 sdennis Exp $
 //
 
 #ifndef _ATTRS_H
@@ -209,7 +209,44 @@
 #define A_STRUCT    254
 #define A_TEMP      255
 
-#define A_USER_START    256 /* Start of user-named attributes */
+#ifdef BT_ENABLED
+
+#define A_LUCK          256
+#define A_MECHSKILLS    257     /* Pilot's skills in using a mech */
+#define A_XTYPE         258     /* Hardcode type */
+#define A_TACHEIGHT     259     /* Tactical height */
+#define A_LRSHEIGHT     260     /* LRS height */
+#define A_CONTACTOPT    261     /* Contact options */
+#define A_MECHNAME      262     /* Mech name */
+#define A_MECHTYPE      263     /* Mech type */
+#define A_MECHDESC      264     /* Mech extra desc (for view) */
+#define A_MECHSTATUS    265     /* Mech status string. Not to be tampered. */
+#define A_MWTEMPLATE    266     /* MW template to use (if any) */
+#define A_FACTION       267     /* Faction */
+#define A_JOB           268     /* Job field */
+#define A_RANKNUM       269     /* 'true' rank, the thing comparisons are done with */
+#define A_HEALTH        270     /* Bruise,Lethal */
+#define A_ATTRS         271     /* Attributes */
+#define A_BUILDLINKS    272     /* Links */
+#define A_BUILDENTRANCE 273     /* Entrance(s) */
+#define A_BUILDCOORD    274     /* X/Y coord */
+#define A_ADVS          275     /* Advantages */
+#define A_PILOTNUM      276     /* Mech's pilot # */
+#define A_MAPVIS        277     /* Visibility */
+#define A_TECHTIME      278     /* Time (as a time_t number) until completion */
+#define A_ECONPARTS     279     /* Econ parts */
+#define A_SKILLS        280     /* Skills */
+#define A_PCEQUIP       281     /* PCombat equipment */
+#define A_AMECHDEST     282
+#define A_USER_START    283     // Start of user-named attributes.
+#define A_MECHPREFID    284     // BUGBUG: This should not occur after A_USER_START.
+#define A_HEATCHARS     285     // BUGBUG: This should not occur after A_USER_START.
+#else
+
+#define A_USER_START    256     // Start of user-named attributes.
+
+#endif
+
 #define ATR_BUF_CHUNK   100 /* Min size to allocate for attribute buffer */
 #define ATR_BUF_INCR    6   /* Max size of one attribute */
 
