@@ -9059,13 +9059,24 @@ FOLD()
 & RJUST()
 RJUST()
 
-  FUNCTION: rjust(<string>, <length>[, <fill>])
- 
-  This function pads a string with leading <fill> characters, or with spaces
-  if no fill character is given) ("right-justifies") so it is <length> long.
-  If <string> is longer than <length>, the <string> is returned; it is not
-  truncated.
- 
+  FUNCTION: rjust(<string>, <width>[, <fill>])
+
+  This function right-justifies <string> within a <width>-sized field. That
+  is, it positions <string> visually in the right-most part of a
+  <width>-sized field.
+
+  The background of this field is specified by a repeating pattern of <fill>
+  characters. The origin of this repeating pattern is at the first position
+  of the field. Another way of saying this is that the repeating pattern
+  starts in first position and repeats to the right. The last <fill> pattern
+  may be truncated.
+
+  By default, <fill> is a single, normal-colored space. The color of
+  <string> and <fill> is maintained.
+
+  If the visual width of <string> is longer than <width> characters, it is
+  truncated to fit.
+
   Examples:
     > say -[rjust(foo,6)]-
     You say "-   foo-"
@@ -9075,19 +9086,32 @@ RJUST()
     01234567"
     > say =[rjust(bar,5,.)]=
     You say "=..bar="
-  
-  Related Topics: ljust(), strlen().
+    > say rjust(%xh%xrR%xgG%xbB,31,%xy--%xm+)
+    --+--+--+--+--+--+--+--+--+-RGB
+
+  Related Topics: center(), ljust().
 
 & LJUST()
 LJUST()
 
-  FUNCTION: ljust(<string>, <length>[, <fill>])
- 
-  This function pads a string with trailing <fill> characters, or with spaces
-  if no fill character is given) ("left-justifies") so it is <length> long.
-  If <string> is longer than <length>, the <string> is returned; it is not
-  truncated.
- 
+  FUNCTION: ljust(<string>, <width>[, <fill>])
+
+  This function left-justifies <string> within a <width>-sized field. That
+  is, it positions <string> visually in the left-most part of a
+  <width>-sized field.
+
+  The background of this field is specified by a repeating pattern of <fill>
+  characters. The origin of this repeating pattern is at the first position
+  of the field. Another way of saying this is that the repeating pattern
+  starts in first position and repeats to the right. The last <fill> pattern
+  may be truncated.
+
+  By default, <fill> is a single, normal-colored space. The color of
+  <string> and <fill> is maintained.
+
+  If the visual width of <string> is longer than <width> characters, it is
+  truncated to fit.
+
   Examples:
     > say -[ljust(foo,6)]-
     You say "-foo   -"
@@ -9097,8 +9121,10 @@ LJUST()
     01234567"
     > say =[ljust(bar,5,.)]=
     You say "=bar..="
-  
-  Related Topics: rjust(), strlen().
+    > say ljust(%xh%xrR%xgG%xbB,31,%xy--%xm+)
+    RGB--+--+--+--+--+--+--+--+--+-
+
+  Related Topics: center(), rjust().
 
 & R()
 R()
@@ -9246,22 +9272,32 @@ TRIM()
 & CENTER()
 CENTER()
 
-  FUNCTION: center(<string>,<width>[,<fill>])
+  FUNCTION: center(<string>, <width>[, <fill>])
  
-  This function will center a string in a string <width> characters wide,
-  using <fil> characters for padding on either end of the string for
-  centering.  If no fill character is specified then a space is used.
-  If <string> is longer than <width> characters, the string is returned
-  unmodified.
+  This function centers <string> within a <width>-sized field.
+
+  The background of this field is specified by a repeating pattern of <fill>
+  characters. The origin of this repeating pattern is at the first position
+  of the field. Another way of saying this is that the repeating pattern
+  starts in first position and repeats to the right. The last <fill> pattern
+  may be truncated.
+
+  By default, <fill> is a single, normal-colored space. The color of
+  <string> and <fill> is maintained.
+
+  If the visual width of <string> is longer than <width> characters, it is
+  truncated to fit.
  
   Example:
     > say center(a,5,-)
     You say "--a--"
     > say center(*BAMF*,15)
     You say "    *BAMF*     "
+    > say center(%xh%xrR%xgG%xbB,31,%xy--%xm+)
+    --+--+--+--+--RGB+--+--+--+--+-
 
-  Related Topics:
-  
+  Related Topics: ljust, rjust
+
 & INSERT()
 INSERT()
 
