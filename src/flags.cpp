@@ -1,6 +1,6 @@
 // flags.cpp - flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.7 2000-10-24 22:26:28 sdennis Exp $ 
+// $Id: flags.cpp,v 1.8 2001-02-09 08:21:21 zenty Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -485,48 +485,59 @@ void flag_set(dbref target, dbref player, char *flag, int key)
 {
     FLAGENT *fp;
     int negate, result;
+    char *nflag=NULL;
 
     /*
      * Trim spaces, and handle the negation character 
      */
 
-    negate = 0;
-    while (Tiny_IsSpace[(unsigned char)*flag])
+    do {
+      negate = 0;
+      while (Tiny_IsSpace[(unsigned char)*flag])
         flag++;
+      
+      if (*flag == '!')
+	{
+	  negate = 1;
+	  flag++;
+	}
+      while (Tiny_IsSpace[(unsigned char)*flag])
+        flag++;      
+      nflag=flag; // this should be the exact flag name
+      while(Tiny_IsAlphaNumeric[(unsigned char)*nflag]) nflag++;
+      if(!*nflag)
+	nflag--; // backup so the next char is still Null... EVIL
+      else
+	*nflag = 0; // Set null so the flag's are broken
 
-    if (*flag == '!')
-    {
-        negate = 1;
-        flag++;
-    }
-    while (Tiny_IsSpace[(unsigned char)*flag])
-        flag++;
-
-    // Make sure a flag name was specified.
-    //
-    if (*flag == '\0')
-    {
-        if (negate)
+      // Make sure a flag name was specified.
+      //
+      if (*flag == '\0')
+	{
+	  if (negate)
             notify(player, "You must specify a flag to clear.");
-        else
+	  else
             notify(player, "You must specify a flag to set.");
-        return;
-    }
-    fp = find_flag(target, flag);
-    if (fp == NULL)
-    {
-        notify(player, "I don't understand that flag.");
-        return;
-    }
-    /*
-     * Invoke the flag handler, and print feedback 
-     */
-
-    result = fp->handler(target, player, fp->flagvalue, fp->flagflag, negate);
-    if (!result)
+	  return;
+	}
+      fp = find_flag(target, flag);
+      if (fp == NULL)
+	{
+	  notify(player, "I don't understand that flag.");
+	  return;
+	}
+      /*
+       * Invoke the flag handler, and print feedback 
+       */
+      
+      result = fp->handler(target, player, fp->flagvalue, fp->flagflag, negate);
+      if (!result)
         notify(player, "Permission denied.");
-    else if (!(key & SET_QUIET) && !Quiet(player))
+      else if (!(key & SET_QUIET) && !Quiet(player))
         notify(player, (negate ? "Cleared." : "Set."));
+      // return;
+      flag=nflag + 1;
+    } while(*flag);
     return;
 }
 
