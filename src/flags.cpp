@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.17 2001-11-28 10:45:47 sdennis Exp $
+// $Id: flags.cpp,v 1.18 2001-11-28 10:51:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -533,10 +533,10 @@ void flag_set(dbref target, dbref player, char *flag, int key)
             flag++;
         }
 
-        int negate = 0;
+        BOOL bNegate = FALSE;
         if (*flag == '!')
         {
-            negate = 1;
+            bNegate = TRUE;
             do
             {
                 flag++;
@@ -564,7 +564,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
         //
         if (*flag == '\0')
         {
-            if (negate)
+            if (bNegate)
             {
                 notify(player, "You must specify a flag to clear.");
             }
@@ -584,20 +584,21 @@ void flag_set(dbref target, dbref player, char *flag, int key)
             {
                 FLAGBITENT *fbe = fp->fbe;
 
+                BOOL bClearSet = bNegate;
                 if (!fp->bPositive)
                 {
-                    negate = !negate;
+                    bNegate = !bNegate;
                 }
 
                 // Invoke the flag handler, and print feedback.
                 //
-                if (!fbe->handler(target, player, fbe->flagvalue, fbe->flagflag, negate))
+                if (!fbe->handler(target, player, fbe->flagvalue, fbe->flagflag, bNegate))
                 {
                     notify(player, NOPERM_MESSAGE);
                 }
                 else if (!(key & SET_QUIET) && !Quiet(player))
                 {
-                    notify(player, (negate ? "Cleared." : "Set."));
+                    notify(player, (bClearSet ? "Cleared." : "Set."));
                 }
             }
         }
