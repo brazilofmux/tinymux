@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.20 2001-04-09 23:47:46 sdennis Exp $
+// $Id: stringutil.h,v 1.21 2001-08-24 18:21:17 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -55,6 +55,9 @@ char *Tiny_i64toa_t(INT64 val);
 void safe_i64toa(INT64 val, char *buff, char **bufc, int size);
 long Tiny_atol(const char *pString);
 INT64 Tiny_atoi64(const char *pString);
+
+extern BOOL is_integer(char *, int *);
+extern BOOL is_number(char *);
 
 #pragma pack(1)
 typedef struct

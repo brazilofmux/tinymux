@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.41 2001-06-29 11:34:04 sdennis Exp $
+// $Id: stringutil.cpp,v 1.42 2001-08-24 18:21:17 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2123,6 +2123,135 @@ INT64 Tiny_atoi64(const char *pString)
         sum = -sum;
     }
     return sum;
+}
+
+BOOL is_integer(char *str, int *pDigits)
+{
+    int nDigits = 0;
+    if (pDigits)
+    {
+        *pDigits = 0;
+    }
+
+    // Leading spaces.
+    //
+    while (Tiny_IsSpace[(unsigned char)*str])
+    {
+        str++;
+    }
+
+    // Leading minus
+    //
+    if (*str == '-')
+    {
+        str++;
+
+        // Just a minus by itself isn't an integer.
+        //
+        if (!*str)
+        {
+            return FALSE;
+        }
+    }
+
+    // Need at least 1 integer
+    //
+    if (!Tiny_IsDigit[(unsigned char)*str])
+    {
+        return FALSE;
+    }
+
+    // The number (int)
+    //
+    while (Tiny_IsDigit[(unsigned char)*str])
+    {
+        nDigits++;
+        str++;
+    }
+    if (pDigits)
+    {
+        *pDigits = nDigits;
+    }
+
+    // Trailing Spaces.
+    //
+    while (Tiny_IsSpace[(unsigned char)*str])
+    {
+        str++;
+    }
+
+    return (*str ? FALSE : TRUE);
+}
+
+BOOL is_number(char *str)
+{
+    int got_one;
+
+    // Leading spaces.
+    //
+    while (Tiny_IsSpace[(unsigned char)*str])
+    {
+        str++;
+    }
+
+    // Leading minus
+    //
+    if (*str == '-')
+    {
+        str++;
+
+        // But not if just a minus
+        //
+        if (!*str)
+        {
+            return FALSE;
+        }
+    }
+
+    // Need at least one digit.
+    //
+    got_one = 0;
+    if (Tiny_IsDigit[(unsigned char)*str])
+    {
+        got_one = 1;
+    }
+
+    // The number (int)
+    //
+    while (Tiny_IsDigit[(unsigned char)*str])
+    {
+        str++;
+    }
+
+    // Decimal point.
+    //
+    if (*str == '.')
+    {
+        str++;
+    }
+
+    // Need at least one digit
+    //
+    if (Tiny_IsDigit[(unsigned char)*str])
+    {
+        got_one = 1;
+    }
+
+    // The number (fract)
+    //
+    while (Tiny_IsDigit[(unsigned char)*str])
+    {
+        str++;
+    }
+
+    // Trailing spaces.
+    //
+    while (Tiny_IsSpace[(unsigned char)*str])
+    {
+        str++;
+    }
+
+    return ((*str || !got_one) ? FALSE : TRUE);
 }
 
 // Tiny_StrTokString, Tiny_StrTokControl, Tiny_StrTokParse.
