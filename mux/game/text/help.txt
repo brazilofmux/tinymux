@@ -4012,9 +4012,9 @@ ANSI SUBSTITUTION
 & ANSI()
 ANSI()
 
-  FUNCTION: ansi(<codes>,<string>)
+  FUNCTION: ansi(<codes>,<string>[,<codes>,<string>[,...]])
 
-  This allows you to highlight a string using ANSI terminal effects. The
+  This allows you to highlight a string using ANSI terminal effects.  The
   string is terminated with a "return to normal" code, and the codes are
   utilized in the order they are specified.
 
