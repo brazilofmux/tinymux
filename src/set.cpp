@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.5 2000-08-09 07:07:54 sdennis Exp $ 
+// $Id: set.cpp,v 1.6 2000-09-29 21:40:47 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -352,30 +352,29 @@ void do_lock(dbref player, dbref cause, int key, char *name, char *keytext)
         {
             if (!atr_get_info(thing, atr, &aowner, &aflags))
             {
-                notify_quiet(player,
-                    "Attribute not present on object.");
+                notify_quiet(player, "Attribute not present on object.");
                 return;
             }
             ap = atr_num(atr);
             
-            /*
-            * You may lock an attribute if: * you could write *
-            * * * the attribute if it were stored on * yourself
-            * * * * * --and-- * you own the attribute or are a * 
-            * wizard as  *  * * long as * you are not #1 and are 
-            * 
-            * * trying to do * * something to #1. 
-            */
-            
-            if (ap && (God(player) ||
-                (!God(thing) && Set_attr(player, player, ap, 0) &&
-                (Wizard(player) ||
-                (aowner == Owner(player))))))
+            // You may lock an attribute if: you could write the
+            // attribute if it were stored on yourself --and-- you
+            // own the attribute or are a wizard as  long as you are
+            // not #1 and are trying to do something to #1.
+            //            
+            if (  ap
+               && (  God(player)
+                  || (  !God(thing)
+                     && Set_attr(player, player, ap, 0)
+                     && (  Wizard(player)
+                        || (aowner == Owner(player))))))
             {
                 aflags |= AF_LOCK;
                 atr_set_flags(thing, atr, aflags);
                 if (!Quiet(player) && !Quiet(thing))
+                {
                     notify_quiet(player, "Attribute locked.");
+                }
             }
             else
             {
@@ -393,9 +392,11 @@ void do_lock(dbref player, dbref cause, int key, char *name, char *keytext)
     case NOTHING:
         notify_quiet(player, "I don't see what you want to lock!");
         return;
+
     case AMBIGUOUS:
         notify_quiet(player, "I don't know which one you want to lock!");
         return;
+
     default:
         if (!controls(player, thing))
         {
@@ -403,22 +404,26 @@ void do_lock(dbref player, dbref cause, int key, char *name, char *keytext)
             return;
         }
     }
-    
-    okey = parse_boolexp(player, keytext, 0);
+
+    char *pRestrictedKeyText = RemoveSetOfCharacters(keytext, "\r\n\t");
+    okey = parse_boolexp(player, pRestrictedKeyText, 0);
     if (okey == TRUE_BOOLEXP)
     {
         notify_quiet(player, "I don't understand that key.");
     }
     else
     {
-    
         // Everything ok, do it.
         //
         if (!key)
+        {
             key = A_LOCK;
+        }
         atr_add_raw(thing, key, unparse_boolexp_quiet(player, okey));
         if (!Quiet(player) && !Quiet(thing))
+        {
             notify_quiet(player, "Locked.");
+        }
     }
     free_boolexp(okey);
 }
