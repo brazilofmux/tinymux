@@ -159,6 +159,7 @@ Feature Additions:
  --  Reformatted wizhelp.txt.
  --  Freshened help for @aconnect and @adisconnect.
  --  Support second argument for squish().
+ --  Compiles under Cygwin.
 
 
 Bug Fixes:
