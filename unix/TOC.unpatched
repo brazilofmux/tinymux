@@ -1,5 +1,6 @@
 docs/muxman.pdf
 game/data/netmux.db
+game/mux.config
 game/netmux.conf
 game/text/badsite.txt
 game/text/connect.txt
