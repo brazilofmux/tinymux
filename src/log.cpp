@@ -1,7 +1,7 @@
 //
 // log.cpp - logging routines
 //
-// $Id: log.cpp,v 1.8 2001-07-06 21:21:57 sdennis Exp $
+// $Id: log.cpp,v 1.9 2001-10-24 18:43:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -158,17 +158,26 @@ void log_name(dbref target)
     char *tp;
 
     if ((mudconf.log_info & LOGOPT_FLAGS) != 0)
+    {
         tp = unparse_object((dbref) GOD, target, 0);
+    }
     else
+    {
         tp = unparse_object_numonly(target);
+    }
     Log.WriteString(strip_ansi(tp));
     free_lbuf(tp);
-    if (((mudconf.log_info & LOGOPT_OWNER) != 0) &&
-        (target != Owner(target))) {
+    if (  (mudconf.log_info & LOGOPT_OWNER) != 0
+       && target != Owner(target))
+    {
         if ((mudconf.log_info & LOGOPT_FLAGS) != 0)
-            tp = unparse_object((dbref) GOD, Owner(target), 0);
+        {
+            tp = unparse_object(GOD, Owner(target), 0);
+        }
         else
+        {
             tp = unparse_object_numonly(Owner(target));
+        }
         Log.tinyprintf("[%s]", strip_ansi(tp));
         free_lbuf(tp);
     }
