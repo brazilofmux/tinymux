@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.14 2000-11-16 19:31:05 sdennis Exp $
+// $Id: wiz.cpp,v 1.15 2001-04-12 01:37:27 morgan Exp $
 //
 
 #include "copyright.h"
@@ -158,10 +158,11 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
         // room where you pass its TELEPORT lock.
         //
         if (  !( Controls(player, destination)
-              || Jump_ok(destination)
-              || Tel_Anywhere(player)
-              )
-           || !could_doit(player, destination, A_LTPORT)
+                 || Jump_ok(destination)
+                 || Tel_Anywhere(player)
+               )
+              || !could_doit(player, destination, A_LTPORT)
+              || ( isExit(victim) && God(destination) && !God(player) )
            )
         {
             // Nope, report failure.
@@ -194,15 +195,29 @@ void do_teleport(dbref player, dbref cause, int key, char *arg1, char *arg2)
             }
         }
     }
-    else if (isExit(destination) && !isExit(victim))
+    else if ( isExit(destination) )
     {
-        if (Exits(destination) == Location(victim))
+        if ( isExit(victim) )
         {
-            move_exit(victim, destination, 0, "You can't go that way.", 0);
+            if ( player != victim )
+            {
+                notify_quiet(player, "Bad destination.");
+            }
+            did_it(victim, destination,
+                   A_TFAIL, "You can't teleport there!",
+                   A_OTFAIL, 0, A_ATFAIL, (char **)NULL, 0);
+            return;
         }
         else
         {
-            notify_quiet(player, "I can't find that exit.");
+            if (Exits(destination) == Location(victim))
+            {
+                move_exit(victim, destination, 0, "You can't go that way.", 0);
+            }
+            else
+            {
+                notify_quiet(player, "I can't find that exit.");
+            }
         }
     }
 }
