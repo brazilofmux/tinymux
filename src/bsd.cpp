@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.22 2001-03-30 16:43:41 zenty Exp $
+// $Id: bsd.cpp,v 1.23 2001-03-31 00:06:32 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -430,15 +430,19 @@ static int get_slave_result(void)
         if (strcmp(d->addr, host))
             continue;
         
-        StringCopyTrunc(d->addr, token, 50);
+        strncpy(d->addr, token, 50);
         d->addr[50] = '\0';
         if (d->player != 0)
         {
             if (d->username[0])
+            {
                 atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s", d->username, d->addr));
+            }
             else
+            {
                 atr_add_raw(d->player, A_LASTSITE, d->addr);
-	    atr_add_raw(d->player, A_LASTIP, inet_ntoa((d->address).sin_addr));
+            }
+            atr_add_raw(d->player, A_LASTIP, inet_ntoa((d->address).sin_addr));
         }
     }
 
@@ -621,20 +625,29 @@ static int get_slave_result()
     }
     p = strchr(buf, '\n');
     *p = '\0';
-    for (d = descriptor_list; d; d = d->next)
+    if (mudconf.use_hostname)
     {
-        if (strcmp(d->addr, host))
-            continue;
-        if (mudconf.use_hostname)
+        for (d = descriptor_list; d; d = d->next)
         {
-            StringCopyTrunc(d->addr, token, 50);
+            if (strcmp(d->addr, host) != 0)
+            {
+                continue;
+            }
+
+            strncpy(d->addr, token, 50);
             d->addr[50] = '\0';
-            if (d->player != 0) {
+            if (d->player != 0)
+            {
                 if (d->username[0])
+                {
                     atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s",
-                             d->username, d->addr));
+                        d->username, d->addr));
+                }
                 else
+                {
                     atr_add_raw(d->player, A_LASTSITE, d->addr);
+                }
+                atr_add_raw(d->player, A_LASTIP, inet_ntoa((d->address).sin_addr));
             }
         }
     }
@@ -650,7 +663,7 @@ static int get_slave_result()
     {
         if (ntohs((d->address).sin_port) != remote_port)
             continue;
-        StringCopyTrunc(d->username, userid, 10);
+        strncpy(d->username, userid, 10);
         d->username[10] = '\0';
         if (d->player != 0)
         {
@@ -2313,8 +2326,8 @@ static void unset_signals(void)
 //
 typedef struct
 {
-	int         nSignal;
-	const char *szSignal;
+    int         nSignal;
+    const char *szSignal;
 } SIGNALTYPE, *PSIGNALTYPE;
 
 const SIGNALTYPE aSigTypes[] =
