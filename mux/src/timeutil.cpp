@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.20 2003-02-24 16:03:29 sdennis Exp $
+// $Id: timeutil.cpp,v 1.21 2003-02-26 06:15:15 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1716,7 +1716,7 @@ Again:
             int nSize = sizeof(OffsetEntry)*(nOffsetTable-iMinTouched-1);
             memmove(OffsetTable+iMinTouched, OffsetTable+iMinTouched+1, nSize);
             nOffsetTable--;
-            if (iMinTouched < i)
+            if (iMinTouched <= i)
             {
                 i--;
             }
