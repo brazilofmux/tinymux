@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.21 2001-01-26 18:35:45 sdennis Exp $
+// $Id: cque.cpp,v 1.22 2001-02-07 05:28:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -598,7 +598,7 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
     // Make sure player can afford to do it.
     //
     a = mudconf.waitcost;
-    if (mudconf.machinecost && RandomLong(0, mudconf.machinecost-1) == 0)
+    if (mudconf.machinecost && RandomINT32(0, mudconf.machinecost-1) == 0)
     {
         a++;
     }

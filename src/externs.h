@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.40 2000-11-12 11:06:15 sdennis Exp $
+// $Id: externs.h,v 1.41 2001-02-07 05:28:14 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -21,7 +21,7 @@ extern void FDECL(regerror, (char *));
 extern char regexp_errbuf[];
 
 /* From conf.cpp */
-extern int  cf_modify_bits(int *, char *, unsigned int, dbref, char *);
+extern int  cf_modify_bits(int *, char *, void *, UINT32, dbref, char *);
 
 /* From mail.cpp */
 extern void load_mail(FILE *);
@@ -104,7 +104,7 @@ extern void helpindex_load(dbref);
 extern void helpindex_init(void);
 
 /* From htab.cpp */
-extern int  cf_ntab_access(int *, char *, unsigned int, dbref, char *);
+extern int  cf_ntab_access(int *, char *, void *, UINT32, dbref, char *);
 
 /* From log.cpp */
 extern int start_log(const char *primary, const char *secondary);

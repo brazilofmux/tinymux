@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.51 2001-01-08 23:29:32 sdennis Exp $
+// $Id: functions.cpp,v 1.52 2001-02-07 05:28:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -831,7 +831,7 @@ FUNCTION(fun_rand)
     }
     else
     {
-        safe_ltoa(RandomLong(0,num-1), buff, bufc, LBUF_SIZE-1);
+        safe_ltoa(RandomINT32(0,num-1), buff, bufc, LBUF_SIZE-1);
     }
 }
 
@@ -6752,14 +6752,14 @@ CF_HAND(cf_func_access)
     {
         if (!string_compare(fp->name, str))
         {
-            return (cf_modify_bits(&fp->perms, ap, extra, player, cmd));
+            return cf_modify_bits(&fp->perms, ap, pExtra, nExtra, player, cmd);
         }
     }
     for (ufp = ufun_head; ufp; ufp = ufp->next)
     {
         if (!string_compare(ufp->name, str))
         {
-            return (cf_modify_bits(&ufp->perms, ap, extra, player, cmd));
+            return cf_modify_bits(&ufp->perms, ap, pExtra, nExtra, player, cmd);
         }
     }
     cf_log_notfound(player, cmd, "Function", str);

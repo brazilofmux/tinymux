@@ -1,12 +1,12 @@
 // svdrand.cpp -- Random Numbers
 //
-// $Id: svdrand.cpp,v 1.12 2000-12-02 17:19:34 sdennis Exp $
+// $Id: svdrand.cpp,v 1.13 2001-02-07 05:28:14 sdennis Exp $
 //
 // The first version of Random Numbers based on algorithms presented in
 // "Numerical Recipes in C", Cambridge Press, 1992. The second one is
 // from Makoto Matsumoto and Takuji Nishimura.
 // 
-// RandomLong() was derived from existing game server code.
+// RandomINT32() was derived from existing game server code.
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -23,8 +23,8 @@
 #include "svdrand.h"
 #include "svdhash.h"
 
-void sgenrand(unsigned long);    // seed the generator
-unsigned long genrand(void);     // returns a random 32-bit integer */
+void sgenrand(UINT32);    // seed the generator
+UINT32 genrand(void);     // returns a random 32-bit integer */
 
 static BOOL bSeeded = FALSE;
 void SeedRandomNumberGenerator(void)
@@ -38,7 +38,7 @@ void SeedRandomNumberGenerator(void)
     lsaNow.GetUTC();
     INT64 i64Seed = lsaNow.Return100ns();
 
-    unsigned long nSeed = CRC32_ProcessBuffer(0, &i64Seed, sizeof(INT64));
+    UINT32 nSeed = CRC32_ProcessBuffer(0, &i64Seed, sizeof(INT64));
     if (nSeed <= 1000)
     {
         nSeed += 22261048;
@@ -49,9 +49,9 @@ void SeedRandomNumberGenerator(void)
     sgenrand(nSeed);
 }
 
-// RandomLong -- return a long on the interval [lLow, lHigh]
+// RandomINT32 -- return a long on the interval [lLow, lHigh]
 //
-long RandomLong(long lLow, long lHigh)
+INT32 RandomINT32(INT32 lLow, INT32 lHigh)
 {
     // Validate parameters
     //
@@ -64,8 +64,8 @@ long RandomLong(long lLow, long lHigh)
         return lLow;
     }
 
-    unsigned long x = lHigh-lLow;
-    if (LONG_MAX < x)
+    UINT32 x = lHigh-lLow;
+    if (INT32_MAX_VALUE < x)
     {
         return -1;
     }
@@ -82,13 +82,13 @@ long RandomLong(long lLow, long lHigh)
     // N.B. This loop happens in randomized constant time, and pretty
     // damn fast randomized constant time too, since
     //
-    //      P(ULONG_MAX - n < ULONG_MAX % x) < 0.5, for any x.
+    //      P(UINT32_MAX_VALUE - n < UINT32_MAX_VALUE % x) < 0.5, for any x.
     //
     // So even for the least desireable x, the average number of times
     // we will call getrand() is less than 2.
     //
-    unsigned long n;
-    unsigned long nLimit = ULONG_MAX - (ULONG_MAX%x);
+    UINT32 n;
+    UINT32 nLimit = UINT32_MAX_VALUE - (UINT32_MAX_VALUE%x);
 
     do
     {
@@ -131,10 +131,10 @@ long RandomLong(long lLow, long lHigh)
 #define TEMPERING_SHIFT_T(y)  (y << 15)
 #define TEMPERING_SHIFT_L(y)  (y >> 18)
 
-static unsigned long mt[N];
+static UINT32 mt[N];
 static int mti = N + 1;
 
-void sgenrand(unsigned long nSeed)
+void sgenrand(UINT32 nSeed)
 {
     nSeed |= 1; // Force the seed to be odd.
     for (int i = 0; i < N; i++)
@@ -147,10 +147,10 @@ void sgenrand(unsigned long nSeed)
     mti = N;
 }
 
-unsigned long genrand(void)
+UINT32 genrand(void)
 {
-    unsigned long y;
-    static unsigned long mag01[2] = {0x0, MATRIX_A};
+    UINT32 y;
+    static UINT32 mag01[2] = {0x0, MATRIX_A};
     int kk;
     
     if (mti >= N)

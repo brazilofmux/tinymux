@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.h,v 1.8 2001-02-01 23:50:36 sdennis Exp $
+// $Id: svdhash.h,v 1.9 2001-02-07 05:28:14 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -16,24 +16,24 @@
 
 //#define HP_PROTECTION
 
-extern unsigned long CRC32_ProcessBuffer
+extern UINT32 CRC32_ProcessBuffer
 (
-    unsigned long  ulCrc,
+    UINT32         ulCrc,
     const void    *pBuffer,
     unsigned int   nBuffer
 );
 
-extern unsigned long CRC32_ProcessInteger(unsigned int nInteger);
-extern unsigned long CRC32_ProcessInteger2
+extern UINT32 CRC32_ProcessInteger(unsigned int nInteger);
+extern UINT32 CRC32_ProcessInteger2
 (
     unsigned int nInteger1,
     unsigned int nInteger2
 );
 
-extern unsigned long HASH_ProcessBuffer
+extern UINT32 HASH_ProcessBuffer
 (
-    unsigned long ulHash,
-    const void *arg_pBuffer,
+    UINT32       ulHash,
+    const void  *arg_pBuffer,
     unsigned int nBuffer
 );
 
@@ -62,9 +62,9 @@ typedef unsigned short HP_DIRINDEX, *HP_PDIRINDEX;
 #pragma pack(1)
 typedef struct tagHPHeader
 {
-    unsigned long  m_nTotalInsert;
-    unsigned long  m_nDirEmptyLeft;
-    unsigned long  m_nHashGroup;
+    UINT32         m_nTotalInsert;
+    UINT32         m_nDirEmptyLeft;
+    UINT32         m_nHashGroup;
     HP_DIRINDEX    m_nDirSize;
     HP_DIRINDEX    m_Primes[16];
     HP_HEAPOFFSET  m_oFreeList;
@@ -80,7 +80,7 @@ typedef struct tagHPHeader
 
 typedef struct tagHPTrailer
 {
-    unsigned long m_checksum;
+    UINT32 m_checksum;
 } HP_TRAILER, *HP_PTRAILER;
 
 typedef struct tagHPHeapNode
@@ -92,7 +92,7 @@ typedef struct tagHPHeapNode
         struct
         {
             HP_HEAPLENGTH nRecordSize;
-            unsigned long nHash;
+            UINT32        nHash;
         } s;
     } u;
 } HP_HEAPNODE, *HP_PHEAPNODE;
@@ -117,14 +117,14 @@ private:
 
     int             m_iDir;
     int             m_nProbesLeft;
-    unsigned long   m_nDirEmptyTrigger;
+    UINT32          m_nDirEmptyTrigger;
 
 #ifdef HP_PROTECTION
-    BOOL ValidateAllocatedBlock(unsigned long iDir);
+    BOOL ValidateAllocatedBlock(UINT32 iDir);
     BOOL ValidateFreeBlock(HP_HEAPOFFSET oBlock);
     BOOL ValidateFreeList(void);
 #endif
-    BOOL HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, unsigned long nHash, void *pRecord);
+    BOOL HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
     void SetVariablePointers(void);
     void SetFixedPointers(void);
     void GetStats(HP_HEAPLENGTH nExtra, int *pnRecords, HP_HEAPLENGTH *pnAllocatedSize, int *pnGoodDirSize);
@@ -133,7 +133,7 @@ public:
     CHashPage(void);
     BOOL Allocate(unsigned int nPageSize);
     ~CHashPage(void);
-    void Empty(HP_DIRINDEX arg_nDepth, unsigned long arg_nHashGroup, HP_DIRINDEX arg_nDirSize);
+    void Empty(HP_DIRINDEX arg_nDepth, UINT32 arg_nHashGroup, HP_DIRINDEX arg_nDirSize);
 #ifdef HP_PROTECTION
     void Protect(void);
     BOOL Validate(void);
@@ -142,9 +142,9 @@ public:
 #define HP_INSERT_SUCCESS       0
 #define HP_INSERT_ERROR_FULL    1
 #define HP_INSERT_ERROR_ILLEGAL 2
-    int Insert(HP_HEAPLENGTH nRecord, unsigned long nHash, void *pRecord);
-    HP_DIRINDEX FindFirstKey(unsigned long nHash, unsigned int *numchecks);
-    HP_DIRINDEX FindNextKey(HP_DIRINDEX i, unsigned long nHash, unsigned int *numchecks);
+    int Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
+    HP_DIRINDEX FindFirstKey(UINT32 nHash, unsigned int *numchecks);
+    HP_DIRINDEX FindNextKey(HP_DIRINDEX i, UINT32 nHash, unsigned int *numchecks);
     HP_DIRINDEX FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord);
     HP_DIRINDEX FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord);
     void HeapCopy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);
@@ -158,7 +158,7 @@ public:
     BOOL Split(CHashPage &hp0, CHashPage &hp1);
 
     BOOL Defrag(HP_HEAPLENGTH nExtra);
-    void GetRange(unsigned long arg_nDirDepth, unsigned long &nStart, unsigned long &nEnd);
+    void GetRange(UINT32 arg_nDirDepth, UINT32 &nStart, UINT32 &nEnd);
 };
 
 
@@ -214,9 +214,9 @@ public:
 #define HF_OPEN_STATUS_NEW    0
 #define HF_OPEN_STATUS_OLD    1
     int Open(const char *szDirFile, const char *szPageFile);
-    BOOL Insert(HP_HEAPLENGTH nRecord, unsigned long nHash, void *pRecord);
-    HP_DIRINDEX FindFirstKey(unsigned long nHash);
-    HP_DIRINDEX FindNextKey(HP_DIRINDEX iDir, unsigned long nHash);
+    BOOL Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
+    HP_DIRINDEX FindFirstKey(UINT32 nHash);
+    HP_DIRINDEX FindNextKey(HP_DIRINDEX iDir, UINT32 nHash);
     void Copy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);
     void Remove(HP_DIRINDEX iDir);
     void CloseAll(void);
@@ -256,9 +256,9 @@ public:
                    INT64 *scans, INT64 *hits, INT64 *checks, int *max_scan);
 
     void Reset(void);
-    BOOL Insert(HP_HEAPLENGTH nRecord, unsigned long nHash, void *pRecord);
-    HP_DIRINDEX FindFirstKey(unsigned long nHash);
-    HP_DIRINDEX FindNextKey(HP_DIRINDEX iDir, unsigned long nHash);
+    BOOL Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
+    HP_DIRINDEX FindFirstKey(UINT32 nHash);
+    HP_DIRINDEX FindNextKey(HP_DIRINDEX iDir, UINT32 nHash);
     HP_DIRINDEX FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord);
     HP_DIRINDEX FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord);
     void Copy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);

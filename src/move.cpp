@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about 
 //
-// $Id: move.cpp,v 1.5 2000-11-12 11:06:14 sdennis Exp $
+// $Id: move.cpp,v 1.6 2001-02-07 05:28:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -187,7 +187,7 @@ void move_object(dbref thing, dbref dest)
         (mudconf.payfind > 0) &&
         (Pennies(thing) < mudconf.paylimit) &&
         (!Controls(thing, dest)) &&
-        RandomLong(0, mudconf.payfind-1) == 0)
+        RandomINT32(0, mudconf.payfind-1) == 0)
     {
         giveto(thing, 1);
         notify(thing, tprintf("You found a %s!", mudconf.one_coin));
