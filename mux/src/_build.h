@@ -1,6 +1,6 @@
 // _build.h
 //
-// $Id: _build.h,v 1.65 2003-03-14 15:38:38 sdennis Exp $
+// $Id: _build.h,v 1.64 2003-03-14 15:37:21 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -16,7 +16,7 @@ extern char szBuildDate[];
 #define MUX_BUILD_DATE szBuildDate
 #endif // MUX_BUILD_DATE
 
-#define MUX_VERSION       "2.2.8.62"     // Version number
+#define MUX_VERSION       "2.2.7.62"     // Version number
 #define MUX_RELEASE_DATE  "2003-MAR-15"  // Source release date
 
 // Define if this release is qualified as ALPHA or BETA.
