@@ -6540,8 +6540,8 @@ FUNCTION CLASSES (continued)
                              LATTR LATTRCMDS LATTRP LCMDS LCON LEXITS LFLAGS
                              LPARENT LOCALIZE LOCK MONEY MONIKER MTIME NAME
                              OBJ OBJEVAL OBJMEM ORFLAGS OWNER PARENT PFIND
-                             PMATCH POSS S SUBJ TYPE U UDEFAULT ULOCAL V
-                             VISIBLE XGET
+                             PMATCH POSS POWERS S SUBJ TYPE U UDEFAULT ULOCAL
+                             V VISIBLE XGET
 
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNRECORD
                              CONNTOTAL DOING FINDABLE HASQUOTA HOST IDLE LWHO
@@ -6631,23 +6631,23 @@ FUNCTION LIST (continued)
 FUNCTION LIST (continued)
 
     POLL()      POP()       PORTS()     POS()       POSS()      POWER()
-    PUSH()      R()         RAND()      REGMATCH()  REGMATCHI() REGRAB()
-    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()     REMOVE()
-    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()
-    RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()     S()
-    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
-    SETINTER()  SETQ()      SETR()      SETUNION()  SHA1()      SHL()
-    SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
-    SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()
-    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIP()     STRIPACCENTS()
-    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()
-    SUBJ()      SWITCH()    T()         TABLE()     TAN()       TEL()
-    TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()
-    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
-    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
-    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()
-    ZFUN()      ZONE()      ZWHO()
+    POWERS()    PUSH()      R()         RAND()      REGMATCH()  REGMATCHI()
+    REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()
+    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
+    RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()
+    S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
+    SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHA1()
+    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
+    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()
+    SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIP()
+    STRIPACCENTS()          STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
+    SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()
+    TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()
+    TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()
+    UNPACK()    V()         VADD()      VALID()     VCROSS()    VDIM()
+    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
+    VUNIT()     WHERE()     WORDPOS()   WORDS()     WRAP()      WRITETIME()
+    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -7004,7 +7004,7 @@ HASPOWER()
     > say hasflag(me, extended_who)
     You say "1"
 
-  Related Topics:
+  Related Topics: powers()
 
 & HASQUOTA()
 HASQUOTA()
@@ -10102,6 +10102,16 @@ POWER()
     You say "+Inf"
 
   Related Topics: exp(), ln(), log(), sqrt()
+
+& POWERS()
+POWERS()
+
+  FUNCTION: powers(<object>)
+
+  Returns a space-delimited list of power names for <object>.  You may not be
+  able to retrieve information for objects that you do not own.
+
+  Related Topics: haspower()
 
 & POWERS LIST
 POWERS LIST
