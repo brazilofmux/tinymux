@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.12 2002-06-13 14:33:57 sdennis Exp $
+// $Id: command.cpp,v 1.13 2002-06-13 14:37:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1846,17 +1846,24 @@ static void list_cmdtable(dbref player)
 static void list_attrtable(dbref player)
 {
     ATTR *ap;
-    char *buf, *bp, *cp;
+    char *buf, *bp;
+    const char *cp;
 
     buf = alloc_lbuf("list_attrtable");
     bp = buf;
-    for (cp = (char *)"Attributes:"; *cp; cp++)
+    for (cp = "Attributes:"; *cp; cp++)
+    {
         *bp++ = *cp;
-    for (ap = attr; ap->name; ap++) {
-        if (See_attr(player, player, ap)) {
+    }
+    for (ap = attr; ap->name; ap++)
+    {
+        if (See_attr(player, player, ap))
+        {
             *bp++ = ' ';
-            for (cp = (char *)(ap->name); *cp; cp++)
+            for (cp = ap->name; *cp; cp++)
+            {
                 *bp++ = *cp;
+            }
         }
     }
     *bp = '\0';
