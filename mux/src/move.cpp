@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
+// $Id: move.cpp,v 1.3 2002-06-11 18:16:09 jake Exp $
 //
 
 #include "copyright.h"
@@ -21,12 +21,13 @@
 
 static void process_leave_loc(dbref thing, dbref dest, dbref cause, int canhear, int hush)
 {
-    dbref loc;
-    int quiet, pattr, oattr, aattr;
-
-    loc = Location(thing);
+    dbref loc = Location(thing);
     if ((loc == NOTHING) || (loc == dest))
+    {
         return;
+    }
+
+    int quiet, pattr, oattr, aattr;
 
     if (dest == HOME)
         dest = Home(thing);
@@ -56,10 +57,8 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, int canhear,
     did_it(thing, loc, pattr, NULL, oattr, NULL, aattr,
            (char **)NULL, 0);
 
-    /*
-     * Do OXENTER for receiving room
-     */
-
+    // Do OXENTER for receiving room
+    //
     if ((dest != NOTHING) && !quiet)
     {
         did_it(thing, dest, 0, NULL, A_OXENTER, NULL, 0, (char **)NULL, 0);
@@ -102,7 +101,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, int canhear, 
     }
 
     show_vrml_url(thing, loc);
-    
+
     // Run the ENTER attributes in the current room if we meet any of following
     // criteria:
     //
@@ -160,37 +159,32 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, int canhear, 
 
 void move_object(dbref thing, dbref dest)
 {
-    dbref src;
+    dbref src = Location(thing);
 
-    /*
-     * Remove from the source location 
-     */
-
-    src = Location(thing);
+    // Remove from the source location 
+    //
     if (src != NOTHING)
         s_Contents(src, remove_first(Contents(src), thing));
 
-    /*
-     * Special check for HOME 
-     */
-
+    // Special check for HOME 
+    //
     if (dest == HOME)
         dest = Home(thing);
 
-    /*
-     * Add to destination location 
-     */
-
+    // Add to destination location 
+    //
     if (dest != NOTHING)
+    {
         s_Contents(dest, insert_first(Contents(dest), thing));
+    }
     else
+    {
         s_Next(thing, NOTHING);
+    }
     s_Location(thing, dest);
 
-    /*
-     * Look around and do the penny check 
-     */
-
+    // Look around and do the penny check 
+    //
     look_in(thing, dest, (LK_SHOWEXIT | LK_OBEYTERSE));
     if (isPlayer(thing) &&
         (mudconf.payfind > 0) &&
@@ -203,9 +197,8 @@ void move_object(dbref thing, dbref dest)
     }
 }
 
-/*   
- * move_the_exit: Move an exit silently from it's location to it's destination
- */
+// move_the_exit: Move an exit silently from its location to its destination
+//
 void move_the_exit(dbref thing, dbref dest)
 {
     dbref exitloc = Exits(thing);
@@ -220,85 +213,72 @@ void move_the_exit(dbref thing, dbref dest)
  * * process_sacrifice_dropto: Check for and process droptos.
  */
 
-/*
- * send_dropto: Send an object through the dropto of a room 
- */
-
+// send_dropto: Send an object through the dropto of a room 
+//
 static void send_dropto(dbref thing, dbref player)
 {
     if (!Sticky(thing))
+    {
         move_via_generic(thing, Dropto(Location(thing)), player, 0);
+    }
     else
+    {
         move_via_generic(thing, HOME, player, 0);
+    }
     divest_object(thing);
-
 }
 
-/*
- * process_sticky_dropto: Call when an object leaves the room to see if
- * * we should empty the room
- */
-
+// process_sticky_dropto: Call when an object leaves the room to see if
+// we should empty the room
+//
 static void process_sticky_dropto(dbref loc, dbref player)
 {
     dbref dropto, thing, next;
 
-    /*
-     * Do nothing if checking anything but a sticky room 
-     */
-
+    // Do nothing if checking anything but a sticky room 
+    //
     if (!Good_obj(loc) || !Has_dropto(loc) || !Sticky(loc))
         return;
 
-    /*
-     * Make sure dropto loc is valid 
-     */
-
+    // Make sure dropto loc is valid 
+    //
     dropto = Dropto(loc);
     if ((dropto == NOTHING) || (dropto == loc))
         return;
 
-    /*
-     * Make sure no players hanging out 
-     */
-
-    DOLIST(thing, Contents(loc)) {
+    // Make sure no players hanging out 
+    //
+    DOLIST(thing, Contents(loc)) 
+    {
         if (Dropper(thing))
             return;
     }
 
-    /*
-     * Send everything through the dropto 
-     */
-
+    // Send everything through the dropto 
+    //
     s_Contents(loc, reverse_list(Contents(loc)));
-    SAFE_DOLIST(thing, next, Contents(loc)) {
+    SAFE_DOLIST(thing, next, Contents(loc)) 
+    {
         send_dropto(thing, player);
     }
 }
 
-/*
- * process_dropped_dropto: Check what to do when someone drops an object. 
- */
-
+// process_dropped_dropto: Check what to do when someone drops an object. 
+//
 static void process_dropped_dropto(dbref thing, dbref player)
 {
-    dbref loc;
-
-    /*
-     * If STICKY, send home 
-     */
-
-    if (Sticky(thing)) {
+    // If STICKY, send home 
+    //
+    if (Sticky(thing)) 
+    {
         move_via_generic(thing, HOME, player, 0);
         divest_object(thing);
         return;
     }
-    /*
-     * Process the dropto if location is a room and is not STICKY 
-     */
 
-    loc = Location(thing);
+    // Process the dropto if location is a room and is not STICKY 
+    //
+    dbref loc = Location(thing);
     if (Has_dropto(loc) && (Dropto(loc) != NOTHING) && !Sticky(loc))
         send_dropto(thing, player);
 }
@@ -311,13 +291,11 @@ static void process_dropped_dropto(dbref thing, dbref player)
 
 void move_via_generic(dbref thing, dbref dest, dbref cause, int hush)
 {
-    dbref src;
-    int canhear;
-
     if (dest == HOME)
         dest = Home(thing);
-    src = Location(thing);
-    canhear = Hearer(thing);
+
+    dbref src = Location(thing);
+    int canhear = Hearer(thing);
     process_leave_loc(thing, dest, cause, canhear, hush);
     move_object(thing, dest);
     did_it(thing, thing, A_MOVE, NULL, A_OMOVE, NULL, A_AMOVE,
@@ -332,33 +310,26 @@ void move_via_generic(dbref thing, dbref dest, dbref cause, int hush)
 
 void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int hush)
 {
-    dbref src;
-    int canhear, darkwiz, quiet, pattr, oattr, aattr;
+    dbref src = Location(thing);
 
     if (dest == HOME)
+    {
         dest = Home(thing);
-    src = Location(thing);
-    canhear = Hearer(thing);
+    }
+    int canhear = Hearer(thing);
+    int darkwiz = (Wizard(thing) && Dark(thing)); // Dark wizards don't trigger OSUCC/ASUCC
+    int quiet = darkwiz || (hush & HUSH_EXIT);
 
-    /*
-     * Dark wizards don't trigger OSUCC/ASUCC 
-     */
-
-    darkwiz = (Wizard(thing) && Dark(thing));
-    quiet = darkwiz || (hush & HUSH_EXIT);
-
-    oattr = quiet ? 0 : A_OSUCC;
-    aattr = quiet ? 0 : A_ASUCC;
-    pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_SUCC;
+    int oattr = quiet ? 0 : A_OSUCC;
+    int aattr = quiet ? 0 : A_ASUCC;
+    int pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_SUCC;
     did_it(thing, exit, pattr, NULL, oattr, NULL, aattr,
            (char **)NULL, 0);
     process_leave_loc(thing, dest, cause, canhear, hush);
     move_object(thing, dest);
 
-    /*
-     * Dark wizards don't trigger ODROP/ADROP 
-     */
-
+    // Dark wizards don't trigger ODROP/ADROP
+    //
     oattr = quiet ? 0 : A_ODROP;
     aattr = quiet ? 0 : A_ADROP;
     pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_DROP;
@@ -412,7 +383,7 @@ int move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
             curr = Location(curr);
         }
     }
-    
+
     if (isExit(thing))
     {
         move_the_exit(thing, dest);
@@ -452,13 +423,14 @@ int move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
 
 void move_exit(dbref player, dbref exit, int divest, const char *failmsg, int hush)
 {
-    dbref loc;
     int oattr, aattr;
     BOOL bDoit = FALSE;
 
-    loc = Location(exit);
+    dbref loc = Location(exit);
     if (loc == HOME)
+    {
         loc = Home(player);
+    }
 
 #ifdef WOD_REALMS
     if (Good_obj(loc) && (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(player, exit, ACTION_IS_MOVING)))
@@ -552,7 +524,6 @@ void move_exit(dbref player, dbref exit, int divest, const char *failmsg, int hu
     }
 }
 
-
 /*
  * ---------------------------------------------------------------------------
  * * do_move: Move from one place to another via exits or 'home'.
@@ -563,28 +534,26 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
     dbref exit, loc;
     int i, quiet;
 
-    if (!string_compare(direction, "home")) {   /*
-                             * go home w/o stuff 
-                             */
+    if (!string_compare(direction, "home")) 
+    {   
+        // Go home w/o stuff.
+        //
         if ((Fixed(executor) || Fixed(Owner(executor))) &&
-            !(WizRoy(executor))) {
+            !(WizRoy(executor))) 
+        {
             notify(executor, mudconf.fixed_home_msg);
             return;
         }
-        
+
         if ((loc = Location(executor)) != NOTHING &&
-            !Dark(executor) && !Dark(loc)) {
-
-            /*
-             * tell all 
-             */
-
+            !Dark(executor) && !Dark(loc)) 
+        {
+            // Tell all 
+            //
             notify_except(loc, executor, executor, tprintf("%s goes home.", Name(executor)), 0);
         }
-        /*
-         * give the player the messages 
-         */
-
+        // Give the player the messages 
+        //
         for (i = 0; i < 3; i++)
             notify(executor, "There's no place like home...");
         move_via_generic(executor, HOME, NOTHING, 0);
@@ -592,17 +561,13 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
         process_sticky_dropto(loc, executor);
         return;
     }
-    /*
-     * find the exit 
-     */
-
+    // Hind the exit
+    //
     init_match_check_keys(executor, direction, TYPE_EXIT);
     match_exit();
     exit = match_result();
     switch (exit) {
-    case NOTHING:       /*
-                 * try to force the object 
-                 */
+    case NOTHING:       // Try to force the object
         notify(executor, "You can't go that way.");
         break;
     case AMBIGUOUS:
@@ -629,7 +594,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
     {
         return;
     }
-   
+
     // You can only pick up things in rooms and ENTER_OK objects/players.
     //
     if (  !isRoom(playerloc)
@@ -685,6 +650,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
     {
     case TYPE_PLAYER:
     case TYPE_THING:
+
         // You can't take what you already have.
         //
         if (thingloc == executor)
@@ -778,19 +744,20 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
 
 void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
-    dbref loc, exitloc, thing;
-    char *buf, *bp;
-    int quiet, oattr, aattr;
-
-    loc = Location(executor);
+    dbref loc = Location(executor);
     if (!Good_obj(loc))
         return;
+
+    dbref exitloc, thing;
+    char *buf, *bp;
+    int quiet, oattr, aattr;
 
     init_match(executor, name, TYPE_THING);
     match_possession();
     match_carried_exit();
 
-    switch (thing = match_result()) {
+    switch (thing = match_result()) 
+    {
     case NOTHING:
         notify(executor, "You don't have that!");
         return;
@@ -799,24 +766,23 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
         return;
     }
 
-    switch (Typeof(thing)) {
+    switch (Typeof(thing)) 
+    {
     case TYPE_THING:
     case TYPE_PLAYER:
 
-        /*
-         * You have to be carrying it 
-         */
-
+        // You have to be carrying it.
+        //
         if (((Location(thing) != executor) && !Wizard(executor)) ||
-            (!could_doit(executor, thing, A_LDROP))) {
+            (!could_doit(executor, thing, A_LDROP))) 
+        {
             did_it(executor, thing, A_DFAIL, "You can't drop that.",
                    A_ODFAIL, NULL, A_ADFAIL, (char **)NULL, 0);
             return;
         }
-        /*
-         * Move it 
-         */
 
+        // Move it
+        //
         move_via_generic(thing, Location(executor), executor, 0);
         notify(thing, "Dropped.");
         quiet = 0;
@@ -830,31 +796,28 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
                aattr, (char **)NULL, 0);
         free_lbuf(buf);
 
-        /*
-         * Process droptos 
-         */
-
+        // Process droptos
+        //
         process_dropped_dropto(thing, executor);
 
         break;
     case TYPE_EXIT:
 
-        /*
-         * You have to be carrying it 
-         */
-
-        if ((Exits(thing) != executor) && !Wizard(executor)) {
+        // You have to be carrying it.
+        //
+        if ((Exits(thing) != executor) && !Wizard(executor)) 
+        {
             notify(executor, "You can't drop that.");
             return;
         }
-        if (!Controls(executor, loc)) {
+        if (!Controls(executor, loc)) 
+        {
             notify(executor, NOPERM_MESSAGE);
             return;
         }
-        /*
-         * Do it 
-         */
 
+        // Do it
+        //
         exitloc = Exits(thing);
         s_Exits(exitloc, remove_first(Exits(exitloc), thing));
         s_Exits(loc, insert_first(Exits(loc), thing));
@@ -866,7 +829,6 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
     default:
         notify(executor, "You can't drop that.");
     }
-
 }
 
 /*
@@ -915,9 +877,7 @@ void do_enter(dbref executor, dbref caller, dbref enactor, int key, char *what)
     init_match(executor, what, TYPE_THING);
     match_neighbor();
     if (Long_Fingers(executor))
-        match_absolute();   /*
-                     * the wizard has long fingers 
-                     */
+        match_absolute();   // the wizard has long fingers
 
     if ((thing = noisy_match_result()) == NOTHING)
         return;
