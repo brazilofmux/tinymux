@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.12 2000-06-07 09:46:28 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.13 2000-06-07 10:17:00 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -192,7 +192,6 @@ FUNCTION(fun_create)
 
         if (check_command(player, "@dig", buff, bufc))
         {
-            safe_str("#-1 PERMISSION DENIED", buff, bufc);
             return;
         }
         thing = create_obj(player, TYPE_ROOM, name, 0);
@@ -202,7 +201,6 @@ FUNCTION(fun_create)
 
         if (check_command(player, "@open", buff, bufc))
         {
-            safe_str("#-1 PERMISSION DENIED", buff, bufc);
             return;
         }
         thing = create_obj(player, TYPE_EXIT, name, 0);
@@ -218,7 +216,6 @@ FUNCTION(fun_create)
 
         if (check_command(player, "@create", buff, bufc))
         {
-            safe_str("#-1 PERMISSION DENIED", buff, bufc);
             return;
         }
         if (*fargs[1])
