@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.17 2000-11-06 03:17:15 sdennis Exp $
+// $Id: cque.cpp,v 1.18 2000-11-13 19:36:37 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -312,7 +312,6 @@ int halt_que(dbref player, dbref object)
 void do_halt(dbref player, dbref cause, int key, char *target)
 {
     dbref player_targ, obj_targ;
-    int numhalted;
 
     if ((key & HALT_ALL) && !(Can_Halt(player)))
     {
@@ -332,24 +331,32 @@ void do_halt(dbref player, dbref cause, int key, char *target)
         else
         {
             player_targ = Owner(player);
-            if (Typeof(player) != TYPE_PLAYER)
+            if (!isPlayer(player))
+            {
                 obj_targ = player;
+            }
         }
     }
     else
     {
         if (Can_Halt(player))
+        {
             obj_targ = match_thing(player, target);
+        }
         else
+        {
             obj_targ = match_controlled(player, target);
-
+        }
         if (obj_targ == NOTHING)
+        {
             return;
-        if (key & HALT_ALL) {
+        }
+        if (key & HALT_ALL)
+        {
             notify(player, "Can't specify a target and /all");
             return;
         }
-        if (Typeof(obj_targ) == TYPE_PLAYER)
+        if (isPlayer(obj_targ))
         {
             player_targ = obj_targ;
             obj_targ = NOTHING;
@@ -360,13 +367,19 @@ void do_halt(dbref player, dbref cause, int key, char *target)
         }
     }
 
-    numhalted = halt_que(player_targ, obj_targ);
+    int numhalted = halt_que(player_targ, obj_targ);
     if (Quiet(player))
+    {
         return;
+    }
     if (numhalted == 1)
+    {
         notify(Owner(player), "1 queue entries removed.");
+    }
     else
+    {
         notify(Owner(player), tprintf("%d queue entries removed.", numhalted));
+    }
 }
 
 int Notify_Key;
