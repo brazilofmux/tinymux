@@ -1,6 +1,7 @@
-/* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.12 2001-06-29 07:05:30 sdennis Exp $ */
-
+// attrs.h - Attribute definitions
+//
+// $Id: attrs.h,v 1.13 2001-06-29 15:47:38 sdennis Exp $
+//
 #ifndef _ATTRS_H
 #define _ATTRS_H
 
@@ -149,7 +150,7 @@
 #define A_WRAITHDESC 146
 #define A_FAEDESC    147
 #define A_MATRIXDESC 148
-#endif
+#endif // WOD_REALMS
 
 #define A_LASTPAGE  200 /* Player last paged */
 #define A_MAIL      201 /* Message echoed to sender */
@@ -177,7 +178,7 @@
 #define A_REASON    222 // Disconnect reason
 #ifdef GAME_DOOFERMUX
 #define A_REGINFO   223 // Registration Information
-#endif
+#endif // GAME_DOOFERMUX
 #define A_CONNINFO  224 // Connection info: (total connected time,
                         // longest connection last connection, total
                         // connections, time of logout.
@@ -197,4 +198,4 @@
 #define ATR_BUF_CHUNK   100 /* Min size to allocate for attribute buffer */
 #define ATR_BUF_INCR    6   /* Max size of one attribute */
 
-#endif
+#endif // _ATTRS_H
