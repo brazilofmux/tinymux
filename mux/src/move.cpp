@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.15 2002-07-16 06:41:41 jake Exp $
+// $Id: move.cpp,v 1.16 2002-07-16 07:04:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -50,7 +50,8 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, BOOL canhear
                     && (  Dark(thing)
                        || Dark(loc))
                     && (  !canhear
-                       || (Wizard(thing) && Dark(thing)))));
+                       || (  Wizard(thing)
+                          && Dark(thing)))));
 
     int oattr = quiet ? 0 : A_OLEAVE;
     int aattr = quiet ? 0 : A_ALEAVE;
