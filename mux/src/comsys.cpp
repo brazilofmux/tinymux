@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.14 2002-07-16 22:03:37 jake Exp $
+// $Id: comsys.cpp,v 1.15 2002-07-16 22:33:11 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2801,8 +2801,11 @@ FUNCTION(fun_channels)
         who = lookup_player(executor, fargs[0], TRUE);
         if (who == NOTHING)
         {
-            safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
-            return;
+            if (strcmp(fargs[0],"all") != 0)
+            {
+                safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+                return;
+            }
         }
     }
 
@@ -2818,9 +2821,8 @@ FUNCTION(fun_channels)
            || (chn->type & CHANNEL_PUBLIC)
            || chn->charge_who == executor)
         {
-            if (  nfargs == 0
-               || (  nfargs == 1
-                  && chn->charge_who == who))
+            if (  chn->charge_who == who
+               || who == NOTHING)
             {
                 strcat(outbuff, chn->name);
                 strcat(outbuff, " ");
