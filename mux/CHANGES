@@ -20,6 +20,7 @@ Feature Additions:
     This feature first appeared in TinyMUSH 3.0.
  -- Limit the number of oustanding slave processes at any one time to
     20.  Introduced by Brazil.  Jointly refined with Alierak.
+ -- Expand @list alloc report to 14 digits for total allocations column.
 
 
 Bug Fixes:
