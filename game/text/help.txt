@@ -6901,17 +6901,29 @@ LATTRCMDS()
 & LCMDS()
 LCMDS()
 
-  FUNCTION: lcmds(<object>)
+  FUNCTION: lcmds(<object> [,<output delim> [,<type>]])
 
-  Returns the attribute names of any commands on a specific <object>
+  Returns the names of all the commands on a specific <object>.  The default
+  output delimter is a space.
 
-  Example:
+  The following <type> are allowed:
+
+      $  : This will list all commands (default).
+      ^  : This will list all ^-LISTENS.
+
+  Examples:
     > &CMD1 me=$command1:@pemit me=blah
     Set.
-    > &CMD2 me=$command2:@pemit me=blah blah
+    > &CMD2 me=$command #2 *:@pemit me=blah blah
+    Set.
+    > &CMD3 me=^* says *:@pemit me=You heard something
     Set.
     > say lcmds(me)
-    You say "command1 command2"
+    You say "command1 command #2 *"
+    > say lcmds(me,|,$)
+    You say "command1|command #2 *"
+    > say lcmds(me,|,^)
+    You say "* says *"
 
   Related Topics: lattrcmds().
 
