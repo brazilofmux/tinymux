@@ -264,6 +264,7 @@ Bug Fixes:
     isn't an urgent issue.
  -- Fix SIGSEGV bug in ANSI_String_Copy that becomes an issue with the use
     of center/ljust/rjust. Discovered by Elmeria@Crystal Bridges.
+ -- Fix uninitialized variable in utility function used by LROOMS().
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
