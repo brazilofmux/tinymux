@@ -2399,6 +2399,9 @@ GUESTS_CHANNEL
   must have created the channel already. To disable this feature, simply set
   this parameter to nothing.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: public_channel.
 
 & GUEST_CHAR_NUM
@@ -3423,6 +3426,9 @@ PUBLIC_CHANNEL
   created. You must have previously created the channel. To disable this
   feature, simply set this parameter to nothing.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: guests_channel.
 
 & PUBLIC_FLAGS
@@ -3452,7 +3458,7 @@ PUEBLO_MESSAGE
 QUEUE_ACTIVE_CHUNK
 
   CONFIG PARAMETER: queue_active_chunk <num>
-  DEFAULT: 0
+  DEFAULT: 10
 
   Specifies the number of commands to be run from the player queue when the
   check for network traffic indicates that there is data needing to be
@@ -3464,7 +3470,7 @@ QUEUE_ACTIVE_CHUNK
 QUEUE_IDLE_CHUNK
 
   CONFIG PARAMETER: queue_idle_chunk <num>
-  DEFAULT: 3
+  DEFAULT: 10
 
   Specifies the number of commands to be run from the player queue when the
   check for network traffic indicates that there is no data needing to be
