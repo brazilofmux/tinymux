@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.12 2000-06-02 19:14:03 sdennis Exp $
+// $Id: stringutil.cpp,v 1.13 2000-06-06 09:52:02 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1716,18 +1716,6 @@ char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
     return buff;
 }
 
-// TODO: remove the following function.
-//
-char *strsave(const char *s)
-{
-    char *p = (char *)MEMALLOC(strlen(s) + 1);
-    if (p)
-    {
-        strcpy(p, s);
-    }
-    return p;
-}
-
 /*
  * ---------------------------------------------------------------------------
  * * safe_copy_str, safe_copy_chr - Copy buffers, watching for overflows.
@@ -2249,30 +2237,3 @@ int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va)
     buff[len] = '\0';
     return len;
 }
-
-#if 0
-DCL_INLINE void *MemAllocate(size_t size, const char *filename, int linenum)
-{
-    void *p = malloc(size);
-    if (!p)
-    {
-        OutOfMemory(filename, linenum);
-    }
-    return p;
-}
-
-DCL_INLINE void MemFree(void *ptr, const char *filename, int linenum)
-{
-    free(ptr);
-}
-
-DCL_INLINE void *MemRealloc(void *ptr, size_t size, const char *filename, int linenum)
-{
-    void *p = realloc(ptr, size);
-    if (!p)
-    {
-        OutOfMemory(filename, linenum);
-    }
-    return p;
-}
-#endif

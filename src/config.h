@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.7 2000-06-02 19:13:46 sdennis Exp $ */
+/* $Id: config.h,v 1.8 2000-06-06 09:52:03 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -123,17 +123,8 @@ extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
 extern BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo);
 #define ISOUTOFMEMORY(exp) (!(exp) && OutOfMemory(__FILE__, __LINE__))
 
-#if 0
-extern DCL_INLINE void *MemAllocate(size_t size, const char *filename, int linenum);
-extern DCL_INLINE void MemFree(void *ptr, const char *filename, int linenum);
-extern DCL_INLINE void *MemRealloc(void *ptr, size_t size, const char *filename, int linenum);
-#define MEMALLOC(size) MemAllocate(size,__FILE__,__LINE__)
-#define MEMFREE(ptr)  MemFree(ptr, __FILE__, __LINE__)
-#define MEMREALLOC(ptr, size) MemRealloc(ptr, size, __FILE__, __LINE__)
-#else
-#define MEMALLOC(size) malloc(size)
-#define MEMFREE(ptr)  free(ptr)
-#define MEMREALLOC(ptr, size) realloc(ptr,size)
-#endif
+#define MEMALLOC(size)        malloc((size))
+#define MEMFREE(ptr)          free((ptr))
+#define MEMREALLOC(ptr, size) realloc((ptr), (size))
 
 #endif // CONFIG_H
