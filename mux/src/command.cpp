@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.108 2003-01-23 02:00:23 sdennis Exp $
+// $Id: command.cpp,v 1.109 2003-02-04 17:25:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3650,10 +3650,11 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
 {
     CMDENT *cmdp;
     NAMETAB *logcmdp;
-    char *buff1, *pt1, *pt2, *pt3, *atrpt, pre[2], *pt4, *pt5, *message;
+    char *buff1, *pt1, *pt2, *pt3, *atrpt, pre[2], *pt4, *pt5;
     int x, aflags, y, home;
-    dbref target, aowner, zone;
+    dbref aowner, zone;
     BOOL bFound, set;
+    dbref target = NOTHING;
 
     int loc_set = -1;
     if (  key == ICMD_IROOM
@@ -3665,10 +3666,6 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
         if (key != ICMD_LALLROOM)
         {
             target = match_thing_quiet(player, name);
-        }
-        else
-        {
-            target = NOTHING;
         }
         if (  key != ICMD_LALLROOM
            && (  !Good_obj(target)
@@ -3812,6 +3809,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
     {
         key = loc_set;
     }
+    char *message = "";
     buff1 = alloc_lbuf("do_icmd");
     for (x = 0; x < nargs; x++)
     {
