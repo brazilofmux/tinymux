@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.33 2001-03-31 00:19:20 sdennis Exp $
+// * $Id: comsys.cpp,v 1.34 2001-03-31 00:32:10 sdennis Exp $
 //
 #define QQQ
 #include "copyright.h"
@@ -812,47 +812,36 @@ char *StartBuildChannelPose
     const char *pPose
 )
 {
-    char *pAllocatedComTitleBuffer = NULL;
     pC->mess = alloc_lbuf("do_processcom");
-
-    // New Comtitle
-    //
-    const char *nComTitle;
 
     // Comtitle Check
     //
     BOOL hasComTitle = (pUserTitle[0] != '\0');
-
-    // Don't evaluate a title if there isn't one to parse or evaluation of
-    // comtitles is disabled.
-    //
-    if (hasComTitle && mudconf.eval_comtitle)
-    {
-        // Evaluate the comtitle as code.
-        //
-        char *p0 = alloc_lbuf("do_processcom.ct");
-        char *p  = p0;
-        char TempToEval[LBUF_SIZE];
-        strcpy(TempToEval, pUserTitle);
-        char *q = TempToEval;
-        TinyExec(p0, &p, 0, player, player, EV_FCHECK | EV_EVAL | EV_TOP, &q,
-            (char **)NULL, 0);
-
-        nComTitle = pAllocatedComTitleBuffer = p0;
-    }
-    else
-    {
-        nComTitle = pUserTitle;
-    }
 
     char *bp = pC->mess;
     
     safe_str(pHeader, pC->mess, &bp);
     safe_chr(' ', pC->mess, &bp);
 
+    // Don't evaluate a title if there isn't one to parse or evaluation of
+    // comtitles is disabled.
+    //
     if (hasComTitle)
     {
-        safe_str(nComTitle, pC->mess, &bp);
+        if (mudconf.eval_comtitle)
+        {
+            // Evaluate the comtitle as code.
+            //
+            char TempToEval[LBUF_SIZE];
+            strcpy(TempToEval, pUserTitle);
+            char *q = TempToEval;
+            TinyExec(pC->mess, &bp, 0, player, player, EV_FCHECK | EV_EVAL
+                | EV_TOP, &q, (char **)NULL, 0);
+        }
+        else
+        {
+            safe_str(pUserTitle, pC->mess, &bp);
+        }
         if (!bSpoof)
         {
             safe_chr(' ', pC->mess, &bp);
@@ -862,10 +851,6 @@ char *StartBuildChannelPose
     else
     {
         safe_str(pPlayerName, pC->mess, &bp);
-    }
-    if (pAllocatedComTitleBuffer)
-    {
-        free_lbuf(pAllocatedComTitleBuffer);
     }
 
     if (':' == pPose[0])
