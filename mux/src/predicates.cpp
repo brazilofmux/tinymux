@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.21 2002-06-28 19:51:05 sdennis Exp $
+// $Id: predicates.cpp,v 1.22 2002-06-29 15:21:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -103,9 +103,15 @@ int member(dbref thing, dbref list)
 
 int could_doit(dbref player, dbref thing, int locknum)
 {
+    if (thing == HOME)
+    {
+        return 1;
+    }
+
     // If nonplayer tries to get key, then no.
     //
-    if (!isPlayer(player) && Key(thing))
+    if (  !isPlayer(player)
+       && Key(thing))
     {
         return 0;
     }

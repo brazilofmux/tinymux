@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.6 2002-06-27 07:46:29 jake Exp $
+// $Id: create.cpp,v 1.7 2002-06-29 15:21:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -95,7 +95,7 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
     }
 
     loc = parse_linkable_room(player, linkto);
-    if (loc != NOTHING)
+    if (Good_obj(loc) || loc == HOME)
     {
         // Make sure the player passes the link lock
         //
@@ -128,26 +128,33 @@ void do_open(dbref executor, dbref caller, dbref enactor, int key,
     char *dest;
 
     // Create the exit and link to the destination, if there is one
-
+    //
     if (nlinks >= 1)
+    {
         dest = links[0];
+    }
     else
+    {
         dest = NULL;
+    }
 
     if (key == OPEN_INVENTORY)
+    {
         loc = executor;
+    }
     else
+    {
         loc = Location(executor);
+    }
 
     open_exit(executor, loc, direction, dest);
-
 
     // Open the back link if we can.
     //
     if (nlinks >= 2)
     {
         destnum = parse_linkable_room(executor, dest);
-        if (destnum != NOTHING)
+        if (Good_obj(destnum) || destnum == HOME)
         {
             char buff[12];
             Tiny_ltoa(loc, buff);
@@ -166,9 +173,10 @@ static void link_exit(dbref player, dbref exit, dbref dest)
 
     // Make sure we can link there
     //
-    if ((dest != HOME) &&
-        ((!controls(player, dest) && !Link_ok(dest)) ||
-         !could_doit(player, dest, A_LLINK)))
+    if (  dest != HOME
+       && (  (  !controls(player, dest)
+             && !Link_ok(dest))
+          || !could_doit(player, dest, A_LLINK)))
     {
         notify_quiet(player, NOPERM_MESSAGE);
         return;
@@ -176,7 +184,8 @@ static void link_exit(dbref player, dbref exit, dbref dest)
 
     // Exit must be unlinked or controlled by you
     //
-    if ((Location(exit) != NOTHING) && !controls(player, exit))
+    if (  Location(exit) != NOTHING
+       && !controls(player, exit))
     {
         notify_quiet(player, NOPERM_MESSAGE);
         return;
@@ -192,7 +201,9 @@ static void link_exit(dbref player, dbref exit, dbref dest)
         quot += mudconf.exit_quota;
     }
     if (!canpayfees(player, player, cost, quot))
+    {
         return;
+    }
 
     // Pay the owner for his loss.
     //
@@ -250,9 +261,12 @@ void do_link
         // Set destination
         //
         room = parse_linkable_room(executor, where);
-        if (room != NOTHING)
+        if (Good_obj(room) || room == HOME)
+        {
             link_exit(executor, thing, room);
+        }
         break;
+
     case TYPE_PLAYER:
     case TYPE_THING:
 
@@ -304,16 +318,16 @@ void do_link
             break;
         }
         room = parse_linkable_room(executor, where);
-        if (!(Good_obj(room) || (room == HOME)))
+        if (!(Good_obj(room) || room == HOME))
         {
             break;
         }
 
-        if ((room != HOME) && !isRoom(room))
+        if (room != HOME && !isRoom(room))
         {
             notify_quiet(executor, "That is not a room!");
         }
-        else if (  (room != HOME)
+        else if (  room != HOME
                 && (  (!controls(executor, room) && !Link_ok(room))
                    || !could_doit(executor, room, A_LLINK)))
         {
@@ -450,12 +464,16 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int key, char *name,
     notify(executor, tprintf("%s created with room number %d.", name, room));
 
     buff = alloc_sbuf("do_dig");
-    if ((nargs >= 1) && args[0] && *args[0])
+    if (  nargs >= 1
+       && args[0]
+       && *args[0])
     {
         Tiny_ltoa(room, buff);
         open_exit(executor, Location(executor), args[0], buff);
     }
-    if ((nargs >= 2) && args[1] && *args[1])
+    if (  nargs >= 2
+       && args[1]
+       && *args[1])
     {
         Tiny_ltoa(Location(executor), buff);
         open_exit(executor, room, args[1], buff);
@@ -683,7 +701,9 @@ void do_clone
 
         s_Dropto(clone, NOTHING);
         if (Dropto(thing) != NOTHING)
+        {
             link_exit(executor, clone, Dropto(thing));
+        }
         break;
 
     case TYPE_EXIT:
@@ -692,7 +712,9 @@ void do_clone
         s_Exits(clone, loc);
         s_Location(clone, NOTHING);
         if (Location(thing) != NOTHING)
+        {
             link_exit(executor, clone, Location(thing));
+        }
         break;
     }
 
