@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.18 2001-10-06 08:14:14 sdennis Exp $
+// $Id: object.cpp,v 1.19 2001-10-06 17:16:49 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -496,15 +496,30 @@ void destroy_obj(dbref obj)
             break;
 
         case TYPE_EXIT:
+#ifdef STANDALONE
             val = mudconf.opencost;
+#else
+            if (Location(obj) == NOTHING)
+            {
+                val = mudconf.opencost;
+            }
+            else
+            {
+                val = mudconf.opencost + mudconf.linkcost;
+            }
+#endif
             quota = mudconf.exit_quota;
             break;
 
         case TYPE_PLAYER:
             if (Robot(obj))
+            {
                 val = mudconf.robotcost;
+            }
             else
+            {
                 val = 0;
+            }
             quota = mudconf.player_quota;
             break;
         }
