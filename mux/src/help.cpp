@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.5 2003-02-05 06:20:59 jake Exp $
+// $Id: help.cpp,v 1.6 2003-02-17 02:26:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -176,7 +176,7 @@ int helpindex_read(int iHelpfile)
 
         for (nTopic = strlen(entry.topic); nTopic > 0; nTopic--)
         {
-            if (mux_isspace[(unsigned char)entry.topic[nTopic-1]])
+            if (mux_isspace(entry.topic[nTopic-1]))
             {
                 continue;
             }

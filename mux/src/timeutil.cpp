@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.15 2003-02-17 01:59:21 sdennis Exp $
+// $Id: timeutil.cpp,v 1.16 2003-02-17 02:26:23 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -460,7 +460,7 @@ bool ParseFractionalSecondsString(INT64 &i64, char *str)
 
     // Leading spaces.
     //
-    while (mux_isspace[(unsigned char)*str])
+    while (mux_isspace(*str))
     {
         str++;
     }
@@ -524,7 +524,7 @@ bool ParseFractionalSecondsString(INT64 &i64, char *str)
 
     // Trailing spaces.
     //
-    while (mux_isspace[(unsigned char)*str])
+    while (mux_isspace(*str))
     {
         str++;
     }

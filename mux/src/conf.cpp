@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.19 2003-02-17 01:59:20 sdennis Exp $
+// $Id: conf.cpp,v 1.20 2003-02-17 02:26:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1289,7 +1289,7 @@ CF_HAND(cf_cf_access)
     CONF *tp;
     char *ap;
 
-    for (ap = str; *ap && !mux_isspace[(unsigned char)*ap]; ap++)
+    for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
         ; // Nothing
     }
@@ -1532,7 +1532,10 @@ CF_HAND(cf_include)
         // portions (separated by a space).  Also, trim off the trailing
         // comment, if any (delimited by #).
         //
-        for (cp = buf; *cp && *cp != '\n'; cp++) ;
+        for (cp = buf; *cp && *cp != '\n'; cp++)
+        {
+            ; // Nothing.
+        }
 
         // Strip '\n'
         //
@@ -1540,11 +1543,17 @@ CF_HAND(cf_include)
 
         // Strip spaces.
         //
-        for (cp = buf; mux_isspace[(unsigned char)*cp]; cp++) ;
+        for (cp = buf; mux_isspace(*cp); cp++)
+        {
+            ; // Nothing.
+        }
 
         // Skip over command.
         //
-        for (ap = cp; *ap && !mux_isspace[(unsigned char)*ap]; ap++) ;
+        for (ap = cp; *ap && !mux_isspace(*ap); ap++)
+        {
+            ; // Nothing.
+        }
 
         // Trim command.
         //
@@ -1560,7 +1569,7 @@ CF_HAND(cf_include)
 
         // Skip Spaces.
         //
-        for (; mux_isspace[(unsigned char)*ap]; ap++)
+        for (; mux_isspace(*ap); ap++)
         {
             ; // Nothing.
         }
@@ -1581,7 +1590,7 @@ CF_HAND(cf_include)
 
         // Zap trailing spaces.
         //
-        for (zp = zp - 1; zp >= ap && mux_isspace[(unsigned char)*zp]; zp--)
+        for (zp = zp - 1; zp >= ap && mux_isspace(*zp); zp--)
         {
             *zp = '\0';
         }

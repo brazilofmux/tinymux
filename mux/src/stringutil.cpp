@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.45 2003-02-17 01:59:21 sdennis Exp $
+// $Id: stringutil.cpp,v 1.46 2003-02-17 02:26:23 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1406,15 +1406,15 @@ char *munge_space(const char *string)
     {
         // Remove initial spaces.
         //
-        while (mux_isspace[(unsigned char)*p])
+        while (mux_isspace(*p))
             p++;
 
         while (*p)
         {
-            while (*p && !mux_isspace[(unsigned char)*p])
+            while (*p && !mux_isspace(*p))
                 *q++ = *p++;
 
-            while (mux_isspace[(unsigned char)*p])
+            while (mux_isspace(*p))
             {
                 p++;
             }
@@ -1443,20 +1443,26 @@ char *trim_spaces(char *string)
     {
         // Remove initial spaces.
         //
-        while (mux_isspace[(unsigned char)*p])
+        while (mux_isspace(*p))
+        {
             p++;
+        }
 
         while (*p)
         {
             // Copy non-space characters.
             //
-            while (*p && !mux_isspace[(unsigned char)*p])
+            while (*p && !mux_isspace(*p))
+            {
                 *q++ = *p++;
+            }
 
             // Compress spaces.
             //
-            while (mux_isspace[(unsigned char)*p])
+            while (mux_isspace(*p))
+            {
                 p++;
+            }
 
             // Leave one space.
             //
@@ -1500,32 +1506,32 @@ int string_compare(const char *s1, const char *s2)
     if (  mudstate.bStandAlone
        || mudconf.space_compress)
     {
-        while (mux_isspace[(unsigned char)*s1])
+        while (mux_isspace(*s1))
         {
             s1++;
         }
-        while (mux_isspace[(unsigned char)*s2])
+        while (mux_isspace(*s2))
         {
             s2++;
         }
 
         while (  *s1 && *s2
               && (  (mux_tolower[(unsigned char)*s1] == mux_tolower[(unsigned char)*s2])
-                 || (mux_isspace[(unsigned char)*s1] && mux_isspace[(unsigned char)*s2])))
+                 || (mux_isspace(*s1) && mux_isspace(*s2))))
         {
-            if (mux_isspace[(unsigned char)*s1] && mux_isspace[(unsigned char)*s2])
+            if (mux_isspace(*s1) && mux_isspace(*s2))
             {
                 // skip all other spaces.
                 //
                 do
                 {
                     s1++;
-                } while (mux_isspace[(unsigned char)*s1]);
+                } while (mux_isspace(*s1));
 
                 do
                 {
                     s2++;
-                } while (mux_isspace[(unsigned char)*s2]);
+                } while (mux_isspace(*s2));
             }
             else
             {
@@ -1539,17 +1545,17 @@ int string_compare(const char *s1, const char *s2)
             return 1;
         }
 
-        if (mux_isspace[(unsigned char)*s1])
+        if (mux_isspace(*s1))
         {
-            while (mux_isspace[(unsigned char)*s1])
+            while (mux_isspace(*s1))
             {
                 s1++;
             }
             return *s1;
         }
-        if (mux_isspace[(unsigned char)*s2])
+        if (mux_isspace(*s2))
         {
-            while (mux_isspace[(unsigned char)*s2])
+            while (mux_isspace(*s2))
             {
                 s2++;
             }
@@ -1916,19 +1922,30 @@ bool matches_exit_from_list(char *str, const char *pattern)
         {
             // Make sure nothing afterwards
             //
-            while (mux_isspace[(unsigned char)*pattern])
+            while (mux_isspace(*pattern))
+            {
                 pattern++;
+            }
 
             // Did we get it?
             //
-            if (!*pattern || (*pattern == EXIT_DELIMITER))
+            if (  !*pattern
+               || (*pattern == EXIT_DELIMITER))
+            {
                 return true;
+            }
         }
         // We didn't get it, find next string to test
         //
-        while (*pattern && *pattern++ != EXIT_DELIMITER) ;
-        while (mux_isspace[(unsigned char)*pattern])
+        while (  *pattern
+              && *pattern++ != EXIT_DELIMITER)
+        {
+            ; // Nothing.
+        }
+        while (mux_isspace(*pattern))
+        {
             pattern++;
+        }
     }
     return false;
 }
@@ -2102,7 +2119,7 @@ long mux_atol(const char *pString)
     unsigned int c0 = pString[0];
     if (!mux_isdigit(c0))
     {
-        while (mux_isspace[(unsigned char)pString[0]])
+        while (mux_isspace(pString[0]))
         {
             pString++;
         }
@@ -2154,7 +2171,7 @@ INT64 mux_atoi64(const char *pString)
     unsigned int c0 = pString[0];
     if (!mux_isdigit(c0))
     {
-        while (mux_isspace[(unsigned char)pString[0]])
+        while (mux_isspace(pString[0]))
         {
             pString++;
         }
@@ -2304,7 +2321,7 @@ INT64 mux_atobcd(const char *pString)
     unsigned int c0 = pString[0];
     if (!mux_isdigit(c0))
     {
-        while (mux_isspace[(unsigned char)pString[0]])
+        while (mux_isspace(pString[0]))
         {
             pString++;
         }
@@ -2359,7 +2376,7 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
     if (  !mux_isdigit(*str)
        && *str != '.')
     {
-        while (mux_isspace[(unsigned char)*str])
+        while (mux_isspace(*str))
         {
             str++;
         }
@@ -2502,7 +2519,7 @@ LastSpaces:
 
     // Trailing spaces.
     //
-    while (mux_isspace[(unsigned char)*str])
+    while (mux_isspace(*str))
     {
         str++;
     }
@@ -2756,7 +2773,7 @@ bool is_integer(char *str, int *pDigits)
 
     // Leading spaces.
     //
-    while (mux_isspace[(unsigned char)*str])
+    while (mux_isspace(*str))
     {
         str++;
     }
@@ -2797,7 +2814,7 @@ bool is_integer(char *str, int *pDigits)
 
     // Trailing Spaces.
     //
-    while (mux_isspace[(unsigned char)*str])
+    while (mux_isspace(*str))
     {
         str++;
     }
@@ -2809,7 +2826,7 @@ bool is_rational(char *str)
 {
     // Leading spaces.
     //
-    while (mux_isspace[(unsigned char)*str])
+    while (mux_isspace(*str))
     {
         str++;
     }
@@ -2871,7 +2888,7 @@ bool is_rational(char *str)
 
     // Trailing spaces.
     //
-    while (mux_isspace[(unsigned char)*str])
+    while (mux_isspace(*str))
     {
         str++;
     }
@@ -3451,12 +3468,13 @@ CF_HAND(cf_art_rule)
 {
     char* pCurrent = str;
 
-    while (mux_isspace[(unsigned char)*pCurrent])
+    while (mux_isspace(*pCurrent))
     {
         pCurrent++;
     }
     char* pArticle = pCurrent;
-    while (!mux_isspace[(unsigned char)*pCurrent] && *pCurrent != '\0')
+    while (  !mux_isspace(*pCurrent)
+          && *pCurrent != '\0')
     {
         pCurrent++;
     }
@@ -3471,15 +3489,15 @@ CF_HAND(cf_art_rule)
 
     if (pCurrent - pArticle <= 2)
     {
-        if (*pArticle == 'A' || *pArticle == 'a')
+        if (mux_tolower(pArticle[0]) == 'a')
         {
-            if (*(pArticle + 1) == 'N' || *(pArticle + 1) == 'n')
+            if (mux_tolower(pArticle[1]) == 'n')
             {
                 bUseAn = true;
                 bOkay = true;
             }
 
-            if (mux_isspace[(unsigned char) *(pArticle + 1)])
+            if (mux_isspace(pArticle[1]))
             {
                 bOkay = true;
             }
@@ -3493,7 +3511,7 @@ CF_HAND(cf_art_rule)
         return -1;
     }
 
-    while (mux_isspace[(unsigned char)*pCurrent])
+    while (mux_isspace(*pCurrent))
     {
         pCurrent++;
     }

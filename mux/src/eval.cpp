@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.13 2003-02-17 01:59:21 sdennis Exp $
+// $Id: eval.cpp,v 1.14 2003-02-17 02:26:23 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -46,7 +46,7 @@ static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
               && !(eval & EV_NO_COMPRESS))
            || (eval & EV_STRIP_LS))
         {
-            while (mux_isspace[(unsigned char)*rstr])
+            while (mux_isspace(*rstr))
             {
                 rstr++;
             }
@@ -58,7 +58,7 @@ static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
            || (eval & EV_STRIP_TS))
         {
             while (  strFirewall < zstr
-                  && mux_isspace[(unsigned char)zstr[-1]])
+                  && mux_isspace(zstr[-1]))
             {
                 zstr--;
             }
@@ -194,7 +194,7 @@ char *parse_to(char **dstr, char delim, int eval)
           || (eval & EV_STRIP_LS))
        && !(eval & EV_NO_COMPRESS))
     {
-        while (mux_isspace[(unsigned char)*rstr])
+        while (mux_isspace(*rstr))
         {
             rstr++;
         }
@@ -1209,7 +1209,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             if (mudconf.space_compress)
             {
                 while (  oldp <= pEnd
-                      && mux_isspace[(unsigned char)*pEnd])
+                      && mux_isspace(*pEnd))
                 {
                     pEnd--;
                 }

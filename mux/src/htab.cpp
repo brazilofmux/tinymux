@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.5 2003-02-05 06:20:59 jake Exp $
+// $Id: htab.cpp,v 1.6 2003-02-17 02:26:23 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -410,7 +410,7 @@ CF_HAND(cf_ntab_access)
     NAMETAB *np;
     char *ap;
 
-    for (ap = str; *ap && !mux_isspace[(unsigned char)*ap]; ap++)
+    for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
         ; // Nothing.
     }
@@ -419,7 +419,7 @@ CF_HAND(cf_ntab_access)
         *ap++ = '\0';
     }
 
-    while (mux_isspace[(unsigned char)*ap])
+    while (mux_isspace(*ap))
     {
         ap++;
     }

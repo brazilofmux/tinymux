@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.18 2003-02-16 00:14:47 sdennis Exp $
+// $Id: command.cpp,v 1.19 2003-02-17 02:26:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1437,7 +1437,7 @@ int cmdtest(dbref player, char *cmd)
         pt1 = strchr(pt2+1,' ');
         if (pt1 && *pt1)
         {
-            while (mux_isspace[(unsigned char)*pt1])
+            while (mux_isspace(*pt1))
             {
                 pt1++;
             }
@@ -1615,7 +1615,7 @@ char *process_command
 
     // Eat leading whitespace, and space-compress if configured.
     //
-    while (mux_isspace[(unsigned char)*pOriginalCommand])
+    while (mux_isspace(*pOriginalCommand))
     {
         pOriginalCommand++;
     }
@@ -1633,11 +1633,11 @@ char *process_command
         q = SpaceCompressCommand;
         while (*p)
         {
-            while (*p && !mux_isspace[(unsigned char)*p])
+            while (*p && !mux_isspace(*p))
             {
                 *q++ = *p++;
             }
-            while (mux_isspace[(unsigned char)*p])
+            while (mux_isspace(*p))
             {
                 p++;
             }
@@ -1845,7 +1845,7 @@ char *process_command
     // Make lowercase command
     //
     for (p = pCommand, q = LowerCaseCommand;
-         *p && !mux_isspace[(unsigned char)*p];
+         *p && !mux_isspace(*p);
          p++, q++)
     {
         *q = mux_tolower[(unsigned char)*p];
@@ -1855,7 +1855,7 @@ char *process_command
 
     // Skip spaces before arg
     //
-    while (mux_isspace[(unsigned char)*p])
+    while (mux_isspace(*p))
     {
         p++;
     }
@@ -1940,7 +1940,7 @@ char *process_command
                 // arg at the arguments.
                 //
                 arg = pCommand = pOriginalCommand;
-                while (*arg && !mux_isspace[(unsigned char)*arg])
+                while (*arg && !mux_isspace(*arg))
                 {
                     arg++;
                 }
@@ -2715,7 +2715,7 @@ CF_HAND(cf_access)
     char *ap;
     bool set_switch;
 
-    for (ap = str; *ap && !mux_isspace[(unsigned char)*ap] && (*ap != '/'); ap++) ;
+    for (ap = str; *ap && !mux_isspace(*ap) && (*ap != '/'); ap++) ;
     if (*ap == '/')
     {
         set_switch = true;
@@ -2725,9 +2725,13 @@ CF_HAND(cf_access)
     {
         set_switch = false;
         if (*ap)
+        {
             *ap++ = '\0';
-        while (mux_isspace[(unsigned char)*ap])
+        }
+        while (mux_isspace(*ap))
+        {
             ap++;
+        }
     }
 
     cmdp = (CMDENT *)hashfindLEN(str, strlen(str), &mudstate.command_htab);
@@ -2793,7 +2797,7 @@ CF_HAND(cf_attr_access)
     ATTR *ap;
     char *sp;
 
-    for (sp = str; *sp && !mux_isspace[(unsigned char)*sp]; sp++)
+    for (sp = str; *sp && !mux_isspace(*sp); sp++)
     {
         ; // Nothing
     }
@@ -2801,7 +2805,7 @@ CF_HAND(cf_attr_access)
     {
         *sp++ = '\0';
     }
-    while (mux_isspace[(unsigned char)*sp])
+    while (mux_isspace(*sp))
     {
         sp++;
     }
@@ -3910,7 +3914,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                     if (  pt1
                        && (pt1 > atrpt)
                        && (*(pt1 - 1) == ':')
-                       && (  mux_isspace[(unsigned char)*(pt1 + aflags)]
+                       && (  mux_isspace(*(pt1 + aflags))
                           || !*(pt1 + aflags)))
                     {
                         break;
@@ -3973,7 +3977,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                     if (pt1)
                     {
                         pt2 = pt1 - 1;
-                        while ((pt2 > atrpt) && !mux_isspace[(unsigned char)*pt2])
+                        while ((pt2 > atrpt) && !mux_isspace(*pt2))
                         {
                             pt2--;
                         }
@@ -3987,7 +3991,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                         pt2 = pt1 + aflags;
                         if (*pt2)
                         {
-                            while (*pt2 && mux_isspace[(unsigned char)*pt2])
+                            while (*pt2 && mux_isspace(*pt2))
                             {
                                 pt2++;
                             }
@@ -3999,7 +4003,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                         if ((y > 1) && !*pt2)
                         {
                             pt2 = atrpt + y;
-                            while ((pt2 > atrpt) && mux_isspace[(unsigned char)*pt2])
+                            while ((pt2 > atrpt) && mux_isspace(*pt2))
                             {
                                 pt2--;
                             }

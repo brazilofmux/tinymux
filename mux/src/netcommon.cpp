@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.13 2003-02-11 07:01:26 sdennis Exp $
+// $Id: netcommon.cpp,v 1.14 2003-02-17 02:26:23 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -515,7 +515,7 @@ void save_command(DESC *d, CBLK *command)
 
 static void set_userstring(char **userstring, const char *command)
 {
-    while (mux_isspace[(unsigned char)*command])
+    while (mux_isspace(*command))
     {
         command++;
     }
@@ -547,18 +547,18 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
         *pass = '\0';
         return;
     }
-    while (mux_isspace[(unsigned char)*msg])
+    while (mux_isspace(*msg))
     {
         msg++;
     }
     char *p = command;
     while (  *msg
-          && !mux_isspace[(unsigned char)*msg])
+          && !mux_isspace(*msg))
     {
         *p++ = *msg++;
     }
     *p = '\0';
-    while (mux_isspace[(unsigned char)*msg])
+    while (mux_isspace(*msg))
     {
         msg++;
     }
@@ -566,7 +566,7 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
     if (  mudconf.name_spaces
        && *msg == '\"')
     {
-        for (; *msg && (*msg == '\"' || mux_isspace[(unsigned char)*msg]); msg++)
+        for (; *msg && (*msg == '\"' || mux_isspace(*msg)); msg++)
         {
             // Nothing.
         }
@@ -574,7 +574,7 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
               && *msg != '\"')
         {
             while (  *msg
-                  && !mux_isspace[(unsigned char)*msg]
+                  && !mux_isspace(*msg)
                   && *msg != '\"')
             {
                 *p++ = *msg++;
@@ -585,7 +585,7 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
                 break;
             }
 
-            while (mux_isspace[(unsigned char)*msg])
+            while (mux_isspace(*msg))
             {
                 msg++;
             }
@@ -605,19 +605,19 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
     else
     {
         while (  *msg
-              && !mux_isspace[(unsigned char)*msg])
+              && !mux_isspace(*msg))
         {
             *p++ = *msg++;
         }
     }
     *p = '\0';
-    while (mux_isspace[(unsigned char)*msg])
+    while (mux_isspace(*msg))
     {
         msg++;
     }
     p = pass;
     while (  *msg
-          && !mux_isspace[(unsigned char)*msg])
+          && !mux_isspace(*msg))
     {
         *p++ = *msg++;
     }
@@ -1320,7 +1320,7 @@ static void dump_users(DESC *e, char *match, int key)
 
     if (match)
     {
-        while (mux_isspace[(unsigned char)*match])
+        while (mux_isspace(*match))
         {
             match++;
         }
@@ -2095,7 +2095,7 @@ bool do_command(DESC *d, char *command)
     // Split off the command from the arguments.
     //
     char *arg = command;
-    while (*arg && !mux_isspace[(unsigned char)*arg])
+    while (*arg && !mux_isspace(*arg))
     {
         arg++;
     }

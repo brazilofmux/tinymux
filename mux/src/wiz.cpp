@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.4 2003-02-05 06:20:59 jake Exp $
+// $Id: wiz.cpp,v 1.5 2003-02-17 02:26:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -239,7 +239,7 @@ void do_force_prefixed( dbref executor, dbref caller, dbref enactor, int key,
     {
         return;
     }
-    while (mux_isspace[(unsigned char)*command])
+    while (mux_isspace(*command))
     {
         command++;
     }

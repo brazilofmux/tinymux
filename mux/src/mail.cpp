@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.17 2003-02-17 01:59:21 sdennis Exp $
+// $Id: mail.cpp,v 1.18 2003-02-17 02:26:23 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -354,7 +354,7 @@ void add_folder_name(dbref player, int fld, char *name)
             // Eat leading spaces.
             //
             while (  aFolders < q
-                  && mux_isspace[(unsigned char)q[-1]])
+                  && mux_isspace(q[-1]))
             {
                 q--;
             }
@@ -367,11 +367,11 @@ void add_folder_name(dbref player, int fld, char *name)
                 p++;
             }
             while (  *p
-                  && !mux_isspace[(unsigned char)*p])
+                  && !mux_isspace(*p))
             {
                 p++;
             }
-            while (mux_isspace[(unsigned char)*p])
+            while (mux_isspace(*p))
             {
                 p++;
             }
@@ -481,7 +481,7 @@ static int get_folder_number(dbref player, char *name)
             p = aFolders + i + nPattern;
             q = p;
             while (  *q
-                  && !mux_isspace[(unsigned char)*q])
+                  && !mux_isspace(*q))
             {
                 q++;
             }
@@ -549,7 +549,7 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
     }
 
     char *p = msglist;
-    while (mux_isspace[(unsigned char)*p])
+    while (mux_isspace(*p))
     {
         p++;
     }

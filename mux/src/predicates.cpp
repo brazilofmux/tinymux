@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.29 2003-02-17 02:03:20 sdennis Exp $
+// $Id: predicates.cpp,v 1.30 2003-02-17 02:26:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -329,8 +329,8 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, bool *pbValid)
     // as the first character, or SPACE as the last character
     //
     if (  strchr("*!#", *pStripped)
-       || mux_isspace[(unsigned char)pStripped[0]]
-       || mux_isspace[(unsigned char)pStripped[nStripped-1]])
+       || mux_isspace(pStripped[0])
+       || mux_isspace(pStripped[nStripped-1]))
     {
         return NULL;
     }
@@ -494,8 +494,8 @@ bool ValidatePlayerName(const char *pName)
     // as the first character, or SPACE as the last character
     //
     if (  strchr("*!#", *pName)
-       || mux_isspace[(unsigned char)pName[0]]
-       || mux_isspace[(unsigned char)pName[nName-1]])
+       || mux_isspace(pName[0])
+       || mux_isspace(pName[nName-1]))
     {
         return false;
     }
@@ -548,7 +548,7 @@ bool ok_password(const char *password, dbref player)
     for (scan = password; *scan; scan++)
     {
         if (  !mux_isprint(*scan)
-           || mux_isspace[(unsigned char)*scan])
+           || mux_isspace(*scan))
         {
             notify_quiet(player, "Illegal character in password.");
             return false;
@@ -1665,7 +1665,7 @@ void parse_range(char **name, dbref *low_bound, dbref *high_bound)
         char *buff2 = parse_to(&buff1, ',', EV_STRIP_TS);
         if (buff1 && *buff1)
         {
-            while (mux_isspace[(unsigned char)*buff1])
+            while (mux_isspace(*buff1))
             {
                 buff1++;
             }
@@ -1686,7 +1686,7 @@ void parse_range(char **name, dbref *low_bound, dbref *high_bound)
             *high_bound = mudstate.db_top - 1;
         }
 
-        while (mux_isspace[(unsigned char)*buff2])
+        while (mux_isspace(*buff2))
         {
             buff2++;
         }

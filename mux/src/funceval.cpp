@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.32 2003-02-17 01:59:21 sdennis Exp $
+// $Id: funceval.cpp,v 1.33 2003-02-17 02:26:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2678,7 +2678,7 @@ FUNCTION(fun_unpack)
 
     // Leading whitespace
     //
-    while (mux_isspace[(unsigned char)*pString])
+    while (mux_isspace(*pString))
     {
         pString++;
     }
