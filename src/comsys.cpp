@@ -1,6 +1,6 @@
 //comsys.c
 //
-// * $Id: comsys.cpp,v 1.2 2000-04-15 15:28:07 sdennis Exp $
+// * $Id: comsys.cpp,v 1.3 2000-04-24 22:18:56 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -452,15 +452,6 @@ void sort_com_aliases(comsys_t *c)
             }
         }
     }
-}
-
-/*
-* This is the hash table for channel names 
-*/
-
-void NDECL(init_chantab)
-{
-    return;
 }
 
 char *get_channel_from_alias(dbref player, char *alias)
