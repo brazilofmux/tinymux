@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.16 2000-11-12 11:06:16 sdennis Exp $
+// $Id: eval.cpp,v 1.17 2000-11-16 07:46:50 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1149,19 +1149,13 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                 // Get the arglist and count the number of args. Neg # of args
                 // means catenate subsequent args.
                 //
-                int abs_nargs = 0;
                 if (ufp)
                 {
                     nfargs = MAX_ARG;
                 }
-                else if (fp->nargs < 0)
-                {
-                    abs_nargs = nfargs = -fp->nargs;
-                }
                 else
                 {
-                    nfargs = MAX_ARG;
-                    abs_nargs = fp->nargs;
+                    nfargs = fp->maxArgsParsed;
                 }
 
                 tstr = pdstr;
@@ -1246,9 +1240,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         // return an error message. Note that parse_arglist returns zero
                         // args as one null arg, so we have to handle that case specially.
                         //
-                        if (  (nfargs == abs_nargs)
-                           || ((fp->flags & FN_VARARGS) && (nfargs > abs_nargs))
-                           )
+                        if (  fp->minArgs <= nfargs
+                           && nfargs <= fp->maxArgs)
                         {
                             // Check recursion limit.
                             //
@@ -1280,13 +1273,17 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         else
                         {
                             *bufc = oldp;
-                            if (fp->flags & FN_VARARGS)
+                            if (fp->minArgs == fp->maxArgs)
                             {
-                                sprintf(TinyExec_scratch, "#-1 FUNCTION (%s) EXPECTS AT LEAST %d ARGUMENTS", fp->name, abs_nargs);
+                                sprintf(TinyExec_scratch, "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS", fp->name, fp->minArgs);
+                            }
+                            else if (fp->minArgs + 1 == fp->maxArgs)
+                            {
+                                sprintf(TinyExec_scratch, "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS", fp->name, fp->minArgs, fp->maxArgs);
                             }
                             else
                             {
-                                sprintf(TinyExec_scratch, "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS", fp->name, abs_nargs);
+                                sprintf(TinyExec_scratch, "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS", fp->name, fp->minArgs, fp->maxArgs);
                             }
                             safe_str(TinyExec_scratch, buff, bufc);
                         }

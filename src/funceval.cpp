@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.37 2000-11-13 01:05:51 sdennis Exp $
+// $Id: funceval.cpp,v 1.38 2000-11-16 07:46:49 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -693,10 +693,6 @@ FUNCTION(fun_zfun)
         safe_str("#-1 INVALID ZONE", buff, bufc);
         return;
     }
-    if (nfargs <= 0 || !*fargs[0])
-    {
-        return;
-    }
 
     // Find the user function attribute.
     //
@@ -783,11 +779,6 @@ FUNCTION(fun_columns)
 //
 FUNCTION(fun_table)
 {
-    if (!fn_range_check("TABLE", nfargs, 1, 6, buff, bufc))
-    {
-        return;
-    }
-
     // Check argument numbers, assign values and defaults if necessary.
     //
     char *pPaddingStart;
@@ -1166,9 +1157,9 @@ FUNCTION(fun_strtrunc)
 
 FUNCTION(fun_ifelse)
 {
-    /* This function now assumes that its arguments have not been
-       evaluated. */
-    
+    // This function now assumes that its arguments have not been
+    // evaluated
+    //
     char *str, *mbuff, *bp;
     
     mbuff = bp = alloc_lbuf("fun_ifelse");
@@ -1195,10 +1186,6 @@ FUNCTION(fun_inc)
     {
         safe_ltoa(Tiny_atol(fargs[0]) + 1, buff, bufc, LBUF_SIZE-1);
     }
-    else if (nfargs > 1)
-    {
-        fn_range_check("INC", nfargs, 0, 1, buff, bufc);
-    }
     else
     {
         safe_chr('1', buff, bufc);
@@ -1210,10 +1197,6 @@ FUNCTION(fun_dec)
     if (nfargs == 1)
     {
         safe_ltoa(Tiny_atol(fargs[0]) - 1, buff, bufc, LBUF_SIZE-1);
-    }
-    else if (nfargs > 1)
-    {
-        fn_range_check("INC", nfargs, 0, 1, buff, bufc);
     }
     else
     {
@@ -1275,7 +1258,7 @@ FUNCTION(fun_mail)
             num = Tiny_atol(fargs[0]);
         }
     }
-    else if (nfargs == 2)
+    else // if (nfargs == 2)
     {
         playerask = lookup_player(player, fargs[0], 1);
         if (playerask == NOTHING)
@@ -1293,11 +1276,6 @@ FUNCTION(fun_mail)
             safe_noperm(buff, bufc);
             return;
         }
-    }
-    else
-    {
-        safe_str("#-1 FUNCTION (MAIL) EXPECTS 0 OR 1 OR 2 ARGUMENTS", buff, bufc);
-        return;
     }
 
     if (num < 1 || !isPlayer(playerask))
@@ -1342,7 +1320,7 @@ FUNCTION(fun_mailfrom)
         playerask = player;
         num = Tiny_atol(fargs[0]);
     }
-    else if (nfargs == 2)
+    else // if (nfargs == 2)
     {
         playerask = lookup_player(player, fargs[0], 1);
         if (playerask == NOTHING)
@@ -1359,11 +1337,6 @@ FUNCTION(fun_mailfrom)
             safe_noperm(buff, bufc);
             return;
         }
-    }
-    else
-    {
-        safe_str("#-1 FUNCTION (MAILFROM) EXPECTS 1 OR 2 ARGUMENTS", buff, bufc);
-        return;
     }
 
     if (num < 1 || !isPlayer(playerask))
@@ -1484,21 +1457,21 @@ FUNCTION(fun_default)
     TinyExec(objname, &bp, 0, player, cause, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
-    /*
-     * First we check to see that the attribute exists on the object. * * 
-     * 
-     * *  * * If so, we grab it and use it. 
-     */
-
-    if (objname != NULL) {
-        if (parse_attrib(player, objname, &thing, &attrib) &&
-            (attrib != NOTHING)) {
+    // First we check to see that the attribute exists on the object.
+    // If so, we grab it and use it.
+    //
+    if (objname != NULL)
+    {
+        if (  parse_attrib(player, objname, &thing, &attrib)
+           && (attrib != NOTHING))
+        {
             attr = atr_num(attrib);
-            if (attr && !(attr->flags & AF_IS_LOCK)) {
+            if (attr && !(attr->flags & AF_IS_LOCK))
+            {
                 atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
-                if (*atr_gotten &&
-                check_read_perms(player, thing, attr, aowner,
-                         aflags, buff, bufc)) {
+                if (  *atr_gotten
+                   && check_read_perms(player, thing, attr, aowner, aflags, buff, bufc))
+                {
                     safe_str(atr_gotten, buff, bufc);
                     free_lbuf(atr_gotten);
                     free_lbuf(objname);
@@ -1509,12 +1482,10 @@ FUNCTION(fun_default)
         }
         free_lbuf(objname);
     }
-    /*
-     * If we've hit this point, we've not gotten anything useful, so * we 
-     * 
-     * *  * *  * * go and evaluate the default. 
-     */
 
+    // If we've hit this point, we've not gotten anything useful, so
+    // we go and evaluate the default.
+    //
     str = fargs[1];
     TinyExec(buff, bufc, 0, player, cause, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
@@ -1531,21 +1502,21 @@ FUNCTION(fun_edefault)
     TinyExec(objname, &bp, 0, player, cause, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
-    /*
-     * First we check to see that the attribute exists on the object. * * 
-     * 
-     * *  * * If so, we grab it and use it. 
-     */
-
-    if (objname != NULL) {
+    // First we check to see that the attribute exists on the object.
+    // If so, we grab it and use it.
+    //
+    if (objname != NULL)
+    {
         if (parse_attrib(player, objname, &thing, &attrib) &&
-            (attrib != NOTHING)) {
+            (attrib != NOTHING))
+        {
             attr = atr_num(attrib);
-            if (attr && !(attr->flags & AF_IS_LOCK)) {
+            if (attr && !(attr->flags & AF_IS_LOCK))
+            {
                 atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
-                if (*atr_gotten &&
-                check_read_perms(player, thing, attr, aowner,
-                         aflags, buff, bufc)) {
+                if (  *atr_gotten
+                   && check_read_perms(player, thing, attr, aowner, aflags, buff, bufc))
+                {
                     str = atr_gotten;
                     TinyExec(buff, bufc, 0, thing, player, EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
                     free_lbuf(atr_gotten);
@@ -1557,12 +1528,10 @@ FUNCTION(fun_edefault)
         }
         free_lbuf(objname);
     }
-    /*
-     * If we've hit this point, we've not gotten anything useful, so * we 
-     * 
-     * *  * *  * * go and evaluate the default. 
-     */
 
+    // If we've hit this point, we've not gotten anything useful, so
+    // we go and evaluate the default.
+    //
     str = fargs[1];
     TinyExec(buff, bufc, 0, player, cause, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
@@ -1573,14 +1542,6 @@ FUNCTION(fun_udefault)
     int aflags, anum;
     ATTR *ap;
     char *objname, *atext, *bp, *str;
-
-
-    if (nfargs < 2)
-    {
-        // must have at least two arguments.
-        //
-        return;
-    }
 
     str = fargs[0];
     objname = bp = alloc_lbuf("fun_udefault");
@@ -1789,18 +1750,17 @@ FUNCTION(fun_elements)
  */
 FUNCTION(fun_grab)
 {
-    char *r, *s, sep;
-
+    char sep;
     varargs_preamble("GRAB", 3);
 
-    /*
-     * Walk the wordstring, until we find the word we want. 
-     */
-
-    s = trim_space_sep(fargs[0], sep);
-    do {
-        r = split_token(&s, sep);
-        if (quick_wild(fargs[1], r)) {
+    // Walk the wordstring, until we find the word we want.
+    //
+    char *s = trim_space_sep(fargs[0], sep);
+    do
+    {
+        char *r = split_token(&s, sep);
+        if (quick_wild(fargs[1], r))
+        {
             safe_str(r, buff, bufc);
             return;
         }
@@ -1854,10 +1814,6 @@ FUNCTION(fun_shuffle)
     int n, i, j;
     char sep;
 
-    if (!nfargs || !fargs[0] || !*fargs[0])
-    {
-        return;
-    }
     varargs_preamble("SHUFFLE", 2);
 
     n = list2arr(words, LBUF_SIZE, fargs[0], sep);
@@ -2003,10 +1959,6 @@ FUNCTION(fun_sortby)
     dbref thing, aowner;
     ATTR *ap;
 
-    if ((nfargs <= 0) || !fargs[0] || !*fargs[0])
-    {
-        return;
-    }
     varargs_preamble("SORTBY", 3);
 
     if (parse_attrib(player, fargs[0], &thing, &anum)) {
@@ -2102,7 +2054,6 @@ FUNCTION(fun_matchall)
 
     varargs_preamble("MATCHALL", 3);
     old = *bufc;
-
     
     // Check each word individually, returning the word number of all
     // that match. If none match, return 0. 
@@ -2236,28 +2187,40 @@ FUNCTION(fun_foreach)
     char *atext, *atextbuf, *str, *cp, *bp;
     char cbuf[2], prev = '\0';
 
-    if ((nfargs != 2) && (nfargs != 4)) {
+    if ((nfargs != 2) && (nfargs != 4))
+    {
         safe_str("#-1 FUNCTION (FOREACH) EXPECTS 2 or 4 ARGUMENTS", buff, bufc);
         return;
     }
 
-    if (parse_attrib(player, fargs[0], &thing, &anum)) {
+    if (parse_attrib(player, fargs[0], &thing, &anum))
+    {
         if ((anum == NOTHING) || !Good_obj(thing))
+        {
             ap = NULL;
+        }
         else
+        {
             ap = atr_num(anum);
-    } else {
+        }
+    }
+    else
+    {
         thing = player;
         ap = atr_str(fargs[0]);
     }
 
-    if (!ap) {
+    if (!ap)
+    {
         return;
     }
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext) {
+    if (!atext)
+    {
         return;
-    } else if (!*atext || !See_attr(player, thing, ap, aowner, aflags)) {
+    }
+    else if (!*atext || !See_attr(player, thing, ap, aowner, aflags))
+    {
         free_lbuf(atext);
         return;
     }
@@ -2268,20 +2231,29 @@ FUNCTION(fun_foreach)
     
     cbuf[1] = '\0';
     
-    if (nfargs == 4) {
-        while (cp && *cp) {
+    if (nfargs == 4)
+    {
+        while (cp && *cp)
+        {
             cbuf[0] = *cp++;
             
-            if (flag) {
-                if ((cbuf[0] == *fargs[3]) && (prev != '\\') && (prev != '%')) {
+            if (flag)
+            {
+                if ((cbuf[0] == *fargs[3]) && (prev != '\\') && (prev != '%'))
+                {
                     flag = 0;
                     continue;
                 }
-            } else {
-                if ((cbuf[0] == *fargs[2]) && (prev != '\\') && (prev != '%')) {
+            }
+            else
+            {
+                if ((cbuf[0] == *fargs[2]) && (prev != '\\') && (prev != '%'))
+                {
                     flag = 1;
                     continue;
-                } else {
+                }
+                else
+                {
                     safe_chr(cbuf[0], buff, bufc);
                     continue;
                 }
@@ -2292,8 +2264,11 @@ FUNCTION(fun_foreach)
             TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
             prev = cbuf[0];
         }
-    } else {
-        while (cp && *cp) {
+    }
+    else
+    {
+        while (cp && *cp)
+        {
             cbuf[0] = *cp++;
     
             strcpy(atextbuf, atext);
@@ -2301,7 +2276,6 @@ FUNCTION(fun_foreach)
             TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
         }
     }
-
     free_lbuf(atextbuf);
     free_lbuf(atext);
 }
@@ -2324,39 +2298,40 @@ FUNCTION(fun_munge)
     char *atext, *bp, *str, sep, *oldp;
 
     oldp = *bufc;
-    if ((nfargs == 0) || !fargs[0] || !*fargs[0]) {
-        return;
-    }
     varargs_preamble("MUNGE", 4);
 
-    /*
-     * Find our object and attribute 
-     */
-
-    if (parse_attrib(player, fargs[0], &thing, &anum)) {
+    // Find our object and attribute.
+    //
+    if (parse_attrib(player, fargs[0], &thing, &anum))
+    {
         if ((anum == NOTHING) || !Good_obj(thing))
             ap = NULL;
         else
             ap = atr_num(anum);
-    } else {
+    }
+    else
+    {
         thing = player;
         ap = atr_str(fargs[0]);
     }
 
-    if (!ap) {
+    if (!ap)
+    {
         return;
     }
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext) {
+    if (!atext)
+    {
         return;
-    } else if (!*atext || !See_attr(player, thing, ap, aowner, aflags)) {
+    }
+    else if (!*atext || !See_attr(player, thing, ap, aowner, aflags))
+    {
         free_lbuf(atext);
         return;
     }
-    /*
-     * Copy our lists and chop them up. 
-     */
 
+    // Copy our lists and chop them up.
+    //
     list1 = alloc_lbuf("fun_munge.list1");
     list2 = alloc_lbuf("fun_munge.list2");
     strcpy(list1, fargs[1]);
@@ -2364,34 +2339,34 @@ FUNCTION(fun_munge)
     nptrs1 = list2arr(ptrs1, LBUF_SIZE / 2, list1, sep);
     nptrs2 = list2arr(ptrs2, LBUF_SIZE / 2, list2, sep);
 
-    if (nptrs1 != nptrs2) {
+    if (nptrs1 != nptrs2)
+    {
         safe_str("#-1 LISTS MUST BE OF EQUAL SIZE", buff, bufc);
         free_lbuf(atext);
         free_lbuf(list1);
         free_lbuf(list2);
         return;
     }
-    /*
-     * Call the u-function with the first list as %0. 
-     */
 
+    // Call the u-function with the first list as %0.
+    //
     bp = rlist = alloc_lbuf("fun_munge");
     str = atext;
     TinyExec(rlist, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &fargs[1], 1);
     *bp = '\0';
 
-    /*
-     * Now that we have our result, put it back into array form. Search * 
-     * 
-     * *  * *  * * through list1 until we find the element position, then 
-     * copy  * the * * * corresponding element from list2. 
-     */
-
+    // Now that we have our result, put it back into array form.
+    // Search through list1 until we find the element position, then
+    // copy the corresponding element from list2.
+    //
     nresults = list2arr(results, LBUF_SIZE / 2, rlist, sep);
 
-    for (i = 0; i < nresults; i++) {
-        for (j = 0; j < nptrs1; j++) {
-            if (!strcmp(results[i], ptrs1[j])) {
+    for (i = 0; i < nresults; i++)
+    {
+        for (j = 0; j < nptrs1; j++)
+        {
+            if (!strcmp(results[i], ptrs1[j]))
+            {
                 if (*bufc != oldp)
                     safe_chr(sep, buff, bufc);
                 safe_str(ptrs2[j], buff, bufc);
@@ -2408,17 +2383,8 @@ FUNCTION(fun_munge)
 
 FUNCTION(fun_die)
 {
-    int n, die, count;
-    int total = 0;
-
-    if (!fargs[0] || !fargs[1])
-    {
-        safe_chr('0', buff, bufc);
-        return;
-    }
-
-    n = Tiny_atol(fargs[0]);
-    die = Tiny_atol(fargs[1]);
+    int n = Tiny_atol(fargs[0]);
+    int die = Tiny_atol(fargs[1]);
 
     if ((n == 0) || (die <= 0))
     {
@@ -2431,7 +2397,8 @@ FUNCTION(fun_die)
         safe_str("#-1 NUMBER OUT OF RANGE", buff, bufc);
         return;
     }
-    for (count = 0; count < n; count++)
+    int total = 0;
+    for (int count = 0; count < n; count++)
     {
         total += RandomLong(1, die);
     }
@@ -2444,9 +2411,8 @@ FUNCTION(fun_die)
  */
 FUNCTION(fun_lit)
 {
-    /*
-     * Just returns the argument, literally 
-     */
+    // Just returns the argument, literally.
+    //
     safe_str(fargs[0], buff, bufc);
 }
 
@@ -2514,11 +2480,6 @@ static char aRadixTable[] =
 
 FUNCTION(fun_unpack)
 {
-    if (!fn_range_check("UNPACK", nfargs, 1, 2, buff, bufc))
-    {
-        return;
-    }
-
     // Validate radix if present.
     //
     INT64 iRadix = 64;
@@ -2588,11 +2549,6 @@ FUNCTION(fun_unpack)
 
 FUNCTION(fun_pack)
 {
-    if (!fn_range_check("PACK", nfargs, 1, 2, buff, bufc))
-    {
-        return;
-    }
-
     // Validate the arguments are numeric.
     //
     int nDigits;
@@ -2667,9 +2623,9 @@ FUNCTION(fun_pack)
 FUNCTION(fun_strcat)
 {
     int i;
-    
     safe_str(fargs[0], buff, bufc);
-    for (i = 1; i < nfargs; i++) {
+    for (i = 1; i < nfargs; i++)
+    {
         safe_str(fargs[i], buff, bufc);
     }
 }
@@ -2802,15 +2758,18 @@ FUNCTION(fun_grepi)
  */
 FUNCTION(fun_art)
 {
-/*
- * checks a word and returns the appropriate article, "a" or "an" 
- */
+    // Checks a word and returns the appropriate article, "a" or "an".
+    //
     char c = Tiny_ToLower[(unsigned char)*fargs[0]];
 
     if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
+    {
         safe_str("an", buff, bufc);
+    }
     else
+    {
         safe_chr('a', buff, bufc);
+    }
 }
 
 /*
@@ -2818,12 +2777,6 @@ FUNCTION(fun_art)
  */
 FUNCTION(fun_alphamax)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
-
     char *amax = fargs[0];
     for (int i = 1; i < nfargs; i++)
     {
@@ -2832,7 +2785,6 @@ FUNCTION(fun_alphamax)
             amax = fargs[i];
         }
     }
-
     safe_tprintf_str(buff, bufc, "%s", amax);
 }
 
@@ -2841,12 +2793,6 @@ FUNCTION(fun_alphamax)
  */
 FUNCTION(fun_alphamin)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
-
     char *amin = fargs[0];
     for (int i = 1; i < nfargs; i++)
     {
@@ -2855,7 +2801,6 @@ FUNCTION(fun_alphamin)
             amin = fargs[i];
         }
     }
-
     safe_tprintf_str(buff, bufc, "%s", amin);
 }
 
@@ -2986,11 +2931,6 @@ FUNCTION(fun_lstack)
     STACK *sp;
     dbref doer;
 
-    if (nfargs > 1)
-    {
-        safe_str("#-1 FUNCTION (CSTACK) EXPECTS 0-1 ARGUMENTS", buff, bufc);
-        return;
-    }
     if (nfargs == 0 || !*fargs[0])
     {
         doer = player;
@@ -3036,11 +2976,6 @@ FUNCTION(fun_empty)
 {
     dbref doer;
 
-    if (nfargs > 1)
-    {
-        safe_str("#-1 FUNCTION (CSTACK) EXPECTS 0-1 ARGUMENTS", buff, bufc);
-        return;
-    }
     if (nfargs == 0 || !*fargs[0])
     {
         doer = player;
@@ -3062,11 +2997,6 @@ FUNCTION(fun_items)
 {
     dbref doer;
 
-    if (nfargs > 1)
-    {
-        safe_str("#-1 FUNCTION (NUMSTACK) EXPECTS 0-1 ARGUMENTS", buff, bufc);
-        return;
-    }
     if (nfargs == 0 || !*fargs[0])
     {
         doer = player;
@@ -3090,11 +3020,6 @@ FUNCTION(fun_peek)
     dbref doer;
     int count, pos;
 
-    if (nfargs > 2)
-    {
-        safe_str("#-1 FUNCTION (PEEK) EXPECTS 0-2 ARGUMENTS", buff, bufc);
-        return;
-    }
     if (nfargs <= 0 || !*fargs[0])
     {
         doer = player;
@@ -3148,11 +3073,6 @@ FUNCTION(fun_pop)
     dbref doer;
     int count = 0, pos;
 
-    if (nfargs > 2)
-    {
-        safe_str("#-1 FUNCTION (POP) EXPECTS 0-2 ARGUMENTS", buff, bufc);
-        return;
-    }
     if (nfargs <= 0 || !*fargs[0])
     {
         doer = player;
@@ -3219,11 +3139,6 @@ FUNCTION(fun_push)
     dbref doer;
     char *data;
 
-    if (nfargs < 1 || 2 < nfargs)
-    {
-        safe_str("#-1 FUNCTION (PUSH) EXPECTS 1-2 ARGUMENTS", buff, bufc);
-        return;
-    }
     if (nfargs <= 1 || !*fargs[1])
     {
         doer = player;
@@ -3269,11 +3184,6 @@ FUNCTION(fun_push)
 
 FUNCTION(fun_regmatch)
 {
-    if (!fn_range_check("REGMATCH", nfargs, 2, 3, buff, bufc))
-    {
-        return;
-    }
-
     regexp *re = regcomp(fargs[1]);
     if (!re)
     {

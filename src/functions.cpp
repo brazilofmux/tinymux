@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.44 2000-11-12 11:06:14 sdennis Exp $
+// $Id: functions.cpp,v 1.45 2000-11-16 07:46:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -909,10 +909,6 @@ FUNCTION(fun_sign)
 FUNCTION(fun_time)
 {
     CLinearTimeAbsolute ltaNow;
-    if (!fn_range_check("TIME", nfargs, 0, 1, buff, bufc))
-    {
-        return;
-    }
     if (nfargs == 0 || _stricmp("utc", fargs[0]) != 0)
     {
         ltaNow.GetLocal();
@@ -939,10 +935,6 @@ FUNCTION(fun_time)
 FUNCTION(fun_secs)
 {
     CLinearTimeAbsolute ltaNow;
-    if (!fn_range_check("SECS", nfargs, 0, 1, buff, bufc))
-    {
-        return;
-    }
     if (nfargs == 0 || _stricmp("local", fargs[0]) != 0)
     {
         ltaNow.GetUTC();
@@ -972,10 +964,6 @@ FUNCTION(fun_secs)
 FUNCTION(fun_convsecs)
 {
     CLinearTimeAbsolute lta;
-    if (!fn_range_check("CONVSECS", nfargs, 1, 2, buff, bufc))
-    {
-        return;
-    }
     lta.SetSecondsString(fargs[0]);
     if (nfargs == 1 || _stricmp("utc", fargs[1]) != 0)
     {
@@ -1006,10 +994,6 @@ FUNCTION(fun_convsecs)
 FUNCTION(fun_convtime)
 {
     CLinearTimeAbsolute lta;
-    if (!fn_range_check("CONVTIME", nfargs, 1, 2, buff, bufc))
-    {
-        return;
-    }
     if (lta.SetString(fargs[0]))
     {
         if (nfargs == 1 || _stricmp("utc", fargs[1]) != 0)
@@ -1286,14 +1270,7 @@ FUNCTION(fun_get_eval)
 
 FUNCTION(fun_subeval)
 {
-    char *str;
-    
-    if (nfargs != 1) {
-        safe_str("#-1 FUNCTION (EVALNOCOMP) EXPECTS 1 OR 2 ARGUMENTS", buff, bufc);
-        return;
-    }
-    
-    str = fargs[0];
+    char *str = fargs[0];
     TinyExec(buff, bufc, 0, player, cause, EV_EVAL|EV_NO_LOCATION|EV_NOFCHECK|EV_FIGNORE|EV_NO_COMPRESS, &str, (char **)NULL, 0);
 }   
 
@@ -1305,35 +1282,39 @@ FUNCTION(fun_eval)
     char *atr_gotten, *str;
     struct boolexp *pBoolExp;
 
-    if ((nfargs != 1) && (nfargs != 2)) {
-        safe_str("#-1 FUNCTION (EVAL) EXPECTS 1 OR 2 ARGUMENTS", buff, bufc);
-        return;
-    }
-    if (nfargs == 1) {
+    if (nfargs == 1)
+    {
         str = fargs[0];
         TinyExec(buff, bufc, 0, player, cause, EV_EVAL, &str, (char **)NULL, 0);
         return;
     }
     if (!*fargs[0] || !*fargs[1])
+    {
         return;
+    }
 
     if (!parse_attrib(player, tprintf("%s/%s", fargs[0], fargs[1]),
-              &thing, &attrib)) {
+              &thing, &attrib))
+    {
         safe_str("#-1 NO MATCH", buff, bufc);
         return;
     }
-    if (attrib == NOTHING) {
+    if (attrib == NOTHING)
+    {
         return;
     }
     free_buffer = 1;
     eval_it = 1;
     attr = atr_num(attrib);
-    if (!attr) {
+    if (!attr)
+    {
         return;
     }
-    if (attr->flags & AF_IS_LOCK) {
+    if (attr->flags & AF_IS_LOCK)
+    {
         atr_gotten = atr_get(thing, attrib, &aowner, &aflags);
-        if (Read_attr(player, thing, attr, aowner, aflags)) {
+        if (Read_attr(player, thing, attr, aowner, aflags))
+        {
             pBoolExp = parse_boolexp(player, atr_gotten, 1);
             free_lbuf(atr_gotten);
             atr_gotten = unparse_boolexp(player, pBoolExp);
@@ -1347,22 +1328,32 @@ FUNCTION(fun_eval)
         }
         free_buffer = 0;
         eval_it = 0;
-    } else {
+    }
+    else
+    {
         atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
     }
-    if (!check_read_perms(player, thing, attr, aowner, aflags, buff, bufc)) {
+    if (!check_read_perms(player, thing, attr, aowner, aflags, buff, bufc))
+    {
         if (free_buffer)
+        {
             free_lbuf(atr_gotten);
+        }
         return;
     }
-    if (eval_it) {
+    if (eval_it)
+    {
         str = atr_gotten;
         TinyExec(buff, bufc, 0, thing, player, EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
-    } else {
+    }
+    else
+    {
         safe_str(atr_gotten, buff, bufc);
     }
     if (free_buffer)
+    {
         free_lbuf(atr_gotten);
+    }
     return;
 }
 
@@ -1382,14 +1373,6 @@ static void do_ufun(char *buff, char **bufc, dbref player, dbref cause,
     char *atext, *str;
     char *preserve[MAX_GLOBAL_REGS];
     int preserve_len[MAX_GLOBAL_REGS];
-
-    // We need at least one argument.
-    //
-    if (nfargs < 1) 
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
@@ -1483,6 +1466,7 @@ FUNCTION(fun_parent)
     return;
 }
 
+#if 1
 /*
  * ---------------------------------------------------------------------------
  * * fun_parse: Make list from evaluating arg3 with each member of arg2.
@@ -1523,6 +1507,7 @@ FUNCTION(fun_parse)
     }
     free_lbuf(curr);
 }
+#endif
 
 /*
  * ---------------------------------------------------------------------------
@@ -1575,19 +1560,17 @@ FUNCTION(fun_first)
 {
     char *s, *first, sep;
 
-    /*
-     * If we are passed an empty arglist return a null string 
-     */
-
-    if (nfargs == 0) {
+    // If we are passed an empty arglist return a null string.
+    //
+    if (nfargs == 0)
+    {
         return;
     }
     varargs_preamble("FIRST", 2);
-    s = trim_space_sep(fargs[0], sep);  /*
-                         * leading spaces ... 
-                         */
+    s = trim_space_sep(fargs[0], sep);
     first = split_token(&s, sep);
-    if (first) {
+    if (first)
+    {
         safe_str(first, buff, bufc);
     }
 }
@@ -1602,11 +1585,10 @@ FUNCTION(fun_rest)
 {
     char *s, *first, sep;
 
-    /*
-     * If we are passed an empty arglist return a null string 
-     */
-
-    if (nfargs == 0) {
+    // If we are passed an empty arglist return a null string.
+    //
+    if (nfargs == 0)
+    {
         return;
     }
     varargs_preamble("REST", 2);
@@ -1893,15 +1875,15 @@ FUNCTION(fun_owner)
 
 FUNCTION(fun_controls)
 {
-    dbref x, y;
-
-    x = match_thing(player, fargs[0]);
-    if (x == NOTHING) {
+    dbref x = match_thing(player, fargs[0]);
+    if (x == NOTHING)
+    {
         safe_tprintf_str(buff, bufc, "%s", "#-1 ARG1 NOT FOUND");
         return;
     }
-    y = match_thing(player, fargs[1]);
-    if (y == NOTHING) {
+    dbref y = match_thing(player, fargs[1]);
+    if (y == NOTHING)
+    {
         safe_tprintf_str(buff, bufc, "%s", "#-1 ARG2 NOT FOUND");
         return;
     }
@@ -1915,15 +1897,16 @@ FUNCTION(fun_controls)
 
 FUNCTION(fun_fullname)
 {
-    dbref it;
-
-    it = match_thing(player, fargs[0]);
-    if (it == NOTHING) {
+    dbref it = match_thing(player, fargs[0]);
+    if (it == NOTHING)
+    {
         return;
     }
-    if (!mudconf.read_rem_name) {
-        if (!nearby_or_control(player, it) &&
-            (!isPlayer(it))) {
+    if (!mudconf.read_rem_name)
+    {
+        if (  !nearby_or_control(player, it)
+           && !isPlayer(it))
+        {
             safe_str("#-1 TOO FAR AWAY TO SEE", buff, bufc);
             return;
         }
@@ -2164,10 +2147,9 @@ FUNCTION(fun_index)
 
 FUNCTION(fun_cat)
 {
-    int i;
-
     safe_str(fargs[0], buff, bufc);
-    for (i = 1; i < nfargs; i++) {
+    for (int i = 1; i < nfargs; i++)
+    {
         safe_chr(' ', buff, bufc);
         safe_str(fargs[i], buff, bufc);
     }
@@ -2334,11 +2316,6 @@ FUNCTION(fun_neq)
 
 FUNCTION(fun_and)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
     int val = TRUE;
     for (int i = 0; i < nfargs; i++)
     {
@@ -2349,12 +2326,6 @@ FUNCTION(fun_and)
 
 FUNCTION(fun_or)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
-
     int val = FALSE;
     for (int i = 0; i < nfargs; i++)
     {
@@ -2365,12 +2336,6 @@ FUNCTION(fun_or)
 
 FUNCTION(fun_xor)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
-
     int val = FALSE;
     for (int i = 0; i < nfargs; i++)
     {
@@ -2410,11 +2375,6 @@ FUNCTION(fun_sqrt)
 
 FUNCTION(fun_add)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
     double sum = 0.0;
     for (int i = 0; i < nfargs; i++)
     {
@@ -2430,11 +2390,6 @@ FUNCTION(fun_sub)
 
 FUNCTION(fun_mul)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
     double prod = 1.0;
     for (int i = 0; i < nfargs; i++)
     {
@@ -2701,10 +2656,10 @@ FUNCTION(fun_log)
 
 FUNCTION(fun_asin)
 {
-    double val;
-
-    val = safe_atof(fargs[0]);
-#ifndef HAVE_IEEE_FP_SNAN
+    double val = safe_atof(fargs[0]);
+#ifdef HAVE_IEEE_FP_SNAN
+    fval(buff, bufc, asin(val));
+#else
     if ((val < -1.0) || (val > 1.0))
     {
         safe_str("Ind", buff, bufc);
@@ -2713,17 +2668,15 @@ FUNCTION(fun_asin)
     {
         fval(buff, bufc, asin(val));
     }
-#else
-    fval(buff, bufc, asin(val));
 #endif
 }
 
 FUNCTION(fun_acos)
 {
-    double val;
-
-    val = safe_atof(fargs[0]);
-#ifndef HAVE_IEEE_FP_SNAN
+    double val = safe_atof(fargs[0]);
+#ifdef HAVE_IEEE_FP_SNAN
+    fval(buff, bufc, acos(val));
+#else
     if ((val < -1.0) || (val > 1.0))
     {
         safe_str("Ind", buff, bufc);
@@ -2732,8 +2685,6 @@ FUNCTION(fun_acos)
     {
         fval(buff, bufc, acos(val));
     }
-#else
-    fval(buff, bufc, acos(val));
 #endif
 }
 
@@ -2941,7 +2892,6 @@ static void handle_vectors
 FUNCTION(fun_vadd)
 {
     char sep, osep;
-    
     svarargs_preamble("VADD", 4);
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VADD_F);
 }
@@ -2949,7 +2899,6 @@ FUNCTION(fun_vadd)
 FUNCTION(fun_vsub)
 {
     char sep, osep;
-    
     svarargs_preamble("VSUB", 4);
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VSUB_F);
 }
@@ -2957,7 +2906,6 @@ FUNCTION(fun_vsub)
 FUNCTION(fun_vmul)
 {
     char sep, osep;
-    
     svarargs_preamble("VMUL", 4);
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VMUL_F);
 }
@@ -2967,7 +2915,6 @@ FUNCTION(fun_vdot)
     // dot product: (a,b,c) . (d,e,f) = ad + be + cf
     //
     char sep, osep;
-    
     svarargs_preamble("VDOT", 4);
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VDOT_F);
 }
@@ -2977,7 +2924,6 @@ FUNCTION(fun_vcross)
     // cross product: (a,b,c) x (d,e,f) = (bf - ce, cd - af, ae - bd)
     //
     char sep, osep;
-    
     svarargs_preamble("VCROSS", 4);
     handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VCROSS_F);
 }
@@ -3073,7 +3019,6 @@ FUNCTION(fun_vunit)
 FUNCTION(fun_vdim)
 {
     char sep;
-    
     if (fargs == 0)
     {
         safe_chr('0', buff, bufc);
@@ -3108,12 +3053,6 @@ FUNCTION(fun_comp)
 #ifdef WOD_REALMS
 FUNCTION(fun_cansee)
 {
-    if (nfargs < 2 || nfargs > 3)
-    {
-        safe_nothing(buff, bufc);
-        return;
-    }
-
     dbref looker, lookee;
     int mode;
     looker = match_thing(player, fargs[0]);
@@ -3571,31 +3510,28 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el, char *word, 
 
 
 FUNCTION(fun_ldelete)
-{               /*
-                 * delete a word at position X of a list 
-                 */
+{
+    // Delete a word at position X of a list.
+    //
     char sep;
-
     varargs_preamble("LDELETE", 3);
     do_itemfuns(buff, bufc, fargs[0], Tiny_atol(fargs[1]), NULL, sep, IF_DELETE);
 }
 
 FUNCTION(fun_replace)
-{               /*
-                 * replace a word at position X of a list 
-                 */
+{
+    // Replace a word at position X of a list.
+    //
     char sep;
-
     varargs_preamble("REPLACE", 4);
     do_itemfuns(buff, bufc, fargs[0], Tiny_atol(fargs[1]), fargs[2], sep, IF_REPLACE);
 }
 
 FUNCTION(fun_insert)
-{               /*
-                 * insert a word at position X of a list 
-                 */
+{
+    // Insert a word at position X of a list.
+    //
     char sep;
-
     varargs_preamble("INSERT", 4);
     do_itemfuns(buff, bufc, fargs[0], Tiny_atol(fargs[1]), fargs[2], sep, IF_INSERT);
 }
@@ -3612,18 +3548,17 @@ FUNCTION(fun_remove)
     int first, found;
 
     varargs_preamble("REMOVE", 3);
-    if (strchr(fargs[1], sep)) {
+    if (strchr(fargs[1], sep))
+    {
         safe_str("#-1 CAN ONLY DELETE ONE ELEMENT", buff, bufc);
         return;
     }
     s = fargs[0];
     word = fargs[1];
 
-    /*
-     * Walk through the string copying words until (if ever) we get to *
-     * * * * one that matches the target word. 
-     */
-
+    // Walk through the string copying words until (if ever) we get to
+    // one that matches the target word.
+    //
     sp = s;
     found = 0;
     first = 1;
@@ -3935,31 +3870,37 @@ FUNCTION(fun_elock)
     ATTR *attr;
     struct boolexp *pBoolExp;
 
-    /*
-     * Parse lock supplier into obj + lock 
-     */
-
+    // Parse lock supplier into obj + lock.
+    //
     if (!get_obj_and_lock(player, fargs[0], &it, &attr, buff, bufc))
+    {
         return;
+    }
 
-    /*
-     * Get the victim and ensure we can do it 
-     */
-
+    // Get the victim and ensure we can do it.
+    //
     victim = match_thing(player, fargs[1]);
-    if (!Good_obj(victim)) {
+    if (!Good_obj(victim))
+    {
         safe_str("#-1 NOT FOUND", buff, bufc);
-    } else if (!nearby_or_control(player, victim) &&
-           !nearby_or_control(player, it)) {
+    }
+    else if (  !nearby_or_control(player, victim)
+            && !nearby_or_control(player, it))
+    {
         safe_str("#-1 TOO FAR AWAY", buff, bufc);
-    } else {
+    }
+    else
+    {
         tbuf = atr_get(it, attr->number, &aowner, &aflags);
-        if ((attr->number == A_LOCK) ||
-            Read_attr(player, it, attr, aowner, aflags)) {
+        if (  attr->number == A_LOCK
+           || Read_attr(player, it, attr, aowner, aflags))
+        {
             pBoolExp = parse_boolexp(player, tbuf, 1);
             safe_ltoa(eval_boolexp(victim, it, it, pBoolExp), buff, bufc, LBUF_SIZE-1);
             free_boolexp(pBoolExp);
-        } else {
+        }
+        else
+        {
             safe_chr('0', buff, bufc);
         }
         free_lbuf(tbuf);
@@ -4175,7 +4116,6 @@ FUNCTION(fun_lnum)
 {
     char sep;
     if (  nfargs == 0
-       || !fn_range_check("LNUM", nfargs, 1, 3, buff, bufc)
        || !delim_check(fargs, nfargs, 3, &sep, buff, bufc, 0, player, cause, cargs, ncargs, 1))
     {
         return;
@@ -4413,15 +4353,6 @@ FUNCTION(fun_after)
     char *mp;
     int mlen;
 
-    if (nfargs == 0)
-    {
-        return;
-    }
-    if (!fn_range_check("AFTER", nfargs, 1, 2, buff, bufc))
-    {
-        return;
-    }
-
     // Sanity-check arg1 and arg2.
     //
     char *bp = fargs[0];
@@ -4460,13 +4391,6 @@ FUNCTION(fun_before)
 {
     char *mp, *ip;
     int mlen;
-
-    if (nfargs == 0)
-    {
-        return;
-    }
-    if (!fn_range_check("BEFORE", nfargs, 1, 2, buff, bufc))
-        return;
 
     // Sanity-check arg1 and arg2.
     //
@@ -4511,12 +4435,6 @@ FUNCTION(fun_before)
 
 FUNCTION(fun_max)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
-
     double maximum = DBL_MIN;
     for (int i = 0; i < nfargs; i++)
     {
@@ -4531,12 +4449,6 @@ FUNCTION(fun_max)
 
 FUNCTION(fun_min)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
-
     double minimum = DBL_MAX;
     for (int i = 0; i < nfargs; i++) 
     {
@@ -4792,6 +4704,7 @@ FUNCTION(fun_repeat)
     }
 }
 
+#if 1
 /*
  * ---------------------------------------------------------------------------
  * * fun_iter: Make list from evaluating arg2 with each member of arg1.
@@ -4810,7 +4723,8 @@ FUNCTION(fun_iter)
     TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
     cp = trim_space_sep(cp, sep);
-    if (!*cp) {
+    if (!*cp)
+    {
         free_lbuf(curr);
         return;
     }
@@ -4818,7 +4732,9 @@ FUNCTION(fun_iter)
     while (cp)
     {
         if (!first)
+        {
             safe_chr(' ', buff, bufc);
+        }
         first = 0;
         number++;
         objstring = split_token(&cp, sep);
@@ -4866,6 +4782,206 @@ FUNCTION(fun_list)
     free_lbuf(curr);
 }
 
+#else
+
+/* ---------------------------------------------------------------------------
+ * fun_loop and fun_parse exist for reasons of backwards compatibility.
+ * See notes on fun_iter for the explanation.
+ */
+
+static void perform_loop
+(
+    char  *buff,
+    char  **bufc,
+    dbref player,
+    dbref cause,
+    char  *list,
+    char  *exprstr,
+    char  *cargs[],
+    int   ncargs,
+    char  sep,
+    char  osep,
+    int   flag       // 0 is parse(), 1 is loop()
+)
+{
+    char *curr, *objstring, *buff2, *buff3, *cp, *dp, *str, *result, *bb_p;
+    int number = 0;
+    
+    dp = cp = curr = alloc_lbuf("perform_loop.1");
+    str = list;
+    TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    *dp = '\0';
+    cp = trim_space_sep(cp, sep);
+    if (!*cp)
+    {
+        free_lbuf(curr);
+        return;
+    }
+
+    bb_p = *bufc;
+
+    while (cp && (mudstate.func_invk_ctr < mudconf.func_invk_lim))
+    {
+        if (!flag && (*bufc != bb_p))
+        {
+            print_sep(osep, buff, bufc);
+        }
+        number++;
+        objstring = split_token(&cp, sep);
+        buff2 = replace_string(BOUND_VAR, objstring, exprstr);
+        buff3 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), buff2);
+        str = buff3;
+        if (!flag)
+        {
+            TinyExec(buff, bufc, 0, player, cause,
+                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        }
+        else
+        {
+            dp = result = alloc_lbuf("perform_loop.2");
+            TinyExec(result, &dp, 0, player, cause,
+                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            *dp = '\0';
+            notify(cause, result);
+            free_lbuf(result);
+        }
+        free_lbuf(buff2);
+        free_lbuf(buff3);
+    }
+    free_lbuf(curr);
+}
+
+FUNCTION(fun_parse)
+{
+    char sep, osep;
+
+    if (!delim_check(fargs, nfargs, 4-1, &sep, buff, bufc, 1, player,
+        cause, cargs, ncargs, 0))
+    {
+        return;
+    }
+    if (!delim_check(fargs, nfargs, 4, &osep, buff, bufc, 1, player,
+        cause, cargs, ncargs, 1))
+    {
+        return;
+    }
+    perform_loop(buff, bufc, player, cause, fargs[0], fargs[1],
+        cargs, ncargs, sep, osep, 0);
+}
+
+FUNCTION(fun_loop)
+{
+    char sep;
+
+    varargs_preamble("LOOP", 3);
+    perform_loop(buff, bufc, player, cause, fargs[0], fargs[1],
+        cargs, ncargs, sep, ' ', 1);
+}
+
+/* ---------------------------------------------------------------------------
+ * fun_iter() and fun_list() parse an expression, substitute elements of
+ * a list, one at a time, using the '##' replacement token. Uses of these
+ * functions can be nested.
+ * In older versions of MUSH, these functions could not be nested.
+ * parse() and loop() exist for reasons of backwards compatibility,
+ * since the peculiarities of the way substitutions were done in the string
+ * replacements make it necessary to provide some way of doing backwards
+ * compatibility, in order to avoid breaking a lot of code that relies upon
+ * particular patterns of necessary escaping.
+ */
+
+static void perform_iter
+(
+    char  *buff,
+    char  **bufc,
+    dbref player,
+    dbref cause,
+    char  *list,
+    char  *exprstr,
+    char  *cargs[],
+    int   ncargs,
+    char  sep,
+    char  osep,
+    int   flag      // 0 is iter(), 1 is list()
+)
+{
+    char *list_str, *lp, *str, *input_p, *bb_p, *save_token, *work_buf;
+    char *dp, *result;
+    int save_num;
+    
+    /* The list argument is unevaluated. Go evaluate it. */
+    
+    input_p = lp = list_str = alloc_lbuf("perform_iter.list");
+    str = list;
+    TinyExec(list_str, &lp, 0, player, cause,
+        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    *lp = '\0';
+    input_p = trim_space_sep(input_p, sep);
+    if (!*input_p)
+    {
+        free_lbuf(list_str);
+        return;
+    }
+    
+    mudstate.in_loop++;QQQ
+    save_token = mudstate.loop_token;
+    save_num = mudstate.loop_number;
+    mudstate.loop_number = 0;
+    
+    bb_p = *bufc;
+    
+    while (input_p && (mudstate.func_invk_ctr < mudconf.func_invk_lim))
+    {
+        if (!flag && (*bufc != bb_p))
+        {
+            print_sep(osep, buff, bufc);
+        }
+        mudstate.loop_token = split_token(&input_p, sep);
+        mudstate.loop_number++;
+        work_buf = alloc_lbuf("perform_iter.eval");
+        strcpy(work_buf, exprstr); /* we might nibble this */
+        str = work_buf;
+        if (!flag)
+        {
+            TinyExec(buff, bufc, 0, player, cause,
+                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        }
+        else
+        {
+            dp = result = alloc_lbuf("perform_iter.out");
+            TinyExec(result, &dp, 0, player, cause,
+                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            *dp = '\0';
+            notify(cause, result);
+            free_lbuf(result);
+        }
+        free_lbuf(work_buf);
+    }
+    
+    free_lbuf(list_str);
+    mudstate.loop_token = save_token;
+    mudstate.loop_number = save_num;
+    mudstate.in_loop--;
+}
+
+FUNCTION(fun_iter)
+{
+    char sep, osep;
+    
+    evarargs_preamble("ITER", 2, 4);
+    perform_iter(buff, bufc, player, cause, fargs[0], fargs[1],
+        cargs, ncargs, sep, osep, 0);
+}
+
+FUNCTION(fun_list)
+{
+    char sep;
+    varargs_preamble("LIST", 3);
+    perform_iter(buff, bufc, player, cause, fargs[0], fargs[1],
+        cargs, ncargs, sep, ' ', 1);
+}
+#endif
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_fold: iteratively eval an attrib with a list of arguments
@@ -4890,64 +5006,68 @@ FUNCTION(fun_fold)
     char *atext, *result, *curr, *bp, *str, *cp, *atextbuf, *clist[2],
     *rstore, sep;
 
-    /*
-     * We need two to four arguements only 
-     */
-
+    // We need two to four arguements only.
+    //
     mvarargs_preamble("FOLD", 2, 4);
 
-    /*
-     * Two possibilities for the first arg: <obj>/<attr> and <attr>. 
-     */
-
-    if (parse_attrib(player, fargs[0], &thing, &anum)) {
+    // Two possibilities for the first arg: <obj>/<attr> and <attr>.
+    //
+    if (parse_attrib(player, fargs[0], &thing, &anum))
+    {
         if ((anum == NOTHING) || (!Good_obj(thing)))
+        {
             ap = NULL;
+        }
         else
+        {
             ap = atr_num(anum);
-    } else {
+        }
+    }
+    else
+    {
         thing = player;
         ap = atr_str(fargs[0]);
     }
 
-    /*
-     * Make sure we got a good attribute 
-     */
-
-    if (!ap) {
+    // Make sure we got a good attribute.
+    //
+    if (!ap)
+    {
         return;
     }
-    /*
-     * Use it if we can access it, otherwise return an error. 
-     */
 
+    // Use it if we can access it, otherwise return an error.
+    //
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext) {
+    if (!atext)
+    {
         return;
-    } else if (!*atext || !See_attr(player, thing, ap, aowner, aflags)) {
+    }
+    else if (!*atext || !See_attr(player, thing, ap, aowner, aflags))
+    {
         free_lbuf(atext);
         return;
     }
-    /*
-     * Evaluate it using the rest of the passed function args 
-     */
 
+    // Evaluate it using the rest of the passed function args.
+    //
     cp = curr = fargs[1];
     atextbuf = alloc_lbuf("fun_fold");
     StringCopy(atextbuf, atext);
 
-    /*
-     * may as well handle first case now 
-     */
-
-    if ((nfargs >= 3) && (fargs[2])) {
+    // May as well handle first case now.
+    //
+    if ((nfargs >= 3) && (fargs[2]))
+    {
         clist[0] = fargs[2];
         clist[1] = split_token(&cp, sep);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
         TinyExec(result, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
-    } else {
+    }
+    else
+    {
         clist[0] = split_token(&cp, sep);
         clist[1] = split_token(&cp, sep);
         result = bp = alloc_lbuf("fun_fold");
@@ -4959,7 +5079,8 @@ FUNCTION(fun_fold)
     rstore = result;
     result = NULL;
 
-    while (cp) {
+    while (cp)
+    {
         clist[0] = rstore;
         clist[1] = split_token(&cp, sep);
         StringCopy(atextbuf, atext);
@@ -5274,13 +5395,6 @@ FUNCTION(fun_switch)
     int i;
     char *mbuff, *tbuff, *bp, *str;
 
-    // If we don't have at least 2 args, return nothing.
-    //
-    if (nfargs < 2)
-    {
-        return;
-    }
-
     // Evaluate the target in fargs[0].
     //
     mbuff = bp = alloc_lbuf("fun_switch");
@@ -5323,13 +5437,6 @@ FUNCTION(fun_case)
 {
     int i;
     char *mbuff, *bp, *str;
-
-    // If we don't have at least 2 args, return nothing.
-    //
-    if (nfargs < 2)
-    {
-        return;
-    }
 
     // Evaluate the target in fargs[0]
     //
@@ -5416,21 +5523,21 @@ FUNCTION(fun_space)
 
 FUNCTION(fun_idle)
 {
-    dbref target;
-
-    target = lookup_player(player, fargs[0], 1);
+    dbref target = lookup_player(player, fargs[0], 1);
     if (Good_obj(target) && Dark(target) && !Wizard(player))
+    {
         target = NOTHING;
+    }
     safe_ltoa(fetch_idle(target), buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_conn)
 {
-    dbref target;
-
-    target = lookup_player(player, fargs[0], 1);
+    dbref target = lookup_player(player, fargs[0], 1);
     if (Good_obj(target) && Dark(target) && !Wizard(player))
+    {
         target = NOTHING;
+    }
     safe_ltoa(fetch_connect(target), buff, bufc, LBUF_SIZE-1);
 }
 
@@ -5546,19 +5653,12 @@ FUNCTION(fun_sort)
     char *list, sep;
     char *ptrs[LBUF_SIZE / 2];
 
-    /*
-     * If we are passed an empty arglist return a null string 
-     */
-
-    if (nfargs == 0) {
-        return;
-    }
+    // If we are passed an empty arglist return a null string.
+    //
     mvarargs_preamble("SORT", 1, 3);
 
-    /*
-     * Convert the list to an array 
-     */
-
+    // Convert the list to an array.
+    //
     list = alloc_lbuf("fun_sort");
     StringCopy(list, fargs[0]);
     nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
@@ -5772,7 +5872,6 @@ static void handle_sets(char *fargs[], char *buff, char **bufc, int oper, char s
 FUNCTION(fun_setunion)
 {
     char sep;
-
     varargs_preamble("SETUNION", 3);
     handle_sets(fargs, buff, bufc, SET_UNION, sep);
     return;
@@ -5781,7 +5880,6 @@ FUNCTION(fun_setunion)
 FUNCTION(fun_setdiff)
 {
     char sep;
-
     varargs_preamble("SETDIFF", 3);
     handle_sets(fargs, buff, bufc, SET_DIFF, sep);
     return;
@@ -5790,7 +5888,6 @@ FUNCTION(fun_setdiff)
 FUNCTION(fun_setinter)
 {
     char sep;
-
     varargs_preamble("SETINTER", 3);
     handle_sets(fargs, buff, bufc, SET_INTERSECT, sep);
     return;
@@ -5804,8 +5901,6 @@ FUNCTION(fun_setinter)
 #define CJC_LJUST  1
 #define CJC_RJUST  2
 
-char *CJC_Names[3] = { "CENTER", "LJUST", "RJUST" };
-
 void centerjustcombo
 (
     int iType,
@@ -5815,11 +5910,6 @@ void centerjustcombo
     int nfargs
 )
 {
-    if (!fn_range_check(CJC_Names[iType], nfargs, 2, 3, buff, bufc))
-    {
-        return;
-    }
-
     // Width must be a number.
     //
     int nDigits;
@@ -6150,9 +6240,6 @@ FUNCTION(fun_trim)
     char *p, *lastchar, *q, sep;
     int trim;
 
-    if (nfargs == 0) {
-        return;
-    }
     mvarargs_preamble("TRIM", 1, 3);
     if (nfargs >= 2)
     {
@@ -6203,271 +6290,273 @@ FUNCTION(fun_trim)
 
 FUN flist[] =
 {
-    {"ABS",      fun_abs,      1,  0,          CA_PUBLIC},
-    {"ACOS",     fun_acos,     1,  0,          CA_PUBLIC},
-    {"ADD",      fun_add,      0,  FN_VARARGS, CA_PUBLIC},
-    {"AFTER",    fun_after,    0,  FN_VARARGS, CA_PUBLIC},
-    {"ALPHAMAX", fun_alphamax, 0,  FN_VARARGS, CA_PUBLIC},
-    {"ALPHAMIN", fun_alphamin, 0,  FN_VARARGS, CA_PUBLIC},
-    {"AND",      fun_and,      0,  FN_VARARGS, CA_PUBLIC},
-    {"ANDFLAGS", fun_andflags, 2,  0,          CA_PUBLIC},
-    {"ANSI",     fun_ansi,     2,  0,          CA_PUBLIC},
-    {"APOSS",    fun_aposs,    1,  0,          CA_PUBLIC},
-    {"ART",      fun_art,      1,  0,          CA_PUBLIC},
-    {"ASIN",     fun_asin,     1,  0,          CA_PUBLIC},
-    {"ATAN",     fun_atan,     1,  0,          CA_PUBLIC},
-    {"BAND",     fun_band,     2,  0,          CA_PUBLIC},
-    {"BEEP",     fun_beep,     0,  0,          CA_WIZARD},
-    {"BEFORE",   fun_before,   0,  FN_VARARGS, CA_PUBLIC},
-    {"BNAND",    fun_bnand,    2,  0,          CA_PUBLIC},
-    {"BOR",      fun_bor,      2,  0,          CA_PUBLIC},
+    {"ABS",      fun_abs,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ACOS",     fun_acos,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ADD",      fun_add,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"AFTER",    fun_after,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"ALPHAMAX", fun_alphamax, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"ALPHAMIN", fun_alphamin, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"AND",      fun_and,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"ANDFLAGS", fun_andflags, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ANSI",     fun_ansi,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"APOSS",    fun_aposs,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ART",      fun_art,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ASIN",     fun_asin,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ATAN",     fun_atan,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"BAND",     fun_band,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"BEEP",     fun_beep,     MAX_ARG, 0,  0,       0, CA_WIZARD},
+    {"BEFORE",   fun_before,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"BNAND",    fun_bnand,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"BOR",      fun_bor,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
 #ifdef WOD_REALMS
-    {"CANSEE",   fun_cansee,   0,  FN_VARARGS, CA_PUBLIC},
+    {"CANSEE",   fun_cansee,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
 #endif
-    {"CAPSTR",   fun_capstr,  -1,  0,          CA_PUBLIC},
-    {"CAT",      fun_cat,      0,  FN_VARARGS, CA_PUBLIC},
-    {"CEIL",     fun_ceil,     1,  0,          CA_PUBLIC},
-    {"CENTER",   fun_center,   0,  FN_VARARGS, CA_PUBLIC},
-    {"CHANNELS", fun_channels, 0,  0,          CA_PUBLIC},
-    {"CHILDREN", fun_children, 1,  0,          CA_PUBLIC},
-    {"COLUMNS",  fun_columns,  0,  FN_VARARGS, CA_PUBLIC},
-    {"COMALIAS", fun_comalias, 2,  0,          CA_PUBLIC},
-    {"COMP",     fun_comp,     2,  0,          CA_PUBLIC},
-    {"COMTITLE", fun_comtitle, 2,  0,          CA_PUBLIC},
-    {"CON",      fun_con,      1,  0,          CA_PUBLIC},
-    {"CONN",     fun_conn,     1,  0,          CA_PUBLIC},
-    {"CONTROLS", fun_controls, 2,  0,          CA_PUBLIC},
-    {"CONVSECS", fun_convsecs, 0,  FN_VARARGS, CA_PUBLIC},
-    {"CONVTIME", fun_convtime, 0,  FN_VARARGS, CA_PUBLIC},
-    {"COS",      fun_cos,      1,  0,          CA_PUBLIC},
-    {"CREATE",   fun_create,   0,  FN_VARARGS, CA_PUBLIC},
-    {"CRC32",    fun_crc32,    0,  FN_VARARGS, CA_PUBLIC},
-    {"CWHO",     fun_cwho,     1,  0,          CA_PUBLIC},
-    {"DEC",      fun_dec,      0,  FN_VARARGS, CA_PUBLIC},
-    {"DECRYPT",  fun_decrypt,  2,  0,          CA_PUBLIC},
-    {"DEFAULT",  fun_default,  2,  FN_NO_EVAL, CA_PUBLIC},
-    {"DELETE",   fun_delete,   3,  0,          CA_PUBLIC},
-    {"DIE",      fun_die,      2,  0,          CA_PUBLIC},
-    {"DIST2D",   fun_dist2d,   4,  0,          CA_PUBLIC},
-    {"DIST3D",   fun_dist3d,   6,  0,          CA_PUBLIC},
-    {"DOING",    fun_doing,    1,  0,          CA_PUBLIC},
-    {"E",        fun_e,        0,  0,          CA_PUBLIC},
-    {"EDEFAULT", fun_edefault, 2,  FN_NO_EVAL, CA_PUBLIC},
-    {"EDIT",     fun_edit,     3,  0,          CA_PUBLIC},
-    {"ELEMENTS", fun_elements, 0,  FN_VARARGS, CA_PUBLIC},
-    {"ELOCK",    fun_elock,    2,  0,          CA_PUBLIC},
-    {"EMPTY",    fun_empty,    0,  FN_VARARGS, CA_PUBLIC},
-    {"ENCRYPT",  fun_encrypt,  2,  0,          CA_PUBLIC},
-    {"EQ",       fun_eq,       2,  0,          CA_PUBLIC},
-    {"ESCAPE",   fun_escape,  -1,  0,          CA_PUBLIC},
-    {"EXIT",     fun_exit,     1,  0,          CA_PUBLIC},
-    {"EXP",      fun_exp,      1,  0,          CA_PUBLIC},
-    {"EXTRACT",  fun_extract,  0,  FN_VARARGS, CA_PUBLIC},
-    {"EVAL",     fun_eval,     0,  FN_VARARGS, CA_PUBLIC},
-    {"SUBEVAL",  fun_subeval,  1,  0,          CA_PUBLIC},
-    {"FDIV",     fun_fdiv,     2,  0,          CA_PUBLIC},
-    {"FILTER",   fun_filter,   0,  FN_VARARGS, CA_PUBLIC},
-    {"FINDABLE", fun_findable, 2,  0,          CA_PUBLIC},
-    {"FIRST",    fun_first,    0,  FN_VARARGS, CA_PUBLIC},
-    {"FLAGS",    fun_flags,    1,  0,          CA_PUBLIC},
-    {"FLOOR",    fun_floor,    1,  0,          CA_PUBLIC},
-    {"FOLD",     fun_fold,     0,  FN_VARARGS, CA_PUBLIC},
-    {"FOREACH",  fun_foreach,  0,  FN_VARARGS, CA_PUBLIC},
-    {"FULLNAME", fun_fullname, 1,  0,          CA_PUBLIC},
-    {"GET",      fun_get,      1,  0,          CA_PUBLIC},
-    {"GET_EVAL", fun_get_eval, 1,  0,          CA_PUBLIC},
-    {"GRAB",     fun_grab,     0,  FN_VARARGS, CA_PUBLIC},
-    {"GREP",     fun_grep,     3,  0,          CA_PUBLIC},
-    {"GREPI",    fun_grepi,    3,  0,          CA_PUBLIC},
-    {"GT",       fun_gt,       2,  0,          CA_PUBLIC},
-    {"GTE",      fun_gte,      2,  0,          CA_PUBLIC},
-    {"HASATTR",  fun_hasattr,  2,  0,          CA_PUBLIC},
-    {"HASATTRP", fun_hasattrp, 2,  0,          CA_PUBLIC},
-    {"HASFLAG",  fun_hasflag,  2,  0,          CA_PUBLIC},
-    {"HASPOWER", fun_haspower, 2,  0,          CA_PUBLIC},
-    {"HASTYPE",  fun_hastype,  2,  0,          CA_PUBLIC},
-    {"HOME",     fun_home,     1,  0,          CA_PUBLIC},
-    {"IADD",     fun_iadd,     0,  FN_VARARGS, CA_PUBLIC},
-    {"IDIV",     fun_idiv,     2,  0,          CA_PUBLIC},
-    {"IDLE",     fun_idle,     1,  0,          CA_PUBLIC},
-    {"IFELSE",   fun_ifelse,   3,  FN_NO_EVAL, CA_PUBLIC},
-    {"IMUL",     fun_imul,     0,  FN_VARARGS, CA_PUBLIC},
-    {"INC",      fun_inc,      0,  FN_VARARGS, CA_PUBLIC},
-    {"INDEX",    fun_index,    4,  0,          CA_PUBLIC},
-    {"INSERT",   fun_insert,   0,  FN_VARARGS, CA_PUBLIC},
-    {"INZONE",   fun_inzone,   1,  0,          CA_PUBLIC},
-    {"ISDBREF",  fun_isdbref,  1,  0,          CA_PUBLIC},
-    {"ISNUM",    fun_isnum,    1,  0,          CA_PUBLIC},
-    {"ISUB",     fun_isub,     2,  0,          CA_PUBLIC},
-    {"ISWORD",   fun_isword,   1,  0,          CA_PUBLIC},
-    {"ITER",     fun_iter,     0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
-    {"LAST",     fun_last,     0,  FN_VARARGS, CA_PUBLIC},
-    {"LATTR",    fun_lattr,    1,  0,          CA_PUBLIC},
-    {"LCON",     fun_lcon,     1,  0,          CA_PUBLIC},
-    {"LCSTR",    fun_lcstr,   -1,  0,          CA_PUBLIC},
-    {"LDELETE",  fun_ldelete,  0,  FN_VARARGS, CA_PUBLIC},
-    {"LEXITS",   fun_lexits,   1,  0,          CA_PUBLIC},
-    {"LPARENT",  fun_lparent,  1,  0,          CA_PUBLIC}, 
-    {"LIST",     fun_list,     0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC}, 
-    {"LIT",      fun_lit,      1,  FN_NO_EVAL, CA_PUBLIC},
-    {"LJUST",    fun_ljust,    0,  FN_VARARGS, CA_PUBLIC},
-    {"LINK",     fun_link,     2,  0,          CA_PUBLIC},
-    {"LN",       fun_ln,       1,  0,          CA_PUBLIC},
-    {"LNUM",     fun_lnum,     0,  FN_VARARGS, CA_PUBLIC},
-    {"LOC",      fun_loc,      1,  0,          CA_PUBLIC},
-    {"LOCATE",   fun_locate,   3,  0,          CA_PUBLIC},
-    {"LOCK",     fun_lock,     1,  0,          CA_PUBLIC},
-    {"LOG",      fun_log,      1,  0,          CA_PUBLIC},
-    {"LPOS",     fun_lpos,     2,  0,          CA_PUBLIC},
-    {"LSTACK",   fun_lstack,   0,  FN_VARARGS, CA_PUBLIC},
-    {"LT",       fun_lt,       2,  0,          CA_PUBLIC},
-    {"LTE",      fun_lte,      2,  0,          CA_PUBLIC},
-    {"LWHO",     fun_lwho,     0,  0,          CA_PUBLIC},
-    {"MAIL",     fun_mail,     0,  FN_VARARGS, CA_PUBLIC},
-    {"MAILFROM", fun_mailfrom, 0,  FN_VARARGS, CA_PUBLIC},
-    {"MAP",      fun_map,      0,  FN_VARARGS, CA_PUBLIC},
-    {"MATCH",    fun_match,    0,  FN_VARARGS, CA_PUBLIC},
-    {"MATCHALL", fun_matchall, 0,  FN_VARARGS, CA_PUBLIC},
-    {"MAX",      fun_max,      0,  FN_VARARGS, CA_PUBLIC},
-    {"MEMBER",   fun_member,   0,  FN_VARARGS, CA_PUBLIC},
-    {"MERGE",    fun_merge,    3,  0,          CA_PUBLIC},
-    {"MID",      fun_mid,      3,  0,          CA_PUBLIC},
-    {"MIN",      fun_min,      0,  FN_VARARGS, CA_PUBLIC},
-    {"MIX",      fun_mix,      0,  FN_VARARGS, CA_PUBLIC},
-    {"MOD",      fun_mod,      2,  0,          CA_PUBLIC},
-    {"MONEY",    fun_money,    1,  0,          CA_PUBLIC},
-    {"MOTD",     fun_motd,     0,  0,          CA_PUBLIC},
-    {"MUDNAME",  fun_mudname,  0,  0,          CA_PUBLIC},
-    {"MUL",      fun_mul,      0,  FN_VARARGS, CA_PUBLIC},
-    {"MUNGE",    fun_munge,    0,  FN_VARARGS, CA_PUBLIC},
-    {"NAME",     fun_name,     1,  0,          CA_PUBLIC},
-    {"NEARBY",   fun_nearby,   2,  0,          CA_PUBLIC},
-    {"NEQ",      fun_neq,      2,  0,          CA_PUBLIC},
-    {"NEXT",     fun_next,     1,  0,          CA_PUBLIC},
-    {"NOT",      fun_not,      1,  0,          CA_PUBLIC},
-    {"NUM",      fun_num,      1,  0,          CA_PUBLIC},
-    {"ITEMS",    fun_items,    0,  FN_VARARGS, CA_PUBLIC},
-    {"OBJ",      fun_obj,      1,  0,          CA_PUBLIC},
-    {"OBJEVAL",  fun_objeval,  2,  FN_NO_EVAL, CA_PUBLIC},
-    {"OBJMEM",   fun_objmem,   1,  0,          CA_PUBLIC},
-    {"OR",       fun_or,       0,  FN_VARARGS, CA_PUBLIC},
-    {"ORFLAGS",  fun_orflags,  2,  0,          CA_PUBLIC},
-    {"OWNER",    fun_owner,    1,  0,          CA_PUBLIC},
-    {"PACK",     fun_pack,     1,  FN_VARARGS, CA_PUBLIC},
-    {"PARENT",   fun_parent,   1,  0,          CA_PUBLIC},
-    {"PARSE",    fun_parse,    0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
-    {"PEEK",     fun_peek,     0,  FN_VARARGS, CA_PUBLIC},
-    {"PEMIT",    fun_pemit,    2,  0,          CA_PUBLIC},
-    {"PFIND",    fun_pfind,    1,  0,          CA_PUBLIC},
-    {"PI",       fun_pi,       0,  0,          CA_PUBLIC},
-    {"PLAYMEM",  fun_playmem,  1,  0,          CA_PUBLIC},
-    {"PMATCH",   fun_pmatch,   1,  0,          CA_PUBLIC},
-    {"POLL",     fun_poll,     0,  0,          CA_PUBLIC},
-    {"POP",      fun_pop,      0,  FN_VARARGS, CA_PUBLIC},
-    {"PORTS",    fun_ports,    1,  0,          CA_PUBLIC},
-    {"POS",      fun_pos,      2,  0,          CA_PUBLIC},
-    {"POSS",     fun_poss,     1,  0,          CA_PUBLIC},
-    {"POWER",    fun_power,    2,  0,          CA_PUBLIC},
-    {"PUSH",     fun_push,     0,  FN_VARARGS, CA_PUBLIC},
-    {"CASE",     fun_case,     0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
-    {"R",        fun_r,        1,  0,          CA_PUBLIC},
-    {"RAND",     fun_rand,     1,  0,          CA_PUBLIC},
-    {"REGMATCH", fun_regmatch, 0,  FN_VARARGS, CA_PUBLIC},
-    {"REMIT",    fun_remit,    2,  0,          CA_PUBLIC},
-    {"REMOVE",   fun_remove,   0,  FN_VARARGS, CA_PUBLIC},
-    {"REPEAT",   fun_repeat,   2,  0,          CA_PUBLIC},
-    {"REPLACE",  fun_replace,  0,  FN_VARARGS, CA_PUBLIC},
-    {"REST",     fun_rest,     0,  FN_VARARGS, CA_PUBLIC},
-    {"REVERSE",  fun_reverse, -1,  0,          CA_PUBLIC},
-    {"REVWORDS", fun_revwords, 0,  FN_VARARGS, CA_PUBLIC},
-    {"RJUST",    fun_rjust,    0,  FN_VARARGS, CA_PUBLIC},
-    {"RLOC",     fun_rloc,     2,  0,          CA_PUBLIC},
-    {"ROOM",     fun_room,     1,  0,          CA_PUBLIC},
-    {"ROUND",    fun_round,    2,  0,          CA_PUBLIC},
-    {"S",        fun_s,       -1,  0,          CA_PUBLIC},
-    {"SCRAMBLE", fun_scramble, 1,  0,          CA_PUBLIC},
-    {"SEARCH",   fun_search,  -1,  0,          CA_PUBLIC},
-    {"SECS",     fun_secs,     0,  FN_VARARGS, CA_PUBLIC},
-    {"SECURE",   fun_secure,  -1,  0,          CA_PUBLIC},
-    {"SET",      fun_set,      2,  0,          CA_PUBLIC},
-    {"SETDIFF",  fun_setdiff,  0,  FN_VARARGS, CA_PUBLIC},
-    {"SETINTER", fun_setinter, 0,  FN_VARARGS, CA_PUBLIC},
-    {"SETQ",     fun_setq,     2,  0,          CA_PUBLIC},
-    {"SETR",     fun_setr,     2,  0,          CA_PUBLIC},
-    {"SETUNION", fun_setunion, 0,  FN_VARARGS, CA_PUBLIC},
-    {"SHL",      fun_shl,      2,  0,          CA_PUBLIC},
-    {"SHR",      fun_shr,      2,  0,          CA_PUBLIC},
-    {"SHUFFLE",  fun_shuffle,  0,  FN_VARARGS, CA_PUBLIC},
-    {"SIGN",     fun_sign,     1,  0,          CA_PUBLIC},
-    {"SIN",      fun_sin,      1,  0,          CA_PUBLIC},
-    {"SORT",     fun_sort,     0,  FN_VARARGS, CA_PUBLIC},
-    {"SORTBY",   fun_sortby,   0,  FN_VARARGS, CA_PUBLIC},
-    {"SPACE",    fun_space,    1,  0,          CA_PUBLIC},
-    {"SPLICE",   fun_splice,   0,  FN_VARARGS, CA_PUBLIC},
-    {"SQRT",     fun_sqrt,     1,  0,          CA_PUBLIC},
-    {"SQUISH",   fun_squish,   1,  0,          CA_PUBLIC},
-    {"STARTTIME",fun_starttime,0,  0,          CA_PUBLIC},
-    {"STATS",    fun_stats,    1,  0,          CA_PUBLIC},
-    {"STRCAT",   fun_strcat,   0,  FN_VARARGS, CA_PUBLIC},
-    {"STRIPANSI",fun_stripansi,1,  0,          CA_PUBLIC},
-    {"STRLEN",   fun_strlen,  -1,  0,          CA_PUBLIC},
-    {"STRMATCH", fun_strmatch, 2,  0,          CA_PUBLIC},
-    {"STRTRUNC", fun_strtrunc, 2,  0,          CA_PUBLIC},
-    {"SUB",      fun_sub,      2,  0,          CA_PUBLIC},
-    {"SUBJ",     fun_subj,     1,  0,          CA_PUBLIC},
-    {"SWITCH",   fun_switch,   0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
-    {"TABLE",    fun_table,    0,  FN_VARARGS, CA_PUBLIC},
-    {"TAN",      fun_tan,      1,  0,          CA_PUBLIC},
-    {"TEL",      fun_tel,      2,  0,          CA_PUBLIC},
-    {"TIME",     fun_time,     0,  FN_VARARGS, CA_PUBLIC},
-    {"TRANSLATE",fun_translate,2,  0,          CA_PUBLIC},
-    {"TRIM",     fun_trim,     0,  FN_VARARGS, CA_PUBLIC},
-    {"TRUNC",    fun_trunc,    1,  0,          CA_PUBLIC},
-    {"TYPE",     fun_type,     1,  0,          CA_PUBLIC},
-    {"U",        fun_u,        0,  FN_VARARGS, CA_PUBLIC},
-    {"UCSTR",    fun_ucstr,   -1,  0,          CA_PUBLIC},
-    {"UDEFAULT", fun_udefault, 0,  FN_VARARGS|FN_NO_EVAL, CA_PUBLIC},
-    {"ULOCAL",   fun_ulocal,   0,  FN_VARARGS, CA_PUBLIC},
-    {"UNPACK",   fun_unpack,   1,  FN_VARARGS, CA_PUBLIC},
-    {"V",        fun_v,        1,  0,          CA_PUBLIC},
-    {"VADD",     fun_vadd,     0,  FN_VARARGS, CA_PUBLIC},
-    {"VALID",    fun_valid,    2,  0,          CA_PUBLIC},
-    {"VCROSS",   fun_vcross,   0,  FN_VARARGS, CA_PUBLIC},
-    {"VDIM",     fun_vdim,     0,  FN_VARARGS, CA_PUBLIC},
-    {"VDOT",     fun_vdot,     0,  FN_VARARGS, CA_PUBLIC},
-    {"VERSION",  fun_version,  0,  0,          CA_PUBLIC},
-    {"VISIBLE",  fun_visible,  2,  0,          CA_PUBLIC},
-    {"VMAG",     fun_vmag,     0,  FN_VARARGS, CA_PUBLIC},
-    {"VMUL",     fun_vmul,     0,  FN_VARARGS, CA_PUBLIC},
-    {"VSUB",     fun_vsub,     0,  FN_VARARGS, CA_PUBLIC},
-    {"VUNIT",    fun_vunit,    0,  FN_VARARGS, CA_PUBLIC},
-    {"WAIT",     fun_wait,     2,  0,          CA_PUBLIC},
-    {"WAITUNTIL",fun_waituntil,2,  0,          CA_PUBLIC},
-    {"WHERE",    fun_where,    1,  0,          CA_PUBLIC},
-    {"WORDPOS",  fun_wordpos,  0,  FN_VARARGS, CA_PUBLIC},
-    {"WORDS",    fun_words,    0,  FN_VARARGS, CA_PUBLIC},
-    {"XGET",     fun_xget,     2,  0,          CA_PUBLIC},
-    {"XOR",      fun_xor,      0,  FN_VARARGS, CA_PUBLIC},
-    {"ZFUN",     fun_zfun,     0,  FN_VARARGS, CA_PUBLIC},
-    {"ZONE",     fun_zone,     1,  0,          CA_PUBLIC},
-    {"ZWHO",     fun_zwho,     1,  0,          CA_PUBLIC},
+    {"CAPSTR",   fun_capstr,   1,       1,  1,       0, CA_PUBLIC},
+    {"CAT",      fun_cat,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"CEIL",     fun_ceil,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CENTER",   fun_center,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"CHANNELS", fun_channels, MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"CHILDREN", fun_children, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"COLUMNS",  fun_columns,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"COMALIAS", fun_comalias, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"COMP",     fun_comp,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"COMTITLE", fun_comtitle, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"CON",      fun_con,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONN",     fun_conn,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"CONVSECS", fun_convsecs, MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"CONVTIME", fun_convtime, MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"COS",      fun_cos,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"CWHO",     fun_cwho,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"DEC",      fun_dec,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"DECRYPT",  fun_decrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"DEFAULT",  fun_default,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
+    {"DELETE",   fun_delete,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"DIE",      fun_die,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"DIST2D",   fun_dist2d,   MAX_ARG, 4,  4,       0, CA_PUBLIC},
+    {"DIST3D",   fun_dist3d,   MAX_ARG, 6,  6,       0, CA_PUBLIC},
+    {"DOING",    fun_doing,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"E",        fun_e,        MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"EDEFAULT", fun_edefault, MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
+    {"EDIT",     fun_edit,     MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"ELEMENTS", fun_elements, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"ELOCK",    fun_elock,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"EMPTY",    fun_empty,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"ENCRYPT",  fun_encrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"EQ",       fun_eq,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ESCAPE",   fun_escape,   1,       1,  1,       0, CA_PUBLIC},
+    {"EXIT",     fun_exit,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"EXP",      fun_exp,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"EXTRACT",  fun_extract,  MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"EVAL",     fun_eval,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"FDIV",     fun_fdiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"FILTER",   fun_filter,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"FINDABLE", fun_findable, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"FIRST",    fun_first,    MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"FLAGS",    fun_flags,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"FLOOR",    fun_floor,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"FOLD",     fun_fold,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"FOREACH",  fun_foreach,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"FULLNAME", fun_fullname, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"GET",      fun_get,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"GET_EVAL", fun_get_eval, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"GRAB",     fun_grab,     MAX_ARG, 2,  3,       0, CA_PUBLIC},
+
+    {"GREP",     fun_grep,     MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"GREPI",    fun_grepi,    MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"GT",       fun_gt,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"GTE",      fun_gte,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASATTR",  fun_hasattr,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASATTRP", fun_hasattrp, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASFLAG",  fun_hasflag,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASPOWER", fun_haspower, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASTYPE",  fun_hastype,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HOME",     fun_home,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"IADD",     fun_iadd,     MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"IDIV",     fun_idiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"IDLE",     fun_idle,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"IFELSE",   fun_ifelse,   MAX_ARG, 3,  3, FN_NO_EVAL, CA_PUBLIC},
+    {"IMUL",     fun_imul,     MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"INC",      fun_inc,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"INDEX",    fun_index,    MAX_ARG, 4,  4,       0, CA_PUBLIC},
+    {"INSERT",   fun_insert,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"INZONE",   fun_inzone,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISDBREF",  fun_isdbref,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISNUM",    fun_isnum,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISUB",     fun_isub,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ISWORD",   fun_isword,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ITER",     fun_iter,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
+    {"ITEMS",    fun_items,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"LAST",     fun_last,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"LATTR",    fun_lattr,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LCON",     fun_lcon,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LCSTR",    fun_lcstr,    1,       1,  1,       0, CA_PUBLIC},
+    {"LDELETE",  fun_ldelete,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"LEXITS",   fun_lexits,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LIST",     fun_list,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
+    {"LIT",      fun_lit,      MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
+    {"LJUST",    fun_ljust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"LINK",     fun_link,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"LN",       fun_ln,       MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LNUM",     fun_lnum,     MAX_ARG, 0,  3,       0, CA_PUBLIC},
+    {"LOC",      fun_loc,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LOCATE",   fun_locate,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"LOCK",     fun_lock,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LOG",      fun_log,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LPOS",     fun_lpos,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"LSTACK",   fun_lstack,   MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"LT",       fun_lt,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"LTE",      fun_lte,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"LWHO",     fun_lwho,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"MAIL",     fun_mail,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"MAILFROM", fun_mailfrom, MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"MAP",      fun_map,      MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"MATCH",    fun_match,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"MATCHALL", fun_matchall, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"MAX",      fun_max,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"MEMBER",   fun_member,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"MERGE",    fun_merge,    MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"MID",      fun_mid,      MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"MIN",      fun_min,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"MIX",      fun_mix,      MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"MOD",      fun_mod,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"MONEY",    fun_money,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"MOTD",     fun_motd,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"MUDNAME",  fun_mudname,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"MUL",      fun_mul,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"MUNGE",    fun_munge,    MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"NAME",     fun_name,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"NEARBY",   fun_nearby,   MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"NEQ",      fun_neq,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"NEXT",     fun_next,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"NOT",      fun_not,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"NUM",      fun_num,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"OBJ",      fun_obj,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"OBJEVAL",  fun_objeval,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
+    {"OBJMEM",   fun_objmem,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"OR",       fun_or,       MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"ORFLAGS",  fun_orflags,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"OWNER",    fun_owner,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"PACK",     fun_pack,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"PARENT",   fun_parent,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"PARSE",    fun_parse,    MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
+    {"PEEK",     fun_peek,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"PEMIT",    fun_pemit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"PFIND",    fun_pfind,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"PI",       fun_pi,       MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"PLAYMEM",  fun_playmem,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"PMATCH",   fun_pmatch,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"POLL",     fun_poll,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"POP",      fun_pop,      MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"PORTS",    fun_ports,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"POS",      fun_pos,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"POSS",     fun_poss,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"POWER",    fun_power,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"PUSH",     fun_push,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"CASE",     fun_case,     MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"R",        fun_r,        MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"RAND",     fun_rand,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"REGMATCH", fun_regmatch, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REMIT",    fun_remit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"REMOVE",   fun_remove,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REPEAT",   fun_repeat,   MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"REPLACE",  fun_replace,  MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"REST",     fun_rest,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"REVERSE",  fun_reverse,  1,       1,  1,       0, CA_PUBLIC},
+    {"REVWORDS", fun_revwords, MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"RJUST",    fun_rjust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"RLOC",     fun_rloc,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ROOM",     fun_room,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ROUND",    fun_round,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"S",        fun_s,        1,       1,  1,       0, CA_PUBLIC},
+    {"SCRAMBLE", fun_scramble, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SEARCH",   fun_search,   1,       1,  1,       0, CA_PUBLIC},
+    {"SECS",     fun_secs,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"SECURE",   fun_secure,   1,       1,  1,       0, CA_PUBLIC},
+    {"SET",      fun_set,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SETDIFF",  fun_setdiff,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"SETINTER", fun_setinter, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"SETQ",     fun_setq,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SETR",     fun_setr,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SETUNION", fun_setunion, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"SHL",      fun_shl,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SHR",      fun_shr,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SHUFFLE",  fun_shuffle,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"SIGN",     fun_sign,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SIN",      fun_sin,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SORT",     fun_sort,     MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"SORTBY",   fun_sortby,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"SPACE",    fun_space,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SPLICE",   fun_splice,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"SQRT",     fun_sqrt,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SQUISH",   fun_squish,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"STARTTIME",fun_starttime,MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"STATS",    fun_stats,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"STRCAT",   fun_strcat,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"STRIPANSI",fun_stripansi,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"STRLEN",   fun_strlen,   1,       1,  1,       0, CA_PUBLIC},
+    {"STRMATCH", fun_strmatch, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"STRTRUNC", fun_strtrunc, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SUB",      fun_sub,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SUBEVAL",  fun_subeval,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SUBJ",     fun_subj,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SWITCH",   fun_switch,   MAX_ARG, 2, MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"TABLE",    fun_table,    MAX_ARG, 1,  6,       0, CA_PUBLIC},
+    {"TAN",      fun_tan,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"TEL",      fun_tel,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"TIME",     fun_time,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"TRANSLATE",fun_translate,MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"TRIM",     fun_trim,     MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"TRUNC",    fun_trunc,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"TYPE",     fun_type,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"U",        fun_u,        MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"UCSTR",    fun_ucstr,    1,       1,  1,       0, CA_PUBLIC},
+    {"UDEFAULT", fun_udefault, MAX_ARG, 2, MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"ULOCAL",   fun_ulocal,   MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"UNPACK",   fun_unpack,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"V",        fun_v,        MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"VADD",     fun_vadd,     MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"VALID",    fun_valid,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"VCROSS",   fun_vcross,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"VDIM",     fun_vdim,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"VDOT",     fun_vdot,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"VERSION",  fun_version,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"VISIBLE",  fun_visible,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"VMAG",     fun_vmag,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"VMUL",     fun_vmul,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"VSUB",     fun_vsub,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"VUNIT",    fun_vunit,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"WAIT",     fun_wait,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"WAITUNTIL",fun_waituntil,MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"WHERE",    fun_where,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"WORDPOS",  fun_wordpos,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"WORDS",    fun_words,    MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"XGET",     fun_xget,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"XOR",      fun_xor,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"ZFUN",     fun_zfun,     MAX_ARG, 2,  11,      0, CA_PUBLIC},
+    {"ZONE",     fun_zone,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ZWHO",     fun_zwho,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+
     // Added by D.Piper (del@doofer.org) 1997 and 2000-APR
     //
-    {"DIGITTIME",fun_digittime,1,  0,          CA_PUBLIC},
-    {"SINGLETIME", fun_singletime, 1,  0,      CA_PUBLIC},
-    {"EXPTIME",  fun_exptime,  1,  0,          CA_PUBLIC},
-    {"WRITETIME",fun_writetime,1,  0,          CA_PUBLIC},
-    {"CMDS",     fun_cmds,     1,  0,          CA_PUBLIC},
-    {"STARTSECS",fun_startsecs,0,  0,          CA_PUBLIC},
-    {"LFLAGS",   fun_lflags,   1,  0,          CA_PUBLIC},
-    {"LATTRCMDS",fun_lattrcmds,1,  0,          CA_PUBLIC},
-    {"LCMDS",    fun_lcmds,    1,  0,          CA_PUBLIC},
-    {"CONNTOTAL",fun_conntotal,1,  0,          CA_PUBLIC},
-    {"CONNMAX",  fun_connmax,  1,  0,          CA_PUBLIC},
-    {"CONNLAST", fun_connlast, 1,  0,          CA_PUBLIC},
-    {"CONNNUM",  fun_connnum,  1,  0,          CA_PUBLIC},
-    {"CONNLEFT", fun_connleft, 1,  0,          CA_PUBLIC},
-    {NULL,       NULL,         0,  0,          0}
+    {"DIGITTIME",fun_digittime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SINGLETIME", fun_singletime, MAX_ARG, 1, 1,    0, CA_PUBLIC},
+    {"EXPTIME",  fun_exptime,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"WRITETIME",fun_writetime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CMDS",     fun_cmds,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"STARTSECS",fun_startsecs,MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"LFLAGS",   fun_lflags,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LATTRCMDS",fun_lattrcmds,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LCMDS",    fun_lcmds,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNTOTAL",fun_conntotal,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNMAX",  fun_connmax,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNLAST", fun_connlast, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNNUM",  fun_connnum,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNLEFT", fun_connleft, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {NULL,       NULL,         MAX_ARG, 0,  0,       0, 0}
 };
 
 
@@ -6716,13 +6805,7 @@ double safe_atof(char *szString)
  
 FUNCTION(fun_iadd)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
     INT64 sum = 0;
- 
     for (int i = 0; i < nfargs; i++)
     {
         sum += Tiny_atoi64(fargs[i]);
@@ -6750,11 +6833,6 @@ FUNCTION(fun_isub)
  
 FUNCTION(fun_imul)
 {
-    if (nfargs <= 0)
-    {
-        safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
-        return;
-    }
     INT64 prod = 1;
     for (int i = 0; i < nfargs; i++)
     {
