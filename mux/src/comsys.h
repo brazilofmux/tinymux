@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.16 2002-08-20 08:54:34 jake Exp $
+// $Id: comsys.h,v 1.17 2002-08-24 02:33:19 jake Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -115,7 +115,7 @@ char  *get_channel_from_alias();
 
 BOOL  do_comsystem(dbref who, char *cmd);
 void  do_chanlist(dbref executor, dbref caller, dbref enactor, int key);
-extern char *modSpeech(dbref player, char *message, BOOL bWhich);
+extern char *modSpeech(dbref player, char *message, BOOL bWhich, char *command);
 
 #define CHANNEL_JOIN      0x1
 #define CHANNEL_TRANSMIT  0x2

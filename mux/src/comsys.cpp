@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.38 2002-08-22 05:52:42 sdennis Exp $
+// $Id: comsys.cpp,v 1.39 2002-08-24 02:33:19 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -845,7 +845,7 @@ void BuildChannelMessage
     {
     case ':':
         pPose++;
-        newPose = modSpeech(user->who, pPose, TRUE);
+        newPose = modSpeech(user->who, pPose, TRUE, "channel/pose");
         if (newPose)
         {
             pPose = newPose;
@@ -861,7 +861,7 @@ void BuildChannelMessage
 
     case ';':
         pPose++;
-        newPose = modSpeech(user->who, pPose, TRUE);
+        newPose = modSpeech(user->who, pPose, TRUE, "channel/pose");
         if (newPose)
         {
             pPose = newPose;
@@ -874,12 +874,12 @@ void BuildChannelMessage
         break;
 
     default:
-        newPose = modSpeech(user->who, pPose, TRUE);
+        newPose = modSpeech(user->who, pPose, TRUE, "channel");
         if (newPose)
         {
             pPose = newPose;
         }
-        saystring = modSpeech(user->who, pPose, FALSE);
+        saystring = modSpeech(user->who, pPose, FALSE, "channel");
         if (saystring)
         {
             safe_chr(' ', *messNormal, &mnptr);
