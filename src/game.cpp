@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.18 2000-08-04 08:31:19 sdennis Exp $
+// $Id: game.cpp,v 1.19 2000-09-07 08:21:26 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1110,7 +1110,9 @@ DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 
 void dump_database_internal(int dump_type)
 {
-    char tmpfile[256], outfn[256], prevfile[256];
+    char tmpfile[SIZEOF_PATHNAME+32];
+    char outfn[SIZEOF_PATHNAME+32];
+    char prevfile[SIZEOF_PATHNAME+32];
     FILE *f;
 
     if (dump_type < 0 || dump_type >= NUM_DUMP_TYPES)
@@ -1473,7 +1475,7 @@ static int load_game(int ccPageFile)
 #endif
 {
     FILE *f = NULL;
-    char infile[256];
+    char infile[SIZEOF_PATHNAME+8];
     struct stat statbuf;
     int db_format, db_version, db_flags;
 
