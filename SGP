@@ -1,5 +1,5 @@
 TinyMUX 2.0:  SGP Minimal DB
-Last Update:  September 2000
+Last Update:  October 2000
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Sandbox Globals Project(SGP) has been included as part of a minimal
@@ -27,6 +27,12 @@ The Basics:
     options for SGP.
 
   - The master_room is defined as #2.
+
+  - ALL SGP objects are installed and left in the master room.  This is
+    totally intentional and done as a means to facilitate the
+    installation of additional code that the user may desire.  As
+    always, move all non-command objects to either inside the other SGP
+    objects or store in a special place for that purpose.
 
   - Storage Wizard has been created, with the alias of 'W2' and the
     password of 'luftroma'. 

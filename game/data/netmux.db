@@ -614,7 +614,7 @@
 >310
 "[setq(6,locate(%0,%1,aimnpP))][switch(r(6),#-*,locate(%0,*%1,p),r(6))]"
 >311
-"orflags(%0,Wzw)"
+"orflags(%0,WZw)"
 >312
 "[switch(1,gt(%0,24),#-1,lt(%0,1),#-1,[setq(0,dice(%0))][setq(1,words(iter(%q0,switch(1,gte(##,%1),##))))][setq(2,words(iter(%q0,switch(##,1,##))))][sub(%q1,%q2)])]"
 >289
