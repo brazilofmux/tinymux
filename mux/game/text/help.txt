@@ -649,7 +649,7 @@ Related Topics: @name.
   in the same room, the name of an object or player.
 
   Example:
-    > @cboot Player1
+    > @cboot Public=Player1
     [Public] Staff1 boots Player1 off the channel.
     [Public] Player1 has left this channel.
 
