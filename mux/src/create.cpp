@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.21 2002-09-20 01:27:53 sdennis Exp $
+// $Id: create.cpp,v 1.22 2002-11-12 06:32:07 jake Exp $
 //
 
 #include "copyright.h"
@@ -793,24 +793,6 @@ void do_pcreate
 }
 
 // ---------------------------------------------------------------------------
-// can_destroy_exit, can_destroy_player, do_destroy: Destroy things.
-//
-static BOOL can_destroy_exit(dbref executor, dbref exit)
-{
-    dbref source;
-    if (  executor != exit
-       && executor != (source = Exits(exit))
-       && !Wizard(executor)
-       && (  !Has_location(executor)
-          || source != Location(executor)))
-    {
-        notify_quiet(executor, "You can not destroy exits in another room.");
-        return FALSE;
-    }
-    return TRUE;
-}
-
-// ---------------------------------------------------------------------------
 // destroyable: Indicates if target of a @destroy is a 'special' object in
 // the database.
 //
@@ -828,6 +810,9 @@ static BOOL destroyable(dbref victim)
     return TRUE;
 }
 
+// ---------------------------------------------------------------------------
+// can_destroy_player, do_destroy: Destroy things.
+//
 static BOOL can_destroy_player(dbref player, dbref victim)
 {
     if (!Wizard(player))
@@ -900,45 +885,21 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
 
     // Make sure we can do it, on a type-specific basis.
     //
-    char *NameOfType;
-    BOOL can_doit;
-    switch (Typeof(thing))
-    {
-    case TYPE_EXIT:
-        NameOfType = "exit";
-        can_doit = can_destroy_exit(executor, thing);
-        break;
-
-    case TYPE_PLAYER:
-        NameOfType = "player";
-        can_doit = can_destroy_player(executor, thing);
-        break;
-
-    case TYPE_ROOM:
-        NameOfType = "room";
-        can_doit = TRUE;
-        break;
-
-    case TYPE_THING:
-        NameOfType = "thing";
-        can_doit = TRUE;
-        break;
-
-    default:
-        NameOfType = "weird";
-        can_doit = TRUE;
-        break;
-    }
-    if (!can_doit)
+    if(  isPlayer(thing)
+      && !can_destroy_player(executor, thing))
     {
         return;
     }
 
+    char *NameOfType = alloc_sbuf("do_destroy.NameOfType");
+    strcpy(NameOfType, object_types[Typeof(thing)].name);
+    _strlwr(NameOfType);
     if (Going(thing))
     {
         if (!mudconf.destroy_going_now)
         {
             notify_quiet(executor, tprintf("No sense beating a dead %s.", NameOfType));
+            free_sbuf(NameOfType);
             return;
         }
         key |= DEST_INSTANT;
@@ -949,7 +910,6 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
     dbref ThingOwner = Owner(thing);
     BOOL bInstant = (key & DEST_INSTANT) || Destroy_ok(thing) || Destroy_ok(ThingOwner);
 
-    const char *p;
     if (!bInstant)
     {
         // Pre-destruction 'crumble' emits and one last possible showstopper.
@@ -962,8 +922,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
 
         case TYPE_PLAYER:
             atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(executor));
-            p = atr_get_raw(thing, A_DESTROYER);
-            if (!p)
+            if (!atr_get_raw(thing, A_DESTROYER))
             {
                 // Not a likely situation, but the player has too many
                 // attributes to remember it's destroyer, so we we need to
@@ -984,6 +943,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
 
         default:
             notify(executor, "Weird object type cannot be destroyed.");
+            free_sbuf(NameOfType);
             return;
         }
 
@@ -1026,7 +986,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
             notify(executor, "Destroyed.");
         }
     }
-
+    free_sbuf(NameOfType);
     s_Going(thing);
 
     if (!bInstant)
