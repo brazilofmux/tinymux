@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: eval.cpp,v 1.3 2002-06-03 20:12:14 sdennis Exp $
 //
 
 // MUX 2.1
@@ -963,9 +963,9 @@ static const unsigned char isSpecial_L2[256] =
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x10-0x1F
       0,  4,  0,  3,  0, 11,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x20-0x2F
       1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  0,  0,  0,  0,  0,  0, // 0x30-0x3F
-      0,145,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9,147,140,144, // 0x40-0x4F
+     20,145,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9,147,140,144, // 0x40-0x4F
     143,130,  5,142,  8,  0,138,  0,   6,  0,  0,  0,  0,  0,  0,  0, // 0x50-0x5F
-      0, 17,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9, 19, 12, 16, // 0x60-0x6F
+     20, 17,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9, 19, 12, 16, // 0x60-0x6F
      15,  2,  5, 14,  8,  0, 10,  0,   6,  0,  0,  0, 13,  0,  0,  0, // 0x70-0x7F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x80-0x8F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x90-0x9F
@@ -1743,7 +1743,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                             //
                             pdstr--;
                         }
-                        else
+                        else if (iCode == 19)
                         {
                             // 4D
                             // M
@@ -1751,6 +1751,19 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                             // Last command
                             //
                             safe_str(mudstate.curr_cmd, buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                        }
+                        else
+                        {
+                            // 40
+                            // @
+                            //
+                            // iCode == '!'
+                            // Caller DB number.
+                            //
+                            TinyExec_scratch[0] = '#';
+                            i = Tiny_ltoa(caller, TinyExec_scratch+1);
+                            safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
