@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.5 2003-02-03 20:24:45 sdennis Exp $
+// $Id: flags.cpp,v 1.6 2003-02-03 20:46:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -917,7 +917,7 @@ CF_HAND(cf_flag_access)
 {
     TINY_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    Tiny_StrTokControl(&tts, " \t=,");
+    mux_strtok_ctl(&tts, " \t=,");
     char *fstr = mux_strtok_parse(&tts);
     char *permstr = mux_strtok_parse(&tts);
 
@@ -1227,7 +1227,7 @@ CF_HAND(cf_flag_name)
 {
     TINY_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    Tiny_StrTokControl(&tts, " \t=,");
+    mux_strtok_ctl(&tts, " \t=,");
     char *flagstr = mux_strtok_parse(&tts);
     char *namestr = mux_strtok_parse(&tts);
 

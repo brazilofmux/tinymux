@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.5 2003-02-03 20:24:45 sdennis Exp $
+// $Id: speech.cpp,v 1.6 2003-02-03 20:46:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -628,7 +628,7 @@ void do_page
         //
         TINY_STRTOK_STATE tts;
         mux_strtok_src(&tts, arg1);
-        Tiny_StrTokControl(&tts, ", ");
+        mux_strtok_ctl(&tts, ", ");
         char *p;
         for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
         {
@@ -654,7 +654,7 @@ void do_page
 
         TINY_STRTOK_STATE tts;
         mux_strtok_src(&tts, pLastPage);
-        Tiny_StrTokControl(&tts, " ");
+        mux_strtok_ctl(&tts, " ");
         char *p;
         for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
         {
@@ -1252,7 +1252,7 @@ void do_pemit_list
     char *p;
     TINY_STRTOK_STATE tts;
     mux_strtok_src(&tts, list);
-    Tiny_StrTokControl(&tts, " ");
+    mux_strtok_ctl(&tts, " ");
     for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
     {
         do_pemit_single(player, key, bDoContents, pemit_flags, p, chPoseType,
