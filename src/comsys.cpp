@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.61 2001-11-20 05:17:54 sdennis Exp $
+// $Id: comsys.cpp,v 1.62 2001-12-28 20:35:24 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -224,13 +224,15 @@ void load_channels(FILE *fp)
 {
     int i, j;
     char buffer[LBUF_SIZE];
-    int np;
     comsys_t *c;
 
+    int np = 0;
     fscanf(fp, "%d\n", &np);
     for (i = 0; i < np; i++)
     {
         c = create_new_comsys();
+        c->who = 0;
+        c->numchannels = 0;
         fscanf(fp, "%d %d\n", &(c->who), &(c->numchannels));
         c->maxchannels = c->numchannels;
         if (c->maxchannels > 0)
@@ -519,12 +521,13 @@ char *get_channel_from_alias(dbref player, char *alias)
 void load_comsystem(FILE *fp)
 {
     int i, j, dummy;
-    int nc, ver = 0;
+    int ver = 0;
     struct channel *ch;
     char temp[LBUF_SIZE];
 
     num_channels = 0;
 
+    int nc = 0;
     fgets(temp, sizeof(temp), fp);
     if (!strncmp(temp, "+V", 2))
     {
@@ -582,6 +585,15 @@ void load_comsystem(FILE *fp)
 
         hashaddLEN(ch->name, nChannel, (int *)ch, &mudstate.channel_htab);
 
+        ch->type = 127;
+        ch->temp1 = 0;
+        ch->temp2 = 0;
+        ch->charge = 0;
+        ch->charge_who = NOTHING;
+        ch->amount_col = 0;
+        ch->num_messages = 0;
+        ch->chan_obj = NOTHING;
+
         if (ver >= 1)
         {
             fscanf(fp, "%d %d %d %d %d %d %d %d\n",
@@ -617,17 +629,23 @@ void load_comsystem(FILE *fp)
                 MAX_HEADER_LEN+1, &vwVisual, ANSI_ENDGOAL_NORMAL);
         }
 
+        ch->num_users = 0;
         fscanf(fp, "%d\n", &(ch->num_users));
         ch->max_users = ch->num_users;
         if (ch->num_users > 0)
         {
             ch->users = (struct comuser **)calloc(ch->max_users, sizeof(struct comuser *));
+            ISOUTOFMEMORY(ch->users);
 
             int jAdded = 0;
             for (j = 0; j < ch->num_users; j++)
             {
                 struct comuser t_user;
                 memset(&t_user, 0, sizeof(t_user));
+
+                t_user.who = NOTHING;
+                t_user.bUserIsOn = FALSE;
+                t_user.ComTitleStatus = FALSE;
 
                 if (ver == 3)
                 {
