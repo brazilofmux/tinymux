@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.39 2002-06-28 05:52:05 sdennis Exp $
+// $Id: functions.cpp,v 1.40 2002-06-28 07:01:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -803,7 +803,7 @@ FUNCTION(fun_words)
 FUNCTION(fun_flags)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (  it != NOTHING
+    if (  Good_obj(it)
        && (  mudconf.pub_flags
           || Examinable(executor, it)
           || it == enactor))
@@ -1888,20 +1888,17 @@ FUNCTION(fun_s)
 
 FUNCTION(fun_con)
 {
-    dbref it;
-
-    it = match_thing_quiet(executor, fargs[0]);
-
-    if ((it != NOTHING) &&
-        (Has_contents(it)) &&
-        (Examinable(executor, it) ||
-         (where_is(executor) == it) ||
-         (it == enactor))) {
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (  Good_obj(it)
+       && Has_contents(it)
+       && (  Examinable(executor, it)
+          || where_is(executor) == it
+          || it == enactor))
+    {
         safe_tprintf_str(buff, bufc, "#%d", Contents(it));
         return;
     }
     safe_nothing(buff, bufc);
-    return;
 }
 
 /*
@@ -1911,25 +1908,31 @@ FUNCTION(fun_con)
 
 FUNCTION(fun_exit)
 {
-    dbref it, exit;
-    int key;
-
-    it = match_thing_quiet(executor, fargs[0]);
-    if (Good_obj(it) && Has_exits(it) && Good_obj(Exits(it))) {
-        key = 0;
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (  Good_obj(it)
+       && Has_exits(it)
+       && Good_obj(Exits(it)))
+    {
+        int key = 0;
         if (Examinable(executor, it))
+        {
             key |= VE_LOC_XAM;
+        }
         if (Dark(it))
+        {
             key |= VE_LOC_DARK;
-        DOLIST(exit, Exits(it)) {
-            if (exit_visible(exit, executor, key)) {
+        }
+        dbref exit;
+        DOLIST(exit, Exits(it))
+        {
+            if (exit_visible(exit, executor, key))
+            {
                 safe_tprintf_str(buff, bufc, "#%d", exit);
                 return;
             }
         }
     }
     safe_nothing(buff, bufc);
-    return;
 }
 
 /*
@@ -1939,29 +1942,38 @@ FUNCTION(fun_exit)
 
 FUNCTION(fun_next)
 {
-    dbref it, loc, exit, ex_here;
-    int key;
-
-    it = match_thing_quiet(executor, fargs[0]);
-    if (Good_obj(it) && Has_siblings(it))
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (  Good_obj(it)
+       && Has_siblings(it))
     {
-        loc = where_is(it);
-        ex_here = Good_obj(loc) ? Examinable(executor, loc) : 0;
-        if (ex_here || (loc == executor) || (loc == where_is(executor)))
+        dbref loc = where_is(it);
+        dbref ex_here = Good_obj(loc) ? Examinable(executor, loc) : 0;
+        if (  ex_here
+           || loc == executor
+           || loc == where_is(executor))
         {
             if (!isExit(it))
             {
                 safe_tprintf_str(buff, bufc, "#%d", Next(it));
                 return;
-            } else {
-                key = 0;
+            }
+            else
+            {
+                int key = 0;
                 if (ex_here)
+                {
                     key |= VE_LOC_XAM;
+                }
                 if (Dark(loc))
+                {
                     key |= VE_LOC_DARK;
-                DOLIST(exit, it) {
-                    if ((exit != it) &&
-                      exit_visible(exit, executor, key)) {
+                }
+                dbref exit;
+                DOLIST(exit, it)
+                {
+                    if (  exit != it
+                       && exit_visible(exit, executor, key))
+                    {
                         safe_tprintf_str(buff, bufc, "#%d", exit);
                         return;
                     }
@@ -1970,7 +1982,6 @@ FUNCTION(fun_next)
         }
     }
     safe_nothing(buff, bufc);
-    return;
 }
 
 /*
@@ -1980,14 +1991,20 @@ FUNCTION(fun_next)
 
 FUNCTION(fun_loc)
 {
-    dbref it;
-
-    it = match_thing_quiet(executor, fargs[0]);
-    if (locatable(executor, it, enactor))
-        safe_tprintf_str(buff, bufc, "#%d", Location(it));
+    dbref result = NOTHING;
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (Good_obj(it))
+    {
+        if (locatable(executor, it, enactor))
+        {
+            result = Location(it);
+        }
+    }
     else
-        safe_nothing(buff, bufc);
-    return;
+    {
+        result = it;
+    }
+    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
