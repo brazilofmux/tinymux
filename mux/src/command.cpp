@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.24 2003-03-23 20:54:35 sdennis Exp $
+// $Id: command.cpp,v 1.25 2003-07-22 19:30:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1903,24 +1903,25 @@ char *process_command
         {
             hval = higcheck(executor, caller, enactor, cmdp, LowerCaseCommand);
         }
-        if (cmdp->hookmask & HOOK_IGSWITCH)
+
+        // If the command contains a switch, but the command doesn't support
+        // any switches or the command contains one that isn't supported,
+        // HOOK_IGSWITCH will allow us to treat the entire command as if it
+        // weren't a built-in command.
+        //
+        if (  (cmdp->hookmask & HOOK_IGSWITCH)
+           && pSlash
+           && ( !(cmdp->switches)
+              || search_nametab(executor, cmdp->switches, pSlash) < 0))
         {
-            if (pSlash && cmdp->switches)
-            {
-                int xkey = search_nametab(executor, cmdp->switches, pSlash);
-                if (xkey < 0)
-                {
-                    cval = 2;
-                }
-            }
-            else if (!(cmdp->switches)) 
-            {
-                cval = 2;
-            }
+            cval = 2;
         }
-        if ((cval != 2) && (hval != 2))
+
+        if (  cval != 2
+           && hval != 2)
         {
-            if (cval == 1 || hval == 1)
+            if (  cval == 1
+               || hval == 1)
             {
                 if (cmdp->hookmask & HOOK_AFAIL)
                 {
@@ -1932,7 +1933,8 @@ char *process_command
                 }
                 return preserve_cmd;
             }  
-            if (mudconf.space_compress && (cmdp->callseq & CS_NOSQUISH))
+            if (  mudconf.space_compress
+               && (cmdp->callseq & CS_NOSQUISH))
             {
                 // We handle this specially -- there is no space compression
                 // involved, so we must go back to the original command.
