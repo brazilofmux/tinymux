@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.26 2000-11-04 08:54:01 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.27 2000-11-06 02:04:34 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1923,6 +1923,7 @@ int do_command(DESC *d, char *command, int first)
                 mudstate.glob_reg_len[i] = 0;
             }
             process_command(d->player, d->player, 1, command, (char **)NULL, 0);
+			mudstate.curr_cmd = (char *) "";
             if (d->output_suffix)
             {
                 queue_string(d, d->output_suffix);

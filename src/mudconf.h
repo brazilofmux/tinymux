@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.14 2000-11-05 18:54:27 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.15 2000-11-06 02:04:34 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -312,7 +312,8 @@ struct statedata
     dbref   curr_player;    /* Who is running the current command */
     int events_flag;    /* Flags for check_events */
     int shutdown_flag;  /* Should interface be shut down? */
-    char    *debug_cmd; /* The command we are executing (if any) */
+    char    *debug_cmd;     // The command we are executing (if any).
+	char	*curr_cmd;	/* The current command */
     SITE    *access_list;   /* Access states for sites */
     SITE    *suspect_list;  /* Sites that are suspect */
     int     attr_next;  /* Next attr to alloc when freelist is empty */

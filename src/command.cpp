@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.29 2000-11-05 18:54:27 sdennis Exp $
+// $Id: command.cpp,v 1.30 2000-11-06 02:04:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1231,9 +1231,17 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
  * ---------------------------------------------------------------------------
  * * process_command: Execute a command.
  */
-
-void process_command(dbref player, dbref cause, int interactive, char *arg_command, char *args[], int nargs)
+char *process_command
+(
+    dbref player,
+    dbref cause,
+    int   interactive,
+    char *arg_command,
+    char *args[],
+    int   nargs
+)
 {
+	static char preserve_cmd[LBUF_SIZE];
     char *pOriginalCommand = arg_command;
     static char SpaceCompressCommand[LBUF_SIZE];
     static char LowerCaseCommand[LBUF_SIZE];
@@ -1259,7 +1267,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
         log_text(SpaceCompressCommand);
         ENDLOG;
         mudstate.debug_cmd = cmdsave;
-        return;
+        return pOriginalCommand;
     }
 
     // Make sure player isn't going or halted.
@@ -1269,7 +1277,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
     {
         notify(Owner(player), tprintf("Attempt to execute command by halted object #%d", player));
         mudstate.debug_cmd = cmdsave;
-        return;
+        return pOriginalCommand;
     }
     if (Suspect(player))
     {
@@ -1306,7 +1314,9 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
     {
         pOriginalCommand++;
     }
+    strcpy(preserve_cmd, pOriginalCommand);
     mudstate.debug_cmd = pOriginalCommand;
+	mudstate.curr_cmd = preserve_cmd;
 
     if (mudconf.space_compress)
     {
@@ -1351,14 +1361,14 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
     {
         process_cmdent(prefix_cmds[i], NULL, player, cause, interactive, pCommand, pCommand, args, nargs);
         mudstate.debug_cmd = cmdsave;
-        return;
+        return preserve_cmd;
     }
 
     if (  mudconf.have_comsys
        && !(Slave(player))
        && !do_comsystem(player, pCommand))
     {
-        return;
+        return preserve_cmd;
     }
 
     // Check for the HOME command.
@@ -1369,11 +1379,11 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
             !(WizRoy(player)))
         {
             notify(player, mudconf.fixed_home_msg);
-            return;
+            return preserve_cmd;
         }
         do_move(player, cause, 0, "home");
         mudstate.debug_cmd = cmdsave;
-        return;
+        return preserve_cmd;
     }
 
     // Only check for exits if we may use the goto command.
@@ -1389,7 +1399,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
         {
             move_exit(player, exit, 0, "You can't go that way.", 0);
             mudstate.debug_cmd = cmdsave;
-            return;
+            return preserve_cmd;
         }
 
         // Check for an exit in the master room.
@@ -1401,7 +1411,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
         {
             move_exit(player, exit, 1, NULL, 0);
             mudstate.debug_cmd = cmdsave;
-            return;
+            return preserve_cmd;
         }
     }
     
@@ -1469,7 +1479,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
         }
         process_cmdent(cmdp, pSlash, player, cause, interactive, arg, pCommand, args, nargs);
         mudstate.debug_cmd = cmdsave;
-        return;
+        return preserve_cmd;
     }
 
     // Check for enter and leave aliases, user-defined commands on the
@@ -1497,7 +1507,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
             {
                 free_lbuf(p);
                 do_leave(player, player, 0);
-                return;
+                return preserve_cmd;
             }
         }
         free_lbuf(p);
@@ -1513,7 +1523,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
                 {
                     free_lbuf(p);
                     do_enter_internal(player, exit, 0);
-                    return;
+                    return preserve_cmd;
                 }
             }
             free_lbuf(p);
@@ -1579,7 +1589,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
                     {
                         move_exit(player, exit, 1, NULL, 0);
                         mudstate.debug_cmd = cmdsave;
-                        return;
+                        return preserve_cmd;
                     }
                     succ += list_check(Contents(zone_loc), player,
                                AMATCH_CMD, LowerCaseCommand, 1);
@@ -1648,7 +1658,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
         ENDLOG;
     }
     mudstate.debug_cmd = cmdsave;
-    return;
+    return preserve_cmd;
 }
 
 /*

@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.14 2000-11-05 18:54:27 sdennis Exp $
+// $Id: eval.cpp,v 1.15 2000-11-06 02:04:35 sdennis Exp $
 //
 
 // MUX 2.1
@@ -946,9 +946,9 @@ unsigned char isSpecial_L2[256] =
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x10-0x1F
       0,  4,  0,  3,  0, 11,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x20-0x2F
       1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  0,  0,  0,  0,  0,  0, // 0x30-0x3F
-      0,145,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9,  0,140,144, // 0x40-0x4F
+      0,145,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9,147,140,144, // 0x40-0x4F
     143,130,  5,142,  8,  0,138,  0,   6,  0,  0,  0,  0,  0,  0,  0, // 0x50-0x5F
-      0, 17,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9,  0, 12, 16, // 0x60-0x6F
+      0, 17,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9, 19, 12, 16, // 0x60-0x6F
      15,  2,  5, 14,  8,  0, 10,  0,   6,  0,  0,  0, 13,  0,  0,  0, // 0x70-0x7F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x80-0x8F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x90-0x9F
@@ -1664,11 +1664,11 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             }
                             else
                             {
-                                safe_str((char *)absp[gender], buff, bufc);
+                                safe_str(absp[gender], buff, bufc);
                                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                             }
                         }
-                        else
+                        else if (iCode == 18)
                         {
                             // 00
                             // \0
@@ -1676,6 +1676,16 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             // All done.
                             //
                             pdstr--;
+                        }
+                        else
+                        {
+                            // 4D
+                            // M
+                            //
+                            // Last command
+                            //
+            				safe_str(mudstate.curr_cmd, buff, bufc);
+                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
                 }

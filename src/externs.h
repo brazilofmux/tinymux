@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.36 2000-11-04 11:19:03 sdennis Exp $
+// $Id: externs.h,v 1.37 2000-11-06 02:04:34 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -238,7 +238,7 @@ extern char *   FDECL(uncompress_str, (char *, const char *, int));
 /* From command.cpp */
 extern int  check_access(dbref player, int mask);
 extern void set_prefix_cmds(void);
-extern void process_command(dbref, dbref, int, char *, char *[], int);
+extern char *process_command(dbref, dbref, int, char *, char *[], int);
 
 #define Protect(f) (cmdp->perms & f)
 

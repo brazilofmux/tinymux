@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.27 2000-11-04 05:29:32 sdennis Exp $
+// $Id: conf.cpp,v 1.28 2000-11-06 02:04:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -271,7 +271,8 @@ void NDECL(cf_init)
     mudstate.curr_enactor = NOTHING;
     mudstate.shutdown_flag = 0;
     mudstate.attr_next = A_USER_START;
-    mudstate.debug_cmd = (char *)"< init >";
+    mudstate.debug_cmd = "< init >";
+	mudstate.curr_cmd  = "< none >";
     strcpy(mudstate.doing_hdr, "Doing");
     mudstate.access_list = NULL;
     mudstate.suspect_list = NULL;
