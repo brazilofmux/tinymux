@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.132 2002-01-25 17:42:07 sdennis Exp $
+// $Id: functions.cpp,v 1.133 2002-01-26 01:01:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5320,6 +5320,7 @@ FUNCTION(fun_iter)
         free_lbuf(curr);
         return;
     }
+    mudstate.in_loop++;
     BOOL first = TRUE;
     while (cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
@@ -5338,6 +5339,7 @@ FUNCTION(fun_iter)
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
     }
+    mudstate.in_loop--;
     free_lbuf(curr);
 }
 
@@ -5357,6 +5359,7 @@ FUNCTION(fun_list)
         free_lbuf(curr);
         return;
     }
+    mudstate.in_loop++;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
@@ -5373,7 +5376,13 @@ FUNCTION(fun_list)
         notify(cause, result);
         free_lbuf(result);
     }
+    mudstate.in_loop--;
     free_lbuf(curr);
+}
+
+FUNCTION(fun_ilev)
+{
+    safe_ltoa(mudstate.in_loop-1, buff, bufc);
 }
 
 /*
@@ -6802,6 +6811,7 @@ FUN flist[] =
     {"IDLE",     fun_idle,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"IF",       fun_ifelse,   MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
     {"IFELSE",   fun_ifelse,   MAX_ARG, 3,  3, FN_NO_EVAL, CA_PUBLIC},
+    {"ILEV",     fun_ilev,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"IMUL",     fun_imul,     MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"INC",      fun_inc,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"INDEX",    fun_index,    MAX_ARG, 4,  4,       0, CA_PUBLIC},

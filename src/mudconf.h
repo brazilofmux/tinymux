@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.37 2002-01-25 17:42:07 sdennis Exp $
+// $Id: mudconf.h,v 1.38 2002-01-26 01:01:50 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -356,6 +356,7 @@ struct statedata
     char    *poutnew;       /* The output being build by the current command */
     char    *poutbufc;      /* Buffer position for poutnew */
     dbref   poutobj;        /* Object doing the piping */
+    int     in_loop;        // Loop nesting level.
 
     CHashTable command_htab;   /* Commands hashtable */
     CHashTable channel_htab;   /* Channels hashtable */
