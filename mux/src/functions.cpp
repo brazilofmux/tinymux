@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.133 2005-04-02 01:39:50 sdennis Exp $
+// $Id: functions.cpp,v 1.134 2005-04-04 12:37:04 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -8268,13 +8268,14 @@ FUNCTION(fun_isint)
 
 FUNCTION(fun_isdbref)
 {
-    dbref dbitem;
     bool bResult = false;
 
     char *p = fargs[0];
-    if (*p++ == NUMBER_TOKEN)
+    if (  NUMBER_TOKEN == p[0]
+       && '\0' != p[1])
     {
-        dbitem = parse_dbref(p);
+        p++;
+        dbref dbitem = parse_dbref(p);
         bResult = Good_obj(dbitem);
     }
     safe_bool(bResult, buff, bufc);
