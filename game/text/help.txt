@@ -5092,12 +5092,12 @@ We would like to thank the following people:
     SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
     SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()
-    SUBJ()      SWITCH()    TAN()       TIME()      TRANSLATE() TRIM()
-    TRUNC()     TYPE()      U()         ULOCAL()    UCSTR()     UDEFAULT()
-    V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
-    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
-    WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()
-    ZONE()      ZWHO()
+    SUBJ()      SWITCH()    TABLE()     TAN()       TIME()      TRANSLATE()
+    TRIM()      TRUNC()     TYPE()      U()         ULOCAL()    UCSTR()
+    UDEFAULT()  V()         VADD()      VALID()     VCROSS()    VDIM()
+    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
+    VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()
+    XOR()       ZONE()      ZWHO()
   
 & FUNCTION CLASSES
 
@@ -5115,7 +5115,7 @@ We would like to thank the following people:
                              FOLD GRAB INDEX ITER LAST LNUM MAP MATCH MATCHALL
                              MEMBER MIX MUNGE PARSE REMOVE REST REVWORDS
                              SETDIFF SETINTER SETUNION SHUFFLE SORT SORTBY
-                             SPLICE WORDS
+                             SPLICE TABLE WORDS
   Logarithms:                E EXP LOG LN
   Logical:                   AND NOT OR XOR
   Miscellaneous:             ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM ISWORD
@@ -6616,6 +6616,7 @@ We would like to thank the following people:
   simply be discarded.
  
   See 'help regexp syntax' for an explanation of regular expressions.
+
 & COLUMNS()
 
   columns(<list>, <width>[, <delim>])
@@ -6624,6 +6625,27 @@ We would like to thank the following people:
   number of characters. As many columns as possible will be fit
   onto the screen. Columns takes an optional delimiter.
  
+& TABLE()
+
+  table(<list>,<field width>,<line length>,<delimiter>,<output separator>) 
+
+  This function returns the elements of <list> in a tabular format.
+  All other parameters are optional.
+  <field width> specifies how wide each table entry is allowed to be.
+  It defaults to 10 characters
+  <line length> is how wide a table row can be. Default is 78 chars.
+  <delimiter> is the delimiter used in <list>. Default is white space.
+  <output separator> is a single character to be used between entries
+  in the table. Default is a single space.
+ 
+  Examples:
+  > think table(a b areallylongone d)
+  a          b          areallylon d
+
+  > think table(the quick brown fox,10,25, ,|)
+  the       |quick
+  brown     |fox
+    
 & FOREACH()
 
   foreach([<object>/]<attribute>,<string>[,<begin>, <end>])
