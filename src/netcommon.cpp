@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.15 2000-06-12 18:17:48 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.16 2000-07-08 13:35:47 sdennis Exp $ 
 */
 
 /*
@@ -951,26 +951,26 @@ int fetch_idle(dbref target)
     ltaNow.GetUTC();
     
     DESC *d;
-    BOOL bFirst = TRUE;
+    BOOL bFound = FALSE;
     DESC_ITER_PLAYER(target, d)
     {
         if (d->flags & DS_CONNECTED)
         {
             CLinearTimeDelta ltdIdle = ltaNow - d->last_time;
-            if (bFirst || ltdIdle < ltdResult)
+            if (!bFound || ltdIdle < ltdResult)
             {
-                bFirst = FALSE;
+                bFound = TRUE;
                 ltdResult = ltdIdle;
             }
         }
     }
-    if (bFirst)
+    if (bFound)
     {
-        return -1;
+        return ltdResult.ReturnSeconds();
     }
     else
     {
-        return ltdResult.ReturnSeconds();
+        return -1;
     }
 }
 
@@ -981,20 +981,27 @@ int fetch_connect(dbref target)
     ltaNow.GetUTC();
     
     DESC *d;
-    BOOL bFirst = TRUE;
+    BOOL bFound = FALSE;
     DESC_ITER_PLAYER(target, d)
     {
         if (d->flags & DS_CONNECTED)
         {
             CLinearTimeDelta ltdConntime = ltaNow - d->connected_at;
-            if (bFirst || ltdConntime < ltdResult)
+            if (!bFound || ltdConntime < ltdResult)
             {
-                bFirst = FALSE;
+                bFound = TRUE;
                 ltdResult = ltdConntime;
             }
         }
     }
-    return ltdResult.ReturnSeconds();
+    if (bFound)
+    {
+        return ltdResult.ReturnSeconds();
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 void NDECL(check_idle)
