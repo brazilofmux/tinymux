@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.31 2001-06-11 12:57:01 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.32 2001-06-30 07:00:15 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1351,9 +1351,15 @@ static void dump_users(DESC *e, char *match, int key)
     free_mbuf(buf);
 }
 
+#ifdef WOD_REALMS
+#define INFO_VERSION "1.1"
+#else // WOD_REALMS
+#define INFO_VERSION "1"
+#endif // WOD_REALMS
+
 static void dump_info(DESC *arg_desc)
 {
-    queue_string(arg_desc, "### Begin INFO 1\r\n");
+    queue_string(arg_desc, "### Begin INFO " INFO_VERSION "\r\n");
 
     queue_string(arg_desc, tprintf("Name: %s\r\n", mudconf.mud_name));
 
@@ -1378,6 +1384,9 @@ static void dump_info(DESC *arg_desc)
     queue_string(arg_desc, tprintf("Connected: %d\r\n", count));
     queue_string(arg_desc, tprintf("Size: %d\r\n", mudstate.db_top));
     queue_string(arg_desc, tprintf("Version: %s\r\n", mudstate.short_ver));
+#ifdef WOD_REALMS
+    queue_string(arg_desc, tprintf("Patches: WOD_REALMS\r\n"));
+#endif // WOD_REALMS
     queue_string(arg_desc, "### End INFO\r\n");
 }
 
