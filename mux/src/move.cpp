@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.13 2002-07-14 00:38:29 sdennis Exp $
+// $Id: move.cpp,v 1.14 2002-07-14 00:42:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -782,9 +782,9 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
 
         // You have to be carrying it.
         //
-        if (((Location(thing) != executor)
-            && !Wizard(executor))
-            || !could_doit(executor, thing, A_LDROP))
+        if (  (  Location(thing) != executor
+              && !Wizard(executor))
+           || !could_doit(executor, thing, A_LDROP))
         {
             did_it(executor, thing, A_DFAIL, "You can't drop that.",
                    A_ODFAIL, NULL, A_ADFAIL, (char **)NULL, 0);
