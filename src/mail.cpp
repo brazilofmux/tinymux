@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.8 2000-08-07 06:58:12 sdennis Exp $
+// $Id: mail.cpp,v 1.9 2000-09-07 22:19:23 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -51,14 +51,18 @@ static void FDECL(do_mail_proof, (dbref));
 void FDECL(do_mail_cc, (dbref, char *));
 void FDECL(do_expmail_abort, (dbref));
 
-#define MALIAS_LEN 100
+#define SIZEOF_MALIAS 13
+#define WIDTHOF_MALIASDESC 40
+#define SIZEOF_MALIASDESC (WIDTHOF_MALIASDESC*2)
 
+#define MAX_MALIAS_MEMBERSHIP 100
 struct malias {
     int owner;
     char *name;
     char *desc;
+    int desc_width; // The visual width of the Mail Alias Description.
     int numrecep;
-    dbref list[MALIAS_LEN];
+    dbref list[MAX_MALIAS_MEMBERSHIP];
 };
 
 int ma_size = 0;
@@ -545,7 +549,7 @@ void do_mail_read(dbref player, char *msglist)
                 //
                 j++;
 #ifdef RADIX_COMPRESSION
-                (void)string_decompress(get_mail_message(mp->number), buff);
+                string_decompress(get_mail_message(mp->number), buff);
 #else
                 buff[LBUF_SIZE-1] = '\0';
                 strncpy(buff, get_mail_message(mp->number), LBUF_SIZE);
@@ -1867,9 +1871,8 @@ int load_mail(FILE *fp)
     int len, number;
 #endif
 
-    /*
-     * Read the version number 
-     */
+    // Read the version number.
+    //
     fgets(nbuf1, sizeof(nbuf1), fp);
 
     if (!strncmp(nbuf1, "+V2", 3))
@@ -2795,11 +2798,16 @@ void check_mail(dbref player, int folder, int silent)
 
 static int sign(int x)
 {
-    if (x == 0) {
+    if (x == 0)
+    {
         return 0;
-    } else if (x < 0) {
+    }
+    else if (x < 0)
+    {
         return -1;
-    } else {
+    }
+    else
+    {
         return 1;
     }
 }
@@ -2808,11 +2816,17 @@ static int sign(int x)
 void do_malias_switch(dbref player, char *a1, char *a2)
 {
     if ((!a2 || !*a2) && !(!a1 || !*a1))
+    {
         do_malias_list(player, a1);
+    }
     else if ((!*a1 || !a1) && (!*a2 || !a2))
+    {
         do_malias_list_all(player);
+    }
     else
+    {
         do_malias_create(player, a1, a2);
+    }
 }
 
 void do_malias(dbref player, dbref cause, int key, char *arg1, char *arg2)
@@ -2856,99 +2870,230 @@ void do_malias(dbref player, dbref cause, int key, char *arg1, char *arg2)
     }
 }
 
+// A mail alias can be any combination of upper-case letters, lower-case
+// letters, and digits. No leading digits. No symbols. No ANSI. Length is
+// limited to SIZEOF_MALIAS-1. Case is preserved.
+//
+char *MakeCanonicalMailAlias
+(
+    char *pMailAlias,
+    int *pnValidMailAlias,
+    BOOL *pbValidMailAlias
+)
+{
+    static char Buffer[SIZEOF_MALIAS];
+
+    *pnValidMailAlias = 0;
+    *pbValidMailAlias = FALSE;
+
+    if (  !pMailAlias
+       || !Tiny_IsAlpha[(unsigned char)pMailAlias[0]])
+    {
+        return NULL;
+    }
+    char *p = Buffer;
+
+    *p++ = pMailAlias[0];
+    pMailAlias += 1;
+    int nLeft = (sizeof(Buffer)-1) - 1;
+
+    while (*pMailAlias && nLeft)
+    {
+        if (  !Tiny_IsAlpha[(unsigned char)*pMailAlias]
+           && !Tiny_IsDigit[(unsigned char)*pMailAlias])
+        {
+            return Buffer;
+        }
+        *p = *pMailAlias;
+        p++;
+        pMailAlias++;
+        nLeft--;
+    }
+    *p = '\0';
+
+    *pnValidMailAlias = p - Buffer;
+    *pbValidMailAlias = TRUE;
+    return Buffer;
+}
+
+// A mail alias description can be any combination of upper-case letters,
+// lower-case letters, digits, blanks, and symbols. ANSI is permitted.
+// Length is limited to SIZEOF_MALIASDESC-1. Visual width is limited to
+// WIDTHOF_MALIASDESC. Case is preserved.
+//
+char *MakeCanonicalMailAliasDesc
+(
+    char *pMailAliasDesc,
+    int *pnValidMailAliasDesc,
+    BOOL *pbValidMailAliasDesc,
+    int *pnVisualWidth
+)
+{
+    *pnValidMailAliasDesc = 0;
+    *pbValidMailAliasDesc = FALSE;
+    *pnVisualWidth = 0;
+
+    if (!pMailAliasDesc)
+    {
+        return NULL;
+    }
+
+    // First, remove all '\r\n\t' from the string.
+    //
+    char *Buffer = RemoveSetOfCharacters(pMailAliasDesc, "\r\n\t");
+
+    // Optimize/terminate any ANSI in the string.
+    //
+    static char szFittedMailAliasDesc[SIZEOF_MALIASDESC];
+    *pnValidMailAliasDesc = ANSI_TruncateToField
+                            ( Buffer,
+                              SIZEOF_MALIASDESC,
+                              szFittedMailAliasDesc,
+                              WIDTHOF_MALIASDESC,
+                              pnVisualWidth,
+                              FALSE
+                             );
+    *pbValidMailAliasDesc = TRUE;
+    return szFittedMailAliasDesc;
+}
+
+#define GMA_NOTFOUND    1
+#define GMA_FOUND       2
+#define GMA_INVALIDFORM 3
+
+struct malias *get_malias(dbref player, char *alias, int *pnResult)
+{
+    *pnResult = GMA_INVALIDFORM;
+    if (!alias)
+    {
+        return NULL;
+    }
+    if (alias[0] == '#')
+    {
+        if (ExpMail(player))
+        {
+            int x = Tiny_atol(alias + 1);
+            if (x < 0 || x >= ma_top)
+            {
+                *pnResult = GMA_NOTFOUND;
+                return NULL;
+            }
+            *pnResult = GMA_FOUND;
+            return malias[x];
+        }
+    }
+    else if (alias[0] == '*')
+    {
+        int  nValidMailAlias;
+        BOOL bValidMailAlias;
+        char *pValidMailAlias = MakeCanonicalMailAlias
+                                (   alias+1,
+                                    &nValidMailAlias,
+                                    &bValidMailAlias
+                                );
+
+        if (bValidMailAlias)
+        {
+            for (int i = 0; i < ma_top; i++)
+            {
+                struct malias *m = malias[i];
+                if (  m->owner == player
+                   || m->owner == GOD
+                   || ExpMail(player))
+                {
+                    if (!strcmp(pValidMailAlias, m->name))
+                    {
+                        // Found it!
+                        //
+                        *pnResult = GMA_FOUND;
+                        return m;
+                    }
+                }
+            }
+            *pnResult = GMA_NOTFOUND;
+        }
+    }
+    if (*pnResult == GMA_INVALIDFORM)
+    {
+        if (ExpMail(player))
+        {
+            notify(player, "MAIL: Mail aliases must be of the form *<name> or #<num>.");
+        }
+        else
+        {
+            notify(player, "MAIL: Mail aliases must be of the form *<name>.");
+        }
+    }
+    return NULL;
+}
+
 void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int number, mail_flag flags, int silent)
 {
     int k;
     dbref vic;
     struct malias *m;
 
-    if (!tolist || !*tolist) {
-        notify(player, "MAIL: I can't figure out who you want to mail to.");
+    int nResult;
+    m = get_malias(player, tolist, &nResult);
+    if (nResult == GMA_INVALIDFORM)
+    {
+        char *p;
+        p = tprintf
+            (  "MAIL: I can't figure out from '%s' who you want to mail to.",
+               tolist
+             );
+        notify(player, p);
         return;
     }
-    m = get_malias(player, tolist);
-
-    if (!m) {
-        notify(player, tprintf("MAIL: Mail alias %s not found.", tolist));
+    else if (nResult == GMA_NOTFOUND)
+    {
+        notify(player, tprintf("MAIL: Alias '%s' not found.", tolist));
         return;
     }
-    /*
-     * Parse the player list 
-     */
 
-    for (k = 0; k < m->numrecep; k++) {
+    // Parse the player list.
+    //
+    for (k = 0; k < m->numrecep; k++)
+    {
         vic = m->list[k];
 
-        if (Typeof(vic) == TYPE_PLAYER) {
+        if (Typeof(vic) == TYPE_PLAYER)
+        {
             send_mail(player, m->list[k], listto, subject, number, flags, silent);
-        } else
-            send_mail(GOD, GOD, listto, subject,    /*
-                                 * Complain 
-                                 * about it 
-                                 */
-                  add_mail_message(player, tprintf("Alias Error: Bad Player %d for %s", (dbref)vic, tolist)),
-                  0, silent);
-    }
-}
-
-struct malias *get_malias(dbref player, char *alias)
-{
-    char *mal;
-    struct malias *m;
-    int i = 0;
-    int x = 0;
-
-    if ((*alias == '#') && ExpMail(player)) {
-        x = Tiny_atol(alias + 1);
-        if (x < 0 || x >= ma_top)
-            return NULL;
+        }
         else
-            return malias[x];
-    } else {
-        if (*alias != '*')
-            return NULL;
-
-        mal = alias + 1;
-
-        for (i = 0; i < ma_top; i++) {
-            m = malias[i];
-            if ((m->owner == player) || (m->owner == GOD)) {
-                if (!strcmp(mal, m->name))  /*
-                                 * Found it! 
-                                 */
-                    return m;
-            }
+        {
+            // Complain about it.
+            //
+            char *pMail = tprintf("Alias Error: Bad Player %d for %s", vic, tolist);
+            int iMail = add_mail_message(player, pMail);
+            send_mail(GOD, GOD, listto, subject, iMail, 0, silent);
         }
     }
-    return NULL;
 }
 
 void do_malias_create(dbref player, char *alias, char *tolist)
 {
     char *head, *tail, spot;
-    struct malias *m;
     struct malias **nm;
-    char *na, *buff;
+    char *buff;
     int i = 0;
     dbref target;
 
-    if (!alias || !*alias || !tolist || !*tolist)
+    int nResult;
+    struct malias *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_INVALIDFORM)
     {
         notify(player, "MAIL: What alias do you want to create?.");
         return;
     }
-    if (*alias != '*')
-    {
-        notify(player, "MAIL: All Mail aliases must begin with '*'.");
-        return;
-    }
-    m = get_malias(player, alias);
-    if (m)
+    else if (nResult == GMA_FOUND)
     {
         notify(player,
            tprintf("MAIL: Mail Alias '%s' already exists.", alias));
         return;
     }
+
     if (!ma_size)
     {
         ma_size = MA_INC;
@@ -2976,7 +3121,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     // Parse the player list.
     //
     head = (char *)tolist;
-    while (head && *head && (i < (MALIAS_LEN - 1)))
+    while (head && *head && (i < (MAX_MALIAS_MEMBERSHIP - 1)))
     {
         while (*head == ' ')
             head++;
@@ -3034,39 +3179,89 @@ void do_malias_create(dbref player, char *alias, char *tolist)
         if (*head == '"')
             head++;
     }
-    malias[ma_top]->list[i] = NOTHING;
+    int  nValidMailAlias;
+    BOOL bValidMailAlias;
+    char *pValidMailAlias = MakeCanonicalMailAlias
+                            (   alias+1,
+                                &nValidMailAlias,
+                                &bValidMailAlias
+                            );
 
-    na = alias + 1;
-    malias[ma_top]->name = StringClone(na);
+    if (!bValidMailAlias)
+    {
+        notify(player, "MAIL: Invalid mail alias.");
+        return;
+    }
+
+    // The Mail Alias Description is a superset of the Mail Alias,
+    // so, the following code is not necessary unless the specification
+    // of the Mail Alias Description becomes more restrictive at some
+    // future time.
+    //
+#if 0
+    int  nValidMailAliasDesc;
+    BOOL bValidMailAliasDesc;
+    char *pValidMailAliasDesc = MakeCanonicalMailAliasDesc
+                                (   alias+1,
+                                    &nValidMailAliasDesc,
+                                    &bValidMailAliasDesc
+                                );
+
+    if (!bValidMailAliasDesc)
+    {
+        notify(player, "MAIL: Invalid mail alias description.");
+        break;
+    }
+#else
+    char *pValidMailAliasDesc = pValidMailAlias;
+    int nValidMailAliasDesc = nValidMailAliasDesc;
+#endif
+
+    malias[ma_top]->list[i] = NOTHING;
+    malias[ma_top]->name = StringCloneLen(pValidMailAlias, nValidMailAlias);
     malias[ma_top]->numrecep = i;
     malias[ma_top]->owner = player;
-    malias[ma_top]->desc = StringClone(na);
+    malias[ma_top]->desc = StringCloneLen(pValidMailAliasDesc, nValidMailAliasDesc);
     ma_top++;
-
 
     notify(player, tprintf("MAIL: Alias set '%s' defined.", alias));
 }
 
 void do_malias_list(dbref player, char *alias)
 {
-    struct malias *m;
-    int i = 0;
-    char *buff, *bp;
-
-    m = get_malias(player, alias);
-
-    if (!m) {
+    int nResult;
+    struct malias *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
+    {
         notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
         return;
     }
-    if (!ExpMail(player) && (player != m->owner) && !(God(m->owner))) {
+    if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+    if (!ExpMail(player) && (player != m->owner) && !(God(m->owner)))
+    {
         notify(player, "MAIL: Permission denied.");
         return;
     }
+    char *buff;
+    char *bp;
     bp = buff = alloc_lbuf("do_malias_list");
     safe_tprintf_str(buff, &bp, "MAIL: Alias *%s: ", m->name);
-    for (i = m->numrecep - 1; i > -1; i--) {
-        safe_str(Name(m->list[i]), buff, &bp);
+    for (int i = m->numrecep - 1; i > -1; i--)
+    {
+        char *p = Name(m->list[i]);
+        if (strchr(p, ' '))
+        {
+            safe_chr('"', buff, &bp);
+            safe_str(p, buff, &bp);
+            safe_chr('"', buff, &bp);
+        }
+        else
+        {
+            safe_str(p, buff, &bp);
+        }
         safe_chr(' ', buff, &bp);
     }
     *bp = '\0';
@@ -3075,26 +3270,44 @@ void do_malias_list(dbref player, char *alias)
     free_lbuf(buff);
 }
 
+char *Spaces(int n)
+{
+    static char buffer[42] = "                                         ";
+    static int nLast = 0;
+    buffer[nLast] = ' ';
+    if (0 <= n && n < sizeof(buffer)-1)
+    {
+        buffer[n] = '\0';
+        nLast = n;
+    }
+    return buffer;
+}
+
 void do_malias_list_all(dbref player)
 {
-    struct malias *m;
     int i = 0;
     int notified = 0;
 
-    for (i = 0; i < ma_top; i++) {
-        m = malias[i];
-        if ((m->owner == GOD) || (m->owner == player) || God(player)) {
-            if (!notified) {
-                notify(player,
-                       "Name         Description                         Owner");
+    for (i = 0; i < ma_top; i++)
+    {
+        struct malias *m = malias[i];
+        if (  m->owner == GOD
+           || m->owner == player
+           || God(player))
+        {
+            if (!notified)
+            {
+                notify(player, "Name         Description                              Owner");
                 notified++;
             }
-            notify(player,
-                   tprintf("%-12.12s %-35.35s %-15.15s", m->name, m->desc,
-                       Name(m->owner)));
+            char *p = tprintf( "%-12s %s%s %-15.15s",
+                               m->name,
+                               m->desc,
+                               Spaces(40 - m->desc_width),
+                               Name(m->owner));
+            notify(player, p);
         }
     }
-
     notify(player, "*****  End of Mail Aliases *****");
 }
 
@@ -3102,15 +3315,16 @@ void load_malias(FILE *fp)
 {
     char buffer[200];
 
-
-    (void)getref(fp);
-    if (fscanf(fp, "*** Begin %s ***\n", buffer) == 1 &&
-        !strcmp(buffer, "MALIAS")) {
+    getref(fp);
+    if (  fscanf(fp, "*** Begin %s ***\n", buffer) == 1
+       && !strcmp(buffer, "MALIAS"))
+    {
         malias_read(fp);
-    } else {
+    }
+    else
+    {
         Log.WriteString("ERROR: Couldn't find Begin MALIAS.\n");
         return;
-
     }
 }
 
@@ -3121,13 +3335,38 @@ void save_malias(FILE *fp)
     malias_write(fp);
 }
 
+// This function acts like fgets except that any data on the end of the 
+// line past the buffer size is truncated instead of being returned on
+// the next call.
+//
+int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
+{
+    fgets(Buffer, nBuffer, fp);
+    int lenBuffer = strlen(Buffer);
+    if (Buffer[lenBuffer-1] != '\n')
+    {
+        // The line was too long for the buffer. Continue reading until the
+        // end of the line.
+        //
+        char TruncBuffer[SBUF_SIZE];
+        int lenTruncBuffer;
+        do
+        {
+            fgets(TruncBuffer, sizeof(TruncBuffer), fp);
+            lenTruncBuffer = strlen(TruncBuffer);
+        }
+        while (TruncBuffer[lenTruncBuffer-1] != '\n');
+    }
+    return lenBuffer;
+}
+
 void malias_read(FILE *fp)
 {
     int i, j;
     char buffer[1000];
     struct malias *m;
 
-    fscanf(fp, "%d\n", &ma_top);
+    ma_top = getref(fp);
     if (ma_top <= 0)
     {
         ma_size = ma_top = 0;
@@ -3146,13 +3385,55 @@ void malias_read(FILE *fp)
 
         malias[i] = m;
 
-        fscanf(fp, "%d %d\n", &(m->owner), &(m->numrecep));
+        // Format is: "%d %d\n", &(m->owner), &(m->numrecep)
+        //
+        fgets(buffer, sizeof(buffer), fp);
+        char *p = strchr(buffer, ' ');
+        m->owner = m->numrecep = 0;
+        if (p)
+        {
+            m->owner = Tiny_atol(buffer);
+            m->numrecep = Tiny_atol(p+1);
+        }
 
-        fscanf(fp, "%[^\n]\n", buffer);
-        m->name = StringClone(buffer+2);
+        // The format of @malias name is "N:<name>\n".
+        //
+        int nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
+        buffer[nLen-1] = '\0'; // Get rid of trailing '\n'.
+        int  nMailAlias;
+        BOOL bMailAlias;
+        char *pMailAlias = MakeCanonicalMailAlias( buffer+2,
+                                                   &nMailAlias,
+                                                   &bMailAlias);
+        if (bMailAlias)
+        {
+            m->name = StringCloneLen(pMailAlias, nMailAlias);
+        }
+        else
+        {
+            m->name = StringCloneLen("Invalid", 7);
+        }
 
-        fscanf(fp, "%[^\n]\n", buffer);
-        m->desc = StringClone(buffer+2);
+        // The format of the description is "D:<description>\n"
+        //
+        nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
+        int  nMailAliasDesc;
+        BOOL bMailAliasDesc;
+        int  nVisualWidth;
+        char *pMailAliasDesc = MakeCanonicalMailAliasDesc( buffer+2,
+                                                           &nMailAliasDesc,
+                                                           &bMailAliasDesc,
+                                                           &nVisualWidth);
+        if (bMailAliasDesc)
+        {
+            m->desc = StringCloneLen(pMailAliasDesc, nMailAliasDesc);
+            m->desc_width = nVisualWidth;
+        }
+        else
+        {
+            m->desc = StringCloneLen("Invalid Desc", 12);
+            m->desc_width = 12;
+        }
 
         if (m->numrecep > 0)
         {
@@ -3173,15 +3454,17 @@ void malias_write(FILE *fp)
     int i, j;
     struct malias *m;
 
-    fprintf(fp, "%d\n", ma_top);
-
-    for (i = 0; i < ma_top; i++) {
+    putref(fp, ma_top);
+    for (i = 0; i < ma_top; i++)
+    {
         m = malias[i];
         fprintf(fp, "%d %d\n", m->owner, m->numrecep);
         fprintf(fp, "N:%s\n", m->name);
         fprintf(fp, "D:%s\n", m->desc);
         for (j = 0; j < m->numrecep; j++)
-            fprintf(fp, "%d\n", m->list[j]);
+        {
+            putref(fp, m->list[j]);
+        }
     }
 }
 
@@ -3301,72 +3584,104 @@ static char *make_numlist(dbref player, char *arg)
     *numbp = '\0';
 
     head = (char *)arg;
-    while (head && *head) {
+    while (head && *head)
+    {
         while (*head == ' ')
+        {
             head++;
+        }
 
         tail = head;
-        while (*tail && (*tail != ' ')) {
-            if (*tail == '"') {
+        while (*tail && (*tail != ' '))
+        {
+            if (*tail == '"')
+            {
                 head++;
                 tail++;
                 while (*tail && (*tail != '"'))
+                {
                     tail++;
+                }
             }
             if (*tail)
+            {
                 tail++;
+            }
         }
         tail--;
         if (*tail != '"')
+        {
             tail++;
+        }
         spot = *tail;
         *tail = 0;
 
         num = Tiny_atol(head);
-        if (num) {
+        if (num)
+        {
             temp = mail_fetch(player, num);
-            if (!temp) {
+            if (!temp)
+            {
                 notify(player, "MAIL: You can't reply to nonexistent mail.");
                 free_lbuf(numbuf);
                 return NULL;
             }
             sprintf(buf, "%d ", temp->from);
             safe_str(buf, numbuf, &numbp);
-        } else if (*head == '*') {
-            m = get_malias(player, head);
-            if (!m) {
+        }
+        else if (*head == '*')
+        {
+            int nResult;
+            m = get_malias(player, head, &nResult);
+            if (nResult == GMA_NOTFOUND)
+            {
                 notify(player, tprintf("MAIL: Alias '%s' does not exist.", head));
+                free_lbuf(numbuf);
+                return NULL;
+            }
+            else if (nResult == GMA_INVALIDFORM)
+            {
+                notify(player, tprintf("MAIL: '%s' is a badly-formed alias.", head));
                 free_lbuf(numbuf);
                 return NULL;
             }
             safe_str(head, numbuf, &numbp);
             safe_chr(' ', numbuf, &numbp);
-        } else {
+        }
+        else
+        {
             target = lookup_player(player, head, 1);
-            if (target != NOTHING) {
+            if (target != NOTHING)
+            {
                 sprintf(buf, "%d ", target);
                 safe_str(buf, numbuf, &numbp);
-            } else {
+            }
+            else
+            {
                 notify(player, tprintf("MAIL: '%s' does not exist.", head));
                 free_lbuf(numbuf);
                 return NULL;
             }
         }
 
-        /*
-         * Get the next recip 
-         */
+        // Get the next recip.
+        //
         *tail = spot;
         head = tail;
         if (*head == '"')
+        {
             head++;
+        }
     }
 
-    if (!*numbuf) {
+    if (!*numbuf)
+    {
         notify(player, "MAIL: No players specified.");
         free_lbuf(numbuf);
         return NULL;
-    } else {
+    }
+    else
+    {
         *(numbp - 1) = '\0';
         return numbuf;
     }
@@ -3428,11 +3743,13 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
 
     number = add_mail_message(player, message);
 
-    head = (char *)list;
+    head = list;
     while (head && *head)
     {
         while (*head == ' ')
+        {
             head++;
+        }
 
         tail = head;
         while (*tail && (*tail != ' '))
@@ -3449,19 +3766,14 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
         }
         tail--;
         if (*tail != '"')
+        {
             tail++;
+        }
         spot = *tail;
         *tail = 0;
 
         if (*head == '*')
         {
-            m = get_malias(player, head);
-            if (!m)
-            {
-                free_lbuf(list);
-                free_lbuf(tolist);
-                return;
-            }
             do_malias_send(player, head, tolist, subject, number, flags, silent);
         }
         else
@@ -3473,13 +3785,14 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
             }
         }
 
-        /*
-         * Get the next recip 
-         */
+        // Get the next recip.
+        //
         *tail = spot;
         head = tail;
         if (*head == '"')
+        {
             head++;
+        }
     }
     free_lbuf(tolist);
     free_lbuf(list);
@@ -3669,68 +3982,94 @@ static void do_mail_proof(dbref player)
 
 void do_malias_desc(dbref player, char *alias, char *desc)
 {
-    struct malias *m = get_malias(player, alias);
-    if (!m)
+    int nResult;
+    struct malias *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
     {
-        notify(player, tprintf("MAIL: Alias %s not found.", alias));
+        notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
         return;
     }
-    else if ((m->owner != GOD) || ExpMail(player))
+    if (nResult != GMA_FOUND)
     {
-        MEMFREE(m->desc);
-        m->desc = StringClone(desc);
-        notify(player, "MAIL: Description changed.");
+        return;
+    }
+    if (  m->owner != GOD
+       || ExpMail(player))
+    {
+        int  nValidMailAliasDesc;
+        BOOL bValidMailAliasDesc;
+        int  nVisualWidth;
+        char *pValidMailAliasDesc = MakeCanonicalMailAliasDesc
+                                    (   desc,
+                                        &nValidMailAliasDesc,
+                                        &bValidMailAliasDesc,
+                                        &nVisualWidth
+                                    );
+
+        if (bValidMailAliasDesc)
+        {
+            MEMFREE(m->desc);
+            m->desc = StringCloneLen(pValidMailAliasDesc, nValidMailAliasDesc);
+            m->desc_width = nVisualWidth;
+            notify(player, "MAIL: Description changed.");
+        }
+        else
+        {
+            notify(player, "MAIL: Description is not valid.");
+        }
     }
     else
     {
         notify(player, "MAIL: Permission denied.");
     }
-    return;
 }
 
 void do_malias_chown(dbref player, char *alias, char *owner)
 {
     dbref no = NOTHING;
 
-    struct malias *m = get_malias(player, alias);
-    if (!m)
+    int nResult;
+    struct malias *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
     {
-        notify(player, tprintf("MAIL: Alias %s not found.", alias));
+        notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
+        return;
+    }
+    if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+    if (!ExpMail(player))
+    {
+        notify(player, "MAIL: You cannot do that!");
         return;
     }
     else
     {
-        if (!ExpMail(player))
+        if ((no = lookup_player(player, owner, 1)) == NOTHING)
         {
-            notify(player, "MAIL: You cannot do that!");
+            notify(player, "MAIL: I do not see that here.");
             return;
         }
-        else
-        {
-            if ((no = lookup_player(player, owner, 1)) == NOTHING)
-            {
-                notify(player, "MAIL: I do not see that here.");
-                return;
-            }
-            m->owner = no;
-            notify(player, "MAIL: Owner changed for alias.");
-        }
+        m->owner = no;
+        notify(player, "MAIL: Owner changed for alias.");
     }
 }
 
 void do_malias_add(dbref player, char *alias, char *person)
 {
-    int i = 0;
-    dbref thing;
-
-    thing = NOTHING; 
-    
-    struct malias *m = get_malias(player, alias);
-    if (!m)
+    int nResult;
+    struct malias *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
     {
-        notify(player, tprintf("MAIL: Alias %s not found.", alias));
+        notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
         return;
     }
+    else if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+    dbref thing = NOTHING;
     if (*person == '#')
     {
         thing = parse_dbref(person + 1);
@@ -3757,6 +4096,7 @@ void do_malias_add(dbref player, char *alias, char *person)
         notify(player, "MAIL: Permission denied.");
         return;
     }
+    int i;
     for (i = 0; i < m->numrecep; i++)
     {
         if (m->list[i] == thing)
@@ -3766,7 +4106,7 @@ void do_malias_add(dbref player, char *alias, char *person)
         }
     }
 
-    if (i >= (MALIAS_LEN - 1))
+    if (i >= (MAX_MALIAS_MEMBERSHIP - 1))
     {
         notify(player, "MAIL: The list is full.");
         return;
@@ -3779,15 +4119,15 @@ void do_malias_add(dbref player, char *alias, char *person)
 
 void do_malias_remove(dbref player, char *alias, char *person)
 {
-    int i, ok = 0;
-    dbref thing;
-
-    thing = NOTHING;
-    
-    struct malias *m = get_malias(player, alias);
-    if (!m)
+    int nResult;
+    struct malias *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
     {
-        notify(player, "MAIL: Alias not found.");
+        notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
+        return;
+    }
+    if (nResult != GMA_FOUND)
+    {
         return;
     }
     if ((m->owner == GOD) && !ExpMail(player))
@@ -3795,31 +4135,31 @@ void do_malias_remove(dbref player, char *alias, char *person)
         notify(player, "MAIL: Permission denied.");
         return;
     }
-    
+
+    dbref thing = NOTHING;
     if (*person == '#')
     {
         thing = parse_dbref(person + 1);
     }
-    
     if (thing == NOTHING)
     {
         thing = lookup_player(player, person, 1);
     }
-    
     if (thing == NOTHING)
     {
         notify(player, "MAIL: I do not see that person here.");
         return;
     }
-        
-    for (i = 0; i < m->numrecep; i++)
+
+    BOOL ok = FALSE;
+    for (int i = 0; i < m->numrecep; i++)
     {
         if (ok)
             m->list[i] = m->list[i + 1];
         else if ((m->list[i] == thing) && !ok)
         {
             m->list[i] = m->list[i + 1];
-            ok = 1;
+            ok = TRUE;
         }
     }
 
@@ -3834,20 +4174,25 @@ void do_malias_remove(dbref player, char *alias, char *person)
 
 void do_malias_rename(dbref player, char *alias, char *newname)
 {
-    if (get_malias(player, newname) != NULL)
+    int nResult;
+    struct malias *m = get_malias(player, newname, &nResult);
+    if (nResult == GMA_FOUND)
     {
         notify(player, "MAIL: That name already exists!");
         return;
     }
-    struct malias *m = get_malias(player, alias);
-    if (!m)
+    if (nResult != GMA_NOTFOUND)
+    {
+        return;
+    }
+    m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
     {
         notify(player, "MAIL: I cannot find that alias!");
         return;
     }
-    if (*newname != '*')
+    if (nResult != GMA_FOUND)
     {
-        notify(player, "MAIL: Bad alias.");
         return;
     }
     if (!ExpMail(player) && !(m->owner == player))
@@ -3855,25 +4200,41 @@ void do_malias_rename(dbref player, char *alias, char *newname)
         notify(player, "MAIL: Permission denied.");
         return;
     }
-    MEMFREE(m->name);
-    m->name = StringClone(newname+1);
-    notify(player, "MAIL: Mailing Alias renamed.");
+
+    int  nValidMailAlias;
+    BOOL bValidMailAlias;
+    char *pValidMailAlias = MakeCanonicalMailAlias
+                            (   newname+1,
+                                &nValidMailAlias,
+                                &bValidMailAlias
+                            );
+    if (bValidMailAlias)
+    {
+        MEMFREE(m->name);
+        m->name = StringClone(newname+1);
+        notify(player, "MAIL: Mailing Alias renamed.");
+    }
+    else
+    {
+        notify(player, "MAIL: Alias is not valid.");
+    }
 }
 
 void do_malias_delete(dbref player, char *alias)
 {
-    int i = 0;
-    int done = 0;
-
-    struct malias *m = get_malias(player, alias);
-    
-    if (!m)
+    int nResult;
+    struct malias *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
     {
-        notify(player, "MAIL: Not a valid alias. Remember to prefix the alias name with *.");
+        notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
         return;
     }
-
-    for (i = 0; i < ma_top; i++)
+    if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+    BOOL done = FALSE;
+    for (int i = 0; i < ma_top; i++)
     {
         if (done)
         {
@@ -3895,7 +4256,7 @@ void do_malias_delete(dbref player, char *alias)
 
     if (!done)
     {
-        notify(player, "MAIL: Alias not found.");
+        notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
     }
     else
     {
@@ -3913,12 +4274,14 @@ void do_malias_adminlist(dbref player)
         return;
     }
     notify(player,
-      "Num  Name       Description                              Owner");
+      "Num  Name         Description                              Owner");
 
-    for (i = 0; i < ma_top; i++) {
+    for (i = 0; i < ma_top; i++)
+    {
         m = malias[i];
-        notify(player, tprintf("%-4d %-10.10s %-40.40s %-11.11s",
-                       i, m->name, m->desc, Name(m->owner)));
+        notify(player, tprintf("%-4d %-12s %s%s %-15.15s",
+                       i, m->name, m->desc, Spaces(40 - m->desc_width),
+                       Name(m->owner)));
     }
 
     notify(player, "***** End of Mail Aliases *****");
