@@ -1,4 +1,6 @@
 BETA
+docs/mux2.2-man.pdf
+docs/mux2.2-man.tex
 src/dbconvert.cpp
 src/sa-attrcache.cpp
 src/sa-boolexp.cpp

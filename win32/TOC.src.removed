@@ -1,3 +1,5 @@
 BETA
+docs/mux2.2-man.tex
+docs/mux2.2-man.pdf
 src/dbconvert.cpp
 src/dbconvert.dsp
