@@ -4,7 +4,7 @@
  * The philosophy is to keep this program as simple/small as possible.
  * It does normal fork()s, so the smaller it is, the faster it goes.
  * 
- * $Id: slave.cpp,v 1.2 2000-04-15 17:28:26 sdennis Exp $
+ * $Id: slave.cpp,v 1.3 2000-08-02 23:58:36 sdennis Exp $
  */
 
 #include "autoconf.h"
@@ -203,9 +203,15 @@ RETSIGTYPE child_signal(int iSig)
     //
 
 #ifdef NEXT
-    while (wait3(NULL, WNOHANG, NULL) > 0);
+    while (wait3(NULL, WNOHANG, NULL) > 0)
+    {
+        ; // Nothing.
+    }
 #else
-    while (waitpid(0, NULL, WNOHANG) > 0) ;
+    while (waitpid(0, NULL, WNOHANG) > 0)
+    {
+        ; // Nothing.
+    }
 #endif
     signal(SIGCHLD, CAST_SIGNAL_FUNC child_signal);
 }
@@ -215,13 +221,12 @@ RETSIGTYPE alarm_signal(int iSig)
     struct itimerval itime;
     struct timeval interval;
 
-    if (getppid() != parent_pid) {
+    if (getppid() != parent_pid)
+    {
         exit(1);
     }
     signal(SIGALRM, CAST_SIGNAL_FUNC alarm_signal);
-    interval.tv_sec = 120;  /*
-                 * 2 minutes 
-                 */
+    interval.tv_sec = 120;  // 2 minutes.
     interval.tv_usec = 0;
     itime.it_interval = interval;
     itime.it_value = interval;
@@ -236,19 +241,25 @@ int main(int argc, char *argv[])
     int len;
 
     parent_pid = getppid();
-    if (parent_pid == 1) {
+    if (parent_pid == 1)
+    {
         exit(1);
     }
     alarm_signal(SIGALRM);
     signal(SIGCHLD, CAST_SIGNAL_FUNC child_signal);
     signal(SIGPIPE, SIG_DFL);
 
-    for (;;) {
+    for (;;)
+    {
         len = read(0, arg, MAX_STRING);
         if (len == 0)
+        {
             break;
-        if (len < 0) {
-            if (errno == EINTR) {
+        }
+        if (len < 0)
+        {
+            if (errno == EINTR)
+            {
                 errno = 0;
                 continue;
             }
@@ -257,25 +268,22 @@ int main(int argc, char *argv[])
         arg[len] = '\0';
         p = strchr(arg, '\n');
         if (p)
+        {
             *p = '\0';
-        switch (fork()) {
+        }
+        switch (fork())
+        {
         case -1:
             exit(1);
 
-        case 0: /*
-                 * child 
-                 */
+        case 0: // child.
             {
-                /*
-                 * we don't want to try this for more than 5
-                 * * * * * minutes 
-                 */
+                // We don't want to try this for more than 5 minutes.
+                //
                 struct itimerval itime;
                 struct timeval interval;
 
-                interval.tv_sec = 300;  /*
-                             * 5 minutes 
-                             */
+                interval.tv_sec = 300;  // 5 minutes.
                 interval.tv_usec = 0;
                 itime.it_interval = interval;
                 itime.it_value = interval;
@@ -283,15 +291,20 @@ int main(int argc, char *argv[])
                 setitimer(ITIMER_REAL, &itime, 0);
             }
             exit(query(arg, p + 1) != 0);
-
         }
-        /*
-         * collect any children 
-         */
+
+        // collect any children 
+        //
 #ifdef NEXT
-        while (wait3(NULL, WNOHANG, NULL) > 0) ;
+        while (wait3(NULL, WNOHANG, NULL) > 0)
+        {
+            ; // Nothing.
+        }
 #else
-        while (waitpid(0, NULL, WNOHANG) > 0) ;
+        while (waitpid(0, NULL, WNOHANG) > 0)
+        {
+            ; // Nothing.
+        }
 #endif
     }
     exit(0);
