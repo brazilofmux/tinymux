@@ -1,10 +1,10 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: attrcache.cpp,v 1.2 2003-01-23 01:52:13 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -14,11 +14,9 @@
 CHashFile hfAttributeFile;
 static BOOL cache_initted = FALSE;
 
-#ifdef STANDALONE
 static BOOL cache_redirected = FALSE;
 #define N_TEMP_FILES 4
 FILE *TempFiles[N_TEMP_FILES];
-#endif // STANDALONE
 
 CLinearTimeAbsolute cs_ltime;
 
@@ -32,11 +30,6 @@ typedef struct tagAttrRecord
 
 static ATTR_RECORD TempRecord;
 
-#ifndef STANDALONE
-#define DO_CACHEING
-#endif // !STANDALONE
-
-#ifdef DO_CACHEING
 typedef struct tagCacheEntryHeader
 {
     struct tagCacheEntryHeader *pPrevEntry;
@@ -48,7 +41,6 @@ typedef struct tagCacheEntryHeader
 PCENT_HDR pCacheHead = 0;
 PCENT_HDR pCacheTail = 0;
 unsigned int CacheSize = 0;
-#endif // DO_CACHEING
 
 int cache_init(const char *game_dir_file, const char *game_pag_file)
 {
@@ -68,7 +60,6 @@ int cache_init(const char *game_dir_file, const char *game_pag_file)
     return cc;
 }
 
-#ifdef STANDALONE
 void cache_redirect(void)
 {
     for (int i = 0; i < N_TEMP_FILES; i++)
@@ -117,7 +108,6 @@ void cache_pass2(void)
         fprintf(stderr, ENDLINE);
     }
 }
-#endif // STANDALONE
 
 void cache_close(void)
 {
@@ -130,7 +120,6 @@ void cache_tick(void)
     hfAttributeFile.Tick();
 }
 
-#ifdef DO_CACHEING
 void REMOVE_ENTRY(PCENT_HDR pEntry)
 {
     // How is X positioned?
@@ -201,7 +190,6 @@ void ADD_ENTRY(PCENT_HDR pEntry)
         pCacheTail = pCacheHead;
     }
 }
-#endif // DO_CACHEING
 
 const char *cache_get(Aname *nam, int *pLen)
 {
@@ -212,22 +200,26 @@ const char *cache_get(Aname *nam, int *pLen)
         return 0;
     }
 
-#ifdef DO_CACHEING
-    // Check the cache, first.
-    //
-    PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN(nam, sizeof(Aname),
-        &mudstate.acache_htab);
-    if (pCacheEntry)
+#ifndef STANDALONE
+    PCENT_HDR pCacheEntry = NULL;
+    if (!mudstate.bStandAlone)
     {
-        // It was in the cache, so move this entry to the head of the queue.
-        // and return a pointer to it.
+        // Check the cache, first.
         //
-        REMOVE_ENTRY(pCacheEntry);
-        ADD_ENTRY(pCacheEntry);
-        *pLen = pCacheEntry->nSize - sizeof(CENT_HDR);
-        return (char *)(pCacheEntry+1);
+        pCacheEntry = (PCENT_HDR)hashfindLEN(nam, sizeof(Aname),
+            &mudstate.acache_htab);
+        if (pCacheEntry)
+        {
+            // It was in the cache, so move this entry to the head of the queue.
+            // and return a pointer to it.
+            //
+            REMOVE_ENTRY(pCacheEntry);
+            ADD_ENTRY(pCacheEntry);
+            *pLen = pCacheEntry->nSize - sizeof(CENT_HDR);
+            return (char *)(pCacheEntry+1);
+        }
     }
-#endif // DO_CACHEING
+#endif
 
     UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 
@@ -243,42 +235,45 @@ const char *cache_get(Aname *nam, int *pLen)
         {
             int nLength = nRecord - sizeof(Aname);
             *pLen = nLength;
-#ifdef DO_CACHEING
-            // Add this information to the cache.
-            //
-            pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+nLength);
-            if (pCacheEntry)
+#ifndef STANDALONE
+            if (!mudstate.bStandAlone)
             {
-                pCacheEntry->attrKey = *nam;
-                pCacheEntry->nSize = nLength + sizeof(CENT_HDR);
-                CacheSize += pCacheEntry->nSize;
-                memcpy((char *)(pCacheEntry+1), TempRecord.attrText, nLength);
-                ADD_ENTRY(pCacheEntry);
-                hashaddLEN(nam, sizeof(Aname), (int *)pCacheEntry,
-                    &mudstate.acache_htab);
-
-                // Check to see if the cache needs to be trimmed.
+                // Add this information to the cache.
                 //
-                while (CacheSize > mudconf.max_cache_size)
+                pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+nLength);
+                if (pCacheEntry)
                 {
-                    // Blow something away.
-                    //
-                    pCacheEntry = pCacheTail;
-                    if (!pCacheEntry)
-                    {
-                        CacheSize = 0;
-                        break;
-                    }
-
-                    REMOVE_ENTRY(pCacheEntry);
-                    CacheSize -= pCacheEntry->nSize;
-                    hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
+                    pCacheEntry->attrKey = *nam;
+                    pCacheEntry->nSize = nLength + sizeof(CENT_HDR);
+                    CacheSize += pCacheEntry->nSize;
+                    memcpy((char *)(pCacheEntry+1), TempRecord.attrText, nLength);
+                    ADD_ENTRY(pCacheEntry);
+                    hashaddLEN(nam, sizeof(Aname), (int *)pCacheEntry,
                         &mudstate.acache_htab);
-                    MEMFREE(pCacheEntry);
-                    pCacheEntry = NULL;
+
+                    // Check to see if the cache needs to be trimmed.
+                    //
+                    while (CacheSize > mudconf.max_cache_size)
+                    {
+                        // Blow something away.
+                        //
+                        pCacheEntry = pCacheTail;
+                        if (!pCacheEntry)
+                        {
+                            CacheSize = 0;
+                            break;
+                        }
+
+                        REMOVE_ENTRY(pCacheEntry);
+                        CacheSize -= pCacheEntry->nSize;
+                        hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
+                            &mudstate.acache_htab);
+                        MEMFREE(pCacheEntry);
+                        pCacheEntry = NULL;
+                    }
                 }
             }
-#endif // DO_CACHEING
+#endif
             return TempRecord.attrText;
         }
         iDir = hfAttributeFile.FindNextKey(iDir, nHash);
@@ -311,7 +306,6 @@ BOOL cache_put(Aname *nam, const char *value, int len)
     //
     UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 
-#ifdef STANDALONE
     if (cache_redirected)
     {
         TempRecord.attrKey = *nam;
@@ -324,7 +318,6 @@ BOOL cache_put(Aname *nam, const char *value, int len)
         fwrite(&TempRecord, 1, nSize, TempFiles[iFile]);
         return TRUE;
     }
-#endif // STANDALONE
 
     HP_DIRINDEX iDir = hfAttributeFile.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -348,59 +341,60 @@ BOOL cache_put(Aname *nam, const char *value, int len)
     //
     hfAttributeFile.Insert(len+sizeof(Aname), nHash, &TempRecord);
 
-#ifdef DO_CACHEING
-
-    // Update cache.
-    //
-    PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN(nam, sizeof(Aname),
-        &mudstate.acache_htab);
-    if (pCacheEntry)
+#ifndef STANDALONE
+    if (!mudstate.bStandAlone)
     {
-        // It was in the cache, so delete it.
+        // Update cache.
         //
-        REMOVE_ENTRY(pCacheEntry);
-        CacheSize -= pCacheEntry->nSize;
-        hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
-        MEMFREE(pCacheEntry);
-        pCacheEntry = NULL;
-    }
-
-    // Add information about the new entry back into the cache.
-    //
-    pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+len);
-    if (pCacheEntry)
-    {
-        pCacheEntry->attrKey = *nam;
-        pCacheEntry->nSize = len + sizeof(CENT_HDR);
-        CacheSize += pCacheEntry->nSize;
-        memcpy((char *)(pCacheEntry+1), TempRecord.attrText, len);
-        ADD_ENTRY(pCacheEntry);
-        hashaddLEN(nam, sizeof(Aname), (int *)pCacheEntry,
+        PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN(nam, sizeof(Aname),
             &mudstate.acache_htab);
-
-        // Check to see if the cache needs to be trimmed.
-        //
-        while (CacheSize > mudconf.max_cache_size)
+        if (pCacheEntry)
         {
-            // Blow something away.
+            // It was in the cache, so delete it.
             //
-            pCacheEntry = pCacheTail;
-            if (!pCacheEntry)
-            {
-                CacheSize = 0;
-                break;
-            }
-
             REMOVE_ENTRY(pCacheEntry);
             CacheSize -= pCacheEntry->nSize;
-            hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
-                &mudstate.acache_htab);
+            hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
             MEMFREE(pCacheEntry);
             pCacheEntry = NULL;
         }
-    }
-#endif // DO_CACHEING
 
+        // Add information about the new entry back into the cache.
+        //
+        pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+len);
+        if (pCacheEntry)
+        {
+            pCacheEntry->attrKey = *nam;
+            pCacheEntry->nSize = len + sizeof(CENT_HDR);
+            CacheSize += pCacheEntry->nSize;
+            memcpy((char *)(pCacheEntry+1), TempRecord.attrText, len);
+            ADD_ENTRY(pCacheEntry);
+            hashaddLEN(nam, sizeof(Aname), (int *)pCacheEntry,
+                &mudstate.acache_htab);
+
+            // Check to see if the cache needs to be trimmed.
+            //
+            while (CacheSize > mudconf.max_cache_size)
+            {
+                // Blow something away.
+                //
+                pCacheEntry = pCacheTail;
+                if (!pCacheEntry)
+                {
+                    CacheSize = 0;
+                    break;
+                }
+
+                REMOVE_ENTRY(pCacheEntry);
+                CacheSize -= pCacheEntry->nSize;
+                hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
+                    &mudstate.acache_htab);
+                MEMFREE(pCacheEntry);
+                pCacheEntry = NULL;
+            }
+        }
+    }
+#endif
     return TRUE;
 }
 
@@ -436,21 +430,23 @@ void cache_del(Aname *nam)
         iDir = hfAttributeFile.FindNextKey(iDir, nHash);
     }
 
-#ifdef DO_CACHEING
-
-    // Update cache.
-    //
-    PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN(nam, sizeof(Aname),
-        &mudstate.acache_htab);
-    if (pCacheEntry)
+#ifndef STANDALONE
+    if (!mudstate.bStandAlone)
     {
-        // It was in the cache, so delete it.
+        // Update cache.
         //
-        REMOVE_ENTRY(pCacheEntry);
-        CacheSize -= pCacheEntry->nSize;;
-        hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
-        MEMFREE(pCacheEntry);
-        pCacheEntry = NULL;
+        PCENT_HDR pCacheEntry = (PCENT_HDR)hashfindLEN(nam, sizeof(Aname),
+            &mudstate.acache_htab);
+        if (pCacheEntry)
+        {
+            // It was in the cache, so delete it.
+            //
+            REMOVE_ENTRY(pCacheEntry);
+            CacheSize -= pCacheEntry->nSize;;
+            hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
+            MEMFREE(pCacheEntry);
+            pCacheEntry = NULL;
+        }
     }
-#endif // DO_CACHEING
+#endif
 }
