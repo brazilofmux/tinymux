@@ -18,6 +18,7 @@ AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS(unistd.h memory.h string.h errno.h malloc.h sys/select.h)
 AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/ioctl.h sys/time.h sys/stat.h)
+AC_CHECK_HEADERS(fpu_control.h)
 AC_CHECKING(for sys_errlist decl)
 if test $ac_cv_header_errno_h = no; then
 	AC_DEFINE(NEED_SYS_ERRLIST_DCL)
@@ -43,7 +44,13 @@ AC_TRY_COMPILE([#include <sys/wait.h>],[union wait stat;],AC_DEFINE(HAVE_UNION_W
 AC_CHECKING(for extended string dcls)
 AC_EGREP_HEADER(rindex,string.h, ,AC_DEFINE(NEED_INDEX_DCL))
 AC_CHECKING(for malloc dcl)
-AC_EGREP_HEADER(realloc,stdlib.h, ,AC_DEFINE(NEED_MALLOC_DCL))
+querymalloc=no
+AC_EGREP_HEADER(realloc,stdlib.h,AC_DEFINE(MALLOC_IN_STDLIB_H),querymalloc=yes)
+if test $ac_cv_header_malloc_h = no && $querymalloc = yes; then
+    AC_DEFINE(NEED_MALLOC_DCL)
+else
+    AC_EGREP_HEADER(realloc,malloc.h, ,AC_DEFINE(NEED_MALLOC_DCL))
+fi
 AC_CHECKING(for vsprintf dcl)
 AC_EGREP_HEADER(vsprintf,stdio.h, ,AC_DEFINE(NEED_VSPRINTF_DCL))
 AC_CHECKING(for sprintf dcl)
@@ -198,5 +205,4 @@ fi
 AC_SUBST(LIBOBJS)
 AC_SUBST(def_force_c_compiler)
 AC_SUBST(def_brief_lib_list)
-AC_CHECK_HEADERS(fpu_control.h)
 AC_OUTPUT(Makefile)
