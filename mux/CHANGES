@@ -46,6 +46,8 @@ Bug Fixes:
  -- Fixed entire class of bugs from MUX 1.x that show themselves to one degree
     or another in nearly every part of the server. The issue was first visible
     with enter locks on zones.
+ -- Fixed ancient filter() bug where only a prefix of '1' was counted as true.
+    Fixed by Raevnos.
 
 
 Performance Enhancements:
