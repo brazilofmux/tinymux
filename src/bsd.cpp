@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.21 2001-01-30 19:57:29 sdennis Exp $
+// $Id: bsd.cpp,v 1.22 2001-03-15 13:14:50 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2292,35 +2292,245 @@ static void unset_signals(void)
     }
 }
 
-#ifndef SIGCHLD
-#define SIGCHLD SIGCLD
-#endif
-
 #ifdef _SGI_SOURCE
 #define CAST_SIGNAL_FUNC (SIG_PF)
 #else
 #define CAST_SIGNAL_FUNC
 #endif
 
+#ifndef SYS_SIGLIST_DECLARED
+
+// The purpose of the following code is support the case where sys_siglist is
+// is not part of the environment. This is the case for some Unix platforms
+// and also for Win32.
+//
+typedef struct
+{
+	int         nSignal;
+	const char *szSignal;
+} SIGNALTYPE, *PSIGNALTYPE;
+
+const SIGNALTYPE aSigTypes[] =
+{
+#ifdef SIGHUP
+    // Hangup detected on controlling terminal or death of controlling process.
+    //
+    { SIGHUP,   "SIGHUP"},
+#endif
+#ifdef SIGINT
+    // Interrupt from keyboard.
+    //
+    { SIGINT,   "SIGINT"},
+#endif
+#ifdef SIGQUIT
+    // Quit from keyboard.
+    //
+    { SIGQUIT,  "SIGQUIT"},
+#endif
+#ifdef SIGILL
+    // Illegal Instruction.
+    //
+    { SIGILL,   "SIGILL"},
+#endif
+#ifdef SIGTRAP
+    // Trace/breakpoint trap.
+    //
+    { SIGTRAP,  "SIGTRAP"},
+#endif
+#if defined(SIGABRT)
+    // Abort signal from abort(3).
+    //
+    { SIGABRT,  "SIGABRT"},
+#elif defined(SIGIOT)
+#define SIGABRT SIGIOT
+    // Abort signal from abort(3).
+    //
+    { SIGIOT,   "SIGIOT"},
+#endif
+#ifdef SIGEMT
+    { SIGEMT,   "SIGEMT"},
+#endif
+#ifdef SIGFPE
+    // Floating-point exception.
+    //
+    { SIGFPE,   "SIGFPE"},
+#endif
+#ifdef SIGKILL
+    // Kill signal. Not catchable.
+    //
+    { SIGKILL,  "SIGKILL"},
+#endif
+#ifdef SIGSEGV
+    // Invalid memory reference.
+    //
+    { SIGSEGV,  "SIGSEGV"},
+#endif
+#ifdef SIGPIPE
+    // Broken pipe: write to pipe with no readers.
+    //
+    { SIGPIPE,  "SIGPIPE"},
+#endif
+#ifdef SIGALRM
+    // Timer signal from alarm(2).
+    //
+    { SIGALRM,  "SIGALRM"},
+#endif
+#ifdef SIGTERM
+    // Termination signal.
+    //
+    { SIGTERM,  "SIGTERM"},
+#endif
+#ifdef SIGUSR1
+    // User-defined signal 1.
+    //
+    { SIGUSR1,  "SIGUSR1"},
+#endif
+#ifdef SIGUSR2
+    // User-defined signal 2.
+    //
+    { SIGUSR2,  "SIGUSR2"},
+#endif
+#if defined(SIGCHLD)
+    // Child stopped or terminated.
+    //
+    { SIGCHLD,  "SIGCHLD"},
+#elif defined(SIGCLD)
+#define SIGCHLD SIGCLD
+    // Child stopped or terminated.
+    //
+    { SIGCLD,   "SIGCLD"},
+#endif
+#ifdef SIGCONT
+    // Continue if stopped.
+    //
+    { SIGCONT,  "SIGCONT"},
+#endif
+#ifdef SIGSTOP
+    // Stop process. Not catchable.
+    //
+    { SIGSTOP,  "SIGSTOP"},
+#endif
+#ifdef SIGTSTP
+    // Stop typed at tty
+    //
+    { SIGTSTP,  "SIGTSTP"},
+#endif
+#ifdef SIGTTIN
+    // tty input for background process.
+    //
+    { SIGTTIN,  "SIGTTIN"},
+#endif
+#ifdef SIGTTOU
+    // tty output for background process.
+    //
+    { SIGTTOU,  "SIGTTOU"},
+#endif
+#ifdef SIGBUS
+    // Bus error (bad memory access).
+    //
+    { SIGBUS,   "SIGBUS"},
+#endif
+#ifdef SIGPROF
+    // Profiling timer expired.
+    //
+    { SIGPROF,  "SIGPROF"},
+#endif
+#ifdef SIGSYS
+    // Bad argument to routine (SVID).
+    //
+    { SIGSYS,   "SIGSYS"},
+#endif
+#ifdef SIGURG
+    // Urgent condition on socket (4.2 BSD).
+    //
+    { SIGURG,   "SIGURG"},
+#endif
+#ifdef SIGVTALRM
+    // Virtual alarm clock (4.2 BSD).
+    //
+    { SIGVTALRM, "SIGVTALRM"},
+#endif
+#ifdef SIGXCPU
+    // CPU time limit exceeded (4.2 BSD).
+    //
+    { SIGXCPU,  "SIGXCPU"},
+#endif
+#ifdef SIGXFSZ
+    // File size limit exceeded (4.2 BSD).
+    //
+    { SIGXFSZ,  "SIGXFSZ"},
+#endif
+#ifdef SIGSTKFLT
+    // Stack fault on coprocessor.
+    //
+    { SIGSTKFLT, "SIGSTKFLT"},
+#endif
+#if defined(SIGIO)
+    // I/O now possible (4.2 BSD). File lock lost.
+    //
+    { SIGIO,    "SIGIO"},
+#elif defined(SIGPOLL)
+#define SIGIO SIGPOLL
+    // Pollable event (Sys V).
+    //
+    { SIGPOLL,  "SIGPOLL"},
+#endif
+#ifdef SIGLOST
+    { SIGLOST,  "SIGLOST"},
+#endif
+#if defined(SIGPWR)
+    // Power failure (System V).
+    //
+    { SIGPWR,   "SIGPWR"},
+#elif defined(SIGINFO)
+#define SIGPWR SIGINFO
+    // Power failure (System V).
+    //
+    { SIGINFO,  "SIGINFO"},
+#endif
+#ifdef SIGWINCH
+    // Window resize signal (4.3 BSD, Sun).
+    //
+    { SIGWINCH, "SIGWINCH"},
+#endif
+    { 0,        "SIGZERO" },
+    { -1, NULL }
+};
+
+static const char *signames[NSIG];
+
+void BuildSignalNamesTable(void)
+{
+    int i;
+    for (i = 0; i < NSIG; i++)
+    {
+        signames[i] = NULL;
+    }
+    i = 0;
+    while (  aSigTypes[i].nSignal >= 0
+          && aSigTypes[i].nSignal < NSIG)
+    {
+        if (signames[i] == NULL)
+        {
+            signames[aSigTypes[i].nSignal] = aSigTypes[i].szSignal;
+        }
+        i++;
+    }
+    for (i = 0; i < NSIG; i++)
+    {
+        if (signames[i] == NULL)
+        {
+            signames[i] = "SIGRESERVED";
+        }
+    }
+}
+#else
+#define signames sys_siglist
+#endif // SYS_SIGLIST_DECLARED
+
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
-#ifdef SYS_SIGLIST_DECLARED
-#define signames sys_siglist
-#else
-    static const char *signames[] =
-    {
-        "SIGZERO",  "SIGHUP",  "SIGINT",    "SIGQUIT",
-        "SIGILL",   "SIGTRAP", "SIGABRT",   "SIGEMT",
-        "SIGFPE",   "SIGKILL", "SIGBUS",    "SIGSEGV",
-        "SIGSYS",   "SIGPIPE", "SIGALRM",   "SIGTERM",
-        "SIGURG",   "SIGSTOP", "SIGTSTP",   "SIGCONT",
-        "SIGCHLD",  "SIGTTIN", "SIGTTOU",   "SIGIO",
-        "SIGXCPU",  "SIGXFSZ", "SIGVTALRM", "SIGPROF",
-        "SIGWINCH", "SIGLOST", "SIGUSR1",   "SIGUSR2"
-    };
-#endif
-
-    char buff[32];
+    char buff[100];
 
 #ifndef WIN32
 #if defined(HAVE_UNION_WAIT) && defined(NEED_WAIT3_DCL)
@@ -2337,7 +2547,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         if (mudstate.bCanRestart)
         {
             log_signal(signames[sig]);
-            do_restart(1,1,0);
+            do_restart(GOD, GOD, 0);
         }
         else
         {
@@ -2350,7 +2560,13 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         break;
 
     case SIGUSR2:
-        do_shutdown(1,0,0,"Signal USR2 received");
+
+        // Drop a flatfile.
+        //
+        log_signal(signames[sig]);
+        sprintf(buff, "Caught signal %s requesting a flatfile @dump. Please wait.", signames[sig]);
+        raw_broadcast(0, buff);
+        dump_database_internal(DUMP_I_SIGNAL);
         break;
 
     case SIGCHLD:
@@ -2401,17 +2617,12 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 #ifdef SIGXCPU
     case SIGXCPU:
 #endif
-        // Normal shutdown
+        // Time for a normal and short-winded shutdown.
         //
         check_panicking(sig);
         log_signal(signames[sig]);
         sprintf(buff, "Caught signal %s, exiting.", signames[sig]);
-        raw_broadcast(0, buff);
-        dump_database_internal(DUMP_I_SIGNAL);
-#ifdef WIN32
-        WSACleanup();
-#endif // WIN32
-        exit(0);
+        do_shutdown(GOD, GOD, 0, buff);
         break;
 
     case SIGILL:
