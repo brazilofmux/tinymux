@@ -3151,7 +3151,7 @@ Related Topics: @name.
   COMMAND:   @signature <player> = <message>
   ATTRIBUTE: Signature
 
-  Sets a message to be appended to ever @mail message you send. It is
+  Sets a message to be appended to every @mail message you send. It is
   appended directly at the end of the message, so if you wish to start the
   signature on a new line you should begin it with a %r.
 
