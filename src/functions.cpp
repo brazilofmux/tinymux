@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.74 2001-07-03 11:59:35 sdennis Exp $
+// $Id: functions.cpp,v 1.75 2001-07-03 17:15:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -45,6 +45,8 @@ XFUNCTION(fun_zone);
 XFUNCTION(fun_link);
 XFUNCTION(fun_tel);
 XFUNCTION(fun_pemit);
+XFUNCTION(fun_oemit);
+XFUNCTION(fun_emit);
 XFUNCTION(fun_remit);
 XFUNCTION(fun_create);
 XFUNCTION(fun_set);
@@ -6265,6 +6267,7 @@ FUN flist[] =
     {"EDIT",     fun_edit,     MAX_ARG, 3,  3,       0, CA_PUBLIC},
     {"ELEMENTS", fun_elements, MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"ELOCK",    fun_elock,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"EMIT",     fun_emit,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"EMPTY",    fun_empty,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"ENCRYPT",  fun_encrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"EQ",       fun_eq,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
@@ -6364,6 +6367,7 @@ FUN flist[] =
     {"OBJ",      fun_obj,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"OBJEVAL",  fun_objeval,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
     {"OBJMEM",   fun_objmem,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"OEMIT",    fun_oemit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"OR",       fun_or,       MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"ORFLAGS",  fun_orflags,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"OWNER",    fun_owner,    MAX_ARG, 1,  1,       0, CA_PUBLIC},

@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.55 2001-06-27 21:09:51 sdennis Exp $
+// $Id: externs.h,v 1.56 2001-07-03 17:15:55 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -704,6 +704,18 @@ extern void do_pemit_list
     int chPoseType,
     char *message
 );
+extern void do_pemit_single
+(
+    dbref player,
+    int key,
+    BOOL bDoContents,
+    int pemit_flags,
+    char *recipient,
+    int chPoseType,
+    char *message
+);
+extern void do_say(dbref player, dbref cause, int key, char *message);
+
 extern int boot_off(dbref player, char *message);
 extern void do_mail_clear(dbref player, char *msglist);
 extern void do_mail_purge(dbref player);
