@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.32 2002-09-24 01:29:46 sdennis Exp $
+// $Id: netcommon.cpp,v 1.33 2002-09-26 07:20:47 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2212,58 +2212,14 @@ BOOL do_command(DESC *d, char *command)
 
 void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
-    CLinearTimeAbsolute lsaNow;
-    lsaNow.GetUTC();
-
-    DESC *d;
-    DESC_ITER_PLAYER(executor, d)
+    if (key == CMD_PUEBLOCLIENT)
     {
-        CLinearTimeDelta ltdIdle = lsaNow - d->last_time;
-        int idletime = ltdIdle.ReturnSeconds();
-
-        if (idletime == 0)
+        DESC *d;
+        DESC_ITER_PLAYER(executor, d)
         {
-            switch (key)
-            {
-            case CMD_QUIT:
-                shutdownsock(d, R_QUIT);
-                return;
-
-            case CMD_LOGOUT:
-                shutdownsock(d, R_LOGOUT);
-                return;
-
-            case CMD_WHO:
-                dump_users(d, arg, CMD_WHO);
-                return;
-
-            case CMD_DOING:
-                dump_users(d, arg, CMD_DOING);
-                return;
-
-            case CMD_SESSION:
-                dump_users(d, arg, CMD_SESSION);
-                return;
-
-            case CMD_PREFIX:
-                set_userstring(&d->output_prefix, arg);
-                return;
-
-            case CMD_SUFFIX:
-                set_userstring(&d->output_suffix, arg);
-                return;
-
-            case CMD_INFO:
-                dump_info(d);
-                return;
-            }
-        }
-
-        if (key == CMD_PUEBLOCLIENT)
-        {
-            /* Set the descriptor's flag */
+            // Set the descriptor's flag.
             d->flags |= DS_PUEBLOCLIENT;
-            /* If we're already connected, set the player's flag */
+            // If we're already connected, set the player's flag.
             if (d->player)
             {
                 s_Html(d->player);
@@ -2271,6 +2227,57 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg
             queue_string(d, mudconf.pueblo_msg);
             queue_string(d, "\r\n");
         }
+        return;
+    }
+
+    DESC *d;
+    DESC *dLatest = NULL;
+    DESC_ITER_PLAYER(executor, d)
+    {
+        if (  dLatest == NULL
+           || dLatest->last_time < d->last_time)
+        {
+            dLatest = d;
+        }
+    }
+    if (dLatest == NULL)
+    {
+        return;
+    }
+
+    switch (key)
+    {
+    case CMD_QUIT:
+        shutdownsock(dLatest, R_QUIT);
+        break;
+
+    case CMD_LOGOUT:
+        shutdownsock(dLatest, R_LOGOUT);
+        break;
+
+    case CMD_WHO:
+        dump_users(dLatest, arg, CMD_WHO);
+        break;
+
+    case CMD_DOING:
+        dump_users(dLatest, arg, CMD_DOING);
+        break;
+
+    case CMD_SESSION:
+        dump_users(dLatest, arg, CMD_SESSION);
+        break;
+
+    case CMD_PREFIX:
+        set_userstring(&dLatest->output_prefix, arg);
+        break;
+
+    case CMD_SUFFIX:
+        set_userstring(&dLatest->output_suffix, arg);
+        break;
+
+    case CMD_INFO:
+        dump_info(dLatest);
+        break;
     }
 }
 
