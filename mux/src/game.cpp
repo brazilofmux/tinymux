@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.43 2004-06-07 16:35:39 sdennis Exp $
+// $Id: game.cpp,v 1.44 2004-06-08 17:32:58 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1527,6 +1527,8 @@ void fork_and_dump(int key)
             // process (mudstate.dumper == 0).
             //
             // See SIGCHLD handler in bsd.cpp.
+            //
+            mudstate.dumper = 0;
         }
 #endif
     }
