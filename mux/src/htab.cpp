@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.18 2004-08-18 22:02:48 sdennis Exp $
+// $Id: htab.cpp,v 1.19 2005-01-11 19:43:26 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -344,8 +344,7 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
     char *bp = buf;
 
     safe_str(prefix, buf, &bp);
-    NAMETAB *nt = ntab;
-    while (nt->name)
+    for (NAMETAB *nt = ntab; nt->name; nt++)
     {
         if (  God(player)
            || check_access(player, nt->perm))
