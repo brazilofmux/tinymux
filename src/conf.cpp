@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.55 2001-12-03 17:49:06 sdennis Exp $
+// $Id: conf.cpp,v 1.56 2001-12-04 23:56:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -388,7 +388,7 @@ void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...)
     {
         STARTLOG(LOG_STARTUP, "CNF", "SYNTX")
         log_text(cmd);
-        log_text((char *)": ");
+        log_text(": ");
         log_text(buf);
         ENDLOG;
     }
@@ -498,13 +498,13 @@ CF_HAND(cf_int)
 //
 NAMETAB bool_names[] =
 {
-    {(char *)"true",    1,  0,  1},
-    {(char *)"false",   1,  0,  0},
-    {(char *)"yes",     1,  0,  1},
-    {(char *)"no",      1,  0,  0},
-    {(char *)"1",       1,  0,  1},
-    {(char *)"0",       1,  0,  0},
-    {NULL,          0,  0,  0}
+    {"true",    1,  0,  1},
+    {"false",   1,  0,  0},
+    {"yes",     1,  0,  1},
+    {"no",      1,  0,  0},
+    {"1",       1,  0,  1},
+    {"0",       1,  0,  0},
+    {NULL,      0,  0,  0}
 };
 
 CF_HAND(cf_bool)
@@ -1297,7 +1297,7 @@ CF_HAND(cf_cf_access)
                 notify(player, NOPERM_MESSAGE);
                 STARTLOG(LOG_CONFIGMODS, "CFG", "PERM");
                 log_name(player);
-                log_text((char *) " tried to change access to static param: ");
+                log_text(" tried to change access to static param: ");
                 log_text(tp->pname);
                 ENDLOG;
                 return -1;
@@ -1632,27 +1632,27 @@ int cf_set(char *cp, char *ap, dbref player)
             {
                 STARTLOG(LOG_CONFIGMODS, "CFG", "UPDAT");
                 log_name(player);
-                log_text((char *)" entered config directive: ");
+                log_text(" entered config directive: ");
                 log_text(cp);
-                log_text((char *)" with args '");
+                log_text(" with args '");
                 log_text(buff);
-                log_text((char *)"'.  Status: ");
+                log_text("'.  Status: ");
                 switch (i)
                 {
                 case 0:
-                    log_text((char *)"Success.");
+                    log_text("Success.");
                     break;
 
                 case 1:
-                    log_text((char *)"Partial success.");
+                    log_text("Partial success.");
                     break;
 
                 case -1:
-                    log_text((char *)"Failure.");
+                    log_text("Failure.");
                     break;
 
                 default:
-                    log_text((char *)"Strange.");
+                    log_text("Strange.");
                 }
                 ENDLOG;
                 free_lbuf(buff);
@@ -1663,7 +1663,7 @@ int cf_set(char *cp, char *ap, dbref player)
 
     // Config directive not found.  Complain about it.
     //
-    cf_log_notfound(player, (char *)"Set", "Config directive", cp);
+    cf_log_notfound(player, "Set", "Config directive", cp);
     return -1;
 }
 

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.31 2001-11-20 05:17:54 sdennis Exp $
+// $Id: cque.cpp,v 1.32 2001-12-04 23:58:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1050,9 +1050,9 @@ void ShowPsLine(BQUE *tmp)
         {
             if (tmp->env[i] != NULL)
             {
-                safe_str((char *)"; Arg", bufp, &bp);
+                safe_str("; Arg", bufp, &bp);
                 safe_chr((char)(i + '0'), bufp, &bp);
-                safe_str((char *)"='", bufp, &bp);
+                safe_str("='", bufp, &bp);
                 safe_str(tmp->env[i], bufp, &bp);
                 safe_chr('\'', bufp, &bp);
             }
