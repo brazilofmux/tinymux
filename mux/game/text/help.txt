@@ -12602,7 +12602,7 @@ VACATION
 & VADD()
 VADD()
 
-  FUNCTION: vadd(<vector>,<vector>[,<delim>][,<output delim>])
+  FUNCTION: vadd(<vector|scalar>,<vector|scalar>[,<delim>][,<output delim>])
 
   Returns the result of either the addition of a vector by a scalar or the
   addition of two vectors.  A vector is a list of numbers separated by spaces
@@ -12796,9 +12796,10 @@ VMUL()
 & VSUB()
 VSUB()
 
-  FUNCTION: vsub(<vector>,<vector>[,<delimiter>][,<output delimiter>])
+  FUNCTION: vsub(<vector|scalar>,<vector|scalar>[,<delimiter>][,<output delimiter>])
 
-  Returns the difference between two vectors.
+  Returns the difference between two vectors, two scalars, or a combination of
+  either.
 
   Example:
     > think vsub(3 4 5,3 2 1)
