@@ -5904,10 +5904,11 @@ FUNCTION CLASSES (continued)
   Object Information:        ANDFLAGS APOSS ATTRCNT CHILDREN CMDS CON CONTROLS
                              DEFAULT EDEFAULT ELOCK EVAL FLAGS FULLNAME GET
                              GET_EVAL GREP GREPI HASATTR HASATTRP HASFLAG
-                             HASPOWER HASTYPE HOME LATTR LATTRCMDS LCMDS LCON
-                             LEXITS LFLAGS LPARENT LOCALIZE LOCK MONEY NAME
-                             OBJ OBJEVAL OBJMEM ORFLAGS OWNER PARENT PMATCH
-                             POSS S SUBJ TYPE U UDEFAULT ULOCAL V VISIBLE XGET
+                             HASPOWER HASTYPE HOME LATTR LATTRCMDS LATTRP
+                             LCMDS LCON LEXITS LFLAGS LPARENT LOCALIZE LOCK
+                             MONEY NAME OBJ OBJEVAL OBJMEM ORFLAGS OWNER
+                             PARENT PMATCH POSS S SUBJ TYPE U UDEFAULT ULOCAL
+                             V VISIBLE XGET
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNTOTAL
                              CTIME DOING FINDABLE HOST IDLE LWHO PLAYMEM PORTS
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ
@@ -5952,39 +5953,39 @@ FUNCTION LIST
     IFELSE()    ILEV()      IMUL()      INC()       INDEX()     INSERT()
     INZONE()    ISDBREF()   ISIGN()     ISNUM()     ISUB()      ISWORD()
     ITER()      ITEMS()     LADD()      LAST()      LATTR()     LATTRCMDS()
-    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()
-    LINK()      LIST()      LIT()       LJUST()     LN()        LNUM()
+    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
+    LFLAGS()    LINK()      LIST()      LIT()       LJUST()     LN()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()       LPARENT()
-    LPOS()      LRAND()     LROOMS()    LSTACK()    LT()        LTE()
-    LWHO()      NULL()      MAIL()      MAILFROM()  MAP()       MATCH()
-    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
-    MIX()       MOD()       MONEY()     MOTD()      MUDNAME()   MUL()
-    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
-    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()
-    ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()     PEEK()
-    PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()
-    POLL()      POP()       PORTS()     POS()       POSS()      POWER()
-    PUSH()      R()         RAND()      REGMATCH()  REMAINDER() REMIT()
-    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
-    RIGHT()     RJUST()     RLOC()      ROOM()      ROUND()     S()
-    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
-    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
-    SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()
-    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS()
-    STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()
-    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
-    TABLE()     TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE()
-    TRIM()      TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()
-    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
-    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
-    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME()
-    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()
+    LPARENT()   LPOS()      LRAND()     LROOMS()    LSTACK()    LT()
+    LTE()       LWHO()      NULL()      MAIL()      MAILFROM()  MAP()
+    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
+    MIN()       MIX()       MOD()       MONEY()     MOTD()      MUDNAME()
+    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
+    NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()
+    OR()        ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()
+    PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()
+    PMATCH()    POLL()      POP()       PORTS()     POS()       POSS()
+    POWER()     PUSH()      R()         RAND()      REGMATCH()  REMAINDER()
+    REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
+    REVWORDS()  RIGHT()     RJUST()     RLOC()      ROOM()      ROUND()
+    S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
+    SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHL()
+    SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
+    SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()
+    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()
+    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
+    T()         TABLE()     TAN()       TEL()       TIME()      TIMEFMT()
+    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
+    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
+    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
+    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
+    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -6960,7 +6961,7 @@ LATTR()
     > say lattr(me/v*)
     You say "VC VE VV"
 
-  Related Topics: attrcnt(), @dolist.
+  Related Topics: attrcnt(), @dolist, lattrp().
 
 & LATTRCMDS()
 LATTRCMDS()
@@ -6979,6 +6980,16 @@ LATTRCMDS()
     You say "CMD1 CMD2"
 
   Related Topics: lcmds().
+
+& LATTRP()
+LATTRP()
+
+  FUNCTION: lattrp(<object>[/<wild-pattern>])
+
+  Returns a list of the attributes set on <object> and it's parents.  If
+  <wild-pattern> is given, only attributes matching it are returned.
+
+  Related Topics: attrcnt(), @dolist, lattr().
 
 & LCMDS()
 LCMDS()
