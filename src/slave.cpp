@@ -4,7 +4,7 @@
 // The philosophy is to keep this program as simple/small as possible.
 // It does normal fork()s, so the smaller it is, the faster it goes.
 // 
-// $Id: slave.cpp,v 1.5 2000-12-03 04:49:32 sdennis Exp $
+// $Id: slave.cpp,v 1.6 2000-12-03 04:51:45 sdennis Exp $
 //
 #include "autoconf.h"
 
@@ -38,12 +38,13 @@ char *format_inet_addr(char *dest, long addr)
     return (dest + strlen(dest));
 }
 
-/*
- * copy a string, returning pointer to the null terminator of dest 
- */
+//
+// copy a string, returning pointer to the null terminator of dest 
+//
 char *stpcpy(char *dest, const char *src)
 {
-    while ((*dest = *src)) {
+    while ((*dest = *src))
+    {
         ++dest;
         ++src;
     }
@@ -77,19 +78,18 @@ int query(char *ip, char *orig_arg)
     {
         return -1;
     }
+    char *pHName = ip;
     hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
     if (hp)
     {
-        p = stpcpy(buf, ip);
-        *p++ = ' ';
-        p = stpcpy(p, hp->h_name);
-        *p++ = '\n';
-        *p++ = '\0';
+        pHName = hp->h_name;
     }
-    else
-    {
-        sprintf(buf, "%s %s\n", ip, ip);
-    }
+    p = stpcpy(buf, ip);
+    *p++ = ' ';
+    p = stpcpy(p, pHName);
+    *p++ = '\n';
+    *p++ = '\0';
+
     arg_for_errors = orig_arg;
     strcpy(arg, orig_arg);
     comma = (char *)strrchr(arg, ',');
