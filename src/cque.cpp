@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.18 2000-11-13 19:36:37 sdennis Exp $
+// $Id: cque.cpp,v 1.19 2000-11-15 02:50:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -273,11 +273,16 @@ int CallBack_HaltQueue(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * halt_que: Remove all queued commands from a certain player
- */
-
+// ------------------------------------------------------------------
+//
+// halt_que: Remove all queued commands that match (player, object).
+//
+// (NOTHING,  NOTHING)  matches all queue entries.
+// (NOTHING,  <object>) matches only queue entries run from <object>.
+// (<player>, NOTHING)  matches only queue entries owned by <player>.
+// (<player>, <object>) matches only queue entries run from <objects>
+//                      and owned by <player>.
+//
 int halt_que(dbref player, dbref object)
 {
     Halt_Player_Target = player;
@@ -383,7 +388,6 @@ void do_halt(dbref player, dbref cause, int key, char *target)
 }
 
 int Notify_Key;
-int Notify_Num_Requested;
 int Notify_Num_Done;
 int Notify_Num_Max;
 int Notify_Sem;
@@ -393,7 +397,8 @@ int CallBack_NotifySemaphore(PTASK_RECORD p)
 {
     // If we've notified enough, exit.
     //
-    if ((Notify_Key == NFY_NFY) && (Notify_Num_Done >= Notify_Num_Max))
+    if (  Notify_Key == NFY_NFY
+       && Notify_Num_Done >= Notify_Num_Max)
     {
         return IU_DONE;
     }
@@ -403,9 +408,11 @@ int CallBack_NotifySemaphore(PTASK_RECORD p)
         // This represents a semaphore.
         //
         BQUE *point = (BQUE *)(p->arg_voidptr);
-        if (  (point->sem == Notify_Sem)
-           && ((point->attr == Notify_Attr) || !Notify_Attr))
+        if (  point->sem == Notify_Sem
+           && (  point->attr == Notify_Attr
+              || !Notify_Attr))
         {
+            Notify_Num_Done++;
             if (Notify_Key == NFY_DRAIN)
             {
                 // Discard the command
@@ -444,30 +451,28 @@ int CallBack_NotifySemaphore(PTASK_RECORD p)
 
 int nfy_que(dbref sem, int attr, int key, int count)
 {
-    int aflags;
-    dbref aowner;
-    char *str;
-
-    int Notify_Num_Requested = 1;
+    int cSemaphore = 1;
     if (attr)
     {
-        str = atr_get(sem, attr, &aowner, &aflags);
-        Notify_Num_Requested = Tiny_atol(str);
+        int   aflags;
+        dbref aowner;
+        char *str = atr_get(sem, attr, &aowner, &aflags);
+        cSemaphore = Tiny_atol(str);
         free_lbuf(str);
     }
     
-    int Notify_Num_Done = 0;
-    if (Notify_Num_Requested > 0)
+    Notify_Num_Done = 0;
+    if (cSemaphore > 0)
     {
-        Notify_Key  = key;
-        Notify_Sem  = sem;
-        Notify_Attr = attr;
-        Notify_Num_Max  = count;
+        Notify_Key     = key;
+        Notify_Sem     = sem;
+        Notify_Attr    = attr;
+        Notify_Num_Max = count;
         scheduler.TraverseUnordered(CallBack_NotifySemaphore);
     }
     
     // Update the sem waiters count.
-    //   
+    //
     if (key == NFY_NFY)
     {
         add_to(sem, -count, attr);
@@ -537,9 +542,13 @@ void do_notify(dbref player, dbref cause, int key, char *what, char *count)
         }
         
         if (count && *count)
+        {
             loccount = Tiny_atol(count);
+        }
         else
+        {
             loccount = 1;
+        }
         if (loccount > 0)
         {
             nfy_que(thing, attr, key, loccount);

@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.9 2000-11-12 11:06:13 sdennis Exp $
+// $Id: object.cpp,v 1.10 2000-11-15 02:50:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -460,7 +460,7 @@ void destroy_obj(dbref player, dbref obj)
             notify(owner, "Halted.");
         }
     }
-    nfy_que(obj, 0, NFY_DRAIN, 0);
+    nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
 
     // Remove forwardlists and stacks.
     //
