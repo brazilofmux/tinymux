@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.49 2001-06-08 23:44:17 sdennis Exp $
+// $Id: externs.h,v 1.50 2001-06-09 08:48:44 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -526,6 +526,9 @@ extern void ReleaseAllResources(dbref obj);
 #define SAY_ROOM    128 /* Output to containing room */
 #define SAY_HTML    256     /* Don't output a newline */
 #define SET_QUIET   1   /* Don't display 'Set.' message. */
+#define SHOUT_DEFAULT 0  /* Default @wall message */
+#define SHOUT_WIZARD  1  /* @wizwall */
+#define SHOUT_ADMIN   2  /* @wall/admin */
 #define SHUTDN_NORMAL   0   /* Normal shutdown */
 #define SHUTDN_PANIC    1   /* Write a panic dump file */
 #define SHUTDN_EXIT 2   /* Exit from shutdown code */

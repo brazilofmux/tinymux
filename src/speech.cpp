@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.7 2001-02-25 21:45:14 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.8 2001-06-09 08:47:55 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -56,12 +56,43 @@ int sp_ok(dbref player)
     return 1;
 }
 
+void wall_broadcast(int target, dbref player, char *message)
+{
+    DESC *d;
+    DESC_ITER_CONN(d)
+    {
+        switch (target)
+        {
+        case SHOUT_WIZARD:
+
+            if (Wizard(d->player))
+            {
+                notify_with_cause(d->player, player, message);
+            }
+            break;
+
+        case SHOUT_ADMIN:
+
+            if (WizRoy(d->player))
+            {
+                notify_with_cause(d->player, player, message);
+            }
+            break;
+
+        default:
+
+            notify_with_cause(d->player, player, message);
+            break;
+        }
+    }
+}
+
 static void say_shout(int target, const char *prefix, int flags, dbref player, char *message)
 {
     if (flags & SAY_NOTAG)
-        raw_broadcast(target, "%s%s", Name(player), message);
+        wall_broadcast(target, player, tprintf("%s%s", Name(player), message));
     else
-        raw_broadcast(target, "%s%s%s", prefix, Name(player), message);
+        wall_broadcast(target, player, tprintf("%s%s%s", prefix, Name(player), message));
 }
 
 static const char *announce_msg = "Announcement: ";
@@ -219,12 +250,12 @@ void do_say(dbref player, dbref cause, int key, char *message)
         switch (*message) {
         case ':':
             message[0] = ' ';
-            say_shout(WIZARD, broadcast_msg, say_flags, player,
+            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, player,
                   message);
             break;
         case ';':
             message++;
-            say_shout(WIZARD, broadcast_msg, say_flags, player,
+            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, player,
                   message);
             break;
         case '"':
@@ -236,7 +267,7 @@ void do_say(dbref player, dbref cause, int key, char *message)
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
-            say_shout(WIZARD, broadcast_msg, say_flags, player,
+            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, player,
                   buf2);
             free_lbuf(buf2);
         }
@@ -251,16 +282,12 @@ void do_say(dbref player, dbref cause, int key, char *message)
         switch (*message) {
         case ':':
             message[0] = ' ';
-            say_shout(WIZARD, admin_msg, say_flags, player,
-                  message);
-            say_shout(ROYALTY, admin_msg, say_flags, player,
+            say_shout(SHOUT_ADMIN, admin_msg, say_flags, player,
                   message);
             break;
         case ';':
             message++;
-            say_shout(WIZARD, admin_msg, say_flags, player,
-                  message);
-            say_shout(ROYALTY, admin_msg, say_flags, player,
+            say_shout(SHOUT_ADMIN, admin_msg, say_flags, player,
                   message);
             break;
         case '"':
@@ -272,9 +299,7 @@ void do_say(dbref player, dbref cause, int key, char *message)
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
-            say_shout(WIZARD, admin_msg, say_flags, player,
-                  buf2);
-            say_shout(ROYALTY, admin_msg, say_flags, player,
+            say_shout(SHOUT_ADMIN, admin_msg, say_flags, player,
                   buf2);
             free_lbuf(buf2);
         }
@@ -288,13 +313,12 @@ void do_say(dbref player, dbref cause, int key, char *message)
     case SAY_WALLPOSE:
         if (say_flags & SAY_NOTAG)
         {
-            raw_broadcast(0, "%s %s", Name(player), message);
+            wall_broadcast(0, player, tprintf("%s %s", Name(player), message));
         }
         else
         {
-            raw_broadcast(0, "Announcement: %s %s", Name(player), message);
+            wall_broadcast(0, player, tprintf("Announcement: %s %s", Name(player), message));
         }
-
         STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
         log_name(player);
         log_text(" WALLposes: ");
@@ -305,11 +329,11 @@ void do_say(dbref player, dbref cause, int key, char *message)
     case SAY_WIZPOSE:
         if (say_flags & SAY_NOTAG)
         {
-            raw_broadcast(WIZARD, "%s %s", Name(player), message);
+            wall_broadcast(SHOUT_WIZARD, player, tprintf("%s %s", Name(player), message));
         }
         else
         {
-            raw_broadcast(WIZARD, "Broadcast: %s %s", Name(player), message);
+            wall_broadcast(SHOUT_WIZARD, player, tprintf("Broadcast: %s %s", Name(player), message));
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
         log_name(player);
@@ -321,11 +345,11 @@ void do_say(dbref player, dbref cause, int key, char *message)
     case SAY_WALLEMIT:
         if (say_flags & SAY_NOTAG)
         {
-            raw_broadcast(0, "%s", message);
+            wall_broadcast(0, player, tprintf("%s", message));
         }
         else
         {
-            raw_broadcast(0, "Announcement: %s", message);
+            wall_broadcast(0, player, tprintf("Announcement: %s", message));
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
         log_name(player);
@@ -337,11 +361,11 @@ void do_say(dbref player, dbref cause, int key, char *message)
     case SAY_WIZEMIT:
         if (say_flags & SAY_NOTAG)
         {
-            raw_broadcast(WIZARD, "%s", message);
+           wall_broadcast(SHOUT_WIZARD, player, tprintf("%s", message));
         }
         else
         {
-            raw_broadcast(WIZARD, "Broadcast: %s", message);
+           wall_broadcast(SHOUT_WIZARD, player, tprintf("Broadcast: %s", message));
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
         log_name(player);
