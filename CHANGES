@@ -92,6 +92,8 @@ Feature Additions:
  --  Added a 'report' command that shows a distribution of 'last logged in'
      times for a week in 8 hour intervals. 
  --  Updated lnum() function to accept three arguments.
+ --  Enhanced secs(), convsecs(), time(), and convtime() to handle both
+     UTC and local timezones with room for others.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -210,6 +212,7 @@ Bug Fixes:
  --  Found memory leak in !MEMORY_BASED + RADIX_COMPRESSION.
  --  Found typo that prevented !MEMORY_BASED + RADIX_COMPRESSION configuration
      from compiling.
+ --  Fixed the way convtime() mishandled daylight savings time.
 
 
 Performance Enhancements:
