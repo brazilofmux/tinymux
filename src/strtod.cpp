@@ -1,10 +1,8 @@
-/*  $NetBSD: strtod.c,v 1.39 2002/01/28 00:10:04 kleink Exp $   */
-
 /****************************************************************
  *
  * The author of this software is David M. Gay.
  *
- * Copyright (c) 1991 by AT&T.
+ * Copyright (c) 1991, 2000, 2001 by Lucent Technologies.
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose without fee is hereby granted, provided that this entire notice
@@ -13,7 +11,7 @@
  * documentation for such software.
  *
  * THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
- * WARRANTY.  IN PARTICULAR, NEITHER THE AUTHOR NOR AT&T MAKES ANY
+ * WARRANTY.  IN PARTICULAR, NEITHER THE AUTHOR NOR LUCENT MAKES ANY
  * REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
  * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
  *
@@ -21,11 +19,22 @@
 
 /* Please send bug reports to
     David M. Gay
-    AT&T Bell Laboratories, Room 2C-463
+    Bell Laboratories, Room 2C-463
     600 Mountain Avenue
-    Murray Hill, NJ 07974-2070
+    Murray Hill, NJ 07974-0636
     U.S.A.
-    dmg@research.att.com or research!dmg
+    dmg@bell-labs.com
+ */
+
+/* On a machine with IEEE extended-precision registers, it is
+ * necessary to specify double-precision (53-bit) rounding precision
+ * before invoking strtod or dtoa.  If the machine uses (the equivalent
+ * of) Intel 80x87 arithmetic, the call
+ *     _control87(PC_53, MCW_PC);
+ * does this with many compilers.  Whether this or another call is
+ * appropriate depends on the compiler; for this to work, it may be
+ * necessary to #include "float.h" or another system-dependent header
+ * file.
  */
 
 /* strtod for IEEE-, VAX-, and IBM-arithmetic machines.
