@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.27 2002-07-14 04:23:26 sdennis Exp $
+// $Id: command.cpp,v 1.28 2002-07-14 05:12:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -796,15 +796,33 @@ BOOL check_access(dbref player, int mask)
 
     if (mask & CA_MUSTBE_MASK)
     {
-        if (  !((mask & CA_WIZARD)   && Wizard(player))
-           && !((mask & CA_ADMIN)    && WizRoy(player))
-           && !((mask & CA_BUILDER)  && Builder(player))
-           && !((mask & CA_STAFF)    && Staff(player))
-           && !((mask & CA_HEAD)     && Head(player))
-           && !((mask & CA_ANNOUNCE) && Announce(player))
-           && !((mask & CA_IMMORTAL) && Immortal(player))
-           && !((mask & CA_UNINS)    && Uninspected(player))
-           && !((mask & CA_ROBOT)    && Robot(player)))
+        // Since CA_GOD by itself is a frequent case, for the sake of
+        // performance, we test CA_GOD specifically. If CA_GOD were ever
+        // combined with anything, it would be passed through to the general
+        // case.
+        //
+        if ((mask & CA_MUSTBE_MASK) == CA_GOD)
+        {
+            return FALSE;
+        }
+
+        // Since God(player) is always FALSE here, CA_GOD is still handled by
+        // the following code even though it doesn't appear in any of the
+        // cases explicitly.  CA_WIZARD by itself is also a common case, but
+        // since we have have a bit (mask & CA_MUSTBE_MASK), and since that
+        // bit is not a lone CA_GOD bit (handled above), and since CA_WIZARD
+        // it tested first below, it doesn't make sense to test CA_WIZARD
+        // as a special case.
+        //
+        if (!(  ((mask & CA_WIZARD)   && Wizard(player))
+             || ((mask & CA_ADMIN)    && WizRoy(player))
+             || ((mask & CA_BUILDER)  && Builder(player))
+             || ((mask & CA_STAFF)    && Staff(player))
+             || ((mask & CA_HEAD)     && Head(player))
+             || ((mask & CA_ANNOUNCE) && Announce(player))
+             || ((mask & CA_IMMORTAL) && Immortal(player))
+             || ((mask & CA_UNINS)    && Uninspected(player))
+             || ((mask & CA_ROBOT)    && Robot(player))))
         {
             return FALSE;
         }
@@ -812,15 +830,18 @@ BOOL check_access(dbref player, int mask)
     
     // Check for forbidden flags.
     //
-    if (  !Wizard(player)
-       && (  ((mask & CA_NO_HAVEN)   && Player_haven(player))
+    if (  (mask & CA_CANTBE_MASK)
+       && !Wizard(player))
+    {
+       if (  ((mask & CA_NO_HAVEN)   && Player_haven(player))
           || ((mask & CA_NO_ROBOT)   && Robot(player))
           || ((mask & CA_NO_SLAVE)   && Slave(player))
           || ((mask & CA_NO_SUSPECT) && Suspect(player))
           || ((mask & CA_NO_GUEST)   && Guest(player))
-          || ((mask & CA_NO_UNINS)   && Uninspected(player))))
-    {
-        return FALSE;
+          || ((mask & CA_NO_UNINS)   && Uninspected(player)))
+       {
+           return FALSE;
+       }
     }
     return TRUE;
 }
