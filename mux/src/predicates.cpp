@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.13 2002-06-14 05:54:08 sdennis Exp $
+// $Id: predicates.cpp,v 1.14 2002-06-14 06:00:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1529,8 +1529,13 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
     }
 #endif
 
-    int mDeny = 0;
     int mAllow = AF_VISUAL;
+    if (  (tattr->flags & mAllow)
+       || (aflags & mAllow))
+    {
+        return TRUE;
+    }
+    int mDeny = 0;
     if (WizRoy(executor))
     {
         if (God(executor))
@@ -1558,11 +1563,6 @@ BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bCheckParent)
         {
             mDeny = AF_INTERNAL|AF_DARK|AF_MDARK|AF_ODARK;
         }
-    }
-    if (  (tattr->flags & mAllow)
-       || (aflags & mAllow))
-    {
-        return TRUE;
     }
     if (mDeny)
     {
