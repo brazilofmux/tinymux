@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.6 2002-08-22 01:00:27 sdennis Exp $
+// $Id: wild.cpp,v 1.7 2003-01-05 19:10:55 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -32,7 +32,7 @@ static int numargs;
 //
 // This routine will cause crashes if fed NULLs instead of strings.
 //
-BOOL quick_wild(char *tstr, const char *dstr)
+BOOL quick_wild(const char *tstr, const char *dstr)
 {
     if (mudstate.wild_invk_ctr >= mudconf.wild_invk_lim)
     {
