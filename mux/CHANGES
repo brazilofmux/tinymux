@@ -224,6 +224,9 @@ Bug Fixes:
     first argument instead of the second one. Reported by Sean Hunter.
  -- Fixed bug in fh_god where permission failures were still reported as
     success.  Reported by Sean Hunter.
+ -- Accept a single '\' as well as the previously accepted '\\' for an @emit.
+    Reported by Vadiv while he was comparing to PennMUSH.  The Tiny* servers
+    escape the single '\' away early in the command processing.
 
 
 
