@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.25 2002-07-09 15:51:41 sdennis Exp $
+// $Id: predicates.cpp,v 1.26 2002-07-09 16:05:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -250,7 +250,9 @@ BOOL payfor(dbref who, int cost)
     if (  Wizard(who)
        || Wizard(Owner(who))
        || Free_Money(who) 
-       || Free_Money(Owner(who))) 
+       || Free_Money(Owner(who)) 
+       || Immortal(who)
+       || Immortal(Owner(who)))
     {
         return TRUE;
     }
@@ -282,7 +284,9 @@ void giveto(dbref who, int pennies)
     if (  Wizard(who)
        || Wizard(Owner(who))
        || Free_Money(who)
-       || Free_Money(Owner(who)))
+       || Free_Money(Owner(who))
+       || Immortal(who)
+       || Immortal(Owner(who)))
     {
         return;
     }
@@ -1321,6 +1325,7 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
         }
 
         // If string started with a ', skip past it
+        //
         if (place == target)
         {
             target++;
@@ -1328,6 +1333,7 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
         }
 
         // If next character is not an s or a space, skip past
+        //
         temp = target++;
         if (!*target)
         {
@@ -1707,12 +1713,12 @@ BOOL locatable(dbref player, dbref it, dbref enactor)
     //
     if (  Examinable(player, it)
        || Find_Unfindable(player)
-       || (loc_it == player)
-       || (  (loc_it != NOTHING) 
-          && (Examinable(player, loc_it)
-          || loc_it == where_is(player)))
+       || loc_it == player
+       || (  loc_it != NOTHING 
+          && (  Examinable(player, loc_it)
+             || loc_it == where_is(player)))
        || Wizard(enactor)
-       || (it == enactor))
+       || it == enactor)
     {
         return TRUE;
     }
@@ -1731,10 +1737,11 @@ BOOL locatable(dbref player, dbref it, dbref enactor)
     // Succeed if we control the containing room or if the target is findable
     // and the containing room is not unfindable.
     //
-    if (  (  (room_it != NOTHING)
+    if (  (  room_it != NOTHING
           && Examinable(player, room_it))
        || Find_Unfindable(player)
-       || (Findable(it) && findable_room))
+       || (  Findable(it)
+          && findable_room))
     {
         return TRUE;
     }
