@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.11 2000-06-30 23:09:03 sdennis Exp $
+// $Id: cque.cpp,v 1.12 2000-08-03 21:12:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -26,8 +26,8 @@ extern int FDECL(QueueMax, (dbref));
 
 CLinearTimeDelta GetProcessorUsage(void)
 {
-#ifdef WIN32
     CLinearTimeDelta ltd;
+#ifdef WIN32
     if (platform == VER_PLATFORM_WIN32_NT)
     {
         FILETIME ftCreate;
