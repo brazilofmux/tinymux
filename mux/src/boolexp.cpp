@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.14 2003-02-04 08:33:47 sdennis Exp $
+// $Id: boolexp.cpp,v 1.15 2004-06-25 17:02:10 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -446,7 +446,7 @@ static BOOLEXP *parse_boolexp_L(void)
                 return TRUE_BOOLEXP;
             }
             b->thing = Tiny_atol(&buf[1]);
-            if (!Good_obj(b->thing))
+            if (!Good_dbref(b->thing))
             {
                 free_lbuf(buf);
                 free_bool(b);
