@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.31 2004-09-21 04:18:40 sdennis Exp $
+// $Id: externs.h,v 1.32 2004-12-31 00:12:16 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -706,7 +706,7 @@ extern void list_system_resources(dbref player);
 #define ACTION_IS_STATIONARY    0
 #define ACTION_IS_MOVING        1
 #define ACTION_IS_TALKING       2
-#define NUMBER_OF_ACTIONS       3  // A count, n, of the number of possible actions 0...n
+#define NUMBER_OF_ACTIONS       3  // A count, n, of the number of possible actions 0...n-1
 
 #define REALM_DO_NORMALLY_SEEN        1
 #define REALM_DO_HIDDEN_FROM_YOU      2
