@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.19 2002-07-17 06:58:14 sdennis Exp $
+// $Id: comsys.cpp,v 1.20 2002-07-18 03:56:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -20,6 +20,11 @@ int num_channels;
 int max_channels;
 struct channel **channels;
 comsys_t *comsys_table[NUM_COMSYS];
+
+#define MIN_RECALL 10
+#define MAX_RECALL 200
+#define DEFAULT_RECALL 0
+extern iMod(int x, int y);
 
 // Return value must be free_lbuf'ed.
 //
@@ -920,6 +925,11 @@ void do_processcom(dbref player, char *arg1, char *arg2)
     {
         do_comwho(player, ch);
     }
+    else if (  !strncmp(arg2, "last ", 5)
+            && is_rational(arg2 + 5))
+    {
+        do_comlast(player, ch, Tiny_atol(arg2 + 5));
+    }
     else if (!do_test_access(player, CHANNEL_TRANSMIT, ch))
     {
         raw_notify(player, "That channel type cannot be transmitted on.");
@@ -979,6 +989,33 @@ void SendChannelMessage
             }
         }
     }
+        
+    dbref obj = ch->chan_obj;
+    if (Good_obj(obj))
+    {
+        dbref aowner;
+        int aflags;
+        int logmax = DEFAULT_RECALL;
+        char *maxbuf;
+        ATTR *attr;
+        if (  (attr = atr_str("MAX_LOG"))
+           && (attr->number))
+        {
+            maxbuf = atr_get(obj, attr->number, &aowner, &aflags);
+            logmax = Tiny_atol(maxbuf);
+            free_lbuf(maxbuf);
+        }
+        if (logmax > 0)
+        {
+            if (logmax > MAX_RECALL)
+            {
+                atr_add(ch->chan_obj, attr->number, Tiny_ltoa_t(MAX_RECALL), GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
+            }
+            int atr = mkattr(tprintf("HISTORY_%d", iMod(ch->num_messages, logmax)));
+            atr_add(ch->chan_obj, atr, msgNormal, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
+        }
+    }
+
 
     // Since msgNormal and msgNoComTitle are no longer needed, free them here.
     //
@@ -1163,6 +1200,96 @@ void do_comwho(dbref player, struct channel *ch)
         }
     }
     raw_notify(player, tprintf("-- %s --", ch->name));
+}
+
+void do_comlast(dbref player, struct channel *ch, int arg)
+{ 
+    if (!Good_obj(ch->chan_obj))
+    {
+        raw_notify(player, "Channel does not have an object.");
+        return;
+    }
+    dbref aowner;
+    int aflags;
+    dbref obj = ch->chan_obj;
+    int logmax = MAX_RECALL;
+    ATTR *attr;
+    if (  (attr = atr_str("MAX_LOG"))
+       && (atr_get_info(obj, attr->number, &aowner, &aflags)))
+    {
+        char *maxbuf = atr_get(obj, attr->number, &aowner, &aflags);
+        logmax = Tiny_atol(maxbuf);
+        free_lbuf(maxbuf);
+    }
+    if (logmax < 1)
+    {
+        raw_notify(player, "Channel does not log.");
+        return;
+    }
+    if (arg < MIN_RECALL)
+    {
+        arg = MIN_RECALL;
+    }
+    if (arg > logmax)
+    {
+        arg = logmax;
+    }
+
+    char *message = alloc_lbuf("do_comlast");
+    int histnum = ch->num_messages - arg;
+
+    raw_notify(player, "-- Begin Comsys Recall --");
+    for (int count = 0; count < arg; count++)
+    {
+        histnum++;
+        attr = atr_str(tprintf("HISTORY_%d", iMod(histnum, logmax)));
+        if (attr)
+        {
+            message = atr_get(obj, attr->number, &aowner, &aflags);
+        }
+        raw_notify(player, message);
+    }
+    raw_notify(player, "-- End Comsys Recall --");
+    free_lbuf(message);
+}
+
+BOOL do_chanlog(dbref player, char *channel, char *arg)
+{
+    int value ;
+    if (  !*arg
+       || !is_rational(arg)
+       || (value = Tiny_atol(arg)) > MAX_RECALL)
+    {
+        return FALSE;
+    }
+    if (value < 0)
+    {
+        value = 0;
+    }
+    struct channel *ch = select_channel(channel);
+    int atr = mkattr("MAX_LOG");
+    char *oldvalue;
+    dbref aowner;
+    int aflags;
+    if (oldvalue = atr_get(ch->chan_obj, atr, &aowner, &aflags))
+    {
+        int oldnum = Tiny_atol(oldvalue);
+        if (oldnum > value)
+        {
+            ATTR *hist;
+            for (int count = 0; count <= oldnum; count++)
+            {
+                hist = atr_str(tprintf("HISTORY_%d", count));
+                if (hist)
+                {
+                    atr_clr(ch->chan_obj, hist->number);
+                }
+            }
+        }
+        free_lbuf(oldvalue);
+    }
+    atr_add(ch->chan_obj, atr, Tiny_ltoa_t(value), GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
+    return TRUE;
 }
 
 struct channel *select_channel(char *channel)
@@ -2112,9 +2239,6 @@ void do_editchannel
     char *arg2
 )
 {
-    char *s;
-    BOOL add_remove = TRUE;
-
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -2131,7 +2255,9 @@ void do_editchannel
         raw_notify(executor, "You do not have permission to do that. (Not owner or Admin.)");
         return;
     }
-    s = arg2;
+
+    BOOL add_remove = TRUE;
+    char *s = arg2;
     if (*s == '!')
     {
         add_remove = FALSE;
@@ -2466,6 +2592,17 @@ void do_chopen
     case CSET_HEADER:
         do_cheader(executor, chan, value);
         msg = "Set.";
+        break;
+
+    case CSET_LOG:
+        if (do_chanlog(executor, chan, value))
+        {
+            msg = tprintf("@cset: Channel %s maximum history set.", chan);
+        }
+        else
+        {
+            msg = tprintf("@cset: Maximum history must be a number less than or equal to %d.", MAX_RECALL);
+        }
         break;
     }
     raw_notify(executor, msg);

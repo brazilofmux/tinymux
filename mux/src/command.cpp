@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.34 2002-07-18 02:56:58 jake Exp $
+// $Id: command.cpp,v 1.35 2002-07-18 03:56:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -81,7 +81,8 @@ NAMETAB cset_sw[] =
 {
     {"anon",            1,  CA_PUBLIC,  CSET_SPOOF},
     {"list",            2,  CA_PUBLIC,  CSET_LIST},
-    {"loud",            2,  CA_PUBLIC,  CSET_LOUD},
+    {"loud",            3,  CA_PUBLIC,  CSET_LOUD},
+    {"log" ,            3,  CA_PUBLIC,  CSET_LOG},
     {"mute",            1,  CA_PUBLIC,  CSET_QUIET},
     {"nospoof",         1,  CA_PUBLIC,  CSET_NOSPOOF},
     {"object",          1,  CA_PUBLIC,  CSET_OBJECT},

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.31 2002-07-17 00:51:10 jake Exp $
+// $Id: externs.h,v 1.32 2002-07-18 03:56:53 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -347,6 +347,7 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define CSET_SPOOF      6   /* Sets the channel spoofable */
 #define CSET_NOSPOOF    7   /* Sets the channel non-spoofable */
 #define CSET_HEADER     8   /* Sets the channel header, like "[Public]" */
+#define CSET_LOG        9   // Set maximum number of messages to log.
 #define DBCK_DEFAULT    1   /* Get default tests too */
 #define DBCK_REPORT     2   /* Report info to invoker */
 #define DBCK_FULL       4   /* Do all tests */
