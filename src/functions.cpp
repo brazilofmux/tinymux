@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.1 2000-04-11 07:14:44 sdennis Exp $
+// $Id: functions.cpp,v 1.2 2000-04-11 21:18:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1071,24 +1071,24 @@ static void do_ufun(char *buff, char **bufc, dbref player, dbref cause,
             int is_local)
 {
     dbref aowner, thing;
-    int aflags, anum, i;
+    int aflags, anum;
     ATTR *ap;
-    char *atext, *preserve[MAX_GLOBAL_REGS], *str;
+    char *atext, *str;
+    char *preserve[MAX_GLOBAL_REGS];
+    int preserve_len[MAX_GLOBAL_REGS];
 
-    /*
-     * We need at least one argument 
-     */
-
+    // We need at least one argument.
+    //
     if (nfargs < 1) 
     {
         safe_str("#-1 TOO FEW ARGUMENTS", buff, bufc);
         return;
     }
-    /*
-     * Two possibilities for the first arg: <obj>/<attr> and <attr>. 
-     */
 
-    if (parse_attrib(player, fargs[0], &thing, &anum)) {
+    // Two possibilities for the first arg: <obj>/<attr> and <attr>.
+    //
+    if (parse_attrib(player, fargs[0], &thing, &anum))
+    {
         if ((anum == NOTHING) || (!Good_obj(thing)))
             ap = NULL;
         else
@@ -1128,17 +1128,9 @@ static void do_ufun(char *buff, char **bufc, dbref player, dbref cause,
 
     if (is_local)
     {
-        for (i = 0; i < MAX_GLOBAL_REGS; i++)
-        {
-            if (!mudstate.global_regs[i])
-                preserve[i] = NULL;
-            else
-            {
-                preserve[i] = alloc_lbuf("u_regs");
-                StringCopy(preserve[i], mudstate.global_regs[i]);
-            }
-        }
+        save_global_regs("fun_ulocal_save", preserve, preserve_len);
     }
+
     /*
      * Evaluate it using the rest of the passed function args 
      */
@@ -1153,21 +1145,7 @@ static void do_ufun(char *buff, char **bufc, dbref player, dbref cause,
 
     if (is_local)
     {
-        for (i = 0; i < MAX_GLOBAL_REGS; i++)
-        {
-            if (preserve[i])
-            {
-                if (!mudstate.global_regs[i])
-                    mudstate.global_regs[i] = alloc_lbuf("u_reg");
-                StringCopy(mudstate.global_regs[i], preserve[i]);
-                free_lbuf(preserve[i]);
-            }
-            else
-            {
-                if (mudstate.global_regs[i])
-                    *(mudstate.global_regs[i]) = '\0';
-            }
-        }
+        restore_global_regs("fun_ulocal_restore", preserve, preserve_len);
     }
 }
 
@@ -3687,27 +3665,31 @@ FUNCTION(fun_lattr)
     int ca, first;
     ATTR *attr;
 
-    /*
-     * Check for wildcard matching.  parse_attrib_wild checks for read *
-     * * * * permission, so we don't have to.  Have p_a_w assume the * *
-     * slash-star * * if it is missing. 
-     */
-
+    // Check for wildcard matching.  parse_attrib_wild checks for read
+    // permission, so we don't have to.  Have p_a_w assume the
+    // slash-star if it is missing.
+    //
     first = 1;
-    if (parse_attrib_wild(player, fargs[0], &thing, 0, 0, 1)) {
-        for (ca = olist_first(); ca != NOTHING; ca = olist_next()) {
+    if (parse_attrib_wild(player, fargs[0], &thing, 0, 0, 1))
+    {
+        for (ca = olist_first(); ca != NOTHING; ca = olist_next())
+        {
             attr = atr_num(ca);
-            if (attr) {
+            if (attr)
+            {
                 if (!first)
+                {
                     safe_chr(' ', buff, bufc);
+                }
                 first = 0;
                 safe_str((char *)attr->name, buff, bufc);
             }
         }
-    } else {
+    }
+    else
+    {
         safe_str("#-1 NO MATCH", buff, bufc);
     }
-    return;
 }
 
 /*
@@ -5392,13 +5374,19 @@ FUNCTION(fun_setq)
     int regnum;
 
     regnum = Tiny_atol(fargs[0]);
-    if ((regnum < 0) || (regnum >= MAX_GLOBAL_REGS)) {
+    if ((regnum < 0) || (regnum >= MAX_GLOBAL_REGS))
+    {
         safe_str("#-1 INVALID GLOBAL REGISTER", buff, bufc);
-    } else {
+    }
+    else
+    {
         if (!mudstate.global_regs[regnum])
-            mudstate.global_regs[regnum] =
-                alloc_lbuf("fun_setq");
-        StringCopy(mudstate.global_regs[regnum], fargs[1]);
+        {
+            mudstate.global_regs[regnum] = alloc_lbuf("fun_setq");
+        }
+        int n = strlen(fargs[1]);
+        memcpy(mudstate.global_regs[regnum], fargs[1], n+1);
+        mudstate.glob_reg_len[regnum] = n;
     }
 }
 
@@ -5407,16 +5395,23 @@ FUNCTION(fun_setr)
     int regnum;
 
     regnum = Tiny_atol(fargs[0]);
-    if ((regnum < 0) || (regnum >= MAX_GLOBAL_REGS)) {
+    int n;
+    if ((regnum < 0) || (regnum >= MAX_GLOBAL_REGS))
+    {
         safe_str("#-1 INVALID GLOBAL REGISTER", buff, bufc);
         return;
-    } else {
-        if (!mudstate.global_regs[regnum])
-            mudstate.global_regs[regnum] =
-                alloc_lbuf("fun_setq");
-        StringCopy(mudstate.global_regs[regnum], fargs[1]);
     }
-    safe_str(fargs[1], buff, bufc);
+    else
+    {
+        if (!mudstate.global_regs[regnum])
+        {
+            mudstate.global_regs[regnum] = alloc_lbuf("fun_setq");
+        }
+        n = strlen(fargs[1]);
+        memcpy(mudstate.global_regs[regnum], fargs[1], n+1);
+        mudstate.glob_reg_len[regnum] = n;
+    }
+    safe_copy_buf(fargs[1], n, buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_r)
@@ -5424,10 +5419,14 @@ FUNCTION(fun_r)
     int regnum;
 
     regnum = Tiny_atol(fargs[0]);
-    if ((regnum < 0) || (regnum >= MAX_GLOBAL_REGS)) {
+    if ((regnum < 0) || (regnum >= MAX_GLOBAL_REGS))
+    {
         safe_str("#-1 INVALID GLOBAL REGISTER", buff, bufc);
-    } else if (mudstate.global_regs[regnum]) {
-        safe_str(mudstate.global_regs[regnum], buff, bufc);
+    }
+    else if (mudstate.global_regs[regnum])
+    {
+        safe_copy_buf(mudstate.global_regs[regnum],
+            mudstate.glob_reg_len[regnum], buff, bufc, LBUF_SIZE-1);
     }
 }
 

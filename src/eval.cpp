@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.1 2000-04-11 07:14:44 sdennis Exp $
+// $Id: eval.cpp,v 1.2 2000-04-11 21:18:06 sdennis Exp $
 //
 
 // MUX 2.0
@@ -966,12 +966,13 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
 {
     char *fargs[MAX_ARG];
     char *preserve[MAX_GLOBAL_REGS];
+    int preserve_len[MAX_GLOBAL_REGS];
     char *TempPtr;
     char *tstr, *tbuf, *atr_gotten, *start, *oldp, *savestr;
     int ch;
     char *realbuff = NULL, *realbp = NULL;
     dbref aowner;
-    int at_space, nfargs, gender, j, aflags, feval, i;
+    int at_space, nfargs, gender, aflags, feval, i;
     int is_trace, is_top, save_count;
     int ansi = 0;
     FUN *fp;
@@ -1053,17 +1054,10 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
             if (i > nBufferAvailable)
             {
                 i = nBufferAvailable;
-                nBufferAvailable = 0;
             }
-            else
-            {
-                nBufferAvailable -= i;
-            }
-            if (i)
-            {
-                memcpy(*bufc, *dstr, i);
-                *bufc = (*bufc) + i;
-            }
+            memcpy(*bufc, *dstr, i);
+            nBufferAvailable -= i;
+            *bufc += i;
             at_space = 0;
         }
 
@@ -1219,18 +1213,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             
                             if (ufp->flags & FN_PRES)
                             {
-                                for (j = 0; j < MAX_GLOBAL_REGS; j++)
-                                {
-                                    if (!mudstate.global_regs[j])
-                                    {
-                                        preserve[j] = NULL;
-                                    }
-                                    else
-                                    {
-                                        preserve[j] = alloc_lbuf("eval_regs");
-                                        StringCopy(preserve[j], mudstate.global_regs[j]);
-                                    }
-                                }
+                                save_global_regs("eval_save", preserve, preserve_len);
                             }
                             
                             TinyExec(buff, &oldp, 0, i, cause, feval, &TempPtr, fargs, nfargs);
@@ -1239,25 +1222,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             
                             if (ufp->flags & FN_PRES)
                             {
-                                for (j = 0; j < MAX_GLOBAL_REGS; j++)
-                                {
-                                    if (preserve[j])
-                                    {
-                                        if (!mudstate.global_regs[j])
-                                        {
-                                            mudstate.global_regs[j] = alloc_lbuf("eval_regs");
-                                        }
-                                        StringCopy(mudstate.global_regs[j], preserve[j]);
-                                        free_lbuf(preserve[j]);
-                                    }
-                                    else 
-                                    {
-                                        if (mudstate.global_regs[j])
-                                        {
-                                            *(mudstate.global_regs[i]) = '\0';
-                                        }
-                                    }
-                                }
+                                restore_global_regs("eval_restore", preserve, preserve_len);
                             }
                             free_lbuf(tstr);
                         }
@@ -1630,11 +1595,14 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                                         i = (*pdstr - '0');
                                         if ((i >= 0) && (i <= 9) && mudstate.global_regs[i])
                                         {
-                                            safe_str(mudstate.global_regs[i], buff, bufc);
+                                            safe_copy_buf(mudstate.global_regs[i],
+                                                mudstate.glob_reg_len[i], buff, bufc, LBUF_SIZE-1);
                                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                                         }
                                         if (!*pdstr)
+                                        {
                                             pdstr--;
+                                        }
                                     }
                                 }
                                 else
@@ -1943,4 +1911,70 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
     isSpecial_L1[' '] = bSpaceIsSpecialSave;
     isSpecial_L1['('] = bParenthesisIsSpecialSave;
     isSpecial_L1['['] = bBracketIsSpecialSave;
+}
+
+/* ---------------------------------------------------------------------------
+ * save_global_regs, restore_global_regs:  Save and restore the global
+ * registers to protect them from various sorts of munging.
+ */
+
+void save_global_regs
+(
+    const char *funcname,
+    char *preserve[],
+    int preserve_len[]
+)
+{
+    int i;
+
+    for (i = 0; i < MAX_GLOBAL_REGS; i++)
+    {
+        if (mudstate.global_regs[i])
+        {
+            preserve[i] = alloc_lbuf(funcname);
+            int n = mudstate.glob_reg_len[i];
+            memcpy(preserve[i], mudstate.global_regs[i], n);
+            preserve[i][n] = '\0';
+            preserve_len[i] = n;
+        }
+        else
+        {
+            preserve[i] = NULL;
+            preserve_len[i] = 0;
+        }
+    }
+}
+
+void restore_global_regs
+(
+    const char *funcname,
+    char *preserve[],
+    int preserve_len[]
+)
+{
+    int i;
+
+    for (i = 0; i < MAX_GLOBAL_REGS; i++)
+    {
+        if (preserve[i])
+        {
+            if (!mudstate.global_regs[i])
+            {
+                mudstate.global_regs[i] = alloc_lbuf(funcname);
+            }
+            int n = preserve_len[i];
+            memcpy(mudstate.global_regs[i], preserve[i], n);
+            mudstate.global_regs[i][n] = '\0';
+            free_lbuf(preserve[i]);
+            mudstate.glob_reg_len[i] = n;
+        }
+        else
+        {
+            if (mudstate.global_regs[i])
+            {
+                mudstate.global_regs[i][0] = '\0';
+            }
+            mudstate.glob_reg_len[i] = 0;
+        }
+    }
 }

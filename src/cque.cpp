@@ -73,11 +73,14 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
             {
                 if (point->scr[i])
                 {
-                    StringCopy(mudstate.global_regs[i], point->scr[i]);
+                    int n = strlen(point->scr[i]);
+                    memcpy(mudstate.global_regs[i], point->scr[i], n+1);
+                    mudstate.glob_reg_len[i] = n;
                 }
                 else 
                 {
-                    *mudstate.global_regs[i] = '\0';
+                    mudstate.global_regs[i][0] = '\0';
+                    mudstate.glob_reg_len[i] = 0;
                 }
             }
 
@@ -87,13 +90,18 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                 char *cp = parse_to(&command, ';', 0);
                 if (cp && *cp)
                 {
-                    while (command && (*command == '|'))
+                    int numpipes = 0;
+                    while (  command
+                          && (*command == '|')
+                          && (numpipes < mudconf.ntfy_nest_lim))
                     {
                         command++;
+                        numpipes++;
                         mudstate.inpipe = 1;
                         mudstate.poutnew = alloc_lbuf("process_command.pipe");
                         mudstate.poutbufc = mudstate.poutnew;
                         mudstate.poutobj = player;
+
                         process_command(player, point->cause, 0, cp, point->env, point->nargs);
                         if (mudstate.pout)
                         {
@@ -106,6 +114,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         cp = parse_to(&command, ';', 0);
                     } 
                     mudstate.inpipe = 0;
+
                     process_command(player, point->cause, 0, cp, point->env, point->nargs);
                     if (mudstate.pout)
                     {
@@ -121,7 +130,8 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
-        *mudstate.global_regs[i] = '\0';
+        mudstate.global_regs[i][0] = '\0';
+        mudstate.glob_reg_len[i] = 0;
     }
 }
 

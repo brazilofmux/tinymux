@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.1 2000-04-11 07:14:44 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.2 2000-04-11 21:18:05 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -2866,18 +2866,27 @@ FUNCTION(fun_regmatch)
             qnums[i] = -1;
     }
 
-    /* Now we run a copy. */
-    for (i = 0;
-         (i < NSUBEXP) && (re->startp[i]) && (re->endp[i]);
-         i++) {
+    // Now we run a copy.
+    //
+    for (i = 0; (i < NSUBEXP) && (re->startp[i]) && (re->endp[i]); i++)
+    {
         curq = qnums[i];
-        if ((curq >= 0) && (curq < MAX_GLOBAL_REGS)) {
-            if (!mudstate.global_regs[curq]) {
+        if ((curq >= 0) && (curq < MAX_GLOBAL_REGS))
+        {
+            if (!mudstate.global_regs[curq])
+            {
                 mudstate.global_regs[curq] = alloc_lbuf("fun_regmatch");
             }
+
             len = re->endp[i] - re->startp[i];
-            strncpy(mudstate.global_regs[curq], re->startp[i], len);
+            if (len > LBUF_SIZE - 1)
+                len = LBUF_SIZE - 1;
+            else if (len < 0)
+                len = 0;
+
+            memcpy(mudstate.global_regs[curq], re->startp[i], len);
             mudstate.global_regs[curq][len] = '\0'; /* must null-terminate */
+            mudstate.glob_reg_len[curq] = len;
         }
     }
 

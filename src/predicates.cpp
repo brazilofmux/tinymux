@@ -1047,7 +1047,7 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
     doer = match_thing(player, name);
 
     if (!(Prog(player) || Prog(Owner(player))) && (player != doer)) {
-        notify(player, "Permission denied.");
+        notify(player, NOPERM_MESSAGE);
         return;
     }
     if (!isPlayer(doer) || !Good_obj(doer)) {
@@ -1078,7 +1078,7 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
             }
             else
             {
-                notify(player, "Permission denied.");
+                notify(player, NOPERM_MESSAGE);
                 free_lbuf(pBuffer);
                 return;
             }
@@ -1111,7 +1111,7 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         program->wait_regs[i] = alloc_lbuf("prog_regs");
-        StringCopy(program->wait_regs[i], mudstate.global_regs[i]);
+        memcpy(program->wait_regs[i], mudstate.global_regs[i], mudstate.glob_reg_len[i]+1);
     }
 
     /*
@@ -1125,7 +1125,6 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
         //
         queue_string(d, tprintf("%s>%s \377\371", ANSI_HILITE, ANSI_NORMAL));
     }
-
 }
 
 /*
@@ -1685,14 +1684,31 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
     char *d, *buff, *act, *charges, *bp, *str;
     dbref loc, aowner;
     int num, aflags;
+    char *preserve[MAX_GLOBAL_REGS];
+    int preserve_len[MAX_GLOBAL_REGS];
 
-    /*
-     * message to player 
-     */
+    // If we need to call exec() from within this function, we first save
+    // the state of the global registers, in order to avoid munging them
+    // inappropriately. Do note that the restoration to their original
+    // values occurs BEFORE the execution of the @a-attribute. Therefore,
+    // any changing of setq() values done in the @-attribute and @o-attribute
+    // will NOT be passed on. This prevents odd behaviors that result from
+    // odd @verbs and so forth (the idea is to preserve the caller's control
+    // of the global register values).
+    //
 
-    if (what > 0) {
+    int need_pres = 0;
+
+    // message to player.
+    //
+
+    if (what > 0)
+    {
         d = atr_pget(thing, what, &aowner, &aflags);
-        if (*d) {
+        if (*d)
+        {
+            need_pres = 1;
+            save_global_regs("did_it_save", preserve, preserve_len);
             buff = bp = alloc_lbuf("did_it.1");
             str = d;
             TinyExec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
@@ -1720,6 +1736,11 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
         d = atr_pget(thing, owhat, &aowner, &aflags);
         if (*d)
         {
+            if (!need_pres)
+            {
+                need_pres = 1;
+                save_global_regs("did_it_save", preserve, preserve_len);
+            }
             buff = bp = alloc_lbuf("did_it.2");
             str = d;
             TinyExec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
@@ -1740,10 +1761,16 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
     {
         notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
     }
-    /*
-     * do the action attribute 
-     */
 
+    // If we preserved the state of the global registers, restore them.
+    //
+    if (need_pres)
+    {
+        restore_global_regs("did_it_restore", preserve, preserve_len);
+    }
+
+    // do the action attribute.
+    //
     if (awhat > 0)
     {
         if (*(act = atr_pget(thing, awhat, &aowner, &aflags)))

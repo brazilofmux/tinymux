@@ -1,8 +1,8 @@
 /*
- * boolexp.c 
+ * boolexp.cpp 
  */
 /*
- * $Id: boolexp.cpp,v 1.1 2000-04-11 07:14:42 sdennis Exp $ 
+ * $Id: boolexp.cpp,v 1.2 2000-04-11 21:18:07 sdennis Exp $ 
  */
 #include "copyright.h"
 #include "autoconf.h"
@@ -58,9 +58,13 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
     int aflags, c, checkit;
     char *key, *buff, *buff2, *bp, *str;
     ATTR *a;
+    int preserve_len[MAX_GLOBAL_REGS];
+    char *preserve[MAX_GLOBAL_REGS];
 
     if (b == TRUE_BOOLEXP)
+    {
         return 1;
+    }
 
     switch (b->type)
     {
@@ -167,10 +171,12 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         }
         if (checkit)
         {
+            save_global_regs("eval_boolexp_save", preserve, preserve_len);
             buff2 = bp = alloc_lbuf("eval_boolexp");
             str = buff;
             TinyExec(buff2, &bp, 0, source, player, EV_FIGNORE | EV_EVAL | EV_TOP, &str, (char **)NULL, 0);
             *bp = '\0';
+            restore_global_regs("eval_boolexp_save", preserve, preserve_len);
             checkit = !string_compare(buff2, (char *)b->sub1);
             free_lbuf(buff2);
         }
@@ -222,9 +228,11 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         return (Owner(b->sub1->thing) == Owner(player));
 
     default:
-        abort();    /*
-                 * bad type 
-                 */
+        // Bad type
+        //
+        Log.WriteString("ABORT! boolexp.cpp, unknown boolexp type in eval_boolexp().\n");
+        Log.Flush();
+        abort();
         return 0;
     }
 }
@@ -353,50 +361,43 @@ static BOOLEXP *NDECL(parse_boolexp_L)
         break;
     default:
 
-        /*
-         * must have hit an object ref.  Load the name into our * * * 
-         * 
-         * *  * *  * * buffer 
-         */
-
+        // Must have hit an object ref.  Load the name into our buffer.
+        //
         buf = alloc_lbuf("parse_boolexp_L");
         p = buf;
         while (*parsebuf && (*parsebuf != AND_TOKEN) &&
-               (*parsebuf != OR_TOKEN) && (*parsebuf != ')')) {
+               (*parsebuf != OR_TOKEN) && (*parsebuf != ')'))
+        {
             *p++ = *parsebuf++;
         }
 
-        /*
-         * strip trailing whitespace 
-         */
-
+        // Strip trailing whitespace.
+        //
         *p-- = '\0';
         while (Tiny_IsSpace[(unsigned char)*p])
+        {
             *p-- = '\0';
+        }
 
-        /*
-         * check for an attribute 
-         */
-
-        if ((b = test_atr(buf)) != NULL) {
+        // Check for an attribute.
+        //
+        if ((b = test_atr(buf)) != NULL)
+        {
             free_lbuf(buf);
             return (b);
         }
         b = alloc_bool("parse_boolexp_L");
         b->type = BOOLEXP_CONST;
 
-        /*
-         * do the match 
-         */
+        // do the match.
+        //
 
 #ifndef STANDALONE
 
-        /*
-         * If we are parsing a boolexp that was a stored lock then *
-         * * * * * * we know that object refs are all dbrefs, so we * 
-         * skip * * the * * * expensive match code. 
-         */
-
+        // If we are parsing a boolexp that was a stored lock then we
+        // know that object refs are all dbrefs, so we skip the
+        // expensive match code.
+        //
         if (parsing_internal) {
             if (buf[0] != '#') {
                 free_lbuf(buf);
