@@ -80,6 +80,14 @@
 #define SIZEOF_LONG 4
 /* sizeof(unsigned long) */
 #define SIZEOF_UNSIGNED_LONG 4
+/* Define if unaligned short access is allowed. */
+#define CAN_UNALIGN_SHORT
+/* Define if unaligned int access is allowed. */
+#define CAN_UNALIGN_INT
+/* Define if unaligned long access is allowed. */
+#define CAN_UNALIGN_LONG
+/* Define if unaligned long long access is allowed. */
+#define CAN_UNALIGN_LONGLONG
 /* Define if we need to redef index/bcopy et al to their SYSV counterparts */
 #undef NEED_INDEX_DCL
 /* Define if we need to declare malloc et al */
