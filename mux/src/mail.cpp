@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.39 2002-09-10 07:56:59 jake Exp $
+// $Id: mail.cpp,v 1.40 2002-09-11 04:34:55 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -366,7 +366,7 @@ static char *get_folder_name(dbref player, int fld)
     }
     strcpy(str, atrstr);
     free_lbuf(atrstr);
-    static char *old = (char *)string_match(str, pat);
+    char *old = (char *)string_match(str, pat);
     if (old)
     {
         char *r = old + strlen(pat);
