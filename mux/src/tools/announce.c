@@ -27,9 +27,7 @@ extern int errno;
 char   *Name;			/* name of this program for error messages */
 char    msg[32768];
 
-int
-main(argc, argv)
-    char   *argv[];
+int main(int argc, char *argv[])
 {
     int     s, ns, foo;
     static struct sockaddr_in sin = {AF_INET};
