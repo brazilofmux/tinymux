@@ -51,6 +51,11 @@ Bug Fixes:
  -- Player names weren't validated properly. Instead of mux_PlayerNameSet[],
     the code was using mux_ObjectNameSet[].
  -- Fixed the bCanRead/read_remote_desc bugs.
+ -- Rename and turn character-typing tables into macros.
+ -- Fixed SIGSEGV bugs related to characters with the high-order bit
+    set.  Introduced, found, and fixed by Brazil.
+ -- Same as above in translate_string() reported by Sean Hunter.  Fixed
+    by Brazil.
 
 
 Performance Enhancements:
