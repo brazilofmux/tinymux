@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.42 2001-06-28 01:59:07 sdennis Exp $
+// $Id: command.cpp,v 1.43 2001-06-28 02:02:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -116,7 +116,7 @@ NAMETAB doing_sw[] =
     {(char *)"header",  1,  CA_PUBLIC,  DOING_HEADER},
     {(char *)"message", 1,  CA_PUBLIC,  DOING_MESSAGE},
     {(char *)"poll",    1,  CA_PUBLIC,  DOING_POLL},
-	{(char *)"unique",  1,  CA_PUBLIC,  DOING_UNIQUE},
+    {(char *)"unique",  1,  CA_PUBLIC,  DOING_UNIQUE},
     { NULL,         0,  0,      0}
 };
 
@@ -2306,8 +2306,8 @@ CF_HAND(cf_cmd_alias)
     for (ap = orig; *ap && (*ap != '/'); ap++) ;
     if (*ap == '/')
     {
-		// Switch form of command aliasing: create an alias for
-		// a command + a switch
+        // Switch form of command aliasing: create an alias for
+        // a command + a switch
         //
         *ap++ = '\0';
 
@@ -2351,7 +2351,7 @@ CF_HAND(cf_cmd_alias)
     }
     else
     {
-		// A normal (non-switch) alias
+        // A normal (non-switch) alias
         //
         hp = hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
         if (hp == NULL)
