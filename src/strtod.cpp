@@ -88,6 +88,7 @@
 
 #include "autoconf.h"
 #include "config.h"
+#include "stringutil.h"
 
 #define Unsigned_Shifts
 #ifdef WORDS_BIGENDIAN
@@ -1183,7 +1184,7 @@ double Tiny_strtod(const char *s00, char **se)
     sign = nz0 = nz = 0;
     value(rv) = 0.;
 
-    for (s = s00; isspace((unsigned char) *s); s++)
+    for (s = s00; Tiny_IsSpace[(unsigned char)*s]; s++)
     {
         ; // Nothing.
     }
@@ -1894,7 +1895,7 @@ drop_down:
         if (y == z)
         {
             /* Can we stop now? */
-            L = aadj;
+            L = (INT32)aadj;
             aadj -= L;
             /* The tolerances below are conservative. */
             if (dsign || word1(rv) || word0(rv) & Bndry_mask)
@@ -2150,9 +2151,9 @@ char *Tiny_dtoa(double _d, int mode, int ndigits, int *decpt, int *sign,
         *decpt = 9999;
         s =
 #ifdef IEEE_Arith
-            !word1(d) && !(word0(d) & 0xfffff) ? "Inf" :
+            !word1(d) && !(word0(d) & 0xfffff) ? (char *)"Inf" :
 #endif
-                "NaN";
+                (char *)"NaN";
         if (rve)
             *rve =
 #ifdef IEEE_Arith
@@ -2399,7 +2400,7 @@ char *Tiny_dtoa(double _d, int mode, int ndigits, int *decpt, int *sign,
             value(eps) = 0.5/tens[ilim-1] - value(eps);
             for (i = 0;;)
             {
-                L = value(d);
+                L = (INT32)(value(d));
                 value(d) -= L;
                 *s++ = '0' + (int)L;
                 if (value(d) < value(eps))
@@ -2425,7 +2426,7 @@ char *Tiny_dtoa(double _d, int mode, int ndigits, int *decpt, int *sign,
             value(eps) *= tens[ilim-1];
             for (i = 1;; i++, value(d) *= 10.)
             {
-                L = value(d);
+                L = (INT32)(value(d));
                 value(d) -= L;
                 *s++ = '0' + (int)L;
                 if (i == ilim)
@@ -2473,7 +2474,7 @@ char *Tiny_dtoa(double _d, int mode, int ndigits, int *decpt, int *sign,
         }
         for (i = 1;; i++)
         {
-            L = value(d) / ds;
+            L = (INT32)(value(d) / ds);
             value(d) -= L*ds;
 #ifdef Check_FLT_ROUNDS
             /* If FLT_ROUNDS == 2, L will usually be high by 1 */
