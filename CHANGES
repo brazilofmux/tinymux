@@ -202,6 +202,7 @@ Bug Fixes:
  -- Add /Op compiler option to fix "20:000000000" bug on Win32.
  -- Bug #799 - SIGSEGV was possible in lcmds().
  -- Guest password is reset to ease transitions.
+ -- @chown success message was not null-terminated.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
