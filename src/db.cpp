@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.42 2001-06-28 09:18:34 sdennis Exp $
+// $Id: db.cpp,v 1.43 2001-06-28 09:21:51 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1421,7 +1421,7 @@ static char *atr_encode(char *iattr, dbref thing, dbref owner, int flags, int at
     if (((owner == Owner(thing)) || (owner == NOTHING)) && !flags)
         return iattr;
 
-    // Encode owner and flags into the attribute text
+    // Encode owner and flags into the attribute text.
     //
     if (owner == NOTHING)
         owner = Owner(thing);
@@ -2443,7 +2443,7 @@ void db_grow(dbref newtop)
 
     // If requested size is greater than the current db size but smaller
     // than the amount of space we have allocated, raise the db size and
-	// initialize the new area.
+    // initialize the new area.
     //
     if (newtop <= mudstate.db_size)
     {
