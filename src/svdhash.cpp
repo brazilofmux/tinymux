@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.9 2000-06-20 16:37:18 sdennis Exp $
+// $Id: svdhash.cpp,v 1.10 2000-09-07 08:22:38 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -2599,7 +2599,7 @@ void CLogFile::ChangePrefix(char *szPrefix)
     {
         CloseLogFile();
 
-        char szNewName[MAX_PATH];
+        char szNewName[SIZEOF_PATHNAME];
         MakeLogName(szPrefix, m_ltaStarted, szNewName);
         ReplaceFile(m_szFilename, szNewName);
         strcpy(m_szPrefix, szPrefix);

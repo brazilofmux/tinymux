@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.h,v 1.3 2000-05-21 06:00:08 sdennis Exp $
+// $Id: svdhash.h,v 1.4 2000-09-07 08:22:38 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -272,7 +272,7 @@ private:
     char m_aBuffer[SIZEOF_LOG_BUFFER];
 #if !defined(STANDALONE) && defined(WIN32)
     char m_szPrefix[32];
-    char m_szFilename[MAX_PATH];
+    char m_szFilename[SIZEOF_PATHNAME];
 
     void CreateLogFile(void);
     void AppendLogFile(void);
