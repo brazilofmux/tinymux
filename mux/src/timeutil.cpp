@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.29 2004-05-15 14:31:53 sdennis Exp $
+// $Id: timeutil.cpp,v 1.30 2004-05-15 15:05:41 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -722,6 +722,11 @@ void CLinearTimeDelta::SetMilliseconds(unsigned long arg_dwMilliseconds)
 long CLinearTimeDelta::ReturnMilliseconds(void)
 {
     return (long)(m_tDelta/FACTOR_100NS_PER_MILLISECOND);
+}
+
+INT64 CLinearTimeDelta::ReturnMicroseconds(void)
+{
+    return m_tDelta/FACTOR_100NS_PER_MICROSECOND;
 }
 
 void CLinearTimeDelta::SetSecondsString(char *arg_szSeconds)
@@ -1522,20 +1527,50 @@ void CMuxAlarm::SurrenderSlice(void)
 
 void GetUTCLinearTime(INT64 *plt)
 {
+#ifdef HAVE_GETTIMEOFDAY
     struct timeval tv;
     struct timezone tz;
     tz.tz_minuteswest = 0;
     tz.tz_dsttime = 0;
+
     gettimeofday(&tv, &tz);
 
     *plt = (((INT64)tv.tv_sec) * FACTOR_100NS_PER_SECOND)
          + (tv.tv_usec * FACTOR_100NS_PER_MICROSECOND)
          + EPOCH_OFFSET;
+#else
+    time_t t;
+
+    time(&t);
+
+    *plt = t*FACTOR_100NS_PER_SECOND;
+#endif
 }
 
 void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
 {
+//#if   defined(HAVE_NANOSLEEP)
+#if defined(HAVE_USLEEP)
+    unsigned long usec;
+    INT64 usecTotal = ltd.ReturnMicroseconds();
+
+    while (usecTotal)
+    {
+        usec = usecTotal;
+        if (usecTotal <= 1000000)
+        {
+            usec = usecTotal;
+        }
+        else
+        {
+            usec = 1000000;
+        }
+        usleep(usec);
+        usecTotal -= usec;
+    }
+#else
     ::sleep(ltd.ReturnSeconds());
+#endif
 }
 
 void CMuxAlarm::SurrenderSlice(void)
