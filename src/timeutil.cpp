@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.16 2001-02-25 16:47:27 sdennis Exp $
+// $Id: timeutil.cpp,v 1.17 2001-09-18 05:22:26 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -379,13 +379,6 @@ INT64 i64Division(INT64 x, INT64 y)
 //
 int DCL_INLINE iFloorDivision(int x, int y)
 {
-    return x / y;
-}
-
-
-int DCL_INLINE iFloorDivisionMod(int x, int y, int *piMod)
-{
-    *piMod = x % y;
     return x / y;
 }
 

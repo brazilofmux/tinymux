@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules
 //
-// $Id: timeutil.h,v 1.7 2001-02-25 16:47:27 sdennis Exp $
+// $Id: timeutil.h,v 1.8 2001-09-18 05:22:26 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -140,11 +140,18 @@ INT64 i64Mod(INT64 x, INT64 y);
 INT64 i64FloorDivision(INT64 x, INT64 y);
 INT64 DCL_INLINE i64Division(INT64 x, INT64 y) { return x / y; }
 INT64 DCL_INLINE i64Remainder(INT64 x, INT64 y) { return x % y; }
+int iFloorDivisionMod(int x, int y, int *piMod);
 #else
 INT64 DCL_INLINE i64Mod(INT64 x, INT64 y) { return x % y; }
 INT64 DCL_INLINE i64FloorDivision(INT64 x, INT64 y) { return x / y; }
 INT64 i64Division(INT64 x, INT64 y);
 INT64 i64Remainder(INT64 x, INT64 y);
+int DCL_INLINE iFloorDivisionMod(int x, int y, int *piMod) \
+{                   \
+    *piMod = x % y; \
+    return x / y;   \
+}
+
 #endif
 
 extern BOOL ParseDate(CLinearTimeAbsolute &lta, char *pDateString, BOOL *pbZoneSpecified);

@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.93 2001-09-14 23:56:15 sdennis Exp $
+// $Id: functions.cpp,v 1.94 2001-09-18 05:22:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1067,6 +1067,319 @@ FUNCTION(fun_starttime)
 {
     char *temp = mudstate.start_time.ReturnDateString();
     safe_str(temp, buff, bufc);
+}
+
+
+// fun_timefmt
+//
+// timefmt(<format>[, <secs>])
+//
+// If <secs> isn't given, the current time is used. Escape sequences
+// in <format> are expanded out.
+//
+// All escape sequences start with a $. Any unrecognized codes or other
+// text will be returned unchanged.
+//
+char *DayOfWeekStringLong[7] =
+{
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+};
+extern char *DayOfWeekString[];
+extern const char *monthtab[];
+char *MonthTableLong[] =
+{
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+};
+
+int Map24to12[24] =
+{   
+    12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+    12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+};
+FUNCTION(fun_timefmt)
+{
+    CLinearTimeAbsolute lta, ltaUTC;
+    if (nfargs == 2)
+    {
+        lta.SetSecondsString(fargs[1]);
+        ltaUTC = lta;
+        lta.UTC2Local();
+    }
+    else
+    {
+        lta.GetLocal();
+        ltaUTC = lta;
+        ltaUTC.Local2UTC();
+    }
+    FIELDEDTIME ft;
+    lta.ReturnFields(&ft);
+
+    // Calculate Time Zone Info
+    //
+    CLinearTimeDelta ltd = lta - ltaUTC;
+    int iTZSecond = ltd.ReturnSeconds();
+    int iTZSign;
+    if (iTZSecond < 0)
+    {
+        iTZSign = '-';
+        iTZSecond = -iTZSecond;
+    }
+    else
+    {
+        iTZSign = '+';
+    }
+    int iTZHour = iTZSecond / 3600;
+    iTZSecond %= 3600;
+    int iTZMinute = iTZSecond/60;
+    int iHour12 = Map24to12[ft.iHour];
+
+    char *q;
+    char *p = fargs[0];
+    while ((q = strchr(p, '$')) != NULL)
+    {
+        size_t nLen = q - p;
+        safe_copy_buf(p, nLen, buff, bufc, LBUF_SIZE-1);
+        p = q;
+
+        // Now, p points to a '$'.
+        //
+        p++;
+
+        // Handle modifiers
+        //
+        int  iOption = 0;
+        int ch = *p++;
+        if (ch == '#' || ch == 'E' || ch == 'O')
+        {
+            iOption = ch;
+            ch = *p++;
+        }
+
+        // Handle format letter.
+        //
+        switch (ch)
+        {
+        case 'a': // $a - Abbreviated weekday name
+            safe_str(DayOfWeekString[ft.iDayOfWeek], buff, bufc);
+            break;
+
+        case 'A': // $A - Full weekday name
+            safe_str(DayOfWeekStringLong[ft.iDayOfWeek], buff, bufc);
+            break;
+
+        case 'b': // $b - Abbreviated month name
+        case 'h':
+            safe_str(monthtab[ft.iMonth-1], buff, bufc);
+            break;
+
+        case 'B': // $B - Full month name
+            safe_str(MonthTableLong[ft.iMonth-1], buff, bufc);
+            break;
+
+        case 'c': // $c - Date and time
+            if (iOption == '#')
+            {
+                // Long version.
+                //
+                safe_tprintf_str(buff, bufc, "%s, %s %d, %d, %02d:%02d:%02d",
+                    DayOfWeekStringLong[ft.iDayOfWeek],
+                    MonthTableLong[ft.iMonth-1],
+                    ft.iDayOfMonth, ft.iYear, ft.iHour, ft.iMinute,
+                    ft.iSecond);
+            }
+            else
+            {
+                safe_str(lta.ReturnDateString(), buff, bufc);
+            }
+            break;
+
+        case 'C': // $C - The century (year/100).
+            safe_tprintf_str(buff, bufc, "%d", ft.iYear / 100);
+            break;
+
+        case 'd': // $d - Day of Month as decimal number (1-31)
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+                ft.iDayOfMonth);
+            break;
+
+        case 'x': // $x - Date
+            if (iOption == '#')
+            {
+                safe_tprintf_str(buff, bufc, "%s, %s %d, %d",
+                    DayOfWeekStringLong[ft.iDayOfWeek],
+                    MonthTableLong[ft.iMonth-1],
+                    ft.iDayOfMonth, ft.iYear);
+                break;
+            }
+
+            // FALL THROUGH
+
+        case 'D': // $D - Equivalent to %m/%d/%y
+            safe_tprintf_str(buff, bufc, "%02d/%02d/%02d", ft.iMonth,
+                ft.iDayOfMonth, ft.iYear % 100);
+            break;
+
+        case 'e': // $e - Like $d, the day of the month as a decimal number,
+                  // but a leading zero is replaced with a space.
+            safe_tprintf_str(buff, bufc, "%2d", ft.iDayOfMonth);
+            break;
+
+        case 'F': // $F - The ISO 8601 formated date.
+            safe_tprintf_str(buff, bufc, "%d-%02d-%02d", ft.iYear, ft.iMonth,
+                ft.iDayOfMonth);
+            break;
+
+        case 'g': // $g - Like $G, two-digit ISO 8601 year.
+            // TODO
+            break;
+
+        case 'G': // $G - The ISO 8601 year.
+            // TODO
+            break;
+
+        case 'H': // $H - Hour of the 24-hour day.
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d", ft.iHour);
+            break;
+
+        case 'I': // $I - Hour of the 12-hour day
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d", iHour12);
+            break;
+
+        case 'j': // $j - Day of the year.
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%03d",
+                ft.iDayOfYear);
+            break;
+
+        case 'k': // $k - Hour of the 24-hour day. Pad with a space.
+            safe_tprintf_str(buff, bufc, "%2d", ft.iHour);
+            break;
+
+        case 'l': // $l - Hour of the 12-hour clock. Pad with a space.
+            safe_tprintf_str(buff, bufc, "%2d", iHour12);
+            break;
+
+        case 'm': // $m - Month of the year
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+                ft.iMonth);
+            break;
+
+        case 'M': // $M - Minutes after the hour
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+                ft.iMinute);
+            break;
+
+        case 'n': // $n - Newline.
+            safe_str("\r\n", buff, bufc);
+            break;
+
+        case 'p': // $p - AM/PM
+            safe_str((ft.iHour < 12)?"AM":"PM", buff, bufc);
+            break;
+
+        case 'P': // $p - am/pm
+            safe_str((ft.iHour < 12)?"am":"pm", buff, bufc);
+            break;
+
+        case 'r': // $r - Equivalent to $I:$M:$S $p
+            safe_tprintf_str(buff, bufc,
+                (iOption=='#')?"%d:%02d:%02d %s":"%02d:%02d:%02d %s",
+                iHour12, ft.iMinute, ft.iSecond,
+                (ft.iHour<12)?"AM":"PM");
+            break;
+
+        case 'R': // $R - Equivalent to $H:$M
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d:%02d":"%02d:%02d",
+                ft.iHour, ft.iMinute);
+            break;
+
+        case 's': // $s - Number of seconds since the epoch.
+            safe_str(ltaUTC.ReturnSecondsString(), buff, bufc);
+            break;
+
+        case 'S': // $S - Seconds after the minute
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+                ft.iSecond);
+            break;
+
+        case 't':
+            safe_chr('\t', buff, bufc);
+            break;
+
+        case 'X': // $X - Time
+        case 'T': // $T - Equivalent to $H:$M:$S
+            safe_tprintf_str(buff, bufc,
+                (iOption=='#')?"%d:%02d:%02d":"%02d:%02d:%02d",
+                ft.iHour, ft.iMinute, ft.iSecond);
+            break;
+
+        case 'u': // $u - Day of the Week, range 1 to 7. Monday = 1.
+            safe_ltoa((ft.iDayOfWeek == 0)?7:ft.iDayOfWeek, buff, bufc,
+                LBUF_SIZE-1);
+            break;
+
+        case 'U': // $U - Week of the year from 1st Sunday
+            // TODO
+            break;
+
+        case 'V': // $V - ISO 8601:1988 week number.
+            // TODO
+            break;
+
+        case 'w': // $w - Day of the week. 0 = Sunday
+            safe_ltoa(ft.iDayOfWeek, buff, bufc, LBUF_SIZE-1);
+            break;
+
+        case 'W': // $W - Week of the year from 1st Monday
+            // TODO
+            break;
+
+        case 'y': // $y - Two-digit year
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%02d",
+                ft.iYear % 100);
+            break;
+
+        case 'Y': // $Y - All-digit year
+            safe_tprintf_str(buff, bufc, (iOption=='#')?"%d":"%04d",
+                ft.iYear);
+            break;
+
+        case 'z': // $z - Time zone
+            safe_tprintf_str(buff, bufc, "%c%02d%02d", iTZSign, iTZHour,
+                iTZMinute);
+            break;
+
+        case 'Z': // $Z - Time zone name
+            // TODO
+            break;
+
+        case '$': // $$
+            safe_chr(ch, buff, bufc);
+            break;
+ 
+        default:
+            safe_chr('$', buff, bufc);
+            p = q + 1;
+            break;
+        }
+    }
+    safe_str(p, buff, bufc);
 }
 
 /*
@@ -6556,6 +6869,7 @@ FUN flist[] =
     {"TAN",      fun_tan,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"TEL",      fun_tel,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"TIME",     fun_time,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"TIMEFMT",  fun_timefmt,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"TRANSLATE",fun_translate,MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"TRIM",     fun_trim,     MAX_ARG, 1,  3,       0, CA_PUBLIC},
     {"TRUNC",    fun_trunc,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
