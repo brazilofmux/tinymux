@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.8 2002-06-21 00:19:04 sdennis Exp $
+// $Id: netcommon.cpp,v 1.9 2002-06-21 01:42:51 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2496,46 +2496,58 @@ FUNCTION(fun_doing)
 // ---------------------------------------------------------------------------
 FUNCTION(fun_host)
 {
-    if (Wizard_Who(executor))
+    if (!Wizard_Who(executor))
     {
-        char *hostname;
-        if (is_rational(fargs[0]))
+        safe_noperm(buff, bufc);
+        return;
+    }
+     
+    BOOL isPort = is_rational(fargs[0]);
+    BOOL bFound = FALSE;
+    DESC *d;
+    if (isPort)
+    {
+        SOCKET s = Tiny_atol(fargs[0]);
+        DESC_ITER_CONN(d)
         {
-            DESC *d;
-            DESC_ITER_CONN(d) {
-                if (((long)d->descriptor) == Tiny_atol(fargs[0])) 
-                {
-                    hostname = ((d->username[0] != '\0') ? 
-                        tprintf("%s@%s", d->username, d->addr) : d->addr);
-                    safe_str(hostname, buff, bufc);
-                    return;
-                }
+            if (d->descriptor == s) 
+            {
+                bFound = TRUE;
+                break;
             }
-        } 
-        else
+        }
+    } 
+    else
+    {
+        dbref victim = lookup_player(executor, fargs[0], 1);
+        if (victim == NOTHING)
         {
-            dbref victim = lookup_player(executor, fargs[0], 1);
-            if (victim == NOTHING)
+            safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
+            return;
+        }
+        for (DESC *d = descriptor_list; d; d = d->next)
+        {
+            if (d->player == victim)
             {
-                safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
-                return;
+                bFound = TRUE;
+                break;
             }
-            for (DESC *d = descriptor_list; d; d = d->next)
-            {
-                if (d->player == victim)
-                {
-                    hostname = ((d->username[0] != '\0') ? 
-                        tprintf("%s@%s", d->username, d->addr) : d->addr);
-                    safe_str(hostname, buff, bufc);
-                    return;
-                }
-            }
-            safe_str("#-1 NOT A CONNECTED PLAYER", buff, bufc);
-       }
+        }
+    }
+    if (bFound)
+    {
+        char *hostname = ((d->username[0] != '\0') ? 
+            tprintf("%s@%s", d->username, d->addr) : d->addr);
+        safe_str(hostname, buff, bufc);
+        return;
+    }
+    if (isPort)
+    {
+        safe_str("#-1 NOT AN ACTIVE PORT", buff, bufc);
     }
     else
-    {   
-        safe_noperm(buff, bufc);
+    {
+        safe_str("#-1 NOT A CONNECTED PLAYER", buff, bufc);
     }
 }
 
