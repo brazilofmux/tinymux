@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.51 2002-09-12 17:29:19 sdennis Exp $
+// $Id: mail.cpp,v 1.52 2002-09-13 06:24:39 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -47,7 +47,6 @@ struct malias **malias = NULL;
 #define MAIL_FUDGE 1
 static void mail_db_grow(int newtop)
 {
-    int i;
     if (newtop <= mudstate.mail_db_top)
     {
         return;
@@ -80,7 +79,7 @@ static void mail_db_grow(int newtop)
 
     // Initialize new parts of the mail bag.
     //
-    for (i = mudstate.mail_db_top; i < newtop; i++)
+    for (int i = mudstate.mail_db_top; i < newtop; i++)
     {
         mudstate.mail_list[i].m_nRefs = 0;
         mudstate.mail_list[i].m_pMessage = NULL;
@@ -130,7 +129,7 @@ static void MessageReferenceDec(int number)
 // MessageFetch - returns the text for a particular message number. This
 // text should not be modified.
 //
-char *MessageFetch(int number)
+const char *MessageFetch(int number)
 {
     MessageReferenceCheck(number);
     if (mudstate.mail_list[number].m_pMessage)
@@ -1438,7 +1437,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
                     j++;
                     status = status_string(mp);
                     msg = bp = alloc_lbuf("do_mail_review");
-                    str = MessageFetch(mp->number);
+                    str = (char *)MessageFetch(mp->number);
                     TinyExec(msg, &bp, player, player, player,
                              EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str,
                              (char **)NULL, 0);
@@ -1879,7 +1878,7 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
     }
 
     const char *pSubject = mp->subject;
-    char *pMessage = MessageFetch(mp->number);
+    const char *pMessage = MessageFetch(mp->number);
     const char *pTime = mp->time;
     if (strncmp(pSubject, "Re:", 3))
     {
@@ -1983,7 +1982,7 @@ void urgent_mail(dbref player, int folder, int *ucount)
     {
         if (Folder(mp) == folder)
         {
-            if (!(Read(mp)) && (Urgent(mp)))
+            if (Unread(mp) && Urgent(mp))
             {
                 uc++;
             }
@@ -2103,7 +2102,8 @@ void do_mail_nuke(dbref player)
 
     // Walk the list.
     //
-    for (dbref thing = 0; thing < mudstate.db_top; thing++)
+    dbref thing;
+    DO_WHOLE_DB(thing)
     {
         struct mail *mp = (struct mail *)hashfindLEN(&thing, sizeof(thing), &mudstate.mail_htab);
         while (mp)
@@ -2128,7 +2128,7 @@ void do_mail_nuke(dbref player)
 
 void do_mail_debug(dbref player, char *action, char *victim)
 {
-    if (!Wizard(player))
+    if (!ExpMail(player))
     {
         notify(player, "Go get some bugspray.");
         return;
@@ -2350,7 +2350,8 @@ void do_mail_stats(dbref player, char *name, int full)
 
     // Find player.
     //
-    if ((*name == '\0') || !name)
+    if (  !name
+       || *name == '\0')
     {
         if (Wizard(player))
         {
@@ -2389,7 +2390,7 @@ void do_mail_stats(dbref player, char *name, int full)
         notify(player, tprintf("%s: No such player.", name));
         return;
     }
-    if (!Wizard(player) && (target != player))
+    if (!ExpMail(player) && (target != player))
     {
         notify(player, "The post office protects privacy!");
         return;
@@ -3308,10 +3309,8 @@ char *Spaces(unsigned int n)
 
 void do_malias_list_all(dbref player)
 {
-    int i = 0;
-    int notified = 0;
-
-    for (i = 0; i < ma_top; i++)
+    BOOL notified = FALSE;
+    for (int i = 0; i < ma_top; i++)
     {
         struct malias *m = malias[i];
         if (  m->owner == GOD
@@ -3321,7 +3320,7 @@ void do_malias_list_all(dbref player)
             if (!notified)
             {
                 notify(player, "Name         Description                              Owner");
-                notified++;
+                notified = TRUE;
             }
             char *p = tprintf( "%-12s %s%s %-15.15s",
                                m->name,
@@ -3336,17 +3335,20 @@ void do_malias_list_all(dbref player)
 
 void do_malias_switch(dbref player, char *a1, char *a2)
 {
-    if ((!a2 || !*a2) && !(!a1 || !*a1))
+    if (a1 && *a1)
     {
-        do_malias_list(player, a1);
-    }
-    else if ((!*a1 || !a1) && (!*a2 || !a2))
-    {
-        do_malias_list_all(player);
+        if (a2 && *a2)
+        {
+            do_malias_create(player, a1, a2);
+        }
+        else
+        {
+            do_malias_list(player, a1);
+        }
     }
     else
     {
-        do_malias_create(player, a1, a2);
+        do_malias_list_all(player);
     }
 }
 
@@ -3556,6 +3558,13 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
 
     if (Flags2(executor) & PLAYER_MAILS)
     {
+        if (  !text
+           || !*text)
+        {
+            notify(executor, "No text prepended.");
+            return;
+        }
+
         dbref aowner;
         int aflags;
 
@@ -3602,6 +3611,13 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
 
     if (Flags2(executor) & PLAYER_MAILS)
     {
+        if (  !text
+           || !*text)
+        {
+            notify(executor, "No text added.");
+            return;
+        }
+
         dbref aowner;
         int aflags;
 

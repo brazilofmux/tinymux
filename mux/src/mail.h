@@ -1,6 +1,6 @@
 // mail.h
 //
-// $Id: mail.h,v 1.9 2002-07-27 10:49:02 jake Exp $
+// $Id: mail.h,v 1.10 2002-09-13 06:24:39 jake Exp $
 //
 
 #ifndef _MAIL_H
@@ -99,7 +99,7 @@ struct mail_entry
 };
 
 extern void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount);
-extern char *MessageFetch(int number);
+extern const char *MessageFetch(int number);
 extern void check_mail_expiration(void);
 extern void check_mail(dbref player, int folder, BOOL silent);
 extern void malias_cleanup(dbref player);
