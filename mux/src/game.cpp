@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.25 2003-04-01 20:42:18 sdennis Exp $
+// $Id: game.cpp,v 1.26 2003-04-01 20:49:26 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2504,6 +2504,7 @@ int DCL_CDECL main(int argc, char *argv[])
     if (slave_pid > 0)
     {
         kill(slave_pid, SIGKILL);
+        sleep(1);
         waitpid(slave_pid, NULL, WNOHANG);
     }
     slave_pid = 0;

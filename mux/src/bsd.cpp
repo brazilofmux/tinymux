@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.21 2003-04-01 20:41:58 sdennis Exp $
+// $Id: bsd.cpp,v 1.22 2003-04-01 20:49:26 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -490,7 +490,6 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     if (slave_pid > 0)
     {
         kill(slave_pid, SIGKILL);
-        waitpid(slave_pid, NULL, WNOHANG);
     }
     slave_pid = 0;
 
@@ -583,7 +582,6 @@ failure:
     if (slave_pid > 0)
     {
         kill(slave_pid, SIGKILL);
-        waitpid(slave_pid, NULL, WNOHANG);
     }
     slave_pid = 0;
     STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
@@ -2936,6 +2934,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             if (slave_pid > 0)
             {
                 kill(slave_pid, SIGKILL);
+                sleep(1);
                 waitpid(slave_pid, NULL, WNOHANG);
             }
             slave_pid = 0;

@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.33 2003-04-01 19:13:08 sdennis Exp $
+// $Id: predicates.cpp,v 1.34 2003-04-01 20:49:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1439,6 +1439,7 @@ extern SOCKET slave_socket;
     if (slave_pid > 0)
     {
         kill(slave_pid, SIGKILL);
+        sleep(1);
         waitpid(slave_pid, NULL, WNOHANG);
     }
     slave_pid = 0;
