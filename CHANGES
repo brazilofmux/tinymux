@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  January 2003
+Last Update:  February 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -380,6 +380,9 @@ Performance Enhancements:
  -- @backup now allows the backup script to unload a flatfile instead of
     having the server do it. Previously, the game server unloaded a flatfile,
     and then the backup script unloaded the flatfile again.
+ -- Player names weren't validated properly. Instead of 
+    Tiny_IsPlayerNameCharacter[], the code was using 
+    Tiny_IsObjectNameCharacter[].
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
