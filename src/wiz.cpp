@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.4 2000-08-18 09:08:00 sdennis Exp $
+// $Id: wiz.cpp,v 1.5 2000-08-28 06:22:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -266,7 +266,7 @@ void do_toad(dbref player, dbref cause, int key, char *toad, char *newowner)
     }
     else
     {
-        recipient = player;
+	    recipient = (mudconf.toad_recipient == -1) ? player : mudconf.toad_recipient;
     }
 
     STARTLOG(LOG_WIZARD, "WIZ", "TOAD");
@@ -286,8 +286,9 @@ void do_toad(dbref player, dbref cause, int key, char *toad, char *newowner)
     {
         // You get it.
         //
-        count = chown_all(victim, recipient, player, 0);
+        count = chown_all(victim, recipient, player, CHOWNALL_NOZONE);
         s_Owner(victim, recipient);
+        s_Zone(victim, NOTHING);
     }
     s_Flags(victim, TYPE_THING | HALT);
     s_Flags2(victim, 0);

@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.7 2000-06-07 23:51:57 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.8 2000-08-28 06:22:49 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -198,6 +198,7 @@ struct confdata
     char    mud_name[32];   /* Name of the mud */
     char    one_coin[32];   /* name of one coin (ie. "penny") */
     char    many_coins[32]; /* name of many coins (ie. "pennies") */
+    int     toad_recipient; /* Default @toad recipient. */
 #else
     int     paylimit;   /* getting money gets hard over this much */
     int     digcost;    /* cost of @dig command */

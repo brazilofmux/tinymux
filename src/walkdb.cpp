@@ -1,7 +1,7 @@
 //
-// walkdb.c -- Support for commands that walk the entire db 
+// walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.6 2000-06-03 09:28:21 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.7 2000-08-28 06:22:49 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -298,6 +298,11 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
                 s_Owner(i, to_player);
             }
             s_Flags(i, (Flags(i) & ~(CHOWN_OK | INHERIT)) | HALT);
+            
+            if (key & CHOWNALL_NOZONE)
+            {
+                s_Zone(i, NOTHING);
+            }
             count++;
         }
     }

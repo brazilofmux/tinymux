@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.26 2000-08-04 08:31:19 sdennis Exp $
+// $Id: externs.h,v 1.27 2000-08-28 06:22:49 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -604,6 +604,9 @@ extern void ReleaseAllResources(dbref obj);
 
 #define SA_EXIT     1   /* Exit, and dump core */
 #define SA_DFLT     2   /* Try to restart on a fatal error */
+
+/* Chownall flags */
+#define CHOWNALL_NOZONE 0x0001
 
 #define STARTLOG(key,p,s) \
     if ((((key) & mudconf.log_options) != 0) && start_log(p, s)) {

@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.17 2000-08-09 07:03:19 sdennis Exp $
+// $Id: conf.cpp,v 1.18 2000-08-28 06:22:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -260,6 +260,7 @@ void NDECL(cf_init)
     mudconf.zone_nest_lim = 20;
     mudconf.stack_limit = 50;
     mudconf.cache_names = 1;
+    mudconf.toad_recipient = -1;
     mudstate.events_flag = 0;
     mudstate.initializing = 0;
     mudstate.panicking = 0;
@@ -1369,6 +1370,7 @@ CONF conftable[] =
     {(char *)"thing_flags",    cf_set_flags,   CA_GOD,     (int *)&mudconf.thing_flags,    0},
     {(char *)"thing_quota",    cf_int,     CA_GOD,     &mudconf.thing_quota,       0},
     {(char *)"timeslice",    cf_int,     CA_GOD,     &mudconf.timeslice,     0},
+    {(char *)"toad_recipient", cf_int,   CA_GOD,     &mudconf.toad_recipient, 0},
     {(char *)"trace_output_limit",    cf_int,     CA_GOD,     &mudconf.trace_limit,       0},
     {(char *)"trace_topdown",    cf_bool,    CA_GOD,     &mudconf.trace_topdown,     0},
     {(char *)"trust_site",    cf_site,    CA_GOD,     (int *)&mudstate.suspect_list,  0},
