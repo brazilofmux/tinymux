@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.7 2004-04-01 22:00:42 sdennis Exp $
+// $Id: help.cpp,v 1.8 2004-06-10 15:39:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -81,7 +81,7 @@ bool HelpIndex_Read(help_indx *pEntry)
                 return false;
             }
             ++lineno;
-            
+
             nLine = strlen(Line);
             if (  nLine > 0
                && Line[nLine - 1] != '\n')

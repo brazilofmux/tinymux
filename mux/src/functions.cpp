@@ -1,10 +1,10 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.105 2004-06-04 23:10:56 sdennis Exp $
+// $Id: functions.cpp,v 1.106 2004-06-10 15:39:34 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1236,7 +1236,7 @@ FUNCTION(fun_timefmt)
             iWeekISO++;
         }
     }
-        
+
     char *q;
     char *p = fargs[0];
     while ((q = strchr(p, '$')) != NULL)
@@ -1718,14 +1718,14 @@ FUNCTION(fun_right)
 
     int iPosition1 = strlen(strip_ansi(fargs[0]));
     int nLength = mux_atol(fargs[1]);
-    int iPosition0 = iPosition1 - nLength;   
+    int iPosition0 = iPosition1 - nLength;
 
     if (nLength > LBUF_SIZE-1)
         nLength = LBUF_SIZE-1;
 
     if (iPosition0 < 0)
         iPosition0 = 0;
-    
+
     if (nLength < 0)
     {
         safe_range(buff, bufc);
@@ -2332,7 +2332,7 @@ FUNCTION(fun_extract)
     //
     start--;
     char *s = trim_space_sep(fargs[0], &sep);
-    while (  start 
+    while (  start
           && s)
     {
         s = next_token(s, &sep);
@@ -2349,7 +2349,7 @@ FUNCTION(fun_extract)
     // Count off the words in the string to save.
     //
     bool bFirst = true;
-    while (  len 
+    while (  len
           && s)
     {
         char *t = split_token(&s, &sep);
@@ -2684,7 +2684,7 @@ FUNCTION(fun_eq)
     {
         bResult = (mux_atol(fargs[0]) == mux_atol(fargs[1]));
     }
-    else 
+    else
     {
         bResult = (  strcmp(fargs[0], fargs[1]) == 0
                   || mux_atof(fargs[0]) == mux_atof(fargs[1]));
@@ -2703,7 +2703,7 @@ FUNCTION(fun_neq)
     {
         bResult = (mux_atol(fargs[0]) != mux_atol(fargs[1]));
     }
-    else 
+    else
     {
         bResult = (  strcmp(fargs[0], fargs[1]) != 0
                   && mux_atof(fargs[0]) != mux_atof(fargs[1]));
@@ -2759,7 +2759,7 @@ FUNCTION(fun_cand)
     {
         char *bp = temp;
         char *str = fargs[i];
-        mux_exec(temp, &bp, executor, caller, enactor, 
+        mux_exec(temp, &bp, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         val = isTRUE(mux_atol(temp));
@@ -2776,7 +2776,7 @@ FUNCTION(fun_cor)
     {
         char *bp = temp;
         char *str = fargs[i];
-        mux_exec(temp, &bp, executor, caller, enactor, 
+        mux_exec(temp, &bp, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         val = isTRUE(mux_atol(temp));
@@ -2793,7 +2793,7 @@ FUNCTION(fun_candbool)
     {
         char *bp = temp;
         char *str = fargs[i];
-        mux_exec(temp, &bp, executor, caller, enactor, 
+        mux_exec(temp, &bp, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         val = xlate(temp);
@@ -2810,7 +2810,7 @@ FUNCTION(fun_corbool)
     {
         char *bp = temp;
         char *str = fargs[i];
-        mux_exec(temp, &bp, executor, caller, enactor, 
+        mux_exec(temp, &bp, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         val = xlate(temp);
@@ -3060,7 +3060,7 @@ void CSpellNum::FractionalDigits(int n, const char *p)
        && n < 15)
     {
         int d = n / 3;
-        int r = n % 3; 
+        int r = n % 3;
         StartWord();
         if (r != 0)
         {
@@ -3126,7 +3126,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
         }
         nB = number - pB;
     }
-    
+
     // Skip trailing spaces.
     //
     while (mux_isspace(*number))
@@ -3211,7 +3211,7 @@ FUNCTION(fun_roman)
         return;
     }
     else if (  nA > 4
-            || (  nA == 1 
+            || (  nA == 1
                && pA[0] == '0')
             || (  nA == 4
                && '3' < pA[0]))
@@ -3234,7 +3234,7 @@ FUNCTION(fun_roman)
         { 'C', 'D', 'M' },
         { 'M', ' ', ' ' }
     };
- 
+
     static const char *aCode[10] =
     {
         "",
@@ -3248,7 +3248,7 @@ FUNCTION(fun_roman)
         "2111",
         "13"
     };
-    
+
     while (nA--)
     {
         const char *pCode = aCode[*pA - '0'];
@@ -3906,7 +3906,7 @@ FUNCTION(fun_ctu)
     val = ConvertRDG2R(val, fargs[1]);
     val = ConvertR2RDG(val, fargs[2]);
     fval(buff, bufc, val);
-} 
+}
 
 //------------------------------------------------------------------------
 // Vector functions: VADD, VSUB, VMUL, VCROSS, VMAG, VUNIT, VDIM
@@ -5854,7 +5854,7 @@ FUNCTION(fun_lnum)
  * fun_lattr, fun_lattrp: Return list of attributes I can see on the object.
  */
 
-void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
+void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
                    bool bCheckParent)
 {
     dbref thing;
@@ -6601,7 +6601,7 @@ void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, bool bWhich)
         else
         {
             safe_str(mudstate.itext[val], buff, bufc);
-        } 
+        }
     }
 }
 
@@ -6672,7 +6672,7 @@ FUNCTION(fun_ilev)
 }
 
 /* ---------------------------------------------------------------------------
- * fun_fold: Iteratively eval an attrib with a list of arguments and an 
+ * fun_fold: Iteratively eval an attrib with a list of arguments and an
  *           optional base case.  With no base case, the first list element is
  *           passed as %0 and the second is %1.  The attrib is then evaluated
  *           with these args, the result is then used as %0 and the next arg
@@ -6768,7 +6768,7 @@ FUNCTION(fun_fold)
 // Default <conjunction> is "and", default punctuation is ","
 //
 FUNCTION(fun_itemize)
-{ 
+{
     SEP sep;
     if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
@@ -6830,7 +6830,7 @@ FUNCTION(fun_itemize)
  *  NOTE:  If you specify a separator, it is used to delimit the returned list.
  */
 
-void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor, 
+void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
                     char *fargs[], SEP *psep, SEP *posep, bool bBool)
 {
     char *atext;
@@ -6842,7 +6842,7 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
 
     // Now iteratively eval the attrib with the argument list.
     //
-    char *result, *curr, *objstring, *bp, *str, *cp; 
+    char *result, *curr, *objstring, *bp, *str, *cp;
 
     cp = curr = trim_space_sep(fargs[1], psep);
     char *atextbuf = alloc_lbuf("fun_filter");
@@ -6909,7 +6909,7 @@ FUNCTION(fun_filterbool)
 
 /* ---------------------------------------------------------------------------
  * fun_map: Iteratively evaluate an attribute with a list of arguments.
- * 
+ *
  *      > &DIV_TWO object=fdiv(%0,2)
  *      > say map(1 2 3 4 5,object/div_two)
  *      You say, "0.5 1 1.5 2 2.5"
@@ -7246,7 +7246,7 @@ FUNCTION(fun_idle)
         DESC *d;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
-        DESC_ITER_CONN(d) 
+        DESC_ITER_CONN(d)
         {
             if (d->descriptor == s)
             {
@@ -7261,8 +7261,8 @@ FUNCTION(fun_idle)
             CLinearTimeDelta ltdResult = ltaNow - d->last_time;
             nIdle = ltdResult.ReturnSeconds();
         }
-    } 
-    else 
+    }
+    else
     {
         char *pTargetName = fargs[0];
         if (*pTargetName == '*')
@@ -7290,7 +7290,7 @@ FUNCTION(fun_conn)
         DESC *d;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
-        DESC_ITER_CONN(d) 
+        DESC_ITER_CONN(d)
         {
             if (d->descriptor == s)
             {
@@ -7305,8 +7305,8 @@ FUNCTION(fun_conn)
             CLinearTimeDelta ltdResult = ltaNow - d->connected_at;
             nConnected = ltdResult.ReturnSeconds();
         }
-    } 
-    else 
+    }
+    else
     {
         char *pTargetName = fargs[0];
         if (*pTargetName == '*')
@@ -7526,7 +7526,7 @@ static void handle_sets
     switch (oper)
     {
     case SET_UNION:
-    
+
         // Copy elements common to both lists.
         //
         // Handle case of two identical single-element lists.
@@ -7621,7 +7621,7 @@ static void handle_sets
         break;
 
     case SET_INTERSECT:
-    
+
         // Copy elements not in both lists.
         //
         while (  i1 < n1
@@ -7664,7 +7664,7 @@ static void handle_sets
         break;
 
     case SET_DIFF:
-    
+
         // Copy elements unique to list1.
         //
         while (  i1 < n1
@@ -8225,8 +8225,8 @@ FUNCTION(fun_bittype)
 
 FUNCTION(fun_error)
 {
-    if (  Good_obj(mudconf.global_error_obj) 
-        && !Going(mudconf.global_error_obj) ) 
+    if (  Good_obj(mudconf.global_error_obj)
+        && !Going(mudconf.global_error_obj) )
     {
         dbref aowner;
         int aflags;
@@ -8237,12 +8237,12 @@ FUNCTION(fun_error)
         if (nfargs == 1)
         {
             char *arg = fargs[0];
-            mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor, 
+            mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 EV_EVAL | EV_FCHECK | EV_STRIP_CURLY, &str, &arg, 1);
         }
         else
         {
-            mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor, 
+            mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 EV_EVAL | EV_FCHECK | EV_STRIP_CURLY, &str, (char **)NULL, 0);
         }
         safe_str(errbuff, buff, bufc);
@@ -8294,7 +8294,7 @@ char *expand_tabs(const char *str)
             case '\t':
                 safe_fill(tbuf1, &bp, ' ', 8 - n % 8);
                 continue;
-            case '\r':  
+            case '\r':
                 // FALL THROUGH
             case '\n':
                 n = 0;
@@ -8331,13 +8331,13 @@ static int wraplen(char *str, const int nWidth, bool &newline)
 {
     const int length = strlen(str);
     newline = false;
-    if (length <= nWidth) 
+    if (length <= nWidth)
     {
         /* Find the first return char
         * so %r will not mess with any alignment
         * functions.
         */
-        for (int i = 0; i < length; i++) 
+        for (int i = 0; i < length; i++)
         {
             if (  str[i] == '\n'
                || str[i] == '\r')
@@ -8355,7 +8355,7 @@ static int wraplen(char *str, const int nWidth, bool &newline)
     */
     for (int i = 0; i < nWidth; i++)
     {
-        if (  str[i] == '\n' 
+        if (  str[i] == '\n'
            || str[i] == '\r')
         {
             newline = true;
@@ -8363,7 +8363,7 @@ static int wraplen(char *str, const int nWidth, bool &newline)
         }
     }
 
-    /* No return char was found. Now 
+    /* No return char was found. Now
     * find the last space in str.
     */
     int maxlen = nWidth;
@@ -8934,7 +8934,7 @@ FUNCTION(fun_cmds)
         SOCKET s = mux_atol(fargs[0]);
         bool bFound = false;
         DESC *d;
-        DESC_ITER_CONN(d) 
+        DESC_ITER_CONN(d)
         {
             if (d->descriptor == s)
             {
@@ -9127,7 +9127,7 @@ FUNCTION(fun_lcmds)
     {
         return;
     }
-    
+
     // Check to see what type of command matching we will do. '$' commands
     // or '^' listens.  We default with '$' commands.
     //
@@ -9138,7 +9138,7 @@ FUNCTION(fun_lcmds)
     {
         cmd_type = *fargs[2];
     }
-    
+
     // Check for wildcard matching.  parse_attrib_wild checks for read
     // permission, so we don't have to.  Have p_a_w assume the
     // slash-star if it is missing.
@@ -9161,14 +9161,14 @@ FUNCTION(fun_lcmds)
                 {
                     bool isFound = false;
                     char *c_ptr = buf+1;
-                    
+
                     // If there is no characters between the '$' or '^' and the
                     // ':' it's not a valid command, so skip it.
                     //
-                    if (*c_ptr != ':') 
+                    if (*c_ptr != ':')
                     {
                         int isEscaped = false;
-                        while (*c_ptr && !isFound) 
+                        while (*c_ptr && !isFound)
                         {
                             // We need to check if the ':' in the command is
                             // escaped.
@@ -9177,7 +9177,7 @@ FUNCTION(fun_lcmds)
                             {
                                 isEscaped = !isEscaped;
                             }
-                            else if (*c_ptr == ':' && !isEscaped) 
+                            else if (*c_ptr == ':' && !isEscaped)
                             {
                                 isFound = true;
                                 *c_ptr = '\0';
@@ -9189,7 +9189,7 @@ FUNCTION(fun_lcmds)
                             c_ptr++;
                         }
                     }
-                    
+
                     // We don't want to bother printing out the $command
                     // if it doesn't have a matching ':'.  It isn't a valid
                     // command then.
@@ -9200,10 +9200,10 @@ FUNCTION(fun_lcmds)
                         {
                             print_sep(&sep, buff, bufc);
                         }
-                        
+
                         mux_strlwr(buf);
                         safe_str(buf+1, buff, bufc);
-                        
+
                         isFirst = false;
                     }
                 }
@@ -9327,7 +9327,7 @@ FUNCTION(fun_art)
     //
     safe_str( "a", buff, bufc);
 }
- 
+
 // ---------------------------------------------------------------------------
 // fun_ord:
 //
@@ -9335,7 +9335,7 @@ FUNCTION(fun_art)
 // position in the character set.
 //
 FUNCTION(fun_ord)
-{ 
+{
     size_t n;
     char *p  = strip_ansi(fargs[0], &n);
     if (n == 1)

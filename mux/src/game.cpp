@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.44 2004-06-08 17:32:58 sdennis Exp $
+// $Id: game.cpp,v 1.45 2004-06-10 15:39:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -919,7 +919,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             {
                 buff = (char *)msg;
             }
-            notify_check(targetloc, sender, buff, 
+            notify_check(targetloc, sender, buff,
                 MSG_ME | MSG_F_UP | MSG_S_INSIDE);
             if (key & MSG_S_INSIDE)
             {
@@ -2057,7 +2057,7 @@ void dbconvert(void)
 #endif // MEMORY_BASED
 
 void write_pidfile(const char *pFilename)
-{   
+{
     FILE *fp = fopen(pFilename, "wb");
     if (fp)
     {

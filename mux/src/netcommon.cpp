@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.40 2004-06-10 14:47:14 sdennis Exp $
+// $Id: netcommon.cpp,v 1.41 2004-06-10 15:39:34 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2656,7 +2656,7 @@ FUNCTION(fun_doing)
         DESC *d;
         DESC_ITER_CONN(d)
         {
-            if (d->descriptor == s) 
+            if (d->descriptor == s)
             {
                 bFound = true;
                 break;
@@ -2681,7 +2681,7 @@ FUNCTION(fun_doing)
             safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
             return;
         }
-    
+
         if (  Wizard_Who(executor)
            || !Hidden(victim))
         {
@@ -2709,7 +2709,7 @@ FUNCTION(fun_host)
         safe_noperm(buff, bufc);
         return;
     }
-     
+
     bool isPort = is_rational(fargs[0]);
     bool bFound = false;
     DESC *d;
@@ -2718,13 +2718,13 @@ FUNCTION(fun_host)
         SOCKET s = mux_atol(fargs[0]);
         DESC_ITER_CONN(d)
         {
-            if (d->descriptor == s) 
+            if (d->descriptor == s)
             {
                 bFound = true;
                 break;
             }
         }
-    } 
+    }
     else
     {
         dbref victim = lookup_player(executor, fargs[0], true);
@@ -2744,7 +2744,7 @@ FUNCTION(fun_host)
     }
     if (bFound)
     {
-        char *hostname = ((d->username[0] != '\0') ? 
+        char *hostname = ((d->username[0] != '\0') ?
             tprintf("%s@%s", d->username, d->addr) : d->addr);
         safe_str(hostname, buff, bufc);
         return;

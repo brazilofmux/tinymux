@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.6 2003-07-27 05:21:39 sdennis Exp $
+// $Id: alloc.cpp,v 1.7 2004-06-10 15:39:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -533,7 +533,7 @@ void list_bufstats(dbref player)
         mux_i64toa(pools[i].max_alloc, szMaxAlloc);
         mux_i64toa(pools[i].tot_alloc, szTotAlloc);
         mux_i64toa(pools[i].num_lost,  szNumLost);
-        
+
         sprintf(buff, "%-12s %5d%10s%10s%14s%7s",
             poolnames[i], (int)pools[i].pool_size,
             szNumAlloc, szMaxAlloc, szTotAlloc, szNumLost);

@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.10 2004-05-10 14:12:22 sdennis Exp $
+// $Id: create.cpp,v 1.11 2004-06-10 15:39:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -66,7 +66,7 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
         if(!(Open_ok(loc) && could_doit(player, loc, A_LOPEN)))
         {
             notify_quiet(player, NOPERM_MESSAGE);
-            return;         
+            return;
         }
     }
     dbref exit = create_obj(player, TYPE_EXIT, direction, 0);
@@ -1029,20 +1029,20 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
         case TYPE_EXIT:
             destroy_exit(thing);
             break;
-    
+
         case TYPE_PLAYER:
             destroy_player(executor, thing);
             break;
-    
+
         case TYPE_ROOM:
             empty_obj(thing);
             destroy_obj(thing);
             break;
-    
+
         case TYPE_THING:
             destroy_thing(thing);
             break;
-    
+
         default:
             notify(executor, "Weird object type cannot be destroyed.");
             return;

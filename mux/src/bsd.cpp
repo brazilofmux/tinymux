@@ -1,10 +1,10 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.37 2004-06-09 05:53:03 sdennis Exp $
+// $Id: bsd.cpp,v 1.38 2004-06-10 15:39:34 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2779,7 +2779,7 @@ void BuildSignalNamesTable(void)
 static char *SignalDesc(int iSignal)
 {
     static char buff[LBUF_SIZE];
-    char *bufc = buff; 
+    char *bufc = buff;
     safe_str(signames[iSignal].pShortName, buff, &bufc);
     if (signames[iSignal].pLongName)
     {
@@ -3614,7 +3614,7 @@ void SiteMonSend(int port, const char *address, DESC *d, const char *msg)
         sendMsg = tprintf("SITEMON: [%d] %s from %s.%s", port, msg,
             address, bSuspect ? " (SUSPECT)": "");
     }
-    
+
     DESC *nd;
     DESC_ITER_CONN(nd)
     {

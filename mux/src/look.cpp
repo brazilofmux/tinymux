@@ -1,10 +1,10 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.23 2004-06-09 05:56:04 sdennis Exp $
+// $Id: look.cpp,v 1.24 2004-06-10 15:39:34 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -963,7 +963,7 @@ static bool show_a_desc(dbref player, dbref loc)
         char *tbuf1 = atr_pget(loc, iDescDefault, &aowner, &aflags);
         char *str = tbuf1;
         char *temp = alloc_lbuf("look_description.ET");
-        char *bp = temp; 
+        char *bp = temp;
         mux_exec(temp, &bp, loc, player, player,
                EV_FCHECK | EV_EVAL | EV_TOP,
                &str, (char **)NULL, 0);
@@ -980,11 +980,11 @@ static bool show_a_desc(dbref player, dbref loc)
         mux_exec(FormatOutput, &tPtr, loc, player, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &DescFormat, ParameterList, 2);
-        
-        notify(player, FormatOutput); 
-        did_it(player, loc, 0, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);  
 
-        free_lbuf(tbuf1); 
+        notify(player, FormatOutput);
+        did_it(player, loc, 0, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
+
+        free_lbuf(tbuf1);
         free_lbuf(attrname);
         free_lbuf(FormatOutput);
         free_lbuf(temp);

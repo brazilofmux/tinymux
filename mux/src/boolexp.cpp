@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.13 2004-05-15 22:45:21 sdennis Exp $
+// $Id: boolexp.cpp,v 1.14 2004-06-10 15:39:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -461,7 +461,7 @@ static BOOLEXP *parse_boolexp_L(void)
                 b->thing = match_result();
                 restore_match_state(&mstate);
             }
-    
+
             if (b->thing == NOTHING)
             {
                 notify(parse_player, tprintf("I don't see %s here.", buf));

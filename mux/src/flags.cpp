@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.16 2004-04-01 22:00:42 sdennis Exp $
+// $Id: flags.cpp,v 1.17 2004-06-10 15:39:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1231,7 +1231,7 @@ CF_HAND(cf_flag_name)
     char *flagstr = mux_strtok_parse(&tts);
     char *namestr = mux_strtok_parse(&tts);
 
-    if (  !flagstr 
+    if (  !flagstr
        || !*flagstr
        || !namestr
        || !*namestr)

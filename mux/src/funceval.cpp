@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.67 2004-06-09 05:54:26 sdennis Exp $
+// $Id: funceval.cpp,v 1.68 2004-06-10 15:39:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -38,7 +38,7 @@ bool parse_and_get_attrib(dbref executor, char *fargs[], char **atext, dbref *th
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
-    if (!parse_attrib(executor, fargs[0], thing, &ap)) 
+    if (!parse_attrib(executor, fargs[0], thing, &ap))
     {
         *thing = executor;
         ap = atr_str(fargs[0]);
@@ -62,10 +62,10 @@ bool parse_and_get_attrib(dbref executor, char *fargs[], char **atext, dbref *th
     dbref aowner;
     int aflags;
     *atext = atr_pget(*thing, ap->number, &aowner, &aflags);
-    if (!*atext) 
+    if (!*atext)
     {
         return false;
-    } 
+    }
     else if (!**atext)
     {
         free_lbuf(*atext);
@@ -94,7 +94,7 @@ FUNCTION(fun_cwho)
         return;
     }
 
-    int match_type = CWHO_ON;    
+    int match_type = CWHO_ON;
     if (nfargs == 2)
     {
         if (mux_stricmp(fargs[1], "all") == 0)
@@ -1625,7 +1625,7 @@ FUNCTION(fun_mailfrom)
 // Hasattr (and hasattrp, which is derived from hasattr) borrowed from
 // TinyMUSH 2.2.
 
-void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
+void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
                    bool bCheckParent)
 {
     dbref thing = match_thing_quiet(executor, fargs[0]);
@@ -1777,19 +1777,19 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
 
 FUNCTION(fun_default)
 {
-    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs, 
+    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
         ncargs, DEFAULT_DEFAULT);
 }
 
 FUNCTION(fun_edefault)
 {
-    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs, 
+    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
         ncargs, DEFAULT_EDEFAULT);
 }
 
 FUNCTION(fun_udefault)
 {
-    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs, 
+    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
         ncargs, DEFAULT_UDEFAULT);
 }
 
@@ -1852,7 +1852,7 @@ FUNCTION(fun_isword)
  */
 FUNCTION(fun_visible)
 {
-    dbref it = match_thing_quiet(executor, fargs[0]); 
+    dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
@@ -2408,11 +2408,11 @@ FUNCTION(fun_mix)
         lastn = nfargs - 2;
     }
 
-    // Get the attribute, check the permissions. 
-    // 
+    // Get the attribute, check the permissions.
+    //
     dbref thing;
     char *atext;
-    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc)) 
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
     {
         return;
     }
@@ -2426,13 +2426,13 @@ FUNCTION(fun_mix)
 
     // Process the lists, one element at a time.
     //
-    for (i = 0; i < lastn; i++) 
+    for (i = 0; i < lastn; i++)
     {
         cp[i] = trim_space_sep(fargs[i+1], &sep);
     }
     int twords;
     int nwords = countwords(cp[0], &sep);
-    for (i = 1; i < lastn; i++) 
+    for (i = 1; i < lastn; i++)
     {
         twords = countwords(cp[i], &sep);
         if (twords > nwords)
@@ -2443,7 +2443,7 @@ FUNCTION(fun_mix)
     char *atextbuf = alloc_lbuf("fun_mix");
     char *str, *os[10];
     bool bFirst = true;
-    for (int wc = 0; wc < nwords && !MuxAlarm.bAlarmed; wc++) 
+    for (int wc = 0; wc < nwords && !MuxAlarm.bAlarmed; wc++)
     {
         if (!bFirst)
         {
@@ -2453,7 +2453,7 @@ FUNCTION(fun_mix)
         {
             bFirst = false;
         }
-        for (i = 0; i < lastn; i++) 
+        for (i = 0; i < lastn; i++)
         {
             os[i] = split_token(&cp[i], &sep);
         }
@@ -3067,7 +3067,7 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
     return tbuf1;
 }
 
-void grep_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
+void grep_handler(char *buff, char **bufc, dbref executor, char *fargs[],
                    bool bCaseInsens)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
@@ -3710,7 +3710,7 @@ void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
         if (  !MuxAlarm.bAlarmed
            && pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 1)
         {
-            if (first) 
+            if (first)
             {
                 first = false;
             }
@@ -3733,7 +3733,7 @@ void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
     }
 }
 
-FUNCTION(fun_regrab) 
+FUNCTION(fun_regrab)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -3743,7 +3743,7 @@ FUNCTION(fun_regrab)
     real_regrab(fargs[0], fargs[1], &sep, buff, bufc, false, false);
 }
 
-FUNCTION(fun_regrabi) 
+FUNCTION(fun_regrabi)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -3753,7 +3753,7 @@ FUNCTION(fun_regrabi)
     real_regrab(fargs[0], fargs[1], &sep, buff, bufc, true, false);
 }
 
-FUNCTION(fun_regraball) 
+FUNCTION(fun_regraball)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -3763,7 +3763,7 @@ FUNCTION(fun_regraball)
     real_regrab(fargs[0], fargs[1], &sep, buff, bufc, false, true);
 }
 
-FUNCTION(fun_regraballi) 
+FUNCTION(fun_regraballi)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))

@@ -1,10 +1,10 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.47 2004-05-20 04:31:19 sdennis Exp $
+// $Id: db.cpp,v 1.48 2004-06-10 15:39:34 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.  
+// rights not explicitly given are reserved.
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2142,7 +2142,7 @@ void atr_free(dbref thing)
 }
 
 /* ---------------------------------------------------------------------------
- * atr_cpy: Copy all attributes from one object to another.  
+ * atr_cpy: Copy all attributes from one object to another.
  */
 
 void atr_cpy(dbref dest, dbref source)
@@ -2167,11 +2167,11 @@ void atr_cpy(dbref dest, dbref source)
         if (attr && at)
         {
             if (  !(at->flags & (AF_INTERNAL|AF_NOCLONE))
-               && (  God(owner) 
-                  || (  !God(dest) 
-                     && !(aflags & AF_LOCK) 
-                     && (  (  Controls(owner, dest) 
-                           && !(at->flags & (AF_WIZARD|AF_GOD)) 
+               && (  God(owner)
+                  || (  !God(dest)
+                     && !(aflags & AF_LOCK)
+                     && (  (  Controls(owner, dest)
+                           && !(at->flags & (AF_WIZARD|AF_GOD))
                            && !(aflags & (AF_WIZARD|AF_GOD)))
                         || (  Wizard(owner)
                            && !(at->flags & AF_GOD))))))

@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.30 2004-05-15 20:44:55 sdennis Exp $
+// $Id: mail.cpp,v 1.31 2004-06-10 15:39:34 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -22,7 +22,7 @@
 #define SIZEOF_MALIASDESC (WIDTHOF_MALIASDESC*2)
 
 #define MAX_MALIAS_MEMBERSHIP 100
-struct malias 
+struct malias
 {
     int owner;
     char *name;
@@ -196,7 +196,7 @@ static int add_mail_message(dbref player, char *message, bool bEval)
     dbref aowner;
     char *bp = alloc_lbuf("add_mail_message");
     char *atrstr = atr_get(player, A_SIGNATURE, &aowner, &aflags);
-    char *execstr = bp; 
+    char *execstr = bp;
     char *str = atrstr;
     mux_exec(execstr, &bp, player, player, player,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
@@ -758,9 +758,9 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                     notify(player, "MAIL: AL isn't enough (all?)");
                     return false;
                     break;
-         
+
                 case 'L':
-    
+
                     // All messages, all folders
                     //
                     p++;
@@ -774,9 +774,9 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                         return false;
                     }
                     break;
-    
+
                 default:
-    
+
                     // Bad
                     //
                     notify(player, mailmsg[MAIL_INVALID_SPEC]);
@@ -1009,7 +1009,7 @@ static bool mail_match(struct mail *mp, struct mail_selector ms, int num)
         return false;
     }
 
-    if (ms.days == -1) 
+    if (ms.days == -1)
     {
         return true;
     }
@@ -1569,7 +1569,7 @@ static char *mail_list_time(const char *the_time)
     // Chop out :ss
     //
     int i;
-    for (i = 0; i < 16; i++) 
+    for (i = 0; i < 16; i++)
     {
         if (*p)
         {
@@ -1577,7 +1577,7 @@ static char *mail_list_time(const char *the_time)
         }
     }
 
-    for (i = 0; i < 3; i++) 
+    for (i = 0; i < 3; i++)
     {
         if (*p)
         {
@@ -1612,7 +1612,7 @@ void do_mail_list(dbref player, char *msglist, bool sub)
     char szSubjectBuffer[MBUF_SIZE];
     int folder = player_folder(player);
 
-    notify(player, 
+    notify(player,
         tprintf("---------------------------   MAIL: Folder %d   ----------------------------", folder));
 
     for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = mp->next)
@@ -1850,7 +1850,7 @@ void do_expmail_start(dbref player, char *arg, char *subject)
         return;
     }
     char *tolist = make_numlist(player, arg, false);
-    if (!tolist) 
+    if (!tolist)
     {
         return;
     }
@@ -2575,8 +2575,8 @@ void do_mail_stats(dbref player, char *name, int full)
         return;
     }
     struct mail *mp;
-    if (target == AMBIGUOUS) 
-    {  
+    if (target == AMBIGUOUS)
+    {
         // stats for all
         if (full == 0)
         {
@@ -3336,7 +3336,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
             {
                 head++;
                 tail++;
-                while (  *tail 
+                while (  *tail
                       && *tail != '"')
                 {
                     tail++;
@@ -3462,7 +3462,7 @@ void do_malias_list(dbref player, char *alias)
     }
     char *buff = alloc_lbuf("do_malias_list");
     char *bp = buff;
-     
+
     safe_tprintf_str(buff, &bp, "MAIL: Alias *%s: ", m->name);
     for (int i = m->numrecep - 1; i > -1; i--)
     {
@@ -3557,7 +3557,7 @@ void do_mail_cc(dbref player, char *arg, bool bBlind)
     }
 
     char *tolist = make_numlist(player, arg, bBlind);
-    if (!tolist) 
+    if (!tolist)
     {
         return;
     }
@@ -3861,7 +3861,7 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
     {
         return;
     }
-    if (  text[1] == '-' 
+    if (  text[1] == '-'
        && text[2] == '\0')
     {
         do_expmail_stop(executor, 0);

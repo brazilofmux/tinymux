@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.12 2004-04-29 05:01:22 sdennis Exp $
+// $Id: object.cpp,v 1.13 2004-06-10 15:39:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -33,17 +33,17 @@ static void Log_pointer_err(dbref prior, dbref obj, dbref loc, dbref ref,
 {
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
     log_type_and_name(obj);
-    if (loc != NOTHING) 
+    if (loc != NOTHING)
     {
         log_text(" in ");
         log_type_and_name(loc);
     }
     log_text(": ");
-    if (prior == NOTHING) 
+    if (prior == NOTHING)
     {
         log_text(reftype);
-    } 
-    else 
+    }
+    else
     {
         log_text("Next pointer");
     }
@@ -59,7 +59,7 @@ static void Log_header_err(dbref obj, dbref loc, dbref val, bool is_object,
 {
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
     log_type_and_name(obj);
-    if (loc != NOTHING) 
+    if (loc != NOTHING)
     {
         log_text(" in ");
         log_type_and_name(loc);
@@ -84,7 +84,7 @@ static void Log_simple_err(dbref obj, dbref loc, const char *errtype)
 {
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
     log_type_and_name(obj);
-    if (loc != NOTHING) 
+    if (loc != NOTHING)
     {
         log_text(" in ");
         log_type_and_name(loc);
@@ -579,11 +579,11 @@ void divest_object(dbref thing)
 {
     dbref curr, temp;
 
-    SAFE_DOLIST(curr, temp, Contents(thing)) 
+    SAFE_DOLIST(curr, temp, Contents(thing))
     {
         if (  !Controls(thing, curr)
            && Has_location(curr)
-           && Key(curr)) 
+           && Key(curr))
         {
             if (  !Good_obj(Home(curr))
                || Going(Home(curr)))
@@ -623,7 +623,7 @@ void empty_obj(dbref obj)
         }
         else
         {
-            s_Location(targ, NOTHING); 
+            s_Location(targ, NOTHING);
             s_Next(targ, NOTHING);
             if (  !Good_obj(Home(targ))
                || Going(Home(targ))
@@ -813,7 +813,7 @@ static void check_dead_refs(void)
         // Check the owner.
         //
         owner = Owner(i);
-        if (!Good_obj(owner)) 
+        if (!Good_obj(owner))
         {
             if (isPlayer(i))
             {
@@ -833,10 +833,10 @@ static void check_dead_refs(void)
                 halt_que(NOTHING, i);
             }
             s_Halted(i);
-        } 
-        else if (check_type & DBCK_FULL) 
+        }
+        else if (check_type & DBCK_FULL)
         {
-            if (Going(owner)) 
+            if (Going(owner))
             {
                 if (isPlayer(i))
                 {
@@ -856,7 +856,7 @@ static void check_dead_refs(void)
                     halt_que(NOTHING, i);
                 }
                 s_Halted(i);
-            } 
+            }
             else if (!OwnsOthers(owner))
             {
                 if (isPlayer(i))
@@ -878,9 +878,9 @@ static void check_dead_refs(void)
         // Check the parent
         //
         targ = Parent(i);
-        if (Good_obj(targ)) 
+        if (Good_obj(targ))
         {
-            if (Going(targ)) 
+            if (Going(targ))
             {
                 s_Parent(i, NOTHING);
                 if (!mudstate.bStandAlone)
@@ -898,8 +898,8 @@ static void check_dead_refs(void)
                         "is invalid.  Cleared.");
                 }
             }
-        } 
-        else if (targ != NOTHING) 
+        }
+        else if (targ != NOTHING)
         {
             Log_header_err(i, Location(i), targ, true,
                 "Parent", "is invalid.  Cleared.");
@@ -942,26 +942,26 @@ static void check_dead_refs(void)
         //
         fp = fwdlist_get(i);
         dirty = false;
-        if (fp) 
+        if (fp)
         {
-            for (j = 0; j < fp->count; j++) 
+            for (j = 0; j < fp->count; j++)
             {
                 targ = fp->data[j];
                 if (  Good_obj(targ)
-                   && Going(targ)) 
+                   && Going(targ))
                 {
                     fp->data[j] = NOTHING;
                     dirty = true;
-                } 
-                else if (  !Good_obj(targ) 
-                        && targ != NOTHING) 
+                }
+                else if (  !Good_obj(targ)
+                        && targ != NOTHING)
                 {
                     fp->data[j] = NOTHING;
                     dirty = true;
                 }
             }
         }
-        if (dirty) 
+        if (dirty)
         {
             str = alloc_lbuf("purge_going");
             (void)fwdlist_rewrite(fp, str);
@@ -970,17 +970,17 @@ static void check_dead_refs(void)
             free_lbuf(str);
         }
 
-        if (check_type & DBCK_FULL) 
+        if (check_type & DBCK_FULL)
         {
             // Check for wizards
             //
-            if (Wizard(i)) 
+            if (Wizard(i))
             {
-                if (isPlayer(i)) 
+                if (isPlayer(i))
                 {
                     Log_simple_err(i, NOTHING, "Player is a WIZARD.");
                 }
-                if (!Wizard(Owner(i))) 
+                if (!Wizard(Owner(i)))
                 {
                     Log_header_err(i, NOTHING, Owner(i), true,
                                "Owner", "of a WIZARD object is not a wizard");
@@ -1014,14 +1014,14 @@ static void check_dead_refs(void)
 
             // Check for self-referential Next().
             //
-            if (Next(i) == i) 
+            if (Next(i) == i)
             {
                 Log_simple_err(i, NOTHING,
                      "Next points to self.  Next cleared.");
                 s_Next(i, NOTHING);
             }
 
-            if (check_type & DBCK_FULL) 
+            if (check_type & DBCK_FULL)
             {
                 // Check wealth.
                 //
@@ -1616,7 +1616,7 @@ static void check_contents_chains(void)
            && Has_location(i))
         {
             Log_simple_err(i, Location(i), "Orphaned object, moved home.");
-            s_Location(i, NOTHING); 
+            s_Location(i, NOTHING);
             s_Next(i, NOTHING);
             if (  !Good_obj(Home(i))
                || Going(Home(i)))

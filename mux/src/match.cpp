@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.4 2003-02-17 02:26:23 sdennis Exp $
+// $Id: match.cpp,v 1.5 2004-06-10 15:39:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -166,7 +166,7 @@ void match_player(void)
 }
 
 /*
- * returns nnn if name = #nnn, else NOTHING 
+ * returns nnn if name = #nnn, else NOTHING
  */
 static dbref absolute_name(bool bNeedPound)
 {
@@ -222,7 +222,7 @@ void match_me(void)
         return;
     }
     if (  Good_obj(md.absolute_form)
-       && md.absolute_form == md.player) 
+       && md.absolute_form == md.player)
     {
         promote_match(md.player, CON_DBREF | CON_LOCAL);
         return;
@@ -254,20 +254,20 @@ void match_here(void)
         return;
     }
     if (  Good_obj(md.player)
-       && Has_location(md.player)) 
+       && Has_location(md.player))
     {
         dbref loc = Location(md.player);
-        if (Good_obj(loc)) 
+        if (Good_obj(loc))
         {
-            if (loc == md.absolute_form) 
+            if (loc == md.absolute_form)
             {
                 promote_match(loc, CON_DBREF | CON_LOCAL);
-            } 
-            else if (!string_compare(md.string, "here")) 
+            }
+            else if (!string_compare(md.string, "here"))
             {
                 promote_match(loc, CON_TOKEN | CON_LOCAL);
-            } 
-            else if (!string_compare(md.string, PureName(loc))) 
+            }
+            else if (!string_compare(md.string, PureName(loc)))
             {
                 promote_match(loc, CON_COMPLETE | CON_LOCAL);
             }
@@ -283,16 +283,16 @@ static void match_list(dbref first, int local)
     }
     DOLIST(first, first)
     {
-        if (first == md.absolute_form) 
+        if (first == md.absolute_form)
         {
             promote_match(first, CON_DBREF | local);
             return;
         }
         /*
-         * Warning: make sure there are no other calls to Name() in 
+         * Warning: make sure there are no other calls to Name() in
          * promote_match or its called subroutines; they
          * would overwrite Name()'s static buffer which is
-         * needed by string_match(). 
+         * needed by string_match().
          */
         const char *namebuf = PureName(first);
 
@@ -326,10 +326,10 @@ void match_neighbor(void)
         return;
     }
     if (  Good_obj(md.player)
-       && Has_location(md.player)) 
+       && Has_location(md.player))
     {
         dbref loc = Location(md.player);
-        if (Good_obj(loc)) 
+        if (Good_obj(loc))
         {
             match_list(Contents(loc), CON_LOCAL);
         }
@@ -348,9 +348,9 @@ static bool match_exit_internal(dbref loc, dbref baseloc, int local)
     bool result = false;
     int key;
 
-    DOLIST(exit, Exits(loc)) 
+    DOLIST(exit, Exits(loc))
     {
-        if (exit == md.absolute_form) 
+        if (exit == md.absolute_form)
         {
             key = 0;
             if (Examinable(md.player, loc))
@@ -365,13 +365,13 @@ static bool match_exit_internal(dbref loc, dbref baseloc, int local)
             {
                 key |= VE_BASE_DARK;
             }
-            if (exit_visible(exit, md.player, key)) 
+            if (exit_visible(exit, md.player, key))
             {
                 promote_match(exit, CON_DBREF | local);
                 return true;
             }
         }
-        if (matches_exit_from_list(md.string, PureName(exit))) 
+        if (matches_exit_from_list(md.string, PureName(exit)))
         {
             promote_match(exit, CON_COMPLETE | local);
             result = true;
@@ -436,13 +436,13 @@ void match_carried_exit_with_parents(void)
     {
         return;
     }
-    if (  Good_obj(md.player) 
-       && (  Has_exits(md.player) 
+    if (  Good_obj(md.player)
+       && (  Has_exits(md.player)
           || isRoom(md.player)))
     {
         dbref parent;
         int lev;
-        ITER_PARENTS(md.player, parent, lev) 
+        ITER_PARENTS(md.player, parent, lev)
         {
             if (match_exit_internal(parent, md.player, CON_LOCAL))
             {
@@ -544,7 +544,7 @@ dbref last_match_result(void)
 
 dbref match_status(dbref player, dbref match)
 {
-    switch (match) 
+    switch (match)
     {
     case NOTHING:
         notify(player, NOMATCH_MESSAGE);

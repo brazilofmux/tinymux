@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.4 2003-08-19 02:01:01 jake Exp $
+// $Id: move.cpp,v 1.5 2004-06-10 15:39:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -13,7 +13,7 @@
 #include "powers.h"
 
 /* ---------------------------------------------------------------------------
- * process_leave_loc: Generate messages and actions resulting from leaving a 
+ * process_leave_loc: Generate messages and actions resulting from leaving a
  * place.
  */
 
@@ -70,7 +70,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
     // criteria:
     //
     //   - Neither the current room nor the moving object are dark.
-    //   - The object can hear and is not a dark wizard. 
+    //   - The object can hear and is not a dark wizard.
     //
     if (  !quiet
        && !Blind(thing)
@@ -161,21 +161,21 @@ void move_object(dbref thing, dbref dest)
 {
     dbref src = Location(thing);
 
-    // Remove from the source location 
+    // Remove from the source location
     //
     if (src != NOTHING)
     {
         s_Contents(src, remove_first(Contents(src), thing));
     }
 
-    // Special check for HOME 
+    // Special check for HOME
     //
     if (dest == HOME)
     {
         dest = Home(thing);
     }
 
-    // Add to destination location 
+    // Add to destination location
     //
     if (dest != NOTHING)
     {
@@ -187,7 +187,7 @@ void move_object(dbref thing, dbref dest)
     }
     s_Location(thing, dest);
 
-    // Look around and do the penny check 
+    // Look around and do the penny check
     //
     look_in(thing, dest, (LK_SHOWEXIT | LK_OBEYTERSE));
     if (  isPlayer(thing)
@@ -216,7 +216,7 @@ void move_the_exit(dbref thing, dbref dest)
  * process_sacrifice_dropto: Check for and process droptos.
  */
 
-// send_dropto: Send an object through the dropto of a room 
+// send_dropto: Send an object through the dropto of a room
 //
 static void send_dropto(dbref thing, dbref player)
 {
@@ -238,48 +238,48 @@ static void process_sticky_dropto(dbref loc, dbref player)
 {
     dbref dropto, thing, next;
 
-    // Do nothing if checking anything but a sticky room 
+    // Do nothing if checking anything but a sticky room
     //
     if (!Good_obj(loc) || !Has_dropto(loc) || !Sticky(loc))
         return;
 
-    // Make sure dropto loc is valid 
+    // Make sure dropto loc is valid
     //
     dropto = Dropto(loc);
     if ((dropto == NOTHING) || (dropto == loc))
         return;
 
-    // Make sure no players hanging out 
+    // Make sure no players hanging out
     //
-    DOLIST(thing, Contents(loc)) 
+    DOLIST(thing, Contents(loc))
     {
         if ((Connected(Owner(thing)) && Hearer(thing)))
             return;
     }
 
-    // Send everything through the dropto 
+    // Send everything through the dropto
     //
     s_Contents(loc, reverse_list(Contents(loc)));
-    SAFE_DOLIST(thing, next, Contents(loc)) 
+    SAFE_DOLIST(thing, next, Contents(loc))
     {
         send_dropto(thing, player);
     }
 }
 
-// process_dropped_dropto: Check what to do when someone drops an object. 
+// process_dropped_dropto: Check what to do when someone drops an object.
 //
 static void process_dropped_dropto(dbref thing, dbref player)
 {
-    // If STICKY, send home 
+    // If STICKY, send home
     //
-    if (Sticky(thing)) 
+    if (Sticky(thing))
     {
         move_via_generic(thing, HOME, player, 0);
         divest_object(thing);
         return;
     }
 
-    // Process the dropto if location is a room and is not STICKY 
+    // Process the dropto if location is a room and is not STICKY
     //
     dbref loc = Location(thing);
     if (Has_dropto(loc) && (Dropto(loc) != NOTHING) && !Sticky(loc))
@@ -561,13 +561,13 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
     dbref exit, loc;
     int i, quiet;
 
-    if (!string_compare(direction, "home")) 
-    {   
+    if (!string_compare(direction, "home"))
+    {
         // Go home w/o stuff.
         //
         if (  (  Fixed(executor)
               || Fixed(Owner(executor)))
-           && !(WizRoy(executor))) 
+           && !(WizRoy(executor)))
         {
             notify(executor, mudconf.fixed_home_msg);
             return;
@@ -575,13 +575,13 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
 
         if (  (loc = Location(executor)) != NOTHING
            && !Dark(executor)
-           && !Dark(loc)) 
+           && !Dark(loc))
         {
-            // Tell all 
+            // Tell all
             //
             notify_except(loc, executor, executor, tprintf("%s goes home.", Name(executor)), 0);
         }
-        // Give the player the messages 
+        // Give the player the messages
         //
         for (i = 0; i < 3; i++)
             notify(executor, "There's no place like home...");
@@ -785,7 +785,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
     match_possession();
     match_carried_exit();
 
-    switch (thing = match_result()) 
+    switch (thing = match_result())
     {
     case NOTHING:
         notify(executor, "You don't have that!");
@@ -795,7 +795,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
         return;
     }
 
-    switch (Typeof(thing)) 
+    switch (Typeof(thing))
     {
     case TYPE_THING:
     case TYPE_PLAYER:
@@ -835,12 +835,12 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
 
         // You have to be carrying it.
         //
-        if ((Exits(thing) != executor) && !Wizard(executor)) 
+        if ((Exits(thing) != executor) && !Wizard(executor))
         {
             notify(executor, "You can't drop that.");
             return;
         }
-        if (!Controls(executor, loc)) 
+        if (!Controls(executor, loc))
         {
             notify(executor, NOPERM_MESSAGE);
             return;
@@ -910,7 +910,7 @@ void do_enter(dbref executor, dbref caller, dbref enactor, int key, char *what)
     if (thing == NOTHING)
         return;
 
-    switch (Typeof(thing)) 
+    switch (Typeof(thing))
     {
     case TYPE_PLAYER:
     case TYPE_THING:

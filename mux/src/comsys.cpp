@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.23 2004-04-29 04:57:56 sdennis Exp $
+// $Id: comsys.cpp,v 1.24 2004-06-10 15:39:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1051,7 +1051,7 @@ void SendChannelMessage
             }
         }
     }
-        
+
     dbref obj = ch->chan_obj;
     if (Good_obj(obj))
     {
@@ -1277,7 +1277,7 @@ void do_comwho(dbref player, struct channel *ch)
 }
 
 void do_comlast(dbref player, struct channel *ch, int arg)
-{ 
+{
     if (!Good_obj(ch->chan_obj))
     {
         raw_notify(player, "Channel does not have an object.");
@@ -1601,10 +1601,10 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
                 raw_notify(executor, tprintf("Alias for channel %s deleted.",
                                            c->channels[i]));
             }
-            
+
             c->channels[i]=NULL;
             c->numchannels--;
-            
+
             for (; i < c->numchannels; i++)
             {
                 strcpy(c->alias + i * ALIAS_SIZE, c->alias + (i + 1) * ALIAS_SIZE);
@@ -1648,7 +1648,7 @@ void do_delcomchannel(dbref player, char *channel, bool bQuiet)
                     }
                     raw_notify(player, tprintf("You have left channel %s.", channel));
                 }
-                
+
                 if (user->title)
                 {
                     MEMFREE(user->title);
@@ -2170,7 +2170,7 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
     struct comuser *cu = select_user(ch, player);
     if (!cu) return;
 
-    if (  (ch->type & CHANNEL_LOUD) 
+    if (  (ch->type & CHANNEL_LOUD)
        && cu->bUserIsOn
        && !Hidden(player))
     {
@@ -2771,7 +2771,7 @@ void do_chboot
         do_delcomchannel(thing, channel, false);
     }
     else
-    {    
+    {
         do_delcomchannel(thing, channel, true);
     }
 }
