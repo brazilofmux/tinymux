@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.8 2002-06-13 22:12:46 jake Exp $
+// $Id: comsys.cpp,v 1.9 2002-06-28 19:51:05 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2510,7 +2510,7 @@ void do_chboot
     }
     dbref thing = match_thing(executor, victim);
 
-    if (thing == NOTHING)
+    if (!Good_obj(thing))
     {
         return;
     }

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.6 2002-06-27 06:38:31 jake Exp $
+// $Id: cque.cpp,v 1.7 2002-06-28 19:51:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -364,7 +364,7 @@ void do_halt(dbref executor, dbref caller, dbref enactor, int key, char *target)
         {
             obj_targ = match_controlled(executor, target);
         }
-        if (obj_targ == NOTHING)
+        if (!Good_obj(obj_targ))
         {
             return;
         }

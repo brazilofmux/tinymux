@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.20 2002-06-28 05:42:06 sdennis Exp $
+// $Id: predicates.cpp,v 1.21 2002-06-28 19:51:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -954,9 +954,12 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int key, char *name)
     dbref doer;
     int i, isprog = 0;
 
-    if (*name) {
+    if (*name)
+    {
         doer = match_thing(player, name);
-    } else {
+    }
+    else
+    {
         doer = player;
     }
 
@@ -1029,7 +1032,7 @@ void do_prog
     DESC *d;
     PROG *program;
     int i, atr, aflags;
-    dbref doer, thing, aowner;
+    dbref thing, aowner;
     ATTR *ap;
     char *attrib, *msg;
 
@@ -1037,17 +1040,21 @@ void do_prog
         notify(player, "No players specified.");
         return;
     }
-    doer = match_thing(player, name);
-
-    if (!(Prog(player) || Prog(Owner(player))) && (player != doer)) {
+    dbref doer = match_thing(player, name);
+    if (  !(  Prog(player)
+           || Prog(Owner(player)))
+       && player != doer)
+    {
         notify(player, NOPERM_MESSAGE);
         return;
     }
-    if (!isPlayer(doer) || !Good_obj(doer)) {
+    if (!isPlayer(doer) || !Good_obj(doer))
+    {
         notify(player, "That is not a player.");
         return;
     }
-    if (!Connected(doer)) {
+    if (!Connected(doer))
+    {
         notify(player, "That player is not connected.");
         return;
     }
@@ -1481,7 +1488,7 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
         if (!Good_obj(*it))
         {
             free_lbuf(tbuf);
-            safe_str("#-1 NOT FOUND", errmsg, bufc);
+            safe_match_result(*it, errmsg, bufc);
             return 0;
         }
         anum = A_LOCK;
