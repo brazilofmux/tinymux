@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.17 2001-10-16 15:46:51 sdennis Exp $
+// $Id: timeutil.cpp,v 1.18 2002-01-27 14:20:41 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1593,6 +1593,7 @@ static CLinearTimeDelta QueryLocalOffsetAt_Internal
     CLinearTimeAbsolute ltaLocal;
     CLinearTimeDelta ltdOffset;
     ltaLocal.SetFields(&ft);
+    lta.SetSeconds(lt);
     ltdOffset = ltaLocal - lta;
 
     *pisDST = ptm->tm_isdst > 0 ? TRUE: FALSE;
