@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.159 2002-02-27 01:07:34 sdennis Exp $
+// $Id: functions.cpp,v 1.160 2002-03-01 00:30:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7142,7 +7142,7 @@ FUN flist[] =
     {"LAST",     fun_last,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"LATTR",    fun_lattr,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LATTRCMDS",fun_lattrcmds,MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LCMDS",    fun_lcmds,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LCMDS",    fun_lcmds,    MAX_ARG, 1,  3,       0, CA_PUBLIC},
     {"LCON",     fun_lcon,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LCSTR",    fun_lcstr,    1,       1,  1,       0, CA_PUBLIC},
     {"LDELETE",  fun_ldelete,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
@@ -7956,22 +7956,19 @@ FUNCTION(fun_connleft)
 //
 FUNCTION(fun_lattrcmds)
 {
-    dbref thing;
-    int ca, first;
-    ATTR *attr;
-
     // Check for wildcard matching.  parse_attrib_wild checks for read
     // permission, so we don't have to.  Have p_a_w assume the
     // slash-star if it is missing.
     //
-    first = 1;
+    dbref thing;
+    BOOL isFirst = TRUE;
     olist_push();
     if (parse_attrib_wild(player, fargs[0], &thing, 0, 0, 1))
     {
         char *buf = alloc_lbuf("fun_lattrcmds");
-        for (ca = olist_first(); ca != NOTHING; ca = olist_next())
+        for (int ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
-            attr = atr_num(ca);
+            ATTR *attr = atr_num(ca);
             if (attr)
             {
                 dbref aowner;
@@ -7979,12 +7976,12 @@ FUNCTION(fun_lattrcmds)
                 atr_get_str(buf, thing, attr->number, &aowner, &aflags);
                 if (buf[0] == '$')
                 {
-                    if (!first)
+                    if (!isFirst)
                     {
                         safe_chr(' ', buff, bufc);
                     }
-                    first = 0;
-                    safe_str((char *)attr->name, buff, bufc);
+                    isFirst = FALSE;
+                    safe_str(attr->name, buff, bufc);
                 }
             }
         }
@@ -7999,45 +7996,91 @@ FUNCTION(fun_lattrcmds)
 
 // lcmds - Output a list of all $ commands on an object.
 // Altered from MUX lattr(). D.Piper - May 1997 & April 2000
+// Modified to handle spaced commands and ^-listens - July 2001 (Ash)
+// Applied patch and code reviewed - February 2002 (Stephen)
 //
 FUNCTION(fun_lcmds)
 {
-    dbref thing;
-    int ca, first;
-    ATTR *attr;
-
+    char sep;
+    evarargs_preamble(2);
+    
+    // Check to see what type of command matching we will do. '$' commands
+    // or '^' listens.  We default with '$' commands.
+    //
+    char cmd_type = '$';
+    if (  nfargs == 3
+        && (*fargs[2] == '$' || *fargs[2] == '^'))
+    {
+        cmd_type = *fargs[2];
+    }
+    
     // Check for wildcard matching.  parse_attrib_wild checks for read
     // permission, so we don't have to.  Have p_a_w assume the
     // slash-star if it is missing.
     //
-    first = 1;
+    dbref thing;
+    BOOL isFirst = TRUE;
     olist_push();
     if (parse_attrib_wild(player, fargs[0], &thing, 0, 0, 1))
     {
-        TINY_STRTOK_STATE tts;
-        Tiny_StrTokControl(&tts, " *:");
         char *buf = alloc_lbuf("fun_lattrcmds");
-        for (ca = olist_first(); ca != NOTHING; ca = olist_next())
+        dbref aowner;
+        int   aflags;
+        for (int ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
-            attr = atr_num(ca);
+            ATTR *attr = atr_num(ca);
             if (attr)
             {
-                dbref aowner;
-                int   aflags;
                 atr_get_str(buf, thing, attr->number, &aowner, &aflags);
-                if (buf[0] == '$')
+                if (buf[0] == cmd_type)
                 {
-                    if (!first)
+                    BOOL isFound = FALSE;
+                    char *c_ptr = buf+1;
+                    
+                    // If there is no characters between the '$' or '^' and the
+                    // ':' it's not a valid command, so skip it.
+                    //
+                    if (*c_ptr != ':') 
                     {
-                        safe_chr(' ', buff, bufc);
+                        int isEscaped = FALSE;
+                        while (*c_ptr && !isFound) 
+                        {
+                            // We need to check if the ':' in the command is
+                            // escaped.
+                            //
+                            if (*c_ptr == '\\')
+                            {
+                                isEscaped = !isEscaped;
+                            }
+                            else if (*c_ptr == ':' && !isEscaped) 
+                            {
+                                isFound = TRUE;
+                                *c_ptr = '\0';
+                            }
+                            else if (*c_ptr != '\\' && isEscaped)
+                            {
+                                isEscaped = FALSE;
+                            }
+                            c_ptr++;
+                        }
                     }
-
-                    Tiny_StrTokString(&tts, buf+1);
-                    char *p = Tiny_StrTokParse(&tts);
-                    _strlwr(p);
-                    safe_str(p, buff, bufc);
-
-                    first = 0;
+                    
+                    // We don't want to bother printing out the $command
+                    // if it doesn't have a matching ':'.  It isn't a valid
+                    // command then.
+                    //
+                    if (isFound)
+                    {
+                        if (!isFirst)
+                        {
+                            print_sep(sep, buff, bufc);
+                        }
+                        
+                        _strlwr(buf);
+                        safe_str(buf+1, buff, bufc);
+                        
+                        isFirst = FALSE;
+                    }
                 }
             }
         }
