@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.23 2000-10-07 03:55:07 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.24 2000-10-24 19:59:52 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -718,7 +718,7 @@ static void announce_connect(dbref player, DESC *d)
     // Do the zone of the player's location's possible aconnect.
     //
     if (  mudconf.have_zones
-       && ((zone = Zone(loc)) != NOTHING))
+       && Good_obj(zone = Zone(loc)))
     {
         switch (Typeof(zone))
         {
@@ -841,7 +841,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
 
         // Do the zone of the player's location's possible adisconnect.
         //
-        if (mudconf.have_zones && ((zone = Zone(loc)) != NOTHING))
+        if (mudconf.have_zones && Good_obj(zone = Zone(loc)))
         {
             switch (Typeof(zone))
             {
