@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.29 2001-03-23 07:53:57 sdennis Exp $
+// * $Id: comsys.cpp,v 1.30 2001-03-29 21:20:34 zenty Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -794,6 +794,36 @@ void save_comsystem(FILE *fp)
     }
 }
 
+// just to make it a bit more readable.
+#define FreeComtitle(x) if(x) free_lbuf(x)
+
+char *GetComtitle(struct comuser *user) {
+  //
+  // New Comtitle
+  //
+  char *nComTitle = user->title;
+  char *pAllocatedComTitleBuffer = NULL;
+  
+  
+  // Don't evaluate a title if the config parameter doesn't want it.
+  // if their getting the comtitle, they obviously need it :)
+  if (mudconf.eval_comtitle)
+    {
+      pAllocatedComTitleBuffer = alloc_lbuf("do_processcom.ct");
+      nComTitle = pAllocatedComTitleBuffer;
+      
+      // Evaluate the comtitle as code.
+      //
+      char *pnComTitle = nComTitle;
+      char TempToEval[LBUF_SIZE];
+      strcpy(TempToEval, user->title);
+      char *pComTitle = TempToEval;
+      TinyExec(nComTitle, &pnComTitle, 0, user->who, user->who, EV_FCHECK |
+	       EV_EVAL | EV_TOP, &pComTitle, (char **)NULL, 0);
+    }
+  return pAllocatedComTitleBuffer;
+}
+
 void do_processcom(dbref player, char *arg1, char *arg2)
 {
     char *mess, *bp;
@@ -854,33 +884,8 @@ void do_processcom(dbref player, char *arg1, char *arg2)
             giveto(ch->charge_who, ch->charge);
         }
 
-        // New Comtitle
-        //
-        char *nComTitle = user->title;
-        char *pAllocatedComTitleBuffer = NULL;
-
-        // Comtitle Check
-        //
-        BOOL hasComTitle = (user->title[0] != '\0');
-
-        // Don't evaluate a title if there isn't one to parse or evaluation
-        // of comtitles is disabled.
-        //
-        if (hasComTitle && mudconf.eval_comtitle)
-        {
-            pAllocatedComTitleBuffer = alloc_lbuf("do_processcom.ct");
-            nComTitle = pAllocatedComTitleBuffer;
-
-            // Evaluate the comtitle as code.
-            //
-            char *pnComTitle = nComTitle;
-            char TempToEval[LBUF_SIZE];
-            strcpy(TempToEval, user->title);
-            char *pComTitle = TempToEval;
-            TinyExec(nComTitle, &pnComTitle, 0, player, player, EV_FCHECK |
-                     EV_EVAL | EV_TOP, &pComTitle, (char **)NULL, 0);
-        }
-   
+	BOOL hasComTitle = (user->title[0] != '\0');
+	char *nComTitle = GetComtitle(user);
         bp = mess = alloc_lbuf("do_processcom");
         
         if ((*arg2) == ':')
@@ -949,10 +954,7 @@ void do_processcom(dbref player, char *arg1, char *arg2)
 
         // Free the comtitle buffer if one was allocated.
         //
-        if (pAllocatedComTitleBuffer)
-        {
-            free_lbuf(pAllocatedComTitleBuffer);
-        }
+	FreeComtitle(nComTitle);
     }
 }
 
@@ -1040,16 +1042,18 @@ void do_joinchannel(dbref player, struct channel *ch)
         {
             // There is a comtitle
             //
+  	    char *nComTitle=GetComtitle(user);
             if (ch->type & CHANNEL_SPOOF)
             {
                 p = tprintf( "%s %s has joined this channel.", ch->header,
-                    user->title);
+                    nComTitle);
             }
             else
             {
                 p = tprintf( "%s %s %s has joined this channel.", ch->header,
-                    user->title, Name(player));
+                    nComTitle, Name(player));
             }
+	    FreeComtitle(nComTitle);
         }
         else
         {
@@ -1069,18 +1073,20 @@ void do_leavechannel(dbref player, struct channel *ch)
     { 
         if (user->title[0] != '\0')
         {
+	    char *nComTitle=GetComtitle(user);
             // There is a comtitle
             //
             if (ch->type & CHANNEL_SPOOF)
             {
                 p = tprintf( "%s %s has left this channel.",
-                             ch->header, user->title);
+                             ch->header, nComTitle);
             }
             else
             {
                 p = tprintf( "%s %s %s has left this channel.",
-                             ch->header, user->title, Name(player));
+                             ch->header, nComTitle, Name(player));
             }
+	    FreeComtitle(nComTitle);
         }
         else
         {
@@ -1104,6 +1110,7 @@ void do_comwho_line
 
     if (user->title[0] != '\0')
     {
+      char *nComTitle=GetComtitle(user);
         // There is a comtitle
         //
         if (Staff(player))
@@ -1111,25 +1118,26 @@ void do_comwho_line
             buff = unparse_object(player, user->who, 0);
             if (ch->type & CHANNEL_SPOOF)
             {
-                msg = tprintf("%s as %s", buff, user->title);
+                msg = tprintf("%s as %s", buff, nComTitle);
             }
             else
             {
-                msg = tprintf("%s as %s %s", buff, user->title, buff);
+                msg = tprintf("%s as %s %s", buff, nComTitle, buff);
             }
         }
         else
         {
             if (ch->type & CHANNEL_SPOOF)
             {
-                msg = user->title;
+                msg = nComTitle;
             }
             else
             {
                 buff = unparse_object(player, user->who, 0);
-                msg = tprintf("%s %s", user->title, buff);
+                msg = tprintf("%s %s", nComTitle, buff);
             }
-        }
+	}
+	if(nComTitle) free_lbuf(nComTitle);
     }
     else
     {
@@ -1441,14 +1449,16 @@ void do_delcomchannel(dbref player, char *channel)
                     {
                         // There is a comtitle.
                         //
+		        char *nComTitle=GetComtitle(user);
                         if (ch->type & CHANNEL_SPOOF)
                         {
-                            p = tprintf("%s %s has left this channel.", ch->header, user->title);
+                            p = tprintf("%s %s has left this channel.", ch->header, nComTitle);
                         }
                         else
                         {
-                            p = tprintf("%s %s %s has left this channel.", ch->header, user->title, Name(player));
+                            p = tprintf("%s %s %s has left this channel.", ch->header, nComTitle, Name(player));
                         }
+			FreeComtitle(nComTitle);
                     }
                     else
                     {
@@ -1965,14 +1975,16 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
         {
             // There is a comtitle.
             //
+	    char *nComTitle=GetComtitle(cu);
             if (ch->type & CHANNEL_SPOOF)
             {
-                sprintf(buff, "%s %s has disconnected.", ch->header, cu->title);
+                sprintf(buff, "%s %s has disconnected.", ch->header, nComTitle);
             }
             else
             {
-                sprintf(buff, "%s %s %s has disconnected.", ch->header, cu->title, Name(player));
+                sprintf(buff, "%s %s %s has disconnected.", ch->header, nComTitle, Name(player));
             }
+	    FreeComtitle(nComTitle);
         }
         else
         {
@@ -1999,6 +2011,7 @@ void do_comconnectraw_notify(dbref player, char *chan)
         {
             // There is a comtitle.
             //
+  	    char *nComTitle=GetComtitle(cu);
             if (ch->type & CHANNEL_SPOOF)
             {
                 sprintf(buff, "%s %s has connected.", ch->header, cu->title);
@@ -2007,6 +2020,7 @@ void do_comconnectraw_notify(dbref player, char *chan)
             {
                 sprintf(buff, "%s %s %s has connected.", ch->header, cu->title, Name(player));
             }
+	    FreeComtitle(nComTitle);
         }
         else
         {
@@ -2498,13 +2512,14 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     {
         // There is a comtitle.
         //
+        char *nComTitle=GetComtitle(user);
         if (ch->type & CHANNEL_SPOOF)
         {
-            strcpy(buf2, user->title);
+	  strcpy(buf2, nComTitle);
         }
         else
         {
-            sprintf(buf2, "%s %s", user->title, Name(player));
+	  sprintf(buf2, "%s %s", nComTitle, Name(player));
         }
     }
     else
@@ -2515,13 +2530,14 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     {
         // There is a comtitle.
         //
+        char *nComTitle=GetComtitle(vu);
         if (ch->type & CHANNEL_SPOOF)
         {
-            sprintf(buff, "%s %s boots %s off the channel.", ch->header, buf2, vu->title);
+            sprintf(buff, "%s %s boots %s off the channel.", ch->header, buf2, nComTitle);
         }
         else
         {
-            sprintf(buff, "%s %s boots %s %s off the channel.", ch->header, buf2, vu->title, Name(thing));
+            sprintf(buff, "%s %s boots %s %s off the channel.", ch->header, buf2, nComTitle, Name(thing));
         }
     }
     else
@@ -2683,8 +2699,16 @@ FUNCTION(fun_comtitle)
         user = select_user(chn, victim);
         if (user)
         {
-            safe_str(user->title, buff, bufc);
-            return;
+	  // Do we want this function to evaluate the comtitle or not?
+#if 0
+	  char *nComTitle=GetComtitle(user);
+	  safe_str(nComTitle, buff, bufc);
+	  FreeComtitle(nComTitle);
+	  return;
+#else
+	  safe_str(user->title, buff, bufc);
+	  return;
+#endif	    
         }
     }
     safe_str("#-1 PLAYER NOT ON THAT CHANNEL", buff, bufc);
