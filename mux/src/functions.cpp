@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.24 2003-02-04 12:01:42 jake Exp $
+// $Id: functions.cpp,v 1.25 2003-02-04 17:21:26 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2733,7 +2733,7 @@ FUNCTION(fun_and)
     BOOL val = TRUE;
     for (int i = 0; i < nfargs && val; i++)
     {
-        val = (mux_atol(fargs[i]) ? TRUE : FALSE);
+        val = (mux_atol(fargs[i]) != 0);
     }
     safe_bool(val, buff, bufc);
 }
