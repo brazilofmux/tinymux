@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.19 2001-10-06 17:16:49 sdennis Exp $
+// $Id: object.cpp,v 1.20 2001-10-06 17:25:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -560,6 +560,7 @@ void destroy_obj(dbref obj)
     s_Link(obj, NOTHING);
     s_Owner(obj, GOD);
     s_Pennies(obj, 0);
+    s_Parent(obj, NOTHING);
     s_Zone(obj, NOTHING);
 }
 
