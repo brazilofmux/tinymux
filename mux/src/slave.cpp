@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.7 2003-03-03 07:56:15 sdennis Exp $
+// $Id: slave.cpp,v 1.8 2003-03-03 17:19:01 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -203,38 +203,8 @@ int query(char *ip, char *orig_arg)
     return 0;
 }
 
-#define MAX_CHILDREN 20
-#define NUM_PERIODS   3
-volatile int nChildren = 0;
-volatile int iPeriod = 0;
-volatile int nSpawned[NUM_PERIODS] = { 0, 0, 0 };
-
-void ChildSpawned(void)
-{
-    nChildren++;
-    nSpawned[iPeriod]++;
-}
-
-void ChildEnded(void)
-{
-    if (nChildren > 0)
-    {
-        nChildren--;
-    }
-}
-
 RETSIGTYPE child_signal(int iSig)
 {
-    // Collect any children.
-    //
-#ifdef NEXT
-    while (wait3(NULL, WNOHANG, NULL) > 0)
-#else
-    while (waitpid(0, NULL, WNOHANG) > 0)
-#endif
-    {
-        ChildEnded();
-    }
     signal(SIGCHLD, CAST_SIGNAL_FUNC child_signal);
 }
 
@@ -253,28 +223,10 @@ RETSIGTYPE alarm_signal(int iSig)
     itime.it_interval = interval;
     itime.it_value = interval;
     setitimer(ITIMER_REAL, &itime, 0);
-
-    int sum = 0;
-    int i;
-    for (i = 0; i < NUM_PERIODS; i++)
-    {
-        sum += nSpawned[i];
-    }
-    if (sum < nChildren)
-    {
-        nChildren = sum;
-    }
-
-    if (iPeriod >= NUM_PERIODS)
-    {
-        iPeriod = 0;
-    }
-    else
-    {
-        iPeriod++;
-    }
-    nSpawned[iPeriod] = 0;
 }
+
+#define MAX_CHILDREN 20
+int nChildren = 0;
 
 int main(int argc, char *argv[])
 {
@@ -340,7 +292,7 @@ int main(int argc, char *argv[])
         }
         if (child > 0)
         {
-            ChildSpawned();
+            nChildren++;
         }
 
         // Collect any children.
@@ -351,7 +303,10 @@ int main(int argc, char *argv[])
         while (waitpid(0, NULL, (nChildren < MAX_CHILDREN) ? WNOHANG: 0) > 0)
 #endif
         {
-            ChildEnded();
+            if (0 < nChildren)
+            {
+                nChildren--;
+            }
         }
     }
     exit(0);
