@@ -68,6 +68,9 @@ Feature Additions:
  -- Clean cygwin builds on Win32 with support for @restart.
  -- Remove support for the COMPRESS flag.
  -- Added softcode config() from TM3.
+ -- With regard to comalias(), wizards can still get the comalias for anyone.
+    Players and objects can still check for themselves. Objects that Inherit
+    can now check for their owners.
 
 Bug Fixes:
 ~~~~~~~~~
