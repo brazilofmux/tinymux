@@ -40,6 +40,7 @@ HELP
   Related Topics: page, pose, say, :, ".
 
 & #
+#
 
   COMMAND: #<number> <command>
 
