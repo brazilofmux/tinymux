@@ -10,9 +10,7 @@ docs/LIMITS
 docs/MEMORY
 docs/PATCHES
 docs/REALMS
-docs/latticeS.ps
 docs/muxman.pdf
-docs/muxman.tex
 game/alias.conf
 game/compat.conf
 game/data/db_load.bat

@@ -14,9 +14,6 @@ docs/LIMITS
 docs/MEMORY
 docs/PATCHES
 docs/REALMS
-docs/BuildPDF
-docs/muxman.tex
-docs/latticeS.ps
 game/Backup
 game/Startmux
 game/alias.conf
