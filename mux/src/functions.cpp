@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.116 2002-10-01 07:36:01 jake Exp $
+// $Id: functions.cpp,v 1.117 2002-10-02 05:12:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8795,19 +8795,21 @@ typedef struct
 
 } RADIX_ENTRY;
 
-#define N_RADIX_ENTRIES 4
+#define N_RADIX_ENTRIES 5
 const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
 {
+    {604800, 'w', 4, "week"   },
     { 86400, 'd', 3, "day"    },
     {  3600, 'h', 4, "hour"   },
     {    60, 'm', 6, "minute" },
     {     1, 's', 6, "second" }
 };
 
-#define IDAYS    0
-#define IHOURS   1
-#define IMINUTES 2
-#define ISECONDS 3
+#define IWEEKS   0
+#define IDAYS    1
+#define IHOURS   2
+#define IMINUTES 3
+#define ISECONDS 4
 
 // This routine supports most of the time formats using the above
 // table.
@@ -8875,12 +8877,12 @@ void GeneralTimeConversion
     *p++ = '\0';
 }
 
-// This buffer is used by:
+// These buffers is used by:
 //
 //     time_format_1 (23 bytes) uses TimeBuffer64,
 //     time_format_2 (17 bytes) uses TimeBuffer32,
-//     expand_time   (29 bytes) uses TimeBuffer32,
-//     write_time    (52 bytes) uses TimeBuffer64.
+//     expand_time   (31 bytes) uses TimeBuffer32,
+//     write_time    (59 bytes) uses TimeBuffer64.
 //
 // time_format_1 and time_format_2 are called from within the same
 // printf, so they must use different buffers.
@@ -8945,10 +8947,10 @@ const char *time_format_2(int Seconds)
 //
 const char *expand_time(int Seconds)
 {
-    // 2^63/86400 is 1.07E14 which is at most 15 digits.
-    // '(15)d (2)h (2)m (2)s\0' is at most 29 characters.
+    // 2^63/604800 is 15250284452472 which is at most 14 digits.
+    // '(14)w (1)d (2)h (2)m (2)s\0' is at most 31 characters.
     //
-    GeneralTimeConversion(TimeBuffer32, Seconds, IDAYS, ISECONDS, FALSE, FALSE);
+    GeneralTimeConversion(TimeBuffer32, Seconds, IWEEKS, ISECONDS, FALSE, FALSE);
     return TimeBuffer32;
 }
 
@@ -8956,11 +8958,11 @@ const char *expand_time(int Seconds)
 //
 const char *write_time(int Seconds)
 {
-    // 2^63/86400 is 1.07E14 which is at most 15 digits.
-    // '(15) days (2) hours (2) minutes (2) seconds\0' is at most
-    // 52 characters.
+    // 2^63/604800 is 15250284452472 which is at most 14 digits.
+    // '(14) weeks (1) days (2) hours (2) minutes (2) seconds\0' is at most
+    // 59 characters.
     //
-    GeneralTimeConversion(TimeBuffer64, Seconds, IDAYS, ISECONDS, FALSE, TRUE);
+    GeneralTimeConversion(TimeBuffer64, Seconds, IWEEKS, ISECONDS, FALSE, TRUE);
     return TimeBuffer64;
 }
 
