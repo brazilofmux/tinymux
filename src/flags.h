@@ -1,5 +1,5 @@
 /* flags.h - object flags */
-/* $Id: flags.h,v 1.3 2000-04-29 08:06:16 sdennis Exp $ */
+/* $Id: flags.h,v 1.4 2000-08-09 07:03:20 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -306,6 +306,12 @@ extern char *   FDECL(unparse_object, (dbref, dbref, int));
 extern char *   FDECL(unparse_object_numonly, (dbref));
 extern int  FDECL(convert_flags, (dbref, char *, FLAGSET *, FLAG *));
 extern void FDECL(decompile_flags, (dbref, dbref, char *));
+extern char *MakeCanonicalFlagName
+(
+    const char *pName,
+    int *pnName,
+    BOOL *pbValid
+);
 
 #define unparse_flags(p,t) decode_flags(p,Flags(t),Flags2(t),Flags3(t))
 

@@ -1,10 +1,7 @@
-/*
- * flags.c - flag manipulation routines 
- */
-/*
- * $Id: flags.cpp,v 1.5 2000-06-07 19:47:00 sdennis Exp $ 
- */
-
+// flags.cpp - flag manipulation routines.
+//
+// $Id: flags.cpp,v 1.6 2000-08-09 07:03:20 sdennis Exp $ 
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -431,16 +428,51 @@ void display_flagtab(dbref player)
     free_lbuf(buf);
 }
 
+char *MakeCanonicalFlagName
+(
+    const char *pName,
+    int *pnName,
+    BOOL *pbValid
+)
+{
+    static char buff[SBUF_SIZE];
+    char *p = buff;
+    int nName = 0;
+
+    while (*pName && nName < SBUF_SIZE)
+    {
+        *p = Tiny_ToLower[(unsigned char)*pName];
+        p++;
+        pName++;
+        nName++;
+    }
+    *p = '\0';
+    if (nName < SBUF_SIZE)
+    {
+        *pnName = nName;
+        *pbValid = TRUE;
+        return buff;
+    }
+    else
+    {
+        *pnName = 0;
+        *pbValid = FALSE;
+        return NULL;
+    }
+}
+
 FLAGENT *find_flag(dbref thing, char *flagname)
 {
     // Convert flagname to canonical lowercase format.
     //
-    static char buff[SBUF_SIZE];
-    strncpy(buff, flagname, SBUF_SIZE);
-    buff[SBUF_SIZE-1] = '\0';
-    _strlwr(buff);
-
-    FLAGENT *fe = (FLAGENT *)hashfindLEN(buff, strlen(buff), &mudstate.flags_htab);
+    int nName;
+    BOOL bValid;
+    char *pName = MakeCanonicalFlagName(flagname, &nName, &bValid);
+    FLAGENT *fe = NULL;
+    if (bValid)
+    {
+        fe = (FLAGENT *)hashfindLEN(pName, nName, &mudstate.flags_htab);
+    }
     return fe;
 }
 
@@ -574,13 +606,13 @@ char *decode_flags(dbref player, FLAG flagword, FLAG flag2word, FLAG flag3word)
 
 int has_flag(dbref player, dbref it, char *flagname)
 {
-    FLAGENT *fp;
-    FLAG fv;
-
-    fp = find_flag(it, flagname);
-    if (fp == NULL)
+    FLAGENT *fp = find_flag(it, flagname);
+    if (!fp)
+    {
         return 0;
+    }
 
+    FLAG fv;
     if (fp->flagflag & FLAG_WORD3)
     {
         fv = Flags3(it);
