@@ -345,6 +345,7 @@ Bug Fixes:
     possible to re-@name an exit to a broader range of names.  Patch
     from Alierak.
  -- Document that y-umlaut is not supported.
+ -- Tweak article_rule configuration options.  Reported by Alierak.
 
 
 Performance Enhancements:
