@@ -455,7 +455,7 @@
   The receive lock for a channel is an enter @lock on the channel object.
   The description of a channel is the @desc of the channel object.
  
-& cwho()
+& CWHO()
 
   Function: cwho(<channel>)
  
@@ -4011,15 +4011,21 @@
   See also: use, @ause, @ouse.
 
 & ABODE
+ABODE
 
-  ABODE  If a room is set ABODE, players can set their homes there, 
+  FLAG: ABODE(A)  ()  
+  
+  If a room is set ABODE, players can set their homes there, 
   and can set the homes of objects there.  It does not mean that a 
   player can open an exit to that room, only that they can set their 
   home there.
+  
+  Related Topics:
 
 & AUDIBLE
+AUDIBLE
 
-  Flag: AUDIBLE(a) (all types)
+  FLAG: AUDIBLE(a) (all types)
  
   When set on an object, player, or room everything from a say, pose, or emit
   inside the object will be sent to every object in the location of that
@@ -4030,35 +4036,54 @@
   attribute will be inserted in front of the text, or a default prefix if no
   @prefix attribute is set.  If the @filter attribute is present, it will be
   used to suppress those messages matching any of the patterns specified.
-  See also: @filter, @forwardlist, @prefix.
+  
+  Related Topics: @filter, @forwardlist, @prefix.
 
 & CHOWN_OK
+CHOWN_OK
 
-  CHOWN_OK  This flag, when set, allows you to transfer ownership to
+  FLAG: CHOWN_OK(C)  () 
+  
+  This flag, when set, allows you to transfer ownership to
   another player. To set it, you must be carrying the object. You 
   also have to be in the room if you want to set this flag on rooms 
   or exits.  After this flag is set, the new player may gain 
-  ownership of the object by using the @chown command (See @chown).
+  ownership of the object by using the @chown command. 
+  
+  Related Topics: @chown
 
 & CONNECTED
+CONNECTED
 
-  CONNECTED  This flag applies only to players and it shows if the 
+  FLAG: CONNECTED(c)  () 
+  
+  This flag applies only to players and it shows if the 
   player is connected or not. Thus, each time you are connected to 
   the game, you should see the 'c' flag set, otherwise, you are DEAD!
   You cannot reset this flag, and it is used internally by the code 
   for things like tabulating players for the WHO list, etc.
+  
+  Related Topics:
 
 & DARK
+DARK
 
-  DARK      If a room is DARK, then no items are shown when a person 
+  FLAG: DARK(D)  ()      
+  
+  If a room is DARK, then no items are shown when a person 
   'looks' there. If a thing is DARK, then "look" does not list that 
   object in the room's Contents:, and if an exit is DARK, it doesn't 
   show up in the Obvious Exits: list.  Puppets and objects that can 
   listen cannot be DARK.
+  
+  Related Topics:
 
 & DESTROY_OK
+DESTROY_OK
 
-  DESTROY_OK   When set on an object, it allows any player to destroy
+  FLAG: DESTROY_OK(d)  ()   
+  
+  When set on an object, it allows any player to destroy
   it as long as the object is not locked against them. This is good 
   for things like notes, whereby the recipient can destroy the note 
   after reading it, instead of having to look for you to destroy it.
@@ -4066,149 +4091,251 @@
   give the /override switch to @destroy to destroy a thing that is both
   DESTROY_OK and SAFE. When it is set on any object or the owner of that
   object, that object is destroyed immediately, without delay.
-  See also: @destroy, SAFE.
+  
+  Related Topics: @destroy, SAFE.
 
-& ENTER_OK
+& ENTER_OK 
+ENTER_OK
 
-  ENTER_OK   If an object or person is ENTER_OK, other players may 
+  FLAG: ENTER_OK(e)  ()   
+  
+  If an object or person is ENTER_OK, other players may 
   enter the object or person by using 'enter <object/person>. Players
   must also have the ENTER_OK set if they wish to be able to receive 
   things given to them by other players via the 
-  'give <player> = <object>'. 
+  'give <player> = <object>'.
+  
+  Related Topics: 
 
 & GAGGED
+GAGGED
  
-  GAGGED    When a player is set GAGGED, they cannot speak or pose under any
+  FLAG: GAGGED(j)  ()    
+  
+  When a player is set GAGGED, they cannot speak or pose under any
   circumstances. This flag has no meaning for objects, exits, or rooms.
+  
+  Related Topics:
  
 & GOING
+GOING
 
-  GOING     Used internally for the @destroy command, it is set on 
+  FLAG: GOING(G)  ()     
+  
+  Used internally for the @destroy command, it is set on 
   rooms that are set to be destroyed. In the event that a player 
   decides they don't want to destroy the room after all then they can
   unset it. 
+  
+  Related Topics:
 
 & HAVEN
+HAVEN
 
-  HAVEN     @set here=haven;@set me=haven. If a location is HAVEN, you 
+  FLAG: HAVEN(H)  ()     
+  
+  @set here=haven;@set me=haven. If a location is HAVEN, you 
   cannot kill in that location.  The HAVEN flag no longer blocks pages or
   @pemits, use @lock/page instead.
  
-  See also: @lock/page.
+  Related Topics: @lock/page.
 
 & KEY
+KEY
 
-  KEY     When set on an object prevents puppets from picking it up.
+  FLAG: KEY(K)  ()    
+  
+  When set on an object prevents puppets from picking it up.
+  
+  Related Topics:
 
 & LINK_OK
+LINK_OK
 
-  LINK_OK   If a room is LINK_OK, anyone can link exits to it (but 
+  FLAG: LINK_OK(L)  ()   
+  
+  If a room is LINK_OK, anyone can link exits to it (but 
   still not from it). It has no meaning for people, things, or exits.
-  See @link.
+  
+  Related Topics: @link, LINKING
 
 & UNFINDABLE
+UNFINDABLE
 
+  FLAG: UNFINDABLE(U)  ()
+  
   If a player is set UNFINDABLE, he cannot be found by the loc() or room()
   functions.  
+  
   If a room is set UNFINDABLE, players in that room (or inside objects
   in the room) cannot be found by loc()/room().
+  
+  Related Topics:
 
 & FLOATING
+FLOATING
 
+  FLAG: FLOATING(F)  () 
+  
   If a room is set floating, you will not be notified every 10 
   minutes or so that you have a disconnected room.
+  
+  Related Topics:
 
 & OPAQUE
+OPAQUE
 
-  OPAQUE   When set on a player, it prevents other players from 
+  FLAG: OPAQUE(O)  ()   
+  
+  When set on a player, it prevents other players from 
   seeing what you are carrying in your inventory. Only exception is 
   when the object you are carrying belongs to the other player 
   looking at you.
+  
+  Related Topics:
 
 & PLAYER
+PLAYER
 
-  PLAYER The PLAYER flag identifies you as a player. This flag cannot
+  FLAG: PLAYER(P)  () 
+  
+  The PLAYER flag identifies you as a player. This flag cannot
   be reset by any player, not even a Wizard (not, yet, anyway 
   *grin*).  It is used mainly by the MUX code to identify your 
   commands, check for validity of commands or locks etc. Generally, 
   just pretend it isn't even there.
+  
+  Related Topics: TYPES
 
 & JUMP_OK
+JUMP_OK
 
+  FLAG: JUMP_OK(J)  ()
+  
   When a room or thing is set JUMP_OK, then that location can be teleported
-  into by anyone. See @teleport.
+  into by anyone. 
+  
+  Related Topics: @teleport
 
 & PUPPET
+PUPPET
 
-  PUPPET   @set <object> = puppet. Causes an object to grow eyes and 
+  FLAG: PUPPET(p)  ()   
+  
+  @set <object> = puppet. Causes an object to grow eyes and 
   ears, and relay all it sees and hears to its owner.  
-  See: @force, PUPPETS
+  
+  Related Topics: @force, PUPPETS
 
 & ROOM
+ROOM
 
-  ROOM   This flag is automatically set on rooms when you @dig a new
+  FLAG: ROOM(R)  ()  
+  
+  This flag is automatically set on rooms when you @dig a new
   room. It cannot be changed. Rooms have the added advantage that 
   they can be saved from destruction by setting the room to !GOING 
   (SEE GOING).
   However, this can only be done if no other room/object was created 
   that overwrote your room when it was set for destruction.
+  
+  Related Topics: 
 
-& VISUAL 
+& VISUAL
+VISUAL 
 
-  VISUAL The flag a lot of players have been waiting for. When set on
+  FLAG: VISUAL(V)  () 
+  
+  The flag a lot of players have been waiting for. When set on
   your object, it allows other players to examine it and see all the
   object's attributes as if they owned the object. They cannot make 
-  any changes to the object. 
+  any changes to the object.
+  
+  Related Topics: 
 
 & VACATION
+VACATION
  
-  VACATION  This flag can only be set by wizards. It is usually used to
+  FLAG: VACATION(|)  () 
+  
+  This flag can only be set by wizards. It is usually used to
   mark players who will be inactive for a long period of time. It is
   automatically cleared when the character logs on.
+  
+  Related Topics:
  
 & QUIET
+QUIET
 
-  QUIET     This flag when set on yourself prevents you from hearing 
+  FLAG: QUIET(Q)  ()     
+  
+  This flag when set on yourself prevents you from hearing 
   the 'set' or 'triggered' messages from any objects you own.  When 
   set on an object, only that object will not relay its messages.
+  
+  Related Topics:
 
 & HALTED
+HALTED
 
-  HALTED    While this flag is set, the object cannot perform any MUX 
+  FLAG: HALTED(h)  ()    
+  
+  While this flag is set, the object cannot perform any MUX 
   actions, listen, be triggered, etc.
+  
+  Related Topics:
 
 & STICKY
+STICKY
 
-  STICKY    If a thing is STICKY, it goes home when dropped 
+  FLAG: STICKY(S)  ()   
+  
+  If a thing is STICKY, it goes home when dropped 
   (See HOMES). If a room is STICKY, its drop-to is delayed until the 
   last person leaves (See DROP-TOs). Only meaningful for things and 
-  rooms. 
-
-& TEMPLE
-
-  Flag: TEMPLE
-
-  The TEMPLE flag is no longer a part of TinyMUX.
+  rooms.
+  
+  Related Topics: 
 
 & ROYALTY
+ROYALTY
 
-  ROYALTY   If a person is ROYALTY, they can see and examine things, and
+  FLAG: ROYALTY(z)  ()   
+  
+  If a person is ROYALTY, they can see and examine things, and
   teleport anywhere or anything, like a wizard can. They cannot modify
   objects or players they do not control, and cannot use wizard commands.
   This flag may only be set by a wizard.
+  
+  Related Topics:
  
 & AUDITORIUM
-  AUDITORIUM  When set on a room, object, or player, it enables the checking
+AUDITORIUM
+
+  FLAG: AUDITORIUM(b)  () 
+  
+  When set on a room, object, or player, it enables the checking
   of speechlocks.
+  
+  Related Topics:
  
 & STAFF
-  STAFF  This flag can be used to mark players who serve as staff on the
+STAFF
+
+  FLAG: STAFF(w)  ()  
+  
+  This flag can be used to mark players who serve as staff on the
   MUX. It is wizard-settable only.
+  
+  Related Topics:
  
 
 & ANSI
+ANSI
 
-  ANSI    When set on a player, it will enable the player to see ANSI color. 
+  FLAG: ANSI(X)  ()   
+  
+  When set on a player, it will enable the player to see ANSI color. 
   If you have TinyFugue and you do not wish to see ANSI color, please 
   leave this flag set and /set catch_ctrls=ansi. The reason for this is when
   the ANSI flag is unset, the server must go through every line of text you
@@ -4216,51 +4343,82 @@
   catch_ctrls=ansi, TinyFugue will strip the ANSI and save the MUX from
   having to do it, resulting in less lag for everyone.
  
-  See also: ansi(), NOBLEED.
+  Related Topics: ansi(), NOBLEED.
  
 & NOBLEED
+NOBLEED
 
-  NOBLEED    When set on a player, it will append an ANSI white character to
+  FLAG: NOBLEED(-)  ()    
+  
+  When set on a player, it will append an ANSI white character to
   the normal ANSI 'normal' character, so it will fix ANSI color 'bleed' on
   most terminals. (Bleed occurs when a color extends into text it was not
   meant to.) Do not set this flag unless you have to, it tends to slow down
   the text display for the MUX.
   
+  Related Topics:
+  
 & HEAD
+HEAD
  
-  HEAD   This is another marker flag, for faction heads and the like. As
+  FLAG: HEAD(?)  ()   
+  
+  This is another marker flag, for faction heads and the like. As
   with STAFF, no powers come with it, it is purely a marker.
+  
+  Related Topics:
  
 & FIXED
+FIXED
 
-  FIXED   No object may teleport or go home when this flag is set. This
+  FLAG: FIXED(f)  ()   
+  
+  No object may teleport or go home when this flag is set. This
   flag may only be set by a wizard. If set on a player, neither they nor
   any of their objects may teleport or go home.
+  
+  Related Topics:
  
 & UNINSPECTED
+UNINSPECTED
 
-  UNINSPECTED  This flag is typically set on rooms that need to be
+  FLAG: UNINSPECTED(g)  ()  
+  
+  This flag is typically set on rooms that need to be
   inspected for good building practices. This flag may only be set by
   wizards and royalty.
+  
+  Related Topics:
  
-& no_command
+& NO_COMMAND
+NO_COMMAND
 
-  NO_COMMAND   The NO_COMMAND flag disables the checking of $-commands 
+  FLAG: NO_COMMAND(n)  ()   
+  
+  The NO_COMMAND flag disables the checking of $-commands 
   on an object.
  
   Most MUXes will be configured to automatically set this flag on rooms
   and players. The server runs faster when fewer objects are checked for
   $-commands; thus, any object which does not have $-commands on it should
   be set NO_COMMAND.
+  
+  Related Topics:
  
 & ANSI()
+ANSI()
 
-  ansi(<codes>,<string>)
+  FUNCTION: ansi(<codes>,<string>)
  
   This allows you to highlight a string using ANSI terminal effects. The
   string is terminated with a "return to normal" code, and the codes are
-  utilized in the order they are specified. The codes are:
- 
+  utilized in the order they are specified.
+
+  Related Topics: ANSI CODES, ANSI SUBSTITUTION. 
+  
+& ANSI CODES
+ANSI CODES
+
         f - flash                       i - inverse
         h - hilite                      n - normal
  
@@ -4274,55 +4432,72 @@
         w - white foreground            W - white background
  
   For example, "ansi(fc, Test)" would hilight "Test" in flashing cyan.
-  { 'help ansi2' for more }
- 
-& ANSI2
-
-  The percent substitution %c<color code> can be used instead of ansi(), and
-  is more efficient. 
+  
+  Related Topics: ansi(), ANSI SUBSTITUTION.
+  
+& ANSI SUBSTITUTION
+ANSI SUBSTITUTION
+  
+  The percent substitution %c<color code> can be used instead of 
+  ansi(), and is more efficient. 
  
   For example, the equivalent to [ansi(rBf,Color!)] would be:
   %cr%cB%cfColor!%cn
  
-  The %cn (to return to normal) is not necessary, but if it is not specified
-  the ansi color codes will continue to the end of the string.
+  The %cn (to return to normal) is not necessary, but if it is not 
+  specified the ansi color codes will continue to the end of the string.
 
-  See also: ANSI  
- 
-& BUILDER
+  Related Topics: ansi(), ANSI CODES  
 
-  BUILDER The BUILDER flag has been changed into a power. See power list.
  
 & WIZARD
+WIZARD
 
-  WIZARD    If a person is WIZARD, they are a wizard, unkillable, 
+  FLAG: WIZARD(W)  ()   
+  
+  If a person is WIZARD, they are a wizard, unkillable, 
   subject to fewer restrictions, and able to use wizard commands.  
   In general, WIZARDs can do anything using #<number> or *<player>. 
   Only player #1 can set and unset the WIZARD flag of other players. 
-  No WIZARD can turn their own WIZARD flag off.   
+  No WIZARD can turn their own WIZARD flag off. 
+  
+  Related Topics:  
 
 & IMMORTAL
+IMMORTAL
 
-  IMMORTAL    Objects set immortal cannot be killed and don't use up money.
+  FLAG: IMMORTAL(i)  ()    
+  
+  Objects set immortal cannot be killed and don't use up money.
   Only settable by wizards.  This is useful when an object's location
   shouldn't be changed by Joe Player, but you don't want to have to relink it
   to its current location whenever it moves.
+  
+  Related Topics:
 
 & VERBOSE
+VERBOSE
 
-  VERBOSE   This flag causes all commands executed by the object having
-  the flag to be sent to the owner of the object.  i.e.:
-  @create foo
-  @set foo=VERBOSE
-  @force foo="Hi.
-  foo] "Hi.
-  foo says "Hi."
+  FLAG: VERBOSE(v)  ()   
+  
+  This flag causes all commands executed by the object having
+  the flag to be sent to the owner of the object.  
+  
+  Examples:
+    > @create foo
+    > @set foo=VERBOSE
+    > @force foo="Hi.
+      foo  "Hi.
+      foo says "Hi."
 
-  See also: TRACE
+  Related Topics: TRACE
 
 & INHERIT
+INHERIT
 
-  INHERIT   Previously, Wizard-owned objects had wizard powers.  This was
+  FLAG: INHERIT(I)  ()  
+  
+  Previously, Wizard-owned objects had wizard powers.  This was
   a problem in many cases, so that behavior has changed.  Now, only Wizard
   objects or Wizard-owned Inherit-set objects have wizard powers.  Only
   players can set the Inherit flag, and the Inherit flag is reset during
@@ -4330,10 +4505,13 @@
   inherit, so his objects can control him.  If a player is NOT Inherit,
   his stuff does NOT control him.  (i.e. cannot @force him.)  This flag
   is not especially useful for non-wizards.
+  
+  Related Topics:
 
 & MONITOR
+MONITOR
 
-  Flag: MONITOR(M)
+  FLAG: MONITOR(M)  ()
  
   Objects:
   When set, anytime the object hears something from someone who passes the
@@ -4349,11 +4527,12 @@
   connects or disconnects from the MUX. It is valid only for players, and
   must be set by a wizard.
  
-  See also: LISTENING.
+  Related Topics: LISTENING.
 
 & TRACE
+TRACE
 
-  Flag: TRACE(T)
+  FLAG: TRACE(T)  ()
  
   When a thing is set TRACE, it will report to its owner the result of all
   substitutions that it performs that change the original string.  The order
@@ -4361,64 +4540,75 @@
   a function) is a site-selected configuration parameter.
  
   Example:
-  > @set object = trace
-  > @va object = say The result is [add(4,mul(3,%0))].
-  > @trig object/va = 7
-  object(#322)} '%0' -> '7'
-  object(#322)} 'mul(3,%0)' -> '21'
-  object(#322)} 'add(4,mul(3,%0))' -> '25'
-  object(#322)} 'The result is [add(4,mul(3,%0))].' -> 'The result is 25.'
-  object says "The result is 25."
+    > @set object = trace
+    > @va object = say The result is [add(4,mul(3,%0))].
+    > @trig object/va = 7
+      object(#322)} '%0' -> '7'
+      object(#322)} 'mul(3,%0)' -> '21'
+      object(#322)} 'add(4,mul(3,%0))' -> '25'
+      object(#322)} 'The result is [add(4,mul(3,%0))].' -> 'The result is 25.'
+      object says "The result is 25."
 
 { 'help trace2' for more } 
 
-& trace2
+& TRACE2
+TRACE (continued)
 
   When trace output is displayed in top-down order (final evaluation first,
   followed by the 'smaller' evaluations needed to perform it), then the total
   number of trace ouput lines that may be produced by an evaluation is limited
   to 200.  Bottom-up trace output is not limited.
 
-  See also: VERBOSE.
+  Related Topics: VERBOSE.
 
 & NOSPOOF
+NOSPOOF
 
-  Flag: NOSPOOF(N)
+  FLAG: NOSPOOF(N)  ()
  
   This flag gives you mucho output when people @emit.  It can be annoying,
   but you'll know who's spoofing.
-  See also: @emit, @femit, @oemit, @pemit.
+  
+  Related Topics: @emit, @femit, @oemit, @pemit.
 
 & PARENT_OK
+PARENT_OK
 
-  Flag: PARENT_OK(Y)
+  FLAG: PARENT_OK(Y)  ()
  
   If an object is set PARENT_OK, then any other object that passes the object's
   ParentLock may make this object a parent of any object that it controls.
   Caution: allowing others to use your objects as parents lets them read the
   attributes on the object (as well as any parents of the object).
 
-  See also: @lock/parent.
+  Related Topics: @lock/parent.
 
 & LIGHT
+LIGHT
 
-  Flag: LIGHT(l)
+  FLAG: LIGHT(l)  ()
 
   An object or exit that is set LIGHT is visible even when inside a DARK
   location.  If an object is set both DARK and LIGHT, then its contents are
   visible even though the object itself is not.
+  
+  Related Topics:
 
 & MYOPIC
+MYOPIC
 
-  Flag: MYOPIC(m)
+  FLAG: MYOPIC(m)  ()
  
   If you are set MYOPIC, then you are treated as if you did not own anything
   when you use the LOOK command or when you automatically look at a location
   when entering it.  Other commands (such as EXAMINE) are not affected.
+  
+  Related Topics:
 
 & TERSE
+TERSE
 
-  Flag: TERSE(q)
+  FLAG: TERSE(q)  ()
  
   If you are set TERSE then you are not shown the description, success/failure
   messages, contents, or exits of locations you enter.  You must use the LOOK
@@ -4427,11 +4617,12 @@
   Others in the location still get the osucc/ofail messages and the asucc or
   afail command list is still run.
  
-  See also: examine, look.
+  Related Topics: examine, look.
 
 & ROBOT
+ROBOT
 
-  Flag: ROBOT(r)
+  FLAG: ROBOT(r)  ()
  
   If set on a player, indicates that the player is a robot and is allowed to
   use the OUTPUTPREFIX and OUTPUTSUFFIX commands that many publicly available
@@ -4440,35 +4631,44 @@
  
   If set on an exit or a thing, indicates that robot players may not use the
   exit or pick up the thing, the player is treated as having failed the lock.
-  See also: OUTPUTPREFIX, OUTPUTSUFFIX, @robot.
+  
+  Related Topics: OUTPUTPREFIX, OUTPUTSUFFIX, @robot.
 
 & SAFE
+SAFE
 
-  Flag: SAFE(s)
+  FLAG: SAFE(s)  ()
  
   When set, requires the use of the /override switch to @destroy in order to
   destroy the object.  It does not prevent the destruction of the object,
   but merely requires some additional effort.  If a thing is set DESTROY_OK,
   its SAFE flag is ignored and it may be destroyed without using the /override
   switch.
-  See also: @destroy, DESTROY_OK.
+  
+  Related Topics: @destroy, DESTROY_OK.
 
 & TRANSPARENT
+TRANSPARENT
 
-  Flag: TRANSPARENT(t)
+  FLAG: TRANSPARENT(t)  ()
  
   If an exit is TRANSPARENT, then when you look at it you see the description
   of the room on the other side of the exit in addition to the description
   of the exit. When a room is TRANSPARENT, you see a 'long' listing of
   exits, including their destinations.
+  
+  Related Topics:
 
 & SLAVE
+SLAVE
 
-  Flag: SLAVE(x)
+  FLAG: SLAVE(x)  ()
  
   If set on a player, neither the player nor any of his objects may perform
   any commands that change the database.  Some sites may restrict additional
   commands.  This flag may only be set or cleared by wizards.
+  
+  Related Topics:
 
 & ARBITRARY COMMANDS
 
@@ -4782,11 +4982,10 @@
   Topic: CREDITS
 
 TinyMUX 2.0 is based on TinyMUX 1.5 and 1.6. It is currently maintained
-by Stephen Dennis (aka Brazil). There is a more complete list of credits
+by Stephen Dennis (AKA Brazil). There is a more complete list of credits
 in the readme files for the server itself.
 
-See http://www.svdltd.com/TinyMUX for an on-line version of these readme
-files.
+See http://www.tinymux.com for an on-line version of these readme files.
  
 & DROP-TOS
 
@@ -4914,9 +5113,8 @@ files.
   See also: get, look, @afail, @fail, @lock, @ofail, STRINGS.
 
 & FLAGS
+FLAGS
 
-  Topic: FLAGS
- 
   Everything in the universe of this MUX (Rooms, Exits, Things, Players,
   etc) are represented in the same way at the program level.  A room merely
   has the room flag set and a player has the player flag set.  In addition,
@@ -4930,7 +5128,7 @@ files.
   request help on the flag's name, as in 'help ENTER_OK'.
 
 & FLAG LIST
-  Topic: FLAG LIST
+FLAG LIST
  
   Flag  Title        Flag  Title        Flag  Title        Flag  Title
   -------------------------------------------------------------------------
@@ -4979,7 +5177,7 @@ files.
   See also: @list functions, FUNCTION CLASSES, FUNCTION LIST.
 
 & FUNCTION LIST
-  Topic: FUNCTION LIST
+FUNCTION LIST
  
   Help is available for the following functions:
     ABS()       ACOS()      ADD()       AFTER()     ALPHAMAX()  ALPHAMIN()
