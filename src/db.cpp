@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.22 2000-08-02 23:34:34 sdennis Exp $
+// $Id: db.cpp,v 1.23 2000-08-03 03:40:24 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3230,7 +3230,8 @@ void load_restart_db(void)
     mudstate.start_time.SetSeconds(getref(f));
     strcpy(mudstate.doing_hdr, getstring_noalloc(f, new_strings));
 
-    if (version & RS_CONCENTRATE) {
+    if (version & RS_CONCENTRATE)
+     {
 #ifdef CONCENTRATE
         conc_pid = getref(f);
 #else
@@ -3238,11 +3239,13 @@ void load_restart_db(void)
 #endif
     }
     
-    if (version & RS_RECORD_PLAYERS) {
+    if (version & RS_RECORD_PLAYERS)
+    {
         mudstate.record_players = getref(f);
     }
     
-    while ((val = getref(f)) != 0) {
+    while ((val = getref(f)) != 0)
+    {
         ndescriptors++;
         d = alloc_desc("restart");
         d->descriptor = val;
@@ -3254,17 +3257,23 @@ void load_restart_db(void)
         d->player = getref(f);
         d->last_time.SetSeconds(getref(f));
         temp = (char *)getstring_noalloc(f, new_strings);
-        if (*temp) {
+        if (*temp)
+        {
             d->output_prefix = alloc_lbuf("set_userstring");
             strcpy(d->output_prefix, temp);
-        } else {
+        }
+        else
+        {
             d->output_prefix = NULL;
         }
         temp = (char *)getstring_noalloc(f, new_strings);
-        if (*temp) {
+        if (*temp)
+        {
             d->output_suffix = alloc_lbuf("set_userstring");
             strcpy(d->output_suffix, temp);
-        } else {
+        }
+        else
+        {
             d->output_suffix = NULL;
         }
 
@@ -3272,7 +3281,8 @@ void load_restart_db(void)
         strcpy(d->doing, getstring_noalloc(f, new_strings));
         strcpy(d->username, getstring_noalloc(f, new_strings));
 
-        if (version & RS_CONCENTRATE) {
+        if (version & RS_CONCENTRATE)
+        {
 #ifdef CONCENTRATE
             d->concid = getref(f);
             d->cstatus = getref(f);
@@ -3297,27 +3307,32 @@ void load_restart_db(void)
         d->program_data = NULL;
         d->hashnext = NULL;
 
-        if (descriptor_list) {
+        if (descriptor_list)
+        {
             for (p = descriptor_list; p->next; p = p->next) ;
             d->prev = &p->next;
             p->next = d;
             d->next = NULL;
-        } else {
+        }
+        else
+        {
             d->next = descriptor_list;
             d->prev = &descriptor_list;
             descriptor_list = d;
         }
 
         if (d->descriptor >= maxd)
+        {
             maxd = d->descriptor + 1;
+        }
         desc_addhash(d);
 #ifdef CONCENTRATE
         if (!(d->cstatus & C_CCONTROL))
 #endif
-            if (isPlayer(d->player))
-            {
-                s_Flags2(d->player, Flags2(d->player) | CONNECTED);
-            }
+        if (isPlayer(d->player))
+        {
+            s_Flags2(d->player, Flags2(d->player) | CONNECTED);
+        }
     }
 
     DESC_ITER_CONN(d)
@@ -3332,7 +3347,9 @@ void load_restart_db(void)
             DESC_ITER_ALL(k)
             {
                 if (k->descriptor = d->descriptor)
+                {
                     d->parent = k;
+                }
             }
         }
 #endif
