@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.28 2001-10-17 16:47:14 sdennis Exp $
+// $Id: db_rw.cpp,v 1.29 2001-10-17 17:04:41 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -389,7 +389,7 @@ static int get_list(FILE *f, dbref i, int new_strings)
                 if (anum < 0)
                 {
                     Log.tinyprintf("Bad attribute name '%s' on object %d, ignoring..." ENDLINE, buff, i);
-                    (void)getstring_noalloc(f, new_strings);
+                    getstring_noalloc(f, new_strings);
                 }
                 else
                 {
@@ -802,14 +802,13 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
             else
             {
-#ifdef STANDALONE
-                Log.WriteString(ENDLINE);
-                Log.Flush();
-#endif
                 *db_version = g_version;
                 *db_format = g_format;
                 *db_flags = g_flags;
-#ifndef STANDALONE
+#ifdef STANDALONE
+                Log.WriteString(ENDLINE);
+                Log.Flush();
+#else
                 load_player_names();
 #endif
                 return mudstate.db_top;
