@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.62 2001-12-28 20:35:24 sdennis Exp $
+// $Id: comsys.cpp,v 1.63 2002-01-15 05:41:00 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1281,7 +1281,9 @@ void do_addcom
         // Read title
         //
         s++;
-        while (*s && ((t - title_tmp) < sizeof(title_tmp)-1))
+        int n = sizeof(title_tmp) - 1;
+        while (  *s
+              && t - title_tmp < n)
         {
             *t++ = *s++;
         }
