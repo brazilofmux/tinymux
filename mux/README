@@ -1,5 +1,5 @@
 TinyMUX 2.2:  README (Unix-based)
-Last Update:  August 2002
+Last Update:  November 2002
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Congratulations and welcome to the README file for TinyMUX 2.2.  That 
 you have chosen to actually read the file is a sign of bravery equal to 
@@ -38,9 +38,6 @@ the following files:
                       information. 
   
   docs/BACKUP         A file about the MUX 2.2 Backup script.
-  
-  docs/COMPRESSION    How to set up and run your game under RADIX 
-                      compression.
   
   docs/CONFIGURATION  How to set up your MUX, including an explanation of 
                       the common configuration items, as well as how to set 
