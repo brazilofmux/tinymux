@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.16 2002-07-13 07:23:01 jake Exp $
+// $Id: look.cpp,v 1.17 2002-07-17 03:46:30 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -466,8 +466,8 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         char *VisibleObjectList = alloc_lbuf("look_exits.VOL");
         char *tPtr = VisibleObjectList;
 
-        DTB pContext;
-        DbrefToBuffer_Init(&pContext, VisibleObjectList, &tPtr);
+        ITL pContext;
+        ItemToList_Init(&pContext, VisibleObjectList, &tPtr, '#');
 
         ITER_PARENTS(loc, parent, lev)
         {
@@ -481,7 +481,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
             DOLIST(thing, Exits(parent))
             {
                 if (  exit_displayable(thing, player, key)
-                   && !DbrefToBuffer_Add(&pContext, thing))
+                   && !ItemToList_AddInteger(&pContext, thing))
                 {
                     bShortCircuit = TRUE;
                     break;
@@ -489,7 +489,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
             }
             if (bShortCircuit) break;
         }
-        DbrefToBuffer_Final(&pContext);
+        ItemToList_Final(&pContext);
 
         char *FormatOutput = alloc_lbuf("look_exits.FO");
         tPtr = FormatOutput;
@@ -623,8 +623,8 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         char *VisibleObjectList = alloc_lbuf("look_contents.VOL");
         char *tPtr = VisibleObjectList;
 
-        DTB pContext;
-        DbrefToBuffer_Init(&pContext, VisibleObjectList, &tPtr);
+        ITL pContext;
+        ItemToList_Init(&pContext, VisibleObjectList, &tPtr, '#');
 
         DOLIST(thing, Contents(loc))
         {
@@ -636,13 +636,13 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
             if (can_see(player, thing, can_see_loc))
 #endif
             {
-                if (!DbrefToBuffer_Add(&pContext, thing))
+                if (!ItemToList_AddInteger(&pContext, thing))
                 {
                     break;
                 }
             }
         }
-        DbrefToBuffer_Final(&pContext);
+        ItemToList_Final(&pContext);
 
         char *ContentsNameScratch = alloc_lbuf("look_contents.CNS");
         tPtr = ContentsNameScratch;

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.10 2002-07-16 20:37:05 jake Exp $
+// $Id: stringutil.cpp,v 1.11 2002-07-17 03:46:30 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2854,34 +2854,41 @@ char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
     return Buffer;
 }
 
-void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc)
+void ItemToList_Init(ITL *p, char *arg_buff, char **arg_bufc,
+    char arg_chPrefix, char arg_chSep)
 {
     p->bFirst = TRUE;
+    p->chPrefix = arg_chPrefix;
+    p->chSep = arg_chSep;
     p->buff = arg_buff;
     p->bufc = arg_bufc;
     p->nBufferAvailable = LBUF_SIZE - (*arg_bufc - arg_buff) - 1;
 }
 
-BOOL DbrefToBuffer_Add(DTB *pContext, int i)
+BOOL ItemToList_AddInteger(ITL *pContext, int i)
 {
     char smbuf[SBUF_SIZE];
     char *p = smbuf;
-    if (pContext->bFirst)
+    if (  !pContext->bFirst
+       && pContext->chSep)
     {
-        pContext->bFirst = FALSE;
+        *p++ = pContext->chSep;
     }
-    else
+    if (pContext->chPrefix)
     {
-        *p++ = ' ';
+        *p++ = pContext->chPrefix;
     }
-    *p++ = '#';
     p += Tiny_ltoa(i, p);
-    int nLen = p - smbuf;
+    size_t nLen = p - smbuf;
     if (nLen > pContext->nBufferAvailable)
     {
         // Out of room.
         //
         return FALSE;
+    }
+    if (pContext->bFirst)
+    {
+        pContext->bFirst = FALSE;
     }
     memcpy(*(pContext->bufc), smbuf, nLen);
     *(pContext->bufc) += nLen;
@@ -2889,46 +2896,50 @@ BOOL DbrefToBuffer_Add(DTB *pContext, int i)
     return TRUE;
 }
 
-void DbrefToBuffer_Final(DTB *pContext)
+BOOL ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr)
 {
-    **(pContext->bufc) = '\0';
-}
-
-void IntegerToBuffer_Init(ITB *p, char *arg_buff, char **arg_bufc)
-{
-    p->bFirst = TRUE;
-    p->buff = arg_buff;
-    p->bufc = arg_bufc;
-    p->nBufferAvailable = LBUF_SIZE - (*arg_bufc - arg_buff) - 1;
-}
-
-BOOL IntegerToBuffer_Add(ITB *pContext, int i)
-{
-    char smbuf[SBUF_SIZE];
-    char *p = smbuf;
-    if (pContext->bFirst)
+    size_t nLen = nStr;
+    if (  !pContext->bFirst
+       && pContext->chSep)
     {
-        pContext->bFirst = FALSE;
+        nLen++;
     }
-    else
+    if (pContext->chPrefix)
     {
-        *p++ = ' ';
+        nLen++;
     }
-    p += Tiny_ltoa(i, p);
-    int nLen = p - smbuf;
     if (nLen > pContext->nBufferAvailable)
     {
         // Out of room.
         //
         return FALSE;
     }
-    memcpy(*(pContext->bufc), smbuf, nLen);
+    char *p = *(pContext->bufc);
+    if (pContext->bFirst)
+    {
+        pContext->bFirst = FALSE;
+    }
+    else if (pContext->chSep)
+    {
+        *p++ = pContext->chSep;
+    }
+    if (pContext->chPrefix)
+    {
+        *p++ = pContext->chPrefix;
+    }
+    memcpy(p, pStr, nStr);
     *(pContext->bufc) += nLen;
     pContext->nBufferAvailable -= nLen;
     return TRUE;
 }
 
-void IntegerToBuffer_Final(ITB *pContext)
+BOOL ItemToList_AddString(ITL *pContext, char *pStr)
+{
+    size_t nStr = strlen(pStr);
+    return ItemToList_AddStringLEN(pContext, nStr, pStr);
+}
+
+void ItemToList_Final(ITL *pContext)
 {
     **(pContext->bufc) = '\0';
 }

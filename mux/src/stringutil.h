@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.7 2002-07-13 07:23:02 jake Exp $
+// $Id: stringutil.h,v 1.8 2002-07-17 03:46:30 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -143,28 +143,23 @@ extern void _strlwr(char *tp);
 extern void _strupr(char *a);
 #endif // WIN32
 
-typedef struct tag_dtb
+typedef struct tag_itl
 {
     BOOL bFirst;
+    char chPrefix;
+    char chSep;
     char *buff;
     char **bufc;
-    int nBufferAvailable;
-} DTB;
+    size_t nBufferAvailable;
+} ITL;
 
-typedef struct tag_itb
-{
-    BOOL bFirst;
-    char *buff;
-    char **bufc;
-    int nBufferAvailable;
-} ITB;
+void ItemToList_Init(ITL *pContext, char *arg_buff, char **arg_bufc,
+    char arg_chPrefix = 0, char arg_chSep = ' ');
+BOOL ItemToList_AddInteger(ITL *pContext, int i);
+BOOL ItemToList_AddString(ITL *pContext, char *pStr);
+BOOL ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr);
+void ItemToList_Final(ITL *pContext);
 
-void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc);
-BOOL DbrefToBuffer_Add(DTB *pContext, int i);
-void DbrefToBuffer_Final(DTB *pContext);
-void IntegerToBuffer_Init(ITB *p, char *arg_buff, char **arg_bufc);
-BOOL IntegerToBuffer_Add(ITB *pContext, int i);
-void IntegerToBuffer_Final(ITB *pContext);
 int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va);
 int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);
 

@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.19 2002-07-16 23:51:21 jake Exp $
+// $Id: speech.cpp,v 1.20 2002-07-17 03:46:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -586,7 +586,7 @@ void do_page
     {
         for (i = 0; i < nPlayers; i++)
         {
-            if (  aPlayers[i] != NOTHING
+            if (  Good_obj(aPlayers[i])
                && !page_check(executor, aPlayers[i]))
             {
                 aPlayers[i] = NOTHING;
@@ -601,20 +601,20 @@ void do_page
         // Our aPlayers could be different than the one encoded on A_LASTPAGE.
         // Update the database.
         //
-        ITB itb;
+        ITL itl;
         char *pBuff = alloc_lbuf("do_page.lastpage");
         char *pBufc = pBuff;
-        IntegerToBuffer_Init(&itb, pBuff, &pBufc);
+        ItemToList_Init(&itl, pBuff, &pBufc);
         int i;
         for (i = 0; i < nPlayers; i++)
         {
-            if (  aPlayers[i] != NOTHING
-               && !IntegerToBuffer_Add(&itb, aPlayers[i]))
+            if (  Good_obj(aPlayers[i])
+               && !ItemToList_AddInteger(&itl, aPlayers[i]))
             {
                 break;
             }
         }
-        IntegerToBuffer_Final(&itb);
+        ItemToList_Final(&itl);
         atr_add_raw(executor, A_LASTPAGE, pBuff);
         free_lbuf(pBuff);
     }

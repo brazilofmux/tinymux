@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.31 2002-07-17 03:19:19 jake Exp $
+// $Id: funceval.cpp,v 1.32 2002-07-17 03:46:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -71,21 +71,21 @@ FUNCTION(fun_cwho)
         }
     }
 
-    DTB pContext;
+    ITL pContext;
     struct comuser *user;
-    DbrefToBuffer_Init(&pContext, buff, bufc);
+    ItemToList_Init(&pContext, buff, bufc, '#');
     for (user = ch->on_users; user; user = user->on_next)
     {
         if (  (  match_type == CWHO_ALL
               || (  (Connected(user->who) || isThing(user->who))
                  && (  (match_type == CWHO_ON && user->bUserIsOn)
                     || (match_type == CWHO_OFF && !(user->bUserIsOn)))))
-           && !DbrefToBuffer_Add(&pContext, user->who))
+           && !ItemToList_AddInteger(&pContext, user->who))
         {
             break;
         }
     }
-    DbrefToBuffer_Final(&pContext);
+    ItemToList_Final(&pContext);
 }
 
 FUNCTION(fun_beep)
@@ -624,18 +624,18 @@ void scan_zone
     }
 
     dbref i;
-    DTB pContext;
-    DbrefToBuffer_Init(&pContext, buff, bufc);
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc, '#');
     for (i = 0; i < mudstate.db_top; i++)
     {
         if (  Typeof(i) == ObjectType
            && Zone(i) == it
-           && !DbrefToBuffer_Add(&pContext, i))
+           && !ItemToList_AddInteger(&pContext, i))
         {
             break;
         }
     }
-    DbrefToBuffer_Final(&pContext);
+    ItemToList_Final(&pContext);
 }
 
 FUNCTION(fun_zwho)
@@ -665,17 +665,17 @@ FUNCTION(fun_children)
     }
 
     dbref i;
-    DTB pContext;
-    DbrefToBuffer_Init(&pContext, buff, bufc);
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc, '#');
     for (i = 0; i < mudstate.db_top; i++)
     {
         if (  Parent(i) == it
-           && !DbrefToBuffer_Add(&pContext, i))
+           && !ItemToList_AddInteger(&pContext, i))
         {
             break;
         }
     }
-    DbrefToBuffer_Final(&pContext);
+    ItemToList_Final(&pContext);
 }
 
 FUNCTION(fun_objeval)
@@ -2982,12 +2982,11 @@ FUNCTION(fun_lparent)
         return;
     }
 
-    DTB pContext;
-    DbrefToBuffer_Init(&pContext, buff, bufc);
-
-    if (!DbrefToBuffer_Add(&pContext, it))
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc, '#');
+    if (!ItemToList_AddInteger(&pContext, it))
     {
-        DbrefToBuffer_Final(&pContext);
+        ItemToList_Final(&pContext);
         return;
     }
 
@@ -2998,7 +2997,7 @@ FUNCTION(fun_lparent)
           && Examinable(executor, it)
           && iNestLevel < mudconf.parent_nest_lim)
     {
-        if (!DbrefToBuffer_Add(&pContext, par))
+        if (!ItemToList_AddInteger(&pContext, par))
         {
             break;
         }
@@ -3006,7 +3005,7 @@ FUNCTION(fun_lparent)
         par = Parent(par);
         iNestLevel++;
     }
-    DbrefToBuffer_Final(&pContext);
+    ItemToList_Final(&pContext);
 }
 
 // stacksize - returns how many items are stuffed onto an object stack
@@ -3730,16 +3729,16 @@ FUNCTION(fun_lrooms)
     room_list(executor, enactor, room, bfTraverse, bfReport, 0, N, B);
     bfReport.Clear(room);
 
-    DTB pContext;
-    DbrefToBuffer_Init(&pContext, buff, bufc);
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc, '#');
     dbref i;
     DO_WHOLE_DB(i)
     {
         if (  bfReport.IsSet(i)
-           && !DbrefToBuffer_Add(&pContext, i))
+           && !ItemToList_AddInteger(&pContext, i))
         {
             break;
         }
     }
-    DbrefToBuffer_Final(&pContext);
+    ItemToList_Final(&pContext);
 }

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.17 2002-07-16 05:28:01 jake Exp $
+// $Id: db.cpp,v 1.18 2002-07-17 03:46:30 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -366,17 +366,17 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
     if (fp && fp->count)
     {
         char *bp = atext;
-        DTB pContext;
-        DbrefToBuffer_Init(&pContext, atext, &bp);
+        ITL pContext;
+        ItemToList_Init(&pContext, atext, &bp, '#');
         for (int i = 0; i < fp->count; i++)
         {
             if (  Good_obj(fp->data[i])
-               && DbrefToBuffer_Add(&pContext, fp->data[i]))
+               && ItemToList_AddInteger(&pContext, fp->data[i]))
             {
                 count++;
             }
         }
-        DbrefToBuffer_Final(&pContext);
+        ItemToList_Final(&pContext);
     }
     return count;
 }

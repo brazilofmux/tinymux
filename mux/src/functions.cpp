@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.58 2002-07-17 03:16:06 jake Exp $
+// $Id: functions.cpp,v 1.59 2002-07-17 03:46:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2570,10 +2570,10 @@ void internalPlayerFind
             return;
         }
     }
-    DTB pContext;
-    DbrefToBuffer_Init(&pContext, buff, bufc);
-    DbrefToBuffer_Add(&pContext, thing);
-    DbrefToBuffer_Final(&pContext);
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc, '#');
+    ItemToList_AddInteger(&pContext, thing);
+    ItemToList_Final(&pContext);
 }
 
 
@@ -4148,8 +4148,8 @@ FUNCTION(fun_lcon)
        || it == enactor)
     {
         dbref thing;
-        DTB pContext;
-        DbrefToBuffer_Init(&pContext, buff, bufc);
+        ITL pContext;
+        ItemToList_Init(&pContext, buff, bufc, '#');
         DOLIST(thing, Contents(it))
         {
 #ifdef WOD_REALMS
@@ -4158,7 +4158,7 @@ FUNCTION(fun_lcon)
             if (iRealmAction != REALM_DO_HIDDEN_FROM_YOU)
             {
 #endif
-                if (!DbrefToBuffer_Add(&pContext, thing))
+                if (!ItemToList_AddInteger(&pContext, thing))
                 {
                     break;
                 }
@@ -4166,7 +4166,7 @@ FUNCTION(fun_lcon)
             }
 #endif
         }
-        DbrefToBuffer_Final(&pContext);
+        ItemToList_Final(&pContext);
     }
     else
     {
@@ -4206,8 +4206,8 @@ FUNCTION(fun_lexits)
     BOOL bDone = FALSE;
     dbref parent;
     int lev;
-    DTB pContext;
-    DbrefToBuffer_Init(&pContext, buff, bufc);
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc, '#');
     ITER_PARENTS(it, parent, lev)
     {
         // Look for exits at each level.
@@ -4234,7 +4234,7 @@ FUNCTION(fun_lexits)
         DOLIST(thing, Exits(parent))
         {
             if (  exit_visible(thing, executor, key)
-               && !DbrefToBuffer_Add(&pContext, thing))
+               && !ItemToList_AddInteger(&pContext, thing))
             {
                 bDone = TRUE;
                 break;
@@ -4245,7 +4245,7 @@ FUNCTION(fun_lexits)
             break;
         }
     }
-    DbrefToBuffer_Final(&pContext);
+    ItemToList_Final(&pContext);
 }
 
 /*
@@ -5037,11 +5037,9 @@ FUNCTION(fun_lwho)
     BOOL bPorts = FALSE;
     if (nfargs == 1)
     {
-        if (Wizard(executor))
-        {
-            bPorts = xlate(fargs[0]);
-        }
-        else
+        bPorts = xlate(fargs[0]);
+        if (  bPorts
+           && !Wizard(executor))
         {
             safe_noperm(buff, bufc);
             return;
@@ -5714,16 +5712,16 @@ FUNCTION(fun_search)
     olist_push();
     search_perform(executor, caller, enactor, &searchparm);
     dbref thing;
-    DTB pContext;
-    DbrefToBuffer_Init(&pContext, buff, bufc);
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc, '#');
     for (thing = olist_first(); thing != NOTHING; thing = olist_next())
     {
-        if (!DbrefToBuffer_Add(&pContext, thing))
+        if (!ItemToList_AddInteger(&pContext, thing))
         {
             break;
         }
     }
-    DbrefToBuffer_Final(&pContext);
+    ItemToList_Final(&pContext);
     olist_pop();
 }
 

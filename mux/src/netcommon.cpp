@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.19 2002-07-17 00:51:10 jake Exp $
+// $Id: netcommon.cpp,v 1.20 2002-07-17 03:46:30 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -39,19 +39,19 @@ extern OVERLAPPED lpo_shutdown; // special to indicate a player should do a shut
 
 void make_portlist(dbref player, dbref target, char *buff, char **bufc)
 {
-    ITB itb;
-    IntegerToBuffer_Init(&itb, buff, bufc);
+    ITL itl;
+    ItemToList_Init(&itl, buff, bufc);
 
     DESC *d;
     DESC_ITER_CONN(d)
     {
         if (  d->player == target
-           && !IntegerToBuffer_Add(&itb, d->descriptor))
+           && !ItemToList_AddInteger(&itl, d->descriptor))
         {
             break;
         }
     }
-    IntegerToBuffer_Final(&itb);
+    ItemToList_Final(&itl);
 }
 
 // ---------------------------------------------------------------------------
@@ -61,26 +61,32 @@ void make_portlist(dbref player, dbref target, char *buff, char **bufc)
 void make_port_ulist(dbref player, char *buff, char **bufc)
 {
     DESC *d;
-    BOOL bFirst = TRUE;
-    char *tbuff;
+    ITL itl;
+    char *tmp = alloc_sbuf("make_port_ulist");
+    ItemToList_Init(&itl, buff, bufc, '#');
     DESC_ITER_CONN(d)
     {
-        if (!See_Hidden(player) && Hidden(d->player))
+        if (  !See_Hidden(player)
+           && Hidden(d->player))
         {
             continue;
         }
-        if (!bFirst)
-        {
-            safe_chr(' ', buff, bufc);
-        }
-        tbuff = tprintf("#%d:%d", d->player, d->descriptor);
-        if (strlen(buff) > (LBUF_SIZE - (strlen(tbuff) + 2)))
+
+        // printf format: printf("%d:%d", d->player, d->descriptor);
+        //
+        char *p = tmp;
+        p += Tiny_ltoa(d->player, p);
+        *p++ = ':';
+        p += Tiny_ltoa(d->descriptor, p);
+
+        size_t n = p - tmp;
+        if (!ItemToList_AddStringLEN(&itl, n, tmp))
         {
             break;
         }
-        safe_str(tbuff, buff, bufc);
-        bFirst = FALSE;
     }
+    ItemToList_Final(&itl);
+    free_sbuf(tmp);
 }
 
 /* ---------------------------------------------------------------------------
@@ -2406,20 +2412,20 @@ void make_ulist(dbref player, char *buff, char **bufc, BOOL bPorts)
     }
     else
     {
-        DTB pContext;
-        DbrefToBuffer_Init(&pContext, buff, bufc);
+        ITL pContext;
+        ItemToList_Init(&pContext, buff, bufc, '#');
         DESC_ITER_CONN(d)
         {
             if (!See_Hidden(player) && Hidden(d->player))
             {
                 continue;
             }
-            if (!DbrefToBuffer_Add(&pContext, d->player))
+            if (!ItemToList_AddInteger(&pContext, d->player))
             {
                 break;
             }
         }
-        DbrefToBuffer_Final(&pContext);
+        ItemToList_Final(&pContext);
     }
 }
 

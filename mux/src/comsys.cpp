@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.16 2002-07-17 01:08:54 sdennis Exp $
+// $Id: comsys.cpp,v 1.17 2002-07-17 03:46:30 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2820,9 +2820,12 @@ FUNCTION(fun_channels)
             {
                 if (bFirst)
                 {
+                    bFirst = FALSE;
+                }
+                else
+                {
                     safe_chr(' ', buff, bufc);
                 }
-                bFirst = FALSE;
                 safe_str(chn->name, buff, bufc);
             }
         }
