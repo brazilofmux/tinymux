@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.4 2003-03-03 06:10:40 sdennis Exp $
+// $Id: slave.cpp,v 1.5 2003-03-03 07:38:49 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -281,6 +281,7 @@ int main(int argc, char *argv[])
     char arg[MAX_STRING];
     char *p;
     int len;
+    pid_t child;
 
     parent_pid = getppid();
     if (parent_pid == 1)
@@ -313,11 +314,12 @@ int main(int argc, char *argv[])
         {
             *p = '\0';
         }
-        ChildSpawned();
-        switch (fork())
+        child = fork();
+        switch (child)
         {
         case -1:
             exit(1);
+            break;
 
         case 0: // child.
             {
@@ -334,6 +336,11 @@ int main(int argc, char *argv[])
                 setitimer(ITIMER_REAL, &itime, 0);
             }
             exit(query(arg, p + 1) != 0);
+            break;
+        }
+        if (child > 0)
+        {
+            ChildSpawned();
         }
 
         // Collect any children.
