@@ -158,7 +158,7 @@ Bug Fixes:
     was likely to fail.
  -- On sizeof(int) == 8 systems, IPv4 mask validation gave false negatives.
     Reported by Alierak.
- -- On sizeof(int) == 8 systems, slave was non-functional because
+ -- On sizeof(int) == 8 systems, slave process was non-functional because
     gethostbyname choked on an eight-byte IPv4 argument. Reported by Alierak.
  -- IP ranges of the form 'a.b.c.d/m' would allow 'm' to be text and take it
     as a zero value. For example, 'forbid_site 1.2.3.4/foobar' would effectly
@@ -168,6 +168,9 @@ Bug Fixes:
     Alierak. Bug introduced by Brazil.
  -- For exits, loc(foo) did not return the same answer as rloc(foo,1). Looks
     like something that's been in there awhile.  Reported by Alierak.
+ -- @cemit's to a channel did not affect channel history. Introduced and
+    fixed by Jake.
+ -- @mail/fwd re-evaluated the fowarded @mail.
 
 
 Performance Enhancements:
