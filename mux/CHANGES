@@ -276,8 +276,9 @@ Bug Fixes:
  -- Players creating themselves from the welcome screen could cause
     NOSPOOF-related messages to show a random executor to other players
     on the Public channel.
- -- Player names weren't validated properly. Instead of mux_PlayerNameSet[],
-    the code was using mux_ObjectNameSet[].
+ -- Player names weren't validated properly. Instead of
+    Tiny_IsPlayerNameCharacter[], the code was using
+    Tiny_IsObjectNameCharacter[].
  -- Fixed the bCanRead/read_remote_desc bugs.
 
 
