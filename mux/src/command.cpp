@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.109 2003-02-04 17:25:38 sdennis Exp $
+// $Id: command.cpp,v 1.110 2003-03-09 14:37:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -929,7 +929,7 @@ BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
             char *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
             char *str = atext;
-            TinyExec(buff, &bufc, executor, caller, enactor, EV_FCHECK | EV_EVAL, &str,
+            TinyExec(buff, &bufc, thing, executor, executor, EV_FCHECK | EV_EVAL, &str,
                 (char **)NULL, 0);
             free_lbuf(atext);
             *bufc = '\0';
