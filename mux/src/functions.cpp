@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.37 2003-02-15 18:03:44 jake Exp $
+// $Id: functions.cpp,v 1.38 2003-02-16 16:06:26 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1449,8 +1449,8 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
         bFreeBuffer = true;
     }
     dbref thing;
-    int   attrib;
-    bool bNoMatch = !parse_attrib(executor, pRefAttrib, &thing, &attrib);
+    ATTR *attr;
+    bool bNoMatch = !parse_attrib_temp(executor, pRefAttrib, &thing, &attr);
     if (bFreeBuffer)
     {
         free_lbuf(pRefAttrib);
@@ -1462,9 +1462,7 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
         return;
     }
 
-    ATTR *attr;
-    if (  attrib == NOTHING
-       || (attr = atr_num(attrib)) == NULL)
+    if (!attr)
     {
         return;
     }
@@ -1472,41 +1470,15 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     dbref aowner;
     int   aflags;
     size_t nLen = 0;
-    bFreeBuffer = false;
-    bool bEval = true;
-    char *atr_gotten = NULL;
-    if (attr->flags & AF_IS_LOCK)
-    {
-        atr_gotten = atr_get_LEN(thing, attrib, &aowner, &aflags, &nLen);
-        if (bCanReadAttr(executor, thing, attr, false))
-        {
-            struct boolexp *pBoolExp = parse_boolexp(executor, atr_gotten, true);
-            free_lbuf(atr_gotten);
-            atr_gotten = unparse_boolexp(executor, pBoolExp);
-            free_boolexp(pBoolExp);
-        }
-        else
-        {
-            free_lbuf(atr_gotten);
-            // TODO: This is bad practice.
-            atr_gotten = (char *)FUNC_NOPERM_MESSAGE;
-        }
-        bEval = false;
-    }
-    else
-    {
-        atr_gotten = atr_pget_LEN(thing, attrib, &aowner, &aflags, &nLen);
-        bFreeBuffer = true;
-    }
+    char *atr_gotten = atr_pget_LEN(thing, attr->number, &aowner, &aflags, &nLen);
 
     // Perform access checks.  check_read_perms() fills buff with an error message
     // if needed.
     //
     if (check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
     {
-        if (  bEval
-           && (  key == GET_EVAL
-              || key == GET_GEVAL))
+        if (  key == GET_EVAL
+           || key == GET_GEVAL)
         {
             char *str = atr_gotten;
             mux_exec(buff, bufc, thing, executor, executor, EV_FIGNORE | EV_EVAL,
@@ -1514,23 +1486,13 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
         }
         else
         {
-            if (bFreeBuffer)
+            if (nLen)
             {
-                if (nLen)
-                {
-                    safe_copy_buf(atr_gotten, nLen, buff, bufc);
-                }
-            }
-            else
-            {
-                safe_str(atr_gotten, buff, bufc);
+                safe_copy_buf(atr_gotten, nLen, buff, bufc);
             }
         }
     }
-    if (bFreeBuffer)
-    {
-        free_lbuf(atr_gotten);
-    }
+    free_lbuf(atr_gotten);
 }
 
 FUNCTION(fun_get)
