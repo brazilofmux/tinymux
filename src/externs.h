@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.36 2001-02-10 17:54:06 sdennis Exp $
+// $Id: externs.h,v 1.37 2001-03-15 13:10:39 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -91,7 +91,7 @@ extern int  FDECL(html_escape, (const char *src, char *dest, char **destp));
 #define DUMP_I_PANIC     1  // UNLOAD to a crashdb
 #define DUMP_I_RESTART   2  // OUTPUT to the inputdb
 #define DUMP_I_FLAT      3  // UNLOAD to a .FLAT file
-#define DUMP_I_SIGNAL    4  // UNLOAD to a .KILLED file
+#define DUMP_I_SIGNAL    4  // UNLOAD to a .FLAT file from signal.
 #define NUM_DUMP_TYPES 5
 extern void dump_database_internal(int);
 #endif
