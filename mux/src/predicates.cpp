@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.3 2002-06-04 00:47:28 sdennis Exp $
+// $Id: predicates.cpp,v 1.4 2002-06-05 06:34:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -558,13 +558,13 @@ void do_switch
     {
         bp = buff;
         str = args[a];
-        TinyExec(buff, &bp, player, CALLERQQQ, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
+        TinyExec(buff, &bp, player, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
             &str, cargs, ncargs);
         *bp = '\0';
         if (wild_match(buff, expr))
         {
             char *tbuf = replace_tokens(args[a+1], NULL, NULL, expr);
-            wait_que(player, CALLERQQQ, enactor, FALSE, lta, NOTHING, 0,
+            wait_que(player, caller, enactor, FALSE, lta, NOTHING, 0,
                 tbuf, cargs, ncargs, mudstate.global_regs);
             free_lbuf(tbuf);
             if (key == SWITCH_ONE)
@@ -581,7 +581,7 @@ void do_switch
        && args[a])
     {
         char *tbuf = replace_tokens(args[a], NULL, NULL, expr);
-        wait_que(player, CALLERQQQ, enactor, FALSE, lta, NOTHING, 0, tbuf,
+        wait_que(player, caller, enactor, FALSE, lta, NOTHING, 0, tbuf,
             cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
     }
@@ -917,7 +917,7 @@ void handle_prog(DESC *d, char *message)
     }
     cmd = atr_get(d->player, A_PROGCMD, &aowner, &aflags);
     CLinearTimeAbsolute lta;
-    wait_que(d->program_data->wait_enactor, CALLERQQQ, d->player, FALSE, lta,
+    wait_que(d->program_data->wait_enactor, d->player, d->player, FALSE, lta,
         NOTHING, 0, cmd, (char **)&message, 1,
         (char **)d->program_data->wait_regs);
 
@@ -1717,7 +1717,8 @@ dbref next_exit(dbref player, dbref this0, int exam_here)
  * * did_it: Have player do something to/with thing
  */
 
-void did_it(dbref player, dbref thing, int what, const char *def, int owhat, const char *odef, int awhat, char *args[], int nargs)
+void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
+            const char *odef, int awhat, char *args[], int nargs)
 {
     char *d, *buff, *act, *charges, *bp, *str;
     dbref loc, aowner;
@@ -1749,27 +1750,34 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
             save_global_regs("did_it_save", preserve, preserve_len);
             buff = bp = alloc_lbuf("did_it.1");
             str = d;
-            TinyExec(buff, &bp, thing, CALLERQQQ, player,
+            TinyExec(buff, &bp, thing, player, player,
                 EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
             *bp = '\0';
-            if (what == A_HTDESC) {
+            if (what == A_HTDESC)
+            {
                 safe_str("\r\n", buff, &bp);
                 *bp = '\0';
                 notify_html(player, buff);
-            } else
+            }
+            else
+            {
                 notify(player, buff);
+            }
             free_lbuf(buff);
-        } else if (def) {
+        }
+        else if (def)
+        {
             notify(player, def);
         }
         free_lbuf(d);
-    } else if ((what < 0) && def) {
+    }
+    else if ((what < 0) && def)
+    {
         notify(player, def);
     }
-    /*
-     * message to neighbors
-     */
 
+    // message to neighbors.
+    //
     if ((owhat > 0) && Has_location(player) && Good_obj(loc = Location(player)))
     {
         d = atr_pget(thing, owhat, &aowner, &aflags);
@@ -1782,7 +1790,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
             }
             buff = bp = alloc_lbuf("did_it.2");
             str = d;
-            TinyExec(buff, &bp, thing, CALLERQQQ, player,
+            TinyExec(buff, &bp, thing, player, player,
                      EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
             *bp = '\0';
             if (*buff)
@@ -1841,7 +1849,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
             }
             free_lbuf(charges);
             CLinearTimeAbsolute lta;
-            wait_que(thing, CALLERQQQ, player, FALSE, lta, NOTHING, 0, act,
+            wait_que(thing, player, player, FALSE, lta, NOTHING, 0, act,
                 args, nargs, mudstate.global_regs);
         }
         free_lbuf(act);
@@ -1973,7 +1981,7 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
     //
     if (nargs >= 7)
     {
-        parse_arglist(victim, CALLERQQQ, actor, args[6], '\0',
+        parse_arglist(victim, actor, actor, args[6], '\0',
             EV_STRIP_LS | EV_STRIP_TS, xargs, 10, (char **)NULL, 0, &nxargs);
     }
 
