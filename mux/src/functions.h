@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.2 2003-02-05 06:20:59 jake Exp $
+// $Id: functions.h,v 1.3 2003-03-02 03:58:12 jake Exp $
 //
 
 #include "copyright.h"
@@ -30,7 +30,7 @@ typedef struct ufun {
     struct ufun *next;  /* Next ufun in chain */
 } UFUN;
 
-#define FN_NO_EVAL  2   // Don't evaluate args to function.
+#define FN_NOEVAL   2   // Don't evaluate args to function.
 #define FN_PRIV     4   // Perform user-def function as holding obj.
 #define FN_PRES     8   // Preseve r-regs before user-def functions.
 
