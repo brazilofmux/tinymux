@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.32 2001-10-27 06:22:01 sdennis Exp $
+// $Id: svdhash.cpp,v 1.33 2001-10-27 16:25:22 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -188,7 +188,7 @@ UINT32 HASH_ProcessBuffer
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
-        case 4:  ulHash ^= *(UINT32 *)(pBuffer + 12);
+                 ulHash ^= *(UINT32 *)(pBuffer + 12);
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
@@ -201,7 +201,14 @@ UINT32 HASH_ProcessBuffer
         case 7:  ulHash  = CRC32_Table[pBuffer[9] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
         case 5:  ulHash  = CRC32_Table[pBuffer[11] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
-#ifndef WIN32
+#ifdef WIN32
+        case 4:  ulHash ^= *(UINT32 *)(pBuffer + 12);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
+                 return ~ulHash;
+#else
         case 4:  ulHash  = CRC32_Table[pBuffer[12] ^ (unsigned char)ulHash] ^ (ulHash >> 8);
 #endif
 
