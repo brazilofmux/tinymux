@@ -105,6 +105,8 @@ src/predicates.cpp
 src/quota.cpp
 src/rob.cpp
 src/set.cpp
+src/sha1.cpp
+src/sha1.h
 src/slave.cpp
 src/slave.h
 src/speech.cpp
