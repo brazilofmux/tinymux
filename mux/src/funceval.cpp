@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.21 2003-02-15 16:48:26 jake Exp $
+// $Id: funceval.cpp,v 1.22 2003-02-15 16:59:22 jake Exp $
 //
 
 #include "copyright.h"
@@ -1786,8 +1786,8 @@ FUNCTION(fun_visible)
 
     bool  result = false;
     dbref thing;
-    int   atr = NOTHING;
-    if (!parse_attrib(executor, fargs[1], &thing, &atr))
+    ATTR  *attr;
+    if (!parse_attrib_temp(executor, fargs[1], &thing, &attr))
     {
         thing = match_thing_quiet(executor, fargs[1]);
         if (!Good_obj(thing))
@@ -1799,14 +1799,13 @@ FUNCTION(fun_visible)
     }
     if (Good_obj(thing))
     {
-        if (atr == NOTHING)
+        if (attr)
         {
-            result = (Examinable(it, thing));
+            result = (See_attr(it, thing, attr));
         }
         else
         {
-            ATTR *ap = atr_num(atr);
-            result = (ap && See_attr(it, thing, ap));
+            result = (Examinable(it, thing));
         }
     }
     safe_bool(result, buff, bufc);
