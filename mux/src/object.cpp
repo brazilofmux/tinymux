@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.7 2002-06-12 19:51:23 jake Exp $
+// $Id: object.cpp,v 1.8 2002-06-13 15:29:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -352,7 +352,8 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
     if (mudstate.freelist != NOTHING)
     {
         obj = mudstate.freelist;
-        if (IS_CLEAN(obj))
+        if (  Good_obj(obj)
+           && IS_CLEAN(obj))
         {
             mudstate.freelist = Link(obj);
         }
