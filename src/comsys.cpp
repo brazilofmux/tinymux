@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.23 2001-02-12 19:50:14 sdennis Exp $
+// * $Id: comsys.cpp,v 1.24 2001-02-26 00:07:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -570,7 +570,6 @@ void load_comsystem(FILE *fp)
     int i, j, dummy;
     int nc, ver = 0;
     struct channel *ch;
-    struct comuser *user;
     char temp[LBUF_SIZE];
     
     num_channels = 0;
@@ -599,19 +598,19 @@ void load_comsystem(FILE *fp)
         ch = (struct channel *)MEMALLOC(sizeof(struct channel));
         ISOUTOFMEMORY(ch);
         
-        int n = GetLineTrunc(temp, sizeof(temp), fp);
-        if (n > MAX_CHANNEL_LEN)
+        int nChannel = GetLineTrunc(temp, sizeof(temp), fp);
+        if (nChannel > MAX_CHANNEL_LEN)
         {
-            n = MAX_CHANNEL_LEN;
+            nChannel = MAX_CHANNEL_LEN;
         }
-        if (temp[n-1] == '\n')
+        if (temp[nChannel-1] == '\n')
         {
             // Get rid of trailing '\n'.
             //
-            n--;
+            nChannel--;
         }
-        memcpy(ch->name, temp, n);
-        ch->name[n] = '\0';
+        memcpy(ch->name, temp, nChannel);
+        ch->name[nChannel] = '\0';
 
         if (ver == 2)
         {
@@ -630,7 +629,7 @@ void load_comsystem(FILE *fp)
 
         ch->on_users = NULL;
         
-        hashaddLEN(ch->name, n, (int *)ch, &mudstate.channel_htab);
+        hashaddLEN(ch->name, nChannel, (int *)ch, &mudstate.channel_htab);
         
         if (ver)
         {
@@ -663,7 +662,7 @@ void load_comsystem(FILE *fp)
                     ANSI_NORMAL);
             }
             int vwVisual;
-            n = ANSI_TruncateToField(temp, MAX_HEADER_LEN+1, ch->header,
+            ANSI_TruncateToField(temp, MAX_HEADER_LEN+1, ch->header,
                 MAX_HEADER_LEN+1, &vwVisual, ANSI_ENDGOAL_NORMAL);
         }
 
@@ -672,62 +671,76 @@ void load_comsystem(FILE *fp)
         if (ch->num_users > 0)
         {
             ch->users = (struct comuser **)calloc(ch->max_users, sizeof(struct comuser *));
-            
+
+            int jAdded = 0;
             for (j = 0; j < ch->num_users; j++)
             {
-                user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
-                ISOUTOFMEMORY(user);
-                
-                ch->users[j] = user;
-                
+                struct comuser t_user;
+                memset(&t_user, 0, sizeof(t_user));
+
                 if (ver)
                 {
-                    fscanf(fp, "%d %d\n", &(user->who), &(user->bUserIsOn));
+                    fscanf(fp, "%d %d\n", &(t_user.who), &(t_user.bUserIsOn));
                 }
                 else
                 {
-                    fscanf(fp, "%d %d %d", &(user->who), &(dummy), &(dummy));
-                    fscanf(fp, "%d\n", &(user->bUserIsOn));
+                    fscanf(fp, "%d %d %d", &(t_user.who), &(dummy), &(dummy));
+                    fscanf(fp, "%d\n", &(t_user.bUserIsOn));
                 }
-                int n = GetLineTrunc(temp, sizeof(temp), fp);
-                if (n > MAX_TITLE_LEN)
-                {
-                    n = MAX_TITLE_LEN;
-                }
-                if (temp[n-1] == '\n')
-                {
-                    // Get rid of trailing '\n'.
-                    //
-                    n--;
-                }
-                if (n < 2)
-                {
-                    n = 2;
-                }
-                n -= 2;
-                user->title = StringCloneLen(temp+2, n);
 
-                if (user->who >= 0 && user->who < mudstate.db_top)
+                // Read Comtitle.
+                //
+                int nTitle = GetLineTrunc(temp, sizeof(temp), fp);
+                char *pTitle = temp;
+
+                if (  t_user.who >= 0
+                   && t_user.who < mudstate.db_top)
                 {
+                    // Validate comtitle
+                    //
+                    if (3 < nTitle && temp[0] == 't' && temp[1] == ':')
+                    {
+                        pTitle = temp+2;
+                        nTitle -= 2;
+                        if (pTitle[nTitle-1] == '\n')
+                        {
+                            // Get rid of trailing '\n'.
+                            //
+                            nTitle--;
+                        }
+                        if (nTitle <= 0 || MAX_TITLE_LEN < nTitle)
+                        {
+                            nTitle = 0;
+                            pTitle = temp;
+                        }
+                    }
+                    else
+                    {
+                        nTitle = 0;
+                    }
+
+                    struct comuser *user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
+                    ISOUTOFMEMORY(user);
+                    memcpy(user, &t_user, sizeof(struct comuser));
+
+                    user->title = StringCloneLen(pTitle, nTitle);
+
                     if (  !(isPlayer(user->who))
                        && !(Going(user->who)
                        && (God(Owner(user->who)))))
                     {
                         do_joinchannel(user->who, ch);
-                        user->on_next = ch->on_users;
-                        ch->on_users = user;
                     }
-                    else
-                    {
-                        user->on_next = ch->on_users;
-                        ch->on_users = user;
-                    }
+                    user->on_next = ch->on_users;
+                    ch->on_users = user;
+                    ch->users[jAdded++] = user;
                 }
                 else
                 {
-                    Log.printf("load_comsystem: dbref %d out of range [0, %d)\n", user->who, mudstate.db_top);
+                    Log.printf("load_comsystem: dbref %d out of range [0, %d)\n", t_user.who, mudstate.db_top);
                 }
             }
+            ch->num_users = jAdded;
             sort_users(ch);
         }
         else
@@ -1194,7 +1207,7 @@ struct comuser *select_user(struct channel *ch, dbref player)
 void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
 {
     char channel[MAX_CHANNEL_LEN+1];
-    char title[MAX_TITLE_LEN+1];
+    char title_tmp[LBUF_SIZE];
     char Buffer[MAX_CHANNEL_LEN+1];
     struct channel *ch;
     char *s, *t;
@@ -1232,14 +1245,14 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
     }
     *t = '\0';
     
-    t = title;
+    t = title_tmp;
     *t = '\0';
     if (*s)
     {   
         // Read title 
         //
         s++;
-        while (*s && ((t - title) < MAX_TITLE_LEN))
+        while (*s && ((t - title_tmp) < sizeof(title_tmp)-1))
         {
             *t++ = *s++;
         }
@@ -1317,7 +1330,7 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
     c->channels[where] = StringClone(channel);
     
     do_joinchannel(player, ch);
-    char *pValidatedTitleValue = RestrictTitleValue(title);
+    char *pValidatedTitleValue = RestrictTitleValue(title_tmp);
     do_setnewtitle(player, ch, pValidatedTitleValue);
     
     if (pValidatedTitleValue[0] == '\0')
