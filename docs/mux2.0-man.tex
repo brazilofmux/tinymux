@@ -138,6 +138,70 @@ as follows:
 \$ \emph{make}
 \end{verse}
 }}
+On some system `gmake' is required instead of `make'. At the end of this
+process, you should have executable programs built in the mux2.0/src directory
+with links made to the mux2.0/game/bin directory. A link in Unix parlance is
+another name for the same file contents.
 
+At this point, if you don't have an existing database to convert or import,
+and if you don't have any configuration changes, you could simply run the
+server and it would create a minimal database and let you connect to port
+2860. This can be done as follows:
+\footnotesize{\texttt{
+\begin{verse}
+\$ \emph{cd ../game}\\
+\$ \emph{./Startmux}
+\end{verse}
+}}
+The Startmux script will do a few things like index the help files and then
+return to the \$-prompt again. You can verify that the server is running as
+follows:
+\footnotesize{\texttt{
+\begin{verse}
+\$ \emph{ps u}
+\end{verse}
+}}
+You will see two processes, a netmux game process and a slave process that
+handled reverse DNS lookups and the identd protocol for hosts that support
+it. To connect to the game, do the following:
+\footnotesize{\texttt{
+\begin{verse}
+\$ \emph{telnet locahost 2860}
+\end{verse}
+}}
+You will see the connect.txt welcome screen contents and then the server will
+wait for you to connect or logon. With a minimal database, there is only one
+player defined: Wizard or \#1. And, there is only one room defined: Limbo or
+\#0. The initial password for \#1 is something of a standard everywhere. You
+should change it right away with the `@password' command. Do the following:
+\footnotesize{\texttt{
+\begin{verse}
+Connect Wizard potrzebie\\
+@password potrzebie=XXXXXXXX
+\end{verse}
+}}
+where XXXXXX is a password of your own chosing.
 
+Use `help @password' to learn more about the @password command, and
+`help topic' if you need help on a command, function, or class of
+functions.
+
+Finally, at some point, you'll want to bring the game down in an orderly way.
+People have stepped over the power cord and other non-orderly ways of bringing
+the game down, but `@shutdown' is recommended instead as follows:
+\footnotesize{\texttt{
+\begin{verse}
+\emph{@shutdown}\\
+Goodbye.\\
+Connection Lost.\\
+\$
+\end{verse}
+}}
+The database is quite rugged, but there are no guarantees if you make a
+habit of abusing it.
+
+Finally, buy a UPS. Backup, off-line. Do it. If you use WinNT, configure it,
+and then leave the server alone. WinNT works best if you give it good
+hardware, good drivers, a set of services to run, and then leave it the heck
+alone.
 \end{document}
