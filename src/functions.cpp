@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.167 2002-04-11 06:05:06 sdennis Exp $
+// $Id: functions.cpp,v 1.168 2002-04-13 20:52:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1926,7 +1926,7 @@ FUNCTION(fun_v)
     ATTR *ap;
 
     tbuf = fargs[0];
-    if (Tiny_IsAlpha[(unsigned char)tbuf[0]] && tbuf[1])
+    if ((Tiny_IsAlpha[(unsigned char)tbuf[0]] || tbuf[0] == '_') && tbuf[1])
     {
         // Fetch an attribute from me. First see if it exists,
         // returning a null string if it does not.
