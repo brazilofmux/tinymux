@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.67 2002-01-31 12:29:30 sdennis Exp $
+// $Id: db.cpp,v 1.68 2002-01-31 12:39:47 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -91,7 +91,7 @@ ATTR attr[] =
     {"Akill", A_AKILL, AF_ODARK, NULL},
     {"Aleave", A_ALEAVE, AF_ODARK, NULL},
     {"Alfail", A_ALFAIL, AF_ODARK | AF_NOPROG, NULL},
-    {"Alias", A_ALIAS, AF_NOPROG | AF_NOCMD | AF_PRIVATE | AF_CONST, NULL},
+    {"Alias", A_ALIAS, AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_PRIVATE | AF_CONST, NULL},
     {"Allowance", A_ALLOWANCE, AF_MDARK | AF_NOPROG | AF_WIZARD, NULL},
     {"Amail", A_AMAIL, AF_ODARK | AF_NOPROG, NULL},
     {"Amhear", A_AMHEAR, AF_ODARK, NULL},
@@ -135,9 +135,9 @@ ATTR attr[] =
     {"Inprefix", A_INPREFIX, AF_ODARK | AF_NOPROG, NULL},
     {"Kill", A_KILL, AF_ODARK, NULL},
     {"Lalias", A_LALIAS, AF_ODARK | AF_NOPROG, NULL},
-    {"Last", A_LAST, AF_WIZARD | AF_NOCMD | AF_NOPROG, NULL},
+    {"Last", A_LAST, AF_WIZARD | AF_NOCMD | AF_NOPROG | AF_NOCLONE, NULL},
     {"Lastpage", A_LASTPAGE, AF_INTERNAL | AF_NOCMD | AF_NOPROG | AF_GOD | AF_PRIVATE, NULL},
-    {"Lastsite", A_LASTSITE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
+    {"Lastsite", A_LASTSITE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_GOD, NULL},
     {"LastIP", A_LASTIP, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_GOD, NULL},
     {"Leave", A_LEAVE, AF_ODARK, NULL},
     {"LeaveLock", A_LLEAVE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
@@ -145,9 +145,9 @@ ATTR attr[] =
     {"LinkLock", A_LLINK, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
     {"Listen", A_LISTEN, AF_ODARK, NULL},
     {"Logindata", A_LOGINDATA, AF_MDARK | AF_NOPROG | AF_NOCMD | AF_CONST, NULL},
-    {"Mailcurf", A_MAILCURF, AF_MDARK | AF_WIZARD | AF_NOPROG, NULL},
-    {"Mailflags", A_MAILFLAGS, AF_MDARK | AF_WIZARD | AF_NOPROG, NULL},
-    {"Mailfolders", A_MAILFOLDERS, AF_MDARK | AF_WIZARD | AF_NOPROG, NULL},
+    {"Mailcurf", A_MAILCURF, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE, NULL},
+    {"Mailflags", A_MAILFLAGS, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE, NULL},
+    {"Mailfolders", A_MAILFOLDERS, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE, NULL},
     {"Mailmsg", A_MAILMSG, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
     {"Mailsub", A_MAILSUB, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
     {"Mailsucc", A_MAIL, AF_ODARK | AF_NOPROG, NULL},
@@ -183,13 +183,13 @@ ATTR attr[] =
     {"Prefix", A_PREFIX, AF_ODARK | AF_NOPROG, NULL},
     {"ProgCmd", A_PROGCMD, AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL, NULL},
     {"QueueMax", A_QUEUEMAX, AF_MDARK | AF_WIZARD | AF_NOPROG, NULL},
-    {"Quota", A_QUOTA, AF_MDARK | AF_NOPROG | AF_GOD | AF_NOCMD, NULL},
+    {"Quota", A_QUOTA, AF_MDARK | AF_NOPROG | AF_GOD | AF_NOCMD | AF_NOCLONE, NULL},
     {"ReceiveLock", A_LRECEIVE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
     {"Reject", A_REJECT, AF_ODARK | AF_NOPROG, NULL},
     {"Rfail", A_RFAIL, AF_ODARK | AF_NOPROG, NULL},
-    {"Rquota", A_RQUOTA, AF_MDARK | AF_NOPROG | AF_GOD | AF_NOCMD, NULL},
+    {"Rquota", A_RQUOTA, AF_MDARK | AF_NOPROG | AF_GOD | AF_NOCMD | AF_NOCLONE, NULL},
     {"Runout", A_RUNOUT, AF_ODARK, NULL},
-    {"Semaphore", A_SEMAPHORE, AF_ODARK | AF_NOPROG | AF_WIZARD | AF_NOCMD, NULL},
+    {"Semaphore", A_SEMAPHORE, AF_ODARK | AF_NOPROG | AF_WIZARD | AF_NOCMD | AF_NOCLONE, NULL},
     {"Sex", A_SEX, AF_NOPROG, NULL},
     {"Signature", A_SIGNATURE, AF_ODARK | AF_NOPROG, NULL},
     {"SpeechLock", A_LSPEECH, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
