@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.25 2004-04-01 22:00:42 sdennis Exp $
+// $Id: mail.cpp,v 1.26 2004-04-07 17:38:24 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -523,6 +523,23 @@ static int parse_folder(dbref player, char *folder_string)
     return get_folder_number(player, folder_string);
 }
 
+#define MAIL_INVALID_RANGE  0
+#define MAIL_INVALID_NUMBER 1
+#define MAIL_INVALID_AGE    2
+#define MAIL_INVALID_DBREF  3
+#define MAIL_INVALID_PLAYER 4
+#define MAIL_INVALID_SPEC   5
+
+static char *mailmsg[] =
+{
+    "MAIL: Invalid message range",
+    "MAIL: Invalid message number",
+    "MAIL: Invalid age",
+    "MAIL: Invalid dbref #",
+    "MAIL: Invalid player",
+    "MAIL: Invalid message specification"
+};
+
 static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
 {
     // Take a message list, and return the appropriate mail_selector setup.
@@ -572,7 +589,7 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             ms->low = mux_atol(p);
             if (ms->low <= 0)
             {
-                notify(player, "MAIL: Invalid message range");
+                notify(player, mailmsg[MAIL_INVALID_RANGE]);
                 return false;
             }
             if (*q == '\0')
@@ -586,7 +603,7 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 ms->high = mux_atol(q);
                 if (ms->low > ms->high)
                 {
-                    notify(player, "MAIL: Invalid message range");
+                    notify(player, mailmsg[MAIL_INVALID_RANGE]);
                     return false;
                 }
             }
@@ -598,7 +615,7 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             ms->low = ms->high = mux_atol(p);
             if (ms->low <= 0)
             {
-                notify(player, "MAIL: Invalid message number");
+                notify(player, mailmsg[MAIL_INVALID_NUMBER]);
                 return false;
             }
         }
@@ -614,13 +631,13 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             p++;
             if (*p == '\0')
             {
-                notify(player, "MAIL: Invalid message range");
+                notify(player, mailmsg[MAIL_INVALID_RANGE]);
                 return false;
             }
             ms->high = mux_atol(p);
             if (ms->high <= 0)
             {
-                notify(player, "MAIL: Invalid message range");
+                notify(player, mailmsg[MAIL_INVALID_RANGE]);
                 return false;
             }
             break;
@@ -632,14 +649,14 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             p++;
             if (*p == '\0')
             {
-                notify(player, "MAIL: Invalid age");
+                notify(player, mailmsg[MAIL_INVALID_AGE]);
                 return false;
             }
             ms->day_comp = 0;
             ms->days = mux_atol(p);
             if (ms->days < 0)
             {
-                notify(player, "MAIL: Invalid age");
+                notify(player, mailmsg[MAIL_INVALID_AGE]);
                 return false;
             }
             break;
@@ -651,14 +668,14 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             p++;
             if (*p == '\0')
             {
-                notify(player, "MAIL: Invalid age");
+                notify(player, mailmsg[MAIL_INVALID_AGE]);
                 return false;
             }
             ms->day_comp = -1;
             ms->days = mux_atol(p);
             if (ms->days < 0)
             {
-                notify(player, "MAIL: Invalid age");
+                notify(player, mailmsg[MAIL_INVALID_AGE]);
                 return false;
             }
             break;
@@ -670,14 +687,14 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             p++;
             if (*p == '\0')
             {
-                notify(player, "MAIL: Invalid age");
+                notify(player, mailmsg[MAIL_INVALID_AGE]);
                 return false;
             }
             ms->day_comp = 1;
             ms->days = mux_atol(p);
             if (ms->days < 0)
             {
-                notify(player, "MAIL: Invalid age");
+                notify(player, mailmsg[MAIL_INVALID_AGE]);
                 return false;
             }
             break;
@@ -689,13 +706,13 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             p++;
             if (*p == '\0')
             {
-                notify(player, "MAIL: Invalid dbref #");
+                notify(player, mailmsg[MAIL_INVALID_DBREF]);
                 return false;
             }
             ms->player = mux_atol(p);
             if (!Good_obj(ms->player) || !(ms->player))
             {
-                notify(player, "MAIL: Invalid dbref #");
+                notify(player, mailmsg[MAIL_INVALID_DBREF]);
                 return false;
             }
             break;
@@ -707,25 +724,76 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             p++;
             if (*p == '\0')
             {
-                notify(player, "MAIL: Invalid player");
+                notify(player, mailmsg[MAIL_INVALID_PLAYER]);
                 return false;
             }
             ms->player = lookup_player(player, p, true);
             if (ms->player == NOTHING)
             {
-                notify(player, "MAIL: Invalid player");
+                notify(player, mailmsg[MAIL_INVALID_PLAYER]);
                 return false;
             }
             break;
 
-#if 0
         case 'A':
 
             // All messages, all folders
             //
-            ms->flags = M_ALL;
+            p++;
+            switch (mux_toupper(*p))
+            {
+            case '\0':
+                notify(player, "MAIL: A isn't enough (all?)");
+                return false;
+                break;
+
+            case 'L':
+
+                // All messages, all folders
+                //
+                p++;
+                switch (mux_toupper(*p))
+                {
+                case '\0':
+                    notify(player, "MAIL: AL isn't enough (all?)");
+                    return false;
+                    break;
+         
+                case 'L':
+    
+                    // All messages, all folders
+                    //
+                    p++;
+                    if (*p == '\0')
+                    {
+                        ms->flags = M_ALL;
+                    }
+                    else
+                    {
+                        notify(player, mailmsg[MAIL_INVALID_SPEC]);
+                        return false;
+                    }
+                    break;
+    
+                default:
+    
+                    // Bad
+                    //
+                    notify(player, mailmsg[MAIL_INVALID_SPEC]);
+                    return false;
+                    break;
+                }
+                break;
+
+            default:
+
+                // Bad
+                //
+                notify(player, mailmsg[MAIL_INVALID_SPEC]);
+                return false;
+                break;
+            }
             break;
-#endif
 
         case 'U':
 
@@ -757,7 +825,7 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
 
                 // Bad
                 //
-                notify(player, "MAIL: Invalid message specification");
+                notify(player, mailmsg[MAIL_INVALID_SPEC]);
                 return false;
                 break;
             }
@@ -808,7 +876,7 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
 
             default:
 
-                notify(player, "MAIL: Invalid message specification");
+                notify(player, mailmsg[MAIL_INVALID_SPEC]);
                 return false;
                 break;
             }
@@ -818,7 +886,7 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
 
             // Bad news.
             //
-            notify(player, "MAIL: Invalid message specification");
+            notify(player, mailmsg[MAIL_INVALID_SPEC]);
             return false;
             break;
         }
@@ -923,7 +991,7 @@ static bool mail_match(struct mail *mp, struct mail_selector ms, int num)
     {
         return false;
     }
-    if (ms.high && num > ms.high)
+    if (ms.high && ms.high < num)
     {
         return false;
     }
@@ -932,8 +1000,11 @@ static bool mail_match(struct mail *mp, struct mail_selector ms, int num)
         return false;
     }
 
-    mail_flag mpflag = Read(mp) ? mp->read : (mp->read | M_MSUNREAD);
-    if (!(ms.flags & M_ALL) && !(ms.flags & mpflag))
+    mail_flag mpflag = Read(mp)
+        ? (mp->read | M_ALL)
+        : (mp->read | M_ALL | M_MSUNREAD);
+
+    if ((ms.flags & mpflag) == 0)
     {
         return false;
     }
