@@ -1,174 +1,124 @@
-TinyMUX 2.0: MEMORY
-Last Update: April 2000
+TinyMUX 2.1: MEMORY
+Last Update: February 2002
 
-This file will explain to configure the two memory options of MUX, so 
-that your game may run under one or the other.
+This file will explain how to configure for the two memory options of MUX as
+well as the procedure for converting between them.
 
-By default, MUX will build a disk-based server. If you prefer to run 
-a memory-based server, this is a compile time option.  There is a 
-section in the Makefile that needs to be changed -- the most important 
-of which is to define MEMORY_BASED.
+The default build procedure creates a disk-based server. MUX is also able to
+run in a memory-based mode and this version of MUX continues to support that
+style. However, to create a memory-based server, you need to change your
+Makefile at a specific time in the build process.
 
-It's equally easy to pick either one if you are starting your MUX from 
-scratch, however, converting from one to the other can be a bit more 
-difficult.
+  ./configure
+  # <---Edit your Makefile to define MEMORY_BASED at this point.
+  make depend
+  make
 
-NOTE: Anytime you switch from one to the other, you should be do a
-      'make clean'. This removes intermediate files and helps to guarantee
-      a clean build.
+The way to turn on MEMORY_BASED is to edit the makefile and remove the leading
+comment character ('#') from the line that looks like the following:
 
-WIN32 NOTE: db_load, db_check, and db_unload are not currently available on
-      Win32. You need to use dbconvert directly, and all the examples show
-      how that's done.
+  #SWITCH_MEMORY_BASED=Uncomment me.
 
-REMINDER:  GAMENAME is the same as the variable set in /game/mux.config 
-(default is 'netmux').
+to make it look like the following:
 
-Converting from memory-based to disk-based:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This is the simple conversion:
+  SWITCH_MEMORY_BASED=Uncomment me.
 
-1.  Undefine MEMORY_BASED in the makefile.
-2.  'make clean' to force all source files to be re-built.
-3.  'make' the game.
-4.  './Startmux' the game from the game sub-directory.
-5.  'connect' as a wizard,
-6.  '@shutdown' to shut it down.
+It is critically important that -all- of your source code is built for the
+same memory mode. If you are building cleanly, there is no special action to
+take. However,if you have previously built for one memory mode and are now
+building for the other memory mode, you must interject the following step
+between editing your Makefile and the 'make depend' and 'make' steps:
 
-This will create the GAMENAME.dir and GAMENAME.pag files in your data
-sub-directory.
+  make clean
 
-Alternatively, you can convert from memory-based to disk-based without
-starting the game using db_load as follows:
+The 'make clean' step removes any intermediate files and prepares for a clean
+build.
 
-1.  Undefine MEMORY_BASED in the makefile.
-2.  'make clean' to force all source files to be re-built.
-3.  'make' the game.
-4.  Change to the data sub-directory.
-5.  db_load GAMENAME GAMENAME.db.new GAMENAME.db
+The remainder of this file details two specific procedures converting from
+one mode of operation to the to the other.
 
-This last step is the same as if you had done the following:
+NOTE: In all four of these procedures, the word 'GAMENAME' is the same as the
+      variable set in your ./game/mux.config (on Unix) or ./game/muxconfig.vbs
+      file (on Win32).
 
-    ../bin/dbconvert GAMENAME X < GAMENAME.db.new > GAMENAME.db
+      Also note that while the following procedures may be adapted for Win32,
+      building MUX on Win32 using the MEMORY_BASED mode is beyond the scope of
+      this readme file.
 
 
-Converting from disk-based to memory-based:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-You need to use db_unload to convert your database to a flatfile, as
-follows:
+Procedure 1. Converting from Memory-Based to Disk-Based:
+-------------------------------------------------------
 
-1.  Define MEMORY_BASED in the makefile.
-2.  'make clean' to force all source files to be re-built.
-3.  'make' the game.
-4.  Change to the data sub-directory.
-5.  db_unload GAMENAME GAMENAME.db.new GAMENAME.db.FLAT
+The first part of converting a database from Memory-Based mode to Disk-Based
+mode is easy as a Memory-Based server always dumps a Flatfile. Look in your
+config file for your specific setting, but the name of the output file is
+normally 'GAMENAME.db.new' ('netmux.db.new' is the default).
 
-This last step is the same as if you had done the following:
+If you want to perform some simple checking, look for '***END OF DUMP***'
+on the end and look for attributes values throughout the flatfile. If
+'***END OF DUMP***' is not at the end, the flatfile has been abbreviated
+(disk quotas, the site operator shutdown the entire server, etc).
+If there are no attribute values throughout the flatfile, it's not a true
+flatfile, but instead what is sometimes called a 'structure' file.
 
-    ../bin/dbconvert GAMENAME x < GAMENAME.db.new > GAMENAME.db.FLAT
+A Structure file is the type of dump performed by a Disk-Based server. You
+aren't running in Memory-Based mode. There is no need to convert.
+Alternatively, if this file is from a backup, you have some problems as there
+isn't enough information in this file alone to run a game.
 
-You then need to remove GAMENAME.db.new, GAMENAME.db,
-GAMENAME.pag, GAMENAME.dir. When that is done, rename
-GAMENAME.db.FLAT to GAMENAME.db.new. Start up the game.
+However, assuming that your flatfile is good and true:
 
+  1. 'cd src'
+  2. Edit your Makefile to add the '#' symbol in from of the
+     SWITCH_MEMORY_BASED line. The effect is the reverse of what was
+     described above.
+  3. 'make clean' to remove all intermediate files.
+  4. 'make' to build a disk-based server.
+  5. 'cd ../game/data'
+  6. './db_load GAMENAME GAMENAME.db.new GAMENAME.db'
+     ('./db_load netmux netmux.db.new netmux.db' is typical).
+  
+At this point, GAMENAME.dir and GAMENAME.pag files should have been created.
+Verify that your .conf file has 'game_pag_file=./data/GAMENAME.pag' and
+'game_dir_file=./data/GAMENAME.dir'.
 
-A comparison of disk-based and memory-based database storage methods.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Frankly any must-be-true conclusions are elusive as the results you get
-depend a lot on how much memory you have in your system relative to the 
-size of the game you are trying to host, but assuming that your memory 
-isn't a limiting factor, we can generally say the following:
+You are now ready to ./Startmux your game.
 
-1. Memory based:
+Step 6 above is also the same as the following:
 
-    a. Advantages:
-
-    - Does not spend time reading from the disk or asking for data to be
-      written to the disk. Also, there is some organizational overhead
-      to a cache that a memory-based system doesn't pay.
-
-    - A memory-based setup dumps and loads using a flatfile, which is
-      easier to manage in some ways than trying to share an on-line
-      database file with the game while it's running.
-
-    - Less chance of an incoherent database. That is, flatfile dumps 
-      have a higher chance of being internally coherent in the face of      
-      system crashes, faults, power glitch and other nasty things.
-
-    b. Disadvantages:
-
-    - Memory usage grows as the size of the database grows.
-
-    - Loading and dumping a complete flatfile is more disk and 
-      processor intensive than incrementally managing an on-line disk 
-      database, however there are ways to hiding this activity so that 
-      it doesn't affect your players much.
-
-    - Greater chance of loss of data. That is, if your game crashes, 
-      only what successfully made it to disk survives.
-          
-2. Disk based:
-
-    a. Advantages:
-
-    - Uses a relatively fixed amount of memory independent of database
-      size.
-      
-    - Faster database saves.
-        
-    - Less risk of loss of data.
-
-    b. Disadvantages:
-
-    - If the game is waiting on data from the disk, nothing else happens.
-      However, the cache hit rates are greater than 95% for the games I've
-      run, but that depends on the size of the cache. You only pay the IO
-      penalty for reads if you the cache doesn't have what you are looking
-      for. Disk writes are performed in a lazy fashion by the OS and don't
-      affect the comparison much.
-
-    - Greater risk of an incoherent database.
+  '../bin/dbconvert GAMENAME X < GAMENAME.db.new > GAMENAME.db'
 
 
-Memory-based usage is preferred _if_ you have enough memory to support a
-growing database, however, when memory is at a premium and memory usage is
-the key point of whether you remain on your site or not, disk-based usage 
-is the way to go.
+Procedure 2. Converting from Disk-Based to Memory-Based.
+-------------------------------------------------------
 
+Because a Disk-Based server does not normally produce a flatfile, it is
+necessary to create one yourself -before- attempting to re-build your
+server for Memory-Based mode.
 
-Saving disk space:
-~~~~~~~~~~~~~~~~~
+While your game is not running, perform the following:
 
-- If you are using a disk-based setup, consider converting to a 
-  memory-based setup, which can use less disk space.
+  1. 'cd game/data'
+  2. './db_unload GAMENAME GAMENAME.db.new GAMENAME.FLAT'
+     ('./db_unload netmux netmux.db.new netmux.FLAT' is typical).
 
-- Enabling the config parameter 'compression', and specifying a
-  'compress_program' and 'uncompress_program' will save disk space under
-  memory based usage and disk-based usage, but it makes much more of a
-  difference with memory-based because it compresses the entire database.
+Step 2 above is also the same as the following:
 
-- Enabling radix compression (see README.COMPRESSION) will reduce the size
-  of a disk-based database AND its memory usage. On a memory-based setup, 
-  it will only reduce memory usage.
+    '../bin/dbconvert GAMENAME x < GAMENAME.db.new > GAMENAME.db.FLAT'
 
+Then, with 'GAMENAME.FLAT' in hand, you can re-build the server for
+Memory-Based mode:
 
-Saving memory:
-~~~~~~~~~~~~~
+  3. 'cd ../../src'
+  4. Uncomment the SWITCH_MEMORY_BASED line in your Makefile.
+  5. 'make clean' to remove all intermediate files.
+  6. 'make' the game.
+  7. 'cd ../game/data'.
+  8. mv GAMENAME.FLAT GAMENAME.db
 
-- If you are using a memory-based setup, consider converting to disk-based.
+For the sake of clean living, you should remove the following files:
 
-- On a disk based setup, reduce the size of the cache. (see README for tips
-  on the cache)
+  GAMENAME.db.new, GAMENAME.db, GAMENAME.pag, GAMENAME.dir.
 
-- On both disk and memory based setups, enable radix compression (see
-  README.COMPRESSION)
+You may now ./Startmux the game in Memory-Based mode.
 
-- Adjust OUTPUT_BLOCK_SIZE in config.h: this should be a power of 2,
-  preferably in the range of 4096 to 16384. Any value over the config
-  parameter 'output_limit' is wasted.
-
-
-You should juggle these options until you find a setup that works, and gives
-you the best performance. There is no 'right' way to set up a MUX, it always
-depends on the capabilities of the system you are running on, and how much
-of those capabilities you can use.
