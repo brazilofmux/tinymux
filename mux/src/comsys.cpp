@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.21 2004-04-06 19:56:01 sdennis Exp $
+// $Id: comsys.cpp,v 1.22 2004-04-28 14:20:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1024,7 +1024,7 @@ void do_processcom(dbref player, char *arg1, char *arg2)
 
 void SendChannelMessage
 (
-    dbref player,
+    dbref executor,
     struct channel *ch,
     char *msgNormal,
     char *msgNoComtitle
@@ -1043,11 +1043,11 @@ void SendChannelMessage
                || bSpoof
                || msgNoComtitle == NULL)
             {
-                notify_with_cause_ooc(user->who, player, msgNormal);
+                notify_with_cause_ooc(user->who, executor, msgNormal);
             }
             else
             {
-                notify_with_cause_ooc(user->who, player, msgNoComtitle);
+                notify_with_cause_ooc(user->who, executor, msgNoComtitle);
             }
         }
     }
@@ -1075,7 +1075,8 @@ void SendChannelMessage
                 atr_add(ch->chan_obj, attr->number, mux_ltoa_t(logmax), GOD,
                     AF_CONST|AF_NOPROG|AF_NOPARSE);
             }
-            int atr = mkattr(tprintf("HISTORY_%d", iMod(ch->num_messages, logmax)));
+            char *p = tprintf("HISTORY_%d", iMod(ch->num_messages, logmax));
+            int atr = mkattr(GOD, p);
             atr_add(ch->chan_obj, atr, msgNormal, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
         }
     }
@@ -1343,7 +1344,7 @@ bool do_chanlog(dbref player, char *channel, char *arg)
         //
         return false;
     }
-    int atr = mkattr("MAX_LOG");
+    int atr = mkattr(GOD, "MAX_LOG");
     char *oldvalue;
     dbref aowner;
     int aflags;

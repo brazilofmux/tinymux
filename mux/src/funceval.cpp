@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.55 2004-04-18 22:33:22 sdennis Exp $
+// $Id: funceval.cpp,v 1.56 2004-04-28 14:20:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -549,7 +549,7 @@ FUNCTION(fun_set)
     if (*p)
     {
         *p++ = 0;
-        int atr = mkattr(fargs[1]);
+        int atr = mkattr(executor, fargs[1]);
         if (atr <= 0)
         {
             safe_str("#-1 UNABLE TO CREATE ATTRIBUTE", buff, bufc);

@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.13 2004-04-16 16:39:47 sdennis Exp $
+// $Id: db_rw.cpp,v 1.14 2004-04-28 14:20:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -168,7 +168,7 @@ static BOOLEXP *getboolexp1(FILE *f)
         }
 
         b = alloc_bool("getboolexp1_quoted");
-        anum = mkattr(buff);
+        anum = mkattr(GOD, buff);
         if (anum <= 0)
         {
             free_bool(b);
@@ -245,7 +245,7 @@ static BOOLEXP *getboolexp1(FILE *f)
             // Look the name up as an attribute. If not found, create a new
             // attribute.
             //
-            anum = mkattr(buff);
+            anum = mkattr(GOD, buff);
             if (anum <= 0)
             {
                 free_bool(b);

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.41 2004-04-20 18:34:49 sdennis Exp $
+// $Id: db.cpp,v 1.42 2004-04-28 14:20:19 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1156,7 +1156,7 @@ ATTR *atr_num(int anum)
  * mkattr: Lookup attribute by name, creating if needed.
  */
 
-int mkattr(char *buff)
+int mkattr(dbref executor, char *buff)
 {
     ATTR *ap = atr_str(buff);
     if (!ap)
@@ -1169,6 +1169,10 @@ int mkattr(char *buff)
         ATTR *va;
         if (bValid)
         {
+            if (!Good_obj(executor))
+            {
+                return -1;
+            }
             int aflags = mudconf.vattr_flags;
             if (pName[0] == '_')
             {

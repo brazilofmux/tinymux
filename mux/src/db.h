@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.3 2003-02-05 06:20:58 jake Exp $
+// $Id: db.h,v 1.4 2004-04-28 14:20:19 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -215,7 +215,7 @@ extern dbref    getref(FILE *);
 extern void putref(FILE *, dbref);
 extern void free_boolexp(BOOLEXP *);
 extern dbref    parse_dbref(const char *);
-extern int  mkattr(char *);
+extern int  mkattr(dbref executor, char *);
 extern void al_store(void);
 extern void db_grow(dbref);
 extern void db_free(void);

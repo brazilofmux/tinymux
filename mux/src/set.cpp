@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.20 2004-04-01 22:00:42 sdennis Exp $
+// $Id: set.cpp,v 1.21 2004-04-28 14:20:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1017,7 +1017,7 @@ void do_set
     if (*p)
     {
         *p++ = 0;
-        int atr = mkattr(flagname);
+        int atr = mkattr(executor, flagname);
         if (atr <= 0)
         {
             notify_quiet(executor, "Couldn't create attribute.");
@@ -1227,7 +1227,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
     int  nCopied = 0;
     for (int i = 1; i < nargs; i++)
     {
-        int anum = mkattr(args[i]);
+        int anum = mkattr(executor, args[i]);
         if (anum <= 0)
         {
             notify_quiet(executor, tprintf("%s: That's not a good name for an attribute.", args[i]));
@@ -1853,7 +1853,7 @@ void do_setvattr
 
     // Get or make attribute
     //
-    anum = mkattr(arg1);
+    anum = mkattr(executor, arg1);
 
     if (anum <= 0)
     {
