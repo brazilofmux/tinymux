@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.8 2000-09-07 14:29:35 sdennis Exp $ 
+// $Id: db_rw.cpp,v 1.9 2000-09-07 14:48:13 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2288,6 +2288,8 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
                     continue;
                 }
             }
+            // Format is: ">%d\n", j
+            //
             got = atr_get_raw(i, j);
             int n = Tiny_ltoa(j, buf+1) + 1;
             buf[n++] = '\n';

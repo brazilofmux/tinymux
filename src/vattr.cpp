@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.6 2000-06-07 10:17:30 sdennis Exp $
+// $Id: vattr.cpp,v 1.7 2000-09-07 14:48:13 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -564,6 +564,13 @@ void dbclean_RenumberAttributes(int cVAttributes)
 
 void do_dbclean(dbref player, dbref cause, int key)
 {
+#if !defined(VMS) && !defined(WIN32)
+    if (mudstate.dumping)
+    {
+        notify(player, "Dumping in progress. Try again later.");
+        return;
+    }
+#endif
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
     //
