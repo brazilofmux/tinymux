@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.86 2002-01-29 10:31:06 sdennis Exp $
+// $Id: funceval.cpp,v 1.87 2002-02-01 06:10:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2922,7 +2922,7 @@ FUNCTION(fun_hastype)
     {
     case 'r':
 
-        if (isThing(it))
+        if (isRoom(it))
         {
             ch = '1';
         }
