@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  March 2001
+Last Update:  June 2001
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -134,6 +134,7 @@ Feature Additions:
      free-form dates and also ISO formats including year/day, month/day, and
      weekofyear/dayofweek.
  --  Morgan added @conformat and @exitformat from PennMUSH.
+ --  Marlek added @nameformat.
 
 
 Bug Fixes:
