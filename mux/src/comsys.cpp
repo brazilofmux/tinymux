@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.21 2002-07-18 05:19:40 jake Exp $
+// $Id: comsys.cpp,v 1.22 2002-07-18 07:38:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -24,7 +24,7 @@ comsys_t *comsys_table[NUM_COMSYS];
 #define MIN_RECALL 10
 #define MAX_RECALL 200
 #define DEFAULT_RECALL 0
-extern iMod(int x, int y);
+extern int iMod(int x, int y);
 
 // Return value must be free_lbuf'ed.
 //
