@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.37 2002-08-02 04:26:19 sdennis Exp $
+// $Id: predicates.cpp,v 1.38 2002-09-13 06:27:54 jake Exp $
 //
 
 #include "copyright.h"
@@ -675,9 +675,10 @@ void do_addcommand
     // Let's make this case insensitive...
     //
     _strlwr(name);
+    char *pName = RemoveSetOfCharacters(name, "\r\n\t ");
     CMDENT *old, *cmd;
     ADDENT *add, *nextp;
-    old = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
+    old = (CMDENT *)hashfindLEN(pName, strlen(pName), &mudstate.command_htab);
 
     if (old && (old->callseq & CS_ADDED))
     {
@@ -688,7 +689,7 @@ void do_addcommand
         {
             if ((nextp->thing == thing) && (nextp->atr == atr))
             {
-                notify(player, tprintf("%s already added.", name));
+                notify(player, tprintf("%s already added.", pName));
                 return;
             }
         }
@@ -699,7 +700,7 @@ void do_addcommand
         (void)ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = atr;
-        add->name = StringClone(name);
+        add->name = StringClone(pName);
         add->next = old->addent;
         old->addent = add;
     }
@@ -709,12 +710,12 @@ void do_addcommand
         {
             // Delete the old built-in and rename it __name.
             //
-            hashdeleteLEN(name, strlen(name), &mudstate.command_htab);
+            hashdeleteLEN(pName, strlen(pName), &mudstate.command_htab);
         }
 
         cmd = (CMDENT *)MEMALLOC(sizeof(CMDENT));
         (void)ISOUTOFMEMORY(cmd);
-        cmd->cmdname = StringClone(name);
+        cmd->cmdname = StringClone(pName);
         cmd->switches = NULL;
         cmd->perms = 0;
         cmd->extra = 0;
@@ -730,18 +731,18 @@ void do_addcommand
         (void)ISOUTOFMEMORY(add);
         add->thing = thing;
         add->atr = atr;
-        add->name = StringClone(name);
+        add->name = StringClone(pName);
         add->next = NULL;
         cmd->addent = add;
 
-        hashaddLEN(name, strlen(name), (int *)cmd, &mudstate.command_htab);
+        hashaddLEN(pName, strlen(pName), (int *)cmd, &mudstate.command_htab);
 
         if (old)
         {
             // Fix any aliases of this command.
             //
             hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
-            char *p = tprintf("__%s", name);
+            char *p = tprintf("__%s", pName);
             hashaddLEN(p, strlen(p), (int *)old, &mudstate.command_htab);
         }
     }
@@ -749,7 +750,7 @@ void do_addcommand
     // We reset the one letter commands here so you can overload them.
     //
     set_prefix_cmds();
-    notify(player, tprintf("%s added.", name));
+    notify(player, tprintf("%s added.", pName));
 }
 
 void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
