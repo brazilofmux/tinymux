@@ -31,6 +31,8 @@ Feature Additions:
     two-digit-hundred-pattern is sometimes used (e.g, 'spellnum(1100)' -->
     'eleven hundred' on MUX 2.2 whereas on PennMUSH, 'spelnum(1100)' -->
     'one thousand one hundred'.
+ -- Added ROMAN() function which converts numbers between 1-3999 to their
+    Roman numeric equivalents.
 
 Bug Fixes:
 ~~~~~~~~~
