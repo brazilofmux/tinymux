@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.26 2003-10-09 01:57:35 sdennis Exp $
+// $Id: netcommon.cpp,v 1.27 2004-02-03 21:08:44 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1294,21 +1294,19 @@ void check_events(void)
 }
 
 #define MAX_TRIMMED_NAME_LENGTH 16
-static const char *trimmed_name(dbref player)
+static const char *trimmed_name(dbref player, int *pvw)
 {
-    const char *pName = Name(player);
-    int nName = strlen(pName);
-    if (nName <= MAX_TRIMMED_NAME_LENGTH)
-    {
-        return pName;
-    }
-    else
-    {
-        static char cbuff[MAX_TRIMMED_NAME_LENGTH+1];
-        memcpy(cbuff, pName, MAX_TRIMMED_NAME_LENGTH);
-        cbuff[MAX_TRIMMED_NAME_LENGTH] = '\0';
-        return cbuff;
-    }
+    static char cbuff[4*MAX_TRIMMED_NAME_LENGTH+1];
+
+    size_t nName = ANSI_TruncateToField(
+                     Moniker(player),
+                     sizeof(cbuff),
+                     cbuff,
+                     MAX_TRIMMED_NAME_LENGTH,
+                     pvw,
+                     ANSI_ENDGOAL_NORMAL
+                  );
+    return cbuff;
 }
 
 static char *trimmed_site(char *szName)
@@ -1508,22 +1506,22 @@ static void dump_users(DESC *e, char *match, int key)
             CLinearTimeDelta ltdLastTime  = ltaNow - d->last_time;
 
             const char *pNameField = "<Unconnected>";
+            int vwNameField = strlen(pNameField);
             if (d->flags & DS_CONNECTED)
             {
-                pNameField = trimmed_name(d->player);
+                pNameField = trimmed_name(d->player, &vwNameField);
             }
-            size_t nNameField = strlen(pNameField);
 
             // How many spaces between the name field and the 'On For' field.
             //
             size_t nFill;
-            if (13 <= nNameField)
+            if (13 <= vwNameField)
             {
                 nFill = 1;
             }
             else
             {
-                nFill = 14-nNameField;
+                nFill = 14-vwNameField;
             }
             char aFill[15];
             memset(aFill, ' ', nFill);
@@ -1531,7 +1529,7 @@ static void dump_users(DESC *e, char *match, int key)
 
             // The width size allocated to the 'On For' field.
             //
-            size_t nOnFor = 25 - nFill - nNameField;
+            size_t nOnFor = 25 - nFill - vwNameField;
 
             if (  (e->flags & DS_CONNECTED)
                && Wizard_Who(e->player)
