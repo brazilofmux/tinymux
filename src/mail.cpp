@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.32 2002-01-15 05:29:16 sdennis Exp $
+// $Id: mail.cpp,v 1.33 2002-01-15 05:42:42 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1031,7 +1031,7 @@ void do_mail_fwd(dbref player, char *msg, char *tolist)
 
 void do_mail_reply(dbref player, char *msg, int all, int key)
 {
-    char *tolist, *bp, *p, *names, *oldlist;
+    char *tolist, *bp, *p, *names = 0, *oldlist;
 
     if (Flags2(player) & PLAYER_MAILS)
     {
@@ -3338,7 +3338,7 @@ void do_malias_list(dbref player, char *alias)
     free_lbuf(buff);
 }
 
-char *Spaces(int n)
+char *Spaces(unsigned int n)
 {
     static char buffer[42] = "                                         ";
     static int nLast = 0;
