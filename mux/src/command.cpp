@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.39 2002-07-19 11:18:28 jake Exp $
+// $Id: command.cpp,v 1.40 2002-07-19 17:37:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1286,8 +1286,12 @@ int cmdtest(dbref player, char *cmd)
         }
         pt1 = strchr(pt2+1,' ');
         if (pt1 && *pt1)
-            while (isspace(*pt1))
+        {
+            while (Tiny_IsSpace[(unsigned char)*pt1])
+            {
                 pt1++;
+            }
+        }
     }
     free_lbuf(buff1);
     return rval;
@@ -3556,7 +3560,9 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
         pt1 = args[x];
         pt2 = buff1;
         while (*pt1)
-            *pt2++ = tolower(*pt1++);
+        {
+            *pt2++ = Tiny_ToLower[(unsigned char)*pt1++];
+        }
         *pt2 = '\0';
         if ((*buff1 == '!') && (*(buff1+1) != '\0'))
         {
@@ -3644,7 +3650,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                     if (  pt1
                        && (pt1 > atrpt)
                        && (*(pt1-1) == ':')
-                       && (  isspace(*(pt1 + aflags))
+                       && (  Tiny_IsSpace[(unsigned char)*(pt1 + aflags)]
                           || !*(pt1 + aflags)))
                     {
                         break;
@@ -3707,7 +3713,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                     if (pt1)
                     {
                         pt2 = pt1-1;
-                        while ((pt2 > atrpt) && !isspace(*pt2))
+                        while ((pt2 > atrpt) && !Tiny_IsSpace[(unsigned char)*pt2])
                         {
                             pt2--;
                         }
@@ -3721,7 +3727,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                         pt2 = pt1+aflags;
                         if (*pt2)
                         {
-                            while (*pt2 && (isspace(*pt2)))
+                            while (*pt2 && Tiny_IsSpace[(unsigned char)*pt2])
                             {
                                 pt2++;
                             }
@@ -3733,7 +3739,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                         if ((y > 1) && !*pt2)
                         {
                             pt2 = atrpt+y;
-                            while ((pt2 > atrpt) && isspace(*pt2))
+                            while ((pt2 > atrpt) && Tiny_IsSpace[(unsigned char)*pt2])
                             {
                                 pt2--;
                             }
