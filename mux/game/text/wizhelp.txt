@@ -439,8 +439,8 @@
 & @HOOK2
 @HOOK (continued)
 
-  Command: @hook[/<switch(s)>] [<command/attribute>]  (continued)
-  Exmaples of @hook are as follows:
+  Examples of @hook are as follows:
+
     > @hook/before look 
     @hook: new mask for 'look' -> before
     > @hook/after look
