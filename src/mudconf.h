@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.11 2000-10-10 23:06:47 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.12 2000-10-24 21:17:52 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -41,8 +41,8 @@ struct confdata
     int     conc_port;  /* concentrator port */
     int     init_size;  /* initial db size */
     int     have_guest; /* Do we wish to allow a GUEST character? */
-    int     guest_char; /* player num of prototype GUEST character */
-    int     guest_nuker;    /* Wiz who nukes the GUEST characters. */
+    dbref   guest_char;     // player num of prototype GUEST character.
+    dbref   guest_nuker;    // Wiz who nukes the GUEST characters.
     int     number_guests;  /* number of guest characters allowed */
     int     indent_desc;    /* Newlines before and after descs? */
     int     name_spaces;    /* allow player names to have spaces */
@@ -117,16 +117,16 @@ struct confdata
     int     stack_limit;    /* How big can stacks get? */
     int     safe_unowned;   /* Are objects not owned by you safe? */
     int     space_compress; /* Convert multiple spaces into one space */
-    int     start_room; /* initial location and home for players */
-    int     start_home; /* initial HOME for players */
+    dbref   start_room;     // initial location and home for players.
+    dbref   start_home;     // initial HOME for players.
     int     terse_look; /* Does manual look obey TERSE */
     int     terse_contents; /* Does TERSE look show exits */
     int     terse_exits;    /* Does TERSE look show obvious exits */
     int     terse_movemsg;  /* Show move msgs (SUCC/LEAVE/etc) if TERSE? */
     int     trace_topdown;  /* Is TRACE output top-down or bottom-up? */
     int     trace_limit;    /* Max lines of trace output if top-down */
-    int     default_home;   /* HOME when home is inaccessable */
-    int     master_room;    /* Room containing default cmds/exits/etc */
+    dbref   default_home;   // HOME when home is inaccessable.
+    dbref   master_room;    // Room containing default cmds/exits/etc.
     int     vattr_flags;    /* Attr flags for all user-defined attrs */
     int     timeslice;  /* How often do we bump people's cmd quotas? */
     int     cmd_quota_max;  /* Max commands at one time */
@@ -213,9 +213,9 @@ struct confdata
     int     thing_quota;    /* quota needed to make a thing */
     int     player_quota;   /* quota needed to make a robot player */
     int     quotas;     /* TRUE = have building quotas */
-    int     start_room; /* initial location and home for players */
-    int     start_home; /* initial HOME for players */
-    int     default_home;   /* HOME when home is inaccessable */
+    dbref   start_room;     // initial location and home for players.
+    dbref   start_home;     // initial HOME for players.
+    dbref   default_home;   // HOME when home is inaccessable.
     int     vattr_flags;    /* Attr flags for all user-defined attrs */
     int     log_options;    /* What gets logged */
     int     log_info;   /* Info that goes into log entries */
