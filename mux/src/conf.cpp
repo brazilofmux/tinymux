@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.36 2004-04-01 21:52:55 sdennis Exp $
+// $Id: conf.cpp,v 1.37 2004-04-01 22:00:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1407,11 +1407,11 @@ int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
     //
     char *p = cmdp->cmdname;
     hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
-    hashaddLEN(p, strlen(p), (int *)cmdp, &mudstate.command_htab);
+    hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
 
     p = tprintf("__%s", cmdp->cmdname);
     hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
-    hashaddLEN(p, strlen(p), (int *)cmdp, &mudstate.command_htab);
+    hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
 
     mudstate.nHelpDesc++;
 

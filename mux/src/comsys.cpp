@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.18 2003-08-25 06:08:02 jake Exp $
+// $Id: comsys.cpp,v 1.19 2004-04-01 22:00:41 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -577,7 +577,7 @@ void load_comsystem(FILE *fp)
 
         ch->on_users = NULL;
 
-        hashaddLEN(ch->name, nChannel, (int *)ch, &mudstate.channel_htab);
+        hashaddLEN(ch->name, nChannel, ch, &mudstate.channel_htab);
 
         ch->type         = 127;
         ch->temp1        = 0;
@@ -1732,7 +1732,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
 
     num_channels++;
 
-    hashaddLEN(newchannel->name, strlen(newchannel->name), (int *)newchannel, &mudstate.channel_htab);
+    hashaddLEN(newchannel->name, strlen(newchannel->name), newchannel, &mudstate.channel_htab);
 
     // Report the channel creation using non-ANSI name.
     //

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.34 2004-03-28 17:58:54 sdennis Exp $
+// $Id: game.cpp,v 1.35 2004-04-01 22:00:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -221,7 +221,7 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
         //
         if (hash_insert)
         {
-            hashaddLEN(&(ap->number), sizeof(ap->number), (int *)&attr, &mudstate.parent_htab);
+            hashaddLEN(&(ap->number), sizeof(ap->number), &attr, &mudstate.parent_htab);
         }
 
         // Check for the leadin character after excluding the attrib.

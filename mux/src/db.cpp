@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.35 2004-03-08 04:37:40 sdennis Exp $
+// $Id: db.cpp,v 1.36 2004-04-01 22:00:41 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -260,11 +260,11 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
     {
         MEMFREE(xfp);
         xfp = NULL;
-        hashreplLEN(&thing, sizeof(thing), (int *)fp, &mudstate.fwdlist_htab);
+        hashreplLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
     }
     else
     {
-        hashaddLEN(&thing, sizeof(thing), (int *)fp, &mudstate.fwdlist_htab);
+        hashaddLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
     }
 }
 
@@ -1049,7 +1049,7 @@ void init_attrtab(void)
         }
         anum_extend(a->number);
         anum_set(a->number, a);
-        hashaddLEN(buff, nLen, (int *)a, &mudstate.attr_name_htab);
+        hashaddLEN(buff, nLen, a, &mudstate.attr_name_htab);
     }
     mux_AttrNameInitialSet['*'] = false;
     mux_AttrNameSet['*'] = false;

@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.4 2003-02-03 15:00:34 sdennis Exp $
+// $Id: player_c.cpp,v 1.5 2004-04-01 22:00:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -70,7 +70,7 @@ PCACHE *pcache_find(dbref player)
     pcache_reload1(player, pp);
     pp->next = pcache_head;
     pcache_head = pp;
-    hashaddLEN(&player, sizeof(player), (int *)pp, &pcache_htab);
+    hashaddLEN(&player, sizeof(player), pp, &pcache_htab);
     return pp;
 }
 

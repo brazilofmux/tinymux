@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.46 2004-04-01 21:52:55 sdennis Exp $
+// $Id: predicates.cpp,v 1.47 2004-04-01 22:00:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1041,7 +1041,7 @@ void do_delcommand
 
                 hashdeleteLEN(p__Name, n__Name, &mudstate.command_htab);
                 hashaddLEN(p__Name, n__Name, cmd, &mudstate.command_htab);
-                hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
+                hashreplall(old, cmd, &mudstate.command_htab);
             }
             else
             {
@@ -1087,7 +1087,7 @@ void do_delcommand
                                     &mudstate.command_htab);
                                 hashaddLEN(p__Name, n__Name, cmd,
                                     &mudstate.command_htab);
-                                hashreplall((int *)old, (int *)cmd,
+                                hashreplall(old, cmd,
                                     &mudstate.command_htab);
                             }
                             MEMFREE(old->cmdname);

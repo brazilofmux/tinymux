@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.15 2003-02-25 20:16:06 sdennis Exp $
+// $Id: flags.cpp,v 1.16 2004-04-01 22:00:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -467,7 +467,7 @@ void init_flagtab(void)
         strncpy(nbuf, fp->pOrigName, SBUF_SIZE);
         nbuf[SBUF_SIZE-1] = '\0';
         mux_strlwr(nbuf);
-        hashaddLEN(nbuf, strlen(nbuf), (int *)fp, &mudstate.flags_htab);
+        hashaddLEN(nbuf, strlen(nbuf), fp, &mudstate.flags_htab);
     }
     free_sbuf(nbuf);
 }
@@ -1149,7 +1149,7 @@ bool flag_rename(char *alias, char *newname)
         flag2 = (FLAGNAMEENT *)hashfindLEN(pNewName, nNewName, &mudstate.flags_htab);
         if (flag2 == NULL)
         {
-            hashaddLEN(pNewName, nNewName, (int *)flag1, &mudstate.flags_htab);
+            hashaddLEN(pNewName, nNewName, flag1, &mudstate.flags_htab);
 
             if (flag1->flagname != flag1->pOrigName)
             {

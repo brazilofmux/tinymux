@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.29 2004-03-08 04:37:40 sdennis Exp $
+// $Id: netcommon.cpp,v 1.30 2004-04-01 22:00:42 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -454,12 +454,12 @@ void desc_addhash(DESC *d)
     if (hdesc == NULL)
     {
         d->hashnext = NULL;
-        hashaddLEN(&player, sizeof(player), (int *)d, &mudstate.desc_htab);
+        hashaddLEN(&player, sizeof(player), d, &mudstate.desc_htab);
     }
     else
     {
         d->hashnext = hdesc;
-        hashreplLEN(&player, sizeof(player), (int *)d, &mudstate.desc_htab);
+        hashreplLEN(&player, sizeof(player), d, &mudstate.desc_htab);
     }
 }
 
@@ -484,7 +484,7 @@ static void desc_delhash(DESC *d)
                 }
                 else
                 {
-                    hashreplLEN(&player, sizeof(player), (int *)(d->hashnext), &mudstate.desc_htab);
+                    hashreplLEN(&player, sizeof(player), d->hashnext, &mudstate.desc_htab);
                 }
             }
             else
@@ -1787,7 +1787,7 @@ void init_logout_cmdtab(void)
     //
     for (cp = logout_cmdtable; cp->flag; cp++)
     {
-        hashaddLEN(cp->name, strlen(cp->name), (int *)cp, &mudstate.logout_cmd_htab);
+        hashaddLEN(cp->name, strlen(cp->name), cp, &mudstate.logout_cmd_htab);
     }
 }
 

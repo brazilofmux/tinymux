@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.8 2003-07-23 03:23:38 sdennis Exp $
+// $Id: attrcache.cpp,v 1.9 2004-04-01 22:00:41 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -246,7 +246,7 @@ const char *cache_get(Aname *nam, int *pLen)
                     CacheSize += pCacheEntry->nSize;
                     memcpy((char *)(pCacheEntry+1), TempRecord.attrText, nLength);
                     ADD_ENTRY(pCacheEntry);
-                    hashaddLEN(nam, sizeof(Aname), (int *)pCacheEntry,
+                    hashaddLEN(nam, sizeof(Aname), pCacheEntry,
                         &mudstate.acache_htab);
 
                     // Check to see if the cache needs to be trimmed.
@@ -365,7 +365,7 @@ bool cache_put(Aname *nam, const char *value, int len)
             CacheSize += pCacheEntry->nSize;
             memcpy((char *)(pCacheEntry+1), TempRecord.attrText, len);
             ADD_ENTRY(pCacheEntry);
-            hashaddLEN(nam, sizeof(Aname), (int *)pCacheEntry,
+            hashaddLEN(nam, sizeof(Aname), pCacheEntry,
                 &mudstate.acache_htab);
 
             // Check to see if the cache needs to be trimmed.

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.73 2004-03-18 19:09:32 sdennis Exp $
+// $Id: functions.cpp,v 1.74 2004-04-01 22:00:42 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -9444,7 +9444,7 @@ void init_functab(void)
         safe_sb_str(fp->name, buff, &bp);
         *bp = '\0';
         mux_strlwr(buff);
-        hashaddLEN(buff, strlen(buff), (int *)fp, &mudstate.func_htab);
+        hashaddLEN(buff, strlen(buff), fp, &mudstate.func_htab);
     }
     free_sbuf(buff);
     ufun_head = NULL;
@@ -9579,7 +9579,7 @@ void do_function
             }
             ufp2->next = ufp;
         }
-        hashaddLEN(np, strlen(np), (int *)ufp, &mudstate.ufunc_htab);
+        hashaddLEN(np, strlen(np), ufp, &mudstate.ufunc_htab);
     }
     ufp->obj = obj;
     ufp->atr = attr->number;

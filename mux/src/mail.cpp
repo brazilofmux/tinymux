@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.24 2004-03-07 06:40:36 sdennis Exp $
+// $Id: mail.cpp,v 1.25 2004-04-01 22:00:42 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1594,7 +1594,7 @@ void do_mail_purge(dbref player)
                 }
                 else
                 {
-                    hashreplLEN(&player, sizeof(player), (int *)(mp->next), &mudstate.mail_htab);
+                    hashreplLEN(&player, sizeof(player), mp->next, &mudstate.mail_htab);
                 }
             }
             else if (mp->next == NULL)
@@ -2152,7 +2152,7 @@ static void send_mail
     }
     else
     {
-        hashaddLEN(&target, sizeof(target), (int *)newp, &mudstate.mail_htab);
+        hashaddLEN(&target, sizeof(target), newp, &mudstate.mail_htab);
         newp->next = NULL;
         newp->prev = NULL;
     }
@@ -2379,7 +2379,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
                     }
                     else
                     {
-                        hashreplLEN(&player, sizeof(player), (int *)(mp->next), &mudstate.mail_htab);
+                        hashreplLEN(&player, sizeof(player), mp->next, &mudstate.mail_htab);
                     }
                 }
                 else if (mp->next == NULL)
@@ -2797,7 +2797,7 @@ void SaveMailStruct(struct mail *mp)
     else
     {
         mp->prev = NULL;
-        hashaddLEN(&nTo, sizeof(nTo), (int *)mp, &mudstate.mail_htab);
+        hashaddLEN(&nTo, sizeof(nTo), mp, &mudstate.mail_htab);
     }
     mp->next = NULL;
 }
@@ -3061,7 +3061,7 @@ void check_mail_expiration(void)
             }
             else
             {
-                hashreplLEN(&nTo, sizeof(nTo), (int *)(mp->next), &mudstate.mail_htab);
+                hashreplLEN(&nTo, sizeof(nTo), mp->next, &mudstate.mail_htab);
             }
         }
         else if (mp->next == NULL)
@@ -4251,7 +4251,7 @@ void do_mail_retract1(dbref player, char *name, char *msglist)
                         }
                         else
                         {
-                            hashreplLEN(&target, sizeof(target), (int *)(mp->next), &mudstate.mail_htab);
+                            hashreplLEN(&target, sizeof(target), mp->next, &mudstate.mail_htab);
                         }
                     }
                     else if (mp->next == NULL)

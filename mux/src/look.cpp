@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.19 2004-03-04 21:12:31 sdennis Exp $
+// $Id: look.cpp,v 1.20 2004-04-01 22:00:42 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -895,7 +895,7 @@ static void look_atrs1
             {
                 if (hash_insert)
                 {
-                    hashaddLEN(&ca, sizeof(ca), (int *)attr,
+                    hashaddLEN(&ca, sizeof(ca), attr,
                         &mudstate.parent_htab);
                 }
                 view_atr(player, thing, &cattr, buf, aowner, aflags, false);

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.27 2004-04-01 21:52:55 sdennis Exp $
+// $Id: command.cpp,v 1.28 2004-04-01 22:00:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -782,31 +782,31 @@ void init_cmdtab(void)
         cp2a->callseq = CS_TWO_ARG;
         cp2a->hookmask = 0;
         cp2a->handler = do_setattr;
-        hashaddLEN(cp2a->cmdname, nBuffer, (int *)cp2a, &mudstate.command_htab);
+        hashaddLEN(cp2a->cmdname, nBuffer, cp2a, &mudstate.command_htab);
     }
 
     // Load the builtin commands
     //
     for (cp0a = command_table_no_arg; cp0a->cmdname; cp0a++)
-        hashaddLEN(cp0a->cmdname, strlen(cp0a->cmdname), (int *)cp0a, &mudstate.command_htab);
+        hashaddLEN(cp0a->cmdname, strlen(cp0a->cmdname), cp0a, &mudstate.command_htab);
 
     for (cp1a = command_table_one_arg; cp1a->cmdname; cp1a++)
-        hashaddLEN(cp1a->cmdname, strlen(cp1a->cmdname), (int *)cp1a, &mudstate.command_htab);
+        hashaddLEN(cp1a->cmdname, strlen(cp1a->cmdname), cp1a, &mudstate.command_htab);
 
     for (cp1ac = command_table_one_arg_cmdarg; cp1ac->cmdname; cp1ac++)
-        hashaddLEN(cp1ac->cmdname, strlen(cp1ac->cmdname), (int *)cp1ac, &mudstate.command_htab);
+        hashaddLEN(cp1ac->cmdname, strlen(cp1ac->cmdname), cp1ac, &mudstate.command_htab);
 
     for (cp2a = command_table_two_arg; cp2a->cmdname; cp2a++)
-        hashaddLEN(cp2a->cmdname, strlen(cp2a->cmdname), (int *)cp2a, &mudstate.command_htab);
+        hashaddLEN(cp2a->cmdname, strlen(cp2a->cmdname), cp2a, &mudstate.command_htab);
 
     for (cp2aa = command_table_two_arg_argv; cp2aa->cmdname; cp2aa++)
-        hashaddLEN(cp2aa->cmdname, strlen(cp2aa->cmdname), (int *)cp2aa, &mudstate.command_htab);
+        hashaddLEN(cp2aa->cmdname, strlen(cp2aa->cmdname), cp2aa, &mudstate.command_htab);
 
     for (cp2ac = command_table_two_arg_cmdarg; cp2ac->cmdname; cp2ac++)
-        hashaddLEN(cp2ac->cmdname, strlen(cp2ac->cmdname), (int *)cp2ac, &mudstate.command_htab);
+        hashaddLEN(cp2ac->cmdname, strlen(cp2ac->cmdname), cp2ac, &mudstate.command_htab);
 
     for (cp2aac = command_table_two_arg_argv_cmdarg; cp2aac->cmdname; cp2aac++)
-        hashaddLEN(cp2aac->cmdname, strlen(cp2aac->cmdname), (int *)cp2aac, &mudstate.command_htab);
+        hashaddLEN(cp2aac->cmdname, strlen(cp2aac->cmdname), cp2aac, &mudstate.command_htab);
 
     set_prefix_cmds();
 
@@ -2886,7 +2886,7 @@ CF_HAND(cf_cmd_alias)
         }
         cmd2->callseq = cmdp->callseq;
         cmd2->handler = cmdp->handler;
-        if (hashaddLEN(cmd2->cmdname, strlen(cmd2->cmdname), (int *)cmd2, (CHashTable *) vp))
+        if (hashaddLEN(cmd2->cmdname, strlen(cmd2->cmdname), cmd2, (CHashTable *) vp))
         {
             MEMFREE(cmd2->cmdname);
             cmd2->cmdname = NULL;
