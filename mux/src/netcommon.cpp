@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.31 2002-09-18 04:19:42 sdennis Exp $
+// $Id: netcommon.cpp,v 1.32 2002-09-24 01:29:46 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2200,7 +2200,7 @@ BOOL do_command(DESC *d, char *command)
     }
     if (!(cp->flag & CMD_NOxFIX))
     {
-        if (d->output_prefix)
+        if (d->output_suffix)
         {
             queue_string(d, d->output_suffix);
             queue_write(d, "\r\n", 2);
