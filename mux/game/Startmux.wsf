@@ -195,15 +195,6 @@ Sub MoveFileIfNewer(fnSource, fnDestination)
     end if
 End Sub
 
-Sub UpdatePrograms()
-    dim va
-    dim item
-    va = Array("netmux", "dbconvert", "mkindx")
-    For Each item in va
-        MoveFileIfNewer bin & "_new\" & item & ".exe", bin & "\" & item & ".exe"
-    Next
-End Sub
-
 ' Execution begins here.
 '
 dim ret
@@ -231,34 +222,24 @@ Do
 
     dim bDone
     bDone = RotateFiles(fnSave, fnInput, fnNew)
-    If not bDone Then
-        wscript.echo "Could not find an appropriate input file."
-        Exit Do
-    End If
+    'If not bDone Then
+    '    wscript.echo "Could not find an appropriate input file."
+    '    Exit Do
+    'End If
 
-    ' Refuse to start if CORRUPT or KILLED databases are present
+    ' Refuse to start if a CRASH database are present
     '
-    dim fnKilled
-    dim fnCorrupt
     dim fnCrash
-
-    fnKilled  = data & "\" & input_db & ".KILLED"
-    fnCorrupt = data & "\" & input_db & ".CORRUPT"
     fnCrash   = data & "\" & input_db & ".CRASH"
 
-    If fso.FileExists(fnKilled) or fso.FileExists(fnCorrupt) or fso.FileExists(fnCrash) Then
-        wscript.echo "There is a CORRUPT, KILLED or CRASH database present."
-        wscript.echo "You should salvage what you can before renaming or"
-        wscript.echo "deleting these database(s). This script cannot continue"
-        wscript.echo "while these files exist."
+    If fso.FileExists(fnCrash) Then
+        wscript.echo "There is a CRASH database present. You should salvage what you can before"
+        wscript.echo "renaming or deleting this database. This script cannot continue while this"
+        wscript.echo "files exist."
         ret = 0
         Exit Do
     End If
 
-    ' See if more recent executables are available.
-    '
-    UpdatePrograms
-    
     ' Kick off the MUX
     '
     ret = shell.run(bin & "\netmux " & gamename & ".conf", SW_HIDE, True)
