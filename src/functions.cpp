@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.186 2003-01-31 06:44:25 sdennis Exp $
+// $Id: functions.cpp,v 1.187 2003-01-31 16:36:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3871,7 +3871,7 @@ FUNCTION(fun_pos)
     // instead of the source because the the pattern will tend to be
     // smaller (i.e., on average, fewer bytes to move).
     //
-    unsigned int nPat;
+    size_t nPat;
     char aPatBuf[LBUF_SIZE];
     char *pPatBuf = strip_ansi(fargs[0], &nPat);
     memcpy(aPatBuf, pPatBuf, nPat);
