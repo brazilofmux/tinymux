@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.118 2001-12-29 19:10:00 sdennis Exp $
+// $Id: functions.cpp,v 1.119 2001-12-29 19:13:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5396,9 +5396,6 @@ FUNCTION(fun_list)
 
 FUNCTION(fun_fold)
 {
-    dbref aowner, thing;
-    int aflags, anum;
-    ATTR *ap;
     char *atext, *result, *curr, *bp, *str, *cp, *atextbuf, *clist[2],
     *rstore, sep;
 
@@ -5408,9 +5405,13 @@ FUNCTION(fun_fold)
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
     //
+    dbref thing;
+    int   anum;
+    ATTR *ap;
     if (parse_attrib(player, fargs[0], &thing, &anum))
     {
-        if ((anum == NOTHING) || (!Good_obj(thing)))
+        if (  anum == NOTHING
+           || !Good_obj(thing))
         {
             ap = NULL;
         }
@@ -5434,12 +5435,15 @@ FUNCTION(fun_fold)
 
     // Use it if we can access it, otherwise return an error.
     //
+    dbref aowner;
+    int   aflags;
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
     if (!atext)
     {
         return;
     }
-    else if (!*atext || !See_attr(player, thing, ap, aowner, aflags))
+    else if (  !*atext
+            || !See_attr(player, thing, ap, aowner, aflags))
     {
         free_lbuf(atext);
         return;
@@ -5453,13 +5457,15 @@ FUNCTION(fun_fold)
 
     // May as well handle first case now.
     //
-    if ((nfargs >= 3) && (fargs[2]))
+    if ( nfargs >= 3
+       && fargs[2])
     {
         clist[0] = fargs[2];
         clist[1] = split_token(&cp, sep);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
-        TinyExec(result, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
+        TinyExec(result, &bp, 0, player, cause,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
     }
     else
@@ -5468,23 +5474,26 @@ FUNCTION(fun_fold)
         clist[1] = split_token(&cp, sep);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
-        TinyExec(result, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
+        TinyExec(result, &bp, 0, player, cause,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
     }
 
     rstore = result;
     result = NULL;
 
-    while (cp)
+    while (  cp
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
         clist[0] = rstore;
         clist[1] = split_token(&cp, sep);
-        StringCopy(atextbuf, atext);
+        strcpy(atextbuf, atext);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
-        TinyExec(result, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
+        TinyExec(result, &bp, 0, player, cause,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
-        StringCopy(rstore, result);
+        strcpy(rstore, result);
         free_lbuf(result);
     }
     safe_str(rstore, buff, bufc);
