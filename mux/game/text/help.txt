@@ -5162,9 +5162,13 @@ DIV()
 & DOING()
 DOING()
 
-  FUNCTION: doing(<player>)
+  FUNCTION: doing(<player|port>)
 
-  doing() returns the connected player's @doing entry.
+  Returns the @doing entry for the requested <player|port>.
+
+  If <player|port> is numeric, it's taken as a port number (as shown in
+  SESSION). Otherwise, it's treated as a player name.  If the named player is
+  connected more than once, the @doing from the first connection is returned.
 
   Related Topics: poll()
 
