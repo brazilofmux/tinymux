@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.128 2004-12-30 21:45:31 sdennis Exp $
+// $Id: functions.cpp,v 1.129 2005-01-05 15:31:17 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2560,6 +2560,16 @@ FUNCTION(fun_strlen)
         strip_ansi(fargs[0], &n);
     }
     safe_ltoa(n, buff, bufc);
+}
+
+FUNCTION(fun_strmem)
+{
+   size_t n = 0;
+   if (nfargs >= 1)
+   {
+       n = strlen(fargs[0]);
+   }
+   safe_ltoa(n, buff, bufc);
 }
 
 FUNCTION(fun_num)
@@ -9921,6 +9931,7 @@ FUN flist[] =
     {"STRIPANSI",   fun_stripansi,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"STRLEN",      fun_strlen,           1, 0,       1,         0, CA_PUBLIC},
     {"STRMATCH",    fun_strmatch,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"STRMEM",      fun_strmem,           1, 0,       1,         0, CA_PUBLIC},
     {"STRTRUNC",    fun_strtrunc,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SUB",         fun_sub,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SUBEVAL",     fun_subeval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
