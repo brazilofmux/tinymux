@@ -42,6 +42,10 @@
 #undef HAVE_GETPAGESIZE
 /* Define if gettimeofday exists */
 #undef HAVE_GETTIMEOFDAY
+/* Define if usleep exists */
+#undef HAVE_USLEEP
+/* Define if nanosleep exists */
+#undef HAVE_NANOSLEEP
 /* Define if sys_siglist[] exists */
 #undef SYS_SIGLIST_DECLARED
 /* Define if sys_signame[] exists */
