@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.27 2002-07-28 15:42:39 jake Exp $
+// $Id: set.cpp,v 1.28 2002-07-28 19:18:43 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1048,7 +1048,7 @@ void do_set
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        if (bCanSetAttr(executor, thing, attr))
+        if (!bCanSetAttr(executor, thing, attr))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
@@ -1069,6 +1069,7 @@ void do_set
             }
             attr2 = atr_num(atr2);
             p = buff;
+            atr_pget_str(buff, thing2, atr2, &aowner, &aflags);
 
             if (  !attr2
                || !See_attr(executor, thing2, attr2))
@@ -1223,6 +1224,8 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
     }
     else
     {
+        dbref aowner;
+        atr_get_str(astr, thing, in_attr->number, &aowner, &aflags);
         if (See_attr(executor, thing, in_attr))
         {
             in_anum = in_attr->number;
