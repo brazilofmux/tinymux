@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.42 2003-02-16 20:55:35 sdennis Exp $
+// $Id: stringutil.cpp,v 1.43 2003-02-16 20:58:49 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2098,8 +2098,8 @@ long mux_atol(const char *pString)
 
     // Convert ASCII digits
     //
-    unsigned c1;
-    unsigned c0 = pString[0];
+    unsigned int c1;
+    unsigned int c0 = pString[0];
     if (!mux_isdigit[(unsigned char)c0])
     {
         while (mux_isspace[(unsigned char)pString[0]])
@@ -2150,8 +2150,8 @@ INT64 mux_atoi64(const char *pString)
 
     // Convert ASCII digits
     //
-    unsigned c1;
-    unsigned c0 = pString[0];
+    unsigned int c1;
+    unsigned int c0 = pString[0];
     if (!mux_isdigit[(unsigned char)c0])
     {
         while (mux_isspace[(unsigned char)pString[0]])
@@ -2301,7 +2301,7 @@ INT64 mux_atobcd(const char *pString)
 
     // Convert ASCII digits
     //
-    unsigned c0 = pString[0];
+    unsigned int c0 = pString[0];
     if (!mux_isdigit[(unsigned char)c0])
     {
         while (mux_isspace[(unsigned char)pString[0]])
