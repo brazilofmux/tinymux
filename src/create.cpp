@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects
 //
-// $Id: create.cpp,v 1.19 2001-11-08 05:54:12 sdennis Exp $
+// $Id: create.cpp,v 1.20 2001-11-14 17:38:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -479,14 +479,14 @@ void do_create
     char *coststr
 )
 {
-    int cost;
+    int cost = 0;
     if (!name || !*name)
     {
         notify_quiet(player, "Create what?");
         return;
     }
-    else if (  nargs < 2
-            || (cost = Tiny_atol(coststr)) < 0)
+    else if (  nargs == 2
+            && (cost = Tiny_atol(coststr)) < 0)
     {
         notify_quiet(player, "You can't create an object for less than nothing!");
         return;
