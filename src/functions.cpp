@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.175 2002-06-04 23:08:31 sdennis Exp $
+// $Id: functions.cpp,v 1.176 2002-06-27 07:46:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5811,11 +5811,11 @@ FUNCTION(fun_filter)
         TinyExec(result, &bp, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
         *bp = '\0';
-        if (!first && *result == '1')
+        if (!first && result[0] == '1' && result[1] == '\0')
         {
             safe_chr(sep, buff, bufc);
         }
-        if (*result == '1')
+        if (result[0] == '1' && result[1] == '\0')
         {
             safe_str(objstring, buff, bufc);
             first = FALSE;
