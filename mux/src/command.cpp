@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.97 2002-11-12 11:40:54 jake Exp $
+// $Id: command.cpp,v 1.98 2003-01-02 14:42:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2980,22 +2980,29 @@ static void list_costs(dbref player)
                mudconf.robotcost, coin_name(mudconf.robotcost), buff));
     if (mudconf.killmin == mudconf.killmax)
     {
-        raw_notify(player,
-               tprintf("Killing costs %d %s, with a %d%% chance of success.",
-                mudconf.killmin, coin_name(mudconf.digcost),
-                   (mudconf.killmin * 100) /
-                   mudconf.killguarantee));
+        int chance = 100;
+        if (0 < mudconf.killguarantee)
+        {
+            chance = (mudconf.killmin * 100) / mudconf.killguarantee;
+        }
+        raw_notify(player, tprintf("Killing costs %d %s, with a %d%% chance of success.",
+            mudconf.killmin, coin_name(mudconf.digcost), chance));
     }
     else
     {
-        raw_notify(player,
-               tprintf("Killing costs between %d and %d %s.",
-                   mudconf.killmin, mudconf.killmax,
-                   mudconf.many_coins));
-        raw_notify(player,
-               tprintf("You must spend %d %s to guarantee success.",
-                   mudconf.killguarantee,
-                   coin_name(mudconf.killguarantee)));
+        int cost_surething;
+        raw_notify(player, tprintf("Killing costs between %d and %d %s.",
+            mudconf.killmin, mudconf.killmax, mudconf.many_coins));
+        if (0 < mudconf.killguarantee)
+        {
+            cost_surething = mudconf.killguarantee;
+        }
+        else
+        {
+            cost_surething = mudconf.killmin;
+        }
+        raw_notify(player, tprintf("You must spend %d %s to guarantee success.",
+            cost_surething, coin_name(cost_surething)));
     }
     raw_notify(player,
            tprintf("Computationally expensive commands and functions (ie: @entrances, @find, @search, @stats (with an argument or switch), search(), and stats()) cost %d %s.",
