@@ -478,23 +478,6 @@ int ok_player_name(const char *name)
     return 1;
 }
 
-int ok_attr_name(const char *attrname)
-{
-    const char *scan;
-
-    if (!isalpha(*attrname))
-        return 0;
-
-    for (scan = attrname; *scan; scan++)
-    {
-        if (Tiny_IsAlphaNumeric[(unsigned char)*scan])
-            continue;
-        if (!(strchr("'?!`/-_.@#$^&~=+<>()%", *scan)))
-            return 0;
-    }
-    return 1;
-}
-
 int ok_password(const char *password, dbref player)
 {
     const char *scan;

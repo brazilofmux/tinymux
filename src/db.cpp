@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.4 2000-04-14 04:08:06 sdennis Exp $
+// $Id: db.cpp,v 1.5 2000-04-15 17:25:48 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -86,26 +86,11 @@ char compress_buff[LBUF_SIZE + (LBUF_SIZE >> 1) + 1];
 
 #endif
 
-extern VATTR *FDECL(vattr_rename, (char *, char *));
-
 typedef struct atrcount ATRCOUNT;
 struct atrcount {
     dbref thing;
     int count;
 };
-
-/*
- * #define GNU_MALLOC_TEST 1 
- */
-
-#ifdef GNU_MALLOC_TEST
-extern unsigned int malloc_sbrk_used;   /*
-
-                     * 
-                     * * amount of data space used now  
-                     */
-
-#endif
 
 /*
  * Check routine forward declaration. 
@@ -597,27 +582,18 @@ void s_Name(dbref thing, char *s)
 {
     // Truncate the name if we have to.
     //
-    // Truncate the name if we have to.
-    //
-    int len = 0;
-    if (s)
-    {
-        len = strlen(s);
-        if (len >= MBUF_SIZE)
-        {
-            len = MBUF_SIZE-1;
-            s[len] = '\0';
-        }
-    }
-        
-    atr_add_raw_LEN(thing, A_NAME, s, len);
+    char *buff = alloc_mbuf("s_Name");
+    int nVisualWidth;
+    int len = ANSI_TruncateToField(s, MBUF_SIZE, buff, LBUF_SIZE, &nVisualWidth, 0);
+    atr_add_raw_LEN(thing, A_NAME, buff, len);
 #ifndef MEMORY_BASED
-    set_string(&names[thing], (char *)s);
+    set_string(&names[thing], (char *)buff);
 #endif
     if (mudconf.cache_names)
     {
-        set_string(&purenames[thing], strip_ansi((char *)s));
+        set_string(&purenames[thing], strip_ansi((char *)buff));
     }
+    free_mbuf(buff);
 }
 
 void s_Pass(dbref thing, const char *s)
@@ -637,19 +613,18 @@ extern NAMETAB attraccess_nametab[];
 void do_attribute(dbref player, dbref cause, int key, char *aname, char *value)
 {
     int success, negate, f;
-    char *buff, *sp;
+    char *sp;
     VATTR *va;
     ATTR *va2;
 
     // Look up the user-named attribute we want to play with.
     //
-    buff = alloc_sbuf("do_attribute");
-    int nBuffer = MakeCanonicalAttributeName(buff, aname);
-    va = (VATTR *)vattr_findLEN(buff, nBuffer);
-    if (!va)
+    int nName;
+    int bValid;
+    char *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
+    if (!bValid || !(va = (VATTR *)vattr_find_LEN(pName, nName)))
     {
         notify(player, "No such user-named attribute.");
-        free_sbuf(buff);
         return;
     }
     switch (key)
@@ -701,36 +676,38 @@ void do_attribute(dbref player, dbref cause, int key, char *aname, char *value)
 
     case ATTRIB_RENAME:
 
-        /*
-         * Make sure the new name doesn't already exist 
-         */
-
-        va2 = atr_str(value);
-        if (va2)
         {
-            notify(player,
-                 "An attribute with that name already exists.");
-            free_sbuf(buff);
-            return;
+            // Save the old name for use later.
+            //
+            char OldName[SBUF_SIZE];
+            int nOldName = nName;
+            memcpy(OldName, pName, nName+1);
+
+            // Make sure the new name doesn't already exist. This checks
+            // the built-in and user-defined data structures.
+            //
+            va2 = atr_str(value);
+            if (va2)
+            {
+                notify(player, "An attribute with that name already exists.");
+                return;
+            }
+            pName = MakeCanonicalAttributeName(value, &nName, &bValid);
+            if (!bValid || vattr_rename_LEN(OldName, nOldName, pName, nName) == NULL)
+                notify(player, "Attribute rename failed.");
+            else
+                notify(player, "Attribute renamed.");
         }
-        if (vattr_rename(va->name, value) == NULL)
-            notify(player, "Attribute rename failed.");
-        else
-            notify(player, "Attribute renamed.");
         break;
 
     case ATTRIB_DELETE:
 
-        /*
-         * Remove the attribute 
-         */
-
-        vattr_delete(buff);
+        // Remove the attribute.
+        //
+        vattr_delete_LEN(pName, nName);
         notify(player, "Attribute deleted.");
         break;
     }
-    free_sbuf(buff);
-    return;
 }
 
 /*
@@ -838,27 +815,78 @@ void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
 
 // MakeCanonicalAttributeName
 //
-int MakeCanonicalAttributeName(char *pBuffer, const char *pName)
+// First letter must be alphabetic.
+// Other letters can be alphanumeric or one of "'?!`/-_.@#$^&~=+<>()%".
+// Letters are converted to uppercase.
+//
+// We truncate the attribute name to a length of SBUF_SIZE-1, if
+// necessary, but we will validate the remaining characters anyway.
+//
+char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
 {
+    static char Buffer[SBUF_SIZE];
+
+    if (  !pName
+       || !Tiny_IsAlpha[(unsigned char)*pName])
+    {
+        *pnName = 0;
+        *pbValid = FALSE;
+        return NULL;
+    }
     int nLeft = SBUF_SIZE-1;
-    char *p = pBuffer;
+    char *p = Buffer;
     while (*pName && nLeft)
     {
+        if (!Tiny_IsAttributeNameCharacter[(unsigned char)*pName])
+        {
+            *pnName = 0;
+            *pbValid = FALSE;
+            return Buffer;
+        }
         *p = Tiny_ToUpper[(unsigned char)*pName];
         p++;
         pName++;
         nLeft--;
     }
     *p = '\0';
-    return p - pBuffer;
+
+    // Continue to validate remaining characters even though
+    // we aren't going to use them. This helps to ensure that
+    // softcode will run in the future if we increase the
+    // size of SBUF_SIZE.
+    //
+    while (*pName)
+    {
+        if (!Tiny_IsAttributeNameCharacter[(unsigned char)*pName])
+        {
+            *pnName = 0;
+            *pbValid = FALSE;
+            return Buffer;
+        }
+        pName++;
+    }
+
+    // Length of truncated result.
+    //
+    *pnName = p - Buffer;
+    *pbValid = TRUE;
+    return Buffer;
 }
 
 // MakeCanonicalAttributeCommand
 //
-int MakeCanonicalAttributeCommand(char *pBuffer, const char *pName)
+char *MakeCanonicalAttributeCommand(const char *pName, int *pnName, BOOL *pbValid)
 {
+    if (!pName)
+    {
+        *pnName = 0;
+        *pbValid = FALSE;
+        return NULL;
+    }
+
+    static char Buffer[SBUF_SIZE];
     int nLeft = SBUF_SIZE-2;
-    char *p = pBuffer;
+    char *p = Buffer;
 
     *p++ = '@';
     while (*pName && nLeft)
@@ -869,7 +897,18 @@ int MakeCanonicalAttributeCommand(char *pBuffer, const char *pName)
         nLeft--;
     }
     *p = '\0';
-    return p - pBuffer;
+
+    // Length of result.
+    //
+    *pnName = p - Buffer;
+
+    // Is the result valid?
+    //
+    *pbValid = (*pnName > 1) ? TRUE : FALSE;
+
+    // Pointer to result
+    //
+    return Buffer;
 }
 
 /*
@@ -880,18 +919,20 @@ int MakeCanonicalAttributeCommand(char *pBuffer, const char *pName)
 void NDECL(init_attrtab)
 {
     ATTR *a;
-    char *buff;
 
-    buff = alloc_sbuf("init_attrtab");
     for (a = attr; a->number; a++)
     {
+        int nLen;
+        BOOL bValid;
+        char *buff = MakeCanonicalAttributeName(a->name, &nLen, &bValid);
+        if (!bValid)
+        {
+            continue;
+        }
         anum_extend(a->number);
         anum_set(a->number, a);
-
-        int nLen = MakeCanonicalAttributeName(buff, a->name);
         hashaddLEN(buff, nLen, (int *)a, &mudstate.attr_name_htab);
     }
-    free_sbuf(buff);
 }
 
 /*
@@ -901,37 +942,31 @@ void NDECL(init_attrtab)
 
 ATTR *atr_str(char *s)
 {
-    char *buff;
-    ATTR *a;
-    VATTR *va;
-    static ATTR tattr;
-
-    if (!s || !*s)
+    // Make attribute name canonical.
+    //
+    int nBuffer;
+    BOOL bValid;
+    char *buff = MakeCanonicalAttributeName(s, &nBuffer, &bValid);
+    if (!bValid)
     {
         return NULL;
     }
 
-    // Make attribute name canonical.
-    //
-    buff = alloc_sbuf("atr_str");
-    int nBuffer = MakeCanonicalAttributeName(buff, s);
-
     // Look for a predefined attribute.
     //
-    a = (ATTR *)hashfindLEN(buff, nBuffer, &mudstate.attr_name_htab);
+    ATTR *a = (ATTR *)hashfindLEN(buff, nBuffer, &mudstate.attr_name_htab);
     if (a != NULL)
     {
-        free_sbuf(buff);
         return a;
     }
 
     // Nope, look for a user attribute.
     //
-    va = (VATTR *)vattr_findLEN(buff, nBuffer);
-    free_sbuf(buff);
+    VATTR *va = (VATTR *)vattr_find_LEN(buff, nBuffer);
 
     // If we got one, load tattr and return a pointer to it.
     //
+    static ATTR tattr;
     if (va != NULL)
     {
         tattr.name = va->name;
@@ -1027,15 +1062,24 @@ int mkattr(char *buff)
     ATTR *ap = atr_str(buff);
     if (!ap)
     {
-        // Unknown attr, create a new one.
+        // Unknown attribute name, create a new one.
         //
-        VATTR *va = vattr_alloc(buff, mudconf.vattr_flags);
-        if (!va || !(va->number))
+        int nName;
+        BOOL bValid;
+        char *pName = MakeCanonicalAttributeName(buff, &nName, &bValid);
+        VATTR *va;
+        if (  !bValid
+           || !(va = vattr_alloc_LEN(pName, nName, mudconf.vattr_flags))
+           || !(va->number))
+        {
             return -1;
+        }
         return va->number;
     }
     if (!(ap->number))
+    {
         return -1;
+    }
     return ap->number;
 }
 

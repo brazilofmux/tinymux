@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.1 2000-04-11 07:14:48 sdennis Exp $
+// $Id: vattr.cpp,v 1.2 2000-04-15 17:25:46 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -50,10 +50,8 @@ void vattr_init(void)
     return;
 }
 
-VATTR *vattr_findLEN(char *pAttrName, int nAttrName)
+VATTR *vattr_find_LEN(char *pAttrName, int nAttrName)
 {
-    if (pAttrName == NULL || !ok_attr_name(pAttrName)) return NULL;
-
     unsigned long nHash = CRC32_ProcessBuffer(0, pAttrName, nAttrName);
 
     CHashTable *pht = &mudstate.vattr_name_htab;
@@ -73,36 +71,16 @@ VATTR *vattr_findLEN(char *pAttrName, int nAttrName)
     return NULL;
 }
 
-VATTR *vattr_alloc(char *name, int flags)
+VATTR *vattr_alloc_LEN(char *pName, int nName, int flags)
 {
     int number = mudstate.attr_next++;
     anum_extend(number);
-    return vattr_define(name, number, flags);
+    return vattr_define_LEN(pName, nName, number, flags);
 }
 
-VATTR *vattr_define(char *name, int number, int flags)
+VATTR *vattr_define_LEN(char *pName, int nName, int number, int flags)
 {
-    if (name == NULL) return NULL;
-
-    // Be ruthless.
-    //
-    int nName = strlen(name);
-    if (nName > MAX_VNAME_LENGTH)
-    {
-        name[MAX_VNAME_LENGTH] = '\0';
-        nName = MAX_VNAME_LENGTH;
-    }
-
-    if (!ok_attr_name(name))
-        return NULL;
-
-    // _strupr
-    //
-    for (int i = 0; i < nName; i++)
-    {
-        name[i] = Tiny_ToUpper[(unsigned char)name[i]];
-    }
-    VATTR *vp = vattr_findLEN(name, nName);
+    VATTR *vp = vattr_find_LEN(pName, nName);
     if (vp) return vp;
 
     vp = (VATTR *)MEMALLOC(sizeof(VATTR), __FILE__, __LINE__);
@@ -110,14 +88,14 @@ VATTR *vattr_define(char *name, int number, int flags)
     // NOTE: By using store_string, the only way to release the memory associated with a user
     // attribute name is to @restart the game.
     //
-    vp->name = store_string(name);
+    vp->name = store_string(pName);
     vp->flags = flags;
     vp->number = number;
 
     // This entry cannot already be in the hash table because we've checked it
-    // above with vattr_findLEN.
+    // above with vattr_find_LEN.
     //
-    unsigned long nHash = CRC32_ProcessBuffer(0, vp->name, nName);
+    unsigned long nHash = CRC32_ProcessBuffer(0, pName, nName);
     mudstate.vattr_name_htab.Insert(sizeof(number), nHash, &number);
 
     anum_extend(vp->number);
@@ -257,7 +235,7 @@ void dbclean_CheckATtoANH(dbref player)
             {
                 nUserDefined++;
                 nAttributes++;
-                VATTR *vb = vattr_findLEN(va->name, strlen(va->name));
+                VATTR *vb = vattr_find_LEN(va->name, strlen(va->name));
                 if (vb != va)
                 {
                     nInvalid++;
@@ -318,9 +296,12 @@ void dbclean_CheckALISTtoAT(dbref player)
                     if (pRecord)
                     {
                         // If the attribute exists in the DB, then the easiest thing to do
-                        // is add a dummy attribute name.
+                        // is add a dummy attribute name. Note: The following attribute
+                        // is already in Canonical form, otherwise, we would need to
+                        // call MakeCanonicalAttributeName.
                         //
-                        vattr_define(tprintf("DANGLINGATTR-%08d", iAttr), iAttr, 0);
+                        char *p = tprintf("DANGLINGATTR-%08d", iAttr);
+                        vattr_define_LEN(p, strlen(p), iAttr, 0);
                         nDangle++;
                     }
                     else
@@ -597,16 +578,11 @@ void do_dbclean(dbref player, dbref cause, int key)
 }
 #endif
         
-void vattr_delete(char *name)
+void vattr_delete_LEN(char *pName, int nName)
 {
-    if (!ok_attr_name(name))
-        return;
-
-    _strupr(name);
-
     // Delete from hashtable.
     //
-    unsigned long nHash = CRC32_ProcessBuffer(0, name, strlen(name));
+    unsigned long nHash = CRC32_ProcessBuffer(0, pName, nName);
     CHashTable *pht = &mudstate.vattr_name_htab;
     HP_DIRINDEX iDir = pht->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -614,7 +590,7 @@ void vattr_delete(char *name)
         HP_HEAPLENGTH nRecord;
         int anum;
         pht->Copy(iDir, &nRecord, &anum);
-        if (strcmp(name, anum_table[anum]->name) == 0)
+        if (strcmp(pName, anum_table[anum]->name) == 0)
         {
             VATTR *vp = (VATTR *)anum_table[anum];
             anum_set(anum, NULL);
@@ -625,26 +601,11 @@ void vattr_delete(char *name)
     }
 }
 
-VATTR *vattr_rename(char *name, char *newname)
+VATTR *vattr_rename_LEN(char *pOldName, int nOldName, char *pNewName, int nNewName)
 {
-    _strupr(name);
-    if (!ok_attr_name(name))
-        return (NULL);
-
-    /*
-     * Be ruthless. 
-     */
-
-    if (strlen(name) > MAX_VNAME_LENGTH)
-        name[MAX_VNAME_LENGTH] = '\0';
-
-    _strupr(newname);
-    if (!ok_attr_name(newname))
-        return (NULL);
-    
     // Find and Delete old name from hashtable.
     //
-    unsigned long nHash = CRC32_ProcessBuffer(0, name, strlen(name));
+    unsigned long nHash = CRC32_ProcessBuffer(0, pOldName, nOldName);
     CHashTable *pht = &mudstate.vattr_name_htab;
     HP_DIRINDEX iDir = pht->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -653,14 +614,15 @@ VATTR *vattr_rename(char *name, char *newname)
         int anum;
         pht->Copy(iDir, &nRecord, &anum);
         VATTR *vp = (VATTR *)anum_table[anum];
-        if (strcmp(name, vp->name) == 0)
+        if (strcmp(pOldName, vp->name) == 0)
         {
             pht->Remove(iDir);
 
-            // Add in new name. iDir is no longer valid, so don't use it.
+            // Add in new name. After the Insert call, iDir is no longer
+            // valid, so don't write code that uses it.
             //
-            vp->name = store_string(newname);
-            nHash = CRC32_ProcessBuffer(0, newname, strlen(newname));
+            vp->name = store_string(pNewName);
+            nHash = CRC32_ProcessBuffer(0, pNewName, nNewName);
             pht->Insert(sizeof(int), nHash, &anum);
             return (VATTR *)anum_table[anum];
         }

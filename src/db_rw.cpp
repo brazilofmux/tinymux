@@ -2,7 +2,7 @@
  * db_rw.c 
  */
 /*
- * $Id: db_rw.cpp,v 1.2 2000-04-13 07:45:27 sdennis Exp $ 
+ * $Id: db_rw.cpp,v 1.3 2000-04-15 17:25:47 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -188,7 +188,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->thing = b->thing * 10 + c - '0';
             }
         }
-        else if (isalpha(c))
+        else if (Tiny_IsAlpha[(unsigned char)c])
         {
             buff = alloc_lbuf("getboolexp1.atr_name");
 
@@ -1634,7 +1634,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                      */
                 anum = getref(f);
                 tstr = getstring_noalloc(f, read_new_strings);
-                if (isdigit(*tstr))
+                if (Tiny_IsDigit[(unsigned char)*tstr])
                 {
                     aflags = 0;
                     while (Tiny_IsDigit[(unsigned char)*tstr])
@@ -1647,7 +1647,15 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     aflags = mudconf.vattr_flags;
                 }
-                vattr_define((char *)tstr, anum, aflags);
+                {
+                    int nName;
+                    BOOL bValid;
+                    char *pName = MakeCanonicalAttributeName(tstr, &nName, &bValid);
+                    if (bValid)
+                    {
+                        vattr_define_LEN(pName, nName, anum, aflags);
+                    }
+                }
                 break;
 
             case 'F':   /*
@@ -2138,7 +2146,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
 
         default:
-            if (isprint(ch))
+            if (Tiny_IsPrint[(unsigned char)ch])
             {
                 Log.printf("\nIllegal character '%c' near object #%d\n", ch, i);
             }

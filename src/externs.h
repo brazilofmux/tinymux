@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.12 2000-04-15 16:17:36 sdennis Exp $
+// $Id: externs.h,v 1.13 2000-04-15 17:25:47 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -174,7 +174,6 @@ extern void FDECL(giveto, (dbref,int));
 extern int  FDECL(payfor, (dbref,int));
 extern int  FDECL(ok_name, (const char *));
 extern int  FDECL(ok_player_name, (const char *));
-extern int  FDECL(ok_attr_name, (const char *));
 extern int  ok_password(const char *szPassword, dbref player);
 extern void FDECL(handle_ears, (dbref, int, int));
 extern dbref    FDECL(match_possessed, (dbref, dbref, char *, dbref, int));

@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.2 2000-04-14 04:16:26 sdennis Exp $
+// $Id: command.cpp,v 1.3 2000-04-15 17:25:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -663,34 +663,37 @@ void NDECL(init_cmdtab)
     CMDENT_TWO_ARG_ARGV_CMDARG  *cp2aac;
 
     ATTR *ap;
-    char *cbuff;
 
-    /*
-     * Load attribute-setting commands 
-     */
-
-    cbuff = alloc_sbuf("init_cmdtab");
+    // Load attribute-setting commands.
+    //
     for (ap = attr; ap->name; ap++)
     {
-        if ((ap->flags & AF_NOCMD) == 0)
+        if (!(ap->flags & AF_NOCMD))
         {
-            int nBuffer = MakeCanonicalAttributeCommand(cbuff, ap->name);
-
-            cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG), __FILE__, __LINE__);
-            cp2a->cmdname = (char *)strsave(cbuff);
-            cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
-            cp2a->switches = NULL;
-            if (ap->flags & (AF_WIZARD | AF_MDARK))
-            {
-                cp2a->perms |= CA_WIZARD;
-            }
-            cp2a->extra = ap->number;
-            cp2a->callseq = CS_TWO_ARG;
-            cp2a->handler = do_setattr;
-            hashaddLEN(cp2a->cmdname, nBuffer, (int *)cp2a, &mudstate.command_htab);
+            continue;
         }
+
+        int nBuffer;
+        BOOL bValid;
+        char *cbuff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
+        if (!bValid)
+        {
+            continue;
+        }
+
+        cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG), __FILE__, __LINE__);
+        cp2a->cmdname = (char *)strsave(cbuff);
+        cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
+        cp2a->switches = NULL;
+        if (ap->flags & (AF_WIZARD | AF_MDARK))
+        {
+            cp2a->perms |= CA_WIZARD;
+        }
+        cp2a->extra = ap->number;
+        cp2a->callseq = CS_TWO_ARG;
+        cp2a->handler = do_setattr;
+        hashaddLEN(cp2a->cmdname, nBuffer, (int *)cp2a, &mudstate.command_htab);
     }
-    free_sbuf(cbuff);
 
     /*
      * Load the builtin commands 
@@ -1814,10 +1817,9 @@ NAMETAB access_nametab[] =
 
 static void list_cmdaccess(dbref player)
 {
-    char *buff;
     ATTR *ap;
 
-    buff = alloc_sbuf("list_cmdaccess");
+    char *buff = alloc_sbuf("list_cmdaccess");
     {
         CMDENT_NO_ARG *cmdp;
         for (cmdp = command_table_no_arg; cmdp->cmdname; cmdp++)
@@ -1916,18 +1918,32 @@ static void list_cmdaccess(dbref player)
             }
         }
     }
+    free_sbuf(buff);
     for (ap = attr; ap->name; ap++)
     {
         if (ap->flags & AF_NOCMD)
+        {
             continue;
+        }
 
-        int nBuffer = MakeCanonicalAttributeCommand(buff, ap->name);
+        int nBuffer;
+        BOOL bValid;
+        buff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
+        if (!bValid)
+        {
+            continue;
+        }
+
         CMDENT *cmdp = (CMDENT *)hashfindLEN(buff, nBuffer, &mudstate.command_htab);
         if (cmdp == NULL)
+        {
             continue;
+        }
 
         if (!check_access(player, cmdp->perms))
+        {
             continue;
+        }
 
         if (!(cmdp->perms & CF_DARK))
         {
@@ -1935,7 +1951,6 @@ static void list_cmdaccess(dbref player)
             listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
         }
     }
-    free_sbuf(buff);
 }
 
 /*
@@ -2164,23 +2179,28 @@ CF_HAND(cf_access)
 
 /*
  * ---------------------------------------------------------------------------
- * * cf_acmd_access: Chante command permissions for all attr-setting cmds.
+ * * cf_acmd_access: Change command permissions for all attr-setting cmds.
  */
 
 CF_HAND(cf_acmd_access)
 {
     ATTR *ap;
 
-    char *buff = alloc_sbuf("cf_acmd_access");
     for (ap = attr; ap->name; ap++)
     {
-        int nBuffer = MakeCanonicalAttributeCommand(buff, ap->name);
+        int nBuffer;
+        int bValid;
+        char *buff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
+        if (!bValid)
+        {
+            continue;
+        }
+
         CMDENT *cmdp = (CMDENT *)hashfindLEN(buff, nBuffer, &mudstate.command_htab);
         if (cmdp != NULL)
         {
             int save = cmdp->perms;
-            int failure = cf_modify_bits(&(cmdp->perms), str, extra,
-                player, cmd);
+            int failure = cf_modify_bits(&(cmdp->perms), str, extra, player, cmd);
             if (failure != 0)
             {
                 cmdp->perms = save;
@@ -2189,7 +2209,6 @@ CF_HAND(cf_acmd_access)
             }
         }
     }
-    free_sbuf(buff);
     return 0;
 }
 
