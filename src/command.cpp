@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.43 2001-06-28 02:02:51 sdennis Exp $
+// $Id: command.cpp,v 1.44 2001-06-28 19:17:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -100,7 +100,6 @@ NAMETAB decomp_sw[] =
 
 NAMETAB destroy_sw[] =
 {
-    {(char *)"now",         8,  CA_PUBLIC,  DEST_INSTANT},
     {(char *)"override",    8,  CA_PUBLIC,  DEST_OVERRIDE},
     { NULL,         0,  0,      0}
 };
@@ -116,7 +115,6 @@ NAMETAB doing_sw[] =
     {(char *)"header",  1,  CA_PUBLIC,  DOING_HEADER},
     {(char *)"message", 1,  CA_PUBLIC,  DOING_MESSAGE},
     {(char *)"poll",    1,  CA_PUBLIC,  DOING_POLL},
-    {(char *)"unique",  1,  CA_PUBLIC,  DOING_UNIQUE},
     { NULL,         0,  0,      0}
 };
 
@@ -537,7 +535,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {(char *)"@mark",         mark_sw,    CA_WIZARD,    SRCH_MARK,  CS_ONE_ARG|CS_NOINTERP,     do_search},
     {(char *)"@motd",         motd_sw,    CA_WIZARD,    0,      CS_ONE_ARG,         do_motd},
     {(char *)"@nemit",        emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE, SAY_EMIT, CS_ONE_ARG|CS_UNPARSE|CS_NOSQUISH, do_say},
-    {(char *)"@poor",         NULL,       CA_GOD,    0,      CS_ONE_ARG|CS_NOINTERP,       do_poor},
+    {(char *)"@poor",         NULL,       CA_GOD,    0,      CS_ONE_ARG|CS_INTERP,       do_poor},
     {(char *)"@ps",           ps_sw,      0,    0,      CS_ONE_ARG|CS_INTERP,       do_ps},
     {(char *)"@quitprogram",  NULL,       CA_PUBLIC,    0,      CS_ONE_ARG|CS_INTERP,       do_quitprog},
     {(char *)"@search",       NULL,       0,    SRCH_SEARCH,    CS_ONE_ARG|CS_NOINTERP,     do_search},
