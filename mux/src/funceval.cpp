@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.22 2003-02-15 16:59:22 jake Exp $
+// $Id: funceval.cpp,v 1.23 2003-02-15 17:09:44 jake Exp $
 //
 
 #include "copyright.h"
@@ -2075,36 +2075,32 @@ loop:
 
 FUNCTION(fun_sortby)
 {
-    char *atext, *list, *ptrs[LBUF_SIZE / 2], sep;
-    int nptrs, aflags, anum;
-    dbref thing, aowner;
-    ATTR *ap;
-
+    char sep;
     varargs_preamble(3);
 
-    if (parse_attrib(executor, fargs[0], &thing, &anum)) 
-    {
-        if (anum == NOTHING)
-            ap = NULL;
-        else
-            ap = atr_num(anum);
-    } 
-    else 
+    dbref thing;
+    ATTR *ap;
+
+    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
     }
 
-    if (!ap) 
+    if (  !ap
+       || !See_attr(executor, thing, ap))
     {
         return;
     }
-    atext = atr_pget(thing, ap->number, &aowner, &aflags);
+
+    dbref aowner;
+    int aflags;
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
     if (!atext) 
     {
         return;
     } 
-    else if (!*atext || !See_attr(executor, thing, ap)) 
+    else if (!*atext)
     {
         free_lbuf(atext);
         return;
@@ -2114,9 +2110,10 @@ FUNCTION(fun_sortby)
     ucomp_caller   = executor;
     ucomp_enactor  = enactor;
 
-    list = alloc_lbuf("fun_sortby");
+    char *list = alloc_lbuf("fun_sortby");
     strcpy(list, fargs[1]);
-    nptrs = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+    char *ptrs[LBUF_SIZE / 2];
+    int nptrs = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
 
     if (nptrs > 1)
     {
