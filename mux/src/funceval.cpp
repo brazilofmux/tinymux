@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.33 2002-07-19 11:44:43 jake Exp $
+// $Id: funceval.cpp,v 1.34 2002-07-19 12:41:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -1113,15 +1113,24 @@ FUNCTION(fun_objmem)
 
 FUNCTION(fun_playmem)
 {
-    dbref thing = match_thing_quiet(executor, fargs[0]);
-    if (!Good_obj(thing))
+    dbref thing;
+    if (nfargs == 1)
     {
-        safe_match_result(thing, buff, bufc);
+        thing = match_thing_quiet(executor, fargs[0]);
+        if (!Good_obj(thing))
+        {
+            safe_match_result(thing, buff, bufc);
+            return;
+        }
+        else if (!Examinable(executor, thing))
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
     }
-    else if (!Examinable(executor, thing))
+    else
     {
-        safe_noperm(buff, bufc);
-        return;
+        thing = executor;
     }
     int tot = 0;
     dbref j;
