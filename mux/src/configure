@@ -5871,23 +5871,6 @@ rm -f core core.* *.core conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 fi
 { echo "$as_me:$LINENO: checking for perror dcl..." >&5
 echo "$as_me: checking for perror dcl..." >&6;}
-cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-#include <errno.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  egrep "perror" >/dev/null 2>&1; then
-  :
-else
-  cat >>confdefs.h <<\_ACEOF
-#define NEED_PERROR_DCL 1
-_ACEOF
-
-fi
-rm -f conftest*
-
 { echo "$as_me:$LINENO: checking for getrusage dcl..." >&5
 echo "$as_me: checking for getrusage dcl..." >&6;}
 cat >conftest.$ac_ext <<_ACEOF
