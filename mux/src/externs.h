@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.6 2003-02-05 00:04:50 sdennis Exp $
+// $Id: externs.h,v 1.7 2003-02-05 00:29:09 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -872,7 +872,7 @@ CLinearTimeAbsolute fetch_logouttime(dbref target);
 //
 extern void FLOAT_Initialize(void);
 double ulp(double);
-double Tiny_strtod(const char *s00, char **se);
+double mux_strtod(const char *s00, char **se);
 char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
              char **rve);
 

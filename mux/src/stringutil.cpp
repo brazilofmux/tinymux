@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.36 2003-02-05 00:04:50 sdennis Exp $
+// $Id: stringutil.cpp,v 1.37 2003-02-05 00:29:09 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2605,7 +2605,7 @@ double mux_atof(char *szString, BOOL bStrict)
         p = pTmp;
     }
 
-    ret = Tiny_strtod(p, NULL);
+    ret = mux_strtod(p, NULL);
 
     if (pTmp)
     {
