@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.74 2004-04-01 22:00:42 sdennis Exp $
+// $Id: functions.cpp,v 1.75 2004-04-02 14:11:21 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -6986,18 +6986,23 @@ FUNCTION(fun_conn)
  * * fun_sort: Sort lists.
  */
 
-typedef struct f_record f_rec;
-typedef struct i_record i_rec;
-
-struct f_record {
+typedef struct f_record
+{
     double data;
     char *str;
-};
+} f_rec;
 
-struct i_record {
+typedef struct i_record
+{
     long data;
     char *str;
-};
+} i_rec;
+
+typedef struct i64_record
+{
+    INT64 data;
+    char *str;
+} i64_rec;
 
 static int DCL_CDECL a_comp(const void *s1, const void *s2)
 {
@@ -7030,35 +7035,49 @@ static int DCL_CDECL i_comp(const void *s1, const void *s2)
     return 0;
 }
 
+static int DCL_CDECL i64_comp(const void *s1, const void *s2)
+{
+    if (((i64_rec *) s1)->data > ((i64_rec *) s2)->data)
+    {
+        return 1;
+    }
+    else if (((i64_rec *) s1)->data < ((i64_rec *) s2)->data)
+    {
+        return -1;
+    }
+    return 0;
+}
+
 static void do_asort(char *s[], int n, int sort_type)
 {
     int i;
     f_rec *fp;
     i_rec *ip;
+    i64_rec *i64p;
 
     switch (sort_type)
     {
     case ASCII_LIST:
 
-        qsort((void *)s, n, sizeof(char *), a_comp);
+        qsort(s, n, sizeof(char *), a_comp);
         break;
 
     case NUMERIC_LIST:
 
-        ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        (void)ISOUTOFMEMORY(ip);
+        i64p = (i64_rec *) MEMALLOC(n * sizeof(i64_rec));
+        (void)ISOUTOFMEMORY(i64p);
         for (i = 0; i < n; i++)
         {
-            ip[i].str = s[i];
-            ip[i].data = mux_atol(s[i]);
+            i64p[i].str = s[i];
+            i64p[i].data = mux_atoi64(s[i]);
         }
-        qsort((void *)ip, n, sizeof(i_rec), i_comp);
+        qsort(i64p, n, sizeof(i_rec), i64_comp);
         for (i = 0; i < n; i++)
         {
-            s[i] = ip[i].str;
+            s[i] = i64p[i].str;
         }
-        MEMFREE(ip);
-        ip = NULL;
+        MEMFREE(i64p);
+        i64p = NULL;
         break;
 
     case DBREF_LIST:
@@ -7069,7 +7088,7 @@ static void do_asort(char *s[], int n, int sort_type)
             ip[i].str = s[i];
             ip[i].data = dbnum(s[i]);
         }
-        qsort((void *)ip, n, sizeof(i_rec), i_comp);
+        qsort(ip, n, sizeof(i_rec), i_comp);
         for (i = 0; i < n; i++)
         {
             s[i] = ip[i].str;
@@ -7087,7 +7106,7 @@ static void do_asort(char *s[], int n, int sort_type)
             fp[i].str = s[i];
             fp[i].data = mux_atof(s[i], false);
         }
-        qsort((void *)fp, n, sizeof(f_rec), f_comp);
+        qsort(fp, n, sizeof(f_rec), f_comp);
         for (i = 0; i < n; i++)
         {
             s[i] = fp[i].str;
