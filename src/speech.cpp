@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.2 2000-05-19 18:45:23 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.3 2000-06-08 20:24:33 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -392,36 +392,36 @@ static void page_return(dbref player, dbref target, const char *tag, int anum, c
 
 static int page_check(dbref player, dbref target)
 {
-    if (!payfor(player, Guest(player) ? 0 : mudconf.pagecost)) {
-        notify(player,
-               tprintf("You don't have enough %s.",
-                   mudconf.many_coins));
-    } else if (!Connected(target)) {
-        page_return(player, target, "Away", A_AWAY,
-                tprintf("Sorry, %s is not connected.",
-                    Name(target)));
-    } else if (!could_doit(player, target, A_LPAGE)) {
+    if (!payfor(player, Guest(player) ? 0 : mudconf.pagecost))
+    {
+        notify(player, tprintf("You don't have enough %s.", mudconf.many_coins));
+    }
+    else if (!Connected(target))
+    {
+        page_return(player, target, "Away", A_AWAY, tprintf("Sorry, %s is not connected.", Name(target)));
+    }
+    else if (!could_doit(player, target, A_LPAGE))
+    {
         if (Wizard(target) && Dark(target))
-            page_return(player, target, "Away", A_AWAY,
-                    tprintf("Sorry, %s is not connected.",
-                        Name(target)));
+            page_return(player, target, "Away", A_AWAY, tprintf("Sorry, %s is not connected.", Name(target)));
         else
-            page_return(player, target, "Reject", A_REJECT,
-                tprintf("Sorry, %s is not accepting pages.",
-                    Name(target)));
-    } else if (!could_doit(target, player, A_LPAGE)) {
-        if (Wizard(player)) {
-            notify(player,
-                   tprintf("Warning: %s can't return your page.",
-                       Name(target)));
+            page_return(player, target, "Reject", A_REJECT, tprintf("Sorry, %s is not accepting pages.", Name(target)));
+    }
+    else if (!could_doit(target, player, A_LPAGE))
+    {
+        if (Wizard(player))
+        {
+            notify(player, tprintf("Warning: %s can't return your page.", Name(target)));
             return 1;
-        } else {
-            notify(player,
-                   tprintf("Sorry, %s can't return your page.",
-                       Name(target)));
+        }
+        else
+        {
+            notify(player, tprintf("Sorry, %s can't return your page.", Name(target)));
             return 0;
         }
-    } else {
+    }
+    else
+    {
         return 1;
     }
     return 0;
