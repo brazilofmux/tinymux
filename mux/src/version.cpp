@@ -1,6 +1,6 @@
 // version.cpp -- Version information.
 //
-// $Id: version.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
+// $Id: version.cpp,v 1.3 2002-06-12 07:26:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -22,25 +22,33 @@ void do_version(dbref executor, dbref caller, dbref enactor, int extra)
 void NDECL(init_version)
 {
 #ifdef WIN32
-#ifdef BETA
+#if defined(ALPHA)
+        sprintf( mudstate.version, "MUX %s for Win32 #%s [ALPHA]",
+            MUX_VERSION, MUX_BUILD_NUM);
+        sprintf( mudstate.short_ver, "MUX %s Alpha Win32", MUX_VERSION);
+#elif defined(BETA)
         sprintf( mudstate.version, "MUX %s for Win32 #%s [BETA]",
             MUX_VERSION, MUX_BUILD_NUM);
         sprintf( mudstate.short_ver, "MUX %s Beta Win32", MUX_VERSION);
-#else // BETA
+#else // RELEASED
         sprintf( mudstate.version, "MUX %s for Win32 #%s [%s]",
             MUX_VERSION, MUX_BUILD_NUM, MUX_RELEASE_DATE);
         sprintf( mudstate.short_ver, "MUX %s Win32", MUX_VERSION);
-#endif // BETA
+#endif // ALPHA, BETA, RELEASED
 #else // WIN32
-#ifdef BETA
+#if defined(ALPHA)
+        sprintf( mudstate.version, "MUX %s #%s [ALPHA]", MUX_VERSION,
+            MUX_BUILD_NUM);
+        sprintf( mudstate.short_ver, "MUX %s Alpha", MUX_VERSION);
+#elif defined(BETA)
         sprintf( mudstate.version, "MUX %s #%s [BETA]", MUX_VERSION,
             MUX_BUILD_NUM);
         sprintf( mudstate.short_ver, "MUX %s Beta", MUX_VERSION);
-#else // BETA
+#else // RELEASED
         sprintf( mudstate.version, "MUX %s #%s [%s]", MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
         sprintf( mudstate.short_ver, "MUX %s", MUX_VERSION);
-#endif // BETA
+#endif // ALPHA, BETA, RELEASED
 #endif // WIN32
 
     STARTLOG(LOG_ALWAYS, "INI", "START");

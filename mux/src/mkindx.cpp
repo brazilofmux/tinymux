@@ -1,6 +1,6 @@
 // mkindx.cpp -- Make help/news file indexes.
 //
-// $Id: mkindx.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: mkindx.cpp,v 1.2 2002-06-12 07:26:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -23,21 +23,27 @@ int DCL_CDECL main(int argc, char *argv[])
     if (argc < 2 || argc > 3)
     {
 #ifdef WIN32
-#ifdef BETA
+#if defined(ALPHA)
+        printf("%s from MUX %s for Win32 #%s [ALPHA]\n", argv[0], MUX_VERSION,
+            MUX_BUILD_NUM);
+#elif defined(BETA)
         printf("%s from MUX %s for Win32 #%s [BETA]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM);
-#else // BETA
+#else // RELEASED
         printf("%s from MUX %s for Win32 #%s [%s]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#endif // BETA
+#endif // ALPHA, BETA, RELEASED
 #else // WIN32
-#ifdef BETA
+#if defined(ALPHA)
+        printf("%s from MUX %s #%s [ALPHA]\n", argv[0], MUX_VERSION,
+            MUX_BUILD_NUM);
+#elif defined(BETA)
         printf("%s from MUX %s #%s [BETA]\n", argv[0], MUX_VERSION,
             MUX_BUILD_NUM);
-#else // BETA
+#else // RELEASED
         printf("%s from MUX %s #%s [%s]\n", argv[0], MUX_VERSION, MUX_BUILD_NUM,
             MUX_RELEASE_DATE);
-#endif // BETA
+#endif // ALPHA, BETA, RELEASED
 #endif // WIN32
         printf("Usage:\tmkindx <file_to_be_indexed> <output_index_filename>\n");
         exit(-1);

@@ -1,6 +1,6 @@
 // dbconvert.cpp -- Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.3 2002-06-12 07:26:22 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -60,21 +60,27 @@ void info(int fmt, int flags, int ver)
 void usage(char *prog)
 {
 #ifdef WIN32
-#ifdef BETA
+#if defined(ALPHA)
+    Log.tinyprintf("%s from MUX %s for Win32 #%s [ALPHA]\n", prog, MUX_VERSION,
+        MUX_BUILD_NUM);
+#elif defined(BETA)
     Log.tinyprintf("%s from MUX %s for Win32 #%s [BETA]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM);
-#else // BETA
+#else // RELEASED
     Log.tinyprintf("%s from MUX %s for Win32 #%s [%s]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM, MUX_RELEASE_DATE);
-#endif // BETA
+#endif // ALPHA, BETA, RELEASED
 #else // WIN32
-#ifdef BETA
+#if defined(ALPHA)
+    Log.tinyprintf("%s from MUX %s #%s [ALPHA]\n", prog, MUX_VERSION,
+        MUX_BUILD_NUM);
+#elif defined(BETA)
     Log.tinyprintf("%s from MUX %s #%s [BETA]\n", prog, MUX_VERSION,
         MUX_BUILD_NUM);
-#else // BETA
+#else // RELEASED
     Log.tinyprintf("%s from MUX %s #%s [%s]\n", prog, MUX_VERSION, MUX_BUILD_NUM,
         MUX_RELEASE_DATE);
-#endif // BETA
+#endif // ALPHA, BETA, RELEASED
 #endif // WIN32
     Log.tinyprintf("Usage: %s gamedb-basename [flags] [<in-file] [>out-file]\n", prog);
     Log.WriteString("   Available flags are:\n");
