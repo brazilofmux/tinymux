@@ -412,6 +412,7 @@ Performance Enhancements:
  -- PushPointers tag was wrong.  Reported by Alierak.
  -- If a Guest<n> player was renamed, the contents of room #0 would be
     cleared leaving @dbck to clean it up.
+ -- Tweak the article_rule configuration options.  Reported by Alierak.
 
 
 Cosmetic Changes:
