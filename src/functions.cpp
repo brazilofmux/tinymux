@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.72 2001-07-02 09:12:11 sdennis Exp $
+// $Id: functions.cpp,v 1.73 2001-07-02 23:20:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3190,42 +3190,33 @@ FUNCTION(fun_cansee)
 
 FUNCTION(fun_lcon)
 {
-    dbref thing, it;
-    char *tbuf;
-    int first = 1;
-
-    it = match_thing(player, fargs[0]);
-    if ((it != NOTHING) &&
-        (Has_contents(it)) &&
-        (Examinable(player, it) ||
-         (Location(player) == it) ||
-         (it == cause)))
+    dbref it = match_thing(player, fargs[0]);
+    if (  it != NOTHING
+       && Has_contents(it)
+       && (  Examinable(player, it)
+          || Location(player) == it
+          || it == cause))
     {
-        tbuf = alloc_sbuf("fun_lcon");
+        dbref thing;
+        DTB pContext;
+        DbrefToBuffer_Init(&pContext, buff, bufc);
         DOLIST(thing, Contents(it))
         {
 #ifdef WOD_REALMS
-            if (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(player, thing, ACTION_IS_STATIONARY))
+            int iRealmAction = DoThingToThingVisibility(player, thing,
+                ACTION_IS_STATIONARY);
+            if (iRealmAction != REALM_DO_HIDDEN_FROM_YOU)
             {
 #endif
-                if (!first)
+                if (!DbrefToBuffer_Add(&pContext, thing))
                 {
-                    tbuf[0] = ' ';
-                    tbuf[1] = '#';
-                    Tiny_ltoa(thing, tbuf+2);
+                    break;
                 }
-                else
-                {
-                    tbuf[0] = '#';
-                    Tiny_ltoa(thing, tbuf+1);
-                    first = 0;
-                }
-                safe_str(tbuf, buff, bufc);
 #ifdef WOD_REALMS
             }
 #endif
         }
-        free_sbuf(tbuf);
+        DbrefToBuffer_Final(&pContext);
     }
     else
     {
