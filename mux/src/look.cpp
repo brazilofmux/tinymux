@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.22 2004-06-04 23:10:57 sdennis Exp $
+// $Id: look.cpp,v 1.23 2004-06-09 05:56:04 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1075,10 +1075,11 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
 #endif
 
     int pattr = (obey_terse && Terse(player)) ? 0 : iDescDefault;
-    if (!show_a_desc(player,thing))
+    if (!show_a_desc(player, thing))
     {
         notify(player, "You see nothing special.");
-        did_it(player, thing, 0, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);	
+        did_it(player, thing, pattr, NULL, A_ODESC, NULL, iADescDefault,
+            (char **)NULL, 0);
     }
 
     if (  !mudconf.quiet_look
