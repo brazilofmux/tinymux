@@ -1,5 +1,5 @@
-TinyMUX 2.0:  REALMS
-Last Update:  December 2001
+TinyMUX 2.1:  REALMS
+Last Update:  February 2002
 
 What are Realms?:
 ~~~~~~~~~~~~~~~~
@@ -58,14 +58,14 @@ add adds one hardcode function:
 
 Out of Character (OOC) commands like page, @mail, etc. are not effected by
 the realms rules. If you don't set any flags, the realms rules do not 
-effect anything, only may affection performance very slightly if at all.
+affect anything except possibly performance very slightly if at all.
 
 Even with use of these flags and attributes, if you are wizard, royalty,
 or staff, you are always seen, and you see everything. This allows staff to
 administrate the situation from the 'outside'.
 
 Let's talk about Obfuscation and Auspex first. There are many races that
-have different gifts or ways of taping into this feature, so don't get too
+have different gifts or ways of tapping into this feature, so don't get too
 attached to the names for it. If a player is marked OBF, then the code 
 starts looking for a special attribute: OBF_LEVEL. If OBF_LEVEL is 1, then 
 they are invisible as long as they don't move through an exit. OBF_LEVEL of 
@@ -120,8 +120,12 @@ yet see and hear -only- things, people, rooms, etc. from another realm.
 @set the PEERING flag, and then set PEERING_REALM to one of the following: 
 NORMAL, MATRIX, UMBRA, SHROUD, FAE, CHIMERA, or BLIND.
 
-UMBRA_WARDED and SHROUD_WARDED are used on exits to keep UMBRA and SHROUD
-characters from passing locks as they normally do. It is also useful to set
-global exits (You can't go in that direction type stuff) in the master room.
-Without setting this UMBRA_WARDED and SHROUD_WARDED, your SHROUD and UMBRA
-players will find themselves somewhere you didn't intend.
+By default, UMBRA and SHROUD characters pass the locks on exits. To prevent
+this, an attribute (UMBRA_WARDED/SHROUD_WARDED) can be set on the exit.  If
+present, that particular exit will behave for UMBRA and SHROUD characters
+in the same way it does for NORMAL-realmed characters.
+
+This is also useful and necessary for any global exit with a lock that
+purposefully fails (You can't go in that direction type stuff) in the master
+room. Without setting this UMBRA_WARDED and SHROUD_WARDED, your SHROUD and
+UMBRA players will easily find themselves somewhere you did not intend.
