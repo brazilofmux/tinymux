@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.45 2001-10-08 03:27:38 sdennis Exp $
+// $Id: conf.cpp,v 1.46 2001-10-08 04:23:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -253,6 +253,7 @@ void NDECL(cf_init)
     mudconf.eval_comtitle = 1;
     mudconf.run_startup = TRUE;
     mudconf.safe_wipe = FALSE;
+    mudconf.destroy_going_now = FALSE;
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = FALSE;
     mudstate.bCanRestart = FALSE;
@@ -1388,6 +1389,7 @@ CONF conftable[] =
     {"create_min_cost",           cf_int,         CA_GOD,    &mudconf.createmin,              NULL,               0},
     {"dark_sleepers",             cf_bool,        CA_GOD,    &mudconf.dark_sleepers,          NULL,               0},
     {"default_home",              cf_int,         CA_GOD,    &mudconf.default_home,           NULL,               0},
+    {"destroy_going_now",         cf_bool,        CA_GOD,    &mudconf.destroy_going_now,      NULL,               0},
     {"dig_cost",                  cf_int,         CA_GOD,    &mudconf.digcost,                NULL,               0},
     {"down_file",                 cf_string_dyn,  CA_STATIC, (int *)&mudconf.down_file,       NULL, SIZEOF_PATHNAME},
     {"down_motd_message",         cf_string,      CA_GOD,    (int *)mudconf.downmotd_msg,     NULL,       GBUF_SIZE},

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.27 2001-10-08 03:27:38 sdennis Exp $
+// $Id: mudconf.h,v 1.28 2001-10-08 04:23:23 sdennis Exp $
 //
 #ifndef __CONF_H
 #define __CONF_H
@@ -106,6 +106,7 @@ struct confdata
     int     player_listen;  /* Are AxHEAR triggered on players? */
     int     quiet_whisper;  /* Can others tell when you whisper? */
     int     dark_sleepers;  /* Are sleeping players 'dark'? */
+    int     destroy_going_now;  // Does GOING act like DESTROY_OK?
     int     see_own_dark;   /* Do you see your own dark stuff? */
     int     idle_wiz_dark;  /* Do idling wizards get set dark? */
     int     pemit_players;  /* Can you @pemit to faraway players? */

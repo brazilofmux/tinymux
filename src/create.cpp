@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects
 //
-// $Id: create.cpp,v 1.16 2001-10-07 22:34:21 sdennis Exp $
+// $Id: create.cpp,v 1.17 2001-10-08 04:23:23 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -875,8 +875,12 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
 
     if (Going(thing))
     {
-        notify_quiet(player, tprintf("No sense beating a dead %s.", NameOfType));
-        return;
+        if (!mudconf.destroy_going_now)
+        {
+            notify_quiet(player, tprintf("No sense beating a dead %s.", NameOfType));
+            return;
+        }
+        key |= DEST_INSTANT;
     }
 
     // Check whether we should perform instant destruction.
