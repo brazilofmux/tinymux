@@ -1,5 +1,5 @@
 /* flags.h - object flags */
-/* $Id: flags.h,v 1.1 2000-04-11 07:14:44 sdennis Exp $ */
+/* $Id: flags.h,v 1.2 2000-04-13 08:16:43 sdennis Exp $ */
 
 #include "copyright.h"
 
@@ -199,11 +199,9 @@
 #define PENN_ROOM_ZEROG     0x200            /* ZeroG room flag */
 #define PENN_ROOM_SLOCK     0x400            /* Auditorium, speech locks */
 #define PENN_ROOM_UNINSPECT 0x1000           /* Not inspected */
-#define PENN_ROOM_DSPACE    0x2000      /* Dynamic Flag */
 #define PENN_EXIT_LIGHT 0x10            /* If a room is dark, and an exit
                      * has this flag, then it shows 
                      * up. */
-#define PENN_EXIT_DSPACE    0x20        /* Dynamic Exit */
 
 /* From old PernMUSH */
 #define PERN_SLAVE  0x00000080
