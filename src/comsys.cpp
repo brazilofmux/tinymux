@@ -1,6 +1,6 @@
-//comsys.c
+// comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.10 2000-08-01 23:55:13 sdennis Exp $
+// * $Id: comsys.cpp,v 1.11 2000-09-07 06:15:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1676,7 +1676,9 @@ void do_allcom(dbref player, dbref cause, int key, char *arg1)
     }
     c = get_comsys(player);
     
-    if ((strcmp(arg1, "who") != 0) && (strcmp(arg1, "on") != 0) && (strcmp(arg1, "off") != 0))
+    if (  strcmp(arg1, "who") != 0
+       && strcmp(arg1, "on")  != 0
+       && strcmp(arg1, "off") != 0)
     {
         raw_notify(player, "Only options available are: on, off and who.");
         return;
@@ -1685,9 +1687,10 @@ void do_allcom(dbref player, dbref cause, int key, char *arg1)
     {
         do_processcom(player, c->channels[i], arg1);
         if (strcmp(arg1, "who") == 0)
+        {
             raw_notify(player, "");
+        }
     }
-    
 }
 
 void sort_users(struct channel *ch)
@@ -2126,21 +2129,21 @@ int do_test_access(dbref player, long access, struct channel *chan)
 int do_comsystem(dbref who, char *cmd)
 {
     char *t;
-    char *ch;
-    char *alias;
-    char *s;
-    
-    
-    alias = alloc_lbuf("do_comsystem");
-    s = alias;
-    for (t = cmd; *t && *t != ' '; *s++ = *t++) ;
+    char *alias = alloc_lbuf("do_comsystem");
+    char *s = alias;
+    for (t = cmd; *t && *t != ' '; *s++ = *t++)
+    {
+        ; // Nothing.
+    }
     
     *s = '\0';
     
     if (*t)
+    {
         t++;
+    }
     
-    ch = get_channel_from_alias(who, alias);
+    char *ch = get_channel_from_alias(who, alias);
     if (ch[0] != '\0')
     {
         do_processcom(who, ch, t);
@@ -2151,9 +2154,7 @@ int do_comsystem(dbref who, char *cmd)
     {
         free_lbuf(alias);
     }
-    
     return 1;
-    
 }
 
 void do_cemit(dbref player, dbref cause, int key, char *chan, char *text)
