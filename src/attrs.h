@@ -1,5 +1,5 @@
 /* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.10 2001-06-27 21:46:35 sdennis Exp $ */
+/* $Id: attrs.h,v 1.11 2001-06-27 22:02:46 sdennis Exp $ */
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -166,8 +166,6 @@
 #define A_DESTROYER 212 /* Who is destroying this object? */
 
 #define A_NEWOBJS       213     /* New object array */
-#define A_LCON_FMT      214     /* Player-specified contents format */
-#define A_LEXITS_FMT    215     /* Player-specified exits format */
 #define A_EXITVARDEST   216     /* Variable exit destination */
 #define A_LCHOWN        217     /* ChownLock */
 #define A_CREATED       218     // Date/time created
@@ -188,7 +186,7 @@
 #define A_IDLETMOUT 240 /* Idle message timeout */
 
 #define A_EXITFORMAT 241
-#define A_CONFORMAT 242
+#define A_CONFORMAT  242
 #define A_NAMEFORMAT 243
 
 #define A_VLIST     252
