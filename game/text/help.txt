@@ -5207,49 +5207,50 @@ FUNCTION LIST
     EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMPTY()     ENCRYPT()
     EQ()        ESCAPE()    EXIT()      EXP()       EXPTIME()   EXTRACT()
     EVAL()      FDIV()      FILTER()    FINDABLE()  FIRST()     FLAGS()
-    FLOOR()     FOLD()      FOREACH()   FULLNAME()  GET()       GET_EVAL()
-    GRAB()      GREP()      GREPI()     GT()        GTE()       HASATTR()
-    HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()   HOME()      IADD()
-    IDIV()      IDLE()      IFELSE()    IMUL()      INC()       INDEX()
-    INSERT()    INZONE()    ISDBREF()   ISNUM()     ISUB()      ISWORD()
-    ITER()      ITEMS()     LAST()      LATTR()     LATTRCMDS() LCMDS()
-    LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LIST()
-    LIT()       LJUST()     LN()        LNUM()      LOC()       LOCATE()
-    LOCK()      LOG()       LPARENT()   LPOS()      LSTACK()    LT()
+    FLOOR()     FLOORDIV()  FOLD()      FOREACH()   FULLNAME()  GET()
+    GET_EVAL()  GRAB()      GREP()      GREPI()     GT()        GTE()
+    HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()   HOME()
+    IADD()      IDIV()      IDLE()      IFELSE()    IMUL()      INC()
+    INDEX()     INSERT()    INZONE()    ISDBREF()   ISNUM()     ISUB()
+    ISWORD()    ITER()      ITEMS()     LAST()      LATTR()     LATTRCMDS()
+    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()
+    LIST()      LIT()       LJUST()     LN()        LNUM()      LOC()
+    LOCATE()    LOCK()      LOG()       LPARENT()   LPOS()      LSTACK()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    LTE()       LWHO()      MAIL()      MAILFROM()  MAP()       MATCH()
-    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
-    MIX()       MOD()       MONEY()     MOTD()      MUDNAME()   MUL()
-    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
-    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OR()        ORFLAGS()
-    OWNER()     PACK()      PARENT()    PARSE()     PEEK()      PEMIT()
-    PI()        PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()
-    POS()       POSS()      POWER()     PUSH()      R()         RAND()
-    REGMATCH()  REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
-    REVWORDS()  RJUST()     RLOC()      ROOM()      ROUND()     S()
-    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
-    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
-    SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()
-    SPACE()     SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
-    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
-    SUB()       SUBJ()      SWITCH()    TABLE()     TAN()       TIME()
-    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
-    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
-    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
-    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
-    WRITETIME() XGET()      XOR()       ZONE()      ZWHO()
- 
+    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAP()
+    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
+    MIN()       MIX()       MOD()       MONEY()     MOTD()      MUDNAME()
+    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
+    NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()    OR()
+    ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()     PEEK()
+    PEMIT()     PI()        PLAYMEM()   PMATCH()    POLL()      POP()
+    PORTS()     POS()       POSS()      POWER()     PUSH()      R()
+    RAND()      REGMATCH()  REMAINDER() REMOVE()    REPEAT()    REPLACE()
+    REST()      REVERSE()   REVWORDS()  RJUST()     RLOC()      ROOM()
+    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
+    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
+    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
+    SORT()      SORTBY()    SPACE()     SPLICE()    SQRT()      SQUISH()
+    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()
+    STRMATCH()  STRTRUNC()  SUB()       SUBJ()      SWITCH()    TABLE()
+    TAN()       TIME()      TRANSLATE() TRIM()      TRUNC()     TYPE()
+    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
+    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
+    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
+    WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()       ZONE()
+   ZWHO()
+
 & FUNCTION CLASSES
 FUNCTION CLASSES
  
   Arithmetic:                ABS ADD BAND BNAND BOR CRC32 DEC DIE FDIV
-                             IADD IDIV IMUL INC ISUB MOD MUL PACK POWER RAND
-                             SHL SHR SIGN SUB SQRT UNPACK
+                             FLOORDIV IADD IDIV IMUL INC ISUB MOD MUL PACK
+                             POWER RAND REMAINDER SHL SHR SIGN SUB SQRT UNPACK
   Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
   Database Information:      EXIT INZONE LOC LOCATE MAIL NEARBY NEXT NUM RLOC
                              ROOM SEARCH STATS VALID WHERE ZONE ZWHO
@@ -6859,6 +6860,46 @@ MOD()
 
   Related Topics: floordiv(), iadd(), idiv(), imul(), isub(),
                   remainder().
+
+& REMAINDER()
+REMAINDER()
+
+  FUNCTION: remainder(<integer1>,<integer2>)
+
+  Returns the integer remainder from dividing <integer1> by <integer2>.
+
+  However, integer division for the case where either <integer1> or
+  <integer2> is negative is defined in a specific way -- by choosing
+  the smallest integer that is greater than or equal to the algebraic
+  quotient. If <integer1> and <integer2> are the same sign, then
+  mod() and remainder() are equivalent.
+
+  For example, division of -9 by 5 would give -1 by this definition
+  instead of -2. idiv() would return -1. floordiv() would return -2,
+  and so, the remainder() function properly goes with the idiv()
+  function:
+
+    idiv(x,y)*y + remainder(x,y) ==> x
+
+  For positive x, remainder(x,y) always returns a positive number less
+  than y. For negative x, remainder(x,y) always returns a negative
+  number greater than y.
+
+  remainder() is the usually the way the '%' operator in the C
+   programming language is defined.
+
+  Example:
+    > say remainder(-9,5)
+    You say "-4"
+    > say remainder(-9,-5)
+    You say "-4"
+    > say remainder(17,3)
+    You say "2"
+    > say remainder(18,3)
+    You say "0"
+
+  Related Topics: idiv(), floordiv(), iadd(), idiv(), imul(), isub(),
+                  mod().
 
 & DIST2D()
 DIST2D()
