@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.97 2004-04-30 20:59:50 sdennis Exp $
+// $Id: functions.cpp,v 1.98 2004-04-30 22:32:35 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -4975,13 +4975,18 @@ FUNCTION(fun_remove)
     {
         return;
     }
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
+    {
+        return;
+    }
 
     char *s, *sp, *word;
     bool first, found;
 
-    if (strchr(fargs[1], sep.str[0]))
+    if (strstr(fargs[1], sep.str))
     {
-        safe_str("#-1 CAN ONLY DELETE ONE ELEMENT", buff, bufc);
+        safe_str("#-1 CAN ONLY REMOVE ONE ELEMENT", buff, bufc);
         return;
     }
     s = fargs[0];
@@ -4996,14 +5001,18 @@ FUNCTION(fun_remove)
     while (s)
     {
         sp = split_token(&s, &sep);
-        if (found || strcmp(sp, word))
+        if (  found
+           || strcmp(sp, word) != 0)
         {
             if (!first)
             {
-                print_sep(&sep, buff, bufc);
+                print_sep(&osep, buff, bufc);
+            }
+            else
+            {
+                first = false;
             }
             safe_str(sp, buff, bufc);
-            first = false;
         }
         else
         {
@@ -9687,7 +9696,7 @@ FUN flist[] =
     {"REGRABI",     fun_regrabi,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"REMAINDER",   fun_remainder,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"REMIT",       fun_remit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"REMOVE",      fun_remove,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {"REMOVE",      fun_remove,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"REPEAT",      fun_repeat,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"REPLACE",     fun_replace,    MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {"REST",        fun_rest,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
