@@ -2646,6 +2646,16 @@ NEWUSER_FILE
 
   Related Topics: @readcache, motd_file.
 
+& NOSITEMON_SITE
+NOSITEMON_SITE
+
+  CONFIG PARAMETER: nositemon_site <site>
+
+  Indicates that sites that match <site> are not to be reported to players
+  with the SITEMON flag.
+
+  Related Topics: register_site, REGISTRATION, SITE LISTS, SITE NOTATION.
+
 & NOTIFY_RECURSION_LIMIT
 NOTIFY_RECURSION_LIMIT
 
