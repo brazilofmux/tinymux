@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.49 2002-09-12 05:29:35 sdennis Exp $
+// $Id: mail.cpp,v 1.50 2002-09-12 05:35:13 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1235,14 +1235,9 @@ static char *make_namelist(dbref player, char *arg)
                 safe_str(Name(target), names, &bp);
             }
         }
-        else if (p[0] == '*')
+        else
         {
             safe_str(p, names, &bp);
-        }
-        else if (  p[0] == '-'
-                && p[1] != '\0')
-        {
-            safe_str("*HIDDEN*", names, &bp);
         }
     }
     *bp = '\0';
@@ -2041,7 +2036,7 @@ static void send_mail
     }
     if (bBlind)
     {
-        newp->tolist = StringClone("-1");
+        newp->tolist = StringClone("*HIDDEN*");
     }
     else
     {
