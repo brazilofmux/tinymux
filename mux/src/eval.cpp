@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.20 2003-03-12 06:42:16 sdennis Exp $
+// $Id: eval.cpp,v 1.21 2003-03-13 15:53:36 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2033,8 +2033,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
     {
         // We need to transfer and/or ANSI optimize the result.
         //
-        struct ANSI_In_Context aic;
-        struct ANSI_Out_Context aoc;
+        static struct ANSI_In_Context aic;
+        static struct ANSI_Out_Context aoc;
 
         ANSI_String_Out_Init(&aoc, mux_scratch, sizeof(mux_scratch),
             sizeof(mux_scratch), ANSI_ENDGOAL_NORMAL);
