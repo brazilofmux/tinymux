@@ -5762,15 +5762,17 @@ files.
   For example, DIE(2, 6) would roll "2d6" - two six-sided dice,
   generating a result in the range 2-12.
 & ALPHAMIN()
+
   alphamin(<word1>, <word2>, <word3>, ...)
 
-  Takes up to ten word arguments, and returns the word which is
-  lexicographically smallest.
+  Returns the word whose order is lexicographically first.
+
 & ALPHAMAX()
+
   alphamax(<word1>, <word2>, <word3>, ...)
 
-  Takes up to ten word arguments, and returns the word which is
-  lexicographically biggest.
+  Returns the word whose order is lexicographically last.
+
 & ART()
   art(<string>)
 
@@ -5963,6 +5965,7 @@ files.
   5 7 9
   > @pemit me=vadd(0|0|0,1|2|3,|,-)
   1-2-3
+
 & VCROSS()
   vcross(<vector>,<vector>[,<delim>][,<output delim>])
  
@@ -5999,6 +6002,7 @@ files.
   
   > @pemit me=vmag(3 4) 
   5
+
 & VMUL()
   vmul(<vector|number>,<vector|number>[,<delim>][,<output delim>])
  
@@ -6019,7 +6023,8 @@ files.
   > @pemit me=vsub(6-4-2,5-2-0,-)
   1-2-2
 & VUNIT()
-  vunit(<vector>[,<delim>][,<output delim>])
+
+  vunit(<vector>[,<delim>])
  
   Returns the unit vector (a vector of magnitude 1) which points
   in the same direction as the given vector.
@@ -6028,6 +6033,7 @@ files.
   1 0 0
   > @pemit me=vmul(vunit(5 6 7),vmag(5 6 7))
   5 6 7
+
 & NEARBY()
 
   Function: nearby(obj1,obj2)
@@ -6199,12 +6205,12 @@ files.
 
 & ADD()
 
-  Function: add(<number1>,<number2>[,<numberN>]...)
+  Function: add(<number1>[,<numberN>]...)
  
-  Returns the result of adding its arguments together.
-  You may add up to 30 numbers in one add() call.
-  <numberN> may be a floating point number, and a floating point result
-  is returned.
+  Returns the result of adding its arguments together. You may add up
+  to 100 numbers in one add() call. <numberN> may be a floating point
+  number, and a floating-point result is returned.
+
  
   Example:
     > say add(2,4)
@@ -6930,10 +6936,10 @@ files.
 
 & AND()
 
-  Function: and(<boolean1>,<boolean2>[,<booleanN>]...)
+  Function: and(<boolean1>[,<booleanN>]...)
  
-  Takes two or more booleans, and returns 1 if they are all each equivalent
-  to true(1).
+  Takes one or more booleans, and returns 1 if they are all each
+  equivalent to true(1).
  
   See also: BOOLEAN VALUES, or(), not(), xor().
 
@@ -7474,12 +7480,13 @@ files.
 
 & AFTER()
 
-  Function: after(<string1>, <string2>)
+  Function: after(<string1>[,<string2>])
 
-  Returns the portion of <string1> that occurs after <string2>.  If <string2>
-  does not occur in <string1>, a null string is returned.
-  If you want to return the portion of the string after the first space,
-  use the rest() function instead.
+  Returns the portion of <string1> that occurs after <string2> or after
+  the first word if <string2> isn't given. If <string2> does not occur
+  in <string1>, a null string is returned. If you want to return the
+  portion of the string after the first space, use the rest() function
+  instead.
  
   This function is case sensitive.
  
@@ -7490,6 +7497,7 @@ files.
     You say " is a test"
     > say after(This is a test, nope)
     You say ""
+
   See also: before(), first(), rest().
 
 & ROOM()
