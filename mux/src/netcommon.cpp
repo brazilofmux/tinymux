@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.10 2002-06-21 03:28:02 sdennis Exp $
+// $Id: netcommon.cpp,v 1.11 2002-06-22 04:19:15 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1536,14 +1536,14 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 
     if (key == DOING_MESSAGE)
     {
-        int foundany = 0;
         DESC *d;
+        BOOL bFound = FALSE;
         DESC_ITER_PLAYER(executor, d)
         {
             memcpy(d->doing, szValidDoing, nValidDoing+1);
-            foundany = 1;
+            bFound = TRUE;
         }
-        if (foundany)
+        if (bFound)
         {
             if (!Quiet(executor))
             {
@@ -1557,21 +1557,21 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     }
     else if (key == DOING_UNIQUE)
     {
-        int foundany = 0;
         DESC *d;
-        CLinearTimeAbsolute ltaNow;
-        ltaNow.GetUTC();
+        DESC *dMax = NULL;
+        CLinearTimeAbsolute ltaMax;
         DESC_ITER_PLAYER(executor, d)
         {
-            if (d->last_time == ltaNow)
+            if (  !dMax
+               && ltaMax < d->last_time)
             {
-                memcpy(d->doing, szValidDoing, nValidDoing+1);
-                foundany = 1;
-                break;
+                ltaMax = d->last_time;
+                dMax = d;
             }
         }
-        if (foundany)
+        if (dMax)
         {
+            memcpy(dMax->doing, szValidDoing, nValidDoing+1);
             if (!Quiet(executor))
             {
                 notify(executor, "Set.");
