@@ -1,6 +1,6 @@
 // svdrand.h -- Random Numbers
 //
-// $Id: svdrand.h,v 1.5 2001-02-07 05:28:15 sdennis Exp $
+// $Id: svdrand.h,v 1.6 2001-09-08 19:25:47 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
@@ -8,7 +8,7 @@
 // RandomINT32() was derived from existing game server code.
 //
 // MUX 2.1
-// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial

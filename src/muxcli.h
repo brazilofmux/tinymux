@@ -1,9 +1,9 @@
 // muxcli.h
 //
-// $Id: muxcli.h,v 1.1 2000-11-06 16:55:16 sdennis Exp $
+// $Id: muxcli.h,v 1.2 2001-09-08 19:25:47 sdennis Exp $
 //
 // MUX 2.0
-// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial

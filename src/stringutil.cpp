@@ -1,11 +1,11 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.46 2001-08-25 17:39:22 sdennis Exp $
+// $Id: stringutil.cpp,v 1.47 2001-09-08 19:25:47 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
 //
-// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial

@@ -1,9 +1,9 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.4 2000-10-25 04:29:23 sdennis Exp $
+// $Id: timer.cpp,v 1.5 2001-09-08 19:25:47 sdennis Exp $
 //
 // MUX 2.1
-// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial

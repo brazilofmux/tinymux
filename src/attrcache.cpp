@@ -1,9 +1,9 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.13 2001-06-29 15:43:17 sdennis Exp $
+// $Id: attrcache.cpp,v 1.14 2001-09-08 19:25:46 sdennis Exp $
 //
 // MUX 2.1
-// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
 // rights not explicitly given are reserved. Permission is given to
 // use this code for building and hosting text-based game servers.
 // Permission is given to use this code for other non-commercial
