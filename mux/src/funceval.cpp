@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.59 2004-04-30 19:59:40 sdennis Exp $
+// $Id: funceval.cpp,v 1.60 2004-04-30 20:59:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1991,9 +1991,13 @@ FUNCTION(fun_graball)
     {
         return;
     }
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
 
     bool bFirst = true;
-
     char *s = trim_space_sep(fargs[0], &sep);
     do
     {
@@ -2003,7 +2007,7 @@ FUNCTION(fun_graball)
         {
             if (!bFirst)
             {
-                print_sep(&sep, buff, bufc);
+                print_sep(&osep, buff, bufc);
             }
             else
             {
