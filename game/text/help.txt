@@ -7064,17 +7064,21 @@ TIMEFMT()
   All escape sequences start with a $. Any unrecognized codes or other
   text will be returned unchanged.
 
-    $a - Abbreviated weekday name  $p - AM/PM  ($P may also work)
-    $A - Full weekday name         $S - Seconds after the minute
-    $b - Abbreviated month name
-    $B - Full month name           $w - Day of the week. 0 = Sunday
-    $c - Date and time
-    $d - Day of the month          $x - Date
-    $H - Hour of the 24-hour day   $X - Time
-    $I - Hour of the 12-hour day   $y - Two-digit year
-    $j - Day of the year           $Y - Four-digit year
-    $m - Month of the year         $z - Time zone offset.
-    $M - Minutes after the hour    $$ - $ character.
+  $a - Abbreviated weekday name  $P - am/pm
+  $A - Full weekday name         $r - Same as $I:$M:$S $p
+  $b - Abbreviated month name    $R - Same as $H:$M
+  $B - Full month name           $S - Seconds after the minute
+  $c - Date and time             $t - Tab
+  $C - Century                   $u - Day of Week (Sunday=7)
+  $d - Day of the month          $U - Week of the year from 1st Sunday
+  $F - ISO8601 YMD               $w - Day of the week (Sunday=0)
+  $H - Hour of the 24-hour day   $W - Week of the year from 1rst Monday
+  $I - Hour of the 12-hour day   $x - Date
+  $j - Day of the year           $X - Time
+  $m - Month of the year         $y - Two-digit year
+  $M - Minutes after the hour    $Y - All-digit year
+  $n - Newline                   $z - Time zone offset
+  $p - AM/PM                     $$ - $ character
 
   Example:
     > think timefmt($A\, the $dth day of $B.)
