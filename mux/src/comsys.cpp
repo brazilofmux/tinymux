@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.17 2003-07-24 00:20:18 sdennis Exp $
+// $Id: comsys.cpp,v 1.18 2003-08-25 06:08:02 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2493,7 +2493,8 @@ bool do_comsystem(dbref who, char *cmd)
     }
 
     char *ch = get_channel_from_alias(who, alias);
-    if (ch[0] != '\0')
+    if (  ch[0] != '\0'
+       && t[0] != '\0')
     {
         do_processcom(who, ch, t);
         free_lbuf(alias);
