@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.6 2003-02-17 02:26:23 sdennis Exp $
+// $Id: htab.cpp,v 1.7 2004-04-01 21:52:55 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -23,7 +23,7 @@ void hashreset(CHashTable *htab)
 #pragma pack(1)
 static struct
 {
-    int *hashdata;
+    void *hashdata;
     char aTarget[LBUF_SIZE+125];
 } htab_rec;
 #pragma pack()
@@ -34,7 +34,7 @@ static struct
  * * hash data.
  */
 
-int *hashfindLEN(const void *str, int nStr, CHashTable *htab)
+void *hashfindLEN(const void *str, int nStr, CHashTable *htab)
 {
     if (  str == NULL
        || nStr <= 0)
@@ -67,7 +67,7 @@ int *hashfindLEN(const void *str, int nStr, CHashTable *htab)
  * * hashaddLEN: Add a new entry to a hash table.
  */
 
-int hashaddLEN(const void *str, int nStr, int *hashdata, CHashTable *htab)
+int hashaddLEN(const void *str, int nStr, void *hashdata, CHashTable *htab)
 {
     // Make sure that the entry isn't already in the hash table.  If it
     // is, exit with an error.
@@ -148,7 +148,7 @@ void hashflush(CHashTable *htab)
  * * hashreplLEN: replace the data part of a hash entry.
  */
 
-bool hashreplLEN(const void *str, int nStr, int *hashdata, CHashTable *htab)
+bool hashreplLEN(const void *str, int nStr, void *hashdata, CHashTable *htab)
 {
     if (  str == NULL
        || nStr <= 0)
@@ -177,7 +177,7 @@ bool hashreplLEN(const void *str, int nStr, int *hashdata, CHashTable *htab)
     return false;
 }
 
-void hashreplall(int *old, int *new0, CHashTable *htab)
+void hashreplall(const void *old, void *new0, CHashTable *htab)
 {
     HP_HEAPLENGTH nRecord;
     for (  HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec);
@@ -196,7 +196,7 @@ void hashreplall(int *old, int *new0, CHashTable *htab)
  * Returns the key for the first hash entry in 'htab'.
  */
 
-int *hash_firstentry(CHashTable *htab)
+void *hash_firstentry(CHashTable *htab)
 {
     HP_HEAPLENGTH nRecord;
     HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec);
@@ -207,7 +207,7 @@ int *hash_firstentry(CHashTable *htab)
     return NULL;
 }
 
-int *hash_nextentry(CHashTable *htab)
+void *hash_nextentry(CHashTable *htab)
 {
     HP_HEAPLENGTH nRecord;
     HP_DIRINDEX iDir = htab->FindNext(&nRecord, &htab_rec);
@@ -218,7 +218,7 @@ int *hash_nextentry(CHashTable *htab)
     return NULL;
 }
 
-int *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
+void *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
 {
     HP_HEAPLENGTH nRecord;
     HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec);
@@ -233,7 +233,7 @@ int *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
     return NULL;
 }
 
-int *hash_nextkey(CHashTable *htab, int *nKeyLength, char **pKey)
+void *hash_nextkey(CHashTable *htab, int *nKeyLength, char **pKey)
 {
     HP_HEAPLENGTH nRecord;
     HP_DIRINDEX iDir = htab->FindNext(&nRecord, &htab_rec);

@@ -1,6 +1,6 @@
 // htab.h - Structures and declarations needed for table hashing.
 //
-// $Id: htab.h,v 1.2 2003-02-05 06:20:59 jake Exp $
+// $Id: htab.h,v 1.3 2004-04-01 21:52:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -40,16 +40,16 @@ struct bque
 };
 
 extern void hashreset(CHashTable *);
-extern int  *hashfindLEN(const void *, int, CHashTable *);
-extern int  hashaddLEN(const void *, int, int *, CHashTable *);
+extern void *hashfindLEN(const void *, int, CHashTable *);
+extern int  hashaddLEN(const void *, int, void *, CHashTable *);
 extern void hashdeleteLEN(const void *, int, CHashTable *);
 extern void hashflush(CHashTable *);
-extern bool hashreplLEN(const void *, int, int *, CHashTable *);
-extern void hashreplall(int *, int *, CHashTable *);
-extern int  *hash_nextentry(CHashTable *htab);
-extern int  *hash_firstentry(CHashTable *htab);
-extern int *hash_firstkey(CHashTable *htab, int *, char **);
-extern int *hash_nextkey(CHashTable *htab, int *, char **);
+extern bool hashreplLEN(const void *, int, void *, CHashTable *);
+extern void hashreplall(const void *, void *, CHashTable *);
+extern void *hash_nextentry(CHashTable *htab);
+extern void *hash_firstentry(CHashTable *htab);
+extern void *hash_firstkey(CHashTable *htab, int *, char **);
+extern void *hash_nextkey(CHashTable *htab, int *, char **);
 
 extern NAMETAB powers_nametab[];
 

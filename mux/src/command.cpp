@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.26 2003-10-09 01:57:35 sdennis Exp $
+// $Id: command.cpp,v 1.27 2004-04-01 21:52:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2832,7 +2832,6 @@ CF_HAND(cf_cmd_alias)
     char *ap;
     CMDENT *cmdp, *cmd2;
     NAMETAB *nt;
-    int *hp;
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
@@ -2899,7 +2898,7 @@ CF_HAND(cf_cmd_alias)
     {
         // A normal (non-switch) alias
         //
-        hp = hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
+        void *hp = hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
         if (hp == NULL)
         {
             cf_log_notfound(player, cmd, "Entry", orig);

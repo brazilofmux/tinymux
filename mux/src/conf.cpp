@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.35 2004-03-17 20:30:08 sdennis Exp $
+// $Id: conf.cpp,v 1.36 2004-04-01 21:52:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -611,7 +611,7 @@ CF_HAND(cf_alias)
     if (orig)
     {
         mux_strlwr(orig);
-        int *cp = hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
+        void *cp = hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
         if (cp == NULL)
         {
             mux_strupr(orig);
@@ -642,7 +642,7 @@ CF_HAND(cf_flagalias)
     bool success = false;
     int  nName;
     bool bValid;
-    int *cp;
+    void *cp;
     char *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
     if (  bValid
        && (cp = hashfindLEN(pName, nName, &mudstate.flags_htab)))
@@ -675,7 +675,7 @@ CF_HAND(cf_poweralias)
     bool success = false;
     int  nName;
     bool bValid;
-    int *cp;
+    void *cp;
     char *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
     if (  bValid
        && (cp = hashfindLEN(pName, nName, &mudstate.powers_htab)))

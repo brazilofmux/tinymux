@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.45 2004-03-18 19:10:13 sdennis Exp $
+// $Id: predicates.cpp,v 1.46 2004-04-01 21:52:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -869,7 +869,7 @@ void do_addcommand
         add->next = NULL;
         cmd->addent = add;
 
-        hashaddLEN(pName, strlen(pName), (int *)cmd, &mudstate.command_htab);
+        hashaddLEN(pName, strlen(pName), cmd, &mudstate.command_htab);
 
         if (  old
            && strcmp(pName, old->cmdname) == 0)
@@ -880,8 +880,8 @@ void do_addcommand
             //
             char *p = tprintf("__%s", pName);
             hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
-            hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
-            hashaddLEN(p, strlen(p), (int *)old, &mudstate.command_htab);
+            hashreplall(old, cmd, &mudstate.command_htab);
+            hashaddLEN(p, strlen(p), old, &mudstate.command_htab);
         }
     }
 
@@ -1032,15 +1032,15 @@ void do_delcommand
             cmd = (CMDENT *)hashfindLEN(p__Name, n__Name, &mudstate.command_htab);
             if (cmd)
             {
-                hashaddLEN(cmd->cmdname, strlen(cmd->cmdname), (int *)cmd,
+                hashaddLEN(cmd->cmdname, strlen(cmd->cmdname), cmd,
                     &mudstate.command_htab);
                 if (strcmp(name, cmd->cmdname) != 0)
                 {
-                    hashaddLEN(name, nName, (int *)cmd, &mudstate.command_htab);
+                    hashaddLEN(name, nName, cmd, &mudstate.command_htab);
                 }
 
                 hashdeleteLEN(p__Name, n__Name, &mudstate.command_htab);
-                hashaddLEN(p__Name, n__Name, (int *)cmd, &mudstate.command_htab);
+                hashaddLEN(p__Name, n__Name, cmd, &mudstate.command_htab);
                 hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
             }
             else
@@ -1076,16 +1076,16 @@ void do_delcommand
                             if (cmd)
                             {
                                 hashaddLEN(cmd->cmdname, strlen(cmd->cmdname),
-                                    (int *)cmd, &mudstate.command_htab);
+                                    cmd, &mudstate.command_htab);
                                 if (strcmp(name, cmd->cmdname) != 0)
                                 {
-                                    hashaddLEN(name, nName, (int *)cmd,
+                                    hashaddLEN(name, nName, cmd,
                                         &mudstate.command_htab);
                                 }
 
                                 hashdeleteLEN(p__Name, n__Name,
                                     &mudstate.command_htab);
-                                hashaddLEN(p__Name, n__Name, (int *)cmd,
+                                hashaddLEN(p__Name, n__Name, cmd,
                                     &mudstate.command_htab);
                                 hashreplall((int *)old, (int *)cmd,
                                     &mudstate.command_htab);
