@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.77 2002-05-24 05:30:01 sdennis Exp $
+// $Id: stringutil.cpp,v 1.78 2002-06-06 05:42:37 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2716,6 +2716,7 @@ BOOL is_rational(char *str)
 BOOL is_real(char *str)
 {
     PARSE_FLOAT_RESULT pfr;
+    memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
     return ParseFloat(&pfr, str);
 }
 
