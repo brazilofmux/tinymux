@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.9 2003-02-05 06:20:59 jake Exp $
+// $Id: speech.cpp,v 1.10 2003-03-01 05:05:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -16,7 +16,8 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command)
 {
     dbref aowner;
     int aflags;
-    char *mod = atr_get(player, bWhich ? A_SPEECHMOD : A_SAYSTRING, &aowner, &aflags);
+    char *mod = atr_get(player, bWhich ? A_SPEECHMOD : A_SAYSTRING,
+        &aowner, &aflags);
 
     if (mod[0] == '\0')
     {
@@ -108,23 +109,27 @@ void wall_broadcast(int target, dbref player, char *message)
     }
 }
 
-static void say_shout(int target, const char *prefix, int flags, dbref player, char *message)
+static void say_shout(int target, const char *prefix, int flags,
+    dbref player, char *message)
 {
+    char *p;
     if (flags & SAY_NOTAG)
     {
-        wall_broadcast(target, player, tprintf("%s%s", Moniker(player), message));
+        p = tprintf("%s%s", Moniker(player), message);
     }
     else
     {
-        wall_broadcast(target, player, tprintf("%s%s%s", prefix, Moniker(player), message));
+        p = tprintf("%s%s%s", prefix, Moniker(player), message);
     }
+    wall_broadcast(target, player, p);
 }
 
 static const char *announce_msg = "Announcement: ";
 static const char *broadcast_msg = "Broadcast: ";
 static const char *admin_msg = "Admin: ";
 
-void do_think(dbref executor, dbref caller, dbref enactor, int key, char *message)
+void do_think(dbref executor, dbref caller, dbref enactor, int key,
+    char *message)
 {
     char *str, *buf, *bp;
 
@@ -317,8 +322,10 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 }
 
 
-void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *message)
+void do_shout(dbref executor, dbref caller, dbref enactor, int key,
+    char *message)
 {
+    char *p;
     char *buf2, *bp;
     int say_flags = key & (SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
     key &= ~(SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
@@ -435,14 +442,14 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
     case SHOUT_WALLPOSE:
         if (say_flags & SAY_NOTAG)
         {
-            wall_broadcast(0, executor, tprintf("%s %s", Moniker(executor),
-                message));
+            p = tprintf("%s %s", Moniker(executor), message);
         }
         else
         {
-            wall_broadcast(0, executor, tprintf("Announcement: %s %s",
-                Moniker(executor), message));
+            p = tprintf("Announcement: %s %s", Moniker(executor),
+                message);
         }
+        wall_broadcast(0, executor, p);
         STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
         log_name(executor);
         log_text(" WALLposes: ");
@@ -453,14 +460,13 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
     case SHOUT_WIZPOSE:
         if (say_flags & SAY_NOTAG)
         {
-            wall_broadcast(SHOUT_WIZARD, executor, tprintf("%s %s",
-                Moniker(executor), message));
+            p = tprintf("%s %s", Moniker(executor), message);
         }
         else
         {
-            wall_broadcast(SHOUT_WIZARD, executor, tprintf("Broadcast: %s %s",
-                Moniker(executor), message));
+            p = tprintf("Broadcast: %s %s", Moniker(executor), message);
         }
+        wall_broadcast(SHOUT_WIZARD, executor, p);
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
         log_name(executor);
         log_text(" WIZposes: ");
@@ -471,12 +477,13 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
     case SHOUT_WALLEMIT:
         if (say_flags & SAY_NOTAG)
         {
-            wall_broadcast(0, executor, tprintf("%s", message));
+            p = tprintf("%s", message);
         }
         else
         {
-            wall_broadcast(0, executor, tprintf("Announcement: %s", message));
+            p = tprintf("Announcement: %s", message);
         }
+        wall_broadcast(0, executor, p);
         STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
         log_name(executor);
         log_text(" WALLemits: ");
@@ -487,12 +494,13 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
     case SHOUT_WIZEMIT:
         if (say_flags & SAY_NOTAG)
         {
-            wall_broadcast(SHOUT_WIZARD, executor, tprintf("%s", message));
+            p = tprintf("%s", message);
         }
         else
         {
-            wall_broadcast(SHOUT_WIZARD, executor, tprintf("Broadcast: %s", message));
+            p = tprintf("Broadcast: %s", message);
         }
+        wall_broadcast(SHOUT_WIZARD, executor, p);
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
         log_name(executor);
         log_text(" WIZemit: ");
@@ -511,7 +519,8 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *messag
  * Page-pose code from shadow@prelude.cc.purdue.
  */
 
-static void page_return(dbref player, dbref target, const char *tag, int anum, const char *dflt)
+static void page_return(dbref player, dbref target, const char *tag,
+    int anum, const char *dflt)
 {
     dbref aowner;
     int aflags;
@@ -533,10 +542,12 @@ static void page_return(dbref player, dbref target, const char *tag, int anum, c
             FIELDEDTIME ft;
             ltaNow.ReturnFields(&ft);
 
-            notify_with_cause_ooc(player, target, tprintf("%s message from %s: %s", tag,
-                Moniker(target), str2));
-            notify_with_cause_ooc(target, player, tprintf("[%d:%02d] %s message sent to %s.",
-                ft.iHour, ft.iMinute, tag, Moniker(player)));
+            char *p = tprintf("%s message from %s: %s", tag,
+                Moniker(target), str2);
+            notify_with_cause_ooc(player, target, p);
+            p = tprintf("[%d:%02d] %s message sent to %s.", ft.iHour,
+                ft.iMinute, tag, Moniker(player));
+            notify_with_cause_ooc(target, player, p);
         }
         free_lbuf(str2);
     }
@@ -575,14 +586,19 @@ static bool page_check(dbref player, dbref target)
     }
     else if (!could_doit(target, player, A_LPAGE))
     {
+        char *p;
         if (Wizard(player))
         {
-            notify(player, tprintf("Warning: %s can't return your page.", Moniker(target)));
+            p = tprintf("Warning: %s can't return your page.",
+                Moniker(target));
+            notify(player, p);
             return true;
         }
         else
         {
-            notify(player, tprintf("Sorry, %s can't return your page.", Moniker(target)));
+            p = tprintf("Sorry, %s can't return your page.",
+                Moniker(target));
+            notify(player, p);
             return false;
         }
     }
@@ -988,6 +1004,7 @@ void do_pemit_single
     char *newMessage = NULL;
     char *saystring = NULL;
 
+    char *p;
     switch (target)
     {
     case NOTHING:
@@ -1148,13 +1165,15 @@ void do_pemit_single
                 saystring = modSpeech(target, message, false, "@fsay");
                 if (saystring)
                 {
-                    notify_except(loc, player, target,
-                        tprintf("%s %s \"%s\"", Moniker(target), saystring, message), 0);
+                    p = tprintf("%s %s \"%s\"", Moniker(target),
+                        saystring, message);
+                    notify_except(loc, player, target, p, 0);
                 }
                 else
                 {
-                    notify_except(loc, player, target,
-                        tprintf("%s says, \"%s\"", Moniker(target), message), 0);
+                    p = tprintf("%s says, \"%s\"", Moniker(target),
+                        message);
+                    notify_except(loc, player, target, p, 0);
                 }
             }
             if (saystring)
@@ -1173,8 +1192,8 @@ void do_pemit_single
             {
                 message = newMessage;
             }
-            notify_all_from_inside(loc, player, tprintf("%s %s", Moniker(target),
-                message));
+            p = tprintf("%s %s", Moniker(target), message);
+            notify_all_from_inside(loc, player, p);
             if (newMessage)
             {
                 free_lbuf(newMessage);
@@ -1187,8 +1206,8 @@ void do_pemit_single
             {
                 message = newMessage;
             }
-            notify_all_from_inside(loc, player, tprintf("%s%s", Moniker(target),
-                message));
+            p = tprintf("%s%s", Moniker(target), message);
+            notify_all_from_inside(loc, player, p);
             if (newMessage)
             {
                 free_lbuf(newMessage);
