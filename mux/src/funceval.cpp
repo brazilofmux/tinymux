@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.22 2002-06-28 21:04:37 sdennis Exp $
+// $Id: funceval.cpp,v 1.23 2002-06-29 00:09:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1669,11 +1669,7 @@ FUNCTION(fun_isword)
 }
 
 /* ---------------------------------------------------------------------------
- * fun_visible:  Can X examine Y. If X does not exist, 0 is returned.
- *               If Y, the object, does not exist, 0 is returned. If
- *               Y the object exists, but the optional attribute does
- *               not, X's ability to return Y the object is returned.
- * Borrowed from PennMUSH 1.50
+ * fun_visible. Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_visible)
 {
