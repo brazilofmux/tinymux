@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.111 2004-07-06 06:45:25 sdennis Exp $
+// $Id: functions.cpp,v 1.112 2004-07-09 14:49:42 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1715,33 +1715,48 @@ FUNCTION(fun_mid)
 
 FUNCTION(fun_right)
 {
-    // Basically just mid(%0,sub(strlen(%0),%1),7998)
-    // Initial checks for iPosition0 [0,LBUF_SIZE), nLength [0,LBUF_SIZE),
-    // and iPosition1 [0,LBUF_SIZE).
-
-    int iPosition1 = strlen(strip_ansi(fargs[0]));
-    int nLength = mux_atol(fargs[1]);
-    int iPosition0 = iPosition1 - nLength;
-
-    if (nLength > LBUF_SIZE-1)
-        nLength = LBUF_SIZE-1;
-
-    if (iPosition0 < 0)
-        iPosition0 = 0;
-
-    if (nLength < 0)
+    // nLength on [0,LBUF_SIZE).
+    //
+    long   lLength = mux_atol(fargs[1]);
+    size_t nLength;
+    if (lLength < 0)
     {
         safe_range(buff, bufc);
         return;
     }
+    else if (LBUF_SIZE-1 < lLength)
+    {
+        nLength = LBUF_SIZE-1;
+    }
+    else
+    {
+        nLength = lLength;
+    }
+
+    // iPosition1 on [0,LBUF_SIZE)
+    //
+    size_t iPosition1 = strlen(strip_ansi(fargs[0]));
+
+    // iPosition0 on [0,LBUF_SIZE)
+    //
+    size_t iPosition0;
+    if (iPosition1 <= nLength)
+    {
+        iPosition0 = 0;
+    }
+    else
+    {
+        iPosition0 = iPosition1 - nLength;
+    }
 
     // At this point, iPosition0, nLength, and iPosition1 are reasonable
     // numbers which may -still- not refer to valid data in the string.
+    //
     struct ANSI_In_Context aic;
     ANSI_String_In_Init(&aic, fargs[0], ANSI_ENDGOAL_NORMAL);
     int nDone;
     ANSI_String_Skip(&aic, iPosition0, &nDone);
-    if (nDone < iPosition0)
+    if ((size_t)nDone < iPosition0)
     {
         return;
     }
