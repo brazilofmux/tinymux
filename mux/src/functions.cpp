@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.89 2004-04-18 16:17:03 sdennis Exp $
+// $Id: functions.cpp,v 1.90 2004-04-18 18:31:38 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -266,7 +266,7 @@ char *next_token(char *str, char sep)
 // split_token: Get next token from string as null-term string. String is
 // destructively modified -- known length version.
 //
-char *split_token_LEN(char **sp, int *nStr, char sep, int *nToken)
+char *split_token_LEN(char **sp, int *nStr, SEP *psep, int *nToken)
 {
     char *str = *sp;
     char *save = str;
@@ -278,30 +278,47 @@ char *split_token_LEN(char **sp, int *nStr, char sep, int *nToken)
         return NULL;
     }
 
-    // Advance over token
-    //
-    while (*str && (*str != sep))
+    if (psep->n == 1)
     {
-        str++;
-    }
-    *nToken = str - save;
-
-    if (*str)
-    {
-        *str++ = '\0';
-        if (sep == ' ')
+        // Advance over token
+        //
+        while (  *str
+              && *str != psep->str[0])
         {
-            while (*str == ' ')
-            {
-                str++;
-            }
+            str++;
         }
-        *nStr -= str - save;
+        *nToken = str - save;
+
+        if (*str)
+        {
+            *str++ = '\0';
+            if (psep->str[0] == ' ')
+            {
+                while (*str == ' ')
+                {
+                    str++;
+                }
+            }
+            *nStr -= str - save;
+        }
+        else
+        {
+            *nStr = 0;
+            str = NULL;
+        }
     }
     else
     {
-        *nStr = 0;
-        str = NULL;
+        char *p = strstr(str, psep->str);
+        if (p)
+        {
+            *p = '\0';
+            str = p + psep->n;
+        }
+        else
+        {
+            str = NULL;
+        }
     }
     *sp = str;
     return save;
@@ -4760,7 +4777,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el,
         else
         {
             eptr = trim_space_sep_LEN(str, nStr, psep, &elen);
-            iptr = split_token_LEN(&eptr, &elen, psep->str[0], &ilen);
+            iptr = split_token_LEN(&eptr, &elen, psep, &ilen);
         }
     }
     else
@@ -4782,7 +4799,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el,
             // the last token in the 'before' portion.
             //
             overrun = false;
-            iptr = split_token_LEN(&eptr, &elen, psep->str[0], &ilen);
+            iptr = split_token_LEN(&eptr, &elen, psep, &ilen);
             slen = (iptr - sptr) + ilen;
         }
 
@@ -4802,7 +4819,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el,
         //
         if (eptr)
         {
-            iptr = split_token_LEN(&eptr, &elen, psep->str[0], &ilen);
+            iptr = split_token_LEN(&eptr, &elen, psep, &ilen);
         }
         else
         {
