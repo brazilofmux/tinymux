@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.39 2000-10-16 07:28:44 sdennis Exp $
+// $Id: functions.cpp,v 1.40 2000-11-06 16:20:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6518,7 +6518,7 @@ FUN flist[] =
     {"ZFUN",     fun_zfun,     0,  FN_VARARGS, CA_PUBLIC},
     {"ZONE",     fun_zone,     1,  0,          CA_PUBLIC},
     {"ZWHO",     fun_zwho,     1,  0,          CA_PUBLIC},
-    // Added by D.Piper (del@delphinian.com) 1997 and 2000-APR
+    // Added by D.Piper (del@doofer.org) 1997 and 2000-APR
     //
     {"DIGITTIME",fun_digittime,1,  0,          CA_PUBLIC},
     {"SINGLETIME", fun_singletime, 1,  0,      CA_PUBLIC},
@@ -6992,7 +6992,7 @@ const char *time_format_2(int Seconds)
 }
 
 // Del's added functions for dooferMUX ! :)
-// D.Piper (del@delphinian.com) 1997 & 2000
+// D.Piper (del@doofer.org) 1997 & 2000
 //
 
 // expand_time - Written (short) time format.
