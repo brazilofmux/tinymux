@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.3 2000-04-12 01:53:32 sdennis Exp $
+// $Id: svdhash.cpp,v 1.4 2000-04-24 22:34:17 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -33,9 +33,6 @@ int cs_dbreads  = 0;    // total read-throughs
 int cs_dbwrites = 0;    // total write-throughs
 int cs_whits    = 0;    // writes into cached pages
 int cs_rhits    = 0;    // read from cached pages
-int cs_resets   = 0;    // total cache resets
-
-typedef int BOOL;
 
 static unsigned long CRC32_Table[256] =
 {
@@ -2065,11 +2062,6 @@ again:
         }
     }
     return -1;
-}
-
-void CHashFile::Reset(void)
-{
-    cs_resets++;
 }
 
 void CHashFile::Tick(void)
