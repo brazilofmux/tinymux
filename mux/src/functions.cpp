@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.120 2004-09-11 22:36:25 sdennis Exp $
+// $Id: functions.cpp,v 1.121 2004-09-14 05:34:13 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -4018,10 +4018,35 @@ static void handle_vectors
     {
     case VADD_F:
 
-        for (i = 0; i < n; i++)
+        // If n or m is 1, this is scalar addition.
+        // otherwise, add element-wise.
+        //
+        if (n == 1)
         {
-            fval_buf(vres[i], mux_atof(v1[i]) + mux_atof(v2[i]));
-            v1[i] = (char *) vres[i];
+            scalar = mux_atof(v1[0]);
+            for (i = 0; i < m; i++)
+            {
+                fval_buf(vres[i], mux_atof(v2[i]) + scalar);
+                v1[i] = (char *) vres[i];
+            }
+            n = m;
+        }
+        else if (m == 1)
+        {
+            scalar = mux_atof(v2[0]);
+            for (i = 0; i < n; i++)
+            {
+                fval_buf(vres[i], mux_atof(v1[i]) + scalar);
+                v1[i] = (char *) vres[i];
+            }
+        }
+        else
+        {
+            for (i = 0; i < n; i++)
+            {
+                fval_buf(vres[i], mux_atof(v1[i]) + mux_atof(v2[i]));
+                v1[i] = (char *) vres[i];
+            }
         }
         arr2list(v1, n, buff, bufc, posep);
         break;
