@@ -14,8 +14,6 @@ Major changes that may affect performance and require softcode tweaks:
  --  Added optionally included WOD_REALMS support.
  --  Replace udb_ocache with an attribute cache using CHashTable.
  --  vmul() behavior didn't match PennMUSH, MUSH 3, or MUX 2 help files.
- --  SIGUSR2 and SIGTERM behavior is swapped, and .KILLED files are no
-     longer generated.
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
@@ -136,7 +134,6 @@ Feature Additions:
      free-form dates and also ISO formats including year/day, month/day, and
      weekofyear/dayofweek.
  --  Morgan added @conformat and @exitformat from PennMUSH.
- --  Zenty added evaluating comtitles.
 
 
 Bug Fixes:
