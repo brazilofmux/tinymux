@@ -91,11 +91,11 @@ COM_OBJ	=
 SA_SRC	= sa-db.cpp sa-db_rw.cpp sa-boolexp.cpp sa-unparse.cpp \
 	  sa-pred.cpp sa-stringu.cpp sa-conf.cpp sa-log.cpp sa-object.cpp \
 	  sa-vattr.cpp sa-htab.cpp sa-player_c.cpp sa-flags.cpp \
-	  sa-svdhash.cpp sa-svdrand.cpp sa-svdocache.cpp
+	  sa-svdhash.cpp sa-svdrand.cpp sa-attrcache.cpp
 SA_OBJ	= sa-db.o sa-db_rw.o sa-boolexp.o sa-unparse.o \
 	  sa-pred.o sa-stringu.o sa-conf.o sa-log.o sa-object.o \
 	  sa-vattr.o sa-htab.o sa-player_c.o sa-flags.o sa-svdhash.o \
-	  sa-svdrand.o sa-svdocache.o
+	  sa-svdrand.o sa-attrcache.o
 
 # Distribution source files
 D_SRC	= create.cpp game.cpp help.cpp look.cpp match.cpp move.cpp player.cpp \
@@ -105,14 +105,14 @@ D_SRC	= create.cpp game.cpp help.cpp look.cpp match.cpp move.cpp player.cpp \
 	  db_rw.cpp stringutil.cpp object.cpp conf.cpp flags.cpp htab.cpp \
 	  file_c.cpp player_c.cpp bsd.cpp alloc.cpp comsys.cpp \
 	  mail.cpp mguests.cpp powers.cpp newconc.cpp funceval.cpp regexp.cpp \
-	  svdrand.cpp svdocache.cpp svdhash.cpp svdreport.cpp quota.cpp
+	  svdrand.cpp attrcache.cpp svdhash.cpp svdreport.cpp quota.cpp
 D_OBJ	= create.o game.o help.o look.o match.o move.o player.o predicates.o \
 	  rob.o set.o speech.o wiz.o walkdb.o timer.o boolexp.o log.o cque.o \
 	  unparse.o eval.o command.o wild.o netcommon.o functions.o vattr.o \
 	  db.o db_rw.o stringutil.o object.o conf.o flags.o htab.o \
           file_c.o player_c.o bsd.o alloc.o comsys.o mail.o \
           mguests.o powers.o newconc.o funceval.o regexp.o svdrand.o \
-	  svdocache.o svdhash.o svdreport.o quota.o
+	  attrcache.o svdhash.o svdreport.o quota.o
 D_INC	= copyright.h flags.h help.h htab.h interface.h match.h functions.h \
 	  command.h config.h db.h externs.h mudconf.h misc.h \
 	  vattr.h file_c.h fifo.h alloc.h attrs.h comsys.h macro.h \
