@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.133 2002-01-26 01:01:50 sdennis Exp $
+// $Id: functions.cpp,v 1.134 2002-01-26 18:08:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5958,7 +5958,12 @@ FUNCTION(fun_space)
 
 FUNCTION(fun_idle)
 {
-    dbref target = lookup_player(player, fargs[0], 1);
+    char *pTargetName = fargs[0];
+    if (*pTargetName == '*')
+    {
+        pTargetName++;
+    }
+    dbref target = lookup_player(player, pTargetName, 1);
     if (Good_obj(target) && Dark(target) && !Wizard(player))
     {
         target = NOTHING;
@@ -5968,7 +5973,12 @@ FUNCTION(fun_idle)
 
 FUNCTION(fun_conn)
 {
-    dbref target = lookup_player(player, fargs[0], 1);
+    char *pTargetName = fargs[0];
+    if (*pTargetName == '*')
+    {
+        pTargetName++;
+    }
+    dbref target = lookup_player(player, pTargetName, 1);
     if (Good_obj(target) && Dark(target) && !Wizard(player))
     {
         target = NOTHING;
