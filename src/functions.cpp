@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.9 2000-04-16 07:43:19 sdennis Exp $
+// $Id: functions.cpp,v 1.10 2000-04-16 16:59:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1412,9 +1412,9 @@ FUNCTION(fun_mid)
     int nLength = Tiny_atol(fargs[2]);
     int iPosition1 = iPosition0 + nLength;
 
-    if (  iPosition0 < 0 || iPosition0 >= LBUF_SIZE
-       || nLength    < 0 || nLength    >= LBUF_SIZE
-       || iPosition1 >= LBUF_SIZE)
+    if (  iPosition0 < 0 || iPosition0 > LBUF_SIZE-1
+       || nLength    < 0 || nLength    > LBUF_SIZE-1
+       || iPosition1 > LBUF_SIZE-1)
     {
         safe_str("#-1 OUT OF RANGE", buff, bufc);
         return;
@@ -1431,8 +1431,8 @@ FUNCTION(fun_mid)
     {
         return;
     }
-    int nAvailable = LBUF_SIZE - (*bufc - buff);
-    int nSize = ANSI_String_Copy(&ac, nAvailable, *bufc, nLength, &nDone);
+    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    int nSize = ANSI_String_Copy(&ac, nBufferAvailable, *bufc, nLength, &nDone);
     *bufc += nSize;
 }
 
@@ -4545,8 +4545,8 @@ FUNCTION(fun_repeat)
         else
         {
             int nSize = len*times;
-            if (  times >= LBUF_SIZE - 1
-               || nSize >= LBUF_SIZE - 1)
+            if (  times > LBUF_SIZE - 1
+               || nSize > LBUF_SIZE - 1)
             {
                 safe_str("#-1 STRING TOO LONG", buff, bufc);
             }
