@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.28 2001-07-05 19:30:16 hellspawn Exp $
+// $Id: look.cpp,v 1.29 2001-07-05 21:47:38 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2213,12 +2213,12 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
     }
     else
     {
-       if (key == DECOMP_DBREF)
-	 {
-	   strcpy(thingname, tprintf("#%d",thing));
-	 }
-       else
-	 {
+        if (key == DECOMP_DBREF)
+        {
+            strcpy(thingname, tprintf("#%d",thing));
+        }
+        else
+        {
             switch (Typeof(thing))
             {
             case TYPE_THING:
@@ -2250,16 +2250,16 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
                 }
                 break;
 
-	     case TYPE_PLAYER:
-	        if (player == thing)
-		 {
-		    strcpy(thingname, "me");
-		 }
-	       else
-		 {
-		 strcpy(thingname, Name(thing));
-		 }
-		break;
+            case TYPE_PLAYER:
+                if (player == thing)
+                {
+                    strcpy(thingname, "me");
+                }
+                else
+                {
+                    strcpy(thingname, Name(thing));
+                }
+                break;
             }
         }
     }

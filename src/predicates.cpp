@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.30 2001-07-05 18:40:18 hellspawn Exp $
+// $Id: predicates.cpp,v 1.31 2001-07-05 21:44:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1263,20 +1263,20 @@ extern SOCKET slave_socket;
 
 void do_backup(dbref player, int cause, int key)
 {
-   if (mudstate.dumping)
-     {
-	notify(player, "Dumping. Please try again later.");
-     }
+    if (mudstate.dumping)
+    {
+        notify(player, "Dumping. Please try again later.");
+    }
    
-   raw_broadcast(0, "GAME: Backing up database. Please wait.");
-   STARTLOG(LOG_ALWAYS, "WIZ", "BACK")
-     log_text((char *)"Backup by ");
-   log_name(player);
-   ENDLOG
+    raw_broadcast(0, "GAME: Backing up database. Please wait.");
+    STARTLOG(LOG_ALWAYS, "WIZ", "BACK");
+    log_text((char *)"Backup by ");
+    log_name(player);
+    ENDLOG;
      
-   dump_database_internal(3);
-   system(tprintf("./Backup.new %s.FLAT 1>&2", mudconf.outdb));
-   raw_broadcast(0, "GAME: Backup finished.");
+    dump_database_internal(DUMP_I_FLAT);
+    system(tprintf("./Backup.new %s.FLAT 1>&2", mudconf.outdb));
+    raw_broadcast(0, "GAME: Backup finished.");
 }
 
 /*

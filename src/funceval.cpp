@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.55 2001-07-05 18:40:18 hellspawn Exp $
+// $Id: funceval.cpp,v 1.56 2001-07-05 21:44:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2470,14 +2470,14 @@ FUNCTION(fun_crc32)
 
 FUNCTION(fun_dumping)
 {
-   if (mudstate.dumping)
-     {
-	safe_chr('1', buff, bufc);
-     }
-   else
-     {
-     safe_chr('0', buff, bufc);
-     }
+    if (mudstate.dumping)
+    {
+        safe_chr('1', buff, bufc);
+    }
+    else
+    {
+        safe_chr('0', buff, bufc);
+    }
 }
 
 // The following table contains 64 symbols, so this supports -a-
