@@ -72,8 +72,18 @@
 #undef HAVE_SYS_RUSAGE_H
 /* Define if const is broken */
 #undef const
-/* Define if char type is unsigned */
-#undef __CHAR_UNSIGNED__
+/* sizeof(short) */
+#undef SIZEOF_SHORT
+/* sizeof(unsigned short) */
+#undef SIZEOF_UNSIGNED_SHORT
+/* sizeof(int) */
+#undef SIZEOF_INT
+/* sizeof(unsigned int) */
+#undef SIZEOF_UNSIGNED_INT
+/* sizeof(long) */
+#undef SIZEOF_LONG
+/* sizeof(unsigned long) */
+#undef SIZEOF_UNSIGNED_LONG
 /* Define if inline keyword is broken or nonstandard */
 #undef inline
 /* Define if we need to redef index/bcopy et al to their SYSV counterparts */
