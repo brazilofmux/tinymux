@@ -1,4 +1,4 @@
-Welcome to AlloyMUX
+Welcome to TinyMUX
 ------------------------------------------------------------------------------
   "connect <name> <password>" connects you to an existing character.
   "WHO" tells you who is logged in to the game (case sensitive).
