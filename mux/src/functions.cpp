@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.118 2002-10-02 05:38:32 sdennis Exp $
+// $Id: functions.cpp,v 1.119 2002-10-03 22:39:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -8472,8 +8472,7 @@ void init_functab(void)
     char *buff = alloc_sbuf("init_functab");
     for (FUN *fp = flist; fp->name; fp++)
     {
-        memcpy(buff, fp->name, SBUF_SIZE);
-        buff[SBUF_SIZE-1] = '\0';
+        strcpy(buff, fp->name);
         _strlwr(buff);
         hashaddLEN(buff, strlen(buff), (int *)fp, &mudstate.func_htab);
     }
