@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.6 2002-06-12 17:56:56 zenty Exp $
+// $Id: comsys.cpp,v 1.7 2002-06-13 15:07:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1410,7 +1410,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
             //
             if (found <= 1)
             {
-                do_delcomchannel(executor, c->channels[i],0);
+                do_delcomchannel(executor, c->channels[i], FALSE);
                 raw_notify(executor, tprintf("Channel %s deleted.", c->channels[i]));
                 MEMFREE(c->channels[i]);
             }
@@ -1434,11 +1434,9 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
     raw_notify(executor, "Unable to find that alias.");
 }
 
-void do_delcomchannel(dbref player, char *channel, int quiet)
+void do_delcomchannel(dbref player, char *channel, BOOL bQuiet)
 {
     struct comuser *user;
-    int i;
-    int j;
 
     struct channel *ch = select_channel(channel);
     if (!ch)
@@ -1447,14 +1445,16 @@ void do_delcomchannel(dbref player, char *channel, int quiet)
     }
     else
     {
-        j = 0;
+        int i;
+        int j = 0;
         for (i = 0; i < ch->num_users && !j; i++)
         {
             user = ch->users[i];
             if (user->who == player)
             {
                 do_comdisconnectchannel(player, channel);
-                if(!quiet) {
+                if (!bQuiet)
+                {
                     if (user->bUserIsOn && (!Dark(player)))
                     {
                         char *messNormal, *messNoComtitle;
@@ -2531,7 +2531,8 @@ void do_chboot
     raw_notify(thing, tprintf("%s boots you off channel %s.",
                               Name(thing), ch->name));
 
-    if(!(key & CBOOT_QUIET)) {
+    if (!(key & CBOOT_QUIET))
+    {
         char *mess1, *mess1nct;
         char *mess2, *mess2nct;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
@@ -2565,9 +2566,11 @@ void do_chboot
         }
         *mnctp = '\0';
         SendChannelMessage(executor, ch, messNormal, messNoComtitle, FALSE);
-        do_delcomchannel(thing, channel,0);
-    } else {    
-        do_delcomchannel(thing, channel,1);
+        do_delcomchannel(thing, channel, FALSE);
+    }
+    else
+    {    
+        do_delcomchannel(thing, channel, TRUE);
     }
     
 }
