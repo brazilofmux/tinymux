@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.33 2001-04-09 23:20:41 morgan Exp $
+// $Id: conf.cpp,v 1.34 2001-04-09 23:25:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -125,7 +125,7 @@ void NDECL(cf_init)
     strcpy(mudconf.public_channel, "Public");
     strcpy(mudconf.guests_channel, "Guests");
     strcpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>");
-	mudconf.art_rules = NULL;
+    mudconf.art_rules = NULL;
     mudconf.indent_desc = 0;
     mudconf.name_spaces = 1;
 #if !defined(VMS) && !defined(WIN32)
@@ -276,7 +276,7 @@ void NDECL(cf_init)
     mudstate.shutdown_flag = 0;
     mudstate.attr_next = A_USER_START;
     mudstate.debug_cmd = "< init >";
-	mudstate.curr_cmd  = "< none >";
+    mudstate.curr_cmd  = "< none >";
     strcpy(mudstate.doing_hdr, "Doing");
     mudstate.access_list = NULL;
     mudstate.suspect_list = NULL;
