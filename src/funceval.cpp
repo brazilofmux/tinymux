@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.92 2002-04-14 23:16:16 sdennis Exp $
+// $Id: funceval.cpp,v 1.93 2002-04-15 00:29:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -62,15 +62,15 @@ FUNCTION(fun_cwho)
     {
         if (_stricmp(fargs[0], "all") == 0)
         {
-            match_type == CWHO_ALL;
+            match_type = CWHO_ALL;
         }
         else if (_stricmp(fargs[0], "off") == 0)
         {
-            match_type == CWHO_OFF;
+            match_type = CWHO_OFF;
         }
         else if (_stricmp(fargs[0], "on") == 0)
         {
-            match_type == CWHO_ON;
+            match_type = CWHO_ON;
         }
     }
 
