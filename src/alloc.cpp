@@ -2,7 +2,7 @@
  * alloc.cpp - memory allocation subsystem 
  */
 /*
- * $Id: alloc.cpp,v 1.4 2000-06-02 19:15:08 sdennis Exp $ 
+ * $Id: alloc.cpp,v 1.5 2000-10-13 21:05:02 sdennis Exp $ 
  */
 #include "copyright.h"
 #include "autoconf.h"
@@ -62,7 +62,7 @@ void pool_init(int poolnum, int poolsize)
 
 static void pool_err(const char *logsys, int logflag, int poolnum, const char *tag, POOLHDR *ph, const char *action, const char *reason)
 {
-    char buffer[256];
+    char buffer[2*LBUF_SIZE];
     if (!mudstate.logging)
     {
         STARTLOG(logflag, logsys, "ALLOC");
