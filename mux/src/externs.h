@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.24 2002-07-09 21:24:45 jake Exp $
+// $Id: externs.h,v 1.25 2002-07-09 22:31:08 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -664,7 +664,6 @@ extern BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
     ENDLOG
 
 #define test_top()      ((mudstate.qfirst != NULL) ? 1 : 0)
-#define controls(p,x)   Controls(p,x)
 
 extern const char *NOMATCH_MESSAGE;
 extern const char *AMBIGUOUS_MESSAGE;

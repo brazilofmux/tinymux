@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.12 2002-07-09 08:22:49 jake Exp $
+// $Id: speech.cpp,v 1.13 2002-07-09 22:31:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -38,7 +38,7 @@ BOOL sp_ok(dbref player)
 
     if (!mudconf.robot_speak)
     {
-        if (Robot(player) && !controls(player, Location(player)))
+        if (Robot(player) && !Controls(player, Location(player)))
         {
             notify(player, "Sorry, robots may not speak in public.");
             return FALSE;

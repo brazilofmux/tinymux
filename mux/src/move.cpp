@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.10 2002-07-09 21:24:45 jake Exp $
+// $Id: move.cpp,v 1.11 2002-07-09 22:31:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -845,7 +845,7 @@ void do_enter_internal(dbref player, dbref thing, int quiet)
 {
     int oattr, aattr;
 
-    if (!Enter_ok(thing) && !controls(player, thing))
+    if (!Enter_ok(thing) && !Controls(player, thing))
     {
         oattr = quiet ? 0 : A_OEFAIL;
         aattr = quiet ? 0 : A_AEFAIL;

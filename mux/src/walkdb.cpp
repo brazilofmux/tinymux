@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.8 2002-07-09 08:22:49 jake Exp $
+// $Id: walkdb.cpp,v 1.9 2002-07-09 22:31:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -96,7 +96,7 @@ void do_find(dbref executor, dbref caller, dbref enactor, int key, char *name)
     for (i = low_bound; i <= high_bound; i++)
     {
         if (  (Typeof(i) != TYPE_EXIT)
-           && controls(executor, i)
+           && Controls(executor, i)
            && (!*name || string_match(PureName(i), name)))
         {
             buff = unparse_object(executor, i, 0);

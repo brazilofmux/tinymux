@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.7 2002-07-09 22:22:46 sdennis Exp $
+// $Id: rob.cpp,v 1.8 2002-07-09 22:31:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -52,8 +52,8 @@ void do_kill
             break;
         }
         if (  (Haven(Location(victim)) && !Wizard(executor)) 
-           || (  controls(victim, Location(victim)) 
-              && !controls(executor, Location(victim))) 
+           || (  Controls(victim, Location(victim)) 
+              && !Controls(executor, Location(victim))) 
            || Unkillable(victim))
         {
             notify(executor, "Sorry.");

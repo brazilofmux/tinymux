@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.8 2002-07-09 08:22:48 jake Exp $
+// $Id: cque.cpp,v 1.9 2002-07-09 22:31:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -568,7 +568,7 @@ void do_notify
     {
         notify(executor, "No match.");
     }
-    else if (!controls(executor, thing) && !Link_ok(thing))
+    else if (!Controls(executor, thing) && !Link_ok(thing))
     {
         notify(executor, NOPERM_MESSAGE);
     }
@@ -891,7 +891,7 @@ void do_wait
     {
         notify(executor, "No match.");
     }
-    else if (!controls(executor, thing) && !Link_ok(thing))
+    else if (!Controls(executor, thing) && !Link_ok(thing))
     {
         notify(executor, NOPERM_MESSAGE);
     }

@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.9 2002-07-09 21:24:45 jake Exp $
+// $Id: create.cpp,v 1.10 2002-07-09 22:31:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -66,7 +66,7 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
         notify_quiet(player, "Open where?");
         return;
     }
-    else if (!controls(player, loc))
+    else if (!Controls(player, loc))
     {
         notify_quiet(player, NOPERM_MESSAGE);
         return;
@@ -174,7 +174,7 @@ static void link_exit(dbref player, dbref exit, dbref dest)
     // Make sure we can link there
     //
     if (  dest != HOME
-       && (  (  !controls(player, dest)
+       && (  (  !Controls(player, dest)
              && !Link_ok(dest))
           || !could_doit(player, dest, A_LLINK)))
     {
@@ -185,7 +185,7 @@ static void link_exit(dbref player, dbref exit, dbref dest)
     // Exit must be unlinked or controlled by you
     //
     if (  Location(exit) != NOTHING
-       && !controls(player, exit))
+       && !Controls(player, exit))
     {
         notify_quiet(player, NOPERM_MESSAGE);
         return;
@@ -328,7 +328,8 @@ void do_link
             notify_quiet(executor, "That is not a room!");
         }
         else if (  room != HOME
-                && (  (!controls(executor, room) && !Link_ok(room))
+                && (  (  !Controls(executor, room)
+                      && !Link_ok(room))
                    || !could_doit(executor, room, A_LLINK)))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
@@ -851,7 +852,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
     // If you own a location, you can destroy its exits.
     //
     if (  thing == NOTHING
-       && controls(executor, Location(executor)))
+       && Controls(executor, Location(executor)))
     {
         init_match(executor, what, TYPE_EXIT);
         match_exit();

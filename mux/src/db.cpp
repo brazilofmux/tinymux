@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.14 2002-07-09 08:22:48 jake Exp $
+// $Id: db.cpp,v 1.15 2002-07-09 22:31:08 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -297,7 +297,7 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
 {
     dbref target;
     char *tp, *bp, *dp;
-    int fail;
+    BOOL fail;
 
     int count = 0;
     int errors = 0;
@@ -326,11 +326,11 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
 #ifdef STANDALONE
             fail = !Good_obj(target);
 #else // STANDALONE
-            fail = (!Good_obj(target) ||
-                (!God(player) &&
-                 !controls(player, target) &&
-                 (!Link_ok(target) ||
-                  !could_doit(player, target, A_LLINK))));
+            fail = (  !Good_obj(target)
+                   || (  !God(player)
+                      && !Controls(player, target)
+                      && (  !Link_ok(target)
+                         || !could_doit(player, target, A_LLINK))));
 #endif // STANDALONE
             if (fail)
             {

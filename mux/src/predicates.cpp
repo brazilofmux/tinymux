@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.28 2002-07-09 21:24:45 jake Exp $
+// $Id: predicates.cpp,v 1.29 2002-07-09 22:31:08 jake Exp $
 //
 
 #include "copyright.h"
@@ -2003,7 +2003,7 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
 {
     dbref actor, victim;
     dbref aowner = NOTHING;
-    int what, owhat, awhat, nxargs, restriction;
+    int what, owhat, awhat, nxargs;
     int aflags = NOTHING;
     ATTR *ap;
     const char *whatd, *owhatd;
@@ -2053,12 +2053,12 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
     //       his action list and any attributes that player cannot read
     //       from victim are defaulted.
     //
-    if (!controls(player, actor))
+    if (!Controls(player, actor))
     {
         notify_quiet(player, "Permission denied,");
         return;
     }
-    restriction = !controls(player, victim);
+    BOOL restriction = !Controls(player, victim);
 
     what = -1;
     owhat = -1;
@@ -2132,9 +2132,12 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
             atr_get_info(victim, what, &aowner, &aflags);
             ap = atr_num(what);
         }
-        if (!ap || !bCanReadAttr(player, victim, ap, FALSE) ||
-            ((ap->number == A_DESC) && !mudconf.read_rem_desc &&
-             !Examinable(player, victim) && !nearby(player, victim)))
+        if (  !ap
+           || !bCanReadAttr(player, victim, ap, FALSE)
+           || (  ap->number == A_DESC 
+              && !mudconf.read_rem_desc
+              && !Examinable(player, victim)
+              && !nearby(player, victim)))
         {
             what = -1;
         }
@@ -2145,9 +2148,12 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
             atr_get_info(victim, owhat, &aowner, &aflags);
             ap = atr_num(owhat);
         }
-        if (!ap || !bCanReadAttr(player, victim, ap, FALSE) ||
-            ((ap->number == A_DESC) && !mudconf.read_rem_desc &&
-             !Examinable(player, victim) && !nearby(player, victim)))
+        if (  !ap
+           || !bCanReadAttr(player, victim, ap, FALSE)
+           || (  ap->number == A_DESC
+              && !mudconf.read_rem_desc
+              && !Examinable(player, victim)
+              && !nearby(player, victim)))
         {
             owhat = -1;
         }

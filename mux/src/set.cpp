@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.21 2002-07-09 21:24:45 jake Exp $
+// $Id: set.cpp,v 1.22 2002-07-09 22:31:08 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -490,7 +490,7 @@ void do_lock
         return;
 
     default:
-        if (!controls(executor, thing))
+        if (!Controls(executor, thing))
         {
             notify_quiet(executor, "You can't lock that!");
             return;
@@ -615,7 +615,7 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int key, char *name)
 
     default:
 
-        if (!controls(executor, exit))
+        if (!Controls(executor, exit))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
         }
@@ -861,7 +861,7 @@ void do_chown
             || (  isThing(thing)
                && Location(thing) != executor
                && !Chown_Any(executor))
-            || !controls(executor, nOwnerNew)
+            || !Controls(executor, nOwnerNew)
             || God(thing))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
@@ -1764,7 +1764,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
         notify_quiet(executor, "No match.");
         return;
     }
-    if (!controls(executor, thing))
+    if (!Controls(executor, thing))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
         return;
