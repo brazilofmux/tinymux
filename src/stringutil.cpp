@@ -1,6 +1,6 @@
-// stringutil.cpp -- string utilities
+// stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.52 2001-11-09 00:05:29 sdennis Exp $
+// $Id: stringutil.cpp,v 1.53 2001-11-20 01:15:39 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -13,6 +13,7 @@
 // building/hosting text-based game servers, contact the author at
 // Stephen Dennis <sdennis@svdltd.com> for another license.
 //
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -2194,7 +2195,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
             pfr->iLeadingSign = '+';
             str++;
         }
-        
+
         if (  !Tiny_IsDigit[(unsigned char)*str]
            && *str != '.')
         {
