@@ -649,7 +649,7 @@ Related Topics: @name.
   in the same room, the name of an object or player.
 
   Example:
-    > @cboot Player1
+    > @cboot Public=Player1
     [Public] Staff1 boots Player1 off the channel.
     [Public] Player1 has left this channel.
 
@@ -1328,11 +1328,14 @@ Related Topics: @name.
   that contains the object you are inside with the /room switch.
 
   The following switches are available:
+
      /here  - Sends the message to everyone in the same location as you.
+     /html  - Sends the message to HTML-flags players.
      /room  - Sends the message to everyone in the room that contains the
              object you are in.  Starting from your location, this switch
              'leaves' objects until it reaches a room, and @emits the message
              there.
+
   If both switches are specified, the message is sent to both places.  If
   neither is specified, /here is assumed.
 
