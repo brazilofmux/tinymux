@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.13 2003-03-14 08:03:13 sdennis Exp $
+// $Id: mguests.cpp,v 1.14 2003-03-14 15:23:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -287,7 +287,7 @@ dbref CGuests::MakeGuestChar(void)
     }
     if (!bFound)
     {
-        return NULL;
+        return NOTHING;
     }
 
     // Make the player.
