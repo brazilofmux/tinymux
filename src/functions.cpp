@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.166 2002-03-02 21:20:48 sdennis Exp $
+// $Id: functions.cpp,v 1.167 2002-04-11 06:05:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5192,10 +5192,20 @@ FUNCTION(fun_min)
 
 FUNCTION(fun_search)
 {
+    char *pArg;
+    if (nfargs == 0)
+    {
+        pArg = "me";
+    }
+    else
+    {
+        pArg = fargs[0];
+    }
+
     // Set up for the search.  If any errors, abort.
     //
     SEARCH searchparm;
-    if (!search_setup(player, fargs[0], &searchparm))
+    if (!search_setup(player, pArg, &searchparm))
     {
         safe_str("#-1 ERROR DURING SEARCH", buff, bufc);
         return;
@@ -5227,24 +5237,28 @@ FUNCTION(fun_search)
 FUNCTION(fun_stats)
 {
     dbref who;
-    STATS statinfo;
 
-    if ((!fargs[0]) || !*fargs[0] || !string_compare(fargs[0], "all")) {
+    if ((!fargs[0]) || !*fargs[0] || !string_compare(fargs[0], "all"))
+    {
         who = NOTHING;
-    } else {
+    }
+    else
+    {
         who = lookup_player(player, fargs[0], 1);
-        if (who == NOTHING) {
+        if (who == NOTHING)
+        {
             safe_str("#-1 NOT FOUND", buff, bufc);
             return;
         }
     }
-    if (!get_stats(player, who, &statinfo)) {
+    STATS statinfo;
+    if (!get_stats(player, who, &statinfo))
+    {
         safe_str("#-1 ERROR GETTING STATS", buff, bufc);
         return;
     }
     safe_tprintf_str(buff, bufc, "%d %d %d %d %d %d", statinfo.s_total, statinfo.s_rooms,
-            statinfo.s_exits, statinfo.s_things, statinfo.s_players,
-             statinfo.s_garbage);
+            statinfo.s_exits, statinfo.s_things, statinfo.s_players, statinfo.s_garbage);
 }
 
 /*
@@ -7222,7 +7236,7 @@ FUN flist[] =
     {"ROUND",    fun_round,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"S",        fun_s,        1,       1,  1,       0, CA_PUBLIC},
     {"SCRAMBLE", fun_scramble, MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SEARCH",   fun_search,   1,       1,  1,       0, CA_PUBLIC},
+    {"SEARCH",   fun_search,   1,       0,  1,       0, CA_PUBLIC},
     {"SECS",     fun_secs,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"SECURE",   fun_secure,   1,       1,  1,       0, CA_PUBLIC},
     {"SET",      fun_set,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
