@@ -9415,7 +9415,9 @@ REGEXP SYNTAX
   TOPIC: Regular Expression Syntax
 
   The following explanation is taken from Henry Spencer's regexp(3)
-  package, the regular expression library used in TinyMUX.
+  package, the regular expression library used in TinyMUX up to version
+  2.2. After that, the PCRE package is used, which has many more features.
+  See a book that covers Perl's regular expressions for details..
 
           A regular expression is zero or more branches, separated by
           `|'.  It matches anything that matches one of the branches.
@@ -9495,17 +9497,22 @@ REGEXPS (continued)
   or '+setnum =10' or similarly malformed input.
 
   Also note that regexps are case-sensitive, but wildcard globbing
-  is not.
+  is not. Some regular expression functions offer case-insensitive 
+  versions, and any regexp can be made case-insensitive by putting 
+  (?i) at the start.
 
   Related Topics: regexp syntax
 
 & REGMATCH()
 REGMATCH()
+REGMATCHI()
 
   FUNCTION: regmatch(<string>,<regexp>[,<register list>])
 
   This function matches the regular expression <regexp> against the
   entirety of <string>, returning 1 if it matches and 0 if it does not.
+  Normally, the regular expression is case sensitive. The regmatchi()
+  version is not.
 
   If <register list> is specified, there is a side-effect: any
   parenthesized substrings within the regular expression will be set
@@ -9521,6 +9528,23 @@ REGMATCH()
   "cookies=30", %q3 will become "cookies", and %q5 will become "30".
   If <register list> was '0 -1 5', then the "cookies" substring would
   simply be discarded.
+
+  See 'help regexp syntax' for an explanation of regular expressions.
+
+& REGRAB()
+REGRAB()
+REGRABI()
+REGRABALL()
+REGRABALLI()
+
+  FUNCTION: regrab(<list>, <regexp>[, <seperator>])
+            regraball(<list>, <regexp>[, <seperator>])
+
+  These functions act like grab() and graball(), respectively, except
+  instead of matching with a wildcard pattern, they use a regular
+  expression. regrab() returns the first element of the list that matches
+  the regexp, and regraball() returns all the elements that match. 
+  They are case-sensitive. The versions ending in 'i' are case-insensitive.
 
   See 'help regexp syntax' for an explanation of regular expressions.
 

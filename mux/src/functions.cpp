@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.31 2002-06-24 23:40:24 sdennis Exp $
+// $Id: functions.cpp,v 1.32 2002-06-25 02:37:41 raevnos Exp $
 //
 
 #include "copyright.h"
@@ -124,6 +124,11 @@ XFUNCTION(fun_pop);
 XFUNCTION(fun_items);
 XFUNCTION(fun_lstack);
 XFUNCTION(fun_regmatch);
+XFUNCTION(fun_regmatchi);
+XFUNCTION(fun_regrab);
+XFUNCTION(fun_regrabi);
+XFUNCTION(fun_regraball);
+XFUNCTION(fun_regraballi);
 XFUNCTION(fun_translate);
 XFUNCTION(fun_doing);      // in netcommon.cpp
 XFUNCTION(fun_host);       // in netcommon.cpp
@@ -7624,6 +7629,11 @@ FUN flist[] =
     {"R",        fun_r,        MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"RAND",     fun_rand,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"REGMATCH", fun_regmatch, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REGMATCHI",fun_regmatchi,MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REGRAB",   fun_regrab,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REGRABALL",fun_regraball,MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REGRABALLI",fun_regraballi,MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REGRABI",  fun_regrabi,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"REMAINDER",fun_remainder,MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"REMIT",    fun_remit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"REMOVE",   fun_remove,   MAX_ARG, 2,  3,       0, CA_PUBLIC},

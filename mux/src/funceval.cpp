@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.18 2002-06-23 23:51:13 sdennis Exp $
+// $Id: funceval.cpp,v 1.19 2002-06-25 02:37:41 raevnos Exp $
 //
 
 #include "copyright.h"
@@ -3222,24 +3222,27 @@ FUNCTION(fun_push)
  * the regexp $1, $2, and $3 become r(0), r(3), and r(5), respectively.
  */
 
-FUNCTION(fun_regmatch)
+void real_regmatch(const char *search, const char *pattern, char *registers,
+		   int nfargs, char *buff, char **bufc, bool cis)
 {
   const char *errptr;
   int erroffset;
   const int ovecsize = 111;
   int ovec[ovecsize];
 
-    pcre *re = pcre_compile(fargs[1], 0, &errptr, &erroffset, NULL);
-    if (!re)
+  pcre *re = pcre_compile(pattern, cis ? PCRE_CASELESS : 0,
+			  &errptr, &erroffset, NULL);
+  if (!re)
     {
         // Matching error.
         //
-        notify_quiet(executor, errptr);
-        safe_chr('0', buff, bufc);
-        return;
+      safe_str("#-1 REGEXP ERROR ", buff, bufc);
+      safe_str(errptr, buff, bufc);
+      return;
     }
 
-    int matched = pcre_exec(re, NULL, fargs[0], strlen(fargs[0]), 0, 0, ovec, ovecsize);
+    int matched = pcre_exec(re, NULL, search, strlen(search), 0, 0,
+			    ovec, ovecsize);
     safe_ltoa(matched > 0, buff, bufc);
 
     // If we don't have a third argument, we're done.
@@ -3256,7 +3259,7 @@ FUNCTION(fun_regmatch)
     //
     const int NSUBEXP = 36;
     char *qregs[NSUBEXP];
-    int nqregs = list2arr(qregs, NSUBEXP, fargs[2], ' ');
+    int nqregs = list2arr(qregs, NSUBEXP, registers, ' ');
     for (int i = 0; i < nqregs; i++)
     {
         int curq;
@@ -3284,13 +3287,107 @@ FUNCTION(fun_regmatch)
                 {
                     len = 0;
                 }
-                memcpy(mudstate.global_regs[curq], fargs[0] + ovec[i*2], len);
+                memcpy(mudstate.global_regs[curq], search + ovec[i*2], len);
             }
             mudstate.global_regs[curq][len] = '\0';
             mudstate.glob_reg_len[curq] = len;
         }
     }
     MEMFREE(re);
+}
+
+FUNCTION(fun_regmatch)
+{
+  real_regmatch(fargs[0], fargs[1], fargs[2], nfargs, buff, bufc, false);
+}
+
+FUNCTION(fun_regmatchi)
+{
+  real_regmatch(fargs[0], fargs[1], fargs[2], nfargs, buff, bufc, true);
+}
+
+
+/* ---------------------------------------------------------------------------
+ * regrab(), regraball(). Like grab() and graball(), using a regular expression
+ * instead of a wildcard pattern. The versions ending in i are case-insensitive.
+ */
+
+void real_regrab(char *search, const char *pattern, char sep, char *buff,
+		 char **bufc, bool cis, bool all) {
+  pcre *re;
+  pcre_extra *study = NULL;
+  const char *errptr;
+  int erroffset;
+  const int ovecsize = 111;
+  int ovec[ovecsize];
+
+  re = pcre_compile(pattern, cis ? PCRE_CASELESS : 0,
+			  &errptr, &erroffset, NULL);
+  if (!re)
+    {
+        // Matching error.
+        //
+      safe_str("#-1 REGEXP ERROR ", buff, bufc);
+      safe_str(errptr, buff, bufc);
+      return;
+    }
+  
+  if (all)
+    study = pcre_study(re, 0, &errptr);
+
+  bool first = true;
+  char *s = trim_space_sep(search, sep);
+  do
+    {
+      char *r = split_token(&s, sep);
+      if (pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 1)
+        {
+	  if (first) 
+	    first = false;
+	  else
+	    safe_chr(sep, buff, bufc);
+	  safe_str(r, buff, bufc);
+	  if (!all)
+	    break;
+        }
+    } while (s);
+
+  MEMFREE(re);
+  if (study)
+    MEMFREE(study);
+}
+
+FUNCTION(fun_regrab) 
+{
+  char sep;
+  varargs_preamble(3);
+
+  real_regrab(fargs[0], fargs[1], sep, buff, bufc, false, false);
+}
+
+
+FUNCTION(fun_regrabi) 
+{
+  char sep;
+  varargs_preamble(3);
+
+  real_regrab(fargs[0], fargs[1], sep, buff, bufc, true, false);
+}
+
+FUNCTION(fun_regraball) 
+{
+  char sep;
+  varargs_preamble(3);
+
+  real_regrab(fargs[0], fargs[1], sep, buff, bufc, false, true);
+}
+
+FUNCTION(fun_regraballi) 
+{
+  char sep;
+  varargs_preamble(3);
+
+  real_regrab(fargs[0], fargs[1], sep, buff, bufc, true, true);
 }
 
 
