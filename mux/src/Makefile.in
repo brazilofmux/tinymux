@@ -1,0 +1,221 @@
+# Makefile for TinyMUX 2.1
+#
+# Search for the text 'CONFIGURATION SECTION' and make any changes needed
+# there.
+
+SHELL=/bin/sh
+srcdir = @srcdir@
+VPATH = @srcdir@
+BIN = ../game/bin
+CC = @CC@
+@def_force_c_compiler@
+ifdef FORCE_C_COMPILER
+CXX = @CC@
+else
+CXX = @CXX@
+endif
+#CXXCPP = @CXXCPP@	# This is broken in autoconf.  Sigh.
+CXXCPP = $(CXX) -E
+@def_brief_lib_list@
+ifdef BRIEF_LIB_LIST
+LIBS = -lm
+else
+LIBS = @LIBS@
+endif
+LIBOBJS = @LIBOBJS@
+.SUFFIXES: .cpp
+
+# After we finish beta testing, we'll take away the debugging -g flag.
+# If you don't use GCC, don't use -g. Add -pg for profiling (gprof netmux
+# gmon.out)
+#
+#OPTIM = -O
+#OPTIM = -g -pg -O
+OPTIM = -g -O
+
+# By default, WOD_REALMS is not enabled. If you wish to use WOD_REALMS,
+# uncomment the first 'switch' definition. Please read the docs/REALMS.
+#
+# NOTE: To ensure a clean build, please 'make clean' first.
+#
+#SWITCH_WOD_REALMS=Uncomment me.
+ifdef SWITCH_WOD_REALMS
+REALMS = -DWOD_REALMS
+endif
+
+# Disk-based caching is the default. If you wish to use memory-based,
+# uncomment the first 'switch' definition. Disk-based usually uses less memory,
+# but more disk space. Memory-based usually uses more memory, less disk-space,
+# and some gain in performance.
+#
+# NOTE: To ensure a clean build, please 'make clean' first.
+#
+#SWITCH_MEMORY_BASED=Uncomment me.
+ifdef SWITCH_MEMORY_BASED
+BASED = -DMEMORY_BASED
+endif
+
+# Source common to netmux and standalone code
+COM_SRC	=
+COM_OBJ	=
+
+# Everything needed to use the database in standalone mode.
+SA_SRC	= sa-db.cpp sa-db_rw.cpp sa-boolexp.cpp sa-unparse.cpp \
+	  sa-pred.cpp sa-stringu.cpp sa-conf.cpp sa-log.cpp sa-object.cpp \
+	  sa-vattr.cpp sa-htab.cpp sa-player_c.cpp sa-flags.cpp \
+	  sa-svdhash.cpp sa-svdrand.cpp sa-attrcache.cpp sa-timeutil.cpp
+SA_OBJ	= sa-db.o sa-db_rw.o sa-boolexp.o sa-unparse.o \
+	  sa-pred.o sa-stringu.o sa-conf.o sa-log.o sa-object.o \
+	  sa-vattr.o sa-htab.o sa-player_c.o sa-flags.o sa-svdhash.o \
+	  sa-svdrand.o sa-attrcache.o sa-timeutil.o
+
+# Distribution source files
+D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
+	comsys.cpp conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp eval.cpp \
+	file_c.cpp flags.cpp funceval.cpp functions.cpp game.cpp help.cpp \
+	htab.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp move.cpp \
+	muxcli.cpp netcommon.cpp object.cpp predicates.cpp player.cpp \
+	player_c.cpp powers.cpp quota.cpp rob.cpp pcre.cpp set.cpp \
+	speech.cpp stringutil.cpp strtod.cpp svdrand.cpp svdhash.cpp \
+        svdreport.cpp timer.cpp timeutil.cpp unparse.cpp vattr.cpp walkdb.cpp \
+	wild.cpp wiz.cpp
+D_OBJ	= _build.o alloc.o attrcache.o boolexp.o bsd.o command.o comsys.o \
+	conf.o cque.o create.o db.o db_rw.o eval.o file_c.o flags.o funceval.o \
+	functions.o game.o help.o htab.o log.o look.o mail.o match.o \
+	mguests.o move.o muxcli.o netcommon.o object.o predicates.o \
+	player.o player_c.o powers.o quota.o rob.o pcre.o set.o speech.o \
+	stringutil.o strtod.o svdrand.o svdhash.o svdreport.o timer.o \
+	timeutil.o unparse.o vattr.o walkdb.o wild.o wiz.o
+
+# Version number routine
+VER_SRC	= version.cpp
+VER_OBJ	= version.o
+VER_FLG	= -DMUX_BUILD_DATE="\"`date`\"" \
+	  -DMUX_BUILD_NUM="\"`sh ./buildnum.sh`\""
+
+# ===================== CONFIGURATION SECTION ====================
+#
+# Select the correct C compiler.  Whatever you choose, it must be able
+# to grok ANSI C (function prototypes)
+#
+#-----CC or GCC (must be able to grok function prototypes)
+#
+DEFS =
+#
+#-----CC on a NeXT system, really weird derivative of GCC
+#
+#DEFS = -DNEXT -DNEED_STRDUP
+#
+#-----GCC if the libraries were built for a pcc-derived cc compiler
+#     (most systems)
+#
+#DEFS = -fpcc-struct-return -Wall
+#
+#-----GCC with GCC-compatible libraries if you want verbose error messages
+#
+#DEFS = -Wall
+#
+#-----HP-UX C compiler
+#
+#DEFS = -w +Obb800 -Aa -D_INCLUDE_POSIX_SOURCE -D_INCLUDE_HPUX_SOURCE -D_INCLUDE_XOPEN_SOURCE
+#
+#-----MIPS C compiler (also DEC 3xxx, Prime EXL7xxx)
+#
+#DEFS = -signed
+#
+
+# Libraries.  Use the second line if you want to use the resolver to get
+# hostnames and your libc doesn't use it already.  If you use it, you'd
+# better have your nameserver working or things may hang for a while when
+# people try to login from distant sites.  Use the third line if you're running
+# on a SysV-ish system and BSD support isn't built in to the standard libc.
+#
+MORELIBS	= -lm
+#MORELIBS	= -lm -lnsl -lsocket -L/usr/ucblib -lucb	# Mips
+
+# Select the networking support you have.  Currently only BSD networking
+# is supported.
+#
+# ----- BSD networking
+NET_S	= bsd.cpp
+NET_O	= bsd.o
+
+# ================== END OF CONFIGURATION SECTION =================
+
+# Auxiliary source files: only used by offline utilities.
+#
+AUX_SRC	= dbconvert.cpp unsplit.cpp
+LIB_SRC = 
+LIB_INC = 
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(REALMS)
+
+#Auxiliary files
+A_INST	= README NOTES HIGHLIGHTS CREDITS CHANGES
+A_TXT	= badsite.txt connect.txt create_reg.txt down.txt guest.txt help.txt \
+	  motd.txt news.txt newuser.txt quit.txt register.txt wizhelp.txt \
+	  wizmotd.txt full.txt plushelp.txt wiznews.txt
+A_SH	= db_load db_unload db_check buildnum.sh
+A_RT	= Startmux mux.config
+A_CONF	= netmux.conf alias.conf compat.conf
+A_MISC	= buildnum.data
+A_VMS	= vms_dbm.cpp vms_dbm.h startmux.com compile.com link.com
+A_AUTO	= configure configure.in autoconf.h.in Makefile.in .depend
+AUXIL	= $(A_INST) $(A_TXT) $(A_SH) $(A_CONF) $(A_MISC) $(A_RT) $(A_VMS) \
+	  $(A_AUTO)
+
+# Compiliation source files.
+#
+ALLSRC	= $(D_SRC) $(VER_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC)
+SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S)
+OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O)
+
+OUT	= netmux dbconvert
+
+.cpp.o:
+	$(CXX) $(ALLCXXFLAGS) -c $<
+
+# paths is likely to remain broken
+all: slave $(OUT) links 
+
+TAGS: *.cpp *.h
+	etags *.cpp *.h
+
+links: dbconvert netmux slave
+	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/dbconvert dbconvert
+	cd ../game/bin ; rm -f netmux ; ln -s ../../src/netmux netmux
+	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
+
+slave: slave.o
+	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o slave slave.o
+
+unsplit: unsplit.o
+	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
+
+dbconvert: _build.o dbconvert.o $(SA_OBJ) $(ALLOC_O) $(LIBOBJS)
+	$(CXX) $(ALLCXXFLAGS) -o dbconvert _build.o dbconvert.o $(SA_OBJ) $(COM_OBJ) $(ALLOC_O) $(LIBS) $(MORELIBS) $(LIBOBJS)
+
+netmux: $(OBJ) $(LIBOBJS) $(VER_SRC)
+	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
+	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(LIBOBJS) $(VER_OBJ) $(LIBS) $(MORELIBS)
+
+cvs:
+	rm -f buildnum.data
+	echo "0" > buildnum.data
+
+depend: $(ALLSRC) unsplit
+	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	mv .depend~ .depend
+
+index: help.indx news.indx wizhelp.indx
+
+verify:
+	runtest --tool mux --src ./testsuite
+
+realclean:
+	-rm -f *.o a.out core gmon.out mux.*log mux.*sum $(OUT) netmux~
+
+clean:
+	-rm -f *.o a.out core gmon.out mux.*log mux.*sum slave $(OUT)
+
+include .depend

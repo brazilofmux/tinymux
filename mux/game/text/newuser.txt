@@ -1,0 +1,10 @@
+Welcome to the world of TinyMUX.  Explore places.  Meet people.  Have fun!
+If you need help, just ask somebody (type a double quote mark and then type
+your question, like this:
+
+"How do I keep people from picking me up?
+
+The question will appear to others in the same room as:
+
+<yourname> says "How do I keep people from picking me up?"
+------------------------------------------------------------------------------

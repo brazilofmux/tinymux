@@ -1,0 +1,5 @@
+& HELP
+NEWS
+
+  See http://www.tinymux.com
+

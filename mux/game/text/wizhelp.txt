@@ -1,0 +1,4235 @@
+& HELP
+
+  This is the MUX online help facility for wizard commands and topics.
+  The information provided by this command is generally not useful for
+  anyone other than wizards and game maintainers, as the features described
+  here are only accessible to characters whose WIZARD bit is set, or to those
+  who have access to the directory where the MUX data files reside.
+
+  Syntax of help command:
+     wizhelp [<command/topic>]
+
+  To get a list of MUX wizard topics:
+     wizhelp topics
+
+  To get a list of MUX wizard commands:
+     wizhelp commands
+
+  If there are any errors in the help text, please notify a Wizard.
+
+  Related Topics: help.
+
+& @ADDCOMMAND
+@ADDCOMMAND
+
+  COMMAND: @addcommand <name>=<thing>/<attribute>
+
+  This command has the capability of adding a softcoded command to the MUX's
+  built-in command table. If <name> already exists as a built-in command,
+  such as 'look' or 'WHO', it will actually replace the functionality of
+  that command, and all aliases that currently point to it. As in look's
+  case, the aliases 'l', 'lo', and 'loo', and the main command 'look' will
+  all point to these softcoded commands. The syntax of <thing>/<attribute> is
+  like any normal $command.
+
+  For example:
+
+  > &LOOK me=$look:say I looked here!
+  > &LOOK_WITH_ARG me=$look *:say I looked at %0!
+  > &LOOK_OUTSIDE me=$look/outside *:say I looked outside at %0!
+  > @addcommand look=me/look
+  > @addcommand look=me/look_with_arg
+  > @addcommand look=me/look_outside
+
+{ 'wizhelp @addcommand2' for more }
+
+& @ADDCOMMAND2
+@ADDCOMMAND (continued)
+
+  Yes, you can specify more than one attribute to go with <name>. When you
+  type 'look' or 'look sofa', the game will execute all attributes that
+  match what you have typed in. Aliases like 'l' are expanded to 'look' so
+  you don't have to worry about those when you take command matching into
+  consideration. If none of the attributes attached match (the attribute
+  *must* begin with $<name> in order to match at all!), no output will
+  be generated.
+
+  Another use is to speed up use of a particular global command. Just use
+  @addcommand to add it to the built-in list, and it will be looked up
+  much faster.
+
+  Related Topics: @delcommand, @listcommands.
+
+& @ADMIN
+@ADMIN
+
+  COMMAND: @admin <param>=<value>
+
+  Sets a TinyMUX configuration parameter to the indicated value. Type
+  'wizhelp config parameters' for a list of the config parameters that
+  may be set.
+
+& @ALLOWANCE
+@ALLOWANCE
+
+  ATTRIBUTE: Allowance
+
+  COMMAND: @allowance <object>[=<amount>]
+
+  Sets the amount of money that the player receives each day he/she connects
+  to the MUX.  The Allowance attribute overrides the default allowance
+  specified by the paycheck config parameter.
+
+  This attribute is only visible and settable by wizards.  It is only
+  meaningful for players, and has no effect on other object types.
+
+& @APPLY_MARKED
+@APPLY_MARKED
+
+  COMMAND: @apply_marked <command>
+
+  Performs <command> once for each object in the database that has its MARK
+  flag set, substituting the characters ## for the object number of the
+  marked object.  The command is performed by the player invoking the
+  @apply_marked command, not by the marked object.  This command may only
+  be used when database cleaning is disabled (via @disable cleaning),
+  as cleaning uses the MARKED flag to check connectivity.
+
+  Related Topics: @mark, @mark_all, MARKED.
+
+& @ATTRIBUTE
+@ATTRIBUTE
+
+  COMMAND: @attribute[/<switch>] <attrib>[=<value>]
+
+  Performs operations on user-named attributes depending on the switch used.
+  The following switches are available:
+
+     /access   - Changes the access to the named attribute.  <value> is a
+                 space-separated list of permissions to add or remove from
+                 the attribute's access permissions. For a list of possible
+                 values, see the related topic given below.
+
+     /delete   - Removes the named attribute from the attribute table.
+                 This switch does not remove instances of the attribute from
+                 objects, and any that remain will be renamed to the
+                 user-named attribute that re-uses the attribute number
+                 of the deleted attribute.
+
+     /rename   - Changes the name of the named attribute to <value>.
+
+  Note that changes to user-named attributes performed by this command
+  are permanent and do not need to be performed each time the MUX is
+  restarted.
+
+  Related Topics: attribute permissions
+
+& @BOOT
+@BOOT
+
+  COMMAND: @boot[/quiet] <player>
+           @boot/port <port#>
+
+  Severs the named player's connection to the game.  The player is given a
+  notice that they have been booted.  If the player is connected to the game
+  more than once, then all connections to that player are severed.
+
+  The following switches are available:
+
+    /quiet - Don't give the booted player any special notice.
+
+    /port  - Disconnects only a specific port.  In this case, <port#> must
+             be the port number obtained from the SESSION command.
+
+  Related Topics: @destroy, @toad, SESSION.
+
+& @CHOWN
+@CHOWN
+
+  COMMAND: @chown <object>=<player>
+
+  Wizards may @chown objects, rooms, and exits to other players.
+  @Chowned objects are set HALT.
+
+  Related Topics: @chownall.
+
+& @CHOWNALL
+@CHOWNALL
+
+  COMMAND: @chownall <victim>[=<recipient>]
+
+  Changes the ownership of all of the victim's objects, rooms, and exits to
+  the indicated recipient (or to the wizard performing the @chownall if
+  no recipient is specified).  All objects, rooms, and exits are set HALTED.
+
+  Related Topics: @chown.
+
+& @CLONE
+@CLONE
+
+  COMMAND: @clone[/<switches>] <object>
+
+  Wizards may also specify the /preserve switch, which preserves the original
+  owner of the object in the new copy, instead of creating the copy as being
+  owned by the wizard.
+
+& @COMMENT
+@COMMENT
+
+  ATTRIBUTE: Comment
+
+  COMMAND: @comment <object>[=<text>]
+
+  Sets a wizard-visible comment on the indicated object. This attribute is
+  only visible and settable by wizards.
+
+& @CUT
+@CUT
+
+  COMMAND: @cut <object/exit>
+
+  Cuts off the object or exit list for the current location at the indicated
+  object or exit by setting [next(thing)] to NOTHING.  Objects or exits that
+  follow in the chain are not moved or otherwise changed, and are only
+  accessible by object number.  This command is intended for performing
+  database repair, and should be used only with extreme caution.
+
+& @DBCK
+@DBCK
+
+  COMMAND: @dbck[/full]
+
+  Performs a scan of the database looking for inconsistencies in the object
+  chains, disconnected rooms, rooms waiting to be destroyed, and problems in
+  the object free list.  Problems that are found are reported to the log
+  file, disconnected rooms are reported to their owners, and players are
+  credited for rooms destroyed.  Database checks are automatically run
+  periodically, so there is usually no need to use this command.
+
+  With the /full switch, @dbck performs more thorough checking, but the
+  additional log messages will need more careful consideration and
+  interpretation.  Some of these messages can provide very useful insight
+  into the state of the database, but it doesn't make sense to run these
+  checks automatically.
+
+  Related Topics: @admin, @disable, @enable, @list.
+
+& @DBCLEAN
+@DBCLEAN
+
+  COMMAND: @dbclean
+
+  This command searches the entire database and removes any stale
+  user-defined attributes.  It should be used sparingly, as it may take many
+  minutes to execute, depending upon database size and machine speed.  Only
+  God may execute this command.
+
+& @DELCOMMAND
+@DELCOMMAND
+
+  COMMAND: @delcommand <name>[=<thing>/<attribute>]
+
+  Deletes a command added by @addcommand.  With only <name> specified,
+  deletes all added commands under <name>.  When you specify <thing> and
+  <attribute>, it only deletes that specific entry.  If the command or
+  commands you are deleting had replaced a built-in command, the built-in
+  command and all aliases are restored to their normal names and actions.
+
+  Related Topics: @addcommand, @listcommands.
+
+& @DESTROY
+@DESTROY
+
+  COMMAND: @destroy[/<switches>] <object>
+
+  Players are always considered SAFE.  Objects owned by other players are
+  not otherwise treated specially.
+
+& @DISABLE
+@DISABLE
+
+  COMMAND: @disable <option>
+
+  Turns off the indicated MUX runtime parameter.  The following parameters
+  may be turned off:
+
+    building      - Allows players to use the building commands.
+    checkpointing - Enables periodic database checkpoint dumping.
+    cleaning      - Enables periodic scanning of the database for rooms
+                    to be destroyed.
+    dequeueing    - Allows commands to be removed from the queue and
+                    executed.
+    idlechecking  - Enables periodic checking for and booting of idle
+                    players.
+    interpret     - Enables execution of commands that place commands
+                    on the queue.
+    logins        - Allows nonwizard players to connect to their characters.
+    eventchecking - Enables certain attribute events (@daily, etc) to occur.
+
+  These parameters are all enabled by default.
+
+  Related Topics: @enable, @list.
+
+& @DOING
+@DOING
+
+  COMMAND: @doing[/<switch>] <text>
+
+  Wizards may use the /header switch to set the Doing header in the WHO report.
+  If no header is specified, the header is reset to "Doing".
+
+& @DUMP
+@DUMP
+
+  COMMAND: @dump[/<switches>]
+
+  Writes a checkpoint dump of the database to disk.  Checkpoint dumps are
+  automatically performed periodically, so there is usually no need to use
+  this command.  Switches may be used to either dump just the structure
+  or text portions of the database to disk.  The default is to write out
+  both the text and structure portions.
+
+  All of the following switches may by used individually or together:
+
+     flatfile   - Dump an internally consistent flatfile which together
+                  with the mail and comsystem databases represent the
+                  entire database of game -- useful in a variety of ways
+                  including for a backup and for moving from one host to
+                  another.
+     structure  - Dump the structure portion of the database to a linear
+                  human-readable file.
+     text       - Ensure that all changes to the text portion of the
+                  database are written out to disk.
+
+  Note that the above structure and text options will cause your database and
+  certain caches to be out of sync. They should NOT be used in the course
+  of normal operation.
+
+  Related Topics: @admin, @disable, @enable, @list, @shutdown.
+
+& @ENABLE
+@ENABLE
+
+  COMMAND: @enable <option>
+
+  Turns on the indicated MUX runtime parameter.  The following parameters
+  may be turned on:
+
+    building      - Allows players to use the building commands.
+    checkpointing - Enables periodic database checkpoint dumping.
+    cleaning      - Enables periodic scanning of the database for rooms
+                    to be destroyed.
+    dequeueing    - Allows commands to be removed from the queue and
+                    executed.
+    idlechecking  - Enables periodic checking for and booting of idle
+                    players.
+    interpret     - Enables execution of commands that place commands
+                    on the queue.
+    logins        - Allows nonwizard players to connect to their characters.
+    eventchecking - Enables certain attribute events (@daily, etc) to occur.
+
+  These parameters are all enabled by default.
+
+  Related Topics: @disable, @list.
+
+& @FIXDB
+@FIXDB
+
+  COMMAND: @fixdb[/<switch>] <object>=<value>
+
+  This command directly edits the database structure according to the
+  switch specified.  As such, it is possible to produce database
+  inconsistencies that can hang or crash the server.  This command should
+  be used with extreme caution.
+
+  The following switches are available:
+
+     contents     - Sets the contents pointer of <object> to <value>
+     exits        - Sets the exits pointer of <object> to <value>
+     location     - Sets the location pointer of <object> to <value>
+     next         - Sets the next pointer of <object> to <value>
+     owner        - Sets the owner of <object> to <value>
+     pennies      - Sets the value or wealth of <object> to <value>
+     rename       - Renames <object> to <value>
+
+& @FLAG
+@FLAG
+
+  Command: @flag[/<switch>] <oldflag>[=<newflag>]
+
+  This command either removes aliases of existing flags, or renames the
+  flag.  For example, if you rename CONNECTED to BOBTHEWIZ, then
+  whenever you reference the previous 'CONNECTED' flag, it will be seen
+  as 'BOBTHEWIZ' instead.  This does not affect the character of 'c'
+  for the flag, only the name of it.  This takes effect until the server
+  is shutdown or rebooted.  To make a permanent addition, you need to
+  use the 'flag_name' config parameter in the conf file.
+  The flag name must be no less than three characters, no greater than
+  15 characters, and can not be a previously existing flag name.  If
+  such a condition exists, it will return an error.
+
+  Switches:
+     /remove - used to remove a flag's alias.
+
+  Examples:
+    @flag/remove con (removes alias 'con' for 'connected')
+    @flag connect=bobthewiz (renames 'connected' to 'bobthewiz')
+
+  Note: the previous naming conventions are referenced automatically as
+        aliases for the flag unless specifically removed.
+
+  Related Topics: flag_name.
+
+& @FUNCTION
+@FUNCTION
+
+  COMMAND: @function[/<switches>] <function>=<object>/<attr>
+
+  This command displays a list of currently-defined global functions or
+  adds a new global function named <function>.  When invoked, the
+  arguments to the function are loaded into %0-%9, the <attr> attribute
+  from <object> is fetched, and substitution is performed on the
+  resulting text.  The result of that substitution is returned as the
+  function result.
+
+  If no arguments are given, or if the /list switch is given, the command
+  displays a list of the currently-defined global functions. /privileged
+  functions are indicated with a 'W' and /preserve functions are indicated
+  with a 'p'.
+
+  If the /privileged switch is given, then the new global function is
+  evaluated as if the evaluation were being performed by the object on
+  which it is stored, instead of as if it were being performed by the
+  invoker of the function.  This may be used to allow access to
+  information normally available only to wizards.
+
+  The /preserve switch causes r-registers to be preserved across the
+  defined function, so you can feel free to use registers in the code
+  without worrying about them overwriting previous definitions.
+
+  The function definitions created by @function are not stored in the
+  database so they need to be re-created each time the MUX is started.
+  It is recommended that the Startup attribute for player #1 include
+  code to set up all global functions.
+
+  Function definitions may not be removed (aside from shutting down and
+  restarting the MUX, but they may be redefined so that they point to
+  an unused attribute.  This command may normally only be invoked by
+  player #1.
+
+& @HALT
+@HALT
+
+  COMMAND: @halt[/<switches>] [<object>]
+
+  This command can be used to halt commands being run by a specific object,
+  all commands being run by objects owned by a specific player, or all
+  commands in the game.  If <object> is not specified, the object running
+  the command is halted.  If the object being halted is a player, then
+  all commands being run by objects owned by that player are halted.
+  Halting an object does not affect commands waiting on it as a semaphore,
+  use the @drain command to reset a semaphore.
+
+  The /all switch may be used to halt all commands globally.
+
+  Related Topics: @drain, @notify, kill, HALTED, SEMAPHORES.
+
+& @HOOK
+@HOOK
+
+  Command: @hook[/<switch(s)>] [<command/attribute>]
+  
+  This command will set up 'hooks' to be applied to various commands or
+  attributes.  You may specify multiple hooks on items.  The HOOK_OBJ is
+  an @admin param that specifies the hook object.  The following hooks exist:
+
+         /before    - Set up a BEFORE hook which will execute before the
+                      corresponding built-in command/attribute is executed.
+                      The HOOK_OBJ attribute is b_<command>.
+
+         /after     - Set up an AFTER hook on a command which will execute
+                      after the corresponding built-in command/attribute is
+                      executed.  The HOOK_OBJ attribute is a_<command>.
+
+         /permit    - Affects command permission.  Return BOOLEAN TRUE to
+                      permit. Return FALSE to notify the enactor with
+                      'Permission denied.'.  The HOOK_OBJ attribute is
+                      p_<command>.
+
+         /ignore    - Return BOOLEAN FALSE to ignore the corresponding
+                      built-in command.  Any matching softcoded commands
+                      continue to be handled.  The HOOK_OBJ attribute is
+                      i_<command>.
+
+         /igswitch  - Specifies that any non-matching /switch to the command
+                      falls through and is handled by softcode.  This allows
+                      you to softcode switches to built-in commands.
+
+         /fail      - Set up a FAIL hook which executes if the command is
+                      somehow block by a @hook/permit or @icmd/disable.
+                      The HOOK_OBJ attribute is af_<command>.
+
+         /clear     - When used in junction with any of the above switches, 
+                      will clear the hook from being applied.
+
+         /list      - This lists the current commands/attributes with hooks.
+
+{ 'wizhelp @hook2' for examples}
+
+& @HOOK2
+@HOOK (continued)
+
+  Examples of @hook are as follows:
+
+    > @hook/before look 
+    @hook: new mask for 'look' -> before
+    > @hook/after look
+    @hook: new mask for 'look' -> before after
+    > @hook/igswitch look
+    @hook: new mask for 'look' -> before after igswitch
+    > @hook/igswitch/clear look
+    @hook: new mask for 'look' -> before after
+    > @hook/list (or just @hook will work)
+    ---------------------------------+---------------------------------------
+    Built-in Command                 | Hook Mask Values
+    ---------------------------------+---------------------------------------
+    look                             | before after
+    ---------------------------------+---------------------------------------
+    Built-in Attribute               | Hook Mask Values
+    ---------------------------------+---------------------------------------
+                               -- No @hooks defined --
+    ---------------------------------+---------------------------------------
+
+  Related Topics: hook_obj, hook_cmd, HOOK SETUP.
+
+& @ICMD
+@ICMD
+
+  Command: @icmd</switch> <player [= arguments]>
+
+  This command sets personal command permissions on a player.
+  It only is useful for removing commands and not granting them.
+  This command is available only to #1.
+  Possible switches are:
+    /ON       - Turn on personal command parsing so that it checks
+                against invalid commands for the player. (Default)
+    /OFF      - Turn off personal command parsing so that commands
+                by player parses normally.
+    /DISABLE  - Disables the given command so it returns a
+                Permission Denied. (Default)
+    /IGNORE   - This command actually removes from existence the
+                specified commands from the user's standpoint so
+                that it is skipped upon command execution checks.
+    /CHECK    - Displays a list of the specified players current
+                disabled commands and at what level.
+                1=disabled   2=ignored
+    /CLEAR    - Removes all icmd information from player.
+
+{ Type 'wizhelp @icmd2' for more switches }
+
+& @ICMD2
+@ICMD (continued)
+
+  Command: @icmd</switch> <player [= arguments]>
+  Continued Switches:
+
+    /IROOM    - This sets commands ignored on the location.
+                This is a NON-PLAYER.
+    /DROOM    - This sets commands disabled on the location.
+                This is a NON-PLAYER.
+    /CROOM    - Clears disabled/ignored commands on target location.
+                This is a NON-PLAYER.
+    /LROOM    - List disabled/ignored commands on target location.
+                This is a NON-PLAYER.
+    /LALLROOM - List all disabled/ignored commands at location
+                and zones from location.  Listings that start with
+                'z' are zonemasters.
+
+{ Type 'wizhelp @icmd3' for examples and syntax }
+
+& @ICMD3
+@ICMD (continued)
+
+  Command: @icmd</switch> <player [= arguments]>
+
+  The commands can be specified on the player in the form of:
+  COMMAND, !COMMAND, COMMAND, ..., etc
+
+  To remove the command from the player, a ! must be specified.
+  To change the level from DISABLE to IGNORE or visa versa, it
+  must first be REMOVED then ADDED.  For example:
+
+    @icmd/disable TinyJerk=page, whisper, @emit, @pemit
+    @icmd/ignore TinyJerk=!@pemit, !@emit, @pemit, @emit
+
+  The above would first set all four to disable.  The second
+  would remove @emit and @pemit and then re-add it as ignored.
+  The /disable switch is the default and assumed if no switches
+  are specified.  All aliases are taken into effect automatically.
+  For rooms you could do the following:
+
+    @icmd/droom here=page, whisper, @emit, @pemit
+    @icmd/iroom here=!@pemit, !@emit, @pemit, @emit
+
+  Example:  @icmd/ignore majortwit=page,",:,say,pose,@emit,@pemit,whisper,;
+            @icmd/ignore dimwit=page,!say,!",pose,:
+
+  Related Topics: access
+
+& @KICK
+@KICK
+
+  COMMAND: @kick <count>
+
+  Immediately executes the first <count> commands from the top of the queue.
+
+  Related Topics: @disable, @enable, @timewarp.
+
+& @LIST
+@LIST
+
+  COMMAND: @list [<option>]
+
+  Lists information from internal databases.  Information is available
+  about the following options:
+
+    allocations         attr_permissions    attributes          bad_names
+    buffers             commands            costs               db_stats
+    default_flags       flags               functions           globals
+    guests              hashstats           logging             options
+    permissions         powers              process             site_info
+    switches            user_attributes
+
+  Type wizhelp @list <option> for help with a particular option.
+
+& @LIST ALLOCATIONS
+@LIST ALLOCATIONS
+
+  COMMAND: @list allocations
+
+  This command lists the usage statistics for the internal buffer pools.
+  For each buffer pool, the following information is listed:
+
+    Size   - The size of a buffer, in characters.
+    InUse  - The number of buffers presently allocated from the pool.
+    Total  - The total number of buffers currently in the pool.
+    Allocs - The total number of buffers ever allocated from the pool.
+    Lost   - The number of buffers lost due to buffer header corruption.
+
+  Information is reported for the following pools:
+
+    Lbufs    - Large buffers, used when handling data input by the user,
+               object attributes, the results of interpreting commands, and
+               many other places.
+    Mbufs    - Medium-sized buffers, for when an sbuf is too small but an lbuf
+               is too large.
+    Sbufs    - Small buffers, for when you need only a little space.
+    Bools    - Boolean expressions, used when evaluating locks.
+    Descs    - Network descriptors, one is used for each connected player.
+    Qentries - Queue entries, one is used for each command placed on the
+               queue. (@wait, @trigger, @switch, @dolist, etc).
+
+  Related Topics: @list buffers.
+
+& @LIST ATTRIBUTES
+@LIST ATTRIBUTES
+
+  COMMAND: @list attributes
+
+  Lists the attributes that are visible or settable by you.
+
+  Related Topics: @list attr_access, @list permissions.
+
+& @LIST ATTR_PERMISSIONS
+@LIST ATTR_PERMISSIONS
+
+  COMMAND: @list attr_permissions
+
+  Lists the attributes and the access restrictions that have been placed on
+  them. The attributes are listed one per line.  Refer to the attr_access
+  config parameter for the meanings of the restrictions.
+
+  Note that being allowed to write to an attribute does not imply the right
+  to use the @<attr-name> shorthand command to set it, just the @set command.
+
+  Related Topics: @list permissions, attr_access.
+
+& @LIST BAD_NAMES
+@LIST BAD_NAMES
+
+  COMMAND: @list bad_names
+
+  This command lists the player names that are not allowed to be created.
+  Any create request (whether via the login screen or @pcreate) that matches
+  (after wildcard expansion) one of the names in the list will be rejected.
+
+& @LIST BUFFERS
+@LIST BUFFERS
+
+  COMMAND: @list buffers
+
+  For each buffer in a buffer pool that is currently allocated, lists where
+  within TinyMUX the buffer was allocated.
+
+& @LIST COMMANDS
+@LIST COMMANDS
+
+  COMMAND: @list commands
+
+  Lists the internal commands that you may execute.  This command does not
+  list the attribute-setting commands that you may use (like @va or @ahear),
+  and does not list exits in your current room or $-commands on objects.
+
+  Related Topics: @list attr_access, @list attributes, @list permissions.
+
+& @LIST COSTS
+@LIST COSTS
+
+  COMMAND: @list costs
+
+  Lists the costs that are associated with some commands, particularly those
+  that expand the database.
+
+& @LIST DB_STATS
+@LIST DB_STATS
+
+  COMMAND: @list db_stats
+
+  Lists statistics for the database cache. If compression is enabled,
+  displays compression statistics as well.
+
+& @LIST DEFAULT_FLAGS
+@LIST DEFAULT_FLAGS
+
+  COMMAND: @list default_flags
+
+  Lists the flags that are automatically given to players, things, rooms,
+  exits, and robots when they are created.
+
+  Related Topics: player_flags, thing_flags, room_flags, exit_flags,
+                  robot_flags.
+
+& @LIST FLAGS
+@LIST FLAGS
+
+  COMMAND: @list flags
+
+  For each object type, lists the name and key letter for all flags that may
+  be set on that object type that are visible to you.
+
+& @LIST FUNCTIONS
+@LIST FUNCTIONS
+
+  COMMAND: @list functions
+
+  Lists the functions that may be used to obtain information when evaluating
+  command lines.
+
+& @LIST GLOBALS
+@LIST GLOBALS
+
+  COMMAND: @list globals
+
+  Lists the global parameters that may be set or cleared by the @enable and
+  @disable commands.  The following parameters are displayed.
+
+    building      - Indicates whether or not commands that alter the
+                    structure of the database are allowed.
+    checkpointing - Indicates whether or not the database is to be
+                    periodically written to disk.
+    cleaning      - Indicates whether or not the database is to be
+                    periodically checked for deleted or disconnected rooms,
+                    and other connectivity problems.
+    dequeueing    - Indicates whether or not commands on the queue may be
+                    automatically executed.
+    idlechecking  - Indicates whether or not the inactivity limits are
+                    enforced.
+    interpret     - Indicates whether or not new commands may be added to
+                    the queue.
+
+{ 'wizhelp @list globals2' for more }
+
+& @LIST GLOBALS2
+@LIST GLOBALS (continued)
+
+    logins        - Indicates whether or not nonwizard players are allowed
+                    to connect.
+
+  Related Topics: @dbck, @disable, @enable, @kick, @list permissions,
+                  @timewarp, checkpoint, conn_timeout, dump_interval,
+                  dump_offset, idle_interval, idle_timeout.
+
+& @LIST GUESTS
+@LIST GUESTS
+
+  COMMAND: @list guests
+
+  Lists all the guests currently on the MUX, the name and dbref, if they are
+  connected or not, and the lastsite of the guest. A * before the entry
+  denotes that the guest will NOT be destroyed on an @dbck.
+
+& @LIST HASHSTATS
+@LIST HASHSTATS
+
+  COMMAND: @list hashstats
+
+  Lists the hashing statistics for each of the internal hash tables.
+  For each hash table, the following information is displayed:
+
+    Size    - The number of hash buckets in the hash table.
+    Entries - The number of entries currently in the hash table.
+    Deleted - The number of entries that have been deleted from the hash
+              table.
+    Empty   - The number of hash buckets with no entries.
+    Lookups - The number of times the hash table has been searched.
+    Hits    - The number of times that an item that was searched for was
+              found.
+    Checks  - The total number of comparisons made against hash table entries
+              to see if they were the desired entry.
+    Longest - The maximum number of entries in one hash bucket.
+
+{ 'wizhelp @list hashstats2' for more }
+
+& @LIST HASHSTATS2
+@LIST HASHSTATS (continued)
+
+  Information is displayed for the following hash tables:
+
+    Commands            - Internal MUX commands
+    Logged-out commands - Commands valid whether or not you are connected
+                          (such as WHO and QUIT).
+    Functions           - MUX functions, such as rand() and lexits().
+    Flags               - Names of flags.
+    Powers              - Names of powers.
+    Attribute names     - Object attribute names.
+    Attribute numbers   - Object attribute numbers (only used internally).
+    Player names        - Names of all players.
+    Net descriptors     - Mapping of player DB numbers to net descriptors.
+    News topics         - Topics for the news command.
+    Help topics         - Topics for the help command.
+    Wizhelp topics      - Topics for the wizhelp command.
+
+  Related Topics: alias, attr_alias, flag_alias.
+
+& @LIST LOGGING
+@LIST LOGGING
+
+  COMMAND: @list logging
+
+  Lists the type of information that is written to the log file and how it is
+  displayed.  The following types of information may be logged:
+
+    accounting     - Usage information on player disconnect.
+    all_commands   - All commands executed by anyone or anything.
+    bad_commands   - Commands that resulted in a 'Huh?' message.
+    buffer_alloc   - Allocates and frees of buffers in the buffer pools.
+    bugs           - Things that should never happen, but did.
+    checkpoints    - Writes of the database to disk.
+    config_changes - Changes in the configuration parameters.
+    create         - The creation of new players.
+    killing        - Use of the kill command, successful and unsuccessful.
+    logins         - Players connecting and disconnecting.
+    network        - New and dropped network connections.
+    problems       - Database inconsistencies that are found.
+    security       - Connect attempts with the wrong password, etc.
+    shouts         - Messages sent to all players or all wizards.
+    startup        - Events while starting up.
+    wizard         - Use of powerful wizard commands, like @toad.
+
+{ 'wizhelp @list logging2' for more }
+
+& @LIST LOGGING2
+@LIST LOGGING (continued)
+
+  The following formatting information is listed:
+
+    flags          - Include flags for players/objects/rooms listed.
+    location       - Include location if player/object when requested.
+    owner          - Include owner of objects/rooms listed.
+    timestamp      - Prefix log entries by a timestamp.
+
+  Related Topics: log, log_options.
+
+& @LIST OPTIONS
+@LIST OPTIONS
+
+  COMMAND: @list options
+
+  Lists the value of many of the configuration parameters.
+
+  Related Topics: @admin.
+
+& @LIST PERMISSIONS
+@LIST PERMISSIONS
+
+  COMMAND: @list permissions
+
+  For each command that you are allowed to use, lists the permissions that are
+  needed to execute it.
+
+  Related Topics: access, attr_cmd_access.
+
+& @LIST POWERS
+@LIST POWERS
+
+  COMMAND: @list powers
+
+  Lists the various powers.
+
+& @LIST PROCESS
+@LIST PROCESS
+
+  COMMAND: @list process
+
+  Lists information about the running MUX process and its resource usage.
+  The following information is returned:
+
+     Process number.
+     Pagesize of the system running the MUX, in bytes.
+     CPU time used, both user and system.
+     Maximum resident size, in both pages and bytes.
+     Integral resident size of the shared, private, and stack segments.
+        This number is not terribly useful.
+     Page faults, counting separately those that cause I/O and those that do
+        not.
+     Number of times the process has been swapped out.
+     Number of real disk reads and writes done (possibly via NFS).
+     Number of network packets read and written.
+     Context switches, counting separately voluntary switches (as the result
+        of calling a blocking I/O routine) and involuntarily switches (as the
+        result of a timeslice end or a higher-priority process becoming
+        runnable).
+     Signals received.
+     How many file descriptors are available to the MUX.
+
+& @LIST SITE_INFORMATION
+@LIST SITE_INFORMATION
+
+  Command: @LIST SITE_INFORMATION
+
+  Lists the contents of the site access and suspect lists.
+
+    Address - The address to which this entry applies.
+    Mask    - The mask that is ANDed to both the input address and the address
+              in the entry when checking to see if this entry is to be used.
+    Status  - Indicates what type of access or restriction is to be applied.
+              The following statuses may occur in the site access list:
+
+                Forbidden    - Connections from this site are rejected.
+                Registration - Connections from this site are accepted,
+                               new characters may not be created with the
+                               'create' command, players wanting a character
+                               must get a wizard to create one for them.
+                Unrestricted - Connections from this site are accepted,
+                               new characters may be created with the 'create'
+                               command.
+
+{ 'wizhelp @list site_information2' for more }
+
+& @LIST SITE_INFORMATION2
+@LIST SITE_INFORMATION (continued)
+
+              The following statuses may occur in the site suspect list:
+
+                Suspected    - Notify logged-in wizards of any connects or
+                               disconnects from this site.
+                Trusted      - Don't notify wizards of connects or disconnects
+                               from this site.
+
+  Related Topics: forbid_site, permit_site, register_site, suspect_site,
+                  trust_site, nositemon_site, guest_site.
+
+& @LIST SWITCHES
+@LIST SWITCHES
+
+  COMMAND: @list switches
+
+  Lists the commands that support switches as well as the switches that may
+  be used.
+
+& @LIST USER_ATTRIBUTES
+@LIST USER_ATTRIBUTES
+
+  COMMAND: @list user_attributes [<pattern>]
+
+  Lists the defined user-named attributes, along with their internal
+  attribute numbers and access restrictions.
+
+  If <pattern> is given, only the user-named attributes which match
+  the <pattern> are reported.
+
+& @LISTCOMMANDS
+@LISTCOMMANDS
+
+  COMMAND: @listcommands [<name>]
+
+  Lists commands added by @addcommand. With <name> specified, lists all
+  commands added under that particular command name. Without it, lists all
+  added commands.
+
+  Related Topics: @addcommand, @listcommands.
+
+& @LISTMOTD
+@LISTMOTD
+
+  COMMAND: @listmotd
+
+  Lists the current MOTD messages as set by the @motd command.
+
+  Related Topics: @motd.
+
+& @LIST_FILE
+@LIST_FILE
+
+  COMMAND: @list_file <file>
+
+  Lists the contents of one of the message files that are shown during the
+  connect/create/disconnect process as conditions warrant.  The following
+  files may be listed:
+
+     badsite_connect - shown when a connection is opened from a forbidden
+                       site.
+     connect          - shown when a connection is opened from a site for
+                        which registration is not enforced.
+     create_register  - shown when the 'create' command is used from a site
+                        for which registration is enforced.
+     down             - shown when a non-wizard attempts to connect to or
+                        create a character when logins are disabled.
+     full             - shown when a non-wizard attempts to connect to or
+                        create a character when the maximum number of connected
+                        players are connected.  Note that this is different
+                        from what happens when someone tries to connect but
+                        there are no free descriptors, which is
+                        machine-dependent (usually the connect attempt hangs
+                        or is rejected).
+     guest_motd       - shown to guest characters immediately after they
+                        connect.
+
+{ 'wizhelp @list_file2' for more }
+
+& @LIST_FILE2
+@LIST_FILE (continued)
+
+     motd             - shown to all players immediately after they connect.
+                        (except guests and players connecting for the first
+                        time)
+     newuser          - shown to players the first time they connect in place
+                        of the motd file.
+     quit             - shown to players when they disconnect from the game.
+     register_connect - shown when a connection is opened from a site for
+                        which registration is enforced.
+     wizard_motd      - shown to wizards when they connect in addition to
+                        the motd file.
+
+  Related Topics: @readcache, badsite_file, connect_file, connect_reg_file,
+                  down_file, guest_file, motd_file, newuser_file, quit_file,
+                  register_create_file, wizard_motd_file.
+
+& @LOCK
+@LOCK
+
+  COMMAND: @lock <object>=<key>
+
+  Note that with attribute locking, a WIZARD object can read any attribute of
+  any object, including attributes invisible to players.
+
+  Player #1 may also make attribute locks of the form <attr-num>:<value>
+  Note that if <attr-num> is not a valid attribute number, the lock will
+  never succeed.
+
+& @LOG
+@LOG
+
+  COMMAND: @log <file>=<message>
+
+  This logs the message (without timestamp) to the named file. Pathnames
+  are stripped, and the file resides in 'mux2.1/game/logs' under the name
+  'M-<file>.log'.
+
+  The file must already exist for the @log request to succeed, and can only
+  be created at the MUX account shell.
+
+& @MARK
+@MARK
+
+  COMMAND: @mark[/<switches>] [<player>] [<class>=<restriction>]
+
+  Sets or clears the MARKED flags for objects that match the search criteria.
+  This command may only be used when database cleaning is disabled (via
+  @disable cleaning), as cleaning uses the MARKED flag to check
+  connectivity.
+
+  The following switches are available:
+
+     /set    - (default) Set the MARKED flag on the selected objects.
+     /clear  - Clear the MARKED flag on the selected objects.
+
+  Related Topics: @apply_marked, @mark_all, MARKED, SEARCH CRITERIA.
+
+& @MARK_ALL
+@MARK_ALL
+
+  COMMAND: @mark_all[/<switches>]
+
+  Sets or clears the MARKED flag for all objects in the database.  This
+  command may only be used when database cleaning is disabled (via @disable
+  cleaning), as cleaning uses the MARKED flag to check connectivity.
+
+  The following switches are available:
+
+     /set    - (default) Set the MARKED flag on all objects.
+     /clear  - Clear the MARKED flag on all objects.
+
+  Related Topics: @apply_marked, @mark_all, MARKED.
+
+& @MOTD
+@MOTD
+
+  COMMAND: @motd[/<switches>] <message>
+
+  This command sets or lists short messages that are displayed to players
+  after they successfully log in to the game (or after they fail because
+  logins are not allowed).  These messages are displayed in addition to
+  the contents of the motd.txt and wizmotd.txt files.
+
+  The following switches are available:
+
+     (No switches)   - Sets the message that all players see when they
+                       connect.
+     /wizard         - Sets the message that wizards see when they connect.
+     /down           - Sets the message the players see when they try to
+                       connect, but fail because logins are disabled.
+     /full           - Sets the message that players see when they try to
+                       connect, but fail because there are too many players
+                       already connected.
+     /list           - Lists the current messages.
+
+  Related Topics: @listmotd.
+
+& @NEWPASSWORD
+@NEWPASSWORD
+
+  COMMAND: @newpassword <player>[=<newpassword>]
+
+  Gives <player> the new password <newpassword>.  If <newpassword> is not
+  specified, the player is given a null password.  If logged in, the player
+  is notified that his password has been changed.
+
+  Related Topics: @password.
+
+& @PCREATE
+@PCREATE
+
+  COMMAND: @pcreate <player>=<password>
+
+  Creates a new player with the indicated password.  This command is
+  equivalent to typing 'create <player> <password>' from the connection
+  screen, and is normally only used when registration is enabled.
+
+  Related Topics: REGISTRATION.
+
+& @POOR
+@POOR
+
+  COMMAND: @poor <amount>
+
+  Sets the wealth of all players to <amount>.
+
+& @PS
+@PS
+
+  COMMAND: @ps[/<switches>] [<object>]
+
+  Wizards may also use the /all switch to view the entire queue.
+
+  Related Topics: @ps (player version).
+
+& @QUOTA
+@QUOTA
+
+  Command: @quota[/<switches>] [<player>[=<quota>]]
+           @quota/all[/<switches>] [<quota>]]
+
+  Lists or sets the player's (or everyone's) remaining or total quota
+  according to the switches used.
+
+  The following switches are available:
+
+     /all       - Display or set the quota for all players.
+     /fix       - Repair the remaining or total quota, assuming that the other
+                  is correct.
+     /remaining - Set or repair the remaining quota.
+     /set       - Set the remaining or total quota to the specified value.
+     /total     - Set or repair the total quota.
+
+  Related Topics: QUOTAS.
+
+& @READCACHE
+@READCACHE
+
+  COMMAND: @readcache
+
+  Reads the commonly-used text files and re-indexes the help files into an
+  internal cache.  Use this command whenever you change one of the game's
+  text files.
+
+& @RESTART
+@RESTART
+
+  COMMAND: @restart
+
+  This command literally restarts the game. To the players, it appears as
+  merely a short pause in the action. There are many reasons to @restart,
+  including updating the source code, freeing built-up memory, etc.
+  @restart dumps and reloads the database, so you cannot use it to change the
+  database. You may recompile and use @restart to implement the changes
+  without having to @shutdown.
+
+  @restart maintains all connections, any relevant information about them
+  across restarts. Nothing should be adversely affected by an @restart.
+  However, it should be used sparingly due to the tedious nature of dumping
+  and loading the database.
+
+  NOTE: If you update the MUX binary with an outside binary, you should
+  never overwrite the old one. Instead, you should delete or move it, and
+  place the new binary in its place, for reasons beyond the scope of this
+  document. This warning does not apply if you remake the binary in your
+  game's source directory.
+
+  Sending the MUX process a SIGUSR1 from the shell account will also cause a
+  @restart.
+
+& @SHUTDOWN
+@SHUTDOWN
+
+  COMMAND: @shutdown <text>
+
+  Disconnects all connected players, saves the database to disk, and shuts
+  down the game.  The game is unavailable until it is restarted.  If an
+  argument is specified, it is written to the file named by the status_file
+  config directive.
+
+  Related Topics: status_file
+
+& @STARTSLAVE
+@STARTSLAVE
+
+  COMMAND: @startslave
+
+  This command restarts the slave process that does user and hostname
+  lookups. It should only be used it the slave process has locked up or died
+  for some reason.
+
+& @TIMECHECK
+@TIMECHECK
+
+  COMMAND: @timecheck[/<switches>]
+
+  An accounting of how much total CPU time has been used to execute commands
+  on each object.
+
+  Win9x caveat:  Win9x does not provide a number of how much CPU time the
+  MUX game server has consumed and so instead of CPU time, we use a
+  high-resolution elapsed time instead. For some CPUs, the resolution of
+  this clock can be as high as the processor itself, but as useful as this
+  is, this accounting does not make a distinction between time spent in the
+  server and time spent in another unrelated application.
+
+  The command takes the following switches:
+
+    /screen     Print information to the screen.
+    /log        Print information to the logfile.
+    /reset      Clear the counters.
+
+  If no switches are provided, printing to the screen and clearing the
+  counters are assumed. The counters are otherwise not cleared unless
+  /reset is specified.
+
+& @TIMEOUT
+@TIMEOUT
+
+  ATTRIBUTE: Timeout
+
+  COMMAND: @timeout <object>[=<seconds>]
+
+  Sets an idle timeout value on <object> that is different from the default
+  value.  If the value is non-numeric or less than or equal to zero, then
+  the default value is used.
+
+  This attribute is only visible and settable by wizards.  It is only
+  meaningful for players, and has no effect on other object types.
+
+  Related Topics: idle_timeout.
+
+& @TIMEWARP
+@TIMEWARP
+
+  COMMAND: @timewarp[/<switches>] <secs>
+
+  Subtracts (or adds if negative) <secs> to one or more internal timers,
+  depending on the switches specified from the following list:
+
+     /check    - The time left until the next consistency check and database
+                 cleaning.
+     /dump     - The time left until the next automatic checkpoint dump.
+     /idle     - The time left until the next check for idle users.
+     /queue    - (default) Adjusts the time-to-execute for all entries in the
+                 wait and semaphore queues.  Entries whose time-to-execute
+                 becomes less than the current time are then ready for
+                 execution. The contents of the object queue are also
+                 appended to the player queue.
+
+  Note: these flags may be specified together if desired.
+
+  Related Topics: @list options.
+
+& @TOAD
+@TOAD
+
+  COMMAND: @toad[/<switches>] <victim>[=<recipient>]
+
+  Turns the victim into an object (a slimy toad) and disconnects them from
+  the game.  The named recipient (or the @toading wizard) get ownership of
+  all the victim's things, rooms, and exits, as well as of the toad object
+  itself.
+
+  The following switches are available:
+
+    /no_chown - Don't change the ownership of the victim or his objects.
+
+  Related Topics: @boot, @chownall, @destroy.
+
+& @WALL
+@WALL
+
+  COMMAND: @wall[/<switches>] <message>
+
+  With no switches, shouts <message> to every connected player or to every
+  connected wizard, prefixed by either 'Announcement:' (if for everyone) or
+  'Broadcast:' (if for wizards).  The following switches can be used to get the
+  described effects:
+
+     /emit      - Format the message as an emit (ie send just <message>).
+     /pose      - Format the message as a pose (ie <yourname> <message>).
+     /wizard    - Only send the message to connected wizards.
+     /admin     - Send the message to connected wizards and royalty.
+     /no_prefix - Don't prepend 'Announcement:' or 'Broadcast:' to the message.
+
+  If neither /emit or /pose are used, you can format the message one of several
+  ways by specifying ':', ';', or '"' as the first character of the message.
+  ':' and ';' format the message as if /pose were specified, except that ';'
+  does not insert a space between your name and the message.  '"' formats the
+  message in normal @wall format (this is the default).
+  The message is also written to the log file.
+
+& ACCESS
+ACCESS
+
+  CONFIG PARAMETER: access <command> <permlist>
+
+  Modifies the permissions needed to execute the indicated command.
+  Specifying a permission adds it to the list of permissions required; to
+  remove a permission prefix it with a ! character.
+
+  Related Topics: PERMISSIONS, @list.
+
+& ALIAS
+ALIAS
+
+  CONFIG PARAMETER: alias <new> <old>.
+
+  Defines the command <new> to be an alias of the command <old>.
+
+  Related Topics: function_alias, flag_alias.
+
+& ALLOW_GUEST_FROM_REGISTERED_SITE
+ALLOW_GUEST_FROM_REGISTERED_SITE
+
+  CONFIG PARAMETER: allow_guest_from_registered_site
+  DEFAULT: yes.
+
+  With this option turned off, guests are not permitted to connect from
+  sites which have been register_site'd.
+
+  Game which use register_site as a more surgical version of forbid_site
+  may be interested in turn this option off. However, game which are
+  register_only will probably want to leave this option as defaulted.
+
+  Related Topics: register_site, SITE LISTS
+
+& ARTICLE_RULE
+ARTICLE_RULE
+
+  CONFIG PARAMETER: article_rule <article> <regular expression>
+  DEFAULT: All articles default to a.
+
+  article_rule adds a new rule to the list which the art function uses to
+  determine which article to use for a particular word (either a or an). New
+  rules are moved to the head of the rule-list so rules appearing later in the
+  configuration will override rules at the beginning; hence the most general
+  rules should come first followed by a set of exceptions. The art() function
+  tests for matches  in order, so only the first matching rule counts.
+
+  <article> is either 'a' or 'an' stating what article to give when art()
+  matches input to a rule.
+
+  <regular expression> is a regex which forms the body of the rule.
+
+  For most games the default set of rules in the configuration files should be
+  sufficient.
+
+  Example:
+    > @admin article_rule=an ^[aeiou]
+    > @admin article_rule=an ^herb
+    > say art(avocado)
+    You say "an"
+    > say art(head)
+    You say "a"
+    > say art(herb)
+    You say "an"
+    > say art(herbal)
+    You say "an"
+
+  Related topics: art(), regexps, @admin, config parameters.
+
+& ATTRIBUTE PERMISSIONS
+ATTRIBUTE PERMISSIONS
+
+  The following attribute flags are available:
+
+    const dark deleted god hidden ignore is_lock locked no_command no_inherit
+    private visual wizard.
+
+  Related Topics: @attribute.
+
+& ATTR_ACCESS
+ATTR_ACCESS
+
+  CONFIG PARAMETER: attr_access <attr> [!]<privilege> [[!]<privilege>]...
+
+  Changes the access rights to the named attribute.
+
+  The following privileges may be used:
+
+  private     - The attribute is visible only to those who can examine the
+                object.
+  internal    - The attribute is not visible to anyone.
+  wizard      - Only wizards may change the attribute.
+  hidden      - The attribute is visible only to wizards.
+
+  Related Topics:
+
+& ATTR_ALIAS
+ATTR_ALIAS
+
+  CONFIG PARAMETER: attr_alias <alias> <attr>.
+
+  Makes <alias> an alias for the attribute <attr>.
+
+  Related Topics:
+
+& ATTR_CMD_ACCESS
+ATTR_CMD_ACCESS
+
+  CONFIG PARAMETER: attr_cmd_access [!]<privilege> [[!]<privilege>]...
+
+  Changes the access rights on all attribute-setting commands in parallel.
+  Use this parameter to allow or deny access to the attribute-setting commands
+  as a group.  This directive should normally be followed by access directives
+  to properly set access to restricted attributes.
+
+  Related Topics: access, PERMISSION.
+
+& AUTOZONE
+AUTOZONE
+
+  CONFIG PARAMETER: autozone
+  DEFAULT: Yes
+
+  Whether newly-created objects are automatically of the same
+  zone as their creator, or they are left zone-less.
+
+  Related Topics:
+
+& BADSITE_FILE
+BADSITE_FILE
+
+  CONFIG PARAMETER: badsite_file <path>
+  DEFAULT: text/badsite.txt
+
+  Specifies the name of the file that is sent to new net connections from
+  sites that have been blocked from accessing the server.  The connection
+  is closed immediately after the file is sent.
+
+  Related Topics: forbid_site, permit_site.
+
+& BAD_NAME
+BAD_NAME
+
+  CONFIG PARAMETER: bad_name <wildcarded-name>
+
+  Specifies that any name that matches <wildcarded-name> may not be used as a
+  player name.  Attempts to create a player with a disallowed name (or to
+  rename to a disallowed name) will be rejected.  Normally, words that
+  lead off messages from MUX are disallowed, some sites may wish to disallow
+  some obscene names as well.
+
+  Related Topics:
+
+& CACHE_DEPTH
+CACHE_DEPTH
+
+  CONFIG PARAMETER: cache_depth <depth>
+  DEFAULT: none.
+
+  This option is obsolete. The cache in MUX 2.0 is controlled differently.
+
+  Related Topics: max_cache_size
+
+& CACHE_NAMES
+CACHE_NAMES
+
+  CONFIG PARAMETER: cache_names
+  DEFAULT: Yes
+
+  Whether or not to use object name caches.
+
+  Related Topics:
+
+& CACHE_TRIM
+CACHE_TRIM
+
+  CONFIG PARAMETER: cache_trim <yes/no>
+  DEFAULT: none.
+
+  This option is obsolete. The cache in MUX 2.0 is controlled differently.
+
+  Related Topics: max_cache_size
+
+& CACHE_WIDTH
+CACHE_WIDTH
+
+  CONFIG PARAMETER: cache_width <depth>
+  DEFAULT: none.
+
+  This option is obsolete. The cache in MUX 2.0 is controlled differently.
+
+  Related Topics: max_cache_size
+
+& CAUTIONS
+CAUTIONS
+
+  The @force command evaluates its argument before putting it on the queue.
+  Therefore, any ';' characters resulting from the evaluation that are
+  outside of any nested delimiters will cause what follows to be treated
+  as a separate command.
+
+& CHECK_INTERVAL
+CHECK_INTERVAL
+
+  CONFIG PARAMETER: check_interval <secs>
+  DEFAULT: 600.
+
+  Specifies how often (in seconds) the database is to be automatically
+  scanned for inconsistencies and purged of references to destroyed objects.
+  Any inconsistencies found are either fixed or recorded in the log file.
+
+  Related Topics: check_offset, @dbck.
+
+& CHECK_OFFSET
+CHECK_OFFSET
+
+  CONFIG PARAMETER: check_offset <secs>
+  DEFAULT: 300.
+
+  Specifies how long after startup the first automatic database check is
+  to be performed.  Subsequent checks are performed every check_interval
+  seconds.
+
+  Related Topics: check_interval, @dbck.
+
+& CLONE_COPIES_COST
+CLONE_COPIES_COST
+
+  CONFIG PARAMETER: clone_copies_cost <yes/no>
+  DEFAULT: NO
+
+  Indicates whether or not @cloned objects inherit the cost of the original.
+  If disabled, @cloned objects cost the same as a @create that doesn't specify
+  the object cost.  The new owner is charged the correct amount in either
+  case.
+
+  Related Topics: @clone.
+
+& COMMANDS
+COMMANDS
+
+  Help is available for the following MUX commands:
+
+  DOING          examine        give           SESSION        slay
+  WHO            wizhelp
+
+  @addcommand    @admin         @apply_marked  @attribute     @boot
+  @chown         @chownall      @clone         @cut           @dbck
+  @dbclean       @delcommand    @destroy       @disable       @doing
+  @dump          @enable        @fixdb         @function      @halt
+  @icmd          @kick          @list          @listcommands  @list_file
+  @listmotd      @lock          @log           @mark          @mark_all
+  @motd          @newpassword   @pcreate       @poor          @ps
+  @quota         @readcache     @restart       @shutdown      @startslave
+  @timecheck     @timewarp      @toad          @wall
+
+  @allowance     @comment       @timeout
+
+& COMMAND_QUOTA_INCREMENT
+COMMAND_QUOTA_INCREMENT
+
+  CONFIG PARAMETER: command_quota_increment <amount>
+  DEFAULT: 1
+
+  Specifies the number of commands by which the command quota for connected
+  users each timeslice.  Each command a user types in (commands executed by
+  machines do not count) decreases the quota by 1, and the user's commands are
+  only executed if the quota is greater than zero.
+
+  Related Topics: command_quota_max, timeslice.
+
+& COMMAND_QUOTA_MAX
+COMMAND_QUOTA_MAX
+
+  CONFIG PARAMETER: command_quota_max <amount>
+  DEFAULT: 100
+
+  Specifies the maximum value for the command quota for connected users.
+  A user's command quota is only increased if it is below this value.
+  Each command a user types in (commands executed by machines do not count)
+  decreases the quota by 1, and the user's commands are only executed if the
+  quota is greater than zero.
+
+  Related Topics: command_quota_increment, timeslice.
+
+& COMPRESSION
+COMPRESSION
+
+  CONFIG PARAMETER: compress <yes/no>
+  DEFAULT: no
+
+  Indicates whether or not the database is to be compressed using the
+  compress_program when it is written, and whether or not to check for a
+  compressed database to uncompress at startup.
+
+  Related Topics: compress_program, uncompress_program.
+
+& COMPRESS_PROGRAM
+COMPRESS_PROGRAM
+
+  CONFIG PARAMETER: compress_program <path>
+  DEFAULT: gzip
+
+  Specifies the program to be run to compress the database file when it is
+  written.  If database file compression is enabled, database dumps are piped
+  through this program on their way out to disk.
+
+  Related Topics: compression, uncompress_program.
+
+& COMSYS_DATABASE
+COMSYS_DATABASE
+
+  CONFIG PARAMETER: comsys_database <path>
+  DEFAULT: comsys.db
+
+  Specifies the file that comsystem and macro information is stored in.
+  This database is loaded at startup if either have_comsys or have_macros
+  are on.
+
+  Related Topics: have_comsys, have_macros.
+
+& CONFIG PARAMETERS
+CONFIG PARAMETERS
+
+  The following configuration parameters may be specified in the configuration
+  file, or given to the @admin command.  Type 'wizhelp <param>' for help on a
+  particular parameter.
+
+  access  alias  allow_guest_from_registered_site  article_rule  attr_access
+  attr_alias  attr_cmd_access  autozone  bad_name  badsite_file  cache_names
+  check_interval  check_offset  clone_copies_cost  command_quota_increment
+  command_quota_max  compress_program  compression  comsys_database
+  config_access  conn_timeout  connect_file  connect_reg_file  crash_database
+  create_max_cost  create_min_cost  dark_sleepers  default_home
+  destroy_going_now  dig_cost  down_file  down_motd_message  dump_interval
+  dump_message  dump_offset  earn_limit  eval_comtitle  events_daily_hour
+  examine_flags  examine_public_attrs  exit_flags  exit_quota
+  fascist_teleport  find_money_chance  fixed_home_message  fixed_tel_message
+  flag_access  flag_alias  flag_name  forbid_site  fork_dump  full_file
+  full_motd_message  function_access  function_alias
+  function_invocation_limit  function_recursion_limit  game_dir_file
+  game_pag_file  global_error_obj  good_name  guest_char_num  guest_file
+  guest_nuker  guest_prefix  guest_site  guests_channel  have_comsys
+  have_mailer  have_zones  helpfile hook_cmd  hook_obj  hostnames
+  idle_interval  idle_timeout  idle_wiz_dark  include  indent_desc
+  initial_size  input_database  kill_guarantee_cost  kill_max_cost
+  kill_min_cost  lag_maximum  link_cost  list_access  lock_recursion_limit
+
+{ 'wizhelp config parameters2' for more }
+
+& CONFIG PARAMETERS2
+CONFIG PARAMETERS (continued)
+
+  log  log_options  logout_cmd_access  logout_cmd_alias  look_obey_terse
+  machine_command_cost  mail_database  mail_expiration  master_room
+  match_own_commands  max_cache_size  max_players  min_guests
+  money_name_plural  money_name_singular  motd_file  motd_message  mud_name
+  newuser_file  nositemon_site  notify_recursion_limit  number_guests
+  open_cost  output_database  output_limit  page_cost  paranoid_allocate
+  parent_recursion_limit  paycheck  pemit_any_object  pemit_far_players
+  permit_site  player_flags  player_listen  player_match_own_commands
+  player_name_spaces  player_queue_limit  player_quota  player_starting_home
+  player_starting_room  port  postdump_message  power_alias  public_channel
+  public_flags  pueblo_message  queue_active_chunk  queue_idle_chunk
+  quiet_look  quiet_whisper  quit_file  quotas  raw_helpfile  read_remote_desc
+  read_remote_name  register_create_file  register_site  retry_limit
+  robot_cost  robot_flags  robot_speech  room_flags  room_quota  run_startup
+  sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords  search_cost
+  see_owned_dark  signal_action  site_chars  space_compress  stack_limit
+  starting_money  starting_quota  status_file  suspect_site  sweep_dark
+  switch_default_all  terse_shows_contents  terse_shows_exits
+  terse_shows_move_messages  thing_flags  thing_quota  timeslice
+  toad_recipient  trace_output_limit  trace_topdown  trust_site
+  uncompress_program  unowned_safe  use_http  user_attr_access  wait_cost
+  wizard_motd_file  wizard_motd_message  zone_recursion_limit
+
+& CONFIG_ACCESS
+CONFIG_ACCESS
+
+  CONFIG PARAMETER: config_access <param> [!]<privilege> [[!]<privilege>]...
+
+  Changes the privileges needed to change the specified configuration
+  parameter.  The value 'disabled' indicates that the parameter may only
+  be specified in the configuration file at startup.  Setting privileges
+  to anything other than disabled or god is meaningless unless the
+  restriction on the @admin command is weakened.
+
+  Related Topics: @admin, @list config_permissions, PERMISSIONS.
+
+& CONNECT_FILE
+CONNECT_FILE
+
+  CONFIG PARAMETER: connect_file <path>
+  DEFAULT: text/connect.txt
+
+  Specifies the name of the file that a user sees immediately after connecting
+  to the MUX if registration is not enabled.  This file normally contains
+  help on how to connect to or create a character, as well as the WHO and QUIT
+  commands.
+
+  Related Topics: connect_reg_file
+
+& CONNECT_REG_FILE
+CONNECT_REG_FILE
+
+  CONFIG PARAMETER: connect_reg_file <path>
+  DEFAULT: text/register.txt
+
+  Specifies the name of the file that a user sees immediately after connecting
+  to the MUX if registration is enabled.  This file normally contains
+  help on how to get a character (usually by sending e-mail to one of the
+  wizards), how to connect to an existing character, as well as the WHO and
+  QUIT commands.
+
+  Related Topics: connect_file
+
+& CONN_TIMEOUT
+CONN_TIMEOUT
+
+  CONFIG PARAMETER: conn_timeout <num>
+  DEFAULT: 60
+
+  Specifies how many seconds a new network connection may remain open before
+  connecting to a character before being automatically disconnected.
+
+& CONTACT INFO
+CONTACT INFO
+
+  Put information about how to contact the wizards and game maintainer
+  in here so they can contact one another when the game is down.
+
+& CRASH_DATABASE
+CRASH_DATABASE
+
+  CONFIG PARAMETER: crash_database <path>
+  DEFAULT: <input db>.CRASH
+
+  Specifies the name of the database file that should be written when MUX
+  detects an internal error and is about to crash. The file is generated
+  in flatfile format with attribute values included.
+
+& CREATE_MAX_COST
+CREATE_MAX_COST
+
+  CONFIG DIRECTIVE: create_max_cost <amount>
+  DEFAULT: 505
+
+  Specifies the maximum amount of money that is used in calculating the value
+  of a created object.  Specifying more than this amount of money in a @create
+  command will cause the excess to be wasted.
+
+  Related Topics: create_min_cost, sacrifice_adjust, sacrifice_factor.
+
+& CREATE_MIN_COST
+CREATE_MIN_COST
+
+  CONFIG DIRECTIVE: create_min_cost <amount>
+  DEFAULT: 10
+
+  Specifies the minimum (and default) cost for creating an object.
+
+  Related Topics: create_max_cost, sacrifice_adjust, sacrifice_factor.
+
+& DARK_SLEEPERS
+DARK_SLEEPERS
+
+  CONFIG DIRECTIVE: dark_sleepers <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not disconnected players are to be considered 'dark',
+  so that they do not show up when a player looks in the room that they are
+  in.  Disconnected players can still be found by examining the room or by
+  using [next()] to follow the contents chain for the room.
+
+& DEBUG FEATURES
+DEBUG FEATURES
+
+  This topic intentionally left blank.
+
+& DEFAULT_HOME
+DEFAULT_HOME
+
+  CONFIG DIRECTIVE: default_home <location>
+  DEFAULT: (player_starting_home)
+
+  Sets the home location for objects which have an invalid home (whether
+  because the home location was deleted, or is owned by another player and
+  is not set ABODE) and the home of their owner is also invalid.  If this
+  parameter is not set, the value of player_starting_home is used instead.
+
+  Related Topics: player_starting_home.
+
+& DESTROY_GOING_NOW
+DESTROY_GOING_NOW
+
+  CONFIG PARAMETER: destroy_going_now [yes/no]
+  DEFAULT: No
+
+  By default, @destroy only queues an object for destruction on the news
+  auto-@dbck cycle. However, if this configuration option is enabled, a
+  second @destroy on a previously queued request causes the destruction to
+  occur immediately.
+
+  This behavior is for compatibility with PennMUSH.
+
+& DIG_COST
+DIG_COST
+
+  CONFIG PARAMETER: dig_cost <amount>
+  DEFAULT: 1
+
+  Specifies how much the @dig command costs.
+
+& DOING
+DOING
+
+  COMMAND: DOING <prefix>
+
+  This command is very similar to the mortal WHO command (the wizard WHO
+  command returns different information).  When run by a wizard, the DOING
+  command reports additional information about the player in the form of flag
+  letters between the idle time and the players' Doing string.  The following
+  letters may be present:
+
+  D - Player is set DARK.
+  d - Player is not shown on the WHO list because they have been idle for
+      longer than the default inactivity timeout and the idle_dark_wiz
+      configuration parameter has been turned on. (only if not D)
+  U - Player is set UNFINDABLE.
+  u - Player is in an UNFINDABLE location (only if not U).
+  + - Player is set SUSPECT.
+
+  Related Topics: SESSION, WHO, DARK, UNFINDABLE, SUSPECT, idle_dark_wiz.
+
+& DOWN_FILE
+DOWN_FILE
+
+  CONFIG PARAMETER: down_file <pathname>.
+  DEFAULT: text/down.txt
+
+  Specifies the name of the file that is displayed when players attempt to
+  connect to a non-wizard character when logins are disabled.
+
+  Related Topics: @disable, down_motd_message.
+
+& DOWN_MOTD_MESSAGE
+DOWN_MOTD_MESSAGE
+
+  CONFIG PARAMETER: down_motd_message <message>
+  DEFAULT: text/down.txt
+
+  Sets the message that is displayed when a player attempts to connect to a
+  non-wizard character when logins are disabled.  This message is displayed
+  in addition to the contents of the down.txt file.
+
+  Related Topics: @disable, down_motd_file.
+
+& DUMP_INTERVAL
+DUMP_INTERVAL
+
+  CONFIG PARAMETER: dump_interval <amount>
+  DEFAULT: 3600
+
+  Specifies the time in seconds between automatic database dumps.
+
+  Related Topics: dump_offset, output_database.
+
+& DUMP_MESSAGE
+DUMP_MESSAGE
+
+  CONFIG PARAMETER: dump_message <message>
+  DEFAULT: blank
+
+  Sets the message that is sent to everyone before the database is being
+  dumped to disk, whether automatically or via the @dump command.
+
+  Related Topics: @dump, postdump_message.
+
+& DUMP_OFFSET
+DUMP_OFFSET
+
+  CONFIG PARAMETER: dump_offset <amount>
+  DEFAULT: 0
+
+  Specifies the time in seconds between startup and the first database dump.
+  If zero, the value of the dump_interval parameter is used.
+
+  Related Topics: dump_interval.
+
+& EARN_LIMIT
+EARN_LIMIT
+
+  CONFIG PARAMETER: earn_limit <amount>
+  DEFAULT: 10000
+
+  Specifies the threshold at which earning additional money becomes
+  difficult.  Specifically, players with more than this much money no longer
+  receive a paycheck for each day they connect, don't receive insurance
+  payments for being killed, and don't find money lying in the streets.
+
+  Related Topics: find_money_chance, paycheck.
+
+& EVAL_COMTITLE
+EVAL_COMTITLE
+
+  CONFIG PARAMETER: eval_comtitle <yes/no>
+  DEFAULT: yes
+
+  Specifies whether or not comtitles are evaluated as code each time
+  a pose is made on channel.
+
+& EVENTS_DAILY_HOUR
+EVENTS_DAILY_HOUR
+
+  CONFIG PARAMETER: events_daily_hour <hour>
+  DEFAULT: 7
+
+  Specifies the hour that @daily is executed. No guarantee is made as to what
+  time during this hour it is executed. This should be a integer between 0 and
+  23.
+
+& EXAMINE
+EXAMINE
+
+  COMMAND: examine[/<switches>] [<object>]
+
+  Wizards may use the /debug switch to see additional information about the
+  object.  The Owner, Exits, Next, and Contents fields of the object are
+  shown in numeric form only, and an attribute list is included.
+
+& EXAMINE_FLAGS
+EXAMINE_FLAGS
+
+  CONFIG PARAMETER: examine_flags <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not the examine command should include an expanded
+  flags list in the description of the object.
+
+  Related Topics: examine.
+
+& EXAMINE_PUBLIC_ATTRS
+EXAMINE_PUBLIC_ATTRS
+
+  CONFIG PARAMETER: examine_public_attrs <yes/no>
+  DEFAULT: yes
+
+  Indicate whether or not the examine command should display the public
+  attributes of the object by default when used by a player who does not
+  control the object.  Regardless of the setting of this parameter, the
+  short form is available with examine/brief and the long form with
+  examine/long.
+
+  Related Topics: examine.
+
+& EXIT_FLAGS
+EXIT_FLAGS
+
+  CONFIG PARAMETER: exit_flags <flags>
+  DEFAULT: blank
+
+  Modifies the set of flags that an exit receives when it is created via the
+  @open command or via the optional exit creation parameters of the @dig or
+  @link commands.  Flags prefixed by a ! remove the indicated flag from the
+  set.
+
+  Related Topics: @list, player_flags, robot_flags, room_flags, thing_flags.
+
+& EXIT_QUOTA
+EXIT_QUOTA
+
+  CONFIG PARAMETER: exit_quota <amount>
+  DEFAULT: 1
+
+  Sets how much quota it costs to create an exit (and also how much the
+  remaining quota is increased when an exit is @destroyed.
+
+  Related Topics: @quota, player_quota, room_quota, thing_quota, QUOTAS.
+
+& FASCIST_TELEPORT
+FASCIST_TELEPORT
+
+  CONFIG PARAMETER: fascist_teleport <yes/no>
+  DEFAULT: no
+
+  If this parameter is set to yes, then players (and objects) may not
+  teleport out of locations that they do not control or which are not set
+  JUMP_OK.  If the teleporting player is inside an object, the room that
+  ultimately contains the object is checked.  Going home is unaffected.
+
+& FILES
+FILES
+
+  TinyMUX uses these files (normally kept in the same directory as the
+  database files and the netmux program) to display information under
+  certain circumstances.  The names of the files used can be changed with
+  configuration directives (or on the netmux command line, in the case of
+  netmux.conf).
+
+  badsite.txt:    Displayed when someone connects from a site that is not
+                  allowed to connect.  The connection is then closed.
+  connect.txt:    Displayed when someone connects from a site for which
+                  registration is not enabled.
+  create_reg.txt: Displayed when someone tries to 'create' a character from
+                  a site for which registration is enforced.
+  down.txt:       Displayed when someone tries to connect to a non-wizard
+                  character when logins are disabled.
+  help.txt:       File containing information displayed by the help command.
+
+{ 'wizhelp files2' for more }
+
+& FILES2
+FILES (continued)
+
+  guest.txt:      Displayed to whoever connects to the guest character
+                  specified by the guest_character config parameter.
+  motd.txt:       Displayed after someone connects to an existing character.
+  netmux.conf:    Configuration directives read at startup.
+  news.txt:       File containing information displayed by the news command.
+  newuser.txt:    Displayed after someone creates a new character or connects
+                  to their character for the first time.
+  quit.txt:       Displayed after someone QUITs but before the net connection
+                  is closed.
+  register.txt:   Displayed when someone connects from a site for which
+                  registration is enabled.
+  wizhelp.txt:    File containing information displayed by the wizhelp
+                  command.
+  wizmotd.txt:    Displayed to wizards when they connect to their characters.
+
+  Related Topics: badsite_file, connect_file, connect_reg_file, down_file,
+                  guest_file, helpfile, raw_helpfile, motd_file, newuser_file,
+                  quit_file, register_create_file, wizard_motd_file.
+
+& FIND_MONEY_CHANCE
+FIND_MONEY_CHANCE
+
+  CONFIG PARAMETER: find_money_chance <amount>
+  DEFAULT: 0
+
+  Indicates the chance that players have of finding money when entering a
+  new room.  The chance is 1 / find_money_chance, except that finding money
+  is disabled if this parameter is set to zero.
+
+  Related Topics: earn_limit, paycheck.
+
+& FIXED_HOME_MESSAGE
+FIXED_HOME_MESSAGE
+
+  CONFIG PARAMETER: fixed_home_message <string>
+  DEFAULT: none
+
+  Specifies the string that is sent to a player when they try to go home
+  while they are set with the FIXED flag.
+
+  Related Topics: fixed_tel_message.
+
+& FIXED_TEL_MESSAGE
+FIXED_TEL_MESSAGE
+
+  CONFIG PARAMETER: fixed_tel_message <string>
+  DEFAULT: none
+
+  Specifies the string that is sent to a player when they try to teleport
+  while they are set with the FIXED flag.
+
+  Related Topics: fixed_home_message.
+
+& FLAGS
+FLAGS
+
+  Information is available on the following flags:
+
+  INHERIT(i)         MARKED(m)          STARTUP(z)         SUSPECT(u)
+  WIZARD(W)
+
+& FLAG_ACCESS
+FLAG_ACCESS
+
+  CONFIG PARAMETER: flag_access <flag name> <access>
+
+  Changes who can set a flag. <access> can be:
+
+  any             - Anyone can set this flag.
+  god             - Only God can set this flag.
+  privileged      - Only God can set this flag on players, but non-robot
+                    players can set it on objects of other types, if
+                    they themselves have the flag.
+  restrict_player - Only Wizards can set this flag on players, but
+                    mortals can set the flag on objects of other types.
+  royalty         - Only Royalty, Wizards, and God can set this flag.
+  staff           - Only Staff, Royalty, Wizards, and God can set this flag.
+  wizard          - Only Wizards and God can set this flag.
+
+  There are some flags whose access permissions cannot be changed,
+  since they are handled in a special way. This includes the DARK,
+  and AUDIBLE flags.
+
+& FLAG_ALIAS
+FLAG_ALIAS
+
+  CONFIG PARAMETER: flag_alias <alias> <flagname>
+
+  Defines <alias> as a synonym for the flag <flagname>.
+
+  Related Topics: alias, function_alias.
+
+& FLAG_NAME
+FLAG_NAME
+
+  Config parameter: flag_name <newflagname> <oldflagname>
+
+  Redefines what the given flag is called.  This config parameter is only
+  useable within the conf file.  Use @flag to change them online.
+
+  Related Topics: @flag
+
+& FORBID_SITE
+FORBID_SITE
+
+  CONFIG PARAMETER: forbid_site <site>
+
+  Indicates that connections are to be rejected from sites whose address
+  matches the specified sit.  The contents of the file specified by
+  badsite_file is sent immediately before closing the connection.  This
+  directive may be used to restrict access to just the local network, or to
+  prevent access from troublemaking sites.  The default is for all sites to
+  be allowed to connect, none forbidden.
+
+  Related Topics: badsite_file, permit_site, register_site, guest_site, 
+                  SITE LISTS, SITE NOTATION,
+
+& FORK_DUMP
+FORK_DUMP
+
+  CONFIG PARAMETER: fork_dump <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not database dumps are to be done by fork()ing off a
+  separate process to perform the dump.  While enabling this parameter reduces
+  the amount of time needed to perform the dump, it requires that the system
+  have enough free swap space to hold a second copy of the running game.
+
+  Related Topics:
+
+& FULL_FILE
+FULL_FILE
+
+  CONFIG PARAMETER: full_file <pathname>
+  DEFAULT: text/full.txt
+
+  Specifies the name of the file that is displayed when players attempt to
+  connect to a non-wizard character when the number of connected players
+  is not less than the number of players allowed by the max_players directive.
+
+  Related Topics: full_motd_message, max_players.
+
+& FULL_MOTD_MESSAGE
+FULL_MOTD_MESSAGE
+
+  CONFIG PARAMETER: full_motd_message <message>
+  DEFAULT: blank
+
+  Sets the message that is displayed when a player attempts to connect to a
+  non-wizard character when the number of connected players is not less than
+  the number of players allowed by the max_players directive.  This message is
+  displayed in addition to the contents of the full.txt file.
+
+  Related Topics: down_motd_file, max_players.
+
+& FUNCTION_ACCESS
+FUNCTION_ACCESS
+
+  CONFIG PARAMETER: function_access <function> [!]<priv> [[!]<priv>]...
+
+  Changes the privileges needed to call the MUX function <function>.
+  If you do not have permission to call a function, the function
+  returns the value "#-1 PERMISSION DENIED" instead of the value it
+  would normally return.
+
+  Related Topics: @list functions, FUNCTION LIST, PERMISSIONS.
+
+& FUNCTION_ALIAS
+FUNCTION_ALIAS
+
+  CONFIG PARAMETER: function_alias <alias> <funcname>
+
+  Defines <alias> as a synonym for the function <funcname>.
+
+  Related Topics: alias, flag_alias.
+
+& FUNCTION_INVOCATION_LIMIT
+FUNCTION_INVOCATION_LIMIT
+
+  CONFIG PARAMETER: function_invocation_limit <num>
+  DEFAULT: 2500
+
+  This directive sets the maximum number of times that a command may make
+  function calls.  If the invocation limit is exceeded, the string
+  '#-1 FUNCTION INVOCATION LIMIT EXCEEDED' is returned.  This limit is
+  intended to prevent long hangs from creative uses of u() and iter().
+  Note: @search is treated specially, each object examined with the
+  eval=<arg> parameter is treated as a separate command for the purposes
+  of the function invocation limit.
+
+& FUNCTION_RECURSION_LIMIT
+FUNCTION_RECURSION_LIMIT
+
+  CONFIG PARAMETER: function_recursion_limit <num>
+  DEFAULT: 50
+
+  This directive sets the maximum number of nested function calls that
+  may be made before the function call is aborted and the string
+  '#-1 FUNCTION RECURSION LIMIT EXCEEDED' is returned.  Normally this is not
+  a problem, but the u() function can be used to cause infinite recursion
+  (unless blocked by a recursion limit)
+
+& GAME_DIR_FILE
+GAME_DIR_FILE
+
+  CONFIG PARAMETER: game_dir_file <path>
+
+  This configuration option specifies the file name of the 'directory' portion
+  of the CHashFile attribute database. If this file is deleted, CHashFile will
+  automatically re-created it.
+
+  It is read into memory at startup and re-written during page splits in the
+  'pages' portion of the database.
+
+  Related Topics: game_pag_file
+
+& GAME_PAG_FILE
+GAME_PAG_FILE
+
+  CONFIG PARAMETER: game_pag_file <path>
+
+  This configuration option specifies the file name of the 'pages' portion of
+  the CHashFile attribute database. Unlike the 'directory' portion, this
+  portion cannot be replaced. Attribute values themselves are stored in this
+  file.
+
+  Related Topics: game_dir_file
+
+& GDBM_DATABASE
+GDBM_DATABASE
+
+  CONFIG PARAMETER: gdbm_database <path>
+
+  MUX 2.0 maintains a database in a different way. This configuration
+  option is obsolete.
+
+  Related Topics: game_dir_file, game_pag_file
+
+& GIVE
+GIVE
+
+  COMMAND: give[/<switches>] <who> = <what>
+
+  Wizards may use the /quiet switch to suppress the 'You give X to P' and
+  'P gave you X' messages.  Other messages related to giving objects
+  (such as the xDROP and XSUCC attributes on the object being given, or
+  error messages) are not suppressed.
+
+& GLOBAL_ERROR_OBJ
+GLOBAL_ERROR_OBJ
+
+  CONFIG DIRECTIVE: global_error_obj <dbref>
+  DEFAULT: -1
+
+  Specifies the object that it looks for, to evaluate an attribute
+  whenever a 'Huh? (Type 'help' for help)' would have shown up.
+  The attribute is the VA attribute (settable by @va or &va), and
+  will evaluate like you would in a @pemit, think, or other command.
+  The enactor is %#, though it is evaluated by the object itself.
+  This _CAN_ be a security risk if not done properly, but is done
+  that way on purpose.  The string they typed will be passed as %0.
+  It will be unevaluated and 'as-is'.
+
+  Why the VA attribute?  Why not?  I felt it was being all alone
+  and left out of the fun ;)
+
+  Original code and helpfile from RhostMUSH. Used with permission.
+
+  Example:
+    > @admin global_error_obj=10
+    Set.
+    > @va #10=[pemit(%#,You typed '%0')]
+    Set.
+    > @pemit me=Test
+    Test
+    > @pmit me=Test
+    You typed '@pmit me=Test'
+
+  Related Topics:
+
+& GOOD_NAME
+GOOD_NAME
+
+  CONFIG PARAMETER: good_name <name>
+
+  Removes <name> from the list of names that may not be used as a player
+  name, reversing the effect of a bad_name directive.  The name must match
+  exactly (wildcard matching is not performed).
+
+& GUESTS_CHANNEL
+GUESTS_CHANNEL
+
+  CONFIG PARAMETER: guests_channel <name>
+  DEFAULT: Guests
+
+  Specifies the name of the channel that guests join when they connect. You
+  must have created the channel already. To disable this feature, simply set
+  this parameter to nothing.
+
+  Related Topics: public_channel.
+
+& GUEST_CHAR_NUM
+GUEST_CHAR_NUM
+
+  CONFIG PARAMETER: guest_char_num <number>
+  DEFAULT: (none)
+
+  Indicates the database reference number of the guest character.  If set,
+  the specified guest character is subject to additional restrictions (such
+  as not being allowed to create or destroy objects).  The actual
+  restrictions can be changed with the access config parameter using the
+  no_guest permission.
+
+  Related Topics: guest_prefix, guest_nuker, number_guests, access,
+                  min_guests, guest_site.
+
+& GUEST_FILE
+GUEST_FILE
+
+  CONFIG PARAMETER: guest_file <path>
+  DEFAULT: text/guest.txt
+
+  Specifies the file that is to be shown to people connecting to the
+  guest character in place of the motd file.
+
+  Related Topics: guest_char_num.
+
+& GUEST_NUKER
+GUEST_NUKER
+
+  CONFIG PARAMETER: guest_nuker <num>
+  DEFAULT: 1
+
+  Specifies who is to nuke guests when they log off. If it is not a good
+  object or a wizard, it defaults to #1.
+
+  Related Topics: guest_char_num, guest_prefix, number_guests, min_guests,
+                  guest_site.
+
+&GUEST_PREFIX
+GUEST_PREFIX
+
+  CONFIG PARAMETER: guest_prefix <name>
+  DEFAULT: Guest
+
+  Specifies the prefix for all guests. This will be what is put before the #
+  when the guest is created. This will also be what is used to connect to
+  the guests on your system.
+
+  Related Topics: guest_char_num, number_guests, min_guests, guest_site.
+
+& GUEST_SITE
+GUEST_SITE
+
+  CONFIG PARAMETER: guest_site <site>
+
+  Indicates that connections to guests form this site should be rejected.
+  Players will be able to connect normally and create if set.
+
+  Related Topics: badsite_file, permit_site, register_site, forbid_site,
+                  SITE LISTS, SITE NOTATION,
+                  allow_guest_from_registered_site.
+
+& HAVE_COMSYS
+HAVE_COMSYS
+
+  CONFIG PARAMETER: have_comsys <yes/no>
+  DEFAULT: yes
+
+  Specifies whether or not the comsystem should be active.
+
+  Related Topics: comsys_database, have_macros.
+
+& HAVE_MAILER
+HAVE_MAILER
+
+  CONFIG PARAMETER: have_mailer <yes/no>
+  DEFAULT: yes
+
+  Specifies whether @mail and mail aliases should be active.
+
+  Related Topics: mail_database
+
+& HAVE_ZONES
+HAVE_ZONES
+
+  CONFIG PARAMETER: have_zones <yes/no>
+  DEFAULT: yes
+
+  Specifies whether zones should be active. If this is off, zone connects
+  and disconnects, zone commands, and the control aspects will all be
+  disabled.
+
+& HELPFILE
+HELPFILE
+
+  CONFIG PARAMETER: helpfile <command> <pathname>
+  DEFAULT: None
+
+  This configuration directive associates the in-game command, <command>,
+  with a set of help topics contained in the file <pathname>.txt and indexed
+  by the file <pathname>.indx.
+
+  By default, this help command has 'public' permissions, but this can be
+  restricted with the 'access' configuration directive.
+
+  By default, the server does not setup any help files (including help,
+  wizhelp, and news).  It is therefore recommended that your configuration
+  file contain the following lines:
+
+    raw_helpfile help text/help
+    raw_helpfile wizhelp text/wizhelp
+    access wizhelp wizard
+
+  Also, in order for the help aliases in alias.conf to be setup properly,
+  the three above lines must occur before alias.conf is included.
+
+  To prevent access to arbitrary files after the server has started, this
+  directive cannot be used by via @admin after the server has started.
+
+  Examples:
+     helpfile wiznews text/wiznews
+     access wiznews wizard
+
+  Related Topics: access, raw_helpfile
+
+& HOOK SETUP
+HOOK SETUP
+
+  Hooks are set up by following the shown methods.
+  1)  You must first create and setup a hook object to store the data.
+      Once you have @created the object, the object needs to be defined
+      with the 'HOOK_OBJ' admin parameter.  This may be placed in the 
+      .conf file or done via @admin.
+
+  2)  You must set up hooks for the commands/attributes you wish to use.
+      The hooks are 'permit', 'ignore', 'before', 'after', and 'igswitch'.
+      See wizhelp on 'hook_cmd' on more info of these switchtypes.
+      You may use the @hook command, or use the hook_cmd admin parameter
+      to place in a .conf file.
+
+  3)  The PERMIT and IGNORE config params are 'enabled' if they return 
+      anything but a 'NULL' or a '1'.
+
+  4)  The IGSWITCH config parameter is a toggle only.
+
+  5)  The BEFORE and AFTER switches are automatically processed if existing.
+
+  6)  The following attributes on the global hook object (hook_obj) exist:
+         I_<command> - ignore            P_<command> - permit
+         A_<command> - after             B_<command> - before
+
+{ see 'wizhelp hook setup2' for examples }
+
+& HOOK SETUP2
+HOOK SETUP (continued)
+
+  > @create HookObject
+  HookObject created as object #1234
+  > &a_look #1234=[pemit(%#,-- After The Look --)]
+  > &b_look #1234=[pemit(%#,-- Before The Look --)]
+  > &i_look #1234=[gt(match(v(is-ignored),%#),0)]
+  > &p_look #1234=[gt(match(v(is-forbidden),%#),0)]
+  > &is-ignored #1234=#5 #8 #9 #12   (this gets 'Huh? (type 'help' for help)')
+  > &is-forbidden #1234=#6 #10 #15   (this gets 'Permission denied.')
+  > @set #1234=sidefx                (needed to use side-effects like pemit())
+
+  Now you can do one of two things:
+  > @hook/before look
+  > @hook/after look
+  > @hook/ignore look
+  > @hook/permit look
+  OR...
+  > @admin hook_cmd look before after ignore permit
+
+  There, your hook object is all set up.  If you want it to last through
+  reboots, you need to either put the @hook's in a @startup, or add the 
+  hook_cmd to the .conf file.  You probably want the hook_cmd :)
+ 
+  Related Topics: @hook, hook_cmd, hook_obj.
+
+& HOOK_CMD
+HOOK_CMD
+
+  Config parameter: hook_cmd <command> <hooks/!hooks>
+  This admin parameter allows you to specify multiple hooks for commands
+  or attributes in the .conf file or online via @admin.  This is an 
+  alternative way to applying hooks besides the @hook command.
+  The following hooks exist:
+         - before      set up functionality BEFORE a command executes.
+         - after       set up functionality AFTER a command executes.
+         - permit      establish functionary lock of attribute/command.
+         - ignore      establish ignore inheritance of attribute/command.
+         - igswitch    specifies if command bypasses failed /switch notices.
+
+  For detailed information on how to set up hooks, please see wizhelp on:
+                                HOOK SETUP
+
+  Related Topics: @hook, hook_obj, HOOK SETUP.
+
+& HOOK_OBJ
+HOOK_OBJ
+
+  Config parameter: hook_obj <dbref>.  Default: -1
+  Specifies the valid dbref# that the hook information is stored.  All
+  hooks are in the form <prefix>_<command/attribute>.  
+  Attributes are stored in the form:
+          I_<command> - ignore configuration
+          P_<command> - permit configuration
+          A_<command> - after configuration
+          B_<command> - before configuration
+
+  For detailed information on how to set up hooks, please see wizhelp on:
+                                HOOK SETUP
+
+  Related Topics: @hook, hook_cmd, HOOK SETUP.
+
+& HOSTNAMES
+HOSTNAMES
+
+  CONFIG PARAMETER: hostnames <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not IP addresses should be replaced with host names
+  where possible in the log file and wizard WHO report.
+
+& IDLE_INTERVAL
+IDLE_INTERVAL
+
+  CONFIG PARAMETER: idle_interval <secs>
+  DEFAULT: 60
+
+  Sets the interval between checks for idle users.
+
+  Related Topics: conn_timeout, idle_timeout.
+
+& IDLE_TIMEOUT
+IDLE_TIMEOUT
+
+  CONFIG PARAMETER: idle_timeout <secs>
+  DEFAULT: 3600 (one hour)
+
+  Sets the amount of time that a player may remain idle before being
+  automatically disconnected.  Players idle longer than this parameter are
+  disconnected when the next check for idle players is done.
+
+  Related Topics: conn_timeout, idle_interval.
+
+& IDLE_WIZ_DARK
+IDLE_WIZ_DARK
+
+  CONFIG PARAMETER: idle_wiz_dark <yes/no>
+  DEFAULT: no
+
+  Indicates whether or not wizards or players with the idle power who are
+  idle for longer than the default timeout value are to automatically be
+  set DARK, and then unDARKed when they type in their next command. Wizards
+  already set DARK are not automatically unDARKed. Any player who is set
+  dark by this action will have a 'd' instead of a 'D' by their idle time
+  in the privileged WHO listing.
+
+& INCLUDE
+INCLUDE
+
+  CONFIG PARAMETER: include <path>
+  DEFAULT: none
+
+  Reads and processes configuration directives from the named file.
+  This directive is only valid during startup.
+
+& INDENT_DESC
+INDENT_DESC
+
+  CONFIG PARAMETER: indent_desc <yes/no>
+  DEFAULT: no
+
+  Places a blank row before and after every room, object, and exit
+  description when looked at.
+
+& INHERIT
+INHERIT
+
+  FLAG: INHERIT(I) (all types)
+
+  When set on an object, gives the object access to the WIZARD and IMMORTAL
+  powers that its owner has, and also allows that object to control the player
+  and other INHERIT objects owned by that player.
+
+  When set on a player, gives all of that player's objects access to the
+  WIZARD and IMMORTAL powers of their owner, and allows them to control the
+  player or any object owned by the player.
+
+& INHERITANCE
+INHERITANCE
+
+  This topic intentionally left blank.
+
+& INITIAL_SIZE
+INITIAL_SIZE
+
+  CONFIG PARAMETER: initial_size <number>
+  DEFAULT: 1000
+
+  This is the number of objects that can be created before the database
+  structure has to be reallocated again. This is needed since MUX allocates
+  space for the database in large chunks, the size of which depends on
+  this parameter.
+
+& INPUT_DATABASE
+INPUT_DATABASE
+
+  CONFIG PARAMETER: input_database
+  DEFAULT: netmux.db
+
+  Specifies the name of the database file that is read in at startup.
+  This file is used only as an input file, the parameter output_database
+  controls where updated copies of the database are written.
+
+  Related Topics: crash_database, output_database
+
+& KILL_GUARANTEE_COST
+KILL_GUARANTEE_COST
+
+  CONFIG PARAMETER: kill_guarantee_cost <amount>
+  DEFAULT: 100
+
+  Specifies the amount of money you have to spend (i.e., kill target =
+  <amount>) to have a 100% chance of killing them (assuming there are no
+  other factors, such as the victim being immortal or in a HAVEN room, etc).
+  The chance of a successful kill is <amount spent> / <kill_guarantee_cost>.
+
+  Related Topics: kill, kill_max_cost, kill_min_cost, HAVEN, IMMORTAL,
+                  KILLING.
+
+& KILL_MAX_COST
+KILL_MAX_COST
+
+  CONFIG PARAMETER: kill_max_cost <amount>
+  DEFAULT: 100
+
+  Specifies the maximum amount of money that may be usefully spent on a kill
+  attempt.  Spending more than this amount does not improve the chance of
+  success.  Setting this parameter to less than the kill_guarantee_cost
+  parameter prevents 'automatic kills', as the kill will always have a chance
+  of failing.
+
+  Related Topics: kill, kill_guarantee_cost, kill_min_cost, HAVEN, IMMORTAL,
+                  KILLING.
+
+& KILL_MIN_COST
+KILL_MIN_COST
+
+  CONFIG PARAMETER: kill_min_cost <amount>
+  DEFAULT: 10
+
+  Specifies the minimum (and default) cost for attempting to kill someone or
+  something.
+
+  Related Topics: kill, kill_guarantee_cost, kill_max_cost, HAVEN, IMMORTAL,
+                  KILLING.
+
+& LINK_COST
+LINK_COST
+
+  CONFIG PARAMETER: link_cost <amount>
+  DEFAULT: 1
+
+  Specifies the cost of using the @link command to establish or change the
+  link of an exit to its destination, the home of a player or an object, or
+  the drop-to of a room.
+
+  Related Topics: @link.
+
+& LIST_ACCESS
+LIST_ACCESS
+
+  CONFIG PARAMETER: list_access <param> [!]<privilege> [[!]<privilege>]...
+
+  Changes the access needed to the <param> option of the @list command.
+
+  Related Topics: @list, PERMISSIONS.
+
+& LOCK_RECURSION_LIMIT
+LOCK_RECURSION_LIMIT
+
+  CONFIG PARAMETER: lock_recursion_limit <num>
+  DEFAULT: 20
+
+  Sets the maximum number of levels of indirection that may be used when
+  using indirect locks.  If more than this many levels are used, the lock
+  fails and the user gets an error message.
+
+& LOG
+LOG
+
+  CONFIG PARAMETER: log [!]<logoption> [[!]<logoption>]...
+
+  Specifies what types of events are to be logged to the logfile.
+
+    accounting     - Write an accounting record to the log for each player
+                     who disconnects.
+    all_commands   - Record all commands executed.
+    bad_commands   - Record commands entered that did not match anything.
+    buffer_alloc   - Record buffer allocates and frees.
+    bugs           - Record internal inconsistencies found.
+    checkpoints    - Record automatic database dumps.
+    config_changes - Record uses of the @admin command.
+    create         - Record creation of new players.
+    killing        - Record uses of the kill and slay commands.
+    logins         - Record connects to characters.
+    network        - Record new and broken net connections.
+    problems       - Record problems found with the database.
+    security       - Record security-related events.
+    shouts         - Record uses of the @wall command.
+    startup        - Record information about game startup.
+    suspect        - Record commands entered by players flagged SUSPECT.
+    wizard         - Record uses of dangerous commands like @toad.
+
+  Related Topics: log_options.
+
+& LOGGING
+LOGGING
+
+  This topic intentionally left blank.
+
+& LOGOUT_CMD_ACCESS
+LOGOUT_CMD_ACCESS
+
+  CONFIG PARAMETER: logout_cmd_access <command> <permlist>
+
+  Specifies permission for logged-out commands, like WHO, DOING, SESSION,
+  QUIT, OUTPUTPREFIX, and OUTPUTSUFFIX.
+
+  Related Topics: access.
+
+& LOGOUT_CMD_ALIAS
+LOGOUT_CMD_ALIAS
+
+  CONFIG PARAMETER: logout_cmd_alias <alias> <command>
+
+  Makes <alias> an alias for <command>, where <command> is one of WHO, DOING,
+  SESSION, QUIT, OUTPUTPREFIX, and OUTPUTSUFFIX.
+
+& LOG_OPTIONS
+LOG_OPTIONS
+
+  CONFIG PARAMETER: log_options [!]<option> [[!]<option>]...
+
+  Specifies the type of information to be included in each log entry.
+  The possible values are:
+
+    flags       - Include the flags set on a player or object.
+    location    - Include the location of referenced players and objects.
+    owner       - Include the owner of referenced players and objects.
+    timestamp   - Include a timestamp in each log entry.
+
+  Related Topics: log.
+
+& LOOK_OBEY_TERSE
+LOOK_OBEY_TERSE
+
+  CONFIG PARAMETER: look_obey_terse <yes/no>
+  DEFAULT: YES
+
+  Indicates whether or not the 'look' command obeys the TERSE flag when
+  deciding how much information to display.  If set to yes, the
+  terse_shows_contents, terse_shows_exits, and terse_shows_move_messages
+  config options control the amount of information displayed for TERSE
+  players.
+
+  Related Topics: terse_shows_contents, terse_shows_exits,
+                  terse_shows_move_messages.
+
+& MACHINE_COMMAND_COST
+MACHINE_COMMAND_COST
+
+  CONFIG PARAMETER: machine_command_cost <number>
+  DEFAULT: 64
+
+  Sets the cost for running a command from a machine, as opposed to running
+  it interactively.  Each command run has a one in <number> chance of being
+  charged one coin for machine overhead.
+
+& MAIL_DATABASE
+MAIL_DATABASE
+
+  CONFIG PARAMETER: mail_database <path>
+  DEFAULT: mail.db
+
+  Sets the file that @mail information is to be stored in. The database
+  is only loaded or saved if have_mailer is set to yes.
+
+  Related Topics: have_mailer.
+
+& MAIL_EXPIRATION
+MAIL_EXPIRATION
+
+  CONFIG PARAMETER: mail_expiration <number of days>
+  DEFAULT: 14
+
+  Sets the number of days that a @mail message should last before it is
+  automatically deleted by the system. If this parameter is set to a
+  negative number, this feature will be disabled.
+
+& MARKED
+MARKED
+
+  FLAG: MARKED(m) (all types)
+
+  This flag is used by the database cleaning routines to check the
+  connectivity of the database, and also by the @mark commands to select
+  objects for special attention.  Since database cleaning is performed
+  automatically from time to time, automatic cleaning must be disabled
+  before using the @mark commands, and the command @mark_all/clear should
+  be run immediately before turning automatic cleaning back on.
+
+  Related Topics: @apply_marked, @dbck, @disable, @enable, @list, @mark,
+                  @mark_all.
+
+& MASTER_ROOM
+MASTER_ROOM
+
+  CONFIG PARAMETER: master_room <roomnum>
+  DEFAULT: (none)
+
+  Specifies the room that is searched for exits if a command does not match
+  an exit in the current room, and for $-command if a command does not match
+  any $-commands that are available to the player in his current location.
+
+  Note: Do not prefix <roomnum> with a '#' character. Even though it is a
+  dbref of the master room, it must be given here as a number.
+
+& MASTER ROOM
+MASTER ROOM
+
+  The master room contains the default exits and $-commands for the MUX.  The
+  exits in the master room are checked if a command doesn't match an exit in
+  the player's current room, and the $-commands on the room and its contents.
+
+  Caution: Do not allow players into the master room, as they can leave
+  objects that will be searched for $-commands.  Make sure that the room is
+  not JUMP_OK or LINK_OK, and that any exits leading to the room are locked
+  so that only wizards may use them.
+
+  To make global commands, make an exit in the master room that is locked to
+  #0 (or some other impossible lock) and has an appropriate Afail action (and
+  possibly Fail and Ofail messages).  You can make global exits by having an
+  unlocked exit from the master room (or an exit locked to a desired key
+  object) lead to the desired destination.  When a player goes through one of
+  these exits, any KEY objects are returned home, as is done with @teleport.
+
+  Do not put too many objects in the room, because each object is searched
+  for $-command every time anyone (or anything) anywhere on the MUX enters
+  an unrecognized command.
+
+  Related Topics: @link, @lock, @open, master_room.
+
+& MATCH_OWN_COMMANDS
+MATCH_OWN_COMMANDS
+
+  Config parameter: match_own_commands <yes/no>.  Default: NO
+
+  Specifies whether or not objects search themselves for $-commands when a
+  command does not match an exit or an internal command.  In order for
+  players to search themselves for commands, both match_own_commands and
+  player_match_own_commands must be set to yes.
+
+  Related Topics: player_match_own_commands.
+
+& MAX_CACHE_SIZE
+MAX_CACHE_SIZE
+
+  CONFIG PARAMETER: max_cache_size <size>
+  DEFAULT: 1048576
+
+  Expressed in bytes, this is the maximum size the server will use for caching
+  attribute values from the database.
+
+& MAX_PLAYERS
+MAX_PLAYERS
+
+  CONFIG PARAMETER: max_players <num>
+  DEFAULT: -1 (unlimited)
+
+  Sets the maximum number of players that may be connected at any one time
+  Note that wizards are allowed to login even if they would exceed the limit,
+  and that this limit does not override any limits imposed by the system
+  running the MUX (such as the maximum number of net connections a process
+  may have).  Players connecting when there are max_players players connected
+  receive the contents of the file named by the full_file directive, and the
+  full_motd_message (also settable via @motd/full), and are disconnected.
+
+  Related Topics: @motd, full_file, full_motd_message.
+
+& MIN_GUESTS
+MIN_GUESTS
+
+  CONFIG PARAMETER: min_guests
+  DEFAULT: 1
+
+  Specifies the minimum number of guests that are should remain on the MUX.
+  These guests will not be nuked on @dbck's but will instead be recycled.
+  Use this to set how many guests you normally have on.
+
+  Related Topics: number_guests, guest_char_num, guest_prefix, guest_site.
+
+& MONEY_NAME_PLURAL
+MONEY_NAME_PLURAL
+
+  CONFIG PARAMETER: money_name_plural <string>
+  DEFAULT: pennies
+
+  Specifies the string to use to describe the coin of the realm when they
+  are being referred to plurally (such as: 'You have <number> pennies.', where
+  <number>  is not 1).
+
+  Related Topics: money_name_singular.
+
+& MONEY_NAME_SINGULAR
+MONEY_NAME_SINGULAR
+
+  CONFIG PARAMETER: money_name_singular <string>
+  DEFAULT: penny
+
+  Specifies the string to use to describe the coin of the realm when they
+  are being referred to singularly (such as: 'You found a penny!').
+
+  Related Topics: money_name_plural.
+
+& MOTD_FILE
+MOTD_FILE
+
+  CONFIG PARAMETER: motd_file <pathname>
+  DEFAULT: text/motd.txt
+
+  Specifies the name of the file to be shown to players immediately after they
+  connect to their characters.
+
+  Related Topics: @readcache, newuser_file, motd_message.
+
+& MOTD_MESSAGE
+MOTD_MESSAGE
+
+  CONFIG PARAMETER: motd_message <message>
+  DEFAULT: blank
+
+  Sets the MOTD message that is displayed to all characters when they log in.
+  This message is displayed in addition to the contents of the motd.txt
+  file.  It can be changed with the @motd command and examined by the
+  @listmotd command.
+
+  Related Topics: @listmotd, @motd, motd_file.
+
+& MUD_NAME
+MUD_NAME
+
+  CONFIG PARAMETER: mud_name <string>
+  DEFAULT: MUX
+
+& NEWUSER_FILE
+NEWUSER_FILE
+
+  CONFIG PARAMETER: newuser_file <filename>
+  DEFAULT: text/newuser.txt
+
+  Specifies the file to be shown to new players immediately after they
+  create their characters, in place of the MOTD file.  This file should
+  contain information about the basic commands and how to get help.
+
+  Related Topics: @readcache, motd_file.
+
+& NOSITEMON_SITE
+NOSITEMON_SITE
+
+  CONFIG PARAMETER: nositemon_site <site>
+
+  Indicates that sites that match <site> are not to be reported to players
+  with the SITEMON flag.
+
+  Related Topics: register_site, REGISTRATION, SITE LISTS, SITE NOTATION.
+
+& NOTIFY_RECURSION_LIMIT
+NOTIFY_RECURSION_LIMIT
+
+  CONFIG PARAMETER: notify_recursion_limit <num>
+  DEFAULT: 20
+
+  Sets the maximum number of times that the notify() routine may be called
+  recursively.  A recursive call is made whenever a message heard by an
+  object is to be forwarded to its contents.
+
+& NUMBER_GUESTS
+NUMBER_GUESTS
+
+  CONFIG PARAMETER: number_guests <num>
+  DEFAULT: 30
+
+  How many guests should we allow at any one time?
+
+  Related Topics: guest_char_num, guest_nuker, guest_prefix.
+
+& OPEN_COST
+OPEN_COST
+
+  CONFIG PARAMETER: open_cost <amount>
+  DEFAULT: 1
+
+  Indicates the cost of using the @open command to open a new exit.
+  If a destination for the new exit is specified and the link is successful,
+  then the link_cost is also charged.
+
+  Related Topics: @open, link_cost.
+
+& OUTPUT_DATABASE
+OUTPUT_DATABASE
+
+  CONFIG PARAMETER: output_database <pathname>
+  DEFAULT: none
+
+  Specifies the file to which the database is to be written when writing
+  checkpoint dumps or writing the final dump after receiving a @shutdown
+  command.
+
+  Related Topics: @dump, @shutdown, checkpoint_database, input_database.
+
+& OUTPUT_LIMIT
+OUTPUT_LIMIT
+
+  CONFIG PARAMETER: output_limit <amount>
+  DEFAULT: 16384
+
+  Specifies how many bytes should be output before the output is flushed,
+  and characters are lost.
+
+& PAGE_COST
+PAGE_COST
+
+  CONFIG PARAMETER: page_cost <amount>
+  DEFAULT: 10
+
+  Specifies the cost of using the page command.
+
+  Related Topics: page.
+
+& PARANOID_ALLOCATE
+PARANOID_ALLOCATE
+
+  CONFIG PARAMETER: paranoid_allocate <yes/no>
+  DEFAULT: no
+
+  Controls whether or not the game performs a consistency check on the entire
+  set of xbuf buffers each time one is allocated or freed.  This check
+  involves making sure that nobody has written to the memory immediately
+  before and after each buffer.  Normally, only the buffer being allocated or
+  freed is checked.
+
+& PARENT_RECURSION_LIMIT
+PARENT_RECURSION_LIMIT
+
+  CONFIG PARAMETER: parent_recursion_limit <num>
+  DEFAULT: 10
+
+  This directive specifies how far back to check parents for commands
+  and attributes.
+
+& PAYCHECK
+PAYCHECK
+
+  CONFIG PARAMETER: paycheck <amount>
+  DEFAULT: 0
+
+  Specifies the default amount of money that players receive each day they
+  connect.  This parameter may be overridden by setting the ALLOWANCE
+  attribute on the player to a different value.
+
+  Related Topics: @allowance, earn_limit, starting_money.
+
+& PEMIT_ANY_OBJECT
+PEMIT_ANY_OBJECT
+
+  CONFIG PARAMETER: pemit_any_object <yes/no>
+  DEFAULT: no
+
+  Indicates whether or not players may @pemit to faraway objects they do not
+  control.  It does not affect @pemits to faraway players, the
+  pemit_far_players directive is used for that purpose.
+
+  Related Topics: pemit_far_players.
+
+& PEMIT_FAR_PLAYERS
+PEMIT_FAR_PLAYERS
+
+  CONFIG PARAMETER: pemit_far_players <yes/no>
+  DEFAULT: no
+
+  Controls whether or not players may use the @pemit command to send messages
+  to other connected players that are not in the same room.  The rules and
+  costs for this form of @pemit are the same as for page.
+
+  Related Topics: pemit_any_object.
+
+& PERMISSIONS
+PERMISSIONS
+
+  Access to many MUX features is controlled by a set of permissions, which
+  can usually be changed via the configuration file or the @admin command.
+
+  There are three different senses of Wizard:
+
+    1) 'WIZARD' means the WIZARD flag,
+    2) 'Wizard' means Wizard-level authority which can be achieved either by
+       being set WIZARD or by inheriting that authority from a WIZARD-owned
+       object with the INHERIT flag, and
+    3) Wizard(#1) who is always set WIZARD and has other special privileges.
+
+  The follow uses two of those senses: 'Wizard' and Wizard(#1).
+
+  This is a list of the valid permissions and their meanings:
+
+    builder       - Must be Wizard, ROYALTY, or have the BUILDER power.
+    dark          - Feature is not shown but is still available.
+    disabled      - No one can use this feature.
+    global_build  - Requires the BUILDER power, Wizard/ROYALTY, or for
+                    building to be allowed game-wide.
+    global_interp - Requires that global interpretation be turned on.
+    god           - Only #1 may use this feature.
+    head          - Must be set HEAD to use this feature.
+    immortal      - Must be set IMMORTAL or set INHERIT with IMMORTAL owner.
+
+{ 'wizhelp permissions2' for more }
+
+& PERMISSIONS2
+PERMISSIONS (continued)
+
+    need_contents - Only players, things, and rooms may use this feature.
+    need_location - Only players and things may use this feature.
+    need_player   - Only players may use this feature.
+    no_haven      - Non-Wizard players with owners set HAVEN may not use this
+                    feature.
+    no_robot      - Non-Wizard players set ROBOT may not use this feature.
+    no_slave      - Non-Wizard players with owners set SLAVE may not use this
+                    feature.
+    no_suspect    - Non-Wizard players with owners set SUSPECT may not use
+                    this feature.
+    no_guest      - Non-Wizards must not possess the GUEST power in order to
+                    use this feature.
+    robot         - Only players set ROBOT can use this feature.
+    wizard        - Only Wizards may use this feature.
+
+& PERMIT_SITE
+PERMIT_SITE
+
+  CONFIG PARAMETER: permit_site <site>
+
+  Indicates that connections are to be accepted and registration is not to be
+  enforced from sites whose address matches the specified <site>.  This
+  directive is typically used to enable connections from a few selected hosts
+  or subnets that would otherwise be disallowed by a forbid_site directive.
+  The default is all sites permitted, none forbidden.
+
+  Related Topics: badsite_file, forbid_site, register_site, guest_site
+                  SITE LISTS, SITE NOTATION.
+
+& PLAYER_FLAGS
+PLAYER_FLAGS
+
+  CONFIG PARAMETER: player_flags <flags>
+  DEFAULT: blank
+
+  Modifies the set of flags that a player receives when it is created via the
+  @pcreate command or via the connection screen.  Flags prefixed by a ! remove
+  the indicated flag from the set.
+
+  Related Topics: @list, exit_flags, robot_flags, room_flags, thing_flags.
+
+& PLAYER_LISTEN
+PLAYER_LISTEN
+
+  CONFIG PARAMETER: player_listen
+  DEFAULT: no
+
+  Indicates whether the Listen, Aahear, Ahear, and Amhear attributes on
+  player objects are to be obeyed.
+
+& PLAYER_MATCH_OWN_COMMANDS
+PLAYER_MATCH_OWN_COMMANDS
+
+  CONFIG PARAMETER: player_match_own_commands <yes/no>
+  DEFAULT: no
+
+  Specifies whether or not players should check themselves for $-commands.
+  This parameter is only checked if the match_own_commands parameter is
+  set to yes.
+
+  Related Topics: match_own_commands.
+
+& PLAYER_NAME_SPACES
+PLAYER_NAME_SPACES
+
+  CONFIG PARAMETER: player_name_spaces
+  DEFAULT: yes
+
+  Specifies whether or not player names are permitted to contain spaces.
+
+& PLAYER_QUEUE_LIMIT
+PLAYER_QUEUE_LIMIT
+
+  CONFIG PARAMETER: player_queue_limit
+  DEFAULT: 100
+
+  Sets the maximum number of commands that non-wizard players may have on the
+  queue at one time.  An attempt to queue more commands than allowed will
+  halt the object performing the command.
+
+& PLAYER_QUOTA
+PLAYER_QUOTA
+
+  CONFIG PARAMETER: player_quota <amount>
+  DEFAULT: 1
+
+  Sets how much quota it costs to create a robot player (and also how much the
+  remaining quota is increased when a robot is @destroyed.
+
+  Related Topics: @quota, exit_quota, room_quota, thing_quota, QUOTAS.
+
+& PLAYER_STARTING_HOME
+PLAYER_STARTING_HOME
+
+  CONFIG PARAMETER: player_starting_home
+  DEFAULT: <player_starting_room>
+
+  Specifies the room to which the home of new players is set.  If this
+  parameter has not been set, then the value of the player_starting_room
+  parameter is used instead.
+
+  Related Topics: default_home, player_starting_room, @pcreate, player_flags.
+
+& PLAYER_STARTING_ROOM
+PLAYER_STARTING_ROOM
+
+  CONFIG PARAMETER: player_starting_room
+  DEFAULT: 0
+
+  Specifies the room that new players start out in.  If the
+  player_starting_home parameter has not been set, then player_starting_room
+  is used for both.
+
+  Related Topics: player_starting_home, @pcreate, player_flags.
+
+& PORT
+PORT
+
+  CONFIG PARAMETER: port <port1> [<port2> [<port3> ...]]
+  DEFAULT: 2860
+
+  Specifies the IP port(s) on which the game listens for new connections.
+
+& POSTDUMP_MESSAGE
+POSTDUMP_MESSAGE
+
+  CONFIG PARAMETER: postdump_message <message>
+  DEFAULT: blank
+
+  Sets the message that is sent to everyone after a database dump
+  whether automatically or via the @dump command.
+
+  Related Topics: @dump, dump_message.
+
+& POWER_ALIAS
+POWER_ALIAS
+
+  CONFIG PARAMETER: power_alias <alias> <powername>
+
+  Defines <alias> as a synonym for the power <powername>.
+
+  Related Topics: alias, flag_alias, function_alias.
+
+& PUBLIC_CHANNEL
+PUBLIC_CHANNEL
+
+  CONFIG PARAMETER: public_channel <name>
+  DEFAULT: Public
+
+  Specifies the name of the channel that new players join when they are
+  created. You must have previously created the channel. To disable this
+  feature, simply set this parameter to nothing.
+
+  Related Topics: guests_channel.
+
+& PUBLIC_FLAGS
+PUBLIC_FLAGS
+
+  CONFIG PARAMETER: public_flags <yes/no>
+  DEFAULT: yes
+
+  If enabled, indicates that players may get the flags of any object with the
+  flags() function call.  Otherwise, they may only get the flags for objects
+  that are examinable by them.
+
+  Related Topics: flags().
+
+& PUEBLO_MESSAGE
+PUEBLO_MESSAGE
+
+  CONFIG PARAMETER: pueblo_message <message>
+  DEFAULT: "</xch_mudtext><img xch_mode=html>"
+
+  Sets the message that is sent to Pueblo clients as a reponse to the
+  PUEBLOCLIENT command.
+
+  Related Topics: pueblo.
+
+& QUEUE_ACTIVE_CHUNK
+QUEUE_ACTIVE_CHUNK
+
+  CONFIG PARAMETER: queue_active_chunk <num>
+  DEFAULT: 0
+
+  Specifies the number of commands to be run from the player queue when the
+  check for network traffic indicates that there is data needing to be
+  read from or written to the network.
+
+  Related Topics: queue_idle_chunk.
+
+& QUEUE_IDLE_CHUNK
+QUEUE_IDLE_CHUNK
+
+  CONFIG PARAMETER: queue_idle_chunk <num>
+  DEFAULT: 3
+
+  Specifies the number of commands to be run from the player queue when the
+  check for network traffic indicates that there is no data needing to be
+  read from or written to the network.
+
+  Related Topics: queue_active_chunk.
+
+& QUIET_LOOK
+QUIET_LOOK
+
+  CONFIG PARAMETER: quiet_look <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not players are shown the attributes set on an object
+  when they look at it.  Not recommended.
+
+& QUIET_WHISPER
+QUIET_WHISPER
+
+  CONFIG PARAMETER: quiet_whisper <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not whispers are completely invisible except to the
+  whispered-to player, or if a '<whisperer> whispers something to
+  <recipient>.' message is displayed to everyone else in the same room.
+
+  Related Topics: whisper.
+
+& QUIT_FILE
+QUIT_FILE
+
+  CONFIG PARAMETER: quit_file <filename>
+  DEFAULT: text/quit.txt
+
+  Specifies the name of the file that is displayed to users after they QUIT
+  but before the network connection is closed.
+
+  Related Topics: QUIT, @readcache.
+
+& QUOTAS
+QUOTAS
+
+  CONFIG PARAMETER: quotas <yes/no>
+  DEFAULT: no
+
+  Indicates whether or not building quotas are enforced and maintained.
+  Quotas are stored as a relative number, ie. number of objects that the
+  player may create, not the total number that the player may create.  If
+  quotas are turned off and turned back on later, any building or @destroying
+  that occurs in the interim does not affect the quotas.
+
+  Related Topics: @create, @destroy, @dig, @open, @quota, QUOTAS.
+
+& RAW_HELPFILE
+RAW_HELPFILE
+
+  CONFIG PARAMETER: raw_helpfile <command> <pathname>
+  DEFAULT: none
+
+  This is similiar to the 'helpfile' configuration directive, except that
+  the help topics contained in <pathname> are not evaluted by the parser
+  before being shown to the player.
+
+  Related Topics: helpfile
+
+& READ_REMOTE_DESC
+READ_REMOTE_DESC
+
+  CONFIG PARAMETER: read_remote_desc <yes/no>
+  DEFAULT: no
+
+  Indicates whether or not the descriptions of faraway objects are available
+  to players that don't control them via the examine command and get()
+  function.
+
+  Related Topics: examine, get().
+
+& READ_REMOTE_NAME
+READ_REMOTE_NAME
+
+  CONFIG PARAMETER: read_remote_name <yes/no>
+  DEFAULT: no
+
+  Indicates whether or not the names of faraway objects are available
+  to players that don't control them via the examine command and get()
+  function.
+
+  Related Topics: examine, get().
+
+& REGISTER_CREATE_FILE
+REGISTER_CREATE_FILE
+
+  CONFIG PARAMETER: register_create_file <filename>
+  DEFAULT: text/create_reg.txt
+
+  Specifies the name of the file that is shown to players who attempt to
+  create a new character when registration is in force from their site.
+
+  Related Topics: @list_file, @readcache, register_site.
+
+& REGISTER_SITE
+REGISTER_SITE
+
+  CONFIG PARAMETER: register_site <site>
+
+  Indicates that registration is to be enforced for sites whose address
+  matches the specified <site>.
+
+  Related Topics: forbid_site, permit_site, guest_site, REGISTRATION, 
+                  SITE LISTS, SITE NOTATION.
+
+& REGISTRATION
+REGISTRATION
+
+  Related Topics: SITE LISTS
+
+& RETRY_LIMIT
+RETRY_LIMIT
+
+  CONFIG PARAMETER: retry_limit <count>
+  DEFAULT: 3
+
+  Specifies the number of times that a user is allowed to try to connect to
+  an existing player before being disconnected.
+
+  Related Topics: conn_timeout.
+
+& ROBOT_COST
+ROBOT_COST
+
+  CONFIG PARAMETER: robot_cost <amount>
+  DEFAULT: 1000
+
+  Specifies the cost of using the @robot command to create a robot.
+
+  Related Topics: @robot, ROBOT.
+
+& ROBOT_FLAGS
+ROBOT_FLAGS
+
+  CONFIG PARAMETER: robot_flags <flags>
+  DEFAULT: ROBOT
+
+  Modifies the set of flags that a robot receives when it is created via
+  the @robot command.  Flags prefixed by a ! remove the indicated flag from
+  the set.
+
+  Related Topics: @list, exit_flags, player_flags, room_flags, thing_flags.
+
+& ROBOT_SPEECH
+ROBOT_SPEECH
+
+  CONFIG PARAMETER: robot_speech: <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not robot characters are allowed to use the speech,
+  pose, and emit commands in areas not controlled by their owner.
+
+  Related Topics: @robot, ROBOT.
+
+& ROOM_FLAGS
+ROOM_FLAGS
+
+  CONFIG PARAMETER: room_flags <flags>
+  DEFAULT: blank
+
+  Modifies the set of flags that a room receives when it is @dug.
+  Flags prefixed by a ! remove the indicated flag from the set.
+
+  Related Topics: @list, exit_flags, player_flags, robot_flags, thing_flags.
+
+& ROOM_QUOTA
+ROOM_QUOTA
+
+  CONFIG PARAMETER: room_quota <amount>
+  DEFAULT: 1
+
+  Sets how much quota it costs to dig a room (and also how much the
+  remaining quota is increased when a room is @destroyed.
+
+  Related Topics: @quota, exit_quota, player_quota, thing_quota, QUOTAS.
+
+& RUN_STARTUP
+RUN_STARTUP
+
+  CONFIG PARAMETER: run_startup
+  DEFAULT: Yes
+
+  Controls whether the @startup attribute is automatically executed at
+  database load time.
+
+& SACRIFICE_ADJUST
+SACRIFICE_ADJUST
+
+  CONFIG PARAMETER: sacrifice_adjust <amount>
+  DEFAULT: -1
+
+  This parameter is part of the formula that is used to determine an object's
+  value given the amount spent on its creation.  The formula is:
+
+     value = (cost / sacrifice_factor) + sacrifice_adjust.
+
+  The inverse formula is used to determine how much the owner receives when
+  @destroying an object.
+
+  Related Topics: @create, @destroy, SACRIFICING, sacrifice_factor.
+
+& SACRIFICE_FACTOR
+SACRIFICE_FACTOR
+
+  CONFIG PARAMETER: sacrifice_factor <amount>
+  DEFAULT: 5
+
+  This parameter is part of the formula that is used to determine an object's
+  value given the amount spent on its creation.  The formula is:
+
+     value = (cost / sacrifice_factor) + sacrifice_adjust.
+
+  The inverse formula is used to determine how much the owner receives when
+  @destroying an object.
+
+  Related Topics: @create, @destroy, SACRIFICING, sacrifice_adjust.
+
+& SAFER_PASSWORDS
+SAFER_PASSWORDS
+
+  CONFIG PARAMETER: safer_passwords [yes/no]
+  DEFAULT: No
+
+  Normally, nearly any password is accepted, but if this
+  configuration option is enabled, passwords must contain
+  at least one capital letter, one lowercase letter, and
+  one numeric digit or symbol.
+
+& SAFE_WIPE
+SAFE_WIPE
+
+  CONFIG PARAMETER: safe_wipe [yes/no]
+  DEFAULT: No
+
+  Is @wipe disallowed for SAFE-marked objects?
+
+& SEARCH CRITERIA
+SEARCH CRITERIA
+
+  The following criteria may be used when searching the database with the
+  @search and @mark commands:
+
+  Syntax: {@mark|@search} [<player>] [<class>=<restriction>]
+
+  <player>  - Restricts to objects owned by the named player.
+              By default, the search is limited to objects owned by the
+              invoking player, except when searching for players or if
+              the invoking player is a wizard.
+
+{ 'wizhelp search criteria2' for more }
+
+& SEARCH CRITERIA2
+SEARCH CRITERIA (continued)
+
+  The following classes may be used when searching:
+
+  TYPE      - Restricts to objects of the indicated type (OBJECTS, ROOMS,
+              EXITS, PLAYERS).
+  NAME      - Restricts to objects whose names start with <restriction>.
+  OBJECTS   - A combination of TYPE=OBJECT and NAME=<restriction>
+  ROOMS     - A combination of TYPE=ROOM and NAME=<restriction>
+  EXITS     - A combination of TYPE=EXIT and NAME=<restriction>
+  PLAYERS   - A combination of TYPE=PLAYER and NAME=<restriction>
+  FLAGS     - Restricts to objects which have the flags listed in
+              <restriction> set.
+
+  Related Topics: @mark, @search.
+
+& SEARCH_COST
+SEARCH_COST
+
+  CONFIG PARAMETER: search_cost <amount>
+  DEFAULT: 100
+
+  Specifies how much commands that scan the entire database (such as @find,
+  @search, and stats with a playername) cost.
+
+  Related Topics: stats, @find, @search.
+
+& SEE_OWNED_DARK
+SEE_OWNED_DARK
+
+  CONFIG PARAMETERS: see_owned_dark <yes/no>
+  DEFAULT: yes
+
+  Specifies whether or not players see their own DARK objects when they
+  look at a room.  It does not affect the inventory or examine commands,
+  both of which show all objects.
+
+& SESSION
+SESSION
+
+  COMMAND: SESSION <prefix>
+
+  The SESSION command displays character input and output information for
+  all connected players, or just those who match <prefix>.
+
+  This command can be used to help identify network problems as follows:
+
+    - A nonzero Input Pending count can indicate typeahead or a
+      client program dumping commands faster than the command scheduling
+      parameters let them be executed.  Telnet sessions in character mode also
+      show up with positive Input Pending counts when the player is in the
+      middle of typing a command.
+    - A nonzero Input Lost count means that the player has typed a line longer
+      than what the MUX can handle.  This usually indicates a problem with
+      the player's client or terminal (a stuck key).
+    - A persistently large Output Pending count can indicate netlag between
+      the host site and the player's site, or merely that the player has
+      performed a command that generated a lot of output which hasn't been
+      sent yet.
+    - A nonzero Output Lost count usually means that the player performed
+      a command that produced more output than the output buffer could hold.
+      It may also indicate network problems or that the player is generating
+      output faster than the network or his client can process it.
+
+& SIGNAL_ACTION
+SIGNAL_ACTION
+
+  CONFIG PARAMETER: signal_action <default|exit>
+  DEFAULT: default
+
+  Specifies what action to take when a fatal signal is received.  The
+  possibilities are:
+
+     default  - Log the error, produce a panic dump, dump a core file, and
+                restart the game using the last reliably saved database.
+                For a description of the restart process, see @restart.
+     exit     - Log the error, and exit, hopefully with a core file.
+
+& SITE LISTS
+SITE LISTS
+
+  Site lists match the numeric IP address of the connecting player, and help
+  to manage client access to the MUX.
+
+  There are two site lists:
+
+      Access Control List  - forbid_site, permit_site, register_site,
+                             guest_site, nositemon_site.
+      Suspects             - suspect_site and trust_site
+
+  Both contain an ordered list of 'sites', 'subnets', or 'hosts' specified
+  with a notation explained in the 'SITE NOTATION' topic.
+
+  Each site in the list is matched in the order it appears in the
+  configuration file, and the first one that matches is used.  Therefore, you
+  should put the more narrowly-defined sites before the more broadly-defined
+  ones. Otherwise, the more narrowly-defined site (the one covering a subset
+  of IP addresses within the more broadly-defined site) will never be in
+  force.
+
+  Additions made to the lists after startup with the @admin command are put
+  at the front of the list, and are checked before entries from the config
+  file and previous entries made by the @admin command.
+
+{ 'wizhelp site lists2' for more }
+
+& SITE LISTS2
+SITE LISTS (continued)
+
+  Example:  Restricting Access
+ 
+  register_site  135.246.4.40 255.255.255.255  <- Allow this site w/reg
+  forbid_site    135.246.4.0  255.255.255.0    <- Disallow a class C subnet
+  permit_site    135.246.0.0  255.255.0.0      <- Permit a class B network
+  register_site  195.3.17.1   255.255.255.255  <- Permit this site w/reg.
+  forbid_site    0.0.0.0      0.0.0.0          <- Disallow everyone else
+ 
+  These directives only allow access from 135.346.*.* and 195.3.17.1, except
+  that all hosts in the 135.246.4 subnet except for 135.246.4.40 are also
+  not allowed access.  People connecting from 135.246.4.40 and 195.3.17.1
+  are not allowed to create their own characters (registration is enabled
+  for those sites), while people connecting from elsewhere on the 135.246
+  net are allowed to create their own characters.
+
+  Related Topics: @admin, forbid_site, @list site_information, permit_site,
+                  register_site, SITE NOTATION, suspect_site, trust_site,
+                  guest_site, nositemon_site..
+
+& SITE NOTATION
+SITE NOTATION
+
+ Site notation specifies a range of numeric IP addresses.  A particular range
+ can include a single IP address or the entire Internet.
+
+ There are several variations:
+
+   <address> <mask>    - The <address> and <mask> are both dotted IPv4
+                         notation, but the <mask> is further restricted that
+                         it's '1' bits are all together and form a prefix.
+                         The <mask> specifies which bits in the <address> are
+                         significant.
+
+   <address>/<N>       - The <address> is a dotted IPv4 number, but <N> is an
+                         integer from 0 to 32 that specifies the number of
+                         significant bits in left-most part of the <address>.
+                         This notation is called CIDR IP prefix notation or
+                         'slash notation'.
+
+{ 'wizhelp site notation2' for more }
+
+& SITE NOTATION2
+SITE NOTATION (continued)
+
+ Four forms of dotted IPv4 addresses are allowed:
+
+   8.8.8.8, 8.8.16, 8.24 and 32.
+
+ 8 means an 8-bit integer from 0 to 255, 16 means a 16-bit integer
+ from 65536, etc. The 8.8.8.8 form is the most common. The latter three
+ originated on BSD.
+
+ Furthermore, the integer can be expressed in decimal, octal, or hexadecimal
+ notation. Hexadecimal numbers have a '0x' prefix. Octal numbers have a '0'
+ prefix.
+
+ Examples:
+
+   135.246.4.40 255.255.255.255   - Single host.
+   135.246.4.0  0xFF.255.0777.0   - Class C subnet.
+   135.246.4.0/24                 - Same as above in CIDR IP format.
+   135.246.0/16                   - Class B subnet.
+   135.0/8                        - Class A subnet in CIDR IP format.
+   0 0                            - The entire Internet
+   0/0                            - Same as above in CIDR IP format.
+
+& SITE_CHARS
+SITE_CHARS
+
+  CONFIG PARAMETER: site_chars <number>
+  DEFAULT: 25
+
+  Specifies the length of the hostname that is shown in a wizard WHO
+  listing. If <number> is 0, then the hostname will be shown in full.
+
+& SLAY
+SLAY
+
+  COMMAND: slay <player/object>
+
+  Kills the indicated player or object without paying any insurance to the
+  victim.  It should be used in places where suicide should not be rewarded.
+
+  Related Topics: kill, IMMORTAL.
+
+& SPACE_COMPRESS
+SPACE_COMPRESS
+
+  CONFIG PARAMETER: space_compress <yes/no>
+  DEFAULT: yes
+
+  Specifies whether or not extra spaces are to be removed from user input
+  as it is processed.  If enabled, multiple spaces are compressed to a single
+  space, and spaces at the ends of strings are removed.
+
+& STACK_LIMIT
+STACK_LIMIT
+
+  CONFIG PARAMETER: stack_limit <number>
+  DEFAULT: 50
+
+  The number of items that are allowed on an object's stack. You should be
+  sparse with this parameter, as stack items are retained until they are
+  removed.
+
+& STARTING_MONEY
+STARTING_MONEY
+
+  CONFIG PARAMETER: starting_money <amount>
+  DEFAULT: 0
+
+  Sets the amount of money that new players start out with.
+
+  Related Topics: paycheck.
+
+& STARTING_QUOTA
+STARTING_QUOTA
+
+  CONFIG PARAMETER: starting_quota <amount>
+  DEFAULT: 20
+
+  Sets the building quota that players receive when they are created, whether
+  by @pcreate or the connection screen.
+
+  Related Topics: @quota, quotas.
+
+& STARTUP
+STARTUP
+
+  FLAG: STARTUP(z) (all types)
+
+  This flag is managed internally by the server and it is not directly
+  settable.  It indicates whether or not the object has a STARTUP attribute
+  that is to be run when the MUX is booted.  This saves a considerable amount
+  of time considering that very few objects have a STARTUP attribute.
+  This flag is set automatically when the STARTUP attribute is set to a
+  non-empty string, and cleared when the STARTUP attribute is removed or
+  set to a null string.
+
+  Related Topics: @startup.
+
+& STATUS_FILE
+STATUS_FILE
+
+  CONFIG PARAMETER: status_file <filename>
+  DEFAULT: shutdown.status
+
+  If you give an argument to the @shutdown command, that argument is written
+  out to the file named by this directive.  The file can be used by an
+  auto-restart script to decide whether or not to bring the MUX back up,
+  for instance.
+
+& SUSPECT
+SUSPECT
+
+  FLAG: SUSPECT(u) (players)
+
+  When set on a player, causes connects, disconnects, name changes, kills,
+  and attempted kills to be reported to all connected wizards.
+  This flag is only visible and settable by wizards.
+
+& SUSPECT_FILE
+SUSPECT_FILE
+
+  CONFIG PARAMETER: suspect_site <site>
+
+  Indicates that sites whose address matches the specified <site> are to be
+  considered suspect, and any player creates, connects and disconnects are to
+  be reported to all logged-in wizards.
+
+  Related Topics: trust_site, SITE LISTS, SITE NOTATION.
+
+& SWEEP_DARK
+SWEEP_DARK
+
+  CONFIG PARAMETER: sweep_dark <yes/no>
+  DEFAULT: no
+
+  Indicates whether or not players are allowed to @sweep dark places they do not
+  control.
+
+  Related Topics: @sweep.
+
+& SWITCH_DEFAULT_ALL
+SWITCH_DEFAULT_ALL
+
+  CONFIG PARAMETER: switch_default_all <yes/no>
+  DEFAULT: yes
+
+  Indicates whether the @switch command should perform the commands for all
+  targets that match or just the first one that matches if you don't specify
+  either /all or /first as a command switch.
+
+& TERSE_SHOWS_CONTENTS
+TERSE_SHOWS_CONTENTS
+
+  CONFIG PARAMETER: terse_shows_contents <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not to suppress the listing of a location's contents
+  when producing TERSE output (whether from an automatic look or a 'real'
+  look if look_obey_terse is turned on.
+
+  Related Topics: look_obey_terse, terse_shows_exits,
+                  terse_shows_move_messages.
+
+& TERSE_SHOWS_CONTENTS
+TERSE_SHOWS_CONTENTS
+
+  CONFIG PARAMETER: terse_shows_contents <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not to suppress the listing of a location's contents
+  when producing TERSE output (whether from an automatic look or a 'real'
+  look if look_obey_terse is turned on.
+
+  Related Topics: look_obey_terse, terse_shows_exits,
+                  terse_shows_move_messages.
+
+& TERSE_SHOWS_EXITS
+TERSE_SHOWS_EXITS
+
+  CONFIG PARAMETER: terse_shows_exits <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not to suppress the listing of a location's obvious
+  exits when producing TERSE output (whether from an automatic look or a
+  'real' look if look_obey_terse is turned on.
+
+  Related Topics: look_obey_terse, terse_shows_contents,
+                  terse_shows_move_messages.
+
+& TERSE_SHOWS_MOVE_MESSAGES
+TERSE_SHOWS_MOVE_MESSAGES
+
+  CONFIG PARAMETER: terse_shows_move_messages <yes/no>
+  DEFAULT: yes
+
+  Indicates whether or not to suppress messages related to moving about
+  produced by locations and exits.  These messages are the ENTER and LEAVE
+  messages on locations, and the SUCC and DROP messages on exits.
+  The messages seen by others (Oxxx attributes) and the actions to be
+  performed (Axxx attributes) are unaffected.
+
+  Related Topics: look_obey_terse, terse_shows_contents, terse_shows_exits.
+
+& THING_FLAGS
+THING_FLAGS
+
+  CONFIG PARAMETER: thing_flags <flags>.
+  DEFAULT: blank
+
+  Modifies the set of flags that a thing receives when it is @created.
+  Flags prefixed by a ! remove the indicated flag from the set.
+
+  Related Topics: @list, exit_flags, player_flags, robot_flags, room_flags.
+
+& THING_QUOTA
+THING_QUOTA
+
+  CONFIG PARAMETER: thing_quota <amount>
+  DEFAULT: 1
+
+  Sets how much quota it costs to create a thing (and also how much the
+  remaining quota is increased when a thing is @destroyed.
+
+  Related Topics: @quota, exit_quota, player_quota, room_quota, QUOTAS.
+
+& TIMESLICE
+TIMESLICE
+
+  CONFIG PARAMETER: timeslice <amount>
+  DEFAULT: 1000
+
+  Specifies the interval at which connected users' command quotas are
+  increased.  Each command a user types in (commands executed by machines do
+  not count) decreases that user's quota by 1, and the user's commands are
+  only executed if the quota is greater than zero.
+
+  Related Topics: command_quota_incr, command_quota_max.
+
+& TOAD_RECIPIENT
+TOAD_RECIPIENT
+
+  CONFIG PARAMETER: toad_recipient <player dbref>
+
+  This is a configuration parameter; as such dbrefs should be given as the raw
+  number and not be preceded by the usual '#' (this is interpreted the
+  beginning of a comment by the config file parser).
+
+  Default: #-1 (-1)
+
+  When a player is @toaded (or @nuked) his or her property is normally @chowned
+  to another player; toad_recipient controls who the recipient of the player's
+  objects are. If the value is set to -1 the @toading wizard will get ownership
+  of all the victim's objects, otherwise the specified player gets ownership.
+  This can be explicitly overridden by providing a recipient with the @toad
+  command.
+
+  @toad/@nuke are potential security risks as they normally change the
+  ownership of a victim (a non-privileged character and presumably untrusted
+  player) to a player with wizard permissions. Furthermore, this can cause
+  clutter and it can be often difficult to sort out unwanted objects after an
+  @toading.
+
+  It is recommended that games create a non-privileged character for the
+  express purpose of being a toad_recipient.
+
+  Example:
+   > @pcreate Nobody=noone
+   New player 'Nobody' created with password 'noone'
+             (dbref of #57)
+
+   > @admin toad_recipient=57
+
+  Related Topics: @admin, @toad, @nuke, config parameters.
+
+& TOPICS
+TOPICS
+
+  Help available on the following Topics:
+
+  CAUTIONS           CONFIG PARAMETERS  DEBUG FEATURES     FILES
+  FLAGS              INHERITANCE        LOGGING            MASTER ROOM
+  PERMISSIONS        SEARCH CRITERIA    SITE LISTS
+
+& TRACE_OUTPUT_LIMIT
+TRACE_OUTPUT_LIMIT
+
+  CONFIG PARAMETER: trace_output_limit <amount>
+  DEFAULT: 200
+
+  Specifies the maximum number of lines of trace output that will be displayed
+  when using top-down format.  Bottom-up format output is not affected by this
+  parameter.
+
+  Note that this parameter is intended as a limit on the amount of memory used
+  to store intermediate data and not on the quantity of trace output, top-down
+  format needs to keep all intermediate results in memory before displaying
+  them, while bottom-up format displays them immediately after generating them.
+
+  When trace output lines are discarded, only the last (trace_output_limit)
+  lines are kept.  These lines contain information about the evaluations done
+  earliest in the process of evaluating the expression (usually the innermost
+  evaluations and earlier arguments of outer functions).
+
+& TRACE_TOPDOWN
+TRACE_TOPDOWN
+
+  CONFIG PARAMETER: trace_topdown <yes/no>
+  DEFAULT: yes
+
+  Specifies whether TRACE output is displayed top-down (complete evaluation
+  shown first, followed by sub-evaluations), or bottom-up (sub-evaluations
+  shown first, followed by the larger evaluation of which they are a part).
+
+& TRUST_SITE
+TRUST_SITE
+
+  CONFIG PARAMETER: trust_site <site>
+
+  Indicates that sites whose address matches the specified <site> are not to
+  be considered suspect.
+
+  Related Topics: suspect_site, SITE LISTS, SITE NOTATION.
+
+& UNCOMPRESS_PROGRAM
+UNCOMPRESS_PROGRAM
+
+  CONFIG PARAMETER: uncompress_program <path>.
+  DEFAULT: gunzip
+
+  Specifies the program to be run to uncompress compressed database files when
+  reading them in at startup.
+
+  Related Topics: compress_program, compression.
+
+& UNOWNED_SAFE
+UNOWNED_SAFE
+
+  CONFIG PARAMETER: unowned_safe <yes/no>.
+  DEFAULT: no
+
+  Indicates whether or not objects not owned by you are automatically
+  considered SAFE.  (This parameter only affects wizards)  Note that players
+  are always considered SAFE, and DESTROY_OK things are never considered SAFE.
+
+  Related Topics: @destroy, DESTROY_OK, SAFE.
+
+& USER_ATTR_ACCESS
+USER_ATTR_ACCESS
+
+  CONFIG PARAMETER: user_attr_access [!]<privilege> [[!]<privilege>]...
+
+  Changes the access flags that new user-named attributes receive when
+  they are created.  By default, user attributes are invisible to others.
+
+& USE_HTTP
+USE_HTTP
+
+  CONFIG PARAMETER: use_http <yes/no>.
+  DEFAULT: no
+
+  Indicates whether or not http access is allowed.
+
+& WAIT_COST
+WAIT_COST
+
+  CONFIG PARAMETER: wait_cost <amount>.
+  DEFAULT: 10
+
+  Sets the amount of money that it costs to run the @wait command and other
+  actions that add commands to the queue.  The money is refunded when the
+  command is removed from the queue (either when it is executed or by @halt).
+
+  Related Topics: @wait.
+
+& WHO
+WHO
+
+  COMMAND: WHO <prefix>
+
+  The WHO command returns miscellaneous information about connected players.
+  It returns the player name, connect time, idle time, and player flags just
+  like the player WHO command (which is available as the DOING command), but
+  returns the following information in place of the player's Doing string:
+
+     Room         - The room that the player is in.
+     Commands     - The number of commands that the player has entered during
+                    this session (not counting machine commands).
+     Host flags   - located between the Commands and Host fields:
+                    F(forbidden), R(registration), +(suspect).
+     Host         - The Internet host name or address from where the player has
+                    connected.
+
+  Related Topics: SESSION, DOING.
+
+& WIZARD
+WIZARD
+
+  FLAG: WIZARD(W) (all types)
+
+  A player or object that is set WIZARD controls all of the objects in the
+  database (except for player #1), regardless of their ownership or flags.
+  In general, WIZARDs can do anything using #<number> or *<player>.
+  Wizards can also use many additional commands that are useful for game
+  administration and maintenance.
+  Only player #1 can set or clear this flag.  An object owned by a Wizard has
+  wizard privileges only if its WIZARD or INHERIT flag is set, or if the
+  owning Wizard has his INHERIT flag set.
+
+  Related Topics: CONTROL, INHERIT.
+
+& WIZARD_MOTD_FILE
+WIZARD_MOTD_FILE
+
+  CONFIG PARAMETER: wizard_motd_file <path>
+  DEFAULT: text/wizmotd.txt
+
+  Specifies the name of the file that contains the wizard MOTD message that
+  is displayed to wizards when they log in.  This message is displayed in
+  addition to the wizard MOTD message that is set by the @motd/wiz command or
+  the wizard_motd_message config parameter.  The contents of the file are
+  read in to a cache when the game is started and whenever a @readcache
+  command is executed.
+
+  Related Topics: @readcache, wizard_motd_message.
+
+& WIZARD_MOTD_MESSAGE
+WIZARD_MOTD_MESSAGE
+
+  CONFIG PARAMETER: wizard_motd_message <message>
+  DEFAULT: blank
+
+  Sets the wizard MOTD message that is displayed to wizards when they log in.
+  This message is displayed in addition to the contents of the wizmotd.txt
+  file.  It can be changed with the @motd/wiz command and examined by the
+  @listmotd command.
+
+  Related Topics: @listmotd, @motd, motd_message, wizard_motd_file.
+
+& WIZHELP
+WIZHELP
+
+  COMMAND: wizhelp <topic>
+
+  Displays information from the wizard help file.  The information is
+  typically of use only to wizards and/or the game maintainer.
+
+  Related Topics: the source code.
+
+& ZONE_RECURSION_LIMIT
+ZONE_RECURSION_LIMIT
+
+  CONFIG DIRECTIVE: zone_recursion_limit <num>
+  DEFAULT: 20
+
+  This directive specifies how far back to check a zone tree for control and
+  commands.
+

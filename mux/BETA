@@ -1,0 +1,57 @@
+TinyMUX 2.2:  BETA
+Last Update:  January 2003
+
+General Cautions During the Beta Period:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+More so than TinyMUX 2.0 or 2.1, TinyMUX 2.2 has had several coders working
+on the code simultaneously.  We suspect that this will prove to be the cause
+of most of it faults.
+
+Some of the changes to TinyMUX 2.2 were features like @hook, @icmd, and
+support for the caller substitution for functions and commands, but some
+changes were required to fix previously unfixable issues.  So, its a mixed
+bag.
+
+Overall, I expect there to be a few surprises, but after these are found
+and removed, the stability will be equal to that of TinyMUX 2.0 or 2.1.
+
+Please take the time to read the README.  These files should be
+helpful to you.  If they aren't helpful, then please help us improve
+our efforts by suggesting specific changes. Documentation bugs can
+usually be fixed more rapidly than any other type of bug.
+
+If you port an existing game to this beta:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - Make frequent backups.  We cannot stress this enough.  The included 
+      Backup script is your friend and should make this process effortless. 
+    
+    - Make complete backups of all of your config, text, mail, and 
+      comsystems.
+    
+    - Store your backups offsite.  This was always prudent anyway.
+    
+    - Run your game as usual.
+    
+    - Report Bugs to sdennis@svdltd.com following the procedure in README.
+
+
+If you start a new game to this beta:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - Make frequent backups.  We cannot stress this enough.  The included 
+      Backup script is your friend and should make this process effortless. 
+    
+    - Make complete backups of all of your config, text, mail, and 
+      comsystems.
+    
+    - Store your backups offsite.  This was always prudent anyway.
+    
+    - Keep decompiles of anything really big, unique, or irreplaceable 
+      softcode.  This is good coding practice, anyway.
+    
+    - Run your game as usual.
+    
+    - Report Bugs to sdennis@svdltd.com following the prcedure in README.
+

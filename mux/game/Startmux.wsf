@@ -1,0 +1,214 @@
+<?xml version="1.0"?>
+<!-- startmux.wsf
+For Win32 platforms, this script starts the MUX 2.x server. -->
+
+<job>
+<object id="shell" progid="WScript.Shell" />
+<object id="fso" progid="Scripting.FileSystemObject" />
+<script language="VBScript" src="muxconfig.vbs">
+</script>
+<script language="VBScript">
+<![CDATA[
+Option Explicit
+const SW_HIDE = 0
+
+' Given three filenames, this function (using existance and modification
+' dates) positions the most recent copy in fnPresent, the next-most-recent
+' copy in fnPast, and fnFuture is left vacant.
+'
+Function RotateFiles(fnPast, fnPresent, fnFuture)
+    dim sName
+    dim bExists(2)
+    dim tTouched(2)
+    dim i
+    dim fs
+    dim nExists
+    dim j
+
+    RotateFiles = False
+
+    ' Gather Information.
+    '
+    sName = Array(fnPast, fnPresent, fnFuture)
+
+    nExists = 0
+    For i = 0 to 2
+        bExists(i) = fso.FileExists(sName(i))
+        If bExists(i) then
+            Set fs = fso.GetFile(sName(i))
+            tTouched(i) = fs.DateLastModified
+            nExists = nExists + 1
+        End If
+    Next
+
+    If nExists = 0 Then
+        Exit Function
+    End If
+
+    ' Ensure that there is at least one open position by deleting
+    ' the oldest file.
+    '
+    Dim k
+    If nExists = 3 Then
+        j = 0
+        For i = 1 to 2
+            If tTouched(i) < tTouched(j) Then
+                j = i
+            End If
+        Next
+
+        Set fs = fso.GetFile(sName(j))
+        wscript.echo "Deleting " & sName(j)
+        fs.Delete True
+        bExists(j) = False
+        nExists = nExists - 1
+    ElseIf nExists = 1 Then
+
+        ' There is only one file. Make it fnCurrent.
+        '
+        If not bExists(1) Then
+            If bExists(0) Then
+                k = 0
+            Else
+                k = 2
+            End If
+            Set fs = fso.GetFile(sName(k))
+            wscript.echo "Moving " & sName(k) & " to " & sName(1)
+            fs.Move sName(1)
+        End If
+        RotateFiles = True
+        Exit Function
+
+    End If
+
+    ' There are only two files left. Which one is oldest?
+    '
+    j = -1
+    For i = 0 to 2
+        If bExists(i) Then
+            If j < 0 Then
+                j = i
+            Else
+                If tTouched(i) < tTouched(j) Then
+                    j = i
+                End If
+            End If
+        End If
+    Next
+    If j < 0 Then
+        Exit Function
+    End If
+
+    ' Move oldest file into the fnPast position.
+    '
+    If j > 0 Then
+
+        ' Do we need to move an existing file out of the way?
+        '
+        If bExists(0) Then
+            If j = 1 Then
+                k = 2
+            Else
+                k = 1
+            End If
+            Set fs = fso.GetFile(sName(0))
+            wscript.echo "Moving " & sName(0) & " to " & sName(k)
+            fs.Move sName(k)
+            tTouched(k) = tTouched(0)
+            bExists(k) = bExists(0)
+            bExists(0) = False
+        End If
+
+        ' Position oldest file at fnPast
+        '
+        Set fs = fso.GetFile(sName(j))
+        wscript.echo "Moving " & sName(j) & " to " & sName(0)
+        fs.Move sName(0)
+        tTouched(0) = tTouched(j)
+        bExists(0) = bExists(j)
+        bExists(j) = False
+    End If
+
+    ' Move the other file into the fnCurrent position.
+    '
+    If not bExists(1) Then
+        Set fs = fso.GetFile(sName(2))
+        wscript.echo "Moving " & sName(2) & " to " & sName(1)
+        fs.Move sName(1)
+    End If
+
+    RotateFiles = True
+
+End Function
+
+Sub MoveFileIfNewer(fnSource, fnDestination)
+    dim fs
+    dim fd
+
+    if fso.FileExists(fnSource) then
+        set fs = fso.GetFile(fnSource)
+        if fso.FileExists(fnDestination) then
+            set fd = fso.GetFile(fnDestination)
+            if fs.DateLastModified > fd.DateLastModified then
+                wscript.Echo "Updating " & fnDestination
+                fd.Delete
+                fs.Move fnDestination
+            else
+                fs.Delete
+            end if
+        else
+            fs.Move fnDestination
+        end if
+    end if
+End Sub
+
+' Execution begins here.
+'
+dim ret
+
+' Verify that we are using cscript and not wscript
+'
+dim s
+s = wscript.FullName
+If instr(1, s, "wscript.exe", vbTextCompare) <> 0 Then
+    MsgBox "Please run this script using cscript."
+    Wscript.Quit
+End If
+
+Do
+    dim fnInput
+    dim fnSave
+    dim fnNew
+
+    fnInput = data & "\" & input_db
+    fnSave  = data & "\" & save_db
+    fnNew   = data & "\" & new_db
+
+    dim bDone
+    bDone = RotateFiles(fnSave, fnInput, fnNew)
+    'If not bDone Then
+    '    wscript.echo "Could not find an appropriate input file."
+    '    Exit Do
+    'End If
+
+    ' Refuse to start if a CRASH database are present
+    '
+    dim fnCrash
+    fnCrash   = data & "\" & input_db & ".CRASH"
+
+    If fso.FileExists(fnCrash) Then
+        wscript.echo "There is a CRASH database present. You should salvage what you can before"
+        wscript.echo "renaming or deleting this database. This script cannot continue while this"
+        wscript.echo "file exists."
+        ret = 0
+        Exit Do
+    End If
+
+    ' Kick off the MUX
+    '
+    ret = shell.run(bin & "\netmux " & gamename & ".conf", SW_HIDE, True)
+Loop While ret = 12345678
+
+]]>
+</script>
+</job>

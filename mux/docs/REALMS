@@ -1,0 +1,131 @@
+TinyMUX 2.1:  REALMS
+Last Update:  February 2002
+
+What are Realms?:
+~~~~~~~~~~~~~~~~
+
+Usually, you dig a room, everyone is in the room. Your control over who 
+sees who is limited. Either you see everyone, you see no one, or you ask
+everyone to use a seperate set of commands, or you and a buncha crack 
+softcoders use @addcommand and much skill to craft something specific to 
+your game.
+
+Hardcode support for for World of Darkness style realms provides another
+answer for that genre.
+
+It allows thing-to-thing visibility rules. Everyone is in the same room
+and yet, whether they can -see- each others poses, speech, and existence
+depends on WoD-type factors. In addition, what is seen is also controlled 
+in a fine-grain thing-to-thing way.
+
+The Umbra. The Shadowlands, Obfuscations, Matrix, Peering, Warded exits,
+Chimera and Fae.
+
+    look, examine, movement, say, pose, other room emits that you cause.
+
+
+How to turn Realms on:
+~~~~~~~~~~~~~~~~~~~~~
+
+Edit your Makefile and include -DWOD_REALMS in the build line.
+
+
+Should I use Realms?:
+~~~~~~~~~~~~~~~~~~~~
+
+It does require helper softcode. The reason for this is that while the
+hardcode is very effective at separating people in the same room, it may be
+too effective in some cases. These cases need further softcode to increase
+the potential for interaction.
+
+
+How is the Realms support used?:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Realm code adds the following flags which are described in the helpfiles:
+
+    OBF(o) HSS(k) UMBRA(y) SHROUD($) MATRIX(/) MEDIUM(^) FAE(0) CHIMERA(1)
+    PEERING(2),
+
+uses the following attributes:
+
+    OBF_LEVEL, HSS_LEVEL, PEERING_REALM, SHROUD_WARED, UMBRA_WARDED, 
+    OBFDESC, UMBRADESC, WRAITHDESC, MATRIXDESC, and FAEDESC,
+
+add adds one hardcode function:
+
+    CANSEE()
+
+Out of Character (OOC) commands like page, @mail, etc. are not effected by
+the realms rules. If you don't set any flags, the realms rules do not 
+affect anything except possibly performance very slightly if at all.
+
+Even with use of these flags and attributes, if you are wizard, royalty,
+or staff, you are always seen, and you see everything. This allows staff to
+administrate the situation from the 'outside'.
+
+Let's talk about Obfuscation and Auspex first. There are many races that
+have different gifts or ways of tapping into this feature, so don't get too
+attached to the names for it. If a player is marked OBF, then the code 
+starts looking for a special attribute: OBF_LEVEL. If OBF_LEVEL is 1, then 
+they are invisible as long as they don't move through an exit. OBF_LEVEL of 
+1 will trigger exits. OBF_LEVEL of 2 and above no longer trigger exits.
+
+If a player is marked HSS, then the code starts looking for a special
+attribute: HSS_LEVEL. If HSS_LEVEL of the looker is greater than the 
+OBF_LEVEL of the lookee, then the lookee's Obfuscation has been thwarted 
+and if OBF_LEVEL is thwarted above level 3, the looker sees the lookee's 
+true form (OBFDESC). If OBF_LEVEL is the same as HSS_LEVEL, it's a coin 
+toss whether Obfuscation will be thwarted or not. This attribute like all 
+the other DESCriptions defined here default to the normal DESC if the 
+special ones aren't present.
+
+UMBRA, SHROUD, MATRIX, and a normal 'unflagged' person are the four
+realms. Except for SHROUD things and players being able to see normal 
+things and players, a player or thing can only see things and players in 
+that realm.  For example, take two players in the same room. Let's say one 
+is marked UMBRA, and the other is marked SHROUD. When and UMBRA player does 
+look, they will see the room's UMBRADESC and they will -not- see the other 
+SHROUD player. If they speak, the SHROUD player will not see it. If they 
+pose, the SHROUD player will not see it. If they try to examine the SHROUD 
+player, the game will behave as if the SHROUD player does not exist.
+
+Players and things are grouped together and can exist in only -one- realm.
+Exits and rooms are grouped together and are generally available to all 
+realms with potentially different appearance. Exits can also be flagged 
+for a particular realm which makes them exclusive to that realm and hidden 
+from all other realms and unusable.
+
+Rooms -could- be flagged for a particular realm, but that's not generally
+useful. It just has the effect of making the room DARK to characters in 
+other realms.
+
+What about wizard things? If the wizard thing is in your room, it honors
+the realm rules. If the wizard thing is located in the master room, it is 
+not affected by the realm rules. The reason for this is that some local 
+things such as cars, terminal, gadgets in the same room typically must be 
+wizard in order operate correctly. For example, a car would not appear in 
+the SHROUD realm and neither would that car's emits been seen by anyone in 
+the SHROUD realm. On the other hand, global code needs to work for everyone 
+regardless of what realm they are in. For example, +time needs to work for 
+you regardless of which realm you're in.
+
+There is also FAE and CHIMERA. FAE can see normal people. They see the
+FAEDESC of other FAE people and CHIMERA people. CHIMERA are only seen by 
+FAE.
+
+Finally, we have the PEERING flag, and PEERING_REALM. These two allow
+you to be seen and heard in one realm (the one you are marked for), and 
+yet see and hear -only- things, people, rooms, etc. from another realm. 
+@set the PEERING flag, and then set PEERING_REALM to one of the following: 
+NORMAL, MATRIX, UMBRA, SHROUD, FAE, CHIMERA, or BLIND.
+
+By default, UMBRA and SHROUD characters pass the locks on exits. To prevent
+this, an attribute (UMBRA_WARDED/SHROUD_WARDED) can be set on the exit.  If
+present, that particular exit will behave for UMBRA and SHROUD characters
+in the same way it does for NORMAL-realmed characters.
+
+This is also useful and necessary for any global exit with a lock that
+purposefully fails (You can't go in that direction type stuff) in the master
+room. Without setting this UMBRA_WARDED and SHROUD_WARDED, your SHROUD and
+UMBRA players will easily find themselves somewhere you did not intend.
