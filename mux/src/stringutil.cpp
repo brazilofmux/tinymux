@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.18 2002-08-09 03:05:35 jake Exp $
+// $Id: stringutil.cpp,v 1.19 2002-08-09 15:10:35 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -572,7 +572,7 @@ const ANSI_ColorState acsRestingStates[3] =
 void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
                   BOOL *pbSawNormal)
 {
-    // if the last character isn't an 'm', then it's an ANSI sequence we
+    // If the last character isn't an 'm', then it's an ANSI sequence we
     // don't support, yet. TODO: There should be a ANSI_Parse() function
     // that calls into this one -only- if there's an 'm', but since 'm'
     // is the only command this game understands at the moment, it's easier
