@@ -1,6 +1,6 @@
-// stringutil.h -- string utilities
+// stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.26 2001-11-09 00:05:29 sdennis Exp $
+// $Id: stringutil.h,v 1.27 2001-11-18 21:45:45 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -13,6 +13,7 @@
 // building/hosting text-based game servers, contact the author at
 // Stephen Dennis <sdennis@svdltd.com> for another license.
 //
+
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 

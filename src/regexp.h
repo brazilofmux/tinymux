@@ -1,5 +1,7 @@
-
-/* regexp.h - Definitions etc. for regexp(3) routines. */
+// regexp.h -- Definitions etc. for regexp(3) routines.
+//
+// $Id: regexp.h,v 1.2 2001-11-18 21:48:14 sdennis Exp $
+//
 
 #ifndef __REGEXP_H
 #define __REGEXP_H
