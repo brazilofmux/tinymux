@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.11 2001-06-27 21:38:21 sdennis Exp $
+// $Id: attrcache.cpp,v 1.12 2001-06-28 18:20:46 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -410,6 +410,7 @@ BOOL cache_sync(void)
 }
 
 // Delete this attribute from the database.
+//
 void cache_del(Aname *nam)
 {
     if (!nam || !cache_initted)
