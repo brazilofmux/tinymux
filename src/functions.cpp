@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.53 2001-06-12 08:29:17 sdennis Exp $
+// $Id: functions.cpp,v 1.54 2001-06-14 08:45:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1499,11 +1499,11 @@ FUNCTION(fun_parent)
 
 FUNCTION(fun_parse)
 {
-    char *curr, *objstring, *buff2, *buff3, *cp, sep;
-    char *dp, *str;
+    char *curr, *objstring, *buff2, *buff3, *cp, *dp, sep, osep;
+    char *str;
     int first, number = 0;
 
-    evarargs_preamble("PARSE", 3);
+    sevarargs_preamble("ITER", 4);
     cp = curr = dp = alloc_lbuf("fun_parse");
     str = fargs[0];
     TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -1517,7 +1517,9 @@ FUNCTION(fun_parse)
     while (cp)
     {
         if (!first)
-            safe_chr(' ', buff, bufc);
+        {
+            print_sep(osep, buff, bufc);
+        }
         first = 0;
         number++;
         objstring = split_token(&cp, sep);
@@ -4925,11 +4927,11 @@ FUNCTION(fun_repeat)
 
 FUNCTION(fun_iter)
 {
-    char *curr, *objstring, *buff2, *buff3, *cp, *dp, sep,
+    char *curr, *objstring, *buff2, *buff3, *cp, *dp, sep, osep,
     *str;
     int first, number = 0;
 
-    evarargs_preamble("ITER", 3);
+    sevarargs_preamble("ITER", 4);
     dp = cp = curr = alloc_lbuf("fun_iter");
     str = fargs[0];
     TinyExec(curr, &dp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -4943,7 +4945,9 @@ FUNCTION(fun_iter)
     while (cp)
     {
         if (!first)
-            safe_chr(' ', buff, bufc);
+        {
+            print_sep(osep, buff, bufc);
+        }
         first = 0;
         number++;
         objstring = split_token(&cp, sep);
@@ -5201,9 +5205,9 @@ FUNCTION(fun_map)
     dbref aowner, thing;
     int aflags, anum, first;
     ATTR *ap;
-    char *atext, *objstring, *str, *cp, *atextbuf, sep;
+    char *atext, *objstring, *str, *cp, *atextbuf, sep, osep;
 
-    varargs_preamble("MAP", 3);
+    svarargs_preamble("MAP", 4);
 
     /*
      * Two possibilities for the second arg: <obj>/<attr> and <attr>. 
@@ -5246,7 +5250,9 @@ FUNCTION(fun_map)
     first = 1;
     while (cp) {
         if (!first)
-            safe_chr(sep, buff, bufc);
+        {
+            print_sep(osep, buff, bufc);
+        }
         first = 0;
         objstring = split_token(&cp, sep);
         StringCopy(atextbuf, atext);
