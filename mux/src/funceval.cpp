@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.24 2003-02-15 17:18:45 jake Exp $
+// $Id: funceval.cpp,v 1.25 2003-02-15 17:24:09 jake Exp $
 //
 
 #include "copyright.h"
@@ -2449,50 +2449,45 @@ FUNCTION(fun_foreach)
  */
 FUNCTION(fun_munge)
 {
-    dbref aowner, thing;
-    int aflags, anum, nptrs1, nptrs2, nresults, i, j;
-    ATTR *ap;
-    char *list1, *list2, *rlist;
-    char *ptrs1[LBUF_SIZE / 2], *ptrs2[LBUF_SIZE / 2], *results[LBUF_SIZE / 2];
-    char *bp, *str, sep, *oldp;
-    char *uargs[2], isep[2] = { '\0', '\0' };
-
-    oldp = *bufc;
+    char sep;
     varargs_preamble(4);
 
     // Find our object and attribute.
     //
-    if (parse_attrib(executor, fargs[0], &thing, &anum))
-    {
-        if (anum == NOTHING)
-        {
-            ap = NULL;
-        }
-        else
-        {
-            ap = atr_num(anum);
-        }
-    }
-    else
+    dbref thing;
+    ATTR *ap;
+
+    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
     }
 
-    if (!ap)
+    if (  !ap
+       || !See_attr(executor, thing, ap))
     {
         return;
     }
+
+    dbref aowner;
+    int aflags;
     char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext)
+    if (!atext) 
     {
         return;
-    }
-    else if (!*atext || !See_attr(executor, thing, ap))
+    } 
+    else if (!*atext)
     {
         free_lbuf(atext);
         return;
     }
+
+    int nptrs1, nptrs2, nresults, i, j;
+    char *list1, *list2, *rlist, *bp, *str, *oldp;
+    char *ptrs1[LBUF_SIZE / 2], *ptrs2[LBUF_SIZE / 2], *results[LBUF_SIZE / 2];
+    char *uargs[2], isep[2] = { '\0', '\0' };
+
+    oldp = *bufc;
 
     // Copy our lists and chop them up.
     //
@@ -2536,7 +2531,9 @@ FUNCTION(fun_munge)
             if (!strcmp(results[i], ptrs1[j]))
             {
                 if (*bufc != oldp)
+                {
                     safe_chr(sep, buff, bufc);
+                }
                 safe_str(ptrs2[j], buff, bufc);
                 ptrs1[j][0] = '\0';
                 break;
