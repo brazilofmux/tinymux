@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.8 2001-06-29 13:11:29 sdennis Exp $ 
+// $Id: set.cpp,v 1.9 2001-06-29 14:11:17 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -90,90 +90,103 @@ dbref match_examinable(dbref player, const char *name)
 
 void do_chzone(dbref player, dbref cause, int key, char *name, char *newobj)
 {
-    dbref thing;
-    dbref zone;
-
-    if (!mudconf.have_zones) {
+    if (!mudconf.have_zones)
+    {
         notify(player, "Zones disabled.");
         return;
     }
     init_match(player, name, NOTYPE);
     match_everything(0);
-    if ((thing = noisy_match_result()) == NOTHING)
+    dbref thing = noisy_match_result();
+    if (thing == NOTHING)
+    {
         return;
+    }
 
+    dbref zone;
     if (!_stricmp(newobj, "none"))
+    {
         zone = NOTHING;
-    else {
+    }
+    else
+    {
         init_match(player, newobj, NOTYPE);
         match_everything(0);
-        if ((zone = noisy_match_result()) == NOTHING)
+        zone = noisy_match_result();
+        if (zone == NOTHING)
+        {
             return;
-
-        if ((Typeof(zone) != TYPE_THING) && (Typeof(zone) != TYPE_ROOM)) {
+        }
+        if (  !isThing(zone)
+           && !isRoom(zone))
+        {
             notify(player, "Invalid zone object type.");
             return;
         }
     }
 
-    if (!Wizard(player) && !(Controls(player, thing)) &&
-        !(check_zone_for_player(player, thing)) &&
-        !(db[player].owner == db[thing].owner)) {
+    if (  !Wizard(player)
+       && !Controls(player, thing)
+       && !check_zone_for_player(player, thing)
+       && db[player].owner != db[thing].owner)
+    {
         notify(player, "You don't have the power to shift reality.");
         return;
     }
-    /*
-     * a player may change an object's zone to NOTHING or to an object he 
-     * 
-     * *  * *  * * owns 
-     */
-    if ((zone != NOTHING) && !Wizard(player) && !(Controls(player, zone)) &&
-        !(db[player].owner == db[zone].owner)) {
+
+    // A player may change an object's zone to NOTHING or to an object he owns.
+    //
+    if (  zone != NOTHING
+       && !Wizard(player)
+       && !Controls(player, zone)
+       && db[player].owner != db[zone].owner)
+    {
         notify(player, "You cannot move that object to that zone.");
         return;
     }
-    /*
-     * only rooms may be zoned to other rooms 
-     */
-    if ((zone != NOTHING) &&
-        (Typeof(zone) == TYPE_ROOM) && Typeof(thing) != TYPE_ROOM) {
+
+    // Only rooms may be zoned to other rooms.
+    //
+    if (  zone != NOTHING
+       && isRoom(zone)
+       && !isRoom(thing))
+    {
         notify(player, "Only rooms may have parent rooms.");
         return;
     }
-    /*
-     * everything is okay, do the change 
-     */
+
+    // Everything is okay, do the change.
+    //
     db[thing].zone = zone;
-    if (Typeof(thing) != TYPE_PLAYER) {
-        /*
-         * if the object is a player, resetting these flags is rather
-         * * * * * inconvenient -- although this may pose a bit of a * 
-         * *  * security * risk. Be careful when @chzone'ing wizard or 
-         * * * * royal players. 
-         */
-        Flags(thing) &= ~WIZARD;
-        Flags(thing) &= ~ROYALTY;
-        Flags(thing) &= ~INHERIT;
+    if (!isPlayer(thing))
+    {
+        // If the object is a player, resetting these flags is rather
+        // inconvenient -- although this may pose a bit of a security risk. Be
+        // careful when @chzone'ing wizard or royal players.
+        //
+        Flags(thing) &= ~(WIZARD | ROYALTY | INHERIT);
+
 #ifdef USE_POWERS
-        Powers(thing) = 0;  /*
-                     * wipe out all powers 
-                     */
-#endif
+        // Wipe out all powers.
+        //
+        Powers(thing) = 0;
+#endif // USE_POWERS
     }
     notify(player, "Zone changed.");
 }
 
 void do_name(dbref player, dbref cause, int key, char *name, char *newname)
 {
-    dbref thing;
     char *buff;
 
-    if ((thing = match_controlled(player, name)) == NOTHING)
+    dbref thing = match_controlled(player, name);
+    if (thing == NOTHING)
+    {
         return;
+    }
 
-    /*
-     * check for bad name 
-     */
+    // Check for bad name.
+    //
     if (!newname || !*newname)
     {
         notify_quiet(player, "Give it what new name?");
@@ -251,25 +264,24 @@ void do_name(dbref player, dbref cause, int key, char *name, char *newname)
 
 void do_alias(dbref player, dbref cause, int key, char *name, char *alias)
 {
-    dbref thing, aowner;
+    dbref aowner;
     int aflags;
     ATTR *ap;
     char *oldalias, *trimalias;
 
-    if ((thing = match_controlled(player, name)) == NOTHING)
+    dbref thing = match_controlled(player, name);
+    if (thing == NOTHING)
+    {
         return;
+    }
 
-    /*
-     * check for renaming a player 
-     */
-
+    // Check for renaming a player.
+    //
     ap = atr_num(A_ALIAS);
-    if (isPlayer(thing)) {
-
-        /*
-         * Fetch the old alias 
-         */
-
+    if (isPlayer(thing))
+    {
+        // Fetch the old alias.
+        //
         oldalias = atr_pget(thing, A_ALIAS, &aowner, &aflags);
         trimalias = trim_spaces(alias);
 
@@ -357,7 +369,7 @@ void do_lock(dbref player, dbref cause, int key, char *name, char *keytext)
     int atr, aflags;
     ATTR *ap;
     struct boolexp *okey;
-    
+
     if (parse_attrib(player, name, &thing, &atr))
     {
         if (atr != NOTHING)
@@ -368,12 +380,12 @@ void do_lock(dbref player, dbref cause, int key, char *name, char *keytext)
                 return;
             }
             ap = atr_num(atr);
-            
+
             // You may lock an attribute if: you could write the
             // attribute if it were stored on yourself --and-- you
             // own the attribute or are a wizard as  long as you are
             // not #1 and are trying to do something to #1.
-            //            
+            //
             if (  ap
                && (  God(player)
                   || (  !God(thing)
@@ -398,7 +410,7 @@ void do_lock(dbref player, dbref cause, int key, char *name, char *keytext)
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     thing = match_result();
-    
+
     switch (thing)
     {
     case NOTHING:
@@ -451,46 +463,54 @@ void do_unlock(dbref player, dbref cause, int key, char *name)
     int atr, aflags;
     ATTR *ap;
 
-    if (parse_attrib(player, name, &thing, &atr)) {
-        if (atr != NOTHING) {
-            if (!atr_get_info(thing, atr, &aowner, &aflags)) {
-                notify_quiet(player,
-                    "Attribute not present on object.");
-                return;
-            }
-            ap = atr_num(atr);
-
-            /*
-             * You may unlock an attribute if: * you could write
-             * * * * the attribute if it were stored on *
-             * yourself * * * * --and-- * you own the attribute
-             * or are a * wizard * as  * long as * you are not #1 
-             * and are * trying to * do * something to #1. 
-             */
-
-            if (ap && (God(player) ||
-              (!God(thing) && Set_attr(player, player, ap, 0) &&
-               (Wizard(player) ||
-                (aowner == Owner(player)))))) {
-                aflags &= ~AF_LOCK;
-                atr_set_flags(thing, atr, aflags);
-                if (Owner(player != Owner(thing)))
-                    if (!Quiet(player) && !Quiet(thing))
-                        notify_quiet(player,
-                             "Attribute unlocked.");
-            }
-            else
-            {
-                notify_quiet(player, NOPERM_MESSAGE);
-            }
+    if (  parse_attrib(player, name, &thing, &atr)
+       && atr != NOTHING)
+    {
+        // We have been asked to change the ownership of an attribute.
+        //
+        if (!atr_get_info(thing, atr, &aowner, &aflags))
+        {
+            notify_quiet(player, "Attribute not present on object.");
             return;
         }
+        ap = atr_num(atr);
+
+        // You may unlock an attribute if: you could write the attribute
+        // if it were stored on yourself --and-- you own the attribute or
+        // are a wizard as long as you are not #1 and are trying to do
+        // something to #1.
+        //
+        if (  ap
+           && (  God(player)
+              || (  !God(thing)
+                 && Set_attr(player, player, ap, 0)
+                 && (  Wizard(player)
+                    || aowner == Owner(player)))))
+        {
+            aflags &= ~AF_LOCK;
+            atr_set_flags(thing, atr, aflags);
+            if (  Owner(player) != Owner(thing)
+               && !Quiet(player)
+               && !Quiet(thing))
+            {
+                notify_quiet(player, "Attribute unlocked.");
+            }
+        }
+        else
+        {
+            notify_quiet(player, NOPERM_MESSAGE);
+        }
+        return;
     }
+
+    // We have been asked to change the ownership of an object.
+    //
     if (!key)
     {
         key = A_LOCK;
     }
-    if ((thing = match_controlled(player, name)) != NOTHING)
+    thing = match_controlled(player, name);
+    if (thing != NOTHING)
     {
         atr_clr(thing, key);
         if (!Quiet(player) && !Quiet(thing))
@@ -943,7 +963,7 @@ void do_set(dbref player, dbref cause, int key, char *name, char *flag)
         }
         buff = alloc_lbuf("do_set");
 
-        // Check for _ 
+        // Check for _
         //
         if (*p == '_')
         {
@@ -982,33 +1002,32 @@ void do_set(dbref player, dbref cause, int key, char *name, char *flag)
 
 void do_power(dbref player, dbref cause, int key, char *name, char *flag)
 {
-    dbref thing;
-
-    if (!flag || !*flag) {
-        notify_quiet(player,
-                 "I don't know what you want to set!");
+    if (!flag || !*flag)
+    {
+        notify_quiet(player, "I don't know what you want to set!");
         return;
     }
-    /*
-     * find thing 
-     */
 
-    if ((thing = match_controlled(player, name)) == NOTHING)
+    // Find thing.
+    //
+    dbref thing = match_controlled(player, name);
+    if (thing == NOTHING)
+    {
         return;
-
+    }
     power_set(thing, player, flag, key);
 }
 
 void do_setattr(dbref player, dbref cause, int attrnum, char *name, char *attrtext)
 {
-    dbref thing;
-
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
-    thing = noisy_match_result();
+    dbref thing = noisy_match_result();
 
     if (thing == NOTHING)
+    {
         return;
+    }
     set_attr_internal(player, thing, attrnum, attrtext, 0);
 }
 
@@ -1126,7 +1145,7 @@ void do_mvattr(dbref player, dbref cause, int key, char *what, char *args[], int
                 notify_quiet(player, tprintf("%s: Permission denied.", args[i]));
                 no_delete++;
             }
-            else 
+            else
             {
                 atr_add(thing, out_attr->number, astr, Owner(player), aflags);
                 if (!Quiet(player))
@@ -1212,53 +1231,59 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, int check_excl
     dbref aowner;
     int ca, ok, aflags;
 
-    /*
-     * Walk the attribute list of the object 
-     */
-
+    // Walk the attribute list of the object.
+    //
     atr_push();
-    for (ca = atr_head(thing, &as); ca; ca = atr_next(&as)) {
+    for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
+    {
         attr = atr_num(ca);
 
-        /*
-         * Discard bad attributes and ones we've seen before. 
-         */
-
+        // Discard bad attributes and ones we've seen before.
+        //
         if (!attr)
-            continue;
-
-        if (check_exclude &&
-            ((attr->flags & AF_PRIVATE) ||
-             hashfindLEN(&ca, sizeof(ca), &mudstate.parent_htab)))
         {
             continue;
         }
 
-        /*
-         * If we aren't the top level remember this attr so we * * *
-         * exclude * it in any parents. 
-         */
-
-        atr_get_info(thing, ca, &aowner, &aflags);
-        if (check_exclude && (aflags & AF_PRIVATE))
+        if (  check_exclude
+           && (  (attr->flags & AF_PRIVATE)
+              || hashfindLEN(&ca, sizeof(ca), &mudstate.parent_htab)))
+        {
             continue;
+        }
+
+        // If we aren't the top level remember this attr so we exclude it in
+        // any parents.
+        //
+        atr_get_info(thing, ca, &aowner, &aflags);
+        if (  check_exclude
+           && (aflags & AF_PRIVATE))
+        {
+            continue;
+        }
 
         if (get_locks)
+        {
             ok = Read_attr(player, thing, attr, aowner, aflags);
+        }
         else
+        {
             ok = See_attr(player, thing, attr, aowner, aflags);
+        }
 
-        /*
-         * Enforce locality restriction on descriptions 
-         */
-
-        if (ok && (attr->number == A_DESC) && !mudconf.read_rem_desc &&
-            !Examinable(player, thing) && !nearby(player, thing))
+        // Enforce locality restriction on descriptions.
+        //
+        if (  ok
+           && attr->number == A_DESC
+           && !mudconf.read_rem_desc
+           && !Examinable(player, thing)
+           && !nearby(player, thing))
         {
             ok = 0;
         }
 
-        if (ok && quick_wild(str, (char *)attr->name))
+        if (  ok
+           && quick_wild(str, (char *)attr->name))
         {
             olist_add(ca);
             if (hash_insert)
@@ -1277,43 +1302,41 @@ int parse_attrib_wild(dbref player, char *str, dbref *thing, int check_parents, 
     int check_exclude, hash_insert, lev;
 
     if (!str)
+    {
         return 0;
+    }
 
     buff = alloc_lbuf("parse_attrib_wild");
-    StringCopy(buff, str);
+    strcpy(buff, str);
 
-    /*
-     * Separate name and attr portions at the first / 
-     */
-
-    if (!parse_thing_slash(player, buff, &str, thing)) {
-
-        /*
-         * Not in obj/attr format, return if not defaulting to * 
-         */
-
-        if (!df_star) {
+    // Separate name and attr portions at the first /.
+    //
+    if (!parse_thing_slash(player, buff, &str, thing))
+    {
+        // Not in obj/attr format, return if not defaulting to.
+        //
+        if (!df_star)
+        {
             free_lbuf(buff);
             return 0;
         }
-        /*
-         * Look for the object, return failure if not found 
-         */
 
+        // Look for the object, return failure if not found.
+        //
         init_match(player, buff, NOTYPE);
         match_everything(MAT_EXIT_PARENTS);
         *thing = match_result();
 
-        if (!Good_obj(*thing)) {
+        if (!Good_obj(*thing))
+        {
             free_lbuf(buff);
             return 0;
         }
         str = (char *)"*";
     }
-    /*
-     * Check the object (and optionally all parents) for attributes 
-     */
 
+    // Check the object (and optionally all parents) for attributes.
+    //
     if (check_parents)
     {
         check_exclude = 0;
@@ -1344,40 +1367,41 @@ void edit_string(char *src, char **dst, char *from, char *to)
 {
     char *cp;
 
-    /*
-     * Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM 
-     */
-
-    if (!strcmp(from, "^")) {
-        /*
-         * Prepend 'to' to string 
-         */
-
+    // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
+    //
+    if (!strcmp(from, "^"))
+    {
+        // Prepend 'to' to string.
+        //
         *dst = alloc_lbuf("edit_string.^");
         cp = *dst;
         safe_str(to, *dst, &cp);
         safe_str(src, *dst, &cp);
         *cp = '\0';
-    } else if (!strcmp(from, "$")) {
-        /*
-         * Append 'to' to string 
-         */
-
+    }
+    else if (!strcmp(from, "$"))
+    {
+        // Append 'to' to string.
+        //
         *dst = alloc_lbuf("edit_string.$");
         cp = *dst;
         safe_str(src, *dst, &cp);
         safe_str(to, *dst, &cp);
         *cp = '\0';
-    } else {
-        /*
-         * replace all occurances of 'from' with 'to'.  Handle the *
-         * * * * special cases of from = \$ and \^. 
-         */
-
-        if (((from[0] == '\\') || (from[0] == '%')) &&
-            ((from[1] == '$') || (from[1] == '^')) &&
-            (from[2] == '\0'))
+    }
+    else
+    {
+        // Replace all occurances of 'from' with 'to'. Handle the special
+        // cases of from = \$ and \^.
+        //
+        if (  (  from[0] == '\\'
+              || from[0] == '%')
+           && (  from[1] == '$'
+              || from[1] == '^')
+           && from[2] == '\0')
+        {
             from++;
+        }
         *dst = replace_string(from, to, src);
     }
 }
@@ -1483,14 +1507,11 @@ void do_edit(dbref player, dbref cause, int key, char *it, char *args[], int nar
     for (attr = olist_first(); attr != NOTHING; attr = olist_next())
     {
         ap = atr_num(attr);
-        if (ap) {
-
-            /*
-             * Get the attr and make sure we can modify it. 
-             */
-
-            atr_get_str(atext, thing, ap->number,
-                    &aowner, &aflags);
+        if (ap)
+        {
+            // Get the attr and make sure we can modify it.
+            //
+            atr_get_str(atext, thing, ap->number, &aowner, &aflags);
             if (Set_attr(player, thing, ap, aflags))
             {
                 // Do the edit and save the result
@@ -1606,22 +1627,26 @@ void do_trigger(dbref player, dbref cause, int key, char *object, char *argv[], 
     dbref thing;
     int attrib;
 
-    if (!parse_attrib(player, object, &thing, &attrib) || (attrib == NOTHING)) {
+    if (  !parse_attrib(player, object, &thing, &attrib)
+       || attrib == NOTHING)
+    {
         notify_quiet(player, "No match.");
         return;
     }
-    if (!controls(player, thing)) {
+    if (!controls(player, thing))
+    {
         notify_quiet(player, NOPERM_MESSAGE);
         return;
     }
     did_it(player, thing, 0, NULL, 0, NULL, attrib, argv, nargs);
 
-    /*
-     * XXX be more descriptive as to what was triggered? 
-     */
-    if (!(key & TRIG_QUIET) && !Quiet(player))
+    // TODO: Be more descriptive as to what was triggered?
+    //
+    if (  !(key & TRIG_QUIET)
+       && !Quiet(player))
+    {
         notify_quiet(player, "Triggered.");
-
+    }
 }
 
 void do_use(dbref player, dbref cause, int key, char *object)
@@ -1643,11 +1668,10 @@ void do_use(dbref player, dbref cause, int key, char *object)
     if (thing == NOTHING)
         return;
 
-    /*
-     * Make sure player can use it 
-     */
-
-    if (!could_doit(player, thing, A_LUSE)) {
+    // Make sure player can use it.
+    //
+    if (!could_doit(player, thing, A_LUSE))
+    {
         did_it(player, thing, A_UFAIL,
                "You can't figure out how to use that.",
                A_OUFAIL, NULL, A_AUFAIL, (char **)NULL, 0);
@@ -1656,14 +1680,21 @@ void do_use(dbref player, dbref cause, int key, char *object)
     temp = alloc_lbuf("do_use");
     doit = 0;
     if (*atr_pget_str(temp, thing, A_USE, &aowner, &aflags))
+    {
         doit = 1;
+    }
     else if (*atr_pget_str(temp, thing, A_OUSE, &aowner, &aflags))
+    {
         doit = 1;
+    }
     else if (*atr_pget_str(temp, thing, A_AUSE, &aowner, &aflags))
+    {
         doit = 1;
+    }
     free_lbuf(temp);
 
-    if (doit) {
+    if (doit)
+    {
         df_use = alloc_lbuf("do_use.use");
         df_ouse = alloc_lbuf("do_use.ouse");
         sprintf(df_use, "You use %s", Name(thing));
@@ -1672,7 +1703,9 @@ void do_use(dbref player, dbref cause, int key, char *object)
                (char **)NULL, 0);
         free_lbuf(df_use);
         free_lbuf(df_ouse);
-    } else {
+    }
+    else
+    {
         notify_quiet(player, "You can't figure out how to use that.");
     }
 }
