@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.28 2001-06-29 18:37:40 sdennis Exp $
+// $Id: predicates.cpp,v 1.29 2001-06-30 17:44:18 morgan Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2075,7 +2075,7 @@ void do_verb(dbref player, dbref cause, int key, char *victim_str, char *args[],
 //
 BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo)
 {
-    Log.printf("%s(%u): Out of memory." ENDLINE, SourceFile, LineNo);
+    Log.tinyprintf("%s(%u): Out of memory." ENDLINE, SourceFile, LineNo);
     Log.Flush();
 #ifdef STANDALONE
     abort();
@@ -2097,7 +2097,7 @@ BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo)
 //
 BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo)
 {
-    Log.printf("%s(%u): Assertion failed." ENDLINE, SourceFile, LineNo);
+    Log.tinyprintf("%s(%u): Assertion failed." ENDLINE, SourceFile, LineNo);
     Log.Flush();
 #ifdef STANDALONE
     abort();

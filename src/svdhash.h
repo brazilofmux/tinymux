@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.h,v 1.10 2001-02-10 04:08:03 sdennis Exp $
+// $Id: svdhash.h,v 1.11 2001-06-30 17:44:18 morgan Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -295,7 +295,7 @@ public:
     void WriteBuffer(int nString, const char *pString);
     void WriteString(const char *pString);
     void WriteInteger(int iNumber);
-    void DCL_CDECL printf(char *pFormatSpec, ...);
+    void DCL_CDECL tinyprintf(char *pFormatSpec, ...);
     void Flush(void);
     void ChangePrefix(char *p);
 };

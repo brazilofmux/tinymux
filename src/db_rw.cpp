@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.18 2001-06-28 10:58:17 sdennis Exp $
+// $Id: db_rw.cpp,v 1.19 2001-06-30 17:44:17 morgan Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -430,7 +430,7 @@ static int get_list(FILE *f, dbref i, int new_strings)
             ownp = (char *)strchr(buff, '^');
             if (!ownp)
             {
-                Log.printf("Bad format in attribute on object %d" ENDLINE, i);
+                Log.tinyprintf("Bad format in attribute on object %d" ENDLINE, i);
                 free_lbuf(buff);
                 return 0;
             }
@@ -441,7 +441,7 @@ static int get_list(FILE *f, dbref i, int new_strings)
             flagp = (char *)strchr(ownp, '^');
             if (!flagp)
             {
-                Log.printf("Bad format in attribute on object %d" ENDLINE, i);
+                Log.tinyprintf("Bad format in attribute on object %d" ENDLINE, i);
                 free_lbuf(buff);
                 return 0;
             }
@@ -492,7 +492,7 @@ static int get_list(FILE *f, dbref i, int new_strings)
                 }
                 if (anum < 0)
                 {
-                    Log.printf("Bad attribute name '%s' on object %d, ignoring..." ENDLINE, buff, i);
+                    Log.tinyprintf("Bad attribute name '%s' on object %d, ignoring..." ENDLINE, buff, i);
                     (void)getstring_noalloc(f, new_strings);
                 }
                 else
@@ -513,13 +513,13 @@ static int get_list(FILE *f, dbref i, int new_strings)
             if (c != '\n')
             {
                 ungetc(c, f);
-                Log.printf("No line feed on object %d" ENDLINE, i);
+                Log.tinyprintf("No line feed on object %d" ENDLINE, i);
                 return 1;
             }
             return 1;
 
         default:
-            Log.printf("Bad character '%c' when getting attributes on object %d" ENDLINE, c, i);
+            Log.tinyprintf("Bad character '%c' when getting attributes on object %d" ENDLINE, c, i);
 
             // We've found a bad spot.  I hope things aren't too bad.
             //
@@ -628,7 +628,7 @@ static void putbool_subexp(FILE *f, BOOLEXP *b)
 
     default:
 
-        Log.printf("Unknown boolean type in putbool_subexp: %d" ENDLINE, b->type);
+        Log.tinyprintf("Unknown boolean type in putbool_subexp: %d" ENDLINE, b->type);
         break;
     }
 }
@@ -703,7 +703,7 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
             break;
 
         default: // A bad type, mark going
-            Log.printf("Funny object type for #%d" ENDLINE, thing);
+            Log.tinyprintf("Funny object type for #%d" ENDLINE, thing);
             *flags1 = GOING;
             return;
         }
@@ -1374,7 +1374,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
             if (size_gotten)
             {
-                Log.printf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
+                Log.tinyprintf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
                 tstr = getstring_noalloc(f, 0); // junk
                 break;
             }
@@ -1397,7 +1397,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (header_gotten)
                 {
-                    Log.printf(ENDLINE "Duplicate MUSH version header entry at object %d, ignored." ENDLINE, i);
+                    Log.tinyprintf(ENDLINE "Duplicate MUSH version header entry at object %d, ignored." ENDLINE, i);
                     tstr = getstring_noalloc(f, 0);
                     break;
                 }
@@ -1434,7 +1434,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (header_gotten)
                 {
-                    Log.printf(ENDLINE "Duplicate MUX version header entry at object %d, ignored." ENDLINE, i);
+                    Log.tinyprintf(ENDLINE "Duplicate MUX version header entry at object %d, ignored." ENDLINE, i);
                     tstr = getstring_noalloc(f, 0);
                     break;
                 }
@@ -1473,7 +1473,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (header_gotten)
                 {
-                    Log.printf(ENDLINE "Duplicate MUSH version header entry at object %d, ignored." ENDLINE, i);
+                    Log.tinyprintf(ENDLINE "Duplicate MUSH version header entry at object %d, ignored." ENDLINE, i);
                     tstr = getstring_noalloc(f, 0);
                     break;
                 }
@@ -1511,7 +1511,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             case 'S':   // SIZE
                 if (size_gotten)
                 {
-                    Log.printf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
+                    Log.tinyprintf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
                     tstr = getstring_noalloc(f, 0);
                 }
                 else
@@ -1555,7 +1555,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             case 'N':   // NEXT ATTR TO ALLOC WHEN NO FREELIST
                 if (nextattr_gotten)
                 {
-                    Log.printf(ENDLINE "Duplicate next free vattr entry at object %d, ignored." ENDLINE, i);
+                    Log.tinyprintf(ENDLINE "Duplicate next free vattr entry at object %d, ignored." ENDLINE, i);
                     tstr = getstring_noalloc(f, 0);
                 }
                 else
@@ -1566,7 +1566,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 break;
 
             default:
-                Log.printf(ENDLINE "Unexpected character '%c' in MUX header near object #%d, ignored." ENDLINE, ch, i);
+                Log.tinyprintf(ENDLINE "Unexpected character '%c' in MUX header near object #%d, ignored." ENDLINE, ch, i);
                 tstr = getstring_noalloc(f, 0);
             }
             break;
@@ -1575,7 +1575,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
         case '@':   // MUSE header
             if (header_gotten)
             {
-                Log.printf(ENDLINE "Duplicate MUSE header entry at object #%d." ENDLINE, i);
+                Log.tinyprintf(ENDLINE "Duplicate MUSE header entry at object #%d." ENDLINE, i);
                 return -1;
             }
             header_gotten = 1;
@@ -1602,12 +1602,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
             if (g_format != F_MUD)
             {
-                Log.printf(ENDLINE "MUD-style object found in non-MUD database at object #%d" ENDLINE, i);
+                Log.tinyprintf(ENDLINE "MUD-style object found in non-MUD database at object #%d" ENDLINE, i);
                 return -1;
             }
             if (i != getref(f))
             {
-                Log.printf(ENDLINE "Sequence error at object #%d" ENDLINE, i);
+                Log.tinyprintf(ENDLINE "Sequence error at object #%d" ENDLINE, i);
                 return -1;
             }
             db_grow(i + 1);
@@ -1813,7 +1813,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 }
                 if (!get_list(f, i, read_new_strings))
                 {
-                    Log.printf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
+                    Log.tinyprintf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
                     return -1;
                 }
             }
@@ -1963,7 +1963,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     if (!get_list(f, i, read_new_strings))
                     {
-                        Log.printf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
+                        Log.tinyprintf(ENDLINE "Error reading attrs for object #%d" ENDLINE, i);
                         return -1;
                     }
                 }
@@ -2001,7 +2001,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             tstr = getstring_noalloc(f, 0);
             if (strncmp(tstr, "**END OF DUMP***", 16))
             {
-                Log.printf(ENDLINE "Bad EOF marker at object #%d" ENDLINE, i);
+                Log.tinyprintf(ENDLINE "Bad EOF marker at object #%d" ENDLINE, i);
                 return -1;
             }
             else
@@ -2025,17 +2025,17 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
 
         case EOF:
-            Log.printf(ENDLINE "Unexpected end of file near object #%d" ENDLINE, i);
+            Log.tinyprintf(ENDLINE "Unexpected end of file near object #%d" ENDLINE, i);
             return -1;
 
         default:
             if (Tiny_IsPrint[(unsigned char)ch])
             {
-                Log.printf(ENDLINE "Illegal character '%c' near object #%d" ENDLINE, ch, i);
+                Log.tinyprintf(ENDLINE "Illegal character '%c' near object #%d" ENDLINE, ch, i);
             }
             else
             {
-                Log.printf(ENDLINE "Illegal character 0x%02x near object #%d" ENDLINE, ch, i);
+                Log.tinyprintf(ENDLINE "Illegal character 0x%02x near object #%d" ENDLINE, ch, i);
             }
             return -1;
         }

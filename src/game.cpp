@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.30 2001-06-29 23:39:14 sdennis Exp $
+// $Id: game.cpp,v 1.31 2001-06-30 17:44:17 morgan Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -936,7 +936,7 @@ static void report_timecheck
             obj_counted++;
             if (yes_log)
             {
-                Log.printf("#%d\t%ld" ENDLINE, thing, used_msecs);
+                Log.tinyprintf("#%d\t%ld" ENDLINE, thing, used_msecs);
             }
             if (yes_screen)
             {
@@ -958,7 +958,7 @@ static void report_timecheck
 
     if (yes_log)
     {
-        Log.printf("Counted %d objects using %ld msecs over %d seconds.",
+        Log.tinyprintf("Counted %d objects using %ld msecs over %d seconds.",
             obj_counted, ltdTotal.ReturnMilliseconds(), ltdPeriod.ReturnSeconds());
         end_log();
     }
@@ -1596,9 +1596,9 @@ static int load_game(int ccPageFile)
         {
             DebugTotalFiles++;
             setvbuf(f, NULL, _IOFBF, 16384);
-            Log.printf("LOADING: %s" ENDLINE, mudconf.mail_db);
+            Log.tinyprintf("LOADING: %s" ENDLINE, mudconf.mail_db);
             load_mail(f);
-            Log.printf("LOADING: %s (done)" ENDLINE, mudconf.mail_db);
+            Log.tinyprintf("LOADING: %s (done)" ENDLINE, mudconf.mail_db);
             if (fclose(f) == 0)
             {
                 DebugTotalFiles--;
@@ -1943,7 +1943,7 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         // We can't run on this version of WinSock.
         //
-        Log.printf("INFO: We requested WinSock v2.2, but only WinSock v%d.%d was available." ENDLINE, LOBYTE(wsaData.wVersion), HIBYTE(wsaData.wVersion));
+        Log.tinyprintf("INFO: We requested WinSock v2.2, but only WinSock v%d.%d was available." ENDLINE, LOBYTE(wsaData.wVersion), HIBYTE(wsaData.wVersion));
         //WSACleanup();
         //return 102;
     }

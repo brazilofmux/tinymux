@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.47 2001-06-29 11:25:02 sdennis Exp $
+// $Id: db.cpp,v 1.48 2001-06-30 17:44:17 morgan Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3003,16 +3003,16 @@ void clone_object(dbref a, dbref b)
 int init_dbfile(char *game_dir_file, char *game_pag_file)
 {
 #ifdef STANDALONE
-    Log.printf("Opening (%s,%s)" ENDLINE, game_dir_file, game_pag_file);
+    Log.tinyprintf("Opening (%s,%s)" ENDLINE, game_dir_file, game_pag_file);
 #endif // STANDALONE
     int cc = cache_init(game_dir_file, game_pag_file);
     if (cc != HF_OPEN_STATUS_ERROR)
     {
 #ifdef STANDALONE
-        Log.printf("Done opening (%s,%s)." ENDLINE, game_dir_file, game_pag_file);
+        Log.tinyprintf("Done opening (%s,%s)." ENDLINE, game_dir_file, game_pag_file);
 #else // STANDALONE
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        Log.printf("Using game db files: (%s,%s).", game_dir_file, game_pag_file);
+        Log.tinyprintf("Using game db files: (%s,%s).", game_dir_file, game_pag_file);
         ENDLOG;
 #endif // STANDALONE
         db_free();
@@ -3337,7 +3337,7 @@ int ReplaceFile(char *old_name, char *new_name)
     }
     else
     {
-        Log.printf("MoveFile %s to %s fails with GetLastError() of %d" ENDLINE, old_name, new_name, GetLastError());
+        Log.tinyprintf("MoveFile %s to %s fails with GetLastError() of %d" ENDLINE, old_name, new_name, GetLastError());
     }
     return -1;
 }
@@ -3357,7 +3357,7 @@ int ReplaceFile(char *old_name, char *new_name)
     }
     else
     {
-        Log.printf("rename %s to %s fails with errno of %s(%d)" ENDLINE, old_name, new_name, strerror(errno), errno);
+        Log.tinyprintf("rename %s to %s fails with errno of %s(%d)" ENDLINE, old_name, new_name, strerror(errno), errno);
     }
     return -1;
 }
