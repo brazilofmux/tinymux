@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  November 2002
+Last Update:  December 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,6 +125,9 @@ Feature Additions:
  -- Extended exptime() and writetime() to use weeks and 30-day months.
  -- Added MailLock as a new @lock.  Incoming @mail must pass the MailLock or
     it is returned.  Added by Jake.
+ -- Added KEEPALIVE flag which, if set, periodically causes a TELNET NOP to
+    be sent to the client.  Idea and patch from Soruk.  This approach is less
+    chatty than using the KEEPALIVE option in TCP/IP.
 
 
 Bug Fixes:
