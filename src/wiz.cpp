@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.8 2000-09-26 06:50:49 sdennis Exp $
+// $Id: wiz.cpp,v 1.9 2000-11-01 09:12:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -219,17 +219,15 @@ void do_force_prefixed( dbref player, dbref cause, int key, char *command,
 void do_force( dbref player, dbref cause, int key, char *what, char *command,
                char *args[], int nargs )
 {
-    dbref victim;
-
-    if ((victim = match_controlled(player, what)) == NOTHING)
+    dbref victim = match_controlled(player, what);
+    if (victim != NOTHING)
     {
-        return;
+        // Force victim to do command.
+        //
+        CLinearTimeDelta ltd;
+        wait_que(victim, player, FALSE, ltd, NOTHING, 0, command,
+            args, nargs, mudstate.global_regs);
     }
-
-    // Force victim to do command.
-    //
-    wait_que( victim, player, 0, NOTHING, 0,
-              command, args, nargs, mudstate.global_regs);
 }
 
 // ---------------------------------------------------------------------------

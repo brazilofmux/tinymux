@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.32 2000-10-10 23:06:47 sdennis Exp $
+// $Id: externs.h,v 1.33 2000-11-01 09:12:30 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -40,7 +40,7 @@ extern const char *time_format_2(int Seconds);
 /* From cque.cpp */
 extern int  FDECL(nfy_que, (dbref, int, int, int));
 extern int  FDECL(halt_que, (dbref, dbref));
-extern void FDECL(wait_que, (dbref, dbref, int, dbref, int, char *, char *[],int, char *[]));
+extern void wait_que(dbref, dbref, BOOL, CLinearTimeDelta&, dbref, int, char *, char *[],int, char *[]);
 extern void NDECL(recover_queue_deposits);
 
 #ifdef WIN32 // WIN32

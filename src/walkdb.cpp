@@ -1,7 +1,7 @@
 //
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.8 2000-08-28 07:52:08 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.9 2000-11-01 09:12:29 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -30,12 +30,11 @@ static void bind_and_queue(dbref player, dbref cause, char *action,
 {
     // Allocated by replace_string.
     //
-    char *command, *command2;
-
-    command = replace_string(BOUND_VAR, argstr, action);
-    command2 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), command);
-    wait_que(player, cause, 0, NOTHING, 0, command2, cargs, ncargs,
-             mudstate.global_regs);
+    char *command = replace_string(BOUND_VAR, argstr, action);
+    char *command2 = replace_string(LISTPLACE_VAR, Tiny_ltoa_t(number), command);
+    CLinearTimeDelta ltd;
+    wait_que(player, cause, FALSE, ltd, NOTHING, 0, command2, cargs,
+        ncargs, mudstate.global_regs);
     free_lbuf(command);
     free_lbuf(command2);
 }

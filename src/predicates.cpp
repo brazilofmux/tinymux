@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.22 2000-10-10 23:06:47 sdennis Exp $
+// $Id: predicates.cpp,v 1.23 2000-11-01 09:12:29 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -167,7 +167,9 @@ int is_number(char *str)
     // Leading spaces.
     //
     while (Tiny_IsSpace[(unsigned char)*str])
+    {
         str++;
+    }
 
     // Leading minus
     //
@@ -178,7 +180,9 @@ int is_number(char *str)
         // But not if just a minus
         //
         if (!*str)
+        {
             return 0;
+        }
     }
 
     // Need at least one digit.
@@ -199,7 +203,9 @@ int is_number(char *str)
     // Decimal point.
     //
     if (*str == '.')
+    {
         str++;
+    }
 
     // Need at least one digit
     //
@@ -218,7 +224,9 @@ int is_number(char *str)
     // Trailing spaces.
     //
     while (Tiny_IsSpace[(unsigned char)*str])
+    {
         str++;
+    }
 
     return ((*str || !got_one) ? 0 : 1);
 }
@@ -227,22 +235,21 @@ int is_number(char *str)
 
 int could_doit(dbref player, dbref thing, int locknum)
 {
-    char *key;
-    dbref aowner;
-    int aflags, doit;
-
-    /*
-     * no if nonplayer trys to get key 
-     */
-
-    if (!isPlayer(player) && Key(thing)) {
+    // If nonplayer tries to get key, then no.
+    //
+    if (!isPlayer(player) && Key(thing))
+    {
         return 0;
     }
     if (Pass_Locks(player))
+    {
         return 1;
+    }
 
-    key = atr_get(thing, locknum, &aowner, &aflags);
-    doit = eval_boolexp_atr(player, thing, thing, key);
+    dbref aowner;
+    int   aflags;
+    char *key = atr_get(thing, locknum, &aowner, &aflags);
+    int doit = eval_boolexp_atr(player, thing, thing, key);
     free_lbuf(key);
     return doit;
 }
@@ -670,15 +677,18 @@ void do_switch(dbref player, dbref cause, int key, char *expr, char *args[], int
 
     any = 0;
     buff = bp = alloc_lbuf("do_switch");
+    CLinearTimeDelta ltd;
     for (a = 0; (a < (nargs - 1)) && args[a] && args[a + 1]; a += 2) {
         bp = buff;
         str = args[a];
         TinyExec(buff, &bp, 0, player, cause, EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs, ncargs);
         *bp = '\0';
-        if (wild_match(buff, expr)) {
-            wait_que(player, cause, 0, NOTHING, 0, args[a + 1],
-                 cargs, ncargs, mudstate.global_regs);
-            if (key == SWITCH_ONE) {
+        if (wild_match(buff, expr))
+        {
+            wait_que(player, cause, FALSE, ltd, NOTHING, 0,
+                args[a+1], cargs, ncargs, mudstate.global_regs);
+            if (key == SWITCH_ONE)
+            {
                 free_lbuf(buff);
                 return;
             }
@@ -687,8 +697,10 @@ void do_switch(dbref player, dbref cause, int key, char *expr, char *args[], int
     }
     free_lbuf(buff);
     if ((a < nargs) && !any && args[a])
-        wait_que(player, cause, 0, NOTHING, 0, args[a], cargs, ncargs,
+    {
+        wait_que(player, cause, FALSE, ltd, NOTHING, 0, args[a], cargs, ncargs,
              mudstate.global_regs);
+    }
 }
 
 void do_addcommand(dbref player, dbref cause, int key, char *name, char *command)
@@ -976,8 +988,10 @@ void handle_prog(DESC *d, char *message)
         return;
     }
     cmd = atr_get(d->player, A_PROGCMD, &aowner, &aflags);
-    wait_que(d->program_data->wait_cause, d->player, 0, NOTHING, 0, cmd, (char **)&message,
-         1, (char **)d->program_data->wait_regs);
+    CLinearTimeDelta ltd;
+    wait_que(d->program_data->wait_cause, d->player, FALSE, ltd,
+        NOTHING, 0, cmd, (char **)&message, 1,
+        (char **)d->program_data->wait_regs);
 
     /* First, set 'all' to a descriptor we find for this player */
     
@@ -1868,8 +1882,9 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
                 }
             }
             free_lbuf(charges);
-            wait_que(thing, player, 0, NOTHING, 0, act, args, nargs,
-                 mudstate.global_regs);
+            CLinearTimeDelta ltd;
+            wait_que(thing, player, FALSE, ltd, NOTHING, 0, act,
+                args, nargs, mudstate.global_regs);
         }
         free_lbuf(act);
     }

@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules
 //
-// $Id: timeutil.h,v 1.4 2000-10-25 04:29:23 sdennis Exp $
+// $Id: timeutil.h,v 1.5 2000-11-01 09:12:29 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -113,6 +113,7 @@ public:
     void SetTimeValueStruct(struct timeval *tv);
     void SetMilliseconds(unsigned long arg_dwMilliseconds);
     void SetSeconds(INT64 arg_tSeconds);
+    void SetSecondsString(char *arg_szSeconds);
     void Set100ns(INT64 arg_t100ns);
 
     void operator+=(const CLinearTimeDelta& ltd);

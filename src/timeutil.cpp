@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.11 2000-10-25 04:29:23 sdennis Exp $
+// $Id: timeutil.cpp,v 1.12 2000-11-01 09:12:29 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -194,8 +194,122 @@ CLinearTimeAbsolute::CLinearTimeAbsolute(const CLinearTimeAbsolute& ltaOrigin, c
     m_tAbsolute = ltaOrigin.m_tAbsolute + ltdOffset.m_tDelta;
 }
 
+BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
+{
+    BOOL bMinus = FALSE;
+
+    i64 = 0;
+
+    BOOL bGotOne;
+
+    // Leading spaces.
+    //
+    while (Tiny_IsSpace[(unsigned char)*str])
+    {
+        str++;
+    }
+
+    // Leading minus
+    //
+    if (*str == '-')
+    {
+        bMinus = TRUE;
+        str++;
+
+        // But not if just a minus
+        //
+        if (!*str)
+        {
+            return FALSE;
+        }
+    }
+
+    // Need at least one digit.
+    //
+    bGotOne = FALSE;
+    char *pIntegerStart = str;
+    if (Tiny_IsDigit[(unsigned char)*str])
+    {
+        bGotOne = TRUE;
+        str++;
+    }
+
+    // The number (int)
+    //
+    while (Tiny_IsDigit[(unsigned char)*str])
+    {
+        str++;
+    }
+
+    // Decimal point.
+    //
+    if (*str == '.')
+    {
+        str++;
+    }
+
+    // Need at least one digit
+    //
+    char *pFractionalStart = str;
+    if (Tiny_IsDigit[(unsigned char)*str])
+    {
+        bGotOne = TRUE;
+        str++;
+    }
+
+    // The number (fract)
+    //
+    while (Tiny_IsDigit[(unsigned char)*str])
+    {
+        str++;
+    }
+    char *pFractionalEnd = str;
+
+    // Trailing spaces.
+    //
+    while (Tiny_IsSpace[(unsigned char)*str])
+    {
+        str++;
+    }
+
+    if (*str || !bGotOne)
+    {
+        return FALSE;
+    }
+
+    // Convert the fractional part to an INT64.
+    //
+    INT64 t_i64 = 0;
+    int n = pFractionalEnd - pFractionalStart;
+    if (n)
+    {
+        static char aZeroes[8] = "0000000";
+        char aBuffer[8];
+        memcpy(aBuffer, aZeroes, sizeof(aZeroes));
+        if (n > sizeof(aZeroes)-1)
+        {
+            n = sizeof(aZeroes)-1;
+        }
+        memcpy(aBuffer, pFractionalStart, n);
+        t_i64 = Tiny_atoi64(aBuffer);
+    }
+
+    // Convert the integer part.
+    //
+    t_i64 += Tiny_atoi64(pIntegerStart) * FACTOR_100NS_PER_SECOND;
+
+    if (bMinus)
+    {
+        t_i64 = -t_i64;
+    }
+    i64 = t_i64;
+    return TRUE;
+}
+
 char *CLinearTimeAbsolute::ReturnSecondsString(void)
 {
+    // TODO: Handle fractional seconds.
+    //
     INT64 lt = i64FloorDivision(m_tAbsolute - EPOCH_OFFSET, FACTOR_100NS_PER_SECOND);
     Tiny_i64toa(lt, m_Buffer);
     return m_Buffer;
@@ -250,6 +364,11 @@ void CLinearTimeDelta::SetMilliseconds(unsigned long arg_dwMilliseconds)
 long CLinearTimeDelta::ReturnMilliseconds(void)
 {
     return (long)(m_tDelta/FACTOR_100NS_PER_MILLISECOND);
+}
+
+void CLinearTimeDelta::SetSecondsString(char *arg_szSeconds)
+{
+    ParseFractionalSecondsString(m_tDelta, arg_szSeconds);
 }
 
 void CLinearTimeDelta::SetSeconds(INT64 arg_tSeconds)
@@ -818,8 +937,8 @@ BOOL LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
 
 void CLinearTimeAbsolute::SetSecondsString(char *arg_szSeconds)
 {
-    INT64 lt = Tiny_atoi64(arg_szSeconds);
-    m_tAbsolute = (lt * FACTOR_100NS_PER_SECOND) + EPOCH_OFFSET;
+    ParseFractionalSecondsString(m_tAbsolute, arg_szSeconds);
+    m_tAbsolute += EPOCH_OFFSET;
 }
 
 // OS Dependent Routines:

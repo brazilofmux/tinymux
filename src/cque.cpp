@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.14 2000-11-01 07:08:35 sdennis Exp $
+// $Id: cque.cpp,v 1.15 2000-11-01 09:12:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -689,12 +689,30 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
  * * wait_que: Add commands to the wait or semaphore queues.
  */
 
-void wait_que(dbref player, dbref cause, int wait, dbref sem, int attr, char *command, char *args[], int nargs, char *sargs[])
+void wait_que
+(
+    dbref player,
+    dbref cause,
+    BOOL bTimed,
+    CLinearTimeDelta &ltdWait,
+    dbref sem,
+    int   attr,
+    char *command,
+    char *args[],
+    int   nargs,
+    char *sargs[]
+)
 {
-    if (!(mudconf.control_flags & CF_INTERP)) return;
+    if (!(mudconf.control_flags & CF_INTERP))
+    {
+        return;
+    }
 
     BQUE *tmp = setup_que(player, cause, command, args, nargs, sargs);
-    if (!tmp) return;
+    if (!tmp)
+    {
+        return;
+    }
 
     int iPriority;
     if (Typeof(tmp->cause) == TYPE_PLAYER)
@@ -706,18 +724,10 @@ void wait_que(dbref player, dbref cause, int wait, dbref sem, int attr, char *co
         iPriority = PRIORITY_OBJECT;
     }
 
-    if (wait == 0)
+    tmp->IsTimed = bTimed;
+    if (bTimed)
     {
-        // This means that waitime is not used.
-        //
-        tmp->IsTimed = FALSE;
-    }
-    else
-    {
-        tmp->IsTimed = TRUE;
         tmp->waittime.GetUTC();
-        CLinearTimeDelta ltdWait;
-        ltdWait.SetSeconds(wait);
         tmp->waittime += ltdWait;
     }
 
@@ -768,14 +778,15 @@ void do_wait
     int ncargs
 )
 {
-    int howlong = 0;
-    
+    CLinearTimeDelta ltdHowLong;
+
     // If arg1 is all numeric, do simple (non-sem) timed wait.
     //
     if (is_number(event))
     {
-        howlong = Tiny_atol(event);
-        wait_que(player, cause, howlong, NOTHING, 0, cmd, cargs, ncargs, mudstate.global_regs);
+        ltdHowLong.SetSecondsString(event);
+        wait_que(player, cause, TRUE, ltdHowLong, NOTHING, 0, cmd,
+            cargs, ncargs, mudstate.global_regs);
         return;
     }
 
@@ -799,11 +810,13 @@ void do_wait
         // Get timeout, default 0.
         //
         int attr = A_SEMAPHORE;
+        BOOL bTimed = FALSE;
         if (event && *event)
         {
             if (is_number(event))
             {
-                howlong = Tiny_atol(event);
+                ltdHowLong.SetSecondsString(event);
+                bTimed = TRUE;
             }
             else
             {
@@ -835,9 +848,10 @@ void do_wait
             // Thing over-notified, run the command immediately.
             //
             thing = NOTHING;
-            howlong = 0;
+            bTimed = FALSE;
         }
-        wait_que(player, cause, howlong, thing, attr, cmd, cargs, ncargs, mudstate.global_regs);
+        wait_que(player, cause, bTimed, ltdHowLong, thing, attr,
+            cmd, cargs, ncargs, mudstate.global_regs);
     }
 }
 

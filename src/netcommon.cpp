@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.24 2000-10-24 19:59:52 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.25 2000-11-01 09:12:30 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -689,9 +689,11 @@ static void announce_connect(dbref player, DESC *d)
             d->addr, Name(player), 0, 0, 0, 0);
     }
     buf = atr_pget(player, A_ACONNECT, &aowner, &aflags);
+    CLinearTimeDelta ltd;
     if (buf)
     {
-        wait_que(player, player, 0, NOTHING, 0, buf, (char **)NULL, 0, NULL);
+        wait_que(player, player, FALSE, ltd, NOTHING, 0, buf,
+            (char **)NULL, 0, NULL);
     }
     free_lbuf(buf);
     if (mudconf.master_room != NOTHING)
@@ -699,8 +701,8 @@ static void announce_connect(dbref player, DESC *d)
         buf = atr_pget(mudconf.master_room, A_ACONNECT, &aowner, &aflags);
         if (buf)
         {
-            wait_que( mudconf.master_room, player, 0, NOTHING, 0,
-                      buf, (char **)NULL, 0, NULL);
+            wait_que(mudconf.master_room, player, FALSE, ltd,
+                NOTHING, 0, buf, (char **)NULL, 0, NULL);
         }
         free_lbuf(buf);
         DOLIST(obj, Contents(mudconf.master_room))
@@ -708,8 +710,8 @@ static void announce_connect(dbref player, DESC *d)
             buf = atr_pget(obj, A_ACONNECT, &aowner, &aflags);
             if (buf)
             {
-                wait_que( obj, player, 0, NOTHING, 0, buf, (char **)NULL, 0,
-                          NULL);
+                wait_que(obj, player, FALSE, ltd, NOTHING, 0, buf,
+                    (char **)NULL, 0, NULL);
             }
             free_lbuf(buf);
         }
@@ -727,8 +729,8 @@ static void announce_connect(dbref player, DESC *d)
             buf = atr_pget(zone, A_ACONNECT, &aowner, &aflags);
             if (buf)
             {
-                wait_que( zone, player, 0, NOTHING, 0, buf, (char **)NULL, 0,
-                          NULL);
+                wait_que(zone, player, FALSE, ltd, NOTHING, 0, buf,
+                    (char **)NULL, 0, NULL);
             }
             free_lbuf(buf);
             break;
@@ -740,9 +742,10 @@ static void announce_connect(dbref player, DESC *d)
             DOLIST(obj, Contents(zone))
             {
                 buf = atr_pget(obj, A_ACONNECT, &aowner, &aflags);
-                if (buf) {
-                    wait_que(obj, player, 0, NOTHING, 0, buf,
-                        (char **)NULL, 0, NULL);
+                if (buf)
+                {
+                    wait_que(obj, player, FALSE, ltd, NOTHING, 0,
+                        buf, (char **)NULL, 0, NULL);
                 }
                 free_lbuf(buf);
             }
@@ -815,9 +818,10 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         
         argv[0] = (char *)reason;
         atr_temp = atr_pget(player, A_ADISCONNECT, &aowner, &aflags);
+        CLinearTimeDelta ltd;
         if (*atr_temp)
         {
-            wait_que(player, player, 0, NOTHING, 0, atr_temp, argv, 1, NULL);
+            wait_que(player, player, FALSE, ltd, NOTHING, 0, atr_temp, argv, 1, NULL);
         }
         free_lbuf(atr_temp);
         if (mudconf.master_room != NOTHING)
@@ -825,7 +829,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             atr_temp = atr_pget(mudconf.master_room, A_ADISCONNECT, &aowner, &aflags);
             if (*atr_temp)
             {
-                wait_que(mudconf.master_room, player, 0, NOTHING, 0, atr_temp, (char **)NULL, 0, NULL);
+                wait_que(mudconf.master_room, player, FALSE, ltd,
+                    NOTHING, 0, atr_temp, (char **)NULL, 0, NULL);
             }
             free_lbuf(atr_temp);
             DOLIST(obj, Contents(mudconf.master_room))
@@ -833,7 +838,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                 atr_temp = atr_pget(obj, A_ADISCONNECT, &aowner, &aflags);
                 if (*atr_temp)
                 {
-                    wait_que(obj, player, 0, NOTHING, 0, atr_temp, (char **)NULL, 0, NULL);
+                    wait_que(obj, player, FALSE, ltd, NOTHING, 0,
+                        atr_temp, (char **)NULL, 0, NULL);
                 }
                 free_lbuf(atr_temp);
             }
@@ -850,7 +856,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                 atr_temp = atr_pget(zone, A_ADISCONNECT, &aowner, &aflags);
                 if (*atr_temp)
                 {
-                    wait_que(zone, player, 0, NOTHING, 0, atr_temp, (char **)NULL, 0, NULL);
+                    wait_que(zone, player, FALSE, ltd, NOTHING, 0,
+                        atr_temp, (char **)NULL, 0, NULL);
                 }
                 free_lbuf(atr_temp);
                 break;
@@ -864,7 +871,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                     atr_temp = atr_pget(obj, A_ADISCONNECT, &aowner, &aflags);
                     if (*atr_temp)
                     {
-                        wait_que(obj, player, 0, NOTHING, 0, atr_temp, (char **)NULL, 0, NULL);
+                        wait_que(obj, player, FALSE, ltd, NOTHING, 0,
+                            atr_temp, (char **)NULL, 0, NULL);
                     }
                     free_lbuf(atr_temp);
                 }

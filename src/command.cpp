@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.25 2000-10-24 23:54:08 sdennis Exp $
+// $Id: command.cpp,v 1.26 2000-11-01 09:12:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1104,7 +1104,8 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
                 
                     if (wild(buff + 1, new0, aargs, 10))
                     {
-                        wait_que(add->thing, player, 0, NOTHING, 0, s, aargs, 10, mudstate.global_regs);
+                        CLinearTimeDelta ltd;
+                        wait_que(add->thing, player, FALSE, ltd, NOTHING, 0, s, aargs, 10, mudstate.global_regs);
                         for (i = 0; i < 10; i++)
                         {
                             if (aargs[i])
