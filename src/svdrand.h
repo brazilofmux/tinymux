@@ -1,7 +1,7 @@
 // svdrand.h -- Random Numbers, CLinearTimeAbsolute, and CLinearTimeDelta
 // modules
 //
-// $Id: svdrand.h,v 1.1 2000-04-11 07:14:48 sdennis Exp $
+// $Id: svdrand.h,v 1.2 2000-04-21 18:07:39 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
@@ -92,6 +92,7 @@ class CLinearTimeDelta
     friend int operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
     friend int operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
     friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
+    friend CLinearTimeDelta operator-(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb);
     friend int operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB);
     friend CLinearTimeDelta operator*(const CLinearTimeDelta& ltdA, int nScaler);
     friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& ltdA, const CLinearTimeDelta& ltdB);
@@ -103,13 +104,17 @@ public:
     CLinearTimeDelta(void);
     CLinearTimeDelta(CLinearTimeAbsolute, CLinearTimeAbsolute);
 
-    void  ReturnTimeValueStruct(struct timeval *tv);
+    void ReturnTimeValueStruct(struct timeval *tv);
     long ReturnMilliseconds(void);
     long ReturnDays(void);
     long ReturnSeconds(void);
 
+    void SetTimeValueStruct(struct timeval *tv);
     void SetMilliseconds(unsigned long arg_dwMilliseconds);
     void SetSeconds(INT64 arg_tSeconds);
+    void Set100ns(INT64 arg_t100ns);
+
+    void operator+=(const CLinearTimeDelta& ltd);
 };
 
 #endif

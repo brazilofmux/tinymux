@@ -1,7 +1,7 @@
 // svdrand.cpp -- Random Numbers, CLinearTimeAbsolute, and CLinearTimeDelta
 // modules
 //
-// $Id: svdrand.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $
+// $Id: svdrand.cpp,v 1.2 2000-04-21 18:07:39 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
@@ -378,6 +378,12 @@ void CLinearTimeDelta::ReturnTimeValueStruct(struct timeval *tv)
     tv->tv_usec = (long)i64FloorDivision(Leftover, FACTOR_100NS_PER_MICROSECOND);
 }
 
+void CLinearTimeDelta::SetTimeValueStruct(struct timeval *tv)
+{
+    m_tDelta = FACTOR_100NS_PER_SECOND * tv->tv_sec
+             + FACTOR_100NS_PER_MICROSECOND * tv->tv_usec;
+}
+
 // Time string format is usually 24 characters long, in format
 // Ddd Mmm DD HH:MM:SS YYYY
 //
@@ -405,6 +411,11 @@ void CLinearTimeDelta::SetSeconds(INT64 arg_tSeconds)
 {
     m_tDelta = arg_tSeconds;
     m_tDelta *= FACTOR_100NS_PER_SECOND;
+}
+
+void CLinearTimeDelta::Set100ns(INT64 arg_t100ns)
+{
+    m_tDelta = arg_t100ns;
 }
 
 void CLinearTimeAbsolute::SetSeconds(INT64 arg_tSeconds)
@@ -781,10 +792,22 @@ BOOL CLinearTimeAbsolute::SetString(const char *arg_tBuffer)
     return FALSE;
 }
 
+void CLinearTimeDelta::operator+=(const CLinearTimeDelta& ltd)
+{
+    m_tDelta += ltd.m_tDelta;
+}
+
 CLinearTimeDelta operator-(const CLinearTimeAbsolute& ltaA, const CLinearTimeAbsolute& ltaB)
 {
     CLinearTimeDelta ltd;
     ltd.m_tDelta = ltaA.m_tAbsolute - ltaB.m_tAbsolute;
+    return ltd;
+}
+
+CLinearTimeDelta operator-(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb)
+{
+    CLinearTimeDelta ltd;
+    ltd.m_tDelta = lta.m_tDelta - ltb.m_tDelta;
     return ltd;
 }
 
@@ -948,26 +971,6 @@ void CLinearTimeAbsolute::SetSecondsString(char *arg_szSeconds)
 //
 #ifdef WIN32
 
-#if 0
-void GetUTCFieldedTime(FIELDEDTIME *ft)
-{
-    SYSTEMTIME st;
-    GetSystemTime(&st);
-
-    ft->iYear = st.wYear;
-    ft->iMonth = st.wMonth;
-    ft->iDayOfMonth = st.wDay;
-    ft->iDayOfWeek = st.wDayOfWeek;
-    ft->iDayOfYear = 0;
-    ft->iHour = st.wHour;
-    ft->iMinute = st.wMinute;
-    ft->iSecond = st.wSecond;
-    ft->iMillisecond = st.wMilliseconds;
-    ft->iMicrosecond = 0;
-    ft->iNanosecond = 0;
-}
-#endif
-
 void GetUTCLinearTime(INT64 *plt)
 {
     SYSTEMTIME st;
@@ -1007,32 +1010,7 @@ void GetLocalFieldedTime(FIELDEDTIME *ft)
     ft->iNanosecond = 0;
 }
 
-#else // WIN32
-
-#if 0
-void GetUTCFieldedTime(FIELDEDTIME *ft)
-{
-    struct timeval tv;
-    struct timezone tz;
-    tz.tz_minuteswest = 0;
-    tz.tz_dsttime = 0;
-    gettimeofday(&tv, &tz);
-    time_t seconds = tv.tv_sec;
-    struct tm *ptm = gmtime(&seconds);
-
-    ft->iYear = ptm->tm_year + 1900;
-    ft->iMonth = ptm->tm_mon + 1;
-    ft->iDayOfMonth = ptm->tm_mday;
-    ft->iDayOfWeek = ptm->tm_wday;
-    ft->iDayOfYear = 0;
-    ft->iHour = ptm->tm_hour;
-    ft->iMinute = ptm->tm_min;
-    ft->iSecond = ptm->tm_sec;
-    ft->iMillisecond = (tv.tv_usec/1000);
-    ft->iMicrosecond = (tv.tv_usec%1000);
-    ft->iNanosecond = 0;
-}
-#endif
+#else // !WIN32
 
 void GetUTCLinearTime(INT64 *plt)
 {
@@ -1069,4 +1047,5 @@ void GetLocalFieldedTime(FIELDEDTIME *ft)
     ft->iMicrosecond = (tv.tv_usec%1000);
     ft->iNanosecond = 0;
 }
-#endif // WIN32
+
+#endif // !WIN32
