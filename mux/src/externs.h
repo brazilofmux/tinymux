@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.24 2004-04-18 15:25:45 sdennis Exp $
+// $Id: externs.h,v 1.25 2004-05-15 01:34:48 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -732,11 +732,6 @@ typedef BOOL __stdcall FGETPROCESSTIMES(HANDLE hProcess,
     LPFILETIME pftUser);
 extern FCANCELIO *fpCancelIo;
 extern FGETPROCESSTIMES *fpGetProcessTimes;
-extern bool bQueryPerformanceAvailable;
-extern INT64 QP_A;
-extern INT64 QP_B;
-extern INT64 QP_C;
-extern INT64 QP_D;
 #else // WIN32
 extern pid_t game_pid;
 #endif // WIN32

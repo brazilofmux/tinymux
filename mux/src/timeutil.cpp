@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.27 2004-04-13 06:34:22 sdennis Exp $
+// $Id: timeutil.cpp,v 1.28 2004-05-15 01:34:48 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1373,8 +1373,132 @@ void CLinearTimeAbsolute::SetSecondsString(char *arg_szSeconds)
 //
 #ifdef WIN32
 
+// This calculates (FACTOR_100NS_PER_SECOND*x)/y accurately without
+// overflow.
+//
+class CxyDiv
+{
+public:
+    void SetDenominator(const INT64 y_arg);
+    INT64 Convert(const INT64 x_arg);
+    CxyDiv(void);
+private:
+    INT64 A, B, C, D;
+};
+
+CxyDiv::CxyDiv(void)
+{
+    A = B = C = D = 0;
+}
+
+void CxyDiv::SetDenominator(const INT64 y_arg)
+{
+    A = FACTOR_100NS_PER_SECOND / y_arg;
+    B = FACTOR_100NS_PER_SECOND % y_arg;
+    C = y_arg/2;
+    D = y_arg;
+}
+
+INT64 CxyDiv::Convert(const INT64 x_arg)
+{
+    return A*x_arg + (B*x_arg + C)/D;
+}
+
+CxyDiv Ticks2Seconds;
+INT64  xIntercept = 0;
+INT64  liInit;
+INT64  tInit;
+INT64  tError;
+bool   bQueryPerformanceAvailable = false;
+bool   bUseQueryPerformance = false;
+
+const INT64 TargetError = 5*FACTOR_100NS_PER_MILLISECOND;
+
+BOOL CalibrateQueryPerformance(void)
+{
+    if (!bQueryPerformanceAvailable)
+    {
+        return false;
+    }
+
+    INT64 li;
+    INT64 t;
+
+    Sleep(0);
+    if (QueryPerformanceCounter((LARGE_INTEGER *)&li))
+    {
+        GetSystemTimeAsFileTime((struct _FILETIME *)&t);
+
+        // Estimate Error.
+        //
+        // x = y/m + b;
+        //
+        tError = Ticks2Seconds.Convert(li) + xIntercept - t;
+        if (  -TargetError < tError
+           && tError < TargetError)
+        {
+            bUseQueryPerformance = true;
+        }
+
+        // x = y/m + b
+        // m = dy/dx = (y1 - y0)/(x1 - x0)
+        //
+        // y is ticks and x is seconds.
+        //
+        INT64 dli = li - liInit;
+        INT64 dt  =  t -  tInit;
+
+        CxyDiv Ticks2Freq;
+
+        Ticks2Freq.SetDenominator(dt);
+        INT64 liFreq = Ticks2Freq.Convert(dli);
+        Ticks2Seconds.SetDenominator(liFreq);
+
+        // Therefore, b = x - y/m
+        //
+        xIntercept = t - Ticks2Seconds.Convert(li);
+        return true;
+    }
+    else
+    {
+        bQueryPerformanceAvailable = false;
+        bUseQueryPerformance = false;
+        return false;
+    }
+}
+
+void InitializeQueryPerformance(void)
+{
+    // The frequency returned is the number of ticks per second.
+    //
+    INT64 liFreq;
+    if (QueryPerformanceFrequency((LARGE_INTEGER *)&liFreq))
+    {
+        Ticks2Seconds.SetDenominator(liFreq);
+
+        Sleep(0);
+        if (QueryPerformanceCounter((LARGE_INTEGER *)&liInit))
+        {
+            GetSystemTimeAsFileTime((struct _FILETIME *)&tInit);
+            xIntercept = tInit - Ticks2Seconds.Convert(liInit);
+            bQueryPerformanceAvailable = true;
+        }
+    }
+}
+
 void GetUTCLinearTime(INT64 *plt)
 {
+    if (bUseQueryPerformance)
+    {
+        INT64 li;
+        if (QueryPerformanceCounter((LARGE_INTEGER *)&li))
+        {
+            *plt = Ticks2Seconds.Convert(li) + xIntercept;
+            return;
+        }
+        bQueryPerformanceAvailable = false;
+        bUseQueryPerformance = false;
+    }
     GetSystemTimeAsFileTime((struct _FILETIME *)plt);
 }
 
@@ -1536,6 +1660,9 @@ void TIME_Initialize(void)
             cnt--;
         }
     }
+#ifdef WIN32
+    InitializeQueryPerformance();
+#endif
 }
 
 // Explanation of the table.

@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.7 2004-04-13 06:34:22 sdennis Exp $
+// $Id: timer.cpp,v 1.8 2004-05-15 01:34:48 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -179,6 +179,23 @@ void dispatch_CanRestart(void *pUnused, int iUnused)
     mudstate.bCanRestart = true;
 }
 
+#ifdef WIN32
+void dispatch_CalibrateQueryPerformance(void *pUnused, int iUnused)
+{
+    CLinearTimeAbsolute ltaNextTime;
+    ltaNextTime.GetUTC();
+    CLinearTimeDelta ltd;
+    ltd.SetSeconds(30);
+    ltaNextTime += ltd;
+
+    if (CalibrateQueryPerformance())
+    {
+        scheduler.DeferTask(ltaNextTime, PRIORITY_SYSTEM,
+            dispatch_CalibrateQueryPerformance, 0, 0);
+    }
+}
+#endif // WIN32
+
 void init_timer(void)
 {
     CLinearTimeAbsolute ltaNow;
@@ -231,6 +248,15 @@ void init_timer(void)
     //
     ltd.SetSeconds(15);
     scheduler.DeferTask(ltaNow+ltd, PRIORITY_OBJECT, dispatch_CanRestart, 0, 0);
+
+#ifdef WIN32
+    // Setup Periodic QueryPerformance Calibration.
+    //
+    ltd.SetSeconds(30);
+    scheduler.DeferTask(ltaNow+ltd, PRIORITY_SYSTEM,
+        dispatch_CalibrateQueryPerformance, 0, 0);
+
+#endif // WIN32
 }
 
 /*

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.28 2004-05-13 13:52:24 sdennis Exp $
+// $Id: bsd.cpp,v 1.29 2004-05-15 01:34:48 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -60,11 +60,6 @@ void SiteMonSend(int, const char *, DESC *, const char *);
 HANDLE hGameProcess = INVALID_HANDLE_VALUE;
 FCANCELIO *fpCancelIo = NULL;
 FGETPROCESSTIMES *fpGetProcessTimes = NULL;
-bool bQueryPerformanceAvailable = false;
-INT64 QP_A = 0;
-INT64 QP_B = 0;
-INT64 QP_C = 0;
-INT64 QP_D = 0;
 HANDLE CompletionPort;    // IOs are queued up on this port
 void __cdecl MUDListenThread(void * pVoid);  // the listening thread
 DWORD platform;   // which version of Windows are we using?

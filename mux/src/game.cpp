@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.35 2004-04-01 22:00:42 sdennis Exp $
+// $Id: game.cpp,v 1.36 2004-05-15 01:34:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2361,13 +2361,6 @@ int DCL_CDECL main(int argc, char *argv[])
     else
     {
         Log.WriteString("Running under Windows 95/98" ENDLINE);
-    }
-    if (QueryPerformanceFrequency((LARGE_INTEGER *)&QP_D))
-    {
-        bQueryPerformanceAvailable = true;
-        QP_A = FACTOR_100NS_PER_SECOND/QP_D;
-        QP_B = FACTOR_100NS_PER_SECOND%QP_D;
-        QP_C = QP_D/2;
     }
 
     // Initialize WinSock.

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.12 2004-05-13 13:30:58 sdennis Exp $
+// $Id: cque.cpp,v 1.13 2004-05-15 01:34:48 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -35,31 +35,6 @@ CLinearTimeDelta GetProcessorUsage(void)
         fpGetProcessTimes(hGameProcess, &ftCreate, &ftExit, &ftKernel, &ftUser);
         ltd.Set100ns(*(INT64 *)(&ftUser));
         return ltd;
-    }
-
-    // Win9x - We can really only report the system time with a
-    // high-resolution timer. This doesn't separate the time from
-    // this process from other processes that are also running on
-    // the same machine, but it's the best we can do on Win9x.
-    //
-    // The scheduling in Win9x is totally screwed up, so even if
-    // Win9x did provide the information, it would certainly be
-    // wrong.
-    //
-    if (bQueryPerformanceAvailable)
-    {
-        // The QueryPerformanceFrequency call at game startup
-        // succeeded. The frequency number is the number of ticks
-        // per second.
-        //
-        INT64 li;
-        if (QueryPerformanceCounter((LARGE_INTEGER *)&li))
-        {
-            li = QP_A*li + (QP_B*li+QP_C)/QP_D;
-            ltd.Set100ns(li);
-            return ltd;
-        }
-        bQueryPerformanceAvailable = false;
     }
 #endif
 

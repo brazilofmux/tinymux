@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.6 2004-04-13 06:34:22 sdennis Exp $
+// $Id: timeutil.h,v 1.7 2004-05-15 01:34:48 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -128,7 +128,11 @@ extern const INT64 FACTOR_100NS_PER_HOUR;
 extern const INT64 FACTOR_100NS_PER_DAY;
 extern const INT64 FACTOR_100NS_PER_WEEK;
 
-void TIME_Initialize(void);
+extern void TIME_Initialize(void);
+#ifdef WIN32
+extern BOOL CalibrateQueryPerformance(void);
+#endif
+
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
 INT64 i64Mod(INT64 x, INT64 y);
 INT64 i64FloorDivision(INT64 x, INT64 y);
