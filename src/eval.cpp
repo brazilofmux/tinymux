@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.20 2001-04-11 19:33:10 sdennis Exp $
+// $Id: eval.cpp,v 1.21 2001-04-28 19:14:27 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1868,14 +1868,6 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
 
     // Report trace information.
     //
-    if (realbuff)
-    {
-        *bufc = realbp;
-        safe_str(buff, realbuff, bufc);
-        MEMFREE(buff);
-        buff = realbuff;
-    }
-    
     if (is_trace)
     {
         tcache_add(savestr, start);
@@ -1889,6 +1881,13 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
             notify(player, tbuf);
             free_mbuf(tbuf);
         }
+    }
+    if (realbuff)
+    {
+        *bufc = realbp;
+        safe_str(buff, realbuff, bufc);
+        MEMFREE(buff);
+        buff = realbuff;
     }
     *dstr = pdstr;
 
