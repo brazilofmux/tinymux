@@ -4517,7 +4517,7 @@
 & REGEXPS
   Topic: REGEXPS (Regular Expressions)
  
-  The majority of matching in MUSH is done with wildcard ("globbing")
+  The majority of matching in MUX is done with wildcard ("globbing")
   patterns. There is a second type of matching, using regular expressions,
   that is available in certain circumstances.
  
@@ -4556,7 +4556,7 @@
   Topic: REGEXP SYNTAX
 
   The following explanation is taken from Henry Spencer's regexp(3)
-  package, the regular expression library used in TinyMUSH 2.2.
+  package, the regular expression library used in TinyMUX.
  
           A regular expression is zero or more branches, separated by
           `|'.  It matches anything that matches one of the branches.
@@ -4780,82 +4780,13 @@
 & CREDITS
 
   Topic: CREDITS
- 
-TinyMUX 1.0 is derived from TinyMUSH 2.0.10 patchlevel 6. It is maintained
-by Lauren (Children of the Atom) and would not exist without the generous
-contributions of many individuals. Ideas for features (and occasionally
-code) came from many places, including TinyMUSE, and PennMUSH.
- 
-We would like to thank the following people:
- 
-- Dave Peterson (Evinar) who maintained TinyMUSH 2.0 in its later
-  incarnations.
- 
-- James Callahan (Darkenelf), who contributed many patches, and ideas
-  (@teleport/quiet, @readcache fixes, side effect functions,
-   many bug fixes)
- 
-- Chris (Children of the Atom) who had many, many, many ideas and found
-  many, many, many bugs, in his own gleeful manner of crashing our site.
- 
-- Alan Schwartz (Javelin/Paul) and Lydia Leong (Amberyl), whose extended
-  mailer from PennMUSH is the basis for MUX's @mail system. Also,
-  Brandy (CrystalMUSH) who's +mail system inspired many of the features.
- 
-- Ethaniel and Kayan Telva (BTech3056) for the basic comsystem and macro code.
- 
-(continued in 'CREDITS2')
- 
-& CREDITS2
- 
-- Kalkin(DarkZone) and Harlock(StarWarsII) who extended the comsystem and
-  added tons of new commands, which is basically unchanged here.
- 
-- Kalkin(DarkZone) for writing the mail alias and guest code.
-  
-- Mike(StarWars), idea for not saving GOING objects.
- 
-Following is the original credits for TinyMUSH 2.0:
- 
-TinyMUSH 2.0 is derived from Larry Foard's TinyMUSH (which was itself derived
-from TinyMUD, written by Jim Aspnes).  Ideas for features (and occasionally
-code) came from many places, including TinyMUSE, PernMUSH, and TinyTIM.
- 
-We would like to thank the following people:
- 
-- Jim Aspnes, for the original TinyMUD (from which TinyMUSH was derived)
- 
-- Larry Foard, for the original implementation of TinyMUSH.
- 
-(continued in 'CREDITS3')
- 
-& CREDITS3
- 
-- Marcus Ranum for the original Untermud database layer code, and  Andrew
-  Molitor for getting it to work with TinyMUSH.
- 
-- Andrew Molitor (again) for the VMS port.
- 
-- Russ(Random) and Jennifer(Moira) Smith, for ideas, comments, and coding
-  help.
- 
-- R'nice(TinyTIM) for more good ideas than we could shake a wand of coding
-  at.  (@doing, @edit enhancements, a REAL use command, lotsa minor fixes and
-  tweaks)
- 
-- Coyote(TinyTIM, DungeonMUSH, NarniaMUSH), for finding some nasty bugs and
-  NOT using them for evil purposes.
- 
-- Ambar, Amberyl, Sh'dow, Jellan, and Miritha (all from PernMUSH) for numerous
-  bug fixes, enhancements, and ideas.
- 
-- Sketch(TinyTIM) for rewriting some of the more confusing help file entries.
- 
-- Hcobb(TinyTIM) and Furie(DungeonMUSH) for inspiring the parser rewrite and
-  other security-related fixes and enhancements.
- 
-- The many other people who have contributed ideas, comments, or complaints
-  about bugs.
+
+TinyMUX 2.0 is based on TinyMUX 1.5 and 1.6. It is currently maintained
+by Stephen Dennis (aka Brazil). There is a more complete list of credits
+in the readme files for the server itself.
+
+See http://www.svdltd.com/TinyMUX for an on-line version of these readme
+files.
  
 & DROP-TOS
 
