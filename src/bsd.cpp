@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.27 2001-06-29 16:15:56 sdennis Exp $
+// $Id: bsd.cpp,v 1.28 2001-06-29 17:27:01 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -3067,7 +3067,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
         }
         else if (lpo == &d->OutboundOverlapped && !d->bConnectionDropped)
         {
-            //Log.printf("Write(%d bytes).\n", nbytes);
+            //Log.printf("Write(%d bytes)." ENDLINE, nbytes);
 
             // Write completed
             //
