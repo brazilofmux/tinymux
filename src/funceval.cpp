@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.76 2001-12-03 06:19:39 sdennis Exp $
+// $Id: funceval.cpp,v 1.77 2001-12-07 09:36:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2861,35 +2861,52 @@ FUNCTION(fun_hastype)
 {
     dbref it = match_thing(player, fargs[0]);
 
-    if (it == NOTHING) {
+    if (it == NOTHING)
+    {
         safe_nomatch(buff, bufc);
         return;
     }
-    if (!fargs[1] || !*fargs[1]) {
-        safe_str("#-1 NO SUCH TYPE", buff, bufc);
-        return;
-    }
-    switch (*fargs[1]) {
+    int ch = '0';
+    switch (Tiny_ToLower[(unsigned char)fargs[1][0]])
+    {
     case 'r':
-    case 'R':
-        safe_str((Typeof(it) == TYPE_ROOM) ? "1" : "0", buff, bufc);
+
+        if (isThing(it))
+        {
+            ch = '1';
+        }
         break;
+
     case 'e':
-    case 'E':
-        safe_str((Typeof(it) == TYPE_EXIT) ? "1" : "0", buff, bufc);
+
+        if (isExit(it))
+        {
+            ch = '1';
+        }
         break;
+
     case 'p':
-    case 'P':
-        safe_str((Typeof(it) == TYPE_PLAYER) ? "1" : "0", buff, bufc);
+
+        if (isPlayer(it))
+        {
+            ch = '1';
+        }
         break;
+
     case 't':
-    case 'T':
-        safe_str((Typeof(it) == TYPE_THING) ? "1" : "0", buff, bufc);
+
+        if (isThing(it))
+        {
+            ch = '1';
+        }
         break;
+
     default:
+
         safe_str("#-1 NO SUCH TYPE", buff, bufc);
         break;
-    };
+    }
+    safe_chr(ch, buff, bufc);
 }
 
 // Borrowed from PennMUSH 1.50

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.56 2001-12-06 04:19:50 sdennis Exp $
+// $Id: stringutil.cpp,v 1.57 2001-12-07 09:36:52 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1259,120 +1259,64 @@ char *translate_string(const char *szString, int bConvert)
                 // Handle special characters. '\0' doesn't occur because
                 // nLengthToken0 controls us.
                 //
-                if (ch <= '(')
+                if (ch <= '\n')
                 {
-                    // LF, CR, SP, %, (
+                    // LF CR
                     //
-                    if (ch <= '\r')
+                    if (ch == '\n')
                     {
-                        // LF CR
-                        //
-                        if (ch == '\n')
+                        if (bConvert)
                         {
-                            if (bConvert)
-                                safe_str("%r", szTranslatedString, &pTranslatedString);
-                            else
-                                safe_chr(' ', szTranslatedString, &pTranslatedString);
-                        }
-
-                        // Ignore CR on purpose.
-                        //
-                    }
-                    else
-                    {
-                        // SP % (
-                        //
-                        if (ch == ' ')
-                        {
-                            // The following can look one ahead off the end of the
-                            // current token (and even at the '\0' at the end of the
-                            // string, but this is acceptable. An extra look will
-                            // always see either ESC from the next ANSI sequence,
-                            // or the '\0' on the end of the string. No harm done.
-                            //
-                            if (pString[0] == ' ' && bConvert)
-                                safe_str("%b", szTranslatedString, &pTranslatedString);
-                            else
-                                safe_chr(' ', szTranslatedString, &pTranslatedString);
-                        }
-                        else if (ch == '%')
-                        {
-                            if (bConvert)
-                                safe_str("%%", szTranslatedString, &pTranslatedString);
-                            else
-                                safe_chr('%', szTranslatedString, &pTranslatedString);
+                            safe_copy_buf("%r", 2, szTranslatedString, &pTranslatedString);
                         }
                         else
                         {
-                            // (
-                            //
-                            if (bConvert)
-                                safe_str("%(", szTranslatedString, &pTranslatedString);
-                            else
-                                safe_chr('(', szTranslatedString, &pTranslatedString);
+                            safe_chr(' ', szTranslatedString, &pTranslatedString);
                         }
+                    }
+
+                    // Ignore CR on purpose.
+                    //
+                }
+                else if (ch == ' ')
+                {
+                    // The following can look one ahead off the end of the
+                    // current token (and even at the '\0' at the end of the
+                    // string, but this is acceptable. An extra look will
+                    // always see either ESC from the next ANSI sequence,
+                    // or the '\0' on the end of the string. No harm done.
+                    //
+                    if (pString[0] == ' ' && bConvert)
+                    {
+                        safe_str("%b", szTranslatedString, &pTranslatedString);
+                    }
+                    else
+                    {
+                        safe_chr(' ', szTranslatedString, &pTranslatedString);
+                    }
+                }
+                else if (ch == '\\')
+                {
+                    // backslash
+                    //
+                    if (bConvert)
+                    {
+                        safe_copy_buf("\\\\", 2, szTranslatedString, &pTranslatedString);
+                    }
+                    else
+                    {
+                        safe_chr('\\', szTranslatedString, &pTranslatedString);
                     }
                 }
                 else
                 {
-                    // ) [ \ ] { }
+                    // % ( ) [ ] { }
                     //
-                    if (ch <= '\\')
+                    if (bConvert)
                     {
-                        // ) [ backslash
-                        //
-                        if (ch == ')')
-                        {
-                            if (bConvert)
-                                safe_str("%)", szTranslatedString, &pTranslatedString);
-                            else
-                                safe_chr(')', szTranslatedString, &pTranslatedString);
-                        }
-                        else if (ch == '[')
-                        {
-                            if (bConvert)
-                                safe_str("%[", szTranslatedString, &pTranslatedString);
-                            else
-                                safe_chr('[', szTranslatedString, &pTranslatedString);
-                        }
-                        else
-                        {
-                            // backslash
-                            //
-                            if (bConvert)
-                                safe_str("\\\\", szTranslatedString, &pTranslatedString);
-                            else
-                                safe_chr('\\', szTranslatedString, &pTranslatedString);
-                        }
+                        safe_chr('%', szTranslatedString, &pTranslatedString);
                     }
-                    else
-                    {
-                        // ] { }
-                        //
-                        if (ch == ']')
-                        {
-                            if (bConvert)
-                                safe_str("%]", szTranslatedString, &pTranslatedString);
-                            else
-                                safe_chr(']', szTranslatedString, &pTranslatedString);
-                        }
-                        else if (ch == '{')
-                        {
-                            if (bConvert)
-                                safe_str("%{", szTranslatedString, &pTranslatedString);
-                            else
-                                safe_chr('{', szTranslatedString, &pTranslatedString);
-                        }
-                        else
-                        {
-                            // }
-                            //
-                            if (bConvert)
-                                safe_str("%}", szTranslatedString, &pTranslatedString);
-                            else
-                                safe_chr('}', szTranslatedString, &pTranslatedString);
-                        }
-                    }
+                    safe_chr(ch, szTranslatedString, &pTranslatedString);
                 }
             }
             acsPrevious = acsCurrent;
