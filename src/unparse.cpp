@@ -1,10 +1,7 @@
-/*
- * unparse.c 
- */
-/*
- * $Id: unparse.cpp,v 1.2 2000-04-16 07:32:01 sdennis Exp $ 
- */
-
+// unparse.cpp
+//
+// $Id: unparse.cpp,v 1.3 2001-06-29 16:58:31 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -18,21 +15,13 @@
 #include "alloc.h"
 
 /*
- * Boolexp decompile formats 
+ * Boolexp decompile formats
  */
 
-#define F_EXAMINE   1   /*
-                 * Normal 
-                 */
-#define F_QUIET     2   /*
-                 * Binary for db dumps 
-                 */
-#define F_DECOMPILE 3   /*
-                 * @decompile output 
-                 */
-#define F_FUNCTION  4   /*
-                 * [lock()] output 
-                 */
+#define F_EXAMINE   1  // Normal
+#define F_QUIET     2  // Binary for db dumps
+#define F_DECOMPILE 3  // @decompile output
+#define F_FUNCTION  4  // [lock()] output
 
 /*
  * Take a dbref (loc) and generate a string.  -1, -3, or (#loc) Note, this
@@ -66,7 +55,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 #ifndef STANDALONE
     char *buff;
 
-#endif
+#endif // !STANDALONE
 
     if ((b == TRUE_BOOLEXP)) {
         if (format == F_EXAMINE) {
@@ -118,39 +107,35 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
         unparse_boolexp1(player, b->sub1, b->type, format);
         break;
     case BOOLEXP_CONST:
-#ifndef STANDALONE
-        switch (format) {
+
+#ifdef STANDALONE
+        safe_str((char *)unparse_object_quiet(player, b->thing),
+             boolexp_buf, &buftop);
+#else // STANDALONE
+        switch (format)
+        {
         case F_QUIET:
 
-            /*
-             * Quiet output - for dumps and internal use. * * * * 
-             * Always #Num 
-             */
-
+            // Quiet output - for dumps and internal use. Always #Num.
+            //
             safe_str((char *)unparse_object_quiet(player, b->thing),
                  boolexp_buf, &buftop);
             break;
+
         case F_EXAMINE:
 
-            /*
-             * Examine output - informative. * Name(#Num) or Name 
-             * 
-             * *  
-             */
-
+            // Examine output - informative. Name(#Num) or Name.
+            //
             buff = unparse_object(player, b->thing, 0);
             safe_str(buff, boolexp_buf, &buftop);
             free_lbuf(buff);
             break;
+
         case F_DECOMPILE:
 
-            /*
-             * Decompile output - should be usable on other * * * 
-             * MUXes. * *Name if player, Name if thing, else #Num 
-             * 
-             * *  
-             */
-
+            // Decompile output - should be usable on other MUXes. Name if
+            // player, Name if thing, else #Num.
+            //
             switch (Typeof(b->thing))
             {
             case TYPE_PLAYER:
@@ -174,12 +159,9 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
         case F_FUNCTION:
 
-            /*
-             * Function output - must be usable by @lock cmd. * * 
-             * 
-             * *  * * *Name if player, else #Num 
-             */
-
+            // Function output - must be usable by @lock cmd. Name if player,
+            // else #Num.
+            //
             switch (Typeof(b->thing))
             {
             case TYPE_PLAYER:
@@ -197,11 +179,9 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
                 free_sbuf(buff);
             }
         }
-#else
-        safe_str((char *)unparse_object_quiet(player, b->thing),
-             boolexp_buf, &buftop);
-#endif
+#endif // STANDALONE
         break;
+
     case BOOLEXP_ATR:
     case BOOLEXP_EVAL:
         if (b->type == BOOLEXP_EVAL)
@@ -235,7 +215,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
         // Bad type.
         //
-        Log.WriteString("ABORT! unparse.cpp, fell off the end of switch in unparse_boolexp1()\n");
+        Log.WriteString("ABORT! unparse.cpp, fell off the end of switch in unparse_boolexp1()" ENDLINE);
         Log.Flush();
         abort();
         break;
@@ -276,4 +256,4 @@ char *unparse_boolexp_function(dbref player, BOOLEXP *b)
     return boolexp_buf;
 }
 
-#endif
+#endif // !STANDALONE
