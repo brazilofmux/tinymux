@@ -4,7 +4,7 @@
  * The philosophy is to keep this program as simple/small as possible.
  * It does normal fork()s, so the smaller it is, the faster it goes.
  * 
- * $Id: slave.cpp,v 1.3 2000-08-02 23:58:36 sdennis Exp $
+ * $Id: slave.cpp,v 1.4 2000-09-07 05:37:54 sdennis Exp $
  */
 
 #include "autoconf.h"
@@ -68,7 +68,7 @@ int query(char *ip, char *orig_arg)
     char result[MAX_STRING];
     char buf[MAX_STRING];
     char buf2[MAX_STRING];
-    char buf3[MAX_STRING];
+    char buf3[MAX_STRING*2];
     char arg[MAX_STRING];
     size_t len;
     char *p;
