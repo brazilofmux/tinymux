@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.39 2001-06-29 06:48:35 sdennis Exp $
+// $Id: funceval.cpp,v 1.40 2001-07-02 23:08:13 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2895,42 +2895,43 @@ FUNCTION(fun_hastype)
 //
 FUNCTION(fun_lparent)
 {
-    dbref it;
-    dbref par;
-    char tbuf1[20];
-
-    it = match_thing(player, fargs[0]);
+    dbref it = match_thing(player, fargs[0]);
     if (!Good_obj(it))
     {
         safe_str("#-1 NO MATCH", buff, bufc);
         return;
     }
-    else if (!(Examinable(player, it)))
+    else if (!Examinable(player, it))
     {
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
         return;
     }
 
-    tbuf1[0] = '#';
-    int nLen = Tiny_ltoa(it, tbuf1+1) + 1;
+    DTB pContext;
+    DbrefToBuffer_Init(&pContext, buff, bufc);
 
-    safe_copy_buf(tbuf1, nLen, buff, bufc, LBUF_SIZE-1);
-    par = Parent(it);
+    if (!DbrefToBuffer_Add(&pContext, it))
+    {
+        DbrefToBuffer_Final(&pContext);
+        return;
+    }
+
+    dbref par = Parent(it);
 
     int iNestLevel = 1;
     while (  Good_obj(par)
           && Examinable(player, it)
           && iNestLevel < mudconf.parent_nest_lim)
     {
-        tbuf1[0] = ' ';
-        tbuf1[1] = '#';
-        nLen = Tiny_ltoa(par, tbuf1+2) + 2;
-
-        safe_copy_buf(tbuf1, nLen, buff, bufc, LBUF_SIZE-1);
+        if (!DbrefToBuffer_Add(&pContext, par))
+        {
+            break;
+        }
         it = par;
         par = Parent(par);
         iNestLevel++;
     }
+    DbrefToBuffer_Final(&pContext);
 }
 
 // stacksize - returns how many items are stuffed onto an object stack
