@@ -4137,22 +4137,26 @@ BOGUS COMMANDS
 & BOOLEAN VALUES
 BOOLEAN VALUES
 
-  Boolean values are internally considered to be either 1, generally
-  interpreted as being true, and 0, which is generally interpreted as being
-  false. Now, any string is interpreted as true(1), except for the null
-  string (whose length is 0), which is false(0).  A #-1 is interpreted as
-  false(0), and any other #<dbref> is interpreted as true(1).  Any number
-  except 0 is interpreted as true(1), except 0 which is false(0). (Yes, even
-  negative numbers are true(1))
+  A Boolean value is either TRUE or FALSE, and all strings are mapped onto one
+  of those two.
+
+  It is easier to describe first which strings MUX understands as FALSE:
+
+   - Numbers (of any type) with a value of zero.
+   - The Special floating-point values of NaN, Ind, +Inf, and -Inf.
+   - Strings with zero-length.
+   - Any error message of the form "#-N <msg>".
+
+  All other strings are understood as TRUE including numbers with a negative
+  value and dbrefs.
 
   Examples:
-  not(foo) = 0             not(<null string>) = 1   not(-66) = 0
-  not(0) = 1               not(#-1) = 1             not(#12) = 0
-  t(1)   = 1               t(#-1)   = 0             t(-66)   = 1
-  And so on...
+ 
+    not(foo) --> 0      not()    --> 1     not(-66) --> 0
+    not(0)   --> 1      not(#-1) --> 1     not(#12) --> 0
+    t(1)     --> 1      t(#-1)   --> 0     t(-66)   --> 1
 
-  Note: These rules only apply when a function expects a Boolean
-  value, not for strings that expect other values.
+  Related Topics: not(), t()
 
 & BOR()
 BOR()
