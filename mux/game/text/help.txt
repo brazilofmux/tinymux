@@ -4190,6 +4190,57 @@ ATTRIBUTE OWNERSHIP (continued)
 
   Related Topics: @chown, @lock, @set, @unlock, examine.
 
+& ATTRIBUTE FLAGS
+ATTRIBUTE FLAGS
+
+    The following lists the possible flags on attributes:
+
+    case (C)       - $-command matching will not be case-sensitive.
+                     Non-functional unless the 'R' flag is also set.
+
+    const          - No one can change this attribute.
+
+    no_command ($) - The attribute is not checked when looking for
+                     $-commands.  Note that the predefined attributes
+                     DESC, IDESC, ODESC, FAIL, OFAIL, SUCC, OSUCC, DROP,
+                     ODROP, SEX, and CHARGES are never checked.
+
+    dark           - Only God can see this attribute.
+
+    god            - Only God can modify this attribute.
+
+    hidden (M)     - Only wizards and royalty can see this attribute.
+
+    html (H)       - Emits from attr, oattr, aattr are not HTML-escaped.
+
+
+{ 'help attribute flags2' for more }
+
+& ATTRIBUTE FLAGS2
+ATTRIBUTE FLAGS (cont)
+
+    no_inherit (I) - This attribute is not inherited by children of the
+                     object.
+
+    locked (+)     - The attribute is locked, it does not change
+                     ownership when the object is @chowned and may not
+                     be modified.
+
+    private        - Only attribute owner and wizards can see this
+                     attribute.
+
+    regexp (R)     - $-command matching on this attribute uses
+                     PCRE-style regular expressions.
+
+    visual (V)     - The attribute is visible to anyone who examines
+                     you.  Note that the predefined attributes DESC,
+                     SEX, and LAST are always VISUAL 
+
+    wizard (W)     - Only wizards can modify this attribute.
+
+
+  Related Topics: examine, ATTRIBUTE OWNERSHIP
+
 & ATTRIBUTE OWNERSHIP
 ATTRIBUTE OWNERSHIP
 
@@ -5875,23 +5926,17 @@ EXAMINE
   COMMAND: examine[/<switches>] <object>[/<wild-attrib>]
 
   Displays all available information about <object>.  <object> may be an
-  object, 'me' or 'here'. You must control the object to examine it, or it
-  must be set VISUAL.  If you do not own the object, you will just see the
-  name of the object's owner, and optionally any public attributes and
-  attributes owned by you set on the object.
+  object, 'me', or 'here'.  You must control the object to examine it,
+  or it must be set VISUAL.  If you do not own the object, you will just
+  see the name of the object's owner, and optionally any public
+  attributes and attributes owned by you set on the object.
 
-  If an attribute is owned by a player other than the owner of the object,
-  the number of the attribute owner is shown in parentheses immediately
-  following the attribute name.  Flag letters may appear in parentheses also,
-  to indicate the status of the attribute:
-    + - The attribute is locked, it does not change ownership when the
-        object is @chowned and may not be modified.
-    $ - The attribute is not checked when looking for $-commands.  Note
-        that the predefined attributes DESC, IDESC, ODESC, FAIL, OFAIL,
-        SUCC, OSUCC, DROP, ODROP, SEX, and CHARGES are never checked.
-    I - This attribute is not inherited by children of the object.
-    V - The attribute is visible to anyone who examines you.  Note that
-        the predefined attributes DESC, SEX, and LAST are always VISUAL.
+  If an attribute is owned by a player other than the owner of the
+  object, the number of the attribute owner is shown in parentheses
+  immediately following the attribute name.  Flag letters may appear in
+  parentheses also, to indicate the status of the attribute.  A list of
+  this flag letters is given in the references.
+
 
 { 'help examine2' for more }
 
@@ -5903,13 +5948,17 @@ EXAMINE2
   start with v and are two characters long.
 
   The following switches are available:
+
      /brief  - Shows everything except attributes.
+
      /full   - When examining an object you don't control, show any public
                attributes set on the object in addition to the owner's name.
+
      /parent - Includes attributes that are not present on the object itself
                but which are inherited from the object's parent.
 
-  Related Topics: look, @decompile, VISUAL, ATTRIBUTE OWNERSHIP.
+  Related Topics: look, @decompile, VISUAL, ATTRIBUTE FLAGS,
+                  ATTRIBUTE OWNERSHIP.
 
 & EXIT()
 EXIT()
