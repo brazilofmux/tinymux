@@ -112,11 +112,11 @@ Feature Additions:
  -- @list user_attributes now supports a wildcard pattern to control
     which user-defined attributes are reported.
  -- Allow '~' as the first character of an attribute name.
- -- VALID() now supports attrname and playername tests.
+ -- VALID() now supports attrname and playername tests. Idea from PennMUSH.
  -- Allow some aspects of the DARK flag to be delegated to players as
     controlled by the hide and can_see powers. auto-DARK is still only
-    performed for Wizards.
- -- Allow #1 to @newpassword herself if it's missing.
+    performed for Wizards. Idea from TinyMUSH 3.0.
+ -- Allow #1 to @newpassword herself if it's missing. Idea from Ian.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -232,9 +232,10 @@ Bug Fixes:
  -- Fix the '@list hashstats' report so that the 'longest' column is reset
     whenever a hash page is defragmented.  This will tend to give a smaller
     and more accurate number.
- -- Fix bug with validating attribute names introduced in Build 42.
+ -- Fix bug with validating attribute names introduced in Build 42. Found
+    by Ashen-Shugar.
  -- @exitformat is executed now even if all the exits in the room are DARK.
- -- Fix edit(test,,a) --> 'testa'.
+ -- Fix edit(test,,a) --> 'testa'. Found by Ashen-Shugar.
  -- Work around what appears to be a compiler bug in GCC 3.0 and 3.1 that
     caused timefmt($z) to return a bogus number.
 
