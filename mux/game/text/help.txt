@@ -11498,8 +11498,8 @@ SUBSTITUTIONS
   first letter of the result of the substitution is also capitalized.
 
   Certain %-sequences provide gender-specific pronouns.  Some provide
-  information about the execution state.  Some provide control the appearance
-  of text.
+  information about the execution state.  Some provide control over the
+  appearance of text.
 
   Commonly-used substitutions:
 
