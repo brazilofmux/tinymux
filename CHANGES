@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  August 2000
+Last Update:  September 2000
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -102,6 +102,8 @@ Feature Additions:
  --  guest_site configuration option is in, but based on input from ChaoticMUX,
      and RHostMUSH, this may be accomplished in another way or with a different
      name. And, there is currently no help for this option.
+ --  Bug #401 - @dump/flatfile is now supported.
+ --  Included all but two GAME_DOOFERMUX changes in the default build.
 
 
 Bug Fixes:
@@ -266,6 +268,24 @@ Bug Fixes:
  --  Fixed minor bug in GeneralTimeConversion with how to express the
      pluralization of '0'.
  --  Use time_t instead of long in test_time_t().
+ --  Bug #277 - escape() is now ANSI-aware.
+ --  Bug #293 - secure() is now ANSI-aware.
+ --  Bug #352 - @mail 0 now gives something reasonable.
+ --  Bug #422 - Fixed @toad race condition.
+ --  Bug #461 - Descriptors 0 and 1 could be closed after a @restart.
+ --  Bug #462 - boot_slave could close it's own socket to the DNS slave.
+ --  Bug #463 - identd info never made it through on Win32.
+ --  Bug #464 - Flag aliases are now put into canonical form.
+ --  Bug #480 - @toad strips the zone on chown objects.
+ --  Bug #483 - Bad socket descriptions are now discovered and removed.
+ --  Bug #484 - @dump/text prevented normal @restart/@dump/@shutdown.
+ --  Bug #485, #486, #487, #488, #489, #490, #491 - possible buffer overflows.
+ --  Bug #492 - @dbclean is no longer allowed while @dump'ing.
+ --  Bug #495 - @destroy strip the zone on chown objects.
+ --  Long @malias no longer SIGSEGV at game start time. @malias length is
+     limited to 12. @malias description visual width is limited to 40.
+ --  columns on @malias reports are lined up even if descriptions include
+     ANSI color.
 
 
 Performance Enhancements:
@@ -356,6 +376,9 @@ Performance Enhancements:
  --  Improved speed and consistancy of object name checking.
  --  Use assert checking macros.
  --  Improve speed of queue argument and environment passing.
+ --  Removed three unused LBUF_SIZE buffers in !RADIX_COMPRESSION builds.
+ --  Rewrote parse_msglist to avoid an extra buffer. The parse is no longer
+     destructive.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
@@ -375,3 +398,4 @@ Miscellaneous:
  --  Source code untars into its own directory.
  --  Miscellaneous server documentation moved to docs/
  --  Increased the size trigger for rotating logfiles on Win32.
+ --  Syncronized version.cpp, _build.cpp, and _build.h between Unix and Win32.
