@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.12 2002-06-13 07:19:33 jake Exp $
+// $Id: funceval.cpp,v 1.13 2002-06-13 07:50:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -333,7 +333,8 @@ FUNCTION(fun_set)
 {
     dbref thing, thing2, aowner;
     char *p, *buff2;
-    int atr, atr2, aflags, clear, flagvalue, could_hear;
+    BOOL clear;
+    int atr, atr2, aflags, flagvalue, could_hear;
     ATTR *attr, *attr2;
 
     if (check_command(executor, "@set", buff, bufc))
@@ -360,7 +361,7 @@ FUNCTION(fun_set)
             if (*fargs[0] == NOT_TOKEN)
             {
                 fargs[0]++;
-                clear = 1;
+                clear = TRUE;
             }
 
             // valid attribute flag?
@@ -433,7 +434,6 @@ FUNCTION(fun_set)
             safe_noperm(buff, bufc);
             return;
         }
-        atr_get_info(thing, atr, &aowner, &aflags);
         if (!bCanSetAttr(executor, thing, attr))
         {
             safe_noperm(buff, bufc);
@@ -2797,44 +2797,9 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
     return tbuf1;
 }
 
-FUNCTION(fun_grep)
+void grep_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
+                   BOOL bCaseInsens)
 {
-    char *tp;
-
-    dbref it = match_thing(executor, fargs[0]);
-
-    if (it == NOTHING)
-    {
-        safe_nomatch(buff, bufc);
-        return;
-    }
-    else if (!(Examinable(executor, it)))
-    {
-        safe_noperm(buff, bufc);
-        return;
-    }
-
-    // Make sure there's an attribute and a pattern.
-    //
-    if (!*fargs[1])
-    {
-        safe_str("#-1 NO SUCH ATTRIBUTE", buff, bufc);
-        return;
-    }
-    if (!*fargs[2])
-    {
-        safe_str("#-1 INVALID GREP PATTERN", buff, bufc);
-        return;
-    }
-    tp = grep_util(executor, it, fargs[1], fargs[2], strlen(fargs[2]), 0);
-    safe_str(tp, buff, bufc);
-    free_lbuf(tp);
-}
-
-FUNCTION(fun_grepi)
-{
-    char *tp;
-
     dbref it = match_thing(executor, fargs[0]);
 
     if (it == NOTHING) {
@@ -2855,9 +2820,19 @@ FUNCTION(fun_grepi)
         safe_str("#-1 INVALID GREP PATTERN", buff, bufc);
         return;
     }
-    tp = grep_util(executor, it, fargs[1], fargs[2], strlen(fargs[2]), 1);
+    char *tp = grep_util(executor, it, fargs[1], fargs[2], strlen(fargs[2]), bCaseInsens);
     safe_str(tp, buff, bufc);
     free_lbuf(tp);
+}
+
+FUNCTION(fun_grep)
+{
+    grep_handler(buff, bufc, executor, fargs, FALSE);
+}
+
+FUNCTION(fun_grepi)
+{
+    grep_handler(buff, bufc, executor, fargs, TRUE);
 }
 
 // Borrowed from PennMUSH 1.50
