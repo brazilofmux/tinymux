@@ -21,6 +21,13 @@ Feature Additions:
  -- Limit the number of oustanding slave processes at any one time to
     20.  Introduced by Brazil.  Jointly refined with Alierak.
  -- Expand @list alloc report to 14 digits for total allocations column.
+ -- Added @descformat. Patch provided by Sean Hunter.
+ -- Added SHA1() to calculate SHA-1 cryptographically secure hashes.
+ -- Existing encrypt passwords are converted to SHA-1 format.
+ -- The WHO/SESSION/DOING report manages the width and format of
+    'On For' column with more care.  A range of years can be represented
+    with a resolution of minutes at most, however, with limited
+    available width resolution is gracefully sacrified.
 
 
 Bug Fixes:
@@ -157,6 +164,8 @@ Bug Fixes:
     as well).  The -Qprec_div option prevents this optimization and fixes
     the behavior.  As insurance, some additional code also will fix the
     the problem.
+ -- @hook/igswitch didn't work when the built-in command normally
+    doesn't take switches.
 
 
 Performance Enhancements:
