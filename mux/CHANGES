@@ -122,6 +122,7 @@ Feature Additions:
  -- Let alloc file/line number of atr_get() series of calls point to the file
     and line number where atr_get() was originally called from. Code from
     RhostMUSH. Jake.
+ -- Extended exptime() and writetime() to use weeks and 30-day months.
 
 
 Bug Fixes:
