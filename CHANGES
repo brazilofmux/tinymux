@@ -119,6 +119,7 @@ Bug Fixes:
  -- Use mudstate.logging again.
  -- Remove vestigates of macros.
  -- Handle prematurely-chopped comsys.db files.
+ -- Bug #548 - DS_AUTODARK was broken for multiple connections.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
