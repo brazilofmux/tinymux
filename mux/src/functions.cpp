@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.95 2004-04-30 19:59:40 sdennis Exp $
+// $Id: functions.cpp,v 1.96 2004-04-30 20:21:56 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2310,12 +2310,14 @@ FUNCTION(fun_extract)
         return;
     }
 
-    int start, len;
-    char *r, *s, *t;
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(5, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
+    {
+        return;
+    }
 
-    s = fargs[0];
-    start = mux_atol(fargs[1]);
-    len = mux_atol(fargs[2]);
+    int start = mux_atol(fargs[1]);
+    int len = mux_atol(fargs[2]);
 
     if (  start < 1
        || len < 1)
@@ -2326,7 +2328,7 @@ FUNCTION(fun_extract)
     // Skip to the start of the string to save.
     //
     start--;
-    s = trim_space_sep(s, &sep);
+    char *s = trim_space_sep(fargs[0], &sep);
     while (  start 
           && s)
     {
@@ -2343,23 +2345,22 @@ FUNCTION(fun_extract)
 
     // Count off the words in the string to save.
     //
-    r = s;
-    len--;
+    bool bFirst = true;
     while (  len 
           && s)
     {
-        s = next_token(s, &sep);
+        char *t = split_token(&s, &sep);
+        if (!bFirst)
+        {
+            print_sep(&osep, buff, bufc);
+        }
+        else
+        {
+            bFirst = false;
+        }
+        safe_str(t, buff, bufc);
         len--;
     }
-
-    // Chop off the rest of the string, if needed.
-    //
-    if (  s
-       && *s)
-    {
-        t = split_token(&s, &sep);
-    }
-    safe_str(r, buff, bufc);
 }
 
 // xlate() controls the subtle definition of a softcode boolean.
@@ -9539,7 +9540,7 @@ FUN flist[] =
     {"EXIT",        fun_exit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"EXP",         fun_exp,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"EXPTIME",     fun_exptime,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"EXTRACT",     fun_extract,    MAX_ARG, 3,       4,         0, CA_PUBLIC},
+    {"EXTRACT",     fun_extract,    MAX_ARG, 3,       5,         0, CA_PUBLIC},
     {"FDIV",        fun_fdiv,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"FILTER",      fun_filter,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"FILTERBOOL",  fun_filterbool, MAX_ARG, 2,       4,         0, CA_PUBLIC},
