@@ -6684,7 +6684,7 @@ LCMDS()
   FUNCTION: lcmds(<object> [,<output delim> [,<type>]])
 
   Returns the names of all the commands on a specific <object>.  The default
-  output delimter is a space.
+  output delimiter is a space.
 
   The following <type> are allowed:
 
