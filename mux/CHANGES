@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  June 2004
+Last Update:  July 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -406,6 +406,10 @@ Bug Fixes:
     the mail.db comes from a previous versions of MUX.
  -- Guest creation did not properly strip attributions from previous
     connections.
+ -- Move initialization of time code further up so that the logging
+    code creates the right timestamp.
+ -- Locks failed to evaluate properly after a dbref within the lock was
+    @destroy.
 
 
 Performance Enhancements:
@@ -434,3 +438,4 @@ Miscellaneous:
  -- Switched to using autoconf 2.53.
  -- Documented flag attributes.
  -- Updated CONVERSION.
+ -- Documented pass_locks @power.
