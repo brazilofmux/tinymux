@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.5 2002-06-05 05:16:32 sdennis Exp $
+// $Id: speech.cpp,v 1.6 2002-06-07 19:44:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -218,16 +218,19 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
             message[0] = ' ';
             say_shout(0, announce_msg, say_flags, executor, message);
             break;
+
         case ';':
             message++;
             say_shout(0, announce_msg, say_flags, executor, message);
             break;
+
         case '"':
             message++;
+
         default:
             buf2 = alloc_lbuf("do_say.shout");
             bp = buf2;
-            safe_str((char *)" shouts \"", buf2, &bp);
+            safe_str(" shouts, \"", buf2, &bp);
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
