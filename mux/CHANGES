@@ -1,5 +1,5 @@
 TinyMUX 2.3:  CHANGES
-Last Update:  March 2003
+Last Update:  April 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,6 +123,13 @@ Bug Fixes:
     possible to re-@name an exit to a broader range of names.  Patch
     from Alierak.
  -- Document that y-umlaut is not supported.
+ -- Fix help topic for conn() and idle().  Reported by Talim.
+ -- Use waitpid() everywhere instead of wait() or wait3().
+ -- Freshen getpagesize() for QNX.
+ -- Previous work on slave left zombie slave processes.
+ -- Disallow parsing of 'Fri Apr 04 07:15:04 2003 utc' by first-level
+    date parser so that second-level parser can deal properly with it.
+    Reported by Talim.
 
 
 Performance Enhancements:
