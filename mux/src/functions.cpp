@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.45 2002-06-28 18:15:00 sdennis Exp $
+// $Id: functions.cpp,v 1.46 2002-06-28 18:30:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2015,7 +2015,10 @@ FUNCTION(fun_next)
             safe_noperm(buff, bufc);
         }
     }
-    safe_nothing(buff, bufc);
+    else
+    {
+        safe_nothing(buff, bufc);
+    }
 }
 
 /*
@@ -2035,7 +2038,10 @@ FUNCTION(fun_loc)
     {
         safe_tprintf_str(buff, bufc, "#%d", Location(it));
     }
-    safe_nothing(buff, bufc);
+    else
+    {
+        safe_nothing(buff, bufc);
+    }
 }
 
 /*
@@ -2055,37 +2061,52 @@ FUNCTION(fun_where)
     {
         safe_tprintf_str(buff, bufc, "#%d", where_is(it));
     }
-    safe_nothing(buff, bufc);
+    else
+    {
+        safe_nothing(buff, bufc);
+    }
 }
 
-/* QQQ
+/*
  * ---------------------------------------------------------------------------
  * * fun_rloc: Returns the recursed location of something (specifying #levels)
  */
 
 FUNCTION(fun_rloc)
 {
-    int i, levels;
-    dbref it;
-
-    levels = Tiny_atol(fargs[1]);
+    int levels = Tiny_atol(fargs[1]);
     if (levels > mudconf.ntfy_nest_lim)
+    {
         levels = mudconf.ntfy_nest_lim;
+    }
 
-    it = match_thing_quiet(executor, fargs[0]);
-    if (locatable(executor, it, enactor)) {
-        for (i = 0; i < levels; i++) {
-            if (!Good_obj(it) || !Has_location(it))
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (locatable(executor, it, enactor))
+    {
+        int i;
+        for (i = 0; i < levels; i++)
+        {
+            if (  !Good_obj(it)
+               || !Has_location(it))
+            {
                 break;
+            }
             it = Location(it);
         }
         safe_tprintf_str(buff, bufc, "#%d", it);
-        return;
     }
-    safe_nothing(buff, bufc);
+    else
+    {
+        safe_nothing(buff, bufc);
+    }
 }
 
-/*
+/* QQQ
  * ---------------------------------------------------------------------------
  * * fun_room: Find the room an object is ultimately in.
  */
