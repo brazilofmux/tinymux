@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.12 2002-07-22 00:04:04 sdennis Exp $
+// $Id: conf.cpp,v 1.13 2002-07-23 21:24:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -549,7 +549,10 @@ CF_HAND(cf_string)
     // The following should never happen because extra is always a non-zero
     // constant in the config table.
     //
-    if (nExtra <= 0) return 1;
+    if (nExtra <= 0)
+    {
+        return 1;
+    }
 
     // Copy the string to the buffer if it is not too big.
     //
@@ -578,11 +581,25 @@ CF_HAND(cf_string)
 
     if (pc == mudconf.mud_name)
     {
-        // We are changing the name of the MUD. Let the logger know.
+        // We are changing the name of the MUD. Form a prefix from the
+        // mudname and let the logger know.
         //
-        Log.ChangePrefix(mudconf.mud_name);
+        char *buff = alloc_sbuf("cf_string.prefix");
+        char *p = buff;
+        char *q = mudconf.mud_name;
+        size_t nLen = 0;
+        while (*q && nLen < SBUF_SIZE)
+        {
+            if (!Tiny_IsSpace[(unsigned char)*q])
+            {
+                *p++ = *q++;
+                nLen++;
+            }
+        }
+        *p = '\0';
+        Log.ChangePrefix(buff);
+        free_sbuf(buff);
     }
-
     return retval;
 }
 
