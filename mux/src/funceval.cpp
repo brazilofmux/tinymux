@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.56 2002-09-26 01:41:55 sdennis Exp $
+// $Id: funceval.cpp,v 1.57 2002-09-26 01:54:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1357,7 +1357,7 @@ FUNCTION(fun_ifelse)
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
-    if (!xlate(lbuf))
+    if (!xlate(lbuff))
     {
         if (nfargs == 3)
         {
