@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.4 2000-04-15 15:45:54 sdennis Exp $
+// $Id: game.cpp,v 1.5 2000-04-24 21:31:06 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -29,7 +29,6 @@
 
 extern void NDECL(init_attrtab);
 extern void NDECL(init_cmdtab);
-extern void NDECL(init_chantab);
 extern void NDECL(cf_init);
 extern void NDECL(pcache_init);
 extern int cf_read(void);
@@ -44,7 +43,9 @@ extern void boot_slave(dbref, dbref, int);
 void FDECL(fork_and_dump, (int));
 void NDECL(dump_database);
 void NDECL(pcache_sync);
+#if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 static void NDECL(init_rlimit);
+#endif
 
 int reserved;
 
@@ -1581,13 +1582,9 @@ static void NDECL(process_preload)
             {
                 did_it(Owner(thing), thing, 0, NULL, 0, NULL, A_STARTUP, (char **)NULL, 0);
 
-                /*
-                 * Process queue entries as we add them 
-                 */
+                // Process queue entries as we add them.
+                //
                 scheduler.RunTasks(10);
-#ifndef MEMORY_BASED
-                cache_reset(0);
-#endif
                 break;
              }
         }
@@ -1603,10 +1600,9 @@ static void NDECL(process_preload)
             {
                 fwdlist_load(fp, GOD, tstr);
                 if (fp->count > 0)
+                {
                     fwdlist_set(thing, fp);
-#ifndef MEMORY_BASED
-                cache_reset(0);
-#endif
+                }
             }
         }
     }
@@ -1825,16 +1821,16 @@ int DCL_CDECL main(int argc, char *argv[])
     tcache_init();
     pcache_init();
     cf_init();
+#if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
     init_rlimit();
+#endif
     init_cmdtab();
-    init_chantab();
     init_logout_cmdtab();
     init_flagtab();
     init_powertab();
     init_functab();
     init_attrtab();
     init_version();
-    vattr_init();
 
     if (conffile)
     {
@@ -2047,24 +2043,25 @@ int DCL_CDECL main(int argc, char *argv[])
     return 0;
 }
 
+#if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 static void NDECL(init_rlimit)
 {
-#if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
     struct rlimit *rlp;
 
     rlp = (struct rlimit *)alloc_lbuf("rlimit");
 
-    if (getrlimit(RLIMIT_NOFILE, rlp)) {
+    if (getrlimit(RLIMIT_NOFILE, rlp))
+    {
         log_perror("RLM", "FAIL", NULL, "getrlimit()");
         free_lbuf(rlp);
         return;
     }
     rlp->rlim_cur = rlp->rlim_max;
     if (setrlimit(RLIMIT_NOFILE, rlp))
+    {
         log_perror("RLM", "FAIL", NULL, "setrlimit()");
+    }
     free_lbuf(rlp);
 
-#endif /*
-        * HAVE_SETRLIMIT 
-        */
 }
+#endif // HAVE_SETRLIMIT
