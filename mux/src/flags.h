@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.14 2002-07-23 14:04:16 jake Exp $
+// $Id: flags.h,v 1.15 2002-07-31 17:02:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -73,7 +73,7 @@
 #define STAFF        0x00010000
 #define HAS_DAILY    0x00020000
 #define GAGGED       0x00040000
-
+#define OPEN_OK      0x00080000  // You can open exits from here if you pass the openlock.
 #define VACATION     0x01000000
 #define PLAYER_MAILS 0x02000000
 #define HTML         0x04000000  /* Player supports HTML */
@@ -253,6 +253,7 @@ extern char *MakeCanonicalFlagName
 
 #define Transparent(x)      ((Flags(x) & SEETHRU) != 0)
 #define Link_ok(x)          (((Flags(x) & LINK_OK) != 0) && Has_contents(x))
+#define Open_ok(x)          (((Flags2(x) & OPEN_OK) != 0) && Has_exits(x))
 #define Wizard(x)           ((Flags(x) & WIZARD) || \
                             ((Flags(Owner(x)) & WIZARD) && Inherits(x)))
 #define Dark(x)             (((Flags(x) & DARK) != 0) && (Wizard(x) || \

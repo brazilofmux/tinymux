@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.10 2002-07-29 13:56:53 jake Exp $
+// $Id: flags.cpp,v 1.11 2002-07-31 17:02:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -298,6 +298,7 @@ static FLAGBITENT fbeNoCommand      = { NO_COMMAND,   'n',    FLAG_WORD2, 0,    
 static FLAGBITENT fbeNoBleed        = { NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeNoSpoof        = { NOSPOOF,      'N',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeOpaque         = { TM_OPAQUE,    'O',    FLAG_WORD1, 0,                    fh_any};
+static FLAGBITENT fbeOpenOk         = { OPEN_OK,      'z',    FLAG_WORD2, 0,                    fh_wiz};
 static FLAGBITENT fbeParentOk       = { PARENT_OK,    'Y',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbePlayerMails    = { PLAYER_MAILS, ' ',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god};
 static FLAGBITENT fbePuppet         = { PUPPET,       'p',    FLAG_WORD1, 0,                    fh_hear_bit};
@@ -401,6 +402,7 @@ FLAGNAMEENT gen_flag_names[] =
     {"NOBLEED",         TRUE, &fbeNoBleed        },
     {"NOSPOOF",         TRUE, &fbeNoSpoof        },
     {"OPAQUE",          TRUE, &fbeOpaque         },
+    {"OPEN_OK",         TRUE, &fbeOpenOk         },
     {"PARENT_OK",       TRUE, &fbeParentOk       },
     {"PLAYER_MAILS",    TRUE, &fbePlayerMails    },
     {"PUPPET",          TRUE, &fbePuppet         },

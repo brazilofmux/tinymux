@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.3 2002-07-28 15:42:39 jake Exp $
+// $Id: attrs.h,v 1.4 2002-07-31 17:02:31 jake Exp $
 //
 
 #ifndef _ATTRS_H
@@ -189,6 +189,8 @@
 #define A_CONNINFO  224 // Connection info: (total connected time,
                         // longest connection last connection, total
                         // connections, time of logout.
+
+#define A_LOPEN     226 // Lock for controlling OPEN_OK locations
 
 #define A_IDLETMOUT 240 /* Idle message timeout */
 

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.28 2002-07-29 13:56:53 jake Exp $
+// $Id: db.cpp,v 1.29 2002-07-31 17:02:31 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -147,6 +147,7 @@ ATTR attr[] =
     {"Olfail",      A_OLFAIL,   AF_ODARK | AF_NOPROG},
     {"Omove",       A_OMOVE,    AF_ODARK | AF_NOPROG},
     {"Opay",        A_OPAY,     AF_ODARK | AF_NOPROG},
+    {"OpenLock",    A_LOPEN,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
     {"Orfail",      A_ORFAIL,   AF_ODARK | AF_NOPROG},
     {"Osucc",       A_OSUCC,    AF_ODARK | AF_NOPROG},
     {"Otfail",      A_OTFAIL,   AF_ODARK | AF_NOPROG},

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.50 2002-07-29 23:53:42 jake Exp $
+// $Id: command.cpp,v 1.51 2002-07-31 17:02:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -278,6 +278,7 @@ NAMETAB lock_sw[] =
     {"givelock",        1,  CA_PUBLIC,  A_LGIVE},
     {"leavelock",       2,  CA_PUBLIC,  A_LLEAVE},
     {"linklock",        2,  CA_PUBLIC,  A_LLINK},
+    {"openlock",        1,  CA_PUBLIC,  A_LOPEN},
     {"pagelock",        3,  CA_PUBLIC,  A_LPAGE},
     {"parentlock",      3,  CA_PUBLIC,  A_LPARENT},
     {"receivelock",     1,  CA_PUBLIC,  A_LRECEIVE},
@@ -798,10 +799,7 @@ void set_prefix_cmds()
 {
     int i;
 
-    // Load the command prefix table. Note - these commands can never
-    // be typed in by a user because commands are lowercased before
-    // the hash table is checked. The names are abbreviated to
-    // minimise name checking time.
+    // Load the command prefix table.
     //
     for (i = 0; i < 256; i++)
     {
