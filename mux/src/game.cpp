@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.3 2002-06-04 00:47:27 sdennis Exp $
+// $Id: game.cpp,v 1.4 2002-06-05 05:19:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -246,7 +246,7 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
         {
             match = 1;
             CLinearTimeAbsolute lta;
-            wait_que(thing, CALLERQQQ, player, FALSE, lta, NOTHING, 0, s,
+            wait_que(thing, player, player, FALSE, lta, NOTHING, 0, s,
                 args, 10, mudstate.global_regs);
             for (int i = 0; i < 10; i++)
             {
@@ -329,7 +329,7 @@ int check_filter(dbref object, dbref player, int filter, const char *msg)
     save_global_regs("check_filter_save", preserve, preserve_len);
     nbuf = dp = alloc_lbuf("check_filter");
     str = buf;
-    TinyExec(nbuf, &dp, object, CALLERQQQ, player,
+    TinyExec(nbuf, &dp, object, player, player,
              EV_FIGNORE | EV_EVAL | EV_TOP, &str, (char **)NULL, 0);
     *dp = '\0';
     dp = nbuf;
@@ -366,7 +366,7 @@ static char *add_prefix(dbref object, dbref player, int prefix, const char *msg,
         save_global_regs("add_prefix_save", preserve, preserve_len);
         nbuf = bp = alloc_lbuf("add_prefix");
         str = buf;
-        TinyExec(nbuf, &bp, object, CALLERQQQ, player,
+        TinyExec(nbuf, &bp, object, player, player,
                  EV_FIGNORE | EV_EVAL | EV_TOP, &str, (char **)NULL, 0);
         *bp = '\0';
         free_lbuf(buf);

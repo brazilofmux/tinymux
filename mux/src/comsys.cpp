@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.4 2002-06-04 04:17:28 sdennis Exp $
+// $Id: comsys.cpp,v 1.5 2002-06-05 05:22:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -818,7 +818,7 @@ void BuildChannelMessage
             char TempToEval[LBUF_SIZE];
             strcpy(TempToEval, user->title);
             char *q = TempToEval;
-            TinyExec(*messNormal, &mnptr, user->who, CALLERQQQ, user->who,
+            TinyExec(*messNormal, &mnptr, user->who, user->who, user->who,
                 EV_FCHECK | EV_EVAL | EV_TOP, &q, (char **)NULL, 0);
         }
         else
@@ -1868,7 +1868,7 @@ void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2)
 
     for (i = (c->numchannels) - 1; i > -1; --i)
     {
-        do_delcom(executor, CALLERQQQ, executor, 0, c->alias + i * 6);
+        do_delcom(executor, caller, enactor, 0, c->alias + i * 6);
     }
 }
 
@@ -2397,7 +2397,7 @@ void do_chopen
     }
     if (key == CSET_LIST)
     {
-        do_chanlist(executor, CALLERQQQ, NOTHING, 1);
+        do_chanlist(executor, caller, enactor, 1);
         return;
     }
 
