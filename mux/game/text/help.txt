@@ -5079,10 +5079,13 @@ CONFIG()
 
   FUNCTION: config([<parameter name>])
 
-  Most server configuration options are exposed programmatically via this
-  function. Given a <parameter name>, this function returns the value
-  currently in force. If no args are given, the function returns a list
-  of all options the player has permission to view.
+  Most server configuration options are exposed programmatically via
+  this function.  Given a <parameter name>, this function returns the
+  value currently in force.  If no args are given, the function returns
+  a list of all options the player has permission to view.
+
+  For boolean configuration options, config() does not return 'yes' or
+  'no'.  It returns the boolean in the form compatible with BOOLEAN.
 
   Configuration options are determined in order by:
 
@@ -5090,7 +5093,7 @@ CONFIG()
     - Configuration file, and
     - @admin changes.
 
-  Related Topics: wizhelp
+  Related Topics: BOOLEAN, wizhelp
 
 & CONN()
 CONN()
@@ -12116,10 +12119,14 @@ TRANSLATE()
 
   FUNCTION: translate(<string>, <type>)
 
-  This function takes <string>, and converts all raw ANSI color codes and
-  carriage returns to either MUX substitutions, or to spaces. If <type> is
-  0 or 's', the raw codes are converted to spaces, if it is 1 or 'p', the
-  codes are converted to MUX %c and %r substitutions.
+  This function converts all raw ANSI color codes, carriage returns, and tabs
+  to either MUX substitutions or to spaces.  If <type> is 0 or 's', the raw
+  codes are converted to spaces, if it is 1 or 'p', the codes are converted
+  to MUX %c and %r substitutions.
+
+  Because multiple spaces can be compressed into a single space, if <type> is
+  1 or 'p', multiple spaces are converted to a series of '%b' followed by a
+  single space.
 
   Related Topics:
 
