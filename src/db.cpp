@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.41 2001-06-27 07:22:35 sdennis Exp $
+// $Id: db.cpp,v 1.42 2001-06-28 09:18:34 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -45,9 +45,8 @@
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)
 #endif
 
-/*
- * Restart definitions
- */
+// Restart definitions
+//
 #define RS_CONCENTRATE      0x00000002
 #define RS_RECORD_PLAYERS   0x00000004
 #define RS_NEW_STRINGS      0x00000008
@@ -68,8 +67,7 @@ extern void FDECL(desc_addhash, (DESC *));
 
 #ifdef RADIX_COMPRESSION
 
-/*
- * Buffers for compressing in and out of. NOTE: These assume that compression
+/* Buffers for compressing in and out of. NOTE: These assume that compression
  * will NEVER expand input text by more than 1.5, which is valid for the
  * radix tree stuff, since it emits at worst a 12 bit code for every input
  * byte. If this changes, the size of compress_buff needs to be adjusted to the
@@ -86,17 +84,15 @@ struct atrcount {
     int count;
 };
 
-/*
- * Check routine forward declaration.
- */
+// Check routine forward declaration.
+//
 extern int FDECL(fwdlist_ck, (int, dbref, dbref, int, char *));
 
 extern void FDECL(pcache_reload, (dbref));
 extern void FDECL(desc_reload, (dbref));
 
-/*
- * list of attributes
- */
+// list of attributes
+//
 ATTR attr[] =
 {
     {"Aahear", A_AAHEAR, AF_ODARK, NULL},
@@ -132,6 +128,7 @@ ATTR attr[] =
     {"Comment", A_COMMENT, AF_MDARK | AF_WIZARD, NULL},
     {"ConFormat", A_CONFORMAT, AF_ODARK | AF_NOPROG, NULL},
     {"Cost", A_COST, AF_ODARK, NULL},
+    {"Created", A_CREATED, AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD, NULL},
     {"Daily", A_DAILY, AF_ODARK, NULL},
     {"Desc", A_DESC, AF_NOPROG, NULL},
     {"DefaultLock", A_LOCK, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
@@ -273,9 +270,8 @@ char *aszSpecialDBRefNames[1-NOPERM] =
 };
 
 #ifndef STANDALONE
-/*
- * ---------------------------------------------------------------------------
- * * fwdlist_set, fwdlist_clr: Manage cached forwarding lists
+/* ---------------------------------------------------------------------------
+ * fwdlist_set, fwdlist_clr: Manage cached forwarding lists
  */
 
 void fwdlist_set(dbref thing, FWDLIST *ifp)
@@ -321,10 +317,8 @@ void fwdlist_clr(dbref thing)
 {
     FWDLIST *xfp;
 
-    /*
-     * If a forwardlist exists, delete it
-     */
-
+    // If a forwardlist exists, delete it
+    //
     xfp = fwdlist_get(thing);
     if (xfp)
     {
@@ -336,9 +330,8 @@ void fwdlist_clr(dbref thing)
 
 #endif
 
-/*
- * ---------------------------------------------------------------------------
- * * fwdlist_load: Load text into a forwardlist.
+/* ---------------------------------------------------------------------------
+ * fwdlist_load: Load text into a forwardlist.
  */
 
 int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
@@ -403,9 +396,8 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
     return errors;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fwdlist_rewrite: Generate a text string from a FWDLIST buffer.
+/* ---------------------------------------------------------------------------
+ * fwdlist_rewrite: Generate a text string from a FWDLIST buffer.
  */
 
 int fwdlist_rewrite(FWDLIST *fp, char *atext)
@@ -431,9 +423,8 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
     return count;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fwdlist_ck:  Check a list of dbref numbers to forward to for AUDIBLE
+/* ---------------------------------------------------------------------------
+ * fwdlist_ck:  Check a list of dbref numbers to forward to for AUDIBLE
  */
 
 int fwdlist_ck(int key, dbref player, dbref thing, int anum, char *atext)
@@ -507,9 +498,8 @@ static char *set_string(char **ptr, char *new0)
     return *ptr;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * Name, s_Name: Get or set an object's name.
+/* ---------------------------------------------------------------------------
+ * Name, s_Name: Get or set an object's name.
  */
 
 char *Name(dbref thing)
@@ -606,9 +596,8 @@ void s_Pass(dbref thing, const char *s)
 
 #ifndef STANDALONE
 
-/*
- * ---------------------------------------------------------------------------
- * * do_attrib: Manage user-named attributes.
+/* ---------------------------------------------------------------------------
+ * do_attrib: Manage user-named attributes.
  */
 
 extern NAMETAB attraccess_nametab[];
@@ -713,9 +702,8 @@ void do_attribute(dbref player, dbref cause, int key, char *aname, char *value)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * do_fixdb: Directly edit database fields
+/* ---------------------------------------------------------------------------
+ * do_fixdb: Directly edit database fields
  */
 
 void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
@@ -944,9 +932,8 @@ char *MakeCanonicalAttributeCommand(const char *pName, int *pnName, BOOL *pbVali
     return Buffer;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * init_attrtab: Initialize the attribute hash tables.
+/* ---------------------------------------------------------------------------
+ * init_attrtab: Initialize the attribute hash tables.
  */
 
 void NDECL(init_attrtab)
@@ -976,9 +963,8 @@ void NDECL(init_attrtab)
     Tiny_IsAttributeNameCharacter['*'] = FALSE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_str: Look up an attribute by name.
+/* ---------------------------------------------------------------------------
+ * atr_str: Look up an attribute by name.
  */
 
 ATTR *atr_str(char *s)
@@ -1022,9 +1008,8 @@ ATTR *atr_str(char *s)
     return NULL;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * anum_extend: Grow the attr num lookup table.
+/* ---------------------------------------------------------------------------
+ * anum_extend: Grow the attr num lookup table.
  */
 
 ATTR **anum_table = NULL;
@@ -1108,9 +1093,8 @@ ATTR *atr_num(int anum)
     return NULL;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * mkattr: Lookup attribute by name, creating if needed.
+/* ---------------------------------------------------------------------------
+ * mkattr: Lookup attribute by name, creating if needed.
  */
 
 int mkattr(char *buff)
@@ -1150,9 +1134,8 @@ int mkattr(char *buff)
     return -1;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * al_decode: Fetch an attribute number from an alist.
+/* ---------------------------------------------------------------------------
+ * al_decode: Fetch an attribute number from an alist.
  */
 
 static int al_decode(char **app)
@@ -1202,9 +1185,8 @@ static char *al_code(char *ap, int atrnum)
     return ap;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * Commer: check if an object has any $-commands in its attributes.
+/* ---------------------------------------------------------------------------
+ * Commer: check if an object has any $-commands in its attributes.
  */
 
 int Commer(dbref thing)
@@ -1234,20 +1216,16 @@ int Commer(dbref thing)
     return 0;
 }
 
-/*
- * routines to handle object attribute lists
- */
+// routines to handle object attribute lists
+//
 
 #ifndef MEMORY_BASED
-/*
- * ---------------------------------------------------------------------------
- * * al_fetch, al_store, al_add, al_delete: Manipulate attribute lists
+/* ---------------------------------------------------------------------------
+ * al_fetch, al_store, al_add, al_delete: Manipulate attribute lists
  */
 
-/*
- * al_extend: Get more space for attributes, if needed
- */
-
+// al_extend: Get more space for attributes, if needed
+//
 void al_extend(char **buffer, int *bufsiz, int len, int copy)
 {
     char *tbuff;
@@ -1271,10 +1249,8 @@ void al_extend(char **buffer, int *bufsiz, int len, int copy)
     }
 }
 
-/*
- * al_store: Write modified attribute list
- */
-
+// al_store: Write modified attribute list
+//
 void NDECL(al_store)
 {
     if (mudstate.mod_al_id != NOTHING)
@@ -1291,10 +1267,8 @@ void NDECL(al_store)
     mudstate.mod_al_id = NOTHING;
 }
 
-/*
- * al_fetch: Load attribute list
- */
-
+// al_fetch: Load attribute list
+//
 char *al_fetch(dbref thing)
 {
     // We only need fetch if we change things.
@@ -1375,10 +1349,8 @@ BOOL al_add(dbref thing, int attrnum)
     return TRUE;
 }
 
-/*
- * al_delete: Remove an attribute from an attribute list
- */
-
+// al_delete: Remove an attribute from an attribute list
+//
 void al_delete(dbref thing, int attrnum)
 {
     int anum;
@@ -1423,25 +1395,21 @@ DCL_INLINE static void makekey(dbref thing, int atr, Aname *abuff)
     return;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * al_destroy: wipe out an object's attribute list.
+/* ---------------------------------------------------------------------------
+ * al_destroy: wipe out an object's attribute list.
  */
 
 void al_destroy(dbref thing)
 {
     if (mudstate.mod_al_id == thing)
-        al_store(); /*
-                 * remove from cache
-                 */
+        al_store(); // remove from cache
     atr_clr(thing, A_LIST);
 }
 
 #endif
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_encode: Encode an attribute string.
+/* ---------------------------------------------------------------------------
+ * atr_encode: Encode an attribute string.
  */
 
 static char *atr_encode(char *iattr, dbref thing, dbref owner, int flags, int atr)
@@ -1453,7 +1421,7 @@ static char *atr_encode(char *iattr, dbref thing, dbref owner, int flags, int at
     if (((owner == Owner(thing)) || (owner == NOTHING)) && !flags)
         return iattr;
 
-    // Encode owner and flags into the attribute text.
+    // Encode owner and flags into the attribute text
     //
     if (owner == NOTHING)
         owner = Owner(thing);
@@ -1642,9 +1610,8 @@ static void atr_decode_LEN(char *iattr, int nLen, char *oattr, dbref thing, dbre
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_clr: clear an attribute in the list.
+/* ---------------------------------------------------------------------------
+ * atr_clr: clear an attribute in the list.
  */
 
 void atr_clr(dbref thing, int atr)
@@ -1721,9 +1688,8 @@ void atr_clr(dbref thing, int atr)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_add_raw, atr_add: add attribute of type atr to list
+/* ---------------------------------------------------------------------------
+ * atr_add_raw, atr_add: add attribute of type atr to list
  */
 
 void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
@@ -1941,9 +1907,8 @@ void atr_set_flags(dbref thing, int atr, dbref flags)
     free_lbuf(buff);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * get_atr,atr_get_raw, atr_get_str, atr_get: Get an attribute from the database.
+/* ---------------------------------------------------------------------------
+ * get_atr,atr_get_raw, atr_get_str, atr_get: Get an attribute from the database.
  */
 
 int get_atr(char *name)
@@ -2198,9 +2163,8 @@ int atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
 
 #endif
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_free: Return all attributes of an object.
+/* ---------------------------------------------------------------------------
+ * atr_free: Return all attributes of an object.
  */
 
 void atr_free(dbref thing)
@@ -2225,11 +2189,10 @@ void atr_free(dbref thing)
 #endif
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_cpy: Copy all attributes from one object to another.  Takes the
- * * player argument to ensure that only attributes that COULD be set by
- * * the player are copied.
+/* ---------------------------------------------------------------------------
+ * atr_cpy: Copy all attributes from one object to another.  Takes the
+ * player argument to ensure that only attributes that COULD be set by
+ * the player are copied.
  */
 
 void atr_cpy(dbref player, dbref dest, dbref source)
@@ -2255,9 +2218,8 @@ void atr_cpy(dbref player, dbref dest, dbref source)
         {
             if (Write_attr(owner, dest, at, aflags))
             {
-                /*
-                 * Only set attrs that owner has perm to set
-                 */
+                // Only set attrs that owner has perm to set.
+                //
                 atr_add(dest, attr, buf, aowner, aflags);
             }
         }
@@ -2266,10 +2228,9 @@ void atr_cpy(dbref player, dbref dest, dbref source)
     atr_pop();
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_chown: Change the ownership of the attributes of an object to the
- * * current owner if they are not locked.
+/* ---------------------------------------------------------------------------
+ * atr_chown: Change the ownership of the attributes of an object to the
+ * current owner if they are not locked.
  */
 
 void atr_chown(dbref obj)
@@ -2290,9 +2251,8 @@ void atr_chown(dbref obj)
     atr_pop();
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_next: Return next attribute in attribute list.
+/* ---------------------------------------------------------------------------
+ * atr_next: Return next attribute in attribute list.
  */
 
 int atr_next(char **attrp)
@@ -2328,9 +2288,8 @@ int atr_next(char **attrp)
 #endif
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_push, atr_pop: Push and pop attr lists.
+/* ---------------------------------------------------------------------------
+ * atr_push, atr_pop: Push and pop attr lists.
  */
 
 void NDECL(atr_push)
@@ -2373,9 +2332,8 @@ void NDECL(atr_pop)
 #endif
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * atr_head: Returns the head of the attr list for object 'thing'
+/* ---------------------------------------------------------------------------
+ * atr_head: Returns the head of the attr list for object 'thing'
  */
 
 int atr_head(dbref thing, char **attrp)
@@ -2397,10 +2355,8 @@ int atr_head(dbref thing, char **attrp)
     char *astr;
     int alen;
 
-    /*
-     * Get attribute list.  Save a read if it is in the modify atr list
-     */
-
+    // Get attribute list.  Save a read if it is in the modify atr list
+    //
     if (thing == mudstate.mod_al_id)
     {
         astr = mudstate.mod_alist;
@@ -2428,9 +2384,8 @@ int atr_head(dbref thing, char **attrp)
 }
 
 
-/*
- * ---------------------------------------------------------------------------
- * * db_grow: Extend the struct database.
+/* ---------------------------------------------------------------------------
+ * db_grow: Extend the struct database.
  */
 
 #define SIZE_HACK   1   // So mistaken refs to #-1 won't die.
@@ -2481,16 +2436,19 @@ void db_grow(dbref newtop)
     //
     // If requested size is smaller than the current db size, ignore it.
     //
-    if (newtop <= mudstate.db_top) {
+    if (newtop <= mudstate.db_top)
+    {
         return;
     }
 
-    // If requested size is greater than the current db size but smaller than
-    // the amount of space we have allocated, raise the db size and initialize
-    // the new area.
+    // If requested size is greater than the current db size but smaller
+    // than the amount of space we have allocated, raise the db size and
+	// initialize the new area.
     //
-    if (newtop <= mudstate.db_size) {
-        for (i = mudstate.db_top; i < newtop; i++) {
+    if (newtop <= mudstate.db_size)
+    {
+        for (i = mudstate.db_top; i < newtop; i++)
+        {
 #ifndef MEMORY_BASED
             names[i] = NULL;
 #endif
@@ -2501,30 +2459,30 @@ void db_grow(dbref newtop)
         mudstate.db_top = newtop;
         return;
     }
-    /*
-     * Grow by a minimum of delta objects
-     */
 
-    if (newtop <= mudstate.db_size + delta) {
+    // Grow by a minimum of delta objects
+    //
+    if (newtop <= mudstate.db_size + delta)
+    {
         newsize = mudstate.db_size + delta;
-    } else {
+    }
+    else
+    {
         newsize = newtop;
     }
 
-    /*
-     * Enforce minimumdatabase size
-     */
-
+    // Enforce minimumdatabase size
+    //
     if (newsize < mudstate.min_size)
         newsize = mudstate.min_size + delta;;
 
-    /*
-     * Grow the name tables
-     */
-
+    // Grow the name tables
+    //
 #ifndef MEMORY_BASED
-    // NOTE: There is always one copy of 'names' around that isn't freed even just before the process terminates.
-    // We rely (quite safely) on the OS to reclaim the memory.
+
+    // NOTE: There is always one copy of 'names' around that isn't freed even
+    // just before the process terminates. We rely (quite safely) on the OS to
+    // reclaim the memory.
     //
     NAME *newnames = (NAME *) MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME));
     ISOUTOFMEMORY(newnames);
@@ -2542,7 +2500,8 @@ void db_grow(dbref newtop)
     }
     else
     {
-        // Creating a brand new struct database.  Fill in the 'reserved' area in case it gets referenced.
+        // Creating a brand new struct database.  Fill in the 'reserved' area
+        // in case it gets referenced.
         //
         names = newnames;
         for (i = 0; i < SIZE_HACK; i++)
@@ -2556,8 +2515,9 @@ void db_grow(dbref newtop)
 
     if (mudconf.cache_names)
     {
-        // NOTE: There is always one copy of 'purenames' around that isn't freed even just before the process terminates.
-        // We rely (quite safely) on the OS to reclaim the memory.
+        // NOTE: There is always one copy of 'purenames' around that isn't
+        // freed even just before the process terminates. We rely (quite
+        // safely) on the OS to reclaim the memory.
         //
         newpurenames = (NAME *)MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME));
         ISOUTOFMEMORY(newpurenames);
@@ -2587,12 +2547,12 @@ void db_grow(dbref newtop)
         newpurenames = NULL;
     }
 
-    /*
-     * Grow the db array
-     */
+    // Grow the db array
+    //
 
-    // NOTE: There is always one copy of 'db' around that isn't freed even just before the process terminates.
-    // We rely (quite safely) on the OS to reclaim the memory.
+    // NOTE: There is always one copy of 'db' around that isn't freed even
+    // just before the process terminates. We rely (quite safely) on the OS
+    // to reclaim the memory.
     //
     newdb = (OBJ *)MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ));
     ISOUTOFMEMORY(newdb);
@@ -2702,9 +2662,8 @@ void NDECL(db_make_minimal)
     s_Pennies(0, 1);
     s_Owner(0, 1);
 
-    /*
-     * should be #1
-     */
+    // should be #1
+    //
     load_player_names();
     obj = create_player((char *)"Wizard", (char *)"potrzebie", NOTHING, 0, 0);
     s_Flags(obj, Flags(obj) | WIZARD);
@@ -2712,9 +2671,8 @@ void NDECL(db_make_minimal)
     s_Powers2(obj, 0);
     s_Pennies(obj, 1000);
 
-    /*
-     * Manually link to Limbo, just in case
-     */
+    // Manually link to Limbo, just in case
+    //
     s_Location(obj, 0);
     s_Next(obj, NOTHING);
     s_Contents(0, obj);
@@ -2728,10 +2686,8 @@ dbref parse_dbref(const char *s)
     const char *p;
     int x;
 
-    /*
-     * Enforce completely numeric dbrefs
-     */
-
+    // Enforce completely numeric dbrefs
+    //
     for (p = s; *p; p++)
     {
         if (!Tiny_IsDigit[(unsigned char)*p])
@@ -3031,7 +2987,7 @@ BOOLEXP *dup_bool(BOOLEXP *b)
         r->sub1 = (BOOLEXP *)StringClone((char *)b->sub1);
         break;
     default:
-        Log.WriteString("bad bool type!!\n");
+        Log.WriteString("Bad bool type!" ENDLINE);
         return TRUE_BOOLEXP;
     }
     return (r);
@@ -3046,13 +3002,13 @@ void clone_object(dbref a, dbref b)
 int init_dbfile(char *game_dir_file, char *game_pag_file)
 {
 #ifdef STANDALONE
-    Log.printf("Opening (%s,%s)\n", game_dir_file, game_pag_file);
+    Log.printf("Opening (%s,%s)" ENDLINE, game_dir_file, game_pag_file);
 #endif
     int cc = cache_init(game_dir_file, game_pag_file);
     if (cc != HF_OPEN_STATUS_ERROR)
     {
 #ifdef STANDALONE
-        Log.printf("Done opening (%s,%s).\n", game_dir_file, game_pag_file);
+        Log.printf("Done opening (%s,%s)." ENDLINE, game_dir_file, game_pag_file);
 #else
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
         Log.printf("Using game db files: (%s,%s).", game_dir_file, game_pag_file);
@@ -3153,9 +3109,8 @@ int check_zone(dbref player, dbref thing)
 #endif
 
 #if !defined(STANDALONE) && !defined(VMS) && !defined(WIN32)
-/*
- * ---------------------------------------------------------------------------
- * * dump_restart_db: Writes out socket information.
+/* ---------------------------------------------------------------------------
+ * dump_restart_db: Writes out socket information.
  */
 void dump_restart_db(void)
 {
@@ -3380,7 +3335,7 @@ int ReplaceFile(char *old_name, char *new_name)
     }
     else
     {
-        Log.printf("MoveFile %s to %s fails with GetLastError() of %d\n", old_name, new_name, GetLastError());
+        Log.printf("MoveFile %s to %s fails with GetLastError() of %d" ENDLINE, old_name, new_name, GetLastError());
     }
     return -1;
 }
@@ -3400,7 +3355,7 @@ int ReplaceFile(char *old_name, char *new_name)
     }
     else
     {
-        Log.printf("rename %s to %s fails with errno of %s(%d)\n", old_name, new_name, strerror(errno), errno);
+        Log.printf("rename %s to %s fails with errno of %s(%d)" ENDLINE, old_name, new_name, strerror(errno), errno);
     }
     return -1;
 }
