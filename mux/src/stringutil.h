@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.27 2003-02-04 22:08:59 sdennis Exp $
+// $Id: stringutil.h,v 1.28 2003-02-04 22:21:20 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -13,8 +13,8 @@ extern const char mux_isprint[256];
 extern const char mux_isdigit[256];
 extern const char mux_isalpha[256];
 extern const char Tiny_IsAlphaNumeric[256];
-extern const char Tiny_IsUpper[256];
-extern const char Tiny_IsLower[256];
+extern const char mux_islower[256];
+extern const char mux_islower[256];
 extern const char mux_isspace[256];
 extern char mux_AttrNameInitialSet[256];
 extern char mux_AttrNameSet[256];

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.33 2003-02-04 22:08:59 sdennis Exp $
+// $Id: stringutil.cpp,v 1.34 2003-02-04 22:21:20 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -106,7 +106,7 @@ const char Tiny_IsAlphaNumeric[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-const char Tiny_IsUpper[256] =
+const char mux_isupper[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -129,7 +129,7 @@ const char Tiny_IsUpper[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const char Tiny_IsLower[256] =
+const char mux_islower[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
