@@ -1,20 +1,17 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.13 2000-04-15 17:25:47 sdennis Exp $
+// $Id: externs.h,v 1.14 2000-04-25 18:32:52 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
 
 #include "svdrand.h"
+#include "timeutil.h"
 #include "svdhash.h"
 #include "db.h"
 #include "mudconf.h"
 #include "regexp.h"
-
-#ifndef WIN32
-#define TRUE    1
-#define FALSE   0
-#endif
+#include "stringutil.h"
 
 /* From regexp.c (extract from Henry Spencer's package) */
 
@@ -200,108 +197,6 @@ extern void FDECL(edit_string, (char *, char **, char *, char *));
 extern dbref    FDECL(match_controlled, (dbref, const char *));
 extern dbref    FDECL(match_affected, (dbref, const char *));
 extern dbref    FDECL(match_examinable, (dbref, const char *));
-
-// From stringutil.c
-//
-extern char Tiny_IsASCII[256];
-extern char Tiny_IsPrint[256];
-extern char Tiny_IsDigit[256];
-extern char Tiny_IsAlpha[256];
-extern char Tiny_IsAlphaNumeric[256];
-extern char Tiny_IsUpper[256];
-extern char Tiny_IsLower[256];
-extern char Tiny_IsSpace[256];
-extern char Tiny_IsAttributeNameCharacter[256];
-extern unsigned char Tiny_ToUpper[256];
-extern unsigned char Tiny_ToLower[256];
-int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1);
-#define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
-#define TOKEN_ANSI      1 // ANSI sequence.
-
-typedef struct
-{
-    char *pString;
-    char aControl[256];
-} TINY_STRTOK_STATE;
-
-void Tiny_StrTokString(TINY_STRTOK_STATE *tts, char *pString);
-void Tiny_StrTokControl(TINY_STRTOK_STATE *tts, char *pControl);
-char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts);
-
-int Tiny_ltoa(long val, char *buf);
-char *Tiny_ltoa_t(long val);
-void safe_ltoa(long val, char *buff, char **bufc, int size);
-int Tiny_i64toa(INT64 val, char *buf);
-char *Tiny_i64toa_t(INT64 val);
-long Tiny_atol(const char *pString);
-INT64 Tiny_atoi64(const char *pString);
-
-typedef struct
-{
-    char bNormal;
-    char bBlink;
-    char bHighlite;
-    char bInverse;
-    char bUnder;
-
-    char iForeground;
-    char iBackground;
-} ANSI_ColorState;
-
-struct ANSI_Context
-{
-    ANSI_ColorState acsCurrent;
-    ANSI_ColorState acsPrevious;
-    ANSI_ColorState acsFinal;
-    const char *pString;
-    int   nString;
-    BOOL  bNoBleed;
-    BOOL  bSawNormal;
-};
-void ANSI_String_Init(struct ANSI_Context *pContext, const char *szString, BOOL bNoBleed);
-void ANSI_String_Skip(struct ANSI_Context *pContext, int maxVisualWidth, int *pnVisualWidth);
-int ANSI_String_Copy(struct ANSI_Context *pContext, int nField, char *pField0, int maxVisualWidth, int *pnVisualWidth);
-int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, BOOL bNoBleed);
-extern char *strip_ansi(const char *);
-extern char *normal_to_white(const char *);
-extern char *   FDECL(munge_space, (char *));
-extern char *   FDECL(trim_spaces, (char *));
-extern char *   FDECL(grabto, (char **, char));
-extern int  FDECL(string_compare, (const char *, const char *));
-extern int  FDECL(string_prefix, (const char *, const char *));
-extern const char * FDECL(string_match, (const char * ,const char *));
-extern char *   FDECL(dollar_to_space, (const char *));
-extern char *   FDECL(replace_string, (const char *, const char *,
-            const char *));
-extern char *   FDECL(replace_string_inplace, (const char *,  const char *,
-            char *));
-extern char *   FDECL(seek_char, (const char *, char));
-extern int  FDECL(prefix_match, (const char *, const char *));
-extern int  FDECL(minmatch, (char *, char *, int));
-extern char *   FDECL(strsave, (const char *));
-void safe_copy_str(const char *src, char *buff, char **bufp, int max);
-int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp, int nSizeOfBuffer);
-extern int  FDECL(matches_exit_from_list, (char *, char *));
-extern char *   FDECL(translate_string, (const char *, int));
-#ifndef WIN32
-extern int _stricmp(const char *a, const char *b);
-extern int _strnicmp(const char *a, const char *b, int n);
-extern void _strlwr(char *tp);
-extern void _strupr(char *a);
-#endif // WIN32
-
-typedef struct tag_dtb
-{
-    int bFirst;
-    char *buff;
-    char **bufc;
-    int nBufferAvailable;
-} DTB;
-
-void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc);
-int DbrefToBuffer_Add(DTB *pContext, int i);
-void DbrefToBuffer_Final(DTB *pContext);
-int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va);
 
 /* From boolexp.c */
 extern int  FDECL(eval_boolexp, (dbref, dbref, dbref, BOOLEXP *));
