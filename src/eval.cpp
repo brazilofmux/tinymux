@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.3 2000-04-12 20:12:14 sdennis Exp $
+// $Id: eval.cpp,v 1.4 2000-04-16 07:44:29 sdennis Exp $
 //
 
 // MUX 2.0
@@ -80,7 +80,7 @@ static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
 // During parsing, this table may be modified for a particular terminating delimeter.
 // The table is always restored it's original state.
 //
-// 0 means mudane character.
+// 0 means mundane character.
 // 1 is 0x20 ' '  delim overridable (only done by parse_to, not parse_to_lite)
 // 2 is 0x5B '['  delim overridable
 // 3 is 0x28 '('  delim overridable
