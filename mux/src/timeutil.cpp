@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.7 2003-02-04 00:07:28 sdennis Exp $
+// $Id: timeutil.cpp,v 1.8 2003-02-04 06:03:12 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -484,7 +484,7 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
     //
     bGotOne = FALSE;
     char *pIntegerStart = str;
-    if (Tiny_IsDigit[(unsigned char)*str])
+    if (mux_isdigit[(unsigned char)*str])
     {
         bGotOne = TRUE;
         str++;
@@ -492,7 +492,7 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
 
     // The number (int)
     //
-    while (Tiny_IsDigit[(unsigned char)*str])
+    while (mux_isdigit[(unsigned char)*str])
     {
         str++;
     }
@@ -508,7 +508,7 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
     // Need at least one digit
     //
     char *pFractionalStart = str;
-    if (Tiny_IsDigit[(unsigned char)*str])
+    if (mux_isdigit[(unsigned char)*str])
     {
         bGotOne = TRUE;
         str++;
@@ -516,7 +516,7 @@ BOOL ParseFractionalSecondsString(INT64 &i64, char *str)
 
     // The number (fract)
     //
-    while (Tiny_IsDigit[(unsigned char)*str])
+    while (mux_isdigit[(unsigned char)*str])
     {
         str++;
     }
@@ -1047,7 +1047,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
     {
         return FALSE;
     }
-    while (Tiny_IsDigit[*p])
+    while (mux_isdigit[*p])
     {
         p++;
     }

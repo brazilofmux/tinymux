@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.8 2003-02-04 00:07:28 sdennis Exp $
+// $Id: flags.cpp,v 1.9 2003-02-04 06:03:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -711,7 +711,7 @@ char *decode_flags(dbref player, FLAGSET *fs)
             }
 
             if (  bNeedColon
-               && Tiny_IsDigit[(unsigned char)fbe->flaglett])
+               && mux_isdigit[(unsigned char)fbe->flaglett])
             {
                 // We can't allow numerical digits at the beginning.
                 //

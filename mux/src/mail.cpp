@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.9 2003-02-04 00:07:28 sdennis Exp $
+// $Id: mail.cpp,v 1.10 2003-02-04 06:03:12 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -504,7 +504,7 @@ static int parse_folder(dbref player, char *folder_string)
     {
         return -1;
     }
-    if (Tiny_IsDigit[(unsigned char)*folder_string])
+    if (mux_isdigit[(unsigned char)*folder_string])
     {
         int fnum = mux_atol(folder_string);
         if (  fnum < 0
@@ -559,7 +559,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
         return TRUE;
     }
 
-    if (Tiny_IsDigit[(unsigned char)*p])
+    if (mux_isdigit[(unsigned char)*p])
     {
         // Message or range.
         //
@@ -1123,7 +1123,7 @@ char *MakeCanonicalMailAlias
     while (*pMailAlias && nLeft)
     {
         if (  !Tiny_IsAlpha[(unsigned char)*pMailAlias]
-           && !Tiny_IsDigit[(unsigned char)*pMailAlias])
+           && !mux_isdigit[(unsigned char)*pMailAlias])
         {
             return Buffer;
         }
@@ -1230,9 +1230,9 @@ static char *make_namelist(dbref player, char *arg)
         }
         bFirst = FALSE;
 
-        if (  Tiny_IsDigit[(unsigned char)p[0]]
+        if (  mux_isdigit[(unsigned char)p[0]]
            || (  p[0] == '!'
-              && Tiny_IsDigit[(unsigned char)p[1]]))
+              && mux_isdigit[(unsigned char)p[1]]))
         {
             char ch = p[0];
             if (ch == '!')
@@ -2686,7 +2686,7 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
     {
         // Must be reading or listing mail - no arg2
         //
-        if (Tiny_IsDigit[(unsigned char)*arg1] && !strchr(arg1, '-'))
+        if (mux_isdigit[(unsigned char)*arg1] && !strchr(arg1, '-'))
         {
             do_mail_read(player, arg1);
         }

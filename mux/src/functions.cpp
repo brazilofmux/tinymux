@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.21 2003-02-04 05:38:04 sdennis Exp $
+// $Id: functions.cpp,v 1.22 2003-02-04 06:03:12 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3125,7 +3125,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
     }
 
     const char *pA = number;
-    while (Tiny_IsDigit[(unsigned char)*number])
+    while (mux_isdigit[(unsigned char)*number])
     {
         number++;
     }
@@ -3137,7 +3137,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
     {
         number++;
         pB = number;
-        while (Tiny_IsDigit[(unsigned char)*number])
+        while (mux_isdigit[(unsigned char)*number])
         {
             number++;
         }
@@ -3207,7 +3207,7 @@ FUNCTION(fun_roman)
     }
 
     const char *pA = number;
-    while (Tiny_IsDigit[(unsigned char)*number])
+    while (mux_isdigit[(unsigned char)*number])
     {
         number++;
     }

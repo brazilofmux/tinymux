@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.4 2003-02-04 00:07:27 sdennis Exp $
+// $Id: boolexp.cpp,v 1.5 2003-02-04 06:03:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -340,7 +340,7 @@ static BOOLEXP *test_atr(char *s)
             free_lbuf(buff);
             return TRUE_BOOLEXP;
         }
-        for (s1 = buff; Tiny_IsDigit[(unsigned char)*s1]; s1++)
+        for (s1 = buff; mux_isdigit[(unsigned char)*s1]; s1++)
         {
             ; // Nothing.
         }

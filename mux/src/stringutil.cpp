@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.27 2003-02-04 05:38:04 sdennis Exp $
+// $Id: stringutil.cpp,v 1.28 2003-02-04 06:03:12 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -37,7 +37,7 @@ const char mux_isprint[256] =
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-const char Tiny_IsDigit[256] =
+const char mux_isdigit[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -609,7 +609,7 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
         // typically).
         //
         const char *p = pANSI;
-        while (Tiny_IsDigit[(unsigned int)*p])
+        while (mux_isdigit[(unsigned int)*p])
         {
             p++;
         }
@@ -2100,7 +2100,7 @@ long mux_atol(const char *pString)
     //
     unsigned c1;
     unsigned c0 = pString[0];
-    if (!Tiny_IsDigit[c0])
+    if (!mux_isdigit[c0])
     {
         while (mux_isspace[(unsigned char)pString[0]])
         {
@@ -2113,7 +2113,7 @@ long mux_atol(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!Tiny_IsDigit[c0])
+        if (!mux_isdigit[c0])
         {
             return 0;
         }
@@ -2122,7 +2122,7 @@ long mux_atol(const char *pString)
     do
     {
         c1 = pString[1];
-        if (Tiny_IsDigit[c1])
+        if (mux_isdigit[c1])
         {
             sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
             pString += 2;
@@ -2132,7 +2132,7 @@ long mux_atol(const char *pString)
             sum = 10 * sum + (c0-'0');
             break;
         }
-    } while (Tiny_IsDigit[c0 = pString[0]]);
+    } while (mux_isdigit[c0 = pString[0]]);
 
     // Interpret sign
     //
@@ -2152,7 +2152,7 @@ INT64 mux_atoi64(const char *pString)
     //
     unsigned c1;
     unsigned c0 = pString[0];
-    if (!Tiny_IsDigit[c0])
+    if (!mux_isdigit[c0])
     {
         while (mux_isspace[(unsigned char)pString[0]])
         {
@@ -2165,7 +2165,7 @@ INT64 mux_atoi64(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!Tiny_IsDigit[c0])
+        if (!mux_isdigit[c0])
         {
             return 0;
         }
@@ -2174,7 +2174,7 @@ INT64 mux_atoi64(const char *pString)
     do
     {
         c1 = pString[1];
-        if (Tiny_IsDigit[c1])
+        if (mux_isdigit[c1])
         {
             sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
             pString += 2;
@@ -2184,7 +2184,7 @@ INT64 mux_atoi64(const char *pString)
             sum = 10 * sum + (c0-'0');
             break;
         }
-    } while (Tiny_IsDigit[c0 = pString[0]]);
+    } while (mux_isdigit[c0 = pString[0]]);
 
     // Interpret sign
     //
@@ -2302,7 +2302,7 @@ INT64 mux_atobcd(const char *pString)
     // Convert ASCII digits
     //
     unsigned c0 = pString[0];
-    if (!Tiny_IsDigit[c0])
+    if (!mux_isdigit[c0])
     {
         while (mux_isspace[(unsigned char)pString[0]])
         {
@@ -2315,7 +2315,7 @@ INT64 mux_atobcd(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!Tiny_IsDigit[c0])
+        if (!mux_isdigit[c0])
         {
             return 0;
         }
@@ -2326,7 +2326,7 @@ INT64 mux_atobcd(const char *pString)
         sum = (sum << 4) | (c0 - '0');
         pString++;
         c0 = pString[0];
-    } while (Tiny_IsDigit[c0]);
+    } while (mux_isdigit[c0]);
 
     sum &= BCD_MASK;
 
@@ -2356,7 +2356,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
     //
     unsigned char ch0;
     pfr->pMeat = str;
-    if (  !Tiny_IsDigit[(unsigned char)*str]
+    if (  !mux_isdigit[(unsigned char)*str]
        && *str != '.')
     {
         while (mux_isspace[(unsigned char)*str])
@@ -2376,7 +2376,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
             str++;
         }
 
-        if (  !Tiny_IsDigit[(unsigned char)*str]
+        if (  !mux_isdigit[(unsigned char)*str]
            && *str != '.')
         {
             // Look for three magic strings.
@@ -2442,7 +2442,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
     // we either have a digit or a decimal point.
     //
     pfr->pDigitsA = str;
-    while (Tiny_IsDigit[(unsigned char)*str])
+    while (mux_isdigit[(unsigned char)*str])
     {
         pfr->nDigitsA++;
         str++;
@@ -2454,7 +2454,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
     }
 
     pfr->pDigitsB = str;
-    while (Tiny_IsDigit[(unsigned char)*str])
+    while (mux_isdigit[(unsigned char)*str])
     {
         pfr->nDigitsB++;
         str++;
@@ -2483,7 +2483,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
             str++;
         }
         pfr->pDigitsC = str;
-        while (Tiny_IsDigit[(unsigned char)*str])
+        while (mux_isdigit[(unsigned char)*str])
         {
             pfr->nDigitsC++;
             str++;
@@ -2776,7 +2776,7 @@ BOOL is_integer(char *str, int *pDigits)
 
     // Need at least 1 integer
     //
-    if (!Tiny_IsDigit[(unsigned char)*str])
+    if (!mux_isdigit[(unsigned char)*str])
     {
         return FALSE;
     }
@@ -2787,7 +2787,7 @@ BOOL is_integer(char *str, int *pDigits)
     {
         str++;
         nDigits++;
-    } while (Tiny_IsDigit[(unsigned char)*str]);
+    } while (mux_isdigit[(unsigned char)*str]);
 
     if (pDigits)
     {
@@ -2830,14 +2830,14 @@ BOOL is_rational(char *str)
     // Need at least one digit.
     //
     BOOL got_one = FALSE;
-    if (Tiny_IsDigit[(unsigned char)*str])
+    if (mux_isdigit[(unsigned char)*str])
     {
         got_one = TRUE;
     }
 
     // The number (int)
     //
-    while (Tiny_IsDigit[(unsigned char)*str])
+    while (mux_isdigit[(unsigned char)*str])
     {
         str++;
     }
@@ -2851,7 +2851,7 @@ BOOL is_rational(char *str)
 
     // Need at least one digit
     //
-    if (Tiny_IsDigit[(unsigned char)*str])
+    if (mux_isdigit[(unsigned char)*str])
     {
         got_one = TRUE;
     }
@@ -2863,7 +2863,7 @@ BOOL is_rational(char *str)
 
     // The number (fract)
     //
-    while (Tiny_IsDigit[(unsigned char)*str])
+    while (mux_isdigit[(unsigned char)*str])
     {
         str++;
     }
