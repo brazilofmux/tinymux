@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.17 2003-08-19 01:54:49 jake Exp $
+// $Id: player.cpp,v 1.18 2003-09-25 03:00:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -467,6 +467,13 @@ bool check_pass(dbref player, const char *pPassword)
                 ChangePassword(player, pPassword);
             }
         }
+    }
+    else if (GOD == player)
+    {
+        // When GOD doesn't have a password, we need to a way to set one.
+        //
+        bValidPass = true;
+        ChangePassword(player, pPassword);
     }
     free_lbuf(pTarget);
     return bValidPass;
