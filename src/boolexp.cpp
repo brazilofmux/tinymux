@@ -2,7 +2,7 @@
  * boolexp.cpp 
  */
 /*
- * $Id: boolexp.cpp,v 1.3 2000-06-02 18:08:45 sdennis Exp $ 
+ * $Id: boolexp.cpp,v 1.4 2000-06-03 04:31:26 sdennis Exp $ 
  */
 #include "copyright.h"
 #include "autoconf.h"
@@ -228,11 +228,10 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         return (Owner(b->sub1->thing) == Owner(player));
 
     default:
+
         // Bad type
         //
-        Log.WriteString("ABORT! boolexp.cpp, unknown boolexp type in eval_boolexp().\n");
-        Log.Flush();
-        abort();
+        Tiny_Assert(0);
         return 0;
     }
 }
