@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.4 2003-02-05 06:20:59 jake Exp $
+// $Id: set.cpp,v 1.5 2003-02-05 07:14:36 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -739,7 +739,7 @@ void do_chown
             notify_quiet(executor, NOPERM_MESSAGE);
         }
 
-        if (bDoit == false)
+        if (!bDoit)
         {
             return;
         }
