@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.59 2002-02-25 16:19:10 sdennis Exp $
+// $Id: bsd.cpp,v 1.60 2002-09-26 07:25:40 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1731,6 +1731,28 @@ void shutdownsock(DESC *d, int reason)
 
     if (reason == R_LOGOUT)
     {
+        // Is this desc still in interactive mode?
+        //
+        if (d->program_data != NULL)
+        {
+            num = 0;
+            DESC_ITER_PLAYER(d->player, dtemp) num++;
+
+            if (num == 0)
+            {
+                for (i = 0; i < MAX_GLOBAL_REGS; i++)
+                {
+                    if (d->program_data->wait_regs[i])
+                    {
+                        free_lbuf(d->program_data->wait_regs[i]);
+                        d->program_data->wait_regs[i] = NULL;
+                    }
+                }
+                MEMFREE(d->program_data);
+                d->program_data = NULL;
+                atr_clr(d->player, A_PROGCMD);
+            }
+        }
         d->connected_at.GetUTC();
         d->retries_left = mudconf.retry_limit;
         d->command_count = 0;
@@ -1809,6 +1831,7 @@ void shutdownsock(DESC *d, int reason)
                 }
                 MEMFREE(d->program_data);
                 d->program_data = NULL;
+                atr_clr(d->player, A_PROGCMD);
             }
         }
 
