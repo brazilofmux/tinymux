@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.15 2001-10-01 04:25:52 sdennis Exp $
+// $Id: object.cpp,v 1.16 2001-10-02 03:57:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -427,7 +427,7 @@ extern void stack_clr(dbref obj);
  * * all lists and has no contents or exits.
  */
 
-void destroy_obj(dbref player, dbref obj)
+void destroy_obj(dbref obj)
 {
     if (!Good_obj(obj))
     {
@@ -511,27 +511,6 @@ void destroy_obj(dbref player, dbref obj)
     }
 #ifndef STANDALONE
     ReleaseAllResources(obj);
-    if ((player != NOTHING) && !Quiet(player))
-    {
-        if (good_owner && Owner(player) != owner)
-        {
-            if (owner == obj)
-            {
-                notify(player, tprintf("Destroyed. %s(#%d)", Name(obj), obj));
-            }
-            else
-            {
-                char *tname = alloc_sbuf("destroy_obj");
-                StringCopy(tname, Name(owner));
-                notify(player, tprintf("Destroyed. %s's %s(#%d)", tname, Name(obj), obj));
-                free_sbuf(tname);
-            }
-        }
-        else if (!Quiet(obj))
-        {
-            notify(player, "Destroyed.");
-        }
-    }
 #endif // STANDALONE
     atr_free(obj);
     s_Name(obj, NULL);
@@ -641,7 +620,7 @@ void empty_obj(dbref obj)
         }
         else
         {
-            destroy_obj(NOTHING, targ);
+            destroy_obj(targ);
         }
     }
 }
@@ -657,38 +636,21 @@ void destroy_exit(dbref exit)
 
     loc = Exits(exit);
     s_Exits(loc, remove_first(Exits(loc), exit));
-    destroy_obj(NOTHING, exit);
+    destroy_obj(exit);
 }
 
 void destroy_thing(dbref thing)
 {
     move_via_generic(thing, NOTHING, Owner(thing), 0);
     empty_obj(thing);
-    destroy_obj(NOTHING, thing);
+    destroy_obj(thing);
 }
 
-void destroy_player(dbref agent, dbref victim)
+void destroy_player(dbref player, dbref victim)
 {
 #ifndef STANDALONE
     // Bye bye...
     //
-    char *p = atr_get_raw(victim, A_DESTROYER);
-    if (!p)
-    {
-        STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
-        log_type_and_name(victim);
-        dbref loc = Location(victim);
-        if (loc != NOTHING)
-        {
-            log_text(" in ");
-            log_type_and_name(loc);
-        }
-        log_text("GOING object doesn't remember it's destroyer. GOING reset.");
-        ENDLOG;
-        s_Flags(victim, Flags(victim) & ~(GOING));
-        return;
-    }
-    dbref player = (dbref) Tiny_atol(p);
     boot_off(victim, (char *)"You have been destroyed!");
     halt_que(victim, NOTHING);
     int count = chown_all(victim, player, player, CHOWN_NOZONE);
@@ -703,7 +665,7 @@ void destroy_player(dbref agent, dbref victim)
     free_lbuf(buf);
 
     move_via_generic(victim, NOTHING, player, 0);
-    destroy_obj(agent, victim);
+    destroy_obj(victim);
     notify_quiet(player, tprintf("(%d objects @chowned to you)", count));
 #endif
 }
@@ -718,10 +680,30 @@ static void NDECL(purge_going)
             continue;
         }
 
+        char *p;
         switch (Typeof(i))
         {
         case TYPE_PLAYER:
-            destroy_player(NOTHING, i);
+            p = atr_get_raw(i, A_DESTROYER);
+            if (!p)
+            {
+                STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
+                log_type_and_name(i);
+                dbref loc = Location(i);
+                if (loc != NOTHING)
+                {
+                    log_text(" in ");
+                    log_type_and_name(loc);
+                }
+                log_text("GOING object doesn't remember it's destroyer. GOING reset.");
+                ENDLOG;
+                s_Flags(i, Flags(i) & ~(GOING));
+            }
+            else
+            {
+                dbref player = (dbref) Tiny_atol(p);
+                destroy_player(player, i);
+            }
             break;
 
         case TYPE_ROOM:
@@ -729,7 +711,7 @@ static void NDECL(purge_going)
             // Room scheduled for destruction... do it.
             //
             empty_obj(i);
-            destroy_obj(NOTHING, i);
+            destroy_obj(i);
             break;
 
         case TYPE_THING:
@@ -749,7 +731,7 @@ static void NDECL(purge_going)
             //
             Log_simple_err(i, NOTHING,
               "GOING object with unexpected type.  Destroyed.");
-            destroy_obj(NOTHING, i);
+            destroy_obj(i);
         }
     }
 }
@@ -1062,7 +1044,7 @@ static NDECL(void check_dead_refs)
             // Funny object type, destroy it.
             //
             Log_simple_err(i, NOTHING, "Funny object type.  Destroyed.");
-            destroy_obj(NOTHING, i);
+            destroy_obj(i);
         }
 
         // Check forwardlist.
@@ -1253,7 +1235,7 @@ static void check_loc_exits(dbref loc)
             {
                 s_Exits(loc, temp);
             }
-            destroy_obj(NOTHING, exit);
+            destroy_obj(exit);
             exit = temp;
             continue;
         }
@@ -1355,7 +1337,7 @@ static void NDECL(check_exit_chains)
         if (isExit(i) && !Marked(i))
         {
             Log_simple_err(i, NOTHING, "Disconnected exit.  Destroyed.");
-            destroy_obj(NOTHING, i);
+            destroy_obj(i);
         }
     }
 }
@@ -1490,7 +1472,7 @@ static void check_loc_contents(dbref loc)
             {
                 s_Contents(loc, temp);
             }
-            destroy_obj(NOTHING, obj);
+            destroy_obj(obj);
             obj = temp;
             continue;
         }
