@@ -78,6 +78,7 @@ Feature Additions:
  -- hasflag() provides flag information on attribute values. From TM3.
  -- Allow GOD and WIZARD players to view logindata. From TM3.
  -- Added itemize() function.
+ -- Changes for DEC Alpha Linux and IA64.
 
 Bug Fixes:
 ~~~~~~~~~
