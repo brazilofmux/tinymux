@@ -3000,7 +3000,7 @@ MAIL_PER_HOUR
   reached are denied.  Any existing @mail-in-progress is still
   permitted.
 
-  Related Topics: user_attr_per_hour
+  Related Topics: user_attrib_per_hour
 
 & MARKED
 MARKED
@@ -4233,12 +4233,12 @@ THING_QUOTA
 & TIMESLICE
 TIMESLICE
 
-  CONFIG PARAMETER: timeslice <amount>
-  DEFAULT: 1000
+  CONFIG PARAMETER: timeslice <seconds>
+  DEFAULT: 1.000
 
-  Specifies the interval at which connected users' command quotas are
-  increased.  Each command a user types in (commands executed by machines do
-  not count) decreases that user's quota by 1, and the user's commands are
+  Specifies the interval (in seconds) at which connected users' command quotas
+  are increased.  Each command a user types in (commands executed by machines
+  do not count) decreases that user's quota by 1, and the user's commands are
   only executed if the quota is greater than zero.
 
   Related Topics: command_quota_incr, command_quota_max.
