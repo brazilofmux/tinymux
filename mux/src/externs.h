@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.5 2002-06-05 07:04:34 sdennis Exp $
+// $Id: externs.h,v 1.6 2002-06-12 01:24:46 raevnos Exp $
 //
 
 #ifndef EXTERNS_H
@@ -12,15 +12,7 @@
 #include "flags.h"
 #include "db.h"
 #include "mudconf.h"
-#include "regexp.h"
 #include "stringutil.h"
-
-/* From regexp.cpp (extract from Henry Spencer's package) */
-
-extern regexp *FDECL(regcomp, (char *));
-extern int FDECL(regexec, (register regexp *, register char *));
-extern void FDECL(regerror, (char *));
-extern char regexp_errbuf[];
 
 /* From conf.cpp */
 extern int  cf_modify_bits(int *, char *, void *, UINT32, dbref, char *);

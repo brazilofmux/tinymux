@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.4 2002-06-05 05:19:18 sdennis Exp $
+// $Id: game.cpp,v 1.5 2002-06-12 01:24:46 raevnos Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -16,7 +16,7 @@
 #include "comsys.h"
 #include "muxcli.h"
 #include "mguests.h"
-
+#include "pcre.h"
 #ifdef RADIX_COMPRESSION
 #include "radix.h"
 #endif // RADIX_COMPRESSION
@@ -100,9 +100,13 @@ void NDECL(report)
 
 int regexp_match(char *pattern, char *str, char *args[], int nargs)
 {
-    regexp *re;
-    int got_match;
+    pcre *re;
+    int matches;
     int i, len;
+    const char *errptr;
+    int erroffset;
+    const int ovecsize = 33;
+    int ovec[ovecsize];
 
     /*
      * Load the regexp pattern. This allocates memory which must be
@@ -110,7 +114,7 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
      * under it.
      */
 
-    if ((re = regcomp(pattern)) == NULL)
+    if ((re = pcre_compile(pattern, 0, &errptr, &erroffset, NULL)) == NULL)
     {
         /*
          * This is a matching error. We have an error message in
@@ -124,11 +128,10 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
      * Now we try to match the pattern. The relevant fields will
      * automatically be filled in by this.
      */
-    got_match = regexec(re, str);
-    if (!got_match)
+    matches = pcre_exec(re, NULL, str, strlen(str), 0, 0, ovec, ovecsize);
+    if (matches <= 0)
     {
         MEMFREE(re);
-        re = NULL;
         return 0;
     }
 
@@ -149,16 +152,17 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
      * so we can copy without fear.
      */
 
-    for (i = 0; (i < NSUBEXP) && (re->startp[i]) && (re->endp[i]); i++)
+    for (i = 0; i < matches; ++i)
     {
-        len = re->endp[i] - re->startp[i];
+      if (ovec[i*2] == -1)
+	continue;
+      len = ovec[(i*2)+1] - ovec[i*2];
         args[i] = alloc_lbuf("regexp_match");
-        strncpy(args[i], re->startp[i], len);
+        strncpy(args[i], str + ovec[i*2], len);
         args[i][len] = '\0';        /* strncpy() does not null-terminate */
     }
 
     MEMFREE(re);
-    re = NULL;
     return 1;
 }
 

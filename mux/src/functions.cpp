@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.12 2002-06-11 22:03:23 jake Exp $
+// $Id: functions.cpp,v 1.13 2002-06-12 01:24:46 raevnos Exp $
 //
 
 #include "copyright.h"
@@ -19,6 +19,7 @@
 #include "misc.h"
 #include "ansi.h"
 #include "interface.h"
+#include "pcre.h"
 
 UFUN *ufun_head;
 
@@ -8371,6 +8372,8 @@ FUNCTION(fun_lflags)
 
 FUNCTION(fun_art)
 {
+  const int ovecsize = 33;
+  int ovec[ovecsize];
     // Drop the input string into lower case.
     //
     _strlwr(fargs[0]);
@@ -8381,9 +8384,11 @@ FUNCTION(fun_art)
 
     while (arRule != NULL)
     {
-        regexp* reRuleRegexp = (regexp *) arRule->m_pRegexp;
+        pcre* reRuleRegexp = (pcre *) arRule->m_pRegexp;
+        pcre_extra* reRuleStudy = (pcre_extra *) arRule->m_pRegexpStudy;
 
-        if (regexec(reRuleRegexp, fargs[0]))
+        if (pcre_exec(reRuleRegexp, reRuleStudy, fargs[0], strlen(fargs[0]),
+		      0, 0, ovec, ovecsize) > 0)
         {
             safe_str(arRule->m_bUseAn ? "an" : "a", buff, bufc);
             return;

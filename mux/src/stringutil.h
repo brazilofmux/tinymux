@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: stringutil.h,v 1.2 2002-06-12 01:24:46 raevnos Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -185,6 +185,7 @@ struct ArtRuleset
     ArtRuleset* m_pNextRule;
 
     void* m_pRegexp;
+    void *m_pRegexpStudy;
     int m_bUseAn;
 };
 

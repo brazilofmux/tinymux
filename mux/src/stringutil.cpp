@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.2 2002-06-06 05:44:00 sdennis Exp $
+// $Id: stringutil.cpp,v 1.3 2002-06-12 01:24:46 raevnos Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -18,6 +18,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "pcre.h"
 
 #include "ansi.h"
 
@@ -3276,12 +3277,17 @@ CF_HAND(cf_art_rule)
         return -1;
     }
 
-    regexp* reNewRegexp = regcomp(pCurrent);
+    const char *errptr;
+    int erroffset;
+    pcre* reNewRegexp = pcre_compile(pCurrent, 0, &errptr, &erroffset, NULL);
     if (!reNewRegexp)
     {
-        cf_log_syntax(player, cmd, "Error processing regexp '%s'.", pCurrent);
+        cf_log_syntax(player, cmd, "Error processing regexp '%s':.",
+		      pCurrent, errptr);
         return -1;
     }
+
+    pcre_extra *study = pcre_study(reNewRegexp, 0, &errptr);
 
     // Push new rule at head of list.
     ArtRuleset** arRules = (ArtRuleset **) vp;
@@ -3290,6 +3296,7 @@ CF_HAND(cf_art_rule)
     arNewRule->m_pNextRule = *arRules;
     arNewRule->m_bUseAn = bUseAn;
     arNewRule->m_pRegexp = reNewRegexp;
+    arNewRule->m_pRegexpStudy = study;
 
     *arRules = arNewRule;
 #endif

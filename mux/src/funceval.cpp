@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.8 2002-06-11 20:07:06 jake Exp $
+// $Id: funceval.cpp,v 1.9 2002-06-12 01:24:46 raevnos Exp $
 //
 
 #include "copyright.h"
@@ -18,6 +18,7 @@
 #include "misc.h"
 #include "ansi.h"
 #include "comsys.h"
+#include "pcre.h"
 #ifdef RADIX_COMPRESSION
 #include "radix.h"
 #endif
@@ -3340,25 +3341,30 @@ FUNCTION(fun_push)
 
 FUNCTION(fun_regmatch)
 {
-    regexp *re = regcomp(fargs[1]);
+  const char *errptr;
+  int erroffset;
+  const int ovecsize = 111;
+  int ovec[ovecsize];
+
+    pcre *re = pcre_compile(fargs[1], 0, &errptr, &erroffset, NULL);
     if (!re)
     {
         // Matching error.
         //
-        notify_quiet(executor, (const char *) regexp_errbuf);
+        notify_quiet(executor, errptr);
         safe_chr('0', buff, bufc);
         return;
     }
 
-    int matched = regexec(re, fargs[0]);
-    safe_ltoa(regexec(re, fargs[0]), buff, bufc);
+    int matched = pcre_exec(re, NULL, fargs[0], strlen(fargs[0]), 0, 0, ovec,
+			    ovecsize);
+    safe_ltoa(matched > 0, buff, bufc);
 
     // If we don't have a third argument, we're done.
     //
     if (nfargs != 3)
     {
         MEMFREE(re);
-        re = NULL;
         return;
     }
 
@@ -3366,6 +3372,7 @@ FUNCTION(fun_regmatch)
     // mentioned in the list, then either fill the register with the
     // subexpression, or if there wasn't a match, clear it.
     //
+    const int NSUBEXP = 36;
     char *qregs[NSUBEXP];
     int nqregs = list2arr(qregs, NSUBEXP, fargs[2], ' ');
     for (int i = 0; i < nqregs; i++)
@@ -3382,11 +3389,11 @@ FUNCTION(fun_regmatch)
                 mudstate.global_regs[curq] = alloc_lbuf("fun_regmatch");
             }
             int len = 0;
-            if (matched && re->startp[i] && re->endp[i])
+            if (matched >= i - 1 && ovec[i*2] >= 0)
             {
                 // We have a subexpression.
                 //
-                len = re->endp[i] - re->startp[i];
+                len = ovec[(i*2)+1] - ovec[i*2];
                 if (len > LBUF_SIZE - 1)
                 {
                     len = LBUF_SIZE - 1;
@@ -3395,14 +3402,13 @@ FUNCTION(fun_regmatch)
                 {
                     len = 0;
                 }
-                memcpy(mudstate.global_regs[curq], re->startp[i], len);
+                memcpy(mudstate.global_regs[curq], fargs[0] + ovec[i*2], len);
             }
             mudstate.global_regs[curq][len] = '\0';
             mudstate.glob_reg_len[curq] = len;
         }
     }
     MEMFREE(re);
-    re = NULL;
 }
 
 
