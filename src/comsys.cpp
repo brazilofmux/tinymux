@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.31 2001-03-31 00:54:06 sdennis Exp $
+// * $Id: comsys.cpp,v 1.32 2001-03-31 01:05:44 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -794,7 +794,6 @@ void save_comsystem(FILE *fp)
     }
 }
 
-#ifdef QQQ
 typedef struct
 {
     char *mess;
@@ -874,38 +873,6 @@ void EndBuildChannelPose(PBCP pC)
     pC->mess = NULL;
 }
 
-#else // QQQ
-// just to make it a bit more readable.
-#define FreeComtitle(x) if(x) free_lbuf(x)
-
-char *GetComtitle(struct comuser *user)
-{
-    // New Comtitle
-    //
-    char *nComTitle = user->title;
-    char *pAllocatedComTitleBuffer = NULL;
-  
-    // Don't evaluate a title if the config parameter doesn't want it.
-    // if their getting the comtitle, they obviously need it :)
-    //
-    if (mudconf.eval_comtitle)
-    {
-        pAllocatedComTitleBuffer = alloc_lbuf("do_processcom.ct");
-        nComTitle = pAllocatedComTitleBuffer;
-      
-        // Evaluate the comtitle as code.
-        //
-        char *pnComTitle = nComTitle;
-        char TempToEval[LBUF_SIZE];
-        strcpy(TempToEval, user->title);
-        char *pComTitle = TempToEval;
-        TinyExec(nComTitle, &pnComTitle, 0, user->who, user->who, EV_FCHECK |
-               EV_EVAL | EV_TOP, &pComTitle, (char **)NULL, 0);
-    }
-    return pAllocatedComTitleBuffer;
-}
-#endif // QQQ
-
 void do_processcom(dbref player, char *arg1, char *arg2)
 {
     char *mess, *bp;
@@ -966,85 +933,12 @@ void do_processcom(dbref player, char *arg1, char *arg2)
             giveto(ch->charge_who, ch->charge);
         }
 
-#ifdef QQQ
         BCP Context;
         char *mess = StartBuildChannelPose(&Context,
             (ch->type & CHANNEL_SPOOF) != 0, ch->header, user, arg2);
 
         do_comsend(ch, mess);
         EndBuildChannelPose(&Context);
-#else // QQQ
-        BOOL hasComTitle = (user->title[0] != '\0');
-        char *nComTitle = GetComtitle(user);
-        bp = mess = alloc_lbuf("do_processcom");
-        
-        if ((*arg2) == ':')
-        {
-            if (hasComTitle)
-            {
-                // There is a comtitle.
-                //
-                if (ch->type & CHANNEL_SPOOF)
-                {
-                    safe_tprintf_str(mess, &bp, "%s %s %s", ch->header, nComTitle, arg2 + 1);
-                }
-                else
-                {
-                    safe_tprintf_str(mess, &bp, "%s %s %s %s", ch->header, nComTitle, Name(player), arg2 + 1);
-                }
-            }
-            else
-            {
-                safe_tprintf_str(mess, &bp, "%s %s %s", ch->header, Name(player), arg2 + 1);
-            }
-        }
-        else if ((*arg2) == ';')
-        {
-            if (hasComTitle)
-            {
-                // There is a comtitle
-                //
-                if (ch->type & CHANNEL_SPOOF)
-                {
-                    safe_tprintf_str(mess, &bp, "%s %s%s", ch->header, nComTitle, arg2 + 1);
-                }
-                else
-                {
-                    safe_tprintf_str(mess, &bp, "%s %s %s%s", ch->header, nComTitle, Name(player), arg2 + 1);
-                }
-            }
-            else
-            {
-                safe_tprintf_str(mess, &bp, "%s %s%s", ch->header, Name(player), arg2 + 1);
-            }
-        }
-        else
-        {
-            if (hasComTitle)
-            {
-                // There is a comtitle
-                //
-                if (ch->type & CHANNEL_SPOOF)
-                {
-                    safe_tprintf_str(mess, &bp, "%s %s says, \"%s\"", ch->header, nComTitle, arg2);
-                }
-                else
-                {
-                    safe_tprintf_str(mess, &bp, "%s %s %s says, \"%s\"", ch->header, nComTitle, Name(player), arg2);
-                }
-            }
-            else
-            {
-                safe_tprintf_str(mess, &bp, "%s %s says, \"%s\"", ch->header, Name(player), arg2);
-            }
-        }
-        do_comsend(ch, mess);
-        free_lbuf(mess);
-
-        // Free the comtitle buffer if one was allocated.
-        //
-        FreeComtitle(nComTitle);
-#endif // QQQ
     }
 }
 
@@ -1126,39 +1020,12 @@ void do_joinchannel(dbref player, struct channel *ch)
     
     if (!Dark(player))
     {
-#ifdef QQQ
         BCP Context;
         char *mess = StartBuildChannelPose(&Context,
             (ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
             ":has joined this channel.");
         do_comsend(ch, mess);
         EndBuildChannelPose(&Context);
-#else // QQQ
-        char *p;
-        if (user->title[0] != '\0')
-        {
-            // There is a comtitle
-            //
-            char *nComTitle = GetComtitle(user);
-            if (ch->type & CHANNEL_SPOOF)
-            {
-                p = tprintf("%s %s has joined this channel.", ch->header,
-                    nComTitle);
-            }
-            else
-            {
-                p = tprintf("%s %s %s has joined this channel.", ch->header,
-                    nComTitle, Name(player));
-            }
-            FreeComtitle(nComTitle);
-        }
-        else
-        {
-            p = tprintf("%s %s has joined this channel.", ch->header,
-                Name(player));
-        }
-        do_comsend(ch, p);
-#endif // QQQ
     }
 }
 
@@ -1168,45 +1035,16 @@ void do_leavechannel(dbref player, struct channel *ch)
     raw_notify(player, tprintf("You have left channel %s.", ch->name));
     if ((user->bUserIsOn) && (!Dark(player)))
     { 
-#ifdef QQQ
         BCP Context;
         char *mess = StartBuildChannelPose(&Context,
             (ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
             ":has left this channel.");
         do_comsend(ch, mess);
         EndBuildChannelPose(&Context);
-#else // QQQ
-        char *p;
-        if (user->title[0] != '\0')
-        {
-            char *nComTitle = GetComtitle(user);
-
-            // There is a comtitle
-            //
-            if (ch->type & CHANNEL_SPOOF)
-            {
-                p = tprintf("%s %s has left this channel.", ch->header,
-                    nComTitle);
-            }
-            else
-            {
-                p = tprintf("%s %s %s has left this channel.", ch->header,
-                    nComTitle, Name(player));
-            }
-            FreeComtitle(nComTitle);
-        }
-        else
-        {
-            p = tprintf("%s %s has left this channel.", ch->header,
-                Name(player));
-        }
-        do_comsend(ch, p);
-#endif // QQQ
     }
     user->bUserIsOn = 0;
 }
 
-#ifdef QQQ
 void do_comwho_line
 (
     dbref player,
@@ -1258,63 +1096,6 @@ void do_comwho_line
         free_lbuf(buff);
     }
 }
-
-#else // QQQ
-
-void do_comwho_line
-(
-    dbref player,
-    struct channel *ch,
-    struct comuser *user
-)
-{
-    char *msg;
-    char *buff = NULL;
-
-    if (user->title[0] != '\0')
-    {
-        // There is a comtitle
-        //
-        char *nComTitle = GetComtitle(user);
-        if (Staff(player))
-        {
-            buff = unparse_object(player, user->who, 0);
-            if (ch->type & CHANNEL_SPOOF)
-            {
-                msg = tprintf("%s as %s", buff, nComTitle);
-            }
-            else
-            {
-                msg = tprintf("%s as %s %s", buff, nComTitle, buff);
-            }
-        }
-        else
-        {
-            if (ch->type & CHANNEL_SPOOF)
-            {
-                msg = nComTitle;
-            }
-            else
-            {
-                buff = unparse_object(player, user->who, 0);
-                msg = tprintf("%s %s", nComTitle, buff);
-            }
-        }
-        FreeComtitle(nComTitle);
-    }
-    else
-    {
-        buff = unparse_object(player, user->who, 0);
-        msg = buff;
-    }
-
-    raw_notify(player, msg);
-    if (buff) 
-    {
-        free_lbuf(buff);
-    }
-}
-#endif // QQQ
 
 void do_comwho(dbref player, struct channel *ch)
 {
@@ -1608,39 +1389,12 @@ void do_delcomchannel(dbref player, char *channel)
                 do_comdisconnectchannel(player, channel);
                 if (user->bUserIsOn && (!Dark(player)))
                 {
-#ifdef QQQ
                     BCP Context;
                     char *mess = StartBuildChannelPose(&Context,
                         (ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
                         ":has left this channel.");
                     do_comsend(ch, mess);
                     EndBuildChannelPose(&Context);
-#else // QQQ
-                    char *p;
-                    if (user->title[0] != '\0')
-                    {
-                        // There is a comtitle.
-                        //
-                        char *nComTitle = GetComtitle(user);
-                        if (ch->type & CHANNEL_SPOOF)
-                        {
-                            p = tprintf("%s %s has left this channel.",
-                                ch->header, nComTitle);
-                        }
-                        else
-                        {
-                            p = tprintf("%s %s %s has left this channel.",
-                                ch->header, nComTitle, Name(player));
-                        }
-                        FreeComtitle(nComTitle);
-                    }
-                    else
-                    {
-                        p = tprintf("%s %s has left this channel.", ch->header,
-                            Name(player));
-                    }
-                    do_comsend(ch, p);
-#endif // QQQ
                 }
                 raw_notify(player, tprintf("You have left channel %s.", channel));
                 
@@ -2133,38 +1887,12 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
     
     if ((ch->type & CHANNEL_LOUD) && (cu->bUserIsOn) && (!Dark(player)))
     {
-#ifdef QQQ
         BCP Context;
         char *mess = StartBuildChannelPose(&Context,
             (ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
             ":has disconnected.");
         do_comsend(ch, mess);
         EndBuildChannelPose(&Context);
-#else // QQQ
-        char *buff = alloc_lbuf("do_comconnect");
-        if (cu->title[0] != '\0')
-        {
-            // There is a comtitle.
-            //
-            char *nComTitle = GetComtitle(cu);
-            if (ch->type & CHANNEL_SPOOF)
-            {
-                sprintf(buff, "%s %s has disconnected.", ch->header, nComTitle);
-            }
-            else
-            {
-                sprintf(buff, "%s %s %s has disconnected.", ch->header,
-                    nComTitle, Name(player));
-            }
-            FreeComtitle(nComTitle);
-        }
-        else
-        {
-            sprintf(buff, "%s %s has disconnected.", ch->header, Name(player));
-        }
-        do_comsend(ch, buff);
-        free_lbuf(buff);
-#endif // QQQ
     }
 }
 
@@ -2179,38 +1907,12 @@ void do_comconnectraw_notify(dbref player, char *chan)
     
     if ((ch->type & CHANNEL_LOUD) && (cu->bUserIsOn) && (!Dark(player)))
     {
-#ifdef QQQ
         BCP Context;
         char *mess = StartBuildChannelPose(&Context,
             (ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
             ":has connected.");
         do_comsend(ch, mess);
         EndBuildChannelPose(&Context);
-#else // QQQ
-        buff = alloc_lbuf("do_comconnect");
-        if (cu->title[0] != '\0')
-        {
-            // There is a comtitle.
-            //
-            char *nComTitle = GetComtitle(cu);
-            if (ch->type & CHANNEL_SPOOF)
-            {
-                sprintf(buff, "%s %s has connected.", ch->header, cu->title);
-            }
-            else
-            {
-                sprintf(buff, "%s %s %s has connected.", ch->header, cu->title,
-                    Name(player));
-            }
-            FreeComtitle(nComTitle);
-        }
-        else
-        {
-            sprintf(buff, "%s %s has connected.", ch->header, Name(player));
-        }
-        do_comsend(ch, buff);
-        free_lbuf(buff);
-#endif // QQQ
     }
 }
 
@@ -2685,7 +2387,6 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
         return;
     }
 
-#ifdef QQQ
     BCP Context1;
     BCP Context2;
     char *mess1 = StartBuildChannelPose(&Context1,
@@ -2705,52 +2406,6 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     do_comsend(ch, buff);
     EndBuildChannelPose(&Context1);
     EndBuildChannelPose(&Context2);
-#else // QQQ
-    // We should be in the clear now. ;)
-    //
-    char buf2[LBUF_SIZE];
-    char buff[LBUF_SIZE];
-    if (user->title[0] != '\0')
-    {
-        // There is a comtitle.
-        //
-        char *nComTitle=GetComtitle(user);
-        if (ch->type & CHANNEL_SPOOF)
-        {
-            strcpy(buf2, nComTitle);
-        }
-        else
-        {
-            sprintf(buf2, "%s %s", nComTitle, Name(player));
-        }
-    }
-    else
-    {
-        strcpy(buf2, Name(player));
-    }
-    if (vu->title[0] != '\0')
-    {
-        // There is a comtitle.
-        //
-        char *nComTitle = GetComtitle(vu);
-        if (ch->type & CHANNEL_SPOOF)
-        {
-            sprintf(buff, "%s %s boots %s off the channel.", ch->header, buf2,
-                nComTitle);
-        }
-        else
-        {
-            sprintf(buff, "%s %s boots %s %s off the channel.", ch->header,
-                buf2, nComTitle, Name(thing));
-        }
-    }
-    else
-    {
-        sprintf(buff, "%s %s boots %s off the channel.", ch->header, buf2,
-            Name(thing));
-    }
-    do_comsend(ch, buff);
-#endif // QQQ
 
     do_delcomchannel(thing, channel);
 }
