@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.18 2003-02-15 16:02:39 jake Exp $
+// $Id: funceval.cpp,v 1.19 2003-02-15 16:04:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -525,7 +525,6 @@ FUNCTION(fun_set)
         //
         if (*p == '_')
         {
-            int atr2;
             ATTR *attr2;
             dbref thing2;
 
@@ -537,9 +536,8 @@ FUNCTION(fun_set)
                 safe_nomatch(buff, bufc);
                 return;
             }
-            atr2 = attr2->number;
             p = buff2;
-            atr_pget_str(buff2, thing2, atr2, &aowner, &aflags);
+            atr_pget_str(buff2, thing2, attr2->number, &aowner, &aflags);
 
             if (!See_attr(executor, thing2, attr2))
             {
