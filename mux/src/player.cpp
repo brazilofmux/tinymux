@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.15 2003-07-24 04:12:44 sdennis Exp $
+// $Id: player.cpp,v 1.16 2003-07-26 14:40:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -363,11 +363,16 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
     }
     else
     {
-        // Strickly speaking, we can say the algorithm is DES, however, in
-        // order to support clear-text passwords, we can look for a fixed
-        // salt of 'XX'.  If you have been using a different salt, or if you
-        // need to generate a DES-encrypted password, the following code
-        // won't work.
+#if 0
+        // Strickly speaking, we can say the algorithm is DES.
+        //
+        *piType = CRYPT_DES;
+#else
+        // However, in order to support clear-text passwords, we restrict
+        // ourselves to only verifying an existing DES-encrypted password and
+        // we assume a fixed salt of 'XX'.  If you have been using a different
+        // salt, or if you need to generate a DES-encrypted password, the
+        // following code won't work.
         //        
         size_t nSetting = strlen(szSetting);
         if (  nSetting == 13
@@ -379,6 +384,7 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
         {
             *piType = CRYPT_CLEARTEXT;
         }
+#endif
     }
 
     switch (*piType)
