@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.19 2002-06-27 09:06:47 jake Exp $
+// $Id: predicates.cpp,v 1.20 2002-06-28 05:42:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1461,26 +1461,25 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
 
     tbuf = alloc_lbuf("get_obj_and_lock");
     StringCopy(tbuf, what);
-    if (parse_thing_slash(player, tbuf, &str, it)) {
-
-        /*
-         * <obj>/<lock> syntax, use the named lock.
-         */
-
+    if (parse_thing_slash(player, tbuf, &str, it))
+    {
+        // <obj>/<lock> syntax, use the named lock.
+        //
         anum = search_nametab(player, lock_sw, str);
-        if (anum < 0) {
+        if (anum < 0)
+        {
             free_lbuf(tbuf);
             safe_str("#-1 LOCK NOT FOUND", errmsg, bufc);
             return 0;
         }
-    } else {
-
-        /*
-         * Not <obj>/<lock>, do a normal get of the default lock.
-         */
-
-        *it = match_thing(player, what);
-        if (!Good_obj(*it)) {
+    }
+    else
+    {
+        // Not <obj>/<lock>, do a normal get of the default lock.
+        //
+        *it = match_thing_quiet(player, what);
+        if (!Good_obj(*it))
+        {
             free_lbuf(tbuf);
             safe_str("#-1 NOT FOUND", errmsg, bufc);
             return 0;
@@ -1488,10 +1487,8 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
         anum = A_LOCK;
     }
 
-    /*
-     * Get the attribute definition, fail if not found.
-     */
-
+    // Get the attribute definition, fail if not found.
+    //
     free_lbuf(tbuf);
     *attr = atr_num(anum);
     if (!(*attr))
