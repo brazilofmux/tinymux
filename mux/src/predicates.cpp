@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.23 2003-02-15 18:04:59 jake Exp $
+// $Id: predicates.cpp,v 1.24 2003-02-16 00:14:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -819,7 +819,7 @@ void do_addcommand
     {
         // Don't allow the same (thing,atr) in the list.
         //
-        for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
+        for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
         {
             if (  nextp->thing == thing
                && nextp->atr == atr)
@@ -915,7 +915,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
             // If it's already found in the hash table, and it's being added
             // using the same object and attribute...
             //
-            for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
+            for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
             {
                 ATTR *ap = (ATTR *)atr_num(nextp->atr);
                 const char *pName = "(WARNING: Bad Attribute Number)";
@@ -943,7 +943,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
             if (old->callseq & CS_ADDED)
             {
                 pKeyName[nKeyName] = '\0';
-                for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
+                for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
                 {
                     if (strcmp(pKeyName, nextp->name) != 0)
                     {
@@ -1015,7 +1015,7 @@ void do_delcommand
         {
             // Delete all @addcommand'ed associations with the given name.
             //
-            for (prev = (ADDENT *)old->handler; prev != NULL; prev = nextp)
+            for (prev = old->addent; prev != NULL; prev = nextp)
             {
                 nextp = prev->next;
                 MEMFREE(prev->name);
@@ -1054,7 +1054,7 @@ void do_delcommand
         {
             // Remove only the (name,thing,atr) association.
             //
-            for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
+            for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
             {
                 if (  nextp->thing == thing
                    && nextp->atr == atr)

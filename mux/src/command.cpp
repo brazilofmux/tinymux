@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.17 2003-02-06 17:33:33 sdennis Exp $
+// $Id: command.cpp,v 1.18 2003-02-16 00:14:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1193,7 +1193,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         }
         else if (cmdp->callseq & CS_ADDED)
         {
-            for (add = (ADDENT *)cmdp->handler; add != NULL; add = add->next)
+            for (add = cmdp->addent; add != NULL; add = add->next)
             {
                 buff = atr_get(add->thing, add->atr, &aowner, &aflags);
 

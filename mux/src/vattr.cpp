@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.3 2003-01-28 15:48:00 sdennis Exp $
+// $Id: vattr.cpp,v 1.4 2003-02-16 00:14:47 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -556,7 +556,7 @@ void dbclean_RenumberAttributes(int cVAttributes)
         {
             pKeyName[nKeyLength] = '\0';
             ADDENT *nextp;
-            for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
+            for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
             {
                 if (strcmp(pKeyName, nextp->name) != 0)
                 {
