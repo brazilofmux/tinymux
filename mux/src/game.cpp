@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.18 2003-02-06 14:10:25 sdennis Exp $
+// $Id: game.cpp,v 1.19 2003-02-16 16:23:44 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2198,11 +2198,6 @@ int DCL_CDECL main(int argc, char *argv[])
             fprintf(stderr, "  -l  Load." ENDLINE);
             fprintf(stderr, "  -o  Output file." ENDLINE);
             fprintf(stderr, "  -u  Unload." ENDLINE);
-#if 1
-            fprintf(stderr, " %s | %s | %s | %d | %d | %d " ENDLINE,
-                standalone_basename, standalone_infile, standalone_outfile,
-                standalone_check, standalone_load, standalone_unload);
-#endif
         }
         else
         {
