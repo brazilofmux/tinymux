@@ -1,8 +1,8 @@
 /*
- * alloc.c - memory allocation subsystem 
+ * alloc.cpp - memory allocation subsystem 
  */
 /*
- * $Id: alloc.cpp,v 1.1 2000-04-11 07:14:42 sdennis Exp $ 
+ * $Id: alloc.cpp,v 1.2 2000-04-11 17:41:34 sdennis Exp $ 
  */
 #include "copyright.h"
 #include "autoconf.h"
@@ -13,6 +13,8 @@
 #include "alloc.h"
 #include "mudconf.h"
 
+// The following structure is 64-bit aligned.
+//
 typedef struct pool_header
 {
     unsigned int magicnum;          // For consistency check 
@@ -63,10 +65,10 @@ static void pool_err(const char *logsys, int logflag, int poolnum, const char *t
     char buffer[256];
     if (!mudstate.logging)
     {
-        STARTLOG(logflag, logsys, "ALLOC")
+        STARTLOG(logflag, logsys, "ALLOC");
         sprintf(buffer, "%s[%d] (tag %s) %s at %lx. (%s)", action, pools[poolnum].pool_size, tag, reason, (long)ph, mudstate.debug_cmd);
         log_text(buffer);
-        ENDLOG
+        ENDLOG;
     }
     else if (logflag != LOG_ALLOCATE)
     {
@@ -96,14 +98,11 @@ static void pool_vfy(int poolnum, const char *tag)
             pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph, "Verify",
                      "header corrupted (clearing freelist)");
 
-            /*
-             * Break the header chain at this point so we don't * 
-             * 
-             * *  * * generate an error for EVERY alloc and free, 
-             * * * also  * we can't continue the scan because the
-             * * next * * pointer might be trash too. 
-             */
-
+            // Break the header chain at this point so we don't
+            // generate an error for EVERY alloc and free, also we
+            // can't continue the scan because the next pointer might
+            // be trash too.
+            //
             if (lastph)
             {
                 lastph->next = NULL;
@@ -156,6 +155,8 @@ char *pool_alloc(int poolnum, const char *tag)
             h = (char *)MEMALLOC(pools[poolnum].pool_size + sizeof(POOLHDR) + sizeof(POOLFTR), __FILE__, __LINE__);
             if (h == NULL)
             {
+                Log.WriteString("ABORT! alloc.cpp, pool_alloc() failed to get memory.\n");
+                Log.Flush();
                 abort();
             }
             ph = (POOLHDR *) h;
