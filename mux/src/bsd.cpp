@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.15 2002-08-22 15:41:16 sdennis Exp $
+// $Id: bsd.cpp,v 1.16 2002-08-22 15:43:34 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -889,10 +889,12 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
 }
 
 #ifdef WIN32
+// Private version of FD_ISSET:
+//
 // The following routine is only used on Win9x. Ordinarily, FD_ISSET
 // maps to a __WSAFDIsSet call, however, the Intel compiler encounters
 // an internal error at link time when some of the higher-order
-// optimizations are requested. Including this function is a the
+// optimizations are requested (-Qipo). Including this function is a
 // workaround.
 //
 DCL_INLINE BOOL FD_ISSET_priv(SOCKET fd, fd_set *set)
