@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.24 2001-10-17 06:23:27 sdennis Exp $
+// $Id: db_rw.cpp,v 1.25 2001-10-17 15:58:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -546,7 +546,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     dbref i, anum;
     int ch;
     const char *tstr;
-    int read_attribs, read_name, read_zone, read_link, read_key, read_parent;
+    int read_attribs, read_name, read_zone, read_key, read_parent;
     int read_extflags, read_3flags, read_money, read_timestamps, read_new_strings;
     int read_powers;
     int deduce_version, deduce_name, deduce_zone, deduce_timestamps;
@@ -567,7 +567,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     read_attribs = 1;
     read_name = 1;
     read_zone = 0;
-    read_link = 0;
     read_key = 1;
     read_parent = 0;
     read_money = 1;
@@ -631,6 +630,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 deduce_version = 0;
                 g_format = F_MUX;
                 g_version = getref(f);
+                Tiny_Assert((g_version & MANDFLAGS) == MANDFLAGS);
 
                 // Otherwise extract feature flags
                 //
@@ -640,7 +640,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     read_name = !(g_version & V_ATRNAME);
                 }
                 read_zone = (g_version & V_ZONE);
-                read_link = (g_version & V_LINK);
                 read_key = !(g_version & V_ATRKEY);
                 read_parent = (g_version & V_PARENT);
                 read_money = !(g_version & V_ATRMONEY);
@@ -797,10 +796,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             // LINK
             //
-            if (read_link)
-                s_Link(i, getref(f));
-            else
-                s_Link(i, NOTHING);
+            s_Link(i, getref(f));
 
             // NEXT
             //
@@ -945,10 +941,7 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
     }
     putref(f, Contents(i));
     putref(f, Exits(i));
-    if (flags & V_LINK)
-    {
-        putref(f, Link(i));
-    }
+    putref(f, Link(i));
     putref(f, Next(i));
     if (!(flags & V_ATRKEY))
     {
