@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.55 2001-11-28 06:35:54 sdennis Exp $
+// $Id: stringutil.cpp,v 1.56 2001-12-06 04:19:50 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2342,7 +2342,7 @@ LastSpaces:
 }
 
 #define ATOF_LIMIT 100
-static double powerstab[10] =
+static const double powerstab[10] =
 {
             1.0,
            10.0,
