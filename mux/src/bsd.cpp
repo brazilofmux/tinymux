@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.33 2004-05-16 08:09:21 sdennis Exp $
+// $Id: bsd.cpp,v 1.34 2004-05-25 05:37:41 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -99,7 +99,6 @@ typedef struct tagSlaveThreadsInfo
 {
     DWORD iDoing;
     DWORD iError;
-    DWORD iToDo;
     DWORD hThreadId;
 } SLAVETHREADINFO;
 static SLAVETHREADINFO SlaveThreadInfo[NUM_SLAVE_THREADS];
@@ -367,7 +366,6 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     DebugTotalSemaphores += 3;
     for (iSlave = 0; iSlave < NUM_SLAVE_THREADS; iSlave++)
     {
-        SlaveThreadInfo[iSlave].iToDo = 0;
         SlaveThreadInfo[iSlave].iDoing = 0;
         SlaveThreadInfo[iSlave].iError = 0;
         CreateThread(NULL, 0, SlaveProc, (LPVOID)iSlave, 0, &SlaveThreadInfo[iSlave].hThreadId);
@@ -391,7 +389,9 @@ static int get_slave_result(void)
     // than 5 seconds to do it. Skip it if we time out.
     //
     if (WAIT_OBJECT_0 != WaitForSingleObject(hSlaveResultStackSemaphore, 5000))
+    {
         return 1;
+    }
 
     // We have control of the stack. Go back to sleep if the stack is empty.
     //
@@ -415,7 +415,9 @@ static int get_slave_result(void)
     for (d = descriptor_list; d; d = d->next)
     {
         if (strcmp(d->addr, host))
+        {
             continue;
+        }
 
         strncpy(d->addr, token, 50);
         d->addr[50] = '\0';
