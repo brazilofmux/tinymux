@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.16 2000-06-02 16:18:10 sdennis Exp $
+// $Id: db.cpp,v 1.17 2000-06-03 01:26:44 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -281,19 +281,18 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
     FWDLIST *fp, *xfp;
     int i;
 
-    /*
-     * If fwdlist is null, clear 
-     */
-
-    if (!ifp || (ifp->count <= 0)) {
+    // If fwdlist is null, clear.
+    //
+    if (!ifp || (ifp->count <= 0))
+    {
         fwdlist_clr(thing);
         return;
     }
-    /*
-     * Copy input forwardlist to a correctly-sized buffer 
-     */
 
+    // Copy input forwardlist to a correctly-sized buffer.
+    //
     fp = (FWDLIST *)MEMALLOC(sizeof(int) * ((ifp->count) + 1));
+    ISOUTOFMEMORY(fp);
 
     for (i = 0; i < ifp->count; i++)
     {
@@ -301,9 +300,8 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
     }
     fp->count = ifp->count;
 
-    /*
-     * Replace an existing forwardlist, or add a new one 
-     */
+    // Replace an existing forwardlist, or add a new one.
+    //
     xfp = fwdlist_get(thing);
     if (xfp)
     {
@@ -345,13 +343,14 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
 {
     dbref target;
     char *tp, *bp, *dp;
-    int count, errors, fail;
+    int fail;
 
-    count = 0;
-    errors = 0;
+    int count = 0;
+    int errors = 0;
     bp = tp = alloc_lbuf("fwdlist_load.str");
-    StringCopy(tp, atext);
-    do {
+    strcpy(tp, atext);
+    do
+    {
         // Skip spaces.
         //
         for (; Tiny_IsSpace[(unsigned char)*bp]; bp++) ;
@@ -363,7 +362,9 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
         // Terminate string.
         //
         if (*bp)
+        {
             *bp++ = '\0';
+        }
 
         if ((*dp++ == '#') && Tiny_IsDigit[(unsigned char)*dp])
         {
@@ -377,15 +378,21 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
 #else
             fail = !Good_obj(target);
 #endif
-            if (fail) {
+            if (fail)
+            {
 #ifndef STANDALONE
                 notify(player,
                        tprintf("Cannot forward to #%d: Permission denied.",
                            target));
 #endif
                 errors++;
-            } else {
-                fp->data[count++] = target;
+            }
+            else
+            {
+                if (count < 1000)
+                {
+                    fp->data[count++] = target;
+                }
             }
         }
     } while (*bp);
@@ -436,21 +443,24 @@ int fwdlist_ck(int key, dbref player, dbref thing, int anum, char *atext)
 
     count = 0;
 
-    if (atext && *atext) {
+    if (atext && *atext)
+    {
         fp = (FWDLIST *) alloc_lbuf("fwdlist_ck.fp");
         fwdlist_load(fp, player, atext);
-    } else {
+    }
+    else
+    {
         fp = NULL;
     }
 
-    /*
-     * Set the cached forwardlist 
-     */
-
+    // Set the cached forwardlist.
+    //
     fwdlist_set(thing, fp);
     count = fwdlist_rewrite(fp, atext);
     if (fp)
+    {
         free_lbuf(fp);
+    }
     return ((count > 0) || !atext || !*atext);
 #else
     return 1;
@@ -460,22 +470,18 @@ int fwdlist_ck(int key, dbref player, dbref thing, int anum, char *atext)
 FWDLIST *fwdlist_get(dbref thing)
 {
 #ifdef STANDALONE
-
-    dbref aowner;
-    int aflags, errors;
-    char *tp;
-
     static FWDLIST *fp = NULL;
-
     if (!fp)
+    {
         fp = (FWDLIST *) alloc_lbuf("fwdlist_get");
-    tp = atr_get(thing, A_FORWARDLIST, &aowner, &aflags);
-    errors = fwdlist_load(fp, GOD, tp);
+    }
+    dbref aowner;
+    int   aflags;
+    char *tp = atr_get(thing, A_FORWARDLIST, &aowner, &aflags);
+    int errors = fwdlist_load(fp, GOD, tp);
     free_lbuf(tp);
 #else
-    FWDLIST *fp;
-
-    fp = ((FWDLIST *) hashfindLEN(&thing, sizeof(thing), &mudstate.fwdlist_htab));
+    FWDLIST *fp = ((FWDLIST *) hashfindLEN(&thing, sizeof(thing), &mudstate.fwdlist_htab));
 #endif
     return fp;
 }
@@ -487,18 +493,16 @@ static char *set_string(char **ptr, char *new0)
     if (*ptr)
     {
         MEMFREE(*ptr);
-        *ptr = NULL;
     }
+    *ptr = NULL;
 
-    // if new string is not null allocate space for it and copy it.
+    // If new string is not null allocate space for it and copy it.
     //
-    if (!new0)
+    if (new0)
     {
-        return (*ptr = NULL);
+        *ptr = StringClone(new0);
     }
-    *ptr = (char *)MEMALLOC(strlen(new0) + 1);
-    StringCopy(*ptr, new0);
-    return (*ptr);
+    return *ptr;
 }
 
 /*
@@ -1003,22 +1007,34 @@ void anum_extend(int newtop)
     delta = 1000;
 #endif
     if (newtop <= anum_alc_top)
+    {
         return;
+    }
     if (newtop < anum_alc_top + delta)
+    {
         newtop = anum_alc_top + delta;
+    }
     if (anum_table == NULL)
     {
         anum_table = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
+        ISOUTOFMEMORY(anum_table);
         for (i = 0; i <= newtop; i++)
+        {
             anum_table[i] = NULL;
+        }
     }
     else
     {
         anum_table2 = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
+        ISOUTOFMEMORY(anum_table2);
         for (i = 0; i <= anum_alc_top; i++)
+        {
             anum_table2[i] = anum_table[i];
+        }
         for (i = anum_alc_top + 1; i <= newtop; i++)
+        {
             anum_table2[i] = NULL;
+        }
         MEMFREE((char *)anum_table);
         anum_table = anum_table2;
     }
@@ -1195,6 +1211,7 @@ void al_extend(char **buffer, int *bufsiz, int len, int copy)
     {
         int newsize = len + ATR_BUF_CHUNK;
         tbuff = (char *)MEMALLOC(newsize);
+        ISOUTOFMEMORY(tbuff);
         if (*buffer)
         {
             if (copy)
@@ -1703,23 +1720,15 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     }
 #ifdef RADIX_COMPRESSION
     int nCompressedValue = string_compress(szValue, compress_buff);
-    text = (char *)MEMALLOC(nCompressedValue);
-    if (!text) return;
-    memcpy(text, compress_buff, nCompressedValue);
+    text = BufferCloneLen(compress_buff, nCompressedValue);
 #else // RADIX_COMPRESSION
-    text = (char *)MEMALLOC(nValue+1);
-    if (!text) return;
-    memcpy(text, szValue, nValue+1);
+    text = StringCloneLen(szValue, nValue);
 #endif // RADIX_COMPRESSION
 
     if (!db[thing].ahead)
     {
         list = (ATRLIST *)MEMALLOC(sizeof(ATRLIST));
-        if (!list)
-        {
-            MEMFREE(text);
-            return;
-        }
+        ISOUTOFMEMORY(list);
         db[thing].ahead = list;
         db[thing].at_count = 1;
         list[0].number = atr;
@@ -1771,12 +1780,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
             // and the attribute should be inserted between them.
             //
             list = (ATRLIST *)MEMALLOC((db[thing].at_count + 1) * sizeof(ATRLIST));
-            if (!list)
-            {
-                db[thing].ahead = NULL;
-                db[thing].at_count = 0;
-                return;
-            }
+            ISOUTOFMEMORY(list);
 
             // Copy bottom part.
             //
@@ -2355,6 +2359,7 @@ int atr_head(dbref thing, char **attrp)
     if (db[thing].at_count)
     {
         atr = (ATRCOUNT *) MEMALLOC(sizeof(ATRCOUNT));
+        ISOUTOFMEMORY(atr);
         atr->thing = thing;
         atr->count = 1;
         *attrp = (char *)atr;
@@ -2502,14 +2507,8 @@ void db_grow(dbref newtop)
     // We rely (quite safely) on the OS to reclaim the memory.
     //
     NAME *newnames = (NAME *) MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME));
-    if (!newnames)
-    {
-        Log.printf("ABORT! db.cpp, could not allocate space for %d item name cache in db_grow().\n", newsize);
-        Log.Flush();
-        abort();
-    }
-
-    bzero((char *)newnames, (newsize + SIZE_HACK) * sizeof(NAME));
+    ISOUTOFMEMORY(newnames);
+    memset(newnames, 0, (newsize + SIZE_HACK) * sizeof(NAME));
 
     if (names)
     {
@@ -2541,14 +2540,8 @@ void db_grow(dbref newtop)
         // We rely (quite safely) on the OS to reclaim the memory.
         //
         newpurenames = (NAME *)MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME));
-
-        if (!newpurenames)
-        {
-            Log.printf("ABORT! db.cpp, could not allocate space for %d item purename cache in db_grow().\n", newsize);
-            Log.Flush();
-            abort();
-        }
-        bzero((char *)newpurenames, (newsize + SIZE_HACK) * sizeof(NAME));
+        ISOUTOFMEMORY(newpurenames);
+        memset(newpurenames, 0, (newsize + SIZE_HACK) * sizeof(NAME));
 
         if (purenames)
         {
@@ -2582,12 +2575,7 @@ void db_grow(dbref newtop)
     // We rely (quite safely) on the OS to reclaim the memory.
     //
     newdb = (OBJ *)MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ));
-    if (!newdb)
-    {
-        Log.printf("ABORT! db.cpp, could not allocate space for %d item struct database.", newsize);
-        Log.Flush();
-        abort();
-    }
+    ISOUTOFMEMORY(newdb);
     if (db)
     {
         // An old struct database exists. Copy it to the new buffer.
@@ -2640,13 +2628,12 @@ void db_grow(dbref newtop)
     mudstate.db_top = newtop;
     mudstate.db_size = newsize;
 
-    /*
-     * Grow the db mark buffer 
-     */
-
+    // Grow the db mark buffer.
+    //
     marksize = (newsize + 7) >> 3;
     newmarkbuf = (MARKBUF *)MEMALLOC(marksize);
-    bzero((char *)newmarkbuf, marksize);
+    ISOUTOFMEMORY(newmarkbuf);
+    memset(newmarkbuf, 0, marksize);
     if (mudstate.markbits)
     {
         marksize = (newtop + 7) >> 3;
@@ -3020,7 +3007,7 @@ BOOLEXP *dup_bool(BOOLEXP *b)
     case BOOLEXP_EVAL:
     case BOOLEXP_ATR:
         r->thing = b->thing;
-        r->sub1 = (BOOLEXP *) strsave((char *)b->sub1);
+        r->sub1 = (BOOLEXP *)StringClone((char *)b->sub1);
         break;
     default:
         Log.WriteString("bad bool type!!\n");
