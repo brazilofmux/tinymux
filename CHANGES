@@ -427,7 +427,8 @@ Bug Fixes:
      Mandrake 8.0. Thanks Marlek.
  --  On Win32, the logs now use CRLF instead of NL.
  --  Clean build on gcc 3.0. Thanks Morgan.
- --  SIGSEGV bug in revwords().
+ --  SIGSEGV bug in revwords(). Bug from Treyvan.
+ --  Code review and changes to object.cpp. Thanks Jake.
 
 
 Performance Enhancements:
