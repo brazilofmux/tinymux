@@ -1,6 +1,6 @@
-// svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
+// svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.33 2001-10-27 16:25:22 sdennis Exp $
+// $Id: svdhash.cpp,v 1.34 2001-11-20 01:04:57 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
