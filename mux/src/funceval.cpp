@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.65 2004-05-20 04:31:19 sdennis Exp $
+// $Id: funceval.cpp,v 1.66 2004-06-04 21:50:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2399,12 +2399,12 @@ FUNCTION(fun_mix)
         sep.str[1] = '\0';
         lastn = nfargs - 1;
     }
-    else 
+    else if (!OPTIONAL_DELIM(nfargs, sep, DELIM_DFLT|DELIM_STRING))
     {
-        if (!OPTIONAL_DELIM(nfargs, sep, DELIM_DFLT|DELIM_STRING))
-        {
-            return;
-        }
+        return;
+    }
+    else
+    {
         lastn = nfargs - 2;
     }
 
@@ -2426,15 +2426,15 @@ FUNCTION(fun_mix)
 
     // Process the lists, one element at a time.
     //
-    for (i = 1; i <= lastn; i++) 
+    for (i = 0; i < lastn; i++) 
     {
-        cp[i-1] = trim_space_sep(fargs[i], &sep);
+        cp[i] = trim_space_sep(fargs[i+1], &sep);
     }
     int twords;
-    int nwords = countwords(cp[1], &sep);
-    for (i = 2; i<= lastn; i++) 
+    int nwords = countwords(cp[0], &sep);
+    for (i = 1; i < lastn; i++) 
     {
-        twords = countwords(cp[i-1], &sep);
+        twords = countwords(cp[i], &sep);
         if (twords > nwords)
         {
            nwords = twords;
@@ -2454,9 +2454,9 @@ FUNCTION(fun_mix)
         {
             bFirst = false;
         }
-        for (i = 1; i <= lastn; i++) 
+        for (i = 0; i < lastn; i++) 
         {
-            os[i - 1] = split_token(&cp[i - 1], &sep);
+            os[i] = split_token(&cp[i], &sep);
         }
         strcpy(atextbuf, atext);
         str = atextbuf;
