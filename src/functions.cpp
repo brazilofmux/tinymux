@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.33 2000-10-04 06:41:59 sdennis Exp $
+// $Id: functions.cpp,v 1.34 2000-10-04 07:38:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5835,57 +5835,22 @@ FUNCTION(fun_setinter)
  * ---------------------------------------------------------------------------
  * * rjust, ljust, center: Justify or center text, specifying fill character
  */
+#define CJC_CENTER 0
+#define CJC_LJUST  1
+#define CJC_RJUST  2
 
-FUNCTION(fun_ljust)
+char *CJC_Names[3] = { "CENTER", "LJUST", "RJUST" };
+
+void centerjustcombo
+(
+    int iType,
+    char *buff,
+    char **bufc,
+    char *fargs[],
+    int nfargs
+)
 {
-    char sep;
-
-    varargs_preamble("LJUST", 3);
-    int nPad = Tiny_atol(fargs[1]) - strlen(strip_ansi(fargs[0]));
-
-    safe_str(fargs[0], buff, bufc);
-
-    if (nPad > 0)
-    {
-        int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-        if (nPad > nBufferAvailable)
-        {
-            nPad = nBufferAvailable;
-        }
-
-        // Fill with padding character.
-        //
-        memset(*bufc, sep, nPad);
-        *bufc += nPad;
-    }
-}
-
-FUNCTION(fun_rjust)
-{
-    char sep;
-
-    varargs_preamble("RJUST", 3);
-    int nPad = Tiny_atol(fargs[1]) - strlen(strip_ansi(fargs[0]));
-
-    if (nPad > 0)
-    {
-        int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-        if (nPad > nBufferAvailable)
-        {
-            nPad = nBufferAvailable;
-        }
-
-        // Fill with padding character.
-        //
-        memset(*bufc, sep, nPad);
-        *bufc += nPad;
-    }
-    safe_str(fargs[0], buff, bufc);
-}
-
-FUNCTION(fun_center)
-{
-    if (!fn_range_check("CENTER", nfargs, 2, 3, buff, bufc))
+    if (!fn_range_check(CJC_Names[iType], nfargs, 2, 3, buff, bufc))
     {
         return;
     }
@@ -5941,7 +5906,17 @@ FUNCTION(fun_center)
         safe_copy_buf(aStr, nStr, buff, bufc, LBUF_SIZE-1);
         return;
     }
-    
+
+    int vwLeading = 0;
+    if (iType == CJC_CENTER)
+    {
+        vwLeading = (width - vwStr)/2;
+    }
+    else if (iType == CJC_RJUST)
+    {
+        vwLeading = width - vwStr;
+    }
+
     // Calculate the necessary info about the leading padding.
     // The origin on the padding is at byte 0 at beginning of the
     // field (this may cause mis-syncronization on the screen if
@@ -5955,27 +5930,40 @@ FUNCTION(fun_center)
     //
     // vwLeading == nLeadFull * vwPad + vwLeadPartial
     //
-    int vwLeading     = (width - vwStr)/2;
-    int nLeadFull     = vwLeading / vwPad;
-    int vwLeadPartial = vwLeading - nLeadFull * vwPad;
+    int nLeadFull     = 0;
+    int vwLeadPartial = 0;
+    if (vwLeading)
+    {
+        nLeadFull     = vwLeading / vwPad;
+        vwLeadPartial = vwLeading - nLeadFull * vwPad;
+    }
 
     // Calculate the necessary info about the trailing padding.
-    // Note: vwTrailing is always equal to or one greater than
-    // vwLeading.
     //
     // vwTrailing == vwTrailPartial0 + nTrailFull * vwPad
     //             + vwTrailPartial1
     //
-    int vwTrailing      = width - vwLeading - vwStr;
-    int vwTrailSkip0    = (vwLeading + vwStr) % vwPad;
+    int vwTrailSkip0    = 0;
     int vwTrailPartial0 = 0;
-    if (vwTrailSkip0)
+    int nTrailFull      = 0;
+    int vwTrailPartial1 = 0;
+    int vwTrailing      = width - vwLeading - vwStr;
+    if (vwTrailing)
     {
-        vwTrailPartial0 = vwPad - vwTrailSkip0;
-        vwTrailing -= vwTrailPartial0;
+        vwTrailSkip0    = (vwLeading + vwStr) % vwPad;
+        vwTrailPartial0 = 0;
+        if (vwTrailSkip0)
+        {
+            int n = vwPad - vwTrailSkip0;
+            if (vwTrailing >= vwTrailPartial0)
+            {
+                vwTrailPartial0 = n;
+                vwTrailing -= vwTrailPartial0;
+            }
+        }
+        nTrailFull      = vwTrailing / vwPad;
+        vwTrailPartial1 = vwTrailing - nTrailFull * vwPad;
     }
-    int nTrailFull      = vwTrailing / vwPad;
-    int vwTrailPartial1 = vwTrailing - nTrailFull * vwPad;
 
     int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable,
@@ -5993,7 +5981,7 @@ FUNCTION(fun_center)
 
     // Output the partial leading padding segment.
     //
-    if (vwLeadPartial)
+    if (vwLeadPartial > 0)
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
         ANSI_String_Copy(&aoc, &aic, nBufferAvailable, vwLeadPartial);
@@ -6001,7 +5989,7 @@ FUNCTION(fun_center)
 
     // Output the main string to be centered.
     //
-    if (nStr)
+    if (nStr > 0)
     {
         ANSI_String_In_Init(&aic, aStr, ANSI_ENDGOAL_NORMAL);
         ANSI_String_Copy(&aoc, &aic, nBufferAvailable, LBUF_SIZE-1);
@@ -6009,7 +5997,7 @@ FUNCTION(fun_center)
 
     // Output the first partial trailing padding segment.
     //
-    if (vwTrailPartial0)
+    if (vwTrailPartial0 > 0)
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
         ANSI_String_Skip(&aic, vwTrailSkip0, &vwDone);
@@ -6026,7 +6014,7 @@ FUNCTION(fun_center)
 
     // Output the second partial trailing padding segment.
     //
-    if (vwTrailPartial1)
+    if (vwTrailPartial1 > 0)
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
         ANSI_String_Copy(&aoc, &aic, nBufferAvailable, vwTrailPartial1);
@@ -6034,6 +6022,21 @@ FUNCTION(fun_center)
 
     n = ANSI_String_Finalize(&aoc, &vwDone);
     *bufc += n;
+}
+
+FUNCTION(fun_ljust)
+{
+    centerjustcombo(CJC_LJUST, buff, bufc, fargs, nfargs);
+}
+
+FUNCTION(fun_rjust)
+{
+    centerjustcombo(CJC_RJUST, buff, bufc, fargs, nfargs);
+}
+
+FUNCTION(fun_center)
+{
+    centerjustcombo(CJC_CENTER, buff, bufc, fargs, nfargs);
 }
 
 /*
