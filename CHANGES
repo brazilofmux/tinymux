@@ -149,6 +149,8 @@ Feature Additions:
  --  Added remit() function.
  --  Bug #677 - Add oemit() function. Thanks Raevnos.
  --  Added if() from PennMUSH. Thanks Raevnos.
+ --  Hellspawn added @backup from ChaoticMUX with corresponding backup
+     script.
 
 
 Bug Fixes:
