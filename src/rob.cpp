@@ -2,7 +2,7 @@
  * rob.c -- Commands dealing with giving/taking/killing things or money 
  */
 /*
- * $Id: rob.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
+ * $Id: rob.cpp,v 1.2 2000-06-07 10:55:33 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -366,22 +366,20 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
 
 void do_give(dbref player, dbref cause, int key, char *who, char *amnt)
 {
-    dbref recipient;
-
-    /*
-     * check recipient 
-     */
-
+    // Check recipient.
+    //
     init_match(player, who, TYPE_PLAYER);
     match_neighbor();
     match_possession();
     match_me();
-    if (Long_Fingers(player)) {
+    if (Long_Fingers(player))
+    {
         match_player();
         match_absolute();
     }
-    recipient = match_result();
-    switch (recipient) {
+    dbref recipient = match_result();
+    switch (recipient)
+    {
     case NOTHING:
         notify(player, "Give to whom?");
         return;
@@ -390,13 +388,22 @@ void do_give(dbref player, dbref cause, int key, char *who, char *amnt)
         return;
     }
 
-    if (Guest(recipient)) {
+    if (isExit(recipient))
+    {
+        notify(player, "You can't give anything to an exit.");
+        return;
+    }
+    if (Guest(recipient))
+    {
         notify(player, "Guest really doesn't need money or anything.");
         return;
     }
-    if (is_number(amnt)) {
+    if (is_number(amnt))
+    {
         give_money(player, recipient, key, Tiny_atol(amnt));
-    } else {
+    }
+    else
+    {
         give_thing(player, recipient, key, amnt);
     }
 }
