@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.29 2002-09-23 07:23:44 sdennis Exp $
+// $Id: stringutil.cpp,v 1.30 2002-09-26 14:48:33 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2465,119 +2465,129 @@ double Tiny_atof(char *szString)
     return ret;
 }
 
-extern char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
-                       char **rve);
+extern char *Tiny_dtoa(double d, int mode, int nRequest, int *iDecimalPoint,
+                       int *sign, char **rve);
 
 char *Tiny_ftoa(double r, BOOL bRounded, int frac)
 {
     static char buffer[100];
     char *q = buffer;
     char *rve = NULL;
-    int decpt = 0;
+    int iDecimalPoint = 0;
     int bNegative = 0;
     int mode = 0;
-    int ndigits = 50;
+    int nRequest = 50;
 
     if (bRounded)
     {
         mode = 3;
-        ndigits = frac;
-        if (50 < ndigits)
+        nRequest = frac;
+        if (50 < nRequest)
         {
-            ndigits = 50;
+            nRequest = 50;
         }
-        else if (ndigits < -20)
+        else if (nRequest < -20)
         {
-            ndigits = -20;
+            nRequest = -20;
         }
     }
-    char *p = Tiny_dtoa(r, mode, ndigits, &decpt, &bNegative, &rve);
-    int nDigits = rve - p;
-    if (nDigits > 50)
+    char *p = Tiny_dtoa(r, mode, nRequest, &iDecimalPoint, &bNegative, &rve);
+    int nSize = rve - p;
+    if (nSize > 50)
     {
-        nDigits = 50;
+        nSize = 50;
     }
     if (bNegative)
     {
         *q++ = '-';
     }
-    int nPad = ndigits - (nDigits - decpt);
-    if (decpt == 9999)
+    if (iDecimalPoint == 9999)
     {
         // Inf or NaN
         //
-        memcpy(q, p, nDigits);
-        q += nDigits;
+        memcpy(q, p, nSize);
+        q += nSize;
     }
-    else if (nDigits <= 0)
+    else if (nSize <= 0)
     {
+        // Zero
+        //
         *q++ = '0';
         if (  bRounded
-           && 0 < nPad)
+           && 0 < nRequest)
         {
             *q++ = '.';
-            memset(q, '0', nPad);
-            q += nPad;
+            memset(q, '0', nRequest);
+            q += nRequest;
         }
     }
-    else if (decpt <= -6 || 18 <= decpt)
+    else if (  iDecimalPoint <= -6
+            || 18 <= iDecimalPoint)
     {
         *q++ = *p++;
-        if (1 < nDigits)
+        if (1 < nSize)
         {
             *q++ = '.';
-            memcpy(q, p, nDigits-1);
-            q += nDigits-1;
+            memcpy(q, p, nSize-1);
+            q += nSize-1;
         }
         *q++ = 'E';
-        q += Tiny_ltoa(decpt-1, q);
+        q += Tiny_ltoa(iDecimalPoint-1, q);
     }
-    else if (decpt <= 0)
+    else if (iDecimalPoint <= 0)
     {
-        // decpt = -5 to 0
+        // iDecimalPoint = -5 to 0
         //
         *q++ = '0';
         *q++ = '.';
-        memset(q, '0', -decpt);
-        q += -decpt;
-        memcpy(q, p, nDigits);
-        q += nDigits;
-        if (  bRounded
-           && 0 < nPad)
+        memset(q, '0', -iDecimalPoint);
+        q += -iDecimalPoint;
+        memcpy(q, p, nSize);
+        q += nSize;
+        if (bRounded)
         {
-            memset(q, '0', nPad);
-            q += nPad;
-        }
-    }
-    else // 0 < decpt
-    {
-        if (nDigits <= decpt)
-        {
-            memcpy(q, p, nDigits);
-            q += nDigits;
-            memset(q, '0', decpt-nDigits);
-            q += decpt-nDigits;
-            if (  bRounded
-               && 0 < nPad)
+            int nPad = nRequest - (nSize - iDecimalPoint);
+            if (0 < nPad)
             {
-                *q++ = '.';
                 memset(q, '0', nPad);
                 q += nPad;
             }
         }
+    }
+    else
+    {
+        // iDecimalPoint = 1 to 17
+        //
+        if (nSize <= iDecimalPoint)
+        {
+            memcpy(q, p, nSize);
+            q += nSize;
+            memset(q, '0', iDecimalPoint - nSize);
+            q += iDecimalPoint - nSize;
+            if (  bRounded
+               && 0 < nRequest)
+            {
+                *q++ = '.';
+                memset(q, '0', nRequest);
+                q += nRequest;
+            }
+        }
         else
         {
-            memcpy(q, p, decpt);
-            q += decpt;
-            p += decpt;
+            memcpy(q, p, iDecimalPoint);
+            q += iDecimalPoint;
+            p += iDecimalPoint;
             *q++ = '.';
-            memcpy(q, p, nDigits-decpt);
-            q += nDigits-decpt;
-            if (  bRounded
-               && 0 < nPad)
+            memcpy(q, p, nSize - iDecimalPoint);
+            q += nSize - iDecimalPoint;
+            if (bRounded)
             {
-                memset(q, '0', nPad);
-                q += nPad;
+                int nPad = nRequest - (nSize - iDecimalPoint);
+                if (0 < nPad)
+                {
+                    memset(q, '0', nPad);
+                    q += nPad;
+                }
             }
         }
     }
