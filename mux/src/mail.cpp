@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.12 2002-07-09 08:22:49 jake Exp $
+// $Id: mail.cpp,v 1.13 2002-07-09 17:36:47 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -298,6 +298,7 @@ void do_mail_change_folder(dbref player, char *fld, char *newname)
     if (!fld || !*fld)
     {
         // Check mail in all folders
+        //
         for (pfld = MAX_FOLDERS; pfld >= 0; pfld--)
         {
             check_mail(player, pfld, 1);
@@ -316,6 +317,7 @@ void do_mail_change_folder(dbref player, char *fld, char *newname)
     if (newname && *newname)
     {
         // We're changing a folder name here
+        //
         if (strlen(newname) > FOLDER_NAME_LEN)
         {
             notify(player, "MAIL: Folder name too long");
@@ -335,6 +337,7 @@ void do_mail_change_folder(dbref player, char *fld, char *newname)
     else
     {
         // Set a new folder
+        //
         set_player_folder(player, pfld);
         notify(player, tprintf("MAIL: Current folder set to %d [%s].",
                        pfld, get_folder_name(player, pfld)));
@@ -429,7 +432,7 @@ static void do_mail_flags(dbref player, char *msglist, mail_flag flag, int negat
     }
 }
 
-// Change a message's folder/
+// Change a message's folder.
 //
 void do_mail_file(dbref player, char *msglist, char *folder)
 {
@@ -626,6 +629,7 @@ void do_mail_retract(dbref player, char *name, char *msglist)
     if (!j)
     {
         // Ran off the end of the list without finding anything.
+        //
         notify(player, "MAIL: No matching messages.");
     }
 }
@@ -773,8 +777,10 @@ static char *mail_list_time(const char *the_time)
         *new0 = '\0';
         return new0;
     }
+
     // Format of the_time is: day mon dd hh:mm:ss yyyy
     // Chop out :ss
+    //
     int i;
     for (i = 0; i < 16; i++) 
     {
@@ -816,6 +822,7 @@ void do_mail_purge(dbref player)
         {
             // Delete this one.
             // Head and tail of the list are special.
+            //
             if (mp->prev == NULL)
             {
                 if (mp->next == NULL)
@@ -1476,6 +1483,7 @@ void do_mail_stats(dbref player, char *name, int full)
     }
 
     // This comand is computationally expensive.
+    //
     if (!payfor(player, mudconf.searchcost))
     {
         notify(player, tprintf("Finding mail stats costs %d %s.",
@@ -1546,9 +1554,11 @@ void do_mail_stats(dbref player, char *name, int full)
     }
 
     // individual stats
+    //
     if (full == 0)
     {
         // Just count the number of messages.
+        //
         MAIL_ITER_ALL(mp, thing)
         {
             if (mp->from == target)
@@ -1651,17 +1661,23 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
             notify(player, "MAIL: Invalid mail command.");
             return;
         }
+
         // Just the "@mail" command.
+        //
         do_mail_list(player, arg1, 1);
         return;
     }
+
     // purge a player's mailbox
+    //
     if (!_stricmp(arg1, "purge"))
     {
         do_mail_purge(player);
         return;
     }
+
     // clear message
+    //
     if (!_stricmp(arg1, "clear"))
     {
         do_mail_clear(player, arg2);
@@ -1675,12 +1691,14 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
     if (arg2 && *arg2)
     {
         // Sending mail
+        //
         do_expmail_start(player, arg1, arg2);
         return;
     }
     else
     {
         // Must be reading or listing mail - no arg2
+        //
         if (Tiny_IsDigit[(unsigned char)*arg1] && !strchr(arg1, '-'))
         {
             do_mail_read(player, arg1);
@@ -1692,7 +1710,6 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
         return;
     }
 }
-
 
 void do_mail
 (
@@ -1821,6 +1838,7 @@ int dump_mail(FILE *fp)
     int count = 0, i;
 
     // Write out version number
+    //
     fprintf(fp, "+V5\n");
     putref(fp, mudstate.mail_db_top);
     DO_WHOLE_DB(thing)
@@ -1848,6 +1866,7 @@ int dump_mail(FILE *fp)
     fprintf(fp, "*** END OF DUMP ***\n");
 
     // Add the db of mail messages
+    //
     for (i = 0; i < mudstate.mail_db_top; i++)
     {
         if (mudstate.mail_list[i].m_nRefs > 0)
@@ -2067,7 +2086,9 @@ void add_folder_name(dbref player, int fld, char *name)
         safe_str(new0, res, &r);
         *r = '\0';
     }
+
     // put the attrib back
+    //
     atr_add(player, A_MAILFOLDERS, res, player, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_LOCK);
     free_lbuf(str);
     free_lbuf(pat);
@@ -2098,6 +2119,7 @@ static int player_folder(dbref player)
 void set_player_folder(dbref player, int fnum)
 {
     // Set a player's folder to fnum.
+    //
     char *tbuf1 = alloc_lbuf("set_player_folder");
     Tiny_ltoa(fnum, tbuf1);
     ATTR *a = atr_num(A_MAILCURF);
@@ -2135,7 +2157,9 @@ static int parse_folder(dbref player, char *folder_string)
             return fnum;
         }
     }
+
     // Handle named folders here
+    //
     return get_folder_number(player, folder_string);
 }
 
@@ -2494,6 +2518,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
 void check_mail_expiration(void)
 {
     // Negative values for expirations never expire.
+    //
     if (0 > mudconf.mail_expiration)
     {
         return;
@@ -2549,7 +2574,9 @@ void check_mail_expiration(void)
         {
             mp->prev->next = NULL;
         }
+
         // relink the list
+        //
         if (mp->prev != NULL)
         {
             mp->prev->next = mp->next;
@@ -2575,6 +2602,7 @@ void check_mail_expiration(void)
 static char *status_chars(struct mail *mp)
 {
     // Return a short description of message flags.
+    //
     static char res[10];
 
     char *p = res;
