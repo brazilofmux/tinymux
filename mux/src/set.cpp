@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.34 2002-12-16 00:21:27 sdennis Exp $
+// $Id: set.cpp,v 1.35 2003-01-01 09:18:22 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -309,12 +309,14 @@ void do_alias
             if (add_player_name(thing, trimalias))
             {
                 if (!Quiet(executor))
+                {
                     notify_quiet(executor, "Alias set.");
+                }
             }
             else
             {
                 notify_quiet(executor,
-                         "That name is already in use or is illegal, alias cleared.");
+                    "That name is already in use or is illegal, alias cleared.");
                 atr_clr(thing, A_ALIAS);
             }
         }
@@ -490,7 +492,8 @@ void do_lock
             key = A_LOCK;
         }
         atr_add_raw(thing, key, unparse_boolexp_quiet(executor, okey));
-        if (!Quiet(executor) && !Quiet(thing))
+        if (  !Quiet(executor)
+           && !Quiet(thing))
         {
             notify_quiet(executor, "Locked.");
         }
@@ -693,7 +696,8 @@ void do_chown
         {
             notify_quiet(executor, "I couldn't find that player.");
         }
-        else if (God(thing) && !God(executor))
+        else if (  God(thing)
+                && !God(executor))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
         }
@@ -895,13 +899,18 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     int aflags;
     ATTR *attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
-    if (attr && bCanSetAttr(player, thing, attr)) 
+    if (  attr
+       && bCanSetAttr(player, thing, attr)) 
     {
         BOOL could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));
-        if (!(key & SET_QUIET) && !Quiet(player) && !Quiet(thing))
+        if (  !(key & SET_QUIET)
+           && !Quiet(player)
+           && !Quiet(thing))
+        {
             notify_quiet(player, "Set.");
+        }
     } 
     else 
     {
@@ -969,7 +978,8 @@ void do_set
             // Make sure we can write to the attribute.
             //
             attr = atr_num(atr);
-            if (!attr || !bCanSetAttr(executor, thing, attr))
+            if (  !attr
+               || !bCanSetAttr(executor, thing, attr))
             {
                 notify_quiet(executor, NOPERM_MESSAGE);
                 return;
@@ -1051,7 +1061,7 @@ void do_set
         {
             strcpy(buff, p + 1);
             if (  !parse_attrib(executor, p + 1, &thing2, &atr2)
-               || (atr2 == NOTHING))
+               || atr2 == NOTHING)
             {
                 notify_quiet(executor, "No match.");
                 free_lbuf(buff);
@@ -1093,7 +1103,8 @@ void do_power
     char *flag
 )
 {
-    if (!flag || !*flag)
+    if (  !flag
+       || !*flag)
     {
         notify_quiet(executor, "I don't know what you want to set!");
         return;
@@ -1137,11 +1148,14 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int key,
     int i;
     char *oldthing, *oldattr, *newthing, *newattr;
 
-    if (!*oldpair || !**newpair || !oldpair || !*newpair)
+    if (  !*oldpair
+       || !**newpair
+       || !oldpair
+       || !*newpair
+       || nargs < 1)
+    {
         return;
-
-    if (nargs < 1)
-        return;
+    }
 
     oldattr = oldpair;
     oldthing = parse_to(&oldattr, '/', 1);
@@ -1155,22 +1169,26 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int key,
         {
             if (!newattr)
             {
-                do_set(executor, caller, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", oldthing, "me", oldthing));
+                do_set(executor, caller, enactor, 0, 2, newthing,
+                    tprintf("%s:_%s/%s", oldthing, "me", oldthing));
             }
             else
             {
-                do_set(executor, caller, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", newattr, "me", oldthing));
+                do_set(executor, caller, enactor, 0, 2, newthing,
+                    tprintf("%s:_%s/%s", newattr, "me", oldthing));
             }
         }
         else
         {
             if (!newattr)
             {
-                do_set(executor, caller, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", oldattr, oldthing, oldattr));
+                do_set(executor, caller, enactor, 0, 2, newthing,
+                    tprintf("%s:_%s/%s", oldattr, oldthing, oldattr));
             }
             else
             {
-                do_set(executor, caller, enactor, 0, 2, newthing, tprintf("%s:_%s/%s", newattr, oldthing, oldattr));
+                do_set(executor, caller, enactor, 0, 2, newthing,
+                    tprintf("%s:_%s/%s", newattr, oldthing, oldattr));
             }
         }
     }
@@ -1324,7 +1342,7 @@ BOOL parse_attrib(dbref player, char *str, dbref *thing, int *atr)
     // Break apart string into obj and attr.  Return on failure.
     //
     char *buff = alloc_lbuf("parse_attrib");
-    StringCopy(buff, str);
+    strcpy(buff, str);
     if (!parse_thing_slash(player, buff, &str, thing))
     {
         free_lbuf(buff);
@@ -1598,7 +1616,8 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
 
     // Make sure we have something to do.
     //
-    if ((nargs < 1) || !*args[0])
+    if (  nargs < 1
+       || !*args[0])
     {
         notify_quiet(executor, "Nothing to do.");
         return;
@@ -1609,7 +1628,9 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
     // Look for the object and get the attribute (possibly wildcarded)
     //
     olist_push();
-    if (!it || !*it || !parse_attrib_wild(executor, it, &thing, FALSE, FALSE, FALSE))
+    if (  !it
+       || !*it
+       || !parse_attrib_wild(executor, it, &thing, FALSE, FALSE, FALSE))
     {
         notify_quiet(executor, "No match.");
         return;
@@ -1674,7 +1695,9 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
     dbref thing;
 
     olist_push();
-    if (!it || !*it || !parse_attrib_wild(executor, it, &thing, FALSE, FALSE, TRUE))
+    if (  !it
+       || !*it
+       || !parse_attrib_wild(executor, it, &thing, FALSE, FALSE, TRUE))
     {
         notify_quiet(executor, "No match.");
         return;
@@ -1846,7 +1869,9 @@ void do_setvattr
     // Split it
     //
     if (*s)
+    {
         *s++ = '\0';
+    }
 
     // Get or make attribute
     //
