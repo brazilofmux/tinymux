@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.31 2003-02-04 16:47:07 sdennis Exp $
+// $Id: stringutil.cpp,v 1.32 2003-02-04 18:54:22 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -205,7 +205,7 @@ char Tiny_IsFirstAttributeNameCharacter[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-char Tiny_IsAttributeNameCharacter[256] =
+char mux_AttrNameSet[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.16 2003-02-04 06:40:40 sdennis Exp $
+// $Id: db.cpp,v 1.17 2003-02-04 18:54:22 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -928,7 +928,7 @@ void do_fixdb
 // necessary, but we will validate the remaining characters anyway.
 //
 // NOTE: Refer to init_attrtab() where it directly manipulates
-// Tiny_IsAttributeNameCharacter to allow the attribute name: "*Password".
+// mux_AttrNameSet to allow the attribute name: "*Password".
 //
 char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
 {
@@ -945,7 +945,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
     char *p = Buffer;
     while (*pName && nLeft)
     {
-        if (!Tiny_IsAttributeNameCharacter[(unsigned char)*pName])
+        if (!mux_AttrNameSet[(unsigned char)*pName])
         {
             *pnName = 0;
             *pbValid = FALSE;
@@ -965,7 +965,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
     //
     while (*pName)
     {
-        if (!Tiny_IsAttributeNameCharacter[(unsigned char)*pName])
+        if (!mux_AttrNameSet[(unsigned char)*pName])
         {
             *pnName = 0;
             *pbValid = FALSE;
@@ -1031,7 +1031,7 @@ void init_attrtab(void)
     // initialization because it's part of the A_PASS attribute
     // name.
     //
-    Tiny_IsAttributeNameCharacter['*'] = TRUE;
+    mux_AttrNameSet['*'] = TRUE;
     Tiny_IsFirstAttributeNameCharacter['*'] = TRUE;
     for (a = attr; a->number; a++)
     {
@@ -1047,7 +1047,7 @@ void init_attrtab(void)
         hashaddLEN(buff, nLen, (int *)a, &mudstate.attr_name_htab);
     }
     Tiny_IsFirstAttributeNameCharacter['*'] = FALSE;
-    Tiny_IsAttributeNameCharacter['*'] = FALSE;
+    mux_AttrNameSet['*'] = FALSE;
 }
 
 /* ---------------------------------------------------------------------------
