@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.26 2002-01-25 04:18:59 sdennis Exp $
+// $Id: create.cpp,v 1.27 2002-01-25 04:20:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -740,8 +740,8 @@ void do_pcreate
     {
         move_object(newplayer, Location(player));
         notify_quiet(player,
-            tprintf("New robot '%s' created with password '%s'",
-                name, pass));
+            tprintf("New robot '%s' (#%d) created with password '%s'",
+                name, newplayer, pass));
         notify_quiet(player, "Your robot has arrived.");
         STARTLOG(LOG_PCREATES, "CRE", "ROBOT");
         log_name(newplayer);
