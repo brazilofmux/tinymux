@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.70 2002-07-23 21:34:35 sdennis Exp $
+// $Id: functions.cpp,v 1.71 2002-07-28 17:11:20 jake Exp $
 //
 
 #include "copyright.h"
@@ -5306,7 +5306,15 @@ FUNCTION(fun_connrecord)
 
 FUNCTION(fun_ctime)
 {
-    dbref thing = match_thing_quiet(executor, fargs[0]);
+    dbref thing;
+    if (nfargs == 1)
+    {
+        thing = match_thing_quiet(executor, fargs[0]);
+    }
+    else
+    {
+        thing = executor;
+    }
     if (!Good_obj(thing))
     {
         safe_match_result(thing, buff, bufc);
@@ -5314,6 +5322,35 @@ FUNCTION(fun_ctime)
     else if (Examinable(executor, thing))
     {
         safe_str(atr_get_raw(thing, A_CREATED), buff, bufc);
+    }
+    else
+    {
+        safe_noperm(buff, bufc);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_mtime: Return the value of an object's Modified attribute.
+// ---------------------------------------------------------------------------
+
+FUNCTION(fun_mtime)
+{
+    dbref thing;
+    if (nfargs == 1)
+    {
+        thing = match_thing_quiet(executor, fargs[0]);
+    }
+    else
+    {
+        thing = executor;
+    }
+    if (!Good_obj(thing))
+    {
+        safe_match_result(thing, buff, bufc);
+    }
+    else if (Examinable(executor, thing))
+    {
+        safe_str(atr_get_raw(thing, A_MODIFIED), buff, bufc);
     }
     else
     {
@@ -7803,7 +7840,7 @@ FUN flist[] =
     {"COS",      fun_cos,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"CTIME",    fun_ctime,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CTIME",    fun_ctime,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"CTU",      fun_ctu,      MAX_ARG, 3,  3,       0, CA_PUBLIC},
     {"CWHO",     fun_cwho,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"DEC",      fun_dec,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
@@ -7926,6 +7963,7 @@ FUN flist[] =
     {"MOD",      fun_mod,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"MONEY",    fun_money,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"MOTD",     fun_motd,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"MTIME",    fun_mtime,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"MUDNAME",  fun_mudname,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"MUL",      fun_mul,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"MUNGE",    fun_munge,    MAX_ARG, 3,  4,       0, CA_PUBLIC},
