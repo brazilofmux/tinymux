@@ -5,6 +5,11 @@ Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  -- Signals SIGINT and SIGUSR2 have been swapped. SIGINT now performs a
     @shutdown, and SIGUSR2 drops a .SIG flatfile.
+ -- Removed support for VMS, for the port concentrator.
+ -- Removed support for many older mail, comsys, and flatfile formats
+    related to Pern, MUD, MUSH, and Penn.
+ -- dbconvert now only support three options: Load, Unload, and Check.
+    
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
@@ -34,6 +39,11 @@ Feature Additions:
  -- Added destroy_going_now configuration option. If enabled, a second
     @destroy request causes the object to be destroyed immediately.
     Added to provide compatibility with PennMUSH. Patch from Jake.
+ -- Win32 builds running on NT are now able to catch the WM_CLOSE messages
+    and @shutdown the server cleanly. Running on Win9x does not have this
+    ability, yet.
+ -- Attributes are now output in numeric order. With this, it is now
+    possible to construct reasonable-sized flatfile patches.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -55,6 +65,15 @@ Bug Fixes:
  -- Document safer_passwords configuration option.
  -- Bug #602 - fun_ansi reaches backwards into the buffer.
  -- Bug #391 - WIZARD player could set attributes on garbage objects.
+ -- Fixed SIZEOF__LONG typo in code that would be very unlikely to affect any
+    platform.
+ -- Added optional 4th argument (indent) to COLUMNS().
+ -- Removed unintialized have_macros config option. Could have been an
+    issue if you were running a non-DEBUG build and wanted to disable the
+    comsys.
+ -- Fixed SIGBUS issue on Solaris. This was not an issue for MUX 2.0.
+ -- Fixed SIGSEGV bug in timeutil with how the timezone offset table was
+    maintained. It required three things to happen at the same time.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,6 +87,11 @@ Performance Enhancements:
  -- For string search with GREP and GREPI, added a Boyer-Moore-Horspool
     string search algorithm for speed.
  -- Perform one strip_ansi() call in do_decomp instead of several.
+ -- Remove fourth argument to safe_copy_buf to reduce code size. The 4th
+    argument was always LBUF_SIZE-1.
+ -- Simplify the varargs_preample family of #defines further.
+ -- Use MUXCLI on both Unix and Win32 builds instead of getopt on Unix
+    and correct-but-inflexible code on Win32.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
