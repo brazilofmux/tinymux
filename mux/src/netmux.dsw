@@ -19,22 +19,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "mkindx"=.\mkindx.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-    begin source code control
-    "$/TinyMUX22/mux/src", HDGAAAAA
-    .
-    end source code control
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
 Project: "netmux"=.\netmux.dsp - Package Owner=<4>
 
 Package=<5>
