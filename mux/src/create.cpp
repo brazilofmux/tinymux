@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.7 2004-04-06 05:23:24 sdennis Exp $
+// $Id: create.cpp,v 1.8 2004-05-05 16:07:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -988,67 +988,65 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
                 Name(thing), thing));
         }
     }
-
+    free_sbuf(NameOfType);
 
     // Imperative Destruction emits.
     //
-    if (  (  !bInstant
-          || isPlayer(thing))
-       && !Quiet(executor))
+    if (!Quiet(executor))
     {
-        if (  Good_owner(ThingOwner)
-           && Owner(executor) != ThingOwner)
+        if (Good_owner(ThingOwner))
         {
-            if (ThingOwner == thing)
+            if (ThingOwner == Owner(executor))
             {
-                notify(executor, tprintf("Destroyed. %s(#%d)",
-                    Name(thing), thing));
+                if (!Quiet(thing))
+                {
+                    notify(executor, tprintf("Destroyed %s(#%d).",
+                        Moniker(thing), thing));
+                }
+            }
+            else if (ThingOwner == thing)
+            {
+                notify(executor, tprintf("Destroyed %s(#%d).",
+                    Moniker(thing), thing));
             }
             else
             {
                 char *tname = alloc_lbuf("destroy_obj");
                 strcpy(tname, Moniker(ThingOwner));
-                notify(executor, tprintf("Destroyed. %s's %s(#%d)",
-                    tname, Name(thing), thing));
+                notify(executor, tprintf("Destroyed %s's %s(#%d).",
+                    tname, Moniker(thing), thing));
                 free_lbuf(tname);
             }
         }
-        else if (!Quiet(thing))
+    }
+
+    if (bInstant)
+    {
+        // Instant destruction by type.
+        //
+        switch (Typeof(thing))
         {
-            notify(executor, "Destroyed.");
+        case TYPE_EXIT:
+            destroy_exit(thing);
+            break;
+    
+        case TYPE_PLAYER:
+            destroy_player(executor, thing);
+            break;
+    
+        case TYPE_ROOM:
+            empty_obj(thing);
+            destroy_obj(thing);
+            break;
+    
+        case TYPE_THING:
+            destroy_thing(thing);
+            break;
+    
+        default:
+            notify(executor, "Weird object type cannot be destroyed.");
+            return;
         }
     }
-    free_sbuf(NameOfType);
     s_Going(thing);
-
-    if (!bInstant)
-    {
-        return;
-    }
-
-    // Instant destruction by type.
-    //
-    switch (Typeof(thing))
-    {
-    case TYPE_EXIT:
-        destroy_exit(thing);
-        break;
-
-    case TYPE_PLAYER:
-        destroy_player(executor, thing);
-        break;
-
-    case TYPE_ROOM:
-        empty_obj(thing);
-        destroy_obj(thing);
-        break;
-
-    case TYPE_THING:
-        destroy_thing(thing);
-        break;
-
-    default:
-        notify(executor, "Weird object type cannot be destroyed.");
-        break;
-    }
 }
