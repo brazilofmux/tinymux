@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.7 2000-04-25 00:19:06 sdennis Exp $
+// $Id: command.cpp,v 1.8 2000-04-29 08:04:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -422,6 +422,14 @@ NAMETAB teleport_sw[] =
     { NULL,         0,  0,      0}
 };
 
+NAMETAB timecheck_sw[] =
+{
+    {(char *)"log",     1,  CA_WIZARD,  TIMECHK_LOG | SW_MULTIPLE},
+    {(char *)"reset",   1,  CA_WIZARD,  TIMECHK_RESET | SW_MULTIPLE},
+    {(char *)"screen",  1,  CA_WIZARD,  TIMECHK_SCREEN | SW_MULTIPLE},
+    { NULL,             0,  0,          0}
+};
+
 NAMETAB toad_sw[] =
 {
     {(char *)"no_chown",    1,  CA_WIZARD,  TOAD_NO_CHOWN|SW_MULTIPLE},
@@ -475,6 +483,7 @@ CMDENT_NO_ARG command_table_no_arg[] =
 #ifndef WIN32
     {(char *)"@startslave",   NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         boot_slave},
 #endif
+    {(char *)"@timecheck",    timecheck_sw, CA_WIZARD,  0,        CS_NO_ARGS,       do_timecheck},
     {(char *)"comlist",       NULL,       CA_NO_SLAVE,        0,              CS_NO_ARGS,                     do_comlist},
     {(char *)"clearcom",      NULL,       CA_NO_SLAVE,        0,              CS_NO_ARGS,                     do_clearcom},
     {(char *)"inventory",     NULL,       0,    LOOK_INVENTORY, CS_NO_ARGS,         do_inventory},
@@ -765,43 +774,57 @@ int check_access(dbref player, int mask)
     succ = fail = 0;
     if (mask & CA_GOD)
         fail++;
-    if (mask & CA_WIZARD) {
+    if (mask & CA_WIZARD)
+    {
         if (Wizard(player))
             succ++;
         else
             fail++;
     }
-    if ((succ == 0) && (mask & CA_ADMIN)) {
+    if ((succ == 0) && (mask & CA_ADMIN))
+    {
         if (WizRoy(player))
             succ++;
         else
             fail++;
     }
-    if ((succ == 0) && (mask & CA_STAFF)) {
-        if (Staff(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_ANNOUNCE)) {
-        if (Announce(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_IMMORTAL)) {
-        if (Immortal(player))
-            succ++;
-        else
-            fail++;
-    }
-    if ((succ == 0) && (mask & CA_BUILDER)) {
+    if ((succ == 0) && (mask & CA_BUILDER))
+    {
         if (Builder(player))
             succ++;
         else
             fail++;
     }
-    if ((succ == 0) && (mask & CA_ROBOT)) {
+    if ((succ == 0) && (mask & CA_STAFF))
+    {
+        if (Staff(player))
+            succ++;
+        else
+            fail++;
+    }
+    if ((succ == 0) && (mask & CA_HEAD))
+    {
+        if (Head(player))
+            succ++;
+        else
+            fail++;
+    }
+    if ((succ == 0) && (mask & CA_ANNOUNCE))
+    {
+        if (Announce(player))
+            succ++;
+        else
+            fail++;
+    }
+    if ((succ == 0) && (mask & CA_IMMORTAL))
+    {
+        if (Immortal(player))
+            succ++;
+        else
+            fail++;
+    }
+    if ((succ == 0) && (mask & CA_ROBOT))
+    {
         if (Robot(player))
             succ++;
         else
@@ -812,16 +835,15 @@ int check_access(dbref player, int mask)
     if (fail > 0)
         return 0;
 
-    /*
-     * Check for forbidden flags. 
-     */
-
-    if (!Wizard(player) &&
-        (((mask & CA_NO_HAVEN) && Player_haven(player)) ||
-         ((mask & CA_NO_ROBOT) && Robot(player)) ||
-         ((mask & CA_NO_SLAVE) && Slave(player)) ||
-         ((mask & CA_NO_SUSPECT) && Suspect(player)) ||
-         ((mask & CA_NO_GUEST) && Guest(player)))) {
+    // Check for forbidden flags.
+    //
+    if (  !Wizard(player)
+       && (  ((mask & CA_NO_HAVEN)   && Player_haven(player))
+          || ((mask & CA_NO_ROBOT)   && Robot(player))
+          || ((mask & CA_NO_SLAVE)   && Slave(player))
+          || ((mask & CA_NO_SUSPECT) && Suspect(player))
+          || ((mask & CA_NO_GUEST)   && Guest(player))))
+    {
         return 0;
     }
     return 1;
@@ -849,7 +871,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
     //
     if (  (Protect(CA_LOCATION) && !Has_location(player))
        || (Protect(CA_CONTENTS) && !Has_contents(player))
-       || (Protect(CA_PLAYER) && (Typeof(player) != TYPE_PLAYER)))
+       || (Protect(CA_PLAYER) && !isPlayer(player)))
     {
         notify(player, "Command incompatible with invoker type.");
         return;
@@ -1787,24 +1809,26 @@ static void list_attrtable(dbref player)
 
 NAMETAB access_nametab[] =
 {
-    {(char *)"god", 2, CA_GOD, CA_GOD},
-    {(char *)"wizard", 3, CA_WIZARD, CA_WIZARD},
-    {(char *)"builder", 6, CA_WIZARD, CA_BUILDER},
-    {(char *)"immortal", 3, CA_WIZARD, CA_IMMORTAL},
-    {(char *)"robot", 2, CA_WIZARD, CA_ROBOT},
-    {(char *)"no_haven", 4, CA_PUBLIC, CA_NO_HAVEN},
-    {(char *)"no_robot", 4, CA_WIZARD, CA_NO_ROBOT},
-    {(char *)"no_slave", 5, CA_PUBLIC, CA_NO_SLAVE},
-    {(char *)"no_suspect", 5, CA_WIZARD, CA_NO_SUSPECT},
-    {(char *)"no_guest", 5, CA_WIZARD, CA_NO_GUEST},
-    {(char *)"global_build", 8, CA_PUBLIC, CA_GBL_BUILD},
+    {(char *)"builder",       6, CA_WIZARD, CA_BUILDER},
+    {(char *)"dark",          4, CA_GOD,    CF_DARK},
+    {(char *)"disabled",      4, CA_GOD,    CA_DISABLED},
+    {(char *)"global_build",  8, CA_PUBLIC, CA_GBL_BUILD},
     {(char *)"global_interp", 8, CA_PUBLIC, CA_GBL_INTERP},
-    {(char *)"disabled", 4, CA_GOD, CA_DISABLED},
-    {(char *)"need_location", 6, CA_PUBLIC, CA_LOCATION},
+    {(char *)"god",           2, CA_GOD,    CA_GOD},
+    {(char *)"head",          2, CA_WIZARD, CA_HEAD},
+    {(char *)"immortal",      3, CA_WIZARD, CA_IMMORTAL},
     {(char *)"need_contents", 6, CA_PUBLIC, CA_CONTENTS},
-    {(char *)"need_player", 6, CA_PUBLIC, CA_PLAYER},
-    {(char *)"dark", 4, CA_GOD, CF_DARK},
-    {NULL, 0, 0, 0}};
+    {(char *)"need_location", 6, CA_PUBLIC, CA_LOCATION},
+    {(char *)"need_player",   6, CA_PUBLIC, CA_PLAYER},
+    {(char *)"no_haven",      4, CA_PUBLIC, CA_NO_HAVEN},
+    {(char *)"no_robot",      4, CA_WIZARD, CA_NO_ROBOT},
+    {(char *)"no_slave",      5, CA_PUBLIC, CA_NO_SLAVE},
+    {(char *)"no_suspect",    5, CA_WIZARD, CA_NO_SUSPECT},
+    {(char *)"no_guest",      5, CA_WIZARD, CA_NO_GUEST},
+    {(char *)"robot",         2, CA_WIZARD, CA_ROBOT},
+    {(char *)"wizard",        3, CA_WIZARD, CA_WIZARD},
+    {NULL,                    0, 0,         0}
+};
 
 static void list_cmdaccess(dbref player)
 {
@@ -2760,7 +2784,7 @@ static void list_db_stats(dbref player)
 
 static void list_process(dbref player)
 {
-    int pid, maxfds;
+    int maxfds;
 
 #ifdef HAVE_GETRUSAGE
     struct rusage usage;
@@ -2801,16 +2825,14 @@ static void list_process(dbref player)
     int psize = getpagesize();
 #endif // WIN32
 
-    pid = getpid();
-
     /*
      * Go display everything 
      */
 
 #ifdef WIN32
-    raw_notify(player, tprintf("Process ID:  %10d", pid));
+    raw_notify(player, tprintf("Process ID:  %10d", game_pid));
 #else // WIN32
-    raw_notify(player, tprintf("Process ID:  %10d        %10d bytes per page", pid, psize));
+    raw_notify(player, tprintf("Process ID:  %10d        %10d bytes per page", game_pid, psize));
 #endif // WIN32
 
 #ifdef HAVE_GETRUSAGE
