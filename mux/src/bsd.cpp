@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.27 2003-02-02 18:35:16 sdennis Exp $
+// $Id: bsd.cpp,v 1.28 2003-03-01 23:16:58 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2840,7 +2840,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         {
             exit(0);
         }
-        mudstate.dumping = 0;
+        mudstate.dumping = FALSE;
         break;
 
     case SIGHUP:
