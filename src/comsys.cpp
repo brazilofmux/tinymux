@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.65 2002-01-24 09:53:48 sdennis Exp $
+// $Id: comsys.cpp,v 1.66 2002-02-02 05:15:20 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2712,7 +2712,6 @@ FUNCTION(fun_comalias)
     }
 
     dbref victim = lookup_player(player, fargs[0], 1);
-    comsys_t *c = get_comsys(player);
 
     if (victim == NOTHING)
     {

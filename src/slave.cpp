@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.10 2001-12-30 06:32:01 sdennis Exp $
+// $Id: slave.cpp,v 1.11 2002-02-02 05:15:20 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -29,6 +29,10 @@ pid_t parent_pid;
 
 #define MAX_STRING 8000
 char *arg_for_errors;
+
+#ifndef INADDR_NONE
+#define INADDR_NONE ((unsigned long)-1)
+#endif
 
 char *format_inet_addr(char *dest, long addr)
 {
@@ -117,7 +121,7 @@ int query(char *ip, char *orig_arg)
         static char namebuf[128];
 
         defaddr.s_addr = inet_addr(arg);
-        if ((long)defaddr.s_addr == -1)
+        if (defaddr.s_addr == INADDR_NONE)
         {
             return -1;
         }

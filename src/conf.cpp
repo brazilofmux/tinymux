@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.64 2002-01-26 01:01:50 sdennis Exp $
+// $Id: conf.cpp,v 1.65 2002-02-02 05:15:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1152,6 +1152,7 @@ BOOL isValidSubnetMask(unsigned long ulMask)
 
 CF_HAND(cf_site)
 {
+    SITE **ppv = (SITE **)vp;
     struct in_addr addr_num, mask_num;
     unsigned long ulMask, ulNetBits;
 
@@ -1227,7 +1228,7 @@ CF_HAND(cf_site)
         addr_num.s_addr = htonl(ulAddr);
     }
 
-    SITE *head = (SITE *) * vp;
+    SITE *head = *ppv;
 
     // Parse the access entry and allocate space for it.
     //
@@ -1250,7 +1251,7 @@ CF_HAND(cf_site)
     {
         if (head == NULL)
         {
-            *vp = (int) site;
+            *ppv = site;
         }
         else
         {
@@ -1265,7 +1266,7 @@ CF_HAND(cf_site)
     else
     {
         site->next = head;
-        *vp = (int) site;
+        *ppv = site;
     }
     return 0;
 }
