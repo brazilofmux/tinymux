@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.44 2002-09-19 05:09:40 sdennis Exp $
+// $Id: comsys.cpp,v 1.45 2002-09-22 20:23:05 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -729,7 +729,9 @@ void save_comsystem(FILE *fp)
 
     fprintf(fp, "+V3\n");
     fprintf(fp, "%d\n", num_channels);
-    for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab); ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
+    for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
+         ch;
+         ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
         fprintf(fp, "%s\n", ch->name);
         fprintf(fp, "%s\n", ch->header);
