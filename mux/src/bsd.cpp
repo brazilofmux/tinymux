@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.28 2003-03-01 23:16:58 sdennis Exp $
+// $Id: bsd.cpp,v 1.29 2003-03-08 09:03:19 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2421,7 +2421,7 @@ void close_sockets(BOOL emergency, char *message)
         else
         {
             queue_string(d, message);
-            queue_write(d, "\r\n", 2);
+            queue_write_LEN(d, "\r\n", 2);
             shutdownsock(d, R_GOING_DOWN);
         }
     }
@@ -3562,7 +3562,7 @@ void SiteMonSend(int port, const char *address, DESC *d, const char *msg)
         if (SiteMon(nd->player))
         {
             queue_string(nd, sendMsg);
-            queue_write(nd, "\r\n", 2);
+            queue_write_LEN(nd, "\r\n", 2);
             process_output(nd, FALSE);
         }
     }

@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.15 2002-09-29 07:21:45 sdennis Exp $
+// $Id: interface.h,v 1.16 2003-03-08 09:03:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -178,13 +178,14 @@ extern CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& tLast, const
 extern void raw_notify(dbref, const char *);
 extern void raw_notify_newline(dbref);
 extern void clearstrings(DESC *);
-extern void queue_write(DESC *, const char *, int);
+extern void queue_write_LEN(DESC *, const char *, int);
+extern void queue_write(DESC *, const char *);
 extern void queue_string(DESC *, const char *);
 extern void freeqs(DESC *);
 extern void welcome_user(DESC *);
 extern void save_command(DESC *, CBLK *);
 extern void announce_disconnect(dbref, DESC *, const char *);
-extern int boot_by_port(SOCKET port, BOOL no_god, const char *message);
+extern int boot_by_port(SOCKET port, BOOL bGod, const char *message);
 extern void find_oldest(dbref target, DESC *dOldest[2]);
 extern void check_idle(void);
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);

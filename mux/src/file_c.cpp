@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.4 2002-07-13 07:23:01 jake Exp $
+// $Id: file_c.cpp,v 1.5 2003-03-08 09:03:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -215,7 +215,7 @@ void fcache_dump(DESC *d, int num)
 
     while (fp != NULL)
     {
-        queue_write(d, fp->data, fp->hdr.nchars);
+        queue_write_LEN(d, fp->data, fp->hdr.nchars);
         fp = fp->hdr.nxt;
     }
 }

@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.42 2003-02-11 07:04:22 sdennis Exp $
+// $Id: netcommon.cpp,v 1.43 2003-03-08 09:03:19 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -176,7 +176,7 @@ void raw_notify(dbref player, const char *msg)
     DESC_ITER_PLAYER(player, d)
     {
         queue_string(d, msg);
-        queue_write(d, "\r\n", 2);
+        queue_write_LEN(d, "\r\n", 2);
     }
 }
 
@@ -195,7 +195,7 @@ void raw_notify_newline(dbref player)
     DESC *d;
     DESC_ITER_PLAYER(player, d)
     {
-        queue_write(d, "\r\n", 2);
+        queue_write_LEN(d, "\r\n", 2);
     }
 }
 
@@ -223,7 +223,7 @@ void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
         if ((Flags(d->player) & inflags) == inflags)
         {
             queue_string(d, buff);
-            queue_write(d, "\r\n", 2);
+            queue_write_LEN(d, "\r\n", 2);
             process_output(d, FALSE);
         }
     }
@@ -314,7 +314,7 @@ void add_to_output_queue(DESC *d, const char *b, int n)
  * queue_write: Add text to the output queue for the indicated descriptor.
  */
 
-void queue_write(DESC *d, const char *b, int n)
+void queue_write_LEN(DESC *d, const char *b, int n)
 {
     if (n <= 0)
     {
@@ -343,7 +343,10 @@ void queue_write(DESC *d, const char *b, int n)
             sprintf(buf, "[%d/%s] Output buffer overflow, %d chars discarded by ", d->descriptor, d->addr, tp->hdr.nchars);
             log_text(buf);
             free_lbuf(buf);
-            log_name(d->player);
+            if (d->flags & DS_CONNECTED)
+            {
+                log_name(d->player);
+            }
             ENDLOG;
             d->output_size -= tp->hdr.nchars;
             d->output_head = tp->hdr.nxt;
@@ -371,28 +374,41 @@ void queue_write(DESC *d, const char *b, int n)
 #endif
 }
 
+void queue_write(DESC *d, const char *b)
+{
+    queue_write_LEN(d, b, strlen(b));
+}
+
 void queue_string(DESC *d, const char *s)
 {
-    const char *new0;
+    const char *p = s;
 
-    if (!Ansi(d->player) && strchr(s, ESC_CHAR))
+    if (d->flags & DS_CONNECTED)
     {
-        new0 = strip_ansi(s);
-    }
-    else if (NoBleed(d->player))
-    {
-        new0 = normal_to_white(s);
+        if (  !Ansi(d->player)
+           && strchr(s, ESC_CHAR))
+        {
+            p = strip_ansi(p);
+        }
+        else if (NoBleed(d->player))
+        {
+            p = normal_to_white(p);
+        }
+
+        if (NoAccents(d->player))
+        {
+            p = strip_accents(p);
+        }
     }
     else
     {
-        new0 = s;
+        if (strchr(s, ESC_CHAR))
+        {
+            p = strip_ansi(p);
+        }
+        p = strip_accents(p);
     }
-
-    if (NoAccents(d->player))
-    {
-        new0 = strip_accents(new0);
-    }
-    queue_write(d, new0, strlen(new0));
+    queue_write(d, p);
 }
 
 void freeqs(DESC *d)
@@ -947,13 +963,13 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             //
             DESC *d1;
             int num = 0;
-            DESC_ITER_PLAYER(d->player, d1)
+            DESC_ITER_PLAYER(player, d1)
             {
                 num++;
             }
             if (num <= 1)
             {
-                db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
+                db[player].fs.word[FLAG_WORD1] &= ~DARK;
             }
         }
 
@@ -998,7 +1014,7 @@ int boot_off(dbref player, const char *message)
         if (message && *message)
         {
             queue_string(d, message);
-            queue_string(d, "\r\n");
+            queue_write_LEN(d, "\r\n", 2);
         }
         shutdownsock(d, R_BOOT);
         count++;
@@ -1006,19 +1022,22 @@ int boot_off(dbref player, const char *message)
     return count;
 }
 
-int boot_by_port(SOCKET port, BOOL no_god, const char *message)
+int boot_by_port(SOCKET port, BOOL bGod, const char *message)
 {
     DESC *d, *dnext;
     int count = 0;
     DESC_SAFEITER_ALL(d, dnext)
     {
-        if (  (d->descriptor == port)
-           && !(no_god && God(d->player)))
+        if (  d->descriptor == port
+           && (  bGod
+              || !(d->flags & DS_CONNECTED)
+              || !God(d->player)))
         {
-            if (message && *message)
+            if (  message
+               && *message)
             {
                 queue_string(d, message);
-                queue_string(d, "\r\n");
+                queue_write_LEN(d, "\r\n", 2);
             }
             shutdownsock(d, R_BOOT);
             count++;
@@ -1160,12 +1179,13 @@ void check_idle(void)
 
     DESC_SAFEITER_ALL(d, dnext)
     {
-        if (KeepAlive(d->player))
+        if (  (d->flags & DS_CONNECTED)
+           && KeepAlive(d->player))
         {
             // Send a Telnet NOP code - creates traffic to keep NAT routers
             // happy.  Hopefully this only runs once a minute.
             //
-            queue_string(d, "\377\361");
+            queue_write_LEN(d, "\377\361", 2);
         }
         if (d->flags & DS_AUTODARK)
         {
@@ -1209,7 +1229,7 @@ void check_idle(void)
             }
             else if (ltdIdle.ReturnSeconds() > d->timeout)
             {
-                queue_string(d, "*** Inactivity Timeout ***\r\n");
+                queue_write(d, "*** Inactivity Timeout ***\r\n");
                 shutdownsock(d, R_TIMEOUT);
             }
         }
@@ -1218,7 +1238,7 @@ void check_idle(void)
             CLinearTimeDelta ltdIdle = ltaNow - d->connected_at;
             if (ltdIdle.ReturnSeconds() > mudconf.conn_timeout)
             {
-                queue_string(d, "*** Login Timeout ***\r\n");
+                queue_write(d, "*** Login Timeout ***\r\n");
                 shutdownsock(d, R_TIMEOUT);
             }
         }
@@ -1331,42 +1351,42 @@ static void dump_users(DESC *e, char *match, int key)
         }
     }
 
-    if (  (e->flags & DS_PUEBLOCLIENT)
+    if (  (e->flags & (DS_PUEBLOCLIENT|DS_CONNECTED))
        && Html(e->player))
     {
-        queue_string(e, "<pre>");
+        queue_write(e, "<pre>");
     }
 
     buf = alloc_mbuf("dump_users");
     if (key == CMD_SESSION)
     {
-        queue_string(e, "                               ");
-        queue_string(e, "     Characters Input----  Characters Output---\r\n");
+        queue_write(e, "                               ");
+        queue_write(e, "     Characters Input----  Characters Output---\r\n");
     }
-    queue_string(e, "Player Name        On For Idle ");
+    queue_write(e, "Player Name        On For Idle ");
     if (key == CMD_SESSION)
     {
-        queue_string(e, "Port Pend  Lost     Total  Pend  Lost     Total\r\n");
+        queue_write(e, "Port Pend  Lost     Total  Pend  Lost     Total\r\n");
     }
     else if (  (e->flags & DS_CONNECTED)
             && Wizard_Who(e->player)
             && key == CMD_WHO)
     {
-        queue_string(e, "  Room    Cmds   Host\r\n");
+        queue_write(e, "  Room    Cmds   Host\r\n");
     }
     else
     {
         if (  Wizard_Who(e->player)
            || See_Hidden(e->player))
         {
-            queue_string(e, "  ");
+            queue_write(e, "  ");
         }
         else
         {
-            queue_string(e, " ");
+            queue_write(e, " ");
         }
         queue_string(e, mudstate.doing_hdr);
-        queue_string(e, "\r\n");
+        queue_write_LEN(e, "\r\n", 2);
     }
     count = 0;
 
@@ -1375,26 +1395,31 @@ static void dump_users(DESC *e, char *match, int key)
 
     DESC_ITER_ALL(d)
     {
-        if (  !SiteMon(e->player)
-           && !Connected(d->player))
+        if (!(  (  (e->flags & DS_CONNECTED)
+                && SiteMon(e->player))
+             || (d->flags & DS_CONNECTED)))
         {
             continue;
         }
-        if (  !Hidden(d->player)
+        if (  !(d->flags & DS_CONNECTED)
+           || !Hidden(d->player)
            || (  (e->flags & DS_CONNECTED)
               && (  Wizard_Who(e->player)
                  || See_Hidden(e->player))))
         {
             count++;
             if (  match
-               && string_prefix(Name(d->player), match) == 0)
+               && (  !(d->flags & DS_CONNECTED)
+                  || string_prefix(Name(d->player), match) == 0))
             {
                 continue;
             }
             if (  key == CMD_SESSION
-               && !(  Wizard_Who(e->player)
-                  && (e->flags & DS_CONNECTED))
-               && d->player != e->player)
+               && (  !(e->flags & DS_CONNECTED)
+                  || !Wizard_Who(e->player))
+               && (  !(e->flags & DS_CONNECTED)
+                  || !(d->flags & DS_CONNECTED)
+                  || d->player != e->player))
             {
                 continue;
             }
@@ -1406,7 +1431,8 @@ static void dump_users(DESC *e, char *match, int key)
             if (  (e->flags & DS_CONNECTED)
                && Wizard_Who(e->player))
             {
-                if (Hidden(d->player))
+                if (  (d->flags & DS_CONNECTED)
+                   && Hidden(d->player))
                 {
                     if (d->flags & DS_AUTODARK)
                     {
@@ -1417,29 +1443,32 @@ static void dump_users(DESC *e, char *match, int key)
                         *fp++ = 'D';
                     }
                 }
-                if (Hideout(d->player))
+                if (d->flags & DS_CONNECTED)
                 {
-                    *fp++ = 'U';
-                }
-                else
-                {
-                    room_it = where_room(d->player);
-                    if (Good_obj(room_it))
+                    if (Hideout(d->player))
                     {
-                        if (Hideout(room_it))
+                        *fp++ = 'U';
+                    }
+                    else
+                    {
+                        room_it = where_room(d->player);
+                        if (Good_obj(room_it))
+                        {
+                            if (Hideout(room_it))
+                            {
+                                *fp++ = 'u';
+                            }
+                        }
+                        else
                         {
                             *fp++ = 'u';
                         }
                     }
-                    else
-                    {
-                        *fp++ = 'u';
-                    }
-                }
 
-                if (Suspect(d->player))
-                {
-                    *fp++ = '+';
+                    if (Suspect(d->player))
+                    {
+                        *fp++ = '+';
+                    }
                 }
                 if (d->host_info & H_FORBIDDEN)
                 {
@@ -1459,18 +1488,17 @@ static void dump_users(DESC *e, char *match, int key)
                 }
             }
             else if (  (e->flags & DS_CONNECTED)
-                    && See_Hidden(e->player))
+                    && (d->flags & DS_CONNECTED)
+                    && See_Hidden(e->player)
+                    && Hidden(d->player))
             {
-                if (Hidden(d->player))
+                if (d->flags & DS_AUTODARK)
                 {
-                    if (d->flags & DS_AUTODARK)
-                    {
-                        *fp++ = 'd';
-                    }
-                    else
-                    {
-                        *fp++ = 'D';
-                    }
+                    *fp++ = 'd';
+                }
+                else
+                {
+                    *fp++ = 'D';
                 }
             }
             *fp = '\0';
@@ -1483,12 +1511,12 @@ static void dump_users(DESC *e, char *match, int key)
                && key == CMD_WHO)
             {
                 sprintf(buf, "%-16s%9s %4s%-3s#%-6d%5d%3s%s\r\n",
-                    (Connected(d->player) ? trimmed_name(d->player) :
+                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
                     "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     flist,
-                    (Connected(d->player) ? Location(d->player) : -1),
+                    ((d->flags & DS_CONNECTED) ? Location(d->player) : -1),
                     d->command_count,
                     slist,
                     trimmed_site(((d->username[0] != '\0') ? tprintf("%s@%s", d->username, d->addr) : d->addr)));
@@ -1496,7 +1524,7 @@ static void dump_users(DESC *e, char *match, int key)
             else if (key == CMD_SESSION)
             {
                 sprintf(buf, "%-16s%9s %4s%5d%5d%6d%10d%6d%6d%10d\r\n",
-                    (Connected(d->player) ? trimmed_name(d->player) :
+                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
                     "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
@@ -1510,7 +1538,7 @@ static void dump_users(DESC *e, char *match, int key)
                     || See_Hidden(e->player))
             {
                 sprintf(buf, "%-16s%9s %4s%-3s%s\r\n",
-                    (Connected(d->player) ? trimmed_name(d->player) :
+                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
                     "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
@@ -1520,7 +1548,8 @@ static void dump_users(DESC *e, char *match, int key)
             else
             {
                 sprintf(buf, "%-16s%9s %4s  %s\r\n",
-                    trimmed_name(d->player),
+                    ((d->flags & DS_CONNECTED) ? trimmed_name(d->player) :
+                    "<Not Connected>"),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
                     d->doing);
@@ -1534,12 +1563,12 @@ static void dump_users(DESC *e, char *match, int key)
     sprintf(buf, "%d Player%slogged in, %d record, %s maximum.\r\n", count,
         (count == 1) ? " " : "s ", mudstate.record_players,
         (mudconf.max_players == -1) ? "no" : Tiny_ltoa_t(mudconf.max_players));
-    queue_string(e, buf);
+    queue_write(e, buf);
 
-    if (  (e->flags & DS_PUEBLOCLIENT)
+    if (  (e->flags & (DS_PUEBLOCLIENT|DS_CONNECTED))
        && Html(e->player))
     {
-        queue_string(e, "</pre>");
+        queue_write(e, "</pre>");
     }
     free_mbuf(buf);
 }
@@ -1552,12 +1581,12 @@ static void dump_users(DESC *e, char *match, int key)
 
 static void dump_info(DESC *arg_desc)
 {
-    queue_string(arg_desc, "### Begin INFO " INFO_VERSION "\r\n");
+    queue_write(arg_desc, "### Begin INFO " INFO_VERSION "\r\n");
 
     queue_string(arg_desc, tprintf("Name: %s\r\n", mudconf.mud_name));
 
     char *temp = mudstate.start_time.ReturnDateString();
-    queue_string(arg_desc, tprintf("Uptime: %s\r\n", temp));
+    queue_write(arg_desc, tprintf("Uptime: %s\r\n", temp));
 
     DESC *d;
     int count = 0;
@@ -1574,13 +1603,13 @@ static void dump_info(DESC *arg_desc)
             count++;
         }
     }
-    queue_string(arg_desc, tprintf("Connected: %d\r\n", count));
-    queue_string(arg_desc, tprintf("Size: %d\r\n", mudstate.db_top));
-    queue_string(arg_desc, tprintf("Version: %s\r\n", mudstate.short_ver));
+    queue_write(arg_desc, tprintf("Connected: %d\r\n", count));
+    queue_write(arg_desc, tprintf("Size: %d\r\n", mudstate.db_top));
+    queue_write(arg_desc, tprintf("Version: %s\r\n", mudstate.short_ver));
 #ifdef WOD_REALMS
-    queue_string(arg_desc, tprintf("Patches: WOD_REALMS\r\n"));
+    queue_write(arg_desc, tprintf("Patches: WOD_REALMS\r\n"));
 #endif // WOD_REALMS
-    queue_string(arg_desc, "### End INFO\r\n");
+    queue_write(arg_desc, "### End INFO\r\n");
 }
 
 char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, BOOL *pbValidDoing)
@@ -1767,7 +1796,7 @@ static void failconn(const char *logcode, const char *logtype, const char *logre
     if (*motd_msg)
     {
         queue_string(d, motd_msg);
-        queue_write(d, "\r\n", 2);
+        queue_write_LEN(d, "\r\n", 2);
     }
     free_lbuf(command);
     free_lbuf(user);
@@ -1834,7 +1863,7 @@ static BOOL check_connect(DESC *d, char *msg)
             {
                 if (!(mudconf.control_flags & CF_GUEST))
                 {
-                    queue_string(d, "Guest logins are disabled.\n");
+                    queue_write(d, "Guest logins are disabled.\r\n");
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
@@ -1843,7 +1872,7 @@ static BOOL check_connect(DESC *d, char *msg)
 
                 if ((p = Guest.Create(d)) == NULL)
                 {
-                    queue_string(d, "All guests are tied up, please try again later.\n");
+                    queue_write(d, "All guests are tied up, please try again later.\r\n");
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
@@ -1876,7 +1905,7 @@ static BOOL check_connect(DESC *d, char *msg)
         {
             // Not a player, or wrong password.
             //
-            queue_string(d, connect_fail);
+            queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
             sprintf(buff, "[%d/%s] Failed connect to '%s'", d->descriptor, d->addr, user);
@@ -1981,7 +2010,7 @@ static BOOL check_connect(DESC *d, char *msg)
             //
             if (d->program_data != NULL)
             {
-                queue_string(d, ">\377\371");
+                queue_write_LEN(d, ">\377\371", 3);
             }
 
         }
@@ -2042,7 +2071,7 @@ static BOOL check_connect(DESC *d, char *msg)
             player = create_player(user, password, NOTHING, FALSE, FALSE);
             if (player == NOTHING)
             {
-                queue_string(d, create_fail);
+                queue_write(d, create_fail);
                 STARTLOG(LOG_SECURITY | LOG_PCREATES, "CON", "BAD");
                 buff = alloc_lbuf("check_conn.LOG.badcrea");
                 sprintf(buff, "[%d/%s] Create of '%s' failed", d->descriptor, d->addr, user);
@@ -2127,7 +2156,7 @@ BOOL do_command(DESC *d, char *command)
             if (d->output_prefix)
             {
                 queue_string(d, d->output_prefix);
-                queue_write(d, "\r\n", 2);
+                queue_write_LEN(d, "\r\n", 2);
             }
             mudstate.curr_executor = d->player;
             mudstate.curr_enactor = d->player;
@@ -2164,7 +2193,7 @@ BOOL do_command(DESC *d, char *command)
             if (d->output_suffix)
             {
                 queue_string(d, d->output_suffix);
-                queue_write(d, "\r\n", 2);
+                queue_write_LEN(d, "\r\n", 2);
             }
             mudstate.debug_cmd = cmdsave;
             return TRUE;
@@ -2188,14 +2217,15 @@ BOOL do_command(DESC *d, char *command)
         if (d->output_prefix)
         {
             queue_string(d, d->output_prefix);
-            queue_write(d, "\r\n", 2);
+            queue_write_LEN(d, "\r\n", 2);
         }
     }
-    if (  !check_access(d->player, cp->perm)
-       || (  (cp->perm & CA_PLAYER)
-          && !(d->flags & DS_CONNECTED)))
+    if (  (  (d->flags & DS_CONNECTED)
+          && !check_access(d->player, cp->perm))
+       || ( !(d->flags & DS_CONNECTED)
+          && cp->perm & CA_PLAYER))
     {
-        queue_string(d, "Permission denied.\r\n");
+        queue_write(d, "Permission denied.\r\n");
     }
     else
     {
@@ -2251,12 +2281,12 @@ BOOL do_command(DESC *d, char *command)
 
             // If we're already connected, set the player's flag.
             //
-            if (d->player)
+            if (d->flags & DS_CONNECTED)
             {
                 s_Html(d->player);
             }
             queue_string(d, mudconf.pueblo_msg);
-            queue_string(d, "\r\n");
+            queue_write_LEN(d, "\r\n", 2);
             break;
 
         default:
@@ -2275,7 +2305,7 @@ BOOL do_command(DESC *d, char *command)
         if (d->output_suffix)
         {
             queue_string(d, d->output_suffix);
-            queue_write(d, "\r\n", 2);
+            queue_write_LEN(d, "\r\n", 2);
         }
     }
     mudstate.debug_cmd = cmdsave;
@@ -2290,14 +2320,17 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg
         DESC_ITER_PLAYER(executor, d)
         {
             // Set the descriptor's flag.
+            //
             d->flags |= DS_PUEBLOCLIENT;
+
             // If we're already connected, set the player's flag.
-            if (d->player)
+            //
+            if (d->flags & DS_CONNECTED)
             {
                 s_Html(d->player);
             }
             queue_string(d, mudconf.pueblo_msg);
-            queue_string(d, "\r\n");
+            queue_write_LEN(d, "\r\n", 2);
         }
         return;
     }
@@ -2532,7 +2565,8 @@ void make_ulist(dbref player, char *buff, char **bufc, BOOL bPorts)
         ItemToList_Init(&pContext, buff, bufc, '#');
         DESC_ITER_CONN(d)
         {
-            if (!See_Hidden(player) && Hidden(d->player))
+            if (  !See_Hidden(player)
+               && Hidden(d->player))
             {
                 continue;
             }
@@ -2567,8 +2601,8 @@ dbref find_connected_name(dbref player, char *name)
         {
             continue;
         }
-        if (  (found != NOTHING)
-           && (found != d->player))
+        if (  found != NOTHING
+           && found != d->player)
         {
             return NOTHING;
         }
@@ -2615,7 +2649,8 @@ FUNCTION(fun_doing)
         if (  Wizard_Who(executor)
            || !Hidden(victim))
         {
-            for (DESC *d = descriptor_list; d; d = d->next)
+            DESC *d;
+            DESC_ITER_CONN(d)
             {
                 if (d->player == victim)
                 {
