@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.4 2003-01-31 06:32:15 sdennis Exp $
+// $Id: stringutil.cpp,v 1.5 2003-02-01 22:17:26 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3012,21 +3012,25 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
 {
     unsigned char *p1 = (unsigned char *)p1_arg;
     unsigned char *p2 = (unsigned char *)p2_arg;
-    while (  n--
+    while (  n
           && Tiny_ToLower[(unsigned char)*p1] == Tiny_ToLower[(unsigned char)*p2])
     {
+        n--;
         p1++;
         p2++;
     }
-    int c1 = Tiny_ToLower[(unsigned char)*p1];
-    int c2 = Tiny_ToLower[(unsigned char)*p2];
-    if (c1 < c2)
+    if (n)
     {
-        return -1;
-    }
-    else if (c1 > c2)
-    {
-        return 1;
+        int c1 = Tiny_ToLower[(unsigned char)*p1];
+        int c2 = Tiny_ToLower[(unsigned char)*p2];
+        if (c1 < c2)
+        {
+            return -1;
+        }
+        else if (c1 > c2)
+        {
+            return 1;
+        }
     }
     return 0;
 }
