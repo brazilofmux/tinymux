@@ -10110,6 +10110,7 @@ POWERS LIST (continued)
   search            Can @search anyone.
   see_all           Can examine and see attributes like a wizard.
   see_queue         Can @ps/all or @ps any player.
+  siteadmin         Can @shutdown and @restart.
   stat_any          Can @stat any player.
   steal_money       Can give negative money.
   tel_anywhere      Can teleport anywhere.
