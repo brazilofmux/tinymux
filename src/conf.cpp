@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.56 2001-12-04 23:56:35 sdennis Exp $
+// $Id: conf.cpp,v 1.57 2002-01-15 05:18:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -442,10 +442,9 @@ CF_HAND(cf_int_array)
 {
     int *aPorts = (int *)MEMALLOC(nExtra*sizeof(int));
     ISOUTOFMEMORY(aPorts);
-    int nPorts = 0;
+    unsigned int nPorts = 0;
 
     char *p;
-    int nLen;
     TINY_STRTOK_STATE tts;
     Tiny_StrTokString(&tts, str);
     Tiny_StrTokControl(&tts, " \t\n\r");
@@ -473,7 +472,7 @@ CF_HAND(cf_int_array)
         pia->pi = (int *)MEMALLOC(nPorts * sizeof(int));
         ISOUTOFMEMORY(pia->pi);
         pia->n = nPorts;
-        for (int i = 0; i < nPorts; i++)
+        for (unsigned int i = 0; i < nPorts; i++)
         {
             pia->pi[i] = aPorts[i];
         }
