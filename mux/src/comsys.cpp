@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.2 2003-01-23 06:16:35 sdennis Exp $
+// $Id: comsys.cpp,v 1.3 2003-01-31 06:32:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1669,7 +1669,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
     (void)ISOUTOFMEMORY(newchannel);
 
     int   vwChannel;
-    unsigned int nNameNoANSI;
+    size_t nNameNoANSI;
     char *pNameNoANSI;
     char Buffer[MAX_HEADER_LEN];
     int nChannel = ANSI_TruncateToField(channel, sizeof(Buffer),

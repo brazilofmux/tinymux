@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.6 2003-01-27 09:34:40 sdennis Exp $
+// $Id: predicates.cpp,v 1.7 2003-01-31 06:32:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -322,7 +322,7 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
 
     // Get the stripped version (Visible parts without color info).
     //
-    unsigned int nStripped;
+    size_t nStripped;
     char *pStripped = strip_ansi(Buf, &nStripped);
 
     // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE

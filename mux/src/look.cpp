@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.2 2003-01-28 15:48:00 sdennis Exp $
+// $Id: look.cpp,v 1.3 2003-01-31 06:32:15 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2382,7 +2382,7 @@ void do_decomp
     // Strip out ANSI in one place rather than have it done in
     // several places.
     //
-    unsigned int len;
+    size_t len;
     char *p = strip_ansi(thingname, &len);
     memcpy(thingname, p, len+1);
 
