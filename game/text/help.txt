@@ -6279,7 +6279,7 @@ CRC32()
 & VADD()
 VADD()
 
-  FUNCTION:  vadd(<vector>,<vector>[,<delimiter>])
+  FUNCTION:  vadd(<vector>,<vector>[,<delim>][,<output delim>])
 
   Returns the sum of two vectors. A vector is a list of numbers
   separated by spaces or a delimiter, and may have up to 20 dimensions.
@@ -6287,9 +6287,9 @@ VADD()
   Example:
     > think vadd(1 2 3,4 5 6)
     5 7 9
-    > think vadd(0|0|0,1|2|3,|)
-    1|2|3
-  
+    > think vadd(0|0|0,1|2|3,|,^)
+    1^2^3
+
   Related Topics:
 
 & VCROSS()
@@ -6339,8 +6339,8 @@ VMAG()
 
   FUNCTION:  vmag(<vector>[,<delimiter>]
 
-  Returns the magnitude of a vector, using a euclidean distance metric.
-  That is, for vector a b c d, returns sqrt(a^2+b^2+c^2+d^2).
+  Returns the magnitude of a vector using a euclidean distance metric.
+  That is, for vector a b c d, it returns sqrt(a^2+b^2+c^2+d^2).
 
   Example:
     > think vmag(3 4) 
@@ -6351,38 +6351,40 @@ VMAG()
 & VMUL()
 VMUL()
 
-  FUNCTION:  vmul(<vector|number>,<vector|number>[,<delimiter>])
+  FUNCTION: vmul(<vector|num>,<vector|num>[,<delim>][,<output delim>])
 
   Returns the result of either multiplying a vector by a number (scalar
-  multiplication), or an elementwise multiplication of two vectors.
+  multiplication) or an elementwise multiplication of two vectors.
 
   Example:
     > think vmul(1 2 3,2)
     2 4 6
     > think vmul(1 2 3,2 3 4)
     2 6 12
-  
+
   Related Topics: vdot(), vcross()
 
 & VSUB()
 VSUB()
 
-  FUNCTION:  vsub(<vector>,<vector>[,<delimiter>])
+  FUNCTION:  vsub(<vector>,<vector>[,<delimiter>][,<output delimiter>])
 
   Returns the difference between two vectors.
 
   Example:
     > think vsub(3 4 5,3 2 1)
     0 2 4
-  
+    > think vsub(3 4 5,3 2 1,,|)
+    0|2|4
+
   Related Topics:
 
 & VUNIT()
 VUNIT()
 
-  FUNCTION:  vunit(<vector>[,<delimiter>]
+  FUNCTION:  vunit(<vector>[,<delimiter>])
 
-  Returns the unit vector (a vector of magnitude 1), which points
+  Returns the unit vector (a vector of magnitude 1) which points
   in the same direction as the given vector.
 
   Example:
@@ -6631,12 +6633,12 @@ INC()
 DEC()
 
   FUNCTION: dec(<number>)
- 
-  Returns <number> minus 1. Much faster and more efficient than
+
+  Returns <number> minus 1. Faster and more efficient than
   sub(<number>,1). Decimal places will be truncated.
- 
+
   Related Topics: sub(), add(), inc().
- 
+
 & SUB()
 SUB()
 
@@ -6748,17 +6750,18 @@ IDIV()
     > say idiv(-17,3)
     You say "-5"
 
-  See also: add(), div(), fdiv(), iadd(), imul(), isub(), mod(), mul(),
+  Related Topics: add(), div(), fdiv(), iadd(), imul(), isub(), mod(), mul(),
             round(), sub(), trunc().
 
 & FDIV()
+FDIV()
 
-  Function: fdiv(<number1>,<number2>)
- 
+  FUNCTION: fdiv(<number1>,<number2>)
+
   Returns the floating point quotient from dividing <number1> by <number2>.
   <number> may be a floating point number, and a floating point result is
   returned.
- 
+
   Examples:
     > say fdiv(15,3)
     You say "5"
@@ -6773,11 +6776,12 @@ IDIV()
     > say fdiv(10,3.5)
     You say "2.857143"
 
-    See also: add(), div(), mod(), mul(), round(), sub(), trunc().
- 
-& MOD()
+  Related Topics: add(), div(), mod(), mul(), round(), sub(), trunc().
 
-  Function: mod(<integer1>,<integer2>)
+& MOD()
+MOD()
+
+  FUNCTION: mod(<integer1>,<integer2>)
  
   Returns the integer remainder from dividing <integer1> by <integer2>.
  
@@ -6790,11 +6794,13 @@ IDIV()
     You say "2"
     > say mod(18,3)
     You say "0"
-  See also: add(), fdiv(),div(), mul(), round(), sub(), trunc().
+  
+  Related Topics: add(), fdiv(),div(), mul(), round(), sub(), trunc().
 
 & DIST2D()
+DIST2D()
 
-  Function: dist2d(x1, y1, x2, y2)
+  FUNCTION: dist2d(x1, y1, x2, y2)
  
   Returns the integer distance between the Cartesian points in two dimensions
   (x1,y1) and (x2,y2).
@@ -6802,11 +6808,13 @@ IDIV()
   Example:
     > say dist2d(0,0,3,4)
     You say "5"
-  See also: dist3d()
+  
+  Related Topics: dist3d()
 
 & DIST3D()
+DIST3D()
 
-  Function: dist3d(x1, y1, z1, x2, y2, z2)
+  FUNCTION: dist3d(x1, y1, z1, x2, y2, z2)
  
   Returns the integer distance between the Cartesian points in three
   dimensions (x1,y1,z1) and (x2,y2,z2).
@@ -6814,11 +6822,13 @@ IDIV()
   Example:
     > say dist3d(0,0,0,10,15,20)
     You say "27"
-  See also: dist2d()
+  
+  Related Topics: dist2d()
 
 & FIRST()
+FIRST()
 
-  Function: first(<string>[, <delim>])
+  FUNCTION: first(<string>[, <delim>])
  
   Returns the first word of a string, that is, everything to the left
   of the first space in the string, or the entire string if there are
@@ -6833,11 +6843,13 @@ IDIV()
     You say "Would"
     > say first(List&with&nonstandard&delimiters,&)
     You say "List"
-  See also: rest().
+  
+  Related Topics: rest().
 
 & REST()
+REST()
 
-  Function: rest(<string>[, <delim>])
+  FUNCTION: rest(<string>[, <delim>])
  
   The rest function takes a string, returns all the string except the first
   word, that is, everything to the right of the first space, or an empty 
