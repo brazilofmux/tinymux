@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.19 2003-03-08 06:41:37 sdennis Exp $
+// $Id: netcommon.cpp,v 1.20 2003-03-08 06:49:51 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2639,7 +2639,8 @@ FUNCTION(fun_doing)
         if (  Wizard_Who(executor)
            || !Hidden(victim))
         {
-            for (DESC *d = descriptor_list; d; d = d->next)
+            DESC *d;
+            DESC_ITER_CONN(d)
             {
                 if (d->player == victim)
                 {
