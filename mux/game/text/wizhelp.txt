@@ -1668,10 +1668,10 @@ CONFIG PARAMETERS
   function_invocation_limit  function_recursion_limit  game_dir_file
   game_pag_file  global_error_obj  good_name  guest_char_num  guest_file
   guest_nuker  guest_prefix  guest_site  guests_channel  have_comsys
-  have_mailer  have_zones  hook_cmd  hook_obj  hostnames  idle_interval
-  idle_timeout  idle_wiz_dark  include  indent_desc  initial_size
-  input_database  kill_guarantee_cost  kill_max_cost  kill_min_cost
-  lag_maximum  link_cost  list_access  lock_recursion_limit
+  have_mailer  have_zones  helpfile hook_cmd  hook_obj  hostnames
+  idle_interval  idle_timeout  idle_wiz_dark  include  indent_desc
+  initial_size  input_database  kill_guarantee_cost  kill_max_cost
+  kill_min_cost  lag_maximum  link_cost  list_access  lock_recursion_limit
 
 { 'wizhelp config parameters2' for more }
 
@@ -1689,7 +1689,7 @@ CONFIG PARAMETERS (continued)
   player_name_spaces  player_queue_limit  player_quota  player_starting_home
   player_starting_room  port  postdump_message  power_alias  public_channel
   public_flags  pueblo_message  queue_active_chunk  queue_idle_chunk
-  quiet_look  quiet_whisper  quit_file  quotas  read_remote_desc
+  quiet_look  quiet_whisper  quit_file  quotas  raw_helpfile  read_remote_desc
   read_remote_name  register_create_file  register_site  retry_limit
   robot_cost  robot_flags  robot_speech  room_flags  room_quota  run_startup
   sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords  search_cost
@@ -2437,41 +2437,30 @@ HAVE_ZONES
   and disconnects, zone commands, and the control aspects will all be
   disabled.
 
-& HOOK_CMD
-HOOK_CMD
+& HELPFILE
+HELPFILE
 
-  Config parameter: hook_cmd <command> <hooks/!hooks>
-  This admin parameter allows you to specify multiple hooks for commands
-  or attributes in the .conf file or online via @admin.  This is an 
-  alternative way to applying hooks besides the @hook command.
-  The following hooks exist:
-         - before      set up functionality BEFORE a command executes.
-         - after       set up functionality AFTER a command executes.
-         - permit      establish functionary lock of attribute/command.
-         - ignore      establish ignore inheritance of attribute/command.
-         - igswitch    specifies if command bypasses failed /switch notices.
+  CONFIG PARAMETER: helpfile <command> <pathname>
+  DEFAULT: None
 
-  For detailed information on how to set up hooks, please see wizhelp on:
-                                HOOK SETUP
+  This configuration directive associates the in-game command, <command>,
+  with a set of help topics contained in the file <pathname>.txt and indexed
+  by the file <pathname>.indx.
 
-  Related Topics: @hook, hook_obj, HOOK SETUP.
+  By default, this help command has 'public' permissions, but this can be
+  restricted with the 'access' configuration directive.
 
-& HOOK_OBJ
-HOOK_OBJ
+  There are three built-in help commands: help, wizhelp, and news.   All
+  other help/news files are added and only permitted to be added by using
+  this directive (and raw_helpfile) to the server's configuration file
+  (netmux.conf).  To prevent access to arbitrary files after the server
+  has started, this directive cannot be used outside the configuration file.
 
-  Config parameter: hook_obj <dbref>.  Default: -1
-  Specifies the valid dbref# that the hook information is stored.  All
-  hooks are in the form <prefix>_<command/attribute>.  
-  Attributes are stored in the form:
-          I_<command> - ignore configuration
-          P_<command> - permit configuration
-          A_<command> - after configuration
-          B_<command> - before configuration
+  Examples:
+     helpfile wiznews text/wiznews
+     access wiznews wizard
 
-  For detailed information on how to set up hooks, please see wizhelp on:
-                                HOOK SETUP
-
-  Related Topics: @hook, hook_cmd, HOOK SETUP.
+  Related Topics: access, mkindx, raw_helpfile
 
 & HOOK SETUP
 HOOK SETUP
@@ -2527,6 +2516,42 @@ HOOK SETUP (continued)
   hook_cmd to the .conf file.  You probably want the hook_cmd :)
  
   Related Topics: @hook, hook_cmd, hook_obj.
+
+& HOOK_CMD
+HOOK_CMD
+
+  Config parameter: hook_cmd <command> <hooks/!hooks>
+  This admin parameter allows you to specify multiple hooks for commands
+  or attributes in the .conf file or online via @admin.  This is an 
+  alternative way to applying hooks besides the @hook command.
+  The following hooks exist:
+         - before      set up functionality BEFORE a command executes.
+         - after       set up functionality AFTER a command executes.
+         - permit      establish functionary lock of attribute/command.
+         - ignore      establish ignore inheritance of attribute/command.
+         - igswitch    specifies if command bypasses failed /switch notices.
+
+  For detailed information on how to set up hooks, please see wizhelp on:
+                                HOOK SETUP
+
+  Related Topics: @hook, hook_obj, HOOK SETUP.
+
+& HOOK_OBJ
+HOOK_OBJ
+
+  Config parameter: hook_obj <dbref>.  Default: -1
+  Specifies the valid dbref# that the hook information is stored.  All
+  hooks are in the form <prefix>_<command/attribute>.  
+  Attributes are stored in the form:
+          I_<command> - ignore configuration
+          P_<command> - permit configuration
+          A_<command> - after configuration
+          B_<command> - before configuration
+
+  For detailed information on how to set up hooks, please see wizhelp on:
+                                HOOK SETUP
+
+  Related Topics: @hook, hook_cmd, HOOK SETUP.
 
 & HOSTNAMES
 HOSTNAMES
@@ -3392,6 +3417,18 @@ QUOTAS
   that occurs in the interim does not affect the quotas.
 
   Related Topics: @create, @destroy, @dig, @open, @quota, QUOTAS.
+
+& RAW_HELPFILE
+RAW_HELPFILE
+
+  CONFIG PARAMETER: raw_helpfile <command> <pathname>
+  DEFAULT: none
+
+  This is similiar to the 'helpfile' configuration directive, except that
+  the help topics contained in <pathname> are not evaluted by the parser
+  before being shown to the player.
+
+  Related Topics: helpfile
 
 & READ_REMOTE_DESC
 READ_REMOTE_DESC
