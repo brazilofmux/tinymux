@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.4 2002-07-23 05:36:12 jake Exp $
+// $Id: attrcache.cpp,v 1.5 2002-08-03 18:32:03 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -298,7 +298,7 @@ char *cache_get(Aname *nam, int *pLen)
 
 // cache_put no longer frees the pointer.
 //
-BOOL cache_put(Aname *nam, char *value, int len)
+BOOL cache_put(Aname *nam, const char *value, int len)
 {
     if (  !value
        || !nam
