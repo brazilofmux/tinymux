@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.64 2002-02-02 10:36:08 sdennis Exp $
+// $Id: stringutil.cpp,v 1.65 2002-02-05 09:30:53 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2355,6 +2355,8 @@ static const double powerstab[10] =
    1000000000.0
 };
 
+extern double Tiny_strtod(const char *s00, char **se);
+
 double Tiny_atof(char *szString)
 {
     // Initialize structure.
@@ -2430,10 +2432,85 @@ double Tiny_atof(char *szString)
     //
     int ch = p[n];
     p[n] = '\0';
-    ret = atof(p);
+    ret = Tiny_strtod(p, NULL);
     p[n] = ch;
 
     return ret;
+}
+
+extern char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
+                       char **rve);
+
+char *Tiny_ftoa(double r)
+{
+    static char buffer[100];
+    char *q = buffer;
+    char *rve = NULL;
+    int decpt;
+    int bNegative;
+
+    char *p0 = Tiny_dtoa(r, 0, 50, &decpt, &bNegative, &rve);
+    char *p = p0;
+    int nDigits = rve - p;
+    if (bNegative)
+    {
+        *q++ = '-';
+    }
+    if (decpt == 9999)
+    {
+        // Inf or NaN
+        //
+        memcpy(q, p, nDigits);
+        q += nDigits;
+    }
+    else if (nDigits <= 0)
+    {
+        *q++ = '0';
+    }
+    else if (decpt <= -6 || 18 <= decpt)
+    {
+        *q++ = *p++;
+        if (1 < nDigits)
+        {
+            *q++ = '.';
+            memcpy(q, p, nDigits-1);
+            q += nDigits-1;
+        }
+        *q++ = 'E';
+        q += Tiny_ltoa(decpt-1, q);
+    }
+    else if (decpt <= 0)
+    {
+        // decpt = -5 to 0
+        //
+        *q++ = '0';
+        *q++ = '.';
+        memset(q, '0', -decpt);
+        q += -decpt;
+        memcpy(q, p, nDigits);
+        q += nDigits;
+    }
+    else // 0 < decpt
+    {
+        if (nDigits <= decpt)
+        {
+            memcpy(q, p, nDigits);
+            q += nDigits;
+            memset(q, '0', decpt-nDigits);
+            q += decpt-nDigits;
+        }
+        else
+        {
+            memcpy(q, p, decpt);
+            q += decpt;
+            p += decpt;
+            *q++ = '.';
+            memcpy(q, p, nDigits-decpt);
+            q += nDigits-decpt;
+        }
+    }
+    *q = '\0';
+    return buffer;
 }
 
 BOOL is_integer(char *str, int *pDigits)

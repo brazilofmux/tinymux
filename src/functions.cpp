@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.145 2002-02-03 08:31:53 sdennis Exp $
+// $Id: functions.cpp,v 1.146 2002-02-05 09:30:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -524,29 +524,6 @@ int nearby_or_control(dbref player, dbref thing)
     return 1;
 }
 
-static char *strip_useless_zeroes(char *pBegin, char *pEnd)
-{
-    // Remove useless trailing 0's between pBegin and pEnd.
-    //
-    while (pBegin <= pEnd && pEnd[0] == '0')
-    {
-        pEnd--;
-    }
-
-    // Take care of dangling '.'
-    //
-    if (pBegin <= pEnd && pEnd[0] == '.')
-    {
-        pEnd--;
-    }
-
-    // Terminate string.
-    //
-    pEnd++;
-    pEnd[0] = '\0';
-    return pEnd;
-}
-
 #ifdef HAVE_IEEE_FP_FORMAT
 
 const char *TinyFPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "0", "0" };
@@ -671,27 +648,16 @@ static void fval(char *buff, char **bufc, double result)
         double rFractionalPart;
 
         rFractionalPart = modf(result, &rIntegerPart);
-        if (  -0.0000005 < rFractionalPart
-           &&  rFractionalPart < 0.0000005
-           &&  LONG_MIN <= rIntegerPart
-           &&  rIntegerPart <= LONG_MAX)
+        if (  0.0 == rFractionalPart
+           && LONG_MIN <= rIntegerPart
+           && rIntegerPart <= LONG_MAX)
         {
             long i = (long)rIntegerPart;
             safe_ltoa(i, buff, bufc);
         }
         else
         {
-            safe_tprintf_str(buff, bufc, "%.6f", result);
-
-            char *pEnd = (*bufc) - 1;
-
-            // Remove useless trailing 0's between pBegin and pEnd.
-            //
-            pEnd = strip_useless_zeroes(pBegin, pEnd);
-
-            // Update bufc pointer.
-            //
-            *bufc = pEnd;
+            safe_str(Tiny_ftoa(result), buff, bufc);
         }
 #ifdef HAVE_IEEE_FP_FORMAT
     }
@@ -727,13 +693,7 @@ static void fval_buf(char *buff, double result)
         }
         else
         {
-            sprintf(buff, "%.6f", result);
-
-            char *pEnd = buff + strlen(buff) - 1;
-
-            // Remove useless trailing 0's between pBegin and pEnd.
-            //
-            strip_useless_zeroes(pBegin, pEnd);
+            strcpy(buff, Tiny_ftoa(result));
         }
 #ifdef HAVE_IEEE_FP_FORMAT
     }
@@ -3111,11 +3071,11 @@ FUNCTION(fun_remainder)
 
 FUNCTION(fun_pi)
 {
-    safe_str("3.141592654", buff, bufc);
+    safe_str("3.141592653589793", buff, bufc);
 }
 FUNCTION(fun_e)
 {
-    safe_str("2.718281828", buff, bufc);
+    safe_str("2.718281828459045", buff, bufc);
 }
 
 static double ConvertRDG2R(double d, const char *szUnits)
@@ -3125,13 +3085,13 @@ static double ConvertRDG2R(double d, const char *szUnits)
     case 'd':
         // Degrees to Radians.
         //
-        d *= 0.01745329251994329576;
+        d *= 0.017453292519943295;
         break;
 
     case 'g':
         // Gradians to Radians.
         //
-        d *= 0.01570796326794896619;
+        d *= 0.011570796326794896;
         break;
     }
     return d;
@@ -3144,13 +3104,13 @@ static double ConvertR2RDG(double d, const char *szUnits)
     case 'd':
         // Radians to Degrees.
         //
-        d *= 57.29577951308232087721;
+        d *= 57.29577951308232;
         break;
 
     case 'g':
         // Radians to Gradians.
         //
-        d *= 63.66197723675813430801;
+        d *= 63.66197723675813;
         break;
     }
     return d;
