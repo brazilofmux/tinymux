@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.25 2000-07-31 16:09:21 sdennis Exp $
+// $Id: externs.h,v 1.26 2000-08-04 08:31:19 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -87,11 +87,11 @@ extern int  FDECL(list_check, (dbref, dbref, char, char *, int));
 extern int  FDECL(html_escape, (const char *src, char *dest, char **destp));
     
 #ifndef STANDALONE
-#define DUMP_NORMAL    0  // OUTPUT to the outdb through a temporary file.
-#define DUMP_PANIC     1  // UNLOAD to a crashdb
-#define DUMP_RESTART   2  // OUTPUT to the inputdb
-#define DUMP_FLAT      3  // UNLOAD to a .FLAT file
-#define DUMP_SIGNAL    4  // UNLOAD to a .KILLED file
+#define DUMP_I_NORMAL    0  // OUTPUT to the outdb through a temporary file.
+#define DUMP_I_PANIC     1  // UNLOAD to a crashdb
+#define DUMP_I_RESTART   2  // OUTPUT to the inputdb
+#define DUMP_I_FLAT      3  // UNLOAD to a .FLAT file
+#define DUMP_I_SIGNAL    4  // UNLOAD to a .KILLED file
 #define NUM_DUMP_TYPES 5
 extern void dump_database_internal(int);
 #endif
@@ -337,14 +337,15 @@ extern void ReleaseAllResources(dbref obj);
 #define DEST_ALL    2   /* owner */
 #define DEST_OVERRIDE   4   /* override Safe() */
 #define DIG_TELEPORT    1   /* teleport to room after @digging */
-#define DOLIST_SPACE    0       /* expect spaces as delimiter */
-#define DOLIST_DELIMIT  1       /* expect custom delimiter */
+#define DOLIST_SPACE    0   /* expect spaces as delimiter */
+#define DOLIST_DELIMIT  1   /* expect custom delimiter */
 #define DOING_MESSAGE   0   /* Set my DOING message */
 #define DOING_HEADER    1   /* Set the DOING header */
-#define DOING_POLL  2   /* List DOING header */
-#define DROP_QUIET  1   /* Don't do odrop/adrop if control */
-#define DUMP_STRUCT 1   /* Dump flat structure file */
-#define DUMP_TEXT   2   /* Dump text (gdbm) file */
+#define DOING_POLL      2   /* List DOING header */
+#define DROP_QUIET      1   /* Don't do odrop/adrop if control */
+#define DUMP_STRUCT     1   /* Dump flat structure file */
+#define DUMP_TEXT       2   /* Dump text (gdbm) file */
+#define DUMP_FLATFILE   4   /* Dump .FLAT file */
 #define EXAM_DEFAULT    0   /* Default */
 #define EXAM_BRIEF  1   /* Nonowner sees just owner */
 #define EXAM_LONG   2   /* Nonowner sees public attrs too */

@@ -1,5 +1,5 @@
 // predicates.cpp
-// $Id: predicates.cpp,v 1.17 2000-08-02 23:52:47 sdennis Exp $
+// $Id: predicates.cpp,v 1.18 2000-08-04 08:31:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1193,7 +1193,7 @@ void do_restart(dbref player, dbref cause, int key)
     ENDLOG;
     
     SYNC;
-    dump_database_internal(DUMP_RESTART);
+    dump_database_internal(DUMP_I_RESTART);
     CLOSE;
 
 #ifdef WIN32 // WIN32

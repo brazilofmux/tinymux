@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.17 2000-08-03 03:55:33 sdennis Exp $
+// $Id: game.cpp,v 1.18 2000-08-04 08:31:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1060,7 +1060,7 @@ void do_shutdown(dbref player, dbref cause, int key, char *message)
         log_text((char *)"Panic dump: ");
         log_text(mudconf.crashdb);
         ENDLOG;
-        dump_database_internal(DUMP_PANIC);
+        dump_database_internal(DUMP_I_PANIC);
         STARTLOG(LOG_ALWAYS, "DMP", "DONE");
         log_text((char *)"Panic dump complete: ");
         log_text(mudconf.crashdb);
@@ -1076,11 +1076,12 @@ void do_shutdown(dbref player, dbref cause, int key, char *message)
 
 // There are several types of dumps:
 //
-// Type 0 - Normal   (mudstate.dumping controlled)
-// Type 1 - Panic    (uncontrolled but only one of these happening at a time).
-// Type 2 - Restart  (mudstate.dumping controlled).
-// Type 3 - FLAT     (currently dead code).
-// Type 4 - signal   (uncontrolled and if we fault twice, the game ends -- see check_panicking).
+// Type 0 - Normal   mudstate.dumping controlled
+// Type 1 - Panic    uncontrolled but only one of these happening at a time.
+// Type 2 - Restart  mudstate.dumping controlled.
+// Type 3 - FLAT     mudstate.dumping controlled.
+// Type 4 - signal   uncontrolled and if we fault twice, the game ends --
+//                   see check_panicking.
 //
 // When changing this function and to keep forking dumps safe, keep in mind
 // that the following combinations can be occuring at the same time. Don't
@@ -1124,7 +1125,9 @@ void dump_database_internal(int dump_type)
     // dump will take care of them as well as can be expected for now, and if
     // we try to, we'll just step on them.
     //
-    if (mudstate.dumping && (dump_type == DUMP_PANIC || dump_type == DUMP_SIGNAL))
+    if (  mudstate.dumping
+       && (  dump_type == DUMP_I_PANIC
+          || dump_type == DUMP_I_SIGNAL))
     {
         bPotentialConflicts = TRUE;
     }
@@ -1171,7 +1174,6 @@ void dump_database_internal(int dump_type)
             log_perror("DMP", "FAIL", dp->pszErrorMessage, outfn);
         }
 
-
         if (!bPotentialConflicts)
         {
             if (mudconf.have_mailer)
@@ -1188,7 +1190,9 @@ void dump_database_internal(int dump_type)
                 }
             }
             if (mudconf.have_comsys || mudconf.have_macros)
+            {
                 save_comsys(mudconf.comsys_db);
+            }
         }
         return;
     }
@@ -1283,12 +1287,13 @@ void NDECL(dump_database)
     if (mudstate.dumping)
     {
         STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
-        log_text((char *)"Waiting on previously-forked child before dumping... ");
+        log_text("Waiting on previously-forked child before dumping... ");
         ENDLOG;
 
         while (mudstate.dumping)
         {
-            // We have a forked dump in progress, so we will wait until the child exits.
+            // We have a forked dump in progress, so we will wait until the
+            // child exits.
             //
             sleep(2);
         }
@@ -1305,16 +1310,16 @@ void NDECL(dump_database)
     STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
     log_text((char *)"Dumping: ");
     log_text(buff);
-    ENDLOG
+    ENDLOG;
     pcache_sync();
 
     SYNC;
 
-    dump_database_internal(DUMP_NORMAL);
+    dump_database_internal(DUMP_I_NORMAL);
     STARTLOG(LOG_DBSAVES, "DMP", "DONE")
     log_text((char *)"Dump complete: ");
     log_text(buff);
-    ENDLOG
+    ENDLOG;
     free_mbuf(buff);
 
 #if !defined(VMS) && !defined(WIN32)
@@ -1337,50 +1342,67 @@ void fork_and_dump(int key)
     mudstate.dumping = 1;
 #endif
 
+    // If no options were given, then it means DUMP_TEXT+DUMP_STRUCT.
+    //
+    if (key == 0)
+    {
+        key = DUMP_TEXT+DUMP_STRUCT;
+    }
+
     if (*mudconf.dump_msg)
     {
         raw_broadcast(0, "%s", mudconf.dump_msg);
     }
     check_mail_expiration();
-    mudstate.epoch++;
-    buff = alloc_mbuf("fork_and_dump");
-#ifndef VMS
-    sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
-#else
-    sprintf(buff, "%s.-%d-", mudconf.outdb, mudstate.epoch);
-#endif // VMS
-    STARTLOG(LOG_DBSAVES, "DMP", "CHKPT");
-    if (!key || (key & DUMP_TEXT))
+    buff = alloc_lbuf("fork_and_dump");
+    if (key & (DUMP_TEXT|DUMP_STRUCT))
     {
-        log_text((char *)"SYNCing");
-        if (!key || (key & DUMP_STRUCT))
+        STARTLOG(LOG_DBSAVES, "DMP", "CHKPT");
+        if (key & DUMP_TEXT)
         {
-            log_text((char *)" and ");
+            log_text("SYNCing");
+            if (key & DUMP_STRUCT)
+            {
+                log_text(" and ");
+            }
         }
+        if (key & DUMP_STRUCT)
+        {
+            mudstate.epoch++;
+#ifndef VMS
+            sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
+#else
+            sprintf(buff, "%s.-%d-", mudconf.outdb, mudstate.epoch);
+#endif // VMS
+            log_text("Checkpointing: ");
+            log_text(buff);
+        }
+        ENDLOG;
     }
-    if (!key || (key & DUMP_STRUCT))
+    if (key & DUMP_FLATFILE)
     {
-        log_text((char *)"Checkpointing: ");
+        STARTLOG(LOG_DBSAVES, "DMP", "FLAT");
+        log_text("Creating flatfile: ");
+        sprintf(buff, "%s.FLAT", mudconf.outdb);
         log_text(buff);
+        ENDLOG;
     }
-    ENDLOG;
-    free_mbuf(buff);
+    free_lbuf(buff);
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
     //
     al_store();
-    
 #endif // MEMORY_BASED
     
-    if (!key || (key & DUMP_TEXT))
+    if (key & DUMP_TEXT)
     {
         pcache_sync();
     }
-    
     SYNC;
     
     int child = 0;
-    if (!key || (key & DUMP_STRUCT))
+    BOOL bChildExists = FALSE;
+    if (key & (DUMP_STRUCT|DUMP_FLATFILE))
     {
 #if !defined(VMS) && !defined(WIN32)
         if (mudconf.fork_dump)
@@ -1394,32 +1416,40 @@ void fork_and_dump(int key)
                 child = fork();
             }
         }
-        else
-        {
-            child = 0;
-        }
-#else
-        child = 0;
 #endif // VMS
         if (child == 0)
         {
-            dump_database_internal(DUMP_NORMAL);
+            if (key & DUMP_STRUCT)
+            {
+                dump_database_internal(DUMP_I_NORMAL);
+            }
+            if (key & DUMP_FLATFILE)
+            {
+                dump_database_internal(DUMP_I_FLAT);
+            }
 #if !defined(VMS) && !defined(WIN32)
             if (mudconf.fork_dump)
+            {
                 _exit(0);
+            }
 #endif // VMS
         }
         else if (child < 0)
         {
             log_perror("DMP", "FORK", NULL, "fork()");
         }
+        else
+        {
+            bChildExists = TRUE;
+        }
     }
     
 #if !defined(VMS) && !defined(WIN32)
-    if (!mudconf.fork_dump)
+    if (!bChildExists)
     {
-        // We have the ability to fork children, but we are configured not to.
-        // There is no forked child running, so we aren't dumping.
+        // We have the ability to fork children, but we are not configured to
+        // use it; or, we tried to fork a child and failed; or, we didn't
+        // need to dump the structure or a flatfile.
         //
         mudstate.dumping = 0;
     }

@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.16 2000-07-31 16:13:29 sdennis Exp $
+// $Id: command.cpp,v 1.17 2000-08-04 08:31:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -132,8 +132,9 @@ NAMETAB drop_sw[] =
 NAMETAB dump_sw[] =
 {
     {(char *)"structure",   1,  CA_WIZARD,  DUMP_STRUCT|SW_MULTIPLE},
-    {(char *)"text",    1,  CA_WIZARD,  DUMP_TEXT|SW_MULTIPLE},
-    { NULL,         0,  0,      0}
+    {(char *)"text",        1,  CA_WIZARD,  DUMP_TEXT|SW_MULTIPLE},
+    {(char *)"flatfile",    1,  CA_WIZARD,  DUMP_FLATFILE|SW_MULTIPLE},
+    { NULL,                 0,  0,          0}
 };
 
 NAMETAB emit_sw[] =
@@ -475,7 +476,7 @@ CMDENT_NO_ARG command_table_no_arg[] =
     {(char *)"@@",            NULL,       0,  0,      CS_NO_ARGS,         do_comment},
     {(char *)"@clist",        clist_sw,   CA_NO_SLAVE,        0,              CS_NO_ARGS,                     do_chanlist},
     {(char *)"@dbck",         NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         do_dbck},
-    {(char *)"@dbclean",      NULL,       CA_GOD,    0,      CS_NO_ARGS,         do_dbclean},
+    {(char *)"@dbclean",      NULL,       CA_GOD,       0,      CS_NO_ARGS,         do_dbclean},
     {(char *)"@dump",         dump_sw,    CA_WIZARD,    0,      CS_NO_ARGS,         do_dump},
     {(char *)"@mark_all",     markall_sw, CA_WIZARD,    MARK_SET,   CS_NO_ARGS,         do_markall},
     {(char *)"@readcache",    NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         do_readcache},

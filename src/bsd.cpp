@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.10 2000-08-03 06:29:13 sdennis Exp $
+// $Id: bsd.cpp,v 1.11 2000-08-04 08:31:18 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -2404,7 +2404,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         log_signal(signames[sig]);
         sprintf(buff, "Caught signal %s, exiting.", signames[sig]);
         raw_broadcast(0, buff);
-        dump_database_internal(DUMP_SIGNAL);
+        dump_database_internal(DUMP_I_SIGNAL);
 #ifdef WIN32
         WSACleanup();
 #endif // WIN32
@@ -2457,7 +2457,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             // got.
             //
             SYNC;
-            dump_database_internal(DUMP_RESTART);
+            dump_database_internal(DUMP_I_RESTART);
             CLOSE;
             shutdown(slave_socket, SD_BOTH);
             if (slave_pid > 0)
