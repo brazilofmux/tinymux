@@ -761,12 +761,16 @@ int Show_Key;
 dbref Show_Player;
 int Show_bFirstLine;
 
+#ifdef WIN32
 void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
+#endif
 void dispatch_DatabaseDump(void *pUnused, int iUnused);
 void dispatch_FreeListReconstruction(void *pUnused, int iUnused);
 void dispatch_IdleCheck(void *pUnused, int iUnused);
 void dispatch_CheckEvents(void *pUnused, int iUnused);
+#ifndef MEMORY_BASED
 void dispatch_CacheTick(void *pUnused, int iUnused);
+#endif
 
 int CallBack_ShowDispatches(PTASK_RECORD p)
 {
@@ -788,10 +792,12 @@ int CallBack_ShowDispatches(PTASK_RECORD p)
     {
         notify(Show_Player, tprintf("[%d]Test for @daily time", ltd.ReturnSeconds()));
     }
+#ifndef MEMORY_BASED
     else if (p->fpTask == dispatch_CacheTick)
     {
         notify(Show_Player, tprintf("[%d]Database cache tick", ltd.ReturnSeconds()));
     }
+#endif // MEMORY_BASED
     else if (p->fpTask == Task_ProcessCommand)
     {
         notify(Show_Player, tprintf("[%d]Further command quota", ltd.ReturnSeconds()));
@@ -801,7 +807,7 @@ int CallBack_ShowDispatches(PTASK_RECORD p)
     {
         notify(Show_Player, tprintf("[%d]Delayed descriptor deallocation", ltd.ReturnSeconds()));
     }
-#endif
+#endif // WIN32
     else
     {
         Total_SystemTasks--;
