@@ -2525,6 +2525,9 @@ Related Topics: @name.
   Emits <message> to everyone in the current location of <player> except
   <player>.
 
+  This command can only be usefully executed by an object with a location.
+  That is, rooms aren't allowed to use this command.
+
   Related Topics: @remit, @emit, @pemit, @npemit, SPOOFING.
 
 & @OENTER
