@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.125 2004-10-08 21:08:02 sdennis Exp $
+// $Id: functions.cpp,v 1.126 2004-10-31 14:01:59 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -8235,7 +8235,9 @@ FUNCTION(fun_trim)
         return;
     }
 
-    char *p, *lastchar, *q;
+    char *p;
+    char *q;
+    char *lastchar;
     int trim;
     if (nfargs >= 2)
     {
@@ -8257,33 +8259,31 @@ FUNCTION(fun_trim)
         trim = 3;
     }
 
-    if (trim == 2 || trim == 3)
+    p = fargs[0];
+
+    if (  trim == 1
+       || trim == 3)
     {
-        p = lastchar = fargs[0];
-        while (*p != '\0')
+        while (*p == sep.str[0])
         {
-            if (*p != sep.str[0])
-                lastchar = p;
             p++;
         }
-        *(lastchar + 1) = '\0';
     }
-    q = fargs[0];
-    if (trim == 1 || trim == 3)
+    if (  trim == 2
+       || trim == 3)
     {
+        q = lastchar = p;
         while (*q != '\0')
         {
-            if (*q == sep.str[0])
+            char ch = *q++;
+            if (ch != sep.str[0])
             {
-                q++;
-            }
-            else
-            {
-                break;
+                lastchar = q;
             }
         }
+        *lastchar = '\0';
     }
-    safe_str(q, buff, bufc);
+    safe_str(p, buff, bufc);
 }
 
 FUNCTION(fun_config)
