@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.12 2004-05-15 01:13:11 sdennis Exp $
+// $Id: mguests.cpp,v 1.13 2004-07-24 14:19:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -153,6 +153,12 @@ const char *CGuests::Create(DESC *d)
                 delete_player_name(guest_player, Name(guest_player));
                 s_Name(guest_player, name);
                 add_player_name(guest_player, Name(guest_player));
+            }
+            else
+            {
+                // Release comsys and @mail state.
+                //
+                ReleaseAllResources(guest_player);
             }
 
             // Reset the flags back to the default.
