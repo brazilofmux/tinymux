@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.27 2000-09-20 17:26:16 sdennis Exp $
+// $Id: functions.cpp,v 1.28 2000-09-20 22:22:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3594,35 +3594,49 @@ FUNCTION(fun_member)
     safe_chr('0', buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_secure, fun_escape: escape [, ], %, \, and the beginning of the string.
- */
-
+// fun_secure: This function replaces any character in the set
+// '%$\[](){},;' with a space. It handles ANSI by not replacing
+// the '[' character within an ANSI sequence.
+//
 FUNCTION(fun_secure)
 {
-    char *s;
+    char *pString = fargs[0];
+    int nString = strlen(pString);
 
-    s = fargs[0];
-    while (*s) {
-        switch (*s) {
-        case '%':
-        case '$':
-        case '\\':
-        case '[':
-        case ']':
-        case '(':
-        case ')':
-        case '{':
-        case '}':
-        case ',':
-        case ';':
-            safe_chr(' ', buff, bufc);
-            break;
-        default:
-            safe_chr(*s, buff, bufc);
+    while (nString)
+    {
+        int nTokenLength0;
+        int nTokenLength1;
+        int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
+
+        if (iType == TOKEN_TEXT_ANSI)
+        {
+            // Process TEXT portion (pString, nTokenLength0).
+            //
+            nString -= nTokenLength0;
+            while (nTokenLength0--)
+            {
+                if (Tiny_IsSecureCharacter[(unsigned char)*pString])
+                {
+                    safe_chr(' ', buff, bufc);
+                }
+                else
+                {
+                    safe_chr(*pString, buff, bufc);
+                }
+                pString++;
+            }
+            nTokenLength0 = nTokenLength1;
         }
-        s++;
+
+        if (nTokenLength0)
+        {
+            // Process ANSI portion (pString, nTokenLength0).
+            //
+            safe_copy_buf(pString, nTokenLength0, buff, bufc, LBUF_SIZE-1);
+            pString += nTokenLength0;
+            nString -= nTokenLength0;
+        }
     }
 }
 

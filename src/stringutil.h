@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.9 2000-09-20 17:26:16 sdennis Exp $
+// $Id: stringutil.h,v 1.10 2000-09-20 22:22:47 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -14,7 +14,7 @@
 // Stephen Dennis <sdennis@svdltd.com> for another license.
 //
 #ifndef STRINGUTIL_H
-#define STRINGUTIL
+#define STRINGUTIL_H
 
 extern char Tiny_IsASCII[256];
 extern char Tiny_IsPrint[256];
@@ -27,6 +27,7 @@ extern char Tiny_IsSpace[256];
 extern char Tiny_IsAttributeNameCharacter[256];
 extern char Tiny_IsObjectNameCharacter[256];
 extern char Tiny_IsPlayerNameCharacter[256];
+extern char Tiny_IsSecureCharacter[256];
 extern char Tiny_IsEscapeCharacter[256];
 extern unsigned char Tiny_ToUpper[256];
 extern unsigned char Tiny_ToLower[256];
