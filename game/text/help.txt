@@ -1,29 +1,3 @@
-& HELP
-HELP
-
-  This is the MUX online help facility.
-
-     Notes on help descriptions:
-        [text] - Text enclosed in []'s is optional.  The []'s are never typed
-                 in as part of the command.
-        <parameter> - Information parameter for a command.  The <>'s are
-                      never typed in as part of the command.
-
-  -  Syntax of help command:
-       help [<command>]
-
-  -  To get a list of MUX topics:
-       help topics
-
-  -  To get a list of Comsystem commands:
-       help comsys
-
-  -  To get a list of MUX Commands:
-       help commands      (or @list commands)
-
-  Some of the configuration shown in the help.txt might not be the same as
-  the configuration of this MUX. If you notice any errors, contact an Admin.
-
 & "
 
   COMMAND: "<message>
@@ -87,19 +61,6 @@ HELP
 
   Related Topics: page, pose, say, whisper, :, ".
 
-& @@()
-@@()
-
-  FUNCTION: @@(<text>)
-
-  The <text> is not evaluated and returns nothing.
-
-  Example:
-    > think @@(pemit(me,Hello))
-    > think @@(abc)
-
-  Related Topics: null() @@
-
 & @@
 @@
 
@@ -125,6 +86,19 @@ HELP
      Hello World!
 
   Related Topics: @comment
+
+& @@()
+@@()
+
+  FUNCTION: @@(<text>)
+
+  The <text> is not evaluated and returns nothing.
+
+  Example:
+    > think @@(pemit(me,Hello))
+    > think @@(abc)
+
+  Related Topics: null() @@
 
 & @AAHEAR
 @AAHEAR
@@ -1580,26 +1554,6 @@ HELP
 
   Related Topics: enter, @describe, ENTER_OK.
 
-& @IDLETIMEOUT
-@IDLETIMEOUT
-
-  COMMAND:   @idletimeout <object> = <seconds>
-  ATTRIBUTE: IdleTimeout
-
-  This attribute is used to determine if your @idle message is sent to
-  a player who successfully pages you.
-  If you're online and working at the same time, you can set the minimum
-  idle time to allow your message to show. so whilst you're not idle your
-  @idle message will not show without you having to delete it to hide it.
-
-  This attribute is only meaningful for players, and will never be
-  automatically referenced on other object types.
-
-  Example: @idle me = Working IRL. Monitoring this window from time to time.
-           @idletimeout me = 60
-
-  Related Topics: @away, @idle, @reject, page.
-
 & @IDLE
 @IDLE
 
@@ -1620,6 +1574,26 @@ HELP
   Example: @idle me = At dinner.  Back about 7PM.
 
   Related Topics: @away, @idletimeout, @reject, page.
+
+& @IDLETIMEOUT
+@IDLETIMEOUT
+
+  COMMAND:   @idletimeout <object> = <seconds>
+  ATTRIBUTE: IdleTimeout
+
+  This attribute is used to determine if your @idle message is sent to
+  a player who successfully pages you.
+  If you're online and working at the same time, you can set the minimum
+  idle time to allow your message to show. so whilst you're not idle your
+  @idle message will not show without you having to delete it to hide it.
+
+  This attribute is only meaningful for players, and will never be
+  automatically referenced on other object types.
+
+  Example: @idle me = Working IRL. Monitoring this window from time to time.
+           @idletimeout me = 60
+
+  Related Topics: @away, @idle, @reject, page.
 
 & @INFILTER
 @INFILTER
@@ -1799,6 +1773,31 @@ HELP
 
   Related Topics: @dig, @open, @unlink, DROP-TOS, HOMES, LINKING.
 
+& @LIST
+@LIST
+
+  COMMAND: @list [<option>]
+
+  Lists information from internal databases.  Information is available
+  about the following options:
+    attributes      - Valid object attributes.
+    commands        - Commands that you may use (excluding the
+                      attribute-setting commands as well as any exits, and
+                      $-commands available).
+    costs           - Lists the costs associated with many commands and
+                      actions.
+    default_flags   - Lists the flags that new objects receive by default
+                      when created.
+    flags           - Lists the name and letter of all the flags.
+    functions       - Lists all the available functions.
+    options         - Lists several global options and limits.
+    powers          - Lists all powers.
+    switches        - Lists what commands support switches and the switches
+                      that they do support.
+  The information provided by the @list command is definitive, as it reads
+  the internal tables to produce the information it displays.  Specifying
+  @list with no argument lists the options you may use.
+
 & @LISTEN
 @LISTEN
 
@@ -1836,30 +1835,27 @@ HELP
   Displays the current message-of-the-day.  Note that it is displayed when
   you connect to your character. This will also display the "motd.txt" file.
 
-& @LIST
-@LIST
+& @LOCK
+@LOCK
 
-  COMMAND: @list [<option>]
+  COMMAND: @lock[/<whichlock>] <object>=<key>
+           @lock <object>/<attrib>
 
-  Lists information from internal databases.  Information is available
-  about the following options:
-    attributes      - Valid object attributes.
-    commands        - Commands that you may use (excluding the
-                      attribute-setting commands as well as any exits, and
-                      $-commands available).
-    costs           - Lists the costs associated with many commands and
-                      actions.
-    default_flags   - Lists the flags that new objects receive by default
-                      when created.
-    flags           - Lists the name and letter of all the flags.
-    functions       - Lists all the available functions.
-    options         - Lists several global options and limits.
-    powers          - Lists all powers.
-    switches        - Lists what commands support switches and the switches
-                      that they do support.
-  The information provided by the @list command is definitive, as it reads
-  the internal tables to produce the information it displays.  Specifying
-  @list with no argument lists the options you may use.
+  The first form locks <object> to a specific key(s).  Type 'help @lock keys'
+  for a list of the keys you may use.
+
+  <whichlock> indicates which lock you want to set on the object.  If you
+  don't specify one, you set the Default lock. Type 'help @lock locks' for
+  a list of the locks you may set and what they are used for.
+
+  The second form locks the indicated attribute of the named object, so that
+  when the object is @chowned, the attribute will remain owned by you.
+  It may also be used when you own an attribute on an object that you do not
+  own, in this case it prevents the object's owner from @chowning the
+  attribute to himself, and prevents anyone from modifying or removing the
+  attribute.
+
+  Related Topics: @chown, @unlock, @lock keys, @lock locks
 
 & @LOCK ATTRIBUTE
 @LOCK ATTRIBUTE
@@ -2129,42 +2125,6 @@ HELP
 
   Related Topics: @lock normal.
 
-& @LOCK
-@LOCK
-
-  COMMAND: @lock[/<whichlock>] <object>=<key>
-           @lock <object>/<attrib>
-
-  The first form locks <object> to a specific key(s).  Type 'help @lock keys'
-  for a list of the keys you may use.
-
-  <whichlock> indicates which lock you want to set on the object.  If you
-  don't specify one, you set the Default lock. Type 'help @lock locks' for
-  a list of the locks you may set and what they are used for.
-
-  The second form locks the indicated attribute of the named object, so that
-  when the object is @chowned, the attribute will remain owned by you.
-  It may also be used when you own an attribute on an object that you do not
-  own, in this case it prevents the object's owner from @chowning the
-  attribute to himself, and prevents anyone from modifying or removing the
-  attribute.
-
-  Related Topics: @chown, @unlock, @lock keys, @lock locks
-
-& @MAILSUCC
-@MAILSUCC
-
-  COMMAND:   @mailsucc <player> = <message>
-  ATTRIBUTE: Mailsucc
-
-  Sets a message to be displayed to the sender whenever <player> receives
-  mail.
-
-  Example:
-    @mailsucc me=Thanks for the mail.
-
-  Related Topics: @amail, @signature, @mail.
-
 & @MAIL
 @MAIL
 
@@ -2194,6 +2154,20 @@ HELP
   Related Topics:
     mail-sending    mail-reading     mail-folders      mail-other
     mail-admin      @malias          mail-reviewing    mail-examples
+
+& @MAILSUCC
+@MAILSUCC
+
+  COMMAND:   @mailsucc <player> = <message>
+  ATTRIBUTE: Mailsucc
+
+  Sets a message to be displayed to the sender whenever <player> receives
+  mail.
+
+  Example:
+    @mailsucc me=Thanks for the mail.
+
+  Related Topics: @amail, @signature, @mail.
 
 & @MALIAS
 @MALIAS
@@ -2275,17 +2249,6 @@ HELP
 
   Related Topics: @set.
 
-& @NAMEFORMAT
-@NAMEFORMAT
-
-  COMMAND: @nameformat <object> [=<format>]
-
-  By default, when an object is looked at, the object's real name is shown.
-  And, if you can link to the object, it's flag letters and dbref are also
-  shown. However, with @nameformat, you can control exactly what is shown.
-
-  Related Topics: @conformat, @exitformat
-
 & @NAME
 @NAME
 
@@ -2296,6 +2259,17 @@ HELP
 
   See '@list options' as to whether or not a player name may contain
   spaces.
+
+& @NAMEFORMAT
+@NAMEFORMAT
+
+  COMMAND: @nameformat <object> [=<format>]
+
+  By default, when an object is looked at, the object's real name is shown.
+  And, if you can link to the object, it's flag letters and dbref are also
+  shown. However, with @nameformat, you can control exactly what is shown.
+
+  Related Topics: @conformat, @exitformat
 
 & @NOTIFY
 @NOTIFY
@@ -3728,6 +3702,21 @@ ANDFLAGS()
 
   Related Topics: flags(), orflags().
 
+& ANSI
+ANSI
+
+  FLAG: ANSI(X)  ()
+
+  When set on a player, it will enable the player to see ANSI color.
+  If you have TinyFugue and you do not wish to see ANSI color, please
+  leave this flag set and /set catch_ctrls=ansi. The reason for this is when
+  the ANSI flag is unset, the server must go through every line of text you
+  see and strip the ANSI codes from it. With the ANSI flag set and /set
+  catch_ctrls=ansi, TinyFugue will strip the ANSI and save the MUX from
+  having to do it, resulting in less lag for everyone.
+
+  Related Topics: ansi(), NOBLEED.
+
 & ANSI CODES
 ANSI CODES
 
@@ -3773,21 +3762,6 @@ ANSI()
   utilized in the order they are specified.
 
   Related Topics: ANSI CODES, ANSI SUBSTITUTION.
-
-& ANSI
-ANSI
-
-  FLAG: ANSI(X)  ()
-
-  When set on a player, it will enable the player to see ANSI color.
-  If you have TinyFugue and you do not wish to see ANSI color, please
-  leave this flag set and /set catch_ctrls=ansi. The reason for this is when
-  the ANSI flag is unset, the server must go through every line of text you
-  see and strip the ANSI codes from it. With the ANSI flag set and /set
-  catch_ctrls=ansi, TinyFugue will strip the ANSI and save the MUX from
-  having to do it, resulting in less lag for everyone.
-
-  Related Topics: ansi(), NOBLEED.
 
 & APOSS()
 APOSS()
@@ -3916,26 +3890,6 @@ ATTRCNT()
 
   Related Topics: lattr()
 
-& ATTRIBUTE OWNERSHIP
-ATTRIBUTE OWNERSHIP
-
-  The attributes on an object may be owned independently from the object.
-  Normally, the owner of the object owns all of its attributes.
-  In addition to an owner, each attribute also has a locked flag,
-  set or cleared with @lock <obj>/<attr> and @unlock <obj>/<attr>.
-  This flag controls whether or not the owner of the object may
-  @chown the attribute to himself with @chown <object>/<attrib>,
-  as well as whether or not the attribute is automatically @chowned to
-  the new owner when the object is @chowned.
-
-  You may lock and unlock attributes that you own on any object (whether
-  you own the object or not), and you may @chown an attribute that you own
-  to the owner of the object if it is unlocked.  The examine command
-  will show you all attributes that you own on an object, even if you
-  don't own the object.
-
-{ 'help attrib2' for more }
-
 & attrib2
 ATTRIBUTE OWNERSHIP (continued)
 
@@ -3970,6 +3924,26 @@ ATTRIBUTE OWNERSHIP (continued)
   being checked.
 
   Related Topics: @chown, @lock, @set, @unlock, examine.
+
+& ATTRIBUTE OWNERSHIP
+ATTRIBUTE OWNERSHIP
+
+  The attributes on an object may be owned independently from the object.
+  Normally, the owner of the object owns all of its attributes.
+  In addition to an owner, each attribute also has a locked flag,
+  set or cleared with @lock <obj>/<attr> and @unlock <obj>/<attr>.
+  This flag controls whether or not the owner of the object may
+  @chown the attribute to himself with @chown <object>/<attrib>,
+  as well as whether or not the attribute is automatically @chowned to
+  the new owner when the object is @chowned.
+
+  You may lock and unlock attributes that you own on any object (whether
+  you own the object or not), and you may @chown an attribute that you own
+  to the owner of the object if it is unlocked.  The examine command
+  will show you all attributes that you own on an object, even if you
+  don't own the object.
+
+{ 'help attrib2' for more }
 
 & AUDIBLE
 AUDIBLE
@@ -4518,6 +4492,26 @@ COMP()
 
   Related Topics:
 
+& COMSYS
+COMSYS
+
+  This is the help for the MUX comsystem. Note that the channel names and
+  aliases are case-sensitive. Many games are configured to have a new player
+  automatically join the 'Public' channel, and a Guest join the 'Guest'
+  channel. If you are a wizard, see 'wizhelp config' for the parameters
+  relating to this.
+
+  A comsys allows the various players to communicate with each other. A
+  comsys can consist of one Public channel for all players, or various
+  channels set aside for various groups within the game, thus allowing each
+  group to communicate with the other members of that group.
+
+  Two of the most accepted reasons for using a comsys are to allow players to
+  interact with members of their group, and to provide a venue for OOC
+  chatting.
+
+  Related Topics: comsys commands, comsys examples
+
 & COMSYS COMMANDS
 COMSYS COMMANDS AND FUNCTIONS
 
@@ -4559,40 +4553,6 @@ COMSYS EXAMPLES
 
   Related Topics: comsys commands
 
-& COMSYS
-COMSYS
-
-  This is the help for the MUX comsystem. Note that the channel names and
-  aliases are case-sensitive. Many games are configured to have a new player
-  automatically join the 'Public' channel, and a Guest join the 'Guest'
-  channel. If you are a wizard, see 'wizhelp config' for the parameters
-  relating to this.
-
-  A comsys allows the various players to communicate with each other. A
-  comsys can consist of one Public channel for all players, or various
-  channels set aside for various groups within the game, thus allowing each
-  group to communicate with the other members of that group.
-
-  Two of the most accepted reasons for using a comsys are to allow players to
-  interact with members of their group, and to provide a venue for OOC
-  chatting.
-
-  Related Topics: comsys commands, comsys examples
-
-& COMTITLE()
-COMTITLE()
-
-  FUNCTION: comtitle(<player>, <channel>)
-
-  comtitle() returns the comtitle the player has set on the named channel.
-  Non-wizards can only use it to return their own comtitles.
-
-  Example:
-    > say comtitle(me,Public)
-    You say "The mighty Wizard"
-
-  Related Topics: channels(), comalias(), cwho()
-
 & COMTITLE
 COMTITLE
 
@@ -4616,6 +4576,20 @@ COMTITLE
     [Public] The Great and Powerful Foobar waves to everyone.
 
   Related Topics: comlist, addcom, alias, delcom, @cset
+
+& COMTITLE()
+COMTITLE()
+
+  FUNCTION: comtitle(<player>, <channel>)
+
+  comtitle() returns the comtitle the player has set on the named channel.
+  Non-wizards can only use it to return their own comtitles.
+
+  Example:
+    > say comtitle(me,Public)
+    You say "The mighty Wizard"
+
+  Related Topics: channels(), comalias(), cwho()
 
 & CON()
 CON()
@@ -4722,23 +4696,6 @@ CONNTOTAL()
   Related Topics: connmax(), connlast(), connnum(), connleft(), secs(),
       conn().
 
-& CONTROLS()
-CONTROLS()
-
-  FUNCTION: controls(<object>,<victim>)
-
-  Returns 1 if <object> controls <victim>, 0 otherwise.
-
-  Examples:
-  > say controls(me,me)
-  You say "1"
-  > say controls(me,#1)
-  You say "0"
-  > say controls(#1,me)
-  You say "1"
-
-  Related Topics: CONTROL.
-
 & CONTROL
 CONTROL
 
@@ -4757,6 +4714,23 @@ CONTROL
 
   Most of the commands for altering the database and many commands and
   functions that retrieve information only work on objects that you control.
+
+& CONTROLS()
+CONTROLS()
+
+  FUNCTION: controls(<object>,<victim>)
+
+  Returns 1 if <object> controls <victim>, 0 otherwise.
+
+  Examples:
+  > say controls(me,me)
+  You say "1"
+  > say controls(me,#1)
+  You say "0"
+  > say controls(#1,me)
+  You say "1"
+
+  Related Topics: CONTROL.
 
 & CONVSECS()
 CONVSECS()
@@ -5122,16 +5096,6 @@ DOING()
 
   Related Topics: poll()
 
-& DROP-TOS
-DROP-TOS
-
-  When the @link command is used on a room, it sets a drop-to location.  Any
-  object dropped in the room (if it isn't STICKY) will go to that location.
-  If the room is STICKY, the drop-to will be delayed until the last person in
-  the room has left.
-
-  Related Topics: @link, STICKY.
-
 & DROP
 
   COMMAND: drop[/<switch>] <object>
@@ -5154,6 +5118,16 @@ DROP-TOS
   'throw' is the same as 'drop'.
 
   Related Topics: get, @adrop, @drop, @odrop, DROP-TO, STICKY.
+
+& DROP-TOS
+DROP-TOS
+
+  When the @link command is used on a room, it sets a drop-to location.  Any
+  object dropped in the room (if it isn't STICKY) will go to that location.
+  If the room is STICKY, the drop-to will be delayed until the last person in
+  the room has left.
+
+  Related Topics: @link, STICKY.
 
 & DUMPING()
 DUMPING()
@@ -5298,19 +5272,6 @@ ENCRYPT()
 
   Related Topics:
 
-& ENTER_OK
-ENTER_OK
-
-  FLAG: ENTER_OK(e)  ()
-
-  If an object or person is ENTER_OK, other players may
-  enter the object or person by using 'enter <object/person>. Players
-  must also have the ENTER_OK set if they wish to be able to receive
-  things given to them by other players via the
-  'give <player> = <object>'.
-
-  Related Topics:
-
 & ENTER
 ENTER
 
@@ -5331,6 +5292,19 @@ ENTER
 
   Related Topics: leave, @aefail, @aenter, @efail, @enter, @idesc, @lock,
                   @oefail, @oenter, @oxleave, ENTER_OK.
+
+& ENTER_OK
+ENTER_OK
+
+  FLAG: ENTER_OK(e)  ()
+
+  If an object or person is ENTER_OK, other players may
+  enter the object or person by using 'enter <object/person>. Players
+  must also have the ENTER_OK set if they wish to be able to receive
+  things given to them by other players via the
+  'give <player> = <object>'.
+
+  Related Topics:
 
 & EQ()
 EQ()
@@ -5652,18 +5626,6 @@ FLAG LIST
   For information on a particular flag, type 'help <flagname>'.
   Some flags may be disabled at the MUX you are located.
 
-& FLAGS()
-FLAGS()
-
-  FUNCTION: flags(<object>)
-
-  Flags returns a string consisting of the flags attached to the
-  object. The string is, however, just one word.  Note that @switch
-  is case-INsensitive.  i.e. p=P as far as it is concerned.  I wish
-  that P=NP....
-
-  Related Topics: andflags(), orflags()
-
 & FLAGS
 FLAGS
 
@@ -5678,6 +5640,18 @@ FLAGS
   players.  To get a list of the flags that are available, type '@list flags'
   or 'help flag list'. For more specific information on a particular flag,
   request help on the flag's name, as in 'help ENTER_OK'.
+
+& FLAGS()
+FLAGS()
+
+  FUNCTION: flags(<object>)
+
+  Flags returns a string consisting of the flags attached to the
+  object. The string is, however, just one word.  Note that @switch
+  is case-INsensitive.  i.e. p=P as far as it is concerned.  I wish
+  that P=NP....
+
+  Related Topics: andflags(), orflags()
 
 & FLOATING
 FLOATING
@@ -5979,21 +5953,6 @@ GET
 
 { 'help get2' for more }
 
-& GET2
-GET (continued)
-
-  The following switch is recognized:
-
-     /quiet   - Don't perform the @osucc/@asucc or @ofail/@afail attributes
-                on the target object.  This switch only works if you control
-                the object.
-
-  <object> and <sub-object> may be either players or things.
-  'take' is the same as 'get'.
-
-  Related Topics: drop, @afail, @asucc, @fail, @ofail, @osucc, @succ,
-      ENTER_OK, FAILURE, SUCCESS.
-
 & GET()
 GET()
 
@@ -6010,6 +5969,21 @@ GET()
     > say get(me/desc)
 
   Related Topics: get_eval(), eval(), xget().
+
+& GET2
+GET (continued)
+
+  The following switch is recognized:
+
+     /quiet   - Don't perform the @osucc/@asucc or @ofail/@afail attributes
+                on the target object.  This switch only works if you control
+                the object.
+
+  <object> and <sub-object> may be either players or things.
+  'take' is the same as 'get'.
+
+  Related Topics: drop, @afail, @asucc, @fail, @ofail, @osucc, @succ,
+      ENTER_OK, FAILURE, SUCCESS.
 
 & GET_EVAL()
 GET_EVAL()
@@ -6279,6 +6253,32 @@ HEAD
   with STAFF, no powers come with it, it is purely a marker.
 
   Related Topics:
+
+& HELP
+HELP
+
+  This is the MUX online help facility.
+
+     Notes on help descriptions:
+        [text] - Text enclosed in []'s is optional.  The []'s are never typed
+                 in as part of the command.
+        <parameter> - Information parameter for a command.  The <>'s are
+                      never typed in as part of the command.
+
+  -  Syntax of help command:
+       help [<command>]
+
+  -  To get a list of MUX topics:
+       help topics
+
+  -  To get a list of Comsystem commands:
+       help comsys
+
+  -  To get a list of MUX Commands:
+       help commands      (or @list commands)
+
+  Some of the configuration shown in the help.txt might not be the same as
+  the configuration of this MUX. If you notice any errors, contact an Admin.
 
 & HERE
 HERE
@@ -7748,6 +7748,15 @@ MAX()
 
   Related Topics: min()
 
+& ME
+ME
+
+  The word 'me' refers to yourself. Some things to do when starting out:
+  1) give yourself a description with
+     '@describe me = <description>', then look at yourself with 'look me'.
+  2) set your gender, if you wish it known, with
+     '@set me=male' or '@set me=female'  (or '@set me=neuter' to be an 'it').
+
 & MEDIUM
 MEDIUM
 
@@ -7801,15 +7810,6 @@ MERGE()
     You say, "ABcdEF"
 
   Related Topics: splice().
-
-& ME
-ME
-
-  The word 'me' refers to yourself. Some things to do when starting out:
-  1) give yourself a description with
-     '@describe me = <description>', then look at yourself with 'look me'.
-  2) set your gender, if you wish it known, with
-     '@set me=male' or '@set me=female'  (or '@set me=neuter' to be an 'it').
 
 & MID()
 MID()
@@ -7901,6 +7901,20 @@ MOD()
   Related Topics: floordiv(), iadd(), idiv(), imul(), isub(),
                   remainder().
 
+& MONEY
+MONEY
+
+  You need money to build within the game, to run programmed objects or use
+  certain other commands, or to buy things from vendors set up by other
+  players.  You can get money via one or more of these methods:
+    1.  You receive a daily allowance for each day you connect.
+    2.  You have a chance of finding money as you wander around areas that
+        other people have built.
+    3.  Some MUXes may implement a place where you can sell valuable objects
+        for money.
+
+  Related Topics: @list costs, COSTS.
+
 & MONEY()
 MONEY()
 
@@ -7924,20 +7938,6 @@ MONEY()
     You say "20"
 
   Related Topics:
-
-& MONEY
-MONEY
-
-  You need money to build within the game, to run programmed objects or use
-  certain other commands, or to buy things from vendors set up by other
-  players.  You can get money via one or more of these methods:
-    1.  You receive a daily allowance for each day you connect.
-    2.  You have a chance of finding money as you wander around areas that
-        other people have built.
-    3.  Some MUXes may implement a place where you can sell valuable objects
-        for money.
-
-  Related Topics: @list costs, COSTS.
 
 & MONITOR
 MONITOR
@@ -8241,15 +8241,6 @@ NO_COMMAND
 
   Related Topics:
 
-& NUM()
-NUM()
-
-  FUNCTION: num(<object>)
-
-  Returns the dbref number of <object>.
-
-  Related Topics: locate().
-
 & NULL()
 NULL()
 
@@ -8263,6 +8254,15 @@ NULL()
     > think null(abc)
 
   Related Topics: @@() @@
+
+& NUM()
+NUM()
+
+  FUNCTION: num(<object>)
+
+  Returns the dbref number of <object>.
+
+  Related Topics: locate().
 
 & OBF
 OBF
@@ -8951,6 +8951,16 @@ PUEBLO
   Related Topics: Please see http://www.chaco.com/pueblo/doc/enhancing.html
       for more details.
 
+& PUPPET
+PUPPET
+
+  FLAG: PUPPET(p)  ()
+
+  @set <object> = puppet. Causes an object to grow eyes and
+  ears, and relay all it sees and hears to its owner.
+
+  Related Topics: @force, PUPPETS
+
 & PUPPETS
 PUPPETS
 
@@ -8968,16 +8978,6 @@ PUPPETS
   @force fred="hi there.  -or-  #4342 "hi there.
 
   Related Topics: VERBOSE.
-
-& PUPPET
-PUPPET
-
-  FLAG: PUPPET(p)  ()
-
-  @set <object> = puppet. Causes an object to grow eyes and
-  ears, and relay all it sees and hears to its owner.
-
-  Related Topics: @force, PUPPETS
 
 & PUSH()
 PUSH()
@@ -9481,6 +9481,20 @@ ROBOT
 
   Related Topics: OUTPUTPREFIX, OUTPUTSUFFIX, @robot.
 
+& ROOM
+ROOM
+
+  FLAG: ROOM(R)  ()
+
+  This flag is automatically set on rooms when you @dig a new
+  room. It cannot be changed. Rooms have the added advantage that
+  they can be saved from destruction by setting the room to !GOING
+  (SEE GOING).
+  However, this can only be done if no other room/object was created
+  that overwrote your room when it was set for destruction.
+
+  Related Topics:
+
 & ROOM()
 ROOM()
 
@@ -9506,20 +9520,6 @@ ROOM()
     You say "The cat is in #368 within room #367."
 
   Related Topics: loc(), UNFINDABLE.
-
-& ROOM
-ROOM
-
-  FLAG: ROOM(R)  ()
-
-  This flag is automatically set on rooms when you @dig a new
-  room. It cannot be changed. Rooms have the added advantage that
-  they can be saved from destruction by setting the room to !GOING
-  (SEE GOING).
-  However, this can only be done if no other room/object was created
-  that overwrote your room when it was set for destruction.
-
-  Related Topics:
 
 & ROUND()
 ROUND()
@@ -11131,6 +11131,14 @@ VERBS
   to set the attributes related to the 'drop' command are @drop, @odrop, and
   @adrop.
 
+& VERSION
+VERSION
+
+  COMMAND: version
+
+  Displays the version of MUX that is running and the date it was last
+  rebuilt.
+
 & VERSION()
 VERSION()
 
@@ -11148,14 +11156,6 @@ VERSION()
 
 
   Related Topics:
-
-& VERSION
-VERSION
-
-  COMMAND: version
-
-  Displays the version of MUX that is running and the date it was last
-  rebuilt.
 
 & VISIBLE()
 VISIBLE()
@@ -11285,16 +11285,6 @@ WHO
 
   Related Topics: @doing.
 
-& WIZARDS
-WIZARDS
-
-  Wizards are the people that help run the game and make sure that everything
-  is working properly.  They have special powers to tweak reality in ways
-  mortals can only dream of.  Be nice to them, they are going out of their
-  way to help keep the game running smoothly. And remember, if you have any
-  problems or just want to talk to someone, they will be there for you as
-  well.
-
 & WIZARD
 WIZARD
 
@@ -11307,6 +11297,16 @@ WIZARD
   No WIZARD can turn their own WIZARD flag off.
 
   Related Topics:
+
+& WIZARDS
+WIZARDS
+
+  Wizards are the people that help run the game and make sure that everything
+  is working properly.  They have special powers to tweak reality in ways
+  mortals can only dream of.  Be nice to them, they are going out of their
+  way to help keep the game running smoothly. And remember, if you have any
+  problems or just want to talk to someone, they will be there for you as
+  well.
 
 & WORDPOS()
 WORDPOS()
