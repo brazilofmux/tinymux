@@ -43,7 +43,7 @@ Feature Additions:
     and @shutdown the server cleanly. Running on Win9x does not have this
     ability, yet.
  -- Attributes are now output in numeric order. With this, it is now
-    possible to construct reasonable-sized flatfile patches.
+    possible to make reasonable-sized patches between two flatfiles.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -72,8 +72,12 @@ Bug Fixes:
     issue if you were running a non-DEBUG build and wanted to disable the
     comsys.
  -- Fixed SIGBUS issue on Solaris. This was not an issue for MUX 2.0.
+    Thanks to nails for providing a Solaris test account.
  -- Fixed SIGSEGV bug in timeutil with how the timezone offset table was
     maintained. It required three things to happen at the same time.
+ -- Fixed memory leak of Bools upon a @backup or @dump/flatfile. Bug
+    originated in MUX 1.6, first fixed in Chaotic MUX, and is already
+    fixed in MUSH 3.0.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
