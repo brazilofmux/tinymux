@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.16 2002-02-13 23:15:48 zenty Exp $
+// $Id: mguests.cpp,v 1.17 2002-02-13 23:47:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -98,11 +98,14 @@ char *CGuests::Create(DESC *d)
     for (i = 0; i < nGuests; i++)
     {
         // If we have something that isn't a guest in the list, lets
-        // just drop it and make a new one
+        // just drop it and make a new one.
         //
-        if(!Good_obj(Guests[i]) || isGarbage(Guests[i]) ||
-           !isPlayer(Guests[i]) || !Guest(Guests[i])) {
-            Guests[i]=MakeGuestChar();
+        if (  !Good_obj(Guests[i])
+           || isGarbage(Guests[i])
+           || !isPlayer(Guests[i])
+           || !Guest(Guests[i]))
+        {
+            Guests[i] = MakeGuestChar();
             return Name(Guests[i]);
         }
         
@@ -128,7 +131,7 @@ char *CGuests::Create(DESC *d)
             db[Guests[i]].fs.word[FLAG_WORD1] |= TYPE_PLAYER;
             db[Guests[i]].fs.word[FLAG_WORD1] &= ~WIZARD;
 
-            // Make sure they're a guest
+            // Make sure they're a guest.
             //
             s_Guest(player);
             
@@ -168,14 +171,18 @@ char *CGuests::Create(DESC *d)
 
 void CGuests::CleanUp(void)
 {
+    // Paranoia Checking. If it's after min_guests, we'll chop it anyways, so
+    // why care?
+    //
     int i;
-
-    // Paranoia Checking. If it's after min_guests, we'll chop it anyways,
-    // so why care?
-    for(i=0;i<mudconf.min_guests;i++) {
-        if(!Good_obj(Guests[i]) || isGarbage(Guests[i]) ||
-           !isPlayer(Guests[i]) || !Guest(Guests[i])) {
-            Guests[i]=MakeGuestChar();
+    for (i = 0; i < mudconf.min_guests; i++)
+    {
+        if (  !Good_obj(Guests[i])
+           || isGarbage(Guests[i])
+           || !isPlayer(Guests[i])
+           || !Guest(Guests[i]))
+        {
+            Guests[i] = MakeGuestChar();
         }
     }
     
@@ -209,8 +216,9 @@ void CGuests::CleanUp(void)
     itmp = nGuests;
     for (i = mudconf.min_guests; i < itmp;i++)
     {
-        if (!Connected(Guests[i]) && Good_obj(Guests[i]) &&
-            !isGarbage(Guests[i]))
+        if (  !Connected(Guests[i])
+           && Good_obj(Guests[i])
+           && !isGarbage(Guests[i]))
         {
             DestroyGuestChar(Guests[i]);
             nGuests--;
@@ -325,13 +333,17 @@ void CGuests::WipeAttrs(dbref guest)
     free_lbuf(atext);
 }
 
-int CGuests::CheckGuest(dbref player)
+BOOL CGuests::CheckGuest(dbref player)
 {
     int i;
-    for(i=0;i<nGuests;i++)
-        if(Guests[i] == player)
-            return 1;
-    return 0;
+    for (i = 0; i < nGuests; i++)
+    {
+        if (Guests[i] == player)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 // @list guests, thanks Rhost for the idea!
