@@ -2,7 +2,7 @@
  * conf.cpp: set up configuration information and static data 
  */
 /*
- * $Id: conf.cpp,v 1.13 2000-06-02 16:18:12 sdennis Exp $ 
+ * $Id: conf.cpp,v 1.14 2000-06-02 23:49:50 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -600,23 +600,7 @@ CF_HAND(cf_string_dyn)
         }
         retval = 1;
     }             
-    char *confbuff = (char *)MEMALLOC(nStr + 1);
-    if (!confbuff)
-    {
-        if (mudstate.initializing)
-        {
-            Log.WriteString("ABORT! conf.cpp, failed to allocate memory in cf_string_dyn().\n");
-            Log.Flush();
-            abort();
-        }
-        else
-        {
-            notify(player, "Memory allocation failed, config unchanged");
-            return 1;
-        }
-    }
-    memcpy(confbuff, str, nStr + 1);
-    confbuff[nStr] = '\0';
+    char *confbuff = StringCloneLen(str, nStr);
 
     // Free previous memory for buffer.
     //
@@ -1042,10 +1026,7 @@ CF_HAND(cf_site)
     // Parse the access entry and allocate space for it.
     //
     SITE *site = (SITE *)MEMALLOC(sizeof(SITE));
-    if (!site)
-    {
-        return -1;
-    }
+    ISOUTOFMEMORY(site);
     
     // Initialize the site entry.
     //
@@ -1521,12 +1502,7 @@ int cf_read(void)
             char *pSuffix = DefaultSuffixes[i].pSuffix;
             int nSuffix = strlen(pSuffix);
             char *buff = (char *)MEMALLOC(nInDB + nSuffix + 1);
-            if (!buff)
-            {
-                Log.WriteString("ABORT! conf.cpp, failed to allocate memory in cf_read().\n");
-                Log.Flush();
-                abort();
-            }
+            ISOUTOFMEMORY(buff);
             memcpy(buff, mudconf.indb, nInDB);
             memcpy(buff + nInDB, pSuffix, nSuffix+1);
             MEMFREE(*p);
