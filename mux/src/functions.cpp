@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.99 2002-09-18 04:19:42 sdennis Exp $
+// $Id: functions.cpp,v 1.100 2002-09-18 04:45:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9234,7 +9234,7 @@ FUNCTION(fun_ord)
     char *p  = strip_ansi(fargs[0], &n);
     if (n == 1)
     {
-        unsigned ch = p[0];
+        unsigned char ch = p[0];
         safe_ltoa(ch, buff, bufc);
     }
     else
