@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.40 2002-07-19 17:37:54 sdennis Exp $
+// $Id: command.cpp,v 1.41 2002-07-20 06:00:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3393,18 +3393,18 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
     CMDENT *cmdp;
     NAMETAB *logcmdp;
     char *buff1, *pt1, *pt2, *pt3, *atrpt, pre[2], *pt4, *pt5, *message;
-    int x, set, aflags, y, home, loc_set;
+    int x, set, aflags, y, home;
     dbref target, aowner, zone;
     BOOL bFound;
 
-    loc_set = -1;
-    if (  (key == ICMD_IROOM)
-       || (key == ICMD_DROOM)
-       || (key == ICMD_CROOM)
-       || (key == ICMD_LROOM)
-       || (key == ICMD_LALLROOM))
+    int loc_set = -1;
+    if (  key == ICMD_IROOM
+       || key == ICMD_DROOM
+       || key == ICMD_CROOM
+       || key == ICMD_LROOM
+       || key == ICMD_LALLROOM)
     {
-        if ( key != ICMD_LALLROOM )
+        if (key != ICMD_LALLROOM)
         {
             target = match_thing_quiet(player, name);
         }
@@ -3412,7 +3412,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
         {
             target = NOTHING;
         }
-        if (  !(key == ICMD_LALLROOM)
+        if (  key != ICMD_LALLROOM
            && (  !Good_obj(target)
               || !( isRoom(target)
                  || isThing(target))))
@@ -3422,18 +3422,18 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
         }
         if (key == ICMD_CROOM)
         {
-            atr_clr(target,A_CMDCHECK);
+            atr_clr(target, A_CMDCHECK);
             notify(player,"@icmd: Location - All cleared.");
             notify(player,"@icmd: Done.");
             return;
         }
-        else if ( key == ICMD_LROOM)
+        else if (key == ICMD_LROOM)
         {
-            atrpt = atr_get(target,A_CMDCHECK,&aowner,&aflags);
+            atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
                 notify(player,"Location CmdCheck attribute is:");
-                notify(player,atrpt);
+                notify(player, atrpt);
             }
             else
             {
@@ -3443,7 +3443,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
             notify(player,"@icmd: Done");
             return;
         }
-        else if ( key == ICMD_LALLROOM)
+        else if (key == ICMD_LALLROOM)
         {
             target = Location(player);
             if (  !Good_obj(target)
