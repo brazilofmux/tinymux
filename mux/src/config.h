@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: config.h,v 1.2 2003-01-23 01:21:21 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -188,9 +188,7 @@ extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
 extern BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo);
 #define ISOUTOFMEMORY(exp) (!(exp) && OutOfMemory(__FILE__, __LINE__))
 
-#ifndef STANDALONE
 //#define MEMORY_ACCOUNTING
-#endif // !STANDALONE
 
 // Memory Allocation Accounting
 //
