@@ -29,7 +29,6 @@ NOTES
 README
 readme.txt
 SGP
-src/a.cpp
 src/alloc.cpp
 src/alloc.h
 src/analyse.pre
