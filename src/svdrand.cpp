@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.22 2002-02-04 09:07:27 sdennis Exp $
+// $Id: svdrand.cpp,v 1.23 2002-02-05 09:29:59 sdennis Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -39,6 +39,7 @@ UINT32 genrand(void);     // returns a random 32-bit integer */
 #define N 624
 static UINT32 mt[N];
 
+BOOL bCryptoAPI = FALSE;
 static BOOL bSeeded = FALSE;
 void SeedRandomNumberGenerator(void)
 {
@@ -66,6 +67,7 @@ void SeedRandomNumberGenerator(void)
     // API as follows lets us to fallback gracefully when running on pre-OSR2
     // Win95.
     //
+    bCryptoAPI = TRUE;
     HINSTANCE hAdvAPI32 = LoadLibrary("advapi32");
     if (hAdvAPI32)
     {
@@ -102,7 +104,7 @@ void SeedRandomNumberGenerator(void)
         }
         FreeLibrary(hAdvAPI32);
     }
-    Log.WriteString("Crypto API unavailable.\r\n");
+    bCryptoAPI = FALSE;
 #endif
 
     // Determine the initial seed.

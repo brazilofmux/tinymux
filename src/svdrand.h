@@ -1,6 +1,6 @@
 // svdrand.h -- Random Numbers.
 //
-// $Id: svdrand.h,v 1.7 2001-11-18 21:43:36 sdennis Exp $
+// $Id: svdrand.h,v 1.8 2002-02-05 09:29:59 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
@@ -23,5 +23,9 @@
 void SeedRandomNumberGenerator(void);
 double RandomFloat(double flLow, double flHigh);
 INT32 RandomINT32(INT32 lLow, INT32 lHigh);
+
+#ifdef WIN32
+extern BOOL bCryptoAPI;
+#endif
 
 #endif // SVDRAND_H

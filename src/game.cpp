@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.51 2001-12-04 09:27:02 sdennis Exp $
+// $Id: game.cpp,v 1.52 2002-02-05 09:29:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1925,6 +1925,10 @@ int DCL_CDECL main(int argc, char *argv[])
             LOBYTE(wsaData.wVersion), HIBYTE(wsaData.wVersion));
         //WSACleanup();
         //return 102;
+    }
+    if (!bCryptoAPI)
+    {
+        Log.WriteString("Crypto API unavailable.\r\n");
     }
 #endif // WIN32
 
