@@ -1486,6 +1486,9 @@ BADSITE_FILE
   sites that have been blocked from accessing the server.  The connection
   is closed immediately after the file is sent.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: forbid_site, permit_site.
 
 & BAD_NAME
@@ -1519,6 +1522,9 @@ CACHE_NAMES
 
   Whether or not to use object name caches.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics:
 
 & CACHE_PAGES
@@ -1537,6 +1543,9 @@ CACHE_PAGES
   increase cache_pages somewhat.  Estimate that you will need one page
   per active player.  So, the default of 40 is tuned to perform well
   for up to 100 players.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: cache_pages, max_cache_size.
 
@@ -1687,6 +1696,9 @@ COMPRESS_PROGRAM
   written.  If database file compression is enabled, database dumps are piped
   through this program on their way out to disk.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: compression, uncompress_program.
 
 & COMSYS_DATABASE
@@ -1698,6 +1710,9 @@ COMSYS_DATABASE
   Specifies the file that comsystem and macro information is stored in.
   This database is loaded at startup if either have_comsys or have_macros
   are on.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: have_comsys, have_macros.
 
@@ -1786,6 +1801,9 @@ CONNECT_FILE
   help on how to connect to or create a character, as well as the WHO and QUIT
   commands.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: connect_reg_file
 
 & CONNECT_REG_FILE
@@ -1799,6 +1817,9 @@ CONNECT_REG_FILE
   help on how to get a character (usually by sending e-mail to one of the
   wizards), how to connect to an existing character, as well as the WHO and
   QUIT commands.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: connect_file
 
@@ -1826,6 +1847,9 @@ CRASH_DATABASE
   Specifies the name of the database file that should be written when MUX
   detects an internal error and is about to crash. The file is generated
   in flatfile format with attribute values included.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
 & CREATE_MAX_COST
 CREATE_MAX_COST
@@ -1928,6 +1952,9 @@ DOWN_FILE
 
   Specifies the name of the file that is displayed when players attempt to
   connect to a non-wizard character when logins are disabled.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: @disable, down_motd_message.
 
@@ -2140,6 +2167,9 @@ FIXED_HOME_MESSAGE
   Specifies the string that is sent to a player when they try to go home
   while they are set with the FIXED flag.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: fixed_tel_message.
 
 & FIXED_TEL_MESSAGE
@@ -2150,6 +2180,9 @@ FIXED_TEL_MESSAGE
 
   Specifies the string that is sent to a player when they try to teleport
   while they are set with the FIXED flag.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: fixed_home_message.
 
@@ -2240,6 +2273,9 @@ FULL_FILE
   connect to a non-wizard character when the number of connected players
   is not less than the number of players allowed by the max_players directive.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: full_motd_message, max_players.
 
 & FULL_MOTD_MESSAGE
@@ -2314,6 +2350,9 @@ GAME_DIR_FILE
   It is read into memory at startup and re-written during page splits in the
   'pages' portion of the database.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: game_pag_file
 
 & GAME_PAG_FILE
@@ -2325,6 +2364,9 @@ GAME_PAG_FILE
   the CHashFile attribute database. Unlike the 'directory' portion, this
   portion cannot be replaced. Attribute values themselves are stored in this
   file.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: game_dir_file
 
@@ -2428,6 +2470,9 @@ GUEST_FILE
   Specifies the file that is to be shown to people connecting to the
   guest character in place of the motd file.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: guest_char_num.
 
 & GUEST_NUKER
@@ -2452,6 +2497,9 @@ GUEST_PREFIX
   when the guest is created. This will also be what is used to connect to
   the guests on your system.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: guest_char_num, number_guests, min_guests, guest_site.
 
 & GUEST_SITE
@@ -2474,6 +2522,9 @@ HAVE_COMSYS
 
   Specifies whether or not the comsystem should be active.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: comsys_database, have_macros.
 
 & HAVE_MAILER
@@ -2483,6 +2534,9 @@ HAVE_MAILER
   DEFAULT: yes
 
   Specifies whether @mail and mail aliases should be active.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: mail_database
 
@@ -2495,6 +2549,9 @@ HAVE_ZONES
   Specifies whether zones should be active. If this is off, zone connects
   and disconnects, zone commands, and the control aspects will all be
   disabled.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
 & HELPFILE
 HELPFILE
@@ -2710,6 +2767,9 @@ INITIAL_SIZE
   space for the database in large chunks, the size of which depends on
   this parameter.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
 & INPUT_DATABASE
 INPUT_DATABASE
 
@@ -2719,6 +2779,9 @@ INPUT_DATABASE
   Specifies the name of the database file that is read in at startup.
   This file is used only as an input file, the parameter output_database
   controls where updated copies of the database are written.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: crash_database, output_database
 
@@ -2809,6 +2872,9 @@ LOCK_RECURSION_LIMIT
   Sets the maximum number of levels of indirection that may be used when
   using indirect locks.  If more than this many levels are used, the lock
   fails and the user gets an error message.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
 & LOG
 LOG
@@ -3024,6 +3090,9 @@ MIN_GUESTS
   These guests will not be nuked on @dbck's but will instead be recycled.
   Use this to set how many guests you normally have on.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: number_guests, guest_char_num, guest_prefix, guest_site.
 
 & MONEY_NAME_PLURAL
@@ -3058,6 +3127,9 @@ MOTD_FILE
   Specifies the name of the file to be shown to players immediately after they
   connect to their characters.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: @readcache, newuser_file, motd_message.
 
 & MOTD_MESSAGE
@@ -3089,6 +3161,9 @@ NEWUSER_FILE
   create their characters, in place of the MOTD file.  This file should
   contain information about the basic commands and how to get help.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: @readcache, motd_file.
 
 & NOSITEMON_SITE
@@ -3119,6 +3194,9 @@ NUMBER_GUESTS
 
   How many guests should we allow at any one time?
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: guest_char_num, guest_nuker, guest_prefix.
 
 & OPEN_COST
@@ -3142,6 +3220,9 @@ OUTPUT_DATABASE
   Specifies the file to which the database is to be written when writing
   checkpoint dumps or writing the final dump after receiving a @shutdown
   command.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: @dump, @shutdown, checkpoint_database, input_database.
 
@@ -3508,6 +3589,9 @@ QUIT_FILE
   Specifies the name of the file that is displayed to users after they QUIT
   but before the network connection is closed.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: QUIT, @readcache.
 
 & QUOTAS
@@ -3533,6 +3617,9 @@ RAW_HELPFILE
   This is similiar to the 'helpfile' configuration directive, except that
   the help topics contained in <pathname> are not evaluted by the parser
   before being shown to the player.
+
+  To prevent access to arbitrary files after the server has started, this
+  directive cannot be used by via @admin after the server has started.
 
   Related Topics: helpfile
 
@@ -3568,6 +3655,9 @@ REGISTER_CREATE_FILE
 
   Specifies the name of the file that is shown to players who attempt to
   create a new character when registration is in force from their site.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: @list_file, @readcache, register_site.
 
@@ -3672,6 +3762,9 @@ RUN_STARTUP
 
   Controls whether the @startup attribute is automatically executed at
   database load time.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
 & SACRIFICE_ADJUST
 SACRIFICE_ADJUST
@@ -3817,6 +3910,9 @@ SIGNAL_ACTION
                 restart the game using the last reliably saved database.
                 For a description of the restart process, see @restart.
      exit     - Log the error, and exit, hopefully with a core file.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
 & SITE LISTS
 SITE LISTS
@@ -4000,6 +4096,9 @@ STATUS_FILE
   out to the file named by this directive.  The file can be used by an
   auto-restart script to decide whether or not to bring the MUX back up,
   for instance.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
 & SUSPECT
 SUSPECT
@@ -4224,6 +4323,9 @@ UNCOMPRESS_PROGRAM
   Specifies the program to be run to uncompress compressed database files when
   reading them in at startup.
 
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
+
   Related Topics: compress_program, compression.
 
 & UNOWNED_SAFE
@@ -4253,6 +4355,9 @@ USE_HTTP
   DEFAULT: no
 
   Indicates whether or not http access is allowed.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
 & WAIT_COST
 WAIT_COST
@@ -4314,6 +4419,9 @@ WIZARD_MOTD_FILE
   the wizard_motd_message config parameter.  The contents of the file are
   read in to a cache when the game is started and whenever a @readcache
   command is executed.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: @readcache, wizard_motd_message.
 
