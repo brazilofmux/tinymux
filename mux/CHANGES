@@ -142,6 +142,8 @@ Feature Additions:
     or needed.
  -- Added command line options to nextmux for obtaining usage and version
     string.
+ -- Added CASE attribute flag to be used in combination with REGEXP flag.
+ -- Added -v and -h command line options to netmux.
 
 
 Bug Fixes:
@@ -246,6 +248,7 @@ Bug Fixes:
  -- Fixed behavior of read_remote_desc configuration option.  Bug introduced
     by Jake.  Fixed by Brazil.
  -- Document INFO logged-out command.
+ -- @dbck didn't reset bogus home as it intended.
 
 
 
