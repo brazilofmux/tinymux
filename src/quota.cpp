@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands
 //
-// $Id: quota.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $
+// $Id: quota.cpp,v 1.2 2001-07-23 16:45:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -152,7 +152,7 @@ void do_quota(dbref player, dbref cause, int key, char *arg1, char *arg2)
     dbref who;
     int set, value, i;
 
-    if (!(mudconf.quotas | Quota(player)))
+    if (!(mudconf.quotas || Quota(player)))
     {
         notify_quiet(player, "Quotas are not enabled.");
         return;
