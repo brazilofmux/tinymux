@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.9 2000-06-09 02:07:48 sdennis Exp $
+// $Id: look.cpp,v 1.10 2000-10-24 20:16:07 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2103,9 +2103,10 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
     
     // If the object has a zone, report it.
     //
-    if (!wild_decomp && (Zone(thing) != NOTHING))
+    int zone;
+    if (!wild_decomp && Good_obj(zone = Zone(thing)))
     {
-        notify(player, tprintf("@chzone %s=#%d", strip_ansi(thingname), Zone(thing)));
+        notify(player, tprintf("@chzone %s=#%d", strip_ansi(thingname), zone));
     }
     
     free_lbuf(thingname);
