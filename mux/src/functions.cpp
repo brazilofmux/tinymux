@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.54 2002-07-13 07:23:01 jake Exp $
+// $Id: functions.cpp,v 1.55 2002-07-16 22:03:37 jake Exp $
 //
 
 #include "copyright.h"
@@ -7589,7 +7589,7 @@ FUN flist[] =
     {"CAT",      fun_cat,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CEIL",     fun_ceil,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CENTER",   fun_center,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"CHANNELS", fun_channels, MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"CHANNELS", fun_channels, MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"CHILDREN", fun_children, MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CMDS",     fun_cmds,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"COLUMNS",  fun_columns,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
