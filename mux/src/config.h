@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.3 2003-02-04 06:40:40 sdennis Exp $
+// $Id: config.h,v 1.4 2003-02-04 17:35:07 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -133,6 +133,8 @@ typedef int SOCKET;
 #define SD_BOTH (2)
 
 #endif // WIN32
+
+#define isTRUE(b) ((b) != 0)
 
 // Find the minimum-sized integer type that will hold 32-bits.
 // Promote to 64-bits if necessary.
