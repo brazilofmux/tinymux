@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.35 2003-02-04 22:35:51 sdennis Exp $
+// $Id: stringutil.cpp,v 1.36 2003-02-05 00:04:50 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2615,7 +2615,7 @@ double mux_atof(char *szString, BOOL bStrict)
     return ret;
 }
 
-extern char *Tiny_dtoa(double d, int mode, int nRequest, int *iDecimalPoint,
+extern char *mux_dtoa(double d, int mode, int nRequest, int *iDecimalPoint,
                        int *sign, char **rve);
 
 char *mux_ftoa(double r, BOOL bRounded, int frac)
@@ -2641,7 +2641,7 @@ char *mux_ftoa(double r, BOOL bRounded, int frac)
             nRequest = -20;
         }
     }
-    char *p = Tiny_dtoa(r, mode, nRequest, &iDecimalPoint, &bNegative, &rve);
+    char *p = mux_dtoa(r, mode, nRequest, &iDecimalPoint, &bNegative, &rve);
     int nSize = rve - p;
     if (nSize > 50)
     {

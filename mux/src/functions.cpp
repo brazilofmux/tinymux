@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.27 2003-02-04 22:08:59 sdennis Exp $
+// $Id: functions.cpp,v 1.28 2003-02-05 00:04:50 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3321,12 +3321,12 @@ static double NearestPretty(double R)
 
     // R.
     //
-    char *p = Tiny_dtoa(R, mode, 50, &decpt, &bNegative, &rve);
+    char *p = mux_dtoa(R, mode, 50, &decpt, &bNegative, &rve);
     int nDigits = rve - p;
 
     // R-ulp(R)
     //
-    p = Tiny_dtoa(R0, mode, 50, &decpt, &bNegative, &rve);
+    p = mux_dtoa(R0, mode, 50, &decpt, &bNegative, &rve);
     if (rve - p < nDigits)
     {
         nDigits = rve - p;
@@ -3335,7 +3335,7 @@ static double NearestPretty(double R)
 
     // R+ulp(R)
     //
-    p = Tiny_dtoa(R1, mode, 50, &decpt, &bNegative, &rve);
+    p = mux_dtoa(R1, mode, 50, &decpt, &bNegative, &rve);
     if (rve - p < nDigits)
     {
         nDigits = rve - p;

@@ -2616,7 +2616,7 @@ void freedtoa(char *s)
  *     calculation.
  */
 
-char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
+char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
                 char **rve)
 {
  /* Arguments ndigits, decpt, sign are similar to those
