@@ -10,6 +10,8 @@ Major changes that may affect performance and require softcode tweaks:
     the changes are made for the sake of consistency across the codebase.
  -- convtime() now returns '#-1 INVALID DATE' instead of -1 when it cannot
     parse the time string because '-1' is a valid time stamp.
+ -- IFELSE() now uses the BOOLEAN convention instead of psuedo-BOOLEAN-Z
+    convention.
 
 
 Feature Additions:
