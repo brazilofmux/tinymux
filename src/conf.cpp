@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.34 2001-04-09 23:25:54 sdennis Exp $
+// $Id: conf.cpp,v 1.35 2001-06-24 01:06:13 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -18,14 +18,6 @@
 #include "flags.h"
 #include "powers.h"
 #include "match.h"
-
-/* Some systems are lame, and inet_addr() claims to return -1 on failure,
- * despite the fact that it returns an unsigned long. (It's not really a -1,
- * obviously.) Better-behaved systems use INADDR_NONE.
- */
-#ifndef INADDR_NONE
-#define INADDR_NONE -1
-#endif
 
 /*
  * ---------------------------------------------------------------------------
@@ -899,38 +891,232 @@ CF_HAND(cf_badname)
     return 0;
 }
 
-/* ---------------------------------------------------------------------------
- * sane_inet_addr: inet_addr() does not necessarily do reasonable checking
- * for sane syntax. On certain operating systems, if passed less than four
- * octets, it will cause a segmentation violation. This is unfriendly.
- * We take steps here to deal with it.
- *
- * This approach specifically disallows the Berkeley-only IP formats:
- *
- *    a.b.c (e.g., Class B 128.net.host)
- *    a.b   (e.g., class A: net.host)
- *    a     (single 32-bit number)
- *
- * Avoiding a SIGSEGV on certain operating systems is better than supporting
- * niche formats that are only available on Berkeley Unix.
- */
-static unsigned long sane_inet_addr(char *str)
+typedef struct
 {
-    int i;
-    
-    char *p = str;
-    for (i = 1; (p = (char *) strchr(p, '.')) != NULL; i++, p++)
+    int    nShift;
+    UINT32 maxValue;
+    int    maxOctLen;
+    int    maxDecLen;
+    int    maxHexLen;
+} DECODEIPV4;
+
+static BOOL DecodeN(int nType, size_t len, const char *p, unsigned long *pu32)
+{
+    static DECODEIPV4 DecodeIPv4Table[4] =
     {
-        // Nothing
+        { 8,         255,  3,  3, 2 },
+        { 16,      65535,  6,  5, 4 },
+        { 24,   16777215,  8,  8, 6 },
+        { 32, 4294967295, 11, 10, 8 }
+    };
+
+    *pu32 <<= DecodeIPv4Table[nType].nShift;
+    if (len == 0)
+    {
+        return FALSE;
     }
-    if (i < 4)
+    unsigned long ul = 0;
+    unsigned long ul2;
+    if (len >= 3 && p[0] == '0' && Tiny_ToLower[(unsigned char)p[1]] == 'x')
     {
-        return (unsigned long)INADDR_NONE;
+        // Hexadecimal Path
+        //
+        // Skip the leading zeros.
+        //
+        p += 2;
+        len -= 2;
+        while (*p == '0' && len)
+        {
+            p++;
+            len--;
+        }
+        if (len > DecodeIPv4Table[nType].maxHexLen)
+        {
+            return FALSE;
+        }
+        while (len)
+        {
+            unsigned char ch = Tiny_ToLower[(unsigned char)*p];
+            ul2 = ul;
+            ul <<= 4;
+            if (ul < ul2)
+            {
+                // Overflow
+                //
+                return FALSE;
+            }
+            if ('0' <= ch && ch <= '9')
+            {
+                ul |= ch - '0';
+            }
+            else if ('a' <= ch && ch <= 'f')
+            {
+                ul |= ch - 'a';
+            }
+            else
+            {
+                return FALSE;
+            }
+            p++;
+            len--;
+        }
+    }
+    else if (len >= 1 && p[0] == '0')
+    {
+        // Octal Path
+        //
+        // Skip the leading zeros.
+        //
+        p++;
+        len--;
+        while (*p == '0' && len)
+        {
+            p++;
+            len--;
+        }
+        if (len > DecodeIPv4Table[nType].maxOctLen)
+        {
+            return FALSE;
+        }
+        while (len)
+        {
+            unsigned char ch = *p;
+            ul2 = ul;
+            ul <<= 3;
+            if (ul < ul2)
+            {
+                // Overflow
+                //
+                return FALSE;
+            }
+            if ('0' <= ch && ch <= '7')
+            {
+                ul |= ch - '0';
+            }
+            else
+            {
+                return FALSE;
+            }
+            p++;
+            len--;
+        }
     }
     else
     {
-        return inet_addr(str);
+        // Decimal Path
+        //
+        if (len > DecodeIPv4Table[nType].maxDecLen)
+        {
+            return FALSE;
+        }
+        while (len)
+        {
+            unsigned char ch = *p;
+            ul2 = ul;
+            ul *= 10;
+            if (ul < ul2)
+            {
+                // Overflow
+                //
+                return FALSE;
+            }
+            ul2 = ul;
+            if ('0' <= ch && ch <= '9')
+            {
+                ul += ch - '0';
+            }
+            else
+            {
+                return FALSE;
+            }
+            if (ul < ul2)
+            {
+                // Overflow
+                //
+                return FALSE;
+            }
+            p++;
+            len--;
+        }
     }
+    if (ul > DecodeIPv4Table[nType].maxValue)
+    {
+        return FALSE;
+    }
+    *pu32 |= ul;
+    return TRUE;
+}
+
+// ---------------------------------------------------------------------------
+// MakeCanonicalIPv4: inet_addr() does not do reasonable checking for sane
+// syntax on all platforms. On certain operating systems, if passed less than
+// four octets, it will cause a segmentation violation. Furthermore, there is
+// confusion between return values for valid input "255.255.255.255" and
+// return values for invalid input (INADDR_NONE as -1). To overcome these
+// problems, it appears necessary to re-implement inet_addr() with a different
+// interface.
+//
+// n8.n8.n8.n8  Class A format. 0 <= n8 <= 255.
+//
+// Supported Berkeley IP formats:
+//
+//    n8.n8.n16  Class B 128.net.host format. 0 <= n16 <= 65535.
+//    n8.n24     Class A net.host format. 0 <= n24 <= 16777215.
+//    n32        Single 32-bit number. 0 <= n32 <= 4294967295.
+//
+// Each element may be expressed in decimal, octal or hexadecimal. '0' is the
+// octal prefix. '0x' or '0X' is the hexadecimal prefix. Otherwise the number
+// is taken as decimal.
+//
+//    08  Octal
+//    0x8 Hexadecimal
+//    0X8 Hexadecimal
+//    8   Decimal
+//
+static BOOL MakeCanonicalIPv4(const char *str, unsigned long *pnIP)
+{
+    *pnIP = 0;
+    if (!str)
+    {
+        return FALSE;
+    }
+
+    // Skip leading spaces.
+    //
+    const char *q = str;
+    while (*q == ' ')
+    {
+        q++;
+    }
+
+    char *p = strchr(q, '.');
+    int n = 0;
+    while (p)
+    {
+        // Decode
+        //
+        n++;
+        if (n > 3)
+        {
+            return FALSE;
+        }
+        if (!DecodeN(0, p-q, q, pnIP))
+        {
+            return FALSE;
+        }
+        q = p + 1;
+        p = strchr(q, '.');
+    }
+
+    // Decode last element.
+    //
+    size_t len = strlen(q);
+    if (!DecodeN(3-n, len, q, pnIP))
+    {
+        return FALSE;
+    }
+    *pnIP = htonl(*pnIP);
+    return TRUE;
 }
 
 // Given a host-ordered mask, this function will determine whether it is a
@@ -981,8 +1167,7 @@ CF_HAND(cf_site)
             cf_log_syntax(player, cmd, "Missing host address or mask.", (char *)"");
             return -1;
         }
-        mask_num.s_addr = sane_inet_addr(mask_txt);
-        if (  mask_num.s_addr == INADDR_NONE
+        if (  !MakeCanonicalIPv4(mask_txt, &mask_num.s_addr)
            || !isValidSubnetMask(ulMask = ntohl(mask_num.s_addr)))
         {
             cf_log_syntax(player, cmd, "Malformed mask address: %s", mask_txt);
@@ -1013,8 +1198,7 @@ CF_HAND(cf_site)
             mask_num.s_addr = htonl(ulMask);
         }
     }
-    addr_num.s_addr = sane_inet_addr(addr_txt);
-    if (addr_num.s_addr == INADDR_NONE)
+    if (!MakeCanonicalIPv4(addr_txt, &addr_num.s_addr))
     {
         cf_log_syntax(player, cmd, "Malformed host address: %s", addr_txt);
         return -1;
