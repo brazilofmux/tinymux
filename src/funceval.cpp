@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.89 2002-02-09 13:03:02 sdennis Exp $
+// $Id: funceval.cpp,v 1.90 2002-03-02 08:04:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1219,7 +1219,7 @@ FUNCTION(fun_ifelse)
     *bp = '\0';
 
     if (  lbuff[0] == '\0'
-       || (  is_number(lbuff)
+       || (  is_integer(lbuff, NULL)
           && Tiny_atol(lbuff) == 0))
     {
         if (nfargs == 3)
@@ -1289,7 +1289,7 @@ FUNCTION(fun_mail)
     }
     else if (nfargs == 1)
     {
-        if (!is_number(fargs[0]))
+        if (!is_integer(fargs[0], NULL))
         {
             // Handle the case of wanting to count the number of
             // messages.
@@ -2507,42 +2507,42 @@ FUNCTION(fun_lit)
 //
 FUNCTION(fun_shl)
 {
-    if (is_number(fargs[0]) && is_number(fargs[1]))
+    if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
         safe_ltoa(Tiny_atol(fargs[0]) << Tiny_atol(fargs[1]), buff, bufc);
     else
-        safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
+        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
 }
 
 FUNCTION(fun_shr)
 {
-    if (is_number(fargs[0]) && is_number(fargs[1]))
+    if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
         safe_ltoa(Tiny_atol(fargs[0]) >> Tiny_atol(fargs[1]), buff, bufc);
     else
-        safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
+        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
 }
 
 FUNCTION(fun_band)
 {
-    if (is_number(fargs[0]) && is_number(fargs[1]))
+    if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
         safe_ltoa(Tiny_atol(fargs[0]) & Tiny_atol(fargs[1]), buff, bufc);
     else
-        safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
+        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
 }
 
 FUNCTION(fun_bor)
 {
-    if (is_number(fargs[0]) && is_number(fargs[1]))
+    if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
         safe_ltoa(Tiny_atol(fargs[0]) | Tiny_atol(fargs[1]), buff, bufc);
     else
-        safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
+        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
 }
 
 FUNCTION(fun_bnand)
 {
-    if (is_number(fargs[0]) && is_number(fargs[1]))
+    if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
         safe_ltoa(Tiny_atol(fargs[0]) & ~(Tiny_atol(fargs[1])), buff, bufc);
     else
-        safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
+        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
 }
 
 FUNCTION(fun_crc32)
@@ -2580,8 +2580,7 @@ FUNCTION(fun_unpack)
     INT64 iRadix = 64;
     if (nfargs == 2)
     {
-        int nDigits;
-        if (  !is_integer(fargs[1], &nDigits)
+        if (  !is_integer(fargs[1], NULL)
            || (iRadix = Tiny_atoi64(fargs[1])) < 2
            || 64 < iRadix)
         {
@@ -2646,9 +2645,8 @@ FUNCTION(fun_pack)
 {
     // Validate the arguments are numeric.
     //
-    int nDigits;
-    if (  !is_integer(fargs[0], &nDigits)
-       || (nfargs == 2 && !is_integer(fargs[1], &nDigits)))
+    if (  !is_integer(fargs[0], NULL)
+       || (nfargs == 2 && !is_integer(fargs[1], NULL)))
     {
         safe_str("#-1 ARGUMENTS MUST BE NUMBERS", buff, bufc);
         return;

@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.24 2002-02-13 18:57:29 sdennis Exp $
+// $Id: wiz.cpp,v 1.25 2002-03-02 08:05:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -452,7 +452,7 @@ void do_boot(dbref player, dbref cause, int key, char *name)
     }
     if (key & BOOT_PORT)
     {
-        if (is_number(name))
+        if (is_integer(name, NULL))
         {
             victim = Tiny_atol(name);
         }
@@ -538,7 +538,7 @@ void do_poor(dbref player, dbref cause, int key, char *arg1)
     dbref a;
     int amt, curamt;
 
-    if (!is_number(arg1))
+    if (!is_rational(arg1))
     {
         return;
     }

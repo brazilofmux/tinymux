@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.36 2002-02-07 09:05:02 sdennis Exp $
+// $Id: stringutil.h,v 1.37 2002-03-02 08:05:00 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -60,7 +60,8 @@ double Tiny_atof(char *szString);
 char *Tiny_ftoa(double r, BOOL bRounded, int frac);
 
 BOOL is_integer(char *, int *);
-BOOL is_number(char *);
+BOOL is_rational(char *);
+BOOL is_real(char *);
 
 #pragma pack(1)
 typedef struct

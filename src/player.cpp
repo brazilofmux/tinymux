@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.13 2002-01-15 06:23:29 sdennis Exp $
+// $Id: player.cpp,v 1.14 2002-03-02 08:05:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -525,7 +525,7 @@ dbref lookup_player(dbref doer, char *name, int check_who)
     if (*name == NUMBER_TOKEN)
     {
         name++;
-        if (!is_number(name))
+        if (!is_integer(name, NULL))
         {
             return NOTHING;
         }

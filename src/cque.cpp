@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.33 2002-01-15 06:23:27 sdennis Exp $
+// $Id: cque.cpp,v 1.34 2002-03-02 08:04:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -865,7 +865,7 @@ void do_wait
 
     // If arg1 is all numeric, do simple (non-sem) timed wait.
     //
-    if (is_number(event))
+    if (is_rational(event))
     {
         if (key & WAIT_UNTIL)
         {
@@ -905,7 +905,7 @@ void do_wait
         BOOL bTimed = FALSE;
         if (event && *event)
         {
-            if (is_number(event))
+            if (is_rational(event))
             {
                 if (key & WAIT_UNTIL)
                 {

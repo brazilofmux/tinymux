@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.10 2001-11-28 06:35:54 sdennis Exp $
+// $Id: rob.cpp,v 1.11 2002-03-02 08:05:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -423,7 +423,7 @@ void do_give
         notify(player, "Guest really doesn't need money or anything.");
         return;
     }
-    if (is_number(amnt))
+    if (is_rational(amnt))
     {
         give_money(player, recipient, key, Tiny_atol(amnt));
     }

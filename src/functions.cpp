@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.163 2002-03-01 22:44:23 sdennis Exp $
+// $Id: functions.cpp,v 1.164 2002-03-02 08:05:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -357,86 +357,56 @@ char *split_token(char **sp, char sep)
  * * List management utilities.
  */
 
-#define ALPHANUM_LIST   1
+#define ASCII_LIST      1
 #define NUMERIC_LIST    2
-#define DBREF_LIST  3
-#define FLOAT_LIST  4
+#define DBREF_LIST      4
+#define FLOAT_LIST      8
+#define ALL_LIST        (ASCII_LIST|NUMERIC_LIST|DBREF_LIST|FLOAT_LIST)
 
 static int autodetect_list(char *ptrs[], int nitems)
 {
-    int sort_type, i;
-    char *p;
-
-    sort_type = NUMERIC_LIST;
-    for (i = 0; i < nitems; i++)
+    int could_be = ALL_LIST;
+    for (int i = 0; i < nitems; i++)
     {
-        switch (sort_type)
+        char *p = ptrs[i];
+        if (p[0] != NUMBER_TOKEN)
         {
-        case NUMERIC_LIST:
+            could_be &= ~DBREF_LIST;
+        }
+        if (  (could_be & DBREF_LIST)
+           && !is_integer(p+1, NULL))
+        {
+            could_be &= ~(DBREF_LIST|NUMERIC_LIST|FLOAT_LIST);
+        }
+        if (  (could_be & FLOAT_LIST)
+           && !is_real(p))
+        {
+            could_be &= ~(NUMERIC_LIST|FLOAT_LIST);
+        }
+        if (  (could_be & NUMERIC_LIST)
+           && !is_integer(p, NULL))
+        {
+            could_be &= ~NUMERIC_LIST;
+        }
 
-            if (!is_number(ptrs[i]))
-            {
-                // If non-numeric, switch to alphanum sort. Exception: if this
-                // is the first element and it is a good dbref, switch to a
-                // dbref sort. We're a little looser than the normal 'good
-                // dbref' rules, any number following # the #-sign is
-                // accepted.
-                //
-                if (i == 0)
-                {
-                    p = ptrs[i];
-                    if (*p++ != NUMBER_TOKEN)
-                    {
-                        return ALPHANUM_LIST;
-                    }
-                    else if (is_integer(p, 0))
-                    {
-                        sort_type = DBREF_LIST;
-                    }
-                    else
-                    {
-                        return ALPHANUM_LIST;
-                    }
-                }
-                else
-                {
-                    return ALPHANUM_LIST;
-                }
-            }
-            else if (strchr(ptrs[i], '.'))
-            {
-                sort_type = FLOAT_LIST;
-            }
-            break;
-
-        case FLOAT_LIST:
-
-            if (!is_number(ptrs[i]))
-            {
-                sort_type = ALPHANUM_LIST;
-                return ALPHANUM_LIST;
-            }
-            break;
-
-        case DBREF_LIST:
-
-            p = ptrs[i];
-            if (*p++ != NUMBER_TOKEN)
-            {
-                return ALPHANUM_LIST;
-            }
-            if (!is_integer(p, 0))
-            {
-                return ALPHANUM_LIST;
-            }
-            break;
-
-        default:
-
-            return ALPHANUM_LIST;
+        if (could_be == ASCII_LIST)
+        {
+            return ASCII_LIST;
         }
     }
-    return sort_type;
+    if (could_be & NUMERIC_LIST)
+    {
+        return NUMERIC_LIST;
+    }
+    else if (could_be & FLOAT_LIST)
+    {
+        return FLOAT_LIST;
+    }
+    else if (could_be & DBREF_LIST)
+    {
+        return DBREF_LIST;
+    }
+    return ASCII_LIST;
 }
 
 static int get_list_type
@@ -461,7 +431,7 @@ static int get_list_type
         case '\0':
             return autodetect_list(ptrs, nitems);
         default:
-            return ALPHANUM_LIST;
+            return ASCII_LIST;
         }
     }
     return autodetect_list(ptrs, nitems);
@@ -2395,7 +2365,7 @@ int xlate(char *arg)
     if (arg[0] == '#')
     {
         arg++;
-        if (is_integer(arg, 0))
+        if (is_integer(arg, NULL))
         {
             temp = Tiny_atol(arg);
             if (temp == -1)
@@ -2411,7 +2381,7 @@ int xlate(char *arg)
     {
         return 0;
     }
-    if (is_integer(temp2, 0))
+    if (is_integer(temp2, NULL))
     {
         return Tiny_atol(temp2);
     }
@@ -6175,7 +6145,7 @@ FUNCTION(fun_space)
             // If 'space(0)', 'space(00)', ..., then allow num == 0,
             // otherwise, we force to num to be 1.
             //
-            if (!is_integer(fargs[0], 0))
+            if (!is_integer(fargs[0], NULL))
             {
                 num = 1;
             }
@@ -6281,7 +6251,7 @@ static void do_asort(char *s[], int n, int sort_type)
 
     switch (sort_type)
     {
-    case ALPHANUM_LIST:
+    case ASCII_LIST:
 
         qsort((void *)s, n, sizeof(char *), a_comp);
         break;
@@ -6387,12 +6357,12 @@ static void handle_sets
     char *list1 = alloc_lbuf("fun_setunion.1");
     strcpy(list1, fargs[0]);
     int n1 = list2arr(ptrs1, LBUF_SIZE, list1, sep);
-    do_asort(ptrs1, n1, ALPHANUM_LIST);
+    do_asort(ptrs1, n1, ASCII_LIST);
 
     char *list2 = alloc_lbuf("fun_setunion.2");
     strcpy(list2, fargs[1]);
     int n2 = list2arr(ptrs2, LBUF_SIZE, list2, sep);
-    do_asort(ptrs2, n2, ALPHANUM_LIST);
+    do_asort(ptrs2, n2, ASCII_LIST);
 
     int i1 = 0;
     int i2 = 0;
@@ -6658,8 +6628,7 @@ void centerjustcombo
 {
     // Width must be a number.
     //
-    int nDigits;
-    if (!is_integer(fargs[1], &nDigits))
+    if (!is_integer(fargs[1], NULL))
     {
         return;
     }
@@ -6923,7 +6892,27 @@ FUNCTION(fun_r)
 
 FUNCTION(fun_isnum)
 {
-    safe_str((is_number(fargs[0]) ? "1" : "0"), buff, bufc);
+    safe_str((is_real(fargs[0]) ? "1" : "0"), buff, bufc);
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * * israt: is the argument an rational?
+ */
+
+FUNCTION(fun_israt)
+{
+    safe_str((is_rational(fargs[0]) ? "1" : "0"), buff, bufc);
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * * isint: is the argument an integer?
+ */
+
+FUNCTION(fun_isint)
+{
+    safe_str((is_integer(fargs[0], NULL) ? "1" : "0"), buff, bufc);
 }
 
 /*
@@ -7128,7 +7117,9 @@ FUN flist[] =
     {"INZONE",   fun_inzone,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISDBREF",  fun_isdbref,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISIGN",    fun_isign,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISINT",    fun_isint,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISNUM",    fun_isnum,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISRAT",    fun_israt,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISUB",     fun_isub,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ISWORD",   fun_isword,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ITEMIZE",  fun_itemize,  MAX_ARG, 1,  4,       0, CA_PUBLIC},

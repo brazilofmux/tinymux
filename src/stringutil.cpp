@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.73 2002-03-02 04:04:17 sdennis Exp $
+// $Id: stringutil.cpp,v 1.74 2002-03-02 08:05:00 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2571,13 +2571,13 @@ BOOL is_integer(char *str, int *pDigits)
         str++;
     }
 
-    // Leading minus
+    // Leading minus or plus
     //
-    if (*str == '-')
+    if (*str == '-' || *str == '+')
     {
         str++;
 
-        // Just a minus by itself isn't an integer.
+        // Just a sign by itself isn't an integer.
         //
         if (!*str)
         {
@@ -2594,11 +2594,12 @@ BOOL is_integer(char *str, int *pDigits)
 
     // The number (int)
     //
-    while (Tiny_IsDigit[(unsigned char)*str])
+    do
     {
-        nDigits++;
         str++;
-    }
+        nDigits++;
+    } while (Tiny_IsDigit[(unsigned char)*str]);
+
     if (pDigits)
     {
         *pDigits = nDigits;
@@ -2614,7 +2615,7 @@ BOOL is_integer(char *str, int *pDigits)
     return (*str ? FALSE : TRUE);
 }
 
-BOOL is_number(char *str)
+BOOL is_rational(char *str)
 {
     // Leading spaces.
     //
@@ -2623,13 +2624,13 @@ BOOL is_number(char *str)
         str++;
     }
 
-    // Leading minus
+    // Leading minus or plus sign.
     //
-    if (*str == '-')
+    if (*str == '-' || *str == '+')
     {
         str++;
 
-        // But not if just a minus
+        // But not if just a sign.
         //
         if (!*str)
         {
@@ -2685,9 +2686,15 @@ BOOL is_number(char *str)
         str++;
     }
 
-    // The must be nothing else after the trailing spaces.
+    // There must be nothing else after the trailing spaces.
     //
     return (*str ? FALSE : TRUE);
+}
+
+BOOL is_real(char *str)
+{
+    PARSE_FLOAT_RESULT pfr;
+    return ParseFloat(&pfr, str);
 }
 
 #endif
