@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.71 2002-08-22 01:12:09 sdennis Exp $
+// $Id: command.cpp,v 1.72 2002-10-01 07:51:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -46,6 +46,7 @@ NAMETAB comtitle_sw[] =
 {
     {"off",             2,  CA_PUBLIC,  COMTITLE_OFF},
     {"on",              2,  CA_PUBLIC,  COMTITLE_ON},
+    { NULL,             0,          0,  0}
 };
 
 NAMETAB cemit_sw[] =
