@@ -1163,8 +1163,9 @@ HELP
 
   The following switches are available:
 
-    /poll - Displays the current poll message from the WHO report.
+    /poll             - Displays the current poll message from the WHO report.
     /header <message> - Sets a new poll message in the WHO report.
+    /unique           - Only set DOING message for the current connection.
 
   Related Topics: WHO, @poll.
 
