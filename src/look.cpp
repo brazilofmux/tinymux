@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.42 2002-05-09 04:28:00 sdennis Exp $
+// $Id: look.cpp,v 1.43 2002-05-23 16:24:41 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -463,7 +463,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     char *ExitFormatBuffer = atr_pget(loc, A_EXITFORMAT, &aowner, &aflags);
     char *ExitFormat = ExitFormatBuffer;
 
-    BOOL bDisplayExits = 1;
+    BOOL bDisplayExits = bFoundAnyDisplayable;
     if (*ExitFormat)
     {
         char *VisibleObjectList = alloc_lbuf("look_exits.VOL");
