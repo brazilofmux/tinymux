@@ -140,6 +140,8 @@
 #undef HAVE_FPU_CONTROL_H
 /* Define if your system has the in_addr_t type */
 #undef HAVE_IN_ADDR_T
+/* Define if fcntl.h exists */
+#undef HAVE_FCNTL_H
 
 /* ---------------------------------------------------------------------------
  * Setup section:
