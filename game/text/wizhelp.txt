@@ -2107,10 +2107,11 @@ GUEST_CHAR_NUM
   CONFIG PARAMETER: guest_char_num <number>
   DEFAULT: (none)
 
-  Indicates the database number of the guest character.  If set, the specified
-  guest character is subject to additional restrictions (such as not being
-  allowed to create or destroy objects).  The actual restrictions can be
-  changed with the access config parameter using the no_guest permission.
+  Indicates the database reference number of the guest character.  If set,
+  the specified guest character is subject to additional restrictions (such
+  as not being allowed to create or destroy objects).  The actual
+  restrictions can be changed with the access config parameter using the
+  no_guest permission.
 
   Related Topics: guest_prefix, guest_nuker, number_guests, access,
                   min_guests, guest_site.
@@ -2160,7 +2161,7 @@ GUEST_SITE
 
   Related Topics: badsite_file, permit_site, register_site, forbid_site,
                   SITE LISTS, SITE NOTATION,
-                  ALLOW_GUEST_FROM_REGISTERED_SITE.
+                  allow_guest_from_registered_site.
 
 & HAVE_COMSYS
 HAVE_COMSYS
@@ -2317,18 +2318,6 @@ INPUT_DATABASE
   controls where updated copies of the database are written.
 
   Related Topics: crash_database, output_database
-
-& MIN_GUESTS
-MIN_GUESTS
-
-  CONFIG PARAMETER: min_guests
-  DEFAULT: 1
-
-  Specifies the minimum number of guests that are should remain on the mux.
-  These guests will not be nuked on @dbck's but will instead be recycled.
-  Use this to set how many guests you normally have on.
-
-  Related Topics: number_guests, guest_char_num, guest_prefix, guest_site
 
 & KILL_GUARANTEE_COST
 KILL_GUARANTEE_COST
@@ -2603,6 +2592,18 @@ MAX_PLAYERS
   full_motd_message (also settable via @motd/full), and are disconnected.
 
   Related Topics: @motd, full_file, full_motd_message.
+
+& MIN_GUESTS
+MIN_GUESTS
+
+  CONFIG PARAMETER: min_guests
+  DEFAULT: 1
+
+  Specifies the minimum number of guests that are should remain on the MUX.
+  These guests will not be nuked on @dbck's but will instead be recycled.
+  Use this to set how many guests you normally have on.
+
+  Related Topics: number_guests, guest_char_num, guest_prefix, guest_site.
 
 & MONEY_NAME_PLURAL
 MONEY_NAME_PLURAL
@@ -3423,7 +3424,7 @@ SITE LISTS (continued)
   are not allowed to create their own characters (registration is enabled
   for those sites), while people connecting from elsewhere on the 135.246
   net are allowed to create their own characters.
- 
+
   Related Topics: @admin, forbid_site, @list site_information, permit_site,
                   register_site, SITE NOTATION, suspect_site, trust_site,
                   guest_site, nositemon_site..
