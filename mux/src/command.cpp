@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.13 2002-06-13 14:37:40 sdennis Exp $
+// $Id: command.cpp,v 1.14 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,15 +8,13 @@
 #include "config.h"
 #include "externs.h"
 
-#include "interface.h"
-#include "command.h"
-#include "functions.h"
-#include "match.h"
 #include "attrs.h"
+#include "command.h"
+#include "comsys.h"
+#include "functions.h"
+#include "mguests.h"
 #include "powers.h"
 #include "vattr.h"
-#include "comsys.h"
-#include "mguests.h"
 
 extern void FDECL(list_cf_access, (dbref));
 extern void FDECL(list_siteinfo, (dbref));

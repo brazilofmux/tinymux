@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: svdrand.cpp,v 1.2 2002-06-13 22:12:46 jake Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -17,9 +17,11 @@
 //
 #include "autoconf.h"
 #include "config.h"
+
 #include "timeutil.h"
-#include "svdrand.h"
+
 #include "svdhash.h"
+#include "svdrand.h"
 
 #ifdef WIN32
 #include <wincrypt.h>

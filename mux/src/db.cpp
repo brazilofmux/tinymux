@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.8 2002-06-13 19:56:40 jake Exp $
+// $Id: db.cpp,v 1.9 2002-06-13 22:12:46 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -23,11 +23,10 @@
 #include "externs.h"
 
 #include "attrs.h"
-#include "vattr.h"
-#include "match.h"
-#include "powers.h"
-#include "interface.h"
 #include "comsys.h"
+#include "interface.h"
+#include "powers.h"
+#include "vattr.h"
 
 #ifndef O_ACCMODE
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)

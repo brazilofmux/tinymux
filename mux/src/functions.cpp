@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.15 2002-06-13 07:19:33 jake Exp $
+// $Id: functions.cpp,v 1.16 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,17 +8,16 @@
 #include "config.h"
 #include "externs.h"
 
+#include <float.h>
 #include <limits.h>
 #include <math.h>
-#include <float.h>
 
+#include "ansi.h"
 #include "attrs.h"
-#include "match.h"
 #include "command.h"
 #include "functions.h"
-#include "misc.h"
-#include "ansi.h"
 #include "interface.h"
+#include "misc.h"
 #include "pcre.h"
 
 UFUN *ufun_head;

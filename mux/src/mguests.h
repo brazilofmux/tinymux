@@ -1,13 +1,12 @@
 // mguests.h
 //
-// $Id: mguests.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: mguests.h,v 1.2 2002-06-13 22:12:46 jake Exp $
 //
 
 #ifndef  __MGUESTS_H
 #define __MGUESTS_H
 
 #include "copyright.h"
-#include "autoconf.h"
 #include "interface.h"
 
 // Zenty does OOP.

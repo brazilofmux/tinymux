@@ -1,14 +1,12 @@
 // match.h
 //
-// $Id: match.h,v 1.2 2002-06-13 19:56:40 jake Exp $
+// $Id: match.h,v 1.3 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
 
 #ifndef M_MATCH_H
 #define M_MATCH_H
-
-#include "db.h"
 
 typedef struct match_state MSTATE;
 struct match_state {

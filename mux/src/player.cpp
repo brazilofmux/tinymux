@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.3 2002-06-05 05:16:32 sdennis Exp $
+// $Id: player.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,14 +8,11 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mudconf.h"
-#include "db.h"
-#include "interface.h"
-#include "alloc.h"
 #include "attrs.h"
-#include "powers.h"
 #include "comsys.h"
 #include "functions.h"
+#include "interface.h"
+#include "powers.h"
 #include "svdreport.h"
 
 // The following is sometime useful if you don't have access to a crypt

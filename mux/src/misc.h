@@ -1,6 +1,6 @@
 // misc.h -- miscellaneous structures that are needed in more than one file.
 //
-// $Id: misc.h,v 1.2 2002-06-04 00:47:28 sdennis Exp $
+// $Id: misc.h,v 1.3 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,8 +8,6 @@
 #ifndef _MISC_H
 #define _MISC_H
 
-#include "db.h"
-#include "flags.h"
 #include "powers.h"
 
 /* Search structure, used by @search and search(). */

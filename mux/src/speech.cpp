@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.7 2002-06-13 19:42:12 jake Exp $
+// $Id: speech.cpp,v 1.8 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,10 +8,9 @@
 #include "config.h"
 #include "externs.h"
 
-#include "interface.h"
-#include "match.h"
-#include "powers.h"
 #include "attrs.h"
+#include "interface.h"
+#include "powers.h"
 
 extern char *FDECL(next_token, (char *, char));
 

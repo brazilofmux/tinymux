@@ -1,16 +1,15 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.10 2002-06-13 19:56:40 jake Exp $
+// $Id: set.cpp,v 1.11 2002-06-13 22:12:46 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
 
-#include "match.h"
-#include "powers.h"
-#include "attrs.h"
 #include "ansi.h"
+#include "attrs.h"
+#include "powers.h"
 
 extern NAMETAB indiv_attraccess_nametab[];
 

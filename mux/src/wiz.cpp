@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.3 2002-06-04 15:33:34 sdennis Exp $
+// $Id: wiz.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,10 +8,9 @@
 #include "config.h"
 #include "externs.h"
 
-#include "file_c.h"
-#include "match.h"
-#include "command.h"
 #include "attrs.h"
+#include "command.h"
+#include "file_c.h"
 #include "powers.h"
 
 extern char *FDECL(crypt, (const char *, const char *));

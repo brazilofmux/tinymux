@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
+// $Id: quota.cpp,v 1.3 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -9,10 +9,8 @@
 #include "externs.h"
 
 #include "attrs.h"
-#include "powers.h"
-#include "match.h"
-#include "mudconf.h"
 #include "functions.h"
+#include "powers.h"
 
 // ---------------------------------------------------------------------------
 // count_quota, mung_quota, show_quota, do_quota: Manage quotas.

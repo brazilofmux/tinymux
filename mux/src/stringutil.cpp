@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.3 2002-06-12 01:24:46 raevnos Exp $
+// $Id: stringutil.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -18,9 +18,9 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-#include "pcre.h"
 
 #include "ansi.h"
+#include "pcre.h"
 
 const char Tiny_IsASCII[256] =
 {

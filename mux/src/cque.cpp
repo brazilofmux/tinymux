@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.4 2002-06-13 07:19:33 jake Exp $
+// $Id: cque.cpp,v 1.5 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -10,16 +10,10 @@
 
 #include <signal.h>
 
-#include "mudconf.h"
-#include "db.h"
-#include "htab.h"
-#include "interface.h"
-#include "match.h"
 #include "attrs.h"
-#include "flags.h"
-#include "powers.h"
 #include "command.h"
-#include "alloc.h"
+#include "interface.h"
+#include "powers.h"
 
 extern int FDECL(a_Queue, (dbref, int));
 extern void FDECL(s_Queue, (dbref, int));

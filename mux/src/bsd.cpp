@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
+// $Id: bsd.cpp,v 1.3 2002-06-13 22:12:46 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -22,16 +22,16 @@
 #ifndef WIN32
 #include <sys/file.h>
 #include <sys/ioctl.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #endif // !WIN32
 
 #include <signal.h>
 
-#include "file_c.h"
-#include "command.h"
-#include "slave.h"
 #include "attrs.h"
+#include "command.h"
+#include "file_c.h"
+#include "slave.h"
 
 #ifdef SOLARIS
 extern const int _sys_nsig;

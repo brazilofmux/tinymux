@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.15 2002-06-13 14:09:37 sdennis Exp $
+// $Id: funceval.cpp,v 1.16 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -11,13 +11,12 @@
 #include <limits.h>
 #include <math.h>
 
+#include "ansi.h"
 #include "attrs.h"
-#include "match.h"
 #include "command.h"
+#include "comsys.h"
 #include "functions.h"
 #include "misc.h"
-#include "ansi.h"
-#include "comsys.h"
 #include "pcre.h"
 
 /* Note: Many functions in this file have been taken, whole or in part, from

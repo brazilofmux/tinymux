@@ -1,14 +1,12 @@
 // mail.h
 //
-// $Id: mail.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: mail.h,v 1.2 2002-06-13 22:12:46 jake Exp $
 //
 
 #ifndef _MAIL_H
 #define _MAIL_H
 
 #include "copyright.h"
-#include "autoconf.h"
-#include "db.h"
 
 /* Some of this isn't implemented yet, but heralds the future! */
 #define M_ISREAD        0x0001

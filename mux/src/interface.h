@@ -1,18 +1,12 @@
 // interface.h
 //
-// $Id: interface.h,v 1.3 2002-06-11 19:16:19 jake Exp $
+// $Id: interface.h,v 1.4 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
 
 #ifndef __INTERFACE__H
 #define __INTERFACE__H
-
-#include "db.h"
-#include "externs.h"
-#include "htab.h"
-#include "alloc.h"
-#include "config.h"
 
 #include <sys/types.h>
 

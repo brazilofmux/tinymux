@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.7 2002-06-13 15:07:34 sdennis Exp $
+// $Id: comsys.cpp,v 1.8 2002-06-13 22:12:46 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -10,16 +10,11 @@
 #include <sys/types.h>
 
 #include "ansi.h"
-#include "db.h"
-#include "interface.h"
 #include "attrs.h"
-#include "match.h"
-#include "config.h"
-#include "flags.h"
-#include "powers.h"
-#include "functions.h"
-
 #include "comsys.h"
+#include "functions.h"
+#include "interface.h"
+#include "powers.h"
 
 int num_channels;
 int max_channels;

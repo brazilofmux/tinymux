@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.5 2002-06-12 15:42:29 sdennis Exp $
+// $Id: mail.cpp,v 1.6 2002-06-13 22:12:46 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -15,8 +15,6 @@
 #include <sys/types.h>
 
 #include "attrs.h"
-#include "mail.h"
-#include "match.h"
 #include "powers.h"
 
 static int FDECL(sign, (int));

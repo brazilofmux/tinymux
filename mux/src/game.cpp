@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.7 2002-06-13 14:33:57 sdennis Exp $
+// $Id: game.cpp,v 1.8 2002-06-13 22:12:46 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -10,13 +10,13 @@
 #include <sys/stat.h>
 #include <signal.h>
 
-#include "file_c.h"
-#include "powers.h"
 #include "attrs.h"
 #include "comsys.h"
-#include "muxcli.h"
+#include "file_c.h"
 #include "mguests.h"
+#include "muxcli.h"
 #include "pcre.h"
+#include "powers.h"
 
 extern void NDECL(init_attrtab);
 extern void NDECL(init_cmdtab);

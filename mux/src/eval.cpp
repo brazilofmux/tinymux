@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.7 2002-06-03 23:20:57 sdennis Exp $
+// $Id: eval.cpp,v 1.8 2002-06-13 22:12:46 jake Exp $
 //
 
 // MUX 2.1
@@ -20,9 +20,9 @@
 #include "config.h"
 #include "externs.h"
 
+#include "ansi.h"
 #include "attrs.h"
 #include "functions.h"
-#include "ansi.h"
 
 //-----------------------------------------------------------------------------
 // parse_to: Split a line at a character, obeying nesting.  The line is

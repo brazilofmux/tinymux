@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.6 2002-06-11 19:51:53 jake Exp $
+// $Id: netcommon.cpp,v 1.7 2002-06-13 22:12:46 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -13,21 +13,16 @@
 #include "externs.h"
 
 #include <time.h>
-#include "db.h"
-#include "mudconf.h"
-#include "file_c.h"
-#include "interface.h"
-#include "command.h"
-#include "alloc.h"
-#include "attrs.h"
-#include "mguests.h"
+
 #include "ansi.h"
-#include "mail.h"
-#include "powers.h"
-#include "alloc.h"
+#include "attrs.h"
+#include "command.h"
 #include "comsys.h"
-#include "svdreport.h"
+#include "file_c.h"
 #include "functions.h"
+#include "mguests.h"
+#include "powers.h"
+#include "svdreport.h"
 
 extern void FDECL(handle_prog, (DESC *, char *));
 

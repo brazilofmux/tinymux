@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.3 2002-06-05 05:18:01 sdennis Exp $
+// $Id: timer.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -19,7 +19,6 @@
 
 #include <signal.h>
 
-#include "interface.h"
 #include "command.h"
 #include "mguests.h"
 

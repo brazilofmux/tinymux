@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.5 2002-06-13 15:24:33 sdennis Exp $
+// $Id: mguests.cpp,v 1.6 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -12,12 +12,8 @@
 
 #include <stdlib.h>
 
-#include "mudconf.h"
-#include "mguests.h"
-#include "db.h"
-#include "interface.h"
-#include "mail.h"
 #include "attrs.h"
+#include "mguests.h"
 #include "powers.h"
 
 #define GUEST_HYSTERESIS 20

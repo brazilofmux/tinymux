@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.10 2002-06-13 17:58:15 jake Exp $
+// $Id: predicates.cpp,v 1.11 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -10,12 +10,11 @@
 
 #include <signal.h>
 
-#include "interface.h"
-#include "match.h"
-#include "command.h"
-#include "attrs.h"
-#include "powers.h"
 #include "ansi.h"
+#include "attrs.h"
+#include "command.h"
+#include "interface.h"
+#include "powers.h"
 
 extern int FDECL(do_command, (DESC *, char *, int));
 extern void NDECL(dump_database);

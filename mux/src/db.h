@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.2 2002-06-12 16:43:57 jake Exp $
+// $Id: db.h,v 1.3 2002-06-13 22:12:46 jake Exp $
 //
 
 #ifndef __DB_H
@@ -21,6 +21,8 @@
 #endif // !MEMORY_BASED
 
 #include "attrcache.h"
+#include "flags.h"
+#include "timeutil.h"
 
 #define ITER_PARENTS(t,p,l) for ((l)=0, (p)=(t); \
                      (Good_obj(p) && \

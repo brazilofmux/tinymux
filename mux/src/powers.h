@@ -1,6 +1,6 @@
 // powers.h -- Object powers.
 //
-// $Id: powers.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: powers.h,v 1.2 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,13 +8,7 @@
 #ifndef __POWERS_H
 #define __POWERS_H
 
-#include "htab.h"
-#include "db.h"
-
-
-
 #define POWER_EXT   0x1 /* Lives in extended powers word */
-
 
 /* First word of powers */
 #define POW_CHG_QUOTAS  0x00000001  /* May change and see quotas */

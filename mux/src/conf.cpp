@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
+// $Id: conf.cpp,v 1.3 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,9 +8,9 @@
 #include "config.h"
 #include "externs.h"
 
-#include "interface.h"
-#include "command.h"
 #include "attrs.h"
+#include "command.h"
+#include "interface.h"
 
 // ---------------------------------------------------------------------------
 // CONFPARM: Data used to find fields in CONFDATA.

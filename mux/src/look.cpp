@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.7 2002-06-12 23:30:23 sdennis Exp $
+// $Id: look.cpp,v 1.8 2002-06-13 22:12:46 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -19,12 +19,11 @@
 #include "config.h"
 #include "externs.h"
 
-#include "interface.h"
-#include "match.h"
-#include "powers.h"
+#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
-#include "ansi.h"
+#include "interface.h"
+#include "powers.h"
 
 extern void FDECL(ufun, (char *, char *, int, int, int, dbref, dbref));
 

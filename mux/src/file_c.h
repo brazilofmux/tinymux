@@ -1,13 +1,12 @@
 // file_c.h -- File cache header file.
 //
-// $Id: file_c.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: file_c.h,v 1.2 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
 #ifndef __FILE_C
 #define __FILE_C
 
-#include "db.h"
 #include "interface.h"
 
 /* File caches.  These _must_ track the fcache array in file_c.c */

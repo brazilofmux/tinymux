@@ -1,13 +1,12 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.4 2002-06-13 07:19:33 jake Exp $
+// $Id: boolexp.cpp,v 1.5 2002-06-13 22:12:46 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
 
-#include "match.h"
 #include "attrs.h"
 #include "powers.h"
 

@@ -1,19 +1,17 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.11 2002-06-13 19:56:40 jake Exp $
+// $Id: externs.h,v 1.12 2002-06-13 22:12:46 jake Exp $
 //
 
 #ifndef EXTERNS_H
 #define EXTERNS_H
 
-#include "svdrand.h"
-#include "timeutil.h"
-#include "svdhash.h"
-#include "flags.h"
 #include "db.h"
+#include "match.h"
 #include "mudconf.h"
 #include "stringutil.h"
-#include "match.h"
+#include "svdhash.h"
+#include "svdrand.h"
 
 /* From conf.cpp */
 extern int  cf_modify_bits(int *, char *, void *, UINT32, dbref, char *);

@@ -1,17 +1,14 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.2 2002-06-04 00:47:28 sdennis Exp $
+// $Id: mudconf.h,v 1.3 2002-06-13 22:12:46 jake Exp $
 //
 
 #ifndef __CONF_H
 #define __CONF_H
 
-#include "config.h"
-#include "htab.h"
 #include "alloc.h"
-#include "flags.h"
+#include "htab.h"
 #include "mail.h"
-#include "db.h"
 #include "stringutil.h"
 
 #ifndef WIN32

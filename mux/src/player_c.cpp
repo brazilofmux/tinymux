@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: player_c.cpp,v 1.2 2002-06-13 22:12:46 jake Exp $
 //
 
 #include "copyright.h"
@@ -8,11 +8,7 @@
 #include "config.h"
 #include "externs.h"
 
-#include "mudconf.h"
-#include "htab.h"
-#include "alloc.h"
 #include "attrs.h"
-#include "db.h"
 
 #ifndef STANDALONE
 
