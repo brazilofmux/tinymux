@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.5 2001-02-07 05:28:14 sdennis Exp $
+// $Id: rob.cpp,v 1.6 2001-06-09 08:54:49 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -207,7 +207,9 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
         notify(giver, "You can't give yourself away!");
         return;
     }
-    if (((Typeof(thing) != TYPE_THING) && (Typeof(thing) != TYPE_PLAYER)) || !(Enter_ok(recipient) || controls(giver, recipient)))
+    if (  (!isThing(thing) && !isPlayer(thing))
+       || !(Enter_ok(recipient) || controls(giver, recipient))
+       || isGarbage(recipient))
     {
         notify(giver, NOPERM_MESSAGE);
         return;
