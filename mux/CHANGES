@@ -21,8 +21,12 @@ Bug Fixes:
 ~~~~~~~~~
  -- Alierak fix for buffer overflow exploit in slave process.
  -- Alierak fix for logic bug in logging.
- -- Alierak fixes build breakage on Darwin due to inconsistent use of size_t.
+ -- Alierak fixes build breakage on Darwin due to inconsistent use of
+    size_t.
  -- Fix SIGSEGV in SCRAMBLE().
+ -- Alierak fixes strcat() given that its assumptions about TinyExec are
+    no longer true.
+
 
 
 Performance Enhancements:
