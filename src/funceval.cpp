@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.28 2000-10-09 06:57:39 sdennis Exp $
+// $Id: funceval.cpp,v 1.29 2000-10-09 07:14:46 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1148,12 +1148,34 @@ FUNCTION(fun_ifelse)
 
 FUNCTION(fun_inc)
 {
-    safe_ltoa(Tiny_atol(fargs[0]) + 1, buff, bufc, LBUF_SIZE-1);
+    if (nfargs == 1)
+    {
+        safe_ltoa(Tiny_atol(fargs[0]) + 1, buff, bufc, LBUF_SIZE-1);
+    }
+    else if (nfargs > 1)
+    {
+        fn_range_check("INC", nfargs, 0, 1, buff, bufc);
+    }
+    else
+    {
+        safe_chr('1', buff, bufc);
+    }
 }
 
 FUNCTION(fun_dec)
 {
-    safe_ltoa(Tiny_atol(fargs[0]) - 1, buff, bufc, LBUF_SIZE-1);
+    if (nfargs == 1)
+    {
+        safe_ltoa(Tiny_atol(fargs[0]) - 1, buff, bufc, LBUF_SIZE-1);
+    }
+    else if (nfargs > 1)
+    {
+        fn_range_check("INC", nfargs, 0, 1, buff, bufc);
+    }
+    else
+    {
+        safe_str("-1", buff, bufc);
+    }
 }
 
 // Mail functions borrowed from DarkZone.

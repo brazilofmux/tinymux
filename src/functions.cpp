@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.36 2000-10-09 05:24:32 sdennis Exp $
+// $Id: functions.cpp,v 1.37 2000-10-09 07:14:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6308,7 +6308,7 @@ FUN flist[] =
     {"COS",      fun_cos,      1,  0,          CA_PUBLIC},
     {"CREATE",   fun_create,   0,  FN_VARARGS, CA_PUBLIC},
     {"CWHO",     fun_cwho,     1,  0,          CA_PUBLIC},
-    {"DEC",      fun_dec,      1,  0,          CA_PUBLIC},
+    {"DEC",      fun_dec,      0,  FN_VARARGS, CA_PUBLIC},
     {"DECRYPT",  fun_decrypt,  2,  0,          CA_PUBLIC},
     {"DEFAULT",  fun_default,  2,  FN_NO_EVAL, CA_PUBLIC},
     {"DELETE",   fun_delete,   3,  0,          CA_PUBLIC},
@@ -6358,7 +6358,7 @@ FUN flist[] =
     {"IDLE",     fun_idle,     1,  0,          CA_PUBLIC},
     {"IFELSE",   fun_ifelse,   3,  FN_NO_EVAL, CA_PUBLIC},
     {"IMUL",     fun_imul,     0,  FN_VARARGS, CA_PUBLIC},
-    {"INC",      fun_inc,      1,  0,          CA_PUBLIC},
+    {"INC",      fun_inc,      0,  FN_VARARGS, CA_PUBLIC},
     {"INDEX",    fun_index,    4,  0,          CA_PUBLIC},
     {"INSERT",   fun_insert,   0,  FN_VARARGS, CA_PUBLIC},
     {"INZONE",   fun_inzone,   1,  0,          CA_PUBLIC},
