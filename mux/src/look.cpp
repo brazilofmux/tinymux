@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.6 2002-06-12 22:07:13 sdennis Exp $
+// $Id: look.cpp,v 1.7 2002-06-12 23:30:23 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -1346,21 +1346,18 @@ static void exam_wildattrs
     int do_parent
 )
 {
-    BOOL got_any = FALSE;
     int atr;
+    BOOL got_any = FALSE;
     for (atr = olist_first(); atr != NOTHING; atr = olist_next())
     {
-        char *buf;
         ATTR *ap = atr_num(atr);
         if (!ap)
         {
             continue;
         }
-        ATTR ta = *ap;
-        ap = &ta;
-
         int   aflags;
         dbref aowner;
+        char *buf;
         if (do_parent && !(ap->flags & AF_PRIVATE))
         {
             buf = atr_pget(thing, atr, &aowner, &aflags);
