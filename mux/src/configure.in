@@ -77,12 +77,6 @@ AC_CHECKING(for wait3 dcl)
 AC_EGREP_HEADER(wait3,sys/wait.h, ,AC_DEFINE(NEED_WAIT3_DCL))
 fi
 
-AC_CHECKING(for srandom dcl)
-AC_EGREP_HEADER(srandom,math.h,,AC_EGREP_HEADER(srandom,stdlib.h,,AC_DEFINE(NEED_SRANDOM_DCL)))
-
-AC_CHECKING(for random dcl)
-AC_EGREP_HEADER(extern * random,stdlib.h,,AC_DEFINE(NEED_RANDOM_DCL))
-
 AC_CHECKING(for signal SIGCHLD braindamage)
 AC_TRY_RUN([
 #include <signal.h>
