@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.95 2002-09-09 04:42:16 sdennis Exp $
+// $Id: functions.cpp,v 1.96 2002-09-17 22:43:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -160,6 +160,7 @@ XFUNCTION(fun_t);
 XFUNCTION(fun_dumping);
 XFUNCTION(fun_lrooms);
 XFUNCTION(fun_hasquota);
+XFUNCTION(fun_chr);
 
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
@@ -7998,6 +7999,7 @@ FUN flist[] =
     {"CENTER",   fun_center,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"CHANNELS", fun_channels, MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"CHILDREN", fun_children, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CHR",      fun_chr,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CMDS",     fun_cmds,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"COLUMNS",  fun_columns,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
     {"COMALIAS", fun_comalias, MAX_ARG, 2,  2,       0, CA_PUBLIC},
@@ -9216,3 +9218,31 @@ FUNCTION(fun_art)
     safe_str( "a", buff, bufc);
 }
 
+// ---------------------------------------------------------------------------
+// fun_chr:
+//
+// Takes an integer and returns the corresponding character from the character
+// set.
+//
+FUNCTION(fun_chr)
+{
+    if (!is_integer(fargs[0], NULL))
+    {
+        safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
+        return;
+    }
+    int ch = Tiny_atol(fargs[0]);
+    if (  ch < 0
+       || UCHAR_MAX < ch)
+    {
+        safe_str("#-1 THIS ISN'T UNICODE", buff, bufc);
+    }
+    else if (Tiny_IsPrint[(unsigned char)ch])
+    {
+        safe_chr(ch, buff, bufc);
+    }
+    else
+    {
+        safe_str("#-1 UNPRINTABLE CHARACTER", buff, bufc);
+    }
+}
