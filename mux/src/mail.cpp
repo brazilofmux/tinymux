@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.46 2002-09-12 03:27:53 jake Exp $
+// $Id: mail.cpp,v 1.47 2002-09-12 04:48:37 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1225,19 +1225,10 @@ static char *make_namelist(dbref player, char *arg)
             {
                 safe_str("*HIDDEN*  ", names, &bp);
             }
-            else
+            else if (*p == '*')
             {
-                int nResult;
-                struct malias *m = get_malias(player, tprintf("*%s",p), &nResult);
-                if (  nResult != GMA_NOTFOUND
-                && nResult != GMA_INVALIDFORM)
-                {
-                    for (int i = 0; i < m->numrecep; i++)
-                    {
-                        safe_str(Name(m->list[i]), names, &bp);
-                        safe_str(", ", names, &bp);
-                    }
-                }
+                safe_str(p, names, &bp);
+                safe_str(", ", names, &bp);
             }
         }
     }
