@@ -11,8 +11,8 @@
 #define _PCRE_H
 
 #define PCRE_MAJOR          4
-#define PCRE_MINOR          2
-#define PCRE_DATE           14-Apr-2003
+#define PCRE_MINOR          3
+#define PCRE_DATE           21-May-2003
 
 #ifndef PCRE_DATA_SCOPE
 #  define PCRE_DATA_SCOPE     extern
