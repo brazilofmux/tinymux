@@ -1059,7 +1059,7 @@
   COMMAND: @log <file>=<message>
 
   This logs the message (without timestamp) to the named file. Pathnames
-  are stripped, and the file resides in 'mux2.1/game/logs' under the name
+  are stripped, and the file resides in 'mux2.0/game/logs' under the name
   'M-<file>.log'.
 
   The file must already exist for the @log request to succeed, and can only
@@ -1656,13 +1656,13 @@ COMMANDS
   @addcommand    @admin         @apply_marked  @attribute     @backup
   @boot          @chown         @chownall      @clone         @cut
   @dbck          @dbclean       @delcommand    @destroy       @disable
-  @doing         @dump          @enable        @fixdb         @function
-  @halt          @hook          @icmd          @kick          @list
-  @listcommands  @list_file     @listmotd      @lock          @log
-  @mark          @mark_all      @motd          @newpassword   @pcreate
-  @poor          @ps            @quota         @readcache     @restart
-  @shutdown      @startslave    @timecheck     @timewarp      @toad
-  @wall
+  @doing         @dump          @enable        @fixdb         @flag
+  @function      @halt          @hook          @icmd          @kick
+  @list          @listcommands  @list_file     @listmotd      @lock
+  @log           @mark          @mark_all      @motd          @newpassword
+  @pcreate       @poor          @ps            @quota         @readcache
+  @restart       @shutdown      @startslave    @timecheck     @timewarp
+  @toad          @wall
 
   @allowance     @comment       @timeout
 
@@ -2492,6 +2492,14 @@ GUEST_CHAR_NUM
   as not being allowed to create or destroy objects).  The actual
   restrictions can be changed with the access config parameter using the
   no_guest permission.
+
+  This configuration parameter is the main on/off switch for the MUX guest
+  system, so in that respect it corresponds to the have_comsys and have_mailer
+  configuration options.  The guest system in MUX is effectively disabled
+  until this configuration parameter is set.
+
+  This configuration option cannot be changed after the server starts.  It
+  can only be changed via the configuration file.
 
   Related Topics: guest_prefix, guest_nuker, number_guests, access,
                   min_guests, guest_site.
