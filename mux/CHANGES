@@ -90,6 +90,8 @@ Bug Fixes:
     sources were merged. The required block of code was accidently left
     out.
  -- Clean up zombie slave processe on @restart.
+ -- set() function free the wrong buffer.  Introduced by Jake in
+    MUX 2.3.0.5.  Reported by A_Character.  Fixed by Brazil.
 
 
 Performance Enhancements:
