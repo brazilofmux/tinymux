@@ -5852,6 +5852,37 @@ ENTER_OK
 
   Related Topics:
 
+& ENTRANCES()
+ENTRANCES()
+
+  FUNCTION: entrances([<loc>[,<type>[,<low>[,<high>]]]])
+ 
+  Returns a space-separated list of links from elsewhere to <loc>.  The
+  results may include exits and drop-to's leading to <loc> as well as players
+  and objects whose home is <loc>.  Unlike @entrances, entrances() does not
+  report parent/child relationships.  Use children() to obtain this
+  information.  <type> can be used to restrict the type of entrances returned:
+  E (exit), T (thing), R (room), P (player).  There is a search cost to this
+  function.  <low> and <high> can be used to indicate where to start and stop
+  the search, respectively.
+ 
+  You may only use this command on locations that you control, or else the
+  results will be limited to items you can examine.
+
+  Defaults:
+    <loc>  -  your current room.
+    <type> -  A (all).
+    <low>  -  beginning of database.
+    <high> -  end of database.
+ 
+  Examples:
+    > say entrances()           <- all links to here
+    > say entrances(object)     <- all links to object
+    > say entrances(here,tp)    <- everything that lives here
+    > say entrances(me,a,1000)  <- all links to me from #1000 and above.
+ 
+  Related Topics: @entrances, @link, link(), children(), lexits().
+
 & EQ()
 EQ()
 
@@ -6416,13 +6447,14 @@ FUNCTION CLASSES (continued)
 FUNCTION CLASSES (continued)
 
   Object Information:        ANDFLAGS APOSS ATTRCNT BITTYPE CHILDREN CMDS CON
-                             CONTROLS CTIME DEFAULT EDEFAULT ELOCK EVAL FLAGS
-                             FULLNAME GET GET_EVAL GREP GREPI HASATTR HASATTRP
-                             HASFLAG HASPOWER HASTYPE HOME LATTR LATTRCMDS
-                             LATTRP LCMDS LCON LEXITS LFLAGS LPARENT LOCALIZE
-                             LOCK MONEY MONIKER MTIME NAME OBJ OBJEVAL OBJMEM
-                             ORFLAGS OWNER PARENT PFIND PMATCH POSS S SUBJ
-                             TYPE U UDEFAULT ULOCAL V VISIBLE XGET
+                             CONTROLS CTIME DEFAULT EDEFAULT ELOCK ENTRANCES
+                             EVAL FLAGS FULLNAME GET GET_EVAL GREP GREPI
+                             HASATTR HASATTRP HASFLAG HASPOWER HASTYPE HOME
+                             LATTR LATTRCMDS LATTRP LCMDS LCON LEXITS LFLAGS
+                             LPARENT LOCALIZE LOCK MONEY MONIKER MTIME NAME
+                             OBJ OBJEVAL OBJMEM ORFLAGS OWNER PARENT PFIND
+                             PMATCH POSS S SUBJ TYPE U UDEFAULT ULOCAL V
+                             VISIBLE XGET
 
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNRECORD
                              CONNTOTAL DOING FINDABLE HASQUOTA HOST IDLE LWHO
@@ -6475,59 +6507,59 @@ FUNCTION LIST
     CRC32()     CREATE()    CTIME()     CTU()       CWHO()      DEC()
     DECRYPT()   DEFAULT()   DELETE()    DIE()       DIGITTIME() DIST2D()
     DIST3D()    DOING()     DUMPING()   E()         EDEFAULT()  EDIT()
-    ELEMENTS()  ELOCK()     EMIT()      EMPTY()     ENCRYPT()   EQ()
-    ERROR()     ESCAPE()    EVAL()      EXIT()      EXP()       EXPTIME()
-    EXTRACT()   FDIV()      FILTER()    FILTERBOOL()FINDABLE()  FIRST()
-    FLAGS()     FLOOR()     FLOORDIV()  FOLD()      FOREACH()   FULLNAME()
-    GET()       GET_EVAL()  GRAB()      GREP()      GREPI()     GT()
+    ELEMENTS()  ELOCK()     EMIT()      EMPTY()     ENCRYPT()   ENTRANCES()
+    EQ()        ERROR()     ESCAPE()    EVAL()      EXIT()      EXP()
+    EXPTIME()   EXTRACT()   FDIV()      FILTER()    FILTERBOOL()FINDABLE()
+    FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FOLD()      FOREACH()
+    FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()      GREPI()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASQUOTA()
-    HASTYPE()   HOME()      HOST()      IABS()      IADD()      IDIV()
-    IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
-    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
-    ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()
-    ITER()      LADD()      LAND()      LAST()      LATTR()     LATTRCMDS()
-    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
-    LFLAGS()    LINK()      LIST()      LIT()       LJUST()     LN()
-    LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()
-    LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()
-    LSTACK()    LT()        LTE()       LWHO()      MAIL()      MAILFROM()
-    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
-    MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()
-    MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()
-    NEARBY()    NEQ()       NEXT()      NOT()       NULL()      NUM()
-    OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()
-    ORD()       ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()
-    PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()
-    PMATCH()    POLL()      POP()       PORTS()     POS()       POSS()
+    GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()
+    HASQUOTA()  HASTYPE()   HOME()      HOST()      IABS()      IADD()
+    IDIV()      IDLE()      IF()        IFELSE()    ILEV()      IMUL()
+    INC()       INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()
+    ISINT()     ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()
+    ITEMS()     ITER()      LADD()      LAND()      LAST()      LATTR()
+    LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()
+    LEXITS()    LFLAGS()    LINK()      LIST()      LIT()       LJUST()
+    LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
+    LOG()       LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()
+    LROOMS()    LSTACK()    LT()        LTE()       LWHO()      MAIL()
+    MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()
+    MERGE()     MID()       MIN()       MIX()       MOD()       MONEY()
+    MONIKER()   MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()
+    NAME()      NEARBY()    NEQ()       NEXT()      NOT()       NULL()
+    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()
+    ORBOOL()    ORD()       ORFLAGS()   OWNER()     PACK()      PARENT()
+    PARSE()     PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()
+    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    POWER()     PUSH()      R()         RAND()      REGMATCH()  REGMATCHI()
-    REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()
-    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
-    RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()
-    S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
-    SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHA1()
-    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
-    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()
-    SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIP()
-    STRIPACCENTS()          STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
-    SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()
-    TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()
-    TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()
-    UNPACK()    V()         VADD()      VALID()     VCROSS()    VDIM()
-    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
-    VUNIT()     WHERE()     WORDPOS()   WORDS()     WRAP()      WRITETIME()
-    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
+    REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER()
+    REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
+    REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()
+    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
+    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
+    SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
+    SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()
+    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
+    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()    STRMATCH()
+    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
+    TABLE()     TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE()
+    TRIM()      TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()
+    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
+    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
+    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRAP()
+    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -7775,7 +7807,7 @@ LEXITS()
   Returns a space-separated list of the exits in <loc> and its parents.
   Dark exits are not returned unless you own the location.
 
-  Example:
+  Examples:
     > look here
     The Town Square
     You are in the town square.  All around you .....
