@@ -2,7 +2,7 @@
  * help.c -- commands for giving help 
  */
 /*
- * $Id: help.cpp,v 1.5 2000-10-28 16:50:35 sdennis Exp $ 
+ * $Id: help.cpp,v 1.6 2001-07-02 15:53:27 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -210,13 +210,24 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
     result = alloc_lbuf("help_write.2");
     for (;;)
     {
-        if (fgets(line, LBUF_SIZE - 1, fp) == NULL)
+        if (  fgets(line, LBUF_SIZE - 1, fp) == NULL
+           || line[0] == '&')
+        {
             break;
-        if (line[0] == '&')
-            break;
+        }
         for (p = line; *p != '\0'; p++)
-            if (*p == '\n')
+        {
+            if (*p == '\n' || *p == '\r')
+            {
                 *p = '\0';
+                break;
+            }
+        }
+        if (line[0] == '\0')
+        {
+            line[0] = ' ';
+            line[1] = '\0';
+        }
         if (eval)
         {
             str = line;
