@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.138 2002-01-29 00:21:57 sdennis Exp $
+// $Id: functions.cpp,v 1.139 2002-01-29 07:24:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -468,10 +468,13 @@ static int get_list_type
 
 int list2arr(char *arr[], int maxlen, char *list, char sep)
 {
-    int i;
-
     list = trim_space_sep(list, sep);
+    if (list[0] == '\0')
+    {
+        return 0;
+    }
     char *p = split_token(&list, sep);
+    int i;
     for (i = 0; p && i < maxlen; i++, p = split_token(&list, sep))
     {
         arr[i] = p;
