@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.34 2003-02-17 03:05:55 sdennis Exp $
+// $Id: funceval.cpp,v 1.35 2003-03-07 01:25:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -593,7 +593,7 @@ FUNCTION(fun_set)
         // Go set it.
         //
         set_attr_internal(executor, thing, atr, p, 0, buff, bufc);
-        free_lbuf(buff);
+        free_lbuf(buff2);
         return;
     }
 
