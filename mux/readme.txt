@@ -1,4 +1,4 @@
-Last Updated: September 2002
+Last Updated: February 2003
 
 Herein are extra notes for the Win32 distribution.  These notes do not apply
 well to the Unix distribution.
