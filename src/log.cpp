@@ -1,7 +1,7 @@
 //
 // log.cpp - logging routines
 //
-// $Id: log.cpp,v 1.6 2001-07-06 20:27:40 sdennis Exp $
+// $Id: log.cpp,v 1.7 2001-07-06 20:47:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -285,7 +285,7 @@ void do_log(dbref player, dbref cause, int key, char *whichlog, char *logtext)
     if (bValid)
     {
         pFullName = alloc_lbuf("do_log_filename");
-        sprintf(pFullName, "logs/%s.log", pFilename);
+        sprintf(pFullName, "logs/M-%s.log", pFilename);
 
         // Strip the message of all ANSI.
         //
