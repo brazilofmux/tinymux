@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.13 2001-10-25 17:08:36 sdennis Exp $
+// $Id: vattr.cpp,v 1.14 2001-11-18 20:45:54 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -27,22 +27,16 @@
 
 static char FDECL(*store_string, (char *));
 
-/*
- * Allocate space for strings in lumps this big. 
- */
-
+// Allocate space for strings in lumps this big.
+//
 #define STRINGBLOCK 1000
 
-/*
- * Current block we're putting stuff in 
- */
-
+// Current block we're putting stuff in
+//
 static char *stringblock = (char *)0;
 
-/*
- * High water mark. 
- */
-
+// High water mark.
+//
 static int stringblock_hwm = 0;
 
 VATTR *vattr_find_LEN(char *pAttrName, int nAttrName)
@@ -389,7 +383,7 @@ int dbclean_RemoveStaleAttributeNames(void)
     for (iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
     {
         va = (VATTR *) anum_get(iAttr);
-        if (va != NULL) 
+        if (va != NULL)
         {
             va->flags &= ~AF_ISUSED;
         }
@@ -590,7 +584,7 @@ void do_dbclean(dbref player, dbref cause, int key)
     notify(player, "@dbclean completed..");
 }
 #endif
-        
+
 void vattr_delete_LEN(char *pName, int nName)
 {
     // Delete from hashtable.
@@ -673,11 +667,9 @@ VATTR *vattr_next(VATTR *vp)
     return NULL;
 }
 
-/*
- * Some goop for efficiently storing strings we expect to
- * keep forever. There is no freeing mechanism.
- */
-
+// Some goop for efficiently storing strings we expect to keep forever. There
+// is no freeing mechanism.
+//
 static char *store_string(char *str)
 {
     int nSize = strlen(str) + 1;
