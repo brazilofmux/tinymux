@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.98 2004-04-30 22:32:35 sdennis Exp $
+// $Id: functions.cpp,v 1.99 2004-04-30 22:46:38 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -6292,6 +6292,11 @@ FUNCTION(fun_splice)
     {
         return;
     }
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(5, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
+    {
+        return;
+    }
 
     // Length checks.
     //
@@ -6320,9 +6325,9 @@ FUNCTION(fun_splice)
         q2 = split_token(&q1, &sep);
         if (!first)
         {
-            print_sep(&sep, buff, bufc);
+            print_sep(&osep, buff, bufc);
         }
-        if (!strcmp(p2, fargs[2]))
+        if (strcmp(p2, fargs[2]) == 0)
         {
             safe_str(q2, buff, bufc); // replace
         }
@@ -9730,7 +9735,7 @@ FUN flist[] =
     {"SORTBY",      fun_sortby,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"SPACE",       fun_space,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"SPELLNUM",    fun_spellnum,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"SPLICE",      fun_splice,     MAX_ARG, 3,       4,         0, CA_PUBLIC},
+    {"SPLICE",      fun_splice,     MAX_ARG, 3,       5,         0, CA_PUBLIC},
     {"SQRT",        fun_sqrt,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SQUISH",      fun_squish,     MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"STARTSECS",   fun_startsecs,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
