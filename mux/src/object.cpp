@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.28 2002-08-14 00:06:58 jake Exp $
+// $Id: object.cpp,v 1.29 2002-08-25 22:38:38 jake Exp $
 //
 
 #include "copyright.h"
@@ -467,7 +467,11 @@ void destroy_obj(dbref obj)
 {
     if (!Good_obj(obj))
     {
-        destroy_bad_obj(obj);
+        if (  (obj >= 0)
+           && (obj < mudstate.db_top))
+        {
+            destroy_bad_obj(obj);
+        }
         return;
     }
 
