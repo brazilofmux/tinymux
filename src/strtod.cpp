@@ -3045,7 +3045,7 @@ fast_failed:
             }
             goto one_digit;
         }
-        for (i = 1;; i++, dval(d) *= 10.)
+        for (i = 1; ; i++, dval(d) *= 10.0)
         {
             L = (Long)(dval(d) / ds);
             dval(d) -= L*ds;
@@ -3057,6 +3057,11 @@ fast_failed:
                 dval(d) += ds;
             }
 #endif
+            if (ds <= dval(d))
+            {
+                L++;
+                dval(d) -= ds;
+            }
             *s++ = '0' + (int)L;
             if (!dval(d))
             {
@@ -3096,7 +3101,7 @@ bump_up:
             }
         }
         goto ret1;
-        }
+    }
 
     m2 = b2;
     m5 = b5;
