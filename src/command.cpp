@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.19 2000-09-07 07:22:26 sdennis Exp $
+// $Id: command.cpp,v 1.20 2000-09-07 08:14:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2776,7 +2776,7 @@ static void list_db_stats(dbref player)
 
 /*
  * ---------------------------------------------------------------------------
- * * list_process: List local resource usage stats of the mush process.
+ * * list_process: List local resource usage stats of the mux process.
  * * Adapted from code by Claudius@PythonMUCK,
  * *     posted to the net by Howard/Dark_Lord.
  */
