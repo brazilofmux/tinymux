@@ -2,7 +2,7 @@
  * match.c -- Routines for parsing arguments 
  */
 /*
- * $Id: match.cpp,v 1.1 2000-04-11 07:14:45 sdennis Exp $ 
+ * $Id: match.cpp,v 1.2 2000-06-04 06:47:49 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -16,33 +16,19 @@
 #include "attrs.h"
 #include "powers.h"
 
-#define CON_LOCAL       0x01    /*
-                     * Match is near me 
-                     */
-#define CON_TYPE        0x02    /*
-                     * Match is of requested type 
-                     */
-#define CON_LOCK        0x04    /*
-                     * I pass the lock on match 
-                     */
-#define CON_COMPLETE        0x08    /*
-                     * Name given is the full name 
-                     */
-#define CON_TOKEN       0x10    /*
-                     * Name is a special token 
-                     */
-#define CON_DBREF       0x20    /*
-                     * Name is a dbref 
-                     */
+#define CON_LOCAL       0x01    // Match is near me.
+#define CON_TYPE        0x02    // Match is of requested type.
+#define CON_LOCK        0x04    // I pass the lock on match.
+#define CON_COMPLETE    0x08    // Name given is the full name.
+#define CON_TOKEN       0x10    // Name is a special token.
+#define CON_DBREF       0x20    // Name is a dbref.
 
 static MSTATE md;
 
 static void promote_match(dbref what, int confidence)
 {
-    /*
-     * Check for type and locks, if requested 
-     */
-
+    // Check for type and locks, if requested.
+    //
     if (md.pref_type != NOTYPE)
     {
         if (Good_obj(what) && (Typeof(what) == md.pref_type))
@@ -55,16 +41,13 @@ static void promote_match(dbref what, int confidence)
         save_match_state(&save_md);
         if (Good_obj(what) && could_doit(md.player, what, A_LOCK))
         {
-            // Nothing
-            ;
+            confidence |= CON_LOCK;
         }
-        confidence |= CON_LOCK;
         restore_match_state(&save_md);
     }
-    /*
-     * If nothing matched, take it 
-     */
 
+    // If nothing matched, take it.
+    //
     if (md.count == 0)
     {
         md.match = what;
@@ -72,18 +55,16 @@ static void promote_match(dbref what, int confidence)
         md.count = 1;
         return;
     }
-    /*
-     * If confidence is lower, ignore 
-     */
 
+    // If confidence is lower, ignore.
+    //
     if (confidence < md.confidence)
     {
         return;
     }
-    /*
-     * If confidence is higher, replace 
-     */
 
+    // If confidence is higher, replace.
+    //
     if (confidence > md.confidence)
     {
         md.match = what;
@@ -91,10 +72,9 @@ static void promote_match(dbref what, int confidence)
         md.count = 1;
         return;
     }
-    /*
-     * Equal confidence, pick randomly 
-     */
 
+    // Equal confidence, pick randomly.
+    //
     if (RandomLong(0,1))
     {
         md.match = what;
@@ -168,10 +148,10 @@ void NDECL(match_player)
         }
     }
 }
+
 /*
  * returns nnn if name = #nnn, else NOTHING 
  */
-
 static dbref absolute_name(int need_pound)
 {
     dbref match;
@@ -185,9 +165,13 @@ static dbref absolute_name(int need_pound)
             mname++;
         }
     }
-    match = parse_dbref(mname);
-    if (Good_obj(match)) {
-        return match;
+    if (*mname)
+    {
+        match = parse_dbref(mname);
+        if (Good_obj(match))
+        {
+            return match;
+        }
     }
     return NOTHING;
 }
