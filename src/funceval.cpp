@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.66 2001-10-08 04:49:50 sdennis Exp $
+// $Id: funceval.cpp,v 1.67 2001-10-08 05:24:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -283,6 +283,12 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     int aflags, could_hear;
     ATTR *attr;
 
+    if (isGarbage(thing))
+    {
+        safe_noperm(buff, bufc);
+        notify_quiet(player, "You shouldn't be rummaging through the garbage.");
+        return;
+    }
     attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (attr && Set_attr(player, thing, attr, aflags))

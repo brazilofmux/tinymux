@@ -54,6 +54,7 @@ Bug Fixes:
  -- Bug #765 - whispering to objects with ears should still be allowed.
  -- Document safer_passwords configuration option.
  -- Bug #602 - fun_ansi reaches backwards into the buffer.
+ -- Bug #391 - WIZARD player could set attributes on garbage objects.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~

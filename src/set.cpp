@@ -1,6 +1,6 @@
 // set.cpp -- commands which set parameters.
 //
-// $Id: set.cpp,v 1.11 2001-10-08 03:27:38 sdennis Exp $
+// $Id: set.cpp,v 1.12 2001-10-08 05:25:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -937,6 +937,13 @@ void do_set(dbref player, dbref cause, int key, char *name, char *flag)
         return;
     }
 
+    if (isGarbage(thing))
+    {
+        notify_quiet(player, "You shouldn't be rummaging through the garbage.");
+        return;
+    }
+
+
     // Check for attribute set first.
     //
     for (p = flag; *p && (*p != ':'); p++)
@@ -1031,6 +1038,11 @@ void do_setattr(dbref player, dbref cause, int attrnum, char *name, char *attrte
 
     if (thing == NOTHING)
     {
+        return;
+    }
+    if (isGarbage(thing))
+    {
+        notify_quiet(player, "You shouldn't be rummaging through the garbage.");
         return;
     }
     set_attr_internal(player, thing, attrnum, attrtext, 0);
