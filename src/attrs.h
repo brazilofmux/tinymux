@@ -1,5 +1,5 @@
 /* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.5 2000-11-06 17:50:09 sdennis Exp $ */
+/* $Id: attrs.h,v 1.6 2001-03-22 23:05:03 morgan Exp $ */
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -184,6 +184,9 @@
                         // connections, time of logout.
 
 #define A_IDLETMOUT 240 /* Idle message timeout */
+
+#define A_EXITFORMAT		241
+#define A_CONFORMAT			242
 
 #define A_VLIST     252
 #define A_LIST      253

@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.14 2001-02-07 05:28:14 sdennis Exp $
+// $Id: look.cpp,v 1.15 2001-03-22 23:05:04 morgan Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -444,29 +444,84 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     
     if (!foundany)
         return;
-    
+
+	// Retrieve the ExitFormat attribute from the location, evaluate and display
+	// the results in lieu of the traditional exits list if it exists.
+	//
+
+	dbref aowner;
+	int aflags;
+	char* ExitOrig, * ExitFormat = atr_pget(loc, A_EXITFORMAT, &aowner, &aflags);
+	ExitOrig = ExitFormat;
+
+	int bDisplayExits = 1;
+	if ( *ExitFormat )
+	{
+		char* VisibleObjectList, * tPtr;
+
+		tPtr = VisibleObjectList = alloc_lbuf("look_exits.VisibleObjectList");
+
+		ITER_PARENTS(loc, parent, lev)
+		{
+			key &= ~VE_LOC_DARK;
+			if (Dark(parent))
+			{
+				key |= VE_LOC_DARK;
+			}
+
+			DOLIST(thing, Exits(parent))
+			{
+				safe_str(tprintf("#%d ", thing), VisibleObjectList, &tPtr);
+			}
+		}
+
+		*(tPtr - 1) = '\0';
+
+		notify(player, exit_name);
+
+		char* FormatOutput = alloc_lbuf("look_exits.FormatOutput");
+		tPtr = FormatOutput;
+
+		TinyExec(FormatOutput, &tPtr, 0, loc, player, 
+				EV_FCHECK | EV_EVAL | EV_TOP,
+				&ExitFormat, &VisibleObjectList, 1);
+
+		notify(player, FormatOutput);
+
+		free_lbuf(FormatOutput);
+		free_lbuf(VisibleObjectList);
+
+		bDisplayExits = 0;
+	}
+
+	if ( ExitOrig )
+		free_lbuf(ExitOrig);
+
+	if ( !bDisplayExits )
+		return;
+
     // Display the list of exit names 
     //
     notify(player, exit_name);
     e = buff = alloc_lbuf("look_exits");
     e1 = buff1 = alloc_lbuf("look_exits2");
     ITER_PARENTS(loc, parent, lev)
-    {
+   	{
         key &= ~VE_LOC_DARK;
         if (Dark(parent))
         {
-            key |= VE_LOC_DARK;
+   	        key |= VE_LOC_DARK;
         }
-        if (Transparent(loc))
+   	    if (Transparent(loc))
         {
             DOLIST(thing, Exits(parent))
             {
-                if (exit_displayable(thing, player, key))
+   	            if (exit_displayable(thing, player, key))
                 {
                     StringCopy(buff, Name(thing));
                     for (e = buff; *e && (*e != ';'); e++) ;
                     *e = '\0';
-                    notify(player, tprintf("%s leads to %s.", buff, Name(Location(thing))));
+   	                notify(player, tprintf("%s leads to %s.", buff, Name(Location(thing))));
                 }
             }
         }
@@ -482,12 +537,14 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
                     //
                     // chop off first exit alias to display
                     //
-                    
+                   
                     if (buff != e)
                         safe_str((char *)"  ", buff, &e);
+
                     for (s = Name(thing); *s && (*s != ';'); s++)
                         safe_chr(*s, buff1, &e1);
-                    *e1 = 0;
+
+	                    *e1 = 0;
                     /* Copy the exit name into 'buff' */
                     if (Html(player))
                     {
@@ -507,7 +564,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
             }
         }
     }
-    
+   
     if (!(Transparent(loc)))
     {
         safe_str((char *)"\r\n", buff, &e);
@@ -530,13 +587,72 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
     char *html_buff, *html_cp;
     char remote_num[32];
     
-    html_buff = html_cp = alloc_lbuf("look_contents");
-    
     // Check to see if he can see the location.
     //
     can_see_loc = (!Dark(loc) ||
         (mudconf.see_own_dark && Examinable(player, loc)));
 
+	dbref aowner;
+	int aflags;
+	char* FormatOriginal, * ContentsFormat;
+	FormatOriginal = ContentsFormat = atr_pget(loc, A_CONFORMAT, &aowner,
+		&aflags);
+
+	int bDisplayContents = 1;
+	if ( *ContentsFormat )
+	{
+		char* tPtr, * VisibleObjectList;
+		tPtr = VisibleObjectList = alloc_lbuf("look_contents.VisibleObjectList");
+
+		DOLIST(thing, Contents(loc))
+		{
+#ifdef WOD_REALMS
+			if ( can_see(player, thing, can_see_loc) &&
+				(REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisiblity(player,
+												thing, ACTION_IS_STATIONARY)) )
+#else
+			if ( can_see(player, thing, can_see_loc) )
+#endif
+				safe_str(tprintf("#%d ", thing), VisibleObjectList, &tPtr);
+		}
+		*(tPtr - 1) = '\0';
+
+		notify(player, contents_name);
+
+		char* ContentsNameScratch = alloc_lbuf("look_contents.ContentsNameScratch.");
+		tPtr = ContentsNameScratch;
+
+		safe_str(contents_name, ContentsNameScratch, &tPtr);
+
+		char* FormatOutput = alloc_lbuf("look_contents.FormatOutput");
+		tPtr = FormatOutput;
+
+		char* ParameterList[] =
+			{ VisibleObjectList, ContentsNameScratch };
+
+		TinyExec(FormatOutput, &tPtr, 0, loc, player,
+				EV_FCHECK | EV_EVAL | EV_TOP,
+				&ContentsFormat, ParameterList, 2);
+
+		notify(player, FormatOutput);
+
+		free_lbuf(FormatOutput);
+		free_lbuf(ContentsNameScratch);
+		free_lbuf(VisibleObjectList);
+
+		bDisplayContents = 0;
+	}
+
+	if ( *FormatOriginal )
+	{
+		free_lbuf(FormatOriginal);
+	}
+
+	if ( !bDisplayContents )
+		return;
+
+    html_buff = html_cp = alloc_lbuf("look_contents");
+    
     // Check to see if there is anything there.
     //    
     DOLIST(thing, Contents(loc))

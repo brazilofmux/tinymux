@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.34 2001-01-08 23:28:04 sdennis Exp $
+// $Id: db.cpp,v 1.35 2001-03-22 23:05:03 morgan Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -130,6 +130,7 @@ ATTR attr[] =
     {"Away", A_AWAY, AF_ODARK | AF_NOPROG, NULL},
     {"Charges", A_CHARGES, AF_ODARK | AF_NOPROG, NULL},
     {"Comment", A_COMMENT, AF_MDARK | AF_WIZARD, NULL},
+	{"ConFormat", A_CONFORMAT, AF_ODARK | AF_NOPROG, NULL},
     {"Cost", A_COST, AF_ODARK, NULL},
     {"Daily", A_DAILY, AF_ODARK, NULL},
     {"Desc", A_DESC, AF_NOPROG, NULL},
@@ -142,6 +143,7 @@ ATTR attr[] =
     {"Efail", A_EFAIL, AF_ODARK | AF_NOPROG, NULL},
     {"Enter", A_ENTER, AF_ODARK, NULL},
     {"EnterLock", A_LENTER, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK, NULL},
+	{"ExitFormat", A_EXITFORMAT, AF_ODARK | AF_NOPROG, NULL},
     {"Fail", A_FAIL, AF_ODARK | AF_NOPROG, NULL},
     {"Filter", A_FILTER, AF_ODARK | AF_NOPROG, NULL},
     {"Forwardlist", A_FORWARDLIST, AF_ODARK | AF_NOPROG, fwdlist_ck},
