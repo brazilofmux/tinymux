@@ -103,6 +103,7 @@ Feature Additions:
  -- Added CHR() from PennMUSH.
  -- Added ORD() from PennMUSH.
  -- Added STRIPACCENTS() from PennMUSH.
+ -- Added NOACCENTS flag from PennMUSH.
 
 Bug Fixes:
 ~~~~~~~~~

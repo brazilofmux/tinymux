@@ -6029,7 +6029,7 @@ FLAG LIST
     q - TERSE      |   r - ROBOT      |   s - SAFE       |   t - TRANSPARENT
     u - SUSPECT    |   v - VERBOSE    |   w - STAFF      |   x - SLAVE
     $ - SITEMON    |   z - OPEN_OK    |   ? - HEAD       |   - - NOBLEED
-    | - VACATION   |                  |                  |
+    | - VACATION   |     - NOACCENTS  |                  | 
   ------------------------------------------------------------------------
   Without Realms Patch Flags:
     0 - MARKER0    |   1 - MARKER1    |   2 - MARKER2    |   3 - MARKER3
@@ -8946,6 +8946,18 @@ NEXT()
   that the object is in.  Otherwise, it returns a '#-1' string.
 
   Related Topics:
+
+& NOACCENTS
+NOACCENTS
+
+  FLAG: NOACCENTS
+
+  When set on a player, it will disable a player from seeing the accent marks
+  above certain letters. The default is for the accent marks to be shown.
+
+  This flag has no associated letter.
+
+  Related Topics: stripaccents(), chr(), ord().
 
 & NOBLEED
 NOBLEED
