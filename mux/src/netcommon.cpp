@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.9 2002-06-21 01:42:51 sdennis Exp $
+// $Id: netcommon.cpp,v 1.10 2002-06-21 03:28:02 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2525,7 +2525,7 @@ FUNCTION(fun_host)
             safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
             return;
         }
-        for (DESC *d = descriptor_list; d; d = d->next)
+        DESC_ITER_CONN(d)
         {
             if (d->player == victim)
             {
