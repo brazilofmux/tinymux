@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.140 2002-01-29 08:33:33 sdennis Exp $
+// $Id: functions.cpp,v 1.141 2002-01-29 10:10:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6189,9 +6189,8 @@ static void handle_sets
 
     int i1 = 0;
     int i2 = 0;
-    char *oldp = *bufc;
+    char *oldp = NULL;
     BOOL bFirst = TRUE;
-    **bufc = '\0';
 
     switch (oper)
     {
@@ -6220,11 +6219,13 @@ static void handle_sets
                || i2 > 0)
             {
                 while (  i1 < n1
+                      && oldp
                       && strcmp(ptrs1[i1], oldp) == 0)
                 {
                     i1++;
                 }
                 while (  i2 < n2
+                      && oldp
                       && strcmp(ptrs2[i2], oldp) == 0)
                 {
                     i2++;
@@ -6241,18 +6242,18 @@ static void handle_sets
                     print_sep(osep, buff, bufc);
                 }
                 bFirst = FALSE;
-                oldp = *bufc;
                 if (strcmp(ptrs1[i1], ptrs2[i2]) < 0)
                 {
+                    oldp = ptrs1[i1];
                     safe_str(ptrs1[i1], buff, bufc);
                     i1++;
                 }
                 else
                 {
+                    oldp = ptrs2[i2];
                     safe_str(ptrs2[i2], buff, bufc);
                     i2++;
                 }
-                **bufc = '\0';
             }
         }
 
@@ -6260,30 +6261,30 @@ static void handle_sets
         //
         for (; i1 < n1; i1++)
         {
-            if (strcmp(oldp, ptrs1[i1]))
+            if (  !oldp
+               || strcmp(oldp, ptrs1[i1]) != 0)
             {
                 if (!bFirst)
                 {
                     print_sep(osep, buff, bufc);
                 }
                 bFirst = FALSE;
-                oldp = *bufc;
+                oldp = ptrs1[i1];
                 safe_str(ptrs1[i1], buff, bufc);
-                **bufc = '\0';
             }
         }
         for (; i2 < n2; i2++)
         {
-            if (strcmp(oldp, ptrs2[i2]))
+            if (  !oldp
+               || strcmp(oldp, ptrs2[i2]) != 0)
             {
                 if (!bFirst)
                 {
                     print_sep(osep, buff, bufc);
                 }
                 bFirst = FALSE;
-                oldp = *bufc;
+                oldp = ptrs2[i2];
                 safe_str(ptrs2[i2], buff, bufc);
-                **bufc = '\0';
             }
         }
         break;
@@ -6305,7 +6306,7 @@ static void handle_sets
                     print_sep(osep, buff, bufc);
                 }
                 bFirst = FALSE;
-                oldp = *bufc;
+                oldp = ptrs1[i1];
                 safe_str(ptrs1[i1], buff, bufc);
                 i1++;
                 i2++;
@@ -6408,7 +6409,6 @@ static void handle_sets
     }
     free_lbuf(list1);
     free_lbuf(list2);
-    return;
 }
 
 FUNCTION(fun_setunion)
@@ -6416,7 +6416,6 @@ FUNCTION(fun_setunion)
     char sep, osep;
     svarargs_preamble(4);
     handle_sets(fargs, buff, bufc, SET_UNION, sep, osep);
-    return;
 }
 
 FUNCTION(fun_setdiff)
@@ -6424,7 +6423,6 @@ FUNCTION(fun_setdiff)
     char sep, osep;
     svarargs_preamble(4);
     handle_sets(fargs, buff, bufc, SET_DIFF, sep, osep);
-    return;
 }
 
 FUNCTION(fun_setinter)
@@ -6432,7 +6430,6 @@ FUNCTION(fun_setinter)
     char sep, osep;
     svarargs_preamble(4);
     handle_sets(fargs, buff, bufc, SET_INTERSECT, sep, osep);
-    return;
 }
 
 /*
