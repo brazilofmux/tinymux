@@ -1041,20 +1041,20 @@
 { 'wizhelp config parameters2' for more }
 & CONFIG PARAMETERS2
   look_obey_terse  machine_command_cost  mail_database  mail_expiration
-  master_room  max_players  match_own_commands  money_name_plural
-  money_name_singular  motd_file  motd_message  mud_name  news_file
-  news_index  newuser_file  notify_recursion_limit  open_cost  output_database
-  output_limit  page_cost  paranoid_allocate  parent_recursion_limit  paycheck
-  pemit_any_object  pemit_far_players  permit_site  player_flags
-  player_listen  player_match_own_commands  player_queue_limit  player_quota
-  player_starting_home  player_starting_room  plushelp_file  plushelp_index
-  port  postdump_message  public_channel  public_flags  queue_active_chunk
-  queue_idle_chunk  quiet_look  quiet_whisper  quit_file  quotas
-  read_remote_desc  read_remote_name  register_create_file
-  register_site  retry_limit  robot_cost  robot_flags  robot_speech
-  room_flags  room_quota  sacrifice_adjust  sacrifice_factor  search_cost
-  see_owned_dark  signal_action  site_chars  space_compress  stack_limit
-  starting_money  starting_quota  suspect_site  sweep_dark
+  master_room  match_own_commands  max_cache_size  max_players
+  money_name_plural  money_name_singular  motd_file  motd_message  mud_name
+  news_file  news_index  newuser_file  notify_recursion_limit  open_cost
+  output_database  output_limit  page_cost  paranoid_allocate
+  parent_recursion_limit  paycheck  pemit_any_object  pemit_far_players
+  permit_site  player_flags  player_listen  player_match_own_commands
+  player_queue_limit  player_quota  player_starting_home  player_starting_room
+  plushelp_file  plushelp_index  port  postdump_message  public_channel
+  public_flags  queue_active_chunk  queue_idle_chunk  quiet_look
+  quiet_whisper  quit_file  quotas  read_remote_desc  read_remote_name
+  register_create_file  register_site  retry_limit  robot_cost  robot_flags
+  robot_speech  room_flags  room_quota  sacrifice_adjust  sacrifice_factor
+  search_cost  see_owned_dark  signal_action  site_chars  space_compress
+  stack_limit  starting_money  starting_quota  suspect_site  sweep_dark
   switch_default_all  terse_shows_contents  terse_shows_exits
   terse_shows_move_messages  thing_flags  thing_quota  timeslice
   trace_output_limit  trace_topdown  trust_site  uncompress_program
@@ -1131,22 +1131,28 @@
   See also: forbid_site, permit_site.
 
 & cache_depth
-  Config parameter: cache_depth <depth>.
+  Config parameter: cache_depth <depth>. Default: none.
   
   The cache in MUX 2.0 is handled differently and this option does not
   apply.
 
+  See also: max_cache_size
+
 & cache_trim
-  Config parameter: cache_trim <yes/no>.  Default: no.
+  Config parameter: cache_trim <yes/no>.  Default: none.
  
   The cache in MUX 2.0 is handled differently and this option does not
   apply.
+
+  See also: max_cache_size
  
 & cache_width
-  Config parameter: cache_width <depth>.  Default: ??
+  Config parameter: cache_width <depth>.  Default: none.
  
   The cache in MUX 2.0 is handled differently and this option does not
   apply.
+
+  See also: max_cache_size
 
 & check_interval
   Config parameter: check_interval <secs>.  Default: 600.
@@ -1822,20 +1828,29 @@
   automatically deleted by the system. If this parameter is set to a
   negative number, this feature will be disabled.
  
-& match_own_commands
-  Config parameter: match_own_commands <yes/no>.  Default: NO
-  Specifies whether or not objects search themselves for $-commands when a
-  command does not match an exit or an internal command.  In order for
-  players to search themselves for commands, both match_own_commands and
-  player_match_own_commands must be set to yes.
-  See also: player_match_own_commands.
-
 & master_room
   Config parameter: master_room <roomnum>.  Default: (none)
+
   Specifies the room that is searched for exits if a command does not match
   an exit in the current room, and for $-command if a command does not match
   any $-commands that are available to the player in his current location.
 
+& match_own_commands
+  Config parameter: match_own_commands <yes/no>.  Default: NO
+
+  Specifies whether or not objects search themselves for $-commands when a
+  command does not match an exit or an internal command.  In order for
+  players to search themselves for commands, both match_own_commands and
+  player_match_own_commands must be set to yes.
+
+  See also: player_match_own_commands.
+
+& max_cache_size
+  Config parameter: max_cache_size <size>. Default: 1048576
+
+  Expressed in bytes, this is the maximum size the server will use for caching
+  attribute values from the database.
+    
 & max_players
   Config directive: max_players <num>.  Default: -1 (unlimited)
  
@@ -1846,6 +1861,7 @@
   may have).  Players connecting when there are max_players players connected
   receive the contents of the file named by the full_file directive, and the
   full_motd_message (also settable via @motd/full), and are disconnected.
+
   See also: @motd, full_file, full_motd_message.
 
 & money_name_plural
