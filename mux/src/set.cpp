@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.14 2002-06-18 20:19:35 jake Exp $
+// $Id: set.cpp,v 1.15 2002-06-27 10:19:33 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -141,11 +141,9 @@ void do_chzone
         //
         Flags(thing) &= ~(WIZARD | ROYALTY | INHERIT);
 
-#ifdef USE_POWERS
         // Wipe out all powers.
         //
         Powers(thing) = 0;
-#endif // USE_POWERS
     }
     notify(executor, "Zone changed.");
 }
