@@ -1,6 +1,6 @@
 // powers.h -- Object powers.
 //
-// $Id: powers.h,v 1.2 2001-11-19 06:20:10 sdennis Exp $
+// $Id: powers.h,v 1.3 2002-05-03 03:10:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -111,35 +111,36 @@ extern int decode_power(dbref player, char *powername, POWERSET *pset);
 #define s_Unkillable(c)     s_Powers((c), Powers(c) | POW_UNKILLABLE)
 #define s_Builder(c)        s_Powers2((c), Powers2(c) | POW_BUILDER)
 
-#define Quota(c)        (((Powers(c) & POW_CHG_QUOTAS) != 0) || Wizard(c))
+#define Quota(c)            (((Powers(c) & POW_CHG_QUOTAS) != 0) || Wizard(c))
 #define Chown_Any(c)        (((Powers(c) & POW_CHOWN_ANY) != 0) || Wizard(c))
-#define Announce(c)     (((Powers(c) & POW_ANNOUNCE) != 0) || Wizard(c))
-#define Can_Boot(c)     (((Powers(c) & POW_BOOT) != 0) || Wizard(c))
-#define Can_Halt(c)     (((Powers(c) & POW_HALT) != 0) || Wizard(c))
+#define Announce(c)         (((Powers(c) & POW_ANNOUNCE) != 0) || Wizard(c))
+#define Can_Boot(c)         (((Powers(c) & POW_BOOT) != 0) || Wizard(c))
+#define Can_Halt(c)         (((Powers(c) & POW_HALT) != 0) || Wizard(c))
 #define Control_All(c)      (((Powers(c) & POW_CONTROL_ALL) != 0) || Wizard(c))
 #define Wizard_Who(c)       (((Powers(c) & POW_WIZARD_WHO) != 0) || WizRoy(c))
-#define See_All(c)      (((Powers(c) & POW_EXAM_ALL) != 0) || WizRoy(c))
+#define See_All(c)          (((Powers(c) & POW_EXAM_ALL) != 0) || WizRoy(c))
 #define Find_Unfindable(c)  ((Powers(c) & POW_FIND_UNFIND) != 0)
 #define Free_Money(c)       (((Powers(c) & POW_FREE_MONEY) != 0) || Immortal(c))
 #define Free_Quota(c)       (((Powers(c) & POW_FREE_QUOTA) != 0) || Wizard(c))
-#define Can_Hide(c)     ((Powers(c) & POW_HIDE) != 0)
-#define Can_Idle(c)     (((Powers(c) & POW_IDLE) != 0) || Wizard(c))
-#define Search(c)       (((Powers(c) & POW_SEARCH) != 0) || WizRoy(c))
+#define Can_Hide(c)         (((Powers(c) & POW_HIDE) != 0) || Wizard(c))
+#define Can_Idle(c)         (((Powers(c) & POW_IDLE) != 0) || Wizard(c))
+#define Search(c)           (((Powers(c) & POW_SEARCH) != 0) || WizRoy(c))
 #define Long_Fingers(c)     (((Powers(c) & POW_LONGFINGERS) != 0) || Wizard(c))
-#define Comm_All(c)     (((Powers(c) & POW_COMM_ALL) != 0) || Wizard(c))
+#define Comm_All(c)         (((Powers(c) & POW_COMM_ALL) != 0) || Wizard(c))
 #define See_Queue(c)        (((Powers(c) & POW_SEE_QUEUE) != 0) || WizRoy(c))
-#define See_Hidden(c)       ((Powers(c) & POW_SEE_HIDDEN) != 0)
+#define See_Hidden(c)       (((Powers(c) & POW_SEE_HIDDEN) != 0) || WizRoy(c))
 #define Can_Monitor(c)      (((Powers(c) & POW_MONITOR) != 0) || Wizard(c))
-#define Can_Poll(c)     (((Powers(c) & POW_POLL) != 0) || Wizard(c))
+#define Can_Poll(c)         (((Powers(c) & POW_POLL) != 0) || Wizard(c))
 #define No_Destroy(c)       (((Powers(c) & POW_NO_DESTROY) != 0) || Wizard(c))
-#define Guest(c)        ((Powers(c) & POW_GUEST) != 0)
+#define Guest(c)            ((Powers(c) & POW_GUEST) != 0)
 #define Set_Maint_Flags(c)  ((Powers(c) & POW_SET_MFLAGS) != 0)
-#define Stat_Any(c)     ((Powers(c) & POW_STAT_ANY) != 0)
-#define Steal(c)        (((Powers(c) & POW_STEAL) != 0) || Wizard(c))
+#define Stat_Any(c)         ((Powers(c) & POW_STAT_ANY) != 0)
+#define Steal(c)            (((Powers(c) & POW_STEAL) != 0) || Wizard(c))
 #define Tel_Anywhere(c)     (((Powers(c) & POW_TEL_ANYWHR) != 0) || Tel_Anything(c))
 #define Tel_Anything(c)     (((Powers(c) & POW_TEL_UNRST) != 0) || WizRoy(c))
 #define Unkillable(c)       (((Powers(c) & POW_UNKILLABLE) != 0) || Immortal(c))
-#define Prog(c)         (((Powers(c) & POW_PROG) != 0) || Wizard(c))
+#define Prog(c)             (((Powers(c) & POW_PROG) != 0) || Wizard(c))
 #define Pass_Locks(c)       ((Powers(c) & POW_PASS_LOCKS) != 0)
-#define Builder(c)      (((Powers2(c) & POW_BUILDER) != 0) || WizRoy(c))
+#define Builder(c)          (((Powers2(c) & POW_BUILDER) != 0) || WizRoy(c))
+
 #endif /* POWERS_H */

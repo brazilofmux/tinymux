@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.171 2002-04-14 23:16:16 sdennis Exp $
+// $Id: functions.cpp,v 1.172 2002-05-03 03:10:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6188,7 +6188,9 @@ FUNCTION(fun_idle)
         pTargetName++;
     }
     dbref target = lookup_player(player, pTargetName, 1);
-    if (Good_obj(target) && Dark(target) && !Wizard(player))
+    if (  Good_obj(target)
+       && Hidden(target)
+       && !See_Hidden(player))
     {
         target = NOTHING;
     }
@@ -6203,7 +6205,9 @@ FUNCTION(fun_conn)
         pTargetName++;
     }
     dbref target = lookup_player(player, pTargetName, 1);
-    if (Good_obj(target) && Dark(target) && !Wizard(player))
+    if (  Good_obj(target)
+       && Hidden(target)
+       && !See_Hidden(player))
     {
         target = NOTHING;
     }
@@ -8141,8 +8145,8 @@ FUNCTION(fun_lflags)
                 if (  isPlayer(target)
                    && (fbe->flagvalue == CONNECTED)
                    && (fbe->flagflag == FLAG_WORD2)
-                   && ((Flags(target) & (WIZARD | DARK)) == (WIZARD | DARK))
-                   && !Wizard(player))
+                   && Hidden(target)
+                   && !See_Hidden(player))
                 {
                     continue;
                 }

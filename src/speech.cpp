@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.22 2002-02-08 00:15:42 sdennis Exp $
+// $Id: speech.cpp,v 1.23 2002-05-03 03:10:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -417,17 +417,22 @@ static int page_check(dbref player, dbref target)
     }
     else if (!Connected(target))
     {
-        page_return(player, target, "Away", A_AWAY, tprintf("Sorry, %s is not connected.", Name(target)));
+        page_return(player, target, "Away", A_AWAY,
+            tprintf("Sorry, %s is not connected.", Name(target)));
     }
     else if (!could_doit(player, target, A_LPAGE))
     {
-        if (Wizard(target) && Dark(target))
+        if (  Can_Hide(target)
+           && Hidden(target)
+           && !See_Hidden(player))
         {
-            page_return(player, target, "Away", A_AWAY, tprintf("Sorry, %s is not connected.", Name(target)));
+            page_return(player, target, "Away", A_AWAY,
+                tprintf("Sorry, %s is not connected.", Name(target)));
         }
         else
         {
-            page_return(player, target, "Reject", A_REJECT, tprintf("Sorry, %s is not accepting pages.", Name(target)));
+            page_return(player, target, "Reject", A_REJECT,
+                tprintf("Sorry, %s is not accepting pages.", Name(target)));
         }
     }
     else if (!could_doit(target, player, A_LPAGE))

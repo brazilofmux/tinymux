@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.14 2002-03-02 08:05:00 sdennis Exp $
+// $Id: player.cpp,v 1.15 2002-05-03 03:10:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -551,7 +551,7 @@ dbref lookup_player(dbref doer, char *name, int check_who)
         if (check_who)
         {
             thing = find_connected_name(doer, name);
-            if (Dark(thing))
+            if (Hidden(thing))
             {
                 thing = NOTHING;
             }

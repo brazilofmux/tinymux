@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.64 2002-02-27 18:57:33 sdennis Exp $
+// $Id: netcommon.cpp,v 1.65 2002-05-03 03:10:47 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -666,7 +666,7 @@ static void announce_connect(dbref player, DESC *d)
         {
             do_comconnect(player);
         }
-        if (Dark(player))
+        if (Hidden(player))
         {
             pMonitorAnnounceFmt = "GAME: %s has DARK-connected.";
         }
@@ -685,8 +685,8 @@ static void announce_connect(dbref player, DESC *d)
 
     key = MSG_INV;
     if (  loc != NOTHING
-       && !(  Dark(player)
-           && Wizard(player)))
+       && !(  Hidden(player)
+           && Can_Hide(player)))
     {
         key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
     }
@@ -805,7 +805,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
 
         sprintf(buf, "%s has disconnected.", Name(player));
         key = MSG_INV;
-        if ((loc != NOTHING) && !(Dark(player) && Wizard(player)))
+        if ((loc != NOTHING) && !(Hidden(player) && Can_Hide(player)))
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
@@ -923,7 +923,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         char *mbuf = alloc_mbuf("announce_disconnect.partial");
         sprintf(mbuf, "%s has partially disconnected.", Name(player));
         key = MSG_INV;
-        if ((loc != NOTHING) && !(Dark(player) && Wizard(player)))
+        if ((loc != NOTHING) && !(Hidden(player) && Can_Hide(player)))
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
@@ -1284,10 +1284,14 @@ static void dump_users(DESC *e, char *match, int key)
     }
     else
     {
-        if (Wizard_Who(e->player))
+        if (Wizard_Who(e->player) || See_Hidden(e->player))
+        {
             queue_string(e, "  ");
+        }
         else
+        {
             queue_string(e, " ");
+        }
         queue_string(e, mudstate.doing_hdr);
         queue_string(e, "\r\n");
     }
@@ -1304,8 +1308,9 @@ static void dump_users(DESC *e, char *match, int key)
             continue;
         }
         if (  !Hidden(d->player)
-           || (e->flags & DS_CONNECTED)
-           && Wizard_Who(e->player))
+           || (  (e->flags & DS_CONNECTED)
+              && (  Wizard_Who(e->player)
+                 || See_Hidden(e->player))))
         {
             count++;
             if (match && !(string_prefix(Name(d->player), match)))
@@ -1324,7 +1329,8 @@ static void dump_users(DESC *e, char *match, int key)
             //
             fp = flist;
             sp = slist;
-            if ((e->flags & DS_CONNECTED) && Wizard_Who(e->player))
+            if (  (e->flags & DS_CONNECTED)
+               && Wizard_Who(e->player))
             {
                 if (Hidden(d->player))
                 {
@@ -1362,6 +1368,17 @@ static void dump_users(DESC *e, char *match, int key)
                 if (d->host_info & H_GUEST)
                     *sp++ = 'G';
             }
+            else if (  (e->flags & DS_CONNECTED)
+                    && See_Hidden(e->player))
+            {
+                if (Hidden(d->player))
+                {
+                    if (d->flags & DS_AUTODARK)
+                        *fp++ = 'd';
+                    else
+                        *fp++ = 'D';
+                }
+            }
             *fp = '\0';
             *sp = '\0';
 
@@ -1393,7 +1410,8 @@ static void dump_users(DESC *e, char *match, int key)
                     d->output_size, d->output_lost,
                     d->output_tot);
             }
-            else if (Wizard_Who(e->player))
+            else if (  Wizard_Who(e->player)
+                    || See_Hidden(e->player))
             {
                 sprintf(buf, "%-16s%9s %4s%-3s%s\r\n",
                     (Connected(d->player) ? trimmed_name(d->player) :
@@ -1452,7 +1470,7 @@ static void dump_info(DESC *arg_desc)
             continue;
         }
         if (  !Hidden(d->player)
-           || ( (arg_desc->flags & DS_CONNECTED)
+           || (  (arg_desc->flags & DS_CONNECTED)
               && See_Hidden(arg_desc->player)))
         {
             count++;
@@ -2352,20 +2370,20 @@ void list_siteinfo(dbref player)
 void make_ulist(dbref player, char *buff, char **bufc)
 {
     DESC *d;
-    char *cp = *bufc;
+    DTB pContext;
+    DbrefToBuffer_Init(&pContext, buff, bufc);
     DESC_ITER_CONN(d)
     {
-        if (!WizRoy(player) && Hidden(d->player))
+        if (!See_Hidden(player) && Hidden(d->player))
         {
             continue;
         }
-        if (cp != *bufc)
+        if (!DbrefToBuffer_Add(&pContext, d->player))
         {
-            safe_chr(' ', buff, bufc);
+            break;
         }
-        safe_chr('#', buff, bufc);
-        safe_ltoa(d->player, buff, bufc);
     }
+    DbrefToBuffer_Final(&pContext);
 }
 
 /*
@@ -2383,8 +2401,12 @@ dbref find_connected_name(dbref player, char *name)
     found = NOTHING;
     DESC_ITER_CONN(d)
     {
-        if (Good_obj(player) && !Wizard(player) && Hidden(d->player))
+        if (  Good_obj(player)
+           && !See_Hidden(player)
+           && Hidden(d->player))
+        {
             continue;
+        }
         if (!string_prefix(Name(d->player), name))
             continue;
         if ((found != NOTHING) && (found != d->player))

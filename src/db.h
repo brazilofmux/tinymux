@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.15 2002-02-25 02:00:42 sdennis Exp $
+// $Id: db.h,v 1.16 2002-05-03 03:10:47 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -27,7 +27,6 @@
                       ((l) < mudconf.parent_nest_lim)); \
                      (p)=Parent(p), (l)++)
 
-#define Hasprivs(x)      (Royalty(x) || Wizard(x))
 int get_atr(char *name);
 
 typedef struct attr ATTR;

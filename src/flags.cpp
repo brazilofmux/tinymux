@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.27 2002-02-25 19:56:21 sdennis Exp $
+// $Id: flags.cpp,v 1.28 2002-05-03 03:10:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -699,7 +699,7 @@ char *decode_flags(dbref player, FLAGSET *fs)
                && fbe->flagflag == FLAG_WORD2
                && fbe->flagvalue == CONNECTED
                && (fs->word[FLAG_WORD1] & (WIZARD | DARK)) == (WIZARD | DARK)
-               && !Wizard(player))
+               && !See_Hidden(player))
             {
                 continue;
             }
@@ -755,8 +755,8 @@ int has_flag(dbref player, dbref it, char *flagname)
         if (  isPlayer(it)
            && (fbe->flagvalue == CONNECTED)
            && (fbe->flagflag == FLAG_WORD2)
-           && ((Flags(it) & (WIZARD | DARK)) == (WIZARD | DARK))
-           && !Wizard(player))
+           && Hidden(it)
+           && !See_Hidden(player))
         {
             return 0;
         }
@@ -818,8 +818,8 @@ char *flag_description(dbref player, dbref target)
             if (  isPlayer(target)
                && (fbe->flagvalue == CONNECTED)
                && (fbe->flagflag == FLAG_WORD2)
-               && ((Flags(target) & (WIZARD | DARK)) == (WIZARD | DARK))
-               && !Wizard(player))
+               && Hidden(target)
+               && !See_Hidden(player))
             {
                 continue;
             }

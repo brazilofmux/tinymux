@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.35 2002-01-15 06:58:58 sdennis Exp $
+// $Id: mail.cpp,v 1.36 2002-05-03 03:10:47 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -17,6 +17,7 @@
 #include "attrs.h"
 #include "mail.h"
 #include "match.h"
+#include "powers.h"
 
 #ifdef RADIX_COMPRESSION
 #include "radix.h"
@@ -568,7 +569,7 @@ void do_mail_read(dbref player, char *msglist)
                                i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
                                timebuff,
                               (Connected(mp->from) &&
-                              (!Hidden(mp->from) || Hasprivs(player))) ?
+                              (!Hidden(mp->from) || See_Hidden(player))) ?
                               " (Conn)" : "      ", folder,
                                status,
                                names,
@@ -580,7 +581,7 @@ void do_mail_read(dbref player, char *msglist)
                                i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
                                mp->time,
                                (Connected(mp->from) &&
-                               (!Hidden(mp->from) || Hasprivs(player))) ?
+                               (!Hidden(mp->from) || See_Hidden(player))) ?
                                " (Conn)" : "      ", folder,
                                status,
                                names,
@@ -775,7 +776,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
                                    i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
                                    timebuff,
                                    (Connected(mp->from) &&
-                                   (!Hidden(mp->from) || Hasprivs(player))) ?
+                                   (!Hidden(mp->from) || See_Hidden(player))) ?
                                    " (Conn)" : "      ", 0,
                                    status, szSubjectBuffer));
 #else
@@ -790,7 +791,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
                                    i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
                                    mp->time,
                                    (Connected(mp->from) &&
-                                   (!Hidden(mp->from) || Hasprivs(player))) ?
+                                   (!Hidden(mp->from) || See_Hidden(player))) ?
                                    " (Conn)" : "      ", 0,
                                    status, szSubjectBuffer));
 #endif // RADIX_COMPRESSION
@@ -855,7 +856,7 @@ void do_mail_list(dbref player, char *msglist, int sub)
                     notify(player, tprintf("[%s] %-3d (%4d) From: %-*s At: %s %s",
                            status_chars(mp), i, strlen(msgbuff),
                            PLAYER_NAME_LIMIT - 6, Name(mp->from), time,
-                           ((Connected(mp->from) && (!Hidden(mp->from) || Hasprivs(player))) ? "Conn" : " ")));
+                           ((Connected(mp->from) && (!Hidden(mp->from) || See_Hidden(player))) ? "Conn" : " ")));
                 }
 #else
                 time = mail_list_time(mp->time);
@@ -872,7 +873,7 @@ void do_mail_list(dbref player, char *msglist, int sub)
                     notify(player, tprintf("[%s] %-3d (%4d) From: %-*s At: %s %s",
                            status_chars(mp), i, strlen(MessageFetch(mp->number)),
                            PLAYER_NAME_LIMIT - 6, Name(mp->from), time,
-                            ((Connected(mp->from) && (!Hidden(mp->from) || Hasprivs(player))) ? "Conn" : " ")));
+                            ((Connected(mp->from) && (!Hidden(mp->from) || See_Hidden(player))) ? "Conn" : " ")));
                 }
 #endif // RADIX_COMPRESSION
                 free_lbuf(time);

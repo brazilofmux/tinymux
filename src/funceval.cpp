@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.94 2002-04-15 00:40:41 sdennis Exp $
+// $Id: funceval.cpp,v 1.95 2002-05-03 03:10:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1162,8 +1162,8 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
             {
                 if (  isPlayer(it)
                    && fset.word[FLAG_WORD2] == CONNECTED
-                   && (Flags(it) & (WIZARD | DARK)) == (WIZARD | DARK)
-                   && !Wizard(player))
+                   && Hidden(it)
+                   && !See_Hidden(player))
                 {
                     temp = 0;
                 }
