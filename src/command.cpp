@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.60 2001-11-20 05:17:54 sdennis Exp $
+// $Id: command.cpp,v 1.61 2001-11-22 19:16:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2900,10 +2900,8 @@ static void list_process(dbref player)
 #ifdef HAVE_GETRUSAGE
     raw_notify(player, tprintf("Time used:   %10d user   %10d sys",
                usage.ru_utime.tv_sec, usage.ru_stime.tv_sec));
-#if 0
     raw_notify(player, tprintf("Resident mem:%10d shared %10d private%10d stack",
            ixrss, idrss, isrss));
-#endif
     raw_notify(player,
            tprintf("Integral mem:%10d shared %10d private%10d stack",
                usage.ru_ixrss, usage.ru_idrss, usage.ru_isrss));
