@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.3 2002-06-04 00:47:27 sdennis Exp $
+// $Id: command.cpp,v 1.4 2002-06-05 05:03:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1014,7 +1014,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
     switch (cmdp->callseq & CS_NARG_MASK)
     {
     case CS_NO_ARGS: // <cmd>   (no args)
-        (*(((CMDENT_NO_ARG *)cmdp)->handler))(executor, CALLERQQQ, enactor, key);
+        (*(((CMDENT_NO_ARG *)cmdp)->handler))(executor, caller, enactor, key);
         break;
 
     case CS_ONE_ARG:    // <cmd> <arg>
@@ -1036,7 +1036,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         {
             buf1 = bp = alloc_lbuf("process_cmdent");
             str = arg;
-            TinyExec(buf1, &bp, executor, CALLERQQQ, enactor,
+            TinyExec(buf1, &bp, executor, caller, enactor,
                      interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
             *bp = '\0';
         }
@@ -1050,7 +1050,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         //
         if (cmdp->callseq & CS_CMDARG)
         {
-            (*(((CMDENT_ONE_ARG_CMDARG *)cmdp)->handler))(executor, CALLERQQQ,
+            (*(((CMDENT_ONE_ARG_CMDARG *)cmdp)->handler))(executor, caller,
                 enactor, key, buf1, cargs, ncargs);
         }
         else
@@ -1120,7 +1120,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
                     if (wild(buff + 1, new0, aargs, 10))
                     {
                         CLinearTimeAbsolute lta;
-                        wait_que(add->thing, CALLERQQQ, executor, FALSE, lta,
+                        wait_que(add->thing, caller, executor, FALSE, lta,
                             NOTHING, 0, s, aargs, 10, mudstate.global_regs);
                         for (i = 0; i < 10; i++)
                         {
@@ -1177,7 +1177,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         }
         buf1 = bp = alloc_lbuf("process_cmdent.2");
         str = buf2;
-        TinyExec(buf1, &bp, executor, CALLERQQQ, enactor,
+        TinyExec(buf1, &bp, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs,
             ncargs);
         *bp = '\0';
@@ -1186,7 +1186,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         {
             // Arg2 is ARGV style.  Go get the args.
             //
-            parse_arglist(executor, CALLERQQQ, enactor, arg, '\0',
+            parse_arglist(executor, caller, enactor, arg, '\0',
                 interp | EV_STRIP_LS | EV_STRIP_TS, args, MAX_ARG, cargs,
                 ncargs, &nargs);
 
@@ -1195,11 +1195,11 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
             if (cmdp->callseq & CS_CMDARG)
             {
                 (*(((CMDENT_TWO_ARG_ARGV_CMDARG *)cmdp)->handler))(executor,
-                    CALLERQQQ, enactor, key, buf1, args, nargs, cargs, ncargs);
+                    caller, enactor, key, buf1, args, nargs, cargs, ncargs);
             }
             else
             {
-                (*(((CMDENT_TWO_ARG_ARGV *)cmdp)->handler))(executor, CALLERQQQ,
+                (*(((CMDENT_TWO_ARG_ARGV *)cmdp)->handler))(executor, caller,
                     enactor, key, buf1, args, nargs);
             }
 
@@ -1218,7 +1218,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
             {
                 buf2 = bp = alloc_lbuf("process_cmdent.3");
                 str = arg;
-                TinyExec(buf2, &bp, executor, CALLERQQQ, enactor,
+                TinyExec(buf2, &bp, executor, caller, enactor,
                     interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
                 *bp = '\0';
             }
@@ -1236,11 +1236,11 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
             if (cmdp->callseq & CS_CMDARG)
             {
                 (*(((CMDENT_TWO_ARG_CMDARG *)cmdp)->handler))(executor,
-                    CALLERQQQ, enactor, key, buf1, buf2, cargs, ncargs);
+                    caller, enactor, key, buf1, buf2, cargs, ncargs);
             }
             else
             {
-                (*(((CMDENT_TWO_ARG *)cmdp)->handler))(executor, CALLERQQQ,
+                (*(((CMDENT_TWO_ARG *)cmdp)->handler))(executor, caller,
                     enactor, key, nargs2, buf1, buf2);
             }
 
@@ -1392,7 +1392,7 @@ char *process_command
     i = pCommand[0] & 0xff;
     if (i && (prefix_cmds[i] != NULL))
     {
-        process_cmdent(prefix_cmds[i], NULL, executor, CALLERQQQ, enactor,
+        process_cmdent(prefix_cmds[i], NULL, executor, caller, enactor,
             interactive, pCommand, pCommand, args, nargs);
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
@@ -1415,7 +1415,7 @@ char *process_command
             notify(executor, mudconf.fixed_home_msg);
             return preserve_cmd;
         }
-        do_move(executor, CALLERQQQ, enactor, 0, "home");
+        do_move(executor, caller, enactor, 0, "home");
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
     }
@@ -1511,7 +1511,7 @@ char *process_command
                 arg++;
             }
         }
-        process_cmdent(cmdp, pSlash, executor, CALLERQQQ, enactor, interactive,
+        process_cmdent(cmdp, pSlash, executor, caller, enactor, interactive,
             arg, pCommand, args, nargs);
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
@@ -1525,7 +1525,7 @@ char *process_command
     //
     bp = LowerCaseCommand;
     str = pCommand;
-    TinyExec(LowerCaseCommand, &bp, executor, CALLERQQQ, enactor,
+    TinyExec(LowerCaseCommand, &bp, executor, caller, enactor,
         EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str, args, nargs);
     *bp = '\0';
     succ = 0;
@@ -1542,7 +1542,7 @@ char *process_command
             if (matches_exit_from_list(LowerCaseCommand, p))
             {
                 free_lbuf(p);
-                do_leave(executor, CALLERQQQ, executor, 0);
+                do_leave(executor, caller, executor, 0);
                 return preserve_cmd;
             }
         }
