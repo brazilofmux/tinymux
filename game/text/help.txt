@@ -6705,12 +6705,13 @@ IMUL()
     > say imul(3,5,-2)
     You say "-30"
 
-  See also: add(), div(), fdiv(), iadd(), isub(), mod(), mul(),
+  Related Topics: add(), div(), fdiv(), iadd(), isub(), mod(), mul(),
             round(), sub(), trunc().
 
 & IDIV()
+IDIV()
 
-  Function: idiv(<number1>,<number2>)
+  FUNCTION: idiv(<number1>,<number2>)
  
   Returns the integer quotient from dividing <number1> by <number2>.
  
@@ -6726,17 +6727,18 @@ IMUL()
     > say idiv(-17,3)
     You say "-5"
 
-  See also: add(), fdiv(), iadd(), imul(), isub(), mod(), mul(), round(),
-            sub(), trunc().
+  Related Topics: add(), div(), fdiv(), iadd(), imul(), isub(), mod(), mul(),
+            round(), sub(), trunc().
 
 & FDIV()
+FDIV()
 
-  Function: fdiv(<number1>,<number2>)
- 
+  FUNCTION: fdiv(<number1>,<number2>)
+
   Returns the floating point quotient from dividing <number1> by <number2>.
   <number> may be a floating point number, and a floating point result is
   returned.
- 
+
   Examples:
     > say fdiv(15,3)
     You say "5"
@@ -6751,11 +6753,12 @@ IMUL()
     > say fdiv(10,3.5)
     You say "2.857143"
 
-    See also: add(), div(), mod(), mul(), round(), sub(), trunc().
- 
-& MOD()
+  Related Topics: add(), div(), mod(), mul(), round(), sub(), trunc().
 
-  Function: mod(<integer1>,<integer2>)
+& MOD()
+MOD()
+
+  FUNCTION: mod(<integer1>,<integer2>)
  
   Returns the integer remainder from dividing <integer1> by <integer2>.
  
@@ -6768,11 +6771,13 @@ IMUL()
     You say "2"
     > say mod(18,3)
     You say "0"
-  See also: add(), fdiv(),div(), mul(), round(), sub(), trunc().
+  
+  Related Topics: add(), fdiv(), div(), mul(), round(), sub(), trunc().
 
 & DIST2D()
+DIST2D()
 
-  Function: dist2d(x1, y1, x2, y2)
+  FUNCTION: dist2d(x1, y1, x2, y2)
  
   Returns the integer distance between the Cartesian points in two dimensions
   (x1,y1) and (x2,y2).
@@ -6780,11 +6785,13 @@ IMUL()
   Example:
     > say dist2d(0,0,3,4)
     You say "5"
-  See also: dist3d()
+  
+  Related Topics: dist3d()
 
 & DIST3D()
+DIST3D()
 
-  Function: dist3d(x1, y1, z1, x2, y2, z2)
+  FUNCTION: dist3d(x1, y1, z1, x2, y2, z2)
  
   Returns the integer distance between the Cartesian points in three
   dimensions (x1,y1,z1) and (x2,y2,z2).
@@ -6792,11 +6799,13 @@ IMUL()
   Example:
     > say dist3d(0,0,0,10,15,20)
     You say "27"
-  See also: dist2d()
+  
+  Related Topics: dist2d()
 
 & FIRST()
+FIRST()
 
-  Function: first(<string>[, <delim>])
+  FUNCTION: first(<string>[, <delim>])
  
   Returns the first word of a string, that is, everything to the left
   of the first space in the string, or the entire string if there are
@@ -6811,11 +6820,13 @@ IMUL()
     You say "Would"
     > say first(List&with&nonstandard&delimiters,&)
     You say "List"
-  See also: rest().
+  
+  Related Topics: rest().
 
 & REST()
+REST()
 
-  Function: rest(<string>[, <delim>])
+  FUNCTION: rest(<string>[, <delim>])
  
   The rest function takes a string, returns all the string except the first
   word, that is, everything to the right of the first space, or an empty 
@@ -6830,11 +6841,13 @@ IMUL()
     You say "you like coffee, or perhaps tea"
     > say rest(List!with!different!delimiters,!)
     You say "with!different!delimiters"
-  See also: first().
+  
+  Related Topics: first().
 
 & STRLEN()
+STRLEN()
 
-  Function: strlen(<string>)
+  FUNCTION: strlen(<string>)
  
   Returns the number of characters in <string>.
  
@@ -6843,36 +6856,44 @@ IMUL()
     You say "14"
     > say strlen(Would you like coffee, or perhaps tea)
     You say "37"
-
+  
+  Related Topics:
+  
 & STRTRUNC()
+STRTRUNC()
 
-  Function: strtrunc(<string>,<number>)
+  FUNCTION: strtrunc(<string>,<number>)
  
   This function returns <string> truncated if it is longer than <number>. If
   <number> is greater than the length of <string>, it just returns <string>.
   Much more efficient than the equivalent mid().
  
-  See also: mid(), ljust().
+  Related Topics: mid(), ljust().
  
 & MID()
+MID()
 
-  mid(<string>, <first>, <length>)
+  FUNCTION: mid(<string>, <first>, <length>)
  
   Mid returns a segment of the string, the <length> characters to the
   right of the <first> character.  Note that the first character in a
   string is numbered zero, and not one.
 
 & COMP()
+COMP()
 
-  comp(<string1>, <string2>)
+  FUNCTION: comp(<string1>, <string2>)
  
   Comp compares two strings.  It returns 0 if they are the same, 1 if
   string2 is less than/precedes alphabetically string1, and -1 
   otherwise.
+  
+  Related Topics:
 
 & S()
+S()
 
-  s(string)
+  FUNCTION: s(string)
  
   This function performs pronoun substitution in a string, and then returns
   that string.  As usually, %n is the name, %s the subjective pronoun, %o the
@@ -6883,10 +6904,13 @@ IMUL()
   type @trigger <object>/ve, it would return "This is <myname>", but 
   if vf were @trigger me/ve, then triggering the vf makes the ve 
   return "This is <object>"
+  
+  Related Topics:
 
 & LPOS()
+LPOS()
 
-  lpos(<string>, <character>)
+  FUNCTION:  lpos(<string>, <character>)
  
   This function returns a list of the positions that <character> occupies
   in <string>, with the first character of the string being 0. (Note that
@@ -6900,18 +6924,22 @@ IMUL()
     You say "1 4 8"
  
 & POS()
+POS()
 
-  pos(<string1>,<string2>)
+  FUNCTION: pos(<string1>,<string2>)
  
   This function returns the position that string1 begins in string2,
   with the first position being 1.
   If string1 is not in string2, then it returns -1.
  
   Example: pos(man,superman) returns 6
+  
+  Related Topics:
 
 & MATCH()
+MATCH()
 
-  Function: match(<string>, <pattern>[, <delim>])
+  FUNCTION: match(<string>, <pattern>[, <delim>])
  
   This function matches <pattern> against each word of <string>, returning
   the number of the first word that matches.  If no words match then 0 is
@@ -6935,11 +6963,13 @@ IMUL()
     You say "0"
     > say match(This is a test, is a)
     You say "0"
-  See also: LISTS, member(), strmatch().
+  
+  Related Topics: LISTS, member(), strmatch().
 
 & STRMATCH()
+STRMATCH()
 
-  Function: strmatch(<string>,<pattern>)
+  FUNCTION: strmatch(<string>,<pattern>)
  
   This function matches <pattern> against the entire <string>, returning 1
   if it matches and 0 if it does not.  The case of the characters being
@@ -6957,10 +6987,13 @@ IMUL()
     You say "0"
     > say strmatch(This is a test,*is*is*)
     You say "1"
-  See also: match(), member(), regmatch().
+  
+  Related Topics: match(), member(), regmatch().
 
 & REGMATCH()
-  regmatch(<string>,<regexp>[,<register list>])
+REGMATCH()
+
+  FUNCTION: regmatch(<string>,<regexp>[,<register list>])
  
   This function matches the regular expression <regexp> against the
   entirety of <string>, returning 1 if it matches and 0 if it does not.
@@ -6983,14 +7016,18 @@ IMUL()
   See 'help regexp syntax' for an explanation of regular expressions.
 
 & COLUMNS()
+COLUMNS()
 
-  columns(<list>, <width>[, <delim>])
+  FUNCTION: columns(<list>, <width>[, <delim>])
  
   Columns displays <list> formatted into columns containing <width>
   number of characters. As many columns as possible will be fit
   onto the screen. Columns takes an optional delimiter.
+  
+  Related Topics:
  
 & TABLE()
+TABLE ()
 
   table(<list>,<field width>,<line length>,<delimiter>,
         <output separator>,<padding>)
@@ -7007,22 +7044,19 @@ IMUL()
     the end of a table entry and the next column. Default: White space.
 
   Examples:
-  > think table(a b areallylongone d)
-  a          b          areallylon d
+    > think table(a b areallylongone d)
+    a          b          areallylon d
+    > think table(the quick brown fox,10,25, ,|)
+    the       |quick
+    brown     |fox
+    > think table(foo bar baz,101,25,0,|,.\,)
+    foo.,.,.,.|bar.,.,.,.
+    baz.,.,.,.
 
-  > think table(the quick brown fox,10,25, ,|)
-  the       |quick
-  brown     |fox
+  Related Topics: columns()& FOREACH()
+FOREACH()
 
-  > think table(foo bar baz,101,25,0,|,.\,)
-  foo.,.,.,.|bar.,.,.,.
-  baz.,.,.,.
-
-  See also: columns()
-
-& FOREACH()
-
-  foreach([<object>/]<attribute>,<string>[,<begin>, <end>])
+  FUNCTION: foreach([<object>/]<attribute>,<string>[,<begin>, <end>])
  
   Maps a function onto a string.
  
@@ -7042,30 +7076,33 @@ IMUL()
     > &add_one me=[add(%0,1)]
     > say [foreach(add_one, This adds #0# to numbers in this string,#,#)]
     You say, "This adds 1 to numbers in this string."
- 
+
+  Related Topics: 
+  
 & MIX()
- 
-  mix([<object>/]<attribute>,<list 1>,<list 2>[,<delim>])
+MIX()
+
+  FUNCTION: mix([<object>/]<attribute>,<list 1>,<list 2>[,<delim>])
  
   This function is similar to MAP(), except that it takes the elements
   of both lists, one by one, and passes them to the user-defined function
   as %0 and %1, respectively, for elements of <list 1> and <list 2>.
   <delim> is used to separate elements; if it is not specified, it
- defaults to a space. The lists must have the same number of elements.
+  defaults to a space. The lists must have the same number of elements.
  
   Examples:
- 
-  > &add_nums me=[add(%0,%1)]
- 
-  > say [mix(add_nums,1 2 3 4 5,2 4 6 8 10)]
-  You say, "3 6 9 12 15"
- 
-  > say [mix(add_nums,1:3:5:7,0:2:4:6,:)]
-  You say, "1:5:9:13"
- 
+    > &add_nums me=[add(%0,%1)]
+    > say [mix(add_nums,1 2 3 4 5,2 4 6 8 10)]
+    You say, "3 6 9 12 15"
+    > say [mix(add_nums,1:3:5:7,0:2:4:6,:)]
+    You say, "1:5:9:13"
+
+  Related Topics:
+   
 & MUNGE()
- 
-  munge([<object>/]<attribute>,<list 1>,<list 2>[,<delimiter>])
+MUNGE()
+
+  FUNCTION: munge([<object>/]<attribute>,<list 1>,<list 2>[,<delimiter>])
  
   This function takes two lists of equal length. It passes the entirety of
   <list 1> to the user-defined function as %0. Then, this resulting list
@@ -7083,13 +7120,17 @@ IMUL()
   places sorted this way would be "Benden Fort Ista", so we want the final
   list to be "#9000 #20 #5000". The functions, using munge(), are simple:
  
-  > &sort_alpha me=[sort(%0)]
-  > say [munge(sort_alpha,v(places),v(dbrefs))]
-  You say, "#9000 #20 #5000"
+  Example:
+    > &sort_alpha me=[sort(%0)]
+    > say [munge(sort_alpha,v(places),v(dbrefs))]
+    You say, "#9000 #20 #5000"
+  
+  Related Topics:
  
 & OBJEVAL()
+OBJEVAL()
 
-  objeval(<object>,<expression>)
+  FUNCTION: objeval(<object>,<expression>)
  
   Allows you to evaluate <expression> from the viewpoint of <object>.
   You must be a wizard or own <object> to use this function. If <object>
@@ -7098,27 +7139,36 @@ IMUL()
  
   This function is useful for securing objects which need to evaluate
   attributes on things owned by others.
+  
+  Related Topics:
  
 & OBJMEM()
- 
-  objmem(<object>)
+OBJMEM()
+
+  FUNCTION: objmem(<object>)
  
   Returns the size in bytes of <object>.
   Note that this is the complete struct size of the object, and
   not just the attribute values.
+  
+  Related Topics:
  
 & PLAYMEM()
- 
-  playmem(<player>)
+PLAYMEM()
+
+  FUNCTION: playmem(<player>)
  
   Returns the size in bytes of <player>.
   Note that this is the total number of bytes that the player uses,
   including all objects that they own. You must be a Wizard, or have
   the search power to use this function on another player.
+  
+  Related Topics:
  
 & ANDFLAGS()
+ANDFLAGS()
 
-  andflags(<object>,<list of flags>)
+  FUNCTION: andflags(<object>,<list of flags>)
  
   This function returns 1 if <object> has all the flags in a specified
   list, and 0 if it does not. The list is specified with a single letter
@@ -7132,10 +7182,13 @@ IMUL()
   If a letter does not correspond to any flag, <object> doesn't have
   it, so the function returns 0. There can be an arbitrary number of
   flags. Do not put spaces between flag letters.
- 
-& ORFLAGS()
 
-  orflags(<object>,<list of flags>)
+  Related Topics: flags(), orflags(). 
+  
+& ORFLAGS()
+ORFLAGS()
+
+  FUNCTION: orflags(<object>,<list of flags>)
  
   This function returns 1 if <object> has at least one of the flags in
   a specified list, and 0 if it does not. The list is specified with a
@@ -7148,15 +7201,18 @@ IMUL()
   If a letter does not correspond to any flag, <object> doesn't have
   it, so it is simply ignored. There can be an arbitrary number of
   flags. Do not put spaces between flag letters.
+  
+  Related Topics:
  
 & EXTRACT()
+EXTRACT()
 
-  extract(<string>, <first>, <length>[, <delim>])
- 
+  FUNCTION: extract(<string>, <first>, <length>[, <delim>])
+
   Extract returns a string of length words, starting with the first 
   word. Unlike letters, the first word in a string is number 1, 
   instead of 0.
- 
+
   <delim> may be used to specify a delimiter other than a space.
 
   Examples:
@@ -7164,11 +7220,13 @@ IMUL()
     You say "really neat"
     > say extract(Another@funky@test@for@extract, 3, 3)
     You say "test@for@extract" 
-  See also: index(), insert(), ldelete(), replace().
+
+  Related Topics: index(), insert(), ldelete(), replace().
 
 & INDEX()
+INDEX()
 
-  Function: index(<list>,<character>,<first>,<length>)
+  FUNCTION: index(<list>,<character>,<first>,<length>)
   
   This function is similar to EXTRACT(), except that an item in the
   list may be more than one word; instead of a space being used to
@@ -7179,35 +7237,44 @@ IMUL()
   Example:
     > say [index(Cup of Tea | Mug of Beer | Glass of Wine, |, 2, 1)]
     You say, "Mug of Beer"
-  See also: extract().
+  
+  Related Topics: extract().
 
 & FLAGS()
+FLAGS()
 
-  flags(<object>)
+  FUNCTION: flags(<object>)
  
   Flags returns a string consisting of the flags attached to the 
   object. The string is, however, just one word.  Note that @switch
   is case-INsensitive.  i.e. p=P as far as it is concerned.  I wish
   that P=NP....
+  
+  Related Topics:
 
 & NUM()
+NUM()
 
-  num(<object>)
+  FUNCTION: num(<object>)
  
   Returns the dbref number of <object>.
  
-  See also: locate().
+  Related Topics: locate().
 
 & CON()
+CON()
 
-  con(<object>)
+  FUNCTION: con(<object>)
  
   Con returns the first object in the list of objects carried by 
-  thing. Just the first, and only the first.  See NEXT.
+  thing. Just the first, and only the first.  
+  
+  Related Topics: next().
 
 & LOC()
+LOC()
 
-  Function: loc(<object>)
+  FUNCTION: loc(<object>)
  
   Returns the number of the location where <object> is.  You must either
   control the object or be nearby for it to work.  When used on an exit it
@@ -7230,11 +7297,13 @@ IMUL()
     You say "#368"
     > say loc(here)
     You say "#367"
-  See also: rloc(), room(), where().
+  
+  Related Topics: rloc(), room(), where().
 
 & RLOC()
+RLOC()
 
-  Function: rloc(<object>,<levels>)
+  FUNCTION: rloc(<object>,<levels>)
  
   This function may be used to get the location of an object's location
   (for which you would previously use 'loc(loc(<object>))', which fails if you
@@ -7250,21 +7319,24 @@ IMUL()
   rloc(<object>,0) is the same as num(<object>), and rloc(<object>,1) is the
   same as loc(<object>).
  
-  See also: loc(), where().
+  Related Topics: loc(), where().
 
 & WHERE()
+WHERE()
 
-  Function: where(<object>)
+  FUNCTION: where(<object>)
  
   This function returns the "true" location of an object. You must control
   the object or be near it in order for it to work. For players and things,
   the "true" location is the normal location of the object. For exits, the
   "true" location is the source room. For rooms, it is #-1.
-  See also: loc(), rloc().
+  
+  Related Topics: loc(), rloc().
 
 & OWNER()
+OWNER()
 
-  Function: owner(<object>)
+  FUNCTION: owner(<object>)
             owner(<object>/<attrib>)
  
   The first form of the owner() function returns the dbref of the owner of the
@@ -7272,75 +7344,87 @@ IMUL()
  
   The second form returns the owner of an attribute on the named object.
   You must own either the object or the attribute.
+  
+  Related Topics:
 
 & NAME()
+NAME()
 
-  name(<dbref>)
+  FUNCTION: name(<dbref>)
  
   This function returns the name of the indicated object.  When called with
   an exit it returns the only the first alias.
 
-  See also: fullname().
+  Related Topics: fullname().
 
 & FULLNAME()
+FULLNAME()
 
-  Function: fullname(<dbref>)
+  FUNCTION: fullname(<dbref>)
   
   This function returns the full name of the indicated object.  This is the
   same as name() in all cases except when <dbref> is an exit, then all the
   aliases are returned as well.
  
-  See also: name().
+  Related Topics: name().
 
 & NEXT()
+NEXT()
 
-  next(<thing>)
+  FUNCTION: next(<thing>)
  
   If thing is an exit in a room, then next will return the next 
   nondark exit in the list of exits for that room.  If thing is an 
   object, then next will return the next object in the inventory list 
   that the object is in.  Otherwise, it returns a '#-1' string.
-
+  
+  Related Topics:
+  
 & AND()
+AND()
 
-  Function: and(<boolean1>[,<booleanN>]...)
+  FUNCTION: and(<boolean1>,<boolean2>[,<booleanN>]...)
  
-  Takes one or more booleans, and returns 1 if they are all each
+  Takes two or more booleans, and returns 1 if they are all each 
   equivalent to true(1).
  
-  See also: BOOLEAN VALUES, or(), not(), xor().
+  Related Topics: BOOLEAN VALUES, or(), not(), xor().
 
 & OR()
+OR()
 
-  Function: or(<boolean1>,<boolean2>[,<booleanN>]...)
+  FUNCTION: or(<boolean1>,<boolean2>[,<booleanN>]...)
  
   Takes two or more booleans, and returns 1 if at least one is equivalent
   to true(1).
  
-  See also: BOOLEAN VALUES, and(), not(), xor().
+  Related Topics: BOOLEAN VALUES, and(), not(), xor().
 
 & NOT()
+NOT()
 
-  Function: not(<boolean>)
+  FUNCTION: not(<boolean>)
  
   Takes a boolean value, and returns its inverse.  So, if the input is
   equivalent to true(1) it returns a 0, and if the input is equivalent to
   false(0), it returns a 1.
  
-  See also: BOOLEAN VALUES, and(), or(), xor().
+  Related Topics: BOOLEAN VALUES, and(), or(), xor().
 
 & XOR()
+XOR()
 
-  Function: xor(<boolean1>,<boolean2>[,<booleanN>]...)
+  FUNCTION: xor(<boolean1>,<boolean2>[,<booleanN>]...)
  
   Takes two or more booleans, and returns 1 if an odd number of them are
   equivalent to true(1).
  
-  See also: BOOLEAN VALUES, and(), nor(), or().
+  Related Topics: BOOLEAN VALUES, and(), nor(), or().
 
-& gt()
+& GT()
+GT()
 
-  Function: gt(<integer1>,<integer2>)
+  FUNCTION: gt(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if and only if <integer1> is greater than
   <integer2>, and 0 otherwise.  Warning: passing anything but integers will
@@ -7356,11 +7440,13 @@ IMUL()
     You say "1"
     > say gt(foo, bar)
     You say "0"
-  See also: lt(), lte(), gte(), eq(), neq().
+  
+  Related Topics: lt(), lte(), gte(), eq(), neq().
 
-& gte()
+& GTE()
+GTE()
 
-  Function: gte(<integer1>,<integer2>)
+  FUNCTION: gte(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if and only if <integer1> is greater than
   or equal to <integer2>, and 0 otherwise.  Warning: passing anything but
@@ -7376,11 +7462,13 @@ IMUL()
     You say "1"
     > say gte(foo, bar)
     You say "1"
-  See also: lt(), lte(), gt(), eq(), neq().
+  
+  Related Topics: lt(), lte(), gt(), eq(), neq().
 
-& lt()
+& LT()
+LT()
 
-  Function: lt(<integer1>,<integer2>)
+  FUNCTION: lt(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if and only if <integer1> is less than
   <integer2>, and 0 otherwise.  Warning: passing anything but integers will
@@ -7396,11 +7484,13 @@ IMUL()
     You say "0"
     > say lt(foo, bar)
     You say "0"
-  See also: lte(), gte(), gt(), eq(), neq().
+  
+  Related Topics: lte(), gte(), gt(), eq(), neq().
 
-& lte()
+& LTE()
+LTE()
 
-  Function: lte(<integer1>,<integer2>)
+  FUNCTION: lte(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if and only if <integer1> is less than or
   equal to <integer2>, and 0 otherwise.  Warning: passing anything but integers
@@ -7416,11 +7506,13 @@ IMUL()
     You say "0"
     > say lte(foo, bar)
     You say "1"
-  See also: lt(), gte(), gt(), eq(), neq().
+  
+  Related Topics: lt(), gte(), gt(), eq(), neq().
 
 & EQ()
+EQ()
 
-  Function: eq(<integer1>,<integer2>)
+  FUNCTION: eq(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if they are equal and 0 if they are not.
   Warning: passing anything but integers will produce unexpected results,
@@ -7433,11 +7525,13 @@ IMUL()
     You say "1"
     > say eq(foo, bar)
     You say "1"
-  See also: lt(), lte(), gte(), gt(), neq().
+    
+  Related Topics: lt(), lte(), gte(), gt(), neq().
 
 & NEQ()
+NEQ()
 
-  Function: neq(<integer1>,<integer2>)
+  FUNCTION: neq(<integer1>,<integer2>)
  
   Takes two integers, and returns 1 if they are not equal and 0 if they are
   equal.  Warning: passing anything but integers will produce unexpected
@@ -7450,11 +7544,13 @@ IMUL()
     You say "0"
     > say neq(foo, bar)
     You say "0"
-  See also: lt(), lte(), gte(), gt(), eq(), not().
+  
+  Related Topics: lt(), lte(), gte(), gt(), eq(), not().
 
 & CAT()
+CAT()
 
-  Function: cat(<string>[,<stringN>])
+  FUNCTION: cat(<string>[,<stringN>])
  
   cat returns a string made up of the contents of string1 through stringN,
   with each string separated from its neighbors by a space.
@@ -7465,9 +7561,12 @@ IMUL()
     > say cat(This is,another,test of the,CAT function)
     You say "This is another test of the CAT function"
 
+  Related Topics:
+  
 & MEMBER()
+MEMBER()
 
-  Function: member(<list>, <word>[, <delim>])
+  FUNCTION: member(<list>, <word>[, <delim>])
  
   Member takes a list and a word, and returns the position of that word
   within the list.  If the word does not occur in the list, then 0 is
@@ -7488,11 +7587,12 @@ IMUL()
     > say member(This is a member test, is a)
     You say "#-1 CAN ONLY TEST ONE ELEMENT"
  
-  See also: LISTS, findelem(), match(), strmatch().
+  Related Topics: LISTS, findelem(), match(), strmatch().
 
 & REMOVE()
+REMOVE()
 
-  Function: remove(<list>, <word>[, <delim>])
+  FUNCTION: remove(<list>, <word>[, <delim>])
  
   Remove takes a list and a word, and returns the list, with the word deleted
   from it.  <delim> may be used to specify a delimiter other than a space.
@@ -7506,10 +7606,13 @@ IMUL()
     You say "#-1 CAN ONLY DELETE ONE ELEMENT"
     > say remove(How about an o-separated list, w ab, o) 
     You say "Hout an o-separated list"
+    
+  Related Topics:
 
 & STARTTIME()
+STARTTIME()
 
-  Function: starttime()
+  FUNCTION: starttime()
  
   Returns a string which is the time the MUX last rebooted.  The time
   is in the same format as the TIME() function returns.
@@ -7517,16 +7620,17 @@ IMUL()
   Example:
     > say starttime()
     You say "Sat Dec  7 00:09:13 1991
-
-  See also: convtime().
+  
+  Related Topics: convtime().
 
 & SECS()
+SECS()
 
-  Function: secs([<zonename>])
+  FUNCTION: secs([<zonename>])
 
   The optional <zonename> parameter may be "utc" or "local". If no
   <zonename> is given, "utc" is assumed.
-  
+
     local - Returns an integer which corresponds to the current local
             time on the machine running the MUX. This integer is
             affected by timezones and daylight savings time and is
@@ -7548,11 +7652,12 @@ IMUL()
      > say secs(local)
      You say "957532580"
 
-  See also: convsecs(), convtime(), time().
+  Related Topics: convsecs(), convtime(), time().
 
 & WORDS()
+WORDS()
 
-  words(<string>[, <delim>])
+  FUNCTION: words(<string>[, <delim>])
  
   Returns the number of words in <string>.  <delim> may be used to specify
   a delimiter other than a space.
@@ -7564,10 +7669,13 @@ IMUL()
     > You say "7"
     say words(This:is:a:colon:separated:list,:)
     > You say "6"
+    
+  Related Topics:
 
 & VERSION()
+VERSION()
 
-  Function: version()
+  FUNCTION: version()
  
   Returns a string which contains various version information for the MUX
   you're on.
@@ -7578,10 +7686,14 @@ IMUL()
      Build date: Thu Dec  5 10:10:07 EST 1991
      > say version()
      You say "TinyMUX Beta version 2.0 patchlevel 0 #3"
+   
+  
+  Related Topics:
 
 & HOME()
+HOME()
 
-  home(<object>)
+  FUNCTION: home(<object>)
  
   Returns the object's home.
  
