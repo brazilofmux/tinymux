@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.28 2002-06-23 23:51:38 sdennis Exp $
+// $Id: functions.cpp,v 1.29 2002-06-24 08:24:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1425,8 +1425,9 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     int attrib, aflags;
     ATTR *attr;
     char *atr_gotten;
-    struct boolexp *pBoolExp;
-    BOOL bNoMatch, bFreeBuffer = TRUE, bEval = TRUE;
+    BOOL bNoMatch;
+    BOOL bFreeBuffer = TRUE;
+    BOOL bEval = TRUE;
 
     switch(key)
     {
@@ -1464,7 +1465,7 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
         atr_gotten = atr_get_LEN(thing, attrib, &aowner, &aflags, &nLen);
         if (bCanReadAttr(executor, thing, attr, FALSE))
         {
-            pBoolExp = parse_boolexp(executor, atr_gotten, 1);
+            struct boolexp *pBoolExp = parse_boolexp(executor, atr_gotten, 1);
             free_lbuf(atr_gotten);
             atr_gotten = unparse_boolexp(executor, pBoolExp);
             free_boolexp(pBoolExp);
@@ -1483,34 +1484,34 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
         atr_gotten = atr_pget_LEN(thing, attrib, &aowner, &aflags, &nLen);
     }
 
-    // Perform access checks.  c_r_p fills buff with an error message
+    // Perform access checks.  check_read_perms() fills buff with an error message
     // if needed.
     //
     if (check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
     {
-        if (bFreeBuffer)
+        if (  bEval
+           && (  key == GET_EVAL
+              || key == GET_GEVAL))
         {
-            if (nLen)
-            {
-                safe_copy_buf(atr_gotten, nLen, buff, bufc);
-            }
+            char *str = atr_gotten;
+            TinyExec(buff, bufc, thing, executor, executor, EV_FIGNORE | EV_EVAL,
+                     &str, (char **)NULL, 0);
         }
         else
         {
-            safe_str(atr_gotten, buff, bufc);
+            if (bFreeBuffer)
+            {
+                if (nLen)
+                {
+                    safe_copy_buf(atr_gotten, nLen, buff, bufc);
+                }
+            }
+            else
+            {
+                safe_str(atr_gotten, buff, bufc);
+            }
         }
     }
-    if (bEval && ((key == GET_EVAL) || (key == GET_GEVAL)))
-    {
-        char *str = atr_gotten;
-        TinyExec(buff, bufc, thing, executor, executor, EV_FIGNORE | EV_EVAL,
-                 &str, (char **)NULL, 0);
-    }
-    else
-    {
-        safe_str(atr_gotten, buff, bufc);
-    }
-
     if (bFreeBuffer)
     {
         free_lbuf(atr_gotten);
