@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers
 //
-// $Id: svdrand.cpp,v 1.6 2000-04-27 23:29:10 sdennis Exp $
+// $Id: svdrand.cpp,v 1.7 2000-04-27 23:32:20 sdennis Exp $
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.
@@ -29,14 +29,14 @@ static unsigned long idum = 123456789;
 static unsigned long idum2 = 123456789;
 static BOOL bSeeded = FALSE;
 
-#define IM1 4294967291
-#define IM2 4294967279
-#define IA1 40014
-#define IA2 40692
-#define IQ1 107336
-#define IQ2 105548
-#define IR1 24587
-#define IR2 8063
+#define IM1 4294967291UL
+#define IM2 4294967279UL
+#define IA1 40014UL
+#define IA2 40692UL
+#define IQ1 107336UL
+#define IQ2 105548UL
+#define IR1 24587UL
+#define IR2 8063UL
 #define NDIV2 (1+(IM1-1)/NTAB)
 
 // Schrage's algorithm algorithm for multiplying two unsigned 32-bit
