@@ -106,8 +106,6 @@
 #undef NEED_SYS_ERRLIST_DCL
 /* Define if you need to declare _sys_errlist yourself */
 #undef NEED_SYS__ERRLIST_DCL
-/* Define if you need to declare perror yourself */
-#undef NEED_PERROR_DCL
 /* Define if you need to declare sprintf yourself */
 #undef NEED_SPRINTF_DCL
 /* Define if you need to declare getrlimit yourself */
@@ -269,6 +267,8 @@ extern int getpagesize(void);
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
+#else
+extern int errno;
 #endif
 
 // Assure that malloc, realloc, and free are defined.
@@ -300,12 +300,7 @@ extern time_t timelocal(struct tm *);
 
 #include <sys/types.h>
 #include <stdio.h>
-
-#ifndef VMS
-#include <fcntl.h>
-#else
 #include <sys/fcntl.h>
-#endif
 
 #ifdef NEED_SPRINTF_DCL
 extern char *sprintf(char *, const char *, ...);
