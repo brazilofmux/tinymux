@@ -1,76 +1,72 @@
 +X992001
 +S11
-+N447
++N451
 -R2
 +A321
 "1:CMD-IC"
 +A296
 "1:HEADER-STAFF"
-+A380
++A393
+"1:CMD_CNOTEDELETE"
++A384
 "1:CMD-BG_REMOVE"
 +A269
 "1:CREDITS-+FINGER"
 +A282
 "1:FOOTER-DASH"
-+A348
++A349
 "1:CMD-MOTD_RESET"
-+A409
++A413
 "1:DO_SIT"
-+A316
-"1:FN_ROLL"
-+A340
-"1:CMD-STAFF-ALL"
-+A364
++A442
+"1:SPY_ADD"
++A368
 "1:CMD-PROJECT-EDIT"
 +A284
 "1:FOOTER-DASH-PERCENT-1"
-+A437
++A441
 "1:SPY_WHO"
-+A439
++A443
 "1:SPY_REMOVE"
-+A357
++A361
 "1:CMD-VERSION-UPDATE"
++A375
+"1:CMD-RSUMMON"
 +A314
 "1:FN_ISSTAFF"
-+A426
-"1:UPDATEINFO"
-+A445
-"1:KILL_WORDS_FN"
 +A302
 "1:NAMESORT"
-+A410
++A414
 "1:PLACEFUNCTION"
-+A387
++A391
 "1:CMD-+CNOTE"
-+A390
++A394
 "1:CMD_CNOTELIST"
 +A257
 "1:SGP-OBJECTS"
 +A337
 "1:CMD-SELFBOOT"
-+A423
++A427
 "1:DO_TTOOC"
 +A278
 "1:FIL-LWHO"
-+A405
++A438
+"1:DO_MUTTER_PLACE"
++A409
 "1:PLACESCLEANUP1"
-+A369
++A373
 "1:CMD-REGISTER-SHELP"
-+A294
-"1:FN_SCAN"
 +A280
 "1:FINGER_LIST"
-+A436
++A440
 "1:DO_SPY"
-+A353
++A357
 "1:CMD-VERSION"
-+A403
++A407
 "1:DO_UPDATE"
 +A256
 "1:DB"
-+A308
-"1:FN_OSTAFF"
-+A351
++A355
 "1:CMD-TIMESTAMP-REMOVE"
 +A274
 "1:CREDITS-OOC"
@@ -78,43 +74,41 @@
 "1:CMD-PLUS-3WHO"
 +A307
 "1:TWODIGCONN"
++A345
+"1:ISWIZARD"
 +A279
 "1:FINGER_LIST_LONG"
-+A359
++A363
 "1:CMD-COMMANDS"
 +A271
 "1:CREDITS-+TIMESTAMP"
-+A416
++A420
 "1:PLACE_LOOK"
-+A394
++A388
+"1:CMD-CNOTE"
++A398
 "1:CMD-STNOTE-SET"
-+A389
-"1:CMD_CNOTEDELETE"
 +A299
 "1:LASTCONN"
 +A305
 "1:STAFF-LIST"
 +A289
 "1:FOOTER-OZ"
-+A388
-"1:CMD_CNOTEAPPROVE"
 +A285
 "1:FOOTER-DASH-PERCENT-2"
 +A333
 "1:CMD-PLUS-WHO-SORTED"
-+A438
-"1:SPY_ADD"
 +A290
 "1:FOOTER-XCOMPLEX"
-+A395
++A399
 "1:CMD-STNOTE-SET-VIS"
-+A415
++A419
 "1:PLACES_FN"
-+A368
++A372
 "1:CMD-REGISTER-STAFF"
-+A385
++A389
 "1:CMD_CNOTE-LIST"
-+A346
++A347
 "1:CMD-MOTD_DEL"
 +A297
 "1:HEADER-STAFFCON"
@@ -124,37 +118,35 @@
 "1:LOCSORT"
 +A292
 "1:FOOTER-COMPLEX"
-+A354
-"1:CMD-VERSION-HISTORY"
-+A381
++A283
+"1:FOOTER-EQ-O"
++A385
 "1:CMD-BG_REPLACE"
++A430
+"1:UPDATEINFO"
 +A267
 "1:CREDITS-+WHERE"
 +A318
 "1:CMD-BEGINNER"
-+A362
++A366
 "1:CMD-JOIN"
 +A300
 "1:LIST-SAMPLE"
-+A363
++A367
 "1:CMD-PROJECT-DELETE"
 +A304
 "1:SECS2HRS"
 +A322
 "1:CMD-INFO"
-+A431
-"1:FUNC_PLACEINFO"
-+A373
++A377
 "1:U_DBREFCHECK"
-+A411
++A415
 "1:DO_DEPART"
-+A420
-"1:NAME_3AUX_FN"
-+A413
++A417
 "1:DO_PLACES"
 +A306
 "1:STARTING_IC_LOC"
-+A398
++A402
 "1:CMD-WARN"
 +A286
 "1:FOOTER-DASH-PERCENT-3"
@@ -164,29 +156,27 @@
 "1:FIL_IS$"
 +A265
 "1:CREDITS-CNOTES"
-+A375
++A379
 "1:CMD-BG_CLEAR"
 +A328
 "1:CMD-OOC_EMIT"
-+A414
++A418
 "1:DO_PLACE"
-+A345
++A346
 "1:CMD-MOTD_SET"
 +A275
 "1:CREDITS-BACKGROUNDS"
 +A277
 "1:DARKEX"
-+A367
-"1:CMD-TRACKER-HELP"
 +A344
 "1:CMD-VIEW-ITEM"
-+A430
++A434
 "1:FUNC_ATPLACE"
 +A260
 "1:BAR"
 +A312
 "1:FN_DICE"
-+A443
++A447
 "1:DOTS_FN"
 +A272
 "1:CREDITS-+3WHO"
@@ -194,91 +184,93 @@
 "1:CREDITS-+UPTIME"
 +A276
 "1:CREDITS-+BEGINNER"
-+A442
++A446
 "1:MUTTER_FROM_FN"
-+A435
++A439
 "1:DO_MUTTER_TT"
 +A339
 "1:CMD-STAFF"
-+A393
++A397
 "1:CMD-STNOTE-OBJECT"
 +A295
 "1:HEADER"
-+A392
++A396
 "1:CMD-STNOTE-AREA"
-+A425
++A429
 "1:GETINFO"
 +A287
 "1:FOOTER-O-EQ"
-+A361
++A365
 "1:CMD-DUTY"
 +A310
 "1:FN_ANDLIST"
-+A401
++A405
 "1:DO_CONFIGURE_SPYING"
-+A427
++A431
 "1:ATPLACE"
 +A319
 "1:CMD-FINGER"
 +A298
 "1:IDLETIME"
-+A259
-"1:UPDATE-HISTORY"
-+A422
-"1:DO_TT"
-+A417
++A316
+"1:FN_ROLL"
++A340
+"1:CMD-STAFF-ALL"
++A421
 "1:DO_PLOOK"
-+A365
-"1:CMD-PROJECT-SET"
++A449
+"1:KILL_WORDS_FN"
 +A324
 "1:CMD-KNOCK"
-+A379
++A383
 "1:CMD-BG_READ"
-+A441
++A445
 "1:MUTTER_TO_FN"
 +A293
 "1:FN_SCANOBJ"
 +A303
 "1:SORTLOC"
-+A352
++A350
+"1:CMD-MOTD_CLEAR"
++A356
 "1:CMD-TIMESTAMP-SHOWALL"
-+A408
++A412
 "1:DO_JOIN"
 +A261
 "1:CANSEE"
-+A371
-"1:CMD-RSUMMON"
-+A407
++A411
 "1:PLACESCLEANUPCMD"
 +A317
 "1:CMD-ACCEPT"
 +A343
 "1:CMD-VIEW"
-+A347
++A348
 "1:CMD-MOTD_LIST"
 +A320
 "1:CMD-GLANCE"
 +A330
 "1:CMD-PLUS-LWHO"
-+A383
++A387
 "1:CMD-BG_VIEW"
-+A428
++A432
 "1:EVAL_MSG"
 +A313
 "1:FN_FINDPC"
 +A266
 "1:CREDITS-LWHO"
-+A358
++A294
+"1:FN_SCAN"
++A362
 "1:CAN_USE"
-+A372
++A376
 "1:CMD-SUMMON"
 +A327
 "1:CMD-ALT-OOC_EMIT"
 +A341
 "1:CMD-TIMESTAMP-READ-PLAYER"
-+A406
++A410
 "1:PLACESCLEANUP2"
-+A421
++A425
 "1:DO_PLOOK_NUMBER"
 +A326
 "1:CMD-MULTIPAGE2"
@@ -286,103 +278,119 @@
 "1:CMD-UPTIME"
 +A325
 "1:CMD-MULTIPAGE"
++A352
+"1:CMD-STAFF-REMOVE"
 +A262
 "1:CANFIND"
-+A396
++A400
 "1:CMD-RESUME"
 +A331
 "1:CMD-PLUS-WHERE"
-+A419
++A423
 "1:NAME_3COL_FN"
-+A378
++A382
 "1:CMD-BG_LOCK"
++A259
+"1:UPDATE-HISTORY"
 +A323
 "1:CMD-INFO-SEE"
-+A355
++A359
 "1:CMD-VERSION-ADD"
++A424
+"1:NAME_3AUX_FN"
++A392
+"1:CMD_CNOTEAPPROVE"
 +A288
 "1:FOOTER-OZZ"
-+A434
-"1:DO_MUTTER_PLACE"
-+A370
++A358
+"1:CMD-VERSION-HISTORY"
++A374
 "1:CMD-RJOIN"
 +A332
 "1:CMD-PLUS-WHO"
-+A429
++A433
 "1:OEVAL_MSG"
-+A350
++A354
 "1:CMD-TIMESTAMP-READ-STAFF"
-+A384
-"1:CMD-CNOTE"
-+A386
++A390
 "1:CMD_CNOTE-VIEW"
-+A412
++A416
 "1:DO_STAND"
++A369
+"1:CMD-PROJECT-SET"
 +A335
 "1:CMD-REGISTER-HELP"
 +A311
 "1:FN_DASH"
-+A360
++A364
 "1:CMD-CONTENTS"
-+A444
++A308
+"1:FN_OSTAFF"
++A448
 "1:SELECT_WORDS_FN"
-+A356
++A360
 "1:CMD-VERSION-REMOVE"
 +A336
 "1:CMD_SCAN"
-+A283
-"1:FOOTER-EQ-O"
++A435
+"1:FUNC_PLACEINFO"
 +A263
 "1:COLDISP_FN"
-+A366
++A370
 "1:CMD-PROJECTS-VIEW"
-+A404
++A351
+"1:CMD-STAFF-ADD"
++A408
 "1:DO_MV"
-+A391
++A395
 "1:CMD_CNOTEVIEW"
-+A376
++A380
 "1:CMD-BG_HELP"
-+A400
++A404
 "1:DO_CONFIGURE"
 +A273
 "1:CREDITS-+MOTD"
-+A397
++A401
 "1:CMD-TIMESTOP"
 +A334
 "1:CMD-REGISTER"
++A371
+"1:CMD-TRACKER-HELP"
 +A270
 "1:CREDITS-REGISTER"
-+A418
++A422
 "1:PLOOK_FOLD_FN"
++A426
+"1:DO_TT"
 +A258
 "1:SGP-VERSION"
 +A291
 "1:FOOTER-OCOMPLEX"
-+A382
++A386
 "1:CMD-BG_CHECK"
-+A446
++A450
 "1:CANSPY"
-+A433
++A437
 "1:DO_MUTTER"
 +A338
 "1:CMD-SHOUT"
-+A377
++A381
 "1:CMD-BG_LIST"
-+A440
++A444
 "1:MUTTER_FN"
-+A374
++A378
 "1:CMD-BG_ADD"
-+A349
++A353
 "1:CMD-TIMESTAMP-SET"
 +A264
 "1:COLDISP_FLD"
-+A424
++A428
 "1:WHICHPLACE"
-+A432
++A436
 "1:FUNC_WHICHPLACE"
-+A399
++A403
 "1:EVAL_OBJ"
-+A402
++A406
 "1:SETUP_FN"
 !0
 "Limbo"
@@ -419,18 +427,16 @@
 0
 0
 0
->30
-"Mon Dec 18 11:43:53 2000"
 >49
 "20"
 >38
 "20"
 >5
 "XXNHc95o0HhAc"
->88
-"216.127.150.109"
->84
-"#1;216.127.150.109;Mon Dec 18 11:43:53 2000;;;;;;;0;0;;;;;;;"
+>222
+"Shutdown"
+>224
+"110 110 110 1 988266934"
 <
 !2
 "Master Room"
@@ -445,7 +451,7 @@
 -1
 0
 0
-0
+4
 0
 0
 0
@@ -467,22 +473,16 @@
 0
 0
 0
->30
-"Fri Jan 05 02:20:30 2001"
 >49
 "20"
 >38
 "20"
 >5
 "XX6..GR5mMOzM"
->88
-"216.127.150.109"
->84
-"#2;216.127.150.109;Fri Jan 05 02:20:30 2001;216.127.150.109;Mon Dec 18 11:44:44 2000;;;;;0;0;;;;;;;"
 >222
 "Shutdown"
 >224
-"478 478 478 1 978679709"
+"565 565 565 1 988267619"
 <
 !4
 "SGP - Global Parent Object"
@@ -504,9 +504,9 @@
 >257
 "#4|#8|#6|#7|#5|#9|#10"
 >258
-"1.0|RPPack|Jan 05 2001"
+"1.0|RPPack|Apr 26 2001"
 >259
-"Base Install 121600 [elements(time(),2 3 5)]|Jan 05 2001 |Jan 05 2001 RPPack added"
+"Base Install 042501 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
 >6
 "This is the global data object for SGP. All the main global objects read data and write from this object and their code will -not- work without it. Non-command attributes for globals that you add to any of the globals objects should be placed here.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >260
@@ -536,7 +536,7 @@
 >272
 "Ian@BrazilMUX"
 >273
-"David Ramsden"
+"Created from scratch by Ashen-Shugar (c) 2001, All rights reserved. This code, with permission, belongs to the SGP code development. All issues with credibility, ownership, or code herein should be brought to the distributors of SGP. This code is original and is not based (other than syntax and attribute compatability) off any other code."
 >274
 "Audumla@Granite"
 >275
@@ -605,7 +605,7 @@
 "#0"
 >307
 "switch(1,lt(%0,60),rjust(%0s,7),lt(%0,3600),rjust(div(%0,60)m,3)[rjust(mod(%0,60)m,4)],lt(%0,86400),rjust(div(%0,3600)h,3)[rjust(div(mod(%0,3600),60)m,4)],rjust(div(%0,86400)d,3)[rjust(div(mod(%0,3600),3600)h,4)])"
->373
+>377
 "[switch(1,match(%0,me),setq(0,%#),isdbref(%0),setq(0,%0),isdbref(num(%0)),setq(0,num(%0)),isdbref(num(*%0)),setq(0,num(*%0)),setq(0,#-1))][%q0]"
 <
 !5
@@ -626,7 +626,7 @@
 0
 0
 >258
-"1.0|Base 121600|Jan 05 2001"
+"1.0|Base 121600|Apr 26 2001"
 >259
 "Base Install 121600 [elements(time(),2 3 5)]"
 >6
@@ -676,9 +676,9 @@
 >256
 "#4"
 >258
-"1.0|RPPack|Jan 05 2001"
+"1.0|RPPack|Apr 26 2001"
 >259
-"Base Install 121600 [elements(time(),2 3 5)]|Jan 05 2001 |Jan 05 2001 RPPack added"
+"Base Install 121600 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
 >6
 "This is the main globals object for SGP. These are global commands that every player will have access to and use.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >317
@@ -733,33 +733,33 @@
 "$+view:@pemit %#=[switch(words(lattr(loc(%#)/view-*)),0,There are no views set on your location.,The following views are set on your location:%R[iter(lattr(loc(%#)/view-*),%b%b[edit(lcstr(after(##,VIEW-)),~,%b)])])][setq(0,iter(lcon(loc(%#)),switch([gte(words(lattr(##/view-*)),1)]:[strmatch(type(##),PLAYER)][not(hasflag(##,connected))],1:10,##,1:0?,##)))][switch(words(%q0),0,,%RThe following objects have views set on them:%R[iter(%q0,%b%b[name(##)])])]"
 >344
 "$+view *:@swi/first [pos(/,%0)]:[setq(0,locate(%#,before(%0,/),*))]%q0=#-1:#-?,{@pemit %#=I can't find that here!},#-1:*,{@pemit %#=[switch(words(lattr(%q0/view-*)),0,There are no views set on that item.,The following views are set on that item:%R[iter(lattr(%q0/view-*),%b%b[edit(lcstr(after(##,VIEW-)),~,%b)])])]},{@verb %q0=%#,view-[setq(1,edit(after(%0,/),%b,~))]%q1,There is no such view on that item,oview-%q1,,aview-%q1}"
->374
-"$+bgadd *=*:@switch isnum(%0)=0,@pemit %#=Invalid section number.,{@switch hasattr(%#,BACKGROUND_%0)=1,{&BACKGROUND_%0 %#=get(%#/BACKGROUND_%0) %1;@pemit %#=get(%#/BACKGROUND_%0)},{&BACKGROUND_%0 %#=%1;@pemit %#=get(%#/BACKGROUND_%0)}}"
->375
-"$+bgclear *:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{&BACKGROUND_%0 %#;@pemit %#=Background section %0 cleared.}"
->376
-"$+bghelp:@pemit %#=[center(Commands for Setting your Background,78, )]%R%R+bg <#>[space(23)]- Read a background section.%R+bglist[space(23)]- List out sections that have been created%R+bgadd <#>=<text>[space(13)]- Add to a background section.%R+bgrem <#>=<text>[space(13)]- Removes text from a background section.%R+bgrep <#>=<old>/<new>[space(8)]- Replaces text in a background section.%R+bgclear <#>[space(18)]- Clears a background section.%R+bglock <#>[space(19)]- Locks a background section when finished.%R%R[center(Staff Commands,78, )]%R%R+bgview <name>[space(19)]- Shows the number of sections for player.%R+bgcheck <name>/<#>[space(14)]- Locks a background section when finished.%R%RThe '<#>' sign in the BG help stands for the number of the section you are%Rworking on. The BG commands allows for multiple sections so that your background can be broken up into reasonably sized pieces of text.%R"
->377
-"$+bglist:@pemit %#=You have the following background sections: [iter(lattr(%#/BACKGROUND_*),after(##,BACKGROUND_))]"
 >378
-"$+bglock *:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@lock %#/BACKGROUND_%0;@pemit %#=Background section %0 locked.}"
+"$+bgadd *=*:@switch isnum(%0)=0,@pemit %#=Invalid section number.,{@switch hasattr(%#,BACKGROUND_%0)=1,{&BACKGROUND_%0 %#=get(%#/BACKGROUND_%0) %1;@pemit %#=get(%#/BACKGROUND_%0)},{&BACKGROUND_%0 %#=%1;@pemit %#=get(%#/BACKGROUND_%0)}}"
 >379
-"$+bg *:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@pemit %#=[repeat(-=,39)]%R%BThis is section %0 of [words(lattr(%#/BACKGROUND_*))] sections.%R[repeat(=-,39)]%R[get_eval(%#/BACKGROUND_%0)]%R[repeat(-=,39)]}"
+"$+bgclear *:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{&BACKGROUND_%0 %#;@pemit %#=Background section %0 cleared.}"
 >380
-"$+bgrem *=*:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@edit %#/BACKGROUND_%0={%1},{}; @pemit %#=get(%#/BACKGROUND_%0)}"
+"$+bghelp:@pemit %#=[center(Commands for Setting your Background,78, )]%R%R+bg <#>[space(23)]- Read a background section.%R+bglist[space(23)]- List out sections that have been created%R+bgadd <#>=<text>[space(13)]- Add to a background section.%R+bgrem <#>=<text>[space(13)]- Removes text from a background section.%R+bgrep <#>=<old>/<new>[space(8)]- Replaces text in a background section.%R+bgclear <#>[space(18)]- Clears a background section.%R+bglock <#>[space(19)]- Locks a background section when finished.%R%R[center(Staff Commands,78, )]%R%R+bgview <name>[space(19)]- Shows the number of sections for player.%R+bgcheck <name>/<#>[space(14)]- Locks a background section when finished.%R%RThe '<#>' sign in the BG help stands for the number of the section you are%Rworking on. The BG commands allows for multiple sections so that your background can be broken up into reasonably sized pieces of text.%R"
 >381
-"$+bgrep *=*/*:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@edit %#/BACKGROUND_%0={%1},{%2}; @pemit %#=get(%#/BACKGROUND_%0)}"
+"$+bglist:@pemit %#=You have the following background sections: [iter(lattr(%#/BACKGROUND_*),after(##,BACKGROUND_))]"
+>382
+"$+bglock *:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@lock %#/BACKGROUND_%0;@pemit %#=Background section %0 locked.}"
+>383
+"$+bg *:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@pemit %#=[repeat(-=,39)]%R%BThis is section %0 of [words(lattr(%#/BACKGROUND_*))] sections.%R[repeat(=-,39)]%R[get_eval(%#/BACKGROUND_%0)]%R[repeat(-=,39)]}"
 >384
-"$+cnote *=*:&cnote-%0 %#=Set by %N on date [time()]:%r%1"
+"$+bgrem *=*:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@edit %#/BACKGROUND_%0={%1},{}; @pemit %#=get(%#/BACKGROUND_%0)}"
 >385
+"$+bgrep *=*/*:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@edit %#/BACKGROUND_%0={%1},{%2}; @pemit %#=get(%#/BACKGROUND_%0)}"
+>388
+"$+cnote *=*:&cnote-%0 %#=Set by %N on date [time()]:%r%1"
+>389
 "$+cnotelist:@pemit %#=[name(%#)] contains the following cnotes:%r[u(v(db)/footer)]%r[edit(lattr(%#/cnote-*),CNOTE-,%b)]%r[u(v(db)/footer)]%rTo view each cnote, type +cnoteview <cnoteofchoice>"
->386
+>390
 "$+cnoteview *:@switch [hasattr(%#,CNOTE-%0)]=0,{@pemit %#=[Name(%#)] has no such cnote. +cnotelist [name(%#)] to view their cnotes.},1,{@pemit %#=[name(%#)]'s '%0' reads:%r[u(v(db)/footer)]%r[u(num(%#)/CNOTE-%0)]%r[u(v(db)/footer)]%r}"
->396
+>400
 "$+resume:@dolist lcon(loc(%#))=@switch/first and(strmatch(first(name(##)),TIMESTOP:*),controls(%#,##))=1,{@destroy/override ##;@destroy/override ##}"
->397
+>401
 "$+timestop:@remit [loc(%#)]=JUDGE : %N calls a Timestop![setq(0,TIMESTOP: Created by %N [time()] at [name(loc(%#))]<[loc(%#)]>)];@create %q0;@lock [setq(1,locate(me,%q0,iT))]%q1=#0;@set %q1=enter_ok;@set %q1=!opaque;@set %q1=commands;@set %q1=unfindable;@tel %q1=[loc(%#)];@dolist lwho()=@switch isstaff(##)=1,@pemit ##=>> %q0 <<"
->398
+>402
 "$+warn *:@switch [loc(*%0)]=#-1,{@pemit %#=[capstr(%0)] is not a valid player name or alias.},[loc(%#)],{@pemit %#=You issue an OOC warning to [name(*%0)].;@pemit *%0=[u(line)]OOC WARNING : You are in a potentially dangerous situation. Willfully initiating or entering combat or continuing with this RP could result in either injury, some other harm, or death for your character. By continuing this situation you accept the consequences of your IC actions.%r[u(line)]},{@pemit %#=That person is not in the same location as you are.}"
 <
 !7
@@ -782,44 +782,54 @@
 >256
 "#4"
 >258
-"1.0|RPPack|Jan 05 2001"
+"1.0|RPPack|Apr 26 2001"
 >259
-"Base Install 121600 [elements(time(),2 3 5)]|Jan 05 2001 |Jan 05 2001 RPPack added"
+"Base Install 042501 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
 >6
 "This is the wizard globals object for SGP. These are global commands that only wizards will have access to.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >345
-"$+motd/set *=*:@switch/first 1={match(%0,general)},{&MOTD-GEN_LIST [v(db)]=[setunion(u(v(db)/MOTD-GEN_LIST),secs())];&MOTD-[secs()] [v(db)]=%1;@motd [iter(u(v(db)/MOTD-GEN_LIST),%r[u(v(db)/MOTD-##)]%r)];@pemit/list lwho()=GAME: [name(%#)] has set a new MOTD.},{match(%0,wizard)},{&MOTD-WIZ_LIST [v(db)]=[setunion(u(v(db)/MOTD-WIZ_LIST),secs())];&MOTD-[secs()] [v(db)]=%1;@motd/wizard [iter(u(v(db)/MOTD-WIZ_LIST),%r[u(v(db)/MOTD-##)]%r)];@pemit %#=GAME: You set a new Wizard MOTD.},{match(%0,full)},{&MOTD-FULL [v(db)]=%1;@motd/full %1;@pemit %#=GAME: You set a new Full MOTD.},{match(%0,down)},{&MOTD-DOWN [v(db)]=%1;@motd/down %1;@pemit %#=GAME: You set a new Down MOTD.},{@pemit %#=ERROR: '%0' is not a valid MOTD type.}"
+"[hasflag(%#,WIZARD)]"
+>62
+"ISWIZARD/1"
 >346
-"$+motd/del *=*:@switch/first 0={strmatch(general wizard down full 0,*%0 *)},{@pemit %#=ERROR: '%0' is not a valid MOTD type.},{not(and(match(%0,general),lte(%1,words(u(v(db)/MOTD-GEN_LIST)))))},{&MOTD-GEN_LIST [v(db)]=[setdiff(u(v(db)/MOTD-GEN_LIST),setq(1,extract(u(v(db)/MOTD-GEN_LIST),%1,1))%q1)];&MOTD-%q1 [v(db)];@motd [iter( u(v(db)/MOTD-GEN_LIST),%r[u(v(db)/MOTD-##)]%r)];@pemit %#=GAME: You remove a MOTD.},{not(and(match(%0,wizard),lte(%1,words(u(v(db)/MOTD-WIZ_LIST)))))},{&MOTD-WIZ_LIST [v(db)]=[setdiff(u(v(db)/MOTD-WIZ_LIST),setq(1,extract(u(v(db)/MOTD-WIZ_LIST),%1,1))%q1)];&MOTD-%q1 [v(db)];@motd/wizard [iter( u(v(db)/MOTD-WIZ_LIST),%r[u(v(db)/MOTD-##)]%r)];@pemit %#=GAME: You remove a MOTD.}, {not(and(match(%0,down),match(%1,1)))},{@wipe [v(db)]/MOTD-DOWN;@motd/down ;@pemit %#=GAME: You remove a MOTD.},{not(and( match(%0,full), match(%1,1)))},{@wipe [v(db)]/MOTD-FULL;@motd/full ;@pemit %#=GAME: You remove a MOTD.},{@pemit %#=ERROR: Invalid MOTD number.}"
+"$+motd/set *=*:@pemit %#=[setq(0,[match(general wizard full down,%0)][setq(9,isstaff(%#))][r(9)])][setq(6,mid(r(0),0,1))][switch(r(0),?0,Permission denied.,0?,+Motd: ERROR - '[secure(%0)]' not a valid MOTD type.,1?,+Motd: General MOTD set.,2?,+Motd: Wizard MOTD set.,3?,+Motd: Full MOTD set.,4?,+Motd: Down MOTD set.)];&MOTD-[setq(1,extract(GEN_LIST WIZ_LIST FULL DOWN,r(6),1))][r(1)] [switch([r(9)][setq(3,gt(r(6),0))][r(3)],11,v(DB),#-1)]=[setunion(get([v(DB)]/MOTD-[r(1)]),secs())];&MOTD-[switch([setq(4,lt(r(6),3))][r(4)],1,[secs()],extract(X X FULL DOWN,r(6),1))] [switch([r(3)][r(9)],11,v(DB),#-1)]=[secure(%1)];@swi [r(0)]=11,{@motd [iter(get([v(DB)]/MOTD-GEN_LIST),%r[get([v(DB)]/MOTD-##)]%r)];@pemit/list lwho()=+Motd: [name(%#)] has set a new general MOTD.},21,{@motd/wizard [iter(get([v(DB)]/MOTD-WIZ_LIST),%r[get([v(DB)]/MOTD-##)]%r)]},31,{@motd/full %1},41,{@motd/down %1}"
 >347
-"$+motd/list:@pemit %#=[center(Currently Set MOTD,78,=)]%rGeneral:[iter(u(v(db)/MOTD-GEN_LIST),%r[member(u(v(db)/MOTD-GEN_LIST),##)]>%b[u(v(db)/MOTD-##)]%r)]%rWizard:[iter(u(v(db)/MOTD-WIZ_LIST),%r[member(u(v(db)/MOTD-WIZ_LIST),##)]>%b[u(v(db)/MOTD-##)]%r)]%rFull:%r[u(v(db)/MOTD-FULL)]%r%rDown:%r[u(v(db)/MOTD-DOWN)]%r[u(v(db)/footer)]"
+"$+motd/del *=*:@pemit %#=[setq(0,[match(general wizard full down,%0)][setq(9,isstaff(%#))][r(9)])][setq(6,mid(r(0),0,1))][switch(r(0),?0,Permission denied.,0?,+Motd: ERROR - '[secure(%0)]' not a valid MOTD type.,1?,+Motd: [setq(8,and(lte(%1,words(get([v(DB)]/motd-gen_list))),gt(%1,0)))][switch(r(8),0,Invalid general MOTD number,You remove MOTD #[add(0,%1)] from general)],2?,+Motd: [setq(8,and(lte(%1,words(get([v(DB)]/motd-wiz_list))),gt(%1,0)))][switch(r(8),0,Invalid wizard MOTD number,You remove MOTD #[add(0,%1)] from wizard)],3?,+Motd: You remove the full MOTD,4?,+Motd: You remove the down MOTD)];&MOTD-[setq(1,extract(GEN_LIST WIZ_LIST FULL DOWN,r(6),1))][r(1)] [switch([r(9)][setq(3,gt(r(6),0))][r(3)],11,v(DB),#-1)]=[setdiff(get([v(DB)]/MOTD-[r(1)]),[setq(7,extract(get([v(DB)]/MOTD-[r(1)]),%1,1))][r(7)])];&MOTD-[switch([setq(4,lt(r(6),3))][r(4)],1,[r(7)],extract(X X FULL DOWN,r(6),1))] [switch([r(3)][r(9)],11,v(DB),#-1)];@swi [r(0)]=11,{@motd [iter(get([v(DB)]/motd-gen_list),%r[get([v(DB)]/MOTD-##)]%r)]},21,{@motd/wizard [iter(get([v(DB)]/motd-wiz_list),%r[get([v(DB)]/MOTD-##)]%r)]},31,{@motd/full;@wipe [v(DB)]/MOTD-FULL},41,{@motd/down;@wipe [v(DB)]/MOTD-DOWN}"
 >348
-"$+motd/reset:@motd [iter(u(v(db)/MOTD-GEN_LIST),%r[u(v(db)/MOTD-##)]%r)];@motd/wizard [iter(u(v(db)/MOTD-WIZ_LIST),%r[u(v(db)/MOTD-##)]%r)];@motd/down [u(v(db)/MOTD-DOWN)];@motd/full [u(v(db)/MOTD-FULL)];@pemit %#=GAME: MOTD's reset."
+"$+motd/list:@pemit %#=[center(Currently Set MOTD,78,=)]%rGeneral:[iter(get([v(DB)]/motd-gen_list),%r[member(get([v(DB)]/motd-gen_list),##)]> [get([v(DB)]/motd-##)]%r)]%rWizard:[iter(get([v(DB)]/motd-wiz_list),%r[member(get([v(DB)]/motd-wiz_list),##)]> [get([v(DB)]/motd-##)]%r)]%rFull:%r[get([v(DB)]/motd-full)]%r%rDown:%r[get([v(DB)]/motd-down)]%r[u(v(db)/footer)]"
 >349
-"$+timestamp */*=*:;@switch hasflag(%#,wizard)[isdbref(num(*%0))]=0*,{@pemit %#=Huh?%B%B(Type \"help\" for help.)},10,{@pemit %#=You can only set timestamps on players.},{&timestamp-%1 *%0=Set by [name(%#)] on [time()]. %2;@lock *%0/timestamp-%1;@pemit %#=You have set the following timestamp on [name(*%0)]:%B%B[get(*%0/timestamp-%1)]}"
+"$+motd/reset:@motd [iter(get([v(DB)]/motd-gen_list),%r[get([v(DB)]/MOTD-##)]%r)];@motd/wizard [iter(get([v(DB)]/motd-wiz_list),%r[get([v(DB)]/MOTD-##)]%r)];@motd/down [get([v(DB)]/motd-down)];@motd/full [get([v(DB)]/motd-full)]"
 >350
-"$+timestamp/read *:@switch isstaff(%#)[isdbref(num(*%0))][words(lattr(*%0/timestamp*))]=0*,{@pemit %#=Huh?%B%B(Type \"help\" for help.)},10*,{@pemit %#=That is not a player.},110,{@pemit %#=[name(*%0)] has no timestamps.},{@pemit %#=center(name(*%0),78,=)[iter(lattr(*%0/timestamp-*),%R##%B-%B[get(*%0/##)])]}"
+"$+motd/clear *:@swi/first [match(general wizard full down all,%0)][isstaff(%#)]=?0,{@pemit %#=Permission denied.},0?,{@pemit %#=+Motd: ERROR - Invalid MOTD type},1?,{@pemit %#=+Motd: You have cleared the general MOTD;@dolist [get([v(DB)]/motd-gen_list)]=@wipe [v(DB)]/MOTD-##;@wipe [v(DB)]/motd-gen_list;@motd},2?,{@pemit %#=+Motd: You have cleared the wizard MOTD;@dolist [get([v(DB)]/motd-wiz_list)]=@wipe [v(DB)]/MOTD-##;@wipe [v(DB)]/motd-wiz_list;@motd/wizard},3?,{@pemit %#=+Motd: You have cleared the full MOTD;@wipe [v(DB)]/motd-full;@motd/full},4?,{@pemit %#=+Motd: You have cleared the down MOTD;@wipe [v(DB)]/motd-down;@motd/down},5?,{@pemit %#=+Motd: You have cleared ALL of the MOTD's.;@motd;@motd/full;@motd/down;@motd/wizard}"
 >351
-"$+timestamp/rem */*:;@switch hasflag(%#,wizard)[isdbref(num(*%0))]=0*,{@pemit %#=Huh?%B%B(Type \"help\" for help.)},10,{@pemit %#=You can only set timestamps on players.},{@unlock *%0/timestamp-%1;@pemit %#=You have removed the following timestamp on [name(*%0)]:%B%B[get(*%0/timestamp-%1)];&timestamp-%1 *%0}"
+"$+staff/add *:[setq(0,switch(isdbref(%0),1,%0,num(*%0)))];@switch/first 1=not(strmatch(type(%q0),PLAYER)),{@pemit %#=%0 is not a player!},match(get(v(db)/STAFF-LIST),%q0),{@pemit %#=That player is already listed in +staff.},{@wait 0=&STAFF-LIST [v(db)]=[get(v(db)/STAFF-LIST)]%B%q0;@pemit %#=You have added [name(%q0)] to the +staff listing.}"
 >352
-"$+timestamp/showall:@dolist search(type=players)=@switch gt(words(lattr(##/timestamp*)),0)=1,@force %#=+timestamp/read [name(##)]"
+"$+staff/remove *:[setq(0,switch(isdbref(%0),1,%0,num(*%0)))];@switch/first 1=not(strmatch(type(%q0),PLAYER)),{@pemit %#=%0 is not a player!},not(match(get(v(db)/STAFF-LIST),%q0)),{@pemit %#=That player is not listed in +staff.},{&STAFF-LIST [v(db)]=remove(get(v(db)/STAFF-LIST),%q0);@pemit %#=You have removed [name(%q0)] from the +staff listing.}"
 >353
-"$+version:@pemit %#=[ljust(===< Version Status for SGP >===,78,=)]%RObject[space(22)]Version[space(3)]dbref%BPatch[space(9)]Last Update%R[repeat(-,78)][iter(get(v(db)/SGP-OBJECTS),%R[mid(ljust(name(##),28),0,29)][mid(ljust(extract(get(##/SGP-VERSION),1,1,|),10),0,11)][ljust(##,6)][mid(ljust(extract(get(##/SGP-VERSION),2,1,|),14),0,15)][ljust(extract(get(##/SGP-VERSION),3,1,|),20)],|)%R][repeat(=,78)]"
+"$+timestamp */*=*:;@switch hasflag(%#,wizard)[isdbref(num(*%0))]=0*,{@pemit %#=Huh?%B%B(Type \"help\" for help.)},10,{@pemit %#=You can only set timestamps on players.},{&timestamp-%1 *%0=Set by [name(%#)] on [time()]. %2;@lock *%0/timestamp-%1;@pemit %#=You have set the following timestamp on [name(*%0)]:%B%B[get(*%0/timestamp-%1)]}"
 >354
-"$+version *:@switch match(get(v(db)/SGP-OBJECTS),%0,|)=0,{@pemit %#=That is not an object tracked by +version.},{@pemit %#=[ljust(===< Version Status for SGP >===,78,=)]%RObject[space(22)]Version[space(3)]dbref%BPatch[space(9)]Last Update%R[repeat(-,78)]%R[mid(ljust(name(%0),28),0,29)][mid(ljust(extract(get(%0/SGP-VERSION),1,1,|),10),0,11)][ljust(%0,6)][mid(ljust(extract(get(%0/SGP-VERSION),2,1,|),14),0,15)][ljust(extract(get(%0/SGP-VERSION),3,1,|),20)]%R[ljust(---< Object History >---,78,-)]%R[get(%0/UPDATE-HISTORY)]%R[repeat(=,78)]}"
+"$+timestamp/read *:@switch isstaff(%#)[isdbref(num(*%0))][words(lattr(*%0/timestamp*))]=0*,{@pemit %#=Huh?%B%B(Type \"help\" for help.)},10*,{@pemit %#=That is not a player.},110,{@pemit %#=[name(*%0)] has no timestamps.},{@pemit %#=center(name(*%0),78,=)[iter(lattr(*%0/timestamp-*),%R##%B-%B[get(*%0/##)])]}"
 >355
-"$+version/add *:@switch match(get(v(db)/SGP-OBJECTS),%0,|)=1,{@pemit %#=That object is already listed in +version.},{@edit v(db)/SGP-OBJECTS=$,|%0;&SGP-VERSION %0=1.0|Base|[elements(time(),2 3 5)];&UPDATE-HISTORY %0=Base [elements(time(),2 3 5)];@pemit %#=You have added [name(%0)] to the +version listing.}"
+"$+timestamp/rem */*:;@switch hasflag(%#,wizard)[isdbref(num(*%0))]=0*,{@pemit %#=Huh?%B%B(Type \"help\" for help.)},10,{@pemit %#=You can only set timestamps on players.},{@unlock *%0/timestamp-%1;@pemit %#=You have removed the following timestamp on [name(*%0)]:%B%B[get(*%0/timestamp-%1)];&timestamp-%1 *%0}"
 >356
-"$+version/remove *:@switch match(get(v(db)/SGP-OBJECTS),%0,|)=0,{@pemit %#=That object is not listed in +version.},{&SGP-OBJECTS [v(db)]=remove(get(v(db)/SGP-OBJECTS),%0,|);&SGP-VERSION %0;&UPDATE-HISTORY %0;@pemit %#=You have removed [name(%0)] from the +version listing.}"
+"$+timestamp/showall:@dolist search(type=players)=@switch gt(words(lattr(##/timestamp*)),0)=1,@force %#=+timestamp/read [name(##)]"
 >357
+"$+version:@pemit %#=[ljust(===< Version Status for SGP >===,78,=)]%RObject[space(22)]Version[space(3)]dbref%BPatch[space(9)]Last Update%R[repeat(-,78)][iter(get(v(db)/SGP-OBJECTS),%R[mid(ljust(name(##),28),0,29)][mid(ljust(extract(get(##/SGP-VERSION),1,1,|),10),0,11)][ljust(##,6)][mid(ljust(extract(get(##/SGP-VERSION),2,1,|),14),0,15)][ljust(extract(get(##/SGP-VERSION),3,1,|),20)],|)%R][repeat(=,78)]"
+>358
+"$+version *:@switch match(get(v(db)/SGP-OBJECTS),%0,|)=0,{@pemit %#=That is not an object tracked by +version.},{@pemit %#=[ljust(===< Version Status for SGP >===,78,=)]%RObject[space(22)]Version[space(3)]dbref%BPatch[space(9)]Last Update%R[repeat(-,78)]%R[mid(ljust(name(%0),28),0,29)][mid(ljust(extract(get(%0/SGP-VERSION),1,1,|),10),0,11)][ljust(%0,6)][mid(ljust(extract(get(%0/SGP-VERSION),2,1,|),14),0,15)][ljust(extract(get(%0/SGP-VERSION),3,1,|),20)]%R[ljust(---< Object History >---,78,-)]%R[get(%0/UPDATE-HISTORY)]%R[repeat(=,78)]}"
+>359
+"$+version/add *:@switch match(get(v(db)/SGP-OBJECTS),%0,|)=1,{@pemit %#=That object is already listed in +version.},{@edit v(db)/SGP-OBJECTS=$,|%0;&SGP-VERSION %0=1.0|Base|[elements(time(),2 3 5)];&UPDATE-HISTORY %0=Base [elements(time(),2 3 5)];@pemit %#=You have added [name(%0)] to the +version listing.}"
+>360
+"$+version/remove *:@switch match(get(v(db)/SGP-OBJECTS),%0,|)=0,{@pemit %#=That object is not listed in +version.},{&SGP-OBJECTS [v(db)]=remove(get(v(db)/SGP-OBJECTS),%0,|);&SGP-VERSION %0;&UPDATE-HISTORY %0;@pemit %#=You have removed [name(%0)] from the +version listing.}"
+>361
 "$+version/update */*=*:@switch/first 0=match(get(v(db)/SGP-OBJECTS),%0,|),{@pemit %#=That object is not listed in +version.},setr(0,match(version patchlevel history,%1)),{@pemit %#=Invalid field. Valid entries are version, patchlevel history.},{&SGP-VERSION %0=setr(1,replace(extract(get(%0/SGP-VERSION),1,2,|),%q0,edit(%2,|,),|)|[extract(time(),2,2)] [last(time())]);&UPDATE-HISTORY %0=get(%0/UPDATE-HISTORY)|[edit(extract(%q1,3,1,|),|,%b)] [switch(%q0,3,edit(%2,|,))];@pemit %#=You have updated [name(%0)]'s [extract(version patchlevel history,%q0,1)] field to '%2'.}"
 >19
 "+motd/reset"
->387
+>391
 "$+cnote/* *=*:@switch 1=[setq(0,u(v(db)/u_dbrefcheck,%1))][isdbref(%q0)],{&cnote-%0 %q0=Set by %N on date [time()]:%r%2 ; @set %q0/cnote-%0=wizard ; @chown %q0/cnote-%0=%# ; @pemit %#=Setting %1/CNOTE-%0 to %2},{@pemit %#=Sorry, I can't find %1 as a DB object.}"
->388
+>392
 "$+cnoteapp* * *:@switch [setq(0,u(v(db)/u_dbrefcheck,%1))][hasattr(%q0,CNOTE-%2)]=0,{@pemit %#=[Name(%q0)] has no such cnote. +cnotelist [name(%q0)] to view their cnotes.},1,{@chown %q0/CNOTE-%2=%# ; @set %q0/CNOTE-%2=wizard ; @set %q0=CNOTE-%2:Approved by [name(%#)] on date [time()]%r[get(%q0/CNOTE-%2)] ; @pemit %#=[name(%q0)]'s '%2' now reads:%r[u(v(db)/footer)]%r[u(num(%q0)/CNOTE-%2)]%r[u(v(db)/footer))]%r}"
->389
+>393
 "$+cnotedel* * *:@switch [setq(0,u(v(db)/u_dbrefcheck,%1))][hasattr(%q0,CNOTE-%2)]=0,{@pemit %#=[Name(%q0)] has no such cnote. +cnotelist [name(%q0)] to view their cnotes.},1,{@pemit %#=[name(%q0)]'s '%2' reads:%r[u(v(db)/footer)]%r[u([num(%q0)]/CNOTE-%2)]%r[u(v(db)/footer)]%r ; @wipe %q0/CNOTE-%2 ; @pemit %#=[name(%q0)]'s '%2' now wiped.}"
 <
 !8
@@ -842,58 +852,58 @@
 >256
 "#4"
 >258
-"1.0|RPPack|Jan 05 2001"
+"1.0|RPPack|Apr 26 2001"
 >259
-"Base Install 121600 [elements(time(),2 3 5)]|Jan 05 2001 |Jan 05 2001 RPPack added"
+"Base Install 121600 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
 >6
 "This is the staff globals object for SGP. These are global commands that only staff, as defined in the isstaff() on the global functions object, will have access to. You may substitute ostaff() for isstaff() in the lock setting.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
->358
-"[isstaff(%#)]"
->359
-"$+commands *:@pemit %#=switch(setq(0,locate(%#,%0,*))%q0,#-*,Cant find that object.,name(%q0) (%q0) has the following command attributes:[iter(lattr(%q0), switch(strmatch(setq(1,get(%q0/##))%q1,$*),1,%r%t##: [mid(%q1,1,sub(pos(:,%q1),2))]))])"
->360
-"$+contents *:@pemit %#=switch(setq(0,locate(%#,%0,*))%q0,#-*,Cant find that.,switch(words(lcon(%q0)),0,name(%q0) (%q0) contains nothing,name(%q0) (%q0) contains:[iter(lcon(%q0),%r%t[name(##)] (##))]))"
->361
-"$+duty:@switch [hasflag(%#,transparent)]=1,{@set %#=!transparent;@pemit %#=Done. You are now on duty.},{@set %#=transparent;@pemit %#=Done. You are now off duty.}"
 >362
-"$+join *:@switch locate(me,*%0,p)=#-*,{@pemit %#=Sorry, %0 is not a valid player name.},{&join-from %#=loc(%#); @tel %#=loc(*%0)}"
+"[isstaff(%#)]"
 >363
-"$+deleteproject *: @switch hasattr(v(db),setq(0,list-[edit(%0,%B,_)])%q0)=0, @pemit %#=No project '%0' listed., {&%q0 [v(db)]; @pemit %#=Project '%0' deleted.}"
+"$+commands *:@pemit %#=switch(setq(0,locate(%#,%0,*))%q0,#-*,Cant find that object.,name(%q0) (%q0) has the following command attributes:[iter(lattr(%q0), switch(strmatch(setq(1,get(%q0/##))%q1,$*),1,%r%t##: [mid(%q1,1,sub(pos(:,%q1),2))]))])"
 >364
-"$+editproject */*=*: @switch hasattr(v(db),setq(0,list-[edit(%0,%B,_)])%q0)=0, @pemit %#=No project '%0' listed., {@switch %1=who, {&%q0 [v(db)]=replace(get(v(db)/%q0),2,%2,|); @pemit %#=Who set to '%2'.},status, {&%q0 [v(db)]=replace(get(v(db)/%q0),3,%2,|); @pemit %#=Status set to '%2'.},@pemit %#=Field should be /who or /status.}"
+"$+contents *:@pemit %#=switch(setq(0,locate(%#,%0,*))%q0,#-*,Cant find that.,switch(words(lcon(%q0)),0,name(%q0) (%q0) contains nothing,name(%q0) (%q0) contains:[iter(lcon(%q0),%r%t[name(##)] (##))]))"
 >365
-"$+setproject */*/*:@switch hasattr(v(db),setq(0,list-[edit(secure(%0),%B,_)])%q0)=1, @pemit %#=Project '%0' already exists., {&%q0 [v(db)]=secure(%0)|%1|%2; @pemit %#=Entry for '%0' created.}"
+"$+duty:@switch [hasflag(%#,transparent)]=1,{@set %#=!transparent;@pemit %#=Done. You are now on duty.},{@set %#=transparent;@pemit %#=Done. You are now off duty.}"
 >366
-"$+viewprojects: @pemit %#=repeat(=,78)%R[ljust(Project,25)] [ljust(Coder,20)] [ljust(STATUS,26)]%R[repeat(=,78)]; @dolist lattr(v(db)/list-*)=@pemit %#=ljust(extract(get(v(db)/##),1,1,|),25) [ljust(extract(get(v(db)/##),2,1,|),20)] [ljust(extract(get(v(db)/##),3,1,|),26)];@wait 1=@pemit %#=repeat(=,78)%r"
+"$+join *:@switch locate(me,*%0,p)=#-*,{@pemit %#=Sorry, %0 is not a valid player name.},{&join-from %#=loc(%#); @tel %#=loc(*%0)}"
 >367
-"$+trackerhelp:@pemit %#=[repeat(=,78)]%R[center(Project Tracker Help,78, )]%R%T+setproject <project name>/<coder name>/<status>%R%T+viewprojects%R%T+editproject <project name>/who=<coder name>%R%T+editproject <project name>/status=<status>%R%T+deleteproject <project name>%R%T+trackerhelp -- Gets this screen.%R%RThe project name, and the other fields, can have spaces in them.%R%Rby BEM@Granite%R[repeat(=,78)]"
+"$+deleteproject *: @switch hasattr(v(db),setq(0,list-[edit(%0,%B,_)])%q0)=0, @pemit %#=No project '%0' listed., {&%q0 [v(db)]; @pemit %#=Project '%0' deleted.}"
 >368
-"$+register *=*=*=*:@switch/first [setq(0,findpc(%#,%0))][r(0)]/[hasattr(%q0,REGISTRATION)]=#-1/*,{@pemit %#=Cannot find %0.},#-2/*,{@pemit %#=Which %0?},*/0,{&REGISTRATION %q0=%1|%2|%3|[time()]|%#;@pemit %#=You have registered [name(%q0)]: Character [name(%q0)] played by [extract(get(%q0/REGISTRATION),1,1,|)] with email address [extract(get(%q0/REGISTRATION),2,1,|)] and alts [extract(get(%q0/REGISTRATION),3,1,|)] as registered on [extract(get(%q0/REGISTRATION),4,1,|)] by [extract(get(%q0/REGISTRATION),5,1,|)].},*/1,{@pemit %#=[name(%q0)] has already been registered: Character [name(%q0)] played by [extract(get(%q0/REGISTRATION),1,1,|)] with email address [extract(get(%q0/REGISTRATION),2,1,|)] and alts [extract(get(%q0/REGISTRATION),3,1,|)] was registered on [extract(get(%q0/REGISTRATION),4,1,|)] by [extract(get(%q0/REGISTRATION),5,1,|)].%r%rIf there is an error with the registration, please +mail Staff for correction.}"
+"$+editproject */*=*: @switch hasattr(v(db),setq(0,list-[edit(%0,%B,_)])%q0)=0, @pemit %#=No project '%0' listed., {@switch %1=who, {&%q0 [v(db)]=replace(get(v(db)/%q0),2,%2,|); @pemit %#=Who set to '%2'.},status, {&%q0 [v(db)]=replace(get(v(db)/%q0),3,%2,|); @pemit %#=Status set to '%2'.},@pemit %#=Field should be /who or /status.}"
 >369
-"$+register: @pemit %#=%R%R+register <character>=<RL name>=<email>=<alts>%r%rThe RL name must be their FULL name, first and last. Alts can be none.%R%R"
+"$+setproject */*/*:@switch hasattr(v(db),setq(0,list-[edit(secure(%0),%B,_)])%q0)=1, @pemit %#=Project '%0' already exists., {&%q0 [v(db)]=secure(%0)|%1|%2; @pemit %#=Entry for '%0' created.}"
 >370
-"$+rjoin:@switch setq(0,get(%#/join-from))%q0=,{@pemit %#=Sorry, you don't have a return destination.},{@tel %#=%q0; &join-from %#}"
+"$+viewprojects: @pemit %#=repeat(=,78)%R[ljust(Project,25)] [ljust(Coder,20)] [ljust(STATUS,26)]%R[repeat(=,78)]; @dolist lattr(v(db)/list-*)=@pemit %#=ljust(extract(get(v(db)/##),1,1,|),25) [ljust(extract(get(v(db)/##),2,1,|),20)] [ljust(extract(get(v(db)/##),3,1,|),26)];@wait 1=@pemit %#=repeat(=,78)%r"
 >371
-"$+rsummon *:@switch locate(me,*%0,p)=#-*,{@pemit %#=Sorry, %0 is not a valid player name.},{@switch setq(0,get(*%0/summon))%q0=,@pemit %#=name(%0) doesn't have a return location,{@oemit *%0=JUDGE: %N sends [name(*%0)] back to [poss(*%0)] former location.;@pemit *%0=JUDGE: %N sends you back to your former location.;@tel *%0=%q0;&summon *%0;@oemit *%0=JUDGE: %N returns [name(*%0)].;&summon *%0.}}"
+"$+trackerhelp:@pemit %#=[repeat(=,78)]%R[center(Project Tracker Help,78, )]%R%T+setproject <project name>/<coder name>/<status>%R%T+viewprojects%R%T+editproject <project name>/who=<coder name>%R%T+editproject <project name>/status=<status>%R%T+deleteproject <project name>%R%T+trackerhelp -- Gets this screen.%R%RThe project name, and the other fields, can have spaces in them.%R%Rby BEM@Granite%R[repeat(=,78)]"
 >372
+"$+register *=*=*=*:@switch/first [setq(0,findpc(%#,%0))][r(0)]/[hasattr(%q0,REGISTRATION)]=#-1/*,{@pemit %#=Cannot find %0.},#-2/*,{@pemit %#=Which %0?},*/0,{&REGISTRATION %q0=%1|%2|%3|[time()]|%#;@pemit %#=You have registered [name(%q0)]: Character [name(%q0)] played by [extract(get(%q0/REGISTRATION),1,1,|)] with email address [extract(get(%q0/REGISTRATION),2,1,|)] and alts [extract(get(%q0/REGISTRATION),3,1,|)] as registered on [extract(get(%q0/REGISTRATION),4,1,|)] by [extract(get(%q0/REGISTRATION),5,1,|)].},*/1,{@pemit %#=[name(%q0)] has already been registered: Character [name(%q0)] played by [extract(get(%q0/REGISTRATION),1,1,|)] with email address [extract(get(%q0/REGISTRATION),2,1,|)] and alts [extract(get(%q0/REGISTRATION),3,1,|)] was registered on [extract(get(%q0/REGISTRATION),4,1,|)] by [extract(get(%q0/REGISTRATION),5,1,|)].%r%rIf there is an error with the registration, please +mail Staff for correction.}"
+>373
+"$+register: @pemit %#=%R%R+register <character>=<RL name>=<email>=<alts>%r%rThe RL name must be their FULL name, first and last. Alts can be none.%R%R"
+>374
+"$+rjoin:@switch setq(0,get(%#/join-from))%q0=,{@pemit %#=Sorry, you don't have a return destination.},{@tel %#=%q0; &join-from %#}"
+>375
+"$+rsummon *:@switch locate(me,*%0,p)=#-*,{@pemit %#=Sorry, %0 is not a valid player name.},{@switch setq(0,get(*%0/summon))%q0=,@pemit %#=name(%0) doesn't have a return location,{@oemit *%0=JUDGE: %N sends [name(*%0)] back to [poss(*%0)] former location.;@pemit *%0=JUDGE: %N sends you back to your former location.;@tel *%0=%q0;&summon *%0;@oemit *%0=JUDGE: %N returns [name(*%0)].;&summon *%0.}}"
+>376
 "$+summon *:@switch locate(me,*%0,p)=#-*,{@pemit %#=Sorry, %0 is not a valid player name.},{&summon *%0=loc(*%0);@oemit *%0=JUDGE: %N summons [name(*%0)] away.;@pemit *%0=JUDGE: %N summons you away.;@remit %#=%N summons [name(*%0)].;@tel *%0=loc(%#)}"
 >62
 "CAN_USE/1"
->382
+>386
 "$+bgcheck */*:@switch 0=isstaff(%#),{@pemit %#=Only staff can use this command},{@switch setq(0,num(*%0))%q0=#-1,@pemit %#=Cant find player named %0,{@switch and(isnum(%1),hasattr(%q0,BACKGROUND_%1))=0,@pemit %#=Invalid section number.,{@pemit %#=[repeat(-=,39)]%R%BThis is section %1 of [words(lattr(*%0/BACKGROUND_*))] sections for [name(*%0)].%R[repeat(=-,39)]%R[get_eval(%q0/BACKGROUND_%1)]%R[repeat(-=,39)]}}}"
->383
+>387
 "$+bgview *:@switch 0=isstaff(%#),{@pemit %#=Only staff can use this command},{@switch setq(0,num(*%0))%q0=#-1,@pemit %#=Cant find player named %0,@pemit %#=name(%q0) has the following background sections: [iter(lattr(%q0/BACKGROUND_*),after(##,BACKGROUND_))]}"
->390
-"$+cnotelist *:@switch 1=[setq(0,u(v(db)/u_dbrefcheck,%0))][isdbref(%q0)],{@pemit %#=[name(%q0)] contains the following cnotes:%r[u(v(db)/footer)]%r[edit(lattr(%q0/cnote-*),CNOTE-,%b)]%r[u(v(db)/footer)]%rTo view each cnote, type +cnoteview %0 <cnoteofchoice>},{@pemit %#=I can't find %0 as a player or object.}"
->391
-"$+cnoteview * *:@switch [setq(0,u(v(db)/u_dbrefcheck,%0))][hasattr(%q0,CNOTE-%1)]=0,{@pemit %#=[Name(%q0)] has no such cnote. +cnotelist [name(%q0)] to view their cnotes.},1,{@pemit %#=[name(%q0)]'s '%1' reads:%r[u(v(db)/footer)]%r[u([num(%q0)]/CNOTE-%1)]%r[u(v(db)/footer)]%r}"
->392
-"$+stnotes:@dolist lcon(loc(%#)) [lexits(loc(%#))] [loc(%#)]=@switch words(setq(0,u(notes,##))%q0)=0,,@pemit %#=name(##) has ST notes: [edit(%q0,STNOTE-,)]"
->393
-"$+stnotes *:@switch setq(0,locate(%#,%0,*))%q0=#-*,{@pemit %#=I can't find %0.},{@switch words(setq(1,u(notes,%q0))%q1)=0,{@pemit %#=name(%q0) doesn't have any valid ST notes.},{@pemit %#=name(%q0) has the following ST notes:[iter(%q1,%R%T[after(##,STNOTE-)]---[get(%q0/##)])]}}"
 >394
-"$+setnote */*=*:@switch 1=strmatch(setq(0,locate(%#,%0,*))%q0,#-*),{@pemit %#=Cannot locate %0},neq(1,words(%1)),{@pemit %#=%1 is not a valid ST note tag.},{@unlock %q0/STNOTE-%1;&STNOTE-%1 %q0=%2;@set %q0/STNOTE-%1=hidden;@set %q0/STNOTE-%1=no_command;@lock %q0/STNOTE-%1}"
+"$+cnotelist *:@switch 1=[setq(0,u(v(db)/u_dbrefcheck,%0))][isdbref(%q0)],{@pemit %#=[name(%q0)] contains the following cnotes:%r[u(v(db)/footer)]%r[edit(lattr(%q0/cnote-*),CNOTE-,%b)]%r[u(v(db)/footer)]%rTo view each cnote, type +cnoteview %0 <cnoteofchoice>},{@pemit %#=I can't find %0 as a player or object.}"
 >395
+"$+cnoteview * *:@switch [setq(0,u(v(db)/u_dbrefcheck,%0))][hasattr(%q0,CNOTE-%1)]=0,{@pemit %#=[Name(%q0)] has no such cnote. +cnotelist [name(%q0)] to view their cnotes.},1,{@pemit %#=[name(%q0)]'s '%1' reads:%r[u(v(db)/footer)]%r[u([num(%q0)]/CNOTE-%1)]%r[u(v(db)/footer)]%r}"
+>396
+"$+stnotes:@dolist lcon(loc(%#)) [lexits(loc(%#))] [loc(%#)]=@switch words(setq(0,u(notes,##))%q0)=0,,@pemit %#=name(##) has ST notes: [edit(%q0,STNOTE-,)]"
+>397
+"$+stnotes *:@switch setq(0,locate(%#,%0,*))%q0=#-*,{@pemit %#=I can't find %0.},{@switch words(setq(1,u(notes,%q0))%q1)=0,{@pemit %#=name(%q0) doesn't have any valid ST notes.},{@pemit %#=name(%q0) has the following ST notes:[iter(%q1,%R%T[after(##,STNOTE-)]---[get(%q0/##)])]}}"
+>398
+"$+setnote */*=*:@switch 1=strmatch(setq(0,locate(%#,%0,*))%q0,#-*),{@pemit %#=Cannot locate %0},neq(1,words(%1)),{@pemit %#=%1 is not a valid ST note tag.},{@unlock %q0/STNOTE-%1;&STNOTE-%1 %q0=%2;@set %q0/STNOTE-%1=hidden;@set %q0/STNOTE-%1=no_command;@lock %q0/STNOTE-%1}"
+>399
 "$+setnote/vis */*=*:@switch 1=strmatch(setq(0,locate(%#,%0,*))%q0,#-*),{@pemit %#=Cannot locate %0},neq(1,words(%1)),{@pemit %#=%1 is not a valid ST note tag.},{@unlock %q0/STNOTE-%1;&STNOTE-%1 %q0=%2;@set %q0/STNOTE-%1=no_command;@set %q0/STNOTE-%1=!hidden;@lock %q0/STNOTE-%1}"
 <
 !9
@@ -915,87 +925,87 @@
 0
 >6
 "The Places Code. Tables, rugs, beds, ladders, etc."
->399
+>403
 "#10"
 >258
-"SGP-Y2K|Base|Jan 05 2001"
+"SGP-Y2K|Base|Apr 26 2001"
 >259
 "Y2K"
->400
-"$configure * places: @switch/first [controls(%#,%l)]:[isnum(%0)]:%0=0:*:*, {@pemit %#=You do not control [name(%l)].},*:0:*, {@pemit %#=The number of places needs to be a number!},*:*:0, {@dolist rest(lnum(add(get(%l/PLACESMAX),1)))={@unlock %l/PLACE##;&PLACE## %l};@unlock %l/PLACESCLEANUP1;@unlock %l/PLACESCLEANUP2;@unlock %l/PLACESMAX;&PLACESCLEANUP1 %l;&PLACESCLEANUP2 %l;&PLACESMAX %l;@set %l=!MONITOR;@pemit %#=Places removed from [name(%l)].},{&PLACESMAX %l=%0;@dolist rest(lnum(add(%0,1)))={@unlock %l/PLACE##;&PLACE## %l=ulocal(SETUP_FN,##,add(rand(9),1))};@unlock %l/PLACESCLEANUP1;@unlock %l/PLACESCLEANUP2;@unlock %l/PLACESMAX;@set %l=MONITOR;&PLACESCLEANUP1 %l=v(PLACESCLEANUP1);&PLACESCLEANUP2 %l=v(PLACESCLEANUP2);&PLACENUMS %l=[repeat(|,%0)];@pemit %#=Configuration for %0 places complete.}"
->401
-"$configure spy* *: @switch/first [controls(%#,%l)]:[ucstr(%1)]=0:*, {@pemit %#=You do not control [name(%l)].},*:Yes, {@pemit %#=Setting this room to allow Spying. ;&SPYOK %L=Yes ;},*:No, {@pemit %#=Setting this room to disallow Spying. Please include a reason why it should not work in a note on the room. ;&SPYOK %L=No ;},{@pemit %#=The valid commands are:%r%tconfigure spying Yes%r%tconfigure spying No%rPlease use one of those.}"
->402
-"Table %0|%1|[add(rand(%1),1)]||I'm sorry, there's no room to add a place there.|I'm sorry, there's on place to move there.|You sit down at|sits down at|You stand and leave|stands and leaves|At your table|A table with 4 legs and some chairs around it."
->403
-"$update */*=*: @switch/first [controls(%#,%l)]:[and(isnum(%0),lte(%0,get(%l/PLACESMAX)))]:[member(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIBE,ucstr(%1))]=0:*:*, {@pemit %#=Permission denied.},*:0:*, {@pemit %#=I'm sorry, but '%0' isn't a valid place number.},*:*:0, {@pemit %#=I'm sorry, but '%1' isn't a valid configuration option.},{@unlock %l/PLACE%0;&PLACE%0 %l=ulocal(UPDATEINFO,%l,%0,%1,%2);@pemit %#=The %1 for [ulocal(GETINFO,%l,%0,NAME)] is now set to:%r[space(5)][ulocal(GETINFO,%l,%0,%1)]}"
 >404
-"$mv from * to *: @switch/first 0=and(gt(%0,0),lte(%0,get(%l/PLACESMAX))), {@pemit %#='%0' is not a valid place number.},and(gt(%1,0),lte(%1,get(%l/PLACESMAX))), {@pemit %#='%1' is not a vaild place number.},not(words(ulocal(GETINFO,%l,%0,FIXED))), {@pemit %#=ulocal(GETINFO,%l,%0,FIXED)},not(words(ulocal(GETINFO,%l,%1,FIXED))), {@pemit %#=ulocal(GETINFO,%l,%1,FIXED)},sub(ulocal(GETINFO,%l,%0,CURPLACES),words(extract(get(%l/PLACENUMS),%0,1,|))), {@pemit %#=ulocal(GETINFO,%l,%0,EMPTY)},neq(ulocal(GETINFO,%l,%1,CURPLACES),ulocal(GETINFO,%l,%1,MAXPLACES)), {@pemit %#=ulocal(GETINFO,%l,%1,FULL)},{@unlock %l/PLACE%0;@unlock %l/PLACE%1;&PLACE%0 %l=ulocal(UPDATEINFO,%l,%0,CURPLACES,sub(ulocal(GETINFO,%l,%0,CURPLACES),1));&PLACE%1 %l=ulocal(UPDATEINFO,%l,%1,CURPLACES,add(ulocal(GETINFO,%l,%1,CURPLACES),1));@pemit %#=You move a place from [ulocal(GETINFO,%l,%0,NAME)] to [ulocal(GETINFO,%l,%1,NAME)].}"
+"$configure * places: @switch/first [controls(%#,%l)]:[isnum(%0)]:%0=0:*:*, {@pemit %#=You do not control [name(%l)].},*:0:*, {@pemit %#=The number of places needs to be a number!},*:*:0, {@dolist rest(lnum(add(get(%l/PLACESMAX),1)))={@unlock %l/PLACE##;&PLACE## %l};@unlock %l/PLACESCLEANUP1;@unlock %l/PLACESCLEANUP2;@unlock %l/PLACESMAX;&PLACESCLEANUP1 %l;&PLACESCLEANUP2 %l;&PLACESMAX %l;@set %l=!MONITOR;@pemit %#=Places removed from [name(%l)].},{&PLACESMAX %l=%0;@dolist rest(lnum(add(%0,1)))={@unlock %l/PLACE##;&PLACE## %l=ulocal(SETUP_FN,##,add(rand(9),1))};@unlock %l/PLACESCLEANUP1;@unlock %l/PLACESCLEANUP2;@unlock %l/PLACESMAX;@set %l=MONITOR;&PLACESCLEANUP1 %l=v(PLACESCLEANUP1);&PLACESCLEANUP2 %l=v(PLACESCLEANUP2);&PLACENUMS %l=[repeat(|,%0)];@pemit %#=Configuration for %0 places complete.}"
 >405
-"^* has left.:placescleanup(%#)"
+"$configure spy* *: @switch/first [controls(%#,%l)]:[ucstr(%1)]=0:*, {@pemit %#=You do not control [name(%l)].},*:Yes, {@pemit %#=Setting this room to allow Spying. ;&SPYOK %L=Yes ;},*:No, {@pemit %#=Setting this room to disallow Spying. Please include a reason why it should not work in a note on the room. ;&SPYOK %L=No ;},{@pemit %#=The valid commands are:%r%tconfigure spying Yes%r%tconfigure spying No%rPlease use one of those.}"
 >406
-"^* has disconnected.:placescleanup(%#)"
+"Table %0|%1|[add(rand(%1),1)]||I'm sorry, there's no room to add a place there.|I'm sorry, there's on place to move there.|You sit down at|sits down at|You stand and leave|stands and leaves|At your table|A table with 4 legs and some chairs around it."
 >407
-"$placescleanup(*):@switch [setq(0, U(WHICHPLACE, %#, %0))][r(0)]=>0, {&PLACENUMS %#=[replace(get(%#/PLACENUMS), r(0), remove(extract(get(%#/PLACENUMS), r(0), 1, |), %0), |)]}"
+"$update */*=*: @switch/first [controls(%#,%l)]:[and(isnum(%0),lte(%0,get(%l/PLACESMAX)))]:[member(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIBE,ucstr(%1))]=0:*:*, {@pemit %#=Permission denied.},*:0:*, {@pemit %#=I'm sorry, but '%0' isn't a valid place number.},*:*:0, {@pemit %#=I'm sorry, but '%1' isn't a valid configuration option.},{@unlock %l/PLACE%0;&PLACE%0 %l=ulocal(UPDATEINFO,%l,%0,%1,%2);@pemit %#=The %1 for [ulocal(GETINFO,%l,%0,NAME)] is now set to:%r[space(5)][ulocal(GETINFO,%l,%0,%1)]}"
 >408
-"$join *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit [setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)]=1,{@trig me/PLACEFUNCTION=%l,%#,%0},{@trig me/PLACEFUNCTION=%l,%#,[match(iter(rest(lnum(add(get(%l/PLACESMAX),1))),[ulocal(GETINFO,%l,##,NAME)]|),*%0*,|)]}}"
+"$mv from * to *: @switch/first 0=and(gt(%0,0),lte(%0,get(%l/PLACESMAX))), {@pemit %#='%0' is not a valid place number.},and(gt(%1,0),lte(%1,get(%l/PLACESMAX))), {@pemit %#='%1' is not a vaild place number.},not(words(ulocal(GETINFO,%l,%0,FIXED))), {@pemit %#=ulocal(GETINFO,%l,%0,FIXED)},not(words(ulocal(GETINFO,%l,%1,FIXED))), {@pemit %#=ulocal(GETINFO,%l,%1,FIXED)},sub(ulocal(GETINFO,%l,%0,CURPLACES),words(extract(get(%l/PLACENUMS),%0,1,|))), {@pemit %#=ulocal(GETINFO,%l,%0,EMPTY)},neq(ulocal(GETINFO,%l,%1,CURPLACES),ulocal(GETINFO,%l,%1,MAXPLACES)), {@pemit %#=ulocal(GETINFO,%l,%1,FULL)},{@unlock %l/PLACE%0;@unlock %l/PLACE%1;&PLACE%0 %l=ulocal(UPDATEINFO,%l,%0,CURPLACES,sub(ulocal(GETINFO,%l,%0,CURPLACES),1));&PLACE%1 %l=ulocal(UPDATEINFO,%l,%1,CURPLACES,add(ulocal(GETINFO,%l,%1,CURPLACES),1));@pemit %#=You move a place from [ulocal(GETINFO,%l,%0,NAME)] to [ulocal(GETINFO,%l,%1,NAME)].}"
 >409
-"$sit *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit [setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)]=1,{@trig me/PLACEFUNCTION=%l,%#,%0},{@trig me/PLACEFUNCTION=%l,%#,[match(iter(rest(lnum(add(get(%l/PLACESMAX),1))),[ulocal(GETINFO,%l,##,NAME)]|),*%0*,|)]}}"
+"^* has left.:placescleanup(%#)"
 >410
-"@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[edit([U(GETINFO, %0, %2, JOIN)] [r(0)].,%,,%%%,)],oeval_mesg,[edit([U(GETINFO, %0, %2, OJOIN)] [r(0)].,%,,%%%,)]};@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, [r(1)]%1%b, |)]"
+"^* has disconnected.:placescleanup(%#)"
 >411
-"$depart:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[edit([U(GETINFO, %l, r(1), DEPART)] [r(0)].,%,,%%%,)];@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [edit([U(GETINFO, %l, r(1), ODEPART)] [r(0)].,%,,%%%,)]}"
+"$placescleanup(*):@switch [setq(0, U(WHICHPLACE, %#, %0))][r(0)]=>0, {&PLACENUMS %#=[replace(get(%#/PLACENUMS), r(0), remove(extract(get(%#/PLACENUMS), r(0), 1, |), %0), |)]}"
 >412
-"$stand:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[edit([U(GETINFO, %l, r(1), DEPART)] [r(0)].,%,,%%%,)];@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [edit([U(GETINFO, %l, r(1), ODEPART)] [r(0)].,%,,%%%,)]}"
+"$join *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit[setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)][setq(1,locate(%#,%0,niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]=1,{@trig me/PLACEFUNCTION=%l,%#,%0 ;},{@pemit %#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]}}"
 >413
-"$places: @pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,map(PLACES_FN,rest(lnum(add(get(%l/PLACESMAX),1)))))"
+"$sit *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit[setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)][setq(1,locate(%#,%0,niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]=1,{@trig me/PLACEFUNCTION=%l,%#,%0},{@pemit %#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]}}"
 >414
-"$place *: @pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,map(PLACES_FN,edit(%0,#,)))"
+"@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[edit([U(GETINFO, %0, %2, JOIN)] [r(0)].,%,,%%%,)],oeval_mesg,[edit([U(GETINFO, %0, %2, OJOIN)] [r(0)].,%,,%%%,)]};@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, [r(1)]%1%b, |)]"
 >415
-"%r[setq(0,ulocal(GETINFO,%l,%0,CURPLACES))][setq(1,extract(get(%l/PLACENUMS),%0,1,|))][capstr(ulocal(GETINFO,%l,%0,NAME))] (#%0) has [setq(2,sub(r(0),words(r(1))))][switch(r(2),0,no empty places,1,1 empty place,[r(2)] empty places)].[switch(words(r(1)),0,,1,%r%tPresent is: %b[name(edit(r(1),%b,))].,%r%tPresent are: %b[ulocal(PLACE_LOOK,r(1))])]"
+"$depart:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[edit([U(GETINFO, %l, r(1), DEPART)] [r(0)].,%,,%%%,)];@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [edit([U(GETINFO, %l, r(1), ODEPART)] [r(0)].,%,,%%%,)]}"
 >416
-"[setq(9,words(%0))][switch(r(9),0,,1,name(%0),2, [name(first(%0))] and [name(rest(%0))],[iter(extract(%0,1,sub(r(9),1)),{name(##),})] and [name(extract(%0,r(9),1))])]"
+"$stand:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[edit([U(GETINFO, %l, r(1), DEPART)] [r(0)].,%,,%%%,)];@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [edit([U(GETINFO, %l, r(1), ODEPART)] [r(0)].,%,,%%%,)]}"
 >417
-"$plook: @pemit %#=[setq(0,edit(get(%l/PLACENUMS),|,))][fold(PLOOK_FOLD_FN,rest(lnum(add(get(%l/PLACESMAX),1))),-----)]%rNo place [space(3)] [setq(3,setdiff(setinter(lcon(%l),lwho()),r(0)))][rjust([words(r(3))] at no places,15)] [space(3)] [setq(4,sort(iter(r(3),name(##))))][ljust(mid(extract(r(4),1,1),0,14),14)] [ljust(mid(extract(r(4),2,1),0,14),14)] [ljust(mid(extract(r(4),3,1),0,14),14)][switch(gt(words(r(4)),3),1,ulocal(NAME_3COL_FN,extract(r(4),4,3999)))]%r-----"
+"$places: @pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,map(PLACES_FN,rest(lnum(add(get(%l/PLACESMAX),1)))))"
 >418
-"%0%r[setq(1,extract(get(%l/PLACENUMS),%1,1,|))]Place #[ljust(%1,5)] [rjust([sub(ulocal(GETINFO,%l,%1,CURPLACES),words(r(1)))] empty places,15)] [space(3)] [setq(2,sort(iter(r(1),name(##))))][ljust(mid(extract(r(2),1,1),0,14),14)] [ljust(mid(extract(r(2),2,1),0,14),14)] [ljust(mid(extract(r(2),3,1),0,14),14)][switch(gt(words(r(2)),3),1,ulocal(NAME_3COL_FN,extract(r(2),4,3999)))]"
+"$place *: @pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,map(PLACES_FN,edit(%0,#,)))"
 >419
-"[fold(NAME_3AUX_FN,rest(%0),%r[space(33)][ljust(mid(first(%0),0,14),15)])]"
+"%r[setq(0,ulocal(GETINFO,%l,%0,CURPLACES))][setq(1,extract(get(%l/PLACENUMS),%0,1,|))][capstr(ulocal(GETINFO,%l,%0,NAME))] (#%0) has [setq(2,sub(r(0),words(r(1))))][switch(r(2),0,no empty places,1,1 empty place,[r(2)] empty places)].[switch(words(r(1)),0,,1,%r%tPresent is: %b[name(edit(r(1),%b,))].,%r%tPresent are: %b[ulocal(PLACE_LOOK,r(1))])]"
 >420
-"%0[switch(mod(words(%0),4),0,%r[space(33)][ljust(mid(%1,0,14),15)],[ljust(mid(%1,0,14),15)])]"
+"[setq(9,words(%0))][switch(r(9),0,,1,name(%0),2, [name(first(%0))] and [name(rest(%0))],[iter(extract(%0,1,sub(r(9),1)),{name(##),})] and [name(extract(%0,r(9),1))])]"
 >421
-"$plook *:@pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,%r[capstr(ulocal(GETINFO,%l,%0,NAME))]:%r[ulocal(GETINFO,%l,edit(%0,#,),DESCRIPTION)])"
+"$plook: @pemit %#=[setq(0,edit(get(%l/PLACENUMS),|,))][fold(PLOOK_FOLD_FN,rest(lnum(add(get(%l/PLACESMAX),1))),-----)]%rNo place [space(3)] [setq(3,setdiff(setinter(lcon(%l),lwho()),r(0)))][rjust([words(r(3))] at no places,15)] [space(3)] [setq(4,sort(iter(r(3),name(##))))][ljust(mid(extract(r(4),1,1),0,14),14)] [ljust(mid(extract(r(4),2,1),0,14),14)] [ljust(mid(extract(r(4),3,1),0,14),14)][switch(gt(words(r(4)),3),1,ulocal(NAME_3COL_FN,extract(r(4),4,3999)))]%r-----"
 >422
-"$tt *:@pemit/list [setq(0,ulocal(WHICHPLACE,%l,%#))][switch(r(0),0,%#[setq(1,You'll need to join a place first.)],[extract(get(%l/PLACENUMS),r(0),1,|)][setq(1,\\{[ulocal(GETINFO,%l,r(0),PREFIX)], [switch(%0,:*,%N [delete(%0,0,1)],;*,%N[delete(%0,0,1)],\"*,%N says \"[delete(%0,0,1)]\",|*,delete(%0,0,1),%N says \"%0\")]\\})])]=r(1);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(1)]"
+"%0%r[setq(1,extract(get(%l/PLACENUMS),%1,1,|))]Place #[ljust(%1,5)] [rjust([sub(ulocal(GETINFO,%l,%1,CURPLACES),words(r(1)))] empty places,15)] [space(3)] [setq(2,sort(iter(r(1),name(##))))][ljust(mid(extract(r(2),1,1),0,14),14)] [ljust(mid(extract(r(2),2,1),0,14),14)] [ljust(mid(extract(r(2),3,1),0,14),14)][switch(gt(words(r(2)),3),1,ulocal(NAME_3COL_FN,extract(r(2),4,3999)))]"
 >423
-"$ttooc *:@pemit/list [setq(0,ulocal(WHICHPLACE,%l,%#))][switch(r(0),0,%#[setq(1,You'll need to join a place first.)],[extract(get(%l/PLACENUMS),r(0),1,|)][setq(1,<OOC> [ulocal(GETINFO,%l,r(0),PREFIX)]%, [switch(%0,:*,%N [delete(%0,0,1)],;*,%N[delete(%0,0,1)],\"*,%N says \"[delete(%0,0,1)]\",|*,delete(%0,0,1),%N says \"%0\")])])]=r(1);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(1)]"
+"[fold(NAME_3AUX_FN,rest(%0),%r[space(33)][ljust(mid(first(%0),0,14),15)])]"
 >424
-"[match(get(%0/PLACENUMS), *%1%b*, |)]"
+"%0[switch(mod(words(%0),4),0,%r[space(33)][ljust(mid(%1,0,14),15)],[ljust(mid(%1,0,14),15)])]"
 >425
-"[extract(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIPTION,%2),1,|)]"
+"$plook *:@pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,%r[capstr(ulocal(GETINFO,%l,%0,NAME))]:%r[ulocal(GETINFO,%l,edit(%0,#,),DESCRIPTION)])"
 >426
-"[replace(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIBE,%2),%3,|)]"
+"$tt *:@pemit/list [setq(0,ulocal(WHICHPLACE,%l,%#))][switch(r(0),0,%#[setq(1,You'll need to join a place first.)],[extract(get(%l/PLACENUMS),r(0),1,|)][setq(1,\\{[ulocal(GETINFO,%l,r(0),PREFIX)], [switch(%0,:*,%N [delete(%0,0,1)],;*,%N[delete(%0,0,1)],\"*,%N says \"[delete(%0,0,1)]\",|*,delete(%0,0,1),%N says \"%0\")]\\})])]=r(1);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(1)]"
 >427
-"[extract(get(%0/PLACENUMS), %1, 1, |)]"
+"$ttooc *:@pemit/list [setq(0,ulocal(WHICHPLACE,%l,%#))][switch(r(0),0,%#[setq(1,You'll need to join a place first.)],[extract(get(%l/PLACENUMS),r(0),1,|)][setq(1,<OOC> [ulocal(GETINFO,%l,r(0),PREFIX)]%, [switch(%0,:*,%N [delete(%0,0,1)],;*,%N[delete(%0,0,1)],\"*,%N says \"[delete(%0,0,1)]\",|*,delete(%0,0,1),%N says \"%0\")])])]=r(1);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(1)]"
+>428
+"[match(get(%0/PLACENUMS), *%1%b*, |)]"
+>429
+"[extract(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIPTION,%2),1,|)]"
 >430
-"[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,extract(get(%0/PLACENUMS), %1, 1, |),PERMISSION DENIED)]"
+"[replace(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIBE,%2),%3,|)]"
 >431
-"[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,extract(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX,%2),1,|),PERMISSION DENIED)]"
->432
-"[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,match(get(%0/PLACENUMS), *%1%b*, |),PERMISSION DENIED)]"
->433
-"$mutter *=*: @remit [setq(0,locate(%#,%0,nimP))][switch(r(0),#-1,XX,#-2,XX,%l)]={[switch(%1,:* \"*\"*,{%N [first(delete(%1,0,1),\")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},:*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},;* \"*\"*,{%N[first(delete(%1,0,1),\")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},;*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},{[setq(1,ulocal(MUTTER_FN,%1))]%N mutters to [switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})]})]};@pemit %#[setq(2,edit(edit(%1,<,),>,))]=switch(r(0),#-1,I don't see that here.,#-2,I'm not sure which %0 you mean.,ulocal(MUTTER_FROM_FN,%#,r(0),r(2)));@pemit [switch(r(0),%#,XX,r(0))]=ulocal(MUTTER_TO_FN,%#,r(0),r(2))"
+"[extract(get(%0/PLACENUMS), %1, 1, |)]"
 >434
-"$mutter/place *=*: @switch and(gte(%0,1),lte(%0,get(%l/PLACESMAX)))=0, {@pemit %#=There is no such place here.},{@remit %l={[switch(%1,:* \"*\"*,{%N [first(delete(%1,0,1),\")]%S mutters to [PlaceInfo(%l,%0,NAME)][setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},:*,{%N mutters to [PlaceInfo(%l,%0,NAME)],},;* \"*\"*,{%N[first(delete(%1,0,1),\")]%S mutters to [PlaceInfo(%l,%0,NAME)][setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},;*,{%N mutters to [PlaceInfo(%l,%0,NAME)]},{[setq(1,ulocal(MUTTER_FN,%1))]%N mutters to [PlaceInfo(%l,%0,NAME)][switch(r(1),....,.,{, \"[r(1)]\"})]})]};@pemit/list [setq(2,edit(edit(%1,<,),>,))][setq(3,{[PlaceInfo(%l,%0,PREFIX)], [switch(r(2),:*,%N [delete(r(2),0,1)],;*,%N[delete(r(2),0,1)],%N says \"[r(2)]\")]})][setunion(AtPlace(%l,%0),%#)]=r(3)}"
+"[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,extract(get(%0/PLACENUMS), %1, 1, |),PERMISSION DENIED)]"
 >435
-"$mutter/tt *=*: @switch/first [setq(0,locate(%#,%0,nimP))][r(0)] [setq(9,WhichPlace(%l,%#))][switch(r(9),0,setq(9,WhichPlace(%l,r(0))))][r(9)]=#-1 *, {@pemit %#=I don't see that here.},#-2 *, {@pemit %#=I'm not sure which %0 you mean.},* 0, {@pemit %#=Neither you nor [name(r(0))] is at a special place.},{@pemit/list [setq(8,{[PlaceInfo(%l,r(9),PREFIX)], [switch(%1,:* \"*\"*,{%N [first(delete(%1,0,1),\")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},:*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},;* \"*\"*,{%N[first(delete(%1,0,1),\")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},;*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},{[setq(1,ulocal(MUTTER_FN,%1))]%N mutters to [switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})]})]})][setunion(AtPlace(%l,r(9)),%# [r(0)])]=r(8);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(8)]@pemit %#=[setq(2,edit(edit(%1,<,),>,))][ulocal(MUTTER_FROM_FN,%#,r(0),r(2))];@pemit r(0)=ulocal(MUTTER_TO_FN,%#,r(0),r(2))}"
+"[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,extract(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX,%2),1,|),PERMISSION DENIED)]"
 >436
-"$+spy *:@switch/first [member(get([parent(me)]/CANSPY),%#)]:[words(get(%l/PLACESMAX))]:[and(gte(%0,0),lte(%0,get(%l/PLACESMAX)))]:[member(get(%L/SPYOK),Yes)]=0:*:*:*,{@pemit %#=You can't do that.},*:0:*:*,{@pemit %#=There aren't any special places here.},*:*:0:*,{@pemit %#=Invalid place number: '%0'.},*:*:*:0,{@pemit %#=Spying can not be used in this room.},{@switch %0=0,{@unlock %#/SPYING;&SPYING %#;@Pemit %#=You cease listening to that place.},{@unlock %#/SPYING;&SPYING %#=%L %0;@lock %#/SPYING=me;@Pemit %#=You listen in on a nearby conversation.}}"
+"[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,match(get(%0/PLACENUMS), *%1%b*, |),PERMISSION DENIED)]"
 >437
-"$+spy/who:@switch isstaff(%#)=0,{@pemit %#=You're not authorized to do that.},{@pemit %#=[repeat(*,78)]%RCharacters currently possessing +spy capability:%R%R[iter(get([parent(me)]/CANSPY),switch(mod(member(get([parent(me)]/CANSPY),##),4),0,%R[ljust(name(##),15)],[ljust(name(##),15)]))]%R%R[repeat(*,78)]}"
+"$mutter *=*: @remit [setq(0,locate(%#,%0,nimP))][switch(r(0),#-1,XX,#-2,XX,%l)]={[switch(%1,:* \"*\"*,{%N [first(delete(%1,0,1),\")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},:*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},;* \"*\"*,{%N[first(delete(%1,0,1),\")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},;*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},{[setq(1,ulocal(MUTTER_FN,%1))]%N mutters to [switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})]})]};@pemit %#[setq(2,edit(edit(%1,<,),>,))]=switch(r(0),#-1,I don't see that here.,#-2,I'm not sure which %0 you mean.,ulocal(MUTTER_FROM_FN,%#,r(0),r(2)));@pemit [switch(r(0),%#,XX,r(0))]=ulocal(MUTTER_TO_FN,%#,r(0),r(2))"
 >438
-"$+spy/add *:@switch orflags(%#,W)=0,{@pemit %#=You're not authorized to do that.},{@switch member(get([parent(me)]/CANSPY),num(*%0))=0,{&CANSPY [parent(me)]=cat(get([parent(me)]/CANSPY),num(*%0));@pemit %#=[name(num(*%0))] has been cleared for spying.},{@pemit %#=That person is already cleared for spying.}}"
+"$mutter/place *=*: @switch and(gte(%0,1),lte(%0,get(%l/PLACESMAX)))=0, {@pemit %#=There is no such place here.},{@remit %l={[switch(%1,:* \"*\"*,{%N [first(delete(%1,0,1),\")]%S mutters to [PlaceInfo(%l,%0,NAME)][setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},:*,{%N mutters to [PlaceInfo(%l,%0,NAME)],},;* \"*\"*,{%N[first(delete(%1,0,1),\")]%S mutters to [PlaceInfo(%l,%0,NAME)][setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},;*,{%N mutters to [PlaceInfo(%l,%0,NAME)]},{[setq(1,ulocal(MUTTER_FN,%1))]%N mutters to [PlaceInfo(%l,%0,NAME)][switch(r(1),....,.,{, \"[r(1)]\"})]})]};@pemit/list [setq(2,edit(edit(%1,<,),>,))][setq(3,{[PlaceInfo(%l,%0,PREFIX)], [switch(r(2),:*,%N [delete(r(2),0,1)],;*,%N[delete(r(2),0,1)],%N says \"[r(2)]\")]})][setunion(AtPlace(%l,%0),%#)]=r(3)}"
 >439
+"$mutter/tt *=*: @switch/first [setq(0,locate(%#,%0,nimP))][r(0)] [setq(9,WhichPlace(%l,%#))][switch(r(9),0,setq(9,WhichPlace(%l,r(0))))][r(9)]=#-1 *, {@pemit %#=I don't see that here.},#-2 *, {@pemit %#=I'm not sure which %0 you mean.},* 0, {@pemit %#=Neither you nor [name(r(0))] is at a special place.},{@pemit/list [setq(8,{[PlaceInfo(%l,r(9),PREFIX)], [switch(%1,:* \"*\"*,{%N [first(delete(%1,0,1),\")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},:*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},;* \"*\"*,{%N[first(delete(%1,0,1),\")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,\")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})] [rest(rest(%1,\"),\")]},;*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},{[setq(1,ulocal(MUTTER_FN,%1))]%N mutters to [switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, \"[r(1)]\"})]})]})][setunion(AtPlace(%l,r(9)),%# [r(0)])]=r(8);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(8)]@pemit %#=[setq(2,edit(edit(%1,<,),>,))][ulocal(MUTTER_FROM_FN,%#,r(0),r(2))];@pemit r(0)=ulocal(MUTTER_TO_FN,%#,r(0),r(2))}"
+>440
+"$+spy *:@switch/first [member(get([parent(me)]/CANSPY),%#)]:[words(get(%l/PLACESMAX))]:[and(gte(%0,0),lte(%0,get(%l/PLACESMAX)))]:[member(get(%L/SPYOK),Yes)]=0:*:*:*,{@pemit %#=You can't do that.},*:0:*:*,{@pemit %#=There aren't any special places here.},*:*:0:*,{@pemit %#=Invalid place number: '%0'.},*:*:*:0,{@pemit %#=Spying can not be used in this room.},{@switch %0=0,{@unlock %#/SPYING;&SPYING %#;@Pemit %#=You cease listening to that place.},{@unlock %#/SPYING;&SPYING %#=%L %0;@lock %#/SPYING=me;@Pemit %#=You listen in on a nearby conversation.}}"
+>441
+"$+spy/who:@switch isstaff(%#)=0,{@pemit %#=You're not authorized to do that.},{@pemit %#=[repeat(*,78)]%RCharacters currently possessing +spy capability:%R%R[iter(get([parent(me)]/CANSPY),switch(mod(member(get([parent(me)]/CANSPY),##),4),0,%R[ljust(name(##),15)],[ljust(name(##),15)]))]%R%R[repeat(*,78)]}"
+>442
+"$+spy/add *:@switch orflags(%#,W)=0,{@pemit %#=You're not authorized to do that.},{@switch member(get([parent(me)]/CANSPY),num(*%0))=0,{&CANSPY [parent(me)]=cat(get([parent(me)]/CANSPY),num(*%0));@pemit %#=[name(num(*%0))] has been cleared for spying.},{@pemit %#=That person is already cleared for spying.}}"
+>443
 "$+spy/remove *:@switch orflags(%#,W)=0,{@pemit %#=You're not authorized to do that.},{@switch member(get([parent(me)]/CANSPY),num(*%0))=0,{@pemit %#=That person is not in the Master Spy List.},{&CANSPY [parent(me)]=remove(get([parent(me)]/CANSPY),num(*%0));@pemit %#=[name(num(*%0))] is removed from the Master Spy List.}}"
 >19
 "@dolist lattr(me/FUNC_*)=@function/privileged after(##,FUNC_)=me/##"
@@ -1018,28 +1028,28 @@
 0
 0
 >258
-"SGP-Y2K|Base|Jan 05 2001"
+"SGP-Y2K|Base|Apr 26 2001"
 >259
 "Y2K"
 >6
 "This evaluator can be used with @verb to send literal messages with correct substitutions. To use it, go @verb [num(me)]=<actor>,eval_msg,,oeval_msg,,%{<msg>,<omsg>%}%rExtra arguments may be passed via setq(), and recovered in msg, omsg via %[r(X)%]."
->428
+>432
 "[s(%0)]"
->429
+>433
 "[s(%1)]"
->440
-"[edit(ulocal(DOTS_FN,ulocal(SELECT_WORDS_FN,%0)),%b...,...)]"
->441
-"[switch(%2,:*,{You sense [name(%0)] [delete(%2,0,1)]},;*,{You sense [name(%0)][delete(%2,0,1)]},{[name(%0)] whispers \"%2\"})]"
->442
-"[switch(%0,%1,switch(%2,:*,{You sense \"[name(%0)] [delete(%2,0,1)]\"},;*,{You sense \"[name(%0)][delete(%2,0,1)]\"},{You mutter to yourself, \"%2\"}),switch(%2,:*,{[name(%1)] senses \"[name(%0)] [delete(%2,0,1)]\"},;*,{[name(%1)] senses \"[name(%0)][delete(%2,0,1)]\"},{You whisper \"%2\" to [name(%1)].}))]"
->443
-"[switch(%0,*... ...*,ulocal(DOTS_FN,edit(%0,... ...,...)),%0)]"
 >444
-"[switch(%0,*<*>*,[map(KILL_WORDS_FN,before(%0,<))] [before(after(%0,<),>)] [ulocal(SELECT_WORDS_FN,after(%0,>))],map(KILL_WORDS_FN,%0))]"
+"[edit(ulocal(DOTS_FN,ulocal(SELECT_WORDS_FN,%0)),%b...,...)]"
 >445
-"[switch([rand(3)]%0,0,,1,,2,,0*,%0,...)]"
+"[switch(%2,:*,{You sense [name(%0)] [delete(%2,0,1)]},;*,{You sense [name(%0)][delete(%2,0,1)]},{[name(%0)] whispers \"%2\"})]"
 >446
+"[switch(%0,%1,switch(%2,:*,{You sense \"[name(%0)] [delete(%2,0,1)]\"},;*,{You sense \"[name(%0)][delete(%2,0,1)]\"},{You mutter to yourself, \"%2\"}),switch(%2,:*,{[name(%1)] senses \"[name(%0)] [delete(%2,0,1)]\"},;*,{[name(%1)] senses \"[name(%0)][delete(%2,0,1)]\"},{You whisper \"%2\" to [name(%1)].}))]"
+>447
+"[switch(%0,*... ...*,ulocal(DOTS_FN,edit(%0,... ...,...)),%0)]"
+>448
+"[switch(%0,*<*>*,[map(KILL_WORDS_FN,before(%0,<))] [before(after(%0,<),>)] [ulocal(SELECT_WORDS_FN,after(%0,>))],map(KILL_WORDS_FN,%0))]"
+>449
+"[switch([rand(3)]%0,0,,1,,2,,0*,%0,...)]"
+>450
 "#1"
 <
 ***END OF DUMP***
