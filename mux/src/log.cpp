@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.12 2002-07-23 05:36:13 jake Exp $
+// $Id: log.cpp,v 1.13 2002-07-23 14:04:16 jake Exp $
 //
 
 #include "copyright.h"
@@ -239,16 +239,6 @@ void log_type_and_name(dbref thing)
         log_text(Name(thing));
     }
     log_text(")");
-    return;
-}
-
-void log_type_and_num(dbref thing)
-{
-    char nbuf[16];
-
-    log_text(OBJTYP(thing));
-    sprintf(nbuf, " #%d", thing);
-    log_text(nbuf);
     return;
 }
 

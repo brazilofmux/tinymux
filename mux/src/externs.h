@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.34 2002-07-23 05:36:13 jake Exp $
+// $Id: externs.h,v 1.35 2002-07-23 14:04:16 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -19,18 +19,10 @@ extern int  cf_modify_bits(int *, char *, void *, UINT32, dbref, char *);
 /* From mail.cpp */
 extern void load_mail(FILE *);
 extern int  dump_mail(FILE *);
-extern void mail_init(void);
 extern struct mail *mail_fetch(dbref, int);
 
 /* From netcommon.cpp */
-extern void make_ulist(dbref, char *, char **, BOOL);
-extern void make_port_ulist(dbref, char *, char **);
-extern int fetch_session(dbref target);
-extern int fetch_idle(dbref target);
-extern int fetch_connect(dbref target);
 extern void DCL_CDECL raw_broadcast(int, char *, ...);
-extern const char *time_format_1(int Seconds);
-extern const char *time_format_2(int Seconds);
 
 /* From cque.cpp */
 extern int  nfy_que(dbref, int, int, int);
@@ -84,7 +76,6 @@ extern void notify_except2(dbref, dbref, dbref, dbref, const char *);
 extern void notify_check(dbref, dbref, const char *, int);
 #endif
 
-extern BOOL check_filter(dbref, dbref, int, const char *);
 extern BOOL Hearer(dbref);
 extern void report(void);
 extern int  atr_match(dbref, dbref, char, char *, BOOL);
@@ -103,7 +94,6 @@ extern void dump_database_internal(int);
 
 /* From help.cpp */
 extern void helpindex_clean(CHashTable *htab);
-extern int  helpindex_read(CHashTable *, char *);
 extern void helpindex_load(dbref);
 extern void helpindex_init(void);
 
@@ -125,7 +115,6 @@ extern void log_number(int);
 extern void log_name(dbref);
 extern void log_name_and_loc(dbref);
 extern void log_type_and_name(dbref);
-extern void log_type_and_num(dbref);
 
 /* From look.cpp */
 extern void look_in(dbref,dbref, int);
@@ -134,7 +123,6 @@ extern void show_vrml_url(dbref, dbref);
 /* From move.cpp */
 extern void move_object(dbref, dbref);
 extern void move_via_generic(dbref, dbref, dbref, int);
-extern void move_via_exit(dbref, dbref, dbref, dbref, int);
 extern BOOL move_via_teleport(dbref, dbref, dbref, int);
 extern void move_exit(dbref, dbref, BOOL, const char *, int);
 extern void do_enter_internal(dbref, dbref, BOOL);
@@ -151,8 +139,6 @@ extern void  destroy_obj(dbref);
 extern void  empty_obj(dbref);
 
 /* From player.cpp */
-extern void record_login(dbref, BOOL, char *, char *, char *, char *);
-extern dbref connect_player(char *, char *, char *, char *, char *);
 extern dbref create_player(char *, char *, dbref, BOOL, BOOL);
 extern BOOL add_player_name(dbref, char *);
 extern BOOL delete_player_name(dbref, char *);
@@ -212,8 +198,6 @@ extern BOOL xlate(char *);
 extern char *trim_space_sep(char *, char);
 extern char *trim_space_sep_LEN(char *str, int nStr, char sep, int *nTrim);
 extern char *next_token(char *str, char sep);
-extern char *next_token_LEN(char *str, int *nStr, char sep);
-extern char *split_token_LEN(char **sp, int *nStr, char sep, int *nToken);
 extern char *split_token(char **sp, char sep);
 
 #ifdef HAVE_IEEE_FP_FORMAT
@@ -268,7 +252,6 @@ extern void fwdlist_set(dbref, FWDLIST *);
 extern void fwdlist_clr(dbref);
 extern int  fwdlist_rewrite(FWDLIST *, char *);
 extern FWDLIST *fwdlist_get(dbref);
-extern void clone_object(dbref, dbref);
 extern void atr_push(void);
 extern void atr_pop(void);
 extern int  atr_head(dbref, char **);
@@ -280,7 +263,6 @@ extern void atr_clr(dbref, int);
 extern void atr_add_raw_LEN(dbref, int, char *, int);
 extern void atr_add_raw(dbref, int, char *);
 extern void atr_add(dbref, int, char *, dbref, int);
-extern void atr_set_owner(dbref, int, dbref);
 extern void atr_set_flags(dbref, int, int);
 extern char *atr_get_raw_LEN(dbref, int, int*);
 extern char *atr_get_raw(dbref, int);
@@ -693,7 +675,6 @@ extern void do_say(dbref executor, dbref caller, dbref enactor, int key,
 extern int  boot_off(dbref player, const char *message);
 extern void do_mail_clear(dbref player, char *msglist);
 extern void do_mail_purge(dbref player);
-extern char *upcasestr(char *);
 extern void raw_notify_html(dbref player, const char *msg);
 extern void do_lock(dbref executor, dbref caller, dbref enactor, int key,
                     int nargs, char *name, char *keytext);

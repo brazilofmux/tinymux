@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.34 2002-07-19 12:41:08 jake Exp $
+// $Id: funceval.cpp,v 1.35 2002-07-23 14:04:16 jake Exp $
 //
 
 #include "copyright.h"
@@ -783,7 +783,7 @@ FUNCTION(fun_zfun)
 
     // Find the user function attribute.
     //
-    int attrib = get_atr(upcasestr(fargs[0]));
+    int attrib = get_atr(fargs[0]);
     if (!attrib)
     {
         safe_str("#-1 NO SUCH USER FUNCTION", buff, bufc);

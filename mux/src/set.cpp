@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.25 2002-07-14 07:38:08 jake Exp $
+// $Id: set.cpp,v 1.26 2002-07-23 14:04:16 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -740,7 +740,9 @@ void do_chown
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        atr_set_owner(thing, atr, nOwnerNew);
+        char *buff = atr_get(thing, atr, &aowner, &aflags);
+        atr_add(thing, atr, buff, nOwnerNew, aflags);
+        free_lbuf(buff);
         if (!Quiet(executor))
         {
             notify_quiet(executor, "Attribute owner changed.");

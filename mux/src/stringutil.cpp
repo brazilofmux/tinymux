@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.14 2002-07-23 12:29:14 jake Exp $
+// $Id: stringutil.cpp,v 1.15 2002-07-23 14:04:16 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1359,31 +1359,15 @@ char *translate_string(const char *szString, BOOL bConvert)
     return szTranslatedString;
 }
 
-/*
- * capitalizes an entire string
- */
-
-char *upcasestr(char *s)
-{
-    if (s)
-    {
-        _strupr(s);
-    }
-    return s;
-}
-
-/*
- * ---------------------------------------------------------------------------
- * * munge_space: Compress multiple spaces to one space, also remove leading and
- * * trailing spaces.
+/* ---------------------------------------------------------------------------
+ * munge_space: Compress multiple spaces to one space, also remove leading and
+ * trailing spaces.
  */
 char *munge_space(char *string)
 {
-    char *buffer, *p, *q;
-
-    buffer = alloc_lbuf("munge_space");
-    p = string;
-    q = buffer;
+    char *buffer = alloc_lbuf("munge_space");
+    char *p = string;
+    char *q = buffer;
 
     if (p)
     {
@@ -1413,16 +1397,14 @@ char *munge_space(char *string)
     return buffer;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * trim_spaces: Remove leading and trailing spaces.
+/* ---------------------------------------------------------------------------
+ * trim_spaces: Remove leading and trailing spaces.
  */
 char *trim_spaces(char *string)
 {
-    char *buffer, *p, *q;
-    buffer = alloc_lbuf("trim_spaces");
-    p = string;
-    q = buffer;
+    char *buffer = alloc_lbuf("trim_spaces");
+    char *p = string;
+    char *q = buffer;
 
     if (p)
     {

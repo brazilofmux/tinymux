@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.3 2002-07-13 07:23:01 jake Exp $
+// $Id: htab.cpp,v 1.4 2002-07-23 14:04:16 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -297,11 +297,8 @@ void display_nametab(dbref player, NAMETAB *ntab, char *prefix, BOOL list_if_non
 {
     char *buf, *bp, *cp;
     NAMETAB *nt;
-    BOOL got_one;
+    BOOL got_one = FALSE;
 
-    buf = alloc_lbuf("display_nametab");
-    bp = buf;
-    got_one = FALSE;
     for (cp = prefix; *cp; cp++)
         *bp++ = *cp;
     for (nt = ntab; nt->name; nt++)
@@ -322,11 +319,8 @@ void display_nametab(dbref player, NAMETAB *ntab, char *prefix, BOOL list_if_non
     free_lbuf(buf);
 }
 
-
-
-/*
- * ---------------------------------------------------------------------------
- * * interp_nametab: Print values for flags defined in name table.
+/* ---------------------------------------------------------------------------
+ * interp_nametab: Print values for flags defined in name table.
  */
 
 void interp_nametab(dbref player, NAMETAB *ntab, int flagword, const char *prefix, const char *true_text, const char *false_text)
@@ -364,22 +358,19 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword, const char *prefi
     free_lbuf(buf);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * listset_nametab: Print values for flags defined in name table.
+/* ---------------------------------------------------------------------------
+ * listset_nametab: Print values for flags defined in name table.
  */
 
 void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, BOOL list_if_none)
 {
     char *buf, *bp, *cp;
-    NAMETAB *nt;
-    BOOL got_one;
-
     buf = bp = alloc_lbuf("listset_nametab");
     for (cp = prefix; *cp; cp++)
         *bp++ = *cp;
-    nt = ntab;
-    got_one = FALSE;
+
+    NAMETAB *nt = ntab;
+    BOOL got_one = FALSE;
     while (nt->name)
     {
         if (  ((flagword & nt->flag) != 0)
@@ -395,13 +386,14 @@ void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, BO
     }
     *bp = '\0';
     if (got_one || list_if_none)
+    {
         notify(player, buf);
+    }
     free_lbuf(buf);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_ntab_access: Change the access on a nametab entry.
+/* ---------------------------------------------------------------------------
+ * cf_ntab_access: Change the access on a nametab entry.
  */
 
 CF_HAND(cf_ntab_access)
@@ -409,12 +401,19 @@ CF_HAND(cf_ntab_access)
     NAMETAB *np;
     char *ap;
 
-    for (ap = str; *ap && !Tiny_IsSpace[(unsigned char)*ap]; ap++) ;
+    for (ap = str; *ap && !Tiny_IsSpace[(unsigned char)*ap]; ap++)
+    {
+        ; // Nothing.
+    }
     if (*ap)
+    {
         *ap++ = '\0';
+    }
 
     while (Tiny_IsSpace[(unsigned char)*ap])
+    {
         ap++;
+    }
 
     for (np = (NAMETAB *) vp; np->name; np++)
     {

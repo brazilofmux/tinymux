@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.20 2002-07-23 05:36:12 jake Exp $
+// $Id: db.cpp,v 1.21 2002-07-23 14:04:16 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1732,17 +1732,6 @@ void atr_add(dbref thing, int atr, char *buff, dbref owner, int flags)
     }
 }
 
-void atr_set_owner(dbref thing, int atr, dbref owner)
-{
-    dbref aowner;
-    int aflags;
-    char *buff;
-
-    buff = atr_get(thing, atr, &aowner, &aflags);
-    atr_add(thing, atr, buff, owner, aflags);
-    free_lbuf(buff);
-}
-
 void atr_set_flags(dbref thing, int atr, dbref flags)
 {
     dbref aowner;
@@ -1967,7 +1956,7 @@ BOOL atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
 #endif // !STANDALONE
 
 /* ---------------------------------------------------------------------------
- * atr_free: Return all attributes of an object.
+ * atr_free: Reset all attributes of an object.
  */
 
 void atr_free(dbref thing)
@@ -2792,11 +2781,6 @@ BOOLEXP *dup_bool(BOOLEXP *b)
         return TRUE_BOOLEXP;
     }
     return (r);
-}
-
-void clone_object(dbref a, dbref b)
-{
-    memcpy(&db[a], &db[b], sizeof(struct object));
 }
 
 #ifndef MEMORY_BASED

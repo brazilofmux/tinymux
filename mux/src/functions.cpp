@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.67 2002-07-21 02:35:25 sdennis Exp $
+// $Id: functions.cpp,v 1.68 2002-07-23 14:04:16 jake Exp $
 //
 
 #include "copyright.h"
@@ -2436,11 +2436,10 @@ BOOL xlate(char *arg)
     return TRUE;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_index:  like extract(), but it works with an arbitrary separator.
- * * index(a b | c d e | f gh | ij k, |, 2, 1) => c d e
- * * index(a b | c d e | f gh | ij k, |, 2, 2) => c d e | f g h
+/* ---------------------------------------------------------------------------
+ * fun_index:  like extract(), but it works with an arbitrary separator.
+ * index(a b | c d e | f g h | i j k, |, 2, 1) => c d e
+ * index(a b | c d e | f g h | i j k, |, 2, 2) => c d e | f g h
  */
 
 FUNCTION(fun_index)
@@ -2724,6 +2723,10 @@ FUNCTION(fun_and)
     for (int i = 0; i < nfargs; i++)
     {
         val = val && Tiny_atol(fargs[i]);
+        if (!val)
+        {
+            break;
+        }
     }
     safe_bool(val, buff, bufc);
 }
@@ -2734,6 +2737,38 @@ FUNCTION(fun_or)
     for (int i = 0; i < nfargs; i++)
     {
         val = val || Tiny_atol(fargs[i]);
+        if (val)
+        {
+            break;
+        }
+    }
+    safe_bool(val, buff, bufc);
+}
+
+FUNCTION(fun_andbool)
+{
+    BOOL val = TRUE;
+    for (int i = 0; i < nfargs; i++)
+    {
+        val = val && xlate(fargs[i]);
+        if (!val)
+        {
+            break;
+        }
+    }
+    safe_bool(val, buff, bufc);
+}
+
+FUNCTION(fun_orbool)
+{
+    BOOL val = FALSE;
+    for (int i = 0; i < nfargs; i++)
+    {
+        val = val || xlate(fargs[i]);
+        if (val)
+        {
+            break;
+        }
     }
     safe_bool(val, buff, bufc);
 }
@@ -7714,6 +7749,7 @@ FUN flist[] =
     {"ALPHAMAX", fun_alphamax, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"ALPHAMIN", fun_alphamin, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"AND",      fun_and,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"ANDBOOL",  fun_andbool,  MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"ANDFLAGS", fun_andflags, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ANSI",     fun_ansi,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"APOSS",    fun_aposs,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
@@ -7896,6 +7932,7 @@ FUN flist[] =
     {"OBJMEM",   fun_objmem,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"OEMIT",    fun_oemit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"OR",       fun_or,       MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"ORBOOL",   fun_orbool,   MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"ORFLAGS",  fun_orflags,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"OWNER",    fun_owner,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"PACK",     fun_pack,     MAX_ARG, 1,  2,       0, CA_PUBLIC},

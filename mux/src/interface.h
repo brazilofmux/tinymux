@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.12 2002-07-23 05:36:13 jake Exp $
+// $Id: interface.h,v 1.13 2002-07-23 14:04:16 jake Exp $
 //
 
 #include "copyright.h"
@@ -167,8 +167,15 @@ extern void BuildSignalNamesTable(void);
 #endif // !SYS_SIGLIST_DECLARED
 extern void set_signals(void);
 
-/* from netcommon.c */
+// from netcommon.cpp
 
+extern void make_ulist(dbref, char *, char **, BOOL);
+extern void make_port_ulist(dbref, char *, char **);
+extern int fetch_session(dbref target);
+extern int fetch_idle(dbref target);
+extern int fetch_connect(dbref target);
+extern const char *time_format_1(int Seconds);
+extern const char *time_format_2(int Seconds);
 extern CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
 extern void raw_notify(dbref, const char *);
 extern void raw_notify_newline(dbref);
@@ -190,6 +197,10 @@ extern dbref  find_connected_name(dbref, char *);
 
 #define alloc_desc(s) (DESC *)pool_alloc(POOL_DESC,s)
 #define free_desc(b) pool_free(POOL_DESC,(char *)(b))
+
+// From player.cpp
+extern void record_login(dbref, BOOL, char *, char *, char *, char *);
+extern dbref connect_player(char *, char *, char *, char *, char *);
 
 #define DESC_ITER_PLAYER(p,d) \
     for (d=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab); d; d = d->hashnext)

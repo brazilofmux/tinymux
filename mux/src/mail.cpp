@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.21 2002-07-23 12:38:18 jake Exp $
+// $Id: mail.cpp,v 1.22 2002-07-23 14:04:16 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2123,7 +2123,7 @@ static int get_folder_number(dbref player, char *name)
     char *pat = alloc_lbuf("get_folder_num_pat");
     char *bp = pat;
     strcpy(str, atrstr);
-    safe_tprintf_str(pat, &bp, ":%s:", upcasestr(name));
+    safe_tprintf_str(pat, &bp, ":%s:", _strupr(name));
     char *res = strstr(str, pat);
     if (!res)
     {
@@ -2196,7 +2196,7 @@ void add_folder_name(dbref player, int fld, char *name)
     char *str  = alloc_lbuf("add_folder_name.str");
     char *tbuf = alloc_lbuf("add_folder_name.tbuf");
 
-    sprintf(new0, "%d:%s:%d ", fld, upcasestr(name), fld);
+    sprintf(new0, "%d:%s:%d ", fld, _strupr(name), fld);
     sprintf(pat, "%d:", fld);
 
     // get the attrib and the old string, if any

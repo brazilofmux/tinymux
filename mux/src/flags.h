@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.13 2002-07-23 05:36:13 jake Exp $
+// $Id: flags.h,v 1.14 2002-07-23 14:04:16 jake Exp $
 //
 
 #include "copyright.h"
@@ -159,7 +159,6 @@ extern void init_flagtab(void);
 extern void display_flagtab(dbref);
 extern void flag_set(dbref, dbref, char *, int);
 extern char *flag_description(dbref, dbref);
-extern FLAGNAMEENT *find_flag(dbref, char *);
 extern char *decode_flags(dbref, FLAGSET *);
 extern BOOL has_flag(dbref, dbref, char *);
 extern char *unparse_object(dbref, dbref, BOOL);
@@ -359,9 +358,8 @@ extern char *MakeCanonicalFlagName
                             mudstate.markbits->chunk[i]=0x0;}
 #define Link_exit(p,x)      ((Typeof(x) == TYPE_EXIT) && \
                             ((Location(x) == NOTHING) || Controls(p,x)))
-#define Linkable(p,x)       (Good_obj(x) && (Has_contents(x)) && \
-                            (((Flags(x) & LINK_OK) != 0) || \
-                            Controls(p,x)))
+#define Linkable(p,x)       (Good_obj(x) && Has_contents(x) && \
+                            (((Flags(x) & LINK_OK) != 0) || Controls(p,x)))
 #define See_attr(p,x,a)     (!((a)->flags & AF_IS_LOCK) && bCanReadAttr(p,x,a,FALSE))
 #define See_attr_explicit(p,x,a,o,f) (!((a)->flags & (AF_INTERNAL|AF_IS_LOCK)) && \
                             (((f) & AF_VISUAL) || (Owner(p) == (o)) && \
