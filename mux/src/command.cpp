@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.61 2002-08-03 07:41:36 sdennis Exp $
+// $Id: command.cpp,v 1.62 2002-08-05 22:20:30 jake Exp $
 //
 
 #include "copyright.h"
@@ -954,7 +954,7 @@ char *hook_name(char *pCommand, int key)
 
     const char *cmdName = pCommand;
     if (  pCommand[0]
-       && !pCommand[0])
+       && !pCommand[1])
     {
         switch (pCommand[0])
         {
@@ -4069,12 +4069,12 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
     BOOL negate, found;
     char *s_ptr, *s_ptrbuff, *cbuff, *p, *q;
     CMDENT *cmdp = (CMDENT *)NULL;
-    
+
     if (  (  key 
        && !(key & HOOK_LIST))
        || (  (  !key 
-       || (key & HOOK_LIST)) 
-       && *name) )
+             || (key & HOOK_LIST))
+          && *name) )
     {
         cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
         if (!cmdp)
@@ -4089,7 +4089,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
         notify(executor, "@hook: Incompatible switches.");
         return;
     }
-    
+
     if (key & HOOK_CLEAR)
     {
         negate = TRUE;
@@ -4100,7 +4100,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
     {
         negate = FALSE;
     }
-    
+
     if (key & (HOOK_BEFORE|HOOK_AFTER|HOOK_PERMIT|HOOK_IGNORE|HOOK_IGSWITCH|HOOK_AFAIL))
     {
         if (negate)
@@ -4264,7 +4264,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                 }
                 s_ptrbuff[0] = '\0';
                 s_ptr = s_ptrbuff;            
-                
+
                 p = cbuff;
                 *p++ = '@';
                 for (q = (char *) ap->name; *q; p++, q++)
