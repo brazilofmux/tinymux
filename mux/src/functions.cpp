@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.13 2002-06-12 01:24:46 raevnos Exp $
+// $Id: functions.cpp,v 1.14 2002-06-12 14:48:45 jake Exp $
 //
 
 #include "copyright.h"
@@ -4931,36 +4931,37 @@ FUNCTION(fun_lnum)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_lattr: Return list of attributes I can see on the object.
+/* ---------------------------------------------------------------------------
+ * fun_lattr, fun_lattrp: Return list of attributes I can see on the object.
  */
 
-FUNCTION(fun_lattr)
+void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
+                   BOOL check_parent)
 {
     dbref thing;
-    int ca, first;
+    int ca;
+    BOOL bFirst;
     ATTR *attr;
 
     // Check for wildcard matching.  parse_attrib_wild checks for read
     // permission, so we don't have to.  Have p_a_w assume the
     // slash-star if it is missing.
     //
-    first = 1;
+    bFirst = TRUE;
     olist_push();
-    if (parse_attrib_wild(executor, fargs[0], &thing, 0, 0, 1))
+    if (parse_attrib_wild(executor, fargs[0], &thing, check_parent, 0, 1))
     {
         for (ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
             attr = atr_num(ca);
             if (attr)
             {
-                if (!first)
+                if (!bFirst)
                 {
                     safe_chr(' ', buff, bufc);
                 }
-                first = 0;
-                safe_str((char *)attr->name, buff, bufc);
+                bFirst = FALSE;
+                safe_str(attr->name, buff, bufc);
             }
         }
     }
@@ -4971,6 +4972,15 @@ FUNCTION(fun_lattr)
     olist_pop();
 }
 
+FUNCTION(fun_lattr)
+{
+    lattr_handler(buff, bufc, executor, fargs, FALSE);
+}
+
+FUNCTION(fun_lattrp)
+{
+    lattr_handler(buff, bufc, executor, fargs, TRUE);
+}
 // ---------------------------------------------------------------------------
 // fun_attrcnt: Return number of attributes I can see on the object.
 // ---------------------------------------------------------------------------
@@ -7301,6 +7311,7 @@ FUN flist[] =
     {"LAST",     fun_last,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
     {"LATTR",    fun_lattr,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LATTRCMDS",fun_lattrcmds,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LATTRP",   fun_lattrp,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LCMDS",    fun_lcmds,    MAX_ARG, 1,  3,       0, CA_PUBLIC},
     {"LCON",     fun_lcon,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LCSTR",    fun_lcstr,    1,       1,  1,       0, CA_PUBLIC},
@@ -8388,7 +8399,7 @@ FUNCTION(fun_art)
         pcre_extra* reRuleStudy = (pcre_extra *) arRule->m_pRegexpStudy;
 
         if (pcre_exec(reRuleRegexp, reRuleStudy, fargs[0], strlen(fargs[0]),
-		      0, 0, ovec, ovecsize) > 0)
+              0, 0, ovec, ovecsize) > 0)
         {
             safe_str(arRule->m_bUseAn ? "an" : "a", buff, bufc);
             return;
