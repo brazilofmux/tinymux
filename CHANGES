@@ -79,6 +79,9 @@ Feature Additions:
  -- Allow GOD and WIZARD players to view logindata. From TM3.
  -- Added itemize() function.
  -- Changes for DEC Alpha Linux and IA64.
+ -- Added optional second parameter to indicate the angle units (Radians,
+    Degrees, and Gradians) to trigometric functions: sin(), cos(), tan(),
+    asin(), acos(), and atan(). Idea from Raevnos.
 
 Bug Fixes:
 ~~~~~~~~~

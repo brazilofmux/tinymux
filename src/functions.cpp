@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.144 2002-02-01 07:59:27 sdennis Exp $
+// $Id: functions.cpp,v 1.145 2002-02-03 08:31:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3118,17 +3118,71 @@ FUNCTION(fun_e)
     safe_str("2.718281828", buff, bufc);
 }
 
+static double ConvertRDG2R(double d, const char *szUnits)
+{
+    switch (Tiny_ToLower[(unsigned char)szUnits[0]])
+    {
+    case 'd':
+        // Degrees to Radians.
+        //
+        d *= 0.01745329251994329576;
+        break;
+
+    case 'g':
+        // Gradians to Radians.
+        //
+        d *= 0.01570796326794896619;
+        break;
+    }
+    return d;
+}
+
+static double ConvertR2RDG(double d, const char *szUnits)
+{
+    switch (Tiny_ToLower[(unsigned char)szUnits[0]])
+    {
+    case 'd':
+        // Radians to Degrees.
+        //
+        d *= 57.29577951308232087721;
+        break;
+
+    case 'g':
+        // Radians to Gradians.
+        //
+        d *= 63.66197723675813430801;
+        break;
+    }
+    return d;
+}
+
 FUNCTION(fun_sin)
 {
-    fval(buff, bufc, sin(Tiny_atof(fargs[0])));
+    double d = Tiny_atof(fargs[0]);
+    if (nfargs == 2)
+    {
+        d = ConvertRDG2R(d, fargs[1]);
+    }
+    fval(buff, bufc, sin(d));
 }
+
 FUNCTION(fun_cos)
 {
-    fval(buff, bufc, cos(Tiny_atof(fargs[0])));
+    double d = Tiny_atof(fargs[0]);
+    if (nfargs == 2)
+    {
+        d = ConvertRDG2R(d, fargs[1]);
+    }
+    fval(buff, bufc, cos(d));
 }
 FUNCTION(fun_tan)
 {
-    fval(buff, bufc, tan(Tiny_atof(fargs[0])));
+    double d = Tiny_atof(fargs[0]);
+    if (nfargs == 2)
+    {
+        d = ConvertRDG2R(d, fargs[1]);
+    }
+    fval(buff, bufc, tan(d));
 }
 
 FUNCTION(fun_exp)
@@ -3205,6 +3259,10 @@ FUNCTION(fun_log)
 FUNCTION(fun_asin)
 {
     double val = Tiny_atof(fargs[0]);
+    if (nfargs == 2)
+    {
+        val = ConvertR2RDG(val, fargs[1]);
+    }
 #ifdef HAVE_IEEE_FP_SNAN
     fval(buff, bufc, asin(val));
 #else
@@ -3222,6 +3280,10 @@ FUNCTION(fun_asin)
 FUNCTION(fun_acos)
 {
     double val = Tiny_atof(fargs[0]);
+    if (nfargs == 2)
+    {
+        val = ConvertR2RDG(val, fargs[1]);
+    }
 #ifdef HAVE_IEEE_FP_SNAN
     fval(buff, bufc, acos(val));
 #else
@@ -3238,7 +3300,12 @@ FUNCTION(fun_acos)
 
 FUNCTION(fun_atan)
 {
-    fval(buff, bufc, atan(Tiny_atof(fargs[0])));
+    double val = Tiny_atof(fargs[0]);
+    if (nfargs == 2)
+    {
+        val = ConvertR2RDG(val, fargs[1]);
+    }
+    fval(buff, bufc, atan(val));
 }
 
 FUNCTION(fun_dist2d)
@@ -6932,7 +6999,7 @@ FUN flist[] =
 {
     {"@@",       fun_null,           1, 1,  1, FN_NO_EVAL, CA_PUBLIC},
     {"ABS",      fun_abs,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ACOS",     fun_acos,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ACOS",     fun_acos,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"ADD",      fun_add,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"AFTER",    fun_after,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"ALPHAMAX", fun_alphamax, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
@@ -6942,8 +7009,8 @@ FUN flist[] =
     {"ANSI",     fun_ansi,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"APOSS",    fun_aposs,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ART",      fun_art,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ASIN",     fun_asin,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ATAN",     fun_atan,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ASIN",     fun_asin,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"ATAN",     fun_atan,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"ATTRCNT",  fun_attrcnt,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"BAND",     fun_band,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"BEEP",     fun_beep,     MAX_ARG, 0,  0,       0, CA_WIZARD},
@@ -6976,7 +7043,7 @@ FUN flist[] =
     {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CONVSECS", fun_convsecs, MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"CONVTIME", fun_convtime, MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"COS",      fun_cos,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"COS",      fun_cos,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"CTIME",    fun_ctime,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
@@ -7157,7 +7224,7 @@ FUN flist[] =
     {"SHR",      fun_shr,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"SHUFFLE",  fun_shuffle,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"SIGN",     fun_sign,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SIN",      fun_sin,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SIN",      fun_sin,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"SINGLETIME", fun_singletime, MAX_ARG, 1, 1,    0, CA_PUBLIC},
     {"SORT",     fun_sort,     MAX_ARG, 1,  4,       0, CA_PUBLIC},
     {"SORTBY",   fun_sortby,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
@@ -7179,7 +7246,7 @@ FUN flist[] =
     {"SWITCH",   fun_switch,   MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
     {"T",        fun_t,        1,       0,  1,       0, CA_PUBLIC},
     {"TABLE",    fun_table,    MAX_ARG, 1,  6,       0, CA_PUBLIC},
-    {"TAN",      fun_tan,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"TAN",      fun_tan,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"TEL",      fun_tel,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"TIME",     fun_time,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"TIMEFMT",  fun_timefmt,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
