@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.30 2000-09-05 20:28:53 sdennis Exp $
+// $Id: externs.h,v 1.31 2000-10-07 02:28:46 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -24,7 +24,7 @@ extern char regexp_errbuf[];
 extern int  cf_modify_bits(int *, char *, unsigned int, dbref, char *);
 
 /* From mail.cpp */
-extern int  FDECL(load_mail, (FILE *));
+extern void load_mail(FILE *);
 extern int  FDECL(dump_mail, (FILE *));
 extern void NDECL(mail_init);
 extern struct mail *FDECL(mail_fetch, (dbref, int));

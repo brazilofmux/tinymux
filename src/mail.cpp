@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.15 2000-10-05 17:08:11 sdennis Exp $
+// $Id: mail.cpp,v 1.16 2000-10-07 02:28:45 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -70,235 +70,111 @@ int ma_top = 0;
 
 struct malias **malias;
 
+// Handling functions for the database of mail messages.
+//
 
-/*
- * Handling functions for the database of mail messages. 
- */
-
-/*
- * mail_db_grow - We keep a database of mail text, so if we send a message to
- * * more than one player, we won't have to duplicate the text.
- */
-
+// mail_db_grow - We keep a database of mail text, so if we send a
+// message to more than one player, we won't have to duplicate the
+// text.
+//
+#define MAIL_FUDGE 1
 static void mail_db_grow(int newtop)
 {
-    int newsize, i;
-    MENT *newdb;
-
+    int i;
     if (newtop <= mudstate.mail_db_top)
     {
         return;
     }
-    if (newtop <= mudstate.mail_db_size)
+    if (mudstate.mail_db_size <= newtop)
     {
-        for (i = mudstate.mail_db_top; i < newtop; i++)
+        // We need to make the mail bag bigger.
+        //
+        int newsize = mudstate.mail_db_size + 100;
+        if (newtop > newsize)
         {
-            mudstate.mail_list[i].count = 0;
-            mudstate.mail_list[i].message = NULL;
+            newsize = newtop;
         }
-        mudstate.mail_db_top = newtop;
-        return;
-    }
-    if (newtop <= mudstate.mail_db_size + 100)
-    {
-        newsize = mudstate.mail_db_size + 100;
-    }
-    else
-    {
-        newsize = newtop;
+
+        MENT *newdb = (MENT *)MEMALLOC((newsize + MAIL_FUDGE) * sizeof(MENT));
+        ISOUTOFMEMORY(newdb);
+        if (mudstate.mail_list)
+        {
+            mudstate.mail_list -= MAIL_FUDGE;
+            memcpy( newdb,
+                    mudstate.mail_list,
+                    (mudstate.mail_db_top + MAIL_FUDGE) * sizeof(MENT));
+            MEMFREE(mudstate.mail_list);
+        }
+        mudstate.mail_list = newdb + MAIL_FUDGE;
+        newdb = NULL;
+        mudstate.mail_db_size = newsize;
     }
 
-    newdb = (MENT *)MEMALLOC((newsize + 1) * sizeof(MENT));
-    ISOUTOFMEMORY(newdb);
-    if (mudstate.mail_list)
-    {
-        mudstate.mail_list -= 1;
-        memcpy(newdb, mudstate.mail_list, (mudstate.mail_db_top + 1) * sizeof(MENT));
-        MEMFREE(mudstate.mail_list);
-    }
-    mudstate.mail_list = newdb + 1;
-    newdb = NULL;
-
+    // Initialize new parts of the mail bag.
+    //
     for (i = mudstate.mail_db_top; i < newtop; i++)
     {
-        mudstate.mail_list[i].count = 0;
-        mudstate.mail_list[i].message = NULL;
+        mudstate.mail_list[i].m_nRefs = 0;
+        mudstate.mail_list[i].m_pMessage = NULL;
     }
     mudstate.mail_db_top = newtop;
-    mudstate.mail_db_size = newsize;
 }
 
-/*
- * make_mail_freelist - move the freelist to the first empty slot in the mail
- * * database.
- */
-
-static void make_mail_freelist()
+// MessageReferenceInc - Increments the reference count for any
+// particular message.
+//
+static DCL_INLINE void MessageReferenceInc(int number)
 {
-    int i;
-    for (i = 0; i < mudstate.mail_db_top; i++)
+    mudstate.mail_list[number].m_nRefs++;
+}
+
+// MessageReferenceCheck - Checks whether the reference count for
+// any particular message indicates that the message body should be
+// freed. Also checks that if a message point is null, that the
+// reference count is zero.
+//
+static void MessageReferenceCheck(int number)
+{
+    MENT &m = mudstate.mail_list[number];
+    if (m.m_nRefs <= 0)
     {
-        if (mudstate.mail_list[i].message == NULL)
+        if (m.m_pMessage)
         {
-            mudstate.mail_freelist = i;
-            return;
+            MEMFREE(m.m_pMessage);
+            m.m_pMessage = NULL;
         }
     }
-    mail_db_grow(i + 1);
-    mudstate.mail_freelist = i;
+    if (m.m_pMessage == NULL)
+    {
+        m.m_nRefs = 0;
+    }
 }
 
-/*
- * add_mail_message - adds a new text message to the mail database, and returns
- * * a unique number for that message.
- */
-
-static int add_mail_message(dbref player, char *message)
+// MessageReferenceDec - Decrements the reference count for a message, and
+// will also delete the message if the counter reaches 0.
+//
+static void MessageReferenceDec(int number)
 {
-    int number;
-    char *atrstr, *execstr, *msg, *bp, *str;
-    int aflags;
-    dbref aowner;
-
-    if (!_stricmp(message, "clear"))
-    {
-        notify(player, "MAIL: You probably don't wanna send mail saying 'clear'.");
-        return -1;
-    }
-    if (!mudstate.mail_list)
-    {
-        mail_db_grow(1);
-    }
-
-    // Add an extra bit of protection here.
-    //
-    while (mudstate.mail_list[mudstate.mail_freelist].message != NULL)
-    {
-        make_mail_freelist();
-    }
-    number = mudstate.mail_freelist;
-
-    atrstr = atr_get(player, A_SIGNATURE, &aowner, &aflags);
-    execstr = bp = alloc_lbuf("add_mail_message");
-    str = atrstr;
-    TinyExec(execstr, &bp, 0, player, player, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
-    *bp = '\0';
-    msg = bp = alloc_lbuf("add_mail_message.2");
-    str = message;
-    TinyExec(msg, &bp, 0, player, player, EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
-    *bp = '\0';
-
-    char *pMessageBody = tprintf("%s %s", msg, execstr);
-#ifdef RADIX_COMPRESSION
-    int len = string_compress(pMessageBody, msgbuff);
-    mudstate.mail_list[number].message = BufferCloneLen(msgbuff, len);
-#else
-    mudstate.mail_list[number].message = StringClone(pMessageBody);
-#endif // RADIX_COMPRESSION
-    free_lbuf(atrstr);
-    free_lbuf(execstr);
-    free_lbuf(msg);
-    make_mail_freelist();
-    return number;
+    mudstate.mail_list[number].m_nRefs--;
+    MessageReferenceCheck(number);
 }
 
-/*
- * add_mail_message_nosig - used for reading in old style messages from disk 
- */
-
-static int add_mail_message_nosig(char *message)
-{
-    int number = mudstate.mail_freelist;
-    if (!mudstate.mail_list)
-    {
-        mail_db_grow(1);
-    }
-    if (strlen(message) > LBUF_SIZE-1)
-    {
-        STARTLOG(LOG_BUGS, "BUG", "MAIL");
-        log_text(tprintf("add_mail_message_nosig: Mail message %d truncated.", number));
-        ENDLOG;
-        message[LBUF_SIZE-1] = '\0';
-    }
-#ifdef RADIX_COMPRESSION
-    int len = string_compress(message, msgbuff);
-    mudstate.mail_list[number].message = BufferCloneLen(msgbuff, len);
-#else
-    mudstate.mail_list[number].message = StringClone(message);
-#endif // RADIX_COMPRESSION
-    make_mail_freelist();
-    return number;
-}
-
-/*
- * new_mail_message - used for reading messages in from disk which already have
- * * a number assigned to them.
- */
-
-#ifdef RADIX_COMPRESSION
-static void new_mail_message(char *message, int number, int len)
-#else
-static void new_mail_message(char *message, int number)
-#endif
-{
-    if (strlen(message) > LBUF_SIZE-1)
-    {
-        STARTLOG(LOG_BUGS, "BUG", "MAIL");
-        log_text(tprintf("new_mail_message: Mail message %d truncated.", number));
-        ENDLOG;
-        message[LBUF_SIZE-1] = '\0';
-    }
-#ifdef RADIX_COMPRESSION
-    mudstate.mail_list[number].message = BufferCloneLen(message, len);
-#else
-    mudstate.mail_list[number].message = StringClone(message);
-#endif
-}
-
-/*
- * add_count - increments the reference count for any particular message 
- */
-
-static DCL_INLINE void add_count(int number)
-{
-    mudstate.mail_list[number].count++;
-}
-
-/*
- * delete_mail_message - decrements the reference count for a message, and
- * * deletes the message if the counter reaches 0.
- */
-
-static void delete_mail_message(int number)
-{
-    mudstate.mail_list[number].count--;
-
-    if (mudstate.mail_list[number].count < 1)
-    {
-        MEMFREE(mudstate.mail_list[number].message);
-        mudstate.mail_list[number].message = NULL;
-        mudstate.mail_list[number].count = 0;
-    }
-}
-
-/*
- * get_mail_message - returns the text for a particular number. This text
- * * should NOT be modified.
- */
-
-char *get_mail_message(int number)
+// MessageFetch - returns the text for a particular message number. This
+// text should not be modified.
+//
+char *MessageFetch(int number)
 {
 #ifdef RADIX_COMPRESSION
     static char buff[LBUF_SIZE];
 #endif
     
-    if (mudstate.mail_list[number].message != NULL)
+    MessageReferenceCheck(number);
+    if (mudstate.mail_list[number].m_pMessage)
     {
-        return mudstate.mail_list[number].message;
+        return mudstate.mail_list[number].m_pMessage;
     }
     else
     {
-        delete_mail_message(number);
 #ifdef RADIX_COMPRESSION
         string_compress("MAIL: This mail message does not exist in the database. Please alert your admin.", msgbuff);
         strcpy(buff, msgbuff);
@@ -306,6 +182,145 @@ char *get_mail_message(int number)
 #else       
         return "MAIL: This mail message does not exist in the database. Please alert your admin.";
 #endif
+    }
+}
+
+// This function returns a reference to the message and the the
+// reference count is increased to reflect that.
+//
+static int MessageAdd(char *pMessage)
+{
+    if (!mudstate.mail_list)
+    {
+        mail_db_grow(1);
+    }
+
+    int i;
+    MENT *pm;
+    BOOL bFound = FALSE;
+    for (i = 0; i < mudstate.mail_db_top; i++)
+    {
+        pm = &mudstate.mail_list[i];
+        if (pm->m_pMessage == NULL)
+        {
+            pm->m_nRefs = 0;
+            bFound = TRUE;
+            break;
+        }
+    }
+    if (!bFound)
+    {
+        mail_db_grow(i + 1);
+    }
+
+    pm = &mudstate.mail_list[i];
+#ifdef RADIX_COMPRESSION
+    int len = string_compress(pMessage, msgbuff);
+    pm->m_pMessage = BufferCloneLen(msgbuff, len);
+#else
+    pm->m_pMessage = StringClone(pMessage);
+#endif // RADIX_COMPRESSION
+    MessageReferenceInc(i);
+    return i;
+}
+
+// add_mail_message - adds a new text message to the mail database, and returns
+// a unique number for that message.
+//
+// IF return value is !NOTHING, you have a reference to the message,
+// and the reference count reflects that.
+//
+static int add_mail_message(dbref player, char *message)
+{
+    if (!_stricmp(message, "clear"))
+    {
+        notify(player, "MAIL: You probably don't wanna send mail saying 'clear'.");
+        return NOTHING;
+    }
+
+    // Evaluate signature.
+    //
+    int   aflags;
+    dbref aowner;
+    char *bp;
+    char *atrstr = atr_get(player, A_SIGNATURE, &aowner, &aflags);
+    char *execstr = bp = alloc_lbuf("add_mail_message");
+    char *str = atrstr;
+    TinyExec(execstr, &bp, 0, player, player, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
+    *bp = '\0';
+    char *msg = bp = alloc_lbuf("add_mail_message.2");
+    str = message;
+    TinyExec(msg, &bp, 0, player, player, EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
+    *bp = '\0';
+
+    // Save message body and return a reference to it.
+    //
+    int number = MessageAdd(tprintf("%s %s", msg, execstr));
+    free_lbuf(atrstr);
+    free_lbuf(execstr);
+    free_lbuf(msg);
+    return number;
+}
+
+
+// add_mail_message_nosig - used for reading in old style messages from disk.
+// This function returns a reference to the message body.
+//
+static int add_mail_message_nosig(char *message)
+{
+    BOOL bTruncated = FALSE;
+    if (strlen(message) > LBUF_SIZE-1)
+    {
+        bTruncated = TRUE;
+        message[LBUF_SIZE-1] = '\0';
+    }
+    int number = MessageAdd(message);
+    if (bTruncated)
+    {
+        STARTLOG(LOG_BUGS, "BUG", "MAIL");
+        log_text(tprintf("add_mail_message_nosig: Mail message %d truncated.", number));
+        ENDLOG;
+    }
+    return number;
+}
+
+// This function is -only- used from reading from the disk, and so
+// it does -not- manage the reference counts.
+//
+static int MessageAddWithNumber(int i, char *pMessage)
+{
+    mail_db_grow(i+1);
+
+    MENT *pm = &mudstate.mail_list[i];
+#ifdef RADIX_COMPRESSION
+    int len = string_compress(pMessage, msgbuff);
+    pm->m_pMessage = BufferCloneLen(msgbuff, len);
+#else
+    pm->m_pMessage = StringClone(pMessage);
+#endif // RADIX_COMPRESSION
+    return i;
+}
+
+// new_mail_message - used for reading messages in from disk which
+// already have a number assigned to them.
+//
+// This function is -only- used from reading from the disk, and so
+// it does -not- manage the reference counts.
+//
+static void new_mail_message(char *message, int number)
+{
+    BOOL bTruncated = FALSE;
+    if (strlen(message) > LBUF_SIZE-1)
+    {
+        bTruncated = TRUE;
+        message[LBUF_SIZE-1] = '\0';
+    }
+    MessageAddWithNumber(number, message);
+    if (bTruncated)
+    {
+        STARTLOG(LOG_BUGS, "BUG", "MAIL");
+        log_text(tprintf("new_mail_message: Mail message %d truncated.", number));
+        ENDLOG;
     }
 }
 
@@ -549,10 +564,10 @@ void do_mail_read(dbref player, char *msglist)
                 //
                 j++;
 #ifdef RADIX_COMPRESSION
-                string_decompress(get_mail_message(mp->number), buff);
+                string_decompress(MessageFetch(mp->number), buff);
 #else
                 buff[LBUF_SIZE-1] = '\0';
-                strncpy(buff, get_mail_message(mp->number), LBUF_SIZE);
+                strncpy(buff, MessageFetch(mp->number), LBUF_SIZE);
                 if (buff[LBUF_SIZE-1] != '\0')
                 {
                     STARTLOG(LOG_BUGS, "BUG", "MAIL");
@@ -665,7 +680,7 @@ void do_mail_retract(dbref player, char *name, char *msglist)
 
                     nextp = mp->next;
                     MEMFREE((char *)mp->subject);
-                    delete_mail_message(mp->number);
+                    MessageReferenceDec(mp->number);
                     MEMFREE((char *)mp->time);
                     MEMFREE((char *)mp->tolist);
                     MEMFREE(mp);
@@ -723,7 +738,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
             {
                 i++;
 #ifdef RADIX_COMPRESSION
-                string_decompress(get_mail_message(mp->number), msgbuff);
+                string_decompress(MessageFetch(mp->number), msgbuff);
                 string_decompress(mp->time, timebuff);
                 string_decompress(mp->subject, subbuff);
                 ANSI_TruncateToField(subbuff, sizeof(szSubjectBuffer),
@@ -738,7 +753,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
                     szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
                 notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %s",
                                status_chars(mp),
-                               i, strlen(get_mail_message(mp->number)),
+                               i, strlen(MessageFetch(mp->number)),
                                PLAYER_NAME_LIMIT - 6, Name(mp->from),
                                szSubjectBuffer));
 #endif // RADIX_COMPRESSION
@@ -765,7 +780,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
                     j++;
                     status = status_string(mp);
 #ifdef RADIX_COMPRESSION
-                    string_decompress(get_mail_message(mp->number), msgbuff);
+                    string_decompress(MessageFetch(mp->number), msgbuff);
                     string_decompress(mp->time, timebuff);
                     string_decompress(mp->subject, subbuff);
 
@@ -786,7 +801,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
                                    status, szSubjectBuffer));
 #else
                     msg = bp = alloc_lbuf("do_mail_review");
-                    str = get_mail_message(mp->number);
+                    str = MessageFetch(mp->number);
                     TinyExec(msg, &bp, 0, player, player, EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
                     *bp = '\0';
                     ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
@@ -848,7 +863,7 @@ void do_mail_list(dbref player, char *msglist, int sub)
             if (mail_match(mp, ms, i))
             {
 #ifdef RADIX_COMPRESSION
-                string_decompress(get_mail_message(mp->number), msgbuff);
+                string_decompress(MessageFetch(mp->number), msgbuff);
                 string_decompress(mp->time, timebuff);
                 time = mail_list_time(timebuff);
                 if (sub)
@@ -874,13 +889,13 @@ void do_mail_list(dbref player, char *msglist, int sub)
                     ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                         szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
                     notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %s",
-                           status_chars(mp), i, strlen(get_mail_message(mp->number)),
+                           status_chars(mp), i, strlen(MessageFetch(mp->number)),
                            PLAYER_NAME_LIMIT - 6, Name(mp->from), szSubjectBuffer));
                 }
                 else
                 {
                     notify(player, tprintf("[%s] %-3d (%4d) From: %-*s At: %s %s",
-                           status_chars(mp), i, strlen(get_mail_message(mp->number)),
+                           status_chars(mp), i, strlen(MessageFetch(mp->number)),
                            PLAYER_NAME_LIMIT - 6, Name(mp->from), time,
                             ((Connected(mp->from) && (!Hidden(mp->from) || Hasprivs(player))) ? "Conn" : " ")));
                 }
@@ -979,7 +994,7 @@ void do_mail_purge(dbref player)
              * then wipe 
              */
             MEMFREE((char *)mp->subject);
-            delete_mail_message(mp->number);
+            MessageReferenceDec(mp->number);
             MEMFREE((char *)mp->time);
             MEMFREE((char *)mp->tolist);
             MEMFREE(mp);
@@ -1026,12 +1041,12 @@ void do_mail_fwd(dbref player, char *msg, char *tolist)
     }
 #ifdef RADIX_COMPRESSION
     string_decompress(mp->subject, subbuff);
-    string_decompress(get_mail_message(mp->number), msgbuff);
+    string_decompress(MessageFetch(mp->number), msgbuff);
     do_expmail_start(player, tolist, tprintf("%s (fwd from %s)", subbuff, Name(mp->from)));
     atr_add_raw(player, A_MAILMSG, msgbuff);
 #else
     do_expmail_start(player, tolist, tprintf("%s (fwd from %s)", mp->subject, Name(mp->from)));
-    atr_add_raw(player, A_MAILMSG, get_mail_message(mp->number));
+    atr_add_raw(player, A_MAILMSG, MessageFetch(mp->number));
 #endif
     char *pValue = atr_get_raw(player, A_MAILFLAGS);
     int iFlag = M_FORWARD;
@@ -1114,13 +1129,13 @@ void do_mail_reply(dbref player, char *msg, int all, int key)
 #ifdef RADIX_COMPRESSION
     string_decompress(mp->subject, subbuff);
     pSubject = subbuff;
-    string_decompress(get_mail_message(mp->number), msgbuff);
+    string_decompress(MessageFetch(mp->number), msgbuff);
     pMessage = msgbuff;
     string_decompress(mp->time, timebuff);
     pTime = timebuff;
 #else
     pSubject = mp->subject;
-    pMessage = get_mail_message(mp->number);
+    pMessage = MessageFetch(mp->number);
     pTime = mp->time;
 #endif
     if (strncmp(pSubject, "Re:", 3))
@@ -1227,14 +1242,22 @@ void urgent_mail(dbref player, int folder, int *ucount)
     *ucount = uc;
 }
 
-static void send_mail(dbref player, dbref target, const char *tolist, const char *subject, int number, mail_flag flags, int silent)
+static void send_mail
+(
+    dbref player,
+    dbref target,
+    const char *tolist,
+    const char *subject,
+    int number,
+    mail_flag flags,
+    int silent
+)
 {
     char tbuf1[30];
 
     if (!isPlayer(target))
     {
         notify(player, "MAIL: You cannot send mail to non-existent people.");
-        delete_mail_message(number);
         return;
     }
     CLinearTimeAbsolute ltaNow;
@@ -1251,7 +1274,7 @@ static void send_mail(dbref player, dbref target, const char *tolist, const char
     newp->tolist = StringClone(tolist);
 
     newp->number = number;
-    add_count(number);
+    MessageReferenceInc(number);
 
 #ifdef RADIX_COMPRESSION
     int len = string_compress(tbuf1, timebuff);
@@ -1319,7 +1342,7 @@ void do_mail_nuke(dbref player)
     MAIL_ITER_SAFE(mp, thing, nextp)
     {
         nextp = mp->next;
-        delete_mail_message(mp->number);
+        MessageReferenceDec(mp->number);
         MEMFREE((char *)mp->subject);
         MEMFREE((char *)mp->tolist);
         MEMFREE((char *)mp->time);
@@ -1356,6 +1379,11 @@ void do_mail_debug(dbref player, char *action, char *victim)
             notify(player, tprintf("%s: no such player.", victim));
             return;
         }
+        if (Wizard(target))
+        {
+            notify(player, tprintf("Let %s clear their own @mail.", Name(target)));
+            return;
+        }
         do_mail_clear(target, NULL);
         do_mail_purge(target);
         notify(player, tprintf("Mail cleared for %s(#%d).", Name(target), target));
@@ -1366,10 +1394,14 @@ void do_mail_debug(dbref player, char *action, char *victim)
         MAIL_ITER_ALL(mp, thing)
         {
             if (!Good_obj(mp->to))
+            {
                 notify(player, tprintf("Bad object #%d has mail.", mp->to));
+            }
             else if (!isPlayer(mp->to))
+            {
                 notify(player, tprintf("%s(#%d) has mail but is not a player.",
                              Name(mp->to), mp->to));
+            }
         }
         notify(player, "Mail sanity check completed.");
     }
@@ -1417,15 +1449,20 @@ void do_mail_debug(dbref player, char *action, char *victim)
                  * then wipe 
                  */
                 MEMFREE((char *)mp->subject);
-                delete_mail_message(mp->number);
+                MessageReferenceDec(mp->number);
                 MEMFREE((char *)mp->time);
                 MEMFREE((char *)mp->tolist);
                 MEMFREE(mp);
-            } else
+            }
+            else
+            {
                 nextp = mp->next;
+            }
         }
         notify(player, "Mail sanity fix completed.");
-    } else {
+    }
+    else
+    {
         notify(player, "That is not a debugging option.");
         return;
     }
@@ -1443,36 +1480,49 @@ void do_mail_stats(dbref player, char *name, int full)
 
     fc = fr = fu = tc = tr = tu = cchars = fchars = tchars = count = 0;
 
-    /*
-     * find player 
-     */
-
-    if ((*name == '\0') || !name) {
-        if Wizard
-            (player)
-                target = AMBIGUOUS;
+    // Find player.
+    //
+    if ((*name == '\0') || !name)
+    {
+        if (Wizard(player))
+        {
+            target = AMBIGUOUS;
+        }
         else
+        {
             target = player;
-    } else if (*name == NUMBER_TOKEN) {
+        }
+    }
+    else if (*name == NUMBER_TOKEN)
+    {
         target = Tiny_atol(&name[1]);
         if (!Good_obj(target) || !isPlayer(target))
+        {
             target = NOTHING;
-    } else if (!_stricmp(name, "me")) {
+        }
+    }
+    else if (!_stricmp(name, "me"))
+    {
         target = player;
-    } else {
+    }
+    else
+    {
         target = lookup_player(player, name, 1);
     }
 
-    if (target == NOTHING) {
+    if (target == NOTHING)
+    {
         init_match(player, name, NOTYPE);
         match_absolute();
         target = match_result();
     }
-    if (target == NOTHING) {
+    if (target == NOTHING)
+    {
         notify(player, tprintf("%s: No such player.", name));
         return;
     }
-    if (!Wizard(player) && (target != player)) {
+    if (!Wizard(player) && (target != player))
+    {
         notify(player, "The post office protects privacy!");
         return;
     }
@@ -1514,27 +1564,27 @@ void do_mail_stats(dbref player, char *name, int full)
 #ifdef RADIX_COMPRESSION
                 if (Cleared(mp)) {
                     fc++;
-                    len = string_decompress(get_mail_message(mp->number), msgbuff);
+                    len = string_decompress(MessageFetch(mp->number), msgbuff);
                     cchars += len;
                 } else if (Read(mp)) {
                     fr++;
-                    len = string_decompress(get_mail_message(mp->number), msgbuff);
+                    len = string_decompress(MessageFetch(mp->number), msgbuff);
                     fchars += len;
                 } else {
                     fu++;
-                    len = string_decompress(get_mail_message(mp->number), msgbuff);
+                    len = string_decompress(MessageFetch(mp->number), msgbuff);
                     tchars += len;
                 }
 #else
                 if (Cleared(mp)) {
                     fc++;
-                    cchars += strlen(get_mail_message(mp->number));
+                    cchars += strlen(MessageFetch(mp->number));
                 } else if (Read(mp)) {
                     fr++;
-                    fchars += strlen(get_mail_message(mp->number));
+                    fchars += strlen(MessageFetch(mp->number));
                 } else {
                     fu++;
-                    tchars += strlen(get_mail_message(mp->number));
+                    tchars += strlen(MessageFetch(mp->number));
                 }
 #endif /*
         * RADIX_COMPRESSION 
@@ -1578,10 +1628,10 @@ void do_mail_stats(dbref player, char *name, int full)
                 fu++;
             if (full == 2)
 #ifdef RADIX_COMPRESSION
-                len = string_compress(get_mail_message(mp->number), msgbuff);
+                len = string_compress(MessageFetch(mp->number), msgbuff);
             fchars += len;
 #else
-                fchars += strlen(get_mail_message(mp->number));
+                fchars += strlen(MessageFetch(mp->number));
 #endif /*
         * RADIX_COMPRESSION 
         */
@@ -1605,10 +1655,10 @@ void do_mail_stats(dbref player, char *name, int full)
                 tu++;
             if (full == 2) {
 #ifdef RADIX_COMPRESSION
-                len = string_decompress(get_mail_message(mp->number), msgbuff);
+                len = string_decompress(MessageFetch(mp->number), msgbuff);
                 tchars += len;
 #else
-                tchars += strlen(get_mail_message(mp->number));
+                tchars += strlen(MessageFetch(mp->number));
 #endif /*
         * RADIX_COMPRESSION 
         */
@@ -1846,14 +1896,14 @@ int dump_mail(FILE *fp)
      */
     for (i = 0; i < mudstate.mail_db_top; i++)
     {
-        if (mudstate.mail_list[i].count > 0)
+        if (mudstate.mail_list[i].m_nRefs > 0)
         {
             putref(fp, i);
 #ifdef RADIX_COMPRESSION
-            string_decompress(get_mail_message(i),msgbuff);
+            string_decompress(MessageFetch(i),msgbuff);
             putstring(fp, msgbuff);
 #else
-            putstring(fp, get_mail_message(i));
+            putstring(fp, MessageFetch(i));
 #endif
         }
     }
@@ -1864,187 +1914,276 @@ int dump_mail(FILE *fp)
     return count;
 }
 
-int load_mail(FILE *fp)
+void SaveMailStruct(struct mail *mp)
 {
-    char nbuf1[8];
-    int mail_top = 0;
-    int new0 = 0;
-    int pennsub = 0;
-    int read_tolist = 0;
-    int read_newdb = 0;
-    int read_new_strings = 0;
-#ifdef RADIX_COMPRESSION
-    int len, number;
-#endif
-
-    // Read the version number.
-    //
-    fgets(nbuf1, sizeof(nbuf1), fp);
-
-    if (!strncmp(nbuf1, "+V2", 3))
+    dbref nTo = mp->to;
+    struct mail *mptr = (struct mail *)hashfindLEN(&nTo, sizeof(nTo), &mudstate.mail_htab);
+    if (mptr)
     {
-        new0 = 1;
-    }
-    else if (!strncmp(nbuf1, "+V3", 3))
-    {
-        new0 = 1;
-        read_tolist = 1;
-    }
-    else if (!strncmp(nbuf1, "+V4", 3))
-    {
-        new0 = 1;
-        read_tolist = 1;
-        read_newdb = 1;
-    }
-    else if (!strncmp(nbuf1, "+V5", 3))
-    {
-        new0 = 1;
-        read_tolist = 1;
-        read_newdb = 1;
-        read_new_strings = 1;
-    }
-    else if (!strncmp(nbuf1, "+1", 2))
-    {
-        pennsub = 1;
-    }
-    if (pennsub)
-    {
-        // Toss away the number of messages.
+        // Find the end of the list the hard way.
         //
-        fgets(nbuf1, sizeof(nbuf1), fp);
-    }
-    if (read_newdb)
-    {
-        mail_top = getref(fp);
-        mail_db_grow(mail_top + 1);
+        while (mptr->next != NULL)
+        {
+            mptr = mptr->next;
+        }
+        mptr->next = mp;
+        mp->prev = mptr;
     }
     else
     {
-        mail_db_grow(1);
+        mp->prev = NULL;
+        hashaddLEN(&nTo, sizeof(nTo), (int *)mp, &mudstate.mail_htab);
     }
+    mp->next = NULL;
+}
 
+void load_mail_Penn(FILE *fp)
+{
+    char nbuf1[8];
+
+    // Toss away the number of messages.
+    //
     fgets(nbuf1, sizeof(nbuf1), fp);
 
+    fgets(nbuf1, sizeof(nbuf1), fp);
     while (strncmp(nbuf1, "***", 3) != 0)
     {
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
         ISOUTOFMEMORY(mp);
 
-        dbref nTo = Tiny_atol(nbuf1);
-
-        struct mail *mptr = (struct mail *)hashfindLEN(&nTo, sizeof(nTo), &mudstate.mail_htab);
-        if (mptr)
-        {
-            // Find the end of the list the hard way.
-            //
-            while (mptr->next != NULL)
-            {
-                mptr = mptr->next;
-            }
-            mptr->next = mp;
-            mp->prev = mptr;
-        }
-        else
-        {
-            mp->prev = NULL;
-            hashaddLEN(&nTo, sizeof(nTo), (int *)mp, &mudstate.mail_htab);
-        }
-        mp->next = NULL;
-        mp->to = nTo;
+        mp->to = Tiny_atol(nbuf1);
         mp->from = getref(fp);
-
-        if (read_newdb)
-        {
-            mp->number = getref(fp);
-            add_count(mp->number);
-        }
-        if (read_tolist)
-        {
-            mp->tolist = StringClone(getstring_noalloc(fp, read_new_strings));
-        }
-        else
-        {
-            mp->tolist = StringClone(Tiny_ltoa_t(mp->to));
-        }
+        mp->tolist = StringClone(Tiny_ltoa_t(mp->to));
 
 #ifdef RADIX_COMPRESSION
-        len = string_compress(getstring_noalloc(fp, read_new_strings), timebuff);
+        int len = string_compress(getstring_noalloc(fp, FALSE), timebuff);
         mp->time = BufferCloneLen(timebuff, len);
-        if (pennsub)
-        {
-            len = string_compress(getstring_noalloc(fp, read_new_strings), subbuff);
-            mp->subject = BufferCloneLen(subbuff, len);
-        }
-        else if (!new0)
-        {
-            len = string_compress("No subject", subbuff);
-            mp->subject = BufferCloneLen(subbuff, len);
-        }
-        if (!read_newdb)
-        {
-            string_compress(getstring_noalloc(fp, read_new_strings), msgbuff);
-            number = add_mail_message_nosig(msgbuff);
-            add_count(number);
-            mp->number = number;
-        }
-        if (new0)
-        {
-            len = string_compress(getstring_noalloc(fp, read_new_strings), subbuff);
-            mp->subject = BufferCloneLen(subbuff, len);
-        }
-        else if (!pennsub)
-        {
-            len = string_compress("No subject", subbuff);
-            mp->subject = BufferCloneLen(subbuff, len);
-        }
+        len = string_compress(getstring_noalloc(fp, FALSE), subbuff);
+        mp->subject = BufferCloneLen(subbuff, len);
 #else
-        mp->time = StringClone(getstring_noalloc(fp, read_new_strings));
-        if (pennsub)
-        {
-            mp->subject = StringClone(getstring_noalloc(fp, read_new_strings));
-        }
-        else if (!new0)
-        {
-            mp->subject = StringClone("No subject");
-        }
+        mp->time = StringClone(getstring_noalloc(fp, FALSE));
+        mp->subject = StringClone(getstring_noalloc(fp, FALSE));
+#endif // RADIX_COMPRESSION
+        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
+        mp->read = getref(fp);
+        SaveMailStruct(mp);
 
-        if (!read_newdb)
-        {
-            int number = add_mail_message_nosig(getstring_noalloc(fp, read_new_strings));
-            add_count(number);
-            mp->number = number;
-        }
-        if (new0)
-        {
-            mp->subject = StringClone(getstring_noalloc(fp, read_new_strings));
-        }
-        else if (!pennsub)
-        {
-            mp->subject = StringClone("No subject");
-        }
+        fgets(nbuf1, sizeof(nbuf1), fp);
+    }
+}
+
+void load_mail_V1(FILE *fp)
+{
+    char nbuf1[8];
+    fgets(nbuf1, sizeof(nbuf1), fp);
+    while (strncmp(nbuf1, "***", 3) != 0)
+    {
+        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
+        ISOUTOFMEMORY(mp);
+
+        mp->to      = Tiny_atol(nbuf1);
+        mp->from    = getref(fp);
+        mp->tolist  = StringClone(Tiny_ltoa_t(mp->to));
+
+#ifdef RADIX_COMPRESSION
+        int len     = string_compress(getstring_noalloc(fp, FALSE), timebuff);
+        mp->time    = BufferCloneLen(timebuff, len);
+        len = string_compress("No subject", subbuff);
+        mp->subject = BufferCloneLen(subbuff, len);
+#else
+        mp->time = StringClone(getstring_noalloc(fp, FALSE));
+        mp->subject = StringClone("No subject");
+#endif // RADIX_COMPRESSION
+
+        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
+        mp->read    = getref(fp);
+        SaveMailStruct(mp);
+
+        fgets(nbuf1, sizeof(nbuf1), fp);
+    }
+}
+
+void load_mail_V2(FILE *fp)
+{
+    char nbuf1[8];
+    fgets(nbuf1, sizeof(nbuf1), fp);
+    while (strncmp(nbuf1, "***", 3) != 0)
+    {
+        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
+        ISOUTOFMEMORY(mp);
+
+        mp->to      = Tiny_atol(nbuf1);
+        mp->from    = getref(fp);
+        mp->tolist  = StringClone(Tiny_ltoa_t(mp->to));
+
+#ifdef RADIX_COMPRESSION
+        int len     = string_compress(getstring_noalloc(fp, FALSE), timebuff);
+        mp->time    = BufferCloneLen(timebuff, len);
+        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
+        len = string_compress(getstring_noalloc(fp, FALSE), subbuff);
+        mp->subject = BufferCloneLen(subbuff, len);
+#else
+        mp->time    = StringClone(getstring_noalloc(fp, FALSE));
+        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
+        mp->subject = StringClone(getstring_noalloc(fp, FALSE));
 #endif // RADIX_COMPRESSION
         mp->read = getref(fp);
+        SaveMailStruct(mp);
+
+        fgets(nbuf1, sizeof(nbuf1), fp);
+    }
+}
+
+void load_mail_V3(FILE *fp)
+{
+    char nbuf1[8];
+    fgets(nbuf1, sizeof(nbuf1), fp);
+    while (strncmp(nbuf1, "***", 3) != 0)
+    {
+        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
+        ISOUTOFMEMORY(mp);
+
+        mp->to      = Tiny_atol(nbuf1);
+        mp->from    = getref(fp);
+        mp->tolist  = StringClone(getstring_noalloc(fp, FALSE));
+
+#ifdef RADIX_COMPRESSION
+        int len     = string_compress(getstring_noalloc(fp, FALSE), timebuff);
+        mp->time    = BufferCloneLen(timebuff, len);
+        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
+        len = string_compress(getstring_noalloc(fp, FALSE), subbuff);
+        mp->subject = BufferCloneLen(subbuff, len);
+#else
+        mp->time    = StringClone(getstring_noalloc(fp, FALSE));
+        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
+        mp->subject = StringClone(getstring_noalloc(fp, FALSE));
+#endif // RADIX_COMPRESSION
+        mp->read = getref(fp);
+        SaveMailStruct(mp);
+
+        fgets(nbuf1, sizeof(nbuf1), fp);
+    }
+}
+
+void load_mail_V4(FILE *fp)
+{
+    int mail_top = getref(fp);
+    mail_db_grow(mail_top + 1);
+
+    char nbuf1[8];
+    fgets(nbuf1, sizeof(nbuf1), fp);
+    while (strncmp(nbuf1, "***", 3) != 0)
+    {
+        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
+        ISOUTOFMEMORY(mp);
+
+        mp->to      = Tiny_atol(nbuf1);
+        mp->from    = getref(fp);
+        mp->number  = getref(fp);
+        MessageReferenceInc(mp->number);
+        mp->tolist  = StringClone(getstring_noalloc(fp, FALSE));
+
+#ifdef RADIX_COMPRESSION
+        int len     = string_compress(getstring_noalloc(fp, FALSE), timebuff);
+        mp->time    = BufferCloneLen(timebuff, len);
+        len         = string_compress(getstring_noalloc(fp, FALSE), subbuff);
+        mp->subject = BufferCloneLen(subbuff, len);
+#else
+        mp->time    = StringClone(getstring_noalloc(fp, FALSE));
+        mp->subject = StringClone(getstring_noalloc(fp, FALSE));
+#endif // RADIX_COMPRESSION
+        mp->read    = getref(fp);
+        SaveMailStruct(mp);
+
         fgets(nbuf1, sizeof(nbuf1), fp);
     }
 
-    if (read_newdb)
-    {
-        fgets(nbuf1, sizeof(nbuf1), fp);
+    fgets(nbuf1, sizeof(nbuf1), fp);
 
-        while (strncmp(nbuf1, "+++", 3))
-        {
-            int number = Tiny_atol(nbuf1);
+    while (strncmp(nbuf1, "+++", 3))
+    {
+        int number = Tiny_atol(nbuf1);
+        new_mail_message(getstring_noalloc(fp, FALSE), number);
+        fgets(nbuf1, sizeof(nbuf1), fp);
+    }
+}
+
+void load_mail_V5(FILE *fp)
+{
+    int mail_top = getref(fp);
+    mail_db_grow(mail_top + 1);
+
+    char nbuf1[8];
+    fgets(nbuf1, sizeof(nbuf1), fp);
+    while (strncmp(nbuf1, "***", 3) != 0)
+    {
+        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
+        ISOUTOFMEMORY(mp);
+
+        mp->to      = Tiny_atol(nbuf1);
+        mp->from    = getref(fp);
+
+        mp->number  = getref(fp);
+        MessageReferenceInc(mp->number);
+        mp->tolist  = StringClone(getstring_noalloc(fp, TRUE));
+
 #ifdef RADIX_COMPRESSION
-            len = string_compress(getstring_noalloc(fp, read_new_strings), msgbuff);
-            new_mail_message(msgbuff, number, len);
+        int len     = string_compress(getstring_noalloc(fp, TRUE), timebuff);
+        mp->time    = BufferCloneLen(timebuff, len);
+        len         = string_compress(getstring_noalloc(fp, TRUE), subbuff);
+        mp->subject = BufferCloneLen(subbuff, len);
 #else
-            new_mail_message(getstring_noalloc(fp, read_new_strings), number);
-#endif
-            fgets(nbuf1, sizeof(nbuf1), fp);
-        }
+        mp->time    = StringClone(getstring_noalloc(fp, TRUE));
+        mp->subject = StringClone(getstring_noalloc(fp, TRUE));
+#endif // RADIX_COMPRESSION
+        mp->read    = getref(fp);
+        SaveMailStruct(mp);
+
+        fgets(nbuf1, sizeof(nbuf1), fp);
+    }
+
+    fgets(nbuf1, sizeof(nbuf1), fp);
+
+    while (strncmp(nbuf1, "+++", 3))
+    {
+        int number = Tiny_atol(nbuf1);
+        new_mail_message(getstring_noalloc(fp, TRUE), number);
+        fgets(nbuf1, sizeof(nbuf1), fp);
+    }
+}
+
+void load_mail(FILE *fp)
+{
+    char nbuf1[8];
+
+    // Read the version number.
+    //
+    fgets(nbuf1, sizeof(nbuf1), fp);
+    if (!strncmp(nbuf1, "+V5", 3))
+    {
+        load_mail_V5(fp);
+    }
+    else if (!strncmp(nbuf1, "+V4", 3))
+    {
+        load_mail_V4(fp);
+    }
+    else if (!strncmp(nbuf1, "+V3", 3))
+    {
+        load_mail_V3(fp);
+    }
+    else if (!strncmp(nbuf1, "+V2", 3))
+    {
+        load_mail_V2(fp);
+    }
+    else if (!strncmp(nbuf1, "+1", 2))
+    {
+        load_mail_Penn(fp);
+    }
+    else
+    {
+        load_mail_V1(fp);
     }
     load_malias(fp);
-    return 1;
 }
 
 static int get_folder_number(dbref player, char *name)
@@ -2695,7 +2834,7 @@ void check_mail_expiration(void)
          * then wipe 
          */
         MEMFREE((char *)mp->subject);
-        delete_mail_message(mp->number);
+        MessageReferenceDec(mp->number);
         MEMFREE((char *)mp->tolist);
         MEMFREE((char *)mp->time);
         MEMFREE(mp);
@@ -3071,7 +3210,11 @@ void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int
             //
             char *pMail = tprintf("Alias Error: Bad Player %d for %s", vic, tolist);
             int iMail = add_mail_message(player, pMail);
-            send_mail(GOD, GOD, listto, subject, iMail, 0, silent);
+            if (iMail != NOTHING)
+            {
+                send_mail(GOD, GOD, listto, subject, iMail, 0, silent);
+                MessageReferenceDec(iMail);
+            }
         }
     }
 }
@@ -3151,18 +3294,18 @@ void do_malias_create(dbref player, char *alias, char *tolist)
         // Now locate a target.
         //
         if (!_stricmp(head, "me"))
+        {
             target = player;
+        }
         else if (*head == '#')
         {
             target = Tiny_atol(head + 1);
-            if (!Good_obj(target))
-                target = NOTHING;
         }
         else
         {
             target = lookup_player(player, head, 1);
         }
-        if ((target == NOTHING) || !isPlayer(target))
+        if (!Good_obj(target) || !isPlayer(target))
         {
             notify(player, "MAIL: No such player.");
         }
@@ -3703,9 +3846,8 @@ void do_mail_quick(dbref player, char *arg1, char *arg2)
 
 void mail_to_list(dbref player, char *list, char *subject, char *message, int flags, int silent)
 {
-    char *head, *tail, spot, *tolist;
+    char *head, *tail, spot;
     dbref target;
-    int number;
 
     if (!list)
     {
@@ -3716,61 +3858,64 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
         free_lbuf(list);
         return;
     }
-    tolist = alloc_lbuf("mail_to_list");
+    char *tolist = alloc_lbuf("mail_to_list");
     strcpy(tolist, list);
 
-    number = add_mail_message(player, message);
-
-    head = list;
-    while (head && *head)
+    int number = add_mail_message(player, message);
+    if (number != NOTHING)
     {
-        while (*head == ' ')
+        head = list;
+        while (head && *head)
         {
-            head++;
-        }
-
-        tail = head;
-        while (*tail && (*tail != ' '))
-        {
-            if (*tail == '"')
+            while (*head == ' ')
             {
                 head++;
-                tail++;
-                while (*tail && (*tail != '"'))
+            }
+
+            tail = head;
+            while (*tail && (*tail != ' '))
+            {
+                if (*tail == '"')
+                {
+                    head++;
+                    tail++;
+                    while (*tail && (*tail != '"'))
+                        tail++;
+                }
+                if (*tail)
                     tail++;
             }
-            if (*tail)
-                tail++;
-        }
-        tail--;
-        if (*tail != '"')
-        {
-            tail++;
-        }
-        spot = *tail;
-        *tail = 0;
-
-        if (*head == '*')
-        {
-            do_malias_send(player, head, tolist, subject, number, flags, silent);
-        }
-        else
-        {
-            target = Tiny_atol(head);
-            if (target != NOTHING)
+            tail--;
+            if (*tail != '"')
             {
-                send_mail(player, target, tolist, subject, number, flags, silent);
+                tail++;
+            }
+            spot = *tail;
+            *tail = 0;
+
+            if (*head == '*')
+            {
+                do_malias_send(player, head, tolist, subject, number, flags, silent);
+            }
+            else
+            {
+                target = Tiny_atol(head);
+                if (Good_obj(target) && isPlayer(target))
+                {
+                    send_mail(player, target, tolist, subject, number, flags, silent);
+                }
+            }
+
+            // Get the next recip.
+            //
+            *tail = spot;
+            head = tail;
+            if (*head == '"')
+            {
+                head++;
             }
         }
-
-        // Get the next recip.
-        //
-        *tail = spot;
-        head = tail;
-        if (*head == '"')
-        {
-            head++;
-        }
+        MessageReferenceDec(number);
     }
     free_lbuf(tolist);
     free_lbuf(list);

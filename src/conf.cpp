@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.23 2000-09-26 06:27:41 sdennis Exp $
+// $Id: conf.cpp,v 1.24 2000-10-07 02:28:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -298,7 +298,6 @@ void NDECL(cf_init)
     mudstate.db_size = 0;
     mudstate.mail_db_top = 0;
     mudstate.mail_db_size = 0;
-    mudstate.mail_freelist = 0;
     mudstate.freelist = NOTHING;
     mudstate.markbits = NULL;
     mudstate.func_nest_lev = 0;

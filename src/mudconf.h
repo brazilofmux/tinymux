@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.9 2000-09-25 07:51:03 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.10 2000-10-07 02:28:45 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -328,7 +328,6 @@ struct statedata
     int min_size;   /* Minimum db size (from file header) */
     int db_top;     /* Number of items in the db */
     int     db_size;        /* Allocated size of db structure */
-    int     mail_freelist;  /* The next free mail number */
     int     mail_db_top;    /* Like db_top */
     int     mail_db_size;   /* Like db_size */
     MENT    *mail_list;     /* The mail database */

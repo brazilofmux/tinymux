@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.25 2000-10-04 06:42:00 sdennis Exp $
+// $Id: funceval.cpp,v 1.26 2000-10-07 02:28:45 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1255,11 +1255,11 @@ FUNCTION(fun_mail)
     {
 #ifdef RADIX_COMPRESSION
         msgbuff = alloc_lbuf("fun_mail");
-        string_decompress(get_mail_message(mp->number), msgbuff);
+        string_decompress(MessageFetch(mp->number), msgbuff);
         safe_str(msgbuff, buff, bufc);
         free_lbuf(msgbuff);
 #else
-        safe_str(get_mail_message(mp->number), buff, bufc);
+        safe_str(MessageFetch(mp->number), buff, bufc);
 #endif
         return;
     }

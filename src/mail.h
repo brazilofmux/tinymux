@@ -1,5 +1,5 @@
 /* mail.h */
-/* $Id: mail.h,v 1.1 2000-04-11 07:14:45 sdennis Exp $ */
+/* $Id: mail.h,v 1.2 2000-10-07 02:28:45 sdennis Exp $ */
 
 #ifndef _MAIL_H
 #define _MAIL_H
@@ -89,9 +89,10 @@ struct muser {
 };
 
 typedef struct mail_entry MENT;
-struct mail_entry {
-    char *message;
-    int count;
+struct mail_entry
+{
+    char *m_pMessage;
+    int   m_nRefs;
 };
 
 extern void FDECL(set_player_folder, (dbref, int));
@@ -117,7 +118,7 @@ extern void FDECL(do_malias_list_all, (dbref));
 extern void FDECL(do_malias_add, (dbref, char *, char *));
 extern void FDECL(do_malias_remove, (dbref, char *, char *));
 extern void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount);
-extern char *get_mail_message(int number);
+extern char *MessageFetch(int number);
 extern void check_mail_expiration(void);
 extern void check_mail(dbref player, int folder, int silent);
 
