@@ -450,6 +450,8 @@ Bug Fixes:
  --  Bug #357 - objects on channel can now use MONITOR, @listen, or @ahear.
      @aahear worked before, and it still works.
  --  Bug Fix: cat() with no arguments causes SIGSEGV.
+ -- Several semaphores waiting on the same object/attr could be @notified
+    out of order.
 
 
 Performance Enhancements:
