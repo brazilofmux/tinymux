@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.65 2003-08-22 08:56:39 jake Exp $
+// $Id: functions.cpp,v 1.66 2003-08-29 06:06:24 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -5768,11 +5768,12 @@ FUNCTION(fun_before)
 
 FUNCTION(fun_max)
 {
-    double maximum = -DBL_MAX;
+    double maximum = 0.0;
     for (int i = 0; i < nfargs; i++)
     {
         double tval = mux_atof(fargs[i]);
-        if (tval > maximum)
+        if (  i == 0
+           || tval > maximum)
         {
             maximum = tval;
         }
@@ -5782,11 +5783,12 @@ FUNCTION(fun_max)
 
 FUNCTION(fun_min)
 {
-    double minimum = DBL_MAX;
+    double minimum = 0.0;
     for (int i = 0; i < nfargs; i++)
     {
         double tval = mux_atof(fargs[i]);
-        if (tval < minimum)
+        if (  i == 0
+           || tval < minimum)
         {
             minimum = tval;
         }
