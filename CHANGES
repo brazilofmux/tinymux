@@ -379,9 +379,12 @@ Bug Fixes:
  --  Bug #665 - @mail/nuke corrupted the post office.
  --  Bug #390 - @mail without a body isn't sent.
  --  Bug #637 - semaphores with timeouts wouldn't run when @notified until the
-                timeout, and semaphores without timeouts didn't have a
-                predicatable run time when @notified, but usually it was right
-                away.
+     timeout, and semaphores without timeouts didn't have a predicatable run
+     time when @notified, but usually it was right away.
+ --  Bug #640 - Whispering to an unconnected player should behave more like
+     paging an unconnected player.
+ --  Bug #661 - comtitles near the maximum length were truncated when the game
+     first starts.
 
 
 Performance Enhancements:
