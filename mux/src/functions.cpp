@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.136 2003-08-07 05:38:01 sdennis Exp $
+// $Id: functions.cpp,v 1.137 2004-02-27 17:43:39 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -8639,46 +8639,43 @@ void do_function
     }
 }
 
-/* ---------------------------------------------------------------------------
- * list_functable: List available functions.
- */
-
+// ---------------------------------------------------------------------------
+// list_functable: List available functions.
+//
 void list_functable(dbref player)
 {
-    char *buf = alloc_lbuf("list_functable");
-    char *bp = buf;
-    char *cp;
-    for (cp = (char *)"Functions:"; *cp; cp++)
-    {
-        *bp++ = *cp;
-    }
+    char *buff = alloc_lbuf("list_functable");
+    char *bp = buff;
+
+    safe_str("Functions:", buff, &bp);
+
     FUN *fp;
-    for (fp = flist; fp->name; fp++)
+    for (fp = flist; fp->name && bp < buff + (LBUF_SIZE-1); fp++)
     {
         if (check_access(player, fp->perms))
         {
-            *bp++ = ' ';
-            for (cp = fp->name; *cp; cp++)
-            {
-                *bp++ = *cp;
-            }
-        }
-    }
-    UFUN *ufp;
-    for (ufp = ufun_head; ufp; ufp = ufp->next)
-    {
-        if (check_access(player, ufp->perms))
-        {
-            *bp++ = ' ';
-            for (cp = ufp->name; *cp; cp++)
-            {
-                *bp++ = *cp;
-            }
+            safe_chr(' ', buff, &bp);
+            safe_str(fp->name, buff, &bp);
         }
     }
     *bp = '\0';
-    notify(player, buf);
-    free_lbuf(buf);
+    notify(player, buff);
+
+    bp = buff;
+    safe_str("User-Functions:", buff, &bp);
+
+    UFUN *ufp;
+    for (ufp = ufun_head; ufp && bp < buff + (LBUF_SIZE-1); ufp = ufp->next)
+    {
+        if (check_access(player, ufp->perms))
+        {
+            safe_chr(' ', buff, &bp);
+            safe_str(ufp->name, buff, &bp);
+        }
+    }
+    *bp = '\0';
+    notify(player, buff);
+    free_lbuf(buff);
 }
 
 /* ---------------------------------------------------------------------------
