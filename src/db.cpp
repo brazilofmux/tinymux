@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.10 2000-04-24 23:28:52 sdennis Exp $
+// $Id: db.cpp,v 1.11 2000-04-29 08:07:14 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2395,9 +2395,7 @@ int atr_head(dbref thing, char **attrp)
  * * db_grow: Extend the struct database.
  */
 
-#define SIZE_HACK   1   /*
-                 * * So mistaken refs to #-1 won't die.  
-                 */
+#define SIZE_HACK   1   // So mistaken refs to #-1 won't die.
 
 void initialize_objects(dbref first, dbref last)
 {
@@ -2405,10 +2403,6 @@ void initialize_objects(dbref first, dbref last)
 
     for (thing = first; thing < last; thing++)
     {
-#ifdef MEMORY_BASED
-        db[thing].ahead = NULL;
-        db[thing].at_count = 0;
-#endif // MEMORY_BASED
         s_Owner(thing, GOD);
         s_Flags(thing, (TYPE_GARBAGE | GOING));
         s_Powers(thing, 0);
@@ -2421,6 +2415,11 @@ void initialize_objects(dbref first, dbref last)
         s_Zone(thing, NOTHING);
         s_Parent(thing, NOTHING);
         s_Stack(thing, NULL);
+        db[thing].cpu_time_used.Set100ns(0);
+#ifdef MEMORY_BASED
+        db[thing].ahead = NULL;
+        db[thing].at_count = 0;
+#endif // MEMORY_BASED
     }
 }
 

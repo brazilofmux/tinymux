@@ -2,7 +2,7 @@
  * object.c - low-level object manipulation routines 
  */
 /*
- * $Id: object.cpp,v 1.1 2000-04-11 07:14:46 sdennis Exp $ 
+ * $Id: object.cpp,v 1.2 2000-04-29 08:05:14 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -395,6 +395,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
     buff = munge_space((char *)name);
     s_Name(obj, buff);
     free_lbuf(buff);
+    db[obj].cpu_time_used.Set100ns(0);
 
     if (objtype == TYPE_PLAYER)
     {
