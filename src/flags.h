@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.15 2002-02-14 01:42:42 sdennis Exp $
+// $Id: flags.h,v 1.16 2002-02-14 05:34:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -96,7 +96,8 @@
 #define CHIMERA         0x00000100      // Fae, FAEDESC
 #define PEERING         0x00000200      // Means the a looker is seeing a
                                         // different realm than they are in.
-#else // WOD_REALMS
+#endif // WOD_REALMS
+#define SITEMON         0x00000400      // Sitemonitor Flag
 #define MARK_0          0x00400000      // User-defined flags.
 #define MARK_1          0x00800000
 #define MARK_2          0x01000000
@@ -107,8 +108,6 @@
 #define MARK_7          0x20000000
 #define MARK_8          0x40000000
 #define MARK_9          0x80000000
-#endif // WOD_REALMS
-#define SITEMON         0x00000400      // Sitemonitor Flag
 
 /* ---------------------------------------------------------------------------
  * FLAGENT: Information about object flags.
