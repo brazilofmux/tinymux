@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.38 2004-06-10 15:39:34 sdennis Exp $
+// $Id: command.cpp,v 1.39 2004-06-18 15:51:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -691,7 +691,7 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@newpassword", NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_newpassword},
     {"@notify",      notify_sw,  CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            0,           CS_TWO_ARG,           0, do_notify},
     {"@npemit",      pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_UNPARSE|CS_NOSQUISH, 0, do_pemit},
-    {"@oemit",       NULL,       CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_OEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
+    {"@oemit",       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_OEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {"@parent",      NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           0, do_parent},
     {"@password",    NULL,       CA_NO_GUEST,                                      0,           CS_TWO_ARG,           0, do_password},
     {"@pcreate",     NULL,       CA_WIZARD|CA_GBL_BUILD,                           PCRE_PLAYER, CS_TWO_ARG,           0, do_pcreate},
