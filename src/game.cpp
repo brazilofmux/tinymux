@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.2 2000-04-11 21:05:12 sdennis Exp $
+// $Id: game.cpp,v 1.3 2000-04-11 21:27:35 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -330,18 +330,23 @@ int check_filter(dbref object, dbref player, int filter, const char *msg)
     int aflags;
     dbref aowner;
     char *buf, *nbuf, *cp, *dp, *str;
+    char *preserve[MAX_GLOBAL_REGS];
+    int preserve_len[MAX_GLOBAL_REGS];
 
     buf = atr_pget(object, filter, &aowner, &aflags);
     if (!*buf) {
         free_lbuf(buf);
         return (1);
     }
+    save_global_regs("check_filter_save", preserve, preserve_len);
     nbuf = dp = alloc_lbuf("check_filter");
     str = buf;
     TinyExec(nbuf, &dp, 0, object, player, EV_FIGNORE | EV_EVAL | EV_TOP, &str, (char **)NULL, 0);
     *dp = '\0';
     dp = nbuf;
     free_lbuf(buf);
+    restore_global_regs("check_filter_restore", preserve, preserve_len);
+
     do {
         cp = parse_to(&dp, ',', EV_STRIP_CURLY);
         if (quick_wild(cp, (char *)msg)) {
@@ -358,22 +363,31 @@ static char *add_prefix(dbref object, dbref player, int prefix, const char *msg,
     int aflags;
     dbref aowner;
     char *buf, *nbuf, *cp, *bp, *str;
+    char *preserve[MAX_GLOBAL_REGS];
+    int preserve_len[MAX_GLOBAL_REGS];
 
     buf = atr_pget(object, prefix, &aowner, &aflags);
-    if (!*buf) {
+    if (!*buf)
+    {
         cp = buf;
         safe_str((char *)dflt, buf, &cp);
-    } else {
+    }
+    else
+    {
+        save_global_regs("add_prefix_save", preserve, preserve_len);
         nbuf = bp = alloc_lbuf("add_prefix");
         str = buf;
         TinyExec(nbuf, &bp, 0, object, player, EV_FIGNORE | EV_EVAL | EV_TOP, &str, (char **)NULL, 0);
         *bp = '\0';
         free_lbuf(buf);
+        restore_global_regs("add_prefix_restore", preserve, preserve_len);
         buf = nbuf;
         cp = &buf[strlen(buf)];
     }
     if (cp != buf)
+    {
         safe_str((char *)" ", buf, &cp);
+    }
     safe_str((char *)msg, buf, &cp);
     *cp = '\0';
     return (buf);
