@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.37 2000-11-06 02:04:34 sdennis Exp $
+// $Id: externs.h,v 1.38 2000-11-06 16:16:53 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -800,7 +800,7 @@ void put_ConnectionInfoFields
     CLinearTimeAbsolute &ltaLogout
 );
 
-// Added by D.Piper (del@delphinian.com) 2000-APR
+// Added by D.Piper (del@doofer.org) 2000-APR
 //
 // In order:
 //

@@ -1,5 +1,5 @@
 /* attrs.h - Attribute definitions */
-/* $Id: attrs.h,v 1.3 2000-09-05 20:28:53 sdennis Exp $ */
+/* $Id: attrs.h,v 1.4 2000-11-06 16:16:54 sdennis Exp $ */
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
@@ -163,7 +163,7 @@
 #define A_VRML_URL  220 /* URL of the VRML scene for this object */
 #define A_HTDESC    221 /* HTML @desc */
 
-// Added by D.Piper (del@delphinian.com) 2000-APR
+// Added by D.Piper (del@doofer.org) 2000-APR
 //
 #define A_REASON    222 // Disconnect reason
 #ifdef GAME_DOOFERMUX
