@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.23 2000-06-16 00:33:06 sdennis Exp $
+// $Id: functions.cpp,v 1.24 2000-06-24 18:30:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6591,9 +6591,9 @@ void GeneralTimeConversion
                     *p++ = ' ';
                     memcpy(p, reTable[i].pName, reTable[i].nName);
                     p += reTable[i].nName;
-                    if (iValue > 1)
+                    if (iValue != 1)
                     {
-                        // More than one
+                        // More than one or zero.
                         //
                         *p++ = 's';
                     }
