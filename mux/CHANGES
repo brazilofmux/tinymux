@@ -104,6 +104,7 @@ Feature Additions:
  -- Added ORD() from PennMUSH.
  -- Added STRIPACCENTS() from PennMUSH.
  -- Added NOACCENTS flag from PennMUSH.
+ -- Added ACCENT() from PennMUSH.
 
 Bug Fixes:
 ~~~~~~~~~

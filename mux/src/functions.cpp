@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.100 2002-09-18 04:45:04 sdennis Exp $
+// $Id: functions.cpp,v 1.101 2002-09-18 07:14:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -163,6 +163,7 @@ XFUNCTION(fun_hasquota);
 XFUNCTION(fun_chr);
 XFUNCTION(fun_ord);
 XFUNCTION(fun_stripaccents);
+XFUNCTION(fun_accent);
 
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
@@ -7968,6 +7969,7 @@ FUN flist[] =
 {
     {"@@",       fun_null,           1, 1,  1, FN_NO_EVAL, CA_PUBLIC},
     {"ABS",      fun_abs,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ACCENT",   fun_accent,   MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ACOS",     fun_acos,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"ADD",      fun_add,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
     {"AFTER",    fun_after,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
@@ -9278,5 +9280,118 @@ FUNCTION(fun_chr)
 FUNCTION(fun_stripaccents)
 {
     size_t nLen;
-    safe_copy_buf(strip_accents(fargs[0], &nLen), nLen, buff, bufc);
+    char *p = strip_accents(fargs[0], &nLen);
+    safe_copy_buf(p, nLen, buff, bufc);
+}
+
+// Base Letter: AaCcEeIiNnOoUuYy
+//
+static const char AccentCombo1[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 1, 0, 3, 0, 5, 0, 0, 0, 7, 0, 0, 0, 0, 9,11,  // 4
+    0, 0, 0, 0, 0,13, 0, 0, 0,15, 0, 0, 0, 0, 0, 0,  // 5
+    0, 2, 0, 4, 0, 6, 0, 0, 0, 8, 0, 0, 0, 0,10,12,  // 6
+    0, 0, 0, 0, 0,14, 0, 0, 0,16, 0, 0, 0, 0, 0, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+// Accent:      `'^~:,o
+//
+static const char AccentCombo2[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 7, 0, 0, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0,  // 3
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 4
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0,  // 5
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,  // 6
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+static const unsigned char AccentCombo3[16][8] =
+{
+    //  0     1     2     3     4     5     6     7
+    //        `     '     ^     ~     :     o     ,
+    //
+    {  0x00, 0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0x00 }, //  1 'A'
+    {  0x00, 0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0x00 }, //  2 'a'
+    {  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC7 }, //  3 'C'
+    {  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE7 }, //  4 'c'
+    {  0x00, 0xC8, 0xC9, 0xCA, 0x00, 0xCB, 0x00, 0x00 }, //  5 'E'
+    {  0x00, 0xE8, 0xE9, 0xEA, 0x00, 0xEB, 0x00, 0x00 }, //  6 'e'
+    {  0x00, 0xCC, 0xCD, 0xCE, 0x00, 0xCF, 0x00, 0x00 }, //  7 'I'
+    {  0x00, 0xEC, 0xED, 0xEE, 0x00, 0xEF, 0x00, 0x00 }, //  8 'i'
+
+    {  0x00, 0x00, 0x00, 0x00, 0xD1, 0x00, 0x00, 0x00 }, //  9 'N'
+    {  0x00, 0x00, 0x00, 0x00, 0xF1, 0x00, 0x00, 0x00 }, //  A 'n'
+    {  0x00, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0x00, 0x00 }, //  B 'O'
+    {  0x00, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0x00, 0x00 }, //  C 'o'
+    {  0x00, 0xD9, 0xDA, 0xDB, 0x00, 0xDC, 0x00, 0x00 }, //  D 'U'
+    {  0x00, 0xF9, 0xFA, 0xFB, 0x00, 0xFC, 0x00, 0x00 }, //  E 'u'
+    {  0x00, 0x00, 0xDD, 0x00, 0x00, 0x00, 0x00, 0x00 }, //  F 'Y'
+    {  0x00, 0x00, 0xFD, 0x00, 0x00, 0xFF, 0x00, 0x00 }  // 10 'y'
+};
+
+// ---------------------------------------------------------------------------
+// fun_accent:
+//
+FUNCTION(fun_accent)
+{
+    size_t n = strlen(fargs[0]);
+    if (n != strlen(fargs[1]))
+    {
+        safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
+        return;
+    }
+
+    const char *p = fargs[0];
+    const char *q = fargs[1];
+
+    while (*p)
+    {
+        unsigned char ch = '\0';
+        char ch0 = AccentCombo1[*p];
+        if (ch0)
+        {
+            char ch1 = AccentCombo2[*q];
+            if (ch1)
+            {
+                ch  = AccentCombo3[ch0-1][ch1];
+            }
+        }
+        if (!Tiny_IsPrint[(unsigned char)ch])
+        {
+            ch = *p;
+        }
+        safe_chr(ch, buff, bufc);
+
+        p++;
+        q++;
+    }
 }
