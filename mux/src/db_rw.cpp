@@ -1,14 +1,11 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: db_rw.cpp,v 1.2 2003-01-24 07:15:17 sdennis Exp $
 //
 
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#ifdef STANDALONE
-#undef MEMORY_BASED
-#endif
 #include "externs.h"
 
 #include "attrs.h"
@@ -532,23 +529,25 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     BOOL bValid;
     char *pName;
 
-#ifdef STANDALONE
-    Log.WriteString("Reading ");
-    Log.Flush();
     int iDotCounter = 0;
-#endif
+    if (mudstate.bStandAlone)
+    {
+        Log.WriteString("Reading ");
+        Log.Flush();
+    }
     db_free();
     for (i = 0;; i++)
     {
-#ifdef STANDALONE
-        if (!iDotCounter)
+        if (mudstate.bStandAlone)
         {
-            iDotCounter = 100;
-            fputc('.', stderr);
-            fflush(stderr);
+            if (!iDotCounter)
+            {
+                iDotCounter = 100;
+                fputc('.', stderr);
+                fflush(stderr);
+            }
+            iDotCounter--;
         }
-        iDotCounter--;
-#endif
 
         ch = getc(f);
         switch (ch)
@@ -770,12 +769,15 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 *db_version = g_version;
                 *db_format = g_format;
                 *db_flags = g_flags;
-#ifdef STANDALONE
-                Log.WriteString(ENDLINE);
-                Log.Flush();
-#else
-                load_player_names();
-#endif
+                if (mudstate.bStandAlone)
+                {
+                    Log.WriteString(ENDLINE);
+                    Log.Flush();
+                }
+                else
+                {
+                    load_player_names();
+                }
                 return mudstate.db_top;
             }
 
@@ -799,10 +801,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
 static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
 {
-#ifndef STANDALONE
     ATTR *a;
-#endif // !STANDALONE
-
     char *got, *as;
     dbref aowner;
     int ca, aflags, j;
@@ -849,16 +848,19 @@ static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
         buf[0] = '>';
         for (ca = atr_head(i, &as); ca; ca = atr_next(&as))
         {
-#ifndef STANDALONE
-            a = atr_num(ca);
-            if (!a)
+            if (mudstate.bStandAlone)
             {
-                continue;
+                j = ca;
             }
-            j = a->number;
-#else // !STANDALONE
-            j = ca;
-#endif // !STANDALONE
+            else
+            {
+                a = atr_num(ca);
+                if (!a)
+                {
+                    continue;
+                }
+                j = a->number;
+            }
             if (j < A_USER_START)
             {
                 switch (j)
@@ -917,10 +919,11 @@ dbref db_write(FILE *f, int format, int version)
         Log.WriteString("Can only write MUX format." ENDLINE);
         return -1;
     }
-#ifdef STANDALONE
-    Log.WriteString("Writing ");
-    Log.Flush();
-#endif // STANDALONE
+    if (mudstate.bStandAlone)
+    {
+        Log.WriteString("Writing ");
+        Log.Flush();
+    }
     i = mudstate.attr_next;
     fprintf(f, "+X%d\n+S%d\n+N%d\n", flags, mudstate.db_top, i);
     fprintf(f, "-R%d\n", mudstate.record_players);
@@ -954,22 +957,21 @@ dbref db_write(FILE *f, int format, int version)
         }
     }
 
-#ifdef STANDALONE
     int iDotCounter = 0;
-#endif // STANDALONE
     char buf[SBUF_SIZE];
     buf[0] = '!';
     DO_WHOLE_DB(i)
     {
-#ifdef STANDALONE
-        if (!iDotCounter)
+        if (mudstate.bStandAlone)
         {
-            iDotCounter = 100;
-            fputc('.', stderr);
-            fflush(stderr);
+            if (!iDotCounter)
+            {
+                iDotCounter = 100;
+                fputc('.', stderr);
+                fflush(stderr);
+            }
+            iDotCounter--;
         }
-        iDotCounter--;
-#endif
 
         if (!isGarbage(i))
         {
@@ -982,9 +984,10 @@ dbref db_write(FILE *f, int format, int version)
         }
     }
     fputs("***END OF DUMP***\n", f);
-#ifdef STANDALONE
-    Log.WriteString(ENDLINE);
-    Log.Flush();
-#endif // STANDALONE
+    if (mudstate.bStandAlone)
+    {
+        Log.WriteString(ENDLINE);
+        Log.Flush();
+    }
     return mudstate.db_top;
 }
