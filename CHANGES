@@ -36,8 +36,6 @@ Performance Enhancements:
     for gcc to optimize and therefore, Unix distro should benefit.
     Actually, new hash function is faster than anything else I've found
     for all block sizes from 1-byte up.
- -- Changed random number generate to use Mersenne Twister exclusively.
-    It's the fastest one and also the one with the longest period.
  -- For string search with GREP and GREPI, added a Boyer-Moore-Horspool
     string search algorithm for speed.
 
