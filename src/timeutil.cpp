@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.9 2000-10-12 06:37:17 sdennis Exp $
+// $Id: timeutil.cpp,v 1.10 2000-10-12 20:06:18 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -945,58 +945,56 @@ static CLinearTimeAbsolute ltaLowerBound;
 static CLinearTimeAbsolute ltaUpperBound;
 static CLinearTimeDelta    ltdTimeZoneStandard;
 
+// Because of signed-ness and -LONG_MAX overflowing, we need to be
+// particularly careful with finding the mid-point.
+//
+time_t time_t_midpoint(time_t ulLower, time_t ulUpper)
+{
+    time_t ulDiff = (ulUpper-2) - ulLower;
+    return ulLower+ulDiff/2+1;
+}
+
 // This determines the valid range of time_t and finds a 'standard'
 // time zone near the earliest supported time_t.
 //
 void test_time_t(void)
 {
-    time_t ulUpper, ulMid, ulLower;
-
-    // Determine the upper bound.
+    // Search for the highest supported value of time_t.
     //
-    ulUpper = LONG_MAX;
-    ulLower = 0;
-    if (localtime(&ulUpper) == NULL)
+    time_t ulUpper = LONG_MAX;
+    time_t ulLower = 0;
+    time_t ulMid;
+    while (ulLower < ulUpper)
     {
-        // Search for upper bound.
-        //
-        do
+        ulMid = time_t_midpoint(ulLower+1, ulUpper);
+        if (localtime(&ulMid))
         {
-            ulMid = (ulLower + ulUpper)/2;
-            if (localtime(&ulMid))
-            {
-                ulLower = ulMid;
-            }
-            else
-            {
-                ulUpper = ulMid-1;
-            }
-        } while (ulLower != ulUpper);
+            ulLower = ulMid;
+        }
+        else
+        {
+            ulUpper = ulMid-1;
+        }
     }
-    ltaUpperBound.SetSeconds(ulUpper);
+    ltaUpperBound.SetSeconds(ulLower);
 
-    // Determine the lower bound.
+    // Search for the lowest supported value of time_t.
     //
     ulUpper = 0;
     ulLower = LONG_MIN;
-    if (localtime(&ulLower) == NULL)
+    while (ulLower < ulUpper)
     {
-        // Search for lower bound.
-        //
-        do
+        ulMid = time_t_midpoint(ulLower, ulUpper-1);
+        if (localtime(&ulMid))
         {
-            ulMid = (ulLower + ulUpper)/2;
-            if (localtime(&ulMid))
-            {
-                ulUpper = ulMid;
-            }
-            else
-            {
-                ulLower = ulMid+1;
-            }
-        } while (ulLower != ulUpper);
+            ulUpper = ulMid;
+        }
+        else
+        {
+            ulLower = ulMid+1;
+        }
     }
-    ltaLowerBound.SetSeconds(ulLower);
+    ltaLowerBound.SetSeconds(ulUpper);
 
     // Find a time near ulLower for which DST is not in affect.
     //
