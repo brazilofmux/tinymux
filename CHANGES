@@ -373,6 +373,10 @@ Bug Fixes:
  --  Config commands didn't accept upper-case flag names.
  --  Bug #665 - @mail/nuke corrupted the post office.
  --  Bug #390 - @mail without a body isn't sent.
+ --  Bug #637 - semaphores with timeouts wouldn't run when @notified until the
+                timeout, and semaphores without timeouts didn't have a
+                predicatable run time when @notified, but usually it was right
+                away.
 
 
 Performance Enhancements:
