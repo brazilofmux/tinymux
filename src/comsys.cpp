@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.64 2002-01-15 06:23:27 sdennis Exp $
+// $Id: comsys.cpp,v 1.65 2002-01-24 09:53:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2727,34 +2727,20 @@ FUNCTION(fun_comalias)
         return;
     }
 
-    int i;
-    struct comuser *user;
-    int onchannel = 0;
-    if (Wizard(player))
-    {
-        onchannel = 1;
-    }
-    else
-    {
-        for (i = 0; i < c->numchannels; i++)
-        {
-            user = select_user(chn, player);
-            if (user)
-            {
-                onchannel = 1;
-                break;
-            }
-        }
-    }
-
-    if (!onchannel)
+    // Wizards can get the comalias for anyone. Players and objects can check
+    // for themselves. Objects that Inherit can check for their owners.
+    //
+    if (  !Wizard(player)
+       && player != victim
+       && (  Owner(player) != victim
+          || !Inherits(player)))
     {
         safe_noperm(buff, bufc);
         return;
     }
 
     comsys_t *cc = get_comsys(victim);
-    for (i = 0; i < cc->numchannels; i++)
+    for (int i = 0; i < cc->numchannels; i++)
     {
         if (!strcmp(fargs[1], cc->channels[i]))
         {
