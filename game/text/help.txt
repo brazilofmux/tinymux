@@ -9259,11 +9259,13 @@ TRIM()
     You say "    Polly Parrot"
     > say trim(---Trim Rules!---,-,l)
     You say "Trim Rules!---"
-  See also: center(), ljust(), rjust().
+  
+  Related Topics: center(), ljust(), rjust().
 
 & CENTER()
+CENTER()
 
-  Function: center(<string>,<width>[,<fill>])
+  FUNCTION: center(<string>,<width>[,<fill>])
  
   This function will center a string in a string <width> characters wide,
   using <fil> characters for padding on either end of the string for
@@ -9277,9 +9279,12 @@ TRIM()
     > say center(*BAMF*,15)
     You say "    *BAMF*     "
 
+  Related Topics:
+  
 & INSERT()
+INSERT()
 
-  Function: insert(<list>, <pos>, <word>[, <sep>])
+  FUNCTION: insert(<list>, <pos>, <word>[, <sep>])
  
   This function inserts a word into <list> so that the word becomes the
   <pos>'th element of the list, and all subsequent list elements are moved
@@ -9294,11 +9299,13 @@ TRIM()
     You say "This is a new test"
     > say insert(Yet@Another@List, 3, Funky, @)
     You say "Yet@Another@Funky@List"
-  See also: extract(), ldelete(), replace().
+  
+  Related Topics: extract(), ldelete(), replace().
 
 & REPLACE()
+REPLACE()
 
-  Function: replace(<list>, <pos>, <word>[, <sep>])
+  FUNCTION: replace(<list>, <pos>, <word>[, <sep>])
  
   This function inserts a word into <list> so that the word becomes the
   <pos>'th element of the list, and the word previously in that position
@@ -9313,11 +9320,13 @@ TRIM()
     You say "This is a quiz"
     > say replace(Yet@Another@Mundane@List, 3, Funky, @)
     You say "Yet@Another@Funky@List"
-  See also: extract(), insert(), ldelete().
+  
+  Related Topics: extract(), insert(), ldelete().
 
 & LDELETE()
+LDELETE()
 
-  Function: ldelete(<list>, <pos>[, <sep>])
+  FUNCTION: ldelete(<list>, <pos>[, <sep>])
  
   This function removes a word from <list> by position.
   <delim> may be used to specify a delimiter other than a space.
@@ -9327,11 +9336,13 @@ TRIM()
     You say "This is a test"
     > say ldelete(Yet@Another@Mundane@List, 3, @)
     You say "Yet@Another@List"
-  See also: extract(), insert(), replace().
+  
+  Related Topics: extract(), insert(), replace().
 
 & ISDBREF()
+ISDBREF()
 
-  Function: isdbref(<string>)
+  FUNCTION: isdbref(<string>)
  
   This function will return 1 if the string passed to it is a valid dbref.
   To be a valid dbref the string must begin with '#' and be followed by an
@@ -9346,10 +9357,13 @@ TRIM()
      You say "1"
      > say isdbref(This is not a dbref)
      You say "0"
-
+  
+  Related Topics:
+  
 & ISNUM()
- 
-  Function: isnum(<string>)
+ISNUM()
+
+  FUNCTION: isnum(<string>)
  
   This function will return return 1 if the argument is a valid number and 0
   if it is not.
@@ -9363,55 +9377,76 @@ TRIM()
      You say "0"
      >say isnum(Bad Numbers!)
      You say "0"
- 
+  
+  Related Topics:
+   
 & ZONE()
+ZONE()
 
-  Function: zone(<object>)
+  FUNCTION: zone(<object>)
  
   Returns the object's 'zone'. This is the dbref of the master object
   which defines the zone.
+  
+  Related Topics: 
 
 & ZWHO()
+ZWHO()
 
-  Function: zwho(<object>)
- 
+  FUNCTION: zwho(<object>)
+
   Returns a list of players who are in the zone defined by <object>.
   Currently a wizard/royalty only function.
- 
-& INZONE()
 
-  Function: inzone(<object>)
+  Related Topics:
+
+& INZONE()
+INZONE()
+
+  FUNCTION: inzone(<object>)
  
   Returns a list of rooms in the zone defined by <object>. Currently a
   wizard/royalty only function.
   
+  Related Topics:
+  
 & CHILDREN()
+CHILDREN()
 
-  Function: children(<object>)
+  FUNCTION: children(<object>)
  
   Returns a list of objects that are parented to <object>. Currently a
   wizard/royalty only function.
+  
+  Related Topics:
  
 & ENCRYPT()
+ENCRYPT()
 
-  Function: encrypt(<text>,<key>)
+  FUNCTION: encrypt(<text>,<key>)
  
   Encrypts <text> using <key>. The text can only be unlocked with <key>, and
   <key> is case-sensitive.
+  
+  Related Topics:
  
 & DECRYPT()
+DECRYPT()
 
-  Function: decrypt(<text>,<key>)
+  FUNCTION: decrypt(<text>,<key>)
  
   Decrypts <text> using <key>. <key> should be the same one used to encrypt
   the text, and is case sensitive.
+  
+  Related Topics:
  
 & MAIL()
+MAIL()
 
-  mail(<mail message #>)
-  mail(<player name>)
-  mail(<player>, <mail message #>)
-  mail()
+  FUNCTION: mail(<mail message #>)
+            mail(<player name>)
+            mail(<player>, <mail message #>)
+            mail()
 
   The first form returns a message corresponding to that mail message
   number in your MUX mailbox. This function can be used to forward
@@ -9425,17 +9460,23 @@ TRIM()
   The last form returns the number of messages the evaluating player has.
   Only wizards can use the second and third forms of the function
   on other players.
- 
-& MAILFROM()
 
-  Function: mailfrom(<msg #>)
+  Related Topics:
+   
+& MAILFROM()
+MAILFROM()
+
+  FUNCTION: mailfrom(<msg #>)
  
   Returns the dbref # of the player who sent you <msg #>. Wizards may
   specify mailfrom(<player>,<msg #>).
+  
+  Related Topics:
  
 & DEFAULT()
+DEFAULT()
 
-  Function:  default(<obj>/<attr>,<default case>)
+  FUNCTION:  default(<obj>/<attr>,<default case>)
  
   This function returns the value of <obj>/<attr>, as if retrieved via
   the get() function, if the attribute exists and is readable by you.
@@ -9454,11 +9495,12 @@ TRIM()
     > say default(me/Test, No fruits!)
     You say "No fruits!"
  
-  See also:  get(), get_eval(), u(), edefault(), udefault().
+  Related Topics:  get(), get_eval(), u(), edefault(), udefault().
  
 & EDEFAULT()
+EDEFAULT()
 
-  Function:  edefault(<obj>/<attr>,<default case>)
+  FUNCTION:  edefault(<obj>/<attr>,<default case>)
  
   This function returns the evaluated value of <obj>/<attr>, as if
   retrieved via the get_eval() function, if the attribute exists and
@@ -9474,11 +9516,12 @@ TRIM()
     > say edefault(me/Test,You have no marbles.)
     You say "You have no marbles."
   
-  See also:  get(), get_eval(), u(), default(), udefault().
+  Related Topics:  get(), get_eval(), u(), default(), udefault().
  
 & UDEFAULT()
+UDEFAULT()
 
-  Function:  udefault([<obj>/]<attr>,<default case>[,<arg>]...)
+  FUNCTION:  udefault([<obj>/]<attr>,<default case>[,<arg>]...)
  
   This function returns the value of the user-defined function
   as defined by <attr> (or <obj>/<attr>), as if retrieved via
@@ -9497,12 +9540,13 @@ TRIM()
     > say udefault(me/Test,-- BOOM --,ACK)
     You say "-- BOOM --"
  
-  See also:  get(), get_eval(), u(), default(), edefault().
+  Related Topics:  get(), get_eval(), u(), default(), edefault().
 
 
 & ULOCAL()
+ULOCAL()
 
-  Function:  ulocal([<obj>/]<attr>[,<arg>]...)
+  FUNCTION:  ulocal([<obj>/]<attr>[,<arg>]...)
  
   The ulocal() function is almost identical to u() in function:  it
   evaluates an attribute, either from the object performing the function,
@@ -9521,11 +9565,12 @@ TRIM()
   calls arbitrary u() functions, where global register values need to be
   preserved from accidental user clobbering.
  
-  See "help ulocal2" for examples.
+  Related Topics: ulocal2
  
 & ULOCAL2
+ULOCAL() (continued)
 
-  Example of ulocal():
+  Examples:
     > &FRUIT me=apples bananas oranges pears
     > &SUB-FUNCTION me=[setq(0,v(FRUIT))][extract(%q0,match(%q0,%0),1)]
     > &TOP-FUNCTION me=[setq(0,are delicious!)][ulocal(SUB-FUNCTION,%0)] %q0
@@ -9545,17 +9590,21 @@ TRIM()
   See also:  u(), setq(), r()
 
 & FINDABLE()
+FINDABLE()
 
-  Function:  findable(<object>,<victim>)
+  FUNCTION:  findable(<object>,<victim>)
  
   Returns 1 if <object> can locate <victim>, or 0 otherwise. This checks
   wizard status of <object>, UNFINDABLE status of <victim>, and other
   related factors. If <object> would not be able to see <victim> were 
   they in the same location a 0 will be returned.
+  
+  Related Topics:
  
 & VISIBLE()
+VISIBLE()
 
-  Function:  visible(<object>,<victim>[/<attr>])
+  FUNCTION:  visible(<object>,<victim>[/<attr>])
  
   Returns 1 if <object> can examine <victim>, or 0 otherwise. If
   <object> or <victim> do not exist, 0 is returned.
@@ -9563,10 +9612,13 @@ TRIM()
   If an object-attribute pair is provided, 1 is returned if <object>
   can see <attr> on <victim>. If <attr> is not present on <victim>,
   1 is returned if <object> can examine <victim>.
+  
+  Related Topics:
  
 & LAST()
+LAST()
 
-  Function: last(<string>[, <delim>])
+  FUNCTION: last(<string>[, <delim>])
  
   Returns the last word of a string, that is, everything to the right
   of the last space in the string, or the entire string if there are no 
@@ -9580,28 +9632,29 @@ TRIM()
     > say last(Happy-Fun-Test-Thing,-)
     You say "Thing"
  
-  See also:  first(), rest().
+  Related Topics:  first(), rest().
 
 & MATCHALL()
+MATCHALL()
 
-  Function: matchall(<string>,<pattern>[,<delim>])
+  FUNCTION: matchall(<string>,<pattern>[,<delim>])
  
   This function works identically to the match() function, save that it
   returns all matches, not just the first: It returns the index numbers of
   all words in the list <string> which match <pattern>.
  
   Examples:
+    > say matchall(This is a test of a test,test)
+    You say "4 7"
+    > say matchall(This is testing a test,tes*)
+    You say "3 5"
  
-  > say matchall(This is a test of a test,test)
-  You say "4 7"
-  > say matchall(This is testing a test,tes*)
-  You say "3 5"
- 
-  See also: LISTS, match(), strmatch(). 
+  Related Topics: LISTS, match(), strmatch(). 
 
 & PORTS()
+PORTS()
 
-  ports(<player name>)
+  FUNCTION: ports(<player name>)
  
   This function returns the list of descriptors ("ports") that a player,
   specified by full player name, or by dbref, is connected to. Only Wizards
@@ -9610,9 +9663,12 @@ TRIM()
   returned in order of most recent connection to least recent connection.
   These ports correspond to those given by the SESSION command.
   
+  Related Topics:
+  
 & ELEMENTS()
+ELEMENTS()
 
-  elements(<list of words>,<list of numbers>[,<delim>])
+  FUNCTION: elements(<list of words>,<list of numbers>[,<delim>])
  
   This function returns the words in <list of words> that are in the
   positions specified by <list of numbers>. Optionally, a list delimiter
@@ -9623,10 +9679,13 @@ TRIM()
     You say "Ack Moo"
     > say elements(Foof|Ack|Beep|Moo,3 1,|)
     You say "Beep|Foof"
+    
+  Related Topics:
 
 & GRAB()
+GRAB()
 
-  Function:  grab(<list>, <pattern>[, <delim>])
+  FUNCTION:  grab(<list>, <pattern>[, <delim>])
   
   This function matches <pattern> against each word in <list>, returning
   the first word that matches. If no words match, then an empty string
@@ -9640,49 +9699,55 @@ TRIM()
     > say grab(Holodeck:#10~Airlock:#58~Dorm:#12~Brig:#83,Airlock:*,~)
     You say "Airlock:#58"
  
-  See also: LISTS, match().
+  Related Topics: LISTS, match().
  
 & PEMIT()
- 
-  Function: pemit(<list of objects>, <message>)
+PEMIT()
+
+  FUNCTION: pemit(<list of objects>, <message>)
  
   A side effect function, with the same effect as @pemit/list <list of
   objects> = <message>.
  
-  See also: @pemit.
+  Related Topics: @pemit.
  
 & EMPTY()
+EMPTY()
   
-  Function: empty([<object>])
+  FUNCTION: empty([<object>])
   
   This function completely empties the stack for the calling object. If
   <object> is specified, and you control it, it empties the stack for
   <object>.
  
-  See also: lstack(), items(), peek(), pop(), push(), OBJECT STACK.
+  Related Topics: lstack(), items(), peek(), pop(), push(), OBJECT STACK.
  
 & ITEMS()
- 
-  Function: items([<object>])
+ITEMS()
+
+  FUNCTION: items([<object>])
  
   items() returns the number of items that the stack of the calling object
   contains. If <object> is specified and you control it, then it returns the
   number of items in the stack of that object.
  
-  See also: lstack(), empty(), peek(), pop(), push(), OBJECT STACK.
+  Related Topics: lstack(), empty(), peek(), pop(), push(), OBJECT STACK.
  
 & LSTACK()
- 
-  Function: lstack([<object>])
+LSTACK()
+
+  FUNCTION: lstack([<object>])
  
   This function returns the contents of an object's stack as a list. If
   <object> is not specified, then it returns the stack of the executing
   object.
-  See also: push(), pop(), peek(), empty(), items(), OBJECT STACK.
+  
+  Related Topics: push(), pop(), peek(), empty(), items(), OBJECT STACK.
  
 & PEEK()
- 
-  Function: peek([<object>], [<position>])
+PEEK()
+
+  FUNCTION: peek([<object>], [<position>])
  
   peek() returns an item from the caller's stack without removing it from
   the stack. If <position> is specified, it returns the item from that
@@ -9691,11 +9756,12 @@ TRIM()
   specified and you control it, then it returns an item from <object>'s
   stack.
  
-  See also: lstack(), empty(), items(), pop(), push(), OBJECT STACK.
+  Related Topics: lstack(), empty(), items(), pop(), push(), OBJECT STACK.
  
 & POP()
- 
-  Function: pop([<object>], [<position>])
+POP()
+
+  FUNCTION: pop([<object>], [<position>])
  
   pop() returns an item from the caller's stack and removes it from
   the stack. If <position> is specified, it returns the item from that
@@ -9704,17 +9770,18 @@ TRIM()
   If <object> is specified and you control it, then it returns an item from
   <object>'s stack.
  
-  See also: lstack(), empty(), items(), peek(), push(), OBJECT STACK.
+  Related Topics: lstack(), empty(), items(), peek(), push(), OBJECT STACK.
  
 & PUSH()
- 
-  Function: push(<data>)
+PUSH()
+
+  FUNCTION: push(<data>)
             push(<object>, <data>)
  
   push() places <data> onto the calling object's stack. If the second form
   is used, it places data onto <object>'s stack.
  
-  See also: lstack(), empty(), items(), peek(), pop(), OBJECT STACK.
+  Related Topics: lstack(), empty(), items(), peek(), pop(), OBJECT STACK.
  
 & COMALIAS()
  
@@ -9726,10 +9793,13 @@ TRIM()
   See also: comtitle()
  
 & CHANNELS()
+CHANNELS()
  
-  Function: channels()
+  FUNCTION: channels()
  
   This function lists all the channels known to the MUX (that you can see).
+  
+  Related Topics:
  
 & COMTITLE()
  
