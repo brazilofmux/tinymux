@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.59 2002-08-02 16:40:04 sdennis Exp $
+// $Id: command.cpp,v 1.60 2002-08-02 16:42:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4263,8 +4263,9 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                 "--------------------------------------------"));
             notify(executor, tprintf("The hook object is currently: #%d (%s)",
                 mudconf.hook_obj,
-                (  Good_obj(mudconf.hook_obj)
-                && !Going(mudconf.hook_obj)) ? "VALID" : "INVALID")));
+                (  (  Good_obj(mudconf.hook_obj)
+                   && !Going(mudconf.hook_obj))
+                ? "VALID" : "INVALID")));
         }
     }
 }
