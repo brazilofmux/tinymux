@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.3 2002-06-03 20:12:14 sdennis Exp $
+// $Id: eval.cpp,v 1.4 2002-06-03 20:29:52 sdennis Exp $
 //
 
 // MUX 2.1
@@ -710,9 +710,9 @@ TryAgain:
 // is unterminated, a NULL is returned.  The original arglist is destructively
 // modified.
 //
-char *parse_arglist( dbref player, dbref caller, dbref cause, char *dstr, char delim,
-                     dbref eval, char *fargs[], dbref nfargs, char *cargs[],
-                     dbref ncargs, int *nArgsParsed )
+char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
+                     char delim, dbref eval, char *fargs[], dbref nfargs,
+                     char *cargs[], dbref ncargs, int *nArgsParsed )
 {
     char *rstr, *tstr, *bp, *str;
     int arg, peval;
@@ -741,7 +741,7 @@ char *parse_arglist( dbref player, dbref caller, dbref cause, char *dstr, char d
         if (eval & EV_EVAL)
         {
             str = tstr;
-            TinyExec(fargs[arg], &bp, player, CALLERQQQ, cause,
+            TinyExec(fargs[arg], &bp, executor, caller, enactor,
                      eval | EV_FCHECK, &str, cargs, ncargs);
             *bp = '\0';
         }
@@ -755,9 +755,10 @@ char *parse_arglist( dbref player, dbref caller, dbref cause, char *dstr, char d
     return dstr;
 }
 
-char *parse_arglist_lite( dbref player, dbref cause, char *dstr, char delim,
-                          int eval, char *fargs[], dbref nfargs, char *cargs[],
-                          dbref ncargs, int *nArgsParsed)
+char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
+                          char *dstr, char delim, int eval, char *fargs[],
+                          dbref nfargs, char *cargs[], dbref ncargs,
+                          int *nArgsParsed)
 {
     char *tstr, *bp, *str;
 
@@ -793,7 +794,7 @@ char *parse_arglist_lite( dbref player, dbref cause, char *dstr, char delim,
 
         bp = fargs[arg] = alloc_lbuf("parse_arglist");
         str = tstr;
-        TinyExec(fargs[arg], &bp, player, CALLERQQQ, cause, peval, &str,
+        TinyExec(fargs[arg], &bp, executor, caller, enactor, peval, &str,
                  cargs, ncargs);
         *bp = '\0';
         arg++;
@@ -1254,7 +1255,7 @@ void TinyExec( char *buff, char **bufc, dbref player, dbref caller,
                 }
 
                 char **fargs = PushPointers(MAX_ARG);
-                pdstr = parse_arglist_lite(player, cause, pdstr + 1,
+                pdstr = parse_arglist_lite(player, caller, cause, pdstr + 1,
                       ')', feval, fargs, nfargs, cargs, ncargs, &nfargs);
 
 
