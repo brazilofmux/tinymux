@@ -12552,8 +12552,9 @@ VADD()
 
   FUNCTION: vadd(<vector>,<vector>[,<delim>][,<output delim>])
 
-  Returns the sum of two vectors. A vector is a list of numbers
-  separated by spaces or a delimiter, and may have up to 20 dimensions.
+  Returns the result of either the addition of a vector by a scalar or the
+  addition of two vectors.  A vector is a list of numbers separated by spaces
+  or a delimiter, and may have up to 20 dimensions.
 
   Example:
     > think vadd(1 2 3,4 5 6)
