@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.1 2000-04-25 18:32:09 sdennis Exp $
+// $Id: timeutil.cpp,v 1.2 2000-04-29 08:02:02 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -136,16 +136,6 @@ INT64 i64CeilingDivision(INT64 x, INT64 y)
 }
 #endif
 
-#define FACTOR_NANOSECONDS_PER_100NS 100
-#define FACTOR_100NS_PER_MICROSECOND 10
-#define FACTOR_100NS_PER_MILLISECOND 10000
-#ifdef WIN32
-#define FACTOR_100NS_PER_SECOND      10000000i64
-#define EPOCH_OFFSET 116444736000000000i64
-#else // WIN32
-#define FACTOR_100NS_PER_SECOND      10000000ULL
-#define EPOCH_OFFSET 116444736000000000ull
-#endif // WIN32
 const INT64 FACTOR_100NS_PER_MINUTE = FACTOR_100NS_PER_SECOND*60;
 const INT64 FACTOR_100NS_PER_HOUR   = FACTOR_100NS_PER_MINUTE*60;
 const INT64 FACTOR_100NS_PER_DAY = FACTOR_100NS_PER_HOUR*24;
@@ -241,13 +231,17 @@ long CLinearTimeDelta::ReturnMilliseconds(void)
 
 void CLinearTimeDelta::SetSeconds(INT64 arg_tSeconds)
 {
-    m_tDelta = arg_tSeconds;
-    m_tDelta *= FACTOR_100NS_PER_SECOND;
+    m_tDelta = arg_tSeconds * FACTOR_100NS_PER_SECOND;
 }
 
 void CLinearTimeDelta::Set100ns(INT64 arg_t100ns)
 {
     m_tDelta = arg_t100ns;
+}
+
+INT64 CLinearTimeDelta::Return100ns(void)
+{
+    return m_tDelta;
 }
 
 void CLinearTimeAbsolute::SetSeconds(INT64 arg_tSeconds)
