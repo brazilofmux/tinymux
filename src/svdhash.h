@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.h,v 1.2 2000-04-24 22:41:39 sdennis Exp $
+// $Id: svdhash.h,v 1.3 2000-05-21 06:00:08 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -145,7 +145,6 @@ public:
     BOOL ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere);
 
     HP_DIRINDEX GetDepth(void);
-    unsigned long GetPrefix(void);
     BOOL Split(CHashPage &hp0, CHashPage &hp1);
 
     BOOL Defrag(HP_HEAPLENGTH nExtra);

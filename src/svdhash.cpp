@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.5 2000-04-27 23:29:28 sdennis Exp $
+// $Id: svdhash.cpp,v 1.6 2000-05-21 06:00:08 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -1110,23 +1110,22 @@ BOOL CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
     return TRUE;
 }
 
-unsigned long CHashPage::GetPrefix(void)
+void CHashPage::GetRange
+(
+    unsigned long arg_nDirDepth,
+    unsigned long &nStart,
+    unsigned long &nEnd
+)
 {
-    if (m_pHeader->m_nDepth == 0)
-        return 0;
-    else
-        return m_pHeader->m_nHashGroup >> (32-m_pHeader->m_nDepth);
-}
-
-void CHashPage::GetRange(unsigned long arg_nDirDepth, unsigned long &nStart, unsigned long &nEnd)
-{
-    nStart = nEnd = GetPrefix();
-    unsigned int nExtraBits = arg_nDirDepth - GetDepth();
-    while (nExtraBits--)
+    unsigned long nBase = 0;
+    int nShift = 32 - arg_nDirDepth;
+    if (arg_nDirDepth > 0)
     {
-        nStart = nStart << 1;
-        nEnd   = (nEnd << 1) | 1;
+        nBase = m_pHeader->m_nHashGroup >> nShift;
     }
+    unsigned long ulMask = anGroupMask[nShift + m_pHeader->m_nDepth];
+    nStart = nBase & ulMask;
+    nEnd   = nBase | ~ulMask;
 }
 
 #ifdef WIN32
