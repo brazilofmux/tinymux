@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.31 2004-04-23 13:35:19 sdennis Exp $
+// $Id: netcommon.cpp,v 1.32 2004-05-10 14:12:22 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -727,7 +727,7 @@ static void announce_connect(dbref player, DESC *d)
         if (  Suspect(player)
            || (d->host_info & H_SUSPECT))
         {
-            raw_broadcast(WIZARD, "[Suspect] %s has connected.", Name(player));
+            raw_broadcast(WIZARD, "[Suspect] %s has connected.", Moniker(player));
         }
     }
     else
@@ -737,11 +737,11 @@ static void announce_connect(dbref player, DESC *d)
         if (  Suspect(player)
            || (d->host_info & H_SUSPECT))
         {
-            raw_broadcast(WIZARD, "[Suspect] %s has reconnected.", Name(player));
+            raw_broadcast(WIZARD, "[Suspect] %s has reconnected.", Moniker(player));
         }
     }
-    sprintf(buf, pRoomAnnounceFmt, Name(player));
-    raw_broadcast(MONITOR, pMonitorAnnounceFmt, Name(player));
+    sprintf(buf, pRoomAnnounceFmt, Moniker(player));
+    raw_broadcast(MONITOR, pMonitorAnnounceFmt, Moniker(player));
 
     int key = MSG_INV;
     if (  loc != NOTHING
@@ -854,11 +854,11 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         if (  Suspect(player)
            || (d->host_info & H_SUSPECT))
         {
-            raw_broadcast(WIZARD, "[Suspect] %s has disconnected.", Name(player));
+            raw_broadcast(WIZARD, "[Suspect] %s has disconnected.", Moniker(player));
         }
         char *buf = alloc_lbuf("announce_disconnect.only");
 
-        sprintf(buf, "%s has disconnected.", Name(player));
+        sprintf(buf, "%s has disconnected.", Moniker(player));
         key = MSG_INV;
         if (  loc != NOTHING
            && !(  Hidden(player)
@@ -873,7 +873,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             do_mail_purge(player);
         }
 
-        raw_broadcast(MONITOR, "GAME: %s has disconnected. <%s>", Name(player), reason);
+        raw_broadcast(MONITOR, "GAME: %s has disconnected. <%s>", Moniker(player), reason);
 
         c_Connected(player);
 
@@ -984,10 +984,10 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         if (  Suspect(player)
            || (d->host_info & H_SUSPECT))
         {
-            raw_broadcast(WIZARD, "[Suspect] %s has partially disconnected.", Name(player));
+            raw_broadcast(WIZARD, "[Suspect] %s has partially disconnected.", Moniker(player));
         }
         char *mbuf = alloc_mbuf("announce_disconnect.partial");
-        sprintf(mbuf, "%s has partially disconnected.", Name(player));
+        sprintf(mbuf, "%s has partially disconnected.", Moniker(player));
         key = MSG_INV;
         if (  loc != NOTHING
            && !(  Hidden(player)
@@ -997,7 +997,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         }
         notify_check(player, player, mbuf, key);
         raw_broadcast(MONITOR, "GAME: %s has partially disconnected.",
-            Name(player));
+            Moniker(player));
         free_mbuf(mbuf);
     }
 
