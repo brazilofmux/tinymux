@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.62 2003-01-06 04:18:04 sdennis Exp $
+// $Id: externs.h,v 1.63 2003-01-06 07:34:59 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -105,8 +105,7 @@ typedef struct
 {
     const char *CommandName;
     CHashTable *ht;
-    char       *pTextFile;
-    char       *pIndexFile;
+    char       *pBaseFilename;
     BOOL       bEval;
     int        permissions;
 } HELP_FILE_DESC;

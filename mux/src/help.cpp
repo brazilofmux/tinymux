@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.15 2003-01-06 04:18:04 sdennis Exp $
+// $Id: help.cpp,v 1.16 2003-01-06 07:34:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -25,12 +25,12 @@ struct help_entry
 
 HELP_FILE_DESC hftable[HFTABLE_SIZE] =
 {
-    { "help",    NULL, "text/help.txt",      "text/help.indx",      FALSE, CA_PUBLIC },
-    { "news",    NULL, "text/news.txt",      "text/news.indx",       TRUE, CA_PUBLIC },
-    { "wizhelp", NULL, "text/wizhelp.txt",   "text/wizhelp.indx",   FALSE, CA_WIZARD },
-    { "+help",   NULL, "text/plushelp.txt",  "text/plushelp.indx",   TRUE, CA_PUBLIC },
-    { "wiznews", NULL, "text/wiznews.txt",   "text/wiznews.indx",   FALSE, CA_WIZARD },
-    { "+shelp",  NULL, "text/staffhelp.txt", "text/staffhelp.indx",  TRUE, CA_STAFF  }
+    { "help",    NULL, "text/help",      FALSE, CA_PUBLIC },
+    { "news",    NULL, "text/news",       TRUE, CA_PUBLIC },
+    { "wizhelp", NULL, "text/wizhelp",   FALSE, CA_WIZARD },
+    { "+help",   NULL, "text/plushelp",   TRUE, CA_PUBLIC },
+    { "wiznews", NULL, "text/wiznews",   FALSE, CA_WIZARD },
+    { "+shelp",  NULL, "text/staffhelp",  TRUE, CA_STAFF  }
 };
 
 void helpindex_clean(int iHelpfile)
@@ -60,16 +60,18 @@ int helpindex_read(int iHelpfile)
 
     hftable[iHelpfile].ht = new CHashTable;
     CHashTable *htab = hftable[iHelpfile].ht;
-    char *filename = hftable[iHelpfile].pIndexFile;
+
+    char szIndexFilename[SBUF_SIZE+8];
+    sprintf(szIndexFilename, "%s.indx", hftable[iHelpfile].pBaseFilename);
 
     help_indx entry;
 
-    FILE *fp = fopen(filename, "rb");
+    FILE *fp = fopen(szIndexFilename, "rb");
     if (fp == NULL)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
         char *p = alloc_lbuf("helpindex_read.LOG");
-        sprintf(p, "Can't open %s for reading.", filename);
+        sprintf(p, "Can't open %s for reading.", szIndexFilename);
         log_text(p);
         free_lbuf(p);
         ENDLOG;
@@ -158,7 +160,9 @@ void help_write(dbref player, char *topic_arg, int iHelpfile)
 {
     BOOL bEval = hftable[iHelpfile].bEval;
     CHashTable *htab = hftable[iHelpfile].ht;
-    char *filename = hftable[iHelpfile].pTextFile;
+
+    char szTextFilename[SBUF_SIZE+8];
+    sprintf(szTextFilename, "%s.txt", hftable[iHelpfile].pBaseFilename);
 
     mux_strlwr(topic_arg);
     const char *topic = topic_arg;
@@ -208,13 +212,13 @@ void help_write(dbref player, char *topic_arg, int iHelpfile)
     }
 
     int offset = htab_entry->pos;
-    FILE *fp = fopen(filename, "rb");
+    FILE *fp = fopen(szTextFilename, "rb");
     if (fp == NULL)
     {
         notify(player, "Sorry, that function is temporarily unavailable.");
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
         char *line = alloc_lbuf("help_write.LOG.open");
-        sprintf(line, "Can't open %s for reading.", filename);
+        sprintf(line, "Can't open %s for reading.", szTextFilename);
         log_text(line);
         free_lbuf(line);
         ENDLOG;
@@ -226,7 +230,7 @@ void help_write(dbref player, char *topic_arg, int iHelpfile)
         notify(player, "Sorry, that function is temporarily unavailable.");
         STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");
         char *line = alloc_lbuf("help_write.LOG.seek");
-        sprintf(line, "Seek error in file %s.", filename);
+        sprintf(line, "Seek error in file %s.", szTextFilename);
         log_text(line);
         free_lbuf(line);
         ENDLOG;

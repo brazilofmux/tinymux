@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.102 2003-01-06 04:18:04 sdennis Exp $
+// $Id: command.cpp,v 1.103 2003-01-06 07:34:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3332,7 +3332,7 @@ static void list_hashstats(dbref player)
     list_hashstat(player, "Attribute Cache", &mudstate.acache_htab);
     for (int i = 0; i < HFTABLE_SIZE; i++)
     {
-        list_hashstat(player, hftable[i].pTextFile, hftable[i].ht);
+        list_hashstat(player, hftable[i].pBaseFilename, hftable[i].ht);
     }
 }
 
