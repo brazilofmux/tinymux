@@ -98,6 +98,8 @@ Feature Additions:
  -- Jake added global_error_obj from RhostMUSH.
  -- Jake added @flag and flag_name. Based on RhostMUSH's.
  -- Jake added train from RhostMUSH.
+ -- Jake added itext() and inum() functions. Equivalent to ## and #@, for multiple
+    levels of iter(). Idea from PennMUSH.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -124,6 +126,7 @@ Bug Fixes:
     channel. Fixed by Jake.
  -- Visible() could be used to detect dark wizards.
  -- Bug #597, @mail/proof and blank message. Fixed by Jake.
+ -- Idle time didn't update while in an @program. Fixed by Jake.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
