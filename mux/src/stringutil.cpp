@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.38 2003-02-16 20:43:35 sdennis Exp $
+// $Id: stringutil.cpp,v 1.39 2003-02-16 20:53:20 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -609,7 +609,7 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
         // typically).
         //
         const char *p = pANSI;
-        while (Tiny_IsDigit[(unsigned int)*p])
+        while (Tiny_IsDigit[(unsigned char)*p])
         {
             p++;
         }

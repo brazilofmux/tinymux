@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.10 2003-01-04 18:14:16 sdennis Exp $
+// $Id: db_rw.cpp,v 1.11 2003-02-16 20:53:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -214,9 +214,9 @@ static BOOLEXP *getboolexp1(FILE *f)
         // form <anam-or-anum>:<string> or <aname-or-anum>/<string>
         // respectively. The characters <nl>, |, and & terminate the string.
         //
-        if (Tiny_IsDigit[(unsigned int)c])
+        if (Tiny_IsDigit[(unsigned char)c])
         {
-            while (Tiny_IsDigit[(unsigned int)(c = getc(f))])
+            while (Tiny_IsDigit[(unsigned char)(c = getc(f))])
             {
                 b->thing = b->thing * 10 + c - '0';
             }
