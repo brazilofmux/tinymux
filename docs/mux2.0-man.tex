@@ -6,7 +6,7 @@
 \setlength{\textwidth}{6in}
 \title{TinyMUX 2.0 Manual}
 \author{Stephen Dennis (AKA Brazil)}
-\date{2001-MAR-01}
+\date{2001-MAR-04}
 \begin{document}
 \frontmatter
 \maketitle
@@ -360,6 +360,58 @@ Pinging 207.153.135.134 with 32 bytes of data.\\
 
 And now, we need to convert from decimal, to hexadecimal, to binary as
 follows:
+\begin{verse}
+130 ==> 0x82 ==> 1000.0010 binary.\\
+132 ==> 0x84 ==> 1000.0100 binary.\\
+134 ==> 0x86 ==> 1000.0110 binary.
+\end{verse}
+So, the subnet is at least the lower three binary digits because those three
+digits are the only ones that are changing. Let's try a different fourth bit
+and see if the hostname changes. That is, 1000.1001 binary ==> 137.
+\footnotesize{\texttt{
+\begin{verse}
+$>$ \emph{ping -a 207.153.135.137}\\
+\ldots\\
+request timed out.
+\ldots
+\end{verse}
+}}
+And, for my subnet, it's hard to find another computer nearby. It turns out
+that the lower 4 binary digits are within my subnet, but you couldn't guess
+that unless one of my computers had allocated one of the higher IP addresses
+from the local DHCP service. DHCP tends to assign IP numbers from lower to
+higher, and it also tends to renew the same IP address to the same device.
+
+Since, there wasn't a computer nearby, you might choose the lower four bits
+anyway, but for this example, we'll proceed with the assumption that the
+subnet is defined uniquely by the upper 29 bits and that the lower 3 bits are
+used for devices within the subnet.
 \subsection{What is the Base IP and Mask?}
+
+The Base IP address for the above example is determined by zeroing out lower
+three bits of an IP address out (e.g., 1000.0\underline{000} binary or 128).
+The Base IP address is 207.153.135.128.
+
+The mask is determined by setting all bits `one' except for the lower 3 bits
+which are `zero' (e.g., the last byte of the IP address is
+1111.1\underline{000} binary or 248). The mask for our example subnet is
+255.255.255.248.
+
+Another way of specifying the mask is to use a slash followed by a number
+from 0 to 32 (`/N'). N is the number of `one' bits in the mask, or
+equivalently, how many bits of the base IP address are significant - 29 in
+our example.
+\subsection{MUX commands}
+You can apply the \texttt{register\_site} restriction to the desired subnet
+with either of the following commands, but the second format is the preferred
+format:
+\footnotesize{\texttt{{
+\begin{verse}
+@admin register\_site=207.153.135.128 255.255.255.248\\
+@admin register\_site=207.153.135.128/29
+\end{verse}
+}}
+The 29 at the end represents the number of significant bits in the base subnet
+address.
 \backmatter
 \end{document}
