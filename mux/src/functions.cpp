@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.43 2003-02-16 16:45:44 jake Exp $
+// $Id: functions.cpp,v 1.44 2003-02-16 16:51:01 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -6530,23 +6530,12 @@ FUNCTION(fun_map)
 
     svarargs_preamble(4);
 
-    // Two possibilities for the second arg: <obj>/<attr> and <attr>.
-    //
     dbref thing;
-    int   anum;
     ATTR *ap;
-    if (parse_attrib(executor, fargs[0], &thing, &anum))
-    {
-        if (anum == NOTHING)
-        {
-            ap = NULL;
-        }
-        else
-        {
-            ap = atr_num(anum);
-        }
-    }
-    else
+
+    // Two possibilities for the first arg: <obj>/<attr> and <attr>.
+    //
+    if (!parse_attrib_temp(executor, fargs[0], &thing, &ap)) 
     {
         thing = executor;
         ap = atr_str(fargs[0]);
@@ -6561,15 +6550,20 @@ FUNCTION(fun_map)
 
     // Use it if we can access it, otherwise return an error.
     //
-    dbref aowner;
-    int   aflags;
-    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
-    if (!atext)
+    if (!See_attr(executor, thing, ap))
     {
+        safe_noperm(buff, bufc);
         return;
     }
-    else if (  !*atext
-            || !See_attr(executor, thing, ap))
+
+    dbref aowner;
+    int aflags;
+    char *atext = atr_pget(thing, ap->number, &aowner, &aflags);
+    if (!atext) 
+    {
+        return;
+    } 
+    else if (!*atext)
     {
         free_lbuf(atext);
         return;
@@ -9286,7 +9280,7 @@ void do_function
     }
 
     char *np, *bp;
-    int atr;
+    ATTR *attr;
     dbref obj;
 
     // Make a local uppercase copy of the function name.
@@ -9307,7 +9301,7 @@ void do_function
 
     // Make sure the target object exists.
     //
-    if (!parse_attrib(executor, target, &obj, &atr))
+    if (!parse_attrib_temp(executor, target, &obj, &attr))
     {
         notify_quiet(executor, NOMATCH_MESSAGE);
         free_sbuf(np);
@@ -9317,7 +9311,7 @@ void do_function
 
     // Make sure the attribute exists.
     //
-    if (atr == NOTHING)
+    if (!attr)
     {
         notify_quiet(executor, "No such attribute.");
         free_sbuf(np);
@@ -9326,14 +9320,7 @@ void do_function
 
     // Make sure attribute is readably by me.
     //
-    ap = atr_num(atr);
-    if (!ap)
-    {
-        notify_quiet(executor, "No such attribute.");
-        free_sbuf(np);
-        return;
-    }
-    if (!See_attr(executor, obj, ap))
+    if (!See_attr(executor, obj, attr))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
         free_sbuf(np);
@@ -9360,7 +9347,7 @@ void do_function
         ufp->name = StringClone(np);
         mux_strupr(ufp->name);
         ufp->obj = obj;
-        ufp->atr = atr;
+        ufp->atr = attr->number;
         ufp->perms = CA_PUBLIC;
         ufp->next = NULL;
         if (!ufun_head)
@@ -9379,7 +9366,7 @@ void do_function
         hashaddLEN(np, strlen(np), (int *)ufp, &mudstate.ufunc_htab);
     }
     ufp->obj = obj;
-    ufp->atr = atr;
+    ufp->atr = attr->number;
     ufp->flags = key;
     free_sbuf(np);
     if (!Quiet(executor))
