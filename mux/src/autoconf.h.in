@@ -159,22 +159,6 @@
  * Load system-dependent header files.
  */
 
-/* Prototype templates for ANSI C and traditional C */
-
-#ifdef __STDC__
-#define NDECL(f)        f(void)
-#define FDECL(f,p)      f p
-#ifdef STDC_HEADERS
-#define VDECL(f,p)      f p
-#else
-#define VDECL(f,p)      f()
-#endif
-#else
-#define NDECL(f)        f()
-#define FDECL(f,p)      f()
-#define VDECL(f,p)      f()
-#endif
-
 #ifdef STDC_HEADERS
 # ifdef __STDC__
 #  include <stdarg.h>
@@ -185,10 +169,10 @@
 #include <limits.h>
 #else
 #include <varargs.h>
-extern int    FDECL(atoi, (const char *));
-extern double FDECL(atof, (const char *));
-extern long   FDECL(atol, (const char *));
-extern int    FDECL(qsort, (char *, int, int, int (*)()));
+extern int    atoi(const char *);
+extern double atof(const char *);
+extern long   atol(const char *);
+extern int    qsort(char *, int, int, int (*)());
 #endif
 
 #ifdef NEED_MEMORY_H
@@ -206,10 +190,10 @@ extern int    FDECL(qsort, (char *, int, int, int (*)()));
 #endif
 #else
 #include <strings.h>
-extern char *   FDECL(strchr, (char *, char));
-extern void     FDECL(bcopy, (char *, char *, int));
-extern int      FDECL(bcmp, (char *, char *, int));
-extern void     FDECL(bzero, (char *, int));
+extern char *   strchr(char *, char);
+extern void     bcopy(char *, char *, int);
+extern int      bcmp(char *, char *, int);
+extern void     bzero(char *, int);
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -237,11 +221,11 @@ extern void     FDECL(bzero, (char *, int));
 #if defined(HAVE_SETRLIMIT) || defined(HAVE_GETRUSAGE)
 #include <sys/resource.h>
 #ifdef NEED_GETRUSAGE_DCL
-extern int      FDECL(getrusage, (int, struct rusage *));
+extern int      getrusage(int, struct rusage *);
 #endif
 #ifdef NEED_GETRLIMIT_DCL
-extern int      FDECL(getrlimit, (int, struct rlimit *));
-extern int      FDECL(setrlimit, (int, struct rlimit *));
+extern int      getrlimit(int, struct rlimit *);
+extern int      setrlimit(int, struct rlimit *);
 #endif
 #endif
 
@@ -255,12 +239,12 @@ extern int      FDECL(setrlimit, (int, struct rlimit *));
 
 #ifdef HAVE_GETTIMEOFDAY
 #ifdef NEED_GETTIMEOFDAY_DCL
-extern int FDECL(gettimeofday, (struct timeval *, struct timezone *));
+extern int gettimeofday(struct timeval *, struct timezone *);
 #endif
 #endif
 
 #ifdef HAVE_GETDTABLESIZE
-extern int NDECL(getdtablesize);
+extern int getdtablesize(void);
 #endif
 
 #ifdef HAVE_FCNTL_H
@@ -273,9 +257,9 @@ extern int NDECL(getdtablesize);
 #endif
 #ifdef NEED_WAIT3_DCL
 #ifdef HAVE_UNION_WAIT
-extern int FDECL(wait3, (union wait *, int, struct rusage *));
+extern int wait3(union wait *, int, struct rusage *);
 #else
-extern int FDECL(wait3, (int *, int, struct rusage *));
+extern int wait3(int *, int, struct rusage *);
 #endif
 #endif
 #endif
@@ -300,7 +284,7 @@ extern int FDECL(wait3, (int *, int, struct rusage *));
 #endif /* no EXEC_PAGESIZE */
 #else /* we've got a getpagesize() function, whee */
 #ifdef NEED_GETPAGESIZE_DECL
-extern int NDECL(getpagesize);
+extern int getpagesize(void);
 #endif /* NEED_GETPAGESIZE_DECL */
 #endif /* HAVE_GETPAGESIZE */
 
@@ -330,7 +314,7 @@ extern char *sys_errlist[];
 
 #ifndef HAVE_MKTIME
 #define NEED_TIMELOCAL
-extern time_t FDECL(timelocal, (struct tm *));
+extern time_t timelocal(struct tm *);
 #else
 #define timelocal mktime
 #endif /* HAVE_MKTIME */
@@ -344,10 +328,10 @@ extern time_t FDECL(timelocal, (struct tm *));
 #ifdef NEED_SRANDOM_DCL
 #ifndef random  // only if not a macro
 #ifdef NEED_RANDOM_DCL
-extern long     NDECL(random);
+extern long random(void);
 #endif // NEED_RANDOM_DCL
 #endif
-extern int      FDECL(srandom, (int));
+extern int srandom(int);
 #endif // NEED_SRANDOM_DCL
 #endif // HAVE_SRANDOM
 
@@ -361,41 +345,41 @@ extern int      FDECL(srandom, (int));
 #endif
 
 #ifdef NEED_SPRINTF_DCL
-extern char *VDECL(sprintf, (char *, const char *, ...));
+extern char *sprintf(char *, const char *, ...);
 #endif
 
 #ifndef EXTENDED_STDIO_DCLS
-extern int    VDECL(fprintf, (FILE *, const char *, ...));
-extern int    VDECL(printf, (const char *, ...));
-extern int    VDECL(sscanf, (const char *, const char *, ...));
-extern int    FDECL(close, (int));
-extern int    FDECL(fclose, (FILE *));
-extern int    FDECL(fflush, (FILE *));
-extern int    FDECL(fgetc, (FILE *));
-extern int    FDECL(fputc, (int, FILE *));
-extern int    FDECL(fputs, (const char *, FILE *));
-extern int    FDECL(fread, (void *, size_t, size_t, FILE *));
-extern int    FDECL(fseek, (FILE *, long, int));
-extern int    FDECL(fwrite, (void *, size_t, size_t, FILE *));
-extern pid_t  FDECL(getpid, (void));
-extern int    FDECL(pclose, (FILE *));
-extern int    FDECL(rename, (char *, char *));
-extern time_t FDECL(time, (time_t *));
-extern int    FDECL(ungetc, (int, FILE *));
-extern int    FDECL(unlink, (const char *));
+extern int    fprintf(FILE *, const char *, ...);
+extern int    printf(const char *, ...);
+extern int    sscanf(const char *, const char *, ...);
+extern int    close(int);
+extern int    fclose(FILE *);
+extern int    fflush(FILE *);
+extern int    fgetc(FILE *);
+extern int    fputc(int, FILE *);
+extern int    fputs(const char *, FILE *);
+extern int    fread(void *, size_t, size_t, FILE *);
+extern int    fseek(FILE *, long, int);
+extern int    fwrite(void *, size_t, size_t, FILE *);
+extern pid_t  getpid(void);
+extern int    pclose(FILE *);
+extern int    rename(char *, char *);
+extern time_t time(time_t *);
+extern int    ungetc(int, FILE *);
+extern int    unlink(const char *);
 #endif
 
 #include <sys/socket.h>
 #ifndef EXTENDED_SOCKET_DCLS
-extern int    FDECL(accept, (int, struct sockaddr *, int *));
-extern int    FDECL(bind, (int, struct sockaddr *, int));
-extern int    FDECL(listen, (int, int));
-extern int    FDECL(sendto, (int, void *, int, unsigned int,
-                    struct sockaddr *, int));
-extern int    FDECL(setsockopt, (int, int, int, void *, int));
-extern int    FDECL(shutdown, (int, int));
-extern int    FDECL(socket, (int, int, int));
-extern int    FDECL(select, (int, fd_set *, fd_set *, fd_set *, struct timeval *));
+extern int    accept(int, struct sockaddr *, int *);
+extern int    bind(int, struct sockaddr *, int);
+extern int    listen(int, int);
+extern int    sendto(int, void *, int, unsigned int,
+                    struct sockaddr *, int);
+extern int    setsockopt(int, int, int, void *, int);
+extern int    shutdown(int, int);
+extern int    socket(int, int, int);
+extern int    select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 #endif
 
 typedef int   dbref;
