@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.16 2002-02-14 05:34:09 sdennis Exp $
+// $Id: flags.h,v 1.17 2002-02-14 09:01:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -23,91 +23,91 @@
 #define TYPE_MASK     0x7
 
 /* First word of flags */
-#define SEETHRU     0x00000008  /* Can see through to the other side */
-#define WIZARD      0x00000010  /* gets automatic control */
-#define LINK_OK     0x00000020  /* anybody can link to this room */
-#define DARK        0x00000040  /* Don't show contents or presence */
-#define JUMP_OK     0x00000080  /* Others may @tel here */
-#define STICKY      0x00000100  /* Object goes home when dropped */
-#define DESTROY_OK  0x00000200  /* Others may @destroy */
-#define HAVEN       0x00000400  /* No killing here, or no pages */
-#define QUIET       0x00000800  /* Prevent 'feelgood' messages */
-#define HALT        0x00001000  /* object cannot perform actions */
-#define TRACE       0x00002000  /* Generate evaluation trace output */
-#define GOING       0x00004000  /* object is available for recycling */
-#define MONITOR     0x00008000  /* Process ^x:action listens on obj? */
-#define MYOPIC      0x00010000  /* See things as nonowner/nonwizard */
-#define PUPPET      0x00020000  /* Relays ALL messages to owner */
-#define CHOWN_OK    0x00040000  /* Object may be @chowned freely */
-#define ENTER_OK    0x00080000  /* Object may be ENTERed */
-#define VISUAL      0x00100000  /* Everyone can see properties */
-#define IMMORTAL    0x00200000  /* Object can't be killed */
-#define HAS_STARTUP 0x00400000  /* Load some attrs at startup */
-#define TM_OPAQUE   0x00800000  /* Can't see inside */
-#define VERBOSE     0x01000000  /* Tells owner everything it does. */
-#define INHERIT     0x02000000  /* Gets owner's privs. (i.e. Wiz) */
-#define NOSPOOF     0x04000000  /* Report originator of all actions. */
-#define ROBOT       0x08000000  /* Player is a ROBOT */
-#define SAFE        0x10000000  /* Need /override to @destroy */
-#define ROYALTY     0x20000000  /* Sees like a wiz, but ca't modify */
-#define HEARTHRU    0x40000000  /* Can hear out of this obj or exit */
-#define TERSE       0x80000000  /* Only show room name on look */
+#define SEETHRU      0x00000008  /* Can see through to the other side */
+#define WIZARD       0x00000010  /* gets automatic control */
+#define LINK_OK      0x00000020  /* anybody can link to this room */
+#define DARK         0x00000040  /* Don't show contents or presence */
+#define JUMP_OK      0x00000080  /* Others may @tel here */
+#define STICKY       0x00000100  /* Object goes home when dropped */
+#define DESTROY_OK   0x00000200  /* Others may @destroy */
+#define HAVEN        0x00000400  /* No killing here, or no pages */
+#define QUIET        0x00000800  /* Prevent 'feelgood' messages */
+#define HALT         0x00001000  /* object cannot perform actions */
+#define TRACE        0x00002000  /* Generate evaluation trace output */
+#define GOING        0x00004000  /* object is available for recycling */
+#define MONITOR      0x00008000  /* Process ^x:action listens on obj? */
+#define MYOPIC       0x00010000  /* See things as nonowner/nonwizard */
+#define PUPPET       0x00020000  /* Relays ALL messages to owner */
+#define CHOWN_OK     0x00040000  /* Object may be @chowned freely */
+#define ENTER_OK     0x00080000  /* Object may be ENTERed */
+#define VISUAL       0x00100000  /* Everyone can see properties */
+#define IMMORTAL     0x00200000  /* Object can't be killed */
+#define HAS_STARTUP  0x00400000  /* Load some attrs at startup */
+#define TM_OPAQUE    0x00800000  /* Can't see inside */
+#define VERBOSE      0x01000000  /* Tells owner everything it does. */
+#define INHERIT      0x02000000  /* Gets owner's privs. (i.e. Wiz) */
+#define NOSPOOF      0x04000000  /* Report originator of all actions. */
+#define ROBOT        0x08000000  /* Player is a ROBOT */
+#define SAFE         0x10000000  /* Need /override to @destroy */
+#define ROYALTY      0x20000000  /* Sees like a wiz, but ca't modify */
+#define HEARTHRU     0x40000000  /* Can hear out of this obj or exit */
+#define TERSE        0x80000000  /* Only show room name on look */
 
 /* Second word of flags */
-#define KEY     0x00000001  /* No puppets */
-#define ABODE       0x00000002  /* May @set home here */
-#define FLOATING    0x00000004  /* Inhibit Floating room.. msgs */
-#define UNFINDABLE  0x00000008  /* Cant loc() from afar */
-#define PARENT_OK   0x00000010  /* Others may @parent to me */
-#define LIGHT       0x00000020  /* Visible in dark places */
-#define HAS_LISTEN  0x00000040  /* Internal: LISTEN attr set */
-#define HAS_FWDLIST 0x00000080  /* Internal: FORWARDLIST attr set */
-#define AUDITORIUM  0x00000100  /* Should we check the SpeechLock? */
-#define ANSI            0x00000200
-#define HEAD_FLAG       0x00000400
-#define FIXED           0x00000800
-#define UNINSPECTED     0x00001000
-#define NO_COMMAND      0x00002000
-#define DYNAMIC         0x00004000
-#define NOBLEED         0x00008000
-#define STAFF           0x00010000
-#define HAS_DAILY   0x00020000
-#define GAGGED      0x00040000
+#define KEY          0x00000001  /* No puppets */
+#define ABODE        0x00000002  /* May @set home here */
+#define FLOATING     0x00000004  /* Inhibit Floating room.. msgs */
+#define UNFINDABLE   0x00000008  /* Cant loc() from afar */
+#define PARENT_OK    0x00000010  /* Others may @parent to me */
+#define LIGHT        0x00000020  /* Visible in dark places */
+#define HAS_LISTEN   0x00000040  /* Internal: LISTEN attr set */
+#define HAS_FWDLIST  0x00000080  /* Internal: FORWARDLIST attr set */
+#define AUDITORIUM   0x00000100  /* Should we check the SpeechLock? */
+#define ANSI         0x00000200
+#define HEAD_FLAG    0x00000400
+#define FIXED        0x00000800
+#define UNINSPECTED  0x00001000
+#define NO_COMMAND   0x00002000
+#define DYNAMIC      0x00004000
+#define NOBLEED      0x00008000
+#define STAFF        0x00010000
+#define HAS_DAILY    0x00020000
+#define GAGGED       0x00040000
 
-#define VACATION    0x01000000
-#define PLAYER_MAILS    0x02000000
-#define HTML        0x04000000      /* Player supports HTML */
-
-#define SUSPECT     0x10000000  /* Report some activities to wizards */
-#define CONNECTED   0x40000000  /* Player is connected */
-#define SLAVE       0x80000000  /* Disallow most commands */
+#define VACATION     0x01000000
+#define PLAYER_MAILS 0x02000000
+#define HTML         0x04000000      /* Player supports HTML */
+#define BLIND        0x08000000  // Surpress has arrived / left messages.
+#define SUSPECT      0x10000000  /* Report some activities to wizards */
+#define CONNECTED    0x40000000  /* Player is connected */
+#define SLAVE        0x80000000  /* Disallow most commands */
 
 // Third word of flags
 //
 #ifdef WOD_REALMS
-#define OBF             0x00000001      // Obfuscate Flag
-#define HSS             0x00000002      // Auspex/Heightened Senses Flag
-#define UMBRA           0x00000004      // Umbra, UMBRADESC
-#define SHROUD          0x00000008      // Shroud, WRAITHDESC
-#define MATRIX          0x00000010      // Matrix, MATRIXDESC
-#define MEDIUM          0x00000020
-#define DEAD            0x00000040
-#define FAE             0x00000080      // Fae, FAEDESC
-#define CHIMERA         0x00000100      // Fae, FAEDESC
-#define PEERING         0x00000200      // Means the a looker is seeing a
+#define OBF          0x00000001      // Obfuscate Flag
+#define HSS          0x00000002      // Auspex/Heightened Senses Flag
+#define UMBRA        0x00000004      // Umbra, UMBRADESC
+#define SHROUD       0x00000008      // Shroud, WRAITHDESC
+#define MATRIX       0x00000010      // Matrix, MATRIXDESC
+#define MEDIUM       0x00000020
+#define DEAD         0x00000040
+#define FAE          0x00000080      // Fae, FAEDESC
+#define CHIMERA      0x00000100      // Fae, FAEDESC
+#define PEERING      0x00000200      // Means the a looker is seeing a
                                         // different realm than they are in.
 #endif // WOD_REALMS
-#define SITEMON         0x00000400      // Sitemonitor Flag
-#define MARK_0          0x00400000      // User-defined flags.
-#define MARK_1          0x00800000
-#define MARK_2          0x01000000
-#define MARK_3          0x02000000
-#define MARK_4          0x04000000
-#define MARK_5          0x08000000
-#define MARK_6          0x10000000
-#define MARK_7          0x20000000
-#define MARK_8          0x40000000
-#define MARK_9          0x80000000
+#define SITEMON      0x00000400      // Sitemonitor Flag
+#define MARK_0       0x00400000      // User-defined flags.
+#define MARK_1       0x00800000
+#define MARK_2       0x01000000
+#define MARK_3       0x02000000
+#define MARK_4       0x04000000
+#define MARK_5       0x08000000
+#define MARK_6       0x10000000
+#define MARK_7       0x20000000
+#define MARK_8       0x40000000
+#define MARK_9       0x80000000
 
 /* ---------------------------------------------------------------------------
  * FLAGENT: Information about object flags.
@@ -310,6 +310,7 @@ extern char *MakeCanonicalFlagName
              (Typeof(x) == TYPE_PLAYER))
 #define Slave(x)    ((Flags2(Owner(x)) & SLAVE) != 0)
 #define Hidden(x)   ((Flags(x) & DARK) != 0)
+#define Blind(x)        ((Flags2(x) & BLIND) != 0)
 
 #define H_Startup(x)    ((Flags(x) & HAS_STARTUP) != 0)
 #define H_Fwdlist(x)    ((Flags2(x) & HAS_FWDLIST) != 0)

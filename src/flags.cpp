@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.24 2002-02-14 09:01:34 sdennis Exp $
+// $Id: flags.cpp,v 1.25 2002-02-14 09:03:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -354,6 +354,7 @@ FLAGNAMEENT gen_flag_names[] =
     {"AUDIBLE",         TRUE, &fbeAudible        },
     {"AUDITORIUM",      TRUE, &fbeAuditorium     },
     {"BLEED",          FALSE, &fbeNoBleed        },
+    {"BLIND",           TRUE, &fbeBlind          },
     {"COMMANDS",       FALSE, &fbeNoCommand      },
     {"CHOWN_OK",        TRUE, &fbeChownOk        },
     {"CONNECTED",       TRUE, &fbeConnected      },

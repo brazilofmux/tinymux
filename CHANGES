@@ -98,6 +98,7 @@ Feature Additions:
  -- Added MARKER0 through MARKER9 flagnames. They are accessible as flag
     letters '0' through '9' when WOD_REALMS is not defined, but only by name
     if WOD_REALMS is defined.
+ -- Added BLIND flag to control * has entered, * has left emits.
 
 Bug Fixes:
 ~~~~~~~~~

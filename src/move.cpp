@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.12 2001-11-28 06:35:54 sdennis Exp $
+// $Id: move.cpp,v 1.13 2002-02-14 09:01:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -71,10 +71,14 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, int canhear,
     //   - Neither the current room nor the moving object are dark.
     //   - The object can hear and is not a dark wizard. 
     //
-    if (!quiet)
+    if (  !quiet
+       && !Blind(thing)
+       && !Blind(loc))
     {
-        if ((!Dark(thing) && !Dark(loc)) ||
-            (canhear && !(Wizard(thing) && Dark(thing))))
+        if (  (  !Dark(thing)
+              && !Dark(loc))
+           || (  canhear
+              && !(Wizard(thing) && Dark(thing))))
         {
             notify_except2(loc, thing, thing, cause,
                        tprintf("%s has left.", Name(thing)));
@@ -139,6 +143,8 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, int canhear, 
     //
     if (  !quiet
        && canhear
+       && !Blind(thing)
+       && !Blind(loc)
        && !(Dark(thing) && Wizard(thing)))
     {
         notify_except2(loc, thing, thing, cause,

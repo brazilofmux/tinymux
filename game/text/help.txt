@@ -5671,29 +5671,30 @@ FLAG LIST
 
   Flag  Title        Flag  Title        Flag  Title        Flag  Title
   -------------------------------------------------------------------------
-    A - ABODE      |   C - CHOWN_OK   |   D - DARK       |   E - EXIT
-    F - FLOATING   |   G - GOING      |   H - HAVEN      |   I - INHERIT
-    J - JUMP_OK    |   K - KEY        |   L - LINK_OK    |   M - MONITOR
-    N - NOSPOOF    |   O - OPAQUE     |   P - PLAYER     |   Q - QUIET
-    R - ROOM       |   S - STICKY     |   T - TRACE      |   U - UNFINDABLE
-    V - VISUAL     |   W - WIZARD     |   X - ANSI       |   Y - PARENT_OK
-    Z - ROYALTY    |   a - AUDIBLE    |   b - AUDITORIUM |   c - CONNECTED
-    d - DESTROY_OK |   e - ENTER_OK   |   f - FIXED      |   g - UNINSPECTED
-    h - HALTED     |   i - IMMORTAL   |   j - GAGGED     |   l - LIGHT
-    m - MYOPIC     |   n - NO_COMMAND |   p - PUPPET     |   q - TERSE
-    r - ROBOT      |   s - SAFE       |   t - TRANSPARENT|   u - SUSPECT
-    v - VERBOSE    |   w - STAFF      |   x - SLAVE      |   $ - SITEMON
-    z - CONTROL_OK |   ? - HEAD       |   - - NOBLEED    |   | - VACATION
+    A - ABODE      |   B - BLIND      |   C - CHOWN_OK   |   D - DARK
+    E - EXIT       |   F - FLOATING   |   G - GOING      |   H - HAVEN
+    I - INHERIT    |   J - JUMP_OK    |   K - KEY        |   L - LINK_OK
+    M - MONITOR    |   N - NOSPOOF    |   O - OPAQUE     |   P - PLAYER
+    Q - QUIET      |   R - ROOM       |   S - STICKY     |   T - TRACE
+    U - UNFINDABLE |   V - VISUAL     |   W - WIZARD     |   X - ANSI
+    Y - PARENT_OK  |   Z - ROYALTY    |   a - AUDIBLE    |   b - AUDITORIUM
+    c - CONNECTED  |   d - DESTROY_OK |   e - ENTER_OK   |   f - FIXED
+    g - UNINSPECTED|   h - HALTED     |   i - IMMORTAL   |   j - GAGGED
+    l - LIGHT      |   m - MYOPIC     |   n - NO_COMMAND |   p - PUPPET
+    q - TERSE      |   r - ROBOT      |   s - SAFE       |   t - TRANSPARENT
+    u - SUSPECT    |   v - VERBOSE    |   w - STAFF      |   x - SLAVE
+    $ - SITEMON    |   z - CONTROL_OK |   ? - HEAD       |   - - NOBLEED
+    | - VACATION   |                  |                  |
   ------------------------------------------------------------------------
   Without Realms Patch Flags:
     0 - MARKER0    |   1 - MARKER1    |   2 - MARKER2    |   3 - MARKER3
     4 - MARKER4    |   5 - MARKER5    |   6 - MARKER6    |   7 - MARKER7
-    8 - MARKER8    |   9 - MARKER9
+    8 - MARKER8    |   9 - MARKER9    |
   ------------------------------------------------------------------------
   Realms Patch Flags:
     0 - FAE        |   1 - CHIMERA    |   2 - PEERING    |   3 - UMBRA
     4 - SHROUD     |   5 - MATRIX     |   6 - OBF        |   7 - HSS
-    8 - MEDIUM     |   9 - DEAD
+    8 - MEDIUM     |   9 - DEAD       |
   ------------------------------------------------------------------------
 
   For information on a particular flag, type 'help <flagname>'.
