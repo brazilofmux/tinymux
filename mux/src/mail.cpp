@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.53 2002-09-25 07:48:16 jake Exp $
+// $Id: mail.cpp,v 1.54 2002-09-26 09:40:30 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -220,7 +220,10 @@ static int add_mail_message(dbref player, char *message, BOOL bEval)
     int number = MessageAdd(tprintf("%s %s", msg, execstr));
     free_lbuf(atrstr);
     free_lbuf(execstr);
-    free_lbuf(msg);
+    if (bEval)
+    {
+        free_lbuf(msg);
+    }
     return number;
 }
 
