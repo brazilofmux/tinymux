@@ -484,9 +484,6 @@
   @malias *<alias>          Displays a list of people on that alias.
   @malias *<alias>=<list>   Creates that mailing list, using <list>.
   
-  For more help, see the following help topics.  All errors can be
-  sent to *Bugs, or Lauren.
- 
 { 'help @malias2' for more }
  
 & @malias2
