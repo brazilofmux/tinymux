@@ -1,6 +1,6 @@
 // svdreport.cpp -- Aggregate User Statistics module.
 //
-// $Id: svdreport.cpp,v 1.1 2000-04-11 07:14:48 sdennis Exp $
+// $Id: svdreport.cpp,v 1.2 2000-04-24 22:26:59 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -21,22 +21,6 @@
 #include "attrs.h"
 #include "functions.h"
 #include "svdreport.h"
-
-void report_login(dbref player, const CLinearTimeAbsolute& ltaLast, const CLinearTimeAbsolute& ltaNow)
-{
-}
-
-void report_logout(dbref player, const CLinearTimeAbsolute& ltConnected, const CLinearTimeAbsolute& ltNow)
-{
-}
-
-void report_create(dbref player, const CLinearTimeAbsolute& ltCreated)
-{
-}
-
-void report_deny(dbref player)
-{
-}
 
 #define NPERIODS 24
 void do_report(dbref player, dbref cause, int extra)
