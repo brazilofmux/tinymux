@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.68 2002-02-25 19:53:46 sdennis Exp $
+// $Id: command.cpp,v 1.69 2002-04-14 18:11:13 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2689,26 +2689,50 @@ static void list_options(dbref player)
 // ---------------------------------------------------------------------------
 // list_vattrs: List user-defined attributes
 //
-static void list_vattrs(dbref player)
+static void list_vattrs(dbref player, char *s_mask, int wild_mtch)
 {
+    char *buff = alloc_lbuf("list_vattrs");
+
+    // If wild_match, then only list attributes that match wildcard(s)
+    //
+    char *p = tprintf("--- User-Defined Attributes %s---",
+        wild_mtch ? "(wildmatched) " : "");
+    raw_notify(player, p);
+
     VATTR *va;
     int na;
-    char *buff;
-
-    buff = alloc_lbuf("list_vattrs");
-    raw_notify(player, "--- User-Defined Attributes ---");
-    for (va = vattr_first(), na = 0; va; va = vattr_next(va), na++) {
-        if (!(va->flags & AF_DELETED)) {
+    int wna = 0;
+    for (va = vattr_first(), na = 0; va; va = vattr_next(va), na++)
+    {
+        if (!(va->flags & AF_DELETED))
+        {
+            // We need to be extremely careful that s_mask is !null and valid
+            //
+            if (wild_mtch)
+            {
+                if (s_mask && *s_mask && !quick_wild(s_mask, va->name))
+                {
+                   continue;
+                }
+                wna++;
+            }
             sprintf(buff, "%s(%d):", va->name, va->number);
-            listset_nametab(player, attraccess_nametab, va->flags,
-                    buff, 1);
+            listset_nametab(player, attraccess_nametab, va->flags, buff, 1);
         }
     }
-
-    raw_notify(player, tprintf("%d attributes, next=%d",
-                   na, mudstate.attr_next));
+ 
+    if (wild_mtch)
+    {
+        p = tprintf("%d attributes matched, %d attributes total, next=%d", wna,
+            na, mudstate.attr_next);
+    }
+    else
+    {
+        p = tprintf("%d attributes, next=%d", na, mudstate.attr_next);
+    }
+    raw_notify(player, p);
     free_lbuf(buff);
-}
+} 
 
 int LeftJustifyString(char *field, int nWidth, const char *value)
 {
@@ -2985,10 +3009,9 @@ extern NAMETAB logdata_nametab[];
 
 void do_list(dbref player, dbref cause, int extra, char *arg)
 {
-    int flagvalue;
-
-    flagvalue = search_nametab(player, list_names, arg);
-    switch (flagvalue) {
+    int flagvalue = search_nametab(player, list_names, arg);
+    switch (flagvalue)
+    {
     case LIST_ALLOCATOR:
         list_bufstats(player);
         break;
@@ -3043,7 +3066,7 @@ void do_list(dbref player, dbref cause, int extra, char *arg)
         list_attraccess(player);
         break;
     case LIST_VATTRS:
-        list_vattrs(player);
+        list_vattrs(player, NULL, 0);
         break;
     case LIST_LOGGING:
         interp_nametab(player, logoptions_nametab, mudconf.log_options,
@@ -3068,9 +3091,25 @@ void do_list(dbref player, dbref cause, int extra, char *arg)
     case LIST_GUESTS:
         Guest.ListAll(player);
         break;
+
     default:
-        display_nametab(player, list_names,
-                (char *)"Unknown option.  Use one of:", 1);
+        TINY_STRTOK_STATE tts;
+        Tiny_StrTokString(&tts, arg);
+        Tiny_StrTokControl(&tts, " \t=,");
+        char *s_option = Tiny_StrTokParse(&tts);
+        char *s_sub_option = Tiny_StrTokParse(&tts);
+        if (s_option)
+        {
+           flagvalue = search_nametab(player, list_names, s_option);
+        }
+        if (flagvalue == LIST_VATTRS)
+        {
+           list_vattrs(player, s_sub_option, 1);
+        }
+        else
+        {
+           display_nametab(player, list_names, "Unknown option.  Use one of:", 1);
+        }
     }
 }
 
