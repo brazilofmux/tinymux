@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.24 2001-06-13 03:54:41 sdennis Exp $
+// $Id: look.cpp,v 1.25 2001-06-16 06:34:32 hellspawn Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2171,44 +2171,50 @@ void do_decomp(dbref player, dbref cause, int key, char *name, char *qual)
     }
     else
     {
-        switch (Typeof(thing))
-        {
-        case TYPE_THING:
-            strcpy(thingname, Name(thing));
-            val = OBJECT_DEPOSIT(Pennies(thing));
-            notify(player,
-                tprintf("@create %s=%d", translate_string(thingname, 1),
-                val));
-            break;
-
-        case TYPE_ROOM:
-            strcpy(thingname, "here");
-            notify(player,
-                tprintf("@dig/teleport %s",
-                translate_string(Name(thing), 1)));
-            break;
-
-        case TYPE_EXIT:
-            strcpy(thingname, Name(thing));
-            notify(player,
-                tprintf("@open %s", translate_string(Name(thing), 1)));
-            for (got = thingname; *got; got++)
-            {
-                if (*got == EXIT_DELIMITER)
-                {
-                    *got = '\0';
-                    break;
-                }
-            }
-            break;
-
-        case TYPE_PLAYER:
-            strcpy(thingname, "me");
-            break;
-        }
+       if (key != DECOMP_DBREF)
+	 {
+	    switch (Typeof(thing))
+	      {
+	       case TYPE_THING:
+		 strcpy(thingname, Name(thing));
+		 val = OBJECT_DEPOSIT(Pennies(thing));
+		 notify(player,
+			tprintf("@create %s=%d", translate_string(thingname, 1),
+				val));
+		 break;
+		 
+	       case TYPE_ROOM:
+		 strcpy(thingname, "here");
+		 notify(player,
+			tprintf("@dig/teleport %s",
+				translate_string(Name(thing), 1)));
+		 break;
+		 
+	       case TYPE_EXIT:
+		 strcpy(thingname, Name(thing));
+		 notify(player,
+			tprintf("@open %s", translate_string(Name(thing), 1)));
+		 for (got = thingname; *got; got++)
+		   {
+		      if (*got == EXIT_DELIMITER)
+			{
+			   *got = '\0';
+			   break;
+			}
+		   }
+		 break;
+		 
+	       case TYPE_PLAYER:
+		 strcpy(thingname, "me");
+		 break;
+	      }
+	 } 
+       else 
+	 {
+	    strcpy(thingname, thing);
+	 }
     }
-    
-    /* Report the lock (if any) */
+   /* Report the lock (if any) */
     
     if (!wild_decomp && (pBoolExp != TRUE_BOOLEXP))
     {
