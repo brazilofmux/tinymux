@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.24 2003-01-05 18:08:22 sdennis Exp $
+// $Id: stringutil.h,v 1.25 2003-01-14 17:55:54 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -49,7 +49,7 @@ char *Tiny_i64toa_t(INT64 val);
 void safe_i64toa(INT64 val, char *buff, char **bufc);
 long Tiny_atol(const char *pString);
 INT64 Tiny_atoi64(const char *pString);
-double Tiny_atof(char *szString);
+double Tiny_atof(char *szString, BOOL bStrict = TRUE);
 char *Tiny_ftoa(double r, BOOL bRounded, int frac);
 
 BOOL is_integer(char *, int *);
@@ -193,6 +193,6 @@ typedef struct
 
 } PARSE_FLOAT_RESULT;
 
-extern BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str);
+extern BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict = TRUE);
 
 #endif // STRINGUTIL_H

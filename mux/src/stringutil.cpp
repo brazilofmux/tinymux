@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.34 2003-01-05 18:08:22 sdennis Exp $
+// $Id: stringutil.cpp,v 1.35 2003-01-14 17:55:54 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2195,7 +2195,7 @@ INT64 Tiny_atoi64(const char *pString)
 // Ind
 // NaN
 //
-BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str)
+BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
 {
     // Parse Input
     //
@@ -2351,7 +2351,14 @@ LastSpaces:
         str++;
     }
 
-    return (!*str);
+    if (bStrict)
+    {
+        return (!*str);
+    }
+    else
+    {
+        return TRUE;
+    }
 }
 
 #define ATOF_LIMIT 100
@@ -2369,14 +2376,14 @@ static const double powerstab[10] =
    1000000000.0
 };
 
-double Tiny_atof(char *szString)
+double Tiny_atof(char *szString, BOOL bStrict)
 {
     // Initialize structure.
     //
     PARSE_FLOAT_RESULT pfr;
     memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
 
-    if (!ParseFloat(&pfr, szString))
+    if (!ParseFloat(&pfr, szString, bStrict))
     {
         return 0.0;
     }

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.126 2003-01-05 18:08:22 sdennis Exp $
+// $Id: functions.cpp,v 1.127 2003-01-14 17:55:54 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -7194,7 +7194,7 @@ static void do_asort(char *s[], int n, int sort_type)
         for (i = 0; i < n; i++)
         {
             fp[i].str = s[i];
-            fp[i].data = Tiny_atof(s[i]);
+            fp[i].data = Tiny_atof(s[i], FALSE);
         }
         qsort((void *)fp, n, sizeof(f_rec), f_comp);
         for (i = 0; i < n; i++)
