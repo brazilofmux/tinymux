@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.27 2002-07-23 09:33:39 jake Exp $
+// $Id: comsys.cpp,v 1.28 2002-07-23 15:51:11 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -17,8 +17,6 @@
 #include "powers.h"
 
 int num_channels;
-int max_channels;
-struct channel **channels;
 comsys_t *comsys_table[NUM_COMSYS];
 
 #define DFLT_MAX_LOG        0

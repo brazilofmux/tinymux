@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.11 2002-07-14 08:03:44 jake Exp $
+// $Id: cque.cpp,v 1.12 2002-07-23 15:51:11 jake Exp $
 //
 
 #include "copyright.h"
@@ -16,7 +16,6 @@
 #include "powers.h"
 
 extern int  a_Queue(dbref, int);
-extern void s_Queue(dbref, int);
 extern int  QueueMax(dbref);
 BOOL break_called = FALSE;
 

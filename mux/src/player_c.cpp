@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.3 2002-06-27 06:38:31 jake Exp $
+// $Id: player_c.cpp,v 1.4 2002-07-23 15:51:11 jake Exp $
 //
 
 #include "copyright.h"
@@ -37,9 +37,7 @@ void pcache_init(void)
 
 static void pcache_reload1(dbref player, PCACHE *pp)
 {
-    char *cp;
-
-    cp = atr_get_raw(player, A_MONEY);
+    char *cp = atr_get_raw(player, A_MONEY);
     if (cp && *cp)
         pp->money = Tiny_atol(cp);
     else
@@ -145,9 +143,7 @@ void pcache_trim(void)
 
 void pcache_sync(void)
 {
-    PCACHE *pp;
-
-    pp = pcache_head;
+    PCACHE *pp = pcache_head;
     while (pp)
     {
         pcache_save(pp);
@@ -157,9 +153,7 @@ void pcache_sync(void)
 
 void pcache_purge(dbref player)
 {
-    PCACHE *pp;
-
-    pp = (PCACHE *) hashfindLEN(&player, sizeof(player), &pcache_htab);
+    PCACHE *pp = (PCACHE *) hashfindLEN(&player, sizeof(player), &pcache_htab);
     if (!pp)
     {
         return;
@@ -170,11 +164,9 @@ void pcache_purge(dbref player)
 
 int a_Queue(dbref player, int adj)
 {
-    PCACHE *pp;
-
     if (OwnsOthers(player))
     {
-        pp = pcache_find(player);
+        PCACHE *pp = pcache_find(player);
         if (pp)
         {
             pp->queue += adj;
@@ -184,32 +176,20 @@ int a_Queue(dbref player, int adj)
     return 0;
 }
 
-void s_Queue(dbref player, int val)
-{
-    PCACHE *pp;
-
-    if (OwnsOthers(player))
-    {
-        pp = pcache_find(player);
-        if (pp)
-        {
-            pp->queue = val;
-        }
-    }
-}
-
 int QueueMax(dbref player)
 {
-    PCACHE *pp;
-    int m;
-
-    m = 0;
-    if (OwnsOthers(player)) {
-        pp = pcache_find(player);
-        if (pp) {
-            if (pp->qmax >= 0) {
+    int m = 0;
+    if (OwnsOthers(player))
+    {
+        PCACHE *pp = pcache_find(player);
+        if (pp)
+        {
+            if (pp->qmax >= 0)
+            {
                 m = pp->qmax;
-            } else {
+            }
+            else
+            {
                 m = mudstate.db_top + 1;
                 if (m < mudconf.queuemax)
                     m = mudconf.queuemax;
@@ -223,18 +203,17 @@ int QueueMax(dbref player)
 
 int Pennies(dbref obj)
 {
-    char *cp;
-
 #ifndef STANDALONE
-    PCACHE *pp;
-
-    if (OwnsOthers(obj)) {
-        pp = pcache_find(obj);
+    if (OwnsOthers(obj))
+    {
+        PCACHE *pp = pcache_find(obj);
         if (pp)
+        {
             return pp->money;
+        }
     }
 #endif
-    cp = atr_get_raw(obj, A_MONEY);
+    char *cp = atr_get_raw(obj, A_MONEY);
     if (cp)
     {
         return Tiny_atol(cp);
@@ -247,11 +226,11 @@ void s_Pennies(dbref obj, int howfew)
     IBUF tbuf;
 
 #ifndef STANDALONE
-    PCACHE *pp;
-
-    if (OwnsOthers(obj)) {
-        pp = pcache_find(obj);
-        if (pp) {
+    if (OwnsOthers(obj))
+    {
+        PCACHE *pp = pcache_find(obj);
+        if (pp)
+        {
             pp->money = howfew;
             pp->cflags |= PF_MONEY_CH;
         }

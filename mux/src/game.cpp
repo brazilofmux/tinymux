@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.19 2002-07-23 05:36:13 jake Exp $
+// $Id: game.cpp,v 1.20 2002-07-23 15:51:11 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -33,7 +33,6 @@ extern void do_dbck(dbref executor, dbref caller, dbref enactor, int);
 extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
 
 void fork_and_dump(int);
-void dump_database(void);
 void pcache_sync(void);
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 static void init_rlimit(void);

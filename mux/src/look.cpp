@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.20 2002-07-23 07:07:29 sdennis Exp $
+// $Id: look.cpp,v 1.21 2002-07-23 15:51:11 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -24,8 +24,6 @@
 #include "command.h"
 #include "interface.h"
 #include "powers.h"
-
-extern void ufun(char *, char *, int, int, int, dbref, dbref);
 
 #ifdef WOD_REALMS
 

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.45 2002-07-23 05:36:12 jake Exp $
+// $Id: command.cpp,v 1.46 2002-07-23 15:51:11 jake Exp $
 //
 
 #include "copyright.h"
@@ -21,7 +21,6 @@ extern void list_siteinfo(dbref);
 extern void logged_out0(dbref executor, dbref caller, dbref enactor, int key);
 extern void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg);
 extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
-extern void vattr_clean_db(void);
 
 // Switch tables for the various commands.
 //

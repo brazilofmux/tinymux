@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.35 2002-07-23 14:04:16 jake Exp $
+// $Id: funceval.cpp,v 1.36 2002-07-23 15:51:11 jake Exp $
 //
 
 #include "copyright.h"
@@ -27,8 +27,6 @@
  */
 
 extern NAMETAB indiv_attraccess_nametab[];
-extern char *next_token(char *, char);
-extern char *split_token(char **, char);
 extern int countwords(char *, char);
 extern BOOL check_read_perms(dbref, dbref, ATTR *, int, int, char *, char **);
 extern void arr2list(char *arr[], int alen, char *list, char **bufc, char sep);

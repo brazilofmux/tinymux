@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.8 2002-07-23 05:36:12 jake Exp $
+// $Id: comsys.h,v 1.9 2002-07-23 15:51:11 jake Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -59,17 +59,12 @@ typedef struct tagComsys
     struct tagComsys *next;
 } comsys_t;
 
-extern comsys_t *comsys_table[NUM_COMSYS];
-
 void save_comsys(char *filename);
 void load_comsys(char *filename);
 void del_comsys(dbref who);
 void add_comsys(comsys_t *c);
-void do_processcom(dbref player, char *arg1, char *arg2);
 BOOL do_test_access(dbref player, long access, struct channel *chan);
 void do_joinchannel(dbref player, struct channel *ch);
-void do_comdisconnectraw_notify(dbref player, char *chan);
-void do_comconnectraw_notify(dbref player, char *chan);
 void do_comdisconnectchannel(dbref player, char *channel);
 void load_channels(FILE *fp);
 void purge_comsystem(void);
@@ -90,13 +85,11 @@ void do_comwho(dbref player, struct channel *ch);
 void do_comlast(dbref player, struct channel *ch, int arg);
 void do_leavechannel(dbref player, struct channel *ch);
 void do_delcomchannel(dbref player, char *channel, BOOL bQuiet);
-void do_listchannels(dbref player);
 #if 0
 void do_cleanupchannels(void);
 #endif // 0
 void do_channelnuke(dbref player);
 void sort_users(struct channel *ch);
-void do_comconnectchannel(dbref player, char *channel, char *alias, int i);
 void do_comdisconnect(dbref player);
 void do_comconnect(dbref player);
 void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2);
@@ -112,15 +105,7 @@ void do_addcom
     char *arg2
 );
 
-comsys_t *get_comsys ();
 comsys_t *create_new_comsys ();
-char     *purge_comsys();
-comsys_t *get_comsys ();
-comsys_t *create_new_comsys ();
-
-extern int num_channels;
-extern int max_channels;
-extern struct channel **channels;
 
 struct channel *select_channel(char *channel);
 struct comuser *select_user(struct channel *ch, dbref player);
@@ -128,8 +113,6 @@ struct comuser *select_user(struct channel *ch, dbref player);
 char  *get_channel_from_alias();
 
 BOOL  do_comsystem(dbref who, char *cmd);
-char  *do_comdisconnectnotify();
-char  *do_comconnectnotify();
 void  do_chanlist(dbref executor, dbref caller, dbref enactor, int key);
 
 #define CHANNEL_JOIN      0x1
