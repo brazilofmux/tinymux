@@ -67,7 +67,7 @@ D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
 	muxcli.cpp netcommon.cpp object.cpp predicates.cpp player.cpp \
 	player_c.cpp powers.cpp quota.cpp rob.cpp pcre.cpp set.cpp \
 	sha1.cpp speech.cpp stringutil.cpp strtod.cpp svdrand.cpp svdhash.cpp \
-        svdreport.cpp timer.cpp timeutil.cpp unparse.cpp vattr.cpp walkdb.cpp \
+	svdreport.cpp timer.cpp timeutil.cpp unparse.cpp vattr.cpp walkdb.cpp \
 	wild.cpp wiz.cpp
 D_OBJ	= _build.o alloc.o attrcache.o boolexp.o bsd.o command.o comsys.o \
 	conf.o cque.o create.o db.o db_rw.o eval.o file_c.o flags.o funceval.o \
@@ -159,16 +159,11 @@ ALLSRC	= $(D_SRC) $(VER_SRC) $(COM_SRC) $(AUX_SRC) $(LIB_SRC)
 SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S)
 OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O)
 
-OUT	= netmux 
-
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
 
 # paths is likely to remain broken
-all: slave $(OUT) links 
-
-TAGS: *.cpp *.h
-	etags *.cpp *.h
+all: slave netmux links 
 
 links: netmux slave
 	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/netmux dbconvert
@@ -190,13 +185,10 @@ depend: $(ALLSRC) unsplit
 	for i in $(D_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
-verify:
-	runtest --tool mux --src ./testsuite
-
 realclean:
-	-rm -f *.o a.out core gmon.out mux.*log mux.*sum $(OUT) netmux~
+	-rm -f *.o a.out core gmon.out mux.*log mux.*sum netmux netmux~
 
 clean:
-	-rm -f *.o a.out core gmon.out mux.*log mux.*sum slave $(OUT)
+	-rm -f *.o a.out core gmon.out mux.*log mux.*sum slave netmux
 
 include .depend
