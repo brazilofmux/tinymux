@@ -1657,11 +1657,12 @@ COMMANDS
   @boot          @chown         @chownall      @clone         @cut
   @dbck          @dbclean       @delcommand    @destroy       @disable
   @doing         @dump          @enable        @fixdb         @function
-  @halt          @icmd          @kick          @list          @listcommands
-  @list_file     @listmotd      @lock          @log           @mark
-  @mark_all      @motd          @newpassword   @pcreate       @poor
-  @ps            @quota         @readcache     @restart       @shutdown
-  @startslave    @timecheck     @timewarp      @toad          @wall
+  @halt          @hook          @icmd          @kick          @list
+  @listcommands  @list_file     @listmotd      @lock          @log
+  @mark          @mark_all      @motd          @newpassword   @pcreate
+  @poor          @ps            @quota         @readcache     @restart
+  @shutdown      @startslave    @timecheck     @timewarp      @toad
+  @wall
 
   @allowance     @comment       @timeout
 
