@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.2 2000-04-12 00:52:24 sdennis Exp $
+// $Id: svdhash.cpp,v 1.3 2000-04-12 01:53:32 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -2524,28 +2524,11 @@ void CLogFile::WriteString(const char *pString)
 
 void DCL_CDECL CLogFile::printf(char *fmt, ...)
 {
-    char aTempBuffer[SIZEOF_LOG_BUFFER];
-
-    // See predicates.cpp, tprintf() for more comments.
-    //
-    aTempBuffer[0] = '\0';
     va_list ap;
     va_start(ap, fmt);
-    int nString = VSNPRINTF(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
+    char aTempBuffer[SIZEOF_LOG_BUFFER];
+    int nString = Tiny_vsnprintf(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
     va_end(ap);
-    if (nString < 0 || nString > SIZEOF_LOG_BUFFER-1)
-    {
-        if (aTempBuffer[0] == '\0')
-        {
-            // vsnprintf did not touch the buffer.
-            //
-            nString = 0;
-        }
-        else
-        {
-            nString = SIZEOF_LOG_BUFFER-1;
-        }
-    }
     WriteBuffer(nString, aTempBuffer);
 }
 

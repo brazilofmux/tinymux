@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.2 2000-04-12 00:52:24 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.3 2000-04-12 01:53:33 sdennis Exp $ 
 */
 
 /*
@@ -172,39 +172,18 @@ void raw_notify_newline(dbref player)
 * * raw_broadcast: Send message to players who have indicated flags
 */
 
-#ifdef NEED_VSPRINTF_DCL
-extern char *vsprintf(char *, char *, va_list);
-#endif
-
 void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
 {
     if (!fmt || !*fmt)
     {
         return;
     }
-    char *buff = alloc_lbuf("raw_broadcast");
 
-    // See predicates.cpp, tprintf() for more comments.
-    //
-    buff[0] = '\0';
     va_list ap;
     va_start(ap, fmt);
-    int len = VSNPRINTF(buff, LBUF_SIZE, fmt, ap);
+    char *buff = alloc_lbuf("raw_broadcast");
+    Tiny_vsnprintf(buff, LBUF_SIZE, fmt, ap);
     va_end(ap);
-    if (len < 0 || len > LBUF_SIZE-1)
-    {
-        if (buff[0] == '\0')
-        {
-            // vsnprintf did not touch the buffer.
-            //
-            len = 0;
-        }
-        else
-        {
-            len = LBUF_SIZE-1;
-        }
-    }
-    buff[len] = '\0';
 
     DESC *d;
     DESC_ITER_CONN(d)

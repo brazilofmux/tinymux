@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.2 2000-04-12 00:46:46 sdennis Exp $ */
+/* $Id: config.h,v 1.3 2000-04-12 01:53:34 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -128,7 +128,6 @@ typedef unsigned __int64 UINT64;
 #define IS_INVALID_SOCKET(s) ((s) == INVALID_SOCKET)
 #define popen _popen
 #define pclose _pclose
-#define VSNPRINTF _vsnprintf
 
 #else // WIN32
 
@@ -149,7 +148,6 @@ typedef int SOCKET;
 #define IS_INVALID_SOCKET(s) ((s) < 0)
 #define INVALID_SOCKET (-1)
 #define SD_BOTH (2)
-#define VSNPRINTF vsnprintf
 
 #endif // WIN32
 
