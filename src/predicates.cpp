@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.33 2001-07-06 15:31:01 sdennis Exp $
+// $Id: predicates.cpp,v 1.34 2001-07-07 19:31:14 morgan Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -845,7 +845,7 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
             if (old && (old->callseq & CS_ADDED)) {
                 
                 for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next) {
-                    if (strcmp(keyname, nextp->name))
+                    if (strncmp(keyname, nextp->name, nKeyLength))
                         continue;
                     notify(player, tprintf("%s: #%d/%s", nextp->name, nextp->thing, ((ATTR *)atr_num(nextp->atr))->name));
                     didit = 1;
