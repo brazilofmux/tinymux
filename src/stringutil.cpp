@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.5 2000-04-12 05:55:56 sdennis Exp $
+// $Id: stringutil.cpp,v 1.6 2000-04-12 19:31:43 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1730,6 +1730,13 @@ char *Tiny_ltoa_t(long val)
     static char buff[12];
     Tiny_ltoa(val, buff);
     return buff;
+}
+
+void safe_ltoa(long val, char *buff, char **bufc, int size)
+{
+    static char temp[12];
+    int n = Tiny_ltoa(val, temp);
+    safe_copy_buf(temp, n, buff, bufc, size);
 }
 
 int Tiny_i64toa(INT64 val, char *buf)

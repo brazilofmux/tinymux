@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.7 2000-04-12 05:55:57 sdennis Exp $
+// $Id: externs.h,v 1.8 2000-04-12 19:31:43 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -229,6 +229,7 @@ char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts);
 
 int Tiny_ltoa(long val, char *buf);
 char *Tiny_ltoa_t(long val);
+void safe_ltoa(long val, char *buff, char **bufc, int size);
 int Tiny_i64toa(INT64 val, char *buf);
 char *Tiny_i64toa_t(INT64 val);
 long Tiny_atol(const char *pString);
