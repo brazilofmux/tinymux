@@ -1,8 +1,7 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.31 2001-03-30 23:02:30 sdennis Exp $
+// * $Id: comsys.cpp,v 1.32 2001-03-30 23:18:18 sdennis Exp $
 //
-//#define QQQ
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -901,31 +900,31 @@ void EndBuildChannelPose(PBCP pC)
 // just to make it a bit more readable.
 #define FreeComtitle(x) if(x) free_lbuf(x)
 
-char *GetComtitle(struct comuser *user) {
-  //
-  // New Comtitle
-  //
-  char *nComTitle = user->title;
-  char *pAllocatedComTitleBuffer = NULL;
+char *GetComtitle(struct comuser *user)
+{
+    // New Comtitle
+    //
+    char *nComTitle = user->title;
+    char *pAllocatedComTitleBuffer = NULL;
   
-  
-  // Don't evaluate a title if the config parameter doesn't want it.
-  // if their getting the comtitle, they obviously need it :)
-  if (mudconf.eval_comtitle)
+    // Don't evaluate a title if the config parameter doesn't want it.
+    // if their getting the comtitle, they obviously need it :)
+    //
+    if (mudconf.eval_comtitle)
     {
-      pAllocatedComTitleBuffer = alloc_lbuf("do_processcom.ct");
-      nComTitle = pAllocatedComTitleBuffer;
+        pAllocatedComTitleBuffer = alloc_lbuf("do_processcom.ct");
+        nComTitle = pAllocatedComTitleBuffer;
       
-      // Evaluate the comtitle as code.
-      //
-      char *pnComTitle = nComTitle;
-      char TempToEval[LBUF_SIZE];
-      strcpy(TempToEval, user->title);
-      char *pComTitle = TempToEval;
-      TinyExec(nComTitle, &pnComTitle, 0, user->who, user->who, EV_FCHECK |
+        // Evaluate the comtitle as code.
+        //
+        char *pnComTitle = nComTitle;
+        char TempToEval[LBUF_SIZE];
+        strcpy(TempToEval, user->title);
+        char *pComTitle = TempToEval;
+        TinyExec(nComTitle, &pnComTitle, 0, user->who, user->who, EV_FCHECK |
                EV_EVAL | EV_TOP, &pComTitle, (char **)NULL, 0);
     }
-  return pAllocatedComTitleBuffer;
+    return pAllocatedComTitleBuffer;
 }
 #endif // QQQ
 
