@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.1 2000-04-11 07:14:43 sdennis Exp $
+// $Id: command.cpp,v 1.2 2000-04-14 04:16:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -674,9 +674,7 @@ void NDECL(init_cmdtab)
     {
         if ((ap->flags & AF_NOCMD) == 0)
         {
-            cbuff[0] = '@';
-            strcpy(cbuff+1, ap->name);
-            _strlwr(cbuff+1);
+            int nBuffer = MakeCanonicalAttributeCommand(cbuff, ap->name);
 
             cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG), __FILE__, __LINE__);
             cp2a->cmdname = (char *)strsave(cbuff);
@@ -689,7 +687,7 @@ void NDECL(init_cmdtab)
             cp2a->extra = ap->number;
             cp2a->callseq = CS_TWO_ARG;
             cp2a->handler = do_setattr;
-            hashaddLEN(cp2a->cmdname, strlen(cp2a->cmdname), (int *)cp2a, &mudstate.command_htab);
+            hashaddLEN(cp2a->cmdname, nBuffer, (int *)cp2a, &mudstate.command_htab);
         }
     }
     free_sbuf(cbuff);
@@ -1923,12 +1921,8 @@ static void list_cmdaccess(dbref player)
         if (ap->flags & AF_NOCMD)
             continue;
 
-        CMDENT *cmdp;
-        buff[0] = '@';
-        strcpy(buff+1, ap->name);
-        _strlwr(buff+1);
-
-        cmdp = (CMDENT *) hashfindLEN(buff, strlen(buff), &mudstate.command_htab);
+        int nBuffer = MakeCanonicalAttributeCommand(buff, ap->name);
+        CMDENT *cmdp = (CMDENT *)hashfindLEN(buff, nBuffer, &mudstate.command_htab);
         if (cmdp == NULL)
             continue;
 
@@ -2175,24 +2169,18 @@ CF_HAND(cf_access)
 
 CF_HAND(cf_acmd_access)
 {
-    CMDENT *cmdp;
     ATTR *ap;
-    char *buff;
-    int failure, save;
 
-    buff = alloc_sbuf("cf_acmd_access");
+    char *buff = alloc_sbuf("cf_acmd_access");
     for (ap = attr; ap->name; ap++)
     {
-        buff[0] = '@';
-        strcpy(buff+1, ap->name);
-        _strlwr(buff+1);
-
-        cmdp = (CMDENT *) hashfindLEN(buff, strlen(buff), &mudstate.command_htab);
+        int nBuffer = MakeCanonicalAttributeCommand(buff, ap->name);
+        CMDENT *cmdp = (CMDENT *)hashfindLEN(buff, nBuffer, &mudstate.command_htab);
         if (cmdp != NULL)
         {
-            save = cmdp->perms;
-            failure = cf_modify_bits(&(cmdp->perms), str,
-                         extra, player, cmd);
+            int save = cmdp->perms;
+            int failure = cf_modify_bits(&(cmdp->perms), str, extra,
+                player, cmd);
             if (failure != 0)
             {
                 cmdp->perms = save;
