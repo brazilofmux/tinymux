@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.h,v 1.6 2001-02-07 05:28:51 sdennis Exp $
+// $Id: svdhash.h,v 1.7 2001-02-10 03:12:17 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -125,7 +125,7 @@ public:
     ~CHashPage(void);
     void Empty(HP_DIRINDEX arg_nDepth, UINT32 arg_nHashGroup, HP_DIRINDEX arg_nDirSize);
 #ifdef HP_PROTECTION
-    void Protect(void);
+    void Protection(void);
     BOOL Validate(void);
 #endif
 
