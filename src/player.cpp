@@ -2,7 +2,7 @@
  * player.c 
  */
 /*
- * $Id: player.cpp,v 1.3 2000-06-02 16:18:02 sdennis Exp $ 
+ * $Id: player.cpp,v 1.4 2000-06-05 19:00:01 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -21,7 +21,7 @@
 #include "svdreport.h"
 
 // The following is sometime useful if you don't have access to a crypt
-// library. It does however make you flatfiles password incompatible with
+// library. It does however make your flatfiles password incompatible with
 // Unix flatfiles, but there are ways of getting around that as well.
 //
 #if 0
@@ -430,13 +430,11 @@ int add_player_name(dbref player, char *name)
     if (p)
     {
 
-        /*
-         * Entry found in the hashtable.  If a player, succeed if the
-         * * * numbers match (already correctly in the hash table),
-         * fail * * if they don't.  Fail if the name is a disallowed
-         * name * * (value AMBIGUOUS). 
-         */
-
+        // Entry found in the hashtable.  If a player, succeed if the
+        // numbers match (already correctly in the hash table), fail
+        // if they don't. Fail if the name is a disallowed name
+        // (value AMBIGUOUS).
+        //
         if (*p == AMBIGUOUS)
         {
             free_lbuf(temp);
@@ -454,11 +452,12 @@ int add_player_name(dbref player, char *name)
                 return 0;
             }
         }
-        /*
-         * It's an alias (or an incorrect entry).  Clobber it 
-         */
+
+        // It's an alias (or an incorrect entry). Clobber it.
+        //
         MEMFREE(p);
         p = (dbref *)MEMALLOC(sizeof(int));
+        ISOUTOFMEMORY(p);
 
         *p = player;
         stat = hashreplLEN(temp, strlen(temp), p, &mudstate.player_htab);
@@ -467,6 +466,7 @@ int add_player_name(dbref player, char *name)
     else
     {
         p = (dbref *)MEMALLOC(sizeof(int));
+        ISOUTOFMEMORY(p);
 
         *p = player;
         stat = hashaddLEN(temp, strlen(temp), p, &mudstate.player_htab);
@@ -581,16 +581,13 @@ void NDECL(load_player_names)
 
 void badname_add(char *bad_name)
 {
-    BADNAME *bp;
-
-    /*
-     * Make a new node and link it in at the top 
-     */
-    bp = (BADNAME *)MEMALLOC(sizeof(BADNAME));
-    bp->name = (char *)MEMALLOC(strlen(bad_name) + 1);
+    // Make a new node and link it in at the top.
+    //
+    BADNAME *bp = (BADNAME *)MEMALLOC(sizeof(BADNAME));
+    ISOUTOFMEMORY(bp);
+    bp->name = StringClone(bad_name);
     bp->next = mudstate.badname_head;
     mudstate.badname_head = bp;
-    StringCopy(bp->name, bad_name);
 }
 
 void badname_remove(char *bad_name)
