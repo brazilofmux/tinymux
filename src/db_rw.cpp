@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.38 2001-11-28 06:35:53 sdennis Exp $
+// $Id: db_rw.cpp,v 1.39 2002-04-13 21:27:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -179,7 +179,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->thing = b->thing * 10 + c - '0';
             }
         }
-        else if (Tiny_IsAlpha[(unsigned char)c] || c == '_')
+        else if (Tiny_IsFirstAttributeNameCharacter[(unsigned char)c])
         {
             buff = alloc_lbuf("getboolexp1.atr_name");
 

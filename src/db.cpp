@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.69 2002-02-01 00:33:45 sdennis Exp $
+// $Id: db.cpp,v 1.70 2002-04-13 21:27:39 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -832,9 +832,7 @@ void do_fixdb
 
 // MakeCanonicalAttributeName
 //
-// First letter must be alphabetic or '_'.
-// Other letters can be alphanumeric or one of "'?!`/-_.@#$^&~=+<>()%".
-// Letters are converted to uppercase.
+// See stringutil.cpp for valid characters used here..
 //
 // We truncate the attribute name to a length of SBUF_SIZE-1, if
 // necessary, but we will validate the remaining characters anyway.
@@ -848,7 +846,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, BOOL *pbValid)
     static char Buffer[SBUF_SIZE];
 
     if (  !pName
-       || !(Tiny_IsAlpha[(unsigned char)*pName] || *pName == '_'))
+       || !Tiny_IsFirstAttributeNameCharacter[(unsigned char)*pName])
     {
         *pnName = 0;
         *pbValid = FALSE;
