@@ -1,6 +1,6 @@
 // look.c -- commands which look at things
 //
-// $Id: look.cpp,v 1.2 2000-04-11 21:38:01 sdennis Exp $
+// $Id: look.cpp,v 1.3 2000-04-13 07:53:47 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -29,7 +29,6 @@
 #include "command.h"
 #include "alloc.h"
 #include "ansi.h"
-//#include "dspace.h"
 
 extern void FDECL(ufun, (char *, char *, int, int, int, dbref, dbref));
 
@@ -410,25 +409,15 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     
     dbref thing, parent;
     char *buff, *e, *s, *buff1, *e1;
-    
-#ifdef DSPACE
-    char *buff2, x, y, z;
-    
-#endif
-    
     int foundany, lev, key;
     
-    /*
-    * make sure location has exits 
-    */
-    
+    // Make sure location has exits.
+    //    
     if (!Good_obj(loc) || !Has_exits(loc))
         return;
     
-        /*
-        * make sure there is at least one visible exit 
-    */
-    
+    // make sure there is at least one visible exit.
+    //    
     foundany = 0;
     key = 0;
     if (Dark(loc))
@@ -456,13 +445,6 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     
     if (!foundany)
         return;
-#ifdef DSPACE
-    if (Dynamic(loc)) {
-        x = atoi_clean(atr_get_raw(loc, get_atr("XCOOR")));
-        y = atoi_clean(atr_get_raw(loc, get_atr("YCOOR")));
-        z = atoi_clean(atr_get_raw(loc, get_atr("ZCOOR")));
-    }
-#endif
     
     // Display the list of exit names 
     //
@@ -496,34 +478,16 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
                 if (exit_displayable(thing, player, key))
                 {
                     e1 = buff1;
-                    /* Put the exit name in buff1 */
-#ifdef DSPACE
-                    if (Dynamic(loc))
-                    {
-                        buff2 = alloc_lbuf("look_exits.buff2");
-                        ufun(buff2, "EXITDARK", x, y, z, thing, player);
-                        if (!*buff2)
-                        {
-#endif
-                            // chop off first exit alias to display
-                            //
-                            
-                            if (buff != e)
-                                safe_str((char *)"  ", buff, &e);
-                            for (s = Name(thing); *s && (*s != ';'); s++)
-                                safe_chr(*s, buff1, &e1);
-#ifdef DSPACE
-                            free_lbuf(buff2);
-                        }
-                    }
-                    else
-                    {
-                        if (buff != e)
-                            safe_str((char *)"  ", buff, &e);
-                        for (s = Name(thing); *s && (*s != ';'); s++)
-                            safe_chr(*s, buff1, &e1);
-                    }
-#endif
+
+                    // Put the exit name in buff1.
+                    //
+                    // chop off first exit alias to display
+                    //
+                    
+                    if (buff != e)
+                        safe_str((char *)"  ", buff, &e);
+                    for (s = Name(thing); *s && (*s != ';'); s++)
+                        safe_chr(*s, buff1, &e1);
                     *e1 = 0;
                     /* Copy the exit name into 'buff' */
                     if (Html(player))

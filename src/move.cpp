@@ -2,7 +2,7 @@
  * move.c -- Routines for moving about 
  */
 /*
- * $Id: move.cpp,v 1.1 2000-04-11 07:14:46 sdennis Exp $ 
+ * $Id: move.cpp,v 1.2 2000-04-13 07:57:55 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -16,7 +16,6 @@
 #include "match.h"
 #include "attrs.h"
 #include "powers.h"
-//#include "dspace.h"
 
 /*
  * ---------------------------------------------------------------------------
@@ -102,11 +101,6 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, int canhear, 
     loc = Location(thing);
     if ((loc == NOTHING) || (loc == src))
         return;
-
-#ifdef DSPACE
-    if (Dynamic(src))
-        leaveroom(thing, src);
-#endif
 
     show_vrml_url(thing, loc);
     
@@ -427,68 +421,57 @@ void move_exit(dbref player, dbref exit, int divest, const char *failmsg, int hu
     loc = Location(exit);
     if (loc == HOME)
         loc = Home(player);
-#ifdef DSPACE
-    if (Dynamic(exit))
-    {
-        move_dynamic_exit(player, exit, Location(player));
-    }
-    else
-    {
-#endif
 
 #ifdef WOD_REALMS
-        if (Good_obj(loc) && (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(player, exit, ACTION_IS_MOVING)))
+    if (Good_obj(loc) && (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(player, exit, ACTION_IS_MOVING)))
+    {
+        if (isShroud(player))
         {
-            if (isShroud(player))
+            bDoit = TRUE;
+            int iShroudWarded = get_atr("SHROUD_WARDED");
+            if (iShroudWarded > 0)
             {
-                bDoit = TRUE;
-                int iShroudWarded = get_atr("SHROUD_WARDED");
-                if (iShroudWarded > 0)
+                int owner, flags;
+                char *buff = atr_pget(exit, iShroudWarded, &owner, &flags);
+                if (buff)
                 {
-                    int owner, flags;
-                    char *buff = atr_pget(exit, iShroudWarded, &owner, &flags);
-                    if (buff)
+                    if (*buff)
                     {
-                        if (*buff)
-                        {
-                            bDoit = FALSE;
-                        }
-                        free_lbuf(buff);
+                        bDoit = FALSE;
                     }
+                    free_lbuf(buff);
                 }
-            }
-
-            if (!bDoit && isUmbra(player))
-            {
-                bDoit = TRUE;
-                int iUmbraWarded = get_atr("UMBRA_WARDED");
-                if (iUmbraWarded > 0)
-                {
-                    int owner, flags;
-                    char *buff = atr_pget(exit, iUmbraWarded, &owner, &flags);
-                    if (buff)
-                    {
-                        if (*buff)
-                        {
-                            bDoit = FALSE;
-                        }
-                        free_lbuf(buff);
-                    }
-                }
-            }
-
-            if (!bDoit && could_doit(player, exit, A_LOCK))
-            {
-                bDoit = TRUE;
             }
         }
-#else
-        if (Good_obj(loc) && could_doit(player, exit, A_LOCK))
+
+        if (!bDoit && isUmbra(player))
+        {
+            bDoit = TRUE;
+            int iUmbraWarded = get_atr("UMBRA_WARDED");
+            if (iUmbraWarded > 0)
+            {
+                int owner, flags;
+                char *buff = atr_pget(exit, iUmbraWarded, &owner, &flags);
+                if (buff)
+                {
+                    if (*buff)
+                    {
+                        bDoit = FALSE;
+                    }
+                    free_lbuf(buff);
+                }
+            }
+        }
+
+        if (!bDoit && could_doit(player, exit, A_LOCK))
         {
             bDoit = TRUE;
         }
-#endif
-#ifdef DSPACE
+    }
+#else
+    if (Good_obj(loc) && could_doit(player, exit, A_LOCK))
+    {
+        bDoit = TRUE;
     }
 #endif
     if (bDoit)
