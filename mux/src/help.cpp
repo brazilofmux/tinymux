@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.14 2003-01-05 22:18:02 sdennis Exp $
+// $Id: help.cpp,v 1.15 2003-01-06 04:18:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -23,52 +23,23 @@ struct help_entry
     char *key;      // The key this is stored under.
 };
 
-typedef struct
-{
-    const char *CommandName;
-    CHashTable *ht;
-    char       *pTextFile;
-    char       *pIndexFile;
-    BOOL       bEval;
-    int        permissions;
-} HELP_FILE_DESC;
-
-#define HFTABLE_SIZE 6
 HELP_FILE_DESC hftable[HFTABLE_SIZE] =
 {
-    { "help",    &mudstate.help_htab,      "text/help.txt",      "text/help.indx",      FALSE, CA_PUBLIC },
-    { "news",    &mudstate.news_htab,      "text/news.txt",      "text/news.indx",       TRUE, CA_PUBLIC },
-    { "wizhelp", &mudstate.wizhelp_htab,   "text/wizhelp.txt",   "text/wizhelp.indx",   FALSE, CA_WIZARD },
-    { "+help",   &mudstate.plushelp_htab,  "text/plushelp.txt",  "text/plushelp.indx",   TRUE, CA_PUBLIC },
-    { "wiznews", &mudstate.wiznews_htab,   "text/wiznews.txt",   "text/wiznews.indx",   FALSE, CA_WIZARD },
-    { "+shelp",  &mudstate.staffhelp_htab, "text/staffhelp.txt", "text/staffhelp.indx",  TRUE, CA_STAFF  }
+    { "help",    NULL, "text/help.txt",      "text/help.indx",      FALSE, CA_PUBLIC },
+    { "news",    NULL, "text/news.txt",      "text/news.indx",       TRUE, CA_PUBLIC },
+    { "wizhelp", NULL, "text/wizhelp.txt",   "text/wizhelp.indx",   FALSE, CA_WIZARD },
+    { "+help",   NULL, "text/plushelp.txt",  "text/plushelp.indx",   TRUE, CA_PUBLIC },
+    { "wiznews", NULL, "text/wiznews.txt",   "text/wiznews.indx",   FALSE, CA_WIZARD },
+    { "+shelp",  NULL, "text/staffhelp.txt", "text/staffhelp.indx",  TRUE, CA_STAFF  }
 };
 
-#if 0
-    mudconf.whelp_file     = StringClone("text/wizhelp.txt");
-    mudconf.whelp_indx     = StringClone("text/wizhelp.indx");
-    mudconf.plushelp_file  = StringClone("text/plushelp.txt");
-    mudconf.plushelp_indx  = StringClone("text/plushelp.indx");
-    mudconf.staffhelp_file = StringClone("text/staffhelp.txt");
-    mudconf.staffhelp_indx = StringClone("text/staffhelp.indx");
-    mudconf.wiznews_file   = StringClone("text/wiznews.txt");
-    mudconf.wiznews_indx   = StringClone("text/wiznews.indx");
-    {"help_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.help_file,       NULL, SIZEOF_PATHNAME},
-    {"help_index",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.help_indx,       NULL, SIZEOF_PATHNAME},
-    {"news_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.news_file,       NULL, SIZEOF_PATHNAME},
-    {"news_index",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.news_indx,       NULL, SIZEOF_PATHNAME},
-    {"wizard_help_file",          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.whelp_file,      NULL, SIZEOF_PATHNAME},
-    {"wizard_help_index",         cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.whelp_indx,      NULL, SIZEOF_PATHNAME},
-    {"plushelp_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.plushelp_file,   NULL, SIZEOF_PATHNAME},
-    {"plushelp_index",            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.plushelp_indx,   NULL, SIZEOF_PATHNAME},
-    {"staffhelp_file",            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.staffhelp_file,  NULL, SIZEOF_PATHNAME},
-    {"staffhelp_index",           cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.staffhelp_indx,  NULL, SIZEOF_PATHNAME},
-    {"wiznews_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wiznews_file,    NULL, SIZEOF_PATHNAME},
-    {"wiznews_index",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wiznews_indx,    NULL, SIZEOF_PATHNAME},
-#endif
-
-void helpindex_clean(CHashTable *htab)
+void helpindex_clean(int iHelpfile)
 {
+    CHashTable *htab = hftable[iHelpfile].ht;
+    if (htab == NULL)
+    {
+        return;
+    }
     struct help_entry *htab_entry;
     for (htab_entry = (struct help_entry *)hash_firstentry(htab);
          htab_entry;
@@ -79,36 +50,33 @@ void helpindex_clean(CHashTable *htab)
         MEMFREE(htab_entry);
         htab_entry = NULL;
     }
-
-    hashflush(htab);
+    delete hftable[iHelpfile].ht;
+    hftable[iHelpfile].ht = NULL;
 }
 
 int helpindex_read(int iHelpfile)
 {
+    helpindex_clean(iHelpfile);
+
+    hftable[iHelpfile].ht = new CHashTable;
     CHashTable *htab = hftable[iHelpfile].ht;
     char *filename = hftable[iHelpfile].pIndexFile;
 
     help_indx entry;
-    char *p;
-    int count;
-
-    // Let's clean out our hash table, before we throw it away.
-    //
-    helpindex_clean(htab);
 
     FILE *fp = fopen(filename, "rb");
     if (fp == NULL)
     {
-        STARTLOG(LOG_PROBLEMS, "HLP", "RINDX")
-        p = alloc_lbuf("helpindex_read.LOG");
+        STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
+        char *p = alloc_lbuf("helpindex_read.LOG");
         sprintf(p, "Can't open %s for reading.", filename);
         log_text(p);
         free_lbuf(p);
-        ENDLOG
+        ENDLOG;
         return -1;
     }
     DebugTotalFiles++;
-    count = 0;
+    int count = 0;
     while ((fread((char *)&entry, sizeof(help_indx), 1, fp)) == 1)
     {
         // Convert the entry to all lowercase letters and add all leftmost substrings.
@@ -167,6 +135,8 @@ void helpindex_load(dbref player)
         cmdp->perms = hftable[i].permissions;
         cmdp->switches = NULL;
 
+        hashdeleteLEN(cmdp->cmdname, strlen(cmdp->cmdname),
+            &mudstate.command_htab);
         hashaddLEN(cmdp->cmdname, strlen(cmdp->cmdname),
             (int *)cmdp, &mudstate.command_htab);
 

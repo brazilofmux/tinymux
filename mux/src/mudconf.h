@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.14 2003-01-05 22:18:02 sdennis Exp $
+// $Id: mudconf.h,v 1.15 2003-01-06 04:18:04 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -335,18 +335,16 @@ struct statedata
     CHashTable fwdlist_htab;   /* Room forwardlists */
     CHashTable parent_htab;    /* Parent $-command exclusion */
 #ifdef PARSE_TREES
-    CHashTable tree_htab;  /* Parse trees for evaluation */
+    CHashTable tree_htab;      /* Parse trees for evaluation */
 #endif // PARSE_TREES
-    CHashTable news_htab;  /* News topics hashtable */
-    CHashTable help_htab;  /* Help topics hashtable */
-    CHashTable wizhelp_htab;   /* Wizard help topics hashtable */
-    CHashTable plushelp_htab;  /* +help topics hashtable */
-    CHashTable staffhelp_htab; /* +shelp topics hashtable */
-    CHashTable wiznews_htab;   /* wiznews topics hashtable */
     CHashTable acache_htab;    // Attribute Cache
 
-    char    version[128];   /* MUX version string */
-    char    short_ver[64];  /* Short version number (for INFO) */
+    CHashTable *HelpHashTable; // Table of help files hashes.
+    int     nHelpHashTable;    // Number of entries used.
+    int     maxHelpHashTable;  // Number of entries allocated.
+
+    char    version[128];      /* MUX version string */
+    char    short_ver[64];     /* Short version number (for INFO) */
     char    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
     int     nObjEvalNest;      // The nesting level of objeval()
                                // invocations.

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.29 2003-01-05 22:18:02 sdennis Exp $
+// $Id: conf.cpp,v 1.30 2003-01-06 04:18:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -303,6 +303,9 @@ void cf_init(void)
     mudstate.in_loop = 0;
     mudstate.bStackLimitReached = FALSE;
     mudstate.nStackNest = 0;
+    mudstate.HelpHashTable = NULL;
+    mudstate.nHelpHashTable = 0;
+    mudstate.maxHelpHashTable = 0;
 
 #else // STANDALONE
     mudconf.paylimit = 10000;

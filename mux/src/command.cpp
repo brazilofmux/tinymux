@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.101 2003-01-05 21:49:33 sdennis Exp $
+// $Id: command.cpp,v 1.102 2003-01-06 04:18:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -16,6 +16,7 @@
 #include "mguests.h"
 #include "powers.h"
 #include "vattr.h"
+#include "help.h"
 
 extern void list_cf_access(dbref);
 extern void list_siteinfo(dbref);
@@ -3328,13 +3329,11 @@ static void list_hashstats(dbref player)
     list_hashstat(player, "Overlaid $-cmds", &mudstate.parent_htab);
     list_hashstat(player, "Mail messages", &mudstate.mail_htab);
     list_hashstat(player, "Channel names", &mudstate.channel_htab);
-    list_hashstat(player, "News topics", &mudstate.news_htab);
-    list_hashstat(player, "Help topics", &mudstate.help_htab);
-    list_hashstat(player, "Wizhelp topics", &mudstate.wizhelp_htab);
-    list_hashstat(player, "+Help topics", &mudstate.plushelp_htab);
-    list_hashstat(player, "+Shelp topics", &mudstate.staffhelp_htab);
-    list_hashstat(player, "Wiznews topics", &mudstate.wiznews_htab);
     list_hashstat(player, "Attribute Cache", &mudstate.acache_htab);
+    for (int i = 0; i < HFTABLE_SIZE; i++)
+    {
+        list_hashstat(player, hftable[i].pTextFile, hftable[i].ht);
+    }
 }
 
 #ifndef MEMORY_BASED

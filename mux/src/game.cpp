@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.28 2003-01-04 04:26:48 sdennis Exp $
+// $Id: game.cpp,v 1.29 2003-01-06 04:18:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -17,6 +17,7 @@
 #include "muxcli.h"
 #include "pcre.h"
 #include "powers.h"
+#include "help.h"
 
 extern void init_attrtab(void);
 extern void init_cmdtab(void);
@@ -2084,12 +2085,6 @@ int DCL_CDECL main(int argc, char *argv[])
     hashreset(&mudstate.attr_name_htab);
     hashreset(&mudstate.player_htab);
     hashreset(&mudstate.fwdlist_htab);
-    hashreset(&mudstate.news_htab);
-    hashreset(&mudstate.help_htab);
-    hashreset(&mudstate.wizhelp_htab);
-    hashreset(&mudstate.plushelp_htab);
-    hashreset(&mudstate.staffhelp_htab);
-    hashreset(&mudstate.wiznews_htab);
     hashreset(&mudstate.desc_htab);
 
     int i;
@@ -2142,12 +2137,10 @@ int DCL_CDECL main(int argc, char *argv[])
     // Go ahead and explicitly free the memory for these things so
     // that it's easy to spot unintentional memory leaks.
     //
-    helpindex_clean(&mudstate.staffhelp_htab);
-    helpindex_clean(&mudstate.plushelp_htab);
-    helpindex_clean(&mudstate.wiznews_htab);
-    helpindex_clean(&mudstate.news_htab);
-    helpindex_clean(&mudstate.help_htab);
-    helpindex_clean(&mudstate.wizhelp_htab);
+    for (i = 0; i < HFTABLE_SIZE; i++)
+    {
+        helpindex_clean(i);
+    }
 
     db_free();
 
