@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.16 2003-02-05 06:20:58 jake Exp $
+// $Id: command.cpp,v 1.17 2003-02-06 17:33:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1908,7 +1908,7 @@ char *process_command
             if (pSlash && cmdp->switches)
             {
                 int xkey = search_nametab(executor, cmdp->switches, pSlash);
-                if (xkey == -1)
+                if (xkey < 0)
                 {
                     cval = 2;
                 }
