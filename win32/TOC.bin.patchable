@@ -17,7 +17,6 @@ game/bin/alt/netmux.exe
 game/compat.conf
 game/data/db_load.bat
 game/data/db_unload.bat
-game/muxconfig.vbs
 game/startmux.wsf
 game/text/help.txt
 game/text/wizhelp.txt
