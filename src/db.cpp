@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.61 2001-12-04 09:27:02 sdennis Exp $
+// $Id: db.cpp,v 1.62 2001-12-06 03:20:01 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -796,7 +796,7 @@ void do_fixdb
             }
             STARTLOG(LOG_SECURITY, "SEC", "CNAME");
             log_name(thing),
-            log_text((char *)" renamed to ");
+            log_text(" renamed to ");
             log_text(pValidName);
             ENDLOG;
             if (Suspect(player))
@@ -1517,7 +1517,7 @@ static int atr_get_raw_decode_LEN(dbref thing, char *oattr, dbref *owner, int *f
         return 0;
 
 #ifdef MEMORY_BASED
-    a = (char *)atr_get_raw_LEN(thing, atr, &nLen);
+    a = atr_get_raw_LEN(thing, atr, &nLen);
 #else // MEMORY_BASED
     Aname okey;
     Tiny_Assert(atr != A_LIST);
@@ -2697,7 +2697,7 @@ void NDECL(db_make_minimal)
     // should be #1
     //
     load_player_names();
-    obj = create_player((char *)"Wizard", (char *)"potrzebie", NOTHING, 0, 0);
+    obj = create_player("Wizard", "potrzebie", NOTHING, 0, 0);
     s_Flags(obj, FLAG_WORD1, Flags(obj) | WIZARD);
     s_Powers(obj, 0);
     s_Powers2(obj, 0);

@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.30 2001-12-03 06:19:39 sdennis Exp $
+// $Id: eval.cpp,v 1.31 2001-12-06 03:20:01 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1220,9 +1220,9 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                 if (eval & EV_FMAND)
                 {
                     *bufc = oldp;
-                    safe_str((char *)"#-1 FUNCTION (", buff, bufc);
+                    safe_str("#-1 FUNCTION (", buff, bufc);
                     safe_str(TinyExec_scratch, buff, bufc);
-                    safe_str((char *)") NOT FOUND", buff, bufc);
+                    safe_str(") NOT FOUND", buff, bufc);
                     nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     break;
                 }

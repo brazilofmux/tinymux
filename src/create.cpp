@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.24 2001-11-28 06:47:18 sdennis Exp $
+// $Id: create.cpp,v 1.25 2001-12-06 03:20:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -745,7 +745,7 @@ void do_pcreate
         notify_quiet(player, "Your robot has arrived.");
         STARTLOG(LOG_PCREATES, "CRE", "ROBOT");
         log_name(newplayer);
-        log_text((char *)" created by ");
+        log_text(" created by ");
         log_name(player);
         ENDLOG;
     }
@@ -757,7 +757,7 @@ void do_pcreate
                    name, pass));
         STARTLOG(LOG_PCREATES | LOG_WIZARD, "WIZ", "PCREA");
         log_name(newplayer);
-        log_text((char *)" created by ");
+        log_text(" created by ");
         log_name(player);
         ENDLOG;
 #ifdef GAME_DOOFERMUX

@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.4 2001-11-28 06:35:53 sdennis Exp $
+// $Id: file_c.cpp,v 1.5 2001-12-06 03:23:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -53,18 +53,18 @@ FCACHE fcache[] =
 
 NAMETAB list_files[] =
 {
-    {(char *)"badsite_connect", 1,  CA_WIZARD,  FC_CONN_SITE},
-    {(char *)"connect",     2,  CA_WIZARD,  FC_CONN},
-    {(char *)"create_register", 2,  CA_WIZARD,  FC_CREA_REG},
-    {(char *)"down",        1,  CA_WIZARD,  FC_CONN_DOWN},
-    {(char *)"full",        1,  CA_WIZARD,  FC_CONN_FULL},
-    {(char *)"guest_motd",      1,  CA_WIZARD,  FC_CONN_GUEST},
-    {(char *)"motd",        1,  CA_WIZARD,  FC_MOTD},
-    {(char *)"newuser",     1,  CA_WIZARD,  FC_CREA_NEW},
-    {(char *)"quit",        1,  CA_WIZARD,  FC_QUIT},
-    {(char *)"register_connect",    1,  CA_WIZARD,  FC_CONN_REG},
-    {(char *)"wizard_motd",     1,  CA_WIZARD,  FC_WIZMOTD},
-    { NULL,             0,  0,      0}
+    {"badsite_connect",  1,  CA_WIZARD,  FC_CONN_SITE},
+    {"connect",          2,  CA_WIZARD,  FC_CONN},
+    {"create_register",  2,  CA_WIZARD,  FC_CREA_REG},
+    {"down",             1,  CA_WIZARD,  FC_CONN_DOWN},
+    {"full",             1,  CA_WIZARD,  FC_CONN_FULL},
+    {"guest_motd",       1,  CA_WIZARD,  FC_CONN_GUEST},
+    {"motd",             1,  CA_WIZARD,  FC_MOTD},
+    {"newuser",          1,  CA_WIZARD,  FC_CREA_NEW},
+    {"quit",             1,  CA_WIZARD,  FC_QUIT},
+    {"register_connect", 1,  CA_WIZARD,  FC_CONN_REG},
+    {"wizard_motd",      1,  CA_WIZARD,  FC_WIZMOTD},
+    { NULL,              0,  0,          0}
 };
 
 void do_list_file(dbref player, dbref cause, int extra, char *arg)
@@ -74,8 +74,7 @@ void do_list_file(dbref player, dbref cause, int extra, char *arg)
     flagvalue = search_nametab(player, list_files, arg);
     if (flagvalue < 0)
     {
-        display_nametab(player, list_files,
-                (char *)"Unknown file.  Use one of:", 1);
+        display_nametab(player, list_files, "Unknown file.  Use one of:", 1);
         return;
     }
     fcache_send(player, flagvalue);
@@ -250,11 +249,11 @@ void fcache_load(dbref player)
         {
             Tiny_ltoa(i, sbuf);
             if (fp == fcache)
-                safe_str((char *)"File sizes: ", buff, &bufc);
+                safe_str("File sizes: ", buff, &bufc);
             else
-                safe_str((char *)"  ", buff, &bufc);
-            safe_str((char *)fp->desc, buff, &bufc);
-            safe_str((char *)"...", buff, &bufc);
+                safe_str("  ", buff, &bufc);
+            safe_str(fp->desc, buff, &bufc);
+            safe_str("...", buff, &bufc);
             safe_str(sbuf, buff, &bufc);
         }
     }
