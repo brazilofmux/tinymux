@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.39 2004-05-15 22:45:55 sdennis Exp $
+// $Id: game.cpp,v 1.40 2004-05-20 03:21:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1089,18 +1089,18 @@ void do_timecheck(dbref executor, dbref caller, dbref enactor, int key)
 
 void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
-    if (Good_obj(executor))
+    if (!Can_SiteAdmin(executor))
     {
-        raw_broadcast(0, "GAME: Shutdown by %s", Name(Owner(executor)));
-        STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
-        log_text("Shutdown by ");
-        log_name(executor);
-        ENDLOG;
+        notify(executor, NOPERM_MESSAGE);
+        return;
     }
-    else
-    {
-        raw_broadcast(0, "GAME: %s", message);
-    }
+
+    raw_broadcast(0, "GAME: Shutdown by %s", Name(Owner(executor)));
+    STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
+    log_text("Shutdown by ");
+    log_name(executor);
+    ENDLOG;
+
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
     log_text("Shutdown status: ");
     log_text(message);

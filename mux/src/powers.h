@@ -1,6 +1,6 @@
 // powers.h -- Object powers.
 //
-// $Id: powers.h,v 1.2 2003-02-05 06:20:59 jake Exp $
+// $Id: powers.h,v 1.3 2004-05-20 03:21:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -27,8 +27,9 @@
 #define POW_SEARCH      0x00002000  /* Can @search anyone */
 #define POW_LONGFINGERS 0x00004000  /* Can get/whisper/etc from a distance */
 #define POW_PROG        0x00008000  /* Can use the @prog command */
+#define POW_SITEADMIN   0x00010000  // Can @shutdown and @restart.
 
-/* FREE: 0x00010000 - 0x00040000 */
+/* FREE: 0x00020000 - 0x00040000 */
 
 #define POW_COMM_ALL    0x00080000  /* Channel wiz */
 #define POW_SEE_QUEUE   0x00100000  /* Player can see the entire queue */
@@ -72,35 +73,7 @@ extern bool has_power(dbref, dbref, char *);
 extern void decompile_powers(dbref, dbref, char *);
 extern bool decode_power(dbref player, char *powername, POWERSET *pset);
 
-#define s_Change_Quotas(c)  s_Powers((c), Powers(c) | POW_CHG_QUOTAS)
-#define s_Chown_Any(c)      s_Powers((c), Powers(c) | POW_CHOWN_ANY)
-#define s_Announce(c)       s_Powers((c), Powers(c) | POW_ANNOUNCE)
-#define s_Can_Boot(c)       s_Powers((c), Powers(c) | POW_BOOT)
-#define s_Can_Halt(c)       s_Powers((c), Powers(c) | POW_HALT)
-#define s_Control_All(c)    s_Powers((c), Powers(c) | POW_CONTROL_ALL)
-#define s_Wizard_Who(c)     s_Powers((c), Powers(c) | POW_WIZARD_WHO)
-#define s_See_All(c)        s_Powers((c), Powers(c) | POW_EXAM_ALL)
-#define s_Find_Unfindable(c)    s_Powers((c), Powers(c) | POW_FIND_UNFIND)
-#define s_Free_Money(c)     s_Powers((c), Powers(c) | POW_FREE_MONEY)
-#define s_Free_Quota(c)     s_Powers((c), Powers(c) | POW_FREE_QUOTA)
-#define s_Can_Hide(c)       s_Powers((c), Powers(c) | POW_HIDE)
-#define s_Can_Idle(c)       s_Powers((c), Powers(c) | POW_IDLE)
-#define s_Search(c)         s_Powers((c), Powers(c) | POW_SEARCH)
-#define s_Long_Fingers(c)   s_Powers((c), Powers(c) | POW_LONGFINGERS)
-#define s_Prog(c)           s_Powers((c), Powers(c) | POW_PROG)
-#define s_Comm_All(c)       s_Powers((c), Powers(c) | POW_COMM_ALL)
-#define s_See_Queue(c)      s_Powers((c), Powers(c) | POW_SEE_QUEUE)
-#define s_See_Hidden(c)     s_Powers((c), Powers(c) | POW_SEE_HIDDEN)
-#define s_Can_Monitor(c)    s_Powers((c), Powers(c) | POW_MONITOR)
-#define s_Can_Poll(c)       s_Powers((c), Powers(c) | POW_POLL)
-#define s_No_Destroy(c)     s_Powers((c), Powers(c) | POW_NO_DESTROY)
 #define s_Guest(c)          s_Powers((c), Powers(c) | POW_GUEST)
-#define s_Stat_Any(c)       s_Powers((c), Powers(c) | POW_STAT_ANY)
-#define s_Steal(c)          s_Powers((c), Powers(c) | POW_STEAL)
-#define s_Tel_Anywhere(c)   s_Powers((c), Powers(c) | POW_TEL_ANYWHR)
-#define s_Tel_Anything(c)   s_Powers((c), Powers(c) | POW_TEL_UNRST)
-#define s_Unkillable(c)     s_Powers((c), Powers(c) | POW_UNKILLABLE)
-#define s_Builder(c)        s_Powers2((c), Powers2(c) | POW_BUILDER)
 
 #define Quota(c)            (((Powers(c) & POW_CHG_QUOTAS) != 0) || Wizard(c))
 #define Chown_Any(c)        (((Powers(c) & POW_CHOWN_ANY) != 0) || Wizard(c))
@@ -132,5 +105,6 @@ extern bool decode_power(dbref player, char *powername, POWERSET *pset);
 #define Prog(c)             (((Powers(c) & POW_PROG) != 0) || Wizard(c))
 #define Pass_Locks(c)       ((Powers(c) & POW_PASS_LOCKS) != 0)
 #define Builder(c)          (((Powers2(c) & POW_BUILDER) != 0) || WizRoy(c))
+#define Can_SiteAdmin(c)    (((Powers(c) & POW_SITEADMIN) != 0) || Wizard(c))
 
 #endif /* POWERS_H */

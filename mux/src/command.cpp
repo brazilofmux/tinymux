@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.32 2004-05-13 14:06:12 sdennis Exp $
+// $Id: command.cpp,v 1.33 2004-05-20 03:21:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -562,7 +562,7 @@ CMDENT_NO_ARG command_table_no_arg[] =
     {"@dump",       dump_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dump},
     {"@mark_all",   markall_sw, CA_WIZARD,   MARK_SET,   CS_NO_ARGS, 0, do_markall},
     {"@readcache",  NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, do_readcache},
-    {"@restart",    NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, do_restart},
+    {"@restart",    NULL,       CA_NO_GUEST|CA_NO_SLAVE, 0, CS_NO_ARGS, 0, do_restart},
 #ifndef WIN32
     {"@startslave", NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, boot_slave},
 #endif // !WIN32
@@ -610,7 +610,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"@ps",           ps_sw,      CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_ps},
     {"@quitprogram",  NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_quitprog},
     {"@search",       NULL,       CA_PUBLIC,        SRCH_SEARCH,  CS_ONE_ARG|CS_NOINTERP,   0, do_search},
-    {"@shutdown",     NULL,       CA_WIZARD,                  0,  CS_ONE_ARG,           0, do_shutdown},
+    {"@shutdown",     NULL,       CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG,           0, do_shutdown},
     {"@stats",        stats_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_stats},
     {"@sweep",        sweep_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_sweep},
     {"@timewarp",     warp_sw,    CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_timewarp},

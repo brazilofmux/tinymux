@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.6 2004-04-01 22:00:42 sdennis Exp $
+// $Id: powers.cpp,v 1.7 2004-05-20 03:21:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -96,36 +96,37 @@ bool ph_inherit(dbref target, dbref player, POWER power, int fpowers, bool reset
 
 POWERENT gen_powers[] =
 {
-    {"quota",           POW_CHG_QUOTAS, 0, 0,   ph_wiz},
-    {"chown_anything",  POW_CHOWN_ANY,  0, 0,   ph_wiz},
     {"announce",        POW_ANNOUNCE,   0, 0,   ph_wiz},
     {"boot",            POW_BOOT,       0, 0,   ph_wiz},
-    {"halt",            POW_HALT,       0, 0,   ph_wiz},
+    {"builder",         POW_BUILDER,    POWER_EXT,  0,  ph_wiz},
+    {"chown_anything",  POW_CHOWN_ANY,  0, 0,   ph_wiz},
+    {"comm_all",        POW_COMM_ALL,   0, 0,   ph_wiz},
     {"control_all",     POW_CONTROL_ALL,0, 0,   ph_god},
     {"expanded_who",    POW_WIZARD_WHO, 0, 0,   ph_wiz},
-    {"see_all",         POW_EXAM_ALL,   0, 0,   ph_wiz},
-    {"prog",            POW_PROG,       0, 0,   ph_wiz},
     {"find_unfindable", POW_FIND_UNFIND,0, 0,   ph_wiz},
     {"free_money",      POW_FREE_MONEY, 0, 0,   ph_wiz},
     {"free_quota",      POW_FREE_QUOTA, 0, 0,   ph_wiz},
+    {"guest",           POW_GUEST,      0, 0,   ph_god},
+    {"halt",            POW_HALT,       0, 0,   ph_wiz},
     {"hide",            POW_HIDE,       0, 0,   ph_wiz},
     {"idle",            POW_IDLE,       0, 0,   ph_wiz},
-    {"search",          POW_SEARCH,     0, 0,   ph_wiz},
     {"long_fingers",    POW_LONGFINGERS,0, 0,   ph_wiz},
-    {"comm_all",        POW_COMM_ALL,   0, 0,   ph_wiz},
-    {"see_queue",       POW_SEE_QUEUE,  0, 0,   ph_wiz},
-    {"see_hidden",      POW_SEE_HIDDEN, 0, 0,   ph_wiz},
     {"monitor",         POW_MONITOR,    0, 0,   ph_wiz},
-    {"poll",            POW_POLL,       0, 0,   ph_wiz},
     {"no_destroy",      POW_NO_DESTROY, 0, 0,   ph_wiz},
-    {"guest",           POW_GUEST,      0, 0,   ph_god},
+    {"pass_locks",      POW_PASS_LOCKS, 0, 0,   ph_wiz},
+    {"poll",            POW_POLL,       0, 0,   ph_wiz},
+    {"prog",            POW_PROG,       0, 0,   ph_wiz},
+    {"quota",           POW_CHG_QUOTAS, 0, 0,   ph_wiz},
+    {"search",          POW_SEARCH,     0, 0,   ph_wiz},
+    {"see_all",         POW_EXAM_ALL,   0, 0,   ph_wiz},
+    {"see_hidden",      POW_SEE_HIDDEN, 0, 0,   ph_wiz},
+    {"see_queue",       POW_SEE_QUEUE,  0, 0,   ph_wiz},
+    {"siteadmin",       POW_SITEADMIN,  0, 0,   ph_wiz},
     {"stat_any",        POW_STAT_ANY,   0, 0,   ph_wiz},
     {"steal_money",     POW_STEAL,      0, 0,   ph_wiz},
-    {"tel_anywhere",    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
     {"tel_anything",    POW_TEL_UNRST,  0, 0,   ph_wiz},
+    {"tel_anywhere",    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
     {"unkillable",      POW_UNKILLABLE, 0, 0,   ph_wiz},
-    {"pass_locks",      POW_PASS_LOCKS, 0, 0,   ph_wiz},
-    {"builder",         POW_BUILDER,    POWER_EXT,  0,  ph_wiz},
     {NULL,              0,              0, 0,   0}
 };
 

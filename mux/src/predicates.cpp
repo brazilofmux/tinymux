@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.50 2004-05-15 20:44:55 sdennis Exp $
+// $Id: predicates.cpp,v 1.51 2004-05-20 03:21:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1380,34 +1380,40 @@ void do_prog
 /* ---------------------------------------------------------------------------
  * do_restart: Restarts the game.
  */
-void do_restart(dbref player, dbref caller, dbref enactor, int key)
+void do_restart(dbref executor, dbref caller, dbref enactor, int key)
 {
+    if (!Can_SiteAdmin(executor))
+    {
+        notify(executor, NOPERM_MESSAGE);
+        return;
+    }
+
     bool bDenied = false;
 #ifndef WIN32
     if (mudstate.dumping)
     {
-        notify(player, "Dumping. Please try again later.");
+        notify(executor, "Dumping. Please try again later.");
         bDenied = true;
     }
 #endif // !WIN32
     if (!mudstate.bCanRestart)
     {
-        notify(player, "Server just started. Please try again in a few seconds.");
+        notify(executor, "Server just started. Please try again in a few seconds.");
         bDenied = true;
     }
     if (bDenied)
     {
         STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
         log_text("Restart requested but not executed by ");
-        log_name(player);
+        log_name(executor);
         ENDLOG;
         return;
     }
 
-    raw_broadcast(0, "GAME: Restart by %s, please wait.", Name(Owner(player)));
+    raw_broadcast(0, "GAME: Restart by %s, please wait.", Name(Owner(executor)));
     STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
     log_text("Restart by ");
-    log_name(player);
+    log_name(executor);
     ENDLOG;
 
     dump_database_internal(DUMP_I_RESTART);
