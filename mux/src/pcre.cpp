@@ -117,9 +117,6 @@ to four bytes there is plenty of space. */
 
 
 
-#define false   0
-#define true    1
-
 #ifndef NEWLINE
 #define NEWLINE '\n'
 #endif
