@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  October 2001
+Last Update:  November 2001
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,6 +48,8 @@ Feature Additions:
     memory leaks, account for which lines of code are allocating and
     deallocating memory, validating the malloc/free protocol itself. It does
     not catch memory overwrites.
+ -- Changed message for @chown to give enough information to a builder to
+    check their work. It's something of an audit trail.
 
 Bug Fixes:
 ~~~~~~~~~
