@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.123 2004-09-22 06:05:21 sdennis Exp $
+// $Id: functions.cpp,v 1.124 2004-09-22 06:25:32 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -699,38 +699,6 @@ static void fval(char *buff, char **bufc, double result)
     else
     {
         safe_str(mux_FPStrings[MUX_FPCLASS(fpc)], buff, bufc);
-    }
-#endif // HAVE_IEEE_FP_FORMAT
-}
-
-static void fval_buf(char *buff, double result)
-{
-    // Get double val into buffer.
-    //
-#ifdef HAVE_IEEE_FP_FORMAT
-    int fpc = mux_fpclass(result);
-    if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
-    {
-#endif // HAVE_IEEE_FP_FORMAT
-        double rIntegerPart;
-        double rFractionalPart = modf(result, &rIntegerPart);
-        if (  -0.0000005 < rFractionalPart
-           &&  rFractionalPart < 0.0000005
-           &&  LONG_MIN <= rIntegerPart
-           &&  rIntegerPart <= LONG_MAX)
-        {
-            long i = (long)rIntegerPart;
-            mux_ltoa(i, buff);
-        }
-        else
-        {
-            strcpy(buff, mux_ftoa(result, false, 0));
-        }
-#ifdef HAVE_IEEE_FP_FORMAT
-    }
-    else
-    {
-        strcpy(buff, mux_FPStrings[MUX_FPCLASS(fpc)]);
     }
 #endif // HAVE_IEEE_FP_FORMAT
 }
@@ -3971,11 +3939,10 @@ FUNCTION(fun_ctu)
 // Vector functions: VADD, VSUB, VMUL, VCROSS, VMAG, VUNIT, VDIM
 // Vectors are space-separated numbers.
 //
-#define MAXDIM 20
-#define VADD_F 0
-#define VSUB_F 1
-#define VMUL_F 2
-#define VDOT_F 3
+#define VADD_F   0
+#define VSUB_F   1
+#define VMUL_F   2
+#define VDOT_F   3
 #define VCROSS_F 4
 
 static void handle_vectors
@@ -3985,7 +3952,6 @@ static void handle_vectors
 )
 {
     char *v1[(LBUF_SIZE+1)/2], *v2[(LBUF_SIZE+1)/2];
-    char vres[MAXDIM][LBUF_SIZE];
     double scalar;
     int n, m, i;
 
@@ -4010,12 +3976,6 @@ static void handle_vectors
         safe_str("#-1 VECTORS MUST BE SAME DIMENSIONS", buff, bufc);
         return;
     }
-    if (  MAXDIM < n
-       || MAXDIM < m)
-    {
-        safe_str("#-1 TOO MANY DIMENSIONS ON VECTORS", buff, bufc);
-        return;
-    }
 
     switch (flag)
     {
@@ -4029,8 +3989,11 @@ static void handle_vectors
             scalar = mux_atof(v1[0]);
             for (i = 0; i < m; i++)
             {
-                fval_buf(vres[i], mux_atof(v2[i]) + scalar);
-                v1[i] = (char *) vres[i];
+                if (i != 0)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                fval(buff, bufc, mux_atof(v2[i]) + scalar);
             }
             n = m;
         }
@@ -4039,29 +4002,36 @@ static void handle_vectors
             scalar = mux_atof(v2[0]);
             for (i = 0; i < n; i++)
             {
-                fval_buf(vres[i], mux_atof(v1[i]) + scalar);
-                v1[i] = (char *) vres[i];
+                if (i != 0)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                fval(buff, bufc, mux_atof(v1[i]) + scalar);
             }
         }
         else
         {
             for (i = 0; i < n; i++)
             {
-                fval_buf(vres[i], mux_atof(v1[i]) + mux_atof(v2[i]));
-                v1[i] = (char *) vres[i];
+                if (i != 0)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                fval(buff, bufc, mux_atof(v1[i]) + mux_atof(v2[i]));
             }
         }
-        arr2list(v1, n, buff, bufc, posep);
         break;
 
     case VSUB_F:
 
         for (i = 0; i < n; i++)
         {
-            fval_buf(vres[i], mux_atof(v1[i]) - mux_atof(v2[i]));
-            v1[i] = (char *) vres[i];
+            if (i != 0)
+            {
+                print_sep(posep, buff, bufc);
+            }
+            fval(buff, bufc, mux_atof(v1[i]) - mux_atof(v2[i]));
         }
-        arr2list(v1, n, buff, bufc, posep);
         break;
 
     case VMUL_F:
@@ -4074,31 +4044,38 @@ static void handle_vectors
             scalar = mux_atof(v1[0]);
             for (i = 0; i < m; i++)
             {
-                fval_buf(vres[i], mux_atof(v2[i]) * scalar);
-                v1[i] = (char *) vres[i];
+                if (i != 0)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                fval(buff, bufc, mux_atof(v2[i]) * scalar);
             }
-            n = m;
         }
         else if (m == 1)
         {
             scalar = mux_atof(v2[0]);
             for (i = 0; i < n; i++)
             {
-                fval_buf(vres[i], mux_atof(v1[i]) * scalar);
-                v1[i] = (char *) vres[i];
+                if (i != 0)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                fval(buff, bufc, mux_atof(v1[i]) * scalar);
             }
         }
         else
         {
-            // Vector elementwise product.
+            // Vector element-wise product.
             //
             for (i = 0; i < n; i++)
             {
-                fval_buf(vres[i], mux_atof(v1[i]) * mux_atof(v2[i]));
-                v1[i] = (char *) vres[i];
+                if (i != 0)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                fval(buff, bufc, mux_atof(v1[i]) * mux_atof(v2[i]));
             }
         }
-        arr2list(v1, n, buff, bufc, posep);
         break;
 
     case VDOT_F:
@@ -4136,12 +4113,12 @@ static void handle_vectors
             {
                 a[0][i] = mux_atof(v1[i]);
                 a[1][i] = mux_atof(v2[i]);
-                v1[i] = (char *) vres[i];
             }
-            fval_buf(vres[0], (a[0][1] * a[1][2]) - (a[0][2] * a[1][1]));
-            fval_buf(vres[1], (a[0][2] * a[1][0]) - (a[0][0] * a[1][2]));
-            fval_buf(vres[2], (a[0][0] * a[1][1]) - (a[0][1] * a[1][0]));
-            arr2list(v1, n, buff, bufc, posep);
+            fval(buff, bufc, (a[0][1] * a[1][2]) - (a[0][2] * a[1][1]));
+            print_sep(posep, buff, bufc);
+            fval(buff, bufc, (a[0][2] * a[1][0]) - (a[0][0] * a[1][2]));
+            print_sep(posep, buff, bufc);
+            fval(buff, bufc, (a[0][0] * a[1][1]) - (a[0][1] * a[1][0]));
         }
         break;
 
@@ -4257,12 +4234,6 @@ FUNCTION(fun_vmag)
     }
     n = list2arr(v1, LBUF_SIZE, fargs[0], &sep);
 
-    if (n > MAXDIM)
-    {
-        safe_str("#-1 TOO MANY DIMENSIONS ON VECTORS", buff, bufc);
-        return;
-    }
-
     // Calculate the magnitude.
     //
     for (i = 0; i < n; i++)
@@ -4290,7 +4261,6 @@ FUNCTION(fun_vunit)
     }
 
     char *v1[LBUF_SIZE];
-    char vres[MAXDIM][LBUF_SIZE];
     int n, i;
     double tmp, res = 0.0;
 
@@ -4301,12 +4271,6 @@ FUNCTION(fun_vunit)
         return;
     }
     n = list2arr(v1, LBUF_SIZE, fargs[0], &sep);
-
-    if (n > MAXDIM)
-    {
-        safe_str("#-1 TOO MANY DIMENSIONS ON VECTORS", buff, bufc);
-        return;
-    }
 
     // Calculate the magnitude.
     //
@@ -4324,11 +4288,12 @@ FUNCTION(fun_vunit)
     }
     for (i = 0; i < n; i++)
     {
-        fval_buf(vres[i], mux_atof(v1[i]) / sqrt(res));
-        v1[i] = (char *) vres[i];
+        if (i != 0)
+        {
+            print_sep(&sep, buff, bufc);
+        }
+        fval(buff, bufc, mux_atof(v1[i]) / sqrt(res));
     }
-
-    arr2list(v1, n, buff, bufc, &sep);
 }
 
 FUNCTION(fun_vdim)
