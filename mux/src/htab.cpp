@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.16 2004-08-18 21:51:22 sdennis Exp $
+// $Id: htab.cpp,v 1.17 2004-08-18 21:58:59 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -336,34 +336,36 @@ void display_nametab(dbref player, NAMETAB *ntab, char *prefix, bool list_if_non
  * interp_nametab: Print values for flags defined in name table.
  */
 
-void interp_nametab(dbref player, NAMETAB *ntab, int flagword, const char *prefix, const char *true_text, const char *false_text)
+void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
+    const char *prefix, const char *true_text, const char *false_text)
 {
+    bool bFirst = true;
     char *buf = alloc_lbuf("interp_nametab");
     char *bp = buf;
-    const char *cp;
 
-    for (cp = prefix; *cp; cp++)
-        *bp++ = *cp;
+    safe_str(prefix, buf, &bp);
     NAMETAB *nt = ntab;
     while (nt->name)
     {
         if (  God(player)
            || check_access(player, nt->perm))
         {
-            *bp++ = ' ';
-            for (cp = nt->name; *cp; cp++)
-                *bp++ = *cp;
-            *bp++ = '.';
-            *bp++ = '.';
-            *bp++ = '.';
+            if (!bFirst)
+            {
+                safe_chr(';', buf, &bp);
+                bFirst = false;
+            }
+            safe_chr(' ', buf, &bp);
+            safe_str(nt->name, buf, &bp);
+            safe_str("...", buf, &bp);
             if ((flagword & nt->flag) != 0)
-                cp = true_text;
+            {
+                safe_str(true_text, buf, &bp);
+            }
             else
-                cp = false_text;
-            while (*cp)
-                *bp++ = *cp++;
-            if ((++nt)->name)
-                *bp++ = ';';
+            {
+                safe_str(false_text, buf, &bp);
+            }
         }
     }
     *bp = '\0';
