@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.13 2000-11-04 05:37:29 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.14 2000-11-05 19:01:26 sdennis Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -337,7 +337,6 @@ struct statedata
     int     func_invk_ctr;  /* Functions invoked so far by this command */
     int     ntfy_nest_lev;  /* Current nesting of notifys */
     int     lock_nest_lev;  /* Current nesting of lock evals */
-    int     ufunc_nest_lev; /* Current nesting of user-defined @functions */
     char    *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
     int     glob_reg_len[MAX_GLOBAL_REGS];  /* Length of strs */
     int     zone_nest_num;  /* Global current zone nest position */

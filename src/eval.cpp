@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.10 2000-10-04 06:42:00 sdennis Exp $
+// $Id: eval.cpp,v 1.11 2000-11-05 19:01:26 sdennis Exp $
 //
 
 // MUX 2.0
@@ -1197,18 +1197,22 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                     if (ufp)
                     {
                         mudstate.func_nest_lev++;
-                        if ( mudstate.ufunc_nest_lev >= mudconf.func_nest_lim )
+                        mudstate.func_invk_ctr++;
+                        if (mudstate.func_nest_lev >= mudconf.func_nest_lim )
                         {
-                             safe_str( "#-1 FUNCTION RECURSION LIMIT EXCEEDED",
-                                       buff, &oldp);
-                             *bufc = oldp;
-                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                             safe_str("#-1 FUNCTION RECURSION LIMIT EXCEEDED", buff, &oldp);
+                        }
+                        else if (mudstate.func_invk_ctr >= mudconf.func_invk_lim)
+                        {
+                            safe_str("#-1 FUNCTION INVOCATION LIMIT EXCEEDED", buff, &oldp);
+                        }
+                        else if (Going(player))
+                        {
+                            safe_str("#-1 BAD INVOKER", buff, &oldp);
                         }
                         else if (!check_access(player, ufp->perms))
                         {
                             safe_str("#-1 PERMISSION DENIED", buff, &oldp);
-                            *bufc = oldp;
-                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                         else
                         {
@@ -1219,23 +1223,21 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                                 i = player;
                             TempPtr = tstr;
                             
-                            mudstate.ufunc_nest_lev++;
                             if (ufp->flags & FN_PRES)
                             {
                                 save_global_regs("eval_save", preserve, preserve_len);
                             }
                             
                             TinyExec(buff, &oldp, 0, i, cause, feval, &TempPtr, fargs, nfargs);
-                            *bufc = oldp;
-                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                             
                             if (ufp->flags & FN_PRES)
                             {
                                 restore_global_regs("eval_restore", preserve, preserve_len);
                             }
-                            mudstate.ufunc_nest_lev--;
                             free_lbuf(tstr);
                         }
+                        *bufc = oldp;
+                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         mudstate.func_nest_lev--;
                     }
                     else
@@ -1255,29 +1257,24 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             if (mudstate.func_nest_lev >= mudconf.func_nest_lim)
                             {
                                 safe_str("#-1 FUNCTION RECURSION LIMIT EXCEEDED", buff, bufc);
-                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                             }
-                            else if (mudstate.func_invk_ctr == mudconf.func_invk_lim)
+                            else if (mudstate.func_invk_ctr >= mudconf.func_invk_lim)
                             {
                                 safe_str("#-1 FUNCTION INVOCATION LIMIT EXCEEDED", buff, bufc);
-                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                            }
+				            else if (Going(player))
+                            {
+					            safe_str("#-1 BAD INVOKER", buff, &oldp);
                             }
                             else if (!check_access(player, fp->perms))
                             {
                                 safe_str("#-1 PERMISSION DENIED", buff, &oldp);
-                                *bufc = oldp;
-                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                            }
-                            else if (mudstate.func_invk_ctr < mudconf.func_invk_lim)
-                            {
-                                fp->fun(buff, &oldp, player, cause, fargs, nfargs, cargs, ncargs);
-                                *bufc = oldp;
-                                nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                             }
                             else
                             {
-                                **bufc = '\0';
+                                fp->fun(buff, &oldp, player, cause, fargs, nfargs, cargs, ncargs);
                             }
+                            *bufc = oldp;
                             mudstate.func_nest_lev--;
                         }
                         else
@@ -1292,8 +1289,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                                 sprintf(TinyExec_scratch, "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS", fp->name, abs_nargs);
                             }
                             safe_str(TinyExec_scratch, buff, bufc);
-                            nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
+                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                 }
 
