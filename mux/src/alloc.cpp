@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.5 2003-07-27 05:01:24 sdennis Exp $
+// $Id: alloc.cpp,v 1.6 2003-07-27 05:21:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -15,7 +15,7 @@
 typedef struct pool_header_unaligned
 {
     unsigned int        magicnum;   // For consistency check
-    int                 pool_size;  // For consistency check
+    size_t              pool_size;  // For consistency check
     struct pool_header *next;       // Next pool header in chain
     struct pool_header *nxtfree;    // Next pool header in freelist
     char               *buf_tag;    // Debugging/trace tag
@@ -28,7 +28,7 @@ typedef struct pool_header_unaligned
 typedef struct pool_header
 {
     unsigned int        magicnum;   // For consistency check
-    int                 pool_size;  // For consistency check
+    size_t              pool_size;  // For consistency check
     struct pool_header *next;       // Next pool header in chain
     struct pool_header *nxtfree;    // Next pool header in freelist
     char               *buf_tag;    // Debugging/trace tag
@@ -42,7 +42,7 @@ typedef struct pool_footer
 
 typedef struct pooldata
 {
-    int    pool_size;               // Size in bytes of a buffer
+    size_t pool_size;               // Size in bytes of a buffer
     unsigned int poolmagic;         // Magic number specific to this pool
     POOLHDR *free_head;             // Buffer freelist head
     POOLHDR *chain_head;            // Buffer chain head
@@ -103,10 +103,9 @@ static void pool_vfy(int poolnum, const char *tag, const char *file, const int l
     POOLHDR *ph, *lastph;
     POOLFTR *pf;
     char *h;
-    int psize;
 
     lastph = NULL;
-    psize = pools[poolnum].pool_size;
+    size_t psize = pools[poolnum].pool_size;
     for (ph = pools[poolnum].chain_head; ph; lastph = ph, ph = ph->next)
     {
         h = (char *)ph;
@@ -536,7 +535,7 @@ void list_bufstats(dbref player)
         mux_i64toa(pools[i].num_lost,  szNumLost);
         
         sprintf(buff, "%-12s %5d%10s%10s%14s%7s",
-            poolnames[i], pools[i].pool_size,
+            poolnames[i], (int)pools[i].pool_size,
             szNumAlloc, szMaxAlloc, szTotAlloc, szNumLost);
         notify(player, buff);
     }
