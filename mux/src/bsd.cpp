@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.21 2002-09-29 07:41:19 sdennis Exp $
+// $Id: bsd.cpp,v 1.22 2002-12-16 09:01:01 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -463,6 +463,8 @@ static int get_slave_result(void)
 
 #else // WIN32
 
+int make_nonblocking(SOCKET s);
+
 void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 {
     char *pFailedFunc = 0;
@@ -501,9 +503,9 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 
     // Set to nonblocking.
     //
-    if (fcntl(sv[0], F_SETFL, FNDELAY) == -1)
+    if (make_nonblocking(sv[0]) < 0)
     {
-        pFailedFunc = "fcntl() error: ";
+        pFailedFunc = "make_nonblocking() error: ";
         close(sv[0]);
         close(sv[1]);
         goto failure;
@@ -550,9 +552,9 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 
     slave_socket = sv[0];
     DebugTotalSockets++;
-    if (fcntl(slave_socket, F_SETFL, FNDELAY) == -1)
+    if (make_nonblocking(slave_socket) < 0)
     {
-        pFailedFunc = "fcntl() error: ";
+        pFailedFunc = "make_nonblocking() error: ";
         shutdown(slave_socket, SD_BOTH);
         if (close(slave_socket) == 0)
         {
@@ -1915,29 +1917,49 @@ void shutdownsock_brief(DESC *d)
 }
 #endif // WIN32
 
-void make_nonblocking(SOCKET s)
+int make_nonblocking(SOCKET s)
 {
 #ifdef WIN32
-    unsigned long arg;
-    if (ioctlsocket(s, FIONBIO, &arg) == SOCKET_ERROR)
+    unsigned long on = 1;
+    if (IS_SOCKET_ERROR(ioctlsocket(s, FIONBIO, &on)))
     {
         log_perror("NET", "FAIL", "make_nonblocking", "ioctlsocket");
+        return -1;
     }
 #else // WIN32
-#ifdef FNDELAY
-    if (fcntl(s, F_SETFL, FNDELAY) == -1)
+#if defined(O_NONBLOCK)
+    if (fcntl(s, F_SETFL, O_NONBLOCK) < 0)
     {
         log_perror("NET", "FAIL", "make_nonblocking", "fcntl");
+        return -1;
     }
-#else // FNDELAY
-    if (fcntl(s, F_SETFL, O_NDELAY) == -1)
+#elif defined(FNDELAY)
+    if (fcntl(s, F_SETFL, FNDELAY) < 0)
     {
         log_perror("NET", "FAIL", "make_nonblocking", "fcntl");
+        return -1;
     }
-#endif // FNDELAY
+#elif defined(O_NDELAY)
+    if (fcntl(s, F_SETFL, O_NDELAY) < 0)
+    {
+        log_perror("NET", "FAIL", "make_nonblocking", "fcntl");
+        return -1;
+    }
+#elif defined(FIONBIO)
+    unsigned long on = 1;
+    if (ioctl(s, FIONBIO, &on) < 0)
+    {
+        log_perror("NET", "FAIL", "make_nonblocking", "ioctl");
+        return -1;
+    }
+#endif // O_NONBLOCK, FNDELAY, O_NDELAY, FIONBIO
 #endif // WIN32
+    return 0;
+}
 
-#if defined(HAVE_LINGER) || defined(WIN32)
+void make_nolinger(SOCKET s)
+{
+#if defined(HAVE_LINGER)
     struct linger ling;
     ling.l_onoff = 0;
     ling.l_linger = 0;
@@ -1945,7 +1967,13 @@ void make_nonblocking(SOCKET s)
     {
         log_perror("NET", "FAIL", "linger", "setsockopt");
     }
-#endif // HAVE_LINGER || WIN32
+#endif // HAVE_LINGER
+}
+
+void config_socket(SOCKET s)
+{
+    make_nonblocking(s);
+    make_nolinger(s);
 }
 
 // This function must be thread safe WinNT
@@ -1985,7 +2013,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->addr[0] = '\0';
     d->doing[0] = '\0';
     d->username[0] = '\0';
-    make_nonblocking(s);
+    config_socket(s);
     d->output_prefix = NULL;
     d->output_suffix = NULL;
     d->output_size = 0;
