@@ -409,7 +409,7 @@ static Bigint *Balloc(int k)
     unsigned int len;
 #endif
 
-    if (rv = freelist[k])
+    if ((rv = freelist[k]))
     {
         freelist[k] = rv->next;
     }
@@ -689,7 +689,7 @@ static Bigint *mult(Bigint *a, Bigint *b)
 #ifdef ULLong
     for (; xb < xbe; xc0++)
     {
-        if (y = *xb++)
+        if ((y = *xb++))
         {
             x = xa;
             xc = xc0;
@@ -774,7 +774,7 @@ static Bigint *pow5mult(Bigint *b, int k)
     int i;
     static int p05[3] = { 5, 25, 125 };
 
-    if (i = k & 3)
+    if ((i = k & 3))
     {
         b = multadd(b, p05[i-1], 0);
     }
@@ -846,7 +846,7 @@ static Bigint *lshift(Bigint *b, int k)
             *x1++ = *x << k | z;
             z = *x++ >> k1;
         } while (x < xe);
-        if (*x1 = z)
+        if ((*x1 = z))
         {
             ++n1;
         }
@@ -1142,15 +1142,15 @@ static Bigint *d2b(double d, int *e, int *bits)
     z |= Exp_msk11;
 #endif
 #else
-    if (de = (int)(d0 >> Exp_shift))
+    if ((de = (int)(d0 >> Exp_shift)))
     {
         z |= Exp_msk1;
     }
 #endif
 #ifdef Pack_32
-    if (y = d1)
+    if ((y = d1))
     {
-        if (k = lo0bits(&y))
+        if ((k = lo0bits(&y)))
         {
             x[0] = y | z << 32 - k;
             z >>= k;
@@ -1349,7 +1349,8 @@ double Tiny_strtod(CONST char *s00, char **se)
     double aadj, aadj1, adj, rv, rv0;
     Long L;
     ULong y, z;
-    Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
+    Bigint *bb = NULL, *bb1 = NULL, *bd = NULL, *bd0 = NULL, *bs = NULL;
+    Bigint *delta = NULL;
 #ifdef SET_INEXACT
     int inexact, oldinexact;
 #endif
@@ -1666,7 +1667,7 @@ vax_ovfl_check:
 
     if (e1 > 0)
     {
-        if (i = e1 & 15)
+        if ((i = e1 & 15))
         {
             dval(rv) *= tens[i];
         }
@@ -1740,7 +1741,7 @@ ovfl:
     else if (e1 < 0)
     {
         e1 = -e1;
-        if (i = e1 & 15)
+        if ((i = e1 & 15))
         {
             dval(rv) /= tens[i];
         }
@@ -2278,7 +2279,7 @@ drop_down:
             {
                 if (aadj <= 0x7fffffff)
                 {
-                    if ((z = aadj) <= 0)
+                    if ((z = (ULong)aadj) <= 0)
                     {
                         z = 1;
                     }
@@ -2534,9 +2535,9 @@ static int quorem(Bigint *b, Bigint *S)
 
 static char *dtoa_result;
 
-static char *rv_alloc(int i)
+static char *rv_alloc(unsigned int i)
 {
-    int j, k, *r;
+    unsigned int j, k, *r;
 
     j = sizeof(ULong);
     for (k = 0;
@@ -2545,7 +2546,7 @@ static char *rv_alloc(int i)
     {
             k++;
     }
-    r = (int*)Balloc(k);
+    r = (unsigned int*)Balloc(k);
     *r = k;
     dtoa_result = (char *)(r+1);
     return dtoa_result;
@@ -2556,11 +2557,16 @@ static char *nrv_alloc(char *s, char **rve, int n)
     char *rv, *t;
 
     t = rv = rv_alloc(n);
-    while (*t = *s++) t++;
-    if (rve)
-        *rve = t;
-    return rv;
+    while ((*t = *s++))
+    {
+        t++;
     }
+    if (rve)
+    {
+        *rve = t;
+    }
+    return rv;
+}
 
 /* freedtoa(s) must be used to free values s returned by dtoa.
  */
@@ -2646,7 +2652,7 @@ char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
         to hold the suppressed trailing zeros.
     */
 
-    int bbits, b2, b5, be, dig, i, ieps, ilim, ilim0, ilim1,
+    int bbits, b2, b5, be, dig, i, ieps, ilim = 0, ilim0 = 0, ilim1 = 0,
         j, j1, k, k0, k_check, leftright, m2, m5, s2, s5,
         spec_case, try_quick;
     Long L;
@@ -2654,7 +2660,7 @@ char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
     int denorm;
     ULong x;
 #endif
-    Bigint *b, *b1, *delta, *mlo, *mhi, *S;
+    Bigint *b = NULL, *b1 = NULL, *delta = NULL, *mlo = NULL, *mhi = NULL, *S = NULL;
     double d2, ds, eps;
     char *s, *s0;
 #ifdef Honor_FLT_ROUNDS
@@ -2733,7 +2739,7 @@ char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
 #ifdef Sudden_Underflow
     i = (int)(word0(d) >> Exp_shift1 & (Exp_mask>>Exp_shift1));
 #else
-    if (i = (int)(word0(d) >> Exp_shift1 & (Exp_mask>>Exp_shift1)))
+    if ((i = (int)(word0(d) >> Exp_shift1 & (Exp_mask>>Exp_shift1))))
     {
 #endif
         dval(d2) = dval(d);
@@ -2915,7 +2921,7 @@ char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
             }
             dval(d) /= ds;
         }
-        else if (j1 = -k)
+        else if ((j1 = -k))
         {
             dval(d) *= tens[j1 & 0xf];
             for (j = j1 >> 4; j; j >>= 1, i++)
@@ -2963,7 +2969,7 @@ char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
             dval(eps) = 0.5/tens[ilim-1] - dval(eps);
             for (i = 0;;)
             {
-                L = dval(d);
+                L = (Long)dval(d);
                 dval(d) -= L;
                 *s++ = '0' + (int)L;
                 if (dval(d) < dval(eps))
@@ -3127,7 +3133,7 @@ bump_up:
                 Bfree(b);
                 b = b1;
             }
-            if (j = b5 - m5)
+            if ((j = b5 - m5))
             {
                 b = pow5mult(b, j);
             }
@@ -3173,12 +3179,12 @@ bump_up:
      * can do shifts and ors to compute the numerator for q.
      */
 #ifdef Pack_32
-    if (i = ((s5 ? 32 - hi0bits(S->x[S->wds-1]) : 1) + s2) & 0x1f)
+    if ((i = ((s5 ? 32 - hi0bits(S->x[S->wds-1]) : 1) + s2) & 0x1f))
     {
         i = 32 - i;
     }
 #else
-    if (i = ((s5 ? 32 - hi0bits(S->x[S->wds-1]) : 1) + s2) & 0xf)
+    if ((i = ((s5 ? 32 - hi0bits(S->x[S->wds-1]) : 1) + s2) & 0xf))
     {
         i = 16 - i;
     }
@@ -3408,7 +3414,9 @@ roundoff:
     }
     else
     {
+#ifdef Honor_FLT_ROUNDS
 trimzeros:
+#endif
         while (*--s == '0')
         {
             ; // Nothing.
