@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
-// 
-// $Id: command.cpp,v 1.37 2001-06-08 23:27:16 sdennis Exp $
+//
+// $Id: command.cpp,v 1.38 2001-06-28 02:02:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -90,7 +90,7 @@ NAMETAB cset_sw[] =
     {(char *)"spoof",       1,      CA_PUBLIC,      CSET_SPOOF},
     {(char *)"header",      2,      CA_PUBLIC,      CSET_HEADER},
     { NULL,                 0,      0,              0}
-}; 
+};
 
 NAMETAB decomp_sw[] =
 {
@@ -100,6 +100,7 @@ NAMETAB decomp_sw[] =
 
 NAMETAB destroy_sw[] =
 {
+    {(char *)"now",         8,  CA_PUBLIC,  DEST_INSTANT},
     {(char *)"override",    8,  CA_PUBLIC,  DEST_OVERRIDE},
     { NULL,         0,  0,      0}
 };
@@ -115,6 +116,7 @@ NAMETAB doing_sw[] =
     {(char *)"header",  1,  CA_PUBLIC,  DOING_HEADER},
     {(char *)"message", 1,  CA_PUBLIC,  DOING_MESSAGE},
     {(char *)"poll",    1,  CA_PUBLIC,  DOING_POLL},
+    {(char *)"unique",  1,  CA_PUBLIC,  DOING_UNIQUE},
     { NULL,         0,  0,      0}
 };
 
@@ -529,7 +531,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {(char *)"@mark",         mark_sw,    CA_WIZARD,    SRCH_MARK,  CS_ONE_ARG|CS_NOINTERP,     do_search},
     {(char *)"@motd",         motd_sw,    CA_WIZARD,    0,      CS_ONE_ARG,         do_motd},
     {(char *)"@nemit",        emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE, SAY_EMIT, CS_ONE_ARG|CS_UNPARSE|CS_NOSQUISH, do_say},
-    {(char *)"@poor",         NULL,       CA_GOD,    0,      CS_ONE_ARG|CS_INTERP,       do_poor},
+    {(char *)"@poor",         NULL,       CA_GOD,    0,      CS_ONE_ARG|CS_NOINTERP,       do_poor},
     {(char *)"@ps",           ps_sw,      0,    0,      CS_ONE_ARG|CS_INTERP,       do_ps},
     {(char *)"@quitprogram",  NULL,       CA_PUBLIC,    0,      CS_ONE_ARG|CS_INTERP,       do_quitprog},
     {(char *)"@search",       NULL,       0,    SRCH_SEARCH,    CS_ONE_ARG|CS_NOINTERP,     do_search},
@@ -711,9 +713,8 @@ void NDECL(init_cmdtab)
         hashaddLEN(cp2a->cmdname, nBuffer, (int *)cp2a, &mudstate.command_htab);
     }
 
-    /*
-     * Load the builtin commands 
-     */
+    // Load the builtin commands
+    //
     for (cp0a = command_table_no_arg; cp0a->cmdname; cp0a++)
         hashaddLEN(cp0a->cmdname, strlen(cp0a->cmdname), (int *)cp0a, &mudstate.command_htab);
 
@@ -763,11 +764,9 @@ void set_prefix_cmds()
     prefix_cmds['~']  = (CMDENT *) hashfindLEN((char *)"~",  1, &mudstate.command_htab);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * check_access: Check if player has access to function.  
- */
-
+// ---------------------------------------------------------------------------
+// check_access: Check if player has access to function.
+//
 int check_access(dbref player, int mask)
 {
     int succ, fail;
@@ -859,9 +858,8 @@ int check_access(dbref player, int mask)
     return 1;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * process_cmdent: Perform indicated command with passed args.
+/* ---------------------------------------------------------------------------
+ * process_cmdent: Perform indicated command with passed args.
  */
 
 void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int interactive, char *arg,
@@ -874,7 +872,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
     dbref aowner;
     char *aargs[10];
     ADDENT *add;
-    
+
     // Perform object type checks.
     //
     if (Invalid_Objtype(player))
@@ -1007,15 +1005,13 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
         (*(((CMDENT_NO_ARG *)cmdp)->handler)) (player, cause, key);
         break;
 
-    case CS_ONE_ARG:    /*
-                 * <cmd> <arg> 
-                 */
+    case CS_ONE_ARG:    // <cmd> <arg>
 
-        /*
-         * If an unparsed command, just give it to the handler 
-         */
-
-#if 0 // This never happens.
+        // If an unparsed command, just give it to the handler
+        //
+#if 0
+        // This never happens.
+        //
         if (cmdp->callseq & CS_UNPARSE)
         {
             (*(((CMDENT_ONE_ARG *)cmdp)->handler)) (player, unp_command);
@@ -1062,7 +1058,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
                         break;
                     }
                     *s++ = '\0';
-                    
+
                     if (!(cmdp->callseq & CS_LEADIN))
                     {
                         for (j = unp_command; *j && (*j != ' '); j++) ;
@@ -1071,7 +1067,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
                     {
                         for (j = unp_command; *j; j++) ;
                     }
-                
+
                     new0 = alloc_lbuf("process_cmdent.soft");
                     bp = new0;
                     if (!*j)
@@ -1105,8 +1101,8 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
                         safe_chr(' ', new0, &bp);
                         safe_str(j, new0, &bp);
                         *bp = '\0';
-                    } 
-                
+                    }
+
                     if (wild(buff + 1, new0, aargs, 10))
                     {
                         wait_que(add->thing, player, 0, NOTHING, 0, s, aargs, 10, mudstate.global_regs);
@@ -1225,11 +1221,9 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
     return;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * process_command: Execute a command.
- */
-
+// ---------------------------------------------------------------------------
+// process_command: Execute a command.
+//
 void process_command(dbref player, dbref cause, int interactive, char *arg_command, char *args[], int nargs)
 {
     char *pOriginalCommand = arg_command;
@@ -1402,7 +1396,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
             return;
         }
     }
-    
+
     // Set up a lowercase command and an arg pointer for the hashed
     // command check.  Since some types of argument processing destroy
     // the arguments, make a copy so that we keep the original command
@@ -1462,7 +1456,7 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
             {
                 // We stopped on the space, advance to next.
                 //
-                arg++;     
+                arg++;
             }
         }
         process_cmdent(cmdp, pSlash, player, cause, interactive, arg, pCommand, args, nargs);
@@ -1649,11 +1643,9 @@ void process_command(dbref player, dbref cause, int interactive, char *arg_comma
     return;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_cmdtable: List internal commands.
- */
-
+// ---------------------------------------------------------------------------
+// list_cmdtable: List internal commands.
+//
 static void list_cmdtable(dbref player)
 {
     char *buf, *bp, *cp;
@@ -1770,10 +1762,8 @@ static void list_cmdtable(dbref player)
     }
     *bp = '\0';
 
-    /*
-     * Players get the list of logged-out cmds too 
-     */
-
+    // Players get the list of logged-out cmds too
+    //
     if (Typeof(player) == TYPE_PLAYER)
         display_nametab(player, logout_cmdtable, buf, 1);
     else
@@ -1781,11 +1771,9 @@ static void list_cmdtable(dbref player)
     free_lbuf(buf);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_attrtable: List available attributes.
- */
-
+// ---------------------------------------------------------------------------
+// list_attrtable: List available attributes.
+//
 static void list_attrtable(dbref player)
 {
     ATTR *ap;
@@ -1807,11 +1795,9 @@ static void list_attrtable(dbref player)
     free_lbuf(buf);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_cmdaccess: List access commands.
- */
-
+// ---------------------------------------------------------------------------
+// list_cmdaccess: List access commands.
+//
 NAMETAB access_nametab[] =
 {
     {(char *)"builder",       6, CA_WIZARD, CA_BUILDER},
@@ -1975,11 +1961,9 @@ static void list_cmdaccess(dbref player)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_cmdswitches: List switches for commands.
- */
-
+// ---------------------------------------------------------------------------
+// list_cmdswitches: List switches for commands.
+//
 static void list_cmdswitches(dbref player)
 {
     char *buff;
@@ -2107,10 +2091,9 @@ static void list_cmdswitches(dbref player)
     free_sbuf(buff);
 }
 
-/* ---------------------------------------------------------------------------
- * list_attraccess: List access to attributes.
- */
-
+// ---------------------------------------------------------------------------
+// list_attraccess: List access to attributes.
+//
 NAMETAB attraccess_nametab[] =
 {
     {(char *)"dark",        2,  CA_WIZARD,  AF_DARK},
@@ -2158,11 +2141,9 @@ static void list_attraccess(dbref player)
     free_sbuf(buff);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_access: Change command or switch permissions.
- */
-
+// ---------------------------------------------------------------------------
+// cf_access: Change command or switch permissions.
+//
 extern void FDECL(cf_log_notfound, (dbref, char *, const char *, char *));
 
 CF_HAND(cf_access)
@@ -2204,11 +2185,9 @@ CF_HAND(cf_access)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_acmd_access: Change command permissions for all attr-setting cmds.
- */
-
+// ---------------------------------------------------------------------------
+// cf_acmd_access: Change command permissions for all attr-setting cmds.
+//
 CF_HAND(cf_acmd_access)
 {
     ATTR *ap;
@@ -2240,17 +2219,15 @@ CF_HAND(cf_acmd_access)
     return 0;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_attr_access: Change access on an attribute.
- */
-
+// ---------------------------------------------------------------------------
+// cf_attr_access: Change access on an attribute.
+//
 CF_HAND(cf_attr_access)
 {
     ATTR *ap;
     char *sp;
 
-    for (sp = str; *sp && !Tiny_IsSpace[(unsigned char)*sp]; sp++) 
+    for (sp = str; *sp && !Tiny_IsSpace[(unsigned char)*sp]; sp++)
     {
         ; // Nothing
     }
@@ -2275,11 +2252,9 @@ CF_HAND(cf_attr_access)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * cf_cmd_alias: Add a command alias.
- */
-
+// ---------------------------------------------------------------------------
+// cf_cmd_alias: Add a command alias.
+//
 CF_HAND(cf_cmd_alias)
 {
     char *ap;
@@ -2301,29 +2276,24 @@ CF_HAND(cf_cmd_alias)
     }
 
     for (ap = orig; *ap && (*ap != '/'); ap++) ;
-    if (*ap == '/') {
-
-        /*
-         * Switch form of command aliasing: create an alias for a  *
-         * * * * * * command + a switch 
-         */
-
+    if (*ap == '/')
+    {
+        // Switch form of command aliasing: create an alias for
+        // a command + a switch
+        //
         *ap++ = '\0';
 
-        /*
-         * Look up the command 
-         */
-
+        // Look up the command
+        //
         cmdp = (CMDENT *) hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
         if (cmdp == NULL || cmdp->switches == NULL)
         {
             cf_log_notfound(player, cmd, "Command", orig);
             return -1;
         }
-        /*
-         * Look up the switch 
-         */
 
+        // Look up the switch
+        //
         nt = find_nametab_ent(player, (NAMETAB *) cmdp->switches, ap);
         if (!nt)
         {
@@ -2353,11 +2323,8 @@ CF_HAND(cf_cmd_alias)
     }
     else
     {
-
-        /*
-         * A normal (non-switch) alias 
-         */
-
+        // A normal (non-switch) alias
+        //
         hp = hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
         if (hp == NULL)
         {
@@ -2369,11 +2336,9 @@ CF_HAND(cf_cmd_alias)
     return 0;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_df_flags: List default flags at create time.
- */
-
+// ---------------------------------------------------------------------------
+// list_df_flags: List default flags at create time.
+//
 static void list_df_flags(dbref player)
 {
     char *playerb, *roomb, *thingb, *exitb, *robotb, *buff;
@@ -2411,11 +2376,9 @@ static void list_df_flags(dbref player)
     free_sbuf(robotb);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_costs: List the costs of things.
- */
-
+// ---------------------------------------------------------------------------
+// list_costs: List the costs of things.
+//
 #define coin_name(s)    (((s)==1) ? mudconf.one_coin : mudconf.many_coins)
 
 static void list_costs(dbref player)
@@ -2516,11 +2479,9 @@ static void list_costs(dbref player)
     free_mbuf(buff);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_options: List more game options from mudconf.
- */
-
+// ---------------------------------------------------------------------------
+// list_options: List more game options from mudconf.
+//
 static const char *switchd[] =
 {"/first", "/all"};
 static const char *examd[] =
@@ -2618,7 +2579,7 @@ static void list_options(dbref player)
     {
         raw_notify(player, "Database dumps are performed by a fork()ed process.");
     }
-#endif // WIN32
+#endif
     if (mudconf.max_players >= 0)
         raw_notify(player,
         tprintf("There may be at most %d players logged in at once.",
@@ -2682,11 +2643,9 @@ static void list_options(dbref player)
     free_mbuf(buff);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_vattrs: List user-defined attributes
- */
-
+// ---------------------------------------------------------------------------
+// list_vattrs: List user-defined attributes
+//
 static void list_vattrs(dbref player)
 {
     VATTR *va;
@@ -2736,7 +2695,6 @@ int RightJustifyNumber(char *field, int nWidth, INT64 value)
 }
 
 // list_hashstats: List information from hash tables
-//
 //
 static void list_hashstat(dbref player, const char *tab_name, CHashTable *htab)
 {
@@ -2800,21 +2758,19 @@ extern int cs_dbreads;      // total read-throughs
 extern int cs_dbwrites;     // total write-throughs
 extern int cs_rhits;        // total reads filled from cache
 extern int cs_whits;        // total writes to dirty cache
-#endif // !MEMORY_BASED
+#endif
 
 
 #ifdef RADIX_COMPRESSION
-extern unsigned int strings_compressed;     // Total number of compressed strings  
-extern unsigned int strings_decompressed;   // Total number of decompressed strings  
+extern unsigned int strings_compressed;     // Total number of compressed strings
+extern unsigned int strings_decompressed;   // Total number of decompressed strings
 extern unsigned int chars_in;               // Total characters compressed
 extern unsigned int symbols_out;            // Total symbols emitted
-#endif // RADIX_COMPRESSION  
+#endif
 
-/*
- * ---------------------------------------------------------------------------
- * * list_db_stats: Get useful info from the DB layer about hash stats, etc.
- */
-
+// ---------------------------------------------------------------------------
+// list_db_stats: Get useful info from the DB layer about hash stats, etc.
+//
 static void list_db_stats(dbref player)
 {
 #ifdef MEMORY_BASED
@@ -2829,23 +2785,21 @@ static void list_db_stats(dbref player)
     raw_notify(player, tprintf("Syncs      %12d", cs_syncs));
     raw_notify(player, tprintf("I/O        %12d%12d", cs_dbwrites, cs_dbreads));
     raw_notify(player, tprintf("Cache Hits %12d%12d", cs_whits, cs_rhits));
-#endif // !MEMORY_BASED
+#endif
 
 #ifdef RADIX_COMPRESSION
     raw_notify(player, "Compression statistics:");
     raw_notify(player, tprintf("Strings compressed %d", strings_compressed));
     raw_notify(player, tprintf("Strings decompressed %d", strings_decompressed));
     raw_notify(player, tprintf("Compression ratio %d:%d", chars_in, symbols_out + (symbols_out >> 1)));
-#endif // RADIX_COMPRESSION
+#endif
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * list_process: List local resource usage stats of the mux process.
- * * Adapted from code by Claudius@PythonMUCK,
- * *     posted to the net by Howard/Dark_Lord.
- */
-
+// ---------------------------------------------------------------------------
+// list_process: List local resource usage stats of the mux process.
+// Adapted from code by Claudius@PythonMUCK,
+//     posted to the net by Howard/Dark_Lord.
+//
 static void list_process(dbref player)
 {
     int maxfds;
@@ -2880,33 +2834,30 @@ static void list_process(dbref player)
 
 #ifdef WIN32
     maxfds = FD_SETSIZE;
-#else // WIN32
+#else
 #ifdef HAVE_GETDTABLESIZE
     maxfds = getdtablesize();
 #else
     maxfds = sysconf(_SC_OPEN_MAX);
 #endif
     int psize = getpagesize();
-#endif // WIN32
+#endif
 
-    /*
-     * Go display everything 
-     */
-
+    // Go display everything
+    //
 #ifdef WIN32
     raw_notify(player, tprintf("Process ID:  %10d", game_pid));
-#else // WIN32
+#else
     raw_notify(player, tprintf("Process ID:  %10d        %10d bytes per page", game_pid, psize));
-#endif // WIN32
+#endif
 
 #ifdef HAVE_GETRUSAGE
     raw_notify(player, tprintf("Time used:   %10d user   %10d sys",
                usage.ru_utime.tv_sec, usage.ru_stime.tv_sec));
-/*
- * raw_notify(player,
- * * tprintf("Resident mem:%10d shared %10d private%10d stack",
- * * ixrss, idrss, isrss));
- */
+#if 0
+    raw_notify(player, tprintf("Resident mem:%10d shared %10d private%10d stack",
+           ixrss, idrss, isrss));
+#endif
     raw_notify(player,
            tprintf("Integral mem:%10d shared %10d private%10d stack",
                usage.ru_ixrss, usage.ru_idrss, usage.ru_isrss));
@@ -2929,11 +2880,10 @@ static void list_process(dbref player)
            tprintf("Descs avail: %10d", maxfds));
 #endif
 }
-/*
- * ---------------------------------------------------------------------------
- * * do_list: List information stored in internal structures.
- */
 
+// ---------------------------------------------------------------------------
+// do_list: List information stored in internal structures.
+//
 #define LIST_ATTRIBUTES 1
 #define LIST_COMMANDS   2
 #define LIST_COSTS  3
@@ -3077,4 +3027,3 @@ void do_list(dbref player, dbref cause, int extra, char *arg)
                 (char *)"Unknown option.  Use one of:", 1);
     }
 }
-
