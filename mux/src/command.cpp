@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.30 2004-04-07 20:32:51 sdennis Exp $
+// $Id: command.cpp,v 1.31 2004-05-13 13:52:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3217,7 +3217,7 @@ static void list_options(dbref player)
     raw_notify(player, buff);
 
     sprintf(buff, "Scheduling: Timeslice...%d  Max_Quota...%d  Increment...%d",
-        mudconf.timeslice, mudconf.cmd_quota_max, mudconf.cmd_quota_incr);
+        mudconf.timeslice.ReturnMilliseconds(),mudconf.cmd_quota_max, mudconf.cmd_quota_incr);
     raw_notify(player, buff);
 
     sprintf(buff, "Spaces...%s  Savefiles...%s",

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.41 2004-04-29 05:01:22 sdennis Exp $
+// $Id: conf.cpp,v 1.42 2004-05-13 13:52:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -205,7 +205,7 @@ void cf_init(void)
     strcpy(mudconf.mud_name, "MUX");
     strcpy(mudconf.one_coin, "penny");
     strcpy(mudconf.many_coins, "pennies");
-    mudconf.timeslice = 1000;
+    mudconf.timeslice.SetSeconds(1);
     mudconf.cmd_quota_max = 100;
     mudconf.cmd_quota_incr = 1;
     mudconf.max_cmdsecs.SetSeconds(120);
@@ -1819,7 +1819,7 @@ CONF conftable[] =
     {"terse_shows_move_messages", cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_movemsg,   NULL,               0},
     {"thing_flags",               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.thing_flags,     NULL,               0},
     {"thing_quota",               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.thing_quota,            NULL,               0},
-    {"timeslice",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.timeslice,              NULL,               0},
+    {"timeslice",                 cf_seconds,     CA_GOD,    CA_PUBLIC,   (int *)&mudconf.timeslice,       NULL,               0},
     {"toad_recipient",            cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.toad_recipient,         NULL,               0},
     {"trace_output_limit",        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.trace_limit,            NULL,               0},
     {"trace_topdown",             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.trace_topdown,   NULL,               0},

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.17 2004-04-29 05:00:01 sdennis Exp $
+// $Id: mudconf.h,v 1.18 2004-05-13 13:52:24 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -150,7 +150,6 @@ struct confdata
     int     stack_limit;        /* How big can stacks get? */
     int     start_quota;        /* Quota for new players */
     int     thing_quota;        /* quota needed to make a thing */
-    int     timeslice;          /* How often do we bump people's cmd quotas? */
     int     trace_limit;        /* Max lines of trace output if top-down */
     int     vattr_flags;        /* Attr flags for all user-defined attrs */
     int     vattr_per_hour;     // Maximum allowed vattrs per hour per object.
@@ -203,6 +202,7 @@ struct confdata
     unsigned char    markdata[8];  /* Masks for marking/unmarking */
     CLinearTimeDelta max_cmdsecs;  /* Threshhold for real time taken by command */
     CLinearTimeDelta cache_tick_period; // Minor cycle for cache maintenance.
+    CLinearTimeDelta timeslice;         // How often do we bump people's cmd quotas?
 
     FLAGSET exit_flags;         /* Flags exits start with */
     FLAGSET player_flags;       /* Flags players start with */
@@ -355,7 +355,6 @@ struct statedata
     CLinearTimeAbsolute dump_counter;   /* Countdown to next db dump */
     CLinearTimeAbsolute events_counter; /* Countdown to next events check */
     CLinearTimeAbsolute idle_counter;   /* Countdown to next idle check */
-    CLinearTimeAbsolute now;            /* What time is it now? */
     CLinearTimeAbsolute start_time;     /* When was MUX started */
 
     CHashTable acache_htab;     // Attribute Cache

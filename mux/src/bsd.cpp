@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.27 2004-04-13 06:34:22 sdennis Exp $
+// $Id: bsd.cpp,v 1.28 2004-05-13 13:52:24 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -929,12 +929,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
     {
         CLinearTimeAbsolute ltaCurrent;
         ltaCurrent.GetUTC();
-        if (ltaCurrent < mudstate.now)
-        {
-            ltaLastSlice = ltaCurrent;
-        }
-        mudstate.now = ltaCurrent;
-        ltaLastSlice = update_quotas(ltaLastSlice, ltaCurrent);
+        update_quotas(ltaLastSlice, ltaCurrent);
 
         // Before processing a possible QUIT command, be sure to give the slave
         // a chance to report it's findings.
@@ -1132,12 +1127,7 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
     {
         CLinearTimeAbsolute ltaCurrent;
         ltaCurrent.GetUTC();
-        if (ltaCurrent < mudstate.now)
-        {
-            ltaLastSlice = ltaCurrent;
-        }
-        mudstate.now = ltaCurrent;
-        ltaLastSlice = update_quotas(ltaLastSlice, ltaCurrent);
+        update_quotas(ltaLastSlice, ltaCurrent);
 
         // Before processing a possible QUIT command, be sure to give the slave
         // a chance to report it's findings.
@@ -1232,12 +1222,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
     {
         CLinearTimeAbsolute ltaCurrent;
         ltaCurrent.GetUTC();
-        if (ltaCurrent < mudstate.now)
-        {
-            ltaLastSlice = ltaCurrent;
-        }
-        mudstate.now= ltaCurrent;
-        ltaLastSlice = update_quotas(ltaLastSlice, ltaCurrent);
+        update_quotas(ltaLastSlice, ltaCurrent);
 
         // Check the scheduler.
         //

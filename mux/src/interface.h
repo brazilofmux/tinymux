@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.6 2003-07-17 00:23:32 sdennis Exp $
+// $Id: interface.h,v 1.7 2004-05-13 13:52:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -174,7 +174,7 @@ extern int fetch_idle(dbref target);
 extern int fetch_connect(dbref target);
 extern const char *time_format_1(int Seconds, size_t maxWidth);
 extern const char *time_format_2(int Seconds);
-extern CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
+extern void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
 extern void raw_notify(dbref, const char *);
 extern void raw_notify_newline(dbref);
 extern void clearstrings(DESC *);

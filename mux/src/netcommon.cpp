@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.33 2004-05-13 06:03:43 sdennis Exp $
+// $Id: netcommon.cpp,v 1.34 2004-05-13 13:52:24 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -93,17 +93,21 @@ void make_port_ulist(dbref player, char *buff, char **bufc)
  * update_quotas: Update timeslice quotas
  */
 
-CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& ltaLast, const CLinearTimeAbsolute& ltaCurrent)
+void update_quotas(CLinearTimeAbsolute& ltaLast, const CLinearTimeAbsolute& ltaCurrent)
 {
     if (ltaCurrent < ltaLast)
     {
-        return ltaCurrent;
+        ltaLast = ltaCurrent;
+        return;
     }
 
     CLinearTimeDelta ltdDiff = ltaCurrent - ltaLast;
-    CLinearTimeDelta ltdTimeSlice;
-    ltdTimeSlice.SetMilliseconds(mudconf.timeslice);
-    int nSlices = ltdDiff / ltdTimeSlice;
+    if (ltdDiff < mudconf.timeslice)
+    {
+        return;
+    }
+
+    int nSlices = ltdDiff / mudconf.timeslice;
     int nExtraQuota = mudconf.cmd_quota_incr * nSlices;
 
     if (nExtraQuota > 0)
@@ -118,7 +122,7 @@ CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& ltaLast, const CLin
             }
         }
     }
-    return ltaLast + ltdTimeSlice * nSlices;
+    ltaLast += mudconf.timeslice * nSlices;
 }
 
 /* raw_notify_html() -- raw_notify() without the newline */
@@ -2452,12 +2456,9 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                 // Don't bother looking for more quota until at least this much time has past.
                 //
                 CLinearTimeAbsolute lsaWhen;
-                CLinearTimeDelta    ltd;
-
-                ltd.SetMilliseconds(mudconf.timeslice);
                 lsaWhen.GetUTC();
 
-                scheduler.DeferTask(lsaWhen + ltd, PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
+                scheduler.DeferTask(lsaWhen + mudconf.timeslice, PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
             }
         }
     }
