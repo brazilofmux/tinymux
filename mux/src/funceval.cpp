@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.61 2002-10-13 19:03:13 sdennis Exp $
+// $Id: funceval.cpp,v 1.62 2002-10-14 06:26:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -661,7 +661,7 @@ FUNCTION(fun_decrypt)
 //
 void scan_zone
 (
-    dbref player,
+    dbref executor,
     char *szZone,
     int   ObjectType,
     char *buff,
@@ -674,14 +674,14 @@ void scan_zone
         return;
     }
 
-    dbref it = match_thing_quiet(player, szZone);
+    dbref it = match_thing_quiet(executor, szZone);
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
         return;
     }
-    else if (  !Controls(player, it)
-            && !WizRoy(player))
+    else if (!(  WizRoy(executor)
+              || Controls(executor, it)))
     {
         safe_noperm(buff, bufc);
         return;
@@ -722,7 +722,8 @@ FUNCTION(fun_children)
         safe_match_result(it, buff, bufc);
         return;
     }
-    else if (!(WizRoy(executor) || Controls(executor, it)))
+    else if (!(  WizRoy(executor)
+              || Controls(executor, it)))
     {
         safe_noperm(buff, bufc);
         return;
