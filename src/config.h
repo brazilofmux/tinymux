@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.3 2000-04-12 01:53:34 sdennis Exp $ */
+/* $Id: config.h,v 1.4 2000-04-25 18:33:14 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -136,6 +136,8 @@ typedef unsigned __int64 UINT64;
 #define INVALID_HANDLE_VALUE (-1)
 #define O_BINARY 0
 typedef int BOOL;
+#define TRUE    1
+#define FALSE   0
 typedef int HANDLE;
 typedef long long INT64;
 typedef unsigned long long UINT64;
