@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.23 2002-06-21 00:18:39 sdennis Exp $
+// $Id: functions.cpp,v 1.24 2002-06-21 00:46:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4888,10 +4888,10 @@ FUNCTION(fun_mudname)
 }
 
 // ---------------------------------------------------------------------------
-// fun_connrec: Return the record number of connected players.
+// fun_connrecord: Return the record number of connected players.
 // ---------------------------------------------------------------------------
 
-FUNCTION(fun_connrec)
+FUNCTION(fun_connrecord)
 {
     safe_ltoa(mudstate.record_players, buff, bufc);
 }
@@ -6470,41 +6470,29 @@ FUNCTION(fun_idle)
 
 FUNCTION(fun_conn)
 {
+    long nConnected = -1;
     if (is_rational(fargs[0]))
     {
-        int foundit = 0;
+        SOCKET s = Tiny_atol(fargs[0]);
+        int bFound = FALSE;
         DESC *d;
-        CLinearTimeAbsolute ltaNow, ltaNewestConnect;
+        CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
         DESC_ITER_CONN(d) 
         {
-            if (((long)d->descriptor) == Tiny_atol(fargs[0]))
+            if (d->descriptor == s)
             {
-                    foundit = 1;
-                    break;
+                bFound = TRUE;
+                break;
             }
         }
-        if (foundit)
+        if (  bFound
+           && (  d->player == executor
+              || Wizard_Who(executor)))
         {
-            if (!((d->player == executor) || Wizard_Who(executor)))
-            {
-                safe_ltoa(NOTHING, buff, bufc);
-                return;
-            }
-            else
-            {   
-                ltaNewestConnect = d->connected_at;
-                CLinearTimeDelta ltdResult = ltaNow - ltaNewestConnect;
-                safe_ltoa(ltdResult.ReturnSeconds(), buff, bufc);
-                return;
-            }
+            CLinearTimeDelta ltdResult = ltaNow - d->connected_at;
+            nConnected = ltdResult.ReturnSeconds();
         }
-        else
-        {
-            safe_ltoa(NOTHING, buff, bufc);
-            return;
-        }
-
     } 
     else 
     {
@@ -6515,13 +6503,13 @@ FUNCTION(fun_conn)
         }
         dbref target = lookup_player(executor, pTargetName, 1);
         if (  Good_obj(target)
-           && Hidden(target)
-           && !See_Hidden(executor))
+           && (  !Hidden(target)
+              || See_Hidden(executor)))
         {
-            target = NOTHING;
+            nConnected = fetch_connect(target);
         }
-        safe_ltoa(fetch_connect(target), buff, bufc);
     }
+    safe_ltoa(nConnected, buff, bufc);
 }
 
 /*
@@ -7375,7 +7363,7 @@ FUN flist[] =
     {"CONNLEFT", fun_connleft, MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONNMAX",  fun_connmax,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONNNUM",  fun_connnum,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNRECORD",fun_connrec, MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"CONNRECORD", fun_connrecord, MAX_ARG, 0,  0,   0, CA_PUBLIC},
     {"CONNTOTAL",fun_conntotal,MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CONVSECS", fun_convsecs, MAX_ARG, 1,  2,       0, CA_PUBLIC},
