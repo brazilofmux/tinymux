@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.41 2002-07-20 06:00:57 sdennis Exp $
+// $Id: command.cpp,v 1.42 2002-07-20 11:09:54 jake Exp $
 //
 
 #include "copyright.h"
@@ -80,6 +80,7 @@ NAMETAB clist_sw[] =
 NAMETAB cset_sw[] =
 {
     {"anon",            1,  CA_PUBLIC,  CSET_SPOOF},
+    {"header",          1,  CA_PUBLIC,  CSET_HEADER},
     {"list",            2,  CA_PUBLIC,  CSET_LIST},
     {"loud",            3,  CA_PUBLIC,  CSET_LOUD},
     {"log" ,            3,  CA_PUBLIC,  CSET_LOG},
@@ -90,7 +91,6 @@ NAMETAB cset_sw[] =
     {"public",          2,  CA_PUBLIC,  CSET_PUBLIC},
     {"quiet",           1,  CA_PUBLIC,  CSET_QUIET},
     {"spoof",           1,  CA_PUBLIC,  CSET_SPOOF},
-    {"header",          2,  CA_PUBLIC,  CSET_HEADER},
     { NULL,             0,          0,  0}
 };
 
@@ -234,16 +234,16 @@ NAMETAB halt_sw[] =
 NAMETAB icmd_sw[] =
 {
     {"check",           2,     CA_GOD, ICMD_CHECK},
-    {"disable",         1,     CA_GOD, ICMD_DISABLE},
-    {"ignore",          1,     CA_GOD, ICMD_IGNORE},
-    {"on",              2,     CA_GOD, ICMD_ON},
-    {"off",             2,     CA_GOD, ICMD_OFF},
     {"clear",           2,     CA_GOD, ICMD_CLEAR},
-    {"droom",           2,     CA_GOD, ICMD_DROOM},
-    {"iroom",           2,     CA_GOD, ICMD_IROOM},
     {"croom",           2,     CA_GOD, ICMD_CROOM},
+    {"disable",         1,     CA_GOD, ICMD_DISABLE},
+    {"droom",           2,     CA_GOD, ICMD_DROOM},
+    {"ignore",          1,     CA_GOD, ICMD_IGNORE},
+    {"iroom",           2,     CA_GOD, ICMD_IROOM},
     {"lroom",           2,     CA_GOD, ICMD_LROOM},
     {"lallroom",        2,     CA_GOD, ICMD_LALLROOM},
+    {"off",             2,     CA_GOD, ICMD_OFF},
+    {"on",              2,     CA_GOD, ICMD_ON},
     {NULL,              0,          0,  0}
 };
 
@@ -271,11 +271,11 @@ NAMETAB lock_sw[] =
     {"pagelock",        3,  CA_PUBLIC,  A_LPAGE},
     {"parentlock",      3,  CA_PUBLIC,  A_LPARENT},
     {"receivelock",     1,  CA_PUBLIC,  A_LRECEIVE},
+    {"speechlock",      1,  CA_PUBLIC,  A_LSPEECH},
     {"teloutlock",      2,  CA_PUBLIC,  A_LTELOUT},
     {"tportlock",       2,  CA_PUBLIC,  A_LTPORT},
     {"uselock",         1,  CA_PUBLIC,  A_LUSE},
     {"userlock",        4,  CA_PUBLIC,  A_LUSER},
-    {"speechlock",      1,  CA_PUBLIC,  A_LSPEECH},
     { NULL,             0,          0,  0}
 };
 
@@ -487,11 +487,11 @@ NAMETAB wait_sw[] =
 
 NAMETAB wall_sw[] =
 {
+    {"admin",           1,  CA_ADMIN,    SHOUT_ADMINSHOUT},
     {"emit",            1,  CA_ANNOUNCE, SHOUT_WALLEMIT},
     {"no_prefix",       1,  CA_ANNOUNCE, SAY_NOTAG|SW_MULTIPLE},
     {"pose",            1,  CA_ANNOUNCE, SHOUT_WALLPOSE},
     {"wizard",          1,  CA_ANNOUNCE, SHOUT_WIZSHOUT|SW_MULTIPLE},
-    {"admin",           1,  CA_ADMIN,    SHOUT_ADMINSHOUT},
     { NULL,             0,          0,  0}
 };
 
@@ -499,9 +499,9 @@ NAMETAB warp_sw[] =
 {
     {"check",           1,  CA_WIZARD,  TWARP_CLEAN|SW_MULTIPLE},
     {"dump",            1,  CA_WIZARD,  TWARP_DUMP|SW_MULTIPLE},
+    {"events",          1,  CA_WIZARD,  TWARP_EVENTS|SW_MULTIPLE},
     {"idle",            1,  CA_WIZARD,  TWARP_IDLE|SW_MULTIPLE},
     {"queue",           1,  CA_WIZARD,  TWARP_QUEUE|SW_MULTIPLE},
-    {"events",          1,  CA_WIZARD,  TWARP_EVENTS|SW_MULTIPLE},
     { NULL,             0,          0,  0}
 };
 
@@ -530,14 +530,14 @@ CMDENT_NO_ARG command_table_no_arg[] =
     {"@timecheck",  timecheck_sw, CA_WIZARD, 0,          CS_NO_ARGS, do_timecheck},
     {"comlist",     NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, do_comlist},
     {"clearcom",    NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, do_clearcom},
+    {"info",        NULL,       CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, logged_out0},
     {"inventory",   NULL,       CA_PUBLIC,   LOOK_INVENTORY,    CS_NO_ARGS, do_inventory},
     {"leave",       leave_sw,   CA_LOCATION, 0,          CS_NO_ARGS, do_leave},
+    {"logout",      NULL,       CA_PUBLIC,   CMD_LOGOUT, CS_NO_ARGS, logged_out0},
+    {"quit",        NULL,       CA_PUBLIC,   CMD_QUIT,   CS_NO_ARGS, logged_out0},
+    {"report",      NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, do_report},
     {"score",       NULL,       CA_PUBLIC,   LOOK_SCORE, CS_NO_ARGS, do_score},
     {"version",     NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, do_version},
-    {"quit",        NULL,       CA_PUBLIC,   CMD_QUIT,   CS_NO_ARGS, logged_out0},
-    {"logout",      NULL,       CA_PUBLIC,   CMD_LOGOUT, CS_NO_ARGS, logged_out0},
-    {"report",      NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, do_report},
-    {"info",        NULL,       CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, logged_out0},
     {NULL,          NULL,       0,           0,          0,          NULL}
 };
 
@@ -583,6 +583,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_ONE_ARG|CS_INTERP,   do_wipe},
     {"allcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_allcom},
     {"delcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_delcom},
+    {"doing",         NULL,       CA_PUBLIC,          CMD_DOING,  CS_ONE_ARG,           logged_out1},
     {"drop",          drop_sw,    CA_NO_SLAVE|CA_CONTENTS|CA_LOCATION|CA_NO_GUEST,  0,  CS_ONE_ARG|CS_INTERP,   do_drop},
     {"enter",         enter_sw,   CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, do_enter},
     {"examine",       examine_sw, CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, do_examine},
@@ -594,15 +595,14 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"outputprefix",  NULL,       CA_PUBLIC,         CMD_PREFIX,  CS_ONE_ARG,           logged_out1},
     {"outputsuffix",  NULL,       CA_PUBLIC,         CMD_SUFFIX,  CS_ONE_ARG,           logged_out1},
     {"pose",          pose_sw,    CA_LOCATION|CA_NO_SLAVE,  SAY_POSE,   CS_ONE_ARG|CS_INTERP,   do_say},
+    {"puebloclient",  NULL,       CA_PUBLIC,   CMD_PUEBLOCLIENT,  CS_ONE_ARG,           logged_out1},
     {"say",           say_sw,     CA_LOCATION|CA_NO_SLAVE,  SAY_SAY,    CS_ONE_ARG|CS_INTERP,   do_say},
     {"session",       NULL,       CA_PUBLIC,        CMD_SESSION,  CS_ONE_ARG,           logged_out1},
     {"think",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           do_think},
     {"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,  0,  CS_ONE_ARG|CS_INTERP, do_use},
+    {"who",           NULL,       CA_PUBLIC,            CMD_WHO,  CS_ONE_ARG,           logged_out1},
     {"wizhelp",       NULL,       CA_WIZARD,       HELP_WIZHELP,  CS_ONE_ARG,           do_help},
     {"wiznews",       NULL,       CA_WIZARD,       HELP_WIZNEWS,  CS_ONE_ARG,           do_help},
-    {"doing",         NULL,       CA_PUBLIC,          CMD_DOING,  CS_ONE_ARG,           logged_out1},
-    {"who",           NULL,       CA_PUBLIC,            CMD_WHO,  CS_ONE_ARG,           logged_out1},
-    {"puebloclient",  NULL,       CA_PUBLIC,   CMD_PUEBLOCLIENT,  CS_ONE_ARG,           logged_out1},
     {"\\",            NULL,       CA_NO_GUEST|CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP,   do_say},
     {":",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, do_say},
     {";",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, do_say},
@@ -654,12 +654,12 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@name",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG|CS_INTERP, do_name},
     {"@newpassword", NULL,       CA_WIZARD,                                        PASS_ANY,    CS_TWO_ARG,           do_newpassword},
     {"@notify",      notify_sw,  CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            0,           CS_TWO_ARG,           do_notify},
+    {"@npemit",      pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_UNPARSE|CS_NOSQUISH, do_pemit},
     {"@oemit",       NULL,       CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_OEMIT, CS_TWO_ARG|CS_INTERP, do_pemit},
     {"@parent",      NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           do_parent},
     {"@password",    NULL,       CA_NO_GUEST,                                      PASS_MINE,   CS_TWO_ARG,           do_password},
     {"@pcreate",     NULL,       CA_WIZARD|CA_GBL_BUILD,                           PCRE_PLAYER, CS_TWO_ARG,           do_pcreate},
     {"@pemit",       pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_INTERP, do_pemit},
-    {"@npemit",      pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_UNPARSE|CS_NOSQUISH, do_pemit},
     {"@power",       NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG,           do_power},
     {"@program",     NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, do_prog},
     {"@quota",       quota_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, do_quota},
@@ -939,7 +939,9 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         {
             buf1 = strchr(switchp, '/');
             if (buf1)
+            {
                 *buf1++ = '\0';
+            }
             xkey = search_nametab(executor, cmdp->switches, switchp);
             if (xkey == -1)
             {
@@ -991,8 +993,8 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         key &= ~SW_NOEVAL;
     }
     else if (  (cmdp->callseq & CS_INTERP)
-            || !(interactive
-            || (cmdp->callseq & CS_NOINTERP)))
+            || !( interactive
+               || (cmdp->callseq & CS_NOINTERP)))
     {
         // If the command is interpreted, or we're interactive (and
         // the command isn't specified CS_NOINTERP), eval the args.
@@ -1180,8 +1182,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         buf1 = bp = alloc_lbuf("process_cmdent.2");
         str = buf2;
         TinyExec(buf1, &bp, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs,
-            ncargs);
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs, ncargs);
         *bp = '\0';
 
         if (cmdp->callseq & CS_ARGV)
@@ -2142,13 +2143,11 @@ static void list_cmdaccess(dbref player)
         CMDENT_NO_ARG *cmdp;
         for (cmdp = command_table_no_arg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+               && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
-                }
             }
         }
     }
@@ -2156,13 +2155,11 @@ static void list_cmdaccess(dbref player)
         CMDENT_ONE_ARG *cmdp;
         for (cmdp = command_table_one_arg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+               && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
-                }
             }
         }
     }
@@ -2170,13 +2167,11 @@ static void list_cmdaccess(dbref player)
         CMDENT_ONE_ARG_CMDARG *cmdp;
         for (cmdp = command_table_one_arg_cmdarg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+               && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
-                }
             }
         }
     }
@@ -2184,13 +2179,11 @@ static void list_cmdaccess(dbref player)
         CMDENT_TWO_ARG *cmdp;
         for (cmdp = command_table_two_arg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+               && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
-                }
             }
         }
     }
@@ -2198,13 +2191,11 @@ static void list_cmdaccess(dbref player)
         CMDENT_TWO_ARG_ARGV *cmdp;
         for (cmdp = command_table_two_arg_argv; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+               && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
-                }
             }
         }
     }
@@ -2212,13 +2203,11 @@ static void list_cmdaccess(dbref player)
         CMDENT_TWO_ARG_CMDARG *cmdp;
         for (cmdp = command_table_two_arg_cmdarg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+               && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
-                }
             }
         }
     }
@@ -2226,13 +2215,11 @@ static void list_cmdaccess(dbref player)
         CMDENT_TWO_ARG_ARGV_CMDARG *cmdp;
         for (cmdp = command_table_two_arg_argv_cmdarg; cmdp->cmdname; cmdp++)
         {
-            if (check_access(player, cmdp->perms))
+            if (  check_access(player, cmdp->perms)
+               && !(cmdp->perms & CF_DARK))
             {
-                if (!(cmdp->perms & CF_DARK))
-                {
                     sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, TRUE);
-                }
             }
         }
     }
@@ -2288,7 +2275,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, 0);
+                        display_nametab(player, cmdp->switches, buff, FALSE);
                     }
                 }
             }
@@ -2305,7 +2292,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, 0);
+                        display_nametab(player, cmdp->switches, buff, FALSE);
                     }
                 }
             }
@@ -2322,7 +2309,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, 0);
+                        display_nametab(player, cmdp->switches, buff, FALSE);
                     }
                 }
             }
@@ -2339,7 +2326,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, 0);
+                        display_nametab(player, cmdp->switches, buff, FALSE);
                     }
                 }
             }
@@ -2356,7 +2343,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, 0);
+                        display_nametab(player, cmdp->switches, buff, FALSE);
                     }
                 }
             }
@@ -2373,7 +2360,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, 0);
+                        display_nametab(player, cmdp->switches, buff, FALSE);
                     }
                 }
             }
@@ -2390,7 +2377,7 @@ static void list_cmdswitches(dbref player)
                     if (!(cmdp->perms & CF_DARK))
                     {
                         sprintf(buff, "%.60s:", cmdp->cmdname);
-                        display_nametab(player, cmdp->switches, buff, 0);
+                        display_nametab(player, cmdp->switches, buff, FALSE);
                     }
                 }
             }
@@ -2425,11 +2412,11 @@ NAMETAB attraccess_nametab[] =
 NAMETAB indiv_attraccess_nametab[] =
 {
     {"hidden",              1,  CA_WIZARD,  AF_MDARK},
-    {"wizard",              1,  CA_WIZARD,  AF_WIZARD},
     {"no_command",          4,  CA_PUBLIC,  AF_NOPROG},
     {"no_inherit",          4,  CA_PUBLIC,  AF_PRIVATE},
-    {"visual",              1,  CA_PUBLIC,  AF_VISUAL},
     {"regexp",              1,  CA_PUBLIC,  AF_REGEXP},
+    {"visual",              1,  CA_PUBLIC,  AF_VISUAL},
+    {"wizard",              1,  CA_WIZARD,  AF_WIZARD},
     { NULL,                 0,          0,          0}
 };
 
@@ -3423,8 +3410,8 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
         if (key == ICMD_CROOM)
         {
             atr_clr(target, A_CMDCHECK);
-            notify(player,"@icmd: Location - All cleared.");
-            notify(player,"@icmd: Done.");
+            notify(player, "@icmd: Location - All cleared.");
+            notify(player, "@icmd: Done.");
             return;
         }
         else if (key == ICMD_LROOM)
@@ -3440,7 +3427,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                 notify(player, "Location CmdCheck attribute is empty.");
             }
             free_lbuf(atrpt);
-            notify(player,"@icmd: Done");
+            notify(player, "@icmd: Done.");
             return;
         }
         else if (key == ICMD_LALLROOM)
@@ -3458,9 +3445,9 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
             atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
-                notify(player,tprintf("%c     --- At %s(#%d) :", 
+                notify(player, tprintf("%c     --- At %s(#%d) :", 
                     (Zone(target) == target ? '*' : ' '), Name(target), target));
-                notify(player,atrpt);
+                notify(player, atrpt);
                 bFound = TRUE;
             }
             free_lbuf(atrpt);
@@ -3476,7 +3463,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                     {
                         notify(player,tprintf("%c     z-- At %s(#%d) :", 
                             '*', Name(zone), zone));
-                        notify(player,atrpt);
+                        notify(player, atrpt);
                         bFound = TRUE;
                     }
                     free_lbuf(atrpt);
@@ -3512,28 +3499,28 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
             s_Flags(target, FLAG_WORD3, Flags3(target) & ~CMDCHECK);
             if (key == ICMD_CLEAR)
             {
-                atr_clr(target,A_CMDCHECK);
+                atr_clr(target, A_CMDCHECK);
             }
-            notify(player,"@icmd: All cleared.");
-            notify(player,"@icmd: Done.");
+            notify(player, "@icmd: All cleared.");
+            notify(player, "@icmd: Done.");
             return;
         }
         else if (key == ICMD_ON)
         {
             s_Flags(target, FLAG_WORD3, Flags3(target) | CMDCHECK);
-            notify(player,"@icmd: Activated.");
-            notify(player,"@icmd: Done.");
+            notify(player, "@icmd: Activated.");
+            notify(player, "@icmd: Done.");
             return;
         }
         else if (key == ICMD_CHECK)
         {
             if (CmdCheck(target))
             {
-                notify(player,"CmdCheck is active.");
+                notify(player, "CmdCheck is active.");
             }
             else
             {
-                notify(player,"CmdCheck is not active.");
+                notify(player, "CmdCheck is not active.");
             }
             atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
@@ -3546,7 +3533,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                 notify(player, "CmdCheck attribute is empty.");
             }
             free_lbuf(atrpt);
-            notify(player,"@icmd: Done.");
+            notify(player, "@icmd: Done.");
             return;
         }
     }
@@ -3564,10 +3551,10 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
             *pt2++ = Tiny_ToLower[(unsigned char)*pt1++];
         }
         *pt2 = '\0';
-        if ((*buff1 == '!') && (*(buff1+1) != '\0'))
+        if ((*buff1 == '!') && (*(buff1 + 1) != '\0'))
         {
             pt4 = args[x] + 1;
-            pt1 = buff1+1;
+            pt1 = buff1 + 1;
             set = 0;
         }
         else
@@ -3587,11 +3574,11 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                 cmdp = (CMDENT *) hashfindLEN(pt1, strlen(pt1), &mudstate.command_htab);
                 if (!cmdp)
                 {
-                    if (!string_compare(pt1,"home"))
+                    if (!string_compare(pt1, "home"))
                     {
                         home = 1;
                     }
-                    else if (prefix_cmds[*pt1] && !*(pt1+1))
+                    else if (prefix_cmds[*pt1] && !*(pt1 + 1))
                     {
                         *pre = *pt1;
                     }
@@ -3603,7 +3590,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
             }
             if (cmdp || logcmdp || home || *pre)
             {
-                atrpt = atr_get(target,A_CMDCHECK,&aowner,&aflags);
+                atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
                 if (cmdp)
                 {
                     aflags = strlen(cmdp->cmdname);
@@ -3625,19 +3612,19 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                 {
                     if (cmdp)
                     {
-                        pt1 = strstr(pt5,cmdp->cmdname);
+                        pt1 = strstr(pt5, cmdp->cmdname);
                     }
                     else if (logcmdp)
                     {
-                        pt1 = strstr(pt5,logcmdp->name);
+                        pt1 = strstr(pt5, logcmdp->name);
                     }
                     else if (home)
                     {
-                        pt1 = strstr(pt5,"home");
+                        pt1 = strstr(pt5, "home");
                     }
                     else if (*pre == ':')
                     {
-                        pt1 = strstr(pt5,"::");
+                        pt1 = strstr(pt5, "::");
                         if (pt1)
                         {
                             pt1++;
@@ -3645,11 +3632,11 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                     }
                     else
                     {
-                        pt1 = strstr(pt5,pre);
+                        pt1 = strstr(pt5, pre);
                     }
                     if (  pt1
                        && (pt1 > atrpt)
-                       && (*(pt1-1) == ':')
+                       && (*(pt1 - 1) == ':')
                        && (  Tiny_IsSpace[(unsigned char)*(pt1 + aflags)]
                           || !*(pt1 + aflags)))
                     {
@@ -3659,7 +3646,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                     {
                         if (*pt1)
                         {
-                            pt5 = pt1+1;
+                            pt5 = pt1 + 1;
                         }
                         else
                         {
@@ -3672,27 +3659,27 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                 {
                     if (!pt1)
                     {
-                        if (*atrpt && (strlen(atrpt) < LBUF_SIZE-2))
+                        if (*atrpt && (strlen(atrpt) < LBUF_SIZE - 2))
                         {
-                            strcat(atrpt," ");
+                            strcat(atrpt, " ");
                         }
                         if (cmdp)
                         {
-                            pt3 = tprintf("%d:%s", key+1, cmdp->cmdname);
+                            pt3 = tprintf("%d:%s", key + 1, cmdp->cmdname);
                         }
                         else if (logcmdp)
                         {
-                            pt3 = tprintf("%d:%s", key+1, logcmdp->name);
+                            pt3 = tprintf("%d:%s", key + 1, logcmdp->name);
                         }
                         else if (home)
                         {
-                            pt3 = tprintf("%d:home", key+1);
+                            pt3 = tprintf("%d:home", key + 1);
                         }
                         else
                         {
-                            pt3 = tprintf("%d:%c", key+1, *pre);
+                            pt3 = tprintf("%d:%c", key + 1, *pre);
                         }
-                        if ((strlen(atrpt) + strlen(pt3)) < LBUF_SIZE -1)
+                        if ((strlen(atrpt) + strlen(pt3)) < LBUF_SIZE - 1)
                         {
                             strcat(atrpt, pt3);
                             atr_add_raw(target, A_CMDCHECK, atrpt);
@@ -3712,19 +3699,19 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                 {
                     if (pt1)
                     {
-                        pt2 = pt1-1;
+                        pt2 = pt1 - 1;
                         while ((pt2 > atrpt) && !Tiny_IsSpace[(unsigned char)*pt2])
                         {
                             pt2--;
                         }
-                        y = pt2-atrpt+1;
-                        strncpy(buff1,atrpt,y);
+                        y = pt2 - atrpt + 1;
+                        strncpy(buff1, atrpt, y);
                         if (y == 1)
                         {
                             *atrpt = '\0';
                         }
                         *(atrpt + y) = '\0';
-                        pt2 = pt1+aflags;
+                        pt2 = pt1 + aflags;
                         if (*pt2)
                         {
                             while (*pt2 && Tiny_IsSpace[(unsigned char)*pt2])
@@ -3738,12 +3725,12 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                         }
                         if ((y > 1) && !*pt2)
                         {
-                            pt2 = atrpt+y;
+                            pt2 = atrpt + y;
                             while ((pt2 > atrpt) && Tiny_IsSpace[(unsigned char)*pt2])
                             {
                                 pt2--;
                             }
-                            *(pt2+1) = '\0';
+                            *(pt2 + 1) = '\0';
                         }
                         if ((y == 1) && !*pt2) 
                         {
@@ -3775,5 +3762,5 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
         }
     }
     free_lbuf(buff1);
-    notify(player,"Icmd: Done.");
+    notify(player,"@icmd: Done.");
 }
