@@ -1,5 +1,5 @@
 /* command.h - declarations used by the command processor */
-/* $Id: command.h,v 1.5 2000-11-06 18:30:28 sdennis Exp $ */
+/* $Id: command.h,v 1.6 2001-03-31 01:54:10 sdennis Exp $ */
 
 #ifndef __COMMAND_H
 #define __COMMAND_H
@@ -261,12 +261,14 @@ typedef struct
 #define CA_ADMIN      0x00000080  /* Wizard or royal */
 #define CA_ROBOT      0x00000100  /* Robots only */
 #define CA_ANNOUNCE   0x00000200  /* Announce Power */
+#define CA_UNINS      0x00000400  /* Uninspected players ONLY */
 
 #define CA_NO_HAVEN   0x00001000  /* Not by HAVEN players */
 #define CA_NO_ROBOT   0x00002000  /* Not by ROBOT players */
 #define CA_NO_SLAVE   0x00004000  /* Not by SLAVE players */
 #define CA_NO_SUSPECT 0x00008000  /* Not by SUSPECT players */
 #define CA_NO_GUEST   0x00010000  /* Not by GUEST players */
+#define CA_NO_UNINS   0x00020000  /* Not by UNINSPECTED players */
 
 #define CA_MARKER0    0x00002000
 #define CA_MARKER1    0x00004000
