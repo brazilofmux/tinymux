@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.37 2002-09-11 23:21:35 sdennis Exp $
+// $Id: mail.cpp,v 1.38 2002-09-11 23:24:20 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2175,7 +2175,8 @@ static char *get_folder_name(dbref player, int fld)
     if (old)
     {
         r = old + strlen(pat);
-        while (*r != ':')
+        while (  *r
+              && *r != ':')
         {
             r++;
         }
