@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.88 2001-08-25 21:08:36 sdennis Exp $
+// $Id: functions.cpp,v 1.89 2001-09-09 02:32:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -575,15 +575,42 @@ char *TinyFPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "0", "0" };
 
 #ifdef WIN32
 #define IEEE_MASK_SIGN     0x8000000000000000ui64
-#define IEEE_MASK_EXPONENT 0x7FF0000000000000i64
-#define IEEE_MASK_MANTISSA 0x000FFFFFFFFFFFFFi64
-#define IEEE_MASK_QNAN     0x0008000000000000i64
+#define IEEE_MASK_EXPONENT 0x7FF0000000000000ui64
+#define IEEE_MASK_MANTISSA 0x000FFFFFFFFFFFFFui64
+#define IEEE_MASK_QNAN     0x0008000000000000ui64
 #else
 #define IEEE_MASK_SIGN     0x8000000000000000ull
 #define IEEE_MASK_EXPONENT 0x7FF0000000000000ull
 #define IEEE_MASK_MANTISSA 0x000FFFFFFFFFFFFFull
 #define IEEE_MASK_QNAN     0x0008000000000000ull
 #endif
+
+#define ARBITRARY_NUMBER 1
+#define IEEE_MAKE_TABLESIZE 5
+typedef union
+{
+    INT64  i64;
+    double d;
+} SpecialFloatUnion;
+
+// We return a Quiet NAN when a Signalling NAN is requested because
+// any operation on a Signalling NAN will result in a Quiet NAN anyway.
+// MUX doesn't catch SIGFPE, but if it did, a Signalling NAN would
+// generate a SIGFPE.
+//
+SpecialFloatUnion SpecialFloatTable[IEEE_MAKE_TABLESIZE] =
+{
+    0, // Unused.
+    IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER,
+    IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER,
+    IEEE_MASK_EXPONENT,
+    IEEE_MASK_EXPONENT | IEEE_MASK_SIGN
+};
+
+double MakeSpecialFloat(int iWhich)
+{
+    return SpecialFloatTable[iWhich].d;
+}
 
 static int Tiny_fpclass(double result)
 {

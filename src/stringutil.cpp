@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.47 2001-09-08 19:25:47 sdennis Exp $
+// $Id: stringutil.cpp,v 1.48 2001-09-09 02:32:17 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2125,6 +2125,8 @@ INT64 Tiny_atoi64(const char *pString)
     return sum;
 }
 
+#ifndef STANDALONE
+
 // Floating-point strings match one of the following patterns:
 //
 // [+\-]?[0-9]?.[0-9]+([eE][+\-]?[0-9]{1,3})?
@@ -2150,10 +2152,6 @@ typedef struct
 
 } PARSE_FLOAT_RESULT;
 
-#define PFR_INF 1
-#define PFR_IND 2
-#define PFR_NAN 3
-
 BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
 {
     // Parse Input
@@ -2174,7 +2172,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
             pfr->iLeadingSign = '-';
             str++;
         }
-        else if (*str == '+');
+        else if (*str == '+')
         {
             pfr->iLeadingSign = '+';
             str++;
@@ -2198,7 +2196,14 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
                     {
                         // Inf
                         //
-                        pfr->iString = PFR_INF;
+                        if (pfr->iLeadingSign == '-')
+                        {
+                            pfr->iString = IEEE_MAKE_NINF;
+                        }
+                        else
+                        {
+                            pfr->iString = IEEE_MAKE_PINF;
+                        }
                         str += 3;
                         goto LastSpaces;
                     }
@@ -2206,7 +2211,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
                     {
                         // Ind
                         //
-                        pfr->iString = PFR_IND;
+                        pfr->iString = IEEE_MAKE_IND;
                         str += 3;
                         goto LastSpaces;
                     }
@@ -2224,7 +2229,7 @@ BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
                     {
                         // Nan
                         //
-                        pfr->iString = PFR_NAN;
+                        pfr->iString = IEEE_MAKE_NAN;
                         str += 3;
                         goto LastSpaces;
                     }
@@ -2335,10 +2340,14 @@ double Tiny_atof(char *szString)
 
     if (pfr.iString)
     {
-        // TODO: Return the double value which corresponds to the
+        // Return the double value which corresponds to the
         // string when HAVE_IEEE_FORMAT.
         //
-        return 0.0;
+#ifdef HAVE_IEEE_FP_FORMAT
+        return MakeSpecialFloat(pfr.iString);
+#else
+        reurn 0.0;
+#endif
     }
 
     // See if we can shortcut the decoding process.
@@ -2531,6 +2540,8 @@ BOOL is_number(char *str)
     //
     return (*str ? FALSE : TRUE);
 }
+
+#endif
 
 // Tiny_StrTokString, Tiny_StrTokControl, Tiny_StrTokParse.
 //
