@@ -5909,7 +5909,7 @@ FUNCTION CLASSES (continued)
                              OBJ OBJEVAL OBJMEM ORFLAGS OWNER PARENT PMATCH
                              POSS S SUBJ TYPE U UDEFAULT ULOCAL V VISIBLE XGET
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNTOTAL
-                             CTIME DOING FINDABLE IDLE LWHO PLAYMEM PORTS
+                             CTIME DOING FINDABLE HOST IDLE LWHO PLAYMEM PORTS
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ
   Realms:                    CANSEE
   Side-Effect Functions:     EMIT LINK OEMIT PEMIT REMIT TEL
@@ -5948,43 +5948,43 @@ FUNCTION LIST
     FLAGS()     FLOOR()     FLOORDIV()  FOLD()      FOREACH()   FULLNAME()
     GET()       GET_EVAL()  GRAB()      GREP()      GREPI()     GT()
     GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()
-    HOME()      IABS()      IADD()      IDIV()      IDLE()      IFELSE()
-    ILEV()      IMUL()      INC()       INDEX()     INSERT()    INZONE()
-    ISDBREF()   ISIGN()     ISNUM()     ISUB()      ISWORD()    ITER()
-    ITEMS()     LADD()      LAST()      LATTR()     LATTRCMDS() LCMDS()
-    LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LINK()
-    LIST()      LIT()       LJUST()     LN()        LNUM()      LOC()
+    HOME()      HOST()      IABS()      IADD()      IDIV()      IDLE()
+    IFELSE()    ILEV()      IMUL()      INC()       INDEX()     INSERT()
+    INZONE()    ISDBREF()   ISIGN()     ISNUM()     ISUB()      ISWORD()
+    ITER()      ITEMS()     LADD()      LAST()      LATTR()     LATTRCMDS()
+    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()
+    LINK()      LIST()      LIT()       LJUST()     LN()        LNUM()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    LOCALIZE()  LOCATE()    LOCK()      LOG()       LPARENT()   LPOS()
-    LRAND()     LROOMS()    LSTACK()    LT()        LTE()       LWHO()
-    NULL()      MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()
-    MAX()       MEMBER()    MERGE()     MID()       MIN()       MIX()
-    MOD()       MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()
-    NAME()      NEARBY()    NEQ()       NEXT()      NOT()       NUM()
-    OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORFLAGS()
-    OWNER()     PACK()      PARENT()    PARSE()     PEEK()      PEMIT()
-    PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()
-    POP()       PORTS()     POS()       POSS()      POWER()     PUSH()
-    R()         RAND()      REGMATCH()  REMAINDER() REMIT()     REMOVE()
-    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()
-    RJUST()     RLOC()      ROOM()      ROUND()     S()         SCRAMBLE()
-    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
-    SETQ()      SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()
-    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
-    SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME()
-    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
-    SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()
-    TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()
-    TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()
-    UNPACK()    V()         VADD()      VALID()     VCROSS()    VDIM()
-    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
-    VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()
-    XOR()       ZFUN()      ZONE()      ZWHO()
+    LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()       LPARENT()
+    LPOS()      LRAND()     LROOMS()    LSTACK()    LT()        LTE()
+    LWHO()      NULL()      MAIL()      MAILFROM()  MAP()       MATCH()
+    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
+    MIX()       MOD()       MONEY()     MOTD()      MUDNAME()   MUL()
+    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
+    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()
+    ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()     PEEK()
+    PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()
+    POLL()      POP()       PORTS()     POS()       POSS()      POWER()
+    PUSH()      R()         RAND()      REGMATCH()  REMAINDER() REMIT()
+    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
+    RIGHT()     RJUST()     RLOC()      ROOM()      ROUND()     S()
+    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
+    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
+    SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()
+    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS()
+    STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()
+    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
+    TABLE()     TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE()
+    TRIM()      TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()
+    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
+    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
+    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME()
+    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -6415,6 +6415,19 @@ HOMES
   home with '@link <dir>=home'.  Drop-tos can also be set to 'home'.
 
   Related Topics: @link, DROP-TO, STICKY.
+
+& HOST()
+HOST()
+
+  FUNCTION: host(<player|port>)
+
+  Returns the hostname for <player|port> as seen on the SESSION report.
+
+  If <player|port> is numeric, it's taken as a port number.  Otherwise, it's
+  treated as a player name.  If the named player is connected more than once,
+  the first connection is returned.
+
+  Related Topics: SESSION.
 
 & HSS
 HSS
