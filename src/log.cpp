@@ -1,10 +1,8 @@
-/*
- * log.c - logging routines 
- */
-/*
- * $Id: log.cpp,v 1.3 2000-10-10 23:06:47 sdennis Exp $ 
- */
-
+//
+// log.cpp - logging routines
+//
+// $Id: log.cpp,v 1.4 2001-06-29 18:18:27 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -53,7 +51,7 @@ NAMETAB logoptions_nametab[] =
     { NULL,                     0,  0,  0}
 };
 
-#endif
+#endif // !STANDALONE
 
 /*
  * ---------------------------------------------------------------------------
@@ -64,7 +62,7 @@ NAMETAB logoptions_nametab[] =
 int start_log(const char *primary, const char *secondary)
 {
     /*
-     * Format the timestamp 
+     * Format the timestamp
      */
 
     char buffer[256];
@@ -81,14 +79,14 @@ int start_log(const char *primary, const char *secondary)
 
 #ifndef STANDALONE
     /*
-     * Write the header to the log 
+     * Write the header to the log
      */
 
     if (secondary && *secondary)
         Log.printf("%s%s %3s/%-5s: ", buffer, mudconf.mud_name, primary, secondary);
     else
         Log.printf("%s%s %-9s: ", buffer, mudconf.mud_name, primary);
-#endif
+#endif // !STANDALONE
 
     return 1;
 }
@@ -100,7 +98,7 @@ int start_log(const char *primary, const char *secondary)
 
 void NDECL(end_log)
 {
-    Log.WriteString("\n");
+    Log.WriteString(ENDLINE);
     Log.Flush();
 }
 
@@ -125,8 +123,8 @@ void log_perror(const char *primary, const char *secondary, const char *extra, c
     Log.WriteString(": ");
     Log.WriteString(strerror(errno));
 #ifndef WIN32
-    Log.WriteString("\n");
-#endif
+    Log.WriteString(ENDLINE);
+#endif // !WIN32
     Log.Flush();
 }
 
@@ -154,7 +152,9 @@ void log_number(int num)
 
 void log_name(dbref target)
 {
-#ifndef STANDALONE
+#ifdef STANDALONE
+    Log.printf("%s(#%d)", Name(target), target);
+#else // STANDALONE
     char *tp;
 
     if ((mudconf.log_info & LOGOPT_FLAGS) != 0)
@@ -172,9 +172,7 @@ void log_name(dbref target)
         Log.printf("[%s]", strip_ansi(tp));
         free_lbuf(tp);
     }
-#else
-    Log.printf("%s(#%d)", Name(target), target);
-#endif
+#endif // STANDALONE
     return;
 }
 
@@ -305,8 +303,8 @@ void do_log(dbref player, dbref cause, int key, char *whichlog, char *logtext)
 
     // Okay, at this point, the file exists.
     //
-    fprintf(hFile, "%s\n", pMessage);
+    fprintf(hFile, "%s" ENDLINE, pMessage);
     fclose(hFile);                        /* Send and close... */
     free_lbuf(pFullName);
 }
-#endif
+#endif // !STANDALONE
