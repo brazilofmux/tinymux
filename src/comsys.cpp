@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.22 2001-02-11 05:23:48 sdennis Exp $
+// * $Id: comsys.cpp,v 1.23 2001-02-12 19:50:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1453,11 +1453,47 @@ void do_createchannel(dbref player, dbref cause, int key, char *channel)
     newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
     ISOUTOFMEMORY(newchannel);
     
-    strncpy(newchannel->name, channel, MAX_CHANNEL_LEN);
-    newchannel->name[MAX_CHANNEL_LEN] = '\0';
+    int   vwChannel;
+    unsigned int nNameNoANSI;
+    char *pNameNoANSI;
+    char Buffer[MAX_HEADER_LEN];
+    int nChannel = ANSI_TruncateToField(channel, sizeof(Buffer),
+        Buffer, sizeof(Buffer), &vwChannel, ANSI_ENDGOAL_NORMAL);
+    if (nChannel == vwChannel)
+    {
+        // The channel name does not contain ANSI, so first, we add some to
+        // get the header.
+        //
+        const int nMax = MAX_HEADER_LEN - (sizeof(ANSI_HILITE)-1)
+                       - (sizeof(ANSI_NORMAL)-1) - 2;
+        if (nChannel > nMax)
+        {
+            nChannel = nMax;
+        }
+        Buffer[nChannel] = '\0';
+        sprintf(newchannel->header, "%s[%s]%s", ANSI_HILITE, Buffer,
+            ANSI_NORMAL);
+
+        // Then, we use the non-ANSI part for the name.
+        //
+        nNameNoANSI = nChannel;
+        pNameNoANSI = Buffer;
+    }
+    else
+    {
+        // The given channel name does contain ANSI.
+        //
+        memcpy(newchannel->header, Buffer, nChannel+1);
+        pNameNoANSI = strip_ansi(Buffer, &nNameNoANSI);
+    }
+    if (nNameNoANSI > MAX_CHANNEL_LEN)
+    {
+        nNameNoANSI = MAX_CHANNEL_LEN;
+    }
+    memcpy(newchannel->name, pNameNoANSI, nNameNoANSI);
+    newchannel->name[nNameNoANSI] = '\0';
+
     newchannel->type = 127;
-    sprintf(newchannel->header, "%s[%s]%s", ANSI_HILITE, newchannel->name,
-        ANSI_NORMAL);
     newchannel->temp1 = 0;
     newchannel->temp2 = 0;
     newchannel->charge = 0;
@@ -1474,7 +1510,9 @@ void do_createchannel(dbref player, dbref cause, int key, char *channel)
     
     hashaddLEN(newchannel->name, strlen(newchannel->name), (int *)newchannel, &mudstate.channel_htab);
     
-    raw_notify(player, tprintf("Channel %s created.", channel));
+    // Report the channel creation using non-ANSI name.
+    //
+    raw_notify(player, tprintf("Channel %s created.", newchannel->name));
 }
 
 void do_destroychannel(dbref player, dbref cause, int key, char *channel)
