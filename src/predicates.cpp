@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.47 2002-04-14 20:29:10 sdennis Exp $
+// $Id: predicates.cpp,v 1.48 2002-04-14 21:23:52 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1063,6 +1063,7 @@ void do_prog
             ap = atr_num(atr);
             if (  God(player)
                || (  !God(thing)
+                  && ap
                   && See_attr(player, thing, ap, aowner, aflags)
                   && (Wizard(player) || (aowner == Owner(player)))))
             {
@@ -1479,7 +1480,8 @@ int get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *err
 
     free_lbuf(tbuf);
     *attr = atr_num(anum);
-    if (!(*attr)) {
+    if (!(*attr))
+    {
         safe_str("#-1 LOCK NOT FOUND", errmsg, bufc);
         return 0;
     }
