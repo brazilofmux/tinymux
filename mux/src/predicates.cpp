@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.47 2003-01-20 02:38:17 jake Exp $
+// $Id: predicates.cpp,v 1.48 2003-01-20 05:26:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -369,6 +369,7 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
 char *MakeCanonicalExitName(const char *pName, int *pnName, BOOL *pbValid)
 {
     static char Buf[MBUF_SIZE];
+    static char Out[MBUF_SIZE];
 
     *pnName = 0;
     *pbValid = FALSE;
@@ -378,59 +379,99 @@ char *MakeCanonicalExitName(const char *pName, int *pnName, BOOL *pbValid)
         return NULL;
     }
 
-    // Build up what the real name would be. If we pass all the
-    // checks, this is what we will return as a result.
+    // Build the non-ANSI version so that we can parse for semicolons
+    // safely.
     //
-    int nVisualWidth;
-    int nBuf = ANSI_TruncateToField(pName, sizeof(Buf), Buf, MBUF_SIZE,
-        &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+    char *pStripped = strip_ansi(pName);
+    char *pBuf = Buf;
+    safe_mb_str(pStripped, Buf, &pBuf);
+    *pBuf = '\0';
 
-    // Disallow pure ANSI names. There must be at least -something-
-    // visible.
-    //
-    if (nVisualWidth <= 0)
+    int nBuf = pBuf - Buf;
+    pBuf = Buf;
+
+    BOOL bHaveDisplay = FALSE;
+
+    char *pOut = Out;
+
+    for (; nBuf;)
     {
-        return NULL;
-    }
-
-    // Get the stripped version (Visible parts without color info).
-    //
-    unsigned int nStripped;
-    char *pStripped = strip_ansi(Buf, &nStripped);
-
-    // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
-    // as the first character, or SPACE as the last character
-    //
-    if (  strchr("*!#", *pStripped)
-       || Tiny_IsSpace[(unsigned char)pStripped[0]]
-       || Tiny_IsSpace[(unsigned char)pStripped[nStripped-1]])
-    {
-        return NULL;
-    }
-
-    // Only printable characters besides ARG_DELIMITER, AND_TOKEN,
-    // and OR_TOKEN are allowed.
-    //
-    for (unsigned int i = 0; i < nStripped; i++)
-    {
-        if (!Tiny_IsObjectNameCharacter[(unsigned char)pStripped[i]])
+        // Build (q,n) as the next segment.  Leave the the remaining segments as
+        // (pBuf,nBuf).
+        //
+        char *q = strchr(pBuf, ';');
+        size_t n;
+        if (q)
         {
-            return NULL;
+            *q = '\0';
+            n = q - pBuf;
+            q = pBuf;
+            pBuf += n + 1;
+            nBuf -= n + 1;
+        }
+        else
+        {
+            n = nBuf;
+            q = pBuf;
+            pBuf += nBuf;
+            nBuf = 0;
+        }
+
+        if (bHaveDisplay)
+        {
+            // We already have the displayable name. We don't allow ANSI in
+            // any segment but the first, so we can pull them directly from
+            // the stripped buffer.
+            //
+            int  nN;
+            BOOL bN;
+            char *pN = MakeCanonicalObjectName(q, &nN, &bN);
+            if (  bN
+               && nN < MBUF_SIZE - (pOut - Out) - 1)
+            {
+                safe_mb_chr(';', Out, &pOut);
+                safe_mb_str(pN, Out, &pOut);
+            }
+        }
+        else
+        {
+            // We don't have the displayable name, yet. We know where the next
+            // semicolon occurs, so we limit the visible width of the
+            // truncation to that.  We should be picking up all the visible
+            // characters leading up to the semicolon, but not including the
+            // semi-colon.
+            //
+            int vw;
+            int nN = ANSI_TruncateToField(pName, sizeof(Out), Out, n, &vw,
+                ANSI_ENDGOAL_NORMAL);
+
+            // vw should always be equal to n, but we'll just make sure.
+            //
+            if (vw == n)
+            {
+                int  nN;
+                BOOL bN;
+                char *pN = MakeCanonicalObjectName(Out, &nN, &bN);
+                if (  bN
+                   && nN <= MBUF_SIZE - 1)
+                {
+                    safe_mb_str(pN, Out, &pOut);
+                    bHaveDisplay = TRUE;
+                }
+            }
         }
     }
-
-    // Special names are specifically dis-allowed.
-    //
-    if (  (nStripped == 2 && memcmp("me", pStripped, 2) == 0)
-       || (nStripped == 4 && (  memcmp("home", pStripped, 4) == 0
-                             || memcmp("here", pStripped, 4) == 0)))
+    if (bHaveDisplay)
+    {
+        *pnName = pOut - Out;
+        *pbValid = TRUE;
+        *pOut = '\0';
+        return Out;
+    }
+    else
     {
         return NULL;
     }
-
-    *pnName = nBuf;
-    *pbValid = TRUE;
-    return Buf;
 }
 
 // The following function validates the player name. ANSI is not
