@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.18 2000-11-17 23:33:04 sdennis Exp $
+// $Id: eval.cpp,v 1.19 2001-04-11 19:29:48 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1651,7 +1651,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                             //
                             // Last command
                             //
-            				safe_str(mudstate.curr_cmd, buff, bufc);
+                            safe_str(mudstate.curr_cmd, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
