@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.23 2002-05-02 15:59:34 sdennis Exp $
+// $Id: timeutil.cpp,v 1.24 2002-05-28 17:53:35 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1233,9 +1233,9 @@ BOOL LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
     ft->iSecond = (int)(ns100 / FACTOR_100NS_PER_SECOND);
     ns100 = ns100 % FACTOR_100NS_PER_SECOND;
 
-    ft->iMillisecond = (int)(ns100 % FACTOR_100NS_PER_MILLISECOND);
+    ft->iMillisecond = (int)(ns100 / FACTOR_100NS_PER_MILLISECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MILLISECOND;
-    ft->iMicrosecond = (int)(ns100 % FACTOR_100NS_PER_MICROSECOND);
+    ft->iMicrosecond = (int)(ns100 / FACTOR_100NS_PER_MICROSECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MICROSECOND;
     ft->iNanosecond = (int)(ns100 * FACTOR_NANOSECONDS_PER_100NS);
 
