@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.15 2003-06-24 14:11:42 sdennis Exp $
+// $Id: comsys.cpp,v 1.16 2003-06-24 14:51:52 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -647,8 +647,8 @@ void load_comsystem(FILE *fp)
                     int iComTitleStatus;
                     fscanf(fp, "%d %d %d\n", &(t_user.who), &iUserIsOn,
                         &iComTitleStatus);
-                    t_user.bUserIsOn = (bool)iUserIsOn;
-                    t_user.ComTitleStatus = (bool)iComTitleStatus;
+                    t_user.bUserIsOn = (iUserIsOn ? true : false);
+                    t_user.ComTitleStatus = (iComTitleStatus ? true : false);
                 }
                 else
                 {
@@ -656,13 +656,13 @@ void load_comsystem(FILE *fp)
                     if (ver)
                     {
                         fscanf(fp, "%d %d\n", &(t_user.who), &iUserIsOn);
-                        t_user.bUserIsOn = (bool)iUserIsOn;
+                        t_user.bUserIsOn = (iUserIsOn ? true : false);
                     }
                     else
                     {
                         fscanf(fp, "%d %d %d", &(t_user.who), &(dummy), &(dummy));
                         fscanf(fp, "%d\n", &iUserIsOn);
-                        t_user.bUserIsOn = (bool)iUserIsOn;
+                        t_user.bUserIsOn = (iUserIsOn ? true : false);
                     }
                 }
 
