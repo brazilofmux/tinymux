@@ -956,7 +956,7 @@ Related Topics: @name.
 
   The second form copies <attr> to the list of objects, with the name
   <attr>. The third form copies <attr> from the object that executes the
-  @cpattr, to the object-attribute pairs in the list. Finally, the third
+  @cpattr, to the object-attribute pairs in the list. Finally, the fourth
   form copies <attr> from the object that executes the @cpattr to the
   objects in the list, with the name <attr>.
 
@@ -3369,7 +3369,7 @@ Related Topics: @name.
 
   Sets the message that someone sees when they try to use object but fail
   the object's use lock.  Note that the other functions controlled by the use
-  lock (paying, listening, and $-commands) do not trigger Oufail.
+  lock (paying, listening, and $-commands) do not trigger ufail.
 
   Example: @ufail robot = The robot pointedly ignores you.
 
@@ -6160,12 +6160,12 @@ GOING
 
   FLAG: GOING(G)  ()
 
-  Used internally for the @destroy command, it is set on
-  rooms that are set to be destroyed. In the event that a player
-  decides they don't want to destroy the room after all then they can
-  unset it.
+  Used internally for the @destroy command, it is set on objects that are set
+  to be destroyed.  In the event that a player decides before the next @dbck
+  to spare the object from destruction, they can accomplish this by reseting
+  the object's GOING flag.
 
-  Related Topics:
+  Related Topics: @destroy, @dbck (in wizhelp).
 
 & GOTO
 GOTO
@@ -7384,7 +7384,7 @@ LNUM()
     > say lnum(3,7)
     You say "3 4 5 6 7"
     > say lnum(4,-2,|)
-    You say "4|3|1|0|-1|-2"
+    You say "4|3|2|1|0|-1|-2"
     > say lnum(2,6,@@)
     You say "23456"
 
@@ -9133,7 +9133,7 @@ POLL()
 & POP()
 POP()
 
-  FUNCTION: pop([<object>], [<position>])
+  FUNCTION: pop([<object>[,<position>]])
 
   pop() returns an item from the caller's stack and removes it from
   the stack. If <position> is specified, it returns the item from that
@@ -9167,7 +9167,7 @@ POS()
   FUNCTION: pos(<string1>,<string2>)
 
   This function returns the position that string1 begins in string2, with the
-  first position being 1.  If string1 is not in string2, then it returns -1.
+  first position being 1.  If string1 is not in string2, then it returns #-1.
 
   Example:
     > think pos(man,superman)
