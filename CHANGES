@@ -125,6 +125,7 @@ Feature Additions:
      @restart either, but a prompt abort.
  --  Added CRC32, PACK, and UNPACK softcode functions.
  --  Included changes from port to Tru64 Unix.
+ --  Can now use @set and set() to set multiple flags at a time.
 
 
 Bug Fixes:
@@ -370,6 +371,7 @@ Bug Fixes:
  --  Config commands didn't accept upper-case flag names.
  --  Bug #665 - @mail/nuke corrupted the post office.
  --  Bug #390 - @mail without a body isn't sent.
+ --  Flag names in configuration options can now be upper or lower case.
 
 
 Performance Enhancements:
