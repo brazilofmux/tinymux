@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.33 2001-03-31 01:17:06 sdennis Exp $
+// * $Id: comsys.cpp,v 1.34 2001-03-31 01:21:36 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -794,7 +794,7 @@ void save_comsystem(FILE *fp)
     }
 }
 
-char *StartBuildChannelPose
+char *StartBuildChannelMessage
 (
     BOOL bSpoof,
     const char *pHeader,
@@ -861,7 +861,7 @@ char *StartBuildChannelPose
     return mess;    
 }
 
-void EndBuildChannelPose(char *mess)
+void EndBuildChannelMessage(char *mess)
 {
     free_lbuf(mess);
 }
@@ -926,10 +926,10 @@ void do_processcom(dbref player, char *arg1, char *arg2)
             giveto(ch->charge_who, ch->charge);
         }
 
-        char *mess = StartBuildChannelPose((ch->type & CHANNEL_SPOOF) != 0,
+        char *mess = StartBuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
             ch->header, user, arg2);
         do_comsend(ch, mess);
-        EndBuildChannelPose(mess);
+        EndBuildChannelMessage(mess);
     }
 }
 
@@ -1011,10 +1011,10 @@ void do_joinchannel(dbref player, struct channel *ch)
     
     if (!Dark(player))
     {
-        char *mess = StartBuildChannelPose((ch->type & CHANNEL_SPOOF) != 0,
+        char *mess = StartBuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
             ch->header, user, ":has joined this channel.");
         do_comsend(ch, mess);
-        EndBuildChannelPose(mess);
+        EndBuildChannelMessage(mess);
     }
 }
 
@@ -1024,10 +1024,10 @@ void do_leavechannel(dbref player, struct channel *ch)
     raw_notify(player, tprintf("You have left channel %s.", ch->name));
     if ((user->bUserIsOn) && (!Dark(player)))
     { 
-        char *mess = StartBuildChannelPose((ch->type & CHANNEL_SPOOF) != 0,
+        char *mess = StartBuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
             ch->header, user, ":has left this channel.");
         do_comsend(ch, mess);
-        EndBuildChannelPose(mess);
+        EndBuildChannelMessage(mess);
     }
     user->bUserIsOn = 0;
 }
@@ -1376,11 +1376,11 @@ void do_delcomchannel(dbref player, char *channel)
                 do_comdisconnectchannel(player, channel);
                 if (user->bUserIsOn && (!Dark(player)))
                 {
-                    char *mess = StartBuildChannelPose(
+                    char *mess = StartBuildChannelMessage(
                         (ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
                         ":has left this channel.");
                     do_comsend(ch, mess);
-                    EndBuildChannelPose(mess);
+                    EndBuildChannelMessage(mess);
                 }
                 raw_notify(player, tprintf("You have left channel %s.", channel));
                 
@@ -1579,11 +1579,11 @@ void do_cleanupchannels(void)
                         //
                         if (!Dark(cuVictim->who))
                         {
-                            char *mess = StartBuildChannelPose(cuVictim->who,
+                            char *mess = StartBuildChannelMessage(cuVictim->who,
                                 (ch->type & CHANNEL_SPOOF) != 0, ch->header, cuVictim->title,
                                 Name(cuVictim->who), ":is booted off the channel by the system.");
                             do_comsend(ch, mess);
-                            EndBuildChannelPose(mess);
+                            EndBuildChannelMessage(mess);
                         }
                         raw_notify(cuVictim->who, tprintf("The system has booted you off channel %s.", ch->name));
 
@@ -1872,10 +1872,10 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
     
     if ((ch->type & CHANNEL_LOUD) && (cu->bUserIsOn) && (!Dark(player)))
     {
-        char *mess = StartBuildChannelPose((ch->type & CHANNEL_SPOOF) != 0,
+        char *mess = StartBuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
             ch->header, cu, ":has disconnected.");
         do_comsend(ch, mess);
-        EndBuildChannelPose(mess);
+        EndBuildChannelMessage(mess);
     }
 }
 
@@ -1890,10 +1890,10 @@ void do_comconnectraw_notify(dbref player, char *chan)
     
     if ((ch->type & CHANNEL_LOUD) && (cu->bUserIsOn) && (!Dark(player)))
     {
-        char *mess = StartBuildChannelPose((ch->type & CHANNEL_SPOOF) != 0,
+        char *mess = StartBuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
             ch->header, cu, ":has connected.");
         do_comsend(ch, mess);
-        EndBuildChannelPose(mess);
+        EndBuildChannelMessage(mess);
     }
 }
 
@@ -2368,10 +2368,10 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
         return;
     }
 
-    char *mess1 = StartBuildChannelPose((ch->type & CHANNEL_SPOOF) != 0,
+    char *mess1 = StartBuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
         ch->header, user, ":boots");
 
-    char *mess2 = StartBuildChannelPose((ch->type & CHANNEL_SPOOF) != 0, "",
+    char *mess2 = StartBuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, "",
         user, ":off the channel.");
 
     char buff[LBUF_SIZE];
@@ -2381,8 +2381,8 @@ void do_chboot(dbref player, dbref cause, int key, char *channel, char *victim)
     *bp = '\0';
 
     do_comsend(ch, buff);
-    EndBuildChannelPose(mess1);
-    EndBuildChannelPose(mess2);
+    EndBuildChannelMessage(mess1);
+    EndBuildChannelMessage(mess2);
 
     do_delcomchannel(thing, channel);
 }
