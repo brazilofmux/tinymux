@@ -129,6 +129,7 @@ Feature Additions:
     a valid object name on its own. Also, ANSI is only allowed in the first
     segment. ANSI color in other parts of the name is stripped.
 
+
 Bug Fixes:
 ~~~~~~~~~
  -- inet_addr() re-write to handle netmask of 255.255.255.255 and Berkeley
@@ -342,7 +343,9 @@ Bug Fixes:
  -- Alierak reported that SCRAMBLE still scrambles characters off the end of
     the buffer.  He provided a patch that fixed that while not giving a flat
     distribution.  This final check-in fixed both issues.
-
+ -- Player names weren't validated properly. Instead of 
+    Tiny_IsPlayerNameCharacter[], the code was using 
+    Tiny_IsObjectNameCharacter[].
 
 
 Performance Enhancements:
@@ -380,9 +383,7 @@ Performance Enhancements:
  -- @backup now allows the backup script to unload a flatfile instead of
     having the server do it. Previously, the game server unloaded a flatfile,
     and then the backup script unloaded the flatfile again.
- -- Player names weren't validated properly. Instead of 
-    Tiny_IsPlayerNameCharacter[], the code was using 
-    Tiny_IsObjectNameCharacter[].
+
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
@@ -394,6 +395,7 @@ Cosmetic Changes:
  -- Help for pmatch changed to reflect that the #-2 result was removed long ago.
  -- @wall now adds comma after shouts. TM3 found first.
  -- Alierak fix for typos in NOTES.
+
 
 Miscellaneous:
 ~~~~~~~~~~~~~
