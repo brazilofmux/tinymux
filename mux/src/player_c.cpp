@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.8 2005-01-04 20:57:18 sdennis Exp $
+// $Id: player_c.cpp,v 1.9 2005-01-04 21:58:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -22,10 +22,8 @@ typedef struct player_cache {
 CHashTable pcache_htab;
 PCACHE *pcache_head;
 
-#define PF_DEAD     0x0001
 #define PF_REF      0x0002
 #define PF_MONEY_CH 0x0004
-#define PF_QMAX_CH  0x0008
 
 void pcache_init(void)
 {
@@ -45,19 +43,17 @@ static void pcache_reload1(dbref player, PCACHE *pp)
         pp->money = 0;
     }
 
+    int m = -1;
     cp = atr_get_raw(player, A_QUEUEMAX);
     if (cp && *cp)
     {
-        pp->qmax = mux_atol(cp);
+        m = mux_atol(cp);
+        if (m < 0)
+        {
+            m = -1;
+        }
     }
-    else if (!Wizard(player))
-    {
-        pp->qmax = -1;
-    }
-    else
-    {
-        pp->qmax = mudconf.queuemax;
-    }
+    pp->qmax = m;
 }
 
 
@@ -98,40 +94,33 @@ static void pcache_save(PCACHE *pp)
 {
     IBUF tbuf;
 
-    if (pp->cflags & PF_DEAD)
-    {
-        return;
-    }
     if (pp->cflags & PF_MONEY_CH)
     {
         mux_ltoa(pp->money, tbuf);
         atr_add_raw(pp->player, A_MONEY, tbuf);
     }
-    if (pp->cflags & PF_QMAX_CH)
-    {
-        mux_ltoa(pp->qmax, tbuf);
-        atr_add_raw(pp->player, A_QUEUEMAX, tbuf);
-    }
-    pp->cflags &= ~(PF_MONEY_CH | PF_QMAX_CH);
+    pp->cflags &= ~PF_MONEY_CH;
 }
 
 void pcache_trim(void)
 {
     PCACHE *pp = pcache_head;
-    PCACHE *pplast = NULL;
     while (pp)
     {
-        if (  !(pp->cflags & PF_DEAD)
-           && (  pp->queue
-              || (pp->cflags & PF_REF)))
+        PCACHE *pplast = NULL;
+        PCACHE *ppnext = pp->next;
+        if (  pp->queue
+           || (pp->cflags & PF_REF))
         {
+            // This entry either has outstanding commands in the queue or we need to let it age.
+            //
             pp->cflags &= ~PF_REF;
             pplast = pp;
-            pp = pp->next;
         }
         else
         {
-            PCACHE *ppnext = pp->next;
+            // Unlink and destroy this entry.
+            //
             if (pplast)
             {
                 pplast->next = ppnext;
@@ -140,14 +129,12 @@ void pcache_trim(void)
             {
                 pcache_head = ppnext;
             }
-            if (!(pp->cflags & PF_DEAD))
-            {
-                pcache_save(pp);
-                hashdeleteLEN(&(pp->player), sizeof(pp->player), &pcache_htab);
-            }
+
+            pcache_save(pp);
+            hashdeleteLEN(&(pp->player), sizeof(pp->player), &pcache_htab);
             free_pcache(pp);
-            pp = ppnext;
         }
+        pp = ppnext;
     }
 }
 
@@ -189,10 +176,13 @@ int QueueMax(dbref player)
             }
             else
             {
-                m = mudstate.db_top + 1;
-                if (m < mudconf.queuemax)
+                // @queuemax was not valid so we use the game-wide limit.
+                //
+                m = mudconf.queuemax;
+                if (  Wizard(player)
+                   && m < mudstate.db_top + 1)
                 {
-                    m = mudconf.queuemax;
+                    m = mudstate.db_top + 1;
                 }
             }
         }
@@ -202,19 +192,21 @@ int QueueMax(dbref player)
 
 int Pennies(dbref obj)
 {
-    if (  !mudstate.bStandAlone
-       && OwnsOthers(obj))
+    if (mudstate.bStandAlone)
+    {
+        const char *cp = atr_get_raw(obj, A_MONEY);
+        if (cp)
+        {
+            return mux_atol(cp);
+        }
+    }
+    else if (OwnsOthers(obj))
     {
         PCACHE *pp = pcache_find(obj);
         if (pp)
         {
             return pp->money;
         }
-    }
-    const char *cp = atr_get_raw(obj, A_MONEY);
-    if (cp)
-    {
-        return mux_atol(cp);
     }
     return 0;
 }
