@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.30 2003-01-20 01:55:25 sdennis Exp $
+// $Id: object.cpp,v 1.31 2003-01-24 06:28:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1050,8 +1050,8 @@ static void check_dead_refs(void)
 #else
                 Log_header_err(i, Location(i), targ, TRUE,
                        "Home", "is invalid.  Cleared.");
-                s_Home(i, new_home(i));
 #endif
+                s_Home(i, new_home(i));
             }
 
             // Check the location.
