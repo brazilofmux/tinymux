@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.36 2004-05-15 01:34:48 sdennis Exp $
+// $Id: game.cpp,v 1.37 2004-05-15 14:31:53 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1374,7 +1374,7 @@ void dump_database(void)
             // We have a forked dump in progress, so we will wait until the
             // child exits.
             //
-            sleep(1);
+            MuxAlarm.Sleep(time_1s);
         }
     }
     mudstate.dumping = true;

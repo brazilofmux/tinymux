@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.20 2004-04-13 06:34:22 sdennis Exp $
+// $Id: svdhash.cpp,v 1.21 2004-05-15 14:31:53 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1022,7 +1022,7 @@ void CHashPage::GetRange
 bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbwrites++;
-    for ( ; ; Sleep(250))
+    for ( ; ; MuxAlarm.Sleep(time_250ms))
     {
         if (SetFilePointer(hFile, oWhere, 0, FILE_BEGIN) == 0xFFFFFFFFUL)
         {
@@ -1047,7 +1047,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbreads++;
     SetFixedPointers();
-    for ( ; ; Sleep(250))
+    for ( ; ; MuxAlarm.Sleep(time_250ms))
     {
         if (SetFilePointer(hFile, oWhere, 0, FILE_BEGIN) == 0xFFFFFFFFUL)
         {
@@ -1074,7 +1074,7 @@ bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
     cs_dbwrites++;
     int cnt = 60;
-    for ( ; cnt; sleep(1), cnt--)
+    for ( ; cnt; MuxAlarm.Sleep(time_1s), cnt--)
     {
         if (lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
@@ -1110,7 +1110,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
     cs_dbreads++;
     SetFixedPointers();
     int cnt = 60;
-    for ( ; cnt; sleep(1), cnt--)
+    for ( ; cnt; MuxAlarm.Sleep(time_1s), cnt--)
     {
         if (lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
@@ -1714,7 +1714,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
                 // We have a forked dump in progress, so we will wait until the
                 // child exits.
                 //
-                sleep(1);
+                MuxAlarm.Sleep(time_1s);
             } while (mudstate.dumping);
         }
 #endif // !WIN32

@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.8 2004-05-15 01:34:48 sdennis Exp $
+// $Id: timer.cpp,v 1.9 2004-05-15 14:31:53 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -124,8 +124,7 @@ void dispatch_CheckEvents(void *pUnused, int iUnused)
     //
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
-    CLinearTimeDelta ltd;
-    ltd.SetSeconds(900);
+    CLinearTimeDelta ltd = time_15m;
     mudstate.events_counter = ltaNow + ltd;
     scheduler.DeferTask(mudstate.events_counter, PRIORITY_SYSTEM, dispatch_CheckEvents, 0, 0);
 }
@@ -136,8 +135,7 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
     char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< cachetick >";
 
-    CLinearTimeDelta ltd;
-    ltd.SetSeconds(0);
+    CLinearTimeDelta ltd = 0;
     if (mudconf.cache_tick_period <= ltd)
     {
         mudconf.cache_tick_period.SetSeconds(1);
@@ -166,8 +164,7 @@ void dispatch_CleanChannels(void *pUnused, int iUnused)
     //
     CLinearTimeAbsolute ltaNextTime;
     ltaNextTime.GetUTC();
-    CLinearTimeDelta ltd;
-    ltd.SetSeconds(900);
+    CLinearTimeDelta ltd = time_15m;
     ltaNextTime += ltd;
     scheduler.DeferTask(ltaNextTime, PRIORITY_SYSTEM, dispatch_CleanChannels, 0, 0);
     mudstate.debug_cmd = cmdsave;
@@ -184,8 +181,7 @@ void dispatch_CalibrateQueryPerformance(void *pUnused, int iUnused)
 {
     CLinearTimeAbsolute ltaNextTime;
     ltaNextTime.GetUTC();
-    CLinearTimeDelta ltd;
-    ltd.SetSeconds(30);
+    CLinearTimeDelta ltd = time_30s;
     ltaNextTime += ltd;
 
     if (CalibrateQueryPerformance())
@@ -222,8 +218,7 @@ void init_timer(void)
 
     // Setup re-occuring Check Events task.
     //
-    ltd.SetSeconds(900);
-    mudstate.events_counter = ltaNow + ltd;
+    mudstate.events_counter = ltaNow + time_15s;
     scheduler.DeferTask(mudstate.events_counter, PRIORITY_SYSTEM, dispatch_CheckEvents, 0, 0);
 
 #ifndef MEMORY_BASED
@@ -240,20 +235,17 @@ void init_timer(void)
 #if 0
     // Setup comsys channel scrubbing.
     //
-    ltd.SetSeconds(45);
-    scheduler.DeferTask(ltaNow+ltd, PRIORITY_SYSTEM, dispatch_CleanChannels, 0, 0);
+    scheduler.DeferTask(ltaNow+time_45s, PRIORITY_SYSTEM, dispatch_CleanChannels, 0, 0);
 #endif // 0
 
     // Setup one-shot task to enable restarting 10 seconds after startmux.
     //
-    ltd.SetSeconds(15);
-    scheduler.DeferTask(ltaNow+ltd, PRIORITY_OBJECT, dispatch_CanRestart, 0, 0);
+    scheduler.DeferTask(ltaNow+time_15s, PRIORITY_OBJECT, dispatch_CanRestart, 0, 0);
 
 #ifdef WIN32
     // Setup Periodic QueryPerformance Calibration.
     //
-    ltd.SetSeconds(30);
-    scheduler.DeferTask(ltaNow+ltd, PRIORITY_SYSTEM,
+    scheduler.DeferTask(ltaNow+time_30s, PRIORITY_SYSTEM,
         dispatch_CalibrateQueryPerformance, 0, 0);
 
 #endif // WIN32

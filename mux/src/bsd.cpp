@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.29 2004-05-15 01:34:48 sdennis Exp $
+// $Id: bsd.cpp,v 1.30 2004-05-15 14:31:53 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -938,8 +938,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
         CLinearTimeAbsolute ltaWakeUp;
         if (!scheduler.WhenNext(&ltaWakeUp))
         {
-            CLinearTimeDelta ltd;
-            ltd.SetSeconds(1800);
+            CLinearTimeDelta ltd = time_30m;
             ltaWakeUp = ltaCurrent + ltd;
         }
         else if (ltaWakeUp < ltaCurrent)
@@ -1136,8 +1135,7 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
         CLinearTimeAbsolute ltaWakeUp;
         if (!scheduler.WhenNext(&ltaWakeUp))
         {
-            CLinearTimeDelta ltd;
-            ltd.SetSeconds(1800);
+            CLinearTimeDelta ltd = time_30m;
             ltaWakeUp = ltaCurrent + ltd;
         }
         else if (ltaWakeUp < ltaCurrent)
@@ -1232,8 +1230,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
         }
         else
         {
-            CLinearTimeDelta ltd;
-            ltd.SetSeconds(1800);
+            CLinearTimeDelta ltd = time_30m;
             ltaWakeUp = ltaCurrent + ltd;
         }
 

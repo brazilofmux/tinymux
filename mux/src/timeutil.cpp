@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.28 2004-05-15 01:34:48 sdennis Exp $
+// $Id: timeutil.cpp,v 1.29 2004-05-15 14:31:53 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -20,6 +20,7 @@
 #include "timeutil.h"
 #include "stringutil.h"
 
+CMuxAlarm MuxAlarm;
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
 
@@ -680,6 +681,11 @@ CLinearTimeAbsolute::CLinearTimeAbsolute(void)
 CLinearTimeDelta::CLinearTimeDelta(void)
 {
     m_tDelta = 0;
+}
+
+CLinearTimeDelta::CLinearTimeDelta(INT64 arg_t100ns)
+{
+    m_tDelta = arg_t100ns;
 }
 
 void CLinearTimeDelta::ReturnTimeValueStruct(struct timeval *tv)
@@ -1424,7 +1430,7 @@ BOOL CalibrateQueryPerformance(void)
     INT64 li;
     INT64 t;
 
-    Sleep(0);
+    MuxAlarm.SurrenderSlice();
     if (QueryPerformanceCounter((LARGE_INTEGER *)&li))
     {
         GetSystemTimeAsFileTime((struct _FILETIME *)&t);
@@ -1476,7 +1482,7 @@ void InitializeQueryPerformance(void)
     {
         Ticks2Seconds.SetDenominator(liFreq);
 
-        Sleep(0);
+        MuxAlarm.SurrenderSlice();
         if (QueryPerformanceCounter((LARGE_INTEGER *)&liInit))
         {
             GetSystemTimeAsFileTime((struct _FILETIME *)&tInit);
@@ -1502,6 +1508,16 @@ void GetUTCLinearTime(INT64 *plt)
     GetSystemTimeAsFileTime((struct _FILETIME *)plt);
 }
 
+void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
+{
+    ::Sleep(ltd.ReturnMilliseconds());
+}
+
+void CMuxAlarm::SurrenderSlice(void)
+{
+    ::Sleep(0);
+}
+
 #else // !WIN32
 
 void GetUTCLinearTime(INT64 *plt)
@@ -1515,6 +1531,16 @@ void GetUTCLinearTime(INT64 *plt)
     *plt = (((INT64)tv.tv_sec) * FACTOR_100NS_PER_SECOND)
          + (tv.tv_usec * FACTOR_100NS_PER_MICROSECOND)
          + EPOCH_OFFSET;
+}
+
+void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
+{
+    ::sleep(ltd.ReturnSeconds());
+}
+
+void CMuxAlarm::SurrenderSlice(void)
+{
+    ::sleep(0);
 }
 
 #endif // !WIN32
@@ -1642,7 +1668,7 @@ void TIME_Initialize(void)
     tzset();
 
     test_time_t();
-    ltdIntervalMinimum.Set100ns(FACTOR_100NS_PER_WEEK);
+    ltdIntervalMinimum = time_1w;
     int i;
     for (i = 0; i < 15; i++)
     {

@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.7 2004-05-15 01:34:48 sdennis Exp $
+// $Id: timeutil.h,v 1.8 2004-05-15 14:31:53 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -96,6 +96,7 @@ private:
 
 public:
     CLinearTimeDelta(void);
+    CLinearTimeDelta(INT64 arg_t100ns);
     CLinearTimeDelta(CLinearTimeAbsolute, CLinearTimeAbsolute);
 
     void ReturnTimeValueStruct(struct timeval *tv);
@@ -114,6 +115,15 @@ public:
     void operator+=(const CLinearTimeDelta& ltd);
 };
 
+class CMuxAlarm
+{
+public:
+    void Sleep(CLinearTimeDelta ltd);
+    void SurrenderSlice(void);
+};
+
+extern CMuxAlarm MuxAlarm;
+
 #define FACTOR_NANOSECONDS_PER_100NS 100
 #define FACTOR_100NS_PER_MICROSECOND 10
 #define FACTOR_100NS_PER_MILLISECOND 10000
@@ -127,6 +137,15 @@ extern const INT64 FACTOR_100NS_PER_MINUTE;
 extern const INT64 FACTOR_100NS_PER_HOUR;
 extern const INT64 FACTOR_100NS_PER_DAY;
 extern const INT64 FACTOR_100NS_PER_WEEK;
+
+const CLinearTimeDelta time_250ms = 250*FACTOR_100NS_PER_MILLISECOND;
+const CLinearTimeDelta time_1s    = FACTOR_100NS_PER_SECOND;
+const CLinearTimeDelta time_15s   = 15*FACTOR_100NS_PER_SECOND;
+const CLinearTimeDelta time_30s   = 30*FACTOR_100NS_PER_SECOND;
+const CLinearTimeDelta time_45s   = 45*FACTOR_100NS_PER_SECOND;
+const CLinearTimeDelta time_15m   = 15*FACTOR_100NS_PER_MINUTE;
+const CLinearTimeDelta time_30m   = 30*FACTOR_100NS_PER_MINUTE;
+const CLinearTimeDelta time_1w    = FACTOR_100NS_PER_WEEK;
 
 extern void TIME_Initialize(void);
 #ifdef WIN32
