@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.8 2003-02-07 16:07:55 sdennis Exp $
+// $Id: config.h,v 1.9 2003-07-22 04:09:32 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -172,6 +172,9 @@ typedef UINT32           UINT16;
 #define INT16_MIN_VALUE  (-32768)
 #define INT16_MAX_VALUE  32767
 #define UINT16_MAX_VALUE 0xFFFFU
+
+typedef   signed char INT8;
+typedef unsigned char UINT8;
 
 #ifndef HAVE_IN_ADDR_T
 typedef UINT32 in_addr_t;
