@@ -3,9 +3,9 @@
 # REQUIRED: ReferenceDir must already exist. It may be created by untaring a
 # previous distribution.
 #
-OldBuild=49
-OldVersion=2.2.0.$OldBuild
-NewBuild=50
+OldBuild=50
+OldVersion=2.2.1.$OldBuild
+NewBuild=51
 NewVersion=2.2.1.$NewBuild
 
 ChangesDir=mux
