@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.23 2002-07-18 23:09:41 sdennis Exp $
+// $Id: comsys.cpp,v 1.24 2002-07-18 23:14:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1268,9 +1268,9 @@ void do_comlast(dbref player, struct channel *ch, int arg)
 
 BOOL do_chanlog(dbref player, char *channel, char *arg)
 {
-    int value ;
+    int value;
     if (  !*arg
-       || !is_rational(arg)
+       || !is_integer(arg, NULL)
        || (value = Tiny_atol(arg)) > MAX_RECALL_REQUEST)
     {
         return FALSE;
@@ -1280,6 +1280,12 @@ BOOL do_chanlog(dbref player, char *channel, char *arg)
         value = 0;
     }
     struct channel *ch = select_channel(channel);
+    if (!Good_obj(ch->chan_obj))
+    {
+        // No channel object has been set.
+        //
+        return FALSE;
+    }
     int atr = mkattr("MAX_LOG");
     char *oldvalue;
     dbref aowner;
