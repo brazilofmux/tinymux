@@ -1,6 +1,6 @@
 // alloc.h -- External definitions for memory allocation subsystem.
 //
-// $Id: alloc.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: alloc.h,v 1.2 2003-01-23 08:07:13 sdennis Exp $
 //
 
 #ifndef M_ALLOC_H
@@ -22,29 +22,6 @@
 #define PBUF_SIZE   128     // Pathname
 #define SBUF_SIZE   64      // Small
 
-/*
-#define LBUF_SIZE   4000
-#define MBUF_SIZE   200
-#define SBUF_SIZE   32
-*/
-
-#ifdef STANDALONE
-
-#define alloc_lbuf(s)   (char *)malloc(LBUF_SIZE)
-#define free_lbuf(b)    if (b) free(b)
-#define alloc_mbuf(s)   (char *)malloc(MBUF_SIZE)
-#define free_mbuf(b)    if (b) free(b)
-#define alloc_sbuf(s)   (char *)malloc(SBUF_SIZE)
-#define free_sbuf(b)    if (b) free(b)
-#define alloc_bool(s)   (struct boolexp *)malloc(sizeof(struct boolexp))
-#define free_bool(b)    if (b) free(b)
-#define alloc_qentry(s) (BQUE *)malloc(sizeof(BQUE))
-#define free_qentry(b)  if (b) free(b)
-#define alloc_pcache(s) (PCACHE *)malloc(sizeof(PCACHE)
-#define free_pcache(b)  if (b) free(b)
-
-#else // STANDALONE
-
 extern void pool_init(int, int);
 extern char *pool_alloc(int, const char *, const char *, int);
 extern char *pool_alloc_lbuf(const char *, const char *, int);
@@ -65,8 +42,6 @@ extern void list_buftrace(dbref);
 #define free_qentry(b)  pool_free(POOL_QENTRY,(char *)(b), __FILE__, __LINE__)
 #define alloc_pcache(s) (PCACHE *)pool_alloc(POOL_PCACHE,s, __FILE__, __LINE__)
 #define free_pcache(b)  pool_free(POOL_PCACHE,(char *)(b), __FILE__, __LINE__)
-
-#endif // STANDALONE
 
 #define safe_copy_chr(src, buff, bufp, nSizeOfBuffer) \
 { \
