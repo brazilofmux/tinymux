@@ -14,7 +14,7 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- AAA.
+ -- Quotas are checked/repaired during @dbck.
 
 
 Bug Fixes:
@@ -44,6 +44,13 @@ Bug Fixes:
     and eval lock cases.
  -- Alierak fixes several stepping past unparse buffer terminator cases. 
  -- Alierak perks up boolexp generally.
+ -- cf_bool() and config() briefly didn't handle bool type correctly.
+ -- Players creating themselves from the welcome screen could cause
+    NOSPOOF-related messages to show a random executor to other players
+    on the Public channel.
+ -- Player names weren't validated properly. Instead of mux_PlayerNameSet[],
+    the code was using mux_ObjectNameSet[].
+ -- Fixed the bCanRead/read_remote_desc bugs.
 
 
 Performance Enhancements:
@@ -58,5 +65,5 @@ Cosmetic Changes:
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- AAA.
+ -- Switched all internal use of BOOL type to bool type.
 
