@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.23 2001-11-28 06:46:51 sdennis Exp $
+// $Id: create.cpp,v 1.24 2001-11-28 06:47:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -643,7 +643,7 @@ void do_clone
     {
         rmv_flags |= INHERIT | IMMORTAL;
     }
-    s_Flags(clone, Flags(thing) & ~rmv_flags);
+    s_Flags(clone, FLAG_WORD1, Flags(thing) & ~rmv_flags);
 
     // Tell creator about it
     //
