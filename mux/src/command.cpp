@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.29 2004-04-07 20:19:41 sdennis Exp $
+// $Id: command.cpp,v 1.30 2004-04-07 20:32:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -407,6 +407,12 @@ NAMETAB open_sw[] =
     { NULL,             0,          0,  0}
 };
 
+NAMETAB page_sw[] =
+{
+    {"noeval",          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
+    { NULL,             0,          0,  0}
+};
+
 NAMETAB pemit_sw[] =
 {
     {"contents",        1,  CA_PUBLIC,  PEMIT_CONTENTS|SW_MULTIPLE},
@@ -701,7 +707,7 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"comtitle",     comtitle_sw,CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_comtitle},
     {"give",         give_sw,    CA_LOCATION|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_give},
     {"kill",         NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          KILL_KILL,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
-    {"page",         NULL,       CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_page},
+    {"page",         page_sw,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_page},
     {"slay",         NULL,       CA_WIZARD,                                        KILL_SLAY,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
     {"whisper",      NULL,       CA_LOCATION|CA_NO_SLAVE,                          PEMIT_WHISPER, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {"&",            NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,                  0,           CS_TWO_ARG|CS_LEADIN, 0, do_setvattr},
