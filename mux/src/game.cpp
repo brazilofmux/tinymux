@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.9 2003-01-24 20:03:15 jake Exp $
+// $Id: game.cpp,v 1.10 2003-01-25 07:31:33 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1873,6 +1873,11 @@ void dbconvert(void)
 
     SeedRandomNumberGenerator();
 
+    pool_init(POOL_LBUF, LBUF_SIZE);
+    pool_init(POOL_MBUF, MBUF_SIZE);
+    pool_init(POOL_SBUF, SBUF_SIZE);
+    pool_init(POOL_BOOL, sizeof(struct boolexp));
+
     cf_init();
 
     // Decide what conversions to do and how to format the output file.
@@ -2092,7 +2097,8 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
     }
 }
 
-#define DBCONVERT_NAME "dbconvert"
+#define DBCONVERT_NAME1 "dbconvert"
+#define DBCONVERT_NAME2 "dbconvert.exe"
 
 int DCL_CDECL main(int argc, char *argv[])
 {
@@ -2103,14 +2109,16 @@ int DCL_CDECL main(int argc, char *argv[])
     size_t nProg = strlen(argv[0]);
     const char *pProg = argv[0] + nProg - 1;
     while (  nProg
-          && Tiny_IsAlpha[(unsigned char)*pProg])
+          && (  Tiny_IsAlpha[(unsigned char)*pProg]
+             || *pProg == '.'))
     {
         nProg--;
         pProg--;
     }
     pProg++;
     mudstate.bStandAlone = FALSE;
-    if (mux_stricmp(pProg, DBCONVERT_NAME) == 0)
+    if (  mux_stricmp(pProg, DBCONVERT_NAME1) == 0
+       || mux_stricmp(pProg, DBCONVERT_NAME2) == 0)
     {
         mudstate.bStandAlone = TRUE;
     }
