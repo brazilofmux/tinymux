@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.75 2002-09-06 16:35:10 sdennis Exp $
+// $Id: command.cpp,v 1.76 2002-09-12 03:26:16 jake Exp $
 //
 
 #include "copyright.h"
@@ -309,6 +309,7 @@ NAMETAB mail_sw[] =
     {"abort",           2,  CA_PUBLIC,  MAIL_ABORT},
     {"alias",           4,  CA_PUBLIC,  MAIL_ALIAS},
     {"alist",           4,  CA_PUBLIC,  MAIL_ALIST},
+    {"bcc",             1,  CA_PUBLIC,  MAIL_BCC},
     {"cc",              2,  CA_PUBLIC,  MAIL_CC},
     {"clear",           2,  CA_PUBLIC,  MAIL_CLEAR},
     {"debug",           2,  CA_PUBLIC,  MAIL_DEBUG},
@@ -3635,9 +3636,9 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
     CMDENT *cmdp;
     NAMETAB *logcmdp;
     char *buff1, *pt1, *pt2, *pt3, *atrpt, pre[2], *pt4, *pt5, *message;
-    int x, set, aflags, y, home;
+    int x, aflags, y, home;
     dbref target, aowner, zone;
-    BOOL bFound;
+    BOOL bFound, set;
 
     int loc_set = -1;
     if (  key == ICMD_IROOM
@@ -3806,17 +3807,18 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
             *pt2++ = Tiny_ToLower[(unsigned char)*pt1++];
         }
         *pt2 = '\0';
-        if ((*buff1 == '!') && (*(buff1 + 1) != '\0'))
+        if (  buff1[0] == '!' 
+           && buff1[1] != '\0')
         {
             pt4 = args[x] + 1;
             pt1 = buff1 + 1;
-            set = 0;
+            set = FALSE;
         }
         else
         {
             pt4 = args[x];
-            set = 1;
             pt1 = buff1;
+            set = TRUE;
         }
         if (*pt1)
         {
