@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.91 2002-04-14 21:11:08 sdennis Exp $
+// $Id: funceval.cpp,v 1.92 2002-04-14 23:16:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -37,6 +37,10 @@ extern int FDECL(check_read_perms, (dbref, dbref, ATTR *, int, int, char *, char
 extern void arr2list(char *arr[], int alen, char *list, char **bufc, char sep);
 extern void FDECL(make_portlist, (dbref, dbref, char *, char **));
 
+#define CWHO_ON  0
+#define CWHO_OFF 1
+#define CWHO_ALL 2
+
 FUNCTION(fun_cwho)
 {
     struct channel *ch = select_channel(fargs[0]);
@@ -45,17 +49,40 @@ FUNCTION(fun_cwho)
         safe_str("#-1 CHANNEL NOT FOUND", buff, bufc);
         return;
     }
-    if (!mudconf.have_comsys || (!Comm_All(player) && (player != ch->charge_who)))
+    if (  !mudconf.have_comsys
+       || (  !Comm_All(player)
+          && player != ch->charge_who))
     {
         safe_noperm(buff, bufc);
         return;
     }
+
+    int match_type = CWHO_ON;    
+    if (nfargs == 2)
+    {
+        if (_stricmp(fargs[0], "all") == 0)
+        {
+            match_type == CWHO_ALL;
+        }
+        else if (_stricmp(fargs[0], "off") == 0)
+        {
+            match_type == CWHO_OFF;
+        }
+        else if (_stricmp(fargs[0], "on") == 0)
+        {
+            match_type == CWHO_ON;
+        }
+    }
+
     DTB pContext;
     struct comuser *user;
     DbrefToBuffer_Init(&pContext, buff, bufc);
     for (user = ch->on_users; user; user = user->on_next)
     {
-        if (  Connected(user->who)
+        if (  (  match_type == CWHO_ALL
+              || (  (Connected(user->who) || isThing(user->who))
+                 && (  (match_type == CWHO_ON && user->bUserIsOn)
+                    || (match_type == CWHO_OFF && !(user->bUserIsOn)))))
            && !DbrefToBuffer_Add(&pContext, user->who))
         {
             break;

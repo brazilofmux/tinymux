@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.170 2002-04-14 21:21:57 sdennis Exp $
+// $Id: functions.cpp,v 1.171 2002-04-14 23:16:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7069,7 +7069,7 @@ FUN flist[] =
     {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"CTIME",    fun_ctime,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CWHO",     fun_cwho,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CWHO",     fun_cwho,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"DEC",      fun_dec,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"DECRYPT",  fun_decrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"DEFAULT",  fun_default,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
