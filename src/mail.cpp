@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.26 2001-06-29 18:30:15 sdennis Exp $
+// $Id: mail.cpp,v 1.27 2001-10-17 18:58:28 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2036,178 +2036,6 @@ void SaveMailStruct(struct mail *mp)
     mp->next = NULL;
 }
 
-void load_mail_Penn(FILE *fp)
-{
-    char nbuf1[8];
-
-    // Toss away the number of messages.
-    //
-    if (!fgets(nbuf1, sizeof(nbuf1), fp))
-    {
-        return;
-    }
-    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
-    while (p && strncmp(nbuf1, "***", 3) != 0)
-    {
-        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
-
-        mp->to = Tiny_atol(nbuf1);
-        mp->from = getref(fp);
-        mp->tolist = StringClone(Tiny_ltoa_t(mp->to));
-
-#ifdef RADIX_COMPRESSION
-        int len = string_compress(getstring_noalloc(fp, FALSE), timebuff);
-        mp->time = BufferCloneLen(timebuff, len);
-        len = string_compress(getstring_noalloc(fp, FALSE), subbuff);
-        mp->subject = BufferCloneLen(subbuff, len);
-#else // RADIX_COMPRESSION
-        mp->time = StringClone(getstring_noalloc(fp, FALSE));
-        mp->subject = StringClone(getstring_noalloc(fp, FALSE));
-#endif // RADIX_COMPRESSION
-        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
-        mp->read = getref(fp);
-        SaveMailStruct(mp);
-
-        p = fgets(nbuf1, sizeof(nbuf1), fp);
-    }
-}
-
-void load_mail_V1(FILE *fp)
-{
-    char nbuf1[8];
-    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
-    while (p && strncmp(nbuf1, "***", 3) != 0)
-    {
-        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
-
-        mp->to      = Tiny_atol(nbuf1);
-        mp->from    = getref(fp);
-        mp->tolist  = StringClone(Tiny_ltoa_t(mp->to));
-
-#ifdef RADIX_COMPRESSION
-        int len     = string_compress(getstring_noalloc(fp, FALSE), timebuff);
-        mp->time    = BufferCloneLen(timebuff, len);
-        len = string_compress("No subject", subbuff);
-        mp->subject = BufferCloneLen(subbuff, len);
-#else // RADIX_COMPRESSION
-        mp->time = StringClone(getstring_noalloc(fp, FALSE));
-        mp->subject = StringClone("No subject");
-#endif // RADIX_COMPRESSION
-
-        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
-        mp->read    = getref(fp);
-        SaveMailStruct(mp);
-
-        p = fgets(nbuf1, sizeof(nbuf1), fp);
-    }
-}
-
-void load_mail_V2(FILE *fp)
-{
-    char nbuf1[8];
-    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
-    while (p && strncmp(nbuf1, "***", 3) != 0)
-    {
-        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
-
-        mp->to      = Tiny_atol(nbuf1);
-        mp->from    = getref(fp);
-        mp->tolist  = StringClone(Tiny_ltoa_t(mp->to));
-
-#ifdef RADIX_COMPRESSION
-        int len     = string_compress(getstring_noalloc(fp, FALSE), timebuff);
-        mp->time    = BufferCloneLen(timebuff, len);
-        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
-        len = string_compress(getstring_noalloc(fp, FALSE), subbuff);
-        mp->subject = BufferCloneLen(subbuff, len);
-#else // RADIX_COMPRESSION
-        mp->time    = StringClone(getstring_noalloc(fp, FALSE));
-        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
-        mp->subject = StringClone(getstring_noalloc(fp, FALSE));
-#endif // RADIX_COMPRESSION
-        mp->read = getref(fp);
-        SaveMailStruct(mp);
-
-        p = fgets(nbuf1, sizeof(nbuf1), fp);
-    }
-}
-
-void load_mail_V3(FILE *fp)
-{
-    char nbuf1[8];
-    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
-    while (p && strncmp(nbuf1, "***", 3) != 0)
-    {
-        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
-
-        mp->to      = Tiny_atol(nbuf1);
-        mp->from    = getref(fp);
-        mp->tolist  = StringClone(getstring_noalloc(fp, FALSE));
-
-#ifdef RADIX_COMPRESSION
-        int len     = string_compress(getstring_noalloc(fp, FALSE), timebuff);
-        mp->time    = BufferCloneLen(timebuff, len);
-        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
-        len = string_compress(getstring_noalloc(fp, FALSE), subbuff);
-        mp->subject = BufferCloneLen(subbuff, len);
-#else // RADIX_COMPRESSION
-        mp->time    = StringClone(getstring_noalloc(fp, FALSE));
-        mp->number  = add_mail_message_nosig(getstring_noalloc(fp, FALSE));
-        mp->subject = StringClone(getstring_noalloc(fp, FALSE));
-#endif // RADIX_COMPRESSION
-        mp->read = getref(fp);
-        SaveMailStruct(mp);
-
-        p = fgets(nbuf1, sizeof(nbuf1), fp);
-    }
-}
-
-void load_mail_V4(FILE *fp)
-{
-    int mail_top = getref(fp);
-    mail_db_grow(mail_top + 1);
-
-    char nbuf1[8];
-    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
-    while (p && strncmp(nbuf1, "***", 3) != 0)
-    {
-        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
-
-        mp->to      = Tiny_atol(nbuf1);
-        mp->from    = getref(fp);
-        mp->number  = getref(fp);
-        MessageReferenceInc(mp->number);
-        mp->tolist  = StringClone(getstring_noalloc(fp, FALSE));
-
-#ifdef RADIX_COMPRESSION
-        int len     = string_compress(getstring_noalloc(fp, FALSE), timebuff);
-        mp->time    = BufferCloneLen(timebuff, len);
-        len         = string_compress(getstring_noalloc(fp, FALSE), subbuff);
-        mp->subject = BufferCloneLen(subbuff, len);
-#else // RADIX_COMPRESSION
-        mp->time    = StringClone(getstring_noalloc(fp, FALSE));
-        mp->subject = StringClone(getstring_noalloc(fp, FALSE));
-#endif // RADIX_COMPRESSION
-        mp->read    = getref(fp);
-        SaveMailStruct(mp);
-
-        p = fgets(nbuf1, sizeof(nbuf1), fp);
-    }
-
-    p = fgets(nbuf1, sizeof(nbuf1), fp);
-    while (p && strncmp(nbuf1, "+++", 3))
-    {
-        int number = Tiny_atol(nbuf1);
-        new_mail_message(getstring_noalloc(fp, FALSE), number);
-        p = fgets(nbuf1, sizeof(nbuf1), fp);
-    }
-}
-
 void load_mail_V5(FILE *fp)
 {
     int mail_top = getref(fp);
@@ -2261,29 +2089,13 @@ void load_mail(FILE *fp)
     {
         return;
     }
-    if (!strncmp(nbuf1, "+V5", 3))
+    if (strncmp(nbuf1, "+V5", 3) == 0)
     {
         load_mail_V5(fp);
     }
-    else if (!strncmp(nbuf1, "+V4", 3))
-    {
-        load_mail_V4(fp);
-    }
-    else if (!strncmp(nbuf1, "+V3", 3))
-    {
-        load_mail_V3(fp);
-    }
-    else if (!strncmp(nbuf1, "+V2", 3))
-    {
-        load_mail_V2(fp);
-    }
-    else if (!strncmp(nbuf1, "+1", 2))
-    {
-        load_mail_Penn(fp);
-    }
     else
     {
-        load_mail_V1(fp);
+        return;
     }
     load_malias(fp);
 }
