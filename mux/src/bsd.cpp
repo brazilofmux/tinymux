@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.12 2002-07-23 05:36:12 jake Exp $
+// $Id: bsd.cpp,v 1.13 2002-07-23 07:25:46 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -624,12 +624,12 @@ static int get_slave_result()
     char *os = alloc_lbuf("slave_os");
     char *userid = alloc_lbuf("slave_userid");
     char *host = alloc_lbuf("slave_host");
-
+    char *p;
     if (sscanf(buf, "%s %s", host, token) != 2)
     {
         goto Done;
     }
-    char *p = strchr(buf, '\n');
+    p = strchr(buf, '\n');
     *p = '\0';
     if (mudconf.use_hostname)
     {
