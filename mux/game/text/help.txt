@@ -5187,6 +5187,14 @@ DARK
 
   Related Topics:
 
+& DEAD
+DEAD
+
+  This flag does not alter any behavior of the server itself. However, it may
+  be useful for softcode. This flag is only available in if realms is enabled.
+
+  Related Topics:
+
 & DEC()
 DEC()
 
