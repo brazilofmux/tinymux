@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.15 2002-07-16 06:41:41 jake Exp $
+// $Id: speech.cpp,v 1.16 2002-07-16 23:10:29 jake Exp $
 //
 
 #include "copyright.h"
@@ -113,7 +113,6 @@ void do_think(dbref executor, dbref caller, dbref enactor, int key, char *messag
 
 void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
-    char *buf2, *bp;
     int say_flags, depth;
 
     // Convert prefix-coded messages into the normal type
@@ -215,7 +214,18 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
             }
         }
         break;
+    }
+}
 
+
+void do_shout(dbref executor, dbref caller, dbref enactor, int key, char *message)
+{
+    char *buf2, *bp;
+    int say_flags = key & (SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
+    key &= ~(SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
+
+    switch (key)
+    {
     case SAY_SHOUT:
         switch (*message)
         {
@@ -233,7 +243,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
             message++;
 
         default:
-            buf2 = alloc_lbuf("do_say.shout");
+            buf2 = alloc_lbuf("do_shout.shout");
             bp = buf2;
             safe_str(" shouts, \"", buf2, &bp);
             safe_str(message, buf2, &bp);
@@ -265,7 +275,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         case '"':
             message++;
         default:
-            buf2 = alloc_lbuf("do_say.wizshout");
+            buf2 = alloc_lbuf("do_shout.wizshout");
             bp = buf2;
             safe_str(" says, \"", buf2, &bp);
             safe_str(message, buf2, &bp);
@@ -298,7 +308,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         case '"':
             message++;
         default:
-            buf2 = alloc_lbuf("do_say.adminshout");
+            buf2 = alloc_lbuf("do_shout.adminshout");
             bp = buf2;
             safe_str(" says, \"", buf2, &bp);
             safe_str(message, buf2, &bp);

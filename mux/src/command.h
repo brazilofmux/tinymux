@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.6 2002-07-14 05:12:20 sdennis Exp $
+// $Id: command.h,v 1.7 2002-07-16 23:10:29 jake Exp $
 //
 
 #ifndef __COMMAND_H
@@ -118,6 +118,7 @@ CMD_ONE_ARG(do_search);         /* Search for objs matching criteria */
 CMD_TWO_ARG(do_set);            /* Set flags or attributes */
 CMD_TWO_ARG(do_setattr);        /* Set object attribute */
 CMD_TWO_ARG(do_setvattr);       /* Set variable attribute */
+CMD_ONE_ARG(do_shout);          /* Messages to all */
 CMD_ONE_ARG(do_shutdown);       /* Stop the game */
 CMD_ONE_ARG(do_stats);          /* Display object type breakdown */
 CMD_ONE_ARG(do_sweep);          /* Check for listeners */
