@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.41 2001-07-05 18:37:48 hellspawn Exp $
+// $Id: command.cpp,v 1.42 2001-07-31 05:20:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -508,6 +508,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {(char *)"+help",         NULL,       0,    HELP_PLUSHELP,  CS_ONE_ARG,         do_help},
     {(char *)"+shelp",        NULL,       CA_STAFF,    HELP_STAFFHELP, CS_ONE_ARG,         do_help},
     {(char *)"@boot",         boot_sw,    CA_NO_GUEST|CA_NO_SLAVE,    0,      CS_ONE_ARG|CS_INTERP,       do_boot},
+    {(char *)"@break",        NULL,       0,                          0,      CS_ONE_ARG,                 do_break},
     {(char *)"@ccreate",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,        0,               CS_ONE_ARG,                    do_createchannel},
     {(char *)"@cdestroy",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,        0,               CS_ONE_ARG,                    do_destroychannel},
     {(char *)"@cut",          NULL,       CA_WIZARD|CA_LOCATION,  0,      CS_ONE_ARG|CS_INTERP,       do_cut},
@@ -3025,4 +3026,10 @@ void do_list(dbref player, dbref cause, int extra, char *arg)
         display_nametab(player, list_names,
                 (char *)"Unknown option.  Use one of:", 1);
     }
+}
+
+void do_break(dbref player, dbref cause, int key, char *arg1)
+{
+    extern int break_called;
+    break_called = !!xlate(arg1);
 }

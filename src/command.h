@@ -1,5 +1,5 @@
 /* command.h - declarations used by the command processor */
-/* $Id: command.h,v 1.6 2001-07-05 18:37:48 hellspawn Exp $ */
+/* $Id: command.h,v 1.7 2001-07-31 05:20:28 sdennis Exp $ */
 
 #ifndef __COMMAND_H
 #define __COMMAND_H
@@ -137,6 +137,7 @@ CMD_NO_ARG(do_dbclean);         /* Remove stale vattr entries */
 CMD_TWO_ARG(do_addcommand);     /* Add or replace a global command */
 CMD_TWO_ARG(do_delcommand);     /* Delete an added global command */
 CMD_ONE_ARG(do_listcommands);   /* List added global commands */
+CMD_ONE_ARG(do_break);          /* Stop evaluating an action list */
 
 typedef struct
 {
