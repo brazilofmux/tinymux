@@ -6169,13 +6169,13 @@ FDIV()
 & FILTER()
 FILTER()
 
-  FUNCTION: filter([<obj>/]<attr>, <list>[, <delim>])
+  FUNCTION: filter([<obj>/]<attr>, <list>[, <in delim>[, <out delim>]])
 
   This function evaluates the contents of <attr> for each element of <list>,
-  passing it in as %0.  A <delimiter>-separated list is returned of those
+  passing it in as %0.  A <out delim>-separated list is returned of those
   elements for which the evaluation returns the value 1.
 
-  <delimiter> may be used to specify a delimiter other than space.
+  <in delim> may be used to specify an input delimiter other than space.
 
   Examples:
     > &IS_ODD object=mod(%0,2)
@@ -6187,13 +6187,13 @@ FILTER()
 & FILTERBOOL()
 FILTERBOOL()
 
-  FUNCTION: filterbool([<obj>/]<attr>, <list>[, <delim>])
+  FUNCTION: filterbool([<obj>/]<attr>, <list>[, <in delim>[, <out delim>]])
 
   This function evaluates the contents of <attr> for each element of <list>,
-  passing it in as %0.  A <delimiter>-separated list is returned of those
+  passing it in as %0.  A <out delim>-separated list is returned of those
   elements for which the evaluation returns a boolean-true value.
 
-  <delimiter> may be used to specify a delimiter other than space.
+  <in delim> may be used to specify an input delimiter other than space.
 
   Examples:
     > &IS_ODD object=mod(%0,2)
@@ -8847,7 +8847,7 @@ MEMBER()
     > say member(This is a member test, *e*)
     You say "0"
     > say member(This is a member test, is a)
-    You say "#-1 CAN ONLY TEST ONE ELEMENT"
+    You say "0"
 
   Related Topics: LISTS, match(), strmatch().
 
