@@ -165,9 +165,6 @@
 #include <limits.h>
 #else
 #include <varargs.h>
-extern int    atoi(const char *);
-extern double atof(const char *);
-extern long   atol(const char *);
 extern int    qsort(char *, int, int, int (*)());
 #endif
 
@@ -181,15 +178,11 @@ extern int    qsort(char *, int, int, int (*)());
 #define index           strchr
 #define rindex          strrchr
 #define bcopy(s,d,n)    memmove(d,s,n)
-#define bcmp(s1,s2,n)   memcmp(s1,s2,n)
-#define bzero(s,n)      memset(s,0,n)
 #endif
 #else
 #include <strings.h>
 extern char *   strchr(char *, char);
 extern void     bcopy(char *, char *, int);
-extern int      bcmp(char *, char *, int);
-extern void     bzero(char *, int);
 #endif
 
 #ifdef HAVE_UNISTD_H
