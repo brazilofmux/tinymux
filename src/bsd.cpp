@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.41 2001-12-03 18:53:08 sdennis Exp $
+// $Id: bsd.cpp,v 1.42 2001-12-03 19:42:54 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -803,6 +803,34 @@ SOCKET make_socket(int port)
     return s;
 }
 
+void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
+{
+    // TODO: Support ability to add and remove ports across a @restart. For
+    // now, we assume the 'port' config option does not change across a
+    // @restart.
+    //
+    *pnPorts = pia->n;
+#ifndef WIN32
+    maxd = 1;
+#endif
+    for (int i = 0; i < pia->n; i++)
+    {
+        aPorts[i].port = pia->pi[i];
+#ifndef WIN32
+        if (!mudstate.restarting)
+#endif
+        {
+            aPorts[i].socket = make_socket(aPorts[i].port);
+#ifndef WIN32
+            if (maxd <= aPorts[i].socket)
+            {
+                maxd = aPorts[i].socket + 1;
+            }
+#endif
+        }
+    }
+}
+
 #ifdef WIN32
 void shovechars9x(int nPorts, PortInfo aPorts[])
 {
@@ -813,11 +841,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
 #define CheckInput(x)   FD_ISSET(x, &input_set)
 #define CheckOutput(x)  FD_ISSET(x, &output_set)
 
-    mudstate.debug_cmd = (char *)"< shovechars >";
-    for (int i = 0; i < nPorts; i++)
-    {
-        aPorts[i].socket = make_socket(aPorts[i].port);
-    }
+    mudstate.debug_cmd = "< shovechars >";
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -1013,11 +1037,7 @@ DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 
 void shovecharsNT(int nPorts, PortInfo aPorts[])
 {
-    mudstate.debug_cmd = (char *)"< shovechars >";
-    for (int i = 0; i < nPorts; i++)
-    {
-        aPorts[i].socket = make_socket(aPorts[i].port);
-    }
+    mudstate.debug_cmd = "< shovechars >";
 
     CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
 
@@ -1111,20 +1131,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
 #define CheckInput(x)     FD_ISSET(x, &input_set)
 #define CheckOutput(x)    FD_ISSET(x, &output_set)
 
-    mudstate.debug_cmd = (char *)"< shovechars >";
-
-    if (!mudstate.restarting)
-    {
-        maxd = 1;
-        for (i = 0; i < nPorts; i++)
-        {
-            aPorts[i].socket = make_socket(aPorts[i].port);
-            if (maxd <= aPorts[i].socket)
-            {
-                maxd = aPorts[i].socket + 1;
-            }
-        }
-    }
+    mudstate.debug_cmd = "< shovechars >";
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();

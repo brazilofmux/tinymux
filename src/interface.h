@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.10 2001-12-03 18:53:09 sdennis Exp $
+// $Id: interface.h,v 1.11 2001-12-03 19:42:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -155,6 +155,7 @@ extern DESC *descriptor_list;
 
 extern void NDECL(emergency_shutdown);
 extern void FDECL(shutdownsock, (DESC *, int));
+extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia);
 #ifdef WIN32
 extern void shovechars9x(int nPorts, PortInfo aPorts[]);
 extern void shovecharsNT(int nPorts, PortInfo aPorts[]);
