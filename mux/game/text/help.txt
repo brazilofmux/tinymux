@@ -5017,8 +5017,7 @@ CONN()
     Wizard                00:04   1m
     Mortal                00:11   0s
     Evinar                00:12   6m  Idle. :)
-    frobozz               00:32   6s
-    4 Players logged in.
+    3 Players logged in.
     > say conn(wiz)
     You say "251"
     > say conn(e)
