@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.32 2001-03-23 07:54:35 sdennis Exp $
+// $Id: conf.cpp,v 1.33 2001-04-09 23:20:41 morgan Exp $
 //
 
 #include "copyright.h"
@@ -125,6 +125,7 @@ void NDECL(cf_init)
     strcpy(mudconf.public_channel, "Public");
     strcpy(mudconf.guests_channel, "Guests");
     strcpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>");
+	mudconf.art_rules = NULL;
     mudconf.indent_desc = 0;
     mudconf.name_spaces = 1;
 #if !defined(VMS) && !defined(WIN32)
@@ -1210,6 +1211,7 @@ extern CF_HAND(cf_acmd_access);
 extern CF_HAND(cf_attr_access);
 extern CF_HAND(cf_func_access);
 extern CF_HAND(cf_flag_access);
+extern CF_HAND(cf_art_rule);
 
 /* ---------------------------------------------------------------------------
  * conftable: Table for parsing the configuration file.
@@ -1219,6 +1221,7 @@ CONF conftable[] =
 {
     {"access",                    cf_access,      CA_GOD,    NULL,                            access_nametab,     0},
     {"alias",                     cf_cmd_alias,   CA_GOD,    (int *)&mudstate.command_htab,   0,                  0},
+    {"article_rule",              cf_art_rule,    CA_GOD,    (int *)&mudconf.art_rules,       NULL,               0},
     {"attr_access",               cf_attr_access, CA_GOD,    NULL,                            attraccess_nametab, 0},
     {"attr_alias",                cf_alias,       CA_GOD,    (int *)&mudstate.attr_name_htab, 0,                  0},
     {"attr_cmd_access",           cf_acmd_access, CA_GOD,    NULL,                            access_nametab,     0},

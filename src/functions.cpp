@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.55 2001-03-31 02:22:25 sdennis Exp $
+// $Id: functions.cpp,v 1.56 2001-04-09 23:20:41 morgan Exp $
 //
 
 #include "copyright.h"
@@ -147,7 +147,8 @@ XFUNCTION(fun_connmax);
 XFUNCTION(fun_connlast);
 XFUNCTION(fun_connnum);
 XFUNCTION(fun_connleft);
- 
+XFUNCTION(fun_art); 
+
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
 //
@@ -7360,3 +7361,45 @@ FUNCTION(fun_lflags)
         safe_nothing(buff, bufc);
     }
 }
+
+// ---------------------------------------------------------------------------
+// fun_art:
+//
+// Accepts a single argument. Based on the rules specified in the config
+// parameters article_regexp and article_exception it determines whether the
+// word should use 'an' or 'a' as its article.
+//
+// By default if a word matches the regexp specified in article_regexp then
+// this function will return 'an', otherwise it will return 'a'. If, however
+// the word also matches one of the specified article_exception regexp's
+// will return the given article.
+//
+
+FUNCTION(fun_art)
+{
+	// Drop the input string into lower case.
+	_strlwr(fargs[0]);
+
+	// Search for exceptions.
+	ArtRuleset *arRule = mudconf.art_rules;
+
+	while ( arRule != NULL )
+	{
+		regexp* reRuleRegexp = (regexp *) arRule->m_pRegexp; 
+
+		if ( regexec(reRuleRegexp, fargs[0]) )
+		{
+			safe_str(arRule->m_bUseAn ? "an" : "a", buff, bufc);
+			MEMFREE(reRuleRegexp);
+
+			return;
+		}
+	
+		MEMFREE(reRuleRegexp);
+		arRule = arRule->m_pNextRule;
+	}
+
+	// Default to 'a'.
+	safe_str( "a", buff, bufc);
+}
+

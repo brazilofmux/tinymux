@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.42 2001-02-07 05:28:14 sdennis Exp $
+// $Id: funceval.cpp,v 1.43 2001-04-09 23:20:41 morgan Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2766,24 +2766,24 @@ FUNCTION(fun_grepi)
     free_lbuf(tp);
 }
 
-/*
- * Borrowed from PennMUSH 1.50 
- */
-FUNCTION(fun_art)
-{
-    // Checks a word and returns the appropriate article, "a" or "an".
-    //
-    char c = Tiny_ToLower[(unsigned char)*fargs[0]];
-
-    if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
-    {
-        safe_str("an", buff, bufc);
-    }
-    else
-    {
-        safe_chr('a', buff, bufc);
-    }
-}
+///*
+// * Borrowed from PennMUSH 1.50 
+// */
+//FUNCTION(fun_art)
+//{
+//    // Checks a word and returns the appropriate article, "a" or "an".
+//    //
+//    char c = Tiny_ToLower[(unsigned char)*fargs[0]];
+//
+//    if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u')
+//    {
+//        safe_str("an", buff, bufc);
+//    }
+//    else
+//    {
+//        safe_chr('a', buff, bufc);
+//    }
+//}
 
 /*
  * Borrowed from PennMUSH 1.50 
@@ -3260,6 +3260,7 @@ FUNCTION(fun_regmatch)
     }
     MEMFREE(re);
 }
+
 
 /* ---------------------------------------------------------------------------
  * fun_translate: Takes a string and a second argument. If the second argument

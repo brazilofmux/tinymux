@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.36 2001-04-03 21:02:09 sdennis Exp $
+// $Id: stringutil.cpp,v 1.37 2001-04-09 23:20:43 morgan Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2569,4 +2569,110 @@ int BMH_StringSearchI(int nPat, char *pPat, int nSrc, char *pSrc)
     BMH_State bmhs;
     BMH_PrepareI(&bmhs, nPat, pPat);
     return BMH_ExecuteI(&bmhs, nPat, pPat, nSrc, pSrc);
+}
+
+// ---------------------------------------------------------------------------
+// cf_art_except:
+//
+// Add an article rule to the ruleset.
+//
+
+#ifndef STANDALONE
+extern void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...);
+#endif // STANDALONE
+
+CF_HAND(cf_art_rule)
+{
+#ifndef STANDALONE
+	char* pCurrent = str;
+	
+	for (;;)
+	{
+		if ( *pCurrent == '\0' )
+		{
+			cf_log_syntax(player, cmd, "No article or regexp specified.");
+			return -1;
+		}
+
+		if ( !Tiny_IsSpace[(unsigned char) *pCurrent] )
+			break;
+
+		pCurrent++;
+	}
+
+	char* pArticle = pCurrent;
+
+	for (;;)
+	{
+		if ( *pCurrent == '\0' )
+		{
+			cf_log_syntax(player, cmd, "No article or regexp specified.");
+			return -1;
+		}
+
+		if ( Tiny_IsSpace[(unsigned char) *pCurrent] )
+			break;
+
+		pCurrent++;
+	}
+
+	int bUseAn = 0;
+	int bOkay = 0;
+
+	if ( pCurrent - pArticle <= 2 )
+	{
+		if ( *pArticle == 'A' || *pArticle == 'a' )
+		{
+			if ( *(pArticle + 1) == 'N' || *(pArticle + 1) == 'n' )
+			{			
+				bUseAn = 1;
+				bOkay = 1;
+			}
+
+			if ( Tiny_IsSpace[(unsigned char) *(pArticle + 1)] )
+				bOkay = 1;
+		}
+	}
+
+	if ( !bOkay )
+	{
+		*pCurrent = '\0';
+		cf_log_syntax(player, cmd, "Invalid article '%s'.", pArticle);
+		return -1;
+	}
+	
+
+	for (;;)
+	{
+		if ( *pCurrent == '\0' )
+		{
+			cf_log_syntax(player, cmd, "No regexp specified.");
+			return -1;
+		}
+
+		if ( !Tiny_IsSpace[(unsigned char) *pCurrent] )
+			break;
+
+		pCurrent++;
+	}
+
+	regexp* reNewRegexp = regcomp(pCurrent);
+	if ( !reNewRegexp )
+	{
+		cf_log_syntax(player, cmd, "Error processing regexp '%s'.", pCurrent);
+		return -1;
+	}
+
+	// Push new rule at head of list.
+	ArtRuleset** arRules = (ArtRuleset **) vp;
+	ArtRuleset* arNewRule = (ArtRuleset *) MEMALLOC(sizeof(ArtRuleset));
+
+	arNewRule->m_pNextRule = *arRules;
+	arNewRule->m_bUseAn = bUseAn;
+	arNewRule->m_pRegexp = reNewRegexp;
+	
+	*arRules = arNewRule;
+
+	return 0;
+#endif //STANDALONE
 }

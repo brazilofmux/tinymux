@@ -1,5 +1,5 @@
 /* mudconf.h */
-/* $Id: mudconf.h,v 1.18 2001-03-23 07:54:35 sdennis Exp $ */
+/* $Id: mudconf.h,v 1.19 2001-04-09 23:20:42 morgan Exp $ */
 
 #ifndef __CONF_H
 #define __CONF_H
@@ -10,6 +10,7 @@
 #include "flags.h"
 #include "mail.h"
 #include "db.h"
+#include "stringutil.h"
 
 #ifndef WIN32
 #ifdef VMS
@@ -198,6 +199,8 @@ struct confdata
     char    mud_name[32];   /* Name of the mud */
     char    one_coin[32];   /* name of one coin (ie. "penny") */
     char    many_coins[32]; /* name of many coins (ie. "pennies") */
+	char	*art_regexp;	/* Basic regexp for determining which article to use. */
+	ArtRuleset* art_rules;  /* Rulesets for defining exceptions. */
     int     toad_recipient; /* Default @toad recipient. */
 #else
     int     paylimit;   /* getting money gets hard over this much */
