@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.36 2003-01-23 02:00:23 sdennis Exp $
+// $Id: game.cpp,v 1.37 2003-01-29 05:33:36 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -168,8 +168,8 @@ BOOL regexp_match
  * atr_match: Check attribute list for wild card matches and queue them.
  */
 
-static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *str, int check_exclude,
-              int hash_insert)
+static int atr_match1(dbref thing, dbref parent, dbref player, char type,
+     char *str, int check_exclude, int hash_insert)
 {
     // See if we can do it.  Silently fail if we can't.
     //
@@ -345,15 +345,44 @@ BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
     PopIntegers(preserve_len, MAX_GLOBAL_REGS);
     PopPointers(preserve, MAX_GLOBAL_REGS);
 
-    do {
-        cp = parse_to(&dp, ',', EV_STRIP_CURLY);
-        mudstate.wild_invk_ctr = 0;
-        if (quick_wild(cp, msg))
+    if (!(aflags & AF_REGEXP))
+    {
+        do
         {
-            free_lbuf(nbuf);
-            return FALSE;
-        }
-    } while (dp != NULL);
+            cp = parse_to(&dp, ',', EV_STRIP_CURLY);
+            mudstate.wild_invk_ctr = 0;
+            if (quick_wild(cp, msg))
+            {
+                free_lbuf(nbuf);
+                return FALSE;
+            }
+        } while (dp != NULL);
+    }
+    else
+    {
+        int case_opt = (aflags & AF_CASE) ? 0 : PCRE_CASELESS;
+        do
+        {
+            int erroffset;
+            const char *errptr;
+            cp = parse_to(&dp, ',', EV_STRIP_CURLY);
+            pcre *re = pcre_compile(cp, case_opt, &errptr, &erroffset, NULL);
+            if (re != NULL)
+            {
+                const int ovecsize = 33;
+                int ovec[ovecsize];
+                int matches = pcre_exec(re, NULL, msg, strlen(msg), 0, 0,
+                    ovec, ovecsize);
+                if (0 <= matches)
+                {
+                    MEMFREE(re);
+                    free_lbuf(nbuf);
+                    return FALSE;
+                }
+                MEMFREE(re);
+            }
+        } while (dp != NULL);
+    }
     free_lbuf(nbuf);
     return TRUE;
 }
