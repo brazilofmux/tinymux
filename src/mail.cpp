@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.31 2001-11-28 06:35:54 sdennis Exp $
+// $Id: mail.cpp,v 1.32 2002-01-15 05:29:16 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -261,27 +261,6 @@ static int add_mail_message(dbref player, char *message)
     return number;
 }
 
-
-// add_mail_message_nosig - used for reading in old style messages from disk.
-// This function returns a reference to the message body.
-//
-static int add_mail_message_nosig(char *message)
-{
-    BOOL bTruncated = FALSE;
-    if (strlen(message) > LBUF_SIZE-1)
-    {
-        bTruncated = TRUE;
-        message[LBUF_SIZE-1] = '\0';
-    }
-    int number = MessageAdd(message);
-    if (bTruncated)
-    {
-        STARTLOG(LOG_BUGS, "BUG", "MAIL");
-        log_text(tprintf("add_mail_message_nosig: Mail message %d truncated.", number));
-        ENDLOG;
-    }
-    return number;
-}
 
 // This function is -only- used from reading from the disk, and so
 // it does -not- manage the reference counts.
@@ -3169,7 +3148,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     dbref target;
 
     int nResult;
-    struct malias *m = get_malias(player, alias, &nResult);
+    get_malias(player, alias, &nResult);
     if (nResult == GMA_INVALIDFORM)
     {
         notify(player, "MAIL: What alias do you want to create?.");
@@ -4303,7 +4282,7 @@ void do_malias_rename(dbref player, char *alias, char *newname)
     if (bValidMailAlias)
     {
         MEMFREE(m->name);
-        m->name = StringClone(newname+1);
+        m->name = StringCloneLen(pValidMailAlias, nValidMailAlias);
         notify(player, "MAIL: Mailing Alias renamed.");
     }
     else
