@@ -2,7 +2,7 @@
  * help.c -- commands for giving help 
  */
 /*
- * $Id: help.cpp,v 1.3 2000-06-02 16:18:06 sdennis Exp $ 
+ * $Id: help.cpp,v 1.4 2000-06-05 19:09:42 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -22,17 +22,12 @@
 /*
  * Pointers to this struct is what gets stored in the help_htab's 
  */
-struct help_entry {
-    int pos;        /*
-                 * Position, copied from help_indx 
-                 */
-    char original;      /*
-                 * 1 for the longest name for a topic. 0 for
-                 * * * * abbreviations 
-                 */
-    char *key;      /*
-                 * The key this is stored under. 
-                 */
+struct help_entry
+{
+    int pos;        // Position, copied from help_indx
+    char original;  // 1 for the longest name for a topic. 0 for
+                    // abbreviations.
+    char *key;      // The key this is stored under.
 };
 
 void helpindex_clean(CHashTable *htab)
@@ -84,16 +79,16 @@ int helpindex_read(CHashTable *htab, char *filename)
 
         for (nTopic = strlen(entry.topic); nTopic > 1; nTopic--)
         {
-            if (Tiny_IsSpace[(unsigned char)entry.topic[nTopic-1]]) continue;
-
-            entry.topic[nTopic] = '\0';
-
+            if (Tiny_IsSpace[(unsigned char)entry.topic[nTopic-1]])
+            {
+                continue;
+            }
             struct help_entry *htab_entry = (struct help_entry *)MEMALLOC(sizeof(struct help_entry));
+            ISOUTOFMEMORY(htab_entry);
             htab_entry->pos = entry.pos;
             htab_entry->original = bOriginal;
             bOriginal = 0;
-            htab_entry->key = (char *)MEMALLOC(nTopic+1);
-            StringCopy(htab_entry->key, entry.topic);
+            htab_entry->key = StringCloneLen(entry.topic, nTopic);
 
             if ((hashaddLEN(entry.topic, nTopic, (int *)htab_entry, htab)) == 0)
             {
