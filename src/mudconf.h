@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.35 2002-01-15 06:43:26 sdennis Exp $
+// $Id: mudconf.h,v 1.36 2002-01-25 17:19:17 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -146,6 +146,7 @@ struct confdata
     int     allow_guest_from_registered_site; // Whether guests from registered sites are allowed.
     int     eval_comtitle;  /* Should Comtitles Evaluate? */
     int     autozone;       // New objects are automatically zoned.
+
     unsigned int max_cache_size; /* Max size of attribute cache */
 
     FLAGSET player_flags;   /* Flags players start with */
@@ -355,6 +356,8 @@ struct statedata
     char    *poutnew;       /* The output being build by the current command */
     char    *poutbufc;      /* Buffer position for poutnew */
     dbref   poutobj;        /* Object doing the piping */
+    int     in_loop;        // Loop Nesting.
+    int     in_switch;      // Switch Nesting.
 
     CHashTable command_htab;   /* Commands hashtable */
     CHashTable channel_htab;   /* Channels hashtable */

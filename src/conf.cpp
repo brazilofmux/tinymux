@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.61 2002-01-24 08:07:37 sdennis Exp $
+// $Id: conf.cpp,v 1.62 2002-01-25 17:19:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -305,6 +305,8 @@ void NDECL(cf_init)
         mudstate.glob_reg_len[i] = 0;
     }
     mudstate.nObjEvalNest = 0;
+    mudstate.in_loop = 0;
+    mudstate.in_switch = 0;
 #else // STANDALONE
     mudconf.paylimit = 10000;
     mudconf.digcost = 10;
