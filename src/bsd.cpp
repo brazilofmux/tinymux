@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.48 2001-12-04 16:19:51 sdennis Exp $
+// $Id: bsd.cpp,v 1.49 2001-12-04 17:59:39 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -724,6 +724,7 @@ void make_socket(PortInfo *Port)
         if (!bDescriptorListInit)
         {
             InitializeCriticalSection(&csDescriptorList);
+            bDescriptorListInit = TRUE;
         }
 
         // Create a TCP/IP stream socket
