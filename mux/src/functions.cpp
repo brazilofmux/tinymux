@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.22 2002-06-20 19:08:43 jake Exp $
+// $Id: functions.cpp,v 1.23 2002-06-21 00:18:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6426,40 +6426,28 @@ FUNCTION(fun_space)
 
 FUNCTION(fun_idle)
 {
+    long nIdle = -1;
     if (is_rational(fargs[0]))
     {
-        int foundit = 0;
+        SOCKET s = Tiny_atol(fargs[0]);
+        BOOL bFound = FALSE;
         DESC *d;
-        CLinearTimeAbsolute ltaNow, ltaNewestLastTime;
+        CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
         DESC_ITER_CONN(d) 
         {
-            if (((long)d->descriptor) == Tiny_atol(fargs[0]))
+            if (d->descriptor == s)
             {
-                    foundit = 1;
-                    break;
+                bFound = TRUE;
+                break;
             }
         }
-        if (foundit)
+        if (  bFound
+           && (  d->player == executor
+              || Wizard_Who(executor)))
         {
-            if (  d->player != executor
-               && !Wizard_Who(executor))
-            {
-                safe_ltoa(NOTHING, buff, bufc);
-                return;
-            }
-            else
-            {
-                ltaNewestLastTime = d->last_time;
-                CLinearTimeDelta ltdResult = ltaNow - ltaNewestLastTime;
-                safe_ltoa(ltdResult.ReturnSeconds(), buff, bufc);
-                return;
-            }
-        }
-        else
-        {
-            safe_ltoa(NOTHING, buff, bufc);
-            return;
+            CLinearTimeDelta ltdResult = ltaNow - d->last_time;
+            nIdle = ltdResult.ReturnSeconds();
         }
     } 
     else 
@@ -6471,13 +6459,13 @@ FUNCTION(fun_idle)
         }
         dbref target = lookup_player(executor, pTargetName, 1);
         if (  Good_obj(target)
-           && Hidden(target)
-           && !See_Hidden(executor))
+           && (  !Hidden(target)
+              || See_Hidden(executor)))
         {
-            target = NOTHING;
+            nIdle = fetch_idle(target);
         }
-        safe_ltoa(fetch_idle(target), buff, bufc);
     }
+    safe_ltoa(nIdle, buff, bufc);
 }
 
 FUNCTION(fun_conn)
