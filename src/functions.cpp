@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.24 2000-06-24 18:30:45 sdennis Exp $
+// $Id: functions.cpp,v 1.25 2000-07-30 16:15:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -357,60 +357,85 @@ static int autodetect_list(char *ptrs[], int nitems)
     char *p;
 
     sort_type = NUMERIC_LIST;
-    for (i = 0; i < nitems; i++) {
-        switch (sort_type) {
+    for (i = 0; i < nitems; i++)
+    {
+        switch (sort_type)
+        {
         case NUMERIC_LIST:
-            if (!is_number(ptrs[i])) {
 
-                /*
-                 * If non-numeric, switch to alphanum sort. * 
-                 * 
-                 * *  * *  * * Exception: if this is the
-                 * first * element * * and * it is a good
-                 * dbref, * switch to a * * dbref sort. *
-                 * We're a * little looser than *  * the
-                 * normal * 'good  * dbref' rules, any * *
-                 * number following # * the #-sign is
-                 * accepted.  
-                 */
-
-                if (i == 0) {
+            if (!is_number(ptrs[i]))
+            {
+                // If non-numeric, switch to alphanum sort. Exception: if this
+                // is the first element and it is a good dbref, switch to a
+                // dbref sort. We're a little looser than the normal 'good
+                // dbref' rules, any number following # the #-sign is
+                // accepted.  
+                //
+                if (i == 0)
+                {
                     p = ptrs[i];
-                    if (*p++ != NUMBER_TOKEN) {
-                        return ALPHANUM_LIST;
-                    } else if (is_integer(p, 0)) {
-                        sort_type = DBREF_LIST;
-                    } else {
+                    if (*p++ != NUMBER_TOKEN)
+                    {
                         return ALPHANUM_LIST;
                     }
-                } else {
+                    else if (is_integer(p, 0))
+                    {
+                        sort_type = DBREF_LIST;
+                    }
+                    else
+                    {
+                        return ALPHANUM_LIST;
+                    }
+                }
+                else
+                {
                     return ALPHANUM_LIST;
                 }
-            } else if (strchr(ptrs[i], '.')) {
+            }
+            else if (strchr(ptrs[i], '.'))
+            {
                 sort_type = FLOAT_LIST;
             }
             break;
+
         case FLOAT_LIST:
-            if (!is_number(ptrs[i])) {
+
+            if (!is_number(ptrs[i]))
+            {
                 sort_type = ALPHANUM_LIST;
                 return ALPHANUM_LIST;
             }
             break;
+
         case DBREF_LIST:
+
             p = ptrs[i];
             if (*p++ != NUMBER_TOKEN)
+            {
                 return ALPHANUM_LIST;
+            }
             if (!is_integer(p, 0))
+            {
                 return ALPHANUM_LIST;
+            }
             break;
+
         default:
+
             return ALPHANUM_LIST;
         }
     }
     return sort_type;
 }
 
-static int get_list_type(char *fargs[], int nfargs, int type_pos, char *ptrs[], int nitems)
+static int get_list_type
+(
+    char *fargs[],
+    int nfargs,
+    int type_pos,
+    char *ptrs[],
+    int nitems
+)
 {
     if (nfargs >= type_pos)
     {
@@ -438,7 +463,8 @@ int list2arr(char *arr[], int maxlen, char *list, char sep)
 
     list = trim_space_sep(list, sep);
     p = split_token(&list, sep);
-    for (i = 0; p && i < maxlen; i++, p = split_token(&list, sep)) {
+    for (i = 0; p && i < maxlen; i++, p = split_token(&list, sep))
+    {
         arr[i] = p;
     }
     return i;
@@ -447,7 +473,6 @@ int list2arr(char *arr[], int maxlen, char *list, char sep)
 void arr2list(char *arr[], int alen, char *list, char **bufc, char sep)
 {
     int i;
-
     for (i = 0; i < alen-1; i++)
     {
         safe_str(arr[i], list, bufc);
@@ -461,10 +486,14 @@ void arr2list(char *arr[], int alen, char *list, char **bufc, char sep)
 
 static int dbnum(char *dbr)
 {
-    if ((strlen(dbr) < 2) && (*dbr != '#'))
+    if (dbr[0] != '#' || dbr[1] == '\0')
+    {
         return 0;
+    }
     else
+    {
         return Tiny_atol(dbr + 1);
+    }
 }
 
 /*
