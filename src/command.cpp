@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.17 2000-08-04 08:31:18 sdennis Exp $
+// $Id: command.cpp,v 1.18 2000-09-07 05:01:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1839,7 +1839,7 @@ static void list_cmdaccess(dbref player)
             {
                 if (!(cmdp->perms & CF_DARK))
                 {
-                    sprintf(buff, "%s:", cmdp->cmdname);
+                    sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
                 }
             }
@@ -1853,21 +1853,21 @@ static void list_cmdaccess(dbref player)
             {
                 if (!(cmdp->perms & CF_DARK))
                 {
-                    sprintf(buff, "%s:", cmdp->cmdname);
+                    sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
                 }
             }
         }
     }
     {
-        CMDENT_ONE_ARG_CMDARG*cmdp;
+        CMDENT_ONE_ARG_CMDARG *cmdp;
         for (cmdp = command_table_one_arg_cmdarg; cmdp->cmdname; cmdp++)
         {
             if (check_access(player, cmdp->perms))
             {
                 if (!(cmdp->perms & CF_DARK))
                 {
-                    sprintf(buff, "%s:", cmdp->cmdname);
+                    sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
                 }
             }
@@ -1881,7 +1881,7 @@ static void list_cmdaccess(dbref player)
             {
                 if (!(cmdp->perms & CF_DARK))
                 {
-                    sprintf(buff, "%s:", cmdp->cmdname);
+                    sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
                 }
             }
@@ -1895,7 +1895,7 @@ static void list_cmdaccess(dbref player)
             {
                 if (!(cmdp->perms & CF_DARK))
                 {
-                    sprintf(buff, "%s:", cmdp->cmdname);
+                    sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
                 }
             }
@@ -1909,7 +1909,7 @@ static void list_cmdaccess(dbref player)
             {
                 if (!(cmdp->perms & CF_DARK))
                 {
-                    sprintf(buff, "%s:", cmdp->cmdname);
+                    sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
                 }
             }
@@ -1923,7 +1923,7 @@ static void list_cmdaccess(dbref player)
             {
                 if (!(cmdp->perms & CF_DARK))
                 {
-                    sprintf(buff, "%s:", cmdp->cmdname);
+                    sprintf(buff, "%.60s:", cmdp->cmdname);
                     listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
                 }
             }
@@ -1958,7 +1958,7 @@ static void list_cmdaccess(dbref player)
 
         if (!(cmdp->perms & CF_DARK))
         {
-            sprintf(buff, "%s:", cmdp->cmdname);
+            sprintf(buff, "%.60s:", cmdp->cmdname);
             listset_nametab(player, access_nametab, cmdp->perms, buff, 1);
         }
     }
