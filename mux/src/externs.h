@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.4 2002-06-04 00:47:27 sdennis Exp $
+// $Id: externs.h,v 1.5 2002-06-05 07:04:34 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -55,7 +55,6 @@ extern "C" char *crypt(const char *inptr, const char *inkey);
 #endif
 
 /* From eval.cpp */
-#define CALLERQQQ (-1)
 void tcache_init(void);
 char *parse_to(char **, char, int);
 char *parse_arglist(dbref executor, dbref caller, dbref enactor, char *,
