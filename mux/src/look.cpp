@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.9 2003-02-05 06:20:59 jake Exp $
+// $Id: look.cpp,v 1.10 2003-02-17 02:57:10 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1616,7 +1616,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         // Print owner, key, and value.
         //
         savec = mudconf.many_coins[0];
-        mudconf.many_coins[0] = mux_toupper[(unsigned char)mudconf.many_coins[0]];
+        mudconf.many_coins[0] = mux_toupper(mudconf.many_coins[0]);
         buf2 = atr_get(thing, A_LOCK, &aowner, &aflags);
         pBoolExp = parse_boolexp(executor, buf2, true);
         buf = unparse_boolexp(executor, pBoolExp);

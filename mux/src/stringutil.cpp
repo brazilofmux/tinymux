@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.46 2003-02-17 02:26:23 sdennis Exp $
+// $Id: stringutil.cpp,v 1.47 2003-02-17 02:57:10 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2398,15 +2398,15 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
         {
             // Look for three magic strings.
             //
-            unsigned char ch0 = mux_toupper[(unsigned char)str[0]];
+            unsigned char ch0 = mux_toupper(str[0]);
             if (ch0 == 'I')
             {
                 // Could be 'Inf' or 'Ind'
                 //
-                ch0 = mux_toupper[(unsigned char)str[1]];
+                ch0 = mux_toupper(str[1]);
                 if (ch0 == 'N')
                 {
-                    ch0 = mux_toupper[(unsigned char)str[2]];
+                    ch0 = mux_toupper(str[2]);
                     if (ch0 == 'F')
                     {
                         // Inf
@@ -2436,10 +2436,10 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
             {
                 // Could be 'Nan'
                 //
-                ch0 = mux_toupper[(unsigned char)str[1]];
+                ch0 = mux_toupper(str[1]);
                 if (ch0 == 'A')
                 {
-                    ch0 = mux_toupper[(unsigned char)str[2]];
+                    ch0 = mux_toupper(str[2]);
                     if (ch0 == 'N')
                     {
                         // Nan
@@ -2483,7 +2483,7 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
         return false;
     }
 
-    ch0 = mux_toupper[(unsigned char)*str];
+    ch0 = mux_toupper(*str);
     if (ch0 == 'E')
     {
         // There is an exponent portion.
@@ -3213,7 +3213,7 @@ void mux_strupr(char *a)
 {
     while (*a)
     {
-        *a = mux_toupper[(unsigned char)*a];
+        *a = mux_toupper(*a);
         a++;
     }
 }
@@ -3406,14 +3406,14 @@ void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
     bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
     {
-        bmhs->m_d[mux_toupper[(unsigned char)pPat[k]]] = nPat - k - 1;
+        bmhs->m_d[mux_toupper(pPat[k])] = nPat - k - 1;
         bmhs->m_d[mux_tolower[(unsigned char)pPat[k]]] = nPat - k - 1;
         if (pPat[k] == chLastPat)
         {
             bmhs->m_skip2 = nPat - k - 1;
         }
     }
-    bmhs->m_d[mux_toupper[(unsigned char)chLastPat]] = BMH_LARGE;
+    bmhs->m_d[mux_toupper(chLastPat)] = BMH_LARGE;
     bmhs->m_d[mux_tolower[(unsigned char)chLastPat]] = BMH_LARGE;
 }
 
@@ -3437,7 +3437,7 @@ int BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
         int j = nPat - 1;
         char *s = pSrc + (i - j);
         while (  --j >= 0
-              && mux_toupper[(unsigned char)s[j]] == mux_toupper[(unsigned char)pPat[j]])
+              && mux_toupper(s[j]) == mux_toupper(pPat[j]))
         {
             ; // Nothing.
         }

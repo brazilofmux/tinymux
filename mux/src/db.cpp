@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.25 2003-02-17 02:34:21 sdennis Exp $
+// $Id: db.cpp,v 1.26 2003-02-17 02:57:10 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -954,7 +954,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, bool *pbValid)
             *pbValid = false;
             return Buffer;
         }
-        *p = mux_toupper[(unsigned char)*pName];
+        *p = mux_toupper(*pName);
         p++;
         pName++;
         nLeft--;

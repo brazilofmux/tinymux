@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.14 2003-02-17 02:26:23 sdennis Exp $
+// $Id: eval.cpp,v 1.15 2003-02-17 02:57:10 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1602,7 +1602,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         pdstr++;
                         if (mux_isalpha(*pdstr))
                         {
-                            i = A_VA + mux_toupper[(unsigned char)(*pdstr)] - 'A';
+                            i = A_VA + mux_toupper(*pdstr) - 'A';
                             size_t nAttrGotten;
                             atr_pget_str_LEN(mux_scratch, executor, i,
                                 &aowner, &aflags, &nAttrGotten);
@@ -1814,7 +1814,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                 //
                 if (cType_L2 & 0x80)
                 {
-                    *TempPtr = mux_toupper[(unsigned char)*TempPtr];
+                    *TempPtr = mux_toupper(*TempPtr);
                 }
             }
         }
