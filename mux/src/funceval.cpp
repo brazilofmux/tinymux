@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.14 2003-02-05 00:59:24 sdennis Exp $
+// $Id: funceval.cpp,v 1.15 2003-02-05 01:13:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -751,7 +751,7 @@ FUNCTION(fun_objeval)
     char *name = alloc_lbuf("fun_objeval");
     char *bp = name;
     char *str = fargs[0];
-    TinyExec(name, &bp, executor, caller, enactor,
+    mux_exec(name, &bp, executor, caller, enactor,
              EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -773,7 +773,7 @@ FUNCTION(fun_objeval)
 
     mudstate.nObjEvalNest++;
     str = fargs[1];
-    TinyExec(buff, bufc, obj, executor, enactor,
+    mux_exec(buff, bufc, obj, executor, enactor,
              EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     free_lbuf(name);
     mudstate.nObjEvalNest--;
@@ -788,7 +788,7 @@ FUNCTION(fun_localize)
     save_global_regs("fun_localize", preserve, preserve_len);
 
     char *str = fargs[0];
-    TinyExec(buff, bufc, executor, caller, enactor,
+    mux_exec(buff, bufc, executor, caller, enactor,
         EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
 
     restore_global_regs("fun_localize", preserve, preserve_len);
@@ -868,7 +868,7 @@ FUNCTION(fun_zfun)
         return;
     }
     char *str = tbuf1;
-    TinyExec(buff, bufc, zone, executor, enactor,
+    mux_exec(buff, bufc, zone, executor, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, &(fargs[1]), nfargs - 1);
     free_lbuf(tbuf1);
 }
@@ -902,7 +902,7 @@ FUNCTION(fun_columns)
     char *cp = curr;
     char *bp = curr;
     char *str = fargs[0];
-    TinyExec(curr, &bp, executor, caller, enactor,
+    mux_exec(curr, &bp, executor, caller, enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
     cp = trim_space_sep(cp, sep);
@@ -1353,7 +1353,7 @@ FUNCTION(fun_ifelse)
     char *lbuff = alloc_lbuf("fun_ifelse");
     char *bp = lbuff;
     char *str = fargs[0];
-    TinyExec(lbuff, &bp, executor, caller, enactor,
+    mux_exec(lbuff, &bp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -1362,14 +1362,14 @@ FUNCTION(fun_ifelse)
         if (nfargs == 3)
         {
             str = fargs[2];
-            TinyExec(buff, bufc, executor, caller, enactor,
+            mux_exec(buff, bufc, executor, caller, enactor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         }
     }
     else
     {
         str = fargs[1];
-        TinyExec(buff, bufc, executor, caller, enactor,
+        mux_exec(buff, bufc, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     }
     free_lbuf(lbuff);
@@ -1637,7 +1637,7 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
 
     objname = bp = alloc_lbuf("default_handler");
     str = fargs[0];
-    TinyExec(objname, &bp, executor, caller, enactor,
+    mux_exec(objname, &bp, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -1663,12 +1663,12 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
                         break;
                     case DEFAULT_EDEFAULT:
                         str = atr_gotten;
-                        TinyExec(buff, bufc, thing, executor, executor,
+                        mux_exec(buff, bufc, thing, executor, executor,
                              EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
                         break;
                     case DEFAULT_UDEFAULT:
                         str = atr_gotten;
-                        TinyExec(buff, bufc, thing, caller, enactor,
+                        mux_exec(buff, bufc, thing, caller, enactor,
                              EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 2);
                         break;
 
@@ -1687,7 +1687,7 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
     // we go and evaluate the default.
     //
     str = fargs[1];
-    TinyExec(buff, bufc, executor, caller, enactor,
+    mux_exec(buff, bufc, executor, caller, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
 
@@ -1993,7 +1993,7 @@ static int u_comp(const void *s1, const void *s2)
     strcpy(tbuf, ucomp_buff);
     result = bp = alloc_lbuf("u_comp");
     str = tbuf;
-    TinyExec(result, &bp, ucomp_executor, ucomp_caller, ucomp_enactor,
+    mux_exec(result, &bp, ucomp_executor, ucomp_caller, ucomp_enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(elems[0]), 2);
     *bp = '\0';
     if (!result)
@@ -2339,7 +2339,7 @@ FUNCTION(fun_mix)
         }
         strcpy(atextbuf, atext);
         str = atextbuf;
-        TinyExec(buff, bufc, thing, executor, enactor,
+        mux_exec(buff, bufc, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(os[0]), lastn);
     }
     free_lbuf(atext);
@@ -2444,7 +2444,7 @@ FUNCTION(fun_foreach)
 
             strcpy(atextbuf, atext);
             str = atextbuf;
-            TinyExec(buff, bufc, thing, executor, enactor,
+            mux_exec(buff, bufc, thing, executor, enactor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
             prev = cbuf[0];
         }
@@ -2459,7 +2459,7 @@ FUNCTION(fun_foreach)
 
             strcpy(atextbuf, atext);
             str = atextbuf;
-            TinyExec(buff, bufc, thing, executor, enactor,
+            mux_exec(buff, bufc, thing, executor, enactor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
         }
     }
@@ -2543,7 +2543,7 @@ FUNCTION(fun_munge)
     isep[0] = sep;
     uargs[0] = fargs[1];
     uargs[1] = isep;
-    TinyExec(rlist, &bp, executor, caller, enactor,
+    mux_exec(rlist, &bp, executor, caller, enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, uargs, 2);
     *bp = '\0';
 

@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.7 2003-02-04 11:43:10 jake Exp $
+// $Id: look.cpp,v 1.8 2003-02-05 01:13:21 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -485,7 +485,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         int preserve_len[MAX_GLOBAL_REGS];
         save_and_clear_global_regs("look_exits_save", preserve, preserve_len);
 
-        TinyExec(FormatOutput, &tPtr, loc, player, player,
+        mux_exec(FormatOutput, &tPtr, loc, player, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &ExitFormat, &VisibleObjectList, 1);
 
@@ -657,7 +657,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         int preserve_len[MAX_GLOBAL_REGS];
         save_and_clear_global_regs("look_contents_save", preserve, preserve_len);
 
-        TinyExec(FormatOutput, &tPtr, loc, player, player,
+        mux_exec(FormatOutput, &tPtr, loc, player, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &ContentsFormat, ParameterList, 2);
 
@@ -1092,7 +1092,7 @@ void look_in(dbref player, dbref loc, int key)
         int preserve_len[MAX_GLOBAL_REGS];
         save_and_clear_global_regs("look_in_save", preserve, preserve_len);
 
-        TinyExec(FormatOutput, &tPtr, loc, player, player,
+        mux_exec(FormatOutput, &tPtr, loc, player, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &NameFormat, 0, 0);
 

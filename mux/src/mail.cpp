@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.12 2003-02-04 22:35:51 sdennis Exp $
+// $Id: mail.cpp,v 1.13 2003-02-05 01:13:21 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -198,7 +198,7 @@ static int add_mail_message(dbref player, char *message, BOOL bEval)
     char *atrstr = atr_get(player, A_SIGNATURE, &aowner, &aflags);
     char *execstr = bp; 
     char *str = atrstr;
-    TinyExec(execstr, &bp, player, player, player,
+    mux_exec(execstr, &bp, player, player, player,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
     *bp = '\0';
     char *msg;
@@ -206,7 +206,7 @@ static int add_mail_message(dbref player, char *message, BOOL bEval)
     {
         msg = bp = alloc_lbuf("add_mail_message.2");
         str = message;
-        TinyExec(msg, &bp, player, player, player,
+        mux_exec(msg, &bp, player, player, player,
              EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
         *bp = '\0';
     }
@@ -1448,7 +1448,7 @@ void do_mail_review(dbref player, char *name, char *msglist)
                     status = status_string(mp);
                     msg = bp = alloc_lbuf("do_mail_review");
                     str = (char *)MessageFetch(mp->number);
-                    TinyExec(msg, &bp, player, player, player,
+                    mux_exec(msg, &bp, player, player, player,
                              EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str,
                              (char **)NULL, 0);
                     *bp = '\0';
@@ -2010,7 +2010,7 @@ static void mail_return(dbref player, dbref target)
         char *str2, *buf, *bp;
         str2 = bp = alloc_lbuf("mail_return");
         buf = str;
-        TinyExec(str2, &bp, target, player, player,
+        mux_exec(str2, &bp, target, player, player,
                  EV_FCHECK | EV_EVAL | EV_TOP | EV_NO_LOCATION, &buf,
                  (char **)NULL, 0);
         *bp = '\0';
@@ -3765,7 +3765,7 @@ static void do_mail_proof(dbref player)
     char *mailto = atr_get(player, A_MAILTO, &aowner, &aflags);
     str = mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
     bp = msg = alloc_lbuf("do_mail_proof");
-    TinyExec(msg, &bp, player, player, player, EV_EVAL | EV_FCHECK,
+    mux_exec(msg, &bp, player, player, player, EV_EVAL | EV_FCHECK,
                 &str, (char **)NULL, 0);
     *bp = '\0';
     free_lbuf(mailmsg);

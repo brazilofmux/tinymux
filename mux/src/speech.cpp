@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.6 2003-02-03 20:46:38 sdennis Exp $
+// $Id: speech.cpp,v 1.7 2003-02-05 01:13:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -30,7 +30,7 @@ char *modSpeech(dbref player, char *message, BOOL bWhich, char *command)
     char *args[2];
     args[0] = message;
     args[1] = command;
-    TinyExec(new_message, &t_ptr, player, player, player, 
+    mux_exec(new_message, &t_ptr, player, player, player, 
         EV_FCHECK | EV_EVAL | EV_TOP, &mod, args, 2);
     free_lbuf(mod_orig);
     return new_message;
@@ -130,7 +130,7 @@ void do_think(dbref executor, dbref caller, dbref enactor, int key, char *messag
 
     buf = bp = alloc_lbuf("do_think");
     str = message;
-    TinyExec(buf, &bp, executor, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
+    mux_exec(buf, &bp, executor, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
              &str, (char **)NULL, 0);
     *bp = '\0';
     notify(executor, buf);
@@ -522,7 +522,7 @@ static void page_return(dbref player, dbref target, const char *tag, int anum, c
     {
         str2 = bp = alloc_lbuf("page_return");
         buf = str;
-        TinyExec(str2, &bp, target, player, player,
+        mux_exec(str2, &bp, target, player, player,
                  EV_FCHECK | EV_EVAL | EV_TOP | EV_NO_LOCATION, &buf,
                  (char **)NULL, 0);
         *bp = '\0';

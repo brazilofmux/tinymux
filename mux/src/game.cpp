@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.14 2003-02-04 17:05:24 sdennis Exp $
+// $Id: game.cpp,v 1.15 2003-02-05 01:13:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -336,7 +336,7 @@ BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
     save_global_regs("check_filter_save", preserve, preserve_len);
     nbuf = dp = alloc_lbuf("check_filter");
     str = buf;
-    TinyExec(nbuf, &dp, object, player, player,
+    mux_exec(nbuf, &dp, object, player, player,
              EV_FIGNORE | EV_EVAL | EV_TOP, &str, (char **)NULL, 0);
     *dp = '\0';
     dp = nbuf;
@@ -410,7 +410,7 @@ static char *add_prefix(dbref object, dbref player, int prefix,
 
         nbuf = cp = alloc_lbuf("add_prefix");
         str = buf;
-        TinyExec(nbuf, &cp, object, player, player,
+        mux_exec(nbuf, &cp, object, player, player,
                  EV_FIGNORE | EV_EVAL | EV_TOP, &str, (char **)NULL, 0);
         free_lbuf(buf);
 

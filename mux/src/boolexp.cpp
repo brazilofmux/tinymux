@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.7 2003-02-04 07:02:54 sdennis Exp $
+// $Id: boolexp.cpp,v 1.8 2003-02-05 01:13:20 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -192,9 +192,9 @@ BOOL eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
             buff2 = bp = alloc_lbuf("eval_boolexp");
             str = buff;
-            TinyExec(buff2, &bp, source, player, player,
-                     EV_FIGNORE | EV_EVAL | EV_FCHECK | EV_TOP, &str,
-                     (char **)NULL, 0);
+            mux_exec(buff2, &bp, source, player, player,
+                EV_FIGNORE | EV_EVAL | EV_FCHECK | EV_TOP, &str,
+                (char **)NULL, 0);
             *bp = '\0';
 
             restore_global_regs("eval_boolexp_save", preserve, preserve_len);

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.13 2003-02-04 12:09:38 jake Exp $
+// $Id: command.cpp,v 1.14 2003-02-05 01:13:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -928,7 +928,7 @@ BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
             char *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
             char *str = atext;
-            TinyExec(buff, &bufc, executor, caller, enactor, EV_FCHECK | EV_EVAL, &str,
+            mux_exec(buff, &bufc, executor, caller, enactor, EV_FCHECK | EV_EVAL, &str,
                 (char **)NULL, 0);
             free_lbuf(atext);
             *bufc = '\0';
@@ -1174,8 +1174,8 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         {
             buf1 = bp = alloc_lbuf("process_cmdent");
             str = arg;
-            TinyExec(buf1, &bp, executor, caller, enactor,
-                     interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
+            mux_exec(buf1, &bp, executor, caller, enactor,
+                interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
             *bp = '\0';
         }
         else
@@ -1317,7 +1317,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
         }
         buf1 = bp = alloc_lbuf("process_cmdent.2");
         str = buf2;
-        TinyExec(buf1, &bp, executor, caller, enactor,
+        mux_exec(buf1, &bp, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs, ncargs);
         *bp = '\0';
 
@@ -1357,7 +1357,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
             {
                 buf2 = bp = alloc_lbuf("process_cmdent.3");
                 str = arg;
-                TinyExec(buf2, &bp, executor, caller, enactor,
+                mux_exec(buf2, &bp, executor, caller, enactor,
                     interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
                 *bp = '\0';
             }
@@ -1975,7 +1975,7 @@ char *process_command
     //
     bp = LowerCaseCommand;
     str = pCommand;
-    TinyExec(LowerCaseCommand, &bp, executor, caller, enactor,
+    mux_exec(LowerCaseCommand, &bp, executor, caller, enactor,
         EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str, args, nargs);
     *bp = '\0';
     BOOL succ = FALSE;
@@ -2220,7 +2220,7 @@ char *process_command
             char *errbuff = alloc_lbuf("process_command.error_msg");
             char *errbufc = errbuff;
             str = errtext;
-            TinyExec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor, 
+            mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor, 
                 EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str,
                 &pCommand, 1);
             notify(executor, errbuff);

@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.15 2003-02-04 22:21:20 sdennis Exp $
+// $Id: predicates.cpp,v 1.16 2003-02-05 01:13:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -701,7 +701,7 @@ void do_switch
     {
         bp = buff;
         str = args[a];
-        TinyExec(buff, &bp, player, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
+        mux_exec(buff, &bp, player, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
             &str, cargs, ncargs);
         *bp = '\0';
         if (wild_match(buff, expr))
@@ -756,7 +756,7 @@ void do_if
     CLinearTimeAbsolute lta;
     buff = bp = alloc_lbuf("do_if");
 
-    TinyExec(buff, &bp, player, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
+    mux_exec(buff, &bp, player, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
         &expr, cargs, ncargs);
     int a = !xlate(buff);
     free_lbuf(buff);
@@ -2085,7 +2085,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             save_global_regs("did_it_save", preserve, preserve_len);
             buff = bp = alloc_lbuf("did_it.1");
             str = d;
-            TinyExec(buff, &bp, thing, player, player,
+            mux_exec(buff, &bp, thing, player, player,
                 EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
             *bp = '\0';
             if (  (aflags & AF_HTML)
@@ -2130,7 +2130,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             }
             buff = bp = alloc_lbuf("did_it.2");
             str = d;
-            TinyExec(buff, &bp, thing, player, player,
+            mux_exec(buff, &bp, thing, player, player,
                      EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
             *bp = '\0';
             if (*buff)

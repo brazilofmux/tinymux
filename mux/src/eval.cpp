@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.10 2003-02-05 00:59:24 sdennis Exp $
+// $Id: eval.cpp,v 1.11 2003-02-05 01:13:20 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -454,7 +454,7 @@ TryAgain:
 }
 
 // This version parse_to is less destructive. It only null-terminates the source
-// It doesn't process escapes. It's useful with TinyExec which will be copying
+// It doesn't process escapes. It's useful with mux_exec which will be copying
 // the characters to another buffer anyway and is more than able to perform the
 // escapes and trimming.
 //
@@ -751,7 +751,7 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
         if (eval & EV_EVAL)
         {
             str = tstr;
-            TinyExec(fargs[arg], &bp, executor, caller, enactor,
+            mux_exec(fargs[arg], &bp, executor, caller, enactor,
                      eval | EV_FCHECK, &str, cargs, ncargs);
             *bp = '\0';
         }
@@ -812,7 +812,7 @@ char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
 
         bp = fargs[arg] = alloc_lbuf("parse_arglist");
         str = tstr;
-        TinyExec(fargs[arg], &bp, executor, caller, enactor, peval, &str,
+        mux_exec(fargs[arg], &bp, executor, caller, enactor, peval, &str,
                  cargs, ncargs);
         *bp = '\0';
         arg++;
@@ -1066,7 +1066,7 @@ void PopIntegers(int *pi, int nNeeded)
     pIntsFrame->nints += nNeeded;
 }
 
-void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
+void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                dbref enactor, int eval, char **dstr, char *cargs[], int ncargs)
 {
     if (  *dstr == NULL
@@ -1100,10 +1100,10 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     static const char *absp[5] = {"", "its", "hers", "his", "theirs"};
 
     // This is scratch buffer is used potentially on every invocation of
-    // TinyExec. Do not assume that its contents are valid after you
-    // execute any function that could re-enter TinyExec.
+    // mux_exec. Do not assume that its contents are valid after you
+    // execute any function that could re-enter mux_exec.
     //
-    static char TinyExec_scratch[LBUF_SIZE];
+    static char mux_scratch[LBUF_SIZE];
 
     char *pdstr = *dstr;
 
@@ -1217,22 +1217,22 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
 
             // _strlwr(tbuf);
             //
-            char *p2 = TinyExec_scratch;
+            char *p2 = mux_scratch;
             for (char *p = oldp; p <= pEnd; p++)
             {
                 *p2++ = mux_tolower[(unsigned char)*p];
             }
             *p2 = '\0';
 
-            int ntbuf = p2 - TinyExec_scratch;
-            fp = (FUN *)hashfindLEN(TinyExec_scratch, ntbuf, &mudstate.func_htab);
+            int ntbuf = p2 - mux_scratch;
+            fp = (FUN *)hashfindLEN(mux_scratch, ntbuf, &mudstate.func_htab);
 
             // If not a builtin func, check for global func.
             //
             ufp = NULL;
             if (fp == NULL)
             {
-                ufp = (UFUN *)hashfindLEN(TinyExec_scratch, ntbuf, &mudstate.ufunc_htab);
+                ufp = (UFUN *)hashfindLEN(mux_scratch, ntbuf, &mudstate.ufunc_htab);
             }
 
             // Do the right thing if it doesn't exist.
@@ -1243,7 +1243,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                 {
                     *bufc = oldp;
                     safe_str("#-1 FUNCTION (", buff, bufc);
-                    safe_str(TinyExec_scratch, buff, bufc);
+                    safe_str(mux_scratch, buff, bufc);
                     safe_str(") NOT FOUND", buff, bufc);
                     nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     break;
@@ -1343,7 +1343,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                             save_global_regs("eval_save", preserve, preserve_len);
                         }
 
-                        TinyExec(buff, &oldp, i, executor, enactor, feval,
+                        mux_exec(buff, &oldp, i, executor, enactor, feval,
                                  &TempPtr, fargs, nfargs);
 
                         if (ufp->flags & FN_PRES)
@@ -1371,23 +1371,23 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         {
                             if (fp->minArgs == fp->maxArgs)
                             {
-                                sprintf(TinyExec_scratch,
+                                sprintf(mux_scratch,
                                     "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS",
                                     fp->name, fp->minArgs);
                             }
                             else if (fp->minArgs + 1 == fp->maxArgs)
                             {
-                                sprintf(TinyExec_scratch,
+                                sprintf(mux_scratch,
                                     "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS",
                                     fp->name, fp->minArgs, fp->maxArgs);
                             }
                             else
                             {
-                                sprintf(TinyExec_scratch,
+                                sprintf(mux_scratch,
                                     "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS",
                                     fp->name, fp->minArgs, fp->maxArgs);
                             }
-                            safe_str(TinyExec_scratch, buff, &oldp);
+                            safe_str(mux_scratch, buff, &oldp);
                         }
                     }
                     *bufc = oldp;
@@ -1481,9 +1481,9 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         //
                         // Enactor DB number.
                         //
-                        TinyExec_scratch[0] = '#';
-                        i = mux_ltoa(enactor, TinyExec_scratch+1);
-                        safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
+                        mux_scratch[0] = '#';
+                        i = mux_ltoa(enactor, mux_scratch+1);
+                        safe_copy_buf(mux_scratch, i+1, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                     else if (iCode == 4)
@@ -1494,9 +1494,9 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         // iCode == '!'
                         // Executor DB number.
                         //
-                        TinyExec_scratch[0] = '#';
-                        i = mux_ltoa(executor, TinyExec_scratch+1);
-                        safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
+                        mux_scratch[0] = '#';
+                        i = mux_ltoa(executor, mux_scratch+1);
+                        safe_copy_buf(mux_scratch, i+1, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                     else
@@ -1586,9 +1586,9 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         //
                         if (!(eval & EV_NO_LOCATION))
                         {
-                            TinyExec_scratch[0] = '#';
-                            i = mux_ltoa(where_is(enactor), TinyExec_scratch+1);
-                            safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
+                            mux_scratch[0] = '#';
+                            i = mux_ltoa(where_is(enactor), mux_scratch+1);
+                            safe_copy_buf(mux_scratch, i+1, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
@@ -1604,7 +1604,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         {
                             i = A_VA + mux_toupper[(unsigned char)(*pdstr)] - 'A';
                             size_t nAttrGotten;
-                            atr_pget_str_LEN(TinyExec_scratch, executor, i,
+                            atr_pget_str_LEN(mux_scratch, executor, i,
                                 &aowner, &aflags, &nAttrGotten);
                             if (0 < nAttrGotten)
                             {
@@ -1612,7 +1612,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                                 {
                                     nAttrGotten = nBufferAvailable;
                                 }
-                                memcpy(*bufc, TinyExec_scratch, nAttrGotten);
+                                memcpy(*bufc, mux_scratch, nAttrGotten);
                                 *bufc += nAttrGotten;
                                 nBufferAvailable -= nAttrGotten;
                             }
@@ -1800,9 +1800,9 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                             // iCode == '@'
                             // Caller DB number.
                             //
-                            TinyExec_scratch[0] = '#';
-                            i = mux_ltoa(caller, TinyExec_scratch+1);
-                            safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
+                            mux_scratch[0] = '#';
+                            i = mux_ltoa(caller, mux_scratch+1);
+                            safe_copy_buf(mux_scratch, i+1, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
@@ -1841,7 +1841,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             {
                 mudstate.nStackNest--;
                 TempPtr = tbuf;
-                TinyExec(buff, bufc, executor, caller, enactor,
+                mux_exec(buff, bufc, executor, caller, enactor,
                     (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, &TempPtr, cargs,
                     ncargs);
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
@@ -1917,14 +1917,14 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                     }
 
                     TempPtr = tbuf;
-                    TinyExec(buff, bufc, executor, caller, enactor,
+                    mux_exec(buff, bufc, executor, caller, enactor,
                         (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_TOP)),
                         &TempPtr, cargs, ncargs);
                 }
                 else
                 {
                     TempPtr = tbuf;
-                    TinyExec(buff, bufc, executor, caller, enactor,
+                    mux_exec(buff, bufc, executor, caller, enactor,
                         eval & ~EV_TOP, &TempPtr, cargs, ncargs);
                 }
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
@@ -2012,12 +2012,12 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
         // ANSI_NORMAL is guaranteed to be written on the end.
         //
         int nVisualWidth;
-        int nLen = ANSI_TruncateToField(buff, sizeof(TinyExec_scratch),
-            TinyExec_scratch, sizeof(TinyExec_scratch), &nVisualWidth,
+        int nLen = ANSI_TruncateToField(buff, sizeof(mux_scratch),
+            mux_scratch, sizeof(mux_scratch), &nVisualWidth,
             ANSI_ENDGOAL_NORMAL);
         if (nLen != nVisualWidth)
         {
-            memcpy(buff, TinyExec_scratch, nLen+1);
+            memcpy(buff, mux_scratch, nLen+1);
             *bufc = buff + nLen;
         }
     }

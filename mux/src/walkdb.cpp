@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.3 2003-02-03 15:00:34 sdennis Exp $
+// $Id: walkdb.cpp,v 1.4 2003-02-05 01:13:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -823,7 +823,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
             char *buff2 = replace_tokens(parm->s_rst_eval, buff, NULL, NULL);
             result = bp = alloc_lbuf("search_perform");
             str = buff2;
-            TinyExec(result, &bp, executor, caller, enactor,
+            mux_exec(result, &bp, executor, caller, enactor,
                 EV_FCHECK | EV_EVAL | EV_NOTRACE, &str, (char **)NULL, 0);
             *bp = '\0';
             free_lbuf(buff2);

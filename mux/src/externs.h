@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.8 2003-02-05 00:59:24 sdennis Exp $
+// $Id: externs.h,v 1.9 2003-02-05 01:13:20 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -41,7 +41,7 @@ char *parse_to(char **, char, int);
 char *parse_arglist(dbref executor, dbref caller, dbref enactor, char *,
                     char, int, char *[], int, char*[], int, int *);
 int get_gender(dbref);
-void TinyExec(char *buff, char **bufc, dbref executor, dbref caller,
+void mux_exec(char *buff, char **bufc, dbref executor, dbref caller,
               dbref enactor, int eval, char **dstr, char *cargs[],
               int ncargs);
 extern void save_global_regs(const char *, char *[], int []);

@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.3 2003-02-04 00:07:28 sdennis Exp $
+// $Id: help.cpp,v 1.4 2003-02-05 01:13:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -342,7 +342,7 @@ void help_write(dbref player, char *topic_arg, int iHelpfile)
         {
             char *str = line;
             char *bp = result;
-            TinyExec(result, &bp, player, player, player,
+            mux_exec(result, &bp, player, player, player,
                      EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
             *bp = '\0';
             notify(player, result);
