@@ -41,6 +41,8 @@ Feature Additions:
     @restart.  The idea is that the site administrator will have access
     to the shell account, but may also need access to site-related
     facilaties within the game.
+ -- Add FCOUNT() and FDEPTH() for softcode access to function invocation
+    and nesting counters.
 
 
 Bug Fixes:
@@ -58,6 +60,8 @@ Bug Fixes:
  -- Guest attributes weren't being wiped as intended.
  -- Fixed @hook IGSWITCH again.  This time, the bug is related to the
     search_nametab() interface.
+ -- Fix @notify/foo123 where foo123 is a never-before-used attributes.
+    Legacy bug from MUX 1.6.
 
 
 Performance Enhancements:
