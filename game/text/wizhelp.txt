@@ -3048,17 +3048,6 @@ QUOTAS
   quotas are turned off and turned back on later, any building or @destroying
   that occurs in the interim does not affect the quotas.
 
-  Related Topics: @create, @destroy, @dig, @open, @quota, QUOTAS, quota_cost.
-
-& QUOTA_COST
-QUOTA_COST
-
-  CONFIG PARAMETER: quota_cost <amount>
-  DEFAULT: 1
-
-  Indicates how much adding one object to the database charges against the
-  player's quota.
-
   Related Topics: @create, @destroy, @dig, @open, @quota, QUOTAS.
 
 & READ_REMOTE_DESC
