@@ -28,6 +28,8 @@ Bug Fixes:
     no longer true.
  -- Alierak fix for home(bad_obj) logic.
  -- Alierak fixes off-by-one error in wrap().
+ -- Only allow printable characters in identd.  The slave process on Unix
+    does this.  The threaded implementation for Win32 didn't.
 
 
 Performance Enhancements:
