@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.46 2002-06-28 18:30:37 sdennis Exp $
+// $Id: functions.cpp,v 1.47 2002-06-28 19:41:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2106,7 +2106,7 @@ FUNCTION(fun_rloc)
     }
 }
 
-/* QQQ
+/*
  * ---------------------------------------------------------------------------
  * * fun_room: Find the room an object is ultimately in.
  */
@@ -2114,6 +2114,11 @@ FUNCTION(fun_rloc)
 FUNCTION(fun_room)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
     if (locatable(executor, it, enactor))
     {
         int count;
@@ -2121,7 +2126,9 @@ FUNCTION(fun_room)
         {
             it = Location(it);
             if (!Good_obj(it))
+            {
                 break;
+            }
             if (isRoom(it))
             {
                 safe_tprintf_str(buff, bufc, "#%d", it);
@@ -2147,9 +2154,8 @@ FUNCTION(fun_room)
 
 FUNCTION(fun_owner)
 {
-    dbref it, aowner;
-    int atr, aflags;
-
+    dbref it;
+    int atr;
     if (parse_attrib(executor, fargs[0], &it, &atr))
     {
         if (atr == NOTHING)
@@ -2158,6 +2164,8 @@ FUNCTION(fun_owner)
         }
         else
         {
+            dbref aowner;
+            int   aflags;
             atr_pget_info(it, atr, &aowner, &aflags);
             it = aowner;
         }
@@ -2165,10 +2173,12 @@ FUNCTION(fun_owner)
     else
     {
         it = match_thing_quiet(executor, fargs[0]);
-        if (Good_obj(it))
+        if (!Good_obj(it))
         {
-            it = Owner(it);
+            safe_match_result(it, buff, bufc);
+            return;
         }
+        it = Owner(it);
     }
     safe_tprintf_str(buff, bufc, "#%d", it);
 }
@@ -2183,13 +2193,15 @@ FUNCTION(fun_controls)
     dbref x = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(x))
     {
-        safe_tprintf_str(buff, bufc, "%s", "#-1 ARG1 NOT FOUND");
+        safe_match_result(x, buff, bufc);
+        safe_str(" (ARG1)", buff, bufc);
         return;
     }
     dbref y = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(y))
     {
-        safe_tprintf_str(buff, bufc, "%s", "#-1 ARG2 NOT FOUND");
+        safe_match_result(x, buff, bufc);
+        safe_str(" (ARG2)", buff, bufc);
         return;
     }
     safe_ltoa(Controls(x, y), buff, bufc);
@@ -2205,6 +2217,7 @@ FUNCTION(fun_fullname)
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
+        safe_match_result(it, buff, bufc);
         return;
     }
     if (!mudconf.read_rem_name)
@@ -2226,12 +2239,10 @@ FUNCTION(fun_fullname)
 
 FUNCTION(fun_name)
 {
-    dbref it;
-    char *s, *temp;
-
-    it = match_thing_quiet(executor, fargs[0]);
+    dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
+        safe_match_result(it, buff, bufc);
         return;
     }
     if (!mudconf.read_rem_name)
@@ -2244,10 +2255,11 @@ FUNCTION(fun_name)
             return;
         }
     }
-    temp = *bufc;
+    char *temp = *bufc;
     safe_str(Name(it), buff, bufc);
     if (isExit(it))
     {
+        char *s;
         for (s = temp; (s != *bufc) && (*s != ';'); s++)
         {
             // Do nothing
@@ -2255,7 +2267,9 @@ FUNCTION(fun_name)
             ;
         }
         if (*s == ';')
+        {
             *bufc = s;
+        }
     }
 }
 
@@ -2548,7 +2562,12 @@ void internalPlayerFind
         thing = match_thing_quiet(player, name);
         if (bVerifyPlayer)
         {
-            if (!Good_obj(thing) || !isPlayer(thing))
+            if (!Good_obj(thing))
+            {
+                safe_match_result(thing, buff, bufc);
+                return;
+            }
+            if (!isPlayer(thing))
             {
                 safe_nomatch(buff, bufc);
                 return;
@@ -4097,50 +4116,53 @@ FUNCTION(fun_comp)
 #ifdef WOD_REALMS
 FUNCTION(fun_cansee)
 {
-    dbref looker, lookee;
-    int mode;
-    looker = match_thing_quiet(executor, fargs[0]);
-    if (Good_obj(looker))
+    dbref looker = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(looker))
     {
-        lookee = match_thing_quiet(executor, fargs[1]);
-        if (Good_obj(lookee))
+        safe_match_result(looker, buff, bufc);
+        safe_str(" (LOOKER)", buff, bufc);
+        return;
+    }
+    dbref lookee = match_thing_quiet(executor, fargs[1]);
+    if (!Good_obj(lookee))
+    {
+        safe_match_result(looker, buff, bufc);
+        safe_str(" (LOOKEE)", buff, bufc);
+        return;
+    }
+    int mode;
+    if (nfargs == 3)
+    {
+        mode = Tiny_atol(fargs[2]);
+        switch (mode)
         {
-            if (nfargs == 3)
-            {
-                mode = Tiny_atol(fargs[2]);
-                switch (mode)
-                {
-                case ACTION_IS_STATIONARY:
-                case ACTION_IS_MOVING:
-                case ACTION_IS_TALKING:
-                    break;
+        case ACTION_IS_STATIONARY:
+        case ACTION_IS_MOVING:
+        case ACTION_IS_TALKING:
+            break;
 
-                default:
-                    mode = ACTION_IS_STATIONARY;
-                    break;
-                }
-            }
-            else
-            {
-                mode = ACTION_IS_STATIONARY;
-            }
-
-            // Do it.
-            //
-            int Realm_Do = DoThingToThingVisibility(looker, lookee, mode);
-            int ch = '0';
-            if ((Realm_Do & REALM_DO_MASK) != REALM_DO_HIDDEN_FROM_YOU)
-            {
-                if (!Dark(lookee))
-                {
-                    ch = '1';
-                }
-            }
-            safe_chr(ch, buff, bufc);
-            return;
+        default:
+            mode = ACTION_IS_STATIONARY;
+            break;
         }
     }
-    safe_nothing(buff, bufc);
+    else
+    {
+        mode = ACTION_IS_STATIONARY;
+    }
+
+    // Do it.
+    //
+    int Realm_Do = DoThingToThingVisibility(looker, lookee, mode);
+    int ch = '0';
+    if ((Realm_Do & REALM_DO_MASK) != REALM_DO_HIDDEN_FROM_YOU)
+    {
+        if (!Dark(lookee))
+        {
+            ch = '1';
+        }
+    }
+    safe_chr(ch, buff, bufc);
 }
 #endif
 
@@ -4152,11 +4174,19 @@ FUNCTION(fun_cansee)
 FUNCTION(fun_lcon)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (  Good_obj(it)
-       && Has_contents(it)
-       && (  Examinable(executor, it)
-          || Location(executor) == it
-          || it == enactor))
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (!Has_contents(it))
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+    if (  Examinable(executor, it)
+       || Location(executor) == it
+       || it == enactor)
     {
         dbref thing;
         DTB pContext;
@@ -4181,7 +4211,7 @@ FUNCTION(fun_lcon)
     }
     else
     {
-        safe_nothing(buff, bufc);
+        safe_noperm(buff, bufc);
     }
 }
 
@@ -4193,10 +4223,9 @@ FUNCTION(fun_lcon)
 FUNCTION(fun_lexits)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
-    
     if (!Good_obj(it))
     {
-        safe_tprintf_str(buff, bufc, "#%d", it);
+        safe_match_result(it, buff, bufc);
         return;
     }
     if (!Has_exits(it))
@@ -4209,7 +4238,7 @@ FUNCTION(fun_lexits)
        && where_is(executor) != it
        && it != enactor)
     {
-        safe_nothing(buff, bufc);
+        safe_noperm(buff, bufc);
         return;
     }
 
@@ -4270,11 +4299,11 @@ FUNCTION(fun_home)
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_tprintf_str(buff, bufc, "#%d", it);
+        safe_match_result(it, buff, bufc);
     }
     if (!Examinable(executor, it))
     {
-        safe_nothing(buff, bufc);
+        safe_noperm(buff, bufc);
     }
     else if (Has_home(it))
     {
@@ -4301,21 +4330,20 @@ FUNCTION(fun_home)
 
 FUNCTION(fun_money)
 {
-    dbref result = NOTHING;
     dbref it = match_thing_quiet(executor, fargs[0]);
-    if (Good_obj(it))
+    if (!Good_obj(it))
     {
-        if (Examinable(executor, it))
-        {
-           safe_ltoa(Pennies(it), buff, bufc);
-           return;
-        }
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (Examinable(executor, it))
+    {
+        safe_ltoa(Pennies(it), buff, bufc);
     }
     else
     {
-        result = it;
+        safe_noperm(buff, bufc);
     }
-    safe_tprintf_str(buff, bufc, "#%d", result);
 }
 
 /*
@@ -5075,12 +5103,14 @@ FUNCTION(fun_nearby)
     if (!Good_obj(obj1))
     {
         safe_match_result(obj1, buff, bufc);
+        safe_str(" (ARG1)", buff, bufc);
         return;
     }
     obj2 = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(obj2))
     {
         safe_match_result(obj2, buff, bufc);
+        safe_str(" (ARG2)", buff, bufc);
         return;
     }
     if (  (  nearby_or_control(executor, obj1)
@@ -5105,7 +5135,8 @@ static void process_sex(dbref player, char *what, const char *token, char *buff,
         safe_match_result(it, buff, bufc);
         return;
     }
-    if (!isPlayer(it) && !nearby_or_control(player, it))
+    if (  !isPlayer(it)
+       && !nearby_or_control(player, it))
     {
         safe_nomatch(buff, bufc);
     }
@@ -5162,13 +5193,17 @@ FUNCTION(fun_connrecord)
 FUNCTION(fun_ctime)
 {
     dbref thing = match_thing_quiet(executor, fargs[0]);
-    if (Examinable(executor, thing))
+    if (!Good_obj(thing))
+    {
+        safe_match_result(thing, buff, bufc);
+    }
+    else if (Examinable(executor, thing))
     {
         safe_str(atr_get_raw(thing, A_CREATED), buff, bufc);
     }
     else
     {
-        safe_str(NOPERM_MESSAGE, buff, bufc);
+        safe_noperm(buff, bufc);
     }
 }
 
@@ -6446,25 +6481,28 @@ FUNCTION(fun_locate)
     pref_type = NOTYPE;
     check_locks = verbose = multiple = 0;
 
-    /*
-     * Find the thing to do the looking, make sure we control it.
-     */
-
+    // Find the thing to do the looking, make sure we control it.
+    //
     if (See_All(executor))
+    {
         thing = match_thing_quiet(executor, fargs[0]);
+    }
     else
-        thing = match_controlled(executor, fargs[0]);
+    {
+        thing = match_controlled_quiet(executor, fargs[0]);
+    }
     if (!Good_obj(thing))
     {
-        safe_noperm(buff, bufc);
+        safe_match_result(thing, buff, bufc);
         return;
     }
-    /*
-     * Get pre- and post-conditions and modifiers
-     */
 
-    for (cp = fargs[2]; *cp; cp++) {
-        switch (*cp) {
+    // Get pre- and post-conditions and modifiers
+    //
+    for (cp = fargs[2]; *cp; cp++)
+    {
+        switch (*cp)
+        {
         case 'E':
             pref_type = TYPE_EXIT;
             break;
@@ -6489,21 +6527,23 @@ FUNCTION(fun_locate)
         }
     }
 
-    /*
-     * Set up for the search
-     */
-
+    // Set up for the search
+    //
     if (check_locks)
+    {
         init_match_check_keys(thing, fargs[1], pref_type);
+    }
     else
+    {
         init_match(thing, fargs[1], pref_type);
+    }
 
-    /*
-     * Search for each requested thing
-     */
-
-    for (cp = fargs[2]; *cp; cp++) {
-        switch (*cp) {
+    // Search for each requested thing
+    //
+    for (cp = fargs[2]; *cp; cp++)
+    {
+        switch (*cp)
+        {
         case 'a':
             match_absolute();
             break;
@@ -6534,22 +6574,26 @@ FUNCTION(fun_locate)
         }
     }
 
-    /*
-     * Get the result and return it to the caller
-     */
-
+    // Get the result and return it to the caller
+    //
     if (multiple)
+    {
         what = last_match_result();
+    }
     else
+    {
         what = match_result();
+    }
 
     if (verbose)
+    {
         (void)match_status(executor, what);
+    }
 
     safe_tprintf_str(buff, bufc, "#%d", what);
 }
 
-/*
+/* QQQ
  * ---------------------------------------------------------------------------
  * * fun_switch: Return value based on pattern matching (ala @switch)
  * * NOTE: This function expects that its arguments have not been evaluated.

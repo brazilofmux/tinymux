@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.15 2002-06-27 10:19:33 jake Exp $
+// $Id: set.cpp,v 1.16 2002-06-28 19:41:37 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -13,11 +13,10 @@
 
 extern NAMETAB indiv_attraccess_nametab[];
 
-dbref match_handler(dbref player, const char *name, int key, BOOL bQuiet)
+dbref match_handler(dbref executor, const char *name, int key, BOOL bQuiet)
 {
     dbref mat;
-    BOOL check;
-    init_match(player, name, NOTYPE);
+    init_match(executor, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     if (bQuiet)
     {
@@ -28,30 +27,46 @@ dbref match_handler(dbref player, const char *name, int key, BOOL bQuiet)
         mat = noisy_match_result();
     }
 
+    if (!Good_obj(mat))
+    {
+        if (!bQuiet)
+        {
+            if (mat == AMBIGUOUS)
+            {
+                notify_quiet(executor, AMBIGUOUS_MESSAGE);
+            }
+            else
+            {
+                notify_quiet(executor, NOMATCH_MESSAGE);
+            }
+        }
+        return mat;
+    }
+
+    BOOL check;
     switch (key)
     {
     case MATCH_CONTROL:
-        check = (Good_obj(mat) && !Controls(player, mat));
+        check = !Controls(executor, mat);
         break;
+
     case MATCH_EXAM:
-        check = (mat != NOTHING && !Examinable(player, mat));
+        check = !Examinable(executor, mat);
         break;
+
     default:
         return NOTHING;
     }
 
-    if (check)
-    {
-        if (!bQuiet)
-        {
-            notify_quiet(player, NOPERM_MESSAGE);
-        }
-        return NOTHING;
-    }
-    else
+    if (!check)
     {
         return mat;
     }
+    if (!bQuiet)
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
+    }
+    return NOTHING;
 }
 
 void do_chzone
