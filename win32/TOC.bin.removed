@@ -13,6 +13,7 @@ docs/mux2.1-man.pdf
 docs/mux2.1-man.tex
 game/bin/TinyMUX.exe
 game/bin/a.exe
+game/bin/mkindx.exe
 game/data/tinymux.db
 game/startmuxold.bat
 game/tinymux.conf

@@ -89,8 +89,6 @@ src/match.h
 src/mguests.cpp
 src/mguests.h
 src/misc.h
-src/mkindx.cpp
-src/mkindx.dsp
 src/move.cpp
 src/mudconf.h
 src/muxcli.cpp

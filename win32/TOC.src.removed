@@ -23,6 +23,8 @@ src/complib.cpp
 src/compresstab.h
 src/compresstab.h.dumb
 src/macro.h
+src/mkindx.cpp
+src/mkindx.dsp
 src/phase1.awk
 src/phase2.awk
 src/radix.cpp
