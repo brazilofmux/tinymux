@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.73 2001-11-23 20:26:24 sdennis Exp $
+// $Id: funceval.cpp,v 1.74 2001-11-25 05:27:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2516,14 +2516,7 @@ FUNCTION(fun_dumping)
 #ifdef WIN32
     safe_chr('0', buff, bufc);
 #else // WIN32
-    if (mudstate.dumping)
-    {
-        safe_chr('1', buff, bufc);
-    }
-    else
-    {
-        safe_chr('0', buff, bufc);
-    }
+    safe_chr(mudstate.dumping ? '1' : '0', buff, bufc);
 #endif // WIN32
 }
 
